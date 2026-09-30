@@ -1,14 +1,14 @@
 import { REDACTED, redactSecrets } from './redactSecrets';
 
-export const REDACTED_EMAIL = '[email]';
+const REDACTED_EMAIL = '[email]';
 
-export const REDACTED_URL = '[url]';
+const REDACTED_URL = '[url]';
 
-export const REDACTED_ID = '[id]';
+const REDACTED_ID = '[id]';
 
-export const REDACTED_IP = '[ip]';
+const REDACTED_IP = '[ip]';
 
-export const REDACTED_USER = '[user]';
+const REDACTED_USER = '[user]';
 
 const ELIDED = '…';
 

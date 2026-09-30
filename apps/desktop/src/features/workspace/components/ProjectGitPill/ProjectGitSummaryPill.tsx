@@ -13,7 +13,7 @@ import {
 import { AnchoredPopover, Button, IconButton, PopoverBody, cn, useDropdown } from '@goodboy/ui';
 import type { ProjectId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
+import { useToast } from '../../../../shared/components/Toast';
 import type { ProjectGitStatusEntry } from '../../hooks/useProjectGitStatuses';
 import { ProjectGitDetail } from './ProjectGitDetail';
 import {

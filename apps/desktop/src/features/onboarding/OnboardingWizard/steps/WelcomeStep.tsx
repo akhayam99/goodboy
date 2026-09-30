@@ -1,4 +1,4 @@
-import { DogMascot } from '../../../../shared/components/DogMascot';
+import { DogMascot } from '@goodboy/ui';
 
 const WELCOME_LINES = [
   { label: 'Connect the AI you already use', time: '1 min' },

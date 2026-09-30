@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { selectLimitsChips, type LimitsChip } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
+import { useNow } from '../../../shared/hooks/useNow';
 import { PROVIDER_ORDER } from '../components/ProviderStudio/providerOrder';
-
-const TICK_MS = 60_000;
 
 export type LimitsChips = {
   readonly chips: ReadonlyArray<LimitsChip>;
@@ -15,12 +14,7 @@ export type LimitsChips = {
 export const useLimitsChips = (): LimitsChips => {
   const providers = useAppStore((state) => state.providers);
   const limits = useAppStore((state) => state.providerLimits);
-  const [nowMs, setNowMs] = useState(() => Date.now());
-
-  useEffect(() => {
-    const id = window.setInterval(() => setNowMs(Date.now()), TICK_MS);
-    return () => window.clearInterval(id);
-  }, []);
+  const nowMs = useNow(60_000);
 
   return useMemo(() => {
     const connected: ReadonlyArray<ProviderId> = providers

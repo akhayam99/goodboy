@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-export type PreviewFact = {
+type PreviewFact = {
   readonly label: string;
   readonly value: ReactNode;
 };

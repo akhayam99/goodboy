@@ -2,20 +2,11 @@ import { useEffect, useRef } from 'react';
 import { Search } from 'lucide-react';
 import { KbdPill } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { isTypingTarget } from '../../../../shared/keyboard/isTypingTarget';
 
 type Props = {
   readonly value: string;
   readonly onChange: (value: string) => void;
-};
-
-const isTypingTarget = (target: EventTarget | null): boolean => {
-  if (!(target instanceof HTMLElement)) {
-    return false;
-  }
-  if (target.isContentEditable) {
-    return true;
-  }
-  return ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
 };
 
 export const ScriptsFilterInput = ({ value, onChange }: Props) => {

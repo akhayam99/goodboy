@@ -1,3 +1,4 @@
+// @vitest-environment node
 import type {
   AgentId,
   ArtifactId,
@@ -71,7 +72,7 @@ const set: SetFn = (patch) => {
 
 const get = (() => ({ ...state })) as unknown as GetFn;
 
-const slice = () => createArtifactsSlice(set, get);
+const slice = () => createArtifactsSlice({ set, get });
 
 describe('artifacts slice', () => {
   beforeEach(() => {

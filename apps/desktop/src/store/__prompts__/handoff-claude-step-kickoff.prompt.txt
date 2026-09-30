@@ -1,0 +1,31 @@
+Output verbosity: NORMAL. Standard prose. Include rationale when non-obvious; avoid filler.
+
+## shared context (already loaded by orchestrator, do not re-derive)
+## goal
+The step finished.
+
+## files touched
+·
+
+## decisions
+·
+
+## open questions
+·
+
+## session summary
+·
+
+## context handoff protocol (parsed into the shared context above, seen by every agent, never repeat what is already there)
+Decisions above carry a number (`D7`). `<<ctx-decision>>durable decision<</ctx-decision>>` adds one; `<<ctx-decision replaces="D3">>the newer decision<</ctx-decision>>` replaces D3; `<<ctx-decision withdraw="D5">>why it no longer holds<</ctx-decision>>` withdraws D5. A decision you do not name stays. `<<ctx-resolved>>original question text, quoted closely<</ctx-resolved>>` once an open question above is answered, one per question.
+`<<ctx-question suggestions="a | b | c" recommended="a" select="one">>question<</ctx-question>>` when the user must answer first: self-contained, what and why in one sentence; `suggestions` = 2 to 4 pipe-separated options when bounded; `recommended` always set, verbatim from suggestions when present; `select="one"` (default, radio) when exactly one option applies, `select="many"` (checkbox) when the user can combine several. A free-text answer stays available in both modes. Add `blocking="true"` only when the answer changes WHAT the output says and cannot be settled from the available material, for example when the goal has two readings that produce different results, two sources contradict each other, or something is needed that only a person has. A preference with a defensible default is never blocking: answer it yourself and record the assumption.
+
+## workflow handoff
+### step 0 output: Trace the rounding
+Every posting rounds itself, 3,100 lines per batch.
+
+Move rounding from post_line to settle_batch.
+
+**Scope** this step only, never a later one. Emit `<<step-done id="agent-2">>` on its own line once it is truly done.
+
+**Questions** a question in plain prose never reaches the user. When you need the user to answer, approve or confirm something before you can go on (a destructive command, a choice only they can make), ask it in one `<<ctx-question blocking="true">>the question<</ctx-question>>` block and stop.

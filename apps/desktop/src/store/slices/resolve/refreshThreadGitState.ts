@@ -25,6 +25,7 @@ import {
 } from './threadGitState';
 import { viewerLoginsOf } from './viewerLogins';
 import type { SessionParams, SliceParams } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 type Params = SliceParams & SessionParams;
 
@@ -58,7 +59,7 @@ export const refreshThreadGitState = async ({ set, get, sessionId }: Params): Pr
     return;
   }
   const worktreePath = repo.worktreePath;
-  const workspaceId = get().sessions?.find((session) => session.id === sessionId)?.workspaceId;
+  const workspaceId = sessionById(get().sessions, sessionId)?.workspaceId;
   const fetched = await worktreeFetchOriginBranch({
     worktreePath,
     branch,

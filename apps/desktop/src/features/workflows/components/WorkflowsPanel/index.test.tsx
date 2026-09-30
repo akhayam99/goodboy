@@ -52,7 +52,7 @@ vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
 
-import { ToastProvider } from '../../../../app/components/Toast';
+import { ToastProvider } from '../../../../shared/components/Toast';
 import { WorkflowsPanel } from './index';
 
 const renderPanel = () =>

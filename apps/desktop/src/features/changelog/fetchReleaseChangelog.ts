@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 
 export const fetchReleaseChangelog = ({ version }: { readonly version: string }): Promise<string> =>
-  invoke<string>('release_changelog', { version });
+  invokeCommand<string>('release_changelog', { version });

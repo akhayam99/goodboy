@@ -13,8 +13,6 @@ vi.mock('../../../../store', () => ({
   agentHasUnread: () => false,
 }));
 
-vi.mock('../../../../shared/components/DogMascot', () => ({ DogMascot: () => null }));
-
 vi.mock('../CreateAgentPopover', () => ({
   CreateAgentPopover: () => (
     <button type="button" data-testid="create-agent">

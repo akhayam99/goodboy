@@ -10,10 +10,11 @@ import {
 import { GitPullRequest, Search } from 'lucide-react';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ErrorStrip } from '@goodboy/ui';
-import { formatAdaptiveAge } from '../../../../shared/utils/relativeDate';
+import { formatAdaptiveAge } from '../../../../shared/utils/time/formatAdaptiveAge';
 import { InboxStatusIcons } from '../../components/InboxStatusIcons';
 import type { BitbucketPullRequest } from '../client';
 import type { BitbucketPrGroup } from './useBitbucketPrs';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 type Props = {
   readonly groups: ReadonlyArray<BitbucketPrGroup>;
@@ -25,6 +26,7 @@ type Props = {
 };
 
 export const PrInbox = ({ groups, focusedPrId, onSelect, loading, error, onRefresh }: Props) => {
+  const now = useNow(30_000);
   const [query, setQuery] = useState('');
   const hasQuery = query.trim() !== '';
   const filtered = useMemo(() => {
@@ -143,7 +145,7 @@ export const PrInbox = ({ groups, focusedPrId, onSelect, loading, error, onRefre
                               ·
                             </span>
                             <span className="shrink-0 tabular-nums text-faint-foreground">
-                              {formatAdaptiveAge({ iso: pullRequest.updatedOn })}
+                              {formatAdaptiveAge({ at: pullRequest.updatedOn, now })}
                             </span>
                             <InboxStatusIcons
                               className="ml-auto"

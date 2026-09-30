@@ -1,24 +1,21 @@
 import { useCallback, useState } from 'react';
 import { type DiffLayoutMode } from '@goodboy/ui';
-import { STORAGE_KEYS } from '../../lib/storage-keys';
+import { STORAGE_KEYS, persistedPref } from '../../lib/storage-keys';
 
 type SetLayoutMode = (mode: DiffLayoutMode) => void;
 
-const readLayoutMode = (): DiffLayoutMode => {
-  if (typeof localStorage === 'undefined') {
-    return 'unified';
-  }
-  return localStorage.getItem(STORAGE_KEYS.diffLayoutMode) === 'split' ? 'split' : 'unified';
-};
+const layoutPref = persistedPref<DiffLayoutMode>({
+  key: STORAGE_KEYS.diffLayoutMode,
+  parse: (raw) => (raw === 'split' ? 'split' : 'unified'),
+  serialize: (mode) => mode,
+  fallback: 'unified',
+});
 
 export const useDiffLayoutMode = (): readonly [DiffLayoutMode, SetLayoutMode] => {
-  const [mode, setModeState] = useState(readLayoutMode);
+  const [mode, setModeState] = useState(layoutPref.read);
   const setMode = useCallback((nextMode: DiffLayoutMode) => {
     setModeState(nextMode);
-    if (typeof localStorage === 'undefined') {
-      return;
-    }
-    localStorage.setItem(STORAGE_KEYS.diffLayoutMode, nextMode);
+    layoutPref.write(nextMode);
   }, []);
   return [mode, setMode] as const;
 };

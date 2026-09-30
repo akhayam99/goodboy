@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 
+import { useInheritedPaneActions } from '@goodboy/ui';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
@@ -120,8 +121,6 @@ vi.mock('../../../../../worktree/useRemoteHostKind', () => ({
   useRemoteHostKind: () => 'github',
 }));
 
-import { useInheritedPaneActions } from '../../../../../../shared/components/PaneShell/paneActionsContext';
-
 vi.mock('./LinearTaskDetail', () => ({
   LinearTaskDetail: ({ task }: TaskDetailProps) => (
     <div data-testid="task-detail">
@@ -146,7 +145,8 @@ vi.mock('./GitlabTaskDetail', () => ({
   ),
 }));
 
-vi.mock('../../../../../../shared/components/PaneShell', () => ({
+vi.mock('@goodboy/ui', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/ui')>()),
   PaneShell: ({ title, children, actions }: Props) => (
     <div>
       <h1>{title}</h1>

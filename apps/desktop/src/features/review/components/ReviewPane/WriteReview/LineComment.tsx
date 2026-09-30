@@ -12,7 +12,7 @@ type Props = {
   readonly draft: PrReviewDraft;
 };
 
-export const STALE_HINT = 'The diff changed under this comment; it is skipped on submit';
+const STALE_HINT = 'The diff changed under this comment; it is skipped on submit';
 
 export const LineComment = ({ sessionId, draft }: Props) => {
   const target = useMemo(

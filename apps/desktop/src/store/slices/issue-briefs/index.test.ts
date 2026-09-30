@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
 
@@ -56,7 +57,7 @@ const harness = ({ isConnected }: HarnessParams) => {
   ) => {
     state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) };
   };
-  const slice = createIssueBriefsSlice(set as never, (() => state) as never);
+  const slice = createIssueBriefsSlice({ set: set as never, get: (() => state) as never });
   const entry = () => selectIssueBrief({ state: state as never, key: KEY });
   return { slice, entry };
 };

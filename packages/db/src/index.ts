@@ -11,12 +11,6 @@ export type {
   TransactionParams,
 } from './client';
 
-export { migrate, type MigrateResult } from './migrations/runner';
-export {
-  runRuntimeMigrations,
-  type MigrationSnapshotStorage,
-} from './migrations/runRuntimeMigrations';
-export { migrations, type Migration } from './migrations';
 export {
   DatabaseFromNewerBuildError,
   NEWER_BUILD_MESSAGE,
@@ -32,7 +26,12 @@ export {
   type SearchBackfillStep,
 } from './maintenance/searchBackfill';
 
-export { NotFoundError, UniqueViolationError } from './shared/errors';
+export {
+  InvalidWorkflowNodeError,
+  NodeNotMutableError,
+  NotFoundError,
+  UniqueViolationError,
+} from './shared/errors';
 export {
   excludeProjectFromSearch,
   includeProjectInSearch,
@@ -214,7 +213,6 @@ export {
   listWorkspaceTurnSpans,
 } from './queries/agent-turn-span';
 export { listProviderLimits, upsertProviderLimits } from './queries/provider-limits';
-export { summarizeProviderSpendPeriods, type ProviderSpendPeriods } from './queries/provider-spend';
 export { getAgentHandoff, insertAgentHandoff } from './queries/agent-handoff';
 export {
   deleteSetting,
@@ -224,24 +222,19 @@ export {
   setSetting,
 } from './queries/settings';
 export {
-  listBudgetRules,
-  getSessionBudget,
-  insertBudgetAlert,
-  listBudgetAlerts,
-  dismissBudgetAlert,
-  type ListBudgetAlertsOptions,
-} from './queries/budget';
-export { listSkillsForWorkspace, upsertSkill, deleteSkill } from './queries/skill';
-export {
   listWorkflows,
   getWorkflow,
   upsertWorkflow,
   deleteWorkflow,
+  removeWorkflow,
+  saveWorkflow,
   restoreSeededWorkflow,
   readBuiltinSeedState,
   listRemovedSeededWorkflowIds,
   takenNameKey,
   type BuiltinSeedState,
+  type SaveWorkflowInput,
+  type WorkflowStepInput,
 } from './queries/workflow';
 export {
   isWorkflowRoutingDecision,
@@ -253,8 +246,22 @@ export {
   stringifyRoutingJson,
 } from './queries/workflowRoutingCodec';
 export {
+  insertAgent,
+  insertAgentBatch,
+  markAgentViewed,
+  recordAgentStatus,
+  setAgentDone,
+  setAgentProviderSession,
+  setAgentVerbosity,
+  updateWorkflowNodeRouting,
+  type AgentBatchInput,
+  type AgentBatchOutcome,
+  type AgentInsertInput,
+  type AgentStatusFields,
+  type WorkflowNodeRouting,
+} from './queries/agent-write';
+export {
   listAgentsForSessions,
-  updateAgentStatus,
   purgeAgentForDelete,
   updateAgentConfig,
   type AgentRoutingUpdate,
@@ -282,7 +289,6 @@ export {
   updateSessionWorktreeRepoSlug,
   listAllSessionWorktrees,
   detachSessionMounts,
-  listArchivedSessionMounts,
   listMountPathOwnership,
   type MountDetachment,
   type MountPathOwnership,

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MountId, MountOperation, ProjectId, SessionId, SessionMount } from '@goodboy/types';
 
@@ -46,69 +47,72 @@ vi.mock('../features/worktree/worktree', () => ({
     }),
   ),
 }));
-vi.mock('@goodboy/db', () => ({
-  listSessionMounts: vi.fn(async () => [...h.mounts.values()]),
-  deleteSessionMount: vi.fn(async ({ mountId }: { readonly mountId: MountId }) =>
-    h.mounts.delete(mountId),
-  ),
-  listMountOperations: vi.fn(async () => [...h.operations.values()]),
-  getMountOperation: vi.fn(
-    async ({ requestId }: { readonly requestId: string }) => h.operations.get(requestId) ?? null,
-  ),
-  insertSessionMount: vi.fn(async ({ mount }: { readonly mount: SessionMount }) => {
-    h.mounts.set(mount.id, mount);
-  }),
-  updateSessionMountLifecycle: vi.fn(
-    async ({
-      mountId,
-      worktreePath,
-      isAttached,
-      diskState,
-      expectedRevision,
-    }: {
-      readonly mountId: MountId;
-      readonly worktreePath: string | null;
-      readonly isAttached: boolean;
-      readonly diskState: SessionMount['diskState'];
-      readonly expectedRevision: number;
-    }) => {
-      const mount = h.mounts.get(mountId);
-      if (mount === undefined || mount.revision !== expectedRevision) {
-        return false;
-      }
-      h.mounts.set(mountId, {
-        ...mount,
+vi.mock('@goodboy/db', async () =>
+  (await import('../test/dbMock')).createDbMock({
+    registerWorktreeRoot: vi.fn(async () => undefined),
+    listSessionMounts: vi.fn(async () => [...h.mounts.values()]),
+    deleteSessionMount: vi.fn(async ({ mountId }: { readonly mountId: MountId }) =>
+      h.mounts.delete(mountId),
+    ),
+    listMountOperations: vi.fn(async () => [...h.operations.values()]),
+    getMountOperation: vi.fn(
+      async ({ requestId }: { readonly requestId: string }) => h.operations.get(requestId) ?? null,
+    ),
+    insertSessionMount: vi.fn(async ({ mount }: { readonly mount: SessionMount }) => {
+      h.mounts.set(mount.id, mount);
+    }),
+    updateSessionMountLifecycle: vi.fn(
+      async ({
+        mountId,
         worktreePath,
-        lastWorktreePath: worktreePath ?? mount.worktreePath ?? mount.lastWorktreePath,
         isAttached,
         diskState,
-        revision: mount.revision + 1,
-      });
-      return true;
-    },
-  ),
-  updateSessionMountBranch: vi.fn(
-    async ({
-      mountId,
-      branch,
-      expectedRevision,
-    }: {
-      readonly mountId: MountId;
-      readonly branch: string;
-      readonly expectedRevision: number;
-    }) => {
-      const mount = h.mounts.get(mountId);
-      if (mount === undefined || mount.revision !== expectedRevision) {
-        return false;
-      }
-      h.mounts.set(mountId, { ...mount, branch, revision: mount.revision + 1 });
-      return true;
-    },
-  ),
-  upsertMountOperation: vi.fn(async ({ operation }: { readonly operation: MountOperation }) => {
-    h.operations.set(operation.requestId, operation);
+        expectedRevision,
+      }: {
+        readonly mountId: MountId;
+        readonly worktreePath: string | null;
+        readonly isAttached: boolean;
+        readonly diskState: SessionMount['diskState'];
+        readonly expectedRevision: number;
+      }) => {
+        const mount = h.mounts.get(mountId);
+        if (mount === undefined || mount.revision !== expectedRevision) {
+          return false;
+        }
+        h.mounts.set(mountId, {
+          ...mount,
+          worktreePath,
+          lastWorktreePath: worktreePath ?? mount.worktreePath ?? mount.lastWorktreePath,
+          isAttached,
+          diskState,
+          revision: mount.revision + 1,
+        });
+        return true;
+      },
+    ),
+    updateSessionMountBranch: vi.fn(
+      async ({
+        mountId,
+        branch,
+        expectedRevision,
+      }: {
+        readonly mountId: MountId;
+        readonly branch: string;
+        readonly expectedRevision: number;
+      }) => {
+        const mount = h.mounts.get(mountId);
+        if (mount === undefined || mount.revision !== expectedRevision) {
+          return false;
+        }
+        h.mounts.set(mountId, { ...mount, branch, revision: mount.revision + 1 });
+        return true;
+      },
+    ),
+    upsertMountOperation: vi.fn(async ({ operation }: { readonly operation: MountOperation }) => {
+      h.operations.set(operation.requestId, operation);
+    }),
   }),
-}));
+);
 
 import { recoverMountOperations } from '../store/slices/project-mounts/recoverMountOperations';
 import { createProjectMountsSlice } from '../store/slices/project-mounts';
@@ -497,7 +501,7 @@ describe('raw checkout recovery', () => {
     const set = (updater: Partial<State> | ((current: State) => Partial<State>)) => {
       Object.assign(state, typeof updater === 'function' ? updater(state) : updater);
     };
-    const slice = createProjectMountsSlice(set as never, (() => state) as never);
+    const slice = createProjectMountsSlice({ set: set as never, get: (() => state) as never });
     return { state, set, slice };
   };
 

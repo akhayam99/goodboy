@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { BitbucketPullRequestState } from './client';
 import { BITBUCKET_PR_PRESENTATION, describeBitbucketPrState } from './bitbucketPrPresentation';

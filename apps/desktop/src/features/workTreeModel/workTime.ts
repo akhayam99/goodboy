@@ -1,6 +1,6 @@
 import type { CostRange, DurationEstimate, EstimateTier } from '@goodboy/core';
 import { formatUsd } from '@goodboy/ui';
-import { formatDuration } from '../chat/utils/format-duration';
+import { formatDuration } from '../../shared/utils/time/formatDuration';
 import type { RowPhase } from './rowState';
 
 export type WorkEstimate = {
@@ -61,7 +61,7 @@ const minutesLabel = ({ minutes }: { readonly minutes: number }): string => {
   return `${Math.round(minutes / 30) / 2}h`;
 };
 
-export const formatEstimateTime = ({ ms }: MsParams): string =>
+const formatEstimateTime = ({ ms }: MsParams): string =>
   minutesLabel({ minutes: estimateMinutes({ ms }) });
 
 type RangeParams = {

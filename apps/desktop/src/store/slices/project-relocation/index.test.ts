@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, Project, ProjectId, WorkspaceId } from '@goodboy/types';
 import type { AppStore } from '../../store';
@@ -20,7 +21,11 @@ vi.mock('../../../features/workspace/projectRelocation', () => ({
   projectRelocate: h.projectRelocate,
   projectRelocationUndo: h.projectRelocationUndo,
 }));
-vi.mock('@goodboy/db', () => ({ updateProjectIdentity: h.updateProjectIdentity }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    updateProjectIdentity: h.updateProjectIdentity,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { findMovedProjects } from './findMovedProjects';
@@ -183,5 +188,40 @@ describe('project relocation slice', () => {
     });
     expect(store.state.projects[0]?.rootPath).toBe('/old/ledger-core');
     expect(store.state.projectRelocationPhase).toBe('idle');
+  });
+
+  it('shows the message of a structured relocate rejection', async () => {
+    const store = harness();
+    await findMovedProjects(
+      store.set,
+      store.get,
+    )({
+      workspaceId: WORKSPACE_ID,
+      parent: '/new',
+    });
+    h.projectRelocate.mockRejectedValueOnce({ kind: 'io', message: 'the folder is locked' });
+
+    await relocateProjects(store.set, store.get)();
+
+    expect(store.state.projectRelocationPhase).toBe('error');
+    expect(store.state.projectRelocationError).toBe('the folder is locked');
+  });
+
+  it('shows the message of a structured undo rejection', async () => {
+    const store = harness();
+    await findMovedProjects(
+      store.set,
+      store.get,
+    )({
+      workspaceId: WORKSPACE_ID,
+      parent: '/new',
+    });
+    await relocateProjects(store.set, store.get)();
+    h.projectRelocationUndo.mockRejectedValueOnce({ kind: 'io', message: 'the folder is locked' });
+
+    await undoRelocation(store.set, store.get)();
+
+    expect(store.state.projectRelocationPhase).toBe('error');
+    expect(store.state.projectRelocationError).toBe('the folder is locked');
   });
 });

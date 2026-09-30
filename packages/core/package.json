@@ -7,15 +7,12 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
-    },
-    "./node": {
-      "types": "./src/node.ts",
-      "default": "./src/node.ts"
     }
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --project unit --passWithNoTests",
+    "test:perf": "vitest run --project perf --passWithNoTests"
   },
   "dependencies": {
     "@goodboy/db": "workspace:*",

@@ -1,7 +1,7 @@
 import { MetaRow, SectionHeader } from '@goodboy/ui';
 import type { Agent, ArtifactId, SessionArtifact, SessionId } from '@goodboy/types';
 import { useAppStore, agentPlace } from '../../../../store';
-import { formatCompactDateTime } from '../../../../shared/utils/formatCompactDateTime';
+import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { ARTIFACT_KIND_MARKER_LABEL } from '../../artifactPresentation';
 import { ArtifactBuiltFrom } from '../ArtifactStudio/ArtifactBuiltFrom';
 import { ArtifactReportProvenance } from '../ArtifactStudio/ArtifactReportProvenance';
@@ -51,7 +51,7 @@ export const ArtifactShellDetails = ({ sessionId, artifact, agents, artifacts }:
             </span>,
             <span key="revision">rev {artifact.revision}</span>,
             <span key="created" className="tabular-nums">
-              {formatCompactDateTime({ iso: artifact.createdAt })}
+              {formatDateTime({ at: artifact.createdAt })}
             </span>,
           ]}
         />

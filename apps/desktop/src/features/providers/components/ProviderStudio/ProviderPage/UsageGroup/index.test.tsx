@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { BudgetRule, IsoDateTime, ProviderId, ProviderLimits } from '@goodboy/types';
 
-const { state, spendSpy } = vi.hoisted(() => ({
+const { state, invokeSpy } = vi.hoisted(() => ({
   state: {
     providerLimits: {} as Partial<Record<ProviderId, ProviderLimits>>,
     budgetRules: [] as ReadonlyArray<BudgetRule>,
@@ -16,20 +16,16 @@ const { state, spendSpy } = vi.hoisted(() => ({
     refreshClaudeUsage: vi.fn(async () => undefined),
     refreshCodexLimits: vi.fn(async () => undefined),
   },
-  spendSpy: vi.fn(),
+  invokeSpy: vi.fn(),
 }));
 
 vi.mock('../../../../../../store', () => ({
   useAppStore: <T,>(selector: (store: typeof state) => T) => selector(state),
 }));
 
-vi.mock('@goodboy/db', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@goodboy/db')>();
-  return { ...actual, summarizeProviderSpendPeriods: spendSpy };
-});
+vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeSpy }));
 
-vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
-
+import { providerBudgetStatusFor } from '../../../../../budget/testing/providerBudgetFixture';
 import { UsageGroup } from './index';
 
 const NOW = new Date(2026, 8, 25, 12, 0).getTime();
@@ -64,8 +60,11 @@ beforeEach(() => {
   vi.useFakeTimers({ now: NOW, toFake: ['Date'] });
   state.providerLimits = {};
   state.budgetRules = [];
-  spendSpy.mockReset();
-  spendSpy.mockResolvedValue({ todayUsd: 3.2, last7DaysUsd: 18.4, thisMonthUsd: 61.02 });
+  invokeSpy.mockReset();
+  invokeSpy.mockResolvedValue({
+    status: providerBudgetStatusFor({ spentUsd: 61.02, capUsd: 80 }),
+    periods: { todayUsd: 3.2, last7DaysUsd: 18.4, thisMonthUsd: 61.02 },
+  });
 });
 
 afterEach(() => {
@@ -90,8 +89,9 @@ describe('UsageGroup', () => {
     expect(screen.getByText('Updated 3m ago')).toBeTruthy();
     expect(screen.getByText(/never reads your sign-in/)).toBeTruthy();
     await waitFor(() => expect(screen.getByText('$18.40')).toBeTruthy());
-    expect(spendSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ provider: 'anthropic', workspaceId: 'ws-harborline' }),
+    expect(invokeSpy).toHaveBeenCalledWith(
+      'provider_budget_overview',
+      expect.objectContaining({ provider: 'anthropic' }),
     );
   });
 
@@ -183,13 +183,40 @@ describe('UsageGroup', () => {
     window.addEventListener('goodboy:open-impact-studio', listener);
     render(<UsageGroup providerId="anthropic" billing="plan" planLabel={null} />);
 
-    await waitFor(() => expect(screen.getByText('Budget $80.00 a month, 76% used')).toBeTruthy());
+    await waitFor(() =>
+      expect(
+        screen.getByText(/^Budget \$80\.00 a month, 76% used across all workspaces, resets /),
+      ).toBeTruthy(),
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Open in Impact' }));
     expect((listener.mock.calls[0]?.[0] as CustomEvent).detail).toEqual({
       scope: { kind: 'provider', provider: 'anthropic' },
     });
     window.removeEventListener('goodboy:open-impact-studio', listener);
   });
+  it('keeps the numbers and does not refetch when the same rule is reloaded', async () => {
+    const rule: BudgetRule = {
+      id: 'rule-1',
+      provider: 'anthropic',
+      period: 'monthly',
+      capUsd: 80,
+      alertThresholdPct: 80,
+      extraTokensBudget: null,
+      createdAt: localIso(9, 0, -20),
+    };
+    state.budgetRules = [rule];
+    const { rerender } = render(
+      <UsageGroup providerId="anthropic" billing="plan" planLabel={null} />,
+    );
+    await waitFor(() => expect(screen.getByText('$18.40')).toBeTruthy());
+
+    state.budgetRules = [{ ...rule }];
+    rerender(<UsageGroup providerId="anthropic" billing="plan" planLabel={null} />);
+
+    expect(screen.getByText('$18.40')).toBeTruthy();
+    expect(invokeSpy).toHaveBeenCalledTimes(1);
+  });
+
   it('asks codex again with the reset details from the refresh button', () => {
     render(<UsageGroup providerId="codex" billing="plan" planLabel="Plus" />);
 

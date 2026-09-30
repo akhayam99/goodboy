@@ -8,6 +8,10 @@
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
+    "./migrations": {
+      "types": "./src/migrations/boot.ts",
+      "default": "./src/migrations/boot.ts"
+    },
     "./test-helpers": {
       "types": "./src/test-helpers/test-db.ts",
       "default": "./src/test-helpers/test-db.ts"
@@ -15,7 +19,8 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --project unit --passWithNoTests",
+    "test:perf": "vitest run --project perf --passWithNoTests"
   },
   "dependencies": {
     "@goodboy/types": "workspace:*"

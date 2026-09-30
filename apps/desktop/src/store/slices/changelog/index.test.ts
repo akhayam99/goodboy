@@ -23,7 +23,12 @@ vi.mock('../../../features/changelog/fetchReleaseChangelog', () => ({
 
 vi.mock('@tauri-apps/api/app', () => ({ getVersion: getVersionMock }));
 
-vi.mock('@goodboy/db', () => ({ getSetting: getSettingMock, setSetting: setSettingMock }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    getSetting: getSettingMock,
+    setSetting: setSettingMock,
+  }),
+);
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: { execute: vi.fn(), select: vi.fn() } }));
 
@@ -43,7 +48,10 @@ const harness = () => {
   const set = (p: Partial<ChangelogState> | ((s: ChangelogState) => Partial<ChangelogState>)) => {
     state = { ...state, ...(typeof p === 'function' ? p(state) : p) };
   };
-  const slice = createChangelogSlice(set as never, (() => ({ ...state, ...slice })) as never);
+  const slice = createChangelogSlice({
+    set: set as never,
+    get: (() => ({ ...state, ...slice })) as never,
+  });
   return { slice, getState: () => state };
 };
 

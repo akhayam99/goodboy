@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentId, IsoDateTime, ArtifactId, SessionArtifact, SessionId } from '@goodboy/types';
 
@@ -8,15 +9,17 @@ const { getArtifactBySourceTurn, insertArtifact } = vi.hoisted(() => ({
   insertArtifact: vi.fn(),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  deleteArtifact: vi.fn(),
-  getArtifactBySourceTurn,
-  insertArtifact,
-  listArtifactsForSession: vi.fn(),
-  restoreArtifact: vi.fn(),
-  setArtifactStatus: vi.fn(),
-  updateArtifactSource: vi.fn(),
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../test/dbMock')).createDbMock({
+    deleteArtifact: vi.fn(),
+    getArtifactBySourceTurn,
+    insertArtifact,
+    listArtifactsForSession: vi.fn(),
+    restoreArtifact: vi.fn(),
+    setArtifactStatus: vi.fn(),
+    updateArtifactSource: vi.fn(),
+  }),
+);
 
 import { createArtifact } from './artifacts';
 

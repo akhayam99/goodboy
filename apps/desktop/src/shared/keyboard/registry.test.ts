@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const { platform } = vi.hoisted(() => ({ platform: { current: 'darwin' as 'darwin' | 'linux' } }));
@@ -109,7 +110,7 @@ describe('shortcut registry', () => {
     for (const [id, entry] of entries) {
       const parts = entry.combo.split('+');
       const shape = `${parts.includes('shift') ? 'shift' : ''}${parts.includes('alt') ? 'alt' : ''}`;
-      const expected = { app: '', session: 'shift', lens: 'alt' }[entry.plane];
+      const expected = { app: '', session: 'shift', lens: 'alt', pane: '' }[entry.plane];
       expect(shape, `${id} is on the ${entry.plane} plane but reads ${entry.combo}`).toBe(expected);
     }
   });

@@ -85,13 +85,45 @@ describe('WorkspaceSwitcher', () => {
     expect(state.openWorkspace).toHaveBeenCalledWith({ id: 'ws-b', title: 'bravo' });
   });
 
+  it.each([{ metaKey: true }, { ctrlKey: true }])(
+    'opens the picked workspace in a new window on %o and Enter',
+    async (modifier) => {
+      const onClose = vi.fn();
+      render(<WorkspaceSwitcher onClose={onClose} />);
+
+      fireEvent.keyDown(screen.getByPlaceholderText('Find a workspace or project'), {
+        key: 'Enter',
+        ...modifier,
+      });
+
+      await vi.waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+      expect(state.openWorkspace).toHaveBeenCalledWith({
+        id: 'ws-b',
+        title: 'bravo',
+        target: 'new-window',
+      });
+    },
+  );
+
+  it('opens the picked workspace here on a bare Enter', async () => {
+    const onClose = vi.fn();
+    render(<WorkspaceSwitcher onClose={onClose} />);
+
+    fireEvent.keyDown(screen.getByPlaceholderText('Find a workspace or project'), {
+      key: 'Enter',
+    });
+
+    await vi.waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(state.openWorkspace).toHaveBeenCalledWith({ id: 'ws-b', title: 'bravo' });
+  });
+
   it('shows an inline confirm instead of switching when opening asks for one', async () => {
     state.openWorkspace = vi.fn(async () => ({ kind: 'needs-confirm' as const, running: 2 }));
     const onClose = vi.fn();
     render(<WorkspaceSwitcher onClose={onClose} />);
     fireEvent.click(screen.getByText('bravo'));
 
-    expect(await screen.findByText('2 agents are running in alpha.')).toBeDefined();
+    expect(await screen.findByText('2 sessions are active in alpha.')).toBeDefined();
     expect(onClose).not.toHaveBeenCalled();
 
     const openInNewWindowButtons = screen.getAllByRole('button', { name: 'Open in new window' });
@@ -104,7 +136,7 @@ describe('WorkspaceSwitcher', () => {
     });
   });
 
-  it('stops the running agents and switches here from the confirm', async () => {
+  it('stops the active sessions and switches here from the confirm', async () => {
     state.openWorkspace = vi.fn(async () => ({ kind: 'needs-confirm' as const, running: 1 }));
     const onClose = vi.fn();
     render(<WorkspaceSwitcher onClose={onClose} />);
@@ -115,12 +147,21 @@ describe('WorkspaceSwitcher', () => {
     expect(state.switchWorkspaceHere).toHaveBeenCalledWith({ id: 'ws-b', title: 'bravo' });
   });
 
-  it('filters by query', () => {
+  it('filters other workspaces by query', () => {
+    state.workspaces = [
+      ...state.workspaces,
+      { id: 'ws-c', name: 'charlie', slug: 'charlie' } as Workspace,
+    ];
     render(<WorkspaceSwitcher onClose={vi.fn()} />);
+    expect(screen.getByText('bravo')).not.toBeNull();
+    expect(screen.getByText('charlie')).not.toBeNull();
+
     fireEvent.change(screen.getByPlaceholderText('Find a workspace or project'), {
       target: { value: 'brav' },
     });
-    expect(screen.queryByText('bravo')).toBeDefined();
+
+    expect(screen.getByText('bravo')).not.toBeNull();
+    expect(screen.queryByText('charlie')).toBeNull();
   });
 
   it('requests a new workspace via the global event', () => {

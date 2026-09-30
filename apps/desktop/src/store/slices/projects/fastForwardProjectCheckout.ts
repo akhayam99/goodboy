@@ -1,6 +1,7 @@
 import type { ProjectId } from '@goodboy/types';
 import { checkoutFastForward } from '../../../shared/lib/repo';
 import type { GetFn, SetFn } from './types';
+import { projectById } from './projectIndex';
 
 type Input = {
   readonly projectId: ProjectId;
@@ -8,7 +9,7 @@ type Input = {
 
 export const fastForwardProjectCheckout = (set: SetFn, get: GetFn) => {
   return async ({ projectId }: Input): Promise<void> => {
-    const project = get().projects.find((candidate) => candidate.id === projectId);
+    const project = projectById(get().projects, projectId);
     if (project === undefined || project.kind !== 'repo') {
       return;
     }

@@ -11,9 +11,9 @@ import { setCurrentWorkspace } from './setCurrentWorkspace';
 import { setWorkspacePermissionDefault } from './setWorkspacePermissionDefault';
 import { updateWorkspaceProfile } from './updateWorkspaceProfile';
 import { wipeLocalDatabase } from './wipeLocalDatabase';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createWorkspacesSlice = (set: SetFn, get: GetFn) => {
+export const createWorkspacesSlice = ({ set, get }: SliceDeps) => {
   return {
     addWorkspace: addWorkspace(set, get),
     checkReconnectCandidate: checkReconnectCandidate(get),

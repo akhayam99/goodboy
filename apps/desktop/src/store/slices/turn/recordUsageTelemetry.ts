@@ -16,18 +16,15 @@ import type {
   TurnEvent,
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import {
-  invokeBudgetAlertsList,
-  invokeBudgetEmitAlerts,
-  invokeBudgetRuleList,
-} from '../../../features/budget/budget';
+import { invokeBudgetAlertsList, invokeBudgetEmitAlerts } from '../../../features/budget/budget';
 import {
   getCodexPriceOverride,
   getGeminiPriceOverride,
 } from '../../../features/providers/provider-pricing';
-import { buildProviderSpendBreakdown } from '../budget';
+import { buildProviderSpendBreakdown, loadCurrentProviderBudgetStatuses } from '../budget';
 import { notifyBudgetAlerts } from './notifyBudgetAlerts';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 type Params = {
   event: Extract<TurnEvent, { kind: 'usage' }>;
@@ -77,25 +74,25 @@ export const recordUsageTelemetry = async (
       [sessionId]: [...(state.sessionTelemetry[sessionId] ?? []), record],
     },
   }));
-  const currentSession = get().sessions.find((s) => s.id === sessionId);
+  const currentSession = sessionById(get().sessions, sessionId);
   if (currentSession != null) {
     const newAlerts: ReadonlyArray<BudgetAlert> = await invokeBudgetEmitAlerts({
       provider,
       sessionId,
     }).catch(() => []);
-    const [sessSummary, wsSummary, providerSummaries, budgetRules, freshAlerts] = await Promise.all(
-      [
+    const [sessSummary, wsSummary, providerSummaries, providerBudgetStatus, freshAlerts] =
+      await Promise.all([
         summarizeSessionTelemetry(tauriDatabase, sessionId),
         summarizeWorkspaceTelemetry(tauriDatabase, currentSession.workspaceId),
         summarizeWorkspaceProviderTelemetry(tauriDatabase, currentSession.workspaceId),
-        invokeBudgetRuleList(),
+        loadCurrentProviderBudgetStatuses(),
         invokeBudgetAlertsList(),
-      ],
-    );
+      ]);
     set({
       sessionSummary: sessSummary,
       workspaceSummary: wsSummary,
-      providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
+      providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries),
+      providerBudgetStatus,
       budgetAlerts: freshAlerts,
     });
     notifyBudgetAlerts({ alerts: newAlerts, get });

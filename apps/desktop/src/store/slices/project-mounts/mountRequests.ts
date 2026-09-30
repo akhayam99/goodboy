@@ -16,6 +16,7 @@ import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import type { AppState } from '../../types';
 import type { GetFn } from '../../slice-types';
 import { selectActiveMountId, selectWritableMounts } from './selectors';
+import { sessionById } from '../sessions/sessionIndex';
 
 export type MountTarget = Readonly<{
   id: MountId;
@@ -166,7 +167,7 @@ const toFetch = ({ session, mount }: ToFetchParams): MountFetch | null => {
 };
 
 export const listMountFetches = ({ state, sessionId }: FetchParams): ReadonlyArray<MountFetch> => {
-  const session = state.sessions.find((candidate) => candidate.id === sessionId);
+  const session = sessionById(state.sessions, sessionId);
   if (session === undefined) {
     return [];
   }

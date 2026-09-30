@@ -1,4 +1,4 @@
-import { slugifyBranch } from '../../../shared/utils/slugifyBranch';
+import { titleBranchSlug } from '../../../shared/utils/issueBranchSlug';
 
 const TITLE_MAX_LEN = 32;
 const SLUG_MAX_LEN = 48;
@@ -61,4 +61,4 @@ export const parseSlackThreadExternalId = ({
 };
 
 export const slackThreadBranchSlug = ({ text }: TextParams): string =>
-  slugifyBranch({ input: slackThreadFirstLine({ text }), maxLength: SLUG_MAX_LEN });
+  titleBranchSlug({ title: slackThreadFirstLine({ text }), maxLength: SLUG_MAX_LEN });

@@ -4,14 +4,15 @@ import {
   insertResolveQueueItem,
   listResolveQueueItems,
   listResolveThreads,
-  migrate,
   upsertResolveThread,
   type Database,
 } from '@goodboy/db';
-import { makeTestDatabase } from '@goodboy/db/test-helpers';
+import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';
 import type { PrComment, ResolveQueueItem, ResolveThread, SessionId } from '@goodboy/types';
 import { reviewCommentStateOf } from '../../../features/resolve/reviewCommentState';
 import { buildResolveQueueRows } from '../../../features/resolve/buildResolveQueueRows';
+import { useAppStore } from '../../store';
+import type { AppStore } from '../../store';
 import { createResolveSlice } from './index';
 import { resolveInitialState } from './state';
 import type { GetFn, SetFn } from './types';
@@ -89,13 +90,14 @@ const seedItem: ResolveQueueItem = {
 let db: Database;
 
 const createHarness = () => {
-  const store = createStore(() => ({
+  const store = createStore<AppStore>(() => ({
+    ...useAppStore.getInitialState(),
     ...resolveInitialState,
     diffComments: {},
     sessionGithub: {},
   }));
-  const set = store.setState as unknown as SetFn;
-  const get = store.getState as unknown as GetFn;
+  const set: SetFn = store.setState;
+  const get: GetFn = store.getState;
   return { get, actions: createResolveSlice({ set, get }) };
 };
 
@@ -117,12 +119,11 @@ const stateNow = async ({ isChanged }: { readonly isChanged: boolean }) => {
 };
 
 beforeEach(async () => {
-  db = makeTestDatabase();
+  db = await makeMigratedTestDatabase();
   h.exec.mockReset().mockImplementation(db.exec);
   h.execute.mockReset().mockImplementation(db.execute);
   h.select.mockReset().mockImplementation(db.select);
   h.transaction.mockReset().mockImplementation(db.transaction);
-  await migrate(db);
   await db.execute(
     "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('workspace', 'Harborline', 'harborline', 1, 1)",
   );

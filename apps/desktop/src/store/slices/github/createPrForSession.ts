@@ -9,10 +9,10 @@ import type {
   SessionExternalTask,
   SessionId,
 } from '@goodboy/types';
-import { tauriGhRunner } from '../../../features/github/github';
-import { appendClosingReferences } from '../../../features/github/appendClosingReferences';
-import { closingIssueReferences } from '../../../features/github/closingIssueReferences';
-import { partOfReferences } from '../../../features/github/partOfReferences';
+import { tauriGhRunner } from '../../../features/integrations/github/github';
+import { appendClosingReferences } from '../../../features/integrations/github/appendClosingReferences';
+import { closingIssueReferences } from '../../../features/integrations/github/closingIssueReferences';
+import { partOfReferences } from '../../../features/integrations/github/partOfReferences';
 import { seriesReferenceLines } from '../pr-series/seriesReferences';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { signScribeBody } from '../scribe/scribeSignature';
@@ -21,8 +21,9 @@ import { githubRequestHost } from './mountPrLink';
 import { resolveSessionPrFetch } from './resolveSessionPrFetch';
 import type { GetFn, SetFn } from './types';
 import { ReportedError } from '../notifications/reportedError';
+import { projectById } from '../projects/projectIndex';
 
-export type CreatePrReferenceMode = 'closing' | 'part-of' | 'none';
+type CreatePrReferenceMode = 'closing' | 'part-of' | 'none';
 
 export type CreatePrInput = {
   readonly sessionId: SessionId;
@@ -128,9 +129,7 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
     });
     const mode = referenceMode ?? (membership === null ? 'closing' : 'part-of');
     const references = mode === 'closing' ? linkedTasks : [];
-    const projectBaseBranch = get().projects.find(
-      (project) => project.id === mount.projectId,
-    )?.baseBranch;
+    const projectBaseBranch = projectById(get().projects, mount.projectId)?.baseBranch;
     const baseBranch = base?.trim() || mount.baseBranch || projectBaseBranch;
     const args = ['pr', 'create', '--repo', repository, '--head', mount.branch];
     const hasFields = title !== undefined || body !== undefined;

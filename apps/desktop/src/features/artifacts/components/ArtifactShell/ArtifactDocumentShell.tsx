@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Button, InlineConfirm, Textarea, formatError } from '@goodboy/ui';
+import { Button, InlineConfirm, Textarea, formatError, PaneShell } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore, useSessionOpenQuestions, agentPlace } from '../../../../store';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
 import { describeArtifactStatus } from '../../artifact-status';

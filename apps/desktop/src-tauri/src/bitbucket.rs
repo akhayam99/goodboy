@@ -5,8 +5,10 @@ use serde_json::Value;
 use tauri::State;
 use thiserror::Error;
 
-use crate::integration_credentials::{self, http_client, IntegrationCredentialError};
+use crate::integration_credentials::{self, IntegrationCredentialError};
+use crate::integrations::http::{self, TransportFailure};
 use crate::secrets;
+use crate::util::percent_encode;
 
 const PROVIDER: &str = "bitbucket";
 
@@ -22,6 +24,8 @@ const AUTH_HINT: &str = "bitbucket rejected the credentials. goodboy signs every
 pub enum BitbucketError {
     #[error("http error {status}: {body}")]
     Http { status: u16, body: String },
+    #[error("request timed out: {0}")]
+    Timeout(String),
     #[error("authentication failed: {0}")]
     Auth(String),
     #[error("not found: {0}")]
@@ -42,6 +46,7 @@ impl BitbucketError {
     fn kind(&self) -> &'static str {
         match self {
             BitbucketError::Http { .. } => "http",
+            BitbucketError::Timeout(_) => "timeout",
             BitbucketError::Auth(_) => "auth",
             BitbucketError::NotFound(_) => "not_found",
             BitbucketError::InvalidShape(_) => "shape",
@@ -54,24 +59,11 @@ impl BitbucketError {
 
 impl From<reqwest::Error> for BitbucketError {
     fn from(e: reqwest::Error) -> Self {
-        BitbucketError::Http {
-            status: 0,
-            body: e.to_string(),
+        match TransportFailure::from(&e) {
+            TransportFailure::Timeout(message) => BitbucketError::Timeout(message),
+            TransportFailure::Network(body) => BitbucketError::Http { status: 0, body },
         }
     }
-}
-
-fn percent_encode(value: &str) -> String {
-    let mut out = String::with_capacity(value.len());
-    for byte in value.bytes() {
-        match byte {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' => {
-                out.push(byte as char)
-            }
-            _ => out.push_str(&format!("%{byte:02X}")),
-        }
-    }
-    out
 }
 
 fn error_message(body: &str) -> Option<String> {
@@ -184,7 +176,7 @@ async fn get_json<T: serde::de::DeserializeOwned>(
     credentials: &Credentials<'_>,
     url: &str,
 ) -> Result<T, BitbucketError> {
-    let res = http_client()
+    let res = http::client()
         .get(url)
         .basic_auth(credentials.email, Some(credentials.token))
         .header("Accept", "application/json")
@@ -206,7 +198,7 @@ async fn get_json_optional<T: serde::de::DeserializeOwned>(
     credentials: &Credentials<'_>,
     url: &str,
 ) -> Result<Option<T>, BitbucketError> {
-    let res = http_client()
+    let res = http::client()
         .get(url)
         .basic_auth(credentials.email, Some(credentials.token))
         .header("Accept", "application/json")
@@ -226,7 +218,7 @@ async fn get_json_optional<T: serde::de::DeserializeOwned>(
 }
 
 async fn get_text(credentials: &Credentials<'_>, url: &str) -> Result<String, BitbucketError> {
-    let res = http_client()
+    let res = http::client()
         .get(url)
         .basic_auth(credentials.email, Some(credentials.token))
         .header("Accept", "text/plain")
@@ -246,7 +238,7 @@ async fn send_json<T: serde::de::DeserializeOwned>(
     url: &str,
     body: Option<&Value>,
 ) -> Result<T, BitbucketError> {
-    let mut request = http_client()
+    let mut request = http::client()
         .request(method, url)
         .basic_auth(credentials.email, Some(credentials.token))
         .header("Accept", "application/json");
@@ -268,7 +260,7 @@ async fn send_no_content(
     url: &str,
     body: Option<&Value>,
 ) -> Result<(), BitbucketError> {
-    let mut request = http_client()
+    let mut request = http::client()
         .request(method, url)
         .basic_auth(credentials.email, Some(credentials.token))
         .header("Accept", "application/json");
@@ -1097,6 +1089,7 @@ pub async fn bitbucket_unrequest_changes(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn bitbucket_merge_pull_request(
     workspace_id: String,
     project_id: Option<String>,
@@ -1148,6 +1141,7 @@ pub async fn bitbucket_decline_pull_request(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn bitbucket_create_pull_request_comment(
     workspace_id: String,
     project_id: Option<String>,
@@ -1176,6 +1170,7 @@ pub async fn bitbucket_create_pull_request_comment(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn bitbucket_reply_to_pull_request_comment(
     workspace_id: String,
     project_id: Option<String>,
@@ -1719,5 +1714,50 @@ mod tests {
             serde_json::from_str(r#"[{ "id": 1, "source": { "branch": { "name": "main" } } }]"#)
                 .unwrap();
         assert!(first_matching_branch(values, "ak/feat-bb").is_none());
+    }
+
+    #[tokio::test]
+    async fn a_silent_server_times_out_on_every_request_path() {
+        use crate::integrations::http::test_support::{
+            assert_error_shape, silent_server, within_bound,
+        };
+        let server = silent_server();
+        let credentials = Credentials {
+            email: "dev@acme.test",
+            token: "token",
+        };
+        let url = format!("{}/user", server.base);
+        let body = serde_json::json!({});
+        let (read, optional, text, write, no_content) = within_bound(async {
+            tokio::join!(
+                get_json::<Value>(&credentials, &url),
+                get_json_optional::<Value>(&credentials, &url),
+                get_text(&credentials, &url),
+                send_json::<Value>(&credentials, reqwest::Method::POST, &url, Some(&body)),
+                send_no_content(&credentials, reqwest::Method::DELETE, &url, None),
+            )
+        })
+        .await;
+        assert_error_shape(&read.unwrap_err(), "timeout");
+        assert_error_shape(&optional.unwrap_err(), "timeout");
+        assert_error_shape(&text.unwrap_err(), "timeout");
+        assert_error_shape(&write.unwrap_err(), "timeout");
+        assert_error_shape(&no_content.unwrap_err(), "timeout");
+    }
+
+    #[tokio::test]
+    async fn a_refused_connection_keeps_the_http_kind() {
+        use crate::integrations::http::test_support::{
+            assert_error_shape, closed_base, within_bound,
+        };
+        let base = closed_base();
+        let credentials = Credentials {
+            email: "dev@acme.test",
+            token: "token",
+        };
+        let error = within_bound(get_json::<Value>(&credentials, &base))
+            .await
+            .unwrap_err();
+        assert_error_shape(&error, "http");
     }
 }

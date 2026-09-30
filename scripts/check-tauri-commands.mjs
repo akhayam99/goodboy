@@ -44,7 +44,7 @@ const collectRegisteredCommands = ({ source }) => {
 const collectLiteralInvocations = ({ source }) => {
   const commands = new Set();
   const invokePattern =
-    /\b(?:this\.)?(?:invoke|invokeDb|invokeFn)(?:\s*<[^()]*>)?\s*\(\s*(['"`])([^'"`]+)\1/g;
+    /\b(?:this\.)?(?:invoke|invokeCommand|invokeDb|invokeFn)(?:\s*<[^()]*>)?\s*\(\s*(['"`])([^'"`]+)\1/g;
   for (const match of source.matchAll(invokePattern)) {
     commands.add(match[2]);
   }

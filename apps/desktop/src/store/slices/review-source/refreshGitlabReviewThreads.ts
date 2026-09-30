@@ -6,6 +6,7 @@ import { sessionMountTargets } from '../project-mounts/mountRequests';
 import { syncSourceThreads } from './syncSourceThreads';
 import type { GetFn, SetFn } from './types';
 import { THREADS_TTL_MS, writeReviewSourceThreads } from './writeReviewSourceThreads';
+import { sessionById } from '../sessions/sessionIndex';
 
 type Params = {
   readonly set: SetFn;
@@ -23,7 +24,7 @@ export const refreshGitlabReviewThreads = async ({
   silent = false,
 }: Params): Promise<void> => {
   const state = get();
-  const session = state.sessions.find((candidate) => candidate.id === sessionId);
+  const session = sessionById(state.sessions, sessionId);
   if (session === undefined) {
     return;
   }

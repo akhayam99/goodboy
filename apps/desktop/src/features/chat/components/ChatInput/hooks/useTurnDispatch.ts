@@ -3,8 +3,9 @@ import { formatError } from '@goodboy/ui';
 import type { AgentId, SessionId, TurnProviderOverride } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { isTranscriptOwnedTurnError } from '../../../turn-errors';
-import { toAttachmentInput } from '../lib';
-import type { PendingAttachment, QueuedTurn } from '../lib';
+import { toAttachmentInput } from '../../../../attachments/pendingAttachment';
+import type { QueuedTurn } from '../lib';
+import type { PendingAttachment } from '../../../../attachments/pendingAttachment';
 import type { SendTurnResult } from '../../../../../store/slices/turn/types';
 
 type UseTurnDispatchArgs = {

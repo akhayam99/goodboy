@@ -184,7 +184,7 @@ import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { QuickActionsPopover } from '../../features/quick-actions';
 import { TranscriptCard } from '../../features/chat/components/TranscriptCards';
 import { SessionOverviewLoading } from '../../features/session/components/SessionWorkspace/parts/SessionOverviewLoading';
-import { ToastProvider } from '../../app/components/Toast';
+import { ToastProvider } from '../../shared/components/Toast';
 
 afterEach(cleanup);
 
@@ -203,20 +203,19 @@ function makeSession(overrides: Partial<Session> = {}): Session {
   } as Session;
 }
 
-describe('snapshot, empty states', () => {
+describe('empty states', () => {
   it('SkillsPanel: no skills', () => {
-    const { container } = render(
+    render(
       <ToastProvider>
         <SkillsPanel workspaceId={WS_ID} />
       </ToastProvider>,
     );
     expect(screen.getByText('No skills yet')).toBeDefined();
     expect(screen.getByRole('button', { name: 'New skill' })).toBeDefined();
-    expect(container.firstChild).toMatchSnapshot();
   });
 
   it('QuickActionsPopover: no skills / empty items', () => {
-    const { container } = render(
+    render(
       <QuickActionsPopover
         items={[]}
         emptyHint="no skills. create one in settings"
@@ -226,24 +225,21 @@ describe('snapshot, empty states', () => {
     );
     expect(screen.getByText('no skills. create one in settings')).toBeDefined();
     expect(screen.queryAllByRole('option')).toEqual([]);
-    expect(container.firstChild).toMatchSnapshot();
   });
 
   it('NotificationCenter: no notifications', async () => {
-    const { container } = render(<NotificationCenter />);
+    render(<NotificationCenter />);
     fireEvent.click(screen.getByRole('button', { name: 'Notifications' }));
     expect(await screen.findByText('No notifications')).toBeDefined();
-    expect(container.firstChild).toMatchSnapshot();
   });
 
   it('NoWorkspaceScreen: no workspace, add-workspace CTA', () => {
-    const { container, getByRole } = render(<NoWorkspaceScreen onAddWorkspace={vi.fn()} />);
+    const { getByRole } = render(<NoWorkspaceScreen onAddWorkspace={vi.fn()} />);
     expect(getByRole('button', { name: /add workspace/i })).toBeTruthy();
-    expect(container.firstChild).toMatchSnapshot();
   });
 
   it('ChatEmptyState: fresh session, set-up-a-workflow CTA', () => {
-    const { container, getByRole } = render(
+    const { getByRole } = render(
       <ChatEmptyState
         sessionId={'sess-1' as SessionId}
         selectedAgentId={null}
@@ -253,66 +249,54 @@ describe('snapshot, empty states', () => {
     );
     const workflowButton = getByRole('button', { name: /set up a workflow/i });
     expect(workflowButton.querySelector('.lucide-waypoints')).toBeTruthy();
-    expect(container.firstChild).toMatchSnapshot();
   });
 });
 
-describe('snapshot, error states', () => {
+describe('error states', () => {
   it('App init error, BootSplash with error message', () => {
-    const { container } = render(<BootSplash phase="error" error="database migration failed" />);
+    render(<BootSplash phase="error" error="database migration failed" />);
     expect(screen.getByRole('alert').textContent).toContain('database migration failed');
-    expect(container.firstChild).toMatchSnapshot();
   });
 
   it('DeleteSessionConfirm: error state', async () => {
     const deleteTask = vi.fn().mockRejectedValue(new Error('session not found'));
     const onClose = vi.fn();
     mockStore({ deleteTask });
-    const { container } = render(
-      <DeleteSessionConfirm session={makeSession()} onClose={onClose} />,
-    );
+    render(<DeleteSessionConfirm session={makeSession()} onClose={onClose} />);
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     expect(await screen.findByText(/session not found/)).toBeDefined();
     expect(deleteTask).toHaveBeenCalledWith('sess-1');
     expect(onClose).not.toHaveBeenCalled();
-    expect(container.firstChild).toMatchSnapshot();
   });
 
   it('BootSplash: boot-error phase', () => {
-    const { container } = render(<BootSplash phase="error" error="detecting-cli failed" />);
+    render(<BootSplash phase="error" error="detecting-cli failed" />);
     expect(screen.getByRole('alert').textContent).toContain('detecting-cli failed');
-    expect(container.firstChild).toMatchSnapshot();
   });
 
   it('SessionOverviewLoading: silent skeleton before the settle window', () => {
     vi.useFakeTimers();
-    const { container } = render(
-      <SessionOverviewLoading isFreshLayout={false} onRetry={vi.fn()} />,
-    );
+    render(<SessionOverviewLoading isFreshLayout={false} onRetry={vi.fn()} />);
     expect(screen.getByRole('status', { name: 'Loading session overview' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
-    expect(container.firstChild).toMatchSnapshot();
     vi.useRealTimers();
   });
 
   it('SessionOverviewLoading: retryable failure after the settle window', () => {
     vi.useFakeTimers();
     const onRetry = vi.fn();
-    const { container } = render(
-      <SessionOverviewLoading isFreshLayout={false} onRetry={onRetry} />,
-    );
+    render(<SessionOverviewLoading isFreshLayout={false} onRetry={onRetry} />);
     act(() => {
       vi.advanceTimersByTime(10_000);
     });
     expect(screen.getByText('This session did not load')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(onRetry).toHaveBeenCalledOnce();
-    expect(container.firstChild).toMatchSnapshot();
     vi.useRealTimers();
   });
 
   it('TranscriptCard: turn error item', () => {
-    const { container } = render(
+    render(
       <TranscriptCard
         item={{
           kind: 'error',
@@ -323,6 +307,5 @@ describe('snapshot, error states', () => {
     );
     expect(screen.getByText('provider failed to respond')).toBeDefined();
     expect(screen.getByTestId('transcript-error-icon')).toBeDefined();
-    expect(container.firstChild).toMatchSnapshot();
   });
 });

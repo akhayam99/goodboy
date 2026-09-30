@@ -17,7 +17,7 @@ const clip = ({ text }: Readonly<{ text: string }>): string => {
   return collapsed.length <= QUESTION_CLIP ? collapsed : `${collapsed.slice(0, QUESTION_CLIP)}...`;
 };
 
-export const artifactAssumptionNote = ({ question, recommended }: NoteParams): string => {
+const artifactAssumptionNote = ({ question, recommended }: NoteParams): string => {
   const asked = clip({ text: question });
   if (recommended === null || recommended.trim().length === 0) {
     return `asked "${asked}" and assumed its own answer, with no recommendation on record`;

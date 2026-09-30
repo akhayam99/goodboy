@@ -3,7 +3,7 @@ import { ArrowUpRight } from 'lucide-react';
 import { GhostActionButton } from '@goodboy/ui';
 import type { HandoffRef, SessionId } from '@goodboy/types';
 import { openUrl } from '../../../../shared/lib/editor';
-import { ConversationThread } from '../../../github/components/PullRequest/ConversationThread';
+import { ConversationThread } from '../../../integrations/github/components/PullRequest/ConversationThread';
 import { openReviewThread } from '../../../review/openReviewThread';
 import { TranscriptChevron } from '../TranscriptChevron';
 import { useDockedReviewThread } from './useDockedReviewThread';

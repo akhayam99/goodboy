@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ToastProvider } from '../../../Toast';
+import { ToastProvider } from '../../../../../shared/components/Toast';
 import { OnboardingWizard } from '../../../../../features/onboarding/OnboardingWizard';
 import { OPEN_WIZARD_EVENT } from '../../../../../features/onboarding/onboarding-store';
 import { useAppStore } from '../../../../../store';

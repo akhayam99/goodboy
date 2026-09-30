@@ -5,9 +5,10 @@ import { recordProviderLimits } from './recordProviderLimits';
 import { refreshClaudeUsage } from './refreshClaudeUsage';
 import { refreshCodexLimits } from './refreshCodexLimits';
 import { providerLimitsInitialState } from './state';
-import type { GetFn, ProviderLimitsSlice, SetFn } from './types';
+import type { ProviderLimitsSlice } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createProviderLimitsSlice = (set: SetFn, get: GetFn): ProviderLimitsSlice => ({
+export const createProviderLimitsSlice = ({ set, get }: SliceDeps): ProviderLimitsSlice => ({
   ...providerLimitsInitialState,
   loadProviderLimits: loadProviderLimits(set),
   recordProviderLimits: recordProviderLimits(set, get),

@@ -9,7 +9,7 @@ export type OutboxEntry = {
   readonly error: string | null;
 };
 
-export const OUTBOX_AUTHOR: ConversationAuthor = { name: 'You', avatarUrl: null, handle: null };
+const OUTBOX_AUTHOR: ConversationAuthor = { name: 'You', avatarUrl: null, handle: null };
 
 type MessageParams = {
   readonly entry: OutboxEntry;

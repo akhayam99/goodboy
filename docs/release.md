@@ -24,16 +24,42 @@ There are two targets, both attached to the same draft release:
   Signing and notarization run on their own from the six `APPLE_*` secrets. If
   those secrets were ever removed, the build would still pass and produce an
   unsigned `.dmg`.
-- The Linux job attaches `Goodboy_<version>_amd64.AppImage`,
-  `Goodboy_<version>_amd64.deb` and `Goodboy-<version>-1.x86_64.rpm` to the same
-  draft. When packaging, `dpkg-shlibdeps` reads the binary and builds the
-  deb's dependency list. That list includes `libc6 (>= 2.39)`, and that is what
-  sets the minimum above. Moving the runner to an older Ubuntu is the way to
-  lower it.
+- The Linux job builds `Goodboy_<version>_amd64.AppImage`,
+  `Goodboy_<version>_amd64.deb` and `Goodboy-<version>-1.x86_64.rpm` in parallel
+  with macOS and uploads them as the workflow artifact `goodboy-linux-bundles`.
+  It has read-only permissions and never touches the release. When packaging,
+  `dpkg-shlibdeps` reads the binary and builds the deb's dependency list. That
+  list includes `libc6 (>= 2.39)`, and that is what sets the minimum above.
+  Moving the runner to an older Ubuntu is the way to lower it.
+- The `attach` job runs only when both the macOS and the Linux job succeeded
+  (`needs: [macos, linux]`). It finds the draft macOS created, refuses to go on
+  unless exactly one release exists for the tag and it is still a draft,
+  uploads the three Linux files with `gh release upload --clobber`, and checks
+  that all seven assets are on the draft. macOS alone owns the release: name,
+  body, `latest.json` and the signatures. Nothing here publishes the draft, so a
+  red Linux or macOS job leaves a draft that is missing assets and never a
+  public partial release. A red job means do not publish that draft. Re-run
+  the failed jobs; the attach job is safe to run again.
 - The Linux job publishes **no `latest.json` and no `.sig`**, so in-app updates
   stay macOS-only. A Linux user takes the next package from the release page.
 - Publishing the draft triggers `.github/workflows/homebrew.yml`, which bumps
   the cask in the tap.
+
+## Cargo cache
+
+A tag can restore caches saved on `main` but not caches saved by another tag,
+so a cache saved on a tag is never read again. The release jobs therefore only
+restore (`actions/cache/restore`), and `.github/workflows/release-cache.yml`
+saves them on `main`. It builds what the release builds, without bundling or
+signing: the universal macOS build and the Linux x86_64 build. The key is
+`cargo-release-<os>-<arch>-<toolchain>-<hash of Cargo.lock and
+rust-toolchain.toml>` in all three files, and a change to it in one file must
+be made in the others. It runs when `Cargo.lock` or `rust-toolchain.toml`
+changes on `main`, and every Monday so the caches do not age out after seven
+idle days. On an exact hit it skips the build. The workflow reads the toolchain
+from `rust-toolchain.toml`, so it needs no pin of its own. The version bump of a
+release changes `Cargo.lock` too, so each release also warms once; that run is
+what lets the next tag find an exact key.
 
 The git tag decides the release name. The version built into the app comes
 from `tauri.conf.json`. So the two must match.
@@ -94,7 +120,7 @@ Access ("My Certificates", right-click the Developer ID cert, Export). Then run
 `base64 -i cert.p12 | gh secret set APPLE_CERTIFICATE --repo akhayam99/goodboy`
 and update `APPLE_CERTIFICATE_PASSWORD`.
 
-Both `tauri-action` steps also set `GOODBOY_BUILD_SHA` to the release commit. The
+The macOS `tauri-action` step and the Linux build step both set `GOODBOY_BUILD_SHA` to the release commit. The
 `app_platform` command bakes its first 12 characters into the binary, and bug
 reports show them as the build. A local build has no value and reports `dev`.
 

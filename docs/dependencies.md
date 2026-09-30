@@ -44,6 +44,13 @@ This is the single source of truth for adding and checking dependencies. Every d
   same highlighter: `@goodboy/ui` stays free of it and reads it from
   `CodeHighlighterContext`, which `main.tsx` provides. Without a provider a
   code block renders plain.
+- Approved for the terminal: `@xterm/xterm` and its addons. They stay inside
+  `apps/desktop/src/shared/components/GenericTerminalPanel`, and every caller
+  renders the panel through `LazyGenericTerminalPanel`, so xterm loads in its
+  own chunk when the first terminal mounts.
+- The boot bundle holds neither xterm, shiki nor the mock scenes. The regression
+  test `lazy-boundaries.test.ts` fails on a static import that pulls one of them
+  back in.
 - Anything else needs a justification in the PR description.
 
 ## Rust crates audit

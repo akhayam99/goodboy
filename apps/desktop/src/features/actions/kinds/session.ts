@@ -2,11 +2,11 @@ import { Copy, GitBranch, Link, Link2, Pencil } from 'lucide-react';
 import type { Session, SessionId, SessionProjectMount } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
-import { openInEditor } from '../../../shared/lib/editor';
+import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
 import { sessionPlace } from '../../../store/slices/navigation/place';
 import { sessionTitle } from '../../session/sessionTitle';
 import { archiveSessions, restoreSessions } from '../../session/sessionArchive';
-import { createAgentEventName } from '../../session/hooks/useTrailMenus';
+import { createAgentEventName } from '../../session/createAgentEventName';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import { RENAME_REQUEST_EVENT, requestRename } from '../renameRequest';
 import { ALL_CHOICES_ID } from '../types';
@@ -18,6 +18,7 @@ import type {
   ObjectKindDefinition,
   SessionActionTarget,
 } from '../types';
+import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 
 export type SessionFacts = {
   readonly session: Session;
@@ -40,7 +41,7 @@ type SessionWorktree = {
   readonly path: string;
 };
 
-export const LINK_ISSUE_EVENT = 'goodboy:link-issue';
+const LINK_ISSUE_EVENT = 'goodboy:link-issue';
 
 export const linkIssueEventName = ({ sessionId }: { readonly sessionId: SessionId }): string =>
   `${LINK_ISSUE_EVENT}:${sessionId}`;
@@ -212,9 +213,9 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     group: 'open',
     when: isLive,
     blockedReason: ({ facts }) => (facts.worktreePath === null ? NO_WORKTREE_REASON : null),
-    run: ({ facts }) => {
+    run: ({ facts, env }) => {
       if (facts.worktreePath !== null) {
-        void openInEditor({ path: facts.worktreePath });
+        void openInConfiguredEditor({ path: facts.worktreePath, state: env.getState() });
       }
     },
   },
@@ -338,7 +339,7 @@ const findSession = ({
   readonly archived: ReadonlyArray<Session>;
   readonly sessionId: SessionId;
 }): Session | null =>
-  sessions.find((candidate) => candidate.id === sessionId) ??
+  sessionById(sessions, sessionId) ??
   archived.find((candidate) => candidate.id === sessionId) ??
   null;
 

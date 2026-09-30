@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId, TurnEvent } from '@goodboy/types';
 import type { TurnOwner } from '../../../features/chat/turnCursor';
@@ -31,17 +32,19 @@ vi.mock('../../../features/chat/turn', () => ({
     })();
   },
 }));
-vi.mock('@goodboy/db', () => ({
-  insertMessage: h.insertMessage,
-  updateProviderRunStatus: h.updateProviderRunStatus,
-  updateSessionState: h.updateSessionState,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    insertMessage: h.insertMessage,
+    updateProviderRunStatus: h.updateProviderRunStatus,
+    updateSessionState: h.updateSessionState,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentList: h.invokeAgentList,
   invokeAgentUpdateStatus: h.invokeAgentUpdateStatus,
 }));
-vi.mock('../../turn-helpers', () => ({
+vi.mock('./turnHelpers', () => ({
   captureArtifactsFromTurn: h.captureArtifactsFromTurn,
   captureMaterializeRequestsFromTurn: h.captureMaterializeRequestsFromTurn,
   enqueueSummarizer: h.enqueueSummarizer,

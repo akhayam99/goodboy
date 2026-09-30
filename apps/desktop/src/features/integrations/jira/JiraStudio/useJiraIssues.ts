@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import type { Session, SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
-import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
+import { issueBranchMatches, issueBranchSlug } from '../../../../shared/utils/issueBranchSlug';
 import { useAppStore, useSessions } from '../../../../store';
 import { jiraListIssues, type JiraIssue, type JiraStatusCategoryKey } from '../client';
 import { useJiraConfig } from '../useJiraConfig';
 import { linkedTaskKey, useLinkedExternalIds } from '../../hooks/useLinkedExternalIds';
+import { compareIsoDesc } from '../../../../shared/utils/compareIsoDesc';
 
-const SLUG_MAX_LEN = 48;
 const JIRA_PROVIDERS: ReadonlyArray<SessionExternalTaskProvider> = ['jira'];
 
 type BranchSlugParams = {
@@ -15,7 +15,7 @@ type BranchSlugParams = {
 };
 
 export const jiraBranchSlug = ({ issue }: BranchSlugParams): string =>
-  `${issue.key.toLowerCase()}-${slugifyBranch({ input: issue.summary, maxLength: SLUG_MAX_LEN })}`;
+  issueBranchSlug({ prefix: issue.key, title: issue.summary });
 
 type JiraIssueRow = {
   readonly issue: JiraIssue;
@@ -65,7 +65,9 @@ export const buildIssueGroups = ({
     rows: buckets
       .get(key)!
       .slice()
-      .sort((left, right) => right.issue.updated.localeCompare(left.issue.updated)),
+      .sort((left, right) =>
+        compareIsoDesc({ left: left.issue.updated, right: right.issue.updated }),
+      ),
   }));
 };
 
@@ -74,12 +76,6 @@ type SessionMatchParams = {
   readonly sessions: ReadonlyArray<Session>;
   readonly sessionBranches: Readonly<Record<string, string>>;
   readonly linkedSessions: ReadonlyMap<string, SessionId>;
-};
-
-const branchTail = (branch: string): string => {
-  const lower = branch.toLowerCase();
-  const index = lower.lastIndexOf('/');
-  return index >= 0 ? lower.slice(index + 1) : lower;
 };
 
 export const resolveIssueSessions = ({
@@ -95,13 +91,12 @@ export const resolveIssueSessions = ({
       byIssue.set(issue.id, linked);
       continue;
     }
-    const slug = jiraBranchSlug({ issue });
     const match = sessions.find((session) => {
       const branch = sessionBranches[session.id];
-      if (branch == null || branch === '') {
+      if (branch == null) {
         return false;
       }
-      return branchTail(branch) === slug;
+      return issueBranchMatches({ branch, prefix: issue.key, title: issue.summary });
     });
     if (match != null) {
       byIssue.set(issue.id, match.id);

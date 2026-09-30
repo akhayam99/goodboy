@@ -3,7 +3,7 @@ import { agentHasUnread } from '../../../../store/slices/agents/agentHasUnread';
 import type { LensKind } from '../../../../store';
 import type { AgentHomeLens } from '../../agent-kind';
 
-export type AttentionAgent = {
+type AttentionAgent = {
   readonly agentId: AgentId;
   readonly home: AgentHomeLens;
 };

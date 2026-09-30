@@ -1,5 +1,5 @@
 import type { WorkspaceId } from '@goodboy/types';
-import { ghStatus } from '../../../features/github/github';
+import { ghStatus } from '../../../features/integrations/github/github';
 import type { GetFn, SetFn } from './types';
 
 type Params = {

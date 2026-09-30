@@ -1,10 +1,13 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId, TurnEvent } from '@goodboy/types';
 import type { SetFn } from './types';
 
-vi.mock('@goodboy/db', () => ({
-  insertTurnEventsBatch: vi.fn(async () => undefined),
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    insertTurnEventsBatch: vi.fn(async () => undefined),
+  }),
+);
 
 vi.mock('../../../shared/lib/db', () => ({
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },

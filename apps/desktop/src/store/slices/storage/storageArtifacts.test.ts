@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ArtifactId, SessionId, WorkspaceId } from '@goodboy/types';
 import type { AppStore } from '../../store';
@@ -17,7 +18,13 @@ const {
   removeArtifactMirror: vi.fn(async (_params: { readonly folder: string }) => true),
 }));
 
-vi.mock('@goodboy/db', () => ({ listOrphanArtifacts, setArtifactKeep, purgeOrphanArtifact }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    listOrphanArtifacts,
+    setArtifactKeep,
+    purgeOrphanArtifact,
+  }),
+);
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 

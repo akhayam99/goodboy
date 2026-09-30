@@ -1,8 +1,9 @@
 import type { MountId, SessionId } from '@goodboy/types';
-import { gitPush } from '../../../features/github/github';
-import { refreshWorktreeStatuses } from '../../../features/session/hooks/useWorktreeStatuses/cache';
+import { gitPush } from '../../../features/integrations/github/github';
+import { refreshWorktreeStatuses } from '../worktreeStatuses/cache';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 type PushResult = { ok: true } | { ok: false; error: string };
 
@@ -21,7 +22,7 @@ export const pushSessionBranch = async ({
   expectedWorktreePath,
   sha,
 }: Params): Promise<PushResult> => {
-  const session = get().sessions.find((s) => s.id === sessionId);
+  const session = sessionById(get().sessions, sessionId);
   if (!session) {
     return { ok: false, error: 'session not found' };
   }

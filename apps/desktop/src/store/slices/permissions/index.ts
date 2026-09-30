@@ -2,9 +2,9 @@ import { resolvePermissionRequest } from './resolvePermissionRequest';
 import { retryBlockedTool } from './retryBlockedTool';
 import { allowAndContinue } from './allowAndContinue';
 import { denyWithReason } from './denyWithReason';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createPermissionsSlice = (set: SetFn, get: GetFn) => {
+export const createPermissionsSlice = ({ set, get }: SliceDeps) => {
   return {
     resolvePermissionRequest: resolvePermissionRequest(set, get),
     retryBlockedTool: retryBlockedTool(get),

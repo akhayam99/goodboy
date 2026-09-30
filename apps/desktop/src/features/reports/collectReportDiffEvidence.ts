@@ -1,10 +1,11 @@
 import type { MountId, SessionId } from '@goodboy/types';
 import type { AppState } from '../../store/types';
 import { resolveArtifactMounts, type ArtifactMountOption } from '../artifacts/artifactMountChoice';
+import { resolveMountBaseBranch } from '../../store/slices/project-mounts/selectors';
 import { listBranchCommits, worktreeChangedFiles } from '../worktree/worktree';
 import type { ReportDiffEvidence, ReportDiffUnavailableReason } from './buildReportContext';
 
-export type ReportDiffMount = Readonly<{
+type ReportDiffMount = Readonly<{
   mountId: MountId;
   evidence: ReportDiffEvidence | null;
   reason: ReportDiffUnavailableReason | null;
@@ -20,15 +21,21 @@ export type ReportDiffCollection = Readonly<{
 }>;
 
 type Params = Readonly<{
-  state: AppState;
+  state: Pick<
+    AppState,
+    'sessions' | 'sessionMounts' | 'sessionProjectMounts' | 'sessionActiveMount' | 'projects'
+  >;
   sessionId: SessionId;
   mountIds: ReadonlyArray<MountId>;
 }>;
 
-const diffOf = async ({
-  mount,
-}: Readonly<{ mount: ArtifactMountOption }>): Promise<ReportDiffMount> => {
-  const baseBranch = mount.baseBranch ?? 'main';
+type DiffParams = Readonly<{
+  mount: ArtifactMountOption;
+  projects: AppState['projects'];
+}>;
+
+const diffOf = async ({ mount, projects }: DiffParams): Promise<ReportDiffMount> => {
+  const baseBranch = resolveMountBaseBranch({ mount, projects });
   try {
     const [changed, commits] = await Promise.all([
       worktreeChangedFiles({ worktreePath: mount.worktreePath, baseBranch }),
@@ -68,7 +75,9 @@ export const collectReportDiffEvidence = async ({
       paths: [],
     };
   }
-  const rows = await Promise.all(mounts.map((mount) => diffOf({ mount })));
+  const rows = await Promise.all(
+    mounts.map((mount) => diffOf({ mount, projects: state.projects })),
+  );
   const changed = rows.filter((row) => (row.evidence?.paths.length ?? 0) > 0);
   const first = rows[0] ?? null;
   return {

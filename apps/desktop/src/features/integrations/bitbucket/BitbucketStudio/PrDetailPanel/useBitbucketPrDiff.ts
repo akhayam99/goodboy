@@ -22,14 +22,36 @@ export const useBitbucketPrDiff = ({ target, isEnabled }: Params): Result => {
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
 
+  const pullRequestId = target?.pullRequestId;
+  const workspaceId = target?.workspaceId;
+  const projectId = target?.projectId;
+  const workspaceSlug = target?.workspaceSlug;
+  const repoSlug = target?.repoSlug;
+  const email = target?.email;
+
   useEffect(() => {
-    if (target == null || !isEnabled) {
+    if (
+      !isEnabled ||
+      pullRequestId === undefined ||
+      workspaceId === undefined ||
+      workspaceSlug === undefined ||
+      repoSlug === undefined ||
+      email === undefined
+    ) {
       return;
     }
+    const request: BitbucketPullRequestTarget = {
+      workspaceId,
+      projectId,
+      workspaceSlug,
+      repoSlug,
+      email,
+      pullRequestId,
+    };
     let isCancelled = false;
     setIsLoading(true);
     setError(null);
-    bitbucketPullRequestDiff(target)
+    bitbucketPullRequestDiff(request)
       .then((raw) => {
         if (isCancelled) {
           return;
@@ -47,7 +69,7 @@ export const useBitbucketPrDiff = ({ target, isEnabled }: Params): Result => {
     return () => {
       isCancelled = true;
     };
-  }, [isEnabled, target, tick]);
+  }, [isEnabled, pullRequestId, workspaceId, projectId, workspaceSlug, repoSlug, email, tick]);
 
   const reload = useCallback(() => setTick((value) => value + 1), []);
   return { files, isLoading, error, reload };

@@ -5,7 +5,7 @@ import { Button, Chip, KbdPill, Markdown, SectionHeader, Textarea, Tooltip, cn }
 import type { ResolveAttempt, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { RelativeTime } from '../../../../shared/components/RelativeTime';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import {
   PARTIAL_ACCEPTANCE,
@@ -237,7 +237,7 @@ export const ReviewComment = ({
         {author !== null && <span className="shrink-0 text-label text-foreground">{author}</span>}
         {note !== null && (
           <span className="shrink-0 text-muted-foreground">
-            {formatRelativeAge({ fromIso: new Date(note.createdAtMs).toISOString() })}
+            <RelativeTime iso={new Date(note.createdAtMs).toISOString()} />
           </span>
         )}
         {note?.location != null && (

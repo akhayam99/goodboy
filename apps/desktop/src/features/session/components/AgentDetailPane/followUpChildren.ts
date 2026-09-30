@@ -1,6 +1,6 @@
 import type { SpawnedChild } from '../../../../shared/utils/spawnedChildren';
 import { classifyAgent } from '../../agent-kind';
-import type { FollowUpKind } from './followUpMoves';
+import type { FollowUpKind } from '../../followUpMoves';
 
 export type FollowUpChild = Readonly<{
   child: SpawnedChild;

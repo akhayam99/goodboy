@@ -12,6 +12,7 @@ import { Button, formatError } from '@goodboy/ui';
 import type { Project, WorkspaceGitStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { openInEditor } from '../../../../shared/lib/editor';
+import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
 import { BaseBranchSelect } from '../../../worktree/BaseBranchSelect';
 import { commitBaseBranch as commitProjectBaseBranch } from '../../../worktree/commitBaseBranch';
 import {
@@ -97,6 +98,7 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
   const [openError, setOpenError] = useState<string | null>(null);
   const [pullError, setPullError] = useState<string | null>(null);
   const [baseBranchError, setBaseBranchError] = useState<string | null>(null);
+  const editor = useAppStore((state) => resolveEditorBinary({ settings: state.settings }));
   const pulling = useAppStore((state) => state.projectCheckoutPulling[project.id] === true);
   const fastForwardProjectCheckout = useAppStore((state) => state.fastForwardProjectCheckout);
   const updateProjectBaseBranch = useAppStore((state) => state.updateProjectBaseBranch);
@@ -116,7 +118,7 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
   const onOpen = async () => {
     setOpenError(null);
     try {
-      await openInEditor({ path: project.rootPath });
+      await openInEditor({ path: project.rootPath, editor });
     } catch (error) {
       setOpenError(formatError(error));
     }

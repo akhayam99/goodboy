@@ -10,7 +10,7 @@ type Params = {
   readonly row: ResolveThread;
 };
 
-export const threadStageEvent = ({ previous, row }: Params): ResolveStageEvent | null => {
+const threadStageEvent = ({ previous, row }: Params): ResolveStageEvent | null => {
   const from = previous?.state ?? 'open';
   if (row.state === from) {
     return previous?.stage === 'approved' ? { kind: 'comment_edited' } : null;

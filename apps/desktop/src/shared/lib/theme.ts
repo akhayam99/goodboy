@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { create } from 'zustand';
-import { STORAGE_KEYS } from './storage-keys';
+import { STORAGE_KEYS, persistedPref } from './storage-keys';
 
 export type Theme = 'dark' | 'light';
 
@@ -11,15 +11,14 @@ const LIGHT_QUERY = '(prefers-color-scheme: light)';
 const SWITCHING_ATTRIBUTE = 'data-theme-switching';
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
-const readStoredPreference = (): ThemePreference => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw === 'light' || raw === 'system') {
-      return raw;
-    }
-  } catch {}
-  return 'dark';
-};
+const themePref = persistedPref<ThemePreference>({
+  key: STORAGE_KEY,
+  parse: (raw) => (raw === 'light' || raw === 'system' ? raw : 'dark'),
+  serialize: (preference) => preference,
+  fallback: 'dark',
+});
+
+const readStoredPreference = themePref.read;
 
 const lightQuery = (): MediaQueryList | null =>
   typeof window.matchMedia === 'function' ? window.matchMedia(LIGHT_QUERY) : null;
@@ -135,9 +134,7 @@ type ThemeState = {
 export const useThemeStore = create<ThemeState>((set, get) => ({
   preference: 'dark',
   setPreference: (preference) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, preference);
-    } catch {}
+    themePref.write(preference);
     transitionToPreference({ preference });
     if (get().preference !== preference) {
       set({ preference });

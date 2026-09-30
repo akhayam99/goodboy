@@ -8,6 +8,7 @@ import type {
 import { upsertProjectScript } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn } from './types';
+import { projectById } from '../projects/projectIndex';
 
 type Params = {
   workspaceId: WorkspaceId;
@@ -19,7 +20,7 @@ type Params = {
 
 export const saveScript = (get: GetFn) => {
   return async ({ workspaceId, projectId, id, name, body }: Params) => {
-    const project = get().projects.find((candidate) => candidate.id === projectId);
+    const project = projectById(get().projects, projectId);
     if (project === undefined || project.workspaceId !== workspaceId) {
       throw new Error(`project ${projectId} does not belong to workspace ${workspaceId}`);
     }

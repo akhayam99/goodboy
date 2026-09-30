@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProjectId, ProjectSentryLink, WorkspaceId } from '@goodboy/types';
 
@@ -32,7 +33,7 @@ const harness = () => {
     state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) };
   };
   const get = () => state;
-  const slice = createSentryLinksSlice(set as never, get as never);
+  const slice = createSentryLinksSlice({ set: set as never, get: get as never });
   state = { ...slice };
   return { slice, read: () => state };
 };

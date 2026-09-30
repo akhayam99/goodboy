@@ -1,4 +1,4 @@
-export type TextMatch = {
+type TextMatch = {
   readonly score: number;
   readonly positions: ReadonlyArray<number>;
   readonly isWordPrefix: boolean;
@@ -184,7 +184,7 @@ const matchToken = ({ token, text }: TokenParams): TextMatch | null => {
   };
 };
 
-export const queryTokens = (query: string): ReadonlyArray<string> =>
+const queryTokens = (query: string): ReadonlyArray<string> =>
   query
     .toLowerCase()
     .split(/\s+/)

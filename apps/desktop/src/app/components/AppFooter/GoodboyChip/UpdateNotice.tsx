@@ -1,6 +1,6 @@
 import { Button, Notice } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
-import { runningAgentsCopy } from '../../../../features/updater/components/UpdateConfirm';
+import { activeWorkCopy } from '../../../../features/updater/components/UpdateConfirm';
 import { useRunningAgentCount } from '../../../../features/updater/hooks/useRunningAgentCount';
 
 export const UpdateNotice = () => {
@@ -23,7 +23,7 @@ export const UpdateNotice = () => {
           ? `Couldn't install ${target}.`
           : `${target} is ${isReady ? 'ready' : 'available'}.`
       }
-      body={hasInstallFailed ? failure.message : runningAgentsCopy({ count: runningCount })}
+      body={hasInstallFailed ? failure.message : activeWorkCopy({ count: runningCount })}
       actions={
         <Button
           size="sm"

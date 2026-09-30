@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { ReportArtifact } from '@goodboy/types';
 import { ARTIFACT_RENDERER_VERSION, artifactMirrorMeta } from './artifactMirrorMeta';

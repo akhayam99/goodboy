@@ -6,6 +6,7 @@ use serde::Serialize;
 use thiserror::Error;
 
 use crate::integration_credentials;
+use crate::proc::git::{Git, GitError};
 use crate::secrets;
 
 const GITHUB_PROVIDER: &str = "github";
@@ -145,11 +146,21 @@ pub enum GithubError {
     Timeout,
 }
 
-impl Serialize for GithubError {
-    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
-        s.serialize_str(&self.to_string())
+impl GithubError {
+    fn kind(&self) -> &'static str {
+        match self {
+            GithubError::NotFound => "gh_missing",
+            GithubError::Spawn(_) => "spawn",
+            GithubError::Secret(_) => "secret",
+            GithubError::Credential(_) => "credential",
+            GithubError::Validation(_) => "validation",
+            GithubError::TokenRejected(_) => "token_rejected",
+            GithubError::Timeout => "timeout",
+        }
     }
 }
+
+crate::util::impl_error_serialize!(GithubError);
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -259,28 +270,30 @@ pub(crate) fn run_git_authenticated(
     cwd: &str,
     token: Option<&str>,
 ) -> Result<GhRunResult, GithubError> {
-    let mut cmd = crate::path_env::command_with_login_env("git");
+    let mut git = Git::new().login_env();
     if gh_available() {
-        cmd.args([
+        git = git.args([
             "-c",
             "credential.https://github.com.helper=",
             "-c",
             "credential.https://github.com.helper=!gh auth git-credential",
         ]);
     }
-    cmd.args(args);
+    git = git.args(args);
     if !cwd.is_empty() {
-        cmd.current_dir(cwd);
+        git = git.cwd(cwd);
     }
     if let Some(t) = token {
         if !t.is_empty() {
-            cmd.env("GH_TOKEN", t);
-            cmd.env("GITHUB_TOKEN", t);
+            git = git.env("GH_TOKEN", t).env("GITHUB_TOKEN", t);
         }
     }
-    let output = cmd.output()?;
+    let output = git.output().map_err(|error| match error {
+        GitError::Spawn(inner) => GithubError::Spawn(inner),
+        _ => GithubError::Timeout,
+    })?;
     Ok(GhRunResult {
-        stdout: String::from_utf8_lossy(&output.stdout).to_string(),
+        stdout: output.stdout_lossy(),
         stderr: String::from_utf8_lossy(&output.stderr).to_string(),
         exit_code: output.status.code().unwrap_or(-1),
     })
@@ -426,10 +439,13 @@ pub async fn gh_set_token(
 }
 
 #[tauri::command]
-pub fn gh_clear_token(workspace_id: Option<String>) -> Result<(), GithubError> {
-    integration_credentials::github_clear_token(workspace_id.as_deref())
-        .map_err(|e| GithubError::Credential(e.to_string()))?;
-    Ok(())
+pub async fn gh_clear_token(workspace_id: Option<String>) -> Result<(), GithubError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        integration_credentials::github_clear_token(workspace_id.as_deref())
+            .map_err(|e| GithubError::Credential(e.to_string()))
+    })
+    .await
+    .map_err(|e| GithubError::Spawn(std::io::Error::other(e.to_string())))?
 }
 
 #[tauri::command]
@@ -836,26 +852,25 @@ mod tests {
     }
 
     #[test]
-    fn a_rejected_token_serialises_to_a_bare_string() {
-        let payload = serde_json::to_string(&GithubError::TokenRejected(
+    fn a_rejected_token_serialises_to_kind_and_message() {
+        let payload = serde_json::to_value(GithubError::TokenRejected(
             BAD_CREDENTIALS_MESSAGE.to_string(),
         ))
         .expect("the error serialises");
         assert_eq!(
             payload,
-            serde_json::to_string(BAD_CREDENTIALS_MESSAGE).expect("the message serialises"),
-            "the frontend reads the rejection as a plain string, not a tagged object"
+            serde_json::json!({ "kind": "token_rejected", "message": BAD_CREDENTIALS_MESSAGE }),
+            "the frontend reads every rejection as a kind and a message"
         );
     }
 
     #[test]
-    fn a_missing_gh_binary_serialises_to_a_bare_string() {
-        let payload = serde_json::to_string(&GithubError::NotFound).expect("the error serialises");
+    fn a_missing_gh_binary_serialises_to_kind_and_message() {
+        let payload = serde_json::to_value(GithubError::NotFound).expect("the error serialises");
         assert_eq!(
             payload,
-            serde_json::to_string(&GithubError::NotFound.to_string())
-                .expect("the message serialises"),
-            "the frontend reads the missing binary as a plain string, not a tagged object"
+            serde_json::json!({ "kind": "gh_missing", "message": GithubError::NotFound.to_string() }),
+            "the frontend reads every rejection as a kind and a message"
         );
     }
 

@@ -20,7 +20,7 @@ const STORAGE_KEY = `goodboy:artifact-drafts:${SESSION_ID}`;
 
 const makeStore = () =>
   createStore<ArtifactDraftsSlice>((set, get) =>
-    createArtifactDraftsSlice(set as SetFn, get as GetFn),
+    createArtifactDraftsSlice({ set: set as SetFn, get: get as GetFn }),
   );
 
 const BASE_REPORT: ArtifactReportDraft = {

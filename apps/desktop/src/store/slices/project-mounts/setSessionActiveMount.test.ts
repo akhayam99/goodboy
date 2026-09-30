@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 
@@ -6,7 +7,9 @@ const { updateSessionWriteDestination, tauriDatabase } = vi.hoisted(() => ({
   tauriDatabase: {},
 }));
 
-vi.mock('@goodboy/db', () => ({ updateSessionWriteDestination }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({ updateSessionWriteDestination }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase }));
 
 import { setSessionActiveMount } from './setSessionActiveMount';

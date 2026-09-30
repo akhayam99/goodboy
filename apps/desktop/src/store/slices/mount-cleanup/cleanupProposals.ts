@@ -33,7 +33,7 @@ type SettleParams = {
 export const cleanupRequestId = ({ mountId, branch, reason }: RequestIdParams): string =>
   `cleanup:${reason}:${mountId}:${branch}`;
 
-export const toCleanupProposal = (operation: MountOperation): MountCleanupProposal | null => {
+const toCleanupProposal = (operation: MountOperation): MountCleanupProposal | null => {
   if (operation.kind !== 'remove' || operation.status !== 'pending') {
     return null;
   }

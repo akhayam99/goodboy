@@ -1,6 +1,8 @@
 import type { MountId, SessionId } from '@goodboy/types';
-import { selectMountById } from '../project-mounts/selectors';
+import { resolveMountBaseBranch, selectMountById } from '../project-mounts/selectors';
 import type { GetFn, HistoryTarget } from './types';
+import { sessionById } from '../sessions/sessionIndex';
+import { selectProjectById } from '../projects/selectProjectById';
 
 type Params = {
   readonly get: GetFn;
@@ -17,8 +19,8 @@ export const historyTargetOf = ({ get, sessionId, mountId }: Params): HistoryTar
   if (mount.branch === '') {
     throw new Error('This folder has no branch to rewrite.');
   }
-  const project = state.projects.find((candidate) => candidate.id === mount.projectId) ?? null;
-  const session = state.sessions.find((candidate) => candidate.id === sessionId) ?? null;
+  const project = selectProjectById(state, mount.projectId);
+  const session = sessionById(state.sessions, sessionId) ?? null;
   return {
     sessionId,
     mountId,
@@ -26,7 +28,7 @@ export const historyTargetOf = ({ get, sessionId, mountId }: Params): HistoryTar
     workspaceId: project?.workspaceId ?? session?.workspaceId ?? null,
     worktreePath: mount.worktreePath,
     branch: mount.branch,
-    baseBranch: mount.baseBranch ?? project?.baseBranch ?? 'main',
+    baseBranch: resolveMountBaseBranch({ mount, projects: state.projects }),
     projectName: project?.name ?? mount.mountName,
   };
 };

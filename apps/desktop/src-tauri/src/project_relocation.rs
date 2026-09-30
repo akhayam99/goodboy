@@ -4,6 +4,7 @@ use tauri::State;
 use thiserror::Error;
 
 use crate::db::Db;
+use crate::proc::git::Git;
 use crate::worktree_writer::{acquire_lease, release_lease, WriterLeases};
 
 #[derive(Debug, Error)]
@@ -217,22 +218,13 @@ fn update_paths(
 }
 
 fn repair_git_links(to_root: &str, worktree_paths: &[String]) -> bool {
-    let mut command = crate::path_env::command("git");
-    command.current_dir(to_root).args(["worktree", "repair"]);
-    for path in worktree_paths {
-        command.arg(path);
-    }
-    command
+    Git::new()
+        .cwd(to_root)
+        .args(["worktree", "repair"])
+        .args(worktree_paths)
         .output()
-        .map(|output| output.status.success())
+        .map(|output| output.success())
         .unwrap_or(false)
-}
-
-fn now_millis() -> i64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|duration| duration.as_millis() as i64)
-        .unwrap_or_default()
 }
 
 fn relocate_with_connection(
@@ -302,11 +294,12 @@ pub async fn project_relocate(
     if !lease.is_granted {
         return Err(ProjectRelocationError::WriterActive);
     }
-    let result = db
-        .0
-        .lock()
-        .map_err(|_| ProjectRelocationError::DatabaseUnavailable)
-        .and_then(|mut connection| relocate_with_connection(&mut connection, &args, now_millis()));
+    let result =
+        db.0.lock()
+            .map_err(|_| ProjectRelocationError::DatabaseUnavailable)
+            .and_then(|mut connection| {
+                relocate_with_connection(&mut connection, &args, crate::util::now_ms())
+            });
     release_lease(&leases.0, &from_root, &holder, lease.token.as_deref());
     let worktree_paths = result?;
     let repaired_git_links = repair_git_links(&args.to_root, &worktree_paths);
@@ -339,7 +332,7 @@ pub async fn project_relocation_undo(
     if !lease.is_granted {
         return Err(ProjectRelocationError::WriterActive);
     }
-    let result = undo_with_connection(&mut connection, &args.relocation_id, now_millis());
+    let result = undo_with_connection(&mut connection, &args.relocation_id, crate::util::now_ms());
     release_lease(&leases.0, &current_root, &holder, lease.token.as_deref());
     let (restored_root, worktree_paths) = result?;
     let repaired_git_links = repair_git_links(&restored_root, &worktree_paths);

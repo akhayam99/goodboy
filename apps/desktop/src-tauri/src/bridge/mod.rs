@@ -51,11 +51,22 @@ pub enum BridgeError {
     Unauthorized(String),
 }
 
-impl Serialize for BridgeError {
-    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
-        s.serialize_str(&self.to_string())
+impl BridgeError {
+    fn kind(&self) -> &'static str {
+        match self {
+            BridgeError::NoHomeDir => "no_home_dir",
+            BridgeError::Noise(_) => "noise",
+            BridgeError::Decode(_) => "decode",
+            BridgeError::Io(_) => "io",
+            BridgeError::Json(_) => "json",
+            BridgeError::Db(_) => "db",
+            BridgeError::Protocol(_) => "protocol",
+            BridgeError::Unauthorized(_) => "unauthorized",
+        }
     }
 }
+
+crate::util::impl_error_serialize!(BridgeError);
 
 /// Tauri-managed state. Holds the persisted identity, the live token store, and
 /// the running server task (if any).

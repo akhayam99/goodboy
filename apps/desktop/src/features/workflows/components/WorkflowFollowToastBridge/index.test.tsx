@@ -1,13 +1,16 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AgentId, SessionId } from '@goodboy/types';
-import type { WorkflowGeneration } from '../../../../store/slices/workflowStudio/types';
+import type { AgentId, SessionId, WorkspaceId } from '@goodboy/types';
+import type { WorkflowStudioState } from '../../../../store/slices/workflowStudio/types';
 
 const announce = vi.fn();
 const state = {
   activeLens: {},
   selectedAgentId: {},
-  workflowGenerations: {} as Record<string, WorkflowGeneration>,
+  workflowGenerations: {} as Record<
+    string,
+    WorkflowStudioState['workflowGenerations'][WorkspaceId]
+  >,
   visibleWorkflowStudioWorkspaceId: null,
 };
 
@@ -23,7 +26,7 @@ vi.mock('../../../../shared/hooks/useAgentStartedToast', () => ({
 }));
 
 import { WorkflowFollowToastBridge } from './';
-import { ToastProvider } from '../../../../app/components/Toast';
+import { ToastProvider } from '../../../../shared/components/Toast';
 
 const SESSION_ID = 'sess-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;

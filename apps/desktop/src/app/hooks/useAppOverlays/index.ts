@@ -2,7 +2,7 @@ import { createElement, useCallback, useState, type ReactNode } from 'react';
 import { useEscapeLayer } from '@goodboy/ui';
 import type { Session, SessionId, Workspace } from '@goodboy/types';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
-import type { SettingsScopeChange } from '../../../features/settings/components/SettingsStudio/types';
+import type { SettingsScopeChange } from '../../../features/settings/settingsFocus';
 import type { ImpactScope } from '../../../features/impact/lib';
 import type { ChangelogScreen } from '../../../features/changelog/changelogScreens';
 import { resolveChangelogScreenOverlay } from '../../../features/changelog/resolveChangelogScreenOverlay';

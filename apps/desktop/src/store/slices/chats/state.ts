@@ -8,7 +8,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-export type ChatStream = {
+type ChatStream = {
   readonly runId: ProviderRunId;
   readonly messageId: ChatMessageId;
   readonly isStopping: boolean;

@@ -11,9 +11,9 @@ type Props = {
   readonly openNotes: ReadonlyArray<DiffComment>;
 };
 
-export const RESOLVE_IN_REVIEW_LABEL = 'Resolve in Review';
+const RESOLVE_IN_REVIEW_LABEL = 'Resolve in Review';
 
-export const notesCountLabel = ({ count }: { readonly count: number }): string =>
+const notesCountLabel = ({ count }: { readonly count: number }): string =>
   `${count} ${count === 1 ? 'note' : 'notes'}`;
 
 export const DiffNotesActions = ({ sessionId, openNotes }: Props) => {

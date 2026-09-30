@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { PageColumn, Trail } from '@goodboy/ui';
+import { PageColumn, Trail, PaneShell, UnderTrailContext } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
-import { PaneShell } from '../../../../shared/components/PaneShell';
-import { UnderTrailContext } from '../../../../shared/components/PaneShell/underTrailContext';
 import { SessionKickoff } from '../SessionKickoff';
 import { SessionDraftHeader } from './SessionDraftHeader';
 

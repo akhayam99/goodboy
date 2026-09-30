@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { AgentId, ResolveVerdict, ResolveVerdictKind, SessionId } from '@goodboy/types';
 import { resolveActions } from '../resolveActions';

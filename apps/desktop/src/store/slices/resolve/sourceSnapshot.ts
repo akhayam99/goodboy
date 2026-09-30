@@ -1,5 +1,5 @@
 import type { PrComment, ResolveSourceSnapshot, ResolveThread } from '@goodboy/types';
-import { groupThreads } from '../../../features/github/comment-threads';
+import { groupThreads } from '../../../features/integrations/github/comment-threads';
 
 type TextParams = {
   readonly comments: ReadonlyArray<PrComment>;

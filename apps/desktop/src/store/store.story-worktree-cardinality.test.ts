@@ -133,13 +133,15 @@ let useAppStore: StoryStore;
 const seed = async ({
   session,
   rows,
+  projectBase = null,
 }: {
   readonly session: Session;
   readonly rows: ReadonlyArray<ReturnType<typeof row>>;
+  readonly projectBase?: string | null;
 }) => {
   const db = await import('@goodboy/db');
   storySpies.listProjectsForWorkspace.mockResolvedValue([
-    project({ id: PROJECT_A, name: 'a' }),
+    { ...project({ id: PROJECT_A, name: 'a' }), baseBranch: projectBase },
     project({ id: PROJECT_B, name: 'b' }),
   ] as never);
   vi.mocked(db.listSessionsForWorkspace).mockResolvedValue([session, OTHER_SESSION] as never);
@@ -203,6 +205,48 @@ describe('story: two mounts of one project survive a restart', () => {
     expect(useAppStore.getState().sessionBranches[SESSION_ID]).toBeUndefined();
     expect(storySpies.updateSessionWriteDestination).not.toHaveBeenCalled();
   });
+
+  it.each([
+    { mountBase: 'develop', projectBase: 'main', expected: 'develop' },
+    { mountBase: null, projectBase: 'develop', expected: 'develop' },
+    { mountBase: null, projectBase: null, expected: null },
+  ])(
+    'measures the changed files of a finished turn against the mount base ($mountBase) or the project base ($projectBase)',
+    async ({ mountBase, projectBase, expected }) => {
+      await seed({
+        session: sessionWith(),
+        rows: [row({ id: MOUNT_A1, projectId: PROJECT_A, branch: 'ak/one', parallelIndex: 1 })],
+        projectBase,
+      });
+      await useAppStore.getState().setCurrentWorkspace(WORKSPACE_ID);
+      useAppStore.setState((state) => ({
+        sessionProjectMounts: {
+          ...state.sessionProjectMounts,
+          [SESSION_ID]: (state.sessionProjectMounts[SESSION_ID] ?? []).map((mount) => ({
+            ...mount,
+            baseBranch: mountBase,
+          })),
+        },
+      }));
+      const agent = buildStoryAgent({
+        id: 'agent-operator' as AgentId,
+        sessionId: SESSION_ID,
+        name: 'operator',
+      });
+      useAppStore.setState({
+        sessionPhaseRuns: { [SESSION_ID]: [agent] },
+        selectedAgentId: { [SESSION_ID]: agent.id },
+        ...connectedAnthropicState(),
+      });
+      storySpies.runTurn.mockImplementation(() => emptyTurnStream());
+
+      await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'go' });
+
+      const bases = storySpies.worktreeChangedFiles.mock.calls.map(([params]) => params.baseBranch);
+      expect(bases.length).toBeGreaterThan(1);
+      expect(new Set(bases)).toEqual(new Set([expected]));
+    },
+  );
 
   it('lets a workflow turn resolve the mount without a choice', async () => {
     await seed({ session: sessionWith(), rows: ROWS });

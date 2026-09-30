@@ -4,9 +4,9 @@ import { loadChangelogDates } from './loadChangelogDates';
 import { loadChangelogUpcoming } from './loadChangelogUpcoming';
 import { markChangelogSeen } from './markChangelogSeen';
 import { reloadChangelogDates } from './reloadChangelogDates';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createChangelogSlice = (set: SetFn, get: GetFn) => {
+export const createChangelogSlice = ({ set, get }: SliceDeps) => {
   return {
     loadChangelogDates: loadChangelogDates(set, get),
     reloadChangelogDates: reloadChangelogDates(set, get),

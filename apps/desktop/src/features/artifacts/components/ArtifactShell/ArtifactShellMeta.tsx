@@ -1,6 +1,6 @@
 import { MetaRow, cn } from '@goodboy/ui';
 import type { Agent, PlanWithCount, SessionArtifact } from '@goodboy/types';
-import { formatCompactDateTime } from '../../../../shared/utils/formatCompactDateTime';
+import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { planConsumerLabel, resolvePlanConsumer } from '../../../../shared/utils/planConsumer';
 import { modelLabel } from '../../../chat/utils/chat-constants';
 
@@ -53,7 +53,7 @@ export const ArtifactShellMeta = ({
         model === null ? null : <span key="model">{modelLabel(model)}</span>,
         <span key="revision">rev {artifact.revision}</span>,
         <span key="created" className="tabular-nums">
-          {formatCompactDateTime({ iso: artifact.createdAt })}
+          {formatDateTime({ at: artifact.createdAt })}
         </span>,
         consumer === null || plan === null ? null : (
           <span key="consumer" className={cn(consumer.isDeleted && 'line-through')}>

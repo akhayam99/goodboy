@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 
@@ -10,11 +11,13 @@ const { cancelTurn, invokeAgentUpdateStatus, applyAgentTurnState, updateSessionS
   }),
 );
 
-vi.mock('@goodboy/db', () => ({ updateSessionState }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({ updateSessionState }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/chat/turn', () => ({ cancelTurn }));
 vi.mock('../../../features/workflows/workflows', () => ({ invokeAgentUpdateStatus }));
-vi.mock('../../session-mutators', () => ({
+vi.mock('../sessions/sessionMutators', () => ({
   applyAgentTurnState,
   cancelledRunIds: new Set<string>(),
 }));

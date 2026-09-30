@@ -1,4 +1,4 @@
-// @vitest-environment happy-dom
+// @vitest-environment node
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionArtifact } from '@goodboy/types';
@@ -17,19 +17,21 @@ vi.mock('./artifactMirrorInvoke', () => ({
 }));
 vi.mock('@tauri-apps/api/app', () => ({ getVersion: async () => '0.7.0' }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
-vi.mock('@goodboy/db', () => ({
-  listArtifactRevisions: vi.fn(async () => [
-    {
-      revision: 1,
-      title: 'Settlement flow',
-      sourceText: '{"version":1}',
-      author: 'agent',
-      ask: null,
-      createdAt: '2026-09-25T09:00:00.000Z',
-      summary: null,
-    },
-  ]),
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    listArtifactRevisions: vi.fn(async () => [
+      {
+        revision: 1,
+        title: 'Settlement flow',
+        sourceText: '{"version":1}',
+        author: 'agent',
+        ask: null,
+        createdAt: '2026-09-25T09:00:00.000Z',
+        summary: null,
+      },
+    ]),
+  }),
+);
 
 import { ARTIFACT_RENDERER_VERSION } from './artifactMirrorMeta';
 import { mirrorArtifacts, resetArtifactMirrorQueue } from './artifactMirrorQueue';

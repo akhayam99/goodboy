@@ -50,6 +50,7 @@ import type {
   ArtifactPorts,
   ObjectKindDefinition,
 } from '../types';
+import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 
 export const ARTIFACT_EDIT_EVENT = 'goodboy:artifact-edit';
 
@@ -467,7 +468,7 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
 export const ARTIFACT_KIND: ObjectKindDefinition<ArtifactActionTarget, ArtifactFacts> = {
   noun: 'artifact',
   facts: ({ state, target }) => {
-    const session = state.sessions.find((candidate) => candidate.id === target.sessionId) ?? null;
+    const session = sessionById(state.sessions, target.sessionId) ?? null;
     const workspaceSlug =
       state.workspaces.find((workspace) => workspace.id === session?.workspaceId)?.slug ?? null;
     const ports = target.ports ?? NO_PORTS;

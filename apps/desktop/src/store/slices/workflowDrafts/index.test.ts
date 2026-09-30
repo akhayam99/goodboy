@@ -1,10 +1,11 @@
-// @vitest-environment happy-dom
+// @vitest-environment node
 
 import { describe, expect, it } from 'vitest';
 import { createStore } from 'zustand';
 import type { SessionId } from '@goodboy/types';
 import { createWorkflowDraftsSlice } from './index';
-import type { SetFn, GetFn, WorkflowBuilderDraft } from './types';
+import type { GetFn } from '../../slice-types';
+import type { SetFn, WorkflowBuilderDraft } from './types';
 
 const SESSION_ID = 'session-1' as SessionId;
 const SESSION_ID_2 = 'session-2' as SessionId;
@@ -42,7 +43,7 @@ const buildDraft = (overrides: Partial<WorkflowBuilderDraft> = {}): WorkflowBuil
 const makeStore = () =>
   createStore<TestState>((set, get) => ({
     workflowDrafts: {},
-    ...createWorkflowDraftsSlice(set as SetFn, get as GetFn),
+    ...createWorkflowDraftsSlice({ set: set as SetFn, get: get as GetFn }),
   }));
 
 describe('workflowDrafts slice', () => {

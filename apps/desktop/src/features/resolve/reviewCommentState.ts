@@ -92,7 +92,7 @@ export const reviewCommentStateOf = ({
 export const isPushFailure = ({ row }: { readonly row: ResolveQueueRow }): boolean =>
   row.thread.stage === 'failed' && row.rowState.failedStep !== 'run';
 
-export const isWaitingForSlot = ({ row }: { readonly row: ResolveQueueRow }): boolean =>
+const isWaitingForSlot = ({ row }: { readonly row: ResolveQueueRow }): boolean =>
   row.thread.stage === 'working' && row.attempt?.phase === 'queued' && row.attempt.batchId !== null;
 
 export const isResolveOnly = ({ row }: { readonly row: ResolveQueueRow }): boolean =>

@@ -6,7 +6,7 @@ export type ConversationAuthor = {
   readonly handle: string | null;
 };
 
-export type ConversationMessageStatus = 'sent' | 'sending' | 'failed';
+type ConversationMessageStatus = 'sent' | 'sending' | 'failed';
 
 export type ConversationMessage = {
   readonly id: string;
@@ -24,7 +24,7 @@ export type ConversationThread = {
   readonly isResolved: boolean | null;
 };
 
-export type ConversationReplyMode = 'thread' | 'quote' | 'none';
+type ConversationReplyMode = 'thread' | 'quote' | 'none';
 
 export type ConversationCapabilities = {
   readonly reply: ConversationReplyMode;
@@ -33,17 +33,17 @@ export type ConversationCapabilities = {
   readonly react: boolean;
 };
 
-export type ConversationPostParams = {
+type ConversationPostParams = {
   readonly body: string;
   readonly threadId: string | null;
 };
 
-export type ConversationResolveParams = {
+type ConversationResolveParams = {
   readonly threadId: string;
   readonly isResolved: boolean;
 };
 
-export type ConversationResolveError = {
+type ConversationResolveError = {
   readonly threadId: string;
   readonly message: string;
 };

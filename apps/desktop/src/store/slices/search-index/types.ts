@@ -1,27 +1,26 @@
 import type { ProjectId, SearchHit, SearchQuery } from '@goodboy/types';
 import type { SearchIndexState } from './state';
+export type { GetFn } from '../../slice-types';
 
-export type { GetFn, SetFn } from '../../slice-types';
-
-export type RunSearchParams = {
+type RunSearchParams = {
   readonly query: SearchQuery;
 };
 
-export type ProjectSearchParams = {
+type ProjectSearchParams = {
   readonly projectId: ProjectId;
   readonly isExcluded: boolean;
 };
 
-export type StartViewFindParams = {
+type StartViewFindParams = {
   readonly query: string;
   readonly target: string | null;
 };
 
-export type StepViewFindParams = {
+type StepViewFindParams = {
   readonly delta: 1 | -1;
 };
 
-export type RememberSearchParams = {
+type RememberSearchParams = {
   readonly text: string;
 };
 

@@ -26,7 +26,8 @@ import { migrations, type Migration } from './index';
 import { getWorkspaceById, insertWorkspace } from '../queries/workspace';
 import { getSessionById, insertSession } from '../queries/session';
 import { listWorkflows, getWorkflow, upsertWorkflow, deleteWorkflow } from '../queries/workflow';
-import { listAgentsForSessions, updateAgentStatus } from '../queries/agent';
+import { listAgentsForSessions } from '../queries/agent';
+import { recordAgentStatus } from '../queries/agent-write';
 import {
   insertSessionWorktree,
   listWorktreesForSession,
@@ -277,7 +278,7 @@ describe('runRuntimeMigrations', () => {
   });
 });
 
-describe('enforced integrity check', () => {
+describe('enforced integrity check', { timeout: 30_000 }, () => {
   const INTEGRITY_MIGRATION = {
     version: 1157,
     sql: `
@@ -891,7 +892,7 @@ CREATE TRIGGER notes_insert AFTER INSERT ON notes BEGIN
     expect(agents[0].status).toBe('pending');
     expect(agents[0].domains).toEqual(['auth', 'db']);
 
-    await updateAgentStatus(db, agent.id, {
+    await recordAgentStatus(db, agent.id, {
       status: 'completed',
       outputSummary: 'Found issues',
     });

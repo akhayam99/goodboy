@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentId, SessionId } from '@goodboy/types';
+import { anAgent } from '@goodboy/types/testing';
 import { RECHECK_NO_ANSWER } from '../../../features/resolve/commentVerdict';
+import { useAppStore } from '../../store';
+import type { AppStore } from '../../store';
 import { recheckThread, settleThreadRecheck } from './recheckThread';
 import { resolveInitialState } from './state';
 import type { ThreadGitFacts } from './threadGitState';
@@ -36,36 +39,43 @@ const facts = (overrides: Partial<ThreadGitFacts>): ThreadGitFacts => ({
 });
 
 type Harness = {
-  readonly state: Record<string, unknown>;
+  readonly state: AppStore;
   readonly set: SetFn;
   readonly get: GetFn;
-  readonly closers: ReadonlyArray<ReturnType<typeof vi.fn>>;
+  readonly closers: ReadonlyArray<unknown>;
 };
 
+type Mutable<T> = { -readonly [K in keyof T]: T[K] };
+
 const harness = ({ afterRefresh }: { readonly afterRefresh: ThreadGitFacts }): Harness => {
-  const closers = [vi.fn(), vi.fn(), vi.fn()];
-  const state: Record<string, unknown> = {
+  const replyAndResolveThread = vi.fn<AppStore['replyAndResolveThread']>();
+  const resolveThreadOnly = vi.fn<AppStore['resolveThreadOnly']>();
+  const answerItemWithoutFix = vi.fn<AppStore['answerItemWithoutFix']>();
+  const closers = [replyAndResolveThread, resolveThreadOnly, answerItemWithoutFix];
+  const state: Mutable<AppStore> = {
+    ...useAppStore.getInitialState(),
     ...resolveInitialState,
     sessionThreadGit: { [sessionId]: { [threadId]: facts({}) } },
     sessionPhaseRuns: {
-      [sessionId]: [{ id: agentId, sourceKind: 'comment_recheck', sourceThreadIds: [threadId] }],
+      [sessionId]: [
+        anAgent({ id: agentId, sourceKind: 'comment_recheck', sourceThreadIds: [threadId] }),
+      ],
     },
     refreshThreadGitState: vi.fn(async () => {
       state.sessionThreadGit = { [sessionId]: { [threadId]: afterRefresh } };
     }),
-    replyAndResolveThread: closers[0],
-    resolveThreadOnly: closers[1],
-    answerItemWithoutFix: closers[2],
+    replyAndResolveThread,
+    resolveThreadOnly,
+    answerItemWithoutFix,
   };
-  const set = ((update: unknown) => {
+  const set: SetFn = (update) => {
     Object.assign(state, typeof update === 'function' ? update(state) : update);
-  }) as unknown as SetFn;
-  const get = (() => state) as unknown as GetFn;
+  };
+  const get: GetFn = () => state;
   return { state, set, get, closers };
 };
 
-const rechecks = (state: Record<string, unknown>) =>
-  (state.sessionThreadRechecks as Record<string, Record<string, unknown>>)[sessionId] ?? {};
+const rechecks = (state: AppStore) => state.sessionThreadRechecks[sessionId] ?? {};
 
 describe('recheckThread', () => {
   beforeEach(() => {

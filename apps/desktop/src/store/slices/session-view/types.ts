@@ -177,15 +177,17 @@ type SessionViewSliceState = {
   readonly terminalMountPath: Readonly<Record<SessionId, string | null>>;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
   readonly revealedActivityRows: Readonly<Record<SessionId, ReadonlySet<string>>>;
+  readonly sessionGroupExpanded: Readonly<Record<string, boolean>>;
 };
 
-export type DiffPage = 'history';
+type DiffPage = 'history';
 
 type SessionViewSliceActions = {
   setScriptsLensScope(params: { readonly scope: { readonly projectId: ProjectId } | null }): void;
   getSessionViewPrefs(workspaceId: WorkspaceId): SessionViewPrefs;
   setSessionSort(workspaceId: WorkspaceId, sort: SessionSortKey): void;
   setSessionGroup(workspaceId: WorkspaceId, group: SessionGroupKey): void;
+  toggleSessionGroup(params: { readonly key: string }): void;
   setActiveLens(sessionId: SessionId, lens: LensKind | null): void;
   toggleWorkflowExpand(sessionId: SessionId, runId: string, defaultExpanded: boolean): void;
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;

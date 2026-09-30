@@ -25,7 +25,7 @@ vi.mock('../../../store', () => ({
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
 
-vi.mock('../../github/github', () => ({
+vi.mock('../github/github', () => ({
   ghStatus: ghStatusMock,
   ghClearToken: ghClearTokenMock,
 }));

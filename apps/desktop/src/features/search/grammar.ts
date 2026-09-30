@@ -1,4 +1,5 @@
 import type { ProjectId, SearchKind } from '@goodboy/types';
+import { formatDayMonth } from '../../shared/utils/time/formatDayMonth';
 import type { SearchChip } from './searchChips';
 
 export type SearchProjectOption = {
@@ -58,6 +59,16 @@ const PROVIDER_ALIASES: Readonly<
   bitbucket: { provider: 'bitbucket', label: 'Bitbucket' },
   sentry: { provider: 'sentry', label: 'Sentry' },
 };
+
+export const PROVIDER_FILTERS: ReadonlyArray<{ readonly value: string; readonly label: string }> =
+  Array.from(
+    new Map(
+      Object.values(PROVIDER_ALIASES).map(({ provider, label }) => [
+        provider,
+        { value: provider, label },
+      ]),
+    ).values(),
+  );
 
 const STATUS_LABELS: Readonly<Record<string, string>> = {
   open: 'Open',
@@ -161,7 +172,7 @@ const qualifierChip = ({ key, value, projects, now }: ChipParams): SearchChip | 
   if (at === null) {
     return null;
   }
-  const label = new Date(at).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  const label = formatDayMonth({ at });
   return name === 'after' ? { key: 'after', at, label } : { key: 'before', at, label };
 };
 

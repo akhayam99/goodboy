@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 
@@ -50,12 +51,14 @@ const h = vi.hoisted(() => ({
   emitNotification: vi.fn(async () => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  listSessionMounts: h.listSessionMounts,
-  updateSessionMountBranch: h.updateSessionMountBranch,
-  getMountOperation: h.getMountOperation,
-  upsertMountOperation: h.upsertMountOperation,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    listSessionMounts: h.listSessionMounts,
+    updateSessionMountBranch: h.updateSessionMountBranch,
+    getMountOperation: h.getMountOperation,
+    upsertMountOperation: h.upsertMountOperation,
+  }),
+);
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 

@@ -14,6 +14,7 @@ import { useAutoLimitContext } from '../../../../providers/hooks/useAutoLimitCon
 import { useAppStore } from '../../../../../store/store';
 import { selectResolvedSettings } from '../../../../../store/slices/overrides/selectResolvedSettings';
 import { isRoutingModelKnown } from '../../../../../store/slices/workflows/orchestrateNextStep';
+import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -46,9 +47,7 @@ const providerModelId = ({ provider, model }: ProviderModelParams): string => {
 };
 
 export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
-  const session = useAppStore((state) =>
-    state.sessions.find((current) => current.id === sessionId),
-  );
+  const session = useAppStore((state) => sessionById(state.sessions, sessionId));
   const providers = useAppStore((state) => state.providers);
   const taskModels = useAppStore(
     (state) => selectResolvedSettings({ state, sessionId })?.taskModels ?? undefined,
@@ -133,10 +132,19 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
         model={model}
         effort={{
           editable: true,
-          value: clampEffortForModel({ model: effortModel, effort: effortValue }) ?? effortValue,
+          value:
+            clampEffortForModel({
+              model: effortModel,
+              effort: effortValue,
+              provider: providerId,
+            }) ?? effortValue,
           onChange: (effort) => {
             const nextModel = pendingModel.current;
-            const applied = clampEffortForModel({ model: nextModel, effort });
+            const applied = clampEffortForModel({
+              model: nextModel,
+              effort,
+              provider: pendingProvider.current,
+            });
             apply({
               providerId: pendingProvider.current,
               model: nextModel,
@@ -178,7 +186,11 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
           const carried =
             pinned?.effort == null
               ? null
-              : clampEffortForModel({ model: nextModel, effort: pinned.effort });
+              : clampEffortForModel({
+                  model: nextModel,
+                  effort: pinned.effort,
+                  provider: pendingProvider.current,
+                });
           apply({
             providerId: pendingProvider.current,
             model: nextModel,

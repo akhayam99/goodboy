@@ -1,6 +1,7 @@
+import { providerIdOf } from '../../../../shared/utils/providerIdOf';
 import { formatTokens, formatUsd } from '@goodboy/ui';
 import type { IsoDateTime } from '@goodboy/types';
-import { formatClockTime } from '../../../../shared/utils/formatClockTime';
+import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { formatInteger } from '../../../../shared/utils/formatInteger';
 import { modelLabel } from '../../utils/chat-constants';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
@@ -51,7 +52,9 @@ export const TurnFooterDetail = ({
 }: Props) => {
   const providerLabel = providerLabelFor(data.provider);
   const heading = [
-    data.model != null ? modelLabel(data.model) : 'Unknown model',
+    data.model != null
+      ? modelLabel(data.model, providerIdOf({ value: data.provider }))
+      : 'Unknown model',
     data.effort,
     providerLabel,
   ]
@@ -88,7 +91,7 @@ export const TurnFooterDetail = ({
           endedAt != null &&
           detailRow({
             label: 'Duration',
-            value: `${duration}  (${formatClockTime({ iso: startedAt })} to ${formatClockTime({ iso: endedAt })})`,
+            value: `${duration}  (${formatClock({ at: startedAt })} to ${formatClock({ at: endedAt })})`,
           })}
         {data.estimatedCostUsd != null &&
           detailRow({

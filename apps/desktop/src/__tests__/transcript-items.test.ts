@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, PermissionRuleId, ProviderRunId, TurnEvent } from '@goodboy/types';
 import { reduceTranscript } from '../features/chat/utils/transcript-items';

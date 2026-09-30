@@ -3,9 +3,9 @@ import { loadSessionSlots } from './loadSessionSlots';
 import { loadSessionTelemetry } from './loadSessionTelemetry';
 import { loadSlotHistory } from './loadSlotHistory';
 import { upsertSessionSlot } from './upsertSessionSlot';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createSlotsSlice = (set: SetFn, get: GetFn) => {
+export const createSlotsSlice = ({ set, get }: SliceDeps) => {
   return {
     loadSessionTelemetry: loadSessionTelemetry(set),
     loadSessionSlots: loadSessionSlots(set),

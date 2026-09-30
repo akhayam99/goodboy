@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { AUTO_RECOMMENDATION_COPY } from './autoRecommendationCopy';
 import { autoLimitReason } from './autoLimitReason';

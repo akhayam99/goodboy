@@ -9,6 +9,7 @@
 // macOS: AppleScript driving Terminal.app. Linux: probe gnome-terminal /
 // konsole / xterm in that order. Windows: cmd.exe via `start cmd /k`.
 
+use crate::util::MessageError;
 use std::process::Command;
 
 #[cfg(target_os = "macos")]
@@ -64,6 +65,9 @@ fn spawn_in_external_terminal(_command: &str) -> Result<(), String> {
 /// connect modal. The embedded PTY remains the primary path; this returns
 /// to the user only when they ask for it.
 #[tauri::command]
-pub fn open_command_in_external_terminal(command: String) -> Result<(), String> {
-    spawn_in_external_terminal(&command)
+pub async fn open_command_in_external_terminal(command: String) -> Result<(), MessageError> {
+    tauri::async_runtime::spawn_blocking(move || spawn_in_external_terminal(&command))
+        .await
+        .map_err(|e| MessageError::Failed(e.to_string()))??;
+    Ok(())
 }

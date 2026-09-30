@@ -2,6 +2,7 @@ import { updateProjectDescription } from '@goodboy/db';
 import type { ProjectId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from './types';
+import { projectById } from './projectIndex';
 
 type Input = {
   readonly projectId: ProjectId;
@@ -10,7 +11,7 @@ type Input = {
 
 export const describeProject = (set: SetFn, get: GetFn) => {
   return async ({ projectId, description }: Input): Promise<void> => {
-    const project = get().projects.find((candidate) => candidate.id === projectId);
+    const project = projectById(get().projects, projectId);
     if (project === undefined) {
       throw new Error(`project not found: ${projectId}`);
     }

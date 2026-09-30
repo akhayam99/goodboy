@@ -3,22 +3,15 @@ import type {
   MountId,
   MountPullRequestIdentity,
   MountPullRequestLink,
-  MountPullRequestState,
 } from '@goodboy/types';
 import type {
   BitbucketPullRequest,
   BitbucketRepo,
 } from '../../../features/integrations/bitbucket/client';
+import { bitbucketPrStateKind } from '../../../features/integrations/bitbucket/bitbucketPrStateKind';
 import { buildMountRequestLink, requestHost } from '../project-mounts/mountRequests';
 
 const BITBUCKET_HOST = 'bitbucket.org';
-
-const LINK_STATE: Readonly<Record<BitbucketPullRequest['state'], MountPullRequestState>> = {
-  OPEN: 'open',
-  MERGED: 'merged',
-  DECLINED: 'closed',
-  SUPERSEDED: 'closed',
-};
 
 type RepositoryParams = {
   readonly workspaceSlug: string;
@@ -93,7 +86,7 @@ export const toMountBitbucketPrLink = ({
     headBranch: pr.sourceBranch,
     baseBranch: pr.destinationBranch,
     url: bitbucketRequestUrl({ repo, pullRequestId: pr.id, url: pr.webUrl }),
-    state: LINK_STATE[pr.state],
+    state: bitbucketPrStateKind({ state: pr.state }),
     snapshot: pr,
     headSha: pr.sourceCommit,
     existing,

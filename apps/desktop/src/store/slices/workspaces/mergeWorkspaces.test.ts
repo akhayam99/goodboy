@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, Project, ProjectId, Workspace, WorkspaceId } from '@goodboy/types';
 import type { AppStore } from '../../store';
@@ -7,9 +8,11 @@ const h = vi.hoisted(() => ({
   mergeWorkspacesInDb: vi.fn(async () => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  mergeWorkspaces: h.mergeWorkspacesInDb,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    mergeWorkspaces: h.mergeWorkspacesInDb,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { mergeWorkspaces } from './mergeWorkspaces';

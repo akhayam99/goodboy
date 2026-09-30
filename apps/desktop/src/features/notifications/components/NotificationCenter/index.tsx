@@ -58,7 +58,6 @@ export const NotificationCenter = () => {
     expectedWidth: DROPDOWN_WIDTH,
     expectedHeight: DROPDOWN_MAX_HEIGHT,
     openEvent: OPEN_EVENT,
-    isEscapeEnabled: false,
   });
   const { open, close, toggle } = dropdown;
   const openRef = useRef(open);

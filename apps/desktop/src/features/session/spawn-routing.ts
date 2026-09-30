@@ -38,7 +38,7 @@ const chatRouting = ({ session, fallbackEffort }: ChatParams): AgentKindRouting 
   return {
     provider,
     model,
-    effort: clampEffortForModel({ model, effort: requested }) ?? requested,
+    effort: clampEffortForModel({ model, effort: requested, provider }) ?? requested,
   };
 };
 

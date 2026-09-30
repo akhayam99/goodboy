@@ -23,6 +23,7 @@ export type RoutingTriggerLabel = {
 type Params = {
   readonly model: CatalogModel | null;
   readonly modelId: string;
+  readonly provider?: ProviderId | null;
   readonly selection: ModelSelection;
   readonly effort: EffortLevel;
   readonly showEffort: boolean;
@@ -37,6 +38,7 @@ type ModeParams = {
 type NameParams = {
   readonly model: CatalogModel | null;
   readonly modelId: string;
+  readonly provider: ProviderId | null;
 };
 
 type SummaryParams = {
@@ -55,9 +57,9 @@ const modeNames = ({ model, selection }: ModeParams): ReadonlyArray<string> => {
   return [...(hasThinking && thinking ? ['Thinking'] : []), ...(hasFast && fast ? ['Fast'] : [])];
 };
 
-const modelNames = ({ model, modelId }: NameParams): ReadonlyArray<string> => {
+const modelNames = ({ model, modelId, provider }: NameParams): ReadonlyArray<string> => {
   if (model == null) {
-    return [modelLabel(modelId)];
+    return [modelLabel(modelId, provider)];
   }
   return [model.label];
 };
@@ -65,12 +67,13 @@ const modelNames = ({ model, modelId }: NameParams): ReadonlyArray<string> => {
 export const routingTriggerLabel = ({
   model,
   modelId,
+  provider = null,
   selection,
   effort,
   showEffort,
   verbosity,
 }: Params): RoutingTriggerLabel => ({
-  name: modelNames({ model, modelId }),
+  name: modelNames({ model, modelId, provider }),
   detail: [
     ...modeNames({ model, selection }),
     ...(showEffort ? [EFFORT_LABEL[effort]] : []),
@@ -92,14 +95,15 @@ type LabelPartsParams = {
 
 type ShownEffortParams = {
   readonly model: string;
+  readonly provider: ProviderId;
   readonly effort: EffortLevel | null;
 };
 
-const plainEffort = ({ model, effort }: ShownEffortParams): EffortLevel | null => {
+const plainEffort = ({ model, provider, effort }: ShownEffortParams): EffortLevel | null => {
   if (effort == null) {
     return null;
   }
-  return clampEffortForModel({ model, effort }) ?? effort;
+  return clampEffortForModel({ model, effort, provider }) ?? effort;
 };
 
 export const routingLabelParts = ({
@@ -120,6 +124,7 @@ export const routingLabelParts = ({
       : null;
   const shown = plainEffort({
     model,
+    provider,
     effort: catalogModel == null ? effort : (stored.selection.effort ?? effort),
   });
   const hasEffort =
@@ -127,6 +132,7 @@ export const routingLabelParts = ({
   return routingTriggerLabel({
     model: catalogModel,
     modelId: model,
+    provider,
     selection: stored.selection,
     effort: shown ?? 'medium',
     showEffort: hasEffort,

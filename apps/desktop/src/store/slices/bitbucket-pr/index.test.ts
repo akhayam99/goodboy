@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   IsoDateTime,
@@ -49,26 +50,28 @@ vi.mock('../../../features/worktree/worktree', () => ({
 
 const links: Array<MountPullRequestLink> = [];
 
-vi.mock('@goodboy/db', () => ({
-  listMountPullRequestLinks: vi.fn(async ({ mountId }: { readonly mountId: MountId }) =>
-    links.filter((link) => link.mountId === mountId),
-  ),
-  upsertMountPullRequestLink: vi.fn(async ({ link }: { readonly link: MountPullRequestLink }) => {
-    const index = links.findIndex(
-      (candidate) =>
-        candidate.mountId === link.mountId &&
-        candidate.host === link.host &&
-        candidate.repoSlug === link.repoSlug &&
-        candidate.prNumber === link.prNumber,
-    );
-    if (index >= 0) {
-      links.splice(index, 1, link);
-    } else {
-      links.push(link);
-    }
-    return true;
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    listMountPullRequestLinks: vi.fn(async ({ mountId }: { readonly mountId: MountId }) =>
+      links.filter((link) => link.mountId === mountId),
+    ),
+    upsertMountPullRequestLink: vi.fn(async ({ link }: { readonly link: MountPullRequestLink }) => {
+      const index = links.findIndex(
+        (candidate) =>
+          candidate.mountId === link.mountId &&
+          candidate.host === link.host &&
+          candidate.repoSlug === link.repoSlug &&
+          candidate.prNumber === link.prNumber,
+      );
+      if (index >= 0) {
+        links.splice(index, 1, link);
+      } else {
+        links.push(link);
+      }
+      return true;
+    }),
   }),
-}));
+);
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
@@ -162,10 +165,10 @@ const buildStore = ({
     state = { ...state, ...(next as TestState) };
   };
   const get = () => state as unknown as AppStore;
-  const slice = createBitbucketPrSlice(
-    set as Parameters<typeof createBitbucketPrSlice>[0],
-    get as Parameters<typeof createBitbucketPrSlice>[1],
-  );
+  const slice = createBitbucketPrSlice({
+    set: set as Parameters<typeof createBitbucketPrSlice>[0]['set'],
+    get: get as Parameters<typeof createBitbucketPrSlice>[0]['get'],
+  });
   Object.assign(state, slice);
   return { getState: () => state, slice };
 };

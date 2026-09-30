@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type {
   AgentId,
@@ -20,7 +21,7 @@ import {
 import type {
   SuggestionMountEvent,
   SuggestionMountEventKind,
-} from '../../store/materializationProposals';
+} from '../../store/slices/project-mounts/materializationProposals';
 
 const sessionId = 'session-1' as SessionId;
 const planId = 'plan-1' as PlanId;

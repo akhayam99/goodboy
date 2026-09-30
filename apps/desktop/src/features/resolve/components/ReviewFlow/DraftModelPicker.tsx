@@ -9,7 +9,7 @@ type Props = {
   readonly children: ReactNode;
 };
 
-export const DRAFT_MODEL_LABEL = 'Model for drafts';
+const DRAFT_MODEL_LABEL = 'Model for drafts';
 
 export const DraftModelPicker = ({ sessionId, request, children }: Props) => {
   const dropdown = useDropdown({

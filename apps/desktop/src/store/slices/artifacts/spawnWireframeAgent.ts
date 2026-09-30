@@ -23,9 +23,9 @@ import type { WireframeTarget } from '../../../features/wireframes/wireframeTarg
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import type { SpawnFocus } from '../session-view/spawnFocus';
 import type { GetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
-export const WIREFRAME_SCOUT_PENDING_NOTE =
-  'the scouts had not reported yet when this row was written';
+const WIREFRAME_SCOUT_PENDING_NOTE = 'the scouts had not reported yet when this row was written';
 
 export type WireframeRouting = {
   readonly provider: ProviderId;
@@ -64,7 +64,7 @@ export const resolveWireframeRouting = ({
   if (picked !== null) {
     return picked;
   }
-  const session = state.sessions?.find((entry) => entry.id === sessionId) ?? null;
+  const session = sessionById(state.sessions, sessionId) ?? null;
   const overrides =
     session === null ? null : (state.workspaceOverrides?.[session.workspaceId] ?? null);
   const role = resolveRoleRouting({ role: 'wireframe', prefs: overrides?.roleModels });
@@ -110,7 +110,7 @@ export const spawnWireframeAgent = (get: GetFn) => {
     focus = 'agent',
   }: SpawnWireframeAgentParams): Promise<AgentId> => {
     const state = get();
-    const session = state.sessions?.find((entry) => entry.id === sessionId) ?? null;
+    const session = sessionById(state.sessions, sessionId) ?? null;
     if (session === null) {
       throw new Error(`session not found: ${sessionId}`);
     }

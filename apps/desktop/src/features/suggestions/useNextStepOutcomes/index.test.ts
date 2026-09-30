@@ -10,7 +10,9 @@ const { listNudgeEvents, insertNudgeEvent } = vi.hoisted(() => ({
   insertNudgeEvent: vi.fn(async (_db: unknown, _event: NudgeEvent): Promise<void> => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({ listNudgeEvents, insertNudgeEvent }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({ listNudgeEvents, insertNudgeEvent }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { recordNextStepOutcome, useNextStepOutcomes } from '.';

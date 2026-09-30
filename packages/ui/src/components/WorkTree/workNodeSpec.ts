@@ -25,11 +25,11 @@ export type WorkNodeSize = 'md' | 'sm';
 
 export const WORK_NODE_SIZE = 20;
 
-export const WORK_NODE_SIZE_SM = 14;
+const WORK_NODE_SIZE_SM = 14;
 
 export const WORK_NODE_GLYPH_SIZE = 12;
 
-export const WORK_NODE_GLYPH_SIZE_SM = 9;
+const WORK_NODE_GLYPH_SIZE_SM = 9;
 
 export const WORK_NODE_SIZE_FOR: Record<WorkNodeSize, number> = {
   md: WORK_NODE_SIZE,

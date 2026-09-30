@@ -248,6 +248,9 @@ export type {
   BudgetRule,
   BudgetPeriod,
   BudgetCheckResult,
+  ProviderBudgetStatus,
+  ProviderSpendPeriods,
+  ProviderBudgetOverview,
   SessionBudget,
   SessionBudgetOnExceed,
   RoutingReason,
@@ -458,7 +461,6 @@ export type {
   PrReviewRequest,
   PrReviewState,
   PullRequestChecks,
-  PullRequestDiff,
   PullRequestState,
   PullRequestStateKind,
 } from './github';

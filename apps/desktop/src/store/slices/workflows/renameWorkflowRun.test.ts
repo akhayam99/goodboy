@@ -1,9 +1,14 @@
+// @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Session, SessionId, WorkflowRun, WorkflowRunId } from '@goodboy/types';
 
 const { updateUserTitleSpy } = vi.hoisted(() => ({ updateUserTitleSpy: vi.fn() }));
 
-vi.mock('@goodboy/db', () => ({ updateUserWorkflowRunTitle: updateUserTitleSpy }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    updateUserWorkflowRunTitle: updateUserTitleSpy,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { renameWorkflowRun } from './renameWorkflowRun';

@@ -1,12 +1,12 @@
 use std::collections::HashMap;
-use std::sync::{Mutex, OnceLock};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::Mutex;
 
 use rusqlite::{Connection, OptionalExtension};
 use thiserror::Error;
 
 use crate::db;
 use crate::secrets;
+use crate::util::now_ms;
 
 pub type SecretCache = Mutex<HashMap<String, String>>;
 
@@ -29,11 +29,6 @@ macro_rules! token_cache {
 }
 
 pub(crate) use token_cache;
-
-pub(crate) fn http_client() -> &'static reqwest::Client {
-    static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
-    CLIENT.get_or_init(reqwest::Client::new)
-}
 
 #[derive(Debug, Error)]
 pub enum IntegrationCredentialError {
@@ -118,13 +113,6 @@ fn open_db() -> Result<Connection, IntegrationCredentialError> {
 
 fn store_err(e: rusqlite::Error) -> IntegrationCredentialError {
     IntegrationCredentialError::Store(e.to_string())
-}
-
-fn now_ms() -> i64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|elapsed| elapsed.as_millis() as i64)
-        .unwrap_or(0)
 }
 
 fn new_id(conn: &Connection) -> Result<String, IntegrationCredentialError> {
@@ -732,10 +720,6 @@ mod tests {
         assert_eq!(unique.len(), ids.len());
     }
 
-    #[test]
-    fn http_client_is_shared() {
-        assert!(std::ptr::eq(http_client(), http_client()));
-    }
     use std::cell::RefCell;
 
     fn cache() -> SecretCache {

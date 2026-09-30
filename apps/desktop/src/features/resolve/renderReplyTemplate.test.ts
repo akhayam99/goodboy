@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { renderReplyTemplate, replyTemplateProblems } from './renderReplyTemplate';
 import { REPLY_TEMPLATE_FIXED_DEFAULT, REPLY_TEMPLATE_NO_CHANGE_DEFAULT } from './replySettings';

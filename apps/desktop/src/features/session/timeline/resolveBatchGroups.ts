@@ -6,9 +6,9 @@ import type {
 import type { ResolveActivityFacts } from './resolveActivity';
 import { resolveBatchSummary, type ResolveBatchRef } from './resolveBatchSummary';
 
-export const RESOLVE_BATCH_MIN_MEMBERS = 2;
+const RESOLVE_BATCH_MIN_MEMBERS = 2;
 
-export const resolveBatchEntryId = ({ batchId }: { readonly batchId: string }): string =>
+const resolveBatchEntryId = ({ batchId }: { readonly batchId: string }): string =>
   `batch:${batchId}`;
 
 type Params = {

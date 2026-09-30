@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { ProjectId, WorkspaceGitStatus, WorkspaceId } from '@goodboy/types';
 import { railSubtitles } from './railSubtitles';

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { mockIPC } from '@tauri-apps/api/mocks';
-import { IconButton } from '@goodboy/ui';
+import { IconButton, PaneShell } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
@@ -10,7 +10,6 @@ import { InboxList } from '../../../../features/inbox/components/InboxStudio/Inb
 import { InboxStudioLayout } from '../../../../features/inbox/components/InboxStudio/InboxStudioLayout';
 import { NO_INBOX_FILTERS, inboxFacetCounts } from '../../../../features/inbox/kindFilter';
 import { orderInboxRecords } from '../../../../features/inbox/orderInboxRecords';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { useAppStore } from '../../../../store';
 import type { ProjectId } from '@goodboy/types';
 import { groupByDay } from '../../../../shared/utils/groupByDay';

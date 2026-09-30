@@ -14,12 +14,7 @@ export const INBOX_KIND_FILTERS: ReadonlyArray<InboxKindFilter> = [
 
 export type InboxTypeFacet = Exclude<InboxKindFilter, 'all'>;
 
-export const INBOX_TYPE_FACETS: ReadonlyArray<InboxTypeFacet> = [
-  'issue',
-  'pr-mr',
-  'thread',
-  'error',
-];
+const INBOX_TYPE_FACETS: ReadonlyArray<InboxTypeFacet> = ['issue', 'pr-mr', 'thread', 'error'];
 
 export const INBOX_KIND_PROVIDERS: Record<InboxTypeFacet, ReadonlyArray<InboxProvider>> = {
   issue: ['github', 'gitlab', 'linear', 'jira'],
@@ -56,11 +51,7 @@ type MatchesProjectParams = {
   readonly project: ProjectId | null;
 };
 
-export const PROJECT_MAPPED_PROVIDERS: ReadonlyArray<InboxProvider> = [
-  'sentry',
-  'github',
-  'gitlab',
-];
+const PROJECT_MAPPED_PROVIDERS: ReadonlyArray<InboxProvider> = ['sentry', 'github', 'gitlab'];
 
 type ProviderParams = {
   readonly provider: InboxProvider;
@@ -119,7 +110,7 @@ type MatchesViewParams = {
   readonly view: InboxView;
 };
 
-export const matchesView = ({ record, view }: MatchesViewParams): boolean => {
+const matchesView = ({ record, view }: MatchesViewParams): boolean => {
   switch (view) {
     case 'all':
       return true;

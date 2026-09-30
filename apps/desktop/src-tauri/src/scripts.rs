@@ -89,7 +89,7 @@ pub fn shutdown(registry: &ScriptRegistry) {
         if let Some(leader_pid) = run.child.process_id() {
             crate::terminal::terminate_pty_session(leader_pid);
         }
-        let _ = run.child.kill();
+        crate::logging::note_kill_failure("script kill", run.child.kill());
     }
 }
 
@@ -286,6 +286,7 @@ async fn spawn_script_blocking(request: ScriptSpawnRequest) -> Result<(), Script
 /// returns immediately. Output is streamed as `script-output` events (base64
 /// chunks). A `script-exit` event fires when the process exits or is killed.
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn workspace_script_run(
     app: AppHandle,
     state: State<'_, Db>,
@@ -322,6 +323,7 @@ pub async fn workspace_script_run(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn workspace_script_run_adhoc(
     app: AppHandle,
     registry: State<'_, ScriptRegistry>,
@@ -376,7 +378,7 @@ pub async fn workspace_script_cancel(
     if let Some(slot) = slot {
         if let Ok(mut guard) = slot.lock() {
             if let Some(mut run) = guard.take() {
-                let _ = run.child.kill();
+                crate::logging::note_kill_failure("script kill", run.child.kill());
                 // Dropping `run.master` sends SIGHUP to the pty process group.
             }
         }

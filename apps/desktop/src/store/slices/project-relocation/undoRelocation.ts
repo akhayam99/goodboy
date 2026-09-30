@@ -1,3 +1,4 @@
+import { formatError } from '@goodboy/ui';
 import { updateProjectIdentity } from '@goodboy/db';
 import type { IsoDateTime } from '@goodboy/types';
 import { projectRelocationUndo } from '../../../features/workspace/projectRelocation';
@@ -48,7 +49,7 @@ export const undoRelocation = (set: SetFn, get: GetFn) => {
     } catch (error: unknown) {
       set({
         projectRelocationPhase: 'error',
-        projectRelocationError: error instanceof Error ? error.message : String(error),
+        projectRelocationError: formatError(error),
       });
     }
   };

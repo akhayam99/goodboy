@@ -30,14 +30,14 @@ export type ReviewFacts = {
   readonly isError: boolean;
 };
 
-export const PUSHING_REASON = 'Pushing now.';
+const PUSHING_REASON = 'Pushing now.';
 
 const EMPTY_NOTES: ReadonlyArray<DiffComment> = [];
 
 export const draftFixesLabel = ({ fresh }: { readonly fresh: number }): string =>
   fresh === 1 ? 'Draft a fix' : `Draft fixes for ${fresh}`;
 
-export const pushLabel = ({
+const pushLabel = ({
   accepted,
   failed,
 }: {

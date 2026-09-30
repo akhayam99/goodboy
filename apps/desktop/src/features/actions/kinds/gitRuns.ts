@@ -1,6 +1,6 @@
 import type { MountId, SessionId } from '@goodboy/types';
 import type { ReviewTargetOutcome } from '../../../store/slices/review-navigation/types';
-import { ensure, worktreeStatusKey } from '../../session/hooks/useWorktreeStatuses/cache';
+import { ensure, worktreeStatusKey } from '../../../store/slices/worktreeStatuses/cache';
 import { REVIEW_TARGET_REASON_COPY } from '../../review/reviewTargetCopy';
 import { worktreeAbortRebase } from '../../worktree/worktree';
 import type { ActionEnv } from '../types';
@@ -26,10 +26,7 @@ export const plural = ({
   readonly many: string;
 }): string => `${count} ${count === 1 ? one : many}`;
 
-export const refreshWorktreeStatus = async ({
-  worktreePath,
-  baseBranch,
-}: StatusParams): Promise<void> => {
+const refreshWorktreeStatus = async ({ worktreePath, baseBranch }: StatusParams): Promise<void> => {
   await ensure({
     key: worktreeStatusKey({ worktreePath, baseBranch: baseBranch ?? undefined }),
     worktreePath,

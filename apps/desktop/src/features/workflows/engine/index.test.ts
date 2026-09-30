@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import type { Workflow } from '@goodboy/types';
 import {
@@ -183,6 +184,21 @@ describe('workflow authoring engine', () => {
     });
     expect(changed.model).toBe('');
     expect(changed.effort).toBe('high');
+  });
+
+  it('keeps the effort of a Cursor step on gemini-3.1-pro, whose Gemini axis does not apply', () => {
+    const step = addStep({ steps: [] })[0];
+    expect(step).toBeDefined();
+    if (step === undefined) {
+      return;
+    }
+    const changed = stepDraftWithModel({
+      step: { ...step, effort: 'medium' },
+      provider: 'cursor',
+      model: 'gemini-3.1-pro',
+      recommendedModel: 'gemini-3.1-pro',
+    });
+    expect(changed.effort).toBe('medium');
   });
 
   it('returns workflow and step field errors', () => {

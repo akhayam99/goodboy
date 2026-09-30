@@ -1,6 +1,7 @@
 import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import type { AppState } from '../../../store/types';
+import { isTurnStateLive } from '../../session/agent-lifecycle';
 
 type SelectParams = {
   readonly state: AppState;
@@ -10,7 +11,7 @@ type SelectParams = {
 const isProviderTurnRunning = ({ state, providerId }: SelectParams): boolean => {
   const liveRunIds = new Set<string>();
   for (const turn of Object.values(state.agentTurnState)) {
-    if (turn.kind === 'running' || turn.kind === 'blocked') {
+    if ('runId' in turn && isTurnStateLive({ turnState: turn, includeBlocked: true })) {
       liveRunIds.add(turn.runId);
     }
   }

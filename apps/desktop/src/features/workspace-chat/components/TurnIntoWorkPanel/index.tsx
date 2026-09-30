@@ -5,6 +5,7 @@ import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core';
 import {
   Button,
   FormActions,
+  formatError,
   IconButton,
   Input,
   KbdPill,
@@ -40,6 +41,7 @@ import { DraftedBy } from './DraftedBy';
 import { ProjectField } from './ProjectField';
 import { RunsOnField } from './RunsOnField';
 import { SessionField } from './SessionField';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Mode = 'new' | 'add';
 
@@ -210,7 +212,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
         .map((project) => project.id),
     [pickedProjectIds, projects, brief],
   );
-  const target = sessions.find((session) => session.id === sessionId) ?? null;
+  const target = sessionById(sessions, sessionId) ?? null;
   const canStart =
     brief !== null &&
     brief.goal.trim() !== '' &&
@@ -262,7 +264,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
         setAgentDraft,
       });
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : String(failure));
+      setError(formatError(failure));
       setIsStarting(false);
     }
   };

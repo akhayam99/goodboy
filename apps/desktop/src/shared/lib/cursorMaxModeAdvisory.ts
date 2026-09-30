@@ -1,4 +1,4 @@
-import { STORAGE_PREFIXES } from './storage-keys';
+import { STORAGE_PREFIXES, persistedPref } from './storage-keys';
 
 type ModelParams = {
   readonly accountId: string;
@@ -31,38 +31,23 @@ const notify = ({}: EmptyParams): void => {
   window.dispatchEvent(new Event(EVENT_NAME));
 };
 
+const advisoryPref = ({ accountId, model }: ModelParams) =>
+  persistedPref<boolean>({
+    key: storageKey({ accountId, model }),
+    parse: (raw) => raw === '1',
+    serialize: () => '1',
+    fallback: false,
+  });
+
 export const cursorMaxModeAdvisory: Advisory = {
-  has: ({ accountId, model }) => {
-    if (typeof localStorage === 'undefined') {
-      return false;
-    }
-    try {
-      return localStorage.getItem(storageKey({ accountId, model })) === '1';
-    } catch {
-      return false;
-    }
-  },
+  has: ({ accountId, model }) => advisoryPref({ accountId, model }).read(),
   mark: ({ accountId, model }) => {
-    if (typeof localStorage === 'undefined') {
-      return;
-    }
-    try {
-      localStorage.setItem(storageKey({ accountId, model }), '1');
-      notify({});
-    } catch {
-      return;
-    }
+    advisoryPref({ accountId, model }).write(true);
+    notify({});
   },
   clear: ({ accountId, model }) => {
-    if (typeof localStorage === 'undefined') {
-      return;
-    }
-    try {
-      localStorage.removeItem(storageKey({ accountId, model }));
-      notify({});
-    } catch {
-      return;
-    }
+    advisoryPref({ accountId, model }).clear();
+    notify({});
   },
   clearAll: ({}) => {
     if (typeof localStorage === 'undefined') {

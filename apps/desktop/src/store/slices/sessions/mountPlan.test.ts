@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, describe, expect, it } from 'vitest';
 import type {
   IsoDateTime,
@@ -8,6 +9,7 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
+import { DEFAULT_BRANCH_PREFIX } from '../../../features/settings/settings';
 import { emptyOverrides } from '../../storyHarness';
 import { forgetMaterializationSeed, rememberMaterializationSeed } from './materializationSeeds';
 import { mountPlan, type MountPlanState } from './mountPlan';
@@ -137,6 +139,74 @@ describe('mountPlan', () => {
 
     expect(plan?.slug).toBe('session-ab12cd34');
     expect(plan?.targetPath).toBe('/repos/goodboy/.goodboy/worktrees/session-ab12cd34-mount-1');
+  });
+
+  it('takes the next ordinal when another live session already owns the branch', () => {
+    const other = { ...session, id: 'session-other' as SessionId };
+    rememberMaterializationSeed({
+      sessionId: SID,
+      seed: { sessionSlug: '812-fix-the-login-flow' },
+    });
+    const state = stateWith({
+      sessions: [session, other],
+      sessionProjectMounts: {
+        'session-other': [{ branch: `${DEFAULT_BRANCH_PREFIX}/812-fix-the-login-flow` }],
+      } as unknown as MountPlanState['sessionProjectMounts'],
+    });
+
+    const plan = mountPlan({ state, sessionId: SID, projectId: PID, mountId: MID });
+
+    expect(plan?.slug).toBe('812-fix-the-login-flow-2');
+    expect(plan?.baseSlug).toBe('812-fix-the-login-flow');
+    expect(plan?.branch).toBe(`${plan?.prefix}/812-fix-the-login-flow-2`);
+    expect(plan?.targetPath).toBe(
+      '/repos/goodboy/.goodboy/worktrees/812-fix-the-login-flow-2-mount-1',
+    );
+  });
+
+  it('keeps the slug when the taken branch belongs to the session itself', () => {
+    rememberMaterializationSeed({
+      sessionId: SID,
+      seed: { sessionSlug: '812-fix-the-login-flow' },
+    });
+    const state = stateWith({
+      sessionProjectMounts: {
+        [SID]: [{ branch: `${DEFAULT_BRANCH_PREFIX}/812-fix-the-login-flow` }],
+      } as unknown as MountPlanState['sessionProjectMounts'],
+    });
+
+    const plan = mountPlan({ state, sessionId: SID, projectId: PID, mountId: MID });
+
+    expect(plan?.slug).toBe('812-fix-the-login-flow');
+  });
+
+  it('never renames an adopted branch', () => {
+    const other = { ...session, id: 'session-other' as SessionId };
+    rememberMaterializationSeed({
+      sessionId: SID,
+      seed: { sessionSlug: 'fix-parser', existingBranch: `${DEFAULT_BRANCH_PREFIX}/fix-parser` },
+    });
+    const state = stateWith({
+      sessions: [session, other],
+      sessionProjectMounts: {
+        'session-other': [{ branch: `${DEFAULT_BRANCH_PREFIX}/fix-parser` }],
+      } as unknown as MountPlanState['sessionProjectMounts'],
+    });
+
+    const plan = mountPlan({ state, sessionId: SID, projectId: PID, mountId: MID });
+
+    expect(plan?.slug).toBe('fix-parser');
+    expect(plan?.adoptedBranch).toBe(`${DEFAULT_BRANCH_PREFIX}/fix-parser`);
+  });
+
+  it('cuts a long explicit slug at the final budget before checking for a collision', () => {
+    const long = `812-${'harborline-checkout-totals-drift-after-refund'}`;
+    rememberMaterializationSeed({ sessionId: SID, seed: { sessionSlug: long } });
+
+    const plan = mountPlan({ state: stateWith(), sessionId: SID, projectId: PID, mountId: MID });
+
+    expect(plan?.slug).toBe('812-harborline-checkout-totals-drift-after-refun');
+    expect(plan?.slug.length).toBeLessThanOrEqual(48);
   });
 
   it('returns null when the project does not belong to the session workspace', () => {

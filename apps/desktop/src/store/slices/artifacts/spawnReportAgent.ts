@@ -24,14 +24,13 @@ import { workflowAvailabilitySnapshot } from '../../../features/workflows/workfl
 import type { SpawnFocus } from '../session-view/spawnFocus';
 import type { ArtifactRunMount } from './artifactScoutRun';
 import type { GetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
-export const REPORT_SCOUT_PENDING_NOTE =
-  'the scouts had not reported yet when this row was written';
+const REPORT_SCOUT_PENDING_NOTE = 'the scouts had not reported yet when this row was written';
 
 const REPORT_SCOUT_ROOT = '.';
 
-export const REPORT_SCOUT_SKIP_BUDGET =
-  'this session is budget blocked, so no scout read a repository';
+const REPORT_SCOUT_SKIP_BUDGET = 'this session is budget blocked, so no scout read a repository';
 
 export type ReportRouting = {
   readonly provider: ProviderId;
@@ -88,7 +87,7 @@ export const resolveReportRouting = ({
   if (picked !== null) {
     return picked;
   }
-  const session = state.sessions?.find((entry) => entry.id === sessionId) ?? null;
+  const session = sessionById(state.sessions, sessionId) ?? null;
   const overrides =
     session === null ? null : (state.workspaceOverrides?.[session.workspaceId] ?? null);
   const usable = usableProviders({ state, sessionId });
@@ -144,7 +143,7 @@ export const spawnReportAgent = (get: GetFn) => {
     focus = 'agent',
   }: SpawnReportAgentParams): Promise<AgentId> => {
     const state = get();
-    const session = state.sessions?.find((entry) => entry.id === sessionId) ?? null;
+    const session = sessionById(state.sessions, sessionId) ?? null;
     if (session === null) {
       throw new Error(`session not found: ${sessionId}`);
     }

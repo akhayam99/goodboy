@@ -1,5 +1,5 @@
 import { parseResetOutcome } from '@goodboy/core';
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import type { CodexResetResult, GetFn, SetFn } from './types';
 
 const attemptKey = (get: GetFn): string =>
@@ -9,7 +9,7 @@ export const consumeCodexResetCredit =
   (set: SetFn, get: GetFn) => async (): Promise<CodexResetResult> => {
     const idempotencyKey = attemptKey(get);
     set({ codexPendingReset: { idempotencyKey } });
-    const response = await invoke<unknown>('codex_consume_reset_credit', {
+    const response = await invokeCommand<unknown>('codex_consume_reset_credit', {
       idempotencyKey,
     }).catch(() => null);
     const outcome = parseResetOutcome({ value: response });

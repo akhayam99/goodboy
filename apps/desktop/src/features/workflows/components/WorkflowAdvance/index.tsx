@@ -8,6 +8,7 @@ import { agentRoutingOverrides } from '../../agentRoutingOverrides';
 import { useWorkflowRunAdvance } from '../../hooks/useWorkflowRunAdvance';
 import { WorkflowNextStepCta } from '../WorkflowNextStepCta';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -24,12 +25,10 @@ export const WorkflowAdvance = ({ sessionId, run, workflow }: Props) => {
   const { state, stepAgents } = useWorkflowRunAdvance({ sessionId, run, workflow });
   const roleModels = useSessionRoleModels({ sessionId });
   const sessionProvider = useAppStore(
-    (state) =>
-      state.sessions?.find((candidate) => candidate.id === sessionId)?.providerPreference
-        .defaultProvider ?? null,
+    (state) => sessionById(state.sessions, sessionId)?.providerPreference.defaultProvider ?? null,
   );
   const sessionEffort = useAppStore(
-    (state) => state.sessions?.find((candidate) => candidate.id === sessionId)?.effort ?? null,
+    (state) => sessionById(state.sessions, sessionId)?.effort ?? null,
   );
   const activateWorkflowAgent = useAppStore((state) => state.activateWorkflowAgent);
   const emitNotification = useAppStore((state) => state.emitNotification);

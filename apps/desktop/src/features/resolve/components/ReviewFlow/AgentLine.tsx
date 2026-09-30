@@ -2,11 +2,12 @@ import { useMemo } from 'react';
 import { stripControlMarkers } from '@goodboy/core';
 import { WorkNode, cn } from '@goodboy/ui';
 import type { ResolveAttempt } from '@goodboy/types';
-import { useTranscript } from '../../../../store/transcript';
+import { useTranscript } from '../../../../store/slices/transcripts/selectors';
 import { reduceTranscript } from '../../../chat/utils/transcript-items';
 import { modelLabel } from '../../../chat/utils/chat-constants';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
-import { formatDuration } from '../../../chat/utils/format-duration';
+import { useNow } from '../../../../shared/hooks/useNow';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
+import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 import { REVIEW_COMMENT_NODE, type ReviewCommentState } from '../../reviewCommentState';
 import { REVIEW_FLOW_LABEL } from '../../reviewFlowCopy';
 import { STATE_WORD_TONE } from './stateTone';
@@ -27,6 +28,7 @@ const lastLineOf = ({ text }: { readonly text: string }): string =>
 
 export const AgentLine = ({ attempt, state, word, attemptNumber = null }: Props) => {
   const transcript = useTranscript(attempt.agentId);
+  const now = useNow(30_000);
   const isDrafting = state === 'drafting';
   const isWaiting = isDrafting && attempt.phase === 'queued' && attempt.batchId !== null;
   const live = useMemo(() => {
@@ -56,7 +58,7 @@ export const AgentLine = ({ attempt, state, word, attemptNumber = null }: Props)
     ...(hasNumber && attempt.effort !== null
       ? [`${attempt.effort.charAt(0).toUpperCase()}${attempt.effort.slice(1)}`]
       : []),
-    duration ?? formatRelativeAge({ fromIso: new Date(at).toISOString() }),
+    duration ?? formatAge({ from: at, now }),
   ];
   return (
     <div className="flex min-w-0 flex-col gap-1">

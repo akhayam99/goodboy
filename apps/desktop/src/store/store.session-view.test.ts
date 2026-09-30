@@ -1,12 +1,11 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Session, SessionId, SessionStage, WorkspaceId } from '@goodboy/types';
 import type { SessionGithubState } from './types';
-import {
-  createSessionViewSlice,
-  deriveSessionStage,
-  sortAndGroupSessions,
-  type GroupedSessions,
-} from './slices/session-view';
+import { createSessionViewSlice } from './slices/session-view';
+import { deriveSessionStage } from './slices/session-view/deriveSessionStage';
+import { sortAndGroupSessions } from './slices/session-view/sortAndGroupSessions';
+import type { GroupedSessions } from './slices/session-view/types';
 import type { SessionViewPrefs } from '@goodboy/types';
 import { STORAGE_PREFIXES } from '../shared/lib/storage-keys';
 import { STAGE_ORDER } from './slices/session-view/types';
@@ -246,15 +245,13 @@ describe('deriveSessionStage', () => {
   });
 
   it('running state beats attention signals', () => {
-    const session: Session = {
-      ...base(1),
-      state: {
-        kind: 'running',
-        runId: 'run-1' as never,
-        startedAt: '2024-01-01T00:00:00.000Z' as never,
-      },
-    };
-    const info = deriveSessionStage({ session, pr: null, ...signals, openQuestionCount: 2 });
+    const info = deriveSessionStage({
+      session: base(1),
+      pr: null,
+      ...signals,
+      openQuestionCount: 2,
+      hasRunningAgent: true,
+    });
     expect(info.stage).toBe('running');
   });
 
@@ -395,12 +392,13 @@ describe('deriveSessionStage', () => {
     expect(info.stage).toBe('running');
   });
 
-  it('starting state → running', () => {
-    const session: Session = {
-      ...base(1),
-      state: { kind: 'starting', startedAt: '2024-01-01T00:00:00.000Z' as never },
-    };
-    const info = deriveSessionStage({ session, pr: null, ...signals });
+  it('a live agent turn → running', () => {
+    const info = deriveSessionStage({
+      session: base(1),
+      pr: null,
+      ...signals,
+      hasRunningAgent: true,
+    });
     expect(info).toEqual({
       stage: 'running',
       reason: 'agent running',
@@ -655,10 +653,10 @@ function buildSlice(): { actions: SliceState; getState: () => SliceState } {
     return state;
   }
 
-  const actions = createSessionViewSlice(
-    set as Parameters<typeof createSessionViewSlice>[0],
-    get as Parameters<typeof createSessionViewSlice>[1],
-  );
+  const actions = createSessionViewSlice({
+    set: set as Parameters<typeof createSessionViewSlice>[0]['set'],
+    get: get as Parameters<typeof createSessionViewSlice>[0]['get'],
+  });
   state = { ...actions };
 
   return { actions, getState: get };
@@ -856,43 +854,6 @@ describe('createSessionViewSlice, per-workspace isolation', () => {
     actions.getSessionViewPrefs(WS2);
     actions.setSessionSort(WS, 'updatedAt');
     expect(getState().sessionViewPrefs[WS2]?.sort).toBe('createdAt');
-  });
-});
-
-describe('sortAndGroupSessions, performance', () => {
-  it('handles 2000 sessions in under 500ms', () => {
-    const sessions = Array.from({ length: 2000 }, (_, i) => {
-      return makeSession(sid(i), {
-        goal: `Goal ${Math.random().toString(36).slice(2)}`,
-        createdAt: `2024-01-${String((i % 30) + 1).padStart(2, '0')}T00:00:00.000Z`,
-        updatedAt: `2024-01-${String((i % 30) + 1).padStart(2, '0')}T0${i % 10}:00:00.000Z`,
-      });
-    });
-
-    const stages: Record<SessionId, SessionStage> = {};
-    sessions.forEach((s, i) => {
-      stages[s.id] = (['attention', 'running', 'review', 'building', 'done'] as const)[i % 5]!;
-    });
-
-    const githubStates = githubWith(
-      sessions.map((s, i) => ({
-        id: s.id,
-        pr:
-          i % 5 === 0
-            ? null
-            : makePr({ isDraft: i % 3 === 0, reviewDecision: i % 7 === 0 ? 'approved' : null }),
-      })),
-    );
-
-    const start = performance.now();
-    for (const sort of ['updatedAt', 'goal', 'createdAt'] as const) {
-      for (const group of ['none', 'stage', 'pr'] as const) {
-        sortAndGroupSessions(sessions, { sort, group }, githubStates, stages);
-      }
-    }
-    const elapsed = performance.now() - start;
-
-    expect(elapsed).toBeLessThan(3000);
   });
 });
 

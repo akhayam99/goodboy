@@ -3,9 +3,11 @@ import { Bug, SlidersHorizontal } from 'lucide-react';
 import type { Notification } from '@goodboy/db';
 import { cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { formatAbsoluteDateTime, formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
+import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { openReportSheet } from '../../../bug-report/openReportSheet';
 import { RetryWithPicker } from './RetryWithPicker';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 type Props = {
   readonly notifications: ReadonlyArray<Notification>;
@@ -15,6 +17,7 @@ const GHOST =
   'inline-flex h-5.5 items-center gap-1 rounded-sm px-1.5 text-secondary text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground';
 
 export const NotificationRowDetail = ({ notifications }: Props) => {
+  const now = useNow(30_000);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [latest, ...older] = notifications;
   if (latest == null) {
@@ -50,10 +53,10 @@ export const NotificationRowDetail = ({ notifications }: Props) => {
               <span className="truncate">{entry.title}</span>
               <time
                 dateTime={entry.ts}
-                title={formatAbsoluteDateTime({ iso: entry.ts })}
+                title={formatDateTime({ at: entry.ts, hasYear: true })}
                 className="shrink-0 text-meta text-faint-foreground"
               >
-                {formatRelativeAge({ fromIso: entry.ts })}
+                {formatAge({ from: entry.ts, now })}
               </time>
             </li>
           ))}

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   Agent,
@@ -31,10 +32,12 @@ vi.mock('@goodboy/core', async (importOriginal) => {
   return { ...actual, summarizeStepOutput: summarizeStepOutputSpy };
 });
 
-vi.mock('@goodboy/db', () => ({
-  updateSessionWorkflowStep: vi.fn(),
-  insertOpenQuestion: insertOpenQuestionSpy,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    updateSessionWorkflowStep: vi.fn(),
+    insertOpenQuestion: insertOpenQuestionSpy,
+  }),
+);
 
 vi.mock('../../../shared/lib/db', () => ({
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
@@ -46,7 +49,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
 }));
 
 import { finalizeWorkflowStep } from './finalizeWorkflowStep';
-import { SUMMARY_TIMEOUT_MS } from '../../summarizeAgentOutput';
+import { SUMMARY_TIMEOUT_MS } from './summarizeAgentOutput';
 import { clearMountContinuations, queueMountContinuation } from '../turn/mountContinuations';
 
 const SESSION_ID = 'session-1' as SessionId;

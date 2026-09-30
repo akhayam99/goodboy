@@ -1,8 +1,7 @@
 import { useCallback, useMemo, type ReactNode } from 'react';
-import { Button, Eyebrow, cn } from '@goodboy/ui';
+import { Button, Eyebrow, cn, DogMascot } from '@goodboy/ui';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
-import { DogMascot } from '../../../../shared/components/DogMascot';
 import { SECTION_ICONS } from '../../../../shared/components/section-icons';
 import { classifyAgent } from '../../../session/agent-kind';
 import { useAppStore } from '../../../../store';

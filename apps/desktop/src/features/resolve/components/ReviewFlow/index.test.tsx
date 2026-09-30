@@ -13,16 +13,30 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
-import { ToastProvider } from '../../../../app/components/Toast';
+import { ToastProvider } from '../../../../shared/components/Toast';
 import {
   EXPANDED_THREAD_ID,
   SESSION,
   seedResolveScene,
-  type ResolveFailure,
 } from '../../../../app/components/MockScene/scenes/resolveSeed';
+import type { AgentId, ResolveBatch } from '@goodboy/types';
 import { ReviewFlow } from './index';
 
 type StoreState = ReturnType<StoryStore['getState']>;
+
+const BATCH: ResolveBatch = {
+  id: 'batch-1',
+  sessionId: SESSION.id,
+  threadIds: [],
+  launchChoice: {
+    provider: 'anthropic',
+    model: 'claude-sonnet-5',
+    effort: null,
+    commitStyle: null,
+    hint: null,
+  },
+  createdAt: 1,
+};
 
 let useAppStore: StoryStore;
 let restore: Partial<StoreState> = {};
@@ -79,7 +93,7 @@ const mountFailed = async ({
   failure,
   threadId = FAILED_THREAD_ID,
 }: {
-  readonly failure: ResolveFailure;
+  readonly failure: 'run' | 'history';
   readonly threadId?: string;
 }): Promise<void> => {
   seedResolveScene({ expandedThreadId: threadId, failure });
@@ -161,11 +175,11 @@ describe('Review as one flow', () => {
   });
 
   it('never starts an agent by opening Review, and Fix opens the strip before anything runs', async () => {
-    const spawnAgent = vi.fn(async () => 'agent-1');
-    const createResolveBatch = vi.fn(async () => ({ id: 'batch-1' }));
+    const spawnAgent = vi.fn<StoreState['spawnAgent']>(async () => 'agent-1' as AgentId);
+    const createResolveBatch = vi.fn<StoreState['createResolveBatch']>(async () => BATCH);
     stub({
-      spawnAgent: spawnAgent as unknown as StoreState['spawnAgent'],
-      createResolveBatch: createResolveBatch as unknown as StoreState['createResolveBatch'],
+      spawnAgent: spawnAgent,
+      createResolveBatch: createResolveBatch,
     });
     await mount({ threadId: NOT_STARTED_THREAD_ID });
 
@@ -202,11 +216,11 @@ describe('Review as one flow', () => {
   });
 
   it('starts with the submit chord and sends the hint, model and commit style on the batch', async () => {
-    const spawnAgent = vi.fn(async () => 'agent-1');
-    const createResolveBatch = vi.fn(async () => ({ id: 'batch-1' }));
+    const spawnAgent = vi.fn<StoreState['spawnAgent']>(async () => 'agent-1' as AgentId);
+    const createResolveBatch = vi.fn<StoreState['createResolveBatch']>(async () => BATCH);
     stub({
-      spawnAgent: spawnAgent as unknown as StoreState['spawnAgent'],
-      createResolveBatch: createResolveBatch as unknown as StoreState['createResolveBatch'],
+      spawnAgent: spawnAgent,
+      createResolveBatch: createResolveBatch,
     });
     await mount({ threadId: NOT_STARTED_THREAD_ID });
 
@@ -218,11 +232,9 @@ describe('Review as one flow', () => {
     fireEvent.keyDown(hint, { key: 'Enter', code: 'Enter', ctrlKey: true });
 
     await waitFor(() => expect(createResolveBatch).toHaveBeenCalledOnce());
-    const [call] = createResolveBatch.mock.calls[0] as unknown as [
-      { threadIds: ReadonlyArray<string>; launchChoice: Record<string, unknown> },
-    ];
-    expect(call.threadIds).toEqual([NOT_STARTED_THREAD_ID]);
-    expect(call.launchChoice).toMatchObject({
+    const [call] = createResolveBatch.mock.calls[0] ?? [];
+    expect(call?.threadIds).toEqual([NOT_STARTED_THREAD_ID]);
+    expect(call?.launchChoice).toMatchObject({
       commitStyle: 'fixup',
       hint: 'Keep the public API unchanged',
     });
@@ -279,11 +291,11 @@ describe('Review as one flow', () => {
   });
 
   it('starts one agent per selected comment in one batch from the strip', async () => {
-    const spawnAgent = vi.fn(async () => 'agent-1');
-    const createResolveBatch = vi.fn(async () => ({ id: 'batch-1' }));
+    const spawnAgent = vi.fn<StoreState['spawnAgent']>(async () => 'agent-1' as AgentId);
+    const createResolveBatch = vi.fn<StoreState['createResolveBatch']>(async () => BATCH);
     stub({
-      spawnAgent: spawnAgent as unknown as StoreState['spawnAgent'],
-      createResolveBatch: createResolveBatch as unknown as StoreState['createResolveBatch'],
+      spawnAgent: spawnAgent,
+      createResolveBatch: createResolveBatch,
     });
     await mount({ threadId: null, selectable: true });
 
@@ -302,10 +314,8 @@ describe('Review as one flow', () => {
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(selected.length));
     expect(createResolveBatch).toHaveBeenCalledOnce();
-    const [call] = createResolveBatch.mock.calls[0] as unknown as [
-      { threadIds: ReadonlyArray<string> },
-    ];
-    expect([...call.threadIds].sort()).toEqual([...selected].sort());
+    const [call] = createResolveBatch.mock.calls[0] ?? [];
+    expect([...(call?.threadIds ?? [])].sort()).toEqual([...selected].sort());
     await waitFor(() =>
       expect(useAppStore.getState().reviewSelection[SESSION.id] ?? []).toEqual([]),
     );
@@ -337,11 +347,11 @@ describe('Review as one flow', () => {
   });
 
   it('accepts with A: marks it, publishes nothing, and moves to the next open comment', async () => {
-    const accept = vi.fn(async () => undefined);
-    const publish = vi.fn(async () => undefined);
+    const accept = vi.fn<StoreState['acceptResolveQueueItem']>(async () => undefined);
+    const publish = vi.fn<StoreState['publishConversations']>(async () => ({ kind: 'missing' }));
     stub({
-      acceptResolveQueueItem: accept as unknown as StoreState['acceptResolveQueueItem'],
-      publishConversations: publish as unknown as StoreState['publishConversations'],
+      acceptResolveQueueItem: accept,
+      publishConversations: publish,
     });
     await mount({ threadId: EXPANDED_THREAD_ID });
 
@@ -411,8 +421,8 @@ describe('Review as one flow', () => {
   });
 
   it('replies without a change from one text box: R, type, Enter', async () => {
-    const refuse = vi.fn(async () => undefined);
-    stub({ refuseResolveQueueItem: refuse as unknown as StoreState['refuseResolveQueueItem'] });
+    const refuse = vi.fn<StoreState['refuseResolveQueueItem']>(async () => undefined);
+    stub({ refuseResolveQueueItem: refuse });
     await mount({ threadId: EXPANDED_THREAD_ID });
 
     row(/retryPolicy\.ts:42/).focus();
@@ -428,11 +438,11 @@ describe('Review as one flow', () => {
   });
 
   it('skips with S and undoes a skip from the waiting group', async () => {
-    const defer = vi.fn(async () => undefined);
-    const takeUp = vi.fn(async () => undefined);
+    const defer = vi.fn<StoreState['deferResolveQueueItem']>(async () => undefined);
+    const takeUp = vi.fn<StoreState['takeUpResolveQueueItem']>(async () => undefined);
     stub({
-      deferResolveQueueItem: defer as unknown as StoreState['deferResolveQueueItem'],
-      takeUpResolveQueueItem: takeUp as unknown as StoreState['takeUpResolveQueueItem'],
+      deferResolveQueueItem: defer,
+      takeUpResolveQueueItem: takeUp,
     });
     await mount({ threadId: EXPANDED_THREAD_ID });
 
@@ -516,8 +526,8 @@ describe('Review as one flow', () => {
       drift: [],
       blocker: null,
     };
-    const prepare = vi.fn(async () => preview);
-    const publish = vi.fn(async () => ({
+    const prepare = vi.fn<StoreState['preparePublication']>(async () => preview);
+    const publish = vi.fn<StoreState['publishConversations']>(async () => ({
       kind: 'done' as const,
       pushed: true,
       pushedHead: 'a41c9e2aaaa',
@@ -531,8 +541,8 @@ describe('Review as one flow', () => {
       error: null,
     }));
     stub({
-      preparePublication: prepare as unknown as StoreState['preparePublication'],
-      publishConversations: publish as unknown as StoreState['publishConversations'],
+      preparePublication: prepare,
+      publishConversations: publish,
     });
     await mount({ threadId: EXPANDED_THREAD_ID });
 
@@ -611,11 +621,11 @@ describe('Review of a failed run', () => {
   });
 
   it('retries on the model the reviewer picked and keeps the earlier attempt in one line', async () => {
-    const spawnAgent = vi.fn(async () => 'agent-retry');
-    const setAgentConfig = vi.fn(async () => undefined);
+    const spawnAgent = vi.fn<StoreState['spawnAgent']>(async () => 'agent-retry' as AgentId);
+    const setAgentConfig = vi.fn<StoreState['setAgentConfig']>(async () => undefined);
     stub({
-      spawnAgent: spawnAgent as unknown as StoreState['spawnAgent'],
-      setAgentConfig: setAgentConfig as unknown as StoreState['setAgentConfig'],
+      spawnAgent: spawnAgent,
+      setAgentConfig: setAgentConfig,
     });
     await mountFailed({ failure: 'history' });
     act(() => {
@@ -633,16 +643,16 @@ describe('Review of a failed run', () => {
     fireEvent.click(failed.getByRole('button', { name: /^Try again on Opus 5/ }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
-    const args = (spawnAgent.mock.calls[0] as unknown as [string, Record<string, unknown>])[1];
-    expect(args.model).toBe('claude-opus-5');
-    expect(args.effort).toBe('high');
+    const args = spawnAgent.mock.calls[0]?.[1];
+    expect(args?.model).toBe('claude-opus-5');
+    expect(args?.effort).toBe('high');
   });
 
   it('opens the hint field and sends it with the retry', async () => {
-    const spawnAgent = vi.fn(async () => 'agent-retry');
+    const spawnAgent = vi.fn<StoreState['spawnAgent']>(async () => 'agent-retry' as AgentId);
     stub({
-      spawnAgent: spawnAgent as unknown as StoreState['spawnAgent'],
-      setAgentConfig: vi.fn(async () => undefined) as unknown as StoreState['setAgentConfig'],
+      spawnAgent: spawnAgent,
+      setAgentConfig: vi.fn<StoreState['setAgentConfig']>(async () => undefined),
     });
     await mountFailed({ failure: 'run' });
 
@@ -654,8 +664,8 @@ describe('Review of a failed run', () => {
     fireEvent.click(within(comment()).getByRole('button', { name: 'Try again with the hint' }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
-    const args = (spawnAgent.mock.calls[0] as unknown as [string, { initialPrompt: string }])[1];
-    expect(args.initialPrompt).toContain('Use ON CONFLICT');
+    const args = spawnAgent.mock.calls[0]?.[1];
+    expect(args?.initialPrompt).toContain('Use ON CONFLICT');
   });
 
   it('puts Reply yourself, Skip and Open transcript in the menu', async () => {
@@ -668,9 +678,11 @@ describe('Review of a failed run', () => {
   });
 
   it('asks before syncing a push that failed on a moved remote and stops on a conflict', async () => {
-    const syncBranchWithRemote = vi.fn(async () => ({ kind: 'conflict' as const }));
+    const syncBranchWithRemote = vi.fn<StoreState['syncBranchWithRemote']>(async () => ({
+      kind: 'conflict',
+    }));
     stub({
-      syncBranchWithRemote: syncBranchWithRemote as unknown as StoreState['syncBranchWithRemote'],
+      syncBranchWithRemote: syncBranchWithRemote,
     });
     await mountFailed({ failure: 'run', threadId: 'PRRT_thread_log_redact' });
 

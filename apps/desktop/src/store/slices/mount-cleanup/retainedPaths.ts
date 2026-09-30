@@ -12,6 +12,7 @@ import type { IsoDateTime, RetainedWorktreePath, SessionId } from '@goodboy/type
 import { tauriDatabase } from '../../../shared/lib/db';
 import { worktreeDirectorySize } from '../../../features/worktree/worktree';
 import type { GetFn, SetFn } from './types';
+import { projectById } from '../projects/projectIndex';
 
 export type WorktreeOwnership = {
   readonly knownPaths: ReadonlyArray<string>;
@@ -99,7 +100,7 @@ export const reconcileWorktreeOwnership = async ({
         mountId: row.mountId,
         diskState: outcome === 'present' ? 'present' : 'unchecked',
       });
-      const project = projects.find((candidate) => candidate.id === row.projectId);
+      const project = projectById(projects, row.projectId);
       transfers.push(toRetained({ row, repoRoot: project?.rootPath ?? '', now }));
     }
     try {

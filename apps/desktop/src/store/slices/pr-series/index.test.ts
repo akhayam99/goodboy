@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MountId, PrSeriesId, ProjectId, SessionId } from '@goodboy/types';
 
@@ -34,42 +35,45 @@ const h = vi.hoisted(() => {
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
-vi.mock('@goodboy/db', () => ({
-  insertPrSeries: vi.fn(async ({ series }: { series: SeriesRow }) => {
-    h.series.set(series.id, { ...series });
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    insertPrSeries: vi.fn(async ({ series }: { series: SeriesRow }) => {
+      h.series.set(series.id, { ...series });
+    }),
+    getPrSeries: vi.fn(
+      async ({ sessionId, seriesId }: { sessionId: string; seriesId: string }) =>
+        [...h.series.values()].find((row) => row.id === seriesId && row.sessionId === sessionId) ??
+        null,
+    ),
+    listPrSeries: vi.fn(
+      async ({ sessionId, projectId }: { sessionId: string; projectId?: string }) =>
+        [...h.series.values()]
+          .filter((row) => row.sessionId === sessionId)
+          .filter((row) => projectId === undefined || row.projectId === projectId)
+          .map((row) => ({
+            ...row,
+            members: [...h.members.values()]
+              .filter((entry) => entry.seriesId === row.id)
+              .sort((a, b) => a.ordinal - b.ordinal)
+              .map((entry) => ({ ...entry, request: null })),
+          })),
+    ),
+    listPrSeriesMembers: vi.fn(async ({ seriesId }: { seriesId: string }) =>
+      [...h.members.values()]
+        .filter((entry) => entry.seriesId === seriesId)
+        .sort((a, b) => a.ordinal - b.ordinal),
+    ),
+    upsertPrSeriesMember: vi.fn(async ({ member }: { member: MemberRow }) => {
+      const previous = [...h.members.values()].find(
+        (entry) => entry.seriesId === member.seriesId && entry.ordinal === member.ordinal,
+      );
+      if (previous !== undefined) {
+        h.members.delete(previous.id);
+      }
+      h.members.set(member.id, { ...member });
+    }),
   }),
-  getPrSeries: vi.fn(
-    async ({ sessionId, seriesId }: { sessionId: string; seriesId: string }) =>
-      [...h.series.values()].find((row) => row.id === seriesId && row.sessionId === sessionId) ??
-      null,
-  ),
-  listPrSeries: vi.fn(async ({ sessionId, projectId }: { sessionId: string; projectId?: string }) =>
-    [...h.series.values()]
-      .filter((row) => row.sessionId === sessionId)
-      .filter((row) => projectId === undefined || row.projectId === projectId)
-      .map((row) => ({
-        ...row,
-        members: [...h.members.values()]
-          .filter((entry) => entry.seriesId === row.id)
-          .sort((a, b) => a.ordinal - b.ordinal)
-          .map((entry) => ({ ...entry, request: null })),
-      })),
-  ),
-  listPrSeriesMembers: vi.fn(async ({ seriesId }: { seriesId: string }) =>
-    [...h.members.values()]
-      .filter((entry) => entry.seriesId === seriesId)
-      .sort((a, b) => a.ordinal - b.ordinal),
-  ),
-  upsertPrSeriesMember: vi.fn(async ({ member }: { member: MemberRow }) => {
-    const previous = [...h.members.values()].find(
-      (entry) => entry.seriesId === member.seriesId && entry.ordinal === member.ordinal,
-    );
-    if (previous !== undefined) {
-      h.members.delete(previous.id);
-    }
-    h.members.set(member.id, { ...member });
-  }),
-}));
+);
 
 import { createPrSeriesSlice } from './index';
 import { resolveParentRequest } from './parentRequest';
@@ -127,7 +131,7 @@ const makeSlice = () => {
     const patch = typeof updater === 'function' ? updater(state) : updater;
     Object.assign(state, patch);
   });
-  const slice = createPrSeriesSlice(set as never, (() => state) as never);
+  const slice = createPrSeriesSlice({ set: set as never, get: (() => state) as never });
   return { state, slice };
 };
 

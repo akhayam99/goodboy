@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect } from 'react';
 
-export type FakeArgs = Readonly<Record<string, unknown>> | undefined;
+type FakeArgs = Readonly<Record<string, unknown>> | undefined;
 
 export type FakeHandlers = Readonly<Record<string, (args: FakeArgs) => unknown>>;
 

@@ -69,7 +69,7 @@ export type NavigationStack = {
   readonly index: number;
 };
 
-export type NavigateMode = 'push' | 'replace';
+type NavigateMode = 'push' | 'replace';
 
 export type NavigateParams = {
   readonly to: PlaceRequest;

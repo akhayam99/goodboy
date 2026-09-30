@@ -1,3 +1,4 @@
+import { formatError } from '@goodboy/ui';
 import type { ExportGroups } from '@goodboy/types';
 import {
   chooseExportFile,
@@ -32,7 +33,7 @@ export const loadBackupExportPreview = (set: SetFn, get: GetFn) => {
     } catch (error: unknown) {
       set({
         backupExportPhase: 'error',
-        backupExportError: error instanceof Error ? error.message : String(error),
+        backupExportError: formatError(error),
       });
     }
   };
@@ -75,7 +76,7 @@ export const writeBackupExport = (set: SetFn, get: GetFn) => {
     } catch (error: unknown) {
       set({
         backupExportPhase: 'error',
-        backupExportError: error instanceof Error ? error.message : String(error),
+        backupExportError: formatError(error),
       });
       return null;
     }

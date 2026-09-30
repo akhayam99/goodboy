@@ -17,7 +17,7 @@ const ARTIFACT_CONTEXT_ROW_IDS = [
   'size',
 ] as const;
 
-export type ArtifactContextRowId = (typeof ARTIFACT_CONTEXT_ROW_IDS)[number];
+type ArtifactContextRowId = (typeof ARTIFACT_CONTEXT_ROW_IDS)[number];
 
 export type ArtifactContextRowState = 'included' | 'partial' | 'missing';
 

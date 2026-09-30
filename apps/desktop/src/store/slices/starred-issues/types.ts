@@ -2,26 +2,26 @@ import type { SessionExternalTaskProvider, StarredIssue, WorkspaceId } from '@go
 import type { InboxRecord } from '../../../features/inbox/types';
 import type { StarredIssuesState } from './state';
 
-export type { GetFn, SetFn } from '../../slice-types';
+export type { SetFn } from '../../slice-types';
 
-export type WorkspaceParams = {
+type WorkspaceParams = {
   readonly workspaceId: WorkspaceId;
 };
 
-export type StarRecordParams = WorkspaceParams & {
+type StarRecordParams = WorkspaceParams & {
   readonly record: InboxRecord;
 };
 
-export type UnstarParams = WorkspaceParams & {
+type UnstarParams = WorkspaceParams & {
   readonly provider: SessionExternalTaskProvider;
   readonly externalId: string;
 };
 
-export type RestoreStarsParams = WorkspaceParams & {
+type RestoreStarsParams = WorkspaceParams & {
   readonly issues: ReadonlyArray<StarredIssue>;
 };
 
-export type RefreshStarsParams = WorkspaceParams & {
+type RefreshStarsParams = WorkspaceParams & {
   readonly force?: boolean;
 };
 

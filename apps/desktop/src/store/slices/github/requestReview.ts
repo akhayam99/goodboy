@@ -1,5 +1,5 @@
 import type { SessionId } from '@goodboy/types';
-import { tauriGhRunner } from '../../../features/github/github';
+import { tauriGhRunner } from '../../../features/integrations/github/github';
 import { prWriteContext } from './prWriteContext';
 import type { GetFn, SetFn } from './types';
 import { ReportedError } from '../notifications/reportedError';

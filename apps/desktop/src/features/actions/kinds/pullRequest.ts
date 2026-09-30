@@ -19,7 +19,7 @@ import { sessionPlace } from '../../../store/slices/navigation/place';
 import { selectPrWrite } from '../../../store/slices/pr-writes/selectPrWrite';
 import { sessionMountViews } from '../../../store/slices/project-mounts/mountRowModel';
 import { resolveSessionRepo } from '../../../store/slices/worktrees/resolveSessionRepo';
-import { isPrDraftAgentRunning } from '../../github/prDraftAgent';
+import { isPrDraftAgentRunning } from '../../integrations/github/prDraftAgent';
 import { describePrWriteInFlight } from '../../review/prLifecycle';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import type {

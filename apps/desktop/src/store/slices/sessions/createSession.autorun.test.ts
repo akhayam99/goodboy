@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   Agent,
@@ -24,15 +25,17 @@ const NOW = '2026-09-18T00:00:00.000Z' as IsoDateTime;
 
 const workspace = { id: WS_ID, name: 'ws', createdAt: NOW, updatedAt: NOW } as unknown as Workspace;
 
-vi.mock('@goodboy/db', () => ({
-  getWorkspaceById: vi.fn(async () => workspace),
-  listProjectsForWorkspace: vi.fn(async () => []),
-  insertSession: insertSessionSpy,
-  deleteSession: vi.fn(async () => undefined),
-  upsertSessionExternalTask: vi.fn(async () => undefined),
-  setSetting: vi.fn(async () => undefined),
-  upsertContextSlot: vi.fn(async () => undefined),
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    getWorkspaceById: vi.fn(async () => workspace),
+    listProjectsForWorkspace: vi.fn(async () => []),
+    insertSession: insertSessionSpy,
+    deleteSession: vi.fn(async () => undefined),
+    upsertSessionExternalTask: vi.fn(async () => undefined),
+    setSetting: vi.fn(async () => undefined),
+    upsertContextSlot: vi.fn(async () => undefined),
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentInsert: invokeAgentInsertSpy,

@@ -683,6 +683,11 @@ A popover opened from inside the command palette does not need a higher token.
 palette's own layer, so the popover stacks at `z-popover` within the palette's
 `z-command-palette` context and renders above its panel.
 
+`useDropdown` also holds an escape layer while its popover is open, so Esc closes
+the popover before whatever it opened from, and it returns focus to the trigger
+when Esc closed it from inside. Pass `isEscapeEnabled: false` only when the
+surface must keep Esc for itself.
+
 ## Primitives
 
 The register taxonomy, and the rule that all registers share one family, live
@@ -841,10 +846,9 @@ app below it has crashed.
 
 ## Pane anatomy
 
-The package ships the pane primitives `PANE_RHYTHM`, `PageColumn`, `ScrollFade`,
-and `Divider`, not a pane frame. `PaneShell` is a desktop component at
-`apps/desktop/src/shared/components/PaneShell/`, built from those primitives,
-and it is the one wrapper every main pane uses. It is a scroll region whose
+The package ships the pane primitives `PANE_RHYTHM`, `PageColumn`, `ScrollFade`
+and `Divider`, and the pane frame built from them. `PaneShell` lives at
+`packages/ui/src/components/PaneShell/` and is the one wrapper every main pane uses. It is a scroll region whose
 header and body share one `PageColumn` with the session trail band above it. It has one `h1` per surface.
 `meta` holds counts and totals in `tabular-nums`, never a control. The header
 row wraps, so actions drop under the title instead of squeezing it. The pane
@@ -906,7 +910,7 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 - A status row that describes the same block, like the orchestrator strip under a failed step or an open question, stays on a neutral rail, so only the next action strip carries the tone.
 - The `tabs` slot of the detail layout keeps the tab strip at its own width. It never stretches across the header.
 - A section-scoped action uses `SectionHeader.action`. A field control uses `FieldRow`. Neither one moves itself up into global chrome.
-- A region that can start several kinds of work shows one primary, never a row of peer buttons. `SplitButton` joins the primary half, which its owner renders through `primary({ className })` so a popover can anchor to it, with a chevron half that opens the less frequent starts as a menu. Each menu item names the kind and carries a one-line `description` and a concept `tone` on its icon. `OverflowMenu` and `SplitButton` render items through the same `MenuItems`.
+- A region that can start several kinds of work shows one primary, never a row of peer buttons. The less frequent starts sit behind an `OverflowMenu`. Each menu item names the kind and carries a one-line `description` and a concept `tone` on its icon, and `OverflowMenu` renders the items through `MenuItems`.
 - The new session draft follows the same rule, with one exception: an empty session asks one question with three choices on one row, as tabs (`SegmentedTabs` `card` variant, glyph, title, one line, a check on the selected one) instead of a stacked list, because there are exactly three doors and they read better side by side. Only the selected tab's panel, and only its primary, shows. An item that cannot work yet is left out, never shown disabled. A grid of tiles is otherwise not an action zone.
 - The session overview's actions carry a second exception: a frequent alternative to the primary sits as one secondary button beside it, not folded into the menu. `OverviewActions` shows a secondary Run workflow (Open run once one is active) next to the primary Start agent, with `OverflowMenu` labeled Create holding only the rarer starts (Report, Wireframe). Still one primary; the secondary is the one alternative common enough to earn its own button.
 - An overflow menu that has to confirm one of its items in place renders `MenuItems` inside its own `AnchoredPopover` and swaps to a plain `InlineConfirm`, as the orchestrator strip does for **Stop now**.
@@ -1304,7 +1308,7 @@ label loses characters before a count disappears.
 `COLLAPSED_RAIL_WIDTH` (44px, exported by `AppShell`) and its buttons center on
 22px. The top bar starts at `--titlebar-inset`, which clears the macOS traffic
 lights, so it no longer shares an axis with the rail:
-`collapsed-rail-width.test.ts` pins both. The sidebar toggle is therefore not
+`collapsed-rail-width.test.tsx` pins both. The sidebar toggle is therefore not
 in the top bar: it is the first `size-8` button of the collapsed rail and of
 the open sidebar's first row, on the same axis in both states
 (`sidebar-toggle-axis.test.tsx`). Widening the rail to fix a padding is

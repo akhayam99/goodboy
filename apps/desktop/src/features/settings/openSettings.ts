@@ -1,4 +1,4 @@
-import type { SettingsFocus } from './components/SettingsStudio/types';
+import type { SettingsFocus } from './settingsFocus';
 
 type Params = Pick<SettingsFocus, 'scope' | 'section'>;
 

@@ -3,6 +3,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { sessionTitle } from '../../../session/sessionTitle';
 import type { PaletteScope } from '../../types';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 export type ScopeInfo = {
   readonly title: string;
@@ -30,7 +31,7 @@ export const useScopeInfo = (scope: PaletteScope | null): ScopeInfo | null => {
       );
     }
     const session =
-      s.sessions.find((candidate) => candidate.id === scope.sessionId) ??
+      sessionById(s.sessions, scope.sessionId) ??
       Object.values(s.archivedSessions)
         .flat()
         .find((candidate) => candidate.id === scope.sessionId) ??

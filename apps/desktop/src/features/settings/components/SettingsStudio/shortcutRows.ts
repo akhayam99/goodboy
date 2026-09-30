@@ -15,7 +15,7 @@ export type ShortcutRow = {
 
 export const SHORTCUT_COLUMNS: ReadonlyArray<ReadonlyArray<ShortcutGroup>> = [
   ['general', 'workspaces', 'navigate', 'session'],
-  ['views', 'review', 'window'],
+  ['views', 'review', 'diff', 'window'],
 ];
 
 const SHORTCUT_IDS = Object.keys(SHORTCUTS) as ReadonlyArray<ShortcutId>;

@@ -11,7 +11,7 @@ import {
 } from '@goodboy/ui';
 import type { ArtifactListRow as Row } from '../../artifactListRows';
 import { ARTIFACT_KIND_MARKER_LABEL } from '../../artifactPresentation';
-import { formatCompactDateTime } from '../../../../shared/utils/formatCompactDateTime';
+import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ArtifactKindGlyph } from './ArtifactKindGlyph';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
@@ -90,7 +90,7 @@ export const ArtifactListRow = ({ row, onOpen, onStop, onRetry, target }: Props)
           {row.revision === null ? '' : `rev ${row.revision}`}
         </span>
         <span className={WORK_META_COLUMN.time}>
-          {row.at === null ? '' : formatCompactDateTime({ iso: row.at })}
+          {row.at === null ? '' : formatDateTime({ at: row.at })}
         </span>
       </span>
       <span className={WORK_META_COLUMN.action}>

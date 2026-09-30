@@ -24,7 +24,7 @@ import {
 import { WIREFRAME_SCOUTS } from './wireframeScoutRoles';
 import { selectResolvedSettings } from '../../store/slices/overrides/selectResolvedSettings';
 
-export type WireframeScoutGate =
+type WireframeScoutGate =
   | Readonly<{ kind: 'skipped'; reason: string }>
   | Readonly<{
       kind: 'ready';
@@ -88,7 +88,7 @@ export const wireframeScoutGate = ({
   return {
     kind: 'ready',
     mounts,
-    modelLabel: `${PROVIDER_LABEL[provider]} ${modelLabel(model)}`,
+    modelLabel: `${PROVIDER_LABEL[provider]} ${modelLabel(model, provider)}`,
     routing,
   };
 };

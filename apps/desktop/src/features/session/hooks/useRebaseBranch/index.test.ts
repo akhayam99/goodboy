@@ -11,7 +11,7 @@ const { showToast, state } = vi.hoisted(() => ({
     sessionProjectMounts: {
       'session-1': [{ mountId: 'mount-1', projectId: 'project-1', baseBranch: 'main' }],
     } as Record<string, ReadonlyArray<unknown>>,
-    projects: [{ id: 'project-1', baseBranch: 'main' }],
+    projects: [{ id: 'project-1', baseBranch: 'main' as string | null }],
     rebaseBranch: vi.fn(async (): Promise<string> => 'rebased'),
     reportError: vi.fn(async (_params: unknown) => undefined),
   },
@@ -21,7 +21,7 @@ vi.mock('../../../../store', () => ({
   useAppStore: <T>(selector: (store: typeof state) => T) => selector(state),
 }));
 
-vi.mock('../../../../app/components/Toast', () => ({
+vi.mock('../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast }),
 }));
 
@@ -41,6 +41,53 @@ afterEach(() => {
   state.rebaseBranch.mockClear();
   state.reportError.mockClear();
   showToast.mockClear();
+});
+
+describe('useRebaseBranch base branch', () => {
+  const rebaseMessage = async () => {
+    const { result } = renderHook(() =>
+      useRebaseBranch({ sessionId, mountId, status: behindBy(4) }),
+    );
+    await act(async () => {
+      await result.current.run({ mountId });
+    });
+    return (showToast.mock.calls[0]?.[0] as { readonly message: string }).message;
+  };
+
+  const seed = ({
+    mountBase,
+    projectBase,
+  }: {
+    readonly mountBase: string | null;
+    readonly projectBase: string | null;
+  }) => {
+    state.sessionProjectMounts = {
+      'session-1': [{ mountId: 'mount-1', projectId: 'project-1', baseBranch: mountBase }],
+    };
+    state.projects = [{ id: 'project-1', baseBranch: projectBase }];
+  };
+
+  afterEach(() => {
+    seed({ mountBase: 'main', projectBase: 'main' });
+  });
+
+  it('names the mount base in the done toast', async () => {
+    seed({ mountBase: 'develop', projectBase: 'main' });
+
+    expect(await rebaseMessage()).toContain('rebased on develop.');
+  });
+
+  it('names the project base when the mount has none', async () => {
+    seed({ mountBase: null, projectBase: 'develop' });
+
+    expect(await rebaseMessage()).toContain('rebased on develop.');
+  });
+
+  it('never says main when no base is known', async () => {
+    seed({ mountBase: null, projectBase: null });
+
+    expect(await rebaseMessage()).toContain('rebased on its base branch.');
+  });
 });
 
 describe('useRebaseBranch', () => {

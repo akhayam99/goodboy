@@ -3,7 +3,7 @@ import { ArrowUp } from 'lucide-react';
 import { Button, cn } from '@goodboy/ui';
 import type { BranchCommit, HistoryGraph } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { HISTORY_GRAPH } from '../../historyGraphGeometry';
 import type { HistoryDropTarget } from '../../useHistoryDrag';
 import type { RowPositions } from '../../useRowPositions';
@@ -58,9 +58,9 @@ export const HistoryNowList = ({
   const forkAge =
     graph === null
       ? ''
-      : formatRelativeAge({
-          fromIso: new Date(graph.mergeBase.timestamp * 1000).toISOString(),
-          nowMs,
+      : formatAge({
+          from: new Date(graph.mergeBase.timestamp * 1000).toISOString(),
+          now: nowMs,
         });
   const mainDots = (graph?.mainCommits ?? [])
     .slice(1, MAIN_DOT_LIMIT + 1)

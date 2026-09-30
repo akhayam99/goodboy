@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type {
   Agent,
@@ -336,6 +337,23 @@ describe('buildReportContext', () => {
     });
     expect(context.text).toContain('abc1234 feat: reports');
     expect(context.text).toContain('+12 -3');
+  });
+
+  it('names the default branch instead of main when the mount has no base', () => {
+    const context = buildReportContext({
+      ...baseParams,
+      diff: {
+        mountName: 'goodboy',
+        baseBranch: null,
+        headSha: 'abc1234',
+        commits: [],
+        additions: 1,
+        deletions: 0,
+        paths: ['a.ts'],
+      },
+    });
+    expect(context.text).toContain('base the default branch');
+    expect(context.text).not.toContain('base main');
   });
 
   it('says plainly when diff, checks and events are missing', () => {

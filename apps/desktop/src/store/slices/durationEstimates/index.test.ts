@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentId, MeasuredTurnSpan, SessionId, WorkspaceId } from '@goodboy/types';
 
@@ -49,7 +50,7 @@ const harness = () => {
     state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) };
   };
   const get = () => state;
-  const slice = createDurationEstimatesSlice(set as never, get as never);
+  const slice = createDurationEstimatesSlice({ set: set as never, get: get as never });
   state = { ...slice };
   return { slice, read: () => state };
 };

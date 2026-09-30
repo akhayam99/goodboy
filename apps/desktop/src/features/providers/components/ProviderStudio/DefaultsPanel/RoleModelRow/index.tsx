@@ -200,7 +200,8 @@ export const RoleModelRow = ({
             providerId: next,
             model: nextModel,
             effort:
-              clampEffortForModel({ model: nextModel, effort: resolved.effort }) ?? resolved.effort,
+              clampEffortForModel({ model: nextModel, effort: resolved.effort, provider: next }) ??
+              resolved.effort,
           });
         }}
         onModel={(nextModel) => {
@@ -212,7 +213,11 @@ export const RoleModelRow = ({
             providerId: pendingProvider.current,
             model: nextModel,
             effort:
-              clampEffortForModel({ model: nextModel, effort: resolved.effort }) ?? resolved.effort,
+              clampEffortForModel({
+                model: nextModel,
+                effort: resolved.effort,
+                provider: pendingProvider.current,
+              }) ?? resolved.effort,
           });
         }}
         {...(resolved.isOverride && {

@@ -1,8 +1,7 @@
 import { AlertTriangle, ArrowUpRight } from 'lucide-react';
 import type { StarredIssue } from '@goodboy/types';
-import { FOCUS_RING, Tooltip, cn } from '@goodboy/ui';
+import { FOCUS_RING, Tooltip, cn, StarToggle } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { StarToggle } from '../../../../shared/components/StarToggle';
 import { openUrl } from '../../../../shared/lib/editor';
 import {
   IntegrationGlyph,

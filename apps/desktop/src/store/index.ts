@@ -1,50 +1,60 @@
 export { useAppStore, type ProviderSpendEntry } from './store';
 
+export { agentHasUnread } from './slices/agents/agentHasUnread';
 export {
-  agentHasUnread,
-  useCurrentSession,
-  useCurrentWorkspace,
-  useDiffComments,
+  useNonResolverStandaloneAgents,
+  useSessionHasUnread,
   useSessionLastTurnFinishedAt,
-  useMountDiffStats,
+} from './slices/agents/selectors';
+export { useDiffComments } from './slices/diff-comments/selectors';
+export { useRunningHere } from './slices/live-work/selectors';
+export {
+  useSessionOpenQuestions,
   useSessionAnsweredQuestions,
   useSessionDismissedQuestions,
-  useSessionById,
-  useSessionCost,
-  useSessionLoading,
-  useIsSessionCollectionLoaded,
-  useNonResolverStandaloneAgents,
-  useSessionOpenQuestions,
-  useSessionPlans,
-  useExecutedAgentRouting,
-  useRunSpendUsd,
-  useSessionPrFetchState,
-  useSessionSlackDrafts,
-  useSessionSlots,
-  useSessionSlotsLoad,
+} from './slices/open-questions/selectors';
+export { useSessionPlans } from './slices/plans/selectors';
+export { useSessionPrFetchState } from './slices/github/selectors';
+export { useMountDiffStats, type MountDiffStat } from './slices/project-mounts/useMountDiffStats';
+export { useProjectMountsForSessions } from './slices/project-mounts/useProjectMountsForSessions';
+export {
   useSessionStageInfo,
   useSessionStages,
   useSessionViewPrefs,
-  useSelectedProjectIds,
-  useProjectFilteredSessions,
-  useProjectMountsForSessions,
-  useTelemetryForSessions,
-  useSlotHistory,
-  useSlotHistoryCount,
-  useSessions,
   useSortedGroupedSessions,
   useStageGroupedSessions,
   useWorkspaceRollup,
-  useSummarizerStatus,
-  useSessionHasUnread,
-  useWorkspaceHasUnread,
-  useHasUnreadElsewhere,
-  useWorkspaces,
+} from './slices/session-view/selectors';
+export {
+  useProjectFilteredSessions,
+  useSelectedProjectIds,
+} from './slices/sessionFilters/selectors';
+export {
+  useCurrentSession,
+  useExecutedAgentRouting,
+  useIsSessionCollectionLoaded,
+  useRunSpendUsd,
+  useSessionById,
+  useSessionCost,
+  useSessionLoading,
+  useSessions,
+  useTelemetryForSessions,
+} from './slices/sessions/selectors';
+export { useHasUnreadElsewhere, useWorkspaceHasUnread } from './slices/sidebar/selectors';
+export { useSessionSlackDrafts } from './slices/slack-drafts/selectors';
+export {
+  useSessionSlots,
+  useSessionSlotsLoad,
+  useSlotHistory,
+  useSlotHistoryCount,
+} from './slices/slots/selectors';
+export { useSummarizerStatus } from './slices/summaries/selectors';
+export {
+  useCurrentWorkspace,
   useDisconnectedWorkspaces,
-  useRunningHere,
-  type MountDiffStat,
-} from './selectors';
-export { useTranscript } from './transcript';
+  useWorkspaces,
+} from './slices/workspaces/selectors';
+export { useTranscript } from './slices/transcripts/selectors';
 export type { SessionStudio, LensKind, DiffFocus } from './slices/session-view';
 export { NO_PROJECT_FILTER_ID } from './slices/sessionFilters';
 export { BOARD_PLACE, agentPlace, sessionPlace } from './slices/navigation/place';

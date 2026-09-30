@@ -80,7 +80,7 @@ pub fn shutdown(registry: &TerminalRegistry) {
         if let Some(leader_pid) = session.child.process_id() {
             terminate_pty_session(leader_pid);
         }
-        let _ = session.child.kill();
+        crate::logging::note_kill_failure("terminal session kill", session.child.kill());
     }
 }
 
@@ -375,7 +375,7 @@ pub async fn terminal_close(
                 if let Some(leader_pid) = session.child.process_id() {
                     terminate_pty_session(leader_pid);
                 }
-                let _ = session.child.kill();
+                crate::logging::note_kill_failure("terminal session kill", session.child.kill());
             }
         }
     }
@@ -421,7 +421,7 @@ mod tests {
             collected.push_str(&String::from_utf8_lossy(&buf[..n]));
             if let Some(rest) = collected.split("BACKGROUND:").nth(1) {
                 let digits: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
-                if digits.len() > 0 && rest.len() > digits.len() {
+                if !digits.is_empty() && rest.len() > digits.len() {
                     return digits.parse().unwrap();
                 }
             }
@@ -461,7 +461,7 @@ mod tests {
         );
 
         terminate_pty_session(leader_pid);
-        let _ = child.kill();
+        crate::logging::note_kill_failure("terminal probe kill", child.kill());
         let _ = child.wait();
 
         let mut still_alive = true;

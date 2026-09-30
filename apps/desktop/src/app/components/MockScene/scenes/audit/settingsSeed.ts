@@ -17,7 +17,7 @@ const clock = sceneClock({ anchor: '2026-09-22T10:12:00.000Z' });
 export const SETTINGS_WORKSPACE_ID = 'mock-settings-workspace-harborline' as WorkspaceId;
 const SETTINGS_NOW = clock.iso({ at: '2026-09-22T10:12:00.000Z' });
 
-export const SETTINGS_OVERRIDES: OverrideSettings = {
+const SETTINGS_OVERRIDES: OverrideSettings = {
   defaultProviderId: 'anthropic',
   defaultBranchPrefix: 'hb',
   defaultVerbosity: 'normal',

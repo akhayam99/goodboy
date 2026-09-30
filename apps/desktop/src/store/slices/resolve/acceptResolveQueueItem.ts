@@ -38,7 +38,7 @@ export const PARTIAL_ACCEPTANCE =
 export const STALE_APPROVAL = 'Approval revision is stale';
 export const ACCEPT_CONFLICT =
   'This fix collides with one accepted before it. Redo it on top of the branch';
-export const ACCEPT_CONFLICT_REASON = 'failed:accept_conflict';
+const ACCEPT_CONFLICT_REASON = 'failed:accept_conflict';
 const NO_LONGER_APPLIES = 'the fix no longer applies on the branch';
 
 type ConflictParams = SliceParams &

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ResolveThread, SessionId } from '@goodboy/types';
+import type { MountId, ProjectId, ResolveThread, SessionId, WorkspaceId } from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
 
 const h = vi.hoisted(() => ({
   ghCalls: [] as Array<ReadonlyArray<string>>,
@@ -19,7 +20,7 @@ vi.mock('../../../features/integrations/bitbucket/client', () => ({
   ),
 }));
 
-vi.mock('../../../features/github/github', () => ({
+vi.mock('../../../features/integrations/github/github', () => ({
   tauriGhRunner: {
     run: vi.fn(async (args: ReadonlyArray<string>) => {
       h.ghCalls.push(args);
@@ -72,53 +73,114 @@ vi.mock('../../../features/integrations/gitlab/client', () => ({
   }),
 }));
 
+import type { BitbucketPullRequest } from '../../../features/integrations/bitbucket/client';
+import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
+import { useAppStore } from '../../store';
 import { reviewSourceFor } from './reviewSourceFor';
 import type { GetFn } from './types';
 
 const SESSION = 'session' as SessionId;
 
-const get = (() => ({
-  sessions: [{ id: SESSION, workspaceId: 'workspace' }],
+const WORKSPACE_ID = 'workspace' as WorkspaceId;
+const MOUNT_ID = 'mount' as MountId;
+const PROJECT_ID = 'project' as ProjectId;
+const BITBUCKET_MOUNT_ID = 'bbmount' as MountId;
+const BITBUCKET_PROJECT_ID = 'bbproject' as ProjectId;
+const GITLAB_MR_URL = 'https://gitlab.example.com/harborline/notify-relay/-/merge_requests/57';
+const BITBUCKET_PR_URL = 'https://bitbucket.org/northwind/storefront-web/pull-requests/12';
+
+const GITLAB_MR: GitlabMergeRequest = {
+  id: 1,
+  iid: 57,
+  projectId: 1,
+  title: 'Retry on 503',
+  description: null,
+  state: 'opened',
+  webUrl: GITLAB_MR_URL,
+  sourceBranch: 'hl/relay-retry',
+  targetBranch: 'main',
+  draft: false,
+  hasConflicts: false,
+  mergeStatus: 'can_be_merged',
+  updatedAt: '2026-09-04T14:20:00.000Z',
+};
+
+const BITBUCKET_PR: BitbucketPullRequest = {
+  id: 12,
+  title: 'Recompute the cart total',
+  description: '',
+  state: 'OPEN',
+  createdOn: '2026-09-04T14:20:00.000Z',
+  updatedOn: '2026-09-04T14:20:00.000Z',
+  sourceBranch: 'nw/cart-total',
+  sourceCommit: null,
+  destinationBranch: 'main',
+  destinationCommit: null,
+  author: null,
+  reviewers: [],
+  participants: [],
+  closeSourceBranch: false,
+  mergeCommit: null,
+  commentCount: 0,
+  taskCount: 0,
+  webUrl: BITBUCKET_PR_URL,
+};
+
+const closeResolvedNote = vi.fn(async () => undefined);
+
+const get: GetFn = () => ({
+  ...useAppStore.getInitialState(),
+  sessions: [aSession({ id: SESSION, workspaceId: WORKSPACE_ID })],
   sessionGithub: {},
   sessionGitlabMr: {},
   reviewSourceKeys: {},
   reviewSourceThreads: {},
   mountGithub: {},
   mountGitlabMr: {
-    mount: {
-      mountId: 'mount',
-      projectId: 'project',
+    [MOUNT_ID]: {
+      mr: GITLAB_MR,
+      fetchedAt: null,
+      loading: false,
+      error: null,
+      mountId: MOUNT_ID,
+      projectId: PROJECT_ID,
+      revision: 1,
       host: 'https://gitlab.example.com',
       projectPath: 'harborline/notify-relay',
-      mr: {
-        iid: 57,
-        webUrl: 'https://gitlab.example.com/harborline/notify-relay/-/merge_requests/57',
-      },
+      branch: 'hl/relay-retry',
+      mrs: [],
+      links: [],
     },
   },
   mountBitbucketPr: {
-    bbmount: {
-      mountId: 'bbmount',
-      projectId: 'bbproject',
-      repo: { workspaceSlug: 'northwind', repoSlug: 'storefront-web' },
-      repository: 'northwind/storefront-web',
-      pr: {
-        id: 12,
-        state: 'OPEN',
-        sourceBranch: 'nw/cart-total',
-        webUrl: 'https://bitbucket.org/northwind/storefront-web/pull-requests/12',
+    [BITBUCKET_MOUNT_ID]: {
+      pr: BITBUCKET_PR,
+      fetchedAt: null,
+      loading: false,
+      error: null,
+      mountId: BITBUCKET_MOUNT_ID,
+      projectId: BITBUCKET_PROJECT_ID,
+      revision: 1,
+      host: null,
+      repo: {
+        workspaceId: WORKSPACE_ID,
+        workspaceSlug: 'northwind',
+        repoSlug: 'storefront-web',
+        email: 'ops@northwind.example',
       },
+      repository: 'northwind/storefront-web',
+      branch: 'nw/cart-total',
       prs: [],
+      links: [],
     },
   },
   diffComments: {},
   projects: [],
   sessionProjectMounts: {},
-  sessionMounts: undefined,
   sessionActiveProject: {},
   sessionActiveMount: {},
-  closeResolvedNote: vi.fn(async () => undefined),
-})) as unknown as GetFn;
+  closeResolvedNote,
+});
 
 const row = (overrides: Partial<ResolveThread>): ResolveThread =>
   ({

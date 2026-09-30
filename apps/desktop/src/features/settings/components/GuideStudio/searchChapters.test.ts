@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { GUIDE_CHAPTERS } from './guideChapters';
 import { searchChapters } from './searchChapters';

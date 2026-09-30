@@ -177,7 +177,7 @@ vi.mock('../features/settings/components/SettingsStudio', () => ({
   ),
 }));
 vi.mock('../features/settings/components/GuideStudio', () => ({ GuideStudio: () => null }));
-vi.mock('../app/components/Toast', () => ({
+vi.mock('../shared/components/Toast', () => ({
   ToastProvider: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   useToast: () => ({ showToast: vi.fn() }),
 }));
@@ -223,7 +223,7 @@ vi.mock('../features/impact/components/ImpactStudio', () => ({
 vi.mock('../features/changelog/components/ChangelogStudio', () => ({
   ChangelogStudio: () => <div data-testid="changelog-studio">Changelog</div>,
 }));
-vi.mock('../features/github/github', () => ({ ghCommitDiff: vi.fn() }));
+vi.mock('../features/integrations/github/github', () => ({ ghCommitDiff: vi.fn() }));
 vi.mock('../features/worktree/worktree', () => ({ worktreeDiffCommit: vi.fn() }));
 vi.mock('../features/onboarding/OnboardingWizard', () => ({ OnboardingWizard: () => null }));
 vi.mock('../features/companion/components/CompanionStudio', () => ({
@@ -267,10 +267,14 @@ vi.mock('../store', async () => {
     useCurrentWorkspace: () => (state.currentWorkspaceId === null ? null : workspace),
     useSessionById: () => null,
     useSessions: () => state.sessions,
+    useSessionViewPrefs: () => ({ group: 'none' }),
+    useSortedGroupedSessions: () => [{ key: 'none', sessions: state.sessions }],
     useWorkspaces: () => state.workspaces,
   };
 });
-vi.mock('../features/github/hooks/useGithubPolling', () => ({ useGithubPolling: vi.fn() }));
+vi.mock('../features/integrations/github/hooks/useGithubPolling', () => ({
+  useGithubPolling: vi.fn(),
+}));
 vi.mock('../features/updater/hooks/useUpdaterPolling', () => ({ useUpdaterPolling: vi.fn() }));
 vi.mock('../features/artifacts/hooks/useArtifactMirror', () => ({ useArtifactMirror: vi.fn() }));
 

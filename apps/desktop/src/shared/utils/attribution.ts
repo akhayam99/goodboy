@@ -2,9 +2,9 @@ import type { OverrideSettings } from '@goodboy/types';
 
 export const ATTRIBUTION_TEXT = 'Written by Goodboy';
 
-export type AttributionSyntax = 'markdown' | 'mrkdwn';
+type AttributionSyntax = 'markdown' | 'mrkdwn';
 
-export const ATTRIBUTION_FOOTERS = {
+const ATTRIBUTION_FOOTERS = {
   markdown: `*${ATTRIBUTION_TEXT}*`,
   mrkdwn: `_${ATTRIBUTION_TEXT}_`,
 } as const satisfies Record<AttributionSyntax, string>;

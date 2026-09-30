@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { PageColumn } from '@goodboy/ui';
 import type { ProjectId, SessionBudget, Skill, Workspace, WorkflowRun } from '@goodboy/types';
-import { CreatePrPanel } from '../../../../../features/github/components/PullRequest/CreatePrPanel';
+import { CreatePrPanel } from '../../../../../features/integrations/github/components/PullRequest/CreatePrPanel';
 import { CreateMrForm } from '../../../../../features/integrations/gitlab/MergeRequest/MrDetailPanel/CreateMrForm';
 import { WorkspaceLinkForm } from '../../../../../features/workspace/components/WorkspaceLinkForm';
 import { ConvertWorkspaceDialog } from '../../../../../features/workspace/components/ConvertWorkspaceDialog';

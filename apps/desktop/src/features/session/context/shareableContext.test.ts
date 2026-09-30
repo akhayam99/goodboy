@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { CONTEXT_ORDER, shareableContext } from './shareableContext';
 import { CONTEXT_TABS, CONTEXT_TAB_LABEL } from '../components/ContextDrawer/contextTabs';

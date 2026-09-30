@@ -5,6 +5,7 @@ import { composerPlaceholder } from './composerPlaceholder';
 import { ReplyBar } from './ReplyBar';
 import type { ConversationSource } from './types';
 import type { ConversationModel } from './useConversation';
+import { formatCombo } from '../../keyboard/registry';
 
 type Props = {
   readonly source: ConversationSource;
@@ -73,7 +74,7 @@ export const ConversationComposer = ({ source, model }: Props) => {
         />
         <div className="flex min-w-0 items-center justify-between gap-2 px-2.5 pb-1.5">
           <span className="flex items-center gap-1 text-meta text-faint-foreground">
-            <KbdPill className="h-4 text-meta">⌘↵</KbdPill>
+            <KbdPill className="h-4 text-meta">{formatCombo('cmd+Enter')}</KbdPill>
             to send
           </span>
           <IconButton icon={ArrowUp} label="Send" disabled={isEmpty} onClick={submit} />

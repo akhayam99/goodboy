@@ -31,6 +31,8 @@ const { store, remoteKind } = vi.hoisted(() => ({
     emitNotification: vi.fn(),
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
     detectedEditors: [] as ReadonlyArray<{ binary: string; label: string }>,
+    settings: {} as Record<string, string>,
+    reportError: vi.fn(),
     loadDetectedEditors: vi.fn(async () => undefined),
     terminalTabs: {} as Record<
       string,
@@ -77,13 +79,13 @@ vi.mock('./MountBranchDecision', () => ({
 vi.mock('../../../../worktree/useMountRemoteHostKind', () => ({
   useMountRemoteHostKind: () => remoteKind.current,
 }));
-vi.mock('../../../../../app/components/Toast', () => ({
+vi.mock('../../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
 vi.mock('../../../../../shared/lib/editor', () => ({
   openInEditor: vi.fn(async () => undefined),
 }));
-vi.mock('../../../hooks/useWorktreeStatuses/cache', () => ({
+vi.mock('../../../../../store/slices/worktreeStatuses/cache', () => ({
   ensure: vi.fn(async () => null),
   worktreeStatusKey: () => 'key',
 }));
@@ -237,6 +239,8 @@ const openRequest: NonNullable<MountRowView['request']> = {
   number: 12,
   state: 'open',
   isDraft: false,
+  checks: null,
+  reviewDecision: null,
   url: 'https://github.com/acme/api/pull/12',
   title: 'Split one',
   label: 'PR #12',
@@ -659,7 +663,9 @@ describe('ProjectMountRow lens opening, write destination isolation', () => {
 
     fireEvent.click(screen.getByRole('menuitem', { name: /Open in editor/ }));
 
-    await waitFor(() => expect(openInEditor).toHaveBeenCalledWith({ path: '/api' }));
+    await waitFor(() =>
+      expect(openInEditor).toHaveBeenCalledWith({ path: '/api', editor: 'code' }),
+    );
   });
 });
 

@@ -126,7 +126,7 @@ export type RowReadyStep = {
   readonly stepLabel: string | null;
 };
 
-export type RowFailedStep = {
+type RowFailedStep = {
   readonly stepLabel: string | null;
   readonly isBlocked: boolean;
 };
@@ -135,7 +135,7 @@ export type RowStoppedStep = {
   readonly stepLabel: string | null;
 };
 
-export type RowWaitingQuestion = {
+type RowWaitingQuestion = {
   readonly question: OpenQuestion;
   readonly stepLabel: string | null;
 };

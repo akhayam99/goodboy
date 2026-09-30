@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Plus } from 'lucide-react';
 import { Button, Eyebrow, Listbox } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
@@ -9,12 +8,14 @@ import {
   suggestAfterDaysOf,
 } from '../../../../store/slices/storage/storageSettings';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { usePickFolder } from '../../../../shared/hooks/usePickFolder';
 
 export const StorageCleanupSettings = () => {
   const rawDays = useAppStore((state) => state.settings[STORAGE_SUGGEST_AFTER_KEY]);
   const saveSetting = useAppStore((state) => state.saveSetting);
   const scanStorageRepository = useAppStore((state) => state.scanStorageRepository);
   const reportError = useAppStore((state) => state.reportError);
+  const pickFolder = usePickFolder();
   const [isScanning, setIsScanning] = useState(false);
   const days = suggestAfterDaysOf({
     settings: rawDays === undefined ? {} : { [STORAGE_SUGGEST_AFTER_KEY]: rawDays },
@@ -26,8 +27,8 @@ export const StorageCleanupSettings = () => {
     );
 
   const onScan = async () => {
-    const picked = await openDialog({ directory: true, multiple: false }).catch(() => null);
-    if (typeof picked !== 'string') {
+    const picked = await pickFolder();
+    if (picked === null) {
       return;
     }
     setIsScanning(true);

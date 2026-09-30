@@ -1,5 +1,4 @@
 import { useId, useMemo, useState, type FormEvent } from 'react';
-import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import {
   Button,
   Chip,
@@ -17,14 +16,16 @@ import { AlertTriangle, Folder, FolderGit2, FolderPlus, Layers, Plus, X } from '
 import { useAppStore } from '../../../../store';
 import { initRepo, validateGitRepo } from '../../../../shared/lib/repo';
 import { useChildRepoDetection } from '../../../../shared/hooks/useChildRepoDetection';
+import { usePickFolder } from '../../../../shared/hooks/usePickFolder';
 import { useProjectAdoption } from '../../../../shared/hooks/useProjectAdoption';
 import { DetectedRepoList } from '../../../../shared/components/DetectedRepoList';
 import { ProjectAdoptionNotice } from '../../../../shared/components/ProjectAdoptionNotice';
 import type { ProjectAttachConflict } from '../../../../store/slices/projects/addProject';
 import type { ReconnectCandidate } from '../../../../store/slices/workspaces/checkReconnectCandidate';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { lastPathSegment } from './lastPathSegment';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 export type WorkspaceLinkMode = 'project' | 'workspace';
 
@@ -51,6 +52,7 @@ const CHOICE_OPTIONS = [
 ] as const;
 
 export const WorkspaceLinkForm = ({ onComplete }: Props) => {
+  const now = useNow(30_000);
   const formId = useId();
   const addWorkspace = useAppStore((state) => state.addWorkspace);
   const checkReconnectCandidate = useAppStore((state) => state.checkReconnectCandidate);
@@ -122,10 +124,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
     onComplete({ mode, workspace });
   };
 
-  const pickDirectory = async (): Promise<string | null> => {
-    const picked = await openDialog({ directory: true, multiple: false });
-    return typeof picked === 'string' && picked.length > 0 ? picked : null;
-  };
+  const pickDirectory = usePickFolder();
 
   const onPickProjectFolder = () =>
     run(async () => {
@@ -419,7 +418,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
                 <Notice
                   tone="info"
                   placement="inline"
-                  title={`${reconnectCandidate.candidate.moved !== null ? 'This looks like it moved from' : 'This folder was part of'} ${reconnectCandidate.candidate.workspaceName}, disconnected ${formatRelativeAge({ fromIso: reconnectCandidate.candidate.disconnectedAt })}, with ${reconnectCandidate.candidate.sessionCount} ${reconnectCandidate.candidate.sessionCount === 1 ? 'session' : 'sessions'}.`}
+                  title={`${reconnectCandidate.candidate.moved !== null ? 'This looks like it moved from' : 'This folder was part of'} ${reconnectCandidate.candidate.workspaceName}, disconnected ${formatAge({ from: reconnectCandidate.candidate.disconnectedAt, now })}, with ${reconnectCandidate.candidate.sessionCount} ${reconnectCandidate.candidate.sessionCount === 1 ? 'session' : 'sessions'}.`}
                   actions={
                     <>
                       <Button size="sm" disabled={busy} onClick={onReconnect}>

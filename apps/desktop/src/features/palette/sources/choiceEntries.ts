@@ -1,7 +1,7 @@
 import type { ObjectTarget, ResolvedAction } from '../../actions/types';
 import type { PaletteEntry } from '../types';
 
-export type ChoiceSelectParams = {
+type ChoiceSelectParams = {
   readonly choice: string;
 };
 

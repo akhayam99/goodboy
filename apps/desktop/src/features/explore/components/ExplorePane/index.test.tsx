@@ -79,7 +79,7 @@ vi.mock('../../../../store', async () => {
     currentSessionId: 'session-1',
     activeLens: { 'session-1': 'explore' },
     drawer: null,
-    ...createDrawerSlice(set as never, get as never),
+    ...createDrawerSlice({ set: set as never, get: get as never }),
   }));
   h.resetStore = () => store.setState({ drawer: null });
   return {
@@ -89,7 +89,7 @@ vi.mock('../../../../store', async () => {
   };
 });
 
-vi.mock('../../../../app/components/Toast', () => ({
+vi.mock('../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: h.showToast }),
 }));
 
@@ -134,7 +134,9 @@ const PaneWithDrawer = () => {
 
 beforeEach(() => {
   h.exploreList.mockReset();
+  h.exploreList.mockResolvedValue([]);
   h.exploreOpen.mockReset();
+  h.exploreOpen.mockResolvedValue(undefined);
   h.exploreRead.mockReset();
   h.spawnAgent.mockReset();
   h.spawnAgent.mockResolvedValue('agent-1');

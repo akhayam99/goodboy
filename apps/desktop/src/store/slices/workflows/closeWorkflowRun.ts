@@ -8,6 +8,7 @@ import { isWorkflowRunClosedByUser } from '../../../features/workflows/isWorkflo
 import { cancelRunningSteps } from './cancelRunningSteps';
 import { persistOrchestrationOutcome, persistOrchestrationStop } from './orchestrateNextStep';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 const WORKFLOW_CLOSED_MESSAGE = 'Closed by you';
 
@@ -34,7 +35,7 @@ const skipPendingAgents = async ({ set, get, sessionId, workflowRunId }: Params)
 };
 
 const holdChainedRuns = async ({ set, get, sessionId, workflowRunId }: Params) => {
-  const session = get().sessions.find((candidate) => candidate.id === sessionId);
+  const session = sessionById(get().sessions, sessionId);
   const chainedIds = new Set(
     (session?.workflowRuns ?? [])
       .filter(
@@ -67,7 +68,7 @@ const holdChainedRuns = async ({ set, get, sessionId, workflowRunId }: Params) =
 };
 
 const runClose = async ({ set, get, sessionId, workflowRunId }: Params): Promise<void> => {
-  const session = get().sessions.find((candidate) => candidate.id === sessionId);
+  const session = sessionById(get().sessions, sessionId);
   const run = session?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
   if (session == null || run == null || run.discardedAt != null) {
     return;

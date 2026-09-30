@@ -5,7 +5,8 @@ import type { SessionExternalTaskProvider } from '@goodboy/types';
 import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
 import type { LaunchExternalTask } from '../../../inbox/launchSpecFor';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
+import { useNow } from '../../../../shared/hooks/useNow';
+import { formatSpan } from '../../../../shared/utils/time/formatSpan';
 import {
   LINK_WORK_PROVIDER_LABEL,
   linkWorkView,
@@ -47,9 +48,9 @@ const placeholderOf = ({
     ? 'Paste a link to an issue'
     : `Search ${LIST_FORMAT.format(sources.map((source) => LINK_WORK_PROVIDER_LABEL[source]))} or paste a link`;
 
-const rowMeta = ({ row }: { readonly row: LinkWorkRow }): string => {
+const rowMeta = ({ row, now }: { readonly row: LinkWorkRow; readonly now: number }): string => {
   if (row.section === 'inbox') {
-    return formatRelativeDuration(row.updatedAt);
+    return formatSpan({ from: row.updatedAt, to: now });
   }
   if (row.section === 'paste') {
     return 'Link this URL';
@@ -70,6 +71,7 @@ export const LinkWorkPicker = ({
   onLink,
   onClose,
 }: Props) => {
+  const now = useNow(30_000);
   const listId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [source, setSource] = useState<LinkWorkSource>('all');
@@ -221,7 +223,7 @@ export const LinkWorkPicker = ({
                 </span>
                 <span className="min-w-0 flex-1 truncate text-foreground">{row.task.title}</span>
                 <span className="shrink-0 text-label text-faint-foreground">
-                  {rowMeta({ row })}
+                  {rowMeta({ row, now })}
                 </span>
               </li>,
             ])}

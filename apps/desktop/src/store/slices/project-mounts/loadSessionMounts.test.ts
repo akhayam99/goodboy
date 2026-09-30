@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MountId, MountOperation, ProjectId, SessionId, SessionMount } from '@goodboy/types';
 
@@ -20,17 +21,19 @@ vi.mock('../../../features/worktree/worktree', () => ({
     return found;
   }),
 }));
-vi.mock('@goodboy/db', () => ({
-  listSessionMounts: vi.fn(async () => [...h.mounts.values()]),
-  getSessionMount: vi.fn(async () => null),
-  updateSessionMountLifecycle: h.updateSessionMountLifecycle,
-  insertSessionMount: vi.fn(async () => undefined),
-  listMountOperations: h.listMountOperations,
-  getMountOperation: vi.fn(
-    async ({ requestId }: { readonly requestId: string }) => h.operations.get(requestId) ?? null,
-  ),
-  upsertMountOperation: h.upsertMountOperation,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    listSessionMounts: vi.fn(async () => [...h.mounts.values()]),
+    getSessionMount: vi.fn(async () => null),
+    updateSessionMountLifecycle: h.updateSessionMountLifecycle,
+    insertSessionMount: vi.fn(async () => undefined),
+    listMountOperations: h.listMountOperations,
+    getMountOperation: vi.fn(
+      async ({ requestId }: { readonly requestId: string }) => h.operations.get(requestId) ?? null,
+    ),
+    upsertMountOperation: h.upsertMountOperation,
+  }),
+);
 
 import { loadSessionMounts } from './loadSessionMounts';
 import { markMountOperationUncertain } from './mountOperations';

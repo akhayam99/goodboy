@@ -1,9 +1,9 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from './invokeCommand';
 
 type RevealInFileManagerParams = {
   readonly path: string;
 };
 
 export const revealInFileManager = async ({ path }: RevealInFileManagerParams): Promise<void> => {
-  await invoke('reveal_in_file_manager', { path });
+  await invokeCommand('reveal_in_file_manager', { path });
 };

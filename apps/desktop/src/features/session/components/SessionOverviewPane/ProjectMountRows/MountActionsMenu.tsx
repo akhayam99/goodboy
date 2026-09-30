@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { AnchoredPopover, IconButton, cn, useDropdown } from '@goodboy/ui';
 import type { MountId, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
-import { useToast } from '../../../../../app/components/Toast';
+import { useToast } from '../../../../../shared/components/Toast';
 import { useAppStore } from '../../../../../store';
 import { worktreeDetachAssessment } from '../../../../worktree/worktree';
 import {
@@ -28,6 +28,7 @@ import {
   summarizeDetachOutcomes,
   type MountAssessment,
 } from './detachPlan';
+import { projectById } from '../../../../../store/slices/projects/projectIndex';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -80,12 +81,10 @@ export const MountActionsMenu = ({
   });
   const detachProject = useAppStore((state) => state.detachProject);
   const reportError = useAppStore((state) => state.reportError);
-  const projectKind = useAppStore(
-    (state) => state.projects.find((candidate) => candidate.id === projectId)?.kind ?? null,
-  );
+  const projectKind = useAppStore((state) => projectById(state.projects, projectId)?.kind ?? null);
   const isRepoProject = projectKind === 'repo';
   const projectBaseBranch = useAppStore(
-    (state) => state.projects.find((candidate) => candidate.id === projectId)?.baseBranch ?? null,
+    (state) => projectById(state.projects, projectId)?.baseBranch ?? null,
   );
   const mountViews = useAppStore(
     useShallow((state) =>

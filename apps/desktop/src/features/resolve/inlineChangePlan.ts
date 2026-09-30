@@ -27,9 +27,9 @@ export type InlineChangePlan =
 
 type Params = { readonly files: ReadonlyArray<FileDiff> };
 
-export const isTestPath = ({ path }: { readonly path: string }): boolean => TEST_PATH.test(path);
+const isTestPath = ({ path }: { readonly path: string }): boolean => TEST_PATH.test(path);
 
-export const changedLineCount = ({ files }: Params): number =>
+const changedLineCount = ({ files }: Params): number =>
   files.reduce((total, file) => total + file.additions + file.deletions, 0);
 
 export const inlineChangePlan = ({ files }: Params): InlineChangePlan => {

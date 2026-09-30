@@ -1,22 +1,22 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createStore } from 'zustand/vanilla';
 import {
   insertResolveQueueItem,
   listResolveQueueItems,
   listResolveThreads,
-  migrate,
   upsertResolveThread,
   type Database,
 } from '@goodboy/db';
+import { migrate } from '@goodboy/db/migrations';
 import { approvedPublicationScope } from './approvedPublicationScope';
 import { saveResolveThread } from './saveResolveThread';
-import { makeTestDatabase } from '@goodboy/db/test-helpers';
+import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';
 import type { ResolveQueueItem, ResolveThread, SessionId } from '@goodboy/types';
 import { createResolveSlice } from './index';
 import { EMPTY_REFUSAL_REPLY, REFUSAL_AFTER_INTEGRATION } from './refuseResolveQueueItem';
 import { resolveInitialState } from './state';
 import { threadOutcome } from './threadOutcome';
-import { RESOLVE_ONLY_AFTER_INTEGRATION } from './settleItemAnswered';
 import type { GetFn, SetFn } from './types';
 
 const h = vi.hoisted(() => ({
@@ -87,12 +87,11 @@ const createHarness = () => {
 };
 
 beforeEach(async () => {
-  db = makeTestDatabase();
+  db = await makeMigratedTestDatabase();
   h.exec.mockReset().mockImplementation(db.exec);
   h.execute.mockReset().mockImplementation(db.execute);
   h.select.mockReset().mockImplementation(db.select);
   h.transaction.mockReset().mockImplementation(db.transaction);
-  await migrate(db);
   await db.execute(
     "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('workspace', 'Workspace', 'workspace', 1, 1)",
   );
@@ -337,7 +336,7 @@ describe('resolve queue actions', () => {
       item.id,
     ]);
     await expect(live.actions.resolveWithoutReply({ sessionId, itemId: item.id })).rejects.toThrow(
-      RESOLVE_ONLY_AFTER_INTEGRATION,
+      'This fix is already on the branch. Undo the decision before resolving without a reply',
     );
     expect((await listResolveQueueItems({ db, sessionId }))[0]?.item.approvalState).toBe('none');
   });

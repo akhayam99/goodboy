@@ -48,7 +48,7 @@ export const WIREFRAME_CONTEXT_LIMITS = {
 export const WIREFRAME_DEFAULT_REQUEST =
   'produce one wireframe document for this product from the evidence below. cover the screens the goal actually needs, and wire the transitions a user would take between them.';
 
-export const WIREFRAME_EXCLUDED_COPY =
+const WIREFRAME_EXCLUDED_COPY =
   'never sent: reports, wireframes, the local change, checks, session events, tool calls, tool output';
 
 export type WireframeContextParams = Readonly<{

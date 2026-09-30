@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
@@ -76,20 +77,22 @@ const {
   })),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  listMountPathOwnership,
-  listAllRetainedWorktreePaths,
-  listUnsettledMountOperations,
-  detachSessionMounts,
-  deleteRetainedWorktreePath,
-  markRetainedWorktreePathChecked,
-  listWorktreeRoots,
-  listWorktreeLedger,
-  markWorktreeRootScanned,
-  registerWorktreeRoot,
-  deleteWorktreeLedgerEntries,
-  recordOrphanWorktrees,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    listMountPathOwnership,
+    listAllRetainedWorktreePaths,
+    listUnsettledMountOperations,
+    detachSessionMounts,
+    deleteRetainedWorktreePath,
+    markRetainedWorktreePathChecked,
+    listWorktreeRoots,
+    listWorktreeLedger,
+    markWorktreeRootScanned,
+    registerWorktreeRoot,
+    deleteWorktreeLedgerEntries,
+    recordOrphanWorktrees,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/worktree/worktree', () => ({
   scanOrphanWorktrees,

@@ -2,9 +2,9 @@ import type { IsoDateTime, MountId } from '@goodboy/types';
 import type { GeneratedArtifactKind } from '../../../features/artifacts/artifactCollection';
 import type { ArtifactCreationDraft } from './types';
 
-export const DEFAULT_REPORT_TYPE = 'session-summary';
+const DEFAULT_REPORT_TYPE = 'session-summary';
 
-export const DEFAULT_WIREFRAME_FIDELITY = 'low';
+const DEFAULT_WIREFRAME_FIDELITY = 'low';
 
 export const DEFAULT_WIREFRAME_TARGET = 'both';
 

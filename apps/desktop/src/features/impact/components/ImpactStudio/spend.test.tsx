@@ -15,14 +15,11 @@ const { state, mocks } = vi.hoisted(() => ({
       goal: string;
     }>,
     sessionTelemetry: {} as Record<string, ReadonlyArray<unknown>>,
-    providerSpendBreakdown: [
-      { provider: 'anthropic', spentUsd: 3, capUsd: 10, pct: 0.3 },
-    ] as ReadonlyArray<{
+    providerSpendBreakdown: [{ provider: 'anthropic', spentUsd: 3 }] as ReadonlyArray<{
       provider: string;
       spentUsd: number;
-      capUsd: number | null;
-      pct: number;
     }>,
+    providerBudgetStatus: {} as Record<string, unknown>,
     budgetAlerts: [] as ReadonlyArray<unknown>,
     budgetRules: [] as ReadonlyArray<unknown>,
     sessionBudgets: {} as Record<string, { softCapUsd: number }>,

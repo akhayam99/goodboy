@@ -1,5 +1,6 @@
 import type { MountId, MountPullRequestIdentity, SessionId } from '@goodboy/types';
-import type { AppState, MountBitbucketPrState } from '../../types';
+import type { AppState } from '../../types';
+import type { MountBitbucketPrState } from './state';
 import { selectActiveMountId } from '../project-mounts/selectors';
 import type { SessionBitbucketPrEntry } from './state';
 

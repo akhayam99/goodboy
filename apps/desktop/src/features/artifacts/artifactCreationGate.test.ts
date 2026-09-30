@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { WorkflowRunId } from '@goodboy/types';
 import type { ArtifactBasedOn } from '../../store/slices/artifactDrafts/types';

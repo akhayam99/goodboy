@@ -25,7 +25,7 @@ type CategoryParams = {
   readonly pr: GithubPullRequestFacts['pr'];
 };
 
-export const githubPullRequestCategory = ({ pr }: CategoryParams): InboxState => {
+const githubPullRequestCategory = ({ pr }: CategoryParams): InboxState => {
   if (pr.isDraft && pr.state === 'open') {
     return 'open';
   }
@@ -39,7 +39,7 @@ type ChecksParams = {
   readonly checks: ReadonlyArray<PrCheckRun>;
 };
 
-export const checksPassing = ({ checks }: ChecksParams): string | null => {
+const checksPassing = ({ checks }: ChecksParams): string | null => {
   if (checks.length === 0) {
     return null;
   }

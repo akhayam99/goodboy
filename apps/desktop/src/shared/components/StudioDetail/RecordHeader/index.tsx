@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { ArrowUpRight, Ellipsis, X } from 'lucide-react';
-import { IconButton } from '@goodboy/ui';
+import { IconButton, useInheritedPaneActions } from '@goodboy/ui';
 import {
   IntegrationGlyph,
   integrationLabel,
@@ -13,7 +13,6 @@ import { NO_RECORD_VERBS, type RecordFrame, type RecordVerbs } from '../RecordAc
 import { ObjectOverflowMenu } from '../../../../features/actions/components/ObjectOverflowMenu';
 import { useObjectMenuTrigger } from '../../../../features/actions/useObjectMenuTrigger';
 import type { RecordActionTarget } from '../../../../features/actions/types';
-import { useInheritedPaneActions } from '../../PaneShell/paneActionsContext';
 
 const RECORD_HEADER_OMISSIONS: ReadonlyArray<string> = ['record.openInProvider'];
 
@@ -118,7 +117,9 @@ export const RecordHeader = ({
       >
         {title}
       </h1>
-      {byline == null ? null : <p className="truncate text-meta text-faint-foreground">{byline}</p>}
+      {byline == null ? null : (
+        <div className="truncate text-meta text-faint-foreground">{byline}</div>
+      )}
       {facts}
       <RecordActions
         primary={frame?.primary ?? null}

@@ -1,6 +1,7 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import type { Session, SessionId } from '@goodboy/types';
-import type { SessionNudge } from '../../../../../store/types';
+import type { SessionNudge } from '../../../../../store/slices/nudges/state';
 import type { AgentKind } from '../../../../session/agent-kind';
 import type { ScopePending } from './useScopeNudge';
 import type { RightSizePending, RightSizeSuggestion } from './useRightSizeNudge';

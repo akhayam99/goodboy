@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { DiffHunkLine } from '@goodboy/types';
 import { pairDiffLines } from './diffLinePairs';

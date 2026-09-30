@@ -12,6 +12,8 @@ import {
 } from '../project-mounts/selectors';
 import { registerScriptRunListeners } from './registerScriptRunListeners';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
+import { projectById } from '../projects/projectIndex';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -47,7 +49,7 @@ export const runScript = (set: SetFn, get: GetFn) => {
     writeRun({ record: { status: 'pending', result: null, runId, startedAt, ...mountField } });
 
     const state = get();
-    const session = state.sessions.find((candidate) => candidate.id === sessionId);
+    const session = sessionById(state.sessions, sessionId);
     const script =
       session === undefined
         ? undefined
@@ -72,9 +74,7 @@ export const runScript = (set: SetFn, get: GetFn) => {
     const resolved = resolveMount();
     if (script === undefined || resolved === null) {
       const project =
-        script === undefined
-          ? undefined
-          : state.projects.find((candidate) => candidate.id === script.projectId);
+        script === undefined ? undefined : projectById(state.projects, script.projectId);
       const candidateCount =
         script === undefined
           ? 0

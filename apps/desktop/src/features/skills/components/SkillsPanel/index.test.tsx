@@ -38,7 +38,7 @@ vi.mock('../../../../store', () => {
   return { useAppStore, EMPTY_ARRAY: [] };
 });
 
-import { ToastProvider } from '../../../../app/components/Toast';
+import { ToastProvider } from '../../../../shared/components/Toast';
 import { SkillsPanel } from './index';
 
 const buildSkill = (): Skill => ({

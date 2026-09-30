@@ -3,18 +3,19 @@ import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskMod
 import type { ContextSlot, SessionId } from '@goodboy/types';
 import { rewriteWorkflowGoal } from '@goodboy/core';
 import { upsertContextSlot } from '@goodboy/db';
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { routeTaskModel } from '../../../features/providers/taskModelRouting';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
+import { sessionById } from '../sessions/sessionIndex';
 
 export const reprocessGoalForWorkflow = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId): Promise<void> => {
     try {
       const state = get();
-      const session = state.sessions.find((s) => s.id === sessionId);
+      const session = sessionById(state.sessions, sessionId);
       if (!session) {
         return;
       }
@@ -63,7 +64,7 @@ export const reprocessGoalForWorkflow = (set: SetFn, get: GetFn) => {
       const rewritten = await rewriteWorkflowGoal(
         {
           ...taskModel,
-          invokeFn: invoke,
+          invokeFn: invokeCommand,
           ...(worktreePath != null && { workingDir: worktreePath }),
         },
         { goal, stepNames },

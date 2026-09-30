@@ -5,7 +5,7 @@ import { sentryLinkedProjects } from './attachInboxProjects';
 import { recordRepoPath, repoHostOf, repoProjectsOf } from './repoProjectsOf';
 import type { InboxProvider } from './types';
 
-export type LaunchMountOption = {
+type LaunchMountOption = {
   readonly projectId: ProjectId;
   readonly name: string;
 };

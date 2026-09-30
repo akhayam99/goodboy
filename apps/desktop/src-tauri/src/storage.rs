@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::worktree::{
     canonical_path, contained_worktrees_parent, git, in_progress_operation,
-    local_only_commit_count, parse_porcelain, parse_working_tree, GitWorkingTree, WorktreeError,
-    WorktreeRemovalReason,
+    local_only_commit_count, parse_porcelain, parse_working_tree, GitWorkingTree, RunGit,
+    WorktreeError, WorktreeRemovalReason,
 };
 
 #[derive(Debug, Deserialize)]
@@ -41,8 +41,6 @@ pub struct DiskFree {
     #[serde(rename = "totalBytes")]
     pub total_bytes: Option<u64>,
 }
-
-type RunGit<'a> = &'a mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>;
 
 fn empty_facts(
     path: &str,

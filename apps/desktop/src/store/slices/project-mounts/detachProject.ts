@@ -17,6 +17,7 @@ import { releaseMountSelection } from './releaseMountSelection';
 import { runMountRemoval } from './runMountRemoval';
 import { settleMountCleanupProposals } from './settleMountProposals';
 import type { GetFn, SetFn } from './types';
+import { projectById } from '../projects/projectIndex';
 
 export type DetachDisposition = 'keep-files' | 'remove-clean' | 'delete-files';
 
@@ -205,7 +206,7 @@ export const detachProject = (set: SetFn, get: GetFn) => {
     if (first === undefined) {
       throw new Error(`project not mounted in this session: ${projectId}`);
     }
-    const project = get().projects.find((candidate) => candidate.id === projectId);
+    const project = projectById(get().projects, projectId);
     const projectName = project?.name ?? first.mountName;
     const selection = selectCleanup({ disposition });
     const outcomes: Array<DetachProjectOutcome> = [];

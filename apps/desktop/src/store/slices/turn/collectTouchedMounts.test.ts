@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   AgentId,
@@ -56,6 +57,7 @@ const getFor =
   ({ isOtherRunning }: StateParams): GetFn =>
   () =>
     ({
+      projects: [],
       sessionPhaseRuns: { [SESSION_ID]: [{ id: AGENT_ID }, { id: OTHER_ID }] },
       agentTurnState: isOtherRunning ? { [OTHER_ID]: { kind: 'running' } } : {},
     }) as unknown as ReturnType<GetFn>;

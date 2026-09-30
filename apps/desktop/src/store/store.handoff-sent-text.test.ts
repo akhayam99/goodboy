@@ -1,5 +1,13 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { STORE_IMPORT_TIMEOUT_MS, importStore, type StoryStore } from './storyHarness';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  buildStoryProject,
+  buildStoryWorkspace,
+  importStore,
+  resetStorySpies,
+  storySpies,
+  type StoryStore,
+} from './storyHarness';
 import type {
   Agent,
   AgentHandoff,
@@ -15,182 +23,73 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-const runTurnSpy = vi.fn();
+vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('./storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('../shared/lib/db', async () => (await import('./storyHarness')).dbLibModuleMock());
+vi.mock('@goodboy/db', async () => (await import('./storyHarness')).dbModuleMock());
+vi.mock('../features/chat/turn', async () => (await import('./storyHarness')).turnModuleMock());
+vi.mock('../features/permissions/permissions', async () =>
+  (await import('./storyHarness')).permissionsModuleMock(),
+);
+vi.mock('../features/providers/providers', async () =>
+  (await import('./storyHarness')).providersModuleMock(),
+);
+vi.mock('../features/providers/routing', async () =>
+  (await import('./storyHarness')).routingModuleMock(),
+);
+vi.mock('../features/budget/budget', async () =>
+  (await import('./storyHarness')).budgetModuleMock(),
+);
+vi.mock('../features/skills/skills', async () =>
+  (await import('./storyHarness')).skillsModuleMock(),
+);
+vi.mock('../features/workflows/workflows', async () =>
+  (await import('./storyHarness')).workflowsModuleMock(),
+);
+vi.mock('../features/worktree/worktree', async () =>
+  (await import('./storyHarness')).worktreeModuleMock(),
+);
+vi.mock('../shared/lib/repo', async () => (await import('./storyHarness')).repoModuleMock());
+vi.mock('../features/plans/plans', async () => (await import('./storyHarness')).plansModuleMock());
 
-vi.mock('../features/chat/turn', () => ({
-  runTurn: (args: unknown) => runTurnSpy(args),
-  cancelTurn: vi.fn(),
-  encodeAuthRequiredMessage: () => '',
-  isAuthErrorMessage: () => false,
-}));
+const runTurnSpy = storySpies.runTurn;
+const phaseRunInsertSpy = storySpies.invokeAgentInsert;
+const phaseRunListSpy = storySpies.invokeAgentList;
+const phaseRunUpdateStatusSpy = storySpies.invokeAgentUpdateStatus;
 
 async function* emptyStream(): AsyncIterable<TurnEvent> {}
 
-vi.mock('../features/permissions/permissions', () => ({
-  invokePermissionRuleList: vi.fn(async () => []),
-  invokePermissionAuditInsert: vi.fn(),
-  useEffectivePermissionRules: () => [],
-}));
-
-vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
-
-vi.mock('../shared/lib/db', () => ({
-  runDbMigrations: vi.fn(),
-  tauriDatabase: { execute: vi.fn(), select: vi.fn() },
-}));
-
-const OVERRIDES = {
-  defaultProviderId: null,
-  defaultWorkflowId: null,
-  defaultBranchPrefix: null,
-  parallelEnabled: null,
-  defaultVerbosity: null,
-  providerBindings: null,
-  taskModels: null,
-  roleModels: null,
-  parallelAgents: null,
-  providerPool: null,
-  attributionFooter: null,
-};
-
-vi.mock('@goodboy/db', () => ({
-  getWorkspaceById: vi.fn(async ({ id }: { id: WorkspaceId }) => ({
-    id,
-    name: 'Harborline',
-    slug: 'harborline',
-    overrides: OVERRIDES,
-    createdAt: '',
-    updatedAt: '',
-  })),
-  listProjectsForWorkspace: vi.fn(async ({ workspaceId }: { workspaceId: WorkspaceId }) => [
-    {
+const wireStoryDefaults = () => {
+  storySpies.getWorkspaceById.mockImplementation(async ({ id }) =>
+    buildStoryWorkspace({ id, name: 'Harborline', slug: 'harborline' }),
+  );
+  storySpies.listProjectsForWorkspace.mockImplementation(async ({ workspaceId }) => [
+    buildStoryProject({
       id: 'project-1' as ProjectId,
       workspaceId,
       name: 'ledger-core',
       rootPath: '/tmp',
-      kind: 'repo',
-      overrides: OVERRIDES,
-      createdAt: '',
-      updatedAt: '',
-    },
-  ]),
-  getSetting: vi.fn(),
-  insertMessage: vi.fn(),
-  insertProviderRun: vi.fn(),
-  insertSession: vi.fn(),
-  deleteSession: vi.fn(async () => undefined),
-  insertSessionWorktree: vi.fn(),
-  insertSessionEvent: vi.fn(async () => undefined),
-  listSessionEvents: vi.fn(async () => []),
-  updateSessionActiveProject: vi.fn(async () => undefined),
-  updateSessionWriteDestination: vi.fn(async () => true),
-  updateSessionWorktreeRepoSlug: vi.fn(async () => undefined),
-  insertTelemetry: vi.fn(),
-  insertWorkspace: vi.fn(),
-  listContextSlotsForSession: vi.fn(async () => []),
-  listMessagesForSession: vi.fn(async () => []),
-  listSessionsForWorkspace: vi.fn(async () => []),
-  listTelemetryForSession: vi.fn(async () => []),
-  listWorkspaces: vi.fn(async () => [
-    { id: 'ws-1', name: 'Harborline', rootPath: '/tmp', createdAt: '', updatedAt: '' },
-  ]),
-  setSetting: vi.fn(),
-  summarizeSessionTelemetry: vi.fn(async () => null),
-  summarizeWorkspaceTelemetry: vi.fn(async () => null),
-  summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
-  updateProviderRunStatus: vi.fn(),
-  updateAgentConfig: vi.fn(),
-  updateSessionState: vi.fn(),
-  upsertContextSlot: vi.fn(),
-  insertOpenQuestion: vi.fn(async () => undefined),
-  markOpenQuestionsResolvedByText: vi.fn(async () => 0),
-  listResolvedQuestionTextsForSession: vi.fn(async () => []),
-  insertTurnEvent: vi.fn(async () => undefined),
-  insertTurnEventsBatch: vi.fn(async () => undefined),
-  listWorktreesForSession: vi.fn(async () => []),
-  listWorktreesForSessions: vi.fn(async () => new Map()),
-  listAgentsForSessions: vi.fn(async () => new Map()),
-  listTurnEventsForAgent: vi.fn(async () => []),
-  listMessagesForAgent: vi.fn(async () => []),
-  insertNotification: vi.fn(async () => undefined),
-  listNotifications: vi.fn(async () => []),
-  countNotifications: vi.fn(async () => []),
-  NOTIFICATION_LIST_LIMIT: 200,
-  markAllNotificationsRead: vi.fn(async () => undefined),
-  clearAllNotifications: vi.fn(async () => undefined),
-  updateSessionWorkflowStep: vi.fn(),
-  attachWorkflowToSession: vi.fn(),
-  detachWorkflowFromSession: vi.fn(),
-  updateWorkflowOrder: vi.fn(),
-  insertAgentHandoff: vi.fn(async () => undefined),
-  getAgentHandoff: vi.fn(async () => null),
-}));
-
-vi.mock('../features/providers/providers', () => ({
-  buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
-  checkProviderAuth: vi.fn(),
-}));
-
-vi.mock('../features/providers/routing', () => ({
-  resolveProviderForTurn: vi.fn(async () => ({
-    selectedProvider: 'anthropic',
-    selectedModel: 'claude-sonnet-5',
-    reason: 'preference',
-  })),
-}));
-
-vi.mock('../features/budget/budget', () => ({
-  invokeBudgetRuleList: vi.fn(async () => []),
-  invokeBudgetRuleUpsert: vi.fn(),
-  invokeBudgetRuleDelete: vi.fn(),
-  invokeBudgetAlertsList: vi.fn(async () => []),
-  invokeBudgetAlertDismiss: vi.fn(),
-  invokeSessionBudgetGet: vi.fn(),
-  invokeSessionBudgetSet: vi.fn(),
-  invokeCheckProviderBudget: vi.fn(),
-}));
-
-vi.mock('../features/skills/skills', () => ({
-  invokeSkillList: vi.fn(async () => []),
-  invokeSkillUpsert: vi.fn(),
-  invokeSkillDelete: vi.fn(),
-  invokeSkillRescan: vi.fn(),
-  resolveSkillInvocation: vi.fn(),
-}));
-
-const phaseRunInsertSpy = vi.fn();
-const phaseRunListSpy = vi.fn();
-const phaseRunUpdateStatusSpy = vi.fn();
-
-vi.mock('../features/workflows/workflows', () => ({
-  invokeWorkflowList: vi.fn(async () => []),
-  invokeWorkflowUpsert: vi.fn(),
-  invokeWorkflowDelete: vi.fn(),
-  invokeAgentList: (sid: SessionId) => phaseRunListSpy(sid),
-  invokeAgentInsert: (args: unknown) => phaseRunInsertSpy(args),
-  invokeAgentUpdateStatus: (id: unknown, fields: unknown) => phaseRunUpdateStatusSpy(id, fields),
-}));
-
-vi.mock('../features/worktree/worktree', () => ({
-  createWorktree: vi.fn(async () => ({
+    }),
+  ]);
+  storySpies.listWorkspaces.mockImplementation(async () => [
+    buildStoryWorkspace({ id: 'ws-1' as WorkspaceId, name: 'Harborline' }),
+  ]);
+  storySpies.createWorktree.mockImplementation(async () => ({
     worktreePath: '/tmp/wt',
     branchName: 'nw/settle',
     slug: 'settle',
-  })),
-  createSessionDir: vi.fn(async () => ({
+  }));
+  storySpies.createSessionDir.mockImplementation(async () => ({
     worktreePath: '/tmp/sessions/settle',
     branchName: '',
     slug: 'settle',
-  })),
-  removeWorktree: vi.fn(),
-  sessionDirExists: vi.fn(async () => true),
-  scratchDirPrepare: vi.fn(async () => '/tmp/goodboy-root/scratch/mountless'),
-  scratchDirRemove: vi.fn(async () => undefined),
-  worktreeChangedFiles: vi.fn(async () => ({ files: [], numstat: '' })),
-}));
-
-vi.mock('../shared/lib/repo', () => ({ validateGitRepo: vi.fn() }));
+  }));
+  storySpies.scratchDirPrepare.mockImplementation(
+    async () => '/tmp/goodboy-root/scratch/mountless',
+  );
+};
 
 const WS_ID = 'ws-1' as WorkspaceId;
 const WORKFLOW_ID = 'wf-settle' as WorkflowId;
@@ -228,7 +127,6 @@ let inserted: Agent[] = [];
 
 const wirePhaseSpies = () => {
   inserted = [];
-  phaseRunInsertSpy.mockReset();
   phaseRunInsertSpy.mockImplementation(async (args: Record<string, unknown>) => {
     const row: Agent = {
       id: `agent-${inserted.length + 1}` as AgentId,
@@ -246,9 +144,7 @@ const wirePhaseSpies = () => {
     inserted.push(row);
     return row;
   });
-  phaseRunListSpy.mockReset();
   phaseRunListSpy.mockImplementation(async () => inserted);
-  phaseRunUpdateStatusSpy.mockReset();
   phaseRunUpdateStatusSpy.mockImplementation(
     async (id: AgentId, fields: Record<string, unknown>) => {
       const existing = inserted.find((row) => row.id === id);
@@ -296,9 +192,10 @@ const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 50));
 
 describe('text sent to the CLI at spawn', () => {
   beforeEach(() => {
+    resetStorySpies();
+    wireStoryDefaults();
     wirePhaseSpies();
     useAppStore.setState({ agentRunHistory: {}, transcripts: {}, agentHandoffs: {} });
-    runTurnSpy.mockReset();
     runTurnSpy.mockImplementation(() => emptyStream());
   });
 
@@ -343,7 +240,13 @@ describe('text sent to the CLI at spawn', () => {
     await startSecondStep();
 
     expect(runTurnSpy).toHaveBeenCalledTimes(1);
-    expect(lastSent()).toMatchSnapshot();
+    const sent = lastSent();
+    await expect(sent.prompt).toMatchFileSnapshot(
+      './__prompts__/handoff-claude-step-kickoff.prompt.txt',
+    );
+    await expect(sent.systemPrompt).toMatchFileSnapshot(
+      './__prompts__/handoff-claude-step-kickoff.system.txt',
+    );
   });
 
   it('keeps the workflow step kickoff on Codex byte for byte', async () => {
@@ -351,7 +254,13 @@ describe('text sent to the CLI at spawn', () => {
     await startSecondStep();
 
     expect(runTurnSpy).toHaveBeenCalledTimes(1);
-    expect(lastSent()).toMatchSnapshot();
+    const sent = lastSent();
+    await expect(sent.prompt).toMatchFileSnapshot(
+      './__prompts__/handoff-codex-step-kickoff.prompt.txt',
+    );
+    await expect(sent.systemPrompt).toMatchFileSnapshot(
+      './__prompts__/handoff-codex-step-kickoff.system.txt',
+    );
   });
 
   it('stores one handoff per agent with the exact text sent', async () => {
@@ -403,6 +312,12 @@ describe('text sent to the CLI at spawn', () => {
     });
 
     expect(runTurnSpy).toHaveBeenCalledTimes(1);
-    expect(lastSent()).toMatchSnapshot();
+    const sent = lastSent();
+    await expect(sent.prompt).toMatchFileSnapshot(
+      './__prompts__/handoff-new-agent-message.prompt.txt',
+    );
+    await expect(sent.systemPrompt).toMatchFileSnapshot(
+      './__prompts__/handoff-new-agent-message.system.txt',
+    );
   });
 });

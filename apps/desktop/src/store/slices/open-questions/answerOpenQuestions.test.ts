@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentId, OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
 
@@ -51,11 +52,13 @@ const {
   };
 });
 
-vi.mock('@goodboy/db', () => ({
-  markOpenQuestionAnswered,
-  markOpenQuestionAnswersDelivered,
-  markOpenQuestionDismissed,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    markOpenQuestionAnswered,
+    markOpenQuestionAnswersDelivered,
+    markOpenQuestionDismissed,
+  }),
+);
 vi.mock('@goodboy/core', () => ({
   removeQuestionsFromSlot,
   wrapOpenQuestionAnswers: (body: string) => `<<oq-answers>>\n${body}\n<</oq-answers>>`,

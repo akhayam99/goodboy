@@ -1,5 +1,6 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { MountId, SessionId } from '@goodboy/types';
+import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 import type { AppState } from '../../store/types';
 import {
   ARTIFACT_MOUNT_CAP,
@@ -53,6 +54,7 @@ const stateWith = (
 
 const option = (mountId: string): ArtifactMountOption => ({
   mountId: mountId as MountId,
+  projectId: 'project-1' as ProjectId,
   mountName: mountId,
   branch: 'main',
   baseBranch: 'main',

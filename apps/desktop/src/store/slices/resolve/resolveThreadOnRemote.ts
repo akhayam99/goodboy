@@ -3,14 +3,14 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { handledByLine } from './threadGitState';
 import type { SliceParams, ThreadParams } from './types';
 
-export type RemoteResolveMode = 'reply' | 'resolve_only';
+type RemoteResolveMode = 'reply' | 'resolve_only';
 
 type Params = SliceParams &
   ThreadParams & { readonly mode: RemoteResolveMode; readonly reply?: string };
 
 const SETTLED = new Set(['fixed', 'answered']);
 
-export const NOTHING_TO_PUBLISH = 'Nothing is waiting to go out for this comment';
+const NOTHING_TO_PUBLISH = 'Nothing is waiting to go out for this comment';
 
 export const resolveThreadOnRemote = async ({
   get,

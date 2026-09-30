@@ -1,0 +1,551 @@
+// @vitest-environment node
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
+
+vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
+vi.mock('../../../shared/lib/db', () => ({
+  tauriDatabase: { execute: vi.fn(), select: vi.fn() },
+}));
+
+const {
+  upsertPlan,
+  listPlansForSession,
+  createArtifact,
+  listArtifactsForSession,
+  updateArtifactSource,
+} = vi.hoisted(() => ({
+  upsertPlan: vi.fn(async () => undefined),
+  listPlansForSession: vi.fn(async () => [] as ReadonlyArray<unknown>),
+  createArtifact: vi.fn(async (args: { readonly sourceTurnId: string }) => ({
+    id: 'artifact-1',
+    sourceTurnId: args.sourceTurnId,
+  })),
+  listArtifactsForSession: vi.fn(async () => [] as ReadonlyArray<unknown>),
+  updateArtifactSource: vi.fn(async (args: { readonly artifactId: string }) => ({
+    id: args.artifactId,
+    revision: 2,
+  })),
+}));
+
+const { loadArtifactProvenance, appendArtifactProvenanceOmission, completeArtifactRun } =
+  vi.hoisted(() => ({
+    loadArtifactProvenance: vi.fn(
+      async () =>
+        null as { designProfileSummary: string | null; hasDesignEvidence?: boolean } | null,
+    ),
+    appendArtifactProvenanceOmission: vi.fn(async () => undefined),
+    completeArtifactRun: vi.fn(async () => undefined),
+  }));
+
+vi.mock('../../../features/artifacts/artifactProvenance', () => ({
+  loadArtifactProvenance,
+  appendArtifactProvenanceOmission,
+  completeArtifactRun,
+}));
+
+vi.mock('../../../features/plans/plans', () => ({ upsertPlan, listPlansForSession }));
+vi.mock('../../../features/artifacts/artifacts', () => ({
+  createArtifact,
+  listArtifactsForSession,
+  updateArtifactSource,
+}));
+
+import { captureArtifactsFromTurn } from './turnHelpers';
+
+const SESSION_ID = 'session-1' as SessionId;
+const AGENT_ID = 'agent-1' as AgentId;
+const RUN_ID = 'run-1' as ProviderRunId;
+
+const WIREFRAME_DOCUMENT = {
+  version: 1,
+  initialScreenId: 'home',
+  theme: { name: 'generic' },
+  screens: [
+    {
+      id: 'home',
+      title: 'Home',
+      viewport: 'desktop',
+      root: { id: 'home-root', kind: 'text', text: 'Sessions' },
+    },
+  ],
+};
+
+type StatePatch = Readonly<Record<string, unknown>>;
+
+const harness = () => {
+  const patches: StatePatch[] = [];
+  const set = ((updater: (state: StatePatch) => StatePatch) => {
+    patches.push(updater({ sessionPlans: {}, sessionArtifacts: {} }));
+  }) as never;
+  return { patches, set };
+};
+
+const run = async (assistantText: string, agentName: string | null = null) => {
+  const { patches, set } = harness();
+  const result = await captureArtifactsFromTurn({
+    set,
+    sessionId: SESSION_ID,
+    agentId: AGENT_ID,
+    agentName,
+    assistantText,
+    emittingProvider: null,
+    sourceTurnId: RUN_ID,
+  });
+  return { patches, result };
+};
+
+beforeEach(() => {
+  upsertPlan.mockClear();
+  listPlansForSession.mockClear();
+  createArtifact.mockReset();
+  createArtifact.mockImplementation(async (args: { readonly sourceTurnId: string }) => ({
+    id: 'artifact-1',
+    sourceTurnId: args.sourceTurnId,
+  }));
+  listArtifactsForSession.mockClear();
+  updateArtifactSource.mockClear();
+  listPlansForSession.mockResolvedValue([]);
+  listArtifactsForSession.mockResolvedValue([]);
+  completeArtifactRun.mockClear();
+  loadArtifactProvenance.mockReset();
+  loadArtifactProvenance.mockResolvedValue(null);
+  appendArtifactProvenanceOmission.mockClear();
+});
+
+describe('captureArtifactsFromTurn', () => {
+  it('captures nothing from plain prose', async () => {
+    const { result } = await run('no markers at all');
+    expect(result).toEqual({ plan: null, artifact: null, error: null });
+    expect(upsertPlan).not.toHaveBeenCalled();
+    expect(createArtifact).not.toHaveBeenCalled();
+  });
+
+  it('keeps legacy plan markers working', async () => {
+    await run('<<plan>>\nShip it\nstep one\n<</plan>>');
+    expect(upsertPlan).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Ship it', bodyMd: 'step one' }),
+    );
+    expect(createArtifact).not.toHaveBeenCalled();
+  });
+
+  it('captures a plan envelope through the plan path', async () => {
+    const body = JSON.stringify({
+      title: 'Envelope plan',
+      format: 'markdown',
+      content: 'step one',
+      metadata: { clusters: [{ title: 'move files', instructions: 'move them' }] },
+    });
+    await run(`<<artifact v=1 kind=plan>>\n${body}\n<</artifact>>`);
+    expect(upsertPlan).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Envelope plan',
+        clusters: [{ title: 'move files', instructions: 'move them' }],
+      }),
+    );
+    expect(createArtifact).not.toHaveBeenCalled();
+  });
+
+  it('stores the refreshed artifacts next to the plans on the plan path', async () => {
+    const storedPlan = { id: 'plan-1', title: 'Envelope plan', bodyMd: 'step one' };
+    const storedArtifact = { id: 'artifact-7', kind: 'report', title: 'Kickoff notes' };
+    listPlansForSession.mockResolvedValue([storedPlan]);
+    listArtifactsForSession.mockResolvedValue([storedArtifact]);
+    const body = JSON.stringify({
+      title: 'Envelope plan',
+      format: 'markdown',
+      content: 'step one',
+    });
+
+    const { patches, result } = await run(`<<artifact v=1 kind=plan>>\n${body}\n<</artifact>>`);
+
+    expect(result).toEqual({ plan: storedPlan, artifact: null, error: null });
+    expect(patches).toEqual([
+      {
+        sessionPlans: { [SESSION_ID]: [storedPlan] },
+        sessionArtifacts: { [SESSION_ID]: [storedArtifact] },
+      },
+    ]);
+  });
+
+  it('keeps the captured plan when the artifact refresh fails', async () => {
+    const storedPlan = { id: 'plan-1', title: 'Envelope plan', bodyMd: 'step one' };
+    listPlansForSession.mockResolvedValue([storedPlan]);
+    listArtifactsForSession.mockRejectedValue(new Error('artifact list unavailable'));
+    const body = JSON.stringify({
+      title: 'Envelope plan',
+      format: 'markdown',
+      content: 'step one',
+    });
+
+    const { patches, result } = await run(`<<artifact v=1 kind=plan>>\n${body}\n<</artifact>>`);
+
+    expect(result).toEqual({ plan: storedPlan, artifact: null, error: null });
+    expect(patches).toEqual([{ sessionPlans: { [SESSION_ID]: [storedPlan] } }]);
+  });
+
+  it('creates an independent artifact for a report and stamps the source turn', async () => {
+    const body = JSON.stringify({
+      title: 'Session report',
+      format: 'markdown',
+      content: '## Outcome',
+      metadata: { reportType: 'session-summary' },
+    });
+    const { patches, result } = await run(`<<artifact v=1 kind=report>>\n${body}\n<</artifact>>`);
+    expect(createArtifact).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'report',
+        title: 'Session report',
+        sourceFormat: 'markdown',
+        sourceTurnId: RUN_ID,
+      }),
+    );
+    expect(upsertPlan).not.toHaveBeenCalled();
+    expect(result.artifact).not.toBeNull();
+    expect(patches.some((patch) => 'sessionArtifacts' in patch)).toBe(true);
+  });
+
+  const wireframeTurn = (fidelity: string): string =>
+    `<<artifact v=1 kind=wireframe>>\n${JSON.stringify({
+      title: 'Onboarding',
+      format: 'json',
+      content: WIREFRAME_DOCUMENT,
+      metadata: { fidelity, designProfile: { tokens: 1 } },
+    })}\n<</artifact>>`;
+
+  it('creates a wireframe artifact with the json source', async () => {
+    loadArtifactProvenance.mockResolvedValue({
+      designProfileSummary: 'tailwind config',
+      hasDesignEvidence: true,
+    });
+    await run(wireframeTurn('high'), 'High fidelity');
+    expect(createArtifact).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'wireframe',
+        sourceFormat: 'json',
+        sourceText: JSON.stringify(WIREFRAME_DOCUMENT),
+        metadata: { fidelity: 'high', designProfile: { tokens: 1 } },
+      }),
+    );
+    expect(appendArtifactProvenanceOmission).not.toHaveBeenCalled();
+  });
+
+  it('forces low fidelity and notes the downgrade when no design source survived', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    await run(wireframeTurn('high'), 'High fidelity');
+    expect(createArtifact).toHaveBeenCalledWith(
+      expect.objectContaining({ metadata: { fidelity: 'low', designProfile: { tokens: 1 } } }),
+    );
+    expect(appendArtifactProvenanceOmission).toHaveBeenCalledWith(
+      expect.objectContaining({ agentId: AGENT_ID }),
+    );
+  });
+
+  it('forces low fidelity when the walk found no design file, whatever it described', async () => {
+    loadArtifactProvenance.mockResolvedValue({
+      designProfileSummary: 'theme name: generic\ncommit: abc1234',
+      hasDesignEvidence: false,
+    });
+    await run(wireframeTurn('high'), 'High fidelity');
+    expect(createArtifact).toHaveBeenCalledWith(
+      expect.objectContaining({ metadata: { fidelity: 'low', designProfile: { tokens: 1 } } }),
+    );
+    expect(appendArtifactProvenanceOmission).toHaveBeenCalledWith(
+      expect.objectContaining({ agentId: AGENT_ID }),
+    );
+  });
+
+  it('forces low fidelity when the user asked for a plain wireframe', async () => {
+    loadArtifactProvenance.mockResolvedValue({
+      designProfileSummary: 'tailwind config',
+      hasDesignEvidence: true,
+    });
+    await run(wireframeTurn('high'), 'Low fidelity');
+    expect(createArtifact).toHaveBeenCalledWith(
+      expect.objectContaining({ metadata: { fidelity: 'low', designProfile: { tokens: 1 } } }),
+    );
+    expect(appendArtifactProvenanceOmission).not.toHaveBeenCalled();
+  });
+
+  it('notes the downgrade on a high fidelity request the agent reported as low', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    await run(wireframeTurn('low'), 'High fidelity');
+    expect(createArtifact).toHaveBeenCalledWith(
+      expect.objectContaining({ metadata: { fidelity: 'low', designProfile: { tokens: 1 } } }),
+    );
+    expect(appendArtifactProvenanceOmission).toHaveBeenCalledWith(
+      expect.objectContaining({ agentId: AGENT_ID }),
+    );
+  });
+
+  it('leaves a low fidelity claim alone without a downgrade note', async () => {
+    await run(wireframeTurn('low'), 'Low fidelity');
+    expect(createArtifact).toHaveBeenCalledWith(
+      expect.objectContaining({ metadata: { fidelity: 'low', designProfile: { tokens: 1 } } }),
+    );
+    expect(appendArtifactProvenanceOmission).not.toHaveBeenCalled();
+  });
+
+  it('rejects a malformed wireframe document instead of storing it', async () => {
+    const body = JSON.stringify({
+      title: 'Onboarding',
+      format: 'json',
+      content: { screens: [] },
+    });
+    const { result } = await run(`<<artifact v=1 kind=wireframe>>\n${body}\n<</artifact>>`);
+    expect(result.error).toMatchObject({ code: 'invalid_payload' });
+    expect(result.artifact).toBeNull();
+    expect(createArtifact).not.toHaveBeenCalled();
+  });
+
+  it('returns a structured error for a malformed block and writes nothing', async () => {
+    const { result } = await run('<<artifact v=1 kind=report>>\n{broken\n<</artifact>>');
+    expect(result.error).toMatchObject({ code: 'invalid_json' });
+    expect(result.plan).toBeNull();
+    expect(result.artifact).toBeNull();
+    expect(createArtifact).not.toHaveBeenCalled();
+    expect(upsertPlan).not.toHaveBeenCalled();
+  });
+
+  it('ignores an envelope quoted inside a code fence', async () => {
+    const text = [
+      'the shape is:',
+      '```text',
+      '<<artifact v=1 kind=report>>',
+      '{"title":"Example","content":"body"}',
+      '<</artifact>>',
+      '```',
+    ].join('\n');
+    const { result } = await run(text);
+    expect(result).toEqual({ plan: null, artifact: null, error: null });
+  });
+
+  it('stores one artifact when the same turn is captured twice', async () => {
+    const stored = new Map<string, { readonly id: string; readonly sourceTurnId: string }>();
+    createArtifact.mockImplementation(async (args: { readonly sourceTurnId: string }) => {
+      const existing = stored.get(args.sourceTurnId);
+      if (existing !== undefined) {
+        return existing;
+      }
+      const created = { id: `artifact-${stored.size + 1}`, sourceTurnId: args.sourceTurnId };
+      stored.set(args.sourceTurnId, created);
+      return created;
+    });
+    const body = JSON.stringify({ title: 'Session report', content: '## Outcome' });
+    const text = `<<artifact v=1 kind=report>>\n${body}\n<</artifact>>`;
+
+    const first = await run(text);
+    const second = await run(text);
+
+    expect(stored.size).toBe(1);
+    expect(second.result.artifact).toEqual(first.result.artifact);
+  });
+
+  it('gives the plan path the same replay key as the artifact path', async () => {
+    await run('<<plan>>\nShip it\nstep one\n<</plan>>');
+    expect(upsertPlan).toHaveBeenCalledWith(expect.objectContaining({ sourceTurnId: RUN_ID }));
+  });
+});
+
+const REPORT_TURN = (content: string, title = 'Session report'): string =>
+  `<<artifact v=1 kind=report>>\n${JSON.stringify({
+    title,
+    format: 'markdown',
+    content,
+    metadata: { reportType: 'session-summary' },
+  })}\n<</artifact>>`;
+
+const QUESTIONS = [
+  '<<ctx-question suggestions="desktop first|mobile first" recommended="desktop first" select="one">>which surface leads?<</ctx-question>>',
+  '<<ctx-question suggestions="keep the old route|drop it" recommended="keep the old route" select="one">>what happens to the legacy route?<</ctx-question>>',
+].join('\n');
+
+const BLOCKING_QUESTION =
+  '<<ctx-question suggestions="renew the key|drop the provider" recommended="renew the key" select="one" blocking="true">>the pro.ip-api.com key expired, renew it or drop the provider?<</ctx-question>>';
+
+const priorReport = (overrides: Readonly<Record<string, unknown>>) => ({
+  id: 'artifact-0',
+  agentId: AGENT_ID,
+  kind: 'report',
+  status: 'active',
+  title: 'Session report',
+  sourceText: '## Outcome',
+  sourceTurnId: 'run-0',
+  ...overrides,
+});
+
+describe('captureArtifactsFromTurn questions', () => {
+  it('produces the artifact in the same turn as two questions and records both assumptions', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    const { result } = await run(`${QUESTIONS}\n${REPORT_TURN('## Outcome')}`);
+
+    expect(createArtifact).toHaveBeenCalledTimes(1);
+    expect(result.artifact).not.toBeNull();
+    expect(appendArtifactProvenanceOmission).toHaveBeenCalledWith({
+      agentId: AGENT_ID,
+      note: 'asked "which surface leads?" and assumed "desktop first"',
+    });
+    expect(appendArtifactProvenanceOmission).toHaveBeenCalledWith({
+      agentId: AGENT_ID,
+      note: 'asked "what happens to the legacy route?" and assumed "keep the old route"',
+    });
+  });
+
+  it('records the question even when the agent gave no recommended answer', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    await run(
+      `<<ctx-question suggestions="a|b">>which one?<</ctx-question>>\n${REPORT_TURN('## Outcome')}`,
+    );
+
+    expect(appendArtifactProvenanceOmission).toHaveBeenCalledWith({
+      agentId: AGENT_ID,
+      note: 'asked "which one?" and assumed its own answer, with no recommendation on record',
+    });
+  });
+
+  it('records nothing for an agent that never started an artifact run', async () => {
+    loadArtifactProvenance.mockResolvedValue(null);
+    await run(`${QUESTIONS}\n${REPORT_TURN('## Outcome')}`);
+
+    expect(appendArtifactProvenanceOmission).not.toHaveBeenCalled();
+    expect(createArtifact).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves a turn without questions alone', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    await run(REPORT_TURN('## Outcome'));
+
+    expect(appendArtifactProvenanceOmission).not.toHaveBeenCalled();
+  });
+});
+
+describe('captureArtifactsFromTurn blocking gate', () => {
+  it('holds the report the agent shipped alongside a blocking question', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    const { patches, result } = await run(`${BLOCKING_QUESTION}\n${REPORT_TURN('## Outcome')}`);
+
+    expect(result).toEqual({ plan: null, artifact: null, error: null });
+    expect(createArtifact).not.toHaveBeenCalled();
+    expect(updateArtifactSource).not.toHaveBeenCalled();
+    expect(patches).toEqual([]);
+  });
+
+  it('holds a plan the same way', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    const body = JSON.stringify({
+      title: 'Envelope plan',
+      format: 'markdown',
+      content: 'step one',
+    });
+
+    const { result } = await run(
+      `${BLOCKING_QUESTION}\n<<artifact v=1 kind=plan>>\n${body}\n<</artifact>>`,
+    );
+
+    expect(result).toEqual({ plan: null, artifact: null, error: null });
+    expect(upsertPlan).not.toHaveBeenCalled();
+  });
+
+  it('holds the legacy plan marker too', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+
+    await run(`${BLOCKING_QUESTION}\n<<plan>>\nShip it\nstep one\n<</plan>>`);
+
+    expect(upsertPlan).not.toHaveBeenCalled();
+  });
+
+  it('stores the report when every question is non blocking', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    const { result } = await run(`${QUESTIONS}\n${REPORT_TURN('## Outcome')}`);
+
+    expect(createArtifact).toHaveBeenCalledTimes(1);
+    expect(result.artifact).not.toBeNull();
+  });
+
+  it('assumes nothing for a question it refused to answer for the user', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+
+    await run(`${BLOCKING_QUESTION}\n${QUESTIONS}\n${REPORT_TURN('## Outcome')}`);
+
+    expect(appendArtifactProvenanceOmission).not.toHaveBeenCalled();
+  });
+});
+
+describe('captureArtifactsFromTurn revisions', () => {
+  it('revises the artifact the container already produced instead of listing a second one', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    listArtifactsForSession.mockResolvedValue([priorReport({})]);
+
+    const { result } = await run(REPORT_TURN('## Outcome, now with the answer'));
+
+    expect(updateArtifactSource).toHaveBeenCalledWith({
+      artifactId: 'artifact-0',
+      title: 'Session report',
+      sourceFormat: 'markdown',
+      sourceText: '## Outcome, now with the answer',
+      metadata: { reportType: 'session-summary' },
+      note: { author: 'agent' },
+    });
+    expect(createArtifact).not.toHaveBeenCalled();
+    expect(result.artifact).toMatchObject({ id: 'artifact-0', revision: 2 });
+  });
+
+  it('never revises for an agent that has no artifact run of its own', async () => {
+    loadArtifactProvenance.mockResolvedValue(null);
+    listArtifactsForSession.mockResolvedValue([priorReport({})]);
+
+    await run(REPORT_TURN('## Outcome, now with the answer'));
+
+    expect(updateArtifactSource).not.toHaveBeenCalled();
+    expect(createArtifact).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the revision where it is when the same turn is captured twice', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    listArtifactsForSession.mockResolvedValue([priorReport({ sourceTurnId: RUN_ID })]);
+
+    await run(REPORT_TURN('## Outcome, now with the answer'));
+
+    expect(updateArtifactSource).not.toHaveBeenCalled();
+    expect(createArtifact).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the revision where it is when the container repeats the same document', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    listArtifactsForSession.mockResolvedValue([priorReport({})]);
+
+    const { result } = await run(REPORT_TURN('## Outcome'));
+
+    expect(updateArtifactSource).not.toHaveBeenCalled();
+    expect(createArtifact).not.toHaveBeenCalled();
+    expect(result.artifact).toMatchObject({ id: 'artifact-0' });
+  });
+
+  it('marks the run done once the artifact it produced is stored', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    listArtifactsForSession.mockResolvedValue([]);
+
+    await run(REPORT_TURN('## Outcome'));
+
+    expect(completeArtifactRun).toHaveBeenCalledWith({ agentId: AGENT_ID });
+  });
+
+  it('creates the artifact of an agent with no run of its own, same document or not', async () => {
+    loadArtifactProvenance.mockResolvedValue(null);
+    listArtifactsForSession.mockResolvedValue([priorReport({})]);
+
+    await run(REPORT_TURN('## Outcome'));
+
+    expect(updateArtifactSource).not.toHaveBeenCalled();
+    expect(createArtifact).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves the artifact of another agent alone', async () => {
+    loadArtifactProvenance.mockResolvedValue({ designProfileSummary: null });
+    listArtifactsForSession.mockResolvedValue([priorReport({ agentId: 'agent-2' })]);
+
+    await run(REPORT_TURN('## Outcome, now with the answer'));
+
+    expect(updateArtifactSource).not.toHaveBeenCalled();
+    expect(createArtifact).toHaveBeenCalledTimes(1);
+  });
+});

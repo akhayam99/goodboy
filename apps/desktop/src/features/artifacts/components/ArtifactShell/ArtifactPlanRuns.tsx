@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { SectionHeader, cn } from '@goodboy/ui';
 import type { Agent, AgentId, PlanId, SessionId } from '@goodboy/types';
 import { useAppStore, agentPlace } from '../../../../store';
-import { formatCompactDateTime } from '../../../../shared/utils/formatCompactDateTime';
+import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { resolvePlanConsumer } from '../../../../shared/utils/planConsumer';
 
 type Props = {
@@ -58,7 +58,7 @@ export const ArtifactPlanRuns = ({ sessionId, planId, agents }: Props) => {
                   ·
                 </span>
                 <span className="shrink-0 tabular-nums">
-                  {formatCompactDateTime({ iso: consumption.consumedAt })}
+                  {formatDateTime({ at: consumption.consumedAt })}
                 </span>
               </li>
             );

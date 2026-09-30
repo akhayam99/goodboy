@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Agent, AgentId } from '@goodboy/types';
 import { planConsumerLabel, resolvePlanConsumer } from './planConsumer';

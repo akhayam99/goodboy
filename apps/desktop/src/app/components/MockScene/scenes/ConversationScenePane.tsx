@@ -1,4 +1,4 @@
-import { PaneShell } from '../../../../shared/components/PaneShell';
+import { PaneShell } from '@goodboy/ui';
 import { RecordSections } from '../../../../shared/components/StudioDetail/RecordSections';
 import type { ConversationSource } from '../../../../shared/components/Conversation/types';
 import { useConversationPane } from '../../../../shared/components/Conversation/useConversationPane';

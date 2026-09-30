@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react';
 import { cn } from '../cn';
 import { ResizeHandle } from './ResizeHandle';
 
-export const RIGHT_DRAWER_MIN = 340;
+const RIGHT_DRAWER_MIN = 340;
 export const RIGHT_DRAWER_MAX = 560;
 export const RIGHT_DRAWER_DEFAULT = 400;
 export const RIGHT_DRAWER_STORAGE_KEY = 'goodboy:right-drawer-width:v1';

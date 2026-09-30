@@ -14,6 +14,7 @@ import { installChatWorkStubs } from './chatWorkSceneStubs';
 import { driveChatWork, isChatWorkStage } from './driveChatWork';
 import { ShellFrame, seedStudioChrome } from './shellChrome';
 import { StudioFrame } from './StudioFrame';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 const noop = () => undefined;
 
@@ -77,7 +78,7 @@ export const ChatRoomScene = () => {
   const openSession = useAppStore((state) =>
     state.currentSessionId === null
       ? null
-      : (state.sessions.find((session) => session.id === state.currentSessionId) ?? null),
+      : (sessionById(state.sessions, state.currentSessionId) ?? null),
   );
 
   useEffect(() => {

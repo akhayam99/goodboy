@@ -1,5 +1,4 @@
-import { Skeleton } from '@goodboy/ui';
-import { PaneShell } from '../../PaneShell';
+import { Skeleton, PaneShell } from '@goodboy/ui';
 import { RecordHeader } from '../RecordHeader';
 import type { IntegrationGlyphProvider } from '../../../../features/integrations/components/IntegrationGlyph';
 

@@ -6,7 +6,7 @@ import {
 } from '@goodboy/db';
 import { updateReviewComment } from '@goodboy/core';
 import type { SessionId } from '@goodboy/types';
-import { tauriGhRunner } from '../../../features/github/github';
+import { tauriGhRunner } from '../../../features/integrations/github/github';
 import {
   editPostedReplyKey,
   isEditPostedReplyOn,
@@ -21,6 +21,7 @@ import { readCommitStory, recordReplyEdit } from './commitStory';
 import { publicationTarget } from './publicationTarget';
 import { loadPublicationsInto } from './publicationState';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 type Params = {
   readonly set: SetFn;
@@ -62,7 +63,7 @@ const rewriteReceiptBodies = async ({
 };
 
 export const editPostedReplies = async ({ set, get, sessionId }: Params): Promise<number> => {
-  const workspaceId = get().sessions.find((session) => session.id === sessionId)?.workspaceId;
+  const workspaceId = sessionById(get().sessions, sessionId)?.workspaceId;
   if (workspaceId === undefined) {
     return 0;
   }

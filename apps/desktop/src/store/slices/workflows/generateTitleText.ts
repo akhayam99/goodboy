@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { getDefaultBinary, runAuxOneShot } from '@goodboy/core';
 import type { TaskModelPreference } from '@goodboy/types';
 import { parseGeneratedTitle } from '../turn/applyHeuristicTitle/parseGeneratedTitle';
@@ -37,7 +37,7 @@ export const generateTitleText = async ({
         userMessage: prompt,
         systemPrompt,
         ...(workingDir != null && { workingDir }),
-        invokeFn: invoke,
+        invokeFn: invokeCommand,
       }),
       timeout,
     ]);

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type {
   IsoDateTime,
@@ -13,6 +14,8 @@ import {
   selectActiveMount,
   selectActiveMountId,
   selectAlsoOnBranchSessionId,
+  resolveMountBaseBranch,
+  selectMountBaseBranch,
   selectMountById,
   selectMountForPath,
   selectUnambiguousProjectMount,
@@ -296,5 +299,62 @@ describe('selectAlsoOnBranchSessionId', () => {
         branch: 'ak/shared',
       }),
     ).toBeNull();
+  });
+});
+
+describe('mount base branch', () => {
+  const PROJECT = (baseBranch: string | null) => [
+    { id: PROJECT_ID, baseBranch } as never as import('@goodboy/types').Project,
+  ];
+
+  const stateWith = ({
+    mountBase,
+    projectBase,
+  }: {
+    readonly mountBase: string | null;
+    readonly projectBase: string | null;
+  }) => ({
+    ...makeState(),
+    projects: PROJECT(projectBase),
+    sessionMounts: {
+      [SESSION_ID]: [
+        {
+          ...view({
+            id: ATTACHED,
+            worktreePath: '/repos/goodboy/wt/first',
+            isAttached: true,
+            diskState: 'present',
+          }),
+          baseBranch: mountBase,
+        },
+      ],
+    },
+  });
+
+  it('prefers the base recorded on the mount over the project base', () => {
+    const state = stateWith({ mountBase: 'release/9', projectBase: 'develop' });
+
+    expect(
+      selectMountBaseBranch({ state, sessionId: SESSION_ID, path: '/repos/goodboy/wt/first' }),
+    ).toBe('release/9');
+  });
+
+  it('falls back to the project base the user picked', () => {
+    const state = stateWith({ mountBase: null, projectBase: 'develop' });
+
+    expect(
+      selectMountBaseBranch({ state, sessionId: SESSION_ID, path: '/repos/goodboy/wt/first' }),
+    ).toBe('develop');
+  });
+
+  it('answers null when nobody picked a base so the backend keeps its own default', () => {
+    const state = stateWith({ mountBase: null, projectBase: null });
+
+    expect(
+      selectMountBaseBranch({ state, sessionId: SESSION_ID, path: '/repos/goodboy/wt/first' }),
+    ).toBeNull();
+    expect(selectMountBaseBranch({ state, sessionId: SESSION_ID, path: '/elsewhere' })).toBeNull();
+    expect(selectMountBaseBranch({ state, sessionId: SESSION_ID, path: null })).toBeNull();
+    expect(resolveMountBaseBranch({ mount: null, projects: PROJECT('develop') })).toBeNull();
   });
 });

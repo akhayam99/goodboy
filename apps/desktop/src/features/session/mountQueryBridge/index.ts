@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { listMountPullRequestLinks } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
@@ -23,7 +23,10 @@ import {
   queueMountContinuation,
 } from '../../../store/slices/turn/mountContinuations';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { selectActiveMountId } from '../../../store/slices/project-mounts/selectors';
+import {
+  resolveMountBaseBranch,
+  selectActiveMountId,
+} from '../../../store/slices/project-mounts/selectors';
 import { useAppStore } from '../../../store/store';
 import { isMainWindow } from '../../workspace/window';
 import { executeSeriesRequest, type SeriesBridgeRequest } from './series';
@@ -32,7 +35,7 @@ const MOUNT_EVENT = 'query-bridge://mount-command';
 
 type BridgeArgs = Readonly<Record<string, unknown>>;
 
-export type MountBridgeRequest = {
+type MountBridgeRequest = {
   readonly id: string;
   readonly provider: 'mount' | 'github' | 'gitlab';
   readonly verb: string;
@@ -44,9 +47,9 @@ export type MountBridgeRequest = {
   readonly args: BridgeArgs;
 };
 
-export type BridgeRequest = MountBridgeRequest | SeriesBridgeRequest;
+type BridgeRequest = MountBridgeRequest | SeriesBridgeRequest;
 
-export type MountBridgeOutcome = {
+type MountBridgeOutcome = {
   readonly ok: boolean;
   readonly error?: string;
   readonly code?: string;
@@ -144,7 +147,12 @@ const inspect = async ({ request }: InspectParams): Promise<MountBridgeOutcome> 
   });
   const path = mount.worktreePath;
   const status =
-    path === null ? null : await worktreeStatus({ worktreePath: path }).catch(() => null);
+    path === null
+      ? null
+      : await worktreeStatus({
+          worktreePath: path,
+          baseBranch: resolveMountBaseBranch({ mount, projects: get().projects }),
+        }).catch(() => null);
   const lease = path === null ? null : await worktreeWriterStatus({ path });
   const blockers =
     path === null
@@ -528,7 +536,7 @@ export const listenMountCommands = async (): Promise<UnlistenFn> => {
     const request = event.payload;
     void executeMountRequest(request)
       .then((result) =>
-        invoke('mount_command_result', {
+        invokeCommand('mount_command_result', {
           id: request.id,
           ok: result.ok,
           error: result.error ?? null,

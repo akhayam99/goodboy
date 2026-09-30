@@ -1,9 +1,9 @@
 import { currentPlatform } from '../platform';
 
-export type ShortcutPlane = 'app' | 'session' | 'lens';
+type ShortcutPlane = 'app' | 'session' | 'lens' | 'pane';
 
 export type ShortcutGroup =
-  'general' | 'workspaces' | 'navigate' | 'session' | 'views' | 'review' | 'window';
+  'general' | 'workspaces' | 'navigate' | 'session' | 'views' | 'review' | 'diff' | 'window';
 
 export type ShortcutFamily = 'workspace-digit';
 
@@ -267,6 +267,15 @@ export const SHORTCUTS = {
     plane: 'app',
     group: 'review',
   },
+
+  'diff.jump': { combo: 'KeyT', label: 'Jump to a file', plane: 'pane', group: 'diff' },
+  'diff.previousFile': {
+    combo: 'BracketLeft',
+    label: 'Previous file',
+    plane: 'pane',
+    group: 'diff',
+  },
+  'diff.nextFile': { combo: 'BracketRight', label: 'Next file', plane: 'pane', group: 'diff' },
 
   'zoom.in': { combo: 'cmd+Equal', label: 'Zoom in', plane: 'app', group: 'window' },
   'zoom.out': { combo: 'cmd+Minus', label: 'Zoom out', plane: 'app', group: 'window' },

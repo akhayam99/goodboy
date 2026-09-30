@@ -1,5 +1,7 @@
 import { currentPlatform } from '../platform';
 import { recordShortcut } from '../utils/actionRing';
+import { isTerminalFocused } from './isTerminalFocused';
+import { isTextEntryTarget, isTypingTarget } from './isTypingTarget';
 import { SHORTCUTS, platformCombo, type ShortcutEntry, type ShortcutId } from './registry';
 
 type Parsed = {
@@ -40,17 +42,28 @@ export const eventMatches = ({ event, entry }: MatchParams): boolean => {
   );
 };
 
+type Handler = (event: KeyboardEvent) => void;
+
 type Registration = {
   readonly id: ShortcutId;
-  readonly handler: () => void;
+  readonly handler: Handler;
 };
 
 const registrations = new Map<ShortcutId, Registration>();
 let listening = false;
 
-const isEditableTarget = (target: EventTarget | null): boolean =>
-  target instanceof HTMLElement &&
-  (target.isContentEditable || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA');
+const isPlainKey = (entry: ShortcutEntry): boolean => {
+  const parsed = parseCombo(platformCombo({ entry }));
+  return !parsed.meta && !parsed.ctrl && !parsed.alt && !parsed.shift;
+};
+
+const MODAL_SELECTOR = '[role="dialog"][aria-modal="true"]';
+
+const plainKeyYields = (event: KeyboardEvent): boolean =>
+  event.defaultPrevented ||
+  isTypingTarget(event.target) ||
+  isTerminalFocused() ||
+  document.querySelector(MODAL_SELECTOR) !== null;
 
 const typingWins = (event: KeyboardEvent): boolean => {
   if (currentPlatform() === 'darwin') {
@@ -59,7 +72,7 @@ const typingWins = (event: KeyboardEvent): boolean => {
   if (event.getModifierState('AltGraph')) {
     return true;
   }
-  return event.altKey && isEditableTarget(event.target);
+  return event.altKey && isTextEntryTarget(event.target);
 };
 
 const onKeyDown = (event: KeyboardEvent): void => {
@@ -67,12 +80,16 @@ const onKeyDown = (event: KeyboardEvent): void => {
     return;
   }
   for (const registration of registrations.values()) {
-    if (!eventMatches({ event, entry: SHORTCUTS[registration.id] })) {
+    const entry: ShortcutEntry = SHORTCUTS[registration.id];
+    if (!eventMatches({ event, entry })) {
+      continue;
+    }
+    if (isPlainKey(entry) && plainKeyYields(event)) {
       continue;
     }
     event.preventDefault();
     recordShortcut({ id: registration.id });
-    registration.handler();
+    registration.handler(event);
     return;
   }
 };
@@ -93,7 +110,7 @@ const stopListening = (): void => {
   listening = false;
 };
 
-export const registerShortcut = (id: ShortcutId, handler: () => void): (() => void) => {
+export const registerShortcut = (id: ShortcutId, handler: Handler): (() => void) => {
   if (import.meta.env.DEV && registrations.has(id)) {
     console.warn(`[shortcuts] ${id} registered twice, the later registration wins`);
   }

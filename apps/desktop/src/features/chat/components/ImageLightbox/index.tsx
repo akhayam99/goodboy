@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
-import { IconButton } from '@goodboy/ui';
+import { IconButton, useEscapeLayer } from '@goodboy/ui';
 
 type Props = {
   readonly src: string;
@@ -40,21 +40,15 @@ export const ImageLightbox = ({ src, alt, onClose, media = 'image' }: Props) => 
     };
   }, [phase, onClose]);
 
+  useEscapeLayer(requestClose);
+
   useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.stopPropagation();
-        requestClose();
-      }
-    };
-    window.addEventListener('keydown', onKey, { capture: true });
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
-      window.removeEventListener('keydown', onKey, { capture: true });
       document.body.style.overflow = prevOverflow;
     };
-  }, [requestClose]);
+  }, []);
 
   const visible = phase === 'open';
 

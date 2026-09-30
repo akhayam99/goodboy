@@ -6,9 +6,14 @@ import type {
   SessionStageInfo,
 } from '@goodboy/types';
 
+export type StagePullRequest = Pick<
+  PullRequestState,
+  'number' | 'state' | 'isDraft' | 'checks' | 'reviewDecision'
+>;
+
 type Params = {
   session: Session;
-  pr: PullRequestState | null;
+  pr: StagePullRequest | null;
   hasUnread: boolean;
   openQuestionCount: number;
   hasRunningAgent?: boolean;
@@ -23,7 +28,7 @@ type Params = {
   readonly hasRun?: boolean;
 };
 
-const isPrLive = (pr: PullRequestState | null): pr is PullRequestState =>
+const isPrLive = (pr: StagePullRequest | null): pr is StagePullRequest =>
   pr !== null && pr.state !== 'merged' && pr.state !== 'closed';
 
 type StageWithoutRequest = Omit<SessionStageInfo, 'prState'>;
@@ -48,16 +53,16 @@ const deriveStage = ({
   if (hasBlockedAgent) {
     return { stage: 'attention', reason: 'Needs approval', attention: 'needs-approval' };
   }
+  if (session.state.kind === 'error') {
+    return { stage: 'attention', reason: 'agent errored', attention: 'agent-error' };
+  }
+  if (hasRunningAgent) {
+    return { stage: 'running', reason: 'agent running', attention: null };
+  }
+  if (isDecidingWorkflow) {
+    return { stage: 'running', reason: 'deciding the next step', attention: null };
+  }
   if (isBranchless) {
-    if (session.state.kind === 'running' || session.state.kind === 'starting' || hasRunningAgent) {
-      return { stage: 'running', reason: 'agent running', attention: null };
-    }
-    if (isDecidingWorkflow) {
-      return { stage: 'running', reason: 'deciding the next step', attention: null };
-    }
-    if (session.state.kind === 'error') {
-      return { stage: 'attention', reason: 'agent errored', attention: 'agent-error' };
-    }
     if (openQuestionCount === 1) {
       return { stage: 'attention', reason: '1 open question', attention: 'open-question' };
     }
@@ -76,18 +81,6 @@ const deriveStage = ({
       reason: hasRun ? 'ready for work' : 'not started',
       attention: null,
     };
-  }
-  if (session.state.kind === 'error') {
-    return { stage: 'attention', reason: 'agent errored', attention: 'agent-error' };
-  }
-  if (session.state.kind === 'running' || session.state.kind === 'starting') {
-    return { stage: 'running', reason: 'agent running', attention: null };
-  }
-  if (hasRunningAgent) {
-    return { stage: 'running', reason: 'agent running', attention: null };
-  }
-  if (isDecidingWorkflow) {
-    return { stage: 'running', reason: 'deciding the next step', attention: null };
   }
   if (isPrLive(pr) && pr.checks === 'failure') {
     return { stage: 'attention', reason: `${label}: CI failed`, attention: 'ci-failed' };

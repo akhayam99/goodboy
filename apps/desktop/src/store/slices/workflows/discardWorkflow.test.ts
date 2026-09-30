@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AgentId, ProviderRunId, SessionId, WorkflowId, WorkflowRunId } from '@goodboy/types';
 import {
@@ -12,11 +13,13 @@ const { cancelTurnSpy, discardWorkflowInSessionSpy, recordSessionEventSpy } = vi
   recordSessionEventSpy: vi.fn(async () => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  discardWorkflowInSession: discardWorkflowInSessionSpy,
-  updateSessionState: vi.fn(async () => undefined),
-  updateSessionWorkflowTriggerMode: vi.fn(async () => undefined),
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    discardWorkflowInSession: discardWorkflowInSessionSpy,
+    updateSessionState: vi.fn(async () => undefined),
+    updateSessionWorkflowTriggerMode: vi.fn(async () => undefined),
+  }),
+);
 
 vi.mock('../../../shared/lib/db', () => ({
   tauriDatabase: {},

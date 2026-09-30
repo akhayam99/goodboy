@@ -37,7 +37,7 @@ type WorkRequest = {
 
 const NO_MESSAGES: ReadonlyArray<ChatMessage> = [];
 
-export const NEW_CHAT_HEADING = 'New chat';
+const NEW_CHAT_HEADING = 'New chat';
 
 export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
   const chatId = chat?.id ?? null;

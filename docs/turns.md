@@ -15,6 +15,52 @@ Owns the turn pipeline. The frontend drives it from
 `apps/desktop/src-tauri/src/turn.rs`. Per-provider stream parsers live in
 `packages/core/src/providers/`.
 
+## How sendTurn is laid out
+
+`sendTurn.ts` holds `run`, which owns the cleanup that must happen whatever the
+turn does, and `runOnce`, which calls one file per phase in the slice
+(`apps/desktop/src/store/slices/turn/`). Each phase returns what the next ones
+read; a phase that can end the turn early (blocked over budget, lease denied,
+cancelled before the spawn) returns `turnDone` with the result, the others
+return `turnReady` with their values. Side effects run in the order below.
+
+1. `prepareTurn`: the mount and working directory, the agent, the slash skill,
+   the attachments and the workflow step the agent belongs to.
+2. `routeTurn`: provider, model, effort and credential, the over-budget gate and
+   the disconnected-provider gate.
+3. `leaseTurnWriter`: the captured-mount check and the resolver's worktree
+   writer lease.
+4. `startTurnRun`: run id, user message, provider run row, the cancel-before-spawn
+   claim (`claimTurnStart`), the agent row moving to `running`, session state.
+5. `buildTurnPrompt`: permission flags, context preamble, handoff layers, the
+   context-window warning.
+6. `buildTurnSpawn`: the resolve attempt, the guards, the system prompt, the
+   writable roots, the file-version capture, the handoff record, the span base.
+7. `readTurnStream`: one loop over the CLI events.
+8. `finalizeTurnStream`: span, run status, workflow completion, context refresh.
+9. `recoverTurnFailure`: failure class, cooldown, fallback rerun, usage-limit
+   retry, error state.
+10. `closeTurnCapture` (always) and `settleTurn`: assistant message, summary,
+    artifacts, nudges, drift, resolve phase, then the stored error is thrown.
+
+The phases share one `TurnProgress` object: the stream phase appends to it, and
+the finalize, recover and settle phases read it. It is a shared object, not a
+return value, because the failure path must see the text streamed before the
+throw. `run` releases the writer lease and drains the resolve queue, opens the
+mount continuation and drains the agent queue after `runOnce` returns or
+throws.
+
+The provider run row is closed on these paths only: `succeeded` when the stream
+and its finalize step complete (`failed` with "cancelled by user" when a stop
+landed), `cancelled` when a stop lands before the spawn (`claimTurnStart`),
+`failed` when the step's agent cannot be resolved, and `failed` on any throw
+inside the stream or finalize step, including the run a fallback rerun
+replaces. A throw before the run row exists (the user message write) leaves no
+run. A throw between the run row and the stream (the agent status write, the
+session state write, the prompt and spawn phases) leaves the run `streaming`
+and the agent `running`; nothing in the turn closes them. `store.sqlite-turn.test.ts` holds the closed paths on a real
+database.
+
 ## Where a turn writes
 
 - A turn writes into the mount it was aimed at, else the session's active
@@ -394,6 +440,13 @@ in the activity rows and the trail, instead of "Blocked" or "Needs you"
 Whatever the outcome, a turn that forked a mount hands off to one continuation
 turn on the new mount once it ends.
 
+After the context refresh, a turn on a git mount mirrors the session's
+`git diff --numstat` against the same merge-base as the file-changes view into
+the `files_touched_numstat` context slot. The slot is not a `SLOT_KEYS` entry: it is
+desktop state that reaches the mobile client through the snapshot, next to the
+paths-only `files_touched` slot the client falls back to. A git failure never
+fails the turn.
+
 ## The session summarizer
 
 After each successful turn the session summarizer condenses what happened into
@@ -491,6 +544,10 @@ avoided on `SendControl`'s own buttons.
   same `ArrowUp` glyph as `ConversationComposer`, stop while a turn runs with
   nothing to send, Queue/Send now once there is something to deliver while a
   turn runs.
+- `ChatInput/index.tsx` only composes. Its state lives in `hooks/use*` (agent
+  selection, draft, queue, send, suggestions), its sections in `parts/`, and
+  its derived flags in `composerView.ts`. It stays one component so the draft
+  and pending nudges survive a re-render.
 - `composerPlaceholder` (`ChatInput/lib.ts`) replaces the old placeholder that
   advertised every prefix inline: a role's first turn gets its
   `firstMessagePrompt`, otherwise `Reply to {role}` idle or `Queue a message

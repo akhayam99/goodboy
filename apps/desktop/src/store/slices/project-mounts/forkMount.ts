@@ -1,9 +1,9 @@
+import { nextAvailableSlug } from '@goodboy/core';
 import { insertSessionMount } from '@goodboy/db';
 import type { IsoDateTime, MountId, SessionMountView } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { createWorktree, listBranchNames } from '../../../features/worktree/worktree';
-import { nextAvailableSlug } from '../sessions/deriveBranchName';
 import { rememberWorktreeRoot } from '../storage/rememberWorktreeRoot';
 import { mountBranchOrigin } from './mountBranchOrigin';
 import { mountDirName } from './mountDirName';

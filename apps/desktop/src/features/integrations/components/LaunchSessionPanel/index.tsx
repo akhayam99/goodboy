@@ -8,7 +8,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
+import { useToast } from '../../../../shared/components/Toast';
 import { issueBriefKey } from '../../../../store/slices/issue-briefs/issueBriefKey';
 import { selectIssueBrief } from '../../../../store/slices/issue-briefs/selectIssueBrief';
 import type { IssueBriefSource } from '../../../../store/slices/issue-briefs/types';

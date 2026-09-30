@@ -1,0 +1,33 @@
+#!/bin/sh
+. "$(dirname "$0")/common.sh"
+case "$fake_mode" in
+  env)
+    printf '%s\n' "$@" > "$PWD/fake-git-argv.txt"
+    {
+      printf 'cwd=%s\n' "$PWD"
+      for key in GIT_TERMINAL_PROMPT GIT_ASKPASS SSH_ASKPASS GIT_SSH_COMMAND GIT_EDITOR GIT_SEQUENCE_EDITOR GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GH_TOKEN GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0; do
+        eval "value=\${$key-__unset__}"
+        printf '%s=%s\n' "$key" "$value"
+      done
+    } > "$PWD/fake-git-env.txt"
+    printf 'fake git ok\n'
+    ;;
+  leak)
+    printf "fatal: unable to access 'https://ci-user:s3cret@harborline.test/ledger-core.git/': could not resolve host\n" >&2
+    exit 128
+    ;;
+  hang)
+    sleep 30 &
+    printf '%s\n' "$!" > "$PWD/fake-git-sleeper.pid"
+    wait
+    ;;
+  stdin)
+    cat
+    ;;
+  binary)
+    printf 'caf\351\n'
+    ;;
+  *)
+    printf 'fake git ok\n'
+    ;;
+esac

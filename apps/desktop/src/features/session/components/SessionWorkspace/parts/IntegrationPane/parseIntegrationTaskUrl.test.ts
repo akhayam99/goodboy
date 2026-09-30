@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { slackThreadExternalId } from '../../../../../integrations/slack/threadFormulas';
 import { parseIntegrationTaskUrl } from './parseIntegrationTaskUrl';

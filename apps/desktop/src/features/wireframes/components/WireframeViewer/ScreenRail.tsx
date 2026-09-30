@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Eyebrow, SelectableRow, WorkNode } from '@goodboy/ui';
 import type { WireframePage } from '../../wireframePagePath';
 
-export type ScreenRailEntry = Readonly<{
+type ScreenRailEntry = Readonly<{
   id: string;
   title: string;
   states: ReadonlyArray<Readonly<{ id: string; label: string }>>;

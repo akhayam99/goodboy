@@ -1,26 +1,29 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Agent, IsoDateTime, ProviderRunId, SessionId, TurnEvent } from '@goodboy/types';
 
 const h = vi.hoisted(() => ({ settings: new Map<string, string>() }));
 
-vi.mock('@goodboy/db', () => ({
-  getSetting: vi.fn(async (_db: unknown, key: string) => h.settings.get(key) ?? null),
-  setSetting: vi.fn(async (_db: unknown, key: string, value: string) => {
-    h.settings.set(key, value);
-  }),
-  replaceSettingIfUnchanged: vi.fn(
-    async (
-      _db: unknown,
-      { key, expected, value }: { key: string; expected: string; value: string },
-    ) => {
-      if (h.settings.get(key) !== expected) {
-        return false;
-      }
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    getSetting: vi.fn(async (_db: unknown, key: string) => h.settings.get(key) ?? null),
+    setSetting: vi.fn(async (_db: unknown, key: string, value: string) => {
       h.settings.set(key, value);
-      return true;
-    },
-  ),
-}));
+    }),
+    replaceSettingIfUnchanged: vi.fn(
+      async (
+        _db: unknown,
+        { key, expected, value }: { key: string; expected: string; value: string },
+      ) => {
+        if (h.settings.get(key) !== expected) {
+          return false;
+        }
+        h.settings.set(key, value);
+        return true;
+      },
+    ),
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { RESTART_RESUME_PROMPT } from './planRestartResume';

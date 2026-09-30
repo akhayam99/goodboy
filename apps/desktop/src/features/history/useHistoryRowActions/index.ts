@@ -13,7 +13,7 @@ type Params = {
   readonly sessionId: SessionId;
 };
 
-export type HistoryRowAction = {
+type HistoryRowAction = {
   readonly label: string;
   readonly onAct: () => void;
   readonly variant?: 'warning';

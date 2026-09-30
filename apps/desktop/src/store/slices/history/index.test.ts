@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   AgentId,
@@ -7,8 +8,11 @@ import type {
   HistoryTrialProgress,
   MountId,
   ProjectId,
+  ResolveThread,
   SessionId,
+  WorkspaceId,
 } from '@goodboy/types';
+import { aProject, aSession } from '@goodboy/types/testing';
 
 const engine = vi.hoisted(() => ({
   readRebasePlan: vi.fn(),
@@ -27,7 +31,10 @@ const engine = vi.hoisted(() => ({
 }));
 
 const worktree = vi.hoisted(() => ({
-  worktreeStatus: vi.fn(async () => ({ upstream: 'origin/fix/ledger-postings', head: 'head-sha' })),
+  worktreeStatus: vi.fn(async (params: { worktreePath: string; baseBranch?: string | null }) => {
+    void params;
+    return { upstream: 'origin/fix/ledger-postings', head: 'head-sha' };
+  }),
   worktreeRemoteHead: vi.fn(async () => 'remote-sha'),
 }));
 
@@ -37,14 +44,18 @@ vi.mock('../../../features/history/historyEngine', () => engine);
 vi.mock('../resolve/editPostedReplies', () => replies);
 vi.mock('../../../features/worktree/worktree', () => worktree);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
-vi.mock('@goodboy/db', () => ({
-  listResolvePublicationsForSession: vi.fn(async () => []),
-  setResolvePublicationPhase: vi.fn(async () => undefined),
-  markHistoryPlan: vi.fn(async () => undefined),
-  saveDraftHistoryPlan: vi.fn(async () => ({ id: 'plan-1' })),
-  getDraftHistoryPlan: vi.fn(async () => null),
-}));
-vi.mock('../../../features/session/components/AgentSpawnConfig/taskModelAgentSpawnConfig', () => ({
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    listResolvePublicationsForSession: vi.fn(async () => []),
+    setResolvePublicationPhase: vi.fn(async () => undefined),
+    markHistoryPlan: vi.fn(async () => undefined),
+    saveDraftHistoryPlan: vi.fn(async () => ({ id: 'plan-1' })),
+    getDraftHistoryPlan: vi.fn(async () => null),
+    getSetting: vi.fn(async () => null),
+    setSetting: vi.fn(async () => undefined),
+  }),
+);
+vi.mock('../../../features/session/taskModelAgentSpawnConfig', () => ({
   taskModelAgentSpawnConfig: () => ({
     hint: '',
     provider: 'anthropic',
@@ -58,6 +69,7 @@ import {
   reviewCommitRows,
   reviewPlanItems,
 } from '../../../features/resolve/reviewCommits';
+import { useAppStore, type AppStore } from '../../store';
 import { createHistorySlice } from './index';
 import { historyInitialState } from './state';
 import { rewriterCopyFor } from './rewriterCopyFor';
@@ -65,10 +77,12 @@ import { rewriterKickoff } from './rewriterKickoff';
 import type { GetFn, SetFn } from './types';
 
 const SESSION_ID = 'session-ledger' as SessionId;
+const PROJECT_ID = 'project-ledger' as ProjectId;
+const WORKSPACE_ID = 'workspace-harborline' as WorkspaceId;
 const IDENTITY = {
   worktreePath: '/w/ledger',
   branch: 'fix/ledger-postings',
-  projectId: 'project-ledger' as ProjectId,
+  projectId: PROJECT_ID,
 };
 const MOUNT_ID = 'mount-ledger' as MountId;
 const AGENT_ID = 'agent-rewriter' as AgentId;
@@ -86,34 +100,39 @@ const REBASE = {
   fetchError: null,
 };
 
-const harness = () => {
-  let state: Record<string, unknown> = {
+type Bases = {
+  readonly mount: string | null;
+  readonly project: string | null;
+};
+
+const harness = ({ mount, project }: Bases = { mount: 'main', project: 'main' }) => {
+  const spawnAgent = vi.fn<AppStore['spawnAgent']>(async () => AGENT_ID);
+  const sendTurn = vi.fn<AppStore['sendTurn']>(async () => ({ blockedOverBudget: false }));
+  let state: AppStore = {
+    ...useAppStore.getInitialState(),
     ...historyInitialState,
-    sessions: [
-      {
-        id: SESSION_ID,
-        workspaceId: 'workspace-harborline',
-        providerPreference: { defaultProvider: 'anthropic' },
-      },
-    ],
+    sessions: [aSession({ id: SESSION_ID, workspaceId: WORKSPACE_ID })],
     projects: [
-      {
-        id: 'project-ledger',
+      aProject({
+        id: PROJECT_ID,
         name: 'ledger-core',
-        workspaceId: 'workspace-harborline',
-        baseBranch: 'main',
-      },
+        workspaceId: WORKSPACE_ID,
+        baseBranch: project,
+      }),
     ],
     sessionProjectMounts: {
       [SESSION_ID]: [
         {
           mountId: MOUNT_ID,
           sessionId: SESSION_ID,
-          projectId: 'project-ledger',
+          projectId: PROJECT_ID,
           mountName: 'ledger-core',
           worktreePath: '/w/ledger',
+          lastWorktreePath: null,
+          repoRoot: '/repos/ledger-core',
           branch: 'fix/ledger-postings',
-          baseBranch: 'main',
+          baseBranch: mount,
+          parallelIndex: 0,
           isAttached: true,
           diskState: 'present',
           revision: 1,
@@ -126,24 +145,20 @@ const harness = () => {
     providerLimits: {},
     recordSessionEvent: vi.fn(async () => undefined),
     reportError: vi.fn(async () => undefined),
-    spawnAgent: vi.fn(async () => AGENT_ID),
-    sendTurn: vi.fn(async () => ({ blockedOverBudget: false })),
+    spawnAgent,
+    sendTurn,
     updateResolveThread: vi.fn(async () => true),
     refreshPrDescription: vi.fn(async () => false),
     refreshSessionPr: vi.fn(async () => undefined),
     loadHistoryDraft: vi.fn(async () => undefined),
   };
-  const set = ((patch: unknown) => {
-    const next =
-      typeof patch === 'function'
-        ? (patch as (s: Record<string, unknown>) => object)(state)
-        : patch;
-    state = { ...state, ...(next as object) };
-  }) as unknown as SetFn;
-  const get = (() => state) as unknown as GetFn;
-  const slice = createHistorySlice(set, get);
+  const set: SetFn = (patch) => {
+    state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) };
+  };
+  const get: GetFn = () => state;
+  const slice = createHistorySlice({ set, get });
   state = { ...state, ...slice };
-  return { slice, read: () => state as unknown as ReturnType<GetFn> };
+  return { slice, read: get, seed: set, spawnAgent, sendTurn };
 };
 
 beforeEach(() => {
@@ -159,6 +174,112 @@ beforeEach(() => {
   engine.pushWithLease.mockResolvedValue({ kind: 'pushed' });
   engine.readRemoteLease.mockResolvedValue({ kind: 'included', sha: 'remote-sha' });
   engine.discardHistoryCopy.mockResolvedValue(undefined);
+});
+
+const statusBases = (): ReadonlyArray<string | null | undefined> =>
+  worktree.worktreeStatus.mock.calls.map(([params]) => params.baseBranch);
+
+describe('the base branch of a history run', () => {
+  const cleanReplay = () => {
+    engine.predictHistoryPlan.mockResolvedValue({
+      isSupported: true,
+      steps: [],
+      head: 'predicted',
+      isTreeEqual: false,
+      changedFiles: [],
+    });
+    engine.tryHistoryPlan.mockResolvedValue({
+      head: 'new-head',
+      map: [{ from: 'a1', to: 'x1' }],
+      isTreeEqual: false,
+      changedFiles: [],
+      stop: null,
+      copyPath: null,
+      order: [],
+    });
+  };
+
+  beforeEach(() => {
+    worktree.worktreeStatus.mockClear();
+  });
+
+  it('rebases onto the mount base and reads every status against it', async () => {
+    const { slice } = harness({ mount: 'develop', project: 'main' });
+    cleanReplay();
+
+    await slice.rebaseBranch({ sessionId: SESSION_ID, mountId: MOUNT_ID });
+
+    expect(engine.readRebasePlan).toHaveBeenCalledWith(
+      expect.objectContaining({ baseBranch: 'develop' }),
+    );
+    expect(statusBases().length).toBeGreaterThan(0);
+    expect(new Set(statusBases())).toEqual(new Set(['develop']));
+  });
+
+  it('falls back to the project base when the mount has none', async () => {
+    const { slice } = harness({ mount: null, project: 'develop' });
+    cleanReplay();
+
+    await slice.rebaseBranch({ sessionId: SESSION_ID, mountId: MOUNT_ID });
+
+    expect(engine.readRebasePlan).toHaveBeenCalledWith(
+      expect.objectContaining({ baseBranch: 'develop' }),
+    );
+    expect(new Set(statusBases())).toEqual(new Set(['develop']));
+  });
+
+  it('lets Rust choose the base when neither the mount nor the project names one', async () => {
+    const { slice, read } = harness({ mount: null, project: null });
+    cleanReplay();
+
+    await slice.rebaseBranch({ sessionId: SESSION_ID, mountId: MOUNT_ID });
+
+    expect(engine.readRebasePlan).toHaveBeenCalledWith(
+      expect.objectContaining({ baseBranch: null }),
+    );
+    expect(new Set(statusBases())).toEqual(new Set([null]));
+    expect(read().recordSessionEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'rebase_requested',
+        payload: expect.objectContaining({ branch: 'origin/main' }),
+      }),
+    );
+  });
+
+  it('reads the status of a restore against the mount base', async () => {
+    const { slice } = harness({ mount: 'develop', project: 'main' });
+    engine.restoreHistoryBackup.mockResolvedValue({
+      kind: 'moved',
+      head: 'backup-sha',
+      backupRef: 'refs/goodboy/backup/fix-ledger-postings/keep-2',
+    });
+
+    await slice.restoreHistory({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      backupRef: 'refs/goodboy/backup/fix-ledger-postings/1',
+      shouldPush: false,
+    });
+
+    expect(statusBases().length).toBeGreaterThan(0);
+    expect(new Set(statusBases())).toEqual(new Set(['develop']));
+  });
+
+  it('reads the status of bringing origin in against the mount base', async () => {
+    const { slice } = harness({ mount: 'develop', project: 'main' });
+    engine.readOriginAhead.mockResolvedValue({
+      remoteSha: 'remote-now',
+      commits: [],
+      fetchError: null,
+    });
+
+    await slice.bringOriginIntoHistory({ sessionId: SESSION_ID, mountId: MOUNT_ID });
+
+    expect(worktree.worktreeStatus).toHaveBeenCalledWith({
+      worktreePath: '/w/ledger',
+      baseBranch: 'develop',
+    });
+  });
 });
 
 describe('rebase on main', () => {
@@ -288,7 +409,7 @@ describe('rebase on main', () => {
   });
 
   it('removes the conflicted copy when the rewriter cannot start or cannot be told', async () => {
-    const { slice, read } = harness();
+    const { slice, read, spawnAgent, sendTurn } = harness();
     engine.prepareHistoryRewrite.mockResolvedValue({
       head: null,
       map: [],
@@ -300,8 +421,7 @@ describe('rebase on main', () => {
       check: null,
     });
     const plan = { worktreePath: '/w/ledger', base: 'base-sha', head: 'head-sha', steps: [] };
-    const spawn = read().spawnAgent as unknown as ReturnType<typeof vi.fn>;
-    spawn.mockRejectedValueOnce(new Error('no room for another agent'));
+    spawnAgent.mockRejectedValueOnce(new Error('no room for another agent'));
     await slice.startHistoryRewriter({
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
@@ -313,8 +433,7 @@ describe('rebase on main', () => {
       worktreePath: '/w/ledger',
       copyPath: '/tmp/goodboy-history-copy',
     });
-    const send = read().sendTurn as unknown as ReturnType<typeof vi.fn>;
-    send.mockRejectedValueOnce(new Error('the provider is offline'));
+    sendTurn.mockRejectedValueOnce(new Error('the provider is offline'));
     await slice.startHistoryRewriter({
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
@@ -374,25 +493,26 @@ describe('rebase on main', () => {
   });
 
   it('applies what the rewriter settled once the engine checks it out', async () => {
-    const { slice, read } = harness();
+    const { slice, read, seed } = harness();
     const plan: HistoryPlanArgs = {
       worktreePath: '/w/ledger',
       base: 'onto-sha',
       head: 'head-sha',
       steps: [{ sha: 'a1', verb: 'pick' }],
     };
-    const state = read() as unknown as Record<string, unknown>;
-    state['historyRewriters'] = {
-      [AGENT_ID]: {
-        sessionId: SESSION_ID,
-        mountId: MOUNT_ID,
-        copyPath: '/tmp/goodboy-history-copy',
-        plan,
-        origin: 'rebase',
-        planId: null,
-        identity: IDENTITY,
+    seed({
+      historyRewriters: {
+        [AGENT_ID]: {
+          sessionId: SESSION_ID,
+          mountId: MOUNT_ID,
+          copyPath: '/tmp/goodboy-history-copy',
+          plan,
+          origin: 'rebase',
+          planId: null,
+          identity: IDENTITY,
+        },
       },
-    };
+    });
     engine.collectHistoryRewrite.mockResolvedValue({
       head: 'rebuilt',
       map: [{ from: 'a1', to: 'rebuilt' }],
@@ -418,18 +538,20 @@ describe('rebase on main', () => {
   });
 
   it('stops and keeps the copy when the rewriter cannot merge with confidence', async () => {
-    const { slice, read } = harness();
-    const state = read() as unknown as Record<string, unknown>;
-    state['historyRewriters'] = {
-      [AGENT_ID]: {
-        sessionId: SESSION_ID,
-        mountId: MOUNT_ID,
-        copyPath: '/tmp/goodboy-history-copy',
-        plan: { worktreePath: '/w/ledger', base: 'onto-sha', head: 'head-sha', steps: [] },
-        origin: 'rebase',
-        planId: null,
+    const { slice, read, seed } = harness();
+    seed({
+      historyRewriters: {
+        [AGENT_ID]: {
+          sessionId: SESSION_ID,
+          mountId: MOUNT_ID,
+          copyPath: '/tmp/goodboy-history-copy',
+          plan: { worktreePath: '/w/ledger', base: 'onto-sha', head: 'head-sha', steps: [] },
+          origin: 'rebase',
+          planId: null,
+          identity: IDENTITY,
+        },
       },
-    };
+    });
 
     await slice.settleHistoryRewriter({
       sessionId: SESSION_ID,
@@ -514,15 +636,56 @@ const PLAN_ITEMS: ReadonlyArray<HistoryStep> = [
   { sha: 'b2', verb: 'fixup', target: 'a1' },
 ];
 
+const resolveThreadOf = ({
+  threadId,
+  commitShas,
+  fixupOfSha,
+  replacesSha,
+}: {
+  readonly threadId: string;
+  readonly commitShas: ReadonlyArray<string>;
+  readonly fixupOfSha: string | null;
+  readonly replacesSha: string | null;
+}): ResolveThread => ({
+  id: `row-${threadId}`,
+  sessionId: SESSION_ID,
+  projectId: null,
+  prNumber: 318,
+  threadId,
+  originKind: 'review_comment',
+  diffCommentId: null,
+  state: 'answered',
+  stage: 'new',
+  stateReason: null,
+  revision: 1,
+  generation: 0,
+  reopenedFromThreadId: null,
+  activeAttemptId: null,
+  disposition: 'fix',
+  replyDraft: null,
+  commitShas,
+  fixupOfSha,
+  replacesSha,
+  question: null,
+  replyPostedAt: null,
+  replyId: null,
+  githubResolved: null,
+  closedAt: null,
+  closedSource: null,
+  createdAt: 1,
+  updatedAt: 1,
+});
+
 const seedDraft = ({
   harnessed,
   onto = null,
+  items = PLAN_ITEMS,
 }: {
   readonly harnessed: ReturnType<typeof harness>;
   readonly onto?: string | null;
+  readonly items?: ReadonlyArray<HistoryStep>;
 }) => {
-  const state = harnessed.read() as unknown as Record<string, unknown>;
-  Object.assign(state, {
+  harnessed.seed({
     historyDrafts: {
       [MOUNT_ID]: {
         sessionId: SESSION_ID,
@@ -532,7 +695,7 @@ const seedDraft = ({
         baseSha: 'base-sha',
         headSha: 'head-sha',
         commits: PLAN_COMMITS,
-        items: PLAN_ITEMS,
+        items,
         onto,
         graph: null,
         undo: [],
@@ -788,15 +951,14 @@ describe('apply a planned rewrite', () => {
     const harnessed = harness();
     seedDraft({ harnessed });
     engine.runHistoryPlan.mockImplementation(async () => {
-      const state = harnessed.read() as unknown as Record<string, unknown>;
-      const mounts = state['sessionProjectMounts'] as Record<
-        string,
-        Array<Record<string, unknown>>
-      >;
-      mounts[SESSION_ID] = (mounts[SESSION_ID] ?? []).map((mount) => ({
-        ...mount,
-        branch: 'fix/other-branch',
-      }));
+      harnessed.seed({
+        sessionProjectMounts: {
+          [SESSION_ID]: (harnessed.read().sessionProjectMounts[SESSION_ID] ?? []).map((mount) => ({
+            ...mount,
+            branch: 'fix/other-branch',
+          })),
+        },
+      });
       return { kind: 'tried', result: TRIED };
     });
 
@@ -884,31 +1046,32 @@ describe('restore previous history', () => {
   });
 
   it('checks an older backup against the remote seen when the last rewrite was applied', async () => {
-    const { slice, read } = harness();
-    const state = read() as unknown as Record<string, unknown>;
+    const { slice, read, seed } = harness();
     const backupRef = 'refs/goodboy/backup/b-6669782f6c6564676572/1790000000000000000';
-    state['historyRuns'] = {
-      [MOUNT_ID]: {
-        sessionId: SESSION_ID,
-        mountId: MOUNT_ID,
-        origin: 'plan',
-        phase: 'pushed',
-        planId: 'plan-2',
-        agentId: null,
-        copyPath: null,
-        stop: null,
-        result: null,
-        backupRef: 'refs/goodboy/backup/b-6669782f6c6564676572/1790000000000000001',
-        remoteSha: 'teammate-sha',
-        holder: null,
-        progress: null,
-        applied: null,
-        identity: null,
-        movedHead: 'rewrite-two',
-        threadShas: [],
-        updatedAt: 1,
+    seed({
+      historyRuns: {
+        [MOUNT_ID]: {
+          sessionId: SESSION_ID,
+          mountId: MOUNT_ID,
+          origin: 'plan',
+          phase: 'pushed',
+          planId: 'plan-2',
+          agentId: null,
+          copyPath: null,
+          stop: null,
+          result: null,
+          backupRef: 'refs/goodboy/backup/b-6669782f6c6564676572/1790000000000000001',
+          remoteSha: 'teammate-sha',
+          holder: null,
+          progress: null,
+          applied: null,
+          identity: null,
+          movedHead: 'rewrite-two',
+          threadShas: [],
+          updatedAt: 1,
+        },
       },
-    };
+    });
     engine.readRemoteLease.mockResolvedValue({ kind: 'not-included', sha: 'rewrite-two' });
     engine.restoreHistoryBackup.mockResolvedValue({
       kind: 'moved',
@@ -987,7 +1150,6 @@ describe('restore previous history', () => {
 describe('the review commits view on the engine', () => {
   it('folds a resolve commit into its fixup_of_sha target and pushes it with the lease', async () => {
     const harnessed = harness();
-    seedDraft({ harnessed });
     const rows = reviewCommitRows({
       commits: PLAN_COMMITS,
       threads: [
@@ -1004,9 +1166,7 @@ describe('the review commits view on the engine', () => {
       rows,
       choices: presetChoices({ rows, preset: 'fold', prNumber: 318 }),
     });
-    const state = harnessed.read() as unknown as Record<string, unknown>;
-    const drafts = state['historyDrafts'] as Record<string, Record<string, unknown>>;
-    drafts[MOUNT_ID] = { ...drafts[MOUNT_ID], items };
+    seedDraft({ harnessed, items });
     engine.runHistoryPlan.mockResolvedValue({ kind: 'tried', result: TRIED });
 
     await expect(
@@ -1036,13 +1196,19 @@ describe('the review commits view on the engine', () => {
 
 describe('resolve shas across a rewrite and its undo', () => {
   it('remaps the thread shas on apply and puts them back when the backup is restored', async () => {
-    const { slice, read } = harness();
-    const state = read() as unknown as Record<string, unknown>;
-    state['sessionResolveThreads'] = {
-      [SESSION_ID]: [
-        { threadId: 'thread-mara', commitShas: ['c81'], fixupOfSha: '7be', replacesSha: null },
-      ],
-    };
+    const { slice, read, seed } = harness();
+    seed({
+      sessionResolveThreads: {
+        [SESSION_ID]: [
+          resolveThreadOf({
+            threadId: 'thread-mara',
+            commitShas: ['c81'],
+            fixupOfSha: '7be',
+            replacesSha: null,
+          }),
+        ],
+      },
+    });
     const update = read().updateResolveThread;
 
     await expect(
@@ -1090,25 +1256,31 @@ describe('resolve shas across a rewrite and its undo', () => {
 
 describe('bring origin into the plan', () => {
   it('replays what origin gained on top of the rewrite and leaves the push to a lease', async () => {
-    const { slice, read } = harness();
-    const state = read() as unknown as Record<string, unknown>;
-    state['historyRuns'] = {
-      [MOUNT_ID]: {
-        sessionId: SESSION_ID,
-        mountId: MOUNT_ID,
-        origin: 'plan',
-        phase: 'stopped',
-        planId: 'plan-1',
-        agentId: null,
-        copyPath: null,
-        stop: { reason: 'origin-moved', message: 'moved', files: [], sha: null },
-        result: null,
-        backupRef: null,
-        remoteSha: 'remote-at-apply',
-        holder: null,
-        updatedAt: 1,
+    const { slice, read, seed } = harness();
+    seed({
+      historyRuns: {
+        [MOUNT_ID]: {
+          sessionId: SESSION_ID,
+          mountId: MOUNT_ID,
+          origin: 'plan',
+          phase: 'stopped',
+          planId: 'plan-1',
+          agentId: null,
+          copyPath: null,
+          stop: { reason: 'origin-moved', message: 'moved', files: [], sha: null },
+          result: null,
+          backupRef: null,
+          remoteSha: 'remote-at-apply',
+          holder: null,
+          progress: null,
+          applied: null,
+          identity: null,
+          movedHead: null,
+          threadShas: [],
+          updatedAt: 1,
+        },
       },
-    };
+    });
     engine.readOriginAhead.mockResolvedValue({
       remoteSha: 'remote-now',
       commits: [{ sha: 'teammate1', subject: 'Teammate adds a note' }],

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
 import { resolveStorageScope } from './resolveStorageScope';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ROW_ACTION_VERB, failedVerbOf, tryAgainLabel } from './failedRunCopy';
+import { failedVerbOf, tryAgainLabel } from './failedRunCopy';
 import type { ResolveRowAction } from './resolveRowState';
 
 describe('failedRunCopy', () => {
@@ -14,7 +14,7 @@ describe('failedRunCopy', () => {
       'resume',
     ];
     for (const action of actions) {
-      expect(ROW_ACTION_VERB[action].trim()).not.toBe('');
+      expect(failedVerbOf({ step: 'run', action }).trim()).not.toBe('');
     }
   });
 

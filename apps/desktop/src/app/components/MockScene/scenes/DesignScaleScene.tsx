@@ -18,7 +18,7 @@ const ROLE_SAMPLES = [
   { role: 'text-label', className: 'text-label', sample: 'Step 3 ready' },
   { role: 'text-secondary', className: 'text-secondary', sample: 'PR #231 awaiting review' },
   { role: 'text-eyebrow', className: 'text-eyebrow', sample: 'In review' },
-  { role: 'text-meta', className: 'text-meta', sample: '07:34 PM · $2.15 · 25m' },
+  { role: 'text-meta', className: 'text-meta', sample: '19:34 · $2.15 · 25m' },
   { role: 'text-code', className: 'text-code', sample: 'nw/fix-posting-rounding' },
 ] as const;
 

@@ -1,5 +1,5 @@
 import type { Session, SessionId } from '@goodboy/types';
-import type { ShowToast } from '../../app/components/Toast';
+import type { ShowToast } from '../../shared/components/Toast';
 import type { AppStore } from '../../store/store';
 import {
   SESSION_ARCHIVED_TITLE,
@@ -20,7 +20,7 @@ const archivedTitle = ({ count }: CountParams): string =>
 const restoredTitle = ({ count }: CountParams): string =>
   count === 1 ? SESSION_RESTORED_TITLE : `${count} sessions restored`;
 
-export type SessionArchivePorts = {
+type SessionArchivePorts = {
   readonly bulkArchiveTask: AppStore['bulkArchiveTask'];
   readonly bulkUnarchiveTask: AppStore['bulkUnarchiveTask'];
   readonly showToast: ShowToast;

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProjectId, SearchQuery } from '@goodboy/types';
 import type { Database } from '@goodboy/db';
@@ -39,7 +40,7 @@ const makeSlice = (): SliceHandle => {
     const next = typeof patch === 'function' ? patch(get()) : patch;
     state = { ...state, ...next };
   };
-  state = createSearchIndexSlice(set, get);
+  state = createSearchIndexSlice({ set, get });
   return { slice: () => get() };
 };
 

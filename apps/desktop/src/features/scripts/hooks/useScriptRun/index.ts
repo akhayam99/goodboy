@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { useNow } from '../../../../shared/hooks/useNow';
 import type { RunnableScript } from '../../buildSessionScripts';
 import type { ScriptRunRecord, ScriptRunResult, ScriptRunStatus } from '../../scripts';
 import { startRunnableScript } from '../../startRunnableScript';
@@ -28,8 +29,6 @@ export type ScriptRun = {
   readonly stop: () => void;
 };
 
-const TICK_MS = 1_000;
-
 type ElapsedParams = {
   readonly record: ScriptRunRecord | null;
   readonly now: number;
@@ -52,16 +51,7 @@ export const useScriptRun = ({ sessionId, scriptKey, target }: Params): ScriptRu
   const record = useAppStore((state) => state.scriptRuns[sessionId]?.[scriptKey] ?? null);
   const cancelScript = useAppStore((state) => state.cancelScript);
   const isRunning = record?.status === 'pending';
-  const [now, setNow] = useState(() => Date.now());
-
-  useEffect(() => {
-    if (!isRunning) {
-      return;
-    }
-    setNow(Date.now());
-    const id = window.setInterval(() => setNow(Date.now()), TICK_MS);
-    return () => window.clearInterval(id);
-  }, [isRunning]);
+  const now = useNow(1_000, isRunning);
 
   const run = useCallback(() => {
     if (target === null || isRunning) {

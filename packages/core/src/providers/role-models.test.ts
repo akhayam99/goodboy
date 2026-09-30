@@ -28,6 +28,7 @@ describe('resolveRoleRouting', () => {
   });
 
   it('falls back when the stored model is unknown to the provider', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const prefs: RoleModelPreferences = {
       reviewer: { providerId: 'anthropic', model: 'claude-opus-99', effort: 'high' },
     };
@@ -35,9 +36,14 @@ describe('resolveRoleRouting', () => {
 
     expect(resolved.model).toBe(AUTO_DEFAULTS.anthropic.reviewer[0]?.key);
     expect(resolved.isOverride).toBe(false);
+    expect(warn).toHaveBeenCalledWith(
+      '[role-models] invalid reviewer model claude-opus-99 for anthropic; using the anthropic default model',
+    );
+    warn.mockRestore();
   });
 
   it('falls back when the stored provider is unknown to the registry', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const prefs: RoleModelPreferences = {
       reviewer: { providerId: 'ollama' as ProviderId, model: 'llama-4', effort: 'high' },
     };
@@ -46,6 +52,10 @@ describe('resolveRoleRouting', () => {
     expect(resolved.provider).toBe('anthropic');
     expect(resolved.model).toBe(AUTO_DEFAULTS.anthropic.reviewer[0]?.key);
     expect(resolved.isOverride).toBe(false);
+    expect(warn).toHaveBeenCalledWith(
+      '[role-models] invalid reviewer provider ollama; using the anthropic default model',
+    );
+    warn.mockRestore();
   });
 
   it('keeps the pinned model and defaults the effort when the ladder omits it', () => {
@@ -249,6 +259,7 @@ describe('resolveRoleRouting', () => {
   });
 
   it('drops the fallback along with a pin the registry rejects', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const prefs: RoleModelPreferences = {
       planner: {
         providerId: 'anthropic',
@@ -261,9 +272,14 @@ describe('resolveRoleRouting', () => {
 
     expect(resolved.isOverride).toBe(false);
     expect(resolved.fallback).toBeUndefined();
+    expect(warn).toHaveBeenCalledWith(
+      '[role-models] invalid planner model claude-opus-99 for anthropic; using the anthropic default model',
+    );
+    warn.mockRestore();
   });
 
   it('routes an unknown role through the custom preference, like the compiled default does', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const prefs: RoleModelPreferences = {
       custom: { providerId: 'codex', model: 'gpt-5.6', effort: 'high' },
     };
@@ -274,6 +290,8 @@ describe('resolveRoleRouting', () => {
       effort: 'high',
       isOverride: true,
     });
+    expect(warn).toHaveBeenCalledWith('[roles] unknown role "emperor"; using custom');
+    warn.mockRestore();
   });
 
   it('preserves an explicit codex variant', () => {

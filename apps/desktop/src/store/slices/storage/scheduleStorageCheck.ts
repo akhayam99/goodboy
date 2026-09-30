@@ -1,6 +1,6 @@
 import type { GetFn } from './types';
 
-export const STORAGE_CHECK_DELAY_MS = 90_000;
+const STORAGE_CHECK_DELAY_MS = 90_000;
 
 type Params = {
   readonly get: GetFn;

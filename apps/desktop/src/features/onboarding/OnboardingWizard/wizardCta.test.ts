@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { PROVIDER_GATE_HINT, wizardActions } from './wizardCta';
 import { WIZARD_STEPS, visibleWizardSteps } from './wizardSteps';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, SessionDecision, SessionId } from '@goodboy/types';
 
@@ -8,11 +9,13 @@ const { db } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('@goodboy/db', () => ({
-  getSessionContextSeenAt: () => db.getSessionContextSeenAt(),
-  setSessionContextSeenAt: (_db: unknown, sessionId: unknown, seenAt: unknown) =>
-    db.setSessionContextSeenAt(sessionId, seenAt),
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    getSessionContextSeenAt: () => db.getSessionContextSeenAt(),
+    setSessionContextSeenAt: (_db: unknown, sessionId: unknown, seenAt: unknown) =>
+      db.setSessionContextSeenAt(sessionId, seenAt),
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { createContextDrawerSlice } from './index';
@@ -44,7 +47,7 @@ const harness = () => {
     state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) };
   };
   const get = () => ({ ...state, ...slice });
-  const slice = createContextDrawerSlice(set as never, get as never);
+  const slice = createContextDrawerSlice({ set: set as never, get: get as never });
   return { slice, getState: () => state };
 };
 

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { parseWireframeSource, WIREFRAME_NODE_KINDS, type WireframeDocument } from '@goodboy/core';
 import type { WireframeArtifact } from '@goodboy/types';

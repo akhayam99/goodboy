@@ -2,21 +2,15 @@ import { useCallback } from 'react';
 import { useShortcut } from '../../../shared/keyboard/useShortcut';
 import { isTerminalFocused } from '../../../shared/keyboard/isTerminalFocused';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
-import {
-  useAppStore,
-  useCurrentSession,
-  useCurrentWorkspace,
-  useSessions,
-  useWorkspaces,
-  type LensKind,
-  sessionPlace,
-} from '../../../store';
+import { useAppStore, useCurrentWorkspace, useWorkspaces, type LensKind } from '../../../store';
 import { requestNewSession } from '../../../features/session/requestNewSession';
 import { openLens } from '../../../features/session/openLens';
 import type { OpenPaletteParams } from '../../../features/palette/paletteModeTypes';
 import type { ContextDrawerTab } from '../../../store/slices/drawer/state';
 import { useMouseHistoryButtons } from '../useMouseHistoryButtons';
 import { useGoToBoard } from '../useGoToBoard';
+import { useSessionNavigation } from '../useSessionNavigation';
+import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 
 type AppShortcutsParams = {
   readonly armDeleteConfirm: () => void;
@@ -28,10 +22,6 @@ type AppShortcutsParams = {
 
 type IndexParams = {
   readonly index: number;
-};
-
-type DeltaParams = {
-  readonly delta: number;
 };
 
 type LensParams = {
@@ -51,10 +41,7 @@ export const useAppShortcuts = ({
 }: AppShortcutsParams): void => {
   const workspaces = useWorkspaces();
   const currentWorkspace = useCurrentWorkspace();
-  const currentSession = useCurrentSession();
-  const currentWorkspaceSessions = useSessions();
   const openWorkspace = useAppStore((state) => state.openWorkspace);
-  const navigate = useAppStore((state) => state.navigate);
   const back = useAppStore((state) => state.back);
   const forward = useAppStore((state) => state.forward);
 
@@ -69,30 +56,7 @@ export const useAppShortcuts = ({
     [workspaces, openWorkspace],
   );
 
-  const navigateSession = useCallback(
-    ({ delta }: DeltaParams) => {
-      const list = currentWorkspaceSessions;
-      if (list.length === 0) {
-        return;
-      }
-      if (currentSession == null) {
-        const target = delta >= 0 ? list[0] : list[list.length - 1];
-        if (target !== undefined) {
-          navigate({ to: sessionPlace({ sessionId: target.id }) });
-        }
-        return;
-      }
-      const index = list.findIndex((session) => session.id === currentSession.id);
-      if (index === -1) {
-        return;
-      }
-      const next = list[index + delta];
-      if (next !== undefined) {
-        navigate({ to: sessionPlace({ sessionId: next.id }) });
-      }
-    },
-    [currentWorkspaceSessions, currentSession, navigate],
-  );
+  const navigateSession = useSessionNavigation();
 
   const toggleContext = useCallback(({ tab }: ContextParams) => {
     const state = useAppStore.getState();
@@ -120,7 +84,7 @@ export const useAppShortcuts = ({
     if (sessionId == null) {
       return false;
     }
-    const session = state.sessions.find((candidate) => candidate.id === sessionId);
+    const session = sessionById(state.sessions, sessionId);
     if (session == null) {
       return false;
     }

@@ -10,6 +10,7 @@ import { formatError } from '@goodboy/ui';
 import { removeWorktreeChecked } from '../../../features/worktree/worktree';
 import type { AppState } from '../../types';
 import type { CleanupTarget, GetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 export type MountCleanupResult = {
   readonly decision: MountCleanupDecision;
@@ -55,7 +56,7 @@ export const MOUNT_CLEANUP_BLOCKER_REASON = {
 } satisfies Record<MountCleanupBlocker, string>;
 
 const holdsTurn = ({ state, sessionId, mountId }: MountParams): boolean => {
-  const session = state.sessions.find((candidate) => candidate.id === sessionId);
+  const session = sessionById(state.sessions, sessionId);
   const runState = session?.state?.kind;
   if (runState !== 'running' && runState !== 'starting') {
     return false;

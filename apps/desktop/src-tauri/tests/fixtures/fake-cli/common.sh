@@ -1,0 +1,76 @@
+fake_dir=$(cd "$(dirname "$0")" && pwd)
+fake_mode=ok
+if [ -f "$fake_dir/mode" ]; then
+  fake_mode=$(cat "$fake_dir/mode")
+fi
+
+fake_record() {
+  printf '%s\n' "$@" > "$PWD/fake-cli-argv.txt"
+  {
+    printf 'cwd=%s\n' "$PWD"
+    for key in GIT_CONFIG_COUNT GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0 GIT_CONFIG_KEY_1 GIT_CONFIG_VALUE_1 GH_TOKEN GITHUB_TOKEN CLAUDECODE CURSOR_CONFIG_DIR; do
+      eval "value=\${$key-__unset__}"
+      printf '%s=%s\n' "$key" "$value"
+    done
+  } > "$PWD/fake-cli-env.txt"
+}
+
+fake_flood_stderr() {
+  dd if=/dev/zero bs=1024 count=300 2>/dev/null | tr '\0' 'e' >&2
+  printf '\nflood-tail-marker\n' >&2
+}
+
+fake_turn() {
+  stream=$1
+  shift
+  fake_record "$@"
+  case "$fake_mode" in
+    ok)
+      cat "$fake_dir/streams/$stream"
+      ;;
+    fail)
+      head -n 2 "$fake_dir/streams/$stream"
+      printf 'fake cli: authentication failed\n' >&2
+      exit 3
+      ;;
+    flood)
+      fake_flood_stderr
+      cat "$fake_dir/streams/$stream"
+      ;;
+    partial)
+      cat "$fake_dir/streams/$stream"
+      printf 'unterminated final line'
+      ;;
+    binary)
+      printf 'caf\351\n'
+      ;;
+    silent)
+      ;;
+    hang)
+      head -n 1 "$fake_dir/streams/$stream"
+      sleep 30 &
+      printf '%s\n' "$!" > "$PWD/fake-cli-sleeper.pid"
+      wait
+      ;;
+  esac
+}
+
+fake_version() {
+  case "$fake_mode" in
+    version-fail)
+      printf 'fake cli: cannot start\n' >&2
+      exit 1
+      ;;
+    version-hang)
+      exec sleep 30
+      ;;
+    *)
+      printf '%s\n' "$1"
+      ;;
+  esac
+}
+
+fake_usage_error() {
+  printf "error: unrecognized subcommand '%s'\n" "$1" >&2
+  exit 2
+}

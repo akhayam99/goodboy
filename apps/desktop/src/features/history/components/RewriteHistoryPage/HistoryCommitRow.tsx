@@ -2,7 +2,7 @@ import type { PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import { Cloud, GitMerge, GripVertical } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { BranchCommit, SessionId } from '@goodboy/types';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { HISTORY_ACTION_CLASSES } from '../../historyActionClasses';
 import type { CombineMode } from '../../historyPlan';
@@ -21,7 +21,7 @@ import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import type { CommitActionTarget } from '../../../actions/types';
 import { useHeldPaletteScope } from '../../../palette/useHeldPaletteScope';
 
-export type HistoryTakenInRow = {
+type HistoryTakenInRow = {
   readonly commit: BranchCommit;
   readonly mode: CombineMode;
 };
@@ -94,9 +94,9 @@ export const HistoryCommitRow = ({
     isExpanded,
   });
   const isDraggable = isInteractive && !isFolded;
-  const age = formatRelativeAge({
-    fromIso: new Date(commit.timestamp * 1000).toISOString(),
-    nowMs,
+  const age = formatAge({
+    from: new Date(commit.timestamp * 1000).toISOString(),
+    now: nowMs,
   });
   const showExpanded = view === 'planned' && isExpanded && takenIn.length > 0;
   const anchorKey = `commit:${commit.sha}`;

@@ -1,7 +1,7 @@
 import type { GithubIssue } from '@goodboy/types';
-import { slugifyBranch } from '../../shared/utils/slugifyBranch';
-import { goalFromIssue as goalFromGithubIssue } from '../github/goal-from-issue';
-import { githubBranchSlug } from '../github/components/PullRequest/useGithubIssues';
+import { titleBranchSlug } from '../../shared/utils/issueBranchSlug';
+import { goalFromIssue as goalFromGithubIssue } from './github/goal-from-issue';
+import { githubBranchSlug } from './github/components/PullRequest/useGithubIssues';
 import type { IssueCandidate } from './fetchIssueCandidates';
 import type { LinearIssue } from './linear/client';
 import { goalFromIssue as goalFromLinearIssue } from './linear/goal-from-issue';
@@ -24,7 +24,7 @@ export const linearIssueCandidate = (issue: LinearIssue): IssueCandidate => ({
   url: issue.url,
   goal: goalFromLinearIssue({ issue }),
   body: issue.description ?? '',
-  branchSlug: slugifyBranch({ input: issue.title, maxLength: 48 }),
+  branchSlug: titleBranchSlug({ title: issue.title }),
 });
 
 export const githubIssueCandidate = (issue: GithubIssue): IssueCandidate => ({
@@ -70,7 +70,7 @@ export const sentryIssueCandidate = (issue: SentryIssue): IssueCandidate => {
     url: issue.permalink ?? '',
     goal,
     body: goal,
-    branchSlug: slugifyBranch({ input: issue.title, maxLength: SENTRY_SLUG_MAX_LEN }),
+    branchSlug: titleBranchSlug({ title: issue.title, maxLength: SENTRY_SLUG_MAX_LEN }),
     ...(issue.project?.slug != null && { sentryProject: issue.project.slug }),
   };
 };

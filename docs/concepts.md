@@ -119,6 +119,17 @@ the session. The stages are the columns of the board:
 - **in review**
 - **done**
 
+"Running" has one meaning everywhere. An agent turn that is starting or
+running, an agent waiting for an approval, and a workflow run deciding its next
+step all count as live work. The top bar chip, the workspace switcher's "N
+running", the footer count, the update pill and the restart-when-idle check all
+read it, so a workspace with one agent waiting on a permission is never "idle".
+
+The board looks at the pull request or merge request of every mount, GitHub,
+GitLab or Bitbucket, and takes the worst one: failing CI, then changes
+requested, then approved. A session is done only when every request is merged
+or closed.
+
 ## Lazy sessions
 
 A new session starts with no folder, no worktree and no branch. A turn that
@@ -1108,8 +1119,9 @@ Goodboy measures every turn on your machine and sends nothing anywhere.
   total per session
 - **Session events**: when a session starts, resets, hits a limit, changes
   provider or ends
-- **Budgets**: a monthly budget per provider and a spend limit per session that
-  pauses workflows or only warns, with an alert before you reach them
+- **Budgets**: a monthly budget per provider, counted across all workspaces on a
+  UTC calendar month, and a spend limit per session that pauses workflows or
+  only warns, with an alert before you reach them
 
 Caps steer where work goes. They never lock you out. When every provider is
 over its cap, the message box tells you. You can still send the turn on the
@@ -1231,6 +1243,10 @@ An agent materializes a project through the query bridge like this:
 - `packages/types/src/session-view.ts`: `SessionStage`
 - `apps/desktop/src/store/slices/session-view/deriveSessionStage.ts`: works
   out a session's stage
+- `apps/desktop/src/store/slices/session-view/sessionStageRequest.ts`: picks the
+  worst request across a session's mounts
+- `apps/desktop/src/store/slices/live-work/selectLiveWork.ts`: the one answer to
+  "what is live right now"
 - `apps/desktop/src/features/session/agent-kind.ts`: kind labels, their order,
   which ones show in the spawn menu, and kind prompts
 - `packages/core/src/roles.ts`: the list of roles and the default model for
@@ -1238,7 +1254,7 @@ An agent materializes a project through the query bridge like this:
 - `packages/types/src/artifact.ts`: artifact kinds, statuses and metadata
 - `packages/core/src/context/marker-parsing.ts`: reads plan markers
 - `packages/types/src/provider-registry.ts`: `ProviderId`
-- `packages/core/src/skills/registry.ts`: finds skills
+- `apps/desktop/src-tauri/src/skills.rs`: finds skills
 - `packages/core/src/profile/profileAccess.ts`: which profile fields each
   role reads
 - `apps/desktop/src-tauri/src/query_bridge/project.rs`: the `materialize` verb

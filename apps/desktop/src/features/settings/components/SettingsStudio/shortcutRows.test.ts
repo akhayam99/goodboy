@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { SHORTCUTS } from '../../../../shared/keyboard/registry';
 import { SHORTCUT_COLUMNS, SHORTCUT_ROW_COUNT, shortcutRows } from './shortcutRows';
@@ -26,6 +27,14 @@ describe('shortcutRows', () => {
     expect(labels).toContain('Pull request');
     expect(labels).toContain('Linear');
     expect(labels).toContain('Slack threads');
+  });
+
+  it('lists the diff keys under their own group', () => {
+    expect(shortcutRows({ group: 'diff' }).map((row) => row.first)).toEqual([
+      'diff.jump',
+      'diff.previousFile',
+      'diff.nextFile',
+    ]);
   });
 
   it('lays every group out exactly once across the columns', () => {

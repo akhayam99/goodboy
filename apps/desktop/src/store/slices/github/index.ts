@@ -16,9 +16,9 @@ import { selectSessionPr } from './selectSessionPr';
 import { pushSessionBranch } from './pushSessionBranch';
 import { setGithubToken } from './setGithubToken';
 import { sweepGithub } from './sweepGithub';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createGithubSlice = (set: SetFn, get: GetFn) => {
+export const createGithubSlice = ({ set, get }: SliceDeps) => {
   return {
     refreshGithubStatus: refreshGithubStatus(set),
     refreshGithubConnection: refreshGithubConnection(set, get),

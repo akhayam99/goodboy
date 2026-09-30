@@ -12,9 +12,11 @@ import type {
 import { useAppStore, agentPlace } from '../../../../store';
 import { distanceBehind } from '../../../../shared/lib/gitStatus';
 import type { SessionCreationId } from '../../../../store/slices/session-view';
-import { useToast } from '../../../../app/components/Toast';
-import { taskModelAgentSpawnConfig } from '../../components/AgentSpawnConfig/taskModelAgentSpawnConfig';
+import { useToast } from '../../../../shared/components/Toast';
+import { taskModelAgentSpawnConfig } from '../../taskModelAgentSpawnConfig';
 import { useAutoLimitContext } from '../../../providers/hooks/useAutoLimitContext';
+import { projectById } from '../../../../store/slices/projects/projectIndex';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Params = {
   readonly sessionId: SessionId | null;
@@ -124,11 +126,7 @@ export const rebasePromptFor = ({
     '- If a conflict cannot be resolved confidently, stop and report the conflicting files.',
   ].join('\n');
 
-export const resumeRebasePromptFor = ({
-  baseBranch,
-  mountId,
-  worktreePath,
-}: PromptParams): string =>
+const resumeRebasePromptFor = ({ baseBranch, mountId, worktreePath }: PromptParams): string =>
   [
     `A rebase of this session branch onto origin/${baseBranch} stopped halfway. Finish it.`,
     mountLineFor({ mountId, worktreePath }),
@@ -147,9 +145,7 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
   const settledAgentIds = useRef(new Set<AgentId>());
   const pendingRef = useRef<Pending | null>(null);
   const session = useAppStore((state) =>
-    sessionId == null
-      ? null
-      : (state.sessions.find((candidate) => candidate.id === sessionId) ?? null),
+    sessionId == null ? null : (sessionById(state.sessions, sessionId) ?? null),
   );
   const workspaceOverrides = useAppStore((state) =>
     session == null ? null : (state.workspaceOverrides?.[session.workspaceId] ?? null),
@@ -161,7 +157,7 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
   const mountOf = ({ id }: { readonly id: MountId | null }): SessionProjectMount | null =>
     id === null ? null : (mounts?.find((candidate) => candidate.mountId === id) ?? null);
   const projectOf = ({ mount }: { readonly mount: SessionProjectMount | null }) =>
-    projects.find((candidate) => candidate.id === mount?.projectId) ?? null;
+    projectById(projects, mount?.projectId) ?? null;
   const targetFor = ({ id }: { readonly id: MountId }): RebaseTarget | null => {
     const mount = mountOf({ id });
     if (mount === null) {

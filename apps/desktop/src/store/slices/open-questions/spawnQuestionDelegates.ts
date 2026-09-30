@@ -1,3 +1,4 @@
+import { formatError } from '@goodboy/ui';
 import type {
   Agent,
   AgentId,
@@ -144,7 +145,7 @@ export const spawnQuestionDelegates = (get: GetFn) => {
           kind: 'agent-auto-spawn',
           severity: 'warning',
           title: 'The delegated agent did not start',
-          body: `${question.text} stays open. Answer it yourself or hand it over again. ${String(error)}`,
+          body: `${question.text} stays open. Answer it yourself or hand it over again. ${formatError(error)}`,
           sessionId,
           coalesceKey: `question-delegate:${question.id}`,
         });

@@ -1,14 +1,14 @@
-import type { TurnState } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { selectLiveWork, type LiveWork } from '../../../../store/slices/live-work/selectLiveWork';
 
-const isRunning = ({ state }: { state: TurnState }): boolean =>
-  state.kind === 'starting' || state.kind === 'running' || state.kind === 'blocked';
+type CountParams = {
+  readonly liveWork: LiveWork;
+};
 
-export const countRunningAgents = ({
-  turnStates,
-}: {
-  turnStates: Readonly<Record<string, TurnState>>;
-}): number => Object.values(turnStates).filter((state) => isRunning({ state })).length;
+export const countLiveWork = ({ liveWork }: CountParams): number =>
+  liveWork.runningAgentIds.length +
+  liveWork.blockedAgentIds.length +
+  liveWork.decidingRunIds.length;
 
 export const useRunningAgentCount = (): number =>
-  useAppStore((state) => countRunningAgents({ turnStates: state.agentTurnState }));
+  useAppStore((state) => countLiveWork({ liveWork: selectLiveWork({ state }) }));

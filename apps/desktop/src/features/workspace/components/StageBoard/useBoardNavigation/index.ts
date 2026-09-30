@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
 import { agentPlace, sessionPlace, useAppStore, type LensKind } from '../../../../../store';
-import { openInEditor } from '../../../../../shared/lib/editor';
+import { openInConfiguredEditor } from '../../../../../shared/lib/editorSettings';
 import { openReview } from '../../../../review/openReview';
 import { openAgentRevealEvent } from '../../../../session/components/AgentDetailPane/agentOpenTab';
 
@@ -46,9 +46,10 @@ export const useBoardNavigation = (): BoardNavigation => {
     };
 
     const openIDE = (session: Session): void => {
-      const path = useAppStore.getState().sessionWorktrees[session.id]?.[0];
+      const state = useAppStore.getState();
+      const path = state.sessionWorktrees[session.id]?.[0];
       if (path) {
-        void openInEditor({ path });
+        void openInConfiguredEditor({ path, state });
       }
     };
 

@@ -3,7 +3,7 @@ import type { ReviewSourceThreads, SetFn } from './types';
 
 export const THREADS_TTL_MS = 30_000;
 
-export const EMPTY_SOURCE_THREADS: ReviewSourceThreads = {
+const EMPTY_SOURCE_THREADS: ReviewSourceThreads = {
   comments: [],
   fetchedAt: null,
   loading: false,

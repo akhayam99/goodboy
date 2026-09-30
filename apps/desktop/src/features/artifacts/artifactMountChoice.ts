@@ -1,4 +1,4 @@
-import type { MountId, SessionId } from '@goodboy/types';
+import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 import type { AppState } from '../../store/types';
 import { selectSelectedMountId } from '../../store/slices/project-mounts/selectedMountId';
 import { selectWritableMounts } from '../../store/slices/project-mounts/selectors';
@@ -8,6 +8,7 @@ export const ARTIFACT_MOUNT_CAP = FAN_OUT_MAX_CHILDREN;
 
 export type ArtifactMountOption = Readonly<{
   mountId: MountId;
+  projectId: ProjectId;
   mountName: string;
   branch: string;
   baseBranch: string | null;
@@ -31,6 +32,7 @@ export const selectArtifactMountOptions = ({
     .filter((mount) => mount.worktreePath.length > 0)
     .map((mount) => ({
       mountId: mount.mountId,
+      projectId: mount.projectId,
       mountName: mount.mountName,
       branch: mount.branch,
       baseBranch: mount.baseBranch,

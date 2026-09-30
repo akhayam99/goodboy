@@ -1,7 +1,10 @@
 import { CloudOff } from 'lucide-react';
 import { cn, Skeleton, Tooltip } from '@goodboy/ui';
 import type { SessionPrFetchState } from '@goodboy/types';
-import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
+import {
+  PullRequestChip,
+  pullRequestMeta,
+} from '../../../../integrations/github/components/PullRequestChip';
 import type { LinkedRequest } from './getLinkedRequest';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 

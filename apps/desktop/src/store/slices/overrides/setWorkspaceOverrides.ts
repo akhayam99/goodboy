@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import type { OverrideSettings, WorkspaceId } from '@goodboy/types';
 import type { GetFn, SetFn } from './types';
 
@@ -9,7 +9,7 @@ export const setWorkspaceOverrides = (set: SetFn, get: GetFn) => {
       workspaceOverrides: { ...state.workspaceOverrides, [workspaceId]: overrides },
     }));
     try {
-      await invoke('set_workspace_overrides', { workspaceId, overrides });
+      await invokeCommand('set_workspace_overrides', { workspaceId, overrides });
     } catch (error) {
       set((state) => {
         if (state.workspaceOverrides[workspaceId] !== overrides) {

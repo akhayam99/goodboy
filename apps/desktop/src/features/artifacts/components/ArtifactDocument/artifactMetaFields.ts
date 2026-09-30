@@ -1,6 +1,6 @@
 import type { ArtifactKind, SessionArtifact } from '@goodboy/types';
 import { asReportType, REPORT_TYPE_LABEL } from '../../../reports/reportTypes';
-import { formatPrintDate } from './formatPrintDate';
+import { formatDate } from '../../../../shared/utils/time/formatDate';
 
 const KIND_LABEL: Readonly<Record<ArtifactKind, string>> = {
   report: 'Report',
@@ -28,5 +28,5 @@ const typeLabel = ({ artifact }: { readonly artifact: SessionArtifact }): string
 
 export const artifactMetaFields = ({ artifact, workspaceName }: Params): ArtifactDocumentMeta => ({
   eyebrowLabel: `${workspaceName} · ${typeLabel({ artifact })}`,
-  dateLabel: formatPrintDate({ iso: artifact.createdAt }),
+  dateLabel: formatDate({ at: artifact.createdAt }),
 });

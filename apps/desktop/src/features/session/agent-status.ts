@@ -16,7 +16,7 @@ export const AGENT_STATUS_PRESENTATION = {
     icon: CONCEPT_ICONS.sessions,
   },
   completed: {
-    label: 'Completed',
+    label: 'Done',
     reason: 'it ran and finished its work',
     tone: 'success',
     icon: CONCEPT_ICONS.runDone,

@@ -1,6 +1,7 @@
 import { Clock } from 'lucide-react';
-import { formatAbsoluteDateTime, formatRelativeAge } from '../utils/relativeDate';
+import { formatDateTime } from '../utils/time/formatDateTime';
 import type { Fact } from './factTypes';
+import { RelativeTime } from '../components/RelativeTime';
 
 type Params = {
   readonly label: string;
@@ -15,7 +16,7 @@ export const timeFact = ({ label, iso }: Params): Fact | null => {
     key: 'time',
     label,
     icon: Clock,
-    hint: `${label} ${formatAbsoluteDateTime({ iso })}`,
-    node: <time dateTime={iso}>{formatRelativeAge({ fromIso: iso })}</time>,
+    hint: `${label} ${formatDateTime({ at: iso, hasYear: true })}`,
+    node: <RelativeTime iso={iso} />,
   };
 };

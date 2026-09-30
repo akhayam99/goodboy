@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentId, SessionId } from '@goodboy/types';
 
@@ -6,7 +7,12 @@ const { listAgentQueuedMessages, replaceAgentQueuedMessages } = vi.hoisted(() =>
   replaceAgentQueuedMessages: vi.fn(async () => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({ listAgentQueuedMessages, replaceAgentQueuedMessages }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    listAgentQueuedMessages,
+    replaceAgentQueuedMessages,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import type { AgentQueuedTurn, AgentQueuedTurnInput, GetFn, SetFn } from './types';
@@ -52,7 +58,7 @@ const harness = ({ running = true }: { readonly running?: boolean } = {}): Harne
     Object.assign(state, patch);
   }) as SetFn;
   const get = (() => state) as unknown as GetFn;
-  const slice = createAgentQueueSlice(set, get);
+  const slice = createAgentQueueSlice({ set, get });
   const cancelCurrentTurn = vi.fn(async () => {
     state.agentTurnState = { [AGENT_ID]: { kind: 'idle' } };
   });

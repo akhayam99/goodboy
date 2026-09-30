@@ -13,7 +13,7 @@ type Props = {
   readonly onOpen: (sessionId: SessionId) => void;
 };
 
-export const CHAT_SESSIONS_LABEL = 'Linked sessions';
+const CHAT_SESSIONS_LABEL = 'Linked sessions';
 
 export const ChatSessionsChip = ({ entries, stage, onOpen }: Props) => {
   const dropdown = useDropdown({

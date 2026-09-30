@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import type { ChatId, IsoDateTime, ProviderRunId, WorkspaceId } from '@goodboy/types';
 import { selectChatGroups } from '../../store/slices/chats/selectChatGroups';

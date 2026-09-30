@@ -1,6 +1,7 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { PrComment } from '@goodboy/types';
-import type { CommentThread } from '../github/comment-threads';
+import type { CommentThread } from '../integrations/github/comment-threads';
 import { chunkConversations } from './chunkConversations';
 
 const threadOn = ({

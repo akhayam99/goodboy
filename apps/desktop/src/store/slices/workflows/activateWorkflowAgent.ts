@@ -15,7 +15,7 @@ import {
   composeKickoff,
   composePlanSection,
   composeStepBoundary,
-} from '../../kickoff';
+} from '../turn/kickoff';
 import type { SpawnFocus } from '../session-view/spawnFocus';
 import {
   canFanOutClusters,
@@ -27,6 +27,7 @@ import {
 import { isWatchingWorkflowLens } from './isWatchingWorkflowLens';
 import { WorkflowGateError, findWorkflowActivationBlock } from './workflowActivationGate';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 export type ActivateWorkflowAgentParams = {
   readonly sessionId: SessionId;
@@ -50,7 +51,7 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
       throw new Error('agent not found or not a workflow agent');
     }
 
-    const session = get().sessions.find((s) => s.id === sessionId);
+    const session = sessionById(get().sessions, sessionId);
     if (!session || session.workflowRuns.length === 0) {
       throw new Error('session has no workflow');
     }

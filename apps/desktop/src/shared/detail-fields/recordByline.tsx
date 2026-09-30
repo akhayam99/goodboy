@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { formatAbsoluteDateTime, formatRelativeAge } from '../utils/relativeDate';
+import { formatDateTime } from '../utils/time/formatDateTime';
+import { RelativeTime } from '../components/RelativeTime';
 
 type TimeParams = {
   readonly iso: string | null;
@@ -9,11 +10,7 @@ export const relativeTimeNode = ({ iso }: TimeParams): ReactNode | null => {
   if (iso == null || iso === '' || Number.isNaN(Date.parse(iso))) {
     return null;
   }
-  return (
-    <time dateTime={iso} title={formatAbsoluteDateTime({ iso })}>
-      {formatRelativeAge({ fromIso: iso })}
-    </time>
-  );
+  return <RelativeTime iso={iso} title={formatDateTime({ at: iso, hasYear: true })} />;
 };
 
 type BylineParams = {

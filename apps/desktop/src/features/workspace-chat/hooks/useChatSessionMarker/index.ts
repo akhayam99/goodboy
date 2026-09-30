@@ -6,7 +6,7 @@ import { SESSION_STAGE_META, STAGE_TONE } from '../../../session/session-stage';
 import { sessionTitle } from '../../../session/sessionTitle';
 import { useAppStore, useSessionStages } from '../../../../store';
 
-export type ChatSessionEntry = {
+type ChatSessionEntry = {
   readonly sessionId: string;
   readonly title: string;
   readonly stage: SessionStage;

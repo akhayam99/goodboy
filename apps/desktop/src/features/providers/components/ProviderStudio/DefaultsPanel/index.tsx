@@ -16,6 +16,7 @@ import {
   FieldRow,
   InlineConfirm,
   OverflowMenu,
+  PaneShell,
 } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import { ROLE_LABEL } from '../../../../session/agent-kind';
@@ -30,7 +31,6 @@ import {
   ICON_SIZE,
 } from '../../../../../shared/components/conceptIcons';
 import { ProviderPicker } from '../../../../../shared/components/RoutingPicker/ProviderPicker';
-import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { pluralize } from '../../../../../shared/utils/pluralize';
 import { SETTINGS_PANE_ENTRY } from '../../../../settings/components/SettingsStudio/settingsPaneEntry';
 

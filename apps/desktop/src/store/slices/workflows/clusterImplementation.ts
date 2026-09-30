@@ -1,3 +1,4 @@
+import { formatError } from '@goodboy/ui';
 import type {
   Agent,
   AgentId,
@@ -16,13 +17,14 @@ import {
   type AgentInsertArgs,
 } from '../../../features/workflows/workflows';
 import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../../features/plans/plans';
-import { composeKickoff, composeUnitBoundary } from '../../kickoff';
+import { composeKickoff, composeUnitBoundary } from '../turn/kickoff';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import { revalidateChildRouting } from './revalidateChildRouting';
 import { continueOrPause, resetContinueAttempts } from './autoContinue';
 import { holdForUserQuestion } from './holdForUserQuestion';
 import type { GetFn, SetFn } from './types';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
+import { sessionById } from '../sessions/sessionIndex';
 
 const MAX_START_ATTEMPTS = 3;
 
@@ -41,7 +43,7 @@ const DETERMINISTIC_START_FAILURES: ReadonlyArray<RegExp> = [
 const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
 const isTransientStartFailure = (error: unknown): boolean => {
-  const message = error instanceof Error ? error.message : String(error);
+  const message = formatError(error);
   return !DETERMINISTIC_START_FAILURES.some((pattern) => pattern.test(message));
 };
 
@@ -186,7 +188,7 @@ const handleChildStartFailure = async ({
   handoff,
   error,
 }: StartChildParams & { readonly error: unknown }): Promise<void> => {
-  const message = error instanceof Error ? error.message : String(error);
+  const message = formatError(error);
   const failures = get().clusterStartAttempts[childId] ?? 1;
   const stepFailures = (get().clusterStepStartAttempts[containerId] ?? 0) + 1;
   set((s) => ({
@@ -218,7 +220,7 @@ const handleChildStartFailure = async ({
     if (isAgentStatusSettled({ status: child.status })) {
       return;
     }
-    const session = get().sessions.find((s) => s.id === sessionId);
+    const session = sessionById(get().sessions, sessionId);
     if (session === undefined) {
       return;
     }

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { BitbucketComment } from './client';
 import { bitbucketConversation } from './bitbucketConversation';

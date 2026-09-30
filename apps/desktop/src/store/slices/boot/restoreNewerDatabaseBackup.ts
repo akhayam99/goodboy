@@ -1,4 +1,4 @@
-import { restoreMigrationSnapshot } from '../../../shared/lib/db';
+import { restoreMigrationSnapshot } from '../../../shared/lib/dbBoot';
 import type { GetFn } from './types';
 
 export const restoreNewerDatabaseBackup = (get: GetFn) => {

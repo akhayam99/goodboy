@@ -120,7 +120,7 @@ export const HBL_377: LinearIssue = linearIssue({
   ago: 2 * DAY,
 });
 
-export const HBL_405: LinearIssue = linearIssue({
+const HBL_405: LinearIssue = linearIssue({
   id: 'mock-brand-linear-hbl-405',
   identifier: 'HBL-405',
   title: 'Expire processed webhook event ids after 30 days',
@@ -135,7 +135,7 @@ export const HBL_405: LinearIssue = linearIssue({
   ago: 26 * HOUR,
 });
 
-export const HBL_389: LinearIssue = linearIssue({
+const HBL_389: LinearIssue = linearIssue({
   id: 'mock-brand-linear-hbl-389',
   identifier: 'HBL-389',
   title: 'Paginate the ledger export endpoint',

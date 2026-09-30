@@ -215,8 +215,13 @@ path**. A provider that is not connected shows only its connect card.
   Claude's free resets only work on claude.ai or in Claude Desktop, so a full
   Claude window shows **Open Claude usage** instead. Goodboy never buys a reset
 - **Spent in Goodboy**, the last row of Usage: today, the last 7 days and this
-  month for the current workspace, counted by Goodboy at API prices, and the
-  provider's budget when you set one. **Open in Impact** edits the budget. On a
+  month across all workspaces, counted by Goodboy at API prices, and the
+  provider's budget when you set one. `provider_budget_overview` in
+  `src-tauri/src/budget.rs` answers all of it in one call. The budget month
+  runs on UTC and resets at 00:00 UTC, shown in your local time. Routing, the
+  provider page, Impact and the chat pill read the same `check_provider_budget`
+  status, so the percentage is the same everywhere. **Open in Impact** edits the
+  budget. On a
   plan this is what the same tokens would cost on the API, not what you pay
 - **Permissions**: what this CLI does with each mode (`Works`, `Partly` with the
   reason, or `Not available` with the mode it runs as instead), whether it
@@ -383,8 +388,8 @@ Docs from each CLI: [Claude Code](https://docs.anthropic.com/en/docs/claude-code
   Goodboy reads `loggedIn` plus `email`/`username`
 
 Goodboy passes `--setting-sources project,local` every time it starts claude. That
-covers turns (`turn.rs`), the planner (`planner.rs`), the summarizer (`summarize.rs`)
-and side jobs (`aux_spawn.rs`). All four live under `apps/desktop/src-tauri/src/`.
+covers turns, the planner and the summarizer. All of them get their arguments from
+`providers/cli_args.rs` under `apps/desktop/src-tauri/src/`.
 
 - Your personal config does not load inside a Goodboy session. That means
   `~/.claude/CLAUDE.md` and your user `settings.json`, with its global MCP servers,
@@ -417,11 +422,8 @@ codex exec --json --skip-git-repo-check --model <ID> --cd <DIR> -s <SANDBOX> -- 
   reads both streams through `AuthCommandOutput::primary_text()` in
   `apps/desktop/src-tauri/src/providers.rs`
 
-A test against the real codex binary. It is skipped by default:
-
-```bash
-GOODBOY_TEST_REAL_CODEX=1 cargo test --lib -- --ignored codex_real
-```
+The Rust tests run codex against a scripted fake binary, not the real one. See
+[Fake CLI binaries](testing.md#fake-cli-binaries-for-the-rust-spawn-tests).
 
 ### Antigravity CLI
 
@@ -470,7 +472,7 @@ opencode looks up providers live on models.dev, so the model id names the provid
 
 Every turn sends the session's mode to its CLI, not only to Claude.
 `modeSupportFor` in `packages/core/src/permissions/modeSupport.ts` owns the
-table; `sendTurn` sends its `runsAs` value and `turn.rs` turns it into flags. A
+table; `sendTurn` sends its `runsAs` value and `providers/cli_args.rs` turns it into flags. A
 mode a CLI can't honor runs as the next stricter one it has, never a looser one.
 
 | Mode                              | Claude              | Codex                                                       | Antigravity                      | Cursor                      | opencode family                            |
@@ -514,6 +516,12 @@ mode a CLI can't honor runs as the next stricter one it has, never a looser one.
   Goodboy passes it without `--force`. Whether read-only shell commands still
   run in that mode has not been checked on a real turn, so the table keeps
   Cursor's Read only at Partly
+- The planner and the summarizer are read-only jobs, so their headless Cursor runs
+  never pass `--force` and ask for `--mode plan`. Only a Full access turn passes
+  `--force`. `providers/cli_args.rs` holds one read-only policy per provider and job,
+  every planner and summarizer argument list is checked against it before the CLI
+  starts, and the fake CLI tests check what really spawns. A new flag for a side job
+  goes through that policy, not into `planner.rs` or `summarize.rs`
 
 ### API keys
 
@@ -557,8 +565,10 @@ What the catalogs do not tell you:
   support (`clampEffort`). It does not fail
 - Only one level has a label that differs from the value Goodboy sends. `xhigh`
   reads **Very high** in the picker
-- claude takes `--effort <level>` and codex takes `-c model_reasoning_effort="<level>"`.
-  Both are built in `apps/desktop/src-tauri/src/turn.rs`
+- claude and Antigravity (`agy --effort`) take `--effort <level>`, codex takes
+  `-c model_reasoning_effort="<level>"` and the opencode family takes `--variant <level>`.
+  `effort_args` in `apps/desktop/src-tauri/src/providers/cli_args.rs` builds all of them,
+  for turns, the planner and the summarizer alike
 - There is no `ultracode` level. `claude --help` lists exactly
   `low, medium, high, xhigh, max`. Run that check before you add a level to the union
 - Prices are looked up only within the provider that runs the model.

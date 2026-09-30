@@ -1,28 +1,26 @@
+import { memo } from 'react';
 import { ArrowUpRight } from 'lucide-react';
-import { FOCUS_RING, StatusDot, Tooltip, cn } from '@goodboy/ui';
+import { FOCUS_RING, StatusDot, Tooltip, cn, StarToggle } from '@goodboy/ui';
 import {
   IntegrationGlyph,
   integrationLabel,
 } from '../../../integrations/components/IntegrationGlyph';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { openUrl } from '../../../../shared/lib/editor';
-import { formatAbsoluteDateTime, formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
+import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { recordSessionId } from '../../recordSessionId';
 import type { InboxRecord } from '../../types';
 import { InboxStateLabel } from '../InboxStateLabel';
-import { StarToggle } from '../../../../shared/components/StarToggle';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
-
-export type InboxRowStar = {
-  readonly isStarred: boolean;
-  readonly onToggle: () => void;
-};
+import { useNow } from '../../../../shared/hooks/useNow';
 
 type Props = {
   readonly record: InboxRecord;
   readonly selected: boolean;
   readonly onSelect: (record: InboxRecord) => void;
-  readonly star?: InboxRowStar;
+  readonly isStarred?: boolean;
+  readonly onToggleStar?: (record: InboxRecord) => void;
   readonly onActivate?: (record: InboxRecord) => void;
 };
 
@@ -33,12 +31,24 @@ type OptionIdParams = {
 export const inboxOptionId = ({ key }: OptionIdParams): string =>
   `inbox-option-${key.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
 
-export const InboxRow = ({ record, selected, onSelect, star, onActivate }: Props) => {
-  const relativeTime = formatRelativeAge({ fromIso: record.updatedAt });
+const InboxRowView = ({
+  record,
+  selected,
+  onSelect,
+  isStarred,
+  onToggleStar,
+  onActivate,
+}: Props) => {
+  const now = useNow(30_000);
+  const relativeTime = formatAge({ from: record.updatedAt, now });
   const sessionId = recordSessionId({ record }) ?? null;
   const hasSession = sessionId != null;
   const toolLabel = integrationLabel({ provider: record.provider });
   const canOpen = record.url !== '';
+  const star =
+    isStarred === undefined || onToggleStar === undefined
+      ? undefined
+      : { isStarred, onToggle: () => onToggleStar(record) };
   const menu = useObjectMenuTrigger({
     target: {
       kind: 'record',
@@ -124,7 +134,7 @@ export const InboxRow = ({ record, selected, onSelect, star, onActivate }: Props
         )}
         <time
           dateTime={record.updatedAt}
-          title={formatAbsoluteDateTime({ iso: record.updatedAt })}
+          title={formatDateTime({ at: record.updatedAt, hasYear: true })}
           className={cn(
             'pointer-events-none text-meta text-faint-foreground',
             canOpen && 'group-hover:hidden',
@@ -156,3 +166,5 @@ export const InboxRow = ({ record, selected, onSelect, star, onActivate }: Props
     </div>
   );
 };
+
+export const InboxRow = memo(InboxRowView);

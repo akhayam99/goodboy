@@ -1,6 +1,7 @@
 import type { ProjectId } from '@goodboy/types';
 import type { ReviewCommitPreset } from '../../../features/resolve/reviewCommits';
 import type { AppState } from '../../types';
+import { projectById } from '../projects/projectIndex';
 
 type Params = {
   readonly state: AppState;
@@ -15,6 +16,6 @@ export const selectReviewCommitPreset = ({ state, projectId }: Params): ReviewCo
   if (remembered !== undefined) {
     return remembered;
   }
-  const project = state.projects.find((candidate) => candidate.id === projectId);
+  const project = projectById(state.projects, projectId);
   return project?.overrides.resolveCommitStyle === 'fixup' ? 'fold' : 'keep';
 };

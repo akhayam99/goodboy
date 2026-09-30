@@ -1,17 +1,21 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createStore } from 'zustand/vanilla';
-import type { MountId, SessionId } from '@goodboy/types';
+import type { MountId, ProjectId, PullRequestState, SessionId } from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
+import { useAppStore, type AppStore } from '../../store';
+import type { MountGithubState, SessionGithubState } from '../../types';
 import { sessionPlace } from '../navigation/place';
 import { createReviewNavigationSlice } from './index';
 import { reviewNavigationInitialState } from './state';
 import { createReviewSelectionSlice } from '../review-selection';
 import { reviewSelectionInitialState } from '../review-selection/state';
 import { reviewFocusThreadId, type ReviewDestination } from './destination';
-import type { GetFn, SetFn } from './types';
 
 const SESSION_ID = 'session-1' as SessionId;
 const OTHER_SESSION_ID = 'session-2' as SessionId;
 const MOUNT_ID = 'mount-1' as MountId;
+const PROJECT_ID = 'project-1' as ProjectId;
 
 type Calls = ReadonlyArray<string>;
 
@@ -27,66 +31,112 @@ const onThread = ({ threadId, prNumber = 248 }: ThreadParams): ReviewDestination
   threadId,
 });
 
+const pullRequestOf = (number: number): PullRequestState => ({
+  number,
+  title: 'Guard the settlement batch',
+  url: `https://github.com/harborline/ledger-core/pull/${number}`,
+  state: 'open',
+  mergeable: true,
+  checks: 'success',
+  baseBranch: 'main',
+  headBranch: 'fix/ledger-postings',
+  isDraft: false,
+  reviewDecision: null,
+  body: '',
+  updatedAt: '2026-09-25T00:00:00.000Z',
+});
+
+const githubWithPr = (number: number): SessionGithubState => ({
+  pr: pullRequestOf(number),
+  linkedIssues: [],
+  fetchedAt: null,
+  failedAt: null,
+  loading: false,
+  error: null,
+  detail: null,
+  detailFetchedAt: null,
+  detailLoading: false,
+  detailError: null,
+});
+
+const mountGithubWith = (numbers: ReadonlyArray<number>): MountGithubState => ({
+  ...githubWithPr(numbers[0] ?? 0),
+  pr: null,
+  mountId: MOUNT_ID,
+  projectId: PROJECT_ID,
+  revision: 1,
+  repository: 'harborline/ledger-core',
+  host: 'github.com',
+  branch: 'fix/ledger-postings',
+  prs: numbers.map(pullRequestOf),
+  links: [],
+});
+
 const createHarness = () => {
   const calls: Array<string> = [];
   const mountGates: Array<() => void> = [];
-  const state = {
+  const mocks = {
+    setSessionActiveMount: vi.fn<AppStore['setSessionActiveMount']>(async () => {
+      calls.push('mount');
+    }),
+    refreshSessionPr: vi.fn<AppStore['refreshSessionPr']>(async () => {
+      calls.push('prs');
+    }),
+    selectSessionPr: vi.fn<AppStore['selectSessionPr']>(async () => {
+      calls.push('pr');
+    }),
+    refreshSessionPrDetail: vi.fn<AppStore['refreshSessionPrDetail']>(async () => {
+      calls.push('refresh');
+    }),
+    loadResolveSession: vi.fn<AppStore['loadResolveSession']>(async () => {
+      calls.push('resolve');
+    }),
+    ensureReviewThread: vi.fn<AppStore['ensureReviewThread']>(async () => {
+      calls.push('thread');
+      return 'created';
+    }),
+    navigate: vi.fn<AppStore['navigate']>(() => {
+      calls.push('lens');
+    }),
+  };
+  const store = createStore<AppStore>((set, get) => ({
+    ...useAppStore.getInitialState(),
     ...reviewNavigationInitialState,
     ...reviewSelectionInitialState,
-    sessions: [{ id: SESSION_ID }, { id: OTHER_SESSION_ID }],
+    sessions: [aSession({ id: SESSION_ID }), aSession({ id: OTHER_SESSION_ID })],
     sessionMounts: {},
     sessionProjectMounts: {},
     sessionActiveMount: {},
     sessionActiveProject: {},
-    sessionSelectedPrNumber: {} as Record<string, number | null>,
-    mountGithub: { [MOUNT_ID]: { prs: [{ number: 248 }, { number: 12 }] } } as Record<
-      string,
-      { prs: ReadonlyArray<{ number: number }> }
-    >,
-    sessionGithub: {} as Record<string, { pr: { number: number } | null }>,
-    setSessionActiveMount: vi.fn(async () => {
-      calls.push('mount');
-    }),
-    refreshSessionPr: vi.fn(async () => {
-      calls.push('prs');
-    }),
-    selectSessionPr: vi.fn(async () => {
-      calls.push('pr');
-    }),
-    refreshSessionPrDetail: vi.fn(async () => {
-      calls.push('refresh');
-    }),
-    loadResolveSession: vi.fn(async () => {
-      calls.push('resolve');
-    }),
-    ensureReviewThread: vi.fn(async (params: { readonly isCancelled?: () => boolean }) => {
-      void params;
-      calls.push('thread');
-      return 'created' as const;
-    }),
-    navigate: vi.fn((params: { readonly to: unknown }) => {
-      void params;
-      calls.push('lens');
-    }),
-  };
-  const store = createStore(() => state);
-  const set = store.setState as unknown as SetFn;
-  const get = store.getState as unknown as GetFn;
-  const actions = createReviewNavigationSlice({ set, get });
-  const selection = createReviewSelectionSlice({ set: set as never });
-  store.setState({ ...actions, ...selection } as never);
-  const seePr = (sessionGithub: Record<string, { pr: { number: number } | null }>): void => {
-    store.setState({ sessionGithub } as never);
+    sessionSelectedPrNumber: {},
+    mountGithub: { [MOUNT_ID]: mountGithubWith([248, 12]) },
+    sessionGithub: {},
+    ...mocks,
+    ...createReviewNavigationSlice({ set, get }),
+    ...createReviewSelectionSlice({ set, get }),
+  }));
+  const actions = store.getState();
+  const seePr = (sessionGithub: Record<SessionId, SessionGithubState>): void => {
+    store.setState({ sessionGithub });
   };
   const holdMounts = (): void => {
-    state.setSessionActiveMount.mockImplementation(async () => {
+    mocks.setSessionActiveMount.mockImplementation(async () => {
       calls.push('mount');
       await new Promise<void>((resolve) => {
         mountGates.push(resolve);
       });
     });
   };
-  return { store, state, calls: calls as Calls, actions, get, seePr, holdMounts, mountGates };
+  return {
+    store,
+    state: mocks,
+    calls: calls as Calls,
+    actions,
+    get: store.getState,
+    seePr,
+    holdMounts,
+    mountGates,
+  };
 };
 
 beforeEach(() => {
@@ -96,7 +146,7 @@ beforeEach(() => {
 describe('the review navigation target', () => {
   it('activates the mount, waits for the pull request, then opens the lens', async () => {
     const live = createHarness();
-    live.seePr({ [SESSION_ID]: { pr: { number: 248 } } });
+    live.seePr({ [SESSION_ID]: githubWithPr(248) });
 
     const outcome = await live.actions.openReviewTarget({
       sessionId: SESSION_ID,
@@ -110,12 +160,12 @@ describe('the review navigation target', () => {
 
   it('loads the pull requests of a cold mount before selecting one of them', async () => {
     const live = createHarness();
-    live.store.setState({ mountGithub: {} } as never);
+    live.store.setState({ mountGithub: {} });
     live.state.refreshSessionPr.mockImplementation(async () => {
       live.store.setState({
-        mountGithub: { [MOUNT_ID]: { prs: [{ number: 248 }] } },
-        sessionGithub: { [SESSION_ID]: { pr: { number: 248 } } },
-      } as never);
+        mountGithub: { [MOUNT_ID]: mountGithubWith([248]) },
+        sessionGithub: { [SESSION_ID]: githubWithPr(248) },
+      });
     });
 
     const outcome = await live.actions.openReviewTarget({
@@ -133,8 +183,8 @@ describe('the review navigation target', () => {
 
   it('accepts a pull request the session selected over its branch pull request', async () => {
     const live = createHarness();
-    live.seePr({ [SESSION_ID]: { pr: { number: 300 } } });
-    live.store.setState({ sessionSelectedPrNumber: { [SESSION_ID]: 248 } } as never);
+    live.seePr({ [SESSION_ID]: githubWithPr(300) });
+    live.store.setState({ sessionSelectedPrNumber: { [SESSION_ID]: 248 } });
 
     const outcome = await live.actions.openReviewTarget({
       sessionId: SESSION_ID,
@@ -172,7 +222,7 @@ describe('the review navigation target', () => {
 
   it('opens a pull request on its own page, not on Review', async () => {
     const live = createHarness();
-    live.seePr({ [SESSION_ID]: { pr: { number: 248 } } });
+    live.seePr({ [SESSION_ID]: githubWithPr(248) });
 
     const outcome = await live.actions.openReviewTarget({
       sessionId: SESSION_ID,
@@ -190,7 +240,7 @@ describe('the review navigation target', () => {
 
   it('opens the comments of a pull request in Review, with that pull request selected', async () => {
     const live = createHarness();
-    live.seePr({ [SESSION_ID]: { pr: { number: 248 } } });
+    live.seePr({ [SESSION_ID]: githubWithPr(248) });
 
     const outcome = await live.actions.openReviewTarget({
       sessionId: SESSION_ID,
@@ -206,7 +256,7 @@ describe('the review navigation target', () => {
 
   it('stays in place and reports a pull request it cannot show', async () => {
     const live = createHarness();
-    live.seePr({ [SESSION_ID]: { pr: { number: 12 } } });
+    live.seePr({ [SESSION_ID]: githubWithPr(12) });
 
     const outcome = await live.actions.openReviewTarget({
       sessionId: SESSION_ID,
@@ -220,7 +270,7 @@ describe('the review navigation target', () => {
 
   it('lands on review with the pull request marked unavailable instead of guessing another', async () => {
     const live = createHarness();
-    live.seePr({ [SESSION_ID]: { pr: { number: 12 } } });
+    live.seePr({ [SESSION_ID]: githubWithPr(12) });
 
     const outcome = await live.actions.openReviewTarget({
       sessionId: SESSION_ID,
@@ -237,8 +287,8 @@ describe('the review navigation target', () => {
 
   it('keeps the queue open with no selection when the thread is gone', async () => {
     const live = createHarness();
-    live.seePr({ [SESSION_ID]: { pr: { number: 248 } } });
-    live.state.ensureReviewThread.mockResolvedValueOnce('missing' as never);
+    live.seePr({ [SESSION_ID]: githubWithPr(248) });
+    live.state.ensureReviewThread.mockResolvedValueOnce('missing');
 
     const outcome = await live.actions.openReviewTarget({
       sessionId: SESSION_ID,
@@ -255,8 +305,8 @@ describe('the review navigation target', () => {
 
   it('reports a closed comment the queue cannot carry instead of settling on nothing', async () => {
     const live = createHarness();
-    live.seePr({ [SESSION_ID]: { pr: { number: 248 } } });
-    live.state.ensureReviewThread.mockResolvedValueOnce('closed' as never);
+    live.seePr({ [SESSION_ID]: githubWithPr(248) });
+    live.state.ensureReviewThread.mockResolvedValueOnce('closed');
 
     const outcome = await live.actions.openReviewTarget({
       sessionId: SESSION_ID,
@@ -272,7 +322,7 @@ describe('the review navigation target', () => {
 
   it('hands materialization a way to see that a newer request took over', async () => {
     const live = createHarness();
-    live.seePr({ [SESSION_ID]: { pr: { number: 248 } } });
+    live.seePr({ [SESSION_ID]: githubWithPr(248) });
     const seen: { current: (() => boolean) | null } = { current: null };
     live.state.ensureReviewThread.mockImplementation(
       async ({ isCancelled }: { readonly isCancelled?: () => boolean }) => {
@@ -297,8 +347,8 @@ describe('the review navigation target', () => {
 
   it('abandons a request whose materialization reports itself superseded', async () => {
     const live = createHarness();
-    live.seePr({ [SESSION_ID]: { pr: { number: 248 } } });
-    live.state.ensureReviewThread.mockResolvedValueOnce('cancelled' as never);
+    live.seePr({ [SESSION_ID]: githubWithPr(248) });
+    live.state.ensureReviewThread.mockResolvedValueOnce('cancelled');
 
     const outcome = await live.actions.openReviewTarget({
       sessionId: SESSION_ID,
@@ -311,7 +361,7 @@ describe('the review navigation target', () => {
 
   it('keeps a remote failure on the target so the surface can retry it', async () => {
     const live = createHarness();
-    live.seePr({ [SESSION_ID]: { pr: { number: 248 } } });
+    live.seePr({ [SESSION_ID]: githubWithPr(248) });
     live.state.refreshSessionPrDetail.mockRejectedValueOnce(new Error('network is down'));
 
     const outcome = await live.actions.openReviewTarget({
@@ -329,8 +379,8 @@ describe('the review navigation target', () => {
   it('keeps one session target from overwriting another', async () => {
     const live = createHarness();
     live.seePr({
-      [SESSION_ID]: { pr: { number: 248 } },
-      [OTHER_SESSION_ID]: { pr: { number: 12 } },
+      [SESSION_ID]: githubWithPr(248),
+      [OTHER_SESSION_ID]: githubWithPr(12),
     });
 
     await live.actions.openReviewTarget({
@@ -352,7 +402,7 @@ describe('the review navigation target', () => {
 
   it('lets only the most recent navigation of a session settle', async () => {
     const live = createHarness();
-    live.seePr({ [SESSION_ID]: { pr: { number: 248 } } });
+    live.seePr({ [SESSION_ID]: githubWithPr(248) });
 
     const first = live.actions.openReviewTarget({
       sessionId: SESSION_ID,
@@ -373,7 +423,7 @@ describe('the review navigation target', () => {
 
   it('keeps the newest navigation even when mount activation finishes out of order', async () => {
     const live = createHarness();
-    live.seePr({ [SESSION_ID]: { pr: { number: 248 } } });
+    live.seePr({ [SESSION_ID]: githubWithPr(248) });
     live.holdMounts();
 
     const first = live.actions.openReviewTarget({
@@ -397,7 +447,7 @@ describe('the review navigation target', () => {
 
   it('releases a target only for the request that owns it', async () => {
     const live = createHarness();
-    live.seePr({ [SESSION_ID]: { pr: { number: 248 } } });
+    live.seePr({ [SESSION_ID]: githubWithPr(248) });
     await live.actions.openReviewTarget({
       sessionId: SESSION_ID,
       destination: onThread({ threadId: 'PRRT_1' }),

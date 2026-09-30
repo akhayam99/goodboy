@@ -16,7 +16,7 @@ import type { WorktreeFacts } from './kinds/worktree';
 import type { ScriptFacts } from './kinds/script';
 import type { ChatFacts } from './kinds/chat';
 import type { AppStore } from '../../store/store';
-import type { ShowToast } from '../../app/components/Toast';
+import type { ShowToast } from '../../shared/components/Toast';
 import type { ShortcutId } from '../../shared/keyboard/registry';
 import type { RemoteHostKind } from '../../shared/lib/remoteHost';
 
@@ -24,7 +24,7 @@ export const ACTION_GROUPS = ['open', 'act', 'copy', 'danger'] as const;
 
 export type ActionGroup = (typeof ACTION_GROUPS)[number];
 
-export const ACTION_SLOTS = [
+const ACTION_SLOTS = [
   'primary',
   'secondary',
   'inline',
@@ -40,7 +40,7 @@ export const ACTION_SLOTS = [
 
 export type ActionSlot = (typeof ACTION_SLOTS)[number];
 
-export type ActionConfirmRole = 'primary' | 'alert' | 'danger';
+type ActionConfirmRole = 'primary' | 'alert' | 'danger';
 
 export type ActionConfirm = {
   readonly title: string;
@@ -77,12 +77,12 @@ export type ActionEnv = {
   readonly viewing: ActionViewing | null;
 };
 
-export type FactsParams<F> = {
+type FactsParams<F> = {
   readonly facts: F;
   readonly viewing?: ActionViewing | null;
 };
 
-export type ActionRunParams<F> = {
+type ActionRunParams<F> = {
   readonly facts: F;
   readonly env: ActionEnv;
   readonly choice: string | null;
@@ -108,7 +108,7 @@ export type ActionDefinition<F> = {
   readonly run: (params: ActionRunParams<F>) => void | Promise<void>;
 };
 
-export type FactsSourceParams<T> = {
+type FactsSourceParams<T> = {
   readonly state: AppStore;
   readonly target: T;
 };
@@ -191,7 +191,7 @@ export type ArtifactPort = {
 
 export type ArtifactPorts = Readonly<Partial<Record<ArtifactPortId, ArtifactPort>>>;
 
-export type ArtifactActionSubject =
+type ArtifactActionSubject =
   | {
       readonly kind: 'stored';
       readonly artifactId: ArtifactId;

@@ -1,7 +1,7 @@
 import type { PullRequestState, SessionPrGroup } from '@goodboy/types';
 
 type ApprovalParams = {
-  readonly pr: PullRequestState;
+  readonly pr: Pick<PullRequestState, 'state' | 'isDraft' | 'reviewDecision'>;
 };
 
 export const isPullRequestApproved = ({ pr }: ApprovalParams): boolean =>

@@ -32,6 +32,9 @@ vi.mock('../../../../store', () => ({
       updateVersion: mocks.updater.version,
       updateFailure: null,
       agentTurnState: {},
+      sessions: [],
+      sessionPhaseRuns: {},
+      orchestratingWorkflowRuns: {},
     }),
 }));
 

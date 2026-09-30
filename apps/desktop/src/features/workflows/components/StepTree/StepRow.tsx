@@ -4,7 +4,7 @@ import { Tooltip, WORK_META_COLUMN, WorkMeta, WorkNode, cn } from '@goodboy/ui';
 import type { EffortLevel, ProviderId } from '@goodboy/types';
 import type { StepDraft } from '../../engine';
 import { WorkTimeCell } from '../../../workTreeModel/components/WorkTimeCell';
-import type { PlanStepEstimate } from '../../../session/components/WorkflowBuilderView/planEstimates';
+import type { PlanStepEstimate } from '../WorkflowBuilderView/planEstimates';
 import { ROLE_LABEL, type AgentKind } from '../../../session/agent-kind';
 import { AgentKindChip } from '../../../session/components/AgentKindChip';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';

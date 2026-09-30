@@ -1,3 +1,4 @@
+import { formatError } from '@goodboy/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -43,7 +44,7 @@ const EMPTY_LOADING = {
 const EMPTY_RESULT = { data: null, error: null };
 
 const toError = ({ value }: ToErrorParams): Error =>
-  value instanceof Error ? value : new Error(String(value));
+  value instanceof Error ? value : new Error(formatError(value));
 
 export const useBudgetData = ({ sessionIds }: Params): BudgetData => {
   const generation = useRef(0);

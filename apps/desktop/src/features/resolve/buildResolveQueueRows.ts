@@ -8,7 +8,7 @@ import type {
   ResolveQueueItemWithThread,
   ResolveThread,
 } from '@goodboy/types';
-import { groupThreads, type CommentThread } from '../github/comment-threads';
+import { groupThreads, type CommentThread } from '../integrations/github/comment-threads';
 import { prCommentLocation } from '../session/pr-comment-location';
 import { noteCommentThread } from './notes/noteThread';
 import { conversationSourceOfThread } from './notes/conversationSource';
@@ -31,7 +31,7 @@ import {
 
 export type ResolveConversationSource = 'github' | 'gitlab' | 'bitbucket' | 'note';
 
-export type ResolveQueueReviewerNote = {
+type ResolveQueueReviewerNote = {
   readonly source: ResolveConversationSource;
   readonly body: string;
   readonly author: string;
@@ -41,7 +41,7 @@ export type ResolveQueueReviewerNote = {
   readonly line: number | null;
 };
 
-export type ResolveQueueDelivery = {
+type ResolveQueueDelivery = {
   readonly isReplyPosted: boolean;
   readonly replyPostedAt: number | null;
   readonly isThreadResolved: boolean;

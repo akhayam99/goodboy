@@ -6,7 +6,7 @@ import {
 } from '../../../features/resolve/replySettings';
 import { appendAttribution } from '../../../shared/utils/attribution';
 
-export type ReplyCommitStory = {
+type ReplyCommitStory = {
   readonly originalSha: string;
   readonly isFolded: boolean;
 };

@@ -12,14 +12,15 @@ import {
 import { isFilePathTool, prefixRuleFor } from '@goodboy/core';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../../chat/utils/transcript-items';
-import { formatCardTime } from '../../../chat/utils/format-card-time';
+import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { TranscriptShell } from '../../../chat/components/TranscriptShell';
 import { formatRequestInput } from './formatRequestInput';
 import { modeCopyOf } from '../../modeCopy';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
+import { useToast } from '../../../../shared/components/Toast';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 const warningTint = tintClasses('warning');
 const resolvedTint = tintClasses('success');
@@ -42,9 +43,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
   const { open, close, toggle } = dropdown;
 
   const session = useAppStore((s) =>
-    sessionId === null
-      ? null
-      : (s.sessions.find((candidate) => candidate.id === sessionId) ?? null),
+    sessionId === null ? null : (sessionById(s.sessions, sessionId) ?? null),
   );
   const workspaceName = useAppStore(
     (s) => s.workspaces.find((w) => w.id === session?.workspaceId)?.name ?? null,
@@ -55,7 +54,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
   const reportError = useAppStore((s) => s.reportError);
   const { showToast } = useToast();
 
-  const timestamp = formatCardTime(item.at);
+  const timestamp = formatClock({ at: item.at });
   const inputPreview = formatRequestInput({ input: item.input });
   const commandText =
     item.toolName === 'Bash' &&

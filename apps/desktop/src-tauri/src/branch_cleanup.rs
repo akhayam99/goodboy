@@ -166,15 +166,51 @@ pub(crate) fn scan_project_branches(
     })
 }
 
-#[derive(Debug, Serialize, PartialEq, Eq)]
-#[serde(tag = "kind", rename_all = "kebab-case")]
+#[derive(Debug, thiserror::Error, PartialEq, Eq)]
 pub enum BranchCleanupError {
+    #[error("the repository folder was not found")]
     RepoNotFound,
+    #[error("the branch no longer exists")]
     BranchMissing,
+    #[error("the branch moved to {actual} while it was being checked")]
     ShaMoved { actual: String },
+    #[error("the branch is checked out in {path}")]
     HeldByWorktree { path: String },
+    #[error("a branch with that name already exists")]
     BranchExists,
+    #[error("{message}")]
     Git { message: String },
+}
+
+impl BranchCleanupError {
+    fn kind(&self) -> &'static str {
+        match self {
+            BranchCleanupError::RepoNotFound => "repo-not-found",
+            BranchCleanupError::BranchMissing => "branch-missing",
+            BranchCleanupError::ShaMoved { .. } => "sha-moved",
+            BranchCleanupError::HeldByWorktree { .. } => "held-by-worktree",
+            BranchCleanupError::BranchExists => "branch-exists",
+            BranchCleanupError::Git { .. } => "git",
+        }
+    }
+}
+
+impl Serialize for BranchCleanupError {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let mut map = serde_json::Map::new();
+        map.insert("kind".to_string(), self.kind().into());
+        map.insert("message".to_string(), self.to_string().into());
+        match self {
+            BranchCleanupError::ShaMoved { actual } => {
+                map.insert("actual".to_string(), actual.as_str().into());
+            }
+            BranchCleanupError::HeldByWorktree { path } => {
+                map.insert("path".to_string(), path.as_str().into());
+            }
+            _ => {}
+        }
+        serde_json::Value::Object(map).serialize(serializer)
+    }
 }
 
 impl From<WorktreeError> for BranchCleanupError {
@@ -568,6 +604,32 @@ mod tests {
     }
 
     #[test]
+    fn scan_uses_the_develop_branch_as_base_when_no_base_is_configured() {
+        let root = init_repo("scan-develop");
+        git_ok(&root, &["branch", "-m", "main", "develop"]);
+        git_ok(&root, &["checkout", "-b", "goodboy/fx"]);
+        std::fs::write(root.join("b.txt"), "fx").unwrap();
+        git_ok(&root, &["add", "b.txt"]);
+        git_ok(&root, &["commit", "-m", "feature"]);
+        git_ok(&root, &["checkout", "-b", "scratch", "develop"]);
+
+        let scan = scan_project_branches(&root.to_string_lossy(), None, &HashMap::new()).unwrap();
+        let find = |name: &str| {
+            scan.branches
+                .iter()
+                .find(|branch| branch.name == name)
+                .unwrap_or_else(|| panic!("missing {name}"))
+        };
+
+        assert_eq!(
+            find("goodboy/fx").merge_state,
+            BranchMergeState::NotMerged { ahead: 1 }
+        );
+        assert_eq!(find("develop").merge_state, BranchMergeState::Protected);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn scan_says_where_each_branch_lives_and_whether_it_merged() {
         let root = init_repo("scan");
         let remote = root.join("remote.git");
@@ -659,5 +721,34 @@ mod tests {
 
         assert_eq!(refused, Err(BranchCleanupError::BranchExists));
         std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_cleanup_error_serializes_with_a_kind_a_message_and_its_extras() {
+        let moved = serde_json::to_value(BranchCleanupError::ShaMoved {
+            actual: "abc123".to_string(),
+        })
+        .unwrap();
+        let held = serde_json::to_value(BranchCleanupError::HeldByWorktree {
+            path: "/work/ledger-core".to_string(),
+        })
+        .unwrap();
+        let missing = serde_json::to_value(BranchCleanupError::RepoNotFound).unwrap();
+
+        assert_eq!(moved["kind"], "sha-moved");
+        assert_eq!(moved["actual"], "abc123");
+        assert_eq!(
+            moved["message"],
+            "the branch moved to abc123 while it was being checked"
+        );
+        assert_eq!(held["kind"], "held-by-worktree");
+        assert_eq!(held["path"], "/work/ledger-core");
+        assert_eq!(
+            missing,
+            serde_json::json!({
+                "kind": "repo-not-found",
+                "message": "the repository folder was not found"
+            })
+        );
     }
 }

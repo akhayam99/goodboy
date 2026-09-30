@@ -857,7 +857,9 @@ Goodboy chip never hides. Past that the glyph strip scrolls.
 ## Shortcuts
 
 There is one registry with three modifier planes: bare ⌘ for the app, ⌘⇧ for
-the session, ⌘⌥ for the lens surfaces. Nobody writes a combo string by hand
+the session, ⌘⌥ for the lens surfaces. A fourth, `pane`, holds plain keys a
+surface answers while it is on screen: the diff's T (jump to a file), [ and ]
+(previous and next file). Nobody writes a combo string by hand
 outside the registry. So no two surfaces can claim the same chord, and no
 shortcut can exist without being documented. That holds for per-OS combos
 too. An entry carries its own combo for other systems where the plain mapping
@@ -868,8 +870,13 @@ it fires from anywhere, the terminal included. Refresh session
 (`session.refresh`, ⌘⇧R) sits on the session plane beside Archive (⌘⇧A) and
 Delete (⌘⇧⌫), because it acts on the open session; ⌘R stays the app reload.
 The plane is for the dispatcher.
+A plain key (no ⌘, Ctrl or Alt) yields on its own: the dispatcher skips it
+while a field, a select or the terminal has focus, while a modal dialog is
+open, and when something below already claimed the event. A surface registers
+its plain keys with `useShortcut` and an enabled flag, never with its own
+window listener.
 Every entry also names the task `group` it belongs to (General, Workspaces,
-Navigate, Session, Views, Window), and Settings > App > Shortcuts lists the
+Navigate, Session, Views, Review, Diff, Window), and Settings > App > Shortcuts lists the
 groups in that order, read top to bottom per column. Entries that share a
 `family` (only the nine workspace digits today) render as one row, "Go to
 workspace 1 to 9" with ⌘1-9, while the registry keeps one entry per chord. A
@@ -933,7 +940,18 @@ one is open at a time.
   open, no frame node exists, so nothing covers the page.
 - **One Esc stack.** The frame, a body that holds Esc (the Inbox with a record
   open), the agent overlay and the delete confirm all register with
-  `useEscapeLayer`, so Esc closes the topmost layer only.
+  `useEscapeLayer`, so Esc closes the topmost layer only. So does every
+  popover built on `useDropdown` (`AnchoredPopover`, the pickers, the bell):
+  it holds a layer while open, so Esc inside a studio closes the popover and
+  the studio stays, and it gives focus back to its trigger. The image
+  lightbox, the sidebar peek, a history drag, the quick actions popover and the
+  artifact page's back-to-list Esc register the same way. A layer registered
+  later sits above one registered earlier. A key handler on a focused field may
+  claim Esc first with `preventDefault`, and the stack then leaves it alone.
+  `useKeepFullScreenOnEscape` is the one raw Esc listener left, because it must
+  see the key when no layer is open. A ratchet
+  (`__tests__/regressions/escape-and-keys-use-the-stack.test.ts`) counts
+  `'Escape'` literals and window key listeners per file and fails on growth.
 
 - **Not every studio earns a footer entry.** Notifications opens from the bell
   popover (its footer's Open all notifications) and from the palette's Go to
@@ -955,7 +973,7 @@ one is open at a time.
   shows in every workspace. Mark all read and Delete all act on that same scope.
   In the studio, rows are grouped by day (Today, Yesterday, This week, Older),
   j and k or the arrow keys move, Enter runs the row's action and e dismisses.
-  The rail rows (`shared/components/FacetRail`), the list keys
+  The rail rows (`packages/ui` `FacetRail`), the list keys
   (`shared/hooks/useListKeys`) and the day grouping (`shared/utils/groupByDay`)
   are shared primitives. The inbox uses all three: its rail filters by view,
   type and source (one pick per section, a tool that did not load says so in

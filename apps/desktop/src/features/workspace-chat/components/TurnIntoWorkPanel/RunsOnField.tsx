@@ -9,7 +9,7 @@ type Props = {
   readonly onChange: (update: (current: WorkRouting | null) => WorkRouting | null) => void;
 };
 
-export const RUNS_ON_LABEL = 'Runs on';
+const RUNS_ON_LABEL = 'Runs on';
 
 export const RunsOnField = ({ connectedProviders, defaultRouting, value, onChange }: Props) => {
   const active = value ?? defaultRouting;

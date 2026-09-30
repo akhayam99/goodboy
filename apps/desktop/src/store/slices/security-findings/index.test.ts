@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProjectId, SecurityFindingId, WorkspaceId } from '@goodboy/types';
 import type { AppStore } from '../../store';
@@ -12,13 +13,15 @@ const h = vi.hoisted(() => ({
   scanTextForSecrets: vi.fn(async () => [] as ReadonlyArray<unknown>),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  recordSecurityFindings: h.recordSecurityFindings,
-  listOpenSecurityFindings: h.listOpenSecurityFindings,
-  listDismissedSecurityFindings: h.listDismissedSecurityFindings,
-  dismissSecurityFinding: h.dismissSecurityFinding,
-  flagSecurityFindingAgain: h.flagSecurityFindingAgain,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    recordSecurityFindings: h.recordSecurityFindings,
+    listOpenSecurityFindings: h.listOpenSecurityFindings,
+    listDismissedSecurityFindings: h.listDismissedSecurityFindings,
+    dismissSecurityFinding: h.dismissSecurityFinding,
+    flagSecurityFindingAgain: h.flagSecurityFindingAgain,
+  }),
+);
 vi.mock('@goodboy/core', () => ({ scanTextForSecrets: h.scanTextForSecrets }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 

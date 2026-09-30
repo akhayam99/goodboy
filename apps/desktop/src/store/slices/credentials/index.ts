@@ -1,9 +1,9 @@
 import { createCredential } from './createCredential';
 import { deleteCredential } from './deleteCredential';
 import { loadCredentials } from './loadCredentials';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createCredentialsSlice = (set: SetFn, get: GetFn) => {
+export const createCredentialsSlice = ({ set, get }: SliceDeps) => {
   return {
     loadCredentials: loadCredentials(set),
     createCredential: createCredential(set),

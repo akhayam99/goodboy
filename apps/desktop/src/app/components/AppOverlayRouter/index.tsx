@@ -3,7 +3,7 @@ import type { Session, Workspace } from '@goodboy/types';
 import { DeleteSessionConfirm } from '../../../features/session/components/DeleteSessionConfirm';
 import { ConvertWorkspaceDialog } from '../../../features/workspace/components/ConvertWorkspaceDialog';
 import { WorkspaceLauncher } from '../../../features/workspace/components/WorkspaceLauncher';
-import type { SettingsScopeChange } from '../../../features/settings/components/SettingsStudio/types';
+import type { SettingsScopeChange } from '../../../features/settings/settingsFocus';
 import type { ImpactScope } from '../../../features/impact/lib';
 import { OnboardingWizard } from '../../../features/onboarding/OnboardingWizard';
 import type { InboxStudioFocus, StudioPlace } from '../../../store';

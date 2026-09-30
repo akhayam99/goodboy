@@ -14,7 +14,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
-import { ToastProvider } from '../../../../app/components/Toast';
+import { ToastProvider } from '../../../../shared/components/Toast';
 import {
   EXPANDED_THREAD_ID,
   SESSION,
@@ -155,8 +155,8 @@ describe('the resolver Brief', () => {
   });
 
   it('accepts with the same call the Review page makes', async () => {
-    const accept = vi.fn(async () => undefined);
-    stub({ acceptResolveQueueItem: accept as unknown as StoreState['acceptResolveQueueItem'] });
+    const accept = vi.fn<StoreState['acceptResolveQueueItem']>(async () => undefined);
+    stub({ acceptResolveQueueItem: accept });
     await mount({ agentId: SINGLE });
 
     fireEvent.click(screen.getByRole('button', { name: /^Accept/ }));
@@ -168,12 +168,9 @@ describe('the resolver Brief', () => {
   });
 
   it('replies without a change from the Brief and keeps the Brief open', async () => {
-    const refuse = vi.fn(async () => undefined);
-    const navigate = vi.fn();
-    stub({
-      refuseResolveQueueItem: refuse as unknown as StoreState['refuseResolveQueueItem'],
-      navigate: navigate as unknown as StoreState['navigate'],
-    });
+    const refuse = vi.fn<StoreState['refuseResolveQueueItem']>(async () => undefined);
+    const navigate = vi.fn<StoreState['navigate']>();
+    stub({ refuseResolveQueueItem: refuse, navigate });
     await mount({ agentId: SINGLE });
 
     fireEvent.click(screen.getByRole('button', { name: /^Reply/ }));
@@ -225,8 +222,8 @@ describe('the resolver Brief', () => {
       drift: [],
       blocker: null,
     };
-    const prepare = vi.fn(async () => preview);
-    const publish = vi.fn(async () => ({
+    const prepare = vi.fn<StoreState['preparePublication']>(async () => preview);
+    const publish = vi.fn<StoreState['publishConversations']>(async () => ({
       kind: 'done' as const,
       pushed: true,
       pushedHead: 'c81e5aaaaaa',
@@ -240,8 +237,8 @@ describe('the resolver Brief', () => {
       error: null,
     }));
     stub({
-      preparePublication: prepare as unknown as StoreState['preparePublication'],
-      publishConversations: publish as unknown as StoreState['publishConversations'],
+      preparePublication: prepare,
+      publishConversations: publish,
     });
     await mount({ agentId: SINGLE });
     const items = useAppStore.getState().sessionResolveQueueItems[SESSION.id] ?? [];
@@ -316,7 +313,7 @@ describe('the resolver Brief', () => {
       blocker: null,
     };
     stub({
-      preparePublication: (async () => preview) as unknown as StoreState['preparePublication'],
+      preparePublication: async () => preview,
     });
     await mount({ agentId: SINGLE });
     const items = useAppStore.getState().sessionResolveQueueItems[SESSION.id] ?? [];
@@ -365,10 +362,10 @@ describe('the resolver Brief', () => {
   });
 
   it('opens Review on the whole batch with the child first', async () => {
-    const openReviewTarget = vi.fn(async () => ({ kind: 'opened' as const }));
-    stub({
-      openReviewTarget: openReviewTarget as unknown as StoreState['openReviewTarget'],
-    });
+    const openReviewTarget = vi.fn<StoreState['openReviewTarget']>(async () => ({
+      kind: 'opened' as const,
+    }));
+    stub({ openReviewTarget });
     await mount({ agentId: CHILD });
 
     fireEvent.click(screen.getByRole('button', { name: 'Open in Review (2)' }));

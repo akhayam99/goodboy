@@ -1,9 +1,9 @@
 import type { ChangelogFeature } from './parseChangelog';
 
 export type ChangelogImageVariant = 'before' | 'after';
-export type ChangelogImageTheme = 'dark' | 'light';
+type ChangelogImageTheme = 'dark' | 'light';
 
-export const CHANGELOG_IMAGE_THEMES: ReadonlyArray<ChangelogImageTheme> = ['dark', 'light'];
+const CHANGELOG_IMAGE_THEMES: ReadonlyArray<ChangelogImageTheme> = ['dark', 'light'];
 
 type FileNameParams = {
   readonly image: string;
@@ -18,7 +18,7 @@ type VariantsForFeatureParams = {
   readonly hasBefore: boolean;
 };
 
-export const changelogImageVariants = ({
+const changelogImageVariants = ({
   hasBefore,
 }: VariantsForFeatureParams): ReadonlyArray<ChangelogImageVariant> =>
   hasBefore ? ['before', 'after'] : ['after'];

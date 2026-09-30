@@ -166,7 +166,7 @@ const NEUTRAL_REASONS: ReadonlySet<RowStateReason['kind']> = new Set([
   'stepStopped',
 ]);
 
-export const isRowStoppedByUser = ({ state }: StateParams): boolean =>
+const isRowStoppedByUser = ({ state }: StateParams): boolean =>
   state.reason?.kind === 'agentStopped' || state.reason?.kind === 'stepStopped';
 
 export const rowStateTone = ({ state }: StateParams): Tone => {

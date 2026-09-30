@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   IsoDateTime,
@@ -33,22 +34,24 @@ const h = vi.hoisted(() => ({
   updateProjectIdentity: vi.fn(async () => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  findProjectByRootPath: h.findProjectByRootPath,
-  getWorkspaceById: h.getWorkspaceById,
-  insertProject: h.insertProject,
-  insertWorkspace: h.insertWorkspace,
-  listAllProjectsForWorkspace: h.listAllProjectsForWorkspace,
-  reconnectProject: h.reconnectProject,
-  reconnectWorkspace: h.reconnectWorkspace,
-  reconnectWorkspaceAndProjects: h.reconnectWorkspaceAndProjects,
-  disconnectProject: h.disconnectProject,
-  disconnectWorkspace: h.disconnectWorkspace,
-  disconnectWorkspaceAndProjects: h.disconnectWorkspaceAndProjects,
-  upsertWorkspaceProfile: h.upsertWorkspaceProfile,
-  describeProjectAdoption: h.describeProjectAdoption,
-  updateProjectIdentity: h.updateProjectIdentity,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    findProjectByRootPath: h.findProjectByRootPath,
+    getWorkspaceById: h.getWorkspaceById,
+    insertProject: h.insertProject,
+    insertWorkspace: h.insertWorkspace,
+    listAllProjectsForWorkspace: h.listAllProjectsForWorkspace,
+    reconnectProject: h.reconnectProject,
+    reconnectWorkspace: h.reconnectWorkspace,
+    reconnectWorkspaceAndProjects: h.reconnectWorkspaceAndProjects,
+    disconnectProject: h.disconnectProject,
+    disconnectWorkspace: h.disconnectWorkspace,
+    disconnectWorkspaceAndProjects: h.disconnectWorkspaceAndProjects,
+    upsertWorkspaceProfile: h.upsertWorkspaceProfile,
+    describeProjectAdoption: h.describeProjectAdoption,
+    updateProjectIdentity: h.updateProjectIdentity,
+  }),
+);
 
 vi.mock('@goodboy/core', () => ({ seedWorkflowLibrary: h.seedWorkflowLibrary }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
@@ -179,6 +182,15 @@ describe('workspace and project slices', () => {
     expect(insertedProject.workspaceId).toBe(insertedWorkspace.id);
     expect(store.state.workspaces).toEqual([insertedWorkspace]);
     expect(store.state.projects).toEqual([insertedProject]);
+  });
+
+  it('scans no skills from disk when a workspace is added while the skills feature is off', async () => {
+    h.invokeSkillRescan.mockClear();
+    const store = harness({});
+
+    await addWorkspace(store.set, store.get)({ rootPath: '/repos/api' });
+
+    expect(h.invokeSkillRescan).not.toHaveBeenCalled();
   });
 
   it('reconnects a disconnected project into its existing container', async () => {

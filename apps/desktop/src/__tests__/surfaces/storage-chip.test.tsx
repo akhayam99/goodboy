@@ -14,14 +14,14 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../store/storyHarness';
-import { ToastProvider } from '../../app/components/Toast';
+import { ToastProvider } from '../../shared/components/Toast';
 import { StorageChip } from '../../app/components/AppTopBar/StorageChip';
 import {
   SETTINGS_WORKSPACE,
   seedSettingsBase,
 } from '../../app/components/MockScene/scenes/audit/settingsSeed';
 import { SettingsStudio } from '../../features/settings/components/SettingsStudio';
-import type { SettingsFocus } from '../../features/settings/components/SettingsStudio/types';
+import type { SettingsFocus } from '../../features/settings/settingsFocus';
 import type { StorageFolder } from '../../store/slices/storage/types';
 
 const GB = 1024 ** 3;
@@ -36,8 +36,10 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   consoleErrors = [];
+  const logError = console.error;
   vi.spyOn(console, 'error').mockImplementation((...args: ReadonlyArray<unknown>) => {
     consoleErrors.push(args.map(String).join(' '));
+    logError(...args);
   });
   seedSettingsBase();
 });

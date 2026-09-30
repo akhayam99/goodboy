@@ -1,8 +1,8 @@
 import { FolderOpen, Plus } from 'lucide-react';
-import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Button, Input } from '@goodboy/ui';
 import type { Project, ProjectId } from '@goodboy/types';
 import type { DetectedChildRepos } from '../../../../shared/hooks/useChildRepoDetection';
+import { usePickFolder } from '../../../../shared/hooks/usePickFolder';
 import { DetectedRepoList, type KnownRepo } from '../../../../shared/components/DetectedRepoList';
 import { ProjectAdoptionNotice } from '../../../../shared/components/ProjectAdoptionNotice';
 import type { ProjectAttachConflict } from '../../../../store/slices/projects/addProject';
@@ -30,11 +30,6 @@ type Props = {
   readonly onDismissDetection: () => void;
 };
 
-const askForFolder = async (): Promise<string | null> => {
-  const picked = await openDialog({ directory: true, multiple: false });
-  return typeof picked === 'string' && picked.length > 0 ? picked : null;
-};
-
 export const ProjectStep = ({
   projects,
   name,
@@ -49,8 +44,9 @@ export const ProjectStep = ({
   onConfirmDetection,
   onDismissDetection,
 }: Props) => {
+  const pickFolder = usePickFolder();
   const pick = async (replaces: ProjectId | null) => {
-    const path = await askForFolder();
+    const path = await pickFolder();
     if (path !== null) {
       onPickFolder({ path, replaces });
     }

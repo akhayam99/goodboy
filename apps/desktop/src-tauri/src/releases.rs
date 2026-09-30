@@ -1,4 +1,5 @@
-use crate::integration_credentials::http_client;
+use crate::integrations::http;
+use crate::util::MessageError;
 
 use serde::{Deserialize, Serialize};
 
@@ -67,8 +68,8 @@ fn published_only(raw: Vec<GithubRelease>) -> Vec<ReleaseNote> {
 }
 
 #[tauri::command]
-pub async fn releases_list() -> Result<Vec<ReleaseNote>, String> {
-    let response = http_client()
+pub async fn releases_list() -> Result<Vec<ReleaseNote>, MessageError> {
+    let response = http::client()
         .get(releases_url())
         .header(reqwest::header::USER_AGENT, CLIENT_USER_AGENT)
         .header(reqwest::header::ACCEPT, "application/vnd.github+json")
@@ -78,7 +79,10 @@ pub async fn releases_list() -> Result<Vec<ReleaseNote>, String> {
 
     let status = response.status();
     if !status.is_success() {
-        return Err(format!("github responded {}", status.as_u16()));
+        return Err(MessageError::Failed(format!(
+            "github responded {}",
+            status.as_u16()
+        )));
     }
 
     let raw: Vec<GithubRelease> = response.json().await.map_err(|e| e.to_string())?;
@@ -86,11 +90,13 @@ pub async fn releases_list() -> Result<Vec<ReleaseNote>, String> {
 }
 
 #[tauri::command]
-pub async fn release_changelog(version: String) -> Result<String, String> {
+pub async fn release_changelog(version: String) -> Result<String, MessageError> {
     if !is_release_version(&version) {
-        return Err(format!("\"{version}\" is not a usable release version"));
+        return Err(MessageError::Refused(format!(
+            "\"{version}\" is not a usable release version"
+        )));
     }
-    let response = http_client()
+    let response = http::client()
         .get(changelog_url(&version))
         .header(reqwest::header::USER_AGENT, CLIENT_USER_AGENT)
         .send()
@@ -99,10 +105,13 @@ pub async fn release_changelog(version: String) -> Result<String, String> {
 
     let status = response.status();
     if !status.is_success() {
-        return Err(format!("github responded {}", status.as_u16()));
+        return Err(MessageError::Failed(format!(
+            "github responded {}",
+            status.as_u16()
+        )));
     }
 
-    response.text().await.map_err(|e| e.to_string())
+    Ok(response.text().await.map_err(|e| e.to_string())?)
 }
 
 #[cfg(test)]

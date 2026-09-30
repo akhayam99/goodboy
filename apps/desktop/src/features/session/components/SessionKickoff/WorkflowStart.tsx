@@ -2,7 +2,10 @@ import { useEffect } from 'react';
 import type { Session, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
-import { WorkflowBuilderView, type BuilderKickoff } from '../WorkflowBuilderView';
+import {
+  WorkflowBuilderView,
+  type BuilderKickoff,
+} from '../../../workflows/components/WorkflowBuilderView';
 
 type Props = {
   readonly workspaceId: WorkspaceId;

@@ -1,7 +1,7 @@
 import { isStorageFolderSuggested, storageFolderBucket } from './classifyStorageFolder';
 import type { StorageFolder } from './types';
 
-export type StorageTally = {
+type StorageTally = {
   readonly count: number;
   readonly bytes: number;
 };

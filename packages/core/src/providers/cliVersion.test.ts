@@ -12,10 +12,8 @@ describe('parseCliVersion', () => {
     expect(parseCliVersion({ raw: 'codex-cli 0.46.0' })).toEqual([0, 46, 0]);
   });
 
-  it('answers quickly on a long run of dotted digits', () => {
-    const started = performance.now();
-    parseCliVersion({ raw: `${'1.'.repeat(50_000)}x` });
-    expect(performance.now() - started).toBeLessThan(200);
+  it('keeps at most six parts of a long run of dotted digits', () => {
+    expect(parseCliVersion({ raw: `${'1.'.repeat(50_000)}x` })).toEqual([1, 1, 1, 1, 1, 1]);
   });
 
   it('answers null when nothing looks like a version', () => {

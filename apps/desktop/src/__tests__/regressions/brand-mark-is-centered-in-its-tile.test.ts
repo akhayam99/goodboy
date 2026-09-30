@@ -1,10 +1,11 @@
+// @vitest-environment node
 import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { deflateSync, inflateSync } from 'zlib';
 import { describe, expect, it } from 'vitest';
 
 const REPOSITORY_ROOT = join(__dirname, '..', '..', '..', '..', '..');
-const MASCOT_PNG = join(__dirname, '..', '..', 'assets', 'mascot.png');
+const MASCOT_PNG = join(REPOSITORY_ROOT, 'packages', 'ui', 'src', 'assets', 'mascot.png');
 const CHROME_MARK = join(
   __dirname,
   '..',

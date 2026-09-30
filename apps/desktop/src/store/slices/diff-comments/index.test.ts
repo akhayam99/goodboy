@@ -71,7 +71,7 @@ vi.mock('../../../features/plans/plans', async () =>
 vi.mock('../../../features/integrations/linear/client', async () =>
   (await import('../../storyHarness')).linearClientModuleMock(),
 );
-vi.mock('../../../features/github/github', async () =>
+vi.mock('../../../features/integrations/github/github', async () =>
   (await import('../../storyHarness')).githubModuleMock(),
 );
 vi.mock('@goodboy/core', async (importOriginal) =>
@@ -82,9 +82,6 @@ vi.mock('../../../features/scripts/scripts', async () =>
 );
 vi.mock('../../../features/terminal/terminal', async () =>
   (await import('../../storyHarness')).terminalModuleMock(),
-);
-vi.mock('../../../features/context/components/QuestionsTab/useOpenQuestions', async () =>
-  (await import('../../storyHarness')).openQuestionsModuleMock(),
 );
 vi.mock('../../../features/settings/config-export', async () =>
   (await import('../../storyHarness')).configExportModuleMock(),
@@ -218,14 +215,14 @@ describe('store contract', () => {
       const store = useAppStore;
       storySpies.listDiffCommentsForSession.mockResolvedValueOnce([]);
       await store.getState().resolveDiffComment(SESSION_ID, 'd1');
-      expect(storySpies.resolveDiffComment).toHaveBeenCalled();
+      expect(storySpies.resolveDiffComment).toHaveBeenCalledWith(expect.anything(), 'd1');
     });
 
     it('deleteDiffComment writes through then refreshes', async () => {
       const store = useAppStore;
       storySpies.listDiffCommentsForSession.mockResolvedValueOnce([]);
       await store.getState().deleteDiffComment(SESSION_ID, 'd1');
-      expect(storySpies.deleteDiffComment).toHaveBeenCalled();
+      expect(storySpies.deleteDiffComment).toHaveBeenCalledWith(expect.anything(), 'd1');
     });
   });
 });

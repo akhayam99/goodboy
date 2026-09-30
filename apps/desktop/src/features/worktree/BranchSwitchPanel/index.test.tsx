@@ -50,7 +50,7 @@ vi.mock('../../../store', () => ({
   useSessionById: () => state.session,
 }));
 
-vi.mock('../../../app/components/Toast', () => ({
+vi.mock('../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast }),
 }));
 

@@ -3,7 +3,7 @@ import { Check } from 'lucide-react';
 import { cn, tintClasses } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
-export type StepStatus = 'done' | 'current' | 'later';
+type StepStatus = 'done' | 'current' | 'later';
 
 export type ConnectStepDef = {
   readonly id: string;

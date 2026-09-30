@@ -127,7 +127,7 @@ const toSimilarIssue = (raw: unknown): SimilarIssue | null => {
   };
 };
 
-export const MIN_SEARCH_LENGTH = 12;
+const MIN_SEARCH_LENGTH = 12;
 
 type FindSimilarParams = {
   readonly runner: GhRunner;

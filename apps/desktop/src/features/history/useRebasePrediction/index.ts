@@ -4,7 +4,7 @@ import { rebasePlanArgs } from '../../../store/slices/history/rebaseBranch';
 
 type Params = {
   readonly worktreePath: string | null;
-  readonly baseBranch: string;
+  readonly baseBranch: string | null;
   readonly head: string | null;
   readonly isEnabled: boolean;
 };

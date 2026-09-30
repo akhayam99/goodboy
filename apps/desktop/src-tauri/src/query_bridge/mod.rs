@@ -105,22 +105,6 @@ pub(crate) struct TurnBinding<'a> {
     pub(crate) run_id: Option<&'a str>,
 }
 
-pub(crate) fn apply_env(
-    command: &mut Command,
-    workspace_id: Option<&str>,
-    session_id: Option<&str>,
-) {
-    apply_turn_env(
-        command,
-        TurnBinding {
-            workspace_id,
-            session_id,
-            mount_id: None,
-            run_id: None,
-        },
-    );
-}
-
 pub(crate) fn apply_turn_env(command: &mut Command, binding: TurnBinding<'_>) {
     if !is_serving() {
         return;
@@ -716,6 +700,18 @@ mod tests {
         assert_eq!(staged_leftovers(&dir), Vec::<String>::new());
 
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    fn apply_env(command: &mut Command, workspace_id: Option<&str>, session_id: Option<&str>) {
+        apply_turn_env(
+            command,
+            TurnBinding {
+                workspace_id,
+                session_id,
+                mount_id: None,
+                run_id: None,
+            },
+        );
     }
 
     fn injected_names(workspace_id: Option<&str>) -> Vec<String> {

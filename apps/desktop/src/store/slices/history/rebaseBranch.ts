@@ -61,7 +61,7 @@ export const rebaseBranch = (set: SetFn, get: GetFn) => {
         projectId: target.projectId,
         projectName: target.projectName,
         worktreePath: target.worktreePath,
-        branch: target.baseBranch,
+        branch: target.baseBranch ?? rebase.ontoRef,
         behind: rebase.behind,
       },
     });

@@ -5,7 +5,7 @@ import {
   type GitlabMergeRequest,
 } from '../../../features/integrations/gitlab/client';
 import { tauriDatabase } from '../../../shared/lib/db';
-import type { MountGitlabMrState } from '../../types';
+import type { MountGitlabMrState } from './state';
 import type { MountFetch } from '../project-mounts/mountRequests';
 import {
   mergeLinkedRequests,

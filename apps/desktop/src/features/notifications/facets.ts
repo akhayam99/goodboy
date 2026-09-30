@@ -51,7 +51,7 @@ type SeverityFacetParams = {
   readonly severity: NotificationSeverity;
 };
 
-export const severityFacet = ({ severity }: SeverityFacetParams): NotificationSeverityFacet =>
+const severityFacet = ({ severity }: SeverityFacetParams): NotificationSeverityFacet =>
   severity === 'success' ? 'info' : severity;
 
 type ViewMatchParams = {

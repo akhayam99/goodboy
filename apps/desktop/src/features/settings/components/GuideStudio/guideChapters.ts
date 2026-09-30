@@ -5,7 +5,7 @@ export type GuideGroup = 'start' | 'task' | 'reference';
 
 export type GuideExtra = 'stages' | 'shortcuts' | 'legend';
 
-export type GuidePoint = {
+type GuidePoint = {
   readonly term: string;
   readonly desc: string;
 };

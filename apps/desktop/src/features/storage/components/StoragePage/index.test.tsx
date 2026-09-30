@@ -58,7 +58,7 @@ vi.mock('../../../../store', () => ({
   useCurrentWorkspace: () => (state.currentWorkspace as unknown) ?? null,
 }));
 
-vi.mock('../../../../app/components/Toast', () => ({
+vi.mock('../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
 

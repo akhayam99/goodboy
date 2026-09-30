@@ -1,5 +1,7 @@
 import type { Tone } from '@goodboy/ui';
 import type { Agent, TurnEvent, TurnState } from '@goodboy/types';
+import { describeAgentStatus } from '../../agent-status';
+import { agentStatusWord } from '../../agentStatusWord';
 
 type AgentNowState = {
   readonly tone: Tone;
@@ -53,6 +55,16 @@ export const agentNowState = ({ agent, turnState, transcript }: NowStateParams):
   }
   if (agent.status === 'pending') {
     return { tone: 'neutral', label: 'queued', isPulsing: false };
+  }
+  if (turnState?.kind === 'starting') {
+    return { tone: 'neutral', label: 'starting', isPulsing: true };
+  }
+  if (agent.status === 'failed' || agent.status === 'stopped') {
+    return {
+      tone: describeAgentStatus({ status: agent.status }).tone,
+      label: agentStatusWord({ status: agent.status }),
+      isPulsing: false,
+    };
   }
   return { tone: 'neutral', label: 'ready', isPulsing: false };
 };

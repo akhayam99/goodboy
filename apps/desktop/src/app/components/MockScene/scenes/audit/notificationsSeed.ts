@@ -40,7 +40,7 @@ const notificationOf = ({
   severity,
 });
 
-export const NOTIFICATIONS: ReadonlyArray<Notification> = [
+const NOTIFICATIONS: ReadonlyArray<Notification> = [
   notificationOf({
     id: 'mock-notification-pr',
     minutesAgo: 3,

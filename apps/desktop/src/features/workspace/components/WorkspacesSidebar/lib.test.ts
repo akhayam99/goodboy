@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
 import { workflowKindName } from './lib';

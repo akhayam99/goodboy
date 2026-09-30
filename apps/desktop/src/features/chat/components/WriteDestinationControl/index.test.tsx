@@ -26,7 +26,7 @@ vi.mock('../../../../store', () => ({
 vi.mock('../../../../features/worktree/worktree', () => ({
   scratchDirPrepare: (args: unknown) => scratchDirPrepare(args),
 }));
-vi.mock('../../../../app/components/Toast', () => ({
+vi.mock('../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
 

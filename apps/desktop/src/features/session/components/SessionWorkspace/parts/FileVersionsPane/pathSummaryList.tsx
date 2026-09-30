@@ -1,6 +1,7 @@
 import { Skeleton, cn, tintClasses } from '@goodboy/ui';
-import { formatRelativeAge } from '../../../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../../../shared/utils/time/formatAge';
 import type { FileVersionGroup } from './fileVersionGroups';
+import { useNow } from '../../../../../../shared/hooks/useNow';
 
 type Props = {
   groups: ReadonlyArray<FileVersionGroup>;
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export const PathSummaryList = ({ groups, selectedPath, loading, onSelectPath }: Props) => {
+  const now = useNow(30_000);
   if (loading) {
     return (
       <div className="flex flex-col gap-2">
@@ -37,7 +39,7 @@ export const PathSummaryList = ({ groups, selectedPath, loading, onSelectPath }:
             <span className="truncate text-code text-foreground">{group.relativePath}</span>
             <span className="text-label text-muted-foreground">
               {group.count} version{group.count === 1 ? '' : 's'} .{' '}
-              {formatRelativeAge({ fromIso: group.lastCapturedAt })}
+              {formatAge({ from: group.lastCapturedAt, now })}
             </span>
           </button>
         </li>

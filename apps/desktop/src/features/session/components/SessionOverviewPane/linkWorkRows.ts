@@ -1,5 +1,6 @@
 import type { SessionExternalTaskProvider } from '@goodboy/types';
 import type { LaunchExternalTask } from '../../../inbox/launchSpecFor';
+import { compareIsoDesc } from '../../../../shared/utils/compareIsoDesc';
 import { resolvePastedIssueCandidate } from '../SessionWorkspace/parts/IntegrationPane/resolvePastedIssueCandidate';
 
 export type LinkWorkSource = SessionExternalTaskProvider | 'all';
@@ -30,7 +31,7 @@ export const LINK_WORK_PROVIDER_LABEL: Readonly<Record<SessionExternalTaskProvid
   bitbucket: 'Bitbucket',
 };
 
-export const INBOX_LIMIT = 3;
+const INBOX_LIMIT = 3;
 
 const RESULT_LIMIT_EMPTY = 5;
 
@@ -50,7 +51,7 @@ type LinkParams = {
   readonly value: string;
 };
 
-export const isLinkLike = ({ value }: LinkParams): boolean => {
+const isLinkLike = ({ value }: LinkParams): boolean => {
   const trimmed = value.trim();
   if (trimmed.includes('://')) {
     return true;
@@ -68,7 +69,7 @@ const hostOf = ({ value }: LinkParams): string | null => {
   }
 };
 
-export const pastedTaskOf = ({ value }: LinkParams): LaunchExternalTask | null => {
+const pastedTaskOf = ({ value }: LinkParams): LaunchExternalTask | null => {
   const host = hostOf({ value });
   if (host === null) {
     return null;
@@ -145,7 +146,11 @@ export const linkWorkView = ({
     matchesQuery({ item, words });
   const recent = [...items]
     .filter(fits)
-    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+    .sort(
+      (left, right) =>
+        compareIsoDesc({ left: left.updatedAt, right: right.updatedAt }) ||
+        left.key.localeCompare(right.key),
+    );
   const inbox = recent.slice(0, INBOX_LIMIT);
   const inboxKeys = new Set(inbox.map((item) => item.key));
   const extra = lookedUp.filter(

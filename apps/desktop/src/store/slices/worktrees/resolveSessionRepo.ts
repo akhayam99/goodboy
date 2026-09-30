@@ -2,6 +2,8 @@ import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
 import { findMountById } from '../project-mounts/findMountById';
 import { selectActiveMount, selectWritableMounts } from '../project-mounts/selectors';
+import { sessionById } from '../sessions/sessionIndex';
+import { projectById } from '../projects/projectIndex';
 
 export type SessionRepo = Readonly<{
   repoRoot: string;
@@ -34,7 +36,7 @@ export const resolveSessionRepo = ({
   sessionId,
   mountId,
 }: ResolveParams): SessionRepo | null => {
-  const session = state.sessions?.find((candidate) => candidate.id === sessionId);
+  const session = sessionById(state.sessions, sessionId);
   if (session === undefined) {
     return null;
   }
@@ -45,7 +47,7 @@ export const resolveSessionRepo = ({
   if (activeMount === null) {
     return null;
   }
-  const project = state.projects?.find((candidate) => candidate.id === activeMount.projectId);
+  const project = projectById(state.projects, activeMount.projectId);
   if (project === undefined || project.kind !== 'repo') {
     return null;
   }

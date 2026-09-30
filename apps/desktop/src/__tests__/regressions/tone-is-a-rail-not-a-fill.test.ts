@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -30,7 +31,7 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'chip',
   },
-  'apps/desktop/src/features/wireframes/components/WireframeDivergenceChip/index.tsx': {
+  'apps/desktop/src/features/wireframes/components/WireframeDivergenceChip.tsx': {
     count: 1,
     reason: 'chip',
   },

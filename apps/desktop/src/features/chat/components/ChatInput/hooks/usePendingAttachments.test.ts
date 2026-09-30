@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import type { ShowToast } from '../../../../../app/components/Toast';
+import type { ShowToast } from '../../../../../shared/components/Toast';
 
 type DragHandler = (event: { payload: unknown }) => void;
 

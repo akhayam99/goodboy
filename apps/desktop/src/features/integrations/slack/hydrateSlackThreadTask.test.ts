@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { SlackChannel, SlackMessage } from './client';
 import { hydrateSlackThreadTask } from './hydrateSlackThreadTask';

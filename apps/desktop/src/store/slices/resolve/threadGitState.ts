@@ -5,7 +5,7 @@ import type {
   ResolveVerdict,
 } from '@goodboy/types';
 import type { FixLocation, FixOnOrigin, OriginCommit } from '../../../features/worktree/worktree';
-import { groupThreads } from '../../../features/github/comment-threads';
+import { groupThreads } from '../../../features/integrations/github/comment-threads';
 import { userReplyIn } from './userReplyIn';
 
 export type ThreadRemoteKind = 'on_origin' | 'looks_fixed' | 'you_replied' | 'missing' | 'folded';

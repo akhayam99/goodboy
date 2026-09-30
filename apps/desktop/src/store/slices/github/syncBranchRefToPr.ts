@@ -1,5 +1,5 @@
 import type { ProjectId, PullRequestState, WorkspaceId } from '@goodboy/types';
-import { refreshWorktreeStatuses } from '../../../features/session/hooks/useWorktreeStatuses/cache';
+import { refreshWorktreeStatuses } from '../worktreeStatuses/cache';
 import { worktreeSyncBranchRef } from '../../../features/worktree/worktree';
 
 type Params = {

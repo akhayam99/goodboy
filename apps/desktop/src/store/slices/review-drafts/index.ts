@@ -5,9 +5,9 @@ import { publishPrReview } from './publishPrReview';
 import { discardReview, setReviewSubmission, submitReview } from './reviewSubmission';
 import { queueAgentReviewComments } from './queueAgentReviewComments';
 import { updateReviewDraft } from './updateReviewDraft';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createReviewDraftsSlice = (set: SetFn, get: GetFn) => {
+export const createReviewDraftsSlice = ({ set, get }: SliceDeps) => {
   return {
     loadReviewDrafts: loadReviewDrafts(set),
     addReviewDraft: addReviewDraft(set, get),

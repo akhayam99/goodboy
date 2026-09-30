@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { resolveSpawnRouting } from './spawn-routing';
@@ -38,6 +39,16 @@ describe('resolveSpawnRouting', () => {
       effort: 'high',
       origin: 'chat',
     });
+  });
+
+  it('routes a chat on gemini-3.1-pro with no pinned provider to Gemini, not Cursor', () => {
+    const routing = resolveSpawnRouting({
+      kind: 'generic',
+      roleModels: null,
+      session: makeSession({ modelOverride: 'gemini-3.1-pro', effort: 'high' }),
+    });
+
+    expect(routing?.provider).toBe('gemini');
   });
 
   it('keeps the role default for an explicit kind, whatever the chat is on', () => {

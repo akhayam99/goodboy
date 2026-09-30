@@ -1,19 +1,11 @@
 import type { ResetAdvice } from '@goodboy/core';
-import { APP_LOCALE } from '../../../../../../../shared/utils/appLocale';
+import { formatDateTime } from '../../../../../../../shared/utils/time/formatDateTime';
+import { formatDayMonth } from '../../../../../../../shared/utils/time/formatDayMonth';
 import { formatLimitReset, formatTimeUntil } from '../../../../../limits/formatLimitReset';
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
-export const formatResetDate = (iso: string): string => {
-  const date = new Date(iso);
-  const day = new Intl.DateTimeFormat(APP_LOCALE, { month: 'short', day: 'numeric' }).format(date);
-  const time = new Intl.DateTimeFormat(APP_LOCALE, {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(date);
-  return `${day} ${time}`;
-};
+const formatResetDate = (iso: string): string => formatDateTime({ at: iso });
 
 export const nextWeeklyRefillAfterReset = ({ nowMs }: { readonly nowMs: number }): string =>
   formatResetDate(new Date(nowMs + WEEK_MS).toISOString());
@@ -23,10 +15,7 @@ export const expiryLine = ({ expiresAt }: { readonly expiresAt: string | null })
   if (expiresAt === null) {
     return base;
   }
-  const day = new Intl.DateTimeFormat(APP_LOCALE, { month: 'short', day: 'numeric' }).format(
-    new Date(expiresAt),
-  );
-  return `${base} Expires ${day}.`;
+  return `${base} Expires ${formatDayMonth({ at: expiresAt })}.`;
 };
 
 export const countLabel = ({ count }: { readonly count: number }): string =>

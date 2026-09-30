@@ -14,6 +14,7 @@ import {
   statusChipOf,
   typeChipOf,
 } from '../../searchFilterOptions';
+import { projectById } from '../../../../store/slices/projects/projectIndex';
 
 export type FilterGroup = 'type' | 'project' | 'provider' | 'status' | 'date';
 
@@ -102,7 +103,7 @@ export const SearchFilterBar = ({ chips, projects, now, onGroupChange }: Props) 
             chips: values.map((value) =>
               projectChipOf({
                 projectId: value as ProjectId,
-                name: projects.find((project) => project.id === value)?.name ?? value,
+                name: projectById(projects, value)?.name ?? value,
               }),
             ),
           })

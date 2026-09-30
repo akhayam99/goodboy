@@ -18,6 +18,7 @@ import {
 import { repoDeletesMergedBranches } from './repoDeletesMergedBranches';
 import { resolveAfterMergeRule } from './resolveAfterMergeRule';
 import type { AfterMergeOutcome, GetFn, RunAfterMergeCleanupParams, SetFn } from './types';
+import { projectById } from '../projects/projectIndex';
 
 const ask = (keptBecause: string | null): AfterMergeOutcome => ({ kind: 'ask', keptBecause });
 
@@ -33,7 +34,7 @@ export const runAfterMergeCleanup = (set: SetFn, get: GetFn) => {
     if (view === undefined || view.branch !== expectedBranch) {
       return { kind: 'skipped' };
     }
-    const project = get().projects.find((candidate) => candidate.id === view.projectId);
+    const project = projectById(get().projects, view.projectId);
     if (project?.kind !== 'repo') {
       return { kind: 'skipped' };
     }

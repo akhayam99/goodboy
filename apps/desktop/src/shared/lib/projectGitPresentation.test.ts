@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { WorkspaceGitStatus } from '@goodboy/types';
 import { projectGitRowStatusOf, projectUpdateBlockReasonOf } from './projectGitPresentation';

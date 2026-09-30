@@ -1,7 +1,7 @@
 import type { AgentId, AuxTaskId, SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { discardHistoryCopy, prepareHistoryRewrite } from '../../../features/history/historyEngine';
-import { taskModelAgentSpawnConfig } from '../../../features/session/components/AgentSpawnConfig/taskModelAgentSpawnConfig';
+import { taskModelAgentSpawnConfig } from '../../../features/session/taskModelAgentSpawnConfig';
 import { autoLimitContext } from '../providerLimits/autoLimitContext';
 import { historyTargetOf } from './historyTargetOf';
 import { identityOf } from './historyIdentity';
@@ -15,8 +15,9 @@ import type {
   SetFn,
   StartHistoryRewriterInput,
 } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
-export const HISTORY_REWRITER_NAME = 'History rewriter';
+const HISTORY_REWRITER_NAME = 'History rewriter';
 
 const REWRITER_TASK: AuxTaskId = 'rebase';
 
@@ -27,7 +28,7 @@ type ConfigParams = {
 
 const rewriterConfig = ({ get, sessionId }: ConfigParams) => {
   const state = get();
-  const session = state.sessions.find((candidate) => candidate.id === sessionId) ?? null;
+  const session = sessionById(state.sessions, sessionId) ?? null;
   const overrides =
     session === null ? null : (state.workspaceOverrides?.[session.workspaceId] ?? null);
   return taskModelAgentSpawnConfig({

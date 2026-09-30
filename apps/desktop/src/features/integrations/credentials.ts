@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 import type { IntegrationCredentialId } from '@goodboy/types';
 
 type HasSecretParams = {
@@ -8,4 +8,4 @@ type HasSecretParams = {
 export const integrationCredentialHasSecret = ({
   credentialId,
 }: HasSecretParams): Promise<boolean> =>
-  invoke<boolean>('integration_credential_has_secret', { credentialId });
+  invokeCommand<boolean>('integration_credential_has_secret', { credentialId });

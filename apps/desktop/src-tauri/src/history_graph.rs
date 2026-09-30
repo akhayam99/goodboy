@@ -104,15 +104,15 @@ fn files_per_commit(cwd: &Path, range: &str) -> Vec<CommitFiles> {
 
 pub(crate) fn history_graph_of(
     cwd: &Path,
-    base_branch: &str,
+    base_branch: Option<&str>,
     branch: &str,
 ) -> Result<HistoryGraph, WorktreeError> {
-    let configured = Some(base_branch.trim()).filter(|name| !name.is_empty());
+    let configured = base_branch.map(str::trim).filter(|name| !name.is_empty());
     let (base_ref, merge_base) =
         resolve_base(cwd, configured).ok_or_else(|| WorktreeError::Git {
             message: format!(
                 "Couldn't find where this branch left {}",
-                configured.unwrap_or("main")
+                configured.unwrap_or("its base")
             ),
         })?;
     let main_head = git(cwd, &["rev-parse", &base_ref])?.trim().to_string();
@@ -150,7 +150,7 @@ pub(crate) fn history_graph_of(
 #[tauri::command]
 pub async fn history_graph(
     worktree_path: String,
-    base_branch: String,
+    base_branch: Option<String>,
     branch: String,
 ) -> Result<HistoryGraph, WorktreeError> {
     tauri::async_runtime::spawn_blocking(move || {
@@ -158,7 +158,7 @@ pub async fn history_graph(
         if !cwd.exists() {
             return Err(WorktreeError::RepoNotFound(worktree_path));
         }
-        history_graph_of(&cwd, &base_branch, &branch)
+        history_graph_of(&cwd, base_branch.as_deref(), &branch)
     })
     .await
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
@@ -200,6 +200,35 @@ mod tests {
     }
 
     #[test]
+    fn the_graph_of_a_develop_repo_finds_develop_without_a_configured_base() {
+        let root = repo("develop");
+        git_ok(&root, &["branch", "-m", "main", "develop"]);
+        let fork = commit(&root, "ledger.ts", "one\n", "Release 2.14");
+        let work = root.join("wt-export");
+        git_ok(
+            &root,
+            &[
+                "worktree",
+                "add",
+                "-q",
+                "-b",
+                "hl/ledger-export",
+                work.to_str().unwrap(),
+                "develop",
+            ],
+        );
+        commit(&work, "export.ts", "export\n", "Add ledger export endpoint");
+        commit(&root, "keys.ts", "keys\n", "Rotate Acme sandbox keys");
+
+        let graph = history_graph_of(&work, None, "hl/ledger-export").unwrap();
+
+        assert_eq!(graph.base_ref, "develop");
+        assert_eq!(graph.merge_base.sha, fork);
+        assert_eq!(graph.behind, 1);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn the_graph_names_the_fork_what_main_gained_and_the_files_of_each_commit() {
         let root = repo("fork");
         let fork = commit(&root, "ledger.ts", "one\n", "Release 2.14");
@@ -216,7 +245,7 @@ mod tests {
         let newest = commit(&root, "rounding.ts", "round\n", "Cascadia rounding rules");
         git_ok(&root, &["checkout", "-q", "hl/ledger-export"]);
 
-        let graph = history_graph_of(&root, "main", "hl/ledger-export").unwrap();
+        let graph = history_graph_of(&root, Some("main"), "hl/ledger-export").unwrap();
 
         assert_eq!(graph.merge_base.sha, fork);
         assert_eq!(graph.merge_base.subject, "Release 2.14");
@@ -268,7 +297,7 @@ mod tests {
             "Stream rows in batches of 500",
         );
 
-        let graph = history_graph_of(&root, "main", "hl/ledger-export").unwrap();
+        let graph = history_graph_of(&root, Some("main"), "hl/ledger-export").unwrap();
 
         assert_eq!(graph.remote_sha, Some(pushed));
         assert_eq!(graph.base_ref, "origin/main");

@@ -1,6 +1,6 @@
 import type { AttachmentInput, MessageAttachment } from '@goodboy/types';
 import { readAttachment } from '../../turn';
-import { dataUrlToBase64 } from '../ChatInput/lib';
+import { dataUrlToBase64 } from '../../../attachments/pendingAttachment';
 
 type Params = {
   readonly worktreePath: string | null;

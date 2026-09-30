@@ -11,6 +11,7 @@
     "tauri:build": "tauri build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --project unit --passWithNoTests",
+    "test:perf": "vitest run --project perf --passWithNoTests",
     "test:a11y": "vitest run --project a11y",
     "build:icons": "node scripts/generate-icons.mjs"
   },

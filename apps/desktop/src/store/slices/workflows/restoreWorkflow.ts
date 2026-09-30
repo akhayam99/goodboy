@@ -2,11 +2,12 @@ import type { IsoDateTime, SessionId, WorkflowRunId } from '@goodboy/types';
 import { restoreWorkflowInSession } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 export const restoreWorkflow = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, workflowRunId: WorkflowRunId) => {
     const state = get();
-    const session = state.sessions.find((s) => s.id === sessionId);
+    const session = sessionById(state.sessions, sessionId);
     if (!session) {
       return;
     }

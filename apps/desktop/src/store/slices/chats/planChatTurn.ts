@@ -1,3 +1,4 @@
+import { formatError } from '@goodboy/ui';
 import {
   CHAT_PROVIDER_REFUSAL,
   isChatProvider,
@@ -48,7 +49,7 @@ const planModel = ({ chat }: ModelPlanParams): ModelPlan => {
       args: resolveChatModel({ provider: chat.provider, modelKey: chat.model }),
     };
   } catch (error) {
-    return { kind: 'blocked', error: error instanceof Error ? error.message : String(error) };
+    return { kind: 'blocked', error: formatError(error) };
   }
 };
 

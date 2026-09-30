@@ -1,8 +1,12 @@
-import { slugifyDir } from './slugifyDir';
+import { MAX_SLUG_LENGTH, slugify, trimSlugAtWord, withSlugSuffix } from '@goodboy/core';
 import { UNTITLED_BASE } from '../../../features/session/sessionTitle';
 
-const MAX_SLUG_LENGTH = 48;
+const DIR_SLUG_MAX_LENGTH = 40;
+const DIR_SLUG_FALLBACK = 'session';
 const IDENTIFIER_MAX_LENGTH = 16;
+
+const slugifyDir = (input: string): string =>
+  slugify({ input, maxLength: DIR_SLUG_MAX_LENGTH, fallback: DIR_SLUG_FALLBACK });
 
 type Params = {
   readonly prefix: string;
@@ -13,37 +17,8 @@ type Params = {
   readonly existingBranches?: ReadonlyArray<string>;
 };
 
-const trimAtWord = ({
-  value,
-  maxLength,
-}: {
-  readonly value: string;
-  readonly maxLength: number;
-}) => {
-  if (value.length <= maxLength) {
-    return value;
-  }
-  const sliced = value.slice(0, maxLength + 1);
-  const boundary = sliced.lastIndexOf('-');
-  if (boundary > 0) {
-    return sliced.slice(0, boundary);
-  }
-  return value.slice(0, maxLength).replace(/-+$/g, '');
-};
-
-const withSuffix = ({
-  base,
-  suffix,
-}: {
-  readonly base: string;
-  readonly suffix: string;
-}): string => {
-  const maxBaseLength = MAX_SLUG_LENGTH - suffix.length - 1;
-  return `${trimAtWord({ value: base, maxLength: maxBaseLength })}-${suffix}`;
-};
-
 const taskSlug = ({ identifier, goal }: { readonly identifier: string; readonly goal: string }) => {
-  const normalizedIdentifier = trimAtWord({
+  const normalizedIdentifier = trimSlugAtWord({
     value: slugifyDir(identifier).slice(0, IDENTIFIER_MAX_LENGTH).replace(/-+$/g, ''),
     maxLength: IDENTIFIER_MAX_LENGTH,
   });
@@ -51,7 +26,7 @@ const taskSlug = ({ identifier, goal }: { readonly identifier: string; readonly 
   const escapedIdentifier = identifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const identifierlessGoal = bracketlessGoal.replace(new RegExp(escapedIdentifier, 'gi'), ' ');
   const remainder = slugifyDir(identifierlessGoal);
-  return trimAtWord({
+  return trimSlugAtWord({
     value: `${normalizedIdentifier}-${remainder}`,
     maxLength: MAX_SLUG_LENGTH,
   });
@@ -76,31 +51,11 @@ export const deriveBranchName = ({
     if (!existingBranches.includes(branch)) {
       return candidate;
     }
-    return withSuffix({ base: candidate, suffix: id8 });
+    return withSlugSuffix({ base: candidate, suffix: id8 });
   }
   const trimmedGoal = goal.trim();
   if (trimmedGoal === '' || trimmedGoal === UNTITLED_BASE) {
     return `session-${id8}`;
   }
-  return withSuffix({ base: slugifyDir(trimmedGoal), suffix: id8 });
-};
-
-type NextSlugParams = {
-  readonly base: string;
-  readonly prefix: string;
-  readonly taken: ReadonlyArray<string>;
-};
-
-export const nextAvailableSlug = ({ base, prefix, taken }: NextSlugParams): string => {
-  const used = new Set(taken);
-  if (!used.has(`${prefix}/${base}`)) {
-    return base;
-  }
-  for (let ordinal = 2; ordinal <= 99; ordinal += 1) {
-    const candidate = withSuffix({ base, suffix: String(ordinal) });
-    if (!used.has(`${prefix}/${candidate}`)) {
-      return candidate;
-    }
-  }
-  return withSuffix({ base, suffix: crypto.randomUUID().slice(0, 8) });
+  return withSlugSuffix({ base: slugifyDir(trimmedGoal), suffix: id8 });
 };

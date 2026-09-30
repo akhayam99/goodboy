@@ -1,12 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ErrorStrip, LensEmptyState, PageColumn, Skeleton, cn, formatError } from '@goodboy/ui';
+import {
+  ErrorStrip,
+  LensEmptyState,
+  PageColumn,
+  Skeleton,
+  cn,
+  formatError,
+  PaneShell,
+} from '@goodboy/ui';
 import type { DiffView as DiffViewKind, SessionId } from '@goodboy/types';
 import { useAppStore, type DiffFocus } from '../../../../store';
-import { selectMountForPath } from '../../../../store/slices/project-mounts/selectors';
+import {
+  selectMountBaseBranch,
+  selectMountForPath,
+} from '../../../../store/slices/project-mounts/selectors';
 import { isMountRequestMerged } from '../../../../store/slices/project-mounts/mountRowModel';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { openFileInWorkspace } from '../../../../shared/lib/editor';
+import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
 import { distanceAhead, distanceBehind } from '../../../../shared/lib/gitStatus';
 import { branchStateOf } from '../../../session/trail/menus/branchMenu';
 import { ActionButtons } from '../../../actions/components/ActionControls/ActionButtons';
@@ -17,11 +28,6 @@ import type { DiffActionTarget } from '../../../actions/types';
 import { useActionControls } from '../../../actions/useActionControls';
 import { useMountRemoteHostKind } from '../../../worktree/useMountRemoteHostKind';
 import { DiffBaseBranchRow } from './DiffBaseBranchRow';
-import {
-  DEFAULT_EDITOR_BINARY,
-  SETTING_DEFAULT_EDITOR,
-  SETTING_EDITOR_BINARY,
-} from '../../../settings/settings';
 import { useRebaseBranch } from '../../../session/hooks/useRebaseBranch';
 import { useRebasePrediction } from '../../../history/useRebasePrediction';
 import { DiffViewSelector } from '../../../permissions/components/DiffViewSelector';
@@ -30,6 +36,7 @@ import { useDiffReviewThreads } from '../../hooks/useDiffReviewThreads';
 import { useSessionDiff } from '../../hooks/useSessionDiff';
 import { DiffView } from '../DiffView';
 import { DiffNotesActions } from '../DiffNotesActions';
+import { projectById } from '../../../../store/slices/projects/projectIndex';
 
 export const DIFF_PANE_TITLE = 'Diff';
 
@@ -41,7 +48,9 @@ type Props = {
   readonly branchRevision: number;
 };
 
-const emptyTitle = (view: DiffViewKind): string => {
+const baseWord = (baseBranch: string | null): string => baseBranch ?? 'its base branch';
+
+const emptyTitle = (view: DiffViewKind, baseBranch: string | null): string => {
   if (view.kind === 'working') {
     if (view.scope === 'staged') {
       return 'No staged changes';
@@ -54,10 +63,10 @@ const emptyTitle = (view: DiffViewKind): string => {
   if (view.kind === 'commit') {
     return 'This commit is empty';
   }
-  return 'Branch matches main';
+  return `Branch matches ${baseWord(baseBranch)}`;
 };
 
-const emptyBlurb = (view: DiffViewKind): string => {
+const emptyBlurb = (view: DiffViewKind, baseBranch: string | null): string => {
   if (view.kind === 'working') {
     if (view.scope === 'staged') {
       return 'Nothing has been staged for the next commit yet.';
@@ -70,7 +79,7 @@ const emptyBlurb = (view: DiffViewKind): string => {
   if (view.kind === 'commit') {
     return 'No file changes were recorded for this commit.';
   }
-  return 'Every commit on this branch is already reachable from main, nothing extra to review.';
+  return `Every commit on this branch is already reachable from ${baseWord(baseBranch)}, nothing extra to review.`;
 };
 
 export const SessionDiffPane = ({
@@ -97,12 +106,7 @@ export const SessionDiffPane = ({
     mountId === null ? false : isMountRequestMerged({ state: s, mountId }),
   );
   const rebase = useRebaseBranch({ sessionId, mountId, status: diff.status });
-  const editorBinary = useAppStore(
-    (s) =>
-      s.settings[SETTING_DEFAULT_EDITOR] ??
-      s.settings[SETTING_EDITOR_BINARY] ??
-      DEFAULT_EDITOR_BINARY,
-  );
+  const editorBinary = useAppStore((s) => resolveEditorBinary({ settings: s.settings }));
   const emitNotification = useAppStore((s) => s.emitNotification);
 
   const isEmpty = !diff.loading && diff.error === null && diff.files.length === 0;
@@ -115,11 +119,9 @@ export const SessionDiffPane = ({
   const mountProjectId = useAppStore(
     (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.projectId ?? null,
   );
-  const projectRoot = useAppStore(
-    (s) => s.projects.find((project) => project.id === mountProjectId)?.rootPath ?? '',
-  );
+  const projectRoot = useAppStore((s) => projectById(s.projects, mountProjectId)?.rootPath ?? '');
   const projectBaseBranch = useAppStore(
-    (s) => s.projects.find((project) => project.id === mountProjectId)?.baseBranch ?? null,
+    (s) => projectById(s.projects, mountProjectId)?.baseBranch ?? null,
   );
   const remoteKind = useMountRemoteHostKind({ sessionId, repoRoot: mountRepoRoot });
   const [isChangingBase, setIsChangingBase] = useState(false);
@@ -129,14 +131,9 @@ export const SessionDiffPane = ({
   const mountBranch = useAppStore(
     (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.branch ?? null,
   );
-  const baseBranch = useAppStore((s) => {
-    const mount = selectMountForPath({ state: s, sessionId, path: worktreePath });
-    return (
-      mount?.baseBranch ??
-      s.projects.find((project) => project.id === mount?.projectId)?.baseBranch ??
-      'main'
-    );
-  });
+  const baseBranch = useAppStore((s) =>
+    selectMountBaseBranch({ state: s, sessionId, path: worktreePath }),
+  );
 
   const openInEditor = useCallback(
     async (filePath: string) => {
@@ -320,8 +317,8 @@ export const SessionDiffPane = ({
       <LensEmptyState
         tone={CONCEPT_TONE.diff}
         icon={CONCEPT_ICONS.diff}
-        title={emptyTitle(diff.view)}
-        description={emptyBlurb(diff.view)}
+        title={emptyTitle(diff.view, baseBranch)}
+        description={emptyBlurb(diff.view, baseBranch)}
       />
     </PageColumn>
   ) : (

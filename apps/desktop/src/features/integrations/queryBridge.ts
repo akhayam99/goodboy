@@ -1,8 +1,8 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 
 export const isQueryBridgeServing = async (): Promise<boolean> => {
   try {
-    return await invoke<boolean>('query_bridge_serving');
+    return await invokeCommand<boolean>('query_bridge_serving');
   } catch {
     return false;
   }

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { OverrideSettings, WorkspaceId } from '@goodboy/types';
 import type { AppStore } from '../../store';
@@ -41,10 +42,10 @@ const buildStore = ({ workspaceOverrides = {} }: BuildStoreParams = {}) => {
     state = { ...state, ...(next as TestState) };
   };
   const get = () => state as unknown as AppStore;
-  const slice = createSlackThreadsSlice(
-    set as Parameters<typeof createSlackThreadsSlice>[0],
-    get as Parameters<typeof createSlackThreadsSlice>[1],
-  );
+  const slice = createSlackThreadsSlice({
+    set: set as Parameters<typeof createSlackThreadsSlice>[0]['set'],
+    get: get as Parameters<typeof createSlackThreadsSlice>[0]['get'],
+  });
   Object.assign(state, slice);
   return { getState: () => state, slice };
 };

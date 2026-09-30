@@ -43,7 +43,7 @@ export const NOW = clock.iso({ at: '2026-09-16T11:20:00.000Z' });
 export const EARLIER = clock.iso({ at: '2026-09-16T09:05:00.000Z' });
 
 export const WORKSPACE_ID = 'mock-flow-workspace-harborline' as WorkspaceId;
-export const LEDGER_PROJECT_ID = 'mock-flow-project-ledger-core' as ProjectId;
+const LEDGER_PROJECT_ID = 'mock-flow-project-ledger-core' as ProjectId;
 export const RELAY_PROJECT_ID = 'mock-flow-project-notify-relay' as ProjectId;
 export const PAYMENTS_PROJECT_ID = 'mock-flow-project-payments-api' as ProjectId;
 

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { invoke } from '@tauri-apps/api/core';
 import type { IntegrationCredentialId, WorkspaceId } from '@goodboy/types';

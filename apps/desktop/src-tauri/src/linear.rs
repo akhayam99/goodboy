@@ -2,7 +2,8 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 use thiserror::Error;
 
-use crate::integration_credentials::{self, http_client, IntegrationCredentialError};
+use crate::integration_credentials::{self, IntegrationCredentialError};
+use crate::integrations::http::{self, TransportFailure};
 use crate::secrets;
 
 const PROVIDER: &str = "linear";
@@ -15,6 +16,8 @@ const API_URL: &str = "https://api.linear.app/graphql";
 pub enum LinearError {
     #[error("http error: {0}")]
     Http(String),
+    #[error("request timed out: {0}")]
+    Timeout(String),
     #[error("graphql error: {0}")]
     GraphQl(String),
     #[error("invalid response shape: {0}")]
@@ -33,6 +36,7 @@ impl LinearError {
     fn kind(&self) -> &'static str {
         match self {
             LinearError::Http(_) => "http",
+            LinearError::Timeout(_) => "timeout",
             LinearError::GraphQl(_) => "graphql",
             LinearError::InvalidShape(_) => "shape",
             LinearError::NoToken(_) => "no_token",
@@ -44,7 +48,10 @@ impl LinearError {
 
 impl From<reqwest::Error> for LinearError {
     fn from(e: reqwest::Error) -> Self {
-        LinearError::Http(e.to_string())
+        match TransportFailure::from(&e) {
+            TransportFailure::Timeout(message) => LinearError::Timeout(message),
+            TransportFailure::Network(message) => LinearError::Http(message),
+        }
     }
 }
 
@@ -60,8 +67,17 @@ async fn graphql<T: serde::de::DeserializeOwned>(
     query: &str,
     variables: Option<serde_json::Value>,
 ) -> Result<T, LinearError> {
-    let res = http_client()
-        .post(API_URL)
+    graphql_at(API_URL, token, query, variables).await
+}
+
+async fn graphql_at<T: serde::de::DeserializeOwned>(
+    url: &str,
+    token: &str,
+    query: &str,
+    variables: Option<serde_json::Value>,
+) -> Result<T, LinearError> {
+    let res = http::client()
+        .post(url)
         .header("Authorization", token)
         .header("Content-Type", "application/json")
         .json(&GraphQlRequest { query, variables })
@@ -1060,5 +1076,39 @@ mod tests {
         assert!(without.creator.is_none());
         assert!(ISSUE_QUERY.contains("creator { name }"));
         assert!(ISSUES_QUERY.contains("creator { name }"));
+    }
+
+    #[tokio::test]
+    async fn a_silent_server_times_out_on_every_request_path() {
+        use crate::integrations::http::test_support::{
+            assert_error_shape, silent_server, within_bound,
+        };
+        let server = silent_server();
+        let error = within_bound(graphql_at::<serde_json::Value>(
+            &server.base,
+            "token",
+            "query { viewer { id } }",
+            None,
+        ))
+        .await
+        .unwrap_err();
+        assert_error_shape(&error, "timeout");
+    }
+
+    #[tokio::test]
+    async fn a_refused_connection_keeps_the_http_kind() {
+        use crate::integrations::http::test_support::{
+            assert_error_shape, closed_base, within_bound,
+        };
+        let base = closed_base();
+        let error = within_bound(graphql_at::<serde_json::Value>(
+            &base,
+            "token",
+            "query { viewer { id } }",
+            None,
+        ))
+        .await
+        .unwrap_err();
+        assert_error_shape(&error, "http");
     }
 }

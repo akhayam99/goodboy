@@ -7,7 +7,7 @@ import { StepDropZone } from './StepDropZone';
 import { StepTreeSkeleton } from './StepTreeSkeleton';
 import type { StepLaneSpan } from './StepTreeLane';
 
-export type StepSlot = {
+type StepSlot = {
   readonly step: StepDraft;
   readonly index: number;
   readonly span: StepLaneSpan;

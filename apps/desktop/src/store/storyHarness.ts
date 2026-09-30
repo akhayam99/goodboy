@@ -1,6 +1,17 @@
 import { vi } from 'vitest';
+import type { WorktreeWriterLease } from '../features/worktree/worktree';
+import { createDbMock } from '../test/dbMock';
+import { createInvokeMock, createInvokeRouter, type InvokeHandlers } from '../test/invokeMock';
 import { createResolveQueryMocks } from './slices/resolve/testing/createResolveQueryMocks';
 import { resetWorkflowTurnBreaker } from './slices/turn/workflowTurnBreaker';
+import {
+  aProject,
+  aSession,
+  aWorkspace,
+  anAgent,
+  EMPTY_OVERRIDES,
+  TEST_NOW,
+} from '@goodboy/types/testing';
 import type { Notification } from '@goodboy/db';
 import type {
   Agent,
@@ -30,7 +41,16 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-export const STORY_NOW = '2026-08-22T00:00:00.000Z' as IsoDateTime;
+export {
+  armedDbFaults,
+  injectDbFault,
+  openStorySqlite,
+  rowsOf,
+  sqliteDbLibModuleMock,
+  storySqlite,
+} from '../test/sqliteDb';
+
+export const STORY_NOW: IsoDateTime = TEST_NOW;
 
 export const STORE_IMPORT_TIMEOUT_MS = 60_000;
 
@@ -54,9 +74,76 @@ const ghStatus: ReturnType<typeof vi.fn> = vi.fn<() => Promise<GhTokenStatus>>(a
 const invokeScriptRun: ReturnType<typeof vi.fn> = vi.fn(async () => undefined);
 const runAdhocScript: ReturnType<typeof vi.fn> = vi.fn(async () => 'run-adhoc');
 
+type WorktreeBaseArgs = {
+  readonly worktreePath: string;
+  readonly baseBranch?: string | null;
+};
+
+type PermissionsModule = typeof import('../features/permissions/permissions');
+
+type WorkflowsModule = typeof import('../features/workflows/workflows');
+
+type PlansModule = typeof import('../features/plans/plans');
+
 const cleanWorkingTree = {
   workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0 },
 } as never;
+
+const SLOT_SUMMARY_PREFIX = 'Current slot values:';
+
+const TITLE_PROMPT_PREFIX = 'Write one imperative title';
+
+type AuxArgs = {
+  readonly args: {
+    readonly providerId: string;
+    readonly systemPrompt: string;
+    readonly userMessage: string;
+  };
+};
+
+export const storySummarizeSession =
+  (stepSummary: string) =>
+  ({ args }: AuxArgs) => {
+    if (args.systemPrompt.startsWith(TITLE_PROMPT_PREFIX)) {
+      return { stdout: '', stderr: 'no aux provider in tests', exitCode: 1 };
+    }
+    const text = args.userMessage.startsWith(SLOT_SUMMARY_PREFIX) ? '{"upserts":[]}' : stepSummary;
+    return {
+      stdout:
+        args.providerId === 'anthropic'
+          ? JSON.stringify({ result: text, subtype: 'success' })
+          : text,
+      stderr: '',
+      exitCode: 0,
+    };
+  };
+
+const storyInvokeHandlers = {
+  gh_status: {
+    available: false,
+    mode: 'absent',
+    version: null,
+    user: null,
+    scopes: [],
+    scoped: false,
+  },
+  query_bridge_serving: false,
+  get_workspace_overrides: null,
+  get_session_overrides: null,
+  set_workspace_overrides: null,
+  boot_breadcrumb: null,
+  claude_usage_probe: null,
+  codex_rate_limits_probe: null,
+  codex_rate_limits_latest: null,
+  integration_credentials_adopt: 0,
+  integration_credential_forget: null,
+  file_versions_list_staged_snapshots: { runs: [], skipped: [] },
+  file_versions_purge_session: null,
+  qa_deciding_workflow_runs: [],
+  workspace_script_list_live: [],
+  terminal_list_live: [],
+  summarize_session: storySummarizeSession('The step finished.'),
+};
 
 export const storySpies = {
   getSetting,
@@ -117,10 +204,10 @@ export const storySpies = {
   invokeAgentInsert: vi.fn(),
   invokeAgentUpdateStatus: vi.fn(),
   invokeAgentSetVerbosity: vi.fn(async () => undefined),
-  invokeAgentMarkViewed: vi.fn(async () => undefined),
+  invokeAgentMarkViewed: vi.fn<WorkflowsModule['invokeAgentMarkViewed']>(async () => undefined),
   invokeAgentSetProviderSessionId: vi.fn(async () => undefined),
   invokeAgentSetDone: vi.fn(async () => undefined),
-  invokeWorkspacesWithUnread: vi.fn(async () => [] as ReadonlyArray<WorkspaceId>),
+  invokeWorkspacesWithUnread: vi.fn<WorkflowsModule['invokeWorkspacesWithUnread']>(async () => []),
   changeWorktreeBranch: vi.fn(async () => undefined),
   scanOrphanWorktrees: vi.fn(
     async () =>
@@ -134,12 +221,12 @@ export const storySpies = {
     kind: 'removed' as const,
     path,
   })),
-  listPlansForSession: vi.fn(async () => [] as ReadonlyArray<PlanWithCount>),
-  upsertPlan: vi.fn(),
+  listPlansForSession: vi.fn<PlansModule['listPlansForSession']>(async () => []),
+  upsertPlan: vi.fn<PlansModule['upsertPlan']>(),
   setPlanStatus: vi.fn(async () => undefined),
   setPlanBody: vi.fn(async () => undefined),
-  addPlanConsumption: vi.fn(async () => undefined),
-  listConsumptionsForPlan: vi.fn(async () => [] as ReadonlyArray<PlanConsumption>),
+  addPlanConsumption: vi.fn<PlansModule['addPlanConsumption']>(),
+  listConsumptionsForPlan: vi.fn<PlansModule['listConsumptionsForPlan']>(async () => []),
   linearConnect: vi.fn(),
   linearDisconnect: vi.fn(async () => undefined),
   linearValidateConnection: vi.fn(),
@@ -193,10 +280,22 @@ export const storySpies = {
     },
   ),
   invokeTerminalClose: vi.fn(async () => undefined),
+  invokePermissionRuleList: vi.fn<PermissionsModule['invokePermissionRuleList']>(async () => []),
+  invokePermissionRuleUpsert: vi.fn<PermissionsModule['invokePermissionRuleUpsert']>(),
+  invokePermissionRuleDelete: vi.fn(async () => undefined),
+  invokePermissionAuditInsert: vi.fn<
+    (input: Parameters<PermissionsModule['invokePermissionAuditInsert']>[0]) => Promise<unknown>
+  >(async () => undefined),
+  invokeAuditRetryEnqueue: vi.fn<PermissionsModule['invokeAuditRetryEnqueue']>(
+    async () => undefined,
+  ),
+  invokeAuditRetryDrain: vi.fn<PermissionsModule['invokeAuditRetryDrain']>(async () => []),
+  invokeAuditRetryUpdate: vi.fn<PermissionsModule['invokeAuditRetryUpdate']>(async () => undefined),
+  invokeAuditRetryDelete: vi.fn<PermissionsModule['invokeAuditRetryDelete']>(async () => undefined),
   runTurn: vi.fn(),
   cancelTurn: vi.fn(async (_runId: unknown) => undefined),
   writeAttachment: vi.fn(async () => '.goodboy/attachments/spec.pdf'),
-  tauriInvoke: vi.fn(async (_cmd?: unknown, _args?: unknown): Promise<unknown> => null),
+  tauriInvoke: createInvokeMock({ handlers: storyInvokeHandlers, unknownResult: null }),
   invokeAgentList: vi.fn(async (_sessionId?: unknown) => [] as ReadonlyArray<Agent>),
   invokeBudgetAlertsList: vi.fn(async () => [] as ReadonlyArray<BudgetAlert>),
   createWorktree: vi.fn(),
@@ -209,21 +308,18 @@ export const storySpies = {
     kind: 'removed',
     path: _args.worktreePath,
   })),
-  worktreeWriterStatus: vi.fn(async (_args: { path: string }) => ({
-    path: _args.path,
-    holder: null,
-    token: null,
-    runId: null,
-    isGranted: false,
-    hasExited: false,
-    waiting: [],
-  })),
+  worktreeWriterStatus: vi.fn(async (_args: { path: string }) =>
+    freeWriterLease({ path: _args.path }),
+  ),
   removeSessionDirectory: vi.fn(async (_args: unknown) => undefined),
   worktreeStatus: vi.fn(async (_path: string) => cleanWorkingTree),
   gitCommonDirectory: vi.fn(
     async (_args: { readonly repoPath: string }): Promise<string | null> => null,
   ),
-  worktreeChangedFiles: vi.fn(async (_path: string) => ({ files: [], numstat: '' })),
+  worktreeChangedFiles: vi.fn(async (_params: WorktreeBaseArgs) => ({
+    files: [],
+    numstat: '',
+  })),
   insertSession: vi.fn(async () => undefined),
   insertSessionEvent: vi.fn(
     async (_params: { readonly event: { readonly kind: string } }) => undefined,
@@ -241,14 +337,22 @@ export const storySpies = {
   updateSessionWorktreeBranch: vi.fn(async () => undefined),
   updateSessionActiveProject: vi.fn(async () => undefined),
   updateSessionWriteDestination: vi.fn(async () => true),
-  listWorktreesForSession: vi.fn(async () => [] as ReadonlyArray<never>),
-  getWorkspaceById: vi.fn(async (): Promise<Workspace | null> => null),
-  listProjectsForWorkspace: vi.fn(async () => [] as ReadonlyArray<Project>),
+  listWorktreesForSession: vi.fn(
+    async () => [] as ReadonlyArray<{ readonly worktreePath: string }>,
+  ),
+  getAgentById: vi.fn(async () => null as Agent | null),
+  getWorkspaceById: vi.fn(
+    async (_params: { readonly id: WorkspaceId }): Promise<Workspace | null> => null,
+  ),
+  listProjectsForWorkspace: vi.fn(
+    async (_params: { readonly workspaceId: WorkspaceId }) => [] as ReadonlyArray<Project>,
+  ),
   upsertSessionExternalTask: vi.fn(async () => undefined),
   upsertContextSlot: vi.fn(async () => undefined),
   deleteSession: vi.fn(async () => undefined),
-  acquireWorktreeWriter: vi.fn(async ({ path }: { readonly path: string }) =>
-    freeWriterLease({ path }),
+  acquireWorktreeWriter: vi.fn(
+    async ({ path }: { readonly path: string; readonly holder?: string }) =>
+      freeWriterLease({ path }),
   ),
   releaseWorktreeWriter: vi.fn(async ({ path }: { readonly path: string }) =>
     freeWriterLease({ path }),
@@ -266,7 +370,7 @@ export const storyResolveQueries = createResolveQueryMocks();
 
 const storyInvoke = (command: string) => storySpies.tauriInvoke(command);
 
-const freeWriterLease = ({ path }: { readonly path: string }) => ({
+const freeWriterLease = ({ path }: { readonly path: string }): WorktreeWriterLease => ({
   path,
   holder: null,
   token: null,
@@ -275,6 +379,12 @@ const freeWriterLease = ({ path }: { readonly path: string }) => ({
   hasExited: false,
   waiting: [],
 });
+
+export const stubStoryInvoke = (overrides: InvokeHandlers) => {
+  storySpies.tauriInvoke.mockImplementation(
+    createInvokeRouter({ handlers: { ...storyInvokeHandlers, ...overrides }, unknownResult: null }),
+  );
+};
 
 export const resetStorySpies = () => {
   resetWorkflowTurnBreaker();
@@ -344,8 +454,27 @@ export const resetStoryStore = async () => {
   }
 };
 
-export const dbModuleMock = () => ({
-  ...storyResolveQueries,
+const { resetResolveQueryMocks: _resetResolveQueryMocks, ...storyResolveDbQueries } =
+  storyResolveQueries;
+
+export const storyDbStubs = () => ({
+  ...storyResolveDbQueries,
+  hasOtherSessionTurnSince: vi.fn(async () => false),
+  insertAgentTurnSpan: vi.fn(async () => undefined),
+  insertAgentHandoff: vi.fn(async () => undefined),
+  countUserTextEvents: vi.fn(async () => 0),
+  listSessionDecisions: vi.fn(async () => []),
+  listProviderLimits: vi.fn(async () => []),
+  listArtifactsForSession: vi.fn(async () => []),
+  listSessionEvents: vi.fn(async () => []),
+  listSessionTurnSpans: vi.fn(async () => []),
+  listWorkspaceTurnSpans: vi.fn(async () => []),
+  listTurnSpans: vi.fn(async () => []),
+  listSettingsWithPrefix: vi.fn(async () => []),
+  listResolveCheckRuns: vi.fn(async () => []),
+  listPlansForSession: vi.fn(async () => []),
+  getArtifactProvenance: vi.fn(async () => null),
+  upsertWorkflow: vi.fn(async () => undefined),
   listActiveResolveAttempts: storySpies.listActiveResolveAttempts,
   getSetting: storySpies.getSetting,
   setSetting: storySpies.setSetting,
@@ -371,7 +500,6 @@ export const dbModuleMock = () => ({
   disconnectWorkspace: vi.fn(async () => undefined),
   reconnectWorkspace: vi.fn(async () => undefined),
   touchWorkspaceLastAccessed: vi.fn(async () => undefined),
-  findWorkspaceByRootPath: vi.fn(async () => null),
   insertMessage: vi.fn(async () => undefined),
   insertProviderRun: vi.fn(async () => undefined),
   updateProviderRunStatus: vi.fn(async () => undefined),
@@ -408,8 +536,8 @@ export const dbModuleMock = () => ({
   listMountPathOwnership: vi.fn(async () => []),
   listMountPullRequestLinks: vi.fn(async () => []),
   upsertMountPullRequestLink: vi.fn(async () => true),
-  listWorktreesForTask: vi.fn(async () => []),
   listWorktreesForSession: storySpies.listWorktreesForSession,
+  getAgentById: storySpies.getAgentById,
   listWorktreesForSessions: vi.fn(async () => new Map()),
   listAllSessionWorktrees: vi.fn(async () => []),
   deleteWorktreesForSession: vi.fn(async () => undefined),
@@ -450,7 +578,7 @@ export const dbModuleMock = () => ({
   countContextSlotHistoryForSession: vi.fn(async () => ({})),
   listMessagesForSession: vi.fn(async () => []),
   listMessagesForAgent: vi.fn(async () => []),
-  insertOpenQuestion: vi.fn(async () => undefined),
+  insertOpenQuestion: vi.fn(async () => ({ inserted: true })),
   markOpenQuestionsResolvedByText: vi.fn(async () => 0),
   listResolvedQuestionTextsForSession: vi.fn(async () => []),
   listOpenQuestionsForSession: vi.fn(async () => []),
@@ -462,7 +590,6 @@ export const dbModuleMock = () => ({
   purgeAgentForDelete: vi.fn(async () => [] as ReadonlyArray<string>),
   listTurnEventsForAgent: vi.fn(async () => []),
   listTurnEventsForSession: vi.fn(async () => []),
-  listTurnEventsForTask: vi.fn(async () => []),
   insertNotification: storySpies.insertNotification,
   listNotifications: storySpies.listNotifications,
   countNotifications: storySpies.countNotifications,
@@ -497,6 +624,9 @@ export const dbModuleMock = () => ({
   updateWorkflowOrder: vi.fn(async () => undefined),
 });
 
+export const dbModuleMock = (stubs: Readonly<Record<string, unknown>> = {}) =>
+  createDbMock({ ...storyDbStubs(), ...stubs });
+
 export const tauriCoreModuleMock = () => ({
   invoke: storySpies.tauriInvoke,
 });
@@ -504,10 +634,13 @@ export const tauriCoreModuleMock = () => ({
 export const tauriEventModuleMock = () => ({ listen: vi.fn(async () => () => undefined) });
 
 export const dbLibModuleMock = () => ({
+  tauriDatabase: { execute: vi.fn(), select: vi.fn() },
+});
+
+export const dbBootModuleMock = () => ({
   runDbMigrations: storySpies.runDbMigrations,
   restoreMigrationSnapshot: storySpies.restoreMigrationSnapshot,
   wipeDb: vi.fn(async () => undefined),
-  tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 });
 
 export const onboardingStoreModuleMock = () => ({
@@ -524,14 +657,14 @@ export const turnModuleMock = () => ({
 });
 
 export const permissionsModuleMock = () => ({
-  invokePermissionRuleList: vi.fn(async () => []),
-  invokePermissionRuleUpsert: vi.fn(async () => undefined),
-  invokePermissionRuleDelete: vi.fn(async () => undefined),
-  invokePermissionAuditInsert: vi.fn(async () => undefined),
-  invokeAuditRetryEnqueue: vi.fn(async () => undefined),
-  invokeAuditRetryDrain: vi.fn(async () => []),
-  invokeAuditRetryUpdate: vi.fn(async () => undefined),
-  invokeAuditRetryDelete: vi.fn(async () => undefined),
+  invokePermissionRuleList: storySpies.invokePermissionRuleList,
+  invokePermissionRuleUpsert: storySpies.invokePermissionRuleUpsert,
+  invokePermissionRuleDelete: storySpies.invokePermissionRuleDelete,
+  invokePermissionAuditInsert: storySpies.invokePermissionAuditInsert,
+  invokeAuditRetryEnqueue: storySpies.invokeAuditRetryEnqueue,
+  invokeAuditRetryDrain: storySpies.invokeAuditRetryDrain,
+  invokeAuditRetryUpdate: storySpies.invokeAuditRetryUpdate,
+  invokeAuditRetryDelete: storySpies.invokeAuditRetryDelete,
   useEffectivePermissionRules: () => [],
 });
 
@@ -618,10 +751,10 @@ export const worktreeModuleMock = () => ({
   sessionDirExists: (args: unknown) => storySpies.sessionDirExists(args),
   scratchDirPrepare: (args: unknown) => storySpies.scratchDirPrepare(args),
   scratchDirRemove: (args: unknown) => storySpies.scratchDirRemove(args),
-  worktreeChangedFiles: (path: string) => storySpies.worktreeChangedFiles(path),
+  worktreeChangedFiles: (params: WorktreeBaseArgs) => storySpies.worktreeChangedFiles(params),
   worktreeStatus: (path: string) => storySpies.worktreeStatus(path),
   gitCommonDirectory: (args: { readonly repoPath: string }) => storySpies.gitCommonDirectory(args),
-  acquireWorktreeWriter: (args: { readonly path: string }) =>
+  acquireWorktreeWriter: (args: { readonly path: string; readonly holder?: string }) =>
     storySpies.acquireWorktreeWriter(args),
   releaseWorktreeWriter: (args: { readonly path: string }) =>
     storySpies.releaseWorktreeWriter(args),
@@ -722,12 +855,6 @@ export const terminalOutputCacheModuleMock = () => ({
   clearTerminalCache: vi.fn(() => undefined),
 });
 
-export const openQuestionsModuleMock = () => ({
-  useOpenQuestions: {
-    getState: () => ({ loadQuestions: vi.fn(async () => undefined) }),
-  },
-});
-
 export const configExportModuleMock = () => ({
   chooseExportFile: vi.fn(async () => '/tmp/export.json'),
   chooseImportFile: vi.fn(async () => null),
@@ -773,81 +900,35 @@ export const configExportModuleMock = () => ({
   })),
 });
 
-export const emptyOverrides: OverrideSettings = {
-  defaultProviderId: null,
-  defaultBranchPrefix: null,
-  defaultVerbosity: null,
-  providerBindings: null,
-  taskModels: null,
-  roleModels: null,
-  parallelAgents: null,
-  providerPool: null,
-  attributionFooter: null,
-  replyVoice: null,
-  replyStyleNote: null,
-  replyTemplateFixed: null,
-  replyTemplateNoChange: null,
-  resolveOnGithub: null,
-  resolveCommitStyle: null,
-  afterMerge: null,
-};
+export const emptyOverrides: OverrideSettings = EMPTY_OVERRIDES;
 
 type WorkspaceOverridesInput = Partial<Workspace> & { readonly id: WorkspaceId };
 
-export const buildStoryWorkspace = (overrides: WorkspaceOverridesInput): Workspace => ({
-  name: 'Acme',
-  slug: 'acme',
-  overrides: emptyOverrides,
-  createdAt: STORY_NOW,
-  updatedAt: STORY_NOW,
-  ...overrides,
-});
+export const buildStoryWorkspace = (overrides: WorkspaceOverridesInput): Workspace =>
+  aWorkspace({ name: 'Acme', slug: 'acme', ...overrides });
 
 type ProjectOverridesInput = Partial<Project> & {
   readonly id: ProjectId;
   readonly workspaceId: WorkspaceId;
 };
 
-export const buildStoryProject = (overrides: ProjectOverridesInput): Project => ({
-  name: 'app',
-  rootPath: '/tmp/app',
-  kind: 'repo',
-  overrides: emptyOverrides,
-  createdAt: STORY_NOW,
-  updatedAt: STORY_NOW,
-  ...overrides,
-});
+export const buildStoryProject = (overrides: ProjectOverridesInput): Project =>
+  aProject({ name: 'app', rootPath: '/tmp/app', ...overrides });
 
 type SessionOverridesInput = Partial<Session> & {
   readonly id: SessionId;
   readonly workspaceId: WorkspaceId;
 };
 
-export const buildStorySession = (overrides: SessionOverridesInput): Session => ({
-  goal: 'ship the thing',
-  state: { kind: 'draft' },
-  contextSlots: [],
-  providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
-  permissionMode: 'bypassPermissions',
-  autoRun: false,
-  titleUserEdited: false,
-  workflowRuns: [],
-  createdAt: STORY_NOW,
-  updatedAt: STORY_NOW,
-  ...overrides,
-});
+export const buildStorySession = (overrides: SessionOverridesInput): Session =>
+  aSession({ goal: 'ship the thing', ...overrides });
 
 type AgentOverridesInput = Partial<Agent> & {
   readonly id: AgentId;
   readonly sessionId: SessionId;
 };
 
-export const buildStoryAgent = (overrides: AgentOverridesInput): Agent => ({
-  ordinal: 0,
-  name: 'agent 1',
-  status: 'pending',
-  ...overrides,
-});
+export const buildStoryAgent = (overrides: AgentOverridesInput): Agent => anAgent(overrides);
 
 export const connectedAnthropicState = () => ({
   providers: [

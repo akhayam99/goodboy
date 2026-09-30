@@ -1,5 +1,14 @@
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
+import {
+  copyFileSync,
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -86,9 +95,7 @@ const canonicalizeIcnsChunkOrder = ({ filePath }) => {
 };
 
 const fanOutIcons = ({ sourcePath }) => {
-  const existingFilenames = readdirSync(ICONS_DIRECTORY).filter(
-    (name) => !name.startsWith('.'),
-  );
+  const existingFilenames = readdirSync(ICONS_DIRECTORY).filter((name) => !name.startsWith('.'));
   const temporaryOutputDirectory = mkdtempSync(join(tmpdir(), 'goodboy-icons-'));
   try {
     execFileSync(TAURI_BINARY, ['icon', sourcePath, '-o', temporaryOutputDirectory], {
@@ -118,9 +125,9 @@ const tauriConfig = JSON.parse(
 );
 const backgroundColor = tauriConfig.app.windows[0].backgroundColor;
 
-const mascotBase64 = readFileSync(resolve(DESKTOP_DIRECTORY, 'src/assets/mascot.png')).toString(
-  'base64',
-);
+const mascotBase64 = readFileSync(
+  resolve(DESKTOP_DIRECTORY, '../../packages/ui/src/assets/mascot.png'),
+).toString('base64');
 
 const html = createIconHtml({ accent, backgroundColor, mascotBase64 });
 const sourcePath = resolve(tmpdir(), `goodboy-icon-source-${process.pid}.png`);

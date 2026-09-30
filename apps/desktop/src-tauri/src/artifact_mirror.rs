@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 use serde::{Deserialize, Serialize};
 
@@ -310,7 +309,6 @@ fn macos_default_browser_app_path() -> Option<PathBuf> {
         let cf_url: CFURLRef =
             CFURLCreateWithString(kCFAllocatorDefault, cf_string, std::ptr::null());
         CFRelease(cf_string as CFTypeRef);
-        let cf_url = cf_url;
         if cf_url.is_null() {
             return None;
         }
@@ -378,7 +376,7 @@ fn open_with_browser(path: &Path) -> std::io::Result<()> {
     #[cfg(target_os = "macos")]
     {
         if let Some(app_path) = macos_default_browser_app_path() {
-            let status = Command::new("open")
+            let status = std::process::Command::new("open")
                 .arg("-a")
                 .arg(&app_path)
                 .arg(path)
@@ -397,7 +395,9 @@ fn open_with_browser(path: &Path) -> std::io::Result<()> {
             } else {
                 format!("{template} \"{path_str}\"")
             };
-            let status = Command::new("cmd").args(["/C", &invocation]).status();
+            let status = std::process::Command::new("cmd")
+                .args(["/C", &invocation])
+                .status();
             if status.map(|s| s.success()).unwrap_or(false) {
                 return Ok(());
             }

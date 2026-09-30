@@ -11,7 +11,7 @@ vi.mock('../../../../../store', () => ({
   useCurrentWorkspace: () => workspace,
 }));
 
-vi.mock('../../WorkflowBuilderView', () => ({
+vi.mock('../../../../workflows/components/WorkflowBuilderView', () => ({
   WorkflowBuilderView: () => <div data-testid="studio-workflow" />,
 }));
 

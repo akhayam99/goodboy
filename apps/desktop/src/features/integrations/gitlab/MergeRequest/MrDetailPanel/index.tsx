@@ -1,5 +1,4 @@
 import { RecordDetailEmptyState } from '../../../../../shared/components/StudioDetail';
-import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { RecordHeader } from '../../../../../shared/components/StudioDetail/RecordHeader';
 import { RecordProperties } from '../../../../../shared/components/StudioDetail/RecordProperties';
 import { RecordSections } from '../../../../../shared/components/StudioDetail/RecordSections';
@@ -7,12 +6,12 @@ import type { RecordSection } from '../../../../../shared/components/StudioDetai
 import type { RecordFrame } from '../../../../../shared/components/StudioDetail/RecordActions/types';
 import { DescriptionSection } from '../../../../../shared/components/DescriptionSection';
 import { useEffect, useMemo, useState } from 'react';
-import { Notice, RefreshIconButton } from '@goodboy/ui';
+import { Notice, RefreshIconButton, PaneShell } from '@goodboy/ui';
 import { GitBranch } from 'lucide-react';
 import type { GitlabIntegrationBinding, SessionId, WorkspaceId } from '@goodboy/types';
 import { gitlabMergeRequestFields, resolveFacts } from '../../../../../shared/detail-fields';
 import { useAppStore } from '../../../../../store';
-import { useToast } from '../../../../../app/components/Toast';
+import { useToast } from '../../../../../shared/components/Toast';
 import {
   gitlabMergeMr,
   gitlabUpdateMrState,
@@ -27,12 +26,13 @@ import { CreateMrForm } from './CreateMrForm';
 import { MrApprovals } from './MrApprovals';
 import { mrDraftTitle } from './mrDraftTitle';
 import { gitlabMrStateKind } from '../../gitlabMrStateKind';
-import { PullRequestChip } from '../../../../github/components/PullRequestChip';
+import { PullRequestChip } from '../../../github/components/PullRequestChip';
 import { useConversationPane } from '../../../../../shared/components/Conversation/useConversationPane';
 import type { ConversationSource } from '../../../../../shared/components/Conversation/types';
 import { GITLAB_MR_CAPABILITIES, gitlabMrConversation } from '../../gitlabMrConversation';
 import { systemNoteFootnote } from '../../systemNoteFootnote';
 import { useMrVerbs, type MrVerbBusy } from './useMrVerbs';
+import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 
 type ApprovalSummaryParams = {
   readonly approval: GitlabMrApprovalState;
@@ -73,7 +73,7 @@ export const MrDetailPanel = ({
   frame = null,
 }: Props) => {
   const session = useAppStore((s) =>
-    sessionId == null ? null : (s.sessions.find((x) => x.id === sessionId) ?? null),
+    sessionId == null ? null : (sessionById(s.sessions, sessionId) ?? null),
   );
   const mrState = useAppStore((s) =>
     sessionId == null ? undefined : s.sessionGitlabMr[sessionId],

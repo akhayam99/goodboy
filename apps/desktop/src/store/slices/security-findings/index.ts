@@ -3,9 +3,10 @@ import { flagSecurityFindingAgain } from './flagSecurityFindingAgain';
 import { loadSecurityFindings } from './loadSecurityFindings';
 import { recordScanFindings } from './recordScanFindings';
 import { securityFindingsInitialState } from './state';
-import type { GetFn, SecurityFindingsSlice, SetFn } from './types';
+import type { SecurityFindingsSlice } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createSecurityFindingsSlice = (set: SetFn, get: GetFn): SecurityFindingsSlice => ({
+export const createSecurityFindingsSlice = ({ set, get }: SliceDeps): SecurityFindingsSlice => ({
   ...securityFindingsInitialState,
   loadSecurityFindings: loadSecurityFindings(set),
   dismissSecurityFinding: dismissSecurityFinding(get),

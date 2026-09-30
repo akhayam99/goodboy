@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { insertProviderCredential } from '@goodboy/db';
 import type { CredentialId, IsoDateTime, ProviderCredential, ProviderId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -16,7 +16,7 @@ export const createCredential = (set: SetFn) => {
     label: string,
     apiKey: string,
   ): Promise<ProviderCredential> => {
-    const check = await invoke<ApiKeyCheck>('provider_api_key_validate', {
+    const check = await invokeCommand<ApiKeyCheck>('provider_api_key_validate', {
       providerId,
       apiKey: apiKey.trim(),
     });
@@ -30,7 +30,10 @@ export const createCredential = (set: SetFn) => {
       hint: maskApiKey(apiKey),
       createdAt: new Date().toISOString() as IsoDateTime,
     };
-    await invoke('secret_set', { key: credentialSecretKey(credential.id), value: apiKey.trim() });
+    await invokeCommand('secret_set', {
+      key: credentialSecretKey(credential.id),
+      value: apiKey.trim(),
+    });
     await insertProviderCredential(tauriDatabase, credential);
     set((state) => ({ providerCredentials: [...state.providerCredentials, credential] }));
     return credential;

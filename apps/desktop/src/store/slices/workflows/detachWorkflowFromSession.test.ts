@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type {
   Agent,
@@ -8,7 +9,7 @@ import type {
   WorkflowId,
   WorkflowRunId,
 } from '@goodboy/types';
-import { purgedAgentIds } from '../../session-mutators';
+import { purgedAgentIds } from '../sessions/sessionMutators';
 
 const {
   cancelTurnSpy,
@@ -38,12 +39,14 @@ const {
   loadSessionOpenQuestionsSpy: vi.fn(async () => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  detachWorkflowFromSession: detachInDbSpy,
-  purgeAgentForDelete: purgeAgentSpy,
-  listResolveAttempts: listResolveAttemptsSpy,
-  updateSessionState: vi.fn(async () => undefined),
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    detachWorkflowFromSession: detachInDbSpy,
+    purgeAgentForDelete: purgeAgentSpy,
+    listResolveAttempts: listResolveAttemptsSpy,
+    updateSessionState: vi.fn(async () => undefined),
+  }),
+);
 
 vi.mock('../../../features/worktree/worktree', () => ({
   abandonWorktreeWriter: abandonWriterSpy,
@@ -66,7 +69,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentList: invokeAgentListSpy,
 }));
 
-vi.mock('../../awaitRunStopped', () => ({
+vi.mock('../agents/awaitRunStopped', () => ({
   awaitRunStopped: awaitRunStoppedSpy,
 }));
 

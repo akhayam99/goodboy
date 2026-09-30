@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   IsoDateTime,
@@ -12,9 +13,11 @@ const { updateHintsSpy } = vi.hoisted(() => ({
   updateHintsSpy: vi.fn(async () => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  updateWorkflowRunOrchestratorHints: updateHintsSpy,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    updateWorkflowRunOrchestratorHints: updateHintsSpy,
+  }),
+);
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 

@@ -1,5 +1,6 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { AgentId, ArtifactScoutPlanEntry, MountId } from '@goodboy/types';
+import type { AgentId, ArtifactScoutPlanEntry, MountId, ProjectId } from '@goodboy/types';
 import { artifactScoutRoster } from './artifactScoutRoster';
 import type { ArtifactMountOption } from './artifactMountChoice';
 import type { WireframeScoutProgress } from '../wireframes/wireframeScoutProgress';
@@ -9,6 +10,7 @@ const MOUNT_ID = 'mount-ledger' as MountId;
 const mounts: ReadonlyArray<ArtifactMountOption> = [
   {
     mountId: MOUNT_ID,
+    projectId: 'project-ledger' as ProjectId,
     mountName: 'ledger-core',
     branch: 'ak/fix-posting-rounding',
     baseBranch: 'main',

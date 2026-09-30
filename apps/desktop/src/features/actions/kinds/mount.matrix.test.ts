@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 import { matrixOf } from '../../../__tests__/helpers/actionMatrix';

@@ -17,7 +17,7 @@ import {
   type StoryStore,
 } from '../../store/storyHarness';
 import { sessionPlace } from '../../store/slices/navigation/place';
-import { ToastProvider } from '../../app/components/Toast';
+import { ToastProvider } from '../../shared/components/Toast';
 import { KeepAliveWorkSurface } from '../../app/components/KeepAliveWorkSurface';
 import { DrawerHost } from '../../app/components/DrawerHost';
 import {
@@ -91,8 +91,10 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   consoleErrors = [];
+  const logError = console.error;
   vi.spyOn(console, 'error').mockImplementation((...args: ReadonlyArray<unknown>) => {
     consoleErrors.push(args.map(String).join(' '));
+    logError(...args);
   });
 });
 

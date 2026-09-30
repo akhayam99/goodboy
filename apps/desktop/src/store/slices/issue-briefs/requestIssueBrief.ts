@@ -1,7 +1,7 @@
 import { autoLimitContext } from '../providerLimits/autoLimitContext';
 import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE, generateIssueBrief } from '@goodboy/core';
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { routeTaskModel } from '../../../features/providers/taskModelRouting';
 import { cutAtBoundary } from '../../../shared/utils/cutAtBoundary';
 import {
@@ -16,6 +16,7 @@ import type {
   RequestIssueBriefParams,
   SetFn,
 } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 const ISSUE_BRIEF_BODY_CAP = 12_000;
 
@@ -61,8 +62,7 @@ export const requestIssueBrief = (set: SetFn, get: GetFn) => {
       return;
     }
 
-    const session =
-      sessionId === null ? null : (state.sessions.find((entry) => entry.id === sessionId) ?? null);
+    const session = sessionId === null ? null : (sessionById(state.sessions, sessionId) ?? null);
     const settings =
       session === null
         ? selectWorkspaceResolvedSettings({ state, workspaceId })
@@ -101,7 +101,7 @@ export const requestIssueBrief = (set: SetFn, get: GetFn) => {
     }));
 
     const result = await generateIssueBrief({
-      deps: { ...taskModel, invokeFn: invoke },
+      deps: { ...taskModel, invokeFn: invokeCommand },
       input: {
         identifier: source.identifier,
         title: source.title,

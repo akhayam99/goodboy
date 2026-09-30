@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import type { DiffComment, IsoDateTime, SessionId } from '@goodboy/types';
 import { postNotesResultMessage, postNotesToPr } from './postNotesToPr';

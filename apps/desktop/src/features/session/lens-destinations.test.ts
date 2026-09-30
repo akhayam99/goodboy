@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { lensDestinations, type ConnectedLensTools } from './lens-destinations';
 import { SHORTCUTS, type ShortcutId } from '../../shared/keyboard/registry';

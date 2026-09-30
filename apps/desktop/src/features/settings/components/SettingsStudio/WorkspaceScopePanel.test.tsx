@@ -2,7 +2,15 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { OverrideSettings } from '@goodboy/types';
+import type {
+  Agent,
+  OverrideSettings,
+  ProviderRunId,
+  Session,
+  TurnState,
+  WorkspaceId,
+} from '@goodboy/types';
+import { aSession, aWorkflowRun, anAgent, TEST_NOW } from '@goodboy/types/testing';
 import {
   mergeWorkspaceOverrides,
   type WorkspaceOverridesPatch,
@@ -30,7 +38,10 @@ const { state, toastMock } = vi.hoisted(() => ({
     focusStorage: vi.fn(),
     setStorageScope: vi.fn(),
     currentWorkspaceId: null as string | null,
-    sessions: [] as ReadonlyArray<{ id: string; state: { kind: string } }>,
+    sessions: [] as ReadonlyArray<Session>,
+    sessionPhaseRuns: {} as Record<string, ReadonlyArray<Agent>>,
+    agentTurnState: {} as Record<string, TurnState>,
+    orchestratingWorkflowRuns: {} as Record<string, boolean>,
   },
   toastMock: vi.fn(),
 }));
@@ -41,7 +52,7 @@ vi.mock('../../../../store', () => ({
   }),
 }));
 
-vi.mock('../../../../app/components/Toast', () => ({
+vi.mock('../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: toastMock }),
 }));
 
@@ -112,6 +123,9 @@ beforeEach(() => {
   state.setStorageScope = vi.fn();
   state.currentWorkspaceId = null;
   state.sessions = [];
+  state.sessionPhaseRuns = {};
+  state.agentTurnState = {};
+  state.orchestratingWorkflowRuns = {};
   toastMock.mockReset();
 });
 afterEach(cleanup);
@@ -289,24 +303,45 @@ describe('WorkspaceScopePanel', () => {
     expect(screen.getByRole('button', { name: /disconnect/i })).toBeDefined();
   });
 
-  it('counts the running sessions it stops when the workspace is current', () => {
+  it('counts the active sessions it stops when the workspace is current', () => {
     state.currentWorkspaceId = 'ws-1';
     state.sessions = [
-      { id: 's-1', state: { kind: 'running' } },
-      { id: 's-2', state: { kind: 'running' } },
-      { id: 's-3', state: { kind: 'idle' } },
+      aSession({ state: { kind: 'running', runId: 'r-1' as ProviderRunId, startedAt: TEST_NOW } }),
+      aSession({ state: { kind: 'running', runId: 'r-2' as ProviderRunId, startedAt: TEST_NOW } }),
+      aSession(),
     ];
     render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: /disconnect/i }));
 
     expect(
-      screen.getByRole('group', { name: 'Disconnect billing and stop 2 running sessions?' }),
+      screen.getByRole('group', { name: 'Disconnect billing and stop 2 active sessions?' }),
+    ).toBeDefined();
+  });
+
+  it('counts a session waiting on an approval and one deciding its next step', () => {
+    const waiting = aSession();
+    const agent = anAgent({ sessionId: waiting.id });
+    const run = aWorkflowRun();
+    state.currentWorkspaceId = 'ws-1';
+    state.sessions = [waiting, aSession({ workflowRuns: [run] }), aSession()];
+    state.sessionPhaseRuns = { [waiting.id]: [agent] };
+    state.agentTurnState = {
+      [agent.id]: { kind: 'blocked', runId: 'r-1' as ProviderRunId, blockedAt: TEST_NOW },
+    };
+    state.orchestratingWorkflowRuns = { [run.id]: true };
+    render(<WorkspaceScopePanel workspaceId={'ws-1' as WorkspaceId} requestClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /disconnect/i }));
+
+    expect(
+      screen.getByRole('group', { name: 'Disconnect billing and stop 2 active sessions?' }),
     ).toBeDefined();
   });
 
   it('claims no stopped sessions for a workspace that is not current', () => {
     state.currentWorkspaceId = 'ws-2';
-    state.sessions = [{ id: 's-1', state: { kind: 'running' } }];
+    state.sessions = [
+      aSession({ state: { kind: 'running', runId: 'r-1' as ProviderRunId, startedAt: TEST_NOW } }),
+    ];
     render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: /disconnect/i }));
 

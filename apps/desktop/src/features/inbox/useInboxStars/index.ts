@@ -1,8 +1,9 @@
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import type { StarredIssue, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
 import { starIdentityOf, starKey } from '../../integrations/starred/starredIssueOf';
 import type { InboxRecord } from '../types';
+import { compareIsoDesc } from '../../../shared/utils/compareIsoDesc';
 
 export type StarredRow = {
   readonly issue: StarredIssue;
@@ -66,7 +67,8 @@ export const useInboxStars = ({ workspaceId, records, refreshOnOpen = true }: Pa
         })
         .sort(
           (left, right) =>
-            rank(left) - rank(right) || updatedAtOf(right).localeCompare(updatedAtOf(left)),
+            rank(left) - rank(right) ||
+            compareIsoDesc({ left: updatedAtOf(left), right: updatedAtOf(right) }),
         ),
     [starred, loadedByKey, fresh],
   );
@@ -78,25 +80,28 @@ export const useInboxStars = ({ workspaceId, records, refreshOnOpen = true }: Pa
 
   const canStar = (record: InboxRecord): boolean => recordStarKey(record) !== null;
 
-  const toggle = async (record: InboxRecord): Promise<void> => {
-    const identity = starIdentityOf(record);
-    if (identity === null) {
-      return;
-    }
-    try {
-      if (starredKeys.has(starKey(identity))) {
-        await unstarIssue({
-          workspaceId,
-          provider: identity.provider,
-          externalId: identity.externalId,
-        });
+  const toggle = useCallback(
+    async (record: InboxRecord): Promise<void> => {
+      const identity = starIdentityOf(record);
+      if (identity === null) {
         return;
       }
-      await starIssueRecord({ workspaceId, record });
-    } catch (error) {
-      void reportError({ title: `Couldn't update the star on ${record.identifier}`, error });
-    }
-  };
+      try {
+        if (starredKeys.has(starKey(identity))) {
+          await unstarIssue({
+            workspaceId,
+            provider: identity.provider,
+            externalId: identity.externalId,
+          });
+          return;
+        }
+        await starIssueRecord({ workspaceId, record });
+      } catch (error) {
+        void reportError({ title: `Couldn't update the star on ${record.identifier}`, error });
+      }
+    },
+    [reportError, starIssueRecord, starredKeys, unstarIssue, workspaceId],
+  );
 
   return { rows, isStarred, canStar, toggle };
 };

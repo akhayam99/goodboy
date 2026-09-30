@@ -1,6 +1,6 @@
 import type { ResolveThread } from '@goodboy/types';
 
-export const DIRTY_TREE_REASON = 'dirty_tree';
+const DIRTY_TREE_REASON = 'dirty_tree';
 
 const DIRTY_TREE_PATTERN = new RegExp(`(^|:)${DIRTY_TREE_REASON}(:|$)`);
 

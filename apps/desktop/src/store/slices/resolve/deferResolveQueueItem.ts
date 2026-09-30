@@ -6,7 +6,7 @@ import type { ItemParams, SliceParams } from './types';
 
 type Params = SliceParams & ItemParams;
 
-export const DEFER_AFTER_INTEGRATION =
+const DEFER_AFTER_INTEGRATION =
   'This change is already on the branch. Reopen the comment to work on it again';
 
 export const deferResolveQueueItem = async ({ set, sessionId, itemId }: Params): Promise<void> => {

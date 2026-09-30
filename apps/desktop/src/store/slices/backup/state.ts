@@ -6,8 +6,8 @@ import type {
 } from '@goodboy/types';
 import { DEFAULT_EXPORT_GROUPS } from '@goodboy/types';
 
-export type BackupExportPhase = 'idle' | 'previewing' | 'writing' | 'done' | 'error';
-export type BackupImportPhase = 'idle' | 'choosing' | 'previewing' | 'applying' | 'done' | 'error';
+type BackupExportPhase = 'idle' | 'previewing' | 'writing' | 'done' | 'error';
+type BackupImportPhase = 'idle' | 'choosing' | 'previewing' | 'applying' | 'done' | 'error';
 
 export type BackupState = {
   readonly backupExportGroups: ExportGroups;

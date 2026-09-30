@@ -37,7 +37,10 @@ export const bringOriginIntoHistory = (set: SetFn, get: GetFn) => {
     if (typeof ahead === 'string') {
       return stopWith({ reason: 'failed', message: ahead, files: [], sha: null });
     }
-    const status = await worktreeStatus({ worktreePath: target.worktreePath }).catch(() => null);
+    const status = await worktreeStatus({
+      worktreePath: target.worktreePath,
+      baseBranch: target.baseBranch,
+    }).catch(() => null);
     const head = status?.head ?? null;
     if (head === null) {
       return stopWith({

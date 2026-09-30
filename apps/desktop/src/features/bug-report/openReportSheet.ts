@@ -4,7 +4,7 @@ export const OPEN_REPORT_SHEET_EVENT = 'goodboy:open-report-sheet';
 
 export const REPORT_OPEN_MENU_EVENT = 'goodboy://report-open';
 
-export type ReportNotice = {
+type ReportNotice = {
   readonly title: string;
   readonly body: string;
 };

@@ -62,7 +62,8 @@ export const InboxStarredGroup = ({
               selected={selectedKey === row.record.key}
               onSelect={onSelect}
               onActivate={onActivate}
-              star={{ isStarred: true, onToggle: () => onUnstar(row) }}
+              isStarred
+              onToggleStar={() => onUnstar(row)}
             />
           );
         }

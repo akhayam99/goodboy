@@ -9,7 +9,7 @@ type Params = {
   readonly anchorKey?: string | null;
 };
 
-export type ActionFailure = {
+type ActionFailure = {
   readonly actionId: string;
   readonly message: string;
 };

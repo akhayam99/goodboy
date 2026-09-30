@@ -3,7 +3,7 @@ import { Inbox } from 'lucide-react';
 import { Markdown, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { codeFenceMarkers } from '../../utils/codeFenceMarkers';
-import { formatCardTime } from '../../utils/format-card-time';
+import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
 
@@ -31,7 +31,7 @@ export const HandoffOlderFormat = ({ text, at }: Props) => {
           icon={<Inbox size={ICON_SIZE.row} aria-hidden />}
           eyebrow="first message"
           preview="older format"
-          meta={formatCardTime(at)}
+          meta={formatClock({ at })}
           open={open}
           onToggle={() => setOpen((value) => !value)}
           aria-label={open ? 'Collapse the first message' : 'Expand the first message'}

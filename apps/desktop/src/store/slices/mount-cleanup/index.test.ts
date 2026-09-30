@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 
@@ -28,7 +29,7 @@ const h = vi.hoisted(() => ({
     exists: true,
   })),
   deleteLocalBranch: vi.fn(async () => undefined),
-  deleteMountPullRequestLink: vi.fn(async () => undefined),
+  upsertMountPullRequestLink: vi.fn(async () => true),
 }));
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
@@ -40,55 +41,57 @@ vi.mock('../../../features/worktree/worktree', () => ({
   deleteLocalBranch: h.deleteLocalBranch,
 }));
 
-vi.mock('@goodboy/db', () => ({
-  listSessionMounts: vi.fn(async () => [...h.rows.values()]),
-  updateSessionMountLifecycle: vi.fn(
-    async ({
-      mountId,
-      worktreePath,
-      isAttached,
-      diskState,
-      expectedRevision,
-    }: {
-      mountId: string;
-      worktreePath: string | null;
-      isAttached: boolean;
-      diskState: string;
-      expectedRevision: number;
-    }) => {
-      const row = h.rows.get(mountId);
-      if (row === undefined || row['revision'] !== expectedRevision) {
-        return false;
-      }
-      h.rows.set(mountId, {
-        ...row,
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    listSessionMounts: vi.fn(async () => [...h.rows.values()]),
+    updateSessionMountLifecycle: vi.fn(
+      async ({
+        mountId,
         worktreePath,
-        lastWorktreePath: worktreePath ?? row['worktreePath'] ?? row['lastWorktreePath'],
         isAttached,
         diskState,
-        revision: (row['revision'] as number) + 1,
-      });
-      return true;
-    },
-  ),
-  getMountOperation: vi.fn(
-    async ({ sessionId, requestId }: { sessionId: string; requestId: string }) =>
-      h.operations.get(`${sessionId}:${requestId}`) ?? null,
-  ),
-  upsertMountOperation: vi.fn(async ({ operation }: { operation: Record<string, unknown> }) => {
-    h.operations.set(`${operation['sessionId']}:${operation['requestId']}`, { ...operation });
+        expectedRevision,
+      }: {
+        mountId: string;
+        worktreePath: string | null;
+        isAttached: boolean;
+        diskState: string;
+        expectedRevision: number;
+      }) => {
+        const row = h.rows.get(mountId);
+        if (row === undefined || row['revision'] !== expectedRevision) {
+          return false;
+        }
+        h.rows.set(mountId, {
+          ...row,
+          worktreePath,
+          lastWorktreePath: worktreePath ?? row['worktreePath'] ?? row['lastWorktreePath'],
+          isAttached,
+          diskState,
+          revision: (row['revision'] as number) + 1,
+        });
+        return true;
+      },
+    ),
+    getMountOperation: vi.fn(
+      async ({ sessionId, requestId }: { sessionId: string; requestId: string }) =>
+        h.operations.get(`${sessionId}:${requestId}`) ?? null,
+    ),
+    upsertMountOperation: vi.fn(async ({ operation }: { operation: Record<string, unknown> }) => {
+      h.operations.set(`${operation['sessionId']}:${operation['requestId']}`, { ...operation });
+    }),
+    listMountOperations: vi.fn(async ({ sessionId }: { sessionId: string }) =>
+      [...h.operations.values()].filter((operation) => operation['sessionId'] === sessionId),
+    ),
+    listMountPathOwnership: vi.fn(async () => []),
+    listAllRetainedWorktreePaths: vi.fn(async () => []),
+    listUnsettledMountOperations: vi.fn(async () => []),
+    detachSessionMounts: vi.fn(async () => undefined),
+    deleteRetainedWorktreePath: vi.fn(async () => undefined),
+    markRetainedWorktreePathChecked: vi.fn(async () => undefined),
+    upsertMountPullRequestLink: h.upsertMountPullRequestLink,
   }),
-  listMountOperations: vi.fn(async ({ sessionId }: { sessionId: string }) =>
-    [...h.operations.values()].filter((operation) => operation['sessionId'] === sessionId),
-  ),
-  listMountPathOwnership: vi.fn(async () => []),
-  listAllRetainedWorktreePaths: vi.fn(async () => []),
-  listUnsettledMountOperations: vi.fn(async () => []),
-  detachSessionMounts: vi.fn(async () => undefined),
-  deleteRetainedWorktreePath: vi.fn(async () => undefined),
-  markRetainedWorktreePathChecked: vi.fn(async () => undefined),
-  deleteMountPullRequestLink: h.deleteMountPullRequestLink,
-}));
+);
 
 import { createMountCleanupSlice } from './index';
 import { cleanupMountDirectory, mountCleanupBlockers } from './cleanupPolicy';
@@ -132,7 +135,7 @@ const makeSlice = () => {
     const patch = typeof updater === 'function' ? updater(state) : updater;
     Object.assign(state, patch);
   });
-  const slice = createMountCleanupSlice(set as never, (() => state) as never);
+  const slice = createMountCleanupSlice({ set: set as never, get: (() => state) as never });
   return { state, slice };
 };
 
@@ -331,7 +334,7 @@ describe('cleaning the mounts of a session', () => {
     await slice.cleanupSessionMounts({ sessionId: SESSION_ID, reason: 'settings' });
 
     expect(h.deleteLocalBranch).not.toHaveBeenCalled();
-    expect(h.deleteMountPullRequestLink).not.toHaveBeenCalled();
+    expect(h.upsertMountPullRequestLink).not.toHaveBeenCalled();
     expect(h.rows.get(MOUNT_ID)).toBeDefined();
     expect(h.rows.get(MOUNT_ID)?.['branch']).toBe('ak/one');
   });

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   Agent,
@@ -34,12 +35,14 @@ const {
   updateOrchestrationOutcomeSpy: vi.fn(async () => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  repointWorkflowRunTemplate: repointWorkflowRunTemplateSpy,
-  listOpenQuestionsForSession: listOpenQuestionsSpy,
-  updateWorkflowRunOrchestrationStop: updateOrchestrationStopSpy,
-  updateWorkflowRunOrchestrationOutcome: updateOrchestrationOutcomeSpy,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    repointWorkflowRunTemplate: repointWorkflowRunTemplateSpy,
+    listOpenQuestionsForSession: listOpenQuestionsSpy,
+    updateWorkflowRunOrchestrationStop: updateOrchestrationStopSpy,
+    updateWorkflowRunOrchestrationOutcome: updateOrchestrationOutcomeSpy,
+  }),
+);
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 

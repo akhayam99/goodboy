@@ -48,8 +48,19 @@ const hoisted = vi.hoisted(() => {
       return undefined;
     }),
     invokeWorkflowNodeRoutingUpdate: vi.fn(async () => undefined),
+    worktreeChangedFiles: vi.fn(
+      async (params: { worktreePath: string; baseBranch?: string | null }) => {
+        void params;
+        return { paths: [] as string[], additions: 0, deletions: 0, numstat: '' };
+      },
+    ),
   };
 });
+
+vi.mock('../../../features/worktree/worktree', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../../features/worktree/worktree')>()),
+  worktreeChangedFiles: hoisted.worktreeChangedFiles,
+}));
 
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentInsertBatch: hoisted.invokeAgentInsertBatch,
@@ -348,6 +359,62 @@ const splitText = (n: number) =>
     JSON.stringify(Array.from({ length: n }, (_, i) => ({ area: `area-${i}`, query: `q-${i}` }))),
     '<</fan-out>>',
   ].join('\n');
+
+describe('the reviewer fan-out condition', () => {
+  const reviewerRun = (base: string | null, projectBase: string | null) => {
+    const reviewer = scoutAgent({ id: 'rev' as AgentId, kind: 'reviewer' });
+    const store = makeAdvanceStore([reviewer], true);
+    Object.assign(store.state, {
+      sessionWorktrees: { [SID]: ['/wt/ledger'] },
+      projects: [{ id: 'project-ledger', baseBranch: projectBase }],
+      sessionProjectMounts: {
+        [SID]: [
+          {
+            mountId: 'mount-ledger',
+            projectId: 'project-ledger',
+            worktreePath: '/wt/ledger',
+            baseBranch: base,
+            isAttached: true,
+          },
+        ],
+      },
+    });
+    return store;
+  };
+
+  it('measures the diff against the base branch of the mount', async () => {
+    const { get, set } = reviewerRun('develop', 'main');
+
+    await advanceScoutTree(set, get)(SID, 'rev' as AgentId, splitText(3));
+
+    expect(hoisted.worktreeChangedFiles).toHaveBeenCalledWith({
+      worktreePath: '/wt/ledger',
+      baseBranch: 'develop',
+    });
+  });
+
+  it('measures the diff against the project base when the mount has none', async () => {
+    const { get, set } = reviewerRun(null, 'develop');
+
+    await advanceScoutTree(set, get)(SID, 'rev' as AgentId, splitText(3));
+
+    expect(hoisted.worktreeChangedFiles).toHaveBeenCalledWith({
+      worktreePath: '/wt/ledger',
+      baseBranch: 'develop',
+    });
+  });
+
+  it('leaves the base to Rust when neither names one', async () => {
+    const { get, set } = reviewerRun(null, null);
+
+    await advanceScoutTree(set, get)(SID, 'rev' as AgentId, splitText(3));
+
+    expect(hoisted.worktreeChangedFiles).toHaveBeenCalledWith({
+      worktreePath: '/wt/ledger',
+      baseBranch: null,
+    });
+  });
+});
 
 describe('advanceScoutTree split decision', () => {
   it('fans out into sub-scouts when the domain is too large and fan-out is enabled', async () => {

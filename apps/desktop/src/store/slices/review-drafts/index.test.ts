@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   AgentId,
@@ -58,7 +59,7 @@ vi.mock('@goodboy/core', async (importOriginal) => ({
   addPullRequestReview: addPullRequestReviewSpy,
 }));
 
-vi.mock('../../../features/github/github', () => ({
+vi.mock('../../../features/integrations/github/github', () => ({
   ghPrDiff: ghPrDiffSpy,
   tauriGhRunner: { run: vi.fn(async () => ({ stdout: '', stderr: '', exitCode: 0 })) },
 }));
@@ -176,7 +177,7 @@ const buildHarness = (initial: Record<string, unknown>): Harness => {
     const patch = typeof p === 'function' ? p(state) : p;
     state = { ...state, ...patch };
   };
-  return { slice: createReviewDraftsSlice(set, get), getState: get };
+  return { slice: createReviewDraftsSlice({ set, get }), getState: get };
 };
 
 describe('review-drafts slice', () => {

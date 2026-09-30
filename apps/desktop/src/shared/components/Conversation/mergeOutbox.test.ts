@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { fixtureMessage, fixtureThread } from './testing/conversationFixtures';
 import { mergeOutbox, type OutboxEntry } from './mergeOutbox';

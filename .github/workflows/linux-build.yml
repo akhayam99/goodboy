@@ -18,6 +18,7 @@ on:
       - '.github/actions/**'
       - 'pnpm-lock.yaml'
       - 'apps/desktop/src-tauri/Cargo.lock'
+      - 'rust-toolchain.toml'
   workflow_dispatch:
 
 permissions:
@@ -53,7 +54,8 @@ jobs:
       - name: setup rust
         uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
         with:
-          toolchain: stable
+          toolchain: 1.98.1
+          components: rustfmt, clippy
 
       - name: install
         run: pnpm install --frozen-lockfile

@@ -6,7 +6,7 @@ import {
 import type { ResolveQueueItemWithThread, ResolveThread, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 
-export type ApprovedRange = Readonly<{
+type ApprovedRange = Readonly<{
   candidateId: string;
   baseSha: string;
   integratedSha: string;

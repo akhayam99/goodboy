@@ -46,7 +46,7 @@ type Span = Readonly<{ start: number; end: number }>;
 
 export type FlowEdgeKind = 'step' | 'skip' | 'back' | 'self';
 
-export type FlowEdgeRole = 'spine' | 'branch' | 'skip' | 'back' | 'self';
+type FlowEdgeRole = 'spine' | 'branch' | 'skip' | 'back' | 'self';
 
 const QUIET_PAINT = {
   line: 'stroke-muted-foreground/60',

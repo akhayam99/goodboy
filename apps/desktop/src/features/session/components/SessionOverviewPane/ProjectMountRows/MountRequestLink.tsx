@@ -3,7 +3,10 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
+import {
+  PullRequestChip,
+  pullRequestMeta,
+} from '../../../../integrations/github/components/PullRequestChip';
 import { REVIEW_TARGET_REASON_COPY } from '../../../../review/reviewTargetCopy';
 
 type Props = {

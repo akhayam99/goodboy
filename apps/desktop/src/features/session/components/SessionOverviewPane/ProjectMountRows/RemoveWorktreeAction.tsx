@@ -3,7 +3,7 @@ import { AnchoredPopover, InlineConfirm, cn, useDropdown, type ConfirmRole } fro
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
-import { useToast } from '../../../../../app/components/Toast';
+import { useToast } from '../../../../../shared/components/Toast';
 import { worktreeDetachAssessment } from '../../../../worktree/worktree';
 import {
   mountCleanupBlockers,
@@ -18,6 +18,7 @@ import {
   isMountRisky,
   measure,
 } from './detachPlan';
+import { projectById } from '../../../../../store/slices/projects/projectIndex';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -52,8 +53,7 @@ const BLOCKER_CODES = [
 export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }: Props) => {
   const removeMountWorktree = useAppStore((state) => state.removeMountWorktree);
   const projectBaseBranch = useAppStore(
-    (state) =>
-      state.projects.find((candidate) => candidate.id === row.projectId)?.baseBranch ?? null,
+    (state) => projectById(state.projects, row.projectId)?.baseBranch ?? null,
   );
   const reportError = useAppStore((state) => state.reportError);
   const { showToast } = useToast();

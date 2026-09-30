@@ -1,5 +1,7 @@
 import type {
   IsoDateTime,
+  WorkflowId,
+  WorkflowRunId,
   MountId,
   Session,
   SessionId,
@@ -411,5 +413,71 @@ describe('session auto_run', () => {
 
     await updateSessionAutoRun(db, autoRunSessionId, false, NOW);
     await expect(getSessionById(db, autoRunSessionId)).resolves.toMatchObject({ autoRun: false });
+  });
+});
+
+describe('insertSession', () => {
+  let db: Database;
+
+  const newSessionId = 'session-new' as SessionId;
+
+  const withRun = (workflowId: string): Session => ({
+    id: newSessionId,
+    workspaceId,
+    goal: 'Close the Harborline ledger',
+    state: { kind: 'draft' },
+    contextSlots: [],
+    providerPreference: PROVIDER_PREFERENCE,
+    permissionMode: 'bypassPermissions',
+    workflowRuns: [
+      {
+        id: 'run-new' as WorkflowRunId,
+        workflowId: workflowId as WorkflowId,
+        ordinal: 0,
+        currentStep: 0,
+        autoRun: false,
+        triggerMode: 'immediate',
+        executionMode: 'static',
+        createdAt: NOW,
+      },
+    ],
+    autoRun: false,
+    titleUserEdited: false,
+    createdAt: NOW,
+    updatedAt: NOW,
+  });
+
+  beforeEach(async () => {
+    db = await makeMigratedTestDatabase();
+    await db.execute(
+      'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, 1, 1)',
+      [workspaceId, 'Workspace', '/tmp/workspace'],
+    );
+    await db.execute(
+      "INSERT INTO workflows (id, workspace_id, name, created_at, updated_at) VALUES ('workflow-close', ?, 'Close', 1, 1)",
+      [workspaceId],
+    );
+  });
+
+  it('writes the session and its workflow run together', async () => {
+    await insertSession(db, withRun('workflow-close'));
+
+    await expect(
+      countRows({ db, table: 'sessions', column: 'id', value: newSessionId }),
+    ).resolves.toBe(1);
+    await expect(
+      countRows({ db, table: 'session_workflows', column: 'session_id', value: newSessionId }),
+    ).resolves.toBe(1);
+  });
+
+  it('leaves no session row when a workflow run row is rejected', async () => {
+    await expect(insertSession(db, withRun('workflow-missing'))).rejects.toThrow();
+
+    await expect(
+      countRows({ db, table: 'sessions', column: 'id', value: newSessionId }),
+    ).resolves.toBe(0);
+    await expect(
+      countRows({ db, table: 'session_workflows', column: 'session_id', value: newSessionId }),
+    ).resolves.toBe(0);
   });
 });

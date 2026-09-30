@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MountId, ProjectId, SessionId, SessionMountView } from '@goodboy/types';
 
@@ -5,6 +6,7 @@ const { state, links } = vi.hoisted(() => ({
   links: [] as Array<Record<string, unknown>>,
   state: {
     sessions: [{ id: 'session-1', workspaceId: 'ws-1', goal: 'split the pull request' }],
+    projects: [] as Array<{ id: string; baseBranch: string | null }>,
     terminalTabs: {} as Record<string, ReadonlyArray<unknown>>,
     sessionActiveMount: {} as Record<string, string | null>,
     sessionMounts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
@@ -52,15 +54,21 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
 vi.mock('../../workspace/window', () => ({ isMainWindow: () => false }));
 vi.mock('../../../store/store', () => ({ useAppStore: { getState: () => state } }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
-vi.mock('@goodboy/db', () => ({
-  listMountPullRequestLinks: vi.fn(async () => links),
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    listMountPullRequestLinks: vi.fn(async () => links),
+  }),
+);
 vi.mock('../../worktree/worktree', () => ({
-  worktreeStatus: vi.fn(async () => ({ branch: 'goodboy/one', head: 'abc123', inProgress: null })),
+  worktreeStatus: vi.fn(async (params: { worktreePath: string; baseBranch?: string | null }) => {
+    void params;
+    return { branch: 'goodboy/one', head: 'abc123', inProgress: null };
+  }),
   worktreeWriterStatus: vi.fn(async () => ({ isGranted: false, hasExited: true })),
   worktreeDirectorySize: vi.fn(async () => ({ sizeBytes: 4096, isPartial: false })),
 }));
 
+import { worktreeStatus } from '../../worktree/worktree';
 import { executeMountRequest, mountResult } from './index';
 import {
   clearMountContinuations,
@@ -108,6 +116,8 @@ beforeEach(() => {
   state.sessionMounts = { 'session-1': state.views };
   links.length = 0;
   state.sessionActiveMount = {};
+  state.projects = [{ id: 'p-api', baseBranch: null }];
+  vi.mocked(worktreeStatus).mockClear();
   clearMountContinuations();
   for (const call of Object.values(state)) {
     if (typeof call === 'function' && 'mockClear' in call) {
@@ -268,6 +278,41 @@ describe('executeMountRequest', () => {
       safety: { canRemove: true, blockers: [] },
       size: { bytes: 4096, isPartial: false },
     });
+  });
+
+  it('reads the inspect status against the base branch of the mount', async () => {
+    await executeMountRequest(request({ verb: 'inspect' }));
+
+    expect(worktreeStatus).toHaveBeenCalledWith({
+      worktreePath: '/wt/mount-1',
+      baseBranch: 'main',
+    });
+  });
+
+  it('reads the inspect status against the project base when the mount has none', async () => {
+    state.views = [
+      { ...state.views[0], baseBranch: null },
+      state.views[1] as Record<string, unknown>,
+    ];
+    state.projects = [{ id: 'p-api', baseBranch: 'develop' }];
+
+    await executeMountRequest(request({ verb: 'inspect' }));
+
+    expect(worktreeStatus).toHaveBeenCalledWith({
+      worktreePath: '/wt/mount-1',
+      baseBranch: 'develop',
+    });
+  });
+
+  it('leaves the base to Rust when neither the mount nor the project names one', async () => {
+    state.views = [
+      { ...state.views[0], baseBranch: null },
+      state.views[1] as Record<string, unknown>,
+    ];
+
+    await executeMountRequest(request({ verb: 'inspect' }));
+
+    expect(worktreeStatus).toHaveBeenCalledWith({ worktreePath: '/wt/mount-1', baseBranch: null });
   });
 
   it('returns the pull request a retry already created instead of opening a second one', async () => {

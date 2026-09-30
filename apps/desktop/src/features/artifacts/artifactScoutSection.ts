@@ -5,12 +5,12 @@ import {
   type WireframeScoutSectionEntry,
 } from '../wireframes/wireframeScoutReports';
 
-export type ArtifactScoutSectionKind = 'wireframe' | 'report';
+type ArtifactScoutSectionKind = 'wireframe' | 'report';
 
 export const REPORT_SCOUT_NOTHING_USABLE =
   'scouting produced nothing usable, so this report is written from the evidence below alone.';
 
-export const REPORT_SCOUT_HEARSAY_RULE =
+const REPORT_SCOUT_HEARSAY_RULE =
   'a claim whose only support is a missing path is hearsay: never a change, never a number, at most an open question. open a cited file before you report what changed in it.';
 
 type OpeningParams = Readonly<{

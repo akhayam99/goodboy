@@ -1,4 +1,12 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode, type RefCallback } from 'react';
+import {
+  memo,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefCallback,
+} from 'react';
 import { Button, EmptyState, cn, type DiffLayoutMode } from '@goodboy/ui';
 import type { DiffCommentAnchor, DiffCommentSide, FileDiff } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -10,7 +18,7 @@ import { DiffRows, type LineSelection, type LineSpot } from './DiffRows';
 import { FileHeader } from './FileHeader';
 import type { DiffComments, DiffFileActions, DiffThread, DiffViewed } from './types';
 
-export const INITIAL_VISIBLE_LINES = 1000;
+const INITIAL_VISIBLE_LINES = 1000;
 const VISIBLE_LINES_STEP = 2000;
 
 type Props = {
@@ -58,7 +66,7 @@ const lineText = (file: FileDiff, anchor: DiffCommentAnchor): string => {
   return out.join('\n');
 };
 
-export const DiffFile = ({
+const DiffFileView = ({
   file,
   layout,
   wrap,
@@ -332,3 +340,5 @@ export const DiffFile = ({
     </section>
   );
 };
+
+export const DiffFile = memo(DiffFileView);

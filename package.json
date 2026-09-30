@@ -20,6 +20,7 @@
     "lint": "turbo run lint && pnpm run check:tauri-commands && pnpm run check:doc-refs",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test --continue",
+    "test:perf": "turbo run test:perf --continue",
     "tauri:dev": "pnpm --filter @goodboy/desktop tauri:dev",
     "tauri:build": "pnpm --filter @goodboy/desktop tauri:build",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
@@ -32,7 +33,7 @@
     "changelog:shots": "node scripts/changelog-shots.mjs",
     "features:shots": "node scripts/feature-shots.mjs",
     "features:snapshot": "node scripts/snapshot-features.mjs",
-    "test:scripts": "node --test scripts/snapshot-features.test.mjs scripts/check-feature-anchors.test.mjs",
+    "test:scripts": "node --test scripts/snapshot-features.test.mjs scripts/check-feature-anchors.test.mjs scripts/ci-changes.test.mjs scripts/ci-gate.test.mjs scripts/check-test-shards.test.mjs",
     "codemod:type-roles": "node scripts/codemods/type-roles.mjs",
     "prepare": "lefthook install"
   },

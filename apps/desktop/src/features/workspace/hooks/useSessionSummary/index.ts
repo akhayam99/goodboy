@@ -19,10 +19,11 @@ import {
 } from '../../../../store';
 import { describeSessionStage } from '../../../session/session-stage';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { workflowProgress, type WorkflowProgress } from './workflowProgress';
 import { summaryMeta, type SummaryActionable, type SummaryMetaItem } from './summaryMeta';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 export type SessionSummary = {
   readonly stage: SessionStage;
@@ -46,6 +47,7 @@ type Params = {
 };
 
 export const useSessionSummary = ({ session }: Params): SessionSummary => {
+  const now = useNow(30_000);
   const id = session.id as SessionId;
   const stageInfo = useSessionStageInfo(session);
   const phaseRuns = useAppStore(
@@ -101,6 +103,6 @@ export const useSessionSummary = ({ session }: Params): SessionSummary => {
     agentCount,
     isAutorun,
     cost,
-    age: formatRelativeAge({ fromIso: session.updatedAt }),
+    age: formatAge({ from: session.updatedAt, now }),
   };
 };

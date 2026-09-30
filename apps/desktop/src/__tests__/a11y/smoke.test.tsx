@@ -28,6 +28,7 @@ vi.mock('../../store', () => {
     sessionPlans: {},
     workspaceSummary: null,
     providerSpendBreakdown: [],
+    providerBudgetStatus: {},
     updaterStatus: 'idle',
     updateVersion: null,
     updateFailure: null,
@@ -110,7 +111,7 @@ import { BootSplash } from '../../app/components/BootSplash';
 import { AppScopePanel } from '../../features/settings/components/SettingsStudio/AppScopePanel';
 import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { QuickActionsPopover, type QuickActionItem } from '../../features/quick-actions';
-import { ToastProvider } from '../../app/components/Toast';
+import { ToastProvider } from '../../shared/components/Toast';
 
 afterEach(() => {
   cleanup();

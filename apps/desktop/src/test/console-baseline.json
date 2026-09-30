@@ -1,0 +1,88 @@
+{
+  "entries": [
+    {
+      "file": "src/features/chat/components/WriteDestinationControl/useWriteDestination/index.test.tsx",
+      "message": "The current testing environment is not configured to support act(...)"
+    },
+    {
+      "file": "src/features/chat/turn.test.ts",
+      "message": "[cursor-adapter] dropped a stream-json line that is not json"
+    },
+    {
+      "file": "src/features/providers/components/ProviderStudio/DefaultsPanel/RoleModelRow/index.test.tsx",
+      "message": "[role-models] invalid planner model auto for anthropic; using the anthropic default model"
+    },
+    {
+      "file": "src/features/providers/components/ProviderStudio/DefaultsPanel/RoleModelRow/index.test.tsx",
+      "message": "[role-models] invalid planner model kimi-k#-low for anthropic; using the anthropic default model"
+    },
+    {
+      "file": "src/features/session/agent-kind.test.ts",
+      "message": "[role-models] invalid reviewer model claude-opus-# for anthropic; using the anthropic default model"
+    },
+    {
+      "file": "src/features/session/agent-kind.test.ts",
+      "message": "[roles] unknown role \"unknown\"; using custom"
+    },
+    {
+      "file": "src/features/session/components/AgentTree/AgentsSection.test.tsx",
+      "message": "Each child in a list should have a unique \"key\" prop. | Check the render method of `MetaRow`. It was passed a child from WorkflowRow. See https://react.dev/link/warning-keys for more information."
+    },
+    {
+      "file": "src/features/workflows/components/WorkflowBuilderView/index.test.tsx",
+      "message": "[roles] unknown role \"engineer\"; using custom"
+    },
+    {
+      "file": "src/features/workflows/engine/index.test.ts",
+      "message": "[roles] unknown role \"emperor\"; using custom"
+    },
+    {
+      "file": "src/features/workspace-chat/runChatTurn.test.ts",
+      "message": "[claude-adapter] dropped a stream-json line that is not json"
+    },
+    {
+      "file": "src/features/workspace/components/WorkspaceIdentityRow/index.test.tsx",
+      "message": "The current testing environment is not configured to support act(...)"
+    },
+    {
+      "file": "src/store/slices/artifacts/spawnReportAgent.test.ts",
+      "message": "[artifact-provenance] report agent-#: database is locked"
+    },
+    {
+      "file": "src/store/slices/artifacts/spawnWireframeAgent.test.ts",
+      "message": "[artifact-provenance] wireframe agent-#: database is locked"
+    },
+    {
+      "file": "src/store/slices/session-events/index.test.ts",
+      "message": "[session-events] persist pr_closed failed Error: disk full"
+    },
+    {
+      "file": "src/store/slices/workflows/activateWorkflowAgent.test.ts",
+      "message": "[artifact-provenance] report agent-step: database is locked"
+    },
+    {
+      "file": "src/store/slices/workflows/attachWorkflowToSession.navigation.test.ts",
+      "message": "[roles] unknown role \"engineer\"; using custom"
+    },
+    {
+      "file": "src/store/slices/workflows/generateWorkflowRunTitle.test.ts",
+      "message": "[workflow] run title generation failed: provider unavailable"
+    },
+    {
+      "file": "src/store/slices/workflows/generateWorkflowTitle.test.ts",
+      "message": "[workflow] title generation failed: provider unavailable"
+    },
+    {
+      "file": "src/store/slices/workflows/preSpawnWorkflowAgents.test.ts",
+      "message": "[role-models] invalid scout model gpt-#.#-sol for cursor; using the anthropic default model"
+    },
+    {
+      "file": "src/store/slices/workflows/suggestWorkflowTitle.test.ts",
+      "message": "[workflow] title suggestion failed: provider unavailable"
+    },
+    {
+      "file": "src/store/slices/turn/turnHelpers.artifact-capture.test.ts",
+      "message": "[artifact-capture] artifact refresh failed for session session-#: artifact list unavailable"
+    }
+  ]
+}

@@ -9,6 +9,7 @@ use thiserror::Error;
 use crate::live_child::{
     drain_lossy, drain_tail_lossy, wait_and_remove, LiveChild, LiveChildRegistry, MAX_STDERR_BYTES,
 };
+use crate::providers::cli_args::{side_job_args, ArgsError, Job, SideJob};
 
 #[derive(Debug, Error)]
 pub enum SummarizeError {
@@ -16,6 +17,17 @@ pub enum SummarizeError {
     Io(#[from] std::io::Error),
     #[error("unknown provider: {0}")]
     UnknownProvider(String),
+    #[error("argument policy violated: {0}")]
+    Policy(String),
+}
+
+impl From<ArgsError> for SummarizeError {
+    fn from(error: ArgsError) -> Self {
+        match error {
+            ArgsError::UnknownProvider(provider) => SummarizeError::UnknownProvider(provider),
+            ArgsError::Policy(message) => SummarizeError::Policy(message),
+        }
+    }
 }
 
 crate::util::impl_error_serialize!(SummarizeError);
@@ -25,6 +37,7 @@ impl SummarizeError {
         match self {
             SummarizeError::Io(_) => "io",
             SummarizeError::UnknownProvider(_) => "unknown_provider",
+            SummarizeError::Policy(_) => "policy",
         }
     }
 }
@@ -88,7 +101,7 @@ pub fn summarize_cancel(
     Ok(())
 }
 
-fn run_summarize(
+pub(crate) fn run_summarize(
     registry: &ChildRegistry,
     args: SummarizeArgs,
 ) -> Result<SummarizeResult, SummarizeError> {
@@ -142,82 +155,17 @@ fn kill_run(registry: &ChildRegistry, run_id: &str) {
 }
 
 fn build_cli_args(args: &SummarizeArgs) -> Result<Vec<String>, SummarizeError> {
-    match args.provider_id.as_str() {
-        "anthropic" => {
-            let mut cli_args = vec![
-                "-p".to_string(),
-                args.user_message.clone(),
-                "--model".to_string(),
-                args.model.clone(),
-                "--system-prompt".to_string(),
-                args.system_prompt.clone(),
-                "--setting-sources".to_string(),
-                crate::aux_spawn::CLAUDE_SETTING_SOURCES.to_string(),
-                "--output-format".to_string(),
-                "json".to_string(),
-                "--no-session-persistence".to_string(),
-                "--tools".to_string(),
-                String::new(),
-            ];
-            crate::aux_spawn::push_claude_mcp_deny(&mut cli_args);
-            crate::aux_spawn::push_effort_args("anthropic", args.effort.as_deref(), &mut cli_args);
-            Ok(cli_args)
-        }
-        "cursor" => Ok(vec![
-            "-p".to_string(),
-            format!("{}\n\n{}", args.system_prompt, args.user_message),
-            "--model".to_string(),
-            args.model.clone(),
-            "--output-format".to_string(),
-            "stream-json".to_string(),
-            "--force".to_string(),
-        ]),
-        "codex" => {
-            let mut cli_args = vec![
-                "exec".to_string(),
-                "--json".to_string(),
-                "-m".to_string(),
-                args.model.clone(),
-                "-s".to_string(),
-                "read-only".to_string(),
-                "--skip-git-repo-check".to_string(),
-            ];
-            crate::aux_spawn::push_effort_args("codex", args.effort.as_deref(), &mut cli_args);
-            cli_args.push(format!("{}\n\n{}", args.system_prompt, args.user_message));
-            Ok(cli_args)
-        }
-        "gemini" => Ok(vec![
-            "-p".to_string(),
-            format!("{}\n\n{}", args.system_prompt, args.user_message),
-            "--model".to_string(),
-            args.model.clone(),
-            "--sandbox".to_string(),
-        ]),
-        "opencode" | "openrouter" | "moonshot" => {
-            let mut cli_args = vec![
-                "run".to_string(),
-                "--format".to_string(),
-                "json".to_string(),
-                "-m".to_string(),
-                args.model.clone(),
-            ];
-            if let Some(working_dir) = args.working_dir.as_deref() {
-                cli_args.push("--dir".to_string());
-                cli_args.push(working_dir.to_string());
-            }
-            crate::aux_spawn::push_effort_args(
-                &args.provider_id,
-                args.effort.as_deref(),
-                &mut cli_args,
-            );
-            cli_args.push("--agent".to_string());
-            cli_args.push("plan".to_string());
-            cli_args.push("--".to_string());
-            cli_args.push(format!("{}\n\n{}", args.system_prompt, args.user_message));
-            Ok(cli_args)
-        }
-        other => Err(SummarizeError::UnknownProvider(other.to_string())),
-    }
+    side_job_args(&SideJob {
+        job: Job::Summarizer,
+        provider_id: &args.provider_id,
+        model: &args.model,
+        system_prompt: &args.system_prompt,
+        user_message: &args.user_message,
+        working_dir: args.working_dir.as_deref(),
+        tools_disabled: true,
+        effort: args.effort.as_deref(),
+    })
+    .map_err(SummarizeError::from)
 }
 
 #[cfg(test)]
@@ -313,6 +261,14 @@ mod tests {
                 "you summarize\n\nsummarize this",
             ]
         );
+    }
+
+    #[test]
+    fn cursor_args_never_carry_force() {
+        let cli = build_cli_args(&make_args("cursor")).expect("cursor args");
+        assert!(!cli.iter().any(|a| a == "--force"), "{cli:?}");
+        let idx = cli.iter().position(|a| a == "--model").expect("--model");
+        assert_eq!(cli[idx + 1], "cheap-model");
     }
 
     #[test]

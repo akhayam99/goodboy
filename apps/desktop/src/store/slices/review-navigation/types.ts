@@ -8,7 +8,7 @@ export type { GetFn, SetFn } from '../../slice-types';
 export type ReviewTargetReason =
   'no_session' | 'no_mount' | 'no_pull_request' | 'no_thread' | 'thread_closed' | 'superseded';
 
-export type ReviewTargetStatus = 'pending' | 'ready' | 'unavailable' | 'failed';
+type ReviewTargetStatus = 'pending' | 'ready' | 'unavailable' | 'failed';
 
 export type ReviewTarget = {
   readonly requestId: string;

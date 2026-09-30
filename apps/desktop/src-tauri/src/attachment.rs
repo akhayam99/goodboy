@@ -37,11 +37,21 @@ pub enum AttachmentError {
     Poisoned,
 }
 
-impl serde::Serialize for AttachmentError {
-    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&self.to_string())
+impl AttachmentError {
+    fn kind(&self) -> &'static str {
+        match self {
+            AttachmentError::Io(_) => "io",
+            AttachmentError::Decode(_) => "decode",
+            AttachmentError::TooLarge(_) => "too_large",
+            AttachmentError::InvalidPath => "invalid_path",
+            AttachmentError::UnsupportedMime(_) => "unsupported_mime",
+            AttachmentError::Sqlite(_) => "sqlite",
+            AttachmentError::Poisoned => "poisoned",
+        }
     }
 }
+
+crate::util::impl_error_serialize!(AttachmentError);
 
 /// Reduces an arbitrary file name to a flat, separator-free token. Drops any
 /// directory component and replaces anything outside `[A-Za-z0-9._-]` — both a

@@ -6,7 +6,7 @@ export type ArtifactCtaBlockReason = 'no-evidence' | 'run-active' | 'session-bus
 export type ArtifactCtaState =
   Readonly<{ kind: 'ready' }> | Readonly<{ kind: 'blocked'; reason: ArtifactCtaBlockReason }>;
 
-export type ArtifactEvidenceParams = Readonly<{
+type ArtifactEvidenceParams = Readonly<{
   agents: ReadonlyArray<Agent>;
 }>;
 
@@ -24,7 +24,7 @@ export const ARTIFACT_CTA_BLOCK_COPY: Record<ArtifactCtaBlockReason, string> = {
   'session-busy': 'The session is busy. Wait for it to settle',
 };
 
-export const hasArtifactEvidence = ({ agents }: ArtifactEvidenceParams): boolean =>
+const hasArtifactEvidence = ({ agents }: ArtifactEvidenceParams): boolean =>
   agents.some(
     (agent) =>
       agent.status === 'completed' ||

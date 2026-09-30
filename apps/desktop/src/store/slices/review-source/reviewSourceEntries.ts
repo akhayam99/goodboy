@@ -2,12 +2,13 @@ import type { MountId, ProjectId, PullRequestState, SessionId } from '@goodboy/t
 import type { BitbucketPullRequest } from '../../../features/integrations/bitbucket/client';
 import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
 import { isOpenNote } from '../../../features/resolve/notes/noteThread';
-import type { AppState, MountBitbucketPrState } from '../../types';
+import type { AppState } from '../../types';
+import type { MountBitbucketPrState } from '../bitbucket-pr/state';
 import { sessionMountTargets } from '../project-mounts/mountRequests';
 import { openReviewThreadIds } from '../resolve/openReviewThreadIds';
 import { LOCAL_SOURCE_KEY, type ReviewSourceEntry } from './types';
 
-export const LOCAL_SOURCE_LABEL = 'Notes on this machine';
+const LOCAL_SOURCE_LABEL = 'Notes on this machine';
 
 type State = Pick<
   AppState,
@@ -39,7 +40,7 @@ const OPEN_PR_STATES: ReadonlySet<PullRequestState['state']> = new Set([
 
 const ENDED_MR_STATES: ReadonlySet<string> = new Set(['merged', 'closed']);
 
-export const githubSourceKey = ({
+const githubSourceKey = ({
   mountId,
   number,
 }: {
@@ -47,7 +48,7 @@ export const githubSourceKey = ({
   readonly number: number;
 }): string => `github:${mountId ?? 'session'}:${number}`;
 
-export const gitlabSourceKey = ({
+const gitlabSourceKey = ({
   mountId,
   number,
 }: {
@@ -55,7 +56,7 @@ export const gitlabSourceKey = ({
   readonly number: number;
 }): string => `gitlab:${mountId ?? 'session'}:${number}`;
 
-export const bitbucketSourceKey = ({
+const bitbucketSourceKey = ({
   mountId,
   number,
 }: {

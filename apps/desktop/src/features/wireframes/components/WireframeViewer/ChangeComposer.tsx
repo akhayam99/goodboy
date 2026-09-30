@@ -3,6 +3,7 @@ import { Crosshair, X } from 'lucide-react';
 import { Button, Chip, KbdPill, SegmentedTabs, Textarea } from '@goodboy/ui';
 import type { WireframeChangeScope, WireframePickedNode } from '../../buildWireframeChangeRequest';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { formatCombo } from '../../../../shared/keyboard/registry';
 
 const SCOPE_OPTIONS = [
   { value: 'screen', label: 'This screen' },
@@ -115,7 +116,7 @@ export const ChangeComposer = ({
             data-testid="wireframe-change-send"
           >
             Ask
-            <KbdPill>⌘↵</KbdPill>
+            <KbdPill>{formatCombo('cmd+Enter')}</KbdPill>
           </Button>
         </span>
       </div>

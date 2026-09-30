@@ -30,7 +30,7 @@ vi.mock('../useIsBranchlessSession', () => ({
   useIsBranchlessSession: () => false,
 }));
 
-import { resetWorktreeStatusCache } from '../useWorktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../../../store/slices/worktreeStatuses/cache';
 import { useSessionBranchSync } from './index';
 
 const session = {

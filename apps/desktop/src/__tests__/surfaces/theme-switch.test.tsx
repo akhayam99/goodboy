@@ -15,7 +15,7 @@ import {
   type StoryStore,
 } from '../../store/storyHarness';
 import { seedSessionWithMounts } from '../helpers/seedSessionWithMounts';
-import { ToastProvider } from '../../app/components/Toast';
+import { ToastProvider } from '../../shared/components/Toast';
 import { KeepAliveWorkSurface } from '../../app/components/KeepAliveWorkSurface';
 import { ThemeToggle } from '../../app/components/AppTopBar/ThemeToggle';
 import { WORKSPACE_ID, seedBoardScene } from '../../app/components/MockScene/scenes/BoardScene';

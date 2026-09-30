@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { isTypingTarget } from '../../keyboard/isTypingTarget';
 
 type Params = {
   readonly keys: ReadonlyArray<string>;
@@ -7,22 +8,6 @@ type Params = {
   readonly onActivate: (key: string) => void;
   readonly onDismiss?: (key: string) => void;
   readonly extraKeys?: Readonly<Record<string, (selectedKey: string | null) => void>>;
-};
-
-type TypingTargetParams = {
-  readonly target: EventTarget | null;
-};
-
-const isTypingTarget = ({ target }: TypingTargetParams): boolean => {
-  if (!(target instanceof HTMLElement)) {
-    return false;
-  }
-  return (
-    target.isContentEditable ||
-    target.tagName === 'INPUT' ||
-    target.tagName === 'TEXTAREA' ||
-    target.tagName === 'SELECT'
-  );
 };
 
 const NEXT_KEYS: ReadonlySet<string> = new Set(['j', 'ArrowDown']);
@@ -44,7 +29,7 @@ export const useListKeys = ({
       if (event.metaKey || event.ctrlKey || event.altKey || event.defaultPrevented) {
         return;
       }
-      if (isTypingTarget({ target: event.target })) {
+      if (isTypingTarget(event.target)) {
         return;
       }
       const current = latest.current;

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import type { ProjectId } from '@goodboy/types';
 import { commitBaseBranch } from './commitBaseBranch';

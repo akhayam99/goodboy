@@ -16,7 +16,10 @@ import { useLaunchMount } from '../../../inbox/useLaunchMount';
 import { resolveSpawnRouting } from '../../spawn-routing';
 import { AGENT_KIND_META, visibleAgentKinds, type AgentKind } from '../../agent-kind';
 import { AgentStartFields, type AgentStartRouting } from '../AgentStartFields';
-import { WorkflowBuilderView, type BuilderKickoff } from '../WorkflowBuilderView';
+import {
+  WorkflowBuilderView,
+  type BuilderKickoff,
+} from '../../../workflows/components/WorkflowBuilderView';
 import { KICKOFF_GOAL_PLACEHOLDER } from './WorkflowStart';
 import { StartFooter } from './StartFooter';
 import { useDraftStart } from './useDraftStart';

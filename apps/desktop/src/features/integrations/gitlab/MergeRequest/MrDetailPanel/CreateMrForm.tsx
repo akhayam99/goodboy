@@ -15,13 +15,14 @@ import { AlertTriangle, ArrowRight, PenLine } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { appendOperatorNotes } from '../../../../session/utils/appendOperatorNotes';
 import { AgentSpawnConfig } from '../../../../session/components/AgentSpawnConfig';
-import type { AgentSpawnConfigValue } from '../../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
-import { taskModelAgentSpawnConfig } from '../../../../session/components/AgentSpawnConfig/taskModelAgentSpawnConfig';
+import type { AgentSpawnConfigValue } from '../../../../session/agentSpawnConfigValue';
+import { taskModelAgentSpawnConfig } from '../../../../session/taskModelAgentSpawnConfig';
 import { useAutoLimitContext } from '../../../../providers/hooks/useAutoLimitContext';
 import { useAppStore } from '../../../../../store';
-import { useToast } from '../../../../../app/components/Toast';
+import { useToast } from '../../../../../shared/components/Toast';
 import { useAgentStartedToast } from '../../../../../shared/hooks/useAgentStartedToast';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 
 type CreateMode = 'manual' | 'agent';
 
@@ -33,7 +34,7 @@ type Props = {
 };
 
 export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
-  const session = useAppStore((s) => s.sessions.find((x) => x.id === sessionId) ?? null);
+  const session = useAppStore((s) => sessionById(s.sessions, sessionId) ?? null);
   const workspaceOverrides = useAppStore((s) =>
     session == null ? null : (s.workspaceOverrides?.[session.workspaceId] ?? null),
   );

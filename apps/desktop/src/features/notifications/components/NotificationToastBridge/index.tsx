@@ -3,13 +3,14 @@ import type { Notification, NotificationAction } from '@goodboy/db';
 import { formatError, inlineMarkdownText } from '@goodboy/ui';
 import type { Session, Workspace } from '@goodboy/types';
 import { agentPlace, sessionPlace, useAppStore } from '../../../../store';
-import { useToast, type ToastAction } from '../../../../app/components/Toast';
+import { useToast, type ToastAction } from '../../../../shared/components/Toast';
 import type { ImpactScope } from '../../../impact/lib';
 import { openImpactStudio } from '../../../impact/openImpactStudio';
 import { CLI_LABEL } from '../../../providers/cliLabel';
 import { openProviderCliUpdate } from '../../../providers/openProviderCliUpdate';
 import { openStorage } from '../../../storage/openStorage';
 import { openAgentRevealEvent } from '../../../session/components/AgentDetailPane/agentOpenTab';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 export const pickFreshFailures = (
   notifications: ReadonlyArray<Notification>,
@@ -43,7 +44,7 @@ export const notificationContext = (
   if (ws) {
     parts.push(ws.name);
   }
-  const session = n.sessionId ? sessions.find((s) => s.id === n.sessionId) : undefined;
+  const session = n.sessionId ? sessionById(sessions, n.sessionId) : undefined;
   if (session) {
     parts.push(inlineMarkdownText({ text: session.goal }).trim() || 'untitled session');
   }

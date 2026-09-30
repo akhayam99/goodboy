@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createStore } from 'zustand';
 import type { IsoDateTime, OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
@@ -14,10 +15,12 @@ const {
   restoreOpenQuestion: vi.fn(async () => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  markOpenQuestionDismissed,
-  restoreOpenQuestion,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    markOpenQuestionDismissed,
+    restoreOpenQuestion,
+  }),
+);
 vi.mock('@goodboy/core', () => ({
   addQuestionsToSlot,
   removeQuestionsFromSlot,

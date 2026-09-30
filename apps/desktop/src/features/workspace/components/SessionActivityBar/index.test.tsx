@@ -4,9 +4,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { Session, SessionId, SessionStageInfo, WorkspaceId } from '@goodboy/types';
 
-const { state, viewPrefs, stageInfo, cost } = vi.hoisted(() => ({
+const { state, viewPrefs, stageInfo, stageInfoReads, cost, store } = vi.hoisted(() => ({
   cost: { current: 0 },
+  stageInfoReads: { current: 0 },
+  store: {
+    version: 0,
+    listeners: new Set<() => void>(),
+  },
   state: {
+    sessionGroupExpanded: {} as Record<string, boolean>,
+    toggleSessionGroup: undefined as unknown as (params: { readonly key: string }) => void,
     sessionGithub: {} as Record<string, unknown>,
     sessionTelemetry: {} as Record<string, ReadonlyArray<unknown>>,
     sessionExternalTasks: {} as Record<string, unknown>,
@@ -47,17 +54,42 @@ vi.mock('../../../session/hooks/useSessionArchive', () => ({
   }),
 }));
 
-vi.mock('../../../../store', () => ({
-  EMPTY_ARRAY: [] as readonly never[],
-  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
-  useSessionCost: () => cost.current,
-  useNonResolverStandaloneAgents: () => [],
-  useSessionHasUnread: () => false,
-  useSessionStageInfo: () => stageInfo.current,
-  useSessionViewPrefs: () => viewPrefs.current,
-  useSortedGroupedSessions: (_workspaceId: unknown, sessions: ReadonlyArray<unknown>) =>
-    viewPrefs.current.group === 'stage' ? [{ key: 'done', sessions }] : [{ key: 'all', sessions }],
-}));
+vi.mock('../../../../store', async () => {
+  const { useSyncExternalStore } = await import('react');
+  const { toggleSessionGroup } =
+    await import('../../../../store/slices/session-view/toggleSessionGroup');
+  state.toggleSessionGroup = toggleSessionGroup((update) => {
+    const partial = typeof update === 'function' ? update(state as never) : update;
+    Object.assign(state, partial);
+    store.version += 1;
+    store.listeners.forEach((listener) => listener());
+  });
+  return {
+    EMPTY_ARRAY: [] as readonly never[],
+    useAppStore: <T,>(selector: (s: typeof state) => T) => {
+      useSyncExternalStore(
+        (listener) => {
+          store.listeners.add(listener);
+          return () => store.listeners.delete(listener);
+        },
+        () => store.version,
+      );
+      return selector(state);
+    },
+    useSessionCost: () => cost.current,
+    useNonResolverStandaloneAgents: () => [],
+    useSessionHasUnread: () => false,
+    useSessionStageInfo: () => {
+      stageInfoReads.current += 1;
+      return stageInfo.current;
+    },
+    useSessionViewPrefs: () => viewPrefs.current,
+    useSortedGroupedSessions: (_workspaceId: unknown, sessions: ReadonlyArray<unknown>) =>
+      viewPrefs.current.group === 'stage'
+        ? [{ key: 'done', sessions }]
+        : [{ key: 'all', sessions }],
+  };
+});
 
 vi.mock('./SessionViewMenu', () => ({
   SessionViewMenu: () => null,
@@ -71,7 +103,7 @@ vi.mock('../../../../features/providers/components/CostBadge', () => ({
   CostBadge: () => null,
 }));
 
-vi.mock('../../../../features/github/components/PullRequestChip', () => ({
+vi.mock('../../../integrations/github/components/PullRequestChip', () => ({
   pullRequestMeta: () => null,
 }));
 
@@ -130,6 +162,7 @@ function selectRow(
 }
 
 beforeEach(() => {
+  state.sessionGroupExpanded = {};
   state.bulkUnarchiveTask.mockClear();
   state.bulkArchiveTask.mockClear();
   state.bulkDeleteTask.mockClear();
@@ -590,5 +623,42 @@ describe('SessionActivityBar, row node', () => {
     ) as HTMLElement;
     expect(trailing.className).toContain('w-12');
     expect(trailing.firstElementChild?.className).toContain('group-hover/session-row:hidden');
+  });
+});
+
+describe('SessionActivityBar, row renders', () => {
+  const sessions = Array.from({ length: 12 }, (_, index) =>
+    makeSession(`a-${index}`, `session ${index}`),
+  );
+
+  const renderWith = ({ currentSessionId }: { readonly currentSessionId: SessionId | null }) => (
+    <SessionActivityBar
+      workspaceId={WS_ID}
+      sessions={sessions}
+      archivedSessions={[]}
+      currentSessionId={currentSessionId}
+      onSelectSession={onSelectSession}
+    />
+  );
+
+  const onSelectSession = vi.fn();
+
+  it('re-renders only the rows that gain or lose the current mark when the session changes', () => {
+    const view = render(renderWith({ currentSessionId: 'a-0' as SessionId }));
+    view.rerender(renderWith({ currentSessionId: 'a-0' as SessionId }));
+    stageInfoReads.current = 0;
+
+    view.rerender(renderWith({ currentSessionId: 'a-1' as SessionId }));
+
+    expect(stageInfoReads.current).toBe(2);
+  });
+
+  it('re-renders only the toggled row when one row joins the selection', () => {
+    render(renderWith({ currentSessionId: null }));
+    stageInfoReads.current = 0;
+
+    selectRow(3);
+
+    expect(stageInfoReads.current).toBe(1);
   });
 });

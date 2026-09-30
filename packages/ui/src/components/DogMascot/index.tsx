@@ -1,0 +1,26 @@
+import type { CSSProperties } from 'react';
+import mascot from '../../assets/mascot.png';
+import { cn } from '../../cn';
+
+type Props = {
+  size?: number;
+  className?: string;
+};
+
+export const DogMascot = ({ size = 16, className }: Props) => {
+  const style: CSSProperties = {
+    width: size,
+    height: size,
+    backgroundColor: 'currentColor',
+    maskImage: `url(${mascot})`,
+    maskRepeat: 'no-repeat',
+    maskPosition: 'center',
+    maskSize: 'contain',
+    WebkitMaskImage: `url(${mascot})`,
+    WebkitMaskRepeat: 'no-repeat',
+    WebkitMaskPosition: 'center',
+    WebkitMaskSize: 'contain',
+  };
+
+  return <span aria-hidden style={style} className={cn('inline-block shrink-0', className)} />;
+};

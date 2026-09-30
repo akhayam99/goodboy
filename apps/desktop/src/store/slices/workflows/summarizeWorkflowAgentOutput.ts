@@ -8,12 +8,13 @@ import {
   routeTaskModel,
   withFailureCooldown,
 } from '../../../features/providers/taskModelRouting';
-import { shortModel } from '../../../features/session/agent-row-format';
+import { modelLabel } from '../../../features/chat/utils/chat-constants';
 import { stepForAgent } from '../../../features/workflows/stepForAgent';
-import { summarizeAgentOutput, type SummarizeAgentOutputResult } from '../../summarizeAgentOutput';
+import { summarizeAgentOutput, type SummarizeAgentOutputResult } from './summarizeAgentOutput';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
+import { sessionById } from '../sessions/sessionIndex';
 
 type Params = {
   readonly set: SetFn;
@@ -40,7 +41,7 @@ type UnavailableParams = {
 };
 
 const modelLabelFor = (taskModel: TaskModelPreference): string =>
-  `${taskModel.providerId}/${shortModel(taskModel.model)}`;
+  `${taskModel.providerId}/${modelLabel(taskModel.model, taskModel.providerId)}`;
 
 const notifyModelUnavailable = ({
   get,
@@ -90,7 +91,7 @@ export const summarizeWorkflowAgentOutput = async ({
   agent,
   output,
 }: Params): Promise<string> => {
-  const session = get().sessions.find((candidate) => candidate.id === sessionId);
+  const session = sessionById(get().sessions, sessionId);
   if (session == null) {
     return fallbackStepOutputSummary({ output });
   }

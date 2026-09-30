@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { PrComment } from '@goodboy/types';
-import type { CommentThread } from '../../../github/comment-threads';
+import type { CommentThread } from '../../../integrations/github/comment-threads';
 import { ReviewThreadContent } from './index';
 
 const HEAD_URL = 'https://github.com/acme/web/pull/248#discussion_r1';

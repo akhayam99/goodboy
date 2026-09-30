@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 import type { ProjectId } from '@goodboy/types';
 
 export type ProjectRelocationResult = {
@@ -20,7 +20,7 @@ export const projectRelocate = async ({
   fromRoot,
   toRoot,
 }: ProjectRelocateParams): Promise<ProjectRelocationResult> => {
-  return invoke<ProjectRelocationResult>('project_relocate', {
+  return invokeCommand<ProjectRelocationResult>('project_relocate', {
     args: { relocationId, projectId, fromRoot, toRoot },
   });
 };
@@ -32,5 +32,7 @@ type ProjectRelocationUndoParams = {
 export const projectRelocationUndo = async ({
   relocationId,
 }: ProjectRelocationUndoParams): Promise<ProjectRelocationResult> => {
-  return invoke<ProjectRelocationResult>('project_relocation_undo', { args: { relocationId } });
+  return invokeCommand<ProjectRelocationResult>('project_relocation_undo', {
+    args: { relocationId },
+  });
 };

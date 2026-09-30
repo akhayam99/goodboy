@@ -67,14 +67,14 @@ export const REPORT_DEFAULT_REQUEST = ({
 }): string =>
   `write a ${REPORT_TYPE_LABEL[reportType].toLowerCase()}: ${REPORT_TYPE_HINT[reportType]}.`;
 
-export const REPORT_NO_SCOUT_COPY = 'no scout read a repository for this report';
+const REPORT_NO_SCOUT_COPY = 'no scout read a repository for this report';
 
-export const REPORT_EXCLUDED_COPY =
+const REPORT_EXCLUDED_COPY =
   'never sent: tool calls, tool output, transcripts beyond the last message, open questions, decisions, review threads, the session summary, other mounts';
 
 export type ReportDiffEvidence = Readonly<{
   mountName: string;
-  baseBranch: string;
+  baseBranch: string | null;
   headSha: string | null;
   commits: ReadonlyArray<Readonly<{ sha: string; subject: string }>>;
   additions: number;
@@ -459,7 +459,7 @@ const diffSection = ({
     text: [
       '## diff',
       '',
-      `mount ${redactSecrets({ text: diff.mountName })}, base ${redactSecrets({ text: diff.baseBranch })}, head ${head}, +${diff.additions} -${diff.deletions}, ${diff.paths.length} files`,
+      `mount ${redactSecrets({ text: diff.mountName })}, base ${redactSecrets({ text: diff.baseBranch ?? 'the default branch' })}, head ${head}, +${diff.additions} -${diff.deletions}, ${diff.paths.length} files`,
       '',
       commits.length === 0 ? 'no commits recorded.' : `commits:\n${commits}`,
       '',
@@ -468,7 +468,7 @@ const diffSection = ({
     row: {
       id: 'diff',
       label: 'local change',
-      summary: `${diff.mountName} against ${diff.baseBranch}: ${diff.commits.length} commits, ${diff.paths.length} files, +${diff.additions} -${diff.deletions}`,
+      summary: `${diff.mountName} against ${diff.baseBranch ?? 'the default branch'}: ${diff.commits.length} commits, ${diff.paths.length} files, +${diff.additions} -${diff.deletions}`,
       state: 'included',
       detail: ['file paths and commit subjects only, no file contents'],
     },

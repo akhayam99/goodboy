@@ -16,7 +16,7 @@ export type WireframeDiffMark = 'added' | 'changed' | 'removed';
 
 export type WireframeDiffMarks = ReadonlyMap<string, WireframeDiffMark>;
 
-export type WireframeRenderContext = Readonly<{
+type WireframeRenderContext = Readonly<{
   links: WireframeLinks;
   stateScreens: ReadonlyMap<string, string>;
   state: WireframeScreenState | null;
@@ -62,7 +62,7 @@ type AttributeParams = {
   readonly ctx: WireframeRenderContext;
 };
 
-export const nodeAttributes = ({ id, kind, ctx }: AttributeParams): string => {
+const nodeAttributes = ({ id, kind, ctx }: AttributeParams): string => {
   const note = ctx.noteNumbers.get(id);
   const noteAttribute = note === undefined ? '' : ` data-note="${note}"`;
   const mark = ctx.marks.get(id);

@@ -2,11 +2,10 @@ import type { ExternalTaskOutcomes, PullRequestOutcomes, ReviewOutcomes } from '
 import type { ReactElement } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { ArrowUpRight } from 'lucide-react';
-import { ErrorStrip } from '@goodboy/ui';
+import { ErrorStrip, PaneShell } from '@goodboy/ui';
 import { PanelLoading } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import { formatHours } from '../../utils/formatHours';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { SessionRows } from './SessionRows';
 import { StackedBar } from './StackedBar';
 import { TrendStatCard } from './TrendStatCard';

@@ -8,6 +8,7 @@ import { dropLeadingTitleHeading } from '../../../artifacts/components/ArtifactD
 import { ReportContentsMenu } from './ReportContentsMenu';
 import { ReportOutlineNav } from './ReportOutlineNav';
 import { useOutlinePlacement } from './useOutlinePlacement';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -16,7 +17,7 @@ type Props = {
 
 export const ReportStudio = ({ sessionId, artifact }: Props) => {
   const workspaceSlug = useAppStore((s) => {
-    const workspaceId = s.sessions.find((session) => session.id === sessionId)?.workspaceId;
+    const workspaceId = sessionById(s.sessions, sessionId)?.workspaceId;
     return s.workspaces.find((workspace) => workspace.id === workspaceId)?.slug ?? '';
   });
   const [activeHeadingId, setActiveHeadingId] = useState<string | null>(null);

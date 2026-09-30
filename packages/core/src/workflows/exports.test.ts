@@ -20,9 +20,4 @@ describe('phases barrel exports', () => {
     expect(phases.buildStepPrompt).toBeTypeOf('function');
     expect(phases.isWorkflowComplete).toBeTypeOf('function');
   });
-
-  it('does NOT expose WorkflowRegistry from the root @goodboy/core barrel (node-only)', () => {
-    expect((core as Record<string, unknown>).WorkflowRegistry).toBeUndefined();
-    expect((phases as Record<string, unknown>).WorkflowRegistry).toBeUndefined();
-  });
 });

@@ -1,6 +1,6 @@
 import type { SessionDecisionChange, SessionEventPayload } from '@goodboy/types';
 
-export type DecisionChangeLine = {
+type DecisionChangeLine = {
   readonly key: string;
   readonly sign: '+' | '−' | '↺' | null;
   readonly label: string;

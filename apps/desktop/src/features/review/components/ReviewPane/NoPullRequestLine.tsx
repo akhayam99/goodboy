@@ -8,9 +8,9 @@ type Props = {
   readonly onOpenPullRequest: () => void;
 };
 
-export const NO_PULL_REQUEST = 'No pull request yet, your notes stay on this machine';
-export const OPEN_PULL_REQUEST = 'Open a pull request';
-export const FOLLOW_DRAFTING_AGENT = 'Follow the drafting agent';
+const NO_PULL_REQUEST = 'No pull request yet, your notes stay on this machine';
+const OPEN_PULL_REQUEST = 'Open a pull request';
+const FOLLOW_DRAFTING_AGENT = 'Follow the drafting agent';
 
 export const NoPullRequestLine = ({
   branch,

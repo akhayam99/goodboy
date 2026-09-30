@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { migrateThrough } from '../test-helpers/migration-rows';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
-import { migrate } from './runner';
 
 const seedBefore = async () => {
   const db = await makeMigratedTestDatabase({ throughVersion: 213 });
@@ -24,7 +24,7 @@ const seedBefore = async () => {
 
 const seed = async () => {
   const db = await seedBefore();
-  const result = await migrate(db);
+  const result = await migrateThrough({ db, version: 214 });
   expect(result.applied).toEqual([214]);
   return db;
 };

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useToast } from '../../../../app/components/Toast';
+import { useToast } from '../../../../shared/components/Toast';
 import { useAppStore } from '../../../../store';
 import { changelogCatchUp } from '../../changelogCatchUp';
 import { isInstalledRelease } from '../../isInstalledRelease';

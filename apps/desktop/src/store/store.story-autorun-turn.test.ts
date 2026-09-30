@@ -20,12 +20,14 @@ import {
   connectedAnthropicState,
   resetStoryStore,
   storySpies,
+  storySummarizeSession,
+  stubStoryInvoke,
   STORY_NOW,
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   type StoryStore,
 } from './storyHarness';
-import { cancelledRunIds } from './session-mutators';
+import { cancelledRunIds } from './slices/sessions/sessionMutators';
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
 vi.mock('@tauri-apps/api/event', async () =>
@@ -217,15 +219,7 @@ const seed = () => {
       return agents.find((agent) => agent.id === agentId);
     },
   );
-  storySpies.tauriInvoke.mockImplementation(async (command: unknown) =>
-    command === 'summarize_session'
-      ? {
-          stdout: JSON.stringify({ result: STEP_SUMMARY, subtype: 'success' }),
-          stderr: '',
-          exitCode: 0,
-        }
-      : null,
-  );
+  stubStoryInvoke({ summarize_session: storySummarizeSession(STEP_SUMMARY) });
 };
 
 const statusWrites = ({ agentId }: { readonly agentId: AgentId }) =>
@@ -445,9 +439,10 @@ describe('story: an autorun step turn and what follows it', () => {
         yield* [];
         throw new Error('Claude usage limit reached');
       })
-      .mockImplementation(
+      .mockImplementationOnce(
         streamOf({ text: `picked up on the fallback <<step-done id="${IMPLEMENT_AGENT}">>` }),
-      );
+      )
+      .mockImplementation(streamOf({ text: '<<ctx-question>>ship it now?<</ctx-question>>' }));
 
     await sendStepTurn({ content: 'implement the export' });
 
@@ -462,6 +457,7 @@ describe('story: an autorun step turn and what follows it', () => {
     expect(statusWrites({ agentId: IMPLEMENT_AGENT })).toContainEqual(
       expect.objectContaining({ status: 'completed' }),
     );
+    await vi.waitFor(() => expect(storySpies.runTurn).toHaveBeenCalledTimes(3));
   });
 
   it('gives the writer lease back after a resolver turn and drains the queue once', async () => {

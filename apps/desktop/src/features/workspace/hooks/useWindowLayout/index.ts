@@ -29,12 +29,19 @@ const layoutInputs = (state: AppStore): ReadonlyArray<unknown> => [
 const isSameInputs = (left: ReadonlyArray<unknown>, right: ReadonlyArray<unknown>): boolean =>
   left.every((value, index) => Object.is(value, right[index]));
 
-const persist = ({ state, label }: { readonly state: AppStore; readonly label: string }) => {
+const persist = async ({
+  state,
+  label,
+}: {
+  readonly state: AppStore;
+  readonly label: string;
+}): Promise<void> => {
   const workspaceId = state.currentWorkspaceId;
   if (workspaceId === null) {
-    return forgetWindowLayout({ label });
+    await forgetWindowLayout({ label });
+    return;
   }
-  return saveWindowLayout({
+  await saveWindowLayout({
     label,
     workspaceId,
     location: captureWindowLocation({ state }),

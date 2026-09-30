@@ -1,7 +1,7 @@
 import { ArrowUpRight, GitFork } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { PullRequestState, SessionId } from '@goodboy/types';
-import { pullRequestMeta } from '../../../../github/components/PullRequestChip';
+import { pullRequestMeta } from '../../../../integrations/github/components/PullRequestChip';
 import { openReview } from '../../../../review/openReview';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 

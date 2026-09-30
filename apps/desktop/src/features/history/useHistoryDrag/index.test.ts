@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
+import { registerEscapeLayer } from '@goodboy/ui';
 import { hitHistoryDrop, useHistoryDrag } from './index';
 
 const ROWS = [
@@ -174,5 +175,54 @@ describe('useHistoryDrag', () => {
     });
     expect(onCancel).toHaveBeenCalledTimes(2);
     expect(onMove).not.toHaveBeenCalled();
+  });
+
+  it('leaves escape to a layer above the drag, then cancels the drag', () => {
+    const list = listWithRows();
+    const onCancel = vi.fn();
+    const closeAbove = vi.fn();
+    const { result } = renderHook(() =>
+      useHistoryDrag({ ...PARAMS, listRef: { current: list }, onCancel }),
+    );
+    act(() => result.current.onPointerDown(down({ sha: 'f', y: 130 }), 'f'));
+    act(() => move({ y: 283 }));
+    const offAbove = registerEscapeLayer(closeAbove);
+
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape' }));
+    });
+    expect(closeAbove).toHaveBeenCalledOnce();
+    expect(onCancel).not.toHaveBeenCalled();
+    expect(result.current.drag).not.toBeNull();
+
+    offAbove();
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape' }));
+    });
+    expect(onCancel).toHaveBeenCalledOnce();
+    expect(result.current.drag).toBeNull();
+  });
+
+  it('holds no escape layer before a drag starts or after it ends', () => {
+    const list = listWithRows();
+    const { result } = renderHook(() => useHistoryDrag({ ...PARAMS, listRef: { current: list } }));
+    const swallowsEscape = () => {
+      const event = new KeyboardEvent('keydown', {
+        key: 'Escape',
+        code: 'Escape',
+        cancelable: true,
+      });
+      act(() => {
+        window.dispatchEvent(event);
+      });
+      return event.defaultPrevented;
+    };
+    act(() => result.current.onPointerDown(down({ sha: 'f', y: 130 }), 'f'));
+    expect(swallowsEscape()).toBe(false);
+    act(() => move({ y: 283 }));
+    act(() => {
+      window.dispatchEvent(new PointerEvent('pointercancel'));
+    });
+    expect(swallowsEscape()).toBe(false);
   });
 });

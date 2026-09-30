@@ -1,4 +1,4 @@
-export const PR_LIFECYCLE_ACTIONS = ['ready', 'undraft', 'merge', 'close', 'reopen'] as const;
+const PR_LIFECYCLE_ACTIONS = ['ready', 'undraft', 'merge', 'close', 'reopen'] as const;
 
 export type PrLifecycleAction = (typeof PR_LIFECYCLE_ACTIONS)[number];
 

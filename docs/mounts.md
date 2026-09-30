@@ -19,6 +19,12 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
 - A repository mount is a git worktree at
   `<repo>/.goodboy/worktrees/<session-slug>-<mount-id>`, truncated to a fixed
   length. The local branch outlives the worktree.
+- Branch and directory names come from one slug rule: ASCII letters and digits,
+  everything else becomes a dash, at most 48 characters, and a short hash when
+  nothing is left. `slugify` in `@goodboy/core` and `slugify` in `worktree/slug.rs`
+  give the same result for the same input. When another live session already
+  owns `<prefix>/<slug>`, the plan takes `-2`, `-3` and so on. An adopted
+  branch is never renamed.
 - A folder mount is a plain directory at `<project-root>/sessions/<name>`.
   Folder projects always keep their directory; no Goodboy action deletes it.
 
@@ -136,6 +142,18 @@ and repairs git's worktree links; see
 [architecture.md](architecture.md#moving-a-projects-folder). Once the
 project's `root_path` is corrected, the next git status read clears the
 mount's `disk_state` on its own.
+
+## Base branch
+
+Every call that compares a mount with its base passes one name: the mount's
+own base, then its project's, then nothing. `resolveMountBaseBranch` and
+`selectMountBaseBranch` make that choice, and no caller writes `main` itself.
+With no name, Rust finds the repo default in one ordered list: `origin/HEAD`,
+then `main`, `master` and `develop` (the remote copy first), then the branch
+the main checkout sits on. A checkout never becomes its own base, whatever
+the name, so a repo with no default at all stays unknown and branch cleanup keeps
+what it cannot place. Creating a mount may cut from the main checkout branch.
+The rebase plan and the history graph take the same optional name.
 
 ## Cleanup proposals
 

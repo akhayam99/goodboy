@@ -5,6 +5,7 @@ import { closeArtifactConversation, openArtifactConversation } from './artifactC
 import { closeArtifactCreation, openArtifactCreation } from './artifactCreation';
 import { setSessionGroup } from './setSessionGroup';
 import { setSessionSort } from './setSessionSort';
+import { toggleSessionGroup } from './toggleSessionGroup';
 import {
   openDiffLens,
   openMountDiff,
@@ -24,33 +25,28 @@ import { openResolveDiff, setResolveQueueView } from './resolveSurface';
 import { setResolveItemDraft } from './resolveItemDrafts';
 import { beginSessionCreation, endSessionCreation } from './sessionCreation';
 import { revealActivityRow } from './revealActivityRow';
-import type { GetFn, SessionViewSlice, SetFn } from './types';
+import type { SessionViewSlice } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export { sortAndGroupSessions } from './sortAndGroupSessions';
-export { deriveSessionStage } from './deriveSessionStage';
-export { resolveSessionRequest } from './resolveSessionRequest';
 export { isPrReviewSession } from './isPrReviewSession';
 export { EMPTY_RESOLVE_QUEUE_VIEW } from './types';
-export type { GroupedSessions, SessionViewSlice } from './types';
+export type { SessionViewSlice } from './types';
 export type {
-  ArtifactCreationTarget,
-  FocusedExternalTask,
   SessionStudio,
   LensKind,
   DiffFocus,
   ResolveQueueView,
-  SessionCreation,
   SessionCreationId,
-  SessionCreationKind,
 } from './types';
 
-export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice => {
+export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlice => {
   return {
     ...createInitialSessionViewState({}),
     setScriptsLensScope: ({ scope }) => set({ scriptsLensScope: scope }),
     getSessionViewPrefs: getSessionViewPrefs(set, get),
     setSessionSort: setSessionSort(set, get),
     setSessionGroup: setSessionGroup(set, get),
+    toggleSessionGroup: toggleSessionGroup(set),
     setActiveLens: setActiveLens(set),
     toggleWorkflowExpand: toggleWorkflowExpand(set),
     setFocusedWorkflowRun: setFocusedWorkflowRun(set),

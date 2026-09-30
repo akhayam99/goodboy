@@ -93,12 +93,15 @@ describe('useMessageQueue', () => {
 
   it('never drains on its own, the store does that when a turn ends', () => {
     const sendTurn = vi.fn();
-    useAppStore.setState({ sendTurn });
+    const sendAgentMessageNow = vi.fn();
+    useAppStore.setState({ sendTurn, sendAgentMessageNow });
     const { result } = render();
     act(() => {
       result.current.enqueue(makeTurn('t1'));
     });
+    expect(result.current.queue.map((q) => q.id)).toEqual(['t1']);
     expect(sendTurn).not.toHaveBeenCalled();
+    expect(sendAgentMessageNow).not.toHaveBeenCalled();
   });
 
   it('keeps separate queues per agent', () => {

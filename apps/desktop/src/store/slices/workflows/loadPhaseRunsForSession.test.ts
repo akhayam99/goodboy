@@ -1,43 +1,43 @@
-import { describe, expect, it, vi } from 'vitest';
-import type { AgentId, SessionId } from '@goodboy/types';
+// @vitest-environment node
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { insertAgent } from '@goodboy/db';
+import type { AgentId, SessionId, WorkspaceId } from '@goodboy/types';
 import type { AppStore } from '../../store';
+import { openStorySqlite, storySqlite } from '../../../test/sqliteDb';
 import type { SetFn } from './types';
 
-const invokeSpy = vi.hoisted(() => vi.fn());
-
-vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeSpy }));
+vi.mock('../../../shared/lib/db', async () =>
+  (await import('../../../test/sqliteDb')).sqliteDbLibModuleMock(),
+);
 
 import { loadPhaseRunsForSession } from './loadPhaseRunsForSession';
 
 const SESSION_ID = 'ses-1' as SessionId;
+const WORKSPACE_ID = 'workspace-harborline' as WorkspaceId;
 
-const agentRow = (id: string) => ({
-  id,
-  sessionId: SESSION_ID,
-  stepId: null,
-  workflowRunId: null,
-  parentAgentId: null,
-  ordinal: 0,
-  name: 'scout',
-  status: 'pending',
-  providerRunId: null,
-  outputSummary: null,
-  startedAt: null,
-  completedAt: null,
-  providerSessionId: null,
-  lastFinishedAt: null,
-  lastViewedAt: null,
-  doneAt: null,
-  kind: 'scout',
-  verbosity: null,
-  effort: 'high',
-  modelOverride: 'claude-opus-5',
-  providerOverride: 'anthropic',
-  sourceThreadId: null,
-  sourceThreadIds: null,
-  sourceCommentUrl: null,
-  sourceKind: null,
-  domainsJson: null,
+const insertScout = (id: string) =>
+  insertAgent(storySqlite(), {
+    id: id as AgentId,
+    sessionId: SESSION_ID,
+    ordinal: 0,
+    name: 'scout',
+    status: 'pending',
+    kind: 'scout',
+    effort: 'high',
+    modelOverride: 'claude-opus-5',
+    providerOverride: 'anthropic',
+  });
+
+beforeEach(async () => {
+  const db = await openStorySqlite();
+  await db.execute(
+    'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, 1, 1)',
+    [WORKSPACE_ID, 'Harborline', 'harborline'],
+  );
+  await db.execute(
+    'INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at) VALUES (?, ?, ?, ?, 1, 1)',
+    [SESSION_ID, WORKSPACE_ID, 'goal', 'idle'],
+  );
 });
 
 const makeStore = (initial: Partial<AppStore>) => {
@@ -51,7 +51,7 @@ const makeStore = (initial: Partial<AppStore>) => {
 
 describe('loadPhaseRunsForSession', () => {
   it('preserves a spawned agent provider, model and effort after a refresh', async () => {
-    invokeSpy.mockResolvedValueOnce([agentRow('agent-new')]);
+    await insertScout('agent-new');
     const { set, getState } = makeStore({ sessionPhaseRuns: {} });
 
     await loadPhaseRunsForSession(set)(SESSION_ID);
@@ -64,7 +64,7 @@ describe('loadPhaseRunsForSession', () => {
   });
 
   it('seeds the agent override maps from the persisted rows', async () => {
-    invokeSpy.mockResolvedValueOnce([agentRow('agent-new')]);
+    await insertScout('agent-new');
     const { set, getState } = makeStore({
       sessionPhaseRuns: {},
       agentModelOverride: {},
@@ -80,7 +80,7 @@ describe('loadPhaseRunsForSession', () => {
   });
 
   it('keeps fresher in-memory overrides over the persisted rows', async () => {
-    invokeSpy.mockResolvedValueOnce([agentRow('agent-new')]);
+    await insertScout('agent-new');
     const { set, getState } = makeStore({
       sessionPhaseRuns: {},
       agentModelOverride: { ['agent-new' as AgentId]: 'claude-sonnet-4-6' },

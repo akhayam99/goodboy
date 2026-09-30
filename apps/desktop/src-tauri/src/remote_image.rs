@@ -2,6 +2,7 @@ use std::future::Future;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 use std::time::Duration;
 
+use crate::util::MessageError;
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine as _;
 use reqwest::redirect::Policy;
@@ -244,7 +245,7 @@ async fn read_image_response<R: ImageResponse + Send>(
 }
 
 #[tauri::command]
-pub async fn fetch_remote_image(url: String) -> Result<String, String> {
+pub async fn fetch_remote_image(url: String) -> Result<String, MessageError> {
     let parsed = validate_image_url(&url)?;
     let host = parsed
         .host_str()
@@ -259,7 +260,7 @@ pub async fn fetch_remote_image(url: String) -> Result<String, String> {
         .await
         .map_err(|_| format!("could not load the image from {host}"))?;
 
-    read_image_response(&host, &mut response).await
+    Ok(read_image_response(&host, &mut response).await?)
 }
 
 const GITHUB_REDIRECT_HOST: &str = "private-user-images.githubusercontent.com";
@@ -369,7 +370,7 @@ pub async fn load_tool_image(
     args: LoadToolImageArgs,
     linear_cache: State<'_, crate::linear::LinearTokenCache>,
     jira_cache: State<'_, crate::jira::JiraTokenCache>,
-) -> Result<String, String> {
+) -> Result<String, MessageError> {
     let LoadToolImageArgs {
         workspace_id,
         project_id,
@@ -401,9 +402,13 @@ pub async fn load_tool_image(
                 .ok_or_else(|| "no github token stored for this workspace".to_string())?;
             ToolAuth::Bearer(token)
         }
-        other => return Err(format!("{other} does not host its own images")),
+        other => {
+            return Err(MessageError::Refused(format!(
+                "{other} does not host its own images"
+            )))
+        }
     };
-    fetch_authed_image(&provider, parsed, auth).await
+    Ok(fetch_authed_image(&provider, parsed, auth).await?)
 }
 
 #[cfg(test)]

@@ -57,6 +57,7 @@ import { selectMountById } from '../project-mounts/selectors';
 import { startFanOutChildren } from '../workflows/scoutTree';
 import { openTurnStartWindow } from '../turn/turnStartWindow';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 export type ArtifactRunKind = 'wireframe' | 'report';
 
@@ -643,7 +644,7 @@ const joinArtifactScoutsFor = async ({
     return;
   }
   const state = get();
-  const session = state.sessions?.find((entry) => entry.id === sessionId) ?? null;
+  const session = sessionById(state.sessions, sessionId) ?? null;
   if (session === null) {
     joined.delete(containerId);
     return;

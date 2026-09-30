@@ -8,7 +8,7 @@ import type {
   ResolveCommitStyle,
 } from '@goodboy/types';
 import type { AgentKind } from '../session/agent-kind';
-import type { CommentThread } from '../github/comment-threads';
+import type { CommentThread } from '../integrations/github/comment-threads';
 import { prCommentLocation } from '../session/pr-comment-location';
 import { RESOLVER_KICKOFF_LABELS } from './utils/resolverKickoffLabels';
 
@@ -50,7 +50,7 @@ const VOICE_RULES: Record<Exclude<ReplyVoice, 'mine'>, ReadonlyArray<string>> = 
   ],
 };
 
-export const replyVoiceRules = ({
+const replyVoiceRules = ({
   voice,
   styleNote,
 }: {
@@ -183,10 +183,10 @@ const instructionsSection = ({ count }: { readonly count: number }): ReadonlyArr
   ];
 };
 
-export const PROCEED_RESOLVER_PROMPT =
+const PROCEED_RESOLVER_PROMPT =
   'Proceed with the fix you proposed in your analysis. When done, commit and emit the <<comment-resolved>> marker as instructed.';
 
-export type PriorContextIntent = 'retry' | 'recheck' | 'proceed';
+type PriorContextIntent = 'retry' | 'recheck' | 'proceed';
 
 export type PriorContext = {
   readonly threadId: string;
@@ -237,7 +237,7 @@ export type FixupTarget = {
   readonly subject: string;
 };
 
-export const commitStyleInstruction = ({
+const commitStyleInstruction = ({
   style,
   fixupTargets,
 }: {

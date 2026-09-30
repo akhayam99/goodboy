@@ -5,7 +5,7 @@ import { formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { resolveLimitedTaskModel } from '../../../../../store/slices/providerLimits/resolveLimitedTaskModel';
 import { useAutoLimitContext } from '../../../../providers/hooks/useAutoLimitContext';
-import { useToast } from '../../../../../app/components/Toast';
+import { useToast } from '../../../../../shared/components/Toast';
 import type { WorkflowDraft } from '../../../engine';
 import { updateStep } from '../../../engine';
 import { polishWorkflowGoalText, polishWorkflowStep } from '../../../workflows';

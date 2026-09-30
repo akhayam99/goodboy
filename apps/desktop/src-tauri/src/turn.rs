@@ -11,6 +11,7 @@ use thiserror::Error;
 use crate::live_child::{
     drain_tail_lossy, wait_and_remove, LiveChild, LiveChildRegistry, MAX_STDERR_BYTES,
 };
+use crate::providers::cli_args::turn_args;
 use crate::turn_backlog::{AttachSnapshot, TurnBacklog};
 
 pub(crate) const MAX_TURN_LINE_BYTES: usize = 64 * 1024 * 1024;
@@ -161,208 +162,13 @@ pub struct TurnEventEnvelope {
 
 pub const EVENT_NAME: &str = "turn_event";
 
-/// Per-binary CLI flag set. Unknown binaries fall through to claude.
-pub(crate) fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String> {
-    let bin = std::path::Path::new(binary)
-        .file_name()
-        .and_then(|s| s.to_str())
-        .unwrap_or(binary);
+pub(crate) trait TurnEmitter: Clone + Send + 'static {
+    fn emit_turn<S: Serialize + Clone>(&self, event: &str, payload: S);
+}
 
-    match bin {
-        "cursor-agent" => {
-            // --force is cursor's equivalent of claude --dangerously-skip-permissions.
-            let mut v = vec![
-                "-p".to_string(),
-                args.prompt.to_string(),
-                "--output-format".to_string(),
-                "stream-json".to_string(),
-                "--workspace".to_string(),
-                args.working_dir.to_string(),
-                "--model".to_string(),
-                args.model.to_string(),
-            ];
-            if args.permission_mode == "bypassPermissions" {
-                v.push("--force".to_string());
-            } else {
-                v.push("--mode".to_string());
-                v.push("plan".to_string());
-            }
-            // cursor-agent ignores permission rules + resume + system_prompt.
-            let _ = (
-                args.allowed_tools,
-                args.disallowed_tools,
-                args.resume_session_id,
-                args.system_prompt,
-            );
-            v.shrink_to_fit();
-            v
-        }
-        "agy" => {
-            let _ = (
-                args.allowed_tools,
-                args.disallowed_tools,
-                args.resume_session_id,
-                args.system_prompt,
-            );
-            let mut v = vec![
-                "-p".to_string(),
-                args.prompt.to_string(),
-                "--model".to_string(),
-                args.model.to_string(),
-            ];
-            if let Some(eff) = args.effort {
-                v.push("--effort".to_string());
-                v.push(eff.to_string());
-            }
-            match args.permission_mode {
-                "bypassPermissions" => v.push("--dangerously-skip-permissions".to_string()),
-                "acceptEdits" => v.extend([
-                    "--mode".to_string(),
-                    "accept-edits".to_string(),
-                    "--sandbox".to_string(),
-                ]),
-                _ => v.extend([
-                    "--mode".to_string(),
-                    "plan".to_string(),
-                    "--sandbox".to_string(),
-                ]),
-            }
-            v.shrink_to_fit();
-            v
-        }
-        "codex" => {
-            // codex exec v0.130 gotchas:
-            //   --cd, NOT --cwd (codex exits 1 with "unexpected argument").
-            //   --skip-git-repo-check, else codex refuses non-trusted dirs.
-            let _ = (args.resume_session_id, args.system_prompt);
-            let mut v: Vec<String> = vec![
-                "exec".to_string(),
-                "--json".to_string(),
-                "--skip-git-repo-check".to_string(),
-                "-m".to_string(),
-                args.model.to_string(),
-                "--cd".to_string(),
-                args.working_dir.to_string(),
-            ];
-            let sandbox = match args.permission_mode {
-                "acceptEdits" | "bypassPermissions" => "workspace-write",
-                _ => "read-only",
-            };
-            v.push("-s".to_string());
-            v.push(sandbox.to_string());
-            if sandbox == "workspace-write" {
-                v.push("-c".to_string());
-                v.push("sandbox_workspace_write.network_access=true".to_string());
-                if args.excludes_tmp {
-                    for setting in [
-                        "sandbox_workspace_write.exclude_tmpdir_env_var=true",
-                        "sandbox_workspace_write.exclude_slash_tmp=true",
-                    ] {
-                        v.push("-c".to_string());
-                        v.push(setting.to_string());
-                    }
-                }
-                for root in args.writable_roots {
-                    v.push("--add-dir".to_string());
-                    v.push(root.to_string());
-                }
-                if let Some(socket_directory) = args.query_socket_directory {
-                    v.push("--add-dir".to_string());
-                    v.push(socket_directory.to_string());
-                }
-            }
-            if let Some(eff) = args.effort {
-                v.push("-c".to_string());
-                v.push(format!("model_reasoning_effort=\"{eff}\""));
-            }
-            v.push("--".to_string());
-            v.push(args.prompt.to_string());
-            v
-        }
-        "opencode" | "openrouter" | "moonshot" => {
-            let _ = (
-                args.allowed_tools,
-                args.disallowed_tools,
-                args.system_prompt,
-            );
-            let mut v = vec![
-                "run".to_string(),
-                "--format".to_string(),
-                "json".to_string(),
-                "-m".to_string(),
-                args.model.to_string(),
-                "--dir".to_string(),
-                args.working_dir.to_string(),
-                "--dangerously-skip-permissions".to_string(),
-            ];
-            if args.permission_mode != "bypassPermissions" {
-                v.push("--agent".to_string());
-                v.push("plan".to_string());
-            }
-            if let Some(effort) = args.effort {
-                v.push("--variant".to_string());
-                v.push(effort.to_string());
-            }
-            if let Some(session_id) = args.resume_session_id {
-                v.push("--session".to_string());
-                v.push(session_id.to_string());
-            }
-            v.push("--".to_string());
-            v.push(args.prompt.to_string());
-            v
-        }
-        _ => {
-            let mut v: Vec<String> = Vec::new();
-            // --resume must precede -p so claude restores the prior session
-            // before consuming the new user message.
-            if let Some(sid) = args.resume_session_id {
-                v.push("--resume".to_string());
-                v.push(sid.to_string());
-            }
-            v.extend([
-                "-p".to_string(),
-                args.prompt.to_string(),
-                "--output-format".to_string(),
-                "stream-json".to_string(),
-                "--verbose".to_string(),
-                "--model".to_string(),
-                args.model.to_string(),
-                "--permission-mode".to_string(),
-                args.permission_mode.to_string(),
-                "--setting-sources".to_string(),
-                crate::aux_spawn::CLAUDE_SETTING_SOURCES.to_string(),
-            ]);
-            for root in args.writable_roots {
-                v.push("--add-dir".to_string());
-                v.push(root.to_string());
-            }
-            if let Some(socket_directory) = args.query_socket_directory {
-                v.push("--add-dir".to_string());
-                v.push(socket_directory.to_string());
-            }
-            if let Some(sp) = args.system_prompt {
-                v.push("--append-system-prompt".to_string());
-                v.push(sp.to_string());
-            }
-            if let Some(eff) = args.effort {
-                v.push("--effort".to_string());
-                v.push(eff.to_string());
-            }
-            if !args.allowed_tools.is_empty() {
-                v.push("--allowedTools".to_string());
-                v.push(args.allowed_tools.join(","));
-            }
-            let mut disallowed_tools: Vec<String> = args
-                .disallowed_tools
-                .iter()
-                .filter(|tool| tool.as_str() != "mcp__*")
-                .cloned()
-                .collect();
-            disallowed_tools.push("mcp__*".to_string());
-            v.push("--disallowedTools".to_string());
-            v.push(disallowed_tools.join(","));
-            v
-        }
+impl TurnEmitter for AppHandle {
+    fn emit_turn<S: Serialize + Clone>(&self, event: &str, payload: S) {
+        let _ = self.emit(event, payload);
     }
 }
 
@@ -440,8 +246,8 @@ fn spawn_leased_child(
     Ok((child, guard))
 }
 
-fn spawn_one(
-    app: &AppHandle,
+fn spawn_one<E: TurnEmitter>(
+    app: &E,
     registry: &ChildRegistry,
     backlog: &TurnBacklog,
     leases: &crate::worktree_writer::WriterLeaseRegistry,
@@ -479,7 +285,7 @@ fn spawn_one(
         },
     );
 
-    let cli_args = build_provider_cli_args(args.binary, &args);
+    let cli_args = turn_args(args.binary, &args);
     for a in &cli_args {
         command.arg(a);
     }
@@ -493,7 +299,7 @@ fn spawn_one(
         args.run_id,
         move || {
             if let Some(binding) = &event_binding {
-                let _ = event_app.emit(
+                event_app.emit_turn(
                     crate::worktree_writer::EVENT_NAME,
                     crate::worktree_writer::WriterLeaseEvent {
                         path: binding.path.clone(),
@@ -627,11 +433,15 @@ pub async fn turn_release(state: State<'_, TurnRegistry>, run_id: String) -> Res
 
 #[tauri::command]
 pub async fn turn_cancel(state: State<'_, TurnRegistry>, run_id: String) -> Result<(), TurnError> {
-    let map = state.0.lock().map_err(|_| TurnError::Poisoned)?;
+    cancel_run(&state.0, &run_id)
+}
+
+fn cancel_run(registry: &ChildRegistry, run_id: &str) -> Result<(), TurnError> {
+    let map = registry.lock().map_err(|_| TurnError::Poisoned)?;
     let live = map
-        .get(&run_id)
+        .get(run_id)
         .cloned()
-        .ok_or_else(|| TurnError::NotFound(run_id.clone()))?;
+        .ok_or_else(|| TurnError::NotFound(run_id.to_string()))?;
     drop(map);
 
     live.kill();
@@ -685,19 +495,19 @@ fn strip_line_ending(buf: &mut Vec<u8>) {
     }
 }
 
-struct TurnSink<'a> {
-    app: &'a AppHandle,
+struct TurnSink<'a, E: TurnEmitter> {
+    app: &'a E,
     backlog: &'a TurnBacklog,
     run_id: &'a str,
 }
 
-impl TurnSink<'_> {
+impl<E: TurnEmitter> TurnSink<'_, E> {
     fn send(&self, event: TurnEventPayload) {
         if is_exiting() && !matches!(event, TurnEventPayload::Line { .. }) {
             return;
         }
         let seq = self.backlog.record(self.run_id, event.clone());
-        let _ = self.app.emit(
+        self.app.emit_turn(
             EVENT_NAME,
             TurnEventEnvelope {
                 run_id: self.run_id.to_string(),
@@ -708,7 +518,7 @@ impl TurnSink<'_> {
     }
 }
 
-fn forward_lines(sink: &TurnSink<'_>, live: &LiveChild, stdout: ChildStdout) {
+fn forward_lines<E: TurnEmitter>(sink: &TurnSink<'_, E>, live: &LiveChild, stdout: ChildStdout) {
     let mut reader = BufReader::new(stdout);
     let mut buf: Vec<u8> = Vec::new();
     loop {
@@ -742,6 +552,9 @@ fn capture_stderr(stderr: ChildStderr) -> String {
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
+
+#[cfg(all(test, unix))]
+mod fake_cli_tests;
 
 #[cfg(test)]
 mod tests {
@@ -923,7 +736,7 @@ mod tests {
     fn claude_args_omit_resume_and_system_prompt_when_none() {
         let empty: Vec<String> = vec![];
         let args = make_args(None, None, &empty);
-        let cli = build_provider_cli_args("claude", &args);
+        let cli = turn_args("claude", &args);
         assert!(!cli.contains(&"--resume".to_string()));
         assert!(!cli.contains(&"--append-system-prompt".to_string()));
     }
@@ -932,7 +745,7 @@ mod tests {
     fn claude_args_include_resume_before_prompt() {
         let empty: Vec<String> = vec![];
         let args = make_args(Some("sess-abc"), None, &empty);
-        let cli = build_provider_cli_args("claude", &args);
+        let cli = turn_args("claude", &args);
         let resume_idx = cli.iter().position(|a| a == "--resume").expect("--resume");
         let p_idx = cli.iter().position(|a| a == "-p").expect("-p");
         assert!(resume_idx < p_idx, "--resume must precede -p");
@@ -943,7 +756,7 @@ mod tests {
     fn claude_args_include_system_prompt() {
         let empty: Vec<String> = vec![];
         let args = make_args(None, Some("you are a planner"), &empty);
-        let cli = build_provider_cli_args("claude", &args);
+        let cli = turn_args("claude", &args);
         let idx = cli
             .iter()
             .position(|a| a == "--append-system-prompt")
@@ -956,7 +769,7 @@ mod tests {
         let empty: Vec<String> = vec![];
         let mut args = make_args(None, None, &empty);
         args.effort = Some("xhigh");
-        let cli = build_provider_cli_args("claude", &args);
+        let cli = turn_args("claude", &args);
         let idx = cli.iter().position(|a| a == "--effort").expect("--effort");
         assert_eq!(cli[idx + 1], "xhigh");
     }
@@ -965,7 +778,7 @@ mod tests {
     fn claude_args_omit_effort_when_none() {
         let empty: Vec<String> = vec![];
         let args = make_args(None, None, &empty);
-        let cli = build_provider_cli_args("claude", &args);
+        let cli = turn_args("claude", &args);
         assert!(!cli.contains(&"--effort".to_string()));
     }
 
@@ -973,7 +786,7 @@ mod tests {
     fn claude_args_isolate_user_settings() {
         let empty: Vec<String> = vec![];
         let args = make_args(None, None, &empty);
-        let cli = build_provider_cli_args("claude", &args);
+        let cli = turn_args("claude", &args);
         let idx = cli
             .iter()
             .position(|a| a == "--setting-sources")
@@ -985,7 +798,7 @@ mod tests {
     fn claude_args_never_use_bare() {
         let empty: Vec<String> = vec![];
         let args = make_args(None, Some("sp"), &empty);
-        let cli = build_provider_cli_args("claude", &args);
+        let cli = turn_args("claude", &args);
         assert!(!cli.iter().any(|a| a == "--bare"));
     }
 
@@ -993,7 +806,7 @@ mod tests {
     fn claude_args_always_deny_mcp_tools() {
         let empty: Vec<String> = vec![];
         let args = make_args(None, None, &empty);
-        let cli = build_provider_cli_args("claude", &args);
+        let cli = turn_args("claude", &args);
         let idx = cli
             .iter()
             .position(|arg| arg == "--disallowedTools")
@@ -1007,7 +820,7 @@ mod tests {
         let disallowed = vec!["Bash".to_string(), "WebFetch".to_string()];
         let mut args = make_args(None, None, &empty);
         args.disallowed_tools = &disallowed;
-        let cli = build_provider_cli_args("claude", &args);
+        let cli = turn_args("claude", &args);
         let idx = cli
             .iter()
             .position(|arg| arg == "--disallowedTools")
@@ -1021,7 +834,7 @@ mod tests {
         let disallowed = vec!["mcp__*".to_string(), "Bash".to_string()];
         let mut args = make_args(None, None, &empty);
         args.disallowed_tools = &disallowed;
-        let cli = build_provider_cli_args("claude", &args);
+        let cli = turn_args("claude", &args);
         let idx = cli
             .iter()
             .position(|arg| arg == "--disallowedTools")
@@ -1034,7 +847,7 @@ mod tests {
         let empty: Vec<String> = vec![];
         let args = make_args(None, None, &empty);
         for binary in ["cursor-agent", "codex"] {
-            let cli = build_provider_cli_args(binary, &args);
+            let cli = turn_args(binary, &args);
             assert!(!cli
                 .windows(2)
                 .any(|pair| pair[0] == "--disallowedTools" && pair[1].contains("mcp__*")));
@@ -1047,7 +860,7 @@ mod tests {
         let roots = vec!["/repo/one/.git".to_string(), "/repo/two/.git".to_string()];
         let mut args = make_args(None, None, &empty);
         args.writable_roots = &roots;
-        let cli = build_provider_cli_args("claude", &args);
+        let cli = turn_args("claude", &args);
         let added_directories: Vec<&str> = cli
             .windows(2)
             .filter(|pair| pair[0] == "--add-dir")
@@ -1077,7 +890,7 @@ mod tests {
         for binary in ["claude", "codex", "cursor-agent", "agy", "opencode"] {
             for mode in ["acceptEdits", "bypassPermissions", "default"] {
                 args.permission_mode = mode;
-                let cli = build_provider_cli_args(binary, &args);
+                let cli = turn_args(binary, &args);
                 for pair in cli.windows(2).filter(|pair| pair[0] == "--add-dir") {
                     let root = std::path::Path::new(&pair[1]);
                     for path in &protected {
@@ -1102,10 +915,10 @@ mod tests {
                 .map(|pair| pair[1].clone())
                 .collect()
         };
-        let plain = settings(&build_provider_cli_args("codex", &args));
+        let plain = settings(&turn_args("codex", &args));
         assert!(!plain.iter().any(|setting| setting.contains("exclude_")));
         args.excludes_tmp = true;
-        let isolated = settings(&build_provider_cli_args("codex", &args));
+        let isolated = settings(&turn_args("codex", &args));
         assert!(
             isolated.contains(&"sandbox_workspace_write.exclude_tmpdir_env_var=true".to_string())
         );
@@ -1116,7 +929,7 @@ mod tests {
     fn codex_args_use_cd_not_cwd() {
         let empty: Vec<String> = vec![];
         let args = make_args(None, None, &empty);
-        let cli = build_provider_cli_args("codex", &args);
+        let cli = turn_args("codex", &args);
         assert!(cli.iter().any(|a| a == "--cd"));
         assert!(!cli.iter().any(|a| a == "--cwd"));
         let idx = cli.iter().position(|a| a == "--cd").expect("--cd");
@@ -1127,7 +940,7 @@ mod tests {
     fn codex_args_always_skip_git_repo_check() {
         let empty: Vec<String> = vec![];
         let args = make_args(None, None, &empty);
-        let cli = build_provider_cli_args("codex", &args);
+        let cli = turn_args("codex", &args);
         assert!(cli.iter().any(|a| a == "--skip-git-repo-check"));
     }
 
@@ -1137,7 +950,7 @@ mod tests {
         let roots = vec!["/repo/one/.git".to_string(), "/repo/two/.git".to_string()];
         let mut args = make_args(None, None, &empty);
         args.writable_roots = &roots;
-        let cli = build_provider_cli_args("codex", &args);
+        let cli = turn_args("codex", &args);
         let idx = cli.iter().position(|a| a == "-s").expect("-s");
         assert_eq!(cli[idx + 1], "workspace-write");
         assert!(cli.windows(2).any(|pair| {
@@ -1167,7 +980,7 @@ mod tests {
         let mut args = make_args(None, None, &empty);
         args.working_dir = "/repo/one/.goodboy/worktrees/first";
         args.writable_roots = &roots;
-        let cli = build_provider_cli_args("codex", &args);
+        let cli = turn_args("codex", &args);
         let added_directories: Vec<&str> = cli
             .windows(2)
             .filter(|pair| pair[0] == "--add-dir")
@@ -1191,7 +1004,7 @@ mod tests {
         let empty: Vec<String> = vec![];
         let mut args = make_args(None, None, &empty);
         args.effort = Some("high");
-        let cli = build_provider_cli_args("codex", &args);
+        let cli = turn_args("codex", &args);
         assert!(cli
             .windows(2)
             .any(|pair| pair[0] == "-c" && pair[1] == "model_reasoning_effort=\"high\""));
@@ -1201,7 +1014,7 @@ mod tests {
     fn codex_args_omit_reasoning_effort_when_none() {
         let empty: Vec<String> = vec![];
         let args = make_args(None, None, &empty);
-        let cli = build_provider_cli_args("codex", &args);
+        let cli = turn_args("codex", &args);
         assert!(!cli.iter().any(|a| a.starts_with("model_reasoning_effort")));
     }
 
@@ -1211,7 +1024,7 @@ mod tests {
         let mut args = make_args(Some("ses_123"), None, &empty);
         args.model = "opencode/big-pickle";
         args.effort = Some("high");
-        let cli = build_provider_cli_args("opencode", &args);
+        let cli = turn_args("opencode", &args);
         assert_eq!(
             cli,
             vec![
@@ -1238,7 +1051,7 @@ mod tests {
         let empty: Vec<String> = vec![];
         let mut args = make_args(None, None, &empty);
         args.model = "openrouter/openai/gpt-5.4";
-        let cli = build_provider_cli_args("openrouter", &args);
+        let cli = turn_args("openrouter", &args);
         assert_eq!(
             cli,
             vec![
@@ -1272,7 +1085,7 @@ mod tests {
     fn codex_args_full_access_keeps_the_workspace_sandbox() {
         let empty: Vec<String> = vec![];
         let args = args_for_mode("bypassPermissions", &empty);
-        let cli = build_provider_cli_args("codex", &args);
+        let cli = turn_args("codex", &args);
         assert_eq!(flag_value(&cli, "-s").as_deref(), Some("workspace-write"));
         assert!(!cli
             .iter()
@@ -1284,7 +1097,7 @@ mod tests {
     fn codex_args_edits_allowed_use_the_workspace_sandbox() {
         let empty: Vec<String> = vec![];
         let args = args_for_mode("acceptEdits", &empty);
-        let cli = build_provider_cli_args("codex", &args);
+        let cli = turn_args("codex", &args);
         assert_eq!(flag_value(&cli, "-s").as_deref(), Some("workspace-write"));
     }
 
@@ -1295,7 +1108,7 @@ mod tests {
         for mode in ["plan", "default", "dontAsk", "unknown"] {
             let mut args = args_for_mode(mode, &empty);
             args.writable_roots = &roots;
-            let cli = build_provider_cli_args("codex", &args);
+            let cli = turn_args("codex", &args);
             assert_eq!(
                 flag_value(&cli, "-s").as_deref(),
                 Some("read-only"),
@@ -1313,7 +1126,7 @@ mod tests {
     fn agy_args_full_access_skip_permissions() {
         let empty: Vec<String> = vec![];
         let args = args_for_mode("bypassPermissions", &empty);
-        let cli = build_provider_cli_args("agy", &args);
+        let cli = turn_args("agy", &args);
         assert!(cli.iter().any(|a| a == "--dangerously-skip-permissions"));
         assert!(!cli.iter().any(|a| a == "--sandbox" || a == "--mode"));
     }
@@ -1322,7 +1135,7 @@ mod tests {
     fn agy_args_edits_allowed_use_accept_edits_mode() {
         let empty: Vec<String> = vec![];
         let args = args_for_mode("acceptEdits", &empty);
-        let cli = build_provider_cli_args("agy", &args);
+        let cli = turn_args("agy", &args);
         assert_eq!(flag_value(&cli, "--mode").as_deref(), Some("accept-edits"));
         assert!(cli.iter().any(|a| a == "--sandbox"));
         assert!(!cli.iter().any(|a| a == "--dangerously-skip-permissions"));
@@ -1333,7 +1146,7 @@ mod tests {
         let empty: Vec<String> = vec![];
         for mode in ["plan", "default", "dontAsk", "unknown"] {
             let args = args_for_mode(mode, &empty);
-            let cli = build_provider_cli_args("agy", &args);
+            let cli = turn_args("agy", &args);
             assert_eq!(
                 flag_value(&cli, "--mode").as_deref(),
                 Some("plan"),
@@ -1350,7 +1163,7 @@ mod tests {
     fn cursor_args_force_only_on_full_access() {
         let empty: Vec<String> = vec![];
         let args = args_for_mode("bypassPermissions", &empty);
-        let cli = build_provider_cli_args("cursor-agent", &args);
+        let cli = turn_args("cursor-agent", &args);
         assert!(cli.iter().any(|a| a == "--force"));
         assert!(!cli.iter().any(|a| a == "--mode"));
     }
@@ -1360,7 +1173,7 @@ mod tests {
         let empty: Vec<String> = vec![];
         for mode in ["plan", "default", "dontAsk", "acceptEdits", "unknown"] {
             let args = args_for_mode(mode, &empty);
-            let cli = build_provider_cli_args("cursor-agent", &args);
+            let cli = turn_args("cursor-agent", &args);
             assert_eq!(
                 flag_value(&cli, "--mode").as_deref(),
                 Some("plan"),
@@ -1376,7 +1189,7 @@ mod tests {
         for binary in ["opencode", "openrouter", "moonshot"] {
             for mode in ["plan", "default", "dontAsk", "acceptEdits", "unknown"] {
                 let args = args_for_mode(mode, &empty);
-                let cli = build_provider_cli_args(binary, &args);
+                let cli = turn_args(binary, &args);
                 assert_eq!(
                     flag_value(&cli, "--agent").as_deref(),
                     Some("plan"),
@@ -1384,7 +1197,7 @@ mod tests {
                 );
             }
             let args = args_for_mode("bypassPermissions", &empty);
-            let cli = build_provider_cli_args(binary, &args);
+            let cli = turn_args(binary, &args);
             assert!(!cli.iter().any(|a| a == "--agent"), "{binary}");
         }
     }
@@ -1400,7 +1213,7 @@ mod tests {
             "bypassPermissions",
         ] {
             let args = args_for_mode(mode, &empty);
-            let cli = build_provider_cli_args("claude", &args);
+            let cli = turn_args("claude", &args);
             assert_eq!(
                 flag_value(&cli, "--permission-mode").as_deref(),
                 Some(mode),
@@ -1413,8 +1226,8 @@ mod tests {
     fn cursor_and_codex_ignore_resume_and_system_prompt() {
         let empty: Vec<String> = vec![];
         let args = make_args(Some("sid"), Some("sp"), &empty);
-        let cli_cursor = build_provider_cli_args("cursor-agent", &args);
-        let cli_codex = build_provider_cli_args("codex", &args);
+        let cli_cursor = turn_args("cursor-agent", &args);
+        let cli_codex = turn_args("codex", &args);
         assert!(!cli_cursor
             .iter()
             .any(|a| a == "--resume" || a == "--append-system-prompt"));
@@ -1433,7 +1246,7 @@ mod tests {
     fn gemini_args_use_long_model_flag() {
         let empty: Vec<String> = vec![];
         let args = make_args(None, None, &empty);
-        let cli = build_provider_cli_args("agy", &args);
+        let cli = turn_args("agy", &args);
         let index = cli
             .iter()
             .position(|arg| arg == "--model")
@@ -1447,7 +1260,7 @@ mod tests {
         let empty: Vec<String> = vec![];
         let mut args = make_args(None, None, &empty);
         args.effort = Some("high");
-        let cli = build_provider_cli_args("agy", &args);
+        let cli = turn_args("agy", &args);
         let idx = cli.iter().position(|a| a == "--effort").expect("--effort");
         assert_eq!(cli[idx + 1], "high");
     }
@@ -1456,74 +1269,7 @@ mod tests {
     fn gemini_args_omit_effort_when_none() {
         let empty: Vec<String> = vec![];
         let args = make_args(None, None, &empty);
-        let cli = build_provider_cli_args("agy", &args);
+        let cli = turn_args("agy", &args);
         assert!(!cli.contains(&"--effort".to_string()));
-    }
-
-    #[test]
-    #[ignore = "requires real codex binary + active login; opt in via GOODBOY_TEST_REAL_CODEX=1"]
-    fn codex_real_spawn_emits_json_events() {
-        if std::env::var("GOODBOY_TEST_REAL_CODEX")
-            .map(|v| v.is_empty())
-            .unwrap_or(true)
-        {
-            return;
-        }
-        let allowed: Vec<String> = vec![];
-        let disallowed: Vec<String> = vec![];
-        let args = SpawnOneArgs {
-            run_id: "smoke-test",
-            binary: "codex",
-            model: "gpt-5.5",
-            working_dir: "/tmp",
-            writable_roots: &[],
-            query_socket_directory: Some("/tmp/goodboy-query"),
-            prompt: "say hello",
-            permission_mode: "default",
-            allowed_tools: &allowed,
-            disallowed_tools: &disallowed,
-            resume_session_id: None,
-            system_prompt: None,
-            effort: None,
-            api_key_env: None,
-            credential_id: None,
-            workspace_id: None,
-            session_id: None,
-            mount_id: None,
-            cursor_max_mode: false,
-            writer_lease: None,
-            blocks_push: false,
-            excludes_tmp: false,
-        };
-        let cli = build_provider_cli_args("codex", &args);
-        let out = std::process::Command::new("codex")
-            .args(&cli)
-            .output()
-            .expect("spawn codex");
-
-        let stdout = String::from_utf8_lossy(&out.stdout);
-        let stderr = String::from_utf8_lossy(&out.stderr);
-        assert!(
-            out.status.success(),
-            "codex exited {:?}\nstdout: {}\nstderr: {}",
-            out.status.code(),
-            stdout,
-            stderr
-        );
-        assert!(
-            stdout.contains(r#""type":"thread.started""#),
-            "missing thread.started in stdout: {}",
-            stdout
-        );
-        assert!(
-            stdout.contains(r#""type":"item.completed""#),
-            "missing item.completed in stdout: {}",
-            stdout
-        );
-        assert!(
-            stdout.contains(r#""type":"turn.completed""#),
-            "missing turn.completed in stdout: {}",
-            stdout
-        );
     }
 }

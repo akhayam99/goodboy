@@ -1,10 +1,9 @@
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
 import { RecordProperties } from '../../../../shared/components/StudioDetail/RecordProperties';
 import { RecordSections } from '../../../../shared/components/StudioDetail/RecordSections';
 import type { RecordSection } from '../../../../shared/components/StudioDetail/RecordSections/types';
 import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
-import { ErrorStrip, Skeleton } from '@goodboy/ui';
+import { ErrorStrip, Skeleton, PaneShell } from '@goodboy/ui';
 import type { SentryIssueDetail as Detail } from '../client';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
 import {

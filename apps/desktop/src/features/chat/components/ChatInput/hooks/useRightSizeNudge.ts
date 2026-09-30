@@ -4,7 +4,7 @@ import { insertNudgeEvent, updateNudgeEventOutcome, type NudgeOutcome } from '@g
 import type { IsoDateTime, ProviderId, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../../../shared/lib/db';
 import { suggestHeavierModel, suggestLighterModel } from '../../../utils/chat-constants';
-import type { PendingAttachment } from '../lib';
+import type { PendingAttachment } from '../../../../attachments/pendingAttachment';
 
 export type RightSizeSuggestion = {
   readonly direction: 'lighter' | 'heavier';

@@ -4,6 +4,7 @@ import type { IsoDateTime } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { projectGitStatus, repoIdentity } from '../../../shared/lib/repo';
 import type { GetFn, SetFn } from './types';
+import { projectById } from './projectIndex';
 
 type Input = {
   readonly projectId: ProjectId;
@@ -21,7 +22,7 @@ const UNREACHABLE: WorkspaceGitStatus = {
 
 export const loadProjectGitStatus = (set: SetFn, get: GetFn) => {
   return async ({ projectId }: Input): Promise<void> => {
-    const project = get().projects.find((candidate) => candidate.id === projectId);
+    const project = projectById(get().projects, projectId);
     if (project === undefined || project.kind !== 'repo') {
       return;
     }

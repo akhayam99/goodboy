@@ -4,13 +4,18 @@ import { sessionPlace } from '../../../../../store/slices/navigation/place';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { HelpCircle, Play, type LucideIcon } from 'lucide-react';
 import type {
+  IsoDateTime,
   PullRequestState,
   Session,
   SessionExternalTask,
   SessionId,
   SessionPrFetchState,
   SessionStage,
+  WorkflowId,
+  WorkflowRunId,
+  WorkspaceId,
 } from '@goodboy/types';
+import { aProject, aSession, aWorkflowRun } from '@goodboy/types/testing';
 import type { GitlabMergeRequest } from '../../../../integrations/gitlab/client';
 import type { BoardNavigation } from '../useBoardNavigation';
 
@@ -93,11 +98,12 @@ const nav = {
   openReview: vi.fn(),
 } satisfies BoardNavigation;
 
-const session = {
+const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
+const session = aSession({
   id: SESSION_ID,
+  workspaceId: WORKSPACE_ID,
   goal: 'Keep every board card compact',
-  workflowRuns: [],
-} as unknown as Session;
+});
 
 const pullRequest = {
   number: 9484,
@@ -185,11 +191,12 @@ describe('StageBoardCard layout', () => {
   });
 
   it('trades the reason for the workflow progress the sidebar row shows', () => {
-    const running = {
+    const running = aSession({
       ...session,
-      workspaceId: 'workspace-1',
-      workflowRuns: [{ id: 'run-1', workflowId: 'wf-1', ordinal: 0, executionMode: 'sequential' }],
-    } as unknown as Session;
+      workflowRuns: [
+        aWorkflowRun({ id: 'run-1' as WorkflowRunId, workflowId: 'wf-1' as WorkflowId }),
+      ],
+    });
     state.phaseTemplates = {
       'workspace-1': [
         {
@@ -231,7 +238,7 @@ describe('StageBoardCard layout', () => {
   });
 
   it('renders a backticked goal as inline code and keeps the tooltip plain', () => {
-    const marked = { ...session, goal: 'run `/explore` first' } as unknown as Session;
+    const marked = aSession({ ...session, goal: 'run `/explore` first' });
     render(<StageBoardCard session={marked} nav={nav} />);
     const title = screen.getByText(/run/);
     expect(title.querySelector('code')?.textContent).toBe('/explore');
@@ -246,8 +253,11 @@ describe('StageBoardCard layout', () => {
   });
 
   it('renders the last update age when the session carries a timestamp', () => {
-    const updated = { ...session, updatedAt: new Date(Date.now() - 7_200_000).toISOString() };
-    render(<StageBoardCard session={updated as unknown as Session} nav={nav} />);
+    const updated = aSession({
+      ...session,
+      updatedAt: new Date(Date.now() - 7_200_000).toISOString() as IsoDateTime,
+    });
+    render(<StageBoardCard session={updated} nav={nav} />);
     expect(screen.getByText('2h ago')).toBeDefined();
   });
 });
@@ -509,10 +519,7 @@ describe('StageBoardCard footer', () => {
     hooks.agents = [{}, {}];
     hooks.cost = 1.25;
     state.sessionExternalTasks = { [SESSION_ID]: [externalTask] };
-    const autoSession = {
-      ...session,
-      workflowRuns: [{ autoRun: true }],
-    } as unknown as Session;
+    const autoSession = aSession({ ...session, workflowRuns: [aWorkflowRun({ autoRun: true })] });
     render(<StageBoardCard session={autoSession} nav={nav} />);
     const agents = screen.getByLabelText('2 agents');
     const task = screen.getByLabelText('GB-123 from Linear');
@@ -536,13 +543,17 @@ describe('StageBoardCard footer', () => {
       task,
     ]);
     expect(right?.firstElementChild).toBe(cost);
-    expect(right?.children.length).toBe(1);
+    expect(right?.children.length).toBe(2);
+    expect(right?.lastElementChild?.textContent).toMatch(/ago$/);
     expect(right?.className).not.toContain('opacity-0');
     expect(metaRow?.querySelector('.lucide-chevron-right')).toBeNull();
   });
 
   it('sizes the project chip to its name, caps it, and lets it yield before the icons', () => {
-    state.projects = [{}, {}];
+    state.projects = [
+      aProject({ workspaceId: WORKSPACE_ID }),
+      aProject({ workspaceId: WORKSPACE_ID }),
+    ];
     state.sessionProjectMounts = {
       [SESSION_ID]: [{ projectId: 'project-1', mountName: 'gateway' }],
     };
@@ -556,7 +567,10 @@ describe('StageBoardCard footer', () => {
   });
 
   it('degrades several projects to a glyphed count that names them, never a mid-word clip', () => {
-    state.projects = [{}, {}];
+    state.projects = [
+      aProject({ workspaceId: WORKSPACE_ID }),
+      aProject({ workspaceId: WORKSPACE_ID }),
+    ];
     state.sessionProjectMounts = {
       [SESSION_ID]: [
         { projectId: 'project-1', mountName: 'core-api' },
@@ -586,8 +600,11 @@ describe('StageBoardCard footer', () => {
 
   it('keeps cost and age at the metadata grade', () => {
     hooks.cost = 1.25;
-    const updated = { ...session, updatedAt: new Date(Date.now() - 7_200_000).toISOString() };
-    render(<StageBoardCard session={updated as unknown as Session} nav={nav} />);
+    const updated = aSession({
+      ...session,
+      updatedAt: new Date(Date.now() - 7_200_000).toISOString() as IsoDateTime,
+    });
+    render(<StageBoardCard session={updated} nav={nav} />);
     const cost = document.querySelector('[title="Session spend: $1.25 (excludes summarizer)"]');
     expect(cost?.className).toContain('text-meta');
     expect(screen.getByText('2h ago').className).toContain('text-meta');

@@ -1,4 +1,5 @@
-import { migrate, migrations, type Database } from '@goodboy/db';
+import { type Database } from '@goodboy/db';
+import { migrate, migrations } from '@goodboy/db/migrations';
 import { makeTestDatabase } from '@goodboy/db/test-helpers';
 import type {
   IsoDateTime,

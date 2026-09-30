@@ -93,8 +93,10 @@ Below, `X` is the new version and `X-1` is the current latest.
 5. Cut the real release: `git tag vX <merge-sha> && git push origin vX`. Wait
    for the build to create the draft release. macOS gives dmg + app.tar.gz +
    .sig + latest.json. Linux gives AppImage + deb + rpm (x86_64, no updater
-   manifest and no signatures). That is seven assets. A missing Linux asset is
-   a red job, not an expected skip.
+   manifest and no signatures), attached by the `attach` job after both
+   platform jobs are green. That is seven assets. A missing asset is a red
+   job, not an expected skip, and a red run means the draft is not to be
+   published.
 
 ## Release notes (from source, not memory)
 

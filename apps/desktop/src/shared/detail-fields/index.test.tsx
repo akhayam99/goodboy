@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import type { GithubIssue, PullRequestState } from '@goodboy/types';
 import type { LinearIssue } from '../../features/integrations/linear/client';
 import type { GitlabIssue, GitlabMergeRequest } from '../../features/integrations/gitlab/client';
-import { formatAbsoluteDateTime } from '../utils/relativeDate';
+import { formatDateTime } from '../utils/time/formatDateTime';
 import {
   githubIssueFields,
   githubPullRequestFields,
@@ -217,7 +217,9 @@ describe('fact registries', () => {
       (fact) => fact.slot === 'time',
     );
 
-    expect(time?.hint).toBe(`Updated ${formatAbsoluteDateTime({ iso: GITLAB_ISSUE.updatedAt })}`);
+    expect(time?.hint).toBe(
+      `Updated ${formatDateTime({ at: GITLAB_ISSUE.updatedAt, hasYear: true })}`,
+    );
   });
 
   it('leaves no empty pill for a fact the payload does not carry', () => {

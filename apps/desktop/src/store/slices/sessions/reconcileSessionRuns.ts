@@ -1,5 +1,5 @@
 import type { Agent, IsoDateTime, ProviderRunId, Session, TurnState } from '@goodboy/types';
-import { updateAgentStatus, updateSessionState } from '@goodboy/db';
+import { recordAgentStatus, updateSessionState } from '@goodboy/db';
 import { cancelTurn, isTurnStreamActive } from '../../../features/chat/turn';
 import { readTurnCursor, type TurnCursor, type TurnOwner } from '../../../features/chat/turnCursor';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -75,7 +75,7 @@ export const reconcileLoadedAgent = async ({
     await cancelTurn(agent.runId).catch(() => undefined);
   }
   const stoppedAt = new Date().toISOString() as IsoDateTime;
-  await updateAgentStatus(tauriDatabase, agent.id, {
+  await recordAgentStatus(tauriDatabase, agent.id, {
     status: 'stopped',
     stoppedAt,
     stoppedBy: 'app',

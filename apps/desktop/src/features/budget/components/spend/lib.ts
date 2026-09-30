@@ -63,13 +63,16 @@ export const providerLabel = ({ provider }: ProviderLabelParams): string => {
 
 type SpendToneParams = {
   readonly pct: number;
+  readonly warnAt?: number;
 };
 
-export const spendTone = ({ pct }: SpendToneParams): Tone => {
+const DEFAULT_WARN_AT = 0.8;
+
+export const spendTone = ({ pct, warnAt = DEFAULT_WARN_AT }: SpendToneParams): Tone => {
   if (pct >= 1) {
     return 'danger';
   }
-  if (pct >= 0.8) {
+  if (pct >= warnAt) {
     return 'warning';
   }
   return 'primary';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { summarizeMountWork, type MountWorkState } from './mountCompletion';
 import type { SessionId } from '@goodboy/types';

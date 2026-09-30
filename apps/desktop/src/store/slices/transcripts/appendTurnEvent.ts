@@ -1,7 +1,7 @@
 import type { AgentId, SessionId, TurnEvent } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { invokeAgentSetProviderSessionId } from '../../../features/workflows/workflows';
-import { purgedAgentIds } from '../../session-mutators';
+import { purgedAgentIds } from '../sessions/sessionMutators';
 import { bufferTurnEvent } from './buffer';
 import { queueTurnEventInsert } from './queue';
 import type { SetFn } from './types';

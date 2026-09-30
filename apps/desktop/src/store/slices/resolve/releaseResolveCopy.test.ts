@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ResolveAttempt } from '@goodboy/types';
+import type { AgentId, MountId, ResolveAttempt, SessionId } from '@goodboy/types';
 
 const h = vi.hoisted(() => ({
   discard: vi.fn(async (_params: { worktreePath: string; copyPath: string }) => undefined),
@@ -12,14 +12,27 @@ vi.mock('../../../features/history/historyEngine', () => ({ discardHistoryCopy: 
 
 import { releaseEndedResolveCopies, releaseResolveCopy } from './releaseResolveCopy';
 
-const attemptOf = (patch: Partial<ResolveAttempt>): ResolveAttempt =>
-  ({
-    id: 'attempt-1',
-    phase: 'finished',
-    copyPath: '/copies/attempt-1',
-    mountTarget: { mountId: 'mount-1', mountRevision: 1, worktreePath: '/repo' },
-    ...patch,
-  }) as unknown as ResolveAttempt;
+const attemptOf = (patch: Partial<ResolveAttempt>): ResolveAttempt => ({
+  id: 'attempt-1',
+  sessionId: 'session-1' as SessionId,
+  agentId: 'agent-1' as AgentId,
+  prNumber: 318,
+  threadIds: ['PRRT_1'],
+  provider: 'anthropic',
+  model: 'claude-sonnet-5',
+  effort: null,
+  instructions: null,
+  phase: 'finished',
+  copyPath: '/copies/attempt-1',
+  mountTarget: { mountId: 'mount-1' as MountId, mountRevision: 1, worktreePath: '/repo' },
+  startedAt: 1,
+  endedAt: 2,
+  error: null,
+  createdAt: 1,
+  batchId: null,
+  launchChoice: null,
+  ...patch,
+});
 
 beforeEach(() => {
   vi.clearAllMocks();

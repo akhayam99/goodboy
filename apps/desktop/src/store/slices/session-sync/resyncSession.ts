@@ -1,10 +1,11 @@
 import { listExternalTasksForWorkspace } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
-import { refreshWorktreeStatuses } from '../../../features/session/hooks/useWorktreeStatuses/cache';
+import { refreshWorktreeStatuses } from '../worktreeStatuses/cache';
 import { invalidateLocalBranchesCache } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { listSessionPrFetches } from '../github/resolveSessionPrFetch';
 import type { GetFn, ResyncSessionParams, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 type SessionParams = {
   readonly set: SetFn;
@@ -36,7 +37,7 @@ const reloadLinkedTasks = async ({
   get,
   sessionId,
 }: SessionParams & ReadParams): Promise<void> => {
-  const session = get().sessions.find((candidate) => candidate.id === sessionId);
+  const session = sessionById(get().sessions, sessionId);
   if (session === undefined) {
     return;
   }

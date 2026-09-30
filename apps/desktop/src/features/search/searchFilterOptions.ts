@@ -1,4 +1,5 @@
 import type { ProjectId, SearchKind } from '@goodboy/types';
+import { PROVIDER_FILTERS } from './grammar';
 import type { SearchChip } from './searchChips';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -21,17 +22,7 @@ export const TYPE_OPTIONS: ReadonlyArray<{
   { value: 'comment', label: 'Comments', kinds: ['comment'] },
 ];
 
-export const PROVIDER_OPTIONS: ReadonlyArray<{ readonly value: string; readonly label: string }> = [
-  { value: 'anthropic', label: 'Claude' },
-  { value: 'codex', label: 'Codex' },
-  { value: 'cursor', label: 'Cursor' },
-  { value: 'gemini', label: 'Gemini' },
-  { value: 'linear', label: 'Linear' },
-  { value: 'jira', label: 'Jira' },
-  { value: 'github', label: 'GitHub' },
-  { value: 'gitlab', label: 'GitLab' },
-  { value: 'sentry', label: 'Sentry' },
-];
+export const PROVIDER_OPTIONS = PROVIDER_FILTERS;
 
 export const STATUS_OPTIONS: ReadonlyArray<{ readonly value: string; readonly label: string }> = [
   { value: 'archived', label: 'Archived' },

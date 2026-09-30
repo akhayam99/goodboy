@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   IsoDateTime,
@@ -45,18 +46,20 @@ const h = vi.hoisted(() => ({
   withRepositoryAndMountLock: vi.fn(async ({ run }: LockParams) => run()),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  getMountOperation: vi.fn(
-    async ({ requestId }: { readonly requestId: string }) => h.operations.get(requestId) ?? null,
-  ),
-  upsertMountOperation: vi.fn(async ({ operation }: { readonly operation: MountOperation }) => {
-    h.operations.set(operation.requestId, operation);
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    getMountOperation: vi.fn(
+      async ({ requestId }: { readonly requestId: string }) => h.operations.get(requestId) ?? null,
+    ),
+    upsertMountOperation: vi.fn(async ({ operation }: { readonly operation: MountOperation }) => {
+      h.operations.set(operation.requestId, operation);
+    }),
+    listSessionMounts: vi.fn(async ({ sessionId }: ListParams) =>
+      [...h.rows.values()].filter((row) => row.sessionId === sessionId),
+    ),
+    updateSessionMountLifecycle: h.updateSessionMountLifecycle,
   }),
-  listSessionMounts: vi.fn(async ({ sessionId }: ListParams) =>
-    [...h.rows.values()].filter((row) => row.sessionId === sessionId),
-  ),
-  updateSessionMountLifecycle: h.updateSessionMountLifecycle,
-}));
+);
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 

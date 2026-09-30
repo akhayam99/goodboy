@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProjectId, SessionId } from '@goodboy/types';
 
@@ -69,7 +70,7 @@ vi.mock('../../store/store', () => ({
 }));
 
 import { executeMaterializeRequest } from './projectMaterializeBridge';
-import { clearMaterializationBatch } from '../../store/materializationGate';
+import { clearMaterializationBatch } from '../../store/slices/project-mounts/materializationGate';
 
 type RequestParams = {
   readonly projectId: string;

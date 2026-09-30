@@ -1,7 +1,7 @@
 import { Pencil } from 'lucide-react';
 import { SectionHeader } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { formatClockTime } from '../../../../shared/utils/formatClockTime';
+import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { REVIEW_FLOW_LABEL, sourceChangeLine } from '../../reviewFlowCopy';
 import type { ReviewSourceChange } from '../../sourceChangeOf';
 import { wordDiff } from '../../wordDiff';
@@ -24,7 +24,7 @@ export const SourceChangeCard = ({ change }: Props) => {
         <span className="min-w-0">
           {sourceChangeLine({
             author: change.author,
-            time: formatClockTime({ iso: change.seenAt }),
+            time: formatClock({ at: change.seenAt }),
           })}
         </span>
       </p>

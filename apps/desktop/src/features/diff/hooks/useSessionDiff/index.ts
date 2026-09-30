@@ -3,6 +3,7 @@ import { formatError } from '@goodboy/ui';
 import { parseUnifiedDiff } from '@goodboy/core';
 import type { BranchCommit, DiffView, FileDiff, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore, useSummarizerStatus, type DiffFocus } from '../../../../store';
+import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
 import {
   listBranchCommits,
   worktreeDiff,
@@ -21,14 +22,20 @@ import type { DiffViewed } from '../../components/DiffView/types';
 
 const DEFAULT_VIEW: DiffView = { kind: 'branch' };
 
-const loadDiffForView = (worktreePath: string, view: DiffView): Promise<string> => {
+type LoadDiffParams = {
+  readonly worktreePath: string;
+  readonly baseBranch: string | null;
+  readonly view: DiffView;
+};
+
+const loadDiffForView = ({ worktreePath, baseBranch, view }: LoadDiffParams): Promise<string> => {
   if (view.kind === 'working') {
     return worktreeDiffWorking(worktreePath, view.scope);
   }
   if (view.kind === 'commit') {
     return worktreeDiffCommit(worktreePath, view.sha);
   }
-  return worktreeDiff({ worktreePath });
+  return worktreeDiff({ worktreePath, baseBranch });
 };
 
 type Params = {
@@ -79,6 +86,9 @@ export const useSessionDiff = ({
   const summarizer = useSummarizerStatus(sessionId);
   const previousSummarizer = useRef(summarizer.status);
   const isGitAware = worktreePath !== null;
+  const baseBranch = useAppStore((s) =>
+    sessionId === null ? null : selectMountBaseBranch({ state: s, sessionId, path: worktreePath }),
+  );
 
   const refresh = useCallback(() => setRefreshTick((tick) => tick + 1), []);
   const clearFocus = useCallback(() => setFocusPath(null), []);
@@ -109,7 +119,7 @@ export const useSessionDiff = ({
       return;
     }
     let cancelled = false;
-    Promise.all([listBranchCommits(worktreePath), worktreeStatus({ worktreePath })])
+    Promise.all([listBranchCommits(worktreePath), worktreeStatus({ worktreePath, baseBranch })])
       .then(([nextCommits, nextStatus]) => {
         if (cancelled) {
           return;
@@ -126,11 +136,13 @@ export const useSessionDiff = ({
     return () => {
       cancelled = true;
     };
-  }, [worktreePath, refreshTick, branchRevision]);
+  }, [worktreePath, baseBranch, refreshTick, branchRevision]);
 
   useEffect(() => {
     const fetcher =
-      worktreePath !== null ? () => loadDiffForView(worktreePath, view) : (loader ?? null);
+      worktreePath !== null
+        ? () => loadDiffForView({ worktreePath, baseBranch, view })
+        : (loader ?? null);
     if (fetcher === null) {
       setError('no diff source configured');
       setLoading(false);
@@ -158,7 +170,7 @@ export const useSessionDiff = ({
     return () => {
       cancelled = true;
     };
-  }, [worktreePath, view, refreshTick, loader]);
+  }, [worktreePath, baseBranch, view, refreshTick, loader]);
 
   useEffect(() => {
     setReviewedMap(readReviewedMap(sessionId, view));

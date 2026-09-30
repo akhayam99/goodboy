@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   Agent,
@@ -42,11 +43,13 @@ vi.mock('../../../features/chat/turn', () => ({
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentList: hoisted.invokeAgentList,
 }));
-vi.mock('@goodboy/db', () => ({
-  updateSessionState: hoisted.updateSessionState,
-  listResolveAttempts: hoisted.listResolveAttempts,
-  purgeAgentForDelete: hoisted.purgeAgentForDelete,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    updateSessionState: hoisted.updateSessionState,
+    listResolveAttempts: hoisted.listResolveAttempts,
+    purgeAgentForDelete: hoisted.purgeAgentForDelete,
+  }),
+);
 vi.mock('@goodboy/core', () => ({
   removeQuestionsFromSlot: hoisted.removeQuestionsFromSlot,
 }));
@@ -56,7 +59,7 @@ vi.mock('../../../features/worktree/worktree', () => ({
 }));
 
 import { deleteAgent } from './deleteAgent';
-import { purgedAgentIds } from '../../session-mutators';
+import { purgedAgentIds } from '../sessions/sessionMutators';
 
 const SID = 'sess-1' as SessionId;
 const DOOMED = 'resolver-1' as AgentId;

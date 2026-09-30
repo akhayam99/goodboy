@@ -7,6 +7,7 @@ import type { IsoDateTime, Project, ProjectId, WorkspaceId } from '@goodboy/type
 vi.mock('../../../store', () => ({
   useAppStore: <T,>(selector: (s: Record<string, unknown>) => T) =>
     selector({
+      settings: {},
       reportError: vi.fn(async () => undefined),
       setProjectStarred: vi.fn(async () => undefined),
       describeProject: vi.fn(async () => undefined),

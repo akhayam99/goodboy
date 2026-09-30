@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type {
   Agent,
@@ -31,10 +32,12 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentUpdateStatus: hoisted.invokeAgentUpdateStatus,
   invokeAgentList: hoisted.invokeAgentList,
 }));
-vi.mock('@goodboy/db', () => ({
-  updateSessionState: hoisted.updateSessionState,
-  listResolveAttempts: hoisted.listResolveAttempts,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    updateSessionState: hoisted.updateSessionState,
+    listResolveAttempts: hoisted.listResolveAttempts,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/worktree/worktree', () => ({
   abandonWorktreeWriter: hoisted.abandonWorktreeWriter,

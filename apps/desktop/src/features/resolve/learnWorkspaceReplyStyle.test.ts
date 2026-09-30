@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
 import {
@@ -15,7 +16,7 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
-vi.mock('../github/github', () => ({ tauriGhRunner: { run: vi.fn() } }));
+vi.mock('../integrations/github/github', () => ({ tauriGhRunner: { run: vi.fn() } }));
 vi.mock('@goodboy/core', () => ({
   DEFAULT_SESSION_PROVIDER_PREFERENCE: { defaultProvider: 'anthropic' },
   detectRepoSlug: h.detectRepoSlug,

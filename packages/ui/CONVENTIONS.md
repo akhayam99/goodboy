@@ -18,6 +18,10 @@ Owned by [docs/typescript/components.md](../../docs/typescript/components.md). A
 - Extend native props with `React.ComponentProps<'button'>` (or the matching element). Avoid `React.HTMLAttributes` unless you mean it.
 - No CVA. No Radix yet (add it later if accessibility needs justify it).
 
+## Assets
+
+An image a component draws lives in `src/assets/` and is imported by that component.
+
 ## Styling rules
 
 - Tailwind utilities only. No `@apply`, no CSS modules, no custom CSS files (the app owns `styles.css`). Inline `style` only for values computed at runtime.

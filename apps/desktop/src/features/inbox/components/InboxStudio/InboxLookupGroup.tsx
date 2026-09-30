@@ -7,7 +7,7 @@ import {
   lookupStatuses,
 } from '../../../integrations/issueCode/lookupCopy';
 import { openToolSettings } from '../../../integrations/openToolSettings';
-import { InboxRow, type InboxRowStar } from './InboxRow';
+import { InboxRow } from './InboxRow';
 import type { InboxRecord } from '../../types';
 import { LookupStatusRow } from './LookupStatusRow';
 
@@ -17,7 +17,8 @@ type Props = {
   readonly selectedKey: string | null;
   readonly onSelect: (hit: LookupHit) => void;
   readonly onActivate?: (record: InboxRecord) => void;
-  readonly starOf?: (record: InboxRecord) => InboxRowStar | undefined;
+  readonly starOf?: (record: InboxRecord) => boolean | undefined;
+  readonly onToggleStar?: (record: InboxRecord) => void;
 };
 
 export const InboxLookupGroup = ({
@@ -27,6 +28,7 @@ export const InboxLookupGroup = ({
   onSelect,
   onActivate,
   starOf,
+  onToggleStar,
 }: Props) => {
   const { state, code } = lookup;
   if (state.status === 'idle' || code === null) {
@@ -58,7 +60,8 @@ export const InboxLookupGroup = ({
               selected={selectedKey === hit.record.key}
               onSelect={() => onSelect(hit)}
               onActivate={onActivate}
-              star={starOf?.(hit.record)}
+              isStarred={starOf?.(hit.record)}
+              onToggleStar={onToggleStar}
             />
             {secondLine === '' ? null : (
               <span className="h-4 truncate pl-[122px] text-secondary text-faint-foreground">

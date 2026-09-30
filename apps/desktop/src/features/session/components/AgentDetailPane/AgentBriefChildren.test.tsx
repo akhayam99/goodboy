@@ -19,6 +19,14 @@ import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren'
 import { useAppStore } from '../../../../store';
 import { AgentBriefChildren } from './AgentBriefChildren';
 
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('../../../../shared/lib/db', async () =>
+  (await import('../../../../store/storyHarness')).dbLibModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
+
 const SESSION_ID = 'session-1' as SessionId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const WORKFLOW_ID = 'workflow-1' as WorkflowId;

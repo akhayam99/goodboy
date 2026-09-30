@@ -1,6 +1,7 @@
 type Params = Record<string, never>;
 
 export const createInitialSessionViewState = ({}: Params) => ({
+  selectedAgentId: {},
   scriptsLensScope: null,
   sessionViewPrefs: {},
   activeLens: {},
@@ -22,4 +23,5 @@ export const createInitialSessionViewState = ({}: Params) => ({
   resolveItemDrafts: {},
   sessionCreations: {},
   revealedActivityRows: {},
+  sessionGroupExpanded: {},
 });

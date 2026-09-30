@@ -50,6 +50,82 @@ If a push fails because a variable is missing, do not skip hooks with
 `git push --no-verify`. Pass the environment through instead. This layer runs
 on macOS and Linux.
 
+### Launching git
+
+Every git process the Rust shell starts goes through one builder,
+`proc::git::Git` (`apps/desktop/src-tauri/src/proc/git.rs`). Nothing else in
+production code builds a `git` command by hand, and a Rust test fails if it
+finds one.
+
+- Every call turns terminal prompts off (`GIT_TERMINAL_PROMPT=0`), sets the
+  editors to `true`, and removes an inherited `GIT_DIR`, `GIT_WORK_TREE` and
+  `GIT_INDEX_FILE`, so git always reads the repository the call names.
+- `batch_auth()` also blanks the askpass helpers and puts ssh in batch mode.
+  `worktree::git` uses it; the other callers keep their own auth behavior.
+- `login_env()` starts git with the login environment, for the one caller whose
+  `pre-push` hook needs it (`run_git_authenticated`).
+- Every call has a timeout: 5 minutes for `fetch`, `push`, `pull`, `ls-remote`
+  and `clone`, 10 minutes for everything else. When it fires, git and its
+  children are killed and the caller gets a `timeout` error.
+- A failure comes back as `GitError`, which serializes as `{kind, message}`.
+  The message carries the arguments and the stderr with URL credentials
+  redacted. `WorktreeError`, `GithubError` and plain `io::Error` callers map it
+  without changing their own wire shape.
+
+`spawn_streaming` is the exception to the timeout: the history predictor keeps
+one `git merge-tree --stdin` process open for a whole plan, so its caller owns
+the lifetime.
+
+### Worktree module
+
+The Rust side of worktrees and branch reads is one module,
+`apps/desktop/src-tauri/src/worktree/`. Each file owns one job: `create`,
+`remove`, `folder` and `orphans` for the folders on disk, `inspect` and
+`detach` for what a folder holds, `base`, `branches` and `merge_state` for
+base and branch resolution, `status`, `diff`, `changed_files`, `commits` and
+`fast_forward` for reads and updates, `candidates` for agent fixes, `scratch`
+and `exclude` for the goodboy directory, `git` for the shared runner, and
+`error`, `types` and `slug` for what they share. `mod.rs` only declares the
+files and re-exports their items, so callers keep writing
+`crate::worktree::git` and lib.rs registers `worktree::worktree_create`. A
+helper another file needs is `pub(super)`; nothing else leaves its file. Tests
+sit in a `tests.rs` beside the file they cover.
+
+### History module
+
+Rewrite history and Rebase on main run in one Rust module,
+`apps/desktop/src-tauri/src/history/`. Each file owns one job: `plan` orders
+the steps and resolves the revisions, `merge_tree` and `predict` build the
+in-memory prediction, `reservation` and `copies` own the throwaway copies
+under the app folder, `trial` and `check` replay a plan in a copy and verify
+the result, `journal`, `preflight` and `apply` move the branch safely,
+`backups` keeps the restore refs, `run` chains preflight and trial, `rebase`
+and `remote` read origin, `rewriter` collects an agent rewrite, and `runner`,
+`commits` and `types` hold what they share. `mod.rs` only declares the files
+and re-exports the items lib.rs, `turn.rs` and the worktree module use, so
+lib.rs still registers `history::history_plan_run` and the other commands by
+name. A helper another file needs is `pub(super)`. Tests sit in a `tests.rs`
+beside the file they cover; the repository builders more than one group needs
+live in the test-only `fixtures.rs`.
+
+### Config export module
+
+Backup and setup export run in one Rust module,
+`apps/desktop/src-tauri/src/config_export/`. Each file owns one job: `bundle`
+holds the schema version and the bundle structs, `groups` the export groups
+and the preview structs, `export` builds a bundle from the database and lists
+the findings a writer can leave out, `file` writes the `0600` file, `validate`
+checks a bundle, `apply` writes an import in one transaction, `preview`
+matches a bundle to what exists, `convert` holds the time, slug and project
+helpers, `error` the error enum, and `commands` the four Tauri commands.
+`mod.rs` only declares the files and re-exports the commands, so lib.rs still
+registers `config_export::config_export_preview` and the others by name. A
+helper another file needs is `pub(super)`. Tests sit in a `tests.rs` beside the
+file they cover; the connection and project builders more than one group needs
+live in the test-only `fixtures.rs`, and `wire_shape_tests.rs` pins the json of
+every bundle struct. The writer map below counts Rust writes per file, so the
+baseline names `config_export/apply.rs`.
+
 ### Provider routing
 
 - The list of models is built into the app, not saved in the database. Each model's id, family, cost tier, effort levels, context window, routing weight and price are written in the provider catalogs under `packages/core/src/providers/`. Every model the app can run ships with the app. When the list changes, there is no row to edit and no migration to write.
@@ -66,6 +142,78 @@ on macOS and Linux.
   providers.** Providers start as `unknown` and are detected after boot,
   through one refresh entry point
   ([ADR 003](adr/003-provider-detection-leaves-the-boot-path.md)).
+
+### Where commands run
+
+A Tauri command declared as a plain `fn` runs on the main thread, the same
+thread that draws the window and handles input. While it works, nothing else in
+the app moves. So the split is by what the command does.
+
+- **A command that touches the file system, git, a subprocess or the keychain
+  is `async fn`, and its blocking work runs inside
+  `tauri::async_runtime::spawn_blocking`.** The command keeps its name,
+  arguments and result. A join error becomes the command's own error type
+  (`restart_prepare` and `history_git_supported` follow the same shape).
+  Worktree, history, config export and import, the git and `gh` wrappers and
+  `explore_read` already work this way.
+- **A short SQLite call may run inline in an `async fn`.** An async command
+  runs on the worker pool, not on the main thread, so a query under the `Db`
+  lock does not freeze the window. Anything that can take long still goes
+  through `spawn_blocking`.
+- **A command that only reads or writes memory stays a plain `fn`.** That
+  covers registry lookups, lease bookkeeping and the answers to the frontend
+  (`mount_command_result`, `worktree_writer_*`, `frame_stage`).
+- **Terminal and provider-login input stays a plain `fn` on purpose.**
+  `terminal_write` and `provider_lifecycle_write` send keystrokes, and the main
+  thread keeps them in the order they were typed. Two async calls could
+  finish out of order.
+- **Do not hold a `std::sync::Mutex` guard across an `.await`.** Take the
+  lock, copy out what you need and drop it before the next `.await`, or do the
+  whole locked section inside `spawn_blocking`.
+
+`command_threading` (a Rust test) scans every `#[tauri::command]` and fails when
+a plain `fn` command is not on its short list of in-memory commands. A new
+command that does I/O has to be async, or the list has to change in review.
+
+### Logging
+
+Every build, debug and release, starts the log plugin first in `setup`
+(`src-tauri/src/logging.rs`), before the query bridge and anything else that
+can warn. It writes to one place: a local file, `goodboy.log`, in the system
+log folder of the app. That folder is `~/Library/Logs/com.goodboy.desktop/` on
+macOS, `~/.local/share/com.goodboy.desktop/logs/` on Linux and
+`%LOCALAPPDATA%\com.goodboy.desktop\logs\` on Windows. Nothing is sent
+anywhere; a debug build also prints to stdout.
+
+- **Level.** `info` and above. The frontend has no channel into the file: the
+  `log` permission is not granted, so a window cannot write to it.
+- **Size.** A file rotates at 512 KiB. The plugin keeps the active file and
+  the 3 most recent dated archives (`goodboy_<date>_<time>.log`). When two
+  rotations land in the same second the plugin renames the older archive to
+  `.log.bak`, and its own cleanup never removes those. So `logging::init`
+  sweeps them at every start and keeps only the newest. That needs more than
+  512 KiB logged in one second, and the one message a stranger could trigger
+  on demand, a network peer that connects to the phone listener and fails the
+  handshake, is logged at `debug` and never reaches the file. Normal size:
+  under about 2.5 MiB. `logging::tests` floods the logger and pins the cap.
+- **Access.** The folder is narrowed to the owner (`0700`) on macOS and Linux.
+- **Content.** Log a fixed label and a short reason, never a token, a prompt,
+  a file's content or a command line. `logging::detail` is the one way to
+  print an error: it keeps the first line, hides credentials inside URLs and
+  cuts the text at 200 characters.
+- **Dropped errors.** `logging::note_failure` and `note_kill_failure` replace
+  `let _ =` in process teardown (killing a terminal, script, provider login or
+  live child) and in git cleanup (removing scratch and copy worktrees,
+  `worktree prune`, `cherry-pick --abort` and the resets after it). A child that
+  already exited is not reported. Other `let _ =` are still silent by design:
+  event emits to a closed window and best-effort file cleanup.
+- **Logging never blocks startup.** `logging::init` builds the logger itself
+  and does not register the plugin. If the folder or file cannot be created or
+  opened (a `goodboy.log` owned by root after a `sudo` run, a read-only data
+  folder), it prints one line to stderr and the app starts with logging off.
+- **Before the logger exists.** `db::open` runs before the app, so its
+  messages go through `logging::early`: printed to stderr at once, and written
+  to the file when `setup` starts the logger (at most 16 lines).
 
 ### Opening an artifact outside the app
 
@@ -211,6 +359,112 @@ Then it runs the same reset before the migrations. A broken view on a
 complete schema, and any other migration failure, still show the error
 screen.
 
+### Who writes each table
+
+Each table has one writer, and the default writer is `packages/db`: the
+migrations, the schema tests and the query functions live there, and the
+frontend reaches SQLite through them. Rust writes a table only when the write
+has to happen without the webview or inside one Rust transaction: the backup
+export and import, a project move, the permission audit, integration
+credentials and the budget checks. The unit is the command or the transaction,
+not the table. The atomic agent operations moved with the agents: the routing
+gate, the fan-out of a delegated batch and the status stamps are guarded
+statements in `packages/db/src/queries/agent-write.ts`, and a workflow save is
+one transaction in `saveWorkflow`.
+
+The `ts` rows below have a ratchet:
+`packages/db/src/migrations/rust-writer-map.test.ts` reads this table, scans
+the production SQL in `apps/desktop/src-tauri/src/` and fails when Rust gains an
+`INSERT`, `UPDATE` or `DELETE` on a `ts` table beyond the writes it lists as
+its baseline. A new table has to appear here first: the same test fails on a
+table this map does not name. The rows marked `rust` are written by Rust
+commands; TypeScript still reaches some of them (`integration_credentials`,
+`integration_bindings`, `permission_rules`, the `permission_audit_log`
+cleanup) and moving those calls behind the commands is not done yet.
+
+| Table                         | Writer | Notes                                                                                                               |
+| ----------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------- |
+| `agent_handoffs`              | ts     |                                                                                                                     |
+| `agent_queued_messages`       | ts     |                                                                                                                     |
+| `agent_turn_spans`            | ts     |                                                                                                                     |
+| `agents`                      | ts     | Inserts, status, routing, viewed and done through `agent-write.ts`. Rust reads only.                                |
+| `artifact_provenance`         | ts     |                                                                                                                     |
+| `artifact_revisions`          | ts     |                                                                                                                     |
+| `budget_alerts`               | rust   | `budget.rs`                                                                                                         |
+| `budget_rules`                | rust   | `budget.rs`, and the backup import                                                                                  |
+| `chat_messages`               | ts     |                                                                                                                     |
+| `chat_session_links`          | ts     |                                                                                                                     |
+| `chats`                       | ts     |                                                                                                                     |
+| `context_slot_history`        | ts     |                                                                                                                     |
+| `context_slots`               | ts     |                                                                                                                     |
+| `deleted_branches`            | ts     |                                                                                                                     |
+| `diff_comments`               | ts     |                                                                                                                     |
+| `file_versions`               | ts     |                                                                                                                     |
+| `github_pr_cache`             | ts     |                                                                                                                     |
+| `goal_attachments`            | ts     |                                                                                                                     |
+| `history_plans`               | ts     |                                                                                                                     |
+| `integration_bindings`        | rust   | `integration_credentials.rs`, and the backup import                                                                 |
+| `integration_credentials`     | rust   | `integration_credentials.rs`, and the backup import                                                                 |
+| `integration_drafts`          | ts     | Exception: the query bridge saves a draft an agent proposes (`query_bridge/dispatch.rs`).                           |
+| `messages`                    | ts     |                                                                                                                     |
+| `mount_operations`            | ts     | Exceptions: a project move rewrites the paths in the log, and the query bridge writes it (`query_bridge/mount.rs`). |
+| `mount_pr_links`              | ts     |                                                                                                                     |
+| `notifications`               | ts     |                                                                                                                     |
+| `nudge_events`                | ts     |                                                                                                                     |
+| `open_questions`              | ts     |                                                                                                                     |
+| `permission_audit_log`        | rust   | `permissions.rs`, at hook time                                                                                      |
+| `permission_audit_retry`      | rust   | `permissions.rs`                                                                                                    |
+| `permission_rules`            | rust   | `permissions.rs`, and the backup import                                                                             |
+| `plan_consumptions`           | ts     |                                                                                                                     |
+| `pr_review_drafts`            | ts     |                                                                                                                     |
+| `pr_series`                   | ts     |                                                                                                                     |
+| `pr_series_members`           | ts     |                                                                                                                     |
+| `project_relocations`         | rust   | `project_relocation.rs`                                                                                             |
+| `project_scripts`             | ts     | Exception: the backup import.                                                                                       |
+| `project_sentry_links`        | ts     |                                                                                                                     |
+| `projects`                    | ts     | Exceptions: the backup import and a project move.                                                                   |
+| `provider_credentials`        | ts     |                                                                                                                     |
+| `provider_limits`             | ts     |                                                                                                                     |
+| `provider_runs`               | ts     |                                                                                                                     |
+| `resolve_attempts`            | ts     | Exception: a project move rewrites `worktree_path`.                                                                 |
+| `resolve_batches`             | ts     |                                                                                                                     |
+| `resolve_candidate_items`     | ts     |                                                                                                                     |
+| `resolve_candidates`          | ts     | Exception: a project move rewrites `worktree_path`.                                                                 |
+| `resolve_check_runs`          | ts     |                                                                                                                     |
+| `resolve_imports`             | ts     |                                                                                                                     |
+| `resolve_publication_threads` | ts     |                                                                                                                     |
+| `resolve_publications`        | ts     | Exception: a project move rewrites `worktree_path`.                                                                 |
+| `resolve_queue_items`         | ts     |                                                                                                                     |
+| `resolve_session_settings`    | ts     |                                                                                                                     |
+| `resolve_threads`             | ts     |                                                                                                                     |
+| `retained_worktree_paths`     | ts     | Exception: a project move rewrites the paths.                                                                       |
+| `schema_migration_segment`    | ts     |                                                                                                                     |
+| `schema_version`              | ts     |                                                                                                                     |
+| `search_docs`                 | ts     |                                                                                                                     |
+| `search_excluded_projects`    | ts     |                                                                                                                     |
+| `search_index`                | ts     |                                                                                                                     |
+| `search_index_state`          | ts     |                                                                                                                     |
+| `security_findings`           | ts     |                                                                                                                     |
+| `session_artifacts`           | ts     |                                                                                                                     |
+| `session_budgets`             | rust   | `budget.rs`                                                                                                         |
+| `session_decisions`           | ts     |                                                                                                                     |
+| `session_events`              | ts     |                                                                                                                     |
+| `session_external_tasks`      | ts     |                                                                                                                     |
+| `session_workflows`           | ts     |                                                                                                                     |
+| `session_worktrees`           | ts     | Exception: a project move rewrites the paths.                                                                       |
+| `sessions`                    | ts     |                                                                                                                     |
+| `settings`                    | ts     | Exceptions: the backup import and the restart marker (`restart_marker.rs`).                                         |
+| `skills`                      | rust   | `skills.rs`, next to the skill files on disk, and the backup import                                                 |
+| `step_library`                | rust   | `workflows.rs`. Only Rust writes it today; a candidate to move.                                                     |
+| `steps`                       | ts     | `saveWorkflow`. Exception: the backup import.                                                                       |
+| `telemetry_records`           | ts     |                                                                                                                     |
+| `turn_events`                 | ts     |                                                                                                                     |
+| `workflows`                   | ts     | `saveWorkflow` and `removeWorkflow`. Exception: the backup import.                                                  |
+| `workspace_profiles`          | ts     | Exception: the backup import.                                                                                       |
+| `workspace_starred_issues`    | ts     |                                                                                                                     |
+| `workspaces`                  | ts     | Exceptions: the backup import and the per-workspace settings override (`settings_overrides.rs`).                    |
+| `worktree_roots`              | ts     | Exception: a project move rewrites `repo_root`.                                                                     |
+
 ### On-disk data layout
 
 Everything the app saves for itself lives in `~/.goodboy`.
@@ -246,6 +500,8 @@ Everything the app saves for itself lives in `~/.goodboy`.
 - `query/query-<pid>.sock`: the socket a running app uses for the query bridge, in its own owner-only folder (see [query-bridge.md](query-bridge.md)).
 - `history-copies/`: the temporary copies Rewrite history replays a plan in.
 - `boot-breadcrumbs.log`: how long each startup step took.
+
+The app log is not in `~/.goodboy`; it lives in the system log folder (see [Logging](#logging)).
 
 When a session works on a repository, it gets its own git worktree in the
 repository's `.goodboy/worktrees/` folder ([mounts.md](mounts.md)). A session
@@ -300,7 +556,7 @@ through `project_relocation_undo`.
 ### Backup and setup export
 
 Settings › App › Backup reads and writes a JSON bundle, schema version 3
-(`apps/desktop/src-tauri/src/config_export.rs`, mirrored in
+(`apps/desktop/src-tauri/src/config_export/`, mirrored in
 `packages/types/src/config-bundle.ts`). What goes in is chosen per group
 (`ExportGroups`): workspaces, projects, folder paths, profile, workflows you
 made, workflows the orchestrator wrote, saved scripts, permission rules,

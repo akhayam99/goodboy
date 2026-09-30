@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   MountCleanupDecision,
@@ -30,14 +31,16 @@ const h = vi.hoisted(() => ({
   ),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  getMountOperation: vi.fn(
-    async ({ requestId }: { readonly requestId: string }) => h.operations.get(requestId) ?? null,
-  ),
-  upsertMountOperation: vi.fn(async ({ operation }: { readonly operation: MountOperation }) => {
-    h.operations.set(operation.requestId, operation);
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    getMountOperation: vi.fn(
+      async ({ requestId }: { readonly requestId: string }) => h.operations.get(requestId) ?? null,
+    ),
+    upsertMountOperation: vi.fn(async ({ operation }: { readonly operation: MountOperation }) => {
+      h.operations.set(operation.requestId, operation);
+    }),
   }),
-}));
+);
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -17,9 +18,9 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'creation menu: picks the kind of artifact to create',
   'features/session/components/SessionOverviewPane/OverviewActions/index.tsx':
     'Create split menu: picks what to create',
-  'features/integrations/linear/LinearAssigneeMenu/index.tsx':
+  'features/integrations/linear/LinearAssigneeMenu.tsx':
     'property picker: sets the assignee value from the control that shows it',
-  'features/integrations/linear/LinearStateMenu/index.tsx':
+  'features/integrations/linear/LinearStateMenu.tsx':
     'property picker: sets the state value from the control that shows it',
   'features/providers/components/ProviderStudio/DefaultsPanel/index.tsx':
     'settings control, not an object in the map',
@@ -33,11 +34,11 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'workflow editor band actions, studio chrome',
   'features/workflows/components/WorkflowStudio/WorkflowList/index.tsx':
     'workflow library list menu (restore built-ins); the workflow kind is a follow-up',
-  'features/history/components/RewriteHistoryPage/index.tsx':
+  'features/history/components/RewriteHistoryPage/HistoryPageActions.tsx':
     'rewrite page menu (backups, terminal), page chrome',
   'features/history/useHistoryRowActions/index.ts':
     'rewrite event rows in Activity: event verbs, not an object in the map',
-  'features/session/components/SessionWorkspace/parts/TimelinePane/index.tsx':
+  'features/session/components/SessionWorkspace/parts/TimelinePane/TimelineEntryRow.tsx':
     'hosts the rewrite event menu of useHistoryRowActions',
   'features/search/components/SearchMode/SearchHitActions.tsx':
     'search preview: lists the registry verbs of the hit through toMenuEntries',

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { AgentId, IsoDateTime, ProviderRunId, TurnEvent } from '@goodboy/types';
 import { encodeCliTooOldMessage } from '../turn';

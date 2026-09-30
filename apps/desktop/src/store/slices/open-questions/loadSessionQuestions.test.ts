@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { OpenQuestion, SessionId } from '@goodboy/types';
 
@@ -5,7 +6,9 @@ const { listOpenQuestionsForSession } = vi.hoisted(() => ({
   listOpenQuestionsForSession: vi.fn(),
 }));
 
-vi.mock('@goodboy/db', () => ({ listOpenQuestionsForSession }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({ listOpenQuestionsForSession }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { loadSessionAnsweredQuestions } from './loadSessionAnsweredQuestions';

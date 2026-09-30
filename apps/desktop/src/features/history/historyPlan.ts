@@ -89,7 +89,7 @@ const replace = ({
 }: ShaParams & { readonly next: (step: HistoryStep) => HistoryStep }) =>
   items.map((step) => (step.sha === sha ? next(step) : step));
 
-export const takenInBy = ({ items, sha }: ShaParams): ReadonlyArray<HistoryStep> =>
+const takenInBy = ({ items, sha }: ShaParams): ReadonlyArray<HistoryStep> =>
   items.filter((step) => isFolded({ step }) && step.target === sha);
 
 export const canRemove = ({ items, sha }: ShaParams): boolean =>

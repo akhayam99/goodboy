@@ -1,9 +1,8 @@
 import { useMemo } from 'react';
-import { MetaRow, SectionHeader, Skeleton, cn } from '@goodboy/ui';
+import { MetaRow, SectionHeader, Skeleton, cn, PaneShell } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useSessionOpenQuestions } from '../../../../store';
-import { PaneShell } from '../../../../shared/components/PaneShell';
-import { formatCompactDateTime } from '../../../../shared/utils/formatCompactDateTime';
+import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { OpenQuestionCluster } from '../../../chat/components/ChatView/OpenQuestionCluster';
 import { modelLabel } from '../../../chat/utils/chat-constants';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
@@ -58,11 +57,11 @@ export const ArtifactGenerationShell = ({ sessionId, generation }: Props) => {
               items={[
                 provider === null ? null : <span key="provider">{provider}</span>,
                 generation.model === null ? null : (
-                  <span key="model">{modelLabel(generation.model)}</span>
+                  <span key="model">{modelLabel(generation.model, generation.provider)}</span>
                 ),
                 generation.startedAt === null ? null : (
                   <span key="started" className="tabular-nums">
-                    {formatCompactDateTime({ iso: generation.startedAt })}
+                    {formatDateTime({ at: generation.startedAt })}
                   </span>
                 ),
               ]}

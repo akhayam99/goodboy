@@ -226,10 +226,14 @@ describe('artifact outcome through the real store', () => {
   it('shows no green when a parsed report fails to save', async () => {
     const { createArtifact } = await import('../features/artifacts/artifacts');
     vi.mocked(createArtifact).mockRejectedValueOnce(new Error('disk full'));
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
     await runReportTurn(CAPTURED_REPORT);
 
     await vi.waitFor(() => expect(agentRow()?.status).toBe('blocked'));
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('[artifact-capture] failed'));
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('disk full'));
+    warn.mockRestore();
     expect(artifacts()).toEqual([]);
     expect(stateWord().word).toBe('No artifact');
     const events = useAppStore.getState().transcripts[AGENT_ID] ?? [];

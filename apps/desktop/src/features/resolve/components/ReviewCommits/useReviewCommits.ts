@@ -32,6 +32,7 @@ import {
 } from '../../reviewCommits';
 import { threadLocationOf } from '../../threadLocationOf';
 import type { ReviewEntry } from '../ReviewFlow/useReviewEntries';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -59,7 +60,7 @@ const threadsOf = ({
     };
   });
 
-export type RewriteStage = 0 | 1 | 2 | 3;
+type RewriteStage = 0 | 1 | 2 | 3;
 
 export const useReviewCommits = ({ sessionId, entries }: Params) => {
   const mountId = useAppStore((s) => selectActiveMount({ state: s, sessionId })?.mountId ?? null);
@@ -75,9 +76,7 @@ export const useReviewCommits = ({ sessionId, entries }: Params) => {
   const prNumber = useAppStore(
     (s) => activeReviewSourceOf({ state: s, sessionId })?.prNumber ?? null,
   );
-  const workspaceId = useAppStore(
-    (s) => s.sessions.find((session) => session.id === sessionId)?.workspaceId ?? null,
-  );
+  const workspaceId = useAppStore((s) => sessionById(s.sessions, sessionId)?.workspaceId ?? null);
   const editKey = workspaceId === null ? null : editPostedReplyKey({ workspaceId });
   const rawEdit = useAppStore((s) => (editKey === null ? undefined : s.settings[editKey]));
   const loadSetting = useAppStore((s) => s.loadSetting);

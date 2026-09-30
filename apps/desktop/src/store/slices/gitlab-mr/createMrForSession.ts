@@ -2,16 +2,17 @@ import { findPrSeriesMembership, upsertMountPullRequestLink } from '@goodboy/db'
 import type { IsoDateTime, MountId, SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { gitlabCreateMr } from '../../../features/integrations/gitlab/client';
-import { appendClosingReferences } from '../../../features/github/appendClosingReferences';
-import { partOfReferences } from '../../../features/github/partOfReferences';
+import { appendClosingReferences } from '../../../features/integrations/github/appendClosingReferences';
+import { partOfReferences } from '../../../features/integrations/github/partOfReferences';
 import { seriesReferenceLines } from '../pr-series/seriesReferences';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { mountRequestEventPayload } from '../project-mounts/mountRequests';
 import { gitlabRequestIdentity, toMountMrLink } from './mrLink';
 import { resolveMrContext, resolveSessionMrTarget } from './resolveMrContext';
 import type { GetFn, SetFn } from './types';
+import { projectById } from '../projects/projectIndex';
 
-export type CreateMrReferenceMode = 'closing' | 'part-of' | 'none';
+type CreateMrReferenceMode = 'closing' | 'part-of' | 'none';
 
 export type CreateMrInput = {
   readonly sessionId: SessionId;
@@ -45,9 +46,7 @@ export const createMrForSession = (_set: SetFn, get: GetFn) => {
       );
     }
     const mount = target.mount;
-    const projectBaseBranch = get().projects.find(
-      (project) => project.id === mount.projectId,
-    )?.baseBranch;
+    const projectBaseBranch = projectById(get().projects, mount.projectId)?.baseBranch;
     const base = targetBranch?.trim() || mount.baseBranch || projectBaseBranch || 'main';
     const resolvedTitle = title?.trim() || context.goal;
     const isDraft = draft ?? true;

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, PullRequestState, SessionExternalTask, SessionId } from '@goodboy/types';
 import { buildWorkItems } from './workItems';

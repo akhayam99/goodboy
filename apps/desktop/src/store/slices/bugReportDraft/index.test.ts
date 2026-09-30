@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { createBugReportDraftSlice } from './index';
@@ -10,7 +11,7 @@ const harness = () => {
   ) => {
     state = { ...state, ...(typeof p === 'function' ? p(state) : p) };
   };
-  const slice = createBugReportDraftSlice(set as never, (() => state) as never);
+  const slice = createBugReportDraftSlice({ set: set as never, get: (() => state) as never });
   return { slice, getState: () => state };
 };
 

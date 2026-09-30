@@ -14,7 +14,8 @@ vi.mock('../../../../store', () => ({
   useSummarizerStatus: () => ({ status: 'idle' }),
 }));
 
-vi.mock('../../../../shared/components/PaneShell', () => ({
+vi.mock('@goodboy/ui', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/ui')>()),
   PaneShell: ({ header, children }: { header: ReactNode; children: ReactNode }) => (
     <div>
       {header}

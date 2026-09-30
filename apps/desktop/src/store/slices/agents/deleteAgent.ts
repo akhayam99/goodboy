@@ -3,16 +3,17 @@ import { purgeAgentForDelete, updateSessionState } from '@goodboy/db';
 import { removeQuestionsFromSlot } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList } from '../../../features/workflows/workflows';
-import { deriveSessionState, purgedAgentIds } from '../../session-mutators';
+import { deriveSessionState, purgedAgentIds } from '../sessions/sessionMutators';
 import { dropPendingTurnEvents } from '../transcripts/buffer';
 import { stopAgentForDelete } from './stopAgentForDelete';
 import { releaseAgentFiles } from './releaseAgentFiles';
 import { omitDeletedAgents } from './omitDeletedAgents';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 export const deleteAgent = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, agentId: AgentId) => {
-    const workspaceId = get().sessions.find((sess) => sess.id === sessionId)?.workspaceId;
+    const workspaceId = sessionById(get().sessions, sessionId)?.workspaceId;
     const runStopped = await stopAgentForDelete({ get, agentId });
     await releaseAgentFiles({ get, sessionId, agentId, isRunStopped: runStopped });
 

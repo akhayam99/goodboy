@@ -15,7 +15,7 @@ type Params = {
 
 type ProjectsParams = Pick<Params, 'projectNames'>;
 
-export const workBriefSystemPrompt = ({ projectNames }: ProjectsParams): string =>
+const workBriefSystemPrompt = ({ projectNames }: ProjectsParams): string =>
   [
     'You turn a conversation about a code workspace into a brief for a coding agent.',
     'Reply with one JSON object and nothing else, with these keys:',

@@ -3,7 +3,7 @@ import { Eyebrow, WorkNode, cn } from '@goodboy/ui';
 import type { ResolveVerdict, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { modelLabel } from '../../../chat/utils/chat-constants';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { RelativeTime } from '../../../../shared/components/RelativeTime';
 import { draftRoutingOf } from '../../draftRouting';
 import { RECHECK_LABEL } from '../../reviewFlowCopy';
 import { VERDICT_VIEW } from '../../reviewRemote';
@@ -43,8 +43,7 @@ export const ThreadVerdictCard = ({ sessionId, verdict, isPushed }: Props) => {
         <p className="text-secondary text-muted-foreground">{RECHECK_LABEL.runsOn({ model })}</p>
       )}
       <p className="text-secondary text-faint-foreground">
-        {RECHECK_LABEL.checked}{' '}
-        {formatRelativeAge({ fromIso: new Date(verdict.checkedAt).toISOString() })}
+        {RECHECK_LABEL.checked} <RelativeTime iso={new Date(verdict.checkedAt).toISOString()} />
       </p>
     </section>
   );

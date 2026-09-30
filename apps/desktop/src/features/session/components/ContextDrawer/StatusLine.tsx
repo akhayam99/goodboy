@@ -3,13 +3,15 @@ import { AlertTriangle } from 'lucide-react';
 import { Button, StatusDot } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore, useSummarizerStatus } from '../../../../store';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 type Props = {
   readonly sessionId: SessionId;
 };
 
 export const StatusLine = ({ sessionId }: Props) => {
+  const now = useNow(30_000);
   const { status, lastUpdate, lastAttempt } = useSummarizerStatus(sessionId);
   const retrySummarizer = useAppStore((state) => state.retrySummarizer);
   const [isRetrying, setIsRetrying] = useState(false);
@@ -57,7 +59,7 @@ export const StatusLine = ({ sessionId }: Props) => {
 
   return (
     <p className="flex h-6 items-center text-secondary text-faint-foreground">
-      {`Updated ${formatRelativeAge({ fromIso: lastUpdate })}`}
+      {`Updated ${formatAge({ from: lastUpdate, now })}`}
     </p>
   );
 };

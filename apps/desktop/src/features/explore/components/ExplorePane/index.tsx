@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight, ExternalLink, File, Folder, FolderSearch } from 'lucide-react';
-import { Button, cn, EmptyState, Skeleton, Tooltip } from '@goodboy/ui';
+import { Button, cn, EmptyState, Skeleton, Tooltip, PaneShell } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { exploreList, exploreOpen, type ExploreEntry } from '../../explore';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState, RefreshIconButton } from '@goodboy/ui';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { useAppStore } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { ExploreSpawnPopover } from './ExploreSpawnPopover';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 const ROOT_PATH = '';
 const EMPTY_ENTRIES: ReadonlyArray<ExploreEntry> = Object.freeze([]);
@@ -31,6 +31,7 @@ const toErrorMessage = ({ error }: { readonly error: unknown }): string => {
 };
 
 export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
+  const now = useNow(30_000);
   const [entriesByPath, setEntriesByPath] = useState<
     Readonly<Record<string, ReadonlyArray<ExploreEntry>>>
   >({});
@@ -130,7 +131,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
       }
       await loadDirectory({ relPath: entry.relPath });
     },
-    [entriesByPath, expandedByPath, loadDirectory, loadingByPath],
+    [entriesByPath, expandedByPath, loadDirectory, loadingByPath, now],
   );
 
   const renderEntries = useCallback(
@@ -142,8 +143,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
         const childError = errorByPath[entry.relPath] ?? null;
         const actionError = actionErrorByPath[entry.relPath] ?? null;
         const isSelectedFile = selectedRelPath === entry.relPath;
-        const age =
-          entry.modifiedAt == null ? '' : formatRelativeAge({ fromIso: entry.modifiedAt });
+        const age = entry.modifiedAt == null ? '' : formatAge({ from: entry.modifiedAt, now });
         const ageLabel = age === '' ? 'unknown age' : age;
         const sizeLabel = formatBytes({ bytes: entry.sizeBytes });
 

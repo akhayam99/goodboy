@@ -11,11 +11,11 @@ type Props = {
   readonly onOpenSettings: () => void;
 };
 
-const runningLabel = (running: number): string => {
-  if (running === 0) {
-    return 'nothing running';
+const activeLabel = (active: number): string => {
+  if (active === 0) {
+    return 'nothing active';
   }
-  return running === 1 ? '1 running' : `${running} running`;
+  return active === 1 ? '1 session active' : `${active} sessions active`;
 };
 
 export const CurrentWorkspaceRow = ({ workspace, onOpenSettings }: Props) => {
@@ -35,7 +35,7 @@ export const CurrentWorkspaceRow = ({ workspace, onOpenSettings }: Props) => {
       <span className="min-w-0 flex-1">
         <span className="truncate text-row text-foreground">{workspace.name}</span>
         <span className="block truncate text-label text-muted-foreground">
-          {projectsLabel} · {runningLabel(running)}
+          {projectsLabel} · {activeLabel(running)}
         </span>
       </span>
       <span className="flex shrink-0 items-center gap-1 text-label text-muted-foreground">

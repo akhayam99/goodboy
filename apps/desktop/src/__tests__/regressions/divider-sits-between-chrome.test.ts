@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -57,7 +58,7 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 2,
     reason: 'chrome',
   },
-  'apps/desktop/src/features/github/components/PullRequest/ThreadReplies.tsx': {
+  'apps/desktop/src/features/integrations/github/components/PullRequest/ThreadReplies.tsx': {
     count: 1,
     reason: 'debt',
   },
@@ -105,13 +106,13 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 2,
     reason: 'debt',
   },
-  'apps/desktop/src/shared/components/PaneShell/index.tsx': { count: 1, reason: 'chrome' },
   'apps/desktop/src/shared/components/RoutingPicker/RoutingPickerBody.tsx': {
     count: 1,
     reason: 'chrome',
   },
   'packages/ui/src/components/Dialog.tsx': { count: 2, reason: 'chrome' },
   'packages/ui/src/components/DrawerFrame.tsx': { count: 1, reason: 'chrome' },
+  'packages/ui/src/components/PaneShell/index.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/Markdown/index.tsx': { count: 3, reason: 'markdown' },
   'apps/desktop/src/app/components/MockScene/scenes/audit/UpdateConfirmScene.tsx': {
     count: 1,

@@ -14,7 +14,7 @@ import type {
 } from '@goodboy/types';
 import { AppFooter } from '../../AppFooter';
 import { AppTopBar } from '../../AppTopBar';
-import { ToastProvider } from '../../Toast';
+import { ToastProvider } from '../../../../shared/components/Toast';
 import { SessionNavSidebar } from '../../../../features/session/components/SessionNavSidebar';
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
 import { useAppStore } from '../../../../store';

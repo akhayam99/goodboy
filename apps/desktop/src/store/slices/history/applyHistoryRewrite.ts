@@ -2,7 +2,7 @@ import { markHistoryPlan } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { applyHistoryPlan, pushWithLease } from '../../../features/history/historyEngine';
-import { refreshWorktreeStatuses } from '../../../features/session/hooks/useWorktreeStatuses/cache';
+import { refreshWorktreeStatuses } from '../worktreeStatuses/cache';
 import { historyTargetOf } from './historyTargetOf';
 import { identityChange } from './historyIdentity';
 import { editPostedReplies } from '../resolve/editPostedReplies';

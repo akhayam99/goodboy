@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { ResolveThread } from '@goodboy/types';
 import { outcomePatch } from './outcomePatch';

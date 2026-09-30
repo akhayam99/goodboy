@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-type Cadence = 5_000 | 15_000 | 30_000 | 60_000;
+type Cadence = 1_000 | 5_000 | 15_000 | 30_000 | 60_000;
 
 type Ticker = {
   now: number;
@@ -42,7 +42,10 @@ function maybeStop(ticker: Ticker): void {
 }
 
 export const useNow = (cadenceMs: Cadence = 5_000, enabled = true): number => {
-  const [now, setNow] = useState(() => getTicker(cadenceMs).now);
+  const [now, setNow] = useState(() => {
+    const ticker = getTicker(cadenceMs);
+    return ticker.intervalId === null ? Date.now() : ticker.now;
+  });
   useEffect(() => {
     if (!enabled) {
       return;

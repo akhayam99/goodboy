@@ -11,7 +11,7 @@ import {
 } from '@goodboy/ui';
 import type { SessionId, WorkflowRun, WorkflowSpendLimitMode } from '@goodboy/types';
 import { useAppStore } from '../../../../store/store';
-import { useRunSpendUsd } from '../../../../store/selectors';
+import { useRunSpendUsd } from '../../../../store/slices/sessions/selectors';
 import { OrchestratorAction } from '../OrchestratorStrip/OrchestratorAction';
 import { SpendLimitFields } from '../../../budget/components/SpendLimitFields';
 import { parseSpendLimit } from '../../../budget/parseSpendLimit';

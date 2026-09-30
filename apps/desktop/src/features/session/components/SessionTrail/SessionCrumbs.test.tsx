@@ -297,7 +297,7 @@ describe('SessionCrumbs', () => {
 
     const selectedCrumb = screen.getByRole('button', { name: /scout one/ });
     expect(
-      within(selectedCrumb).getByLabelText('Completed, it ran and finished its work'),
+      within(selectedCrumb).getByLabelText('Done, it ran and finished its work'),
     ).toBeDefined();
   });
 

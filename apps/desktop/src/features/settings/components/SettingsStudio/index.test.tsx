@@ -89,6 +89,9 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
     providers: [] as ReadonlyArray<unknown>,
     cliRequirements: [] as ReadonlyArray<unknown>,
     agentTurnState: {},
+    sessions: [] as ReadonlyArray<unknown>,
+    sessionPhaseRuns: {},
+    orchestratingWorkflowRuns: {},
     openSecurityFindings: {} as Record<string, ReadonlyArray<unknown>>,
     projects: [] as ReadonlyArray<unknown>,
     projectGitStatus: {} as Record<string, unknown>,
@@ -124,7 +127,7 @@ vi.mock('./WorkspaceScopePanel', () => ({
   WorkspaceScopePanel: () => <div>Workspace settings content</div>,
 }));
 
-vi.mock('../../../../app/components/Toast', () => ({
+vi.mock('../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: toastMock }),
 }));
 
@@ -134,7 +137,7 @@ vi.mock('../../../onboarding/onboarding-store', () => ({
 
 import { SettingsStudio } from './index';
 import { APP_SECTIONS } from './appSections';
-import type { SettingsScopeChange } from './types';
+import type { SettingsScopeChange } from '../../settingsFocus';
 import { OPEN_REPORT_SHEET_EVENT } from '../../../bug-report/openReportSheet';
 import { shortcutGlyphs, shortcutRangeGlyphs } from '../../../../shared/keyboard/registry';
 import { SHORTCUT_ROW_COUNT } from './shortcutRows';

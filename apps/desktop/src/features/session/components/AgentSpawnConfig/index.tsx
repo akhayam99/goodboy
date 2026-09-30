@@ -7,7 +7,7 @@ import { useAppStore } from '../../../../store';
 import { AGENT_FORM_GRAMMAR, type AgentFormRole } from '../../agent-form-grammar';
 import { AgentInstructionsField } from '../AgentInstructionsField';
 import { AgentRoleField } from '../AgentRoleField';
-import type { AgentSpawnConfigValue } from './AgentSpawnConfigValue';
+import type { AgentSpawnConfigValue } from '../../agentSpawnConfigValue';
 
 type Props = {
   readonly value: AgentSpawnConfigValue;
@@ -32,7 +32,7 @@ export const AgentSpawnConfig = ({ value, onChange, disabled, className, role }:
       ...value,
       provider,
       model,
-      effort: clampEffortForModel({ model, effort: value.effort }) ?? value.effort,
+      effort: clampEffortForModel({ model, effort: value.effort, provider }) ?? value.effort,
     });
   };
 
@@ -60,7 +60,12 @@ export const AgentSpawnConfig = ({ value, onChange, disabled, className, role }:
           onChange({
             ...value,
             model,
-            effort: clampEffortForModel({ model, effort: value.effort }) ?? value.effort,
+            effort:
+              clampEffortForModel({
+                model,
+                effort: value.effort,
+                provider: value.provider === '' ? null : value.provider,
+              }) ?? value.effort,
           })
         }
       />

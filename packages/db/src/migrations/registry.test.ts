@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { Database } from '../client';
@@ -271,6 +271,7 @@ const SHIPPED_MIGRATION_SQL_SHA256: Readonly<Record<number, string>> = {
   212: 'b11ae20f3ae7b8eb40b0b750ba61a25165e3906e9a6350f6cb64f76730bb2d46',
   213: '6b1b2710abce3bf972cc15beeb19b09bdcc8cd8eb9f499038a46ebdb481dec9b',
   214: '7096a8edfd601b841575f6691d1dd93707521fb87331d469c352778da33bf1c6',
+  215: '4aa6c3ec76a41113219a0d5bab772cd42fca7c34527ad952ef8ed46559cfde5d',
 };
 
 const MIN_CONVERGENCE_SAMPLE_POINTS = 10;
@@ -336,6 +337,57 @@ describe('migration registry', () => {
       unpinned.length,
       `new migration(s) not yet pinned; paste into SHIPPED_MIGRATION_SQL_SHA256:\n${lines}`,
     ).toBe(0);
+  });
+});
+
+const REBUILDS_TABLES = /PRAGMA\s+foreign_keys\s*=\s*OFF/i;
+const SEEDS_OLDER_SCHEMA = /throughVersion:|migrations\.filter\(/;
+
+const REBUILDS_WITHOUT_DATA_TEST: ReadonlySet<number> = new Set([
+  31, 37, 45, 64, 65, 67, 68, 71, 73, 85, 96, 126, 128,
+]);
+
+const dataTestSource = ({ version }: { readonly version: number }): string | undefined => {
+  const prefix = `m${String(version).padStart(3, '0')}-`;
+  const name = readdirSync(join(import.meta.dirname)).find(
+    (file) =>
+      file.startsWith(prefix) && file.endsWith('.test.ts') && !file.endsWith('.perf.test.ts'),
+  );
+  return name === undefined ? undefined : readFileSync(join(import.meta.dirname, name), 'utf8');
+};
+
+const rebuildVersions = migrations
+  .filter((migration) => REBUILDS_TABLES.test(migration.sql))
+  .map((migration) => migration.version);
+
+describe('table rebuild data tests', () => {
+  it('requires a data test for every rebuild not on the legacy list', () => {
+    for (const version of rebuildVersions.filter(
+      (candidate) => !REBUILDS_WITHOUT_DATA_TEST.has(candidate),
+    )) {
+      const source = dataTestSource({ version });
+      expect(
+        source,
+        `migration ${version} rebuilds tables with foreign_keys = OFF and has no mNNN-*.test.ts that seeds rows and checks they survive`,
+      ).toBeDefined();
+      expect(
+        SEEDS_OLDER_SCHEMA.test(source ?? ''),
+        `the test for migration ${version} must seed rows at the schema before it (makeMigratedTestDatabase with throughVersion, or migrations.filter)`,
+      ).toBe(true);
+    }
+  });
+
+  it('keeps the legacy list to rebuilds that still lack a data test', () => {
+    for (const version of REBUILDS_WITHOUT_DATA_TEST) {
+      expect(
+        rebuildVersions,
+        `migration ${version} on the legacy list does not rebuild tables with foreign_keys = OFF`,
+      ).toContain(version);
+      expect(
+        dataTestSource({ version }),
+        `migration ${version} now has a data test: remove it from REBUILDS_WITHOUT_DATA_TEST`,
+      ).toBeUndefined();
+    }
   });
 });
 

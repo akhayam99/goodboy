@@ -11,7 +11,7 @@ vi.mock('@goodboy/core', async (importOriginal) => {
   return { ...actual, detectRepoSlug: h.detectRepoSlug };
 });
 
-vi.mock('../github/github', () => ({
+vi.mock('./github/github', () => ({
   tauriGhRunner: {},
   ghAssignedIssues: h.ghAssignedIssues,
 }));

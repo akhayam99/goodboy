@@ -7,7 +7,7 @@ export type LensDestination = {
   readonly shortcut: ShortcutId;
 };
 
-export type LensTool = 'linear' | 'gitlab' | 'jira' | 'slack';
+type LensTool = 'linear' | 'gitlab' | 'jira' | 'slack';
 
 export type ConnectedLensTools = Readonly<Record<LensTool, boolean>>;
 

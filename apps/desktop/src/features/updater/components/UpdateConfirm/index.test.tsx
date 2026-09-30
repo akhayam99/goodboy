@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, ProviderRunId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { UpdateConfirm, runningAgentsCopy } from './index';
+import { UpdateConfirm, activeWorkCopy } from './index';
 
 const applyUpdate = vi.fn(async () => undefined);
 const focusChangelogRelease = vi.fn();
@@ -34,20 +34,20 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-describe('runningAgentsCopy', () => {
+describe('activeWorkCopy', () => {
   it('names what a restart stops', () => {
-    expect(runningAgentsCopy({ count: 0 })).toBe('Nothing is running.');
-    expect(runningAgentsCopy({ count: 1 })).toBe(
-      'The running agent picks up where it stopped after the restart.',
+    expect(activeWorkCopy({ count: 0 })).toBe('Nothing is active.');
+    expect(activeWorkCopy({ count: 1 })).toBe(
+      'The active work picks up where it stopped after the restart.',
     );
-    expect(runningAgentsCopy({ count: 2 })).toBe(
-      'The 2 running agents pick up where they stopped after the restart.',
+    expect(activeWorkCopy({ count: 2 })).toBe(
+      'The 2 pieces of active work pick up where they stopped after the restart.',
     );
   });
 });
 
 describe('UpdateConfirm', () => {
-  it('counts running agents in the confirmation', async () => {
+  it('counts active work in the confirmation', async () => {
     seed({ running: 2 });
     render(
       <UpdateConfirm
@@ -60,7 +60,7 @@ describe('UpdateConfirm', () => {
     );
     await userEvent.click(screen.getByRole('button', { name: 'open' }));
     expect(
-      screen.getByText('The 2 running agents pick up where they stopped after the restart.'),
+      screen.getByText('The 2 pieces of active work pick up where they stopped after the restart.'),
     ).toBeTruthy();
     expect(screen.queryByRole('button', { name: "What's new" })).toBeNull();
   });

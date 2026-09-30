@@ -1,3 +1,4 @@
+import { providerIdOf } from '../../../../shared/utils/providerIdOf';
 import { Info } from 'lucide-react';
 import { cn, formatTokens, formatUsd } from '@goodboy/ui';
 import { modelLabel } from '../../utils/chat-constants';
@@ -24,7 +25,9 @@ export const UsageStatsRow = ({
 }: Props) => (
   <>
     <ProviderIcon provider={data.provider} size={11} />
-    {data.model != null && <span>{modelLabel(data.model)}</span>}
+    {data.model != null && (
+      <span>{modelLabel(data.model, providerIdOf({ value: data.provider }))}</span>
+    )}
     {duration != null && <span className="text-faint-foreground">{duration}</span>}
     <span>
       {formatTokens(totalInput)} in · {formatTokens(data.outputTokens)} out

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   AfterMergeRule,
@@ -30,21 +31,23 @@ const h = vi.hoisted(() => ({
   ghRepoDeletesMergedBranches: vi.fn(async () => false as boolean | null),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  insertDeletedBranch: h.insertDeletedBranch,
-  getDeletedBranch: h.getDeletedBranch,
-  markDeletedBranchRestored: h.markDeletedBranchRestored,
-  listDeletedBranches: h.listDeletedBranches,
-  listExpiredDeletedBranches: h.listExpiredDeletedBranches,
-  forgetDeletedBranch: h.forgetDeletedBranch,
-  listGoodboyBranches: h.listGoodboyBranches,
-  listMergedRequestHeads: h.listMergedRequestHeads,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    insertDeletedBranch: h.insertDeletedBranch,
+    getDeletedBranch: h.getDeletedBranch,
+    markDeletedBranchRestored: h.markDeletedBranchRestored,
+    listDeletedBranches: h.listDeletedBranches,
+    listExpiredDeletedBranches: h.listExpiredDeletedBranches,
+    forgetDeletedBranch: h.forgetDeletedBranch,
+    listGoodboyBranches: h.listGoodboyBranches,
+    listMergedRequestHeads: h.listMergedRequestHeads,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../shared/lib/repo', () => ({ projectFetch: h.projectFetch }));
 vi.mock('../project-mounts/mountViews', () => ({ loadMountViews: h.loadMountViews }));
 vi.mock('../../../features/worktree/worktree', () => ({ branchMergeState: h.branchMergeState }));
-vi.mock('../../../features/github/github', () => ({
+vi.mock('../../../features/integrations/github/github', () => ({
   ghRepoDeletesMergedBranches: h.ghRepoDeletesMergedBranches,
 }));
 vi.mock('../../../features/worktree/branchCleanup', async (importOriginal) => {
@@ -354,6 +357,21 @@ describe('loadProjectBranches', () => {
     expect(context.store.state.branchScans[PROJECT_ID]).toEqual({
       status: 'failed',
       message: 'not a repository',
+    });
+  });
+
+  it('shows the written message when the repository folder is gone', async () => {
+    const context = makeStore();
+    h.listProjectBranches.mockRejectedValueOnce({
+      kind: 'repo-not-found',
+      message: 'the repository folder was not found',
+    });
+
+    await loadProjectBranches(context.set, context.get)({ projectIds: [PROJECT_ID] });
+
+    expect(context.store.state.branchScans[PROJECT_ID]).toEqual({
+      status: 'failed',
+      message: 'the repository folder was not found',
     });
   });
 });

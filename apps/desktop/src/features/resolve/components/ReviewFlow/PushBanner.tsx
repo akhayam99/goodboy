@@ -43,8 +43,8 @@ const RECOVERY_ICON: Record<keyof typeof RECOVERY_LABEL, LucideIcon> = {
   sync: GitMerge,
 };
 
-export const PUSH_LABEL = 'Push';
-export const DISMISS_LABEL = 'Dismiss';
+const PUSH_LABEL = 'Push';
+const DISMISS_LABEL = 'Dismiss';
 
 export const PushBanner = ({ sessionId, push }: Props) => {
   const commitStyle = useAppStore((s) => sessionReplySettings({ state: s, sessionId }).commitStyle);

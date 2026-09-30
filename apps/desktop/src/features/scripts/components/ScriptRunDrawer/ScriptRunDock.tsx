@@ -1,7 +1,7 @@
 import { Check, Copy, Square, X } from 'lucide-react';
 import { Button, cn, useCopyLink } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { formatScriptDuration } from '../../formatScriptDuration';
+import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 import type { ScriptRunStatus } from '../../scripts';
 
 type Props = {
@@ -36,7 +36,7 @@ export const ScriptRunDock = ({ status, exitCode, elapsedMs, output }: Props) =>
 
   const Glyph = status === 'ok' ? Check : status === 'error' ? X : Square;
   const duration =
-    elapsedMs === null ? null : formatScriptDuration({ durationMs: elapsedMs, hasTenths: true });
+    elapsedMs === null ? null : formatDuration({ durationMs: elapsedMs, hasTenths: true });
 
   return (
     <div className="flex items-center gap-2">

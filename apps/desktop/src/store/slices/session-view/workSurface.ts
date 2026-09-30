@@ -5,6 +5,7 @@ import { PROVIDER_LENS } from '../../../features/integrations/providerLens';
 import { workSurfaceFocus } from './workSurfaceFocus';
 import { drawerAfterArtifactFocus } from '../drawer/drawerAfterArtifactFocus';
 import { sessionPlace } from '../navigation/place';
+import { sessionById } from '../sessions/sessionIndex';
 
 export const setActiveLens = (set: SetFn) => {
   return (sessionId: SessionId, lens: LensKind | null): void => {
@@ -164,7 +165,7 @@ export const setFocusedGithubIssueNumber = (set: SetFn) => {
 export const openExternalTaskLens = (get: GetFn) => {
   return (sessionId: SessionId, task: SessionExternalTask): void => {
     if (task.provider === 'sentry') {
-      const workspaceId = get().sessions.find((session) => session.id === sessionId)?.workspaceId;
+      const workspaceId = sessionById(get().sessions, sessionId)?.workspaceId;
       window.dispatchEvent(
         new CustomEvent('goodboy:open-inbox', {
           detail: {

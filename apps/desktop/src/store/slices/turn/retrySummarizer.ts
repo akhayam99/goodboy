@@ -1,5 +1,5 @@
 import type { SessionId, TaskModelPreference } from '@goodboy/types';
-import { enqueueSummarizer } from '../../turn-helpers';
+import { enqueueSummarizer } from './turnHelpers';
 import type { GetFn, SetFn } from './types';
 
 export const retrySummarizer = (set: SetFn, get: GetFn) => {

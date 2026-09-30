@@ -2,15 +2,17 @@ import { useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@goodboy/ui';
-import type { AgentId, AgentStatus, PlanId, SessionId, TurnState } from '@goodboy/types';
+import type { AgentId, PlanId, SessionId, TurnState } from '@goodboy/types';
 import { extractHandoff } from '@goodboy/core';
 import { EMPTY_ARRAY, agentPlace, useAppStore } from '../../../../store';
 import { AGENT_KIND_META, KIND_TO_ROLE, ROLE_LABEL } from '../../../session/agent-kind';
+import { agentStatusWord } from '../../../session/agentStatusWord';
 import { AgentStatusIcon } from '../../../session/components/AgentCard/AgentStatusIcon';
 import { TranscriptShell } from '../TranscriptShell';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
 import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren';
 import { hasActiveWorkflowRun } from '../../../workflows/activeWorkflowRuns';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
   readonly assistantText: string;
@@ -18,17 +20,11 @@ type Props = {
   readonly sourceAgentId: AgentId | null;
 };
 
-const TERMINAL_LABELS: Partial<Record<AgentStatus, string>> = {
-  completed: 'done',
-  failed: 'failed',
-  skipped: 'skipped',
-};
-
 export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) => {
   const [isPending, setIsPending] = useState(false);
   const pendingRef = useRef(false);
   const handoff = useMemo(() => extractHandoff(assistantText), [assistantText]);
-  const session = useAppStore((s) => s.sessions.find((x) => x.id === sessionId) ?? null);
+  const session = useAppStore((s) => sessionById(s.sessions, sessionId) ?? null);
   const sessionNudge = useAppStore((s) => s.sessionNudges[sessionId] ?? null);
   const runs = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const turnStates = useAppStore(
@@ -109,7 +105,7 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
   };
 
   const statusLabel =
-    spawnedChild == null ? null : (TERMINAL_LABELS[spawnedChild.status] ?? spawnedChild.status);
+    spawnedChild == null ? null : agentStatusWord({ status: spawnedChild.status });
 
   return (
     <TranscriptShell

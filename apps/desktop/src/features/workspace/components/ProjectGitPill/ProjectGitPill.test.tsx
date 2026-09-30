@@ -15,6 +15,7 @@ const h = vi.hoisted(() => ({
   fastForward: vi.fn(async () => undefined),
   showToast: vi.fn(),
   store: {
+    settings: {} as Record<string, string>,
     projectCheckoutPulling: {} as Record<string, boolean>,
     projectCheckoutResult: {} as Record<string, unknown>,
     fastForwardProjectCheckout: vi.fn(async () => undefined),
@@ -27,7 +28,7 @@ vi.mock('@tauri-apps/api/core', () => ({ invoke: h.invoke }));
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (state: typeof h.store) => T) => selector(h.store),
 }));
-vi.mock('../../../../app/components/Toast', () => ({
+vi.mock('../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: h.showToast }),
 }));
 
@@ -72,6 +73,7 @@ beforeEach(() => {
   h.fastForward.mockReset();
   h.fastForward.mockResolvedValue(undefined);
   h.store.projectCheckoutPulling = {};
+  h.store.settings = {};
   h.store.projectCheckoutResult = {};
   h.store.fetchProjectCheckouts = vi.fn(async () => undefined);
   h.store.fastForwardProjectCheckouts = vi.fn(async () => ({ updated: 0, failed: 0 }));
@@ -126,6 +128,23 @@ describe('ProjectGitPill', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open in editor' }));
     await waitFor(() =>
       expect(screen.getByRole('alert').textContent).toContain('editor unavailable'),
+    );
+  });
+
+  it('opens the project in the editor chosen in settings', async () => {
+    h.store.settings = { 'editor.binary': 'zed' };
+    renderPill({ status: statusOf({}) });
+    fireEvent.click(screen.getByRole('button', { name: /Web git status/ }));
+    await waitFor(() => expect(h.invoke).toHaveBeenCalled());
+    h.invoke.mockClear();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open in editor' }));
+
+    await waitFor(() =>
+      expect(h.invoke).toHaveBeenCalledWith('open_in_editor', {
+        path: '/repo/web',
+        editor: 'zed',
+      }),
     );
   });
 

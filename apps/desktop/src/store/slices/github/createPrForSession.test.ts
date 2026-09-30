@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   IsoDateTime,
@@ -20,7 +21,7 @@ const h = vi.hoisted(() => ({
   findPrSeriesMembership: vi.fn(async (): Promise<unknown> => null),
 }));
 
-vi.mock('../../../features/github/github', () => ({
+vi.mock('../../../features/integrations/github/github', () => ({
   tauriGhRunner: { run: h.run },
 }));
 
@@ -28,10 +29,12 @@ vi.mock('../../../shared/lib/db', () => ({
   tauriDatabase: {},
 }));
 
-vi.mock('@goodboy/db', () => ({
-  upsertMountPullRequestLink: h.upsertMountPullRequestLink,
-  findPrSeriesMembership: h.findPrSeriesMembership,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    upsertMountPullRequestLink: h.upsertMountPullRequestLink,
+    findPrSeriesMembership: h.findPrSeriesMembership,
+  }),
+);
 
 import { createPrForSession } from './createPrForSession';
 import type { GetFn, SetFn } from './types';

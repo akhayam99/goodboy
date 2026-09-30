@@ -7,7 +7,7 @@ import type {
   SessionProjectMount,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { EMPTY_LOADING } from '../../../../store/session-mutators';
+import { EMPTY_LOADING } from '../../../../store/slices/sessions/sessionMutators';
 import type { AppStore } from '../../../../store/store';
 
 type Input = Parameters<AppStore['createSession']>[0];

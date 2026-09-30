@@ -8,6 +8,7 @@ use rusqlite::Connection;
 use tauri::State;
 
 use crate::db::Db;
+use crate::util::MessageError;
 
 const MAX_IMAGE_BYTES: u64 = 15 * 1024 * 1024;
 
@@ -16,14 +17,15 @@ pub async fn local_image_read(
     state: State<'_, Db>,
     session_id: String,
     path: String,
-) -> Result<String, String> {
+) -> Result<String, MessageError> {
     let root = {
         let conn = state.0.lock().map_err(|_| "image root is unavailable")?;
         resolve_root(&conn, &session_id)?
     };
     tauri::async_runtime::spawn_blocking(move || read_image(Path::new(&root), Path::new(&path)))
         .await
-        .map_err(|_| "could not read the image".to_string())?
+        .map_err(|_| MessageError::Failed("could not read the image".to_string()))?
+        .map_err(MessageError::Failed)
 }
 
 fn resolve_root(conn: &Connection, session_id: &str) -> Result<String, String> {

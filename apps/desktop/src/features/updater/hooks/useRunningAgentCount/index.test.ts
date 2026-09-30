@@ -1,26 +1,30 @@
 import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, ProviderRunId } from '@goodboy/types';
-import { countRunningAgents } from './index';
+import type { AgentId, WorkflowRunId } from '@goodboy/types';
+import { countLiveWork } from './index';
 
-const at = '2026-09-23T10:00:00Z' as IsoDateTime;
-const run = 'run-1' as ProviderRunId;
+const liveWork = (partial: Partial<Parameters<typeof countLiveWork>[0]['liveWork']>) => ({
+  runningAgentIds: [],
+  blockedAgentIds: [],
+  decidingRunIds: [],
+  decidingRuns: [],
+  liveSessionIds: [],
+  ...partial,
+});
 
-describe('countRunningAgents', () => {
-  it('counts starting, running and blocked turns only', () => {
+describe('countLiveWork', () => {
+  it('counts running, blocked and deciding work together', () => {
     expect(
-      countRunningAgents({
-        turnStates: {
-          a: { kind: 'running', runId: run, startedAt: at },
-          b: { kind: 'starting', startedAt: at },
-          c: { kind: 'blocked', runId: run, blockedAt: at },
-          d: { kind: 'idle', lastActivityAt: at },
-          e: { kind: 'ended', endedAt: at },
-        },
+      countLiveWork({
+        liveWork: liveWork({
+          runningAgentIds: ['a' as AgentId, 'b' as AgentId],
+          blockedAgentIds: ['c' as AgentId],
+          decidingRunIds: ['w' as WorkflowRunId],
+        }),
       }),
-    ).toBe(3);
+    ).toBe(4);
   });
 
   it('is zero when nothing runs', () => {
-    expect(countRunningAgents({ turnStates: {} })).toBe(0);
+    expect(countLiveWork({ liveWork: liveWork({}) })).toBe(0);
   });
 });

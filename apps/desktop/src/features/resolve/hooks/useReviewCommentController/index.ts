@@ -61,7 +61,7 @@ const ADVANCING = new Set([
   'reviewComment.closeWithReply',
 ]);
 
-export const COULD_NOT_SEND =
+const COULD_NOT_SEND =
   'This comment is no longer on the pull request, so the agent cannot be asked about it';
 
 const nextOpenAfter = ({

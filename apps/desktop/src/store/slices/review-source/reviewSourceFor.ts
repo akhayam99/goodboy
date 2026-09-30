@@ -6,7 +6,7 @@ import {
   type ReviewSource,
 } from '@goodboy/core';
 import type { ResolveThread, SessionId } from '@goodboy/types';
-import { tauriGhRunner } from '../../../features/github/github';
+import { tauriGhRunner } from '../../../features/integrations/github/github';
 import { bitbucketReviewTransport } from '../../../features/integrations/bitbucket/bitbucketReviewTransport';
 import { gitlabReviewTransport } from '../../../features/integrations/gitlab/gitlabReviewTransport';
 import { sessionThreadGhOptions } from '../github/sessionThreadGhOptions';
@@ -15,6 +15,7 @@ import { threadSourceKindOf } from '../resolve/resolveThreadSource';
 import { activeReviewSourceOf } from './activeReviewSource';
 import { openBitbucketPullRequestsOf } from './reviewSourceEntries';
 import type { GetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 type Params = {
   readonly get: GetFn;
@@ -25,7 +26,7 @@ type Params = {
   >;
 };
 
-export const NO_REVIEW_SOURCE = 'This comment has no source to talk to';
+const NO_REVIEW_SOURCE = 'This comment has no source to talk to';
 
 export const reviewSourceFor = ({ get, sessionId, row }: Params): ReviewSource => {
   const kind = threadSourceKindOf({ row });
@@ -47,7 +48,7 @@ export const reviewSourceFor = ({ get, sessionId, row }: Params): ReviewSource =
     });
   }
   if (kind === 'gitlab') {
-    const session = state.sessions.find((candidate) => candidate.id === sessionId);
+    const session = sessionById(state.sessions, sessionId);
     const mountIds = new Set(sessionMountTargets({ state, sessionId }).map((target) => target.id));
     const entry = Object.values(state.mountGitlabMr ?? {}).find(
       (candidate) =>

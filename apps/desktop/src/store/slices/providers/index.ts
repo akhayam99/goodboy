@@ -6,18 +6,11 @@ import { learnCliRequirement } from './learnCliRequirement';
 import { logoutProvider } from './logoutProvider';
 import { refreshProviders } from './refreshProviders';
 import { updateProviderCli } from './updateProviderCli';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export type {
-  ProviderConnectMap,
-  ProviderConnectPhase,
-  ProviderConnectStep,
-  ProviderLifecycleMap,
-} from './types';
-export type { LearnCliRequirementParams } from './learnCliRequirement';
-export { INITIAL_CONNECT_MAP, INITIAL_LIFECYCLE_MAP } from './types';
+export type { ProviderConnectPhase, ProviderConnectStep } from './types';
 
-export const createProvidersSlice = (set: SetFn, get: GetFn) => {
+export const createProvidersSlice = ({ set, get }: SliceDeps) => {
   return {
     refreshProviders: refreshProviders(set, get),
     logoutProvider: logoutProvider(set, get),

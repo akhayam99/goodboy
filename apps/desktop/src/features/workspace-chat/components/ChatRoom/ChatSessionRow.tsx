@@ -1,5 +1,6 @@
 import { Button, StatusDot } from '@goodboy/ui';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { useNow } from '../../../../shared/hooks/useNow';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { SESSION_STAGE_META, STAGE_TONE } from '../../../session/session-stage';
 import { sessionTitle } from '../../../session/sessionTitle';
 import type { ChatSessionEntry } from '../../chatSessionEntries';
@@ -16,7 +17,8 @@ const ORIGIN: Record<ChatSessionEntry['link']['kind'], string> = {
 
 export const ChatSessionRow = ({ entry, onOpen }: Props) => {
   const title = sessionTitle({ session: entry.session });
-  const age = formatRelativeAge({ fromIso: entry.link.createdAt });
+  const now = useNow(30_000);
+  const age = formatAge({ from: entry.link.createdAt, now });
   return (
     <div className="flex items-center gap-2.5 rounded-md p-2 hover:bg-hover">
       <StatusDot

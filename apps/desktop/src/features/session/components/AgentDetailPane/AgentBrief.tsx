@@ -14,7 +14,7 @@ import {
   useSessionAnsweredQuestions,
   useSessionOpenQuestions,
 } from '../../../../store';
-import { useTranscript } from '../../../../store/transcript';
+import { useTranscript } from '../../../../store/slices/transcripts/selectors';
 import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren';
 import { reduceTranscript } from '../../../chat/utils/transcript-items';
 import { isQuestionDelegate } from '../../../context/questionDelegate';
@@ -30,7 +30,7 @@ import { AgentBriefQuestions } from './AgentBriefQuestions';
 import { AgentBriefHandoffLine } from './AgentBriefHandoffLine';
 import { AgentBriefResolver } from './AgentBriefResolver';
 import { AgentFollowUps } from './AgentFollowUps';
-import { agentFollowUpMoves } from './followUpMoves';
+import { agentFollowUpMoves } from '../../followUpMoves';
 import { selectFollowUpChildren } from './followUpChildren';
 import { agentNowState } from './agentNowState';
 import { AgentMuchLonger } from './AgentMuchLonger';

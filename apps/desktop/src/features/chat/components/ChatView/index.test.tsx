@@ -61,7 +61,7 @@ vi.mock('../../../../store', async () => ({
   useTranscript: () => [],
 }));
 
-vi.mock('../../../../app/components/Toast', () => ({
+vi.mock('../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
   useToastLift: () => undefined,
 }));

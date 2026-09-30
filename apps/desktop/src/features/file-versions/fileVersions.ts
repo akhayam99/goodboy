@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 import type { FileVersionChangeKind, SessionId } from '@goodboy/types';
 
 export type SnapshotManifestEntry = Readonly<{
@@ -85,7 +85,7 @@ export const fileVersionsBeginSnapshot = async ({
   runId,
   sizeCapBytes,
 }: BeginSnapshotArgs): Promise<BeginSnapshotResult> => {
-  return invoke<BeginSnapshotResult>('file_versions_begin_snapshot', {
+  return invokeCommand<BeginSnapshotResult>('file_versions_begin_snapshot', {
     args: { sessionDir, sessionId, runId, ...(sizeCapBytes !== undefined && { sizeCapBytes }) },
   });
 };
@@ -96,13 +96,13 @@ export const fileVersionsFinalizeSnapshot = async ({
   runId,
   manifest,
 }: FinalizeSnapshotArgs): Promise<FinalizeSnapshotResult> => {
-  return invoke<FinalizeSnapshotResult>('file_versions_finalize_snapshot', {
+  return invokeCommand<FinalizeSnapshotResult>('file_versions_finalize_snapshot', {
     args: { sessionDir, sessionId, runId, manifest },
   });
 };
 
 export const fileVersionsListStagedSnapshots = async (): Promise<ListStagedSnapshotsResult> => {
-  return invoke<ListStagedSnapshotsResult>('file_versions_list_staged_snapshots');
+  return invokeCommand<ListStagedSnapshotsResult>('file_versions_list_staged_snapshots');
 };
 
 export const fileVersionsRestore = async ({
@@ -111,7 +111,7 @@ export const fileVersionsRestore = async ({
   relativePath,
   storedName,
 }: RestoreVersionArgs): Promise<void> => {
-  await invoke('file_versions_restore', {
+  await invokeCommand('file_versions_restore', {
     args: { sessionDir, sessionId, relativePath, storedName },
   });
 };
@@ -120,9 +120,9 @@ export const fileVersionsDelete = async ({
   sessionId,
   storedName,
 }: DeleteVersionArgs): Promise<void> => {
-  await invoke('file_versions_delete', { args: { sessionId, storedName } });
+  await invokeCommand('file_versions_delete', { args: { sessionId, storedName } });
 };
 
 export const fileVersionsPurgeSession = async ({ sessionId }: PurgeSessionArgs): Promise<void> => {
-  await invoke('file_versions_purge_session', { args: { sessionId } });
+  await invokeCommand('file_versions_purge_session', { args: { sessionId } });
 };

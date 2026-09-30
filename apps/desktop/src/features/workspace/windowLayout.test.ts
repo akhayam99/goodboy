@@ -1,21 +1,24 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
 
 const h = vi.hoisted(() => ({ settings: new Map<string, string>() }));
 
-vi.mock('@goodboy/db', () => ({
-  setSetting: vi.fn(async (_db: unknown, key: string, value: string) => {
-    h.settings.set(key, value);
+vi.mock('@goodboy/db', async () =>
+  (await import('../../test/dbMock')).createDbMock({
+    setSetting: vi.fn(async (_db: unknown, key: string, value: string) => {
+      h.settings.set(key, value);
+    }),
+    deleteSetting: vi.fn(async (_db: unknown, key: string) => {
+      h.settings.delete(key);
+    }),
+    listSettingsWithPrefix: vi.fn(async (_db: unknown, prefix: string) =>
+      [...h.settings.entries()]
+        .filter(([key]) => key.startsWith(prefix))
+        .map(([key, value]) => ({ key, value })),
+    ),
   }),
-  deleteSetting: vi.fn(async (_db: unknown, key: string) => {
-    h.settings.delete(key);
-  }),
-  listSettingsWithPrefix: vi.fn(async (_db: unknown, prefix: string) =>
-    [...h.settings.entries()]
-      .filter(([key]) => key.startsWith(prefix))
-      .map(([key, value]) => ({ key, value })),
-  ),
-}));
+);
 vi.mock('../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { listWindowLayouts, parseLocation, saveWindowLayout } from './windowLayout';

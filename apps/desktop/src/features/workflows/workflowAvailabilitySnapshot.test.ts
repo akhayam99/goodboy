@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { BudgetAlert, IsoDateTime, ProviderId, SessionId } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../providers/providers';

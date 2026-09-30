@@ -2,21 +2,40 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import type { AgentId, PrComment, PullRequestState, SessionId } from '@goodboy/types';
+import type { PrComment, PullRequestState, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import {
+  EMPTY_RESOLVE_QUEUE_VIEW,
+  type ResolveQueueView,
+} from '../../../../store/slices/session-view/types';
+import type { SessionGithubState } from '../../../../store/types';
 import type { ResolveQueueRow } from '../../buildResolveQueueRows';
+import type { startResolve as StartResolve } from '../../startResolve';
 import { useResolveAgain } from './index';
 
 const { startResolve } = vi.hoisted(() => ({
-  startResolve: vi.fn(async () => [] as ReadonlyArray<AgentId>),
+  startResolve: vi.fn<typeof StartResolve>(async () => []),
 }));
 
 vi.mock('../../startResolve', () => ({ startResolve }));
 
 const SESSION_ID = 'session-retry' as SessionId;
-const PR = { number: 248, headBranch: 'feature/retry' } as unknown as PullRequestState;
+const PR: PullRequestState = {
+  number: 248,
+  title: 'Retry deliveries with a dedupe lock',
+  url: 'https://github.com/acme/notify-relay/pull/248',
+  state: 'open',
+  mergeable: true,
+  checks: 'success',
+  baseBranch: 'main',
+  headBranch: 'feature/retry',
+  isDraft: false,
+  reviewDecision: null,
+  body: '',
+  updatedAt: '2026-01-05T09:00:00.000Z',
+};
 
-const REVIEW_COMMENT = {
+const REVIEW_COMMENT: PrComment = {
   id: 'c1',
   author: 'harbor-reviewer',
   authorAvatarUrl: null,
@@ -28,14 +47,95 @@ const REVIEW_COMMENT = {
   path: 'src/idempotency.ts',
   line: 55,
   threadId: 'PRRT_1',
-} as unknown as PrComment;
+};
 
-const ROW = {
-  thread: { threadId: 'PRRT_1', replyDraft: 'Tried a lock', commitShas: ['aa11bb22'] },
+const GITHUB_STATE: SessionGithubState = {
+  pr: PR,
+  linkedIssues: [],
+  fetchedAt: null,
+  failedAt: null,
+  loading: false,
+  error: null,
+  detail: {
+    prNumber: PR.number,
+    comments: [REVIEW_COMMENT],
+    reviews: [],
+    reviewRequests: [],
+    checks: [],
+  },
+  detailFetchedAt: null,
+  detailLoading: false,
+  detailError: null,
+};
+
+const ROW: ResolveQueueRow = {
+  thread: {
+    id: 'thread-row-1',
+    sessionId: SESSION_ID,
+    projectId: null,
+    prNumber: PR.number,
+    threadId: 'PRRT_1',
+    originKind: 'review_comment',
+    diffCommentId: null,
+    state: 'open',
+    stage: 'proposed',
+    stateReason: null,
+    revision: 1,
+    generation: 1,
+    reopenedFromThreadId: null,
+    activeAttemptId: null,
+    disposition: null,
+    replyDraft: 'Tried a lock',
+    commitShas: ['aa11bb22'],
+    fixupOfSha: null,
+    replacesSha: null,
+    question: null,
+    replyPostedAt: null,
+    replyId: null,
+    githubResolved: null,
+    closedAt: null,
+    closedSource: null,
+    createdAt: 1,
+    updatedAt: 1,
+  },
+  item: {
+    id: 'item-row-1',
+    sessionId: SESSION_ID,
+    threadId: 'PRRT_1',
+    generation: 1,
+    reopenedFromItemId: null,
+    candidateRevision: 1,
+    approvalState: 'none',
+    approvedRevision: null,
+    approvedReplyHash: null,
+    integratedSha: null,
+    deferredAt: null,
+    deliveredAt: null,
+    supersededAt: null,
+    createdAt: 1,
+    updatedAt: 1,
+  },
   commentThread: null,
-} as unknown as ResolveQueueRow;
+  status: 'ready',
+  rowState: {
+    state: 'ready',
+    node: 'ready',
+    sentence: null,
+    action: null,
+    failedStep: null,
+    isRemoteMoved: false,
+  },
+  attempt: null,
+  reviewerNote: null,
+  proposal: null,
+  proposalKind: 'fix',
+  coveredThreadIds: [],
+  delivery: null,
+};
 
 const PICKED = { provider: 'anthropic', model: 'claude-opus-5', effort: 'high' } as const;
+
+const QUEUE_VIEW: ResolveQueueView = { ...EMPTY_RESOLVE_QUEUE_VIEW, lastRouting: PICKED };
 
 beforeEach(() => {
   startResolve.mockClear();
@@ -44,12 +144,8 @@ beforeEach(() => {
     projects: [],
     workspaceOverrides: {},
     sessionActiveProject: {},
-    sessionGithub: {
-      [SESSION_ID]: { pr: PR, detail: { comments: [REVIEW_COMMENT] } },
-    } as unknown as ReturnType<typeof useAppStore.getState>['sessionGithub'],
-    resolveQueueView: {
-      [SESSION_ID]: { lastRouting: PICKED },
-    } as unknown as ReturnType<typeof useAppStore.getState>['resolveQueueView'],
+    sessionGithub: { [SESSION_ID]: GITHUB_STATE },
+    resolveQueueView: { [SESSION_ID]: QUEUE_VIEW },
   });
 });
 
@@ -67,8 +163,8 @@ describe('useResolveAgain', () => {
     });
 
     expect(outcome).toBe('started');
-    const call = startResolve.mock.calls[0] as unknown as [Record<string, unknown>];
-    expect(call[0]).toMatchObject({
+    const [params] = startResolve.mock.calls[0] ?? [];
+    expect(params).toMatchObject({
       routing: PICKED,
       note: 'Use ON CONFLICT',
       mode: 'retry',

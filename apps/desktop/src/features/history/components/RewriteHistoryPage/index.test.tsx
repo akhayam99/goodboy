@@ -15,6 +15,9 @@ import { LEDGER, LEDGER_COMMITS, LEDGER_GRAPH } from '../../testing/ledgerFixtur
 import { LEDGER_PRESET } from '../../testing/ledgerPreset';
 import { historyBackupRef } from '../../historyBackupRef';
 
+vi.useFakeTimers({ toFake: ['Date'] });
+vi.setSystemTime(new Date(2026, 8, 30, 12, 0, 0));
+
 const BACKUP_REF = historyBackupRef({ branch: 'hl/ledger-export', atMs: Date.now() });
 
 const SESSION_ID = 'session-ledger' as SessionId;
@@ -25,6 +28,7 @@ const { a, b, c, d, x, e, f } = LEDGER;
 const h = vi.hoisted(() => ({
   state: {} as Record<string, unknown>,
   width: 1000 as number | null,
+  chosenBase: 'main' as string | null,
   status: {
     upstream: 'origin/hl/ledger-export',
     workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
@@ -46,6 +50,7 @@ vi.mock('../../../../store/slices/project-mounts/selectors', () => ({
     baseBranch: 'main',
     worktreePath: '/w/payments',
   }),
+  selectMountBaseBranch: () => h.chosenBase,
 }));
 
 vi.mock('../../../session/hooks/useWorktreeStatuses', () => ({
@@ -71,9 +76,16 @@ type Setup = {
   readonly prediction?: HistoryPlanPrediction;
   readonly run?: unknown;
   readonly onto?: string | null;
+  readonly graph?: typeof LEDGER_GRAPH;
 };
 
-const setup = ({ items = BASE, prediction, run = null, onto = null }: Setup = {}) => {
+const setup = ({
+  items = BASE,
+  prediction,
+  run = null,
+  onto = null,
+  graph = LEDGER_GRAPH,
+}: Setup = {}) => {
   const actions = {
     loadHistoryDraft: vi.fn(async () => undefined),
     editHistoryDraft: vi.fn(
@@ -109,7 +121,7 @@ const setup = ({ items = BASE, prediction, run = null, onto = null }: Setup = {}
         commits: LEDGER_COMMITS,
         items,
         onto,
-        graph: LEDGER_GRAPH,
+        graph,
         undo: [],
         prediction: prediction ?? clean(items),
         isPredicting: false,
@@ -134,6 +146,7 @@ const lastItems = (actions: ReturnType<typeof setup>) =>
 
 beforeEach(() => {
   h.width = 1000;
+  h.chosenBase = 'main';
   h.status = {
     upstream: 'origin/hl/ledger-export',
     workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
@@ -518,6 +531,20 @@ describe('RewriteHistoryPage', () => {
       items: BASE,
       onto: LEDGER_GRAPH.mainHead,
     });
+  });
+
+  it('names the chosen base branch in the graph', () => {
+    h.chosenBase = 'develop';
+    setup();
+    expect(screen.getAllByText(/develop/).length).toBeGreaterThan(0);
+    expect(screen.queryAllByText(/main · merge base/)).toHaveLength(0);
+  });
+
+  it('names the base the repo resolved when none is chosen, never main', () => {
+    h.chosenBase = null;
+    setup({ graph: { ...LEDGER_GRAPH, baseRef: 'origin/develop' } });
+    expect(screen.getAllByText(/develop/).length).toBeGreaterThan(0);
+    expect(screen.queryAllByText(/main · merge base/)).toHaveLength(0);
   });
 
   it('folds the side graph into a Now and After Apply toggle when narrow', () => {

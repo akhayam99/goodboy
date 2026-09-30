@@ -2,7 +2,7 @@ import type { AgentId, ProjectId, ProviderRunId, SessionEvent } from '@goodboy/t
 import {
   pendingMountProposals,
   type SuggestionMountEvent,
-} from '../../store/materializationProposals';
+} from '../../store/slices/project-mounts/materializationProposals';
 
 export type TranscriptMountProposal = SuggestionMountEvent & {
   readonly agentId: AgentId;

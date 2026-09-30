@@ -4,13 +4,14 @@ import { updateSessionWorkflowStep } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { isWorkflowRunComplete } from '../../../features/workflows/isWorkflowRunComplete';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
-import { composeStepBoundary } from '../../kickoff';
+import { composeStepBoundary } from '../turn/kickoff';
 import { resumeClusterChildren, unsettledClusterChildren } from './clusterImplementation';
 import { continueOrPause, resetContinueAttempts } from './autoContinue';
 import { holdForUserQuestion } from './holdForUserQuestion';
 import type { GetFn, SetFn } from './types';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
 import { pendingMountContinuations } from '../turn/mountContinuations';
+import { sessionById } from '../sessions/sessionIndex';
 
 const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
@@ -108,7 +109,7 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
     const workflowRunId = agent.workflowRunId;
     const ordinal = agent.ordinal;
     set((state) => {
-      const target = state.sessions.find((s) => s.id === sessionId);
+      const target = sessionById(state.sessions, sessionId);
       const runId = target?.workflowRuns.some((r) => r.id === workflowRunId) ? workflowRunId : null;
       if (runId) {
         void updateSessionWorkflowStep(tauriDatabase, sessionId, runId, ordinal, nowIso());
@@ -129,7 +130,7 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
       };
     });
     void get().refreshUnreadWorkspaces();
-    const session = get().sessions.find((candidate) => candidate.id === sessionId);
+    const session = sessionById(get().sessions, sessionId);
     const run = session?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
     const workflow =
       run === undefined || session === undefined

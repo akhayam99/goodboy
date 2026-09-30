@@ -1,8 +1,9 @@
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { getSetting, listProjectsForWorkspace, listWorkspaces } from '@goodboy/db';
-import { invoke } from '@tauri-apps/api/core';
-import { runDbMigrations, tauriDatabase } from '../../../shared/lib/db';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
+import { tauriDatabase } from '../../../shared/lib/db';
+import { runDbMigrations } from '../../../shared/lib/dbBoot';
 import { newerDatabaseFromError } from '../../../shared/lib/newerDatabase';
 import { hydrateOnboardingFromDb } from '../../../features/onboarding/onboarding-store';
 import { setWindowTitle, targetWorkspaceFromHash } from '../../../features/workspace/window';
@@ -24,7 +25,7 @@ import { drainAuditRetryQueue } from './auditRetryQueue';
 import { scheduleStorageCheck } from '../storage/scheduleStorageCheck';
 import { scheduleSearchBackfill } from '../search-index/scheduleSearchBackfill';
 import type { GetFn, SetFn } from './types';
-import type { BootPhase } from '../../types';
+import type { BootPhase } from './state';
 
 const INTEGRATION_KEY_ADOPTION_COALESCE_KEY = 'boot:integration-key-adoption';
 
@@ -35,7 +36,9 @@ type RecordBootBreadcrumbParams = {
 
 const recordBootBreadcrumb = ({ phase, detail }: RecordBootBreadcrumbParams): void => {
   try {
-    void Promise.resolve(invoke('boot_breadcrumb', { phase, detail })).catch(() => undefined);
+    void Promise.resolve(invokeCommand('boot_breadcrumb', { phase, detail })).catch(
+      () => undefined,
+    );
   } catch {
     return;
   }

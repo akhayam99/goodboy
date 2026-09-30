@@ -4,7 +4,8 @@ import { Button, ScrollFade } from '@goodboy/ui';
 import type { ChatId, ChatSummary } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { markdownPreview } from '../../../../shared/utils/markdownPreview';
-import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
+import { useNow } from '../../../../shared/hooks/useNow';
+import { formatSpan } from '../../../../shared/utils/time/formatSpan';
 import { ChatArchivedRow } from './ChatArchivedRow';
 import { ChatPurgeConfirm } from './ChatPurgeConfirm';
 
@@ -31,6 +32,7 @@ export const ChatArchivedView = ({
 }: Props) => {
   const [query, setQuery] = useState('');
   const [isPurging, setIsPurging] = useState(false);
+  const now = useNow(60_000);
   const needle = query.trim().toLowerCase();
   const shown = useMemo(() => chats.filter((chat) => matches({ chat, needle })), [chats, needle]);
   const deleteOne = (chatId: ChatId): Promise<void> => onDelete([chatId]);
@@ -73,7 +75,7 @@ export const ChatArchivedView = ({
                   chatId={chat.id}
                   title={chat.title}
                   snippet={markdownPreview({ text: chat.preview })}
-                  age={`archived ${formatRelativeDuration(chat.archivedAt ?? chat.updatedAt)}`}
+                  age={`archived ${formatSpan({ from: chat.archivedAt ?? chat.updatedAt, to: now })}`}
                   isSelected={chat.id === selectedId}
                   onSelect={onSelect}
                   onRestore={onRestore}

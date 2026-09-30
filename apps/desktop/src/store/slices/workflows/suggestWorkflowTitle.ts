@@ -7,6 +7,7 @@ import { clampWorkflowTitle } from './titleLimit';
 import { generateTitleText } from './generateTitleText';
 import type { GetFn, SetFn } from './types';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
+import { sessionById } from '../sessions/sessionIndex';
 
 const SUGGESTED_TITLE_SYSTEM_PROMPT = [
   'Write one short title for the workflow described below.',
@@ -22,7 +23,7 @@ export const suggestWorkflowTitle = (_set: SetFn, get: GetFn) => {
       return null;
     }
     try {
-      const session = get().sessions.find((candidate) => candidate.id === sessionId);
+      const session = sessionById(get().sessions, sessionId);
       if (session == null) {
         return null;
       }

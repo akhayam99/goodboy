@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ToastProvider } from '../../../Toast';
+import { ToastProvider } from '../../../../../shared/components/Toast';
 import { UpdatePill } from '../../../../../features/updater/components/UpdatePill';
 import { useAppStore } from '../../../../../store';
 import { sceneParam } from './sceneParams';

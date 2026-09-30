@@ -7,7 +7,7 @@ export type ChatRouting = ChatModelChoice & {
   readonly effort: EffortLevel | null;
 };
 
-export const DEFAULT_CHAT_EFFORT: EffortLevel = 'medium';
+const DEFAULT_CHAT_EFFORT: EffortLevel = 'medium';
 
 export const shownChatEffort = ({ provider, model, effort }: ChatRouting): EffortLevel => {
   if (effort !== null) {

@@ -3,8 +3,9 @@ import { ChevronDown, GitCommit, Search } from 'lucide-react';
 import { AnchoredPopover, Chip, cn, ScrollFade, useDropdown, tintClasses } from '@goodboy/ui';
 import type { BranchCommit, DiffView, WorktreeStatus } from '@goodboy/types';
 import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
-import { formatAdaptiveAge } from '../../../../shared/utils/relativeDate';
+import { formatAdaptiveAge } from '../../../../shared/utils/time/formatAdaptiveAge';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 type Props = {
   readonly view: DiffView;
@@ -120,6 +121,7 @@ export const DiffViewSelector = ({
   filesCount,
   loading,
 }: Props) => {
+  const now = useNow(30_000);
   const dropdown = useDropdown({
     expectedHeight: 440,
     expectedWidth: 440,
@@ -408,7 +410,7 @@ export const DiffViewSelector = ({
                             />
                           )}
                           <span className="shrink-0 text-meta text-faint-foreground">
-                            {formatAdaptiveAge({ iso: row.commit.timestamp * 1000 })}
+                            {formatAdaptiveAge({ at: row.commit.timestamp * 1000, now })}
                           </span>
                         </>
                       ) : (

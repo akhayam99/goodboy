@@ -4,10 +4,11 @@ import { runsForWorkflowRun } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { activateWorkflowAgentOrNotify } from './activateWorkflowAgentOrNotify';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 export const startWorkflowRun = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, workflowRunId: WorkflowRunId) => {
-    const session = get().sessions.find((s) => s.id === sessionId);
+    const session = sessionById(get().sessions, sessionId);
     if (!session) {
       return;
     }

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { migrate, type Database } from '@goodboy/db';
-import { makeTestDatabase } from '@goodboy/db/test-helpers';
+import type { Database } from '@goodboy/db';
+import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';
 import type { ResolvePublicationThread, ResolveThread, SessionId } from '@goodboy/types';
 
 const h = vi.hoisted(() => ({
@@ -11,7 +11,7 @@ const h = vi.hoisted(() => ({
   addReviewThreadReply: vi.fn(async () => ({ id: 'PRRC_9', url: 'u' })),
 }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: h }));
-vi.mock('../../../features/github/github', () => ({ tauriGhRunner: {} }));
+vi.mock('../../../features/integrations/github/github', () => ({ tauriGhRunner: {} }));
 vi.mock('../review-source/reviewSourceFor', () => ({
   reviewSourceFor: () => ({ reply: async () => h.addReviewThreadReply() }),
 }));
@@ -24,7 +24,7 @@ vi.mock('./sessionThreadGhOptions', () => ({ sessionThreadGhOptions: () => ({}) 
 
 import { readCommitStory } from '../resolve/commitStory';
 import { postThreadReply } from './postThreadReply';
-import type { GetFn } from './types';
+import { useAppStore } from '../../store';
 
 const SESSION = 'session-ledger' as SessionId;
 let db: Database;
@@ -84,11 +84,12 @@ const FROZEN: ResolvePublicationThread = {
 
 const post = ({ row }: { readonly row: ResolveThread }) =>
   postThreadReply({
-    get: (() => ({
+    get: () => ({
+      ...useAppStore.getInitialState(),
       sessionResolveThreads: { [SESSION]: [row] },
       sessionGithub: {},
-      updateResolveThread: vi.fn(async () => undefined),
-    })) as unknown as GetFn,
+      updateResolveThread: vi.fn(async () => true),
+    }),
     sessionId: SESSION,
     threadId: 'PRRT_1',
     replyBody: 'Fixed in `e31b9f4`.',
@@ -96,12 +97,11 @@ const post = ({ row }: { readonly row: ResolveThread }) =>
   });
 
 beforeEach(async () => {
-  db = makeTestDatabase();
+  db = await makeMigratedTestDatabase();
   h.exec.mockReset().mockImplementation(db.exec);
   h.execute.mockReset().mockImplementation(db.execute);
   h.select.mockReset().mockImplementation(db.select);
   h.transaction.mockReset().mockImplementation(db.transaction);
-  await migrate(db);
 });
 
 describe('postThreadReply', () => {

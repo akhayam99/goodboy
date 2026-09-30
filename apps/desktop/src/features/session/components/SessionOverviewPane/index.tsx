@@ -1,7 +1,7 @@
+import { PaneShell } from '@goodboy/ui';
 import { useMemo, useState } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
 import type { LensKind } from '../../../../store';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { HeaderBand } from './HeaderBand';
 import { ArchivedGate } from './ArchivedGate';
 import { TimelinePane } from '../SessionWorkspace/parts/TimelinePane';

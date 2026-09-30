@@ -83,7 +83,7 @@ export const pushStyleNote = ({
     ? 'Commits are fixups of the commits they fix, set in Review replies.'
     : 'Every fix is its own new commit, set in Review replies.';
 
-export type PushResultTone = 'done' | 'partial' | 'failed';
+type PushResultTone = 'done' | 'partial' | 'failed';
 
 export type PushResult = {
   readonly tone: PushResultTone;

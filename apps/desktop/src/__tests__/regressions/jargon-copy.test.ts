@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
 import { join, relative, sep } from 'path';
 import ts from 'typescript';

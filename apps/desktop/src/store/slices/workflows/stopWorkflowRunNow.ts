@@ -3,6 +3,7 @@ import { formatError } from '@goodboy/ui';
 import { cancelRunningSteps } from './cancelRunningSteps';
 import { persistOrchestrationStop } from './orchestrateNextStep';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 const OPERATOR_STOP_MESSAGE =
   'You stopped this run. The step in flight was skipped and everything it had already written is kept.';
@@ -15,7 +16,7 @@ type Params = {
 };
 
 const runStop = async ({ set, get, sessionId, workflowRunId }: Params): Promise<void> => {
-  const session = get().sessions.find((candidate) => candidate.id === sessionId);
+  const session = sessionById(get().sessions, sessionId);
   const run = session?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
   if (run == null || run.discardedAt != null) {
     return;

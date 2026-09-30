@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { detectDrift } from './drift-detection';
 import type { AgentKind } from './agent-kind';

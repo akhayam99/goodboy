@@ -55,7 +55,7 @@ export type HistoryIdentity = {
   readonly projectId: ProjectId;
 };
 
-export type HistoryRewriteResult = {
+type HistoryRewriteResult = {
   readonly head: string;
   readonly expectedHead: string;
   readonly map: ReadonlyArray<HistoryShaMove>;
@@ -93,7 +93,7 @@ export type HistoryRun = {
   readonly updatedAt: number;
 };
 
-export type HistoryAppliedLine = {
+type HistoryAppliedLine = {
   readonly action: HistoryAction;
   readonly text: string;
 };
@@ -127,7 +127,7 @@ export type HistoryTarget = {
   readonly workspaceId: WorkspaceId | null;
   readonly worktreePath: string;
   readonly branch: string;
-  readonly baseBranch: string;
+  readonly baseBranch: string | null;
   readonly projectName: string;
 };
 

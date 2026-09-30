@@ -2,10 +2,11 @@ import { useMemo } from 'react';
 import { StatusDot, cn } from '@goodboy/ui';
 import type { AgentStatus, SessionId } from '@goodboy/types';
 import { useAppStore, useSessionOpenQuestions, agentPlace } from '../../../../store';
-import { useTranscript } from '../../../../store/transcript';
+import { useTranscript } from '../../../../store/slices/transcripts/selectors';
 import { attachedQuestionsFor } from '../../timeline/attachedQuestions';
 import { AgentKindChip } from '../AgentKindChip';
 import { AgentStatusIcon } from '../AgentCard/AgentStatusIcon';
+import { agentStatusWord } from '../../agentStatusWord';
 import { agentNowState } from './agentNowState';
 import { openAgentRevealEvent } from './agentOpenTab';
 import type { FollowUpChild } from './followUpChildren';
@@ -15,11 +16,7 @@ type Props = {
   readonly sessionId: SessionId;
 };
 
-const TERMINAL_LABELS: Partial<Record<AgentStatus, string>> = {
-  completed: 'done',
-  failed: 'failed',
-  skipped: 'skipped',
-};
+const TERMINAL_STATUSES: ReadonlyArray<AgentStatus> = ['completed', 'failed', 'skipped', 'stopped'];
 
 export const AgentFollowUpChild = ({ entry, sessionId }: Props) => {
   const { child, kind } = entry;
@@ -33,7 +30,9 @@ export const AgentFollowUpChild = ({ entry, sessionId }: Props) => {
     [agent, questions],
   );
 
-  const terminalLabel = TERMINAL_LABELS[child.status] ?? null;
+  const terminalLabel = TERMINAL_STATUSES.includes(child.status)
+    ? agentStatusWord({ status: child.status })
+    : null;
   const live = agentNowState({ agent, turnState, transcript });
   const label = hasQuestion ? 'question' : (terminalLabel ?? live.label);
 

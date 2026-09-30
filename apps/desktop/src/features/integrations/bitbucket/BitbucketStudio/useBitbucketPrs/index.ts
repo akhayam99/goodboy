@@ -5,6 +5,8 @@ import {
   type BitbucketPullRequest,
   type BitbucketRepo,
 } from '../../client';
+import { compareIsoDesc } from '../../../../../shared/utils/compareIsoDesc';
+import { bitbucketPrStateKind } from '../../bitbucketPrStateKind';
 
 export type BitbucketPrGroup = Readonly<{
   key: string;
@@ -34,10 +36,11 @@ type BucketParams = {
 };
 
 const bucketOf = ({ pullRequest }: BucketParams): string => {
-  if (pullRequest.state === 'OPEN') {
+  const kind = bitbucketPrStateKind({ state: pullRequest.state });
+  if (kind === 'open') {
     return 'Open';
   }
-  if (pullRequest.state === 'MERGED') {
+  if (kind === 'merged') {
     return 'Merged';
   }
   return 'Closed';
@@ -55,7 +58,7 @@ const buildBitbucketPrGroups = ({
     key,
     label: key,
     rows: (buckets.get(key) ?? []).sort((left, right) =>
-      right.updatedOn.localeCompare(left.updatedOn),
+      compareIsoDesc({ left: left.updatedOn, right: right.updatedOn }),
     ),
   }));
 };

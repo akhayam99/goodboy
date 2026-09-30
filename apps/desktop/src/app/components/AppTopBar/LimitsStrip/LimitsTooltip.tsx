@@ -6,7 +6,7 @@ import { formatLimitReset } from '../../../../features/providers/limits/formatLi
 import { formatUsedPercent } from '../../../../features/providers/limits/formatUsedPercent';
 import { limitsChipHeadline } from '../../../../features/providers/limits/limitsChipHeadline';
 import { limitWindowLabel } from '../../../../features/providers/limits/limitWindowLabel';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { WINDOW_TONE_TEXT, windowTone } from '../../../../features/providers/limits/windowTone';
 
 type Props = {
@@ -24,7 +24,7 @@ export const LimitsTooltip = ({ chip, nowMs }: Props) => {
   const footer =
     chip.observedAt === null
       ? 'Click for details'
-      : `Updated ${formatRelativeAge({ fromIso: chip.observedAt, nowMs })} · Click for details`;
+      : `Updated ${formatAge({ from: chip.observedAt, now: nowMs })} · Click for details`;
   return (
     <span className="flex flex-col gap-1.5">
       <span className="flex items-baseline gap-1.5">

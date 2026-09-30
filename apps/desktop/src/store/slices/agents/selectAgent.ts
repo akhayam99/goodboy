@@ -3,7 +3,7 @@ import { listMessagesForAgent, listTurnEventsForAgent } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentMarkViewed } from '../../../features/workflows/workflows';
 import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
-import { EMPTY_LOADING } from '../../session-mutators';
+import { EMPTY_LOADING } from '../sessions/sessionMutators';
 import { flushTurnEvents } from '../transcripts/buffer';
 import type { GetFn, SetFn } from './types';
 import { stampAgentSubtreeViewed } from './stampAgentSubtreeViewed';

@@ -1,6 +1,7 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { GithubIssue } from '@goodboy/types';
-import { goalFromIssue as goalFromGithubIssue } from '../../github/goal-from-issue';
+import { goalFromIssue as goalFromGithubIssue } from '../github/goal-from-issue';
 import { goalFromPullRequest } from '../bitbucket/goal-from-pull-request';
 import { goalFromMergeRequest } from '../gitlab/goal-from-merge-request';
 import { GOAL_BODY_CHAR_CAP } from './goalBodyCap';

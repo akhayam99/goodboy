@@ -11,8 +11,11 @@ import { findMountById } from './findMountById';
 import { recoverSoleMount } from './recoverSoleMount';
 import { selectSelectedMountId } from './selectedMountId';
 import { toProjectMounts } from './mountViews';
+import { projectById } from '../projects/projectIndex';
 
 type MountState = Pick<AppState, 'sessionMounts' | 'sessionProjectMounts'>;
+
+type BaseBranchState = MountState & Pick<AppState, 'projects'>;
 
 type ObservationState = Pick<AppState, 'mountBranchObservations'>;
 
@@ -178,3 +181,34 @@ export const selectMountForPath = ({
     selectWritableMounts({ state, sessionId }).find((mount) => mount.worktreePath === path) ?? null
   );
 };
+
+type ResolveBaseBranchParams = {
+  readonly mount: Pick<SessionProjectMount, 'projectId' | 'baseBranch'> | null;
+  readonly projects: AppState['projects'];
+};
+
+export const resolveMountBaseBranch = ({
+  mount,
+  projects,
+}: ResolveBaseBranchParams): string | null => {
+  if (mount === null) {
+    return null;
+  }
+  return mount.baseBranch ?? projectById(projects, mount.projectId)?.baseBranch ?? null;
+};
+
+type BaseBranchParams = {
+  readonly state: BaseBranchState;
+  readonly sessionId: SessionId;
+  readonly path: string | null;
+};
+
+export const selectMountBaseBranch = ({
+  state,
+  sessionId,
+  path,
+}: BaseBranchParams): string | null =>
+  resolveMountBaseBranch({
+    mount: selectMountForPath({ state, sessionId, path }),
+    projects: state.projects,
+  });

@@ -1,6 +1,7 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import type { AgentId, PrComment, PullRequestState, SessionId } from '@goodboy/types';
-import type { CommentThread } from '../github/comment-threads';
+import type { CommentThread } from '../integrations/github/comment-threads';
 import { startFixAttempt, type SetAgentConfigFn, type SpawnAgentFn } from './startFixAttempt';
 
 const SESSION_ID = 'session-1' as SessionId;

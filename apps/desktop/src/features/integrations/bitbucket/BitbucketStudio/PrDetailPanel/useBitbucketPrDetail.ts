@@ -35,28 +35,47 @@ export const useBitbucketPrDetail = ({ target }: Params): Result => {
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
   const wantedId = target?.pullRequestId ?? null;
+  const workspaceId = target?.workspaceId;
+  const projectId = target?.projectId;
+  const workspaceSlug = target?.workspaceSlug;
+  const repoSlug = target?.repoSlug;
+  const email = target?.email;
   const isStale = loaded.pullRequestId !== wantedId;
 
   useEffect(() => {
-    if (target == null) {
+    if (
+      wantedId == null ||
+      workspaceId === undefined ||
+      workspaceSlug === undefined ||
+      repoSlug === undefined ||
+      email === undefined
+    ) {
       setLoaded(EMPTY);
       setIsFetching(false);
       setError(null);
       return;
     }
+    const request: BitbucketPullRequestTarget = {
+      workspaceId,
+      projectId,
+      workspaceSlug,
+      repoSlug,
+      email,
+      pullRequestId: wantedId,
+    };
     let isCancelled = false;
     setIsFetching(true);
     setError(null);
     Promise.all([
-      bitbucketListPullRequestComments(target),
-      bitbucketListPullRequestStatuses(target),
+      bitbucketListPullRequestComments(request),
+      bitbucketListPullRequestStatuses(request),
     ])
       .then(([nextComments, statuses]) => {
         if (isCancelled) {
           return;
         }
         setLoaded({
-          pullRequestId: target.pullRequestId,
+          pullRequestId: wantedId,
           comments: nextComments.filter((comment) => comment.deleted === false),
           checks: bitbucketCheckRuns({ statuses }),
         });
@@ -72,7 +91,7 @@ export const useBitbucketPrDetail = ({ target }: Params): Result => {
     return () => {
       isCancelled = true;
     };
-  }, [target, tick]);
+  }, [wantedId, workspaceId, projectId, workspaceSlug, repoSlug, email, tick]);
 
   const reload = useCallback(() => setTick((value) => value + 1), []);
   return {

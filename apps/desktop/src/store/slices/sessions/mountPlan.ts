@@ -1,11 +1,12 @@
-import { resolveSettings } from '@goodboy/core';
+import { nextAvailableSlug, resolveSettings, slugify } from '@goodboy/core';
 import type { MountId, Project, ProjectId, SessionId } from '@goodboy/types';
 import { DEFAULT_BRANCH_PREFIX } from '../../../features/settings/settings';
 import { mountDirName } from '../project-mounts/mountDirName';
-import { sanitizeSlug } from '../project-mounts/sanitizeSlug';
 import { deriveBranchName } from './deriveBranchName';
 import { materializationSeedFor } from './materializationSeeds';
 import type { AppStore } from '../../store';
+import { sessionById } from './sessionIndex';
+import { projectById } from '../projects/projectIndex';
 
 export type MountPlanState = Pick<
   AppStore,
@@ -22,6 +23,7 @@ export type MountPlan = {
   readonly project: Project;
   readonly mountId: MountId;
   readonly prefix: string;
+  readonly baseSlug: string;
   readonly slug: string;
   readonly branch: string | null;
   readonly adoptedBranch: string | null;
@@ -60,14 +62,14 @@ export const mountPlan = ({
   taskIdentifiers,
 }: Params): MountPlan | null => {
   const session =
-    state.sessions.find((candidate) => candidate.id === sessionId) ??
+    sessionById(state.sessions, sessionId) ??
     Object.values(state.archivedSessions)
       .flat()
       .find((candidate) => candidate.id === sessionId);
   if (session === undefined) {
     return null;
   }
-  const project = state.projects.find((candidate) => candidate.id === projectId);
+  const project = projectById(state.projects, projectId);
   if (project === undefined || project.workspaceId !== session.workspaceId) {
     return null;
   }
@@ -111,13 +113,18 @@ export const mountPlan = ({
     taskIdentifiers: storedIdentifiers.length > 0 ? storedIdentifiers : taskIdentifiers,
     existingBranches: takenBranches,
   });
-  const sanitizedSlug = sanitizeSlug(derivedSlug);
-  const slug = sanitizedSlug === '' ? `session-${sessionId.slice(0, 8)}` : sanitizedSlug;
+  const sanitizedSlug = slugify({ input: derivedSlug, fallback: '' });
+  const baseSlug = sanitizedSlug === '' ? `session-${sessionId.slice(0, 8)}` : sanitizedSlug;
   const adoptedBranch = seed?.existingBranch ?? null;
+  const slug =
+    project.kind === 'repo' && adoptedBranch === null
+      ? nextAvailableSlug({ base: baseSlug, prefix, taken: takenBranches })
+      : baseSlug;
   return {
     project,
     mountId,
     prefix,
+    baseSlug,
     slug,
     branch: project.kind === 'repo' ? `${prefix}/${slug}` : null,
     adoptedBranch: project.kind === 'repo' ? adoptedBranch : null,

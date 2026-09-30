@@ -1,7 +1,6 @@
 import { useMemo, type ReactElement } from 'react';
 import type { ProviderName, SessionId } from '@goodboy/types';
-import { SectionHeader, formatUsd, formatUsdPrecise } from '@goodboy/ui';
-import { PaneShell } from '../../../../shared/components/PaneShell';
+import { SectionHeader, formatUsd, formatUsdPrecise, PaneShell } from '@goodboy/ui';
 import { SpendSection } from '../../../budget/components/spend/SpendSection';
 import type { WorkspaceSpend } from '../../../budget/hooks/useWorkspaceSpend';
 import type { ImpactMetrics } from '../../hooks/useImpactMetrics';

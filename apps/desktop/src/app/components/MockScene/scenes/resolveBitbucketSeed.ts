@@ -22,7 +22,7 @@ import {
 } from './resolveSeed';
 import { NOTES, noteRow } from './resolveGitlabSeed';
 
-export const BITBUCKET_EXPANDED_THREAD_ID = 'bitbucket:1041';
+const BITBUCKET_EXPANDED_THREAD_ID = 'bitbucket:1041';
 
 const PR_URL = 'https://example.invalid/northwind/storefront-web/pull-requests/12';
 const PR_NUMBER = 12;

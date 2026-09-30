@@ -13,63 +13,63 @@ import type {
 } from '@goodboy/types';
 import type { ChatTurnOutcome, RunChatTurnParams } from './runChatTurn';
 
-export type ListChatsParams = {
+type ListChatsParams = {
   readonly workspaceId: WorkspaceId;
   readonly includeArchived?: boolean;
 };
 
-export type ChatRefParams = {
+type ChatRefParams = {
   readonly chatId: ChatId;
 };
 
-export type InsertChatParams = {
+type InsertChatParams = {
   readonly chat: Chat;
 };
 
-export type ChatMessageParams = {
+type ChatMessageParams = {
   readonly message: ChatMessage;
 };
 
-export type SetArchivedParams = {
+type SetArchivedParams = {
   readonly chatIds: ReadonlyArray<ChatId>;
   readonly archivedAt: IsoDateTime | null;
   readonly now: IsoDateTime;
 };
 
-export type DeleteChatsParams = {
+type DeleteChatsParams = {
   readonly chatIds: ReadonlyArray<ChatId>;
 };
 
-export type InsertLinkParams = {
+type InsertLinkParams = {
   readonly link: ChatSessionLink;
 };
 
-export type ListLinksParams = {
+type ListLinksParams = {
   readonly workspaceId: WorkspaceId;
 };
 
-export type SetPinnedParams = ChatRefParams & {
+type SetPinnedParams = ChatRefParams & {
   readonly pinnedAt: IsoDateTime | null;
   readonly now: IsoDateTime;
 };
 
-export type RenameParams = ChatRefParams & {
+type RenameParams = ChatRefParams & {
   readonly title: string;
   readonly now: IsoDateTime;
 };
 
-export type SetModelParams = ChatRefParams & {
+type SetModelParams = ChatRefParams & {
   readonly provider: ProviderId;
   readonly model: ModelKey;
   readonly effort: EffortLevel | null;
   readonly now: IsoDateTime;
 };
 
-export type SettleParams = {
+type SettleParams = {
   readonly now: IsoDateTime;
 };
 
-export type CancelTurnParams = {
+type CancelTurnParams = {
   readonly runId: ProviderRunId;
 };
 

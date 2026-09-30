@@ -22,7 +22,7 @@ vi.mock('../../../../store', async () => ({
   useSessionOpenQuestions: () => state.openQuestions,
 }));
 
-vi.mock('../../../../store/transcript', () => ({
+vi.mock('../../../../store/slices/transcripts/selectors', () => ({
   useTranscript: () => [],
 }));
 
@@ -192,6 +192,22 @@ describe('AgentFollowUps after a spawn', () => {
     );
 
     expect(screen.getByText('done')).toBeDefined();
+  });
+
+  it('reads a spawned child that was stopped as stopped, not ready', () => {
+    render(
+      <AgentFollowUps
+        sourceAgent={source}
+        sourceKind="reviewer"
+        summary="two findings"
+        sessionId={sessionId}
+        followUps={[makeChild({ status: 'stopped' })]}
+        activePlanId={null}
+      />,
+    );
+
+    expect(screen.getByText('stopped')).toBeDefined();
+    expect(screen.queryByText('ready')).toBeNull();
   });
 
   it('flags a spawned child that is waiting on an answer', () => {

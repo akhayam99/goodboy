@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, Project, ProjectId, WorkspaceId } from '@goodboy/types';
 import type { AppStore } from '../../store';
@@ -9,9 +10,11 @@ const h = vi.hoisted(() => ({
   applyGoodboyIgnore: vi.fn(),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  updateProjectGoodboyIgnore: h.updateProjectGoodboyIgnore,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    updateProjectGoodboyIgnore: h.updateProjectGoodboyIgnore,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/worktree/goodboyIgnore', () => ({
   checkGoodboyIgnoreStatus: h.checkGoodboyIgnoreStatus,

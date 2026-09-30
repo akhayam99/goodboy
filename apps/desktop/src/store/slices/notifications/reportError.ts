@@ -3,7 +3,7 @@ import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import type { GetFn } from './types';
 
-export const REPORT_ERROR_BODY_LIMIT = 600;
+const REPORT_ERROR_BODY_LIMIT = 600;
 
 export type ReportErrorParams = {
   title: string;

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { INITIAL_CONNECT_MAP, INITIAL_LIFECYCLE_MAP } from './types';
 import { updateProviderCli } from './updateProviderCli';

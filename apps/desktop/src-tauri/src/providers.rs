@@ -6,6 +6,8 @@ use thiserror::Error;
 
 use crate::path_env;
 
+pub(crate) mod cli_args;
+
 #[derive(Debug, Error)]
 pub enum ProviderStatusError {
     #[error("provider detection did not finish: {0}")]
@@ -72,6 +74,10 @@ pub fn detect_opencode() -> ProviderStatus {
 }
 
 fn detect_binary(id: &str, binary: &str) -> ProviderStatus {
+    detect_binary_within(id, binary, DETECT_TIMEOUT)
+}
+
+fn detect_binary_within(id: &str, binary: &str, timeout: Duration) -> ProviderStatus {
     let mut child = match path_env::command(binary)
         .arg("--version")
         .stdout(Stdio::piped())
@@ -90,7 +96,7 @@ fn detect_binary(id: &str, binary: &str) -> ProviderStatus {
         }
     };
 
-    let deadline = Instant::now() + DETECT_TIMEOUT;
+    let deadline = Instant::now() + timeout;
     loop {
         match child.try_wait() {
             Ok(Some(status)) => {
@@ -318,7 +324,11 @@ fn extract_codex_identity_from_auth_json() -> Option<String> {
 }
 
 fn check_claude_auth() -> AuthState {
-    match run_auth_command(&["claude", "auth", "status"]) {
+    check_claude_auth_with("claude")
+}
+
+fn check_claude_auth_with(binary: &str) -> AuthState {
+    match run_auth_command(&[binary, "auth", "status"]) {
         Ok(out) => parse_claude_auth_output(&out.stdout),
         Err(_) => AuthState {
             state: AuthStateKind::Unknown,
@@ -365,7 +375,11 @@ fn parse_claude_auth_output(output: &str) -> AuthState {
 }
 
 fn check_cursor_auth() -> AuthState {
-    match run_auth_command(&["cursor-agent", "status"]) {
+    check_cursor_auth_with("cursor-agent")
+}
+
+fn check_cursor_auth_with(binary: &str) -> AuthState {
+    match run_auth_command(&[binary, "status"]) {
         // Use primary_text() so a non-TTY child that writes status to stderr is
         // still read (cursor-agent, like codex, can route to stderr headless).
         Ok(out) => parse_cursor_auth_output(out.primary_text()),
@@ -427,15 +441,19 @@ fn parse_cursor_auth_output(output: &str) -> AuthState {
 }
 
 fn check_codex_auth() -> AuthState {
+    check_codex_auth_with("codex", CODEX_AUTH_TIMEOUT)
+}
+
+fn check_codex_auth_with(binary: &str, total_timeout: Duration) -> AuthState {
     // Subcommand layout shifted across codex versions; try most recent first.
-    let candidates: &[&[&str]] = &[
-        &["codex", "login", "status"],
-        &["codex", "auth", "status"],
-        &["codex", "auth", "whoami"],
-        &["codex", "whoami"],
-        &["codex", "status"],
+    let candidates: [&[&str]; 5] = [
+        &[binary, "login", "status"],
+        &[binary, "auth", "status"],
+        &[binary, "auth", "whoami"],
+        &[binary, "whoami"],
+        &[binary, "status"],
     ];
-    let deadline = Instant::now() + CODEX_AUTH_TIMEOUT;
+    let deadline = Instant::now() + total_timeout;
     for cmd in candidates {
         let now = Instant::now();
         if now >= deadline {
@@ -765,6 +783,9 @@ pub async fn check_provider_auth(provider_id: String) -> AuthState {
         })
 }
 
+#[cfg(all(test, unix))]
+mod fake_cli_tests;
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1027,23 +1048,6 @@ mod tests {
         assert_eq!(
             openrouter_credential(&names),
             Some(&"OpenRouter".to_string())
-        );
-    }
-
-    #[test]
-    #[ignore = "requires real codex binary + active login; opt in via GOODBOY_TEST_REAL_CODEX=1"]
-    fn codex_real_auth_detection_works() {
-        if std::env::var("GOODBOY_TEST_REAL_CODEX")
-            .map(|v| v.is_empty())
-            .unwrap_or(true)
-        {
-            return;
-        }
-        let auth = check_codex_auth();
-        assert!(
-            !matches!(auth.state, AuthStateKind::Unknown),
-            "expected Connected or Disconnected, got Unknown — \
-             auth detection regressed (likely back to stdout-only routing)"
         );
     }
 }

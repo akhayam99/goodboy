@@ -28,11 +28,7 @@ type PlanOfParams = HistoryMountInput & {
   readonly get: GetFn;
 };
 
-export const draftPlanArgs = ({
-  get,
-  sessionId,
-  mountId,
-}: PlanOfParams): HistoryPlanArgs | null => {
+const draftPlanArgs = ({ get, sessionId, mountId }: PlanOfParams): HistoryPlanArgs | null => {
   const draft = get().historyDrafts[mountId];
   if (draft === undefined || draft.sessionId !== sessionId || draft.commits.length === 0) {
     return null;

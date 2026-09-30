@@ -14,7 +14,7 @@ import {
   type InboxKind,
   type InboxProvider,
 } from '../../../features/inbox/types';
-import type { SettingsStudioScope } from '../../../features/settings/components/SettingsStudio/types';
+import type { SettingsStudioScope } from '../../../features/settings/settingsFocus';
 import type { StudioPlace } from '../../../store';
 
 type EventValueParams = {

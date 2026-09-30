@@ -19,7 +19,7 @@ export type WireframeDraft = WireframeDraftRequest &
     | Readonly<{ status: 'failed'; reason: string; detail: string | null }>
   );
 
-export const DRAFT_NO_VERSION_REASON = 'The agent answered without a new version.';
+const DRAFT_NO_VERSION_REASON = 'The agent answered without a new version.';
 
 export const draftFailure = ({
   events,

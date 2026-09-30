@@ -50,7 +50,9 @@ export const useDraftRouting = ({ sessionId }: { readonly sessionId: SessionId }
       save({
         ...routing,
         model,
-        effort: clampEffortForModel({ model, effort: routing.effort }) ?? routing.effort,
+        effort:
+          clampEffortForModel({ model, effort: routing.effort, provider: routing.provider }) ??
+          routing.effort,
       }),
   };
 };

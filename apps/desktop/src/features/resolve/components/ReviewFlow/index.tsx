@@ -17,13 +17,14 @@ import {
   SegmentedTabs,
   Skeleton,
   formatError,
+  PaneShell,
 } from '@goodboy/ui';
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { eventMatches } from '../../../../shared/keyboard/dispatcher';
+import { isTypingTarget } from '../../../../shared/keyboard/isTypingTarget';
 import { SHORTCUTS, type ShortcutId } from '../../../../shared/keyboard/registry';
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
 import { selectActiveMountId } from '../../../../store/slices/project-mounts/selectors';
@@ -92,10 +93,6 @@ type StartedNote = {
 };
 
 const SKELETON_ROWS = [0, 1, 2];
-
-const isEditable = (target: EventTarget | null): boolean =>
-  target instanceof HTMLElement &&
-  (target.isContentEditable || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA');
 
 export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
   const sessionId = session.id as SessionId;
@@ -320,7 +317,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
 
   const switchView = (event: KeyboardEvent<HTMLDivElement>): boolean => {
     if (
-      isEditable(event.target) ||
+      isTypingTarget(event.target) ||
       compose !== null ||
       editingReplyId !== null ||
       !eventMatches({ event: event.nativeEvent, entry: SHORTCUTS['review.view'] })
@@ -357,7 +354,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
       });
       return;
     }
-    if (isEditable(event.target) || compose !== null || editingReplyId !== null) {
+    if (isTypingTarget(event.target) || compose !== null || editingReplyId !== null) {
       return;
     }
     if (eventMatches({ event: native, entry: SHORTCUTS['review.next'] })) {

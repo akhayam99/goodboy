@@ -2,7 +2,7 @@ import { PROVIDERS_REPORTING_LIMITS, sortLimitWindows } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
 import { BAND_ROW_CLASS, Band, Button, Notice, RefreshIconButton, cn } from '@goodboy/ui';
 import { useAppStore } from '../../../../../../store';
-import { formatRelativeAge } from '../../../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../../../shared/utils/time/formatAge';
 import { useAutoDetour } from '../../../../hooks/useAutoDetour';
 import { useProviderLimitsChip } from '../../../../hooks/useProviderLimitsChip';
 import { usageNotice } from '../../../../limits/usageNotice';
@@ -45,7 +45,7 @@ export const UsageGroup = ({ providerId, billing, planLabel }: Props) => {
   const isChecking = probe?.isChecking === true;
   const hasFailed = (probe?.failures ?? 0) >= PROBE_FAILURE_LIMIT;
   const lastAge =
-    chip.observedAt === null ? null : formatRelativeAge({ fromIso: chip.observedAt, nowMs });
+    chip.observedAt === null ? null : formatAge({ from: chip.observedAt, now: nowMs });
   const isClaudeOut =
     providerId === 'anthropic' &&
     windows.some((window) => window.status === 'reached' || (window.usedFraction ?? 0) >= 1);

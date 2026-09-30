@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+use crate::proc::git::Git;
 use crate::worktree::{GitDistance, GitOperation, GitUnknownReason, GitWorkingTree};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -132,9 +133,9 @@ fn validate_git_repo_blocking(path: String) -> GitRepoCheck {
     let resolved_path = std::fs::canonicalize(candidate)
         .map(|found| found.to_string_lossy().into_owned())
         .ok();
-    let output = match crate::path_env::command("git")
+    let output = match Git::new()
         .args(["rev-parse", "--show-toplevel"])
-        .current_dir(candidate)
+        .cwd(candidate)
         .output()
     {
         Ok(out) => out,
@@ -713,10 +714,11 @@ fn write_ignore_entries(root: &Path, skip_goodboy: bool) -> Result<(), RepoInitE
 }
 
 fn is_path_ignored(root: &Path, probe: &str) -> Result<bool, RepoInitError> {
-    let output = crate::path_env::command("git")
+    let output = Git::new()
         .args(["check-ignore", "--no-index", "-q", "--", probe])
-        .current_dir(root)
-        .output()?;
+        .cwd(root)
+        .output()
+        .map_err(std::io::Error::from)?;
     match output.status.code() {
         Some(0) => Ok(true),
         Some(1) => Ok(false),

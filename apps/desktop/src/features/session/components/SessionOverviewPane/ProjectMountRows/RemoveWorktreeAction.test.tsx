@@ -29,7 +29,7 @@ vi.mock('../../../../../store', () => ({
   useAppStore: <Value,>(selector: (store: typeof state) => Value) => selector(state),
 }));
 
-vi.mock('../../../../../app/components/Toast', () => ({
+vi.mock('../../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast }),
 }));
 

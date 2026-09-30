@@ -8,7 +8,7 @@ import {
   resolveReviewTarget,
   type ReviewTarget,
 } from '../../../../../store/slices/review-drafts/resolveReviewTarget';
-import { ghPrDiff } from '../../../../github/github';
+import { ghPrDiff } from '../../../../integrations/github/github';
 import { gitlabMrDiff } from '../../../../integrations/gitlab/client';
 import { resolveSessionRepo } from '../../../../../store/slices/worktrees/resolveSessionRepo';
 

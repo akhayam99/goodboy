@@ -15,9 +15,9 @@ import {
   setBackupImportResolvedPath,
   setBackupImportWorkspaceTarget,
 } from './importActions';
-import type { GetFn, SetFn } from '../../slice-types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createBackupSlice = (set: SetFn, get: GetFn) => ({
+export const createBackupSlice = ({ set, get }: SliceDeps) => ({
   ...backupInitialState,
   setBackupExportGroup: setBackupExportGroup(set, get),
   loadBackupExportPreview: loadBackupExportPreview(set, get),

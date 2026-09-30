@@ -4,7 +4,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { SendControl } from './SendControl';
 
-afterEach(cleanup);
+const { platform } = vi.hoisted(() => ({ platform: { current: 'darwin' as 'darwin' | 'linux' } }));
+
+vi.mock('../../../../../shared/platform', () => ({ currentPlatform: () => platform.current }));
+
+afterEach(() => {
+  cleanup();
+  platform.current = 'darwin';
+});
 
 const base = {
   isRunning: false,
@@ -43,5 +50,16 @@ describe('SendControl', () => {
     expect(screen.getByRole('button', { name: 'Send message' }).hasAttribute('disabled')).toBe(
       true,
     );
+  });
+
+  it('labels the delivery keys with the platform glyphs', () => {
+    render(<SendControl {...base} isRunning showsDeliveryChoice />);
+    expect(screen.getByRole('button', { name: /^Queue/ }).textContent).toContain('↵');
+    expect(screen.getByRole('button', { name: /^Send now/ }).textContent).toContain('⌘↵');
+    cleanup();
+    platform.current = 'linux';
+    render(<SendControl {...base} isRunning showsDeliveryChoice />);
+    expect(screen.getByRole('button', { name: /^Queue/ }).textContent).toContain('Enter');
+    expect(screen.getByRole('button', { name: /^Send now/ }).textContent).toContain('Ctrl+Enter');
   });
 });

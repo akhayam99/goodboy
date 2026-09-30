@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Download, Search } from 'lucide-react';
 import { AnchoredPopover, Button, FormActions, Input, useDropdown } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
-import { useToast } from '../../../../../app/components/Toast';
+import { useToast } from '../../../../../shared/components/Toast';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { useWorkflowImport } from '../../WorkflowsPanel/useWorkflowImport';
 import { ImportGroupSection } from './ImportGroupSection';

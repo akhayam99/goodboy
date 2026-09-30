@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 
@@ -9,7 +10,7 @@ const h = vi.hoisted(() => ({
   })),
 }));
 
-vi.mock('../../../features/github/github', () => ({ tauriGhRunner: { run: h.run } }));
+vi.mock('../../../features/integrations/github/github', () => ({ tauriGhRunner: { run: h.run } }));
 
 import { closePr } from './closePr';
 import { convertPrToDraft } from './convertPrToDraft';
@@ -258,7 +259,7 @@ const expectLoudFailure = async ({
   expect(h.run).not.toHaveBeenCalled();
 };
 
-describe.each(VERBS)('$name without what it needs', ({ title, hasOptionalNumber, call }) => {
+describe.each(VERBS)('$name without what it needs', ({ title, call }) => {
   it('fails loudly when the workspace is missing', async () => {
     const state = { ...makeState(), workspaces: [] };
 
@@ -291,15 +292,20 @@ describe.each(VERBS)('$name without what it needs', ({ title, hasOptionalNumber,
       message: PR_WRITE_NO_SESSION,
     });
   });
-
-  it.runIf(hasOptionalNumber)('fails loudly when there is no pull request to act on', async () => {
-    const state = { ...makeState(), sessionGithub: {} };
-
-    await expectLoudFailure({
-      run: call({ state }),
-      state,
-      title: title.replace('#12', 'the pull request'),
-      message: PR_WRITE_NO_PULL_REQUEST,
-    });
-  });
 });
+
+describe.each(VERBS.filter(({ hasOptionalNumber }) => hasOptionalNumber))(
+  '$name without a pull request',
+  ({ title, call }) => {
+    it('fails loudly when there is no pull request to act on', async () => {
+      const state = { ...makeState(), sessionGithub: {} };
+
+      await expectLoudFailure({
+        run: call({ state }),
+        state,
+        title: title.replace('#12', 'the pull request'),
+        message: PR_WRITE_NO_PULL_REQUEST,
+      });
+    });
+  },
+);

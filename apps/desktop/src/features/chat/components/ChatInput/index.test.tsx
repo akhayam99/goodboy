@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { IsoDateTime, ProviderRunId, Session } from '@goodboy/types';
 
@@ -49,6 +49,7 @@ const {
     discoveredScriptScans: Record<string, never>;
     sessionWorktrees: Record<string, ReadonlyArray<string>>;
     providerSpendBreakdown: ReadonlyArray<never>;
+    providerBudgetStatus: Record<string, never>;
     selectedAgentId: Record<string, string>;
     agentTurnState: Record<string, never>;
     agentModelOverride: Record<string, string>;
@@ -104,6 +105,7 @@ const {
     discoveredScriptScans: {},
     sessionWorktrees: {},
     providerSpendBreakdown: [],
+    providerBudgetStatus: {},
     workspaces: [],
     selectedAgentId: { 'session-1': 'agent-1' },
     agentTurnState: {},
@@ -174,6 +176,7 @@ function resetMockStore() {
     agentDraft: {},
     agentAttachments: {},
     agentQueue: {},
+    takeQueuedMessage: vi.fn(() => null),
     agentKindOverride: {},
     agentModelOverride: {},
     agentProviderOverride: {},
@@ -196,7 +199,7 @@ vi.mock('../../../../store', () => ({
   },
 }));
 
-vi.mock('../../../../app/components/Toast', () => ({
+vi.mock('../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
   useToastLift: () => undefined,
 }));
@@ -221,6 +224,7 @@ vi.mock('@goodboy/core', async (importOriginal) => {
   };
 });
 
+import { ARCHIVED_SESSION_REASON } from '../../../session/archivedSession';
 import { ChatInput } from './index';
 
 function makeSession(overrides: Partial<Session> = {}): Session {
@@ -1062,5 +1066,224 @@ describe('ChatInput, cursor combo axes', () => {
     await togglePicker(user);
 
     expect(modeChip('Thinking').getAttribute('aria-pressed')).toBe('true');
+  });
+});
+
+describe('ChatInput, composer flows', () => {
+  const runningSession = () =>
+    makeSession({
+      state: {
+        kind: 'running',
+        runId: 'run-1' as ProviderRunId,
+        startedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+      },
+    });
+
+  it('keeps Enter from sending while the quick actions menu is open and Escape closes it', async () => {
+    const user = userEvent.setup();
+    render(<ChatInput session={makeSession()} />);
+    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
+
+    await user.type(textarea, '~');
+    expect(screen.getByText('no workflows yet. create one in workspace settings')).toBeDefined();
+    await user.keyboard('{Enter}');
+
+    expect(sendTurnMock).not.toHaveBeenCalled();
+    expect(textarea.value).toBe('~');
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByText('no workflows yet. create one in workspace settings')).toBeNull();
+    expect(textarea.value).toBe('~');
+  });
+
+  it('sends a prefixed message on Enter once the menu is closed', async () => {
+    const user = userEvent.setup();
+    render(<ChatInput session={makeSession()} />);
+
+    await user.type(screen.getByRole('textbox'), '~');
+    await user.keyboard('{Escape}{Enter}');
+
+    expect(sendTurnMock).toHaveBeenCalledWith(expect.objectContaining({ content: '~' }));
+  });
+
+  it('inserts the picked prefix from the plus menu, opens its menu and focuses the textarea', async () => {
+    const user = userEvent.setup();
+    render(<ChatInput session={makeSession()} />);
+    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
+
+    await user.click(screen.getByRole('button', { name: 'More actions' }));
+    await user.click(screen.getByRole('menuitem', { name: /Start a workflow/ }));
+
+    expect(textarea.value).toBe('~');
+    expect(screen.getByText('no workflows yet. create one in workspace settings')).toBeDefined();
+    expect(document.activeElement).toBe(textarea);
+  });
+
+  it('opens the file picker from the plus menu', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<ChatInput session={makeSession()} />);
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const click = vi.spyOn(input, 'click');
+
+    await user.click(screen.getByRole('button', { name: 'More actions' }));
+    await user.click(screen.getByRole('menuitem', { name: /Attach files/ }));
+
+    expect(click).toHaveBeenCalledOnce();
+  });
+
+  it('writes the draft to the store per keystroke, clears it when emptied and restores it on remount', async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<ChatInput session={makeSession()} />);
+
+    await user.type(screen.getByRole('textbox'), 'abc');
+    expect(mockStore.getState().agentDraft['agent-1']).toBe('abc');
+
+    unmount();
+    render(<ChatInput session={makeSession()} />);
+    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
+    expect(textarea.value).toBe('abc');
+
+    await user.clear(textarea);
+    expect('agent-1' in mockStore.getState().agentDraft).toBe(false);
+  });
+
+  it('shows the draft of the selected agent only', () => {
+    mockStore.setState({
+      agentDraft: { 'agent-1': 'first draft', 'agent-2': 'second draft' },
+    });
+    render(<ChatInput session={makeSession()} />);
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('first draft');
+
+    act(() => mockStore.setState({ selectedAgentId: { 'session-1': 'agent-2' } }));
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('second draft');
+    mockStore.setState({ selectedAgentId: { 'session-1': 'agent-1' } });
+  });
+
+  it('sends now on Ctrl+Enter while running and sends normally on Cmd+Enter when idle', async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<ChatInput session={runningSession()} />);
+    await user.type(screen.getByRole('textbox'), 'stop and use decimals');
+    await user.keyboard('{Control>}{Enter}{/Control}');
+
+    expect(mockStore.getState().sendAgentMessageNow).toHaveBeenCalledOnce();
+    expect(mockStore.getState().enqueueAgentMessage).not.toHaveBeenCalled();
+    unmount();
+    resetMockStore();
+
+    render(<ChatInput session={makeSession()} />);
+    await user.type(screen.getByRole('textbox'), 'plain send');
+    await user.keyboard('{Meta>}{Enter}{/Meta}');
+
+    expect(sendTurnMock).toHaveBeenCalledWith(expect.objectContaining({ content: 'plain send' }));
+    expect(mockStore.getState().sendAgentMessageNow).toHaveBeenCalledOnce();
+  });
+
+  it('ignores a whitespace-only draft on Enter', async () => {
+    const user = userEvent.setup();
+    render(<ChatInput session={makeSession()} />);
+
+    await user.type(screen.getByRole('textbox'), '   ');
+    await user.keyboard('{Enter}');
+
+    expect(sendTurnMock).not.toHaveBeenCalled();
+  });
+
+  it('trims the sent content', async () => {
+    const user = userEvent.setup();
+    render(<ChatInput session={makeSession()} />);
+
+    await user.type(screen.getByRole('textbox'), '  padded  ');
+    await user.keyboard('{Enter}');
+
+    expect(sendTurnMock).toHaveBeenCalledWith(expect.objectContaining({ content: 'padded' }));
+  });
+
+  it('attaches an image pasted into the textarea without inserting text', async () => {
+    mockStore.setState({ sessionWorktrees: { 'session-1': ['/wt'] } });
+    render(<ChatInput session={makeSession()} />);
+    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
+
+    fireEvent.paste(textarea, {
+      clipboardData: { files: [new File(['abc'], 'pic.png', { type: 'image/png' })] },
+    });
+
+    expect(await screen.findByAltText('pic.png')).toBeTruthy();
+    expect(textarea.value).toBe('');
+    expect(screen.getByText('1 file')).toBeDefined();
+  });
+
+  it('marks the composer as a drop target and removes a chip on demand', async () => {
+    mockStore.setState({ sessionWorktrees: { 'session-1': ['/wt'] } });
+    const user = userEvent.setup();
+    const { container } = render(<ChatInput session={makeSession()} />);
+    expect(container.querySelectorAll('[data-drop-composer]').length).toBe(1);
+
+    fireEvent.paste(screen.getByRole('textbox'), {
+      clipboardData: { files: [new File(['abc'], 'pic.png', { type: 'image/png' })] },
+    });
+    await screen.findByAltText('pic.png');
+    await user.click(screen.getByRole('button', { name: /remove/i }));
+
+    expect(screen.queryByAltText('pic.png')).toBeNull();
+  });
+
+  it('moves a queued message back into the composer and focuses it', async () => {
+    const queued = {
+      id: 'q-1',
+      agentId: 'agent-1',
+      content: 'queued words',
+      attachments: [],
+      override: undefined,
+      status: 'queued',
+    };
+    mockStore.setState({
+      agentQueue: { 'agent-1': [queued] },
+      takeQueuedMessage: vi.fn(() => queued),
+    });
+    const user = userEvent.setup();
+    render(<ChatInput session={runningSession()} />);
+    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
+
+    await user.click(screen.getByRole('button', { name: 'queued words' }));
+
+    expect(mockStore.getState().takeQueuedMessage).toHaveBeenCalledWith({
+      agentId: 'agent-1',
+      itemId: 'q-1',
+    });
+    expect(textarea.value).toBe('queued words');
+    expect(document.activeElement).toBe(textarea);
+  });
+
+  it('locks the composer with a sign-in prompt while the provider is disconnected', async () => {
+    const user = userEvent.setup();
+    render(<ChatInput session={makeSession()} providerDisconnected />);
+    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
+
+    expect(textarea.disabled).toBe(true);
+    expect(textarea.getAttribute('placeholder')).toBe('Sign in to send a message');
+    expect(document.activeElement).not.toBe(textarea);
+    await user.keyboard('{Enter}');
+    expect(sendTurnMock).not.toHaveBeenCalled();
+  });
+
+  it('locks the composer for an archived session', () => {
+    render(
+      <ChatInput
+        session={makeSession({ archivedAt: '2026-01-02T00:00:00.000Z' as IsoDateTime })}
+      />,
+    );
+    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
+
+    expect(textarea.disabled).toBe(true);
+    expect(textarea.getAttribute('placeholder')).toBe(ARCHIVED_SESSION_REASON);
+  });
+
+  it('cancels the running turn from the stop control', async () => {
+    const user = userEvent.setup();
+    render(<ChatInput session={runningSession()} />);
+
+    await user.click(screen.getByRole('button', { name: 'Cancel turn' }));
+
+    expect(cancelCurrentTurnMock).toHaveBeenCalledWith('session-1', 'agent-1', 'user');
   });
 });

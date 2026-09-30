@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { parseSummaryDocument } from '@goodboy/core';
 import { summaryDisplayBlocks } from './summaryDisplayBlocks';

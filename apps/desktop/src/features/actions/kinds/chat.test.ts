@@ -22,7 +22,16 @@ const factsOf = (overrides: Partial<ChatFacts> = {}): ChatFacts => ({
 const idsOf = (facts: ChatFacts): ReadonlyArray<string> =>
   resolveActions({ definitions: CHAT_KIND.actions, facts }).map((action) => action.id);
 
-const env = { anchorKey: 'chat-row:chat-consent' } as unknown as ActionEnv;
+const env: ActionEnv = {
+  getState: () => {
+    throw new Error('chat actions never read the store');
+  },
+  showToast: vi.fn(),
+  copyText: vi.fn(async () => undefined),
+  origin: 'menu',
+  anchorKey: 'chat-row:chat-consent',
+  viewing: null,
+};
 
 const runOf = ({ id, facts }: { readonly id: string; readonly facts: ChatFacts }) =>
   CHAT_KIND.actions.find((action) => action.id === id)?.run({ facts, env, choice: null });

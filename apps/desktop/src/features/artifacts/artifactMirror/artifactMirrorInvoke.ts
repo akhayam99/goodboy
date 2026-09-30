@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import type { ArtifactFolderFile } from '../artifactFile';
 
 export type ArtifactMirrorEntry = Readonly<{
@@ -24,20 +24,20 @@ export const writeArtifactMirror = async ({
   folder,
   files,
 }: FolderParams & { readonly files: ReadonlyArray<ArtifactFolderFile> }): Promise<string> =>
-  invoke<string>('artifact_mirror_write', { workspaceSlug, folder, files });
+  invokeCommand<string>('artifact_mirror_write', { workspaceSlug, folder, files });
 
 export const pendingArtifactMirrors = async ({
   entries,
 }: {
   readonly entries: ReadonlyArray<ArtifactMirrorEntry>;
 }): Promise<ReadonlyArray<string>> =>
-  invoke<ReadonlyArray<string>>('artifact_mirror_pending', { entries });
+  invokeCommand<ReadonlyArray<string>>('artifact_mirror_pending', { entries });
 
 export const locateArtifactMirror = async ({
   workspaceSlug,
   folder,
 }: FolderParams): Promise<ArtifactMirrorLocation> =>
-  invoke<ArtifactMirrorLocation>('artifact_mirror_locate', { workspaceSlug, folder });
+  invokeCommand<ArtifactMirrorLocation>('artifact_mirror_locate', { workspaceSlug, folder });
 
 export type ArtifactMirrorRef = Readonly<{
   workspaceSlug: string;
@@ -54,29 +54,29 @@ export const measureArtifactMirrors = async ({
 }: {
   readonly entries: ReadonlyArray<ArtifactMirrorRef>;
 }): Promise<ReadonlyArray<ArtifactMirrorSize>> =>
-  invoke<ReadonlyArray<ArtifactMirrorSize>>('artifact_mirror_measure', { entries });
+  invokeCommand<ReadonlyArray<ArtifactMirrorSize>>('artifact_mirror_measure', { entries });
 
 export const removeArtifactMirror = async ({
   workspaceSlug,
   folder,
 }: FolderParams): Promise<boolean> =>
-  invoke<boolean>('artifact_mirror_remove', { workspaceSlug, folder });
+  invokeCommand<boolean>('artifact_mirror_remove', { workspaceSlug, folder });
 
 export const revealArtifactMirror = async ({
   workspaceSlug,
   folder,
 }: FolderParams): Promise<void> =>
-  invoke<void>('artifact_mirror_reveal', { workspaceSlug, folder });
+  invokeCommand<void>('artifact_mirror_reveal', { workspaceSlug, folder });
 
 export const openArtifactMirror = async ({
   workspaceSlug,
   folder,
   file,
 }: FolderParams & { readonly file: string }): Promise<void> =>
-  invoke<void>('artifact_mirror_open', { workspaceSlug, folder, file });
+  invokeCommand<void>('artifact_mirror_open', { workspaceSlug, folder, file });
 
 export const openArtifactsFolder = async ({
   workspaceSlug,
 }: {
   readonly workspaceSlug: string;
-}): Promise<void> => invoke<void>('artifact_mirror_open_root', { workspaceSlug });
+}): Promise<void> => invokeCommand<void>('artifact_mirror_open_root', { workspaceSlug });

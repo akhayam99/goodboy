@@ -8,11 +8,12 @@ import { AgentSpawnConfig } from '../../../session/components/AgentSpawnConfig';
 import { AGENT_KIND_META } from '../../../session/agent-kind';
 import { resolveSpawnRouting } from '../../../session/spawn-routing';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
-import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
+import type { AgentSpawnConfigValue } from '../../../session/agentSpawnConfigValue';
 import { appendOperatorNotes } from '../../../session/utils/appendOperatorNotes';
 import { type ExploreEntry } from '../../explore';
 import { buildExploreSpawnPrompt } from '../../buildExploreSpawnPrompt';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -36,9 +37,7 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
   const { open, close, toggle } = dropdown;
   const spawnAgent = useAppStore((state) => state.spawnAgent);
   const announceAgentStarted = useAgentStartedToast();
-  const session = useAppStore(
-    (state) => state.sessions.find((candidate) => candidate.id === sessionId) ?? null,
-  );
+  const session = useAppStore((state) => sessionById(state.sessions, sessionId) ?? null);
   const roleModels = useSessionRoleModels({ sessionId });
   const spawnRouting = resolveSpawnRouting({ kind: 'scout', roleModels, session });
   const defaultConfig = useMemo<AgentSpawnConfigValue>(
@@ -47,8 +46,11 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
       provider: spawnRouting.provider,
       model: spawnRouting.model,
       effort:
-        clampEffortForModel({ model: spawnRouting.model, effort: spawnRouting.effort }) ??
-        spawnRouting.effort,
+        clampEffortForModel({
+          model: spawnRouting.model,
+          effort: spawnRouting.effort,
+          provider: spawnRouting.provider,
+        }) ?? spawnRouting.effort,
     }),
     [spawnRouting.provider, spawnRouting.model, spawnRouting.effort],
   );

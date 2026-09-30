@@ -5,14 +5,18 @@ import type {
   MountPullRequestProvider,
   PrSeriesView,
   ProjectId,
+  PullRequestChecks,
+  PullRequestState,
   PullRequestStateKind,
   SessionId,
   SessionMountView,
   SessionProjectMount,
   WorkspaceId,
 } from '@goodboy/types';
+import { bitbucketPrStateKind } from '../../../features/integrations/bitbucket/bitbucketPrStateKind';
 import { mapMrToPullRequestState } from '../../../features/integrations/gitlab/mapMrToPullRequestState';
 import type { AppState } from '../../types';
+import { projectById } from '../projects/projectIndex';
 
 export type MountRequestState = Pick<
   AppState,
@@ -31,13 +35,15 @@ export type MountRequestView = Readonly<{
   number: number;
   state: PullRequestStateKind;
   isDraft: boolean;
+  checks: PullRequestChecks;
+  reviewDecision: PullRequestState['reviewDecision'];
   url: string;
   title: string;
   label: string;
   mergedHeadSha?: string | null;
 }>;
 
-export type MountSeriesPosition = Readonly<{
+type MountSeriesPosition = Readonly<{
   seriesId: string;
   name: string;
   position: number;
@@ -107,13 +113,6 @@ type SeriesParams = {
   readonly branch: string;
 };
 
-const BITBUCKET_STATE: Readonly<Record<string, PullRequestStateKind>> = {
-  OPEN: 'open',
-  MERGED: 'merged',
-  DECLINED: 'closed',
-  SUPERSEDED: 'closed',
-};
-
 const isTerminal = ({ state }: TerminalParams): boolean => state === 'merged' || state === 'closed';
 
 type MergedHeadParams = {
@@ -142,6 +141,8 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
       number: githubPr.number,
       state: githubPr.state,
       isDraft: githubPr.isDraft,
+      checks: githubPr.checks ?? null,
+      reviewDecision: githubPr.reviewDecision ?? null,
       url: githubPr.url,
       title: githubPr.title,
       label: `PR #${githubPr.number}`,
@@ -165,6 +166,8 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
       number: mapped.number,
       state: mapped.state,
       isDraft: mapped.isDraft,
+      checks: mapped.checks,
+      reviewDecision: mapped.reviewDecision,
       url: mapped.url,
       title: mapped.title,
       label: `MR !${mapped.number}`,
@@ -176,7 +179,7 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
   if (bitbucketPr === null || bitbucketPr === undefined) {
     return null;
   }
-  const bitbucketState = BITBUCKET_STATE[bitbucketPr.state] ?? 'open';
+  const bitbucketState = bitbucketPrStateKind({ state: bitbucketPr.state });
   return {
     provider: 'bitbucket',
     identity:
@@ -191,6 +194,8 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
     number: bitbucketPr.id,
     state: bitbucketState,
     isDraft: false,
+    checks: null,
+    reviewDecision: null,
     url: bitbucketPr.webUrl ?? '',
     title: bitbucketPr.title,
     label: `PR #${bitbucketPr.id}`,
@@ -325,7 +330,7 @@ export const buildMountRows = ({
   const order: Array<ProjectId> = [];
   const grouped = new Map<ProjectId, Array<MountRowView>>();
   for (const view of views) {
-    const project = state.projects.find((candidate) => candidate.id === view.projectId);
+    const project = projectById(state.projects, view.projectId);
     const request = mountRequestOf({ state, mountId: view.id });
     const isOnDisk = view.diskState !== 'missing' && view.diskState !== 'removed';
     const row: MountRowView = {
@@ -363,7 +368,7 @@ export const buildMountRows = ({
     if (head === undefined) {
       return [];
     }
-    const project = state.projects.find((candidate) => candidate.id === projectId);
+    const project = projectById(state.projects, projectId);
     return [
       {
         projectId,

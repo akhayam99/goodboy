@@ -7,7 +7,7 @@ import type { StorageFolder } from '../../../../store/slices/storage/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { storageFolderLastChange } from '../../../../store/slices/storage/classifyStorageFolder';
-import { formatSince } from '../../storageCopy';
+import { formatSpan } from '../../../../shared/utils/time/formatSpan';
 
 export type RemoveIntent = 'safe' | 'force' | 'untracked';
 
@@ -64,7 +64,7 @@ const copyOf = ({ folder, intent }: CopyParams): Copy => {
     };
   }
   if (intent === 'untracked') {
-    const age = formatSince({ from: storageFolderLastChange({ folder }), now: Date.now() });
+    const age = formatSpan({ from: storageFolderLastChange({ folder }), to: Date.now() });
     return {
       title: "Remove this folder? Goodboy can't check it for changes.",
       description:

@@ -2,9 +2,9 @@ import { listArtifactMirrorPage, type ArtifactMirrorCursor } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { mirrorArtifacts } from './artifactMirrorQueue';
 
-export const MIRROR_BACKFILL_PAGE = 25;
+const MIRROR_BACKFILL_PAGE = 25;
 
-export const MIRROR_BACKFILL_PAUSE_MS = 400;
+const MIRROR_BACKFILL_PAUSE_MS = 400;
 
 type Params = {
   readonly signal: AbortSignal;

@@ -48,7 +48,7 @@ type PickSelectionParams = {
   readonly provider: ProviderId;
 };
 
-export type LastUsedRouting = {
+type LastUsedRouting = {
   readonly routing: Recommendation;
   readonly active: boolean;
   readonly onSelect: () => void;

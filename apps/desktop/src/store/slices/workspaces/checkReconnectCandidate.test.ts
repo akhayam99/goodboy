@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, Project, ProjectId, Workspace, WorkspaceId } from '@goodboy/types';
 import type { AppStore } from '../../store';
@@ -11,12 +12,14 @@ const h = vi.hoisted(() => ({
   repoIdentity: vi.fn(async () => ({ rootCommits: [] as ReadonlyArray<string>, remoteUrl: null })),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  findProjectByRootPath: h.findProjectByRootPath,
-  findDisconnectedProjectByIdentity: h.findDisconnectedProjectByIdentity,
-  getWorkspaceById: h.getWorkspaceById,
-  describeProjectAdoption: h.describeProjectAdoption,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    findProjectByRootPath: h.findProjectByRootPath,
+    findDisconnectedProjectByIdentity: h.findDisconnectedProjectByIdentity,
+    getWorkspaceById: h.getWorkspaceById,
+    describeProjectAdoption: h.describeProjectAdoption,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../shared/lib/repo', () => ({ repoIdentity: h.repoIdentity }));
 

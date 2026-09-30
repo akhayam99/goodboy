@@ -17,7 +17,7 @@ export type ScribeTask =
       readonly commits: ReadonlyArray<{ readonly sha: string; readonly subject: string }>;
     };
 
-export type ScribeStatus = 'writing' | 'ready' | 'failed';
+type ScribeStatus = 'writing' | 'ready' | 'failed';
 
 export type ScribeWork = {
   readonly key: string;

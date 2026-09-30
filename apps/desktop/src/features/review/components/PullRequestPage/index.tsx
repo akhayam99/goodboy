@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { PencilLine } from 'lucide-react';
-import { Button, GhostActionButton, Notice } from '@goodboy/ui';
+import { Button, GhostActionButton, Notice, PaneShell } from '@goodboy/ui';
 import type {
   PrCheckRun,
   PrReviewDraft,
@@ -11,12 +11,11 @@ import type {
 import { EMPTY_ARRAY, useAppStore, useMountDiffStats, sessionPlace } from '../../../../store';
 import { selectActiveProjectPrs } from '../../../../store/slices/github/activeProjectPrs';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { openUrl } from '../../../../shared/lib/editor';
-import { GithubConnectionEmptyState } from '../../../github/components/GithubConnectionEmptyState';
+import { GithubConnectionEmptyState } from '../../../integrations/github/components/GithubConnectionEmptyState';
 import { useGithubConnection } from '../../../integrations/github/useGithubConnection';
-import { usePrDraftAgentRunning } from '../../../github/usePrDraftAgentRunning';
+import { usePrDraftAgentRunning } from '../../../integrations/github/usePrDraftAgentRunning';
 import { ActionButtons } from '../../../actions/components/ActionControls/ActionButtons';
 import { ObjectMenuArea } from '../../../actions/components/ObjectMenuArea';
 import { ActionConfirmPanel } from '../../../actions/components/ActionControls/ActionConfirmPanel';
@@ -36,9 +35,9 @@ type Props = {
 
 const EMPTY_CHECKS: ReadonlyArray<PrCheckRun> = [];
 const EMPTY_PRS: ReadonlyArray<PullRequestState> = [];
-export const PULL_REQUEST_TITLE = 'Pull request';
-export const NEW_PULL_REQUEST_TITLE = 'New pull request';
-export const WRITE_REVIEW_LABEL = 'Write review';
+const PULL_REQUEST_TITLE = 'Pull request';
+const NEW_PULL_REQUEST_TITLE = 'New pull request';
+const WRITE_REVIEW_LABEL = 'Write review';
 
 export const PullRequestPage = ({ session }: Props) => {
   const sessionId = session.id as SessionId;

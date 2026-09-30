@@ -21,8 +21,9 @@ import { isWorkflowRunComplete } from '../../workflows/isWorkflowRunComplete';
 import { CLOSE_WORKFLOW_COPY } from '../../workflows/closeWorkflowCopy';
 import { useOpenQuestions } from '../../context/components/QuestionsTab/useOpenQuestions';
 import type { ActionEnv, ObjectKindDefinition, WorkflowRunActionTarget } from '../types';
+import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 
-export type WorkflowRunState = 'queued' | 'running' | 'paused' | 'failed' | 'done' | 'discarded';
+type WorkflowRunState = 'queued' | 'running' | 'paused' | 'failed' | 'done' | 'discarded';
 
 export type WorkflowRunFacts = {
   readonly run: WorkflowRun;
@@ -83,7 +84,7 @@ const isLive = ({ facts }: { readonly facts: WorkflowRunFacts }): boolean =>
 export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, WorkflowRunFacts> = {
   noun: 'workflow run',
   facts: ({ state, target }) => {
-    const session = state.sessions.find((candidate) => candidate.id === target.sessionId) ?? null;
+    const session = sessionById(state.sessions, target.sessionId) ?? null;
     const run = session?.workflowRuns.find((candidate) => candidate.id === target.runId) ?? null;
     if (session === null || run === null) {
       return null;

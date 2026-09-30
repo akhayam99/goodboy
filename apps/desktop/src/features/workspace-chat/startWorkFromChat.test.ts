@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import type {
   ChatMessage,
@@ -5,10 +6,10 @@ import type {
   ChatId,
   IsoDateTime,
   ProjectId,
-  Session,
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
 import type { AppStore } from '../../store/store';
 import { createMemoryChatBackend } from './createMemoryChatBackend';
 import { startWorkFromChat } from './startWorkFromChat';
@@ -82,7 +83,7 @@ describe('turn a chat into work', () => {
       projectNames: PROJECTS,
     });
     const createSession = vi.fn(async () => ({
-      session: { id: 'session-new' as SessionId } as Session,
+      session: aSession({ id: 'session-new' as SessionId }),
     }));
     const setSessionConfig = vi.fn<AppStore['setSessionConfig']>();
 
@@ -118,7 +119,7 @@ describe('turn a chat into work', () => {
 
   it('sets the session default model and effort after creating it', async () => {
     const createSession = vi.fn(async () => ({
-      session: { id: 'session-new' as SessionId } as Session,
+      session: aSession({ id: 'session-new' as SessionId }),
     }));
     const setSessionConfig = vi.fn<AppStore['setSessionConfig']>();
 
@@ -212,7 +213,7 @@ describe('turn a chat into work', () => {
       projectNames: PROJECTS,
     });
     const createSession = vi.fn<AppStore['createSession']>(async () => ({
-      session: { id: 'session-new' as SessionId } as Session,
+      session: aSession({ id: 'session-new' as SessionId }),
     }));
     const start = (projectIds: ReadonlyArray<ProjectId>) =>
       startWorkFromChat({

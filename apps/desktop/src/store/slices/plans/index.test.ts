@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   Agent,
@@ -17,7 +18,6 @@ import type {
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
 vi.mock('../../../shared/lib/db', () => ({
-  runDbMigrations: vi.fn(),
   tauriDatabase: { exec: vi.fn(), execute: vi.fn(), select: vi.fn() },
 }));
 
@@ -124,8 +124,11 @@ type FakeState = {
 
 function buildSlice(state: FakeState) {
   const set = vi.fn();
-  const get = (() => state) as unknown as Parameters<typeof createPlansSlice>[1];
-  return createPlansSlice(set as unknown as Parameters<typeof createPlansSlice>[0], get);
+  const get = (() => state) as unknown as Parameters<typeof createPlansSlice>[0]['get'];
+  return createPlansSlice({
+    set: set as unknown as Parameters<typeof createPlansSlice>[0]['set'],
+    get,
+  });
 }
 
 function defaultState(overrides: Partial<FakeState> = {}): FakeState {

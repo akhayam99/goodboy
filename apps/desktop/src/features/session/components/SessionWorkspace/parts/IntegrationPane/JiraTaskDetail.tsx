@@ -1,7 +1,6 @@
-import { Skeleton } from '@goodboy/ui';
+import { Skeleton, PaneShell } from '@goodboy/ui';
 import type { ProjectId, SessionExternalTask, WorkspaceId } from '@goodboy/types';
 import { ErrorStrip } from '@goodboy/ui';
-import { PaneShell } from '../../../../../../shared/components/PaneShell';
 import { JiraIssueDetail } from '../../../../../integrations/jira/JiraIssueDetail';
 import { useJiraIssue } from '../../../../../integrations/jira/useJiraIssue';
 

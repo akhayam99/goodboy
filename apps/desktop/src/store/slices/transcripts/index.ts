@@ -1,7 +1,7 @@
 import { appendTurnEvent } from './appendTurnEvent';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createTranscriptsSlice = (set: SetFn, _get: GetFn) => {
+export const createTranscriptsSlice = ({ set }: SliceDeps) => {
   return {
     appendTurnEvent: appendTurnEvent(set),
   };

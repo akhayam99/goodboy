@@ -16,7 +16,7 @@ vi.mock('../../../../../store', () => ({
   useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
 }));
 
-vi.mock('../../../../../app/components/Toast', () => ({
+vi.mock('../../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast }),
 }));
 

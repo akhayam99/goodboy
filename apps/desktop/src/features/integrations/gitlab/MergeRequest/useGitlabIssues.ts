@@ -7,20 +7,16 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
-import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
+import { issueBranchMatches, issueBranchSlug } from '../../../../shared/utils/issueBranchSlug';
 import { useAppStore, useSessions } from '../../../../store';
 import { gitlabFetchAssignedIssues, type GitlabIssue } from '../client';
 import { linkedTaskKey, useLinkedExternalIds } from '../../hooks/useLinkedExternalIds';
+import { compareIsoDesc } from '../../../../shared/utils/compareIsoDesc';
 
-const SLUG_MAX_LEN = 48;
 const GITLAB_PROVIDERS: ReadonlyArray<SessionExternalTaskProvider> = ['gitlab'];
 
-const slugify = (input: string): string => {
-  return slugifyBranch({ input, maxLength: SLUG_MAX_LEN });
-};
-
 export const gitlabBranchSlug = (issue: GitlabIssue): string => {
-  return `${issue.iid}-${slugify(issue.title)}`;
+  return issueBranchSlug({ prefix: String(issue.iid), title: issue.title });
 };
 
 export const projectPathFromIssue = (issue: GitlabIssue): string => {
@@ -60,16 +56,10 @@ export const buildIssueGroups = (
     }
   }
   const sortRows = (rows: GitlabIssueRow[]): GitlabIssueRow[] =>
-    rows.sort((a, b) => b.issue.updatedAt.localeCompare(a.issue.updatedAt));
+    rows.sort((a, b) => compareIsoDesc({ left: a.issue.updatedAt, right: b.issue.updatedAt }));
   return [...buckets.keys()]
     .sort((a, b) => a.localeCompare(b))
     .map((key) => ({ key, label: key, rows: sortRows(buckets.get(key)!) }));
-};
-
-const branchTail = (branch: string): string => {
-  const lower = branch.toLowerCase();
-  const idx = lower.lastIndexOf('/');
-  return idx >= 0 ? lower.slice(idx + 1) : lower;
 };
 
 const sessionMatchesIssue = (
@@ -81,7 +71,7 @@ const sessionMatchesIssue = (
   if (!branch) {
     return false;
   }
-  return branchTail(branch) === gitlabBranchSlug(issue).toLowerCase();
+  return issueBranchMatches({ branch, prefix: String(issue.iid), title: issue.title });
 };
 
 export const resolveIssueSessions = (

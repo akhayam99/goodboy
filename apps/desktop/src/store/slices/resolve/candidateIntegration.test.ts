@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -10,11 +11,10 @@ import {
   listResolveCandidates,
   listResolveQueueItems,
   listResolveThreads,
-  migrate,
   upsertResolveThread,
   type Database,
 } from '@goodboy/db';
-import { makeTestDatabase } from '@goodboy/db/test-helpers';
+import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';
 import type {
   AgentId,
   MountId,
@@ -24,11 +24,7 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import {
-  ACCEPT_CONFLICT,
-  ACCEPT_CONFLICT_REASON,
-  acceptResolveQueueItem,
-} from './acceptResolveQueueItem';
+import { ACCEPT_CONFLICT, acceptResolveQueueItem } from './acceptResolveQueueItem';
 import { integrateWorktreeCandidate } from '../../../features/worktree/worktree';
 import { createResolveSlice } from './index';
 import { resolveInitialState } from './state';
@@ -426,14 +422,13 @@ const expectNoAncestryLeak = async (): Promise<void> => {
 };
 
 beforeEach(async () => {
-  db = makeTestDatabase();
+  db = await makeMigratedTestDatabase();
   h.exec.mockReset().mockImplementation(db.exec);
   h.execute.mockReset().mockImplementation(db.execute);
   h.select.mockReset().mockImplementation(db.select);
   h.transaction.mockReset().mockImplementation(db.transaction);
   h.leases.clear();
   h.failFinalizeOnce = false;
-  await migrate(db);
   await db.execute(
     "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('ws-1', 'Workspace', 'workspace', 1, 1)",
   );
@@ -689,7 +684,7 @@ describe('resolve candidates keep the branch tip approved', () => {
 
     expect(git(worktreePath, ['rev-parse', 'HEAD'])).toBe(head);
     const [thread] = await listResolveThreads({ db, sessionId: SESSION_ID });
-    expect(thread?.stateReason).toBe(ACCEPT_CONFLICT_REASON);
+    expect(thread?.stateReason).toBe('failed:accept_conflict');
     const [candidate] = await listResolveCandidates({ db, sessionId: SESSION_ID });
     expect(candidate?.state).toBe('stale');
   });

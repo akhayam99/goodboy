@@ -232,6 +232,7 @@ describe('parseJsonLine (gemini stream-json)', () => {
   });
 
   it('reports unrecognized events through the unknown payload callback', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const onUnknown = vi.fn();
     const payload = { event: 'future_event', value: 42 };
     const events = parse({ line: JSON.stringify(payload), overrides: { onUnknown } });
@@ -246,5 +247,7 @@ describe('parseJsonLine (gemini stream-json)', () => {
         at,
       },
     ]);
+    expect(warn).toHaveBeenCalledWith('[gemini-adapter] unknown json payload event: future_event');
+    warn.mockRestore();
   });
 });

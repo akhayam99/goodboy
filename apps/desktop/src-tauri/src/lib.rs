@@ -20,6 +20,8 @@ mod db;
 mod editor;
 mod explore;
 mod external_terminal;
+#[cfg(all(test, unix))]
+mod fake_cli;
 mod file_versions;
 mod frame_protocol;
 mod github;
@@ -28,14 +30,17 @@ mod goodboy_ignore;
 mod history;
 mod history_graph;
 mod integration_credentials;
+mod integrations;
 mod jira;
 mod last_crash;
 mod linear;
 mod live_child;
 mod local_image;
+mod logging;
 mod path_env;
 mod permissions;
 mod planner;
+mod proc;
 mod process_group;
 mod project_relocation;
 mod project_scripts;
@@ -68,6 +73,9 @@ mod util;
 mod workflows;
 mod worktree;
 mod worktree_writer;
+
+#[cfg(test)]
+mod command_threading;
 
 #[cfg(target_os = "macos")]
 mod fullscreen_escape;
@@ -126,7 +134,10 @@ pub fn run() {
         Ok(database) => Some(database),
         Err(error) => {
             boot_breadcrumb::record("error", Some("error"));
-            eprintln!("[goodboy] the local database could not be opened: {error}");
+            logging::early(format!(
+                "[goodboy] the local database could not be opened: {}",
+                logging::detail(&error)
+            ));
             None
         }
     };
@@ -193,6 +204,7 @@ pub fn run() {
         .manage(frame_protocol::FrameStages::default())
         .setup(move |app| {
             use tauri::Manager;
+            logging::init(app.handle());
             query_bridge::start(app.handle().clone());
             std::thread::spawn(history::clean_stale_copies);
             #[cfg(target_os = "macos")]
@@ -200,13 +212,6 @@ pub fn run() {
             #[cfg(desktop)]
             app.handle()
                 .plugin(tauri_plugin_updater::Builder::new().build())?;
-            if cfg!(debug_assertions) {
-                app.handle().plugin(
-                    tauri_plugin_log::Builder::default()
-                        .level(log::LevelFilter::Info)
-                        .build(),
-                )?;
-            }
             let windows = app.webview_windows();
             if !windows.is_empty() {
                 boot_breadcrumb::record("window-created", Some("ok"));
@@ -407,6 +412,7 @@ pub fn run() {
             budget::budget_alert_dismiss,
             budget::budget_emit_alerts,
             budget::check_provider_budget,
+            budget::provider_budget_overview,
             skills::skill_list,
             skills::skill_get,
             skills::skill_upsert,
@@ -425,20 +431,9 @@ pub fn run() {
             terminal::terminal_close,
             workflows::workflow_list,
             workflows::workflows_for_session,
-            workflows::workflow_upsert,
-            workflows::workflow_delete,
             workflows::step_def_list,
             workflows::step_def_upsert,
             workflows::step_def_delete,
-            workflows::agent_list_for_session,
-            workflows::agent_insert,
-            workflows::agent_insert_batch,
-            workflows::workflow_node_routing_update,
-            workflows::agent_update_status,
-            workflows::agent_set_provider_session_id,
-            workflows::agent_set_verbosity,
-            workflows::agent_mark_viewed,
-            workflows::agent_set_done,
             workflows::workspaces_with_unread,
             permissions::permission_rule_list,
             permissions::permission_rule_upsert,

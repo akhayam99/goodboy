@@ -64,7 +64,7 @@ vi.mock('../../../../../store', () => ({
 vi.mock('../../../../worktree/useMountRemoteHostKind', () => ({
   useMountRemoteHostKind: () => 'github',
 }));
-vi.mock('../../../../../app/components/Toast', () => ({
+vi.mock('../../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
 vi.mock('../../../hooks/useWorktreeStatuses', () => ({
@@ -186,6 +186,21 @@ describe('ProjectMountRows', () => {
     store.settings = {};
   });
   afterEach(cleanup);
+
+  it('reads ahead and behind against the base the project picked when the mount records none', () => {
+    store.projects = [{ ...store.projects[0], baseBranch: 'develop' }];
+    store.sessionMounts = {
+      'session-1': [
+        { ...mountView({ id: 'mount-1', branch: 'feat/one', path: '/api-one' }), baseBranch: null },
+      ],
+    };
+
+    render(<ProjectMountRows session={session} />);
+
+    expect(useWorktreeStatuses).toHaveBeenCalledWith({
+      targets: [{ worktreePath: '/api-one', baseBranch: 'develop' }],
+    });
+  });
 
   it('gives a project owning a single mount the same header as a project owning several', () => {
     store.projects = [

@@ -12,7 +12,7 @@ const h = vi.hoisted(() => ({
 
 vi.mock('../linear/client', () => ({ linearFetchIssue: h.linearFetchIssue }));
 vi.mock('../jira/client', () => ({ jiraGetIssue: h.jiraGetIssue }));
-vi.mock('../../github/github', () => ({ ghIssueInRepo: h.ghIssueInRepo }));
+vi.mock('../github/github', () => ({ ghIssueInRepo: h.ghIssueInRepo }));
 vi.mock('../gitlab/client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../gitlab/client')>()),
   gitlabFetchIssue: h.gitlabFetchIssue,

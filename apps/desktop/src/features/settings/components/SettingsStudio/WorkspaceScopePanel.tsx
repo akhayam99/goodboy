@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { Button, InlineConfirm } from '@goodboy/ui';
+import { Button, InlineConfirm, PaneShell } from '@goodboy/ui';
 import { Unplug } from 'lucide-react';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
 import { WorkspaceAfterMergeSection } from './WorkspaceAfterMergeSection';
@@ -17,8 +17,8 @@ import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { useAppStore } from '../../../../store';
 import { useSectionAnchors } from '../../hooks/useSectionAnchors';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { selectLiveWork } from '../../../../store/slices/live-work/selectLiveWork';
 import { SETTINGS_PANE_ENTRY } from './settingsPaneEntry';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 
 type DisconnectTitleParams = {
   readonly name: string;
@@ -29,7 +29,7 @@ const disconnectTitle = ({ name, runningCount }: DisconnectTitleParams): string 
   if (runningCount === 0) {
     return `Disconnect ${name}?`;
   }
-  return `Disconnect ${name} and stop ${runningCount} running ${runningCount === 1 ? 'session' : 'sessions'}?`;
+  return `Disconnect ${name} and stop ${runningCount} active ${runningCount === 1 ? 'session' : 'sessions'}?`;
 };
 
 type Props = {
@@ -44,9 +44,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
     (s) => s.workspaces.find((w) => w.id === workspaceId)?.name ?? null,
   );
   const runningCount = useAppStore((s) =>
-    s.currentWorkspaceId === workspaceId
-      ? s.sessions.filter((session) => session.state.kind === 'running').length
-      : 0,
+    s.currentWorkspaceId === workspaceId ? selectLiveWork({ state: s }).liveSessionIds.length : 0,
   );
   const reportError = useAppStore((s) => s.reportError);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);

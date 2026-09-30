@@ -6,7 +6,7 @@ import {
   type BitbucketPullRequest,
 } from '../../../features/integrations/bitbucket/client';
 import { tauriDatabase } from '../../../shared/lib/db';
-import type { MountBitbucketPrState } from '../../types';
+import type { MountBitbucketPrState } from './state';
 import type { MountFetch } from '../project-mounts/mountRequests';
 import {
   mergeLinkedRequests,

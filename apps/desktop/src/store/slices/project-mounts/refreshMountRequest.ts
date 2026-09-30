@@ -16,13 +16,13 @@ import {
   requestIdentityEquals,
 } from './mountRequests';
 
-export type RefreshRequestOptions = {
+type RefreshRequestOptions = {
   readonly force?: boolean;
   readonly silent?: boolean;
   readonly retries?: number;
 };
 
-export type RefreshOutcome<TEntry> =
+type RefreshOutcome<TEntry> =
   | { readonly kind: 'stale' }
   | {
       readonly kind: 'settle';

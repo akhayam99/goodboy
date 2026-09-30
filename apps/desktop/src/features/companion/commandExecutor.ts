@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import {
   PROVIDER_CAPABILITIES,
@@ -20,6 +20,7 @@ import type {
 } from '@goodboy/types';
 import { useAppStore } from '../../store/store';
 import { resolveSessionRepo } from '../../store/slices/worktrees/resolveSessionRepo';
+import { selectMountBaseBranch } from '../../store/slices/project-mounts/selectors';
 import { WorkflowGateError } from '../../store/slices/workflows/workflowActivationGate';
 import { PROVIDER_LABEL } from '../providers/providerLabel';
 import { isMainWindow } from '../workspace/window';
@@ -62,6 +63,7 @@ import { parseIssueCode } from '../integrations/issueCode/parseIssueCode';
 import { goalFromIssue as gitlabGoalFromIssue } from '../integrations/gitlab/goal-from-issue';
 import { jiraListIssues, jiraGetIssue, type JiraIssue } from '../integrations/jira/client';
 import { goalFromIssue as jiraGoalFromIssue } from '../integrations/jira/goal-from-issue';
+import { sessionById } from '../../store/slices/sessions/sessionIndex';
 
 export const BRIDGE_PROVIDER_ALLOWLIST = [
   'anthropic',
@@ -480,7 +482,7 @@ async function resolveIssueForSessionSafe(
 
 async function advanceNextWorkflowStep(sessionId: SessionId): Promise<void> {
   const store = useAppStore.getState();
-  const session = store.sessions.find((s) => s.id === sessionId);
+  const session = sessionById(store.sessions, sessionId);
   if (!session || session.workflowRuns.length === 0) {
     throw new BridgeSafeError('session has no workflow to advance');
   }
@@ -552,7 +554,12 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
       if (!worktreePath) {
         throw new BridgeSafeError('session worktree is not available');
       }
-      const diff = await worktreeDiffFile({ worktreePath, path });
+      const baseBranch = selectMountBaseBranch({
+        state: store,
+        sessionId,
+        path: worktreePath,
+      });
+      const diff = await worktreeDiffFile({ worktreePath, path, baseBranch });
       return { diff };
     }
 
@@ -709,7 +716,7 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
 
     case 'spawnWorkflow': {
       const workflowId = asString(data.workflowId);
-      const session = store.sessions.find((s) => s.id === asString(data.sessionId));
+      const session = sessionById(store.sessions, asString(data.sessionId));
       const gate = evaluateMobileSpawnWorkflow({
         sessionId: data.sessionId,
         workflowId,
@@ -786,7 +793,7 @@ export const listenBridgeCommands = async (): Promise<UnlistenFn> => {
     const cmd = event.payload;
     void executeBridgeCommand(cmd)
       .then((result) =>
-        invoke('bridge_command_result', {
+        invokeCommand('bridge_command_result', {
           id: cmd.id,
           ok: result.ok,
           error: result.error ?? null,

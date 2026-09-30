@@ -1,7 +1,7 @@
 import type { SessionTitleRef } from '@goodboy/db';
 import type { Session, SessionId, Workspace, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { formatRelativeAge } from '../../../shared/utils/relativeDate';
+import { formatAge } from '../../../shared/utils/time/formatAge';
 import { sessionTitle } from '../../session/sessionTitle';
 import type { PaletteEntry } from '../types';
 
@@ -20,7 +20,7 @@ type Params = {
   readonly open: (params: SessionOpenParams) => void;
 };
 
-export const sessionKey = (sessionId: string): string => `session:${sessionId}`;
+const sessionKey = (sessionId: string): string => `session:${sessionId}`;
 
 export const sessionEntries = ({
   sessions,
@@ -39,7 +39,7 @@ export const sessionEntries = ({
       const sessionId = session.id as SessionId;
       const workspaceId = session.workspaceId as WorkspaceId;
       const project = projectNames.get(sessionId) ?? null;
-      const age = formatRelativeAge({ fromIso: session.updatedAt, nowMs: now });
+      const age = formatAge({ from: session.updatedAt, now });
       return {
         key: sessionKey(sessionId),
         label: sessionTitle({ session }),
@@ -58,7 +58,7 @@ export const sessionEntries = ({
     .filter((ref) => ref.workspaceId !== currentWorkspaceId && !localIds.has(ref.sessionId))
     .map((ref): PaletteEntry => {
       const workspace = nameOf(ref.workspaceId);
-      const age = formatRelativeAge({ fromIso: ref.updatedAt, nowMs: now });
+      const age = formatAge({ from: ref.updatedAt, now });
       return {
         key: sessionKey(ref.sessionId),
         label: sessionTitle({ session: ref }),

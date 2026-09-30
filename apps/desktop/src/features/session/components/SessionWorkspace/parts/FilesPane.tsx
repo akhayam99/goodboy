@@ -1,10 +1,9 @@
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
-import { LensEmptyState } from '@goodboy/ui';
+import { LensEmptyState, PaneShell } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { DIFF_PANE_TITLE, SessionDiffPane } from '../../../../diff/components/SessionDiffPane';
 import { FileVersionsPane } from './FileVersionsPane';
-import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { RewriteHistoryPage } from '../../../../history/components/RewriteHistoryPage';
 
 type Props = {

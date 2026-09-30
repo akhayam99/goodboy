@@ -1,6 +1,6 @@
 import type { ResolveThread } from '@goodboy/types';
 import type { SessionGithubState } from '../../store/types';
-import { groupThreads, type CommentThread } from '../github/comment-threads';
+import { groupThreads, type CommentThread } from '../integrations/github/comment-threads';
 
 type Params = {
   readonly github: SessionGithubState | null;

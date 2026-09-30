@@ -1,3 +1,4 @@
+// @vitest-environment node
 import type { ResolveAttemptBatch } from '../resolve/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
@@ -227,6 +228,18 @@ function buildHarness(
   };
 }
 
+const expectFannedOut = (clusters: ReadonlyArray<ImplementationCluster>) => {
+  expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
+  expect(fanOutClustersSpy).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.anything(),
+    SESSION_ID,
+    expect.anything(),
+    clusters,
+    expect.any(String),
+  );
+};
+
 describe('spawnAgent focus', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -372,7 +385,7 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
 
     await spawn(SESSION_ID, { triggeredPlanId: PLAN_ID, kindOverride: 'implementer' });
 
-    expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
+    expectFannedOut(TWO_CLUSTERS);
     expect(addPlanConsumptionSpy).toHaveBeenCalledWith(PLAN_ID, INSERTED_ID);
     expect(sendTurn).not.toHaveBeenCalled();
   });
@@ -382,7 +395,7 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
 
     await spawn(SESSION_ID, { kindOverride: 'implementer' });
 
-    expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
+    expectFannedOut(TWO_CLUSTERS);
     expect(sendTurn).not.toHaveBeenCalled();
   });
 
@@ -563,7 +576,7 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
 
     await spawn(SESSION_ID, { kindOverride: 'implementer' });
 
-    expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
+    expectFannedOut(TWO_CLUSTERS);
     expect(addPlanConsumptionSpy).toHaveBeenCalledWith(PLAN_ID, INSERTED_ID);
   });
 
@@ -574,7 +587,7 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
 
     await spawn(SESSION_ID, { triggeredPlanId: PLAN_ID, kindOverride: 'implementer' });
 
-    expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
+    expectFannedOut(TWO_CLUSTERS);
     expect(sendTurn).not.toHaveBeenCalled();
   });
 
@@ -587,7 +600,7 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
 
     await spawn(SESSION_ID, { kindOverride: 'implementer' });
 
-    expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
+    expectFannedOut(TWO_CLUSTERS);
     expect(sendTurn).not.toHaveBeenCalled();
   });
 });

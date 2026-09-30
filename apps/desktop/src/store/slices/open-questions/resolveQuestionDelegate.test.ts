@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Agent, AgentId, OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
 
@@ -48,11 +49,13 @@ vi.mock('@goodboy/core', async (importOriginal) => {
   return { ...actual, removeQuestionsFromSlot: h.removeQuestionsFromSlot };
 });
 
-vi.mock('@goodboy/db', () => ({
-  getOpenQuestionById: h.getOpenQuestionById,
-  markOpenQuestionAnswered: h.markOpenQuestionAnswered,
-  markOpenQuestionAnswersDelivered: h.markOpenQuestionAnswersDelivered,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    getOpenQuestionById: h.getOpenQuestionById,
+    markOpenQuestionAnswered: h.markOpenQuestionAnswered,
+    markOpenQuestionAnswersDelivered: h.markOpenQuestionAnswersDelivered,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentList: h.invokeAgentList,

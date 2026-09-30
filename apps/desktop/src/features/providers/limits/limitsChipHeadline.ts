@@ -1,6 +1,6 @@
 import type { LimitsChip } from '@goodboy/core';
 import type { ProviderLimitWindow } from '@goodboy/types';
-import { formatRelativeAge } from '../../../shared/utils/relativeDate';
+import { formatAge } from '../../../shared/utils/time/formatAge';
 import { PROVIDER_LABEL } from '../providerLabel';
 import { formatLimitReset } from './formatLimitReset';
 import { formatUsedPercent } from './formatUsedPercent';
@@ -65,7 +65,7 @@ export const limitsChipHeadline = ({ chip, nowMs }: Params): string => {
     case 'stale':
       return chip.observedAt === null
         ? usedLine({ chip })
-        : `Updated ${formatRelativeAge({ fromIso: chip.observedAt, nowMs })}`;
+        : `Updated ${formatAge({ from: chip.observedAt, now: nowMs })}`;
     case 'reset':
       return chip.resetsAt === null
         ? `The window reset. No ${label} turn since.`

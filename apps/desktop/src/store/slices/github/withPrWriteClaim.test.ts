@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProjectId } from '@goodboy/types';
 
@@ -31,7 +32,7 @@ const harness = () => {
     state = { ...state, ...(next as object) };
   }) as unknown as SetFn;
   const get = (() => state) as unknown as GetFn;
-  state = { ...state, ...createPrWritesSlice(set, get) };
+  state = { ...state, ...createPrWritesSlice({ set, get }) };
   return { get };
 };
 

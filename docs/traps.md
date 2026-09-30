@@ -195,7 +195,7 @@ fails silently at runtime.
   `useShallow`, or read `useAppStore.getState()` inside the handler that needs
   it. `apps/desktop/src/__tests__/surfaces/primary-surfaces.test.tsx` mounts
   the main surfaces on the real store to catch this, and
-  `navigation-flows.test.tsx` next to it clicks into every page of the app.
+  the `navigation-flows/` folder next to it clicks into every page of the app.
 - Every path stored for a project or a session (`projects.root_path`,
   `session_worktrees.worktree_path`, `retained_worktree_paths`,
   `worktree_roots`, `resolve_*`, `skills.file_path`) is absolute. Never
@@ -263,10 +263,10 @@ fails silently at runtime.
   `search_*` tables, never another source table: a trigger that names a
   table breaks the next `ALTER TABLE ... RENAME` of that table's rebuild,
   exactly like a view does.
-- `cargo fmt` formats the whole crate, whatever file you give it, and `main`
-  is not fmt-clean (`rust.yml` runs the check as advisory). A local run
-  rewrites files the change never touched. Revert those hunks before you
-  commit.
+- `cargo fmt` formats the whole crate, whatever file you give it. `main` is
+  fmt-clean and `rust.yml` blocks on it, so a local run only touches files
+  the change edited. If it rewrites others, your toolchain is not the one in
+  `rust-toolchain.toml`.
 - Neither `ci.yml` nor `rust.yml` has a `workflow_dispatch` trigger, so there
   is no "run workflow" button. Pushing another commit to the PR starts them
   again. A finished run can also be re-run from the Actions UI. Closing and

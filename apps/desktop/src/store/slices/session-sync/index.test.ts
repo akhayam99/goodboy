@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   IsoDateTime,
@@ -39,35 +40,37 @@ vi.mock('@goodboy/core', () => ({
   toCachedPullRequest: vi.fn(() => null),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  listMountPullRequestLinks: vi.fn(async ({ mountId }: { readonly mountId: MountId }) =>
-    h.links.filter((link) => link.mountId === mountId),
-  ),
-  upsertMountPullRequestLink: vi.fn(async ({ link }: { readonly link: MountPullRequestLink }) => {
-    const index = h.links.findIndex(
-      (candidate) => candidate.mountId === link.mountId && candidate.prNumber === link.prNumber,
-    );
-    if (index >= 0) {
-      h.links.splice(index, 1, link);
-    } else {
-      h.links.push(link);
-    }
-    return true;
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    listMountPullRequestLinks: vi.fn(async ({ mountId }: { readonly mountId: MountId }) =>
+      h.links.filter((link) => link.mountId === mountId),
+    ),
+    upsertMountPullRequestLink: vi.fn(async ({ link }: { readonly link: MountPullRequestLink }) => {
+      const index = h.links.findIndex(
+        (candidate) => candidate.mountId === link.mountId && candidate.prNumber === link.prNumber,
+      );
+      if (index >= 0) {
+        h.links.splice(index, 1, link);
+      } else {
+        h.links.push(link);
+      }
+      return true;
+    }),
+    upsertGithubPrCache: vi.fn(async () => undefined),
+    findPrSeriesMembership: vi.fn(async () => null),
+    listExternalTasksForWorkspace: vi.fn(async () => h.tasks),
   }),
-  upsertGithubPrCache: vi.fn(async () => undefined),
-  findPrSeriesMembership: vi.fn(async () => null),
-  listExternalTasksForWorkspace: vi.fn(async () => h.tasks),
-}));
+);
 
 vi.mock('@goodboy/ui', () => ({
   formatError: (error: unknown) => (error instanceof Error ? error.message : String(error)),
 }));
 
-vi.mock('../../../features/github/github', () => ({
+vi.mock('../../../features/integrations/github/github', () => ({
   tauriGhRunner: { run: h.ghRun },
 }));
 
-vi.mock('../../../features/session/hooks/useWorktreeStatuses/cache', () => ({
+vi.mock('../worktreeStatuses/cache', () => ({
   refreshWorktreeStatuses: h.refreshWorktreeStatuses,
 }));
 
@@ -233,7 +236,7 @@ const harness = ({
   }) as unknown as SetFn;
   const get = (() => state) as unknown as GetFn;
   state.refreshSessionPr = refreshSessionPr(set, get);
-  Object.assign(state, createSessionSyncSlice(set, get));
+  Object.assign(state, createSessionSyncSlice({ set, get }));
   const slice = state as unknown as ReturnType<typeof createSessionSyncSlice> & {
     readonly sessionSyncing: Record<string, true>;
   };

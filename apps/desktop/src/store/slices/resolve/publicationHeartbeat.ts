@@ -3,12 +3,12 @@ import type { ResolvePublication } from '@goodboy/types';
 import { currentWindowLabel } from '../../../features/workspace/window';
 import { tauriDatabase } from '../../../shared/lib/db';
 
-export const PUBLICATION_HEARTBEAT_MS = 10_000;
+const PUBLICATION_HEARTBEAT_MS = 10_000;
 export const PUBLICATION_STALE_MS = 60_000;
 
 const LAUNCH_ID = crypto.randomUUID();
 
-export const publicationHolder = (): string => `${currentWindowLabel()}:${LAUNCH_ID}`;
+const publicationHolder = (): string => `${currentWindowLabel()}:${LAUNCH_ID}`;
 
 type StaleParams = {
   readonly publication: ResolvePublication;

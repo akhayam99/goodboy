@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createStore } from 'zustand';
 import type {
@@ -33,12 +34,14 @@ vi.mock('@goodboy/core', () => ({
   computeProviderCostUsd: vi.fn(() => 2.5),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  insertTelemetry,
-  summarizeSessionTelemetry,
-  summarizeWorkspaceProviderTelemetry,
-  summarizeWorkspaceTelemetry,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    insertTelemetry,
+    summarizeSessionTelemetry,
+    summarizeWorkspaceProviderTelemetry,
+    summarizeWorkspaceTelemetry,
+  }),
+);
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 

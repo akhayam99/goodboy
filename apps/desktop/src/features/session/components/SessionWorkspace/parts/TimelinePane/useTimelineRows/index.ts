@@ -1,0 +1,381 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
+import type { SessionWorktree } from '@goodboy/db';
+import type {
+  Agent,
+  ProviderRunId,
+  Session,
+  SessionEvent,
+  SessionId,
+  Step,
+  TelemetryRecord,
+} from '@goodboy/types';
+import {
+  EMPTY_ARRAY,
+  agentHasUnread,
+  useAppStore,
+  useIsSessionCollectionLoaded,
+  useSessionAnsweredQuestions,
+  useSessionDismissedQuestions,
+  useSessionOpenQuestions,
+} from '../../../../../../../store';
+import { runSpendUsd } from '../../../../../../../store/slices/workflows/runSpendUsd';
+import { useAttachedWorkflowRuns } from '../../../../../../workflows/useAttachedWorkflowRuns';
+import { useWorkflowAdvanceStates } from '../../../../../../workflows/useWorkflowAdvanceStates';
+import {
+  filterTimelineEntries,
+  isActivityChildShown,
+} from '../../../../../timeline/activityFilter';
+import { agentSpendById } from '../../../../../timeline/agentSpendById';
+import {
+  buildTimelineGroups,
+  type TimelineTopLevelEntry,
+} from '../../../../../timeline/buildTimelineGroups';
+import {
+  buildTimelineStream,
+  type TimelineStream,
+  type TimelineStreamItem,
+} from '../../../../../timeline/buildTimelineStream';
+import { dayLabel } from '../../../../../timeline/dayLabel';
+import {
+  decisionChangeDetail,
+  type DecisionChangeDetail,
+} from '../../../../../timeline/decisionChangeLines';
+import { needsYouCount, needsYouEntries, needsYouRootIds } from '../../../../../timeline/needsYou';
+import { shownQuestionIds } from '../../../../../timeline/shownQuestionIds';
+import { timelineLaneRuns, type TimelineLaneRuns } from '../../../../../timeline/timelineLaneRuns';
+import { layoutTimelineRail, type RailLayout } from '../../../../../../workTreeModel/railGeometry';
+import type { ActivityFilterControl } from '../../../../../hooks/useActivityFilter';
+import type { ExplodeGroups } from '../../../../../hooks/useExplodeGroups';
+import { useResolveActivity } from '../../../../../hooks/useResolveActivity';
+
+const NO_EXPANDED_ROWS: ReadonlySet<string> = new Set();
+
+const EMPTY_REVEALED_ROWS: ReadonlySet<string> = new Set();
+
+type Params = {
+  readonly session: Session;
+  readonly activity: ActivityFilterControl;
+  readonly explode: ExplodeGroups;
+};
+
+export type TimelineRows = {
+  readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
+  readonly visibleEntries: ReadonlyArray<TimelineTopLevelEntry>;
+  readonly events: ReadonlyArray<SessionEvent>;
+  readonly worktrees: ReadonlyArray<SessionWorktree>;
+  readonly isLoaded: boolean;
+  readonly stream: TimelineStream;
+  readonly hiddenChildRows: number;
+  readonly laidOutItems: ReadonlyArray<TimelineStreamItem>;
+  readonly rail: RailLayout;
+  readonly laneRuns: TimelineLaneRuns;
+  readonly needsYouTotal: number;
+  readonly unreadAgentIds: ReadonlySet<string>;
+  readonly shownQuestions: ReadonlySet<string>;
+  readonly revealedRows: ReadonlySet<string>;
+  readonly stepById: ReadonlyMap<string, Step>;
+  readonly spendByAgentId: ReadonlyMap<string, number>;
+  readonly spendByRunId: ReadonlyMap<string, number>;
+  readonly decisionDetails: ReadonlyMap<string, DecisionChangeDetail>;
+  readonly expandedRows: ReadonlySet<string>;
+  readonly toggleExpanded: (rowId: string) => void;
+};
+
+export const useTimelineRows = ({ session, activity, explode }: Params): TimelineRows => {
+  const sessionId: SessionId = session.id;
+  const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
+  const plans = useAppStore((s) => s.sessionPlans?.[sessionId] ?? EMPTY_ARRAY);
+  const artifacts = useAppStore((s) => s.sessionArtifacts?.[sessionId] ?? EMPTY_ARRAY);
+  const externalTasks = useAppStore((s) => s.sessionExternalTasks?.[sessionId] ?? EMPTY_ARRAY);
+  const worktrees = useAppStore((s) => s.sessionWorktreeRecords?.[sessionId] ?? EMPTY_ARRAY);
+  const events = useAppStore((s) => s.sessionEvents?.[sessionId] ?? EMPTY_ARRAY);
+  const areEventsLoaded = useAppStore((s) => s.sessionEvents?.[sessionId] !== undefined);
+  const areAgentsLoaded = useIsSessionCollectionLoaded({ sessionId, collection: 'agents' });
+  const loadSessionEvents = useAppStore((s) => s.loadSessionEvents);
+  const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
+  const agentKindOverride = useAppStore((s) => s.agentKindOverride);
+  const orchestratingWorkflowRuns = useAppStore((s) => s.orchestratingWorkflowRuns);
+  const openQuestions = useSessionOpenQuestions(sessionId);
+  const answeredQuestions = useSessionAnsweredQuestions(sessionId);
+  const dismissedQuestions = useSessionDismissedQuestions(sessionId);
+  const loadSessionAnsweredQuestions = useAppStore((s) => s.loadSessionAnsweredQuestions);
+  const loadSessionDismissedQuestions = useAppStore((s) => s.loadSessionDismissedQuestions);
+  const workflows = useAttachedWorkflowRuns({ session });
+  const resolveActivity = useResolveActivity({ sessionId });
+  const revealedRows = useAppStore((s) => s.revealedActivityRows[sessionId] ?? EMPTY_REVEALED_ROWS);
+  const telemetry = useAppStore(
+    (s) => s.sessionTelemetry[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
+  );
+  const agentRunHistory = useAppStore(
+    useShallow((s) => {
+      const history: Record<string, ReadonlyArray<ProviderRunId>> = {};
+      for (const agent of s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>)) {
+        const runIds = s.agentRunHistory[agent.id];
+        if (runIds != null) {
+          history[agent.id] = runIds;
+        }
+      }
+      return history;
+    }),
+  );
+  const [expandedRows, setExpandedRows] = useState<ReadonlySet<string>>(NO_EXPANDED_ROWS);
+
+  useEffect(() => {
+    void loadSessionEvents({ sessionId });
+  }, [loadSessionEvents, sessionId]);
+
+  useEffect(() => {
+    void loadSessionArtifacts(sessionId);
+  }, [loadSessionArtifacts, sessionId]);
+
+  useEffect(() => {
+    void loadSessionAnsweredQuestions(sessionId);
+    void loadSessionDismissedQuestions(sessionId);
+  }, [loadSessionAnsweredQuestions, loadSessionDismissedQuestions, sessionId]);
+
+  const questions = useMemo(
+    () => [...openQuestions, ...answeredQuestions, ...dismissedQuestions],
+    [answeredQuestions, dismissedQuestions, openQuestions],
+  );
+
+  const model = useMemo(
+    () =>
+      buildTimelineGroups({
+        sessionId,
+        agents,
+        workflows,
+        plans,
+        artifacts,
+        externalTasks,
+        questions,
+        worktrees,
+        events,
+        agentKindOverride,
+      }),
+    [
+      agentKindOverride,
+      agents,
+      artifacts,
+      events,
+      externalTasks,
+      plans,
+      questions,
+      sessionId,
+      workflows,
+      worktrees,
+    ],
+  );
+
+  const stepById = useMemo(() => {
+    const steps = new Map<string, Step>();
+    for (const { workflow } of workflows) {
+      for (const step of workflow.steps) {
+        steps.set(step.id, step);
+      }
+    }
+    return steps;
+  }, [workflows]);
+
+  const spendByAgentId = useMemo(
+    () => agentSpendById({ records: telemetry, agents, agentRunHistory }),
+    [agentRunHistory, agents, telemetry],
+  );
+
+  const spendByRunId = useMemo(() => {
+    const spend = new Map<string, number>();
+    for (const { run } of workflows) {
+      spend.set(
+        run.id,
+        runSpendUsd({ records: telemetry, agents, agentRunHistory, workflowRunId: run.id }),
+      );
+    }
+    return spend;
+  }, [agentRunHistory, agents, telemetry, workflows]);
+
+  const advanceByRunId = useWorkflowAdvanceStates({ sessionId, workflows, agents });
+
+  const unreadAgentIds = useMemo(() => {
+    const unread = new Set<string>();
+    for (const agent of agents) {
+      if (agentHasUnread(agent, false)) {
+        unread.add(agent.id);
+      }
+    }
+    return unread;
+  }, [agents]);
+
+  const decidingRunIds = useMemo(() => {
+    const deciding = new Set<string>();
+    for (const { run } of workflows) {
+      if (orchestratingWorkflowRuns?.[run.id] === true) {
+        deciding.add(run.id);
+      }
+    }
+    return deciding;
+  }, [orchestratingWorkflowRuns, workflows]);
+
+  const fullStreamItems = useMemo(
+    () =>
+      buildTimelineStream({
+        entries: model.entries,
+        unreadAgentIds,
+        advanceByRunId,
+        decidingRunIds,
+        dayLabelFor: dayLabel,
+        resolveBatchByAgentId: resolveActivity.batchByAgentId,
+        resolveFactsByAgentId: resolveActivity.factsByAgentId,
+      }).items,
+    [advanceByRunId, decidingRunIds, model.entries, resolveActivity, unreadAgentIds],
+  );
+
+  const attentionRootIds = useMemo(
+    () => needsYouRootIds({ items: fullStreamItems }),
+    [fullStreamItems],
+  );
+
+  const needsYouTotal = useMemo(() => needsYouCount({ items: fullStreamItems }), [fullStreamItems]);
+
+  const { isNeedsYou } = activity;
+
+  const visibleEntries = useMemo(
+    () =>
+      isNeedsYou
+        ? needsYouEntries({ entries: model.entries, rootIds: attentionRootIds })
+        : filterTimelineEntries({
+            entries: model.entries,
+            filter: activity.filter,
+            revealed: revealedRows,
+          }),
+    [activity.filter, attentionRootIds, isNeedsYou, model.entries, revealedRows],
+  );
+
+  const stream = useMemo(
+    () =>
+      buildTimelineStream({
+        entries: visibleEntries,
+        unreadAgentIds,
+        advanceByRunId,
+        decidingRunIds,
+        dayLabelFor: dayLabel,
+        showWorkflowSubagents: isNeedsYou || activity.filter.workflowSubagents,
+        showAgentSubagents: isNeedsYou || activity.filter.agentSubagents,
+        showPlans: isNeedsYou || isActivityChildShown({ filter: activity.filter, toggle: 'plans' }),
+        showReports:
+          isNeedsYou || isActivityChildShown({ filter: activity.filter, toggle: 'reports' }),
+        showWireframes:
+          isNeedsYou || isActivityChildShown({ filter: activity.filter, toggle: 'wireframes' }),
+        showQuestions: isNeedsYou || activity.filter.questions,
+        resolveBatchByAgentId: resolveActivity.batchByAgentId,
+        resolveFactsByAgentId: resolveActivity.factsByAgentId,
+        expandedGroupIds: explode.expandedIds,
+      }),
+    [
+      activity.filter,
+      advanceByRunId,
+      decidingRunIds,
+      explode.expandedIds,
+      isNeedsYou,
+      resolveActivity,
+      unreadAgentIds,
+      visibleEntries,
+    ],
+  );
+
+  const unfilteredStream = useMemo(
+    () =>
+      buildTimelineStream({
+        entries: visibleEntries,
+        unreadAgentIds,
+        advanceByRunId,
+        decidingRunIds,
+        dayLabelFor: dayLabel,
+        resolveBatchByAgentId: resolveActivity.batchByAgentId,
+        resolveFactsByAgentId: resolveActivity.factsByAgentId,
+        expandedGroupIds: explode.expandedIds,
+      }),
+    [
+      advanceByRunId,
+      decidingRunIds,
+      explode.expandedIds,
+      resolveActivity,
+      unreadAgentIds,
+      visibleEntries,
+    ],
+  );
+
+  const hiddenChildRows = Math.max(0, unfilteredStream.items.length - stream.items.length);
+
+  const shownQuestions = useMemo(() => shownQuestionIds({ items: stream.items }), [stream.items]);
+
+  const decisionDetails = useMemo(() => {
+    const details = new Map<string, DecisionChangeDetail>();
+    for (const item of stream.items) {
+      if (item.kind !== 'row' || item.entry.kind !== 'event') {
+        continue;
+      }
+      if (item.entry.event.kind !== 'decisions_changed') {
+        continue;
+      }
+      const detail = decisionChangeDetail({ payload: item.entry.event.payload });
+      if (detail !== null) {
+        details.set(item.id, detail);
+      }
+    }
+    return details;
+  }, [stream.items]);
+
+  const laidOutItems = useMemo(
+    () =>
+      stream.items.map((item) => {
+        const detail = expandedRows.has(item.id) ? decisionDetails.get(item.id) : undefined;
+        return detail === undefined ? item : { ...item, height: item.height + detail.height };
+      }),
+    [decisionDetails, expandedRows, stream.items],
+  );
+
+  const toggleExpanded = useCallback((rowId: string) => {
+    setExpandedRows((current) => {
+      const next = new Set(current);
+      if (next.has(rowId)) {
+        next.delete(rowId);
+        return next;
+      }
+      next.add(rowId);
+      return next;
+    });
+  }, []);
+
+  const rail = useMemo(
+    () => layoutTimelineRail({ rows: laidOutItems, groups: stream.groups }),
+    [stream.groups, laidOutItems],
+  );
+
+  const laneRuns = useMemo(
+    () => timelineLaneRuns({ items: stream.items, groups: stream.groups }),
+    [stream.groups, stream.items],
+  );
+
+  return {
+    entries: model.entries,
+    visibleEntries,
+    events,
+    worktrees,
+    isLoaded: areEventsLoaded && areAgentsLoaded,
+    stream,
+    hiddenChildRows,
+    laidOutItems,
+    rail,
+    laneRuns,
+    needsYouTotal,
+    unreadAgentIds,
+    shownQuestions,
+    revealedRows,
+    stepById,
+    spendByAgentId,
+    spendByRunId,
+    decisionDetails,
+    expandedRows,
+    toggleExpanded,
+  };
+};

@@ -1,6 +1,5 @@
 import type { ProjectId, SessionExternalTask, WorkspaceId } from '@goodboy/types';
-import { ErrorStrip } from '@goodboy/ui';
-import { PaneShell } from '../../../../../../shared/components/PaneShell';
+import { ErrorStrip, PaneShell } from '@goodboy/ui';
 import { RecordDetailSkeleton } from '../../../../../../shared/components/StudioDetail/RecordDetailSkeleton';
 import { LinearIssueDetail } from '../../../../../integrations/linear/LinearIssueDetail';
 import { useLinearIssue } from '../../../../../integrations/linear/useLinearIssue';
