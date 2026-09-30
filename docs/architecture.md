@@ -143,6 +143,38 @@ baseline names `config_export/apply.rs`.
   through one refresh entry point
   ([ADR 003](adr/003-provider-detection-leaves-the-boot-path.md)).
 
+### Where commands run
+
+A Tauri command declared as a plain `fn` runs on the main thread, the same
+thread that draws the window and handles input. While it works, nothing else in
+the app moves. So the split is by what the command does.
+
+- **A command that touches the file system, git, a subprocess or the keychain
+  is `async fn`, and its blocking work runs inside
+  `tauri::async_runtime::spawn_blocking`.** The command keeps its name,
+  arguments and result. A join error becomes the command's own error type
+  (`restart_prepare` and `history_git_supported` follow the same shape).
+  Worktree, history, config export and import, the git and `gh` wrappers and
+  `explore_read` already work this way.
+- **A short SQLite call may run inline in an `async fn`.** An async command
+  runs on the worker pool, not on the main thread, so a query under the `Db`
+  lock does not freeze the window. Anything that can take long still goes
+  through `spawn_blocking`.
+- **A command that only reads or writes memory stays a plain `fn`.** That
+  covers registry lookups, lease bookkeeping and the answers to the frontend
+  (`mount_command_result`, `worktree_writer_*`, `frame_stage`).
+- **Terminal and provider-login input stays a plain `fn` on purpose.**
+  `terminal_write` and `provider_lifecycle_write` send keystrokes, and the main
+  thread keeps them in the order they were typed. Two async calls could
+  finish out of order.
+- **Do not hold a `std::sync::Mutex` guard across an `.await`.** Take the
+  lock, copy out what you need and drop it before the next `.await`, or do the
+  whole locked section inside `spawn_blocking`.
+
+`command_threading` (a Rust test) scans every `#[tauri::command]` and fails when
+a plain `fn` command is not on its short list of in-memory commands. A new
+command that does I/O has to be async, or the list has to change in review.
+
 ### Logging
 
 Every build, debug and release, starts the log plugin first in `setup`

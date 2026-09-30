@@ -439,10 +439,13 @@ pub async fn gh_set_token(
 }
 
 #[tauri::command]
-pub fn gh_clear_token(workspace_id: Option<String>) -> Result<(), GithubError> {
-    integration_credentials::github_clear_token(workspace_id.as_deref())
-        .map_err(|e| GithubError::Credential(e.to_string()))?;
-    Ok(())
+pub async fn gh_clear_token(workspace_id: Option<String>) -> Result<(), GithubError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        integration_credentials::github_clear_token(workspace_id.as_deref())
+            .map_err(|e| GithubError::Credential(e.to_string()))
+    })
+    .await
+    .map_err(|e| GithubError::Spawn(std::io::Error::other(e.to_string())))?
 }
 
 #[tauri::command]
