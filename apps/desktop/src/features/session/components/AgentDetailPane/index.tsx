@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
-import { PageColumn, SegmentedTabs } from '@goodboy/ui';
+import { PageColumn, SegmentedTabs, PaneShell } from '@goodboy/ui';
 import type { Agent, Session } from '@goodboy/types';
 import { ChatView } from '../../../chat/components/ChatView';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { TriggerSeparator } from '../../../../shared/components/RoutingPicker/TriggerSeparator';
 import { useAppStore, useExecutedAgentRouting } from '../../../../store';

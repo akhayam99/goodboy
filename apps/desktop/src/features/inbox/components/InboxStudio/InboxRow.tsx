@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { ArrowUpRight } from 'lucide-react';
-import { FOCUS_RING, StatusDot, Tooltip, cn } from '@goodboy/ui';
+import { FOCUS_RING, StatusDot, Tooltip, cn, StarToggle } from '@goodboy/ui';
 import {
   IntegrationGlyph,
   integrationLabel,
@@ -12,7 +12,6 @@ import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { recordSessionId } from '../../recordSessionId';
 import type { InboxRecord } from '../../types';
 import { InboxStateLabel } from '../InboxStateLabel';
-import { StarToggle } from '../../../../shared/components/StarToggle';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { useNow } from '../../../../shared/hooks/useNow';
 

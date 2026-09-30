@@ -1,8 +1,7 @@
+import { FacetRow, FacetSection } from '@goodboy/ui';
 import { useState } from 'react';
 import type { Project } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { FacetRow } from '../../../../shared/components/FacetRail/FacetRow';
-import { FacetSection } from '../../../../shared/components/FacetRail/FacetSection';
 import type { InboxFacetCounts, InboxFilters } from '../../kindFilter';
 
 type Props = {

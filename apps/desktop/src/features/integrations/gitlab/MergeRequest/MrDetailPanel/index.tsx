@@ -1,5 +1,4 @@
 import { RecordDetailEmptyState } from '../../../../../shared/components/StudioDetail';
-import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { RecordHeader } from '../../../../../shared/components/StudioDetail/RecordHeader';
 import { RecordProperties } from '../../../../../shared/components/StudioDetail/RecordProperties';
 import { RecordSections } from '../../../../../shared/components/StudioDetail/RecordSections';
@@ -7,7 +6,7 @@ import type { RecordSection } from '../../../../../shared/components/StudioDetai
 import type { RecordFrame } from '../../../../../shared/components/StudioDetail/RecordActions/types';
 import { DescriptionSection } from '../../../../../shared/components/DescriptionSection';
 import { useEffect, useMemo, useState } from 'react';
-import { Notice, RefreshIconButton } from '@goodboy/ui';
+import { Notice, RefreshIconButton, PaneShell } from '@goodboy/ui';
 import { GitBranch } from 'lucide-react';
 import type { GitlabIntegrationBinding, SessionId, WorkspaceId } from '@goodboy/types';
 import { gitlabMergeRequestFields, resolveFacts } from '../../../../../shared/detail-fields';

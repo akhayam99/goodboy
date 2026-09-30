@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { Button, InlineConfirm } from '@goodboy/ui';
+import { Button, InlineConfirm, PaneShell } from '@goodboy/ui';
 import { Unplug } from 'lucide-react';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
 import { WorkspaceAfterMergeSection } from './WorkspaceAfterMergeSection';
@@ -19,7 +19,6 @@ import { useSectionAnchors } from '../../hooks/useSectionAnchors';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { selectLiveWork } from '../../../../store/slices/live-work/selectLiveWork';
 import { SETTINGS_PANE_ENTRY } from './settingsPaneEntry';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 
 type DisconnectTitleParams = {
   readonly name: string;

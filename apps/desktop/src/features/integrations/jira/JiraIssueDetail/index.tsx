@@ -1,11 +1,10 @@
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
 import { RecordProperties } from '../../../../shared/components/StudioDetail/RecordProperties';
 import { RecordSections } from '../../../../shared/components/StudioDetail/RecordSections';
 import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
 import { useMemo } from 'react';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
-import { StateBadge } from '@goodboy/ui';
+import { StateBadge, PaneShell } from '@goodboy/ui';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
 import { ToolImageScope } from '../../../../shared/components/ToolImageScope';
 import { jiraIssueFields, recordByline, resolveFacts } from '../../../../shared/detail-fields';

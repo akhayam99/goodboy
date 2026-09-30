@@ -281,7 +281,7 @@ const rowOrder = (): ReadonlyArray<string> =>
 
 const facet = (section: string, name: RegExp) =>
   within(
-    within(screen.getByRole('navigation', { name: 'Filter the inbox' })).getByRole('region', {
+    within(screen.getByRole('navigation', { name: 'Filter the inbox' })).getByRole('group', {
       name: section,
     }),
   ).getByRole('button', { name });
@@ -352,7 +352,7 @@ describe('InboxStudio', () => {
 
     renderStudio();
 
-    expect(screen.queryByRole('region', { name: 'Type' })).not.toBeNull();
+    expect(screen.queryByRole('group', { name: 'Type' })).not.toBeNull();
     expect(() => facet('Type', /Threads/)).toThrow();
     expect(() => facet('Type', /Errors/)).toThrow();
   });

@@ -1,9 +1,8 @@
 import type { ReactElement } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
-import { ErrorStrip } from '@goodboy/ui';
+import { ErrorStrip, PaneShell } from '@goodboy/ui';
 import { PanelLoading } from '@goodboy/ui';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { SpendAnchorTitle } from './SpendAnchorTitle';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import type { WorkspaceTurn } from './lib';

@@ -10,11 +10,11 @@ import {
   cn,
   formatError,
   useEscapeLayer,
+  PaneShell,
 } from '@goodboy/ui';
 import type { Agent, AgentId, ProviderId, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionSlots, useSessionSlotsLoad } from '../../../../store';
 import { selectSelectedMountId } from '../../../../store/slices/project-mounts/selectedMountId';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { LENS_ICON } from '../../../session/lens-labels';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { workflowAvailabilitySnapshot } from '../../../workflows/workflowAvailabilitySnapshot';

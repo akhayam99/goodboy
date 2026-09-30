@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
-import { PANE_RHYTHM, ScrollFade, cn } from '@goodboy/ui';
+import { cn } from '../../cn';
+import { PANE_RHYTHM } from '../../paneRhythm';
+import { ScrollFade } from '../ScrollFade';
 
 type Props = {
   readonly ariaLabel: string;

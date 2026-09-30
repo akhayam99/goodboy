@@ -973,7 +973,7 @@ one is open at a time.
   shows in every workspace. Mark all read and Delete all act on that same scope.
   In the studio, rows are grouped by day (Today, Yesterday, This week, Older),
   j and k or the arrow keys move, Enter runs the row's action and e dismisses.
-  The rail rows (`shared/components/FacetRail`), the list keys
+  The rail rows (`packages/ui` `FacetRail`), the list keys
   (`shared/hooks/useListKeys`) and the day grouping (`shared/utils/groupByDay`)
   are shared primitives. The inbox uses all three: its rail filters by view,
   type and source (one pick per section, a tool that did not load says so in

@@ -9,11 +9,11 @@ import {
   InlineConfirm,
   ScrollFade,
   Tooltip,
+  DogMascot,
 } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { DogMascot } from '../../../../shared/components/DogMascot';
 import { SETTING_REOPEN_LAST } from '../../../settings/settings';
 import { UpdatePill } from '../../../updater/components/UpdatePill';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';

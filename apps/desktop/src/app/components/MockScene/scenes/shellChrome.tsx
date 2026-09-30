@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { AppShell } from '@goodboy/ui';
+import { AppShell, UnderTrailContext } from '@goodboy/ui';
 import type {
   IsoDateTime,
   ProviderRunId,
@@ -17,7 +17,6 @@ import { ToastProvider } from '../../Toast';
 import { SessionNavSidebar } from '../../../../features/session/components/SessionNavSidebar';
 import { CollapsedRail } from '../../../../features/session/components/SessionNavSidebar/parts/CollapsedRail';
 import { TrailBar } from '../../../../features/session/components/SessionWorkspace/parts/TrailBar';
-import { UnderTrailContext } from '../../../../shared/components/PaneShell/underTrailContext';
 import { useAppStore, type LensKind } from '../../../../store';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { shellArrangement } from '../../../shellArrangement';

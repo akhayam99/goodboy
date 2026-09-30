@@ -5,12 +5,11 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from 'react';
-import { Button, Divider } from '@goodboy/ui';
+import { Button, Divider, PaneShell } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import {
   LazyGenericTerminalPanel,
   type TerminalDriver,

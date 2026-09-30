@@ -1,6 +1,5 @@
 import type { SessionExternalTask, WorkspaceId } from '@goodboy/types';
-import { LensEmptyState } from '@goodboy/ui';
-import { PaneShell } from '../../../../../../shared/components/PaneShell';
+import { LensEmptyState, PaneShell } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { SlackThreadDetail } from '../../../../../integrations/slack/SlackThreadDetail';
 import { parseSlackThreadExternalId } from '../../../../../integrations/slack/threadFormulas';

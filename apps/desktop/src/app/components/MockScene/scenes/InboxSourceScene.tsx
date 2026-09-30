@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { mockIPC } from '@tauri-apps/api/mocks';
-import { IconButton } from '@goodboy/ui';
+import { IconButton, PaneShell } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { ProjectId, ProjectSentryLink } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { groupByDay } from '../../../../shared/utils/groupByDay';
 import { useAppStore } from '../../../../store';
 import { adaptLinearIssues } from '../../../../features/inbox/adapters/linear';

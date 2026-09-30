@@ -1,5 +1,5 @@
 import { useMemo, type ReactElement } from 'react';
-import { StatCard, formatUsd, formatUsdPrecise } from '@goodboy/ui';
+import { StatCard, formatUsd, formatUsdPrecise, PaneShell } from '@goodboy/ui';
 import type { BudgetRule, ProviderName, SessionId } from '@goodboy/types';
 import { ErrorStrip } from '@goodboy/ui';
 import { PanelLoading } from '@goodboy/ui';
@@ -9,7 +9,6 @@ import { CapEditor } from './CapEditor';
 import { CostRing } from './CostRing';
 import { CoverageNotice } from './CoverageNotice';
 import { ModelTable } from './ModelTable';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { SpendAnchorTitle } from './SpendAnchorTitle';
 import { TurnsTable } from './TurnsTable';
 import { StudioWidget } from '@goodboy/ui';

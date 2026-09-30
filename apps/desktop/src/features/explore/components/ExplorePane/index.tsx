@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight, ExternalLink, File, Folder, FolderSearch } from 'lucide-react';
-import { Button, cn, EmptyState, Skeleton, Tooltip } from '@goodboy/ui';
+import { Button, cn, EmptyState, Skeleton, Tooltip, PaneShell } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { exploreList, exploreOpen, type ExploreEntry } from '../../explore';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState, RefreshIconButton } from '@goodboy/ui';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { useAppStore } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { ExploreSpawnPopover } from './ExploreSpawnPopover';

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { CircleCheck } from 'lucide-react';
-import { LensEmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
+import { LensEmptyState, ScrollFade, Skeleton, PaneShell } from '@goodboy/ui';
 import type { AgentId, OpenQuestion, OpenQuestionId, Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -17,7 +17,6 @@ import { useOpenQuestions } from '../../../../context/components/QuestionsTab/us
 import type { AgentKind } from '../../../agent-kind';
 import { ContextLoadFailure } from '../../ContextDrawer/ContextLoadFailure';
 import { selectOpenQuestions } from '../../SessionOverviewPane/lib';
-import { PaneShell } from '../../../../../shared/components/PaneShell';
 import {
   CONCEPT_ICONS,
   CONCEPT_TONE,

@@ -1,8 +1,11 @@
 import { useContext, type ReactElement, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Divider, PageColumn, ScrollFade, cn, tintClasses } from '@goodboy/ui';
-import type { Tone } from '@goodboy/ui';
-import { PANE_RHYTHM } from '@goodboy/ui';
+import { cn } from '../../cn';
+import { PANE_RHYTHM } from '../../paneRhythm';
+import { tintClasses, type Tone } from '../../tint';
+import { Divider } from '../Divider';
+import { PageColumn } from '../PageColumn';
+import { ScrollFade } from '../ScrollFade';
 import { PaneTitleRow } from './PaneTitleRow';
 import { UnderTrailContext } from './underTrailContext';
 import { PaneActionsContext, useInheritedPaneActions } from './paneActionsContext';

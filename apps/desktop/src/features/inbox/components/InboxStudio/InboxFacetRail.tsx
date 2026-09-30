@@ -10,15 +10,15 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { Project } from '@goodboy/types';
-import { StatusDot } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { FacetRail } from '../../../../shared/components/FacetRail';
 import {
+  StatusDot,
+  FacetRail,
   FacetKeyHints,
   type FacetKeyHint,
-} from '../../../../shared/components/FacetRail/FacetKeyHints';
-import { FacetRow } from '../../../../shared/components/FacetRail/FacetRow';
-import { FacetSection } from '../../../../shared/components/FacetRail/FacetSection';
+  FacetRow,
+  FacetSection,
+} from '@goodboy/ui';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import {
   IntegrationGlyph,
   integrationLabel,

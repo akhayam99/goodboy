@@ -36,7 +36,8 @@ vi.mock('../../../../../store', async () => ({
   useSessionAnsweredQuestions: () => store.answered,
 }));
 
-vi.mock('../../../../../shared/components/PaneShell', () => ({
+vi.mock('@goodboy/ui', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/ui')>()),
   PaneShell: (props: { title: string; meta?: string; children: ReactNode }) => (
     <div data-testid="pane-shell" data-title={props.title} data-meta={props.meta}>
       {props.children}

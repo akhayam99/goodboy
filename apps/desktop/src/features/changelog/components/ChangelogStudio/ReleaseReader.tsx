@@ -1,5 +1,5 @@
+import { PaneShell } from '@goodboy/ui';
 import type { ReactNode } from 'react';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import type { ChangelogScreen } from '../../changelogScreens';
 import type { ReleaseEntry } from '../../parseChangelog';
 import { ReleaseBody } from './ReleaseBody';

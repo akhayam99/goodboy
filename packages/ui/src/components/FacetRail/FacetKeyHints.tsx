@@ -1,4 +1,5 @@
-import { Eyebrow, KbdPill } from '@goodboy/ui';
+import { Eyebrow } from '../Eyebrow';
+import { KbdPill } from '../KbdPill';
 
 export type FacetKeyHint = {
   readonly keys: ReadonlyArray<string>;
@@ -10,7 +11,7 @@ type Props = {
 };
 
 export const FacetKeyHints = ({ hints }: Props) => (
-  <div className="flex flex-col gap-1.5 px-2">
+  <div role="group" aria-label="Keys" className="flex flex-col gap-1.5 px-2">
     <Eyebrow label="Keys" muted />
     <dl className="flex flex-col gap-1">
       {hints.map((hint) => (

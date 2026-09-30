@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ScriptActionTarget } from '../../../actions/types';
 import { Plus } from 'lucide-react';
-import { Button, LensEmptyState, formatError, useCopyLink } from '@goodboy/ui';
+import { Button, LensEmptyState, formatError, useCopyLink, PaneShell } from '@goodboy/ui';
 import type { MountId, ProjectScriptId, SessionId, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { MountProjectAction } from '../../../session/components/SessionOverviewPane/ProjectMountRows/MountProjectAction';

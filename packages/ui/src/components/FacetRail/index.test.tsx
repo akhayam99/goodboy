@@ -22,7 +22,7 @@ describe('FacetRail', () => {
     );
 
     const view = within(screen.getByRole('navigation', { name: 'Filter items' })).getByRole(
-      'region',
+      'group',
       { name: 'View' },
     );
     const all = within(view).getByRole('button', { name: /All/ });
@@ -58,7 +58,9 @@ describe('FacetRail', () => {
       />,
     );
 
-    expect(screen.getByText('Keys')).toBeDefined();
+    const group = screen.getByRole('group', { name: 'Keys' });
+    expect(within(group).getByText('Next or previous')).toBeDefined();
+    expect(screen.queryByRole('region')).toBeNull();
     expect(screen.getByText('Next or previous')).toBeDefined();
     expect(screen.getByText('j')).toBeDefined();
     expect(screen.getByText('k')).toBeDefined();

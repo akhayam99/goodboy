@@ -1,4 +1,4 @@
-import { PaneShell } from '../../../../shared/components/PaneShell';
+import { PaneShell } from '@goodboy/ui';
 import type { ChangelogCatchUp } from '../../changelogCatchUp';
 import { ReleaseBody } from './ReleaseBody';
 

@@ -96,11 +96,7 @@ import {
   SlackIcon,
 } from '@goodboy/ui';
 
-export const ICON_SIZE = {
-  row: 12,
-  control: 14,
-  hero: 18,
-} as const;
+export { ICON_SIZE } from '@goodboy/ui';
 
 export const CONCEPT_ICONS = {
   agents: Bot,

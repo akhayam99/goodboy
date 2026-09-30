@@ -1,6 +1,8 @@
 import { Star } from 'lucide-react';
-import { FOCUS_RING, Tooltip, cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../conceptIcons';
+import { cn } from '../../cn';
+import { FOCUS_RING } from '../../focusRing';
+import { ICON_SIZE } from '../../iconSize';
+import { Tooltip } from '../Tooltip';
 
 type Props = {
   readonly isStarred: boolean;

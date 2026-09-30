@@ -124,7 +124,6 @@ vi.mock('./StageColumn', () => ({
 vi.mock('../../../session/components/DeleteSessionConfirm', () => ({
   DeleteSessionConfirm: () => null,
 }));
-vi.mock('../../../../shared/components/DogMascot', () => ({ DogMascot: () => <div /> }));
 
 vi.mock('@goodboy/ui', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@goodboy/ui')>();

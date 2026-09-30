@@ -6,7 +6,14 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { cn, CountToggle, formatError, InlineConfirm } from '@goodboy/ui';
+import {
+  cn,
+  CountToggle,
+  formatError,
+  InlineConfirm,
+  PaneShell,
+  PaneActionsContext,
+} from '@goodboy/ui';
 import { LensEmptyState } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
 import { selectActiveProjectPrs } from '../../../../../../store/slices/github/activeProjectPrs';
@@ -19,8 +26,6 @@ import {
   ICON_SIZE,
 } from '../../../../../../shared/components/conceptIcons';
 import { GhostActionButton } from '@goodboy/ui';
-import { PaneShell } from '../../../../../../shared/components/PaneShell';
-import { PaneActionsContext } from '../../../../../../shared/components/PaneShell/paneActionsContext';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { useSessionRepo } from '../../../../../../store/slices/worktrees/useSessionRepo';
 import { branchRequests } from '../../../../branchRequests';
