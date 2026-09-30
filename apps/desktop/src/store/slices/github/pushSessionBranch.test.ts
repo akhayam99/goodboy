@@ -103,13 +103,13 @@ describe('pushSessionBranch', () => {
     });
 
     expect(result).toEqual({ ok: true });
-    expect(h.gitPush).toHaveBeenCalledWith(
-      '/worktrees/task-2',
-      'ak/sibling',
-      'workspace-1',
-      PROJECT_ID,
-      undefined,
-    );
+    expect(h.gitPush).toHaveBeenCalledWith({
+      cwd: '/worktrees/task-2',
+      branch: 'ak/sibling',
+      workspaceId: 'workspace-1',
+      projectId: PROJECT_ID,
+      sha: undefined,
+    });
     expect(state.refreshSessionPr).toHaveBeenCalledWith(SESSION_ID, {
       mountId: SIBLING_MOUNT_ID,
       force: true,
@@ -154,13 +154,13 @@ describe('pushSessionBranch', () => {
     });
 
     expect(result).toEqual({ ok: true });
-    expect(h.gitPush).toHaveBeenCalledWith(
-      '/worktrees/task-2',
-      'ak/sibling',
-      'workspace-1',
-      PROJECT_ID,
-      'c81e5aa0f3',
-    );
+    expect(h.gitPush).toHaveBeenCalledWith({
+      cwd: '/worktrees/task-2',
+      branch: 'ak/sibling',
+      workspaceId: 'workspace-1',
+      projectId: PROJECT_ID,
+      sha: 'c81e5aa0f3',
+    });
   });
 
   it('leaves the pull request alone when the push fails', async () => {

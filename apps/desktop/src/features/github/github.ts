@@ -90,13 +90,21 @@ export const ghPrDiff = async (
   }
 };
 
-export const gitPush = async (
-  cwd: string,
-  branch: string | null,
-  workspaceId?: string,
-  projectId?: string,
-  sha?: string,
-): Promise<{ stdout: string; stderr: string; exitCode: number }> => {
+type GitPushParams = {
+  readonly cwd: string;
+  readonly branch: string | null;
+  readonly workspaceId?: string;
+  readonly projectId?: string;
+  readonly sha?: string;
+};
+
+export const gitPush = async ({
+  cwd,
+  branch,
+  workspaceId,
+  projectId,
+  sha,
+}: GitPushParams): Promise<{ stdout: string; stderr: string; exitCode: number }> => {
   try {
     const raw = await invoke<RawGhRunResult>('git_push', {
       cwd,
