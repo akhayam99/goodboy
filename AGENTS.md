@@ -20,7 +20,9 @@ layout and where tests go live in [docs/file-system.md](./docs/file-system.md).
 
 ## Naming
 
-- Components and their folders use `PascalCase`.
+- Components and their folders use `PascalCase`. A hook is a folder `useFoo/index.ts`.
+  A folder exists only when it holds more than its entry file (hooks excepted):
+  [docs/file-system.md](./docs/file-system.md) → The folder rule.
 - Utilities, helpers, and hooks use `camelCase`. Hook names start with `use`.
 - A file has the same name as its main export. Constants use `SCREAMING_SNAKE_CASE`.
 - Boolean names start with `is`, `has`, `can`, or `should`.

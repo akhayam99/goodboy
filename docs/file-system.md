@@ -52,23 +52,51 @@ A feature is self-contained:
 
 ## App shell (`app/`)
 
-Only shell components that are global by nature go here, all under `app/components/<Name>/`. `App.tsx`, `main.tsx` and `styles.css` sit at the `src/` root, not here. `AppShell` is a layout primitive in `@goodboy/ui`. A component drawn in only one feature's view belongs in that feature, not here. For breadcrumb IA and the layout of `AppTopBar` controls, see [navigation.md](navigation.md).
+Only shell code that is global by nature goes here. `App.tsx`, `main.tsx` and `styles.css` sit at the `src/` root, not here. `AppShell` is a layout primitive in `@goodboy/ui`. A component drawn in only one feature's view belongs in that feature, not here. For breadcrumb IA and the layout of `AppTopBar` controls, see [navigation.md](navigation.md). Three folders, no others:
+
+- `app/components/<Name>/`: shell components.
+- `app/hooks/`: hooks that wire the shell (shortcuts, overlays, session navigation, native menu policy). Same hook rule as below.
+- `app/shellArrangement/`: the pure function that decides which shell slots show.
+
+## The folder rule
+
+One rule decides whether something gets a folder: **a folder exists only when it holds more than its entry file**. The entry (`index.tsx` or `index.ts`) plus a test, stories or sub-files makes a folder. A lone entry is a flat file. Hooks are the one exception (below). Never create a folder for a single file and its test unless it is a component or a hook.
+
+| Kind                                   | Shape                                                                                            |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Component with no test, no sub-files   | flat `parent/Name.tsx`                                                                           |
+| Component with a test, stories or subs | folder `parent/Name/index.tsx` + `index.test.tsx` + `*.stories.tsx` + sub-files                  |
+| Hook                                   | always a folder `useFoo/index.ts`, even when it is alone, + `index.test.ts` when non-trivial     |
+| Module (any other `.ts`)               | flat pair `name.ts` + `name.test.ts`; a folder only for a package (index + sub-files), see below |
+
+Case: components and their folders are `PascalCase`. Hook folders start with `use`. Modules are `camelCase` files named after their main export. A new file is never kebab-case.
 
 ## Components (`features/**/components/`, `shared/components/`)
 
 Rule: **1 file = 1 export = 1 definition**.
 
-- Small component, no test → flat file: `parent/Name.tsx`
-- Small component WITH test → folder: `parent/Name/index.tsx` + `parent/Name/index.test.tsx`
-- Large component (>~250 lines) OR split into sub-pieces → folder: `parent/Name/index.tsx` + sub-files (imported only by `index.tsx`) + optional `index.test.tsx`
-- **Never** a folder that holds only `index.tsx` and nothing else. If only the index exists, flatten it to `parent/Name.tsx`.
+- A component past ~250 lines, or split into sub-pieces, is a folder: `index.tsx` is the component, sub-files are imported only by it (see [typescript/components.md](typescript/components.md)).
+- **Never** a folder that holds only `index.tsx`. If only the index exists, it is `parent/Name.tsx`.
 
 ## Hooks
 
-- Hook reused across domains → `shared/hooks/<useFoo>/index.ts`
-- Hook used inside one domain → `features/<domain>/hooks/<useFoo>/index.ts`
-- Same folder rule as components: a folder with `index.ts` + `index.test.ts` when a test exists, a flat `useFoo.ts` otherwise.
-- A hook tied closely to one parent component can stay as a sibling file in that component's folder.
+- Hook reused across domains → `shared/hooks/useFoo/index.ts`
+- Hook used inside one domain → `features/<domain>/hooks/useFoo/index.ts`
+- A hook folder holding only `index.ts` is correct and stays. `index.test.ts` when the behavior is non-trivial.
+- A hook tied closely to one parent component can stay as a sibling file in that component's folder (`Name/use<Name>.ts`).
+
+## Modules
+
+A module is any `.ts` file that is neither a component nor a hook. It is a flat file `name.ts` with `name.test.ts` beside it. A package folder (`name/index.ts` + sub-files) only when the module splits into several files. Store slices are the model (Store slices, below).
+
+## Legacy shapes
+
+Some files predate the folder rule. New code never adds one. A mechanical move flattens the component folders that hold only `index.tsx`. The rest changes only when you edit the file for another reason:
+
+- A flat component pair `Name.tsx` + `Name.test.tsx` folds into `Name/index.tsx` + `Name/index.test.tsx`.
+- A flat hook `useFoo.ts` outside a component folder becomes `useFoo/index.ts`.
+- A module folder holding only `index.ts` and its test becomes a flat pair.
+- `shared/layout/` (a lone test) and `shared/pullRequestPresentation.ts` at the `shared/` root move into the folders above. `shared/lib/` files that are pure functions move to `shared/utils/`.
 
 ## Store slices (`store/slices/<name>/`)
 
@@ -95,8 +123,9 @@ Rules around slices:
 
 ## Test file placement
 
-- Tests sit next to their source: `index.ts(x)` + `index.test.ts(x)` in the same folder.
-- Never flat pairs `Name.tsx` + `Name.test.tsx` in the parent. Put them in a folder.
+- Tests sit next to their source, with the name the folder rule gives: `index.test.tsx` in a component folder, `index.test.ts` in a hook folder, `name.test.ts` beside a flat module.
+- A component test is never a flat `Name.test.tsx` beside a flat `Name.tsx`. Put both in a folder.
+- Suites that span features live in `src/__tests__/`, not next to any one source.
 
 ## Shared types
 
@@ -104,9 +133,22 @@ Rules around slices:
 - Types shared across packages → `packages/types/src/`
 - Types used in one file stay in that file.
 
+## Shared code (`shared/`)
+
+`shared/` has these folders and nothing loose at its root:
+
+- `components/`, `hooks/`, `types/`: shared components, hooks and types, by the rules above.
+- `utils/`: pure functions and constants. No `invoke`, no store, no React, no browser storage.
+- `lib/`: code that touches the runtime boundary: Tauri wrappers (`invokeCommand`, `db`, `dbBoot`, `editor`, `reveal`), browser storage (`storage-keys`, `zoom`), theme and the feature flags. A pure function does not belong here: put it in `utils/`.
+- `keyboard/`: the shortcut registry, its dispatcher and `useShortcut`.
+- `platform/`: operating system detection.
+- `detail-fields/`: the field builders the record detail panes render, one file per tracker.
+
+No other `shared/` subfolder without adding it here. A folder that holds only a test file is not a folder: the test goes next to the code it covers.
+
 ## Shared utilities
 
-- Reusable utilities → `shared/utils/<name>.ts`
+- Reusable utilities → `shared/utils/<name>.ts`, each with its `<name>.test.ts` beside it.
 - A file enters `shared/` only when 2+ different features import it. When in doubt, keep it in the feature. Do not share ahead of time.
 - Before you create a new shared util, grep `shared/utils/` for one you can reuse.
 - Dates, times, durations and ages live in `shared/utils/time/`, one file per formatter: `formatClock` (14:30, 24 hour), `formatDayMonth` (Sep 29), `formatDate` (Sep 29, 2026), `formatDateTime`, `formatWeekday`, `formatDuration` (1h 5m), `formatSpan` (5m), `formatAge` (5m ago) and `formatAdaptiveAge`. `formatIntl.ts` holds the only `Intl.DateTimeFormat` call: it pins `en-US` and a 24 hour clock, so the output never depends on the machine locale. A relative label takes `now` from `useNow` (`shared/hooks/useNow`) so it keeps counting; `RelativeTime` does that for a bare label. Never call `toLocaleTimeString`, `toLocaleDateString` or `Intl.DateTimeFormat` in a feature.
