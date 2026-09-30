@@ -5,6 +5,7 @@ export type { ResizeActivity, SheetEdge } from './sheet';
 export { FOCUS_RING } from './focusRing';
 export { registerEscapeLayer } from './escape';
 export { useEscapeLayer } from './useEscapeLayer';
+export { copyToClipboard } from './copyToClipboard';
 export { useCopyLink } from './useCopyLink';
 export { useDropdown } from './useDropdown';
 export { PopoverPortalProvider } from './PopoverPortalContext';

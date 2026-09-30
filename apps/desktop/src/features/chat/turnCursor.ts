@@ -1,6 +1,5 @@
 import type { AgentTurnSpan, MountId, ProviderId, ProviderRunId } from '@goodboy/types';
-
-const CURSOR_PREFIX = 'goodboy:turn-cursor:';
+import { STORAGE_PREFIXES, persistedPref } from '../../shared/lib/storage-keys';
 
 export type TurnOwner = Omit<
   AgentTurnSpan,
@@ -25,7 +24,7 @@ type WriteParams = RunParams & {
   readonly cursor: TurnCursor;
 };
 
-const keyFor = ({ runId }: RunParams): string => `${CURSOR_PREFIX}${runId}`;
+const keyFor = ({ runId }: RunParams): string => `${STORAGE_PREFIXES.turnCursor}${runId}`;
 
 const isCursor = (value: unknown): value is TurnCursor => {
   if (typeof value !== 'object' || value === null) {
@@ -35,31 +34,21 @@ const isCursor = (value: unknown): value is TurnCursor => {
   return typeof candidate.seq === 'number' && typeof candidate.index === 'number';
 };
 
-export const readTurnCursor = ({ runId }: RunParams): TurnCursor | null => {
-  try {
-    const raw = sessionStorage.getItem(keyFor({ runId }));
-    if (raw === null) {
-      return null;
-    }
-    const parsed: unknown = JSON.parse(raw);
-    return isCursor(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
-};
+const cursorPref = ({ runId }: RunParams) =>
+  persistedPref<TurnCursor | null>({
+    key: keyFor({ runId }),
+    area: 'session',
+    fallback: null,
+    parse: (raw) => {
+      const parsed: unknown = JSON.parse(raw);
+      return isCursor(parsed) ? parsed : undefined;
+    },
+  });
 
-export const writeTurnCursor = ({ runId, cursor }: WriteParams): void => {
-  try {
-    sessionStorage.setItem(keyFor({ runId }), JSON.stringify(cursor));
-  } catch {
-    return;
-  }
-};
+export const readTurnCursor = ({ runId }: RunParams): TurnCursor | null =>
+  cursorPref({ runId }).read();
 
-export const clearTurnCursor = ({ runId }: RunParams): void => {
-  try {
-    sessionStorage.removeItem(keyFor({ runId }));
-  } catch {
-    return;
-  }
-};
+export const writeTurnCursor = ({ runId, cursor }: WriteParams): void =>
+  cursorPref({ runId }).write(cursor);
+
+export const clearTurnCursor = ({ runId }: RunParams): void => cursorPref({ runId }).clear();

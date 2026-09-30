@@ -13,6 +13,7 @@ import { filterScriptGroups } from '../../filterScriptGroups';
 import { groupScriptsByPackage } from '../../groupScriptsByPackage';
 import { readCollapsedGroups, writeCollapsedGroups } from '../../groupsCollapsedStorage';
 import { useSessionScripts } from '../../hooks/useSessionScripts';
+import { useNow } from '../../../../shared/hooks/useNow';
 import {
   readPackagesCollapsedOverrides,
   writePackagesCollapsedOverrides,
@@ -48,9 +49,6 @@ type RowParams = {
   readonly group: SessionScriptGroup;
   readonly script: RunnableScript;
 };
-
-const RUNNING_TICK_MS = 1_000;
-const IDLE_TICK_MS = 30_000;
 
 type RecordParams = {
   readonly runs: Readonly<Record<string, ScriptRunRecord>> | undefined;
@@ -103,7 +101,6 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
   );
   const [scopedProjectId] = useState(() => scriptsLensScope?.projectId ?? null);
   const [pageError, setPageError] = useState<string | null>(null);
-  const [now, setNow] = useState(() => Date.now());
   const draft = useScriptDraft({ workspaceId });
   const { copy } = useCopyLink();
 
@@ -116,6 +113,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
     () => Object.values(runs ?? {}).filter((record) => record.status === 'pending').length,
     [runs],
   );
+  const now = useNow(runningCount > 0 ? 1_000 : 30_000);
   const projectCount = useMemo(
     () => new Set(groups.map((group) => group.projectId)).size,
     [groups],
@@ -143,14 +141,6 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
   useEffect(() => {
     setScriptsLensScope({ scope: null });
   }, [setScriptsLensScope]);
-
-  useEffect(() => {
-    const id = window.setInterval(
-      () => setNow(Date.now()),
-      runningCount > 0 ? RUNNING_TICK_MS : IDLE_TICK_MS,
-    );
-    return () => window.clearInterval(id);
-  }, [runningCount]);
 
   const setGroupCollapsed = useCallback(
     ({ mountId, isCollapsed }: { readonly mountId: MountId; readonly isCollapsed: boolean }) => {

@@ -16,7 +16,7 @@ import {
 } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { ArrowUpRight } from 'lucide-react';
-import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
+import { STORAGE_KEYS, persistedPref } from '../../../../shared/lib/storage-keys';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { StudioWidget } from '@goodboy/ui';
 import { sortTurns, type SortKey, type WorkspaceTurn } from './lib';
@@ -33,7 +33,12 @@ type HandleSortKeyParams = {
   readonly key: SortKey;
 };
 
-const SORT_KEY_STORAGE = STORAGE_KEYS.pricingSortKey;
+const sortKeyPref = persistedPref<SortKey>({
+  key: STORAGE_KEYS.pricingSortKey,
+  parse: (raw) => (raw === 'expensive' ? 'expensive' : 'recent'),
+  serialize: (key) => key,
+  fallback: 'recent',
+});
 const SORT_OPTIONS: ReadonlyArray<SegmentedTabOption<SortKey>> = [
   { value: 'recent', label: 'Recent' },
   { value: 'expensive', label: 'Most expensive' },
@@ -46,10 +51,7 @@ export const TurnsTable = ({
   formatSpent = formatUsd,
   onOpenSession,
 }: Props) => {
-  const [sortKey, setSortKey] = useState<SortKey>(() => {
-    const stored = localStorage.getItem(SORT_KEY_STORAGE);
-    return stored === 'expensive' ? 'expensive' : 'recent';
-  });
+  const [sortKey, setSortKey] = useState<SortKey>(sortKeyPref.read);
   const [visible, setVisible] = useState(PAGE_SIZE);
 
   const sorted = useMemo(() => sortTurns(turns, sortKey), [turns, sortKey]);
@@ -59,7 +61,7 @@ export const TurnsTable = ({
   const handleSortKey = ({ key }: HandleSortKeyParams) => {
     setSortKey(key);
     setVisible(PAGE_SIZE);
-    localStorage.setItem(SORT_KEY_STORAGE, key);
+    sortKeyPref.write(key);
   };
 
   const action = (

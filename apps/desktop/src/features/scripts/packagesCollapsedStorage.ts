@@ -1,4 +1,5 @@
 import type { WorkspaceId } from '@goodboy/types';
+import { STORAGE_PREFIXES, persistedPref } from '../../shared/lib/storage-keys';
 
 type ReadParams = {
   readonly workspaceId: WorkspaceId;
@@ -9,7 +10,7 @@ type WriteParams = ReadParams & {
 };
 
 const storageKey = ({ workspaceId }: ReadParams): string =>
-  `goodboy:scripts-packages-collapsed:v1:${workspaceId}`;
+  `${STORAGE_PREFIXES.scriptsPackagesCollapsed}${workspaceId}`;
 
 const isBooleanRecord = (value: unknown): value is Readonly<Record<string, boolean>> =>
   typeof value === 'object' &&
@@ -17,25 +18,21 @@ const isBooleanRecord = (value: unknown): value is Readonly<Record<string, boole
   !Array.isArray(value) &&
   Object.values(value).every((entry) => typeof entry === 'boolean');
 
+const NO_OVERRIDES: Readonly<Record<string, boolean>> = {};
+
+const overridesPref = ({ workspaceId }: ReadParams) =>
+  persistedPref<Readonly<Record<string, boolean>>>({
+    key: storageKey({ workspaceId }),
+    fallback: NO_OVERRIDES,
+    parse: (raw) => {
+      const parsed: unknown = JSON.parse(raw);
+      return isBooleanRecord(parsed) ? parsed : undefined;
+    },
+  });
+
 export const readPackagesCollapsedOverrides = ({
   workspaceId,
-}: ReadParams): Readonly<Record<string, boolean>> => {
-  try {
-    const raw = localStorage.getItem(storageKey({ workspaceId }));
-    if (raw === null) {
-      return {};
-    }
-    const parsed: unknown = JSON.parse(raw);
-    return isBooleanRecord(parsed) ? parsed : {};
-  } catch {
-    return {};
-  }
-};
+}: ReadParams): Readonly<Record<string, boolean>> => overridesPref({ workspaceId }).read();
 
-export const writePackagesCollapsedOverrides = ({ workspaceId, overrides }: WriteParams): void => {
-  try {
-    localStorage.setItem(storageKey({ workspaceId }), JSON.stringify(overrides));
-  } catch {
-    return;
-  }
-};
+export const writePackagesCollapsedOverrides = ({ workspaceId, overrides }: WriteParams): void =>
+  overridesPref({ workspaceId }).write(overrides);

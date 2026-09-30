@@ -5,6 +5,7 @@ import type { GhTokenStatus } from '@goodboy/types';
 import {
   Listbox,
   ReportSheet,
+  copyToClipboard,
   formatError,
   type ReportSheetAttachment,
   type ReportSheetVariant,
@@ -198,10 +199,15 @@ export const ReportComposer = ({
     setError(null);
     if (!direct) {
       const opened = link ?? buildReportLink({ title: report.title, body: report.body });
-      try {
-        if (opened.overflows) {
-          await navigator.clipboard?.writeText(`${report.title}\n\n${report.body}`);
+      if (opened.overflows) {
+        try {
+          await copyToClipboard({ text: `${report.title}\n\n${report.body}` });
+        } catch (err) {
+          setError(`Could not copy the report to your clipboard. ${formatError(err)}`);
+          return;
         }
+      }
+      try {
         await openUrl(opened.url);
         onDraftClear();
         onOpenedLink({ overflows: opened.overflows });

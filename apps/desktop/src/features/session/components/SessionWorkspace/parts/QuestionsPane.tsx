@@ -22,6 +22,7 @@ import {
   CONCEPT_TONE,
   ICON_SIZE,
 } from '../../../../../shared/components/conceptIcons';
+import { isTypingTarget } from '../../../../../shared/keyboard/isTypingTarget';
 import { QuestionsQueue } from './QuestionsQueue';
 import {
   buildQuestionsLens,
@@ -48,9 +49,6 @@ const paneMeta = ({
   }
   return blocking > 0 ? `${waiting} waiting · ${blocking} blocking` : `${waiting} waiting`;
 };
-
-const isTypingTarget = (target: EventTarget): boolean =>
-  target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement;
 
 export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   const sessionId = session.id as SessionId;

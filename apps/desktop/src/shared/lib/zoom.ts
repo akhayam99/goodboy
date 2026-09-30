@@ -1,6 +1,6 @@
 import { getCurrentWebview } from '@tauri-apps/api/webview';
+import { STORAGE_KEYS, persistedPref } from './storage-keys';
 
-const STORAGE_KEY = 'goodboy:zoom';
 const MIN = 0.5;
 const MAX = 2.5;
 const ZOOM_STEP = 0.1;
@@ -10,22 +10,25 @@ function clamp(factor: number): number {
   return Math.min(MAX, Math.max(MIN, rounded));
 }
 
+const zoomPref = persistedPref<number>({
+  key: STORAGE_KEYS.zoom,
+  parse: (raw) => {
+    const parsed = Number.parseFloat(raw);
+    return Number.isFinite(parsed) ? clamp(parsed) : undefined;
+  },
+  serialize: String,
+  fallback: 1,
+});
+
 function readZoom(): number {
-  if (typeof localStorage === 'undefined') {
-    return 1;
-  }
-  const raw = localStorage.getItem(STORAGE_KEY);
-  const parsed = raw ? Number.parseFloat(raw) : 1;
-  return Number.isFinite(parsed) ? clamp(parsed) : 1;
+  return zoomPref.read();
 }
 
 async function applyZoom(factor: number): Promise<void> {
   const next = clamp(factor);
   try {
     await getCurrentWebview().setZoom(next);
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, String(next));
-    }
+    zoomPref.write(next);
   } catch {
     void 0;
   }

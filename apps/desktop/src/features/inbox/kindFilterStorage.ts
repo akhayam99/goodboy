@@ -1,5 +1,5 @@
 import type { WorkspaceId } from '@goodboy/types';
-import { STORAGE_PREFIXES } from '../../shared/lib/storage-keys';
+import { STORAGE_PREFIXES, persistedPref } from '../../shared/lib/storage-keys';
 import { INBOX_KIND_FILTERS, type InboxKindFilter } from './kindFilter';
 import { INBOX_PROVIDERS, type InboxProvider } from './types';
 
@@ -45,37 +45,33 @@ const storedSource = ({ source, providers }: SourceParams): InboxProvider | null
   return INBOX_PROVIDERS.find((provider) => legacy.includes(provider)) ?? null;
 };
 
-export const readInboxFilters = ({ workspaceId }: Params): StoredInboxFilters | null => {
-  try {
-    const raw = localStorage.getItem(storageKey({ workspaceId }));
-    if (isInboxKindFilter(raw)) {
-      return { kind: raw, source: null };
-    }
-    if (raw == null) {
-      return null;
-    }
-    const parsed: unknown = JSON.parse(raw);
-    if (typeof parsed !== 'object' || parsed == null || Array.isArray(parsed)) {
-      return null;
-    }
-    const kind: unknown = Reflect.get(parsed, 'kindFilter');
-    const source = storedSource({
-      source: Reflect.get(parsed, 'source'),
-      providers: Reflect.get(parsed, 'providers'),
-    });
-    if (!isInboxKindFilter(kind) || source === undefined) {
-      return null;
-    }
-    return { kind, source };
-  } catch {
-    return null;
-  }
-};
+const inboxFiltersPref = ({ workspaceId }: Params) =>
+  persistedPref<StoredInboxFilters | null>({
+    key: storageKey({ workspaceId }),
+    fallback: null,
+    parse: (raw) => {
+      if (isInboxKindFilter(raw)) {
+        return { kind: raw, source: null };
+      }
+      const parsed: unknown = JSON.parse(raw);
+      if (typeof parsed !== 'object' || parsed == null || Array.isArray(parsed)) {
+        return undefined;
+      }
+      const kind: unknown = Reflect.get(parsed, 'kindFilter');
+      const source = storedSource({
+        source: Reflect.get(parsed, 'source'),
+        providers: Reflect.get(parsed, 'providers'),
+      });
+      if (!isInboxKindFilter(kind) || source === undefined) {
+        return undefined;
+      }
+      return { kind, source };
+    },
+    serialize: (value) => JSON.stringify(value && { kindFilter: value.kind, source: value.source }),
+  });
 
-export const writeInboxFilters = ({ workspaceId, kind, source }: WriteParams): void => {
-  try {
-    localStorage.setItem(storageKey({ workspaceId }), JSON.stringify({ kindFilter: kind, source }));
-  } catch {
-    return;
-  }
-};
+export const readInboxFilters = ({ workspaceId }: Params): StoredInboxFilters | null =>
+  inboxFiltersPref({ workspaceId }).read();
+
+export const writeInboxFilters = ({ workspaceId, kind, source }: WriteParams): void =>
+  inboxFiltersPref({ workspaceId }).write({ kind, source });

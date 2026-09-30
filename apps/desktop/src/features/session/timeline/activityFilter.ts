@@ -1,4 +1,5 @@
 import type { SessionEventKind } from '@goodboy/types';
+import { STORAGE_KEYS, persistedPref } from '../../../shared/lib/storage-keys';
 import type { TimelineAgentEntry, TimelineTopLevelEntry } from './buildTimelineGroups';
 
 export const ACTIVITY_CATEGORIES = [
@@ -211,8 +212,6 @@ export const activityCounts = ({ entries }: CountsParams): ActivityCounts => {
   return counts;
 };
 
-const ACTIVITY_FILTER_STORAGE_KEY = 'goodboy:activity-filter';
-
 const CATEGORY_BY_EVENT_KIND: Record<SessionEventKind, ActivityCategory> = {
   worktree_created: 'worktree',
   branch_created: 'worktree',
@@ -411,28 +410,17 @@ export const parseActivityFilter = ({ raw }: ParseParams): ActivityFilter => {
   }
 };
 
-export const readActivityFilter = (): ActivityFilter => {
-  if (typeof localStorage === 'undefined') {
-    return DEFAULT_ACTIVITY_FILTER;
-  }
-  try {
-    return parseActivityFilter({ raw: localStorage.getItem(ACTIVITY_FILTER_STORAGE_KEY) });
-  } catch {
-    return DEFAULT_ACTIVITY_FILTER;
-  }
-};
+const activityFilterPref = persistedPref<ActivityFilter>({
+  key: STORAGE_KEYS.activityFilter,
+  parse: (raw) => parseActivityFilter({ raw }),
+  fallback: DEFAULT_ACTIVITY_FILTER,
+});
+
+export const readActivityFilter = activityFilterPref.read;
 
 type WriteParams = {
   readonly filter: ActivityFilter;
 };
 
-export const writeActivityFilter = ({ filter }: WriteParams): void => {
-  if (typeof localStorage === 'undefined') {
-    return;
-  }
-  try {
-    localStorage.setItem(ACTIVITY_FILTER_STORAGE_KEY, JSON.stringify(filter));
-  } catch {
-    return;
-  }
-};
+export const writeActivityFilter = ({ filter }: WriteParams): void =>
+  activityFilterPref.write(filter);
