@@ -1,7 +1,6 @@
-import { cn } from '@goodboy/ui';
+import { cn, DogMascot } from '@goodboy/ui';
 import { ONBOARDING_STEPS } from '../../../../features/onboarding/onboarding-store';
 import type { OnboardingProgress } from '../../../../features/onboarding/hooks/useOnboardingProgress';
-import { DogMascot } from '../../../../shared/components/DogMascot';
 import { useAppStore } from '../../../../store';
 import { useRunningAgentCount } from '../../../../features/updater/hooks/useRunningAgentCount';
 import { useUpdateSweep } from '../../../../features/updater/hooks/useUpdateSweep';

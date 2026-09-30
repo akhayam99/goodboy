@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { EmptyState, Eyebrow, StudioRailLayout } from '@goodboy/ui';
+import { EmptyState, Eyebrow, StudioRailLayout, PaneShell } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useAppStore } from '../../../../store';
 import { mapNotificationAction } from '../NotificationToastBridge';

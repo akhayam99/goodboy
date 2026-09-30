@@ -1,7 +1,10 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { PANE_RHYTHM, SelectableRow, cn, tintClasses, type Tone } from '@goodboy/ui';
-import { ICON_SIZE } from '../conceptIcons';
+import { cn } from '../../cn';
+import { ICON_SIZE } from '../../iconSize';
+import { PANE_RHYTHM } from '../../paneRhythm';
+import { tintClasses, type Tone } from '../../tint';
+import { SelectableRow } from '../SelectableRow';
 
 type LeadingProps =
   | { readonly icon: LucideIcon; readonly glyph?: undefined }

@@ -1,4 +1,3 @@
-import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { useEffect, useMemo, useState } from 'react';
 import { GitBranch, GitFork, GitMerge, GitPullRequest } from 'lucide-react';
 import type { Session, SessionId } from '@goodboy/types';
@@ -12,7 +11,7 @@ import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
 import { gitlabMrStateKind } from '../../../../integrations/gitlab/gitlabMrStateKind';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { selectActiveProjectPrs } from '../../../../../store/slices/github/activeProjectPrs';
-import { HeaderBand, StudioDetailTabs } from '@goodboy/ui';
+import { HeaderBand, StudioDetailTabs, PaneShell } from '@goodboy/ui';
 import { StateBadge } from '@goodboy/ui';
 import { useSessionRepo } from '../../../../../store/slices/worktrees/useSessionRepo';
 import type { RemoteHostKind } from '../../../../../shared/lib/remoteHost';

@@ -1,13 +1,15 @@
 import { Inbox, Mail, Zap, type LucideIcon } from 'lucide-react';
-import { Eyebrow, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { FacetRail } from '../../../../shared/components/FacetRail';
 import {
+  Eyebrow,
+  SegmentedTabs,
+  type SegmentedTabOption,
+  FacetRail,
   FacetKeyHints,
   type FacetKeyHint,
-} from '../../../../shared/components/FacetRail/FacetKeyHints';
-import { FacetRow } from '../../../../shared/components/FacetRail/FacetRow';
-import { FacetSection } from '../../../../shared/components/FacetRail/FacetSection';
+  FacetRow,
+  FacetSection,
+} from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { NotificationScope } from '../../../../store/slices/notifications/state';
 import {
   NOTIFICATION_SEVERITY_FACETS,

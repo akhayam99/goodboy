@@ -1,5 +1,4 @@
-import { Button, EmptyState } from '@goodboy/ui';
-import { DogMascot } from '../../../shared/components/DogMascot';
+import { Button, EmptyState, DogMascot } from '@goodboy/ui';
 
 type Props = {
   readonly onAddWorkspace: () => void;

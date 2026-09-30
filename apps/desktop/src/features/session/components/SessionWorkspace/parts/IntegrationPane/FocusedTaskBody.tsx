@@ -1,3 +1,4 @@
+import { PaneShell } from '@goodboy/ui';
 import type {
   SessionExternalTask,
   SessionExternalTaskProvider,
@@ -5,7 +6,6 @@ import type {
   ProjectId,
   WorkspaceId,
 } from '@goodboy/types';
-import { PaneShell } from '../../../../../../shared/components/PaneShell';
 import { openUrl } from '../../../../../../shared/lib/editor';
 import { ExternalTaskChip } from '../../../../../integrations/components/ExternalTaskChip';
 import { useSessionRepo } from '../../../../../../store/slices/worktrees/useSessionRepo';

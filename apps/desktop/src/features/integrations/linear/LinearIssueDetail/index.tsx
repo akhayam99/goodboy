@@ -1,4 +1,4 @@
-import { PaneShell } from '../../../../shared/components/PaneShell';
+import { PaneShell } from '@goodboy/ui';
 import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
 import { RecordProperties } from '../../../../shared/components/StudioDetail/RecordProperties';
 import { RecordSections } from '../../../../shared/components/StudioDetail/RecordSections';

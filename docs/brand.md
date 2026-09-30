@@ -14,7 +14,7 @@ you use it. This file covers how people recognise it before they have used it.
 The one true asset is a **white-on-transparent PNG**. The same file lives in
 two places:
 
-- `apps/desktop/src/assets/mascot.png`
+- `packages/ui/src/assets/mascot.png`
 - `website/src/assets/mascot.png`
 
 It is never drawn as a coloured image. It is a **mask**: the surface

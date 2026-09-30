@@ -17,11 +17,11 @@ import {
   SegmentedTabs,
   Skeleton,
   formatError,
+  PaneShell,
 } from '@goodboy/ui';
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { eventMatches } from '../../../../shared/keyboard/dispatcher';
 import { SHORTCUTS, type ShortcutId } from '../../../../shared/keyboard/registry';

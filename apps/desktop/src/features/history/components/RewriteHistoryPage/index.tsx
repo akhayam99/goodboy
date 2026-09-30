@@ -13,6 +13,7 @@ import {
   Skeleton,
   cn,
   type OverflowMenuItem,
+  PaneShell,
 } from '@goodboy/ui';
 import type { BranchCommit, HistoryStep, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -26,7 +27,6 @@ import {
 } from '../../../../store/slices/project-mounts/selectors';
 import { scribeKeyOf } from '../../../../store/slices/scribe/scribeKeyOf';
 import { isHistoryRunActive } from '../../../../store/slices/history/isHistoryRunActive';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { useFlipList } from '../../../../shared/hooks/useFlipList';

@@ -1,9 +1,9 @@
+import { PaneShell } from '@goodboy/ui';
 import { useEffect } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore, sessionPlace } from '../../../../store';
 import { reviewFocusThreadId } from '../../../../store/slices/review-navigation';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { GithubConnectionEmptyState } from '../../../github/components/GithubConnectionEmptyState';
 import { useGithubConnection } from '../../../integrations/github/useGithubConnection';

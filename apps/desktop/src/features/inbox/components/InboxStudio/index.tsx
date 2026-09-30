@@ -1,9 +1,8 @@
 import { openToolSettings } from '../../../integrations/openToolSettings';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { inlineMarkdownText, useEscapeLayer } from '@goodboy/ui';
+import { inlineMarkdownText, useEscapeLayer, PaneShell } from '@goodboy/ui';
 import type { SessionId, StarredIssue, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { useListKeys } from '../../../../shared/hooks/useListKeys';

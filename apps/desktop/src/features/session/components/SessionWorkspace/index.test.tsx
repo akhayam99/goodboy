@@ -164,6 +164,15 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
       <div data-testid="divider" data-orientation={orientation ?? 'horizontal'} />
     ),
     ScrollFade: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    PaneShell: ({ title, header, meta, children }: PaneShellMockProps) => (
+      <div>
+        {header ?? <h1>{title}</h1>}
+        {meta != null && title != null ? (
+          <span data-testid={`pane-meta-${title.toLowerCase()}`}>{meta}</span>
+        ) : null}
+        {children}
+      </div>
+    ),
   };
 });
 
@@ -254,19 +263,6 @@ vi.mock('./parts/IntegrationPane/LinkTicketPopover', () => ({
     </button>
   ),
 }));
-vi.mock('../../../../shared/components/PaneShell', () => {
-  return {
-    PaneShell: ({ title, header, meta, children }: PaneShellMockProps) => (
-      <div>
-        {header ?? <h1>{title}</h1>}
-        {meta != null && title != null ? (
-          <span data-testid={`pane-meta-${title.toLowerCase()}`}>{meta}</span>
-        ) : null}
-        {children}
-      </div>
-    ),
-  };
-});
 vi.mock('../../hooks/useSelectedAgentHome', () => ({
   useSelectedAgentHome: () => hooks.agentHome,
 }));

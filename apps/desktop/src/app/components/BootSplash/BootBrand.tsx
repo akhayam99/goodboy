@@ -1,4 +1,4 @@
-import { DogMascot } from '../../../shared/components/DogMascot';
+import { DogMascot } from '@goodboy/ui';
 
 export const BootBrand = () => (
   <div className="flex flex-col items-center gap-5">

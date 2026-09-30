@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { PencilLine } from 'lucide-react';
-import { Button, GhostActionButton, Notice } from '@goodboy/ui';
+import { Button, GhostActionButton, Notice, PaneShell } from '@goodboy/ui';
 import type {
   PrCheckRun,
   PrReviewDraft,
@@ -11,7 +11,6 @@ import type {
 import { EMPTY_ARRAY, useAppStore, useMountDiffStats, sessionPlace } from '../../../../store';
 import { selectActiveProjectPrs } from '../../../../store/slices/github/activeProjectPrs';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { openUrl } from '../../../../shared/lib/editor';
 import { GithubConnectionEmptyState } from '../../../github/components/GithubConnectionEmptyState';

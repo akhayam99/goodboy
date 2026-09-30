@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
-import { MetaRow, SectionHeader, Skeleton, cn } from '@goodboy/ui';
+import { MetaRow, SectionHeader, Skeleton, cn, PaneShell } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useSessionOpenQuestions } from '../../../../store';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { OpenQuestionCluster } from '../../../chat/components/ChatView/OpenQuestionCluster';
 import { modelLabel } from '../../../chat/utils/chat-constants';

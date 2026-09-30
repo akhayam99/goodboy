@@ -1,9 +1,9 @@
+import { PaneShell } from '@goodboy/ui';
 import type { ReactNode } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
 import { CreateAgentPopover } from '../../CreateAgentPopover';
 import { createAgentEventName } from '../../../hooks/useTrailMenus';
 import { StandaloneAgentsLane } from '../../StandaloneAgentsLane';
-import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { WorkflowAutorunToggle } from '../../../../workflows/components/WorkflowAutorunToggle';
 import { useAppStore } from '../../../../../store/store';
 import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';

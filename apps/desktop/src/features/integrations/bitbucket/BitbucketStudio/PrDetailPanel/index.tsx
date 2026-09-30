@@ -1,5 +1,4 @@
 import { RecordDetailEmptyState } from '../../../../../shared/components/StudioDetail';
-import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { RecordHeader } from '../../../../../shared/components/StudioDetail/RecordHeader';
 import { RecordProperties } from '../../../../../shared/components/StudioDetail/RecordProperties';
 import { RecordSections } from '../../../../../shared/components/StudioDetail/RecordSections';
@@ -7,7 +6,7 @@ import type { RecordSection } from '../../../../../shared/components/StudioDetai
 import type { RecordFrame } from '../../../../../shared/components/StudioDetail/RecordActions/types';
 import { DescriptionSection } from '../../../../../shared/components/DescriptionSection';
 import { useMemo } from 'react';
-import { Notice } from '@goodboy/ui';
+import { Notice, PaneShell } from '@goodboy/ui';
 import type { BitbucketIntegrationBinding, FileDiff, SessionId, WorkspaceId } from '@goodboy/types';
 import { bitbucketPullRequestFields, resolveFacts } from '../../../../../shared/detail-fields';
 import { checksRollup } from '../../../../github/components/PullRequest/checksRollup';

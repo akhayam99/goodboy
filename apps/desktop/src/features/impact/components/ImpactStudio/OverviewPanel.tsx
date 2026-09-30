@@ -8,9 +8,9 @@ import {
   PanelLoading,
   SectionHeader,
   formatUsd,
+  PaneShell,
 } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import type { ImpactTab, ImpactWindowId } from '../../lib';
 import { formatHours } from '../../utils/formatHours';

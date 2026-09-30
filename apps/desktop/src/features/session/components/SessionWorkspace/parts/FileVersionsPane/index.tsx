@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Divider, formatError, cn, tintClasses } from '@goodboy/ui';
+import { Divider, formatError, cn, tintClasses, PaneShell } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import type { FileVersion, FileVersionId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
@@ -10,7 +10,6 @@ import {
   ICON_SIZE,
 } from '../../../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';
-import { PaneShell } from '../../../../../../shared/components/PaneShell';
 import { fileVersionGroups } from './fileVersionGroups';
 import { PathSummaryList } from './pathSummaryList';
 import { VersionHistoryList } from './versionHistoryList';

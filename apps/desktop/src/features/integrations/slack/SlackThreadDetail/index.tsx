@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Notice } from '@goodboy/ui';
+import { Button, Notice, PaneShell } from '@goodboy/ui';
 import type { SlackIntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
 import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
 import { recordByline, resolveFacts, slackThreadFields } from '../../../../shared/detail-fields';

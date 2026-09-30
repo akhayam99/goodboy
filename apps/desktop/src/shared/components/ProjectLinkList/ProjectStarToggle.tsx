@@ -1,6 +1,6 @@
+import { StarToggle } from '@goodboy/ui';
 import type { Project } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import { StarToggle } from '../StarToggle';
 
 type Props = {
   readonly project: Project;

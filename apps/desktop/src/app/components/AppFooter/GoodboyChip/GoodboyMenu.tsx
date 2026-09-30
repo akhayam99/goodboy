@@ -1,10 +1,9 @@
 import { ExternalLink, Heart } from 'lucide-react';
-import { Button, Divider, Eyebrow } from '@goodboy/ui';
+import { Button, Divider, Eyebrow, DogMascot } from '@goodboy/ui';
 import { finish } from '../../../../features/onboarding/onboarding-store';
 import type { OnboardingProgress } from '../../../../features/onboarding/hooks/useOnboardingProgress';
 import { ChecklistBody } from '../../../../features/onboarding/SetupChecklist/ChecklistBody';
 import { CompletedBody } from '../../../../features/onboarding/SetupChecklist/CompletedBody';
-import { DogMascot } from '../../../../shared/components/DogMascot';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { MenuRow } from './MenuRow';

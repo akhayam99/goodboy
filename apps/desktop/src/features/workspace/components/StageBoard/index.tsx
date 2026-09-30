@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Plus } from 'lucide-react';
-import { Button, cn, EmptyState, ScrollFade, Skeleton, Tooltip, tintClasses } from '@goodboy/ui';
+import {
+  Button,
+  cn,
+  EmptyState,
+  ScrollFade,
+  Skeleton,
+  Tooltip,
+  tintClasses,
+  DogMascot,
+} from '@goodboy/ui';
 import type { Session, SessionId, SessionStage, WorkspaceId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -10,7 +19,6 @@ import {
   useStageGroupedSessions,
 } from '../../../../store';
 import { STAGE_ORDER } from '../../../../store/slices/session-view/types';
-import { DogMascot } from '../../../../shared/components/DogMascot';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { BulkActionBar } from '../BulkActionBar';
 import { useProjectGitStatuses } from '../../hooks/useProjectGitStatuses';

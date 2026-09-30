@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ErrorStrip, LensEmptyState, PageColumn, Skeleton, cn, formatError } from '@goodboy/ui';
+import {
+  ErrorStrip,
+  LensEmptyState,
+  PageColumn,
+  Skeleton,
+  cn,
+  formatError,
+  PaneShell,
+} from '@goodboy/ui';
 import type { DiffView as DiffViewKind, SessionId } from '@goodboy/types';
 import { useAppStore, type DiffFocus } from '../../../../store';
 import {
@@ -7,7 +15,6 @@ import {
   selectMountForPath,
 } from '../../../../store/slices/project-mounts/selectors';
 import { isMountRequestMerged } from '../../../../store/slices/project-mounts/mountRowModel';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { openFileInWorkspace } from '../../../../shared/lib/editor';
 import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';

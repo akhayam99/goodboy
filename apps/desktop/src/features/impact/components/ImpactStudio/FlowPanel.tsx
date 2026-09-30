@@ -1,12 +1,11 @@
 import type { AgentDurations, FlowHealth } from '@goodboy/db';
 import type { ReactElement } from 'react';
 import type { SessionId } from '@goodboy/types';
-import { EmptyState, StatCard } from '@goodboy/ui';
+import { EmptyState, StatCard, PaneShell } from '@goodboy/ui';
 import { ErrorStrip } from '@goodboy/ui';
 import { PanelLoading } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import { formatHours } from '../../utils/formatHours';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { SessionRows } from './SessionRows';
 import { StudioWidget } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';

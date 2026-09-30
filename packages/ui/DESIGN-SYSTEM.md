@@ -846,10 +846,9 @@ app below it has crashed.
 
 ## Pane anatomy
 
-The package ships the pane primitives `PANE_RHYTHM`, `PageColumn`, `ScrollFade`,
-and `Divider`, not a pane frame. `PaneShell` is a desktop component at
-`apps/desktop/src/shared/components/PaneShell/`, built from those primitives,
-and it is the one wrapper every main pane uses. It is a scroll region whose
+The package ships the pane primitives `PANE_RHYTHM`, `PageColumn`, `ScrollFade`
+and `Divider`, and the pane frame built from them. `PaneShell` lives at
+`packages/ui/src/components/PaneShell/` and is the one wrapper every main pane uses. It is a scroll region whose
 header and body share one `PageColumn` with the session trail band above it. It has one `h1` per surface.
 `meta` holds counts and totals in `tabular-nums`, never a control. The header
 row wraps, so actions drop under the title instead of squeezing it. The pane

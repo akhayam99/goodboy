@@ -1,5 +1,5 @@
+import { PaneShell } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { APP_SECTIONS, type AppSection } from './appSections';
 import { BackupPage } from '../../../backup/components/BackupPage';
 import { AppDangerSection } from './AppDangerSection';

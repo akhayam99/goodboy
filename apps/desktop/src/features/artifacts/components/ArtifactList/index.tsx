@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { LensEmptyState } from '@goodboy/ui';
+import { LensEmptyState, PaneShell } from '@goodboy/ui';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 import { WireframeImportNotice } from '../../../wireframes/components/WireframeImportNotice';
 import { useWireframeImport } from '../../../wireframes/useWireframeImport';
@@ -8,7 +8,6 @@ import { useAppStore } from '../../../../store';
 import type { ArtifactFilter, ArtifactGeneration } from '../../artifactCollection';
 import type { ArtifactListCounts, ArtifactListRow as Row } from '../../artifactListRows';
 import { ARTIFACT_KIND_CONCEPT } from '../../artifactPresentation';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { ArtifactFilterTabs } from '../ArtifactStudio/ArtifactFilterTabs';
 import { ArtifactListOverflowMenu } from './ArtifactListOverflowMenu';

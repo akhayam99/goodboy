@@ -1,6 +1,5 @@
-import { SectionHeader, cn } from '@goodboy/ui';
+import { SectionHeader, cn, DogMascot } from '@goodboy/ui';
 import type { Session, WorkflowRunId } from '@goodboy/types';
-import { DogMascot } from '../../../../shared/components/DogMascot';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { StandaloneAgentsLane } from '../StandaloneAgentsLane';
 import { WorkflowAttachButton } from '../../../workflows/components/WorkflowAttachButton';

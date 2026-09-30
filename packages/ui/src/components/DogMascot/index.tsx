@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
-import { cn } from '@goodboy/ui';
-import mascot from '../../../assets/mascot.png';
+import mascot from '../../assets/mascot.png';
+import { cn } from '../../cn';
 
 type Props = {
   size?: number;

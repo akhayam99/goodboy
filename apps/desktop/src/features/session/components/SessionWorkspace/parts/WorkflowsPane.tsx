@@ -3,7 +3,7 @@ import { BookmarkPlus } from 'lucide-react';
 import type { Agent, Session, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
-import { LensEmptyState } from '@goodboy/ui';
+import { LensEmptyState, PaneShell } from '@goodboy/ui';
 import { splitWorkflowRuns } from '../../../../workflows/activeWorkflowRuns';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
 import { WorkflowAttachButton } from '../../../../workflows/components/WorkflowAttachButton';
@@ -12,7 +12,6 @@ import { workflowKindName } from '../../../../workspace/components/WorkspacesSid
 import { WorkflowRailCard } from './WorkflowRailCard';
 import { WorkflowRunDetail } from './WorkflowRunDetail';
 import { useAgentMetrics } from '../../../hooks/useAgentMetrics';
-import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { GhostActionButton } from '@goodboy/ui';
 import { FinishedRegister } from '../../../../../shared/components/FinishedRegister';
 

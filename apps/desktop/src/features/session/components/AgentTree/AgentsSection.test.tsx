@@ -186,7 +186,6 @@ vi.mock('../../../workflows/components/NextActionStrip', () => ({
 vi.mock('../../../context/components/ContextPanel/strips/GoalAttachmentsStrip', () => ({
   GoalAttachmentsStrip: () => null,
 }));
-vi.mock('../../../../shared/components/DogMascot', () => ({ DogMascot: () => null }));
 vi.mock('../../../providers/components/CostBadge', () => ({ CostBadge: () => null }));
 
 type NextStepCtaProps = {

@@ -1,7 +1,6 @@
-import { Button, SectionHeader } from '@goodboy/ui';
+import { Button, SectionHeader, PaneShell } from '@goodboy/ui';
 import type { IntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { FOOTER_INTEGRATIONS } from '../../../../app/components/AppFooter/categories';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { SETTINGS_PANE_ENTRY } from '../../../settings/components/SettingsStudio/settingsPaneEntry';
 import {
   IntegrationGlyph,
