@@ -3,7 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore, useSessionLastTurnFinishedAt } from '../../../../store';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
-import { ensure, worktreeStatusKey } from '../useWorktreeStatuses/cache';
+import { ensure, worktreeStatusKey } from '../../../../store/slices/worktreeStatuses/cache';
 import { useIsBranchlessSession } from '../useIsBranchlessSession';
 
 const BRANCH_MAX_AGE_MS = 10_000;

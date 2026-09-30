@@ -23,7 +23,7 @@ vi.mock('../../../../../store', () => ({
 }));
 vi.mock('../../../../worktree/worktree', () => ({ worktreeAbortRebase }));
 vi.mock('../../../hooks/useRebaseAgent', () => ({ useRebaseAgent: () => rebase }));
-vi.mock('../../../hooks/useWorktreeStatuses/cache', () => ({
+vi.mock('../../../../../store/slices/worktreeStatuses/cache', () => ({
   ensure,
   worktreeStatusKey: () => 'key',
 }));

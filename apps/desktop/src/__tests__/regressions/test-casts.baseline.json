@@ -547,7 +547,7 @@
     "apps/desktop/src/features/session/components/AgentDetailPane/agentStoppedCopy.test.ts": 1,
     "apps/desktop/src/features/session/components/AgentDetailPane/AgentTitle.test.tsx": 1,
     "apps/desktop/src/features/session/components/AgentDetailPane/followUpChildren.test.ts": 1,
-    "apps/desktop/src/features/session/components/AgentDetailPane/followUpMoves.test.ts": 1,
+    "apps/desktop/src/features/session/followUpMoves.test.ts": 1,
     "apps/desktop/src/features/session/components/AgentDetailPane/index.test.tsx": 1,
     "apps/desktop/src/features/session/components/AgentMetrics/duration.test.tsx": 2,
     "apps/desktop/src/features/session/components/AgentMetrics/index.test.tsx": 1,

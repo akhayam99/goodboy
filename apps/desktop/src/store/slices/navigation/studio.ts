@@ -1,7 +1,7 @@
 import type { ChatId, SessionId } from '@goodboy/types';
 import type { ImpactScope } from '../../../features/impact/lib';
 import type { InboxKind, InboxProvider } from '../../../features/inbox/types';
-import type { SettingsFocus } from '../../../features/settings/components/SettingsStudio/types';
+import type { SettingsFocus } from '../../../features/settings/settingsFocus';
 
 export type InboxStudioFocus = {
   readonly provider: InboxProvider | null;

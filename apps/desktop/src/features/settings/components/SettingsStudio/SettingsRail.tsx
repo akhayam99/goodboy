@@ -1,7 +1,7 @@
 import { useShallow } from 'zustand/react/shallow';
 import type { WorkspaceId } from '@goodboy/types';
 import { PANE_RHYTHM, Reveal, StatusRailItem, cn } from '@goodboy/ui';
-import type { SettingsScopeChange, SettingsStudioScope } from './types';
+import type { SettingsScopeChange, SettingsStudioScope } from '../../settingsFocus';
 import { APP_SECTIONS, type AppSection } from './appSections';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';

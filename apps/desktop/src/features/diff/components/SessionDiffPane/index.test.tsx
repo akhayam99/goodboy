@@ -122,7 +122,7 @@ vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
 
-vi.mock('../../../session/hooks/useWorktreeStatuses/cache', () => ({
+vi.mock('../../../../store/slices/worktreeStatuses/cache', () => ({
   ensure: vi.fn(async () => null),
   worktreeStatusKey: () => 'key',
 }));

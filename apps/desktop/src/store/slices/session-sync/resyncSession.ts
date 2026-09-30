@@ -1,6 +1,6 @@
 import { listExternalTasksForWorkspace } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
-import { refreshWorktreeStatuses } from '../../../features/session/hooks/useWorktreeStatuses/cache';
+import { refreshWorktreeStatuses } from '../worktreeStatuses/cache';
 import { invalidateLocalBranchesCache } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { listSessionPrFetches } from '../github/resolveSessionPrFetch';

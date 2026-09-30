@@ -855,12 +855,6 @@ export const terminalOutputCacheModuleMock = () => ({
   clearTerminalCache: vi.fn(() => undefined),
 });
 
-export const openQuestionsModuleMock = () => ({
-  useOpenQuestions: {
-    getState: () => ({ loadQuestions: vi.fn(async () => undefined) }),
-  },
-});
-
 export const configExportModuleMock = () => ({
   chooseExportFile: vi.fn(async () => '/tmp/export.json'),
   chooseImportFile: vi.fn(async () => null),

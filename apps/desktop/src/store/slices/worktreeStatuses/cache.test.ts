@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const worktreeStatus = vi.hoisted(() => vi.fn());
 
-vi.mock('../../../worktree/worktree', () => ({ worktreeStatus }));
+vi.mock('../../../features/worktree/worktree', () => ({ worktreeStatus }));
 
 import {
   REFRESH_MS,

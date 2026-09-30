@@ -84,9 +84,7 @@
         "src/features/resolve/learnWorkspaceReplyStyle.ts": ["exports"],
         "src/features/session/agent-kind.ts": ["exports"],
         "src/features/session/agent-status.ts": ["exports"],
-        "src/features/session/components/SessionWorkspace/parts/resolvePullRequestProvider.ts": [
-          "types"
-        ],
+        "src/features/session/resolvePullRequestProvider.ts": ["types"],
         "src/features/session/components/SessionWorkspace/sessionBreadcrumb.ts": ["types"],
         "src/features/session/components/WorkflowBuilderView/index.tsx": ["exports"],
         "src/features/session/components/WorkflowBuilderView/parts/BuilderTitleField.tsx": [
@@ -96,7 +94,7 @@
         "src/features/session/hooks/useRebaseAgent/index.ts": ["exports"],
         "src/features/session/hooks/useSessionFocusRecheck/index.ts": ["exports"],
         "src/features/session/hooks/useSessionRefresh/index.ts": ["exports"],
-        "src/features/session/hooks/useWorktreeStatuses/cache.ts": ["exports"],
+        "src/store/slices/worktreeStatuses/cache.ts": ["exports"],
         "src/features/session/lens-destinations.ts": ["types"],
         "src/features/session/mountQueryBridge/index.ts": ["exports"],
         "src/features/session/projectMaterializeBridge.ts": ["exports"],

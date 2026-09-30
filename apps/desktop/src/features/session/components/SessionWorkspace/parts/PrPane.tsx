@@ -20,7 +20,7 @@ import {
   availableProviderCount,
   resolvePullRequestProvider,
   type PullRequestProvider,
-} from './resolvePullRequestProvider';
+} from '../../../resolvePullRequestProvider';
 
 const PROVIDER_TAB_OPTIONS: ReadonlyArray<{
   readonly value: PullRequestProvider;

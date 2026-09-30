@@ -67,7 +67,7 @@ vi.mock('@goodboy/db', async () =>
 );
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
-import { resetWorktreeStatusCache } from '../../session/hooks/useWorktreeStatuses/cache';
+import { resetWorktreeStatusCache } from '../../../store/slices/worktreeStatuses/cache';
 import { useSessionSuggestions } from '.';
 
 const session = { id: 'session-1', workspaceId: 'ws-1', goal: 'Ship the thing' } as Session;

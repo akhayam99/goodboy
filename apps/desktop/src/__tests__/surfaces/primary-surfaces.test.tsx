@@ -46,7 +46,7 @@ import { WorkspaceSwitcher } from '../../features/workspace/components/Workspace
 import { ContextDrawer } from '../../features/session/components/ContextDrawer';
 import { PullRequestPage } from '../../features/review/components/PullRequestPage';
 import { CONTEXT_TAB_LABEL } from '../../features/session/components/ContextDrawer/contextTabs';
-import type { SettingsFocus } from '../../features/settings/components/SettingsStudio/types';
+import type { SettingsFocus } from '../../features/settings/settingsFocus';
 
 const LINKED_PR_URL = 'https://example.invalid/cascade/pull/231';
 

@@ -8,7 +8,7 @@ import type {
   SessionId,
   TaskModelPreferences,
 } from '@goodboy/types';
-import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
+import type { AgentSpawnConfigValue } from '../../../session/agentSpawnConfigValue';
 
 type SpawnAgent = (
   sessionId: SessionId,

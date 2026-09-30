@@ -1,5 +1,5 @@
 import type { ReviewablePrProvider, SessionExternalTask, SessionId } from '@goodboy/types';
-import { PROVIDER_PRIORITY } from '../../../features/session/components/SessionWorkspace/parts/resolvePullRequestProvider';
+import { PROVIDER_PRIORITY } from '../../../features/session/resolvePullRequestProvider';
 import { selectActiveProjectPrs } from '../github/activeProjectPrs';
 import type { AppState } from '../../types';
 

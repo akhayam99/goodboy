@@ -1,7 +1,7 @@
 import type { AgentId, AuxTaskId, SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { discardHistoryCopy, prepareHistoryRewrite } from '../../../features/history/historyEngine';
-import { taskModelAgentSpawnConfig } from '../../../features/session/components/AgentSpawnConfig/taskModelAgentSpawnConfig';
+import { taskModelAgentSpawnConfig } from '../../../features/session/taskModelAgentSpawnConfig';
 import { autoLimitContext } from '../providerLimits/autoLimitContext';
 import { historyTargetOf } from './historyTargetOf';
 import { identityOf } from './historyIdentity';

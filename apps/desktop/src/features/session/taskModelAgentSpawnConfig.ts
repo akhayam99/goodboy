@@ -1,9 +1,9 @@
 import { clampEffortForModel } from '@goodboy/core';
 import type { AuxTaskId, ProviderId, TaskModelPreferences } from '@goodboy/types';
-import type { AutoLimitContext } from '../../../../store/slices/providerLimits/autoLimitContext';
-import { resolveLimitedTaskModel } from '../../../../store/slices/providerLimits/resolveLimitedTaskModel';
-import { kindRouting } from '../../agent-kind';
-import type { AgentSpawnConfigValue } from './AgentSpawnConfigValue';
+import type { AutoLimitContext } from '../../store/slices/providerLimits/autoLimitContext';
+import { resolveLimitedTaskModel } from '../../store/slices/providerLimits/resolveLimitedTaskModel';
+import { kindRouting } from './agent-kind';
+import type { AgentSpawnConfigValue } from './agentSpawnConfigValue';
 
 type Params = {
   readonly task: AuxTaskId;

@@ -1,8 +1,8 @@
 {
   "else-branch": {
+    "apps/desktop/src/features/attachments/pendingAttachment.ts": 1,
     "apps/desktop/src/features/budget/components/spend/lib.ts": 1,
     "apps/desktop/src/features/chat/components/ChatInput/index.tsx": 1,
-    "apps/desktop/src/features/chat/components/ChatInput/lib.ts": 1,
     "apps/desktop/src/features/chat/components/ChatView/index.tsx": 1,
     "apps/desktop/src/features/chat/turn.ts": 1,
     "apps/desktop/src/features/chat/utils/cluster-operations.ts": 2,
@@ -35,9 +35,9 @@
     "apps/desktop/src/store/slices/sessions/setAgentConfig.ts": 3,
     "apps/desktop/src/store/slices/sessions/setCurrentSession.ts": 2,
     "apps/desktop/src/store/slices/sessions/unarchiveTask.ts": 2,
+    "apps/desktop/src/store/slices/turn/turnHelpers.ts": 1,
     "apps/desktop/src/store/slices/workflows/attachWorkflowToSession.ts": 3,
     "apps/desktop/src/store/slices/workspaces/setCurrentWorkspace.ts": 2,
-    "apps/desktop/src/store/slices/turn/turnHelpers.ts": 1,
     "packages/core/src/artifacts/wireframe/validateWireframeDocument.ts": 4,
     "packages/core/src/github/diff.ts": 7,
     "packages/core/src/orchestrator/prompt.ts": 3,

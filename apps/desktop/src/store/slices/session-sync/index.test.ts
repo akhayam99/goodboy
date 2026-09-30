@@ -70,7 +70,7 @@ vi.mock('../../../features/github/github', () => ({
   tauriGhRunner: { run: h.ghRun },
 }));
 
-vi.mock('../../../features/session/hooks/useWorktreeStatuses/cache', () => ({
+vi.mock('../worktreeStatuses/cache', () => ({
   refreshWorktreeStatuses: h.refreshWorktreeStatuses,
 }));
 

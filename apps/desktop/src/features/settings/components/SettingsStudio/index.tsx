@@ -16,7 +16,8 @@ import {
   type NestedScope,
 } from './SettingsRail';
 import { appSectionOf } from './appSections';
-import type { ScopeFrame, SettingsFocus, SettingsScopeChange, SettingsStudioScope } from './types';
+import type { ScopeFrame } from './types';
+import type { SettingsFocus, SettingsScopeChange, SettingsStudioScope } from '../../settingsFocus';
 import { WorkspaceScopePanel } from './WorkspaceScopePanel';
 
 type Props = {

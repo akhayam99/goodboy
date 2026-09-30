@@ -4,7 +4,7 @@ import { useAppStore } from '../../../../../store';
 import type { DraftAttachment } from '../../../../../store/slices/agents/setAgentAttachments';
 import { deleteAttachment, readAttachment, writeAttachment } from '../../../turn';
 import type { ShowToast } from '../../../../../app/components/Toast';
-import { dataUrlToBase64, type PendingAttachment } from '../lib';
+import { dataUrlToBase64, type PendingAttachment } from '../../../../attachments/pendingAttachment';
 import { usePendingAttachments } from './usePendingAttachments';
 
 type Params = {

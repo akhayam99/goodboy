@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { AgentId, MountId, SessionId } from '@goodboy/types';
 
-vi.mock('../../../features/session/components/AgentSpawnConfig/taskModelAgentSpawnConfig', () => ({
+vi.mock('../../../features/session/taskModelAgentSpawnConfig', () => ({
   taskModelAgentSpawnConfig: () => ({
     hint: '',
     provider: 'anthropic',

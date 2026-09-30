@@ -28,7 +28,7 @@ import { openImpactStudio } from '../../impact/openImpactStudio';
 import { openChangelogStudio } from '../../changelog/changelogStudioEvent';
 import { linkedProjectsLabel } from '../../workspace/linkedProjectsLabel';
 import { APP_SECTIONS } from '../../settings/components/SettingsStudio/appSections';
-import type { SettingsFocus } from '../../settings/components/SettingsStudio/types';
+import type { SettingsFocus } from '../../settings/settingsFocus';
 import { useToast } from '../../../app/components/Toast';
 import { agentEntries } from '../sources/agentEntries';
 import { artifactEntries } from '../sources/artifactEntries';

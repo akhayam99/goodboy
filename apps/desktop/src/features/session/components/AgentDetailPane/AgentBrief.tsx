@@ -30,7 +30,7 @@ import { AgentBriefQuestions } from './AgentBriefQuestions';
 import { AgentBriefHandoffLine } from './AgentBriefHandoffLine';
 import { AgentBriefResolver } from './AgentBriefResolver';
 import { AgentFollowUps } from './AgentFollowUps';
-import { agentFollowUpMoves } from './followUpMoves';
+import { agentFollowUpMoves } from '../../followUpMoves';
 import { selectFollowUpChildren } from './followUpChildren';
 import { agentNowState } from './agentNowState';
 import { AgentMuchLonger } from './AgentMuchLonger';

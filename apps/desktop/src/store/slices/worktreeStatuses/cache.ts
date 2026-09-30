@@ -1,5 +1,5 @@
 import type { WorktreeStatus } from '@goodboy/types';
-import { worktreeStatus } from '../../../worktree/worktree';
+import { worktreeStatus } from '../../../features/worktree/worktree';
 
 type CacheEntry = {
   value: WorktreeStatus | null;

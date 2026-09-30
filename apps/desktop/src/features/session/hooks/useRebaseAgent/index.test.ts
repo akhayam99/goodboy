@@ -64,7 +64,7 @@ vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast }),
 }));
 
-vi.mock('../../components/AgentSpawnConfig/taskModelAgentSpawnConfig', () => ({
+vi.mock('../../taskModelAgentSpawnConfig', () => ({
   taskModelAgentSpawnConfig: () => ({
     provider: 'codex',
     model: 'gpt-5.6-terra',

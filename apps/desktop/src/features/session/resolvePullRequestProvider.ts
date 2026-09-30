@@ -1,4 +1,4 @@
-import type { RemoteHostKind } from '../../../../../shared/lib/remoteHost';
+import type { RemoteHostKind } from '../../shared/lib/remoteHost';
 
 export type PullRequestProvider = 'github' | 'gitlab' | 'bitbucket';
 

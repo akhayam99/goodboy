@@ -1,5 +1,5 @@
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
-import type { SettingsFocus } from '../../../features/settings/components/SettingsStudio/types';
+import type { SettingsFocus } from '../../../features/settings/settingsFocus';
 import type { InboxStudioFocus, StudioPlace } from '../../../store';
 
 export const isAppScopeOverlay = ({ overlay }: { readonly overlay: StudioPlace }): boolean => {

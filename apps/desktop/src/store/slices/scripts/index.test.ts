@@ -89,9 +89,6 @@ vi.mock('../../../features/scripts/scripts', async () => ({
 vi.mock('../../../features/terminal/terminal', async () =>
   (await import('../../storyHarness')).terminalModuleMock(),
 );
-vi.mock('../../../features/context/components/QuestionsTab/useOpenQuestions', async () =>
-  (await import('../../storyHarness')).openQuestionsModuleMock(),
-);
 vi.mock('../../../features/settings/config-export', async () =>
   (await import('../../storyHarness')).configExportModuleMock(),
 );

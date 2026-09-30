@@ -55,7 +55,7 @@ vi.mock('@goodboy/db', async () =>
     setSetting: vi.fn(async () => undefined),
   }),
 );
-vi.mock('../../../features/session/components/AgentSpawnConfig/taskModelAgentSpawnConfig', () => ({
+vi.mock('../../../features/session/taskModelAgentSpawnConfig', () => ({
   taskModelAgentSpawnConfig: () => ({
     hint: '',
     provider: 'anthropic',

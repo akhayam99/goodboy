@@ -1,6 +1,6 @@
 import type { AgentId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
-import { taskModelAgentSpawnConfig } from '../../../features/session/components/AgentSpawnConfig/taskModelAgentSpawnConfig';
+import { taskModelAgentSpawnConfig } from '../../../features/session/taskModelAgentSpawnConfig';
 import { autoLimitContext } from '../providerLimits/autoLimitContext';
 import { selectMountById } from '../project-mounts/selectors';
 import { scribeKeyOf } from './scribeKeyOf';

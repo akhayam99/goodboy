@@ -81,7 +81,7 @@ import {
   AttachmentChip,
   pendingAttachmentProps,
 } from '../../../attachments/components/AttachmentChip';
-import { toAttachmentInput } from '../../../chat/components/ChatInput/lib';
+import { toAttachmentInput } from '../../../attachments/pendingAttachment';
 import { usePendingAttachments } from '../../../chat/components/ChatInput/hooks/usePendingAttachments';
 import { runIdentity, runIdentitySeed } from '../../timeline/runIdentity';
 import { BuilderTitleField } from './parts/BuilderTitleField';

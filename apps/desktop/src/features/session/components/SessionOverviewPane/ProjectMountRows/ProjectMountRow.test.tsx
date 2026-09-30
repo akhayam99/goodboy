@@ -85,7 +85,7 @@ vi.mock('../../../../../app/components/Toast', () => ({
 vi.mock('../../../../../shared/lib/editor', () => ({
   openInEditor: vi.fn(async () => undefined),
 }));
-vi.mock('../../../hooks/useWorktreeStatuses/cache', () => ({
+vi.mock('../../../../../store/slices/worktreeStatuses/cache', () => ({
   ensure: vi.fn(async () => null),
   worktreeStatusKey: () => 'key',
 }));

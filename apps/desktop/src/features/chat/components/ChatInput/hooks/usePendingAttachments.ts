@@ -15,7 +15,7 @@ import {
   extFromMime,
   readFileAsDataUrl,
   type PendingAttachment,
-} from '../lib';
+} from '../../../../attachments/pendingAttachment';
 
 type PersistArgs = {
   readonly id: string;

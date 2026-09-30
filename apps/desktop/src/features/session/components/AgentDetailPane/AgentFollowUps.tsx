@@ -6,7 +6,7 @@ import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedTo
 import type { AgentKind } from '../../agent-kind';
 import { AGENT_KIND_META } from '../../agent-kind';
 import { AgentKindChip } from '../AgentKindChip';
-import { agentFollowUpMoves, composeFollowUpSeed } from './followUpMoves';
+import { agentFollowUpMoves, composeFollowUpSeed } from '../../followUpMoves';
 import type { FollowUpChild } from './followUpChildren';
 import { AgentFollowUpChild } from './AgentFollowUpChild';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
