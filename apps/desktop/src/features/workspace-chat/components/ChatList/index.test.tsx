@@ -101,6 +101,7 @@ vi.mock('../../../actions/components/ObjectOverflowMenu', async () => {
 
 import type { ChatFacts } from '../../../actions/kinds/chat';
 import { ChatList } from './index';
+import { chatModelLabel } from '../../chatModelLabel';
 
 const WORKSPACE_ID = 'ws-harborline' as WorkspaceId;
 const HOUR = 60 * 60 * 1000;
@@ -505,5 +506,32 @@ describe('ChatList', () => {
       document.querySelectorAll(`[data-chat-row="${chatId}"] .text-meta svg`).length;
     expect(glyphs('chat-changes')).toBe(2);
     expect(glyphs('chat-lunch')).toBe(0);
+  });
+
+  it('names the models of a mixed chat for assistive technology', () => {
+    const mixed: ChatSummary = {
+      ...(CHATS[2] as ChatSummary),
+      modelsUsed: [
+        { provider: 'anthropic', model: 'sonnet-5' },
+        { provider: 'codex', model: 'gpt-5.6-sol' },
+      ],
+    };
+    render(
+      <ChatList
+        workspaceId={WORKSPACE_ID}
+        chats={[mixed, ...CHATS.slice(3)]}
+        selectedId={null}
+        onSelect={vi.fn()}
+        onNew={vi.fn()}
+        onArchived={vi.fn()}
+        onDeleted={vi.fn()}
+      />,
+    );
+
+    const row = document.querySelector('[data-chat-row="chat-changes"]') as HTMLElement;
+    const group = within(row).getByRole('img');
+    const label = group.getAttribute('aria-label') ?? '';
+    expect(label.split(', ')).toHaveLength(2);
+    expect(label).toContain(chatModelLabel({ provider: 'codex', model: 'gpt-5.6-sol' }));
   });
 });

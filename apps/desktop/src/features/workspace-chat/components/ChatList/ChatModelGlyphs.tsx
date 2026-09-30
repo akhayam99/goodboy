@@ -22,7 +22,11 @@ export const ChatModelGlyphs = ({ models }: Props) => {
   );
   return (
     <Tooltip content={labels.join(', ')} anchorClassName="shrink-0">
-      <span className="pointer-events-auto flex shrink-0 items-center gap-0.5">
+      <span
+        role="img"
+        aria-label={labels.join(', ')}
+        className="pointer-events-auto flex shrink-0 items-center gap-0.5"
+      >
         {distinctProviders(models).map((provider) => (
           <ProviderGlyph key={provider} id={provider} size={GLYPH_SIZE} />
         ))}
