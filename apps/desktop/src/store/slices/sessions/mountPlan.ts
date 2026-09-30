@@ -5,6 +5,8 @@ import { mountDirName } from '../project-mounts/mountDirName';
 import { deriveBranchName } from './deriveBranchName';
 import { materializationSeedFor } from './materializationSeeds';
 import type { AppStore } from '../../store';
+import { sessionById } from './sessionIndex';
+import { projectById } from '../projects/projectIndex';
 
 export type MountPlanState = Pick<
   AppStore,
@@ -60,14 +62,14 @@ export const mountPlan = ({
   taskIdentifiers,
 }: Params): MountPlan | null => {
   const session =
-    state.sessions.find((candidate) => candidate.id === sessionId) ??
+    sessionById(state.sessions, sessionId) ??
     Object.values(state.archivedSessions)
       .flat()
       .find((candidate) => candidate.id === sessionId);
   if (session === undefined) {
     return null;
   }
-  const project = state.projects.find((candidate) => candidate.id === projectId);
+  const project = projectById(state.projects, projectId);
   if (project === undefined || project.workspaceId !== session.workspaceId) {
     return null;
   }

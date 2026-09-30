@@ -3,6 +3,7 @@ import { Button, FormActions, Input, Textarea } from '@goodboy/ui';
 import type { Project, ProjectId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ProjectSelect } from './ProjectSelect';
+import { projectById } from '../../../../store/slices/projects/projectIndex';
 
 type Props = {
   readonly label: string;
@@ -33,7 +34,7 @@ export const ScriptEditor = ({
   onSave,
   onCancel,
 }: Props) => {
-  const projectName = projects.find((project) => project.id === projectId)?.name ?? 'this project';
+  const projectName = projectById(projects, projectId)?.name ?? 'this project';
 
   return (
     <section

@@ -24,6 +24,7 @@ import {
 } from '../../artifactListRows';
 import { planAsArtifact, planFromArtifact } from '../../../plans/planAsArtifact';
 import { useEscapeToList } from '../../hooks/useEscapeToList';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -34,7 +35,7 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
   const agents = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
-  const session = useAppStore((s) => s.sessions.find((entry) => entry.id === sessionId) ?? null);
+  const session = useAppStore((s) => sessionById(s.sessions, sessionId) ?? null);
   const plans = useSessionPlans(sessionId);
   const openQuestions = useSessionOpenQuestions(sessionId);
   const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);

@@ -20,6 +20,7 @@ import { activateWorkflowAgentOrNotify } from './activateWorkflowAgentOrNotify';
 import { resumeClusterChildren, unsettledClusterChildren } from './clusterImplementation';
 import { waitForSessionSummarizer } from './summarizerGate';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 const advanceInFlight = new Set<SessionId>();
 
@@ -31,7 +32,7 @@ type Params = {
 
 const startChainedRuns = async ({ get, sessionId }: Params): Promise<void> => {
   const state = get();
-  const session = state.sessions.find((s) => s.id === sessionId);
+  const session = sessionById(state.sessions, sessionId);
   if (session == null) {
     return;
   }
@@ -70,7 +71,7 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
   await waitForSessionSummarizer({ get, sessionId });
 
   const state = get();
-  const session = state.sessions.find((s) => s.id === sessionId);
+  const session = sessionById(state.sessions, sessionId);
   if (session == null || session.workflowRuns.length === 0) {
     return;
   }

@@ -10,6 +10,8 @@ import { recoverSoleMount } from './recoverSoleMount';
 import { selectSelectedMountId } from './selectedMountId';
 import { selectWritableMounts } from './selectors';
 import type { EnsureProjectMountedInput, EnsureProjectMountedResult, GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
+import { projectById } from '../projects/projectIndex';
 
 const inFlight = new Map<string, Promise<EnsureProjectMountedResult>>();
 
@@ -20,7 +22,7 @@ type SessionParams = {
 
 const sessionOf = ({ get, sessionId }: SessionParams): Session => {
   const session =
-    get().sessions.find((candidate) => candidate.id === sessionId) ??
+    sessionById(get().sessions, sessionId) ??
     Object.values(get().archivedSessions)
       .flat()
       .find((candidate) => candidate.id === sessionId);
@@ -66,7 +68,7 @@ export const ensureProjectMounted = (set: SetFn, get: GetFn) => {
       throw new Error('materializing a project requires a reason');
     }
     const session = sessionOf({ get, sessionId });
-    const project = get().projects.find((candidate) => candidate.id === projectId);
+    const project = projectById(get().projects, projectId);
     if (project === undefined || project.workspaceId !== session.workspaceId) {
       throw new Error(`project not found in this workspace: ${projectId}`);
     }

@@ -3,10 +3,11 @@ import { updateSessionConfig as updateSessionConfigInDb } from '@goodboy/db';
 import type { SessionConfigUpdate } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from './sessionIndex';
 
 export const setSessionConfig = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, fields: SessionConfigUpdate) => {
-    const prev = get().sessions.find((s) => s.id === sessionId);
+    const prev = sessionById(get().sessions, sessionId);
     if (!prev) {
       return;
     }

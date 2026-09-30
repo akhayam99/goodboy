@@ -3,6 +3,7 @@ import { updateProjectKind } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { initRepoWithRemote, validateGitRepo } from '../../../shared/lib/repo';
 import type { GetFn, SetFn } from './types';
+import { projectById } from './projectIndex';
 
 type Input = {
   readonly projectId: ProjectId;
@@ -11,7 +12,7 @@ type Input = {
 
 export const convertProjectToRepo = (set: SetFn, get: GetFn) => {
   return async ({ projectId, remoteUrl }: Input): Promise<Project> => {
-    const project = get().projects.find((candidate) => candidate.id === projectId);
+    const project = projectById(get().projects, projectId);
     if (project === undefined) {
       throw new Error(`project not found: ${projectId}`);
     }

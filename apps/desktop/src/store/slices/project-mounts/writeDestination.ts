@@ -1,5 +1,6 @@
 import type { MountId, Project, ProjectId, SessionProjectMount } from '@goodboy/types';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
+import { projectById } from '../projects/projectIndex';
 
 type WriteDestinationMount = Readonly<{
   kind: 'mount';
@@ -98,6 +99,6 @@ export const listWriteDestinationCandidates = ({
     if (!mount.isAttached || mount.worktreePath === '') {
       return [];
     }
-    const project = projects.find((candidate) => candidate.id === mount.projectId);
+    const project = projectById(projects, mount.projectId);
     return [describeMount({ mount, projectName: project?.name ?? mount.mountName })];
   });

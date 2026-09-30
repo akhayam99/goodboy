@@ -10,6 +10,7 @@ import type { ContextDrawerTab } from '../../../store/slices/drawer/state';
 import { useMouseHistoryButtons } from '../useMouseHistoryButtons';
 import { useGoToBoard } from '../useGoToBoard';
 import { useSessionNavigation } from '../useSessionNavigation';
+import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 
 type AppShortcutsParams = {
   readonly armDeleteConfirm: () => void;
@@ -83,7 +84,7 @@ export const useAppShortcuts = ({
     if (sessionId == null) {
       return false;
     }
-    const session = state.sessions.find((candidate) => candidate.id === sessionId);
+    const session = sessionById(state.sessions, sessionId);
     if (session == null) {
       return false;
     }

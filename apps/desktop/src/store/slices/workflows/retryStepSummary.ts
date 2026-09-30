@@ -9,6 +9,7 @@ import { summarizeAgentOutput } from './summarizeAgentOutput';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
+import { sessionById } from '../sessions/sessionIndex';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -18,7 +19,7 @@ type Params = {
 
 export const retryStepSummary = (set: SetFn, get: GetFn) => {
   return async ({ sessionId, agentId, taskModelOverride }: Params): Promise<void> => {
-    const session = get().sessions.find((s) => s.id === sessionId);
+    const session = sessionById(get().sessions, sessionId);
     const agents = get().sessionPhaseRuns[sessionId] ?? [];
     const agent = agents.find((a) => a.id === agentId);
 

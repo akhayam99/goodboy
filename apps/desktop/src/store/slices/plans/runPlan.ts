@@ -5,12 +5,13 @@ import { resolveWorkflowAdvance } from '../../../features/workflows/advanceGate'
 import { viewWorkflowAdvance } from '../../../features/workflows/workflowAdvanceView';
 import { activateWorkflowAgentOrNotify } from '../workflows/activateWorkflowAgentOrNotify';
 import type { GetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 export const runPlan = (get: GetFn) => {
   return async (sessionId: SessionId, planId: PlanId): Promise<AgentId | null> => {
     const state = get();
 
-    const session = state.sessions.find((s) => s.id === sessionId);
+    const session = sessionById(state.sessions, sessionId);
     if (!session || session.workflowRuns.length === 0) {
       return await get().spawnAgent(sessionId, {
         triggeredPlanId: planId,

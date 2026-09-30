@@ -3,6 +3,7 @@ import { ReportedError } from '../notifications/reportedError';
 import type { SessionRepo } from '../worktrees/resolveSessionRepo';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 export const PR_WRITE_NO_PULL_REQUEST = 'This session has no pull request to update';
 export const PR_WRITE_NO_SESSION = 'This session no longer exists';
@@ -31,7 +32,7 @@ export const prWriteContext = ({
   failureTitle,
 }: Params): PrWriteContext => {
   const num = prNumber ?? get().sessionGithub[sessionId]?.pr?.number ?? null;
-  const session = get().sessions.find((candidate) => candidate.id === sessionId) ?? null;
+  const session = sessionById(get().sessions, sessionId) ?? null;
   const fail = (message: string): never => {
     void get()
       .reportError({

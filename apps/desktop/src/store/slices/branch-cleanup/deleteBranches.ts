@@ -13,13 +13,14 @@ import type {
   RestoreDeletedBranchesParams,
   SetFn,
 } from './types';
+import { projectById } from '../projects/projectIndex';
 
 export const deleteBranches = (set: SetFn, get: GetFn) => {
   return async ({ targets }: DeleteBranchesParams): Promise<DeleteBranchesOutcome> => {
     const deleted: DeletedBranch[] = [];
     const kept: string[] = [];
     for (const target of targets) {
-      const project = get().projects.find((candidate) => candidate.id === target.projectId);
+      const project = projectById(get().projects, target.projectId);
       if (project === undefined) {
         continue;
       }

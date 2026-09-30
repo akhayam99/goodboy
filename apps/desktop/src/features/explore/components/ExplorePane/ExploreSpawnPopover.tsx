@@ -13,6 +13,7 @@ import { appendOperatorNotes } from '../../../session/utils/appendOperatorNotes'
 import { type ExploreEntry } from '../../explore';
 import { buildExploreSpawnPrompt } from '../../buildExploreSpawnPrompt';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -36,9 +37,7 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
   const { open, close, toggle } = dropdown;
   const spawnAgent = useAppStore((state) => state.spawnAgent);
   const announceAgentStarted = useAgentStartedToast();
-  const session = useAppStore(
-    (state) => state.sessions.find((candidate) => candidate.id === sessionId) ?? null,
-  );
+  const session = useAppStore((state) => sessionById(state.sessions, sessionId) ?? null);
   const roleModels = useSessionRoleModels({ sessionId });
   const spawnRouting = resolveSpawnRouting({ kind: 'scout', roleModels, session });
   const defaultConfig = useMemo<AgentSpawnConfigValue>(

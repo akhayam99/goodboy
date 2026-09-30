@@ -22,6 +22,7 @@ import { pendingAgentSignal } from '../pendingAgentSignal';
 import { useNextStepOutcomes } from '../useNextStepOutcomes';
 import { shouldDemote } from '../nextStepGates';
 import { SUGGESTION_KINDS, type SuggestionKind } from '../types';
+import { projectById } from '../../../store/slices/projects/projectIndex';
 
 type Params = {
   readonly session: Session;
@@ -165,9 +166,7 @@ export const useSessionSuggestions = ({
         ? rebaseMounts.map((mount) => ({
             worktreePath: mount.worktreePath,
             baseBranch:
-              mount.baseBranch ??
-              projects.find((project) => project.id === mount.projectId)?.baseBranch ??
-              undefined,
+              mount.baseBranch ?? projectById(projects, mount.projectId)?.baseBranch ?? undefined,
           }))
         : NO_TARGETS,
     [projects, rebaseMounts, withRebase],
@@ -251,7 +250,7 @@ export const useSessionSuggestions = ({
       mountEvents: toMountEvents({ events }),
       projects: withRebase
         ? rebaseMounts.map((mount) => {
-            const project = projects.find((candidate) => candidate.id === mount.projectId) ?? null;
+            const project = projectById(projects, mount.projectId) ?? null;
             const status = worktreeStatuses.get(mount.worktreePath) ?? null;
             const mountId = mount.mountId;
             const mountRequest = rebaseRequests.get(
@@ -293,7 +292,7 @@ export const useSessionSuggestions = ({
       }) satisfies ReadonlyArray<SuggestionAgent>,
       mounts: withRebase
         ? rebaseMounts.map((mount) => {
-            const project = projects.find((candidate) => candidate.id === mount.projectId) ?? null;
+            const project = projectById(projects, mount.projectId) ?? null;
             const status = worktreeStatuses.get(mount.worktreePath) ?? null;
             const githubState = mountGithubByMountId[mount.mountId] ?? null;
             return {
@@ -315,7 +314,7 @@ export const useSessionSuggestions = ({
         if (proposal.request === null) {
           return [];
         }
-        const project = projects.find((candidate) => candidate.id === proposal.projectId) ?? null;
+        const project = projectById(projects, proposal.projectId) ?? null;
         return [
           {
             requestId: proposal.requestId,

@@ -21,6 +21,7 @@ import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import type { AppStore } from '../../store';
 import type { WorkflowRoutingNodeRef } from './types';
 import { isWorkflowNodeRoutingMutable } from './workflowNodeRoutingMutability';
+import { sessionById } from '../sessions/sessionIndex';
 
 const UNKNOWN_PROFILE: WorkflowTaskProfile = {
   taskType: 'general',
@@ -112,7 +113,7 @@ export const workflowNodeRoutingContext = ({
   nodeKind,
   id,
 }: Params): WorkflowNodeRoutingContext | null => {
-  const session = state.sessions.find((candidate) => candidate.id === sessionId);
+  const session = sessionById(state.sessions, sessionId);
   if (session == null) {
     return null;
   }

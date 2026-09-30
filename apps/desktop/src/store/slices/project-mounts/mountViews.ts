@@ -5,6 +5,7 @@ import { findMountById } from './findMountById';
 import { mountError } from './mountErrors';
 import { selectSelectedMountId } from './selectedMountId';
 import type { GetFn, SetFn } from './types';
+import { projectById } from '../projects/projectIndex';
 
 type LoadParams = {
   readonly get: GetFn;
@@ -22,7 +23,7 @@ export const loadMountViews = async ({
     if (projectId === null) {
       return [];
     }
-    const project = projects.find((candidate) => candidate.id === projectId);
+    const project = projectById(projects, projectId);
     if (project === undefined) {
       return [];
     }

@@ -18,6 +18,7 @@ import {
   isMountRisky,
   measure,
 } from './detachPlan';
+import { projectById } from '../../../../../store/slices/projects/projectIndex';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -52,8 +53,7 @@ const BLOCKER_CODES = [
 export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }: Props) => {
   const removeMountWorktree = useAppStore((state) => state.removeMountWorktree);
   const projectBaseBranch = useAppStore(
-    (state) =>
-      state.projects.find((candidate) => candidate.id === row.projectId)?.baseBranch ?? null,
+    (state) => projectById(state.projects, row.projectId)?.baseBranch ?? null,
   );
   const reportError = useAppStore((state) => state.reportError);
   const { showToast } = useToast();

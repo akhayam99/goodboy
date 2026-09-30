@@ -1,5 +1,6 @@
 import type { SessionId, WorkflowRun, WorkflowRunId } from '@goodboy/types';
 import type { GetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 type Params = {
   readonly get: GetFn;
@@ -8,6 +9,6 @@ type Params = {
 };
 
 export const findWorkflowRun = ({ get, sessionId, workflowRunId }: Params): WorkflowRun | null =>
-  get()
-    .sessions.find((candidate) => candidate.id === sessionId)
-    ?.workflowRuns.find((candidate) => candidate.id === workflowRunId) ?? null;
+  sessionById(get().sessions, sessionId)?.workflowRuns.find(
+    (candidate) => candidate.id === workflowRunId,
+  ) ?? null;

@@ -1,6 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import { enqueueContextConsolidation } from '../turn/turnHelpers';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 export type ConsolidateSessionContextParams = {
   readonly sessionId: SessionId;
@@ -9,7 +10,7 @@ export type ConsolidateSessionContextParams = {
 
 export const consolidateSessionContext = (set: SetFn, get: GetFn) => {
   return ({ sessionId, after }: ConsolidateSessionContextParams): void => {
-    const session = get().sessions.find((candidate) => candidate.id === sessionId);
+    const session = sessionById(get().sessions, sessionId);
     if (session === undefined) {
       return;
     }

@@ -3,6 +3,7 @@ import type { GitlabIntegrationBinding, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
 import type { RemoteHostKind } from '../../shared/lib/remoteHost';
 import { useRootRemoteHostKind } from './useRootRemoteHostKind';
+import { sessionById } from '../../store/slices/sessions/sessionIndex';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -11,7 +12,7 @@ type Params = {
 
 export const useMountRemoteHostKind = ({ sessionId, repoRoot }: Params): RemoteHostKind | null => {
   const workspaceId = useAppStore(
-    (state) => state.sessions.find((session) => session.id === sessionId)?.workspaceId ?? null,
+    (state) => sessionById(state.sessions, sessionId)?.workspaceId ?? null,
   );
   const gitlabHosts = useAppStore(
     useShallow((state) =>

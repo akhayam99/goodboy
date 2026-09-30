@@ -12,6 +12,7 @@ import { ScriptRunDock } from './ScriptRunDock';
 import { ScriptRunLog } from './ScriptRunLog';
 import { ScriptRunMeta } from './ScriptRunMeta';
 import { runLogPlaceholder } from './runLogPlaceholder';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -22,7 +23,7 @@ type Props = {
 
 export const ScriptRunDrawer = ({ sessionId, scriptKey, mountId, onClose }: Props) => {
   const workspaceId = useAppStore(
-    (state) => state.sessions.find((session) => session.id === sessionId)?.workspaceId ?? null,
+    (state) => sessionById(state.sessions, sessionId)?.workspaceId ?? null,
   );
   const { groups } = useSessionScripts({ sessionId, workspaceId, shouldScan: false });
   const resolved = useMemo(

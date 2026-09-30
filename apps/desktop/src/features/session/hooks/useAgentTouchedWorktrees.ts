@@ -8,6 +8,7 @@ import {
 } from '../../../store/slices/project-mounts/selectors';
 import { mountDisplayName } from '../../../store/slices/project-mounts/writeDestination';
 import { agentTouchedWorktrees } from '../timeline/agentTouchedWorktrees';
+import { projectById } from '../../../store/slices/projects/projectIndex';
 
 const NO_TOUCHED: ReadonlyMap<string, ReadonlyArray<string>> = new Map();
 
@@ -25,9 +26,7 @@ export const useAgentTouchedWorktrees = (
     useShallow((state): ReadonlyArray<string> =>
       selectWritableMounts({ state, sessionId }).map((mount) =>
         mountDisplayName({
-          projectName:
-            state.projects.find((project) => project.id === mount.projectId)?.name ??
-            mount.mountName,
+          projectName: projectById(state.projects, mount.projectId)?.name ?? mount.mountName,
           mountName: mount.mountName,
         }),
       ),

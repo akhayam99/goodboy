@@ -16,6 +16,7 @@ import type {
   RequestIssueBriefParams,
   SetFn,
 } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 const ISSUE_BRIEF_BODY_CAP = 12_000;
 
@@ -61,8 +62,7 @@ export const requestIssueBrief = (set: SetFn, get: GetFn) => {
       return;
     }
 
-    const session =
-      sessionId === null ? null : (state.sessions.find((entry) => entry.id === sessionId) ?? null);
+    const session = sessionId === null ? null : (sessionById(state.sessions, sessionId) ?? null);
     const settings =
       session === null
         ? selectWorkspaceResolvedSettings({ state, workspaceId })

@@ -14,6 +14,7 @@ import { summarizeAgentOutput, type SummarizeAgentOutputResult } from './summari
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
+import { sessionById } from '../sessions/sessionIndex';
 
 type Params = {
   readonly set: SetFn;
@@ -90,7 +91,7 @@ export const summarizeWorkflowAgentOutput = async ({
   agent,
   output,
 }: Params): Promise<string> => {
-  const session = get().sessions.find((candidate) => candidate.id === sessionId);
+  const session = sessionById(get().sessions, sessionId);
   if (session == null) {
     return fallbackStepOutputSummary({ output });
   }

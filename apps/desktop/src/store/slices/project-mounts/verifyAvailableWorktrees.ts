@@ -2,6 +2,7 @@ import { getSessionMount, updateSessionMountLifecycle } from '@goodboy/db';
 import type { IsoDateTime, MountId, Project, ProjectId, SessionId } from '@goodboy/types';
 import { inspectWorktree } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { projectById } from '../projects/projectIndex';
 
 type WorktreeCandidate = {
   readonly id: string;
@@ -32,7 +33,7 @@ export const verifyAvailableWorktrees = async <Candidate extends WorktreeCandida
     if (candidate.worktreePath === null) {
       continue;
     }
-    const project = projects.find((entry) => entry.id === candidate.projectId);
+    const project = projectById(projects, candidate.projectId);
     if (project === undefined || project.kind !== 'repo') {
       available.push(candidate);
       continue;

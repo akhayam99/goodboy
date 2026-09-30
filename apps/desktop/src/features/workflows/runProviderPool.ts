@@ -1,4 +1,5 @@
 import type { ProviderId, Session, SessionId, WorkflowRunId } from '@goodboy/types';
+import { sessionById } from '../../store/slices/sessions/sessionIndex';
 
 type Params = {
   readonly sessions: ReadonlyArray<Session>;
@@ -14,7 +15,7 @@ export const runProviderPool = ({
   if (workflowRunId == null) {
     return null;
   }
-  const session = sessions.find((candidate) => candidate.id === sessionId);
+  const session = sessionById(sessions, sessionId);
   const run = session?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
   return run?.providerPool ?? null;
 };

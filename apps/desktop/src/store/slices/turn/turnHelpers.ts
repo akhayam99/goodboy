@@ -97,6 +97,7 @@ import { mountContinuationRefusal, queueMountContinuation } from './mountContinu
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { autoLimitContext } from '../providerLimits/autoLimitContext';
 import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
+import { sessionById } from '../sessions/sessionIndex';
 
 type AttachmentsBlockParams = {
   readonly scope: string;
@@ -358,7 +359,7 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
   const { turnInput, turnOutput, workingDir } = entry;
   const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
-  const session = get().sessions.find((s) => s.id === sessionId);
+  const session = sessionById(get().sessions, sessionId);
   if (!session) {
     return;
   }
@@ -919,7 +920,7 @@ export const captureMaterializeRequestsFromTurn = async ({
   if (requests.length === 0) {
     return;
   }
-  const session = get().sessions.find((candidate) => candidate.id === sessionId);
+  const session = sessionById(get().sessions, sessionId);
   if (session === undefined) {
     return;
   }
@@ -1072,7 +1073,7 @@ export const emitTurnNudges = async (
   assistantText: string,
   capturedPlan: PlanWithCount | null,
 ): Promise<void> => {
-  const session = get().sessions.find((s) => s.id === sessionId);
+  const session = sessionById(get().sessions, sessionId);
   if (!session) {
     return;
   }

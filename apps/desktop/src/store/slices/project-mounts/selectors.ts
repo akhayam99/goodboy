@@ -11,6 +11,7 @@ import { findMountById } from './findMountById';
 import { recoverSoleMount } from './recoverSoleMount';
 import { selectSelectedMountId } from './selectedMountId';
 import { toProjectMounts } from './mountViews';
+import { projectById } from '../projects/projectIndex';
 
 type MountState = Pick<AppState, 'sessionMounts' | 'sessionProjectMounts'>;
 
@@ -193,11 +194,7 @@ export const resolveMountBaseBranch = ({
   if (mount === null) {
     return null;
   }
-  return (
-    mount.baseBranch ??
-    projects.find((project) => project.id === mount.projectId)?.baseBranch ??
-    null
-  );
+  return mount.baseBranch ?? projectById(projects, mount.projectId)?.baseBranch ?? null;
 };
 
 type BaseBranchParams = {

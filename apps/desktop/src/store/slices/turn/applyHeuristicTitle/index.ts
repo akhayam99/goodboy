@@ -9,6 +9,7 @@ import { parseGeneratedTitle } from './parseGeneratedTitle';
 import { tauriDatabase } from '../../../../shared/lib/db';
 import type { GetFn, SetFn } from '../types';
 import { selectResolvedSettings } from '../../overrides/selectResolvedSettings';
+import { sessionById } from '../../sessions/sessionIndex';
 
 const TITLE_TIMEOUT_MS = 15_000;
 
@@ -108,7 +109,7 @@ export const applyHeuristicTitle = async ({
   try {
     const heuristicTitle = heuristicAgentTitle(prompt);
 
-    const session = get().sessions.find((candidate) => candidate.id === sessionId);
+    const session = sessionById(get().sessions, sessionId);
     if (session == null) {
       return;
     }
@@ -175,7 +176,7 @@ export const applyHeuristicTitle = async ({
       return;
     }
 
-    const currentSession = get().sessions.find((candidate) => candidate.id === sessionId);
+    const currentSession = sessionById(get().sessions, sessionId);
     const currentAgent = (get().sessionPhaseRuns[sessionId] ?? []).find(
       (candidate) => candidate.id === agentId,
     );

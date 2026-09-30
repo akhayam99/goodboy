@@ -22,6 +22,7 @@ import type { ProviderContextUsage } from './ContextWindowBar';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { providerIdOf } from '../../../../shared/utils/providerIdOf';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
   readonly run: Agent;
@@ -99,7 +100,7 @@ export const AgentRow = ({
   ].filter((part): part is string => part !== null);
   const modeLine =
     useAppStore((state) => {
-      const session = state.sessions.find((candidate) => candidate.id === run.sessionId);
+      const session = sessionById(state.sessions, run.sessionId);
       if (session === undefined) {
         return null;
       }

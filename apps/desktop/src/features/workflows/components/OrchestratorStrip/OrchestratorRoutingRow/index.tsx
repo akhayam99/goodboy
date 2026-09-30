@@ -14,6 +14,7 @@ import { useAutoLimitContext } from '../../../../providers/hooks/useAutoLimitCon
 import { useAppStore } from '../../../../../store/store';
 import { selectResolvedSettings } from '../../../../../store/slices/overrides/selectResolvedSettings';
 import { isRoutingModelKnown } from '../../../../../store/slices/workflows/orchestrateNextStep';
+import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -46,9 +47,7 @@ const providerModelId = ({ provider, model }: ProviderModelParams): string => {
 };
 
 export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
-  const session = useAppStore((state) =>
-    state.sessions.find((current) => current.id === sessionId),
-  );
+  const session = useAppStore((state) => sessionById(state.sessions, sessionId));
   const providers = useAppStore((state) => state.providers);
   const taskModels = useAppStore(
     (state) => selectResolvedSettings({ state, sessionId })?.taskModels ?? undefined,

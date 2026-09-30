@@ -3,6 +3,7 @@ import { OverflowMenu } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { openArtifactsFolder } from '../../artifactMirror/artifactMirrorInvoke';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -10,7 +11,7 @@ type Props = {
 
 export const ArtifactListOverflowMenu = ({ sessionId }: Props) => {
   const workspaceSlug = useAppStore((s) => {
-    const workspaceId = s.sessions.find((session) => session.id === sessionId)?.workspaceId;
+    const workspaceId = sessionById(s.sessions, sessionId)?.workspaceId;
     return s.workspaces.find((workspace) => workspace.id === workspaceId)?.slug ?? null;
   });
 

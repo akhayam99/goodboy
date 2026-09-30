@@ -3,6 +3,7 @@ import { formatError } from '@goodboy/ui';
 import { classifyWorkflowChain, findReusableAgent, runsForWorkflowRun } from '@goodboy/core';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
@@ -21,7 +22,7 @@ const runSkipAndAdvance = async ({
   workflowRunId,
   onlyWhenBlocked,
 }: SkipParams): Promise<void> => {
-  const session = get().sessions.find((s) => s.id === sessionId);
+  const session = sessionById(get().sessions, sessionId);
   if (!session) {
     return;
   }

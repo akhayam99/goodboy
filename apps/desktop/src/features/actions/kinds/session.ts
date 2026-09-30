@@ -18,6 +18,7 @@ import type {
   ObjectKindDefinition,
   SessionActionTarget,
 } from '../types';
+import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 
 export type SessionFacts = {
   readonly session: Session;
@@ -338,7 +339,7 @@ const findSession = ({
   readonly archived: ReadonlyArray<Session>;
   readonly sessionId: SessionId;
 }): Session | null =>
-  sessions.find((candidate) => candidate.id === sessionId) ??
+  sessionById(sessions, sessionId) ??
   archived.find((candidate) => candidate.id === sessionId) ??
   null;
 

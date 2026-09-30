@@ -12,6 +12,7 @@ import { stopAgentForDelete } from '../agents/stopAgentForDelete';
 import { releaseAgentFiles } from '../agents/releaseAgentFiles';
 import { omitDeletedAgents } from '../agents/omitDeletedAgents';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 type OwnedAgentsParams = {
   readonly agents: ReadonlyArray<Agent>;
@@ -39,7 +40,7 @@ const runOwnedAgentIds = ({ agents, workflowRunId }: OwnedAgentsParams): Readonl
 export const detachWorkflowFromSession = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, workflowRunId: WorkflowRunId) => {
     const state = get();
-    const session = state.sessions.find((s) => s.id === sessionId);
+    const session = sessionById(state.sessions, sessionId);
     if (!session) {
       throw new Error(`session not found: ${sessionId}`);
     }

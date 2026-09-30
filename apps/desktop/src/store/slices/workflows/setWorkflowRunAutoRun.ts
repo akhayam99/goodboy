@@ -3,6 +3,7 @@ import { updateSessionWorkflowAutoRun } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { persistOrchestrationStop } from './orchestrateNextStep';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 export const setWorkflowRunAutoRun = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, workflowRunId: WorkflowRunId, autoRun: boolean) => {
@@ -24,9 +25,9 @@ export const setWorkflowRunAutoRun = (set: SetFn, get: GetFn) => {
     if (!autoRun) {
       return;
     }
-    const run = get()
-      .sessions.find((s) => s.id === sessionId)
-      ?.workflowRuns.find((r) => r.id === workflowRunId);
+    const run = sessionById(get().sessions, sessionId)?.workflowRuns.find(
+      (r) => r.id === workflowRunId,
+    );
     if (run?.orchestrationStop?.kind === 'operator') {
       await persistOrchestrationStop({ set, sessionId, workflowRunId, stop: null });
     }

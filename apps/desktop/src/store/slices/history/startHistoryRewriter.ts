@@ -15,6 +15,7 @@ import type {
   SetFn,
   StartHistoryRewriterInput,
 } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 const HISTORY_REWRITER_NAME = 'History rewriter';
 
@@ -27,7 +28,7 @@ type ConfigParams = {
 
 const rewriterConfig = ({ get, sessionId }: ConfigParams) => {
   const state = get();
-  const session = state.sessions.find((candidate) => candidate.id === sessionId) ?? null;
+  const session = sessionById(state.sessions, sessionId) ?? null;
   const overrides =
     session === null ? null : (state.workspaceOverrides?.[session.workspaceId] ?? null);
   return taskModelAgentSpawnConfig({

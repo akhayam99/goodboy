@@ -24,6 +24,7 @@ import { continueOrPause, resetContinueAttempts } from './autoContinue';
 import { holdForUserQuestion } from './holdForUserQuestion';
 import type { GetFn, SetFn } from './types';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
+import { sessionById } from '../sessions/sessionIndex';
 
 const MAX_START_ATTEMPTS = 3;
 
@@ -219,7 +220,7 @@ const handleChildStartFailure = async ({
     if (isAgentStatusSettled({ status: child.status })) {
       return;
     }
-    const session = get().sessions.find((s) => s.id === sessionId);
+    const session = sessionById(get().sessions, sessionId);
     if (session === undefined) {
       return;
     }

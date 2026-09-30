@@ -2,6 +2,7 @@ import type { ProjectId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { selectAlsoOnBranchSessionId } from '../../../../../store/slices/project-mounts/selectors';
 import { AlsoInChipContent } from './AlsoInChipContent';
+import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -14,9 +15,7 @@ export const AlsoInChip = ({ sessionId, projectId, branch }: Props) => {
     selectAlsoOnBranchSessionId({ state, sessionId, projectId, branch }),
   );
   const otherSession = useAppStore((state) =>
-    otherSessionId === null
-      ? null
-      : (state.sessions.find((candidate) => candidate.id === otherSessionId) ?? null),
+    otherSessionId === null ? null : (sessionById(state.sessions, otherSessionId) ?? null),
   );
 
   if (otherSession === null) {

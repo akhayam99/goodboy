@@ -10,6 +10,7 @@ import { generateTitleText } from './generateTitleText';
 import { patchWorkflowRun } from './patchWorkflowRun';
 import { clampWorkflowTitle } from './titleLimit';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 const WORKFLOW_RUN_TITLE_SYSTEM_PROMPT = [
   'Write one short title for the workflow run whose goal is described below.',
@@ -27,9 +28,7 @@ type Params = {
 };
 
 const findRun = ({ get, sessionId, workflowRunId }: Omit<Params, 'set'>) =>
-  get()
-    .sessions.find((session) => session.id === sessionId)
-    ?.workflowRuns.find((run) => run.id === workflowRunId);
+  sessionById(get().sessions, sessionId)?.workflowRuns.find((run) => run.id === workflowRunId);
 
 export const generateWorkflowRunTitle = async ({
   set,
@@ -38,7 +37,7 @@ export const generateWorkflowRunTitle = async ({
   workflowRunId,
 }: Params): Promise<void> => {
   try {
-    const session = get().sessions.find((candidate) => candidate.id === sessionId);
+    const session = sessionById(get().sessions, sessionId);
     const run = findRun({ get, sessionId, workflowRunId });
     if (session == null || run == null || run.titleUserEdited === true) {
       return;

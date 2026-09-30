@@ -19,6 +19,7 @@ import { eligibleReviewThreads } from '../eligibleThreads';
 import { useMountProposalActions } from '../useMountProposalActions';
 import { useOpenAgentQuestion } from '../../context/hooks/useOpenAgentQuestion';
 import type { RebaseSuggestionTarget, SessionSuggestion } from '../types';
+import { projectById } from '../../../store/slices/projects/projectIndex';
 
 const openProviderSignIn = ({ providerId }: { readonly providerId: string }) =>
   window.dispatchEvent(
@@ -116,8 +117,7 @@ export const useSuggestionActions = ({
     () =>
       rebaseMounts.map((mount) => ({
         worktreePath: mount.worktreePath,
-        baseBranch:
-          projects.find((project) => project.id === mount.projectId)?.baseBranch ?? undefined,
+        baseBranch: projectById(projects, mount.projectId)?.baseBranch ?? undefined,
       })),
     [projects, rebaseMounts],
   );

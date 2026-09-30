@@ -13,6 +13,7 @@ import {
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import { OPEN_AGENT_INTENT } from '../../session/components/AgentDetailPane/agentOpenTab';
 import type { ActionEnv, AgentActionTarget, ObjectKindDefinition } from '../types';
+import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 
 export type AgentFacts = {
   readonly agent: Agent;
@@ -66,7 +67,7 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
     if (agent === null || agent.deletedAt != null) {
       return null;
     }
-    const session = state.sessions.find((candidate) => candidate.id === target.sessionId) ?? null;
+    const session = sessionById(state.sessions, target.sessionId) ?? null;
     const turnState = state.agentTurnState[agent.id];
     const isTurnLive = isTurnStateLive({ turnState });
     const hasOpenQuestion = (state.sessionOpenQuestions[target.sessionId] ?? []).some(

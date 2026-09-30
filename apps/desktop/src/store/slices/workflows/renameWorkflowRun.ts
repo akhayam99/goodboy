@@ -4,6 +4,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
 import { clampWorkflowTitle } from './titleLimit';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 export const renameWorkflowRun = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, workflowRunId: WorkflowRunId, name: string) => {
@@ -11,9 +12,9 @@ export const renameWorkflowRun = (set: SetFn, get: GetFn) => {
     if (title.length === 0) {
       throw new Error('workflow run name cannot be empty');
     }
-    const prev = get()
-      .sessions.find((session) => session.id === sessionId)
-      ?.workflowRuns.find((run) => run.id === workflowRunId);
+    const prev = sessionById(get().sessions, sessionId)?.workflowRuns.find(
+      (run) => run.id === workflowRunId,
+    );
     if (prev == null) {
       throw new Error(`workflow run not found: ${workflowRunId}`);
     }

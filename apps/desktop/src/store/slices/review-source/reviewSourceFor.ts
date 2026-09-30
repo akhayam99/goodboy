@@ -15,6 +15,7 @@ import { threadSourceKindOf } from '../resolve/resolveThreadSource';
 import { activeReviewSourceOf } from './activeReviewSource';
 import { openBitbucketPullRequestsOf } from './reviewSourceEntries';
 import type { GetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 type Params = {
   readonly get: GetFn;
@@ -47,7 +48,7 @@ export const reviewSourceFor = ({ get, sessionId, row }: Params): ReviewSource =
     });
   }
   if (kind === 'gitlab') {
-    const session = state.sessions.find((candidate) => candidate.id === sessionId);
+    const session = sessionById(state.sessions, sessionId);
     const mountIds = new Set(sessionMountTargets({ state, sessionId }).map((target) => target.id));
     const entry = Object.values(state.mountGitlabMr ?? {}).find(
       (candidate) =>

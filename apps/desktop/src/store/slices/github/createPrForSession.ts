@@ -21,6 +21,7 @@ import { githubRequestHost } from './mountPrLink';
 import { resolveSessionPrFetch } from './resolveSessionPrFetch';
 import type { GetFn, SetFn } from './types';
 import { ReportedError } from '../notifications/reportedError';
+import { projectById } from '../projects/projectIndex';
 
 type CreatePrReferenceMode = 'closing' | 'part-of' | 'none';
 
@@ -128,9 +129,7 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
     });
     const mode = referenceMode ?? (membership === null ? 'closing' : 'part-of');
     const references = mode === 'closing' ? linkedTasks : [];
-    const projectBaseBranch = get().projects.find(
-      (project) => project.id === mount.projectId,
-    )?.baseBranch;
+    const projectBaseBranch = projectById(get().projects, mount.projectId)?.baseBranch;
     const baseBranch = base?.trim() || mount.baseBranch || projectBaseBranch;
     const args = ['pr', 'create', '--repo', repository, '--head', mount.branch];
     const hasFields = title !== undefined || body !== undefined;

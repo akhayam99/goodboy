@@ -1,5 +1,6 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { GetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 type Params = {
   sessionId: SessionId;
@@ -15,7 +16,7 @@ const composeRetryPrompt = ({ toolName }: Pick<Params, 'toolName'>): string =>
 
 export const retryBlockedTool = (get: GetFn) => {
   return async ({ sessionId, agentId, toolName }: Params): Promise<void> => {
-    const session = get().sessions.find((s) => s.id === sessionId);
+    const session = sessionById(get().sessions, sessionId);
     if (session == null) {
       return;
     }

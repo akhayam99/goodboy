@@ -1,5 +1,6 @@
 import type { MountId, Project, SessionProjectMount } from '@goodboy/types';
 import { starredProjectLines } from './starredProjectLines';
+import { projectById } from '../projects/projectIndex';
 
 type ScopeGuardParams = {
   readonly workingDir: string;
@@ -122,7 +123,7 @@ const mountInventoryLine = ({
   readonly mount: SessionProjectMount;
   readonly projects: ReadonlyArray<Project>;
 }): string => {
-  const project = projects.find((candidate) => candidate.id === mount.projectId);
+  const project = projectById(projects, mount.projectId);
   const identity = mount.mountId === undefined ? '' : ` [mount ${mount.mountId}]`;
   const branch = mount.branch === '' ? 'no branch' : `branch ${mount.branch}`;
   return `- ${mount.mountName}${identity} project ${project?.name ?? mount.projectId} ${branch} at ${mount.worktreePath} (${availabilityOf({ mount })})`;

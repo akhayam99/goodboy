@@ -9,6 +9,7 @@ import type {
 import { classifyScript, type ScriptCategory } from './classifyScript';
 import { extractPreviewLine } from './extractPreviewLine';
 import { discoveredScriptId, type ScriptGroup, type ScriptSource } from './scripts';
+import { projectById } from '../../store/slices/projects/projectIndex';
 
 export type RunnableScriptSource = 'saved' | ScriptSource;
 
@@ -153,8 +154,7 @@ export const buildSessionScripts = ({
     return {
       mountId: mount.mountId,
       projectId: mount.projectId,
-      projectName:
-        projects.find((project) => project.id === mount.projectId)?.name ?? mount.mountName,
+      projectName: projectById(projects, mount.projectId)?.name ?? mount.mountName,
       branch: mount.branch,
       worktreePath: mount.worktreePath,
       isReady,

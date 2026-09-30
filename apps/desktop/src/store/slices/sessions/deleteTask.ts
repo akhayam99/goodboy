@@ -29,6 +29,8 @@ import { dropPendingTurnEvents } from '../transcripts/buffer';
 import { cleanupMountDirectory } from '../mount-cleanup';
 import { forgetMaterializationSeed } from './materializationSeeds';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from './sessionIndex';
+import { projectById } from '../projects/projectIndex';
 
 const removePersistedDirectory = async (path: string): Promise<void> => {
   const parent = path.slice(0, path.lastIndexOf('/'));
@@ -73,7 +75,7 @@ type ResolveParams = {
 };
 
 const resolveProject = ({ projects, mount }: ResolveParams): Project | undefined => {
-  const byId = projects.find((candidate) => candidate.id === mount.projectId);
+  const byId = projectById(projects, mount.projectId);
   if (byId !== undefined) {
     return byId;
   }
@@ -85,7 +87,7 @@ const resolveProject = ({ projects, mount }: ResolveParams): Project | undefined
 export const deleteTask = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId) => {
     const session =
-      get().sessions.find((s) => s.id === sessionId) ??
+      sessionById(get().sessions, sessionId) ??
       Object.values(get().archivedSessions)
         .flat()
         .find((s) => s.id === sessionId);

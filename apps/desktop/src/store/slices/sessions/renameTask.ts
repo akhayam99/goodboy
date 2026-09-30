@@ -3,6 +3,7 @@ import { renameSession as renameSessionInDb } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { clampTitle } from './titleLimit';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from './sessionIndex';
 
 export const renameTask = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, goal: string) => {
@@ -11,7 +12,7 @@ export const renameTask = (set: SetFn, get: GetFn) => {
       throw new Error('session name cannot be empty');
     }
     const now = new Date().toISOString() as IsoDateTime;
-    const prev = get().sessions.find((s) => s.id === sessionId);
+    const prev = sessionById(get().sessions, sessionId);
     if (!prev) {
       throw new Error(`session not found: ${sessionId}`);
     }
