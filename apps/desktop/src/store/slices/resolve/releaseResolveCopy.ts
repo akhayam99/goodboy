@@ -16,7 +16,11 @@ export const releaseResolveCopy = async ({
   }
   const worktreePath = attempt.mountTarget?.worktreePath ?? null;
   if (worktreePath !== null) {
-    await discardHistoryCopy({ worktreePath, copyPath }).catch(() => undefined);
+    try {
+      await discardHistoryCopy({ worktreePath, copyPath });
+    } catch {
+      return;
+    }
   }
   await setResolveAttemptCopyPath({ db: tauriDatabase, id: attempt.id, copyPath: null });
 };
