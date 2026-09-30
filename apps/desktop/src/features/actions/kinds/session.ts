@@ -6,7 +6,7 @@ import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
 import { sessionPlace } from '../../../store/slices/navigation/place';
 import { sessionTitle } from '../../session/sessionTitle';
 import { archiveSessions, restoreSessions } from '../../session/sessionArchive';
-import { createAgentEventName } from '../../session/hooks/useTrailMenus';
+import { createAgentEventName } from '../../session/createAgentEventName';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import { RENAME_REQUEST_EVENT, requestRename } from '../renameRequest';
 import { ALL_CHOICES_ID } from '../types';

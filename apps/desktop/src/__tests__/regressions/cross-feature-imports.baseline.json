@@ -2,7 +2,7 @@
   "deepImportsByPair": {
     "actions -> artifacts": 1,
     "actions -> context": 1,
-    "actions -> session": 3,
+    "actions -> session": 2,
     "artifacts -> actions": 1,
     "artifacts -> attachments": 2,
     "artifacts -> chat": 3,
