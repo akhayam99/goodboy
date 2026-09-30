@@ -1,0 +1,25 @@
+import { GitMerge } from 'lucide-react';
+import type { SessionId } from '@goodboy/types';
+import { MrDetailPanel } from './MergeRequest/MrDetailPanel';
+import { StudioShell } from '../../../shared/components/StudioShell';
+
+type Props = {
+  readonly sessionId: SessionId;
+  readonly onClose: () => void;
+};
+
+export const MrSessionPane = ({ sessionId, onClose }: Props) => (
+  <StudioShell
+    icon={GitMerge}
+    title="Merge request"
+    closeLabel="close merge request"
+    onClose={onClose}
+    variant="slot"
+  >
+    {(requestClose) => (
+      <div className="min-h-0 flex-1">
+        <MrDetailPanel sessionId={sessionId} onClose={requestClose} />
+      </div>
+    )}
+  </StudioShell>
+);

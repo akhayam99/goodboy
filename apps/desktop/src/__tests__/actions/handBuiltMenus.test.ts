@@ -18,9 +18,9 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'creation menu: picks the kind of artifact to create',
   'features/session/components/SessionOverviewPane/OverviewActions/index.tsx':
     'Create split menu: picks what to create',
-  'features/integrations/linear/LinearAssigneeMenu/index.tsx':
+  'features/integrations/linear/LinearAssigneeMenu.tsx':
     'property picker: sets the assignee value from the control that shows it',
-  'features/integrations/linear/LinearStateMenu/index.tsx':
+  'features/integrations/linear/LinearStateMenu.tsx':
     'property picker: sets the state value from the control that shows it',
   'features/providers/components/ProviderStudio/DefaultsPanel/index.tsx':
     'settings control, not an object in the map',
