@@ -491,6 +491,10 @@ avoided on `SendControl`'s own buttons.
   same `ArrowUp` glyph as `ConversationComposer`, stop while a turn runs with
   nothing to send, Queue/Send now once there is something to deliver while a
   turn runs.
+- `ChatInput/index.tsx` only composes. Its state lives in `hooks/use*` (agent
+  selection, draft, queue, send, suggestions), its sections in `parts/`, and
+  its derived flags in `composerView.ts`. It stays one component so the draft
+  and pending nudges survive a re-render.
 - `composerPlaceholder` (`ChatInput/lib.ts`) replaces the old placeholder that
   advertised every prefix inline: a role's first turn gets its
   `firstMessagePrompt`, otherwise `Reply to {role}` idle or `Queue a message
