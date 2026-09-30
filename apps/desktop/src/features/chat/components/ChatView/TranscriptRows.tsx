@@ -98,6 +98,7 @@ export const TranscriptRows = ({
       out.push(<li key={`mount-suggestion-${runId}`}>{node}</li>);
     }
   };
+  const todayKey = dayKey(new Date().toISOString());
   let lastDay: string | null = null;
   let userTurnOrdinal = 0;
   let railGroup: Array<ReactNode> = [];
@@ -147,14 +148,21 @@ export const TranscriptRows = ({
       const at = row.item.at;
       const day = dayKey(at);
       const dayChanged = day !== lastDay;
+      const isLeadingToday = lastDay === null && day === todayKey;
       if (dayChanged) {
-        out.push(
-          <li key={`day-${day}-${idx}`} className="flex justify-center">
-            <span className="rounded-full border border-border-soft bg-background px-2 py-0.5 text-secondary uppercase tracking-eyebrow text-muted-foreground">
-              {formatDayLabel(at)}
-            </span>
-          </li>,
-        );
+        if (!isLeadingToday) {
+          out.push(
+            <li
+              key={`day-${day}-${idx}`}
+              data-testid="transcript-day"
+              className="flex justify-center"
+            >
+              <span className="rounded-full border border-border-soft bg-background px-2 py-0.5 text-secondary uppercase tracking-eyebrow text-muted-foreground">
+                {formatDayLabel(at)}
+              </span>
+            </li>,
+          );
+        }
         lastDay = day;
       }
     }

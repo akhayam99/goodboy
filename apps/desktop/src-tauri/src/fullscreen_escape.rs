@@ -152,12 +152,12 @@ pub fn install(window: &tauri::WebviewWindow) {
     unsafe {
         let cls = window_class(ns_window as *const AnyObject);
         if cls.is_null() || std::ptr::eq(cls, class!(NSWindow)) {
-            eprintln!("[goodboy] full screen esc guard skipped: window class is not a subclass");
+            log::warn!("[goodboy] full screen esc guard skipped: window class is not a subclass");
             return;
         }
         let name = class_name(cls);
         let guarded = install_on_class(cls);
-        eprintln!(
+        log::info!(
             "[goodboy] full screen esc guard on {name}: {guarded} of {GUARDED_METHODS} methods"
         );
     }

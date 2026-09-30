@@ -3,6 +3,7 @@ import { Play } from 'lucide-react';
 import { CopyButton, Markdown, Notice } from '@goodboy/ui';
 import type { ChatMessage, ChatMessageId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { chatAnswerMeta } from '../../chatAnswerMeta';
 import { ChatReads } from './ChatReads';
 import { ChatTyping } from './ChatTyping';
 
@@ -15,6 +16,7 @@ type Props = {
 const ChatAssistantMessageView = ({ message, workspaceName, onStartWork }: Props) => {
   const isStreaming = message.status === 'streaming';
   const hasText = message.content.trim() !== '';
+  const meta = chatAnswerMeta({ message });
   if (message.status === 'failed') {
     return (
       <div data-chat-message="assistant" className="flex flex-col gap-2">
@@ -33,7 +35,7 @@ const ChatAssistantMessageView = ({ message, workspaceName, onStartWork }: Props
     <div
       data-chat-message="assistant"
       aria-busy={isStreaming ? true : undefined}
-      className="flex flex-col gap-2"
+      className="group/answer flex flex-col gap-2"
     >
       {hasText ? <Markdown text={message.content} className="text-prose" /> : null}
       {isStreaming && !hasText ? <ChatTyping workspaceName={workspaceName} /> : null}
@@ -42,26 +44,32 @@ const ChatAssistantMessageView = ({ message, workspaceName, onStartWork }: Props
         <p className="text-secondary text-faint-foreground">Stopped</p>
       ) : null}
       {isStreaming || !hasText ? null : (
-        <div className="-ml-1.5 flex items-center gap-1">
-          <CopyButton
-            value={message.content}
-            label="Copy the answer"
-            presentation="icon"
-            tone="faint"
-            size={ICON_SIZE.row}
-            className="h-6 gap-1 px-1.5 text-secondary"
-          >
-            Copy
-          </CopyButton>
-          {onStartWork === undefined ? null : (
-            <button
-              type="button"
-              onClick={() => onStartWork(message.id)}
-              className="flex h-6 items-center gap-1 rounded-md px-1.5 text-secondary text-faint-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+        <div className="-ml-1.5 flex h-7 items-center gap-1">
+          <div className="flex items-center gap-1 opacity-0 motion-safe:transition-opacity group-focus-within/answer:opacity-100 group-hover/answer:opacity-100">
+            <CopyButton
+              value={message.content}
+              label="Copy the answer"
+              presentation="icon"
+              tone="faint"
+              size={ICON_SIZE.row}
+              className="h-6 gap-1 px-1.5 text-secondary"
             >
-              <Play size={ICON_SIZE.row} aria-hidden />
-              Start work from here
-            </button>
+              Copy
+            </CopyButton>
+            {onStartWork === undefined ? null : (
+              <button
+                type="button"
+                onClick={() => onStartWork(message.id)}
+                className="flex h-6 items-center gap-1 rounded-md px-1.5 text-secondary text-faint-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              >
+                <Play size={ICON_SIZE.row} aria-hidden />
+                Start work from here
+              </button>
+            )}
+          </div>
+          <span className="flex-1" />
+          {meta === null ? null : (
+            <span className="truncate pl-1.5 text-secondary text-faint-foreground">{meta}</span>
           )}
         </div>
       )}

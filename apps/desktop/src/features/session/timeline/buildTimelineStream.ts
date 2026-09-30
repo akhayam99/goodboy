@@ -26,11 +26,24 @@ import type {
   TimelineIssueEntry,
   TimelinePlanEntry,
   TimelineQuestionEntry,
+  TimelineResolveBatchEntry,
   TimelineRunEntry,
+  TimelineSubagentGroupEntry,
   TimelineTopLevelEntry,
 } from './buildTimelineGroups';
 import type { RailGroupInput, RailGroupShape } from '../../workTreeModel/railGeometry';
-import type { RunIdentity } from './runIdentity';
+import { runIdentity, runIdentitySeed, type RunIdentity } from './runIdentity';
+import { groupResolveBatches } from './resolveBatchGroups';
+import { resolverRowState, type ResolveActivityFacts } from './resolveActivity';
+import { resolveBatchRowState, type ResolveBatchRef } from './resolveBatchSummary';
+import {
+  SUBAGENT_GROUP_MIN_MEMBERS,
+  isSubagentAttention,
+  subagentGroupEntryId,
+  subagentGroupRowState,
+  subagentGroupSummary,
+  type SubagentFact,
+} from './subagentGroups';
 import {
   hasShownRunQuestion,
   oldestAgentOpenQuestion,
@@ -53,7 +66,9 @@ export type TimelineStreamEntry =
   | TimelineIssueEntry
   | TimelineBranchEntry
   | TimelineEventEntry
-  | TimelineQuestionEntry;
+  | TimelineQuestionEntry
+  | TimelineResolveBatchEntry
+  | TimelineSubagentGroupEntry;
 
 type StreamRail = {
   readonly id: string;
@@ -76,6 +91,13 @@ export type TimelineDayItem = StreamRail & {
   readonly ruleY: number;
 };
 
+type TimelineExplodeSlot = {
+  readonly groupId: string;
+  readonly kind: 'batch' | 'subagents';
+  readonly order: number;
+  readonly total: number;
+};
+
 export type TimelineRowItem = StreamRail & {
   readonly kind: 'row';
   readonly at: string | null;
@@ -87,6 +109,7 @@ export type TimelineRowItem = StreamRail & {
   readonly nodeIndex: string | null;
   readonly rowState: RowState;
   readonly hasUnread: boolean;
+  readonly explode?: TimelineExplodeSlot;
 };
 
 export type TimelineStreamItem = TimelineNowItem | TimelineDayItem | TimelineRowItem;
@@ -108,6 +131,9 @@ type Params = {
   readonly showReports?: boolean;
   readonly showWireframes?: boolean;
   readonly showQuestions?: boolean;
+  readonly resolveBatchByAgentId?: ReadonlyMap<string, ResolveBatchRef>;
+  readonly resolveFactsByAgentId?: ReadonlyMap<string, ResolveActivityFacts>;
+  readonly expandedGroupIds?: ReadonlySet<string>;
 };
 
 type DraftRow = {
@@ -124,6 +150,7 @@ type DraftRow = {
   readonly rowState: RowState;
   readonly hasUnread: boolean;
   readonly isPending: boolean;
+  readonly explode?: TimelineExplodeSlot;
 };
 
 type DraftDay = {
@@ -469,6 +496,12 @@ const SKIPPED_UNDER_CLOSED: RowState = { phase: 'skipped', reason: { kind: 'skip
 
 const NO_QUESTION_ROWS: ReadonlySet<string> = new Set();
 
+const NO_RESOLVE_FACTS: ReadonlyMap<string, ResolveActivityFacts> = new Map();
+
+const NO_RESOLVE_BATCHES: ReadonlyMap<string, ResolveBatchRef> = new Map();
+
+const NO_EXPANDED_GROUPS: ReadonlySet<string> = new Set();
+
 const agentRowStateOf = ({
   entry,
   readyAgentId,
@@ -587,6 +620,8 @@ type EmitContext = {
   readonly showWireframes: boolean;
   readonly showQuestions: boolean;
   readonly questionRowIds: ReadonlySet<string>;
+  readonly resolveFactsByAgentId: ReadonlyMap<string, ResolveActivityFacts>;
+  readonly expandedGroupIds: ReadonlySet<string> | null;
 };
 
 const hasUnreadDescendant = ({
@@ -618,6 +653,278 @@ type EmitAgentParams = {
 const nodeIndexOf = ({ stepLabel }: { readonly stepLabel: string | null }): string | null =>
   stepLabel == null ? null : (stepLabel.split('.').at(-1) ?? null);
 
+const rowStateOfAgentRow = ({
+  resolved,
+  reviewFacts,
+  isSkippedUnderClosed,
+}: {
+  readonly resolved: RowState;
+  readonly reviewFacts: ResolveActivityFacts | undefined;
+  readonly isSkippedUnderClosed: boolean;
+}): RowState => {
+  if (reviewFacts !== undefined && resolved.phase !== 'closed') {
+    return resolverRowState({ facts: reviewFacts });
+  }
+  return isSkippedUnderClosed ? SKIPPED_UNDER_CLOSED : resolved;
+};
+
+type EntryStateParams = {
+  readonly entry: TimelineAgentEntry;
+  readonly readyAgentId: string | null;
+  readonly failedAgentId?: string | null;
+  readonly isParentClosed: boolean;
+  readonly context: EmitContext;
+};
+
+const entryRowStateOf = ({
+  entry,
+  readyAgentId,
+  failedAgentId = null,
+  isParentClosed,
+  context,
+}: EntryStateParams): { readonly rowState: RowState; readonly isSkippedUnderClosed: boolean } => {
+  const resolved = agentRowStateOf({
+    entry,
+    readyAgentId,
+    failedAgentId,
+    questionRowIds: context.questionRowIds,
+  });
+  const isSkippedUnderClosed = isParentClosed && resolved.phase === 'queued';
+  const reviewFacts = context.resolveFactsByAgentId.get(entry.agent.id);
+  return {
+    rowState: rowStateOfAgentRow({ resolved, reviewFacts, isSkippedUnderClosed }),
+    isSkippedUnderClosed,
+  };
+};
+
+const earliestChildAt = ({
+  children,
+}: {
+  readonly children: ReadonlyArray<TimelineAgentEntry>;
+}): string | null => {
+  const times = children.flatMap((child) => (child.at === null ? [] : [child.at]));
+  return times.length === 0
+    ? null
+    : times.reduce((first, second) => (first <= second ? first : second));
+};
+
+type ExplodedRowsParams = {
+  readonly groupId: string;
+  readonly kind: TimelineExplodeSlot['kind'];
+  readonly laneId: string;
+  readonly children: ReadonlyArray<TimelineAgentEntry>;
+  readonly identity: RunIdentity | null;
+  readonly isMuted: boolean;
+  readonly familyId: string | null;
+  readonly showSubagents: boolean;
+  readonly isParentClosed: boolean;
+  readonly context: EmitContext;
+};
+
+const explodedRows = ({
+  groupId,
+  kind,
+  laneId,
+  children,
+  identity,
+  isMuted,
+  familyId,
+  showSubagents,
+  isParentClosed,
+  context,
+}: ExplodedRowsParams): ReadonlyArray<DraftRow> => {
+  const rows = children
+    .flatMap((child) =>
+      agentRows({
+        entry: child,
+        grade: 'step',
+        identity,
+        isMuted,
+        familyId,
+        groupId: laneId,
+        showSubagents,
+        readyAgentId: null,
+        isParentClosed,
+        context,
+      }),
+    )
+    .sort((first, second) => compareNewestFirst({ first, second }));
+  const direct = rows.filter((row) => row.groupId === laneId);
+  return rows.map((row) => {
+    const position = direct.indexOf(row);
+    if (position === -1) {
+      return row;
+    }
+    return {
+      ...row,
+      explode: { groupId, kind, order: direct.length - 1 - position, total: direct.length },
+    };
+  });
+};
+
+const hasSubagentGroup = ({
+  entry,
+  showSubagents,
+  context,
+}: {
+  readonly entry: TimelineAgentEntry;
+  readonly showSubagents: boolean;
+  readonly context: EmitContext;
+}): boolean =>
+  showSubagents &&
+  context.expandedGroupIds !== null &&
+  entry.children.length >= SUBAGENT_GROUP_MIN_MEMBERS;
+
+const subagentAttentionKeys = ({
+  child,
+}: {
+  readonly child: TimelineAgentEntry;
+}): ReadonlyArray<string> =>
+  child.openQuestions.length > 0 && !isQuestionDelegate({ agent: child.agent })
+    ? child.openQuestions.map((question) => question.id)
+    : [child.id];
+
+type SubagentGroupRowsParams = {
+  readonly entry: TimelineAgentEntry;
+  readonly identity: RunIdentity | null;
+  readonly isMuted: boolean;
+  readonly familyId: string | null;
+  readonly parentLaneId: string;
+  readonly isChildParentClosed: boolean;
+  readonly context: EmitContext;
+};
+
+const subagentGroupRows = ({
+  entry,
+  identity,
+  isMuted,
+  familyId,
+  parentLaneId,
+  isChildParentClosed,
+  context,
+}: SubagentGroupRowsParams): ReadonlyArray<DraftRow> => {
+  const facts: ReadonlyArray<SubagentFact> = entry.children.map((child) => ({
+    state: entryRowStateOf({
+      entry: child,
+      readyAgentId: null,
+      isParentClosed: isChildParentClosed,
+      context,
+    }).rowState,
+    isAsking: child.openQuestions.length > 0 && !isQuestionDelegate({ agent: child.agent }),
+  }));
+  const summary = subagentGroupSummary({ facts });
+  const id = subagentGroupEntryId({ parentId: entry.id });
+  const group: TimelineSubagentGroupEntry = {
+    kind: 'subagentGroup',
+    id,
+    at: earliestChildAt({ children: entry.children }) ?? entry.at,
+    parentId: entry.id,
+    children: entry.children,
+    summary,
+    attentionKeys: entry.children.flatMap((child, index) => {
+      const fact = facts[index];
+      return fact !== undefined && isSubagentAttention({ fact })
+        ? subagentAttentionKeys({ child })
+        : [];
+    }),
+    isExpanded: context.expandedGroupIds?.has(id) === true,
+  };
+  const header: DraftRow = {
+    kind: 'row',
+    id,
+    at: group.at,
+    grade: 'step',
+    entry: group,
+    identity,
+    familyId,
+    groupId: parentLaneId,
+    ordinal: null,
+    sortOrdinal: Math.min(...entry.children.map((child) => child.ordinal)) - 0.5,
+    rowState: subagentGroupRowState({ summary }),
+    hasUnread: entry.children.some(
+      (child) =>
+        context.unreadAgentIds.has(child.agent.id) ||
+        hasUnreadDescendant({ entry: child, unreadAgentIds: context.unreadAgentIds }),
+    ),
+    isPending: false,
+  };
+  if (!group.isExpanded) {
+    return [header];
+  }
+  const laneId = laneIdOf({ entryId: id });
+  context.groups.push({
+    id: laneId,
+    parentGroupId: parentLaneId,
+    identityIndex: identity?.index ?? null,
+    isMuted,
+    originRowId: id,
+    shape: 'merged',
+  });
+  return [
+    ...explodedRows({
+      groupId: id,
+      kind: 'subagents',
+      laneId,
+      children: entry.children,
+      identity,
+      isMuted,
+      familyId,
+      showSubagents: true,
+      isParentClosed: isChildParentClosed,
+      context,
+    }),
+    header,
+  ];
+};
+
+type SubagentRowsParams = {
+  readonly entry: TimelineAgentEntry;
+  readonly identity: RunIdentity | null;
+  readonly isMuted: boolean;
+  readonly familyId: string | null;
+  readonly laneId: string;
+  readonly showSubagents: boolean;
+  readonly isChildParentClosed: boolean;
+  readonly context: EmitContext;
+};
+
+const subagentRows = ({
+  entry,
+  identity,
+  isMuted,
+  familyId,
+  laneId,
+  showSubagents,
+  isChildParentClosed,
+  context,
+}: SubagentRowsParams): ReadonlyArray<DraftRow> => {
+  if (hasSubagentGroup({ entry, showSubagents, context })) {
+    return subagentGroupRows({
+      entry,
+      identity,
+      isMuted,
+      familyId,
+      parentLaneId: laneId,
+      isChildParentClosed,
+      context,
+    });
+  }
+  return entry.children.flatMap((child) =>
+    agentRows({
+      entry: child,
+      grade: 'step',
+      identity,
+      isMuted,
+      familyId,
+      groupId: laneId,
+      showSubagents,
+      readyAgentId: null,
+      isParentClosed: isChildParentClosed,
+      context,
+    }),
+  );
+};
+
 const agentRows = ({
   entry,
   grade,
@@ -631,15 +938,15 @@ const agentRows = ({
   isParentClosed,
   context,
 }: EmitAgentParams): ReadonlyArray<DraftRow> => {
-  const resolved = agentRowStateOf({
+  const { rowState, isSkippedUnderClosed } = entryRowStateOf({
     entry,
     readyAgentId,
     failedAgentId,
-    questionRowIds: context.questionRowIds,
+    isParentClosed,
+    context,
   });
-  const isSkippedUnderClosed = isParentClosed && resolved.phase === 'queued';
-  const rowState = isSkippedUnderClosed ? SKIPPED_UNDER_CLOSED : resolved;
   const childLaneId = laneIdOf({ entryId: entry.id });
+  const isChildParentClosed = rowState.phase === 'closed' || isSkippedUnderClosed;
   const nested: DraftRow[] = [];
   if (showSubagents && entry.children.length > 0) {
     context.groups.push({
@@ -650,22 +957,18 @@ const agentRows = ({
       originRowId: entry.id,
       shape: childLaneShape({ entry, parentState: rowState, groupId }),
     });
-    for (const child of entry.children) {
-      nested.push(
-        ...agentRows({
-          entry: child,
-          grade: 'step',
-          identity,
-          isMuted,
-          familyId,
-          groupId: childLaneId,
-          showSubagents,
-          readyAgentId: null,
-          isParentClosed: rowState.phase === 'closed' || isSkippedUnderClosed,
-          context,
-        }),
-      );
-    }
+    nested.push(
+      ...subagentRows({
+        entry,
+        identity,
+        isMuted,
+        familyId,
+        laneId: childLaneId,
+        showSubagents,
+        isChildParentClosed,
+        context,
+      }),
+    );
   }
   const isPending = entry.agent.status === 'pending' && !isSkippedUnderClosed;
   const origin: DraftRow = {
@@ -1022,6 +1325,7 @@ const streamItemsOf = ({ drafts }: StreamItemsParams): ReadonlyArray<TimelineStr
       groupId: draft.groupId,
       isPending: draft.isPending,
       gap,
+      ...(draft.explode === undefined ? {} : { explode: draft.explode }),
     });
     previous = draft;
   }
@@ -1044,6 +1348,68 @@ const openQuestionRowIds = ({
     ),
   );
 
+type BatchRowsParams = {
+  readonly batch: TimelineResolveBatchEntry;
+  readonly context: EmitContext;
+  readonly unreadAgentIds: ReadonlySet<string>;
+};
+
+const batchLaneIdOf = ({ batch }: { readonly batch: TimelineResolveBatchEntry }): string =>
+  laneIdOf({ entryId: batch.id });
+
+const batchRows = ({
+  batch,
+  context,
+  unreadAgentIds,
+}: BatchRowsParams): { readonly header: DraftRow; readonly children: ReadonlyArray<DraftRow> } => {
+  const identity = runIdentity({
+    laneIndex: 0,
+    seed: runIdentitySeed({ sessionId: batch.batchId }),
+  });
+  const laneId = batchLaneIdOf({ batch });
+  const header: DraftRow = {
+    kind: 'row',
+    id: batch.id,
+    at: batch.at,
+    grade: 'entry',
+    entry: batch,
+    identity,
+    familyId: batch.id,
+    groupId: null,
+    ordinal: null,
+    sortOrdinal: Math.min(...batch.children.map((child) => child.ordinal)) - 1,
+    rowState: resolveBatchRowState({ summary: batch.summary }),
+    hasUnread: batch.children.some((child) => unreadAgentIds.has(child.agent.id)),
+    isPending: false,
+  };
+  if (!batch.isExpanded) {
+    return { header, children: [] };
+  }
+  context.groups.push({
+    id: laneId,
+    parentGroupId: null,
+    identityIndex: identity.index,
+    isMuted: false,
+    originRowId: batch.id,
+    shape: 'merged',
+  });
+  return {
+    header,
+    children: explodedRows({
+      groupId: batch.id,
+      kind: 'batch',
+      laneId,
+      children: batch.children,
+      identity,
+      isMuted: false,
+      familyId: batch.id,
+      showSubagents: context.showAgentSubagents,
+      isParentClosed: false,
+      context,
+    }),
+  };
+};
+
 export const buildTimelineStream = ({
   entries,
   unreadAgentIds,
@@ -1056,6 +1422,9 @@ export const buildTimelineStream = ({
   showReports = true,
   showWireframes = true,
   showQuestions = true,
+  resolveBatchByAgentId = NO_RESOLVE_BATCHES,
+  resolveFactsByAgentId = NO_RESOLVE_FACTS,
+  expandedGroupIds = NO_EXPANDED_GROUPS,
 }: Params): TimelineStream => {
   const chainedRunById = new Map<string, ChainedRun>();
   for (const entry of entries) {
@@ -1079,10 +1448,22 @@ export const buildTimelineStream = ({
     showWireframes,
     showQuestions,
     questionRowIds: showQuestions ? openQuestionRowIds({ entries }) : NO_QUESTION_ROWS,
+    resolveFactsByAgentId,
+    expandedGroupIds,
   };
   const rows: DraftRow[] = [];
+  const grouped = groupResolveBatches({
+    entries,
+    batchByAgentId: resolveBatchByAgentId,
+    factsByAgentId: resolveFactsByAgentId,
+    expandedBatchIds: expandedGroupIds,
+  });
+  for (const batch of grouped.batches) {
+    const { header, children } = batchRows({ batch, context, unreadAgentIds });
+    rows.push(header, ...children);
+  }
 
-  for (const entry of entries) {
+  for (const entry of grouped.remaining) {
     if (entry.kind === 'run') {
       rows.push(...runRows({ entry, context }));
       continue;
@@ -1201,6 +1582,8 @@ export const buildRunTreeStream = ({
     showWireframes: false,
     showQuestions: false,
     questionRowIds: NO_QUESTION_ROWS,
+    resolveFactsByAgentId: NO_RESOLVE_FACTS,
+    expandedGroupIds: null,
   };
   const sorted = [...runRows({ entry, context })].sort((first, second) =>
     compareNewestFirst({ first, second }),
@@ -1240,6 +1623,8 @@ export const buildAgentTreeStream = ({
     showWireframes: false,
     showQuestions: false,
     questionRowIds: NO_QUESTION_ROWS,
+    resolveFactsByAgentId: NO_RESOLVE_FACTS,
+    expandedGroupIds: null,
   };
   const rootLaneId = `tree:${entry.id}`;
   context.groups.push({

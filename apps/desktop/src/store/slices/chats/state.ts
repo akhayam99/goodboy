@@ -2,6 +2,7 @@ import type {
   ChatId,
   ChatMessage,
   ChatMessageId,
+  ChatSessionLink,
   ChatSummary,
   ProviderRunId,
   WorkspaceId,
@@ -15,6 +16,8 @@ type ChatStream = {
 
 export type ChatsState = {
   readonly chatsByWorkspace: Readonly<Record<WorkspaceId, ReadonlyArray<ChatSummary>>>;
+  readonly archivedChatsByWorkspace: Readonly<Record<WorkspaceId, ReadonlyArray<ChatSummary>>>;
+  readonly chatLinks: Readonly<Record<ChatId, ReadonlyArray<ChatSessionLink>>>;
   readonly chatMessages: Readonly<Record<ChatId, ReadonlyArray<ChatMessage>>>;
   readonly chatStreams: Readonly<Record<ChatId, ChatStream>>;
   readonly hasSettledChatStreams: boolean;
@@ -23,6 +26,8 @@ export type ChatsState = {
 
 export const chatsInitialState: ChatsState = {
   chatsByWorkspace: {},
+  archivedChatsByWorkspace: {},
+  chatLinks: {},
   chatMessages: {},
   chatStreams: {},
   hasSettledChatStreams: false,

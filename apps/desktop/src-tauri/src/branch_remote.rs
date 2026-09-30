@@ -16,7 +16,7 @@ pub(crate) struct BranchRemote {
     pub distance: GitDistance,
 }
 
-fn remote_of(configured: Option<&str>) -> &str {
+pub(crate) fn remote_of(configured: Option<&str>) -> &str {
     configured
         .and_then(|name| name.split_once('/'))
         .map(|(remote, _)| remote)
@@ -24,7 +24,7 @@ fn remote_of(configured: Option<&str>) -> &str {
         .unwrap_or(DEFAULT_REMOTE)
 }
 
-fn tracking_sha(cwd: &Path, tracking: &str) -> Option<String> {
+pub(crate) fn tracking_sha(cwd: &Path, tracking: &str) -> Option<String> {
     git(
         cwd,
         &[

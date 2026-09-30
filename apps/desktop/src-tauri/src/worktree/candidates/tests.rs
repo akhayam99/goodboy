@@ -314,3 +314,85 @@ fn a_deferred_candidate_never_becomes_reachable_from_the_tip() {
     );
     assert!(!root.join("b.txt").exists(), "deferred work is in the tree");
 }
+
+fn resolve_copy(root: &Path, scratch: &Path, attempt: &str) -> PathBuf {
+    let copy = scratch
+        .join(format!("goodboy-history-resolve-{attempt}"))
+        .join("copy");
+    let made = crate::history::prepare_resolve_copy_at(root, &copy).unwrap();
+    assert_eq!(made.head, head(root), "the copy is not at the branch head");
+    copy
+}
+
+fn registered(root: &Path, copy: &Path) -> bool {
+    let canonical = std::fs::canonicalize(copy)
+        .map(|path| path.to_string_lossy().to_string())
+        .unwrap_or_default();
+    !canonical.is_empty() && git_ok(root, &["worktree", "list", "--porcelain"]).contains(&canonical)
+}
+
+#[test]
+fn fixes_in_separate_copies_become_candidates_and_all_land_on_accept() {
+    let root = init_repo("resolve-copies");
+    let base = commit(&root, "ledger.ts", "ledger", "base");
+    let scratch = temp_root("resolve-copies-scratch");
+    let first = resolve_copy(&root, &scratch, "one");
+    let second = resolve_copy(&root, &scratch, "two");
+    commit(&first, "rounding.ts", "half even", "round half even");
+    std::fs::write(second.join("refunds.ts"), "refunds").unwrap();
+
+    let one = quarantine(&first, "attempt-one", &base).unwrap();
+    let two = quarantine(&second, "attempt-two", &base).unwrap();
+
+    assert_eq!(head(&root), base, "a copy wrote to the real branch");
+    let landed_one = integrate(&root, "attempt-one", &one, &base).unwrap();
+    let landed_two = integrate(&root, "attempt-two", &two, &base).unwrap();
+    assert_eq!(landed_one, one);
+    assert_eq!(head(&root), landed_two);
+    assert!(root.join("rounding.ts").exists() && root.join("refunds.ts").exists());
+
+    crate::history::discard_copy(&first.to_string_lossy());
+    crate::history::discard_copy(&second.to_string_lossy());
+    assert!(!first.exists() && !second.exists(), "a copy stayed on disk");
+}
+
+#[test]
+fn a_colliding_fix_is_refused_at_accept_and_the_branch_rolls_back() {
+    let root = init_repo("resolve-copies-collide");
+    let base = commit(&root, "ledger.ts", "round up", "base");
+    let scratch = temp_root("resolve-copies-collide-scratch");
+    let first = resolve_copy(&root, &scratch, "one");
+    let second = resolve_copy(&root, &scratch, "two");
+    commit(&first, "ledger.ts", "round half even", "half even");
+    commit(&second, "ledger.ts", "round down", "down");
+    let one = quarantine(&first, "attempt-one", &base).unwrap();
+    let two = quarantine(&second, "attempt-two", &base).unwrap();
+    let landed = integrate(&root, "attempt-one", &one, &base).unwrap();
+
+    let outcome = integrate(&root, "attempt-two", &two, &base);
+
+    assert!(outcome.is_err(), "{outcome:?}");
+    assert_eq!(head(&root), landed, "the branch did not roll back");
+    assert_eq!(git_ok(&root, &["status", "--porcelain=v1"]), "");
+    assert_eq!(
+        std::fs::read_to_string(root.join("ledger.ts")).unwrap(),
+        "round half even"
+    );
+    crate::history::discard_copy(&first.to_string_lossy());
+    crate::history::discard_copy(&second.to_string_lossy());
+}
+
+#[test]
+fn a_resolve_copy_left_by_an_earlier_run_is_removed_at_start() {
+    let root = init_repo("resolve-copies-orphan");
+    commit(&root, "ledger.ts", "ledger", "base");
+    let scratch = temp_root("resolve-copies-orphan-scratch");
+    let copy = resolve_copy(&root, &scratch, "orphan");
+    crate::history::release_held_copy_for_test(&copy);
+    assert!(registered(&root, &copy));
+
+    let cleaned = crate::history::clean_stale_copies_in(&scratch, u64::MAX, u64::MAX);
+
+    assert_eq!(cleaned, 1);
+    assert!(!copy.exists(), "the orphan copy is still on disk");
+}

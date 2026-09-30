@@ -2,10 +2,13 @@ import {
   finalizeResolveCandidateIntegration,
   getReadyResolveCandidateForItem,
   listResolveCandidateItems,
+  listResolveAttempts,
   listResolveQueueItems,
+  setResolveCandidateState,
   setResolveQueueItemApproval,
 } from '@goodboy/db';
 import type { ResolveQueueItemWithThread } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import { integrateWorktreeCandidate } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { advanceResolveStage } from './advanceResolveStage';
@@ -13,13 +16,15 @@ import { withCandidateLock } from './candidateLock';
 import { hashResolveReply } from './hashResolveReply';
 import { loadResolveCandidatesInto } from './loadResolveCandidatesInto';
 import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';
+import { releaseResolveCopy } from './releaseResolveCopy';
 import { remapIntegratedCommits } from './remapIntegratedCommits';
+import { saveResolveThread } from './saveResolveThread';
 import { withSavedReplyDraft } from './saveResolveReplyDraft';
 import {
   UNCAPTURED_WORK_ON_BRANCH,
   recoverUncapturedResolveWork,
 } from './recoverUncapturedResolveWork';
-import type { ItemRevisionParams, SliceParams } from './types';
+import type { ItemRevisionParams, SessionParams, SliceParams } from './types';
 
 type Params = SliceParams & ItemRevisionParams;
 type Covered = {
@@ -31,6 +36,44 @@ type Covered = {
 export const PARTIAL_ACCEPTANCE =
   'This change also answers comments you left for later. Resolve them together, or take those back up first';
 export const STALE_APPROVAL = 'Approval revision is stale';
+export const ACCEPT_CONFLICT =
+  'This fix collides with one accepted before it. Redo it on top of the branch';
+const ACCEPT_CONFLICT_REASON = 'failed:accept_conflict';
+const NO_LONGER_APPLIES = 'the fix no longer applies on the branch';
+
+type ConflictParams = SliceParams &
+  SessionParams & {
+    readonly candidateId: string;
+    readonly covered: ReadonlyArray<Covered>;
+  };
+
+const markAcceptConflict = async ({
+  set,
+  sessionId,
+  candidateId,
+  covered,
+}: ConflictParams): Promise<void> => {
+  const db = tauriDatabase;
+  await setResolveCandidateState({ db, candidateId, state: 'stale' });
+  for (const { entry } of covered) {
+    if (entry === undefined) {
+      continue;
+    }
+    await saveResolveThread({
+      db,
+      row: {
+        ...entry.thread,
+        state: 'failed',
+        stateReason: ACCEPT_CONFLICT_REASON,
+        updatedAt: Date.now(),
+      },
+      expectedRevision: entry.thread.revision,
+    });
+  }
+  await loadResolveQueueItemsInto({ set, sessionId });
+  await loadResolveCandidatesInto({ set, sessionId });
+};
+
 export const PARTIAL_REFUSAL =
   'This change also answers comments you said you will not fix. Take those back up first';
 
@@ -134,7 +177,7 @@ const acceptDecidedItem = async ({
           : await hashResolveReply({ reply: entry?.thread.replyDraft ?? '' }),
     })),
   );
-  const integratedSha = await withCandidateLock({
+  const integrated = await withCandidateLock({
     worktreePath: candidate.worktreePath,
     holder: `accept:${candidate.id}`,
     run: () =>
@@ -144,7 +187,23 @@ const acceptDecidedItem = async ({
         candidateSha: candidate.candidateSha,
         expectedHead: candidate.baseSha,
       }),
+  }).catch((error: unknown) => {
+    if (!formatError(error).includes(NO_LONGER_APPLIES)) {
+      throw error;
+    }
+    return null;
   });
+  if (integrated === null) {
+    await markAcceptConflict({ set, get, sessionId, candidateId: candidate.id, covered });
+    throw new Error(ACCEPT_CONFLICT);
+  }
+  const integratedSha = integrated;
+  const attempt = (await listResolveAttempts({ db, sessionId })).find(
+    (item) => item.id === candidate.id,
+  );
+  if (attempt !== undefined) {
+    await releaseResolveCopy({ attempt });
+  }
   await finalizeResolveCandidateIntegration({
     db,
     candidateId: candidate.id,

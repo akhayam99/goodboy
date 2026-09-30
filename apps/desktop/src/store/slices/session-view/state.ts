@@ -14,6 +14,7 @@ import type {
   ArtifactCreationTarget,
   FocusedExternalTask,
 } from './types';
+import type { AgentPane } from '../navigation/types';
 import type { ArtifactFilter } from '../../../features/artifacts/artifactCollection';
 
 export type SessionViewState = {
@@ -36,4 +37,5 @@ export type SessionViewState = {
   readonly artifactCreation: Readonly<Record<SessionId, ArtifactCreationTarget | null>>;
   readonly focusedGithubIssueNumber: Readonly<Record<SessionId, number | null>>;
   readonly focusedExternalTask: Readonly<Record<SessionId, FocusedExternalTask | null>>;
+  readonly agentPane: Readonly<Record<SessionId, AgentPane | null>>;
 };

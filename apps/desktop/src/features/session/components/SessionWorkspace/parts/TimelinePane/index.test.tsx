@@ -2,8 +2,18 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { agentPlace, sessionPlace } from '../../../../../../store/slices/navigation/place';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { AgentId, ArtifactId, OpenQuestion, Session, SessionId } from '@goodboy/types';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import type {
+  AgentId,
+  ArtifactId,
+  IsoDateTime,
+  OpenQuestion,
+  OpenQuestionId,
+  Session,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
 
 type Worktree = {
   readonly id: string;
@@ -15,54 +25,61 @@ type Worktree = {
   readonly createdAt: number;
 };
 
-const { storeState, diffStats, unread, questions, agentsLoaded, attachedRuns } = vi.hoisted(() => ({
-  attachedRuns: { list: [] as ReadonlyArray<unknown> },
-  unread: { current: false },
-  agentsLoaded: { current: true },
-  diffStats: { current: new Map<string, { additions: number; deletions: number }>() },
-  questions: {
-    open: [] as ReadonlyArray<unknown>,
-    answered: [] as ReadonlyArray<unknown>,
-    dismissed: [] as ReadonlyArray<unknown>,
-  },
-  storeState: {
-    sessionPhaseRuns: {},
-    sessionPlans: {},
-    sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
-    sessionExternalTasks: {},
-    sessionWorktreeRecords: {} as Record<string, ReadonlyArray<unknown>>,
-    sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
-    selectedAgentId: {} as Record<string, string | null>,
-    revealedActivityRows: {} as Record<string, ReadonlySet<string>>,
-    transcripts: {} as Record<string, ReadonlyArray<unknown>>,
-    projects: [] as ReadonlyArray<unknown>,
-    sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
-    agentKindOverride: {},
-    agentProviderOverride: {} as Record<string, string>,
-    agentModelOverride: {} as Record<string, string>,
-    agentEffortOverride: {} as Record<string, string>,
-    agentRunHistory: {},
-    sessionTelemetry: {} as Record<string, ReadonlyArray<unknown>>,
-    executed: new Map<string, { provider: string; model: string }>(),
-    sessionTurnSpans: {} as Record<string, ReadonlyArray<unknown>>,
-    workspaceDurationHistory: {} as Record<string, unknown>,
-    agentTurnState: {} as Record<string, unknown>,
-    loadSessionTurnSpans: vi.fn(async () => undefined),
-    loadWorkspaceDurationHistory: vi.fn(async () => undefined),
-    loadSessionEvents: vi.fn(async () => undefined),
-    loadSessionArtifacts: vi.fn(async () => undefined),
-    loadSessionAnsweredQuestions: vi.fn(async () => undefined),
-    loadSessionDismissedQuestions: vi.fn(async () => undefined),
-    markAllAgentsSeen: vi.fn(),
-    openArtifactCreation: vi.fn(),
-    setActiveLens: vi.fn(),
-    navigate: vi.fn(),
-    setFocusedArtifactId: vi.fn(),
-    openMountDiff: vi.fn(),
-    closeWorkflowRun: vi.fn(async () => undefined),
-    requestOpenQuestionScroll: vi.fn(),
-  },
-}));
+const { storeState, diffStats, unread, questions, agentsLoaded, attachedRuns, resolveActivity } =
+  vi.hoisted(() => ({
+    attachedRuns: { list: [] as ReadonlyArray<unknown> },
+    resolveActivity: {
+      current: {
+        batchByAgentId: new Map<string, unknown>(),
+        factsByAgentId: new Map<string, unknown>(),
+      },
+    },
+    unread: { current: false },
+    agentsLoaded: { current: true },
+    diffStats: { current: new Map<string, { additions: number; deletions: number }>() },
+    questions: {
+      open: [] as ReadonlyArray<unknown>,
+      answered: [] as ReadonlyArray<unknown>,
+      dismissed: [] as ReadonlyArray<unknown>,
+    },
+    storeState: {
+      sessionPhaseRuns: {},
+      sessionPlans: {},
+      sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionExternalTasks: {},
+      sessionWorktreeRecords: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
+      selectedAgentId: {} as Record<string, string | null>,
+      revealedActivityRows: {} as Record<string, ReadonlySet<string>>,
+      transcripts: {} as Record<string, ReadonlyArray<unknown>>,
+      projects: [] as ReadonlyArray<unknown>,
+      sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
+      agentKindOverride: {},
+      agentProviderOverride: {} as Record<string, string>,
+      agentModelOverride: {} as Record<string, string>,
+      agentEffortOverride: {} as Record<string, string>,
+      agentRunHistory: {},
+      sessionTelemetry: {} as Record<string, ReadonlyArray<unknown>>,
+      executed: new Map<string, { provider: string; model: string }>(),
+      sessionTurnSpans: {} as Record<string, ReadonlyArray<unknown>>,
+      workspaceDurationHistory: {} as Record<string, unknown>,
+      agentTurnState: {} as Record<string, unknown>,
+      loadSessionTurnSpans: vi.fn(async () => undefined),
+      loadWorkspaceDurationHistory: vi.fn(async () => undefined),
+      loadSessionEvents: vi.fn(async () => undefined),
+      loadSessionArtifacts: vi.fn(async () => undefined),
+      loadSessionAnsweredQuestions: vi.fn(async () => undefined),
+      loadSessionDismissedQuestions: vi.fn(async () => undefined),
+      markAllAgentsSeen: vi.fn(),
+      openArtifactCreation: vi.fn(),
+      setActiveLens: vi.fn(),
+      navigate: vi.fn(),
+      setFocusedArtifactId: vi.fn(),
+      openMountDiff: vi.fn(),
+      closeWorkflowRun: vi.fn(async () => undefined),
+      requestOpenQuestionScroll: vi.fn(),
+    },
+  }));
 
 vi.mock('../../../../../../store', async () => {
   const useAppStore = <T,>(selector: (state: typeof storeState) => T) => selector(storeState);
@@ -87,6 +104,9 @@ vi.mock('../../../../../../shared/hooks/useSessionRoleModels', () => ({
 vi.mock('../../../CreateAgentPopover', () => ({
   CreateAgentPopover: () => <button type="button">Start agent</button>,
 }));
+vi.mock('../../../../hooks/useResolveActivity', () => ({
+  useResolveActivity: () => resolveActivity.current,
+}));
 vi.mock('../../../../../workflows/useAttachedWorkflowRuns', () => ({
   useAttachedWorkflowRuns: () => attachedRuns.list,
 }));
@@ -107,12 +127,21 @@ import { useOpenQuestions } from '../../../../../context/components/QuestionsTab
 import { OverviewActions } from '../../../SessionOverviewPane/OverviewActions';
 import { DEFAULT_ACTIVITY_FILTER, writeActivityFilter } from '../../../../timeline/activityFilter';
 
-const SESSION = {
-  id: 'session-1',
-  workspaceId: 'ws-1',
+const SESSION: Session = aSession({
+  id: 'session-1' as SessionId,
+  workspaceId: 'ws-1' as WorkspaceId,
   goal: 'ship it',
-  workflowRuns: [],
-} as unknown as Session;
+});
+
+const aQuestion = (
+  overrides: Pick<OpenQuestion, 'id' | 'text' | 'userAnswer' | 'status' | 'createdAt'> &
+    Partial<OpenQuestion>,
+): OpenQuestion => ({
+  sessionId: 'session-1' as SessionId,
+  suggestedAnswers: [],
+  isBlocking: false,
+  ...overrides,
+});
 
 const WORKTREE: Worktree = {
   id: 'wt-1',
@@ -151,6 +180,7 @@ beforeEach(() => {
   questions.dismissed = [];
   agentsLoaded.current = true;
   attachedRuns.list = [];
+  resolveActivity.current = { batchByAgentId: new Map(), factsByAgentId: new Map() };
   useOpenQuestions.setState({ focusedQuestionId: null });
   localStorage.clear();
 });
@@ -324,26 +354,22 @@ describe('TimelinePane unread affordance', () => {
 });
 
 describe('TimelinePane questions', () => {
-  const OPEN_QUESTION = {
-    id: 'question-open',
-    sessionId: 'session-1',
+  const OPEN_QUESTION = aQuestion({
+    id: 'question-open' as OpenQuestionId,
     text: 'Which database should we use?',
-    suggestedAnswers: [],
     userAnswer: null,
     status: 'open',
-    createdAt: '2026-08-20T09:00:00.000Z',
-  } as unknown as OpenQuestion;
+    createdAt: '2026-08-20T09:00:00.000Z' as IsoDateTime,
+  });
 
-  const ANSWERED_QUESTION = {
-    id: 'question-answered',
-    sessionId: 'session-1',
+  const ANSWERED_QUESTION = aQuestion({
+    id: 'question-answered' as OpenQuestionId,
     text: 'Which cloud provider?',
-    suggestedAnswers: [],
     userAnswer: 'aws',
     status: 'answered',
-    createdAt: '2026-08-19T09:00:00.000Z',
-    answeredAt: '2026-08-19T10:00:00.000Z',
-  } as unknown as OpenQuestion;
+    createdAt: '2026-08-19T09:00:00.000Z' as IsoDateTime,
+    answeredAt: '2026-08-19T10:00:00.000Z' as IsoDateTime,
+  });
 
   it('loads the answered and dismissed caches on mount, alongside the open one', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
@@ -454,16 +480,14 @@ describe('TimelinePane run waiting on an answer', () => {
     status: 'running',
     startedAt: '2026-08-20T10:31:00.000Z',
   };
-  const STEP_QUESTION = {
-    id: 'question-step',
-    sessionId: 'session-1',
-    createdByAgentId: 'agent-step',
+  const STEP_QUESTION = aQuestion({
+    id: 'question-step' as OpenQuestionId,
+    createdByAgentId: 'agent-step' as AgentId,
     text: 'Retry on 5xx only?',
-    suggestedAnswers: [],
     userAnswer: null,
     status: 'open',
-    createdAt: '2026-08-20T10:40:00.000Z',
-  } as unknown as OpenQuestion;
+    createdAt: '2026-08-20T10:40:00.000Z' as IsoDateTime,
+  });
 
   const runRow = () => screen.getByText('Retry failed checkout payments').closest('.group');
 
@@ -1171,5 +1195,231 @@ describe('TimelinePane row meta', () => {
 
     expect(runCost?.className).toContain('@max-[560px]:hidden');
     expect(stepCost?.className).toContain('@max-[560px]:hidden');
+  });
+});
+
+describe('TimelinePane resolve batch', () => {
+  const STATES = ['ready', 'drafting', 'pushed', 'failed'] as const;
+  const WORD = {
+    ready: 'Ready for you',
+    drafting: 'Drafting',
+    pushed: 'Pushed',
+    failed: 'Draft failed',
+  } as const;
+
+  const seedBatch = () => {
+    const agents = STATES.map((state, index) => ({
+      id: `resolver-${state}`,
+      sessionId: 'session-1',
+      ordinal: index + 1,
+      name: `resolve: tvarga on file${index}.ts:${index + 1}`,
+      kind: 'resolver',
+      status: 'completed',
+      startedAt: `2026-08-20T10:0${index}:00.000Z`,
+      completedAt: `2026-08-20T10:0${index}:30.000Z`,
+    }));
+    storeState.sessionPhaseRuns = { 'session-1': agents };
+    resolveActivity.current = {
+      batchByAgentId: new Map(
+        agents.map((agent) => [agent.id, { batchId: 'batch-1', prNumber: 318 }] as const),
+      ),
+      factsByAgentId: new Map(
+        STATES.map((state) => [`resolver-${state}`, { state, word: WORD[state] }] as const),
+      ),
+    };
+  };
+
+  const toggle = () => screen.getByRole('button', { name: /4 resolves on PR #318/ });
+
+  it('draws one closed row with the state summary and no child rows', () => {
+    seedBatch();
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    expect(toggle().getAttribute('aria-expanded')).toBe('false');
+    expect(screen.getByTestId('resolve-batch-summary').textContent).toBe(
+      '1 ready for you · 1 drafting · 1 pushed · 1 failed',
+    );
+    expect(screen.queryByText('tvarga on file0.ts:1')).toBeNull();
+  });
+
+  it('draws a mixed node with one arc per state and the count in the middle', () => {
+    seedBatch();
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    const node = within(toggle()).queryByRole('img');
+    const row = toggle().closest('[data-row-id]');
+    const mixed = row?.querySelector('[data-node-state="mixed"]');
+    expect(node).toBeNull();
+    expect(mixed?.textContent).toBe('4');
+    expect(mixed?.querySelectorAll('[data-arc-tone]')).toHaveLength(4);
+  });
+
+  it('explodes on click and folds back on the second click', () => {
+    vi.useFakeTimers();
+    seedBatch();
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    fireEvent.click(toggle());
+
+    expect(toggle().getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByText('tvarga on file0.ts:1')).toBeTruthy();
+    expect(screen.getAllByText('Ready for you').length).toBeGreaterThan(0);
+    expect(screen.getByText('Draft failed')).toBeTruthy();
+    const rowIds = Array.from(document.querySelectorAll('[data-row-id]')).map((element) =>
+      element.getAttribute('data-row-id'),
+    );
+    const batchRows = rowIds.filter(
+      (id) => id?.startsWith('agent:resolver') === true || id === 'batch:batch-1',
+    );
+    expect(batchRows.at(-1)).toBe('batch:batch-1');
+    expect(batchRows).toHaveLength(5);
+
+    fireEvent.click(toggle());
+    expect(toggle().getAttribute('aria-expanded')).toBe('false');
+    expect(document.querySelectorAll('[data-explode="out"]')).toHaveLength(4);
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+    expect(screen.queryByText('tvarga on file0.ts:1')).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it('animates the children in and out with the stagger unless motion is reduced', () => {
+    seedBatch();
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    fireEvent.click(toggle());
+
+    const children = Array.from(document.querySelectorAll<HTMLElement>('[data-explode="in"]'));
+    expect(children).toHaveLength(4);
+    expect(
+      children.every((child) => child.className.includes('motion-safe:animate-explode-in')),
+    ).toBe(true);
+    const delays = children.map((child) => child.style.animationDelay).sort();
+    expect(delays).toEqual(['0ms', '24ms', '48ms', '72ms']);
+  });
+
+  it('collapses at once when motion is reduced', () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes('reduce'),
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    })) as unknown as typeof window.matchMedia;
+    seedBatch();
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    fireEvent.click(toggle());
+    fireEvent.click(toggle());
+
+    expect(document.querySelectorAll('[data-explode]')).toHaveLength(0);
+    expect(screen.queryByText('tvarga on file0.ts:1')).toBeNull();
+    window.matchMedia = original;
+  });
+
+  it('opens and closes with the arrow keys', () => {
+    seedBatch();
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    fireEvent.keyDown(toggle(), { key: 'ArrowRight' });
+    expect(toggle().getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('keeps a failed child from opening the group and counts it as needing you', () => {
+    seedBatch();
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    expect(toggle().getAttribute('aria-expanded')).toBe('false');
+    expect(screen.getByTestId('resolve-batch-summary').textContent).toContain('1 failed');
+  });
+});
+
+describe('TimelinePane subagent group', () => {
+  const NAMES = ['Scout thresholds', 'Scout retry paths', 'Implement the hook', 'Test the banner'];
+
+  const seedSubagents = ({ count = NAMES.length }: { readonly count?: number } = {}) => {
+    const lead = {
+      id: 'lead',
+      sessionId: 'session-1',
+      ordinal: 1,
+      name: 'Implement the banner',
+      status: 'running',
+      startedAt: '2026-08-20T10:00:00.000Z',
+    };
+    const children = NAMES.slice(0, count).map((name, index) => ({
+      id: `sub-${index}`,
+      sessionId: 'session-1',
+      ordinal: index + 2,
+      name,
+      parentAgentId: 'lead',
+      status: index === count - 1 ? 'running' : 'completed',
+      startedAt: `2026-08-20T10:0${index + 1}:00.000Z`,
+      ...(index === count - 1 ? {} : { completedAt: `2026-08-20T10:0${index + 1}:30.000Z` }),
+    }));
+    storeState.sessionPhaseRuns = { 'session-1': [lead, ...children] };
+    resolveActivity.current = { batchByAgentId: new Map(), factsByAgentId: new Map() };
+  };
+
+  const toggle = () => screen.getByRole('button', { name: /4 subagents/ });
+
+  const rowIds = () =>
+    Array.from(document.querySelectorAll('[data-row-id]')).map((element) =>
+      element.getAttribute('data-row-id'),
+    );
+
+  it('draws one closed row with the state summary above the parent and no child rows', () => {
+    seedSubagents();
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    expect(toggle().getAttribute('aria-expanded')).toBe('false');
+    expect(screen.getByTestId('resolve-batch-summary').textContent).toBe('3 done · 1 running');
+    expect(screen.queryByText('Scout thresholds')).toBeNull();
+    const ids = rowIds();
+    expect(ids.indexOf('subagents:agent:lead')).toBeLessThan(ids.indexOf('agent:lead'));
+    const mixed = toggle().closest('[data-row-id]')?.querySelector('[data-node-state="mixed"]');
+    expect(mixed?.textContent).toBe('4');
+  });
+
+  it('leaves two subagents as plain rows', () => {
+    seedSubagents({ count: 2 });
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    expect(screen.queryByRole('button', { name: /subagents/ })).toBeNull();
+    expect(screen.getByText('Scout thresholds')).toBeTruthy();
+  });
+
+  it('explodes upward on click and folds back on the second click', () => {
+    vi.useFakeTimers();
+    seedSubagents();
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    fireEvent.click(toggle());
+
+    expect(toggle().getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByText('Scout thresholds')).toBeTruthy();
+    const ids = rowIds().filter(
+      (id) => id?.startsWith('agent:sub') || id?.startsWith('subagents:'),
+    );
+    expect(ids.at(-1)).toBe('subagents:agent:lead');
+    expect(ids).toHaveLength(5);
+    expect(document.querySelectorAll('[data-explode="in"]')).toHaveLength(4);
+
+    fireEvent.click(toggle());
+    expect(toggle().getAttribute('aria-expanded')).toBe('false');
+    expect(document.querySelectorAll('[data-explode="out"]')).toHaveLength(4);
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+    expect(screen.queryByText('Scout thresholds')).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it('opens and closes with the arrow keys', () => {
+    seedSubagents();
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    fireEvent.keyDown(toggle(), { key: 'ArrowRight' });
+    expect(toggle().getAttribute('aria-expanded')).toBe('true');
   });
 });

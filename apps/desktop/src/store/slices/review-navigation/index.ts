@@ -10,7 +10,7 @@ import type {
 } from './types';
 import type { SliceDeps } from '../../slice-types';
 
-export { reviewThreadId } from './destination';
+export { reviewFocusThreadId } from './destination';
 export type { ReviewDestination } from './destination';
 export type { ReviewTargetOutcome, ReviewTargetReason } from './types';
 

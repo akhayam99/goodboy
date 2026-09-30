@@ -13,7 +13,15 @@ import { ConversationScene } from './scenes/ConversationScene';
 import { MountsScene } from './scenes/MountsScene';
 import { MountMismatchScene } from './scenes/MountMismatchScene';
 import { ResolveScene } from './scenes/ResolveScene';
+import { ResolveSelectScene } from './scenes/ResolveSelectScene';
+import { ResolveDriftScene } from './scenes/ResolveDriftScene';
+import { ResolveCommitStoryScene } from './scenes/ResolveCommitStoryScene';
+import { ResolveCommitsScene } from './scenes/ResolveCommitsScene';
+import { ResolveGitlabScene } from './scenes/ResolveGitlabScene';
+import { ResolveBitbucketScene } from './scenes/ResolveBitbucketScene';
 import { ResolveItemScene } from './scenes/ResolveItemScene';
+import { ResolveFailedHistoryScene } from './scenes/ResolveFailedHistoryScene';
+import { ResolveFailedRunScene } from './scenes/ResolveFailedRunScene';
 import { BoardScene } from './scenes/BoardScene';
 import { TranscriptMountScene } from './scenes/TranscriptMountScene';
 import { BoardShellScene } from './scenes/BoardShellScene';
@@ -29,6 +37,7 @@ import {
 } from './scenes/ArtifactCreationScenes';
 import { ActivityFilterScene, ActivityTimelineScene } from './scenes/ActivityScenes';
 import { ActivityRunScene } from './scenes/ActivityRunScene';
+import { ActivityResolvesScene } from './scenes/ActivityResolvesScene';
 import { ActivityQuestionScene } from './scenes/ActivityQuestionScene';
 import { ActivityOneSignalScene } from './scenes/ActivityOneSignalScene';
 import { ContextDrawerScene } from './scenes/ContextDrawerScene';
@@ -117,6 +126,7 @@ import { useBrandChrome } from './scenes/brand/brandChrome';
 import { applyDocumentTheme } from '../../../shared/lib/theme';
 import { AgentBriefScene } from './scenes/AgentBriefScene';
 import { AgentBriefQuestionScene } from './scenes/AgentBriefQuestionScene';
+import { AgentBriefResolverScene } from './scenes/AgentBriefResolverScene';
 import { ReportSheetHost } from '../../../features/bug-report/components/ReportSheetHost';
 import { CrashReportScene, useReportSheetParam } from './scenes/audit/ReportScenes';
 
@@ -132,7 +142,15 @@ export const MOCK_SCENES = {
   mounts: MountsScene,
   'mount-mismatch': MountMismatchScene,
   resolve: ResolveScene,
+  'resolve-select': ResolveSelectScene,
   'resolve-item': ResolveItemScene,
+  'resolve-failed': ResolveFailedRunScene,
+  'resolve-failed-history': ResolveFailedHistoryScene,
+  'resolve-drift': ResolveDriftScene,
+  'resolve-commit-story': ResolveCommitStoryScene,
+  'resolve-commits': ResolveCommitsScene,
+  'resolve-gitlab': ResolveGitlabScene,
+  'resolve-bitbucket': ResolveBitbucketScene,
   board: BoardScene,
   'transcript-mount': TranscriptMountScene,
   'board-shell': BoardShellScene,
@@ -145,6 +163,7 @@ export const MOCK_SCENES = {
   activity: ActivityTimelineScene,
   'activity-filter': ActivityFilterScene,
   'activity-run': ActivityRunScene,
+  'activity-resolves': ActivityResolvesScene,
   'activity-question': ActivityQuestionScene,
   'activity-one-signal': ActivityOneSignalScene,
   'context-drawer': ContextDrawerScene,
@@ -227,6 +246,7 @@ export const MOCK_SCENES = {
   'brand-tools': BrandToolsScene,
   'agent-brief': AgentBriefScene,
   'agent-brief-question': AgentBriefQuestionScene,
+  'agent-brief-resolver': AgentBriefResolverScene,
   'crash-report': CrashReportScene,
 };
 

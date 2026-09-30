@@ -156,9 +156,9 @@ export const STORAGE_LOCAL = fragment({
 
 export const WORKSPACE_CHAT = fragment({
   id: 'workspace-chat',
-  height: 1292,
-  displayWidth: 666,
-  alt: 'An answer about Harborline: where the consent step lives in payments-api, a table of three files and what each does, Read 4 files, Copy and Start work from here',
+  height: 1721,
+  displayWidth: 784,
+  alt: 'An answer about Harborline: where the consent step lives in payments-api, a table of three files and what each does, Read 4 files, the model Sonnet 5 Medium and a Started a session note with Open session',
 });
 
 export const CHAT_PLAIN = fragment({

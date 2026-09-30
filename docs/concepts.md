@@ -674,19 +674,62 @@ Every comment shows one state word, grouped in three:
 
 - **Open**: Not started, Drafting (one live line says what the agent does),
   Needs you (the agent asked), Ready (the fix and the reply under the comment,
-  with an Edited tag once you changed the reply), Outdated (the comment changed
-  since the draft), Draft failed or Push failed (the line under the comment
+  with an Edited tag once you changed the reply), Comment changed (the reviewer
+  edited the original comment since the draft), Draft failed or Push failed (the box under the comment
   names the reason, such as the run ended before a result or the provider
-  error, never a generic error)
-- **Waiting for the push**: Accepted, Reply only (with a Resolve only tag when
-  nothing is posted), Skipped
-- **Done**: Pushed, and Resolved on GitHub when someone else closed it
+  error, never a generic error. A failed run also shows the last command it
+  ran with its result, such as `pnpm test src/webhooks · 2 failing`, and a
+  link to the transcript)
+- **Ready to push**: Accepted, Reply only (with a Resolve only tag when
+  nothing is posted)
+- **Done**: Skipped (it never blocks the push), Pushed, and Resolved on GitHub
+  when someone else closed it
+
+The state word carries the tone: Needs you is the only warning, Ready is neutral
+(the Accept button is the signal), Edited and Comment changed have their own tones,
+and the header shows one summary line instead of a chip per state. The `…`
+above the list filters the list by state.
+
+Review reads git after a fetch when it opens and again before every push, and
+keeps one git state per thread in `resolve_threads.git_state` (`local`,
+`on_origin`, `fixed_elsewhere`, `folded`, `missing`). A comment whose fix sha is
+already on `origin/<branch>` reads **Already on origin**: it offers
+`Reply and resolve`, the header Push does not count it (the header says how many
+more need only a reply) and `preparePublication` pushes only the local threads.
+A comment with no fix of ours whose commented line was changed by a commit on
+origin that Goodboy did not make, or whose fix `git cherry` finds under another
+sha, reads **Looks fixed**: it shows the commit and its author, `Reply and
+resolve` posts "Handled in <sha> by @<author>", `Fix anyway` puts the comment
+back in the normal flow. It is always a suggestion, never an automatic resolve.
+A reply the user wrote by hand after the draft, whatever its text, reads **You
+replied**: `Resolve only` posts nothing (`reconcileReplyOperation` recognises it
+too). **Fix went missing** (a fix sha that is neither on the branch nor on
+origin, or a pushed sha origin lost) gets its own detail and the
+`missing_commit` push blocker points to it. `computeThreadGitFacts` first asks
+`worktree_locate_fix`: the same patch on HEAD under another sha makes the thread
+`folded` (**Folded in**: it stays in the push with the remapped sha, the action
+reads `Push to reply`, and the reply "Fixed in <old>, squashed into <new>" is posted
+by the normal push flow after the push lands; only `on_origin` skips the push). If git cannot answer, **Re-check** (`recheckThread`) spawns a
+read-only scout (`sourceKind` `comment_recheck`, FixMode `recheck`) on the
+cheapest model of the provider. It ends with `<<comment-verdict threadId verdict
+sha evidence>>` (`fixed-here`, `not-relevant`, `still-needed`), parsed by
+`extractCommentVerdict` and stored in `resolve_threads.verdict_json`. The verdict
+offers one action (Reply and resolve, Close with this reply, Fix again) and never
+acts alone (where `canResolve` is false, as on Bitbucket, they read `Reply` and
+`Post this reply`, and `Resolve only` is not offered); `settleItemAnswered` takes `allowIntegrated` so a missing
+fix can be answered without undoing its accepted decision. The git facts live in `sessionThreadGit`, the per-thread computation in
+`store/slices/resolve/threadGitState.ts`, the git side in
+`src-tauri/src/thread_git.rs`.
 
 Each comment has four verbs, with single keys while the list has focus:
-`Accept` (A), `Edit` (E, `Answer` when the agent asked, `Redraft` when the
-draft is outdated or failed), `Reply` (R, a reply without a change) and `Skip`
-(S), plus `Undo` (U) until the push and `Draft a fix` (D) on a comment nobody
-drafted. J and K move. Edit, Answer and Reply share one text box: Enter sends,
+`Accept` (A), `Edit` (E, `Answer` when the agent asked, `Redraft with the new
+comment` when the reviewer changed it, `Add a hint` when the run failed), `Reply` (R, a reply
+without a change) and `Skip` (S), plus `Undo` (U, `Resume` on a skipped
+comment) until the push and `Fix` (F) on a comment nobody started, which opens
+the launch strip. J and K move. A checkbox appears on hover on comments nobody
+started (X toggles the focused row, Cmd+A picks every one of them, Esc clears):
+the bar `3 selected · Fix 3 separately` opens the strip for the pick, and a
+batch is born only from a selection or one `Fix`. Edit, Answer and Reply share one text box: Enter sends,
 Shift+Enter adds a line, Esc cancels. Clicking the reply edits it in place.
 `…` also offers Stop drafting, Resolve without a reply, Open in diff, Agent
 transcript, Open on GitHub and Copy link. Accept and Skip move focus to the
@@ -695,6 +738,18 @@ push and, for a fix, lands the commit on the local branch. The actions are the
 `review` and `reviewComment` kinds of the action registry
 (`features/actions/kinds/`), so the buttons, `…`, the right click and the
 palette list the same set.
+
+A comment turns to Comment changed only when the reviewer edits the original
+comment. Every refresh of the pull request compares the fingerprint of the root
+comment with the one stored in
+`resolve_threads.source_snapshot_json` when the draft was made, and a mismatch
+stores the new text, who wrote it and when Goodboy saw it. A plain write to the
+thread (a resolved flag, a phase) never marks it: those writes keep the draft in
+step with the thread revision. `Keep the draft` adopts the new text as the
+baseline and keeps the draft acceptable; `Redraft with the new comment` moves
+the baseline when the agent starts. GitHub's outdated flag is a fact on the
+comment (The line moved), not a state. A new reply after the draft is a fact too
+(New reply from the author, with the text one click away): it never blocks Accept.
 
 A **fix attempt** is one agent working on one or more conversations. It ends
 with a local commit and never pushes.
@@ -717,14 +772,36 @@ with a local commit and never pushes.
   sha fails, preparing the publication (or **Recheck fix**) records it again
   before it checks the branch
 
-- Every start goes through one path (`startResolve`): `Draft fixes for N` in
-  the Review header, `Draft a fix` on one comment, or the Activity suggestion.
-  Opening Review never starts an agent. Each start carries the thread ids and
-  the marker contract. It uses the model chosen in `…` → `Model for drafts…`
-  (the shared picker with every connected provider and a **Suggested** row),
-  or the suggested resolver model
-- Fixes run one at a time in the session worktree, so two fixes never fight
-  over the same branch
+- Every start goes through one path (`startBatch`): `Fix` on the row of a
+  comment nobody started (hover) or in its detail, `F` on the focused row, or
+  the Activity suggestion. The header has no "Draft fixes" button: a batch is
+  born from the comments you pick. Opening Review never starts an agent.
+  `Fix` opens the **launch strip**, inline under the header (never a dialog):
+  the model and effort pill (the shared picker with every connected provider
+  and a **Suggested** row), the commit style (`New commit` or `Fixup of the
+original`, prefilled from the settings or the last batch), an optional hint
+  that lands in Operator notes, a plain count line (`3 agents · up to 4 run at
+once · each works on its own copy of the branch`, no price: nothing
+  estimates the cost of a run), and `Start` on Cmd+Enter (Esc closes). The
+  choice is saved on the batch and on every attempt (`launch_choice_json`). Each start carries the thread ids and the
+  marker contract
+- A retry reads the same choices again. Redraft, Answer and Try again use the
+  launch choice of the comment's last batch attempt (model, effort, commit
+  style, hint), then the model picked for the session (`Model for drafts…`) and
+  the commit style set in Review replies, so with fixup set the second round is
+  a fixup too. The
+  hint you type before a retry lands in the prompt's operator notes
+- A failed run offers **Try again** (`Try again on Opus 5` once you picked a
+  model, `Try again with the hint` with a hint), **Try another model** (the
+  picker opens inline under the buttons) and **Add a hint** (F is Try again).
+  `…` holds Reply yourself, Skip and Open transcript. The earlier attempts of
+  the comment fold into one line above (`Attempt 1 · Sonnet 5 · Medium ·
+failed`) that opens to their reasons. A failed step after the run shows its
+  own verb: `Push again`, `Post the reply again` or `Open on GitHub` when
+  Goodboy could not confirm the reply landed
+- A batch fix runs in its own copy of the branch, up to four at a time (the
+  session limit), so two fixes never fight over the same branch. The rest wait
+  with `Waiting for a free slot`
 - After a restart, Goodboy rebuilds everything from its database, not from a
   chat log
 
@@ -737,7 +814,12 @@ blocker (uncommitted changes, a commit nobody approved, a fix still running)
 replaces the confirm with its reason and the one move that clears it. The
 result stays on the layer in one line with its commit; a partial push says how
 many landed and marks the comment that did not with its reason, and `Retry
-push for N` picks it up. ⌘↵ with the list focused pushes too. Behind it runs a
+push for N` picks it up. When the push failed because origin moved, `Sync and
+try again` (on the comment and in the result line) asks first under the header,
+then fetches origin and rebases the unpushed commits of the local branch on it
+in a copy, without pushing, and checks the push again. If those commits
+conflict with the new ones it stops and says so, and the branch stays as it
+was. ⌘↵ with the list focused pushes too. Behind it runs a
 **publication**, which:
 
 1. Locks the conversations it will publish
@@ -753,12 +835,25 @@ How a reply reads is set in Settings, Workspace, **Review replies**:
   voice goes into the agent's prompt
 - **Templates**: When fixed and When not changing. Goodboy fills them in code,
   the agent writes only `{reason}`. The other variables are `{commit}`,
-  `{fixup_of}`, `{reviewer}`, `{file}` and `{line}`. The defaults are the
-  reason, then `Fixed in {commit}.` or `Leaving this as is.`
+  `{commit_story}`, `{fixup_of}`, `{reviewer}`, `{file}` and `{line}`.
+  `{commit_story}` is the same sha as `{commit}`, plus `c81e5aa, squashed into
+e31b9f4` when a history rewrite folded the fix. Reply and page always read
+  the last commit of the thread after rewrites. The defaults are the
+  reason, then `Fixed in {commit_story}.` or `Leaving this as is.`
 - **Sign replies** is the attribution line switch, so one value signs
   everything Goodboy posts
 - **Resolve the thread after replying** (on by default) and **Commits** (new
   commit, or fixup of the commit that added the line)
+- **Edit the posted reply** (on by default, stored per workspace in the
+  `settings` table under `review.edit_posted_reply.<workspaceId>`, `0` = off).
+  After a history rewrite is pushed and a reply Goodboy posted names a sha that
+  moved, Goodboy edits that reply in place with `updateReviewComment`: it adds
+  `Update: c81e5aa was squashed into e31b9f4.` (or `is now`) above the
+  signature, once per sha change, and rewrites the delivery receipt body so the
+  Review page shows the same text as GitHub. Replies from people are never edited. The
+  per-thread history (first sha, folded or not, posted sha and body, update
+  lines) lives in the `settings` table under
+  `resolve.commit_story.<sessionId>.<threadId>`, so it needs no migration
 
 Goodboy saves a receipt for every step, and the outcome it reports is read from
 those receipts: a thread shows as resolved only after GitHub confirmed it. If a

@@ -36,6 +36,7 @@ mod last_crash;
 mod linear;
 mod live_child;
 mod local_image;
+mod logging;
 mod path_env;
 mod permissions;
 mod planner;
@@ -64,6 +65,7 @@ mod slack;
 mod storage;
 mod summarize;
 mod terminal;
+mod thread_git;
 mod turn;
 mod turn_backlog;
 mod usage_probe;
@@ -71,6 +73,9 @@ mod util;
 mod workflows;
 mod worktree;
 mod worktree_writer;
+
+#[cfg(test)]
+mod command_threading;
 
 #[cfg(target_os = "macos")]
 mod fullscreen_escape;
@@ -129,7 +134,10 @@ pub fn run() {
         Ok(database) => Some(database),
         Err(error) => {
             boot_breadcrumb::record("error", Some("error"));
-            eprintln!("[goodboy] the local database could not be opened: {error}");
+            logging::early(format!(
+                "[goodboy] the local database could not be opened: {}",
+                logging::detail(&error)
+            ));
             None
         }
     };
@@ -196,6 +204,7 @@ pub fn run() {
         .manage(frame_protocol::FrameStages::default())
         .setup(move |app| {
             use tauri::Manager;
+            logging::init(app.handle());
             query_bridge::start(app.handle().clone());
             std::thread::spawn(history::clean_stale_copies);
             #[cfg(target_os = "macos")]
@@ -203,13 +212,6 @@ pub fn run() {
             #[cfg(desktop)]
             app.handle()
                 .plugin(tauri_plugin_updater::Builder::new().build())?;
-            if cfg!(debug_assertions) {
-                app.handle().plugin(
-                    tauri_plugin_log::Builder::default()
-                        .level(log::LevelFilter::Info)
-                        .build(),
-                )?;
-            }
             let windows = app.webview_windows();
             if !windows.is_empty() {
                 boot_breadcrumb::record("window-created", Some("ok"));
@@ -317,10 +319,15 @@ pub fn run() {
             history::history_rewriter_prepare,
             history::history_rewriter_collect,
             history::history_copy_discard,
+            history::resolve_copy_prepare,
             history::history_copy_git_dirs,
             worktree::worktree_diff_working,
             worktree::worktree_status,
             branch_remote::worktree_sync_branch_ref,
+            thread_git::worktree_fetch_origin_branch,
+            thread_git::worktree_fix_on_origin,
+            thread_git::worktree_locate_fix,
+            thread_git::worktree_origin_commits_touching,
             worktree::checkout_fast_forward,
             worktree::worktree_list_local_branches,
             worktree::worktree_list_branch_names,

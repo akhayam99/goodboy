@@ -23,6 +23,7 @@ export const createChat =
       title: trimmed === '' ? NEW_CHAT_TITLE : trimmed,
       provider,
       model,
+      effort: null,
       pinnedAt: null,
       archivedAt: null,
       lastActivityAt: now,
@@ -33,7 +34,10 @@ export const createChat =
     set((state) => ({
       chatsByWorkspace: {
         ...state.chatsByWorkspace,
-        [workspaceId]: [{ ...chat, preview: null }, ...(state.chatsByWorkspace[workspaceId] ?? [])],
+        [workspaceId]: [
+          { ...chat, preview: null, modelsUsed: [] },
+          ...(state.chatsByWorkspace[workspaceId] ?? []),
+        ],
       },
       chatMessages: { ...state.chatMessages, [chat.id]: [] },
     }));

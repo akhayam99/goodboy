@@ -6,8 +6,12 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import type { AppState } from '../../store/types';
+import {
+  activeReviewSourceOf,
+  selectedReviewEntryOf,
+} from '../../store/slices/review-source/activeReviewSource';
+import { rowBelongsToSource } from '../../store/slices/review-source/rowBelongsToSource';
 import { buildResolveQueueRows, type ResolveQueueRow } from './buildResolveQueueRows';
-import { conversationSourceOf } from './notes/conversationSource';
 import { draftReplyText, type ResolveItemDraft } from './resolveItemDraft';
 import { reviewCommentStateOf, type ReviewCommentState } from './reviewCommentState';
 
@@ -26,11 +30,11 @@ export const reviewRowsOf = ({ state, sessionId }: Params): ReadonlyArray<Resolv
     entries: state.sessionResolveQueueItems[sessionId] ?? EMPTY_ENTRIES,
     attempts: state.sessionResolveAttempts[sessionId] ?? EMPTY_ATTEMPTS,
     deliveryReceipts: [],
-    comments: state.sessionGithub[sessionId]?.detail?.comments ?? EMPTY_COMMENTS,
+    comments: activeReviewSourceOf({ state, sessionId })?.comments ?? EMPTY_COMMENTS,
     notes: state.diffComments[sessionId] ?? EMPTY_NOTES,
   });
-  const hasPr = state.sessionGithub[sessionId]?.pr != null;
-  return hasPr ? rows : rows.filter((row) => conversationSourceOf({ row }) === 'note');
+  const entry = selectedReviewEntryOf({ state, sessionId });
+  return rows.filter((row) => rowBelongsToSource({ row: row.thread, entry }));
 };
 
 type DraftParams = {
@@ -55,4 +59,6 @@ export const rowStateOf = ({ state, sessionId, row }: RowStateParams): ReviewCom
       draft: state.resolveItemDrafts[sessionId]?.[row.thread.threadId],
       row,
     }),
+    isChanged:
+      state.sessionResolveSourceSnapshots[sessionId]?.[row.thread.threadId]?.changed != null,
   });

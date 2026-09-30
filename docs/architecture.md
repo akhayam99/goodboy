@@ -143,6 +143,78 @@ baseline names `config_export/apply.rs`.
   through one refresh entry point
   ([ADR 003](adr/003-provider-detection-leaves-the-boot-path.md)).
 
+### Where commands run
+
+A Tauri command declared as a plain `fn` runs on the main thread, the same
+thread that draws the window and handles input. While it works, nothing else in
+the app moves. So the split is by what the command does.
+
+- **A command that touches the file system, git, a subprocess or the keychain
+  is `async fn`, and its blocking work runs inside
+  `tauri::async_runtime::spawn_blocking`.** The command keeps its name,
+  arguments and result. A join error becomes the command's own error type
+  (`restart_prepare` and `history_git_supported` follow the same shape).
+  Worktree, history, config export and import, the git and `gh` wrappers and
+  `explore_read` already work this way.
+- **A short SQLite call may run inline in an `async fn`.** An async command
+  runs on the worker pool, not on the main thread, so a query under the `Db`
+  lock does not freeze the window. Anything that can take long still goes
+  through `spawn_blocking`.
+- **A command that only reads or writes memory stays a plain `fn`.** That
+  covers registry lookups, lease bookkeeping and the answers to the frontend
+  (`mount_command_result`, `worktree_writer_*`, `frame_stage`).
+- **Terminal and provider-login input stays a plain `fn` on purpose.**
+  `terminal_write` and `provider_lifecycle_write` send keystrokes, and the main
+  thread keeps them in the order they were typed. Two async calls could
+  finish out of order.
+- **Do not hold a `std::sync::Mutex` guard across an `.await`.** Take the
+  lock, copy out what you need and drop it before the next `.await`, or do the
+  whole locked section inside `spawn_blocking`.
+
+`command_threading` (a Rust test) scans every `#[tauri::command]` and fails when
+a plain `fn` command is not on its short list of in-memory commands. A new
+command that does I/O has to be async, or the list has to change in review.
+
+### Logging
+
+Every build, debug and release, starts the log plugin first in `setup`
+(`src-tauri/src/logging.rs`), before the query bridge and anything else that
+can warn. It writes to one place: a local file, `goodboy.log`, in the system
+log folder of the app. That folder is `~/Library/Logs/com.goodboy.desktop/` on
+macOS, `~/.local/share/com.goodboy.desktop/logs/` on Linux and
+`%LOCALAPPDATA%\com.goodboy.desktop\logs\` on Windows. Nothing is sent
+anywhere; a debug build also prints to stdout.
+
+- **Level.** `info` and above. The frontend has no channel into the file: the
+  `log` permission is not granted, so a window cannot write to it.
+- **Size.** A file rotates at 512 KiB. The plugin keeps the active file and
+  the 3 most recent dated archives (`goodboy_<date>_<time>.log`). When two
+  rotations land in the same second the plugin renames the older archive to
+  `.log.bak`, and its own cleanup never removes those. So `logging::init`
+  sweeps them at every start and keeps only the newest. That needs more than
+  512 KiB logged in one second, and the one message a stranger could trigger
+  on demand, a network peer that connects to the phone listener and fails the
+  handshake, is logged at `debug` and never reaches the file. Normal size:
+  under about 2.5 MiB. `logging::tests` floods the logger and pins the cap.
+- **Access.** The folder is narrowed to the owner (`0700`) on macOS and Linux.
+- **Content.** Log a fixed label and a short reason, never a token, a prompt,
+  a file's content or a command line. `logging::detail` is the one way to
+  print an error: it keeps the first line, hides credentials inside URLs and
+  cuts the text at 200 characters.
+- **Dropped errors.** `logging::note_failure` and `note_kill_failure` replace
+  `let _ =` in process teardown (killing a terminal, script, provider login or
+  live child) and in git cleanup (removing scratch and copy worktrees,
+  `worktree prune`, `cherry-pick --abort` and the resets after it). A child that
+  already exited is not reported. Other `let _ =` are still silent by design:
+  event emits to a closed window and best-effort file cleanup.
+- **Logging never blocks startup.** `logging::init` builds the logger itself
+  and does not register the plugin. If the folder or file cannot be created or
+  opened (a `goodboy.log` owned by root after a `sudo` run, a read-only data
+  folder), it prints one line to stderr and the app starts with logging off.
+- **Before the logger exists.** `db::open` runs before the app, so its
+  messages go through `logging::early`: printed to stderr at once, and written
+  to the file when `setup` starts the logger (at most 16 lines).
+
 ### Opening an artifact outside the app
 
 - **There is no reader window and no print window.** A plan, a report and a
@@ -321,6 +393,7 @@ cleanup) and moving those calls behind the commands is not done yet.
 | `budget_alerts`               | rust   | `budget.rs`                                                                                                         |
 | `budget_rules`                | rust   | `budget.rs`, and the backup import                                                                                  |
 | `chat_messages`               | ts     |                                                                                                                     |
+| `chat_session_links`          | ts     |                                                                                                                     |
 | `chats`                       | ts     |                                                                                                                     |
 | `context_slot_history`        | ts     |                                                                                                                     |
 | `context_slots`               | ts     |                                                                                                                     |
@@ -354,6 +427,7 @@ cleanup) and moving those calls behind the commands is not done yet.
 | `provider_limits`             | ts     |                                                                                                                     |
 | `provider_runs`               | ts     |                                                                                                                     |
 | `resolve_attempts`            | ts     | Exception: a project move rewrites `worktree_path`.                                                                 |
+| `resolve_batches`             | ts     |                                                                                                                     |
 | `resolve_candidate_items`     | ts     |                                                                                                                     |
 | `resolve_candidates`          | ts     | Exception: a project move rewrites `worktree_path`.                                                                 |
 | `resolve_check_runs`          | ts     |                                                                                                                     |
@@ -361,6 +435,7 @@ cleanup) and moving those calls behind the commands is not done yet.
 | `resolve_publication_threads` | ts     |                                                                                                                     |
 | `resolve_publications`        | ts     | Exception: a project move rewrites `worktree_path`.                                                                 |
 | `resolve_queue_items`         | ts     |                                                                                                                     |
+| `resolve_session_settings`    | ts     |                                                                                                                     |
 | `resolve_threads`             | ts     |                                                                                                                     |
 | `retained_worktree_paths`     | ts     | Exception: a project move rewrites the paths.                                                                       |
 | `schema_migration_segment`    | ts     |                                                                                                                     |
@@ -425,6 +500,8 @@ Everything the app saves for itself lives in `~/.goodboy`.
 - `query/query-<pid>.sock`: the socket a running app uses for the query bridge, in its own owner-only folder (see [query-bridge.md](query-bridge.md)).
 - `history-copies/`: the temporary copies Rewrite history replays a plan in.
 - `boot-breadcrumbs.log`: how long each startup step took.
+
+The app log is not in `~/.goodboy`; it lives in the system log folder (see [Logging](#logging)).
 
 When a session works on a repository, it gets its own git worktree in the
 repository's `.goodboy/worktrees/` folder ([mounts.md](mounts.md)). A session

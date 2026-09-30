@@ -2,6 +2,8 @@ import type {
   Chat,
   ChatId,
   ChatMessage,
+  ChatModelUsed,
+  ChatSessionLink,
   ChatSummary,
   IsoDateTime,
   ProviderRunId,
@@ -21,6 +23,7 @@ export type ChatResponder = (params: ChatResponderParams) => Promise<ChatTurnOut
 export type ChatSeed = {
   readonly chats: ReadonlyArray<Chat>;
   readonly messages: ReadonlyArray<ChatMessage>;
+  readonly links?: ReadonlyArray<ChatSessionLink>;
 };
 
 export type ChatSeedParams = {
@@ -58,6 +61,7 @@ export const createMemoryChatBackend = ({ respond, seed, summarize }: Params): C
   const messages = new Map<ChatId, ReadonlyArray<ChatMessage>>();
   const seeded = new Set<WorkspaceId>();
   const cancelled = new Set<ProviderRunId>();
+  const links = new Map<string, ChatSessionLink>();
 
   const append = ({ message }: MessageParams) => {
     messages.set(message.chatId, [...(messages.get(message.chatId) ?? []), message]);
@@ -74,6 +78,9 @@ export const createMemoryChatBackend = ({ respond, seed, summarize }: Params): C
     }
     for (const message of data.messages) {
       append({ message });
+    }
+    for (const link of data.links ?? []) {
+      links.set(link.id, link);
     }
   };
 
@@ -107,6 +114,20 @@ export const createMemoryChatBackend = ({ respond, seed, summarize }: Params): C
     return last === undefined ? null : last.content.slice(0, PREVIEW_LENGTH);
   };
 
+  const modelsUsedOf = ({ chatId }: ChatRef): ReadonlyArray<ChatModelUsed> => {
+    const used: ChatModelUsed[] = [];
+    for (const message of messages.get(chatId) ?? []) {
+      if (message.role !== 'assistant' || message.provider === null || message.model === null) {
+        continue;
+      }
+      const { provider, model } = message;
+      if (!used.some((entry) => entry.provider === provider && entry.model === model)) {
+        used.push({ provider, model });
+      }
+    }
+    return used;
+  };
+
   return {
     listChats: async ({ workspaceId, includeArchived = false }) => {
       ensureSeeded({ workspaceId });
@@ -114,7 +135,11 @@ export const createMemoryChatBackend = ({ respond, seed, summarize }: Params): C
         .filter((chat) => chat.workspaceId === workspaceId)
         .filter((chat) => includeArchived || chat.archivedAt === null)
         .sort((left, right) => right.lastActivityAt.localeCompare(left.lastActivityAt))
-        .map((chat): ChatSummary => ({ ...chat, preview: previewOf({ chatId: chat.id }) }));
+        .map((chat): ChatSummary => ({
+          ...chat,
+          preview: previewOf({ chatId: chat.id }),
+          modelsUsed: modelsUsedOf({ chatId: chat.id }),
+        }));
     },
     listMessages: async ({ chatId }) => messages.get(chatId) ?? [],
     insertChat: async ({ chat }) => {
@@ -138,14 +163,34 @@ export const createMemoryChatBackend = ({ respond, seed, summarize }: Params): C
         patchChat({ chatId, patch: { archivedAt, updatedAt: now } });
       }
     },
+    deleteChats: async ({ chatIds }) => {
+      for (const chatId of chatIds) {
+        chats.delete(chatId);
+        messages.delete(chatId);
+        for (const [linkId, link] of links) {
+          if (link.chatId === chatId) {
+            links.delete(linkId);
+          }
+        }
+      }
+    },
+    insertLink: async ({ link }) => {
+      links.set(link.id, link);
+    },
+    listLinks: async ({ workspaceId }) => {
+      ensureSeeded({ workspaceId });
+      return [...links.values()]
+        .filter((link) => chats.get(link.chatId)?.workspaceId === workspaceId)
+        .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+    },
     setPinned: async ({ chatId, pinnedAt, now }) => {
       patchChat({ chatId, patch: { pinnedAt, updatedAt: now } });
     },
     rename: async ({ chatId, title, now }) => {
       patchChat({ chatId, patch: { title, updatedAt: now } });
     },
-    setModel: async ({ chatId, provider, model, now }) => {
-      patchChat({ chatId, patch: { provider, model, updatedAt: now } });
+    setModel: async ({ chatId, provider, model, effort, now }) => {
+      patchChat({ chatId, patch: { provider, model, effort, updatedAt: now } });
     },
     settleStreaming: async ({ now }) => {
       let settled = 0;

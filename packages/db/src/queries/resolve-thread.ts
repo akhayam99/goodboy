@@ -1,11 +1,23 @@
-import type { ResolveStage, ResolveThread, ResolveThreadState, SessionId } from '@goodboy/types';
+import type {
+  ResolveSourceKind,
+  ResolveStage,
+  ResolveThread,
+  ResolveThreadState,
+  SessionId,
+} from '@goodboy/types';
 import type { Database } from '../client';
 import { resolveStringArray } from './resolve-json';
 
-type Row = Omit<ResolveThread, 'commitShas' | 'githubResolved'> & {
+type Row = Omit<ResolveThread, 'commitShas' | 'githubResolved' | 'sourceKind'> & {
   readonly commitShas: string | null;
   readonly githubResolved: number | null;
+  readonly sourceKind: string;
 };
+
+const SOURCE_KINDS: ReadonlyArray<ResolveSourceKind> = ['github', 'gitlab', 'bitbucket', 'local'];
+
+const sourceKindOf = ({ row }: { readonly row: ResolveThread }): ResolveSourceKind =>
+  row.sourceKind ?? (row.originKind === 'diff_comment' ? 'local' : 'github');
 type ListParams = { readonly db: Database; readonly sessionId: SessionId };
 type UpsertParams = {
   readonly db: Database;
@@ -36,13 +48,14 @@ export const listResolveThreads = async ({
   sessionId,
 }: ListParams): Promise<ReadonlyArray<ResolveThread>> => {
   const rows = await db.select<Row>(
-    `SELECT id, session_id AS sessionId, project_id AS projectId, pr_number AS prNumber, thread_id AS threadId, origin_kind AS originKind, diff_comment_id AS diffCommentId, state, stage, state_reason AS stateReason, revision, generation, reopened_from_thread_id AS reopenedFromThreadId, active_attempt_id AS activeAttemptId, disposition, reply_draft AS replyDraft, commit_shas_json AS commitShas, fixup_of_sha AS fixupOfSha, replaces_sha AS replacesSha, question, reply_posted_at AS replyPostedAt, reply_id AS replyId, github_resolved AS githubResolved, closed_at AS closedAt, closed_source AS closedSource, created_at AS createdAt, updated_at AS updatedAt FROM resolve_threads WHERE session_id = ? ORDER BY created_at, id`,
+    `SELECT id, session_id AS sessionId, project_id AS projectId, pr_number AS prNumber, thread_id AS threadId, origin_kind AS originKind, diff_comment_id AS diffCommentId, state, stage, state_reason AS stateReason, revision, generation, reopened_from_thread_id AS reopenedFromThreadId, active_attempt_id AS activeAttemptId, disposition, reply_draft AS replyDraft, commit_shas_json AS commitShas, fixup_of_sha AS fixupOfSha, replaces_sha AS replacesSha, question, reply_posted_at AS replyPostedAt, reply_id AS replyId, github_resolved AS githubResolved, closed_at AS closedAt, closed_source AS closedSource, created_at AS createdAt, updated_at AS updatedAt, source_kind AS sourceKind, provider_thread_id AS providerThreadId FROM resolve_threads WHERE session_id = ? ORDER BY created_at, id`,
     [sessionId],
   );
   return rows.map((row) => ({
     ...row,
     commitShas: row.commitShas === null ? null : resolveStringArray({ json: row.commitShas }),
     githubResolved: row.githubResolved === null ? null : row.githubResolved === 1,
+    sourceKind: SOURCE_KINDS.find((kind) => kind === row.sourceKind) ?? 'github',
   }));
 };
 
@@ -52,8 +65,8 @@ export const upsertResolveThread = async ({
   expectedRevision,
 }: UpsertParams): Promise<boolean> => {
   const result = await db.execute(
-    `INSERT INTO resolve_threads (id, session_id, project_id, pr_number, thread_id, origin_kind, diff_comment_id, state, stage, state_reason, revision, generation, reopened_from_thread_id, active_attempt_id, disposition, reply_draft, commit_shas_json, fixup_of_sha, replaces_sha, question, reply_posted_at, reply_id, github_resolved, closed_at, closed_source, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO resolve_threads (id, session_id, project_id, pr_number, thread_id, origin_kind, diff_comment_id, state, stage, state_reason, revision, generation, reopened_from_thread_id, active_attempt_id, disposition, reply_draft, commit_shas_json, fixup_of_sha, replaces_sha, question, reply_posted_at, reply_id, github_resolved, closed_at, closed_source, created_at, updated_at, source_kind, provider_thread_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT (session_id, thread_id) DO UPDATE SET
        project_id = excluded.project_id,
        pr_number = excluded.pr_number,
@@ -105,6 +118,8 @@ export const upsertResolveThread = async ({
       row.closedSource,
       row.createdAt,
       row.updatedAt,
+      sourceKindOf({ row }),
+      row.providerThreadId ?? null,
       expectedRevision,
       expectedRevision,
     ],

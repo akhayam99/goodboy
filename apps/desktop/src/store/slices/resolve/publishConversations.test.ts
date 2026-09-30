@@ -39,6 +39,7 @@ const h = vi.hoisted(() => ({
   run: vi.fn<GhRun>(),
   leases: new Map<string, string>(),
   pushedFrom: [] as Array<string>,
+  pushedShas: [] as Array<string | null>,
   failOnPhase: null as string | null,
   isRemoteHeadUnreadable: false,
   hidesRemoteHeadAfterPush: false,
@@ -50,12 +51,14 @@ vi.mock('@goodboy/db', async () => {
   const mocks = (await import('./testing/createResolveQueryMocks')).createResolveQueryMocks();
   return {
     ...mocks,
-    setResolvePublicationPhase: vi.fn(async (params: { readonly phase: string }) => {
-      if (h.failOnPhase !== null && params.phase === h.failOnPhase) {
-        throw new Error('the database is locked');
-      }
-      return mocks.setResolvePublicationPhase(params as never);
-    }),
+    setResolvePublicationPhase: vi.fn(
+      async (params: Parameters<typeof mocks.setResolvePublicationPhase>[0]) => {
+        if (h.failOnPhase !== null && params.phase === h.failOnPhase) {
+          throw new Error('the database is locked');
+        }
+        return mocks.setResolvePublicationPhase(params);
+      },
+    ),
     listWorktreesForSession: vi.fn(async () => []),
   };
 });
@@ -67,23 +70,39 @@ vi.mock('../../../features/workflows/workflows', () => ({
 
 vi.mock('../../../features/github/github', () => ({
   tauriGhRunner: { run: h.run },
-  gitPush: vi.fn(async (cwd: string, branch: string | null) => {
-    h.pushedFrom.push(cwd);
-    try {
-      const stdout = git(cwd, ['push', 'origin', branch ?? 'HEAD']);
-      if (h.hidesRemoteHeadAfterPush) {
-        h.isRemoteHeadUnreadable = true;
+  gitPush: vi.fn(
+    async ({
+      cwd,
+      branch,
+      sha,
+    }: {
+      readonly cwd: string;
+      readonly branch: string | null;
+      readonly sha?: string;
+    }) => {
+      h.pushedFrom.push(cwd);
+      h.pushedShas.push(sha ?? null);
+      try {
+        const stdout = git(
+          cwd,
+          sha === undefined
+            ? ['push', 'origin', branch ?? 'HEAD']
+            : ['push', 'origin', `${sha}:refs/heads/${branch ?? ''}`],
+        );
+        if (h.hidesRemoteHeadAfterPush) {
+          h.isRemoteHeadUnreadable = true;
+        }
+        return { stdout, stderr: '', exitCode: 0 };
+      } catch (error) {
+        const failure = error as { stderr?: Buffer | string };
+        return {
+          stdout: '',
+          stderr: String(failure.stderr ?? 'push failed'),
+          exitCode: 1,
+        };
       }
-      return { stdout, stderr: '', exitCode: 0 };
-    } catch (error) {
-      const failure = error as { stderr?: Buffer | string };
-      return {
-        stdout: '',
-        stderr: String(failure.stderr ?? 'push failed'),
-        exitCode: 1,
-      };
-    }
-  }),
+    },
+  ),
 }));
 
 vi.mock('../../../features/worktree/worktree', () => {
@@ -175,6 +194,60 @@ vi.mock('../../../features/worktree/worktree', () => {
         return raw === '' ? null : (raw.split(/\s+/)[0] ?? null);
       },
     ),
+    worktreeFetchOriginBranch: vi.fn(
+      async ({
+        worktreePath,
+        branch,
+      }: {
+        readonly worktreePath: string;
+        readonly branch: string;
+      }) => {
+        git(worktreePath, ['fetch', '--quiet', 'origin']);
+        return {
+          fetched: true,
+          error: null,
+          remoteHead: git(worktreePath, ['rev-parse', `origin/${branch}`]),
+        };
+      },
+    ),
+    worktreeFixOnOrigin: vi.fn(
+      async ({
+        worktreePath,
+        branch,
+        sha,
+      }: {
+        readonly worktreePath: string;
+        readonly branch: string;
+        readonly sha: string;
+      }) => {
+        try {
+          git(worktreePath, ['merge-base', '--is-ancestor', sha, `origin/${branch}`]);
+          return { onOrigin: true, landedAs: null };
+        } catch {
+          return { onOrigin: false, landedAs: null };
+        }
+      },
+    ),
+    worktreeLocateFix: vi.fn(
+      async ({ worktreePath, sha }: { readonly worktreePath: string; readonly sha: string }) => {
+        try {
+          const parent = git(worktreePath, ['rev-parse', `${sha}^`]);
+          const pending = git(worktreePath, ['cherry', 'HEAD', sha, parent]);
+          if (!pending.split('\n').every((line) => line.startsWith('-'))) {
+            return { isKnown: true, landedAs: null, pathExists: null };
+          }
+          const landed = git(worktreePath, ['cherry', sha, 'HEAD', parent])
+            .split('\n')
+            .filter((line) => line.startsWith('- '))
+            .map((line) => line.slice(2).trim())
+            .at(-1);
+          return { isKnown: true, landedAs: landed ?? null, pathExists: null };
+        } catch {
+          return { isKnown: false, landedAs: null, pathExists: null };
+        }
+      },
+    ),
+    worktreeOriginCommitsTouching: vi.fn(async () => []),
     worktreeWriterStatus: vi.fn(async ({ path }: { readonly path: string }) => ({
       ...freeLease({ path }),
       holder: h.leases.get(path) ?? null,
@@ -316,6 +389,7 @@ const makeStore = ({ sessionId = SESSION_ID }: { readonly sessionId?: SessionId 
     agentRunHistory: {},
     emitNotification: vi.fn(async () => undefined),
     refreshSessionPrDetail: vi.fn(async () => undefined),
+    refreshReviewSource: vi.fn(async () => undefined),
     refreshSessionPr: vi.fn(async () => undefined),
   }));
   const set = store.setState as unknown as SetFn;
@@ -465,6 +539,7 @@ beforeEach(async () => {
   vi.clearAllMocks();
   h.leases.clear();
   h.pushedFrom.length = 0;
+  h.pushedShas.length = 0;
   h.failOnPhase = null;
   h.isRemoteHeadUnreadable = false;
   h.hidesRemoteHeadAfterPush = false;
@@ -756,7 +831,7 @@ describe('publishConversations over a real git repository', () => {
     const fix = commit({ text: 'export const retry = () => 2;\n', message: 'fix: early return' });
     const { actions, get } = makeStore();
     await seedFixRow({ actions, threadId: 'PRRT_1', shas: [fix], reply: 'Fixed' });
-    vi.mocked(get().refreshSessionPrDetail).mockRejectedValueOnce(new Error('gh is offline'));
+    vi.mocked(get().refreshReviewSource).mockRejectedValueOnce(new Error('gh is offline'));
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
     const preview = await actions.preparePublication({ sessionId: SESSION_ID });
@@ -948,21 +1023,6 @@ describe('publishConversations over a real git repository', () => {
     expect(git(worktreePath, ['rev-parse', 'origin/feature/retry'])).not.toBe(
       git(worktreePath, ['rev-parse', 'HEAD']),
     );
-  });
-
-  it('blocks with missing_commit when the recorded sha was amended away', async () => {
-    const original = commit({
-      text: 'export const retry = () => 2;\n',
-      message: 'fix: early return',
-    });
-    git(worktreePath, ['commit', '--amend', '-m', 'fix: early return, reworded']);
-    const { actions } = makeStore();
-    await seedFixRow({ actions, threadId: 'PRRT_1', shas: [original], reply: 'Fixed' });
-
-    const preview = await actions.preparePublication({ sessionId: SESSION_ID });
-
-    expect(preview.blocker).toBe('missing_commit');
-    expect(preview.publicationId).toBeNull();
   });
 
   it('blocks with missing_commit when the recorded sha is no longer an ancestor of HEAD', async () => {
@@ -1526,5 +1586,203 @@ describe('publishConversations over a real git repository', () => {
     expect(secondPreview.repo).toBeNull();
     expect(refused).toEqual({ kind: 'busy' });
     expect(await running).toMatchObject({ kind: 'done', closed: 1 });
+  });
+
+  it('pushes exactly the fix when its parent is on origin, even with a newer commit above', async () => {
+    const fix = commit({ text: 'export const retry = () => 2;\n', message: 'fix: early return' });
+    const newer = commit({ text: 'export const retry = () => 3;\n', message: 'fix: cap retries' });
+    const { actions } = makeStore();
+    await seedFixRow({ actions, threadId: 'PRRT_1', shas: [fix], reply: 'Fixed' });
+    await seedFixRow({ actions, threadId: 'PRRT_2', shas: [newer], reply: 'Capped' });
+
+    const preview = await actions.preparePublication({
+      sessionId: SESSION_ID,
+      threadIds: ['PRRT_1'],
+      isolated: true,
+    });
+
+    expect(preview.blocker).toBeNull();
+    expect(preview.localHead).toBe(fix);
+    expect(preview.commits.map((entry) => entry.sha)).toEqual([fix]);
+    expect(preview.earlierCommits).toEqual([]);
+
+    const result = await actions.publishConversations({
+      sessionId: SESSION_ID,
+      publicationId: preview.publicationId ?? '',
+    });
+
+    expect(result).toMatchObject({ kind: 'done', pushed: true, pushedHead: fix, failed: 0 });
+    expect(h.pushedShas).toEqual([fix]);
+    expect(git(worktreePath, ['rev-parse', 'origin/feature/retry'])).toBe(fix);
+    expect(git(worktreePath, ['rev-parse', 'HEAD'])).toBe(newer);
+  });
+
+  it('names the earlier commits a fix would carry along, then pushes up to the fix', async () => {
+    const earlier = commit({
+      text: 'export const retry = () => 2;\n',
+      message: 'fix: early return',
+    });
+    const fix = commit({ text: 'export const retry = () => 3;\n', message: 'fix: cap retries' });
+    const { actions } = makeStore();
+    await seedFixRow({ actions, threadId: 'PRRT_1', shas: [earlier], reply: 'Fixed' });
+    await seedFixRow({ actions, threadId: 'PRRT_2', shas: [fix], reply: 'Capped' });
+
+    const preview = await actions.preparePublication({
+      sessionId: SESSION_ID,
+      threadIds: ['PRRT_2'],
+      isolated: true,
+    });
+
+    expect(preview.blocker).toBeNull();
+    expect(preview.localHead).toBe(fix);
+    expect(preview.commits.map((entry) => entry.sha)).toEqual([fix]);
+    expect(preview.earlierCommits?.map((entry) => [entry.sha, entry.subject])).toEqual([
+      [earlier, 'fix: early return'],
+    ]);
+
+    const result = await actions.publishConversations({
+      sessionId: SESSION_ID,
+      publicationId: preview.publicationId ?? '',
+    });
+
+    expect(result).toMatchObject({ kind: 'done', pushed: true, pushedHead: fix });
+    expect(git(worktreePath, ['rev-parse', 'origin/feature/retry'])).toBe(fix);
+  });
+
+  it('blocks a scoped push that would carry an unapproved earlier commit', async () => {
+    commit({ text: 'export const retry = () => 2;\n', message: 'wip: try something' });
+    const fix = commit({ text: 'export const retry = () => 3;\n', message: 'fix: cap retries' });
+    const { actions } = makeStore();
+    await seedFixRow({ actions, threadId: 'PRRT_2', shas: [fix], reply: 'Capped' });
+
+    const preview = await actions.preparePublication({
+      sessionId: SESSION_ID,
+      threadIds: ['PRRT_2'],
+      isolated: true,
+    });
+
+    expect(preview.blocker).toBe('unapproved_commit');
+    expect(preview.unapproved.map((entry) => entry.subject)).toEqual(['wip: try something']);
+    expect(h.pushedShas).toEqual([]);
+  });
+
+  it('keeps the branch push of a normal publication', async () => {
+    const fix = commit({ text: 'export const retry = () => 2;\n', message: 'fix: early return' });
+    const { actions } = makeStore();
+    await seedFixRow({ actions, threadId: 'PRRT_1', shas: [fix], reply: 'Fixed' });
+
+    const preview = await actions.preparePublication({ sessionId: SESSION_ID });
+    await actions.publishConversations({
+      sessionId: SESSION_ID,
+      publicationId: preview.publicationId ?? '',
+    });
+
+    expect(preview.earlierCommits).toBeUndefined();
+    expect(h.pushedShas).toEqual([null]);
+  });
+});
+
+describe('publishConversations with git state per thread', () => {
+  it('leaves a fix that is already on origin out of the push and still replies and resolves', async () => {
+    const fix = commit({
+      text: 'export const retry = () => 4;\n',
+      message: 'fix: handled by hand',
+    });
+    git(worktreePath, ['push', 'origin', 'feature/retry']);
+    const { actions, get } = makeStore();
+    await seedFixRow({ actions, threadId: 'PRRT_1', shas: [fix], reply: 'Fixed' });
+
+    const preview = await actions.preparePublication({ sessionId: SESSION_ID });
+
+    expect(preview.blocker).toBeNull();
+    expect(preview.requiresPush).toBe(false);
+    expect(preview.commits).toEqual([]);
+    expect(preview.replies.map((reply) => reply.threadId)).toEqual(['PRRT_1']);
+    expect(get().sessionThreadGit[SESSION_ID]?.PRRT_1?.gitState).toBe('on_origin');
+
+    const pushSpy = vi.mocked((await import('../../../features/github/github')).gitPush);
+    pushSpy.mockClear();
+    const result = await actions.publishConversations({
+      sessionId: SESSION_ID,
+      publicationId: preview.publicationId ?? '',
+    });
+
+    expect(result).toMatchObject({ kind: 'done', pushed: false, replied: 1, resolved: 1 });
+    expect(pushSpy).not.toHaveBeenCalled();
+  });
+
+  it('pushes only the local fixes when another fix of the same run is already on origin', async () => {
+    const onOrigin = commit({ text: 'export const retry = () => 5;\n', message: 'fix: by hand' });
+    git(worktreePath, ['push', 'origin', 'feature/retry']);
+    const local = commit({ text: 'export const retry = () => 6;\n', message: 'fix: still local' });
+    const { actions } = makeStore();
+    await seedFixRow({ actions, threadId: 'PRRT_1', shas: [onOrigin], reply: 'Fixed' });
+    await seedFixRow({ actions, threadId: 'PRRT_2', shas: [local], reply: 'Fixed too' });
+
+    const preview = await actions.preparePublication({ sessionId: SESSION_ID });
+
+    expect(preview.requiresPush).toBe(true);
+    expect(preview.commits.map((entry) => entry.sha)).toEqual([local]);
+    expect(preview.replies.map((reply) => reply.threadId).sort()).toEqual(['PRRT_1', 'PRRT_2']);
+  });
+
+  it('keeps a folded fix in the push and replies with both shas after it lands', async () => {
+    const original = commit({ text: 'export const retry = () => 8;\n', message: 'fix: cap it' });
+    git(worktreePath, ['commit', '--amend', '-m', 'fix: cap it, reworded']);
+    const folded = git(worktreePath, ['rev-parse', 'HEAD']);
+    const { actions, store } = makeStore();
+    await seedFixRow({ actions, threadId: 'PRRT_1', shas: [original], reply: 'Fixed' });
+
+    const preview = await actions.preparePublication({ sessionId: SESSION_ID });
+
+    expect(store.getState().sessionThreadGit[SESSION_ID]?.PRRT_1?.gitState).toBe('folded');
+    expect(preview.blocker).toBeNull();
+    expect(preview.requiresPush).toBe(true);
+    expect(preview.commits.map((entry) => entry.sha)).toEqual([folded]);
+    expect(preview.replies).toHaveLength(1);
+    expect(preview.replies[0]?.body).toContain(`Fixed in \`${original.slice(0, 7)}\``);
+    expect(preview.replies[0]?.body).toContain(`squashed into \`${folded.slice(0, 7)}\``);
+  });
+
+  it('posts no reply under a reply the user already wrote by hand, and only resolves', async () => {
+    const fix = commit({ text: 'export const retry = () => 7;\n', message: 'fix: cap it' });
+    const { actions, store } = makeStore();
+    store.setState({
+      githubStatus: { user: 'Mquint' },
+      githubWorkspaceStatus: {},
+      sessionGithub: {
+        [SESSION_ID]: {
+          pr: { number: 248, url: PR_URL, headBranch: 'feature/retry' },
+          detail: {
+            comments: [
+              {
+                id: 'c1',
+                threadId: 'PRRT_1',
+                author: 'iokafor',
+                body: 'Please cap this',
+                createdAt: new Date(Date.now() - 3_600_000).toISOString(),
+                source: 'review',
+              },
+              {
+                id: 'c2',
+                threadId: 'PRRT_1',
+                author: 'mquint',
+                body: 'Done, thanks for the catch',
+                createdAt: new Date(Date.now() + 60_000).toISOString(),
+                source: 'review',
+              },
+            ],
+          },
+        },
+      },
+    } as never);
+    await seedFixRow({ actions, threadId: 'PRRT_1', shas: [fix], reply: 'Fixed' });
+
+    const preview = await actions.preparePublication({ sessionId: SESSION_ID });
+
+    expect(preview.replies).toEqual([]);
+    expect(preview.notes.map((note) => note.threadId)).toEqual(['PRRT_1']);
+    expect(preview.notes[0]?.closes).toBe(true);
+    expect(store.getState().sessionThreadGit[SESSION_ID]?.PRRT_1?.userReply?.commentId).toBe('c2');
   });
 });

@@ -1,3 +1,4 @@
+import type { ResolveAttemptBatch } from '../resolve/types';
 import type {
   AgentId,
   AgentSourceKind,
@@ -61,6 +62,7 @@ type SpawnArgs = {
   sourceKind?: AgentSourceKind;
   focus?: SpawnFocus;
   parentAgentId?: AgentId;
+  resolveBatch?: ResolveAttemptBatch;
 };
 
 type Params = {
@@ -268,6 +270,7 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
       instructions: kickoff,
       phase: 'queued',
       mountTarget: requireMountTarget({ get, sessionId }),
+      ...(args.resolveBatch !== undefined && { batch: args.resolveBatch }),
     });
     if (kickoff.length > 0) {
       void get().drainResolveQueue({ sessionId });

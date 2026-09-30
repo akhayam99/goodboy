@@ -26,7 +26,7 @@ pub(crate) use predict::*;
 pub(crate) use rebase::*;
 pub(crate) use remote::*;
 #[cfg(test)]
-pub(crate) use reservation::reservations_dir;
+pub(crate) use reservation::{discard_copy, reservations_dir};
 pub(crate) use rewriter::*;
 pub(crate) use run::*;
 pub(crate) use runner::*;

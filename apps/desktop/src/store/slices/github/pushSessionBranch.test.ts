@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { MountId, ProjectId, SessionId, WorktreeStatus } from '@goodboy/types';
+import type { MountId, ProjectId, SessionId, WorkspaceId, WorktreeStatus } from '@goodboy/types';
+import { aProject, aSession } from '@goodboy/types/testing';
 
 const statusAhead = (ahead: number): WorktreeStatus => ({
   branch: 'ak/sibling',
@@ -29,24 +30,25 @@ import {
 } from '../../../features/session/hooks/useWorktreeStatuses/cache';
 import { branchPushStateOf } from '../../../shared/lib/branchPushState';
 import { pushSessionBranch } from './pushSessionBranch';
+import { useAppStore, type AppStore } from '../../store';
 
 const SESSION_ID = 'session-1' as SessionId;
 const PROJECT_ID = 'project-1' as ProjectId;
+const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const MOUNT_ID = 'mount-1' as MountId;
 const SIBLING_MOUNT_ID = 'mount-2' as MountId;
 
-type State = Record<string, unknown>;
-
-const makeState = (): State => ({
+const makeState = (): AppStore => ({
+  ...useAppStore.getInitialState(),
   sessions: [
-    {
+    aSession({
       id: SESSION_ID,
-      workspaceId: 'workspace-1',
+      workspaceId: WORKSPACE_ID,
       activeMountId: MOUNT_ID,
       activeProjectId: PROJECT_ID,
-    },
+    }),
   ],
-  projects: [{ id: PROJECT_ID, workspaceId: 'workspace-1', kind: 'repo', name: 'goodboy' }],
+  projects: [aProject({ id: PROJECT_ID, workspaceId: WORKSPACE_ID, name: 'goodboy' })],
   sessionActiveMount: { [SESSION_ID]: MOUNT_ID },
   sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
   sessionMounts: {},
@@ -98,18 +100,19 @@ describe('pushSessionBranch', () => {
     const state = makeState();
 
     const result = await pushSessionBranch({
-      get: (() => state) as never,
+      get: () => state,
       sessionId: SESSION_ID,
       mountId: SIBLING_MOUNT_ID,
     });
 
     expect(result).toEqual({ ok: true });
-    expect(h.gitPush).toHaveBeenCalledWith(
-      '/worktrees/task-2',
-      'ak/sibling',
-      'workspace-1',
-      PROJECT_ID,
-    );
+    expect(h.gitPush).toHaveBeenCalledWith({
+      cwd: '/worktrees/task-2',
+      branch: 'ak/sibling',
+      workspaceId: 'workspace-1',
+      projectId: PROJECT_ID,
+      sha: undefined,
+    });
     expect(state.refreshSessionPr).toHaveBeenCalledWith(SESSION_ID, {
       mountId: SIBLING_MOUNT_ID,
       force: true,
@@ -130,7 +133,7 @@ describe('pushSessionBranch', () => {
     h.worktreeStatus.mockResolvedValue(statusAhead(0));
 
     await pushSessionBranch({
-      get: (() => state) as never,
+      get: () => state,
       sessionId: SESSION_ID,
       mountId: SIBLING_MOUNT_ID,
     });
@@ -143,12 +146,32 @@ describe('pushSessionBranch', () => {
     });
   });
 
+  it('pushes exactly the sha it was given', async () => {
+    const state = makeState();
+
+    const result = await pushSessionBranch({
+      get: () => state,
+      sessionId: SESSION_ID,
+      mountId: SIBLING_MOUNT_ID,
+      sha: 'c81e5aa0f3',
+    });
+
+    expect(result).toEqual({ ok: true });
+    expect(h.gitPush).toHaveBeenCalledWith({
+      cwd: '/worktrees/task-2',
+      branch: 'ak/sibling',
+      workspaceId: 'workspace-1',
+      projectId: PROJECT_ID,
+      sha: 'c81e5aa0f3',
+    });
+  });
+
   it('leaves the pull request alone when the push fails', async () => {
     const state = makeState();
     h.gitPush.mockResolvedValue({ exitCode: 1, stdout: '', stderr: 'rejected' });
 
     const result = await pushSessionBranch({
-      get: (() => state) as never,
+      get: () => state,
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
     });
@@ -161,7 +184,7 @@ describe('pushSessionBranch', () => {
     const state = makeState();
 
     const result = await pushSessionBranch({
-      get: (() => state) as never,
+      get: () => state,
       sessionId: SESSION_ID,
       mountId: 'mount-elsewhere' as MountId,
     });

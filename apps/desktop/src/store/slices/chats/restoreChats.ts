@@ -14,5 +14,16 @@ export const restoreChats =
       now: new Date().toISOString() as IsoDateTime,
     });
     const chats = await activeChatBackend.listChats({ workspaceId });
-    set((state) => ({ chatsByWorkspace: { ...state.chatsByWorkspace, [workspaceId]: chats } }));
+    set((state) => {
+      const archived = state.archivedChatsByWorkspace[workspaceId];
+      return {
+        chatsByWorkspace: { ...state.chatsByWorkspace, [workspaceId]: chats },
+        ...(archived !== undefined && {
+          archivedChatsByWorkspace: {
+            ...state.archivedChatsByWorkspace,
+            [workspaceId]: archived.filter((chat) => !chatIds.includes(chat.id)),
+          },
+        }),
+      };
+    });
   };

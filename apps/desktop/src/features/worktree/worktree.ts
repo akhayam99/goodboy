@@ -67,6 +67,16 @@ export const quarantineWorktreeCandidate = async (
 ): Promise<QuarantinedCandidate> =>
   invokeCommand<QuarantinedCandidate>('worktree_quarantine_candidate', { args });
 
+export type ResolveCopy = {
+  readonly copyPath: string;
+  readonly head: string;
+};
+
+export const prepareResolveCopy = async (args: {
+  readonly worktreePath: string;
+  readonly attemptId: string;
+}): Promise<ResolveCopy> => invokeCommand<ResolveCopy>('resolve_copy_prepare', { args });
+
 export type WorktreeWriterLease = {
   readonly path: string;
   readonly holder: string | null;
@@ -578,6 +588,96 @@ export const worktreeSyncBranchRef = async ({
     expectedSha,
     workspaceId,
     projectId,
+  });
+
+type OriginBranchParams = {
+  readonly worktreePath: string;
+  readonly branch: string;
+};
+
+export type OriginFetch = {
+  readonly fetched: boolean;
+  readonly error: string | null;
+  readonly remoteHead: string | null;
+};
+
+type FetchOriginBranchParams = OriginBranchParams & {
+  readonly workspaceId?: WorkspaceId;
+  readonly projectId?: string;
+};
+
+export const worktreeFetchOriginBranch = async ({
+  worktreePath,
+  branch,
+  workspaceId,
+  projectId,
+}: FetchOriginBranchParams): Promise<OriginFetch> =>
+  invokeCommand<OriginFetch>('worktree_fetch_origin_branch', {
+    worktreePath,
+    branch,
+    workspaceId,
+    projectId,
+  });
+
+export type FixOnOrigin = {
+  readonly onOrigin: boolean;
+  readonly landedAs: string | null;
+};
+
+export const worktreeFixOnOrigin = async ({
+  worktreePath,
+  branch,
+  sha,
+}: OriginBranchParams & { readonly sha: string }): Promise<FixOnOrigin> =>
+  invokeCommand<FixOnOrigin>('worktree_fix_on_origin', { worktreePath, branch, sha });
+
+export type FixLocation = {
+  readonly isKnown: boolean;
+  readonly landedAs: string | null;
+  readonly pathExists: boolean | null;
+};
+
+export const worktreeLocateFix = async ({
+  worktreePath,
+  sha,
+  path = null,
+}: {
+  readonly worktreePath: string;
+  readonly sha: string;
+  readonly path?: string | null;
+}): Promise<FixLocation> =>
+  invokeCommand<FixLocation>('worktree_locate_fix', { worktreePath, sha, path });
+
+export type OriginCommit = {
+  readonly sha: string;
+  readonly author: string;
+  readonly email: string;
+  readonly subject: string;
+  readonly committedAt: number;
+};
+
+type OriginCommitsTouchingParams = OriginBranchParams & {
+  readonly path: string;
+  readonly startLine: number;
+  readonly endLine: number;
+  readonly sinceSecs: number;
+};
+
+export const worktreeOriginCommitsTouching = async ({
+  worktreePath,
+  branch,
+  path,
+  startLine,
+  endLine,
+  sinceSecs,
+}: OriginCommitsTouchingParams): Promise<ReadonlyArray<OriginCommit>> =>
+  invokeCommand<ReadonlyArray<OriginCommit>>('worktree_origin_commits_touching', {
+    worktreePath,
+    branch,
+    path,
+    startLine,
+    endLine,
+    sinceSecs,
   });
 
 export const worktreeStatus = async ({

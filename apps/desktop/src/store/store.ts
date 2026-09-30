@@ -1,6 +1,9 @@
 import { createResolveSlice } from './slices/resolve';
 import { createReviewNavigationSlice } from './slices/review-navigation';
+import { createReviewSelectionSlice } from './slices/review-selection';
+import { reviewSelectionInitialState } from './slices/review-selection/state';
 import { reviewNavigationInitialState } from './slices/review-navigation/state';
+import { createReviewSourceSlice, reviewSourceInitialState } from './slices/review-source';
 import { resolveInitialState } from './slices/resolve/state';
 import { create } from 'zustand';
 import type { AgentId, SessionId, PrReviewDraft } from '@goodboy/types';
@@ -95,6 +98,7 @@ import { createUpdaterSlice } from './slices/updater';
 import { initialUpdaterState } from './slices/updater/state';
 import { createChangelogSlice } from './slices/changelog';
 import { initialChangelogState } from './slices/changelog/state';
+import { createReviewCommitsSlice, initialReviewCommitsState } from './slices/reviewCommits';
 import { createBugReportDraftSlice } from './slices/bugReportDraft';
 import { createSessionDraftSlice } from './slices/sessionDraft';
 import { createContextDrawerSlice } from './slices/contextDrawer';
@@ -172,6 +176,8 @@ export type AppStore = AppState &
   ReturnType<typeof createArtifactsSlice> &
   ReturnType<typeof createResolveSlice> &
   ReturnType<typeof createReviewNavigationSlice> &
+  ReturnType<typeof createReviewSelectionSlice> &
+  ReturnType<typeof createReviewSourceSlice> &
   ReturnType<typeof createPrWritesSlice> &
   ReturnType<typeof createSessionSyncSlice> &
   ReturnType<typeof createIssueBriefsSlice> &
@@ -189,6 +195,7 @@ export type AppStore = AppState &
   ReturnType<typeof createChatsSlice> &
   ReturnType<typeof createUpdaterSlice> &
   ReturnType<typeof createChangelogSlice> &
+  ReturnType<typeof createReviewCommitsSlice> &
   ReturnType<typeof createBugReportDraftSlice> &
   ReturnType<typeof createSessionDraftSlice> &
   ReturnType<typeof createContextDrawerSlice> &
@@ -247,6 +254,7 @@ export type AppStore = AppState &
 export const initialState: AppState = {
   ...initialUpdaterState,
   ...initialChangelogState,
+  ...initialReviewCommitsState,
   ...initialBugReportDraftState,
   ...initialSessionDraftState,
   ...initialContextDrawerState,
@@ -301,6 +309,8 @@ export const initialState: AppState = {
   ...permissionsInitialState,
   ...resolveInitialState,
   ...reviewNavigationInitialState,
+  ...reviewSelectionInitialState,
+  ...reviewSourceInitialState,
   ...artifactsInitialState,
   ...workflowDraftsInitialState,
   ...artifactDraftsInitialState,
@@ -350,6 +360,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createAgentQueueSlice({ set, get }),
   ...createResolveSlice({ set, get }),
   ...createReviewNavigationSlice({ set, get }),
+  ...createReviewSelectionSlice({ set, get }),
+  ...createReviewSourceSlice({ set, get }),
   ...createWorkflowDraftsSlice({ set, get }),
   ...createArtifactDraftsSlice({ set, get }),
   ...createWorkflowStudioSlice({ set, get }),
@@ -389,6 +401,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createBootSlice({ set, get }),
   ...createUpdaterSlice({ set, get }),
   ...createChangelogSlice({ set, get }),
+  ...createReviewCommitsSlice({ set, get }),
   ...createBugReportDraftSlice({ set, get }),
   ...createSessionDraftSlice({ set, get }),
   ...createContextDrawerSlice({ set, get }),

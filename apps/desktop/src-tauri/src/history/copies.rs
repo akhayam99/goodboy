@@ -1,12 +1,12 @@
 use super::plan::plan_error;
 use super::reservation::{
-    created_admin_dir, discard_copy, held_locks, is_held, is_owned_copy, is_real_dir,
+    copy_path_of, created_admin_dir, discard_copy, held_locks, is_held, is_owned_copy, is_real_dir,
     is_regular_file, open_lock, owner_repo, owner_text, recorded_admin_dir, remove_reservation,
-    reservation_root_of, reservations_dir, COPY_PREFIX, RESERVATION_FILE,
+    reservation_root_of, reservations_dir, COPY_PREFIX, RESERVATION_FILE, RESOLVE_SLUG_PREFIX,
 };
 use super::trial::TRIAL_SLUG_PREFIX;
-use crate::worktree::{git, WorktreeError};
-use serde::Serialize;
+use crate::worktree::{git, resolve_commit, WorktreeError};
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
 const STALE_TRIAL_SECS: u64 = 10 * 60;
@@ -61,7 +61,7 @@ pub(super) fn create_copy(
     let written = std::fs::write(root.join(RESERVATION_FILE), owner_text(&repo, None));
     let lock = open_lock(&root);
     if written.is_err() || lock.is_none() {
-        let _ = std::fs::remove_dir_all(&root);
+        crate::logging::note_failure("copy folder delete", std::fs::remove_dir_all(&root));
         return Err(plan_error("couldn't reserve the temporary copy"));
     }
     let guard = CopyGuard {
@@ -90,7 +90,10 @@ pub(super) fn create_copy(
             && recorded_admin_dir(&guard.root).as_deref() == Some(admin.as_path())
     });
     if !recorded {
-        let _ = git(cwd, &["worktree", "remove", "--force", &copy_text]);
+        crate::logging::note_failure(
+            "copy worktree remove",
+            git(cwd, &["worktree", "remove", "--force", &copy_text]),
+        );
     }
     added?;
     if !recorded {
@@ -126,7 +129,9 @@ pub(crate) fn clean_stale_copies_in(
         if owner_repo(&root).is_none() || is_held(&root) {
             continue;
         }
-        let limit = if slug.starts_with(TRIAL_SLUG_PREFIX) {
+        let limit = if slug.starts_with(RESOLVE_SLUG_PREFIX) {
+            0
+        } else if slug.starts_with(TRIAL_SLUG_PREFIX) {
             trial_after_secs
         } else {
             other_after_secs
@@ -200,6 +205,65 @@ pub async fn history_copy_discard(
         }
         discard_copy(&copy_path);
         Ok(())
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ResolveCopyArgs {
+    pub worktree_path: String,
+    pub attempt_id: String,
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ResolveCopy {
+    pub copy_path: String,
+    pub head: String,
+}
+
+pub(crate) fn resolve_copy_path_of(attempt_id: &str) -> PathBuf {
+    copy_path_of(&format!("{RESOLVE_SLUG_PREFIX}{attempt_id}"))
+}
+
+pub(crate) fn prepare_resolve_copy_at(
+    cwd: &Path,
+    copy: &Path,
+) -> Result<ResolveCopy, WorktreeError> {
+    if copy.exists() && is_owned_copy(copy) {
+        discard_copy(&copy.to_string_lossy());
+    }
+    let head = resolve_commit(cwd, "HEAD")?;
+    let mut guard = create_copy(cwd, copy, &head)?;
+    guard.is_kept = true;
+    drop(guard);
+    Ok(ResolveCopy {
+        copy_path: copy.to_string_lossy().to_string(),
+        head,
+    })
+}
+
+#[cfg(test)]
+pub(crate) fn release_held_copy_for_test(copy: &Path) {
+    if let Some(root) = reservation_root_of(copy) {
+        drop(super::reservation::take_held(&root));
+    }
+}
+
+#[tauri::command]
+pub async fn resolve_copy_prepare(args: ResolveCopyArgs) -> Result<ResolveCopy, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let cwd = PathBuf::from(&args.worktree_path);
+        if !cwd.exists() {
+            return Err(WorktreeError::RepoNotFound(args.worktree_path));
+        }
+        let copy = resolve_copy_path_of(&args.attempt_id);
+        if !copy.is_absolute() {
+            return Err(plan_error("there is no folder for the temporary copy"));
+        }
+        prepare_resolve_copy_at(&cwd, &copy)
     })
     .await
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?

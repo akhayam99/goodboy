@@ -14,6 +14,7 @@ import type {
 } from '@goodboy/types';
 import { acquireWorktreeWriter, releaseWorktreeWriter } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { activeReviewSourceOf } from '../review-source/activeReviewSource';
 import { approvedPublicationScope } from './approvedPublicationScope';
 import { liveMountTarget } from './mountTarget';
 import { deliverPublicationThread } from './deliverPublicationThread';
@@ -133,8 +134,8 @@ const publishOnce = async ({
           return { kind: 'missing' };
         }
         const rowsBefore = await listResolveThreads({ db: tauriDatabase, sessionId });
-        const comments: ReadonlyArray<PrComment> =
-          get().sessionGithub[sessionId]?.detail?.comments ?? [];
+        const source = activeReviewSourceOf({ state: get(), sessionId });
+        const comments: ReadonlyArray<PrComment> = source?.comments ?? [];
         const liveTarget = liveMountTarget({ get, sessionId, target: publication.mountTarget });
         const targetDrift = mountTargetDrift({
           frozenTarget: publication.mountTarget,
@@ -142,7 +143,11 @@ const publishOnce = async ({
         });
         const isDrifted = targetDrift !== null || isDriftChecked({ publication });
         if (isDrifted) {
-          const scope = await approvedPublicationScope({ sessionId });
+          const frozenThreadIds = new Set(frozen.map((thread) => thread.threadId));
+          const scope = await approvedPublicationScope({
+            sessionId,
+            include: (thread) => frozenThreadIds.has(thread.threadId),
+          });
           const drift =
             targetDrift === null
               ? await publicationDrift({
@@ -242,6 +247,7 @@ const publishOnce = async ({
                 comments,
                 shouldResolveOnGithub: sessionReplySettings({ state: get(), sessionId })
                   .resolveOnGithub,
+                canResolve: source?.capabilities.canResolve ?? true,
               }),
             });
             receipts.set(thread.threadId, receipt);
@@ -282,7 +288,7 @@ const publishOnce = async ({
         }));
         await quietly({
           publicationId,
-          work: () => get().refreshSessionPrDetail(sessionId, { force: true }),
+          work: () => get().refreshReviewSource({ sessionId, force: true }),
         });
         return { kind: 'done', ...outcome };
       } finally {

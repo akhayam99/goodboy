@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   ChatId,
+  ChatMessageId,
   ChatSummary,
   IsoDateTime,
   Project,
   ProjectId,
+  SessionId,
   Workspace,
   WorkspaceId,
 } from '@goodboy/types';
@@ -222,6 +224,63 @@ describe('chats slice', () => {
     });
   });
 
+  it('stamps the provider, model and effort on the reply and keeps the models used', async () => {
+    const { slice, read } = harness({});
+    const chatId = await slice.createChat({
+      workspaceId: WORKSPACE,
+      provider: 'anthropic',
+      model: 'sonnet-5',
+    });
+
+    await slice.sendChatMessage({ chatId, content: 'Where is the consent step?' });
+    await slice.setChatModel({ chatId, provider: 'codex', model: 'gpt-5.6-sol', effort: 'low' });
+    await slice.sendChatMessage({ chatId, content: 'And the refund step?' });
+
+    const replies = (read().chatMessages[chatId] ?? []).filter(
+      (message) => message.role === 'assistant',
+    );
+    expect(replies.map((reply) => [reply.provider, reply.model])).toEqual([
+      ['anthropic', 'sonnet-5'],
+      ['codex', 'gpt-5.6-sol'],
+    ]);
+    expect(replies[1]?.effort).toBe('low');
+    const saved = await holder.backend?.listMessages({ chatId });
+    expect(saved?.filter((message) => message.role === 'assistant')[1]).toMatchObject({
+      provider: 'codex',
+      model: 'gpt-5.6-sol',
+      effort: 'low',
+    });
+    await slice.loadChats({ workspaceId: WORKSPACE });
+    expect(read().chatsByWorkspace[WORKSPACE]?.[0]?.modelsUsed).toEqual([
+      { provider: 'anthropic', model: 'sonnet-5' },
+      { provider: 'codex', model: 'gpt-5.6-sol' },
+    ]);
+  });
+
+  it('runs the turn on the effort saved on the chat, else on the one the model key implies', async () => {
+    const requests: Array<string | undefined> = [];
+    holder.respond = async (params) => {
+      requests.push(params.request.effort);
+      return { status: 'done' };
+    };
+    const { slice, read } = harness({});
+    const chatId = await slice.createChat({
+      workspaceId: WORKSPACE,
+      provider: 'anthropic',
+      model: 'sonnet-5',
+    });
+
+    await slice.sendChatMessage({ chatId, content: 'First question' });
+    await slice.setChatModel({ chatId, provider: 'anthropic', model: 'sonnet-5', effort: 'max' });
+    await slice.sendChatMessage({ chatId, content: 'Second question' });
+    await slice.setChatModel({ chatId, provider: 'anthropic', model: 'sonnet-5' });
+    await slice.sendChatMessage({ chatId, content: 'Third question' });
+
+    expect(requests[1]).toBe('max');
+    expect(requests[2]).toBe(requests[0]);
+    expect(read().chatsByWorkspace[WORKSPACE]?.[0]?.effort).toBeNull();
+  });
+
   it('sends the earlier turns with the next question', async () => {
     const { slice } = harness({});
     const prompts: string[] = [];
@@ -406,6 +465,7 @@ describe('chats slice', () => {
         title: 'Lunch ideas near the office',
         provider: 'anthropic',
         model: 'sonnet-5',
+        effort: null,
         pinnedAt: null,
         archivedAt: null,
         lastActivityAt: old,
@@ -426,6 +486,110 @@ describe('chats slice', () => {
     expect(read().chatsByWorkspace[WORKSPACE]?.map((chat) => chat.id)).toEqual([fresh]);
     await slice.restoreChats({ workspaceId: WORKSPACE, chatIds: archived });
     expect(read().chatsByWorkspace[WORKSPACE]).toHaveLength(2);
+  });
+
+  it('deletes chats for good: list, messages, links, unread mark and the saved rows', async () => {
+    const { slice, read } = harness({});
+    const kept = await slice.createChat({
+      workspaceId: WORKSPACE,
+      provider: 'anthropic',
+      model: 'sonnet-5',
+    });
+    const doomed = await slice.createChat({
+      workspaceId: WORKSPACE,
+      provider: 'anthropic',
+      model: 'sonnet-5',
+    });
+    await slice.sendChatMessage({ chatId: doomed, content: 'Where is the consent step?' });
+    await slice.recordChatLink({
+      chatId: doomed,
+      sessionId: 'session-1' as SessionId,
+      messageId: null,
+      kind: 'new',
+    });
+    await slice.recordChatLink({
+      chatId: kept,
+      sessionId: 'session-2' as SessionId,
+      messageId: null,
+      kind: 'add',
+    });
+    slice.markChatUnread({ chatId: doomed });
+    expect(read().unreadChatIds).toContain(doomed);
+
+    await slice.deleteChats({ workspaceId: WORKSPACE, chatIds: [doomed] });
+
+    expect(read().chatsByWorkspace[WORKSPACE]?.map((chat) => chat.id)).toEqual([kept]);
+    expect(read().chatMessages[doomed]).toBeUndefined();
+    expect(read().chatLinks[doomed]).toBeUndefined();
+    expect(read().chatLinks[kept]).toHaveLength(1);
+    expect(read().unreadChatIds).not.toContain(doomed);
+    await slice.loadChats({ workspaceId: WORKSPACE });
+    expect(read().chatsByWorkspace[WORKSPACE]?.map((chat) => chat.id)).toEqual([kept]);
+    expect(await holder.backend?.listMessages({ chatId: doomed })).toEqual([]);
+  });
+
+  it('deletes an archived chat from the archived list too', async () => {
+    const { slice, read } = harness({});
+    const chatId = await slice.createChat({
+      workspaceId: WORKSPACE,
+      provider: 'anthropic',
+      model: 'sonnet-5',
+    });
+    await slice.archiveChats({ workspaceId: WORKSPACE, chatIds: [chatId] });
+    await slice.loadArchivedChats({ workspaceId: WORKSPACE });
+    expect(read().archivedChatsByWorkspace[WORKSPACE]?.map((chat) => chat.id)).toEqual([chatId]);
+
+    await slice.deleteChats({ workspaceId: WORKSPACE, chatIds: [chatId] });
+
+    expect(read().archivedChatsByWorkspace[WORKSPACE]).toEqual([]);
+  });
+
+  it('loads archived chats apart from the live list and keeps both in step', async () => {
+    const { slice, read } = harness({});
+    const live = await slice.createChat({
+      workspaceId: WORKSPACE,
+      provider: 'anthropic',
+      model: 'sonnet-5',
+    });
+    const shelved = await slice.createChat({
+      workspaceId: WORKSPACE,
+      provider: 'anthropic',
+      model: 'sonnet-5',
+    });
+    await slice.archiveChats({ workspaceId: WORKSPACE, chatIds: [shelved] });
+
+    const archived = await slice.loadArchivedChats({ workspaceId: WORKSPACE });
+
+    expect(archived.map((chat) => chat.id)).toEqual([shelved]);
+    expect(read().archivedChatsByWorkspace[WORKSPACE]?.map((chat) => chat.id)).toEqual([shelved]);
+    expect(read().chatsByWorkspace[WORKSPACE]?.map((chat) => chat.id)).toEqual([live]);
+
+    await slice.restoreChats({ workspaceId: WORKSPACE, chatIds: [shelved] });
+    expect(read().archivedChatsByWorkspace[WORKSPACE]).toEqual([]);
+    await slice.archiveChats({ workspaceId: WORKSPACE, chatIds: [live] });
+    expect(read().archivedChatsByWorkspace[WORKSPACE]?.map((chat) => chat.id)).toEqual([live]);
+  });
+
+  it('records a chat to session link, saves it and loads it back with the chats', async () => {
+    const { slice, read } = harness({});
+    const chatId = await slice.createChat({
+      workspaceId: WORKSPACE,
+      provider: 'anthropic',
+      model: 'sonnet-5',
+    });
+
+    const link = await slice.recordChatLink({
+      chatId,
+      sessionId: 'session-1' as SessionId,
+      messageId: 'message-1' as ChatMessageId,
+      kind: 'new',
+    });
+
+    expect(read().chatLinks[chatId]).toEqual([link]);
+    expect(link).toMatchObject({ chatId, sessionId: 'session-1', kind: 'new' });
+    expect(await holder.backend?.listLinks({ workspaceId: WORKSPACE })).toEqual([link]);
+    await slice.loadChats({ workspaceId: WORKSPACE });
+    expect(read().chatLinks[chatId]).toEqual([link]);
   });
 
   it('refuses a chat on a provider that cannot run read-only', async () => {

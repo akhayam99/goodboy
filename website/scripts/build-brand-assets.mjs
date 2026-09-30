@@ -192,7 +192,7 @@ const extractCssValue = ({ cssSource, variableName }) =>
   requireMatch({
     source: cssSource,
     pattern: new RegExp(`${variableName.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\s*:\\s*([^;]+);`),
-    description: `${variableName} in the light theme`,
+    description: `${variableName} in the theme block`,
   })[1].trim();
 
 const encodeSrgbChannel = (value) => {
@@ -232,11 +232,11 @@ const toHexColor = (color) => {
   });
 };
 
-const resolveBrands = ({ brands, iconSource, lightThemeSource }) =>
+const resolveBrands = ({ brands, iconSource, themeSource }) =>
   brands.map(({ id, iconName, cssVar }) => ({
     id,
     path: extractIconPath({ iconSource, componentName: iconName }),
-    color: extractCssValue({ cssSource: lightThemeSource, variableName: cssVar }),
+    color: extractCssValue({ cssSource: themeSource, variableName: cssVar }),
   }));
 
 const createMascot = ({ className, mascotBase64 }) =>
@@ -271,7 +271,7 @@ const createBaseHtml = ({
 </style>
 <body class="${bodyClass}">${content}</body>`;
 
-const createOgHtml = ({ format, accent, tileColor, mascotBase64, providerBrands, date }) => {
+const createOgHtml = ({ format, theme, tileColor, mascotBase64, providerBrands, date }) => {
   const marks = providerBrands
     .map(
       ({ id, path, color }) =>
@@ -290,24 +290,24 @@ const createOgHtml = ({ format, accent, tileColor, mascotBase64, providerBrands,
   return createBaseHtml({
     width: format.width,
     height: format.height,
-    accent,
+    accent: theme.accent,
     bodyClass: 'og',
     content,
     extraCss: `
-      body { padding: 68px 76px; display: flex; flex-direction: column; position: relative }
+      body { background: ${theme.background}; color: ${theme.foreground}; padding: 68px 76px; display: flex; flex-direction: column; position: relative }
       .brand { display: flex; align-items: center; gap: 16px; position: relative }
-      .brand .tile { width: 60px; height: 60px; border-radius: ${60 * TILE_RADIUS_RATIO}px; background: ${tileColor}; display: grid; place-items: center }
+      .brand .tile { width: 60px; height: 60px; border-radius: ${60 * TILE_RADIUS_RATIO}px; background: ${tileColor}; box-shadow: inset 0 0 0 1.5px ${theme.tileRing}; display: grid; place-items: center }
       .brand .mascot { width: ${60 * MARK_SCALE}px; height: ${60 * MARK_SCALE}px; background: #fff }
       .brand > span:last-child { font-size: 38px; font-weight: 600; letter-spacing: -0.015em }
       h1 { margin-top: auto; font-size: 88px; font-weight: 500; line-height: 1.04; letter-spacing: -0.02em; position: relative }
-      h1 em { font-style: normal; color: ${accent} }
-      .sub { margin-top: 26px; font-size: 30px; line-height: 1.35; color: #495057; max-width: 940px; position: relative }
+      h1 em { font-style: normal; color: ${theme.accent} }
+      .sub { margin-top: 26px; font-size: 30px; line-height: 1.35; color: ${theme.secondary}; max-width: 940px; position: relative }
       .foot { margin-top: auto; padding-top: 40px; display: flex; align-items: center; gap: 22px; position: relative }
       .dom { font-size: 24px; font-weight: 600 }
       .marks-wrap { display: flex; flex-direction: column; align-items: center; gap: 7px }
       .marks { display: flex; align-items: center; gap: 14px }
-      .marks-wrap small { color: #66707a; font-size: 12px; letter-spacing: 0.02em }
-      .note { font-size: 22px; color: #66707a; margin-left: auto }
+      .marks-wrap small { color: ${theme.muted}; font-size: 12px; letter-spacing: 0.02em }
+      .note { font-size: 22px; color: ${theme.muted}; margin-left: auto }
     `,
   });
 };
@@ -444,9 +444,16 @@ const outputPathFor = (surface) =>
     ? resolve(WEBSITE_DIRECTORY, 'public/og-image.png')
     : resolve(WEBSITE_DIRECTORY, `public/brand/${slugFor(surface)}.png`);
 
-const createHtmlFor = ({ format, accent, tileColor, mascotBase64, providerBrands, date }) => {
+const createHtmlFor = ({ format, accent, tileColor, mascotBase64, ogTheme, date }) => {
   if (format.surface === 'og-image') {
-    return createOgHtml({ format, accent, tileColor, mascotBase64, providerBrands, date });
+    return createOgHtml({
+      format,
+      theme: ogTheme,
+      tileColor,
+      mascotBase64,
+      providerBrands: ogTheme.providerBrands,
+      date,
+    });
   }
   if (format.surface === 'X avatar') {
     return createAvatarHtml({ format, accent, mascotBase64 });
@@ -597,16 +604,30 @@ const mascotBase64 = readFileSync(resolve(WEBSITE_DIRECTORY, 'src/assets/mascot.
 const formats = parseSocialFormats(brandSource);
 const providerIds = parseProviderIds(providerRegistrySource);
 const providerBrandEntries = parseProviderBrand({ providerBrandSource, providerIds });
-const lightThemeSource = extractCssBlock({
-  stylesSource: desktopStylesSource,
-  selector: "html[data-theme='light']",
-});
-const providerBrands = resolveBrands({
-  brands: providerBrandEntries,
-  iconSource,
-  lightThemeSource,
-});
 const accent = extractCssValue({ cssSource: websiteStylesSource, variableName: '--accent' });
+const websiteDarkSource = extractCssBlock({
+  stylesSource: websiteStylesSource,
+  selector: ":root[data-theme='dark']",
+});
+const desktopDarkSource = extractCssBlock({
+  stylesSource: desktopStylesSource,
+  selector: '@theme',
+});
+const websiteDarkValue = (variableName) =>
+  extractCssValue({ cssSource: websiteDarkSource, variableName });
+const ogTheme = {
+  background: websiteDarkValue('--bg'),
+  foreground: websiteDarkValue('--t1'),
+  secondary: websiteDarkValue('--t2'),
+  muted: websiteDarkValue('--t3'),
+  accent: websiteDarkValue('--accent'),
+  tileRing: websiteDarkValue('--tile-ring'),
+  providerBrands: resolveBrands({
+    brands: providerBrandEntries,
+    iconSource,
+    themeSource: desktopDarkSource,
+  }),
+};
 const tileColor = toHexColor(
   extractCssValue({ cssSource: websiteStylesSource, variableName: '--brand-tile' }),
 );
@@ -635,7 +656,14 @@ if (requestedSurface !== '' && !knownSurfaces.includes(requestedSurface)) {
 }
 
 selectedFormats.forEach((format) => {
-  const html = createHtmlFor({ format, accent, tileColor, mascotBase64, providerBrands, date });
+  const html = createHtmlFor({
+    format,
+    accent,
+    tileColor,
+    mascotBase64,
+    ogTheme,
+    date,
+  });
   renderFormat({ format, html });
 });
 

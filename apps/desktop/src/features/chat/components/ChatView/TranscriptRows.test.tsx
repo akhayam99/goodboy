@@ -159,6 +159,26 @@ describe('TranscriptRows', () => {
     expect(container.querySelectorAll('li')).toHaveLength(4);
   });
 
+  it('drops the day chip when the transcript starts today', () => {
+    renderRows([itemRow(userText('u1', new Date()))]);
+    expect(screen.queryByTestId('transcript-day')).toBeNull();
+  });
+
+  it('keeps the day chip when the transcript started on an earlier day', () => {
+    renderRows([itemRow(userText('u1', new Date(2026, 4, 15, 9, 0, 0)))]);
+    expect(screen.getAllByTestId('transcript-day')).toHaveLength(1);
+  });
+
+  it('marks the move into today after an earlier day', () => {
+    renderRows([
+      itemRow(userText('u1', new Date(Date.now() - 86_400_000))),
+      itemRow(userText('u2', new Date())),
+    ]);
+    const days = screen.getAllByTestId('transcript-day');
+    expect(days).toHaveLength(2);
+    expect(days[1]?.textContent?.toLowerCase()).toBe('today');
+  });
+
   it('renders future and null ordinal question buckets at the transcript tail', () => {
     const oqByTurnOrdinal = new Map([
       [4, [{ id: 'future' }]],

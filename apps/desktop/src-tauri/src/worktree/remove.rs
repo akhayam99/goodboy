@@ -190,7 +190,7 @@ pub(crate) fn remove_worktree_checked_with(
     if target.exists() {
         std::fs::remove_dir_all(&target)?;
     }
-    let _ = run_git(repo_path, &["worktree", "prune"]);
+    crate::logging::note_failure("worktree prune", run_git(repo_path, &["worktree", "prune"]));
     if target.exists() {
         return Err(WorktreeError::Git {
             message: format!(

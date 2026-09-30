@@ -194,6 +194,7 @@ type Input = {
   agentId?: AgentId;
   mountId?: MountId;
   mountTarget?: MountTargetSnapshot;
+  resolveCopyPath?: string;
   content: string;
   attachments?: ReadonlyArray<AttachmentInput>;
   override?: TurnProviderOverride;
@@ -238,6 +239,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       agentId,
       mountId,
       mountTarget,
+      resolveCopyPath,
       content,
       attachments,
       override,
@@ -306,12 +308,15 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           };
     const turnMountId = turnTarget?.mountId ?? null;
     const turnMountRevision = turnTarget?.mountRevision ?? null;
+    const copyPath = rewriterCopy === null ? (resolveCopyPath ?? null) : null;
     const workingDir =
       rewriterCopy !== null
         ? rewriterCopy.copyPath
-        : activeMount !== undefined
-          ? activeMount.worktreePath
-          : await scratchDirPrepare({ sessionId });
+        : copyPath !== null
+          ? copyPath
+          : activeMount !== undefined
+            ? activeMount.worktreePath
+            : await scratchDirPrepare({ sessionId });
     const isPlainSessionDir =
       activeMount !== undefined && isBranchlessSession({ branch: activeMount.branch });
     if (isPlainSessionDir) {
@@ -671,7 +676,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       const capturedMount = selectMountById({ state: get(), sessionId, mountId: turnMountId });
       const isStillCaptured =
         capturedMount !== null &&
-        capturedMount.worktreePath === workingDir &&
+        capturedMount.worktreePath === turnTarget?.worktreePath &&
         (turnMountRevision === null || (capturedMount.revision ?? null) === turnMountRevision);
       if (!isStillCaptured) {
         throw new Error('the project mount this turn captured changed before it could start');
@@ -684,14 +689,19 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const isScribeTurn =
       turnAgentKind === 'scribe' && get().scribeAgents[activeAgentId] !== undefined;
     const isResolverTurn = turnAgentKind === 'resolver';
+    const isCopyTurn = isResolverTurn && copyPath !== null;
+    if (copyPath !== null && !isResolverTurn) {
+      throw new Error('only a resolver can work in a copy of the branch');
+    }
     const agentRowForLease = isResolverTurn
       ? ((get().sessionPhaseRuns[sessionId] ?? []).find((row) => row.id === activeAgentId) ??
         (await getAgentById(tauriDatabase, activeAgentId)))
       : null;
-    const writerLeasePath = isResolverTurn
-      ? await resolveWorktreePath({ get, sessionId, target: turnTarget })
-      : null;
-    if (isResolverTurn && (writerLeasePath === null || agentRowForLease === null)) {
+    const writerLeasePath =
+      isResolverTurn && !isCopyTurn
+        ? await resolveWorktreePath({ get, sessionId, target: turnTarget })
+        : null;
+    if (isResolverTurn && !isCopyTurn && (writerLeasePath === null || agentRowForLease === null)) {
       throw new Error(
         writerLeasePath === null
           ? 'resolver turn refused: the session has no worktree to lease'
@@ -1006,11 +1016,13 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
               rows: get().sessionResolveThreads[sessionId] ?? [],
               agent: agentRowEarly,
             }),
-            candidateMode: resolveCandidateMode({
-              agents: get().sessionPhaseRuns[sessionId] ?? [],
-              resolverId: activeAgentId,
-              isOperatorTurn: origin === 'operator',
-            }),
+            candidateMode: isCopyTurn
+              ? 'propose'
+              : resolveCandidateMode({
+                  agents: get().sessionPhaseRuns[sessionId] ?? [],
+                  resolverId: activeAgentId,
+                  isOperatorTurn: origin === 'operator',
+                }),
           })
         : undefined;
     lease.attemptId = resolveAttemptId;
@@ -1046,7 +1058,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const kindSystemPrompt = AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
 
     const scopeMounts =
-      rewriterCopy !== null ? [] : selectWritableMounts({ state: get(), sessionId });
+      rewriterCopy !== null || copyPath !== null
+        ? []
+        : selectWritableMounts({ state: get(), sessionId });
     const activeProject =
       activeMount !== undefined
         ? get().projects.find((project) => project.id === activeMount.projectId)
@@ -1133,9 +1147,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const gitDirs = await resolveGitCommonDirs({
       repoRoots: repoRootsForTurn({ mounts: scopeMounts }),
     });
+    const isolatedCopyPath = rewriterCopy?.copyPath ?? copyPath;
     const writableRoots =
-      rewriterCopy !== null
-        ? await rewriterWritableRoots({ copyPath: rewriterCopy.copyPath })
+      isolatedCopyPath !== null
+        ? await rewriterWritableRoots({ copyPath: isolatedCopyPath })
         : buildTurnWritableRoots({
             mounts: scopeMounts,
             workingDir,
@@ -1226,13 +1241,13 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           binary: providerInfo?.binary,
           workspaceId: session.workspaceId,
           sessionId,
-          ...(turnMountId !== null && { mountId: turnMountId }),
+          ...(turnMountId !== null && copyPath === null && { mountId: turnMountId }),
           ...(resumeSessionId !== undefined && { resumeSessionId }),
           systemPrompt: fullSystemPrompt,
           ...(effortFlag !== undefined && { effort: effortFlag }),
           ...(resolvedModel.maxMode === true && { cursorMaxMode: true }),
           ...(writerLease !== undefined && { writerLease }),
-          ...((rewriterCopy !== null || isScribeTurn) && { blocksPush: true }),
+          ...((isolatedCopyPath !== null || isScribeTurn) && { blocksPush: true }),
           ...(rewriterCopy !== null && { excludesTmp: true }),
           ...(apiKeyBinding ?? {}),
           ...claudeFlags,
@@ -1518,7 +1533,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         // The existing `files_touched` slot is left untouched (mobile falls back
         // to it, paths-only, when this slot is absent). Best-effort: a git failure
         // must not fail the turn.
-        if (activeMount !== undefined && !isSessionDirScope) {
+        if (activeMount !== undefined && !isSessionDirScope && copyPath === null) {
           try {
             const changed = await worktreeChangedFiles({
               worktreePath: workingDir,
@@ -1672,6 +1687,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             ...(force === true ? { force: true } : {}),
             ...(origin !== undefined && { origin }),
             ...(turnTarget !== null && { mountTarget: turnTarget }),
+            ...(copyPath !== null && { resolveCopyPath: copyPath }),
             retry: {
               attempt: (retry?.attempt ?? 0) + 1,
               provider: fallbackPlan.provider,

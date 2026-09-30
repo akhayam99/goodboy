@@ -190,4 +190,50 @@ describe('WorkNode', () => {
     );
     expect(glyph.className).not.toContain('inline-flex');
   });
+  it('splits the mixed ring into arcs proportional to the counts, one tone each', () => {
+    const { container } = render(
+      <WorkNode
+        state="mixed"
+        label="10 resolves"
+        mark={{ kind: 'index', value: '10' }}
+        parts={[
+          { tone: 'warning', count: 3 },
+          { tone: 'info', count: 4 },
+          { tone: 'success', count: 2 },
+          { tone: 'danger', count: 1 },
+        ]}
+      />,
+    );
+
+    const arcs = Array.from(container.querySelectorAll<SVGCircleElement>('[data-arc-tone]'));
+    expect(arcs.map((arc) => arc.getAttribute('data-arc-tone'))).toEqual([
+      'warning',
+      'info',
+      'success',
+      'danger',
+    ]);
+    const lengths = arcs.map((arc) => Number(arc.getAttribute('stroke-dasharray')?.split(' ')[0]));
+    const unit = (lengths[3] ?? 0) / 1;
+    expect(lengths[0]).toBeCloseTo(unit * 3, 1);
+    expect(lengths[1]).toBeCloseTo(unit * 4, 1);
+    expect(lengths[2]).toBeCloseTo(unit * 2, 1);
+    expect(nodeOf('10 resolves').textContent).toBe('10');
+    expect(nodeOf('10 resolves').getAttribute('data-node-state')).toBe('mixed');
+  });
+
+  it('draws a single part as one unbroken ring', () => {
+    const { container } = render(
+      <WorkNode
+        state="mixed"
+        label="4 done"
+        mark={{ kind: 'index', value: '4' }}
+        parts={[{ tone: 'success', count: 4 }]}
+      />,
+    );
+
+    const arcs = container.querySelectorAll('[data-arc-tone]');
+    expect(arcs).toHaveLength(1);
+    const dash = arcs[0]?.getAttribute('stroke-dasharray')?.split(' ') ?? [];
+    expect(Number(dash[1])).toBeCloseTo(0, 1);
+  });
 });

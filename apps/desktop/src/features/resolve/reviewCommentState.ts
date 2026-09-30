@@ -1,4 +1,5 @@
-import type { WorkNodeState } from '@goodboy/ui';
+import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
+import type { Tone, WorkNodeState } from '@goodboy/ui';
 import type { ResolveQueueRow } from './buildResolveQueueRows';
 
 export type ReviewCommentState =
@@ -15,13 +16,13 @@ export type ReviewCommentState =
   | 'pushed'
   | 'resolved';
 
-export type ReviewCommentGroup = 'open' | 'waiting' | 'done';
+export type ReviewCommentGroup = 'open' | 'push' | 'done';
 
-export const REVIEW_COMMENT_GROUPS: ReadonlyArray<ReviewCommentGroup> = ['open', 'waiting', 'done'];
+export const REVIEW_COMMENT_GROUPS: ReadonlyArray<ReviewCommentGroup> = ['open', 'push', 'done'];
 
 export const REVIEW_COMMENT_GROUP_LABEL: Record<ReviewCommentGroup, string> = {
   open: 'Open',
-  waiting: 'Waiting for the push',
+  push: 'Ready to push',
   done: 'Done',
 };
 
@@ -35,7 +36,7 @@ const OPEN_STATES: ReadonlySet<ReviewCommentState> = new Set([
   'failed',
 ]);
 
-const DECIDED_STATES: ReadonlySet<ReviewCommentState> = new Set(['accepted', 'replied', 'skipped']);
+const PUSH_STATES: ReadonlySet<ReviewCommentState> = new Set(['accepted', 'replied']);
 
 export const reviewCommentGroup = ({
   state,
@@ -45,11 +46,8 @@ export const reviewCommentGroup = ({
   if (OPEN_STATES.has(state)) {
     return 'open';
   }
-  return DECIDED_STATES.has(state) ? 'waiting' : 'done';
+  return PUSH_STATES.has(state) ? 'push' : 'done';
 };
-
-const isOutdated = ({ row }: { readonly row: ResolveQueueRow }): boolean =>
-  row.item.candidateRevision !== row.thread.revision;
 
 const isReplyOnly = ({ row }: { readonly row: ResolveQueueRow }): boolean =>
   row.item.approvalState === 'wont_fix' || row.proposalKind !== 'fix';
@@ -57,9 +55,11 @@ const isReplyOnly = ({ row }: { readonly row: ResolveQueueRow }): boolean =>
 export const reviewCommentStateOf = ({
   row,
   isEdited = false,
+  isChanged = false,
 }: {
   readonly row: ResolveQueueRow;
   readonly isEdited?: boolean;
+  readonly isChanged?: boolean;
 }): ReviewCommentState => {
   switch (row.thread.stage) {
     case 'new':
@@ -69,7 +69,7 @@ export const reviewCommentStateOf = ({
     case 'asking':
       return 'needs';
     case 'proposed':
-      if (isOutdated({ row })) {
+      if (isChanged) {
         return 'outdated';
       }
       return isEdited ? 'edited' : 'ready';
@@ -92,6 +92,9 @@ export const reviewCommentStateOf = ({
 export const isPushFailure = ({ row }: { readonly row: ResolveQueueRow }): boolean =>
   row.thread.stage === 'failed' && row.rowState.failedStep !== 'run';
 
+const isWaitingForSlot = ({ row }: { readonly row: ResolveQueueRow }): boolean =>
+  row.thread.stage === 'working' && row.attempt?.phase === 'queued' && row.attempt.batchId !== null;
+
 export const isResolveOnly = ({ row }: { readonly row: ResolveQueueRow }): boolean =>
   (row.thread.replyDraft ?? '').trim() === '' && row.proposalKind !== 'fix';
 
@@ -109,14 +112,14 @@ export const reviewCommentWord = ({
     case 'new':
       return 'Not started';
     case 'drafting':
-      return 'Drafting';
+      return isWaitingForSlot({ row }) ? 'Waiting' : 'Drafting';
     case 'needs':
       return 'Needs you';
     case 'ready':
     case 'edited':
       return 'Ready';
     case 'outdated':
-      return 'Outdated';
+      return 'Comment changed';
     case 'failed':
       return isPushFailure({ row }) ? 'Push failed' : 'Draft failed';
     case 'accepted':
@@ -128,7 +131,7 @@ export const reviewCommentWord = ({
     case 'pushed':
       return 'Pushed';
     case 'resolved':
-      return 'Resolved on GitHub';
+      return `Resolved on ${REVIEW_SOURCE_LABEL[row.thread.sourceKind ?? 'github']}`;
     default: {
       const exhaustive: never = state;
       return exhaustive;
@@ -136,12 +139,15 @@ export const reviewCommentWord = ({
   }
 };
 
-export const REVIEW_COMMENT_NODE: Record<ReviewCommentState, WorkNodeState> = {
+export const REVIEW_COMMENT_NODE: Record<
+  ReviewCommentState,
+  Exclude<WorkNodeState, 'marker' | 'mixed'>
+> = {
   new: 'queued',
   drafting: 'running',
   needs: 'question',
-  ready: 'ready',
-  edited: 'ready',
+  ready: 'stopped',
+  edited: 'stopped',
   outdated: 'stopped',
   failed: 'failed',
   accepted: 'done',
@@ -151,17 +157,71 @@ export const REVIEW_COMMENT_NODE: Record<ReviewCommentState, WorkNodeState> = {
   resolved: 'closed',
 };
 
-export const REVIEW_COUNT_NOUN: Record<ReviewCommentState, string> = {
-  new: 'not started',
-  drafting: 'drafting',
-  needs: 'need you',
-  ready: 'ready',
-  edited: 'ready',
-  outdated: 'outdated',
-  failed: 'failed',
-  accepted: 'accepted',
-  replied: 'reply only',
-  skipped: 'skipped',
-  pushed: 'pushed',
-  resolved: 'resolved',
+export const REVIEW_COMMENT_TONE: Record<ReviewCommentState, Tone> = {
+  new: 'neutral',
+  drafting: 'info',
+  needs: 'warning',
+  ready: 'warning',
+  edited: 'warning',
+  outdated: 'warning',
+  failed: 'danger',
+  accepted: 'success',
+  replied: 'success',
+  skipped: 'neutral',
+  pushed: 'success',
+  resolved: 'neutral',
+};
+
+export type ReviewStateFilter =
+  'all' | 'new' | 'drafting' | 'needs' | 'ready' | 'outdated' | 'failed';
+
+export const REVIEW_STATE_FILTERS: ReadonlyArray<ReviewStateFilter> = [
+  'all',
+  'needs',
+  'ready',
+  'new',
+  'drafting',
+  'outdated',
+  'failed',
+];
+
+export const REVIEW_STATE_FILTER_LABEL: Record<ReviewStateFilter, string> = {
+  all: 'All comments',
+  new: 'Not started',
+  drafting: 'Drafting',
+  needs: 'Needs you',
+  ready: 'Ready',
+  outdated: 'Comment changed',
+  failed: 'Failed',
+};
+
+export const matchesReviewStateFilter = ({
+  state,
+  filter,
+}: {
+  readonly state: ReviewCommentState;
+  readonly filter: ReviewStateFilter;
+}): boolean => {
+  if (filter === 'all') {
+    return true;
+  }
+  if (filter === 'ready') {
+    return state === 'ready' || state === 'edited';
+  }
+  return state === filter;
+};
+
+export const reviewSummaryLine = ({
+  states,
+}: {
+  readonly states: ReadonlyArray<ReviewCommentState>;
+}): ReadonlyArray<{ readonly count: number; readonly noun: string }> => {
+  const inGroup = (group: ReviewCommentGroup): number =>
+    states.filter((state) => reviewCommentGroup({ state }) === group).length;
+  return [
+    { count: inGroup('open'), noun: 'open' },
+    { count: states.filter((state) => state === 'drafting').length, noun: 'drafting' },
+    { count: inGroup('push'), noun: 'ready to push' },
+    { count: inGroup('done'), noun: 'done' },
+  ].filter((part) => part.count > 0);
 };

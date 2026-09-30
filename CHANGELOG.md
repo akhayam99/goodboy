@@ -12,6 +12,106 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.14.0
+
+Fix review comments in parallel on GitHub, GitLab and Bitbucket, start and track sessions from a chat, and read an agent's header in two rows.
+
+This version updates your data in one direction. To go back to 0.13, restore the backup Goodboy made before updating.
+
+### New
+
+#### Fix review comments in parallel
+<!-- gb area=review image=review -->
+
+Press Fix on a comment, or select several with the box that shows on hover, X or `Cmd+A`, and press Fix N separately. A strip under the header sets the model and commit style. Each comment gets its own agent in its own copy of your branch, up to four at a time.
+
+Accepting a fix puts it on your branch. If it collides with a fix you accepted before, the branch stays as it was and the comment says to redo it on top. A retry keeps the model, commit style and hint the comment started with.
+
+#### Review pull requests from GitLab and Bitbucket
+<!-- gb area=review -->
+
+The picker under the Review title lists every pull request and merge request of the session with its provider icon and open count. Notes on this machine come last. A session with two projects on two providers shows two entries.
+
+Reply and push work the same on each. Bitbucket cannot resolve a thread, so its comments offer Reply, and the push confirm says the thread stays open for the reviewer.
+
+#### Commits view in Review
+<!-- gb area=review -->
+
+Review has two views, Comments and Commits, and `V` switches them. Commits lists the branch commits since the base with each resolve commit linked to its comment. Three presets set how they land: Keep as they are, Fold each into its original, One commit for the review.
+
+A preview shows the resulting commits, the predicted outcome and the reply each comment carries once the shas move. Rewrite goes through Rewrite history, and Undo puts every comment back on its commit. The preset you pick is remembered per project.
+
+#### What git says on each comment
+<!-- gb area=review -->
+
+A comment whose fix you already pushed reads Already on origin. One that someone else's commit seems to have fixed reads Looks fixed, with the commit and its author. Both offer Reply and resolve and never push. A thread you already answered reads You replied and offers Resolve only.
+
+#### Re-check a fix that went missing
+<!-- gb area=review -->
+
+When the commit of a fix is no longer on the branch or on origin, the comment reads Fix went missing. A fix that only moved to another sha reads Folded in and stays in the push.
+
+Otherwise Re-check starts a read-only agent that answers Already fixed here, No longer relevant or Still needed. A verdict never closes or fixes anything by itself.
+
+#### Start a session from a chat
+<!-- gb area=app image=chat-room -->
+
+Start session creates the session and opens it on its overview with the title and goal, and nothing running yet. Under Drafted by you choose the model that writes the brief, and under Runs on the model and effort the session starts from.
+
+Add to a session opens one you pick with the brief waiting in its message box, unsent. A session started from a chat shows From chat in its overview and opens that chat.
+
+#### Choose the model and effort for each chat
+<!-- gb area=app -->
+
+The chat message box uses the same model picker as sessions, with an effort level kept for that chat. Each answer names the model and effort that wrote it, and a chat row shows the provider icons of the models it used.
+
+#### Sessions linked to a chat
+<!-- gb area=app -->
+
+Once a session came from a chat, the chat header shows 1 session with a dot in the color of the session's stage. The chip lists each session with its stage and whether it was started or added from the chat. The note under the answer that started it stays after you restart Goodboy.
+
+#### Manage your chats
+<!-- gb area=app -->
+
+Hover a chat for Pin and the menu, or right click it: Rename, Mark as unread, Pin, Archive and Delete. Delete asks first, offers Archive instead, and leaves any session started from the chat alone.
+
+Archived chats sit under Archived at the bottom of the list, with Restore and Delete on hover. An archived chat opens with a banner, and sending a message restores it.
+
+### Improved
+
+#### The agent header takes two rows
+<!-- gb area=agents image=agent-header -->
+
+The title, the Brief and Transcript tabs and the actions share one row, and role, status, time and model sit on one line under it. Delete is an icon with a confirm anchored to it. The chips for what the agent received show once you open its first message.
+
+#### Activity folds resolves and subagents
+<!-- gb area=sessions -->
+
+Resolves started together on one pull request fold into a single row with a summary of their states, and the row opens on a click or Enter. An agent with three or more subagents folds them the same way. A resolver row shows the state of its comment, such as Ready for you or Pushed, and anything failed or waiting on you counts in the need-you chip.
+
+#### Manage a resolve from its Brief
+<!-- gb area=review -->
+
+A resolver opens on its Brief, where Accept, Edit, Reply and Skip sit beside the comment, the fix and the reply. Push now pushes exactly that fix, after a confirm that lists any earlier local commits it would take along. A resolve that fixed several comments shows Open in Review instead.
+
+#### Review comment states and filters
+<!-- gb area=review -->
+
+The Review header shows one summary line, and a filter menu trims the list by state. A comment reads Comment changed only when the reviewer edited the original text after the draft. A new reply shows as New reply and never blocks Accept.
+
+#### Failed drafts offer a next step
+<!-- gb area=review -->
+
+A failed draft says why in plain words, shows the last command the agent ran and links to the transcript. Try again, Try another model and Add a hint start a new attempt, and earlier attempts fold into one line. When the branch on origin moved, Sync and try again asks first and stops if the new commits conflict.
+
+### Fixed
+
+- Esc closes an open confirm popover before the drawer or palette behind it. <!-- gb area=app -->
+- Undoing a history rewrite puts the resolve commits back on their comments. <!-- gb area=review -->
+- A fix folded into another commit stays in the push, and its reply goes out after the push lands. <!-- gb area=review -->
+- A resolver opens on its Brief instead of its transcript, and the tab stays when you come back to it. <!-- gb area=agents -->
+- A running agent with no summary yet no longer shows a raw marker in the Latest band of its Brief. <!-- gb area=agents -->
+
 ## Goodboy v0.13.1
 
 A new Sonnet joins the picker, Chat shows when it is working or has a new reply, and a resolver that committed no longer ends as a failed draft.

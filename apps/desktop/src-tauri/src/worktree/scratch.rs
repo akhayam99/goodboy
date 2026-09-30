@@ -21,11 +21,14 @@ fn scratch_path_of(slug: &str) -> PathBuf {
 }
 
 fn discard_scratch(cwd: &Path, path: &str) {
-    let _ = git(cwd, &["worktree", "remove", "--force", path]);
+    crate::logging::note_failure(
+        "scratch worktree remove",
+        git(cwd, &["worktree", "remove", "--force", path]),
+    );
     if Path::new(path).exists() {
-        let _ = std::fs::remove_dir_all(path);
+        crate::logging::note_failure("scratch folder delete", std::fs::remove_dir_all(path));
     }
-    let _ = git(cwd, &["worktree", "prune"]);
+    crate::logging::note_failure("scratch worktree prune", git(cwd, &["worktree", "prune"]));
 }
 
 fn worktree_scratch_add_blocking(

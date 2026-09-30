@@ -1,8 +1,17 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { create } from 'zustand';
-import type { Agent, AgentId, ArtifactId, SessionId, WorkspaceId } from '@goodboy/types';
-import type { AppStore } from '../../store';
+import type {
+  Agent,
+  AgentId,
+  ArtifactId,
+  ResolveAttempt,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
+import { anAgent, aSession } from '@goodboy/types/testing';
+import { useAppStore, type AppStore } from '../../store';
+import type { SessionGithubState } from '../../types';
 import { createDrawerSlice } from '../drawer';
 import type { DrawerRequest } from '../drawer/state';
 import { createNavigationSlice } from '.';
@@ -28,59 +37,108 @@ const RESOLVER = 'agent-resolver' as AgentId;
 const ARTIFACT = 'artifact-1' as ArtifactId;
 
 const agent = (overrides: Partial<Agent>): Agent =>
-  ({
+  anAgent({
     id: AGENT,
-    parentAgentId: null,
-    workflowRunId: null,
-    stepId: null,
+    sessionId: S1,
     name: 'implementer',
     ...overrides,
-  }) as unknown as Agent;
+  });
+
+const githubWithPr = (number: number): SessionGithubState => ({
+  pr: {
+    number,
+    title: 'Guard the settlement batch',
+    url: `https://github.com/harborline/ledger-core/pull/${number}`,
+    state: 'open',
+    mergeable: true,
+    checks: 'success',
+    baseBranch: 'main',
+    headBranch: 'fix/ledger-postings',
+    isDraft: false,
+    reviewDecision: null,
+    body: '',
+    updatedAt: '2026-09-25T00:00:00.000Z',
+  },
+  linkedIssues: [],
+  fetchedAt: null,
+  failedAt: null,
+  loading: false,
+  error: null,
+  detail: null,
+  detailFetchedAt: null,
+  detailLoading: false,
+  detailError: null,
+});
+
+const resolveAttemptFor = ({
+  agentId,
+  threadIds,
+}: {
+  readonly agentId: AgentId;
+  readonly threadIds: ReadonlyArray<string>;
+}): ResolveAttempt => ({
+  id: `attempt-${agentId}`,
+  sessionId: S1,
+  agentId,
+  prNumber: null,
+  threadIds,
+  provider: 'anthropic',
+  model: 'sonnet-5',
+  effort: null,
+  instructions: null,
+  phase: 'finished',
+  mountTarget: null,
+  startedAt: null,
+  endedAt: null,
+  error: null,
+  createdAt: 1,
+  batchId: null,
+  copyPath: null,
+  launchChoice: null,
+});
 
 const makeStore = () =>
-  create<AppStore>()(
-    (set, get) =>
-      ({
-        currentWorkspaceId: WS,
-        currentSessionId: null,
-        sessions: [{ id: S1 }, { id: S2 }],
-        navigation: {},
-        appStudio: null,
-        activeLens: {},
-        sessionStudio: {},
-        selectedAgentId: {},
-        focusedWorkflowRunId: {},
-        diffFocus: {},
-        diffMountPath: {},
-        diffPage: {},
-        terminalMountPath: {},
-        focusedArtifactId: {},
-        focusedGithubIssueNumber: {},
-        focusedExternalTask: {},
-        drawer: null,
-        openSessionDraftWorkspaceId: null,
-        contextDrawerTab: {},
-        sessionPhaseRuns: {
-          [S1]: [agent({}), agent({ id: RESOLVER, name: 'resolve: ana on a.ts:4' })],
-        },
-        agentKindOverride: { [RESOLVER]: 'resolver' },
-        sessionResolveAttempts: {},
-        sessionGithub: {},
-        sessionGitlabMr: {},
-        sessionBitbucketPr: {},
-        setCurrentSession: async (id: SessionId | null) => {
-          set((state) => ({
-            currentSessionId: id,
-            activeLens: id === null ? state.activeLens : { ...state.activeLens, [id]: null },
-          }));
-        },
-        selectAgent: async (sessionId: SessionId, agentId: AgentId) => {
-          set((state) => ({ selectedAgentId: { ...state.selectedAgentId, [sessionId]: agentId } }));
-        },
-        ...createNavigationSlice({ set, get }),
-        ...createDrawerSlice({ set, get }),
-      }) as unknown as AppStore,
-  );
+  create<AppStore>()((set, get) => ({
+    ...useAppStore.getInitialState(),
+    currentWorkspaceId: WS,
+    currentSessionId: null,
+    sessions: [aSession({ id: S1 }), aSession({ id: S2 })],
+    navigation: {},
+    appStudio: null,
+    activeLens: {},
+    sessionStudio: {},
+    selectedAgentId: {},
+    focusedWorkflowRunId: {},
+    diffFocus: {},
+    diffMountPath: {},
+    diffPage: {},
+    terminalMountPath: {},
+    focusedArtifactId: {},
+    focusedGithubIssueNumber: {},
+    focusedExternalTask: {},
+    drawer: null,
+    openSessionDraftWorkspaceId: null,
+    contextDrawerTab: {},
+    sessionPhaseRuns: {
+      [S1]: [agent({}), agent({ id: RESOLVER, name: 'resolve: ana on a.ts:4' })],
+    },
+    agentKindOverride: { [RESOLVER]: 'resolver' },
+    sessionResolveAttempts: {},
+    sessionGithub: {},
+    sessionGitlabMr: {},
+    sessionBitbucketPr: {},
+    setCurrentSession: async (id: SessionId | null) => {
+      set((state) => ({
+        currentSessionId: id,
+        activeLens: id === null ? state.activeLens : { ...state.activeLens, [id]: null },
+      }));
+    },
+    selectAgent: async (sessionId: SessionId, agentId: AgentId) => {
+      set((state) => ({ selectedAgentId: { ...state.selectedAgentId, [sessionId]: agentId } }));
+    },
+    ...createNavigationSlice({ set, get }),
+    ...createDrawerSlice({ set, get }),
+  }));
 
 const keyOf = (store: ReturnType<typeof makeStore>): string => {
   const state = store.getState();
@@ -267,7 +325,7 @@ describe('navigation slice', () => {
 
   it('keeps the pull request lens on a GitHub PR, apart from Review', () => {
     const store = makeStore();
-    store.setState({ sessionGithub: { [S1]: { pr: { number: 528 } } } } as never);
+    store.setState({ sessionGithub: { [S1]: githubWithPr(528) } });
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'linear' }) });
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'pr' }) });
     expect(store.getState().activeLens[S1]).toBe('pr');
@@ -288,8 +346,10 @@ describe('navigation slice', () => {
   it('opens a resolver as its transcript layer over the comment in Review', () => {
     const store = makeStore();
     store.setState({
-      sessionResolveAttempts: { [S1]: [{ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] }] },
-    } as never);
+      sessionResolveAttempts: {
+        [S1]: [resolveAttemptFor({ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] })],
+      },
+    });
     store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: RESOLVER }) });
 
     expect(keyOf(store)).toBe(`s/${S1}/review/t/gh:PRRT_42/agent`);
@@ -302,6 +362,62 @@ describe('navigation slice', () => {
     });
   });
 
+  it('carries the requested agent tab in the address of a resolver page', () => {
+    const store = makeStore();
+    store.setState({
+      sessionResolveAttempts: {
+        [S1]: [resolveAttemptFor({ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] })],
+      },
+    });
+    store.getState().navigate({
+      to: agentPlace({ sessionId: S1, agentId: RESOLVER, pane: 'brief' }),
+    });
+
+    expect(keyOf(store)).toBe(`s/${S1}/review/t/gh:PRRT_42/agent/brief`);
+    expect(store.getState().agentPane[S1]).toBe('brief');
+    expect(captureWindowLocation({ state: store.getState() })?.place).toEqual(
+      resolverPagePlace({
+        sessionId: S1,
+        agentId: RESOLVER,
+        threadId: 'gh:PRRT_42',
+        pane: 'brief',
+      }),
+    );
+  });
+
+  it('asks for the transcript and clears the tab when the page changes', () => {
+    const store = makeStore();
+    store.setState({
+      sessionResolveAttempts: {
+        [S1]: [resolveAttemptFor({ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] })],
+      },
+    });
+    store.getState().navigate({
+      to: agentPlace({ sessionId: S1, agentId: RESOLVER, pane: 'transcript' }),
+    });
+    expect(store.getState().agentPane[S1]).toBe('transcript');
+
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
+    expect(store.getState().agentPane[S1]).toBeNull();
+  });
+
+  it('restores the requested tab on Back', () => {
+    const store = makeStore();
+    store.setState({
+      sessionResolveAttempts: {
+        [S1]: [resolveAttemptFor({ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] })],
+      },
+    });
+    store.getState().navigate({
+      to: agentPlace({ sessionId: S1, agentId: RESOLVER, pane: 'brief' }),
+    });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
+    store.getState().back();
+
+    expect(store.getState().agentPane[S1]).toBe('brief');
+    expect(keyOf(store)).toBe(`s/${S1}/review/t/gh:PRRT_42/agent/brief`);
+  });
+
   it('addresses the resolver page under its comment and goes back to the open comment', () => {
     const store = makeStore();
     const conversation = {
@@ -310,8 +426,10 @@ describe('navigation slice', () => {
       payload: { threadId: 'gh:PRRT_42' },
     };
     store.setState({
-      sessionResolveAttempts: { [S1]: [{ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] }] },
-    } as never);
+      sessionResolveAttempts: {
+        [S1]: [resolveAttemptFor({ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] })],
+      },
+    });
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
     store.getState().openDrawer(conversation);
     store.getState().navigate({
@@ -328,8 +446,10 @@ describe('navigation slice', () => {
   it('goes up from a resolver page reached from elsewhere to the queue with its comment', () => {
     const store = makeStore();
     store.setState({
-      sessionResolveAttempts: { [S1]: [{ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] }] },
-    } as never);
+      sessionResolveAttempts: {
+        [S1]: [resolveAttemptFor({ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] })],
+      },
+    });
     store.getState().navigate({
       to: resolverPagePlace({ sessionId: S1, agentId: RESOLVER, threadId: 'gh:PRRT_42' }),
     });
@@ -615,7 +735,7 @@ describe('code host layers', () => {
 
   it('gives a jump from outside the canonical path of its target', () => {
     const store = makeStore();
-    store.setState({ sessionGithub: { [S1]: { pr: { number: 318 } } } } as never);
+    store.setState({ sessionGithub: { [S1]: githubWithPr(318) } });
     store.getState().navigate({ to: BOARD_PLACE });
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
     expect(layersOf(store)).toEqual(['pr']);
@@ -626,7 +746,7 @@ describe('code host layers', () => {
 
   it('opens Review from the Overview with the Overview as its only parent', () => {
     const store = makeStore();
-    store.setState({ sessionGithub: { [S1]: { pr: { number: 318 } } } } as never);
+    store.setState({ sessionGithub: { [S1]: githubWithPr(318) } });
     store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
     expect(layersOf(store)).toEqual([]);

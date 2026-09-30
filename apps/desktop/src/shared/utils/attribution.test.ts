@@ -1,7 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { OverrideSettings } from '@goodboy/types';
-import { appendAttribution, ATTRIBUTION_TEXT, isAttributionEnabled } from './attribution';
+import {
+  appendAttribution,
+  ATTRIBUTION_TEXT,
+  insertBeforeAttribution,
+  isAttributionEnabled,
+} from './attribution';
 
 const overridesWith = (attributionFooter: boolean | null): OverrideSettings => ({
   defaultProviderId: null,
@@ -111,6 +116,25 @@ describe('appendAttribution', () => {
     );
     expect(appendAttribution({ body: '   ', isEnabled: true, syntax: 'mrkdwn' })).toBe(
       '_Written by Goodboy_',
+    );
+  });
+});
+
+describe('insertBeforeAttribution', () => {
+  it('puts the text above the signature', () => {
+    expect(
+      insertBeforeAttribution({
+        body: 'Fixed in `c81e5aa`.\n\n*Written by Goodboy*',
+        text: 'Update: `c81e5aa` was squashed into `e31b9f4`.',
+      }),
+    ).toBe(
+      'Fixed in `c81e5aa`.\n\nUpdate: `c81e5aa` was squashed into `e31b9f4`.\n\n*Written by Goodboy*',
+    );
+  });
+
+  it('appends the text to an unsigned body', () => {
+    expect(insertBeforeAttribution({ body: 'Fixed in `c81e5aa`.', text: 'Update: moved.' })).toBe(
+      'Fixed in `c81e5aa`.\n\nUpdate: moved.',
     );
   });
 });

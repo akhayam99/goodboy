@@ -78,12 +78,15 @@ fn open_and_finish_wipe(path: &std::path::Path) -> Result<Connection, DbError> {
         .map(|elapsed| elapsed.as_secs())
         .unwrap_or_default();
     match finish_interrupted_wipe(&conn, path, stamp) {
-        Ok(Some(backup)) => eprintln!(
+        Ok(Some(backup)) => crate::logging::early(format!(
             "[goodboy] finished an interrupted wipe of the local database, copy kept at {}",
             backup.display()
-        ),
+        )),
         Ok(None) => {}
-        Err(error) => eprintln!("[goodboy] left a possibly half-wiped database untouched: {error}"),
+        Err(error) => crate::logging::early(format!(
+            "[goodboy] left a possibly half-wiped database untouched: {}",
+            crate::logging::detail(&error)
+        )),
     }
     Ok(conn)
 }

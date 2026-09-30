@@ -29,7 +29,7 @@ const NODE_CENTER = join(
   'WorkNodeCenter.tsx',
 );
 
-const ANIMATION = /animate-|spin-border|attention-ring/;
+const ANIMATION = /animate-(?!explode-)|spin-border|attention-ring/;
 
 const listSourceFiles = (dir: string, acc: string[] = []): string[] => {
   for (const entry of readdirSync(dir)) {
@@ -64,6 +64,24 @@ describe('activity feed motion', () => {
       offenders,
       `Running is the only animated state in the feed, and it lives in WorkNode:\n${offenders.join('\n')}`,
     ).toEqual([]);
+  });
+
+  it('gates the group explode motion on motion-safe so reduced motion drops it', () => {
+    const offenders: string[] = [];
+    for (const file of listSourceFiles(FEED)) {
+      if (file.endsWith('.test.tsx') || file.endsWith('.test.ts')) {
+        continue;
+      }
+      readFileSync(file, 'utf8')
+        .split('\n')
+        .forEach((line, idx) => {
+          const isUngated = /(^|[^:])animate-explode-/.test(line);
+          if (isUngated) {
+            offenders.push(`${relative(FEED, file)}:${idx + 1} ${line.trim()}`);
+          }
+        });
+    }
+    expect(offenders).toEqual([]);
   });
 
   it('gates the running dot on motion-safe so reduced motion keeps the dot and drops the pulse', () => {

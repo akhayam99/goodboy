@@ -65,6 +65,13 @@ type HistoryRewriteResult = {
   readonly identity: HistoryIdentity;
 };
 
+export type HistoryThreadShas = {
+  readonly threadId: string;
+  readonly commitShas: ReadonlyArray<string>;
+  readonly fixupOfSha: string | null;
+  readonly replacesSha: string | null;
+};
+
 export type HistoryRun = {
   readonly sessionId: SessionId;
   readonly mountId: MountId;
@@ -82,6 +89,7 @@ export type HistoryRun = {
   readonly applied: HistoryApplied | null;
   readonly identity: HistoryIdentity | null;
   readonly movedHead: string | null;
+  readonly threadShas: ReadonlyArray<HistoryThreadShas>;
   readonly updatedAt: number;
 };
 

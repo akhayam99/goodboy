@@ -1,7 +1,8 @@
 import { listResolvePublicationsForSession, setResolvePublicationPhase } from '@goodboy/db';
 import type { HistoryShaMove, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import type { GetFn, SetFn } from './types';
+import { recordCommitMove } from '../resolve/commitStory';
+import type { GetFn, HistoryThreadShas, SetFn } from './types';
 
 type Params = {
   readonly set: SetFn;
@@ -12,6 +13,26 @@ type Params = {
 
 const moved = ({ map }: { readonly map: ReadonlyArray<HistoryShaMove> }) =>
   new Map(map.filter((entry) => entry.to !== entry.from).map((entry) => [entry.from, entry.to]));
+
+const foldedShas = ({
+  map,
+}: {
+  readonly map: ReadonlyArray<HistoryShaMove>;
+}): ReadonlySet<string> => {
+  const survivors = new Map<string, string>();
+  const folded = new Set<string>();
+  for (const entry of map) {
+    if (entry.to === null) {
+      continue;
+    }
+    if (!survivors.has(entry.to)) {
+      survivors.set(entry.to, entry.from);
+      continue;
+    }
+    folded.add(entry.from);
+  }
+  return folded;
+};
 
 const remapSha = ({
   sha,
@@ -31,10 +52,10 @@ export const remapRewrittenCommits = async ({
   get,
   sessionId,
   map,
-}: Params): Promise<void> => {
+}: Params): Promise<ReadonlyArray<HistoryThreadShas>> => {
   const moves = moved({ map });
   if (moves.size === 0) {
-    return;
+    return [];
   }
   const publications = await listResolvePublicationsForSession({
     db: tauriDatabase,
@@ -57,6 +78,8 @@ export const remapRewrittenCommits = async ({
       activePublicationPreview: { ...state.activePublicationPreview, [sessionId]: null },
     }));
   }
+  const folded = foldedShas({ map });
+  const before: HistoryThreadShas[] = [];
   for (const row of get().sessionResolveThreads[sessionId] ?? []) {
     const shas = row.commitShas ?? [];
     const isTouched =
@@ -66,11 +89,27 @@ export const remapRewrittenCommits = async ({
     if (!isTouched) {
       continue;
     }
+    before.push({
+      threadId: row.threadId,
+      commitShas: shas,
+      fixupOfSha: row.fixupOfSha,
+      replacesSha: row.replacesSha,
+    });
     const nextShas = Array.from(
       new Set(
         shas.map((sha) => remapSha({ sha, moves })).filter((sha): sha is string => sha !== null),
       ),
     );
+    const fromSha = shas.at(-1);
+    const toSha = nextShas.at(-1);
+    if (fromSha !== undefined && toSha !== undefined && fromSha !== toSha) {
+      await recordCommitMove({
+        sessionId,
+        threadId: row.threadId,
+        fromSha,
+        isFolded: folded.has(fromSha),
+      }).catch(() => undefined);
+    }
     await get().updateResolveThread({
       sessionId,
       threadId: row.threadId,
@@ -81,4 +120,5 @@ export const remapRewrittenCommits = async ({
       },
     });
   }
+  return before;
 };

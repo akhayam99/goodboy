@@ -6,7 +6,7 @@ import { mountRevision, requestIdentityEquals } from '../project-mounts/mountReq
 import { applyMountGithub } from './mountGithub';
 import { githubRequestIdentity } from './mountPrLink';
 import { resolveSessionPrFetch } from './resolveSessionPrFetch';
-import type { ResolveUpdates } from '../resolve/types';
+import { syncSourceThreads } from '../review-source/syncSourceThreads';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -116,56 +116,14 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
           return;
         }
         const detail = await fetchPrDetail(tauriGhRunner, slug, pr.number, ghOptions);
-        await get().updateResolveThreads({
+        await syncSourceThreads({
+          get,
           sessionId,
-          updates: ({ rows }) => {
-            const updates: Array<ResolveUpdates[number]> = [];
-            for (const thread of detail.comments) {
-              if (thread.resolved === undefined || thread.threadId === undefined) {
-                continue;
-              }
-              const row = rows.find((item) => item.threadId === thread.threadId);
-              if (
-                row === undefined ||
-                row.prNumber !== pr.number ||
-                (row.projectId !== null && row.projectId !== mount.projectId) ||
-                row.githubResolved === thread.resolved
-              ) {
-                continue;
-              }
-              updates.push({
-                threadId: thread.threadId,
-                revision: row.revision,
-                patch: thread.resolved
-                  ? {
-                      state: 'closed',
-                      githubResolved: true,
-                      closedAt: Date.now(),
-                      closedSource: 'github',
-                    }
-                  : {
-                      githubResolved: false,
-                      ...(row.state === 'closed' && {
-                        state: 'open',
-                        closedAt: null,
-                        closedSource: null,
-                      }),
-                    },
-              });
-            }
-            return updates;
-          },
+          kind: 'github',
+          prNumber: pr.number,
+          projectId: mount.projectId,
+          comments: detail.comments,
         });
-        try {
-          await get().materializeReviewThreads({
-            sessionId,
-            prNumber: pr.number,
-            projectId: mount.projectId,
-            comments: detail.comments,
-          });
-        } catch (error) {
-          console.warn(`[review-threads] ${sessionId}: ${formatError(error)}`);
-        }
         if (!isCurrent()) {
           return;
         }

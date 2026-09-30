@@ -5,6 +5,7 @@ import { selectChatGroups } from '../../store/slices/chats/selectChatGroups';
 import { createMemoryChatBackend } from './createMemoryChatBackend';
 import { mockChatResponder } from './mockChatResponder';
 import { mockChatSeed } from './mockChatSeed';
+import { mockChatSessions } from './mockChatSessions';
 
 const WORKSPACE = 'ws-harborline' as WorkspaceId;
 const NOW = Date.parse('2026-09-28T15:00:00.000Z');
@@ -28,6 +29,34 @@ describe('mock chat backend', () => {
       'Flaky test in ledger-core',
     ]);
     expect(chats.every((chat) => chat.preview !== null)).toBe(true);
+  });
+
+  it('links the consent and rounding chats to their sessions and lists two models on one chat', async () => {
+    const backend = createMemoryChatBackend({
+      respond: mockChatResponder,
+      seed: ({ workspaceId }) => mockChatSeed({ workspaceId, now: NOW }),
+    });
+
+    const chats = await backend.listChats({ workspaceId: WORKSPACE });
+    const links = await backend.listLinks({ workspaceId: WORKSPACE });
+    const sessions = mockChatSessions({ workspaceId: WORKSPACE, now: NOW });
+    const titleOf = (chatTitle: string) => {
+      const chat = chats.find((entry) => entry.title === chatTitle);
+      const link = links.find((entry) => entry.chatId === chat?.id);
+      return sessions.find((session) => session.id === link?.sessionId);
+    };
+
+    expect(links).toHaveLength(2);
+    expect(titleOf('Where is the consent step defined?')).toMatchObject({
+      goal: 'Ask for consent again when the policy changes',
+      state: { kind: 'running' },
+    });
+    expect(titleOf('Ledger rounding on refunds')?.state.kind).toBe('ended');
+    expect(chats.find((chat) => chat.title.startsWith('What changed'))?.modelsUsed).toEqual([
+      { provider: 'anthropic', model: 'sonnet-5' },
+      { provider: 'codex', model: 'gpt-5.6-sol' },
+    ]);
+    expect(chats.find((chat) => chat.title.startsWith('Release'))?.modelsUsed).toHaveLength(1);
   });
 
   it('streams a canned answer for the last question only', async () => {

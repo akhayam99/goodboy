@@ -156,10 +156,10 @@ See pull requests made outside Goodboy without reloading. One an agent opened or
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-activity-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-activity-light.webp" alt="The Activity timeline of the session: a report titled Webhook redelivery no longer double credits, the step Report the session outcome on Sonnet 5, a queued step Cover the console retry states on Haiku 4.5 with a range of 11 to 14 minutes, the question Which failures should count toward a stuck delivery? with an Answer button, the step Add the stuck-delivery banner marked Needs you on Kimi K3, and Decisions 1 replaced, 1 withdrawn, and #311 merged">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-activity-light.webp" alt="The Activity timeline of the session: a report titled Webhook redelivery no longer double credits, a queued step Cover the console retry states on Haiku 4.5 with a range of 11 to 14 minutes, the question Which failures should count toward a stuck delivery? with an Answer button, a folded row 10 resolves on PR #318 with 3 ready for you, 4 drafting, 2 pushed and 1 failed, Decisions 1 replaced, 1 withdrawn, and a folded row 6 subagents with 5 done and 1 running above the step Implement the stuck-delivery banner on Kimi K3">
 </picture>
 
-Read the whole session as one timeline of agents, workflows, questions, fixes, artifacts, pull requests and decisions. Each step shows provider, model, time and cost in the same columns. A question sits on its own row with **Answer** beside it, and the step it blocks is marked **Needs you**. **Filter** trims what the timeline shows.
+Read the whole session as one timeline of agents, workflows, questions, fixes, artifacts, pull requests and decisions. Each step shows provider, model, time and cost in the same columns. A question sits on its own row with **Answer** beside it, and the step it blocks is marked **Needs you**. **Filter** trims what the timeline shows. Resolves started together on one pull request fold into a single row, "10 resolves on PR #318", with a mixed node and a summary of their states. It stays closed until you click it or press Enter; the resolves then come out above it, and a second click folds them back. A failed one never opens the group, it shows in red in the summary and in the need-you chip. An agent with three or more subagents folds them the same way into one row, "6 subagents", with a summary like "5 done · 1 running"; a subagent that failed or asks you something colours the ring and counts in the need-you chip without opening the group. A resolver row says the state of its comment, not of the agent: Ready for you, Drafting, Pushed or Draft failed, and a fix waiting on you counts in the need-you chip.
 
 ### Next
 
@@ -410,36 +410,77 @@ Turn review comments into commits, push them back to GitHub, and read your own p
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-resolve-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-resolve-light.webp" alt="Review for PR #318 in Harborline with six open comments on the left and the one from kenji-w on retryPolicy.ts:42 on the right, marked Ready, with a Proposed change that caps the retries in retryPolicy.ts and metrics.ts">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-resolve-light.webp" alt="Review for PR #318 in Harborline under the Comments and Commits switch, with six open comments on the left and the one from kenji-w on retryPolicy.ts:42 on the right, marked Ready, with a Proposed change that caps the retries in retryPolicy.ts and metrics.ts">
 </picture>
 
-Turn review comments into commits without writing the fix yourself. **Review** lists the comments on the left and the one you picked on the right: here kenji-w asks for a retry cap on `retryPolicy.ts:42`, and the resolver's **Proposed change** sits under it. **Draft a fix** (**Draft fixes for N** when several are waiting) has an agent write each fix as a local commit and draft the reply, then you accept it, edit it, reply yourself or skip the comment.
+Turn review comments into commits without writing the fix yourself. Review lists the comments on the left and the one you picked on the right. Press **Fix** on a comment (or **F**), pick the model and commit style in the strip that opens under the header, and each comment gets its own agent (check several comments with the box that shows on hover, **X** or **Cmd+A**, then **Fix N separately** to start them together), working in its own copy of the branch, up to four at a time while the rest wait for a free slot. Each agent writes its fix as a commit and drafts the reply, then you accept it, edit it, reply yourself or skip the comment. Accepting puts the fix on your branch; if it collides with a fix you accepted before, the branch stays as it was and the comment says to redo it on top. A retry keeps the model, commit style and hint the comment started with.
+
+### Review sources
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-sources-dark.webp">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-sources-light.webp" width="520" alt="The Review header of notify-relay !57 with the source picker open: payments-api #318 on GitHub with 9 open, notify-relay !57 on GitLab with 3 open and checked, and Notes on this machine with 2 open">
+</picture>
+
+Read the comments of every request in the session from one place. The picker under the Review title lists each pull request and merge request of the session with its provider icon and open count, and **Notes on this machine** last. A session with two projects on two providers shows two entries, and picking one makes its project the active one. Draft, reply and push work the same everywhere. Where a provider cannot resolve a thread, the comment offers **Reply** and no resolve, and the push confirm says the thread stays open for the reviewer.
+
+| Source                 | Read comments   | Reply | Resolve thread            |
+| ---------------------- | --------------- | ----- | ------------------------- |
+| GitHub pull request    | Yes             | Yes   | Yes                       |
+| GitLab merge request   | Yes             | Yes   | Yes                       |
+| Bitbucket pull request | Inline comments | Yes   | No, the thread stays open |
+| Notes on this machine  | Yes             | No    | Close the note            |
 
 ### Comment states
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-comment-states-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-comment-states-light.webp" alt="The Review list for PR #318 grouped as Open 6, Waiting for the push 2 and Done 1, with each row marked Outdated, Needs you, Drafting, Ready, Not started, Accepted, Skipped or Pushed, and a row of count chips above">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-comment-states-light.webp" width="420" alt="The comment list of Review for PR #318 under the summary 6 open, 1 drafting, 1 ready to push, 2 done and the Comments and Commits switch, with a filter menu and the groups Open 6, Ready to push 1 and Done 2, each row marked Comment changed, Needs you, Drafting, Ready, Not started, Accepted, Skipped or Pushed">
 </picture>
 
-Know what each comment needs next. Each row carries a state: **Outdated**, **Needs you**, **Drafting**, **Ready**, **Not started**, **Accepted**, **Skipped** or **Pushed**. Rows group as **Open**, **Waiting for the push** and **Done**, and the chips above the list count them, such as **2 ready** and **1 pushed**. An **Outdated** comment changed since its reply was drafted, so **Redraft** comes first.
+Know what each comment needs next. Each one shows a state like **Not started**, **Drafting**, **Needs you**, **Ready** or **Comment changed**, grouped as **Open**, **Ready to push** and **Done**. A single summary line under the title counts them, and the list menu filters by state. A comment is marked changed only when the reviewer really edited the original comment after the draft (a new reply shows as **New reply from** the author and never blocks Accept): the card shows the text before and after and who wrote it, and you choose **Redraft with the new comment** or **Keep the draft**. A comment whose line moved on GitHub says so, and stays as it is.
+
+### Failed drafts
+
+Know why a draft failed and what to do next. The comment says why in plain words, shows the last command the agent ran and how it ended, and links to the transcript. Pick **Try again**, **Try another model** or **Add a hint**, and earlier attempts fold into one line above. When a push fails because the branch on origin moved, **Sync and try again** asks first, brings the new commits under yours, and stops without touching anything if they conflict.
+
+### Manage a resolve from its Brief
+
+Click a resolve in Activity and its Brief holds the comment, the fix and the reply, with **Accept**, **Edit**, **Reply** and **Skip**. The header chip reads the comment state, as Activity does, such as **Ready for you** or **Accepted**, not **Done**. After you accept, **Push now** pushes exactly that fix, after a confirm right under the header. If earlier local commits would go with it, the confirm lists them first. A resolve that fixed several comments together shows **Open in Review (N)** instead, and Review opens on the first of them.
+
+### Fixes already on the branch
+
+Review looks at origin before it pushes. A comment whose fix you already pushed reads **Already on origin**, and one that someone else's commit seems to have fixed reads **Looks fixed** with the commit and its author. Both offer **Reply and resolve** and never push. If you already answered a thread yourself it reads **You replied** and offers **Resolve only**. On a Bitbucket pull request, where a thread cannot be resolved, the same moves read **Reply** and **Post this reply**, and there is no **Resolve only**.
+
+### A fix that went missing
+
+When the commit of a fix is no longer on the branch or on origin, the comment reads **Fix went missing** with its own detail, and the push blocker points to it. Goodboy first asks git without an agent: the same patch under another sha turns it into **Folded in**: it stays in the push (**Push to reply**) and its reply, "Fixed in the old sha, squashed into the new one", goes out after the push lands. If that is not enough, **Re-check** starts a read-only agent on the cheapest model of your provider. It answers **Already fixed here** (Reply and resolve with the sha), **No longer relevant** (Close with this reply, editable) or **Still needed** (Fix again, Add a hint). A verdict never closes or fixes anything by itself. A pushed fix that origin lost later, after a force push or a squash done elsewhere, gets the same check.
 
 ### Close on GitHub
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-push-confirm-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-push-confirm-light.webp" alt="The Review header of PR #318 with a confirm under it: Push 1 to hl/fix-duplicate-credit, 1 fix in 1 new commit, 1 reply, 1 thread resolved on GitHub, 2 comments need you first, with Cancel and Push buttons">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-push-confirm-light.webp" alt="The Review header of PR #318 with its summary line and the Comments and Commits switch, and under it a confirm: Push 1 to hl/fix-duplicate-credit, 1 fix in 1 new commit, 1 reply, 1 thread resolved on GitHub, 2 comments need you first, with Cancel and Push buttons">
 </picture>
 
-Finish a review in one action. **Push 1** in the Review header opens a confirm right under it: **Push 1 to hl/fix-duplicate-credit?**, with the count of fixes, replies and threads it will resolve on GitHub, and a note when comments still need you. **Push** pushes the fixes, posts the replies and resolves the threads. **Cancel** leaves everything as it was. After an interruption Goodboy looks for your reply in the thread before posting it again.
+Finish a review in one action. **Push 1** in the Review header opens a confirm right under it: **Push 1 to hl/fix-duplicate-credit?**, with the count of fixes, replies and threads it will resolve on GitHub, and a note when comments still need you. **Push** pushes the fixes, posts the replies and resolves the threads (on a GitLab merge request too, not on Bitbucket). **Cancel** leaves everything as it was. After an interruption Goodboy looks for your reply in the thread before posting it again.
 
 ### Review replies in your voice
 
-Get replies that sound like you, **Terse**, **Friendly**, **Formal** or **Like my replies**. **Like my replies** reads your last 20 review replies and writes a style note you can edit.
+Get replies that sound like you, **Terse**, **Friendly**, **Formal** or **Like my replies**. **Like my replies** reads your last 20 review replies and writes a style note you can edit. When you squash or fold a fix, the reply names both commits, and a reply already posted gets an Update line, which you can turn off in Settings.
 
 ### Fixes on a branch that moved
 
 Accept a fix even after the branch got new commits: it lands on top of the latest one, and on a conflict the branch goes back to its old head.
+
+### Squash and fold the resolve commits
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-commits-dark.webp">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-commits-light.webp" alt="The Commits view of Review for PR #318: the branch hl/fix-duplicate-credit with 5 commits oldest first, the presets Keep as they are, Fold each into its original and One commit for the review, each commit with its sha and whether it is on origin, and on the right the After list of 5 commits with Reset and Rewrite">
+</picture>
+
+Choose how the fixes land before anyone sees them. Review has two views, **Comments** and **Commits** (press **V** to switch). **Commits** lists the branch commits since the base, yours and the resolve commits linked to their comment, with three presets: **Keep as they are**, **Fold each into its original** (into the commit the fix was a fixup of) and **One commit for the review**, plus a menu per commit to keep it, fold it into an earlier commit, squash it with the one above or reword it. The preview shows the resulting commits and the predicted outcome before anything runs, and a **Replies** list with the text each comment's reply will carry once the shas move (a reply already posted gets its Update line, with the **Edit the posted reply** switch beside it). A plan you left in Rewrite history is never overwritten: Commits says so and waits for **Open it** or **Replace it**. **Rewrite** goes through Rewrite history: tried in a copy, a backup kept, and when commits are already on origin it says first that this is a force push with lease that reviewers will see as force-pushed. **Undo** restores the backup and puts every comment back on its commit. The preset you pick is remembered per project and sets whether later resolves commit as fixups or new commits.
 
 ### Notes before a pull request
 
@@ -640,7 +681,7 @@ Get each question as one card: who asks, whether it is **Blocking**, the questio
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-question-agent-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-question-agent-light.webp" alt="The Brief of the agent Reuse the token footer in the brief with its blocking question open on Let an agent decide: An agent decides with Sonnet 5 · Medium, a hints box, Cancel and Hand off">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-question-agent-light.webp" alt="The Brief of the agent Reuse the token footer in the brief: a header with the title, the Brief and Transcript tabs and a delete icon, one line with Implementer, Running and Opus 5, and its blocking question open on Let an agent decide: An agent decides with Sonnet 5 · Medium, a hints box, Cancel and Hand off">
 </picture>
 
 Hand a question to another agent with a hint and a model from **Let an agent decide**, then press **Hand off**. Its answer counts as yours, and **Answer it yourself** takes it back.
@@ -1054,18 +1095,28 @@ Talk to agents, watch what they do and steer them while they work.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-light.webp" alt="Chat in Harborline: the chat list grouped by Pinned, Today, This week and Idle with Archive idle, and the answer to Where is the consent step defined? as a table of three payments-api files, with Read 4 files, Copy and Start work from here, under the chips Harborline · 3 projects, Read-only and Sonnet 5">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-light.webp" alt="Chat in Harborline: the chat list grouped by Pinned, This week and Idle with Archive idle and Archived 4, session marks on two chats, and the answer to Where is the consent step defined? as a table of three payments-api files with Read 4 files, Sonnet 5 · Medium under it and a Started a session note, below the header chip 1 session and above a message box that reads Sonnet 5 · Medium and Read-only · 3 projects">
 </picture>
 
-Ask about the workspace without starting a session. **Chat**, next to **Board**, opens your chats on the left and one conversation on the right. Each chat reads every project of the workspace (**Harborline · 3 projects**) and never changes a file (**Read-only**): the answer streams in, **Read 4 files** lists what it opened, and the model, here **Sonnet 5**, is picked per chat from Claude or Codex, the two providers that can be held to reading. Chats you have not used for seven days move to **Idle**, dimmed, and **Archive idle** clears them with an **Undo**. Nothing is archived for you.
+Ask about the workspace without starting a session. **Chat**, next to **Board**, opens your chats on the left and one conversation on the right. Each chat reads every project of the workspace and never changes a file: the composer says **Read-only · 3 projects**, the answer streams in, **Read 4 files** lists what it opened, and the model picker beside the box is the same one you use for sessions, limited to Claude and Codex, the two providers that can be held to reading. It keeps the effort you pick for that chat and applies it from the next message, and each answer names the model and effort that wrote it, so a chat that changed model shows both. Hover an answer for **Copy** and **Start work from here**. Chats you have not used for seven days move to **Idle**, dimmed, and **Archive idle** clears them with an **Undo**. Nothing is archived for you.
 
-**Start work** turns a chat into work in a panel beside it: the chat's model drafts a title, a goal, what the chat established and the files it named, you edit any of it, then start a new session with that goal or send it into a session that is already running. The **Project** field searches your projects and takes none, one or several; **Add to a session** lists sessions by Active and Recent, with their projects, stage and age.
+Hover a chat in the list for **Pin** and **⋯**. The same menu opens with a right click or Shift+F10: **Rename** edits the title in place (Enter saves, Esc cancels), **Mark as unread**, **Pin**, **Archive** and **Delete**. **Delete** asks first in the menu, removes the chat's messages from this device and leaves any session started from it alone; the confirm also offers **Archive instead**. A chat that started a session shows a session mark with the session's stage on its second line, and a chat that used more than one model shows the providers it used.
+
+Archived chats stay one click away. When any exist, **Archived** with a count sits at the bottom of the list and switches it to the archived chats, where **Restore** and **Delete** appear on hover and **Delete all archived** asks once. An archived chat opens with an **Archived** banner above the message box, and sending a message restores it. A session started from a chat shows **From chat** in its overview and opens that chat.
+
+**Start work** turns a chat into work in a panel beside it: a model you choose under **Drafted by**, the chat's own by default and remembered per workspace, drafts a title, a goal, what the chat established and the files it named, and you edit any of it. **Start session** creates a session with that goal and opens it, with nothing running yet; **Runs on** sets the model and effort the new session starts from. **Add to a session** opens a session you pick with the brief waiting in its message box, unsent. The **Project** field searches your projects and takes none, one or several; the session list groups by Active and Recent, with their projects, stage and age. Back returns to the chat.
+
+A chat remembers the work it started. Once a session came from it, the header shows **1 session** with a dot in the color of that session's stage; with several, the dot follows the most urgent one. The chip opens the list with each session's stage, whether it was started or added from this chat, and **Open**. The note under the answer that started it stays when you close the chat or restart Goodboy, and a deleted session drops out of both.
 
 The top bar shows when a chat is working: a pulsing dot and "1 chat running" on **Chat**, and a still **New reply** dot in the notification color on it, and on the chat in the list, until you open the chat.
 
 ### Roles
 
 Give each agent the job it is good at. Nine roles come with the app, **Scout**, **Debug**, **Plan**, **Implement**, **Review**, **Test**, **Resolve**, **Docs** and **Generalist**, and a role sets the agent's instructions, its default model and what it hands back.
+
+### Agent header
+
+Read who an agent is without giving the transcript away. The title, the **Brief** and **Transcript** tabs and the actions share one row, and role, status, time and model sit on one line under it. The title stays on one line and shows in full on hover. **Delete** is an icon that asks in a confirm anchored to it, and the menu beside it holds the rest. The transcript starts right under the header, without a leading day chip.
 
 ### What the agent received
 

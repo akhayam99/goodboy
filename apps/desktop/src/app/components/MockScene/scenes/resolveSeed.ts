@@ -13,10 +13,14 @@ import type {
   ResolveQueueApprovalState,
   ResolveQueueItem,
   ResolveQueueItemWithThread,
+  ResolveSourceSnapshot,
   ResolveThread,
   ResolveThreadState,
   ResolveStage,
+  ProviderRunId,
+  TurnEvent,
   AgentId,
+  IsoDateTime,
   MountId,
   MountTargetSnapshot,
   Session,
@@ -25,20 +29,23 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import type { ResolveCandidateWithItems } from '../../../../store/slices/resolve/state';
 import { EMPTY_RESOLVE_QUEUE_VIEW } from '../../../../store/slices/session-view';
+import { remoteMovedError } from '../../../../store/slices/resolve/remoteMovedError';
 import { sceneClock } from '../sceneClock';
 
 const clock = sceneClock({ anchor: '2026-09-04T14:20:00.000Z' });
 
 export const WORKSPACE_ID = 'mock-resolve-workspace-harborline' as WorkspaceId;
 export const SESSION_ID = 'mock-resolve-session-webhook-retry' as SessionId;
-const PROJECT_ID = 'mock-resolve-project-payments-api' as ProjectId;
+export const PROJECT_ID = 'mock-resolve-project-payments-api' as ProjectId;
 
-const NOW_ISO = clock.iso({ at: '2026-09-04T14:20:00.000Z' });
+export const NOW_ISO = clock.iso({ at: '2026-09-04T14:20:00.000Z' });
 const NOW_MS = Date.parse(NOW_ISO);
-const msAgo = ({ minutes }: { readonly minutes: number }): number => NOW_MS - minutes * 60_000;
-const isoAgo = ({ minutes }: { readonly minutes: number }): string =>
+export const msAgo = ({ minutes }: { readonly minutes: number }): number =>
+  NOW_MS - minutes * 60_000;
+export const isoAgo = ({ minutes }: { readonly minutes: number }): string =>
   new Date(msAgo({ minutes })).toISOString();
 
 const OVERRIDES = {
@@ -113,6 +120,14 @@ const T8 = 'PRRT_thread_typo';
 const T9 = 'PRRT_thread_retry_constant';
 
 export const EXPANDED_THREAD_ID = T1;
+export const THREAD_IDS = {
+  metrics: T2,
+  logRedact: T5,
+  timeoutConfig: T6,
+  typo: T8,
+  retryConstant: T9,
+} as const;
+export const RESOLVE_SCENE_PR = PR;
 
 const ITEM1_ID = 'mock-resolve-item-retry-backoff';
 const ITEM2_ID = 'mock-resolve-item-retry-metrics';
@@ -132,7 +147,7 @@ const PUBLICATION_ID = 'mock-resolve-publication-timeout-config';
 const PROPOSAL_RETRY =
   'Added a capped exponential backoff (max 6 attempts) that reads the Retry-After header when the provider sends one, and emits a retry_backoff_exhausted metric once we give up.';
 
-type ThreadSeed = {
+export type ThreadSeed = {
   readonly threadId: string;
   readonly state: ResolveThreadState;
   readonly stage: ResolveStage;
@@ -144,7 +159,7 @@ type ThreadSeed = {
   readonly createdMinutesAgo: number;
 };
 
-const buildThread = (seed: ThreadSeed): ResolveThread => ({
+export const buildThread = (seed: ThreadSeed): ResolveThread => ({
   id: `mock-resolve-thread-${seed.threadId}`,
   sessionId: SESSION_ID,
   projectId: null,
@@ -174,7 +189,7 @@ const buildThread = (seed: ThreadSeed): ResolveThread => ({
   updatedAt: msAgo({ minutes: seed.createdMinutesAgo }),
 });
 
-type ItemSeed = {
+export type ItemSeed = {
   readonly id: string;
   readonly threadId: string;
   readonly approvalState: ResolveQueueApprovalState;
@@ -186,7 +201,7 @@ type ItemSeed = {
   readonly integratedSha?: string | null;
 };
 
-const buildItem = (seed: ItemSeed): ResolveQueueItem => ({
+export const buildItem = (seed: ItemSeed): ResolveQueueItem => ({
   id: seed.id,
   sessionId: SESSION_ID,
   threadId: seed.threadId,
@@ -384,7 +399,7 @@ const ITEM_TYPO = buildItem({
   approvedRevision: null,
   deferredAt: null,
   deliveredAt: null,
-  candidateRevision: 1,
+  candidateRevision: 2,
   createdMinutesAgo: 500,
 });
 
@@ -399,7 +414,65 @@ const ITEM_RETRY_CONSTANT = buildItem({
   createdMinutesAgo: 12,
 });
 
-const QUEUE_ITEMS: ReadonlyArray<ResolveQueueItemWithThread> = [
+const EXTRA_NEW: ReadonlyArray<{
+  readonly threadId: string;
+  readonly author: string;
+  readonly path: string;
+  readonly line: number;
+  readonly minutesAgo: number;
+  readonly body: string;
+}> = [
+  {
+    threadId: 'PRRT_thread_jitter',
+    author: 'omar-t',
+    path: 'src/webhooks/retryPolicy.ts',
+    line: 31,
+    minutesAgo: 30,
+    body: 'Add jitter so retried deliveries from many tenants do not line up.',
+  },
+  {
+    threadId: 'PRRT_thread_log_delivery_id',
+    author: 'nadia-p',
+    path: 'src/webhooks/logging.ts',
+    line: 44,
+    minutesAgo: 45,
+    body: 'Log the delivery id, not the whole body.',
+  },
+  {
+    threadId: 'PRRT_thread_response_time',
+    author: 'kenji-w',
+    path: 'src/webhooks/metrics.ts',
+    line: 4,
+    minutesAgo: 60,
+    body: 'Should we also record the response time of each attempt?',
+  },
+];
+
+const EXTRA_QUEUE_ITEMS: ReadonlyArray<ResolveQueueItemWithThread> = EXTRA_NEW.map((extra) => ({
+  item: buildItem({
+    id: `mock-resolve-item-${extra.threadId}`,
+    threadId: extra.threadId,
+    approvalState: 'none',
+    approvedRevision: null,
+    deferredAt: null,
+    deliveredAt: null,
+    candidateRevision: 1,
+    createdMinutesAgo: extra.minutesAgo,
+  }),
+  thread: buildThread({
+    threadId: extra.threadId,
+    state: 'open',
+    stage: 'new',
+    revision: 1,
+    activeAttemptId: null,
+    disposition: null,
+    replyDraft: null,
+    question: null,
+    createdMinutesAgo: extra.minutesAgo,
+  }),
+}));
+
+export const QUEUE_ITEMS: ReadonlyArray<ResolveQueueItemWithThread> = [
   { item: ITEM_RETRY_BACKOFF, thread: THREAD_RETRY_BACKOFF },
   { item: ITEM_RETRY_METRICS, thread: THREAD_RETRY_METRICS },
   { item: ITEM_ERROR_SHAPE, thread: THREAD_ERROR_SHAPE },
@@ -418,6 +491,7 @@ type NoteSeed = {
   readonly path: string;
   readonly line: number;
   readonly createdMinutesAgo: number;
+  readonly isOutdated?: boolean;
 };
 
 const buildNote = (seed: NoteSeed): PrComment => ({
@@ -431,9 +505,12 @@ const buildNote = (seed: NoteSeed): PrComment => ({
   path: seed.path,
   line: seed.line,
   resolved: false,
-  outdated: false,
+  outdated: seed.isOutdated ?? false,
   threadId: seed.threadId,
 });
+
+const TYPO_BEFORE = "Typo: 'shoudl' should be 'should' in the comment above the retry constant.";
+const TYPO_ADDED = 'Also rename the flag to shouldRetry.';
 
 const COMMENTS: ReadonlyArray<PrComment> = [
   buildNote({
@@ -490,6 +567,7 @@ const COMMENTS: ReadonlyArray<PrComment> = [
     path: 'src/webhooks/retryPolicy.test.ts',
     line: 31,
     createdMinutesAgo: 300,
+    isOutdated: true,
     body: 'This test sleeps for real between retries and flakes on a loaded runner. Can it use fake timers?',
   }),
   buildNote({
@@ -498,7 +576,7 @@ const COMMENTS: ReadonlyArray<PrComment> = [
     path: 'src/webhooks/config.ts',
     line: 3,
     createdMinutesAgo: 500,
-    body: "Typo: 'shoudl' should be 'should' in the comment above the retry constant.",
+    body: `${TYPO_BEFORE} ${TYPO_ADDED}`,
   }),
   buildNote({
     threadId: T9,
@@ -510,7 +588,57 @@ const COMMENTS: ReadonlyArray<PrComment> = [
   }),
 ];
 
-const MOUNT_TARGET: MountTargetSnapshot = {
+const EXTRA_COMMENTS: ReadonlyArray<PrComment> = EXTRA_NEW.map((extra) =>
+  buildNote({
+    threadId: extra.threadId,
+    author: extra.author,
+    path: extra.path,
+    line: extra.line,
+    createdMinutesAgo: extra.minutesAgo,
+    body: extra.body,
+  }),
+);
+
+const TYPO_SNAPSHOT: ResolveSourceSnapshot = {
+  body: TYPO_BEFORE,
+  author: 'kenji-w',
+  fingerprint: 'mock-typo-before',
+  seenAt: msAgo({ minutes: 480 }),
+  replyIds: [],
+  changed: {
+    body: `${TYPO_BEFORE} ${TYPO_ADDED}`,
+    author: 'kenji-w',
+    fingerprint: 'mock-typo-after',
+    seenAt: msAgo({ minutes: 30 }),
+  },
+};
+
+const METRICS_REPLY: PrComment = {
+  id: 'mock-resolve-comment-reply-metrics',
+  author: 'nadia-p',
+  authorAvatarUrl: null,
+  body: 'Agreed. A counter per give-up reason would help too.',
+  createdAt: isoAgo({ minutes: 20 }),
+  url: `${PR.url}#discussion_reply_metrics`,
+  source: 'review',
+  path: 'src/webhooks/metrics.ts',
+  line: 18,
+  resolved: false,
+  outdated: false,
+  threadId: T2,
+  inReplyToId: `mock-resolve-comment-${T2}`,
+};
+
+const METRICS_SNAPSHOT: ResolveSourceSnapshot = {
+  body: 'Same loop should emit a metric when it gives up, otherwise we will never see this happening in production.',
+  author: 'kenji-w',
+  fingerprint: 'mock-metrics-root',
+  seenAt: msAgo({ minutes: 85 }),
+  replyIds: [],
+  changed: null,
+};
+
+export const MOUNT_TARGET: MountTargetSnapshot = {
   mountId: 'mock-resolve-mount-payments-api' as MountId,
   mountRevision: 3,
   worktreePath: '~/code/harborline/payments-api-webhook-retry',
@@ -532,6 +660,9 @@ const ATTEMPT_RETRY: ResolveAttempt = {
   endedAt: msAgo({ minutes: 52 }),
   error: null,
   createdAt: msAgo({ minutes: 70 }),
+  batchId: null,
+  copyPath: null,
+  launchChoice: null,
 };
 
 const ATTEMPT_IDEMPOTENCY: ResolveAttempt = {
@@ -550,6 +681,9 @@ const ATTEMPT_IDEMPOTENCY: ResolveAttempt = {
   endedAt: null,
   error: null,
   createdAt: msAgo({ minutes: 6 }),
+  batchId: null,
+  copyPath: null,
+  launchChoice: null,
 };
 
 const CANDIDATE_RETRY: ResolveCandidate = {
@@ -678,6 +812,20 @@ const FAKE_RETRY_DIFF = [
   ' };',
 ].join('\n');
 
+const FAKE_COMMIT_DIFF = [
+  'diff --git a/src/webhooks/metrics.ts b/src/webhooks/metrics.ts',
+  '--- a/src/webhooks/metrics.ts',
+  '+++ b/src/webhooks/metrics.ts',
+  '@@ -16,5 +16,7 @@ export const metrics = {',
+  '   record: (name: string, value: number) => emit(name, value),',
+  '-  gaveUp: () => undefined,',
+  '+  gaveUp: (reason: string) => {',
+  "+    emit('retry_backoff_exhausted', 1);",
+  "+    emit('retry_backoff_reason', reason);",
+  '+  },',
+  ' };',
+].join('\n');
+
 const payloadSql = ({ payload }: { readonly payload: InvokeArgs | undefined }): string => {
   if (payload === undefined || Array.isArray(payload)) {
     return '';
@@ -689,13 +837,22 @@ const payloadSql = ({ payload }: { readonly payload: InvokeArgs | undefined }): 
   return typeof sql === 'string' ? sql : '';
 };
 
-const installResolveMockIpc = (): void => {
+const installResolveMockIpc = ({
+  deliveredReplyBody,
+}: {
+  readonly deliveredReplyBody: string | null;
+}): void => {
   mockIPC((cmd, payload) => {
     if (cmd === 'worktree_diff_range') {
       return FAKE_RETRY_DIFF;
     }
+    if (cmd === 'worktree_diff_commit') {
+      return FAKE_COMMIT_DIFF;
+    }
     if (cmd === 'db_select' && payloadSql({ payload }).includes('resolve_publication_threads')) {
-      return PUBLICATION_THREAD_ROWS;
+      return deliveredReplyBody === null
+        ? PUBLICATION_THREAD_ROWS
+        : PUBLICATION_THREAD_ROWS.map((row) => ({ ...row, replyBody: deliveredReplyBody }));
     }
     return null;
   });
@@ -713,12 +870,154 @@ const EMPTY_GITHUB = {
   detailError: null,
 };
 
+type ResolveFailure = 'run' | 'history';
+
 type SeedParams = {
   readonly expandedThreadId: string | null;
+  readonly failure?: ResolveFailure;
+  readonly selectable?: boolean;
+  readonly deliveredReplyBody?: string | null;
 };
 
-export const seedResolveScene = ({ expandedThreadId }: SeedParams): void => {
-  installResolveMockIpc();
+const CONNECTED_PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = (
+  [
+    ['anthropic', 'claude', 'Claude'],
+    ['codex', 'codex', 'Codex'],
+  ] as const
+).map(([id, binary, label]) => ({
+  id,
+  binary,
+  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  connection: 'connected',
+  version: '1.0.0',
+  identity: 'harborline',
+  label,
+  error: null,
+  docsUrl: 'https://example.invalid/docs',
+}));
+
+const FAILED_ATTEMPT_ID = 'mock-resolve-attempt-idempotency-failed';
+const FIRST_ATTEMPT_ID = 'mock-resolve-attempt-idempotency-first';
+const FAILED_AGENT_ID = 'mock-resolve-agent-idempotency-failed' as AgentId;
+const FIRST_AGENT_ID = 'mock-resolve-agent-idempotency-first' as AgentId;
+
+const failedAttempt = ({
+  id,
+  agentId,
+  provider,
+  model,
+  effort,
+  startedMinutesAgo,
+  endedMinutesAgo,
+}: {
+  readonly id: string;
+  readonly agentId: AgentId;
+  readonly provider: string;
+  readonly model: string;
+  readonly effort: string;
+  readonly startedMinutesAgo: number;
+  readonly endedMinutesAgo: number;
+}): ResolveAttempt => ({
+  ...ATTEMPT_IDEMPOTENCY,
+  id,
+  agentId,
+  provider,
+  model,
+  effort,
+  phase: 'failed',
+  startedAt: msAgo({ minutes: startedMinutesAgo }),
+  endedAt: msAgo({ minutes: endedMinutesAgo }),
+  error: 'interrupted',
+  createdAt: msAgo({ minutes: startedMinutesAgo }),
+});
+
+const failedTranscript = ({
+  runId,
+}: {
+  readonly runId: ProviderRunId;
+}): ReadonlyArray<TurnEvent> => [
+  {
+    kind: 'tool_call_start',
+    runId,
+    toolUseId: 'mock-tool-tests',
+    toolName: 'Bash',
+    input: { command: 'pnpm test src/webhooks' },
+    at: NOW_ISO as IsoDateTime,
+  },
+  {
+    kind: 'tool_call_end',
+    runId,
+    toolUseId: 'mock-tool-tests',
+    output: 'Tests  2 failed | 8 passed',
+    isError: true,
+    at: NOW_ISO as IsoDateTime,
+  },
+];
+
+const PUSH_FAILURE_REASON = `publication_failed:${JSON.stringify({
+  error: remoteMovedError({
+    branch: PR.headBranch,
+    remote: '8c1d2e47b90a',
+    reviewed: '4f21c8b9a7d3',
+  }),
+})}`;
+
+const failureSeed = ({ failure }: { readonly failure: ResolveFailure }) => {
+  const isHistory = failure === 'history';
+  const active = failedAttempt({
+    id: FAILED_ATTEMPT_ID,
+    agentId: FAILED_AGENT_ID,
+    provider: isHistory ? 'codex' : 'anthropic',
+    model: isHistory ? 'gpt-5.6-sol' : 'claude-sonnet-5',
+    effort: isHistory ? 'high' : 'medium',
+    startedMinutesAgo: 26,
+    endedMinutesAgo: 22,
+  });
+  const first = failedAttempt({
+    id: FIRST_ATTEMPT_ID,
+    agentId: FIRST_AGENT_ID,
+    provider: 'anthropic',
+    model: 'claude-sonnet-5',
+    effort: 'medium',
+    startedMinutesAgo: 40,
+    endedMinutesAgo: 36,
+  });
+  const runThread: ResolveThread = {
+    ...THREAD_IDEMPOTENCY,
+    state: 'failed',
+    stage: 'failed',
+    stateReason: 'failed:interrupted',
+    activeAttemptId: FAILED_ATTEMPT_ID,
+  };
+  const pushThread: ResolveThread = {
+    ...THREAD_LOG_REDACT,
+    state: 'failed',
+    stage: 'failed',
+    stateReason: PUSH_FAILURE_REASON,
+  };
+  const queue = QUEUE_ITEMS.map((entry) => {
+    if (entry.thread.threadId === T4) {
+      return { item: entry.item, thread: runThread };
+    }
+    return entry.thread.threadId === T5 ? { item: entry.item, thread: pushThread } : entry;
+  });
+  return {
+    queue,
+    attempts: isHistory ? [ATTEMPT_RETRY, first, active] : [ATTEMPT_RETRY, active],
+    transcripts: {
+      [FAILED_AGENT_ID]: failedTranscript({ runId: 'mock-run-failed' as ProviderRunId }),
+    },
+  };
+};
+
+export const seedResolveScene = ({
+  expandedThreadId,
+  failure,
+  selectable = false,
+  deliveredReplyBody = null,
+}: SeedParams): void => {
+  installResolveMockIpc({ deliveredReplyBody });
+  const failed = failure === undefined ? null : failureSeed({ failure });
 
   const candidatesWithItems: ReadonlyArray<ResolveCandidateWithItems> = [
     { candidate: CANDIDATE_RETRY, items: CANDIDATE_ITEMS },
@@ -730,12 +1029,22 @@ export const seedResolveScene = ({ expandedThreadId }: SeedParams): void => {
     projects: [],
     sessions: [SESSION],
     currentSessionId: SESSION_ID,
-    sessionResolveQueueItems: { [SESSION_ID]: QUEUE_ITEMS },
-    sessionResolveAttempts: { [SESSION_ID]: [ATTEMPT_RETRY, ATTEMPT_IDEMPOTENCY] },
+    sessionResolveQueueItems: {
+      [SESSION_ID]:
+        failed?.queue ?? (selectable ? [...QUEUE_ITEMS, ...EXTRA_QUEUE_ITEMS] : QUEUE_ITEMS),
+    },
+    sessionResolveAttempts: {
+      [SESSION_ID]: failed?.attempts ?? [ATTEMPT_RETRY, ATTEMPT_IDEMPOTENCY],
+    },
+    transcripts: failed?.transcripts ?? {},
+    ...(failed !== null && { providers: CONNECTED_PROVIDERS }),
     sessionResolveCandidates: { [SESSION_ID]: candidatesWithItems },
     sessionResolveCheckRuns: { [SESSION_ID]: CHECK_RUNS },
     sessionResolvePublications: { [SESSION_ID]: [PUBLICATION] },
     sessionResolveUncapturedWork: { [SESSION_ID]: null },
+    sessionResolveSourceSnapshots: {
+      [SESSION_ID]: { [T8]: TYPO_SNAPSHOT, [T2]: METRICS_SNAPSHOT },
+    },
     resolveQueueView: {
       [SESSION_ID]: EMPTY_RESOLVE_QUEUE_VIEW,
     },
@@ -753,7 +1062,9 @@ export const seedResolveScene = ({ expandedThreadId }: SeedParams): void => {
         pr: PR,
         detail: {
           prNumber: PR.number,
-          comments: COMMENTS,
+          comments: selectable
+            ? [...COMMENTS, ...EXTRA_COMMENTS, METRICS_REPLY]
+            : [...COMMENTS, METRICS_REPLY],
           reviews: [],
           reviewRequests: [],
           checks: [],

@@ -16,6 +16,9 @@ const { state, learn } = vi.hoisted(() => ({
       async (_params: { workspaceId: string; patch: WorkspaceOverridesPatch }) => undefined,
     ),
     reportError: vi.fn(async () => undefined),
+    settings: {} as Record<string, string>,
+    loadSetting: vi.fn(async () => null),
+    saveSetting: vi.fn(async () => undefined),
     projects: [
       { id: 'p1', workspaceId: 'workspace-1', kind: 'repo', rootPath: '/repos/ledger-core' },
       { id: 'p2', workspaceId: 'workspace-2', kind: 'repo', rootPath: '/repos/notify-relay' },
@@ -45,6 +48,8 @@ const renderWith = (patch: Partial<OverrideSettings> = {}) => {
 
 beforeEach(() => {
   state.patchWorkspaceOverrides.mockClear();
+  state.saveSetting.mockClear();
+  state.settings = {};
   learn.mockReset();
 });
 
@@ -59,7 +64,7 @@ describe('WorkspaceReviewRepliesSection', () => {
     expect(screen.getByRole('tab', { name: 'Terse' }).getAttribute('aria-selected')).toBe('true');
     expect(screen.getByLabelText('When fixed')).toHaveProperty(
       'value',
-      '{reason}\n\nFixed in {commit}.',
+      '{reason}\n\nFixed in {commit_story}.',
     );
     const preview = screen.getByLabelText('Reply preview');
     expect(preview.textContent).toContain('Retry-After');
@@ -133,7 +138,7 @@ describe('WorkspaceReviewRepliesSection', () => {
     renderWith({ replyTemplateFixed: '{reason}\n\nDone in {commit}.' });
     const field = screen.getByLabelText('When fixed');
 
-    fireEvent.change(field, { target: { value: '{reason}\n\nFixed in {commit}.' } });
+    fireEvent.change(field, { target: { value: '{reason}\n\nFixed in {commit_story}.' } });
     fireEvent.blur(field);
 
     expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
@@ -162,6 +167,20 @@ describe('WorkspaceReviewRepliesSection', () => {
       workspaceId: WORKSPACE,
       patch: { resolveCommitStyle: 'fixup' },
     });
+  });
+
+  it('edits the posted reply by default and saves the switch per workspace', () => {
+    renderWith();
+
+    const [, , editSwitch] = screen.getAllByRole('switch');
+    if (editSwitch === undefined) {
+      throw new Error('edit switch missing');
+    }
+    expect(screen.getByText('Edit the posted reply')).toBeTruthy();
+    expect(editSwitch.getAttribute('aria-checked')).toBe('true');
+    fireEvent.click(editSwitch);
+
+    expect(state.saveSetting).toHaveBeenCalledWith(`review.edit_posted_reply.${WORKSPACE}`, '0');
   });
 
   it('resets every reply setting after a confirm and keeps signing as it is', async () => {

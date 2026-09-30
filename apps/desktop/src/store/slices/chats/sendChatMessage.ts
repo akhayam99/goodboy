@@ -4,7 +4,9 @@ import type {
   ChatMessage,
   ChatMessageId,
   ChatMessageStatus,
+  EffortLevel,
   IsoDateTime,
+  ProviderId,
   ProviderRunId,
 } from '@goodboy/types';
 import { activeChatBackend } from '../../../features/workspace-chat/activeChatBackend';
@@ -27,9 +29,21 @@ type MessageDraft = {
   readonly content: string;
   readonly status: ChatMessageStatus;
   readonly at: IsoDateTime;
+  readonly provider?: ProviderId;
+  readonly model?: string;
+  readonly effort?: EffortLevel | null;
 };
 
-const draftMessage = ({ chatId, role, content, status, at }: MessageDraft): ChatMessage => ({
+const draftMessage = ({
+  chatId,
+  role,
+  content,
+  status,
+  at,
+  provider,
+  model,
+  effort,
+}: MessageDraft): ChatMessage => ({
   id: crypto.randomUUID() as ChatMessageId,
   chatId,
   role,
@@ -37,6 +51,9 @@ const draftMessage = ({ chatId, role, content, status, at }: MessageDraft): Chat
   status,
   reads: [],
   error: null,
+  provider: provider ?? null,
+  model: model ?? null,
+  effort: effort ?? null,
   createdAt: at,
   updatedAt: at,
 });
@@ -101,7 +118,16 @@ export const sendChatMessage =
     const at = isoNow();
     const runId = crypto.randomUUID() as ProviderRunId;
     const asked = draftMessage({ chatId, role: 'user', content: question, status: 'done', at });
-    const reply = draftMessage({ chatId, role: 'assistant', content: '', status: 'streaming', at });
+    const reply = draftMessage({
+      chatId,
+      role: 'assistant',
+      content: '',
+      status: 'streaming',
+      at,
+      provider: chat.provider,
+      model: chat.model,
+      effort: chat.effort,
+    });
     const title =
       history.length === 0 && chat.title === NEW_CHAT_TITLE
         ? chatTitleFromQuestion({ question })
@@ -128,6 +154,16 @@ export const sendChatMessage =
         await activeChatBackend.rename({ chatId, title, now: at });
       }
       const plan = planChatTurn({ state: get(), chat, history, question, runId });
+      if (plan.kind === 'ready') {
+        set((state) =>
+          patchChatMessage({
+            state,
+            chatId,
+            messageId: reply.id,
+            update: (message) => ({ ...message, effort: plan.effort }),
+          }),
+        );
+      }
       outcome =
         plan.kind === 'blocked'
           ? { status: 'failed', error: plan.error }

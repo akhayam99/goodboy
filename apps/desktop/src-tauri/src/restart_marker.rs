@@ -1,3 +1,4 @@
+use crate::util::MessageError;
 use rusqlite::Connection;
 use serde::Serialize;
 
@@ -40,15 +41,24 @@ pub fn persist(app: &tauri::AppHandle, run_ids: &[String]) {
         .map(|elapsed| elapsed.as_millis() as i64)
         .unwrap_or(0);
     if let Err(error) = record(&conn, run_ids, now_ms) {
-        eprintln!("[goodboy] could not record the interrupted runs: {error}");
+        log::warn!(
+            "[goodboy] could not record the interrupted runs: {}",
+            crate::logging::detail(&error)
+        );
     }
 }
 
 #[tauri::command]
-pub fn restart_prepare(app: tauri::AppHandle) -> Vec<String> {
+pub async fn restart_prepare(app: tauri::AppHandle) -> Result<Vec<String>, MessageError> {
+    tauri::async_runtime::spawn_blocking(move || restart_prepare_blocking(&app))
+        .await
+        .map_err(|e| MessageError::Failed(e.to_string()))
+}
+
+fn restart_prepare_blocking(app: &tauri::AppHandle) -> Vec<String> {
     use tauri::Manager;
     let interrupted = crate::turn::live_run_ids(&app.state::<crate::turn::TurnRegistry>());
-    crate::drain_child_processes(&app, true);
+    crate::drain_child_processes(app, true);
     interrupted
 }
 

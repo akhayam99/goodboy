@@ -14,6 +14,7 @@ import type { CommitFacts } from './kinds/commit';
 import type { DiffFileFacts } from './kinds/diffFile';
 import type { WorktreeFacts } from './kinds/worktree';
 import type { ScriptFacts } from './kinds/script';
+import type { ChatFacts } from './kinds/chat';
 import type { AppStore } from '../../store/store';
 import type { ShowToast } from '../../app/components/Toast';
 import type { ShortcutId } from '../../shared/keyboard/registry';
@@ -267,6 +268,11 @@ export type MessageActionTarget = {
   readonly agentId: AgentId | null;
 };
 
+export type ChatActionTarget = {
+  readonly kind: 'chat';
+  readonly facts: ChatFacts;
+};
+
 export type LinkActionTarget = {
   readonly kind: 'link';
   readonly href: string;
@@ -306,6 +312,7 @@ export type ObjectTarget =
   | WorktreeActionTarget
   | ScriptActionTarget
   | MessageActionTarget
+  | ChatActionTarget
   | LinkActionTarget
   | ReviewActionTarget
   | ReviewCommentActionTarget

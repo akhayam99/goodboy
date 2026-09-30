@@ -1,7 +1,9 @@
-import { listResolveThreads } from '@goodboy/db';
+import { keepResolveDraftCurrent, listResolveThreads } from '@goodboy/db';
 import { saveResolveThread } from './saveResolveThread';
 import { withNextStage } from './withNextStage';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { loadResolveCandidatesInto } from './loadResolveCandidatesInto';
+import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';
 import { projectResolveRows } from './projectResolveRows';
 import type { BatchUpdateParams, SliceParams } from './types';
 
@@ -12,9 +14,11 @@ export const updateResolveThreads = async ({
   get,
   sessionId,
   updates,
+  keepsDraft = false,
 }: Params): Promise<void> => {
   const rows = [...(await listResolveThreads({ db: tauriDatabase, sessionId }))];
   const changes = typeof updates === 'function' ? updates({ rows }) : updates;
+  let hasKept = false;
   for (const update of changes) {
     const index = rows.findIndex((row) => row.threadId === update.threadId);
     const previous = rows[index];
@@ -34,7 +38,22 @@ export const updateResolveThreads = async ({
       })
     ) {
       rows[index] = { ...withNextStage({ previous, row }), revision: previous.revision + 1 };
+      if (
+        keepsDraft &&
+        (await keepResolveDraftCurrent({
+          db: tauriDatabase,
+          sessionId,
+          threadId: previous.threadId,
+          fromRevision: previous.revision,
+        }))
+      ) {
+        hasKept = true;
+      }
     }
+  }
+  if (hasKept) {
+    await loadResolveQueueItemsInto({ set, sessionId });
+    await loadResolveCandidatesInto({ set, sessionId });
   }
   projectResolveRows({
     set,

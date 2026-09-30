@@ -42,7 +42,7 @@ impl LiveChild {
     fn kill_leader_fallback(&self) {
         if let Ok(mut guard) = self.slot.try_lock() {
             if let Some(child) = guard.as_mut() {
-                let _ = child.kill();
+                crate::logging::note_kill_failure("live child kill", child.kill());
             }
         }
     }

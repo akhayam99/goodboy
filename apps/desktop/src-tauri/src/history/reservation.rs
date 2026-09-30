@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
 pub(super) const COPY_PREFIX: &str = "goodboy-history-";
+pub(super) const RESOLVE_SLUG_PREFIX: &str = "resolve-";
 
 pub(super) const COPY_DIR: &str = "copy";
 

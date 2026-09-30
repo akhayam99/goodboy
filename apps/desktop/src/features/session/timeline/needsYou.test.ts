@@ -19,7 +19,13 @@ type RowParams = {
 };
 
 const row = ({ id, familyId, rowState }: RowParams): TimelineStreamItem =>
-  ({ kind: 'row', id, familyId, rowState }) as unknown as TimelineStreamItem;
+  ({
+    kind: 'row',
+    id,
+    familyId,
+    rowState,
+    entry: { kind: 'agent' },
+  }) as unknown as TimelineStreamItem;
 
 const NOW = { kind: 'now', id: 'now' } as unknown as TimelineStreamItem;
 

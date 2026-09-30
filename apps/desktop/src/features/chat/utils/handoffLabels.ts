@@ -74,7 +74,7 @@ export const handoffChipLabel = ({ section }: ChipLabelParams): string => {
     case 'threads':
       return pluralize(section.refs.length, 'comment');
     case 'role':
-      return `${section.summary.split(' · ')[0] ?? 'Role'} instructions`;
+      return `${(section.summary.split(' · ')[0] ?? 'Role').replace(/ instructions$/i, '')} instructions`;
     case 'ask':
     case 'goal':
     case 'plan':

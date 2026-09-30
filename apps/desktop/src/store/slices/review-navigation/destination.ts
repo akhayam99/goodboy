@@ -18,6 +18,11 @@ export type ReviewDestination =
       readonly mountId: MountId | null;
       readonly prNumber: number;
       readonly threadId: string;
+    }
+  | {
+      readonly kind: 'threads';
+      readonly mountId: MountId | null;
+      readonly threadIds: ReadonlyArray<string>;
     };
 
 type Params = {
@@ -38,3 +43,16 @@ export const reviewPrNumber = ({ destination }: Params): number | null =>
 
 export const reviewThreadId = ({ destination }: Params): string | null =>
   destination.kind === 'thread' ? destination.threadId : null;
+
+export const reviewThreadIds = ({ destination }: Params): ReadonlyArray<string> =>
+  destination.kind === 'threads'
+    ? destination.threadIds
+    : destination.kind === 'thread'
+      ? [destination.threadId]
+      : [];
+
+export const reviewFocusThreadId = ({
+  destination,
+  isPresent = () => true,
+}: Params & { readonly isPresent?: (threadId: string) => boolean }): string | null =>
+  reviewThreadIds({ destination }).find(isPresent) ?? null;

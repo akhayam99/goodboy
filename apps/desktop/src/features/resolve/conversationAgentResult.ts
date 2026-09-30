@@ -1,4 +1,5 @@
 import type { ResolveQueueRow } from './buildResolveQueueRows';
+import { threadFixSha } from './threadFixSha';
 
 export const conversationSha = ({ row }: { readonly row: ResolveQueueRow }): string | null =>
-  row.item.integratedSha ?? row.thread.commitShas?.at(-1) ?? null;
+  threadFixSha({ commitShas: row.thread.commitShas, integratedSha: row.item.integratedSha });
