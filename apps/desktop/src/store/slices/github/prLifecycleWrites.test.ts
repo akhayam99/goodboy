@@ -10,7 +10,7 @@ const h = vi.hoisted(() => ({
   })),
 }));
 
-vi.mock('../../../features/github/github', () => ({ tauriGhRunner: { run: h.run } }));
+vi.mock('../../../features/integrations/github/github', () => ({ tauriGhRunner: { run: h.run } }));
 
 import { closePr } from './closePr';
 import { convertPrToDraft } from './convertPrToDraft';

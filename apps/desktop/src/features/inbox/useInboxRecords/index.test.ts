@@ -1,8 +1,8 @@
 import { renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
-import type { GithubIssueGroup } from '../../github/components/PullRequest/useGithubIssues';
-import type { GithubPrGroup } from '../../github/components/PullRequest/useGithubPrs';
+import type { GithubIssueGroup } from '../../integrations/github/components/PullRequest/useGithubIssues';
+import type { GithubPrGroup } from '../../integrations/github/components/PullRequest/useGithubPrs';
 import type { GitlabIssueGroup } from '../../integrations/gitlab/MergeRequest/useGitlabIssues';
 import type { GitlabMrGroup } from '../../integrations/gitlab/MergeRequest/useGitlabMrs';
 import type { JiraIssueGroup } from '../../integrations/jira/JiraStudio/useJiraIssues';
@@ -68,14 +68,14 @@ vi.mock('../../../store', () => ({
     }),
 }));
 
-vi.mock('../../github/components/PullRequest/useGithubIssues', () => ({
+vi.mock('../../integrations/github/components/PullRequest/useGithubIssues', () => ({
   useGithubIssues: (params: { isEnabled: boolean }) => {
     h.enabled.github = params.isEnabled;
     return { ...h.github, refetch: h.refetch.github };
   },
 }));
 
-vi.mock('../../github/components/PullRequest/useGithubPrs', () => ({
+vi.mock('../../integrations/github/components/PullRequest/useGithubPrs', () => ({
   useGithubPrs: (params: { isEnabled: boolean }) => {
     h.enabled.githubPrs = params.isEnabled;
     return { ...h.githubPrs, refetch: h.refetch.githubPrs };

@@ -7,7 +7,7 @@ import type { FileDiffSource } from '../../../../store/slices/drawer/state';
 import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { ghCommitDiff } from '../../../github/github';
+import { ghCommitDiff } from '../../../integrations/github/github';
 import { worktreeDiff, worktreeDiffCommit } from '../../../worktree/worktree';
 import { useSessionDiff } from '../../hooks/useSessionDiff';
 import { splitPath } from '../../lib/fileStatus';

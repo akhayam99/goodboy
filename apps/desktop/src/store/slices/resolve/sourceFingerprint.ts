@@ -1,5 +1,5 @@
 import type { PrComment } from '@goodboy/types';
-import { groupThreads } from '../../../features/github/comment-threads';
+import { groupThreads } from '../../../features/integrations/github/comment-threads';
 
 type Params = {
   readonly comments: ReadonlyArray<PrComment>;

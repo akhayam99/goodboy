@@ -15,7 +15,7 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { tauriGhRunner } from '../../../features/github/github';
+import { tauriGhRunner } from '../../../features/integrations/github/github';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { MountGithubState } from '../../types';
 import { requestIdentityEquals } from '../project-mounts/mountRequests';

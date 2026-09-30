@@ -9,10 +9,10 @@ import type {
   SessionExternalTask,
   SessionId,
 } from '@goodboy/types';
-import { tauriGhRunner } from '../../../features/github/github';
-import { appendClosingReferences } from '../../../features/github/appendClosingReferences';
-import { closingIssueReferences } from '../../../features/github/closingIssueReferences';
-import { partOfReferences } from '../../../features/github/partOfReferences';
+import { tauriGhRunner } from '../../../features/integrations/github/github';
+import { appendClosingReferences } from '../../../features/integrations/github/appendClosingReferences';
+import { closingIssueReferences } from '../../../features/integrations/github/closingIssueReferences';
+import { partOfReferences } from '../../../features/integrations/github/partOfReferences';
 import { seriesReferenceLines } from '../pr-series/seriesReferences';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { signScribeBody } from '../scribe/scribeSignature';

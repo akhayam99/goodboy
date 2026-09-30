@@ -7,14 +7,14 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { useGithubIssue } from '../../../../../github/useGithubIssue';
+import { useGithubIssue } from '../../../../../integrations/github/useGithubIssue';
 import { GithubTaskDetail } from './GithubTaskDetail';
 
-vi.mock('../../../../../github/useGithubIssue', () => ({
+vi.mock('../../../../../integrations/github/useGithubIssue', () => ({
   useGithubIssue: vi.fn(),
 }));
 
-vi.mock('../../../../../github/useGithubIssueComments', () => ({
+vi.mock('../../../../../integrations/github/useGithubIssueComments', () => ({
   useGithubIssueComments: () => ({ comments: [], isLoading: false, error: null, post: null }),
 }));
 

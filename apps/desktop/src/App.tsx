@@ -46,7 +46,7 @@ import {
   useSessions,
   useWorkspaces,
 } from './store';
-import { useGithubPolling } from './features/github/hooks/useGithubPolling';
+import { useGithubPolling } from './features/integrations/github/hooks/useGithubPolling';
 import { useSessionFocusRecheck } from './features/session/hooks/useSessionFocusRecheck';
 import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
 import { useConnectedIntegrations } from './features/integrations/hooks/useConnectedIntegrations';

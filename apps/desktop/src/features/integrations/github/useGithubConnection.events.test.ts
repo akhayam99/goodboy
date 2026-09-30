@@ -6,7 +6,7 @@ const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 
 const h = vi.hoisted(() => ({ ghStatus: vi.fn() }));
 
-vi.mock('../../github/github', () => ({ ghStatus: h.ghStatus }));
+vi.mock('./github', () => ({ ghStatus: h.ghStatus }));
 
 import { useAppStore } from '../../../store';
 import { useGithubConnection } from './useGithubConnection';

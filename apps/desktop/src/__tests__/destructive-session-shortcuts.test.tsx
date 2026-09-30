@@ -108,7 +108,7 @@ vi.mock('../features/workspace/window', () => ({
   onWindowClose: async () => () => undefined,
 }));
 vi.mock('../features/workflows/components/WorkflowStudio', () => ({ WorkflowStudio: () => null }));
-vi.mock('../features/github/github', () => ({ ghCommitDiff: vi.fn() }));
+vi.mock('../features/integrations/github/github', () => ({ ghCommitDiff: vi.fn() }));
 vi.mock('../features/worktree/worktree', () => ({ worktreeDiffCommit: vi.fn() }));
 vi.mock('../features/onboarding/OnboardingWizard', () => ({ OnboardingWizard: () => null }));
 vi.mock('../features/companion/components/CompanionStudio', () => ({
@@ -148,7 +148,9 @@ vi.mock('../store', () => {
     useWorkspaces: () => state.workspaces,
   };
 });
-vi.mock('../features/github/hooks/useGithubPolling', () => ({ useGithubPolling: vi.fn() }));
+vi.mock('../features/integrations/github/hooks/useGithubPolling', () => ({
+  useGithubPolling: vi.fn(),
+}));
 vi.mock('../features/updater/hooks/useUpdaterPolling', () => ({ useUpdaterPolling: vi.fn() }));
 vi.mock('../features/artifacts/hooks/useArtifactMirror', () => ({ useArtifactMirror: vi.fn() }));
 

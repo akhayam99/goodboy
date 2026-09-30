@@ -4,7 +4,7 @@ import type {
   SessionExternalTaskProvider,
   WorkspaceId,
 } from '@goodboy/types';
-import { ghAssignedIssues, tauriGhRunner } from '../github/github';
+import { ghAssignedIssues, tauriGhRunner } from './github/github';
 import { linearFetchAssignedIssues } from './linear/client';
 import { gitlabFetchAssignedIssues } from './gitlab/client';
 import { jiraListIssues } from './jira/client';

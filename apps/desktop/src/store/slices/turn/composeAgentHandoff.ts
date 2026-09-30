@@ -21,7 +21,7 @@ import type {
   Step,
   WorkflowRunId,
 } from '@goodboy/types';
-import { groupThreads } from '../../../features/github/comment-threads';
+import { groupThreads } from '../../../features/integrations/github/comment-threads';
 import { prCommentLocation } from '../../../features/session/pr-comment-location';
 import {
   AGENT_KIND_META,

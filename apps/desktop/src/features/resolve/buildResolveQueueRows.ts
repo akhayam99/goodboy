@@ -8,7 +8,7 @@ import type {
   ResolveQueueItemWithThread,
   ResolveThread,
 } from '@goodboy/types';
-import { groupThreads, type CommentThread } from '../github/comment-threads';
+import { groupThreads, type CommentThread } from '../integrations/github/comment-threads';
 import { prCommentLocation } from '../session/pr-comment-location';
 import { noteCommentThread } from './notes/noteThread';
 import { conversationSourceOfThread } from './notes/conversationSource';

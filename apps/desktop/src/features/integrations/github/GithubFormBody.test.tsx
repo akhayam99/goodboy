@@ -14,7 +14,7 @@ const { ghStatusMock, ghSetTokenMock, ghClearTokenMock } = vi.hoisted(() => ({
   ghClearTokenMock: vi.fn(async () => undefined),
 }));
 
-vi.mock('../../github/github', () => ({
+vi.mock('./github', () => ({
   ghStatus: ghStatusMock,
   ghSetToken: ghSetTokenMock,
   ghClearToken: ghClearTokenMock,

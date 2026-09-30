@@ -7,7 +7,7 @@ import { detectRepoSlug } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { MountId, Project, Session, SessionId, SessionProjectMount } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { tauriGhRunner } from '../../../features/github/github';
+import { tauriGhRunner } from '../../../features/integrations/github/github';
 import { createSessionDir, createWorktree } from '../../../features/worktree/worktree';
 import { consumeAdoptionSeed, materializationSeedFor } from '../sessions/materializationSeeds';
 import { mountPlan } from '../sessions/mountPlan';

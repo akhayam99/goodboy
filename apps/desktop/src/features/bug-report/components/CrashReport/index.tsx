@@ -4,7 +4,7 @@ import type { GhTokenStatus } from '@goodboy/types';
 import { Button, Notice } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { openUrl } from '../../../../shared/lib/editor';
-import { ghStatus, tauriGhRunner } from '../../../github/github';
+import { ghStatus, tauriGhRunner } from '../../../integrations/github/github';
 import { DEFAULT_ISSUE_TYPE } from '../../../settings/reportIssueTypes';
 import { collectCrashContext } from '../../crashReport';
 import { contextParts, type ReportPart } from '../../reportBody';

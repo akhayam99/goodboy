@@ -8,7 +8,7 @@ import {
 import type { OverrideSettings, ProviderId, WorkspaceId } from '@goodboy/types';
 import type { AutoLimitContext } from '../../store/slices/providerLimits/autoLimitContext';
 import { resolveLimitedTaskModel } from '../../store/slices/providerLimits/resolveLimitedTaskModel';
-import { tauriGhRunner } from '../github/github';
+import { tauriGhRunner } from '../integrations/github/github';
 
 export const NO_WORKSPACE_REPO = 'No project in this workspace is a GitHub repository.';
 export const NO_REVIEW_REPLIES = "Couldn't find review replies you wrote in this workspace.";

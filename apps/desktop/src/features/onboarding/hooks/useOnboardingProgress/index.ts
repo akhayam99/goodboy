@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { useAppStore, useWorkspaces } from '../../../../store';
-import { ghStatus } from '../../../github/github';
+import { ghStatus } from '../../../integrations/github/github';
 import { normalizeWorkspaceProfile } from '../../../../shared/utils/normalizeWorkspaceProfile';
 import {
   ONBOARDING_STEPS,

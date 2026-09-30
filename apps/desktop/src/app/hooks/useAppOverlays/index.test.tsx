@@ -51,7 +51,7 @@ vi.mock('../../../shared/hooks/useCommitLinkInterceptor', () => ({
   useCommitLinkInterceptor: () => ({ commitDiff: null, setCommitDiff: () => undefined }),
 }));
 vi.mock('../../../features/onboarding/OnboardingWizard', () => ({ OnboardingWizard: () => null }));
-vi.mock('../../../features/github/github', () => ({ ghCommitDiff: vi.fn() }));
+vi.mock('../../../features/integrations/github/github', () => ({ ghCommitDiff: vi.fn() }));
 vi.mock('../../../features/worktree/worktree', () => ({ worktreeDiffCommit: vi.fn() }));
 vi.mock('../../../features/palette/components/PaletteOverlay', () => ({
   PaletteOverlay: () => <div data-testid="studio" data-kind="palette" />,

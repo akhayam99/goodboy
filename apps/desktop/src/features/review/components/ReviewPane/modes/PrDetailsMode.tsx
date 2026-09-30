@@ -5,10 +5,10 @@ import type { LensKind } from '../../../../../store';
 import { RecordProperties } from '../../../../../shared/components/StudioDetail/RecordProperties';
 import { githubPullRequestFields, resolveFacts } from '../../../../../shared/detail-fields';
 import { useSessionRepo } from '../../../../../store/slices/worktrees/useSessionRepo';
-import { closingIssueReferences } from '../../../../github/closingIssueReferences';
-import { LinkIssueToPrPopover } from '../../../../github/components/LinkIssueToPrPopover';
-import { PrOverview } from '../../../../github/components/PullRequest/PrOverview';
-import { PrReviewers } from '../../../../github/components/PullRequest/PrReviewers';
+import { closingIssueReferences } from '../../../../integrations/github/closingIssueReferences';
+import { LinkIssueToPrPopover } from '../../../../integrations/github/components/LinkIssueToPrPopover';
+import { PrOverview } from '../../../../integrations/github/components/PullRequest/PrOverview';
+import { PrReviewers } from '../../../../integrations/github/components/PullRequest/PrReviewers';
 import {
   PR_EDIT_DETAILS_EVENT,
   PR_REQUEST_REVIEW_EVENT,

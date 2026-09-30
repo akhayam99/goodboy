@@ -1,8 +1,8 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { GithubIssue, PullRequestState, SessionId } from '@goodboy/types';
-import type { GithubIssueGroup } from '../../github/components/PullRequest/useGithubIssues';
-import type { GithubPrGroup } from '../../github/components/PullRequest/useGithubPrs';
+import type { GithubIssueGroup } from '../../integrations/github/components/PullRequest/useGithubIssues';
+import type { GithubPrGroup } from '../../integrations/github/components/PullRequest/useGithubPrs';
 import { adaptGithubIssues, adaptGithubPrs } from './github';
 
 const issue = (overrides: Partial<GithubIssue> = {}): GithubIssue => ({

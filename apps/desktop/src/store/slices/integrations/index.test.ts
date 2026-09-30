@@ -89,7 +89,7 @@ vi.mock('../../../features/integrations/jira/client', async () =>
 vi.mock('../../../features/integrations/slack/client', async () =>
   (await import('../../storyHarness')).slackClientModuleMock(),
 );
-vi.mock('../../../features/github/github', async () =>
+vi.mock('../../../features/integrations/github/github', async () =>
   (await import('../../storyHarness')).githubModuleMock(),
 );
 vi.mock('@goodboy/core', async (importOriginal) =>

@@ -47,7 +47,7 @@ vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../shared/lib/repo', () => ({ projectFetch: h.projectFetch }));
 vi.mock('../project-mounts/mountViews', () => ({ loadMountViews: h.loadMountViews }));
 vi.mock('../../../features/worktree/worktree', () => ({ branchMergeState: h.branchMergeState }));
-vi.mock('../../../features/github/github', () => ({
+vi.mock('../../../features/integrations/github/github', () => ({
   ghRepoDeletesMergedBranches: h.ghRepoDeletesMergedBranches,
 }));
 vi.mock('../../../features/worktree/branchCleanup', async (importOriginal) => {

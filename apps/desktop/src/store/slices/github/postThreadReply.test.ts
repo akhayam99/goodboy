@@ -11,7 +11,7 @@ const h = vi.hoisted(() => ({
   addReviewThreadReply: vi.fn(async () => ({ id: 'PRRC_9', url: 'u' })),
 }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: h }));
-vi.mock('../../../features/github/github', () => ({ tauriGhRunner: {} }));
+vi.mock('../../../features/integrations/github/github', () => ({ tauriGhRunner: {} }));
 vi.mock('../review-source/reviewSourceFor', () => ({
   reviewSourceFor: () => ({ reply: async () => h.addReviewThreadReply() }),
 }));

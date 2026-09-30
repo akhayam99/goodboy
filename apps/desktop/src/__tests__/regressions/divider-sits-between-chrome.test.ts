@@ -58,7 +58,7 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 2,
     reason: 'chrome',
   },
-  'apps/desktop/src/features/github/components/PullRequest/ThreadReplies.tsx': {
+  'apps/desktop/src/features/integrations/github/components/PullRequest/ThreadReplies.tsx': {
     count: 1,
     reason: 'debt',
   },

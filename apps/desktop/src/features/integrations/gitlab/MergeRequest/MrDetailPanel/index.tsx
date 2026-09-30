@@ -27,7 +27,7 @@ import { CreateMrForm } from './CreateMrForm';
 import { MrApprovals } from './MrApprovals';
 import { mrDraftTitle } from './mrDraftTitle';
 import { gitlabMrStateKind } from '../../gitlabMrStateKind';
-import { PullRequestChip } from '../../../../github/components/PullRequestChip';
+import { PullRequestChip } from '../../../github/components/PullRequestChip';
 import { useConversationPane } from '../../../../../shared/components/Conversation/useConversationPane';
 import type { ConversationSource } from '../../../../../shared/components/Conversation/types';
 import { GITLAB_MR_CAPABILITIES, gitlabMrConversation } from '../../gitlabMrConversation';

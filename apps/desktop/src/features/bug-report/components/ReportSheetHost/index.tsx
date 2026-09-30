@@ -5,7 +5,7 @@ import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { redactReport } from '../../../../shared/utils/redactReport';
 import { useAppStore } from '../../../../store';
 import type { AppState } from '../../../../store/types';
-import { tauriGhRunner } from '../../../github/github';
+import { tauriGhRunner } from '../../../integrations/github/github';
 import { collectReportContext } from '../../../settings/reportContext';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { lastCrashPart } from '../../crashReport';

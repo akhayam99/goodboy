@@ -1,5 +1,5 @@
 import type { DiffComment } from '@goodboy/types';
-import type { CommentThread } from '../../github/comment-threads';
+import type { CommentThread } from '../../integrations/github/comment-threads';
 
 const NOTE_PREFIX = 'note:';
 const GENERATION_SUFFIX = /:g(\d+)$/;

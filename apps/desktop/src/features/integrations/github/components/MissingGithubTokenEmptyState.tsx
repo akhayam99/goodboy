@@ -1,0 +1,41 @@
+import type { WorkspaceId } from '@goodboy/types';
+import { IntegrationConnectPanel } from '../../components/IntegrationConnectPanel';
+import { GithubFormBody } from '../GithubFormBody';
+
+type Props = {
+  readonly workspaceId: WorkspaceId;
+  readonly compact?: boolean;
+  readonly onConnected: () => void;
+  readonly shouldAutoFocus?: boolean;
+  readonly wrapped?: boolean;
+};
+
+export const MissingGithubTokenEmptyState = ({
+  workspaceId,
+  compact = false,
+  onConnected,
+  shouldAutoFocus = false,
+  wrapped = true,
+}: Props) => {
+  const panel = (
+    <IntegrationConnectPanel
+      provider="github"
+      description="Connect a GitHub token to review pull requests and issues from this repository."
+      headingLevel={compact ? undefined : 2}
+    >
+      <GithubFormBody
+        workspaceId={workspaceId}
+        onConnected={onConnected}
+        shouldAutoFocus={shouldAutoFocus}
+      />
+    </IntegrationConnectPanel>
+  );
+
+  if (!wrapped) {
+    return panel;
+  }
+
+  return (
+    <div className={compact ? 'flex justify-center py-5' : 'flex justify-center'}>{panel}</div>
+  );
+};

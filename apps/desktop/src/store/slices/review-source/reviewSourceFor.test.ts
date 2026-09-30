@@ -20,7 +20,7 @@ vi.mock('../../../features/integrations/bitbucket/client', () => ({
   ),
 }));
 
-vi.mock('../../../features/github/github', () => ({
+vi.mock('../../../features/integrations/github/github', () => ({
   tauriGhRunner: {
     run: vi.fn(async (args: ReadonlyArray<string>) => {
       h.ghCalls.push(args);

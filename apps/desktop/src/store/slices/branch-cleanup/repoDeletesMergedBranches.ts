@@ -1,4 +1,4 @@
-import { ghRepoDeletesMergedBranches } from '../../../features/github/github';
+import { ghRepoDeletesMergedBranches } from '../../../features/integrations/github/github';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

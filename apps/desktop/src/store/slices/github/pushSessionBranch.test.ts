@@ -19,7 +19,7 @@ const h = vi.hoisted(() => ({
   worktreeStatus: vi.fn<() => Promise<WorktreeStatus>>(),
 }));
 
-vi.mock('../../../features/github/github', () => ({ gitPush: h.gitPush }));
+vi.mock('../../../features/integrations/github/github', () => ({ gitPush: h.gitPush }));
 vi.mock('../../../features/worktree/worktree', () => ({ worktreeStatus: h.worktreeStatus }));
 
 import {

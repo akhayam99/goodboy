@@ -2,8 +2,8 @@ import { findPrSeriesMembership, upsertMountPullRequestLink } from '@goodboy/db'
 import type { IsoDateTime, MountId, SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { gitlabCreateMr } from '../../../features/integrations/gitlab/client';
-import { appendClosingReferences } from '../../../features/github/appendClosingReferences';
-import { partOfReferences } from '../../../features/github/partOfReferences';
+import { appendClosingReferences } from '../../../features/integrations/github/appendClosingReferences';
+import { partOfReferences } from '../../../features/integrations/github/partOfReferences';
 import { seriesReferenceLines } from '../pr-series/seriesReferences';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { mountRequestEventPayload } from '../project-mounts/mountRequests';

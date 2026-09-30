@@ -68,7 +68,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentList: vi.fn(async () => []),
 }));
 
-vi.mock('../../../features/github/github', () => ({
+vi.mock('../../../features/integrations/github/github', () => ({
   tauriGhRunner: { run: h.run },
   gitPush: vi.fn(
     async ({
@@ -782,7 +782,7 @@ describe('publishConversations over a real git repository', () => {
     const fix = commit({ text: 'export const retry = () => 2;\n', message: 'fix: early return' });
     const { actions } = makeStore();
     await seedFixRow({ actions, threadId: 'PRRT_1', shas: [fix], reply: 'Fixed' });
-    const github = await import('../../../features/github/github');
+    const github = await import('../../../features/integrations/github/github');
     const pushSpy = vi.mocked(github.gitPush);
 
     const preview = await actions.preparePublication({ sessionId: SESSION_ID });
@@ -812,7 +812,7 @@ describe('publishConversations over a real git repository', () => {
     const fix = commit({ text: 'export const retry = () => 2;\n', message: 'fix: early return' });
     const { actions } = makeStore();
     await seedFixRow({ actions, threadId: 'PRRT_1', shas: [fix], reply: 'Fixed' });
-    const github = await import('../../../features/github/github');
+    const github = await import('../../../features/integrations/github/github');
     const pushSpy = vi.mocked(github.gitPush);
     const db = await import('@goodboy/db');
     vi.mocked(db.claimResolvePublication).mockResolvedValueOnce(false);
@@ -1255,7 +1255,7 @@ describe('publishConversations over a real git repository', () => {
     const fix = commit({ text: 'export const retry = () => 2;\n', message: 'fix: early return' });
     const { actions, get } = makeStore();
     await seedFixRow({ actions, threadId: 'PRRT_1', shas: [fix], reply: 'Fixed' });
-    const github = await import('../../../features/github/github');
+    const github = await import('../../../features/integrations/github/github');
     const pushSpy = vi.mocked(github.gitPush);
     h.run.mockImplementation(async () => {
       throw new Error('github exploded right after the push');
@@ -1304,7 +1304,7 @@ describe('publishConversations over a real git repository', () => {
     git(other, ['commit', '-m', 'chore: someone else']);
     git(other, ['push', 'origin', 'feature/retry']);
     const remoteBefore = git(worktreePath, ['ls-remote', 'origin', 'refs/heads/feature/retry']);
-    const github = await import('../../../features/github/github');
+    const github = await import('../../../features/integrations/github/github');
     const pushSpy = vi.mocked(github.gitPush);
 
     const result = await actions.publishConversations({
@@ -1399,7 +1399,7 @@ describe('publishConversations over a real git repository', () => {
     await seedAnswerRow({ actions, threadId: 'PRRT_1', reply: 'First' });
     await seedAnswerRow({ actions, threadId: 'PRRT_2', reply: 'Second' });
     await seedAnswerRow({ actions, threadId: 'PRRT_3', reply: 'Third' });
-    const github = await import('../../../features/github/github');
+    const github = await import('../../../features/integrations/github/github');
     const pushSpy = vi.mocked(github.gitPush);
 
     const preview = await actions.preparePublication({ sessionId: SESSION_ID });
@@ -1700,7 +1700,9 @@ describe('publishConversations with git state per thread', () => {
     expect(preview.replies.map((reply) => reply.threadId)).toEqual(['PRRT_1']);
     expect(get().sessionThreadGit[SESSION_ID]?.PRRT_1?.gitState).toBe('on_origin');
 
-    const pushSpy = vi.mocked((await import('../../../features/github/github')).gitPush);
+    const pushSpy = vi.mocked(
+      (await import('../../../features/integrations/github/github')).gitPush,
+    );
     pushSpy.mockClear();
     const result = await actions.publishConversations({
       sessionId: SESSION_ID,

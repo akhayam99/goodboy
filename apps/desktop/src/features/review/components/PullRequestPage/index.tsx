@@ -14,9 +14,9 @@ import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRep
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { openUrl } from '../../../../shared/lib/editor';
-import { GithubConnectionEmptyState } from '../../../github/components/GithubConnectionEmptyState';
+import { GithubConnectionEmptyState } from '../../../integrations/github/components/GithubConnectionEmptyState';
 import { useGithubConnection } from '../../../integrations/github/useGithubConnection';
-import { usePrDraftAgentRunning } from '../../../github/usePrDraftAgentRunning';
+import { usePrDraftAgentRunning } from '../../../integrations/github/usePrDraftAgentRunning';
 import { ActionButtons } from '../../../actions/components/ActionControls/ActionButtons';
 import { ObjectMenuArea } from '../../../actions/components/ObjectMenuArea';
 import { ActionConfirmPanel } from '../../../actions/components/ActionControls/ActionConfirmPanel';

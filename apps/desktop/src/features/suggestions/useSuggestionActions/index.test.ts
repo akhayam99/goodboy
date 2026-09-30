@@ -137,7 +137,7 @@ vi.mock('../../session/hooks/useRebaseBranch', () => ({
 vi.mock('../../workflows/useAdvanceWorkflowAgent', () => ({
   useAdvanceWorkflowAgent: () => spies.advanceAgent,
 }));
-vi.mock('../../github/comment-threads', () => ({
+vi.mock('../../integrations/github/comment-threads', () => ({
   groupThreads: (comments: ReadonlyArray<unknown>) =>
     comments.map((comment) => ({ head: comment, replies: [] })),
 }));

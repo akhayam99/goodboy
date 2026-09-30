@@ -1,11 +1,11 @@
 import { cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GhTokenStatus, WorkspaceId } from '@goodboy/types';
-import { ghStatus } from '../../github/github';
+import { ghStatus } from './github';
 import { useAppStore } from '../../../store';
 import { useGithubConnection } from './useGithubConnection';
 
-vi.mock('../../github/github', () => ({
+vi.mock('./github', () => ({
   ghStatus: vi.fn(),
 }));
 

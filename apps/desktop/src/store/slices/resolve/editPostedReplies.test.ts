@@ -21,7 +21,7 @@ const h = vi.hoisted(() => ({
   })),
 }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: h }));
-vi.mock('../../../features/github/github', () => ({ tauriGhRunner: {} }));
+vi.mock('../../../features/integrations/github/github', () => ({ tauriGhRunner: {} }));
 vi.mock('@goodboy/core', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@goodboy/core')>()),
   updateReviewComment: h.updateReviewComment,

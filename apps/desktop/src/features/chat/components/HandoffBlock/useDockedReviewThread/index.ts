@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { PrComment, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
-import { groupThreads, type CommentThread } from '../../../../github/comment-threads';
+import { groupThreads, type CommentThread } from '../../../../integrations/github/comment-threads';
 
 type Params = {
   readonly sessionId: SessionId | null;

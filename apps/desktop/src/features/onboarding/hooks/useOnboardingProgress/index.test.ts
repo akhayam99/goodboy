@@ -39,7 +39,7 @@ vi.mock('../../onboarding-store', () => ({
   markStepComplete: markStepCompleteMock,
 }));
 
-vi.mock('../../../github/github', () => ({
+vi.mock('../../../integrations/github/github', () => ({
   ghStatus: ghStatusMock,
 }));
 

@@ -1,5 +1,5 @@
 import type { JiraIntegrationConfig, SessionId, WorkspaceId } from '@goodboy/types';
-import { ghIssueInRepo } from '../../github/github';
+import { ghIssueInRepo } from '../github/github';
 import { adaptGithubIssues } from '../../inbox/adapters/github';
 import { adaptGitlab } from '../../inbox/adapters/gitlab';
 import { adaptJiraIssues } from '../../inbox/adapters/jira';

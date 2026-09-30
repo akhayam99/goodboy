@@ -21,7 +21,7 @@ const h = vi.hoisted(() => ({
   findPrSeriesMembership: vi.fn(async (): Promise<unknown> => null),
 }));
 
-vi.mock('../../../features/github/github', () => ({
+vi.mock('../../../features/integrations/github/github', () => ({
   tauriGhRunner: { run: h.run },
 }));
 

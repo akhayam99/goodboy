@@ -1,7 +1,7 @@
 import type { GithubIssue } from '@goodboy/types';
 import { titleBranchSlug } from '../../shared/utils/issueBranchSlug';
-import { goalFromIssue as goalFromGithubIssue } from '../github/goal-from-issue';
-import { githubBranchSlug } from '../github/components/PullRequest/useGithubIssues';
+import { goalFromIssue as goalFromGithubIssue } from './github/goal-from-issue';
+import { githubBranchSlug } from './github/components/PullRequest/useGithubIssues';
 import type { IssueCandidate } from './fetchIssueCandidates';
 import type { LinearIssue } from './linear/client';
 import { goalFromIssue as goalFromLinearIssue } from './linear/goal-from-issue';

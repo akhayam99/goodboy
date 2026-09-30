@@ -1,4 +1,4 @@
-import { ghStatus } from '../../../features/github/github';
+import { ghStatus } from '../../../features/integrations/github/github';
 import type { SetFn } from './types';
 
 export const refreshGithubStatus = (set: SetFn) => {

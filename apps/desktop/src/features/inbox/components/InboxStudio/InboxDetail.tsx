@@ -1,6 +1,6 @@
 import type { WorkspaceId } from '@goodboy/types';
-import { GithubIssueDetail } from '../../../github/GithubIssueDetail';
-import { GithubPrDetail } from '../../../github/GithubPrDetail';
+import { GithubIssueDetail } from '../../../integrations/github/GithubIssueDetail';
+import { GithubPrDetail } from '../../../integrations/github/GithubPrDetail';
 import { GitlabIssueDetail } from '../../../integrations/gitlab/GitlabIssueDetail';
 import { MrDetailPanel } from '../../../integrations/gitlab/MergeRequest/MrDetailPanel';
 import { LinearIssueDetail } from '../../../integrations/linear/LinearIssueDetail';

@@ -114,7 +114,7 @@ vi.mock('../../../../store/slices/github/activeProjectPrs', () => ({
 vi.mock('../../../../store/slices/worktrees/resolveSessionRepo', () => ({
   resolveSessionRepo: () => ({ projectId: 'project-1' }),
 }));
-vi.mock('../../../github/components/PullRequest/CreatePrPanel', () => ({
+vi.mock('../../../integrations/github/components/PullRequest/CreatePrPanel', () => ({
   CreatePrPanel: ({ onCancel }: { readonly onCancel?: () => void }) => (
     <div data-testid="create-pr">
       <button type="button" onClick={onCancel}>
@@ -140,7 +140,7 @@ vi.mock('../../../../shared/hooks/useSessionRoleModels', () => ({
 vi.mock('../../../integrations/github/useGithubConnection', () => ({
   useGithubConnection: () => ({ isResolved: true, isAuthenticated: true, refresh: vi.fn() }),
 }));
-vi.mock('../../../github/usePrDraftAgentRunning', () => ({
+vi.mock('../../../integrations/github/usePrDraftAgentRunning', () => ({
   usePrDraftAgentRunning: () => false,
 }));
 

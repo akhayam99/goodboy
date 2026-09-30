@@ -1,5 +1,5 @@
 import type { MountId, SessionId } from '@goodboy/types';
-import { gitPush } from '../../../features/github/github';
+import { gitPush } from '../../../features/integrations/github/github';
 import { refreshWorktreeStatuses } from '../worktreeStatuses/cache';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn } from './types';

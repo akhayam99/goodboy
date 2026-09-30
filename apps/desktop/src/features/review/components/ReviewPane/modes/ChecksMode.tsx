@@ -1,6 +1,6 @@
 import { SectionHeader } from '@goodboy/ui';
 import type { PrCheckRun } from '@goodboy/types';
-import { PrChecks } from '../../../../github/components/PullRequest/PrChecks';
+import { PrChecks } from '../../../../integrations/github/components/PullRequest/PrChecks';
 
 type Props = {
   readonly checks: ReadonlyArray<PrCheckRun>;

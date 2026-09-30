@@ -42,9 +42,11 @@
         "src/features/diff/hooks/useDiffReviewThreads/index.tsx": ["exports"],
         "src/features/diff/hooks/useDiffTokens/index.ts": ["exports"],
         "src/features/diff/hooks/useFileJump/index.ts": ["exports"],
-        "src/features/github/components/PullRequest/useGithubIssues.ts": ["exports"],
-        "src/features/github/components/PullRequest/useGithubPrs/index.ts": ["exports"],
-        "src/features/github/prDraftAgent.ts": ["exports"],
+        "src/features/integrations/github/components/PullRequest/useGithubIssues.ts": ["exports"],
+        "src/features/integrations/github/components/PullRequest/useGithubPrs/index.ts": [
+          "exports"
+        ],
+        "src/features/integrations/github/prDraftAgent.ts": ["exports"],
         "src/features/history/historyEngine.ts": ["exports"],
         "src/features/history/historyGraphModel.ts": ["exports"],
         "src/features/history/useHistoryDrag/index.ts": ["exports"],

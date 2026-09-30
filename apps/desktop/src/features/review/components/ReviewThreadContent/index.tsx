@@ -1,10 +1,10 @@
 import { ExternalLink, MessageSquare } from 'lucide-react';
 import { Avatar, Chip, Tooltip } from '@goodboy/ui';
-import type { CommentThread } from '../../../github/comment-threads';
-import { isBot } from '../../../github/comment-threads';
-import { ThreadBody } from '../../../github/components/PullRequest/ThreadBody';
-import { ThreadPathChip } from '../../../github/components/PullRequest/ThreadPathChip';
-import { ThreadReplies } from '../../../github/components/PullRequest/ThreadReplies';
+import type { CommentThread } from '../../../integrations/github/comment-threads';
+import { isBot } from '../../../integrations/github/comment-threads';
+import { ThreadBody } from '../../../integrations/github/components/PullRequest/ThreadBody';
+import { ThreadPathChip } from '../../../integrations/github/components/PullRequest/ThreadPathChip';
+import { ThreadReplies } from '../../../integrations/github/components/PullRequest/ThreadReplies';
 import { RelativeTime } from '../../../../shared/components/RelativeTime';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 

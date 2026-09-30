@@ -24,7 +24,7 @@ import {
   selectActiveMountId,
   selectTurnMountCount,
 } from '../../../store/slices/project-mounts/selectors';
-import { isPrDraftAgentRunning } from '../../github/prDraftAgent';
+import { isPrDraftAgentRunning } from '../../integrations/github/prDraftAgent';
 import { mountReviewGithub } from '../../review/mountReviewGithub';
 import { eligibleReviewThreadCount } from '../../suggestions/eligibleThreads';
 import { BLOCKER_SENTENCE } from '../../session/components/SessionOverviewPane/ProjectMountRows/detachPlan';
