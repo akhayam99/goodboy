@@ -60,7 +60,7 @@ function sessionHasRunIn(state: StageInfoState, sessionId: SessionId): boolean {
   return runs === undefined || runs.length > 0;
 }
 
-export function stageInfoOf(state: StageInfoState, session: Session): SessionStageInfo {
+export const stageInfoOf = (state: StageInfoState, session: Session): SessionStageInfo => {
   const sessionId = session.id as SessionId;
   const isBranchless = isBranchlessSession({
     branch: state.sessionBranches[sessionId],
@@ -94,4 +94,4 @@ export function stageInfoOf(state: StageInfoState, session: Session): SessionSta
     isBranchless,
     hasRun: sessionHasRunIn(state, sessionId),
   });
-}
+};
