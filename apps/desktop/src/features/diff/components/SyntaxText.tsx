@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { SYNTAX_CLASS, type SyntaxToken } from '../../lib/highlight';
-import type { CharRange } from '../../lib/wordDiff';
+import { SYNTAX_CLASS, type SyntaxToken } from '../lib/highlight';
+import type { CharRange } from '../lib/wordDiff';
 
 type Props = {
   text: string;

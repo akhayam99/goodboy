@@ -1,5 +1,5 @@
 import { Tooltip, formatUsd } from '@goodboy/ui';
-import { useCurrentWorkspace, useSessions, useWorkspaceRollup } from '../../../../store';
+import { useCurrentWorkspace, useSessions, useWorkspaceRollup } from '../../../store';
 
 type Props = {
   readonly onOpenSpend: () => void;

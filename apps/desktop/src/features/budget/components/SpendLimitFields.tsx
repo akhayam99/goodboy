@@ -1,7 +1,7 @@
 import { Bell, Pause } from 'lucide-react';
 import { Input, SegmentedTabs, cn, type SegmentedTabOption } from '@goodboy/ui';
 import type { SessionBudgetOnExceed } from '@goodboy/types';
-import { parseSpendLimit } from '../../parseSpendLimit';
+import { parseSpendLimit } from '../parseSpendLimit';
 
 const BEHAVIOR_OPTIONS: ReadonlyArray<SegmentedTabOption<SessionBudgetOnExceed>> = [
   { value: 'pause', label: 'Pause workflows', hint: 'stop at the limit', icon: Pause },

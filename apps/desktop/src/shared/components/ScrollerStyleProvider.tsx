@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { ScrollerStyleContext, type ScrollerStyle } from '@goodboy/ui';
-import { systemScrollerStyle } from '../../lib/scrollerStyle';
+import { systemScrollerStyle } from '../lib/scrollerStyle';
 
 type Props = {
   readonly children: ReactNode;

@@ -2,14 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 import type { GhTokenStatus } from '@goodboy/types';
 import { Button, Notice } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { openUrl } from '../../../../shared/lib/editor';
-import { ghStatus, tauriGhRunner } from '../../../integrations/github/github';
-import { DEFAULT_ISSUE_TYPE } from '../../../settings/reportIssueTypes';
-import { collectCrashContext } from '../../crashReport';
-import { contextParts, type ReportPart } from '../../reportBody';
-import type { ReportFiled } from '../../reportDestination';
-import { ReportComposer, type ReportDraft, type ReportLinkOpened } from '../ReportComposer';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { openUrl } from '../../../shared/lib/editor';
+import { ghStatus, tauriGhRunner } from '../../integrations/github/github';
+import { DEFAULT_ISSUE_TYPE } from '../../settings/reportIssueTypes';
+import { collectCrashContext } from '../crashReport';
+import { contextParts, type ReportPart } from '../reportBody';
+import type { ReportFiled } from '../reportDestination';
+import { ReportComposer, type ReportDraft, type ReportLinkOpened } from './ReportComposer';
 
 type Props = {
   readonly heading: string;

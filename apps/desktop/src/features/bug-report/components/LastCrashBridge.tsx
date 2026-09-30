@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import { useToast } from '../../../../shared/components/Toast';
-import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
-import { LAST_CRASH_TITLE, claimLastCrash, deleteLastCrash, type LastCrash } from '../../lastCrash';
-import { openReportSheet } from '../../openReportSheet';
+import { useToast } from '../../../shared/components/Toast';
+import { formatDateTime } from '../../../shared/utils/time/formatDateTime';
+import { LAST_CRASH_TITLE, claimLastCrash, deleteLastCrash, type LastCrash } from '../lastCrash';
+import { openReportSheet } from '../openReportSheet';
 
 type MessageParams = {
   readonly crash: LastCrash;

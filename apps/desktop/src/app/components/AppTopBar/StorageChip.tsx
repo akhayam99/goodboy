@@ -1,8 +1,8 @@
 import { Tooltip } from '@goodboy/ui';
-import { openStorage } from '../../../../features/storage/openStorage';
-import { useStorageSummary } from '../../../../features/storage/useStorageSummary';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { formatBytes } from '../../../../shared/utils/formatBytes';
+import { openStorage } from '../../../features/storage/openStorage';
+import { useStorageSummary } from '../../../features/storage/useStorageSummary';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { formatBytes } from '../../../shared/utils/formatBytes';
 
 const GB = 1024 ** 3;
 

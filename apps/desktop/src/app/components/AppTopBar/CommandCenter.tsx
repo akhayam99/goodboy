@@ -1,8 +1,8 @@
 import { Search } from 'lucide-react';
-import { useCurrentWorkspace } from '../../../../store';
-import { OPEN_COMMAND_PALETTE_EVENT } from '../../../../features/onboarding/openCommandPaletteEvent';
-import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { useCurrentWorkspace } from '../../../store';
+import { OPEN_COMMAND_PALETTE_EVENT } from '../../../features/onboarding/openCommandPaletteEvent';
+import { shortcutGlyphs } from '../../../shared/keyboard/registry';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 export const CommandCenter = () => {
   const workspace = useCurrentWorkspace();

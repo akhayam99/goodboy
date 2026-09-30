@@ -1,6 +1,6 @@
 import type { SessionArtifact, SessionId } from '@goodboy/types';
-import { CreateReportCta } from '../../../../reports/components/CreateReportCta';
-import { CreateWireframeCta } from '../../../../wireframes/components/CreateWireframeCta';
+import { CreateReportCta } from '../../../reports/components/CreateReportCta';
+import { CreateWireframeCta } from '../../../wireframes/components/CreateWireframeCta';
 
 type Props = {
   readonly sessionId: SessionId;
