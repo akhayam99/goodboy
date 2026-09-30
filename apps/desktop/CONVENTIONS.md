@@ -12,6 +12,8 @@ This app is the **only** layer that calls Tauri commands (`invoke`) and imports 
 
 [docs/file-system.md](../../docs/file-system.md) owns the layout and decides where new code goes. Code reused across features moves to `shared/`. No deep imports from one feature into another.
 
+The folder rule, stated once in [docs/file-system.md](../../docs/file-system.md) → The folder rule: a folder exists only when it holds more than its entry file. Components with a test or sub-files are `Name/index.tsx` folders, hooks are always `useFoo/index.ts` folders, and other modules are flat `name.ts` + `name.test.ts` pairs. `shared/utils/` holds pure functions and `shared/lib/` the runtime boundary (Tauri wrappers, storage, flags). Do not restate the rule in another doc.
+
 ## Tauri command patterns
 
 - Each command gets one thin wrapper, in the feature's `features/<domain>/<domain>.ts` (or `shared/lib/` when no feature owns it). Store actions and feature wrapper modules may call `invoke`. Components and hooks never import it. They pass a wrapper instead, including where a `@goodboy/core` helper takes an `invokeFn`.
