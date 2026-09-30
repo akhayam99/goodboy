@@ -91,6 +91,23 @@ files and re-exports their items, so callers keep writing
 helper another file needs is `pub(super)`; nothing else leaves its file. Tests
 sit in a `tests.rs` beside the file they cover.
 
+### History module
+
+Rewrite history and Rebase on main run in one Rust module,
+`apps/desktop/src-tauri/src/history/`. Each file owns one job: `plan` orders
+the steps and resolves the revisions, `merge_tree` and `predict` build the
+in-memory prediction, `reservation` and `copies` own the throwaway copies
+under the app folder, `trial` and `check` replay a plan in a copy and verify
+the result, `journal`, `preflight` and `apply` move the branch safely,
+`backups` keeps the restore refs, `run` chains preflight and trial, `rebase`
+and `remote` read origin, `rewriter` collects an agent rewrite, and `runner`,
+`commits` and `types` hold what they share. `mod.rs` only declares the files
+and re-exports the items lib.rs, `turn.rs` and the worktree module use, so
+lib.rs still registers `history::history_plan_run` and the other commands by
+name. A helper another file needs is `pub(super)`. Tests sit in a `tests.rs`
+beside the file they cover; the repository builders more than one group needs
+live in the test-only `fixtures.rs`.
+
 ### Provider routing
 
 - The list of models is built into the app, not saved in the database. Each model's id, family, cost tier, effort levels, context window, routing weight and price are written in the provider catalogs under `packages/core/src/providers/`. Every model the app can run ships with the app. When the list changes, there is no row to edit and no migration to write.
