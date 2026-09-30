@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useCurrentWorkspace, type SessionStudio } from '../../../../../store';
-import { WorkflowBuilderView } from '../../WorkflowBuilderView';
+import { WorkflowBuilderView } from '../../../../workflows/components/WorkflowBuilderView';
 import { MrSessionPane } from '../../../../integrations/gitlab/MrSessionPane';
 import { BitbucketStudio } from '../../../../integrations/bitbucket/BitbucketStudio';
 

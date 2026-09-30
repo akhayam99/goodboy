@@ -34,11 +34,7 @@ import type {
 } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
-import {
-  createWorkflowPlanner,
-  polishWorkflowGoalText,
-  polishWorkflowStep,
-} from '../../../workflows/workflows';
+import { createWorkflowPlanner, polishWorkflowGoalText, polishWorkflowStep } from '../../workflows';
 import { EMPTY_ARRAY, useAppStore, useSessionSlots } from '../../../../store';
 import { buildProfileGuard } from '../../../../store/slices/turn/profileGuard';
 import { buildWorkspaceProjectsBlock } from '../../../../store/slices/workflows/buildWorkspaceProjectsBlock';
@@ -52,7 +48,7 @@ import type {
   WorkflowDraftKey,
 } from '../../../../store/slices/workflowDrafts/types';
 import { kickoffDraftKey } from '../../../../store/slices/workflowDrafts/kickoffDraftKey';
-import type { StepDraft, WorkflowDraft } from '../../../workflows/engine';
+import type { StepDraft, WorkflowDraft } from '../../engine';
 import {
   addStep as addDraftStep,
   blankStepDraft,
@@ -64,17 +60,17 @@ import {
   stepDraftWithModel,
   updateStep as updateDraftStep,
   upsertArgsFromDraft,
-} from '../../../workflows/engine';
-import { useWorkflowDraft } from '../../../workflows/engine/useWorkflowDraft';
-import { ROLE_LABEL, classifyStep } from '../../agent-kind';
-import { isWorkflowRunComplete } from '../../../workflows/isWorkflowRunComplete';
-import { isPresetWorkflow } from '../../../workflows/isPresetWorkflow';
-import { useWorkflowDrag } from '../../../workflows/hooks/useWorkflowDrag';
-import { useSaveAsStep } from '../../../workflows/hooks/useSaveAsStep';
-import { useSavedSteps } from '../../../workflows/hooks/useSavedSteps';
-import { stepDraftFromSavedStep, type SavedStep } from '../../../workflows/savedSteps';
+} from '../../engine';
+import { useWorkflowDraft } from '../../engine/useWorkflowDraft';
+import { ROLE_LABEL, classifyStep } from '../../../session/agent-kind';
+import { isWorkflowRunComplete } from '../../isWorkflowRunComplete';
+import { isPresetWorkflow } from '../../isPresetWorkflow';
+import { useWorkflowDrag } from '../../hooks/useWorkflowDrag';
+import { useSaveAsStep } from '../../hooks/useSaveAsStep';
+import { useSavedSteps } from '../../hooks/useSavedSteps';
+import { stepDraftFromSavedStep, type SavedStep } from '../../savedSteps';
 import { parseSpendLimit } from '../../../budget/parseSpendLimit';
-import { DragGhost } from '../../../workflows/components/WorkflowStudio/DragGhost';
+import { DragGhost } from '../WorkflowStudio/DragGhost';
 import { useToast } from '../../../../shared/components/Toast';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import {
@@ -83,7 +79,7 @@ import {
 } from '../../../attachments/components/AttachmentChip';
 import { toAttachmentInput } from '../../../attachments/pendingAttachment';
 import { usePendingAttachments } from '../../../chat/components/ChatInput/hooks/usePendingAttachments';
-import { runIdentity, runIdentitySeed } from '../../timeline/runIdentity';
+import { runIdentity, runIdentitySeed } from '../../../session/timeline/runIdentity';
 import { BuilderTitleField } from './parts/BuilderTitleField';
 import { GoalField } from './parts/GoalField';
 import { LaunchBar } from './parts/LaunchBar';
@@ -94,9 +90,9 @@ import { PlanDraftingBanner } from './parts/PlanDraftingBanner';
 import { PresetPicker } from './parts/PresetPicker';
 import { SpendCapChip } from './parts/SpendCapChip';
 import { StartsChip, type ChainRun, type StartChoice } from './parts/StartsChip';
-import { StepTree } from '../../../workflows/components/StepTree';
-import { StepEditor } from '../../../workflows/components/StepTree/StepEditor';
-import { StepRow } from '../../../workflows/components/StepTree/StepRow';
+import { StepTree } from '../StepTree';
+import { StepEditor } from '../StepTree/StepEditor';
+import { StepRow } from '../StepTree/StepRow';
 import { OrchestratorRow } from './parts/OrchestratorRow';
 import { PlannerDraftRow } from './parts/PlannerDraftRow';
 import { PlanEstimateChip } from './parts/PlanEstimateChip';

@@ -3,7 +3,7 @@ import { ListChecks, PenLine } from 'lucide-react';
 import { SegmentedTabs } from '@goodboy/ui';
 import type { Mode } from '../../../../../store/slices/workflowDrafts/types';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
-import { GlossaryTerm } from '../../GlossaryTerm';
+import { GlossaryTerm } from '../../../../session/components/GlossaryTerm';
 
 type Props = {
   readonly mode: Mode;

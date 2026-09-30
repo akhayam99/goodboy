@@ -1,5 +1,5 @@
 import type { AgentRole, EffortLevel, Step, Workflow } from '@goodboy/types';
-import type { StepDraft } from '../../../workflows/engine';
+import type { StepDraft } from '../../engine';
 
 const sortedPresetSteps = (preset: Workflow): Workflow['steps'] =>
   [...preset.steps].sort((first, second) => first.ordinal - second.ordinal);

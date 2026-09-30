@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Workflow } from '@goodboy/types';
-import { draftFromWorkflow } from '../../../workflows/engine';
+import { draftFromWorkflow } from '../../engine';
 import { editedStepKeys, stepsMatchPreset } from './presetEdits';
 
 const preset = {

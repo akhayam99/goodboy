@@ -29,7 +29,7 @@
       "message": "Each child in a list should have a unique \"key\" prop. | Check the render method of `MetaRow`. It was passed a child from WorkflowRow. See https://react.dev/link/warning-keys for more information."
     },
     {
-      "file": "src/features/session/components/WorkflowBuilderView/index.test.tsx",
+      "file": "src/features/workflows/components/WorkflowBuilderView/index.test.tsx",
       "message": "[roles] unknown role \"engineer\"; using custom"
     },
     {

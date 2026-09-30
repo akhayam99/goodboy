@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Textarea } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { StepTreeGutter } from '../../../../workflows/components/StepTree/StepTreeGutter';
+import { StepTreeGutter } from '../../StepTree/StepTreeGutter';
 
 type Props = {
   readonly identityIndex: number;

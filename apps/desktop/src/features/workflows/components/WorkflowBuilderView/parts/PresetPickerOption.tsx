@@ -2,7 +2,7 @@ import { Trash2 } from 'lucide-react';
 import { IconButton, ListboxOptionRow, cn } from '@goodboy/ui';
 import type { ListboxMatch } from '@goodboy/ui';
 import type { Workflow } from '@goodboy/types';
-import { agentKindPalette, classifyStep } from '../../../agent-kind';
+import { agentKindPalette, classifyStep } from '../../../../session/agent-kind';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {

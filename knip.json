@@ -86,8 +86,8 @@
         "src/features/session/agent-status.ts": ["exports"],
         "src/features/session/resolvePullRequestProvider.ts": ["types"],
         "src/features/session/components/SessionWorkspace/sessionBreadcrumb.ts": ["types"],
-        "src/features/session/components/WorkflowBuilderView/index.tsx": ["exports"],
-        "src/features/session/components/WorkflowBuilderView/parts/BuilderTitleField.tsx": [
+        "src/features/workflows/components/WorkflowBuilderView/index.tsx": ["exports"],
+        "src/features/workflows/components/WorkflowBuilderView/parts/BuilderTitleField.tsx": [
           "exports"
         ],
         "src/features/session/context/shareableContext.ts": ["exports"],

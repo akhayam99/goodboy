@@ -4,7 +4,7 @@ import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { ExampleSteps } from './ExampleSteps';
 import { GuidanceDisclosure } from './GuidanceDisclosure';
-import { StepTreeGutter } from '../../../../workflows/components/StepTree/StepTreeGutter';
+import { StepTreeGutter } from '../../StepTree/StepTreeGutter';
 
 type Props = {
   readonly identityIndex: number;

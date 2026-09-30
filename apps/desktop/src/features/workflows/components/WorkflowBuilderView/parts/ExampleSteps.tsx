@@ -1,10 +1,10 @@
 import type { CSSProperties, ReactNode } from 'react';
 import type { AgentRole } from '@goodboy/types';
 import { WorkNode, cn } from '@goodboy/ui';
-import { ROLE_LABEL, type AgentKind } from '../../../agent-kind';
-import { AgentKindChip } from '../../AgentKindChip';
-import { StepTreeGutter } from '../../../../workflows/components/StepTree/StepTreeGutter';
-import type { StepLaneSpan } from '../../../../workflows/components/StepTree/StepTreeLane';
+import { ROLE_LABEL, type AgentKind } from '../../../../session/agent-kind';
+import { AgentKindChip } from '../../../../session/components/AgentKindChip';
+import { StepTreeGutter } from '../../StepTree/StepTreeGutter';
+import type { StepLaneSpan } from '../../StepTree/StepTreeLane';
 
 type Props = {
   readonly identityIndex: number;

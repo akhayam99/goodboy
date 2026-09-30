@@ -6,9 +6,9 @@ import type { ProviderId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { ROLE_LABEL, classifyStep } from '../../../../session/agent-kind';
-import { BuilderTitleField } from '../../../../session/components/WorkflowBuilderView/parts/BuilderTitleField';
-import { GoalField } from '../../../../session/components/WorkflowBuilderView/parts/GoalField';
-import { PlanDraftingBanner } from '../../../../session/components/WorkflowBuilderView/parts/PlanDraftingBanner';
+import { BuilderTitleField } from '../../WorkflowBuilderView/parts/BuilderTitleField';
+import { GoalField } from '../../WorkflowBuilderView/parts/GoalField';
+import { PlanDraftingBanner } from '../../WorkflowBuilderView/parts/PlanDraftingBanner';
 import type { StepDraft } from '../../../engine';
 import {
   addStep,
