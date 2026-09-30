@@ -27,7 +27,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
 }));
 
 import { retryStepSummary } from './retryStepSummary';
-import { summarizeAgentOutput } from '../../summarizeAgentOutput';
+import { summarizeAgentOutput } from './summarizeAgentOutput';
 
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;

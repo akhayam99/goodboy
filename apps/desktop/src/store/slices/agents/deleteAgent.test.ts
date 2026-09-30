@@ -59,7 +59,7 @@ vi.mock('../../../features/worktree/worktree', () => ({
 }));
 
 import { deleteAgent } from './deleteAgent';
-import { purgedAgentIds } from '../../session-mutators';
+import { purgedAgentIds } from '../sessions/sessionMutators';
 
 const SID = 'sess-1' as SessionId;
 const DOOMED = 'resolver-1' as AgentId;

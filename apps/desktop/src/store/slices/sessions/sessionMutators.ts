@@ -1,6 +1,6 @@
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId, TurnState } from '@goodboy/types';
-import type { SessionLoadingFlags } from './slices/sessions/state';
-import type { SetFn } from './slice-types';
+import type { SessionLoadingFlags } from './state';
+import type { SetFn } from '../../slice-types';
 
 export const EMPTY_LOADING: SessionLoadingFlags = {
   agents: false,

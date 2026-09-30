@@ -13,7 +13,7 @@ import { invokeAgentList } from '../../../features/workflows/workflows';
 import { listPlansForSession as invokeListPlansForSession } from '../../../features/plans/plans';
 import type { AgentKind } from '../../../features/session/agent-kind';
 import { SETTING_LAST_SESSION_ID } from '../../../features/settings/settings';
-import { EMPTY_LOADING } from '../../session-mutators';
+import { EMPTY_LOADING } from './sessionMutators';
 import type { SessionLoadingFlags } from './state';
 import { seedRunRoutingFromSpans } from '../turn/seedRunRoutingFromSpans';
 import type { GetFn, SetFn } from './types';

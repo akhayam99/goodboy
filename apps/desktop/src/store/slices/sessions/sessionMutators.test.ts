@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, ProviderRunId, TurnState } from '@goodboy/types';
-import { deriveSessionState } from '../store/session-mutators';
+import { deriveSessionState } from './sessionMutators';
 
 const now = '2026-05-07T00:00:00.000Z' as IsoDateTime;
 const earlier = '2026-05-07T00:00:01.000Z' as IsoDateTime;

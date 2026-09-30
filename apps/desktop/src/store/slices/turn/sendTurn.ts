@@ -100,7 +100,7 @@ import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory
 import { estimateTokens } from '../../../shared/utils/estimate-tokens';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from './preamble';
-import { applyAgentTurnState, cancelledRunIds, purgedAgentIds } from '../../session-mutators';
+import { applyAgentTurnState, cancelledRunIds, purgedAgentIds } from '../sessions/sessionMutators';
 import { claimTurnStart, closeTurnStartWindow } from './turnStartWindow';
 import { markTurnActive, markTurnSettled } from './turnSettled';
 import {

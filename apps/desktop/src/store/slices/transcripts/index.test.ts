@@ -21,7 +21,7 @@ import type {
   Workspace,
   WorkspaceId,
 } from '@goodboy/types';
-import { purgedAgentIds } from '../../session-mutators';
+import { purgedAgentIds } from '../sessions/sessionMutators';
 import { flushTurnEvents } from './buffer';
 
 vi.mock('@tauri-apps/api/core', async () =>

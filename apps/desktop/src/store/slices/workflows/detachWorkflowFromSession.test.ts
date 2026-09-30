@@ -9,7 +9,7 @@ import type {
   WorkflowId,
   WorkflowRunId,
 } from '@goodboy/types';
-import { purgedAgentIds } from '../../session-mutators';
+import { purgedAgentIds } from '../sessions/sessionMutators';
 
 const {
   cancelTurnSpy,
@@ -69,7 +69,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentList: invokeAgentListSpy,
 }));
 
-vi.mock('../../awaitRunStopped', () => ({
+vi.mock('../agents/awaitRunStopped', () => ({
   awaitRunStopped: awaitRunStoppedSpy,
 }));
 

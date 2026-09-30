@@ -273,7 +273,7 @@
     "apps/desktop/src/store/slices/workspaces/setCurrentWorkspace.test.ts": 1,
     "apps/desktop/src/store/store.plan-consumption-ordering.test.ts": 1,
     "apps/desktop/src/store/store.summarizer-notifications.test.ts": 2,
-    "apps/desktop/src/store/summarizeAgentOutput.test.ts": 2,
+    "apps/desktop/src/store/slices/workflows/summarizeAgentOutput.test.ts": 2,
     "apps/desktop/src/store/slices/turn/turnHelpers.test.ts": 1,
     "packages/core/src/artifacts/grammar.test.ts": 1,
     "packages/core/src/context/extractors.test.ts": 1,

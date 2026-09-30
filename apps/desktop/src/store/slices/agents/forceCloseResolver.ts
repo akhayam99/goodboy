@@ -5,7 +5,7 @@ import { cancelTurn } from '../../../features/chat/turn';
 import { abandonWorktreeWriter } from '../../../features/worktree/worktree';
 import { agentWritePaths } from '../resolve/agentWritePath';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
-import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
+import { applyAgentTurnState, cancelledRunIds } from '../sessions/sessionMutators';
 import type { GetFn, SetFn } from './types';
 
 export const forceCloseResolver = (set: SetFn, get: GetFn) => {

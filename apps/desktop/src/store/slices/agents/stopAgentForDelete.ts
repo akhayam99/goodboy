@@ -1,7 +1,7 @@
 import type { AgentId } from '@goodboy/types';
 import { cancelTurn } from '../../../features/chat/turn';
-import { cancelledRunIds } from '../../session-mutators';
-import { awaitRunStopped } from '../../awaitRunStopped';
+import { cancelledRunIds } from '../sessions/sessionMutators';
+import { awaitRunStopped } from './awaitRunStopped';
 import { cancelTurnStartWindow } from '../turn/turnStartWindow';
 import type { GetFn } from './types';
 

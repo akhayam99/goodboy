@@ -15,7 +15,7 @@ import { attachTurn } from '../../../features/chat/turn';
 import type { TurnCursor, TurnOwner } from '../../../features/chat/turnCursor';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { applyAgentTurnState, cancelledRunIds, purgedAgentIds } from '../../session-mutators';
+import { applyAgentTurnState, cancelledRunIds, purgedAgentIds } from '../sessions/sessionMutators';
 import {
   captureArtifactsFromTurn,
   captureMaterializeRequestsFromTurn,

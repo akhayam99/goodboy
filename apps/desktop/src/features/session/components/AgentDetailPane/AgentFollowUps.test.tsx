@@ -22,7 +22,7 @@ vi.mock('../../../../store', async () => ({
   useSessionOpenQuestions: () => state.openQuestions,
 }));
 
-vi.mock('../../../../store/transcript', () => ({
+vi.mock('../../../../store/slices/transcripts/selectors', () => ({
   useTranscript: () => [],
 }));
 

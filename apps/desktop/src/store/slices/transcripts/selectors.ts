@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import type { AgentId, TurnEvent } from '@goodboy/types';
-import { useAppStore } from './store';
-import type { AppState } from './types';
+import { useAppStore } from '../../store';
+import type { AppState } from '../../types';
 
 const EMPTY: ReadonlyArray<TurnEvent> = [];
 

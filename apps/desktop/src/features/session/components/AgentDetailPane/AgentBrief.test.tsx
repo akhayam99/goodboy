@@ -47,7 +47,7 @@ vi.mock('../../../../store', async () => ({
   useExecutedAgentRouting: () => null,
 }));
 
-vi.mock('../../../../store/transcript', () => ({
+vi.mock('../../../../store/slices/transcripts/selectors', () => ({
   useTranscript: () => [],
 }));
 
