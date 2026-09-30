@@ -1,5 +1,5 @@
 import type { WorkspaceId } from '@goodboy/types';
-import { STORAGE_PREFIXES } from '../../../../shared/lib/storage-keys';
+import { STORAGE_PREFIXES, persistedPref } from '../../../../shared/lib/storage-keys';
 import type { Mode } from '../../../../store/slices/workflowDrafts/types';
 
 type Params = {
@@ -20,19 +20,16 @@ const storageKey = ({ workspaceId }: Params): string =>
 const isMode = (value: unknown): value is Mode =>
   typeof value === 'string' && WORKFLOW_MODES.some((candidate) => candidate === value);
 
-export const readLastWorkflowMode = ({ workspaceId }: Params): Mode => {
-  try {
-    const raw = localStorage.getItem(storageKey({ workspaceId }));
-    return isMode(raw) ? raw : FIRST_WORKFLOW_MODE;
-  } catch {
-    return FIRST_WORKFLOW_MODE;
-  }
-};
+const modePref = ({ workspaceId }: Params) =>
+  persistedPref<Mode>({
+    key: storageKey({ workspaceId }),
+    parse: (raw) => (isMode(raw) ? raw : undefined),
+    serialize: (mode) => mode,
+    fallback: FIRST_WORKFLOW_MODE,
+  });
 
-export const writeLastWorkflowMode = ({ workspaceId, mode }: WriteParams): void => {
-  try {
-    localStorage.setItem(storageKey({ workspaceId }), mode);
-  } catch {
-    return;
-  }
-};
+export const readLastWorkflowMode = ({ workspaceId }: Params): Mode =>
+  modePref({ workspaceId }).read();
+
+export const writeLastWorkflowMode = ({ workspaceId, mode }: WriteParams): void =>
+  modePref({ workspaceId }).write(mode);

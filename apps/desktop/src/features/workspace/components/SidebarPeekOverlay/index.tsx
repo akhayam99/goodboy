@@ -6,24 +6,23 @@ import {
   LEFT_SIDEBAR_STORAGE_KEY,
   cn,
 } from '@goodboy/ui';
+import { persistedPref } from '../../../../shared/lib/storage-keys';
 import { SidebarPeekHoldContext, type SidebarPeekHold } from './hold';
 
 const PEEK_WIDTH_FACTOR = 1.2;
 
-const pinnedWidth = (): number => {
-  if (typeof localStorage === 'undefined') {
-    return LEFT_SIDEBAR_DEFAULT;
-  }
-  const raw = localStorage.getItem(LEFT_SIDEBAR_STORAGE_KEY);
-  if (raw === null) {
-    return LEFT_SIDEBAR_DEFAULT;
-  }
-  const parsed = Number.parseInt(raw, 10);
-  if (Number.isNaN(parsed)) {
-    return LEFT_SIDEBAR_DEFAULT;
-  }
-  return Math.max(LEFT_SIDEBAR_MIN, Math.min(LEFT_SIDEBAR_MAX, parsed));
-};
+const pinnedWidthPref = persistedPref<number>({
+  key: LEFT_SIDEBAR_STORAGE_KEY,
+  parse: (raw) => {
+    const parsed = Number.parseInt(raw, 10);
+    return Number.isNaN(parsed)
+      ? undefined
+      : Math.max(LEFT_SIDEBAR_MIN, Math.min(LEFT_SIDEBAR_MAX, parsed));
+  },
+  fallback: LEFT_SIDEBAR_DEFAULT,
+});
+
+const pinnedWidth = pinnedWidthPref.read;
 
 const readWidth = (): number =>
   Math.min(LEFT_SIDEBAR_MAX, Math.round(pinnedWidth() * PEEK_WIDTH_FACTOR));

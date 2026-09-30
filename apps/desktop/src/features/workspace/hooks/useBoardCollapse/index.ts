@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { STORAGE_PREFIXES } from '../../../../shared/lib/storage-keys';
+import { STORAGE_PREFIXES, persistedPref } from '../../../../shared/lib/storage-keys';
 
 export type BoardCollapsibleColumn = 'done' | 'archived';
 
@@ -33,35 +33,21 @@ const isCollapseState = (value: unknown): value is BoardCollapseState => {
   return typeof record.done === 'boolean' && typeof record.archived === 'boolean';
 };
 
-const readState = ({ workspaceId }: Params): BoardCollapseState => {
-  if (typeof localStorage === 'undefined') {
-    return DEFAULT_STATE;
-  }
-  try {
-    const raw = localStorage.getItem(keyFor({ workspaceId }));
-    if (raw === null) {
-      return DEFAULT_STATE;
-    }
-    const parsed: unknown = JSON.parse(raw);
-    if (!isCollapseState(parsed)) {
-      return DEFAULT_STATE;
-    }
-    return { done: parsed.done, archived: parsed.archived };
-  } catch {
-    return DEFAULT_STATE;
-  }
-};
+const statePref = ({ workspaceId }: Params) =>
+  persistedPref<BoardCollapseState>({
+    key: keyFor({ workspaceId }),
+    fallback: DEFAULT_STATE,
+    parse: (raw) => {
+      const parsed: unknown = JSON.parse(raw);
+      return isCollapseState(parsed) ? { done: parsed.done, archived: parsed.archived } : undefined;
+    },
+  });
 
-const writeState = ({ workspaceId, next }: WriteParams): void => {
-  if (typeof localStorage === 'undefined') {
-    return;
-  }
-  try {
-    localStorage.setItem(keyFor({ workspaceId }), JSON.stringify(next));
-  } catch {
-    return;
-  }
-};
+const readState = ({ workspaceId }: Params): BoardCollapseState =>
+  statePref({ workspaceId }).read();
+
+const writeState = ({ workspaceId, next }: WriteParams): void =>
+  statePref({ workspaceId }).write(next);
 
 type Held = {
   readonly workspaceId: WorkspaceId;

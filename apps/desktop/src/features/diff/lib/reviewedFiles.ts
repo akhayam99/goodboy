@@ -1,5 +1,5 @@
 import type { DiffView, FileDiff, SessionId } from '@goodboy/types';
-import { STORAGE_PREFIXES } from '../../../shared/lib/storage-keys';
+import { STORAGE_PREFIXES, persistedPref } from '../../../shared/lib/storage-keys';
 
 export type ViewedState = 'none' | 'viewed' | 'stale';
 
@@ -23,21 +23,21 @@ export const fileSignature = (file: FileDiff): string =>
 const storageKey = (sessionId: SessionId | null, view: DiffView): string | null =>
   sessionId ? `${STORAGE_PREFIXES.diffReviewed}${sessionId}:${viewKeyOf(view)}` : null;
 
+const NOTHING_REVIEWED: ReviewedMap = {};
+
+const reviewedPref = ({ key }: { readonly key: string }) =>
+  persistedPref<ReviewedMap>({
+    key,
+    fallback: NOTHING_REVIEWED,
+    parse: (raw) => {
+      const parsed: unknown = JSON.parse(raw);
+      return parsed !== null && typeof parsed === 'object' ? (parsed as ReviewedMap) : undefined;
+    },
+  });
+
 export const readReviewedMap = (sessionId: SessionId | null, view: DiffView): ReviewedMap => {
   const key = storageKey(sessionId, view);
-  if (key === null || typeof window === 'undefined') {
-    return {};
-  }
-  try {
-    const raw = window.localStorage.getItem(key);
-    if (!raw) {
-      return {};
-    }
-    const parsed: unknown = JSON.parse(raw);
-    return parsed !== null && typeof parsed === 'object' ? (parsed as ReviewedMap) : {};
-  } catch {
-    return {};
-  }
+  return key === null ? NOTHING_REVIEWED : reviewedPref({ key }).read();
 };
 
 export const writeReviewedMap = (
@@ -46,14 +46,10 @@ export const writeReviewedMap = (
   map: ReviewedMap,
 ): void => {
   const key = storageKey(sessionId, view);
-  if (key === null || typeof window === 'undefined') {
+  if (key === null) {
     return;
   }
-  try {
-    window.localStorage.setItem(key, JSON.stringify(map));
-  } catch {
-    return;
-  }
+  reviewedPref({ key }).write(map);
 };
 
 export const viewedStateOf = (file: FileDiff, map: ReviewedMap): ViewedState => {

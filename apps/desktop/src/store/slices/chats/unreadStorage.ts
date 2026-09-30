@@ -1,30 +1,24 @@
 import type { ChatId } from '@goodboy/types';
-import { STORAGE_KEYS } from '../../../shared/lib/storage-keys';
+import { STORAGE_KEYS, persistedPref } from '../../../shared/lib/storage-keys';
 
 type WriteParams = {
   readonly chatIds: ReadonlyArray<ChatId>;
 };
 
-export const readUnreadChats = (): ReadonlyArray<ChatId> => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.chatUnread);
-    if (raw === null) {
-      return [];
-    }
+const NO_CHATS: ReadonlyArray<ChatId> = [];
+
+const unreadPref = persistedPref<ReadonlyArray<ChatId>>({
+  key: STORAGE_KEYS.chatUnread,
+  fallback: NO_CHATS,
+  parse: (raw) => {
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) {
-      return [];
+      return undefined;
     }
     return parsed.filter((id): id is ChatId => typeof id === 'string');
-  } catch {
-    return [];
-  }
-};
+  },
+});
 
-export const writeUnreadChats = ({ chatIds }: WriteParams): void => {
-  try {
-    localStorage.setItem(STORAGE_KEYS.chatUnread, JSON.stringify(chatIds));
-  } catch {
-    return;
-  }
-};
+export const readUnreadChats = unreadPref.read;
+
+export const writeUnreadChats = ({ chatIds }: WriteParams): void => unreadPref.write(chatIds);

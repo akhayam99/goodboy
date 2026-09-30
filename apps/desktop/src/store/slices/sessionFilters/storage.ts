@@ -1,5 +1,5 @@
 import type { WorkspaceId } from '@goodboy/types';
-import { STORAGE_PREFIXES } from '../../../shared/lib/storage-keys';
+import { STORAGE_PREFIXES, persistedPref } from '../../../shared/lib/storage-keys';
 
 type PersistedFilters = {
   readonly v: 1;
@@ -20,30 +20,30 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const storageKey = ({ workspaceId }: Params): string =>
   `${STORAGE_PREFIXES.sessionFilters}${workspaceId}`;
 
-export const readFromStorage = ({ workspaceId }: Params): ReadonlyArray<string> => {
-  try {
-    const raw = localStorage.getItem(storageKey({ workspaceId }));
-    if (raw === null) {
-      return [];
-    }
-    const parsed: unknown = JSON.parse(raw);
-    if (!isRecord(parsed)) {
-      return [];
-    }
-    if (parsed['v'] !== 1 || !Array.isArray(parsed['selectedProjectIds'])) {
-      return [];
-    }
-    return parsed['selectedProjectIds'].filter((id): id is string => typeof id === 'string');
-  } catch {
-    return [];
-  }
-};
+const NO_PROJECTS: ReadonlyArray<string> = [];
 
-export const writeToStorage = ({ workspaceId, selectedProjectIds }: WriteParams): void => {
-  try {
-    const persisted: PersistedFilters = { v: 1, selectedProjectIds };
-    localStorage.setItem(storageKey({ workspaceId }), JSON.stringify(persisted));
-  } catch {
-    return;
-  }
-};
+const filtersPref = ({ workspaceId }: Params) =>
+  persistedPref<ReadonlyArray<string>>({
+    key: storageKey({ workspaceId }),
+    fallback: NO_PROJECTS,
+    parse: (raw) => {
+      const parsed: unknown = JSON.parse(raw);
+      if (!isRecord(parsed)) {
+        return undefined;
+      }
+      if (parsed['v'] !== 1 || !Array.isArray(parsed['selectedProjectIds'])) {
+        return undefined;
+      }
+      return parsed['selectedProjectIds'].filter((id): id is string => typeof id === 'string');
+    },
+    serialize: (selectedProjectIds) => {
+      const persisted: PersistedFilters = { v: 1, selectedProjectIds };
+      return JSON.stringify(persisted);
+    },
+  });
+
+export const readFromStorage = ({ workspaceId }: Params): ReadonlyArray<string> =>
+  filtersPref({ workspaceId }).read();
+
+export const writeToStorage = ({ workspaceId, selectedProjectIds }: WriteParams): void =>
+  filtersPref({ workspaceId }).write(selectedProjectIds);

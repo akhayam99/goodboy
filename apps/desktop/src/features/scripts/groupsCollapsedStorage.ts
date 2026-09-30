@@ -1,4 +1,5 @@
 import type { MountId, WorkspaceId } from '@goodboy/types';
+import { STORAGE_PREFIXES, persistedPref } from '../../shared/lib/storage-keys';
 
 type ReadParams = {
   readonly workspaceId: WorkspaceId;
@@ -9,28 +10,26 @@ type WriteParams = ReadParams & {
 };
 
 const storageKey = ({ workspaceId }: ReadParams): string =>
-  `goodboy:scripts-groups-collapsed:v1:${workspaceId}`;
+  `${STORAGE_PREFIXES.scriptsGroupsCollapsed}${workspaceId}`;
 
 const isStringArray = (value: unknown): value is ReadonlyArray<string> =>
   Array.isArray(value) && value.every((entry) => typeof entry === 'string');
 
-export const readCollapsedGroups = ({ workspaceId }: ReadParams): ReadonlySet<MountId> => {
-  try {
-    const raw = localStorage.getItem(storageKey({ workspaceId }));
-    if (raw === null) {
-      return new Set();
-    }
-    const parsed: unknown = JSON.parse(raw);
-    return isStringArray(parsed) ? new Set(parsed.map((entry) => entry as MountId)) : new Set();
-  } catch {
-    return new Set();
-  }
-};
+const EMPTY_GROUPS: ReadonlySet<MountId> = new Set();
 
-export const writeCollapsedGroups = ({ workspaceId, collapsed }: WriteParams): void => {
-  try {
-    localStorage.setItem(storageKey({ workspaceId }), JSON.stringify([...collapsed]));
-  } catch {
-    return;
-  }
-};
+const groupsPref = ({ workspaceId }: ReadParams) =>
+  persistedPref<ReadonlySet<MountId>>({
+    key: storageKey({ workspaceId }),
+    fallback: EMPTY_GROUPS,
+    parse: (raw) => {
+      const parsed: unknown = JSON.parse(raw);
+      return isStringArray(parsed) ? new Set(parsed.map((entry) => entry as MountId)) : undefined;
+    },
+    serialize: (collapsed) => JSON.stringify([...collapsed]),
+  });
+
+export const readCollapsedGroups = ({ workspaceId }: ReadParams): ReadonlySet<MountId> =>
+  groupsPref({ workspaceId }).read();
+
+export const writeCollapsedGroups = ({ workspaceId, collapsed }: WriteParams): void =>
+  groupsPref({ workspaceId }).write(collapsed);

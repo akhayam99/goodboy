@@ -1,25 +1,20 @@
 import { useCallback, useState } from 'react';
-import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
+import { STORAGE_KEYS, persistedPref } from '../../../../shared/lib/storage-keys';
 
 type SetWrap = (next: boolean) => void;
 
-const readWrap = (): boolean => {
-  try {
-    return localStorage.getItem(STORAGE_KEYS.diffWrap) !== '0';
-  } catch {
-    return true;
-  }
-};
+const wrapPref = persistedPref<boolean>({
+  key: STORAGE_KEYS.diffWrap,
+  parse: (raw) => raw !== '0',
+  serialize: (wrap) => (wrap ? '1' : '0'),
+  fallback: true,
+});
 
 export const useDiffWrap = (): readonly [boolean, SetWrap] => {
-  const [wrap, setWrapState] = useState(readWrap);
+  const [wrap, setWrapState] = useState(wrapPref.read);
   const setWrap = useCallback((next: boolean) => {
     setWrapState(next);
-    try {
-      localStorage.setItem(STORAGE_KEYS.diffWrap, next ? '1' : '0');
-    } catch {
-      return;
-    }
+    wrapPref.write(next);
   }, []);
   return [wrap, setWrap] as const;
 };

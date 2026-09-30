@@ -13,7 +13,7 @@ import { EFFORT_LEVELS } from '../../../features/chat/utils/chat-constants';
 import { asReportType } from '../../../features/reports/reportTypes';
 import { asWireframeFidelity } from '../../../features/wireframes/wireframeFidelity';
 import { asWireframeTarget } from '../../../features/wireframes/wireframeTarget';
-import { STORAGE_PREFIXES } from '../../../shared/lib/storage-keys';
+import { STORAGE_PREFIXES, persistedPref } from '../../../shared/lib/storage-keys';
 import { DEFAULT_WIREFRAME_TARGET } from './defaultArtifactDraft';
 import type {
   ArtifactBasedOn,
@@ -120,40 +120,40 @@ const readDraft = (value: unknown): ArtifactCreationDraft | null => {
   return null;
 };
 
-export const readFromStorage = ({ sessionId }: Params): SessionArtifactDrafts => {
-  try {
-    const raw = localStorage.getItem(storageKey({ sessionId }));
-    if (raw === null) {
-      return {};
-    }
-    const parsed: unknown = JSON.parse(raw);
-    if (!isRecord(parsed) || parsed['v'] !== 1) {
-      return {};
-    }
-    return GENERATED_ARTIFACT_KINDS.reduce<SessionArtifactDrafts>((acc, kind) => {
-      const draft = readDraft(parsed[kind]);
-      return draft === null || draft.kind !== kind ? acc : { ...acc, [kind]: draft };
-    }, {});
-  } catch {
-    return {};
-  }
-};
+const NO_DRAFTS: SessionArtifactDrafts = {};
+
+const draftsPref = ({ sessionId }: Params) =>
+  persistedPref<SessionArtifactDrafts>({
+    key: storageKey({ sessionId }),
+    fallback: NO_DRAFTS,
+    parse: (raw) => {
+      const parsed: unknown = JSON.parse(raw);
+      if (!isRecord(parsed) || parsed['v'] !== 1) {
+        return undefined;
+      }
+      return GENERATED_ARTIFACT_KINDS.reduce<SessionArtifactDrafts>((acc, kind) => {
+        const draft = readDraft(parsed[kind]);
+        return draft === null || draft.kind !== kind ? acc : { ...acc, [kind]: draft };
+      }, {});
+    },
+    serialize: (drafts) => JSON.stringify({ v: 1, ...drafts }),
+  });
+
+export const readFromStorage = ({ sessionId }: Params): SessionArtifactDrafts =>
+  draftsPref({ sessionId }).read();
 
 export const writeToStorage = ({ sessionId, drafts }: WriteParams): void => {
-  try {
-    const kept = GENERATED_ARTIFACT_KINDS.reduce<Record<string, ArtifactCreationDraft>>(
-      (acc, kind) => {
-        const draft = drafts[kind];
-        return draft === undefined ? acc : { ...acc, [kind]: draft };
-      },
-      {},
-    );
-    if (Object.keys(kept).length === 0) {
-      localStorage.removeItem(storageKey({ sessionId }));
-      return;
-    }
-    localStorage.setItem(storageKey({ sessionId }), JSON.stringify({ v: 1, ...kept }));
-  } catch {
+  const pref = draftsPref({ sessionId });
+  const kept = GENERATED_ARTIFACT_KINDS.reduce<Record<string, ArtifactCreationDraft>>(
+    (acc, kind) => {
+      const draft = drafts[kind];
+      return draft === undefined ? acc : { ...acc, [kind]: draft };
+    },
+    {},
+  );
+  if (Object.keys(kept).length === 0) {
+    pref.clear();
     return;
   }
+  pref.write(kept);
 };

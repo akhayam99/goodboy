@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useEscapeLayer } from '@goodboy/ui';
-import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
+import { STORAGE_KEYS, persistedPref } from '../../../../shared/lib/storage-keys';
 
 type Params = {
   readonly hasActiveSession: boolean;
@@ -10,31 +10,20 @@ const OPEN_DELAY_MS = 150;
 
 const CLOSE_DELAY_MS = 300;
 
-const readPreference = (): boolean => {
-  if (typeof localStorage === 'undefined') {
-    return false;
-  }
-  try {
-    return localStorage.getItem(STORAGE_KEYS.sessionSidebarCollapsed) === '1';
-  } catch {
-    return false;
-  }
-};
+const collapsedPref = persistedPref<boolean>({
+  key: STORAGE_KEYS.sessionSidebarCollapsed,
+  parse: (raw) => raw === '1',
+  serialize: (collapsed) => (collapsed ? '1' : '0'),
+  fallback: false,
+});
+
+const readPreference = collapsedPref.read;
 
 type WriteParams = {
   readonly next: boolean;
 };
 
-const writePreference = ({ next }: WriteParams): void => {
-  if (typeof localStorage === 'undefined') {
-    return;
-  }
-  try {
-    localStorage.setItem(STORAGE_KEYS.sessionSidebarCollapsed, next ? '1' : '0');
-  } catch {
-    return;
-  }
-};
+const writePreference = ({ next }: WriteParams): void => collapsedPref.write(next);
 
 export const useSessionSidebarVisibility = ({ hasActiveSession }: Params) => {
   const [isCollapsed, setIsCollapsed] = useState(readPreference);

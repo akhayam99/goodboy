@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
+import { STORAGE_KEYS, persistedPref } from '../../../../shared/lib/storage-keys';
 import { nextSweepRecord, shouldSweep } from '../../updateSweepGate';
 import type { UpdateSweepRecord } from '../../updateSweepGate';
 
@@ -10,39 +10,25 @@ const prefersReducedMotion = (): boolean => {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 };
 
-const readRecord = (): UpdateSweepRecord | null => {
-  if (typeof localStorage === 'undefined') {
-    return null;
-  }
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.updateSweep);
-    if (raw === null) {
-      return null;
-    }
+const sweepPref = persistedPref<UpdateSweepRecord | null>({
+  key: STORAGE_KEYS.updateSweep,
+  fallback: null,
+  parse: (raw) => {
     const parsed = JSON.parse(raw) as UpdateSweepRecord;
     if (
       typeof parsed.lastSweepAt !== 'number' ||
       typeof parsed.dayKey !== 'string' ||
       typeof parsed.countToday !== 'number'
     ) {
-      return null;
+      return undefined;
     }
     return parsed;
-  } catch {
-    return null;
-  }
-};
+  },
+});
 
-const writeRecord = (record: UpdateSweepRecord): void => {
-  if (typeof localStorage === 'undefined') {
-    return;
-  }
-  try {
-    localStorage.setItem(STORAGE_KEYS.updateSweep, JSON.stringify(record));
-  } catch {
-    return;
-  }
-};
+const readRecord = sweepPref.read;
+
+const writeRecord = (record: UpdateSweepRecord): void => sweepPref.write(record);
 
 type Params = {
   readonly active: boolean;
