@@ -1,7 +1,7 @@
 import { ChevronRight } from 'lucide-react';
 import { cn, StatusDot } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { QUESTION_DELEGATE_COPY } from '../../../questionDelegate';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { QUESTION_DELEGATE_COPY } from '../../questionDelegate';
 
 type Props = {
   readonly onOpen: (() => void) | null;

@@ -10,10 +10,10 @@ import {
   type ReportSheetAttachment,
   type ReportSheetVariant,
 } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { openUrl } from '../../../../shared/lib/editor';
-import { formatCombo } from '../../../../shared/keyboard/registry';
-import { ISSUE_TYPE_OPTIONS, type IssueTypeValue } from '../../../settings/reportIssueTypes';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { openUrl } from '../../../shared/lib/editor';
+import { formatCombo } from '../../../shared/keyboard/registry';
+import { ISSUE_TYPE_OPTIONS, type IssueTypeValue } from '../../settings/reportIssueTypes';
 import {
   NEVER_SENT,
   buildReport,
@@ -21,7 +21,7 @@ import {
   previewSummary,
   type ReportPart,
   type ReportPartId,
-} from '../../reportBody';
+} from '../reportBody';
 import {
   addReportComment,
   fileReportIssue,
@@ -29,7 +29,7 @@ import {
   sendsDirectly,
   type ReportFiled,
   type SimilarIssue,
-} from '../../reportDestination';
+} from '../reportDestination';
 
 export type ReportDraft = {
   readonly issueType: IssueTypeValue;

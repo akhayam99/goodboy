@@ -1,13 +1,13 @@
-import { useAppStore } from '../../../store';
-import { selectDrawerPanel } from '../../../store/slices/drawer/selectDrawerPanel';
-import { ContextDrawer } from '../../../features/session/components/ContextDrawer';
-import { ExploreFileDrawer } from '../../../features/explore/components/ExploreFileDrawer';
-import { ArtifactShellDrawer } from '../../../features/artifacts/components/ArtifactShell/ArtifactShellDrawer';
-import { PlanPartDrawer } from '../../../features/plans/components/PlanParts/PlanPartDrawer';
-import { ScriptRunDrawer } from '../../../features/scripts/components/ScriptRunDrawer';
-import { DiffNotesDrawer } from '../../../features/diff/components/DiffNotesDrawer';
-import { FileDiffDrawer } from '../../../features/diff/components/FileDiffDrawer';
-import { drawerKey } from '../../../store/slices/drawer/drawerKey';
+import { useAppStore } from '../../store';
+import { selectDrawerPanel } from '../../store/slices/drawer/selectDrawerPanel';
+import { ContextDrawer } from '../../features/session/components/ContextDrawer';
+import { ExploreFileDrawer } from '../../features/explore/components/ExploreFileDrawer';
+import { ArtifactShellDrawer } from '../../features/artifacts/components/ArtifactShell/ArtifactShellDrawer';
+import { PlanPartDrawer } from '../../features/plans/components/PlanParts/PlanPartDrawer';
+import { ScriptRunDrawer } from '../../features/scripts/components/ScriptRunDrawer';
+import { DiffNotesDrawer } from '../../features/diff/components/DiffNotesDrawer';
+import { FileDiffDrawer } from '../../features/diff/components/FileDiffDrawer';
+import { drawerKey } from '../../store/slices/drawer/drawerKey';
 
 const NO_HIGHLIGHT: ReadonlyArray<number> = [];
 

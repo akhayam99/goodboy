@@ -1,24 +1,24 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useToast } from '../../../../shared/components/Toast';
-import { openUrl } from '../../../../shared/lib/editor';
-import { useShortcut } from '../../../../shared/keyboard/useShortcut';
-import { redactReport } from '../../../../shared/utils/redactReport';
-import { useAppStore } from '../../../../store';
-import type { AppState } from '../../../../store/types';
-import { tauriGhRunner } from '../../../integrations/github/github';
-import { collectReportContext } from '../../../settings/reportContext';
+import { useToast } from '../../../shared/components/Toast';
+import { openUrl } from '../../../shared/lib/editor';
+import { useShortcut } from '../../../shared/keyboard/useShortcut';
+import { redactReport } from '../../../shared/utils/redactReport';
+import { useAppStore } from '../../../store';
+import type { AppState } from '../../../store/types';
+import { tauriGhRunner } from '../../integrations/github/github';
+import { collectReportContext } from '../../settings/reportContext';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { lastCrashPart } from '../../crashReport';
-import { LAST_CRASH_TITLE } from '../../lastCrash';
+import { lastCrashPart } from '../crashReport';
+import { LAST_CRASH_TITLE } from '../lastCrash';
 import {
   OPEN_REPORT_SHEET_EVENT,
   REPORT_OPEN_MENU_EVENT,
   type OpenReportSheetDetail,
-} from '../../openReportSheet';
-import { contextParts, noticePart, type ReportPart } from '../../reportBody';
-import type { ReportFiled } from '../../reportDestination';
-import { reportNames } from '../../reportNames';
-import { ReportComposer, type ReportDraft, type ReportLinkOpened } from '../ReportComposer';
+} from '../openReportSheet';
+import { contextParts, noticePart, type ReportPart } from '../reportBody';
+import type { ReportFiled } from '../reportDestination';
+import { reportNames } from '../reportNames';
+import { ReportComposer, type ReportDraft, type ReportLinkOpened } from './ReportComposer';
 
 type Opened = {
   readonly key: number;

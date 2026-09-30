@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { File } from 'lucide-react';
 import { DrawerFrame } from '@goodboy/ui';
-import { exploreOpen, type ExploreEntry } from '../../explore';
-import { useExplorePreview } from '../../hooks/useExplorePreview';
-import { ExplorePreviewPanel } from '../ExplorePane/ExplorePreviewPanel';
+import { exploreOpen, type ExploreEntry } from '../explore';
+import { useExplorePreview } from '../hooks/useExplorePreview';
+import { ExplorePreviewPanel } from './ExplorePane/ExplorePreviewPanel';
 
 type Props = {
   readonly sessionDir: string;

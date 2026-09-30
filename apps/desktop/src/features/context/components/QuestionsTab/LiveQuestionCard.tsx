@@ -1,14 +1,14 @@
 import { useCallback } from 'react';
 import type { Agent, OpenQuestion, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../../store';
-import { formatAge } from '../../../../../shared/utils/time/formatAge';
-import { classifyAgent } from '../../../../session/agent-kind';
-import { useAnswerQuestion } from '../../../hooks/useAnswerQuestion';
-import { useQuestionDelegateControls } from '../../../hooks/useQuestionDelegateControls';
-import { QuestionCard, type QuestionCardState } from '../QuestionCard';
-import type { QuestionPagerModel } from '../QuestionCard/QuestionPager';
-import { useOpenQuestions } from '../useOpenQuestions';
-import { useNow } from '../../../../../shared/hooks/useNow';
+import { useAppStore } from '../../../../store';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
+import { classifyAgent } from '../../../session/agent-kind';
+import { useAnswerQuestion } from '../../hooks/useAnswerQuestion';
+import { useQuestionDelegateControls } from '../../hooks/useQuestionDelegateControls';
+import { QuestionCard, type QuestionCardState } from './QuestionCard';
+import type { QuestionPagerModel } from './QuestionCard/QuestionPager';
+import { useOpenQuestions } from './useOpenQuestions';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 type Props = {
   readonly question: OpenQuestion;

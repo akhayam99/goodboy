@@ -2,11 +2,11 @@ import { useMemo } from 'react';
 import { MessageSquare } from 'lucide-react';
 import { DrawerFrame, EmptyState } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { useDiffNotes } from '../../hooks/useDiffNotes';
-import { CommentThread } from '../DiffView/CommentThread';
-import type { DiffThread } from '../DiffView/types';
+import { useAppStore } from '../../../store';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
+import { useDiffNotes } from '../hooks/useDiffNotes';
+import { CommentThread } from './DiffView/CommentThread';
+import type { DiffThread } from './DiffView/types';
 
 type Props = {
   readonly sessionId: SessionId;
