@@ -39,7 +39,9 @@ export const useComposerSuggestions = ({
   const announceAgentStarted = useAgentStartedToast();
 
   const onScopeSpawn = async () => {
-    if (!scope.scopePending) return;
+    if (!scope.scopePending) {
+      return;
+    }
     const target = scope.scopePending.mismatch.suggestedAgentKind;
     const content = scope.scopePending.content;
     scope.setScopePending(null);
@@ -59,7 +61,9 @@ export const useComposerSuggestions = ({
   };
 
   const onScopeSendAnyway = async () => {
-    if (!scope.scopePending) return;
+    if (!scope.scopePending) {
+      return;
+    }
     const content = scope.scopePending.content;
     const atts = scope.scopePending.attachments;
     scope.setScopePending(null);
@@ -76,13 +80,17 @@ export const useComposerSuggestions = ({
 
   const onUseSuggested = async () => {
     const pending = rightSize.rightSizePending;
-    if (pending === null) return;
+    if (pending === null) {
+      return;
+    }
     const suggested = rightSize.rightSizeSuggestion?.model ?? null;
     rightSize.setRightSizePending(null);
     rightSize.setRightSizeDismissed(true);
     setValue('');
     setAttachments([]);
-    if (suggested !== null) routing.setSelectedModel(suggested);
+    if (suggested !== null) {
+      routing.setSelectedModel(suggested);
+    }
     await rightSize.recordRightSizeOutcome({ outcome: 'accepted' });
     await sendWith({
       content: pending.content,
@@ -93,7 +101,9 @@ export const useComposerSuggestions = ({
 
   const onKeepCurrent = async () => {
     const pending = rightSize.rightSizePending;
-    if (pending === null) return;
+    if (pending === null) {
+      return;
+    }
     rightSize.setRightSizePending(null);
     rightSize.setRightSizeDismissed(true);
     setValue('');

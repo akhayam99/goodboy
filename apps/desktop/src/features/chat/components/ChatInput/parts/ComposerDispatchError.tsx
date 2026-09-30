@@ -8,7 +8,9 @@ type Props = {
 };
 
 export const ComposerDispatchError = ({ dispatch, providerId }: Props) => {
-  if (!dispatch.error) return null;
+  if (!dispatch.error) {
+    return null;
+  }
   return (
     <ComposerErrorNotice
       message={dispatch.error}

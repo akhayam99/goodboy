@@ -12,12 +12,14 @@ export const useComposerDraft = ({ selectedAgentId }: Params) => {
   const clearAgentDraft = useAppStore((s) => s.clearAgentDraft);
   const setValue = useCallback(
     (next: string) => {
-      if (!selectedAgentId) return;
+      if (!selectedAgentId) {
+        return;
+      }
       if (next.length === 0) {
         clearAgentDraft(selectedAgentId);
-      } else {
-        setAgentDraft(selectedAgentId, next);
+        return;
       }
+      setAgentDraft(selectedAgentId, next);
     },
     [selectedAgentId, setAgentDraft, clearAgentDraft],
   );

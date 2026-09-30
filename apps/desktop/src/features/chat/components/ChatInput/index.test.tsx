@@ -176,7 +176,7 @@ function resetMockStore() {
     agentDraft: {},
     agentAttachments: {},
     agentQueue: {},
-    takeQueuedMessage: vi.fn(() => null) as never,
+    takeQueuedMessage: vi.fn(() => null),
     agentKindOverride: {},
     agentModelOverride: {},
     agentProviderOverride: {},
@@ -1238,7 +1238,7 @@ describe('ChatInput, composer flows', () => {
     };
     mockStore.setState({
       agentQueue: { 'agent-1': [queued] },
-      takeQueuedMessage: vi.fn(() => queued) as never,
+      takeQueuedMessage: vi.fn(() => queued),
     });
     const user = userEvent.setup();
     render(<ChatInput session={runningSession()} />);

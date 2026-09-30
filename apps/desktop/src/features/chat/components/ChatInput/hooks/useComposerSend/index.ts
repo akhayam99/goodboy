@@ -126,14 +126,19 @@ export const useComposerSend = ({
   }) => {
     const content = value.trim();
     const atts = attachments;
-    if ((!content && atts.length === 0) || providerDisconnected || session.archivedAt != null)
+    if ((!content && atts.length === 0) || providerDisconnected || session.archivedAt != null) {
       return;
+    }
     dispatch.setError(null);
     dispatch.setLastFailedTurn(null);
 
     if (!force) {
-      if (await scope.checkAndInterceptScope(content, atts)) return;
-      if (!isRunning && (await rightSize.checkAndInterceptRightSize(content, atts))) return;
+      if (await scope.checkAndInterceptScope(content, atts)) {
+        return;
+      }
+      if (!isRunning && (await rightSize.checkAndInterceptRightSize(content, atts))) {
+        return;
+      }
     }
 
     if (force && scope.scopePending !== null) {

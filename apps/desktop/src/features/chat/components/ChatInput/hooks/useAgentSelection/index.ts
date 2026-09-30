@@ -13,12 +13,16 @@ export const useAgentSelection = ({ session }: Params) => {
     selectedAgentId ? (s.agentKindOverride[selectedAgentId] ?? null) : null,
   );
   const selectedAgentName = useAppStore((s) => {
-    if (!selectedAgentId) return null;
+    if (!selectedAgentId) {
+      return null;
+    }
     const runs = s.sessionPhaseRuns[session.id] ?? [];
     return runs.find((r) => r.id === selectedAgentId)?.name ?? null;
   });
   const selectedAgentPersistedKind = useAppStore((s) => {
-    if (!selectedAgentId) return null;
+    if (!selectedAgentId) {
+      return null;
+    }
     const runs = s.sessionPhaseRuns[session.id] ?? [];
     return runs.find((r) => r.id === selectedAgentId)?.kind ?? null;
   });
