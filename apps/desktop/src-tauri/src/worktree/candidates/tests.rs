@@ -328,8 +328,7 @@ fn registered(root: &Path, copy: &Path) -> bool {
     let canonical = std::fs::canonicalize(copy)
         .map(|path| path.to_string_lossy().to_string())
         .unwrap_or_default();
-    !canonical.is_empty()
-        && git_ok(root, &["worktree", "list", "--porcelain"]).contains(&canonical)
+    !canonical.is_empty() && git_ok(root, &["worktree", "list", "--porcelain"]).contains(&canonical)
 }
 
 #[test]

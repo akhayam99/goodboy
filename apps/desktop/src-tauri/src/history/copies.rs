@@ -1,9 +1,8 @@
 use super::plan::plan_error;
 use super::reservation::{
-    copy_path_of, created_admin_dir, discard_copy, held_locks, is_held, is_owned_copy,
-    is_real_dir, is_regular_file, open_lock, owner_repo, owner_text, recorded_admin_dir,
-    remove_reservation, reservation_root_of, reservations_dir, COPY_PREFIX, RESERVATION_FILE,
-    RESOLVE_SLUG_PREFIX,
+    copy_path_of, created_admin_dir, discard_copy, held_locks, is_held, is_owned_copy, is_real_dir,
+    is_regular_file, open_lock, owner_repo, owner_text, recorded_admin_dir, remove_reservation,
+    reservation_root_of, reservations_dir, COPY_PREFIX, RESERVATION_FILE, RESOLVE_SLUG_PREFIX,
 };
 use super::trial::TRIAL_SLUG_PREFIX;
 use crate::worktree::{git, resolve_commit, WorktreeError};
