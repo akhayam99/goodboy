@@ -69,13 +69,15 @@ vi.mock('../../../features/workflows/workflows', () => ({
 vi.mock('../../../features/github/github', () => ({
   tauriGhRunner: { run: h.run },
   gitPush: vi.fn(
-    async (
-      cwd: string,
-      branch: string | null,
-      _workspaceId?: string,
-      _projectId?: string,
-      sha?: string,
-    ) => {
+    async ({
+      cwd,
+      branch,
+      sha,
+    }: {
+      readonly cwd: string;
+      readonly branch: string | null;
+      readonly sha?: string;
+    }) => {
       h.pushedFrom.push(cwd);
       h.pushedShas.push(sha ?? null);
       try {
