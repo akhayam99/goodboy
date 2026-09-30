@@ -1,6 +1,8 @@
 import type { Project, ProjectId, Session, SessionId } from '@goodboy/types';
 import { mountError } from './mountErrors';
 import type { GetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
+import { projectById } from '../projects/projectIndex';
 
 type SessionParams = {
   readonly get: GetFn;
@@ -18,7 +20,7 @@ export type MountContext = {
 
 const requireSession = ({ get, sessionId }: SessionParams): Session => {
   const session =
-    get().sessions.find((candidate) => candidate.id === sessionId) ??
+    sessionById(get().sessions, sessionId) ??
     Object.values(get().archivedSessions)
       .flat()
       .find((candidate) => candidate.id === sessionId);
@@ -30,7 +32,7 @@ const requireSession = ({ get, sessionId }: SessionParams): Session => {
 
 export const requireMountContext = ({ get, sessionId, projectId }: ContextParams): MountContext => {
   const session = requireSession({ get, sessionId });
-  const project = get().projects.find((candidate) => candidate.id === projectId);
+  const project = projectById(get().projects, projectId);
   if (project === undefined || project.workspaceId !== session.workspaceId) {
     throw mountError({
       code: 'project-missing',

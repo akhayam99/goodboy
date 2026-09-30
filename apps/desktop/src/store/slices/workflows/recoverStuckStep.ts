@@ -8,6 +8,7 @@ import { formatError } from '@goodboy/ui';
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import { composeStepBoundary } from '../turn/kickoff';
 import type { GetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -28,7 +29,7 @@ const recoveryPrompt = ({
 export const recoverStuckStep = (get: GetFn) => {
   return async ({ sessionId, workflowRunId }: Params): Promise<void> => {
     try {
-      const session = get().sessions.find((candidate) => candidate.id === sessionId);
+      const session = sessionById(get().sessions, sessionId);
       if (session == null) {
         return;
       }

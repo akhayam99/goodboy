@@ -33,6 +33,7 @@ import type { ConversationSource } from '../../../../../shared/components/Conver
 import { GITLAB_MR_CAPABILITIES, gitlabMrConversation } from '../../gitlabMrConversation';
 import { systemNoteFootnote } from '../../systemNoteFootnote';
 import { useMrVerbs, type MrVerbBusy } from './useMrVerbs';
+import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 
 type ApprovalSummaryParams = {
   readonly approval: GitlabMrApprovalState;
@@ -73,7 +74,7 @@ export const MrDetailPanel = ({
   frame = null,
 }: Props) => {
   const session = useAppStore((s) =>
-    sessionId == null ? null : (s.sessions.find((x) => x.id === sessionId) ?? null),
+    sessionId == null ? null : (sessionById(s.sessions, sessionId) ?? null),
   );
   const mrState = useAppStore((s) =>
     sessionId == null ? undefined : s.sessionGitlabMr[sessionId],

@@ -9,6 +9,7 @@ import { selectSelectedMountId } from './selectedMountId';
 import { selectWritableMounts } from './selectors';
 import { writeDestinationPatch } from './writeDestinationPatch';
 import type { GetFn, MountKeyInput, SetFn } from './types';
+import { projectById } from '../projects/projectIndex';
 
 export const setSessionActiveMount = (set: SetFn, get: GetFn) => {
   return async ({ sessionId, mountId }: MountKeyInput): Promise<void> => {
@@ -25,8 +26,7 @@ export const setSessionActiveMount = (set: SetFn, get: GetFn) => {
     }
     const projectId = mount.projectId;
     const previousMountId = selectSelectedMountId({ state: get(), sessionId });
-    const projectName =
-      get().projects.find((candidate) => candidate.id === projectId)?.name ?? mount.mountName;
+    const projectName = projectById(get().projects, projectId)?.name ?? mount.mountName;
     const persisted = await updateSessionWriteDestination({
       db: tauriDatabase,
       sessionId,

@@ -10,6 +10,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { refreshNotificationCounts } from './refreshNotificationCounts';
 import { scopedWorkspaceId } from './notificationScope';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 export type EmitNotificationParams = {
   kind: NotificationKind;
@@ -49,10 +50,7 @@ export const emitNotification = (set: SetFn, get: GetFn) => {
     };
     const state = get();
     const scope = scopedWorkspaceId({ state });
-    const owner =
-      workspaceId ??
-      state.sessions.find((session) => session.id === sessionId)?.workspaceId ??
-      null;
+    const owner = workspaceId ?? sessionById(state.sessions, sessionId)?.workspaceId ?? null;
     if (scope == null || owner == null || owner === scope) {
       set((current) => ({ notifications: [n, ...current.notifications] }));
     }

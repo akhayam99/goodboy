@@ -3,6 +3,7 @@ import type { IsoDateTime, ProjectId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { checkGoodboyIgnoreStatus } from '../../../features/worktree/goodboyIgnore';
 import type { GetFn, SetFn } from './types';
+import { projectById } from './projectIndex';
 
 type Input = {
   readonly projectId: ProjectId;
@@ -12,7 +13,7 @@ const EXPLICIT_MODES = new Set(['this-mac', 'project', 'global']);
 
 export const checkGoodboyIgnore = (set: SetFn, get: GetFn) => {
   return async ({ projectId }: Input): Promise<void> => {
-    const project = get().projects.find((candidate) => candidate.id === projectId);
+    const project = projectById(get().projects, projectId);
     if (project === undefined || project.kind !== 'repo') {
       return;
     }

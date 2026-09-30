@@ -14,6 +14,8 @@ import {
   type WriteDestinationCandidate,
 } from '../../../../../store/slices/project-mounts/writeDestination';
 import { scratchDirPrepare } from '../../../../../features/worktree/worktree';
+import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
+import { projectById } from '../../../../../store/slices/projects/projectIndex';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -34,9 +36,7 @@ export const useWriteDestination = ({
   agentId,
   fallback = 'automatic',
 }: Params): WriteDestinationView => {
-  const session = useAppStore((state) =>
-    state.sessions.find((candidate) => candidate.id === sessionId),
-  );
+  const session = useAppStore((state) => sessionById(state.sessions, sessionId));
   const sessionActiveMountId = useAppStore((state) => state.sessionActiveMount[sessionId]);
   const sessionActiveProjectId = useAppStore((state) => state.sessionActiveProject[sessionId]);
   const sessionMounts = useAppStore((state) => state.sessionMounts[sessionId]);
@@ -92,10 +92,7 @@ export const useWriteDestination = ({
     [writableMounts, projects],
   );
   const activeProjectName = useMemo(
-    () =>
-      nextMount === null
-        ? null
-        : (projects.find((project) => project.id === nextMount.projectId)?.name ?? null),
+    () => (nextMount === null ? null : (projectById(projects, nextMount.projectId)?.name ?? null)),
     [nextMount, projects],
   );
 

@@ -4,6 +4,7 @@ import { sessionTitle } from '../../../session/sessionTitle';
 import type { PaletteScope } from '../../../palette/types';
 import type { SearchProjectOption } from '../../grammar';
 import type { SearchScope } from '../../searchScope';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 export type SearchContext = {
   readonly initialScope: SearchScope;
@@ -19,9 +20,7 @@ export const useSearchContext = ({ paletteScope }: Params): SearchContext => {
   const sessionId =
     paletteScope === null || paletteScope.kind === 'workspace' ? null : paletteScope.sessionId;
   const session = useAppStore((state) =>
-    sessionId === null
-      ? null
-      : (state.sessions.find((candidate) => candidate.id === sessionId) ?? null),
+    sessionId === null ? null : (sessionById(state.sessions, sessionId) ?? null),
   );
   const workspaceId =
     paletteScope?.kind === 'workspace' ? paletteScope.workspaceId : (session?.workspaceId ?? null);

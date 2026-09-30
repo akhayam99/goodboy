@@ -16,6 +16,7 @@ import type {
 import { bitbucketPrStateKind } from '../../../features/integrations/bitbucket/bitbucketPrStateKind';
 import { mapMrToPullRequestState } from '../../../features/integrations/gitlab/mapMrToPullRequestState';
 import type { AppState } from '../../types';
+import { projectById } from '../projects/projectIndex';
 
 export type MountRequestState = Pick<
   AppState,
@@ -329,7 +330,7 @@ export const buildMountRows = ({
   const order: Array<ProjectId> = [];
   const grouped = new Map<ProjectId, Array<MountRowView>>();
   for (const view of views) {
-    const project = state.projects.find((candidate) => candidate.id === view.projectId);
+    const project = projectById(state.projects, view.projectId);
     const request = mountRequestOf({ state, mountId: view.id });
     const isOnDisk = view.diskState !== 'missing' && view.diskState !== 'removed';
     const row: MountRowView = {
@@ -367,7 +368,7 @@ export const buildMountRows = ({
     if (head === undefined) {
       return [];
     }
-    const project = state.projects.find((candidate) => candidate.id === projectId);
+    const project = projectById(state.projects, projectId);
     return [
       {
         projectId,

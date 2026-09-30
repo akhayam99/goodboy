@@ -13,6 +13,7 @@ import { PrDetailPanel } from './PrDetailPanel';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import { PrInbox } from './PrInbox';
 import { useBitbucketPrs } from './useBitbucketPrs';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -21,7 +22,7 @@ type Props = {
 
 export const BitbucketStudio = ({ sessionId, onClose }: Props) => {
   const workspaceId = useAppStore(
-    (state) => state.sessions.find((session) => session.id === sessionId)?.workspaceId ?? null,
+    (state) => sessionById(state.sessions, sessionId)?.workspaceId ?? null,
   );
   const repo = useAppStore((state) => state.sessionBitbucketRepo[sessionId] ?? null);
   const sessionPr = useAppStore((state) => state.sessionBitbucketPr[sessionId]?.pr ?? null);

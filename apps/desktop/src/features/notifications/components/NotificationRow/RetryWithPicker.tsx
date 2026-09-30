@@ -6,6 +6,7 @@ import { resolveLimitedTaskModel } from '../../../../store/slices/providerLimits
 import type { EffortLevel, ProviderId, TaskModelPreference } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type RetryAction = Extract<
   NotificationAction,
@@ -22,7 +23,7 @@ export const RetryWithPicker = ({ action, onDone }: RetryWithPickerProps) => {
     useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
   );
   const sessionProvider = useAppStore(
-    (s) => s.sessions.find((x) => x.id === action.sessionId)?.providerPreference.defaultProvider,
+    (s) => sessionById(s.sessions, action.sessionId)?.providerPreference.defaultProvider,
   );
   const availableProviderIds = connectedProviderIds.filter(
     (candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0,

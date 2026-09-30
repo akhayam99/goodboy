@@ -27,6 +27,7 @@ import type {
   PublishPrReviewVerdict,
   SetFn,
 } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 const VERDICT_EVENT = {
   comment: 'COMMENT',
@@ -214,7 +215,7 @@ export const publishPrReview = (set: SetFn, get: GetFn) => {
     if (target == null) {
       throw new Error('no linked pull request or merge request for this session');
     }
-    const session = get().sessions.find((candidate) => candidate.id === sessionId);
+    const session = sessionById(get().sessions, sessionId);
     const workspace = session
       ? get().workspaces.find((candidate) => candidate.id === session.workspaceId)
       : undefined;

@@ -6,6 +6,7 @@ import { useAppStore } from '../../../../../store';
 import { ChatView } from '../../../../chat/components/ChatView';
 import { appendArtifactAttachment } from '../../../artifactConversationAttachment';
 import { ArtifactCreateAnother } from '../ArtifactCreateAnother';
+import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -16,7 +17,7 @@ type Props = {
 
 export const ArtifactConversation = ({ sessionId, artifact, agent, isWorkflowOwned }: Props) => {
   const agentId = artifact.agentId;
-  const session = useAppStore((s) => s.sessions?.find((entry) => entry.id === sessionId) ?? null);
+  const session = useAppStore((s) => sessionById(s.sessions, sessionId) ?? null);
   const isActive = useAppStore((s) => s.currentSessionId === sessionId);
   const draft = useAppStore((s) => s.agentDraft?.[agentId] ?? '');
   const setAgentDraft = useAppStore((s) => s.setAgentDraft);

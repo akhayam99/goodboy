@@ -30,6 +30,7 @@ import { ScriptSavedSection } from './ScriptSavedSection';
 import { ScriptsFilterInput } from './ScriptsFilterInput';
 import { UnmountedScriptsNote, type UnmountedScriptsEntry } from './UnmountedScriptsNote';
 import { useScriptDraft } from './useScriptDraft';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 const packageSectionKey = ({
   mountId,
@@ -77,7 +78,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
   const discovered = useAppStore((state) => state.discoveredScripts[sessionId]);
   const scans = useAppStore((state) => state.discoveredScriptScans[sessionId]);
   const activeProjectId = useAppStore((state) => {
-    const session = state.sessions.find((candidate) => candidate.id === sessionId);
+    const session = sessionById(state.sessions, sessionId);
     return state.sessionActiveProject[sessionId] ?? session?.activeProjectId ?? null;
   });
   const openPayload = useAppStore((state) => {

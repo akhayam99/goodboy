@@ -188,6 +188,8 @@ import {
   MISSING_ARTIFACT_CODE,
   MISSING_ARTIFACT_MESSAGE,
 } from '../../../features/artifacts/turnArtifactOutcome';
+import { sessionById } from '../sessions/sessionIndex';
+import { projectById } from '../projects/projectIndex';
 
 type Input = {
   sessionId: SessionId;
@@ -253,7 +255,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     lease: TurnLease,
   ): Promise<SendTurnResult> => {
     const before = get();
-    const session = before.sessions.find((s) => s.id === sessionId);
+    const session = sessionById(before.sessions, sessionId);
     if (!session) {
       throw new Error(`session not found: ${sessionId}`);
     }
@@ -346,7 +348,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
 
     const turnDestinationProjectName =
       activeMount !== undefined
-        ? (before.projects.find((project) => project.id === activeMount.projectId)?.name ?? null)
+        ? (projectById(before.projects, activeMount.projectId)?.name ?? null)
         : null;
     set((state) => ({
       agentTurnDestination: {
@@ -1062,9 +1064,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         ? []
         : selectWritableMounts({ state: get(), sessionId });
     const activeProject =
-      activeMount !== undefined
-        ? get().projects.find((project) => project.id === activeMount.projectId)
-        : undefined;
+      activeMount !== undefined ? projectById(get().projects, activeMount.projectId) : undefined;
     const isSessionDirScope = activeProject?.kind === 'folder';
     const notifySnapshotFailure = async ({
       stage,
@@ -1468,7 +1468,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             return undefined;
           }
           const templates = stateForAgentCtx.phaseTemplates[session.workspaceId] ?? [];
-          const sess = stateForAgentCtx.sessions.find((s) => s.id === sessionId);
+          const sess = sessionById(stateForAgentCtx.sessions, sessionId);
           const run = activeAgentRow.workflowRunId
             ? sess?.workflowRuns.find((r) => r.id === activeAgentRow.workflowRunId)
             : undefined;

@@ -15,6 +15,7 @@ import {
   type AgentKindRouting,
 } from '../../agent-kind';
 import { AgentKindGrid } from '../CreateAgentPopover/AgentKindGrid';
+import { projectById } from '../../../../store/slices/projects/projectIndex';
 
 export type AgentStartRouting = AgentKindRouting | null;
 
@@ -51,7 +52,7 @@ export const AgentStartFields = ({
   const projectDropdown = useDropdown({ align: 'start', expectedWidth: 240, expectedHeight: 200 });
   const palette = agentKindPalette({ kind });
   const effective = routing ?? suggestion;
-  const selectedProject = projects.find((project) => project.id === projectId) ?? null;
+  const selectedProject = projectById(projects, projectId) ?? null;
 
   return (
     <div className="flex items-center gap-1.5">

@@ -2,6 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import { SESSION_EVICTION, type EvictionMode, type EvictionScope } from '../../sessionEviction';
 import { dropSession } from '../navigation/history';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from './sessionIndex';
 
 type Params = {
   readonly set: SetFn;
@@ -41,7 +42,7 @@ export const evictSession = ({ set, get }: Params) => {
     const state = get();
     const agentIds = (state.sessionPhaseRuns[sessionId] ?? []).map((agent) => agent.id);
     const session =
-      state.sessions.find((candidate) => candidate.id === sessionId) ??
+      sessionById(state.sessions, sessionId) ??
       Object.values(state.archivedSessions)
         .flat()
         .find((candidate) => candidate.id === sessionId);

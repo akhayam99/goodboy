@@ -17,6 +17,7 @@ import { EMPTY_LOADING } from './sessionMutators';
 import type { SessionLoadingFlags } from './state';
 import { seedRunRoutingFromSpans } from '../turn/seedRunRoutingFromSpans';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from './sessionIndex';
 
 export const setCurrentSession = (set: SetFn, get: GetFn) => {
   return async (id: SessionId | null) => {
@@ -186,7 +187,7 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
         .then(([agents, agentRunIds, spanRoutes]) => {
           const seededHistory: Record<string, ReadonlyArray<ProviderRunId>> = {};
           const seededTurnState: Record<string, TurnState> = {};
-          const session = get().sessions.find((s) => s.id === id);
+          const session = sessionById(get().sessions, id);
           const sessionState =
             session?.state ??
             ({ kind: 'idle', lastActivityAt: new Date().toISOString() } as TurnState);

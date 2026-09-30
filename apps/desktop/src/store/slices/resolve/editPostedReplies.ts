@@ -21,6 +21,7 @@ import { readCommitStory, recordReplyEdit } from './commitStory';
 import { publicationTarget } from './publicationTarget';
 import { loadPublicationsInto } from './publicationState';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 type Params = {
   readonly set: SetFn;
@@ -62,7 +63,7 @@ const rewriteReceiptBodies = async ({
 };
 
 export const editPostedReplies = async ({ set, get, sessionId }: Params): Promise<number> => {
-  const workspaceId = get().sessions.find((session) => session.id === sessionId)?.workspaceId;
+  const workspaceId = sessionById(get().sessions, sessionId)?.workspaceId;
   if (workspaceId === undefined) {
     return 0;
   }

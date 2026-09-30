@@ -37,6 +37,7 @@ import type {
 } from '../types';
 import { abortRebase, plural, pushMount, rebaseMount, settleRequest } from './gitRuns';
 import { mountFacts, type MountFacts } from './mountFacts';
+import { selectProjectById } from '../../../store/slices/projects/selectProjectById';
 
 type FactsOnly = { readonly facts: MountFacts };
 
@@ -429,7 +430,7 @@ export const mountFactsFor = ({
   if (view === null) {
     return null;
   }
-  const project = state.projects.find((candidate) => candidate.id === view.projectId) ?? null;
+  const project = selectProjectById(state, view.projectId);
   const request = mountRequestOf({ state, mountId });
   const github = mountReviewGithub({ state, sessionId, mountId });
   const isAttached = view.isAttached && view.worktreePath !== null;

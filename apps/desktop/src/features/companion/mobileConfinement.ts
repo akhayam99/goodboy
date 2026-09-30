@@ -12,6 +12,8 @@ import type {
   WorkspaceIntegrationProvider,
 } from '@goodboy/types';
 import { evaluatePrMergeReadiness } from '../review/prMergeReadiness';
+import { sessionById } from '../../store/slices/sessions/sessionIndex';
+import { projectById } from '../../store/slices/projects/projectIndex';
 
 const MERGE_METHODS: ReadonlySet<string> = new Set<PrMergeMethod>(['squash', 'merge', 'rebase']);
 
@@ -83,7 +85,7 @@ const chooseMobileProject = (args: {
   }
   const requested = typeof projectId === 'string' && projectId.length > 0 ? projectId : undefined;
   if (requested !== undefined) {
-    const picked = projects.find((project) => project.id === requested);
+    const picked = projectById(projects, requested);
     if (picked === undefined) {
       return { ok: false, reason: `unknown project for this workspace: ${requested}` };
     }
@@ -218,7 +220,7 @@ export const evaluateMobileSpawnWorkflow = (args: {
   if (typeof workflowId !== 'string' || workflowId.length === 0) {
     return { ok: false, reason: 'missing workflowId' };
   }
-  const session = sessions.find((s) => s.id === sessionId);
+  const session = sessionById(sessions, sessionId);
   if (!session) {
     return { ok: false, reason: `unknown session: ${sessionId}` };
   }

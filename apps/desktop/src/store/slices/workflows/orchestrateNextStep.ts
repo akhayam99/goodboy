@@ -78,6 +78,7 @@ import { WORKFLOW_BLOCK_COPY } from '../../../features/workflows/blockCopy';
 import type { GetFn, SetFn } from './types';
 import { autoLimitContext } from '../providerLimits/autoLimitContext';
 import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
+import { sessionById } from '../sessions/sessionIndex';
 
 export type OrchestrateOptions = {
   readonly routing?: OrchestratorRouting;
@@ -340,9 +341,9 @@ type OperatorStopParams = {
 };
 
 const hasOperatorStop = ({ get, sessionId, workflowRunId }: OperatorStopParams): boolean => {
-  const current = get()
-    .sessions.find((candidate) => candidate.id === sessionId)
-    ?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
+  const current = sessionById(get().sessions, sessionId)?.workflowRuns.find(
+    (candidate) => candidate.id === workflowRunId,
+  );
   const kind = current?.orchestrationStop?.kind;
   return kind === 'operator' || kind === 'closed';
 };
@@ -402,9 +403,9 @@ const liveWorkflowFor = ({
   workflowRunId,
   snapshot,
 }: LiveWorkflowParams): Workflow => {
-  const run = get()
-    .sessions.find((candidate) => candidate.id === sessionId)
-    ?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
+  const run = sessionById(get().sessions, sessionId)?.workflowRuns.find(
+    (candidate) => candidate.id === workflowRunId,
+  );
   const targetId = run?.workflowId ?? snapshot.id;
   return (
     (get().phaseTemplates[snapshot.workspaceId] ?? []).find(
@@ -451,7 +452,7 @@ const appendStep = async ({
     steps: [...workflow.steps, nextStep],
     isPreset: workflow.isPreset,
   });
-  const session = get().sessions.find((candidate) => candidate.id === sessionId);
+  const session = sessionById(get().sessions, sessionId);
   if (session == null) {
     throw new Error(`session not found: ${sessionId}`);
   }
@@ -533,7 +534,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
     orchestrationInFlight.add(workflowRunId);
     try {
       setDeciding({ set, workflowRunId, isDeciding: true });
-      const session = get().sessions.find((candidate) => candidate.id === sessionId);
+      const session = sessionById(get().sessions, sessionId);
       const run = session?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
       if (
         session == null ||
@@ -593,9 +594,9 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       }
       if (options?.bypassGate !== true) {
         await waitForSessionSummarizer({ get, sessionId });
-        const settled = get()
-          .sessions.find((candidate) => candidate.id === sessionId)
-          ?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
+        const settled = sessionById(get().sessions, sessionId)?.workflowRuns.find(
+          (candidate) => candidate.id === workflowRunId,
+        );
         if (
           settled == null ||
           settled.discardedAt != null ||
@@ -988,9 +989,9 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           });
         });
       }
-      const finished = get()
-        .sessions.find((candidate) => candidate.id === sessionId)
-        ?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
+      const finished = sessionById(get().sessions, sessionId)?.workflowRuns.find(
+        (candidate) => candidate.id === workflowRunId,
+      );
       if (finished?.orchestrationOutcome === 'done') {
         void get().maybeAutoAdvanceWorkflow(sessionId);
       }

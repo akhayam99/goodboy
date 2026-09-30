@@ -7,6 +7,7 @@ import {
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from './types';
+import { projectById } from './projectIndex';
 
 type Input = {
   readonly projectId: ProjectId;
@@ -23,7 +24,7 @@ export const adoptProject = (set: SetFn, get: GetFn) => {
   return async ({ projectId, targetWorkspaceId }: Input): Promise<AdoptProjectResult> => {
     const state = get();
     const project =
-      state.projects.find((entry) => entry.id === projectId) ??
+      projectById(state.projects, projectId) ??
       (await getProjectById({ db: tauriDatabase, id: projectId }));
     if (project === null || project === undefined) {
       throw new Error(`project not found: ${projectId}`);

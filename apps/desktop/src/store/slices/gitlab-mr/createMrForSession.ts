@@ -10,6 +10,7 @@ import { mountRequestEventPayload } from '../project-mounts/mountRequests';
 import { gitlabRequestIdentity, toMountMrLink } from './mrLink';
 import { resolveMrContext, resolveSessionMrTarget } from './resolveMrContext';
 import type { GetFn, SetFn } from './types';
+import { projectById } from '../projects/projectIndex';
 
 type CreateMrReferenceMode = 'closing' | 'part-of' | 'none';
 
@@ -45,9 +46,7 @@ export const createMrForSession = (_set: SetFn, get: GetFn) => {
       );
     }
     const mount = target.mount;
-    const projectBaseBranch = get().projects.find(
-      (project) => project.id === mount.projectId,
-    )?.baseBranch;
+    const projectBaseBranch = projectById(get().projects, mount.projectId)?.baseBranch;
     const base = targetBranch?.trim() || mount.baseBranch || projectBaseBranch || 'main';
     const resolvedTitle = title?.trim() || context.goal;
     const isDraft = draft ?? true;

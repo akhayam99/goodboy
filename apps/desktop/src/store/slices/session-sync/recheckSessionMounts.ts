@@ -1,6 +1,7 @@
 import { refreshWorktreeStatuses } from '../../../features/session/hooks/useWorktreeStatuses/cache';
 import { listSessionPrFetches } from '../github/resolveSessionPrFetch';
 import type { GetFn, RecheckReason, RecheckSessionMountsParams } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 const RECHECK_MIN_AGE_MS: Readonly<Record<RecheckReason, number>> = {
   'turn-end': 5_000,
@@ -10,7 +11,7 @@ const RECHECK_MIN_AGE_MS: Readonly<Record<RecheckReason, number>> = {
 export const recheckSessionMounts = (get: GetFn) => {
   return async ({ sessionId, reason }: RecheckSessionMountsParams): Promise<void> => {
     const state = get();
-    const session = state.sessions.find((candidate) => candidate.id === sessionId);
+    const session = sessionById(state.sessions, sessionId);
     if (session === undefined || session.archivedAt != null) {
       return;
     }

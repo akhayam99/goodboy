@@ -28,6 +28,7 @@ import { scribeKeyOf } from '../../../../store/slices/scribe/scribeKeyOf';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { openUrl } from '../../../../shared/lib/editor';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type CreateMode = 'manual' | 'agent';
 
@@ -54,7 +55,7 @@ export const CreatePrPanel = ({
   const branch = repo?.branch ?? null;
   const projectRoot = repo?.repoRoot ?? null;
   const projectId = repo?.projectId;
-  const session = useAppStore((s) => s.sessions.find((x) => x.id === sessionId) ?? null);
+  const session = useAppStore((s) => sessionById(s.sessions, sessionId) ?? null);
   const workspaceId = session?.workspaceId;
   const workspaceOverrides = useAppStore((s) =>
     workspaceId == null ? null : (s.workspaceOverrides?.[workspaceId] ?? null),

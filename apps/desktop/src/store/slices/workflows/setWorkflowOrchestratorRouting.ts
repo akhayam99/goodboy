@@ -3,6 +3,7 @@ import { updateWorkflowRunOrchestratorRouting } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 export const setWorkflowOrchestratorRouting = (set: SetFn, get: GetFn) => {
   return async (
@@ -10,7 +11,7 @@ export const setWorkflowOrchestratorRouting = (set: SetFn, get: GetFn) => {
     workflowRunId: WorkflowRunId,
     routing: OrchestratorRouting | null,
   ) => {
-    const session = get().sessions.find((candidate) => candidate.id === sessionId);
+    const session = sessionById(get().sessions, sessionId);
     const run = session?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
     if (run == null) {
       return;

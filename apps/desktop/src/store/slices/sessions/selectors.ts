@@ -14,6 +14,7 @@ import { sumSessionCost } from './sumSessionCost';
 import { runSpendUsd } from '../workflows/runSpendUsd';
 import { executedAgentRouting, type ExecutedAgentRouting } from '../turn/executedAgentRouting';
 import type { SessionLoadingFlags } from './state';
+import { selectSessionById } from './selectSessionById';
 
 const EMPTY_TELEMETRY: ReadonlyArray<TelemetryRecord> = [];
 const EMPTY_AGENTS: ReadonlyArray<Agent> = [];
@@ -143,25 +144,8 @@ export const useIsSessionCollectionLoaded = ({
 
 const selectSessions = (state: AppState): ReadonlyArray<Session> => state.sessions;
 
-function findSessionInAnyPool(state: AppState, id: string | null): Session | null {
-  if (!id) {
-    return null;
-  }
-  const active = state.sessions.find((s) => s.id === id);
-  if (active) {
-    return active;
-  }
-  for (const list of Object.values(state.archivedSessions)) {
-    const hit = list.find((s) => s.id === id);
-    if (hit) {
-      return hit;
-    }
-  }
-  return null;
-}
-
 const selectCurrentSession = (state: AppState): Session | null =>
-  findSessionInAnyPool(state, state.currentSessionId);
+  selectSessionById(state, state.currentSessionId);
 export const useSessions = (): ReadonlyArray<Session> => useAppStore(selectSessions);
 export const useCurrentSession = (): Session | null => useAppStore(selectCurrentSession);
 
@@ -169,7 +153,7 @@ export const useSessionById = (id: SessionId | null): Session | null => {
   const selector = useMemo(
     () =>
       (state: AppState): Session | null =>
-        findSessionInAnyPool(state, id),
+        selectSessionById(state, id),
     [id],
   );
   return useAppStore(selector);

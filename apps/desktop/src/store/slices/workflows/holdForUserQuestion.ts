@@ -4,6 +4,7 @@ import { insertOpenQuestion } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { resetContinueAttempts } from './autoContinue';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 type Params = {
   readonly set: SetFn;
@@ -27,7 +28,7 @@ const stepLocationOf = ({
   const runs = state.sessionPhaseRuns[sessionId] ?? [];
   const stepId =
     agent.stepId ?? runs.find((candidate) => candidate.id === agent.parentAgentId)?.stepId;
-  const session = state.sessions.find((candidate) => candidate.id === sessionId);
+  const session = sessionById(state.sessions, sessionId);
   if (stepId == null || session == null) {
     return null;
   }

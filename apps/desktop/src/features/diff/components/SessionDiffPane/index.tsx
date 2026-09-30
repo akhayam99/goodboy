@@ -29,6 +29,7 @@ import { useDiffReviewThreads } from '../../hooks/useDiffReviewThreads';
 import { useSessionDiff } from '../../hooks/useSessionDiff';
 import { DiffView } from '../DiffView';
 import { DiffNotesActions } from '../DiffNotesActions';
+import { projectById } from '../../../../store/slices/projects/projectIndex';
 
 export const DIFF_PANE_TITLE = 'Diff';
 
@@ -111,11 +112,9 @@ export const SessionDiffPane = ({
   const mountProjectId = useAppStore(
     (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.projectId ?? null,
   );
-  const projectRoot = useAppStore(
-    (s) => s.projects.find((project) => project.id === mountProjectId)?.rootPath ?? '',
-  );
+  const projectRoot = useAppStore((s) => projectById(s.projects, mountProjectId)?.rootPath ?? '');
   const projectBaseBranch = useAppStore(
-    (s) => s.projects.find((project) => project.id === mountProjectId)?.baseBranch ?? null,
+    (s) => projectById(s.projects, mountProjectId)?.baseBranch ?? null,
   );
   const remoteKind = useMountRemoteHostKind({ sessionId, repoRoot: mountRepoRoot });
   const [isChangingBase, setIsChangingBase] = useState(false);

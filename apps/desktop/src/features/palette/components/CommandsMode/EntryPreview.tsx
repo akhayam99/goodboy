@@ -6,6 +6,7 @@ import { ExcerptBlock } from './ExcerptBlock';
 import { PreviewFacts } from './PreviewFacts';
 import { PreviewHeader } from './PreviewHeader';
 import { SessionPreview } from './SessionPreview';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 const sentenceCase = (text: string): string => `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
 
@@ -18,7 +19,7 @@ export const EntryPreview = ({ entry, subject }: Props) => {
   const target = entry.target;
   const session = useAppStore((s) =>
     target?.kind === 'session'
-      ? (s.sessions.find((candidate) => candidate.id === target.sessionId) ??
+      ? (sessionById(s.sessions, target.sessionId) ??
         Object.values(s.archivedSessions)
           .flat()
           .find((candidate) => candidate.id === target.sessionId) ??

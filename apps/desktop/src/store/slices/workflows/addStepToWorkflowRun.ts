@@ -26,6 +26,7 @@ import { clearOrchestrationOutcome } from './clearOrchestrationOutcome';
 import { isWorkflowRunClosedByUser } from '../../../features/workflows/isWorkflowRunClosedByUser';
 import { patchWorkflowRun } from './patchWorkflowRun';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 export type AddStepToWorkflowRunParams = {
   readonly sessionId: SessionId;
@@ -101,7 +102,7 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
     if (trimmedName === '') {
       return { kind: 'refused', reason: 'the step needs a name' };
     }
-    const session = get().sessions.find((candidate) => candidate.id === sessionId);
+    const session = sessionById(get().sessions, sessionId);
     const run = session?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
     if (session == null || run == null) {
       return { kind: 'refused', reason: 'this workflow run is no longer attached' };
@@ -206,7 +207,7 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
     const commitWorkflow = (next: Workflow): void => {
       const dropsSource =
         clone != null &&
-        !(get().sessions.find((candidate) => candidate.id === sessionId)?.workflowRuns ?? []).some(
+        !(sessionById(get().sessions, sessionId)?.workflowRuns ?? []).some(
           (candidate) =>
             candidate.id !== workflowRunId &&
             candidate.discardedAt == null &&

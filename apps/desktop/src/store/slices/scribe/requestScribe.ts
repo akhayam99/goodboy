@@ -6,6 +6,8 @@ import { selectMountById } from '../project-mounts/selectors';
 import { scribeKeyOf } from './scribeKeyOf';
 import { scribeKickoff } from './scribeKickoff';
 import type { GetFn, RequestScribeInput, ScribeWork, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
+import { selectProjectById } from '../projects/selectProjectById';
 
 const SCRIBE_NAME = 'Scribe';
 
@@ -55,8 +57,8 @@ export const requestScribe = (set: SetFn, get: GetFn) => {
     if (mount === null) {
       throw new Error('This branch is no longer in the session.');
     }
-    const session = state.sessions.find((candidate) => candidate.id === sessionId) ?? null;
-    const project = state.projects.find((candidate) => candidate.id === mount.projectId) ?? null;
+    const session = sessionById(state.sessions, sessionId) ?? null;
+    const project = selectProjectById(state, mount.projectId);
     const overrides =
       session === null ? null : (state.workspaceOverrides?.[session.workspaceId] ?? null);
     const resolved = taskModelAgentSpawnConfig({

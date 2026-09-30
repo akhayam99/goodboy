@@ -20,6 +20,7 @@ import { MOUNT_REMOVAL_FINISHES } from './runMountRemoval';
 import { settleMountCleanupProposals } from './settleMountProposals';
 import { verifyMountViews } from './verifyMountViews';
 import type { GetFn, SessionKeyInput, SetFn } from './types';
+import { projectById } from '../projects/projectIndex';
 
 const readPath = ({ operation }: { readonly operation: MountOperation }): string | null => {
   const sources = [operation.result, operation.input];
@@ -85,7 +86,7 @@ const recoverFork = async ({ get, operation, views }: RecoverForkParams): Promis
   if (inspection?.kind !== 'registered' || inspection.isMain) {
     return false;
   }
-  const project = get().projects.find((candidate) => candidate.id === projectId);
+  const project = projectById(get().projects, projectId);
   if (project === undefined || project.rootPath !== repoRoot) {
     return false;
   }

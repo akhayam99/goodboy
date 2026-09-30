@@ -7,6 +7,7 @@ import { useAppStore } from '../../../../store';
 import { WorkflowStepCard } from '../../../session/components/WorkflowStepCard';
 import { kindForRole } from '../../../session/agent-kind';
 import { addStep, stepDraftWithModel, type StepDraft } from '../../engine';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -23,7 +24,7 @@ export const WorkflowAddStep = ({ sessionId, workspaceId, workflowRunId, stepCou
     (state) => state.workspaceOverrides?.[workspaceId]?.roleModels ?? null,
   );
   const sessionProvider = useAppStore((state) => {
-    const session = state.sessions.find((candidate) => candidate.id === sessionId);
+    const session = sessionById(state.sessions, sessionId);
     if (session == null) {
       return null;
     }

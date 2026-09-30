@@ -6,6 +6,7 @@ import { StandaloneAgentsLane } from '../../StandaloneAgentsLane';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { WorkflowAutorunToggle } from '../../../../workflows/components/WorkflowAutorunToggle';
 import { useAppStore } from '../../../../../store/store';
+import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
   readonly session: Session;
@@ -14,7 +15,7 @@ type Props = {
 
 export const AgentsPane = ({ session, meta }: Props) => {
   const sessionId = session.id as SessionId;
-  const autoRun = useAppStore((s) => s.sessions.find((c) => c.id === sessionId)?.autoRun === true);
+  const autoRun = useAppStore((s) => sessionById(s.sessions, sessionId)?.autoRun === true);
   const setSessionAutoRun = useAppStore((s) => s.setSessionAutoRun);
 
   return (

@@ -2,6 +2,7 @@ import type { SessionId, SessionMountView } from '@goodboy/types';
 import { loadMountViews } from './mountViews';
 import { verifyAvailableWorktrees } from './verifyAvailableWorktrees';
 import type { GetFn } from './types';
+import { projectById } from '../projects/projectIndex';
 
 type Params = {
   readonly get: GetFn;
@@ -25,7 +26,7 @@ export const verifyMountViews = async ({
   const availableIds = new Set(available.map((view) => view.id));
   const missingIds = new Set(missing);
   return (await loadMountViews({ get, sessionId })).map((view) => {
-    const project = projects.find((candidate) => candidate.id === view.projectId);
+    const project = projectById(projects, view.projectId);
     if (
       view.worktreePath === null ||
       !view.isAttached ||

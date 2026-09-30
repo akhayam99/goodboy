@@ -4,10 +4,11 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { clearOrchestrationOutcome } from './clearOrchestrationOutcome';
 import { patchWorkflowRun } from './patchWorkflowRun';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 export const retryWorkflowOrchestration = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void> => {
-    const session = get().sessions.find((candidate) => candidate.id === sessionId);
+    const session = sessionById(get().sessions, sessionId);
     const run = session?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
     if (session == null || run == null || run.executionMode !== 'dynamic') {
       return;

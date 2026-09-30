@@ -3,6 +3,7 @@ import type { NavigationLocation } from '../../../../store';
 import { LENS_LABEL } from '../../../../features/session/lens-labels';
 import { sessionTitle } from '../../../../features/session/sessionTitle';
 import { STUDIO_META } from '../../StudioFrame/studioMeta';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 export type HistoryLabel = {
   readonly label: string;
@@ -25,7 +26,7 @@ export const historyLabel = ({ location, sessions }: Params): HistoryLabel => {
   if (place.at === 'session-draft') {
     return { label: 'New session', context: null };
   }
-  const session = sessions.find((candidate) => candidate.id === place.sessionId) ?? null;
+  const session = sessionById(sessions, place.sessionId) ?? null;
   const lens = place.view.lens;
   return {
     label: lens === null ? 'Overview' : LENS_LABEL[lens],

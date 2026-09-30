@@ -9,6 +9,7 @@ import type {
 } from '@goodboy/types';
 import { invokePermissionRuleUpsert } from '../../../features/permissions/permissions';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 type Params = {
   sessionId: SessionId;
@@ -22,7 +23,7 @@ type Params = {
 
 export const resolvePermissionRequest = (set: SetFn, get: GetFn) => {
   return async ({ sessionId, agentId, toolUseId, toolName, runId, scope, pattern }: Params) => {
-    const session = get().sessions.find((s) => s.id === sessionId);
+    const session = sessionById(get().sessions, sessionId);
     if (!session) {
       return;
     }

@@ -4,6 +4,7 @@ import { useAppStore } from '../../../../store';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { useConnectedIntegrations } from '../../../integrations/hooks/useConnectedIntegrations';
 import { lensDestinations, type LensDestination } from '../../lens-destinations';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Params = {
   readonly sessionId: SessionId | null;
@@ -14,9 +15,7 @@ export const useLensDestinations = ({ sessionId }: Params): ReadonlyArray<LensDe
     sessionId === null ? false : isBranchlessSession({ branch: s.sessionBranches[sessionId] }),
   );
   const workspaceId = useAppStore((s) =>
-    sessionId === null
-      ? null
-      : (s.sessions.find((session) => session.id === sessionId)?.workspaceId ?? null),
+    sessionId === null ? null : (sessionById(s.sessions, sessionId)?.workspaceId ?? null),
   );
   const connected = useConnectedIntegrations({ workspaceId });
 

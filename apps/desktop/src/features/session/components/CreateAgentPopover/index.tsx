@@ -35,6 +35,7 @@ import { RoutingPickerBody } from '../../../../shared/components/RoutingPicker/R
 import { CreateAgentTrigger } from './CreateAgentTrigger';
 import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 const ROUTING_PANEL_ID = 'create-agent-routing';
 
@@ -73,7 +74,7 @@ export const CreateAgentPopover = ({ sessionId, className, onSpawned, openEvent 
     ),
   );
   const roleModels = useSessionRoleModels({ sessionId });
-  const session = useAppStore((state) => state.sessions?.find((s) => s.id === sessionId) ?? null);
+  const session = useAppStore((state) => sessionById(state.sessions, sessionId) ?? null);
   const defaultProvider = useAppStore(
     (state) => selectResolvedSettings({ state, sessionId })?.defaultProviderId ?? null,
   );

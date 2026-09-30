@@ -3,6 +3,7 @@ import { worktreeDirectorySize } from '../../../features/worktree/worktree';
 import { loadMountViews } from '../project-mounts/mountViews';
 import { cleanupRequestId, saveCleanupProposal } from './cleanupProposals';
 import type { GetFn, ProposeMountCleanupInput, SetFn } from './types';
+import { projectById } from '../projects/projectIndex';
 
 type BuildParams = {
   readonly get: GetFn;
@@ -21,7 +22,7 @@ export const buildCleanupProposal = async ({
   if (worktreePath === null) {
     return null;
   }
-  const project = get().projects.find((candidate) => candidate.id === view.projectId);
+  const project = projectById(get().projects, view.projectId);
   if (project?.kind !== 'repo') {
     return null;
   }

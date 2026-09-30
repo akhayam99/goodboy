@@ -42,6 +42,7 @@ import type { GetFn, SetFn } from './types';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { autoLimitContext } from '../providerLimits/autoLimitContext';
 import { isReportedError } from '../notifications/reportedError';
+import { sessionById } from '../sessions/sessionIndex';
 
 const spawnQueue = createKeyedQueue();
 
@@ -311,7 +312,7 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
 
 export const spawnAgent = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, args: SpawnArgs): Promise<AgentId> => {
-    const session = get().sessions.find((s) => s.id === sessionId);
+    const session = sessionById(get().sessions, sessionId);
     if (!session) {
       throw new Error(`session not found: ${sessionId}`);
     }

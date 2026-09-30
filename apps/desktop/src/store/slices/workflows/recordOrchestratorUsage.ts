@@ -18,6 +18,7 @@ import type {
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 type Params = {
   readonly set: SetFn;
@@ -114,7 +115,7 @@ export const recordOrchestratorUsage = async ({
       },
     }),
   }));
-  const session = get().sessions.find((candidate) => candidate.id === sessionId);
+  const session = sessionById(get().sessions, sessionId);
   if (session == null) {
     return;
   }

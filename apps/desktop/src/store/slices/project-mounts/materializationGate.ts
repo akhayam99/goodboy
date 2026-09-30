@@ -8,6 +8,7 @@ import type {
 } from '@goodboy/types';
 import { pendingMountProposals } from './materializationProposals';
 import type { GetFn } from '../../slice-types';
+import { sessionById } from '../sessions/sessionIndex';
 
 const IMMEDIATE_MATERIALIZE_CAP = 2;
 const UNNAMED_FOOTPRINT_CAP = 2;
@@ -30,7 +31,7 @@ const explicitlyAuthorizedProjectIds = ({
   sessionId,
 }: SessionAuthorizationParams): ReadonlySet<ProjectId> => {
   const state = get();
-  const session = state.sessions.find((candidate) => candidate.id === sessionId);
+  const session = sessionById(state.sessions, sessionId);
   const ids = new Set<ProjectId>();
   if (session?.activeProjectId !== undefined) {
     ids.add(session.activeProjectId);

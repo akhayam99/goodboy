@@ -1,5 +1,6 @@
 import type { SessionWorktree } from '@goodboy/db';
 import type { MountId, Project, SessionProjectMount } from '@goodboy/types';
+import { projectById } from '../projects/projectIndex';
 
 type Params = {
   readonly projects: ReadonlyArray<Project>;
@@ -14,7 +15,7 @@ export const buildSessionProjectMounts = ({
     if (row.projectId === undefined) {
       return [];
     }
-    const project = projects.find((candidate) => candidate.id === row.projectId);
+    const project = projectById(projects, row.projectId);
     if (project === undefined) {
       return [];
     }

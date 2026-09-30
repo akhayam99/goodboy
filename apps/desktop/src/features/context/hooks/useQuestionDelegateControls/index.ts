@@ -16,6 +16,7 @@ import {
   type DelegateRouting,
 } from '../../components/QuestionsTab/useOpenQuestions';
 import { selectResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -48,9 +49,7 @@ export const useQuestionDelegateControls = ({
     (state) => state.drafts[question.id]?.answerIntent ?? PERSON_ANSWERS,
   );
   const agents = useAppStore((state) => state.sessionPhaseRuns?.[sessionId] ?? NO_AGENTS);
-  const session = useAppStore(
-    (state) => state.sessions?.find((candidate) => candidate.id === sessionId) ?? null,
-  );
+  const session = useAppStore((state) => sessionById(state.sessions, sessionId) ?? null);
   const workspaceId = session?.workspaceId ?? null;
   const taskModels = useAppStore(
     (state) => selectResolvedSettings({ state, sessionId })?.taskModels ?? null,

@@ -3,6 +3,7 @@ import type { BudgetAlert, BudgetAlertKind, ProviderId } from '@goodboy/types';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { sessionTitle } from '../../../features/session/sessionTitle';
 import type { GetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 type Params = {
   readonly alerts: ReadonlyArray<BudgetAlert>;
@@ -34,7 +35,7 @@ type TitleParams = AlertParams & {
 
 const sessionTitleFor = ({ alert, get }: TitleParams): string => {
   const state = get();
-  const session = state.sessions.find((candidate) => candidate.id === alert.sessionId) ?? null;
+  const session = sessionById(state.sessions, alert.sessionId) ?? null;
   const name = sessionTitle({ session });
   const limit = formatUsd(alert.capUsd);
   if (alert.kind === 'session-threshold') {

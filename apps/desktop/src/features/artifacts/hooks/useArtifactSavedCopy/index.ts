@@ -9,6 +9,7 @@ import {
   revealArtifactMirror,
   type ArtifactMirrorLocation,
 } from '../../artifactMirror/artifactMirrorInvoke';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 const MIRROR_INDEX_FILE = 'index.html';
 
@@ -26,7 +27,7 @@ type Params = {
 
 export const useArtifactSavedCopy = ({ sessionId, artifact }: Params): ArtifactSavedCopy => {
   const workspaceSlug = useAppStore((s) => {
-    const workspaceId = s.sessions.find((session) => session.id === sessionId)?.workspaceId;
+    const workspaceId = sessionById(s.sessions, sessionId)?.workspaceId;
     return s.workspaces.find((workspace) => workspace.id === workspaceId)?.slug ?? null;
   });
   const folder = artifactFolderName({ artifact });

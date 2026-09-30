@@ -6,6 +6,7 @@ import { ICON_SIZE, projectGlyph } from '../../../../../shared/components/concep
 import { MountPreflightCard } from './MountPreflightCard';
 import { mountFailure, type MountFailure } from './mountFailure';
 import { useMountPreflight } from './useMountPreflight';
+import { projectById } from '../../../../../store/slices/projects/projectIndex';
 
 const MANUAL_REASON = 'added manually by the user';
 const SEARCH_THRESHOLD = 8;
@@ -28,7 +29,7 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
     () => projects.filter((project) => project.name.toLowerCase().includes(query.toLowerCase())),
     [projects, query],
   );
-  const selectedProject = projects.find((project) => project.id === selectedProjectId) ?? null;
+  const selectedProject = projectById(projects, selectedProjectId) ?? null;
   const preflightState = useMountPreflight({ sessionId, project: selectedProject });
 
   const mountProject = async ({ project }: { readonly project: Project }) => {

@@ -10,6 +10,7 @@ import { openWireframeInBrowser } from '../../../wireframes/openWireframeInBrows
 import type { WireframeFidelity } from '../../../wireframes/wireframeFidelity';
 import type { ArtifactActionTarget, ResolvedAction } from '../../../actions/types';
 import { ArtifactShellActions } from './ArtifactShellActions';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -36,7 +37,7 @@ export const WireframeShellActions = ({
   const { fidelity, isRespawning, error, respawn } = useWireframeRespawn({ sessionId, artifact });
   const folderExport = useWireframeFolderExport({ artifact });
   const workspaceSlug = useAppStore((s) => {
-    const workspaceId = s.sessions.find((session) => session.id === sessionId)?.workspaceId;
+    const workspaceId = sessionById(s.sessions, sessionId)?.workspaceId;
     return s.workspaces.find((workspace) => workspace.id === workspaceId)?.slug ?? null;
   });
   const [note, setNote] = useState<Note | null>(null);

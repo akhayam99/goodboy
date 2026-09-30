@@ -27,6 +27,7 @@ import { activateWorkflowAgentOrNotify } from './activateWorkflowAgentOrNotify';
 import { generateWorkflowRunTitle } from './generateWorkflowRunTitle';
 import { sessionPlace } from '../navigation/place';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 type Options = {
   autoRun?: boolean;
@@ -44,7 +45,7 @@ type Options = {
 
 export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, workflowId: WorkflowId, options?: Options) => {
-    const session = get().sessions.find((s) => s.id === sessionId);
+    const session = sessionById(get().sessions, sessionId);
     if (!session) {
       throw new Error(`session not found: ${sessionId}`);
     }

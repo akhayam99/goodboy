@@ -12,6 +12,7 @@ import { TranscriptShell } from '../TranscriptShell';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
 import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren';
 import { hasActiveWorkflowRun } from '../../../workflows/activeWorkflowRuns';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
   readonly assistantText: string;
@@ -23,7 +24,7 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
   const [isPending, setIsPending] = useState(false);
   const pendingRef = useRef(false);
   const handoff = useMemo(() => extractHandoff(assistantText), [assistantText]);
-  const session = useAppStore((s) => s.sessions.find((x) => x.id === sessionId) ?? null);
+  const session = useAppStore((s) => sessionById(s.sessions, sessionId) ?? null);
   const sessionNudge = useAppStore((s) => s.sessionNudges[sessionId] ?? null);
   const runs = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const turnStates = useAppStore(

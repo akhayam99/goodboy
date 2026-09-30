@@ -1,5 +1,6 @@
 import type { MountId, SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
+import { sessionById } from '../sessions/sessionIndex';
 
 type Params = {
   readonly state: Pick<AppState, 'sessions' | 'sessionActiveMount'>;
@@ -11,6 +12,6 @@ export const selectSelectedMountId = ({ state, sessionId }: Params): MountId | n
   if (selected !== undefined) {
     return selected;
   }
-  const session = state.sessions?.find((candidate) => candidate.id === sessionId);
+  const session = sessionById(state.sessions, sessionId);
   return session?.activeMountId ?? null;
 };

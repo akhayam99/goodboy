@@ -1,6 +1,7 @@
 import type { AgentId, IsoDateTime, ProviderId, ProviderRunId, SessionId } from '@goodboy/types';
 import { planRestartResume, type RestartReason } from './planRestartResume';
 import type { GetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 type Params = {
   readonly get: GetFn;
@@ -21,7 +22,7 @@ export const resumeAfterRestart = async ({
     await get().loadAgentTranscript(sessionId, agentId);
   }
   const state = get();
-  const session = state.sessions.find((candidate) => candidate.id === sessionId);
+  const session = sessionById(state.sessions, sessionId);
   const agent = (state.sessionPhaseRuns[sessionId] ?? []).find(
     (candidate) => candidate.id === agentId,
   );

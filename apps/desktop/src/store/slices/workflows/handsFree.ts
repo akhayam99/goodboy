@@ -1,12 +1,13 @@
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import type { GetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 export const isHandsFree = (
   get: GetFn,
   sessionId: SessionId,
   workflowRunId?: WorkflowRunId | null | undefined,
 ): boolean => {
-  const session = get().sessions.find((s) => s.id === sessionId);
+  const session = sessionById(get().sessions, sessionId);
   if (!session) {
     return false;
   }

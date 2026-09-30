@@ -13,6 +13,7 @@ import { findMountById } from '../../store/slices/project-mounts/findMountById';
 import { recoverSoleMount } from '../../store/slices/project-mounts/recoverSoleMount';
 import { selectWritableMounts } from '../../store/slices/project-mounts/selectors';
 import { isMainWindow } from '../workspace/window';
+import { selectProjectById } from '../../store/slices/projects/selectProjectById';
 
 const MATERIALIZE_EVENT = 'query-bridge://project-materialize';
 
@@ -43,7 +44,7 @@ export const executeMaterializeRequest = async ({
   reason,
 }: MaterializeRequest): Promise<MaterializeOutcome> => {
   const get = useAppStore.getState;
-  const project = get().projects.find((candidate) => candidate.id === projectId) ?? null;
+  const project = selectProjectById(get(), projectId);
   if (project === null) {
     return { ok: false, error: `unknown project: ${projectName}` };
   }

@@ -24,6 +24,7 @@ import {
 import { buildProviderSpendBreakdown, loadCurrentProviderBudgetStatuses } from '../budget';
 import { notifyBudgetAlerts } from './notifyBudgetAlerts';
 import type { GetFn, SetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 type Params = {
   event: Extract<TurnEvent, { kind: 'usage' }>;
@@ -73,7 +74,7 @@ export const recordUsageTelemetry = async (
       [sessionId]: [...(state.sessionTelemetry[sessionId] ?? []), record],
     },
   }));
-  const currentSession = get().sessions.find((s) => s.id === sessionId);
+  const currentSession = sessionById(get().sessions, sessionId);
   if (currentSession != null) {
     const newAlerts: ReadonlyArray<BudgetAlert> = await invokeBudgetEmitAlerts({
       provider,

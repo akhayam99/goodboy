@@ -1,6 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn } from './types';
+import { sessionById } from '../sessions/sessionIndex';
 
 type Params = {
   readonly get: GetFn;
@@ -8,7 +9,7 @@ type Params = {
 };
 
 export const sessionThreadGhOptions = ({ get, sessionId }: Params) => {
-  const session = get().sessions.find((candidate) => candidate.id === sessionId);
+  const session = sessionById(get().sessions, sessionId);
   const repo = getSessionRepo({ get, sessionId });
   return {
     cwd: repo?.repoRoot,

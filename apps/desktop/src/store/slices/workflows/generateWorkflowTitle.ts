@@ -8,6 +8,7 @@ import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
 import { clampWorkflowTitle } from './titleLimit';
 import type { GetFn, SetFn } from './types';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
+import { sessionById } from '../sessions/sessionIndex';
 
 const WORKFLOW_TITLE_SYSTEM_PROMPT = [
   'Write one short title for the orchestrated workflow described below.',
@@ -26,7 +27,7 @@ export const generateWorkflowTitle = (set: SetFn, get: GetFn) => {
     process: string,
   ): Promise<void> => {
     try {
-      const session = get().sessions.find((candidate) => candidate.id === sessionId);
+      const session = sessionById(get().sessions, sessionId);
       if (session == null) {
         return;
       }

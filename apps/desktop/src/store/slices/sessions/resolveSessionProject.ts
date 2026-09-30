@@ -1,4 +1,5 @@
 import type { Project, ProjectId } from '@goodboy/types';
+import { projectById } from '../projects/projectIndex';
 
 type Params = {
   readonly projects: ReadonlyArray<Project>;
@@ -6,7 +7,7 @@ type Params = {
 };
 
 export const resolveSessionProject = ({ projects, projectId }: Params): Project => {
-  const picked = projects.find((candidate) => candidate.id === projectId);
+  const picked = projectById(projects, projectId);
   if (picked === undefined) {
     throw new Error(`project not found in this workspace: ${projectId}`);
   }
