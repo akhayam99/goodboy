@@ -18,7 +18,6 @@ import {
   EXPANDED_THREAD_ID,
   SESSION,
   seedResolveScene,
-  type ResolveFailure,
 } from '../../../../app/components/MockScene/scenes/resolveSeed';
 import { ReviewFlow } from './index';
 
@@ -79,7 +78,7 @@ const mountFailed = async ({
   failure,
   threadId = FAILED_THREAD_ID,
 }: {
-  readonly failure: ResolveFailure;
+  readonly failure: 'run' | 'history';
   readonly threadId?: string;
 }): Promise<void> => {
   seedResolveScene({ expandedThreadId: threadId, failure });

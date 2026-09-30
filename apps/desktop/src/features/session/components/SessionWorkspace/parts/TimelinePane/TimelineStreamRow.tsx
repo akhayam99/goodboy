@@ -18,7 +18,7 @@ import { TimelineRail, type TimelineLaneControl, type TimelineLaneTarget } from 
 import { TimelineRowLabel } from './TimelineRowLabel';
 import { TimelineRowMarker } from './TimelineRowMarker';
 
-export type TimelineRowExpansion = {
+type TimelineRowExpansion = {
   readonly isExpanded: boolean;
   readonly controlsId: string | null;
   readonly onSet?: (params: { readonly isExpanded: boolean }) => void;

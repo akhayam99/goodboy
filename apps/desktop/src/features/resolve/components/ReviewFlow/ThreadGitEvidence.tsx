@@ -3,6 +3,7 @@ import { AlertCircle, ArrowUp, Check, GitCommitHorizontal } from 'lucide-react';
 import { Eyebrow } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { REMOTE_LABEL } from '../../reviewRemote';
 import { ThreadGitFact as Fact } from './ThreadGitFact';
 import { ThreadGitMiniDiff } from './ThreadGitMiniDiff';
@@ -14,8 +15,7 @@ type Props = {
   readonly entry: ReviewEntry;
 };
 
-const timeOf = ({ ms }: { readonly ms: number }): string =>
-  new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+const timeOf = ({ ms }: { readonly ms: number }): string => formatClock({ at: ms });
 
 const facts = ({ entry }: { readonly entry: ReviewEntry }): ReactNode => {
   const git = entry.facts;

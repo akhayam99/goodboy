@@ -12,7 +12,7 @@ type Props = {
   readonly onChange: (routing: ChatRouting) => void;
 };
 
-export const CHAT_ROUTING_LABEL = 'Model for this chat';
+const CHAT_ROUTING_LABEL = 'Model for this chat';
 
 const offeredProviders = (
   connected: ReadonlyArray<ProviderId>,

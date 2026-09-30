@@ -43,7 +43,7 @@ const BUCKET_NOUN: Record<Bucket, string> = {
   failed: 'failed',
 };
 
-export type ResolveSummaryPart = {
+type ResolveSummaryPart = {
   readonly state: ReviewCommentState;
   readonly tone: Tone;
   readonly count: number;

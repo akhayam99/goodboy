@@ -8,7 +8,7 @@ import { sessionMountTargets } from '../project-mounts/mountRequests';
 import { openReviewThreadIds } from '../resolve/openReviewThreadIds';
 import { LOCAL_SOURCE_KEY, type ReviewSourceEntry } from './types';
 
-export const LOCAL_SOURCE_LABEL = 'Notes on this machine';
+const LOCAL_SOURCE_LABEL = 'Notes on this machine';
 
 type State = Pick<
   AppState,
@@ -40,7 +40,7 @@ const OPEN_PR_STATES: ReadonlySet<PullRequestState['state']> = new Set([
 
 const ENDED_MR_STATES: ReadonlySet<string> = new Set(['merged', 'closed']);
 
-export const githubSourceKey = ({
+const githubSourceKey = ({
   mountId,
   number,
 }: {
@@ -48,7 +48,7 @@ export const githubSourceKey = ({
   readonly number: number;
 }): string => `github:${mountId ?? 'session'}:${number}`;
 
-export const gitlabSourceKey = ({
+const gitlabSourceKey = ({
   mountId,
   number,
 }: {
@@ -56,7 +56,7 @@ export const gitlabSourceKey = ({
   readonly number: number;
 }): string => `gitlab:${mountId ?? 'session'}:${number}`;
 
-export const bitbucketSourceKey = ({
+const bitbucketSourceKey = ({
   mountId,
   number,
 }: {

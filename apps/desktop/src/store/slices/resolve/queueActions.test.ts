@@ -17,7 +17,6 @@ import { createResolveSlice } from './index';
 import { EMPTY_REFUSAL_REPLY, REFUSAL_AFTER_INTEGRATION } from './refuseResolveQueueItem';
 import { resolveInitialState } from './state';
 import { threadOutcome } from './threadOutcome';
-import { RESOLVE_ONLY_AFTER_INTEGRATION } from './settleItemAnswered';
 import type { GetFn, SetFn } from './types';
 
 const h = vi.hoisted(() => ({
@@ -337,7 +336,7 @@ describe('resolve queue actions', () => {
       item.id,
     ]);
     await expect(live.actions.resolveWithoutReply({ sessionId, itemId: item.id })).rejects.toThrow(
-      RESOLVE_ONLY_AFTER_INTEGRATION,
+      'This fix is already on the branch. Undo the decision before resolving without a reply',
     );
     expect((await listResolveQueueItems({ db, sessionId }))[0]?.item.approvalState).toBe('none');
   });

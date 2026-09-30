@@ -12,10 +12,10 @@ type Props = {
   readonly onSelect: (key: string) => void;
 };
 
-export const sourceOptionLabel = ({ entry }: { readonly entry: ReviewSourceEntry }): string =>
+const sourceOptionLabel = ({ entry }: { readonly entry: ReviewSourceEntry }): string =>
   entry.kind === 'local' ? entry.label : `${entry.label} · ${REVIEW_SOURCE_LABEL[entry.kind]}`;
 
-export const sourceOpenLabel = ({ entry }: { readonly entry: ReviewSourceEntry }): string | null =>
+const sourceOpenLabel = ({ entry }: { readonly entry: ReviewSourceEntry }): string | null =>
   entry.openCount === null || entry.openCount === 0 ? null : `${entry.openCount} open`;
 
 export const ReviewSourcePicker = ({ entries, selected, onSelect }: Props) => {

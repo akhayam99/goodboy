@@ -26,12 +26,6 @@ const RULES: ReadonlyArray<Rule> = [
     isExempt: (path) => path === INTL_HOME,
     hint: 'call a formatter from shared/utils/time/ (formatClock, formatDayMonth, formatDate, formatDateTime, formatWeekday), so every date reads the same on every machine',
   },
-  {
-    id: 'legacy-relative-age',
-    pattern: /shared\/utils\/relativeDate['"]/g,
-    isExempt: () => false,
-    hint: 'use formatAge from shared/utils/time/formatAge with a now from useNow, so the label keeps counting',
-  },
 ];
 
 type Counts = Readonly<Record<string, Readonly<Record<string, number>>>>;
@@ -143,10 +137,6 @@ describe('dates and times are formatted by shared/utils/time', () => {
     expect(countOf({ id: 'own-date-formatting', text: 'new Intl.RelativeTimeFormat()' })).toBe(1);
     expect(countOf({ id: 'own-date-formatting', text: 'value.toLocaleLowerCase()' })).toBe(0);
     expect(countOf({ id: 'own-date-formatting', text: 'const Intl_ = 1;' })).toBe(0);
-    expect(
-      countOf({ id: 'legacy-relative-age', text: "from '../../shared/utils/relativeDate';" }),
-    ).toBe(1);
-    expect(countOf({ id: 'legacy-relative-age', text: "from './time/formatAge';" })).toBe(0);
   });
 
   it('keeps the module folder holding the one Intl call site', () => {

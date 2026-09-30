@@ -512,7 +512,7 @@ const buildNote = (seed: NoteSeed): PrComment => ({
 const TYPO_BEFORE = "Typo: 'shoudl' should be 'should' in the comment above the retry constant.";
 const TYPO_ADDED = 'Also rename the flag to shouldRetry.';
 
-export const COMMENTS: ReadonlyArray<PrComment> = [
+const COMMENTS: ReadonlyArray<PrComment> = [
   buildNote({
     threadId: T1,
     author: 'kenji-w',
@@ -858,7 +858,7 @@ const installResolveMockIpc = ({
   });
 };
 
-export const EMPTY_GITHUB = {
+const EMPTY_GITHUB = {
   linkedIssues: [],
   fetchedAt: NOW_ISO,
   failedAt: null,
@@ -870,7 +870,7 @@ export const EMPTY_GITHUB = {
   detailError: null,
 };
 
-export type ResolveFailure = 'run' | 'history';
+type ResolveFailure = 'run' | 'history';
 
 type SeedParams = {
   readonly expandedThreadId: string | null;

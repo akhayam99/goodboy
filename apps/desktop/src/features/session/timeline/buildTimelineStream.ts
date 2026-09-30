@@ -91,7 +91,7 @@ export type TimelineDayItem = StreamRail & {
   readonly ruleY: number;
 };
 
-export type TimelineExplodeSlot = {
+type TimelineExplodeSlot = {
   readonly groupId: string;
   readonly kind: 'batch' | 'subagents';
   readonly order: number;

@@ -10,7 +10,7 @@ type Input = {
   readonly preset: ReviewCommitPreset;
 };
 
-export const commitStyleOfPreset = ({
+const commitStyleOfPreset = ({
   preset,
 }: {
   readonly preset: ReviewCommitPreset;

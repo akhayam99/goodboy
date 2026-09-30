@@ -11,7 +11,7 @@ const digest = async ({ text }: { readonly text: string }): Promise<string> => {
   return Array.from(new Uint8Array(bytes), (value) => value.toString(16).padStart(2, '0')).join('');
 };
 
-export const rootOf = ({ comments, threadId }: Params): PrComment | null =>
+const rootOf = ({ comments, threadId }: Params): PrComment | null =>
   groupThreads(
     comments.filter((comment) => comment.threadId === threadId && comment.source === 'review'),
   )[0]?.head ?? null;

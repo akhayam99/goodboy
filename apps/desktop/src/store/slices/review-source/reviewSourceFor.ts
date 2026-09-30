@@ -25,7 +25,7 @@ type Params = {
   >;
 };
 
-export const NO_REVIEW_SOURCE = 'This comment has no source to talk to';
+const NO_REVIEW_SOURCE = 'This comment has no source to talk to';
 
 export const reviewSourceFor = ({ get, sessionId, row }: Params): ReviewSource => {
   const kind = threadSourceKindOf({ row });

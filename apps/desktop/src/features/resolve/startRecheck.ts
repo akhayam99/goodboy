@@ -11,7 +11,7 @@ type Params = {
   readonly threadId: string;
 };
 
-export const NOTHING_TO_RECHECK = 'This comment is no longer on the pull request';
+const NOTHING_TO_RECHECK = 'This comment is no longer on the pull request';
 
 export const recheckModelOf = ({
   provider,

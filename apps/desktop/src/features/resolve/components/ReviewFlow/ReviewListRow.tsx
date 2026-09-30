@@ -7,7 +7,7 @@ import { firstSentence } from './firstSentence';
 import { REMOTE_TONE_CLASS, STATE_WORD_TONE } from './stateTone';
 import type { ReviewEntry } from './useReviewEntries';
 
-export type RowSelection = {
+type RowSelection = {
   readonly isChecked: boolean;
   readonly isSelecting: boolean;
   readonly onToggle: () => void;

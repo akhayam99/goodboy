@@ -393,6 +393,7 @@ cleanup) and moving those calls behind the commands is not done yet.
 | `budget_alerts`               | rust   | `budget.rs`                                                                                                         |
 | `budget_rules`                | rust   | `budget.rs`, and the backup import                                                                                  |
 | `chat_messages`               | ts     |                                                                                                                     |
+| `chat_session_links`          | ts     |                                                                                                                     |
 | `chats`                       | ts     |                                                                                                                     |
 | `context_slot_history`        | ts     |                                                                                                                     |
 | `context_slots`               | ts     |                                                                                                                     |
@@ -426,6 +427,7 @@ cleanup) and moving those calls behind the commands is not done yet.
 | `provider_limits`             | ts     |                                                                                                                     |
 | `provider_runs`               | ts     |                                                                                                                     |
 | `resolve_attempts`            | ts     | Exception: a project move rewrites `worktree_path`.                                                                 |
+| `resolve_batches`             | ts     |                                                                                                                     |
 | `resolve_candidate_items`     | ts     |                                                                                                                     |
 | `resolve_candidates`          | ts     | Exception: a project move rewrites `worktree_path`.                                                                 |
 | `resolve_check_runs`          | ts     |                                                                                                                     |
@@ -433,6 +435,7 @@ cleanup) and moving those calls behind the commands is not done yet.
 | `resolve_publication_threads` | ts     |                                                                                                                     |
 | `resolve_publications`        | ts     | Exception: a project move rewrites `worktree_path`.                                                                 |
 | `resolve_queue_items`         | ts     |                                                                                                                     |
+| `resolve_session_settings`    | ts     |                                                                                                                     |
 | `resolve_threads`             | ts     |                                                                                                                     |
 | `retained_worktree_paths`     | ts     | Exception: a project move rewrites the paths.                                                                       |
 | `schema_migration_segment`    | ts     |                                                                                                                     |

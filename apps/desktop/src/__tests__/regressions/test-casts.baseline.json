@@ -388,7 +388,6 @@
     "apps/desktop/src/shared/utils/formatShortDate.test.ts": 1,
     "apps/desktop/src/shared/utils/formatShortDayMonth.test.ts": 1,
     "apps/desktop/src/shared/utils/formatWeekday.test.ts": 1,
-    "apps/desktop/src/shared/utils/relativeDate.test.ts": 1,
     "apps/desktop/src/store/sessionEviction.test.ts": 10,
     "apps/desktop/src/store/slices/agents/index.test.ts": 1,
     "apps/desktop/src/store/slices/agents/spawnAgent.test.ts": 1,

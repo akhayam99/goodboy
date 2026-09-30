@@ -59,7 +59,7 @@ const threadsOf = ({
     };
   });
 
-export type RewriteStage = 0 | 1 | 2 | 3;
+type RewriteStage = 0 | 1 | 2 | 3;
 
 export const useReviewCommits = ({ sessionId, entries }: Params) => {
   const mountId = useAppStore((s) => selectActiveMount({ state: s, sessionId })?.mountId ?? null);

@@ -18,7 +18,7 @@ import {
   seedResolveScene,
 } from './resolveSeed';
 
-export const GITLAB_EXPANDED_THREAD_ID = 'gitlab:d41';
+const GITLAB_EXPANDED_THREAD_ID = 'gitlab:d41';
 
 const MR_URL = 'https://example.invalid/harborline/notify-relay/-/merge_requests/57';
 const MR_NUMBER = 57;

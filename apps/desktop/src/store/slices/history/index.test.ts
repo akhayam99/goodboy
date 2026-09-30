@@ -48,6 +48,8 @@ vi.mock('@goodboy/db', async () =>
     markHistoryPlan: vi.fn(async () => undefined),
     saveDraftHistoryPlan: vi.fn(async () => ({ id: 'plan-1' })),
     getDraftHistoryPlan: vi.fn(async () => null),
+    getSetting: vi.fn(async () => null),
+    setSetting: vi.fn(async () => undefined),
   }),
 );
 vi.mock('../../../features/session/components/AgentSpawnConfig/taskModelAgentSpawnConfig', () => ({

@@ -28,7 +28,7 @@ export const tryAgainLabel = ({
   return modelName === null ? FAILED_RUN_COPY.tryAgain : `Try again on ${modelName}`;
 };
 
-export const ROW_ACTION_VERB: Record<ResolveRowAction, string> = {
+const ROW_ACTION_VERB: Record<ResolveRowAction, string> = {
   resolve: 'Draft a fix',
   answer: 'Answer',
   review: 'Review',

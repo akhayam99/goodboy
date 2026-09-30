@@ -19,7 +19,7 @@ export type ReviewCommitChoice =
 
 export type ReviewCommitChoices = Readonly<Record<string, ReviewCommitChoice>>;
 
-export type ReviewCommitThread = {
+type ReviewCommitThread = {
   readonly threadId: string;
   readonly author: string | null;
   readonly location: string | null;
@@ -111,7 +111,7 @@ export const reviewCommitRows = ({
   });
 };
 
-export const reviewCommitSubject = ({ prNumber }: { readonly prNumber: number | null }): string =>
+const reviewCommitSubject = ({ prNumber }: { readonly prNumber: number | null }): string =>
   prNumber === null ? 'Address review comments' : `Address review on #${prNumber}`;
 
 type PresetParams = {
@@ -236,7 +236,7 @@ type ItemsParams = {
   readonly items: ReadonlyArray<HistoryStep>;
 };
 
-export const cleanPrefixLength = ({ rows, items }: ItemsParams): number => {
+const cleanPrefixLength = ({ rows, items }: ItemsParams): number => {
   const targets = new Set(
     items.flatMap((step) => (isFolded({ step }) ? [targetOf({ step }) ?? ''] : [])),
   );

@@ -2,7 +2,7 @@ import { getSetting, setSetting } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 
-export type PostedReplyStory = {
+type PostedReplyStory = {
   readonly sha: string;
   readonly body: string;
   readonly lines: ReadonlyArray<string>;

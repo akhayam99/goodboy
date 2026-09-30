@@ -9,7 +9,7 @@ export const subagentGroupEntryId = ({ parentId }: { readonly parentId: string }
 export const subagentGroupTitle = ({ total }: { readonly total: number }): string =>
   `${total} subagents`;
 
-export type SubagentBucket =
+type SubagentBucket =
   'asking' | 'waiting' | 'done' | 'running' | 'queued' | 'skipped' | 'closed' | 'failed';
 
 const BUCKET_ORDER: ReadonlyArray<SubagentBucket> = [
@@ -60,7 +60,7 @@ export type SubagentFact = {
   readonly isAsking: boolean;
 };
 
-export type SubagentSummaryPart = {
+type SubagentSummaryPart = {
   readonly state: SubagentBucket;
   readonly tone: Tone;
   readonly count: number;

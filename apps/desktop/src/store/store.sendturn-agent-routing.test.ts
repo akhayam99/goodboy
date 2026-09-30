@@ -2575,8 +2575,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
 
   it('runs a batch resolver in its copy of the branch without leasing the real worktree', async () => {
     const useAppStore = await seedResolverTurn();
-    const worktreeMod = await import('../features/worktree/worktree');
-    const acquire = worktreeMod.acquireWorktreeWriter as ReturnType<typeof vi.fn>;
+    const acquire = storySpies.acquireWorktreeWriter;
     acquire.mockClear();
     runTurnSpy.mockReset();
     runTurnSpy.mockImplementation(() => emptyStream());

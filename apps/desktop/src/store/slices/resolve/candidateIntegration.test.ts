@@ -24,11 +24,7 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import {
-  ACCEPT_CONFLICT,
-  ACCEPT_CONFLICT_REASON,
-  acceptResolveQueueItem,
-} from './acceptResolveQueueItem';
+import { ACCEPT_CONFLICT, acceptResolveQueueItem } from './acceptResolveQueueItem';
 import { integrateWorktreeCandidate } from '../../../features/worktree/worktree';
 import { createResolveSlice } from './index';
 import { resolveInitialState } from './state';
@@ -688,7 +684,7 @@ describe('resolve candidates keep the branch tip approved', () => {
 
     expect(git(worktreePath, ['rev-parse', 'HEAD'])).toBe(head);
     const [thread] = await listResolveThreads({ db, sessionId: SESSION_ID });
-    expect(thread?.stateReason).toBe(ACCEPT_CONFLICT_REASON);
+    expect(thread?.stateReason).toBe('failed:accept_conflict');
     const [candidate] = await listResolveCandidates({ db, sessionId: SESSION_ID });
     expect(candidate?.state).toBe('stale');
   });

@@ -9,7 +9,7 @@ type Props = {
   readonly onChange: (update: (current: ChatModelChoice) => ChatModelChoice) => void;
 };
 
-export const DRAFTED_BY_LABEL = 'Drafted by';
+const DRAFTED_BY_LABEL = 'Drafted by';
 
 export const DraftedBy = ({ choice, connectedProviders, onChange }: Props) => (
   <div className="flex min-w-0 items-center gap-1.5">
