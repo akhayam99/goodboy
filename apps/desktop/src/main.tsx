@@ -1,4 +1,4 @@
-import { StrictMode } from 'react';
+import { StrictMode, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   CodeHighlighterContext,
@@ -7,7 +7,6 @@ import {
   type ErrorReportRequest,
 } from '@goodboy/ui';
 import { App } from './App';
-import { MockScene } from './app/components/MockScene';
 import { ScrollerStyleProvider } from './shared/components/ScrollerStyleProvider';
 import { MOCK_ENABLED } from './store/mock-data';
 import { bootstrapTheme } from './shared/lib/theme';
@@ -24,6 +23,10 @@ import './styles.css';
 
 bootstrapTheme();
 installCrashCapture();
+
+const MockScene = lazy(() =>
+  import('./app/components/MockScene').then((module) => ({ default: module.MockScene })),
+);
 
 const renderCrashReport = ({ error, componentStack }: ErrorReportRequest) => (
   <CrashReport
@@ -43,7 +46,15 @@ createRoot(container).render(
     <ErrorBoundary describeError={describeCrash} renderReport={renderCrashReport}>
       <RemoteImageLoaderProvider load={loadRemoteImage}>
         <CodeHighlighterContext.Provider value={APP_CODE_HIGHLIGHTER}>
-          <ScrollerStyleProvider>{MOCK_ENABLED ? <MockScene /> : <App />}</ScrollerStyleProvider>
+          <ScrollerStyleProvider>
+            {MOCK_ENABLED ? (
+              <Suspense fallback={null}>
+                <MockScene />
+              </Suspense>
+            ) : (
+              <App />
+            )}
+          </ScrollerStyleProvider>
         </CodeHighlighterContext.Provider>
       </RemoteImageLoaderProvider>
     </ErrorBoundary>

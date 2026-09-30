@@ -84,6 +84,9 @@ export const SessionActivityBar = ({
   );
   const selection = useMultiSelect(visibleOrder);
   const { clear: clearSelection, isSelected } = selection;
+  const selectedRef = useRef(selection.selected);
+  selectedRef.current = selection.selected;
+  const getSelectedIds = useCallback(() => selectedRef.current, []);
 
   const visibleSessions = isArchivedView ? archivedSessions : sessions;
   const selectedSessions = useMemo(
@@ -200,10 +203,10 @@ export const SessionActivityBar = ({
                         isActive={session.id === currentSessionId}
                         isDimmed={isArchivedView}
                         isSelected={isSelected(session.id as SessionId)}
-                        selectedIds={selection.selected}
+                        getSelectedIds={getSelectedIds}
                         onClearSelection={clearSelection}
                         onModifierClick={selection.handleItemClick}
-                        onClick={() => onSelectSession(session.id as SessionId)}
+                        onSelect={onSelectSession}
                       />
                     ))}
                   </div>

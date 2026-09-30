@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { FOCUS_RING, StatusDot, Tooltip, cn } from '@goodboy/ui';
 import {
@@ -15,16 +16,12 @@ import { StarToggle } from '../../../../shared/components/StarToggle';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { useNow } from '../../../../shared/hooks/useNow';
 
-export type InboxRowStar = {
-  readonly isStarred: boolean;
-  readonly onToggle: () => void;
-};
-
 type Props = {
   readonly record: InboxRecord;
   readonly selected: boolean;
   readonly onSelect: (record: InboxRecord) => void;
-  readonly star?: InboxRowStar;
+  readonly isStarred?: boolean;
+  readonly onToggleStar?: (record: InboxRecord) => void;
   readonly onActivate?: (record: InboxRecord) => void;
 };
 
@@ -35,13 +32,24 @@ type OptionIdParams = {
 export const inboxOptionId = ({ key }: OptionIdParams): string =>
   `inbox-option-${key.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
 
-export const InboxRow = ({ record, selected, onSelect, star, onActivate }: Props) => {
+const InboxRowView = ({
+  record,
+  selected,
+  onSelect,
+  isStarred,
+  onToggleStar,
+  onActivate,
+}: Props) => {
   const now = useNow(30_000);
   const relativeTime = formatAge({ from: record.updatedAt, now });
   const sessionId = recordSessionId({ record }) ?? null;
   const hasSession = sessionId != null;
   const toolLabel = integrationLabel({ provider: record.provider });
   const canOpen = record.url !== '';
+  const star =
+    isStarred === undefined || onToggleStar === undefined
+      ? undefined
+      : { isStarred, onToggle: () => onToggleStar(record) };
   const menu = useObjectMenuTrigger({
     target: {
       kind: 'record',
@@ -159,3 +167,5 @@ export const InboxRow = ({ record, selected, onSelect, star, onActivate }: Props
     </div>
   );
 };
+
+export const InboxRow = memo(InboxRowView);

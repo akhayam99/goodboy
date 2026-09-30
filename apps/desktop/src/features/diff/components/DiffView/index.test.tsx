@@ -6,8 +6,13 @@ import type { FileDiff, IsoDateTime } from '@goodboy/types';
 import { DiffView } from '.';
 import type { DiffComments, DiffThread } from './types';
 
+const { fileRenders } = vi.hoisted(() => ({ fileRenders: { current: 0 } }));
+
 vi.mock('../../hooks/useDiffTokens', () => ({
-  useDiffTokens: () => null,
+  useDiffTokens: () => {
+    fileRenders.current += 1;
+    return null;
+  },
   tokensForLine: () => null,
 }));
 
@@ -417,5 +422,28 @@ describe('DiffView navigation', () => {
     expect(screen.queryByRole('button', { name: /files/ })).toBeNull();
     fireEvent.keyDown(window, { code: 'KeyT', key: 't' });
     expect(screen.queryByRole('combobox')).toBeNull();
+  });
+});
+
+describe('DiffView file renders', () => {
+  it('leaves the file bodies alone when only the toolbar state changes', () => {
+    render(<DiffView files={[LEDGER, RELAY]} />);
+    fileRenders.current = 0;
+
+    fireEvent.keyDown(window, { code: 'KeyT', key: 't' });
+    expect(screen.getByRole('combobox', { name: 'Filter files' })).toBeTruthy();
+
+    expect(fileRenders.current).toBe(0);
+  });
+
+  it('leaves the file bodies alone when the parent re-renders with the same props', () => {
+    const comments = commentsWith([thread()]);
+    const { rerender } = render(<DiffView files={[LEDGER, RELAY]} comments={comments} />);
+    fileRenders.current = 0;
+
+    rerender(<DiffView files={[LEDGER, RELAY]} comments={comments} footer={<p>Footer</p>} />);
+
+    expect(screen.getByText('Footer')).toBeTruthy();
+    expect(fileRenders.current).toBe(0);
   });
 });
