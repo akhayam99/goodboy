@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { Eyebrow, cn } from '@goodboy/ui';
 import type { StepDraft } from '../../engine';
 import type { SavedStep, SavedStepGroups } from '../../savedSteps';
@@ -50,6 +50,23 @@ export const StepTree = ({
 }: Props) => {
   const count = steps.length;
   const isDrafting = isPlanning && count === 0;
+  const listRef = useRef<HTMLOListElement>(null);
+  const hasPendingAddRef = useRef(false);
+  useEffect(() => {
+    if (!hasPendingAddRef.current) {
+      return;
+    }
+    hasPendingAddRef.current = false;
+    const rows = listRef.current?.querySelectorAll<HTMLElement>('[data-plan-step]');
+    const last = rows?.item(rows.length - 1);
+    if (typeof last?.scrollIntoView === 'function') {
+      last.scrollIntoView({ block: 'nearest' });
+    }
+  }, [count]);
+  const addStep = (step: SavedStep | null) => {
+    hasPendingAddRef.current = true;
+    onAddStep(step);
+  };
   return (
     <section aria-label="Plan" className="flex min-w-0 flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
@@ -69,11 +86,9 @@ export const StepTree = ({
         <StepTreeSkeleton identityIndex={identityIndex} />
       ) : (
         <ol
+          ref={listRef}
           aria-label="Workflow steps"
-          className={cn(
-            'flex flex-col-reverse motion-safe:transition-opacity',
-            isPlanning && 'opacity-60',
-          )}
+          className={cn('flex flex-col motion-safe:transition-opacity', isPlanning && 'opacity-60')}
         >
           {steps.flatMap((step, index) => [
             isDragging ? (
@@ -100,7 +115,7 @@ export const StepTree = ({
             identityIndex={identityIndex}
             disabled={disabled}
             savedSteps={savedSteps}
-            onAdd={onAddStep}
+            onAdd={addStep}
           />
         </ol>
       )}
