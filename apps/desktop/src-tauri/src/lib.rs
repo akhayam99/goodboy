@@ -51,6 +51,7 @@ mod qa_preview;
 mod query_bridge;
 mod releases;
 mod remote_image;
+mod remote_probe;
 mod repo;
 mod restart_marker;
 mod scratch_dir;
@@ -395,6 +396,7 @@ pub fn run() {
             repo::validate_git_repo,
             repo::project_git_status,
             repo::project_fetch,
+            remote_probe::project_remote_probe,
             repo::repo_init_with_remote,
             repo::repo_init,
             repo::scan_child_repos,

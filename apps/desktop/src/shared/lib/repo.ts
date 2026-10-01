@@ -1,5 +1,5 @@
 import { invokeCommand } from './invokeCommand';
-import type { FastForwardResult, WorkspaceGitStatus } from '@goodboy/types';
+import type { FastForwardResult, RemoteProbe, WorkspaceGitStatus } from '@goodboy/types';
 
 export type GitRepoCheck = {
   readonly isRepo: boolean;
@@ -34,6 +34,24 @@ export const projectFetch = async ({
   projectId,
 }: ProjectFetchParams): Promise<void> => {
   return invokeCommand<void>('project_fetch', { projectPath, workspaceId, projectId });
+};
+
+type ProjectRemoteProbeParams = {
+  readonly projectPath: string;
+  readonly workspaceId?: string;
+  readonly projectId?: string;
+};
+
+export const projectRemoteProbe = async ({
+  projectPath,
+  workspaceId,
+  projectId,
+}: ProjectRemoteProbeParams): Promise<RemoteProbe> => {
+  return invokeCommand<RemoteProbe>('project_remote_probe', {
+    projectPath,
+    workspaceId,
+    projectId,
+  });
 };
 
 type CheckoutFastForwardParams = {

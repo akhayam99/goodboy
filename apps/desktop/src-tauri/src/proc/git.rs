@@ -151,7 +151,6 @@ impl Git {
         self
     }
 
-    #[cfg(test)]
     pub(crate) fn timeout(mut self, timeout: Duration) -> Self {
         self.timeout = Some(timeout);
         self

@@ -495,7 +495,7 @@ fn project_fetch_blocking(
     Ok(())
 }
 
-fn default_remote_name(root: &Path) -> Option<String> {
+pub(crate) fn default_remote_name(root: &Path) -> Option<String> {
     if let Some(upstream) = crate::worktree::resolve_upstream(root) {
         if let Some((remote, _)) = upstream.split_once('/') {
             return Some(remote.to_string());
@@ -523,7 +523,7 @@ fn blank_status(state: &'static str) -> WorkspaceGitStatus {
     }
 }
 
-fn is_repo_root(root: &Path) -> bool {
+pub(crate) fn is_repo_root(root: &Path) -> bool {
     let check = validate_git_repo_blocking(root.to_string_lossy().into_owned());
     let Some(toplevel) = check.root_path.filter(|found| !found.is_empty()) else {
         return false;
