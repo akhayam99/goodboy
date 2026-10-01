@@ -8,6 +8,7 @@ import type { StepLaneSpan } from '../../StepTree/StepTreeLane';
 
 type Props = {
   readonly identityIndex: number;
+  readonly guidance: ReactNode;
   readonly children: ReactNode;
 };
 
@@ -42,19 +43,17 @@ type SpanParams = {
 const spanOf = ({ index }: SpanParams): StepLaneSpan =>
   index === EXAMPLE_STEPS.length - 1 ? 'tip' : 'through';
 
-export const ExampleSteps = ({ identityIndex, children }: Props) => (
+export const ExampleSteps = ({ identityIndex, guidance, children }: Props) => (
   <div className="flex min-w-0 flex-col">
-    <div
-      className={cn('flex min-w-0 gap-1.5', ENTRY_CLASS)}
-      style={entryDelay({ order: EXAMPLE_STEPS.length + 1 })}
-    >
-      <StepTreeGutter span="none" identityIndex={identityIndex} />
+    <ol className="flex flex-col">{children}</ol>
+    {guidance}
+    <div className={cn('flex min-w-0 gap-1.5', ENTRY_CLASS)} style={entryDelay({ order: 0 })}>
+      <StepTreeGutter span="through" identityIndex={identityIndex} />
       <p className="pb-1 pl-2 text-secondary text-faint-foreground">
         Example. Real steps are picked one at a time as the run goes.
       </p>
     </div>
-    <ol className="flex flex-col-reverse">
-      {children}
+    <ol className="flex flex-col">
       {EXAMPLE_STEPS.map((step, index) => (
         <li
           key={step.role}
