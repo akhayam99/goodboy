@@ -1113,11 +1113,11 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
       name: /add guidance for the orchestrator/i,
     });
     const caption = within(plan).getByText(/^example\. real steps are picked one at a time/i);
-    const precedes = (earlier: Node, later: Node) =>
+    const precedes = ({ earlier, later }: { readonly earlier: Node; readonly later: Node }) =>
       Boolean(earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(precedes(orchestrator, guidance)).toBe(true);
-    expect(precedes(guidance, caption)).toBe(true);
-    expect(precedes(caption, examples[0]!)).toBe(true);
+    expect(precedes({ earlier: orchestrator, later: guidance })).toBe(true);
+    expect(precedes({ earlier: guidance, later: caption })).toBe(true);
+    expect(precedes({ earlier: caption, later: examples[0]! })).toBe(true);
   });
 
   it('keeps guidance behind a disclosure and folds it back when left empty', () => {

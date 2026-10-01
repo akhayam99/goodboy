@@ -63,7 +63,7 @@ export const StepTree = ({
       last.scrollIntoView({ block: 'nearest' });
     }
   }, [count]);
-  const addStep = (step: SavedStep | null) => {
+  const addStep = ({ step }: { readonly step: SavedStep | null }) => {
     hasPendingAddRef.current = true;
     onAddStep(step);
   };
@@ -115,7 +115,7 @@ export const StepTree = ({
             identityIndex={identityIndex}
             disabled={disabled}
             savedSteps={savedSteps}
-            onAdd={addStep}
+            onAdd={(step) => addStep({ step })}
           />
         </ol>
       )}
