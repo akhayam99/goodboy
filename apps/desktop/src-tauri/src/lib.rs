@@ -47,6 +47,7 @@ mod project_scripts;
 mod provider_credentials;
 mod provider_lifecycle;
 mod providers;
+mod publish;
 mod qa_preview;
 mod query_bridge;
 mod releases;
@@ -397,6 +398,8 @@ pub fn run() {
             repo::project_git_status,
             repo::project_fetch,
             remote_probe::project_remote_probe,
+            publish::project_link_remote,
+            publish::project_publish_main,
             repo::repo_init_with_remote,
             repo::repo_init,
             repo::scan_child_repos,

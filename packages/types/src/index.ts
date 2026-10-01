@@ -464,6 +464,7 @@ export type {
   PullRequestState,
   PullRequestStateKind,
 } from './github';
+export type { LinkedRemote, PublishOutcome, PublishStep } from './publish';
 export type { RemoteProbe } from './remote-probe';
 export type {
   PrReviewDraft,

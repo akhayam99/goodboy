@@ -1,5 +1,11 @@
 import { invokeCommand } from './invokeCommand';
-import type { FastForwardResult, RemoteProbe, WorkspaceGitStatus } from '@goodboy/types';
+import type {
+  FastForwardResult,
+  LinkedRemote,
+  PublishOutcome,
+  RemoteProbe,
+  WorkspaceGitStatus,
+} from '@goodboy/types';
 
 export type GitRepoCheck = {
   readonly isRepo: boolean;
@@ -48,6 +54,36 @@ export const projectRemoteProbe = async ({
   projectId,
 }: ProjectRemoteProbeParams): Promise<RemoteProbe> => {
   return invokeCommand<RemoteProbe>('project_remote_probe', {
+    projectPath,
+    workspaceId,
+    projectId,
+  });
+};
+
+type ProjectLinkRemoteParams = {
+  readonly projectPath: string;
+  readonly remoteUrl: string;
+};
+
+export const projectLinkRemote = async ({
+  projectPath,
+  remoteUrl,
+}: ProjectLinkRemoteParams): Promise<LinkedRemote> => {
+  return invokeCommand<LinkedRemote>('project_link_remote', { projectPath, remoteUrl });
+};
+
+type ProjectPublishMainParams = {
+  readonly projectPath: string;
+  readonly workspaceId?: string;
+  readonly projectId?: string;
+};
+
+export const projectPublishMain = async ({
+  projectPath,
+  workspaceId,
+  projectId,
+}: ProjectPublishMainParams): Promise<PublishOutcome> => {
+  return invokeCommand<PublishOutcome>('project_publish_main', {
     projectPath,
     workspaceId,
     projectId,
