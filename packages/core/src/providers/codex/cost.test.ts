@@ -38,6 +38,21 @@ describe('computeCodexCostUsd', () => {
     ).toBeCloseTo(12.5);
   });
 
+  it('prices GPT-6.1 Sol at 2 and 10 per million with cached input at 0.10', () => {
+    expect(CODEX_PRICES['gpt-6.1-sol']).toEqual({
+      inputPerMtok: 2,
+      outputPerMtok: 10,
+      cachedInputPerMtok: 0.1,
+    });
+    expect(computeCodexCostUsd({ usage, model: 'gpt-6.1-sol' })).toBeCloseTo(12);
+    expect(
+      computeCodexCostUsd({
+        usage: { ...usage, inputTokens: 2_000_000, cachedInputTokens: 1_000_000, outputTokens: 0 },
+        model: 'gpt-6.1-sol',
+      }),
+    ).toBeCloseTo(2.1);
+  });
+
   it('prices every catalog cli id', () => {
     const modelIds = CODEX_CATALOG.flatMap((model) =>
       model.variants.map((variant) => variant.cliId),

@@ -6,6 +6,11 @@ export const CODEX_PRICES: Readonly<Record<string, ModelPrice>> = {
     outputPerMtok: 50,
     cachedInputPerMtok: 1,
   },
+  'gpt-6.1-sol': {
+    inputPerMtok: 2,
+    outputPerMtok: 10,
+    cachedInputPerMtok: 0.1,
+  },
   'gpt-5.6-sol': {
     inputPerMtok: 5,
     outputPerMtok: 30,

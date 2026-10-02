@@ -8,6 +8,10 @@ describe('modelLabel', () => {
     expect(modelLabel('gpt-6-astra')).toBe('Astra');
   });
 
+  it('uses the authored GPT-6.1 Sol label for its catalog key and cli id', () => {
+    expect(modelLabel('gpt-6.1-sol')).toBe('GPT-6.1 Sol');
+  });
+
   it('humanizes an unrecognized Astra effort suffix', () => {
     expect(modelLabel('gpt-6-astra-high')).toBe('GPT 6 Astra High');
   });

@@ -29,6 +29,7 @@ export const OPENROUTER_AGENT_MODEL_IDS = [
   'openrouter/openai/gpt-5.6-sol',
   'openrouter/openai/gpt-5.6-terra',
   'openrouter/openai/gpt-6-astra',
+  'openrouter/openai/gpt-6.1-sol',
   'openrouter/x-ai/grok-4.3',
   'openrouter/x-ai/grok-4.5',
   'openrouter/x-ai/grok-4.6',

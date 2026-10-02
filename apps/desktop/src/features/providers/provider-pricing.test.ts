@@ -43,6 +43,14 @@ describe('getCodexPriceOverride', () => {
     });
   });
 
+  it('returns the standard GPT-6.1 Sol rates', () => {
+    expect(getCodexPriceOverride(null, 'gpt-6.1-sol')).toEqual({
+      inputPerMtok: 2,
+      outputPerMtok: 10,
+      cachedInputPerMtok: 0.1,
+    });
+  });
+
   it('returns null for unknown model', () => {
     expect(getCodexPriceOverride(null, 'unknown-model-xyz')).toBeNull();
   });
