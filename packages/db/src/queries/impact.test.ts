@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import type { SessionId, WorkspaceId } from '@goodboy/types';
+import type { WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
-import { makeMigratedTestDatabase } from '../test-helpers/test-db';
+import {
+  addImpactEvent,
+  addImpactLink,
+  addImpactMount,
+  addImpactSession,
+  addImpactTelemetry,
+  seedImpactDb,
+  type ImpactTelemetrySeed,
+} from '../test-helpers/impact-seeds';
 import {
   getAgentDurations,
   getCacheEfficiency,
@@ -14,7 +22,6 @@ import {
   getRightSizeNudgeOutcomes,
   getTurnDistribution,
 } from './impact';
-import { purgeSessionForDelete } from './session';
 
 const workspaceId = 'w1' as WorkspaceId;
 const otherWorkspaceId = 'w2' as WorkspaceId;
@@ -24,19 +31,8 @@ const RECENT = NOW - 2 * DAY_MS;
 const OLD = NOW - 45 * DAY_MS;
 const SINCE = NOW - 30 * DAY_MS;
 
-const iso = (value: number): string => new Date(value).toISOString();
-
-const seedDb = async (): Promise<Database> => {
-  const db = await makeMigratedTestDatabase();
-  for (const id of [workspaceId, otherWorkspaceId]) {
-    await db.execute(
-      `INSERT INTO workspaces (id, name, slug, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?)`,
-      [id, id, `/tmp/${id}`, OLD, NOW],
-    );
-  }
-  return db;
-};
+const seedDb = async (): Promise<Database> =>
+  seedImpactDb({ workspaceIds: [workspaceId, otherWorkspaceId], at: OLD });
 
 type SessionSeed = {
   readonly id: string;
@@ -52,17 +48,15 @@ const addSession = async ({
   readonly db: Database;
   readonly seed: SessionSeed;
 }): Promise<void> => {
-  await db.execute(
-    `INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at)
-     VALUES (?, ?, ?, 'idle', ?, ?)`,
-    [
-      seed.id,
-      seed.workspace ?? workspaceId,
-      `goal ${seed.id}`,
-      seed.createdAt,
-      seed.updatedAt ?? seed.createdAt,
-    ],
-  );
+  await addImpactSession({
+    db,
+    seed: {
+      id: seed.id,
+      workspaceId: seed.workspace ?? workspaceId,
+      createdAt: seed.createdAt,
+      ...(seed.updatedAt === undefined ? {} : { updatedAt: seed.updatedAt }),
+    },
+  });
 };
 
 type AgentSeed = {
@@ -101,56 +95,13 @@ const addAgent = async ({
   );
 };
 
-type TelemetrySeed = {
-  readonly id: string;
-  readonly runId: string;
-  readonly sessionId: string;
-  readonly at: number;
-  readonly provider?: string;
-  readonly input?: number;
-  readonly cached?: number;
-  readonly created?: number;
-  readonly context?: number | null;
-  readonly cost?: number;
-};
-
 const addTelemetry = async ({
   db,
   seed,
 }: {
   readonly db: Database;
-  readonly seed: TelemetrySeed;
-}): Promise<void> => {
-  const runs = await db.select<{ id: string }>('SELECT id FROM provider_runs WHERE id = ?', [
-    seed.runId,
-  ]);
-  if (runs.length === 0) {
-    await db.execute(
-      `INSERT INTO provider_runs (id, session_id, provider, model, status_kind, created_at)
-       VALUES (?, ?, 'anthropic', 'opus', 'succeeded', ?)`,
-      [seed.runId, seed.sessionId, seed.at],
-    );
-  }
-  await db.execute(
-    `INSERT INTO telemetry_records
-       (id, run_id, session_id, kind, provider, model, input_tokens, output_tokens,
-        estimated_cost_usd, recorded_at, cached_input_tokens, cache_creation_input_tokens,
-        context_tokens)
-     VALUES (?, ?, ?, 'turn', ?, 'opus', ?, 10, ?, ?, ?, ?, ?)`,
-    [
-      seed.id,
-      seed.runId,
-      seed.sessionId,
-      seed.provider ?? 'anthropic',
-      seed.input ?? 100,
-      seed.cost ?? 0.1,
-      seed.at,
-      seed.cached ?? 0,
-      seed.created ?? 0,
-      seed.context ?? null,
-    ],
-  );
-};
+  readonly seed: ImpactTelemetrySeed;
+}): Promise<void> => addImpactTelemetry({ db, seed });
 
 const params = ({
   db,
@@ -254,42 +205,24 @@ describe('impact overview', () => {
 });
 
 describe('pull request outcomes', () => {
-  it('scopes cached PR state through workspace session branches', async () => {
+  it('counts the latest state of each linked pull request in the workspace', async () => {
     const db = await seedDb();
     await addSession({ db, seed: { id: 's1', createdAt: RECENT } });
-    await addSession({
+    await addSession({ db, seed: { id: 's2', createdAt: RECENT, workspace: otherWorkspaceId } });
+    await addImpactMount({ db, seed: { id: 'wt1', sessionId: 's1', branch: 'a', at: RECENT } });
+    await addImpactMount({ db, seed: { id: 'wt2', sessionId: 's2', branch: 'b', at: RECENT } });
+    await addImpactLink({
       db,
-      seed: { id: 's2', createdAt: RECENT, workspace: otherWorkspaceId },
+      seed: { id: 'l1', mountId: 'wt1', number: 8, state: 'merged', at: RECENT, title: 'ship' },
     });
-    await db.execute(
-      `INSERT INTO session_worktrees
-         (id, session_id, worktree_path, branch, parallel_index, repo_slug, created_at)
-       VALUES ('wt1', 's1', '/tmp/a', 'feature/a', 0, 'repo', ?),
-              ('wt2', 's2', '/tmp/b', 'feature/b', 0, 'repo', ?)`,
-      [RECENT, RECENT],
-    );
-    await db.execute(
-      `INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at)
-       VALUES (?, 'repo', ?, ?), (?, 'repo', ?, ?)`,
-      [
-        'feature/a',
-        JSON.stringify({
-          number: 8,
-          title: 'ship impact',
-          state: 'merged',
-          updatedAt: iso(RECENT),
-        }),
-        RECENT,
-        'feature/b',
-        JSON.stringify({
-          number: 9,
-          title: 'other',
-          state: 'open',
-          updatedAt: iso(RECENT),
-        }),
-        RECENT,
-      ],
-    );
+    await addImpactLink({
+      db,
+      seed: { id: 'l2', mountId: 'wt1', number: 9, state: 'open', at: RECENT },
+    });
+    await addImpactLink({
+      db,
+      seed: { id: 'l3', mountId: 'wt2', number: 10, state: 'open', at: RECENT },
+    });
     await addTelemetry({
       db,
       seed: { id: 't-s1', runId: 'r-s1', sessionId: 's1', at: RECENT, cost: 2.5 },
@@ -297,181 +230,127 @@ describe('pull request outcomes', () => {
 
     const result = await getPullRequestOutcomes(params({ db, sinceMs: SINCE }));
 
-    expect(result).toMatchObject({ open: 0, merged: 1, closed: 0 });
-    expect(result.entries[0]).toMatchObject({ number: 8, sessionId: 's1', spendUsd: 2.5 });
+    expect(result).toMatchObject({ open: 1, merged: 1, closed: 0 });
+    expect(result.entries.find((entry) => entry.number === 8)).toMatchObject({
+      sessionId: 's1',
+      title: 'ship',
+      spendUsd: 2.5,
+      isDeleted: false,
+    });
   });
 
-  it('keeps the pull request of a deleted session, whose mount rows survive the purge', async () => {
+  it('counts a pull request once when its link and its merge event both name it', async () => {
     const db = await seedDb();
     await addSession({ db, seed: { id: 's1', createdAt: RECENT } });
-    await db.execute(
-      `INSERT INTO session_worktrees
-         (id, session_id, worktree_path, branch, parallel_index, repo_slug, created_at)
-       VALUES ('wt1', 's1', '/tmp/a', 'feature/a', 0, 'repo', ?)`,
-      [RECENT],
-    );
-    await db.execute(
-      `INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at)
-       VALUES (?, 'repo', ?, ?)`,
-      [
-        'feature/a',
-        JSON.stringify({
-          number: 8,
-          title: 'ship impact',
-          state: 'merged',
-          updatedAt: iso(RECENT),
-        }),
-        RECENT,
-      ],
-    );
-
-    await addTelemetry({
+    await addImpactMount({ db, seed: { id: 'wt1', sessionId: 's1', branch: 'a', at: RECENT } });
+    await addImpactLink({
       db,
-      seed: { id: 't-gone', runId: 'r-gone', sessionId: 's1', at: RECENT, cost: 4 },
+      seed: { id: 'l1', mountId: 'wt1', number: 8, state: 'merged', at: RECENT },
     });
-
-    await purgeSessionForDelete({ db, id: 's1' as SessionId });
-
-    const result = await getPullRequestOutcomes(params({ db, sinceMs: SINCE }));
-
-    expect(result).toMatchObject({ open: 0, merged: 1, closed: 0 });
-    expect(result.entries[0]).toMatchObject({ number: 8, sessionId: 's1', spendUsd: 4 });
-  });
-
-  it('does not double-count spend when a multi-project session has two worktree rows on one branch', async () => {
-    const db = await seedDb();
-    await addSession({ db, seed: { id: 'multi-project', createdAt: RECENT } });
-    await db.execute(
-      `INSERT INTO session_worktrees
-         (id, session_id, worktree_path, branch, parallel_index, repo_slug, created_at)
-       VALUES ('wt-a', 'multi-project', '/tmp/repo-a', 'shared/branch', 0, 'repo', ?),
-              ('wt-b', 'multi-project', '/tmp/repo-b', 'shared/branch', 1, 'repo', ?)`,
-      [RECENT, RECENT],
-    );
-    await db.execute(
-      `INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at)
-       VALUES (?, 'repo', ?, ?)`,
-      [
-        'shared/branch',
-        JSON.stringify({
-          number: 21,
-          title: 'multi-project ship',
-          state: 'merged',
-          updatedAt: iso(RECENT),
-        }),
-        RECENT,
-      ],
-    );
-    await addTelemetry({
+    await addImpactEvent({
       db,
       seed: {
-        id: 't-multi-project',
-        runId: 'r-multi-project',
-        sessionId: 'multi-project',
+        id: 'e-legacy',
+        sessionId: 's1',
+        kind: 'pr_merged',
+        payload: { number: 8, url: 'https://github.com/acme/ledger-core/pull/8' },
         at: RECENT,
-        cost: 5,
+      },
+    });
+    await addImpactEvent({
+      db,
+      seed: {
+        id: 'e-bare',
+        sessionId: 's1',
+        kind: 'pr_merged',
+        payload: { number: 8 },
+        at: RECENT,
       },
     });
 
     const result = await getPullRequestOutcomes(params({ db, sinceMs: SINCE }));
 
+    expect(result.merged).toBe(1);
+    expect(result.entries).toHaveLength(1);
+  });
+
+  it('keeps two repositories that share a pull request number apart', async () => {
+    const db = await seedDb();
+    await addSession({ db, seed: { id: 'api', createdAt: RECENT } });
+    await addImpactMount({
+      db,
+      seed: { id: 'wt-api', sessionId: 'api', branch: 'x', repoSlug: 'acme/api', at: RECENT },
+    });
+    await addImpactMount({
+      db,
+      seed: { id: 'wt-web', sessionId: 'api', branch: 'x', repoSlug: 'acme/web', at: RECENT },
+    });
+    await addImpactLink({
+      db,
+      seed: {
+        id: 'l-api',
+        mountId: 'wt-api',
+        number: 70,
+        state: 'merged',
+        repoSlug: 'acme/api',
+        at: RECENT,
+      },
+    });
+    await addImpactLink({
+      db,
+      seed: {
+        id: 'l-web',
+        mountId: 'wt-web',
+        number: 70,
+        state: 'merged',
+        repoSlug: 'acme/web',
+        at: RECENT,
+      },
+    });
+
+    const result = await getPullRequestOutcomes(params({ db, sinceMs: SINCE }));
+
+    expect(result.merged).toBe(2);
+  });
+
+  it('does not double-count spend when two mounts of one session link the same pull request', async () => {
+    const db = await seedDb();
+    await addSession({ db, seed: { id: 'multi', createdAt: RECENT } });
+    await addImpactMount({
+      db,
+      seed: { id: 'wt-a', sessionId: 'multi', branch: 'shared', at: RECENT },
+    });
+    await addImpactMount({
+      db,
+      seed: { id: 'wt-b', sessionId: 'multi', branch: 'shared', at: RECENT },
+    });
+    await addImpactLink({
+      db,
+      seed: { id: 'l-a', mountId: 'wt-a', number: 21, state: 'merged', at: RECENT },
+    });
+    await addImpactLink({
+      db,
+      seed: { id: 'l-b', mountId: 'wt-b', number: 21, state: 'merged', at: RECENT },
+    });
+    await addTelemetry({
+      db,
+      seed: { id: 't-multi', runId: 'r-multi', sessionId: 'multi', at: RECENT, cost: 5 },
+    });
+
+    const result = await getPullRequestOutcomes(params({ db, sinceMs: SINCE }));
+
+    expect(result.merged).toBe(1);
     expect(result.entries[0]).toMatchObject({ number: 21, spendUsd: 5 });
   });
 
-  it('reports a pull request with no telemetry as having no spend, not zero spend', async () => {
-    const db = await seedDb();
-    await addSession({ db, seed: { id: 'unpriced', createdAt: RECENT } });
-    await db.execute(
-      `INSERT INTO session_worktrees
-         (id, session_id, worktree_path, branch, parallel_index, repo_slug, created_at)
-       VALUES ('wt-unpriced', 'unpriced', '/tmp/unpriced', 'feature/unpriced', 0, 'repo', ?)`,
-      [RECENT],
-    );
-    await db.execute(
-      `INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at)
-       VALUES (?, 'repo', ?, ?)`,
-      [
-        'feature/unpriced',
-        JSON.stringify({
-          number: 30,
-          title: 'no telemetry yet',
-          state: 'open',
-          updatedAt: iso(RECENT),
-        }),
-        RECENT,
-      ],
-    );
-
-    const result = await getPullRequestOutcomes(params({ db, sinceMs: SINCE }));
-
-    expect(result.entries[0]).toMatchObject({ number: 30, spendUsd: null });
-  });
-
-  it('leaves another workspace spend out of a pull request that shares its branch name', async () => {
-    const db = await seedDb();
-    await addSession({ db, seed: { id: 'mine', createdAt: RECENT } });
-    await addSession({
-      db,
-      seed: { id: 'theirs', createdAt: RECENT, workspace: otherWorkspaceId },
-    });
-    await db.execute(
-      `INSERT INTO session_worktrees
-         (id, session_id, worktree_path, branch, parallel_index, repo_slug, created_at)
-       VALUES ('wt-mine', 'mine', '/tmp/mine', 'ak/shared-slug', 0, 'repo', ?),
-              ('wt-theirs', 'theirs', '/tmp/theirs', 'ak/shared-slug', 0, 'repo', ?)`,
-      [RECENT, RECENT],
-    );
-    await db.execute(
-      `INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at)
-       VALUES (?, 'repo', ?, ?)`,
-      [
-        'ak/shared-slug',
-        JSON.stringify({
-          number: 44,
-          title: 'shared branch name',
-          state: 'open',
-          updatedAt: iso(RECENT),
-        }),
-        RECENT,
-      ],
-    );
-    await addTelemetry({
-      db,
-      seed: { id: 't-mine', runId: 'r-mine', sessionId: 'mine', at: RECENT, cost: 2 },
-    });
-    await addTelemetry({
-      db,
-      seed: { id: 't-theirs', runId: 'r-theirs', sessionId: 'theirs', at: RECENT, cost: 9 },
-    });
-
-    const result = await getPullRequestOutcomes(params({ db, sinceMs: SINCE }));
-
-    expect(result.entries[0]).toMatchObject({ number: 44, spendUsd: 2 });
-  });
-
-  it('reports a pull request priced at zero as having no spend', async () => {
+  it('reports a pull request with no priced telemetry as having no spend', async () => {
     const db = await seedDb();
     await addSession({ db, seed: { id: 'freebie', createdAt: RECENT } });
-    await db.execute(
-      `INSERT INTO session_worktrees
-         (id, session_id, worktree_path, branch, parallel_index, repo_slug, created_at)
-       VALUES ('wt-freebie', 'freebie', '/tmp/freebie', 'ak/freebie', 0, 'repo', ?)`,
-      [RECENT],
-    );
-    await db.execute(
-      `INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at)
-       VALUES (?, 'repo', ?, ?)`,
-      [
-        'ak/freebie',
-        JSON.stringify({
-          number: 51,
-          title: 'unpriced provider run',
-          state: 'open',
-          updatedAt: iso(RECENT),
-        }),
-        RECENT,
-      ],
-    );
+    await addImpactMount({ db, seed: { id: 'wt', sessionId: 'freebie', branch: 'f', at: RECENT } });
+    await addImpactLink({
+      db,
+      seed: { id: 'l', mountId: 'wt', number: 51, state: 'open', at: RECENT },
+    });
     await addTelemetry({
       db,
       seed: {
@@ -489,133 +368,49 @@ describe('pull request outcomes', () => {
     expect(result.entries[0]).toMatchObject({ number: 51, spendUsd: null });
   });
 
-  it('leaves out a worktree that has no repository slug yet', async () => {
+  it('places a merged pull request in the window of its merge, not of its last check', async () => {
     const db = await seedDb();
-    await addSession({ db, seed: { id: 'unslugged', createdAt: RECENT } });
-    await db.execute(
-      `INSERT INTO session_worktrees
-         (id, session_id, worktree_path, branch, parallel_index, created_at)
-       VALUES ('wt-unslugged', 'unslugged', '/tmp/unslugged', 'ak/pre-upgrade', 0, ?)`,
-      [RECENT],
-    );
-    await db.execute(
-      `INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at)
-       VALUES (?, 'org/repo', ?, ?)`,
-      [
-        'ak/pre-upgrade',
-        JSON.stringify({
-          number: 60,
-          title: 'pre-upgrade worktree',
-          state: 'open',
-          updatedAt: iso(RECENT),
-        }),
-        RECENT,
-      ],
-    );
+    await addSession({ db, seed: { id: 's1', createdAt: OLD } });
+    await addImpactMount({ db, seed: { id: 'wt', sessionId: 's1', branch: 'b', at: OLD } });
+    await addImpactLink({
+      db,
+      seed: { id: 'l', mountId: 'wt', number: 5, state: 'merged', at: RECENT, mergedAt: OLD },
+    });
 
-    const result = await getPullRequestOutcomes(params({ db, sinceMs: SINCE }));
+    const recent = await getPullRequestOutcomes(params({ db, sinceMs: SINCE }));
+    const all = await getPullRequestOutcomes(params({ db, sinceMs: null }));
 
-    expect(result.entries).toEqual([]);
-    expect(result).toMatchObject({ open: 0, merged: 0, closed: 0 });
+    expect(recent.merged).toBe(0);
+    expect(all.merged).toBe(1);
   });
 
-  it('keeps two repositories that share a branch name apart', async () => {
+  it('compares merged pull requests with the window before', async () => {
     const db = await seedDb();
-    await addSession({ db, seed: { id: 'api', createdAt: RECENT } });
-    await addSession({ db, seed: { id: 'web', createdAt: RECENT } });
-    await db.execute(
-      `INSERT INTO session_worktrees
-         (id, session_id, worktree_path, branch, parallel_index, repo_slug, created_at)
-       VALUES ('wt-api', 'api', '/tmp/api', 'ak/same-branch', 0, 'org/api', ?),
-              ('wt-web', 'web', '/tmp/web', 'ak/same-branch', 0, 'org/web', ?)`,
-      [RECENT, RECENT],
-    );
-    await db.execute(
-      `INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at)
-       VALUES (?, 'org/api', ?, ?)`,
-      [
-        'ak/same-branch',
-        JSON.stringify({
-          number: 70,
-          title: 'api pull request',
-          state: 'open',
-          updatedAt: iso(RECENT),
-        }),
-        RECENT,
-      ],
-    );
-    await addTelemetry({
+    await addSession({ db, seed: { id: 's1', createdAt: OLD } });
+    await addImpactEvent({
       db,
-      seed: { id: 't-api', runId: 'r-api', sessionId: 'api', at: RECENT, cost: 3 },
+      seed: {
+        id: 'e-old',
+        sessionId: 's1',
+        kind: 'pr_merged',
+        payload: { host: 'github.com', repository: 'acme/ledger-core', number: 3 },
+        at: NOW - 40 * DAY_MS,
+      },
     });
-    await addTelemetry({
+    await addImpactEvent({
       db,
-      seed: { id: 't-web', runId: 'r-web', sessionId: 'web', at: RECENT, cost: 11 },
+      seed: {
+        id: 'e-closed',
+        sessionId: 's1',
+        kind: 'pr_closed',
+        payload: { host: 'github.com', repository: 'acme/ledger-core', number: 4 },
+        at: RECENT,
+      },
     });
 
     const result = await getPullRequestOutcomes(params({ db, sinceMs: SINCE }));
 
-    expect(result.entries).toHaveLength(1);
-    expect(result.entries[0]).toMatchObject({ number: 70, sessionId: 'api', spendUsd: 3 });
-  });
-
-  it('leaves out a cache row fetched longer ago than the read bound', async () => {
-    const db = await seedDb();
-    const staleFetch = Date.now() - 400 * DAY_MS;
-    await addSession({ db, seed: { id: 'stale', createdAt: RECENT } });
-    await db.execute(
-      `INSERT INTO session_worktrees
-         (id, session_id, worktree_path, branch, parallel_index, repo_slug, created_at)
-       VALUES ('wt-stale', 'stale', '/tmp/stale', 'ak/stale', 0, 'org/repo', ?)`,
-      [RECENT],
-    );
-    await db.execute(
-      `INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at)
-       VALUES (?, 'org/repo', ?, ?)`,
-      [
-        'ak/stale',
-        JSON.stringify({
-          number: 80,
-          title: 'long forgotten',
-          state: 'open',
-          updatedAt: iso(RECENT),
-        }),
-        staleFetch,
-      ],
-    );
-
-    const result = await getPullRequestOutcomes(params({ db, sinceMs: null }));
-
-    expect(result.entries).toEqual([]);
-  });
-
-  it('keeps a cache row fetched inside the read bound when the window is unbounded', async () => {
-    const db = await seedDb();
-    await addSession({ db, seed: { id: 'kept', createdAt: RECENT } });
-    await db.execute(
-      `INSERT INTO session_worktrees
-         (id, session_id, worktree_path, branch, parallel_index, repo_slug, created_at)
-       VALUES ('wt-kept', 'kept', '/tmp/kept', 'ak/kept', 0, 'org/repo', ?)`,
-      [RECENT],
-    );
-    await db.execute(
-      `INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at)
-       VALUES (?, 'org/repo', ?, ?)`,
-      [
-        'ak/kept',
-        JSON.stringify({
-          number: 81,
-          title: 'still readable',
-          state: 'merged',
-          updatedAt: iso(RECENT),
-        }),
-        Date.now() - DAY_MS,
-      ],
-    );
-
-    const result = await getPullRequestOutcomes(params({ db, sinceMs: null }));
-
-    expect(result.entries[0]).toMatchObject({ number: 81 });
+    expect(result).toMatchObject({ merged: 0, closed: 1, previousMerged: 1 });
   });
 });
 
@@ -629,6 +424,12 @@ describe('review outcomes', () => {
        VALUES ('d1', 's1', 'src/hot.ts', 'a', 'resolved', ?, ?),
               ('d2', 's1', 'src/hot.ts', 'b', 'resolved', ?, ?)`,
       [RECENT, RECENT + 3_600_000, RECENT, RECENT + 3 * 3_600_000],
+    );
+    await db.execute(
+      `INSERT INTO diff_comments
+         (id, session_id, file_path, body, status, created_at, consumed_at)
+       VALUES ('d3', 's1', 'src/cold.ts', 'c', 'consumed', ?, ?)`,
+      [RECENT, RECENT + 9 * 3_600_000],
     );
     await db.execute(
       `INSERT INTO pr_review_drafts
@@ -646,6 +447,7 @@ describe('review outcomes', () => {
     const result = await getReviewOutcomes(params({ db, sinceMs: SINCE }));
 
     expect(result.commentsResolved).toBe(2);
+    expect(result.sentToAgent).toBe(1);
     expect(result.medianResolveHours).toBe(1);
     expect(result.publishedDrafts).toBe(1);
     expect(result.pushedResolutions).toBe(1);

@@ -46,6 +46,7 @@ import type { WorkspacesState } from './slices/workspaces/state';
 import type { ProjectsState } from './slices/projects/state';
 import type { SessionsState } from './slices/sessions/state';
 import type { SessionEventsState } from './slices/session-events/state';
+import type { DormantSpendState } from './slices/dormant-spend/state';
 import type { PresenceState } from './slices/presence/state';
 import type { SettingsState } from './slices/settings/state';
 import type { ProvidersState } from './slices/providers/state';
@@ -139,6 +140,7 @@ type AppSliceState = ArtifactsState &
   ProjectsState &
   SessionsState &
   SessionEventsState &
+  DormantSpendState &
   PresenceState &
   SettingsState &
   ProvidersState &

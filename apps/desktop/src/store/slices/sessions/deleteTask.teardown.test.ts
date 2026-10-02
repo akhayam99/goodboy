@@ -98,6 +98,7 @@ const makeStore = (state: { kind: string; runId?: string } = { kind: 'idle' }) =
   evictSession: vi.fn(),
   emitNotification: vi.fn(async () => undefined),
   reconcileOrphanWorktrees: vi.fn(async () => undefined),
+  loadDormantSpend: vi.fn(async () => undefined),
 });
 
 beforeEach(() => {

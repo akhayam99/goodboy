@@ -9,6 +9,7 @@ type Params = {
   readonly windowId: ImpactWindowId;
   readonly workspaceName: string | null;
   readonly sessionCount: number;
+  readonly deletedSessionCount: number;
   readonly mergedPullRequests: number | null;
   readonly spendText: string | null;
   readonly workflowShare: number | null;
@@ -36,6 +37,7 @@ export const impactSummary = ({
   windowId,
   workspaceName,
   sessionCount,
+  deletedSessionCount,
   mergedPullRequests,
   spendText,
   workflowShare,
@@ -47,6 +49,7 @@ export const impactSummary = ({
     [
       plain('ran '),
       strong(counted({ count: sessionCount, singular: 'session', plural: 'sessions' })),
+      ...(deletedSessionCount > 0 ? [plain(` (${deletedSessionCount} deleted)`)] : []),
       ...(workspaceName === null ? [] : [plain(` in ${workspaceName}`)]),
     ],
   ];

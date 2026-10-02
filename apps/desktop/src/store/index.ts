@@ -25,6 +25,7 @@ export {
   useStageGroupedSessions,
   useWorkspaceRollup,
 } from './slices/session-view/selectors';
+export { useDormantSpend } from './slices/dormant-spend/selectors';
 export {
   useProjectFilteredSessions,
   useSelectedProjectIds,

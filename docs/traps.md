@@ -189,6 +189,25 @@ fails silently at runtime.
 - `SIMPLE_LENSES` marks the lenses that still work without a branch. A lens
   left out of it is hidden or cleared for sessions with no branch.
 
+- Impact counts deleted sessions on purpose. Deleting a session is a soft
+  delete: `purgeSessionForDelete` frees the transcript, file versions, slots,
+  decisions and images, and keeps the row with `deleted_at`. Never add
+  `s.deleted_at IS NULL` to `packages/db/src/queries/impact.ts` or
+  `impact-pull-requests.ts`: `impact-lifecycle.test.ts` fails on it. The
+  filters on `a.deleted_at` stay: those are agents removed from a workflow.
+  Windows and durations read `COALESCE(last_activity_at, updated_at)`, and
+  the purge leaves `updated_at` alone, so a session deleted today stays in the
+  window of its last activity.
+- Impact never reads `github_pr_cache`. The boot cleanup
+  (`runDatabaseHygiene`) deletes cache rows whose branch has no live session,
+  which is exactly the work that shipped. Merged pull requests come from
+  `mount_pr_links` and the `pr_merged` session events, keyed by host,
+  repository and number. A detached project deletes its mount and its links,
+  so the same boot cleanup writes a `pr_merged` event for every merged link
+  that has none yet (`backfillMergedPullRequestEvents`). A merge done in
+  Goodboy carries host and repository in its payload (`mountPrEventPayload`),
+  so it and the observed transition dedupe to one event.
+
 ## Traps in the store
 
 - A store helper named `select*` is not always safe as a `useAppStore`

@@ -85,6 +85,7 @@ vi.mock('../../store', async () => ({
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
   useSessions: () => state.sessions,
   useTelemetryForSessions: () => state.sessionTelemetry,
+  useDormantSpend: () => [],
 }));
 
 import { ProviderUsagePill } from '../chat/components/ProviderUsagePill';

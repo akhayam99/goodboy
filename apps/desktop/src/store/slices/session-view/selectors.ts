@@ -18,6 +18,8 @@ import { useAppStore } from '../../store';
 import { useProjectFilteredSessions } from '../sessionFilters/selectors';
 import { useProjectMountsForSessions } from '../project-mounts/useProjectMountsForSessions';
 import { useTelemetryForSessions } from '../sessions/selectors';
+import { useDormantSpend } from '../dormant-spend/selectors';
+import { spendSources } from '../../../shared/utils/spendSources';
 import { sortAndGroupSessions } from './sortAndGroupSessions';
 import type { GroupedSessions } from './types';
 import { stageInfoOf, type StageInfoState } from './stageInfoOf';
@@ -330,19 +332,16 @@ export const useWorkspaceRollup = (
 ): WorkspaceRollup => {
   const groups = useStageGroupedSessions(workspaceId, sessions);
   const sessionTelemetry = useTelemetryForSessions({ sessions });
+  const dormant = useDormantSpend();
   return useMemo(() => {
     const countOf = (key: string) => groups.find((g) => g.key === key)?.sessions.length ?? 0;
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
-    const cutoff = startOfDay.toISOString();
+    const cutoff = startOfDay.getTime();
     let todaySpend = 0;
-    for (const session of sessions) {
-      const recs = sessionTelemetry[session.id];
-      if (recs === undefined) {
-        continue;
-      }
-      for (const rec of recs) {
-        if (rec.kind === 'summarizer' || rec.recordedAt < cutoff) {
+    for (const source of spendSources({ sessions, telemetryMap: sessionTelemetry, dormant })) {
+      for (const rec of source.records) {
+        if (Date.parse(rec.recordedAt) < cutoff) {
           continue;
         }
         todaySpend += rec.estimatedCostUsd;
@@ -353,5 +352,5 @@ export const useWorkspaceRollup = (
       runningCount: countOf('running'),
       todaySpend,
     };
-  }, [groups, sessionTelemetry, sessions]);
+  }, [dormant, groups, sessionTelemetry, sessions]);
 };
