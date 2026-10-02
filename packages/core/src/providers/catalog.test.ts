@@ -268,6 +268,15 @@ describe('model catalogs', () => {
     },
   );
 
+  it('emits the GPT-6.1 Sol cli id with its effort', () => {
+    expect(
+      resolveModelArgs({
+        provider: 'codex',
+        selection: { key: 'gpt-6.1-sol', effort: 'max' },
+      }),
+    ).toEqual({ args: ['-m', 'gpt-6.1-sol', '-c', 'model_reasoning_effort="max"'] });
+  });
+
   it('routes every spawnable id back to the model that owns it', () => {
     for (const provider of PROVIDER_IDS) {
       for (const model of MODEL_CATALOGS[provider]) {

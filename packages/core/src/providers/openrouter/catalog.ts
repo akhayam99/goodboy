@@ -48,7 +48,7 @@ export const OPENROUTER_CATALOG = [
     key: 'gpt-5.4',
     label: 'GPT-5.4',
     tier: 'turn',
-    contextWindow: 400_000,
+    contextWindow: 1_050_000,
     presentation: {
       family: 'gpt',
       group: 'GPT',
@@ -283,6 +283,24 @@ export const OPENROUTER_CATALOG = [
     cliId: 'openrouter/anthropic/claude-haiku-4.5',
     efforts: EFFORTS,
     defaultEffort: 'low',
+  },
+  {
+    key: 'gpt-6.1-sol',
+    label: 'GPT-6.1 Sol',
+    tier: 'turn',
+    contextWindow: 1_050_000,
+    presentation: {
+      family: 'gpt',
+      group: 'GPT',
+      version: '6.1',
+      checkpoint: 'Sol',
+      order: 67,
+      costTier: 'expensive',
+    },
+    provider: 'openrouter',
+    cliId: 'openrouter/openai/gpt-6.1-sol',
+    efforts: EFFORTS,
+    defaultEffort: 'medium',
   },
   {
     key: 'gpt-6-astra',
@@ -572,7 +590,7 @@ export const OPENROUTER_CATALOG = [
     key: 'glm-5.3',
     label: 'GLM-5.3',
     tier: 'cheap',
-    contextWindow: 1_310_720,
+    contextWindow: 1_048_576,
     presentation: {
       family: 'other',
       group: 'GLM',

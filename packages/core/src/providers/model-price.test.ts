@@ -37,6 +37,7 @@ describe('getProviderModelPrice per provider table', () => {
 
   it('returns codex pricing for catalog cli ids', () => {
     expect(price('codex', 'gpt-6-astra')).toEqual({ inputPerMtok: 10, outputPerMtok: 50 });
+    expect(price('codex', 'gpt-6.1-sol')).toEqual({ inputPerMtok: 2, outputPerMtok: 10 });
     expect(price('codex', 'gpt-5.5')).toEqual({ inputPerMtok: 5, outputPerMtok: 30 });
     expect(price('codex', 'gpt-5.4')).toEqual({ inputPerMtok: 2.5, outputPerMtok: 15 });
     expect(price('codex', 'gpt-5.4-mini')).toEqual({ inputPerMtok: 0.75, outputPerMtok: 4.5 });
@@ -48,6 +49,7 @@ describe('getProviderModelPrice per provider table', () => {
 
   it.each([
     ['codex', 'gpt-6', 'gpt-6-astra'],
+    ['codex', 'gpt-6.1-sol', 'gpt-6.1-sol'],
     ['codex', 'gpt-5.6-sol', 'gpt-5.6-sol'],
     ['anthropic', 'opus-5', 'claude-opus-5'],
     ['anthropic', 'sonnet-4.6', 'claude-sonnet-4-6'],

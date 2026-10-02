@@ -7,7 +7,7 @@ describe('contextWindowFor', () => {
     expect(contextWindowFor('claude-4.6-sonnet-medium-thinking')).toBe(1_000_000);
     expect(contextWindowFor('composer-2.5')).toBe(200_000);
     expect(contextWindowFor('gpt-5.5')).toBe(400_000);
-    expect(contextWindowFor('claude-opus-4-6')).toBe(200_000);
+    expect(contextWindowFor('claude-opus-4-6')).toBe(1_000_000);
   });
 
   it('returns null instead of a provider fallback for unknown ids', () => {

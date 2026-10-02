@@ -25,6 +25,11 @@ const OPUS_PRICE: ModelPrice = {
   outputPerMtok: 25,
   cachedInputPerMtok: 0.5,
 };
+const OPUS_55_PRICE: ModelPrice = {
+  inputPerMtok: 4,
+  outputPerMtok: 20,
+  cachedInputPerMtok: 0.2,
+};
 const FABLE_PRICE: ModelPrice = {
   inputPerMtok: 10,
   outputPerMtok: 50,
@@ -35,7 +40,12 @@ const FABLE_51_PRICE: ModelPrice = {
   outputPerMtok: 50,
   cachedInputPerMtok: 0.25,
 };
-const GPT56_PRICE: ModelPrice = {
+const SOL_PRICE: ModelPrice = {
+  inputPerMtok: 4,
+  outputPerMtok: 20,
+  cachedInputPerMtok: 0.4,
+};
+const GPT55_PRICE: ModelPrice = {
   inputPerMtok: 5,
   outputPerMtok: 30,
   cachedInputPerMtok: 0.5,
@@ -50,10 +60,10 @@ const LUNA_PRICE: ModelPrice = {
   outputPerMtok: 1.2,
   cachedInputPerMtok: 0.02,
 };
-const GPT54_PRICE: ModelPrice = {
-  inputPerMtok: 2.5,
-  outputPerMtok: 15,
-  cachedInputPerMtok: 0.25,
+const GPT53_CODEX_PRICE: ModelPrice = {
+  inputPerMtok: 1.75,
+  outputPerMtok: 14,
+  cachedInputPerMtok: 0.175,
 };
 const GROK_PRICE: ModelPrice = {
   inputPerMtok: 2,
@@ -70,6 +80,11 @@ const GEMINI_FLASH_PRICE: ModelPrice = {
   outputPerMtok: 3.5,
   cachedInputPerMtok: 0.075,
 };
+const GEMINI_35_FLASH_PRICE: ModelPrice = {
+  inputPerMtok: 1.5,
+  outputPerMtok: 9,
+  cachedInputPerMtok: 0.15,
+};
 const GEMINI_PRO_PRICE: ModelPrice = {
   inputPerMtok: 2,
   outputPerMtok: 12,
@@ -85,6 +100,11 @@ const KIMI_PRICE: ModelPrice = {
   outputPerMtok: 15,
   cachedInputPerMtok: 0.3,
 };
+const KIMI_K27_CODE_PRICE: ModelPrice = {
+  inputPerMtok: 0.95,
+  outputPerMtok: 4,
+  cachedInputPerMtok: 0.19,
+};
 const GLM_PRICE: ModelPrice = {
   inputPerMtok: 1.4,
   outputPerMtok: 4.4,
@@ -96,11 +116,11 @@ export const CURSOR_PRICES: Record<string, ModelPrice> = {
   'composer-2.5': COMPOSER_PRICE,
   auto: COMPOSER_PRICE,
 
-  'claude-opus-5-5-low': OPUS_PRICE,
-  'claude-opus-5-5-medium': OPUS_PRICE,
-  'claude-opus-5-5-high': OPUS_PRICE,
-  'claude-opus-5-5-xhigh': OPUS_PRICE,
-  'claude-opus-5-5-max': OPUS_PRICE,
+  'claude-opus-5-5-low': OPUS_55_PRICE,
+  'claude-opus-5-5-medium': OPUS_55_PRICE,
+  'claude-opus-5-5-high': OPUS_55_PRICE,
+  'claude-opus-5-5-xhigh': OPUS_55_PRICE,
+  'claude-opus-5-5-max': OPUS_55_PRICE,
   'claude-opus-5-thinking-high': OPUS_PRICE,
   'claude-opus-5-low': OPUS_PRICE,
   'claude-opus-4-8-thinking-high': OPUS_PRICE,
@@ -127,14 +147,14 @@ export const CURSOR_PRICES: Record<string, ModelPrice> = {
   'claude-4.6-sonnet-medium': SONNET_PRICE,
   'claude-4.6-sonnet-medium-thinking': SONNET_PRICE,
 
-  'gpt-5.6-sol-high': GPT56_PRICE,
+  'gpt-5.6-sol-high': SOL_PRICE,
   'gpt-5.6-terra-high': TERRA_PRICE,
   'gpt-5.6-terra-xhigh': TERRA_PRICE,
   'gpt-5.6-luna-medium': LUNA_PRICE,
   'gpt-5.6-luna-high': LUNA_PRICE,
-  'gpt-5.5-high': GPT56_PRICE,
-  'gpt-5.5-medium': GPT56_PRICE,
-  'gpt-5.3-codex': GPT54_PRICE,
+  'gpt-5.5-high': GPT55_PRICE,
+  'gpt-5.5-medium': GPT55_PRICE,
+  'gpt-5.3-codex': GPT53_CODEX_PRICE,
 
   'grok-4.7-medium': GROK_PRICE,
   'grok-4.7-medium-fast': GROK_FAST_PRICE,
@@ -151,7 +171,7 @@ export const CURSOR_PRICES: Record<string, ModelPrice> = {
   'gemini-3.6-flash-low': GEMINI_FLASH_PRICE,
   'gemini-3.6-flash-medium': GEMINI_FLASH_PRICE,
   'gemini-3.6-flash-high': GEMINI_FLASH_PRICE,
-  'gemini-3.5-flash': GEMINI_FLASH_PRICE,
+  'gemini-3.5-flash': GEMINI_35_FLASH_PRICE,
   'gemini-3-flash': GEMINI_FLASH_PRICE,
 
   'muse-spark-1.3-low': MUSE_SPARK_PRICE,
@@ -160,7 +180,7 @@ export const CURSOR_PRICES: Record<string, ModelPrice> = {
   'muse-spark-1.3-xhigh': MUSE_SPARK_PRICE,
   'muse-spark-1.3-max': MUSE_SPARK_PRICE,
 
-  'kimi-k2.7-code': KIMI_PRICE,
+  'kimi-k2.7-code': KIMI_K27_CODE_PRICE,
   'kimi-k3-low': KIMI_PRICE,
   'kimi-k3-high': KIMI_PRICE,
   'kimi-k3-max': KIMI_PRICE,

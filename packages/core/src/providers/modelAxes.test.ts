@@ -17,7 +17,7 @@ describe('modelAxes', () => {
       throw new Error('missing codex Astra');
     }
     const axes = modelAxes({ model, selection: { key: model.key, variant: 'astra' } });
-    expect(axes.model.options).toContainEqual({ id: 'GPT', label: 'GPT', modelKey: 'gpt-6' });
+    expect(axes.model.options).toContainEqual({ id: 'GPT', label: 'GPT', modelKey: 'gpt-6.1-sol' });
     expect(axes.version?.options).toContainEqual({ id: '6', label: '6', modelKey: 'gpt-6' });
     expect(axes.checkpoint).toEqual({
       label: 'Variant',
@@ -113,6 +113,29 @@ describe('modelAxes', () => {
     expect(fromTerra.version?.options.find((option) => option.id === '6')?.modelKey).toBe('gpt-6');
   });
 
+  it('offers GPT-6.1 Sol as the newest GPT version with the full Codex effort ladder', () => {
+    const model = CODEX_CATALOG.find((candidate) => candidate.key === 'gpt-6.1-sol');
+    if (model == null) {
+      throw new Error('missing codex GPT-6.1 Sol');
+    }
+    const axes = modelAxes({ model, selection: { key: model.key } });
+    expect(axes.version?.options).toContainEqual({
+      id: '6.1',
+      label: '6.1',
+      modelKey: 'gpt-6.1-sol',
+    });
+    expect(axes.version?.activeId).toBe('6.1');
+    expect(axes.checkpoint?.activeId).toBe('Sol');
+    expect(axes.effort?.levels.map((level) => level.level)).toEqual([
+      'low',
+      'medium',
+      'high',
+      'xhigh',
+      'max',
+    ]);
+    expect(axes.variant).toBeNull();
+  });
+
   it('gives each gpt checkpoint its own version chip, so cost is selectable', () => {
     const model = CODEX_CATALOG.find((candidate) => candidate.key === 'gpt-5.6-luna');
     if (model == null) {
@@ -123,6 +146,7 @@ describe('modelAxes', () => {
       { id: '5.5', label: '5.5', modelKey: 'gpt-5.5' },
       { id: '5.6', label: '5.6', modelKey: 'gpt-5.6-luna' },
       { id: '6', label: '6', modelKey: 'gpt-6' },
+      { id: '6.1', label: '6.1', modelKey: 'gpt-6.1-sol' },
     ]);
     expect(axes.version?.activeId).toBe('5.6');
   });
