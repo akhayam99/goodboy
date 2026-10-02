@@ -1,7 +1,13 @@
 {
   "version": "0.15.2",
-  "summary": "The workflow builder and the Workflows Studio list steps top down, step 1 first, with Add step at the end.",
-  "new": [],
+  "summary": "Codex agents can run the newest Sol model, and the workflow builder and Studio list steps top down, step 1 first.",
+  "new": [
+    {
+      "title": "GPT-6.1 Sol on Codex",
+      "area": "providers",
+      "copy": "Codex agents can now run GPT-6.1 Sol."
+    }
+  ],
   "groups": [
     {
       "id": "set-up",

@@ -14,7 +14,14 @@ onto its own paragraph.
 
 ## Goodboy v0.15.2
 
-The workflow builder and the Workflows Studio list steps top down, step 1 first, with Add step at the end.
+Codex agents can run the newest Sol model, and the workflow builder and Studio list steps top down, step 1 first.
+
+### New
+
+#### GPT-6.1 Sol on Codex
+<!-- gb area=providers pr=1951 -->
+
+Codex agents can now run GPT-6.1 Sol. It shows in the model picker with the same effort levels as the other Codex models, and its usage is priced in the cost view. It needs Codex CLI 0.160 or newer.
 
 ### Improved
 
