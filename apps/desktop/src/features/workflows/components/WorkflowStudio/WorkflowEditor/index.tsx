@@ -242,8 +242,8 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
               onStartDrag={(event) =>
                 startStepDrag(index, step.name.trim() || ROLE_LABEL[step.role], event)
               }
-              onMoveUp={() => moveStep(step.key, 1)}
-              onMoveDown={() => moveStep(step.key, -1)}
+              onMoveUp={() => moveStep(step.key, -1)}
+              onMoveDown={() => moveStep(step.key, 1)}
               editor={
                 <StepEditor
                   step={step}
@@ -278,8 +278,8 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
                   onEffort={(next) => patchStep(step.key, { effort: next })}
                   onVerbosity={(verbosity) => patchStep(step.key, { verbosity })}
                   onRoutingReset={() => patchStep(step.key, { provider: '', model: '' })}
-                  onMoveUp={() => moveStep(step.key, 1)}
-                  onMoveDown={() => moveStep(step.key, -1)}
+                  onMoveUp={() => moveStep(step.key, -1)}
+                  onMoveDown={() => moveStep(step.key, 1)}
                   onDuplicate={() =>
                     setSteps((current) => duplicateStep({ steps: current, key: step.key }))
                   }

@@ -17,9 +17,9 @@ const endsOf = ({ span }: { readonly span: Exclude<StepLaneSpan, 'none'> }) => {
     case 'through':
       return { from: '0', to: '100%' };
     case 'origin':
-      return { from: '0', to: String(NODE_CENTER_Y) };
-    case 'tip':
       return { from: String(NODE_CENTER_Y), to: '100%' };
+    case 'tip':
+      return { from: '0', to: String(NODE_CENTER_Y) };
     default: {
       const exhaustive: never = span;
       return exhaustive;

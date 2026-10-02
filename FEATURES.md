@@ -571,7 +571,7 @@ A workflow runs several agents in one session, each step with its own role, mode
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-light.webp" alt="The workflow builder for Duplicate credit fix: a goal, the Orchestrated, Custom and Preset modes, the plan preview with the Orchestrator row on GPT-5.6 Sol, guidance, Starts Now, Autorun, Spend cap and Start workflow">
 </picture>
 
-Shape a run before it starts: a name, a goal and a mode, with the plan previewed as the tree the run will show. **Starts**, **Autorun** and **Spend cap** sit under the plan.
+Shape a run before it starts: a name, a goal and a mode, with the plan previewed as a recipe, step 1 on top, in the same nodes the run will show. **Starts**, **Autorun** and **Spend cap** sit under the plan.
 
 ### Orchestrated
 

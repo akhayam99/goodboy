@@ -603,18 +603,20 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     expect(screen.queryByTestId('plan-estimate')).toBeNull();
   });
 
-  it('draws the plan bottom up with a numbered node per step, in execution order', async () => {
+  it('draws the plan top down with a numbered node per step and Add step last', async () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     await draftPlan();
 
     const list = screen.getByRole('list', { name: 'Workflow steps' });
-    expect(list.className).toContain('flex-col-reverse');
+    expect(list.className).not.toContain('flex-col-reverse');
     expect(stepToggles().map((toggle) => toggle.getAttribute('aria-label'))).toEqual([
       'Step 1: scout',
       'Step 2: implementer',
     ]);
     expect(within(list).getByRole('img', { name: 'Step 1, not started' })).toBeDefined();
-    expect(within(list).getByRole('button', { name: /^add step$/i })).toBeDefined();
+    const addButton = within(list).getByRole('button', { name: /^add step$/i });
+    const lastItem = within(list).getAllByRole('listitem').at(-1);
+    expect(lastItem?.contains(addButton)).toBe(true);
   });
 
   it('edits a step inline and closes it with Done or Escape', async () => {
@@ -1093,7 +1095,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     expect(orchestratorPicker().dataset.offeredProviders).toBe('anthropic,codex');
   });
 
-  it('draws three example steps above the orchestrator and says they are an example', () => {
+  it('draws the orchestrator first, then three example steps under an example caption', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
 
     const plan = screen.getByRole('region', { name: /^plan$/i });
@@ -1106,6 +1108,16 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     ]);
     expect(examples.every((row) => row.getAttribute('aria-hidden') === 'true')).toBe(true);
     expect(within(plan).queryByRole('group', { name: /scout routing/i })).toBeNull();
+    const orchestrator = within(plan).getByRole('img', { name: 'Orchestrator' });
+    const guidance = within(plan).getByRole('button', {
+      name: /add guidance for the orchestrator/i,
+    });
+    const caption = within(plan).getByText(/^example\. real steps are picked one at a time/i);
+    const precedes = ({ earlier, later }: { readonly earlier: Node; readonly later: Node }) =>
+      Boolean(earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(precedes({ earlier: orchestrator, later: guidance })).toBe(true);
+    expect(precedes({ earlier: guidance, later: caption })).toBe(true);
+    expect(precedes({ earlier: caption, later: examples[0]! })).toBe(true);
   });
 
   it('keeps guidance behind a disclosure and folds it back when left empty', () => {
@@ -1636,12 +1648,26 @@ describe('WorkflowBuilderView (step management in custom mode)', () => {
     expect(startBtn().disabled).toBe(true);
   });
 
-  it('moving the first step up runs it later, as the tree grows upward', async () => {
+  it('moving the first step up is a no-op, as it already runs first', async () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     await draftPlan();
 
     const grips = screen.getAllByRole('button', { name: /reorder step/i });
     fireEvent.keyDown(grips[0]!, { key: 'ArrowUp' });
+
+    fireEvent.click(startBtn());
+    await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
+    const steps = mockSavePhaseTemplate.mock.calls[0]![0].steps;
+    expect(steps[0]!.role).toBe('scout');
+    expect(steps[1]!.role).toBe('custom');
+  });
+
+  it('moving the first step down runs it later', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    await draftPlan();
+
+    const grips = screen.getAllByRole('button', { name: /reorder step/i });
+    fireEvent.keyDown(grips[0]!, { key: 'ArrowDown' });
 
     fireEvent.click(startBtn());
     await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());

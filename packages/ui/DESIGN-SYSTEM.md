@@ -630,15 +630,16 @@ appear. Headers, cards, tables and the queue use the inline `RoutingLabel`.
 
 ### The plan in the workflow builder
 
-The builder draws the plan with the same grammar, because the form is a
-preview of the run. Every row is future, so every node is `queued` with its
+The builder draws the plan with the same grammar as the run, so a step
+looks the same before and after it starts. Every row is future, so every node is `queued` with its
 number and the lane is dashed in the run's identity colour. There is no
 ordinal column: nothing in the form can turn into a check. Each row draws
 its own lane segment over its own height, so an expanded row lengthens its
-segment and needs no second lane engine. Step 1 sits at the bottom, just
-above the launch bar, and **Add step** is the top node, because the future is
-up. The list keeps run order in the DOM and reverses it with
-`flex-col-reverse`. The form sits on the pane measure, the same column as the
+segment and needs no second lane engine. A recipe reads top down: step 1 is the first row and
+**Add step** is the last node, under the last step, so the lane is a dashed
+line that ends at that node. The first row is the origin, so the lane starts at
+its node, and a drop zone above step 1 draws no lane. The run tree and the
+activity timeline keep growing upward to NOW on purpose. The form sits on the pane measure, the same column as the
 workflow detail, so the plan keeps its width when the run starts. The meta
 columns are `WorkMeta` with no `@container` above them, so the effort shows at
 every width, since choosing it is the point of the form. The row's trailing
@@ -651,9 +652,10 @@ name row carries the plan's total in a muted chip. Nothing in the form draws a
 percentage or an arc: nothing has run yet.
 
 An orchestrated plan has no steps yet, so it draws the orchestrator as the
-origin node and three example rows above it: queued nodes, muted role pills
-and a bare bar for the title, never text or routing, under a caption that
-says they are an example. They enter once, staggered 120ms apart, with the
+origin node, the guidance disclosure under it and three example rows below:
+queued nodes, muted role pills and a bare bar for the title, never text or
+routing, under a caption that says they are an example. They enter once,
+top to bottom, staggered 120ms apart, with the
 `fade-in` transition keyframe and `animation-fill-mode: backwards`. The
 entry confirms that the mode changed and that the run grows one step at a
 time. It never loops, and reduced motion drops it.

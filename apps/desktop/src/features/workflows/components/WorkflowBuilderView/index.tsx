@@ -1014,8 +1014,8 @@ export const WorkflowBuilderView = (props: Props) => {
             onStartDrag={(event) =>
               startStepDrag(index, step.name.trim() || ROLE_LABEL[step.role], event)
             }
-            onMoveUp={() => moveStep(step.key, 1)}
-            onMoveDown={() => moveStep(step.key, -1)}
+            onMoveUp={() => moveStep(step.key, -1)}
+            onMoveDown={() => moveStep(step.key, 1)}
             editor={
               <StepEditor
                 step={step}
@@ -1051,8 +1051,8 @@ export const WorkflowBuilderView = (props: Props) => {
                 onEffort={(next) => patchStep(step.key, { effort: next })}
                 onVerbosity={(verbosity) => patchStep(step.key, { verbosity })}
                 onRoutingReset={() => patchStep(step.key, { provider: '', model: '' })}
-                onMoveUp={() => moveStep(step.key, 1)}
-                onMoveDown={() => moveStep(step.key, -1)}
+                onMoveUp={() => moveStep(step.key, -1)}
+                onMoveDown={() => moveStep(step.key, 1)}
                 onDuplicate={() =>
                   setSteps((previous) => duplicateDraftStep({ steps: previous, key: step.key }))
                 }

@@ -158,6 +158,12 @@ status` directly. A branch cut from a remote-tracking ref (`worktree add -b
   `bypassPermissions` (the default), Cursor, OpenCode and Antigravity have no
   OS sandbox and can write there anyway. `turn.rs` has a test that fails when
   a provider's `--add-dir` contains those paths.
+- `StepTree` (the workflow builder and the Studio editor) reads top down,
+  step 1 first and **Add step** last, while `RunTree` and the activity
+  timeline read bottom up to NOW. That split is on purpose: a recipe reads like
+  text, a run reads like a log. Aligning one to the other, or copying the
+  `flex-col-reverse` of the run back into the plan, breaks the lane geometry in
+  `StepTreeLane` and the reorder keys, where up means earlier.
 
 ## Hand-maintained lists the compiler does not check
 

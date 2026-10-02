@@ -19,7 +19,7 @@ export const GuidanceDisclosure = ({ identityIndex, guidance, disabled, onGuidan
 
   return (
     <div className="flex min-w-0 gap-1.5">
-      <StepTreeGutter span="none" identityIndex={identityIndex} />
+      <StepTreeGutter span="through" identityIndex={identityIndex} />
       {isOpen ? (
         <div className="flex min-w-0 flex-1 flex-col gap-1 pl-2">
           <label htmlFor={GUIDANCE_ID} className="text-secondary text-muted-foreground">

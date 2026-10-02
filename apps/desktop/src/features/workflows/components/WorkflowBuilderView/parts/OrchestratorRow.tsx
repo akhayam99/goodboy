@@ -43,7 +43,17 @@ export const OrchestratorRow = ({
 }: Props) => (
   <section aria-label="Plan" className="flex min-w-0 flex-col gap-2">
     <Eyebrow label="Plan" muted />
-    <ExampleSteps identityIndex={identityIndex}>
+    <ExampleSteps
+      identityIndex={identityIndex}
+      guidance={
+        <GuidanceDisclosure
+          identityIndex={identityIndex}
+          guidance={guidance}
+          disabled={disabled}
+          onGuidance={onGuidance}
+        />
+      }
+    >
       <li className="flex min-w-0 gap-1.5">
         <StepTreeGutter
           span="origin"
@@ -84,11 +94,5 @@ export const OrchestratorRow = ({
         </div>
       </li>
     </ExampleSteps>
-    <GuidanceDisclosure
-      identityIndex={identityIndex}
-      guidance={guidance}
-      disabled={disabled}
-      onGuidance={onGuidance}
-    />
   </section>
 );
