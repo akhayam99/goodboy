@@ -68,6 +68,7 @@ const seedScene = (): void => {
     loadBudgetAlerts: noop,
     loadSessionTelemetry: noop,
     loadSessionBudget: noop,
+    refreshDormantPullRequests: async () => 0,
     navigate: () => undefined,
   });
 };

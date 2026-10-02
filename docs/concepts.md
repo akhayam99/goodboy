@@ -149,7 +149,9 @@ Impact, the Spend tab and the spend chip in the top bar all count it.
 A deleted session shows up in Impact with a **Deleted** label and does not
 open. Its spend joins the live spend in one sum: the store reads the archived
 and deleted part once when the workspace opens (`dormantSpend`) and adds the
-live sessions on top.
+live sessions on top. When Impact opens it refreshes up to 20 pull requests of
+archived or deleted sessions that were still open, so a merge that happened
+after you deleted the session still counts.
 
 ## Lazy sessions
 

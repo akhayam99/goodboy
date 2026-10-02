@@ -63,7 +63,9 @@ import {
   injectDbFault,
   openStorySqlite,
   resetStoryStore,
+  rowsOf,
   storySqlite,
+  stubStoryInvoke,
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ImpactStudio } from './index';
@@ -331,5 +333,49 @@ describe('ImpactStudio on the real database', () => {
     fireEvent.click(within(alert).getByRole('button', { name: 'Retry' }));
 
     await waitFor(async () => expect(await summary()).toContain('Goodboy ran'));
+  });
+});
+
+describe('ImpactStudio refreshes pull requests of sessions no longer on the board', () => {
+  it('settles an open pull request of a deleted session once, when Impact opens', async () => {
+    const db = storySqlite();
+    await db.execute("UPDATE mount_pr_links SET state = 'open', merged_at = NULL");
+    const calls: Array<ReadonlyArray<string>> = [];
+    stubStoryInvoke({
+      gh_run: ({ args }: { readonly args: ReadonlyArray<string> }) => {
+        calls.push(args);
+        return {
+          stdout: JSON.stringify({
+            number: 412,
+            title: 'Reconcile the ledger export',
+            url: 'https://github.com/acme/ledger-core/pull/412',
+            state: 'MERGED',
+            isDraft: false,
+            mergeable: 'UNKNOWN',
+            baseRefName: 'main',
+            headRefName: 'mq/ledger-export',
+            reviewDecision: null,
+            statusCheckRollup: null,
+            updatedAt: iso(TODAY),
+            body: null,
+            autoMergeRequest: null,
+            mergedAt: iso(TODAY),
+          }),
+          stderr: '',
+          exitCode: 0,
+        };
+      },
+    });
+    useAppStore.setState({ githubStatus: { mode: 'gh-cli', available: true } });
+    renderStudio();
+    fireEvent.click(screen.getByRole('tab', { name: '7 days' }));
+
+    await waitFor(async () => expect(await summary()).toContain('merged 1 pull request'));
+    const events = await rowsOf<{ kind: string }>({
+      sql: "SELECT kind FROM session_events WHERE session_id = ? AND kind = 'pr_merged'",
+      params: [GONE],
+    });
+    expect(calls).toHaveLength(1);
+    expect(events).toHaveLength(1);
   });
 });

@@ -302,6 +302,7 @@ export {
   upsertMountOperation,
 } from './queries/mount-operation';
 export {
+  listDormantOpenPullRequests,
   listMergedRequestHeads,
   listMountPullRequestLinks,
   upsertMountPullRequestLink,

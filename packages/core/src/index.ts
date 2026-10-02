@@ -546,6 +546,7 @@ export {
   parseUnifiedDiff,
   resolvePrForBranch,
   resolveReviewThread,
+  viewPullRequest,
   updateReviewComment,
   runJson as ghRunJson,
   toCachedPullRequest,

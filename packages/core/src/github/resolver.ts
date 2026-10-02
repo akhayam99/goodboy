@@ -234,6 +234,31 @@ export const resolvePrForBranch = async (
   return toPullRequestState({ raw: head, mergeQueue: placements.get(head.number) ?? null });
 };
 
+type ViewPullRequestParams = {
+  readonly runner: GhRunner;
+  readonly repo: string;
+  readonly number: number;
+  readonly opts?: GhRunOptions;
+};
+
+export const viewPullRequest = async ({
+  runner,
+  repo,
+  number,
+  opts = {},
+}: ViewPullRequestParams): Promise<PullRequestState | null> => {
+  const args = ['pr', 'view', String(number), '--repo', repo, '--json', PR_FIELDS.join(',')];
+  try {
+    const raw = await runJson<RawPullRequest>({ runner, args, opts, shape: 'object' });
+    return toPullRequestState({ raw });
+  } catch (err) {
+    if (err instanceof GhCliError) {
+      return null;
+    }
+    throw err;
+  }
+};
+
 export const listPrsForBranch = async (
   runner: GhRunner,
   repo: string,
