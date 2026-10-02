@@ -37,6 +37,7 @@
   --t3: #66707a;
   --t4: #737c85;
   --accent: oklch(0.455 0.14 210);
+  --star: #e3b341;
   --brand-tile: #0b0b0d;
   --tile-ring: transparent;
   --btn-bg: var(--t1);
