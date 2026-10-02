@@ -1,0 +1,1240 @@
+{
+  "clusters": [
+    {
+      "id": "onboarding",
+      "title": "Set up and start a task",
+      "lead": "Connect a provider, link your tools and begin from an issue, a workflow or a question.",
+      "groups": ["Set up", "Start a task"],
+      "mocks": ["session"],
+      "guides": [
+        {
+          "area": "setup",
+          "label": "Set up"
+        },
+        {
+          "area": "start",
+          "label": "Start a task"
+        }
+      ],
+      "items": [
+        {
+          "title": "Welcome to Goodboy",
+          "text": "Five short steps take you from install to a first agent reading your project. Skip any step that does not apply to you.",
+          "group": "Set up",
+          "main": true
+        },
+        {
+          "title": "Provider connection",
+          "text": "Connect the provider you already use with a login or an API key. Each card shows whether it is connected, signed out or missing.",
+          "group": "Set up",
+          "main": true
+        },
+        {
+          "title": "One page per provider",
+          "text": "Each provider has its own page for usage, which models appear in the picker, permissions and your account.",
+          "group": "Set up",
+          "also": "provider pages",
+          "shown": true
+        },
+        {
+          "title": "Update the provider CLI",
+          "text": "A banner tells you when a model needs a newer provider tool. One button updates it once running turns finish.",
+          "group": "Set up",
+          "also": "CLI updates",
+          "shown": true
+        },
+        {
+          "title": "Permissions for each provider",
+          "text": "See which permission modes a provider can honor before you pick one. A mode it cannot honor never runs looser.",
+          "group": "Set up",
+          "also": "permissions",
+          "shown": true
+        },
+        {
+          "title": "Integrations",
+          "text": "Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from one page. Keys stay in your system credential store.",
+          "group": "Set up",
+          "also": "integrations",
+          "shown": true
+        },
+        {
+          "title": "About you",
+          "text": "Tell agents once who you are and how you like to work. You can see which role reads each part.",
+          "group": "Set up",
+          "also": "about you"
+        },
+        {
+          "title": "How do you want to start?",
+          "text": "A new session draft offers three tabs: pick up a task, run a workflow or ask an agent. It becomes a session only when you press Start.",
+          "group": "Start a task",
+          "also": "start tabs",
+          "shown": true
+        },
+        {
+          "title": "Pick up a task, with a drafted brief",
+          "text": "Pick an issue and Goodboy drafts a short title, a goal and done-when criteria. Keep the brief, edit it or use the issue text.",
+          "group": "Start a task",
+          "main": true
+        },
+        {
+          "title": "Run a workflow",
+          "text": "Write a goal, choose how steps are picked and read the plan before you run it. One press creates the session and starts the run.",
+          "group": "Start a task",
+          "main": true
+        },
+        {
+          "title": "Ask an agent",
+          "text": "Map an unfamiliar repo before you plan. The scout only reads, so it changes nothing.",
+          "group": "Start a task",
+          "also": "ask an agent"
+        },
+        {
+          "title": "Start blank",
+          "text": "Start from the goal instead. A blank session opens on its overview, where you add the goal, projects and work.",
+          "group": "Start a task",
+          "also": "blank start"
+        },
+        {
+          "title": "Named by Goodboy",
+          "text": "A new session gets a short title without you writing one. It is marked until you rename it.",
+          "group": "Start a task",
+          "also": "auto titles"
+        },
+        {
+          "title": "Settings rail",
+          "text": "Each settings area says what needs you, like folders not found.",
+          "group": "Set up",
+          "also": "settings rail",
+          "shown": true
+        }
+      ]
+    },
+    {
+      "id": "running",
+      "title": "Follow a task while it runs",
+      "lead": "See what needs you from any screen, find anything fast, and watch each session move across the board.",
+      "groups": [
+        "Overview and activity",
+        "Switch between tasks",
+        "Search and navigation",
+        "The board"
+      ],
+      "mocks": ["board"],
+      "guides": [
+        {
+          "area": "overview",
+          "label": "Overview and activity"
+        },
+        {
+          "area": "switching",
+          "label": "Switch between tasks"
+        },
+        {
+          "area": "search",
+          "label": "Search and navigation"
+        },
+        {
+          "area": "board",
+          "label": "The board"
+        }
+      ],
+      "items": [
+        {
+          "title": "Session overview",
+          "text": "Find the goal, linked issues, projects, cost and the buttons to start an agent on one screen. Each project lists its branches and pull request state.",
+          "group": "Overview and activity",
+          "main": true
+        },
+        {
+          "title": "Refresh a session",
+          "text": "Pull requests made outside Goodboy show up when a turn ends or you come back to the window. Refresh re-reads everything right away.",
+          "group": "Overview and activity",
+          "also": "refresh"
+        },
+        {
+          "title": "Activity",
+          "text": "Read the whole session as one timeline of agents, questions, fixes, pull requests and decisions. Related steps fold into a single row.",
+          "group": "Overview and activity",
+          "main": true
+        },
+        {
+          "title": "Next",
+          "text": "Goodboy shows the one move that unblocks a task, like answering a question or opening a pull request. Put a suggestion away until things change.",
+          "group": "Overview and activity",
+          "also": "next step"
+        },
+        {
+          "title": "Time left",
+          "text": "Queued steps show how long they should take, learned from your own past runs. Thin history shows a count instead of a guess.",
+          "group": "Overview and activity",
+          "also": "time left",
+          "shown": true
+        },
+        {
+          "title": "File versions",
+          "text": "Undo an agent's edit without a branch. Each changed file is kept as it was, with a Restore button.",
+          "group": "Overview and activity",
+          "also": "file versions"
+        },
+        {
+          "title": "Activity bar",
+          "text": "A bar on the left lists the sessions of the workspace by where they stand. Each row says what it is waiting on.",
+          "group": "Switch between tasks",
+          "main": true
+        },
+        {
+          "title": "Now chip",
+          "text": "A chip in the top bar counts sessions that need you and those running. Click it to jump straight to one.",
+          "group": "Switch between tasks",
+          "also": "now chip"
+        },
+        {
+          "title": "Notifications",
+          "text": "Everything Goodboy has to tell you lands in one list with an unread count. A row that needs you carries its next step.",
+          "group": "Switch between tasks",
+          "also": "notifications",
+          "shown": true
+        },
+        {
+          "title": "Open in new window",
+          "text": "Give each workspace its own window so switching never interrupts running agents. Windows come back as you left them after a restart.",
+          "group": "Switch between tasks",
+          "also": "new windows",
+          "shown": true
+        },
+        {
+          "title": "Go anywhere",
+          "text": "Press ⌘K and type a few letters to find any session, agent, plan, page or script. Enter opens it.",
+          "group": "Search and navigation",
+          "also": "go anywhere"
+        },
+        {
+          "title": "Command palette",
+          "text": "Act on what you are looking at. The actions of the open agent and session come first, each with its shortcut.",
+          "group": "Search and navigation",
+          "also": "command palette",
+          "shown": true
+        },
+        {
+          "title": "Search",
+          "text": "Find a message, plan, decision, issue or branch with ⌘F, starting in the open session. The index stays on your computer.",
+          "group": "Search and navigation",
+          "also": "search",
+          "shown": true
+        },
+        {
+          "title": "Right click menus",
+          "text": "Right click almost anything to see every action it has. The menu and the palette list the same actions in the same order.",
+          "group": "Search and navigation",
+          "also": "right click menus"
+        },
+        {
+          "title": "Stage board",
+          "text": "See where each session stands without moving cards. Each one sits in building, running, needs you or in review.",
+          "group": "The board",
+          "main": true
+        },
+        {
+          "title": "Session card",
+          "text": "Read a task at a glance: pull request or status, agent count, project, cost and age. A round button opens a waiting action.",
+          "group": "The board",
+          "also": "session cards",
+          "shown": true
+        },
+        {
+          "title": "Done and Archived dock",
+          "text": "Finished sessions fold into two icons at the side of the board. Click one to open its column.",
+          "group": "The board",
+          "also": "done dock",
+          "shown": true
+        },
+        {
+          "title": "Bulk select",
+          "text": "Lasso or modifier-click cards across columns, then archive, restore or delete them together.",
+          "group": "The board",
+          "also": "bulk select",
+          "shown": true
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "title": "Shared context and projects",
+      "lead": "What one agent learns, the next one reads, across every repo your work touches.",
+      "groups": ["Shared context", "Workspace and projects"],
+      "mocks": ["handoff"],
+      "guides": [
+        {
+          "area": "context",
+          "label": "Shared context"
+        },
+        {
+          "area": "workspace",
+          "label": "Workspace and projects"
+        }
+      ],
+      "items": [
+        {
+          "title": "Decisions",
+          "text": "Record a decision once and later agents read it. Replacing or withdrawing one needs a reason that stays next to it.",
+          "group": "Shared context",
+          "main": true
+        },
+        {
+          "title": "See why each decision was made",
+          "text": "The reason behind a decision stays visible in the drawer, as a muted line under the decision itself.",
+          "group": "Shared context",
+          "also": "decision reasons",
+          "shown": true
+        },
+        {
+          "title": "Running summary",
+          "text": "After each turn a summary of state, next steps, open questions and lessons is updated for the next agent. Your own edits are kept.",
+          "group": "Shared context",
+          "main": true
+        },
+        {
+          "title": "Context drawer",
+          "text": "Open the goal, decisions and summary from any session page. Copy them out as a brief and see what changed since you last looked.",
+          "group": "Shared context",
+          "also": "context drawer"
+        },
+        {
+          "title": "Context budgets",
+          "text": "Prompts stay small as a session grows. Each part of the shared brief has its own size, and the newest decisions are kept.",
+          "group": "Shared context",
+          "also": "context budgets",
+          "shown": true
+        },
+        {
+          "title": "Plans handed to the next agent",
+          "text": "Hand a plan straight to the implementer. The plan moves from Ready to run to Ran and shows which agent used it.",
+          "group": "Shared context",
+          "also": "plan handoff",
+          "shown": true
+        },
+        {
+          "title": "Workspace with several projects",
+          "text": "Keep your repos together and let one session work across several of them. A repo gets a branch only when an agent needs to edit it.",
+          "group": "Workspace and projects",
+          "main": true
+        },
+        {
+          "title": "Starred projects, descriptions and base branch",
+          "text": "Star a project and give it a one-line description, and agents read both in their brief. Starred projects come first in the pickers.",
+          "group": "Workspace and projects",
+          "also": "starred projects"
+        },
+        {
+          "title": "Worktrees",
+          "text": "Each branch gets its own worktree, a separate folder next to your checkout. Agents edit in parallel without touching your own files.",
+          "group": "Workspace and projects",
+          "main": true
+        },
+        {
+          "title": "Several branches per project",
+          "text": "Work on several branches of one repo in the same session. If a worktree drifts to another branch, a card offers clear choices.",
+          "group": "Workspace and projects",
+          "also": "several branches",
+          "shown": true
+        },
+        {
+          "title": "Workspace switcher and Reconnect",
+          "text": "Jump between workspaces and projects from one search. Disconnecting keeps the history, and adding the folder again offers Reconnect.",
+          "group": "Workspace and projects",
+          "also": "workspace switcher",
+          "shown": true
+        },
+        {
+          "title": "Repo status across projects",
+          "text": "See which repos are behind, uncommitted or diverged. Update the safe ones together, fast-forward only, and leave the rest to you.",
+          "group": "Workspace and projects",
+          "also": "repo status",
+          "shown": true
+        },
+        {
+          "title": "Locate moved projects",
+          "text": "If you moved your repos, pick the parent folder. Goodboy finds them again, fixes the paths and repairs the worktrees, with Undo move.",
+          "group": "Workspace and projects",
+          "also": "moved projects",
+          "shown": true
+        },
+        {
+          "title": "Keep .goodboy out of git",
+          "text": "Keep Goodboy's own folder out of your commits with one click. The card shows only when git does not already ignore it.",
+          "group": "Workspace and projects",
+          "also": "git ignore"
+        }
+      ]
+    },
+    {
+      "id": "workflows",
+      "title": "Split work into steps",
+      "lead": "Chain several agents in one run, each with its own role and model, and steer them as they go.",
+      "groups": ["Workflows"],
+      "mocks": ["workflow"],
+      "guides": [
+        {
+          "area": "workflows",
+          "label": "Workflows"
+        }
+      ],
+      "items": [
+        {
+          "title": "Workflow builder",
+          "text": "Shape a run before it starts with a name, a goal and a mode. The plan is previewed as a recipe, step 1 on top, in the same nodes the run will show.",
+          "group": "Workflows",
+          "main": true
+        },
+        {
+          "title": "Orchestrated",
+          "text": "Give a goal and a model picks each next step with a role, a model and a reason. It stops when done or blocked.",
+          "group": "Workflows",
+          "main": true
+        },
+        {
+          "title": "Preset and Custom",
+          "text": "Write the steps yourself, or draft them with a planner. Save what you changed as a preset, or pick a saved one.",
+          "group": "Workflows",
+          "also": "presets",
+          "shown": true
+        },
+        {
+          "title": "Built-in workflows",
+          "text": "Start from Refactor, Plan and ship or Fix a bug. A built-in you delete stays deleted until you restore it.",
+          "group": "Workflows",
+          "also": "built-in workflows"
+        },
+        {
+          "title": "Saved steps",
+          "text": "Reuse steps across workflows. The built-in steps are read-only, and Save a copy makes your own.",
+          "group": "Workflows",
+          "also": "saved steps",
+          "shown": true
+        },
+        {
+          "title": "Model per step",
+          "text": "Put a light model on a scout and a strong one on the planner. Goodboy records what actually ran.",
+          "group": "Workflows",
+          "also": "model per step",
+          "shown": true
+        },
+        {
+          "title": "Autorun",
+          "text": "Let a run move to its next step without you. A guard stops an agent after four unattended turns in an hour.",
+          "group": "Workflows",
+          "also": "autorun",
+          "shown": true
+        },
+        {
+          "title": "Spend limit",
+          "text": "Cap what a run or a session can spend, then choose to pause workflows or only be warned. A paused run offers Raise limit.",
+          "group": "Workflows",
+          "main": true
+        },
+        {
+          "title": "Chained starts",
+          "text": "Line work up behind work. A run can start now, wait for you, or start once another workflow completes.",
+          "group": "Workflows",
+          "also": "chained starts",
+          "shown": true
+        },
+        {
+          "title": "Workflow run",
+          "text": "Follow a run as a tree with one pinned next action. After a restart, one Resume all starts the stopped agents again.",
+          "group": "Workflows",
+          "main": true
+        },
+        {
+          "title": "Hints to the orchestrator",
+          "text": "Steer a run while it goes. Queue a hint for the next decision, or read it now to stop the step in flight.",
+          "group": "Workflows",
+          "also": "hints",
+          "shown": true
+        },
+        {
+          "title": "Why each step, and the run recap",
+          "text": "See why each step was picked, with a short recap of what is done and what is left.",
+          "group": "Workflows",
+          "also": "run recap"
+        },
+        {
+          "title": "Step handoff summary",
+          "text": "Each step starts from a short brief instead of the whole previous conversation. If the summary fails, the brief is marked degraded.",
+          "group": "Workflows",
+          "also": "handoff summary"
+        },
+        {
+          "title": "Open questions",
+          "text": "Each question is one card: who asks, whether it blocks, and numbered answers with the recommended one tagged. Pick with a number key.",
+          "group": "Workflows",
+          "also": "open questions",
+          "shown": true
+        },
+        {
+          "title": "Let an agent decide",
+          "text": "Hand a question to another agent with a hint and a model. Its answer counts as yours, and you can take it back.",
+          "group": "Workflows",
+          "also": "delegated answers"
+        },
+        {
+          "title": "Import workflows",
+          "text": "Bring custom workflows over from your other workspaces with Import in the Workflows studio.",
+          "group": "Workflows",
+          "also": "import",
+          "shown": true
+        }
+      ]
+    },
+    {
+      "id": "review",
+      "title": "Review and branches",
+      "lead": "Reshape history before it ships, turn comments into commits, and read your own diffs first.",
+      "groups": ["Branch history", "Review, resolve and pull requests"],
+      "mocks": ["diff"],
+      "guides": [
+        {
+          "area": "review",
+          "label": "Review, resolve and pull requests"
+        },
+        {
+          "area": "branch-history",
+          "label": "Branch history"
+        }
+      ],
+      "items": [
+        {
+          "title": "Rewrite history",
+          "text": "Clean up a branch by hand. Drag commits to move them, drop one onto another to fold it, or rename and remove them.",
+          "group": "Branch history",
+          "main": true
+        },
+        {
+          "title": "Safe apply",
+          "text": "Your plan is tried on a temporary copy first, and a backup is saved before anything changes. If a step stops, your branch stays as it was.",
+          "group": "Branch history",
+          "main": true
+        },
+        {
+          "title": "Conflict prediction",
+          "text": "While you edit the plan, Goodboy tries it in memory and marks each change that may conflict. Your checkout stays untouched.",
+          "group": "Branch history",
+          "also": "conflict prediction",
+          "shown": true
+        },
+        {
+          "title": "Conflicts merged in a copy",
+          "text": "When a step stops on a conflict, the notice names the step and the file. An agent can merge it in a copy, and Goodboy checks the result.",
+          "group": "Branch history",
+          "also": "conflict merge"
+        },
+        {
+          "title": "Push with lease and restore",
+          "text": "Updating the online branch never overwrites a teammate's newer push. Restore takes the old history back, and the backup stays for 30 days.",
+          "group": "Branch history",
+          "also": "push with lease",
+          "shown": true
+        },
+        {
+          "title": "Backups",
+          "text": "Open the menu and choose Backups to see older histories of the branch. Restore previous history puts one back.",
+          "group": "Branch history",
+          "also": "backups"
+        },
+        {
+          "title": "Suggest a message",
+          "text": "Get a commit message drafted for a squash or a reword. Edit it before you apply.",
+          "group": "Branch history",
+          "also": "commit messages",
+          "shown": true
+        },
+        {
+          "title": "Bring them into the plan",
+          "text": "If someone pushed after you applied, Goodboy lists their new commits and offers to add them to the plan.",
+          "group": "Branch history",
+          "also": "new commits"
+        },
+        {
+          "title": "Rebase on main",
+          "text": "Rebase on main with the same engine, and bring in an agent only when there is a conflict.",
+          "group": "Branch history",
+          "also": "rebase on main",
+          "shown": true
+        },
+        {
+          "title": "After a pull request merges",
+          "text": "Choose what happens to a merged branch: ask me, delete on this Mac, or also on origin. You have 14 days to restore it.",
+          "group": "Branch history",
+          "also": "merged branches",
+          "shown": true
+        },
+        {
+          "title": "Resolve",
+          "text": "Turn review comments into commits without writing the fix yourself. Each comment gets its own agent, and you accept, edit or skip the result.",
+          "group": "Review, resolve and pull requests",
+          "main": true
+        },
+        {
+          "title": "Review sources",
+          "text": "One picker covers GitHub, GitLab, Bitbucket and notes on your machine. Reading and replying work everywhere, and resolving works where the host allows it.",
+          "group": "Review, resolve and pull requests",
+          "also": "review sources",
+          "shown": true
+        },
+        {
+          "title": "Comment states",
+          "text": "Each comment shows what it needs next, such as not started, drafting, needs you, ready or done. A summary line counts them.",
+          "group": "Review, resolve and pull requests",
+          "also": "comment states",
+          "shown": true
+        },
+        {
+          "title": "Failed drafts",
+          "text": "A failed draft says why in plain words and links to the transcript. Try again, try another model or add a hint.",
+          "group": "Review, resolve and pull requests",
+          "also": "failed drafts"
+        },
+        {
+          "title": "Manage a resolve from its Brief",
+          "text": "Click a resolve in Activity to see the comment, the fix and the reply. Accept, edit, reply or skip, then push exactly that fix.",
+          "group": "Review, resolve and pull requests",
+          "also": "resolve brief"
+        },
+        {
+          "title": "Fixes already on the branch",
+          "text": "Review checks origin before it pushes. A fix already pushed, or one that someone else seems to have made, offers Reply and resolve instead.",
+          "group": "Review, resolve and pull requests",
+          "also": "fixes on the branch"
+        },
+        {
+          "title": "A fix that went missing",
+          "text": "If a fix commit is no longer on the branch, the comment says so. Goodboy checks git first, then can ask a read-only agent.",
+          "group": "Review, resolve and pull requests",
+          "also": "missing fixes"
+        },
+        {
+          "title": "Close on GitHub",
+          "text": "Finish a review in one action. Push sends the fixes, posts the replies and resolves the threads, after a confirm that counts them.",
+          "group": "Review, resolve and pull requests",
+          "main": true
+        },
+        {
+          "title": "Review replies in your voice",
+          "text": "Choose replies that sound like you: terse, friendly, formal, or learned from your last 20 replies. You can edit the style note.",
+          "group": "Review, resolve and pull requests",
+          "also": "replies in your voice"
+        },
+        {
+          "title": "Fixes on a branch that moved",
+          "text": "Accept a fix even after the branch got new commits. It lands on top, and on a conflict the branch goes back to its old head.",
+          "group": "Review, resolve and pull requests",
+          "also": "moved branches"
+        },
+        {
+          "title": "Squash and fold the resolve commits",
+          "text": "Choose how fixes land before anyone sees them. Keep them, fold each into its original commit, or make one commit for the review.",
+          "group": "Review, resolve and pull requests",
+          "also": "squash and fold",
+          "shown": true
+        },
+        {
+          "title": "Notes before a pull request",
+          "text": "Review your own diff first. Leave notes on lines, resolve them like review comments, and post the open ones to the pull request later.",
+          "group": "Review, resolve and pull requests",
+          "also": "notes before a PR"
+        },
+        {
+          "title": "GitHub pull request page",
+          "text": "See in plain words whether a pull request can merge, with its checks. Merge, mark ready, draft or close it from there.",
+          "group": "Review, resolve and pull requests",
+          "also": "pull request page"
+        },
+        {
+          "title": "Pull request, Diff and Review as layers",
+          "text": "Move between a pull request, its diff and its review without losing your place. Back walks the same path.",
+          "group": "Review, resolve and pull requests",
+          "also": "review layers"
+        },
+        {
+          "title": "Write it for me",
+          "text": "Get a pull request title, description and changelog entry in your repo's format. Linked issues become closing references.",
+          "group": "Review, resolve and pull requests",
+          "also": "PR text",
+          "shown": true
+        },
+        {
+          "title": "PR description follows the push",
+          "text": "A description Goodboy wrote is updated after a history push, unless you edited it.",
+          "group": "Review, resolve and pull requests",
+          "also": "PR description sync"
+        },
+        {
+          "title": "Diff",
+          "text": "Read changes with syntax colors, word-level highlights, a unified or split view and a viewed tick per file. Quote a line into a note or a question for an agent.",
+          "group": "Review, resolve and pull requests",
+          "also": "diff"
+        },
+        {
+          "title": "Write review",
+          "text": "Review someone else's pull request in a form under the diff. Add line comments, pick comment, approve or request changes, and submit one review.",
+          "group": "Review, resolve and pull requests",
+          "also": "write review"
+        },
+        {
+          "title": "Written by Goodboy",
+          "text": "Comments Goodboy posts end with a line that says so, and a setting turns it off.",
+          "group": "Review, resolve and pull requests",
+          "also": "written by Goodboy"
+        },
+        {
+          "title": "Resolve again",
+          "text": "Reread a comment and try the fix once more.",
+          "group": "Review, resolve and pull requests",
+          "also": "resolve again"
+        },
+        {
+          "title": "Checks",
+          "text": "See a pull request's checks with their durations. A failed check becomes a suggested next step.",
+          "group": "Review, resolve and pull requests",
+          "also": "checks",
+          "shown": true
+        }
+      ]
+    },
+    {
+      "id": "tools",
+      "title": "Inbox, plans and wireframes",
+      "lead": "Connect your trackers once, let agents read them, and keep every document next to the task.",
+      "groups": ["Inbox and your tools", "Plans, reports and wireframes"],
+      "mocks": ["inbox"],
+      "guides": [
+        {
+          "area": "inbox",
+          "label": "Inbox and your tools"
+        },
+        {
+          "area": "artifacts",
+          "label": "Plans, reports and wireframes"
+        }
+      ],
+      "items": [
+        {
+          "title": "Supported tools",
+          "text": "Connect GitHub, GitLab, Bitbucket, Jira, Linear, Sentry and Slack in Settings. Each one feeds the Inbox and can start a session with its brief drafted.",
+          "group": "Inbox and your tools",
+          "also": "supported tools",
+          "shown": true
+        },
+        {
+          "title": "Agents use your tools",
+          "text": "Agents on any provider can read and act on your connected tools without ever holding your keys. Goodboy makes each call for them.",
+          "group": "Inbox and your tools",
+          "also": "agent tools"
+        },
+        {
+          "title": "Inbox",
+          "text": "Work from one list instead of seven tabs. Issues, Slack threads, Sentry errors and pull requests sit together, grouped by day.",
+          "group": "Inbox and your tools",
+          "main": true
+        },
+        {
+          "title": "Find any issue by code or link",
+          "text": "Paste an issue code, a pull request number or a link to open it. It does not need to be assigned to you.",
+          "group": "Inbox and your tools",
+          "also": "find by code",
+          "shown": true
+        },
+        {
+          "title": "Starred issues",
+          "text": "Star an issue to keep it on top of the Inbox and of the list you pick tasks from.",
+          "group": "Inbox and your tools",
+          "also": "starred issues",
+          "shown": true
+        },
+        {
+          "title": "Launch a session from any item",
+          "text": "Press Launch session on an issue, a Slack thread or an error. The session starts with its brief already drafted.",
+          "group": "Inbox and your tools",
+          "also": "launch from an item"
+        },
+        {
+          "title": "Link an item to a session",
+          "text": "Attach an Inbox item to work that already exists. Link work in a session searches every connected tracker at once.",
+          "group": "Inbox and your tools",
+          "also": "link to a session"
+        },
+        {
+          "title": "Trackers",
+          "text": "Read Sentry errors with stack trace, breadcrumbs and tags inside Goodboy. Comment, assign, edit and move issues in Linear and Jira the same way.",
+          "group": "Inbox and your tools",
+          "main": true
+        },
+        {
+          "title": "Code hosts",
+          "text": "Work on GitHub pull requests, GitLab merge requests and Bitbucket comments, approvals and merges without leaving Goodboy. GitHub and GitLab can work side by side.",
+          "group": "Inbox and your tools",
+          "main": true
+        },
+        {
+          "title": "Slack: what agents can do",
+          "text": "Choose the channels agents follow and set what each action may do. They never start conversations or send direct messages.",
+          "group": "Inbox and your tools",
+          "also": "Slack actions",
+          "shown": true
+        },
+        {
+          "title": "Reply ready for #channel",
+          "text": "A Slack reply waits in the session as a card with the draft. Send it, edit it or discard it.",
+          "group": "Inbox and your tools",
+          "also": "Slack replies"
+        },
+        {
+          "title": "Slack signature",
+          "text": "Show when an agent wrote a Slack reply, with a note you can reword or switch off.",
+          "group": "Inbox and your tools",
+          "also": "Slack signature"
+        },
+        {
+          "title": "Images from your tools",
+          "text": "See screenshots attached in Linear, Jira and GitHub inside Goodboy. Your key goes only to that tool's own image host.",
+          "group": "Inbox and your tools",
+          "also": "tool images"
+        },
+        {
+          "title": "Records read the same way",
+          "text": "Items from any tool read the same way: one list of labels and values, with who opened them and when.",
+          "group": "Inbox and your tools",
+          "also": "record view"
+        },
+        {
+          "title": "Comment threads",
+          "text": "Follow replies under the comment they answer, in Linear and GitLab. Long threads fold behind a Show earlier replies link.",
+          "group": "Inbox and your tools",
+          "also": "comment threads",
+          "shown": true
+        },
+        {
+          "title": "Artifacts",
+          "text": "Plans, reports and wireframes live next to the task, each tagged by kind. Tabs filter the list and each row shows its state.",
+          "group": "Plans, reports and wireframes",
+          "also": "artifacts",
+          "shown": true
+        },
+        {
+          "title": "Plan parts and Run plan",
+          "text": "Give each part of a plan done-when checks and the files it expects to touch. Run plan turns each part into a sub-agent.",
+          "group": "Plans, reports and wireframes",
+          "also": "plan parts"
+        },
+        {
+          "title": "Report as a document",
+          "text": "Read a report as one document with an outline on the left, and edit the text in place. The same file opens in a browser on another machine.",
+          "group": "Plans, reports and wireframes",
+          "also": "reports",
+          "shown": true
+        },
+        {
+          "title": "Files on disk",
+          "text": "Open any artifact as a folder, in your browser or file manager. The folder is rewritten on each revision.",
+          "group": "Plans, reports and wireframes",
+          "also": "files on disk"
+        },
+        {
+          "title": "Create a wireframe",
+          "text": "Describe the screen in a brief, add attachments, and choose the fidelity and the target: phone, desktop or both. See exactly what goes in the context pack.",
+          "group": "Plans, reports and wireframes",
+          "main": true
+        },
+        {
+          "title": "Wireframes scouted first",
+          "text": "Two scouts read your repo before drawing, one for screens and one for data. Every claim must cite a real file.",
+          "group": "Plans, reports and wireframes",
+          "also": "scouted wireframes"
+        },
+        {
+          "title": "Wireframe versions",
+          "text": "Go back to any wireframe version with View, Compare and Restore.",
+          "group": "Plans, reports and wireframes",
+          "also": "wireframe versions",
+          "shown": true
+        },
+        {
+          "title": "Compare",
+          "text": "See what changed between two wireframe versions side by side, with a change list under the frames.",
+          "group": "Plans, reports and wireframes",
+          "also": "compare",
+          "shown": true
+        },
+        {
+          "title": "Ask for a change",
+          "text": "Point at what you want changed. Pick elements on the wireframe, choose this screen or all screens, and ask.",
+          "group": "Plans, reports and wireframes",
+          "also": "change requests"
+        },
+        {
+          "title": "Import wireframe JSON",
+          "text": "Bring in a wireframe made elsewhere, with a preview of any fixes before it lands.",
+          "group": "Plans, reports and wireframes",
+          "also": "import JSON"
+        },
+        {
+          "title": "Revisions and Restore",
+          "text": "Bring back an earlier plan, report or wireframe as a new revision, with its author, without losing the later ones.",
+          "group": "Plans, reports and wireframes",
+          "also": "revisions"
+        },
+        {
+          "title": "Save a copy and New variant",
+          "text": "Export a wireframe as a folder of pages, or redraw it at the other fidelity.",
+          "group": "Plans, reports and wireframes",
+          "also": "variants"
+        }
+      ]
+    },
+    {
+      "id": "providers",
+      "title": "Providers, limits and cost",
+      "lead": "Know how much of each plan is left, keep work moving when one runs out, and see the total bill.",
+      "groups": ["Providers, limits and cost"],
+      "mocks": ["bars"],
+      "guides": [
+        {
+          "area": "providers",
+          "label": "Providers, limits and cost"
+        }
+      ],
+      "items": [
+        {
+          "title": "Usage limits chip",
+          "text": "See how much of your Claude and Codex plans is left before a run stops. Two bars show the 5-hour window and the week.",
+          "group": "Providers, limits and cost",
+          "main": true
+        },
+        {
+          "title": "Use reset",
+          "text": "When Codex offers a free reset, Goodboy shows it with its expiry. It warns you if using it now would waste most of the week.",
+          "group": "Providers, limits and cost",
+          "also": "use reset",
+          "shown": true
+        },
+        {
+          "title": "Fallback when a limit is hit",
+          "text": "When a provider runs out, a turn can move to another connected one. The conversation records where it went.",
+          "group": "Providers, limits and cost",
+          "main": true
+        },
+        {
+          "title": "Fallback order and Auto",
+          "text": "Choose where Auto starts and the order it falls back through. Each role can use Auto or be pinned to a model.",
+          "group": "Providers, limits and cost",
+          "also": "fallback order",
+          "shown": true
+        },
+        {
+          "title": "Model picker",
+          "text": "Pick a model with the reason next to it. The picker leads with Auto and shows what it resolves to right now.",
+          "group": "Providers, limits and cost",
+          "main": true
+        },
+        {
+          "title": "Impact",
+          "text": "See what Goodboy got done and what it cost over 7 days, 30 days or all time. Tiles compare each figure with the period before.",
+          "group": "Providers, limits and cost",
+          "main": true
+        },
+        {
+          "title": "Monthly cap and budget alert",
+          "text": "Set a monthly cap per provider and a share of it where Goodboy warns you. Past that, the next turn goes to another provider with room.",
+          "group": "Providers, limits and cost",
+          "also": "monthly cap",
+          "shown": true
+        }
+      ]
+    },
+    {
+      "id": "agents",
+      "title": "Work with agents directly",
+      "lead": "Ask questions, give each helper a job, and steer it from the keyboard or a real terminal.",
+      "groups": ["Agents", "Keyboard and terminal"],
+      "mocks": ["askcode"],
+      "guides": [
+        {
+          "area": "agents",
+          "label": "Agents"
+        },
+        {
+          "area": "keyboard",
+          "label": "Keyboard and terminal"
+        }
+      ],
+      "items": [
+        {
+          "title": "Workspace chat",
+          "text": "Ask about your repos without starting a session. The answer reads every project and never changes a file, and you can turn it into work later.",
+          "group": "Agents",
+          "main": true
+        },
+        {
+          "title": "Roles",
+          "text": "Nine roles come with the app, from Scout to Generalist. A role sets the agent's instructions, its default model and what it hands back. When one recommends the next, its reason and result travel with it.",
+          "group": "Agents",
+          "main": true
+        },
+        {
+          "title": "Agent suggests",
+          "text": "When one agent recommends the next, its reason and result travel with it. Pick the provider, model and effort, then press Start.",
+          "group": "Agents",
+          "also": "agent suggests",
+          "shown": true
+        },
+        {
+          "title": "Agent header",
+          "text": "Read who an agent is at a glance. Role, status, time and model sit on one line under the title.",
+          "group": "Agents",
+          "also": "agent header"
+        },
+        {
+          "title": "What the agent received",
+          "text": "Check exactly what an agent was told, with a chip for each part of its brief. View the exact text sent to the provider.",
+          "group": "Agents",
+          "also": "what it received"
+        },
+        {
+          "title": "Agent transcript",
+          "text": "Follow one agent's work in order. Plans and reports show as chips, file edits group together, and questions appear where you answer them.",
+          "group": "Agents",
+          "main": true
+        },
+        {
+          "title": "Queue or send now",
+          "text": "Keep talking while an agent works. Enter queues your message for its next turn, and ⌘Enter sends it now.",
+          "group": "Agents",
+          "also": "queue or send now",
+          "shown": true
+        },
+        {
+          "title": "Stop and Continue",
+          "text": "Stopping keeps what the agent wrote and offers Continue. An agent working during a restart picks up where it stopped.",
+          "group": "Agents",
+          "also": "stop and continue",
+          "shown": true
+        },
+        {
+          "title": "Turn footer",
+          "text": "See what each turn cost: provider, model, duration, tokens, cache share, estimated cost and a context meter.",
+          "group": "Agents",
+          "also": "turn footer"
+        },
+        {
+          "title": "Tool call states",
+          "text": "Tell at a glance what a tool call did: running, done, failed, needs approval, stopped or denied.",
+          "group": "Agents",
+          "also": "tool states"
+        },
+        {
+          "title": "Composer plus menu",
+          "text": "The plus button attaches files, runs a script, starts a workflow or asks another agent.",
+          "group": "Agents",
+          "also": "plus menu"
+        },
+        {
+          "title": "Attach files",
+          "text": "Hand an agent images, PDFs, CSV and text files, up to 10 at a time, by paste, drop or pick.",
+          "group": "Agents",
+          "also": "attachments",
+          "shown": true
+        },
+        {
+          "title": "Drift warning",
+          "text": "Get a notification when an agent steps outside its role, like a planner editing files.",
+          "group": "Agents",
+          "also": "drift warning",
+          "shown": true
+        },
+        {
+          "title": "Subagents from plan parts",
+          "text": "Run a plan part by part. An implementer splits a plan into one sub-agent per part.",
+          "group": "Agents",
+          "also": "subagents",
+          "shown": true
+        },
+        {
+          "title": "History rewriter and Scribe",
+          "text": "The helpers that rewrite history and write pull request text cannot push. Their push address goes nowhere and their GitHub tokens are removed.",
+          "group": "Agents",
+          "also": "helpers that cannot push"
+        },
+        {
+          "title": "One language per session",
+          "text": "Get agents and summaries in the language of your goal.",
+          "group": "Agents",
+          "also": "one language"
+        },
+        {
+          "title": "Terminal",
+          "text": "Open a real login shell in the session's worktree. It is still there after a reload.",
+          "group": "Keyboard and terminal",
+          "main": true
+        },
+        {
+          "title": "Keyboard shortcuts, back and forward",
+          "text": "Drive Goodboy from the keyboard with 57 shortcuts. ⌘/ opens the list, and ⌘[ and ⌘] move through history.",
+          "group": "Keyboard and terminal",
+          "main": true
+        },
+        {
+          "title": "Script drawer",
+          "text": "Watch a script's live output in a drawer. Stop it, run it again and copy the output.",
+          "group": "Keyboard and terminal",
+          "also": "script drawer",
+          "shown": true
+        },
+        {
+          "title": "Open in editor",
+          "text": "Jump into VS Code, Cursor, Zed, the JetBrains IDEs, Sublime Text, Vim or Neovim, at the worktree or the file.",
+          "group": "Keyboard and terminal",
+          "also": "open in editor",
+          "shown": true
+        },
+        {
+          "title": "Explore",
+          "text": "Browse the session folder as a file tree with a preview. Ask an agent about the selected file from its row.",
+          "group": "Keyboard and terminal",
+          "also": "explore"
+        }
+      ]
+    },
+    {
+      "id": "storage",
+      "title": "Storage, backup and updates",
+      "lead": "Free disk space safely, move your setup between Macs, and keep tokens out of what you save.",
+      "groups": ["Storage", "Security, backup and updates", "Support Goodboy"],
+      "mocks": ["storage"],
+      "guides": [
+        {
+          "area": "storage",
+          "label": "Storage"
+        },
+        {
+          "area": "security",
+          "label": "Security, backup and updates"
+        },
+        {
+          "area": "support",
+          "label": "Support Goodboy"
+        }
+      ],
+      "items": [
+        {
+          "title": "Worktree folders",
+          "text": "See the checkout folders of archived or deleted sessions with their size and whether they are safe to remove. One button clears the clean ones.",
+          "group": "Storage",
+          "main": true
+        },
+        {
+          "title": "Branches",
+          "text": "Local branches are sorted into safe to delete and needs a look. Every deletion can be restored for 14 days.",
+          "group": "Storage",
+          "main": true
+        },
+        {
+          "title": "Storage scope",
+          "text": "Clean up this workspace, other workspaces, removed ones or all of them. Bulk actions name the scope they act on.",
+          "group": "Storage",
+          "also": "storage scope",
+          "shown": true
+        },
+        {
+          "title": "Free space chip",
+          "text": "Once at least 1 GB of worktree folders can go, the top bar shows how much. Click it to open Storage.",
+          "group": "Storage",
+          "also": "free space chip",
+          "shown": true
+        },
+        {
+          "title": "Artifacts from deleted sessions",
+          "text": "Decide what to keep from sessions you deleted: their plans, reports and wireframes.",
+          "group": "Storage",
+          "also": "deleted artifacts"
+        },
+        {
+          "title": "Goodboy can free N GB",
+          "text": "Hear about reclaimable space once, when idle folders pass 10 GB or the disk runs low. It waits 14 days before speaking again.",
+          "group": "Storage",
+          "also": "disk notice"
+        },
+        {
+          "title": "Security findings",
+          "text": "Each time you save a project script, Goodboy checks it for keys and tokens on your Mac. You can dismiss a finding or flag it again.",
+          "group": "Security, backup and updates",
+          "also": "security findings",
+          "shown": true
+        },
+        {
+          "title": "Findings kept out of the export",
+          "text": "An export leaves out any script that holds a flagged token, unless you include it on purpose.",
+          "group": "Security, backup and updates",
+          "also": "safe exports"
+        },
+        {
+          "title": "Export and import your setup",
+          "text": "Move your setup to another Mac or keep a copy, in groups you choose. Import shows what it adds before writing anything.",
+          "group": "Security, backup and updates",
+          "main": true
+        },
+        {
+          "title": "Backup before a data update",
+          "text": "Before an update changes your data, Goodboy makes a full copy and keeps the last two. If the copy fails, the update does not start.",
+          "group": "Security, backup and updates",
+          "also": "data backups",
+          "shown": true
+        },
+        {
+          "title": "Newer data guard",
+          "text": "An older Goodboy opened on newer data stops before touching anything. It offers Restore backup or Quit.",
+          "group": "Security, backup and updates",
+          "also": "newer data guard"
+        },
+        {
+          "title": "Updates",
+          "text": "Updates download in the background, then a pill in the top bar offers to restart. With agents running, it can wait until they finish.",
+          "group": "Security, backup and updates",
+          "main": true
+        },
+        {
+          "title": "Changelog in the app",
+          "text": "Read release notes inside the app, searchable, with links to the screen each change touched. See what an update brings before you install it.",
+          "group": "Security, backup and updates",
+          "also": "changelog",
+          "shown": true
+        },
+        {
+          "title": "Before and after pictures",
+          "text": "Release notes can show Before and After pictures, with a lightbox, in light and dark.",
+          "group": "Security, backup and updates",
+          "also": "before and after"
+        },
+        {
+          "title": "Guide",
+          "text": "Learn how Goodboy works in 18 short chapters that follow a task. Open Guide from the palette.",
+          "group": "Security, backup and updates",
+          "also": "guide"
+        },
+        {
+          "title": "Report a bug",
+          "text": "Press ⌘I from any screen to report a bug in one line. What gets sent is shown first, and secrets, paths and emails are stripped.",
+          "group": "Support Goodboy",
+          "also": "bug reports",
+          "shown": true
+        },
+        {
+          "title": "Update pill",
+          "text": "A single light sweep shows when an update is ready.",
+          "group": "Security, backup and updates",
+          "also": "update pill",
+          "shown": true
+        }
+      ]
+    }
+  ]
+}

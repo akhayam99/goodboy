@@ -1,0 +1,64 @@
+#context .chapterInner {
+  gap: 0;
+  padding-block: 88px;
+}
+
+.sharedContext {
+  display: grid;
+  gap: 40px;
+  min-width: 0;
+}
+
+.sharedContextHead .chapterTitle {
+  font-size: 56px;
+  line-height: 62px;
+  letter-spacing: -0.03em;
+}
+
+.sharedContextHead .lead {
+  margin-top: 12px;
+}
+
+.sharedContextMock {
+  width: 100%;
+  min-width: 0;
+}
+
+.sharedContextFacts {
+  width: 100%;
+  max-width: 960px;
+  min-width: 0;
+  margin-inline: auto;
+}
+
+.sharedContextMore {
+  display: flex;
+  justify-content: center;
+}
+
+.sharedContextMore .textLink {
+  margin-top: 0;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .sharedContextMore .textLink {
+    align-items: center;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 600px) {
+  #context .chapterInner {
+    padding-block: 48px;
+  }
+
+  .sharedContext {
+    gap: 24px;
+  }
+
+  .sharedContextHead .chapterTitle {
+    font-size: 36px;
+    line-height: 42px;
+    letter-spacing: -0.02em;
+  }
+}
