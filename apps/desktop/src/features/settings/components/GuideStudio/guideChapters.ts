@@ -142,7 +142,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Chat',
-        desc: 'Chat, right of Board, answers a question about the whole workspace without a session. It only reads, on Claude or Codex, with the model and effort you pick for each chat. Start work drafts a brief, and Start session opens a new session with it, nothing running yet, or Add to a session leaves it in the message box of one you pick. Pin, archive and delete chats from their menu.',
+        desc: 'Chat, right of Board, answers a question about the whole workspace without a session. It only reads, on Claude or Codex, with the model and effort you pick for each chat. Make default in the picker saves them for new chats in the workspace. Start work drafts a brief, and Start session opens a new session with it, nothing running yet, or Add to a session leaves it in the message box of one you pick. Pin, archive and delete chats from their menu.',
       },
       {
         term: 'Start blank',

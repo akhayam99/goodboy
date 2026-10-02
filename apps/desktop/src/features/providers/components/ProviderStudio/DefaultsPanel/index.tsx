@@ -21,6 +21,8 @@ import {
 import { useShallow } from 'zustand/react/shallow';
 import { ROLE_LABEL } from '../../../../session/agent-kind';
 import { useAppStore } from '../../../../../store';
+import { useChatDefaultModel } from '../../../../../shared/hooks/useChatDefaultModel';
+import { ChatModelRow } from './ChatModelRow';
 import { RoleModelRow } from './RoleModelRow';
 import { TaskModelRow } from './TaskModelRow';
 import { FallbackOrder } from './FallbackOrder';
@@ -90,13 +92,15 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
     fallbackOrder,
   };
 
+  const chatDefault = useChatDefaultModel({ workspaceId });
   const { busy, error, persistOverrides, persistTaskModel, persistRoleModel } =
     useDefaultsPersistence({ workspaceId });
   const [isConfirmingReset, setIsConfirmingReset] = useState(false);
 
   const pinnedTaskCount = TASKS.filter((task) => overrides.taskModels?.[task.id] != null).length;
   const pinnedRoleCount = Object.keys(overrides.roleModels ?? {}).length;
-  const pinnedCount = pinnedTaskCount + pinnedRoleCount;
+  const pinnedChatCount = chatDefault.saved === null ? 0 : 1;
+  const pinnedCount = pinnedTaskCount + pinnedRoleCount + pinnedChatCount;
 
   const onDefaultProvider = ({ providerId }: ProviderParams) => {
     const providerPool =
@@ -127,6 +131,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
   };
 
   const onResetAll = async () => {
+    chatDefault.clear();
     await persistOverrides({ patch: { taskModels: null, roleModels: null } });
     setIsConfirmingReset(false);
   };
@@ -160,7 +165,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
           role="danger"
           icon={<RotateCcw size={ICON_SIZE.control} aria-hidden />}
           title={`Reset ${pinnedCount} pinned ${pinnedCount === 1 ? 'model' : 'models'} to Auto?`}
-          description="Every agent role and background task goes back to Auto."
+          description="New chats, every agent role and background task go back to Auto."
           confirmLabel="Reset all"
           isBusy={busy}
           onConfirm={onResetAll}
@@ -203,6 +208,19 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
             />
           )}
         </FieldRow>
+      </section>
+
+      <section aria-label="Chat" className="flex flex-col gap-2">
+        <Eyebrow label="Chat" />
+        <BandStack>
+          <Band>
+            <ChatModelRow
+              workspaceId={workspaceId}
+              connectedProviderIds={connectedProviderIds}
+              disabled={busy}
+            />
+          </Band>
+        </BandStack>
       </section>
 
       <section aria-label="Agents" className="flex flex-col gap-2">

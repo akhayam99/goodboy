@@ -5,6 +5,8 @@ import { SESSION_EVENT_KINDS } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import { PULL_REQUEST_PRESENTATION } from '../../../shared/pullRequestPresentation';
 import {
+  decisionDiff,
+  isEmptyDecisionDiff,
   TIMELINE_PROJECT_NAME_LIMIT,
   segmentsToText,
   sessionEventEmphasis,
@@ -109,27 +111,35 @@ describe('sessionEventLabel as text', () => {
     expect(sessionEventEmphasis({ kind: 'workflow_closed' })).toBe('muted');
   });
 
-  it('counts decisions on both sides', () => {
+  it('names a decision change as context and leaves the counts to the diff', () => {
     expect(
       segmentsToText({
         segments: sessionEventLabel({
           event: event({ kind: 'decisions_changed', payload: { added: 3, removed: 1 } }),
         }),
       }),
-    ).toBe('3 decisions added, 1 removed');
+    ).toBe('Context');
   });
 
-  it('says what the ledger really changed, leaving out what did not', () => {
+  it('counts a replacement on both sides of the diff, like a changed line', () => {
     expect(
-      segmentsToText({
-        segments: sessionEventLabel({
-          event: event({
-            kind: 'decisions_changed',
-            payload: { added: 1, replaced: 1, withdrawn: 1, merged: 0, restored: 0 },
-          }),
-        }),
+      decisionDiff({
+        payload: { added: 1, replaced: 1, withdrawn: 1, merged: 2, restored: 1 },
       }),
-    ).toBe('Decisions · 1 added, 1 replaced, 1 withdrawn');
+    ).toEqual({ additions: 3, deletions: 4 });
+  });
+
+  it('reads a legacy count-only payload as the same diff', () => {
+    expect(decisionDiff({ payload: { added: 3, removed: 1 } })).toEqual({
+      additions: 3,
+      deletions: 1,
+    });
+  });
+
+  it('treats a change with nothing added or removed as empty', () => {
+    expect(isEmptyDecisionDiff({ payload: { added: 0, removed: 0 } })).toBe(true);
+    expect(isEmptyDecisionDiff({ payload: null })).toBe(true);
+    expect(isEmptyDecisionDiff({ payload: { withdrawn: 1 } })).toBe(false);
   });
 
   it('names a consolidation and what set it off', () => {
@@ -149,17 +159,7 @@ describe('sessionEventLabel as text', () => {
           }),
         }),
       }),
-    ).toBe('Context consolidated after #612 merged · 1 withdrawn, 2 merged');
-  });
-
-  it('keeps a single decision singular', () => {
-    expect(
-      segmentsToText({
-        segments: sessionEventLabel({
-          event: event({ kind: 'decisions_changed', payload: { added: 1, removed: 0 } }),
-        }),
-      }),
-    ).toBe('1 decision added, 0 removed');
+    ).toBe('Context consolidated after #612 merged');
   });
 
   it('names the mounted project first when the payload carries it', () => {

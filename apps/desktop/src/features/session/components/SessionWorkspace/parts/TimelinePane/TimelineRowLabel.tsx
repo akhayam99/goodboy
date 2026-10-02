@@ -8,6 +8,7 @@ import type {
   TimelineSubagentGroupEntry,
 } from '../../../../timeline/buildTimelineGroups';
 import {
+  decisionDiff,
   segmentsToText,
   sessionEventEmphasis,
   sessionEventLabel,
@@ -204,6 +205,10 @@ export const TimelineRowLabel = ({
       ? sessionEventSecondary({ event: entry.event })
       : null;
   const segments = segmentsOf({ entry, isBatchChild: item.explode?.kind === 'batch' });
+  const stat =
+    entry.kind === 'event' && entry.event.kind === 'decisions_changed'
+      ? decisionDiff({ payload: entry.event.payload })
+      : diffStat;
   return (
     <>
       {item.ordinal != null ? (
@@ -245,9 +250,9 @@ export const TimelineRowLabel = ({
           ),
         )}
       </span>
-      {diffStat == null ? null : (
+      {stat == null ? null : (
         <span className="self-center">
-          <DiffStat additions={diffStat.additions} deletions={diffStat.deletions} />
+          <DiffStat additions={stat.additions} deletions={stat.deletions} />
         </span>
       )}
       {secondary != null ? (

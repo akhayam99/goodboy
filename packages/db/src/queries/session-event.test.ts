@@ -133,6 +133,56 @@ describe('session_events queries', () => {
     });
   });
 
+  it('reads back the ledger counts and changes of a decisions event', async () => {
+    const db = await seed();
+    const event = makeEvent({
+      overrides: {
+        kind: 'decisions_changed',
+        payload: {
+          added: 1,
+          replaced: 1,
+          withdrawn: 1,
+          merged: 1,
+          restored: 0,
+          decisionChanges: [
+            { kind: 'added', number: 4, text: 'Use the ledger' },
+            { kind: 'replaced', number: 1, by: 4, text: 'Use the ledger', reason: null },
+            { kind: 'withdrawn', number: 2, text: 'Drop the cache', reason: 'stale' },
+            { kind: 'merged', number: 3, into: 4, text: 'Same as 4' },
+          ],
+          consolidatedAfter: '#612 merged',
+        },
+      },
+    });
+
+    await insertSessionEvent({ db, event });
+
+    expect(await listSessionEvents({ db, sessionId })).toEqual([event]);
+  });
+
+  it('keeps the history fields of a rewrite event', async () => {
+    const db = await seed();
+    const event = makeEvent({
+      overrides: {
+        kind: 'history_rewritten',
+        payload: {
+          planId: 'plan-1',
+          summary: 'Squashed 4 commits',
+          origin: 'plan',
+          files: ['src/a.ts'],
+          isTreeEqual: true,
+          prNumber: 12,
+          backupRef: 'refs/goodboy/backup/1',
+          onOrigin: false,
+        },
+      },
+    });
+
+    await insertSessionEvent({ db, event });
+
+    expect(await listSessionEvents({ db, sessionId })).toEqual([event]);
+  });
+
   it('drops payload fields of the wrong shape', async () => {
     const db = await seed();
     await db.execute(

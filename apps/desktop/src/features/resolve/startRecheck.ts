@@ -3,6 +3,7 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
 import { startFixAttempt } from '../review/startFixAttempt';
 import { draftRoutingOf } from './draftRouting';
+import { recheckParentOf } from './recheckParentOf';
 import { reviewRowsOf } from './reviewRows';
 
 type Params = {
@@ -51,6 +52,7 @@ export const startRecheck = async ({
         intent: 'recheck',
       },
     ],
+    parentAgentId: recheckParentOf({ agents: state.sessionPhaseRuns[sessionId] ?? [], threadId }),
     spawnAgent: state.spawnAgent,
     setAgentConfig: state.setAgentConfig,
   });

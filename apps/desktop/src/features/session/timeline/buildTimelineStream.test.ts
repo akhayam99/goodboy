@@ -943,6 +943,7 @@ describe('buildTimelineStream', () => {
           id: 'ev-decision',
           kind: 'decisions_changed',
           at: localIso({ day: 17, hour: 23, minute: 27 }),
+          payload: { added: 1 },
         }),
       ],
     });
@@ -1021,6 +1022,22 @@ const sessionEvent = ({ id, kind, at, payload }: SessionEventParams): SessionEve
 });
 
 describe('buildTimelineStream, session events', () => {
+  it('leaves out a decision change that added and removed nothing', () => {
+    const result = stream({
+      agents: [],
+      events: [
+        sessionEvent({
+          id: 'ev-empty',
+          kind: 'decisions_changed',
+          at: localIso({ day: 18, hour: 12 }),
+          payload: { added: 0, removed: 0 },
+        }),
+      ],
+    });
+
+    expect(result.items.some((item) => item.id.includes('ev-empty'))).toBe(false);
+  });
+
   it('merges three consecutive decision changes into the newest row', () => {
     const newestAt = localIso({ day: 18, hour: 12 });
     const result = stream({

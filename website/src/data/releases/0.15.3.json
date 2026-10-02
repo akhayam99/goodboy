@@ -1,11 +1,16 @@
 {
   "version": "0.15.3",
-  "summary": "Start a project from an empty folder, publish it when you are ready, and move the first session's work into a branch of its own.",
+  "summary": "Start a project from an empty folder, pick the model new chats start on, and read context changes as a diff in the activity timeline.",
   "new": [
     {
       "title": "Start a project from nothing",
       "area": "app",
       "copy": "Choose Start a new project on the empty screen, in the workspace launcher or in the setup wizard."
+    },
+    {
+      "title": "Default model for new chats",
+      "area": "providers",
+      "copy": "Pick the provider, model and effort that new chats in a workspace start on."
     }
   ],
   "groups": [
