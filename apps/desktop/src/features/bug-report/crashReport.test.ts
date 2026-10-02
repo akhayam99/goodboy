@@ -101,4 +101,30 @@ describe('captureCrash', () => {
       crash: { source: 'promise', message: 'RangeError: index out of range' },
     });
   });
+
+  it('keeps the kind and message of a rejection that is a plain command error object', async () => {
+    const { installCrashCapture } = await loadCapture();
+    installCrashCapture();
+
+    window.dispatchEvent(
+      Object.assign(new Event('unhandledrejection'), {
+        reason: { kind: 'sqlite', message: 'sqlite error: database is locked' },
+      }),
+    );
+
+    expect(payloadOf(0)).toMatchObject({
+      crash: { source: 'promise', message: 'sqlite: sqlite error: database is locked' },
+    });
+  });
+
+  it('falls back to a generic message for a rejection with no readable message', async () => {
+    const { installCrashCapture } = await loadCapture();
+    installCrashCapture();
+
+    window.dispatchEvent(Object.assign(new Event('unhandledrejection'), { reason: { code: 5 } }));
+
+    expect(payloadOf(0)).toMatchObject({
+      crash: { source: 'promise', message: 'Unhandled rejection' },
+    });
+  });
 });

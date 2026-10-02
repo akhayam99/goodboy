@@ -111,10 +111,27 @@ const followScreens = (): void => {
   });
 };
 
-const describeReason = (reason: unknown): { readonly message: string; readonly stack?: string } =>
-  reason instanceof Error
-    ? { message: `${reason.name}: ${reason.message}`, stack: reason.stack }
-    : { message: typeof reason === 'string' ? reason : 'Unhandled rejection' };
+const describeRejectedObject = (reason: unknown): string | null => {
+  if (typeof reason !== 'object' || reason === null) {
+    return null;
+  }
+  const message: unknown = Reflect.get(reason, 'message');
+  if (typeof message !== 'string' || message === '') {
+    return null;
+  }
+  const kind: unknown = Reflect.get(reason, 'kind');
+  return typeof kind === 'string' && kind !== '' ? `${kind}: ${message}` : message;
+};
+
+const describeReason = (reason: unknown): { readonly message: string; readonly stack?: string } => {
+  if (reason instanceof Error) {
+    return { message: `${reason.name}: ${reason.message}`, stack: reason.stack };
+  }
+  if (typeof reason === 'string') {
+    return { message: reason };
+  }
+  return { message: describeRejectedObject(reason) ?? 'Unhandled rejection' };
+};
 
 export const installCrashCapture = (): void => {
   followScreens();
