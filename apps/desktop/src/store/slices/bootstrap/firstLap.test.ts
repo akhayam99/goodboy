@@ -3,9 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { BootstrapPhase, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { aProject, aSession, TEST_NOW } from '@goodboy/types/testing';
 import {
-  FIRST_LAP_REFUSAL,
   firstLapProjectOfWorkspace,
-  isFirstLapRefusal,
   isProjectInFirstLap,
   selectFirstLapProject,
   selectLapProject,
@@ -80,11 +78,5 @@ describe('first lap helpers', () => {
     expect(
       firstLapProjectOfWorkspace({ state, workspaceId: 'ws-other' as WorkspaceId }),
     ).toBeNull();
-  });
-
-  it('recognizes its own refusal and no other error', () => {
-    expect(isFirstLapRefusal(new Error(FIRST_LAP_REFUSAL))).toBe(true);
-    expect(isFirstLapRefusal(new Error('disk full'))).toBe(false);
-    expect(isFirstLapRefusal(FIRST_LAP_REFUSAL)).toBe(false);
   });
 });

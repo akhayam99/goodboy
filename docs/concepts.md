@@ -160,6 +160,14 @@ This only happens when the work needs it. There are four ways:
 Each of these needs a reason, and the reason is saved in the session's
 activity. If the reason is blank, Goodboy refuses before doing anything.
 
+A project made with **Start a new project** is the exception while it has not
+been published. Its first lap session works in the project folder on `main`
+and none of the four triggers cuts a worktree, because the repository's only
+commit holds `.gitignore` and the worktree would be empty. Once `main` is on a
+code host, the work left in the folder moves into a session named `bootstrap`
+and every later session is an ordinary worktree ([mounts.md](mounts.md) → The
+first lap and the bootstrap move).
+
 The branch is named `<prefix>/<session-slug>`. It has the same name in every
 project the session touches. The repository name on each mount tells them
 apart.

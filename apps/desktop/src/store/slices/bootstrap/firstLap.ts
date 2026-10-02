@@ -17,9 +17,6 @@ type ProjectParams = {
 export const FIRST_LAP_REFUSAL =
   'This project is still in its first lap, so work happens in the project folder. Publish it to start worktree sessions.';
 
-export const isFirstLapRefusal = (error: unknown): boolean =>
-  error instanceof Error && error.message === FIRST_LAP_REFUSAL;
-
 export const isProjectInFirstLap = ({ state, projectId }: ProjectParams): boolean =>
   state.bootstrapPhase[projectId]?.stage === 'first-lap';
 

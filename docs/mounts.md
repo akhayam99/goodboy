@@ -28,6 +28,39 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
 - A folder mount is a plain directory at `<project-root>/sessions/<name>`.
   Folder projects always keep their directory; no Goodboy action deletes it.
 
+## The first lap and the bootstrap move
+
+A project made from the empty screen starts in its **first lap**. The phase is
+one settings row per project (`bootstrap.phase.<project-id>`: `first-lap`,
+`moving`, `done`), never a column, and it only moves forward. While it is
+`first-lap`:
+
+- One session, the first lap session, writes directly in the project folder
+  on `main`. Its turns get a write destination of kind `root`
+  (`writeDestination.ts`), and the scope guard says nothing is committed or
+  pushed for it. There is no mount and no worktree.
+- Every path that cuts a worktree for that project refuses with one typed
+  message (`ensureProjectMounted`, `FIRST_LAP_REFUSAL`): the first-turn rule,
+  the + project chip, workflow steps and the query bridge. Starting a session
+  opens the first lap session instead of a draft.
+
+Publishing pushes `main` with an upstream and sets `origin/HEAD`
+(`project_publish_main`). `project_remote_probe` answers `no-remote`,
+`unreachable`, `reachable-no-main` or `main-present` and never acts on a guess.
+Once `main` is on the remote, the bootstrap move runs on one click. Uncommitted
+work goes into a worktree session named `bootstrap` in this order, and the
+project folder is untouched until the copy is verified:
+
+1. A temporary index records the folder as one commit object (`refs/goodboy/bootstrap/<project>` keeps it).
+2. A worktree is cut from `origin/<default branch>` and the snapshot is applied with a three-way pick.
+3. Every listed path is hashed in the worktree against the snapshot.
+4. The session is created on that worktree.
+5. The folder is cleared by exact paths whose content still matches the snapshot. A file edited since stays and is listed. `git clean` and `git stash` never run.
+6. Local `main` is aligned only when it is still Goodboy's single `.gitignore` commit.
+
+A crash leaves the phase at `moving`; the next start verifies the copy and
+finishes, or undoes it. A second move is not possible: the phase ends at `done`.
+
 ## Hiding .goodboy from git
 
 `goodboy_ignore_status` (`apps/desktop/src-tauri/src/goodboy_ignore.rs`) checks

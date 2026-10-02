@@ -66,6 +66,14 @@ import {
 import { ModelPickerClaudeScene } from './scenes/ModelPickerClaudeScene';
 
 import { FrameScene } from './scenes/audit/FrameScene';
+import { FirstRunScene } from './scenes/audit/FirstRunScene';
+import {
+  FirstLapMoveScene,
+  FirstLapMovingScene,
+  FirstLapPublishScene,
+  FirstLapReportScene,
+  FirstLapScene,
+} from './scenes/audit/FirstLapScene';
 import { BoardStatesScene } from './scenes/audit/BoardStatesScene';
 import { SessionStatesScene } from './scenes/audit/SessionStatesScene';
 import { FeaturesStartTabsScene } from './scenes/features/StartTabsScene';
@@ -188,6 +196,12 @@ export const MOCK_SCENES = {
   'model-picker-claude': ModelPickerClaudeScene,
   'model-picker-triggers': ModelPickerTriggersScene,
   frame: FrameScene,
+  'first-run': FirstRunScene,
+  'first-lap': FirstLapScene,
+  'first-lap-publish': FirstLapPublishScene,
+  'first-lap-move': FirstLapMoveScene,
+  'first-lap-moving': FirstLapMovingScene,
+  'first-lap-report': FirstLapReportScene,
   'board-states': BoardStatesScene,
   'session-states': SessionStatesScene,
   'session-start': SessionStartScene,

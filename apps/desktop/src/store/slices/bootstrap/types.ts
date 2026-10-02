@@ -4,25 +4,25 @@ import type { PublishFirstLapResult, PublishRemote } from './publishFirstLap';
 import type { NewProject } from './createNewProject';
 import type { BootstrapState } from './state';
 
-export type CreateNewProjectParams = {
+type CreateNewProjectParams = {
   readonly parentPath: string;
   readonly name: string;
 };
 
-export type SetBootstrapPhaseParams = {
+type SetBootstrapPhaseParams = {
   readonly projectId: ProjectId;
   readonly patch: Partial<Omit<BootstrapPhase, 'updatedAt'>>;
 };
 
-export type EnsureFirstLapSessionParams = {
+type EnsureFirstLapSessionParams = {
   readonly projectId: ProjectId;
 };
 
-export type ProbeProjectRemoteParams = {
+type ProbeProjectRemoteParams = {
   readonly projectId: ProjectId;
 };
 
-export type PublishFirstLapParams = {
+type PublishFirstLapParams = {
   readonly projectId: ProjectId;
   readonly remote: PublishRemote;
 };

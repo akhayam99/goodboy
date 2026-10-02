@@ -4,10 +4,11 @@ import { NewProjectForm } from '../../shared/components/NewProjectForm';
 
 type Props = {
   readonly onAddWorkspace: () => void;
+  readonly startOpen?: boolean;
 };
 
-export const NoWorkspaceScreen = ({ onAddWorkspace }: Props) => {
-  const [isStarting, setIsStarting] = useState(false);
+export const NoWorkspaceScreen = ({ onAddWorkspace, startOpen = false }: Props) => {
+  const [isStarting, setIsStarting] = useState(startOpen);
 
   return (
     <div className="relative flex h-full w-full items-center justify-center overflow-hidden px-6">

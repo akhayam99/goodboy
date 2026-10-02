@@ -18,9 +18,8 @@ type Props = {
 const resumed = new Set<string>();
 
 export const FirstLapBanner = ({ sessionId }: Props) => {
-  const lap = useAppStore((state) => selectLapProject({ state, sessionId }));
-  const project = lap?.project ?? null;
-  const stage = lap?.stage ?? null;
+  const project = useAppStore((state) => selectLapProject({ state, sessionId })?.project ?? null);
+  const stage = useAppStore((state) => selectLapProject({ state, sessionId })?.stage ?? null);
   const probe = useAppStore((state) =>
     project === null ? null : (state.bootstrapRemoteProbe[project.id]?.probe ?? null),
   );

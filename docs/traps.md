@@ -271,3 +271,16 @@ fails silently at runtime.
   is no "run workflow" button. Pushing another commit to the PR starts them
   again. A finished run can also be re-run from the Actions UI. Closing and
   reopening the PR is the last resort, not the only way.
+- Moving uncommitted work out of a folder never uses `git clean`, `git stash`
+  or a copy followed by a blanket delete. The bootstrap move records the folder
+  with a temporary index (`Git::index_file`, the only repo env that survives
+  the launcher), verifies the copy by hash and clears by exact paths whose
+  content still matches. Ignored files stay where they are on purpose.
+- After the first push into an empty repository `origin/HEAD` is not set, so
+  `worktree_repo_default_base_branch` returns nothing and the base branch
+  picker is empty. `remote set-head origin <branch>` after the push fixes it;
+  the publish and the probe both do it.
+- A selector passed to `useAppStore` must return a stable value. A selector
+  that builds an object (`{ project, stage }`) loops the render; select the
+  project and the stage separately. The mock scenes catch this, unit tests with
+  a mocked store do not.

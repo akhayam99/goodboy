@@ -4,7 +4,6 @@ import type { ProjectId } from '@goodboy/types';
 import { aProject } from '@goodboy/types/testing';
 import { useAppStore, type AppStore } from '../../store';
 import type { GetFn, SetFn } from '../../slice-types';
-import { selectBootstrapRemoteProbe } from './selectors';
 
 const h = vi.hoisted(() => ({ projectRemoteProbe: vi.fn() }));
 
@@ -44,7 +43,7 @@ describe('probeProjectRemote', () => {
     const probe = await probeProjectRemote(set, get)({ projectId: PROJECT_ID });
 
     expect(probe).toEqual({ kind: 'main-present', branch: 'main', sha: 'abc' });
-    const entry = selectBootstrapRemoteProbe(store.state, PROJECT_ID);
+    const entry = store.state.bootstrapRemoteProbe[PROJECT_ID];
     expect(entry?.probe).toEqual(probe);
     expect(entry?.readAt).toBeDefined();
   });
@@ -56,7 +55,7 @@ describe('probeProjectRemote', () => {
     const probe = await probeProjectRemote(set, get)({ projectId: PROJECT_ID });
 
     expect(probe).toEqual({ kind: 'unreachable', reason: 'git timed out' });
-    expect(selectBootstrapRemoteProbe(store.state, PROJECT_ID)?.probe.kind).toBe('unreachable');
+    expect(store.state.bootstrapRemoteProbe[PROJECT_ID]?.probe.kind).toBe('unreachable');
   });
 
   it('skips a project that is not a repository without asking git', async () => {

@@ -28,8 +28,8 @@ vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../shared/lib/repo', () => ({ projectFolderCreate: h.projectFolderCreate }));
 
 import { createBootstrapSlice } from './index';
+import { isProjectInFirstLap } from './firstLap';
 import { bootstrapPhaseKey, parseBootstrapPhase, serializeBootstrapPhase } from './phase';
-import { selectBootstrapPhase, selectIsFirstLap } from './selectors';
 
 const PROJECT_ID = 'proj-cascadia' as ProjectId;
 const workspace = aWorkspace({ name: 'cascadia' });
@@ -97,28 +97,28 @@ describe('setBootstrapPhase', () => {
       bootstrapPhaseKey(PROJECT_ID),
       expect.stringContaining('"stage":"first-lap"'),
     );
-    expect(selectIsFirstLap(store.state, PROJECT_ID)).toBe(true);
+    expect(isProjectInFirstLap({ state: store.state, projectId: PROJECT_ID })).toBe(true);
 
     await slice.setBootstrapPhase({ projectId: PROJECT_ID, patch: { stage: 'moving' } });
     await slice.setBootstrapPhase({ projectId: PROJECT_ID, patch: { stage: 'done' } });
-    expect(selectBootstrapPhase(store.state, PROJECT_ID)?.stage).toBe('done');
-    expect(selectIsFirstLap(store.state, PROJECT_ID)).toBe(false);
+    expect(store.state.bootstrapPhase[PROJECT_ID]?.stage).toBe('done');
+    expect(isProjectInFirstLap({ state: store.state, projectId: PROJECT_ID })).toBe(false);
 
     await expect(
       slice.setBootstrapPhase({ projectId: PROJECT_ID, patch: { stage: 'first-lap' } }),
     ).rejects.toThrow('cannot go back');
-    expect(selectBootstrapPhase(store.state, PROJECT_ID)?.stage).toBe('done');
+    expect(store.state.bootstrapPhase[PROJECT_ID]?.stage).toBe('done');
   });
 
   it('returns a stable reference for an unchanged project', async () => {
     const { store, slice } = makeSlice();
     await slice.setBootstrapPhase({ projectId: PROJECT_ID, patch: {} });
 
-    const before = selectBootstrapPhase(store.state, PROJECT_ID);
-    const after = selectBootstrapPhase(store.state, PROJECT_ID);
+    const before = store.state.bootstrapPhase[PROJECT_ID];
+    const after = store.state.bootstrapPhase[PROJECT_ID];
 
     expect(after).toBe(before);
-    expect(selectBootstrapPhase(store.state, 'proj-other' as ProjectId)).toBeNull();
+    expect(store.state.bootstrapPhase['proj-other' as ProjectId]).toBeUndefined();
   });
 });
 
@@ -158,7 +158,7 @@ describe('createNewProject', () => {
       name: 'cascadia',
     });
     expect(created.project.id).toBe(PROJECT_ID);
-    expect(selectIsFirstLap(store.state, PROJECT_ID)).toBe(true);
+    expect(isProjectInFirstLap({ state: store.state, projectId: PROJECT_ID })).toBe(true);
   });
 
   it('stops before registering anything when the folder cannot be created', async () => {

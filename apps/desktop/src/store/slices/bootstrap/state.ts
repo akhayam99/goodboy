@@ -7,7 +7,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 
-export type BootstrapRemoteProbeEntry = {
+type BootstrapRemoteProbeEntry = {
   readonly probe: RemoteProbe;
   readonly readAt: IsoDateTime;
 };
