@@ -1,6 +1,12 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { BootstrapPhase, ProjectId, RemoteProbe } from '@goodboy/types';
+import type {
+  BootstrapPhase,
+  MountId,
+  ProjectId,
+  RemoteProbe,
+  SessionProjectMount,
+} from '@goodboy/types';
 import { aProject, aSession, TEST_NOW } from '@goodboy/types/testing';
 import { useAppStore, type AppStore } from '../../store';
 import type { GetFn, SetFn } from '../../slice-types';
@@ -8,10 +14,12 @@ import type { GetFn, SetFn } from '../../slice-types';
 const h = vi.hoisted(() => ({
   setSetting: vi.fn(async () => undefined),
   prepare: vi.fn(),
+  apply: vi.fn(),
   clearRoot: vi.fn(),
   alignMain: vi.fn(),
   recover: vi.fn(),
   rollback: vi.fn(),
+  discard: vi.fn(),
   liveSessionIds: [] as string[],
 }));
 
@@ -21,10 +29,14 @@ vi.mock('@goodboy/db', async () =>
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../shared/lib/repo', () => ({
   bootstrapPrepare: h.prepare,
+  bootstrapApply: h.apply,
   bootstrapClearRoot: h.clearRoot,
   bootstrapAlignMain: h.alignMain,
   bootstrapRecover: h.recover,
   bootstrapRollback: h.rollback,
+}));
+vi.mock('../sessions/discardUncreatedSession', () => ({
+  discardUncreatedSession: h.discard,
 }));
 vi.mock('../live-work/selectLiveWork', () => ({
   selectLiveWork: () => ({ liveSessionIds: h.liveSessionIds }),
@@ -37,11 +49,11 @@ const PROJECT_ID = 'proj-cascadia' as ProjectId;
 const LAP_SESSION = aSession({ goal: 'First lap' });
 const BOOTSTRAP_SESSION = aSession({ goal: 'bootstrap' });
 const MAIN: RemoteProbe = { kind: 'main-present', branch: 'main', sha: 'abc1234' };
+const WORKTREE = '/games/cascadia/.goodboy/worktrees/goodboy-bootstrap-1a2b';
 
 const prepared = {
   snapshotId: 'a'.repeat(40),
   snapshotRef: 'refs/goodboy/bootstrap/proj-cascadia',
-  worktreePath: '/games/cascadia/.goodboy/worktrees/bootstrap',
   branch: 'goodboy/bootstrap',
   baseBranch: 'main',
   files: [
@@ -51,6 +63,23 @@ const prepared = {
   largeFiles: ['video.mp4'],
   ignoredAtRisk: { count: 1, samples: ['.env'] },
 };
+
+const mountOf = (patch: Partial<SessionProjectMount> = {}): SessionProjectMount => ({
+  mountId: 'mount-bootstrap' as MountId,
+  sessionId: BOOTSTRAP_SESSION.id,
+  projectId: PROJECT_ID,
+  mountName: 'cascadia',
+  worktreePath: WORKTREE,
+  lastWorktreePath: null,
+  repoRoot: '/games/cascadia',
+  branch: 'goodboy/bootstrap',
+  baseBranch: null,
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present',
+  revision: 0,
+  ...patch,
+});
 
 const phaseOf = (patch: Partial<BootstrapPhase> = {}): BootstrapPhase => ({
   stage: 'first-lap',
@@ -63,8 +92,25 @@ const phaseOf = (patch: Partial<BootstrapPhase> = {}): BootstrapPhase => ({
   ...patch,
 });
 
-const makeStore = ({ phase = phaseOf(), probe = MAIN as RemoteProbe | null } = {}) => {
-  const createSession = vi.fn(async () => ({ session: BOOTSTRAP_SESSION }));
+const interrupted = phaseOf({
+  stage: 'moving',
+  bootstrapSessionId: BOOTSTRAP_SESSION.id,
+  snapshotId: prepared.snapshotId,
+  worktreePath: WORKTREE,
+  branch: prepared.branch,
+});
+
+type StoreOptions = {
+  readonly phase?: BootstrapPhase;
+  readonly probe?: RemoteProbe | null;
+  readonly hasBootstrapSession?: boolean;
+};
+
+const makeStore = ({
+  phase = phaseOf(),
+  probe = MAIN,
+  hasBootstrapSession = false,
+}: StoreOptions = {}) => {
   const renameTask = vi.fn(async () => undefined);
   const archiveTask = vi.fn(async () => undefined);
   const loadProjectGitStatus = vi.fn(async () => undefined);
@@ -72,10 +118,9 @@ const makeStore = ({ phase = phaseOf(), probe = MAIN as RemoteProbe | null } = {
     state: {
       ...useAppStore.getState(),
       projects: [aProject({ id: PROJECT_ID, kind: 'repo', rootPath: '/games/cascadia' })],
-      sessions: [LAP_SESSION],
+      sessions: hasBootstrapSession ? [LAP_SESSION, BOOTSTRAP_SESSION] : [LAP_SESSION],
       bootstrapPhase: { [PROJECT_ID]: phase },
       bootstrapRemoteProbe: probe === null ? {} : { [PROJECT_ID]: { probe, readAt: TEST_NOW } },
-      createSession,
       renameTask,
       archiveTask,
       loadProjectGitStatus,
@@ -86,16 +131,20 @@ const makeStore = ({ phase = phaseOf(), probe = MAIN as RemoteProbe | null } = {
     store.state = { ...store.state, ...next };
   };
   const get: GetFn = () => store.state;
-  const slice = useAppStore.getState();
+  const createSession = vi.fn(async () => {
+    set({ sessionProjectMounts: { [BOOTSTRAP_SESSION.id]: [mountOf()] } });
+    return { session: BOOTSTRAP_SESSION };
+  });
   store.state = {
     ...store.state,
+    createSession,
     setBootstrapPhase: async ({ projectId, patch }) => {
       const current = store.state.bootstrapPhase[projectId] ?? phase;
       const next = { ...current, ...patch, updatedAt: TEST_NOW };
       set({ bootstrapPhase: { ...store.state.bootstrapPhase, [projectId]: next } });
       return next;
     },
-    dismissBootstrapReport: slice.dismissBootstrapReport,
+    dismissBootstrapReport: useAppStore.getState().dismissBootstrapReport,
   };
   return { store, set, get, createSession, renameTask, archiveTask };
 };
@@ -104,14 +153,16 @@ beforeEach(() => {
   vi.clearAllMocks();
   h.liveSessionIds = [];
   h.prepare.mockResolvedValue(prepared);
+  h.apply.mockResolvedValue(undefined);
   h.clearRoot.mockResolvedValue({ cleared: ['a.txt', 'b.txt'], kept: [] });
   h.alignMain.mockResolvedValue({ kind: 'already-aligned' });
   h.recover.mockResolvedValue({ kind: 'verified' });
   h.rollback.mockResolvedValue(undefined);
+  h.discard.mockResolvedValue(undefined);
 });
 
 describe('moveToBootstrap', () => {
-  it('moves the work, adopts the worktree as a session named bootstrap and finishes the phase', async () => {
+  it('adopts the prepared branch as a session named bootstrap, fills its worktree and finishes the phase', async () => {
     const { store, set, get, createSession, renameTask, archiveTask } = makeStore();
 
     const result = await moveToBootstrap(set, get)({ projectId: PROJECT_ID });
@@ -130,14 +181,19 @@ describe('moveToBootstrap', () => {
         projectId: PROJECT_ID,
         title: 'bootstrap',
         existingBranch: 'goodboy/bootstrap',
-        folderName: 'bootstrap',
       }),
     );
     expect(renameTask).toHaveBeenCalledWith(BOOTSTRAP_SESSION.id, 'bootstrap');
+    expect(h.apply).toHaveBeenCalledWith({
+      projectPath: '/games/cascadia',
+      snapshotId: prepared.snapshotId,
+      worktreePath: WORKTREE,
+      baseBranch: 'main',
+    });
     expect(h.clearRoot).toHaveBeenCalledWith({
       projectPath: '/games/cascadia',
       snapshotId: prepared.snapshotId,
-      worktreePath: prepared.worktreePath,
+      worktreePath: WORKTREE,
     });
     expect(archiveTask).toHaveBeenCalledWith(LAP_SESSION.id);
     expect(store.state.bootstrapPhase[PROJECT_ID]?.stage).toBe('done');
@@ -150,12 +206,16 @@ describe('moveToBootstrap', () => {
     });
   });
 
-  it('clears the project folder only after the session exists', async () => {
+  it('copies into the worktree only after the session owns it and clears the folder last', async () => {
     const { set, get, createSession } = makeStore();
     const order: string[] = [];
     createSession.mockImplementation(async () => {
       order.push('session');
+      set({ sessionProjectMounts: { [BOOTSTRAP_SESSION.id]: [mountOf()] } });
       return { session: BOOTSTRAP_SESSION };
+    });
+    h.apply.mockImplementation(async () => {
+      order.push('apply');
     });
     h.clearRoot.mockImplementation(async () => {
       order.push('clear');
@@ -164,7 +224,7 @@ describe('moveToBootstrap', () => {
 
     await moveToBootstrap(set, get)({ projectId: PROJECT_ID });
 
-    expect(order).toEqual(['session', 'clear']);
+    expect(order).toEqual(['session', 'apply', 'clear']);
   });
 
   it('refuses before touching anything when main is not on the remote', async () => {
@@ -213,18 +273,14 @@ describe('moveToBootstrap', () => {
   it('takes the next name when a branch called bootstrap already exists', async () => {
     h.prepare
       .mockRejectedValueOnce(new CommandError({ kind: 'branch_taken', message: 'taken' }))
-      .mockResolvedValueOnce({
-        ...prepared,
-        branch: 'goodboy/bootstrap-2',
-        worktreePath: '/games/cascadia/.goodboy/worktrees/bootstrap-2',
-      });
+      .mockResolvedValueOnce({ ...prepared, branch: 'goodboy/bootstrap-2' });
     const { set, get, createSession } = makeStore();
 
     await moveToBootstrap(set, get)({ projectId: PROJECT_ID });
 
     expect(h.prepare.mock.calls.map(([args]) => args.slug)).toEqual(['bootstrap', 'bootstrap-2']);
     expect(createSession).toHaveBeenCalledWith(
-      expect.objectContaining({ existingBranch: 'goodboy/bootstrap-2', folderName: 'bootstrap-2' }),
+      expect.objectContaining({ existingBranch: 'goodboy/bootstrap-2' }),
     );
   });
 
@@ -239,7 +295,7 @@ describe('moveToBootstrap', () => {
     expect(store.state.bootstrapPhase[PROJECT_ID]?.stage).toBe('done');
   });
 
-  it('undoes the worktree and returns to the first lap when the session cannot start', async () => {
+  it('drops the branch and returns to the first lap when the session cannot start', async () => {
     const { store, set, get, createSession } = makeStore();
     createSession.mockRejectedValue(new Error('no provider'));
 
@@ -248,7 +304,29 @@ describe('moveToBootstrap', () => {
     expect(result).toMatchObject({ kind: 'refused', reason: 'failed' });
     expect(h.rollback).toHaveBeenCalledWith({
       projectPath: '/games/cascadia',
-      worktreePath: prepared.worktreePath,
+      worktreePath: '',
+      branch: prepared.branch,
+    });
+    expect(h.apply).not.toHaveBeenCalled();
+    expect(h.clearRoot).not.toHaveBeenCalled();
+    expect(store.state.bootstrapPhase[PROJECT_ID]?.stage).toBe('first-lap');
+  });
+
+  it('undoes the session and the worktree when the copy does not apply, and never clears the folder', async () => {
+    h.apply.mockRejectedValue(
+      new CommandError({ kind: 'apply_conflict', message: 'the work does not apply: plot.txt' }),
+    );
+    const { store, set, get } = makeStore();
+
+    const result = await moveToBootstrap(set, get)({ projectId: PROJECT_ID });
+
+    expect(result).toMatchObject({ kind: 'refused', reason: 'refused' });
+    expect(h.discard).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId: BOOTSTRAP_SESSION.id }),
+    );
+    expect(h.rollback).toHaveBeenCalledWith({
+      projectPath: '/games/cascadia',
+      worktreePath: WORKTREE,
       branch: prepared.branch,
     });
     expect(h.clearRoot).not.toHaveBeenCalled();
@@ -277,27 +355,21 @@ describe('moveToBootstrap', () => {
 });
 
 describe('resumeBootstrapMove', () => {
-  const interrupted = phaseOf({
-    stage: 'moving',
-    snapshotId: prepared.snapshotId,
-    worktreePath: prepared.worktreePath,
-    branch: prepared.branch,
-  });
-
-  it('finishes a verified move without cutting a second worktree', async () => {
-    const { store, set, get } = makeStore({ phase: interrupted });
+  it('finishes a verified move without preparing or applying again', async () => {
+    const { store, set, get } = makeStore({ phase: interrupted, hasBootstrapSession: true });
 
     const result = await resumeBootstrapMove(set, get)({ projectId: PROJECT_ID });
 
     expect(result.kind).toBe('moved');
     expect(h.prepare).not.toHaveBeenCalled();
+    expect(h.apply).not.toHaveBeenCalled();
     expect(h.clearRoot).toHaveBeenCalledTimes(1);
     expect(store.state.bootstrapPhase[PROJECT_ID]?.stage).toBe('done');
   });
 
   it('undoes a move whose copy no longer verifies', async () => {
     h.recover.mockResolvedValue({ kind: 'mismatch', paths: ['a.txt'] });
-    const { store, set, get } = makeStore({ phase: interrupted });
+    const { store, set, get } = makeStore({ phase: interrupted, hasBootstrapSession: true });
 
     const result = await resumeBootstrapMove(set, get)({ projectId: PROJECT_ID });
 
@@ -307,12 +379,20 @@ describe('resumeBootstrapMove', () => {
     expect(store.state.bootstrapPhase[PROJECT_ID]?.stage).toBe('first-lap');
   });
 
-  it('returns to the first lap when it was interrupted before anything was copied', async () => {
-    const { store, set, get } = makeStore({ phase: phaseOf({ stage: 'moving' }) });
+  it('undoes a move that was interrupted before the session had its worktree filled', async () => {
+    const { store, set, get } = makeStore({
+      phase: phaseOf({ stage: 'moving', snapshotId: prepared.snapshotId, branch: prepared.branch }),
+    });
 
-    await resumeBootstrapMove(set, get)({ projectId: PROJECT_ID });
+    const result = await resumeBootstrapMove(set, get)({ projectId: PROJECT_ID });
 
+    expect(result).toMatchObject({ kind: 'refused', reason: 'failed' });
     expect(h.recover).not.toHaveBeenCalled();
+    expect(h.rollback).toHaveBeenCalledWith({
+      projectPath: '/games/cascadia',
+      worktreePath: '',
+      branch: prepared.branch,
+    });
     expect(store.state.bootstrapPhase[PROJECT_ID]?.stage).toBe('first-lap');
   });
 

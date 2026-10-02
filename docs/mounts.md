@@ -52,9 +52,9 @@ work goes into a worktree session named `bootstrap` in this order, and the
 project folder is untouched until the copy is verified:
 
 1. A temporary index records the folder as one commit object (`refs/goodboy/bootstrap/<project>` keeps it).
-2. A worktree is cut from `origin/<default branch>` and the snapshot is applied with a three-way pick.
-3. Every listed path is hashed in the worktree against the snapshot.
-4. The session is created on that worktree.
+2. A branch `<prefix>/bootstrap` is cut from `origin/<default branch>` and nothing else changes.
+3. A session named `bootstrap` adopts that branch, so its worktree is an ordinary mount.
+4. The snapshot is applied in that worktree with a three-way pick and every listed path is hashed against the snapshot. A conflict or a mismatch undoes the session, the worktree and the branch.
 5. The folder is cleared by exact paths whose content still matches the snapshot. A file edited since stays and is listed. `git clean` and `git stash` never run.
 6. Local `main` is aligned only when it is still Goodboy's single `.gitignore` commit.
 

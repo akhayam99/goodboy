@@ -26,7 +26,7 @@ pub(super) fn branch_checkout_path_with(
         .map(|entry| entry.path)
 }
 
-pub(crate) fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktree, WorktreeError> {
+pub(super) fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktree, WorktreeError> {
     let repo_path = PathBuf::from(&args.repo_path);
     if !repo_path.exists() {
         return Err(WorktreeError::RepoNotFound(args.repo_path.clone()));

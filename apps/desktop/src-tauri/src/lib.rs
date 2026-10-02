@@ -402,6 +402,7 @@ pub fn run() {
             remote_probe::project_remote_probe,
             publish::project_link_remote,
             bootstrap::bootstrap_prepare,
+            bootstrap::bootstrap_apply,
             bootstrap::bootstrap_clear_root,
             bootstrap::bootstrap_align_main,
             bootstrap::bootstrap_recover,

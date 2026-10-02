@@ -23,7 +23,6 @@ export type BootstrapMovedFile = {
 export type BootstrapPrepared = {
   readonly snapshotId: string;
   readonly snapshotRef: string;
-  readonly worktreePath: string;
   readonly branch: string;
   readonly baseBranch: string;
   readonly files: ReadonlyArray<BootstrapMovedFile>;

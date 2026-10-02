@@ -223,6 +223,17 @@ export const bootstrapPrepare = async (
   return invokeCommand<BootstrapPrepared>('bootstrap_prepare', { args: params });
 };
 
+type BootstrapApplyParams = {
+  readonly projectPath: string;
+  readonly snapshotId: string;
+  readonly worktreePath: string;
+  readonly baseBranch: string;
+};
+
+export const bootstrapApply = async (params: BootstrapApplyParams): Promise<void> => {
+  return invokeCommand<void>('bootstrap_apply', { args: params });
+};
+
 type BootstrapClearRootParams = {
   readonly projectPath: string;
   readonly snapshotId: string;

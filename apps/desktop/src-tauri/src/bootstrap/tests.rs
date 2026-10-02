@@ -1,6 +1,8 @@
 use super::clear::{align_main, clear_root, recover, AlignOutcome, RecoverState};
 use super::lock::MoveLock;
-use super::{prepare, rollback, BootstrapError, FileChange, PrepareArgs};
+use super::{
+    apply, prepare, rollback, ApplyArgs, BootstrapError, BootstrapPrepared, FileChange, PrepareArgs,
+};
 use crate::project_folder::create_project_folder;
 use crate::worktree::{git, git_argv_log};
 use std::path::{Path, PathBuf};
@@ -89,6 +91,46 @@ fn status(root: &Path) -> String {
     git_ok(root, &["status", "--porcelain"])
 }
 
+fn worktree_for(fixture: &Fixture, prepared: &BootstrapPrepared) -> PathBuf {
+    let path = fixture
+        .root
+        .join(".goodboy")
+        .join("worktrees")
+        .join("bootstrap");
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+    git_ok(
+        &fixture.root,
+        &[
+            "worktree",
+            "add",
+            "-q",
+            path.to_str().unwrap(),
+            &prepared.branch,
+        ],
+    );
+    path
+}
+
+fn apply_to(
+    fixture: &Fixture,
+    prepared: &BootstrapPrepared,
+    worktree: &Path,
+) -> Result<(), BootstrapError> {
+    apply(ApplyArgs {
+        project_path: fixture.root.to_string_lossy().into_owned(),
+        snapshot_id: prepared.snapshot_id.clone(),
+        worktree_path: worktree.to_string_lossy().into_owned(),
+        base_branch: prepared.base_branch.clone(),
+    })
+}
+
+fn moved(fixture: &Fixture) -> (BootstrapPrepared, PathBuf) {
+    let prepared = prepare(args(fixture)).unwrap();
+    let worktree = worktree_for(fixture, &prepared);
+    apply_to(fixture, &prepared, &worktree).unwrap();
+    (prepared, worktree)
+}
+
 fn first_lap_work(root: &Path) {
     write(root, "src/main.gd", "extends Node\n");
     write(root, "README.md", "cascadia\n");
@@ -136,6 +178,10 @@ fn moving_copies_every_kind_of_change_then_clears_the_folder_by_exact_paths() {
     let prepared = prepare(args(&fixture)).unwrap();
 
     assert_eq!(status(&fixture.root), before);
+    assert_eq!(
+        git_ok(&fixture.root, &["rev-parse", &prepared.branch]),
+        git_ok(&fixture.root, &["rev-parse", "origin/main"])
+    );
     let by_path = |path: &str| {
         prepared
             .files
@@ -147,8 +193,9 @@ fn moving_copies_every_kind_of_change_then_clears_the_folder_by_exact_paths() {
     assert_eq!(by_path("keep.txt").change, FileChange::Modified);
     assert_eq!(by_path("gone.txt").change, FileChange::Deleted);
     assert_eq!(prepared.branch, "ak/bootstrap");
-    let worktree = PathBuf::from(&prepared.worktree_path);
-    assert!(worktree.starts_with(fixture.root.join(".goodboy").join("worktrees")));
+    let worktree = worktree_for(&fixture, &prepared);
+    assert_eq!(status(&worktree), "");
+    apply_to(&fixture, &prepared, &worktree).unwrap();
     assert_eq!(
         std::fs::read(worktree.join("art.bin")).unwrap(),
         std::fs::read(fixture.root.join("art.bin")).unwrap()
@@ -177,12 +224,7 @@ fn moving_copies_every_kind_of_change_then_clears_the_folder_by_exact_paths() {
         prepared.snapshot_id
     );
 
-    let report = clear_root(
-        &fixture.root,
-        &prepared.snapshot_id,
-        &PathBuf::from(&prepared.worktree_path),
-    )
-    .unwrap();
+    let report = clear_root(&fixture.root, &prepared.snapshot_id, &worktree).unwrap();
 
     assert!(report.kept.is_empty());
     assert_eq!(status(&fixture.root), "");
@@ -202,19 +244,14 @@ fn moving_copies_every_kind_of_change_then_clears_the_folder_by_exact_paths() {
 fn a_file_edited_after_the_snapshot_stays_and_is_listed() {
     let fixture = fixture("edited");
     first_lap_work(&fixture.root);
-    let prepared = prepare(args(&fixture)).unwrap();
+    let (prepared, worktree) = moved(&fixture);
     write(
         &fixture.root,
         "README.md",
         "cascadia, edited by the engine\n",
     );
 
-    let report = clear_root(
-        &fixture.root,
-        &prepared.snapshot_id,
-        &PathBuf::from(&prepared.worktree_path),
-    )
-    .unwrap();
+    let report = clear_root(&fixture.root, &prepared.snapshot_id, &worktree).unwrap();
 
     assert_eq!(report.kept, vec!["README.md".to_string()]);
     assert_eq!(
@@ -229,8 +266,7 @@ fn a_file_edited_after_the_snapshot_stays_and_is_listed() {
 fn clearing_refuses_when_the_copy_no_longer_matches() {
     let fixture = fixture("tampered");
     first_lap_work(&fixture.root);
-    let prepared = prepare(args(&fixture)).unwrap();
-    let worktree = PathBuf::from(&prepared.worktree_path);
+    let (prepared, worktree) = moved(&fixture);
     write(&worktree, "README.md", "changed in the worktree\n");
 
     let result = clear_root(&fixture.root, &prepared.snapshot_id, &worktree);
@@ -245,16 +281,12 @@ fn clearing_refuses_when_the_copy_no_longer_matches() {
 fn clearing_refuses_when_the_project_moved_since_the_snapshot() {
     let fixture = fixture("moved");
     first_lap_work(&fixture.root);
-    let prepared = prepare(args(&fixture)).unwrap();
+    let (prepared, worktree) = moved(&fixture);
     write(&fixture.root, "later.txt", "later\n");
     git_ok(&fixture.root, &["add", "later.txt"]);
     git_ok(&fixture.root, &["commit", "-q", "-m", "later"]);
 
-    let result = clear_root(
-        &fixture.root,
-        &prepared.snapshot_id,
-        &PathBuf::from(&prepared.worktree_path),
-    );
+    let result = clear_root(&fixture.root, &prepared.snapshot_id, &worktree);
 
     assert!(matches!(result, Err(BootstrapError::RootMoved)));
     assert!(fixture.root.join("src").join("main.gd").exists());
@@ -345,7 +377,7 @@ fn a_remote_branch_that_was_never_fetched_refuses_the_move() {
 }
 
 #[test]
-fn a_clash_with_the_remote_rolls_back_the_worktree_and_leaves_the_folder_alone() {
+fn a_clash_with_the_remote_fails_the_apply_and_rolls_back_without_touching_the_folder() {
     let fixture = fixture("clash");
     write(&fixture.root, "plot.txt", "chapter one\n");
     commit_all(&fixture.root, "plot");
@@ -369,20 +401,23 @@ fn a_clash_with_the_remote_rolls_back_the_worktree_and_leaves_the_folder_alone()
     first_lap_work(&fixture.root);
     let before = status(&fixture.root);
 
-    let result = prepare(args(&fixture));
+    let prepared = prepare(args(&fixture)).unwrap();
+    let worktree = worktree_for(&fixture, &prepared);
+    let result = apply_to(&fixture, &prepared, &worktree);
 
     assert!(matches!(result, Err(BootstrapError::ApplyConflict { .. })));
     assert_eq!(status(&fixture.root), before);
+    rollback(
+        fixture.root.to_str().unwrap(),
+        worktree.to_str().unwrap(),
+        &prepared.branch,
+    )
+    .unwrap();
     assert_eq!(
         git_ok(&fixture.root, &["branch", "--list", "ak/bootstrap"]),
         ""
     );
-    assert!(!fixture
-        .root
-        .join(".goodboy")
-        .join("worktrees")
-        .join("bootstrap")
-        .exists());
+    assert!(!worktree.exists());
     assert_ne!(git_ok(&fixture.root, &["for-each-ref", "refs/goodboy"]), "");
     assert_eq!(
         std::fs::read_to_string(fixture.root.join("plot.txt")).unwrap(),
@@ -429,8 +464,7 @@ fn work_moves_onto_a_remote_main_that_came_from_elsewhere_and_local_main_aligns(
         remote,
     };
 
-    let prepared = prepare(args(&fixture)).unwrap();
-    let worktree = PathBuf::from(&prepared.worktree_path);
+    let (prepared, worktree) = moved(&fixture);
 
     assert!(worktree.join("LICENSE").exists());
     assert!(worktree.join("src").join("main.gd").exists());
@@ -512,8 +546,7 @@ fn aligning_leaves_local_main_alone_when_it_holds_more_than_the_first_commit() {
 fn recovery_tells_a_verified_copy_from_a_missing_or_changed_one() {
     let fixture = fixture("recover");
     first_lap_work(&fixture.root);
-    let prepared = prepare(args(&fixture)).unwrap();
-    let worktree = PathBuf::from(&prepared.worktree_path);
+    let (prepared, worktree) = moved(&fixture);
 
     assert_eq!(
         recover(&fixture.root, &prepared.snapshot_id, &worktree).unwrap(),
@@ -540,16 +573,16 @@ fn recovery_tells_a_verified_copy_from_a_missing_or_changed_one() {
 fn rolling_back_removes_the_worktree_and_branch_but_keeps_the_snapshot() {
     let fixture = fixture("rollback");
     first_lap_work(&fixture.root);
-    let prepared = prepare(args(&fixture)).unwrap();
+    let (prepared, worktree) = moved(&fixture);
 
     rollback(
         fixture.root.to_str().unwrap(),
-        &prepared.worktree_path,
+        worktree.to_str().unwrap(),
         &prepared.branch,
     )
     .unwrap();
 
-    assert!(!PathBuf::from(&prepared.worktree_path).exists());
+    assert!(!worktree.exists());
     assert_eq!(
         git_ok(&fixture.root, &["branch", "--list", "ak/bootstrap"]),
         ""
@@ -559,6 +592,40 @@ fn rolling_back_removes_the_worktree_and_branch_but_keeps_the_snapshot() {
         prepared.snapshot_id
     );
     assert!(fixture.root.join("src").join("main.gd").exists());
+    finish(&fixture);
+}
+
+#[test]
+fn rolling_back_before_a_worktree_exists_only_drops_the_branch() {
+    let fixture = fixture("branchonly");
+    first_lap_work(&fixture.root);
+    let prepared = prepare(args(&fixture)).unwrap();
+
+    rollback(fixture.root.to_str().unwrap(), "", &prepared.branch).unwrap();
+
+    assert_eq!(
+        git_ok(&fixture.root, &["branch", "--list", "ak/bootstrap"]),
+        ""
+    );
+    assert!(fixture.root.join("src").join("main.gd").exists());
+    finish(&fixture);
+}
+
+#[test]
+fn applying_refuses_a_worktree_that_does_not_start_from_the_remote_main_or_is_not_clean() {
+    let fixture = fixture("badapply");
+    first_lap_work(&fixture.root);
+    let prepared = prepare(args(&fixture)).unwrap();
+    let worktree = worktree_for(&fixture, &prepared);
+    write(&worktree, "stray.txt", "stray\n");
+
+    let dirty = apply_to(&fixture, &prepared, &worktree);
+
+    assert!(matches!(dirty, Err(BootstrapError::InvalidInput(_))));
+    let outside = fixture.parent.join("elsewhere");
+    std::fs::create_dir_all(&outside).unwrap();
+    let escaped = apply_to(&fixture, &prepared, &outside);
+    assert!(matches!(escaped, Err(BootstrapError::InvalidInput(_))));
     finish(&fixture);
 }
 

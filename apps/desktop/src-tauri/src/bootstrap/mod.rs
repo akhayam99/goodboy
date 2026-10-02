@@ -8,10 +8,11 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::repo::{has_commit, is_repo_root};
-use crate::worktree::{
-    git, ignored_files_at_risk, in_progress_operation, worktree_create_blocking, CreateArgs,
+use crate::worktree::{git, ignored_files_at_risk, in_progress_operation};
+use clear::{
+    align_main, checked_snapshot, clear_root, recover, rev, verified_worktree,
+    worktree_under_goodboy,
 };
-use clear::{align_main, clear_root, recover, rev, verified_worktree, worktree_under_goodboy};
 pub use clear::{AlignOutcome, ClearReport, RecoverState};
 use lock::MoveLock;
 pub use snapshot::FileChange;
@@ -106,12 +107,20 @@ pub struct IgnoredAtRisk {
     pub samples: Vec<String>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ApplyArgs {
+    pub project_path: String,
+    pub snapshot_id: String,
+    pub worktree_path: String,
+    pub base_branch: String,
+}
+
 #[derive(Debug, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct BootstrapPrepared {
     pub snapshot_id: String,
     pub snapshot_ref: String,
-    pub worktree_path: String,
     pub branch: String,
     pub base_branch: String,
     pub files: Vec<MovedFile>,
@@ -274,43 +283,20 @@ pub(crate) fn prepare(args: PrepareArgs) -> Result<BootstrapPrepared, BootstrapE
         .filter(|file| file.size > LARGE_FILE_BYTES)
         .map(|file| file.path.clone())
         .collect();
-    let created = worktree_create_blocking(CreateArgs {
-        repo_path: args.project_path.trim().to_string(),
-        branch_prefix: args.branch_prefix.clone(),
-        slug: slug.clone(),
-        parent_dir: None,
-        existing_branch: None,
-        fallback_ref: None,
-        base_branch: Some(args.base_branch.clone()),
-        dir_name: Some(slug.clone()),
-    })
-    .map_err(|error| BootstrapError::Git {
-        message: crate::worktree::redact_credentials(&error.to_string()),
-    })?;
-    let worktree_path = PathBuf::from(&created.worktree_path);
-    if created.reused {
-        return Err(BootstrapError::InvalidInput(format!(
-            "a worktree already exists at {}",
-            created.worktree_path
-        )));
-    }
-    let outcome = apply_snapshot(&worktree_path, &args.base_branch, &snapshot.id).and_then(|_| {
-        let bad = verified_worktree(&root, &worktree_path, &changes)?;
-        match bad.is_empty() {
-            true => Ok(()),
-            false => Err(BootstrapError::VerifyFailed(bad.join(", "))),
-        }
-    });
-    if let Err(error) = outcome {
-        remove_worktree(&root, &worktree_path, &created.branch_name);
-        return Err(error);
-    }
+    run(
+        &root,
+        &[
+            "branch",
+            "--no-track",
+            &branch,
+            &format!("{remote_ref}^{{commit}}"),
+        ],
+    )?;
     let at_risk = ignored_files_at_risk(&root);
     Ok(BootstrapPrepared {
         snapshot_id: snapshot.id,
         snapshot_ref,
-        worktree_path: created.worktree_path,
-        branch: created.branch_name,
+        branch,
         base_branch: args.base_branch,
         files,
         large_files,
@@ -319,6 +305,50 @@ pub(crate) fn prepare(args: PrepareArgs) -> Result<BootstrapPrepared, BootstrapE
             samples: at_risk.map(|found| found.samples).unwrap_or_default(),
         },
     })
+}
+
+pub(crate) fn apply(args: ApplyArgs) -> Result<(), BootstrapError> {
+    let root = repo_root(&args.project_path)?;
+    if !is_safe_branch(&args.base_branch) {
+        return Err(BootstrapError::InvalidInput(
+            "the branch name has characters that are not allowed".to_string(),
+        ));
+    }
+    let Some(worktree) = worktree_under_goodboy(&root, Path::new(&args.worktree_path)) else {
+        return Err(BootstrapError::InvalidInput(
+            "the worktree is not inside the project's worktree folder".to_string(),
+        ));
+    };
+    if !worktree.is_dir() {
+        return Err(BootstrapError::InvalidInput(
+            "the bootstrap worktree is missing".to_string(),
+        ));
+    }
+    let _lock = MoveLock::acquire(&absolute_git_dir(&root)?)?;
+    checked_snapshot(&root, &args.snapshot_id)?;
+    let remote_tip = rev(
+        &root,
+        &format!("refs/remotes/origin/{}^{{commit}}", args.base_branch),
+    );
+    let at = rev(&worktree, "HEAD");
+    if remote_tip.is_none() || at != remote_tip {
+        return Err(BootstrapError::InvalidInput(
+            "the bootstrap worktree does not start from the remote main".to_string(),
+        ));
+    }
+    let dirty = run(&worktree, &["status", "--porcelain"])?;
+    if !dirty.trim().is_empty() {
+        return Err(BootstrapError::InvalidInput(
+            "the bootstrap worktree already has changes".to_string(),
+        ));
+    }
+    let changes = list_changes(&root, &args.snapshot_id)?;
+    apply_snapshot(&worktree, &args.base_branch, &args.snapshot_id)?;
+    let bad = verified_worktree(&root, &worktree, &changes)?;
+    if !bad.is_empty() {
+        return Err(BootstrapError::VerifyFailed(bad.join(", ")));
+    }
+    Ok(())
 }
 
 pub(crate) fn rollback(
@@ -332,12 +362,16 @@ pub(crate) fn rollback(
             "the branch name has characters that are not allowed".to_string(),
         ));
     }
+    let _lock = MoveLock::acquire(&absolute_git_dir(&root)?)?;
+    if worktree_path.trim().is_empty() {
+        let _ = git(&root, &["branch", "-D", branch]);
+        return Ok(());
+    }
     let Some(target) = worktree_under_goodboy(&root, Path::new(worktree_path)) else {
         return Err(BootstrapError::InvalidInput(
             "the worktree is not inside the project's worktree folder".to_string(),
         ));
     };
-    let _lock = MoveLock::acquire(&absolute_git_dir(&root)?)?;
     remove_worktree(&root, &target, branch);
     Ok(())
 }
@@ -355,6 +389,11 @@ where
 #[tauri::command]
 pub async fn bootstrap_prepare(args: PrepareArgs) -> Result<BootstrapPrepared, BootstrapError> {
     blocking(move || prepare(args)).await
+}
+
+#[tauri::command]
+pub async fn bootstrap_apply(args: ApplyArgs) -> Result<(), BootstrapError> {
+    blocking(move || apply(args)).await
 }
 
 #[tauri::command]

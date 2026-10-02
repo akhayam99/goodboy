@@ -47,7 +47,7 @@ pub(crate) fn rev(root: &Path, name: &str) -> Option<String> {
         .filter(|found| !found.is_empty())
 }
 
-fn checked_snapshot(root: &Path, snapshot_id: &str) -> Result<(), BootstrapError> {
+pub(crate) fn checked_snapshot(root: &Path, snapshot_id: &str) -> Result<(), BootstrapError> {
     if !is_object_id(snapshot_id) {
         return Err(BootstrapError::InvalidInput(
             "the snapshot id is not a commit id".to_string(),
