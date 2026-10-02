@@ -3,7 +3,6 @@ import { BrandMark } from '../components/BrandIcons';
 import { Logo } from '../components/Logo';
 import { NavMenu, type NavMenuLink } from '../components/NavMenu';
 import { ThemeToggle } from '../components/ThemeToggle';
-import { useDownloads } from '../hooks/useDownloads';
 import { useScrolled } from '../hooks/useScrolled';
 import { SITE } from '../site';
 
@@ -20,7 +19,6 @@ const isCurrent = (href: string) =>
 
 export const Nav = () => {
   const isScrolled = useScrolled();
-  const { primary } = useDownloads();
   const menuLinks = NAV_LINKS.map((link) => ({ ...link, isCurrent: isCurrent(link.href) }));
 
   return (
@@ -45,9 +43,6 @@ export const Nav = () => {
               <BrandMark brand="github" size={18} />
             </a>
             <ThemeToggle />
-            <a className="btn small onlyFine" href={primary.href} data-download>
-              {primary.label}
-            </a>
           </div>
           <NavMenu links={menuLinks} />
         </div>

@@ -2,7 +2,6 @@ import './NavMenu.css';
 import { useEffect, useRef, useState } from 'react';
 import { StarButton } from './StarButton';
 import { ThemeToggle } from './ThemeToggle';
-import { useDownloads } from '../hooks/useDownloads';
 
 export type NavMenuLink = {
   readonly label: string;
@@ -18,7 +17,6 @@ const SHEET_ID = 'nav-menu-sheet';
 
 export const NavMenu = ({ links }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { primary } = useDownloads();
   const rootRef = useRef<HTMLSpanElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -100,9 +98,6 @@ export const NavMenu = ({ links }: Props) => {
         <div className="navSheetAction onlyCoarse">
           <StarButton />
         </div>
-        <a className="btn navSheetAction onlyFine" href={primary.href} data-download>
-          {primary.label}
-        </a>
       </div>
     </span>
   );

@@ -111,6 +111,10 @@ All in `website/src/components/`, each with its own CSS file.
 - `StarButton`, a Star on GitHub link to `SITE.repo`, shown on touch devices in
   place of the downloads. On desktop the hero shows its own Star on GitHub button
   next to the download.
+- `StarCount`, the star total inside every Star on GitHub button. `useStarCount`
+  reads `stargazers_count` from `SITE.repoApi` once per session and
+  `formatStars` floors it to the hundred: 100+, 200+, then 1.2k+. Under 100, or
+  when the API fails, the button shows no number.
 - `BrandIcons`, the provider marks, in their brand colours with the names in
   tier 3. Each hex is sourced and recorded in `brandIcons.source.json`.
 
@@ -124,13 +128,14 @@ the phone sheet alike.
 
 A touch device is told by pointer, `(hover: none) and (pointer: coarse)`, never
 by width. `.onlyFine` hides an element on touch and `.onlyCoarse` hides it with
-a mouse, both in `src/styles.css`. On touch the nav Download, the hero download
-buttons and the install block give way to `StarButton`. A phone has no
+a mouse, both in `src/styles.css`. On touch the hero download buttons and the
+install block give way to `StarButton`. A phone has no
 `[data-download]` element, and every button, `.btn` and nav link is 44 px tall
 or more.
 
 ## Downloads
 
+Downloads live in the hero and the install block only; the nav carries none.
 Every `[data-download]` link is a direct file download from
 `https://github.com/akhayam99/goodboy/releases/download/v<version>/<asset>`,
 never the releases page. `src/data/downloads.ts` builds the four asset URLs
