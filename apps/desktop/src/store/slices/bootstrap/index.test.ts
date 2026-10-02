@@ -72,6 +72,8 @@ describe('bootstrap phase storage', () => {
       firstLapSessionId: null,
       bootstrapSessionId: null,
       snapshotId: 'snap-1',
+      worktreePath: null,
+      branch: null,
       updatedAt: TEST_NOW,
     };
     expect(parseBootstrapPhase(serializeBootstrapPhase(phase))).toEqual(phase);
@@ -128,6 +130,8 @@ describe('hydrateBootstrapPhases', () => {
       firstLapSessionId: null,
       bootstrapSessionId: null,
       snapshotId: null,
+      worktreePath: null,
+      branch: null,
       updatedAt: TEST_NOW,
     });
     h.listSettingsWithPrefix.mockResolvedValueOnce([

@@ -7,6 +7,8 @@ export type BootstrapPhase = {
   readonly firstLapSessionId: SessionId | null;
   readonly bootstrapSessionId: SessionId | null;
   readonly snapshotId: string | null;
+  readonly worktreePath: string | null;
+  readonly branch: string | null;
   readonly updatedAt: IsoDateTime;
 };
 

@@ -59,3 +59,28 @@ export const firstLapProjectOfWorkspace = ({
   }
   return null;
 };
+
+export type LapProject = {
+  readonly project: Project;
+  readonly stage: 'first-lap' | 'moving';
+};
+
+export const selectLapProject = ({ state, sessionId }: SessionParams): LapProject | null => {
+  const session = sessionById(state.sessions, sessionId);
+  if (session === undefined) {
+    return null;
+  }
+  for (const project of state.projects) {
+    if (project.workspaceId !== session.workspaceId || project.kind !== 'repo') {
+      continue;
+    }
+    const phase = state.bootstrapPhase[project.id];
+    if (phase?.firstLapSessionId !== sessionId) {
+      continue;
+    }
+    if (phase.stage === 'first-lap' || phase.stage === 'moving') {
+      return { project, stage: phase.stage };
+    }
+  }
+  return null;
+};

@@ -21,6 +21,8 @@ const makeStore = (stage: 'first-lap' | 'done', existing = false) => {
     firstLapSessionId: created.id,
     bootstrapSessionId: null,
     snapshotId: null,
+    worktreePath: null,
+    branch: null,
     updatedAt: TEST_NOW,
   }));
   const lapSession = aSession({ workspaceId: WORKSPACE_ID });
@@ -35,6 +37,8 @@ const makeStore = (stage: 'first-lap' | 'done', existing = false) => {
           firstLapSessionId: existing ? lapSession.id : null,
           bootstrapSessionId: null,
           snapshotId: null,
+          worktreePath: null,
+          branch: null,
           updatedAt: TEST_NOW,
         },
       },

@@ -28,6 +28,8 @@ const makeStore = (stage: 'first-lap' | 'done') => {
           firstLapSessionId: session.id,
           bootstrapSessionId: null,
           snapshotId: null,
+          worktreePath: null,
+          branch: null,
           updatedAt: TEST_NOW,
         },
       },

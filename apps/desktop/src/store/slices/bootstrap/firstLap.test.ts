@@ -8,6 +8,7 @@ import {
   isFirstLapRefusal,
   isProjectInFirstLap,
   selectFirstLapProject,
+  selectLapProject,
 } from './firstLap';
 
 const WORKSPACE_ID = 'ws-cascadia' as WorkspaceId;
@@ -20,6 +21,8 @@ const phase = (patch: Partial<BootstrapPhase>): BootstrapPhase => ({
   firstLapSessionId: LAP_SESSION,
   bootstrapSessionId: null,
   snapshotId: null,
+  worktreePath: null,
+  branch: null,
   updatedAt: TEST_NOW,
   ...patch,
 });
@@ -51,6 +54,19 @@ describe('selectFirstLapProject', () => {
 
   it('ignores a project that has no phase', () => {
     expect(selectFirstLapProject({ state: stateOf({}), sessionId: LAP_SESSION })).toBeNull();
+  });
+});
+
+describe('selectLapProject', () => {
+  it('reports a moving project as well as a first lap one', () => {
+    const lap = stateOf({ [PROJECT_ID]: phase({}) });
+    const moving = stateOf({ [PROJECT_ID]: phase({ stage: 'moving' }) });
+    const done = stateOf({ [PROJECT_ID]: phase({ stage: 'done' }) });
+
+    expect(selectLapProject({ state: lap, sessionId: LAP_SESSION })?.stage).toBe('first-lap');
+    expect(selectLapProject({ state: moving, sessionId: LAP_SESSION })?.stage).toBe('moving');
+    expect(selectLapProject({ state: done, sessionId: LAP_SESSION })).toBeNull();
+    expect(selectLapProject({ state: lap, sessionId: OTHER_SESSION })).toBeNull();
   });
 });
 

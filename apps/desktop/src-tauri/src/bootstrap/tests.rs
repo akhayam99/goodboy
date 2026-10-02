@@ -282,7 +282,7 @@ fn a_folder_with_its_own_repository_is_refused_before_a_worktree_is_made() {
         .root
         .join(".goodboy")
         .join("worktrees")
-        .join("ak-bootstrap")
+        .join("bootstrap")
         .exists());
     assert_eq!(git_ok(&fixture.root, &["for-each-ref", "refs/goodboy"]), "");
     finish(&fixture);
@@ -381,7 +381,7 @@ fn a_clash_with_the_remote_rolls_back_the_worktree_and_leaves_the_folder_alone()
         .root
         .join(".goodboy")
         .join("worktrees")
-        .join("ak-bootstrap")
+        .join("bootstrap")
         .exists());
     assert_ne!(git_ok(&fixture.root, &["for-each-ref", "refs/goodboy"]), "");
     assert_eq!(

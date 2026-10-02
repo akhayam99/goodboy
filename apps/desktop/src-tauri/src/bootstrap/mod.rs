@@ -282,7 +282,7 @@ pub(crate) fn prepare(args: PrepareArgs) -> Result<BootstrapPrepared, BootstrapE
         existing_branch: None,
         fallback_ref: None,
         base_branch: Some(args.base_branch.clone()),
-        dir_name: None,
+        dir_name: Some(slug.clone()),
     })
     .map_err(|error| BootstrapError::Git {
         message: crate::worktree::redact_credentials(&error.to_string()),

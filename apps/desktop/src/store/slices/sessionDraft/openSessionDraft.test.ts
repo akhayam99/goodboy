@@ -23,6 +23,8 @@ const makeState = (stage: 'first-lap' | 'done') => {
         firstLapSessionId: lapSession.id,
         bootstrapSessionId: null,
         snapshotId: null,
+        worktreePath: null,
+        branch: null,
         updatedAt: TEST_NOW,
       },
     },

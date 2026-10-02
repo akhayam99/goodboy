@@ -53,6 +53,8 @@ export const parseBootstrapPhase = (raw: string): BootstrapPhase | null => {
     firstLapSessionId: firstLapSessionId === null ? null : (firstLapSessionId as SessionId),
     bootstrapSessionId: bootstrapSessionId === null ? null : (bootstrapSessionId as SessionId),
     snapshotId: nullableString(record.get('snapshotId')),
+    worktreePath: nullableString(record.get('worktreePath')),
+    branch: nullableString(record.get('branch')),
     updatedAt: updatedAt as IsoDateTime,
   };
 };
@@ -64,6 +66,8 @@ export const freshBootstrapPhase = (at: IsoDateTime): BootstrapPhase => ({
   firstLapSessionId: null,
   bootstrapSessionId: null,
   snapshotId: null,
+  worktreePath: null,
+  branch: null,
   updatedAt: at,
 });
 
