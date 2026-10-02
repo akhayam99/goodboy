@@ -4,6 +4,7 @@ import { BrandMark } from '../components/BrandIcons';
 import { Eyebrow } from '../components/Eyebrow';
 import { ProviderLine } from '../components/ProviderLine';
 import { StarButton } from '../components/StarButton';
+import { StarCount } from '../components/StarCount';
 import { SessionMock } from '../components/mocks/SessionMock';
 import { useDownloads } from '../hooks/useDownloads';
 import { SITE } from '../site';
@@ -35,6 +36,7 @@ export const Hero = () => {
             <a className="btn ghost" href={SITE.repo} aria-label="Star Goodboy on GitHub" data-star>
               <BrandMark brand="github" size={18} />
               Star on GitHub
+              <StarCount />
             </a>
             <span className="heroMeta">No account needed</span>
             {platform === 'other' ? (

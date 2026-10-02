@@ -1,5 +1,6 @@
 import './StarButton.css';
 import { BrandMark } from './BrandIcons';
+import { StarCount } from './StarCount';
 import { SITE } from '../site';
 
 type Props = {
@@ -15,5 +16,6 @@ export const StarButton = ({ isSmall = false }: Props) => (
   >
     <BrandMark brand="github" size={isSmall ? 16 : 18} />
     {isSmall ? 'Star' : 'Star on GitHub'}
+    <StarCount />
   </a>
 );
