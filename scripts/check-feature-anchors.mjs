@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -25,6 +25,12 @@ export const collectAnchors = ({ markdown }) => {
       continue;
     }
     const match = isFenced ? null : /^#{1,6}\s+(.+?)\s*#*\s*$/.exec(line);
+    const explicit = isFenced ? null : /<a id="([^"]+)"><\/a>/g;
+    if (explicit !== null) {
+      for (const [, anchor] of line.matchAll(explicit)) {
+        anchors.add(anchor);
+      }
+    }
     if (!match) {
       continue;
     }
@@ -42,7 +48,8 @@ const listFiles = () =>
   })
     .toString()
     .split('\n')
-    .filter((path) => path !== '' && path !== 'CHANGELOG.md');
+    .filter((path) => path !== '' && path !== 'CHANGELOG.md')
+    .filter((path) => existsSync(resolve(ROOT_DIRECTORY, path)));
 
 const collectMisses = ({ anchors }) =>
   listFiles().flatMap((path) => {

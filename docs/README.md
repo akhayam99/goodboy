@@ -44,8 +44,35 @@ Below is the full index. Other docs and agents use it to find their way.
 
 - [README.md](../README.md): when you are new here, human or agent, and
   want the short recap and the install steps.
-- [FEATURES.md](../FEATURES.md): when you want every feature, in the order a
-  task lives, with a screenshot where one helps.
+- [FEATURES.md](../FEATURES.md): when you want the main features in task order.
+  Each entry links to its focused page in [features](features/).
+
+## Feature-area ownership
+
+`pnpm check:doc-refs` checks the current index and area files. Run `node scripts/split-features.mjs --check` to verify the ongoing feature-doc contract. The split parity proof ran once at commit `5b2a41bd5`.
+
+| Area           | Source glob                                   |
+| -------------- | --------------------------------------------- |
+| inbox          | `apps/desktop/src/features/inbox/**`          |
+| workflows      | `apps/desktop/src/features/workflows/**`      |
+| agents         | `apps/desktop/src/features/workspace-chat/**` |
+| board          | `apps/desktop/src/components/StageBoard/**`   |
+| review         | `apps/desktop/src/features/review/**`         |
+| providers      | `apps/desktop/src/features/providers/**`      |
+| storage        | `apps/desktop/src/features/storage/**`        |
+| setup          | `apps/desktop/src/features/onboarding/**`     |
+| start          | `apps/desktop/src/features/session/**`        |
+| overview       | `apps/desktop/src/features/file-versions/**`  |
+| switching      | `apps/desktop/src/features/notifications/**`  |
+| search         | `apps/desktop/src/features/search/**`         |
+| workspace      | `apps/desktop/src/features/workspace/**`      |
+| branch-history | `apps/desktop/src/features/history/**`        |
+| artifacts      | `apps/desktop/src/features/artifacts/**`      |
+| context        | `apps/desktop/src/features/context/**`        |
+| security       | `apps/desktop/src/features/backup/**`         |
+| support        | `apps/desktop/src/features/bug-report/**`     |
+| keyboard       | `apps/desktop/src/features/terminal/**`       |
+
 - [concepts.md](./concepts.md): when you need to know what something in the
   app is, or how far an integration goes.
 - [DESIGN.md](../DESIGN.md): when you are judging whether a screen or flow
@@ -194,6 +221,7 @@ that matches its task. Whoever starts the agent points it here.
   release flow writes `CHANGELOG.md`, and agents read it through
   [release-command.md](release-command.md), the doc that owns it. The root
   `README.md` is the public landing page GitHub shows first, and
-  `FEATURES.md` is the public feature guide it links to; their entries in
-  this map are their headers. `.github/pull_request_template.md` is a form
+  `FEATURES.md` is the public feature index it links to; the feature-area
+  docs it links to are the guide. Their entries in this map are their headers.
+  `.github/pull_request_template.md` is a form
   pasted into every PR body, not a doc.

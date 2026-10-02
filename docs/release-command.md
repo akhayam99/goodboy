@@ -1,5 +1,7 @@
 # How to release Goodboy
 
+Before release screenshots, run `node scripts/fidelity-shots.mjs` with the website and app scene servers available. It writes paired mock and real-scene PNGs plus measured values for both themes and desktop and phone sizes.
+
 > **Read this when** an agent is executing a release and needs the step
 > order plus the gotchas that bit previous runs. **Not for** signing,
 > notarization or updater detail (`docs/release.md`).
@@ -46,19 +48,20 @@ Below, `X` is the new version and `X-1` is the current latest.
    entries. How to shoot, name and cap them is in
    [mock-screenshots.md](mock-screenshots.md) → Pictures for the changelog.
    Then align the public pages with the release, in the same PR:
-   - Update `README.md`, `FEATURES.md` and `website/`: drop what is no longer
-     true and add what is new. Edit them in place, never rewrite them from
-     scratch.
+   - Update `README.md`, the relevant `docs/features/<area>.md`, its index
+     entry in `FEATURES.md`, and `website/`: drop what is no longer true and
+     add what is new. Edit them in place, never rewrite them from scratch.
    - Every user-facing feature the release adds or changes gets its website
-     section updated in the same PR, text and figure, or a new section when
-     none tells it yet. Re-shoot every figure the change made stale, in
-     `website/public/img/` and `docs/readme/`, from the mock scenes as
+     text updated in the same PR, or a new entry when none tells it yet. The
+     website has no captures: its product views are React mocks, so edit the
+     mock when the feature changes how the app looks. Re-shoot every figure the
+     change made stale in `docs/readme/`, from the mock scenes as
      [mock-screenshots.md](mock-screenshots.md) describes, at a scale of 4 or
-     more, at every width, in both themes, with the phone crop of a frame.
-     `FEATURES.md` figures go to goodboy-media through `pnpm features:shots`,
-     at its default scale of 3, in both themes. A release that only fixes bugs
-     changes no figure.
-   - Run `node scripts/snapshot-features.mjs X`. It reads `FEATURES.md` and the
+     more, in both themes. Feature-area guide figures go to goodboy-media through
+     `pnpm features:shots`, at its default scale of 3, in both themes. A
+     release that only fixes bugs changes no figure.
+   - Run `node scripts/snapshot-features.mjs X`. It reads the area docs in
+     `FEATURES.md` index order and the
      `## Goodboy vX` entry in `CHANGELOG.md`, and writes one JSON file named
      after the version into `website/src/data/releases/`: the feature map the
      site shows for that version, with its New items highlighted, and the
