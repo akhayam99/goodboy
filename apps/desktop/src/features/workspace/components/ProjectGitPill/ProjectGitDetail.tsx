@@ -12,6 +12,7 @@ import { Button, formatError } from '@goodboy/ui';
 import type { Project, WorkspaceGitStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { openInEditor } from '../../../../shared/lib/editor';
+import { initRepo } from '../../../../shared/lib/repo';
 import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
 import { BaseBranchSelect } from '../../../worktree/BaseBranchSelect';
 import { commitBaseBranch as commitProjectBaseBranch } from '../../../worktree/commitBaseBranch';
@@ -102,6 +103,7 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
   const pulling = useAppStore((state) => state.projectCheckoutPulling[project.id] === true);
   const fastForwardProjectCheckout = useAppStore((state) => state.fastForwardProjectCheckout);
   const updateProjectBaseBranch = useAppStore((state) => state.updateProjectBaseBranch);
+  const loadProjectGitStatus = useAppStore((state) => state.loadProjectGitStatus);
   const isReady = status?.state === 'ready';
   const details = isReady ? detailsOf({ status }) : [];
   const notes = isReady ? unknownNotesOf({ status }) : [];
@@ -122,6 +124,10 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
     } catch (error) {
       setOpenError(formatError(error));
     }
+  };
+  const onStartRepository = async () => {
+    await initRepo({ path: project.rootPath });
+    await loadProjectGitStatus({ projectId: project.id });
   };
   const onPull = async () => {
     setPullError(null);
@@ -159,7 +165,7 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
           </span>
         </div>
       ) : status.state === 'absent' || status.state === 'unborn' ? (
-        <InitGuide rootPath={project.rootPath} state={status.state} />
+        <InitGuide rootPath={project.rootPath} state={status.state} onStart={onStartRepository} />
       ) : (
         <div className="flex flex-col gap-2 p-3">
           <div className="flex flex-col gap-1.5">

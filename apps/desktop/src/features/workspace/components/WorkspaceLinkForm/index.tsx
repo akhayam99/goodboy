@@ -411,8 +411,8 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
           {choice === 'project' ? (
             <div className="flex flex-col gap-2">
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Pick a folder with a git repository, or let New project run git init in an empty
-                one.
+                Pick a folder with a git repository, or let New project start a repository in an
+                empty one.
               </p>
               {reconnectCandidate !== null ? (
                 <Notice
