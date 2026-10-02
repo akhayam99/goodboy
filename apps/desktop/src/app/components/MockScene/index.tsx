@@ -67,13 +67,11 @@ import { ModelPickerClaudeScene } from './scenes/ModelPickerClaudeScene';
 
 import { FrameScene } from './scenes/audit/FrameScene';
 import { FirstRunScene } from './scenes/audit/FirstRunScene';
-import {
-  FirstLapMoveScene,
-  FirstLapMovingScene,
-  FirstLapPublishScene,
-  FirstLapReportScene,
-  FirstLapScene,
-} from './scenes/audit/FirstLapScene';
+import { FirstLapScene } from './scenes/audit/FirstLapScene';
+import { FirstLapPublishScene } from './scenes/audit/FirstLapPublishScene';
+import { FirstLapMoveScene } from './scenes/audit/FirstLapMoveScene';
+import { FirstLapMovingScene } from './scenes/audit/FirstLapMovingScene';
+import { FirstLapReportScene } from './scenes/audit/FirstLapReportScene';
 import { BoardStatesScene } from './scenes/audit/BoardStatesScene';
 import { SessionStatesScene } from './scenes/audit/SessionStatesScene';
 import { FeaturesStartTabsScene } from './scenes/features/StartTabsScene';
