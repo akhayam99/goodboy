@@ -1,0 +1,125 @@
+.tourWrap {
+  display: grid;
+  gap: 28px;
+  min-width: 0;
+}
+
+.tourTabs {
+  display: flex;
+  gap: 4px;
+  justify-self: start;
+  max-width: 100%;
+  min-width: 0;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.tourTab {
+  flex: none;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font: 500 14px/20px var(--sans);
+  color: var(--t2);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.tourTab:hover {
+  background: var(--hover);
+  color: var(--t1);
+}
+
+.tourTab[aria-selected='true'] {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.tourTab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .tourTab {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tourTab {
+    transition: none;
+  }
+}
+
+.tourPanel {
+  display: grid;
+  grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+  gap: 40px;
+  align-items: start;
+}
+
+.tourPanel[hidden] {
+  display: none;
+}
+
+.tourPanel:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 6px;
+}
+
+.tourText,
+.tourMock {
+  min-width: 0;
+}
+
+.tourTitle {
+  font: var(--t-cell);
+  letter-spacing: var(--tr-cell);
+  text-wrap: balance;
+}
+
+.tourCopy {
+  max-width: 44ch;
+  margin-top: 8px;
+  font: var(--t-body);
+  letter-spacing: var(--tr-body);
+  color: var(--t2);
+  text-wrap: pretty;
+}
+
+.tourText .textLink {
+  margin-top: 16px;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .tourText .textLink {
+    align-items: center;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 760px) {
+  .tourPanel {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+}
+
+@media (max-width: 600px) {
+  .tourWrap {
+    gap: 20px;
+  }
+  .tourTabs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    justify-self: stretch;
+  }
+  .tourTab {
+    padding: 0 4px;
+  }
+}

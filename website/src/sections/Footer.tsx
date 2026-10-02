@@ -18,9 +18,9 @@ const COLUMNS: readonly Column[] = [
   {
     title: 'Product',
     links: [
-      { label: 'How it works', href: '/#how' },
-      { label: 'Workflows', href: '/#workflows' },
-      { label: 'All features', href: '/features' },
+      { label: 'All features', href: SITE.features },
+      { label: 'How it works', href: SITE.howItWorks },
+      { label: 'Workflows', href: `${SITE.features}#workflows` },
       { label: 'Releases', href: SITE.releases },
     ],
   },
@@ -29,8 +29,8 @@ const COLUMNS: readonly Column[] = [
     links: [
       { label: 'Getting started', href: SITE.gettingStarted },
       { label: 'Concepts', href: SITE.featureGuide },
-      { label: 'Providers', href: `${SITE.featureGuide}#providers-limits-and-cost` },
-      { label: 'Workflows guide', href: `${SITE.featureGuide}#workflows` },
+      { label: 'Providers', href: SITE.featureDoc('providers') },
+      { label: 'Workflows guide', href: SITE.featureDoc('workflows') },
     ],
   },
   {

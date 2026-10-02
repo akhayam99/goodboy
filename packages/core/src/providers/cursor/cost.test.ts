@@ -31,8 +31,8 @@ describe('computeCursorCostUsd', () => {
     );
   });
 
-  it('claude-opus-5-5-max uses opus-tier pricing', () => {
-    expect(computeCursorCostUsd({ usage, model: 'claude-opus-5-5-max' })).toBeCloseTo(5 + 25);
+  it('claude-opus-5-5-max uses the opus 5.5 rate', () => {
+    expect(computeCursorCostUsd({ usage, model: 'claude-opus-5-5-max' })).toBeCloseTo(4 + 20);
   });
 
   it('claude-sonnet-5-5-medium uses the sonnet 5 rate', () => {
@@ -61,8 +61,20 @@ describe('computeCursorCostUsd', () => {
     expect(unpriced).toEqual([]);
   });
 
-  it('gpt-5.5-high uses GPT-5 pricing proxy', () => {
+  it('gpt-5.5-high uses the gpt-5.5 rate', () => {
     expect(computeCursorCostUsd({ usage, model: 'gpt-5.5-high' })).toBeCloseTo(5 + 30);
+  });
+
+  it('prices the gpt-5.6 models and gpt-5.3-codex at the published rates', () => {
+    expect(computeCursorCostUsd({ usage, model: 'gpt-5.6-sol-high' })).toBeCloseTo(4 + 20);
+    expect(computeCursorCostUsd({ usage, model: 'gpt-5.6-terra-high' })).toBeCloseTo(2 + 12);
+    expect(computeCursorCostUsd({ usage, model: 'gpt-5.6-luna-high' })).toBeCloseTo(0.2 + 1.2);
+    expect(computeCursorCostUsd({ usage, model: 'gpt-5.3-codex' })).toBeCloseTo(1.75 + 14);
+  });
+
+  it('prices gemini 3.5 flash and kimi k2.7 code at the published rates', () => {
+    expect(computeCursorCostUsd({ usage, model: 'gemini-3.5-flash' })).toBeCloseTo(1.5 + 9);
+    expect(computeCursorCostUsd({ usage, model: 'kimi-k2.7-code' })).toBeCloseTo(0.95 + 4);
   });
 
   it('unknown model costs at least as much as every known model', () => {

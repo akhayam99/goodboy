@@ -1,0 +1,223 @@
+.twoWays {
+  --tw-fs: 13px;
+  --tw-fs-sm: 12px;
+  container-type: inline-size;
+  display: grid;
+  justify-items: start;
+  gap: 16px;
+  min-width: 0;
+  color: var(--t1);
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .twoWays {
+    --tw-fs-sm: 13px;
+  }
+}
+
+.twoWays .twPair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(4, auto);
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+}
+
+.twoWays .twBill {
+  display: grid;
+  grid-row: span 4;
+  grid-template-rows: subgrid;
+  align-content: start;
+  min-width: 0;
+  padding: 16px 12px;
+}
+
+.twoWays .twBill + .twBill {
+  border-left: 1px solid var(--line);
+}
+
+.twoWays .twTitle {
+  margin: 0;
+  font: var(--t-cell);
+  letter-spacing: var(--tr-cell);
+  color: var(--t1);
+}
+
+.twoWays .twSub {
+  margin: 2px 0 0;
+  font-size: var(--tw-fs);
+  line-height: 1.4;
+  color: var(--t3);
+}
+
+.twoWays .twRows {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.twoWays .twRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 3px 8px;
+  font-size: var(--tw-fs);
+  line-height: 20px;
+}
+
+.twoWays .twAsk {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--t2);
+}
+
+.twoWays .twAsk svg {
+  flex: none;
+  color: var(--t3);
+}
+
+.twoWays .twRole {
+  color: var(--t1);
+  font-weight: 500;
+}
+
+.twoWays .twAsk small {
+  font-size: var(--tw-fs-sm);
+  color: var(--t3);
+  white-space: nowrap;
+}
+
+.twoWays .twDetail {
+  display: none;
+}
+
+.twoWays .twLong {
+  display: none;
+}
+
+.twoWays .twBar {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  display: block;
+  width: var(--w);
+  min-width: 3px;
+  height: 8px;
+  border-radius: 4px;
+  transform-origin: left center;
+}
+
+.twoWays .twBar.dull {
+  background: var(--t4);
+}
+
+.twoWays .twBar.fresh {
+  background: var(--g-agent-generic);
+}
+
+.twoWays .twBar[data-tone='scout'] {
+  background: var(--g-agent-scout);
+}
+.twoWays .twBar[data-tone='planner'] {
+  background: var(--g-agent-planner);
+}
+.twoWays .twBar[data-tone='implementer'] {
+  background: var(--g-agent-implementer);
+}
+.twoWays .twBar[data-tone='tester'] {
+  background: var(--g-agent-tester);
+}
+.twoWays .twBar[data-tone='reviewer'] {
+  background: var(--g-agent-reviewer);
+}
+.twoWays .twBar[data-tone='resolver'] {
+  background: var(--g-agent-resolver);
+}
+
+.twoWays .twValue {
+  text-align: right;
+  font-family: var(--mono);
+  font-size: var(--tw-fs);
+  font-variant-numeric: tabular-nums;
+  color: var(--t3);
+}
+
+.twoWays .twTotal {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: var(--tw-fs);
+  color: var(--t3);
+}
+
+.twoWays .twTotal b {
+  font: 500 18px/26px var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--t2);
+}
+
+.twoWays .twTotal.fresh b {
+  color: var(--accent);
+}
+
+@keyframes twGrow {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .twoWays[data-play='idle'] .twBar {
+    transform: scaleX(0);
+  }
+
+  .twoWays[data-play='run'] .twBar {
+    animation: twGrow 900ms cubic-bezier(0.2, 0.7, 0.2, 1) var(--d) backwards;
+  }
+}
+
+@container (min-width: 560px) {
+  .twoWays .twBill {
+    padding: 20px 20px;
+  }
+
+  .twoWays .twDetail {
+    display: inline-flex;
+  }
+
+  .twoWays small.twDetail {
+    display: inline;
+  }
+
+  .twoWays .twLong {
+    display: inline;
+  }
+
+  .twoWays .twShort {
+    display: none;
+  }
+}
+
+@container (min-width: 720px) {
+  .twoWays .twBill {
+    padding: 24px 28px;
+  }
+
+  .twoWays .twRow {
+    grid-template-columns: minmax(0, 200px) minmax(0, 1fr) 56px;
+    gap: 12px;
+    height: 32px;
+  }
+
+  .twoWays .twBar {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}

@@ -30,11 +30,15 @@ export const Statement = ({
     <div
       className={['statement', isCentered ? 'centered' : null, className].filter(Boolean).join(' ')}
     >
-      {eyebrow === undefined ? null : <Eyebrow text={eyebrow} kind={eyebrowKind} />}
-      <Heading id={headingId} className={level === 1 ? 'display' : 'chapterTitle'}>
+      {eyebrow === undefined ? null : <Eyebrow text={eyebrow} kind={eyebrowKind} isReveal />}
+      <Heading id={headingId} className={level === 1 ? 'display' : 'chapterTitle'} data-reveal="">
         {heading}
       </Heading>
-      {lead === undefined ? null : <p className="lead">{lead}</p>}
+      {lead === undefined ? null : (
+        <p className="lead" data-reveal="">
+          {lead}
+        </p>
+      )}
       {children}
     </div>
   );

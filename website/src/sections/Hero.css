@@ -1,24 +1,23 @@
 .hero {
-  padding-top: 72px;
+  padding-block: 40px 56px;
 }
 
 .heroCopy {
   display: grid;
   justify-items: start;
-  padding: 0 36px;
 }
 
 .heroCopy .eyebrow {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .heroCopy .lead {
-  margin-top: 20px;
+  margin-top: 16px;
   max-width: 620px;
 }
 
 .heroCopy .ctaRow {
-  margin-top: 32px;
+  margin-top: 24px;
 }
 
 .heroCopy .ctaRow.onlyCoarse {
@@ -31,19 +30,65 @@
   color: var(--t4);
 }
 
+.heroAlt {
+  font: var(--t-caption);
+  color: var(--t3);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.heroFeatures {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 2px;
+  font: var(--t-btn);
+  color: var(--accent);
+  transition: opacity 0.16s ease-out;
+}
+
+.heroFeatures:hover {
+  opacity: 0.78;
+  transition: none;
+}
+
 .heroFrame {
-  margin-top: 56px;
+  margin-top: 24px;
 }
 
 .rise {
-  animation: rise 500ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  animation-delay: calc(var(--i, 0) * 70ms);
+  animation:
+    hero-fade 1100ms cubic-bezier(0.33, 0, 0.2, 1) both,
+    hero-rise 1300ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(160ms + var(--i, 0) * 140ms);
 }
 
-@keyframes rise {
+.heroFrame.rise {
+  animation:
+    hero-fade 1300ms cubic-bezier(0.33, 0, 0.2, 1) both,
+    hero-lift 1600ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(160ms + var(--i, 0) * 140ms);
+}
+
+.fontsWait .rise {
+  animation-play-state: paused;
+}
+
+@keyframes hero-fade {
   from {
     opacity: 0;
-    transform: translateY(8px);
+  }
+}
+
+@keyframes hero-rise {
+  from {
+    transform: translateY(16px);
+  }
+}
+
+@keyframes hero-lift {
+  from {
+    transform: translateY(28px) scale(0.985);
   }
 }
 
@@ -60,12 +105,16 @@
   }
 }
 
+@media (hover: none) and (pointer: coarse) {
+  .heroFeatures {
+    min-height: 44px;
+    margin-left: 0;
+  }
+}
+
 @media (max-width: 600px) {
   .hero {
-    padding-top: 64px;
-  }
-  .heroCopy {
-    padding: 0;
+    padding-block: 64px 48px;
   }
   .heroCopy .ctaRow .btn {
     height: 44px;

@@ -83,9 +83,9 @@ talking to a market. There are two voices:
 - **No feature inventory dumps.** Pick the few features that matter and write
   them as scenarios. Leave the rest in a short list, one line each.
 - **Headings name the feature, in one register.** A heading in the README or
-  `FEATURES.md` names the feature in plain words: "Search and navigation", not
-  "Go anywhere, find anything". A site eyebrow copies the `FEATURES.md` group
-  name verbatim, or a README section for an audience ("For developers"). A
+  a feature-area guide names the feature in plain words: "Search and navigation", not
+  "Go anywhere, find anything". A site eyebrow copies the `FEATURES.md` index group
+  name verbatim. A
   site h2 says what you get in one plain sentence of seven words or fewer,
   never a question or a slogan. The one brand line, "Stop re-explaining
   yourself.", closes the landing page.

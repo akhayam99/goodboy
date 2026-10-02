@@ -1,0 +1,334 @@
+.mockStage .ibxWin {
+  container-type: inline-size;
+  container-name: ibxw;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--mk-win);
+  box-shadow: var(--mk-win-shadow);
+  font: 400 12px / 16px var(--sans);
+  color: var(--g-muted-foreground);
+}
+
+.mockStage .ibxTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 16px;
+  min-height: 40px;
+  padding: 8px 14px;
+  background: var(--raise);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.mockStage .ibxTopTitle {
+  font: 600 13px / 20px var(--sans);
+  color: var(--t1);
+}
+
+.mockStage .ibxPulls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  min-width: 0;
+}
+
+.mockStage .ibxPullsLabel {
+  color: var(--g-faint-foreground);
+}
+
+.mockStage .ibxPullsList {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mockStage .ibxPullsItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--g-muted-foreground);
+  white-space: nowrap;
+}
+
+.mockStage .ibxBrand {
+  display: inline-flex;
+  flex: none;
+}
+
+.mockStage .ibxBrand svg {
+  display: block;
+}
+
+.mockStage .ibxBody {
+  display: grid;
+  grid-template-columns: 164px minmax(0, 1fr);
+  min-width: 0;
+}
+
+.mockStage .ibxRail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 8px;
+  border-right: 1px solid var(--line-soft);
+  background: color-mix(in oklab, var(--raise) 60%, var(--mk-win));
+}
+
+.mockStage .ibxRailLabel {
+  padding: 10px 8px 4px;
+}
+
+.mockStage .ibxRailLabel:first-child {
+  padding-top: 0;
+}
+
+.mockStage .ibxFacet {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 6px;
+  color: var(--g-muted-foreground);
+}
+
+.mockStage .ibxFacet svg {
+  display: block;
+  flex: none;
+}
+
+.mockStage .ibxFacet[data-selected='true'] {
+  font-weight: 500;
+  color: var(--t1);
+  background: color-mix(in oklab, var(--t1) 8%, transparent);
+}
+
+.mockStage .ibxFacetLabel {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mockStage .ibxFacetCount {
+  flex: none;
+  font: 400 10px / 14px var(--sans);
+  font-variant-numeric: tabular-nums;
+  color: var(--g-faint-foreground);
+}
+
+.mockStage .ibxStrip {
+  display: none;
+}
+
+.mockStage .ibxList {
+  container-type: inline-size;
+  container-name: ibxl;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 12px 6px 10px;
+}
+
+.mockStage .ibxListHead {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0 10px 6px;
+}
+
+.mockStage .ibxListTitle {
+  font: 600 14px / 20px var(--sans);
+  color: var(--t1);
+}
+
+.mockStage .ibxListCount {
+  font: 400 12px / 16px var(--sans);
+  font-variant-numeric: tabular-nums;
+  color: var(--g-faint-foreground);
+}
+
+.mockStage .ibxGroup {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.mockStage .ibxGroupHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 10px 4px;
+}
+
+.mockStage .ibxGroupCount {
+  font: 400 11px / 16px var(--sans);
+  font-variant-numeric: tabular-nums;
+  color: var(--g-faint-foreground);
+}
+
+.mockStage .ibxRow {
+  flex: none;
+  height: 32px;
+}
+
+.mockStage .ibxRowInner {
+  display: grid;
+  grid-template-columns: 6px 14px 76px minmax(0, 1fr) 100px 88px 52px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+}
+
+.mockStage .ibxDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.mockStage .ibxDot[data-on] {
+  background: var(--g-primary);
+}
+
+.mockStage .ibxGlyph {
+  display: flex;
+}
+
+.mockStage .ibxId {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 11px / 16px var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--g-faint-foreground);
+}
+
+.mockStage .ibxTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 12px / 16px var(--sans);
+  color: var(--t1);
+}
+
+.mockStage .ibxTitle[data-done] {
+  color: var(--g-muted-foreground);
+}
+
+.mockStage .ibxContext {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 11px / 16px var(--sans);
+  color: var(--g-faint-foreground);
+}
+
+.mockStage .ibxAge {
+  justify-self: end;
+  white-space: nowrap;
+  font: 400 10px / 14px var(--sans);
+  color: var(--g-faint-foreground);
+}
+
+@container ibxw (max-width: 620px) {
+  .mockStage .ibxBody {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mockStage .ibxRail {
+    display: none;
+  }
+
+  .mockStage .ibxStrip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 12px 0;
+  }
+}
+
+@container ibxl (max-width: 520px) {
+  .mockStage .ibxRowInner {
+    grid-template-columns: 6px 14px 76px minmax(0, 1fr) 88px 48px;
+  }
+
+  .mockStage .ibxContext {
+    display: none;
+  }
+}
+
+@container ibxl (max-width: 420px) {
+  .mockStage .ibxRow {
+    height: auto;
+    min-height: 32px;
+  }
+
+  .mockStage .ibxRowInner {
+    grid-template-columns: 6px 14px auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'dot glyph id title title'
+      '. state state state age';
+    gap: 2px 10px;
+    padding: 8px 10px;
+  }
+
+  .mockStage .ibxDot {
+    grid-area: dot;
+  }
+
+  .mockStage .ibxGlyph {
+    grid-area: glyph;
+  }
+
+  .mockStage .ibxId {
+    grid-area: id;
+  }
+
+  .mockStage .ibxTitle {
+    grid-area: title;
+  }
+
+  .mockStage .ibxState {
+    grid-area: state;
+  }
+
+  .mockStage .ibxAge {
+    grid-area: age;
+  }
+}
+
+@container ibxw (max-width: 520px) {
+  .mockStage .ibxPullsName {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .mockStage .ibxPullsList {
+    gap: 4px 12px;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .mockStage .ibxWin,
+  .mockStage .ibxFacetCount,
+  .mockStage .ibxListCount,
+  .mockStage .ibxGroupCount,
+  .mockStage .ibxId,
+  .mockStage .ibxContext,
+  .mockStage .ibxAge,
+  .mockStage .ibxTitle {
+    font-size: 13px;
+  }
+}

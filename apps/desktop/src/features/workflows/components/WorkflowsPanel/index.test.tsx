@@ -324,6 +324,54 @@ describe('WorkflowsPanel editor', () => {
     expect(screen.getByLabelText('Title')).toBeDefined();
   });
 
+  it('reads the steps top down and reorders them with the grip arrows', () => {
+    const second = {
+      id: 'step-2',
+      role: 'implementer',
+      ordinal: 1,
+      name: 'Build',
+      promptPrefix: 'Write it',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+    };
+    const base = makeWorkflow({ name: 'Plan and build' });
+    state.phaseTemplates = { 'ws-1': [{ ...base, steps: [...base.steps, second] }] };
+    renderPanel();
+    openWorkflow('Plan and build');
+
+    const names = () =>
+      screen
+        .getAllByRole('button', { name: /^Step \d+: / })
+        .map((toggle) => toggle.getAttribute('aria-label'));
+    expect(names()).toEqual(['Step 1: Plan', 'Step 2: Build']);
+
+    fireEvent.keyDown(screen.getByRole('button', { name: /^Reorder step 1/ }), { key: 'ArrowUp' });
+    expect(names()).toEqual(['Step 1: Plan', 'Step 2: Build']);
+
+    fireEvent.keyDown(screen.getByRole('button', { name: /^Reorder step 1/ }), {
+      key: 'ArrowDown',
+    });
+    expect(names()).toEqual(['Step 1: Build', 'Step 2: Plan']);
+
+    fireEvent.keyDown(screen.getByRole('button', { name: /^Reorder step 2/ }), { key: 'ArrowUp' });
+    expect(names()).toEqual(['Step 1: Plan', 'Step 2: Build']);
+  });
+
+  it('scrolls the new row into view when a step is added at the end', () => {
+    const original = Element.prototype.scrollIntoView;
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    state.phaseTemplates = { 'ws-1': [makeWorkflow({ name: 'Plan and build' })] };
+    renderPanel();
+    openWorkflow('Plan and build');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add step' }));
+    fireEvent.click(screen.getByRole('option', { name: /Blank step/ }));
+
+    Element.prototype.scrollIntoView = original;
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
+  });
+
   it('duplicates a workflow as an independent preset from the menu', async () => {
     const original = makeWorkflow({ name: 'Plan and build' });
     state.phaseTemplates = { 'ws-1': [original] };

@@ -1,0 +1,962 @@
+@import '../app-tokens.css';
+
+@property --gk-spin-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes gkSpin {
+  to {
+    --gk-spin-angle: 360deg;
+  }
+}
+
+@keyframes gkSoftPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.gkKind,
+.gkChip,
+.gkBadge,
+.gkNode,
+.gkRunTree,
+.gkRunTree *,
+.gkTop,
+.gkTop *,
+.gkRecord,
+.gkGroup,
+.gkButton,
+.gkMeta {
+  box-sizing: border-box;
+}
+
+.gkMuted {
+  color: var(--g-muted-foreground);
+}
+
+.gkFaint {
+  color: var(--g-faint-foreground);
+}
+
+.gkFg {
+  color: var(--t1);
+}
+
+.gkDim {
+  opacity: 0.65;
+}
+
+.gkToneWarning {
+  color: var(--g-warning);
+}
+
+.gkToneDanger {
+  color: var(--g-danger);
+}
+
+.gkToneSuccess {
+  color: var(--g-success);
+}
+
+.gkToneMuted {
+  color: var(--g-muted-foreground);
+}
+
+.gkToneFaint {
+  color: var(--g-faint-foreground);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .gkSoftPulse {
+    animation: gkSoftPulse 2.8s ease-in-out infinite;
+  }
+}
+
+.gkKind {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 4px;
+  font: 500 11px / 16px var(--sans);
+  white-space: nowrap;
+  color: var(--gk-kind);
+  background: color-mix(in oklab, var(--gk-kind) 12%, transparent);
+}
+
+.gkKindMuted {
+  color: var(--g-faint-foreground);
+  background: var(--g-fill);
+}
+
+.gkKindHug {
+  width: auto;
+}
+
+.gkNode {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--mk-win, var(--bg));
+}
+
+.gkNodeRing {
+  position: absolute;
+  inset: 0;
+}
+
+.gkNodeGlyph {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.gkNodeGlyph svg {
+  display: block;
+  flex: none;
+}
+
+.gkNodeIndex {
+  font: 600 10px / 1 var(--sans);
+  font-variant-numeric: tabular-nums;
+  color: var(--t1);
+}
+
+.gkNodeIndexFaint {
+  color: var(--g-faint-foreground);
+}
+
+.gkNodeSign {
+  font: 600 11px / 1 var(--sans);
+  font-variant-numeric: tabular-nums;
+}
+
+.gkNodeDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--t1);
+}
+
+.gkNodeDotRunning {
+  background: var(--g-info);
+  animation: gkSoftPulse 2.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gkNodeDotRunning {
+    animation: none;
+  }
+}
+
+.gkNodeSquare {
+  width: 6px;
+  height: 6px;
+  border-radius: 4px;
+  background: var(--g-muted-foreground);
+}
+
+.gkNodeMarker {
+  box-shadow: 0 0 0 1px var(--gk-marker-ring);
+}
+
+.gkNodeSpin::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--gk-spin-angle),
+    transparent 0deg,
+    var(--gk-spin-color, var(--g-info)) 50deg,
+    var(--gk-spin-color, var(--g-info)) 120deg,
+    transparent 170deg,
+    transparent 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .gkNodeSpin::before {
+    animation: gkSpin 3.6s linear infinite;
+  }
+}
+
+.gkNodeUnread {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--g-primary);
+  box-shadow: 0 0 0 1px var(--mk-win, var(--bg));
+}
+
+.gkChip {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 999px;
+  font: 500 11px / 16px var(--sans);
+  white-space: nowrap;
+  appearance: none;
+  color: var(--gk-tone);
+  background: color-mix(in oklab, var(--gk-tone) 10%, transparent);
+}
+
+.gkChip[data-tone='neutral'] {
+  background: var(--g-fill);
+}
+
+.gkChip[data-shape='badge'] {
+  border-radius: 6px;
+}
+
+.gkChip[data-size='3xs'] {
+  font: 500 10px / 14px var(--sans);
+}
+
+.gkChip[data-size='sm'] {
+  padding: 2px 8px;
+}
+
+.gkChip[data-size='md'] {
+  padding: 4px 8px;
+  font: 500 12px / 16px var(--sans);
+}
+
+.gkChip[data-size='control'] {
+  height: 24px;
+  flex: none;
+  gap: 6px;
+  padding: 0 8px;
+}
+
+.gkChip[data-emphasis='subtle']:not([data-tone='neutral']) {
+  background: color-mix(in oklab, var(--gk-tone) 5%, transparent);
+}
+
+.gkChip[data-bordered] {
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--gk-tone) 20%, transparent);
+}
+
+.gkChip[data-bordered][data-tone='neutral'] {
+  box-shadow: 0 0 0 1px var(--g-border-soft);
+}
+
+.gkChip[data-bordered][data-emphasis='strong'] {
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--gk-tone) 60%, transparent);
+}
+
+.gkChip[data-bordered][data-tone='neutral'][data-emphasis='strong'] {
+  box-shadow: 0 0 0 1px var(--g-border);
+}
+
+.gkChip svg {
+  display: block;
+  flex: none;
+}
+
+.gkChipBrand {
+  display: inline-flex;
+  flex: none;
+}
+
+.gkChipLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gkRepo {
+  max-width: 96px;
+}
+
+.gkBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font: 500 11px / 16px var(--sans);
+  color: var(--gk-tone);
+  background: color-mix(in oklab, var(--gk-tone) 10%, transparent);
+}
+
+.gkBadge[data-tone='neutral'] {
+  background: var(--g-fill);
+}
+
+.gkToneBar {
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+  background: var(--gk-tone);
+}
+
+.gkToneBar[data-density='card'] {
+  top: 12px;
+  bottom: 12px;
+  left: 6px;
+  width: 3px;
+}
+
+.gkToneBar[data-density='row'] {
+  top: 9px;
+  bottom: 9px;
+  left: 4px;
+  width: 2px;
+}
+
+.gkRecord {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  font: 400 11px / 16px var(--sans);
+  color: var(--g-muted-foreground);
+}
+
+.gkRecordIcon {
+  display: inline-flex;
+  flex: none;
+  color: var(--gk-tone);
+}
+
+.gkRecordIcon svg {
+  display: block;
+}
+
+.gkRecordLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gkGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: 600 11px / 16px var(--sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--g-muted-foreground);
+}
+
+.gkGroupMuted {
+  color: var(--g-faint-foreground);
+}
+
+.gkAppRow {
+  position: relative;
+  min-width: 0;
+  flex: 1;
+  border-radius: 6px;
+  color: var(--g-muted-foreground);
+}
+
+.gkAppRow[data-selected='true'] {
+  font-weight: 500;
+  color: var(--t1);
+  background: color-mix(in oklab, var(--t1) 8%, transparent);
+}
+
+.gkAppRow[data-waiting] {
+  background: color-mix(in oklab, var(--g-warning) 5%, transparent);
+}
+
+.gkAppRowInner {
+  position: relative;
+  display: flex;
+  height: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  padding: 0 6px 0 8px;
+}
+
+.gkButton {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font: 500 12px / 16px var(--sans);
+  white-space: nowrap;
+}
+
+.gkButton[data-size='md'] {
+  height: 32px;
+  padding: 0 12px;
+  font: 500 14px / 20px var(--sans);
+}
+
+.gkButtonCompact {
+  height: 24px;
+}
+
+.gkButton[data-variant='secondary'] {
+  border-color: var(--g-border);
+  color: var(--t1);
+  background: var(--g-fill);
+}
+
+.gkButton[data-variant='primary'] {
+  color: var(--g-on-tone);
+  background: var(--g-primary);
+}
+
+.gkButton[data-variant='ghost'] {
+  color: var(--t1);
+}
+
+.gkRunTree {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  font-family: var(--sans);
+}
+
+.gkRunRow {
+  display: flex;
+  min-width: 0;
+}
+
+.gkRail {
+  position: relative;
+  flex: none;
+}
+
+.gkRailSvg {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+
+.gkRailMarker {
+  position: absolute;
+  display: flex;
+  transform: translate(-50%, -50%);
+}
+
+.gkNowDot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--g-faint-foreground);
+  transform: translate(-50%, -50%);
+}
+
+.gkRunNow {
+  align-items: center;
+}
+
+.gkNowLabel {
+  padding-left: 8px;
+}
+
+.gkRowBox {
+  container: gkrow / inline-size;
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: flex-end;
+}
+
+.gkRowFrame {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+}
+
+.gkOrdinal {
+  width: 24px;
+  flex: none;
+  text-align: right;
+  font: 400 10px / 14px var(--sans);
+  color: var(--g-faint-foreground);
+}
+
+.gkRowMain {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+}
+
+.gkRowTitle {
+  min-width: 96px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 14px / 20px var(--sans);
+  color: var(--t1);
+}
+
+.gkRowTitleNested {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.gkRowTitle[data-phase='queued'] {
+  color: var(--g-muted-foreground);
+}
+
+.gkRowTitle[data-emphasis] {
+  font-weight: 500;
+  color: var(--t1);
+}
+
+.gkAnswering {
+  max-width: 160px;
+  flex: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 10px / 14px var(--sans);
+  color: var(--g-muted-foreground);
+}
+
+.gkStateLine {
+  flex: none;
+  white-space: nowrap;
+  font: 400 11px / 16px var(--sans);
+  color: var(--g-muted-foreground);
+}
+
+.gkStateNote {
+  color: var(--g-faint-foreground);
+}
+
+.gkStateShort {
+  display: none;
+}
+
+.gkMeta {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  font: 400 11px / 16px var(--sans);
+  font-variant-numeric: tabular-nums;
+  color: var(--g-muted-foreground);
+}
+
+.gkMetaPlanned {
+  color: var(--g-faint-foreground);
+}
+
+.gkRouting {
+  display: flex;
+  width: 136px;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.gkRoutingPlanned .gkRoutingDetail {
+  color: var(--g-faint-foreground);
+}
+
+.gkRoutingGlyph {
+  display: inline-flex;
+  flex: none;
+}
+
+.gkRoutingGlyph svg {
+  display: block;
+}
+
+.gkRoutingName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gkRoutingDetail {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  color: var(--g-faint-foreground);
+}
+
+.gkMetaTime,
+.gkMetaCost,
+.gkMetaCostRange {
+  flex: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.gkMetaTime {
+  width: 96px;
+}
+
+.gkMetaCost {
+  width: 56px;
+}
+
+.gkMetaCostRange {
+  width: 72px;
+}
+
+.gkActionColumn {
+  display: flex;
+  min-width: 76px;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+@container gkrow (width < 880px) {
+  .gkStateFull {
+    display: none;
+  }
+
+  .gkStateShort {
+    display: inline;
+  }
+}
+
+@container gkrow (width < 780px) {
+  .gkMetaCost,
+  .gkMetaCostRange {
+    display: none;
+  }
+}
+
+@container gkrow (width < 720px) {
+  .gkRoutingDetail {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+@container gkrow (width < 700px) {
+  .gkStateLine {
+    display: none;
+  }
+}
+
+@container gkrow (width < 640px) {
+  .gkMetaTime {
+    width: 80px;
+  }
+}
+
+@container gkrow (width < 600px) {
+  .gkRouting {
+    width: 12px;
+  }
+
+  .gkRoutingName {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+}
+
+@container gkrow (width < 480px) {
+  .gkMetaTime {
+    display: none;
+  }
+}
+
+@container gkrow (width < 360px) {
+  .gkRouting {
+    display: none;
+  }
+}
+
+.gkRunStacked .gkRunRowInner {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) auto;
+  grid-template-rows: 20px 20px;
+  align-content: start;
+  gap: 0 8px;
+  padding: 6px 8px 0;
+}
+
+.gkRunStacked .gkOrdinal,
+.gkRunStacked .gkAnswering,
+.gkRunStacked .gkMetaCost,
+.gkRunStacked .gkMetaCostRange,
+.gkRunStacked .gkActionColumn {
+  display: none;
+}
+
+.gkRunStacked .gkRowMain,
+.gkRunStacked .gkMeta {
+  display: contents;
+}
+
+.gkRunStacked .gkRowTitle {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  min-width: 0;
+}
+
+.gkRunStacked .gkRowKind {
+  grid-column: 1;
+  grid-row: 2;
+  width: 92px;
+  height: 20px;
+  padding: 0 4px;
+}
+
+.gkRunStacked .gkStateLine {
+  display: block;
+  grid-column: 2;
+  grid-row: 2;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gkRunStacked .gkStateFull {
+  display: none;
+}
+
+.gkRunStacked .gkStateShort {
+  display: inline;
+}
+
+.gkRunStacked .gkRouting {
+  display: flex;
+  grid-column: 2;
+  grid-row: 2;
+  width: auto;
+  min-width: 0;
+}
+
+.gkRunStacked .gkRoutingName {
+  position: static;
+  width: auto;
+  height: auto;
+  clip-path: none;
+}
+
+.gkRunStacked .gkRoutingDetail {
+  display: none;
+}
+
+.gkRunStacked .gkRunRow[data-has-state] .gkRouting {
+  display: none;
+}
+
+.gkRunStacked .gkMetaTime {
+  display: block;
+  grid-column: 3;
+  grid-row: 2;
+  width: auto;
+}
+
+.gkTop {
+  container: gktop / inline-size;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(max-content, 1fr);
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px 0 6px;
+  font: 400 12px / 16px var(--sans);
+  color: var(--g-muted-foreground);
+  background: var(--raise);
+}
+
+.gkTopStart {
+  display: flex;
+  min-width: 0;
+  max-width: 340px;
+  align-items: center;
+  gap: 6px;
+}
+
+.gkTopTile {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  place-items: center;
+  border-radius: 6px;
+  font: 600 11px / 1 var(--sans);
+  color: var(--g-identity-3);
+  background: color-mix(in oklab, var(--g-identity-3) 22%, transparent);
+}
+
+.gkTopName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--t1);
+}
+
+.gkTopChevron {
+  flex: none;
+  color: var(--g-faint-foreground);
+}
+
+.gkTopNav {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+.gkTopNavItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gkTopNavItem svg {
+  flex: none;
+  color: var(--g-faint-foreground);
+}
+
+.gkTopToday {
+  display: inline-flex;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.gkTopToday strong {
+  font-weight: 600;
+  color: var(--t1);
+}
+
+.gkTopCenter {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+.gkTopSearch {
+  display: flex;
+  width: 240px;
+  max-width: 100%;
+  height: 24px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  border-radius: 6px;
+  color: var(--g-faint-foreground);
+  box-shadow: 0 0 0 1px var(--g-border-soft);
+}
+
+.gkTopSearchText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gkTopKbd {
+  margin-left: auto;
+  flex: none;
+  font: 500 10px / 14px var(--sans);
+}
+
+.gkTopEnd {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+@container gktop (width < 720px) {
+  .gkTopNav {
+    display: none;
+  }
+}
+
+@container gktop (width < 620px) {
+  .gkTopToday {
+    display: none;
+  }
+}
+
+@container gktop (width < 540px) {
+  .gkTop .gkTopRunning {
+    display: none;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .gkKind,
+  .gkChip,
+  .gkChip[data-size='3xs'],
+  .gkBadge,
+  .gkMeta,
+  .gkStateLine,
+  .gkOrdinal,
+  .gkGroup,
+  .gkRecord,
+  .gkAnswering,
+  .gkButton,
+  .gkTop,
+  .gkTopKbd,
+  .gkRowTitleNested,
+  .gkNodeIndex,
+  .gkNodeSign,
+  .gkTopTile {
+    font-size: 13px;
+  }
+
+  .gkChip[data-size='md'] {
+    font-size: 13px;
+  }
+}

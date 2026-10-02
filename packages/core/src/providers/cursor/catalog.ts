@@ -147,7 +147,7 @@ export const CURSOR_CATALOG = [
     legacy: true,
     label: 'GPT-5.5',
     tier: 'turn',
-    contextWindow: 400_000,
+    contextWindow: 1_000_000,
     presentation: {
       family: 'gpt',
       group: 'GPT',
@@ -245,7 +245,7 @@ export const CURSOR_CATALOG = [
     key: 'sonnet-5.5',
     label: 'Sonnet 5.5',
     tier: 'turn',
-    contextWindow: 300_000,
+    contextWindow: 1_000_000,
     presentation: {
       family: 'claude',
       group: 'Sonnet',

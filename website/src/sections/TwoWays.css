@@ -1,0 +1,40 @@
+#two-ways .chapterInner {
+  gap: 40px;
+  padding-block: 72px;
+}
+
+.twoWaysBody {
+  display: grid;
+  gap: 16px;
+}
+
+.twoWaysFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+  font: var(--t-caption);
+  color: var(--t3);
+}
+
+.twoWaysFoot .textLink {
+  margin-top: 0;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .twoWaysFoot .textLink {
+    align-items: center;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 600px) {
+  #two-ways .chapterInner {
+    gap: 32px;
+    padding-block: 56px;
+  }
+
+  .twoWaysFoot {
+    font-size: 13px;
+  }
+}

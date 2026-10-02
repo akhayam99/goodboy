@@ -1,0 +1,104 @@
+.sessionMock .smApp {
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--mk-win);
+  box-shadow: var(--mk-win-shadow);
+}
+
+.sessionMock .smNeeds {
+  flex: none;
+}
+
+.sessionMock .smRunning {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px;
+  white-space: nowrap;
+  color: var(--g-muted-foreground);
+}
+
+.sessionMock .smRunningDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--g-info);
+}
+
+.sessionMock .smBody {
+  padding: 20px 20px 16px;
+}
+
+.sessionMock .smHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.sessionMock .smIcon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--g-on-tone);
+  background: var(--g-primary);
+}
+
+.sessionMock .smHeadText {
+  min-width: 0;
+}
+
+.sessionMock .smTitle {
+  margin: 0;
+  font: 600 20px / 26px var(--sans);
+  letter-spacing: -0.01em;
+  color: var(--t1);
+}
+
+.sessionMock .smMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 14px;
+  margin: 2px 0 0;
+  font: 400 12px / 16px var(--sans);
+  color: var(--g-muted-foreground);
+}
+
+.sessionMock .smStarts {
+  display: flex;
+  margin: 14px 0 16px;
+}
+
+.sessionMock .smToday {
+  margin-left: 6px;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .sessionMock .smMeta {
+    font-size: 13px;
+  }
+
+  .sessionMock .smBody {
+    padding: 14px 12px 12px;
+  }
+
+  .sessionMock .smTitle {
+    font-size: 17px;
+    line-height: 22px;
+  }
+
+  .sessionMock .smRunning,
+  .sessionMock .smToday,
+  .sessionMock .gkTopCenter,
+  .sessionMock .gkTopNav {
+    display: none;
+  }
+
+  .sessionMock .gkTop {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}

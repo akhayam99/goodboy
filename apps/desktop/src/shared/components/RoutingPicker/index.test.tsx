@@ -570,6 +570,7 @@ describe('RoutingPicker', () => {
       '5.5',
       '5.6',
       '6',
+      '6.1',
     ]);
     expect(versions.getByRole('button', { name: '5.6' }).getAttribute('aria-pressed')).toBe('true');
     const variants = within(screen.getByRole('group', { name: 'Variant' }));
@@ -583,6 +584,15 @@ describe('RoutingPicker', () => {
     );
     fireEvent.click(variants.getByRole('button', { name: 'Luna' }));
     expect(onModel).toHaveBeenCalledWith('gpt-5.6-luna');
+  });
+
+  it('selects GPT-6.1 Sol from the version row and emits its cli id', () => {
+    const onModel = vi.fn();
+    render(<RoutingPicker {...baseProps} provider="codex" model="gpt-5.6-sol" onModel={onModel} />);
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const versions = within(screen.getByRole('group', { name: 'Version' }));
+    fireEvent.click(versions.getByRole('button', { name: '6.1' }));
+    expect(onModel).toHaveBeenCalledWith('gpt-6.1-sol');
   });
 
   it('selects Astra from Sol and emits its cli id and requested effort', () => {
