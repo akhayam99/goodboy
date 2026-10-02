@@ -12,6 +12,7 @@ import { selectWritableMounts } from './selectors';
 import type { EnsureProjectMountedInput, EnsureProjectMountedResult, GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 import { projectById } from '../projects/projectIndex';
+import { FIRST_LAP_REFUSAL, isProjectInFirstLap } from '../bootstrap/firstLap';
 
 const inFlight = new Map<string, Promise<EnsureProjectMountedResult>>();
 
@@ -80,6 +81,9 @@ export const ensureProjectMounted = (set: SetFn, get: GetFn) => {
         status: 'already-mounted',
         mountIds: known.map((mount) => mount.mountId),
       };
+    }
+    if (isProjectInFirstLap({ state: get(), projectId })) {
+      throw new Error(FIRST_LAP_REFUSAL);
     }
     const rows = await listWorktreesForSession(tauriDatabase, sessionId);
     const persistedRows = rows.filter((row) => row.projectId === projectId);

@@ -66,7 +66,7 @@ export const InitGuide = ({ rootPath, state, onStart }: Props) => {
         </div>
       </div>
       <details className="flex flex-col gap-3">
-        <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
+        <summary className="cursor-pointer text-label text-muted-foreground">
           Or run it yourself
         </summary>
         <ol className="mt-3 flex flex-col gap-3">

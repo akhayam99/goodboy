@@ -1,4 +1,5 @@
 import { createNewProject } from './createNewProject';
+import { ensureFirstLapSession } from './ensureFirstLapSession';
 import { hydrateBootstrapPhases } from './hydrateBootstrapPhases';
 import { setBootstrapPhase } from './setBootstrapPhase';
 import { bootstrapInitialState } from './state';
@@ -10,4 +11,5 @@ export const createBootstrapSlice = ({ set, get }: SliceDeps): BootstrapSlice =>
   hydrateBootstrapPhases: hydrateBootstrapPhases(set, get),
   setBootstrapPhase: setBootstrapPhase(set, get),
   createNewProject: createNewProject(set, get),
+  ensureFirstLapSession: ensureFirstLapSession(set, get),
 });

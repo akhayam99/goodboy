@@ -17,7 +17,16 @@ export type WriteDestinationCandidate = WriteDestinationMount;
 
 type WriteDestinationScratch = Readonly<{ kind: 'scratch'; path: string | null }>;
 
-export type WriteDestination = WriteDestinationMount | WriteDestinationScratch;
+type WriteDestinationRoot = Readonly<{
+  kind: 'root';
+  projectId: ProjectId;
+  projectName: string;
+  path: string;
+  branch: string;
+}>;
+
+export type WriteDestination =
+  WriteDestinationMount | WriteDestinationScratch | WriteDestinationRoot;
 
 type DescribeMountParams = {
   readonly mount: SessionProjectMount;
@@ -39,15 +48,20 @@ type ResolveParams = {
   readonly mount: SessionProjectMount | null;
   readonly projectName: string | null;
   readonly scratchPath: string | null;
+  readonly root?: Omit<WriteDestinationRoot, 'kind'> | null;
 };
 
 export const resolveWriteDestination = ({
   mount,
   projectName,
   scratchPath,
+  root = null,
 }: ResolveParams): WriteDestination => {
   if (mount !== null) {
     return describeMount({ mount, projectName: projectName ?? mount.mountName });
+  }
+  if (root !== null) {
+    return { kind: 'root', ...root };
   }
   return { kind: 'scratch', path: scratchPath };
 };
@@ -64,21 +78,34 @@ export const writeDestinationLabel = (destination: WriteDestination): string => 
   if (destination.kind === 'scratch') {
     return 'session scratch folder';
   }
+  if (destination.kind === 'root') {
+    return `${destination.projectName} / project folder / ${destination.branch}`;
+  }
   if (!destination.hasGit) {
     return `${destination.projectName} / working folder / no git`;
   }
   return `${mountDisplayName({ projectName: destination.projectName, mountName: destination.mountName })} / ${destination.branch}`;
 };
 
+const destinationPath = (destination: WriteDestination): string | null => {
+  if (destination.kind === 'scratch') {
+    return destination.path;
+  }
+  return destination.kind === 'root' ? destination.path : destination.worktreePath;
+};
+
 export const writeDestinationDetail = (destination: WriteDestination): string => {
   const label = writeDestinationLabel(destination);
-  const path = destination.kind === 'scratch' ? destination.path : destination.worktreePath;
+  const path = destinationPath(destination);
   return path === null ? label : `${label} (${path})`;
 };
 
 export const writeDestinationsMatch = (a: WriteDestination, b: WriteDestination): boolean => {
   if (a.kind === 'scratch' && b.kind === 'scratch') {
     return true;
+  }
+  if (a.kind === 'root' && b.kind === 'root') {
+    return a.projectId === b.projectId;
   }
   if (a.kind !== 'mount' || b.kind !== 'mount') {
     return false;

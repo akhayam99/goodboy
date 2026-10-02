@@ -20,6 +20,7 @@ import { persistAttachments } from './persistAttachments';
 import type { GetFn, SetFn, SendTurnInput, TurnPhaseValue } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 import { projectById } from '../projects/projectIndex';
+import { selectFirstLapProject } from '../bootstrap/firstLap';
 import { turnDone, turnReady } from './turnPhase';
 import { NOT_BLOCKED } from './notBlocked';
 
@@ -96,6 +97,10 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
   const turnMountId = turnTarget?.mountId ?? null;
   const turnMountRevision = turnTarget?.mountRevision ?? null;
   const copyPath = rewriterCopy === null ? (resolveCopyPath ?? null) : null;
+  const firstLapProject =
+    rewriterCopy === null && copyPath === null && activeMount === undefined
+      ? selectFirstLapProject({ state: before, sessionId })
+      : null;
   const workingDir =
     rewriterCopy !== null
       ? rewriterCopy.copyPath
@@ -103,7 +108,9 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
         ? copyPath
         : activeMount !== undefined
           ? activeMount.worktreePath
-          : await scratchDirPrepare({ sessionId });
+          : firstLapProject !== null
+            ? firstLapProject.rootPath
+            : await scratchDirPrepare({ sessionId });
   const isPlainSessionDir =
     activeMount !== undefined && isBranchlessSession({ branch: activeMount.branch });
   if (isPlainSessionDir) {
@@ -141,7 +148,16 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
       [activeAgentId]: resolveWriteDestination({
         mount: activeMount ?? null,
         projectName: turnDestinationProjectName,
-        scratchPath: activeMount === undefined ? workingDir : null,
+        scratchPath: activeMount === undefined && firstLapProject === null ? workingDir : null,
+        root:
+          firstLapProject === null
+            ? null
+            : {
+                projectId: firstLapProject.id,
+                projectName: firstLapProject.name,
+                path: firstLapProject.rootPath,
+                branch: 'main',
+              },
       }),
     },
   }));
@@ -293,6 +309,7 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
       turnMountId,
       turnMountRevision,
       copyPath,
+      firstLapProject,
       workingDir,
       now,
       activeAgentId,

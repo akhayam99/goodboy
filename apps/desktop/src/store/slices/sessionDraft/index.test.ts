@@ -36,6 +36,8 @@ const harness = () => {
     ...initialSessionDraftState,
     currentWorkspaceId: WORKSPACE_ID,
     currentSessionId: null,
+    projects: [],
+    bootstrapPhase: {},
     ...spies,
   };
   const set = (patch: Partial<HarnessState> | ((s: HarnessState) => Partial<HarnessState>)) => {

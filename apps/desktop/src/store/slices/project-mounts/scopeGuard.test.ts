@@ -482,3 +482,31 @@ describe('buildScopeGuard', () => {
     expect(guard).toContain(READING_ENTITLEMENT);
   });
 });
+
+describe('buildScopeGuard during the first lap', () => {
+  const guard = (canWrite: boolean) =>
+    buildScopeGuard({
+      workingDir: '/tmp/app',
+      projects: [app],
+      mounts: [],
+      isBridgeServing: true,
+      isSessionDirScope: false,
+      firstLapProject: app,
+      canWrite,
+    });
+
+  it('tells a writing agent it works on main in the project folder and commits nothing', () => {
+    const text = guard(true);
+
+    expect(text).toContain('[first-lap-scope]');
+    expect(text).toContain('project folder of app at: /tmp/app');
+    expect(text).toContain('on the main branch');
+    expect(text).toContain('Nothing is committed or pushed for you');
+    expect(text).not.toContain('scratch');
+    expect(text).not.toContain('materialize: <project name>');
+  });
+
+  it('keeps a read only role read only', () => {
+    expect(guard(false)).toContain('does not cover changing project files');
+  });
+});
