@@ -676,7 +676,10 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   draft in `ChatRoom` and `askInChat` applies it to Ask in Chat. A value that
   fails `parseChatDefaultModel`, or whose provider is not connected, falls back
   to the automatic model. An existing chat never changes: it keeps the model
-  stored on its row.
+  stored on its row. The first send of a new chat awaits the saved default
+  (`useChatDefaultModel` `read`), so a cold cache never starts it on the
+  automatic model, and a failed read is reported and falls back to automatic.
+  Reset all in Defaults clears it with the role and task pins.
 - **Activity in the top bar.** `chatStreams` says which chats are answering.
   `useChatActivity` turns it into a running count and an unread flag for the
   Chat button in the top bar: a pulsing info dot (the tone of the running

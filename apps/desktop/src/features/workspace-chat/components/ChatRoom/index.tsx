@@ -75,7 +75,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
   const [draftRouting, setDraftRouting] = useState<ChatRouting | null>(null);
   const [work, setWork] = useState<WorkRequest | null>(null);
   const linked = useChatSessions({ chatId });
-  const { saved: savedDefault } = useChatDefaultModel({ workspaceId });
+  const { saved: savedDefault, read: readSavedDefault } = useChatDefaultModel({ workspaceId });
 
   useEffect(() => {
     if (chatId === null || messages !== undefined) {
@@ -99,13 +99,19 @@ export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
       await sendChatMessage({ chatId, content: text });
       return;
     }
-    const created = await createChat({ workspaceId, provider: model.provider, model: model.model });
-    if (model.effort !== null) {
+    const routing =
+      draftRouting ?? defaultChatRouting({ connected, saved: await readSavedDefault() });
+    const created = await createChat({
+      workspaceId,
+      provider: routing.provider,
+      model: routing.model,
+    });
+    if (routing.effort !== null) {
       await setChatModel({
         chatId: created,
-        provider: model.provider,
-        model: model.model,
-        effort: model.effort,
+        provider: routing.provider,
+        model: routing.model,
+        effort: routing.effort,
       });
     }
     onCreated(created);

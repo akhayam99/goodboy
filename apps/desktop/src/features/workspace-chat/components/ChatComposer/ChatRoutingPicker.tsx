@@ -82,7 +82,11 @@ export const ChatRoutingPicker = ({ workspaceId, routing, onChange }: Props) => 
             </div>
           ) : (
             <div className="flex items-center justify-between gap-2">
-              <span>New chats start on automatic.</span>
+              <span>
+                {defaultModel.saved === null
+                  ? 'New chats start on automatic.'
+                  : 'New chats use another default model.'}
+              </span>
               <Button variant="ghost" size="sm" onClick={() => defaultModel.save({ routing })}>
                 Make default
               </Button>

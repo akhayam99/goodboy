@@ -20,10 +20,14 @@ type SerializeParams = {
   readonly routing: ChatRouting;
 };
 
-const chatProviderOf = (value: unknown): ChatProviderId | null =>
+type ValueParams = {
+  readonly value: unknown;
+};
+
+const chatProviderOf = ({ value }: ValueParams): ChatProviderId | null =>
   CHAT_PROVIDER_IDS.find((candidate) => candidate === value) ?? null;
 
-const effortOf = (value: unknown): EffortLevel | null =>
+const effortOf = ({ value }: ValueParams): EffortLevel | null =>
   typeof value === 'string' && isEffortLevel(value) ? value : null;
 
 export const chatDefaultModelKey = ({ workspaceId }: KeyParams): string =>
@@ -38,7 +42,7 @@ export const parseChatDefaultModel = ({ raw }: ParseParams): ChatRouting | null 
     if (typeof parsed !== 'object' || parsed === null) {
       return null;
     }
-    const provider = chatProviderOf(Reflect.get(parsed, 'provider'));
+    const provider = chatProviderOf({ value: Reflect.get(parsed, 'provider') });
     const model: unknown = Reflect.get(parsed, 'model');
     if (provider === null || typeof model !== 'string') {
       return null;
@@ -46,7 +50,7 @@ export const parseChatDefaultModel = ({ raw }: ParseParams): ChatRouting | null 
     if (!MODEL_CATALOGS[provider].some((candidate) => candidate.key === model)) {
       return null;
     }
-    return { provider, model, effort: effortOf(Reflect.get(parsed, 'effort')) };
+    return { provider, model, effort: effortOf({ value: Reflect.get(parsed, 'effort') }) };
   } catch {
     return null;
   }

@@ -6,21 +6,22 @@ import {
   type ProviderId,
   type WorkspaceId,
 } from '@goodboy/types';
-import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
-import { useChatDefaultModel } from '../../../../../../shared/hooks/useChatDefaultModel';
-import {
-  chatModelId,
-  chatModelKey,
-  shownChatEffort,
-} from '../../../../../workspace-chat/chatRouting';
-import { defaultChatRouting } from '../../../../../workspace-chat/defaultChatRouting';
-import { firstChatModelOf } from '../../../../../workspace-chat/defaultChatModel';
-import { DefaultRow } from '../DefaultRow';
+import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
+import { useChatDefaultModel } from '../../../../../shared/hooks/useChatDefaultModel';
+import { chatModelId, chatModelKey, shownChatEffort } from '../../../../workspace-chat/chatRouting';
+import { defaultChatRouting } from '../../../../workspace-chat/defaultChatRouting';
+import { firstChatModelOf } from '../../../../workspace-chat/defaultChatModel';
+import { DefaultRow } from './DefaultRow';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly connectedProviderIds: ReadonlyArray<ProviderId>;
   readonly disabled: boolean;
+};
+
+type CommitParams = {
+  readonly model: string;
+  readonly effort: EffortLevel | null;
 };
 
 export const ChatModelRow = ({ workspaceId, connectedProviderIds, disabled }: Props) => {
@@ -44,13 +45,7 @@ export const ChatModelRow = ({ workspaceId, connectedProviderIds, disabled }: Pr
     pendingModel.current = preferredModel;
   }, [preferredModel]);
 
-  const commit = ({
-    model,
-    effort,
-  }: {
-    readonly model: string;
-    readonly effort: EffortLevel | null;
-  }) => {
+  const commit = ({ model, effort }: CommitParams) => {
     save({ routing: { provider: pendingProvider.current, model, effort } });
   };
 

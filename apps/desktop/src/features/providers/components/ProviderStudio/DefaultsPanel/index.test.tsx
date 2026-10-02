@@ -753,6 +753,26 @@ describe('DefaultsPanel', () => {
       ),
     );
   });
+  it('counts a saved new-chat model as pinned and resets it with the rest', async () => {
+    state.settings = {
+      'chat.default_model.ws-1': JSON.stringify({
+        provider: 'anthropic',
+        model: 'opus-5',
+        effort: null,
+      }),
+    };
+    render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
+
+    expect(screen.getByText('1 pinned')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Defaults actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Reset all to Auto/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reset all' }));
+
+    await waitFor(() =>
+      expect(state.saveSetting).toHaveBeenLastCalledWith('chat.default_model.ws-1', ''),
+    );
+  });
+
   it('saves a new-chat model per workspace in the settings store', () => {
     render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
 

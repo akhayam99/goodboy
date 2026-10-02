@@ -75,4 +75,30 @@ describe('useChatDefaultModel', () => {
       expect.objectContaining({ title: "Couldn't save the default chat model" }),
     );
   });
+
+  it('reports a failed read and falls back to no default without an unhandled rejection', async () => {
+    store.loadSetting.mockRejectedValue(new Error('db locked'));
+
+    const { result } = renderHook(() => useChatDefaultModel({ workspaceId: WORKSPACE }));
+    await vi.waitFor(() => expect(store.reportError).toHaveBeenCalledTimes(1));
+
+    expect(store.reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't read the default chat model" }),
+    );
+    expect(result.current.saved).toBeNull();
+    await expect(result.current.read()).resolves.toBeNull();
+  });
+
+  it('read waits for the database when the cache is cold', async () => {
+    store.loadSetting.mockResolvedValue(
+      JSON.stringify({ provider: 'anthropic', model: 'opus-5', effort: 'low' }),
+    );
+    const { result } = renderHook(() => useChatDefaultModel({ workspaceId: WORKSPACE }));
+
+    await expect(result.current.read()).resolves.toEqual({
+      provider: 'anthropic',
+      model: 'opus-5',
+      effort: 'low',
+    });
+  });
 });
