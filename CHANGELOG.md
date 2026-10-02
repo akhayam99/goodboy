@@ -12,6 +12,19 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.15.2
+
+The workflow builder and the Workflows Studio list steps top down, step 1 first, with Add step at the end.
+
+### Improved
+
+#### Workflow steps read top down
+<!-- gb area=workflows screen=workflows image=workflow-plan-order pr=1949 -->
+
+The workflow builder lists steps from the top: step 1 first, then the rest in the order they run, with Add step at the end. This holds in Preset, Custom and Orchestrated modes, in the kickoff and in the Workflows Studio editor. Orchestrated mode shows the Orchestrator and its guidance first, then the example steps.
+
+Move step up now means earlier, and ArrowUp on a step's grip follows it. The up and down buttons are disabled at the first and last step, and a step you add scrolls into view. The activity timeline and the run detail still read from the bottom up to now.
+
 ## Goodboy v0.15.1
 
 Suggested agents start briefed and on the model you pick, stopped agents resume in one action, and an agent handed work by another role no longer ends Blocked.
