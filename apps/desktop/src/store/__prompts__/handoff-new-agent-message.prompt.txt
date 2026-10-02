@@ -32,12 +32,12 @@ Codes: exp=exploration, pln=planning, imp=implementation, dbg=debugging, rev=rev
 A model marked unassessed has no reviewed routing profile, which is not a statement about how good it is.
 Prices are published rates per million tokens, input then output, and are absent when this build has no rate for that provider.
 anthropic/opus-5 efforts low,medium,high,xhigh,max unassessed ctx 1000k $5/$25
-anthropic/opus-5.5 efforts low,medium,high,xhigh,max unassessed ctx 1000k $5/$25
+anthropic/opus-5.5 efforts low,medium,high,xhigh,max unassessed ctx 1000k $4/$20
 anthropic/fable-5.1 efforts low,medium,high,xhigh,max unassessed ctx 1000k $10/$50
 anthropic/fable-5 efforts low,medium,high,xhigh,max unassessed ctx 1000k $10/$50
 anthropic/opus-4.8 efforts low,medium,high,xhigh,max unassessed ctx 1000k $5/$25
 anthropic/opus-4.7 efforts low,medium,high,xhigh,max unassessed ctx 1000k $5/$25
-anthropic/opus-4.6 efforts low,medium,high,xhigh,max unassessed ctx 200k $5/$25
+anthropic/opus-4.6 efforts low,medium,high,max unassessed ctx 1000k $5/$25
 anthropic/sonnet-5.5 efforts low,medium,high,xhigh,max unassessed ctx 1000k $2/$10
 anthropic/sonnet-5 efforts low,medium,high unassessed ctx 1000k $2/$10
 anthropic/sonnet-4.6 efforts low,medium,high unassessed ctx 1000k $3/$15
