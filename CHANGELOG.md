@@ -32,6 +32,10 @@ The workflow builder lists steps from the top: step 1 first, then the rest in th
 
 Move step up now means earlier, and ArrowUp on a step's grip follows it. The up and down buttons are disabled at the first and last step, and a step you add scrolls into view. The activity timeline and the run detail still read from the bottom up to now.
 
+### Fixed
+
+- Cost estimates for GPT-5.6, Opus 5.5 and Gemini Flash agents now use the current prices, and Opus 4.6 no longer offers an effort level it cannot run. <!-- gb area=providers pr=1951 -->
+
 ## Goodboy v0.15.1
 
 Suggested agents start briefed and on the model you pick, stopped agents resume in one action, and an agent handed work by another role no longer ends Blocked.
