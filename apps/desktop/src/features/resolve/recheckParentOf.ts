@@ -1,13 +1,12 @@
 import type { Agent, AgentId } from '@goodboy/types';
 import { agentThreadIds } from '../session/agentThreadIds';
 
-export const recheckParentOf = ({
-  agents,
-  threadId,
-}: {
+type Params = {
   readonly agents: ReadonlyArray<Agent>;
   readonly threadId: string;
-}): AgentId | null =>
+};
+
+export const recheckParentOf = ({ agents, threadId }: Params): AgentId | null =>
   agents
     .filter(
       (agent) =>

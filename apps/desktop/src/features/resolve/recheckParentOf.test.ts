@@ -4,15 +4,13 @@ import type { AgentId, IsoDateTime } from '@goodboy/types';
 import { agentFixture } from '../../__tests__/helpers/actionFixtures';
 import { recheckParentOf } from './recheckParentOf';
 
-const resolver = ({
-  id,
-  ordinal,
-  threadIds,
-}: {
+type ResolverParams = {
   readonly id: string;
   readonly ordinal: number;
   readonly threadIds: ReadonlyArray<string>;
-}) =>
+};
+
+const resolver = ({ id, ordinal, threadIds }: ResolverParams) =>
   agentFixture({
     id: id as AgentId,
     ordinal,

@@ -201,13 +201,17 @@ const compareNewestFirst = ({
   return second.sortOrdinal - first.sortOrdinal || first.id.localeCompare(second.id);
 };
 
-const isDecisionChangeRow = ({ draft }: { readonly draft: DraftRow }): boolean =>
+type DraftParams = {
+  readonly draft: DraftRow;
+};
+
+const isDecisionChangeRow = ({ draft }: DraftParams): boolean =>
   draft.groupId == null &&
   draft.entry.kind === 'event' &&
   draft.entry.event.kind === 'decisions_changed' &&
   draft.entry.event.payload?.consolidatedAfter === undefined;
 
-const isEmptyDecisionRow = ({ draft }: { readonly draft: DraftRow }): boolean =>
+const isEmptyDecisionRow = ({ draft }: DraftParams): boolean =>
   draft.entry.kind === 'event' &&
   draft.entry.event.kind === 'decisions_changed' &&
   isEmptyDecisionDiff({ payload: draft.entry.event.payload });
