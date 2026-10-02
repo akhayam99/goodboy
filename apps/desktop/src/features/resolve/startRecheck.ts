@@ -1,9 +1,9 @@
 import { strongestModelForTier } from '@goodboy/core';
-import type { Agent, AgentId, SessionId } from '@goodboy/types';
-import { agentThreadIds } from '../session/agentThreadIds';
+import type { AgentId, SessionId } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
 import { startFixAttempt } from '../review/startFixAttempt';
 import { draftRoutingOf } from './draftRouting';
+import { recheckParentOf } from './recheckParentOf';
 import { reviewRowsOf } from './reviewRows';
 
 type Params = {
@@ -20,25 +20,6 @@ export const recheckModelOf = ({
   readonly provider: Parameters<typeof strongestModelForTier>[0]['provider'];
 }): string | null =>
   strongestModelForTier({ provider, tier: 'cheap', wantsThinker: false })?.id ?? null;
-
-export const recheckParentOf = ({
-  agents,
-  threadId,
-}: {
-  readonly agents: ReadonlyArray<Agent>;
-  readonly threadId: string;
-}): AgentId | null =>
-  agents
-    .filter(
-      (agent) =>
-        agent.deletedAt == null &&
-        agent.sourceKind === 'review_comment' &&
-        agentThreadIds(agent).includes(threadId),
-    )
-    .reduce<Agent | null>(
-      (latest, agent) => (latest === null || agent.ordinal > latest.ordinal ? agent : latest),
-      null,
-    )?.id ?? null;
 
 export const startRecheck = async ({
   getState,

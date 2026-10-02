@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AgentId, IsoDateTime } from '@goodboy/types';
 import { agentFixture } from '../../__tests__/helpers/actionFixtures';
-import { recheckParentOf } from './startRecheck';
+import { recheckParentOf } from './recheckParentOf';
 
 const resolver = ({
   id,
