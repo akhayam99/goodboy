@@ -26,4 +26,9 @@ describe('clampEffortForModel', () => {
   it('reads the ladder through a native cli id', () => {
     expect(clampEffortForModel({ model: 'claude-sonnet-4-6', effort: 'max' })).toBe('high');
   });
+
+  it('drops xhigh from the opus 4.6 ladder', () => {
+    expect(clampEffortForModel({ model: 'opus-4.6', effort: 'xhigh' })).toBe('high');
+    expect(clampEffortForModel({ model: 'opus-4.6', effort: 'max' })).toBe('max');
+  });
 });

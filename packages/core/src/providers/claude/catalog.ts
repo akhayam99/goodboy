@@ -1,6 +1,7 @@
 import type { AnthropicModel, EffortLevel } from '@goodboy/types';
 
 const OPUS_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] satisfies ReadonlyArray<EffortLevel>;
+const OPUS_46_EFFORTS = ['low', 'medium', 'high', 'max'] satisfies ReadonlyArray<EffortLevel>;
 const SONNET_EFFORTS = ['low', 'medium', 'high'] satisfies ReadonlyArray<EffortLevel>;
 
 export const ANTHROPIC_CATALOG = [
@@ -114,7 +115,7 @@ export const ANTHROPIC_CATALOG = [
     legacy: true,
     label: 'Opus 4.6',
     tier: 'turn',
-    contextWindow: 200_000,
+    contextWindow: 1_000_000,
     presentation: {
       family: 'claude',
       group: 'Opus',
@@ -124,7 +125,7 @@ export const ANTHROPIC_CATALOG = [
     },
     provider: 'anthropic',
     cliId: 'claude-opus-4-6',
-    efforts: OPUS_EFFORTS,
+    efforts: OPUS_46_EFFORTS,
     defaultEffort: 'high',
   },
   {

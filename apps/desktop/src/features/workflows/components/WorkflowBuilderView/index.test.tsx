@@ -1038,7 +1038,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
         orchestratorRouting: {
           providerId: 'anthropic',
           model: 'claude-opus-4-6',
-          effort: 'xhigh',
+          effort: 'high',
         },
       }),
     );

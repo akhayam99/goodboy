@@ -48,7 +48,7 @@ export const OPENROUTER_CATALOG = [
     key: 'gpt-5.4',
     label: 'GPT-5.4',
     tier: 'turn',
-    contextWindow: 400_000,
+    contextWindow: 1_050_000,
     presentation: {
       family: 'gpt',
       group: 'GPT',
@@ -590,7 +590,7 @@ export const OPENROUTER_CATALOG = [
     key: 'glm-5.3',
     label: 'GLM-5.3',
     tier: 'cheap',
-    contextWindow: 1_310_720,
+    contextWindow: 1_048_576,
     presentation: {
       family: 'other',
       group: 'GLM',
