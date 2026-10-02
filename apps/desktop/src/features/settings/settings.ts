@@ -3,6 +3,7 @@ export const SETTING_LAST_WORKSPACE_ID = 'last.workspace_id';
 export const SETTING_LAST_SESSION_ID = 'last.session_id';
 export const SETTING_REOPEN_LAST = 'launch.reopen_last';
 export const SETTING_HIDDEN_MODELS = 'providers.hiddenModels';
+export const SETTING_NEW_PROJECT_PARENT = 'new-project.parent';
 export const SETTING_UPDATER_AUTO_DOWNLOAD = 'updater.autoDownload';
 export const SETTING_UPDATER_SNOOZED_VERSION = 'updater.snoozedVersion';
 export const SETTING_UPDATER_SNOOZED_AT = 'updater.snoozedAt';
