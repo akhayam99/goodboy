@@ -19,41 +19,40 @@ deployed by Vercel from `website/vercel.json`.
 ## Pages
 
 - `/`, the landing page, from `website/index.html` and `website/src/App.tsx`.
-- `/features`, every feature group with the release picker and the supported
-  tools, from `website/features.html` and `website/src/pages/features/`. Vite
-  builds both as inputs, `vercel.json` serves them without `.html`, and the
-  dev and preview servers rewrite `/features` the same way.
+  Its sections live in `website/src/sections/`, in this order: Nav, Hero,
+  TwoWays, SharedContext, Tour, Install, Footer.
+- `/features`, one cluster per topic, from `website/features.html` and
+  `website/src/pages/features/`. The clusters, their groups and their copy come
+  from `features.data.json` in that folder. Vite builds both pages as inputs,
+  `vercel.json` serves them without `.html`, and the dev and preview servers
+  rewrite `/features` the same way.
 
-## Figures
+Each cluster shows its main features, not all of them. In `features.data.json`
+every item of the guide stays in the file: 3 to 5 items per cluster carry
+`main: true` and render as cards (four columns, two on a tablet, a swipe row on
+a phone); every other item carries an `also` noun, and the nouns of the items
+marked `shown: true` render as one plain "Also:" line of two lines at most (the
+rest live in the area files). `guides` lists one `{ area, label }` per area file, shown as
+"In the guide:" links to `docs/features/<area>.md` through
+`SITE.featureDoc(area)`. A main item must also be a main item of that area in
+the `FEATURES.md` index, and an item title is the heading (or small features
+table row) it has in the area file. Check the page fails when they drift.
 
-Product figures are real app screenshots from the mock scenes (see
-[docs/mock-screenshots.md](../docs/mock-screenshots.md), Landing crops),
-captured at a device scale factor of 4 or more, in both app themes. They live
-in `website/public/img/` as WebP, each at three widths and never upscaled.
-The widths are exactly 1, 2 and 3 times the size the image is drawn at, so a
-screen at 1x, 2x or 3x shows the file pixel for pixel and the browser never
-resamples it:
+## Product views
 
-- `<id>-<width>.webp` in the dark theme and `<id>-<width>-light.webp` in the
-  light one.
-- A frame is drawn 1144 CSS pixels wide at 1440, inside its stage, so its
-  files are 1144, 2288 and 3432 wide. A 1024 pixel app window lands at 1.12
-  times its size; the board keeps a 1250 pixel window so its four columns fit,
-  and draws at 0.92.
-- A frame has a `<id>-phone` twin, a 4:5 cut of the window between 288 and 375
-  app pixels wide that a 390 phone draws 366 wide, at 0.98 to 1.27 times the
-  app, instead of the whole window shrunk. Its right edge fades out on a
-  phone, so a row that runs on reads as the app continuing. Its files are
-  732, 1098 and 1464 wide.
-- A fragment is one component, drawn at its `displayWidth`, at least 1.18
-  times its size in the app, with files at 1, 2 and 3 times that width. App
-  text never draws below its size in the app.
+The page shows no screenshots. Every product view is a React mock, built from
+the same tokens as the page, so it is sharp at any zoom, follows the theme and
+ships no raster file.
 
-`website/src/figures.ts` holds each figure's id, pixel size, display width and
-alt text. `Picture` loads only the active theme and lets the browser pick the
-width through `srcset`, and `pnpm check:page` fails when any image draws below
-twice its displayed size. When a scene changes, reshoot every width and both
-themes of its figures in one pass.
+- `website/src/components/mocks/` holds the kit: `MockStage` puts a mock on a
+  stage, `MockWindow` is the app window chrome, and `mocks.css` holds the shared
+  look. Each scene (`SessionMock`, `BoardMock`, `InboxMock` and the rest) has its
+  own `.tsx` and `.css`.
+- A mock that plays runs once, when it scrolls into view, through
+  `usePlayOnce`. It rests on its final state under `prefers-reduced-motion`.
+- The hero mock is the one `MockStage` with `isHero`, which sets
+  `data-hero-mock`. At least 380 px of it must show in the first 900 px at 1440.
+- The only images are brand assets, see [docs/brand.md](../docs/brand.md).
 
 ## Theme
 
@@ -62,11 +61,12 @@ toggle, which is kept in `localStorage` under `goodboy-site:theme`. A script at
 the top of `website/index.html` sets `data-theme` before the first paint, so
 the page never flashes. Colours come from the tokens at the top of
 `website/src/styles.css`, with a dark set under `:root[data-theme='dark']`:
-one page background, a `--band` a step above it for every other chapter, a
-`--stage` for product images (a flat 160 degree linear gradient, teal to
-page gray, taken from the earlier site, with no sheen, glow or shadow), one
-raised surface for controls, hairlines instead of shadows, four text tiers (`--t1` to `--t4`) and a teal `--accent` that marks text links and
-focus rings only. The logo is always the dark tile with the white dog, in both
+one page background, a `--band` a step above it, the `--g-stage-gradient` token
+behind every stage and mock (a flat 160 degree linear gradient, dark teal to
+near black, with no sheen or glow, defined once in `website/src/styles.css`),
+one raised surface for controls, hairlines instead of shadows, four text
+tiers (`--t1` to `--t4`) and a teal `--accent` that marks text links and focus
+rings only. The logo is always the dark tile with the white dog, in both
 themes.
 
 ## Type
@@ -94,91 +94,139 @@ embed uses `lang: 'it'` and goes back to `'en'` once an English policy exists
 in the iubenda dashboard. The GTM iubenda tag stays paused so the card never
 loads twice.
 
-## Page kit
+## Components
 
-The page is built from five formats in `website/src/components/`, each with
-its own CSS file:
+All in `website/src/components/`, each with its own CSS file.
 
-- `Chapter`, a section with a `Statement` head, then its blocks 96 px apart
-  (64 on a phone). `isBand` puts it on `--band` with a hairline above and
-  below; How it works, Workflows, Questions and Install are banded, the
-  chapters between them are not.
-- `Statement`, an eyebrow, a heading and a lead of 20 words or fewer. The
-  hero and the closer use it too. No h1, h2 or h3 ends with a period.
-- `Frame`, one full product view on a stage: 64 px of stage around the view
-  (40 below 1100 px), radius 28, the view capped at 600 px (640 in the hero)
-  and faded out over 140 px. Below 860 px the stage runs edge to edge with 12
-  px around the view, and a phone shows a 4:5 crop of its own. `isCanvas`
-  fades the view's top and bottom into the stage and adds a soft neutral
-  shadow above and below it: the one shadow on the page, used only for the
-  workflow step graph and marked `data-shadow-exception` for the check.
-- `Fragment`, a split of text beside one or two components on a smaller
-  stage (radius 20), the component bleeding off its right and bottom edge
-  where the screen continues. It stacks below 900 px. On a phone the stage
-  runs edge to edge and the picture is drawn at 0.58 of its size, whole from
-  top to bottom, and fades out on the right where it is wider than the stage.
-- `Grid`, two or three cells, each a stage with a component bleeding off it,
-  then a title and one line. No box around the cells. On a phone the stage runs
-  edge to edge and the picture is drawn at 0.58 of its size, fading out on the
-  right where it is wider than the stage.
+- `Chapter`, a section with a `Statement` head and its blocks. `data-tone` is
+  `page`, `band` or `stage`. Two neighbours never share a tone. Bands and
+  stages each have a hairline above and below.
+- `Statement`, an eyebrow, a heading and a lead of 20 words or fewer. No h1, h2
+  or h3 ends with a period.
+- `CardRow`, a row of cards, each a mock or a short caption. Its cards line up
+  with the heading's left edge.
+- `ProviderLine`, the Works with row, marked `data-works-with`. It must sit in
+  the first screen on the home page.
+- `NavMenu`, the sheet that holds the nav links on a phone.
+- `StarButton`, a Star on GitHub link to `SITE.repo`, shown on touch devices in
+  place of the downloads. On desktop the hero shows its own Star on GitHub button
+  next to the download.
+- `BrandIcons`, the provider marks, in their brand colours with the names in
+  tier 3. Each hex is sourced and recorded in `brandIcons.source.json`.
 
-Motion: the hero rises in on load. Below it, every frame, fragment, grid
-image and frame note fades and rises 14 px as it scrolls into view
-(`useReveal`, which marks `[data-reveal]` nodes shown), and the cost bars grow
-from zero when their pair appears. The provider marks in the Works with row are in their
-brand colours (Claude orange, OpenRouter slate, the Gemini gradient from its
-2025 mark, Codex the OpenAI green, Cursor its orange, OpenCode and Moonshot
-their own accent blues, each hex sourced and recorded in
-`brandIcons.source.json`), with the names in tier 3. They scroll as a marquee
-on a phone and sit still on wider screens. `prefers-reduced-motion` turns all
-of it off.
+A "learn more" link carries `data-see-more` and points at a `/features#cluster`
+anchor. A link to a repo doc points at `FEATURES.md` or at
+`docs/features/<area>.md`, and only from a `refLink` or the footer. The nav
+marks the current page with `aria-current="page"`, in the desktop links and in
+the phone sheet alike.
 
-`Picture` serves every image as a `srcset` of its three widths, so a browser
-downloads only what its screen needs.
+## Phones
+
+A touch device is told by pointer, `(hover: none) and (pointer: coarse)`, never
+by width. `.onlyFine` hides an element on touch and `.onlyCoarse` hides it with
+a mouse, both in `src/styles.css`. On touch the nav Download, the hero download
+buttons and the install block give way to `StarButton`. A phone has no
+`[data-download]` element, and every button, `.btn` and nav link is 44 px tall
+or more.
+
+## Downloads
+
+Every `[data-download]` link is a direct file download from
+`https://github.com/akhayam99/goodboy/releases/download/v<version>/<asset>`,
+never the releases page. `src/data/downloads.ts` builds the four asset URLs
+(`.dmg`, `.AppImage`, `.deb`, `.rpm`) from `LATEST_VERSION`, the newest
+snapshot in `src/data/releases/`. That snapshot lands in the version bump
+commit, before the release build attaches the assets, so for a short window the
+build-time URL can 404. `useDownloads` closes that gap: once per session it
+reads `api.github.com/repos/akhayam99/goodboy/releases/latest` (no auth, cached
+in `sessionStorage`, failures ignored) and swaps in the real
+`browser_download_url` of each matching asset. With no answer, the build-time
+URL stays. Nothing falls back to the releases page.
+
+`usePlatform` picks the primary button: macOS visitors get the DMG
+("Download for macOS"), Linux visitors the AppImage ("Download for Linux") and
+Install adds `.deb` and `.rpm` links. Any other system gets the macOS button
+and a quiet "Linux build" link. The Homebrew line shows on macOS only, since
+the tap holds casks and has no Linux formula. A phone has no download buttons.
 
 ## Check the page
 
 `pnpm check:page [url...]` drives headless Chrome over a running page (default
 `http://localhost:1499/`) at 1440, 1024, 768, 660 and 390 pixels wide, in
-both themes, at twice the pixel density. It fails on horizontal overflow, an
-image drawn below 2x, a frame, fragment or grid with a shadow (outside
-`data-shadow-exception`), a page taller
-than 14,300 px at 1440 or 15,000 on a phone, an em dash or a middot triplet in
-visible text, a heading that ends with a period, a section that runs into the
-next one or whose content spills below it, Inter not loaded, a hero frame that
-starts below the first screen at 1440, and a consent card over the h1, and an
-eyebrow outside the one register: a feature
-eyebrow (`kind="group"`, the default) must be a `FEATURES.md` group name
-verbatim, an audience eyebrow a `README.md` section, and the few page eyebrows
-(hero, Questions, Install, All features) are listed in the script. The heading
-rule itself lives in [docs/tone-of-voice.md](../docs/tone-of-voice.md). `--shots <dir>` also saves every heading, and
-`--verify-icons` compares the provider mark paths with their pinned
-simple-icons files over the network; the fill is free, since the marks
-carry brand colours. It also fails a `.textLink` (a "learn more" or "How X
-works" link), a nav link or a footer Docs-column link that points anywhere in
-the repo's docs other than `FEATURES.md`, or whose anchor is not a heading in
-the current `FEATURES.md`; the GitHub repo, releases, changelog, security and
-legal links are unaffected. Tag Manager is blocked during the run.
+both themes, at twice the pixel density. The `/` and `/features` pages both
+pass it. Tag Manager is blocked during the run.
 
-Phones: a touch device is told by pointer, `(hover: none) and (pointer: coarse)`,
-never by width. `.onlyFine` hides an element on touch and `.onlyCoarse` hides it
-with a mouse, both in `src/styles.css`. On touch the nav Download, the hero
-download buttons, the install block (Homebrew command, Download for macOS, Linux
-builds and the five-minutes note) give way to
-`StarButton`, a Star on GitHub link to `SITE.repo`. The phone run of
-`check:page` emulates touch and fails on a visible `[data-download]` element or
-a missing `[data-star]` one, and on a Star button with a mouse.
+Rules that run on every page:
+
+- No horizontal overflow, no em dash or middot triplet in visible text, no
+  heading that ends with a period, and Inter loaded.
+- A section never runs into the next one, and its content never spills below
+  it. The consent card never covers the h1.
+- No raster image in `main`: no `img` and no `picture`.
+- No shadow on a mock window or a stage, outside `data-shadow-exception`. A page
+  with no `.mockStage` fails, so the rule cannot pass by finding nothing.
+- Chapters alternate tones, and no two neighbours share one. Each chapter has
+  at most one eyebrow; the tour has none, its tabs do that job. An eyebrow is a `FEATURES.md` group name verbatim, or one of the
+  page eyebrows listed in the script (the hero's "Free desktop ADE, built in public", "Install" and "All features").
+- On `/`, the first heading of each section sits on the shell's left edge,
+  within 1 px, unless it is centred. On both pages, a card's title and caption
+  share the card's left edge.
+- Gradients: no gradient paints anything but `--g-stage-gradient`. A source scan
+  of `website/src` fails on any `linear-`, `radial-` or `conic-gradient(` outside
+  the token definition, except in a mask property or in a rule that also sets a
+  mask, which is how the running-state ring in `kit/kit.css` is drawn. A
+  computed-style scan of the page (pseudo-elements included) fails on any other
+  painted gradient. Add no new gradient; use a flat colour.
+- Board mock: the cards of a row, across the stage columns, differ in height by
+  at most 1 px.
+- Copy: a sentence has at most 20 words, and no word repeats across an eyebrow,
+  heading and lead, apart from `goodboy`, `task`, `tasks` and the function
+  words `your`, `with`, `that`, `this` and `from`.
+- Links: every `data-see-more` points at a real `/features` anchor. A link to
+  `FEATURES.md` or to a `docs/features/<area>.md` file sits only on a `.refLink`
+  or in the footer, the file exists, and any anchor is a heading in it.
+- Works with: `[data-works-with]` sits in the first screen on `/`.
+- Download: the download buttons show on `/` with a mouse and never on a phone,
+  and every `[data-download]` href starts with `/releases/download/`.
+
+Budgets, in the `PAGE_BUDGETS` constant:
+
+- `/`: at most 5000 px tall at 1440 and 6000 px on a phone, and no section over
+  1100 px.
+- `/features`: at most 8400 px tall at 1440 and 11500 px on a phone, and no
+  cluster over 900 px at 1440 or 1300 px on a phone.
+- The hero: at least 380 px of `[data-hero-mock]` shows in the first 900 px at
+  1440, and the hero mock is fully opaque after load.
+
+Phone run, which emulates touch:
+
+- Visible text is 13 px or more, mock text included. A mock raises its small
+  type to 13 px under `(hover: none) and (pointer: coarse)` in its own css or in
+  `kit/kit.css`, and keeps its desktop size otherwise.
+- Every button, `.btn`, nav link and menu link is 44 px tall or more.
+- There is a visible menu button, and a visible `[data-star]` element.
+
+Coverage, once per run: every group in `FEATURES.md` is in a cluster of
+`features.data.json`, and every cluster has an element with its id on
+`/features`. Each cluster has 3 to 5 main items, an `also` noun for every other
+item, and a guide link whose label is the title of its area file and whose area
+is one of its groups. Every `###` entry of those area files is an item of the
+cluster, every item is a `###` entry or a small features table row of one of
+them, and every main item is a main item of the `FEATURES.md` index. `--shots <dir>` also saves every heading, and `--verify-icons`
+compares the provider mark paths with their pinned simple-icons files over the
+network. The fill is free, since the marks carry brand colours. The heading rule
+itself lives in [docs/tone-of-voice.md](../docs/tone-of-voice.md).
 
 ## One invented world
 
 Every name, number and time on the page belongs to one invented world, and
-every figure agrees with every other. The canon lives in
+every mock agrees with every other. The canon lives in
 `apps/desktop/src/app/components/MockScene/scenes/brand/canon.ts`: workspace
 Harborline with `payments-api`, `notify-relay` and `ledger-core`; the task
 HBL-412 "Stop retried webhooks posting a second credit" on branch
 `hl/fix-duplicate-credit`, with pull requests `payments-api` #318 and
 `notify-relay` #57, while `ledger-core` is only read; $3.47 spent so far; the
 people Dana R., Kenji W., Marta L. and Omar T. A repo the story only reads has
-no branch or pull request in any figure, and any number in the copy matches the
-figure next to it. Nothing on the page names a real person, customer or
+no branch or pull request in any mock, and any number in the copy matches the
+mock next to it. Nothing on the page names a real person, customer or
 repository. When the canon changes, it changes everywhere in one pass.
