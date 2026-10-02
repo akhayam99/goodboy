@@ -70,7 +70,6 @@ Find any session, message, plan or action, and reach it from the keyboard.
 
 Keep your repos together, and let sessions work across them.
 
-- Start a project from nothing
 - Workspace with several projects
 - Worktrees
 - Repo status across projects
