@@ -764,13 +764,13 @@ describe('orchestrateNextStep', () => {
       'Codes: exp=exploration, pln=planning, imp=implementation, dbg=debugging, rev=review, tst=testing, wrt=writing, gen=general; lt=light, st=standard, hv=heavy, uk=unknown.',
     );
     expect(prompt).toContain(
-      'anthropic/opus-5.5 efforts low,medium,high,xhigh,max unassessed ctx 1000k $5/$25',
+      'anthropic/opus-5.5 efforts low,medium,high,xhigh,max unassessed ctx 1000k $4/$20',
     );
     expect(prompt).toContain(
       'anthropic/opus-5 efforts low,medium,high,xhigh,max unassessed ctx 1000k $5/$25',
     );
     expect(prompt).toContain(
-      'codex/gpt-5.6-sol efforts low,medium,high,xhigh,max unassessed ctx 1000k $5/$30',
+      'codex/gpt-5.6-sol efforts low,medium,high,xhigh,max unassessed ctx 1000k $4/$20',
     );
     expect(prompt).toContain(
       'anthropic/haiku-4.5 efforts no effort control unassessed ctx 200k $1/$5',
@@ -780,7 +780,7 @@ describe('orchestrateNextStep', () => {
     const menuLines = prompt
       .split('\n')
       .filter((line) => line.startsWith('anthropic/') || line.startsWith('codex/'));
-    expect(menuLines).toHaveLength(17);
+    expect(menuLines).toHaveLength(18);
     for (const line of menuLines) {
       expect(line).toContain('unassessed');
       expect(line).toMatch(/ ctx \d+k \$[\d.]+\/\$[\d.]+$/);

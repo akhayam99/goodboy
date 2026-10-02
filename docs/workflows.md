@@ -25,9 +25,10 @@ that agent is done, it hands a summary to the next one.
 
 ## Picking or building one
 
-Open the workflow builder in a session. The builder is a preview of the run:
-the plan draws with the same tree, nodes and meta as the workflow detail, so
-what you see before the start is what you see after it. From the top:
+Open the workflow builder in a session. The plan draws with the same nodes,
+lane and meta as the run. A recipe reads top down and a run reads up from NOW,
+so the builder lists step 1 first and the workflow detail grows upward from
+it. From the top:
 
 - **Name**: a large inline field that wraps a long name instead of cutting
   it, and never takes a line break. It stays empty and shows a name as its
@@ -42,13 +43,13 @@ what you see before the start is what you see after it. From the top:
   **Undo** and **Polish** sit inside the field.
 - **Mode**, with one line under it that says what the mode does, and the
   mode's own control on the right of the same row.
-- **Plan**: the steps as a tree that grows upward, step 1 at the bottom.
+- **Plan**: the steps as a tree that reads top down, step 1 first and **Add step** last.
 - **Launch bar**: when it starts, **Autorun**, the spend cap or **Save as
   preset**, and **Start workflow**. The reason Start is off shows under it.
 
 The three modes:
 
-1. **Orchestrated**: give a goal and let the orchestrator choose each step as the work goes. The plan shows the orchestrator with its model at the bottom, and three example steps above it that grow in once when the tab opens. They are marked as an example and carry no model, because the real steps are picked one at a time. **Add guidance for the orchestrator** under it opens **Guidance (optional)**: what the orchestrator should respect or avoid, and when to stop. An emptied field folds back. **Can use**, next to the tabs, sets the providers this run may put agents on. It starts on every connected provider and keeps at least one. The goal alone is enough to start.
+1. **Orchestrated**: give a goal and let the orchestrator choose each step as the work goes. The plan shows the orchestrator with its model first, then **Add guidance for the orchestrator** and three example steps under it that grow in once when the tab opens, top to bottom. They are marked as an example and carry no model, because the real steps are picked one at a time. The guidance link opens **Guidance (optional)**: what the orchestrator should respect or avoid, and when to stop. An emptied field folds back. **Can use**, next to the tabs, sets the providers this run may put agents on. It starts on every connected provider and keeps at least one. The goal alone is enough to start.
 2. **Custom**: write the steps yourself, or open **Draft with planner**, describe what you want and Goodboy drafts the steps for you to edit.
 3. **Preset**: pick a ready workflow from the **Preset** picker. Goodboy comes with three: **Refactor** (scout, plan, implement, test), **Plan and ship** (scout, plan, implement, review) and **Fix a bug** (investigate, implement, test). The last two are built from the built-in steps. A preset is a source: editing a step marks it, the name shows "Edited from" the preset, and switching to **Custom** keeps the steps.
 
@@ -56,7 +57,7 @@ Click a step to edit it in place: title, role, instruction, expected output,
 and provider, model, variant and effort on the right. Its footer moves,
 duplicates or removes the step. Remove asks first. Escape or **Done** closes
 it. The grip on the row drags a step, and the arrow keys on the grip move it:
-up runs it later, down runs it earlier.
+up runs it earlier, down runs it later.
 
 Once the workspace has measured 10 finished steps, every step row shows how
 long steps like it usually take and what they usually cost, as a range
@@ -73,10 +74,6 @@ large), and the range narrows to the faster or slower half of past runs; the
 tooltip and the editor footer say so. The planner never gives minutes, and the
 agents never see the size.
 Every estimate is machine time only ([turns.md](turns.md#measured-time-and-estimates)).
-
-The page draws the plan bottom up, but the page order stays the run order:
-a screen reader and Tab read step 1 first. So keyboard focus moves upward on
-the screen. That is a known cost of matching the run's tree.
 
 The builder opens on the mode of the last workflow you started in that
 workspace, and on **Orchestrated** the first time. Only starting a workflow
@@ -113,7 +110,7 @@ agent to write the steps from the goal. With steps already there it reads
 
 **Add step**, in the Studio and in the builder, opens a menu: a search field,
 **Blank step**, then the built-in steps and the steps saved in this workspace.
-The pick lands at the tip of the tree with its editor open. **Save as step** in
+The pick lands at the end of the tree, under the last step, with its editor open. **Save as step** in
 a step's editor saves it to the workspace. The **Saved steps** tab next to
 **Workflows** is where you manage them. Built-in steps, one per role that works
 in the repo, cannot be edited or removed: **Save a copy** makes a workspace copy

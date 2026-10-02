@@ -14,6 +14,18 @@ describe('provider model display', () => {
     });
   });
 
+  it('resolves GPT-6.1 Sol presentation from its cli id', () => {
+    expect(getModelProvider('gpt-6.1-sol')).toBe('codex');
+    expect(getModelDescriptor({ id: 'gpt-6.1-sol' })).toMatchObject({
+      id: 'gpt-6.1-sol',
+      label: 'GPT-6.1 Sol',
+      family: 'gpt',
+      variantLabel: '6.1 Sol',
+      contextWindow: 1_000_000,
+      costTier: 'expensive',
+    });
+  });
+
   it('resolves OpenCode models', () => {
     expect(getModelProvider('opencode/big-pickle')).toBe('opencode');
     expect(getModelDescriptor({ id: 'opencode/big-pickle' })?.id).toBe('big-pickle');

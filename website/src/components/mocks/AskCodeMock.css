@@ -1,0 +1,32 @@
+.mockStage .askQ,
+.mockStage .askA {
+  align-items: baseline;
+}
+
+.mockStage .askQ > .mkMuted,
+.mockStage .askA > .mkMuted {
+  min-width: 52px;
+}
+
+.mockStage .askQ {
+  font-weight: 600;
+}
+
+.mockStage .askSources {
+  gap: 6px 8px;
+}
+
+.mockStage .askFile {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.mockStage .askComposer {
+  border-top: 1px solid var(--line);
+  color: var(--t3);
+}
+
+.mockStage .askSend {
+  color: var(--accent);
+  font-weight: 600;
+}

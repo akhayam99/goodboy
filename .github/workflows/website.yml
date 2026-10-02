@@ -33,3 +33,11 @@ jobs:
 
       - name: build
         run: pnpm build
+
+      - name: check pages
+        run: |
+          pnpm preview --port 1561 --host 127.0.0.1 > /tmp/goodboy-website-preview.log 2>&1 &
+          preview_pid=$!
+          trap 'kill $preview_pid' EXIT
+          until curl --fail --silent http://127.0.0.1:1561/ > /dev/null; do sleep 1; done
+          CHROME_PATH="$(command -v google-chrome || command -v chromium || command -v chromium-browser)" node scripts/check-page.mjs http://127.0.0.1:1561/ http://127.0.0.1:1561/features

@@ -1,0 +1,76 @@
+.navMenu {
+  display: none;
+}
+
+.navMenuButton {
+  height: 44px;
+  min-width: 72px;
+}
+
+.navSheet {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: calc(100dvh - 64px);
+  overflow-y: auto;
+  padding: 6px 24px 16px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+
+.navSheet[hidden] {
+  display: none;
+}
+
+.navSheetLinks {
+  display: flex;
+  flex-direction: column;
+}
+
+.navSheetLinks a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  border-bottom: 1px solid var(--line);
+  font-size: 16px;
+  color: var(--t3);
+}
+
+.navSheetLinks a[aria-current='page'] {
+  color: var(--t1);
+}
+
+.navSheetRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 52px;
+  font-size: 14px;
+  color: var(--t3);
+}
+
+.navSheet .iconButton {
+  width: 44px;
+  height: 44px;
+}
+
+.navSheet .btn,
+.navSheet .starButton {
+  width: 100%;
+  max-width: none;
+  min-height: 44px;
+}
+
+.navSheetAction {
+  margin-top: 4px;
+}
+
+@media (max-width: 860px), (hover: none) and (pointer: coarse) {
+  .navMenu {
+    display: contents;
+  }
+}

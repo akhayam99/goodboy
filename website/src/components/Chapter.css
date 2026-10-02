@@ -4,8 +4,13 @@
   padding: 112px 0;
 }
 
-.chapter.band {
+.chapter.tone-band {
   background: var(--band);
+  border-block: 1px solid var(--line-soft);
+}
+
+.chapter.tone-stage {
+  background: var(--g-stage-gradient);
   border-block: 1px solid var(--line-soft);
 }
 

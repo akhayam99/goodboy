@@ -92,13 +92,13 @@ describe('suggestLighterModel', () => {
     ).toBe('gpt-5.6-terra');
   });
 
-  it('codex: GPT-5.5 costs about 2x GPT-5.4', () => {
+  it('codex: GPT-5.5 costs about 2.5x GPT-5.6 Terra', () => {
     expect(
       suggestLighterModel({ provider: 'codex', current: 'gpt-5.5', candidates: CODEX }),
     ).toEqual({
       id: 'gpt-5.6-terra',
       kind: 'strong',
-      costMultiplier: 2,
+      costMultiplier: 2.5,
     });
   });
 
@@ -164,13 +164,13 @@ describe('suggestHeavierModel', () => {
     ).toBe('gpt-5.5');
   });
 
-  it('codex: GPT-5.5 costs about 2x GPT-5.4', () => {
+  it('codex: GPT-5.5 costs about 2.5x GPT-5.6 Terra', () => {
     expect(
       suggestHeavierModel({ provider: 'codex', current: 'gpt-5.6-terra', candidates: CODEX }),
     ).toEqual({
       id: 'gpt-5.5',
       kind: 'strong',
-      costMultiplier: 2,
+      costMultiplier: 2.5,
     });
   });
 

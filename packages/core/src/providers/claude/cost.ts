@@ -16,8 +16,9 @@ const OPUS_PRICE: ModelPrice = {
   cachedInputPerMtok: 0.5,
 };
 const OPUS_55_PRICE: ModelPrice = {
-  ...OPUS_PRICE,
-  assumed: true,
+  inputPerMtok: 4,
+  outputPerMtok: 20,
+  cachedInputPerMtok: 0.2,
 };
 const SONNET_PRICE: ModelPrice = {
   inputPerMtok: 3,

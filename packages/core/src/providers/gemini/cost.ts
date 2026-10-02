@@ -12,21 +12,19 @@ export const GEMINI_PRICES: Readonly<Record<string, ModelPrice>> = {
     cachedInputPerMtok: 0.15,
   },
   'gemini-3.8-flash': {
-    inputPerMtok: 1.5,
-    outputPerMtok: 9,
-    cachedInputPerMtok: 0.15,
-    assumed: true,
+    inputPerMtok: 0.75,
+    outputPerMtok: 3.75,
+    cachedInputPerMtok: 0.075,
   },
   'gemini-3.7-flash': {
-    inputPerMtok: 1.5,
-    outputPerMtok: 9,
-    cachedInputPerMtok: 0.15,
-    assumed: true,
+    inputPerMtok: 0.75,
+    outputPerMtok: 3.75,
+    cachedInputPerMtok: 0.075,
   },
   'gemini-3.6-flash': {
-    inputPerMtok: 1.5,
-    outputPerMtok: 9,
-    cachedInputPerMtok: 0.15,
+    inputPerMtok: 0.75,
+    outputPerMtok: 3.75,
+    cachedInputPerMtok: 0.075,
   },
 };
 

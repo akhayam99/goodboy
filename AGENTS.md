@@ -76,7 +76,11 @@ dependencies live in [docs/dependencies.md](./docs/dependencies.md).
 
 A change that alters behavior, a contract, a name, or a trap updates the doc
 that owns that concept in the same PR. Find the owner through
-[docs/README.md](./docs/README.md); if none exists and a reader would break
+[docs/README.md](./docs/README.md). A change under a glob in its feature-area
+ownership table updates only its matching `docs/features/<area>.md`. If it adds,
+removes or renames a main item, also update its line in `FEATURES.md` and, when
+the item appears on the site, `website/src/pages/features/features.data.json`.
+`pnpm check:doc-refs` checks the current feature index, area files, legacy anchors and ownership table. Run `node scripts/split-features.mjs --check` to verify the ongoing feature-doc contract. The split parity proof ran once at commit `5b2a41bd5`. If no owner exists and a reader would break
 something without knowing it, add the line to the nearest owner or to
 [docs/traps.md](./docs/traps.md). Renaming or deleting a symbol, file, or route
 means grepping `*.md` for it first. A lesson learned while working here goes

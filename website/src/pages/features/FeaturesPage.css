@@ -1,0 +1,63 @@
+.ftPage {
+  display: grid;
+  gap: 48px;
+  padding: 80px 0 88px;
+}
+
+.ftHeadLinks {
+  gap: 12px 24px;
+  margin-top: 28px;
+}
+
+.refLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  font: var(--t-cell);
+  letter-spacing: var(--tr-cell);
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.refLink:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.ftBody {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 40px;
+  align-items: start;
+}
+
+.ftClusters {
+  display: grid;
+  gap: 72px;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .ftBody {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+  }
+  .ftClusters {
+    gap: 56px;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .refLink {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 600px) {
+  .ftPage {
+    gap: 32px;
+    padding: 56px 0 72px;
+  }
+}

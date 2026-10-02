@@ -8,6 +8,10 @@ describe('modelLabel', () => {
     expect(modelLabel('gpt-6-astra')).toBe('Astra');
   });
 
+  it('uses the authored GPT-6.1 Sol label for its catalog key and cli id', () => {
+    expect(modelLabel('gpt-6.1-sol')).toBe('GPT-6.1 Sol');
+  });
+
   it('humanizes an unrecognized Astra effort suffix', () => {
     expect(modelLabel('gpt-6-astra-high')).toBe('GPT 6 Astra High');
   });
@@ -74,6 +78,6 @@ describe('suggestHeavierModel, price from the provider that runs the model', () 
         current: 'gpt-5.6-terra',
         candidates: ['gpt-5.6-terra', 'gpt-5.6'],
       }),
-    ).toEqual({ id: 'gpt-5.6', kind: 'strong', costMultiplier: 2.5 });
+    ).toEqual({ id: 'gpt-5.6', kind: 'strong', costMultiplier: 1.8 });
   });
 });

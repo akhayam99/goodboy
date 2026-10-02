@@ -49,6 +49,7 @@ describe('shouldRunTests', () => {
   it('treats markdown that code reads as code', () => {
     assert.equal(shouldRunTestsForPullRequest({ paths: ['CHANGELOG.md'] }), true);
     assert.equal(shouldRunTestsForPullRequest({ paths: ['FEATURES.md'] }), true);
+    assert.equal(shouldRunTestsForPullRequest({ paths: ['docs/features/workflows.md'] }), true);
     assert.equal(shouldRunTestsForPullRequest({ paths: ['README.md'] }), true);
     assert.equal(
       shouldRunTestsForPullRequest({ paths: ['docs/changelog/0.13.1/hero.webp'] }),

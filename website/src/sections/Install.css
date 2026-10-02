@@ -1,69 +1,150 @@
+#install .chapterInner {
+  gap: 40px;
+  padding-block: 64px;
+}
+
 .install {
   display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 36px;
+  align-items: start;
+}
+
+.installCta > div {
+  display: grid;
   justify-items: start;
-  gap: 24px;
-  padding: 0 36px;
 }
 
-.cmd {
-  display: flex;
+.installCta .installMain,
+.installCta .btn.starButton {
+  height: 44px;
+  min-height: 44px;
+  padding: 0 20px;
+  font-size: 14px;
+}
+
+.installCta .btn.starButton {
+  width: 100%;
+  max-width: none;
+}
+
+.installFeatures {
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
-  width: min(100%, 620px);
-  padding: 10px 10px 10px 16px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-btn);
-  background: var(--raise);
-  font: 400 14px/20px var(--mono);
-  font-variant-numeric: tabular-nums;
-  color: var(--t1);
+  gap: 6px;
+  margin-top: 14px;
+  font: var(--t-btn);
+  color: var(--accent);
+  transition: opacity 0.16s ease-out;
 }
 
-.cmd code {
-  flex: 1;
-  min-width: 0;
-  overflow-wrap: anywhere;
-  font: inherit;
-}
-
-.cmdPrompt {
-  color: var(--t4);
-}
-
-.cmd button {
-  height: 28px;
-  padding: 0 10px;
-  border-radius: 6px;
-  font: 500 13px/20px var(--sans);
-  color: var(--t2);
-  transition: background 0.16s ease-out;
-}
-
-.cmd button:hover {
-  background: var(--hover);
+.installFeatures:hover {
+  opacity: 0.78;
   transition: none;
 }
 
-.installNote {
-  font: var(--t-caption);
-  color: var(--t4);
+@media (hover: none) and (pointer: coarse) {
+  .installFeatures {
+    min-height: 44px;
+  }
 }
 
-.installSupport {
-  font: var(--t-body);
-  letter-spacing: var(--tr-body);
+.installAlt {
+  margin: 10px 0 0;
+  font: var(--t-caption);
   color: var(--t3);
 }
 
-.installSupport a {
+.installAlt a,
+.installBug a {
   color: var(--accent);
 }
 
-@media (max-width: 600px) {
-  .install {
-    padding: 0;
+.installBrew {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 0;
+  font: var(--t-caption);
+  color: var(--t2);
+}
+
+.installBrew code {
+  font: 400 13px/20px var(--mono);
+  color: var(--t1);
+  overflow-wrap: anywhere;
+}
+
+.installDim {
+  color: var(--t4);
+}
+
+.installBrew button {
+  padding: 4px;
+  font: 600 13px/20px var(--sans);
+  color: var(--accent);
+}
+
+.installSteps {
+  display: grid;
+  gap: 16px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.installSteps li {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  column-gap: 10px;
+  counter-increment: step;
+  font: var(--t-body);
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--t1);
+}
+
+.installSteps li::before {
+  content: counter(step);
+  grid-row: span 2;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  font: 600 13px/16px var(--sans);
+  color: var(--accent);
+}
+
+.installSteps b {
+  font-weight: 600;
+}
+
+.installSteps span {
+  font: var(--t-caption);
+  color: var(--t2);
+}
+
+.installBug {
+  grid-column: 1 / -1;
+  margin: 14px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font: var(--t-caption);
+  color: var(--t3);
+}
+
+@media (max-width: 640px) {
+  #install .chapterInner {
+    gap: 28px;
+    padding-block: 48px;
   }
-  .cmd {
-    font-size: 13px;
+
+  .install {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
   }
 }

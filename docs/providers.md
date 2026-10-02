@@ -555,8 +555,13 @@ What the catalogs do not tell you:
 - This matters because code that holds only a key picks `variants[0]`. If several
   paid models shared one key, Goodboy would start and bill the wrong one
 - That is why Codex Sol, Terra and Luna are three ids: `gpt-5.6-sol`, `gpt-5.6-terra`
-  and `gpt-5.6-luna`. Each has its own cost tier and price in `codex/cost.ts` (5/30,
-  2.5/15 and 1/6 per Mtok). The picker shows them as version chips
+  and `gpt-5.6-luna`. Each has its own cost tier and price in `codex/cost.ts` (4/20,
+  2/12 and 0.2/1.2 per Mtok). The picker shows them as version chips
+- `gpt-6.1-sol` (Codex CLI 0.160 or newer) is the newest Sol and a fourth id of its own,
+  priced 2/10 per Mtok with cached input at 0.10 in `codex/cost.ts` and
+  `features/providers/pricing.json`. Its catalog `costTier` is `expensive` on purpose,
+  like Astra: `mid` would make it the codex mid model in place of Terra. The same
+  model sits in the OpenRouter catalog as `openrouter/openai/gpt-6.1-sol`
 - Cursor is the only provider whose `getCheapModel` is set by hand. It is set to
   `auto` in `cli-defaults.ts`
 - Old ids still work through `parseLegacyId.ts`. So an id missing from the catalog is
@@ -579,9 +584,12 @@ What the catalogs do not tell you:
   `model-price.test.ts` checks that every anthropic, cursor, codex and gemini
   catalog model has a price
 - A rate the vendor has not published yet is copied from the model it follows and
-  carries `assumed: true` in `claude/cost.ts` (Opus 5.5 today), so
+  carries `assumed: true` in its `cost.ts` (no model does today), so
   `costCoverage` reports its spend as approximate. `pricing.json` keeps measured
   rates only
+- Gemini 3.6, 3.7 and 3.8 Flash bill 0.75/3.75 per Mtok (cached 0.075) in
+  `gemini/cost.ts` until December 31, 2026. Google lists 1.50/7.50 (cached 0.15)
+  from January 1, 2027, so move the three rows then
 
 When a provider ships or retires a model, update three files under
 `packages/core/src/providers/<cli>/` together:

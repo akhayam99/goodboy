@@ -28,6 +28,7 @@ describe('costCoverage', () => {
 
   it('reports codex as measured for a priced model and unpriced otherwise', () => {
     expect(costCoverage({ provider: 'codex', model: 'gpt-6-astra' })).toBe('measured');
+    expect(costCoverage({ provider: 'codex', model: 'gpt-6.1-sol' })).toBe('measured');
     expect(costCoverage({ provider: 'codex', model: 'gpt-5.6-sol' })).toBe('measured');
     expect(costCoverage({ provider: 'codex', model: 'unknown-codex-model' })).toBe('unpriced');
   });
@@ -37,13 +38,14 @@ describe('costCoverage', () => {
     expect(costCoverage({ provider: 'gemini', model: 'unknown-gemini-model' })).toBe('unpriced');
   });
 
-  it('never reports an assumed rate as measured spend', () => {
-    expect(costCoverage({ provider: 'anthropic', model: 'claude-opus-5-5' })).toBe('approximate');
+  it('reports a published rate as measured and an unknown model as approximate', () => {
+    expect(costCoverage({ provider: 'anthropic', model: 'claude-opus-5-5' })).toBe('measured');
+    expect(costCoverage({ provider: 'anthropic', model: 'claude-unknown-9' })).toBe('approximate');
     expect(costCoverage({ provider: 'anthropic', model: 'claude-opus-5' })).toBe('measured');
     expect(costCoverage({ provider: 'anthropic', model: 'claude-sonnet-5-5' })).toBe('measured');
     expect(costCoverage({ provider: 'anthropic', model: 'claude-sonnet-5' })).toBe('measured');
-    expect(costCoverage({ provider: 'gemini', model: 'gemini-3.8-flash' })).toBe('approximate');
-    expect(costCoverage({ provider: 'gemini', model: 'gemini-3.7-flash' })).toBe('approximate');
+    expect(costCoverage({ provider: 'gemini', model: 'gemini-3.8-flash' })).toBe('measured');
+    expect(costCoverage({ provider: 'gemini', model: 'gemini-3.7-flash' })).toBe('measured');
     expect(costCoverage({ provider: 'gemini', model: 'gemini-3.1-pro' })).toBe('measured');
   });
 

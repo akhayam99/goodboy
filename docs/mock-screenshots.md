@@ -210,23 +210,21 @@ session. `?scene=workflow-run&run=parallel` shows the same run earlier, on its
 first step: three scouts working side by side, one done, and the orchestrator
 waiting on the step (`scenes/flow-audit/parallelRun.ts`).
 
-The README, `FEATURES.md` and the website are captured from these scenes. The
+The README and feature-area guide docs are captured from these scenes. The
 `brand-*` scenes in `scenes/brand/` tell one Harborline story (issue HBL-412,
 branch `hl/fix-duplicate-credit`, payments-api #318 and notify-relay #57, with
 ledger-core only read), and `scenes/brand/canon.ts` holds the names and numbers
 every picture shares. Add `&brand=1` to skip onboarding and hide the toasts a
 browser tab raises. The README images live in `docs/readme/`, the
-`FEATURES.md` ones in the public
+feature-area guide ones in the public
 [goodboy-media](https://github.com/akhayam99/goodboy-media) repo, both as dark
-and light `.webp` pairs, and the website's in `website/public/img/`. To
-crop a short surface, use a `--window-size` height shorter than 900. The layout
-keeps its own proportions and the footer stays pinned.
+and light `.webp` pairs. The website takes no screenshots: its product views are
+React mocks. To crop a short surface, use a `--window-size` height shorter than 900. The layout keeps its own proportions and the footer stays pinned.
 
-## Pictures for FEATURES.md
+## Pictures for feature-area guides
 
-Every figure in `FEATURES.md` sits in the same stage frame as the website: the
-teal-to-dark gradient card in dark, the pale gray one in light, with the app
-clip inside it. `scripts/feature-shots.mjs` captures a scene in both themes,
+Every figure in a feature-area guide sits in a stage frame: the teal-to-dark gradient
+card in dark, the pale gray one in light, with the app clip inside it. `scripts/feature-shots.mjs` captures a scene in both themes,
 clips it, draws the frame around it and writes
 `<name>-{dark,light}.webp` into `features/` of a goodboy-media checkout,
 `../goodboy-media` next to this repo or the folder `GOODBOY_MEDIA_DIR` names:
@@ -253,7 +251,7 @@ pnpm features:shots --scene 'board-shell&brand=1' --out board-stage --selector '
 - Put `%20` for spaces inside `--scene`, or Chrome never loads the page.
 - `--click "Commits,Sort"` clicks, in order, the buttons, tabs or links whose text starts with each name, after the scene loads and before the capture. It shoots a state a scene does not open by itself, such as a second tab or an open picker. A name that matches nothing stops the run.
 
-`FEATURES.md` points at each file with its raw URL,
+Each feature-area guide points at each file with its raw URL,
 `https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/<name>-dark.webp`.
 Pictures live outside this repo so each reshoot does not grow its history:
 push the new files to goodboy-media first, then the text here. Reusing a name
@@ -261,49 +259,6 @@ replaces the picture in place, within the five minutes GitHub caches it.
 
 A figure shows exactly the feature named by the heading it sits under, and its
 alt text names what is visible.
-
-## Landing crops
-
-The website shows three kinds of picture, and each one is cut a different
-way. Every one exists in both themes, and each file is exported at the widths
-its entry in `website/src/figures.ts` lists, as `<id>-<width>.webp` for dark
-and `<id>-<width>-light.webp` for light, so `<picture>` can pick one from
-`srcset`. A frame uses `FRAME_WIDTHS`, a phone crop `PHONE_WIDTHS`, and a
-fragment one, two and three times its recorded display width.
-
-- **A frame** is the whole window. Capture it at `1024x640`, the app's minimum
-  width, at device scale factor 4. That gives 4096x2560, which exports down to
-  every width. A frame never uses a window narrower than 1024: below it the
-  sidebar and the top bar show a layout no user can get. A wide frame (the
-  board at 2.4:1) uses a wider window, such as `1280x533`, instead of a
-  shorter crop.
-- **A fragment** is one component, clipped to its box plus 24 px where the
-  screen continues. Where the component ends in its own border (a popover, a
-  palette), keep 8 px on that side, because the screen behind it is noise.
-  Clip through CDP `Page.captureScreenshot` with `clip.scale`, so the clip
-  renders at 4 times that scale. Pick the scale so the clip reaches three
-  times its display width: a 400 px popover shown at 780 needs 2340 px, so
-  scale 1.5, which is 6x. Chrome lays the text out
-  again at that size, so it stays sharp. Never enlarge a smaller capture.
-- **A phone crop** is a 4:5 cut of the same window a frame uses. Do not narrow
-  the window to make the content fit: the rows truncate their branch names and
-  titles. Cut the part that reads on its own (the title and projects, the role
-  rows, one board column), and leave the right edge open where a row runs on.
-  A crop that needs more rows uses a taller window, such as `1024x1100`.
-
-The smallest text inside a fragment is 10 css px in the app. The site keeps
-fragment text at 13 css px or larger, so it draws a fragment at 1.3 times its
-clip width or wider. Record that width with each fragment. Measure it from the
-text nodes that intersect the clip, not by eye.
-
-A wireframe or a report inside a fragment needs
-`--disable-site-isolation-trials` (see above), or the frame renders at 1x
-while the rest of the clip is sharp. A wireframe keeps its own palette in both
-app themes, so its light file can match its dark one.
-
-Look at every file at 100% before you keep it, in both themes, at the smallest
-and the largest width. Check the edges too: a clip that cuts a heading in half,
-or catches the top of a button below, needs a new box.
 
 ## Pictures for the changelog
 

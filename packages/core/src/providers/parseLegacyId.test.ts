@@ -20,6 +20,15 @@ describe('parseLegacyId', () => {
     });
   });
 
+  it('recognizes the stored GPT-6.1 Sol cli id', () => {
+    expect(
+      resolveStoredModelSelection({ provider: 'codex', id: 'gpt-6.1-sol', effort: 'high' }),
+    ).toEqual({
+      selection: { key: 'gpt-6.1-sol', effort: 'high' },
+      report: null,
+    });
+  });
+
   it('maps shipped legacy ids to structured selections', () => {
     expect(parseLegacyId({ provider: 'anthropic', id: 'claude-sonnet-4-6' })).toEqual({
       key: 'sonnet-4.6',

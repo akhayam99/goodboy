@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { resolve } from 'node:path';
 import { describe, it } from 'node:test';
 import {
   buildSnapshot,
+  aggregateFeatureDocs,
   normalizeVersion,
   parseFeatures,
   parseRelease,
@@ -155,5 +160,78 @@ describe('buildSnapshot', () => {
       ['Stage board', false],
       ['Session card', true],
     ]);
+  });
+});
+
+describe('aggregateFeatureDocs', () => {
+  it('aggregates every current feature area', () => {
+    const markdown = aggregateFeatureDocs();
+    const areaCount = (markdown.match(/^## /gm) ?? []).length;
+    assert.ok(areaCount > 10);
+    assert.match(markdown, /^## Set up$/m);
+    assert.match(markdown, /^## Also there$/m);
+  });
+
+  it('fails loudly when the index has no area links', () => {
+    const directory = mkdtempSync(resolve(tmpdir(), 'goodboy-feature-index-'));
+    try {
+      writeFileSync(resolve(directory, 'FEATURES.md'), '# Goodboy features\n\n## The board\n');
+      assert.throws(() => aggregateFeatureDocs({ root: directory }), /no "\[More on/);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('feature doc contract', () => {
+  const root = resolve(import.meta.dirname, '..');
+  const withFeatureDocs = ({ change, verify }) => {
+    const directory = mkdtempSync(resolve(tmpdir(), 'goodboy-feature-docs-'));
+    cpSync(resolve(root, 'FEATURES.md'), resolve(directory, 'FEATURES.md'));
+    cpSync(resolve(root, 'docs'), resolve(directory, 'docs'), { recursive: true });
+    try {
+      change({ directory });
+      verify({ directory });
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  };
+
+  it('allows prose edits in an area file', () => {
+    withFeatureDocs({
+      change: ({ directory }) => {
+        const file = resolve(directory, 'docs/features/board.md');
+        writeFileSync(file, `${readFileSync(file, 'utf8')}\nA clearer detail for this area.\n`);
+      },
+      verify: ({ directory }) => {
+        execFileSync('node', ['scripts/split-features.mjs', '--check'], {
+          cwd: root,
+          env: { ...process.env, FEATURE_DOCS_ROOT: directory },
+        });
+      },
+    });
+  });
+
+  it('rejects a main H3 removed from an area file', () => {
+    withFeatureDocs({
+      change: ({ directory }) => {
+        const file = resolve(directory, 'docs/features/board.md');
+        writeFileSync(
+          file,
+          readFileSync(file, 'utf8').replace('### Stage board', '### Board stages'),
+        );
+      },
+      verify: ({ directory }) => {
+        assert.throws(
+          () =>
+            execFileSync('node', ['scripts/split-features.mjs', '--check'], {
+              cwd: root,
+              env: { ...process.env, FEATURE_DOCS_ROOT: directory },
+              stdio: 'pipe',
+            }),
+          /board\.md is missing index main item Stage board/,
+        );
+      },
+    });
   });
 });

@@ -12,6 +12,30 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.15.2
+
+Codex agents can run the newest Sol model, and the workflow builder and Studio list steps top down, step 1 first.
+
+### New
+
+#### GPT-6.1 Sol on Codex
+<!-- gb area=providers pr=1951 -->
+
+Codex agents can now run GPT-6.1 Sol. It shows in the model picker with the same effort levels as the other Codex models, and its usage is priced in the cost view. It needs Codex CLI 0.160 or newer.
+
+### Improved
+
+#### Workflow steps read top down
+<!-- gb area=workflows screen=workflows image=workflow-plan-order pr=1949 -->
+
+The workflow builder lists steps from the top: step 1 first, then the rest in the order they run, with Add step at the end. This holds in Preset, Custom and Orchestrated modes, in the kickoff and in the Workflows Studio editor. Orchestrated mode shows the Orchestrator and its guidance first, then the example steps.
+
+Move step up now means earlier, and ArrowUp on a step's grip follows it. The up and down buttons are disabled at the first and last step, and a step you add scrolls into view. The activity timeline and the run detail still read from the bottom up to now.
+
+### Fixed
+
+- Cost estimates for GPT-5.6, Opus 5.5 and Gemini Flash agents now use the current prices, and Opus 4.6 no longer offers an effort level it cannot run. <!-- gb area=providers pr=1951 -->
+
 ## Goodboy v0.15.1
 
 Suggested agents start briefed and on the model you pick, stopped agents resume in one action, and an agent handed work by another role no longer ends Blocked.

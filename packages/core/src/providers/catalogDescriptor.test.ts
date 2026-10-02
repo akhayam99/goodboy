@@ -15,6 +15,14 @@ describe('catalogDescriptor weights', () => {
     expect(catalogDescriptor({ model: fable }).weight).toBe(95);
   });
 
+  it('ranks GPT-6.1 Sol level with the Sol it follows and below Astra', () => {
+    const next = MODEL_CATALOGS.codex.find((model) => model.key === 'gpt-6.1-sol');
+    if (next == null) {
+      throw new Error('missing codex GPT-6.1 Sol');
+    }
+    expect(catalogDescriptor({ model: next }).weight).toBe(28);
+  });
+
   it('ranks kimi-k3 above the unlisted-model fallback and below sonnet-4.5', () => {
     const kimi = MODEL_CATALOGS.moonshot.find((model) => model.key === 'kimi-k3');
     const sonnet = MODEL_CATALOGS.anthropic.find((model) => model.key === 'sonnet-4.5');

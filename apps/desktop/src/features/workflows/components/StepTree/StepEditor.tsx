@@ -128,7 +128,7 @@ export const StepEditor = ({
             variant="ghost"
             iconSize={ICON_SIZE.control}
             onClick={onMoveUp}
-            disabled={disabled || ordinal === stepCount}
+            disabled={disabled || ordinal === 1}
           />
           <IconButton
             icon={ArrowDown}
@@ -136,7 +136,7 @@ export const StepEditor = ({
             variant="ghost"
             iconSize={ICON_SIZE.control}
             onClick={onMoveDown}
-            disabled={disabled || ordinal === 1}
+            disabled={disabled || ordinal === stepCount}
           />
           <Button variant="ghost" size="sm" onClick={onDuplicate} disabled={disabled}>
             <Copy size={ICON_SIZE.row} aria-hidden />

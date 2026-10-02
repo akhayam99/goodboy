@@ -1,0 +1,156 @@
+.mockStage {
+  --mk-fs: 13px;
+  --mk-fs-sm: 12px;
+  --mk-win: var(--bg);
+  --mk-win-2: var(--raise);
+  --mk-ok: oklch(0.45 0.12 155);
+  --mk-warn: oklch(0.5 0.12 65);
+  --mk-win-shadow: 0 0 0 1px var(--win-edge);
+  container-type: inline-size;
+  min-width: 0;
+  max-width: 100%;
+  padding: 32px;
+  border-radius: var(--r-stage);
+  border: 1px solid var(--stage-line);
+  background: var(--g-stage-gradient);
+  color: var(--t1);
+  font: 400 var(--mk-fs) / 1.45 var(--sans);
+}
+
+:root[data-theme='dark'] .mockStage {
+  --mk-ok: oklch(0.78 0.13 155);
+  --mk-warn: oklch(0.8 0.13 75);
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .mockStage {
+    --mk-fs-sm: 13px;
+  }
+}
+
+@media (max-width: 600px) {
+  .mockStage {
+    padding: 16px;
+  }
+}
+
+.mkWin {
+  min-width: 0;
+  border-radius: 10px;
+  background: var(--mk-win);
+  box-shadow: var(--mk-win-shadow);
+}
+
+.mkWin > :first-child {
+  border-start-start-radius: inherit;
+  border-start-end-radius: inherit;
+}
+
+.mkWin > :last-child {
+  border-end-start-radius: inherit;
+  border-end-end-radius: inherit;
+}
+
+.mkRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  min-width: 0;
+  padding: 9px 12px;
+  border-top: 1px solid var(--line-soft);
+  font-size: var(--mk-fs);
+  color: var(--t1);
+  overflow-wrap: anywhere;
+}
+
+.mkRow:first-child {
+  border-top: 0;
+}
+
+.mkTitle {
+  background: var(--mk-win-2);
+  border-bottom: 1px solid var(--line-soft);
+  font-weight: 600;
+}
+
+.mkTitle + .mkRow {
+  border-top: 0;
+}
+
+.mkChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 8px;
+  border-radius: 6px;
+  background: var(--mk-win-2);
+  box-shadow: inset 0 0 0 1px var(--line-soft);
+  color: var(--t2);
+  font-size: var(--mk-fs-sm);
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.mkChip[data-tone='accent'] {
+  background: color-mix(in srgb, var(--accent) 14%, var(--mk-win));
+  color: var(--accent);
+}
+
+.mkChip[data-tone='ok'] {
+  background: color-mix(in srgb, var(--mk-ok) 14%, var(--mk-win));
+  color: var(--mk-ok);
+}
+
+.mkChip[data-tone='warn'] {
+  background: color-mix(in srgb, var(--mk-warn) 14%, var(--mk-win));
+  color: var(--mk-warn);
+}
+
+.mkMono {
+  font-family: var(--mono);
+  font-size: var(--mk-fs-sm);
+}
+
+.mkMuted {
+  color: var(--t3);
+  font-size: var(--mk-fs-sm);
+}
+
+.mkSpacer {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.mkGrow {
+  flex: 1 1 0;
+  min-width: 8ch;
+}
+
+@keyframes mkPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 28%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .mkDot[data-running] {
+    animation: mkPulse 1.6s ease-in-out 3;
+  }
+}
+
+@container (max-width: 420px) {
+  .mkSecondary {
+    display: none;
+  }
+}
+
+@container (max-width: 340px) {
+  .mkRow {
+    padding: 8px 10px;
+  }
+}
