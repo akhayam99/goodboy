@@ -6,6 +6,7 @@ mod attachment;
 mod aux_spawn;
 mod bitbucket;
 mod boot_breadcrumb;
+mod bootstrap;
 mod branch_cleanup;
 mod branch_remote;
 mod bridge;
@@ -42,15 +43,18 @@ mod permissions;
 mod planner;
 mod proc;
 mod process_group;
+mod project_folder;
 mod project_relocation;
 mod project_scripts;
 mod provider_credentials;
 mod provider_lifecycle;
 mod providers;
+mod publish;
 mod qa_preview;
 mod query_bridge;
 mod releases;
 mod remote_image;
+mod remote_probe;
 mod repo;
 mod restart_marker;
 mod scratch_dir;
@@ -395,8 +399,18 @@ pub fn run() {
             repo::validate_git_repo,
             repo::project_git_status,
             repo::project_fetch,
+            remote_probe::project_remote_probe,
+            publish::project_link_remote,
+            bootstrap::bootstrap_prepare,
+            bootstrap::bootstrap_apply,
+            bootstrap::bootstrap_clear_root,
+            bootstrap::bootstrap_align_main,
+            bootstrap::bootstrap_recover,
+            bootstrap::bootstrap_rollback,
+            publish::project_publish_main,
             repo::repo_init_with_remote,
             repo::repo_init,
+            project_folder::project_folder_create,
             repo::scan_child_repos,
             repo::repo_identity,
             repo::find_moved_projects,

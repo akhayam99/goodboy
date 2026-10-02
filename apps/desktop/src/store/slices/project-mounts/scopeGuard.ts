@@ -9,6 +9,7 @@ type ScopeGuardParams = {
   readonly activeMountId?: MountId | null;
   readonly isBridgeServing: boolean;
   readonly isSessionDirScope: boolean;
+  readonly firstLapProject?: Project | null;
   readonly canWrite: boolean;
 };
 
@@ -91,7 +92,7 @@ const WRITE_BOUNDARY_LINES: ReadonlyArray<string> = [
 const READ_ONLY_ROLE_LINE =
   'Your role covers inspection and analysis across the listed workspace projects. It does not cover changing project files or requesting a writable mount.';
 
-type GuardTag = 'worktree-scope' | 'session-directory-scope' | 'projects-scope';
+type GuardTag = 'worktree-scope' | 'session-directory-scope' | 'projects-scope' | 'first-lap-scope';
 
 type TagParams = {
   readonly mounts: ReadonlyArray<SessionProjectMount>;
@@ -196,6 +197,26 @@ const executionLines = ({
   ];
 };
 
+const FIRST_LAP_WRITE_LINES: ReadonlyArray<string> = [
+  'This session works directly in the project folder, on the main branch. No worktree was cut and none is available until the project is published.',
+  'ALL writes MUST resolve inside the project folder. Do not materialize projects and do not create branches or worktrees.',
+  'Nothing is committed or pushed for you. Do not run git commit, git push or any command that changes git history unless the user asks for it in this session.',
+];
+
+type FirstLapGuardParams = {
+  readonly firstLapProject: Project;
+  readonly workingDir: string;
+  readonly canWrite: boolean;
+};
+
+const firstLapGuard = ({ firstLapProject, workingDir, canWrite }: FirstLapGuardParams): string =>
+  [
+    '[first-lap-scope]',
+    `You are working in the project folder of ${firstLapProject.name} at: ${workingDir}`,
+    ...(canWrite ? FIRST_LAP_WRITE_LINES : [READ_ONLY_ROLE_LINE]),
+    '[/first-lap-scope]',
+  ].join('\n');
+
 export const buildScopeGuard = ({
   workingDir,
   projects,
@@ -203,8 +224,12 @@ export const buildScopeGuard = ({
   activeMountId = null,
   isBridgeServing,
   isSessionDirScope,
+  firstLapProject = null,
   canWrite,
 }: ScopeGuardParams): string => {
+  if (firstLapProject !== null) {
+    return firstLapGuard({ firstLapProject, workingDir, canWrite });
+  }
   const tag = guardTag({ mounts, isSessionDirScope });
   const boundaryLines = canWrite
     ? [...WRITE_BOUNDARY_LINES, ...MOUNT_RULE_LINES, materializeLine({ isBridgeServing })]

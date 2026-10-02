@@ -275,6 +275,7 @@ export const WizardFrame = ({
         onKeepConflict: () => setConflict(null),
         onConfirmDetection: confirmDetection,
         onDismissDetection: () => setDetection(null),
+        onNewProjectCreated: () => close(),
       }}
       codeHostStep={
         workspaceId === null

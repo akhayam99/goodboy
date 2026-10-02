@@ -465,6 +465,18 @@ export type {
   PullRequestStateKind,
 } from './github';
 export type {
+  BootstrapAlignOutcome,
+  BootstrapClearReport,
+  BootstrapFileChange,
+  BootstrapMovedFile,
+  BootstrapPhase,
+  BootstrapPrepared,
+  BootstrapRecoverState,
+  BootstrapStage,
+} from './bootstrap';
+export type { LinkedRemote, PublishOutcome, PublishStep } from './publish';
+export type { RemoteProbe } from './remote-probe';
+export type {
   PrReviewDraft,
   ReviewDraftOrigin,
   ReviewDraftSide,

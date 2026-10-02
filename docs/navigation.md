@@ -1273,6 +1273,27 @@ agentId, pane })` asks for either, and the address prints it as a last
   gives the reason on the CTA and opens an inline confirm before anything
   starts. With auto-run off, nothing advances without a click.
 
+## Starting a project from nothing
+
+The empty screen and the workspace launcher offer **Start a new project** and
+**Open a folder**. The wizard's project step offers the same two. Start opens
+one inline form (`NewProjectForm`), never a dialog: a name, a location (the
+last parent folder, else the home folder, changed with the system picker) and
+the four things the click does. A name that exists in the parent says so and
+offers **Open it instead**. Create project makes the folder, a repository on
+`main` with a first commit that holds `.gitignore` and nothing else, one
+workspace and project named after it, and opens the first lap session.
+
+The first lap session shows one banner under the crumb bar: where it works
+(project folder, `main`), that nothing is published, and **Publish**. Publish
+opens an inline panel: create a repository on your own GitHub account
+(visibility is always an explicit pick) or use any HTTPS or SSH address. When
+the project folder has changed files the primary action reads **Publish and
+move my work**. When `main` appears on the remote, whoever pushed it, the
+banner turns into the move card. A move in progress shows its own banner, and
+a finished one leaves a report on the bootstrap session until it is dismissed.
+The project git pill offers **Publish** on a repository with no remote.
+
 ## Creating a session
 
 The new session form always lands on Overview. It offers no agent-kind picker

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Plus, Search, Unplug } from 'lucide-react';
+import { FolderPlus, Plus, Search, Unplug } from 'lucide-react';
 import {
   Button,
   Checkbox,
@@ -19,6 +19,7 @@ import { UpdatePill } from '../../../updater/components/UpdatePill';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { WorkspaceListRow } from '../WorkspaceListRow';
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
+import { NewProjectForm } from '../../../../shared/components/NewProjectForm';
 
 export const WorkspaceLauncher = () => {
   const workspaces = useWorkspaces();
@@ -31,6 +32,7 @@ export const WorkspaceLauncher = () => {
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const [disconnectTarget, setDisconnectTarget] = useState<Workspace | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -104,6 +106,8 @@ export const WorkspaceLauncher = () => {
           <h1 className="text-title text-foreground">Open a workspace</h1>
         </div>
 
+        {isStarting ? <NewProjectForm onCancel={() => setIsStarting(false)} /> : null}
+
         <div className="relative">
           <Search
             size={ICON_SIZE.control}
@@ -172,10 +176,21 @@ export const WorkspaceLauncher = () => {
           </ul>
         </div>
 
-        <Button variant="secondary" onClick={addWorkspace} className="w-fit">
-          <Plus size={ICON_SIZE.control} aria-hidden />
-          Add workspace
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            disabled={isStarting}
+            onClick={() => setIsStarting(true)}
+            className="w-fit"
+          >
+            <FolderPlus size={ICON_SIZE.control} aria-hidden />
+            Start a new project
+          </Button>
+          <Button variant="secondary" onClick={addWorkspace} className="w-fit">
+            <Plus size={ICON_SIZE.control} aria-hidden />
+            Add workspace
+          </Button>
+        </div>
 
         <Checkbox
           label="Reopen last workspace on launch"

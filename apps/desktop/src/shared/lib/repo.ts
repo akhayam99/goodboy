@@ -1,5 +1,15 @@
 import { invokeCommand } from './invokeCommand';
-import type { FastForwardResult, WorkspaceGitStatus } from '@goodboy/types';
+import type {
+  BootstrapAlignOutcome,
+  BootstrapClearReport,
+  BootstrapPrepared,
+  BootstrapRecoverState,
+  FastForwardResult,
+  LinkedRemote,
+  PublishOutcome,
+  RemoteProbe,
+  WorkspaceGitStatus,
+} from '@goodboy/types';
 
 export type GitRepoCheck = {
   readonly isRepo: boolean;
@@ -34,6 +44,54 @@ export const projectFetch = async ({
   projectId,
 }: ProjectFetchParams): Promise<void> => {
   return invokeCommand<void>('project_fetch', { projectPath, workspaceId, projectId });
+};
+
+type ProjectRemoteProbeParams = {
+  readonly projectPath: string;
+  readonly workspaceId?: string;
+  readonly projectId?: string;
+};
+
+export const projectRemoteProbe = async ({
+  projectPath,
+  workspaceId,
+  projectId,
+}: ProjectRemoteProbeParams): Promise<RemoteProbe> => {
+  return invokeCommand<RemoteProbe>('project_remote_probe', {
+    projectPath,
+    workspaceId,
+    projectId,
+  });
+};
+
+type ProjectLinkRemoteParams = {
+  readonly projectPath: string;
+  readonly remoteUrl: string;
+};
+
+export const projectLinkRemote = async ({
+  projectPath,
+  remoteUrl,
+}: ProjectLinkRemoteParams): Promise<LinkedRemote> => {
+  return invokeCommand<LinkedRemote>('project_link_remote', { projectPath, remoteUrl });
+};
+
+type ProjectPublishMainParams = {
+  readonly projectPath: string;
+  readonly workspaceId?: string;
+  readonly projectId?: string;
+};
+
+export const projectPublishMain = async ({
+  projectPath,
+  workspaceId,
+  projectId,
+}: ProjectPublishMainParams): Promise<PublishOutcome> => {
+  return invokeCommand<PublishOutcome>('project_publish_main', {
+    projectPath,
+    workspaceId,
+    projectId,
+  });
 };
 
 type CheckoutFastForwardParams = {
@@ -131,10 +189,109 @@ export const initRepoWithRemote = async ({
   return invokeCommand<InitializedRepo>('repo_init_with_remote', { args: { path, remoteUrl } });
 };
 
+type ProjectFolderCreateParams = {
+  readonly parentPath: string;
+  readonly name: string;
+};
+
+export const projectFolderCreate = async ({
+  parentPath,
+  name,
+}: ProjectFolderCreateParams): Promise<InitializedRepo> => {
+  return invokeCommand<InitializedRepo>('project_folder_create', { parentPath, name });
+};
+
 type InitPlainRepoParams = {
   readonly path: string;
 };
 
 export const initRepo = async ({ path }: InitPlainRepoParams): Promise<InitializedRepo> => {
   return invokeCommand<InitializedRepo>('repo_init', { path });
+};
+
+type BootstrapPrepareParams = {
+  readonly projectPath: string;
+  readonly projectKey: string;
+  readonly branchPrefix: string;
+  readonly baseBranch: string;
+  readonly slug?: string;
+};
+
+export const bootstrapPrepare = async (
+  params: BootstrapPrepareParams,
+): Promise<BootstrapPrepared> => {
+  return invokeCommand<BootstrapPrepared>('bootstrap_prepare', { args: params });
+};
+
+type BootstrapApplyParams = {
+  readonly projectPath: string;
+  readonly snapshotId: string;
+  readonly worktreePath: string;
+  readonly baseBranch: string;
+};
+
+export const bootstrapApply = async (params: BootstrapApplyParams): Promise<void> => {
+  return invokeCommand<void>('bootstrap_apply', { args: params });
+};
+
+type BootstrapClearRootParams = {
+  readonly projectPath: string;
+  readonly snapshotId: string;
+  readonly worktreePath: string;
+};
+
+export const bootstrapClearRoot = async ({
+  projectPath,
+  snapshotId,
+  worktreePath,
+}: BootstrapClearRootParams): Promise<BootstrapClearReport> => {
+  return invokeCommand<BootstrapClearReport>('bootstrap_clear_root', {
+    projectPath,
+    snapshotId,
+    worktreePath,
+  });
+};
+
+type BootstrapAlignMainParams = {
+  readonly projectPath: string;
+  readonly baseBranch: string;
+};
+
+export const bootstrapAlignMain = async ({
+  projectPath,
+  baseBranch,
+}: BootstrapAlignMainParams): Promise<BootstrapAlignOutcome> => {
+  return invokeCommand<BootstrapAlignOutcome>('bootstrap_align_main', { projectPath, baseBranch });
+};
+
+type BootstrapRecoverParams = {
+  readonly projectPath: string;
+  readonly snapshotId: string;
+  readonly worktreePath: string;
+};
+
+export const bootstrapRecover = async ({
+  projectPath,
+  snapshotId,
+  worktreePath,
+}: BootstrapRecoverParams): Promise<BootstrapRecoverState> => {
+  return invokeCommand<BootstrapRecoverState>('bootstrap_recover', {
+    projectPath,
+    snapshotId,
+    worktreePath,
+  });
+};
+
+type BootstrapRollbackParams = {
+  readonly projectPath: string;
+  readonly worktreePath: string;
+  readonly branch: string;
+};
+
+export const bootstrapRollback = async ({
+  projectPath,
+  worktreePath,
+  branch,
+}: BootstrapRollbackParams): Promise<void> => {
+  return invokeCommand<void>('bootstrap_rollback', { projectPath, worktreePath, branch });
 };

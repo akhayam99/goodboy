@@ -13,6 +13,7 @@ import type {
 const h = vi.hoisted(() => ({
   invoke: vi.fn(async () => undefined),
   fastForward: vi.fn(async () => undefined),
+  loadStatus: vi.fn(async () => undefined),
   showToast: vi.fn(),
   store: {
     settings: {} as Record<string, string>,
@@ -21,6 +22,8 @@ const h = vi.hoisted(() => ({
     fastForwardProjectCheckout: vi.fn(async () => undefined),
     fetchProjectCheckouts: vi.fn(async () => undefined),
     fastForwardProjectCheckouts: vi.fn(async () => ({ updated: 0, failed: 0 })),
+    loadProjectGitStatus: vi.fn(async () => undefined),
+    bootstrapPhase: {} as Record<string, unknown>,
   },
 }));
 
@@ -70,6 +73,9 @@ beforeEach(() => {
   h.invoke.mockReset();
   h.invoke.mockResolvedValue(undefined);
   h.store.fastForwardProjectCheckout = h.fastForward;
+  h.store.loadProjectGitStatus = h.loadStatus;
+  h.loadStatus.mockReset();
+  h.loadStatus.mockResolvedValue(undefined);
   h.fastForward.mockReset();
   h.fastForward.mockResolvedValue(undefined);
   h.store.projectCheckoutPulling = {};
@@ -99,7 +105,38 @@ describe('ProjectGitPill', () => {
     expect(screen.getByTestId('project-git-warning')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: /Web git status/ }));
     expect(screen.getByText('This folder has no git repository yet')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Start a repository' })).toBeDefined();
+    expect(screen.getByText('Or run it yourself')).toBeDefined();
     expect(screen.getByLabelText('copy command: Create the repository')).toBeDefined();
+  });
+
+  it('offers the first commit for an unborn repository and never says Goodboy will not commit', () => {
+    renderPill({ status: statusOf({ state: 'unborn' }) });
+    fireEvent.click(screen.getByRole('button', { name: /Web git status/ }));
+    expect(screen.getByRole('button', { name: 'Make the first commit' })).toBeDefined();
+    expect(
+      screen.getByText(
+        'Goodboy commits a .gitignore and nothing else. Your files stay as they are.',
+      ),
+    ).toBeDefined();
+    expect(screen.queryByText(/never commits for you/)).toBeNull();
+  });
+
+  it('starts the repository, then reads the project status again', async () => {
+    renderPill({ status: statusOf({ state: 'absent' }) });
+    fireEvent.click(screen.getByRole('button', { name: /Web git status/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start a repository' }));
+    await waitFor(() => expect(h.invoke).toHaveBeenCalledWith('repo_init', { path: '/repo/web' }));
+    await waitFor(() => expect(h.loadStatus).toHaveBeenCalledWith({ projectId: project.id }));
+  });
+
+  it('shows why the repository could not be started', async () => {
+    h.invoke.mockRejectedValueOnce(new Error('this folder is already inside a repository'));
+    renderPill({ status: statusOf({ state: 'absent' }) });
+    fireEvent.click(screen.getByRole('button', { name: /Web git status/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start a repository' }));
+    expect((await screen.findByRole('alert')).textContent).toContain('already inside a repository');
+    expect(h.loadStatus).not.toHaveBeenCalled();
   });
 
   it('fast-forwards the correct project and shows the disabled reason inline', () => {

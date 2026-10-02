@@ -43,9 +43,10 @@ A few rules are always true:
 - A single repository is a workspace with one project
 - A session belongs to the workspace, never to a project
 - Every session starts with one agent, and always has at least one
-- Git state is created or rewritten only when you ask: initializing a repo,
-  amend, squash, a resolve attempt. Never by a mount or a turn, and nothing is
-  pushed without a publish
+- Git state is created or rewritten only when you ask: creating a project and
+  its first commit, publishing it, moving the first lap into bootstrap, amend,
+  squash, a resolve attempt. Never by a mount or a turn, and nothing is pushed
+  without a publish
 
 The app follows the life of a task. First the task itself. Then the tools it
 comes from and goes back to. Then the code it produces. The chat comes last.
@@ -66,9 +67,10 @@ Each project belongs to one workspace only. It keeps only what is specific to
 that place. That means its scripts, its own settings and, if you want, its own
 connection to a tool.
 
-The new-workspace form offers **Single project**, **Multi project** and
-**Standalone**. All three set up the projects of one workspace. They are not
-different kinds of workspace, and a workspace never links to another one
+The new-workspace form offers **Start from a project** and **A workspace with
+several projects**, and the empty screen adds **Start a new project**. They set
+up the projects of one workspace. They are not different kinds of workspace, and
+a workspace never links to another one
 ([ADR 001](adr/001-workspace-project-rename.md)).
 
 You can **star** the projects you work on most and give each project a
@@ -157,6 +159,14 @@ This only happens when the work needs it. There are four ways:
 
 Each of these needs a reason, and the reason is saved in the session's
 activity. If the reason is blank, Goodboy refuses before doing anything.
+
+A project made with **Start a new project** is the exception while it has not
+been published. Its first lap session works in the project folder on `main`
+and none of the four triggers cuts a worktree, because the repository's only
+commit holds `.gitignore` and the worktree would be empty. Once `main` is on a
+code host, the work left in the folder moves into a session named `bootstrap`
+and every later session is an ordinary worktree ([mounts.md](mounts.md) → The
+first lap and the bootstrap move).
 
 The branch is named `<prefix>/<session-slug>`. It has the same name in every
 project the session touches. The repository name on each mount tells them

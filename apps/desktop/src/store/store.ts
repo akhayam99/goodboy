@@ -1,3 +1,5 @@
+import { createBootstrapSlice } from './slices/bootstrap';
+import { bootstrapInitialState } from './slices/bootstrap/state';
 import { createResolveSlice } from './slices/resolve';
 import { createReviewNavigationSlice } from './slices/review-navigation';
 import { createReviewSelectionSlice } from './slices/review-selection';
@@ -174,6 +176,7 @@ type AppActions = {
 export type AppStore = AppState &
   AppActions &
   ReturnType<typeof createArtifactsSlice> &
+  ReturnType<typeof createBootstrapSlice> &
   ReturnType<typeof createResolveSlice> &
   ReturnType<typeof createReviewNavigationSlice> &
   ReturnType<typeof createReviewSelectionSlice> &
@@ -307,6 +310,7 @@ export const initialState: AppState = {
   reviewDrafts: {},
   reviewSubmission: {},
   ...permissionsInitialState,
+  ...bootstrapInitialState,
   ...resolveInitialState,
   ...reviewNavigationInitialState,
   ...reviewSelectionInitialState,
@@ -358,6 +362,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createProvidersSlice({ set, get }),
   ...createAgentsSlice({ set, get }),
   ...createAgentQueueSlice({ set, get }),
+  ...createBootstrapSlice({ set, get }),
   ...createResolveSlice({ set, get }),
   ...createReviewNavigationSlice({ set, get }),
   ...createReviewSelectionSlice({ set, get }),

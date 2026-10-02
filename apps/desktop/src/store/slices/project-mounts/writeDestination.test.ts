@@ -196,3 +196,64 @@ describe('mountDisplayName', () => {
     );
   });
 });
+
+describe('the first lap root destination', () => {
+  const root = {
+    projectId: PROJECT_ID,
+    projectName: 'cascadia',
+    path: '/games/cascadia',
+    branch: 'main',
+  };
+
+  it('is chosen when the turn has no mount and a first lap project', () => {
+    const destination = resolveWriteDestination({
+      mount: null,
+      projectName: null,
+      scratchPath: null,
+      root,
+    });
+
+    expect(destination).toEqual({ kind: 'root', ...root });
+    expect(writeDestinationLabel(destination)).toBe('cascadia / project folder / main');
+  });
+
+  it('never replaces a mount and never reads as scratch', () => {
+    const mounted = resolveWriteDestination({
+      mount: repoMount,
+      projectName: 'web',
+      scratchPath: null,
+      root,
+    });
+    const scratch = resolveWriteDestination({
+      mount: null,
+      projectName: null,
+      scratchPath: '/scratch/one',
+    });
+
+    expect(mounted.kind).toBe('mount');
+    expect(scratch.kind).toBe('scratch');
+    expect(
+      writeDestinationsMatch(
+        resolveWriteDestination({ mount: null, projectName: null, scratchPath: null, root }),
+        scratch,
+      ),
+    ).toBe(false);
+  });
+
+  it('matches itself by project', () => {
+    const first = resolveWriteDestination({
+      mount: null,
+      projectName: null,
+      scratchPath: null,
+      root,
+    });
+    const second = resolveWriteDestination({
+      mount: null,
+      projectName: null,
+      scratchPath: null,
+      root: { ...root, path: '/elsewhere' },
+    });
+
+    expect(writeDestinationsMatch(first, second)).toBe(true);
+  });
+});

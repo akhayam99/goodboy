@@ -286,6 +286,14 @@ anywhere; a debug build also prints to stdout.
   called, and `git()` stays unaware of config
   ([ADR 004](adr/004-git-reads-fail-closed.md)).
 
+- **The remote probe is a git read like the others.** `project_remote_probe`
+  asks `ls-remote --symref origin HEAD` with a 15 second timeout, fetches the
+  default branch only on a hit and sets `origin/HEAD`. Its four answers
+  (`no-remote`, `unreachable`, `reachable-no-main`, `main-present`) fail closed:
+  a timeout or a failed step is `unreachable`, never `main-present`. It runs on
+  window focus and every 60 seconds (five minutes after three unreachable
+  answers) only while a project is in its first lap, from `useBootstrapWatch`.
+
 ### Database migrations
 
 Each migration is one file, `mNNN-kebab-name.ts`, in

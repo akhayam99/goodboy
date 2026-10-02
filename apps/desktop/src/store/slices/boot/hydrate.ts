@@ -59,6 +59,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         set({ bootPhase: 'migrating', bootFailedPhase: null, newerDatabase: null, error: null });
         await runDbMigrations();
         await hydrateOnboardingFromDb();
+        await get().hydrateBootstrapPhases();
         await get().hydrateChangelogSeen();
         await get().hydrateCliRequirements();
         void get()

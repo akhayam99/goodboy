@@ -233,9 +233,10 @@ describe('empty states', () => {
     expect(await screen.findByText('No notifications')).toBeDefined();
   });
 
-  it('NoWorkspaceScreen: no workspace, add-workspace CTA', () => {
+  it('NoWorkspaceScreen: no workspace, start and open CTAs', () => {
     const { getByRole } = render(<NoWorkspaceScreen onAddWorkspace={vi.fn()} />);
-    expect(getByRole('button', { name: /add workspace/i })).toBeTruthy();
+    expect(getByRole('button', { name: 'Start a new project' })).toBeTruthy();
+    expect(getByRole('button', { name: 'Open a folder' })).toBeTruthy();
   });
 
   it('ChatEmptyState: fresh session, set-up-a-workflow CTA', () => {

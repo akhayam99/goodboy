@@ -400,7 +400,7 @@ describe('PrPane', () => {
     expect(screen.getByRole('tab', { name: 'GitHub' })).toBeDefined();
     expect(screen.getByRole('heading', { name: 'Refactor authentication' })).toBeDefined();
     expect(screen.queryByRole('heading', { name: 'Connect GitHub' })).toBeNull();
-    expect(screen.queryByText(/does not have a GitHub remote/i)).toBeNull();
+    expect(screen.queryByText(/isn't on GitHub yet/i)).toBeNull();
   });
 
   it('never opens a GitHub studio: Review owns the pull request', () => {
@@ -423,7 +423,7 @@ describe('PrPane', () => {
     render(<PrPane session={session} />);
 
     expect(screen.getByRole('heading', { name: 'Connect GitHub', level: 2 })).toBeDefined();
-    expect(screen.getByText(/does not have a GitHub remote/i)).toBeDefined();
+    expect(screen.getByText(/isn't on GitHub yet/i)).toBeDefined();
     expect(screen.queryByLabelText('Personal API key')).toBeNull();
   });
 

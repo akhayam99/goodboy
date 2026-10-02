@@ -14,9 +14,16 @@ onto its own paragraph.
 
 ## Goodboy v0.15.3
 
-Each workspace can pick the model new chats start on, and the activity timeline shows context changes as a diff.
+Start a project from an empty folder, pick the model new chats start on, and read context changes as a diff in the activity timeline.
 
 ### New
+
+#### Start a project from nothing
+<!-- gb area=app pr=1952 -->
+
+Choose Start a new project on the empty screen, in the workspace launcher or in the setup wizard. Goodboy makes the folder, starts a git repository on main with a first commit that holds only a .gitignore, and opens a first session that works right in that folder.
+
+Publish creates a repository on your GitHub account, private or public, or links one you already have. When main is on the remote, Move my work puts everything you have not committed into a session named bootstrap with its own worktree, and the project folder is clean again. From then on the project works like any other.
 
 #### Default model for new chats
 <!-- gb area=providers screen=settings/providers -->
@@ -26,6 +33,11 @@ Pick the provider, model and effort that new chats in a workspace start on. Set 
 When the saved provider is not connected, the chat starts on the automatic model. Chats you already have keep theirs.
 
 ### Improved
+
+#### A folder without a repository says how to start one
+<!-- gb area=app pr=1952 -->
+
+The git pill of a project with no repository offers Start a repository, then Make the first commit, and Publish once there is a commit, instead of asking you to run git yourself.
 
 #### Context changes read as a diff
 <!-- gb area=sessions -->
@@ -37,6 +49,7 @@ The activity timeline labels a change to a task's decisions as Context and shows
 - Decision changes in the activity timeline keep their counts after a reload, instead of showing 0 added and 0 removed. <!-- gb area=sessions -->
 - The re-check scout sits under the resolver that worked its thread in the activity timeline, not at the top level. <!-- gb area=review -->
 - Crash reports include the error message when a request fails with one, so a report says what went wrong. <!-- gb area=app -->
+
 
 ## Goodboy v0.15.2
 

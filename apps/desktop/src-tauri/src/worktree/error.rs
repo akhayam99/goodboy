@@ -5,10 +5,10 @@ use thiserror::Error;
 pub enum WorktreeError {
     #[error("repository not found: {0}")]
     RepoNotFound(String),
-    #[error("no git repository at {0}. run git init in that folder, then start a session")]
+    #[error("no git repository at {0}. start a repository for this project, then start a session")]
     NoRepository(String),
     #[error(
-        "the git repository at {0} has no commits yet. make the first commit, then start a session"
+        "the git repository at {0} has no commits yet. make the first commit for this project, then start a session"
     )]
     NoCommit(String),
     #[error("git failed: {message}")]

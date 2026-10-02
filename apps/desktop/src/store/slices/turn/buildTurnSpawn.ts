@@ -55,6 +55,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
     turnTarget,
     turnMountId,
     copyPath,
+    firstLapProject,
     workingDir,
     now,
     activeAgentId,
@@ -176,6 +177,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
     activeMountId: turnMountId,
     isBridgeServing,
     isSessionDirScope,
+    firstLapProject,
     canWrite: kindWritesFiles({ kind: earlyAgentKind }),
   });
   const anchorText = get().sessionLanguageAnchor[sessionId] ?? '';

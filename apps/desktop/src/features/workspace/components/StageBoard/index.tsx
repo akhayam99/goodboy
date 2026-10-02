@@ -238,7 +238,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
       : 'Goodboy cannot reach the folders these projects point to. Relink them in workspace settings.';
   const blockedDescription = areAllRepoProjectsMissing
     ? unreachableDescription
-    : 'Sessions branch from the latest commit. Make the first commit, or link another project in workspace settings.';
+    : 'Sessions branch from the latest commit. Open the git pill on the project and make the first commit, or link another project in workspace settings.';
 
   const newSessionButton = (
     <Button

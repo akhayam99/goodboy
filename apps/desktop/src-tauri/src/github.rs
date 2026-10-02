@@ -270,7 +270,19 @@ pub(crate) fn run_git_authenticated(
     cwd: &str,
     token: Option<&str>,
 ) -> Result<GhRunResult, GithubError> {
+    run_git_authenticated_within(args, cwd, token, None)
+}
+
+pub(crate) fn run_git_authenticated_within(
+    args: &[&str],
+    cwd: &str,
+    token: Option<&str>,
+    timeout: Option<std::time::Duration>,
+) -> Result<GhRunResult, GithubError> {
     let mut git = Git::new().login_env();
+    if let Some(limit) = timeout {
+        git = git.timeout(limit);
+    }
     if gh_available() {
         git = git.args([
             "-c",

@@ -1,7 +1,12 @@
 {
   "version": "0.15.3",
-  "summary": "Each workspace can pick the model new chats start on, and the activity timeline shows context changes as a diff.",
+  "summary": "Start a project from an empty folder, pick the model new chats start on, and read context changes as a diff in the activity timeline.",
   "new": [
+    {
+      "title": "Start a project from nothing",
+      "area": "app",
+      "copy": "Choose Start a new project on the empty screen, in the workspace launcher or in the setup wizard."
+    },
     {
       "title": "Default model for new chats",
       "area": "providers",
@@ -238,6 +243,13 @@
       "title": "Workspace and projects",
       "image": null,
       "features": [
+        {
+          "id": "start-a-project-from-nothing",
+          "title": "Start a project from nothing",
+          "copy": "Begin with an empty folder and no repository.",
+          "image": null,
+          "isNew": true
+        },
         {
           "id": "workspace-with-several-projects",
           "title": "Workspace with several projects",

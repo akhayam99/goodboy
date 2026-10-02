@@ -1,4 +1,5 @@
-import { FolderOpen, Plus } from 'lucide-react';
+import { useState } from 'react';
+import { FolderOpen, FolderPlus, Plus } from 'lucide-react';
 import { Button, Input } from '@goodboy/ui';
 import type { Project, ProjectId } from '@goodboy/types';
 import type { DetectedChildRepos } from '../../../../shared/hooks/useChildRepoDetection';
@@ -7,6 +8,7 @@ import { DetectedRepoList, type KnownRepo } from '../../../../shared/components/
 import { ProjectAdoptionNotice } from '../../../../shared/components/ProjectAdoptionNotice';
 import type { ProjectAttachConflict } from '../../../../store/slices/projects/addProject';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { NewProjectForm } from '../../../../shared/components/NewProjectForm';
 import { FolderCard } from './FolderCard';
 import { StepHeading } from './StepHeading';
 
@@ -28,6 +30,7 @@ type Props = {
   readonly onKeepConflict: () => void;
   readonly onConfirmDetection: (params: { readonly paths: ReadonlyArray<string> }) => void;
   readonly onDismissDetection: () => void;
+  readonly onNewProjectCreated: () => void;
 };
 
 export const ProjectStep = ({
@@ -43,8 +46,10 @@ export const ProjectStep = ({
   onKeepConflict,
   onConfirmDetection,
   onDismissDetection,
+  onNewProjectCreated,
 }: Props) => {
   const pickFolder = usePickFolder();
+  const [isStarting, setIsStarting] = useState(false);
   const pick = async (replaces: ProjectId | null) => {
     const path = await pickFolder();
     if (path !== null) {
@@ -71,11 +76,24 @@ export const ProjectStep = ({
           ))}
         </ul>
       ) : (
-        <div>
-          <Button variant="primary" disabled={busy} onClick={() => void pick(null)}>
-            <FolderOpen size={ICON_SIZE.control} aria-hidden />
-            Choose a folder
-          </Button>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-2">
+            <Button variant="primary" disabled={busy} onClick={() => void pick(null)}>
+              <FolderOpen size={ICON_SIZE.control} aria-hidden />
+              Choose a folder
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={busy || isStarting}
+              onClick={() => setIsStarting(true)}
+            >
+              <FolderPlus size={ICON_SIZE.control} aria-hidden />
+              Start a new project
+            </Button>
+          </div>
+          {isStarting ? (
+            <NewProjectForm onCreated={onNewProjectCreated} onCancel={() => setIsStarting(false)} />
+          ) : null}
         </div>
       )}
       {detection !== null ? (

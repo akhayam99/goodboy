@@ -7,8 +7,10 @@ import { describeProject } from './describeProject';
 import { fastForwardProjectCheckout } from './fastForwardProjectCheckout';
 import { fastForwardProjectCheckouts } from './fastForwardProjectCheckouts';
 import { fetchProjectCheckouts } from './fetchProjectCheckouts';
+import { linkProjectRemote } from './linkProjectRemote';
 import { loadProjectGitStatus } from './loadProjectGitStatus';
 import { previewProjectAdoption } from './previewProjectAdoption';
+import { publishProjectMain } from './publishProjectMain';
 import { removeProject } from './removeProject';
 import { saveGoodboyIgnore } from './saveGoodboyIgnore';
 import { setProjectStarred } from './setProjectStarred';
@@ -23,6 +25,8 @@ export const createProjectsSlice = ({ set, get }: SliceDeps) => ({
   previewProjectAdoption: previewProjectAdoption(set, get),
   removeProject: removeProject(set, get),
   convertProjectToRepo: convertProjectToRepo(set, get),
+  linkProjectRemote: linkProjectRemote(set, get),
+  publishProjectMain: publishProjectMain(set, get),
   loadProjectGitStatus: loadProjectGitStatus(set, get),
   fastForwardProjectCheckout: fastForwardProjectCheckout(set, get),
   fetchProjectCheckouts: fetchProjectCheckouts(set, get),
