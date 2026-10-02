@@ -51,6 +51,10 @@ pub enum RepoInitError {
     NestedRepo(String),
     #[error("not a usable git remote url: {0}")]
     InvalidRemote(String),
+    #[error("{0} is not a usable folder name")]
+    InvalidName(String),
+    #[error("{0} already exists")]
+    AlreadyExists(String),
     #[error("git still does not ignore {0}, so the first commit could carry session data")]
     IgnoreNotApplied(String),
     #[error("{message}")]
@@ -70,6 +74,8 @@ impl RepoInitError {
             RepoInitError::AlreadyRepo(_) => "already_repo",
             RepoInitError::NestedRepo(_) => "nested_repo",
             RepoInitError::InvalidRemote(_) => "invalid_remote",
+            RepoInitError::InvalidName(_) => "invalid_name",
+            RepoInitError::AlreadyExists(_) => "already_exists",
             RepoInitError::IgnoreNotApplied(_) => "ignore_not_applied",
             RepoInitError::RollbackFailed { .. } => "rollback_failed",
             RepoInitError::Git { .. } => "git",
@@ -94,7 +100,7 @@ pub struct InitializedRepo {
     pub branch: String,
 }
 
-enum RepoState {
+pub(crate) enum RepoState {
     Absent,
     AtRoot,
     Nested(String),
@@ -596,7 +602,10 @@ fn repo_init_blocking(path: String) -> Result<InitializedRepo, RepoInitError> {
     init_repo_at(&path, None)
 }
 
-fn init_repo_at(path: &str, remote_url: Option<&str>) -> Result<InitializedRepo, RepoInitError> {
+pub(crate) fn init_repo_at(
+    path: &str,
+    remote_url: Option<&str>,
+) -> Result<InitializedRepo, RepoInitError> {
     let root = PathBuf::from(path.trim());
     if !root.is_dir() {
         return Err(RepoInitError::DirNotFound(path.to_string()));
@@ -610,7 +619,7 @@ fn init_repo_at(path: &str, remote_url: Option<&str>) -> Result<InitializedRepo,
     }
 }
 
-fn repo_state(root: &Path) -> Result<RepoState, RepoInitError> {
+pub(crate) fn repo_state(root: &Path) -> Result<RepoState, RepoInitError> {
     let check = validate_git_repo_blocking(root.to_string_lossy().into_owned());
     let Some(toplevel) = check.root_path.filter(|found| !found.is_empty()) else {
         if root.join(".git").exists() {

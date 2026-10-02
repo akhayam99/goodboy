@@ -1,6 +1,7 @@
 import type { ArtifactsState } from './slices/artifacts/state';
 import type { ResolveState } from './slices/resolve/state';
 import type { ReviewNavigationState } from './slices/review-navigation/state';
+import type { BootstrapState } from './slices/bootstrap/state';
 import type { ReviewSelectionState } from './slices/review-selection/state';
 import type { ReviewSourceState } from './slices/review-source/state';
 import type { MountCleanupState } from './slices/mount-cleanup/state';
@@ -109,6 +110,7 @@ export type MountGithubState = SessionGithubState & {
 };
 
 type AppSliceState = ArtifactsState &
+  BootstrapState &
   BudgetSliceState &
   ResolveState &
   ReviewNavigationState &

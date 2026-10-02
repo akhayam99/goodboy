@@ -464,6 +464,7 @@ export type {
   PullRequestState,
   PullRequestStateKind,
 } from './github';
+export type { BootstrapPhase, BootstrapStage } from './bootstrap';
 export type { LinkedRemote, PublishOutcome, PublishStep } from './publish';
 export type { RemoteProbe } from './remote-probe';
 export type {

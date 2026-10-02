@@ -185,6 +185,18 @@ export const initRepoWithRemote = async ({
   return invokeCommand<InitializedRepo>('repo_init_with_remote', { args: { path, remoteUrl } });
 };
 
+type ProjectFolderCreateParams = {
+  readonly parentPath: string;
+  readonly name: string;
+};
+
+export const projectFolderCreate = async ({
+  parentPath,
+  name,
+}: ProjectFolderCreateParams): Promise<InitializedRepo> => {
+  return invokeCommand<InitializedRepo>('project_folder_create', { parentPath, name });
+};
+
 type InitPlainRepoParams = {
   readonly path: string;
 };

@@ -42,6 +42,7 @@ mod permissions;
 mod planner;
 mod proc;
 mod process_group;
+mod project_folder;
 mod project_relocation;
 mod project_scripts;
 mod provider_credentials;
@@ -402,6 +403,7 @@ pub fn run() {
             publish::project_publish_main,
             repo::repo_init_with_remote,
             repo::repo_init,
+            project_folder::project_folder_create,
             repo::scan_child_repos,
             repo::repo_identity,
             repo::find_moved_projects,
