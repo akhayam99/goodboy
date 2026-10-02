@@ -555,8 +555,8 @@ What the catalogs do not tell you:
 - This matters because code that holds only a key picks `variants[0]`. If several
   paid models shared one key, Goodboy would start and bill the wrong one
 - That is why Codex Sol, Terra and Luna are three ids: `gpt-5.6-sol`, `gpt-5.6-terra`
-  and `gpt-5.6-luna`. Each has its own cost tier and price in `codex/cost.ts` (5/30,
-  2.5/15 and 1/6 per Mtok). The picker shows them as version chips
+  and `gpt-5.6-luna`. Each has its own cost tier and price in `codex/cost.ts` (4/20,
+  2/12 and 0.2/1.2 per Mtok). The picker shows them as version chips
 - `gpt-6.1-sol` (Codex CLI 0.160 or newer) is the newest Sol and a fourth id of its own,
   priced 2/10 per Mtok with cached input at 0.10 in `codex/cost.ts` and
   `features/providers/pricing.json`. Its catalog `costTier` is `expensive` on purpose,

@@ -65,9 +65,9 @@ describe('computeCodexCostUsd', () => {
   });
 
   it('uses the verified gpt-5.6 variant prices', () => {
-    expect(computeCodexCostUsd({ usage, model: 'gpt-5.6-sol' })).toBeCloseTo(35);
-    expect(computeCodexCostUsd({ usage, model: 'gpt-5.6-terra' })).toBeCloseTo(17.5);
-    expect(computeCodexCostUsd({ usage, model: 'gpt-5.6-luna' })).toBeCloseTo(7);
+    expect(computeCodexCostUsd({ usage, model: 'gpt-5.6-sol' })).toBeCloseTo(24);
+    expect(computeCodexCostUsd({ usage, model: 'gpt-5.6-terra' })).toBeCloseTo(14);
+    expect(computeCodexCostUsd({ usage, model: 'gpt-5.6-luna' })).toBeCloseTo(1.4);
   });
 
   it('bills cached input at ten percent of input', () => {
@@ -102,9 +102,7 @@ describe('computeCodexCostUsd', () => {
       estimatedCostUsd: 0,
     };
 
-    expect(computeCodexCostUsd({ usage: cacheCreationUsage, model: 'gpt-5.6-sol' })).toBeCloseTo(
-      1.25,
-    );
+    expect(computeCodexCostUsd({ usage: cacheCreationUsage, model: 'gpt-5.6-sol' })).toBeCloseTo(1);
   });
 
   it('returns zero for unknown models', () => {

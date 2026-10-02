@@ -57,9 +57,9 @@ describe('getCodexPriceOverride', () => {
 
   it('returns price for known codex model', () => {
     expect(getCodexPriceOverride(null, 'gpt-5.6-sol')).toEqual({
-      inputPerMtok: 5,
-      outputPerMtok: 30,
-      cachedInputPerMtok: 0.5,
+      inputPerMtok: 4,
+      outputPerMtok: 20,
+      cachedInputPerMtok: 0.4,
     });
   });
 
