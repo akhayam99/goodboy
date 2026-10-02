@@ -80,6 +80,7 @@ pub(crate) struct Git {
     login_env: bool,
     batch_auth: bool,
     push_block: bool,
+    index_file: Option<PathBuf>,
     timeout: Option<Duration>,
     input: Option<Vec<u8>>,
 }
@@ -99,6 +100,7 @@ impl Git {
             login_env: false,
             batch_auth: false,
             push_block: false,
+            index_file: None,
             timeout: None,
             input: None,
         }
@@ -137,6 +139,11 @@ impl Git {
 
     pub(crate) fn login_env(mut self) -> Self {
         self.login_env = true;
+        self
+    }
+
+    pub(crate) fn index_file(mut self, path: impl AsRef<Path>) -> Self {
+        self.index_file = Some(path.as_ref().to_path_buf());
         self
     }
 
@@ -219,6 +226,9 @@ impl Git {
         }
         for key in INHERITED_REPO_ENV {
             command.env_remove(key);
+        }
+        if let Some(index) = &self.index_file {
+            command.env("GIT_INDEX_FILE", index);
         }
         if self.push_block {
             crate::turn::apply_push_block(&mut command);
@@ -553,6 +563,25 @@ mod tests {
             recorded_env(&fake, "GIT_SSH_COMMAND"),
             inherited("GIT_SSH_COMMAND")
         );
+    }
+
+    #[test]
+    fn an_explicit_index_file_is_the_only_repo_env_that_survives() {
+        let fake = FakeCli::stage("env");
+
+        Git::with_binary(fake.binary("git"))
+            .cwd(fake.work_dir())
+            .env("GIT_INDEX_FILE", "/elsewhere/index")
+            .index_file("/tmp/goodboy-snapshot.index")
+            .arg("status")
+            .output()
+            .unwrap();
+
+        assert_eq!(
+            recorded_env(&fake, "GIT_INDEX_FILE"),
+            "/tmp/goodboy-snapshot.index"
+        );
+        assert_eq!(recorded_env(&fake, "GIT_DIR"), UNSET);
     }
 
     #[test]

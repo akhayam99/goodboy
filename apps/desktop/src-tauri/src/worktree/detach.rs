@@ -42,12 +42,12 @@ fn is_reproducible_ignored_path(relative: &str) -> bool {
     REPRODUCIBLE_IGNORED_DIRS.contains(&top_level)
 }
 
-struct IgnoredFilesAtRisk {
-    count: u32,
-    samples: Vec<String>,
+pub(crate) struct IgnoredFilesAtRisk {
+    pub(crate) count: u32,
+    pub(crate) samples: Vec<String>,
 }
 
-fn ignored_files_at_risk(worktree_path: &Path) -> Option<IgnoredFilesAtRisk> {
+pub(crate) fn ignored_files_at_risk(worktree_path: &Path) -> Option<IgnoredFilesAtRisk> {
     let raw = git(
         worktree_path,
         &[

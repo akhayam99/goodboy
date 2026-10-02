@@ -6,6 +6,7 @@ mod attachment;
 mod aux_spawn;
 mod bitbucket;
 mod boot_breadcrumb;
+mod bootstrap;
 mod branch_cleanup;
 mod branch_remote;
 mod bridge;
@@ -400,6 +401,11 @@ pub fn run() {
             repo::project_fetch,
             remote_probe::project_remote_probe,
             publish::project_link_remote,
+            bootstrap::bootstrap_prepare,
+            bootstrap::bootstrap_clear_root,
+            bootstrap::bootstrap_align_main,
+            bootstrap::bootstrap_recover,
+            bootstrap::bootstrap_rollback,
             publish::project_publish_main,
             repo::repo_init_with_remote,
             repo::repo_init,
