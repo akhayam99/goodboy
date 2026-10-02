@@ -831,6 +831,17 @@ const subagentAttentionKeys = ({
     ? child.openQuestions.map((question) => question.id)
     : [child.id];
 
+const headerSortOrdinal = ({
+  parentOrdinal,
+  lowestChildOrdinal,
+}: {
+  readonly parentOrdinal: number;
+  readonly lowestChildOrdinal: number;
+}): number =>
+  lowestChildOrdinal > parentOrdinal
+    ? (parentOrdinal + lowestChildOrdinal) / 2
+    : lowestChildOrdinal - 0.5;
+
 type SubagentGroupRowsParams = {
   readonly entry: TimelineAgentEntry;
   readonly identity: RunIdentity | null;
@@ -886,7 +897,10 @@ const subagentGroupRows = ({
     familyId,
     groupId: parentLaneId,
     ordinal: null,
-    sortOrdinal: Math.min(...entry.children.map((child) => child.ordinal)) - 0.5,
+    sortOrdinal: headerSortOrdinal({
+      parentOrdinal: entry.ordinal,
+      lowestChildOrdinal: Math.min(...entry.children.map((child) => child.ordinal)),
+    }),
     rowState: subagentGroupRowState({ summary }),
     hasUnread: entry.children.some(
       (child) =>
@@ -1263,23 +1277,23 @@ const withPendingAtFamilyHead = ({ drafts }: HeadParams): ReadonlyArray<DraftRow
         first.id.localeCompare(second.id),
     );
   }
-  const result: DraftRow[] = [];
+  const anchored: DraftRow[] = [];
   for (const draft of unanchored) {
     const familyId = draft.familyId;
-    if (familyId != null) {
-      const pending = pendingByFamilyId.get(familyId);
-      if (pending !== undefined) {
-        result.push(...pending);
-        pendingByFamilyId.delete(familyId);
-      }
+    if (familyId == null) {
+      continue;
     }
-    result.push(draft);
+    const pending = pendingByFamilyId.get(familyId);
+    if (pending !== undefined) {
+      anchored.push(...pending);
+      pendingByFamilyId.delete(familyId);
+    }
   }
   const remaining = [...pendingByFamilyId.values()]
     .flat()
     .map((draft) => ({ ...draft, at: null }))
     .sort((first, second) => compareNewestFirst({ first, second }));
-  return [...remaining, ...result];
+  return [...remaining, ...anchored, ...unanchored];
 };
 
 type DayBreakParams = {

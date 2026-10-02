@@ -164,6 +164,12 @@ status` directly. A branch cut from a remote-tracking ref (`worktree add -b
   text, a run reads like a log. Aligning one to the other, or copying the
   `flex-col-reverse` of the run back into the plan, breaks the lane geometry in
   `StepTreeLane` and the reorder keys, where up means earlier.
+- Every timeline row draws its own piece of the rail in its own `<svg>`, so
+  the joins only stay seamless while every row shares one pixel grid. Never
+  animate a row with a `transform` that outlives the animation (a keyframe
+  with `fill-mode: both` leaves one behind and puts the row on its own layer),
+  and never give lines and elbows different `shape-rendering`. Grow rows with
+  `Reveal`, which moves only the grid track.
 
 ## Hand-maintained lists the compiler does not check
 

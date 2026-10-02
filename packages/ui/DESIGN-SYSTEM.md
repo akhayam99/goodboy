@@ -403,9 +403,13 @@ upward. And a dash always points toward NOW, because dashed means future.
 
 Queued steps follow the same direction. They sort by step path, not by the
 order the agents were created in, so a run's 7, 6 and 5 sit above step 4's
-queued 4.3 and 4.2. One dash per run reaches NOW. A child lane that still has
+queued 4.3 and 4.2. A queued step is future, so it sits above every dated row:
+an agent you start after step 1 stays between step 1 and the queued step 2.
+One dash per run reaches NOW. A child lane that still has
 work queued ends at its newest row and rejoins its parent lane there with a
-dashed join (the `rejoining` group shape), under the parent's next step. A
+dashed join (the `rejoining` group shape), under the parent's next step. The
+join is a quarter circle into the parent column and a straight run up to the
+row top, so it meets the lane above vertically. A
 child lane with no ancestor lane continuing above it stays open to NOW instead.
 A child lane closes on its newest row once its parent and every child have
 settled, and at once when you close the parent. An agent you closed counts as

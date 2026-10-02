@@ -290,6 +290,53 @@ const labelOf = (item: TimelineStreamItem): string => {
 };
 
 describe('buildTimelineStream', () => {
+  describe('an agent started between two steps of a run (#1546)', () => {
+    const agentsWith = ({ second }: { readonly second: 'queued' | 'running' }) => [
+      agent({
+        id: 'scout',
+        ordinal: 1,
+        startedAt: localIso({ day: 18, hour: 9 }),
+        completedAt: localIso({ day: 18, hour: 9, minute: 20 }),
+        workflowRunId: RUN_ID,
+      }),
+      agent({
+        id: 'hand-agent',
+        ordinal: 2,
+        status: 'running',
+        startedAt: localIso({ day: 18, hour: 9, minute: 21 }),
+      }),
+      second === 'queued'
+        ? agent({ id: 'build', ordinal: 3, status: 'pending', workflowRunId: RUN_ID })
+        : agent({
+            id: 'build',
+            ordinal: 3,
+            status: 'running',
+            startedAt: localIso({ day: 18, hour: 9, minute: 30 }),
+            workflowRunId: RUN_ID,
+          }),
+    ];
+
+    for (const second of ['queued', 'running'] as const) {
+      it(`sits between step 1 and a ${second} step 2 with the run lane passing it`, () => {
+        const { items, groups } = stream({
+          workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 9 }) })],
+          agents: agentsWith({ second }),
+        });
+        const order = items.filter((item) => item.kind === 'row').map((item) => item.id);
+
+        expect(order).toEqual(['agent:build', 'agent:hand-agent', 'agent:scout', 'run:run-1']);
+        const layout = layoutTimelineRail({ rows: items, groups });
+        const handRail = layout.rows[items.findIndex((item) => item.id === 'agent:hand-agent')];
+        expect(handRail?.markerColumn).toBe(0);
+        expect(
+          handRail?.segments
+            .filter((segment) => segment.column === 1)
+            .map((segment) => `${segment.fromY}-${segment.toY}`),
+        ).toEqual([`0-${handRail?.height ?? 0}`]);
+      });
+    }
+  });
+
   it('draws no day rule directly under NOW, since it would divide nothing', () => {
     const { items } = stream({
       agents: [
@@ -560,7 +607,7 @@ describe('buildTimelineStream', () => {
     ]);
   });
 
-  it('places a pending block above its run newest dated row', () => {
+  it('places a pending block above every dated row, so later work sits under the next step', () => {
     const { items } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
       agents: RUN_WITH_PENDING_AGENTS,
@@ -568,10 +615,10 @@ describe('buildTimelineStream', () => {
 
     expect(items.map(labelOf)).toEqual([
       'now',
-      'entry:agent:built-by-hand',
       'pending:agent:ship',
       'pending:agent:review',
       'pending:agent:test',
+      'entry:agent:built-by-hand',
       'step:agent:implement',
       'step:agent:plan',
       'entry:run:run-1',
@@ -611,11 +658,13 @@ describe('buildTimelineStream', () => {
     const nowRail = layout.rows[0];
 
     expect(originRail?.joins.map((join) => `${join.kind}:${join.dash}`)).toEqual(['branch:solid']);
-    expect(originRail?.joins[0]?.path).toBe('M 24 0 C 24 8.84, 16.84 24, 8 24');
+    expect(originRail?.joins[0]?.anchorY).toBe(24);
     expect(queuedRail?.joins).toEqual([]);
     expect(
-      queuedRail?.segments.filter((segment) => segment.column > 0).map((segment) => segment.dash),
-    ).toEqual(['dashed', 'dashed']);
+      queuedRail?.segments
+        .filter((segment) => segment.column > 0)
+        .map((segment) => `${segment.dash}:${segment.fromY}-${segment.toY}`),
+    ).toEqual([`dashed:0-${queuedRail?.height}`]);
     expect(queuedRail?.markerColumn).toBe(1);
     expect(
       nowRail?.segments.filter((segment) => segment.column > 0).map((segment) => segment.dash),
@@ -741,10 +790,10 @@ describe('buildTimelineStream', () => {
       'now',
       'pending:agent:b-last',
       'pending:agent:b-next',
-      'step:agent:b-running',
-      'entry:run:run-2',
       'pending:agent:a-last',
       'pending:agent:a-next',
+      'step:agent:b-running',
+      'entry:run:run-2',
       'step:agent:a-done',
       'entry:run:run-1',
     ]);
@@ -785,8 +834,8 @@ describe('buildTimelineStream', () => {
 
     expect(items.map(labelOf)).toEqual([
       'now',
-      'entry:agent:built-by-hand',
       'pending:agent:todo',
+      'entry:agent:built-by-hand',
       'day:Aug 10',
       'step:agent:done',
       'entry:run:run-1',
