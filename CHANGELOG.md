@@ -12,6 +12,32 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.15.3
+
+Each workspace can pick the model new chats start on, and the activity timeline shows context changes as a diff.
+
+### New
+
+#### Default model for new chats
+<!-- gb area=providers screen=settings/providers -->
+
+Pick the provider, model and effort that new chats in a workspace start on. Set it with Make default in the chat model picker, or under Chat in Defaults in the provider settings. Back to automatic clears it.
+
+When the saved provider is not connected, the chat starts on the automatic model. Chats you already have keep theirs.
+
+### Improved
+
+#### Context changes read as a diff
+<!-- gb area=sessions -->
+
+The activity timeline labels a change to a task's decisions as Context and shows it as a diff, +N for what was added and -M for what was removed. Rows where nothing changed are hidden.
+
+### Fixed
+
+- Decision changes in the activity timeline keep their counts after a reload, instead of showing 0 added and 0 removed. <!-- gb area=sessions -->
+- The re-check scout sits under the resolver that worked its thread in the activity timeline, not at the top level. <!-- gb area=review -->
+- Crash reports include the error message when a request fails with one, so a report says what went wrong. <!-- gb area=app -->
+
 ## Goodboy v0.15.2
 
 Codex agents can run the newest Sol model, and the workflow builder and Studio list steps top down, step 1 first.
