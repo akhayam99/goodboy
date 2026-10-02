@@ -1,0 +1,81 @@
+.mockStage .wfrWin {
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--mk-win);
+  box-shadow: var(--mk-win-shadow);
+}
+
+.mockStage .wfrHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px 0;
+}
+
+.mockStage .wfrTile {
+  display: grid;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--g-primary);
+  background: color-mix(in oklab, var(--g-primary) 12%, transparent);
+}
+
+.mockStage .wfrTile svg {
+  display: block;
+}
+
+.mockStage .wfrHeadText {
+  min-width: 0;
+}
+
+.mockStage .wfrTitle {
+  margin: 0;
+  font: 650 17px / 22px var(--sans);
+  letter-spacing: -0.01em;
+  color: var(--t1);
+}
+
+.mockStage .wfrMeta {
+  margin: 0;
+  font: 400 12px / 16px var(--sans);
+  color: var(--g-faint-foreground);
+}
+
+.mockStage .wfrChips {
+  display: flex;
+  min-width: 0;
+  padding: 10px 18px 0;
+}
+
+.mockStage .wfrChips .gkChip {
+  max-width: 100%;
+}
+
+.mockStage .wfrRows {
+  min-width: 0;
+  padding: 10px 12px 12px 14px;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .mockStage .wfrMeta {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 600px) {
+  .mockStage .wfrHead {
+    padding: 14px 12px 0;
+  }
+
+  .mockStage .wfrChips {
+    padding: 10px 12px 0;
+  }
+
+  .mockStage .wfrRows {
+    padding: 8px 8px 10px 10px;
+  }
+}
