@@ -143,11 +143,12 @@ suggests. Every one of these is generated, never cropped by hand.
 | X header                    | 1500x500                 | Bottom left, where the avatar overlaps, and the top and bottom edges, cut on mobile |
 | LinkedIn company cover      | 1128x191, rendered at 2x | Bottom left, under the company logo                                                 |
 | LinkedIn profile background | 1584x396                 | The left third, under the profile photo                                             |
-| og-image                    | 1200x630                 | Nothing, but crawlers only take the PNG, so the PNG is the only source              |
+| og-image                    | 1200x630                 | The bottom 100 px, where X lays the page title over the card                        |
 
 The og-image is the one card drawn on the website's dark theme tokens, so a link
 preview reads as dark on X, LinkedIn and Slack. Its URL in the page heads carries
-a `?v=` suffix. Bump it whenever the PNG changes, because scrapers cache by URL.
+a `?v=` suffix. Bump it whenever the PNG changes, because scrapers cache by URL:
+X kept showing the old light card under an unchanged suffix.
 
 A banner shows up much smaller than it is made. 1500 px wide becomes about 600
 on desktop and 440 on mobile. Anything under about 40 px in the source can't be
