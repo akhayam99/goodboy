@@ -34,7 +34,7 @@ import { REWRITE_HISTORY_TITLE } from '../../../history/rewriteHistoryTitle';
 import { layerPlace } from '../../../../store/slices/navigation/layers';
 import type { LayerKind } from '../../../../store/slices/navigation/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { LENS_ICON } from '../../lens-labels';
+import { LENS_ICON, lensIconClass } from '../../lens-labels';
 
 type Params = {
   readonly session: Session;
@@ -80,7 +80,10 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       ? null
       : resolverThread({ state: s, sessionId, agentId: selectedAgentId as AgentId }),
   );
-  const queueRows = useResolveQueueRows({ sessionId });
+  const queueRows = useResolveQueueRows({
+    sessionId,
+    isEnabled: resolverThreadId !== null,
+  });
   const selectedThreadLabel = useMemo(() => {
     if (resolverThreadId === null) {
       return null;
@@ -203,6 +206,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
               ? REWRITE_HISTORY_TITLE
               : lensLabelFor({ lens: LAYER_LENS[kind], isBranchless }),
         icon: kind === 'history' ? CONCEPT_ICONS.history : LENS_ICON[LAYER_LENS[kind]],
+        ...(kind !== 'history' && { iconClassName: lensIconClass({ lens: LAYER_LENS[kind] }) }),
         onClick: () =>
           navigate({ to: layerPlace({ state: useAppStore.getState(), sessionId, kind }) }),
       })),

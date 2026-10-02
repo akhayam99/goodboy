@@ -893,6 +893,13 @@ width: the column changes only when the window changes or the right drawer
 opens. `PANE_RHYTHM.hero` (640px) is only for the content of an empty state.
 [docs/styling.md](../../docs/styling.md) owns the column rules.
 
+**Trail separator.** Each segment except the last ends with one 24px chevron
+slot in `faint-foreground`: a button that opens the segment's menu, or a static
+separator when there is none. Segments sit 4px apart, the name and the chevron
+of a menu segment share one `hover` chip, and the chevron turns 90 degrees
+while the menu is open. Colour changes take 120ms `ease-out`; nothing else
+moves.
+
 **Crumb menus.** Every trail segment with siblings opens one `CrumbMenu`: a
 `floating` popover, radius 8, `border-soft`, 4px padding, a 26px heading
 (`Steps · Ship a fix`, count on the right), rows of 30px with five fixed slots

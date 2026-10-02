@@ -2,7 +2,7 @@ import type { CrumbMenuAction, CrumbMenuGroup, CrumbMenuModel, CrumbMenuRow } fr
 import type { LensKind } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { LensDestination } from '../../lens-destinations';
-import { LENS_ICON, lensLabelFor } from '../../lens-labels';
+import { LENS_ICON, lensIconClass, lensLabelFor } from '../../lens-labels';
 
 export type PageSummaries = Partial<Record<LensKind, string>>;
 
@@ -44,7 +44,17 @@ export const pageMenu = ({
 }: Params): CrumbMenuModel => {
   const rowOf = (lens: LensKind | null): CrumbMenuRow => ({
     id: lens ?? 'overview',
-    lead: { kind: 'icon', icon: lens === null ? CONCEPT_ICONS.timeline : LENS_ICON[lens] },
+    lead:
+      lens === null
+        ? { kind: 'icon', icon: CONCEPT_ICONS.timeline }
+        : {
+            kind: 'icon',
+            icon: LENS_ICON[lens],
+            className: lensIconClass({
+              lens,
+              isQuiet: lens === 'questions' && summaries.questions === undefined,
+            }),
+          },
     label: lens === null ? 'Overview' : lensLabelFor({ lens, isBranchless }),
     secondary: null,
     metaA: lens === null ? null : (summaries[lens] ?? null),

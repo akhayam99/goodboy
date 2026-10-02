@@ -609,7 +609,11 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   `isAgentFinished` makes), and a check on the current row, which is there even
   when it is the only row. The last segment opens its menu from the whole
   segment and always shows the chevron; an ancestor goes up by its name and
-  shows its chevron on hover. Widths are 300 (pages, scopes, sections), 380
+  opens its menu from a chevron that is always visible, faint, and doubles as
+  the separator: every segment but the last ends with the same chevron slot,
+  whether it has a menu or not, so the gaps are equal. Name and chevron light
+  up as one chip on hover. Page icons take the tone of their concept
+  (`LENS_TONE`, linked tools keep their brand color). Widths are 300 (pages, scopes, sections), 380
   (runs, steps, agents, artifacts, conversations, attempts) and 460 (branches);
   a filter appears from nine rows up. An action that breaks something (Stop
   this step) confirms inside the menu's action band with `InlineConfirm`;
