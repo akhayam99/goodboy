@@ -20,6 +20,21 @@ This file says what to test and how. Where test files go: [file-system.md](file-
 - For store slices: test the contract (given state X + action Y, expect state Y'), not the internals.
 - For hooks: `renderHook` from `@testing-library/react`.
 - Some suites have a per-test hook that dynamically `import()`s a large module graph. Such a suite loads that import once in `beforeAll`, with a timeout that fits it. Never in `beforeEach`. There, the import cost lands on whichever test runs first, and on a busy machine it goes past the 15s hook timeout in `apps/desktop/vitest.config.ts`. Never raise the global timeouts to hide it.
+- `__tests__/regressions/store-mocks.test.ts` counts the `vi.mock` and `vi.doMock` calls in `apps/desktop/src` whose target resolves to `store/store`, `store/index`, the `store` folder or a module under `store/slices/`, per file, against `store-mocks.baseline.json`. A mock of another module that only has `store` in its name (`onboarding-store`) is not counted. A file may keep what it has or shed it, and a new file starts at zero. It is a static scan and runs in well under a second. Regenerate the baseline only on the integration branch, with `GOODBOY_UPDATE_BASELINE=1 pnpm --filter @goodboy/desktop exec vitest run src/__tests__/regressions/store-mocks.test.ts`, so that parallel changes do not edit the same rows. Never regenerate it to absorb a new mock.
+
+## Rules for every change
+
+These hold for each change that touches a test, and they come from tests that stayed green while the app was wrong.
+
+1. A bug fix starts from a test that fails on the old code. The PR body names that test.
+2. Assert behavior: role, text, aria, or the state of the store or the database after an action. Never a CSS class in `apps/desktop`, never `expect(getBy*(...)).toBeTruthy()`.
+3. A new test does not fake the store. It loads the real one through `storyHarness` (`importStore`, `resetStoryStore`, `stubStoryInvoke`). A file whose assertions you change moves to the harness in the same change. A file that only sits next to your change stays as it is. `store-mocks.test.ts` fails on any file that mocks the store beyond its baseline.
+4. A mock scene proves that a surface mounts with no console error, in both themes, and nothing more. Behavior is proved in harness tests, and geometry by capturing the scene and looking at it.
+5. Delete a test that only checks that a fake function was called, one that repeats a ratchet, and one for text you removed.
+6. No new real wait with `setTimeout`. Use fake timers or wait on the condition.
+7. New behavior goes in a new test file beside the old one. The huge files (`buildTimelineStream.test.ts`, `WorkflowBuilderView/index.test.tsx`, `orchestrateNextStep.test.ts`) only get shorter.
+8. The PR body says "tests removed n, replaced by m, files converted k".
+9. A ratchet baseline never grows.
 
 ## Desktop unit tests run in four shards
 
@@ -133,7 +148,7 @@ A migration that rebuilds a table (`PRAGMA foreign_keys = OFF`, a new table, a c
 
 ## No stopwatch in the gate
 
-A test that reads the clock (`performance.now()`, `Date.now()`) and asserts a budget in milliseconds fails when the runner is loaded, not when the code is slow. The required `unit` project has none. A real benchmark is named `*.perf.test.ts` and lives in the `perf` vitest project of `apps/desktop`, `packages/core` or `packages/db`. Run it with `pnpm test:perf` (or `pnpm --filter <pkg> test:perf`). It never blocks a merge: `.github/workflows/perf.yml` runs it on push to main, nightly and on demand, and a nightly failure opens or updates one issue labeled `perf`.
+A test that reads the clock (`performance.now()`, `Date.now()`) and asserts a budget in milliseconds fails when the runner is loaded, not when the code is slow. The required `unit` project has none. A real benchmark is named `*.perf.test.ts` and lives in the `perf` vitest project of `apps/desktop`, `packages/core` or `packages/db`. Run it with `pnpm test:perf` (or `pnpm --filter <pkg> test:perf`). It never blocks a merge: `.github/workflows/perf.yml` runs it on push to main, nightly and on demand, and a nightly failure opens or updates one issue labeled `perf`. The same workflow has a non-blocking `bundle` job, nightly and on demand, that builds the desktop app and writes the size of the js and css that index.html loads up front, raw and gzip, to the run summary next to the reference weights (4.9 MB, 1.44 MB gzip).
 
 - A guard against a slow regex or a quadratic loop asserts the result on the pathological input in the `unit` file, and keeps its time budget in the package's perf file (for example `packages/core/src/pathological-input.perf.test.ts`). Where the code reads its input by index, count the reads instead of timing them (`packages/core/src/artifacts/grammar.test.ts`).
 - The search query is guarded by `packages/db/src/queries/search.plan.test.ts`, which runs `EXPLAIN QUERY PLAN` on the query `searchIndex` really sends and checks that it walks the FTS index, reads documents by rowid or index, and never scans a table. `search.perf.test.ts` keeps the 100k message timing for the perf project.
