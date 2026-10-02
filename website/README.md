@@ -111,10 +111,11 @@ All in `website/src/components/`, each with its own CSS file.
 - `StarButton`, a Star on GitHub link to `SITE.repo`, shown on touch devices in
   place of the downloads. On desktop the hero shows its own Star on GitHub button
   next to the download.
-- `StarCount`, the star total inside every Star on GitHub button. `useStarCount`
-  reads `stargazers_count` from `SITE.repoApi` once per session and
-  `formatStars` floors it to the hundred: 100+, 200+, then 1.2k+. Under 100, or
-  when the API fails, the button shows no number.
+- `StarCount`, the star total inside every Star on GitHub button. `vite.config.ts`
+  reads `stargazers_count` from the GitHub API once per build, so visitors never
+  call GitHub, and `src/data/formatStars.ts` floors it to the hundred: 100+,
+  200+, then 1.2k+. Under 100, or when the build cannot reach the API, the
+  button shows no number. The total refreshes on every deploy.
 - `BrandIcons`, the provider marks, in their brand colours with the names in
   tier 3. Each hex is sourced and recorded in `brandIcons.source.json`.
 

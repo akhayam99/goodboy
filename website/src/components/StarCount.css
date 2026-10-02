@@ -2,8 +2,7 @@
   align-self: stretch;
   display: inline-flex;
   align-items: center;
-  margin-left: 4px;
-  padding-left: 12px;
+  padding-left: 10px;
   border-left: 1px solid color-mix(in srgb, currentColor 24%, transparent);
   font-variant-numeric: tabular-nums;
   opacity: 0.72;
