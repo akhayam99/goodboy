@@ -14,6 +14,7 @@ export {
   type ParallelCarryForwardBranch,
 } from './propagator';
 export { WORKFLOW_LIBRARY, type WorkflowLibraryEntry, type WorkflowLibraryStep } from './library';
+export { findBuiltinWorkflow } from './findBuiltinWorkflow';
 export {
   BUILTIN_STEPS,
   builtinStepForRole,
@@ -28,6 +29,8 @@ export {
   type RestoreWorkflowLibraryParams,
   type SeedResult,
   type SeedWorkflowLibraryDeps,
+  WorkflowRestoreError,
+  type WorkflowRestoreErrorKind,
 } from './seeder';
 export {
   formatWorkflowFromNL,

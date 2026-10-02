@@ -39,6 +39,7 @@ describe('captureCrash actions', () => {
     );
     stop();
 
+    await vi.waitFor(() => expect(writes()).toHaveLength(1));
     expect(payloadOf(0)).toMatchObject({
       crash: { actions: ['screen.board', 'nav.back'] },
     });
@@ -96,6 +97,7 @@ describe('captureCrash', () => {
       }),
     );
 
+    await vi.waitFor(() => expect(writes()).toHaveLength(1));
     expect(writes()).toHaveLength(1);
     expect(payloadOf(0)).toMatchObject({
       crash: { source: 'promise', message: 'RangeError: index out of range' },
@@ -112,19 +114,38 @@ describe('captureCrash', () => {
       }),
     );
 
+    await vi.waitFor(() => expect(writes()).toHaveLength(1));
     expect(payloadOf(0)).toMatchObject({
       crash: { source: 'promise', message: 'sqlite: sqlite error: database is locked' },
     });
   });
 
-  it('falls back to a generic message for a rejection with no readable message', async () => {
+  it('describes a rejection object that has no message', async () => {
     const { installCrashCapture } = await loadCapture();
     installCrashCapture();
 
     window.dispatchEvent(Object.assign(new Event('unhandledrejection'), { reason: { code: 5 } }));
 
+    await vi.waitFor(() => expect(writes()).toHaveLength(1));
     expect(payloadOf(0)).toMatchObject({
-      crash: { source: 'promise', message: 'Unhandled rejection' },
+      crash: { source: 'promise', message: '{"code":5}' },
+    });
+  });
+
+  it('keeps the first three reasons from a rejection burst', async () => {
+    const { installCrashCapture } = await loadCapture();
+    installCrashCapture();
+
+    for (const reason of ['first', { code: 2 }, new Error('third'), 'fourth']) {
+      window.dispatchEvent(Object.assign(new Event('unhandledrejection'), { reason }));
+    }
+
+    await vi.waitFor(() => expect(writes()).toHaveLength(1));
+    expect(payloadOf(0)).toMatchObject({
+      crash: {
+        source: 'promise',
+        message: '1. first\n2. {"code":2}\n3. Error: third',
+      },
     });
   });
 });

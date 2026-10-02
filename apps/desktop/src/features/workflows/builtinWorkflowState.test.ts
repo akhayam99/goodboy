@@ -106,14 +106,16 @@ describe('restorableBuiltins', () => {
     expect(restorableBuiltins({ workflows: [refactor], removedIds: NONE_REMOVED })).toEqual([]);
   });
 
-  it('skips a built-in whose name another workflow now holds', () => {
+  it('keeps a removed built-in restorable when another workflow holds its name', () => {
     const [refactor, planAndShip] = seededEvery();
     if (refactor === undefined || planAndShip === undefined) {
       throw new Error('the workflow library has fewer than two entries');
     }
     const own = seededWorkflow({ id: 'wf-own' as WorkflowId, name: 'Fix a bug', origin: 'custom' });
     expect(
-      restorableBuiltins({ workflows: [refactor, planAndShip, own], removedIds: REMOVED_FIX }),
-    ).toEqual([]);
+      restorableBuiltins({ workflows: [refactor, planAndShip, own], removedIds: REMOVED_FIX }).map(
+        ({ entry }) => entry.name,
+      ),
+    ).toEqual(['Fix a bug']);
   });
 });

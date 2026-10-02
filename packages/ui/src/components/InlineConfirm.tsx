@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { cn } from '../cn';
+import { formatError } from '../formatError';
 import { tintClasses, type Tone } from '../tint';
 import { Button, type ButtonVariant } from './Button';
 
@@ -64,23 +65,27 @@ export const InlineConfirm = ({
   className,
 }: Props) => {
   const [isRunning, setIsRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const tint = tintClasses(ROLE_TONE[role]);
   const busy = isBusy || isRunning;
   const cancelRef = useRef(onCancel);
   cancelRef.current = onCancel;
 
   useEffect(() => {
-    if (autoDisarmMs === undefined || busy) {
+    if (autoDisarmMs === undefined || busy || error !== null) {
       return;
     }
     const timer = window.setTimeout(() => cancelRef.current(), autoDisarmMs);
     return () => window.clearTimeout(timer);
-  }, [autoDisarmMs, busy]);
+  }, [autoDisarmMs, busy, error]);
 
   const confirm = async () => {
     setIsRunning(true);
+    setError(null);
     try {
       await onConfirm();
+    } catch (caught) {
+      setError(formatError(caught));
     } finally {
       setIsRunning(false);
     }
@@ -111,6 +116,11 @@ export const InlineConfirm = ({
 
       {children}
       {note}
+      {error !== null && error !== '' && (
+        <p role="alert" className="text-danger">
+          {error}
+        </p>
+      )}
 
       <div
         className={cn(

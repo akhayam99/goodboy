@@ -9,6 +9,8 @@ import type {
 } from '@goodboy/types';
 import {
   readBuiltinSeedState,
+  findActiveWorkflowRunTitle,
+  listWorkflowsIncludingDeleted,
   restoreSeededWorkflow,
   takenNameKey,
   upsertWorkflow,
@@ -17,6 +19,24 @@ import {
 import { normalizeAgentRole } from '../roles';
 import { builtinStepForRole } from './builtinSteps';
 import { WORKFLOW_LIBRARY, type WorkflowLibraryEntry } from './library';
+import { findBuiltinWorkflow } from './findBuiltinWorkflow';
+
+export type WorkflowRestoreErrorKind = 'name_taken' | 'workflow_running';
+
+type WorkflowRestoreErrorParams = {
+  readonly kind: WorkflowRestoreErrorKind;
+  readonly message: string;
+};
+
+export class WorkflowRestoreError extends Error {
+  readonly kind: WorkflowRestoreErrorKind;
+
+  constructor({ kind, message }: WorkflowRestoreErrorParams) {
+    super(message);
+    this.name = 'WorkflowRestoreError';
+    this.kind = kind;
+  }
+}
 
 export type SeedWorkflowLibraryDeps = {
   readonly db: Database;
@@ -42,14 +62,18 @@ type SeedParams = {
   readonly entry: WorkflowLibraryEntry;
   readonly workspaceId: WorkspaceId;
   readonly now: IsoDateTime;
+  readonly existing?: Workflow;
 };
 
-const seededWorkflow = ({ entry, workspaceId, now }: SeedParams): Workflow => {
-  const workflowId = makeWorkflowId(entry.slug, workspaceId);
+const seededWorkflow = ({ entry, workspaceId, now, existing }: SeedParams): Workflow => {
+  const workflowId = existing?.id ?? makeWorkflowId(entry.slug, workspaceId);
   const steps: ReadonlyArray<Step> = entry.steps.map((s, ordinal) => {
     const libraryStepId = builtinStepForRole({ role: normalizeAgentRole({ role: s.role }) })?.id;
+    const existingStep = existing?.steps.find(
+      (step) => step.ordinal === ordinal && step.name === s.name,
+    );
     return {
-      id: makeStepId(entry.slug, s.name, workspaceId),
+      id: existingStep?.id ?? makeStepId(entry.slug, s.name, workspaceId),
       workflowId,
       ...(libraryStepId && { libraryStepId }),
       role: s.role as AgentRole,
@@ -67,7 +91,7 @@ const seededWorkflow = ({ entry, workspaceId, now }: SeedParams): Workflow => {
     ...(entry.goal && { goal: entry.goal }),
     steps,
     origin: 'library',
-    createdAt: now,
+    createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };
 };
@@ -133,10 +157,42 @@ export const restoreWorkflowLibrary = async (
   const now = (deps.now ?? isoNow)();
   const wanted = new Set(slugs);
   const seeded: Array<{ slug: string; workflowId: WorkflowId }> = [];
+  const workflows = await listWorkflowsIncludingDeleted({ db: deps.db, workspaceId });
 
   for (const entry of WORKFLOW_LIBRARY.filter((candidate) => wanted.has(candidate.slug))) {
-    const workflow = seededWorkflow({ entry, workspaceId, now });
-    await restoreSeededWorkflow(deps.db, workflow);
+    const existing = findBuiltinWorkflow({ workflows, entry });
+    const workflow = seededWorkflow({
+      entry,
+      workspaceId,
+      now,
+      ...(existing === null ? {} : { existing }),
+    });
+    if (existing !== null) {
+      const sessionTitle = await findActiveWorkflowRunTitle({
+        db: deps.db,
+        workflowId: existing.id,
+      });
+      if (sessionTitle !== null) {
+        const title = sessionTitle.trim() === '' ? 'Untitled session' : sessionTitle;
+        throw new WorkflowRestoreError({
+          kind: 'workflow_running',
+          message: `${entry.name} is running in ${title}. Restore it when the run ends.`,
+        });
+      }
+    }
+    const outcome = await restoreSeededWorkflow({ db: deps.db, workflow });
+    if (outcome === 'name_taken') {
+      throw new WorkflowRestoreError({
+        kind: 'name_taken',
+        message: `A workflow named ${entry.name} already exists. Rename it and try again.`,
+      });
+    }
+    if (outcome === 'workflow_running') {
+      throw new WorkflowRestoreError({
+        kind: 'workflow_running',
+        message: `${entry.name} is running in another session. Restore it when the run ends.`,
+      });
+    }
     seeded.push({ slug: entry.slug, workflowId: workflow.id });
   }
 

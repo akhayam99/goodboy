@@ -16,6 +16,7 @@ export const draftFromWorkflow = ({ workflow }: DraftFromWorkflowParams): Workfl
   name: workflow.name,
   description: workflow.description,
   goal: workflow.goal ?? '',
+  processText: workflow.processText ?? '',
   origin: workflow.origin ?? 'custom',
   isPreset: workflow.isPreset !== false,
   steps: [...workflow.steps]
@@ -33,6 +34,10 @@ export const draftFromWorkflow = ({ workflow }: DraftFromWorkflowParams): Workfl
       effort: (step.effort as EffortLevel | undefined) ?? DEFAULT_EFFORT,
       verbosity: step.verbosity ?? 'normal',
       size: step.size ?? null,
+      orchestratorReason: step.orchestratorReason ?? null,
+      routingLock: step.routingLock ?? null,
+      routingDecision: step.routingDecision ?? null,
+      taskProfile: step.taskProfile ?? null,
     })),
 });
 
@@ -70,6 +75,8 @@ export const upsertArgsFromDraft = ({
   name: draft.name.trim(),
   description: draft.description.trim(),
   ...(draft.goal.trim().length > 0 && { goal: draft.goal.trim() }),
+  ...(draft.processText != null &&
+    draft.processText.trim() !== '' && { processText: draft.processText.trim() }),
   steps: draft.steps.map((step, ordinal) => ({
     ...(step.sourceStepId !== null && { id: step.sourceStepId }),
     ...(step.libraryStepId !== null && { libraryStepId: step.libraryStepId }),
@@ -85,6 +92,10 @@ export const upsertArgsFromDraft = ({
     effort: step.effort,
     verbosity: step.verbosity,
     ...(step.size !== null && !draft.isPreset && { size: step.size }),
+    ...(step.orchestratorReason != null && { orchestratorReason: step.orchestratorReason }),
+    ...(step.routingLock !== undefined && { routingLock: step.routingLock }),
+    ...(step.routingDecision !== undefined && { routingDecision: step.routingDecision }),
+    ...(step.taskProfile !== undefined && { taskProfile: step.taskProfile }),
   })),
   isPreset: draft.isPreset,
   origin: draft.origin,
