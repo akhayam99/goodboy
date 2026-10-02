@@ -70,12 +70,17 @@ const openBrowser = async () => {
     ],
     { stdio: 'ignore' },
   );
-  const send = await connect({ port });
   const close = () => {
     chrome.kill('SIGKILL');
     rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   };
-  return { send, close };
+  try {
+    const send = await connect({ port });
+    return { send, close };
+  } catch (error) {
+    close();
+    throw error;
+  }
 };
 
 const composeHero = ({ width, tileRing }) => {
