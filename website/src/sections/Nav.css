@@ -70,10 +70,6 @@
   padding: 0;
 }
 
-.nav .btn.small {
-  margin-left: 4px;
-}
-
 @media (max-width: 860px), (hover: none) and (pointer: coarse) {
   .navLinks,
   .navActions {
