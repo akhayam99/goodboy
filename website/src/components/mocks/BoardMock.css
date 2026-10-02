@@ -1,0 +1,224 @@
+.mockStage .brdBoard {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: 12px;
+  row-gap: 8px;
+}
+
+.mockStage .brdCol {
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  row-gap: 8px;
+  min-width: 0;
+}
+
+.mockStage .brdHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 20px;
+  margin: 0;
+}
+
+.mockStage .brdHeadLabel {
+  color: var(--g-faint-foreground);
+}
+
+.mockStage .brdCol[data-tone='info'] .brdHeadLabel {
+  color: var(--g-info);
+}
+
+.mockStage .brdCol[data-tone='warning'] .brdHeadLabel {
+  color: var(--g-warning);
+}
+
+.mockStage .brdCol[data-tone='success'] .brdHeadLabel {
+  color: var(--g-success);
+}
+
+.mockStage .brdCount {
+  color: var(--g-faint-foreground);
+  font: 400 11px / 16px var(--sans);
+  font-variant-numeric: tabular-nums;
+}
+
+.mockStage .brdCard {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 4px 8px;
+  height: 112px;
+  min-width: 0;
+  margin: 0;
+  padding: 12px 12px 12px 18px;
+  border-radius: 8px;
+  background: var(--mk-win);
+  box-shadow: 0 0 0 1px var(--g-border-soft);
+  font-family: var(--sans);
+  text-align: left;
+}
+
+.mockStage .brdMain {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.mockStage .brdTop {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-height: 40px;
+}
+
+.mockStage .brdPr {
+  display: inline-flex;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-left: -2px;
+  margin-top: 1px;
+  align-items: center;
+  justify-content: center;
+  color: var(--g-success);
+}
+
+.mockStage .brdTitle {
+  display: -webkit-box;
+  min-width: 0;
+  min-height: 40px;
+  flex: 1;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  color: var(--t1);
+  font: 500 14px / 20px var(--sans);
+}
+
+.mockStage .brdReason {
+  overflow: hidden;
+  color: var(--g-muted-foreground);
+  font: 400 11px / 16px var(--sans);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mockStage .brdSide {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  align-self: start;
+  gap: 4px;
+  color: var(--g-faint-foreground);
+}
+
+.mockStage .brdAction {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--g-warning);
+  background: color-mix(in oklab, var(--g-warning) 10%, transparent);
+}
+
+.mockStage .brdChevron {
+  flex: none;
+}
+
+.mockStage .brdFoot {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  display: flex;
+  min-width: 0;
+  height: 20px;
+  align-items: center;
+  gap: 8px;
+}
+
+.mockStage .brdFootStart {
+  display: flex;
+  min-width: 0;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.mockStage .brdAgents {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  color: var(--g-faint-foreground);
+  font: 400 10px / 14px var(--sans);
+}
+
+.mockStage .brdSource {
+  display: inline-flex;
+  flex: none;
+}
+
+.mockStage .brdSource svg {
+  display: block;
+}
+
+.mockStage .brdFootEnd {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  color: var(--g-faint-foreground);
+  font: 400 10px / 14px var(--sans);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .mockStage .brdHeadLabel,
+  .mockStage .brdCount,
+  .mockStage .brdReason,
+  .mockStage .brdAgents,
+  .mockStage .brdFootEnd {
+    font-size: 13px;
+  }
+}
+
+@container (max-width: 560px) {
+  .mockStage .brdBoard {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 8px;
+    row-gap: 8px;
+  }
+
+  .mockStage .brdCol:nth-child(n + 3) {
+    margin-top: 8px;
+  }
+}
+
+@container (max-width: 460px) {
+  .mockStage .brdBoard {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 12px;
+  }
+
+  .mockStage .brdCol {
+    grid-row: span 2;
+  }
+
+  .mockStage .brdCol:nth-child(n + 2) {
+    margin-top: 0;
+  }
+
+  .mockStage .brdCard:nth-of-type(2),
+  .mockStage .brdCount {
+    display: none;
+  }
+}

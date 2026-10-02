@@ -1,0 +1,20 @@
+.mockStage .stoVerdict {
+  min-width: 56px;
+  justify-content: center;
+}
+
+.mockStage .stoFree {
+  font-weight: 600;
+}
+
+.mockStage .stoBtn {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 12px;
+  border-radius: 7px;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: var(--mk-fs-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}

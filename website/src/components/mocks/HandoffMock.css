@@ -1,0 +1,564 @@
+.handoff {
+  --mk-win: var(--bg);
+  --hm-xs: 11px;
+  --hm-sm: 12px;
+  --hm-body: 13px;
+  --hm-muted: var(--g-muted-foreground);
+  --hm-faint: var(--g-faint-foreground);
+  container-type: inline-size;
+  display: grid;
+  justify-items: start;
+  gap: 14px;
+  width: 100%;
+  max-width: 960px;
+  min-width: 0;
+  margin-inline: auto;
+  color: var(--t1);
+  font: 400 var(--hm-body) / 1.45 var(--sans);
+  text-align: left;
+}
+
+.handoff *,
+.handoff *::before,
+.handoff *::after {
+  box-sizing: border-box;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .handoff {
+    --hm-xs: 13px;
+    --hm-sm: 13px;
+  }
+}
+
+.handoff p {
+  margin: 0;
+}
+
+.handoff svg {
+  flex: none;
+  display: block;
+}
+
+.handoff .hmSpacer {
+  flex: 1;
+  min-width: 0;
+}
+
+.handoff .hmApp {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-height: 440px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--mk-win);
+  box-shadow: 0 0 0 1px var(--win-edge);
+}
+
+.handoff .hmLeft {
+  display: flex;
+  flex: 0 0 58%;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  padding: 22px 26px;
+}
+
+.handoff .hmRight {
+  display: flex;
+  flex: 0 0 42%;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 18px 20px;
+  background: var(--raise);
+  box-shadow: inset 1px 0 0 var(--line);
+}
+
+.handoff .hmCrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--hm-muted);
+  font-size: var(--hm-sm);
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.handoff .hmCrumbId {
+  color: var(--hm-faint);
+  font-size: var(--hm-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.handoff .hmMsg {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.handoff .hmSent {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--hm-muted);
+}
+
+.handoff .hmSentValue {
+  color: var(--hm-faint);
+  font-size: var(--hm-sm);
+}
+
+.handoff .hmTime {
+  color: var(--hm-muted);
+  font: 400 var(--hm-xs) / 16px var(--mono);
+}
+
+.handoff .hmAsk {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 23px;
+  color: var(--t1);
+}
+
+.handoff .hmWhy {
+  width: max-content;
+  max-width: calc(100% + 12px);
+  margin-inline: -6px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  color: var(--hm-muted);
+  font-size: var(--hm-body);
+  line-height: 19px;
+}
+
+.handoff .hmWhyPre {
+  margin-right: 2px;
+  color: var(--hm-faint);
+  font-weight: 500;
+}
+
+.handoff .hmWhyTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--g-primary) 16%, transparent);
+  color: var(--g-primary);
+  font-size: var(--hm-xs);
+  font-weight: 600;
+  opacity: 0;
+  transform: translateX(-4px);
+}
+
+.handoff .hmReply {
+  color: var(--t1);
+  font-size: 14px;
+  line-height: 21px;
+}
+
+.handoff .hmCode {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--g-fill);
+  color: var(--hm-faint);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.handoff .hmOps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  height: 30px;
+  color: var(--hm-muted);
+}
+
+.handoff .hmOpsLabel {
+  color: var(--t1);
+}
+
+.handoff .hmBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--g-fill);
+  color: var(--hm-muted);
+  font-size: var(--hm-xs);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.handoff .hmMuted {
+  color: var(--hm-muted);
+  font-size: var(--hm-sm);
+}
+
+.handoff .hmComposer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--g-fill);
+  box-shadow: inset 0 0 0 1px var(--g-border-soft);
+}
+
+.handoff .hmPlaceholder {
+  color: var(--hm-faint);
+  font-size: var(--hm-body);
+}
+
+.handoff .hmComposerBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.handoff .hmIconButton {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  color: var(--hm-muted);
+}
+
+.handoff .hmAskFirst {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: var(--raise);
+  color: var(--t1);
+  font-size: var(--hm-sm);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.handoff .hmRoute {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  height: 24px;
+  padding: 0 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--raise);
+  box-shadow: inset 0 0 0 1px var(--g-border-soft);
+  color: var(--t1);
+  font-size: var(--hm-xs);
+  white-space: nowrap;
+}
+
+.handoff .hmRouteBrand {
+  display: flex;
+  color: var(--g-provider-codex);
+}
+
+.handoff .hmRouteLabel {
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--mono);
+  text-overflow: ellipsis;
+}
+
+.handoff .hmSend {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--g-border-soft);
+  color: var(--hm-muted);
+}
+
+.handoff .hmDrawerHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--hm-muted);
+}
+
+.handoff .hmDrawerTitle {
+  color: var(--t1);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.handoff .hmUpdated {
+  color: var(--hm-muted);
+  font-size: var(--hm-xs);
+  white-space: nowrap;
+}
+
+.handoff .hmTabs {
+  display: flex;
+  gap: 4px;
+  width: max-content;
+  max-width: 100%;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--g-fill);
+}
+
+.handoff .hmTab {
+  padding: 5px 9px;
+  border-radius: 6px;
+  color: var(--hm-muted);
+  font-size: var(--hm-sm);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.handoff .hmTab[data-active] {
+  background: var(--raise);
+  box-shadow: inset 0 0 0 1px var(--g-border-soft);
+  color: var(--t1);
+}
+
+.handoff .hmTab b {
+  font-weight: 600;
+}
+
+.handoff .hmActive {
+  display: flex;
+  flex-direction: column;
+}
+
+.handoff .hmDec {
+  display: flex;
+  gap: 10px;
+}
+
+.handoff .hmNum {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--g-fill);
+  box-shadow: inset 0 0 0 1px var(--g-border-soft);
+  color: var(--hm-muted);
+  font-size: var(--hm-xs);
+  font-weight: 600;
+}
+
+.handoff .hmDecBody {
+  min-width: 0;
+}
+
+.handoff .hmDecText {
+  color: var(--t1);
+  font-size: var(--hm-body);
+  font-weight: 500;
+  line-height: 19px;
+}
+
+.handoff .hmDecSource {
+  margin-top: 2px;
+  color: var(--hm-muted);
+  font-size: var(--hm-xs);
+}
+
+.handoff .hmDec {
+  --hm-hl: color-mix(in oklab, var(--g-primary) 12%, transparent);
+  margin-inline: -8px;
+  padding: 7px 8px;
+  border-radius: 8px;
+}
+
+.handoff .hmDec[data-hot] {
+  background: var(--hm-hl);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--g-primary) 45%, transparent);
+}
+
+.handoff .hmDec[data-old] .hmDecText {
+  color: var(--hm-muted);
+  text-decoration: line-through;
+}
+
+.handoff .hmDec[data-old] .hmLabel {
+  text-decoration: none;
+}
+
+.handoff .hmLabel {
+  display: none;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: var(--hm-xs);
+  font-weight: 600;
+  line-height: 16px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.handoff .hmDec[data-old] .hmReplaced {
+  display: inline-flex;
+  background: color-mix(in oklab, var(--g-danger) 16%, transparent);
+  color: var(--g-danger);
+}
+
+.handoff .hmAdded[data-on] {
+  display: inline-flex;
+  background: color-mix(in oklab, var(--g-success) 16%, transparent);
+  color: var(--g-success);
+}
+
+.handoff .hmReadBy[data-on] {
+  display: inline-flex;
+  background: color-mix(in oklab, var(--g-primary) 16%, transparent);
+  color: var(--g-primary);
+}
+
+.handoff .hmNewSlot {
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+.handoff .hmNewSlot[data-shown] {
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+}
+
+.handoff .hmLeft[data-idle] > :not(.hmCrumb) {
+  opacity: 0.4;
+}
+
+.handoff .hmWhy[data-hot] {
+  background: color-mix(in oklab, var(--g-primary) 12%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--g-primary) 45%, transparent);
+}
+
+.handoff .hmWhy[data-hot] .hmWhyTag {
+  opacity: 1;
+  transform: none;
+}
+
+.handoff .hmCaption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+}
+
+.handoff .hmSteps {
+  display: inline-flex;
+  flex: none;
+  gap: 5px;
+}
+
+.handoff .hmStepDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--g-border-soft);
+}
+
+.handoff .hmStepDot[data-on] {
+  background: var(--g-primary);
+}
+
+.handoff .hmCaptionText {
+  color: var(--t2);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: left;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .handoff .hmLeft > *,
+  .handoff .hmWhy,
+  .handoff .hmDec,
+  .handoff .hmDecText,
+  .handoff .hmNewSlot,
+  .handoff .hmStepDot {
+    transition:
+      opacity 500ms ease,
+      transform 500ms ease,
+      background-color 500ms ease,
+      box-shadow 500ms ease,
+      color 500ms ease,
+      visibility 0s linear 0s;
+  }
+
+  .handoff .hmWhyTag {
+    transition:
+      opacity 400ms ease 200ms,
+      transform 400ms ease 200ms;
+  }
+
+  .handoff .hmCaptionText {
+    animation: hmCaptionIn 400ms ease both;
+  }
+
+  @keyframes hmCaptionIn {
+    from {
+      opacity: 0;
+      transform: translateY(3px);
+    }
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .handoff .hmCaptionText {
+    font-size: 14px;
+  }
+}
+
+@container (max-width: 720px) {
+  .handoff .hmApp {
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .handoff .hmRight {
+    order: -1;
+    flex: 1 1 auto;
+    box-shadow: inset 0 -1px 0 var(--line);
+  }
+
+  .handoff .hmLeft {
+    flex: 1 1 auto;
+  }
+
+  .handoff .hmReply,
+  .handoff .hmOps,
+  .handoff .hmComposer,
+  .handoff .hmTabs {
+    display: none;
+  }
+
+  .handoff .hmLeft,
+  .handoff .hmRight {
+    gap: 12px;
+    padding: 16px 18px;
+  }
+
+  .handoff .hmComposerBar {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .handoff .hmComposerBar .hmSpacer {
+    flex-basis: 100%;
+    height: 0;
+  }
+}
