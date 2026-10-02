@@ -47,6 +47,7 @@ import {
   noop,
 } from './fixtures';
 import { sceneClock } from '../../sceneClock';
+import { FINISHED_AGENTS, FINISHED_SESSION } from './finishedRun';
 import {
   PARALLEL_AGENTS,
   PARALLEL_SESSIONS,
@@ -199,6 +200,19 @@ export const seedWorkflowRun = () => {
     focusedWorkflowRunId: { [FLOW_SESSION_ID]: DYNAMIC_RUN_ID },
     sessionOpenQuestions: { [FLOW_SESSION_ID]: [] },
     budgetAlerts: [],
+  });
+};
+
+export const seedWorkflowRunFinished = () => {
+  seedWorkflowRun();
+  useAppStore.setState({
+    sessions: SESSIONS.map((session) =>
+      session.id === FINISHED_SESSION.id ? FINISHED_SESSION : session,
+    ),
+    sessionPhaseRuns: { [FLOW_SESSION_ID]: FINISHED_AGENTS, [CHAT_SESSION_ID]: CHAT_AGENTS },
+    sessionTelemetry: { [FLOW_SESSION_ID]: FLOW_TELEMETRY },
+    agentTurnState: {},
+    selectedAgentId: { [FLOW_SESSION_ID]: AGENT_ROUNDING_ID },
   });
 };
 

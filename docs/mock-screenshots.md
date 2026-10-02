@@ -209,6 +209,8 @@ questions cluster, the transcript and the command palette over one Harborline
 session. `?scene=workflow-run&run=parallel` shows the same run earlier, on its
 first step: three scouts working side by side, one done, and the orchestrator
 waiting on the step (`scenes/flow-audit/parallelRun.ts`).
+`?scene=workflow-run&run=finished` shows the run done, with every step complete
+and no NOW (`scenes/flow-audit/finishedRun.ts`).
 
 The README and feature-area guide docs are captured from these scenes. The
 `brand-*` scenes in `scenes/brand/` tell one Harborline story (issue HBL-412,
