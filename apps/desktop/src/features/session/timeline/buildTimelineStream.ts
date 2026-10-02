@@ -36,6 +36,7 @@ import { runIdentity, runIdentitySeed, type RunIdentity } from './runIdentity';
 import { groupResolveBatches } from './resolveBatchGroups';
 import { resolverRowState, type ResolveActivityFacts } from './resolveActivity';
 import { resolveBatchRowState, type ResolveBatchRef } from './resolveBatchSummary';
+import { isEmptyDecisionDiff } from './sessionEventPresentation';
 import {
   SUBAGENT_GROUP_MIN_MEMBERS,
   isSubagentAttention,
@@ -205,6 +206,11 @@ const isDecisionChangeRow = ({ draft }: { readonly draft: DraftRow }): boolean =
   draft.entry.kind === 'event' &&
   draft.entry.event.kind === 'decisions_changed' &&
   draft.entry.event.payload?.consolidatedAfter === undefined;
+
+const isEmptyDecisionRow = ({ draft }: { readonly draft: DraftRow }): boolean =>
+  draft.entry.kind === 'event' &&
+  draft.entry.event.kind === 'decisions_changed' &&
+  isEmptyDecisionDiff({ payload: draft.entry.event.payload });
 
 const DECISION_COUNT_KEYS = [
   'added',
@@ -1545,7 +1551,9 @@ export const buildTimelineStream = ({
   const sorted = [...rows].sort((first, second) => compareNewestFirst({ first, second }));
   const merged = mergeConsecutiveQuestionRows({
     drafts: mergeConsecutiveProjectRows({
-      drafts: mergeConsecutiveDecisionRows({ drafts: sorted }),
+      drafts: mergeConsecutiveDecisionRows({ drafts: sorted }).filter(
+        (draft) => !isEmptyDecisionRow({ draft }),
+      ),
     }),
   });
   const withDays = withDayBreaks({

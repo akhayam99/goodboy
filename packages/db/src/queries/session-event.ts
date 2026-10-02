@@ -4,6 +4,7 @@ import type {
   SessionEvent,
   SessionEventId,
   SessionEventKind,
+  SessionDecisionChange,
   SessionEventPayload,
   SessionId,
 } from '@goodboy/types';
@@ -44,6 +45,72 @@ const deferralCauseAt = ({ source, key }: FieldParams): MaterializationDeferralC
   return MATERIALIZATION_DEFERRAL_CAUSES.find((candidate) => candidate === value) ?? null;
 };
 
+const stringListAt = ({ source, key }: FieldParams): ReadonlyArray<string> | null => {
+  const value = source[key];
+  return Array.isArray(value) && value.every((item) => typeof item === 'string') ? value : null;
+};
+
+const originAt = ({ source, key }: FieldParams): SessionEventPayload['origin'] | null => {
+  const value = stringAt({ source, key });
+  return value === 'plan' || value === 'rebase' ? value : null;
+};
+
+const nullableStringAt = ({ source, key }: FieldParams): string | null | undefined => {
+  const value = source[key];
+  if (value === null) {
+    return null;
+  }
+  return typeof value === 'string' ? value : undefined;
+};
+
+const decisionChangeOf = ({ value }: { readonly value: unknown }): SessionDecisionChange | null => {
+  if (!isJsonRecord(value)) {
+    return null;
+  }
+  const kind = stringAt({ source: value, key: 'kind' });
+  const number = numberAt({ source: value, key: 'number' });
+  const text = stringAt({ source: value, key: 'text' });
+  if (number === null || text === null) {
+    return null;
+  }
+  const reason = nullableStringAt({ source: value, key: 'reason' });
+  switch (kind) {
+    case 'added':
+    case 'restored':
+      return { kind, number, text };
+    case 'withdrawn':
+      return reason === undefined ? null : { kind, number, text, reason };
+    case 'replaced': {
+      const by = numberAt({ source: value, key: 'by' });
+      return by === null || reason === undefined ? null : { kind, number, by, text, reason };
+    }
+    case 'merged': {
+      const into = numberAt({ source: value, key: 'into' });
+      return into === null ? null : { kind, number, into, text };
+    }
+    case 'reworded': {
+      const previousText = stringAt({ source: value, key: 'previousText' });
+      return previousText === null ? null : { kind, number, text, previousText };
+    }
+    default:
+      return null;
+  }
+};
+
+const decisionChangesAt = ({
+  source,
+  key,
+}: FieldParams): ReadonlyArray<SessionDecisionChange> | null => {
+  const value = source[key];
+  if (!Array.isArray(value)) {
+    return null;
+  }
+  return value.flatMap((item) => {
+    const change = decisionChangeOf({ value: item });
+    return change === null ? [] : [change];
+  });
+};
+
 type ParsePayloadParams = {
   readonly raw: string | null;
 };
@@ -82,6 +149,21 @@ const parsePayload = ({ raw }: ParsePayloadParams): SessionEventPayload | null =
   const number = numberAt({ source, key: 'number' });
   const added = numberAt({ source, key: 'added' });
   const removed = numberAt({ source, key: 'removed' });
+  const replaced = numberAt({ source, key: 'replaced' });
+  const withdrawn = numberAt({ source, key: 'withdrawn' });
+  const merged = numberAt({ source, key: 'merged' });
+  const restored = numberAt({ source, key: 'restored' });
+  const decisionChanges = decisionChangesAt({ source, key: 'decisionChanges' });
+  const consolidatedAfter = stringAt({ source, key: 'consolidatedAfter' });
+  const planId = stringAt({ source, key: 'planId' });
+  const summary = stringAt({ source, key: 'summary' });
+  const origin = originAt({ source, key: 'origin' });
+  const files = stringListAt({ source, key: 'files' });
+  const isTreeEqual = booleanAt({ source, key: 'isTreeEqual' });
+  const prNumber = numberAt({ source, key: 'prNumber' });
+  const backupRef = stringAt({ source, key: 'backupRef' });
+  const deletedBranchId = stringAt({ source, key: 'deletedBranchId' });
+  const onOrigin = booleanAt({ source, key: 'onOrigin' });
   const behind = numberAt({ source, key: 'behind' });
   const turnRunId = stringAt({ source, key: 'turnRunId' });
   const questionId = stringAt({ source, key: 'questionId' });
@@ -109,6 +191,21 @@ const parsePayload = ({ raw }: ParsePayloadParams): SessionEventPayload | null =
     ...(number != null ? { number } : {}),
     ...(added != null ? { added } : {}),
     ...(removed != null ? { removed } : {}),
+    ...(replaced != null ? { replaced } : {}),
+    ...(withdrawn != null ? { withdrawn } : {}),
+    ...(merged != null ? { merged } : {}),
+    ...(restored != null ? { restored } : {}),
+    ...(decisionChanges != null ? { decisionChanges } : {}),
+    ...(consolidatedAfter != null ? { consolidatedAfter } : {}),
+    ...(planId != null ? { planId } : {}),
+    ...(summary != null ? { summary } : {}),
+    ...(origin != null ? { origin } : {}),
+    ...(files != null ? { files } : {}),
+    ...(isTreeEqual != null ? { isTreeEqual } : {}),
+    ...(prNumber != null ? { prNumber } : {}),
+    ...(backupRef != null ? { backupRef } : {}),
+    ...(deletedBranchId != null ? { deletedBranchId } : {}),
+    ...(onOrigin != null ? { onOrigin } : {}),
     ...(behind != null ? { behind } : {}),
     ...(turnRunId != null ? { turnRunId } : {}),
     ...(questionId != null ? { questionId } : {}),

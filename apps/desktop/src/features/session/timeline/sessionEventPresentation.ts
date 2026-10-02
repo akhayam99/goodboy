@@ -161,34 +161,29 @@ const workflowSegment = ({ payload }: PayloadParams): TimelineLabelSegment =>
     ? { kind: 'text', text: 'Workflow' }
     : { kind: 'value', text: payload.workflowName, variant: 'workflow' };
 
-const decisionCount = ({ count }: { readonly count: number }): string =>
-  count === 1 ? '1 decision' : `${count} decisions`;
-
-const LEDGER_PARTS = ['added', 'replaced', 'withdrawn', 'merged', 'restored'] as const;
-
-const ledgerParts = ({ payload }: PayloadParams): string =>
-  LEDGER_PARTS.flatMap((key) => {
-    const count = payload?.[key] ?? 0;
-    return count > 0 ? [`${count} ${key}`] : [];
-  }).join(', ');
-
-const isLedgerPayload = ({ payload }: PayloadParams): boolean =>
-  payload?.replaced !== undefined ||
-  payload?.withdrawn !== undefined ||
-  payload?.merged !== undefined;
-
-const decisionsChangedLabel = ({ payload }: PayloadParams): string => {
-  if (payload?.consolidatedAfter !== undefined) {
-    const parts = ledgerParts({ payload });
-    const head = `Context consolidated after ${payload.consolidatedAfter}`;
-    return parts === '' ? head : `${head} · ${parts}`;
-  }
-  if (isLedgerPayload({ payload })) {
-    const parts = ledgerParts({ payload });
-    return parts === '' ? 'Decisions' : `Decisions · ${parts}`;
-  }
-  return `${decisionCount({ count: payload?.added ?? 0 })} added, ${payload?.removed ?? 0} removed`;
+export type DecisionDiff = {
+  readonly additions: number;
+  readonly deletions: number;
 };
+
+export const decisionDiff = ({ payload }: PayloadParams): DecisionDiff => {
+  const replaced = payload?.replaced ?? 0;
+  return {
+    additions: (payload?.added ?? 0) + replaced + (payload?.restored ?? 0),
+    deletions:
+      (payload?.removed ?? 0) + replaced + (payload?.withdrawn ?? 0) + (payload?.merged ?? 0),
+  };
+};
+
+export const isEmptyDecisionDiff = ({ payload }: PayloadParams): boolean => {
+  const { additions, deletions } = decisionDiff({ payload });
+  return additions === 0 && deletions === 0;
+};
+
+const decisionsChangedLabel = ({ payload }: PayloadParams): string =>
+  payload?.consolidatedAfter === undefined
+    ? 'Context'
+    : `Context consolidated after ${payload.consolidatedAfter}`;
 
 type TitleParams = {
   readonly event: SessionEvent;
