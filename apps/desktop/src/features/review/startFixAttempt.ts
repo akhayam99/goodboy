@@ -25,6 +25,7 @@ type SpawnAgentArgs = {
   readonly sourceCommentUrl: string;
   readonly sourceKind: 'review_comment' | 'comment_recheck';
   readonly focus: 'none';
+  readonly parentAgentId?: AgentId;
   readonly resolveBatch?: ResolveAttemptBatch;
 };
 
@@ -51,6 +52,7 @@ type Params = {
   readonly style?: ResolverStyle;
   readonly contextWindow?: number | null;
   readonly batch?: ResolveAttemptBatch | null;
+  readonly parentAgentId?: AgentId | null;
   readonly spawnAgent: SpawnAgentFn;
   readonly setAgentConfig: SetAgentConfigFn;
 };
@@ -96,6 +98,7 @@ export const startFixAttempt = async ({
   style: requestedStyle,
   contextWindow = null,
   batch = null,
+  parentAgentId = null,
   spawnAgent,
   setAgentConfig,
 }: Params): Promise<ReadonlyArray<AgentId>> => {
@@ -142,6 +145,7 @@ export const startFixAttempt = async ({
       sourceCommentUrl: args.sourceCommentUrl,
       sourceKind: args.sourceKind === 'comment_recheck' ? 'comment_recheck' : 'review_comment',
       focus: 'none',
+      ...(parentAgentId !== null && { parentAgentId }),
       ...(batch !== null && { resolveBatch: batch }),
     });
     await setAgentConfig(sessionId, agentId, {

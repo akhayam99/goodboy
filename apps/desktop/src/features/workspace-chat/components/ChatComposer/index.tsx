@@ -3,10 +3,12 @@ import { ArrowUp, Square } from 'lucide-react';
 import { Tooltip, cn, tintClasses } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { pluralize } from '../../../../shared/utils/pluralize';
+import type { WorkspaceId } from '@goodboy/types';
 import type { ChatRouting } from '../../chatRouting';
 import { ChatRoutingPicker } from './ChatRoutingPicker';
 
 type Props = {
+  readonly workspaceId: WorkspaceId;
   readonly placeholder: string;
   readonly routing: ChatRouting;
   readonly projectCount: number;
@@ -26,6 +28,7 @@ const ROUND_BUTTON =
   'flex size-6 shrink-0 items-center justify-center rounded-md motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
 
 export const ChatComposer = ({
+  workspaceId,
   placeholder,
   routing,
   projectCount,
@@ -68,7 +71,7 @@ export const ChatComposer = ({
         className="w-full resize-none bg-transparent px-3 pb-0.5 pt-2.5 text-prose text-foreground outline-none placeholder:text-faint-foreground focus-visible:shadow-none focus-visible:ring-0 focus-visible:outline-none"
       />
       <div className="flex items-center gap-2 px-1.5 pb-1.5 pt-1">
-        <ChatRoutingPicker routing={routing} onChange={onRouting} />
+        <ChatRoutingPicker workspaceId={workspaceId} routing={routing} onChange={onRouting} />
         <span className="flex-1" />
         <span className="hidden text-secondary text-faint-foreground @2xl/chat:inline">
           {`Read-only · ${pluralize(projectCount, 'project')}`}

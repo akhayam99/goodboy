@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type {
   ChatId,
   ChatMessage,
@@ -53,6 +53,7 @@ const { store, summarize } = vi.hoisted(() => ({
     setAgentDraft: vi.fn(),
     loadSetting: vi.fn(async (_key: string) => null as string | null),
     saveSetting: vi.fn(async (_key: string, _value: string) => undefined),
+    reportError: vi.fn(),
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     agentDraft: {} as Record<string, string>,
     navigate: vi.fn(),
@@ -173,6 +174,8 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  store.loadSetting.mockReset();
+  store.loadSetting.mockResolvedValue(null);
 });
 
 const ANSWERED: ReadonlyArray<ChatMessage> = [
@@ -636,12 +639,12 @@ describe('ChatRoom', () => {
     });
   });
 
-  it('shows the empty state with suggestions from the projects', () => {
+  it('shows the empty state with suggestions from the projects', async () => {
     renderRoom({ chat: null });
 
     expect(screen.getByRole('heading', { name: 'Ask anything about Harborline' })).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: /What changed in payments-api/ }));
-    expect(store.createChat).toHaveBeenCalled();
+    await waitFor(() => expect(store.createChat).toHaveBeenCalled());
   });
 
   it('renders a streaming answer as it grows and offers Stop', () => {
@@ -708,5 +711,130 @@ describe('ChatRoom', () => {
       model: 'sonnet-5',
       effort: 'high',
     });
+  });
+  it('starts a new chat on the workspace default model and effort', () => {
+    store.settings = {
+      'chat.default_model.ws-harborline': JSON.stringify({
+        provider: 'anthropic',
+        model: 'opus-5',
+        effort: 'high',
+      }),
+    };
+    renderRoom({ chat: null });
+
+    expect(
+      screen.getByRole('button', { name: /^Model for this chat: / }).getAttribute('aria-label'),
+    ).toMatch(/Opus 5/);
+  });
+
+  it('keeps the automatic model while no default is saved', () => {
+    renderRoom({ chat: null });
+
+    expect(
+      screen.getByRole('button', { name: /^Model for this chat: / }).getAttribute('aria-label'),
+    ).toMatch(/Sonnet 5/);
+  });
+
+  it('saves the picked model as the default for new chats from the picker footer', () => {
+    store.chatMessages = { [CHAT_ID]: [] };
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: /^Model for this chat: / }));
+    const dialog = screen.getByRole('dialog', { name: 'Model for this chat' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Make default' }));
+
+    expect(store.saveSetting).toHaveBeenCalledWith(
+      'chat.default_model.ws-harborline',
+      JSON.stringify({ provider: 'anthropic', model: 'sonnet-5', effort: null }),
+    );
+  });
+
+  it('offers to clear the default when the shown model is the default', () => {
+    store.settings = {
+      'chat.default_model.ws-harborline': JSON.stringify({
+        provider: 'anthropic',
+        model: 'sonnet-5',
+        effort: null,
+      }),
+    };
+    store.chatMessages = { [CHAT_ID]: [] };
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: /^Model for this chat: / }));
+    const dialog = screen.getByRole('dialog', { name: 'Model for this chat' });
+    expect(within(dialog).queryByRole('button', { name: 'Make default' })).toBeNull();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Back to automatic' }));
+
+    expect(store.saveSetting).toHaveBeenCalledWith('chat.default_model.ws-harborline', '');
+  });
+
+  it('names a different saved default instead of calling it automatic', () => {
+    store.settings = {
+      'chat.default_model.ws-harborline': JSON.stringify({
+        provider: 'anthropic',
+        model: 'opus-5',
+        effort: null,
+      }),
+    };
+    store.chatMessages = { [CHAT_ID]: [] };
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: /^Model for this chat: / }));
+    const dialog = screen.getByRole('dialog', { name: 'Model for this chat' });
+
+    expect(within(dialog).queryByText('New chats start on automatic.')).toBeNull();
+    expect(within(dialog).getByText('New chats use another default model.')).toBeDefined();
+    expect(within(dialog).getByRole('button', { name: 'Make default' })).toBeDefined();
+  });
+
+  it('waits for the saved default on a cold cache before creating the first chat', async () => {
+    let resolveSaved: (value: string | null) => void = () => undefined;
+    store.loadSetting.mockImplementation(
+      () => new Promise<string | null>((resolve) => (resolveSaved = resolve)),
+    );
+    renderRoom({ chat: null });
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Message' }), {
+      target: { value: 'Where do we validate IBANs?' },
+    });
+    await act(async () => {
+      fireEvent.keyDown(screen.getByRole('textbox', { name: 'Message' }), { key: 'Enter' });
+    });
+    expect(store.createChat).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolveSaved(JSON.stringify({ provider: 'anthropic', model: 'opus-5', effort: 'high' }));
+    });
+
+    expect(store.createChat).toHaveBeenCalledWith({
+      workspaceId: WORKSPACE_ID,
+      provider: 'anthropic',
+      model: 'opus-5',
+    });
+    expect(store.setChatModel).toHaveBeenCalledWith({
+      chatId: 'chat-new',
+      provider: 'anthropic',
+      model: 'opus-5',
+      effort: 'high',
+    });
+  });
+
+  it('falls back to automatic when reading the saved default fails', async () => {
+    store.loadSetting.mockRejectedValue(new Error('db locked'));
+    renderRoom({ chat: null });
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Message' }), {
+      target: { value: 'Where do we validate IBANs?' },
+    });
+    await act(async () => {
+      fireEvent.keyDown(screen.getByRole('textbox', { name: 'Message' }), { key: 'Enter' });
+    });
+
+    expect(store.createChat).toHaveBeenCalledWith({
+      workspaceId: WORKSPACE_ID,
+      provider: 'anthropic',
+      model: 'sonnet-5',
+    });
+    expect(store.reportError).toHaveBeenCalled();
   });
 });

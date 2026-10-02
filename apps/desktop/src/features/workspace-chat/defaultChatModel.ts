@@ -16,7 +16,7 @@ type ProviderParams = {
   readonly provider: ProviderId;
 };
 
-const firstChatModelOf = ({ provider }: ProviderParams): ModelKey | null => {
+export const firstChatModelOf = ({ provider }: ProviderParams): ModelKey | null => {
   const catalog: ReadonlyArray<CatalogModel> = MODEL_CATALOGS[provider];
   const current = catalog.filter((model) => model.legacy !== true);
   return (current.find((model) => model.tier === 'turn') ?? current[0] ?? catalog[0])?.key ?? null;
