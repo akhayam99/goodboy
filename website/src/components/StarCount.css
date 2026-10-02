@@ -1,9 +1,30 @@
 .starCount {
-  align-self: stretch;
   display: inline-flex;
   align-items: center;
-  padding-left: 10px;
-  border-left: 1px solid color-mix(in srgb, currentColor 24%, transparent);
+  gap: 6px;
+  padding-left: 6px;
   font-variant-numeric: tabular-nums;
+}
+
+.starIcon {
+  flex: none;
+  fill: var(--star);
+}
+
+.starTotal {
   opacity: 0.72;
+}
+
+.starPlus {
+  position: relative;
+  top: -0.08em;
+  padding-left: 1px;
+  font-size: 0.78em;
+  font-weight: 500;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .starPlus {
+    font-size: 13px;
+  }
 }

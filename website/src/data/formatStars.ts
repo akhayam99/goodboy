@@ -11,10 +11,10 @@ const formatStars = ({ count }: Params): string | null => {
   }
   const floored = Math.floor(count / STEP) * STEP;
   if (floored < THOUSAND) {
-    return `${floored}+`;
+    return String(floored);
   }
   const thousands = (floored / THOUSAND).toFixed(1).replace(/\.0$/, '');
-  return `${thousands}k+`;
+  return `${thousands}k`;
 };
 
 export const STARS = formatStars({ count: __GOODBOY_STARS__ });
