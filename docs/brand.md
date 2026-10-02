@@ -145,8 +145,11 @@ suggests. Every one of these is generated, never cropped by hand.
 | LinkedIn profile background | 1584x396                 | The left third, under the profile photo                                             |
 | og-image                    | 1200x630                 | The bottom 100 px, where X lays the page title over the card                        |
 
-The og-image is the one card drawn on the website's dark theme tokens, so a link
-preview reads as dark on X, LinkedIn and Slack. Its URL in the page heads carries
+The og-image is the one card drawn on the website's dark theme tokens, on the
+stage gradient of the site's Stop re-explaining yourself band, so a link preview
+reads as dark on X, LinkedIn and Slack. It carries the logo, the free desktop
+ADE pill, the headline, the providers in their colours and the tools in white,
+and no domain or date. Its URL in the page heads carries
 a `?v=` suffix. Bump it whenever the PNG changes, because scrapers cache by URL:
 X kept showing the old light card under an unchanged suffix.
 
