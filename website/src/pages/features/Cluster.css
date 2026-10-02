@@ -1,0 +1,135 @@
+.ftCluster {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+  scroll-margin-top: 96px;
+}
+
+.ftClusterTop {
+  display: grid;
+  gap: 32px;
+  min-width: 0;
+}
+
+.ftClusterHead {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  max-width: 720px;
+}
+
+.ftMocks {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+
+@media (min-width: 1200px) {
+  .ftClusterTop {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 40px;
+    align-items: start;
+  }
+}
+
+.ftMock {
+  min-width: 0;
+}
+
+.ftCluster .cardRow {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px 32px;
+}
+
+@media (min-width: 1200px) {
+  .ftCluster .cardRow {
+    grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+    gap: 24px 28px;
+  }
+}
+
+@media (max-width: 720px) {
+  .ftCluster .cardRow {
+    display: flex;
+    gap: 24px;
+    margin-inline: -24px;
+    padding-inline: 24px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-padding-inline: 24px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .ftCluster .cardRow::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ftCluster .cardRowDots {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 16px;
+  }
+
+  .ftCluster .cardRowDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--line-strong);
+  }
+
+  .ftCluster .cardRowDot[data-active='true'] {
+    background: var(--accent);
+  }
+
+  .ftCluster .cardRowItem {
+    display: block;
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+  }
+}
+
+.ftAlso {
+  max-width: 76ch;
+  margin-top: -8px;
+  font: var(--t-cell-text);
+  color: var(--t3);
+}
+
+.ftGuide {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 24px;
+  margin-top: -12px;
+  font: var(--t-cell);
+  letter-spacing: var(--tr-cell);
+  color: var(--t3);
+}
+
+.ftCluster .cardRowItem {
+  grid-row: auto;
+  grid-template-rows: auto auto 1fr;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .ftGuide {
+    gap: 0 20px;
+  }
+}
+
+@media (max-width: 900px) {
+  .ftCluster {
+    gap: 32px;
+    scroll-margin-top: 140px;
+  }
+}
+
+@media (max-width: 600px) {
+  .ftCluster .cardRow {
+    margin-inline: -20px;
+    padding-inline: 20px;
+    scroll-padding-inline: 20px;
+  }
+}

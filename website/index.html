@@ -18,6 +18,15 @@
         }
         document.documentElement.setAttribute('data-theme', theme);
         document.documentElement.style.colorScheme = theme;
+        var root = document.documentElement;
+        if (document.fonts && document.fonts.ready) {
+          root.classList.add('fontsWait');
+          var go = function () {
+            root.classList.remove('fontsWait');
+          };
+          document.fonts.ready.then(go, go);
+          window.setTimeout(go, 700);
+        }
       })();
     </script>
 
@@ -130,7 +139,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!-- Primary -->
-    <title>Goodboy: a development environment that structures agent work</title>
+    <title>Goodboy: give your agents a structure to work in</title>
     <meta
       name="description"
       content="Goodboy is a free agentic development environment for macOS and Linux. The providers you connect do the work and Goodboy gives it structure: each task keeps its goal, decisions and summary, so the next agent starts briefed."
@@ -148,7 +157,7 @@
     <meta property="og:url" content="https://goodboy-ai.dev/" />
     <meta
       property="og:title"
-      content="Goodboy: a development environment that structures agent work"
+      content="Goodboy: give your agents a structure to work in"
     />
     <meta
       property="og:description"
@@ -166,7 +175,7 @@
     <meta name="twitter:creator" content="@GoodboyWorks" />
     <meta
       name="twitter:title"
-      content="Goodboy: a development environment that structures agent work"
+      content="Goodboy: give your agents a structure to work in"
     />
     <meta
       name="twitter:description"
