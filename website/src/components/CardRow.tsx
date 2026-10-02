@@ -8,6 +8,8 @@ export type CardRowItem = {
   readonly caption: ReactNode;
 };
 
+const REDUCED_QUERY = '(prefers-reduced-motion: reduce)';
+
 type Props = {
   readonly label: string;
   readonly columns?: 2 | 3 | 4;
@@ -26,14 +28,33 @@ export const CardRow = ({ label, columns = 2, mediaRatio, hasDots = false, items
   const listRef = useRef<HTMLUListElement | null>(null);
   const [active, setActive] = useState(0);
 
+  const readStep = (list: HTMLUListElement) => {
+    const first = list.firstElementChild;
+    if (!(first instanceof HTMLElement)) {
+      return 0;
+    }
+    return first.offsetWidth + parseFloat(getComputedStyle(list).columnGap || '0');
+  };
+
   const onScroll = () => {
     const list = listRef.current;
-    const first = list?.firstElementChild;
-    if (list === null || !(first instanceof HTMLElement)) {
+    if (list === null) {
       return;
     }
-    const step = first.offsetWidth + parseFloat(getComputedStyle(list).columnGap || '0');
+    const step = readStep(list);
+    if (step === 0) {
+      return;
+    }
     setActive(Math.min(items.length - 1, Math.max(0, Math.round(list.scrollLeft / step))));
+  };
+
+  const scrollToCard = (index: number) => {
+    const list = listRef.current;
+    if (list === null) {
+      return;
+    }
+    const isReduced = window.matchMedia(REDUCED_QUERY).matches;
+    list.scrollTo({ left: index * readStep(list), behavior: isReduced ? 'auto' : 'smooth' });
   };
 
   const list = (
@@ -63,9 +84,16 @@ export const CardRow = ({ label, columns = 2, mediaRatio, hasDots = false, items
   return (
     <div className="cardRowWrap" data-reveal="">
       {list}
-      <span className="cardRowDots" aria-hidden="true">
+      <span className="cardRowDots" role="group" aria-label={`Choose a card in ${label}`}>
         {items.map((item, index) => (
-          <span key={item.key} className="cardRowDot" data-active={index === active} />
+          <button
+            key={item.key}
+            type="button"
+            className="cardRowDot"
+            aria-label={`Show ${item.title}`}
+            aria-current={index === active ? 'true' : undefined}
+            onClick={() => scrollToCard(index)}
+          />
         ))}
       </span>
     </div>

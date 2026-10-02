@@ -22,11 +22,11 @@ export const ClusterRail = ({ items }: Props) => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            visible.add(entry.target.id);
-          } else {
+          if (!entry.isIntersecting) {
             visible.delete(entry.target.id);
+            return;
           }
+          visible.add(entry.target.id);
         });
         const first = items.find((item) => visible.has(item.id));
         if (first !== undefined) {

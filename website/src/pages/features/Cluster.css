@@ -67,20 +67,22 @@
 
   .ftCluster .cardRowDots {
     display: flex;
-    gap: 8px;
     justify-content: center;
-    margin-top: 16px;
+    margin-top: 0;
   }
 
   .ftCluster .cardRowDot {
-    width: 8px;
-    height: 8px;
+    width: 44px;
+    height: 44px;
+    padding: 18px;
     border-radius: 50%;
     background: var(--line-strong);
+    background-clip: content-box;
   }
 
-  .ftCluster .cardRowDot[data-active='true'] {
+  .ftCluster .cardRowDot[aria-current='true'] {
     background: var(--accent);
+    background-clip: content-box;
   }
 
   .ftCluster .cardRowItem {

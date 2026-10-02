@@ -1,6 +1,8 @@
 import './AskCodeMock.css';
 import { MockStage } from './MockStage';
-import { MockChip, MockRow, MockWindow } from './MockWindow';
+import { MockChip } from './MockChip';
+import { MockRow } from './MockRow';
+import { MockWindow } from './MockWindow';
 
 const SOURCES: readonly string[] = [
   'payments-api/src/credits/apply.ts',

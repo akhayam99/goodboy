@@ -61,17 +61,17 @@ export const Tour = () => {
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     const last = STOPS.length - 1;
-    if (event.key === 'ArrowRight') {
-      select(selected === last ? 0 : selected + 1);
-    } else if (event.key === 'ArrowLeft') {
-      select(selected === 0 ? last : selected - 1);
-    } else if (event.key === 'Home') {
-      select(0);
-    } else if (event.key === 'End') {
-      select(last);
-    } else {
+    const targets = new Map<string, number>([
+      ['ArrowRight', selected === last ? 0 : selected + 1],
+      ['ArrowLeft', selected === 0 ? last : selected - 1],
+      ['Home', 0],
+      ['End', last],
+    ]);
+    const target = targets.get(event.key);
+    if (target === undefined) {
       return;
     }
+    select(target);
     event.preventDefault();
   };
 

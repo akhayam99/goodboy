@@ -3,8 +3,6 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const FEATURES_PATH = resolve(ROOT_DIRECTORY, 'FEATURES.md');
-const FEATURE_DOCS_DIRECTORY = resolve(ROOT_DIRECTORY, 'docs/features');
 const CHANGELOG_PATH = resolve(ROOT_DIRECTORY, 'CHANGELOG.md');
 const RELEASES_DIRECTORY = resolve(ROOT_DIRECTORY, 'website/src/data/releases');
 const VERSION_PATTERN = /^\d+\.\d+\.\d+$/;
@@ -153,16 +151,23 @@ export const buildSnapshot = ({ version, featuresMarkdown, changelog }) => {
   return { version, summary: release.summary, new: release.items, groups };
 };
 
-export const aggregateFeatureDocs = () => {
-  const index = readFileSync(FEATURES_PATH, 'utf8');
-  const areas = [...index.matchAll(/^## (.+)\n[\s\S]*?\[All .*?\]\(docs\/features\/([a-z-]+)\.md\)$/gm)];
+export const aggregateFeatureDocs = ({ root = ROOT_DIRECTORY } = {}) => {
+  const index = readFileSync(resolve(root, 'FEATURES.md'), 'utf8');
+  const areas = [
+    ...index.matchAll(/^## (.+)\n[\s\S]*?\[More on .*?\]\(docs\/features\/([a-z-]+)\.md\)$/gm),
+  ];
+  if (areas.length === 0) {
+    throw new Error('FEATURES.md has no "[More on ...]" area links');
+  }
   const docs = areas.map(([, title, slug]) => ({
     title,
-    body: readFileSync(resolve(FEATURE_DOCS_DIRECTORY, `${slug}.md`), 'utf8'),
+    body: readFileSync(resolve(root, 'docs/features', `${slug}.md`), 'utf8'),
   }));
   const foundRows = docs
     .flatMap(({ body }) => body.split('\n'))
-    .filter((line) => /^\| (?:Written by Goodboy|Resolve again|Checks|Settings rail|Update pill) /.test(line));
+    .filter((line) =>
+      /^\| (?:Written by Goodboy|Resolve again|Checks|Settings rail|Update pill) /.test(line),
+    );
   const groups = docs.map(({ title, body }) => {
     const guide = body
       .replace(/\n\n\*\*Also in this area\*\*[\s\S]*$/, '')
@@ -170,8 +175,16 @@ export const aggregateFeatureDocs = () => {
       .trim();
     return guide;
   });
-  const rowOrder = ['Written by Goodboy', 'Resolve again', 'Checks', 'Settings rail', 'Update pill'];
-  const rows = rowOrder.map((title) => foundRows.find((line) => line.startsWith(`| ${title} `))).filter((line) => line !== undefined);
+  const rowOrder = [
+    'Written by Goodboy',
+    'Resolve again',
+    'Checks',
+    'Settings rail',
+    'Update pill',
+  ];
+  const rows = rowOrder
+    .map((title) => foundRows.find((line) => line.startsWith(`| ${title} `)))
+    .filter((line) => line !== undefined);
   return `${groups.join('\n\n')}\n\n## Also there\n\n| Feature | What it does for you |\n| ------- | -------------------- |\n${rows.join('\n')}\n`;
 };
 

@@ -107,22 +107,6 @@
   color: var(--mk-warn);
 }
 
-.mkDot {
-  flex: none;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--accent);
-}
-
-.mkDot[data-tone='ok'] {
-  background: var(--mk-ok);
-}
-
-.mkDot[data-tone='warn'] {
-  background: var(--mk-warn);
-}
-
 .mkMono {
   font-family: var(--mono);
   font-size: var(--mk-fs-sm);
