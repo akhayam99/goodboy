@@ -95,8 +95,6 @@ export type TimelineDayItem = StreamRail & {
 type TimelineExplodeSlot = {
   readonly groupId: string;
   readonly kind: 'batch' | 'subagents';
-  readonly order: number;
-  readonly total: number;
 };
 
 export type TimelineRowItem = StreamRail & {
@@ -110,10 +108,21 @@ export type TimelineRowItem = StreamRail & {
   readonly nodeIndex: string | null;
   readonly rowState: RowState;
   readonly hasUnread: boolean;
+  readonly opensLane?: boolean;
   readonly explode?: TimelineExplodeSlot;
 };
 
-export type TimelineStreamItem = TimelineNowItem | TimelineDayItem | TimelineRowItem;
+export type TimelineMoreItem = StreamRail & {
+  readonly kind: 'more';
+  readonly familyId: string | null;
+  readonly hiddenCount: number;
+  readonly explode: TimelineExplodeSlot;
+};
+
+export type TimelineStreamItem =
+  TimelineNowItem | TimelineDayItem | TimelineRowItem | TimelineMoreItem;
+
+const GROUP_VISIBLE_CHILDREN = 8;
 
 export type TimelineStream = {
   readonly items: ReadonlyArray<TimelineStreamItem>;
@@ -135,6 +144,7 @@ type Params = {
   readonly resolveBatchByAgentId?: ReadonlyMap<string, ResolveBatchRef>;
   readonly resolveFactsByAgentId?: ReadonlyMap<string, ResolveActivityFacts>;
   readonly expandedGroupIds?: ReadonlySet<string>;
+  readonly fullGroupIds?: ReadonlySet<string>;
 };
 
 type DraftRow = {
@@ -160,7 +170,16 @@ type DraftDay = {
   readonly label: string;
 };
 
-type Draft = DraftRow | DraftDay;
+type DraftMore = {
+  readonly kind: 'more';
+  readonly id: string;
+  readonly familyId: string | null;
+  readonly groupId: string;
+  readonly hiddenCount: number;
+  readonly explode: TimelineExplodeSlot;
+};
+
+type Draft = DraftRow | DraftDay | DraftMore;
 
 const eventRank = ({ kind }: { readonly kind: SessionEventKind }): number => {
   if (kind === 'worktree_created') {
@@ -632,6 +651,8 @@ type EmitContext = {
   readonly questionRowIds: ReadonlySet<string>;
   readonly resolveFactsByAgentId: ReadonlyMap<string, ResolveActivityFacts>;
   readonly expandedGroupIds: ReadonlySet<string> | null;
+  readonly fullGroupIds: ReadonlySet<string>;
+  readonly mores: Array<{ readonly anchorRowId: string; readonly more: DraftMore }>;
 };
 
 const hasUnreadDescendant = ({
@@ -743,8 +764,8 @@ const explodedRows = ({
   isParentClosed,
   context,
 }: ExplodedRowsParams): ReadonlyArray<DraftRow> => {
-  const rows = children
-    .flatMap((child) =>
+  const blocks = children
+    .map((child) =>
       agentRows({
         entry: child,
         grade: 'step',
@@ -758,18 +779,34 @@ const explodedRows = ({
         context,
       }),
     )
+    .flatMap((block) => {
+      const origin = block.at(-1);
+      return origin === undefined ? [] : [{ origin, block }];
+    })
+    .sort((first, second) => compareNewestFirst({ first: first.origin, second: second.origin }));
+  const hiddenCount = context.fullGroupIds.has(groupId)
+    ? 0
+    : Math.max(0, blocks.length - GROUP_VISIBLE_CHILDREN);
+  const shown = blocks.slice(hiddenCount);
+  const rows = shown
+    .flatMap(({ block }) => block)
     .sort((first, second) => compareNewestFirst({ first, second }));
-  const direct = rows.filter((row) => row.groupId === laneId);
-  return rows.map((row) => {
-    const position = direct.indexOf(row);
-    if (position === -1) {
-      return row;
-    }
-    return {
-      ...row,
-      explode: { groupId, kind, order: direct.length - 1 - position, total: direct.length },
-    };
-  });
+  const slot: TimelineExplodeSlot = { groupId, kind };
+  const newest = shown[0]?.origin;
+  if (hiddenCount > 0 && newest !== undefined) {
+    context.mores.push({
+      anchorRowId: newest.id,
+      more: {
+        kind: 'more',
+        id: `more:${groupId}`,
+        familyId,
+        groupId: laneId,
+        hiddenCount,
+        explode: slot,
+      },
+    });
+  }
+  return rows.map((row) => (row.groupId === laneId ? { ...row, explode: slot } : row));
 };
 
 const hasSubagentGroup = ({
@@ -1272,6 +1309,22 @@ const withDayBreaks = ({ drafts, dayLabelFor }: DayBreakParams): ReadonlyArray<D
   return dated;
 };
 
+type MoreRowsParams = {
+  readonly drafts: ReadonlyArray<Draft>;
+  readonly mores: EmitContext['mores'];
+};
+
+const withMoreRows = ({ drafts, mores }: MoreRowsParams): ReadonlyArray<Draft> => {
+  if (mores.length === 0) {
+    return drafts;
+  }
+  const moreByAnchorId = new Map(mores.map(({ anchorRowId, more }) => [anchorRowId, more]));
+  return drafts.flatMap((draft) => {
+    const more = moreByAnchorId.get(draft.id);
+    return more === undefined ? [draft] : [more, draft];
+  });
+};
+
 type StreamItemsParams = {
   readonly drafts: ReadonlyArray<Draft>;
 };
@@ -1310,6 +1363,24 @@ const streamItemsOf = ({ drafts }: StreamItemsParams): ReadonlyArray<TimelineStr
       continue;
     }
     const { familyId } = draft;
+    if (draft.kind === 'more') {
+      const moreGap: TimelineGap = previous == null || previous.kind === 'day' ? 'none' : 'sibling';
+      items.push({
+        kind: 'more',
+        id: draft.id,
+        familyId,
+        hiddenCount: draft.hiddenCount,
+        explode: draft.explode,
+        height: rowBoxHeight({ grade: 'step', gap: moreGap }),
+        topY: 0,
+        markerY: markerCenterY({ grade: 'step', gap: moreGap }),
+        groupId: draft.groupId,
+        isPending: false,
+        gap: moreGap,
+      });
+      previous = draft;
+      continue;
+    }
     const gap: TimelineGap =
       previous == null || previous.kind === 'day'
         ? 'none'
@@ -1334,6 +1405,7 @@ const streamItemsOf = ({ drafts }: StreamItemsParams): ReadonlyArray<TimelineStr
       markerY: markerCenterY({ grade: draft.grade, gap }),
       groupId: draft.groupId,
       isPending: draft.isPending,
+      opensLane: draft.entry.kind === 'resolveBatch' || draft.entry.kind === 'subagentGroup',
       gap,
       ...(draft.explode === undefined ? {} : { explode: draft.explode }),
     });
@@ -1435,6 +1507,7 @@ export const buildTimelineStream = ({
   resolveBatchByAgentId = NO_RESOLVE_BATCHES,
   resolveFactsByAgentId = NO_RESOLVE_FACTS,
   expandedGroupIds = NO_EXPANDED_GROUPS,
+  fullGroupIds = NO_EXPANDED_GROUPS,
 }: Params): TimelineStream => {
   const chainedRunById = new Map<string, ChainedRun>();
   for (const entry of entries) {
@@ -1460,6 +1533,8 @@ export const buildTimelineStream = ({
     questionRowIds: showQuestions ? openQuestionRowIds({ entries }) : NO_QUESTION_ROWS,
     resolveFactsByAgentId,
     expandedGroupIds,
+    fullGroupIds,
+    mores: [],
   };
   const rows: DraftRow[] = [];
   const grouped = groupResolveBatches({
@@ -1565,7 +1640,10 @@ export const buildTimelineStream = ({
     dayLabelFor,
   });
 
-  return { items: streamItemsOf({ drafts: withDays }), groups: context.groups };
+  return {
+    items: streamItemsOf({ drafts: withMoreRows({ drafts: withDays, mores: context.mores }) }),
+    groups: context.groups,
+  };
 };
 
 type RunTreeParams = {
@@ -1596,6 +1674,8 @@ export const buildRunTreeStream = ({
     questionRowIds: NO_QUESTION_ROWS,
     resolveFactsByAgentId: NO_RESOLVE_FACTS,
     expandedGroupIds: null,
+    fullGroupIds: NO_EXPANDED_GROUPS,
+    mores: [],
   };
   const sorted = [...runRows({ entry, context })].sort((first, second) =>
     compareNewestFirst({ first, second }),
@@ -1637,6 +1717,8 @@ export const buildAgentTreeStream = ({
     questionRowIds: NO_QUESTION_ROWS,
     resolveFactsByAgentId: NO_RESOLVE_FACTS,
     expandedGroupIds: null,
+    fullGroupIds: NO_EXPANDED_GROUPS,
+    mores: [],
   };
   const rootLaneId = `tree:${entry.id}`;
   context.groups.push({

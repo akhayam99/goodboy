@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { SessionWorktree } from '@goodboy/db';
 import type {
@@ -44,7 +44,12 @@ import {
 import { needsYouCount, needsYouEntries, needsYouRootIds } from '../../../../../timeline/needsYou';
 import { shownQuestionIds } from '../../../../../timeline/shownQuestionIds';
 import { timelineLaneRuns, type TimelineLaneRuns } from '../../../../../timeline/timelineLaneRuns';
-import { layoutTimelineRail, type RailLayout } from '../../../../../../workTreeModel/railGeometry';
+import {
+  layoutTimelineRail,
+  type RailLayout,
+  type RailRow,
+} from '../../../../../../workTreeModel/railGeometry';
+import { keepEqualById } from '../../../../../../../shared/utils/keepEqualById';
 import type { ActivityFilterControl } from '../../../../../hooks/useActivityFilter';
 import type { ExplodeGroups } from '../../../../../hooks/useExplodeGroups';
 import { useResolveActivity } from '../../../../../hooks/useResolveActivity';
@@ -250,6 +255,21 @@ export const useTimelineRows = ({ session, activity, explode }: Params): Timelin
     [activity.filter, attentionRootIds, isNeedsYou, model.entries, revealedRows],
   );
 
+  const shows = useMemo(
+    () => ({
+      showWorkflowSubagents: isNeedsYou || activity.filter.workflowSubagents,
+      showAgentSubagents: isNeedsYou || activity.filter.agentSubagents,
+      showPlans: isNeedsYou || isActivityChildShown({ filter: activity.filter, toggle: 'plans' }),
+      showReports:
+        isNeedsYou || isActivityChildShown({ filter: activity.filter, toggle: 'reports' }),
+      showWireframes:
+        isNeedsYou || isActivityChildShown({ filter: activity.filter, toggle: 'wireframes' }),
+      showQuestions: isNeedsYou || activity.filter.questions,
+    }),
+    [activity.filter, isNeedsYou],
+  );
+  const isShowingEverything = Object.values(shows).every((isShown) => isShown);
+
   const stream = useMemo(
     () =>
       buildTimelineStream({
@@ -258,25 +278,19 @@ export const useTimelineRows = ({ session, activity, explode }: Params): Timelin
         advanceByRunId,
         decidingRunIds,
         dayLabelFor: dayLabel,
-        showWorkflowSubagents: isNeedsYou || activity.filter.workflowSubagents,
-        showAgentSubagents: isNeedsYou || activity.filter.agentSubagents,
-        showPlans: isNeedsYou || isActivityChildShown({ filter: activity.filter, toggle: 'plans' }),
-        showReports:
-          isNeedsYou || isActivityChildShown({ filter: activity.filter, toggle: 'reports' }),
-        showWireframes:
-          isNeedsYou || isActivityChildShown({ filter: activity.filter, toggle: 'wireframes' }),
-        showQuestions: isNeedsYou || activity.filter.questions,
+        ...shows,
         resolveBatchByAgentId: resolveActivity.batchByAgentId,
         resolveFactsByAgentId: resolveActivity.factsByAgentId,
         expandedGroupIds: explode.expandedIds,
+        fullGroupIds: explode.fullIds,
       }),
     [
-      activity.filter,
       advanceByRunId,
       decidingRunIds,
       explode.expandedIds,
-      isNeedsYou,
+      explode.fullIds,
       resolveActivity,
+      shows,
       unreadAgentIds,
       visibleEntries,
     ],
@@ -284,21 +298,27 @@ export const useTimelineRows = ({ session, activity, explode }: Params): Timelin
 
   const unfilteredStream = useMemo(
     () =>
-      buildTimelineStream({
-        entries: visibleEntries,
-        unreadAgentIds,
-        advanceByRunId,
-        decidingRunIds,
-        dayLabelFor: dayLabel,
-        resolveBatchByAgentId: resolveActivity.batchByAgentId,
-        resolveFactsByAgentId: resolveActivity.factsByAgentId,
-        expandedGroupIds: explode.expandedIds,
-      }),
+      isShowingEverything
+        ? stream
+        : buildTimelineStream({
+            entries: visibleEntries,
+            unreadAgentIds,
+            advanceByRunId,
+            decidingRunIds,
+            dayLabelFor: dayLabel,
+            resolveBatchByAgentId: resolveActivity.batchByAgentId,
+            resolveFactsByAgentId: resolveActivity.factsByAgentId,
+            expandedGroupIds: explode.expandedIds,
+            fullGroupIds: explode.fullIds,
+          }),
     [
       advanceByRunId,
       decidingRunIds,
       explode.expandedIds,
+      explode.fullIds,
+      isShowingEverything,
       resolveActivity,
+      stream,
       unreadAgentIds,
       visibleEntries,
     ],
@@ -325,14 +345,16 @@ export const useTimelineRows = ({ session, activity, explode }: Params): Timelin
     return details;
   }, [stream.items]);
 
-  const laidOutItems = useMemo(
-    () =>
-      stream.items.map((item) => {
-        const detail = expandedRows.has(item.id) ? decisionDetails.get(item.id) : undefined;
-        return detail === undefined ? item : { ...item, height: item.height + detail.height };
-      }),
-    [decisionDetails, expandedRows, stream.items],
-  );
+  const itemCache = useRef<ReadonlyMap<string, TimelineStreamItem>>(new Map());
+  const laidOutItems = useMemo(() => {
+    const next = stream.items.map((item) => {
+      const detail = expandedRows.has(item.id) ? decisionDetails.get(item.id) : undefined;
+      return detail === undefined ? item : { ...item, height: item.height + detail.height };
+    });
+    const kept = keepEqualById({ previous: itemCache.current, next });
+    itemCache.current = new Map(kept.map((item) => [item.id, item]));
+    return kept;
+  }, [decisionDetails, expandedRows, stream.items]);
 
   const toggleExpanded = useCallback((rowId: string) => {
     setExpandedRows((current) => {
@@ -346,10 +368,13 @@ export const useTimelineRows = ({ session, activity, explode }: Params): Timelin
     });
   }, []);
 
-  const rail = useMemo(
-    () => layoutTimelineRail({ rows: laidOutItems, groups: stream.groups }),
-    [stream.groups, laidOutItems],
-  );
+  const railCache = useRef<ReadonlyMap<string, RailRow>>(new Map());
+  const rail = useMemo(() => {
+    const layout = layoutTimelineRail({ rows: laidOutItems, groups: stream.groups });
+    const rows = keepEqualById({ previous: railCache.current, next: layout.rows });
+    railCache.current = new Map(rows.map((row) => [row.id, row]));
+    return { ...layout, rows };
+  }, [stream.groups, laidOutItems]);
 
   const laneRuns = useMemo(
     () => timelineLaneRuns({ items: stream.items, groups: stream.groups }),

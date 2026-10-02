@@ -34,7 +34,6 @@ type Props = {
   readonly sessionEffort: EffortLevel | null;
   readonly costUsd: number;
   readonly isRevealed?: boolean;
-  readonly explodePhase?: 'in' | 'out' | null;
 };
 
 export const TimelineAgentStreamRow = ({
@@ -55,7 +54,6 @@ export const TimelineAgentStreamRow = ({
   sessionEffort,
   costUsd,
   isRevealed = false,
-  explodePhase = null,
 }: Props) => {
   const contextMenu = useObjectMenuTrigger({
     target: { kind: 'agent', sessionId, agentId: entry.agent.id },
@@ -85,7 +83,6 @@ export const TimelineAgentStreamRow = ({
       progress={work.time?.progress ?? null}
       stateNote={work.time?.note ?? null}
       isRevealed={isRevealed}
-      explodePhase={explodePhase}
       lanes={lanes}
       runLane={runLane}
     />

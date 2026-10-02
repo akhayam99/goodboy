@@ -197,12 +197,9 @@ describe('buildTimelineStream subagent groups', () => {
         shape: 'merged',
       }),
     ]);
-    expect(rows.slice(0, 4).map((row) => row.explode)).toEqual([
-      { groupId: GROUP_ID, kind: 'subagents', order: 3, total: 4 },
-      { groupId: GROUP_ID, kind: 'subagents', order: 2, total: 4 },
-      { groupId: GROUP_ID, kind: 'subagents', order: 1, total: 4 },
-      { groupId: GROUP_ID, kind: 'subagents', order: 0, total: 4 },
-    ]);
+    expect(rows.slice(0, 4).map((row) => row.explode)).toEqual(
+      Array.from({ length: 4 }, () => ({ groupId: GROUP_ID, kind: 'subagents' })),
+    );
 
     const layout = layoutTimelineRail({ rows: items, groups });
     const groupRail = layout.rows[items.findIndex((item) => item.id === GROUP_ID)];

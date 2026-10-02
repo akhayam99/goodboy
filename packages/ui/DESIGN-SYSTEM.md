@@ -555,10 +555,15 @@ succeeded.
 A group row (a batch of resolves, or three or more subagents of one agent) is closed by default and draws the `mixed`
 node. Activity is newest first, so its children come out above it, on the
 group's own lane with the existing upward elbows, and fold back down into it.
-Each child fades in over 180ms from 6px below, staggered 24ms from the nearest
-one; folding takes 130ms with a 10ms stagger from the farthest. The group opens
-with a click, Enter, Space or the right arrow and closes with a second click or
-the left arrow. Reduced motion skips the animation and swaps the rows at once.
+Each child grows from zero height with `Reveal` (200ms, all at once, no
+stagger), and while they grow the scroller moves by the same amount every frame,
+so the group row you clicked stays under the pointer; folding runs the same
+transition backwards and removes the rows when it settles. A group of more than
+eight children opens on the eight nearest its row, under a compact "Show 12
+more" row that brings the rest. The group opens with a click, Enter, Space or
+the right arrow and closes with a second click or the left arrow. Reduced
+motion skips the transition and swaps the rows at once. The rail reserves the
+lane a closed group would open, so opening it never moves the list sideways.
 A failed child never opens the group: its arc is `danger`, the summary says
 "1 failed" in `danger` text and the need-you count includes it. A subagent group
 sits on the lane of its parent agent, above the parent, at the start of its

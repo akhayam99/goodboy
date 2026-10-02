@@ -6,7 +6,6 @@ import type { MountDiffStat } from '../../../../../../store';
 import { formatClock } from '../../../../../../shared/utils/time/formatClock';
 import { useHoverMarkViewed } from '../../../../hooks/useHoverMarkViewed';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
-import { EXPLODE_IN_STAGGER_MS, EXPLODE_OUT_STAGGER_MS } from '../../../../timeline/explodeTiming';
 import type { TimelineOpenTarget } from '../../../../hooks/useTimelineOpen';
 import { railColumnX, type RailRow } from '../../../../../workTreeModel/railGeometry';
 import { TIMELINE_RHYTHM } from '../../../../../workTreeModel/timelineRhythm';
@@ -50,24 +49,7 @@ type Props = {
   readonly detail?: ReactNode;
   readonly detailHeight?: number;
   readonly expansion?: TimelineRowExpansion | null;
-  readonly explodePhase?: 'in' | 'out' | null;
   readonly contextMenu?: ObjectMenuTrigger;
-};
-
-const explodeDelayOf = ({
-  item,
-  explodePhase,
-}: {
-  readonly item: TimelineRowItem;
-  readonly explodePhase: 'in' | 'out' | null;
-}): string | undefined => {
-  if (item.explode === undefined || explodePhase === null) {
-    return undefined;
-  }
-  if (explodePhase === 'in') {
-    return `${item.explode.order * EXPLODE_IN_STAGGER_MS}ms`;
-  }
-  return `${(item.explode.total - 1 - item.explode.order) * EXPLODE_OUT_STAGGER_MS}ms`;
 };
 
 const agentIdOf = ({ item }: { readonly item: TimelineRowItem }): AgentId | null =>
@@ -92,7 +74,6 @@ export const TimelineStreamRow = ({
   detail = null,
   detailHeight = 0,
   expansion = null,
-  explodePhase = null,
   contextMenu,
 }: Props) => {
   const hover = useHoverMarkViewed({
@@ -161,13 +142,8 @@ export const TimelineStreamRow = ({
   return (
     <div
       data-row-id={item.id}
-      data-explode={explodePhase ?? undefined}
-      className={cn(
-        'group flex min-w-0',
-        explodePhase === 'in' && 'motion-safe:animate-explode-in',
-        explodePhase === 'out' && 'motion-safe:animate-explode-out',
-      )}
-      style={{ height: item.height, animationDelay: explodeDelayOf({ item, explodePhase }) }}
+      className="group flex min-w-0"
+      style={{ height: item.height }}
       onMouseEnter={hover.onMouseEnter}
       onMouseLeave={hover.onMouseLeave}
       onContextMenu={contextMenu?.onContextMenu}

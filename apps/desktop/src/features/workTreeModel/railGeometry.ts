@@ -23,6 +23,7 @@ export type RailRowInput = {
   readonly markerY: number | null;
   readonly groupId: string | null;
   readonly isPending: boolean;
+  readonly opensLane?: boolean;
 };
 
 export type RailSegment = {
@@ -388,8 +389,19 @@ export const layoutTimelineRail = ({ rows, groups, hasSpine = true }: Params): R
     0,
   );
 
+  const reservedColumns = rows.reduce((widest, row) => {
+    if (row.opensLane !== true) {
+      return widest;
+    }
+    const column =
+      row.groupId == null
+        ? rootParentColumn
+        : (columnByGroupId.get(row.groupId) ?? rootParentColumn);
+    return column + 1 > widest ? column + 1 : widest;
+  }, maxColumn);
+
   return {
-    width: RAIL_SPINE_X + maxColumn * RAIL_LANE_OFFSET + RAIL_EDGE_PAD,
+    width: RAIL_SPINE_X + reservedColumns * RAIL_LANE_OFFSET + RAIL_EDGE_PAD,
     columnByGroupId,
     rows: rows.map((row, index) => ({
       id: row.id,

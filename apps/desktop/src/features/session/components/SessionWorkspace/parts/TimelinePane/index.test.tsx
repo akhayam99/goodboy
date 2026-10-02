@@ -187,6 +187,24 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
+const REVEAL_FRAME = '[data-reveal-group] > [data-state]';
+
+const revealFrames = () => Array.from(document.querySelectorAll<HTMLElement>(REVEAL_FRAME));
+
+const withRevealTransitions = () => {
+  const computed = window.getComputedStyle.bind(window);
+  return vi.spyOn(window, 'getComputedStyle').mockImplementation((element, pseudo) => {
+    const style = computed(element, pseudo);
+    if (!(element instanceof HTMLElement) || !element.matches(REVEAL_FRAME)) {
+      return style;
+    }
+    return new Proxy(style, {
+      get: (target, key) =>
+        key === 'transitionDuration' ? '0.2s' : Reflect.get(target, key, target),
+    });
+  });
+};
+
 describe('TimelinePane mount rows', () => {
   it('turns the mount row action into the diff once the mount has changes', () => {
     storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
@@ -1231,6 +1249,46 @@ describe('TimelinePane resolve batch', () => {
 
   const toggle = () => screen.getByRole('button', { name: /4 resolves on PR #318/ });
 
+  const seedWideBatch = ({ count }: { readonly count: number }) => {
+    const agents = Array.from({ length: count }, (_, index) => ({
+      id: `resolver-${index}`,
+      sessionId: 'session-1',
+      ordinal: index + 1,
+      name: `resolve: tvarga on wide${index}.ts:${index + 1}`,
+      kind: 'resolver',
+      status: 'completed',
+      startedAt: `2026-08-20T10:${String(index).padStart(2, '0')}:00.000Z`,
+      completedAt: `2026-08-20T10:${String(index).padStart(2, '0')}:30.000Z`,
+    }));
+    storeState.sessionPhaseRuns = { 'session-1': agents };
+    resolveActivity.current = {
+      batchByAgentId: new Map(
+        agents.map((agent) => [agent.id, { batchId: 'batch-1', prNumber: 318 }] as const),
+      ),
+      factsByAgentId: new Map(
+        agents.map((agent) => [agent.id, { state: 'pushed', word: 'Pushed' }] as const),
+      ),
+    };
+  };
+
+  it('mounts eight children and a Show 12 more row for a group of twenty', () => {
+    seedWideBatch({ count: 20 });
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /20 resolves on PR #318/ }));
+
+    expect(revealFrames()).toHaveLength(9);
+    expect(screen.getByRole('button', { name: 'Show 12 more' })).toBeTruthy();
+    expect(screen.getByText('tvarga on wide0.ts:1')).toBeTruthy();
+    expect(screen.queryByText('tvarga on wide19.ts:20')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show 12 more' }));
+
+    expect(revealFrames()).toHaveLength(20);
+    expect(screen.queryByRole('button', { name: /more$/ })).toBeNull();
+    expect(screen.getByText('tvarga on wide19.ts:20')).toBeTruthy();
+  });
+
   it('draws one closed row with the state summary and no child rows', () => {
     seedBatch();
     render(<TimelinePane session={SESSION} actions={null} />);
@@ -1254,8 +1312,8 @@ describe('TimelinePane resolve batch', () => {
     expect(mixed?.querySelectorAll('[data-arc-tone]')).toHaveLength(4);
   });
 
-  it('explodes on click and folds back on the second click', () => {
-    vi.useFakeTimers();
+  it('explodes on click and folds back once the children have closed', () => {
+    const transitions = withRevealTransitions();
     seedBatch();
     render(<TimelinePane session={SESSION} actions={null} />);
 
@@ -1273,30 +1331,45 @@ describe('TimelinePane resolve batch', () => {
     );
     expect(batchRows.at(-1)).toBe('batch:batch-1');
     expect(batchRows).toHaveLength(5);
+    expect(revealFrames().map((frame) => frame.dataset.state)).toEqual([
+      'open',
+      'open',
+      'open',
+      'open',
+    ]);
 
     fireEvent.click(toggle());
+
     expect(toggle().getAttribute('aria-expanded')).toBe('false');
-    expect(document.querySelectorAll('[data-explode="out"]')).toHaveLength(4);
-    act(() => {
-      vi.advanceTimersByTime(400);
-    });
+    expect(screen.getByText('tvarga on file0.ts:1')).toBeTruthy();
+    const leaving = Array.from(document.querySelectorAll<HTMLElement>('[data-leaving="true"]'));
+    expect(leaving).toHaveLength(4);
+    expect(leaving.every((row) => row.inert)).toBe(true);
+    expect(revealFrames().every((frame) => frame.dataset.state === 'closed')).toBe(true);
+
+    for (const frame of revealFrames()) {
+      fireEvent.transitionEnd(frame);
+    }
+
     expect(screen.queryByText('tvarga on file0.ts:1')).toBeNull();
-    vi.useRealTimers();
+    expect(document.querySelectorAll('[data-reveal-group]')).toHaveLength(0);
+    transitions.mockRestore();
   });
 
-  it('animates the children in and out with the stagger unless motion is reduced', () => {
+  it('opens again from the middle of a fold without losing a child', () => {
+    const transitions = withRevealTransitions();
     seedBatch();
     render(<TimelinePane session={SESSION} actions={null} />);
 
     fireEvent.click(toggle());
+    fireEvent.click(toggle());
+    fireEvent.click(toggle());
 
-    const children = Array.from(document.querySelectorAll<HTMLElement>('[data-explode="in"]'));
-    expect(children).toHaveLength(4);
-    expect(
-      children.every((child) => child.className.includes('motion-safe:animate-explode-in')),
-    ).toBe(true);
-    const delays = children.map((child) => child.style.animationDelay).sort();
-    expect(delays).toEqual(['0ms', '24ms', '48ms', '72ms']);
+    expect(toggle().getAttribute('aria-expanded')).toBe('true');
+    expect(document.querySelectorAll('[data-leaving="true"]')).toHaveLength(0);
+    expect(revealFrames()).toHaveLength(4);
+    expect(revealFrames().every((frame) => frame.dataset.state === 'open')).toBe(true);
+    transitions.mockRestore();
   });
 
   it('collapses at once when motion is reduced', () => {
@@ -1313,7 +1386,7 @@ describe('TimelinePane resolve batch', () => {
     fireEvent.click(toggle());
     fireEvent.click(toggle());
 
-    expect(document.querySelectorAll('[data-explode]')).toHaveLength(0);
+    expect(document.querySelectorAll('[data-reveal-group]')).toHaveLength(0);
     expect(screen.queryByText('tvarga on file0.ts:1')).toBeNull();
     window.matchMedia = original;
   });
@@ -1391,6 +1464,7 @@ describe('TimelinePane subagent group', () => {
 
   it('explodes upward on click and folds back on the second click', () => {
     vi.useFakeTimers();
+    const transitions = withRevealTransitions();
     seedSubagents();
     render(<TimelinePane session={SESSION} actions={null} />);
 
@@ -1403,15 +1477,16 @@ describe('TimelinePane subagent group', () => {
     );
     expect(ids.at(-1)).toBe('subagents:agent:lead');
     expect(ids).toHaveLength(5);
-    expect(document.querySelectorAll('[data-explode="in"]')).toHaveLength(4);
+    expect(revealFrames()).toHaveLength(4);
 
     fireEvent.click(toggle());
     expect(toggle().getAttribute('aria-expanded')).toBe('false');
-    expect(document.querySelectorAll('[data-explode="out"]')).toHaveLength(4);
+    expect(document.querySelectorAll('[data-leaving="true"]')).toHaveLength(4);
     act(() => {
       vi.advanceTimersByTime(400);
     });
     expect(screen.queryByText('Scout thresholds')).toBeNull();
+    transitions.mockRestore();
     vi.useRealTimers();
   });
 
