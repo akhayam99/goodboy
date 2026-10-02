@@ -38,6 +38,49 @@ jobs:
       - name: perf tests
         run: pnpm test:perf
 
+  bundle:
+    name: bundle weight
+    if: ${{ github.event_name != 'push' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+    steps:
+      - name: checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: setup node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: install
+        run: pnpm install --frozen-lockfile
+
+      - name: build
+        run: pnpm --filter @goodboy/desktop exec vite build
+
+      - name: report the bundle weight
+        working-directory: apps/desktop/dist
+        run: |
+          raw=0
+          packed=0
+          for file in $(grep -oE '(src|href)="/assets/[^"]+\.(js|css)"' index.html | sed -E 's/^[a-z]+="\/(.*)"$/\1/'); do
+            raw=$((raw + $(wc -c < "$file")))
+            packed=$((packed + $(gzip -9 -c "$file" | wc -c)))
+          done
+          {
+            echo "### Bundle weight"
+            echo ""
+            echo "| | now | reference |"
+            echo "| --- | --- | --- |"
+            echo "| initial load, js and css | $(awk -v b=$raw 'BEGIN { printf "%.2f", b / 1048576 }') MB | 4.9 MB |"
+            echo "| initial load, gzip | $(awk -v b=$packed 'BEGIN { printf "%.2f", b / 1048576 }') MB | 1.44 MB |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   report:
     name: report nightly failure
     needs: perf

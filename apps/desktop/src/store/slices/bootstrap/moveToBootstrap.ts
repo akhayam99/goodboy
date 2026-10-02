@@ -24,7 +24,7 @@ import type { BootstrapMoveReport } from './state';
 const SESSION_NAME = 'bootstrap';
 const MAX_SLUG_TRIES = 4;
 
-export type MoveRefusal = 'not-ready' | 'remote-not-ready' | 'turn-running' | 'refused' | 'failed';
+type MoveRefusal = 'not-ready' | 'remote-not-ready' | 'turn-running' | 'refused' | 'failed';
 
 export type MoveToBootstrapResult =
   | { readonly kind: 'moved'; readonly session: Session; readonly report: BootstrapMoveReport }

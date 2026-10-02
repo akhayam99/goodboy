@@ -59,7 +59,7 @@ import { openTurnStartWindow } from '../turn/turnStartWindow';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 
-export type ArtifactRunKind = 'wireframe' | 'report';
+type ArtifactRunKind = 'wireframe' | 'report';
 
 export const artifactRunRestartSummary = ({ kind }: Readonly<{ kind: ArtifactRunKind }>): string =>
   `the app restarted before the scouts finished, so this ${kind} was never written. try again.`;
