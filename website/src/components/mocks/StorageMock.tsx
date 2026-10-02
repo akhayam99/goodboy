@@ -1,6 +1,8 @@
 import './StorageMock.css';
 import { MockStage } from './MockStage';
-import { MockChip, MockRow, MockWindow } from './MockWindow';
+import { MockChip } from './MockChip';
+import { MockRow } from './MockRow';
+import { MockWindow } from './MockWindow';
 
 type Part = {
   readonly name: string;

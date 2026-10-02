@@ -166,7 +166,20 @@ describe('buildSnapshot', () => {
 describe('aggregateFeatureDocs', () => {
   it('aggregates every current feature area', () => {
     const markdown = aggregateFeatureDocs();
-    assert.equal(typeof markdown, 'string');
+    const areaCount = (markdown.match(/^## /gm) ?? []).length;
+    assert.ok(areaCount > 10);
+    assert.match(markdown, /^## Set up$/m);
+    assert.match(markdown, /^## Also there$/m);
+  });
+
+  it('fails loudly when the index has no area links', () => {
+    const directory = mkdtempSync(resolve(tmpdir(), 'goodboy-feature-index-'));
+    try {
+      writeFileSync(resolve(directory, 'FEATURES.md'), '# Goodboy features\n\n## The board\n');
+      assert.throws(() => aggregateFeatureDocs({ root: directory }), /no "\[More on/);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 });
 

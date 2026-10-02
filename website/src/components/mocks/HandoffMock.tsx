@@ -10,7 +10,7 @@ import {
   Waypoints,
 } from './icons';
 import { GroupLabel, KindChip, WorkNode } from './kit';
-import { useStepLoop } from './usePlayOnce';
+import { useStepLoop } from './useStepLoop';
 
 const HOLDS: ReadonlyArray<number> = [1600, 3200, 3200, 2800, 4800];
 

@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import './kit.css';
-import { AppBrandIcon, CircleHelp, FolderTree, type AppBrandId } from '../icons';
+import { AppBrandIcon, type AppBrandId } from '../icons';
 import { cx } from './cx';
 import { TONE_COLOR, type Tone } from './spec';
 
@@ -66,55 +66,3 @@ export const Chip = ({
     </Tag>
   );
 };
-
-type RepoChipProps = {
-  readonly name: string;
-  readonly className?: string;
-};
-
-export const RepoChip = ({ name, className }: RepoChipProps) => (
-  <Chip
-    tone="neutral"
-    size="xs"
-    bordered={false}
-    label={name}
-    className={cx('gkRepo', className)}
-  />
-);
-
-type StartsInChipProps = {
-  readonly target: string;
-  readonly verb?: string;
-  readonly className?: string;
-};
-
-export const StartsInChip = ({ target, verb = 'Starts in', className }: StartsInChipProps) => (
-  <Chip
-    tone="neutral"
-    size="xs"
-    bordered={false}
-    icon={<FolderTree size={12} />}
-    label={
-      <>
-        <span className="gkMuted">{verb}</span> <span className="gkFg">{target}</span>
-      </>
-    }
-    className={className}
-  />
-);
-
-type NeedsYouChipProps = {
-  readonly count: number;
-  readonly className?: string;
-};
-
-export const NeedsYouChip = ({ count, className }: NeedsYouChipProps) => (
-  <Chip
-    tone="neutral"
-    size="control"
-    emphasis="subtle"
-    icon={<CircleHelp size={12} />}
-    label={`${count} ${count === 1 ? 'needs' : 'need'} you`}
-    className={className}
-  />
-);
