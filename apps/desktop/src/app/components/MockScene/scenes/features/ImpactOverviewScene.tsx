@@ -113,7 +113,7 @@ export const FeaturesImpactOverviewScene = () => {
 
   return (
     <StudioFrame
-      target="impact"
+      target={{ place: 'impact', tool: null }}
       main={
         <StudioShell
           icon={CONCEPT_ICONS.impact}

@@ -130,7 +130,7 @@ export const ChatRoomScene = () => {
       ) : (
         <div data-scene-view="chat" className="contents">
           <StudioFrame
-            target={null}
+            target={{ place: null, tool: null }}
             main={
               <AppStudioFrame kind="chat" onClose={noop}>
                 <ChatStudio workspaceId={WORKSPACE_ID} chatId={chatId} onClose={noop} />

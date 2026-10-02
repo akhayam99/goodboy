@@ -341,14 +341,14 @@ describe('app overlay hook', () => {
     expect(await openStudios()).toEqual(['workflow']);
   });
 
-  it('opens the inbox on github when github is connected and lights its glyph', async () => {
+  it('opens the inbox on github when github is connected and rings its glyph', async () => {
     renderHarness({ connectedGithub: true });
 
     act(() => overlays().openIntegration({ provider: 'github' }));
 
     expect(await openStudios()).toEqual(['inbox']);
     expect(screen.getByTestId('studio').getAttribute('data-provider')).toBe('github');
-    expect(overlays().footer).toBe('github');
+    expect(overlays().footer).toEqual({ place: 'inbox', tool: 'github' });
   });
 
   it('opens the tools form for a disconnected integration and lights the link action', async () => {
@@ -358,7 +358,7 @@ describe('app overlay hook', () => {
 
     expect(await openStudios()).toEqual(['settings']);
     expect(screen.getByTestId('studio').getAttribute('data-scope')).toBe('tools');
-    expect(overlays().footer).toBe('link');
+    expect(overlays().footer).toEqual({ place: 'link', tool: null });
   });
 
   it('leaves only settings when the shortcut help opens over another studio', async () => {

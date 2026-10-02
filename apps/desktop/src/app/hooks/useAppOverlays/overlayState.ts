@@ -25,15 +25,19 @@ export const isAppScopeOverlay = ({ overlay }: { readonly overlay: StudioPlace }
 
 export type ConnectedIntegrations = Readonly<Record<IntegrationGlyphProvider, boolean>>;
 
-export type FooterTarget =
-  | IntegrationGlyphProvider
-  | 'link'
-  | 'inbox'
-  | 'workflows'
-  | 'settings'
-  | 'impact'
-  | 'changelog'
-  | null;
+type FooterPlace = 'link' | 'inbox' | 'workflows' | 'settings' | 'impact' | 'changelog';
+
+export type FooterTarget = {
+  readonly place: FooterPlace | null;
+  readonly tool: IntegrationGlyphProvider | null;
+};
+
+const NO_FOOTER_TARGET: FooterTarget = { place: null, tool: null };
+
+const placeTarget = ({ place }: { readonly place: FooterPlace }): FooterTarget => ({
+  place,
+  tool: null,
+});
 
 type FooterTargetParams = {
   readonly overlay: StudioPlace | null;
@@ -52,22 +56,19 @@ type InboxTargetParams = {
 
 const settingsTarget = ({ focus, connected }: SettingsTargetParams): FooterTarget => {
   if (focus.scope === 'tools' && focus.tool !== undefined && !connected[focus.tool]) {
-    return 'link';
+    return placeTarget({ place: 'link' });
   }
-  return 'settings';
+  return placeTarget({ place: 'settings' });
 };
 
 const inboxTarget = ({ focus, connected }: InboxTargetParams): FooterTarget => {
   const provider = focus?.provider ?? null;
-  if (provider !== null && connected[provider]) {
-    return provider;
-  }
-  return 'inbox';
+  return { place: 'inbox', tool: provider !== null && connected[provider] ? provider : null };
 };
 
 export const footerTarget = ({ overlay, connected }: FooterTargetParams): FooterTarget => {
   if (overlay === null) {
-    return null;
+    return NO_FOOTER_TARGET;
   }
   switch (overlay.kind) {
     case 'settings':
@@ -75,17 +76,17 @@ export const footerTarget = ({ overlay, connected }: FooterTargetParams): Footer
     case 'inbox':
       return inboxTarget({ focus: overlay.focus, connected });
     case 'workflow':
-      return 'workflows';
+      return placeTarget({ place: 'workflows' });
     case 'impact':
-      return 'impact';
+      return placeTarget({ place: 'impact' });
     case 'changelog':
-      return 'changelog';
+      return placeTarget({ place: 'changelog' });
     case 'guide':
     case 'companion':
     case 'addWorkspace':
     case 'notifications':
     case 'chat':
-      return null;
+      return NO_FOOTER_TARGET;
     default: {
       const unreachable: never = overlay;
       return unreachable;
