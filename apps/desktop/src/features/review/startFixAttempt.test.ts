@@ -138,6 +138,22 @@ describe('startFixAttempt', () => {
     expect(args?.initialPrompt).not.toContain('<<comment-resolved');
   });
 
+  it('nests the recheck under the agent it checks', async () => {
+    const { spawnAgent, setAgentConfig } = harness();
+
+    await startFixAttempt({
+      sessionId: SESSION_ID,
+      threads: [threadOn({ id: 't1', path: 'a.ts' })],
+      pr,
+      mode: 'recheck',
+      parentAgentId: 'resolver-1' as AgentId,
+      spawnAgent,
+      setAgentConfig,
+    });
+
+    expect(spawnAgent.mock.calls[0]?.[1].parentAgentId).toBe('resolver-1');
+  });
+
   it('starts one recheck per thread', async () => {
     const { spawnAgent, setAgentConfig } = harness();
 
