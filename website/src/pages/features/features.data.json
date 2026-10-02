@@ -314,6 +314,12 @@
           "shown": true
         },
         {
+          "title": "Start a project from nothing",
+          "text": "Begin with an empty folder. Goodboy starts the repository, a first session works in it, and Publish puts main on GitHub when you are ready.",
+          "group": "Workspace and projects",
+          "main": true
+        },
+        {
           "title": "Workspace with several projects",
           "text": "Keep your repos together and let one session work across several of them. A repo gets a branch only when an agent needs to edit it.",
           "group": "Workspace and projects",
