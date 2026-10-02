@@ -12,6 +12,26 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.15.3
+
+Start a project from an empty folder, publish it when you are ready, and move the first session's work into a branch of its own.
+
+### New
+
+#### Start a project from nothing
+<!-- gb area=app pr=1952 -->
+
+Choose Start a new project on the empty screen, in the workspace launcher or in the setup wizard. Goodboy makes the folder, starts a git repository on main with a first commit that holds only a .gitignore, and opens a first session that works right in that folder.
+
+Publish creates a repository on your GitHub account, private or public, or links one you already have. When main is on the remote, Move my work puts everything you have not committed into a session named bootstrap with its own worktree, and the project folder is clean again. From then on the project works like any other.
+
+### Improved
+
+#### A folder without a repository says how to start one
+<!-- gb area=app pr=1952 -->
+
+The git pill of a project with no repository offers Start a repository, then Make the first commit, and Publish once there is a commit, instead of asking you to run git yourself.
+
 ## Goodboy v0.15.2
 
 Codex agents can run the newest Sol model, and the workflow builder and Studio list steps top down, step 1 first.

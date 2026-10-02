@@ -54,6 +54,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Star the projects agents should reach for first and give each a one-line description. Both go into every agent brief, and each project shows its base branch.',
       },
       {
+        term: 'A project from nothing',
+        desc: 'Start a new project from an empty folder. The first session works in that folder, Publish puts main on GitHub, and Move my work then carries what you have not committed into a bootstrap session.',
+      },
+      {
         term: 'A branch only when needed',
         desc: 'A project gets its own worktree and branch only when an agent needs to edit it, so your own checkout stays as it is.',
       },

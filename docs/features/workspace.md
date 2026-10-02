@@ -2,6 +2,10 @@
 
 Keep your repos together, and let sessions work across them.
 
+### Start a project from nothing
+
+Begin with an empty folder and no repository. **Start a new project** on the empty screen, in the workspace launcher and in the setup wizard makes the folder, starts a git repository on main with a first commit that holds only a .gitignore, and opens a first session that works in that folder. **Publish** creates a repository on your GitHub account, private or public, or links one you already have. When main is on the remote, **Move my work** puts what you have not committed into a session named bootstrap with its own worktree, and the folder is clean again.
+
 ### Workspace with several projects
 
 <picture>
