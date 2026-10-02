@@ -37,8 +37,15 @@ export const createNewProject = (set: SetFn, get: GetFn) => {
       throw new Error('the new project was not registered');
     }
     try {
-      await get().setBootstrapPhase({ projectId: project.id, patch: { stage: 'first-lap' } });
+      await get()
+        .setBootstrapPhase({ projectId: project.id, patch: { stage: 'first-lap' } })
+        .catch(() =>
+          get().setBootstrapPhase({ projectId: project.id, patch: { stage: 'first-lap' } }),
+        );
     } catch (error) {
+      await get()
+        .disconnectWorkspace(workspace.id)
+        .catch(() => undefined);
       await deleteSetting(tauriDatabase, bootstrapPhaseKey(project.id)).catch(() => undefined);
       set((state) => {
         const { [project.id]: _removed, ...rest } = state.bootstrapPhase;

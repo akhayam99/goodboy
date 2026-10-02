@@ -46,6 +46,7 @@ const makeSlice = () => {
       bootstrapPhase: {},
       projects: [project],
       addWorkspace: vi.fn(async () => workspace),
+      disconnectWorkspace: vi.fn(async () => undefined),
     },
   };
   const set: Parameters<typeof createBootstrapSlice>[0]['set'] = (partial) => {
@@ -172,13 +173,24 @@ describe('createNewProject', () => {
     expect(h.setSetting).not.toHaveBeenCalled();
   });
 
-  it('removes the phase row when it cannot be stored', async () => {
+  it('tries the phase row a second time before giving up', async () => {
     const { store, slice } = makeSlice();
-    h.setSetting.mockRejectedValueOnce(new Error('disk full'));
+    h.setSetting.mockRejectedValueOnce(new Error('database is locked'));
+
+    await slice.createNewProject({ parentPath: '/games', name: 'cascadia' });
+
+    expect(isProjectInFirstLap({ state: store.state, projectId: PROJECT_ID })).toBe(true);
+    expect(store.state.disconnectWorkspace).not.toHaveBeenCalled();
+  });
+
+  it('disconnects the half-made workspace and removes the phase row when it cannot be stored', async () => {
+    const { store, slice } = makeSlice();
+    h.setSetting.mockRejectedValue(new Error('disk full'));
 
     await expect(
       slice.createNewProject({ parentPath: '/games', name: 'cascadia' }),
     ).rejects.toThrow('disk full');
+    expect(store.state.disconnectWorkspace).toHaveBeenCalledWith(workspace.id);
     expect(h.deleteSetting).toHaveBeenCalledWith({}, bootstrapPhaseKey(PROJECT_ID));
     expect(store.state.bootstrapPhase).toEqual({});
   });

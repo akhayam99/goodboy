@@ -290,10 +290,19 @@ export const moveToBootstrap = (set: SetFn, get: GetFn) => {
         }
         return failureOf(error);
       }
-      await get().setBootstrapPhase({
-        projectId,
-        patch: { stage: 'moving', snapshotId: prepared.snapshotId, branch: prepared.branch },
-      });
+      try {
+        await get().setBootstrapPhase({
+          projectId,
+          patch: { stage: 'moving', snapshotId: prepared.snapshotId, branch: prepared.branch },
+        });
+      } catch (error) {
+        await bootstrapRollback({
+          projectPath: project.rootPath,
+          worktreePath: '',
+          branch: prepared.branch,
+        }).catch(() => undefined);
+        return failureOf(error);
+      }
       return continueMove({
         set,
         get,

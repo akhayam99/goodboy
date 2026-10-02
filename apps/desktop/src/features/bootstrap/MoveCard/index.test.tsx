@@ -77,13 +77,14 @@ describe('MoveCard', () => {
     expect(h.store.navigate).not.toHaveBeenCalled();
   });
 
-  it('offers no move when the folder has no changed files', () => {
+  it('offers Finish instead of a move when the folder has no changed files', () => {
     render(<MoveCard project={project} changedCount={0} isTurnRunning={false} />);
 
     expect(screen.queryByRole('button', { name: 'Move my work' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Finish' })).toBeDefined();
     expect(
       screen.getByText(
-        'The project folder has no changed files. Starting a new session is enough.',
+        'The project folder has no changed files. Finish to start worktree sessions.',
       ),
     ).toBeDefined();
   });

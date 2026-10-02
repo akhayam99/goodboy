@@ -6,6 +6,9 @@ use super::BootstrapError;
 
 const LOCK_FILE: &str = "goodboy-bootstrap.lock";
 
+#[cfg(not(unix))]
+const STALE_AFTER: std::time::Duration = std::time::Duration::from_secs(15 * 60);
+
 pub(crate) struct MoveLock {
     path: PathBuf,
 }
@@ -21,11 +24,26 @@ fn is_alive(_pid: i32) -> bool {
     true
 }
 
-fn holder_is_gone(path: &Path) -> bool {
-    std::fs::read_to_string(path)
+#[cfg(unix)]
+fn aged_out(_path: &Path) -> bool {
+    false
+}
+
+#[cfg(not(unix))]
+fn aged_out(path: &Path) -> bool {
+    std::fs::metadata(path)
+        .and_then(|meta| meta.modified())
         .ok()
-        .and_then(|raw| raw.trim().parse::<i32>().ok())
-        .is_some_and(|pid| !is_alive(pid))
+        .and_then(|modified| modified.elapsed().ok())
+        .is_some_and(|age| age > STALE_AFTER)
+}
+
+fn holder_is_gone(path: &Path) -> bool {
+    aged_out(path)
+        || std::fs::read_to_string(path)
+            .ok()
+            .and_then(|raw| raw.trim().parse::<i32>().ok())
+            .is_some_and(|pid| !is_alive(pid))
 }
 
 fn create(path: &Path) -> std::io::Result<()> {

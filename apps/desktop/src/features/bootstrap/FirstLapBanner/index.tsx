@@ -115,7 +115,7 @@ export const FirstLapBanner = ({ sessionId }: Props) => {
           primaryLabel={changed !== null && changed > 0 ? 'Publish and move my work' : 'Publish'}
           onPublished={(result) => {
             setIsPublishing(false);
-            if (result.kind === 'published' && changed !== null && changed > 0) {
+            if (result.kind === 'published') {
               void moveToBootstrap({ projectId: project.id }).then((moved) => {
                 if (moved.kind === 'moved') {
                   navigate({ to: sessionPlace({ sessionId: moved.session.id }) });

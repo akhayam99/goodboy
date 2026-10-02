@@ -312,6 +312,27 @@ describe('moveToBootstrap', () => {
     expect(store.state.bootstrapPhase[PROJECT_ID]?.stage).toBe('first-lap');
   });
 
+  it('drops the branch when the moving phase cannot be stored', async () => {
+    const { store, set, get, createSession } = makeStore();
+    store.state = {
+      ...store.state,
+      setBootstrapPhase: vi.fn(async () => {
+        throw new Error('database is locked');
+      }),
+    };
+
+    const result = await moveToBootstrap(set, get)({ projectId: PROJECT_ID });
+
+    expect(result).toMatchObject({ kind: 'refused', reason: 'failed' });
+    expect(h.rollback).toHaveBeenCalledWith({
+      projectPath: '/games/cascadia',
+      worktreePath: '',
+      branch: prepared.branch,
+    });
+    expect(createSession).not.toHaveBeenCalled();
+    expect(store.state.bootstrapPhase[PROJECT_ID]?.stage).toBe('first-lap');
+  });
+
   it('undoes the session and the worktree when the copy does not apply, and never clears the folder', async () => {
     h.apply.mockRejectedValue(
       new CommandError({ kind: 'apply_conflict', message: 'the work does not apply: plot.txt' }),

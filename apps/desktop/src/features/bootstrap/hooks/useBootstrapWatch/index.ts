@@ -26,12 +26,10 @@ export const useBootstrapWatch = ({ projectId, enabled }: Params): void => {
     }
     let stopped = false;
     let unreachable = 0;
-    let idle = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
     let focusTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const delay = (): number =>
-      unreachable >= SLOW_AFTER_UNREACHABLE || idle ? SLOW_POLL_MS : POLL_MS;
+    const delay = (): number => (unreachable >= SLOW_AFTER_UNREACHABLE ? SLOW_POLL_MS : POLL_MS);
 
     const check = async (): Promise<void> => {
       const probe = await probeProjectRemote({ projectId });
@@ -39,7 +37,6 @@ export const useBootstrapWatch = ({ projectId, enabled }: Params): void => {
         return;
       }
       unreachable = probe.kind === 'unreachable' ? unreachable + 1 : 0;
-      idle = probe.kind === 'no-remote';
     };
 
     const schedule = (): void => {

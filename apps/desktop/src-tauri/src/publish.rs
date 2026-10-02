@@ -113,6 +113,8 @@ pub(crate) fn link_remote(
     })
 }
 
+const PUBLISHABLE_BRANCHES: [&str; 2] = ["main", "master"];
+
 fn current_branch(root: &Path) -> Option<String> {
     git(root, &["symbolic-ref", "--quiet", "--short", "HEAD"])
         .ok()
@@ -133,6 +135,12 @@ pub(crate) fn publish_main(
     let Some(branch) = current_branch(root).filter(|_| has_commit(root)) else {
         return Ok(PublishOutcome::NothingToPublish);
     };
+    if !PUBLISHABLE_BRANCHES.contains(&branch.as_str()) {
+        return Ok(failed(
+            PublishStep::Check,
+            format!("Publishing pushes main. Check out main first, this folder is on {branch}."),
+        ));
+    }
     match probe_with(root, token, probe_timeout) {
         RemoteProbe::NoRemote => return Ok(PublishOutcome::NoRemote),
         RemoteProbe::Unreachable { reason } => return Ok(failed(PublishStep::Check, reason)),

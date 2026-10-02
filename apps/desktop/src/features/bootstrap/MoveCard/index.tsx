@@ -36,6 +36,7 @@ export const MoveCard = ({ project, changedCount, isTurnRunning }: Props) => {
   };
 
   const hasWork = changedCount !== null && changedCount > 0;
+  const actionLabel = hasWork ? 'Move my work' : 'Finish';
 
   return (
     <section
@@ -49,29 +50,27 @@ export const MoveCard = ({ project, changedCount, isTurnRunning }: Props) => {
         <p className="text-secondary text-muted-foreground">
           {hasWork
             ? `${changedCount} changed ${plural(changedCount)} in the project folder move into a worktree session. The folder ends clean on main.`
-            : 'The project folder has no changed files. Starting a new session is enough.'}
+            : 'The project folder has no changed files. Finish to start worktree sessions.'}
         </p>
       </div>
       {message !== null ? (
         <Notice tone="warning" placement="inline" role="alert" title={message} />
       ) : null}
-      {hasWork ? (
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            disabled={isMoving || isTurnRunning}
-            aria-busy={isMoving}
-            onClick={() => void move()}
-          >
-            {isMoving ? 'Moving' : 'Move my work'}
-          </Button>
-          {isTurnRunning ? (
-            <span className="text-secondary text-muted-foreground">
-              Wait for the running turn to finish
-            </span>
-          ) : null}
-        </div>
-      ) : null}
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          disabled={isMoving || isTurnRunning}
+          aria-busy={isMoving}
+          onClick={() => void move()}
+        >
+          {isMoving ? 'Moving' : actionLabel}
+        </Button>
+        {isTurnRunning ? (
+          <span className="text-secondary text-muted-foreground">
+            Wait for the running turn to finish
+          </span>
+        ) : null}
+      </div>
     </section>
   );
 };

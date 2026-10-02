@@ -141,6 +141,24 @@ fn a_repository_without_a_commit_has_nothing_to_publish() {
 }
 
 #[test]
+fn a_feature_branch_is_never_published_as_main() {
+    let root = temp_root("feature");
+    let repo = local_repo(&root);
+    git_ok(&repo, &["checkout", "-b", "feat/side"]);
+
+    let outcome = publish(&repo);
+
+    assert!(matches!(
+        outcome,
+        PublishOutcome::Failed {
+            step: PublishStep::Check,
+            ..
+        }
+    ));
+    std::fs::remove_dir_all(&root).unwrap();
+}
+
+#[test]
 fn an_unreadable_remote_fails_at_the_check_step() {
     let root = temp_root("broken");
     let repo = local_repo(&root);

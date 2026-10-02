@@ -85,15 +85,15 @@ describe('useBootstrapWatch', () => {
     expect(h.probe).toHaveBeenCalledTimes(4);
   });
 
-  it('polls slowly while there is no remote to ask', async () => {
+  it('keeps asking every minute while there is no remote yet', async () => {
     h.probe.mockResolvedValue({ kind: 'no-remote' } satisfies RemoteProbe);
     renderHook(() => useBootstrapWatch({ projectId: PROJECT_ID, enabled: true }));
     await tick(0);
 
-    await tick(120_000);
-    expect(h.probe).toHaveBeenCalledTimes(1);
-    await tick(180_000);
+    await tick(60_000);
     expect(h.probe).toHaveBeenCalledTimes(2);
+    await tick(60_000);
+    expect(h.probe).toHaveBeenCalledTimes(3);
   });
 
   it('stops once main is on the remote', async () => {

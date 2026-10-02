@@ -72,10 +72,15 @@ export const selectLapProject = ({ state, sessionId }: SessionParams): LapProjec
       continue;
     }
     const phase = state.bootstrapPhase[project.id];
-    if (phase?.firstLapSessionId !== sessionId) {
+    if (phase === undefined) {
       continue;
     }
-    if (phase.stage === 'first-lap' || phase.stage === 'moving') {
+    if (phase.stage === 'first-lap' && phase.firstLapSessionId === sessionId) {
+      return { project, stage: phase.stage };
+    }
+    const ownsMove =
+      phase.firstLapSessionId === sessionId || phase.bootstrapSessionId === sessionId;
+    if (phase.stage === 'moving' && ownsMove) {
       return { project, stage: phase.stage };
     }
   }

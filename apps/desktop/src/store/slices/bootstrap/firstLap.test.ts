@@ -13,6 +13,7 @@ const WORKSPACE_ID = 'ws-cascadia' as WorkspaceId;
 const PROJECT_ID = 'proj-cascadia' as ProjectId;
 const LAP_SESSION = 'sess-lap' as SessionId;
 const OTHER_SESSION = 'sess-other' as SessionId;
+const BOOTSTRAP_SESSION = 'sess-bootstrap' as SessionId;
 
 const phase = (patch: Partial<BootstrapPhase>): BootstrapPhase => ({
   stage: 'first-lap',
@@ -29,6 +30,7 @@ const stateOf = (bootstrapPhase: Readonly<Record<ProjectId, BootstrapPhase>>) =>
   sessions: [
     aSession({ id: LAP_SESSION, workspaceId: WORKSPACE_ID }),
     aSession({ id: OTHER_SESSION, workspaceId: WORKSPACE_ID }),
+    aSession({ id: BOOTSTRAP_SESSION, workspaceId: WORKSPACE_ID }),
   ],
   projects: [aProject({ id: PROJECT_ID, workspaceId: WORKSPACE_ID, kind: 'repo' })],
   bootstrapPhase,
@@ -65,6 +67,16 @@ describe('selectLapProject', () => {
     expect(selectLapProject({ state: moving, sessionId: LAP_SESSION })?.stage).toBe('moving');
     expect(selectLapProject({ state: done, sessionId: LAP_SESSION })).toBeNull();
     expect(selectLapProject({ state: lap, sessionId: OTHER_SESSION })).toBeNull();
+  });
+
+  it('reports an interrupted move to the bootstrap session it created', () => {
+    const moving = stateOf({
+      [PROJECT_ID]: phase({ stage: 'moving', bootstrapSessionId: BOOTSTRAP_SESSION }),
+    });
+    const lap = stateOf({ [PROJECT_ID]: phase({ bootstrapSessionId: BOOTSTRAP_SESSION }) });
+
+    expect(selectLapProject({ state: moving, sessionId: BOOTSTRAP_SESSION })?.stage).toBe('moving');
+    expect(selectLapProject({ state: lap, sessionId: BOOTSTRAP_SESSION })).toBeNull();
   });
 });
 
