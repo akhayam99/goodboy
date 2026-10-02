@@ -1,13 +1,16 @@
 import { useShallow } from 'zustand/react/shallow';
+import { Button } from '@goodboy/ui';
 import { CHAT_PROVIDER_IDS, CHAT_PROVIDER_REFUSAL, isChatProvider } from '@goodboy/types';
-import type { ProviderId } from '@goodboy/types';
+import type { ProviderId, WorkspaceId } from '@goodboy/types';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { useAppStore } from '../../../../store';
+import { useChatDefaultModel } from '../../../../shared/hooks/useChatDefaultModel';
 import { chatModelId, shownChatEffort, type ChatRouting } from '../../chatRouting';
 import { useRoutingDraft } from './useRoutingDraft';
 
 type Props = {
+  readonly workspaceId: WorkspaceId;
   readonly routing: ChatRouting;
   readonly onChange: (routing: ChatRouting) => void;
 };
@@ -24,7 +27,7 @@ const offeredProviders = (
   return offered.length === 0 ? CHAT_PROVIDER_IDS : offered;
 };
 
-export const ChatRoutingPicker = ({ routing, onChange }: Props) => {
+export const ChatRoutingPicker = ({ workspaceId, routing, onChange }: Props) => {
   const connected = useAppStore(
     useShallow((state) =>
       state.providers
@@ -33,6 +36,12 @@ export const ChatRoutingPicker = ({ routing, onChange }: Props) => {
     ),
   );
   const draft = useRoutingDraft({ routing, onCommit: onChange });
+  const defaultModel = useChatDefaultModel({ workspaceId });
+  const isDefault =
+    defaultModel.saved !== null &&
+    defaultModel.saved.provider === routing.provider &&
+    defaultModel.saved.model === routing.model &&
+    shownChatEffort(defaultModel.saved) === shownChatEffort(routing);
   const refused = connected.filter((candidate) => !isChatProvider(candidate));
   const refusedLabels = refused.map((candidate) => PROVIDER_LABEL[candidate]).join(', ');
 
@@ -64,6 +73,21 @@ export const ChatRoutingPicker = ({ routing, onChange }: Props) => {
             </p>
           )}
           <p>Applies to the next message in this chat.</p>
+          {isDefault ? (
+            <div className="flex items-center justify-between gap-2">
+              <span>Default for new chats.</span>
+              <Button variant="ghost" size="sm" onClick={defaultModel.clear}>
+                Back to automatic
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-2">
+              <span>New chats start on automatic.</span>
+              <Button variant="ghost" size="sm" onClick={() => defaultModel.save({ routing })}>
+                Make default
+              </Button>
+            </div>
+          )}
         </div>
       }
     />

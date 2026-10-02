@@ -2,11 +2,12 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_GROUPS, ROLE_REGISTRY, TASKS } from '@goodboy/core';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { OverrideSettings, TaskModelPreference } from '@goodboy/types';
+import type { OverrideSettings, TaskModelPreference, WorkspaceId } from '@goodboy/types';
 import {
   mergeWorkspaceOverrides,
   type WorkspaceOverridesPatch,
 } from '../../../../../store/slices/overrides/patchWorkspaceOverrides';
+import { chatModelKey } from '../../../../workspace-chat/chatRouting';
 import { DefaultsPanel } from './index';
 
 type SetWorkspaceOverrides = (workspaceId: string, overrides: OverrideSettings) => Promise<void>;
@@ -19,6 +20,10 @@ const { state } = vi.hoisted(() => ({
       { id: 'anthropic', connection: 'connected' },
       { id: 'cursor', connection: 'connected' },
     ],
+    settings: {} as Record<string, string>,
+    loadSetting: vi.fn(async (_key: string) => null as string | null),
+    saveSetting: vi.fn(async (_key: string, _value: string) => undefined),
+    reportError: vi.fn(),
     setWorkspaceOverrides: vi.fn<SetWorkspaceOverrides>(async () => undefined),
     patchWorkspaceOverrides: async (_params: {
       workspaceId: string;
@@ -163,6 +168,9 @@ beforeEach(() => {
       }),
     );
   state.workspaceOverrides = { 'ws-1': EMPTY_OVERRIDES };
+  state.settings = {};
+  state.loadSetting.mockClear();
+  state.saveSetting.mockClear();
   state.setWorkspaceOverrides.mockReset();
   state.setWorkspaceOverrides.mockImplementation(async (workspaceId, overrides) => {
     state.workspaceOverrides = {
@@ -173,6 +181,8 @@ beforeEach(() => {
 });
 
 afterEach(cleanup);
+
+const WORKSPACE_ID = 'ws-1' as WorkspaceId;
 
 const TASK_LABELS = [
   'Step summaries',
@@ -741,6 +751,53 @@ describe('DefaultsPanel', () => {
         'ws-1',
         expect.objectContaining({ taskModels: null, roleModels: null }),
       ),
+    );
+  });
+  it('saves a new-chat model per workspace in the settings store', () => {
+    render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'New chats routing model' }));
+
+    expect(state.saveSetting).toHaveBeenLastCalledWith(
+      'chat.default_model.ws-1',
+      JSON.stringify({
+        provider: 'anthropic',
+        model: chatModelKey({ provider: 'anthropic', modelId: 'claude-sonnet-4-6' }),
+        effort: null,
+      }),
+    );
+  });
+
+  it('shows a saved new-chat model as overridden and clears it back to Auto', () => {
+    state.settings = {
+      'chat.default_model.ws-1': JSON.stringify({
+        provider: 'anthropic',
+        model: 'opus-5',
+        effort: 'high',
+      }),
+    };
+    render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'New chats routing reset' }));
+
+    expect(state.saveSetting).toHaveBeenLastCalledWith('chat.default_model.ws-1', '');
+  });
+
+  it('pins an effort for new chats on the saved model', () => {
+    state.settings = {
+      'chat.default_model.ws-1': JSON.stringify({
+        provider: 'anthropic',
+        model: 'opus-5',
+        effort: 'low',
+      }),
+    };
+    render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'New chats routing high effort' }));
+
+    expect(state.saveSetting).toHaveBeenLastCalledWith(
+      'chat.default_model.ws-1',
+      JSON.stringify({ provider: 'anthropic', model: 'opus-5', effort: 'high' }),
     );
   });
 });

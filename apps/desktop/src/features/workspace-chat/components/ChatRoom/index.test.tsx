@@ -709,4 +709,59 @@ describe('ChatRoom', () => {
       effort: 'high',
     });
   });
+  it('starts a new chat on the workspace default model and effort', () => {
+    store.settings = {
+      'chat.default_model.ws-harborline': JSON.stringify({
+        provider: 'anthropic',
+        model: 'opus-5',
+        effort: 'high',
+      }),
+    };
+    renderRoom({ chat: null });
+
+    expect(
+      screen.getByRole('button', { name: /^Model for this chat: / }).getAttribute('aria-label'),
+    ).toMatch(/Opus 5/);
+  });
+
+  it('keeps the automatic model while no default is saved', () => {
+    renderRoom({ chat: null });
+
+    expect(
+      screen.getByRole('button', { name: /^Model for this chat: / }).getAttribute('aria-label'),
+    ).toMatch(/Sonnet 5/);
+  });
+
+  it('saves the picked model as the default for new chats from the picker footer', () => {
+    store.chatMessages = { [CHAT_ID]: [] };
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: /^Model for this chat: / }));
+    const dialog = screen.getByRole('dialog', { name: 'Model for this chat' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Make default' }));
+
+    expect(store.saveSetting).toHaveBeenCalledWith(
+      'chat.default_model.ws-harborline',
+      JSON.stringify({ provider: 'anthropic', model: 'sonnet-5', effort: null }),
+    );
+  });
+
+  it('offers to clear the default when the shown model is the default', () => {
+    store.settings = {
+      'chat.default_model.ws-harborline': JSON.stringify({
+        provider: 'anthropic',
+        model: 'sonnet-5',
+        effort: null,
+      }),
+    };
+    store.chatMessages = { [CHAT_ID]: [] };
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: /^Model for this chat: / }));
+    const dialog = screen.getByRole('dialog', { name: 'Model for this chat' });
+    expect(within(dialog).queryByRole('button', { name: 'Make default' })).toBeNull();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Back to automatic' }));
+
+    expect(store.saveSetting).toHaveBeenCalledWith('chat.default_model.ws-harborline', '');
+  });
 });

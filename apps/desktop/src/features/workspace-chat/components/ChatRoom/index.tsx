@@ -15,7 +15,8 @@ import { sessionPlace, useAppStore } from '../../../../store';
 import { useChatSessions } from '../../hooks/useChatSessions';
 import { chatSuggestions } from '../../chatSuggestions';
 import type { ChatRouting } from '../../chatRouting';
-import { defaultChatModel } from '../../defaultChatModel';
+import { defaultChatRouting } from '../../defaultChatRouting';
+import { useChatDefaultModel } from '../../../../shared/hooks/useChatDefaultModel';
 import { ChatComposer } from '../ChatComposer';
 import { TURN_INTO_WORK_LABEL, TurnIntoWorkPanel } from '../TurnIntoWorkPanel';
 import { ChatArchivedBanner } from './ChatArchivedBanner';
@@ -74,6 +75,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
   const [draftRouting, setDraftRouting] = useState<ChatRouting | null>(null);
   const [work, setWork] = useState<WorkRequest | null>(null);
   const linked = useChatSessions({ chatId });
+  const { saved: savedDefault } = useChatDefaultModel({ workspaceId });
 
   useEffect(() => {
     if (chatId === null || messages !== undefined) {
@@ -86,8 +88,8 @@ export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
     if (chat !== null) {
       return { provider: chat.provider, model: chat.model, effort: chat.effort };
     }
-    return draftRouting ?? { ...defaultChatModel({ connected }), effort: null };
-  }, [chat, draftRouting, connected]);
+    return draftRouting ?? defaultChatRouting({ connected, saved: savedDefault });
+  }, [chat, draftRouting, connected, savedDefault]);
 
   const send = async (text: string): Promise<void> => {
     if (chatId !== null) {
@@ -183,6 +185,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
           />
         )}
         <ChatComposer
+          workspaceId={workspaceId}
           placeholder={`Ask anything about ${workspaceName}`}
           routing={model}
           projectCount={projectNames.length}

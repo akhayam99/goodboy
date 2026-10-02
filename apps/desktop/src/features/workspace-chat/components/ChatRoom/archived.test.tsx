@@ -12,6 +12,8 @@ const { store } = vi.hoisted(() => ({
     providers: [{ id: 'anthropic', connection: 'connected' }],
     cliRequirements: [] as ReadonlyArray<unknown>,
     settings: {} as Record<string, string>,
+    loadSetting: vi.fn(async (_key: string) => null as string | null),
+    saveSetting: vi.fn(async (_key: string, _value: string) => undefined),
     chatLinks: {} as Record<string, ReadonlyArray<unknown>>,
     chatMessages: {} as Record<string, ReadonlyArray<unknown>>,
     chatStreams: {} as Record<string, unknown>,

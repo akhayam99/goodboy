@@ -667,6 +667,16 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   sessions; deleting a session deletes its links. Idle is derived: a chat with
   no activity for seven days moves to the idle group, and only the user
   archives it.
+- **Default model for new chats.** Without a saved default a new chat starts
+  on Sonnet 5 when Claude is connected, else on the first connected chat
+  provider (`defaultChatModel`). The user can save a provider, model and effort
+  per workspace in the `settings` table under `chat.default_model.<workspaceId>`
+  (JSON, an empty string means cleared), from Providers, Defaults, Chat, or with
+  Make default in the chat model picker. `defaultChatRouting` applies it to the
+  draft in `ChatRoom` and `askInChat` applies it to Ask in Chat. A value that
+  fails `parseChatDefaultModel`, or whose provider is not connected, falls back
+  to the automatic model. An existing chat never changes: it keeps the model
+  stored on its row.
 - **Activity in the top bar.** `chatStreams` says which chats are answering.
   `useChatActivity` turns it into a running count and an unread flag for the
   Chat button in the top bar: a pulsing info dot (the tone of the running

@@ -21,6 +21,7 @@ import {
 import { useShallow } from 'zustand/react/shallow';
 import { ROLE_LABEL } from '../../../../session/agent-kind';
 import { useAppStore } from '../../../../../store';
+import { ChatModelRow } from './ChatModelRow';
 import { RoleModelRow } from './RoleModelRow';
 import { TaskModelRow } from './TaskModelRow';
 import { FallbackOrder } from './FallbackOrder';
@@ -203,6 +204,19 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
             />
           )}
         </FieldRow>
+      </section>
+
+      <section aria-label="Chat" className="flex flex-col gap-2">
+        <Eyebrow label="Chat" />
+        <BandStack>
+          <Band>
+            <ChatModelRow
+              workspaceId={workspaceId}
+              connectedProviderIds={connectedProviderIds}
+              disabled={busy}
+            />
+          </Band>
+        </BandStack>
       </section>
 
       <section aria-label="Agents" className="flex flex-col gap-2">
