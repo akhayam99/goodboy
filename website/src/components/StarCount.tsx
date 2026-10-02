@@ -1,10 +1,4 @@
 import './StarCount.css';
-import { useStarCount } from '../hooks/useStarCount';
+import { STARS } from '../data/formatStars';
 
-export const StarCount = () => {
-  const label = useStarCount();
-  if (label === null) {
-    return null;
-  }
-  return <span className="starCount">{label}</span>;
-};
+export const StarCount = () => (STARS === null ? null : <span className="starCount">{STARS}</span>);

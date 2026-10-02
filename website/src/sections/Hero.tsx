@@ -33,7 +33,7 @@ export const Hero = () => {
             <a className="btn" href={primary.href} data-download>
               {primary.label}
             </a>
-            <a className="btn ghost" href={SITE.repo} aria-label="Star Goodboy on GitHub" data-star>
+            <a className="btn ghost" href={SITE.repo} data-star>
               <BrandMark brand="github" size={18} />
               Star on GitHub
               <StarCount />

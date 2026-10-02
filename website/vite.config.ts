@@ -5,6 +5,22 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
 const ROOT = fileURLToPath(new URL('.', import.meta.url));
+const REPO_API = 'https://api.github.com/repos/akhayam99/goodboy';
+const STAR_FETCH_TIMEOUT_MS = 5000;
+
+const fetchStarCount = async (): Promise<number | null> => {
+  try {
+    const response = await fetch(REPO_API, {
+      headers: { Accept: 'application/vnd.github+json' },
+      signal: AbortSignal.timeout(STAR_FETCH_TIMEOUT_MS),
+    });
+    const payload: unknown = response.ok ? await response.json() : null;
+    const count = (payload as { readonly stargazers_count?: unknown } | null)?.stargazers_count;
+    return typeof count === 'number' ? count : null;
+  } catch {
+    return null;
+  }
+};
 
 const CLEAN_URLS: Record<string, string> = {
   '/features': '/features.html',
@@ -30,8 +46,11 @@ const cleanUrls = (): Plugin => ({
   },
 });
 
-export default defineConfig({
+export default defineConfig(async () => ({
   plugins: [react(), tailwindcss(), cleanUrls()],
+  define: {
+    __GOODBOY_STARS__: JSON.stringify(await fetchStarCount()),
+  },
   server: {
     port: 1499,
     strictPort: true,
@@ -44,4 +63,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));

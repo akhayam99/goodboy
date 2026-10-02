@@ -6,7 +6,6 @@ export const SITE = {
   repo: REPO,
   releases: `${REPO}/releases`,
   releaseDownloads: `${REPO}/releases/download`,
-  repoApi: 'https://api.github.com/repos/akhayam99/goodboy',
   latestApi: 'https://api.github.com/repos/akhayam99/goodboy/releases/latest',
   features: '/features',
   howItWorks: '/#two-ways',

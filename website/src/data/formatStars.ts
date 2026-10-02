@@ -1,8 +1,12 @@
 const STEP = 100;
 const THOUSAND = 1000;
 
-export const formatStars = (count: number): string | null => {
-  if (!Number.isFinite(count) || count < STEP) {
+type Params = {
+  readonly count: number | null;
+};
+
+const formatStars = ({ count }: Params): string | null => {
+  if (count === null || !Number.isFinite(count) || count < STEP) {
     return null;
   }
   const floored = Math.floor(count / STEP) * STEP;
@@ -12,3 +16,5 @@ export const formatStars = (count: number): string | null => {
   const thousands = (floored / THOUSAND).toFixed(1).replace(/\.0$/, '');
   return `${thousands}k+`;
 };
+
+export const STARS = formatStars({ count: __GOODBOY_STARS__ });
