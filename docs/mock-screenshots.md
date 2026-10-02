@@ -219,7 +219,10 @@ browser tab raises. The README images live in `docs/readme/`, the
 feature-area guide ones in the public
 [goodboy-media](https://github.com/akhayam99/goodboy-media) repo, both as dark
 and light `.webp` pairs. The website takes no screenshots: its product views are
-React mocks. To crop a short surface, use a `--window-size` height shorter than 900. The layout keeps its own proportions and the footer stays pinned.
+React mocks. The README hero is the exception that goes the other way:
+`pnpm readme:hero` draws the logo, the headline and the website's hero
+`SessionMock` from the website dev server on port 1499 and writes
+`docs/readme/readme-hero-{dark,light}.webp` at three times the README width. To crop a short surface, use a `--window-size` height shorter than 900. The layout keeps its own proportions and the footer stays pinned.
 
 ## Pictures for feature-area guides
 

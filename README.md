@@ -2,7 +2,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-hero-dark.webp">
-  <img src="./docs/readme/readme-hero-light.webp" alt="Goodboy, a desktop app that gives your agents a structure to work in: the overview of a Harborline session with its tasks by stage, its projects and its pull requests" width="880">
+  <img src="./docs/readme/readme-hero-light.webp" alt="Goodboy, a free desktop ADE built in public. Stop re-explaining yourself: the Duplicate credit fix task in Harborline, its steps run by scouts, a planner, implementers, a reviewer, a debugger waiting on your answer and a tester, each on its own model" width="880">
 </picture>
 
 [![ci](https://img.shields.io/github/actions/workflow/status/akhayam99/goodboy/ci.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white&label=ci&labelColor=15181b)](https://github.com/akhayam99/goodboy/actions/workflows/ci.yml)
