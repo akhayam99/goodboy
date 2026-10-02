@@ -9,11 +9,11 @@ export const MissingGithubRemoteEmptyState = ({ compact = false, wrapped = true 
   const panel = (
     <IntegrationConnectPanel
       provider="github"
-      description="This repository does not have a GitHub remote. Add one with Git before reviewing pull requests and issues here."
+      description="This project isn't on GitHub yet. Publish it from the project's git pill to review pull requests and issues here."
       headingLevel={compact ? undefined : 2}
     >
-      <p className="text-xs leading-relaxed text-muted-foreground">
-        Goodboy does not change repository remotes from this screen.
+      <p className="text-secondary text-muted-foreground">
+        Publishing creates the repository and pushes main. Nothing else is sent.
       </p>
     </IntegrationConnectPanel>
   );

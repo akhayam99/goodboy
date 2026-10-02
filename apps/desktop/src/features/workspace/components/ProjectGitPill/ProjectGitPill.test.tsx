@@ -23,6 +23,7 @@ const h = vi.hoisted(() => ({
     fetchProjectCheckouts: vi.fn(async () => undefined),
     fastForwardProjectCheckouts: vi.fn(async () => ({ updated: 0, failed: 0 })),
     loadProjectGitStatus: vi.fn(async () => undefined),
+    bootstrapPhase: {} as Record<string, unknown>,
   },
 }));
 

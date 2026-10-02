@@ -9,6 +9,7 @@ import { ScriptsPanel } from '../../../scripts';
 import { EMPTY_ARRAY, useAppStore, useIsSessionCollectionLoaded } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { SessionOverviewPane } from '../SessionOverviewPane';
+import { FirstLapBanner } from '../../../bootstrap/FirstLapBanner';
 import { TrailBar } from './parts/TrailBar';
 import { AgentOverlay } from './parts/AgentOverlay';
 import { AgentsPane } from './parts/AgentsPane';
@@ -159,6 +160,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   return (
     <div className="@container relative flex h-full w-full min-w-0 flex-col">
       <TrailBar session={session} />
+      <FirstLapBanner sessionId={sessionId} />
       <UnderTrailContext.Provider value>
         <div className="relative min-h-0 flex-1">
           <div

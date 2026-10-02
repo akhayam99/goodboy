@@ -1,4 +1,5 @@
-import type { BootstrapPhase, ProjectId, Session } from '@goodboy/types';
+import type { BootstrapPhase, ProjectId, RemoteProbe, Session } from '@goodboy/types';
+import type { PublishFirstLapResult, PublishRemote } from './publishFirstLap';
 import type { NewProject } from './createNewProject';
 import type { BootstrapState } from './state';
 
@@ -16,9 +17,20 @@ export type EnsureFirstLapSessionParams = {
   readonly projectId: ProjectId;
 };
 
+export type ProbeProjectRemoteParams = {
+  readonly projectId: ProjectId;
+};
+
+export type PublishFirstLapParams = {
+  readonly projectId: ProjectId;
+  readonly remote: PublishRemote;
+};
+
 export type BootstrapSlice = BootstrapState & {
   hydrateBootstrapPhases(): Promise<void>;
   setBootstrapPhase(params: SetBootstrapPhaseParams): Promise<BootstrapPhase>;
   createNewProject(params: CreateNewProjectParams): Promise<NewProject>;
   ensureFirstLapSession(params: EnsureFirstLapSessionParams): Promise<Session>;
+  probeProjectRemote(params: ProbeProjectRemoteParams): Promise<RemoteProbe>;
+  publishFirstLap(params: PublishFirstLapParams): Promise<PublishFirstLapResult>;
 };

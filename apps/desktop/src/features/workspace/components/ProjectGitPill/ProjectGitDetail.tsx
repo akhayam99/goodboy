@@ -7,6 +7,7 @@ import {
   FolderOpen,
   GitMerge,
   Pencil,
+  Upload,
 } from 'lucide-react';
 import { Button, formatError } from '@goodboy/ui';
 import type { Project, WorkspaceGitStatus } from '@goodboy/types';
@@ -24,6 +25,7 @@ import {
   unknownReasonLabel,
   unmergedCount,
 } from '../../../../shared/lib/gitStatus';
+import { PublishPanel } from '../../../bootstrap/PublishPanel';
 import { InitGuide } from './InitGuide';
 import {
   hasReadFailure,
@@ -99,12 +101,20 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
   const [openError, setOpenError] = useState<string | null>(null);
   const [pullError, setPullError] = useState<string | null>(null);
   const [baseBranchError, setBaseBranchError] = useState<string | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
   const editor = useAppStore((state) => resolveEditorBinary({ settings: state.settings }));
   const pulling = useAppStore((state) => state.projectCheckoutPulling[project.id] === true);
   const fastForwardProjectCheckout = useAppStore((state) => state.fastForwardProjectCheckout);
   const updateProjectBaseBranch = useAppStore((state) => state.updateProjectBaseBranch);
   const loadProjectGitStatus = useAppStore((state) => state.loadProjectGitStatus);
+  const isFirstLap = useAppStore(
+    (state) => state.bootstrapPhase[project.id]?.stage === 'first-lap',
+  );
   const isReady = status?.state === 'ready';
+  const canPublish =
+    isReady &&
+    status.upstream == null &&
+    (project.remoteUrl === undefined || project.remoteUrl === '');
   const details = isReady ? detailsOf({ status }) : [];
   const notes = isReady ? unknownNotesOf({ status }) : [];
   const readFailure = isReady && hasReadFailure({ status });
@@ -230,7 +240,20 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
               <FolderOpen size={ICON_SIZE.row} aria-hidden />
               Open in editor
             </Button>
+            {canPublish && !isPublishing ? (
+              <Button size="sm" variant="ghost" onClick={() => setIsPublishing(true)}>
+                <Upload size={ICON_SIZE.row} aria-hidden />
+                Publish
+              </Button>
+            ) : null}
           </div>
+          {canPublish && isPublishing ? (
+            <PublishPanel
+              project={project}
+              onPublished={() => setIsPublishing(false)}
+              onCancel={() => setIsPublishing(false)}
+            />
+          ) : null}
           {pullError != null ? (
             <span role="alert" className="text-secondary text-danger">
               {pullError}
@@ -244,7 +267,9 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
         </div>
       )}
       <span className="border-t border-border-soft px-3 py-2 text-secondary text-faint-foreground">
-        Sessions keep working in their own worktree, never on this checkout.
+        {isFirstLap
+          ? 'This project works in its own folder until it is published.'
+          : 'Sessions keep working in their own worktree, never on this checkout.'}
       </span>
     </div>
   );

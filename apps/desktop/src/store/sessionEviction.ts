@@ -288,6 +288,7 @@ export const NON_SESSION_STATE_KEYS = [
   'wireframeDrafts',
   'sessionGroupExpanded',
   'bootstrapPhase',
+  'bootstrapRemoteProbe',
 ] as const satisfies ReadonlyArray<keyof AppState>;
 
 type RegisteredKey =

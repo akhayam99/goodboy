@@ -1,5 +1,5 @@
 import type { BootstrapPhase, ProjectId } from '@goodboy/types';
-import type { BootstrapState } from './state';
+import type { BootstrapRemoteProbeEntry, BootstrapState } from './state';
 
 export const selectBootstrapPhase = (
   state: BootstrapState,
@@ -8,3 +8,8 @@ export const selectBootstrapPhase = (
 
 export const selectIsFirstLap = (state: BootstrapState, projectId: ProjectId): boolean =>
   state.bootstrapPhase[projectId]?.stage === 'first-lap';
+
+export const selectBootstrapRemoteProbe = (
+  state: BootstrapState,
+  projectId: ProjectId,
+): BootstrapRemoteProbeEntry | null => state.bootstrapRemoteProbe[projectId] ?? null;
