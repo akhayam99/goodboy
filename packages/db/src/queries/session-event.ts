@@ -63,7 +63,11 @@ const nullableStringAt = ({ source, key }: FieldParams): string | null | undefin
   return typeof value === 'string' ? value : undefined;
 };
 
-const decisionChangeOf = ({ value }: { readonly value: unknown }): SessionDecisionChange | null => {
+type DecisionChangeParams = {
+  readonly value: unknown;
+};
+
+const decisionChangeOf = ({ value }: DecisionChangeParams): SessionDecisionChange | null => {
   if (!isJsonRecord(value)) {
     return null;
   }
