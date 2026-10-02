@@ -34,17 +34,18 @@ const goalOf = (sessionId: SessionId): string => GOALS.get(sessionId) ?? '';
 
 const OVERVIEW: ImpactOverview = {
   sessionCount: 24,
+  deletedSessionCount: 0,
   orchestratedSessions: 15,
   previousSessionCount: 19,
   previousOrchestratedSessions: 10,
   medianSessionHours: 1.4,
   previousMedianSessionHours: 1.9,
   sessions: [
-    { sessionId: CREDIT, goal: goalOf(CREDIT), value: 2.6 },
-    { sessionId: HOLD, goal: goalOf(HOLD), value: 1.8 },
-    { sessionId: EXPORT, goal: goalOf(EXPORT), value: 3.1 },
-    { sessionId: LIMITS, goal: goalOf(LIMITS), value: 2.2 },
-    { sessionId: CRON, goal: goalOf(CRON), value: 0.9 },
+    { sessionId: CREDIT, goal: goalOf(CREDIT), value: 2.6, isDeleted: false },
+    { sessionId: HOLD, goal: goalOf(HOLD), value: 1.8, isDeleted: false },
+    { sessionId: EXPORT, goal: goalOf(EXPORT), value: 3.1, isDeleted: false },
+    { sessionId: LIMITS, goal: goalOf(LIMITS), value: 2.2, isDeleted: false },
+    { sessionId: CRON, goal: goalOf(CRON), value: 0.9, isDeleted: false },
   ],
   spendUsd: 250.77,
   spendSessions: [],
@@ -57,6 +58,7 @@ const entryOf = (sessionId: SessionId, number: number, title: string, spendUsd: 
   title,
   state: 'merged' as const,
   spendUsd,
+  isDeleted: false,
 });
 
 const PULL_REQUESTS: PullRequestOutcomes = {
@@ -77,6 +79,7 @@ const PULL_REQUESTS: PullRequestOutcomes = {
 const REVIEWS: ReviewOutcomes = {
   commentsResolved: 46,
   previousCommentsResolved: 38,
+  sentToAgent: 0,
   medianResolveHours: 0.6,
   publishedDrafts: 21,
   pushedResolutions: 19,

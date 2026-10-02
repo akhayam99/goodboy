@@ -132,7 +132,11 @@ be used inside ToastProvider`.** `main.tsx` renders `MockScene` in place of
   opens on renders nothing from it. Filling the store cannot reach that hook,
   because it does not go through a store action. When a scene mounts a studio,
   open it on the scope whose panels read from the store. Check the console
-  before you trust a screenshot that looks full.
+  before you trust a screenshot that looks full. `?scene=impact-deleted` fills
+  every panel instead: it answers the Impact queries through `mockIPC`
+  (`impactDeletedSeed.ts` matches each SELECT by its text) and seeds the
+  deleted sessions into `dormantSpend`. Capture it without `&brand=1`: the brand
+  chrome pins the top bar spend to a fixed figure that ignores deleted sessions.
 
 ## Capture the actual image, not a browser-pane screenshot
 

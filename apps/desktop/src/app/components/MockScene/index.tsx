@@ -57,6 +57,7 @@ import { LensSwitcherClosedScene, LensSwitcherScene } from './scenes/LensSwitche
 import { CardRailsScene } from './scenes/CardRailsScene';
 import { ProvidersScene } from './scenes/ProvidersScene';
 import { ImpactScene } from './scenes/ImpactScene';
+import { ImpactDeletedScene } from './scenes/ImpactDeletedScene';
 import {
   ModelPickerCodexScene,
   ModelPickerCursorScene,
@@ -224,6 +225,7 @@ export const MOCK_SCENES = {
   'workflow-builder-modes': WorkflowBuilderModesScene,
   forms: FormsAuditScene,
   'impact-scopes': ImpactScopesScene,
+  'impact-deleted': ImpactDeletedScene,
   explore: ExploreScene,
   'design-scale': DesignScaleScene,
   listbox: ListboxScene,

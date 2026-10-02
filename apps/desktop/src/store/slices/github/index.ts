@@ -16,6 +16,7 @@ import { selectSessionPr } from './selectSessionPr';
 import { pushSessionBranch } from './pushSessionBranch';
 import { setGithubToken } from './setGithubToken';
 import { sweepGithub } from './sweepGithub';
+import { refreshDormantPullRequests } from './refreshDormantPullRequests';
 import type { SliceDeps } from '../../slice-types';
 
 export const createGithubSlice = ({ set, get }: SliceDeps) => {
@@ -38,5 +39,6 @@ export const createGithubSlice = ({ set, get }: SliceDeps) => {
     editPr: editPr(set, get),
     requestReview: requestReview(set, get),
     sweepGithub: sweepGithub(set, get),
+    refreshDormantPullRequests: refreshDormantPullRequests(get),
   };
 };

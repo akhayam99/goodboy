@@ -14,6 +14,7 @@ export {
   listPrsForBranch,
   parseLinkedIssuesFromBody,
   resolvePrForBranch,
+  viewPullRequest,
 } from './resolver';
 
 export {

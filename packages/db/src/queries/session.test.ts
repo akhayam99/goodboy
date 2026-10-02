@@ -164,7 +164,7 @@ describe('purgeSessionForDelete', () => {
       [sessionId],
     );
     expect(sessions[0]?.deleted_at).toEqual(expect.any(Number));
-    expect(sessions[0]?.updated_at).toBe(sessions[0]?.deleted_at);
+    expect(sessions[0]?.updated_at).toBe(1);
 
     for (const table of ['messages', 'file_versions', 'context_slots', 'context_slot_history']) {
       await expect(countRows({ db, table, column: 'session_id', value: sessionId })).resolves.toBe(

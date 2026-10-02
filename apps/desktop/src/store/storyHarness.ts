@@ -570,6 +570,7 @@ export const storyDbStubs = () => ({
   summarizeSessionTelemetry: vi.fn(async () => null),
   summarizeWorkspaceTelemetry: vi.fn(async () => null),
   summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
+  listDormantSessionTelemetry: vi.fn(async () => []),
   listTelemetryForSession: vi.fn(async () => []),
   upsertContextSlot: storySpies.upsertContextSlot,
   listContextSlotsForSession: vi.fn(async () => []),

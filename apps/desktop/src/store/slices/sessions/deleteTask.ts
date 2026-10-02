@@ -199,6 +199,9 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
     }
     const sessionWorkspaceId = session.workspaceId;
     await purgeSessionForDelete({ db: tauriDatabase, id: sessionId });
+    void get()
+      .loadDormantSpend(sessionWorkspaceId)
+      .catch(() => undefined);
     dropPendingTurnEvents({
       agentIds: (get().sessionPhaseRuns[sessionId] ?? []).map((agent) => agent.id),
     });

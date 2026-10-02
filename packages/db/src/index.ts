@@ -204,6 +204,7 @@ export {
   summarizeWorkspaceProviderTelemetry,
   type ProviderTelemetrySummary,
 } from './queries/telemetry';
+export { listDormantSessionTelemetry, type DormantTelemetry } from './queries/dormant-telemetry';
 export {
   hasOtherSessionTurnSince,
   insertAgentTurnSpan,
@@ -304,6 +305,7 @@ export {
   upsertMountOperation,
 } from './queries/mount-operation';
 export {
+  listDormantOpenPullRequests,
   listMergedRequestHeads,
   listMountPullRequestLinks,
   upsertMountPullRequestLink,
@@ -416,8 +418,6 @@ export {
   getRightSizeNudgeOutcomes,
   type ImpactOverview,
   type ImpactSession,
-  type PullRequestOutcomes,
-  type PullRequestEntry,
   type ReviewOutcomes,
   type ResolutionOutcome,
   type HotFile,
@@ -430,6 +430,7 @@ export {
   type TurnBucket,
   type NudgeOutcomeCount,
 } from './queries/impact';
+export { type PullRequestOutcomes, type PullRequestEntry } from './queries/impact-pull-requests';
 export {
   insertArtifact,
   getArtifact,

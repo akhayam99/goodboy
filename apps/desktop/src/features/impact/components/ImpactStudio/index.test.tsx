@@ -1,267 +1,306 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { sessionPlace } from '../../../../store/slices/navigation/place';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { SessionId } from '@goodboy/types';
-import type { ImpactMetrics } from '../../hooks/useImpactMetrics';
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('../../../../shared/lib/db', async () =>
+  (await import('../../../../store/storyHarness')).sqliteDbLibModuleMock(),
+);
+vi.mock('../../../chat/turn', async () =>
+  (await import('../../../../store/storyHarness')).turnModuleMock(),
+);
+vi.mock('../../../permissions/permissions', async () =>
+  (await import('../../../../store/storyHarness')).permissionsModuleMock(),
+);
+vi.mock('../../../providers/providers', async () =>
+  (await import('../../../../store/storyHarness')).providersModuleMock(),
+);
+vi.mock('../../../providers/routing', async () =>
+  (await import('../../../../store/storyHarness')).routingModuleMock(),
+);
+vi.mock('../../../budget/budget', async () =>
+  (await import('../../../../store/storyHarness')).budgetModuleMock(),
+);
+vi.mock('../../../skills/skills', async () =>
+  (await import('../../../../store/storyHarness')).skillsModuleMock(),
+);
+vi.mock('../../../workflows/workflows', async () =>
+  (await import('../../../../store/storyHarness')).workflowsModuleMock(),
+);
+vi.mock('../../../worktree/worktree', async () =>
+  (await import('../../../../store/storyHarness')).worktreeModuleMock(),
+);
+vi.mock('../../../../shared/lib/repo', async () =>
+  (await import('../../../../store/storyHarness')).repoModuleMock(),
+);
 
-const mocks = vi.hoisted(() => ({
-  metrics: null as unknown as ImpactMetrics,
-  retry: vi.fn(),
-  useImpactMetrics: vi.fn(),
-  sessions: [] as ReadonlyArray<{ id: string; goal: string }>,
-  state: {
-    navigate: vi.fn(),
-    currentSessionId: null,
-    currentWorkspaceId: 'workspace-1',
-    sessionTelemetry: {},
-    providerSpendBreakdown: [],
-    budgetAlerts: [],
-    budgetRules: [],
-    sessionBudgets: {},
-    dismissBudgetAlert: vi.fn(),
-    saveBudgetRule: vi.fn(),
-    deleteBudgetRule: vi.fn(),
-    setSessionBudget: vi.fn(),
-    refreshProviderSpendBreakdown: vi.fn(),
-    loadBudgetRules: vi.fn(async () => undefined),
-    loadBudgetAlerts: vi.fn(async () => undefined),
-    loadSessionTelemetry: vi.fn(async () => undefined),
-    loadSessionBudget: vi.fn(async () => undefined),
-  },
-}));
-
-vi.mock('../../hooks/useImpactMetrics', () => ({
-  useImpactMetrics: mocks.useImpactMetrics,
-}));
-
-vi.mock('../../../../store', async () => ({
-  ...(await import('../../../../store/slices/navigation/place')),
-  EMPTY_ARRAY: [],
-  useAppStore: <T,>(selector: (state: typeof mocks.state) => T) => selector(mocks.state),
-  useSessions: () => mocks.sessions,
-  useTelemetryForSessions: () => mocks.state.sessionTelemetry,
-}));
-
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import {
+  insertSession,
+  insertTelemetry,
+  insertWorkspace,
+  purgeSessionForDelete,
+  type Database,
+} from '@goodboy/db';
+import type {
+  IsoDateTime,
+  ProviderRunId,
+  SessionId,
+  TelemetryKind,
+  TelemetryRecordId,
+  WorkspaceId,
+} from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
+import { SpendButton } from '../../../../app/components/AppTopBar/SpendButton';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  buildStoryWorkspace,
+  importStore,
+  injectDbFault,
+  openStorySqlite,
+  resetStoryStore,
+  rowsOf,
+  storySqlite,
+  stubStoryInvoke,
+  type StoryStore,
+} from '../../../../store/storyHarness';
 import { ImpactStudio } from './index';
 
-const result = <T,>(data: T) => ({ data, error: null });
-const sessionId = 'session-1' as SessionId;
+const WORKSPACE_ID = 'workspace-harborline' as WorkspaceId;
+const LIVE = 'session-payout-hold' as SessionId;
+const ARCHIVED = 'session-export-cron' as SessionId;
+const GONE = 'session-ledger-export' as SessionId;
+const GONE_TODAY = 'session-refund-split' as SessionId;
+const HOUR_MS = 3_600_000;
+const DAY_MS = 24 * HOUR_MS;
+const NOW = Date.now();
+const TODAY = Math.max(new Date(NOW).setHours(0, 0, 0, 0) + 60_000, NOW - HOUR_MS);
 
-const buildMetrics = (): ImpactMetrics => ({
-  overview: result({
-    sessionCount: 4,
-    orchestratedSessions: 3,
-    previousSessionCount: 2,
-    previousOrchestratedSessions: 1,
-    medianSessionHours: 2,
-    previousMedianSessionHours: 3,
-    sessions: [{ sessionId, goal: 'Ship impact studio', value: 2 }],
-    spendUsd: 12.5,
-    spendSessions: [{ sessionId, goal: 'Ship impact studio', value: 7.25 }],
-  }),
-  pullRequests: result({
-    open: 2,
-    merged: 3,
-    closed: 1,
-    previousOpen: 1,
-    previousMerged: 2,
-    entries: [
-      {
-        sessionId,
-        goal: 'Ship impact studio',
-        number: 42,
-        title: 'Outcome and tempo',
-        state: 'merged',
-        spendUsd: 3.5,
-      },
-    ],
-  }),
-  reviews: result({
-    commentsResolved: 6,
-    previousCommentsResolved: 3,
-    medianResolveHours: 1.5,
-    publishedDrafts: 4,
-    pushedResolutions: 2,
-    resolutionOutcomes: [{ outcome: 'resolved', count: 2 }],
-    resolutionDurationsHours: [0.5, 2, 30],
-    hotFiles: [{ filePath: 'src/hot.ts', comments: 3 }],
-    sessions: [{ sessionId, goal: 'Ship impact studio', value: 6 }],
-  }),
-  externalTasks: result({
-    linked: 5,
-    launched: 2,
-    sessions: [{ sessionId, goal: 'Ship impact studio', value: 1 }],
-  }),
-  agentDurations: result({
-    totalAgents: 8,
-    byKind: [{ kind: 'implementer', agents: 8, medianHours: 1, p90Hours: 4 }],
-  }),
-  flowHealth: result({
-    medianSessionHours: 2,
-    p90SessionHours: 8,
-    answeredQuestions: 3,
-    medianQuestionHours: 0.5,
-    questionBlockedSessions: 2,
-    staleQuestions: 1,
-    failedAgents: 1,
-    budgetAlerts: 2,
-    sessions: [{ sessionId, goal: 'Ship impact studio', value: 8 }],
-  }),
-  cacheEfficiency: result([
-    {
-      provider: 'anthropic',
-      inputTokens: 1000,
-      cachedInputTokens: 600,
-      cacheCreationInputTokens: 100,
-      hitRatio: 0.6,
-    },
-  ]),
-  contextGrowth: result([
-    { recordedAt: 1, contextTokens: 100 },
-    { recordedAt: 2, contextTokens: 300 },
-  ]),
-  turns: result([
-    { turnCount: 2, agentCount: 2 },
-    { turnCount: 5, agentCount: 1 },
-  ]),
-  nudges: result([
-    { outcome: 'accepted', count: 3 },
-    { outcome: 'overridden', count: 1 },
-  ]),
-  loading: { overview: false, shipped: false, flow: false, efficiency: false },
-  retry: mocks.retry,
+const iso = (ms: number): IsoDateTime => new Date(ms).toISOString() as IsoDateTime;
+
+const workspace = buildStoryWorkspace({ id: WORKSPACE_ID, name: 'Harborline', slug: 'harborline' });
+
+type SeedSessionParams = {
+  readonly db: Database;
+  readonly id: SessionId;
+  readonly goal: string;
+  readonly createdAt: number;
+  readonly lastActivityAt: number;
+};
+
+const seedSession = async ({ db, id, goal, createdAt, lastActivityAt }: SeedSessionParams) => {
+  const session = aSession({
+    id,
+    workspaceId: WORKSPACE_ID,
+    goal,
+    state: { kind: 'idle', lastActivityAt: iso(lastActivityAt) },
+    createdAt: iso(createdAt),
+    updatedAt: iso(lastActivityAt),
+  });
+  await insertSession(db, session);
+  return session;
+};
+
+type SpendParams = {
+  readonly db: Database;
+  readonly sessionId: SessionId;
+  readonly id: string;
+  readonly at: number;
+  readonly cost: number;
+  readonly kind?: TelemetryKind;
+};
+
+const seedSpend = async ({ db, sessionId, id, at, cost, kind = 'turn' }: SpendParams) => {
+  await db.execute(
+    `INSERT OR IGNORE INTO provider_runs (id, session_id, provider, model, status_kind, created_at)
+     VALUES (?, ?, 'anthropic', 'claude-opus-5', 'succeeded', ?)`,
+    [`run-${id}`, sessionId, at],
+  );
+  await insertTelemetry(db, {
+    id: `telemetry-${id}` as TelemetryRecordId,
+    runId: `run-${id}` as ProviderRunId,
+    sessionId,
+    kind,
+    provider: 'anthropic',
+    model: 'claude-opus-5',
+    inputTokens: 1200,
+    outputTokens: 300,
+    estimatedCostUsd: cost,
+    recordedAt: iso(at),
+  });
+};
+
+const seedMergedPullRequest = async ({ db }: { readonly db: Database }) => {
+  await db.execute(
+    `INSERT INTO session_worktrees
+       (id, session_id, worktree_path, branch, parallel_index, repo_slug, created_at)
+     VALUES ('mount-ledger', ?, '/tmp/mount-ledger', 'mq/ledger-export', 0, 'acme/ledger-core', ?)`,
+    [GONE, NOW - 20 * DAY_MS],
+  );
+  await db.execute(
+    `INSERT INTO mount_pr_links
+       (id, mount_id, provider, host, repo_slug, pr_number, head_branch, base_branch, url, state,
+        snapshot_json, merged_at, last_observed_at, created_at, updated_at)
+     VALUES ('link-412', 'mount-ledger', 'github', 'github.com', 'acme/ledger-core', 412,
+             'mq/ledger-export', 'main', 'https://github.com/acme/ledger-core/pull/412', 'merged',
+             '{"title":"Reconcile the ledger export"}', ?, ?, ?, ?)`,
+    [NOW - 19 * DAY_MS, NOW - 19 * DAY_MS, NOW - 20 * DAY_MS, NOW - 19 * DAY_MS],
+  );
+};
+
+let useAppStore: StoryStore;
+const navigate = vi.fn();
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+  navigate.mockReset();
+  const db = await openStorySqlite();
+  await insertWorkspace({ db, workspace });
+  const live = await seedSession({
+    db,
+    id: LIVE,
+    goal: 'Warn merchants before a payout hold',
+    createdAt: TODAY - HOUR_MS,
+    lastActivityAt: TODAY,
+  });
+  await seedSession({
+    db,
+    id: ARCHIVED,
+    goal: 'Retire the legacy export cron job',
+    createdAt: TODAY - HOUR_MS,
+    lastActivityAt: TODAY,
+  });
+  await db.execute('UPDATE sessions SET archived_at = ? WHERE id = ?', [TODAY, ARCHIVED]);
+  await seedSession({
+    db,
+    id: GONE,
+    goal: 'Reconcile the ledger export',
+    createdAt: NOW - 20 * DAY_MS,
+    lastActivityAt: NOW - 20 * DAY_MS + 3 * HOUR_MS,
+  });
+  await seedSession({
+    db,
+    id: GONE_TODAY,
+    goal: 'Split payments-api refunds',
+    createdAt: TODAY - HOUR_MS,
+    lastActivityAt: TODAY,
+  });
+  await seedSpend({ db, sessionId: LIVE, id: 'live-turn', at: TODAY, cost: 2.5 });
+  await seedSpend({
+    db,
+    sessionId: LIVE,
+    id: 'live-summary',
+    at: TODAY,
+    cost: 0.5,
+    kind: 'summarizer',
+  });
+  await seedSpend({ db, sessionId: ARCHIVED, id: 'archived', at: TODAY, cost: 1 });
+  await seedSpend({ db, sessionId: GONE_TODAY, id: 'gone-today', at: TODAY, cost: 1.5 });
+  await seedSpend({ db, sessionId: GONE, id: 'gone', at: NOW - 20 * DAY_MS, cost: 4 });
+  await seedMergedPullRequest({ db });
+  await purgeSessionForDelete({ db, id: GONE });
+  await purgeSessionForDelete({ db, id: GONE_TODAY });
+  useAppStore.setState({
+    workspaces: [workspace],
+    currentWorkspaceId: WORKSPACE_ID,
+    sessions: [live],
+    navigate,
+  });
+  await useAppStore.getState().loadDormantSpend(WORKSPACE_ID);
 });
 
-beforeEach(() => {
-  mocks.retry.mockClear();
-  mocks.state.navigate.mockClear();
-  mocks.useImpactMetrics.mockImplementation(() => mocks.metrics);
-  mocks.metrics = buildMetrics();
+afterEach(() => {
+  cleanup();
 });
-
-afterEach(cleanup);
 
 const renderStudio = (onClose = vi.fn()) =>
-  render(
-    <ImpactStudio
-      workspaceId={'workspace-1' as never}
-      workspaceName="Northwind"
-      onClose={onClose}
-    />,
+  render(<ImpactStudio workspaceId={WORKSPACE_ID} workspaceName="Harborline" onClose={onClose} />);
+
+const summary = async (): Promise<string> => {
+  const paragraph = await screen.findByText(
+    (_, node) => node?.tagName === 'P' && (node.textContent ?? '').includes('Goodboy ran'),
   );
+  return paragraph.textContent ?? '';
+};
 
-describe('ImpactStudio', () => {
-  it('opens on a summary sentence built from the numbers', () => {
+describe('ImpactStudio on the real database', () => {
+  it('counts deleted sessions, their spend and their merged pull request over all time', async () => {
     renderStudio();
 
-    expect(
-      screen.getByText(
-        (_, node) =>
-          node?.tagName === 'P' &&
-          node.textContent ===
-            'In the last 30 days Goodboy ran 4 sessions in Northwind, merged 3 pull requests and spent $12.50. Workflows ran 75% of sessions.',
+    fireEvent.click(screen.getByRole('tab', { name: 'All time' }));
+
+    await waitFor(async () =>
+      expect(await summary()).toBe(
+        'So far Goodboy ran 4 sessions (2 deleted) in Harborline, merged 1 pull request and spent $9.50. Workflows ran 0% of sessions.',
       ),
-    ).toBeDefined();
-    expect(screen.getByRole('tab', { name: 'Overview', selected: true })).toBeDefined();
+    );
   });
 
-  it('leaves spend out of the sentence when nothing was measured', () => {
-    const base = buildMetrics();
-    mocks.metrics = {
-      ...base,
-      overview: result({ ...base.overview.data!, spendUsd: null, spendSessions: [] }),
-    };
+  it('keeps a session deleted today out of an older window and a long one out of this week', async () => {
     renderStudio();
 
-    expect(screen.queryByText('$0')).toBeNull();
-    expect(screen.queryByText(/spent/)).toBeNull();
+    fireEvent.click(screen.getByRole('tab', { name: '7 days' }));
+
+    await waitFor(async () =>
+      expect(await summary()).toBe(
+        'In the last 7 days Goodboy ran 3 sessions (1 deleted) in Harborline, merged 0 pull requests and spent $5.50. Workflows ran 0% of sessions.',
+      ),
+    );
   });
 
-  it('opens the tab that explains a tile, not a session', () => {
+  it('shows a deleted session as a row that does not open', async () => {
     renderStudio();
+    fireEvent.click(screen.getByRole('tab', { name: 'All time' }));
 
-    fireEvent.click(screen.getByRole('button', { name: /pull requests merged/i }));
-    expect(screen.getByText('PR funnel')).toBeDefined();
-    expect(mocks.state.navigate).not.toHaveBeenCalled();
+    const row = await screen.findByText('Reconcile the ledger export');
+    const list = row.closest('li');
+
+    expect(list).not.toBeNull();
+    within(list as HTMLElement).getByText('Deleted');
+    expect(within(list as HTMLElement).queryByRole('button')).toBeNull();
   });
 
-  it('names each change in words next to its tile', () => {
-    renderStudio();
+  it('says the same spend in Impact, the Spend tab and the top bar chip', async () => {
+    render(
+      <>
+        <SpendButton onOpenSpend={vi.fn()} />
+        <ImpactStudio workspaceId={WORKSPACE_ID} workspaceName="Harborline" onClose={vi.fn()} />
+      </>,
+    );
+    fireEvent.click(screen.getByRole('tab', { name: '7 days' }));
+    await waitFor(async () => expect(await summary()).toContain('spent $5.50'));
 
-    expect(screen.getByText('up 50%')).toBeDefined();
-    expect(screen.getByText('down 1.0h')).toBeDefined();
+    fireEvent.click(screen.getByRole('tab', { name: 'Spend' }));
+
+    await waitFor(() => expect(screen.getAllByText('$5.50').length).toBeGreaterThanOrEqual(3));
+    within(screen.getByRole('button', { name: /Spent today in Harborline/ })).getByText('$5.50');
   });
 
-  it('opens a session from the sessions that shipped the most', () => {
+  it('opens a live session from its row and closes the studio', async () => {
     const onClose = vi.fn();
     renderStudio(onClose);
-
-    fireEvent.click(screen.getByRole('button', { name: /ship impact studio/i }));
-    expect(mocks.state.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: 'session-1' as SessionId }),
-    });
-    expect(onClose).toHaveBeenCalled();
-  });
-
-  it('shows the empty state when the window has no sessions', () => {
-    const base = buildMetrics();
-    mocks.metrics = {
-      ...base,
-      overview: result({ ...base.overview.data!, sessionCount: 0, orchestratedSessions: 0 }),
-    };
-    renderStudio();
-
-    expect(screen.getByText('Impact fills in as sessions finish.')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Start a session' })).toBeDefined();
-  });
-
-  it('switches to Shipped and renders its key outcome rows', () => {
-    renderStudio();
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Shipped' }));
-    expect(screen.getByText('PR funnel')).toBeDefined();
-    expect(screen.getByText('Published drafts: 4')).toBeDefined();
-    expect(screen.getByText('src/hot.ts')).toBeDefined();
-    expect(screen.getByText('$3.50')).toBeDefined();
-  });
-
-  it('omits the pull request spend figure when the pull request has no telemetry', () => {
-    const base = buildMetrics();
-    const prs = base.pullRequests.data!;
-    mocks.metrics = {
-      ...base,
-      pullRequests: result({
-        ...prs,
-        entries: prs.entries.map((entry) => ({ ...entry, spendUsd: null })),
-      }),
-    };
-    renderStudio();
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Shipped' }));
-    expect(screen.getByText('PR funnel')).toBeDefined();
-    expect(screen.queryByText('$3.50')).toBeNull();
-    expect(screen.queryByText('$0')).toBeNull();
-  });
-
-  it('switches to Flow and renders tempo and blocker rows', () => {
-    renderStudio();
-
     fireEvent.click(screen.getByRole('tab', { name: 'Flow' }));
-    expect(screen.getByText('agent duration by kind')).toBeDefined();
-    expect(screen.getByText('Waiting on open questions')).toBeDefined();
-    expect(screen.getByText('p90 4.0h')).toBeDefined();
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: /Warn merchants before a payout hold/ }),
+    );
+
+    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalled();
   });
 
   it('reports every scope change, so the navigation address stays honest', () => {
     const onScopeChange = vi.fn();
     render(
-      <ImpactStudio
-        workspaceId={'workspace-1' as never}
-        onClose={vi.fn()}
-        onScopeChange={onScopeChange}
-      />,
+      <ImpactStudio workspaceId={WORKSPACE_ID} onClose={vi.fn()} onScopeChange={onScopeChange} />,
     );
 
     fireEvent.click(screen.getByRole('tab', { name: 'Flow' }));
@@ -269,47 +308,74 @@ describe('ImpactStudio', () => {
     expect(onScopeChange).toHaveBeenCalledWith({ kind: 'flow' });
   });
 
-  it('draws failed flow metrics as not loaded instead of zero', () => {
-    mocks.metrics = {
-      ...buildMetrics(),
-      flowHealth: { data: null, error: new Error('database is locked') },
-    };
+  it('counts comments sent to an agent apart from the resolved ones', async () => {
+    const db = storySqlite();
+    await db.execute(
+      `INSERT INTO diff_comments (id, session_id, file_path, body, status, created_at, resolved_at, consumed_at)
+       VALUES ('c-resolved', ?, 'src/payout.ts', 'hold first', 'resolved', ?, ?, NULL),
+              ('c-sent', ?, 'src/payout.ts', 'retry', 'consumed', ?, NULL, ?)`,
+      [LIVE, TODAY, TODAY + 60_000, LIVE, TODAY, TODAY + 60_000],
+    );
     renderStudio();
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Flow' }));
-    expect(screen.getAllByText('not loaded')).toHaveLength(4);
-    expect(screen.queryByText('0 answered')).toBeNull();
-    expect(screen.getAllByText('\u2013').length).toBeGreaterThanOrEqual(4);
+    fireEvent.click(screen.getByRole('tab', { name: 'Shipped' }));
+
+    await screen.findByText('Sent to agent: 1');
+    screen.getByText('Pushed resolutions: 0');
   });
 
-  it('folds efficiency into the spend tab', () => {
+  it('renders a failed overview as an error strip and loads it again on retry', async () => {
+    injectDbFault({ match: /orchestrated_sessions/, message: 'database is locked' });
     renderStudio();
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Spend' }));
-    expect(screen.getByText('cache reuse by provider')).toBeDefined();
-    expect(screen.getByText('context growth per turn')).toBeDefined();
-    expect(screen.queryByRole('tab', { name: 'Efficiency' })).toBeNull();
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('database is locked');
+    fireEvent.click(within(alert).getByRole('button', { name: 'Retry' }));
+
+    await waitFor(async () => expect(await summary()).toContain('Goodboy ran'));
   });
+});
 
-  it('updates the query window from the header toggle', () => {
-    renderStudio();
-
-    fireEvent.click(screen.getByRole('tab', { name: '7 days' }));
-    expect(mocks.useImpactMetrics).toHaveBeenLastCalledWith({
-      workspaceId: 'workspace-1',
-      windowId: 'last7',
+describe('ImpactStudio refreshes pull requests of sessions no longer on the board', () => {
+  it('settles an open pull request of a deleted session once, when Impact opens', async () => {
+    const db = storySqlite();
+    await db.execute("UPDATE mount_pr_links SET state = 'open', merged_at = NULL");
+    const calls: Array<ReadonlyArray<string>> = [];
+    stubStoryInvoke({
+      gh_run: ({ args }: { readonly args: ReadonlyArray<string> }) => {
+        calls.push(args);
+        return {
+          stdout: JSON.stringify({
+            number: 412,
+            title: 'Reconcile the ledger export',
+            url: 'https://github.com/acme/ledger-core/pull/412',
+            state: 'MERGED',
+            isDraft: false,
+            mergeable: 'UNKNOWN',
+            baseRefName: 'main',
+            headRefName: 'mq/ledger-export',
+            reviewDecision: null,
+            statusCheckRollup: null,
+            updatedAt: iso(TODAY),
+            body: null,
+            autoMergeRequest: null,
+            mergedAt: iso(TODAY),
+          }),
+          stderr: '',
+          exitCode: 0,
+        };
+      },
     });
-  });
-
-  it('renders a danger error strip and retries its scope', () => {
-    mocks.metrics = {
-      ...buildMetrics(),
-      overview: { data: null, error: new Error('database unavailable') },
-    };
+    useAppStore.setState({ githubStatus: { mode: 'gh-cli', available: true } });
     renderStudio();
+    fireEvent.click(screen.getByRole('tab', { name: '7 days' }));
 
-    expect(screen.getByRole('alert').textContent).toContain('database unavailable');
-    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
-    expect(mocks.retry).toHaveBeenCalledWith('overview');
+    await waitFor(async () => expect(await summary()).toContain('merged 1 pull request'));
+    const events = await rowsOf<{ kind: string }>({
+      sql: "SELECT kind FROM session_events WHERE session_id = ? AND kind = 'pr_merged'",
+      params: [GONE],
+    });
+    expect(calls).toHaveLength(1);
+    expect(events).toHaveLength(1);
   });
 });

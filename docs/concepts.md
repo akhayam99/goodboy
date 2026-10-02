@@ -132,6 +132,27 @@ GitLab or Bitbucket, and takes the worst one: failing CI, then changes
 requested, then approved. A session is done only when every request is merged
 or closed.
 
+### Session lifecycle
+
+What you did in a session stays counted after the session leaves the board.
+Impact, the Spend tab and the spend chip in the top bar all count it.
+
+| How it goes away                      | What happens to its rows                                                                          | What Impact keeps                                     |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| You delete it in Goodboy              | transcript, file versions, slots, decisions and images are freed; the row stays with `deleted_at` | sessions, spend, pull requests, reviews and durations |
+| Its worktree disappears from disk     | rows stay, the mount is marked `missing`                                                          | everything                                            |
+| You archive it                        | rows stay with `archived_at`                                                                      | everything                                            |
+| You detach or forget its project      | the mount row and its pull request links go                                                       | merged pull requests, through their `pr_merged` event |
+| You remove its workspace              | rows stay, the workspace is disconnected                                                          | everything, under that workspace                      |
+| A draft that never started is deleted | the row goes                                                                                      | nothing to keep                                       |
+
+A deleted session shows up in Impact with a **Deleted** label and does not
+open. Its spend joins the live spend in one sum: the store reads the archived
+and deleted part once when the workspace opens (`dormantSpend`) and adds the
+live sessions on top. When Impact opens it refreshes up to 20 pull requests of
+archived or deleted sessions that were still open, so a merge that happened
+after you deleted the session still counts.
+
 ## Lazy sessions
 
 A new session starts with no folder, no worktree and no branch. A turn that

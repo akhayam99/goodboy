@@ -504,8 +504,8 @@ export const purgeSessionForDelete = async ({
         params: [id, id],
       },
       {
-        sql: 'UPDATE sessions SET deleted_at = ?, updated_at = ? WHERE id = ?',
-        params: [now, now, id],
+        sql: 'UPDATE sessions SET deleted_at = ? WHERE id = ?',
+        params: [now, id],
       },
     ],
   });
