@@ -584,9 +584,12 @@ What the catalogs do not tell you:
   `model-price.test.ts` checks that every anthropic, cursor, codex and gemini
   catalog model has a price
 - A rate the vendor has not published yet is copied from the model it follows and
-  carries `assumed: true` in `claude/cost.ts` (Opus 5.5 today), so
+  carries `assumed: true` in its `cost.ts` (no model does today), so
   `costCoverage` reports its spend as approximate. `pricing.json` keeps measured
   rates only
+- Gemini 3.6, 3.7 and 3.8 Flash bill 0.75/3.75 per Mtok (cached 0.075) in
+  `gemini/cost.ts` until December 31, 2026. Google lists 1.50/7.50 (cached 0.15)
+  from January 1, 2027, so move the three rows then
 
 When a provider ships or retires a model, update three files under
 `packages/core/src/providers/<cli>/` together:
