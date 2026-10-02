@@ -280,12 +280,12 @@ const createOgHtml = ({ format, theme, tileColor, mascotBase64, providerBrands, 
     .join('');
   const content = `
     <div class="brand"><span class="tile">${createMascot({ className: 'mascot', mascotBase64 })}</span><span>Goodboy</span></div>
-    <h1>Stop <em>re&#8209;explaining yourself.</em></h1>
-    <p class="sub">Describe a task once. Goodboy decides which agent goes next, on the plans you already pay for.</p>
+    <h1>Stop <em>re&#8209;explaining yourself</em></h1>
+    <p class="sub">One app to plan, run and review your code, with the subscriptions you already have.</p>
     <div class="foot">
       <span class="dom">goodboy-ai.dev</span>
       <span class="marks-wrap"><span class="marks">${marks}</span><small>providers as of ${date}</small></span>
-      <span class="note">free and source-available</span>
+      <span class="note">Free desktop ADE, built in public</span>
     </div>`;
   return createBaseHtml({
     width: format.width,
@@ -294,7 +294,7 @@ const createOgHtml = ({ format, theme, tileColor, mascotBase64, providerBrands, 
     bodyClass: 'og',
     content,
     extraCss: `
-      body { background: ${theme.background}; color: ${theme.foreground}; padding: 68px 76px; display: flex; flex-direction: column; position: relative }
+      body { background: ${theme.background}; color: ${theme.foreground}; padding: 68px 76px 104px; display: flex; flex-direction: column; position: relative }
       .brand { display: flex; align-items: center; gap: 16px; position: relative }
       .brand .tile { width: 60px; height: 60px; border-radius: ${60 * TILE_RADIUS_RATIO}px; background: ${tileColor}; box-shadow: inset 0 0 0 1.5px ${theme.tileRing}; display: grid; place-items: center }
       .brand .mascot { width: ${60 * MARK_SCALE}px; height: ${60 * MARK_SCALE}px; background: #fff }
