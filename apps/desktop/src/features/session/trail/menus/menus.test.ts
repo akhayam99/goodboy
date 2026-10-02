@@ -89,6 +89,46 @@ describe('pageMenu', () => {
   });
 });
 
+describe('pageMenu icon tones', () => {
+  const build = (summaries: Record<string, string>) =>
+    pageMenu({
+      destinations: lensDestinations({
+        isBranchless: false,
+        connectedTools: { linear: true, gitlab: false, jira: false, slack: false },
+      }),
+      activeLens: null,
+      isBranchless: false,
+      sessionTitle: 'Retry failed webhook deliveries',
+      summaries,
+      actions: [],
+      onSelect: vi.fn(),
+    });
+
+  const classOf = (menu: CrumbMenuModel, label: string) => {
+    const lead = rowsOf(menu).find((row) => row.label === label)?.lead;
+    return lead?.kind === 'icon' ? lead.className : undefined;
+  };
+
+  it('colors every page but Overview with its concept and Linear with its brand', () => {
+    const menu = build({});
+
+    expect(classOf(menu, 'Overview')).toBeUndefined();
+    expect(classOf(menu, 'Workflows')).toBe('text-primary');
+    expect(classOf(menu, 'Diff')).toBe('text-info');
+    expect(classOf(menu, 'Linear')).toBe('text-provider-linear');
+    rowsOf(menu)
+      .filter((row) => row.label !== 'Overview')
+      .forEach((row) => {
+        expect(row.lead.kind === 'icon' && row.lead.className !== undefined).toBe(true);
+      });
+  });
+
+  it('turns Questions yellow only when something is open', () => {
+    expect(classOf(build({}), 'Questions')).toBe('text-faint-foreground');
+    expect(classOf(build({ questions: '2 open' }), 'Questions')).toBe('text-warning');
+  });
+});
+
 describe('stepMenu', () => {
   it('lists every step in order, the ones not started switched off', () => {
     const scout = agent({

@@ -9,10 +9,24 @@ const WORKSPACE = 'features/session/components/SessionWorkspace/index.tsx';
 
 const WIDTH_ALLOWLIST = new Set(['features/chat/components/ImageLightbox/index.tsx']);
 
-const FORBIDDEN_WIDTHS: ReadonlyArray<RegExp> = [
-  /PANE_RHYTHM\.measure/,
-  /DIFF_CAPPED_COLUMN_CLASS/,
-  /\bmax-w-(3xl|4xl|5xl|6xl|7xl)\b/,
+const NARROW_ALLOWLIST = new Set([
+  'features/chat/components/HandoffChip/index.tsx',
+  'features/workspace/components/StageBoard/index.tsx',
+  'features/workspace/components/WorkspaceLauncher/index.tsx',
+]);
+
+type Forbidden = {
+  readonly pattern: RegExp;
+  readonly allowed: ReadonlySet<string>;
+};
+
+const NO_EXCEPTION: ReadonlySet<string> = new Set();
+
+const FORBIDDEN_WIDTHS: ReadonlyArray<Forbidden> = [
+  { pattern: /PANE_RHYTHM\.measure/, allowed: NO_EXCEPTION },
+  { pattern: /DIFF_CAPPED_COLUMN_CLASS/, allowed: NO_EXCEPTION },
+  { pattern: /\bmax-w-(3xl|4xl|5xl|6xl|7xl)\b/, allowed: NO_EXCEPTION },
+  { pattern: /\bmax-w-(2xl|xl)\b/, allowed: NARROW_ALLOWLIST },
 ];
 
 type RootKind = 'shell' | 'bare' | 'dispatch' | 'helper';
@@ -136,12 +150,29 @@ describe('content column contract', () => {
         return [];
       }
       const source = readFileSync(path, 'utf8');
-      return FORBIDDEN_WIDTHS.filter((pattern) => pattern.test(source)).map(
-        (pattern) => `${key} uses ${pattern.source}`,
-      );
+      return FORBIDDEN_WIDTHS.filter(
+        ({ pattern, allowed }) => !allowed.has(key) && pattern.test(source),
+      ).map(({ pattern }) => `${key} uses ${pattern.source}`);
     });
 
     expect(offenders).toEqual([]);
+  });
+
+  it('keeps the allowed narrow widths to files that still use one', () => {
+    const stale = [...NARROW_ALLOWLIST].filter((key) => !/\bmax-w-(2xl|xl)\b/.test(read(key)));
+
+    expect(stale).toEqual([]);
+  });
+
+  it('puts the workspace chat header, thread and composer on the page column', () => {
+    const files = [
+      'features/workspace-chat/components/ChatRoom/ChatHeader.tsx',
+      'features/workspace-chat/components/ChatRoom/ChatThread.tsx',
+      'features/workspace-chat/components/ChatRoom/index.tsx',
+    ];
+
+    expect(files.filter((file) => !/<PageColumn\b/.test(read(file)))).toEqual([]);
+    expect(read('features/workspace-chat/components/ChatComposer/index.tsx')).not.toMatch(/max-w-/);
   });
 
   it('classifies every component the session workspace mounts', () => {

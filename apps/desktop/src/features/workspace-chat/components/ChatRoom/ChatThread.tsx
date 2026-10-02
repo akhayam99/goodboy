@@ -1,5 +1,5 @@
 import { Fragment, useLayoutEffect, useMemo, useRef } from 'react';
-import { ScrollFade } from '@goodboy/ui';
+import { PageColumn, ScrollFade } from '@goodboy/ui';
 import type { ChatMessage, ChatMessageId, SessionId } from '@goodboy/types';
 import type { ChatSessionEntry } from '../../chatSessionEntries';
 import { ChatAssistantMessage } from './ChatAssistantMessage';
@@ -66,36 +66,35 @@ export const ChatThread = ({
 
   return (
     <ScrollFade className="flex-1" viewportRef={viewportRef} onViewportScroll={onScroll}>
-      <ol
-        aria-label="Messages"
-        className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-6 pb-5 pt-1.5 select-text"
-      >
-        {messages.map((message) => (
-          <Fragment key={message.id}>
-            <li className="flex flex-col">
-              {message.role === 'user' ? (
-                <ChatUserMessage content={message.content} />
-              ) : (
-                <ChatAssistantMessage
-                  message={message}
-                  workspaceName={workspaceName}
-                  {...(onStartWork !== undefined && { onStartWork })}
-                />
-              )}
-            </li>
-            {notes.after.get(message.id)?.map((entry) => (
-              <li key={entry.link.id} className="flex flex-col">
-                <ChatHandoffNote entry={entry} onOpen={onOpenSession} />
+      <PageColumn>
+        <ol aria-label="Messages" className="flex w-full flex-col gap-4 pb-5 pt-1.5 select-text">
+          {messages.map((message) => (
+            <Fragment key={message.id}>
+              <li className="flex flex-col">
+                {message.role === 'user' ? (
+                  <ChatUserMessage content={message.content} />
+                ) : (
+                  <ChatAssistantMessage
+                    message={message}
+                    workspaceName={workspaceName}
+                    {...(onStartWork !== undefined && { onStartWork })}
+                  />
+                )}
               </li>
-            ))}
-          </Fragment>
-        ))}
-        {notes.trailing.map((entry) => (
-          <li key={entry.link.id} className="flex flex-col">
-            <ChatHandoffNote entry={entry} onOpen={onOpenSession} />
-          </li>
-        ))}
-      </ol>
+              {notes.after.get(message.id)?.map((entry) => (
+                <li key={entry.link.id} className="flex flex-col">
+                  <ChatHandoffNote entry={entry} onOpen={onOpenSession} />
+                </li>
+              ))}
+            </Fragment>
+          ))}
+          {notes.trailing.map((entry) => (
+            <li key={entry.link.id} className="flex flex-col">
+              <ChatHandoffNote entry={entry} onOpen={onOpenSession} />
+            </li>
+          ))}
+        </ol>
+      </PageColumn>
     </ScrollFade>
   );
 };

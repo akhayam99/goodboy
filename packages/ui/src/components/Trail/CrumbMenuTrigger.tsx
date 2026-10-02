@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '../../cn';
 import { useDropdown } from '../../useDropdown';
 import { AnchoredPopover } from '../AnchoredPopover';
@@ -8,7 +8,12 @@ import type { CrumbMenuModel } from './crumbMenuTypes';
 import type { TrailSegmentModel } from './types';
 import { CrumbMenu } from './CrumbMenu';
 import { TrailLabel } from './TrailLabel';
-import { TRAIL_CRUMB_CLASS, TRAIL_CURRENT_CLASS, TRAIL_LINK_CLASS } from './trailClasses';
+import {
+  TRAIL_CRUMB_CLASS,
+  TRAIL_CURRENT_CLASS,
+  TRAIL_LINK_CLASS,
+  TRAIL_TAIL_CLASS,
+} from './trailClasses';
 
 const WIDTH: Record<CrumbMenuModel['width'], { readonly className: string; readonly px: number }> =
   {
@@ -70,6 +75,11 @@ export const CrumbMenuTrigger = ({ segment, menu, isCurrent, isIconOnly }: Props
       className={cn('shrink-0 transition-transform', open && 'rotate-180')}
     />
   );
+  const nameClass = cn(
+    TRAIL_CRUMB_CLASS,
+    'text-faint-foreground group-hover/crumb:text-foreground focus-visible:text-foreground',
+    open && 'text-foreground',
+  );
   const openOnArrow = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (event.key !== 'ArrowDown' || open) {
       return;
@@ -88,6 +98,7 @@ export const CrumbMenuTrigger = ({ segment, menu, isCurrent, isIconOnly }: Props
         aria-haspopup="menu"
         aria-expanded={open}
         data-crumb-trigger={segment.id}
+        data-trail-piece=""
         className={cn(
           TRAIL_CRUMB_CLASS,
           TRAIL_CURRENT_CLASS,
@@ -104,19 +115,25 @@ export const CrumbMenuTrigger = ({ segment, menu, isCurrent, isIconOnly }: Props
       </button>
     </Tooltip>
   ) : (
-    <span className="group/crumb flex min-w-0 items-center">
+    <span
+      className={cn(
+        'group/crumb flex min-w-0 items-center rounded-sm transition-colors duration-120 ease-out hover:bg-hover',
+        open && 'bg-hover',
+      )}
+    >
       {segment.onSelect != null ? (
         <button
           type="button"
+          data-trail-piece=""
           onClick={segment.onSelect}
           aria-label={isIconOnly ? segment.label : undefined}
-          className={cn(TRAIL_CRUMB_CLASS, TRAIL_LINK_CLASS)}
+          className={nameClass}
         >
           {iconNode}
           <TrailLabel label={segment.label} isCurrent={false} isIconOnly={isIconOnly} />
         </button>
       ) : (
-        <span className={cn(TRAIL_CRUMB_CLASS, TRAIL_LINK_CLASS)}>
+        <span data-trail-piece="" className={nameClass}>
           {iconNode}
           <TrailLabel label={segment.label} isCurrent={false} isIconOnly={isIconOnly} />
         </span>
@@ -125,6 +142,7 @@ export const CrumbMenuTrigger = ({ segment, menu, isCurrent, isIconOnly }: Props
         <button
           ref={triggerRef}
           type="button"
+          data-trail-tail=""
           onClick={toggle}
           onKeyDown={openOnArrow}
           aria-label={`${menu.triggerLabel}: ${segment.label}`}
@@ -132,14 +150,19 @@ export const CrumbMenuTrigger = ({ segment, menu, isCurrent, isIconOnly }: Props
           aria-expanded={open}
           data-crumb-trigger={segment.id}
           className={cn(
-            'flex h-6 w-4.5 shrink-0 items-center justify-center rounded-sm text-faint-foreground transition-opacity',
-            'hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-            open || isIconOnly
-              ? 'opacity-100'
-              : 'opacity-0 group-hover/crumb:opacity-100 focus-visible:opacity-100',
+            TRAIL_TAIL_CLASS,
+            'group-hover/crumb:text-foreground focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            open && 'text-foreground',
           )}
         >
-          {chevron}
+          <ChevronRight
+            size={12}
+            aria-hidden
+            className={cn(
+              'shrink-0 motion-safe:transition-transform motion-safe:duration-150',
+              open && 'rotate-90',
+            )}
+          />
         </button>
       </Tooltip>
     </span>

@@ -57,7 +57,10 @@ a reason in its allowlist entry, never a waiver for a whole directory.
 
 `LENS_ICON` in `features/session/lens-labels.ts` reads straight from the
 registry, so a lens never picks its own glyph, and `LENS_LABEL` in the same
-file names it. Size is `control` in the lens switcher. `lensDestinations` in
+file names it. `LENS_TONE` in the same file gives each lens its tone, and
+`lensIconClass` turns it into the icon color the page menu and the breadcrumb
+use; linked tools keep their brand color, and Questions is muted until
+something is open. Size is `control` in the lens switcher. `lensDestinations` in
 `features/session/lens-destinations.ts` decides which lenses a session lists.
 
 | Lens (`LENS_LABEL`)         | Concept        | Glyph                   | Tone    | Listed                                     |

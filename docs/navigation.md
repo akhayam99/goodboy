@@ -609,7 +609,11 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   `isAgentFinished` makes), and a check on the current row, which is there even
   when it is the only row. The last segment opens its menu from the whole
   segment and always shows the chevron; an ancestor goes up by its name and
-  shows its chevron on hover. Widths are 300 (pages, scopes, sections), 380
+  opens its menu from a chevron that is always visible, faint, and doubles as
+  the separator: every segment but the last ends with the same chevron slot,
+  whether it has a menu or not, so the gaps are equal. Name and chevron light
+  up as one chip on hover. Page icons take the tone of their concept
+  (`LENS_TONE`, linked tools keep their brand color). Widths are 300 (pages, scopes, sections), 380
   (runs, steps, agents, artifacts, conversations, attempts) and 460 (branches);
   a filter appears from nine rows up. An action that breaks something (Stop
   this step) confirms inside the menu's action band with `InlineConfirm`;
@@ -844,9 +848,13 @@ Goodboy chip never hides. Past that the glyph strip scrolls.
   running"**, not "has a new release been published". After an update, one
   notice names the installed version and opens its notes. It works offline. A
   fresh install shows none, and dismissing it marks that version as read.
-- Exactly one integration control has the active fill. It sits on the open
-  glyph, or on the link action when that integration is disconnected. Opening
-  any studio closes the others.
+- The footer target is a pair, the place and the tool (`FooterTarget`). The
+  place has the active fill: Inbox while the Inbox studio is open, whatever
+  source it filters, or the link action when a disconnected tool form is open.
+  The tool glyph of a connected source gets a quiet ring with no fill. Every
+  lit control carries `aria-current="page"`, and tests read that instead of
+  classes. The source filter can change inside the Inbox and the ring follows.
+  Opening any studio closes the others.
 - **Before any workspace exists, the footer keeps its app half**: Settings and
   the Goodboy chip. The integration strip, Inbox and Workflows belong to a
   workspace and wait for one. Settings then opens on App and lists only App and

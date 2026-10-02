@@ -35,7 +35,7 @@ export const WorkspaceFrame = ({ session, main }: Props) => {
       footer={
         <AppFooter
           scope="workspace"
-          target={null}
+          target={{ place: null, tool: null }}
           connected={FRAME_CONNECTED}
           onOpenIntegration={noop}
           onOpenInbox={noop}

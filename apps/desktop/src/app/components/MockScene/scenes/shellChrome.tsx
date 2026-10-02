@@ -127,7 +127,7 @@ export const ShellFrame = ({ session, main, sidebar = 'collapsed' }: ShellFrameP
         footer={
           <AppFooter
             scope={arrangement.footer}
-            target={null}
+            target={{ place: null, tool: null }}
             connected={{
               github: true,
               linear: true,
