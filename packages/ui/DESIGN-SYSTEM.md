@@ -1206,9 +1206,13 @@ conversation is the wrapped sheet, and "Turn into work" is the
   shape and only drops a text step (`faint` title, `disabled` snippet); a
   group action ("Archive idle") is a quiet text button at the end of its
   heading, and its Undo line takes the group's place.
-- **The conversation** is one `max-w-2xl` column. The question is a `bg-subtle`
-  bubble on the right in `text-prose`; the answer is `Markdown` in
-  `text-prose` with no bubble. Under it, in order: `Read N files` (a quiet
+- **The conversation** sits on `PageColumn`, the same 960px column as every
+  other page: the header, the thread and the composer share one left and one
+  right edge. Prose (paragraphs, lists, quotes, headings) stops at a `72ch`
+  measure, left aligned; tables and code blocks take the whole column. The
+  question is a `bg-subtle` bubble on the right in `text-prose`; the answer is
+  `Markdown` in `text-prose` with no bubble. Under it, in order: `Read N files`
+  (a quiet
   disclosure listing paths in `text-code`), then one `h-7` row. Copy
   (`CopyButton` with `tone="faint"`) and "Start work from here" sit on the
   left, quiet `text-secondary` actions that show on hover or keyboard focus of

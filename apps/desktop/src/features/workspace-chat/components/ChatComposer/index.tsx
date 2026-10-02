@@ -59,7 +59,7 @@ export const ChatComposer = ({
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col rounded-lg border border-border bg-subtle focus-within:border-border-strong">
+    <div className="flex w-full flex-col rounded-lg border border-border bg-subtle focus-within:border-border-strong">
       <textarea
         rows={2}
         value={text}

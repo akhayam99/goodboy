@@ -165,8 +165,9 @@ or the right drawer opens, never because you moved from Overview to Review to a
 chat. Anything that centres content uses `PageColumn` or `PANE_RHYTHM.column`;
 no other `max-w-*` layout width lives under `features/`.
 `shared/layout/columnContract.test.ts` fails on `PANE_RHYTHM.measure`,
-`DIFF_CAPPED_COLUMN_CLASS` and `max-w-3xl` to `max-w-7xl` there (with an
-explicit allowlist, such as the image lightbox), and on a lens the session
+`DIFF_CAPPED_COLUMN_CLASS` and `max-w-xl` to `max-w-7xl` there (with an
+explicit allowlist, such as the image lightbox, and a narrow list for cards and
+empty states that still use `max-w-xl`), and on a lens the session
 workspace mounts without `PaneShell`, or a root that draws a crumb of its own.
 The session trail lives only in `TrailBar`, a 40px band above every layer; the
 panes under it start with their title.
