@@ -19,7 +19,7 @@ Start a project from an empty folder, pick the model new chats start on, and rea
 ### New
 
 #### Start a project from nothing
-<!-- gb area=app pr=1952 -->
+<!-- gb area=app image=start-a-project pr=1952 -->
 
 Choose Start a new project on the empty screen, in the workspace launcher or in the setup wizard. Goodboy makes the folder, starts a git repository on main with a first commit that holds only a .gitignore, and opens a first session that works right in that folder.
 
