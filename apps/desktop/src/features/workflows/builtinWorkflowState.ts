@@ -1,4 +1,4 @@
-import { WORKFLOW_LIBRARY, type WorkflowLibraryEntry } from '@goodboy/core';
+import { WORKFLOW_LIBRARY, findBuiltinWorkflow, type WorkflowLibraryEntry } from '@goodboy/core';
 import type { Workflow } from '@goodboy/types';
 
 export type BuiltinWorkflowState = 'custom' | 'builtin' | 'edited';
@@ -7,11 +7,10 @@ type Params = {
   readonly workflow: Workflow;
 };
 
-const SEED_ID_PREFIX = 'wf_seed_';
-
 const libraryEntryOf = ({ workflow }: Params): WorkflowLibraryEntry | null =>
-  WORKFLOW_LIBRARY.find((entry) => workflow.id.startsWith(`${SEED_ID_PREFIX}${entry.slug}_`)) ??
-  null;
+  WORKFLOW_LIBRARY.find(
+    (entry) => findBuiltinWorkflow({ workflows: [workflow], entry }) !== null,
+  ) ?? null;
 
 type MatchParams = {
   readonly workflow: Workflow;
@@ -54,18 +53,12 @@ export const restorableBuiltins = ({
   removedIds,
 }: WorkflowsParams): RestorableBuiltin[] =>
   WORKFLOW_LIBRARY.flatMap((entry): RestorableBuiltin[] => {
-    const prefix = `${SEED_ID_PREFIX}${entry.slug}_`;
-    const seeded = workflows.find((workflow) => workflow.id.startsWith(prefix));
+    const prefix = `wf_seed_${entry.slug}_`;
+    const seeded = findBuiltinWorkflow({ workflows, entry }) ?? undefined;
     if (seeded !== undefined && matchesEntry({ workflow: seeded, entry })) {
       return [];
     }
     if (seeded === undefined && ![...removedIds].some((id) => id.startsWith(prefix))) {
-      return [];
-    }
-    const nameTaken = workflows.some(
-      (workflow) => workflow.id !== seeded?.id && workflow.name === entry.name,
-    );
-    if (nameTaken) {
       return [];
     }
     return [{ entry, drift: seeded === undefined ? 'deleted' : 'edited' }];

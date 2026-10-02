@@ -223,18 +223,21 @@ export {
 } from './queries/settings';
 export {
   listWorkflows,
+  listWorkflowsIncludingDeleted,
   getWorkflow,
   upsertWorkflow,
   deleteWorkflow,
   removeWorkflow,
   saveWorkflow,
   restoreSeededWorkflow,
+  findActiveWorkflowRunTitle,
   readBuiltinSeedState,
   listRemovedSeededWorkflowIds,
   takenNameKey,
   type BuiltinSeedState,
   type SaveWorkflowInput,
   type WorkflowStepInput,
+  type RestoreSeededWorkflowResult,
 } from './queries/workflow';
 export {
   isWorkflowRoutingDecision,

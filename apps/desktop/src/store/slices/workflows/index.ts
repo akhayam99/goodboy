@@ -50,7 +50,7 @@ export const createWorkflowsSlice = ({ set, get }: SliceDeps) => {
     loadStepLibrary: loadStepLibrary(set),
     saveStepDef: saveStepDef(set),
     deleteStepDef: deleteStepDef(set),
-    resetWorkflows: resetWorkflows(set, get),
+    resetWorkflows: resetWorkflows({ get }),
     loadPhaseRunsForSession: loadPhaseRunsForSession(set),
     attachWorkflowToSession: attachWorkflowToSession(set, get),
     detachWorkflowFromSession: detachWorkflowFromSession(set, get),

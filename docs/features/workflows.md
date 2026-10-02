@@ -33,7 +33,7 @@ In **Preset** mode, pick a saved sequence from the list and edit any step before
 
 ### Built-in workflows
 
-Start from **Refactor**, **Plan and ship** or **Fix a bug**. A built-in you delete stays deleted until you press **Restore built-in workflows**.
+Start from **Refactor**, **Plan and ship** or **Fix a bug**. A built-in you delete stays deleted until you press **Restore built-in workflows**. Restore keeps the existing workflow and step identities. If its name is held by another workflow, or one of its runs is still active, the confirmation stays open and says what must change first.
 
 ### Saved steps
 
