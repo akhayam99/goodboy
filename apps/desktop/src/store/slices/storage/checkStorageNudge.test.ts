@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
 import type { AppStore } from '../../store';
 import { checkStorageNudge } from './checkStorageNudge';
-import { selectStorageAttention, selectStorageAttentionTone } from './selectStorageAttention';
+import { storageAttention } from './selectStorageAttention';
 import { STORAGE_LAST_NUDGE_AT_KEY, STORAGE_LAST_NUDGE_BYTES_KEY } from './storageSettings';
 import type { StorageFolder } from './types';
 
@@ -77,18 +77,19 @@ describe('checkStorageNudge', () => {
   });
 });
 
-describe('selectStorageAttention', () => {
+describe('storageAttention', () => {
   it('puts an info dot with the amount on the Storage row above 10 GB', () => {
     const state = makeState({});
 
-    expect(selectStorageAttention({ state })).toBe('12 GB can go');
-    expect(selectStorageAttentionTone({ state })).toBe('info');
+    expect(storageAttention({ state, nowMs: Date.now() })).toEqual({
+      label: '12 GB can go',
+      tone: 'info',
+    });
   });
 
   it('shows no dot under 10 GB', () => {
     const state = { ...makeState({}), storageFolders: [idleFolder('a')] };
 
-    expect(selectStorageAttention({ state })).toBeNull();
-    expect(selectStorageAttentionTone({ state })).toBeNull();
+    expect(storageAttention({ state, nowMs: Date.now() })).toBeNull();
   });
 });

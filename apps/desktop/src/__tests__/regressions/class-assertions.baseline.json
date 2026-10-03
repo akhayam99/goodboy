@@ -48,7 +48,6 @@
   "apps/desktop/src/features/reports/components/ReportStudio/index.test.tsx": 4,
   "apps/desktop/src/features/session/components/AgentDetailPane/AgentBrief.test.tsx": 4,
   "apps/desktop/src/features/session/components/AgentDetailPane/AgentBriefPlans.test.tsx": 2,
-  "apps/desktop/src/features/session/components/AgentKindChip/index.test.tsx": 3,
   "apps/desktop/src/features/session/components/AgentMetrics/index.test.tsx": 2,
   "apps/desktop/src/features/session/components/AgentTree/AgentRow.test.tsx": 6,
   "apps/desktop/src/features/session/components/AgentTree/ClusterChildRow.test.tsx": 7,

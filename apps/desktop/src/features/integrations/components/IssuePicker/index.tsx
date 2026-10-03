@@ -2,7 +2,6 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import {
   AnchoredPopover,
   cn,
-  EmptyState,
   filterOptions,
   ListboxList,
   listboxOptionId,
@@ -13,6 +12,7 @@ import {
   splitErrorMessage,
   useDropdown,
   useListboxKeyboard,
+  FilledEmptyState,
 } from '@goodboy/ui';
 import { ChevronDown, ExternalLink } from 'lucide-react';
 import type { IssueCandidate } from '../../fetchIssueCandidates';
@@ -296,14 +296,12 @@ export const IssuePicker = ({
 
           {isEmptyState && (
             <div className="px-3 py-2 text-label text-muted-foreground">
-              <EmptyState
+              <FilledEmptyState
                 icon={CONCEPT_ICONS.search}
                 tone={CONCEPT_TONE.search}
                 title={
                   query.trim() !== '' ? 'No matching issues' : 'No open issues assigned to you'
                 }
-                size="inline"
-                className="p-0"
               />
             </div>
           )}

@@ -1,6 +1,6 @@
 import type { Workflow } from '@goodboy/types';
 import { classifyStep } from '../../../../session/agent-kind';
-import { AgentKindChip } from '../../../../session/components/AgentKindChip';
+import { AgentKindChip } from '../../../../../shared/components/AgentKindChip';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { formatSpan } from '../../../../../shared/utils/time/formatSpan';
 import type { BuiltinWorkflowState } from '../../../builtinWorkflowState';

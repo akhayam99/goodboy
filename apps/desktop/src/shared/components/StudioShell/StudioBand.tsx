@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn, tintClasses, Trail, type Tone } from '@goodboy/ui';
+import { Button, tintClasses, Trail, type Tone } from '@goodboy/ui';
 import { X, type LucideIcon } from 'lucide-react';
 import { CONCEPT_ICONS } from '../conceptIcons';
 
@@ -64,19 +64,9 @@ export const StudioBand = ({
         )}
       </div>
       {accessory}
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label={closeLabel}
-        className={cn(
-          'inline-flex h-6 items-center gap-1.5 rounded-md border border-border px-2.5',
-          'text-label text-muted-foreground transition-colors',
-          'hover:bg-hover hover:text-foreground',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-        )}
-      >
-        <X size={13} aria-hidden /> Done
-      </button>
+      <Button variant="ghost" size="sm" onClick={onClose} aria-label={closeLabel}>
+        <X size={13} aria-hidden /> Close
+      </Button>
     </header>
   </>
 );

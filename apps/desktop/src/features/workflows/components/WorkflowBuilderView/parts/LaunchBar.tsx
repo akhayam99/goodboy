@@ -28,7 +28,7 @@ export const LaunchBar = ({
     {canDiscard ? (
       <Button
         variant="ghost"
-        size="md"
+        size="sm"
         onClick={onDiscard}
         disabled={isStarting}
         aria-label="Discard workflow draft"

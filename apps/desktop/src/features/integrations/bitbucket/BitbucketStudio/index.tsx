@@ -96,6 +96,7 @@ export const BitbucketStudio = ({ sessionId, onClose }: Props) => {
           <StudioRailLayout
             railLabel="Bitbucket pull requests"
             railWidth="standard"
+            surface="bitbucket"
             rail={
               <PrInbox
                 groups={pullRequests.groups}

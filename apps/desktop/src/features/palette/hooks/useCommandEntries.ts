@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Plus, Smartphone } from 'lucide-react';
-import type { AgentId, ProjectScript, SessionId } from '@goodboy/types';
+import type { AgentId, ProjectScript, SessionId, Workflow } from '@goodboy/types';
 import {
   BOARD_PLACE,
   EMPTY_ARRAY,
@@ -33,6 +33,7 @@ import { useToast } from '../../../shared/components/Toast';
 import { agentEntries } from '../sources/agentEntries';
 import { artifactEntries } from '../sources/artifactEntries';
 import { sessionEntries } from '../sources/sessionEntries';
+import { workflowEntries } from '../sources/workflowEntries';
 import { openSessionAnywhere } from '../openSessionAnywhere';
 import type { PaletteEntry } from '../types';
 import { useSessionsEverywhere } from './useSessionsEverywhere';
@@ -77,6 +78,10 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const scripts = useAppStore((s) =>
     currentWorkspace ? (s.projectScripts[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
   ) as ReadonlyArray<ProjectScript>;
+  const workflows = useAppStore((s) =>
+    currentWorkspace ? (s.phaseTemplates[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
+  ) as ReadonlyArray<Workflow>;
+  const attachWorkflowToSession = useAppStore((s) => s.attachWorkflowToSession);
   const agents = useAppStore((s) =>
     sessionId === null ? EMPTY_ARRAY : (s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY),
   );
@@ -125,6 +130,16 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           kindOf: ({ agent }) =>
             classifyAgent({ agent, override: agentKindOverride[agent.id as AgentId] ?? null }),
           open: ({ agentId }) => navigate({ to: agentPlace({ sessionId, agentId }) }),
+        }),
+        ...workflowEntries({
+          workflows,
+          start: (workflow) => {
+            void attachWorkflowToSession(sessionId, workflow.id, { navigate: true })
+              .then(() => showToast({ kind: 'success', message: `Started ${workflow.name}.` }))
+              .catch((error: unknown) =>
+                reportError({ title: `Couldn't start ${workflow.name}`, error, sessionId }),
+              );
+          },
         }),
         ...artifactEntries({
           sessionId,
@@ -319,7 +334,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         group: 'action',
         icon: CONCEPT_ICONS.settings,
         shortcut: 'settings.open',
-        run: () => openSettings({ scope: 'app' }),
+        run: () => openSettings({ scope: 'home' }),
       },
       ...APP_SECTIONS.filter((section) => section.id !== 'shortcuts').map(
         (section): PaletteEntry => ({
@@ -398,6 +413,8 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     agents,
     artifacts,
     plans,
+    workflows,
+    attachWorkflowToSession,
     scripts,
     agentKindOverride,
     destinations,

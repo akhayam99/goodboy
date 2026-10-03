@@ -31,7 +31,7 @@ Read the whole session as one timeline of agents, workflows, questions, fixes, a
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-next-light.webp" alt="The Next row of a session: the plan Show the attempts on each delivery, marked Ready to implement, with a Start implementer button and a more menu">
 </picture>
 
-Know the one move that unblocks a task, like answering a question, fixing a failing check or opening a pull request. Here the plan **Show the attempts on each delivery** is ready, and **Start implementer** starts it. **Not now** in the row menu puts a suggestion away until the situation changes.
+Know the one move that unblocks a task, like answering a question, fixing a failing check or opening a pull request. Here the plan **Show the attempts on each delivery** is ready, and **Start implementer** starts it. **Not now** in the row menu puts a suggestion away until the situation changes. A step that starts an implementer, reviewer, resolver, PR reviewer or debugger shows **Runs on** with the model and effort it starts on, and **Change** picks another for that start.
 
 ### Time left
 

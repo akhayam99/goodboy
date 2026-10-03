@@ -6,18 +6,25 @@ import { linkedProjectsLabel } from '../../linkedProjectsLabel';
 import { formatSpan } from '../../../../shared/utils/time/formatSpan';
 import { workspaceAccent } from '../../color';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { formatCombo } from '../../../../shared/keyboard/registry';
+import { shortcutGlyphs, type ShortcutId } from '../../../../shared/keyboard/registry';
 import { useWorkspaceWindowState } from './useWorkspaceWindowState';
 import { useNow } from '../../../../shared/hooks/useNow';
 
 type Props = {
   readonly workspace: Workspace;
   readonly highlighted: boolean;
+  readonly digitShortcut: ShortcutId | null;
   readonly onOpen: () => void;
   readonly onOpenNewWindow: () => void;
 };
 
-export const OtherWorkspaceRow = ({ workspace, highlighted, onOpen, onOpenNewWindow }: Props) => {
+export const OtherWorkspaceRow = ({
+  workspace,
+  highlighted,
+  digitShortcut,
+  onOpen,
+  onOpenNewWindow,
+}: Props) => {
   const now = useNow(30_000);
   const windowState = useWorkspaceWindowState({ workspaceId: workspace.id });
   const hasUnread = useWorkspaceHasUnread(workspace.id);
@@ -59,6 +66,11 @@ export const OtherWorkspaceRow = ({ workspace, highlighted, onOpen, onOpenNewWin
           {hasUnread ? <Chip tone="warning" size="3xs" bordered={false} label="unread" /> : null}
         </span>
       </button>
+      {digitShortcut === null ? null : (
+        <KbdPill className="shrink-0 group-hover:hidden group-focus-within:hidden">
+          {shortcutGlyphs(digitShortcut)}
+        </KbdPill>
+      )}
       <button
         type="button"
         onClick={onOpen}
@@ -67,7 +79,7 @@ export const OtherWorkspaceRow = ({ workspace, highlighted, onOpen, onOpenNewWin
         Open
         <KbdPill>↵</KbdPill>
       </button>
-      <Tooltip content={`Open in new window (${formatCombo('cmd+Enter')})`}>
+      <Tooltip content={`Open in new window (${shortcutGlyphs('composer.submit')})`}>
         <button
           type="button"
           onClick={onOpenNewWindow}

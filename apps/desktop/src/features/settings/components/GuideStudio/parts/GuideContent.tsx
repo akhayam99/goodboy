@@ -5,6 +5,7 @@ import type { GuideTarget } from '../guideTarget';
 import { ChapterSection } from './ChapterSection';
 import { findScrollParent } from './findScrollParent';
 import { LegendSection } from './LegendSection';
+import { ListensExtra } from './ListensExtra';
 import { ShortcutsExtra } from './ShortcutsExtra';
 import { StagesExtra } from './StagesExtra';
 
@@ -14,6 +15,8 @@ const renderExtra = ({ extra }: { readonly extra: GuideExtra | undefined }) => {
       return <StagesExtra />;
     case 'shortcuts':
       return <ShortcutsExtra />;
+    case 'listens':
+      return <ListensExtra />;
     case 'legend':
       return <LegendSection />;
     case undefined:

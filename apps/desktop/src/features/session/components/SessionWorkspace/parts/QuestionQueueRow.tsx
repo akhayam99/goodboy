@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react';
 import { Chip, cn, InteractiveRow, tintClasses } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { AgentAvatar } from '../../../../../shared/components/AgentAvatar';
+import { AgentKindChip } from '../../../../../shared/components/AgentKindChip';
 import { questionParts } from '../../../../context/components/QuestionsTab/questionParts';
 import type { AgentKind } from '../../../agent-kind';
 import type { QuestionRow } from './questionsLensModel';
@@ -46,18 +46,6 @@ export const QuestionQueueRow = ({
       dataAttributes={{ 'data-question-row': row.question.id }}
       className="flex min-w-0 items-start gap-2.5 px-2.5 py-2"
     >
-      {isSettled ? (
-        <span
-          aria-hidden
-          className={cn('grid size-5 shrink-0 place-items-center rounded-full', doneTint.bg)}
-        >
-          <Check size={ICON_SIZE.row} className={doneTint.text} />
-        </span>
-      ) : (
-        <span className="grid size-5 shrink-0 place-items-center">
-          <AgentAvatar kind={askerKind ?? 'generic'} size="md" />
-        </span>
-      )}
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span
           className={cn(
@@ -68,6 +56,11 @@ export const QuestionQueueRow = ({
           {title}
         </span>
         <span className="flex min-w-0 items-center gap-1.5 text-secondary text-faint-foreground">
+          {isSettled ? (
+            <Check size={ICON_SIZE.row} aria-hidden className={cn('shrink-0', doneTint.text)} />
+          ) : (
+            <AgentKindChip kind={askerKind ?? 'generic'} />
+          )}
           {row.kind === 'waiting' && (
             <>
               <span className="min-w-0 truncate">

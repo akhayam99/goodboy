@@ -92,7 +92,15 @@ export type { StateTone } from './components/StateBadge';
 export { ValueToken } from './components/ValueToken';
 export type { ValueTokenProps } from './components/ValueToken';
 export { StudioDetailTabs } from './components/StudioDetailTabs';
-export { StudioRailLayout } from './components/StudioRailLayout';
+export {
+  STUDIO_RAIL_MAX,
+  STUDIO_RAIL_MIN,
+  STUDIO_RAIL_WIDTHS,
+  StudioRailLayout,
+  readStudioRailWidth,
+  studioRailStorageKey,
+} from './components/StudioRailLayout';
+export { useResizableWidth } from './useResizableWidth';
 export { StudioWidget } from './components/StudioWidget';
 export {
   ClaudeIcon,
@@ -109,6 +117,7 @@ export {
   MoonshotIcon,
   SentryIcon,
   SlackIcon,
+  XIcon,
 } from './components/brandIcons';
 export type { ButtonEmphasis, ButtonProps, ButtonSize, ButtonVariant } from './components/Button';
 export type { CardActionProps } from './components/CardAction';

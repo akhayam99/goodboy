@@ -126,18 +126,16 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
         </WorkspaceDefaultRow>
 
         <WorkspaceDefaultRow label="Output verbosity" help="Response style for agents.">
-          <div className="w-36">
-            <VerbositySelect
-              value={verbosity}
-              onChange={(v) =>
-                void persistOverrides({
-                  patch: { defaultVerbosity: v },
-                  failureTitle: "Couldn't save the output verbosity",
-                })
-              }
-              disabled={busy}
-            />
-          </div>
+          <VerbositySelect
+            value={verbosity}
+            onChange={(v) =>
+              void persistOverrides({
+                patch: { defaultVerbosity: v },
+                failureTitle: "Couldn't save the output verbosity",
+              })
+            }
+            disabled={busy}
+          />
         </WorkspaceDefaultRow>
 
         <WorkspaceDefaultRow

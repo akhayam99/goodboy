@@ -59,7 +59,7 @@ const isPlainKey = (entry: ShortcutEntry): boolean => {
 
 const MODAL_SELECTOR = '[role="dialog"][aria-modal="true"]';
 
-const plainKeyYields = (event: KeyboardEvent): boolean =>
+export const plainKeyYields = (event: KeyboardEvent): boolean =>
   event.defaultPrevented ||
   isTypingTarget(event.target) ||
   isTerminalFocused() ||

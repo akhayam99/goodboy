@@ -1,10 +1,14 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
-import { AppShell } from '../components/AppShell';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { AppShell, LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_STORAGE_KEY } from '../components/AppShell';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  localStorage.clear();
+  vi.restoreAllMocks();
+});
 
 describe('AppShell', () => {
   it('takes the hidden left sidebar out of the tab order', () => {
@@ -117,5 +121,29 @@ describe('AppShell right drawer', () => {
     expect(panel.hasAttribute('inert')).toBe(false);
     expect(panel.closest('main')).not.toBeNull();
     expect(screen.getByText('drafts')).toBeDefined();
+  });
+
+  it('drags the sidebar through a CSS variable and saves its width once, on release', () => {
+    const { container } = render(
+      <AppShell leftSidebar={<div>sessions</div>} main={<div>main</div>} />,
+    );
+    const setItem = vi.spyOn(localStorage, 'setItem');
+    const grid = container.querySelector<HTMLElement>('[style*="grid-template-areas"]');
+    const handle = screen.getByRole('separator', { name: 'Resize left sidebar' });
+
+    fireEvent.mouseDown(handle, { button: 0, clientX: 340 });
+    Array.from({ length: 50 }).forEach((_, index) =>
+      fireEvent.mouseMove(window, { clientX: 340 + index }),
+    );
+
+    expect(setItem).not.toHaveBeenCalled();
+    expect(grid?.style.getPropertyValue('--goodboy-left-sidebar-width')).toBe(
+      `${LEFT_SIDEBAR_DEFAULT + 49}px`,
+    );
+
+    fireEvent.mouseUp(window);
+
+    expect(setItem).toHaveBeenCalledOnce();
+    expect(localStorage.getItem(LEFT_SIDEBAR_STORAGE_KEY)).toBe(String(LEFT_SIDEBAR_DEFAULT + 49));
   });
 });

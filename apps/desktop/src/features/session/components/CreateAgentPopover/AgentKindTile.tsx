@@ -1,6 +1,6 @@
 import { cn } from '@goodboy/ui';
-import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
-import { AGENT_KIND_META, type AgentKind } from '../../agent-kind';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { AGENT_KIND_META, agentKindPalette, type AgentKind } from '../../agent-kind';
 
 type Props = {
   readonly kind: AgentKind;
@@ -10,6 +10,8 @@ type Props = {
 
 export const AgentKindTile = ({ kind, isActive, onSelect }: Props) => {
   const meta = AGENT_KIND_META[kind];
+  const palette = agentKindPalette({ kind });
+  const Icon = palette.icon;
   return (
     <button
       type="button"
@@ -23,7 +25,7 @@ export const AgentKindTile = ({ kind, isActive, onSelect }: Props) => {
           : 'text-muted-foreground hover:bg-background hover:text-foreground',
       )}
     >
-      <AgentAvatar kind={kind} size="md" />
+      <Icon size={ICON_SIZE.row} aria-hidden className={cn('shrink-0', palette.fg)} />
       <span className="truncate text-label font-medium">{meta.label}</span>
     </button>
   );

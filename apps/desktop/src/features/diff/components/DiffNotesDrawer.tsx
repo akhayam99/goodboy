@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { MessageSquare } from 'lucide-react';
-import { DrawerFrame, EmptyState } from '@goodboy/ui';
+import { DrawerFrame, FilledEmptyState } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
@@ -50,12 +50,11 @@ export const DiffNotesDrawer = ({ sessionId, onClose }: Props) => {
       onClose={onClose}
     >
       {groups.length === 0 ? (
-        <EmptyState
+        <FilledEmptyState
           icon={CONCEPT_ICONS.diff}
           tone={CONCEPT_TONE.diff}
           title="No open notes"
           description="Click a line number in the diff to leave a note for the agents."
-          size="inline"
         />
       ) : (
         <div className="flex flex-col gap-4">

@@ -19,8 +19,12 @@ const LIST_ROWS = (
   </div>
 );
 
-const RAIL = (
-  <div className="flex w-56 shrink-0 flex-col gap-3 bg-subtle px-4 py-6">
+const railSkeleton = ({ widthPx }: { readonly widthPx: number }) => (
+  <div
+    data-studio-skeleton-rail=""
+    style={{ width: widthPx }}
+    className="flex shrink-0 flex-col gap-3 bg-subtle px-4 py-6"
+  >
     {RAIL_ITEMS.map((item) => (
       <Skeleton key={item} className="h-3 w-3/4" />
     ))}
@@ -42,16 +46,17 @@ const GRID = (
 type Props = {
   readonly layout: StudioSkeletonLayout;
   readonly title: string;
+  readonly railWidthPx: number;
 };
 
-export const StudioSkeleton = ({ layout, title }: Props) => (
+export const StudioSkeleton = ({ layout, title, railWidthPx }: Props) => (
   <div
     role="status"
     aria-label={`Loading ${title}`}
     data-studio-skeleton={layout}
     className="flex min-h-0 min-w-0 flex-1 bg-background"
   >
-    {layout === 'rail' ? RAIL : null}
+    {layout === 'rail' ? railSkeleton({ widthPx: railWidthPx }) : null}
     {layout === 'grid' ? GRID : LIST_ROWS}
   </div>
 );

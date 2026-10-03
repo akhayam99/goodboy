@@ -117,15 +117,6 @@ vi.mock('../../../../features/worktree/worktree', () => ({
   worktreeDiff: vi.fn(async () => ''),
 }));
 
-vi.mock('../../../../assets/agents/debugger.png', () => ({ default: '' }));
-vi.mock('../../../../assets/agents/docs.png', () => ({ default: '' }));
-vi.mock('../../../../assets/agents/goodboy.png', () => ({ default: '' }));
-vi.mock('../../../../assets/agents/implementer.png', () => ({ default: '' }));
-vi.mock('../../../../assets/agents/planner.png', () => ({ default: '' }));
-vi.mock('../../../../assets/agents/reviewer.png', () => ({ default: '' }));
-vi.mock('../../../../assets/agents/scout.png', () => ({ default: '' }));
-vi.mock('../../../../assets/agents/tester.png', () => ({ default: '' }));
-
 import { ChatView } from './index';
 
 const session: Session = {

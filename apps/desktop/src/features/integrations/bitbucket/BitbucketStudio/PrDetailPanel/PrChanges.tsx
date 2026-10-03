@@ -1,4 +1,4 @@
-import { EmptyState, ErrorStrip, Skeleton } from '@goodboy/ui';
+import { ErrorStrip, Skeleton, FilledEmptyState } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { DiffView } from '../../../../diff/components/DiffView';
@@ -27,12 +27,11 @@ export const PrChanges = ({ files, isLoading, error, onRetry }: Props) => {
 
   if (files.length === 0) {
     return (
-      <EmptyState
+      <FilledEmptyState
         icon={CONCEPT_ICONS.diff}
         tone={CONCEPT_TONE.diff}
         title="No file changes"
         description="This pull request does not touch any file Goodboy can render."
-        size="inline"
       />
     );
   }

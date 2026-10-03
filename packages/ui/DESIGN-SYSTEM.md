@@ -1120,6 +1120,30 @@ box around the whole thing. Secondary controls go in `SectionHeader`'s
 action row comes right after the last section: error on the left, exactly one
 primary button on the right, cancel and alternates as ghost or secondary.
 
+## One way to ask
+
+Four rules keep the same intent in the same shape. `apps/desktop/src/shared/lib/interactionRules.ts`
+holds the constants, the guide chapter How Goodboy listens prints them, and
+`apps/desktop/src/__tests__/regressions/interaction-rules.test.ts` checks the code.
+
+- **One verb per intent, one button variant per verb.** **Done** finishes an
+  edit in place (`secondary`, `sm`). **Close** leaves a panel (`ghost`, `sm`),
+  including the studio band. **Dismiss** hides a notice (`ghost`, `sm`).
+  **Discard** abandons an unsaved draft (`ghost`, `sm`), the way the New
+  workflow form does. **Delete** removes an object and confirms first. A verb is
+  never drawn with a hand-made `<button>`.
+- **Choosing a value.** Up to four options that fit the row are a
+  `SegmentedTabs`. Five or more, or a list that depends on data, is a `Listbox`.
+  A segmented control never carries a More segment. Reply verbosity and Theme
+  are segmented, the default editor is a list.
+- **Two kinds of field, one key each.** A message sends with Enter, goes to a
+  new line with Shift+Enter and sends now with ⌘↵. A document takes a new line on
+  Enter and saves or sends with ⌘↵. Every ⌘↵ check reads the `composer.submit`
+  id through `isSubmitChord`, and every hint prints `shortcutGlyphs`.
+- **A key you can see works.** The rail hints, the pills and the Shortcuts page
+  read the registry. `navigation-flows/keys.test.tsx` presses every id on the
+  real app and has a short exemption list that may only shrink.
+
 ## Form actions
 
 Every form, creation and edit flow ends the way the new workflow form does
@@ -1207,7 +1231,10 @@ example run and no grid of tiles.
 Inline empty states belong to a lens or a compact collection surface. A filled,
 borderless inline empty state belongs to a surface's own body and uses
 `FilledEmptyState`, which owns its inset and fill. Do not hand-roll either
-shape with `EmptyState size="inline"`.
+shape with `EmptyState size="inline"`: a caller passes only layout
+(`justify-center`, `basis-full`), never its own padding or fill, and
+`inline-empty-states-use-the-wrappers.test.ts` fails on any `size="inline"`
+under `apps/desktop/src`.
 
 **Inline beats the centred hero** because the pane already has a title and a
 rhythm. A hero repeats the title in bigger type. It pretends the lens is a
@@ -1315,9 +1342,6 @@ update only themselves.
   (a `WorkNode`'s ring). A session card or row carries its tone in a
   `ToneBar` instead, a bar inside the surface rather than a border around it,
   breathing through `soft-pulse` while running.
-- `attention-ring`: something new arrived. It is a short outward breath (three
-  cycles, then rest) on an element that now needs the user, never one that
-  is working.
 - `soft-pulse`: the only animation in the app for a lasting state. It breathes
   a state that holds and is alive: the centre dot of a running
   `WorkNode` that carries no step number, the head of a running `WorkNode`'s
@@ -1330,10 +1354,10 @@ update only themselves.
   place in 160ms; with reduced motion it changes in place.
 - `text-shimmer`: a label whose action is in flight, such as a handoff while
   its agent starts. It replaces a spinner next to the label.
-- `update-sweep`: a new version arrived. One 1.2s light sweep across the
-  update pill, on arrival and again when the window regains focus at least
-  an hour after the last sweep, capped at six a day. Never loops, never
-  wraps the pill in a ring.
+- The update pill has no animation of its own. It enters once with
+  `studio-body-in` (opacity and 4px) when a new version arrives, then holds
+  still in the soft primary tone. The arrival card announces it; nothing
+  sweeps, rings or repeats on focus.
 - Skeleton pulse (`animate-pulse` inside `Skeleton` only): loading.
 
 `no-token-bypass.test.ts` rejects any `animate-pulse` or `animate-ping`

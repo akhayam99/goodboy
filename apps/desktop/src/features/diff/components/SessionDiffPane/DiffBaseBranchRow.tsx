@@ -36,7 +36,7 @@ export const DiffBaseBranchRow = ({ projectId, repoPath, value, onDone }: Props)
       <div className="flex min-w-0 items-center gap-3 text-secondary">
         <span className="shrink-0 text-foreground">Compare with</span>
         <BaseBranchSelect repoPath={repoPath} value={value} onCommit={commit} />
-        <Button size="sm" variant="ghost" onClick={onDone}>
+        <Button size="sm" variant="secondary" onClick={onDone}>
           Done
         </Button>
       </div>

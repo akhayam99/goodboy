@@ -1,8 +1,9 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollFade, StudioRailLayout } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { GUIDE_CHAPTERS } from './guideChapters';
+import { clearGuideChapter, peekGuideChapter } from './guideChapterRequest';
 import { GuideContent } from './parts/GuideContent';
 import { GuideRail } from './parts/GuideRail';
 import { searchChapters } from './searchChapters';
@@ -28,6 +29,18 @@ export const GuideStudio = ({ onClose }: Props) => {
     scrollToRef.current(id);
   };
 
+  useEffect(() => {
+    const requested = peekGuideChapter();
+    if (requested === null) {
+      return;
+    }
+    const frame = requestAnimationFrame(() => {
+      clearGuideChapter();
+      jump(requested);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
   const onVisible = useCallback((id: string) => {
     if (Date.now() >= suppressUntilRef.current) {
       setActiveId(id);
@@ -51,6 +64,7 @@ export const GuideStudio = ({ onClose }: Props) => {
         <StudioRailLayout
           railLabel="Guide chapters"
           railWidth="standard"
+          surface="guide"
           rail={
             <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
               <GuideRail

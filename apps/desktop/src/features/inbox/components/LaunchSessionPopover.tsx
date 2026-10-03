@@ -3,6 +3,7 @@ import { Rocket } from 'lucide-react';
 import { AnchoredPopover, Button, KbdPill, useDropdown } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { LaunchSessionPanel } from '../../integrations/components/LaunchSessionPanel';
 import type { LaunchMount } from '../launchMountFor';
 import type { LaunchSpec } from '../launchSpecFor';
@@ -54,7 +55,7 @@ export const LaunchSessionPopover = ({
         >
           <Rocket size={ICON_SIZE.row} aria-hidden />
           Launch session
-          <KbdPill>↵</KbdPill>
+          <KbdPill>{shortcutGlyphs('list.open')}</KbdPill>
         </Button>
       }
     >

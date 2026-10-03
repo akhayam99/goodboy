@@ -1,5 +1,5 @@
 import type { VerbosityLevel } from '@goodboy/types';
-import { cn, Listbox, type ListboxOption } from '@goodboy/ui';
+import { cn, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import { VERBOSITY_LABEL, VERBOSITY_LEVELS, VERBOSITY_DOT } from '../../../settings/verbosity';
 
 type Props = {
@@ -8,22 +8,24 @@ type Props = {
   disabled: boolean;
 };
 
-const VERBOSITY_OPTIONS: ReadonlyArray<ListboxOption<VerbosityLevel>> = VERBOSITY_LEVELS.map(
+const VERBOSITY_OPTIONS: ReadonlyArray<SegmentedTabOption<VerbosityLevel>> = VERBOSITY_LEVELS.map(
   (level) => ({
     value: level,
     label: VERBOSITY_LABEL[level],
-    leading: <span className={cn('size-1.5 rounded-full', VERBOSITY_DOT[level])} />,
+    glyph: <span className={cn('size-1.5 rounded-full', VERBOSITY_DOT[level])} />,
   }),
 );
 
+const DISABLED_OPTIONS: ReadonlyArray<SegmentedTabOption<VerbosityLevel>> = VERBOSITY_OPTIONS.map(
+  (option) => ({ ...option, disabled: true }),
+);
+
 export const VerbositySelect = ({ value, onChange, disabled }: Props) => (
-  <Listbox
+  <SegmentedTabs
     ariaLabel="Reply verbosity"
     size="sm"
-    isBlock
     value={value}
-    options={VERBOSITY_OPTIONS}
+    options={disabled ? DISABLED_OPTIONS : VERBOSITY_OPTIONS}
     onChange={onChange}
-    disabled={disabled}
   />
 );

@@ -1,9 +1,12 @@
 import { RotateCcw, Smartphone } from 'lucide-react';
-import { Button, FieldRow, KbdPill } from '@goodboy/ui';
+import { Button, FieldRow, KbdPill, XIcon } from '@goodboy/ui';
 import { reopenWizard } from '../../../onboarding/onboarding-store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { openReportSheet } from '../../../bug-report/openReportSheet';
+import { openUrl } from '../../../../shared/lib/editor';
+import { SOCIAL_LINKS } from '../../../../shared/lib/productLinks';
+import { requestGuideChapter } from '../GuideStudio/guideChapterRequest';
 
 type Props = {
   readonly requestClose: () => void;
@@ -36,6 +39,22 @@ export const AppHelpSection = ({ requestClose }: Props) => {
         </Button>
       </FieldRow>
 
+      <FieldRow
+        label="How Goodboy listens"
+        help="Prefixes, list keys and the two kinds of field, on one page."
+      >
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={closeThen(() => {
+            requestGuideChapter('listens');
+            window.dispatchEvent(new CustomEvent('goodboy:open-guide'));
+          })}
+        >
+          Open
+        </Button>
+      </FieldRow>
+
       <FieldRow label="iPhone" help="Follow your sessions from your phone.">
         <Button
           variant="secondary"
@@ -55,6 +74,18 @@ export const AppHelpSection = ({ requestClose }: Props) => {
         <Button variant="secondary" size="sm" onClick={() => openReportSheet()}>
           <CONCEPT_ICONS.reportIssue size={ICON_SIZE.control} aria-hidden /> Report a bug
           <KbdPill>{shortcutGlyphs('report.open')}</KbdPill>
+        </Button>
+      </FieldRow>
+
+      <FieldRow label="Follow Goodboy" help="Release news as each version ships.">
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            void openUrl(SOCIAL_LINKS.x);
+          }}
+        >
+          <XIcon size={ICON_SIZE.control} aria-hidden /> Follow on X
         </Button>
       </FieldRow>
     </div>

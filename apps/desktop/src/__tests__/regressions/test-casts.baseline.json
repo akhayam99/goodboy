@@ -279,7 +279,6 @@
     "apps/desktop/src/__tests__/mount-recovery.operations.test.ts": 8,
     "apps/desktop/src/__tests__/mount-recovery.persistence.test.ts": 1,
     "apps/desktop/src/__tests__/sidebar.test.ts": 1,
-    "apps/desktop/src/__tests__/snapshots/empty-error-states.test.tsx": 2,
     "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/useArtifactContextPreview/index.test.ts": 1,
     "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/useArtifactCreationDraft/index.test.ts": 5,
     "apps/desktop/src/features/artifacts/components/ArtifactList/ArtifactListOverflowMenu.test.tsx": 2,
@@ -493,7 +492,6 @@
   "domain-cast": {
     "apps/desktop/src/__tests__/keyboard/navigation.test.tsx": 1,
     "apps/desktop/src/__tests__/regressions/zustand-selector-stability.test.tsx": 2,
-    "apps/desktop/src/__tests__/snapshots/empty-error-states.test.tsx": 1,
     "apps/desktop/src/__tests__/surfaces/main-flows.test.tsx": 3,
     "apps/desktop/src/app/components/AppTopBar/index.test.tsx": 1,
     "apps/desktop/src/app/components/AppTopBar/NavCluster/index.test.tsx": 1,

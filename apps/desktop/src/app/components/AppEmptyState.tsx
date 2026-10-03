@@ -1,6 +1,9 @@
 import { useState } from 'react';
-import { Button, EmptyState, DogMascot } from '@goodboy/ui';
+import { Plus } from 'lucide-react';
+import { Button, EmptyState } from '@goodboy/ui';
 import { NewProjectForm } from '../../shared/components/NewProjectForm';
+import { ConceptTile } from '../../shared/components/ConceptTile';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../shared/components/conceptIcons';
 
 type Props = {
   readonly onAddWorkspace: () => void;
@@ -24,14 +27,16 @@ export const NoWorkspaceScreen = ({ onAddWorkspace, startOpen = false }: Props) 
       {isStarting ? (
         <div className="relative flex w-full max-w-md flex-col gap-5">
           <div className="flex flex-col items-center gap-3 text-center">
-            <DogMascot size={56} className="text-primary" />
+            <ConceptTile icon={Plus} tone="primary" />
             <h2 className="text-title text-foreground">Start a new project</h2>
           </div>
           <NewProjectForm onCancel={() => setIsStarting(false)} />
         </div>
       ) : (
         <EmptyState
-          illustration={<DogMascot size={96} className="text-primary" />}
+          illustration={
+            <ConceptTile icon={CONCEPT_ICONS.workspace} tone={CONCEPT_TONE.workspace} />
+          }
           title="Welcome to Goodboy"
           description="Start a project from nothing, or open a folder you already have."
           action={

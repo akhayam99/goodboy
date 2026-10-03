@@ -51,7 +51,7 @@ const renderCard = (patch: Partial<CardProps> = {}) => {
     question: QUESTION,
     variant: 'full',
     state: 'open',
-    askerName: 'Planner',
+    askerName: 'Retry planner',
     askerKind: 'planner',
     age: '4m ago',
     draft: undefined,
@@ -71,8 +71,9 @@ const renderCard = (patch: Partial<CardProps> = {}) => {
 };
 
 describe('QuestionCard', () => {
-  it('shows who asks, the blocking tag, the question as a title and its context', () => {
+  it('shows who asks with their kind chip, the blocking tag, the question as a title and its context', () => {
     renderCard();
+    screen.getByText('Retry planner');
     screen.getByText('Planner');
     screen.getByText('Blocking');
     screen.getByRole('heading', { name: 'Which queue should webhook retries run on?' });
@@ -181,6 +182,6 @@ describe('QuestionCard', () => {
       question: { ...QUESTION, status: 'answered', userAnswer: 'Dedicated retry queue' },
     });
     screen.getByText('Dedicated retry queue');
-    screen.getByText('Answered · sent to Planner');
+    screen.getByText('Answered · sent to Retry planner');
   });
 });

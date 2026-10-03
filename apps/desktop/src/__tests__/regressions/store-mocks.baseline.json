@@ -6,7 +6,6 @@
   "apps/desktop/src/__tests__/keyboard/navigation.test.tsx": 1,
   "apps/desktop/src/__tests__/regressions/sidebar-toggle-axis.test.tsx": 1,
   "apps/desktop/src/__tests__/regressions/zustand-selector-stability.test.tsx": 1,
-  "apps/desktop/src/__tests__/snapshots/empty-error-states.test.tsx": 1,
   "apps/desktop/src/app/components/AppFooter/GoodboyChip/index.test.tsx": 1,
   "apps/desktop/src/app/components/AppTopBar/index.test.tsx": 1,
   "apps/desktop/src/app/components/AppTopBar/LimitsStrip/index.test.tsx": 1,
