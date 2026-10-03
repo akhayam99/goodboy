@@ -695,7 +695,8 @@ When a provider ships or retires a model, update these together:
   no On provider can work) filters `workflowAvailabilitySnapshot` for static steps,
   fan-out children and the orchestrator, whose model menu follows
   `availability.providerOrder`. `workspacePolicyAvailability` hands every snapshot the
-  current workspace policy and the providers at their limit
+  policy of the workspace that owns the session (the current workspace only when
+  no session is known) and the providers at their limit
 - `ROLE_REGISTRY` holds no routing any more: the Claude column of `AUTO_DEFAULTS` is
   the reference. `kindRouting` maps an agent kind to its role and reads the same
   ladder; there is no separate cheap tier for Scout, Docs or Generalist

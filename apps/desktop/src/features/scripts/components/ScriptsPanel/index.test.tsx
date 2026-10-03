@@ -117,6 +117,8 @@ vi.mock(
 );
 
 vi.mock('../../../../store', () => {
+  const NO_SETTINGS = {};
+  const noPins = async () => undefined;
   const getStoreState = () => ({
     sessions: [{ id: SESSION, workspaceId: WORKSPACE, activeProjectId: LEDGER.id }],
     currentSessionId: SESSION,
@@ -141,6 +143,10 @@ vi.mock('../../../../store', () => {
     runDiscoveredScript: state.runDiscoveredScript,
     openDrawer: state.openDrawer,
     toggleDrawer: state.toggleDrawer,
+    settings: NO_SETTINGS,
+    loadScriptPins: noPins,
+    toggleScriptPin: noPins,
+    reportError: noPins,
   });
   const useAppStore = <T,>(selector: (storeState: ReturnType<typeof getStoreState>) => T) =>
     selector(getStoreState());

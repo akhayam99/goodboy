@@ -11,7 +11,9 @@ React class components (error boundaries that require `class`) are the only exce
 
 ## React component patterns
 
-- No `React.FC`. Function components with an explicit local `type Props`.
+- No `React.FC`. Function components with an explicit local `type Props`. In
+  `packages/ui` a non-exported props type named after its component fails
+  `ui-props-named-props.test.ts`; an exported `<Name>Props` stays public API.
 - `ref` is a plain prop (React 19). No `forwardRef`.
 - Discriminated unions for variant props:
   ```ts
