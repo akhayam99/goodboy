@@ -40,6 +40,7 @@ import {
 } from './scenes/ArtifactCreationScenes';
 import { ActivityFilterScene, ActivityTimelineScene } from './scenes/ActivityScenes';
 import { ActivityRunScene } from './scenes/ActivityRunScene';
+import { ActivityRunFinishedScene } from './scenes/ActivityRunFinishedScene';
 import { ActivityResolvesScene } from './scenes/ActivityResolvesScene';
 import { ActivityQuestionScene } from './scenes/ActivityQuestionScene';
 import { ActivityOneSignalScene } from './scenes/ActivityOneSignalScene';
@@ -129,6 +130,7 @@ import { BrandDiffManyFilesScene } from './scenes/brand/DiffManyFilesScene';
 import { BrandHistoryScene } from './scenes/brand/HistoryScene';
 import { BrandHistoryPlanScene } from './scenes/brand/HistoryPlanScene';
 import { BrandHistoryResultScene } from './scenes/brand/HistoryResultScene';
+import { BrandHistorySquashScene } from './scenes/brand/HistorySquashScene';
 import { BrandHistoryStoppedScene } from './scenes/brand/HistoryStoppedScene';
 import { BrandHistoryTrialScene } from './scenes/brand/HistoryTrialScene';
 import { BrandLimitsScene } from './scenes/brand/LimitsScene';
@@ -180,6 +182,7 @@ export const MOCK_SCENES = {
   activity: ActivityTimelineScene,
   'activity-filter': ActivityFilterScene,
   'activity-run': ActivityRunScene,
+  'activity-run-finished': ActivityRunFinishedScene,
   'activity-resolves': ActivityResolvesScene,
   'activity-question': ActivityQuestionScene,
   'activity-one-signal': ActivityOneSignalScene,
@@ -267,6 +270,7 @@ export const MOCK_SCENES = {
   'brand-history-trial': BrandHistoryTrialScene,
   'brand-history-stopped': BrandHistoryStoppedScene,
   'brand-history-result': BrandHistoryResultScene,
+  'brand-history-squash': BrandHistorySquashScene,
   'brand-limits': BrandLimitsScene,
   'brand-codex': BrandCodexScene,
   'brand-storage': BrandStorageScene,

@@ -33,9 +33,12 @@ import {
 } from '../../../../../timeline/buildTimelineGroups';
 import {
   buildTimelineStream,
+  liveFoldRootIds,
   type TimelineStream,
   type TimelineStreamItem,
 } from '../../../../../timeline/buildTimelineStream';
+import { groupTotalsById } from '../../../../../timeline/groupTotalsById';
+import type { GroupTotals } from '../../../../../timeline/groupTotals';
 import { dayLabel } from '../../../../../timeline/dayLabel';
 import {
   decisionChangeDetail,
@@ -82,6 +85,7 @@ export type TimelineRows = {
   readonly stepById: ReadonlyMap<string, Step>;
   readonly spendByAgentId: ReadonlyMap<string, number>;
   readonly spendByRunId: ReadonlyMap<string, number>;
+  readonly groupTotals: ReadonlyMap<string, GroupTotals>;
   readonly decisionDetails: ReadonlyMap<string, DecisionChangeDetail>;
   readonly expandedRows: ReadonlySet<string>;
   readonly toggleExpanded: (rowId: string) => void;
@@ -109,6 +113,7 @@ export const useTimelineRows = ({ session, activity, explode }: Params): Timelin
   const workflows = useAttachedWorkflowRuns({ session });
   const resolveActivity = useResolveActivity({ sessionId });
   const revealedRows = useAppStore((s) => s.revealedActivityRows[sessionId] ?? EMPTY_REVEALED_ROWS);
+  const spans = useAppStore((s) => s.sessionTurnSpans?.[sessionId]);
   const telemetry = useAppStore(
     (s) => s.sessionTelemetry[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
   );
@@ -283,6 +288,7 @@ export const useTimelineRows = ({ session, activity, explode }: Params): Timelin
         resolveFactsByAgentId: resolveActivity.factsByAgentId,
         expandedGroupIds: explode.expandedIds,
         fullGroupIds: explode.fullIds,
+        foldsFinished: true,
       }),
     [
       advanceByRunId,
@@ -310,6 +316,7 @@ export const useTimelineRows = ({ session, activity, explode }: Params): Timelin
             resolveFactsByAgentId: resolveActivity.factsByAgentId,
             expandedGroupIds: explode.expandedIds,
             fullGroupIds: explode.fullIds,
+            foldsFinished: true,
           }),
     [
       advanceByRunId,
@@ -323,6 +330,34 @@ export const useTimelineRows = ({ session, activity, explode }: Params): Timelin
       visibleEntries,
     ],
   );
+
+  const isLoaded = areEventsLoaded && areAgentsLoaded;
+  const { keepOpen } = explode;
+  const liveRootKey = useMemo(
+    () => liveFoldRootIds({ entries: model.entries }).join(' '),
+    [model.entries],
+  );
+
+  useEffect(() => {
+    if (!areAgentsLoaded || liveRootKey === '') {
+      return;
+    }
+    keepOpen({ ids: liveRootKey.split(' ') });
+  }, [areAgentsLoaded, keepOpen, liveRootKey]);
+
+  const totalsCache = useRef<ReadonlyMap<string, GroupTotals>>(new Map());
+  const groupTotals = useMemo(() => {
+    const next = groupTotalsById({
+      items: stream.items,
+      agents,
+      spans: spans ?? [],
+      spendByAgentId,
+      spendByRunId,
+      previous: totalsCache.current,
+    });
+    totalsCache.current = next;
+    return next;
+  }, [agents, spans, spendByAgentId, spendByRunId, stream.items]);
 
   const hiddenChildRows = Math.max(0, unfilteredStream.items.length - stream.items.length);
 
@@ -386,7 +421,7 @@ export const useTimelineRows = ({ session, activity, explode }: Params): Timelin
     visibleEntries,
     events,
     worktrees,
-    isLoaded: areEventsLoaded && areAgentsLoaded,
+    isLoaded,
     stream,
     hiddenChildRows,
     laidOutItems,
@@ -399,6 +434,7 @@ export const useTimelineRows = ({ session, activity, explode }: Params): Timelin
     stepById,
     spendByAgentId,
     spendByRunId,
+    groupTotals,
     decisionDetails,
     expandedRows,
     toggleExpanded,

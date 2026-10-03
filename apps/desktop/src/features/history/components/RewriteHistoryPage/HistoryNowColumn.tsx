@@ -58,28 +58,26 @@ export const HistoryNowColumn = ({
   onStartFromMain,
 }: Props) => (
   <div className="flex min-w-0 flex-col gap-2" onKeyDown={onKeyDown}>
-    <div className="flex h-6 items-center gap-2 pl-2">
-      {isDone ? null : (
-        <>
-          <Eyebrow label={view === 'planned' ? 'After Apply' : 'Now'} muted />
-          <span className="text-label text-faint-foreground">
-            {view === 'planned'
-              ? `${afterCount} ${afterCount === 1 ? 'commit' : 'commits'}`
-              : 'your branch as it is'}
-          </span>
-        </>
-      )}
-      <span className="flex-1" />
-      {isNarrow && !isDone ? (
-        <SegmentedTabs
-          size="sm"
-          ariaLabel="Show"
-          options={NOW_VIEW_OPTIONS}
-          value={narrowView}
-          onChange={onNarrowViewChange}
-        />
-      ) : null}
-    </div>
+    {isDone ? null : (
+      <div className="flex h-6 items-center gap-2 pl-2">
+        <Eyebrow label={view === 'planned' ? 'After Apply' : 'Now'} muted />
+        <span className="text-label text-faint-foreground">
+          {view === 'planned'
+            ? `${afterCount} ${afterCount === 1 ? 'commit' : 'commits'}`
+            : 'your branch as it is'}
+        </span>
+        <span className="flex-1" />
+        {isNarrow ? (
+          <SegmentedTabs
+            size="sm"
+            ariaLabel="Show"
+            options={NOW_VIEW_OPTIONS}
+            value={narrowView}
+            onChange={onNarrowViewChange}
+          />
+        ) : null}
+      </div>
+    )}
     <HistoryNowList
       view={view}
       rows={rows}

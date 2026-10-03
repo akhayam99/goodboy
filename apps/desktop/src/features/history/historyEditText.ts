@@ -6,6 +6,7 @@ type TitleOf = (sha: string) => string;
 type Params = {
   readonly edit: HistoryEdit;
   readonly titleOf: TitleOf;
+  readonly targetTitleOf?: TitleOf;
 };
 
 export const quoted = ({ text }: { readonly text: string }): string => `“${text}”`;
@@ -13,19 +14,19 @@ export const quoted = ({ text }: { readonly text: string }): string => `“${tex
 export const historyEditAction = ({ edit }: { readonly edit: HistoryEdit }): HistoryAction =>
   edit.kind;
 
-export const historyEditText = ({ edit, titleOf }: Params): string => {
+export const historyEditText = ({ edit, titleOf, targetTitleOf = titleOf }: Params): string => {
   switch (edit.kind) {
     case 'fixup':
-      return `Folded ${quoted({ text: titleOf(edit.sha) })} into ${quoted({ text: titleOf(edit.target) })}, keeping its title`;
+      return `Folded ${quoted({ text: titleOf(edit.sha) })} into ${quoted({ text: targetTitleOf(edit.target) })}, keeping its title`;
     case 'squash':
-      return `Combined ${quoted({ text: titleOf(edit.sha) })} with ${quoted({ text: titleOf(edit.target) })}, both messages kept`;
+      return `Combined ${quoted({ text: titleOf(edit.sha) })} with ${quoted({ text: targetTitleOf(edit.target) })}, both messages kept`;
     case 'move': {
       const title = quoted({ text: titleOf(edit.sha) });
       const relation = edit.move.relation;
       if (relation.where === 'bottom') {
         return `Moved ${title} to the bottom`;
       }
-      return `Moved ${title} ${relation.where} ${quoted({ text: titleOf(relation.sha) })}`;
+      return `Moved ${title} ${relation.where} ${quoted({ text: targetTitleOf(relation.sha) })}`;
     }
     case 'reword':
       return `Renamed ${quoted({ text: titleOf(edit.sha) })} to ${quoted({ text: edit.message.split('\n')[0] ?? edit.message })}`;
