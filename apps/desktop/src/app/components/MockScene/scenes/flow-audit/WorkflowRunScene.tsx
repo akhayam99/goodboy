@@ -4,6 +4,7 @@ import { ShellFrame, seedShellChrome } from '../shellChrome';
 import { DYNAMIC_RUN_ID, FLOW_SESSION, FLOW_SESSION_ID, NOW, SESSIONS } from './fixtures';
 import { FINISHED_SESSION } from './finishedRun';
 import { PARALLEL_SESSION } from './parallelRun';
+import { PLAN_HOLD_SESSION, seedWorkflowRunPlanHold } from './planHoldRun';
 import { seedWorkflowRun, seedWorkflowRunFinished, seedWorkflowRunParallel } from './seeds';
 import {
   PAUSED_SESSION,
@@ -22,6 +23,9 @@ const sessionFor = () => {
   if (variant === 'paused') {
     return PAUSED_SESSION;
   }
+  if (variant === 'plan-hold') {
+    return PLAN_HOLD_SESSION;
+  }
   return variant === 'finished' ? FINISHED_SESSION : FLOW_SESSION;
 };
 
@@ -36,6 +40,9 @@ const seedFor = ({ session }: { readonly session: typeof FLOW_SESSION }) => {
   }
   if (session === PAUSED_SESSION) {
     return seedWorkflowRunPaused;
+  }
+  if (session === PLAN_HOLD_SESSION) {
+    return seedWorkflowRunPlanHold;
   }
   if (runVariant() === 'quiet') {
     return seedWorkflowRunQuiet;

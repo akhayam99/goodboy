@@ -94,6 +94,7 @@ export const settleTurn = async ({ set, get, ctx }: Params) => {
       turnInput: resolvedPrompt,
       turnOutput: assistantText,
       workingDir,
+      agentId: activeAgentId,
     });
     enqueueLearnings({
       set,

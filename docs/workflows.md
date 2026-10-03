@@ -169,6 +169,10 @@ default**. Where it goes:
   tester or the reviewer get it only when you pick them under **Sent to**
 - an empty text adds nothing
 
+On the run page, each step whose role got the guidance (`guidanceSentTo`, the
+same check the brief uses) shows a small **Guidance** tag; its tooltip quotes
+the first line. An orchestrated run tags no step.
+
 **Polish** on guidance uses `polishWorkflowGuidance` in `packages/core`, its own
 prompt next to the goal polish: one rule per line as a list, the language of the
 input, every rule kept and none added. The guidance links to the profile field
@@ -618,7 +622,9 @@ and `maybeAutoAdvanceWorkflow`. `bypassGate` never skips it, so the step
 button, a skip, a read-now hint and a retry all stop at the hold.
 **Approve plan** (`approveWorkflowRunPlan`) marks the copy `planApproved`,
 clears the stop and lets the run advance; switching the run to another autonomy
-also drops the hold. A plan step that writes no plan never holds.
+also drops the hold. A plan step that writes no plan never holds. While it holds, the run's status reads
+**Plan ready**, not a failure, and **Run next step** is hidden, so **Approve plan**
+is the only way on; it comes back once the plan is approved.
 
 ### Pause is one admission check
 

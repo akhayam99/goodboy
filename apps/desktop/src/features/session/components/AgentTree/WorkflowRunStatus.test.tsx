@@ -79,6 +79,19 @@ describe('WorkflowRunStatus', () => {
     expect(screen.queryByTestId('workflow-orchestrator-failed')).toBeNull();
   });
 
+  it('says a run held after its plan has a plan ready, not a failure', () => {
+    renderStatus({
+      runOverride: {
+        ...run,
+        executionMode: 'static',
+        orchestrationStop: { kind: 'plan-approval', message: 'Approve it to start the rest.' },
+      },
+    });
+
+    expect(screen.getByTestId('workflow-run-plan-ready').textContent).toBe('Plan ready');
+    expect(screen.queryByTestId('workflow-orchestrator-failed')).toBeNull();
+  });
+
   it('marks a failed decision as an orchestrator failure', () => {
     renderStatus({
       runOverride: { ...run, orchestrationStop: { kind: 'failure', message: 'usage limit' } },

@@ -43,6 +43,9 @@ import { useSessionTitleRename } from '../../../../session/hooks/useSessionTitle
 const SESSION_CARD_REVEAL =
   'opacity-0 group-hover/session-card:opacity-100 group-focus-within/session-card:opacity-100 aria-expanded:opacity-100';
 
+const RAIL_UNDER_CHECKBOX =
+  'group-hover/select-row:top-9 group-focus-within/select-row:top-9 group-data-[selecting=true]/select-list:top-9';
+
 const isUrgent = ({ tone }: { readonly tone: DynamicAction['tone'] }): boolean =>
   tone === 'warning' || tone === 'danger';
 
@@ -174,20 +177,27 @@ export const StageBoardCard = memo(function StageBoardCard({
         nav.selectCard(session);
       }}
       className={cn(
-        'group/session-card group/select-row grid h-28 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] gap-x-2 gap-y-1 p-3 pl-4.5 text-left',
+        'group/session-card group/select-row grid h-28 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] gap-x-2 gap-y-1 p-3 text-left',
+        onToggleSelect === undefined ? 'pl-4.5' : 'pl-7',
         sessionCardShell({ selected }),
       )}
     >
-      <ToneBar tone={tone.tone} density="card" isBreathing={tone.isBreathing} />
+      <ToneBar
+        tone={tone.tone}
+        density="card"
+        isBreathing={tone.isBreathing}
+        {...(onToggleSelect === undefined ? {} : { className: RAIL_UNDER_CHECKBOX })}
+      />
+      {onToggleSelect !== undefined && (
+        <SelectionCheckbox
+          checked={selected === true}
+          label={`Select ${inlineMarkdownText({ text: sessionTitle({ session }) })}`}
+          onToggle={(event) => onToggleSelect(id, event)}
+          className="absolute top-2.5 left-1"
+        />
+      )}
       <span className="flex min-w-0 flex-col justify-between">
         <span className="flex min-h-10 items-start gap-2">
-          {onToggleSelect !== undefined && (
-            <SelectionCheckbox
-              checked={selected === true}
-              label={`Select ${inlineMarkdownText({ text: sessionTitle({ session }) })}`}
-              onToggle={(event) => onToggleSelect(id, event)}
-            />
-          )}
           <PrRequestSlot
             linkedRequest={linkedRequest}
             isGitlab={isGitlab}

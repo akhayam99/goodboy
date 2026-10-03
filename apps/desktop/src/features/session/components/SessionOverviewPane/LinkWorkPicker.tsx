@@ -9,10 +9,18 @@ import { useNow } from '../../../../shared/hooks/useNow';
 import { formatSpan } from '../../../../shared/utils/time/formatSpan';
 import { branchLeaf } from '../../../../store/slices/sessions/branchLeaf';
 import { LinkScopePreview } from './LinkScopePreview';
-import { relationFor, type LinkChoice, type LinkScope } from './linkScope';
+import {
+  SCOPE_TAB_LABEL,
+  freeScope,
+  linkedLabel,
+  relationFor,
+  type LinkChoice,
+  type LinkScope,
+} from './linkScope';
 import {
   LINK_WORK_PROVIDER_LABEL,
   linkWorkView,
+  type LinkedScopes,
   type LinkWorkItem,
   type LinkWorkRow,
   type LinkWorkSource,
@@ -23,7 +31,7 @@ type Props = {
   readonly onQueryChange: (query: string) => void;
   readonly items: ReadonlyArray<LinkWorkItem>;
   readonly lookedUp: ReadonlyArray<LinkWorkItem>;
-  readonly linkedKeys: ReadonlySet<string>;
+  readonly linkedScopes: LinkedScopes;
   readonly sources: ReadonlyArray<SessionExternalTaskProvider>;
   readonly isLoading: boolean;
   readonly isLinking: boolean;
@@ -53,6 +61,9 @@ const placeholderOf = ({
     : `Search ${LIST_FORMAT.format(sources.map((source) => LINK_WORK_PROVIDER_LABEL[source]))} or paste a link`;
 
 const rowMeta = ({ row, now }: { readonly row: LinkWorkRow; readonly now: number }): string => {
+  if (row.linkedScopes.length > 0) {
+    return linkedLabel({ scopes: row.linkedScopes });
+  }
   if (row.section === 'inbox') {
     return formatSpan({ from: row.updatedAt, to: now });
   }
@@ -67,7 +78,7 @@ export const LinkWorkPicker = ({
   onQueryChange,
   items,
   lookedUp,
-  linkedKeys,
+  linkedScopes,
   sources,
   isLoading,
   isLinking,
@@ -84,8 +95,8 @@ export const LinkWorkPicker = ({
   const [scope, setScope] = useState<LinkScope>('session');
   const [isClosing, setIsClosing] = useState(true);
   const view = useMemo(
-    () => linkWorkView({ query, source, items, lookedUp, linkedKeys }),
-    [query, source, items, lookedUp, linkedKeys],
+    () => linkWorkView({ query, source, items, lookedUp, linkedScopes }),
+    [query, source, items, lookedUp, linkedScopes],
   );
   const rows = view.kind === 'unknownLink' ? [] : view.rows;
   const active = rows[Math.min(activeIndex, rows.length - 1)] ?? null;
@@ -100,8 +111,10 @@ export const LinkWorkPicker = ({
 
   const optionId = (key: string): string => `${listId}-${key}`;
 
+  const isDuplicate = (row: LinkWorkRow): boolean => row.linkedScopes.includes(scope);
+
   const link = (row: LinkWorkRow | null): void => {
-    if (row === null || isLinking) {
+    if (row === null || isLinking || isDuplicate(row)) {
       return;
     }
     onLink(row.task, { scope, relation: relationFor({ scope, isClosing }) });
@@ -113,10 +126,10 @@ export const LinkWorkPicker = ({
   };
 
   const scopeOptions = [
-    { value: 'session' as const, label: 'This session' },
+    { value: 'session' as const, label: SCOPE_TAB_LABEL.session },
     {
       value: 'branch' as const,
-      label: 'This branch',
+      label: SCOPE_TAB_LABEL.branch,
       disabled: branch === null,
       ...(branch === null
         ? { hint: 'Open a branch first' }
@@ -128,7 +141,7 @@ export const LinkWorkPicker = ({
             ),
           }),
     },
-    { value: 'workspace' as const, label: 'Whole workspace' },
+    { value: 'workspace' as const, label: SCOPE_TAB_LABEL.workspace },
   ];
 
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
@@ -257,7 +270,10 @@ export const LinkWorkPicker = ({
                 )}
                 onMouseMove={() => setActiveIndex(index)}
                 onMouseDown={(event) => event.preventDefault()}
-                onClick={() => link(row)}
+                onClick={() => {
+                  setActiveIndex(index);
+                  link(row);
+                }}
               >
                 <IntegrationGlyph provider={row.task.provider} size="xs" />
                 <span className="w-32 shrink-0 truncate text-code text-muted-foreground">
@@ -282,6 +298,14 @@ export const LinkWorkPicker = ({
             branch={branch}
             isClosing={isClosing}
             isLinking={isLinking}
+            {...(isDuplicate(active)
+              ? {
+                  duplicate: {
+                    scopes: active.linkedScopes,
+                    next: freeScope({ scopes: active.linkedScopes, hasBranch: branch !== null }),
+                  },
+                }
+              : {})}
             onToggleClosing={() => setIsClosing((current) => !current)}
             onLink={() => link(active)}
             onCancel={onClose}

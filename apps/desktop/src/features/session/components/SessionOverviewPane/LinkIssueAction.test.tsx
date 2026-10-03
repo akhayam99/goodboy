@@ -12,7 +12,7 @@ const { store, work } = vi.hoisted(() => ({
   work: {
     items: [] as ReadonlyArray<LinkWorkItem>,
     lookedUp: [] as ReadonlyArray<LinkWorkItem>,
-    linkedKeys: new Set<string>(),
+    linkedScopes: new Map<string, ReadonlyArray<'session' | 'branch' | 'workspace'>>(),
     sources: [] as ReadonlyArray<SessionExternalTaskProvider>,
     isLoading: false,
   },
@@ -105,7 +105,7 @@ beforeEach(() => {
   store.linkSessionExternalTask.mockClear();
   work.items = INBOX_ITEMS;
   work.lookedUp = [];
-  work.linkedKeys = new Set<string>();
+  work.linkedScopes = new Map();
   work.sources = ['linear', 'sentry', 'github'];
   work.isLoading = false;
 });
@@ -180,8 +180,8 @@ describe('LinkIssueAction', () => {
     expect(screen.queryByRole('combobox', { name: 'Search work to link' })).toBeNull();
   });
 
-  it('hides what is already linked', () => {
-    work.linkedKeys = new Set(['sentry:LEDGER-2M']);
+  it('hides a task linked to every scope', () => {
+    work.linkedScopes = new Map([['sentry:LEDGER-2M', ['session', 'branch', 'workspace']]]);
     render(<LinkIssueAction session={session} />);
     fireEvent.click(trigger());
 

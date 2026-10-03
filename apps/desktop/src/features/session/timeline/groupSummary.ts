@@ -6,6 +6,8 @@ export type GroupSummaryPart<State extends string = string> = {
   readonly count: number;
   readonly noun: string;
   readonly isFailure: boolean;
+  readonly text?: string;
+  readonly isKept?: boolean;
 };
 
 export type GroupSummary<State extends string = string> = {
@@ -46,14 +48,17 @@ export const groupSummaryParts = <State extends string>({
     ];
   });
 
+export const groupSummaryPartText = ({ part }: { readonly part: GroupSummaryPart }): string =>
+  part.text ?? `${part.count} ${part.noun}`;
+
 export const groupSummaryText = ({ summary }: { readonly summary: GroupSummary }): string =>
-  summary.parts.map((part) => `${part.count} ${part.noun}`).join(' · ');
+  summary.parts.map((part) => groupSummaryPartText({ part })).join(' · ');
 
 export type StepsGroupKind = 'run' | 'chain';
 
-type StepsState = 'steps' | 'answered';
+type StepsState = 'steps' | 'answered' | 'context';
 
-const STEPS_ORDER: ReadonlyArray<StepsState> = ['steps', 'answered'];
+const STEPS_ORDER: ReadonlyArray<StepsState> = ['steps', 'answered', 'context'];
 
 const plural = ({
   count,
@@ -69,16 +74,19 @@ type StepsSummaryParams = {
   readonly kind: StepsGroupKind;
   readonly steps: number;
   readonly answered: number;
+  readonly contextAdded?: number;
 };
 
 export const stepsGroupSummary = ({
   kind,
   steps,
   answered,
+  contextAdded = 0,
 }: StepsSummaryParams): GroupSummary<StepsState> => {
   const counts = new Map<StepsState, number>([
     ['steps', steps],
     ['answered', answered],
+    ['context', contextAdded],
   ]);
   return {
     total: steps,
@@ -86,14 +94,18 @@ export const stepsGroupSummary = ({
       counts,
       order: STEPS_ORDER,
       nounOf: ({ state, count }) =>
-        state === 'answered'
-          ? `${plural({ count, one: 'question', many: 'questions' })} answered`
-          : kind === 'run'
-            ? plural({ count, one: 'step', many: 'steps' })
-            : plural({ count, one: 'subagent', many: 'subagents' }),
+        state === 'context'
+          ? 'context'
+          : state === 'answered'
+            ? `${plural({ count, one: 'question', many: 'questions' })} answered`
+            : kind === 'run'
+              ? plural({ count, one: 'step', many: 'steps' })
+              : plural({ count, one: 'subagent', many: 'subagents' }),
       toneOf: () => 'neutral',
       failure: null,
-    }),
+    }).map((part) =>
+      part.state === 'context' ? { ...part, text: `Context +${part.count}`, isKept: true } : part,
+    ),
     attentionCount: 0,
     failedCount: 0,
   };

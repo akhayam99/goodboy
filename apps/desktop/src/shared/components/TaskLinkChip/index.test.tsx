@@ -25,14 +25,14 @@ describe('TaskLinkChip', () => {
     render(
       <TaskLinkChip
         provider="linear"
-        identifier="HAR-400"
+        identifier="HBL-400"
         title="Payments revamp"
         isActive
         onClick={onClick}
       />,
     );
 
-    const chip = screen.getByRole('button', { name: /HAR-400/ });
+    const chip = screen.getByRole('button', { name: /HBL-400/ });
     expect(chip.getAttribute('aria-pressed')).toBe('true');
     expect(chip.textContent).toContain('Payments revamp');
     fireEvent.click(chip);

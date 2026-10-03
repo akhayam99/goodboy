@@ -5,7 +5,7 @@ import {
   type DecisionOp,
 } from '@goodboy/core';
 import { listContextSlotsForSession } from '@goodboy/db';
-import type { SessionId } from '@goodboy/types';
+import type { AgentId, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { decisionsChangedPayload } from './decisionsChangedPayload';
 import { withDecisionsSlot } from './withDecisionsSlot';
@@ -16,6 +16,7 @@ export type ApplySessionDecisionOpsParams = {
   readonly ops: ReadonlyArray<DecisionOp>;
   readonly actor: DecisionActor;
   readonly consolidatedAfter?: string;
+  readonly agentId?: AgentId;
 };
 
 export const applySessionDecisionOps = (set: SetFn, get: GetFn) => {
@@ -24,6 +25,7 @@ export const applySessionDecisionOps = (set: SetFn, get: GetFn) => {
     ops,
     actor,
     consolidatedAfter,
+    agentId,
   }: ApplySessionDecisionOpsParams): Promise<AppliedDecisionOps> => {
     const applied = await applyDecisionOpsToSession({ db: tauriDatabase, sessionId, ops, actor });
     const slots = await listContextSlotsForSession(tauriDatabase, sessionId);
@@ -34,6 +36,7 @@ export const applySessionDecisionOps = (set: SetFn, get: GetFn) => {
     const payload = decisionsChangedPayload({
       changes: applied.changes,
       ...(consolidatedAfter !== undefined && { consolidatedAfter }),
+      ...(agentId !== undefined && { agentId }),
     });
     if (payload !== null) {
       await get().recordSessionEvent({ sessionId, kind: 'decisions_changed', payload });

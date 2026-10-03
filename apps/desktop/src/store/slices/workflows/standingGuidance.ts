@@ -5,13 +5,28 @@ type SectionParams = {
   readonly role: AgentRole | null;
 };
 
-export const standingGuidanceSection = ({ run, role }: SectionParams): string => {
+export const guidanceSentTo = ({ run, role }: SectionParams): string | null => {
   const rules = run?.rulesSnapshot;
   const text = rules?.standingGuidance.trim() ?? '';
   if (rules === undefined || text === '' || run?.executionMode === 'dynamic' || role === null) {
-    return '';
+    return null;
   }
-  return rules.guidanceRoles.includes(role) ? `**Standing guidance**\n${text}` : '';
+  return rules.guidanceRoles.includes(role) ? text : null;
+};
+
+export const standingGuidanceSection = ({ run, role }: SectionParams): string => {
+  const text = guidanceSentTo({ run, role });
+  return text === null ? '' : `**Standing guidance**\n${text}`;
+};
+
+export const guidanceTagTip = ({ text }: { readonly text: string }): string => {
+  const lines = text
+    .split('\n')
+    .map((line) => line.replace(/^\s*(?:[-*+]|\d+[.)])\s+/, '').trim())
+    .filter((line) => line !== '');
+  const [first = ''] = lines;
+  const more = lines.length - 1;
+  return `\u201c${first}\u201d${more > 0 ? `, and ${more} more` : ''}`;
 };
 
 type ProcessParams = {

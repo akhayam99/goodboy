@@ -26,8 +26,8 @@ const ITEMS: ReadonlyArray<LinkWorkItem> = [
     task: {
       provider: 'linear',
       externalId: 'lin-400',
-      identifier: 'HAR-400',
-      url: 'https://linear.app/harborline/issue/HAR-400',
+      identifier: 'HBL-400',
+      url: 'https://linear.app/harborline/issue/HBL-400',
       title: 'Payments revamp',
     },
   },
@@ -43,7 +43,7 @@ const renderPicker = ({ branch = 'hl/fix-duplicate-credit' }: { branch?: string 
       onQueryChange={vi.fn()}
       items={ITEMS}
       lookedUp={[]}
-      linkedKeys={new Set()}
+      linkedScopes={new Map()}
       sources={['linear']}
       isLoading={false}
       isLinking={false}
@@ -110,7 +110,7 @@ describe('LinkWorkPicker scope', () => {
         .tagName,
     ).toBe('P');
     expect(preview().queryByRole('button', { name: 'Don’t close' })).toBeNull();
-    fireEvent.click(preview().getByRole('button', { name: 'Link HAR-400' }));
+    fireEvent.click(preview().getByRole('button', { name: 'Link HBL-400' }));
 
     expect(linked).toEqual([
       { task: ITEMS[1]?.task, choice: { scope: 'workspace', relation: 'part-of' } },

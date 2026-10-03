@@ -25,7 +25,7 @@ const keysOf = (items: ReadonlyArray<LinkWorkItem>): ReadonlyArray<string> => {
     source: 'all',
     items,
     lookedUp: [],
-    linkedKeys: new Set(),
+    linkedScopes: new Map(),
   });
   return view.kind === 'list' ? view.rows.map((row) => row.key) : [];
 };
@@ -44,5 +44,32 @@ describe('linkWorkView', () => {
 
     expect(keysOf([second, first])).toEqual(['a', 'b']);
     expect(keysOf([first, second])).toEqual(['a', 'b']);
+  });
+});
+
+describe('linkWorkView with linked scopes', () => {
+  const rowsOf = (
+    linkedScopes: ReadonlyMap<string, ReadonlyArray<'session' | 'branch' | 'workspace'>>,
+  ) => {
+    const view = linkWorkView({
+      query: '',
+      source: 'all',
+      items: [item({ key: 'revamp', updatedAt: '2026-09-29T08:00:00Z' })],
+      lookedUp: [],
+      linkedScopes,
+    });
+    return view.kind === 'list'
+      ? view.rows.map((row) => ({ key: row.key, linkedScopes: row.linkedScopes }))
+      : [];
+  };
+
+  it('keeps a task linked to the session, carrying that scope', () => {
+    expect(rowsOf(new Map([['revamp', ['session']]]))).toEqual([
+      { key: 'revamp', linkedScopes: ['session'] },
+    ]);
+  });
+
+  it('drops a task once every scope has it', () => {
+    expect(rowsOf(new Map([['revamp', ['session', 'branch', 'workspace']]]))).toEqual([]);
   });
 });

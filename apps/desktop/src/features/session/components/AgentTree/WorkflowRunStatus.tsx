@@ -1,4 +1,4 @@
-import { AlertTriangle, CircleStop, Link2, Pause } from 'lucide-react';
+import { AlertTriangle, CircleStop, ClipboardCheck, Link2, Pause } from 'lucide-react';
 import type { Agent, Workflow, WorkflowRun } from '@goodboy/types';
 import { isAgentStatusSettled } from '@goodboy/core';
 import { Chip, StatusDot, cn, tintClasses } from '@goodboy/ui';
@@ -6,6 +6,7 @@ import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptI
 import type { WorkflowBlockReason } from '../../../workflows/advanceGate';
 import { isWorkflowRunClosedByUser } from '../../../workflows/isWorkflowRunClosedByUser';
 import { isRunPaused } from '../../../workflows/isRunPaused';
+import { isRunHeldForPlan } from '../../../../store/slices/workflows/workflowPlanApproval';
 
 type Props = {
   readonly run: WorkflowRun;
@@ -93,6 +94,18 @@ export const WorkflowRunStatus = ({
       >
         <Pause size={10} aria-hidden />
         Paused
+      </span>
+    );
+  }
+  if (isRunHeldForPlan({ run }) && !hasOrchestratorStrip) {
+    return (
+      <span
+        className={cn(baseClass, cn(tintClasses('info').bg, 'text-info'))}
+        title={stop?.message}
+        data-testid="workflow-run-plan-ready"
+      >
+        <ClipboardCheck size={10} aria-hidden />
+        Plan ready
       </span>
     );
   }

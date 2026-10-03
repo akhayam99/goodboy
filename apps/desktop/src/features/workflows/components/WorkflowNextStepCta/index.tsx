@@ -89,7 +89,7 @@ export const WorkflowNextStepCta = ({
       });
     },
   });
-  if (next == null) {
+  if (next == null || blockReason === 'plan-approval') {
     return null;
   }
   const pendingAgent = runs.find((agent) => agent.stepId === next.id && agent.status === 'pending');
