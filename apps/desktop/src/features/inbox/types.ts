@@ -102,5 +102,6 @@ export type InboxRecord = {
   readonly context: string;
   readonly projectIds?: ReadonlyArray<ProjectId>;
   readonly linkedSessionId?: SessionId | null;
+  readonly linkedSessionIds?: ReadonlyArray<SessionId>;
   readonly payload: Payload;
 };

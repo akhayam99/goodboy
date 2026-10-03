@@ -128,6 +128,7 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
       branch: mount.branch,
     });
     const mode = referenceMode ?? (membership === null ? 'closing' : 'part-of');
+    const partOfTasks = linkedTasks.filter((task) => task.relation === 'part-of');
     const references = mode === 'closing' ? linkedTasks : [];
     const projectBaseBranch = projectById(get().projects, mount.projectId)?.baseBranch;
     const baseBranch = base?.trim() || mount.baseBranch || projectBaseBranch;
@@ -151,7 +152,9 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
                 branch: mount.branch,
                 body: filledBody,
               })
-            : [],
+            : mode === 'closing'
+              ? partOfReferences({ tasks: partOfTasks, branch: mount.branch, body: filledBody })
+              : [],
       });
       args.push('--body', isScribeBody === true ? signScribeBody({ body: finalBody }) : finalBody);
     } else {

@@ -22,7 +22,7 @@ export const closingIssueReferences = ({
 }: Params): ReadonlyArray<ClosingIssueReference> => {
   const byNumber = new Map<number, ClosingIssueReference>();
   for (const task of tasks) {
-    if (task.provider !== 'github') {
+    if (task.provider !== 'github' || task.relation === 'part-of') {
       continue;
     }
     const taskBranch = task.branch ?? null;

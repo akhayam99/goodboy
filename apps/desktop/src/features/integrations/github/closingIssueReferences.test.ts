@@ -36,6 +36,15 @@ describe('closingIssueReferences', () => {
     expect(refs).toEqual([]);
   });
 
+  it('never closes an issue the link says it is only part of', () => {
+    const refs = closingIssueReferences({
+      tasks: [task({ branch: 'ak/cards', relation: 'part-of' })],
+      branch: 'ak/cards',
+      body: '',
+    });
+    expect(refs).toEqual([]);
+  });
+
   it('never writes a non-github issue as a closing reference', () => {
     const refs = closingIssueReferences({
       tasks: [

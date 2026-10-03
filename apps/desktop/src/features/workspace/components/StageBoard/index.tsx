@@ -28,6 +28,8 @@ import { useBoardCollapse, type BoardCollapsibleColumn } from '../../hooks/useBo
 import { useBoardNavigation } from './useBoardNavigation';
 import { useBoardSelection } from './useBoardSelection';
 import { ProjectFilter } from '../ProjectFilter';
+import { OngoingTasksRow } from './OngoingTasksRow';
+import { sessionsOnOngoingTask } from './sessionsOnOngoingTask';
 import { ProjectGitPills } from '../ProjectGitPill';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -91,11 +93,34 @@ type Props = {
 };
 
 export const StageBoard = ({ workspaceId, sessions }: Props) => {
-  const groups = useStageGroupedSessions(workspaceId, sessions);
+  const [ongoingFilter, setOngoingFilter] = useState<string | null>(null);
+  const ongoingSessionIds = useAppStore(
+    useShallow((s) =>
+      sessionsOnOngoingTask({
+        sessionExternalTasks: s.sessionExternalTasks,
+        filter: ongoingFilter,
+      }),
+    ),
+  );
+  const shownSessions = useMemo(
+    () =>
+      ongoingFilter === null
+        ? sessions
+        : sessions.filter((session) => ongoingSessionIds.includes(session.id)),
+    [ongoingFilter, ongoingSessionIds, sessions],
+  );
+  const groups = useStageGroupedSessions(workspaceId, shownSessions);
   const nav = useBoardNavigation();
   const archivedList = useAppStore((s) => s.archivedSessions[workspaceId]);
   const archived = archivedList ?? EMPTY_ARRAY;
-  const filteredArchived = useProjectFilteredSessions({ workspaceId, sessions: archived });
+  const projectArchived = useProjectFilteredSessions({ workspaceId, sessions: archived });
+  const filteredArchived = useMemo(
+    () =>
+      ongoingFilter === null
+        ? projectArchived
+        : projectArchived.filter((session) => ongoingSessionIds.includes(session.id)),
+    [ongoingFilter, ongoingSessionIds, projectArchived],
+  );
   const filterSessions = useMemo(() => [...sessions, ...archived], [archived, sessions]);
   const boardReady = useAppStore((s) => s.boardReady);
   const loadArchivedSessions = useAppStore((s) => s.loadArchivedSessions);
@@ -304,6 +329,13 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
               )}
             </span>
           </div>
+          {pending ? null : (
+            <OngoingTasksRow
+              workspaceId={workspaceId}
+              filter={ongoingFilter}
+              onFilter={setOngoingFilter}
+            />
+          )}
         </>
       ) : null}
 

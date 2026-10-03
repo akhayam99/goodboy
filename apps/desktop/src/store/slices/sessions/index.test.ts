@@ -1176,6 +1176,41 @@ describe('store contract', () => {
       expect(kinds).toEqual(['project_materialized', 'external_task_created']);
     });
 
+    it('writes the branch the session starts on into the task link', async () => {
+      const store = useAppStore;
+      const db = await import('@goodboy/db');
+      store.setState({ currentWorkspaceId: WS_ID });
+
+      storySpies.createWorktree.mockImplementationOnce(
+        async ({ branchName }: { readonly branchName: string }) => ({
+          worktreePath: '/tmp/mounts/har-212',
+          branchName,
+          slug: 'har-212',
+          reused: false,
+        }),
+      );
+
+      await store.getState().createSession({
+        workspaceId: WS_ID,
+        projectId: PROJECT_ID,
+        goal: 'Retry failed payments',
+        externalTasks: [
+          {
+            provider: 'linear',
+            externalId: 'lin-212',
+            identifier: 'HAR-212',
+            url: 'https://linear.app/harborline/issue/HAR-212',
+            title: 'Retry failed payments',
+          },
+        ],
+      });
+
+      const written = vi.mocked(db.upsertSessionExternalTask).mock.calls.map(([{ task }]) => task);
+      expect(written).toHaveLength(1);
+      expect(written[0]?.branch).toBe('goodboy/har-212-retry-failed-payments');
+      expect(written[0]?.scope).toBeUndefined();
+    });
+
     it('passes task identifiers into the initial materialization', async () => {
       const store = useAppStore;
       store.setState({ currentWorkspaceId: WS_ID });

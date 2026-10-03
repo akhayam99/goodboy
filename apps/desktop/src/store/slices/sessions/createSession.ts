@@ -254,10 +254,19 @@ export const createSession = (set: SetFn, get: GetFn) => {
 
     const externalTaskRows: Array<SessionExternalTask> = [];
     const failedTaskLinks: Array<{ readonly identifier: string; readonly error: unknown }> = [];
+    const createdMounts = (get().sessionProjectMounts[session.id] ?? []).filter(
+      (mount) => mount.branch !== '',
+    );
     for (const externalTask of externalTasks ?? []) {
+      const taskProjectId = externalTask.projectId ?? project?.id ?? null;
+      const branch =
+        createdMounts.find((mount) => mount.projectId === taskProjectId)?.branch ??
+        createdMounts[0]?.branch ??
+        null;
       const row: SessionExternalTask = {
         sessionId: session.id,
         ...(externalTask.projectId != null ? { projectId: externalTask.projectId } : {}),
+        ...(branch === null ? {} : { branch }),
         provider: externalTask.provider,
         externalId: externalTask.externalId,
         identifier: externalTask.identifier,

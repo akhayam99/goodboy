@@ -185,6 +185,22 @@ describe('createPrForSession, issue references', () => {
     expect(bodyArg()).toBe('Documents the change.\n\nCloses #41');
   });
 
+  it('writes Part of, never Closes, for a link told not to close', async () => {
+    const state = buildState({
+      sessionExternalTasks: {
+        [SESSION_ID]: [
+          githubIssue({ relation: 'part-of' }),
+          githubIssue({ externalId: '52', identifier: '#52', scope: 'branch' }),
+        ],
+      },
+    });
+
+    await buildCreate(state)({ sessionId: SESSION_ID, title: 'Fix cards', body: 'First part.' });
+
+    expect(bodyArg()).toBe('First part.\n\nCloses #52\nPart of #41');
+    expect(bodyArg()).not.toContain('Closes #41');
+  });
+
   it('closes every github issue linked on the session branch', async () => {
     const state = buildState({
       sessionExternalTasks: {

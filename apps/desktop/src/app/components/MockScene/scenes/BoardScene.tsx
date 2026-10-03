@@ -791,16 +791,59 @@ export const seedBoardScene = (): void => {
     slotHistoryCounts: {},
     loadArchivedSessions: async () => undefined,
     loadProjectGitStatus: async () => undefined,
+    workspaceExternalTasks: { [WORKSPACE_ID]: [] },
+    loadWorkspaceExternalTasks: async () => undefined,
   });
 };
 
-export const BoardScene = () => {
+const ONGOING_TASK = {
+  workspaceId: WORKSPACE_ID,
+  provider: 'linear' as const,
+  externalId: 'mock-board-HBL-400',
+  identifier: 'HBL-400',
+  url: 'https://example.invalid/linear/HBL-400',
+  title: 'Payments revamp',
+  createdAt: isoAgo(6 * DAY),
+};
+
+const ONGOING_SESSIONS: ReadonlyArray<SessionId> = [RUNNING_CHECKOUT_RETRY, ATTENTION_ERROR];
+
+export const seedBoardOngoing = (): void => {
+  seedBoardScene();
+  const linked = useAppStore.getState().sessionExternalTasks;
+  useAppStore.setState({
+    workspaceExternalTasks: { [WORKSPACE_ID]: [ONGOING_TASK] },
+    sessionExternalTasks: {
+      ...linked,
+      ...Object.fromEntries(
+        ONGOING_SESSIONS.map((sessionId) => [
+          sessionId,
+          [
+            ...(linked[sessionId] ?? []),
+            externalTask({
+              sessionId,
+              provider: 'linear',
+              identifier: 'HBL-400',
+              title: ONGOING_TASK.title,
+            }),
+          ],
+        ]),
+      ),
+    },
+  });
+};
+
+type BoardSceneProps = {
+  readonly seed?: () => void;
+};
+
+export const BoardScene = ({ seed = seedBoardScene }: BoardSceneProps) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    seedBoardScene();
+    seed();
     setIsReady(true);
-  }, []);
+  }, [seed]);
 
   if (!isReady) {
     return null;

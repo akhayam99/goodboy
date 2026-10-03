@@ -2,7 +2,7 @@ import type { SessionExternalTask, SessionId } from '@goodboy/types';
 import { launchSpecFor } from './launchSpecFor';
 import type { InboxRecord } from './types';
 
-export type LinkedSessionIndex = ReadonlyMap<string, SessionId>;
+export type LinkedSessionIndex = ReadonlyMap<string, ReadonlyArray<SessionId>>;
 
 type TaskKeyParams = Pick<SessionExternalTask, 'provider' | 'externalId'>;
 type CodeKeyParams = Pick<SessionExternalTask, 'provider' | 'identifier'>;
@@ -22,18 +22,27 @@ export const indexLinkedSessions = ({
   sessionIds,
   sessionExternalTasks,
 }: IndexParams): LinkedSessionIndex => {
-  const index = new Map<string, SessionId>();
+  const index = new Map<string, Array<SessionId>>();
   for (const sessionId of sessionIds) {
     for (const task of sessionExternalTasks[sessionId] ?? []) {
       for (const key of [taskKey(task), codeKey(task)]) {
-        if (!index.has(key)) {
-          index.set(key, sessionId);
+        const sessions = index.get(key) ?? [];
+        if (!sessions.includes(sessionId)) {
+          index.set(key, [...sessions, sessionId]);
         }
       }
     }
   }
   return index;
 };
+
+const sameSessions = (
+  left: ReadonlyArray<SessionId> | undefined,
+  right: ReadonlyArray<SessionId>,
+): boolean =>
+  left !== undefined &&
+  left.length === right.length &&
+  left.every((sessionId, index) => sessionId === right[index]);
 
 type AttachParams = {
   readonly record: InboxRecord;
@@ -45,9 +54,22 @@ export const attachLinkedSession = ({ record, linked }: AttachParams): InboxReco
   if (task == null) {
     return record;
   }
-  const linkedSessionId = linked.get(taskKey(task)) ?? linked.get(codeKey(task)) ?? null;
-  if (linkedSessionId === (record.linkedSessionId ?? null)) {
+  const byTask = linked.get(taskKey(task)) ?? [];
+  const byCode = linked.get(codeKey(task)) ?? [];
+  const linkedSessionIds = [
+    ...byTask,
+    ...byCode.filter((sessionId) => !byTask.includes(sessionId)),
+  ];
+  const linkedSessionId = linkedSessionIds[0] ?? null;
+  if (
+    linkedSessionId === (record.linkedSessionId ?? null) &&
+    (linkedSessionIds.length === 0 || sameSessions(record.linkedSessionIds, linkedSessionIds))
+  ) {
     return record;
   }
-  return { ...record, linkedSessionId };
+  return {
+    ...record,
+    linkedSessionId,
+    ...(linkedSessionIds.length === 0 ? {} : { linkedSessionIds }),
+  };
 };

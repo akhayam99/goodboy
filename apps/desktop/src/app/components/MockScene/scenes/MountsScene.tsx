@@ -26,6 +26,7 @@ import type {
   SessionProjectMount,
   Workspace,
   WorkspaceId,
+  SessionExternalTask,
 } from '@goodboy/types';
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
 import { useAppStore } from '../../../../store';
@@ -194,7 +195,7 @@ const EXTRA_SEEDS: ReadonlyArray<MountSeed> = [
   },
 ];
 
-type MountsVariant = 'mounts' | 'many' | 'refreshing' | 'full';
+type MountsVariant = 'mounts' | 'many' | 'refreshing' | 'full' | 'branch-tasks';
 
 type Props = {
   readonly variant?: MountsVariant;
@@ -574,6 +575,43 @@ const SERIES: PrSeriesView = {
   ],
 };
 
+const BRANCH_TASKS: ReadonlyArray<SessionExternalTask> = [
+  {
+    sessionId: SESSION_ID,
+    provider: 'linear',
+    externalId: 'mock-mounts-hbl-412',
+    identifier: 'HBL-412',
+    url: 'https://example.invalid/linear/HBL-412',
+    title: 'Post each ledger entry once',
+    scope: 'branch',
+    branch: POSTINGS_BRANCH,
+    createdAt: NOW,
+  },
+  {
+    sessionId: SESSION_ID,
+    provider: 'linear',
+    externalId: 'mock-mounts-hbl-418',
+    identifier: 'HBL-418',
+    url: 'https://example.invalid/linear/HBL-418',
+    title: 'Replay postings after a timeout',
+    scope: 'branch',
+    branch: POSTINGS_BRANCH,
+    relation: 'part-of',
+    createdAt: NOW,
+  },
+  {
+    sessionId: SESSION_ID,
+    provider: 'jira',
+    externalId: 'mock-mounts-ops-81',
+    identifier: 'LEDG-81',
+    url: 'https://example.invalid/jira/LEDG-81',
+    title: 'Back off on webhook rate limits',
+    scope: 'branch',
+    branch: RELAY_BRANCH,
+    createdAt: NOW,
+  },
+];
+
 export const MountsScene = ({ variant = 'mounts' }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const seeds = variant === 'many' ? [...MOUNT_SEEDS, ...EXTRA_SEEDS] : MOUNT_SEEDS;
@@ -687,6 +725,7 @@ export const MountsScene = ({ variant = 'mounts' }: Props) => {
             title: 'Notify relay floods the webhook provider',
             createdAt: NOW,
           },
+          ...(variant === 'branch-tasks' ? BRANCH_TASKS : []),
         ],
       },
       sessionGithub: { [SESSION_ID]: { ...EMPTY_GITHUB, pr: POSTINGS_PR } },
