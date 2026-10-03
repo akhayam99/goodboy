@@ -17,7 +17,7 @@ import { chatSuggestions } from '../../chatSuggestions';
 import type { ChatRouting } from '../../chatRouting';
 import { defaultChatRouting } from '../../defaultChatRouting';
 import { useChatDefaultModel } from '../../../../shared/hooks/useChatDefaultModel';
-import { ChatComposer } from '../ChatComposer';
+import { ChatComposer, type ChatComposerMessage } from '../ChatComposer';
 import { TURN_INTO_WORK_LABEL, TurnIntoWorkPanel } from '../TurnIntoWorkPanel';
 import { ChatArchivedBanner } from './ChatArchivedBanner';
 import { ChatEmpty } from './ChatEmpty';
@@ -41,6 +41,10 @@ type WorkRequest = {
 };
 
 const NO_MESSAGES: ReadonlyArray<ChatMessage> = [];
+
+const NO_IMAGES: ChatComposerMessage['images'] = [];
+
+type SendParams = Pick<ChatComposerMessage, 'text'> & Partial<Pick<ChatComposerMessage, 'images'>>;
 
 const NEW_CHAT_HEADING = 'New chat';
 
@@ -102,13 +106,12 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
     );
   }, [chat, draftRouting, connected, savedDefault, workspaceDefaultProvider]);
 
-  const send = async (text: string): Promise<void> => {
+  const send = async ({ text, images = NO_IMAGES }: SendParams): Promise<boolean> => {
     if (chatId !== null) {
       if (chat !== null && chat.archivedAt !== null) {
         await restoreChats({ workspaceId, chatIds: [chatId] });
       }
-      await sendChatMessage({ chatId, content: text });
-      return;
+      return sendChatMessage({ chatId, content: text, attachments: images });
     }
     const routing =
       draftRouting ??
@@ -131,7 +134,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
       });
     }
     onCreated(created);
-    await sendChatMessage({ chatId: created, content: text });
+    return sendChatMessage({ chatId: created, content: text, attachments: images });
   };
 
   const pickRouting = (choice: ChatRouting): void => {
@@ -191,7 +194,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
             workspaceName={workspaceName}
             projectNames={projectNames}
             suggestions={chatSuggestions({ projectNames })}
-            onAsk={(question) => void send(question)}
+            onAsk={(question) => void send({ text: question })}
           />
         </PageColumn>
       ) : (
@@ -219,7 +222,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
             isStreaming={stream !== undefined}
             isStopping={stream?.isStopping === true}
             isAutoFocused={chatId === null}
-            onSend={(text) => void send(text)}
+            onSend={send}
             onStop={() => {
               if (chatId !== null) {
                 void stopChatReply({ chatId });

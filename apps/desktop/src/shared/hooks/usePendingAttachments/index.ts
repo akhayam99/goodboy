@@ -26,6 +26,11 @@ export type PersistArgs = {
   readonly blob: Blob;
 };
 
+export type AttachableFile = {
+  readonly name: string;
+  readonly type: string;
+};
+
 export type AttachmentDropNotices = Readonly<{
   ambiguous: string;
   disabled: string;
@@ -37,6 +42,7 @@ type Params = {
   readonly enabled?: boolean;
   readonly notices?: AttachmentDropNotices;
   readonly persistToDisk?: (att: PersistArgs) => Promise<string | null>;
+  readonly isAccepted?: (file: AttachableFile) => boolean;
 };
 
 type DroppedPaths = {
@@ -68,6 +74,7 @@ export const usePendingAttachments = ({
   enabled = true,
   notices = COMPOSER_DROP_NOTICES,
   persistToDisk,
+  isAccepted = isAllowedAttachment,
 }: Params) => {
   const [attachments, setAttachments] = useState<ReadonlyArray<PendingAttachment>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -104,7 +111,7 @@ export const usePendingAttachments = ({
 
   const addFiles = useCallback(
     async (files: ReadonlyArray<File>) => {
-      const allowed = files.filter(isAllowedAttachment);
+      const allowed = files.filter(isAccepted);
       const skipped = files.length - allowed.length;
       if (skipped > 0) {
         showToast({
@@ -130,7 +137,7 @@ export const usePendingAttachments = ({
       }
       admit(accepted);
     },
-    [showToast, persist, admit],
+    [showToast, persist, admit, isAccepted],
   );
 
   const removeAttachment = useCallback((id: string) => {
@@ -139,13 +146,13 @@ export const usePendingAttachments = ({
 
   const onPaste = useCallback(
     (event: ReactClipboardEvent<HTMLTextAreaElement>) => {
-      const files = Array.from(event.clipboardData.files).filter(isAllowedAttachment);
+      const files = Array.from(event.clipboardData.files).filter(isAccepted);
       if (files.length > 0) {
         event.preventDefault();
         void addFiles(files);
       }
     },
-    [addFiles],
+    [addFiles, isAccepted],
   );
 
   const onFileInputChange = (event: ReactChangeEvent<HTMLInputElement>) => {
@@ -158,7 +165,7 @@ export const usePendingAttachments = ({
 
   const ingestDroppedPaths = async ({ paths }: DroppedPaths) => {
     const supported = paths.filter((path) =>
-      isAllowedAttachment({ name: droppedFileName({ path }), type: '' }),
+      isAccepted({ name: droppedFileName({ path }), type: '' }),
     );
     const unsupported = paths.length - supported.length;
     if (unsupported > 0) {

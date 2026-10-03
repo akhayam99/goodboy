@@ -20,10 +20,17 @@ export type ChatResponderParams = RunChatTurnParams & {
 
 export type ChatResponder = (params: ChatResponderParams) => Promise<ChatTurnOutcome>;
 
+export type ChatSeedImage = {
+  readonly chatId: ChatId;
+  readonly attachmentId: string;
+  readonly blob: Blob;
+};
+
 export type ChatSeed = {
   readonly chats: ReadonlyArray<Chat>;
   readonly messages: ReadonlyArray<ChatMessage>;
   readonly links?: ReadonlyArray<ChatSessionLink>;
+  readonly images?: ReadonlyArray<ChatSeedImage>;
 };
 
 export type ChatSeedParams = {
@@ -52,6 +59,11 @@ type TouchParams = {
   readonly at: IsoDateTime;
 };
 
+type ImageKeyParams = {
+  readonly chatId: ChatId;
+  readonly attachmentId: string;
+};
+
 type ChatRef = {
   readonly chatId: ChatId;
 };
@@ -62,6 +74,8 @@ export const createMemoryChatBackend = ({ respond, seed, summarize }: Params): C
   const seeded = new Set<WorkspaceId>();
   const cancelled = new Set<ProviderRunId>();
   const links = new Map<string, ChatSessionLink>();
+  const images = new Map<string, Blob>();
+  const imageKey = ({ chatId, attachmentId }: ImageKeyParams) => `${chatId}/${attachmentId}`;
 
   const append = ({ message }: MessageParams) => {
     messages.set(message.chatId, [...(messages.get(message.chatId) ?? []), message]);
@@ -75,6 +89,9 @@ export const createMemoryChatBackend = ({ respond, seed, summarize }: Params): C
     const data = seed({ workspaceId });
     for (const chat of data.chats) {
       chats.set(chat.id, chat);
+    }
+    for (const image of data.images ?? []) {
+      images.set(imageKey(image), image.blob);
     }
     for (const message of data.messages) {
       append({ message });
@@ -168,6 +185,11 @@ export const createMemoryChatBackend = ({ respond, seed, summarize }: Params): C
       for (const chatId of chatIds) {
         chats.delete(chatId);
         messages.delete(chatId);
+        for (const key of images.keys()) {
+          if (key.startsWith(`${chatId}/`)) {
+            images.delete(key);
+          }
+        }
         for (const [linkId, link] of links) {
           if (link.chatId === chatId) {
             links.delete(linkId);
@@ -208,6 +230,17 @@ export const createMemoryChatBackend = ({ respond, seed, summarize }: Params): C
         );
       }
       return settled;
+    },
+    writeImage: async ({ chatId, attachmentId, blob }) => {
+      images.set(imageKey({ chatId, attachmentId }), blob);
+      return blob.size;
+    },
+    readImage: async ({ chatId, attachmentId }) => {
+      const blob = images.get(imageKey({ chatId, attachmentId }));
+      if (blob === undefined) {
+        throw new Error('The image is no longer on this computer.');
+      }
+      return blob;
     },
     runTurn: async (params) => {
       const outcome = await respond({

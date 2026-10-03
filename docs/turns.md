@@ -678,6 +678,29 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   database by chat id. The CLI runs in the first project (oldest first) and the
   other projects are extra read roots for Claude. It never widens to a shared
   parent folder, and never uses `/`, the home folder or a parent of it.
+- **Images.** The composer takes up to 10 PNG, JPEG, GIF or WebP images per
+  message, at most 10 MB each, by paste, drop or the paperclip. Before the
+  message is saved, `chat_attachment_write` stores each one read-only in the
+  app's `chat-attachments/<chat id>/` folder, next to the database, and the
+  message and its `chat_message_attachments` rows (m220) go in one
+  transaction. A failed image write sends nothing and puts the text and the
+  images back in the box. The frontend sends only `images: true` and the new
+  message id, never a path: Rust reads the chat's image rows and hard links
+  (or copies) them into a fresh temporary root, `goodboy-chat/<run id>/` in
+  the system temp folder, read-only, which it removes when the turn ends.
+  `~/.goodboy` stays on Claude's deny list, so the agent never reads the
+  store itself. Claude gets the root as one more `--add-dir`, never as the
+  working folder and never when it sits inside a project, and the prompt ends
+  with the list of image paths, the new message's marked "(this message)".
+  Codex gets the new message's images with `--image` (`codex exec --help`
+  lists the flag; the read-only probe ran on 0.160.0). Earlier messages name
+  their images in the history text. Deleting a chat removes its folder
+  (`chat_attachments_remove`). The thread loads each image through
+  `chat_attachment_read` as an object URL freed on unmount, and a user
+  message is memoized, so a streaming answer redraws only itself
+  (`ChatThread.redraw.test.tsx`, 50 images). The `chat.images` setting set
+  to `false` is the kill switch: no paperclip, no paste, and no image root
+  on any turn.
 - **Its own channel.** Output streams as `chat_event` with the chat id, never
   as `turn_event`, so no session sees it. There is no reload backlog: a reply
   still streaming when the window closes is marked stopped at the next load,
@@ -691,7 +714,8 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   trace. Codex reads through shell commands, so for Codex the trace takes the
   file arguments of `cat`, `nl`, `head`, `tail`, `sed -n`, `rg` or `grep` with
   a file, and `ls` of a file (`chatReadPath.ts`).
-- **Storage.** `chats`, `chat_messages` (m212) and `chat_session_links` (m214). A
+- **Storage.** `chats`, `chat_messages` (m212), `chat_session_links` (m214) and
+  `chat_message_attachments` (m220). A
   chat stores its model as a catalog key and, once the user sets one, an
   `effort` that the next turn uses instead of the effort the key implies.
   Every assistant message records the `provider`, `model` and `effort` that

@@ -2,7 +2,7 @@ import { invokeCommand } from '../../shared/lib/invokeCommand';
 import { listen } from '@tauri-apps/api/event';
 import { createJsonLineAssembler, type ParseContext } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
-import type { ChatId, IsoDateTime, ProviderId, ProviderRunId } from '@goodboy/types';
+import type { ChatId, ChatMessageId, IsoDateTime, ProviderId, ProviderRunId } from '@goodboy/types';
 import { parseProviderLine } from '../chat/parseProviderLine';
 import { chatReadPaths } from './chatReadPath';
 
@@ -21,6 +21,7 @@ export type ChatTurnRequest = {
   readonly workingDir: string;
   readonly prompt: string;
   readonly systemPrompt: string;
+  readonly images?: { readonly messageId: ChatMessageId };
 };
 
 export type ChatTurnOutcome =
@@ -167,6 +168,10 @@ export const runChatTurn = async ({
             prompt: request.prompt,
             systemPrompt: request.systemPrompt,
             ...(request.effort !== undefined && { effort: request.effort }),
+            ...(request.images !== undefined && {
+              images: true,
+              messageId: request.images.messageId,
+            }),
           },
         });
       })

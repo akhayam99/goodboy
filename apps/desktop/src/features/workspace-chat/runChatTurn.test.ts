@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ChatId, ProviderRunId } from '@goodboy/types';
+import type { ChatId, ChatMessageId, ProviderRunId } from '@goodboy/types';
 
 type Envelope = {
   readonly runId: string;
@@ -108,6 +108,26 @@ describe('runChatTurn', () => {
       },
     });
     expect(unlistenMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks Rust for the chat images and names the new message, never a path', async () => {
+    invokeMock.mockImplementation(async () => {
+      emit({ runId: RUN, type: 'line', line: assistant([{ type: 'text', text: 'Seen.' }]) });
+      emit({ runId: RUN, type: 'end', exit_code: 0, stderr: '' });
+      return RUN;
+    });
+
+    await runChatTurn({
+      request: request({ images: { messageId: 'asked' as ChatMessageId } }),
+      onText: () => undefined,
+      onRead: () => undefined,
+    });
+
+    const [, payload] = invokeMock.mock.calls[0] ?? [];
+    expect(payload).toEqual({
+      args: expect.objectContaining({ images: true, messageId: 'asked' }),
+    });
+    expect(JSON.stringify(payload)).not.toContain('/');
   });
 
   it('fails with the refusal when the provider cannot be read-only', async () => {

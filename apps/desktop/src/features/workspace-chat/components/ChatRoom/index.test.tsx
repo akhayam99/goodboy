@@ -698,6 +698,7 @@ describe('ChatRoom', () => {
     expect(store.sendChatMessage).toHaveBeenCalledWith({
       chatId: 'chat-new',
       content: 'Where do we validate IBANs?',
+      attachments: [],
     });
   });
 

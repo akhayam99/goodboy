@@ -2,6 +2,7 @@ import { formatError } from '@goodboy/ui';
 import type {
   ChatId,
   ChatMessage,
+  ChatMessageAttachment,
   ChatMessageId,
   ChatMessageStatus,
   EffortLevel,
@@ -13,13 +14,17 @@ import { activeChatBackend } from '../../../features/workspace-chat/activeChatBa
 import type { ChatTurnOutcome } from '../../../features/workspace-chat/runChatTurn';
 import { chatTitleFromQuestion, NEW_CHAT_TITLE } from './chatTitleFromQuestion';
 import { findChat } from './findChat';
+import { isChatImagesOn } from './isChatImagesOn';
 import { isViewingChat } from './isViewingChat';
 import { patchChatMessage } from './patchChatMessage';
 import { patchChatSummary } from './patchChatSummary';
 import { planChatTurn } from './planChatTurn';
+import { saveChatImages } from './saveChatImages';
 import type { GetFn, SendChatMessageParams, SetFn } from './types';
 
 const PREVIEW_LENGTH = 240;
+
+const IMAGE_ONLY_QUESTION = 'Look at the attached images.';
 
 const isoNow = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
@@ -32,6 +37,8 @@ type MessageDraft = {
   readonly provider?: ProviderId;
   readonly model?: string;
   readonly effort?: EffortLevel | null;
+  readonly id?: ChatMessageId;
+  readonly attachments?: ReadonlyArray<ChatMessageAttachment>;
 };
 
 const draftMessage = ({
@@ -43,14 +50,16 @@ const draftMessage = ({
   provider,
   model,
   effort,
+  id,
+  attachments = [],
 }: MessageDraft): ChatMessage => ({
-  id: crypto.randomUUID() as ChatMessageId,
+  id: id ?? (crypto.randomUUID() as ChatMessageId),
   chatId,
   role,
   content,
   status,
   reads: [],
-  attachments: [],
+  attachments,
   error: null,
   provider: provider ?? null,
   model: model ?? null,
@@ -111,16 +120,40 @@ const finishReply = async ({ set, get, chatId, messageId, outcome }: FinishParam
 
 export const sendChatMessage =
   (set: SetFn, get: GetFn) =>
-  async ({ chatId, content }: SendChatMessageParams): Promise<void> => {
+  async ({ chatId, content, attachments = [] }: SendChatMessageParams): Promise<boolean> => {
     const question = content.trim();
     const chat = findChat({ state: get(), chatId });
-    if (question === '' || chat === null || get().chatStreams[chatId] !== undefined) {
-      return;
+    const isImagesOn = isChatImagesOn({ state: get() });
+    const wanted = isImagesOn ? attachments : [];
+    if (
+      (question === '' && wanted.length === 0) ||
+      chat === null ||
+      get().chatStreams[chatId] !== undefined
+    ) {
+      return false;
     }
     const history = get().chatMessages[chatId] ?? [];
     const at = isoNow();
     const runId = crypto.randomUUID() as ProviderRunId;
-    const asked = draftMessage({ chatId, role: 'user', content: question, status: 'done', at });
+    const askedId = crypto.randomUUID() as ChatMessageId;
+    let images: ReadonlyArray<ChatMessageAttachment>;
+    try {
+      images = await saveChatImages({ chatId, messageId: askedId, attachments: wanted, at });
+    } catch {
+      return false;
+    }
+    const asked = draftMessage({
+      chatId,
+      role: 'user',
+      content: question,
+      status: 'done',
+      at,
+      id: askedId,
+      attachments: images,
+    });
+    const hasImages =
+      isImagesOn &&
+      (images.length > 0 || history.some((message) => message.attachments.length > 0));
     const reply = draftMessage({
       chatId,
       role: 'assistant',
@@ -133,7 +166,9 @@ export const sendChatMessage =
     });
     const title =
       history.length === 0 && chat.title === NEW_CHAT_TITLE
-        ? chatTitleFromQuestion({ question })
+        ? chatTitleFromQuestion({
+            question: question === '' ? (images[0]?.fileName ?? '') : question,
+          })
         : null;
 
     set((state) => ({
@@ -156,7 +191,14 @@ export const sendChatMessage =
       if (title !== null) {
         await activeChatBackend.rename({ chatId, title, now: at });
       }
-      const plan = planChatTurn({ state: get(), chat, history, question, runId });
+      const plan = planChatTurn({
+        state: get(),
+        chat,
+        history,
+        question: question === '' ? IMAGE_ONLY_QUESTION : question,
+        runId,
+        imagesOf: hasImages ? askedId : null,
+      });
       if (plan.kind === 'ready') {
         set((state) =>
           patchChatMessage({
@@ -198,4 +240,5 @@ export const sendChatMessage =
       outcome = { status: 'failed', error: formatError(error) };
     }
     await finishReply({ set, get, chatId, messageId: reply.id, outcome });
+    return true;
   };
