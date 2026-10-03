@@ -24,7 +24,7 @@ Pin the scripts you use from the Scripts lens or from the project row on the wor
 
 ### Open in editor
 
-Jump into VS Code, Cursor, Zed, the JetBrains IDEs, Sublime Text, Vim or Neovim, at the worktree or the file. VS Code and Cursor open it in the window you already have.
+Jump into VS Code, Cursor, Zed, the JetBrains IDEs, Sublime Text, Vim or Neovim, at the worktree or the file. VS Code and Cursor open it in the window you already have. **Open with**, in Settings, General, picks the editor, and the browser that links and artifacts open in: **System default** at first, with a note when the one you chose is no longer installed.
 
 ### Explore
 

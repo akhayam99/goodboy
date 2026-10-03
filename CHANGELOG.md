@@ -12,6 +12,83 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.15.5
+
+Settings open on a home, each workspace sets which providers it runs on, finished runs fold into one row, and one composer and selection bar work everywhere.
+
+### New
+
+#### Settings home
+<!-- gb area=settings screen=settings/app image=settings-home -->
+
+Settings, its footer button, `Cmd+,` and the palette open on a home with App, Workspace, Providers & models and Integrations as cards, each page with its status. Pick a page and the cards become the rail. The Settings crumb takes you back to the home.
+
+Workspace settings are pages now, each part in its own card. Copy settings from another workspace or restore the defaults in one inline flow that previews every change, and reset a single field where it differs from the default. Turning a folder into a repository happens inline on Projects.
+
+Every studio rail and the Inbox filters resize by drag, keys or a double click, and remember their width. An Open with card in General picks the editor and the browser that files, links and artifacts open in.
+
+#### Provider order and Auto
+<!-- gb area=providers screen=settings/providers image=provider-policy -->
+
+Providers in Defaults is one ordered list where each provider is On, Backup only or Off. Drag a row, or press Alt and an arrow, to change the order. Auto, pinned models, sessions, background tasks, workflow steps and the orchestrator all follow it, so an Off provider is never offered or estimated. The footer Providers button opens your limits and the same list.
+
+Each role in Defaults shows how it runs, and Models for that role takes up to three models for Auto to pick from. The provider order is saved in a new shape: if you go back to 0.15.4, it reads no order and starts work on any connected provider.
+
+#### Pause, resume and skip
+<!-- gb area=workflows screen=workflows -->
+
+Pause lets the step in flight finish and starts nothing new. Resume picks up where the run was, Skip cancels the step that is running, and a step quiet for 15 minutes offers Ask it to continue. If you go back to 0.15.4, a paused run shows as stopped.
+
+The step editor keeps Done as its one button and moves Duplicate, Save as step, Move and Delete into a menu, with Undo on Delete. A step follows its role or pins a model, and a step added to a running run opens the same editor.
+
+#### Fix diff notes with one agent per note
+<!-- gb area=review -->
+
+A note in the diff offers Fix, Close note and Delete, and the toolbar offers Fix N notes. Both open the fix strip under the diff with the model the fixers run on, and Start launches one agent per note. The notes drawer groups your notes by state, and Open in Review lands on them even with a pull request open.
+
+### Improved
+
+#### Finished runs fold into one row
+<!-- gb area=workflows -->
+
+A finished workflow run or agent chain with three rows or more folds into one row with its steps, answered questions, total time, cost and models. Runs that ask you something, failed or still run stay open, and so does one that finishes while you watch. A long group opens on the eight rows nearest the one you clicked, with Show more for the rest.
+
+A squashed history reads as groups, with a chip for each kind of change. In a narrow row the model shrinks to its icon before the title gives way.
+
+#### One selection bar for every list
+<!-- gb area=sessions image=selection-bar -->
+
+The Board, the session list, chats, Review comments, branches, worktree folders and the artifacts of deleted sessions share one selection bar: a checkbox on each row, the count, Select all and the actions. Delete and Remove confirm above the bar. `X` selects the row under the pointer and `Esc` clears.
+
+Every chat row shows its model, and a chat can be deleted from its row or its header.
+
+#### One composer for every agent field
+<!-- gb area=agents -->
+
+Chat, kickoff, answers, review replies, diff comments and workflow fields share one composer: Write and Preview, markdown, and files by paste, drop or Attach where the field takes them. Start agent and the issue kickoff now start on `Enter`, and review replies send on `Cmd+Enter`. Keys from before 0.15.5, in Shortcuts, brings the old keys back.
+
+The orchestrator hint takes several lines, markdown and images, and the next agent reads them.
+
+#### Artifacts grouped by state, with Undo
+<!-- gb area=artifacts -->
+
+Artifact lists group by state: Needs you, Ready, Running, Ran and Recently deleted. Each row says its state, such as Ready to run or Partly ran, and carries its action and a date, and New marks what arrived in the last day that you have not opened. Delete works on every kind with Undo, and Recently deleted restores.
+
+#### Storage, branches and pinned scripts
+<!-- gb area=storage screen=settings/app/storage -->
+
+Branches has its own page in App settings, with a Recently deleted group you can restore from. Storage also lists the Claude Code, Codex and Cursor folders on your Mac, read only, with their size. Pin a script per project and it shows in the lens, under `$` in the palette and on the Projects page.
+
+### Fixed
+
+- Context updates show in the Context drawer with their model and cost, and Update now queues one. <!-- gb area=sessions -->
+- Every shortcut the app lists is a key that works, the Inbox opens on its first row, and the Guide explains how Goodboy listens. <!-- gb area=app -->
+- The session overview says once what waits on you, and every chat linked to a session shows where it came from. <!-- gb area=sessions -->
+- The footer chip shows your version, the update pill stays calm, and Follow on X sits in its menu. <!-- gb area=app -->
+- Agents show a kind chip with an icon and a name, and the dog drawings are gone except the logo. <!-- gb area=agents -->
+- The Inbox shows Reply only on records you can reply to. <!-- gb area=inbox screen=inbox -->
+- Model names in the picker use the interface font. <!-- gb area=providers -->
+
 ## Goodboy v0.15.4
 
 Impact counts deleted sessions and what they shipped, Auto runs the newest model of each line, and one-click agents show their model before they start.

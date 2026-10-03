@@ -24,7 +24,7 @@ Spend a free Codex reset at the right moment. When Codex offers one, the Usage g
 
 Keep a task moving when a provider runs out. With another eligible provider connected, the turn can move there, and the chat records where it went.
 
-### Fallback order and Auto
+### Provider order and Auto
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-fallback-auto-dark.webp">

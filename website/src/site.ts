@@ -19,4 +19,5 @@ export const SITE = {
   privacy: POLICY,
   cookies: `${POLICY}/cookie-policy`,
   brew: 'brew install --cask akhayam99/tap/goodboy',
+  x: 'https://x.com/GoodboyWorks',
 } as const;
