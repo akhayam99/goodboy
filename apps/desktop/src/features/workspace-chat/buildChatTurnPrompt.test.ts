@@ -1,6 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { ChatId, ChatMessage, ChatMessageId, IsoDateTime } from '@goodboy/types';
+import type {
+  ChatAttachmentId,
+  ChatId,
+  ChatMessage,
+  ChatMessageId,
+  IsoDateTime,
+} from '@goodboy/types';
 import { buildChatSystemPrompt } from './buildChatSystemPrompt';
 import { buildChatTurnPrompt } from './buildChatTurnPrompt';
 
@@ -13,6 +19,7 @@ const message = (patch: Partial<ChatMessage>): ChatMessage => ({
   content: 'Where is the consent step defined?',
   status: 'done',
   reads: [],
+  attachments: [],
   error: null,
   provider: null,
   model: null,
@@ -23,6 +30,31 @@ const message = (patch: Partial<ChatMessage>): ChatMessage => ({
 });
 
 describe('buildChatTurnPrompt', () => {
+  it('names the images of earlier messages, even one sent without text', () => {
+    const screenshot = {
+      id: 'img' as ChatAttachmentId,
+      chatId: 'chat' as ChatId,
+      messageId: 'm' as ChatMessageId,
+      position: 0,
+      fileName: 'checkout-502.png',
+      mimeType: 'image/png',
+      byteSize: 2048,
+      createdAt: AT,
+    };
+    const prompt = buildChatTurnPrompt({
+      history: [
+        message({ content: '', attachments: [screenshot] }),
+        message({ role: 'assistant', content: 'The 502 comes from notify-relay.' }),
+      ],
+      question: 'And on Acme?',
+    });
+    expect(prompt.split('\n').slice(0, 3)).toEqual([
+      'Earlier in this chat:',
+      'User: (attached images: checkout-502.png)',
+      'Assistant: The 502 comes from notify-relay.',
+    ]);
+  });
+
   it('sends the first question alone', () => {
     expect(buildChatTurnPrompt({ history: [], question: '  Why does notify-relay retry? ' })).toBe(
       'Why does notify-relay retry?',

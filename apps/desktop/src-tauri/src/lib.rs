@@ -13,6 +13,7 @@ mod bridge;
 mod budget;
 mod changelog_images;
 mod chat;
+mod chat_images;
 mod codex_app_server;
 mod codex_rollout;
 mod config_export;
@@ -372,6 +373,10 @@ pub fn run() {
             turn::turn_list_live,
             chat::chat_turn,
             chat::chat_cancel,
+            chat_images::chat_attachment_write,
+            chat_images::chat_attachment_read,
+            chat_images::chat_attachments_remove,
+            chat_images::chat_attachments_prune,
             worktree_writer::worktree_writer_acquire,
             worktree_writer::worktree_writer_release,
             worktree_writer::worktree_writer_cancel,

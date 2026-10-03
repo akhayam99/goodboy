@@ -3,6 +3,7 @@ import {
   CHAT_PROVIDER_REFUSAL,
   isChatProvider,
   type ChatMessage,
+  type ChatMessageId,
   type ChatSummary,
   type EffortLevel,
   isEffortLevel,
@@ -34,6 +35,7 @@ type Params = {
   readonly history: ReadonlyArray<ChatMessage>;
   readonly question: string;
   readonly runId: ProviderRunId;
+  readonly imagesOf?: ChatMessageId | null;
 };
 
 type ModelPlanParams = Pick<Params, 'chat'>;
@@ -53,7 +55,14 @@ const planModel = ({ chat }: ModelPlanParams): ModelPlan => {
   }
 };
 
-export const planChatTurn = ({ state, chat, history, question, runId }: Params): ChatTurnPlan => {
+export const planChatTurn = ({
+  state,
+  chat,
+  history,
+  question,
+  runId,
+  imagesOf = null,
+}: Params): ChatTurnPlan => {
   if (!isChatProvider(chat.provider)) {
     return { kind: 'blocked', error: CHAT_PROVIDER_REFUSAL };
   }
@@ -88,6 +97,7 @@ export const planChatTurn = ({ state, chat, history, question, runId }: Params):
       ...(effort !== null && { effort }),
       workingDir: folder.workingDir,
       prompt: buildChatTurnPrompt({ history, question }),
+      ...(imagesOf !== null && { images: { messageId: imagesOf } }),
       systemPrompt: buildChatSystemPrompt({
         workspaceName: workspace?.name ?? 'current',
         projects: projects.map((project) => ({

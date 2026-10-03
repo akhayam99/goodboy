@@ -19,12 +19,19 @@ type HistoryParams = {
   readonly history: ReadonlyArray<ChatMessage>;
 };
 
+const lineOf = ({ message }: MessageParams): string => {
+  const text = message.content.trim();
+  const images = message.attachments.map((attachment) => attachment.fileName).join(', ');
+  const imageNote = images === '' ? '' : `(attached images: ${images})`;
+  return `${speakerOf({ message })}: ${[text, imageNote].filter((part) => part !== '').join(' ')}`;
+};
+
 const usableHistory = ({ history }: HistoryParams): ReadonlyArray<string> => {
   const lines = history
-    .filter((message) => message.content.trim() !== '')
+    .filter((message) => message.content.trim() !== '' || message.attachments.length > 0)
     .filter((message) => message.role === 'user' || message.status !== 'failed')
     .slice(-MAX_HISTORY_MESSAGES)
-    .map((message) => `${speakerOf({ message })}: ${message.content.trim()}`);
+    .map((message) => lineOf({ message }));
   const kept: string[] = [];
   let total = 0;
   for (const line of [...lines].reverse()) {

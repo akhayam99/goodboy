@@ -400,6 +400,7 @@ cleanup) and moving those calls behind the commands is not done yet.
 | `artifact_revisions`          | ts     |                                                                                                                     |
 | `budget_alerts`               | rust   | `budget.rs`                                                                                                         |
 | `budget_rules`                | rust   | `budget.rs`, and the backup import                                                                                  |
+| `chat_message_attachments`    | ts     | Rows go in with their message through `insertChatMessage`. Rust reads them to build a turn's image root.            |
 | `chat_messages`               | ts     |                                                                                                                     |
 | `chat_session_links`          | ts     |                                                                                                                     |
 | `chats`                       | ts     |                                                                                                                     |

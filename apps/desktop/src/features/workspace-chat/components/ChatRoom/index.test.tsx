@@ -115,15 +115,22 @@ const CHAT: ChatSummary = {
 };
 
 type MessageSeed = Pick<ChatMessage, 'role' | 'content' | 'status'> &
-  Partial<Pick<ChatMessage, 'reads'>>;
+  Partial<Pick<ChatMessage, 'reads' | 'attachments'>>;
 
-const messageOf = ({ role, content, status, reads = [] }: MessageSeed): ChatMessage => ({
+const messageOf = ({
+  role,
+  content,
+  status,
+  reads = [],
+  attachments = [],
+}: MessageSeed): ChatMessage => ({
   id: `${role}-${status}` as ChatMessageId,
   chatId: CHAT_ID,
   role,
   content,
   status,
   reads,
+  attachments,
   error: null,
   provider: null,
   model: null,
@@ -691,6 +698,7 @@ describe('ChatRoom', () => {
     expect(store.sendChatMessage).toHaveBeenCalledWith({
       chatId: 'chat-new',
       content: 'Where do we validate IBANs?',
+      attachments: [],
     });
   });
 
