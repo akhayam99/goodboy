@@ -3,6 +3,7 @@ import { Band } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { resolveStorageScope } from '../../resolveStorageScope';
 import { ArtifactSection } from './ArtifactSection';
+import { OtherToolsSection } from './OtherToolsSection';
 import { StorageHistory } from './StorageHistory';
 import { StorageSummary } from './StorageSummary';
 import { WorktreeSection } from './WorktreeSection';
@@ -29,6 +30,7 @@ export const StoragePage = () => {
       <WorktreeSection scope={scope} />
       <ArtifactSection scope={scope} />
       <StorageHistory />
+      <OtherToolsSection />
     </div>
   );
 };

@@ -225,6 +225,7 @@ export const NON_SESSION_STATE_KEYS = [
   'storageScope',
   'storageArtifacts',
   'storageDeletingArtifacts',
+  'storageOtherTools',
   'budgetRules',
   'providerSpendBreakdown',
   'providerBudgetStatus',

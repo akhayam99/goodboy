@@ -12,6 +12,7 @@ import type { BranchMergeState } from '../../../../../features/worktree/worktree
 import type { BranchLocation, ProjectBranch } from '../../../../../features/worktree/branchCleanup';
 import type { BranchScanEntry } from '../../../../../store/slices/branch-cleanup';
 import type { StorageFolder, StorageRoot } from '../../../../../store/slices/storage/types';
+import type { OtherToolUsage } from '../../../../../features/storage/otherTools';
 import { useAppStore } from '../../../../../store';
 import { SettingsFrame } from '../audit/SettingsFrame';
 import { SETTINGS_PROJECTS, SETTINGS_WORKSPACE_ID } from '../audit/settingsSeed';
@@ -367,6 +368,35 @@ const DELETED: ReadonlyArray<DeletedBranch> = [
   }),
 ];
 
+const MB = 1024 * 1024;
+
+const OTHER_TOOLS: ReadonlyArray<OtherToolUsage> = [
+  {
+    id: 'claude-code',
+    path: '/mock/home/.claude',
+    displayPath: '~/.claude',
+    bytes: 6_100 * MB,
+    sessions: 4_405,
+    goodboyBytes: 312 * MB,
+  },
+  {
+    id: 'codex',
+    path: '/mock/home/.codex',
+    displayPath: '~/.codex',
+    bytes: 976 * MB,
+    sessions: 1_275,
+    goodboyBytes: 104 * MB,
+  },
+  {
+    id: 'cursor',
+    path: '/mock/home/.cursor',
+    displayPath: '~/.cursor',
+    bytes: 2_000 * MB,
+    sessions: 2_916,
+    goodboyBytes: 86 * MB,
+  },
+];
+
 export const seedStorageScene = (): void => {
   seedBrandSettings();
   const state = useAppStore.getState();
@@ -388,6 +418,9 @@ export const seedStorageScene = (): void => {
     loadProjectBranches: async () => undefined,
     loadDeletedBranches: async () => undefined,
     deletedBranches: { [SETTINGS_WORKSPACE_ID]: DELETED },
+    storageOtherTools: { status: 'ready', tools: OTHER_TOOLS },
+    loadOtherTools: async () => undefined,
+    cancelOtherTools: async () => undefined,
   });
 };
 
