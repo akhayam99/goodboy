@@ -63,7 +63,7 @@ Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from one page.
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-about-you-light.webp" alt="The About you section of workspace settings with four fields: Your roles (Tech Lead, Backend Engineer), About your work, How agents should work with you, and Explain more when it touches (Rust), with a See who reads what link">
 </picture>
 
-Tell agents once who you are and how you like to work, in four short parts: **Your roles**, **About your work**, **How agents should work with you** and **Explain more when it touches**. **See who reads what** shows which role reads each part.
+Tell agents once who you are and how you like to work, in four short parts: **Your roles**, **About your work**, **How agents should work with you** and **Explain more when it touches**. **See who reads what** shows which role reads each part. Under **Explain more when it touches**, **Learned · 12 · Open** opens what agents explained about your topics in this workspace, grouped by topic, with the project and age of each one. A learning from a deleted session stays and says **Deleted session**.
 
 **Also in this area**
 

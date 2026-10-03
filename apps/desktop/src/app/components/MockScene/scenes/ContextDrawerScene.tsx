@@ -3,7 +3,7 @@ import { ActivityRunScene } from './ActivityRunScene';
 
 const contextTabFromUrl = (): ContextDrawerTab => {
   const tab = new URLSearchParams(window.location.search).get('tab');
-  return tab === 'goal' || tab === 'summary' ? tab : 'decisions';
+  return tab === 'goal' || tab === 'summary' || tab === 'learned' ? tab : 'decisions';
 };
 
 export const ContextDrawerScene = () => <ActivityRunScene contextTab={contextTabFromUrl()} />;

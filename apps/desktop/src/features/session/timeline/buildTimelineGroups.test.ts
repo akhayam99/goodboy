@@ -9,6 +9,8 @@ import type {
   ProjectId,
   PlanWithCount,
   SessionArtifact,
+  SessionContextItem,
+  SessionContextItemId,
   SessionEvent,
   SessionEventId,
   SessionEventKind,
@@ -205,6 +207,7 @@ type BuildParams = {
   readonly externalTasks?: ReadonlyArray<SessionExternalTask>;
   readonly worktrees?: ReadonlyArray<SessionWorktree>;
   readonly events?: ReadonlyArray<SessionEvent>;
+  readonly learnings?: ReadonlyArray<SessionContextItem>;
 };
 
 const build = ({
@@ -217,6 +220,7 @@ const build = ({
   externalTasks = [],
   worktrees = [],
   events = [],
+  learnings = [],
 }: BuildParams) =>
   buildTimelineGroups({
     sessionId,
@@ -228,8 +232,48 @@ const build = ({
     questions,
     worktrees,
     events,
+    learnings,
     agentKindOverride: {},
   });
+
+const learning = ({
+  id,
+  status = 'active',
+  at,
+}: {
+  readonly id: string;
+  readonly status?: SessionContextItem['status'];
+  readonly at: string;
+}): SessionContextItem => ({
+  id: typedString<SessionContextItemId>({ value: id }),
+  sessionId: SESSION_ID,
+  workspaceId: typedString<WorkspaceId>({ value: 'workspace-1' }),
+  kind: 'learning',
+  title: `Learned ${id}`,
+  text: 'Explained.',
+  topic: 'Rust',
+  source: null,
+  audience: [],
+  status,
+  projectName: null,
+  isSessionDeleted: false,
+  createdAt: typedString<IsoDateTime>({ value: at }),
+  updatedAt: typedString<IsoDateTime>({ value: at }),
+});
+
+describe('buildTimelineGroups, learnings', () => {
+  it('adds an active learning at its time and leaves a dismissed one out', () => {
+    const model = build({
+      agents: [agent({ id: 'a1', startedAt: '2026-08-17T09:00:00Z' })],
+      learnings: [
+        learning({ id: 'kept', at: '2026-08-17T10:00:00Z' }),
+        learning({ id: 'gone', status: 'dismissed', at: '2026-08-17T11:00:00Z' }),
+      ],
+    });
+
+    expect(model.entries.map((entry) => entry.id)).toEqual(['learning:kept', 'agent:a1']);
+  });
+});
 
 describe('buildTimelineGroups', () => {
   it('places a completed agent with NULL started_at at completed_at', () => {

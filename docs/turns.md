@@ -482,6 +482,18 @@ desktop state that reaches the mobile client through the snapshot, next to the
 paths-only `files_touched` slot the client falls back to. A git failure never
 fails the turn.
 
+## Learnings
+
+After a successful turn whose role received the "Explain more when the work
+touches" line, and only when that field has topics, the turn joins a learnings
+queue per agent (`learningQueue.ts`). One pass runs at a time per agent; turns
+that finish meanwhile are read together and the learning cites the merged turn
+range. It runs on the `learnings` task model (Defaults, Writing for you), off
+the summarizer queue, so no workflow step waits for it. A pass records its cost
+like the summarizer and writes `session_context_items` rows of kind `learning`
+only for concrete explanations of a listed topic. `context.learnings` set to
+`false` stops new passes.
+
 ## The session summarizer
 
 After each successful turn the session summarizer condenses what happened into

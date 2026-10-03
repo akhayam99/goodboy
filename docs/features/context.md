@@ -37,6 +37,10 @@ Open goal, decisions and summary from any session page with the **Context** butt
 
 See which agents read each part of the context. Under the tabs, **Visible to** says which roles receive the open tab ("All roles except Scout, Docs") and opens to one chip per role. Each role receives a fixed set: planners, implementers, reviewers, debuggers and resolvers get the decisions, scouts and docs agents do not, and the generalist, tester, report, scribe, wireframe and history rewriter get everything. You always see everything; the limit is only on what goes into an agent's prompt.
 
+### Learned
+
+Read back what agents explained about the topics you follow. When you list topics under **Explain more when it touches** in About you, and an agent concretely explains something that touches one of them, a short learning appears in the **Learned** tab with its topic, the turns it came from and who wrote it. Activity shows it as a compact **Learned · Rust · title** row. Learnings are written for you, so **Visible to** reads **You only**. **Dismiss** hides one, with **Undo**.
+
 ### Context budgets
 
 Keep prompts small as a session grows. Each part of the shared brief has its own size, and when decisions run over, the newest are kept.

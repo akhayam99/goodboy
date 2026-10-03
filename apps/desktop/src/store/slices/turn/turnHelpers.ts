@@ -268,7 +268,7 @@ const mergeTelemetry = ({
   return [...recordsById.values()];
 };
 
-const scheduleIdle = ({ run }: { readonly run: () => void }): void => {
+export const scheduleIdle = ({ run }: { readonly run: () => void }): void => {
   if (typeof requestIdleCallback === 'function') {
     requestIdleCallback(() => run());
     return;

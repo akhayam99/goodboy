@@ -150,7 +150,7 @@ Plans, reports and wireframes live next to the task, not inside a chat.
 
 [More on plans, reports and wireframes](docs/features/artifacts.md)
 
-<a id="decisions"></a><a id="see-why-each-decision-was-made"></a><a id="running-summary"></a><a id="context-drawer"></a><a id="who-receives-what"></a><a id="context-budgets"></a><a id="plans-handed-to-the-next-agent"></a>
+<a id="decisions"></a><a id="see-why-each-decision-was-made"></a><a id="running-summary"></a><a id="context-drawer"></a><a id="who-receives-what"></a><a id="learned"></a><a id="context-budgets"></a><a id="plans-handed-to-the-next-agent"></a>
 
 ## Shared context
 
@@ -160,6 +160,7 @@ What one agent learns, the next one reads. The goal, decisions and a running sum
 - Running summary
 - Context drawer
 - Who receives what
+- Learned
 
 [More on shared context](docs/features/context.md)
 

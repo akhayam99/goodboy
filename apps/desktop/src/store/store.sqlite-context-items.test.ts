@@ -4,21 +4,25 @@ import type {
   AgentId,
   AgentRole,
   IsoDateTime,
+  ProviderRunId,
   SessionContextItemId,
   SessionId,
+  TurnEvent,
   WorkspaceId,
 } from '@goodboy/types';
 import type { AgentKind } from '../features/session/agent-kind';
-import { SETTING_CONTEXT_ROLE_MAP } from '../features/settings/settings';
+import { SETTING_CONTEXT_LEARNINGS, SETTING_CONTEXT_ROLE_MAP } from '../features/settings/settings';
+import { learningQueues } from './slices/turn/learningQueue';
 import { summarizerQueues } from './slices/turn/turnHelpers';
 import {
   buildStoryWorkspace,
   connectedAnthropicState,
-  emptyTurnStream,
   importStore,
   openStorySqlite,
   resetStoryStore,
+  rowsOf,
   STORE_IMPORT_TIMEOUT_MS,
+  storySummarizeSession,
   storySpies,
   storySqlite,
   stubStoryInvoke,
@@ -57,13 +61,38 @@ const AT = '2026-10-03T09:00:00.000Z' as IsoDateTime;
 const NOTE = 'Check the retry schedule against the Acme receiver';
 const DECISION = 'D1 Retry up to five times with exponential backoff';
 
+const PROFILE = {
+  roles: ['Tech Lead'],
+  aboutWork: null,
+  workingRules: null,
+  explainMore: ['Rust'],
+};
 const workspace = buildStoryWorkspace({ id: WORKSPACE_ID, name: 'Harborline', slug: 'harborline' });
+const LEARNING_PROMPT = 'Extract explanations';
+const EXPLAINED = {
+  topic: 'Rust',
+  title: 'Why select! can drop a half-sent request',
+  text: 'select! cancels every branch that did not win, so a losing request is dropped mid-write.',
+};
 
 let useAppStore: StoryStore;
 
 beforeAll(async () => {
   useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
+
+const ACTIVE_TURN: ReadonlySet<string> = new Set(['starting', 'running']);
+
+const isTurnActive = ({ agentId }: { readonly agentId: AgentId }): boolean =>
+  ACTIVE_TURN.has(useAppStore.getState().agentTurnState[agentId]?.kind ?? 'idle');
+
+async function* explainingStream({
+  runId,
+}: {
+  readonly runId: ProviderRunId;
+}): AsyncIterable<TurnEvent> {
+  yield { kind: 'assistant_text', runId, delta: EXPLAINED.text, at: AT };
+}
 
 type Started = { readonly sessionId: SessionId; readonly agentId: AgentId };
 
@@ -78,9 +107,11 @@ const startSession = async ({ kind }: { readonly kind: AgentKind }): Promise<Sta
   if (agent === undefined) {
     throw new Error('createSession left no agent');
   }
-  await vi.waitFor(() =>
-    expect(useAppStore.getState().agentTurnState[agent.id]?.kind ?? 'idle').toBe('idle'),
-  );
+  if (kind !== 'generic') {
+    await vi.waitFor(() =>
+      expect(useAppStore.getState().agentTurnState[agent.id]?.kind).toBe('idle'),
+    );
+  }
   const decisions = { key: 'decisions', value: DECISION, enabled: true } as const;
   await upsertContextSlot(storySqlite(), sessionId, decisions);
   useAppStore.setState((state) => ({
@@ -139,12 +170,61 @@ beforeEach(async () => {
   storySpies.scratchDirPrepare.mockResolvedValue('/tmp/goodboy-root/scratch/harborline');
   stubStoryInvoke({ workspaces_with_unread: [] });
   storySpies.cancelTurn.mockResolvedValue(undefined);
-  storySpies.runTurn.mockImplementation(() => emptyTurnStream());
+  storySpies.runTurn.mockImplementation(({ runId }: { readonly runId: ProviderRunId }) =>
+    explainingStream({ runId }),
+  );
 });
 
 afterEach(async () => {
   await vi.waitFor(() => expect(summarizerQueues.size).toBe(0));
+  await vi.waitFor(() => expect(learningQueues.size).toBe(0));
 });
+
+type AuxCall = {
+  readonly args: {
+    readonly providerId: string;
+    readonly systemPrompt: string;
+    readonly userMessage: string;
+  };
+};
+
+const summarizeStep = storySummarizeSession('The step finished.');
+
+const answerLearnings = ({
+  items,
+  hold,
+}: {
+  readonly items: ReadonlyArray<Record<string, unknown>>;
+  readonly hold?: Promise<void>;
+}) => {
+  const calls: Array<string> = [];
+  stubStoryInvoke({
+    workspaces_with_unread: [],
+    summarize_session: async (call: AuxCall) => {
+      if (!call.args.systemPrompt.startsWith(LEARNING_PROMPT)) {
+        return summarizeStep(call);
+      }
+      calls.push(call.args.userMessage);
+      if (hold !== undefined) {
+        await hold;
+      }
+      return {
+        stdout: JSON.stringify({ result: JSON.stringify({ items }), subtype: 'success' }),
+        stderr: '',
+        exitCode: 0,
+      };
+    },
+  });
+  return calls;
+};
+
+const withProfile = () =>
+  useAppStore.setState({ workspaces: [{ ...workspace, profile: PROFILE }] });
+
+const learningRows = () =>
+  rowsOf<{ topic: string; title: string; source_json: string; audience_json: string }>({
+    sql: "SELECT topic, title, source_json, audience_json FROM session_context_items WHERE kind = 'learning'",
+  });
 
 describe('role context on sqlite', () => {
   it('sends a reviewer-only note and the decisions to the reviewer', async () => {
@@ -168,5 +248,73 @@ describe('role context on sqlite', () => {
 
     expect(prompt).not.toContain(NOTE);
     expect(prompt).not.toContain(DECISION);
+  });
+});
+
+describe('learnings on sqlite', () => {
+  it('writes a learning when an agent explained a topic you follow', async () => {
+    withProfile();
+    const calls = answerLearnings({ items: [EXPLAINED] });
+    const started = await startSession({ kind: 'generic' });
+
+    await promptOf(started);
+
+    await vi.waitFor(async () => expect(await learningRows()).toHaveLength(1));
+    const [row] = await learningRows();
+    expect(row).toMatchObject({ topic: 'Rust', title: EXPLAINED.title, audience_json: '[]' });
+    expect(JSON.parse(row?.source_json ?? '{}')).toMatchObject({ role: 'custom' });
+    expect(calls.at(-1)).toContain('Topics: Rust');
+    const items = useAppStore.getState().sessionContextItems[started.sessionId] ?? [];
+    expect(items.filter((item) => item.kind === 'learning').map((item) => item.title)).toEqual([
+      EXPLAINED.title,
+    ]);
+  });
+
+  it('writes nothing when the turn explained none of the topics', async () => {
+    withProfile();
+    const calls = answerLearnings({ items: [] });
+
+    await promptOf(await startSession({ kind: 'generic' }));
+
+    await vi.waitFor(() => expect(calls.length).toBeGreaterThan(0));
+    await vi.waitFor(() => expect(learningQueues.size).toBe(0));
+    expect(await learningRows()).toEqual([]);
+  });
+
+  it('never runs with the field empty, for a role without the line, or with the switch off', async () => {
+    const calls = answerLearnings({ items: [EXPLAINED] });
+    await promptOf(await startSession({ kind: 'generic' }));
+
+    withProfile();
+    await promptOf(await startSession({ kind: 'implementer' }));
+
+    useAppStore.setState({ settings: { [SETTING_CONTEXT_LEARNINGS]: 'false' } });
+    await promptOf(await startSession({ kind: 'generic' }));
+
+    await vi.waitFor(() => expect(summarizerQueues.size).toBe(0));
+    expect(learningQueues.size).toBe(0);
+    expect(calls).toEqual([]);
+    expect(await learningRows()).toEqual([]);
+  });
+
+  it('settles the turn and finishes the summary while the learnings are still running', async () => {
+    withProfile();
+    let release: () => void = () => undefined;
+    const hold = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const calls = answerLearnings({ items: [EXPLAINED], hold });
+    const started = await startSession({ kind: 'generic' });
+
+    await promptOf(started);
+
+    await vi.waitFor(() => expect(calls.length).toBeGreaterThan(0));
+    await vi.waitFor(() => expect(summarizerQueues.size).toBe(0));
+    expect(learningQueues.get(started.agentId)?.isRunning).toBe(true);
+    expect(isTurnActive({ agentId: started.agentId })).toBe(false);
+    expect(await learningRows()).toEqual([]);
+
+    release();
+    await vi.waitFor(async () => expect(await learningRows()).toHaveLength(1));
   });
 });

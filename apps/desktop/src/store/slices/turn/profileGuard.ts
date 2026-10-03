@@ -52,3 +52,10 @@ export const buildProfileGuard = ({ profile, audience }: GuardParams): string =>
     '\n',
   );
 };
+
+export const explainMoreTopicsFor = ({ profile, audience }: GuardParams): ReadonlyArray<string> => {
+  if (profile === undefined || !PROFILE_ACCESS[audience].includes('explainMore')) {
+    return [];
+  }
+  return profile.explainMore.map((topic) => topic.trim()).filter((topic) => topic !== '');
+};

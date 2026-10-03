@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { WorkspaceProfile } from '@goodboy/types';
-import { buildProfileGuard } from './profileGuard';
+import { buildProfileGuard, explainMoreTopicsFor } from './profileGuard';
 
 const FULL: WorkspaceProfile = {
   roles: ['Tech Lead', 'Backend Engineer'],
@@ -82,5 +82,27 @@ describe('buildProfileGuard', () => {
       audience: 'planner',
     });
     expect(guard).toContain('About their work:\nline one\nline two\n[/user-profile]');
+  });
+});
+
+describe('explainMoreTopicsFor', () => {
+  it('returns the topics for a role that reads the explain-more line', () => {
+    expect(explainMoreTopicsFor({ profile: FULL, audience: 'reviewer' })).toEqual([
+      'Rust',
+      'Kubernetes',
+    ]);
+  });
+
+  it('returns nothing for a role that never receives the line', () => {
+    expect(explainMoreTopicsFor({ profile: FULL, audience: 'implementer' })).toEqual([]);
+    expect(explainMoreTopicsFor({ profile: FULL, audience: 'questionDelegate' })).toEqual([]);
+  });
+
+  it('returns nothing when the field is empty or blank', () => {
+    expect(explainMoreTopicsFor({ profile: EMPTY, audience: 'custom' })).toEqual([]);
+    expect(
+      explainMoreTopicsFor({ profile: { ...EMPTY, explainMore: [' '] }, audience: 'custom' }),
+    ).toEqual([]);
+    expect(explainMoreTopicsFor({ profile: undefined, audience: 'custom' })).toEqual([]);
   });
 });
