@@ -1,29 +1,48 @@
-// @vitest-environment node
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../../store/storyHarness')).dbModuleMock());
+vi.mock('../../../shared/lib/db', async () =>
+  (await import('../../../store/storyHarness')).dbLibModuleMock(),
+);
+
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
-
-const { store } = vi.hoisted(() => ({
-  store: {
-    startSessionFromDraft: vi.fn(async () => undefined),
-    patchSessionDraft: vi.fn(),
-    openSessionDraft: vi.fn(),
-  },
-}));
-
-vi.mock('../../../store', () => ({
-  useAppStore: { getState: () => store },
-}));
-
+import { aSession } from '@goodboy/types/testing';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../store/storyHarness';
 import { scoutKickoffPrompt } from '../../session/components/SessionKickoff/AgentStart';
 import { handOffFirstSession, startFirstScout } from './startFirstSession';
 
 const WORKSPACE_ID = 'workspace-harborline' as WorkspaceId;
 const PROJECT_ID = 'project-ledger-core' as ProjectId;
 
-beforeEach(() => {
-  store.startSessionFromDraft.mockClear();
-  store.patchSessionDraft.mockClear();
-  store.openSessionDraft.mockClear();
+type Started = Parameters<ReturnType<StoryStore['getState']>['startSessionFromDraft']>[0];
+
+let useAppStore: StoryStore;
+let started: Started[];
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+  started = [];
+  useAppStore.setState({
+    currentWorkspaceId: WORKSPACE_ID,
+    startSessionFromDraft: async (input) => {
+      started.push(input);
+      return aSession({ workspaceId: input.workspaceId });
+    },
+  });
 });
 
 describe('startFirstScout', () => {
@@ -34,21 +53,19 @@ describe('startFirstScout', () => {
       prompt: 'Find one small bug',
     });
 
-    expect(store.patchSessionDraft).toHaveBeenCalledWith({
-      workspaceId: WORKSPACE_ID,
-      patch: { projectId: PROJECT_ID },
-    });
-
-    expect(store.startSessionFromDraft).toHaveBeenCalledWith({
-      workspaceId: WORKSPACE_ID,
-      start: {
-        kind: 'scout',
-        agentKind: 'scout',
-        focus: 'Find one small bug',
-        prompt: scoutKickoffPrompt({ focus: 'Find one small bug' }),
-        routing: null,
+    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.projectId).toBe(PROJECT_ID);
+    expect(started).toEqual([
+      {
+        workspaceId: WORKSPACE_ID,
+        start: {
+          kind: 'scout',
+          agentKind: 'scout',
+          focus: 'Find one small bug',
+          prompt: scoutKickoffPrompt({ focus: 'Find one small bug' }),
+          routing: null,
+        },
       },
-    });
+    ]);
   });
 });
 
@@ -56,10 +73,11 @@ describe('handOffFirstSession', () => {
   it('opens the session draft on the picked choice and project', () => {
     handOffFirstSession({ workspaceId: WORKSPACE_ID, projectId: PROJECT_ID, choice: 'workflow' });
 
-    expect(store.patchSessionDraft).toHaveBeenCalledWith({
-      workspaceId: WORKSPACE_ID,
-      patch: { choice: 'workflow', projectId: PROJECT_ID },
+    const draft = useAppStore.getState().sessionDrafts[WORKSPACE_ID];
+    expect({ choice: draft?.choice, projectId: draft?.projectId }).toEqual({
+      choice: 'workflow',
+      projectId: PROJECT_ID,
     });
-    expect(store.openSessionDraft).toHaveBeenCalledOnce();
+    expect(useAppStore.getState().openSessionDraftWorkspaceId).toBe(WORKSPACE_ID);
   });
 });

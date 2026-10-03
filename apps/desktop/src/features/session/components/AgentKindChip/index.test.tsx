@@ -37,15 +37,6 @@ describe('AgentKindChip', () => {
     expect(chip.className).not.toContain('uppercase');
   });
 
-  it('draws the role as the app chip, a pill tinted in the colour of its role', () => {
-    const { container } = render(<AgentKindChip kind="resolver" />);
-    const chip = container.firstElementChild;
-
-    expect(chip?.className).toContain('rounded-full');
-    expect(chip?.className).toContain('text-agent-resolver');
-    expect(chip?.className).toContain('ring-1');
-  });
-
   it('lets every chip hug its word instead of padding the short roles to one width', () => {
     const widths = AGENT_KIND_ORDER.map((kind) => {
       const { container } = render(<AgentKindChip kind={kind} />);

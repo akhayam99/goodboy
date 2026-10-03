@@ -82,10 +82,10 @@ describe('TurnFooter', () => {
         startedAt={'2026-06-08T10:00:00.000Z' as IsoDateTime}
       />,
     );
-    expect(screen.getByText('42s')).toBeTruthy();
-    expect(screen.getByText(/in ·/)).toBeTruthy();
-    expect(screen.getByText('~$0.12')).toBeTruthy();
-    expect(screen.getByText('47% cached')).toBeTruthy();
+    screen.getByText('42s');
+    screen.getByText(/in ·/);
+    screen.getByText('~$0.12');
+    screen.getByText('47% cached');
   });
 
   it('never shows $0.00: hides the cost entry when it is unknown', () => {
@@ -97,8 +97,8 @@ describe('TurnFooter', () => {
     render(<TurnFooter item={usageItem()} sessionId={null} agentId={null} />);
     expect(screen.queryByText('Input')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Turn detail' }));
-    expect(screen.getByText('Input')).toBeTruthy();
-    expect(screen.getByText('Output')).toBeTruthy();
+    screen.getByText('Input');
+    screen.getByText('Output');
   });
 
   it('renders a stopped row with the stopped node instead of the full stats line', () => {
@@ -111,12 +111,12 @@ describe('TurnFooter', () => {
         startedAt={'2026-06-08T10:00:00.000Z' as IsoDateTime}
       />,
     );
-    expect(screen.getByText('Stopped after 42s')).toBeTruthy();
+    screen.getByText('Stopped after 42s');
     expect(screen.queryByRole('button', { name: 'Turn detail' })).toBeNull();
   });
 
   it('renders a failed row with the failed node', () => {
     render(<TurnFooter item={usageItem()} sessionId={null} agentId={null} outcome="failed" />);
-    expect(screen.getByText('Failed')).toBeTruthy();
+    screen.getByText('Failed');
   });
 });
