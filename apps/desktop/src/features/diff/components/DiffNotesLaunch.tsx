@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { X } from 'lucide-react';
-import { IconButton } from '@goodboy/ui';
+import { IconButton, Notice } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { FIRST_LAP_REFUSAL, selectFirstLapProject } from '../../../store/slices/bootstrap/firstLap';
@@ -44,14 +44,21 @@ export const DiffNotesLaunch = ({ sessionId }: Props) => {
         {started ?? ''}
       </p>
       {threadIds === null ? null : isFirstLap ? (
-        <section
-          aria-label={REVIEW_LAUNCH_LABEL.strip}
-          className="flex min-w-0 items-start gap-2 rounded-lg bg-subtle px-4 py-3"
-        >
-          <p role="alert" className="min-w-0 flex-1 text-body text-muted-foreground">
-            {FIRST_LAP_REFUSAL}
-          </p>
-          <IconButton icon={X} label={REVIEW_LAUNCH_LABEL.close} variant="ghost" onClick={close} />
+        <section aria-label={REVIEW_LAUNCH_LABEL.strip}>
+          <Notice
+            tone="info"
+            placement="inline"
+            role="alert"
+            title={FIRST_LAP_REFUSAL}
+            actions={
+              <IconButton
+                icon={X}
+                label={REVIEW_LAUNCH_LABEL.close}
+                variant="ghost"
+                onClick={close}
+              />
+            }
+          />
         </section>
       ) : (
         <ReviewLaunchStrip
