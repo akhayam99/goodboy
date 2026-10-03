@@ -41,7 +41,5 @@ export const startedLine = ({
   readonly modelName: string;
 }): string => `${count} ${count === 1 ? 'agent' : 'agents'} started on ${modelName}`;
 
-export const selectedLabel = ({ count }: { readonly count: number }): string => `${count} selected`;
-
 export const fixSelectedLabel = ({ count }: { readonly count: number }): string =>
   count === 1 ? 'Fix' : `Fix ${count} separately`;
