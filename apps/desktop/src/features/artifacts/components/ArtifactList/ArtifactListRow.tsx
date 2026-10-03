@@ -175,23 +175,25 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
           {at === null ? null : <RelativeTime iso={at} title={atTitle} />}
         </span>
         <span className="flex shrink-0 items-center gap-0.5">
-          {primary === null ? null : (
-            <span className="mr-1 flex w-[92px] justify-end">
-              <Button
-                size="sm"
-                variant={primary.slot === 'primary' ? 'primary' : 'secondary'}
-                emphasis={primary.slot === 'primary' ? 'outline' : 'solid'}
-                disabled={primary.blockedReason !== null}
-                isBusy={controls.pendingId === primary.id}
-                title={primary.blockedReason ?? primary.description ?? undefined}
-                onClick={() => controls.trigger({ actionId: primary.id })}
-              >
-                {primary.shortLabel}
-              </Button>
+          {isDeleted ? null : (
+            <span className="mr-1 flex w-[92px] justify-end @max-[400px]:w-16">
+              {primary === null ? null : (
+                <Button
+                  size="sm"
+                  variant={primary.slot === 'primary' ? 'primary' : 'secondary'}
+                  emphasis={primary.slot === 'primary' ? 'outline' : 'solid'}
+                  disabled={primary.blockedReason !== null}
+                  isBusy={controls.pendingId === primary.id}
+                  title={primary.blockedReason ?? primary.description ?? undefined}
+                  onClick={() => controls.trigger({ actionId: primary.id })}
+                >
+                  {primary.shortLabel}
+                </Button>
+              )}
             </span>
           )}
-          {hover.length === 0 ? null : (
-            <span className="pointer-events-none flex shrink-0 items-center opacity-0 transition-opacity group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100 @max-[560px]:hidden">
+          {isDeleted ? null : (
+            <span className="pointer-events-none flex w-[84px] shrink-0 items-center justify-end opacity-0 transition-opacity group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100 @max-[560px]:hidden">
               {hover.map((action) => (
                 <IconButton
                   key={action.id}
@@ -228,16 +230,20 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
               Delete permanently
             </Button>
           )}
-          {deleteAction === null ? null : (
-            <IconButton
-              icon={deleteAction.icon}
-              iconSize={ICON_SIZE.control}
-              label={`Delete ${row.title}`}
-              tooltip="Delete"
-              variant="ghost"
-              disabled={deleteAction.blockedReason !== null}
-              onClick={() => controls.trigger({ actionId: deleteAction.id })}
-            />
+          {isDeleted ? null : (
+            <span className="flex w-8 shrink-0 justify-center">
+              {deleteAction === null ? null : (
+                <IconButton
+                  icon={deleteAction.icon}
+                  iconSize={ICON_SIZE.control}
+                  label={`Delete ${row.title}`}
+                  tooltip="Delete"
+                  variant="ghost"
+                  disabled={deleteAction.blockedReason !== null}
+                  onClick={() => controls.trigger({ actionId: deleteAction.id })}
+                />
+              )}
+            </span>
           )}
           {isDeleted ? null : (
             <ArtifactOverflowMenu
