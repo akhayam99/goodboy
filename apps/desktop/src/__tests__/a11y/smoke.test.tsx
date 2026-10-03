@@ -24,6 +24,7 @@ vi.mock('../../store', () => {
     sessionSummary: null,
     sessions: [],
     detectedEditors: [],
+    detectedBrowsers: [],
     sessionPhaseRuns: {},
     sessionPlans: {},
     workspaceSummary: null,
@@ -73,6 +74,7 @@ vi.mock('../../store', () => {
     clearGithubToken: vi.fn(),
     reconcileOrphanWorktrees: vi.fn(async () => undefined),
     loadDetectedEditors: vi.fn(async () => undefined),
+    loadDetectedBrowsers: vi.fn(async () => undefined),
     ...storeSeed.current,
   });
   return {
