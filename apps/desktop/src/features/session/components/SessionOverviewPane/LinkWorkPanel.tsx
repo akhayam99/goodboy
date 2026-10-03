@@ -58,7 +58,7 @@ export const LinkWorkPanel = ({ session, onLinked, onClose }: Props) => {
       onQueryChange={setQuery}
       items={work.items}
       lookedUp={work.lookedUp}
-      linkedKeys={work.linkedKeys}
+      linkedScopes={work.linkedScopes}
       sources={work.sources}
       isLoading={work.isLoading}
       isLinking={isLinking}

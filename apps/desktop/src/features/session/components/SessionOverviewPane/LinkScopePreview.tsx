@@ -1,7 +1,7 @@
 import { Button } from '@goodboy/ui';
 import type { SessionExternalTaskProvider } from '@goodboy/types';
 import { TaskLinkChip } from '../../../../shared/components/TaskLinkChip';
-import type { LinkScope } from './linkScope';
+import { SCOPE_TAB_LABEL, linkedLabel, type LinkScope } from './linkScope';
 
 type Props = {
   readonly provider: SessionExternalTaskProvider;
@@ -11,6 +11,10 @@ type Props = {
   readonly branch: string | null;
   readonly isClosing: boolean;
   readonly isLinking: boolean;
+  readonly duplicate?: {
+    readonly scopes: ReadonlyArray<LinkScope>;
+    readonly next: LinkScope | null;
+  };
   readonly onToggleClosing: () => void;
   readonly onLink: () => void;
   readonly onCancel: () => void;
@@ -34,6 +38,7 @@ export const LinkScopePreview = ({
   branch,
   isClosing,
   isLinking,
+  duplicate,
   onToggleClosing,
   onLink,
   onCancel,
@@ -51,7 +56,9 @@ export const LinkScopePreview = ({
       </span>
     </div>
     <p className="text-label text-foreground">
-      {scope === 'workspace' ? (
+      {duplicate !== undefined ? (
+        `${linkedLabel({ scopes: duplicate.scopes })} already.${duplicate.next === null ? '' : ` Pick ${SCOPE_TAB_LABEL[duplicate.next]} to add it there too.`}`
+      ) : scope === 'workspace' ? (
         'Stays open. Shows under Ongoing on the Board, not on this session.'
       ) : isClosing ? (
         <>
@@ -78,7 +85,12 @@ export const LinkScopePreview = ({
       )}
     </p>
     <div className="flex items-center gap-2">
-      <Button size="sm" variant="primary" disabled={isLinking} onClick={onLink}>
+      <Button
+        size="sm"
+        variant="primary"
+        disabled={isLinking || duplicate !== undefined}
+        onClick={onLink}
+      >
         {`Link ${identifier}`}
       </Button>
       <Button size="sm" variant="ghost" onClick={onCancel}>

@@ -43,7 +43,7 @@ const renderPicker = ({ branch = 'hl/fix-duplicate-credit' }: { branch?: string 
       onQueryChange={vi.fn()}
       items={ITEMS}
       lookedUp={[]}
-      linkedKeys={new Set()}
+      linkedScopes={new Map()}
       sources={['linear']}
       isLoading={false}
       isLinking={false}
