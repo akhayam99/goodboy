@@ -73,6 +73,7 @@ export const SavedStepEditor = ({
         onEffort={(effort) => onChange({ effort })}
         onVerbosity={(verbosity) => onChange({ verbosity })}
         onRoutingReset={() => onChange({ provider: '', model: '' })}
+        onPin={() => onChange({ provider: recommendedProvider, model: recommendedModel })}
       />
       {isConfirmingRemove ? (
         <InlineConfirm

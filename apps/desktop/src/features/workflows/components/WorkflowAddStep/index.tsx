@@ -1,13 +1,9 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { Button, FormActions, formatError, GhostActionButton } from '@goodboy/ui';
-import { recommendedModelForRole, resolveRoleRouting } from '@goodboy/core';
-import type { ProviderId, SessionId, WorkflowRunId, WorkspaceId } from '@goodboy/types';
+import { GhostActionButton } from '@goodboy/ui';
+import type { SessionId, WorkflowRunId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { WorkflowStepCard } from '../../../session/components/WorkflowStepCard';
-import { kindForRole } from '../../../session/agent-kind';
-import { addStep, stepDraftWithModel, type StepDraft } from '../../engine';
-import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
+import { RunStepDraft } from './RunStepDraft';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -16,170 +12,36 @@ type Props = {
   readonly stepCount: number;
 };
 
-const blankDraft = (): StepDraft => addStep({ steps: [] })[0]!;
-
 export const WorkflowAddStep = ({ sessionId, workspaceId, workflowRunId, stepCount }: Props) => {
-  const addStepToWorkflowRun = useAppStore((state) => state.addStepToWorkflowRun);
-  const workspaceRoleModels = useAppStore(
-    (state) => state.workspaceOverrides?.[workspaceId]?.roleModels ?? null,
-  );
-  const sessionProvider = useAppStore((state) => {
-    const session = sessionById(state.sessions, sessionId);
-    if (session == null) {
-      return null;
-    }
-    return (session.providerOverride ?? session.providerPreference.defaultProvider) as ProviderId;
-  });
   const isOrchestrating = useAppStore(
     (state) => state.orchestratingWorkflowRuns?.[workflowRunId] === true,
   );
-  const providers = useAppStore((state) => state.providers);
-  const [draft, setDraft] = useState<StepDraft | null>(null);
-  const [isBusy, setIsBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
 
-  const connectedProviders = (providers ?? [])
-    .filter((provider) => provider.connection === 'connected')
-    .map((provider) => provider.id);
-
-  if (draft === null) {
+  if (isOpen) {
     return (
-      <GhostActionButton
-        icon={Plus}
-        label="Add step"
-        title={
-          isOrchestrating
-            ? 'The orchestrator is choosing the next step'
-            : 'Append one more agent to this run'
-        }
-        disabled={isOrchestrating}
-        onClick={() => {
-          setError(null);
-          setDraft(blankDraft());
-        }}
+      <RunStepDraft
+        sessionId={sessionId}
+        workspaceId={workspaceId}
+        workflowRunId={workflowRunId}
+        stepCount={stepCount}
+        isOrchestrating={isOrchestrating}
+        onClose={() => setIsOpen(false)}
       />
     );
   }
 
-  const roleRouting = resolveRoleRouting({ role: draft.role, prefs: workspaceRoleModels });
-  const defaultProvider: ProviderId = roleRouting.isOverride
-    ? roleRouting.provider
-    : (sessionProvider ?? connectedProviders[0] ?? 'anthropic');
-  const resolvedProvider: ProviderId = draft.provider !== '' ? draft.provider : defaultProvider;
-  const recommendedModel = recommendedModelForRole({
-    role: draft.role,
-    provider: resolvedProvider,
-    prefs: workspaceRoleModels,
-  });
-  const patch = (next: Partial<StepDraft>) =>
-    setDraft((current) => (current === null ? current : { ...current, ...next }));
-
-  const submit = async () => {
-    setIsBusy(true);
-    setError(null);
-    const outcome = await addStepToWorkflowRun({
-      sessionId,
-      workflowRunId,
-      name: draft.name,
-      role: draft.role,
-      promptPrefix: draft.prompt,
-      ...(draft.expectedOutput.trim() !== '' && { expectedOutput: draft.expectedOutput }),
-      ...(draft.provider !== '' && { providerOverride: draft.provider }),
-      ...(draft.model.trim() !== '' && { modelOverride: draft.model }),
-      effort: draft.effort,
-      verbosity: draft.verbosity,
-    }).catch((reason: unknown) => ({
-      kind: 'refused' as const,
-      reason: formatError(reason),
-    }));
-    setIsBusy(false);
-    if (outcome.kind === 'refused') {
-      setError(outcome.reason);
-      return;
-    }
-    setDraft(null);
-  };
-
   return (
-    <div className="flex w-full flex-col gap-2">
-      <ul className="flex list-none flex-col p-0">
-        <WorkflowStepCard
-          ordinal={stepCount}
-          kind={kindForRole({ role: draft.role })}
-          role={draft.role}
-          provider={resolvedProvider}
-          providerValue={draft.provider}
-          recommendedProvider={defaultProvider}
-          connectedProviders={connectedProviders}
-          name={draft.name}
-          promptPrefix={draft.prompt}
-          expectedOutput={draft.expectedOutput}
-          model={draft.model}
-          resolvedModel={draft.model !== '' ? draft.model : recommendedModel}
-          recommendedModel={recommendedModel}
-          effort={draft.effort}
-          verbosity={draft.verbosity}
-          expanded
-          dragging={false}
-          disabled={isBusy}
-          polishing={false}
-          onExpand={() => undefined}
-          onCollapse={() => undefined}
-          onStartDrag={() => undefined}
-          onName={(value) => patch({ name: value })}
-          onPrompt={(value) => patch({ prompt: value })}
-          onExpectedOutput={(value) => patch({ expectedOutput: value })}
-          onProvider={(value) => patch({ provider: value })}
-          onModel={(value) =>
-            patch(
-              stepDraftWithModel({
-                step: draft,
-                provider: draft.provider,
-                model: value,
-                recommendedModel,
-              }),
-            )
-          }
-          onEffort={(value) => patch({ effort: value })}
-          onVerbosity={(value) => patch({ verbosity: value })}
-          onRole={(value) => patch({ role: value })}
-          isRoutingOverridden={draft.provider !== '' || draft.model !== ''}
-          onRoutingReset={() => patch({ provider: '', model: '' })}
-          onRemove={() => setDraft(null)}
-          onMoveUp={() => undefined}
-          onMoveDown={() => undefined}
-        />
-      </ul>
-      <FormActions
-        leading={
-          error !== null ? (
-            <span className="text-secondary font-medium text-danger" role="alert">
-              {error}
-            </span>
-          ) : isOrchestrating ? (
-            <span className="text-secondary font-medium text-muted-foreground">
-              the orchestrator is choosing the next step
-            </span>
-          ) : null
-        }
-      >
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={isBusy}
-          onClick={() => setDraft(null)}
-          className="text-muted-foreground"
-        >
-          Cancel
-        </Button>
-        <Button
-          size="sm"
-          disabled={isBusy || isOrchestrating || draft.name.trim() === ''}
-          onClick={() => void submit()}
-        >
-          {isBusy ? 'Adding' : 'Add step'}
-        </Button>
-      </FormActions>
-    </div>
+    <GhostActionButton
+      icon={Plus}
+      label="Add step"
+      title={
+        isOrchestrating
+          ? 'The orchestrator is choosing the next step'
+          : 'Append one more agent to this run'
+      }
+      disabled={isOrchestrating}
+      onClick={() => setIsOpen(true)}
+    />
   );
 };

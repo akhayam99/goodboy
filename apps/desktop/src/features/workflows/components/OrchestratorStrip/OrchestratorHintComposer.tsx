@@ -11,6 +11,7 @@ import type {
 type Props = {
   readonly isDeciding: boolean;
   readonly isStepRunning: boolean;
+  readonly isPaused?: boolean;
   readonly onSubmit: (draft: OrchestratorHintDraft) => Promise<boolean>;
 };
 
@@ -21,9 +22,13 @@ type SendParams = {
 type ReadNowParams = {
   readonly isDeciding: boolean;
   readonly isStepRunning: boolean;
+  readonly isPaused: boolean;
 };
 
-const readNowCopy = ({ isDeciding, isStepRunning }: ReadNowParams): string => {
+const readNowCopy = ({ isDeciding, isStepRunning, isPaused }: ReadNowParams): string => {
+  if (isPaused) {
+    return 'While the run is paused, Read now waits in the queue too.';
+  }
   if (isDeciding) {
     return 'Read now restarts this one with your hint.';
   }
@@ -38,7 +43,12 @@ const DELIVERY: Readonly<Record<PromptSubmitMode, OrchestratorHintDelivery>> = {
   now: 'now',
 };
 
-export const OrchestratorHintComposer = ({ isDeciding, isStepRunning, onSubmit }: Props) => {
+export const OrchestratorHintComposer = ({
+  isDeciding,
+  isStepRunning,
+  isPaused = false,
+  onSubmit,
+}: Props) => {
   const [text, setText] = useState('');
   const fieldRef = useRef<HTMLDivElement>(null);
   const files = usePromptFiles({ note: 'Images go to the next agent' });
@@ -116,7 +126,7 @@ export const OrchestratorHintComposer = ({ isDeciding, isStepRunning, onSubmit }
         }
       />
       <span data-testid="orchestrator-hint-timing" className="text-secondary text-muted-foreground">
-        Queue waits for the next decision. {readNowCopy({ isDeciding, isStepRunning })}
+        Queue waits for the next decision. {readNowCopy({ isDeciding, isStepRunning, isPaused })}
       </span>
     </form>
   );

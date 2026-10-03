@@ -67,6 +67,7 @@ const baseState = (overrides: Record<string, unknown> = {}): State => {
   const state: State = {
     sessions: [session(overrides)],
     orchestrateNextStep: vi.fn(async () => undefined),
+    maybeAutoAdvanceWorkflow: vi.fn(async () => undefined),
   };
   return state;
 };
@@ -89,13 +90,13 @@ describe('continueWorkflowRun', () => {
     expect(state['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
   });
 
-  it('leaves a static run alone', async () => {
-    const state = baseState({ executionMode: 'static' });
+  it('resumes a static run through the auto advance, with no orchestrator', async () => {
+    const state = baseState({ executionMode: 'static', orchestrationStop: undefined });
     const { set, get } = harness(state);
 
     await continueWorkflowRun(set, get)(SESSION_ID, RUN_ID);
 
-    expect(updateOutcomeSpy).not.toHaveBeenCalled();
+    expect(state['maybeAutoAdvanceWorkflow']).toHaveBeenCalledWith(SESSION_ID);
     expect(state['orchestrateNextStep']).not.toHaveBeenCalled();
   });
 });

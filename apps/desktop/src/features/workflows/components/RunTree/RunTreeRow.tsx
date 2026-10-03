@@ -18,6 +18,7 @@ import type { TimelineRowItem } from '../../../session/timeline/buildTimelineStr
 import { railColumnX, type RailRow } from '../../../workTreeModel/railGeometry';
 import type { RowAsk } from '../../../workTreeModel/rowState';
 import { TIMELINE_RHYTHM } from '../../../workTreeModel/timelineRhythm';
+import { RunStepSkip, type RunStepSkipAction } from './RunStepSkip';
 
 export type RunTreeRouting = {
   readonly stepById: ReadonlyMap<string, Step>;
@@ -38,6 +39,7 @@ type Props = {
   readonly parentStepName: string | null;
   readonly isSelected: boolean;
   readonly isHighlighted: boolean;
+  readonly skip: RunStepSkipAction | null;
   readonly onHighlight?: (isOn: boolean) => void;
   readonly onSelect: () => void;
   readonly onAnswer: (question: OpenQuestion | null) => void;
@@ -79,6 +81,7 @@ export const RunTreeRow = ({
   parentStepName,
   isSelected,
   isHighlighted,
+  skip,
   onHighlight,
   onSelect,
   onAnswer,
@@ -163,6 +166,9 @@ export const RunTreeRow = ({
             <TimelineAgentMeta work={work} costUsd={costUsd} />
             {hasActionColumn ? (
               <span className={WORK_META_COLUMN.action}>
+                {answer === null && skip !== null && !isNested && agent.status === 'running' ? (
+                  <RunStepSkip agent={agent} skip={skip} />
+                ) : null}
                 {answer === null ? null : (
                   <Button
                     variant="secondary"

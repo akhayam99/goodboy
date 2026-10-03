@@ -2,7 +2,7 @@ import { classifyWorkflowChain, findReusableAgent } from '@goodboy/core';
 import type { Agent, Step, Workflow } from '@goodboy/types';
 
 export type WorkflowBlockReason =
-  'questions' | 'summarizer' | 'failed-step' | 'stopped-step' | 'turn-running';
+  'questions' | 'summarizer' | 'failed-step' | 'stopped-step' | 'turn-running' | 'paused';
 
 export type WorkflowAdvanceState =
   | { readonly kind: 'complete' }

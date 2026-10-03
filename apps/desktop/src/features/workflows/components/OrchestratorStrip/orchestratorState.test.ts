@@ -80,20 +80,46 @@ describe('resolveOrchestratorState', () => {
     expect(state.sentence).toBe('Stopping · waiting for the decision already in flight');
   });
 
-  it('reports a graceful pause while a step finishes with autorun off', () => {
-    const state = resolve({ agents: [makeAgent(0, 'running')] });
+  it('waits on the step in flight when the run asks before each step', () => {
+    const running = makeAgent(0, 'running');
+    const state = resolve({ agents: [running] });
 
-    expect(state.phase).toBe('stopping-graceful');
-    expect(state.tone).toBe('neutral');
-    expect(state.sentence).toBe('Finishing the step in flight · autorun is off');
+    expect(state.phase).toBe('waiting');
+    expect(state.sentence).toBe('Waiting on step 1 · step 0');
+    expect(state.waitingOnAgentId).toBe(running.id);
   });
 
-  it('reports a normal pause after the graceful step finishes', () => {
+  it('waits for your go after a step when the run asks before each step', () => {
     const state = resolve({ agents: [makeAgent(0, 'completed')] });
 
     expect(state.phase).toBe('ready-mid');
     expect(state.tone).toBe('neutral');
-    expect(state.sentence).toBe('Paused · autorun is off');
+    expect(state.sentence).toBe('Waiting for your go');
+  });
+
+  it('says the step in flight finishes when you pause, and nothing new starts', () => {
+    const state = resolve({
+      run: makeRun({ autoRun: true, orchestrationStop: { kind: 'paused', message: 'paused' } }),
+      agents: [makeAgent(0, 'completed'), makeAgent(1, 'running', { name: 'Reviewer' })],
+    });
+
+    expect(state.phase).toBe('paused');
+    expect(state.tone).toBe('warning');
+    expect(state.sentence).toBe('Paused by you');
+    expect(state.detail).toBe(
+      'Reviewer finishes its turn. Nothing new starts until you resume. The pause survives a restart.',
+    );
+  });
+
+  it('stays paused while a decision is in flight and names the next step', () => {
+    const state = resolve({
+      run: makeRun({ orchestrationStop: { kind: 'paused', message: 'paused' } }),
+      agents: [makeAgent(0, 'completed'), makeAgent(1, 'pending', { name: 'Tester' })],
+      isOrchestrating: true,
+    });
+
+    expect(state.phase).toBe('paused');
+    expect(state.detail).toBe('Nothing new starts until you resume. Next: Tester.');
   });
 
   it('never claims the run is stopped before the decision returns', () => {
@@ -200,7 +226,7 @@ describe('resolveOrchestratorState', () => {
     });
 
     expect(state.phase).toBe('ready-mid');
-    expect(state.sentence).toBe('Paused · autorun is off');
+    expect(state.sentence).toBe('Waiting for your go');
   });
 
   it('waits on the running step and names it for its measured time', () => {

@@ -46,6 +46,15 @@ const seedStudio = (): void => {
     loadPhaseTemplates: async () => undefined,
     loadStepLibrary: async () => undefined,
     setWorkflowStudioVisible: noop,
+    savePhaseTemplate: async (args) => {
+      const kept = (useAppStore.getState().phaseTemplates[WORKSPACE_ID] ?? []).find(
+        (workflow) => workflow.id === args.id,
+      );
+      if (kept === undefined) {
+        throw new Error('This mock keeps the workflows it opened with.');
+      }
+      return kept;
+    },
   });
   if (IS_CONFIRM_ERROR) {
     const workflow = editedBuiltin();

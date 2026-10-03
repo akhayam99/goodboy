@@ -1,14 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Button,
-  Chip,
-  FormPage,
-  Notice,
-  Switch,
-  Tooltip,
-  formatError,
-  FilledEmptyState,
-} from '@goodboy/ui';
+import { Button, Chip, FormPage, Notice, Switch, formatError, FilledEmptyState } from '@goodboy/ui';
 import {
   DEFAULT_SESSION_PROVIDER_PREFERENCE,
   PROVIDER_CAPABILITIES,
@@ -34,7 +25,10 @@ import type {
 } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
-import { createWorkflowPlanner, polishWorkflowGoalText, polishWorkflowStep } from '../../workflows';
+import { createWorkflowPlanner, polishWorkflowGoalText } from '../../workflows';
+import { usePolish } from '../../hooks/usePolish';
+import { useStepDeleteUndo } from '../../hooks/useStepDeleteUndo';
+import { stepPolishFields } from '../../stepPolishFields';
 import { EMPTY_ARRAY, useAppStore, useSessionSlots } from '../../../../store';
 import { buildProfileGuard } from '../../../../store/slices/turn/profileGuard';
 import { buildWorkspaceProjectsBlock } from '../../../../store/slices/workflows/buildWorkspaceProjectsBlock';
@@ -55,7 +49,6 @@ import {
   draftFromPlannerSteps,
   draftFromWorkflow,
   duplicateStep as duplicateDraftStep,
-  removeStep as removeDraftStep,
   reorderSteps as reorderDraftSteps,
   stepDraftWithModel,
   updateStep as updateDraftStep,
@@ -85,6 +78,7 @@ import { effectiveProviderPool } from './providerPool';
 import { PlanDraftingBanner } from './parts/PlanDraftingBanner';
 import { PresetPicker } from './parts/PresetPicker';
 import { SpendCapChip } from './parts/SpendCapChip';
+import { AutonomyChip } from './parts/AutonomyChip';
 import { StartsChip, type ChainRun, type StartChoice } from './parts/StartsChip';
 import { StepTree } from '../StepTree';
 import { StepEditor } from '../StepTree/StepEditor';
@@ -254,7 +248,6 @@ export const WorkflowBuilderView = (props: Props) => {
     () => initialWorkflowDraft.steps.length === 0 || (initialDraft?.processText ?? '') !== '',
   );
   const [planning, setPlanning] = useState(false);
-  const [polishingKey, setPolishingKey] = useState<string | null>(null);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [saveAsPreset, setSaveAsPreset] = useState(initialDraft?.saveAsPreset ?? false);
   const [autoRun, setAutoRun] = useState(initialDraft?.autoRun ?? false);
@@ -565,11 +558,6 @@ export const WorkflowBuilderView = (props: Props) => {
   const patchStep = (key: string, patch: Partial<StepDraft>) =>
     setSteps((previous) => updateDraftStep({ steps: previous, key, patch }));
 
-  const removeStep = (key: string) => {
-    setSteps((previous) => removeDraftStep({ steps: previous, key }));
-    setExpandedKey((cur) => (cur === key ? null : cur));
-  };
-
   const moveStep = (key: string, dir: -1 | 1) =>
     setSteps((previous) => {
       const i = previous.findIndex((step) => step.key === key);
@@ -617,43 +605,18 @@ export const WorkflowBuilderView = (props: Props) => {
   const resolvedModel = (step: StepDraft): string =>
     step.model !== '' ? step.model : recommendedModel(step);
 
-  const onPolishStep = async (key: string) => {
-    const step = steps.find((s) => s.key === key);
-    if (step === undefined || step.prompt.trim().length === 0 || polishingKey !== null) {
-      return;
-    }
-    setError(null);
-    setPolishingKey(key);
-    try {
-      const polished = await polishWorkflowStep({
-        deps: {
-          ...resolvedProsePolishTaskModel,
-          ...(sessionWorktree != null && { workingDir: sessionWorktree }),
-        },
-        input: {
-          role: step.role,
-          name: step.name,
-          instruction: step.prompt,
-          ...(goalText.trim().length > 0 && { goal: goalText }),
-        },
-      });
-      if (polished !== null && polished !== step.prompt) {
-        patchStep(key, { prompt: polished });
-        return;
-      }
-      if (!polished) {
-        showToast({
-          kind: 'warning',
-          message: 'Kept your wording. The step could not be polished.',
-        });
-        return;
-      }
-    } catch (err) {
-      setError({ title: "Couldn't polish the step", message: formatError(err) });
-    } finally {
-      setPolishingKey(null);
-    }
+  const stepPolish = usePolish({
+    onError: (message) => setError({ title: "Couldn't polish the step", message }),
+  });
+  const stepPolishDeps = {
+    ...resolvedProsePolishTaskModel,
+    ...(sessionWorktree != null && { workingDir: sessionWorktree }),
   };
+  const deleteStep = useStepDeleteUndo({
+    steps,
+    setSteps,
+    onDeleted: (key) => setExpandedKey((cur) => (cur === key ? null : cur)),
+  });
 
   const sessionGoal = (sessionSlots.find((s) => s.key === 'goal')?.value ?? '').trim();
   const selectedPreset = presets.find((t) => t.id === selectedPresetId) ?? null;
@@ -1007,6 +970,7 @@ export const WorkflowBuilderView = (props: Props) => {
             identityIndex={identityIndex}
             isExpanded={expandedKey === step.key}
             isEdited={editedKeys.has(step.key)}
+            isPinned={step.provider !== '' || step.model !== ''}
             isDragging={draggingKey === step.key}
             disabled={blocked}
             onToggle={() => setExpandedKey((cur) => (cur === step.key ? null : step.key))}
@@ -1027,10 +991,13 @@ export const WorkflowBuilderView = (props: Props) => {
                 connectedProviders={connectedProviders}
                 isRoutingOverridden={step.provider !== '' || step.model !== ''}
                 disabled={blocked}
-                polish={{
-                  isPolishing: polishingKey === step.key,
-                  onPolish: () => void onPolishStep(step.key),
-                }}
+                polish={stepPolishFields({
+                  polish: stepPolish,
+                  deps: stepPolishDeps,
+                  goal: goalText,
+                  step,
+                  patchStep,
+                })}
                 onName={(name) => patchStep(step.key, { name })}
                 onRole={(role) => patchStep(step.key, { role })}
                 onPrompt={(prompt) => patchStep(step.key, { prompt })}
@@ -1050,6 +1017,12 @@ export const WorkflowBuilderView = (props: Props) => {
                 onEffort={(next) => patchStep(step.key, { effort: next })}
                 onVerbosity={(verbosity) => patchStep(step.key, { verbosity })}
                 onRoutingReset={() => patchStep(step.key, { provider: '', model: '' })}
+                onPin={() =>
+                  patchStep(step.key, {
+                    provider: resolvedProvider(step),
+                    model: resolvedModel(step),
+                  })
+                }
                 onMoveUp={() => moveStep(step.key, -1)}
                 onMoveDown={() => moveStep(step.key, 1)}
                 onDuplicate={() =>
@@ -1057,7 +1030,7 @@ export const WorkflowBuilderView = (props: Props) => {
                 }
                 isSavingAsStep={savingKey === step.key}
                 onSaveAsStep={() => void saveAsStep(step)}
-                onRemove={() => removeStep(step.key)}
+                onDelete={() => deleteStep(step.key)}
                 onDone={() => setExpandedKey(null)}
               />
             }
@@ -1126,15 +1099,7 @@ export const WorkflowBuilderView = (props: Props) => {
         disabled={blocked}
         onChange={setStartChoice}
       />
-      <Tooltip
-        content={
-          autoRun
-            ? 'Each next step starts on its own.'
-            : 'Pauses after each step so you can review it.'
-        }
-      >
-        <Switch label="Autorun" checked={autoRun} onChange={setAutoRun} disabled={busy} />
-      </Tooltip>
+      <AutonomyChip autoRun={autoRun} disabled={busy} onChange={setAutoRun} />
       {mode === 'dynamic' ? (
         <SpendCapChip
           isEnabled={isSpendLimitEnabled}

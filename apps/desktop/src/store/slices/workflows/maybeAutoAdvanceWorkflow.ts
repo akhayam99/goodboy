@@ -8,6 +8,7 @@ import {
 } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { isWorkflowRunComplete } from '../../../features/workflows/isWorkflowRunComplete';
+import { isRunPaused } from '../../../features/workflows/isRunPaused';
 import { workflowRunHasOpenQuestions } from '../../../features/context/openQuestionsGate';
 import {
   budgetBlockMessage,
@@ -76,7 +77,13 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
     return;
   }
   const activeRuns = session.workflowRuns
-    .filter((r) => r.autoRun && r.discardedAt == null && r.triggerMode === 'immediate')
+    .filter(
+      (r) =>
+        r.autoRun &&
+        r.discardedAt == null &&
+        r.triggerMode === 'immediate' &&
+        !isRunPaused({ run: r }),
+    )
     .sort((a, b) => a.ordinal - b.ordinal);
   if (activeRuns.length === 0) {
     return;

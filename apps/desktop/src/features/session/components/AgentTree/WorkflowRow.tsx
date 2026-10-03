@@ -44,7 +44,9 @@ import { WorkflowAddStep } from '../../../workflows/components/WorkflowAddStep';
 import { WorkflowResumeStrip } from './WorkflowResumeStrip';
 import { CreateReportCta } from '../../../reports/components/CreateReportCta';
 import { CreateWireframeCta } from '../../../wireframes/components/CreateWireframeCta';
-import { WorkflowAutorunToggle } from '../../../workflows/components/WorkflowAutorunToggle';
+import { RunControls } from '../../../workflows/components/RunControls';
+import { runAutonomyOf } from '../../../workflows/runAutonomy';
+import { skipStepDescription } from '../../../workflows/skipStepCopy';
 import { useWorkflowRunTitleRename } from '../../../workflows/hooks/useWorkflowRunTitleRename';
 import { RunTree } from '../../../workflows/components/RunTree';
 import { WorkTimeProvider } from '../../../workTreeModel/components/WorkTimeProvider';
@@ -138,6 +140,7 @@ export const WorkflowRow = ({
   const isOrchestrating = useAppStore((s) => s.orchestratingWorkflowRuns?.[run.id] ?? false);
   const restoreWorkflow = useAppStore((s) => s.restoreWorkflow);
   const closeWorkflowRun = useAppStore((s) => s.closeWorkflowRun);
+  const skipStuckStepAndAdvance = useAppStore((s) => s.skipStuckStepAndAdvance);
   const sessionAgents = useAppStore((s) => s.sessionPhaseRuns[task.id] ?? EMPTY_ARRAY);
   const writableMountCount = useAppStore(
     (state) => selectWritableMounts({ state, sessionId: task.id }).length,
@@ -314,6 +317,11 @@ export const WorkflowRow = ({
                       isDynamic && !isDiscarded ? (
                         <RunSpendLimitPopover sessionId={task.id} run={run} variant="meta" />
                       ) : null,
+                      !isDiscarded && !isCompleted ? (
+                        <span data-testid="run-autonomy-fact">
+                          {runAutonomyOf({ autoRun: run.autoRun }).label}
+                        </span>
+                      ) : null,
                     ]}
                     run={run}
                     steps={workflow.steps}
@@ -344,9 +352,17 @@ export const WorkflowRow = ({
                       />
                     ) : null}
                     {!isDiscarded && !isCompleted && !hasOrchestratorStrip && (
-                      <WorkflowAutorunToggle
-                        isOn={run.autoRun}
-                        onToggle={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
+                      <RunControls
+                        sessionId={task.id}
+                        run={run}
+                        agents={wfAgents}
+                        isOrchestrating={isOrchestrating}
+                        isRunOver={isCompleted}
+                        autonomyMenu={{
+                          label: `When ${name} asks`,
+                          onAutoRun: (autoRun) =>
+                            void setWorkflowRunAutoRun(task.id, run.id, autoRun),
+                        }}
                       />
                     )}
                   </div>
@@ -442,6 +458,19 @@ export const WorkflowRow = ({
                     }}
                     selectedAgentId={selectedAgentId}
                     highlightedStepId={highlightedStepId}
+                    skip={
+                      isDiscarded || isCompleted
+                        ? null
+                        : {
+                            describe: (agent) =>
+                              skipStepDescription({ run, agent, agents: wfAgents }),
+                            onSkip: (agent) =>
+                              skipStuckStepAndAdvance(task.id, run.id, {
+                                force: true,
+                                agentId: agent.id,
+                              }),
+                          }
+                    }
                     onHighlight={setHoveredStepId}
                     onSelect={onPickAgent}
                     onAnswer={onAnswerQuestion}
