@@ -3,7 +3,9 @@ import {
   PROVIDER_CAPABILITIES,
   clampEffortForModel,
   getModelProvider,
+  isModelHidden,
   recommendedModelForRole,
+  resolveStoredModelSelection,
   resolveRoleRouting,
   type AutoContext,
   type ResolvedRoleFallback,
@@ -19,6 +21,8 @@ import type {
 import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
 import { DefaultRow } from '../DefaultRow';
 import { FallbackRow } from '../FallbackRow';
+import { useHiddenModels } from '../../../../hooks/useHiddenModels';
+import { hiddenModelNote } from '../hiddenModelNote';
 
 type Props = {
   readonly role: AgentRole;
@@ -94,6 +98,23 @@ export const RoleModelRow = ({
   const prefs: RoleModelPreferences | null = preference == null ? null : { [role]: preference };
   const resolved = resolveRoleRouting({ role, prefs });
   const resolvedProviderId = resolved.isOverride ? resolved.provider : compiled.provider;
+  const hidden = useHiddenModels();
+  const isPinnedHidden =
+    resolved.isOverride &&
+    isModelHidden({
+      provider: resolved.provider,
+      hidden,
+      key: resolveStoredModelSelection({ provider: resolved.provider, id: resolved.model })
+        .selection.key,
+    });
+  const summary = !isPinnedHidden
+    ? help
+    : hiddenModelNote({
+        provider: resolved.provider,
+        model: resolved.model,
+        isPinned: true,
+        job: label,
+      });
   const [providerId, setProviderId] = useState(resolvedProviderId);
   const pendingProvider = useRef(resolvedProviderId);
   const availableProviderIds = connectedProviderIds.filter(
@@ -156,7 +177,7 @@ export const RoleModelRow = ({
   };
 
   return (
-    <DefaultRow label={label} summary={help}>
+    <DefaultRow label={label} summary={summary} isSummaryNoted={isPinnedHidden}>
       <RoutingPicker
         availability="setup"
         ariaLabel={`${label} routing`}

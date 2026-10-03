@@ -218,6 +218,7 @@ export const OPENROUTER_CATALOG = [
   },
   {
     key: 'sonnet-5.5',
+    defaultTurn: true,
     label: 'Claude Sonnet 5.5',
     tier: 'turn',
     contextWindow: 1_000_000,
@@ -331,7 +332,7 @@ export const OPENROUTER_CATALOG = [
       version: '5.6',
       checkpoint: 'Sol',
       order: 64,
-      costTier: 'mid',
+      costTier: 'expensive',
     },
     provider: 'openrouter',
     cliId: 'openrouter/openai/gpt-5.6-sol',

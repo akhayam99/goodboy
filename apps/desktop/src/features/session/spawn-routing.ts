@@ -1,6 +1,6 @@
 import { PROVIDER_CAPABILITIES, getModelProvider, clampEffortForModel } from '@goodboy/core';
-import type { AgentEffort, ProviderId, RoleModelPreferences, Session } from '@goodboy/types';
-import { kindRouting, type AgentKind, type AgentKindRouting } from './agent-kind';
+import type { AgentEffort, ProviderId, Session } from '@goodboy/types';
+import type { AgentKind, AgentKindRouting } from './agent-kind';
 
 type SpawnRoutingOrigin = 'chat' | 'role-default';
 
@@ -10,9 +10,8 @@ export type SpawnRouting = AgentKindRouting & {
 
 type Params = {
   readonly kind: AgentKind;
-  readonly roleModels: RoleModelPreferences | null;
+  readonly roleDefault: AgentKindRouting;
   readonly session: Session | null;
-  readonly defaultProvider?: ProviderId | null;
 };
 
 type ChatParams = {
@@ -42,13 +41,7 @@ const chatRouting = ({ session, fallbackEffort }: ChatParams): AgentKindRouting 
   };
 };
 
-export const resolveSpawnRouting = ({
-  kind,
-  roleModels,
-  session,
-  defaultProvider,
-}: Params): SpawnRouting => {
-  const roleDefault = kindRouting({ kind, roleModels, defaultProvider });
+export const resolveSpawnRouting = ({ kind, roleDefault, session }: Params): SpawnRouting => {
   const origin: SpawnRoutingOrigin = 'role-default';
   if (kind !== 'generic' || session == null) {
     return { ...roleDefault, origin };

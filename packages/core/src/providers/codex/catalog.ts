@@ -6,6 +6,7 @@ const STANDARD_EFFORTS = ['low', 'medium', 'high', 'xhigh'] satisfies ReadonlyAr
 export const CODEX_CATALOG = [
   {
     key: 'gpt-5.6-sol',
+    defaultTurn: true,
     label: 'GPT-5.6 Sol',
     tier: 'turn',
     contextWindow: 1_000_000,
@@ -93,6 +94,8 @@ export const CODEX_CATALOG = [
     variants: [{ id: 'default', label: 'Default', cliId: 'gpt-6.1-sol' }],
     efforts: FULL_EFFORTS,
     defaultEffort: 'low',
+
+    minCliVersion: '0.160.0',
   },
   {
     key: 'gpt-5.5',

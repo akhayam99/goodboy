@@ -421,7 +421,7 @@ describe('ChatRoom', () => {
     );
     const drafter = screen.getByRole('button', { name: /^Drafted by: / });
     expect(drafter.textContent).toContain('Sonnet 5');
-    expect(drafter.textContent).not.toMatch(/High|Medium|Low/);
+    expect(drafter.textContent).toContain('Medium');
   });
 
   it('drafts with the model remembered for the workspace', async () => {
@@ -658,7 +658,7 @@ describe('ChatRoom', () => {
     expect(store.createChat).toHaveBeenCalledWith({
       workspaceId: WORKSPACE_ID,
       provider: 'anthropic',
-      model: 'sonnet-5',
+      model: 'sonnet-5.5',
     });
     expect(onCreated).toHaveBeenCalledWith('chat-new');
     expect(store.sendChatMessage).toHaveBeenCalledWith({
@@ -861,7 +861,7 @@ describe('ChatRoom', () => {
     expect(store.createChat).toHaveBeenCalledWith({
       workspaceId: WORKSPACE_ID,
       provider: 'anthropic',
-      model: 'sonnet-5',
+      model: 'sonnet-5.5',
     });
     expect(store.reportError).toHaveBeenCalled();
   });

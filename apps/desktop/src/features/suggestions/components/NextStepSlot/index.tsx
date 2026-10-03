@@ -8,6 +8,7 @@ import { useTranscriptMountProposals } from '../../useTranscriptMountProposals';
 import { transcriptOwnedProjectIds } from '../../transcriptMountProposals';
 import { recordNextStepOutcome } from '../../useNextStepOutcomes';
 import type { SessionSuggestion } from '../../types';
+import type { AgentKindRouting } from '../../../session/agent-kind';
 import { NextStepRow } from './NextStepRow';
 
 const choiceKey = ({
@@ -107,6 +108,7 @@ export const NextStepSlot = ({
     if (primary === null) {
       return actions;
     }
+    const runsOn = primary.runsOn;
     const tracked =
       ({ key, task }: { readonly key: string; readonly task: () => Promise<void> }) =>
       async () => {
@@ -123,6 +125,13 @@ export const NextStepSlot = ({
       primary: {
         ...primary,
         run: tracked({ key: suggestion.id, task: primary.run }),
+        ...(runsOn !== undefined && {
+          runsOn: {
+            kind: runsOn.kind,
+            runWith: (routing: AgentKindRouting) =>
+              tracked({ key: suggestion.id, task: () => runsOn.runWith(routing) })(),
+          },
+        }),
         ...(primary.choices !== undefined && {
           choices: primary.choices.map((choice) => ({
             ...choice,
