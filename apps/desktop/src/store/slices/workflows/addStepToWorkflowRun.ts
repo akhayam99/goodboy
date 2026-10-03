@@ -243,6 +243,7 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
       return rollback('the step could not be saved');
     }
     const spawned = await preSpawnWorkflowAgents({
+      policy: workspacePolicyAvailability({ state: get() }).policy,
       sessionId,
       workflowRunId,
       steps: [savedStep],

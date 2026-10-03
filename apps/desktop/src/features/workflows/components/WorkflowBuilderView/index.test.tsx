@@ -2192,6 +2192,31 @@ describe('WorkflowBuilderView (kickoff, before the session exists)', () => {
     expect(startBtn().disabled).toBe(true);
   });
 
+  it('offers Can use only the providers the workspace policy does not turn off', () => {
+    storeState.providers = [
+      { id: 'anthropic', connection: 'connected' },
+      { id: 'codex', connection: 'connected' },
+      { id: 'cursor', connection: 'connected' },
+    ];
+    storeState.workspaceOverrides = {
+      'ws-1': {
+        providerPool: [
+          { id: 'cursor', state: 'on' },
+          { id: 'codex', state: 'off' },
+          { id: 'anthropic', state: 'backup' },
+        ],
+      },
+    };
+    render(<KickoffHarness start={kickoffStart()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Can use/ }));
+
+    const offered = within(
+      screen.getByRole('dialog', { name: 'Providers this run can use' }),
+    ).getAllByRole('button');
+    expect(offered.map((button) => button.textContent)).toEqual(['Cursor', 'Claude']);
+  });
+
   it('has one goal field and nothing that needs a session', () => {
     render(<KickoffHarness start={kickoffStart()} />);
 

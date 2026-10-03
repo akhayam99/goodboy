@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { RotateCcw } from 'lucide-react';
-import type { OverrideSettings, ProviderId, ProviderPolicy, WorkspaceId } from '@goodboy/types';
+import type { OverrideSettings, WorkspaceId } from '@goodboy/types';
 import {
   DEFAULT_GROUPS,
   DEFAULT_SESSION_PROVIDER_PREFERENCE,
   ROLE_REGISTRY,
   TASKS,
   firstOnProvider,
-  seedProviderPolicy,
   type AutoContext,
 } from '@goodboy/core';
 import {
@@ -27,24 +26,19 @@ import { useChatDefaultModel } from '../../../../../shared/hooks/useChatDefaultM
 import { ChatModelRow } from './ChatModelRow';
 import { RoleModelRow } from './RoleModelRow';
 import { TaskModelRow } from './TaskModelRow';
-import { FallbackOrder } from './FallbackOrder';
+import { ProvidersInOrder } from './ProvidersInOrder';
 import { useDefaultsPersistence } from './useDefaultsPersistence';
 import {
   CONCEPT_ICONS,
   CONCEPT_TONE,
   ICON_SIZE,
 } from '../../../../../shared/components/conceptIcons';
-import { ProviderPicker } from '../../../../../shared/components/RoutingPicker/ProviderPicker';
 import { pluralize } from '../../../../../shared/utils/pluralize';
 import { SETTINGS_PANE_ENTRY } from '../../../../settings/components/SettingsStudio/settingsPaneEntry';
 import { useAutoLimitContext } from '../../../hooks/useAutoLimitContext';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
-};
-
-type ProviderParams = {
-  readonly providerId: ProviderId;
 };
 
 const TASK_BY_ID = new Map(TASKS.map((task) => [task.id, task]));
@@ -85,22 +79,10 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
     firstOnProvider({ policy }) ??
     overrides.defaultProviderId ??
     DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider;
-  const providerPoolIds = new Set<ProviderId>(
-    policy == null
-      ? connectedProviderIds
-      : policy.filter((entry) => entry.state !== 'off').map((entry) => entry.id),
-  );
-  providerPoolIds.add(defaultProviderId);
-  const orderedProviderIds = [
-    ...connectedProviderIds.filter((id) => id === defaultProviderId),
-    ...connectedProviderIds.filter((id) => id !== defaultProviderId),
-  ];
-  const fallbackOrder = orderedProviderIds.filter((id) => providerPoolIds.has(id));
   const limitContext = useAutoLimitContext();
   const autoContext: AutoContext = {
     defaultProvider: defaultProviderId,
     connected: connectedProviderIds,
-    fallbackOrder,
     ...(policy != null && { policy }),
     ...(limitContext?.hidden != null && { hidden: limitContext.hidden }),
     ...(limitContext?.cliVersions != null && { cliVersions: limitContext.cliVersions }),
@@ -115,37 +97,6 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
   const pinnedRoleCount = Object.keys(overrides.roleModels ?? {}).length;
   const pinnedChatCount = chatDefault.saved === null ? 0 : 1;
   const pinnedCount = pinnedTaskCount + pinnedRoleCount + pinnedChatCount;
-
-  const currentPolicy = (): ProviderPolicy =>
-    policy ??
-    seedProviderPolicy({ defaultProvider: defaultProviderId, connected: connectedProviderIds });
-
-  const onDefaultProvider = ({ providerId }: ProviderParams) => {
-    const rest = currentPolicy().filter((entry) => entry.id !== providerId);
-    void persistOverrides({
-      patch: {
-        defaultProviderId: providerId,
-        providerPool: [{ id: providerId, state: 'on' }, ...rest],
-      },
-    });
-  };
-
-  const onToggleRoutingProvider = ({ providerId }: ProviderParams) => {
-    if (providerId === defaultProviderId) {
-      return;
-    }
-    const isInPool = providerPoolIds.has(providerId);
-    const base = currentPolicy();
-    const missing: ProviderPolicy = [{ id: providerId, state: 'off' }];
-    const known = base.some((entry) => entry.id === providerId) ? base : [...base, ...missing];
-    void persistOverrides({
-      patch: {
-        providerPool: known.map((entry) =>
-          entry.id === providerId ? { ...entry, state: isInPool ? 'off' : 'on' } : entry,
-        ),
-      },
-    });
-  };
 
   const onResetAll = async () => {
     chatDefault.clear();
@@ -192,38 +143,17 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
 
       <section aria-label="Providers" className="flex flex-col gap-1">
         <Eyebrow label="Providers" />
-        <FieldRow label="Default provider" help="Auto starts here.">
-          <div className="w-[220px]">
-            <ProviderPicker
-              connectedProviders={connectedProviderIds}
-              provider={defaultProviderId}
-              disabled={busy}
-              onProvider={(providerId) => onDefaultProvider({ providerId })}
-              align="end"
-              ariaLabel="Default provider"
-            />
-          </div>
-        </FieldRow>
-        <FieldRow
-          label="Fallback order"
-          help="If a provider is not connected or out of quota, Auto moves to the next one."
-        >
-          {connectedProviderIds.length === 0 ? (
+        {connectedProviderIds.length === 0 ? (
+          <FieldRow label="Providers, in order">
             <FilledEmptyState
               icon={CONCEPT_ICONS.providers}
               tone={CONCEPT_TONE.providers}
               title="No providers connected"
             />
-          ) : (
-            <FallbackOrder
-              providerIds={orderedProviderIds}
-              poolIds={providerPoolIds}
-              defaultProviderId={defaultProviderId}
-              disabled={busy}
-              onToggle={(providerId) => onToggleRoutingProvider({ providerId })}
-            />
-          )}
-        </FieldRow>
+          </FieldRow>
+        ) : (
+          <ProvidersInOrder workspaceId={workspaceId} />
+        )}
       </section>
 
       <section aria-label="Chat" className="flex flex-col gap-2">
@@ -289,7 +219,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
                       help={task.description}
                       preference={overrides.taskModels?.[task.id] ?? null}
                       defaultProviderId={defaultProviderId}
-                      fallbackOrder={fallbackOrder}
+                      providerPolicy={policy}
                       connectedProviderIds={connectedProviderIds}
                       disabled={busy}
                       onChange={(preference) => persistTaskModel({ task: task.id, preference })}

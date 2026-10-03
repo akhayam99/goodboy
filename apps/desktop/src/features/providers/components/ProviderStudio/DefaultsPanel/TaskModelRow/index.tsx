@@ -6,7 +6,13 @@ import {
   resolveStoredModelSelection,
 } from '@goodboy/core';
 import { resolveLimitedTaskModel } from '../../../../../../store/slices/providerLimits/resolveLimitedTaskModel';
-import type { AuxTaskId, EffortLevel, ProviderId, TaskModelPreference } from '@goodboy/types';
+import type {
+  AuxTaskId,
+  EffortLevel,
+  ProviderId,
+  ProviderPolicy,
+  TaskModelPreference,
+} from '@goodboy/types';
 import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
 import { AUTO_RECOMMENDATION_COPY } from '../../../../../../shared/components/RoutingPicker/autoRecommendationCopy';
 import { autoLimitReason } from '../../../../../../shared/components/RoutingPicker/autoLimitReason';
@@ -24,7 +30,7 @@ type Props = {
   readonly help: string;
   readonly preference: TaskModelPreference | null;
   readonly defaultProviderId: ProviderId;
-  readonly fallbackOrder: ReadonlyArray<ProviderId>;
+  readonly providerPolicy: ProviderPolicy | null;
   readonly connectedProviderIds: ReadonlyArray<ProviderId>;
   readonly disabled: boolean;
   readonly onChange: (preference: TaskModelPreference | null) => void;
@@ -36,7 +42,7 @@ export const TaskModelRow = ({
   help,
   preference,
   defaultProviderId,
-  fallbackOrder,
+  providerPolicy,
   connectedProviderIds,
   disabled,
   onChange,
@@ -49,7 +55,7 @@ export const TaskModelRow = ({
     workspaceDefaultProviderId: defaultProviderId,
     sessionDefaultProviderId: defaultProviderId,
     connectedProviders: connectedProviderIds,
-    fallbackOrder,
+    providerPolicy,
   });
   const preferredProviderId = preference?.providerId ?? automatic.providerId;
   const [providerId, setProviderId] = useState(preferredProviderId);

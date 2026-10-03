@@ -31,7 +31,7 @@ Keep a task moving when a provider runs out. With another eligible provider conn
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-fallback-auto-light.webp" alt="Settings, Providers and models, Defaults: Default provider set to Claude with the note Auto starts here, Fallback order with Claude first, and the Explore and plan roles Scout, Debugger and Planner, each with an Auto picker">
 </picture>
 
-Choose where **Auto** starts and how it falls back. **Default provider** says where Auto starts, and **Fallback order** lists the providers it moves through when one is not connected or is out of quota. Each role below, from Scout to Planner, has its own picker, set to **Auto** or pinned to a model.
+Choose which providers this workspace uses, and in what order. **Providers, in order** in Defaults sums the list up ("Claude, Codex · Cursor as backup") and opens it in place: drag a provider by its handle, or move it with Alt and the arrow keys, and set it **On**, **Backup only** or **Off**. The first On provider is where new work starts. Auto uses the first On provider that can work, a **Backup only** provider only when no On provider can (not connected, at its limit, CLI too old), and an **Off** provider never, not even for a role pinned to it. Two marks are yours to set: **Pay-as-you-go**, which suggests Backup only, and **Keep using after the limit**, which keeps a provider in the order while it is at its limit. A provider connected later shows at the end as **New** and stays unused until you turn it on. Every agent launch, new session, background task, workflow step and the workflow orchestrator's model menu read the same list. The **Providers** button in the footer opens the same list for the current workspace. Each role below, from Scout to Planner, has its own picker, set to **Auto** or pinned to a model.
 
 ### Model picker
 
@@ -40,7 +40,7 @@ Choose where **Auto** starts and how it falls back. **Default provider** says wh
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-model-picker-light.webp" alt="The model picker opened on the Implementer role in Defaults: Auto with what it resolves to now, Claude Sonnet 5 Medium, then Provider icons, Model chips Haiku, Sonnet, Opus and Fable, Version 4.6 and 5, and Effort from Low to Max">
 </picture>
 
-Pick a model with the reason next to it. The picker leads with **Auto** and what it resolves to right now, then the provider, the model family, the version and the effort. The settings icon beside **Provider** opens **Models in the picker**, where you choose which models appear; a model you turn off is also left out of Auto and the workflow orchestrator. When you create an agent, the picker also offers a **Suggested** model with the reason and **Last used here**.
+Pick a model with the reason next to it. The picker leads with **Auto** and what it resolves to right now, then the provider, the model family, the version and the effort. The settings icon beside **Provider** opens **Models in the picker**, where you choose which models appear; a model you turn off is also left out of Auto and the workflow orchestrator. When you create an agent, the picker also offers a **Suggested** model with the reason and **Last used here**. Under the provider icons the picker says why the provider you look at is not a plain choice: **Off in this workspace**, **Backup only** or **At limit until 18:40**; a model the CLI is too old for, or one you hid, says so on its own line.
 
 ### Impact
 

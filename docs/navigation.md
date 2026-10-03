@@ -836,14 +836,21 @@ items (provider, project, code host, task manager, first session, profile); a
 skipped code host or task manager reopens its own step, and the first session
 ticks when an agent finishes a turn, not when a session row exists.
 
-Right: Inbox, Workflows, Impact and Settings. Settings always opens App >
+Right: Inbox, Workflows, Impact, Providers and Settings. Settings always opens App >
 General, with or without a workspace; Workspace settings opens only from the
 gear on the current-workspace row of the workspace popover. Impact is a
 destination, so it has a launcher; the launcher opens its Overview tab, while
 the spend figure in the top bar and the `Impact: Spend` palette entry open its
-Spend tab. Providers & models is a Settings scope, reached from the Settings
-rail and the palette, so it has no footer launcher. Changelog opens from the
-Goodboy chip and the palette, so it earns no footer entry either.
+Spend tab. **Providers** is not a door to the Providers & models page: it opens
+a menu that changes things in place (`AppFooter/ProvidersMenu`). On top, every
+connected provider with its 5-hour and weekly limits; under "For <workspace>",
+the same `ProviderPolicyList` as Defaults > Providers, in order, writing through
+the same `setProviderPolicy`; then Connect for each CLI provider that is not
+connected, and Open Providers & models. It reads the cached providers and never
+refreshes them on open. With no provider connected the button pulses; that pulse
+replaced the top bar's old Connect a provider chip, so the limits strip shows
+nothing until a provider is connected. Changelog opens from the Goodboy chip and
+the palette, so it earns no footer entry.
 
 The footer is an `@container/footer` on the same `chrome-labels` step as the
 top bar. Below it, every launcher label and the **Link integration** label

@@ -462,6 +462,7 @@ const appendStep = async ({
   const baseOrdinal =
     existingAgents.reduce((max, current) => Math.max(max, current.ordinal), -1) + 1;
   const spawned = await preSpawnWorkflowAgents({
+    policy: workspacePolicyAvailability({ state: get() }).policy,
     sessionId,
     workflowRunId,
     steps: [nextStep],

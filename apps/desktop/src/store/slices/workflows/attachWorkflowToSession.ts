@@ -127,6 +127,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
             blocked: [],
           })
         : preSpawnWorkflowAgents({
+            policy: workspacePolicyAvailability({ state: get() }).policy,
             sessionId,
             workflowRunId,
             steps: template.steps,
