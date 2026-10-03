@@ -95,7 +95,7 @@ export const WorkspaceLauncher = () => {
           variant="ghost"
           onClick={() =>
             window.dispatchEvent(
-              new CustomEvent('goodboy:open-settings', { detail: { scope: 'app' } }),
+              new CustomEvent('goodboy:open-settings', { detail: { scope: 'home' } }),
             )
           }
         />

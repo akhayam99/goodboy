@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { ScrollFade, StudioRailLayout } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
@@ -9,16 +9,16 @@ import { StudioShell } from '../../../../shared/components/StudioShell';
 import { StudioTrail } from '../../../../shared/components/StudioShell/StudioTrail';
 import { settingsTrail } from '../../trail/settingsMenus';
 import { AppScopePanel } from './AppScopePanel';
-import {
-  SettingsRail,
-  isNestedScope,
-  settingsScopeAvailable,
-  type NestedScope,
-} from './SettingsRail';
+import { SettingsRail } from './SettingsRail';
+import { isNestedScope, settingsScopeAvailable, type NestedScope } from './settingsScopes';
 import { appSectionOf } from './appSections';
 import type { ScopeFrame } from './types';
-import type { SettingsFocus, SettingsScopeChange, SettingsStudioScope } from '../../settingsFocus';
+import type { SettingsFocus, SettingsPageScope, SettingsScopeChange } from '../../settingsFocus';
 import { WorkspaceScopePanel } from './WorkspaceScopePanel';
+import { useSettingsStatus } from '../../hooks/useSettingsStatus';
+import { settingsDirectory, settingsPageKey } from './settingsDirectory';
+import { SettingsHome } from './SettingsHome';
+import { writeLastSettingsPage } from './lastSettingsPage';
 
 type Props = {
   readonly currentWorkspace: Workspace | null;
@@ -46,12 +46,47 @@ const withSlot = ({
   return { ...slots, [scope]: element ?? undefined };
 };
 
+const pageScopeOf = ({
+  focus,
+  hasWorkspace,
+}: {
+  readonly focus: SettingsFocus;
+  readonly hasWorkspace: boolean;
+}): SettingsPageScope => {
+  if (focus.scope === 'home') {
+    return 'app';
+  }
+  return settingsScopeAvailable({ scope: focus.scope, hasWorkspace }) ? focus.scope : 'app';
+};
+
 export const SettingsStudio = ({ currentWorkspace, focus, onScopeChange, onClose }: Props) => {
   const hasWorkspace = currentWorkspace !== null;
-  const availableScope = settingsScopeAvailable({ scope: focus.scope, hasWorkspace })
-    ? focus.scope
-    : 'app';
-  const [shownScope, setShownScope] = useState<SettingsStudioScope>(availableScope);
+  const workspaceId = currentWorkspace?.id ?? null;
+  const workspaceName = currentWorkspace?.name ?? null;
+  const isHome = focus.scope === 'home';
+  const availableScope = pageScopeOf({ focus, hasWorkspace });
+  const status = useSettingsStatus({ workspaceId });
+  const groups = useMemo(
+    () => settingsDirectory({ status, workspaceName }),
+    [status, workspaceName],
+  );
+  const pageKey = isHome
+    ? null
+    : settingsPageKey({
+        scope: availableScope,
+        section: focus.section,
+        provider: focus.provider,
+        tool: focus.tool,
+      });
+
+  useEffect(() => {
+    if (pageKey === null) {
+      return;
+    }
+    writeLastSettingsPage({ key: pageKey });
+  }, [pageKey]);
+
+  const [shownScope, setShownScope] = useState<SettingsPageScope>(availableScope);
   const [leaving, setLeaving] = useState<NestedScope | null>(null);
   const [railSlots, setRailSlots] = useState<Slots>({});
   const [detailSlots, setDetailSlots] = useState<Slots>({});
@@ -148,36 +183,40 @@ export const SettingsStudio = ({ currentWorkspace, focus, onScopeChange, onClose
         <>
           <StudioTrail
             segments={settingsTrail({
-              scope: availableScope,
+              scope: isHome ? 'home' : availableScope,
               appSection: appSectionOf({ section: focus.section }),
-              workspaceName: currentWorkspace?.name ?? null,
+              workspaceName,
               onSelect: onScopeChange,
             })}
           />
-          <StudioRailLayout
-            railLabel="Settings scopes"
-            railWidth="narrow"
-            rail={
-              <ScrollFade className="min-h-0 flex-1" fadeFrom="background">
-                <SettingsRail
-                  scope={availableScope}
-                  appSection={appSectionOf({ section: focus.section })}
-                  workspaceId={currentWorkspace?.id ?? null}
-                  workspaceName={currentWorkspace?.name ?? null}
-                  hasWorkspace={hasWorkspace}
-                  nestedSlot={slotRefs.rail}
-                  onNestedClosed={({ scope }) =>
-                    setLeaving((current) => (current === scope ? null : current))
-                  }
-                  onSelect={onScopeChange}
-                />
-              </ScrollFade>
-            }
-            detail={renderDetail(requestClose)}
-          />
-          {NESTED_SCOPES.filter((scope) => scope === availableScope || scope === leaving).map(
-            renderScope,
+          {isHome ? (
+            <SettingsHome groups={groups} onOpen={(page) => onScopeChange(page.target)} />
+          ) : (
+            <StudioRailLayout
+              railLabel="Settings scopes"
+              railWidth="narrow"
+              rail={
+                <ScrollFade className="min-h-0 flex-1" fadeFrom="background">
+                  <SettingsRail
+                    scope={availableScope}
+                    appSection={appSectionOf({ section: focus.section })}
+                    groups={groups}
+                    nestedSlot={slotRefs.rail}
+                    onNestedClosed={({ scope }) =>
+                      setLeaving((current) => (current === scope ? null : current))
+                    }
+                    onSelect={onScopeChange}
+                  />
+                </ScrollFade>
+              }
+              detail={renderDetail(requestClose)}
+            />
           )}
+          {isHome
+            ? null
+            : NESTED_SCOPES.filter((scope) => scope === availableScope || scope === leaving).map(
+                renderScope,
+              )}
         </>
       )}
     </StudioShell>

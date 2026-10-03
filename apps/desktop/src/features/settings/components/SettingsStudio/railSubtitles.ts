@@ -3,10 +3,7 @@ import type { Tone } from '@goodboy/ui';
 import type { AppStore } from '../../../../store/store';
 import { selectProviderAttention } from '../../../../store/slices/providers/selectProviderAttention';
 import { selectSecurityFindingsAttention } from '../../../../store/slices/security-findings/selectSecurityFindingsAttention';
-import {
-  selectStorageAttention,
-  selectStorageAttentionTone,
-} from '../../../../store/slices/storage/selectStorageAttention';
+import { storageAttention } from '../../../../store/slices/storage/selectStorageAttention';
 import { pluralize } from '../../../../shared/utils/pluralize';
 
 export type RailSubtitles = {
@@ -22,21 +19,24 @@ export type RailSubtitles = {
   readonly workspaceTone: Tone | undefined;
 };
 
+export type RailSubtitleState = Pick<
+  AppStore,
+  | 'updaterStatus'
+  | 'storageFolders'
+  | 'settings'
+  | 'storageStats'
+  | 'openSecurityFindings'
+  | 'providers'
+  | 'cliRequirements'
+  | 'providerLimits'
+  | 'projects'
+  | 'projectGitStatus'
+>;
+
 type Params = {
-  readonly state: Pick<
-    AppStore,
-    | 'updaterStatus'
-    | 'storageFolders'
-    | 'settings'
-    | 'storageStats'
-    | 'openSecurityFindings'
-    | 'providers'
-    | 'cliRequirements'
-    | 'providerLimits'
-    | 'projects'
-    | 'projectGitStatus'
-  >;
+  readonly state: RailSubtitleState;
   readonly workspaceId: WorkspaceId | null;
+  readonly nowMs: number;
 };
 
 const missingFolderCount = ({
@@ -53,9 +53,10 @@ const missingFolderCount = ({
   ).length;
 };
 
-export const railSubtitles = ({ state, workspaceId }: Params): RailSubtitles => {
-  const storageText = selectStorageAttention({ state }) ?? undefined;
-  const storageTone = selectStorageAttentionTone({ state }) ?? undefined;
+export const railSubtitles = ({ state, workspaceId, nowMs }: Params): RailSubtitles => {
+  const storage = storageAttention({ state, nowMs });
+  const storageText = storage?.label;
+  const storageTone = storage?.tone;
   const securityFindingsText = selectSecurityFindingsAttention({ state, workspaceId }) ?? undefined;
   const providersText = selectProviderAttention({ state }) ?? undefined;
   const missing = missingFolderCount({ state, workspaceId });

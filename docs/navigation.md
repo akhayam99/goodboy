@@ -602,8 +602,9 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   section. The scope segment lists App, the workspace, Providers & models and
   Tools; the section segment lists the App sections. Neither carries an
   action: Settings has no project scope, so there is no `Use workspace values`
-  to offer. The first segment of a
-  studio has no menu: studios change from the footer.
+  to offer. The first segment of a studio has no menu (studios change from the
+  footer) and is always a button back to that studio's start: Settings goes to
+  its home, Workflows to its list. On the Settings home it is the only segment.
 - **Every menu row has five slots**: lead, label with a faint second part,
   meta, a state that is always a word (from `agentStateWord`, the same reading
   `isAgentFinished` makes), and a check on the current row, which is there even
@@ -724,7 +725,7 @@ only drop under zoom.
   row, never in a modal: the primary keeps them going in a new window, the
   ghost alternative stops them and opens here. A closed `Disconnected` group
   lists workspaces removed from disk, each with a small `Reconnect`. Settings
-  opens on App > General; only Workspace settings lives behind this popover,
+  opens on its home; only Workspace settings lives behind this popover,
   so the bar holds no second settings control.
 - **Identity is pinned and mounted once.** Workspace identity stays at the left
   of the top bar on the board, inside sessions, and under studios. Exactly one
@@ -829,8 +830,8 @@ items (provider, project, code host, task manager, first session, profile); a
 skipped code host or task manager reopens its own step, and the first session
 ticks when an agent finishes a turn, not when a session row exists.
 
-Right: Inbox, Workflows, Impact and Settings. Settings always opens App >
-General, with or without a workspace; Workspace settings opens only from the
+Right: Inbox, Workflows, Impact and Settings. Settings (and ⌘,) always opens
+the Settings home, with or without a workspace; Workspace settings opens only from the
 gear on the current-workspace row of the workspace popover. Impact is a
 destination, so it has a launcher; the launcher opens its Overview tab, while
 the spend figure in the top bar and the `Impact: Spend` palette entry open its
@@ -857,8 +858,8 @@ Goodboy chip never hides. Past that the glyph strip scrolls.
   Opening any studio closes the others.
 - **Before any workspace exists, the footer keeps its app half**: Settings and
   the Goodboy chip. The integration strip, Inbox and Workflows belong to a
-  workspace and wait for one. Settings then opens on App and lists only App and
-  Providers & models, and Providers opens on an account instead of on the
+  workspace and wait for one. Settings then opens its home with only the App and
+  Providers & models groups, and Providers opens on an account instead of on the
   workspace defaults. Precedent: VS Code keeps its status bar and Manage gear
   with no folder open.
 
@@ -944,7 +945,8 @@ one is open at a time.
   `StudioShell`; inside the frame it only hands its chrome to the band. Until a
   body's chunk arrives, the frame shows one of three opaque skeletons: `list`
   (Inbox, Notifications, Add workspace, Impact), `rail`
-  (Settings) or `grid` (Workflows, Changelog, the guide, pairing). With no studio
+  (a Settings page) or `grid` (Workflows, Changelog, the guide, pairing, the
+  Settings home). With no studio
   open, no frame node exists, so nothing covers the page.
 - **One Esc stack.** The frame, a body that holds Esc (the Inbox with a record
   open), the agent overlay and the delete confirm all register with
@@ -991,6 +993,20 @@ one is open at a time.
   reply box, / focuses the search, and Escape closes the record before the
   studio. Below a 720px list column the rail folds into a Filters button in
   the list header.
+- **Settings opens on a home that mirrors its rail.** The footer, ⌘, and the
+  palette's Open settings land on it; a link that names a page (a scope, a
+  section, a provider or a tool) skips it. It shows the rail's four groups
+  (App, Workspace, Providers & models, Integrations), each titled with where
+  it applies, and every page of a group as a card: the concept icon on its
+  tone, the name and the same status line the rail shows (a quiet hint when
+  nothing needs doing). Cards and rail rows come from one list,
+  `settingsDirectory`, so no card exists without a rail row. The page opened
+  last carries `Last opened` and takes the focus, so Enter goes back to it.
+  The status lines are read once per studio (`useSettingsStatus`, on the
+  minute clock of `useNow`) and feed the home and the rail; the home starts no
+  loading of its own (no storage scan, no branch scan, no provider refresh).
+  Without a workspace the Workspace and Integrations groups are left out.
+  Precedent: the Google Account home and the iOS settings list.
 - **Settings nests items in its rail.** The App items (General, Shortcuts,
   Backup, Storage, Security findings, Help, Danger zone) always sit under the
   App row as indented
@@ -1075,15 +1091,17 @@ look` (`Merged, then N new commits`, unmerged and gone on origin, local
   workspace; without one it says so instead of scanning anything.
 - **Settings rail tone is state, never decoration.** Each row carries its
   concept icon from `CONCEPT_ICONS`. One reader, `railSubtitles({ state,
-workspaceId })`, owns every row's subtitle and tone (it replaced three
-  separate selectors read straight from `SettingsRail`, and a regression test
-  spies on `invoke` to keep it invoke-free at render). A dot appears only
+workspaceId, nowMs })`, owns every row's subtitle and tone (it replaced three
+  separate selectors read straight from `SettingsRail`). `useSettingsStatus`
+  calls it once per studio and hands the result to the rail and the home, and
+  a test mounts the home on the strict `invoke` mock to keep it free of
+  commands and loads at render. A dot appears only
   when something needs doing: warning on Providers & models when a connected
   CLI is too old for a model it serves or no provider is connected
   (`selectProviderAttention`, with the reason as the row subtitle), info on
   General while an app update is ready, info on Storage with "N GB can go" as
   its subtitle once clean idle folders pass 10 GB (warning when the disk has
-  under 10 GB free and at least 1 GB can go, `selectStorageAttention`),
+  under 10 GB free and at least 1 GB can go, `storageAttention`),
   warning on Security findings with "N open" once the current workspace has
   an undismissed finding (`selectSecurityFindingsAttention`), and warning on
   Workspace with "N folders not found" once one of its projects reads

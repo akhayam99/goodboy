@@ -224,24 +224,6 @@ describe('app overlay hook, navigation', () => {
     expect(frame?.getAttribute('data-studio')).toBe('workflow');
   });
 
-  it('footer Settings opens App > General with a workspace', async () => {
-    renderHarness();
-    act(() => overlays().openSettings());
-
-    expect(await openStudios()).toEqual(['settings']);
-    expect(screen.getByTestId('studio').getAttribute('data-scope')).toBe('app');
-    expect(screen.getByTestId('studio').getAttribute('data-section')).toBe('general');
-  });
-
-  it('footer Settings opens App > General without a workspace', async () => {
-    render(<Harness connectedGithub={false} isLauncher />);
-    act(() => overlays().openSettings());
-
-    expect(await openStudios()).toEqual(['settings']);
-    expect(screen.getByTestId('studio').getAttribute('data-scope')).toBe('app');
-    expect(screen.getByTestId('studio').getAttribute('data-section')).toBe('general');
-  });
-
   it('changes the settings scope in place', async () => {
     renderHarness();
     act(() => overlays().openSettings());

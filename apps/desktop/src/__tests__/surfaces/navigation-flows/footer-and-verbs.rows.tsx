@@ -92,9 +92,9 @@ export const FOOTER_AND_VERB_ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'footer: settings',
-    covers: ['openSettings', 'studio:settings', 'settings:general'],
+    covers: ['openSettings', 'studio:settings', 'scope:home'],
     open: () => clickButton(/^Open settings/),
-    lands: () => heading('Appearance'),
+    lands: () => visible('list', 'App pages'),
   },
   {
     name: 'footer: integrations',

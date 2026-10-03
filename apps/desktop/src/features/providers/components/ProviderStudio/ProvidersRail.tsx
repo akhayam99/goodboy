@@ -1,13 +1,12 @@
-import { limitsChipOf, outdatedCliModels } from '@goodboy/core';
-import { limitsRailStatus } from '../../limits/limitsRailStatus';
-import { cn, PANE_RHYTHM, SelectableRow, StatusRailItem, type Tone } from '@goodboy/ui';
-import { type ProviderConnectionState, type ProviderId } from '@goodboy/types';
+import { useShallow } from 'zustand/react/shallow';
+import { cn, PANE_RHYTHM, SelectableRow, StatusRailItem } from '@goodboy/ui';
+import type { ProviderId } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
 import { SlidersHorizontal } from 'lucide-react';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
-import { PROVIDER_CONNECTION_LABEL } from '../../connectionLabel';
+import { providerRailStatus } from '../../providerRailStatus';
 
 type Props = {
   readonly providers: ReadonlyArray<ProviderDisplayInfo>;
@@ -16,17 +15,13 @@ type Props = {
   readonly onSelectDefaults?: () => void;
 };
 
-const STATUS_TONE: Record<ProviderConnectionState, Tone> = {
-  connected: 'success',
-  installed_disconnected: 'warning',
-  missing: 'neutral',
-  error: 'danger',
-  unknown: 'neutral',
-};
-
 export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults }: Props) => {
-  const learned = useAppStore((state) => state.cliRequirements);
-  const providerLimits = useAppStore((state) => state.providerLimits);
+  const state = useAppStore(
+    useShallow((store) => ({
+      cliRequirements: store.cliRequirements,
+      providerLimits: store.providerLimits,
+    })),
+  );
   const nowMs = Date.now();
   return (
     <ul
@@ -53,26 +48,7 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
       {providers.map((p) => {
         const id = p.id as ProviderId;
         const Icon = PROVIDER_BRAND[id].icon;
-        const isOutdated =
-          p.connection !== 'missing' &&
-          outdatedCliModels({ provider: id, installedVersion: p.version, learned }).length > 0;
-        const limitStatus =
-          p.connection === 'connected'
-            ? limitsRailStatus({
-                chip: limitsChipOf({ providerId: id, limits: providerLimits[id], nowMs }),
-                nowMs,
-              })
-            : null;
-        const connectionSubtitle =
-          p.connection === 'connected'
-            ? (p.identity ?? PROVIDER_CONNECTION_LABEL.connected)
-            : PROVIDER_CONNECTION_LABEL[p.connection];
-        const subtitle = isOutdated
-          ? 'update needed'
-          : (limitStatus?.subtitle ?? connectionSubtitle);
-        const tone: Tone = isOutdated
-          ? 'warning'
-          : (limitStatus?.tone ?? STATUS_TONE[p.connection]);
+        const { subtitle, tone } = providerRailStatus({ provider: p, state, nowMs });
         return (
           <li key={id}>
             <StatusRailItem

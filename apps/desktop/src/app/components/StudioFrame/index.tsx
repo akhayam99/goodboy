@@ -8,16 +8,17 @@ import {
 } from '../../../shared/components/StudioShell/studioFrameContext';
 import { STUDIO_EXIT_MS } from '../../../shared/hooks/useStudioOverlay';
 import type { StudioKind } from '../../../store';
-import { STUDIO_META } from './studioMeta';
+import { STUDIO_META, type StudioSkeletonLayout } from './studioMeta';
 import { StudioSkeleton } from './StudioSkeleton';
 
 type Props = {
   readonly kind: StudioKind;
+  readonly skeleton?: StudioSkeletonLayout;
   readonly onClose: () => void;
   readonly children: ReactNode;
 };
 
-export const StudioFrame = ({ kind, onClose, children }: Props) => {
+export const StudioFrame = ({ kind, skeleton, onClose, children }: Props) => {
   const [chrome, setChrome] = useState<StudioChrome | null>(null);
   const [closingKind, setClosingKind] = useState<StudioKind | null>(null);
   const kindRef = useRef(kind);
@@ -82,7 +83,9 @@ export const StudioFrame = ({ kind, onClose, children }: Props) => {
             'has-[[data-studio-rail]]:border-y-0',
           )}
         >
-          <Suspense fallback={<StudioSkeleton layout={meta.skeleton} title={meta.title} />}>
+          <Suspense
+            fallback={<StudioSkeleton layout={skeleton ?? meta.skeleton} title={meta.title} />}
+          >
             {children}
           </Suspense>
         </div>
