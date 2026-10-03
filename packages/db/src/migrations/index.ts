@@ -74,6 +74,7 @@ import { m212Chats } from './m212-chats';
 import { m213ResolveBatches } from './m213-resolve-batches';
 import { m214ChatModelsLinks } from './m214-chat-models-links';
 import { m215IndexAudit } from './m215-index-audit';
+import { m216TaskLinksScope } from './m216-task-links-scope';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -435,4 +436,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 213, sql: m213ResolveBatches },
   { version: 214, sql: m214ChatModelsLinks },
   { version: 215, sql: m215IndexAudit },
+  { version: 216, sql: m216TaskLinksScope },
 ];

@@ -1,3 +1,4 @@
+import { DEFAULT_BRANCH_TEMPLATE } from '@goodboy/core';
 import {
   AFTER_MERGE_RULES,
   REPLY_VOICES,
@@ -108,6 +109,16 @@ const WORKSPACE_FIELDS: ReadonlyArray<WorkspaceFieldDef> = [
     stored: ({ overrides }) => overrides?.defaultBranchPrefix ?? null,
     display: (value) => value,
     write: (value) => override('defaultBranchPrefix', value),
+  }),
+  erase({
+    id: 'branchTemplate',
+    label: 'Branch name',
+    fallback: DEFAULT_BRANCH_TEMPLATE,
+    parse: asText,
+    stored: ({ overrides }) => textOrNull(overrides?.defaultBranchTemplate),
+    display: (value) => value,
+    write: (value) =>
+      override('defaultBranchTemplate', value === DEFAULT_BRANCH_TEMPLATE ? null : value),
   }),
   erase({
     id: 'attribution',

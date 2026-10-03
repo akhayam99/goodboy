@@ -42,6 +42,7 @@ export type ConfigBundleWorkspaceOverrides = Readonly<{
   replyTemplateNoChange: string | null;
   resolveOnGithub: boolean | null;
   resolveCommitStyle: string | null;
+  defaultBranchTemplate?: string | null;
 }>;
 
 export type ConfigBundleWorkspace = Readonly<{

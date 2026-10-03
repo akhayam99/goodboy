@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Database } from '../client';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
+import { migrations } from './index';
 import { migrate } from './runner';
 
 type Lookup = {
@@ -164,7 +165,10 @@ describe('m215 index audit', () => {
     await db.execute(
       "INSERT INTO skills (id, workspace_id, name, description, file_path, body, frontmatter_json, created_at, updated_at) VALUES ('skill-1', 'harborline', 'Reconcile', 'Match payouts to the ledger', '/skills/reconcile.md', 'Match payouts.', '{}', 1, 1)",
     );
-    const result = await migrate(db);
+    const result = await migrate(
+      db,
+      migrations.filter((migration) => migration.version <= 215),
+    );
     expect(result.applied).toEqual([215]);
     const agents = await db.select<{ readonly id: string }>('SELECT id FROM agents');
     const skills = await db.select<{ readonly id: string }>('SELECT id FROM skills');

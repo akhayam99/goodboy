@@ -128,8 +128,8 @@ export const insertWorkspace = async ({ db, workspace }: InsertWorkspaceParams):
        default_branch_prefix, default_verbosity, provider_bindings,
        task_models, role_models, parallel_agents, provider_pool, created_at, updated_at,
        deleted_at, disconnected_at, last_accessed_at, attribution_footer,
-       default_permission_mode, ${REPLY_SETTING_COLUMNS}
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       default_permission_mode, ${REPLY_SETTING_COLUMNS}, default_branch_template
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       workspace.id,
       workspace.name,
@@ -158,6 +158,7 @@ export const insertWorkspace = async ({ db, workspace }: InsertWorkspaceParams):
           : 0,
       workspace.defaultPermissionMode ?? 'bypassPermissions',
       ...replySettingValues({ overrides: workspace.overrides }),
+      workspace.overrides.defaultBranchTemplate,
     ],
   );
   if (workspace.profile === undefined) {

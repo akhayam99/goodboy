@@ -33,6 +33,7 @@ const NULL_OVERRIDE: OverrideSettings = {
   resolveOnGithub: null,
   resolveCommitStyle: null,
   afterMerge: null,
+  defaultBranchTemplate: null,
 };
 
 type StateParams = {

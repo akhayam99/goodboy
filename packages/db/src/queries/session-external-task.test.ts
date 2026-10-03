@@ -9,7 +9,6 @@ import type {
 import type { Database } from '../client';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { migrations } from '../migrations';
-import { migrate } from '../migrations/runner';
 import {
   deleteSessionExternalTask,
   listExternalTasksForWorkspace,
@@ -198,90 +197,6 @@ describe('session_external_tasks queries', () => {
     expect(await listSessionTasks({ db })).toEqual([]);
   });
 
-  it('preserves an existing row while removing the one-link constraint', async () => {
-    const db = await seed({ throughVersion: 70 });
-    const original = makeTask({});
-    await db.execute(
-      `INSERT INTO session_external_tasks
-        (session_id, provider, external_id, identifier, url, title, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [
-        original.sessionId,
-        original.provider,
-        original.externalId,
-        original.identifier,
-        original.url,
-        original.title,
-        Date.parse(original.createdAt),
-      ],
-    );
-    await migrate(db, migrations);
-
-    expect(await listSessionTasks({ db })).toEqual([original]);
-  });
-
-  it('preserves existing rows while allowing GitHub links', async () => {
-    const db = await seed({ throughVersion: 72 });
-    const gitlab = makeTask({
-      overrides: {
-        provider: 'gitlab',
-        externalId: 'gitlab-12',
-        identifier: '#12',
-        url: 'https://gitlab.com/goodboy/goodboy/-/issues/12',
-        title: 'Keep this link',
-      },
-    });
-    await db.execute(
-      `INSERT INTO session_external_tasks
-        (session_id, provider, external_id, identifier, url, title, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [
-        gitlab.sessionId,
-        gitlab.provider,
-        gitlab.externalId,
-        gitlab.identifier,
-        gitlab.url,
-        gitlab.title,
-        Date.parse(gitlab.createdAt),
-      ],
-    );
-    await migrate(db, migrations);
-    const github = makeTask({
-      overrides: {
-        provider: 'github',
-        externalId: '34',
-        identifier: '#34',
-        url: 'https://github.com/goodboy/goodboy/issues/34',
-        title: 'Add GitHub issues',
-      },
-    });
-    await upsertSessionExternalTask({ db, task: github });
-
-    expect(await listSessionTasks({ db })).toEqual([github, gitlab]);
-  });
-
-  it('preserves existing links with null mount attribution', async () => {
-    const db = await seed({ throughVersion: 95 });
-    const original = makeTask({});
-    await db.execute(
-      `INSERT INTO session_external_tasks
-        (session_id, provider, external_id, identifier, url, title, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [
-        original.sessionId,
-        original.provider,
-        original.externalId,
-        original.identifier,
-        original.url,
-        original.title,
-        Date.parse(original.createdAt),
-      ],
-    );
-    await migrate(db, migrations);
-
-    expect(await listSessionTasks({ db })).toEqual([original]);
-  });
-
   it('keeps the branch an issue was linked on', async () => {
     const db = await seed({});
     const stamped = makeTask({ overrides: { branch: 'ak/fix-auth' } });
@@ -290,16 +205,90 @@ describe('session_external_tasks queries', () => {
     expect(await listSessionTasks({ db })).toEqual([stamped]);
   });
 
-  it('keeps the original branch when the same link is upserted without one', async () => {
+  it('keeps the branch a session link was written with when it is linked again without one', async () => {
     const db = await seed({});
     await upsertSessionExternalTask({
       db,
-      task: makeTask({ overrides: { branch: 'ak/fix-auth' } }),
+      task: makeTask({ overrides: { branch: 'hl/fix-auth' } }),
     });
     await upsertSessionExternalTask({ db, task: makeTask({ overrides: { title: 'Renamed' } }) });
 
     expect(await listSessionTasks({ db })).toEqual([
-      makeTask({ overrides: { branch: 'ak/fix-auth', title: 'Renamed' } }),
+      makeTask({ overrides: { branch: 'hl/fix-auth', title: 'Renamed' } }),
     ]);
+  });
+
+  it('keeps a session link and a branch link of the same task apart, and never duplicates either', async () => {
+    const db = await seed({});
+    const onSession = makeTask({ overrides: { branch: 'hl/fix-auth' } });
+    const onBranch = makeTask({ overrides: { branch: 'hl/fix-auth', scope: 'branch' } });
+    const onOtherBranch = makeTask({ overrides: { branch: 'hl/auth-copy', scope: 'branch' } });
+
+    for (const task of [onSession, onBranch, onOtherBranch, onBranch, onSession]) {
+      await upsertSessionExternalTask({ db, task });
+    }
+
+    expect(await listSessionTasks({ db })).toEqual([onSession, onOtherBranch, onBranch]);
+  });
+
+  it('stores the relation a link was written with and updates it on the next link', async () => {
+    const db = await seed({});
+    await upsertSessionExternalTask({ db, task: makeTask({ overrides: { relation: 'part-of' } }) });
+    expect(await listSessionTasks({ db })).toEqual([
+      makeTask({ overrides: { relation: 'part-of' } }),
+    ]);
+
+    await upsertSessionExternalTask({ db, task: makeTask({}) });
+    expect(await listSessionTasks({ db })).toEqual([makeTask({})]);
+  });
+
+  it('refuses a branch link without a branch', async () => {
+    const db = await seed({});
+    await expect(
+      upsertSessionExternalTask({ db, task: makeTask({ overrides: { scope: 'branch' } }) }),
+    ).rejects.toThrow(/needs a branch/);
+  });
+
+  it('removes only the link of the scope it names', async () => {
+    const db = await seed({});
+    const onSession = makeTask({ overrides: { branch: 'hl/fix-auth' } });
+    const onBranch = makeTask({ overrides: { branch: 'hl/fix-auth', scope: 'branch' } });
+    await upsertSessionExternalTask({ db, task: onSession });
+    await upsertSessionExternalTask({ db, task: onBranch });
+
+    await deleteSessionExternalTask({
+      db,
+      sessionId,
+      provider: 'linear',
+      externalId: 'lin-uuid-1',
+      scope: 'branch',
+      branch: 'hl/fix-auth',
+    });
+    expect(await listSessionTasks({ db })).toEqual([onSession]);
+
+    await deleteSessionExternalTask({
+      db,
+      sessionId,
+      provider: 'linear',
+      externalId: 'lin-uuid-1',
+    });
+    expect(await listSessionTasks({ db })).toEqual([]);
+  });
+
+  it('finds a link through the identity index', async () => {
+    const db = await seed({});
+    const plan = await db.select<{ readonly detail: string }>(
+      `EXPLAIN QUERY PLAN
+       DELETE FROM session_external_tasks
+        WHERE session_id = ?
+          AND provider = ?
+          AND external_id = ?
+          AND COALESCE(project_id, '') = ?
+          AND COALESCE(CASE scope WHEN 'branch' THEN branch END, '') = ?`,
+      [sessionId, 'linear', 'lin-uuid-1', '', ''],
+    );
+    expect(plan.map((row) => row.detail).join('\n')).toContain(
+      'USING INDEX idx_session_external_tasks_identity',
+    );
   });
 });

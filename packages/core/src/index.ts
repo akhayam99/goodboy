@@ -1,9 +1,24 @@
 export {
+  availableBranchName,
+  BRANCH_PLACEHOLDERS,
+  branchNameProblem,
+  branchTemplateProblem,
+  buildBranchName,
+  DEFAULT_BRANCH_TEMPLATE,
+  isValidBranchName,
+  MAX_BRANCH_NAME_LENGTH,
   MAX_SLUG_LENGTH,
+  NO_TASK_BRANCH_TEMPLATE,
+  nextFreeBranchName,
   nextAvailableSlug,
   slugify,
   trimSlugAtWord,
+  unknownBranchPlaceholders,
   withSlugSuffix,
+  type BranchNameProblem,
+  type BranchPlaceholder,
+  type BranchTemplateProblem,
+  type BranchValues,
 } from './slug';
 export { IllegalTurnTransitionError, turnReducer, type TurnLifecycleEvent } from './turn';
 

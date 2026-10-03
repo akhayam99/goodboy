@@ -251,6 +251,7 @@ describe('sendTurn, terminal state guarantees', () => {
             resolveOnGithub: null,
             resolveCommitStyle: null,
             afterMerge: null,
+            defaultBranchTemplate: null,
           },
           createdAt: '2026-05-08T00:00:00.000Z' as IsoDateTime,
           updatedAt: '2026-05-08T00:00:00.000Z' as IsoDateTime,

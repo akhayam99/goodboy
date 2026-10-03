@@ -39,6 +39,7 @@ const overrides = {
   resolveOnGithub: null,
   resolveCommitStyle: null,
   afterMerge: null,
+  defaultBranchTemplate: null,
 } as const;
 
 const disconnectedWorkspace = (): Workspace => ({

@@ -3,6 +3,7 @@ import type { WorkspacePage } from './components/SettingsStudio/workspacePages';
 
 export type WorkspaceSettingField =
   | 'branchPrefix'
+  | 'branchTemplate'
   | 'attribution'
   | 'parallelAgents'
   | 'verbosity'
@@ -22,6 +23,7 @@ export type WorkspaceSettingField =
 
 export const FIELD_PAGE: Readonly<Record<WorkspaceSettingField, WorkspacePage>> = {
   branchPrefix: 'general',
+  branchTemplate: 'general',
   attribution: 'general',
   parallelAgents: 'general',
   verbosity: 'general',
@@ -46,6 +48,7 @@ type OverrideOwner =
 
 const OVERRIDE_OWNER: Readonly<Record<keyof OverrideSettings, OverrideOwner>> = {
   defaultBranchPrefix: { kind: 'field', field: 'branchPrefix' },
+  defaultBranchTemplate: { kind: 'field', field: 'branchTemplate' },
   attributionFooter: { kind: 'field', field: 'attribution' },
   parallelAgents: { kind: 'field', field: 'parallelAgents' },
   defaultVerbosity: { kind: 'field', field: 'verbosity' },

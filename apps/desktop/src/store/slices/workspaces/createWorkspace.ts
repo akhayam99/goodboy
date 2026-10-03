@@ -28,6 +28,7 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   resolveOnGithub: null,
   resolveCommitStyle: null,
   afterMerge: null,
+  defaultBranchTemplate: null,
 };
 
 export const createWorkspace = (set: SetFn, get: GetFn) => {

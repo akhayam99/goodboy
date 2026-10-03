@@ -43,6 +43,7 @@ const OVERRIDES = {
   resolveOnGithub: null,
   resolveCommitStyle: null,
   afterMerge: null,
+  defaultBranchTemplate: null,
 };
 
 const WORKSPACE: Workspace = {
