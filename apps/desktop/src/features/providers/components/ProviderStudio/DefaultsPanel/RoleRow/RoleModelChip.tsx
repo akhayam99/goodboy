@@ -1,6 +1,6 @@
 import type { KeyboardEvent } from 'react';
 import { X } from 'lucide-react';
-import { StateBadge, cn } from '@goodboy/ui';
+import { FOCUS_RING, ICON_SIZE, StateBadge, Tooltip, cn } from '@goodboy/ui';
 import type { RoleSetEntry } from '../../../../roleSetEntries';
 
 type Props = {
@@ -41,23 +41,27 @@ export const RoleModelChip = ({ entry, position, disabled, onRemove, onMove }: P
       data-role-model={entry.choice.model}
       aria-label={`${entry.label}, position ${position}${entry.isGone ? ', no longer in the catalog' : ''}`}
       onKeyDown={onKeyDown}
-      className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-background pl-2 pr-1 text-label outline-none focus-visible:ring-1 focus-visible:ring-primary"
+      className={cn(
+        'inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-background pl-2 pr-1 text-label',
+        FOCUS_RING,
+      )}
     >
       <span className="w-2.5 text-meta text-faint-foreground">{position}</span>
       <span className={cn(entry.isGone && 'text-faint-foreground line-through')}>
         {entry.label}
       </span>
       {entry.isGone ? <StateBadge>Gone, skipped</StateBadge> : null}
-      <button
-        type="button"
-        disabled={disabled}
-        aria-label={`Remove ${entry.label}`}
-        title="Remove"
-        onClick={onRemove}
-        className="grid size-5 place-items-center rounded-sm text-faint-foreground hover:bg-hover hover:text-foreground disabled:cursor-not-allowed"
-      >
-        <X size={12} aria-hidden />
-      </button>
+      <Tooltip content="Remove">
+        <button
+          type="button"
+          disabled={disabled}
+          aria-label={`Remove ${entry.label}`}
+          onClick={onRemove}
+          className="grid size-5 place-items-center rounded-sm text-faint-foreground hover:bg-hover hover:text-foreground disabled:cursor-not-allowed"
+        >
+          <X size={ICON_SIZE.row} aria-hidden />
+        </button>
+      </Tooltip>
     </span>
   );
 };

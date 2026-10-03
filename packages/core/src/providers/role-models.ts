@@ -280,10 +280,9 @@ export const nextRoleModelChoice = ({
   const failedAt = known.findIndex(
     (choice) => choice.provider === failed.provider && choice.model === failed.model,
   );
-  const ordered =
-    failedAt < 0 ? known : [...known.slice(failedAt + 1), ...known.slice(0, failedAt)];
+  const backups = known.slice(failedAt < 0 ? 1 : failedAt + 1);
   return (
-    ordered.find(
+    backups.find(
       (choice) => choice.provider !== failed.provider || choice.model !== failed.model,
     ) ?? null
   );

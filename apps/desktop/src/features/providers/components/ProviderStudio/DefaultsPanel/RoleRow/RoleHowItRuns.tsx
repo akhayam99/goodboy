@@ -1,5 +1,5 @@
 import { Eye } from 'lucide-react';
-import { Eyebrow, StateBadge } from '@goodboy/ui';
+import { Eyebrow, ICON_SIZE, StateBadge } from '@goodboy/ui';
 import type { RoleRunFacts } from './roleRunFacts';
 
 type Props = {
@@ -17,7 +17,7 @@ export const RoleHowItRuns = ({ label, facts }: Props) => (
     className="flex flex-col gap-2 rounded-md border border-border bg-background p-3"
   >
     <header className="flex items-center justify-between gap-2">
-      <Eyebrow label={`How ${label} runs`} icon={<Eye size={12} aria-hidden />} />
+      <Eyebrow label={`How ${label} runs`} icon={<Eye size={ICON_SIZE.row} aria-hidden />} />
       <StateBadge>Read only</StateBadge>
     </header>
     <dl className="grid grid-cols-[96px_minmax(0,1fr)] gap-x-3 gap-y-2">

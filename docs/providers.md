@@ -738,7 +738,9 @@ When a provider ships or retires a model, update these together:
 - If an effort is not on the ladder, it becomes the role's default effort when that
   one is on the ladder. Otherwise it becomes the top of the ladder
 - After a failure Goodboy recognizes, the first retry uses the next model of the
-  role's set after the one that failed (`nextRoleModelChoice`). The second retry uses
+  role's set after the one that failed, or the second model of the set when the
+  failed one is not in it (`nextRoleModelChoice`). A set of one has no retry of its
+  own. The second retry uses
   the `planTurnFallback` heuristic as a safety net. `MAX_ATTEMPTS` stays 2, and the
   way failures are recognized does not change
 - A set model uses its own effort when it has one, else the role's saved effort, and

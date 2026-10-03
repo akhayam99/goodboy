@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { ProviderId, RoleModelPreferences } from '@goodboy/types';
 import { AUTO_DEFAULTS } from './autoRouting/defaults';
-import { resolveRoleRouting, roleModelChoices, roleModelSetPreference } from './role-models';
+import {
+  nextRoleModelChoice,
+  resolveRoleRouting,
+  roleModelChoices,
+  roleModelSetPreference,
+} from './role-models';
 
 describe('resolveRoleRouting', () => {
   it('resolves a role with no stored preference to its compiled default', () => {
@@ -393,5 +398,57 @@ describe('resolveRoleRouting', () => {
       isOverride: false,
       pinnedUnavailable: { provider: 'cursor', model: 'composer-2.5' },
     });
+  });
+});
+
+describe('nextRoleModelChoice', () => {
+  const prefs: RoleModelPreferences = {
+    planner: {
+      providerId: 'anthropic',
+      model: 'claude-opus-5-5',
+      effort: 'high',
+      models: [
+        { providerId: 'anthropic', model: 'claude-opus-5-5' },
+        { providerId: 'codex', model: 'gpt-6.1-sol' },
+        { providerId: 'anthropic', model: 'claude-haiku-4-5' },
+      ],
+    },
+  };
+
+  it('retries on the model after the one that failed', () => {
+    expect(
+      nextRoleModelChoice({
+        role: 'planner',
+        prefs,
+        failed: { provider: 'codex', model: 'gpt-6.1-sol' },
+      })?.model,
+    ).toBe('haiku-4.5');
+  });
+
+  it('retries on the second model when the failed one is not in the set', () => {
+    expect(
+      nextRoleModelChoice({
+        role: 'planner',
+        prefs,
+        failed: { provider: 'anthropic', model: 'sonnet-5' },
+      })?.model,
+    ).toBe('gpt-6.1-sol');
+  });
+
+  it('has nothing left after the last model or for a set of one', () => {
+    expect(
+      nextRoleModelChoice({
+        role: 'planner',
+        prefs,
+        failed: { provider: 'anthropic', model: 'haiku-4.5' },
+      }),
+    ).toBeNull();
+    expect(
+      nextRoleModelChoice({
+        role: 'planner',
+        prefs: { planner: { providerId: 'anthropic', model: 'claude-opus-5-5', effort: 'high' } },
+        failed: { provider: 'anthropic', model: 'sonnet-5' },
+      }),
+    ).toBeNull();
   });
 });
