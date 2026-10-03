@@ -59,7 +59,7 @@ export const NextActionButtons = ({ sessionId, workflowRunId, action }: Props) =
             size="sm"
             variant="primary"
             isBusy={isChecking}
-            busyLabel="Checking step"
+            busyLabel="Asking"
             disabled={isBusy}
             data-testid="workflow-recover-step-cta"
             title="Ask the agent to verify the work, finish anything missing, and emit the completion marker"
@@ -70,14 +70,14 @@ export const NextActionButtons = ({ sessionId, workflowRunId, action }: Props) =
               })
             }
           >
-            Check completion
+            Ask it to continue
           </Button>
           <ConfirmPopover
             role="alert"
             icon={<AlertTriangle size={ICON_SIZE.row} />}
-            title="Skip the blocked step and start the next agent?"
-            description={`${action.step.name} will be marked skipped. Its output will not be carried forward.`}
-            confirmLabel="Skip and continue"
+            title={`Skip ${action.step.name}?`}
+            description={`${action.step.name} is marked Skipped. Its changes stay in the worktree.`}
+            confirmLabel="Skip step"
             cancelLabel="Cancel"
             isBusy={isBusy}
             onConfirm={() =>
@@ -92,10 +92,10 @@ export const NextActionButtons = ({ sessionId, workflowRunId, action }: Props) =
                 variant="secondary"
                 disabled={isBusy}
                 data-testid="workflow-force-next-step-cta"
-                title="Discard this step output and continue without it"
+                title="Mark this step Skipped and move on"
                 onClick={arm}
               >
-                Skip step
+                Skip
               </Button>
             )}
           />

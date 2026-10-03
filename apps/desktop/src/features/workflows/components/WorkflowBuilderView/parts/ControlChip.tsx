@@ -4,6 +4,7 @@ import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly label: string;
+  readonly isLabelShown?: boolean;
   readonly value: string;
   readonly isOpen: boolean;
   readonly isInvalid?: boolean;
@@ -13,6 +14,7 @@ type Props = {
 
 export const ControlChip = ({
   label,
+  isLabelShown = true,
   value,
   isOpen,
   isInvalid = false,
@@ -32,7 +34,7 @@ export const ControlChip = ({
       disabled && 'cursor-not-allowed opacity-60',
     )}
   >
-    <span className="shrink-0 text-faint-foreground">{label}</span>
+    {isLabelShown ? <span className="shrink-0 text-faint-foreground">{label}</span> : null}
     <span className="min-w-0 truncate text-foreground">{value}</span>
     <ChevronDown
       size={ICON_SIZE.row}

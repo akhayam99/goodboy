@@ -3,10 +3,11 @@ import { formatUsd } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 import type { Agent, AgentId, WorkflowOrchestrationStopKind, WorkflowRun } from '@goodboy/types';
 import { ORCHESTRATOR_DECIDING_SENTENCE } from '../../orchestratorCopy';
+import { isRunPaused } from '../../isRunPaused';
 
 type OrchestratorPhase =
   | 'deciding'
-  | 'stopping-graceful'
+  | 'paused'
   | 'stopping'
   | 'waiting'
   | 'automatic'
@@ -81,6 +82,28 @@ const STOP_PRESENTATION: Record<WorkflowOrchestrationStopKind, StopPresentation>
     sentence: 'Paused · needs your approval',
     showsMessage: true,
   },
+  paused: {
+    phase: 'paused',
+    tone: 'warning',
+    sentence: 'Paused by you',
+    showsMessage: false,
+  },
+};
+
+type PausedParams = {
+  readonly ordered: ReadonlyArray<Agent>;
+};
+
+const pausedDetail = ({ ordered }: PausedParams): string => {
+  const running = ordered.find((agent) => agent.status === 'running');
+  if (running != null) {
+    return `${running.name} finishes its turn. Nothing new starts until you resume. The pause survives a restart.`;
+  }
+  const next = ordered.find((agent) => agent.status === 'pending');
+  if (next != null) {
+    return `Nothing new starts until you resume. Next: ${next.name}.`;
+  }
+  return 'Nothing new starts until you resume.';
 };
 
 const OPERATOR_STOP_IN_FLIGHT: StopPresentation = {
@@ -109,7 +132,6 @@ export const resolveOrchestratorState = ({
     isAgentStatusSettled({ status: agent.status }),
   ).length;
   const base = { detail: null, waitingOnAgentId: null };
-  const hasRunningStep = agents.some((agent) => agent.status === 'running');
 
   if (isOrchestrating && run.orchestrationStop?.kind === 'operator') {
     return {
@@ -119,12 +141,13 @@ export const resolveOrchestratorState = ({
       sentence: OPERATOR_STOP_IN_FLIGHT.sentence,
     };
   }
-  if (hasRunningStep && run.autoRun === false && run.orchestrationStop?.kind !== 'operator') {
+  if (isRunPaused({ run })) {
     return {
       ...base,
-      phase: 'stopping-graceful',
-      tone: 'neutral',
-      sentence: 'Finishing the step in flight · autorun is off',
+      phase: STOP_PRESENTATION.paused.phase,
+      tone: STOP_PRESENTATION.paused.tone,
+      sentence: STOP_PRESENTATION.paused.sentence,
+      detail: pausedDetail({ ordered }),
     };
   }
   if (isOrchestrating) {
@@ -246,7 +269,7 @@ export const resolveOrchestratorState = ({
       ...base,
       phase: 'ready-mid',
       tone: 'neutral',
-      sentence: 'Paused · autorun is off',
+      sentence: 'Waiting for your go',
     };
   }
   return {

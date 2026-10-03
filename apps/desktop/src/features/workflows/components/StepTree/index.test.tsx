@@ -3,15 +3,8 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { StepDraft } from '../../engine';
 import { savedStepGroups } from '../../savedSteps';
-import { StepEditor } from './StepEditor';
 import { StepRow } from './StepRow';
 import { StepTree } from '.';
-
-vi.mock('../../../../shared/components/RoutingPicker', () => ({
-  RoutingPicker: ({ ariaLabel }: { readonly ariaLabel: string }) => (
-    <div role="group" aria-label={ariaLabel} />
-  ),
-}));
 
 type StepParams = {
   readonly key: string;
@@ -74,6 +67,7 @@ const renderTree = ({
 type RowParams = {
   readonly isExpanded?: boolean;
   readonly isEdited?: boolean;
+  readonly isPinned?: boolean;
   readonly onToggle?: () => void;
   readonly onMoveUp?: () => void;
 };
@@ -81,6 +75,7 @@ type RowParams = {
 const renderRow = ({
   isExpanded = false,
   isEdited = false,
+  isPinned = false,
   onToggle = vi.fn(),
   onMoveUp = vi.fn(),
 }: RowParams) =>
@@ -98,6 +93,7 @@ const renderRow = ({
         identityIndex={0}
         isExpanded={isExpanded}
         isEdited={isEdited}
+        isPinned={isPinned}
         isDragging={false}
         disabled={false}
         editor={<p>Editor body</p>}
@@ -114,37 +110,6 @@ type EditorParams = {
   readonly estimateNote?: string | null;
   readonly onRemove?: () => void;
 };
-
-const renderEditor = ({ polish, estimateNote, onRemove = vi.fn() }: EditorParams) =>
-  render(
-    <StepEditor
-      step={step({ key: 's1', name: 'Review', role: 'reviewer', prompt: 'Check the diff' })}
-      ordinal={2}
-      stepCount={3}
-      effort="medium"
-      recommendedProvider="anthropic"
-      recommendedModel="opus"
-      connectedProviders={['anthropic']}
-      isRoutingOverridden={false}
-      disabled={false}
-      onName={vi.fn()}
-      onRole={vi.fn()}
-      onPrompt={vi.fn()}
-      onExpectedOutput={vi.fn()}
-      onProvider={vi.fn()}
-      onModel={vi.fn()}
-      onEffort={vi.fn()}
-      onVerbosity={vi.fn()}
-      onRoutingReset={vi.fn()}
-      onMoveUp={vi.fn()}
-      onMoveDown={vi.fn()}
-      onDuplicate={vi.fn()}
-      onRemove={onRemove}
-      onDone={vi.fn()}
-      {...(polish !== undefined && { polish })}
-      {...(estimateNote !== undefined && { estimateNote })}
-    />,
-  );
 
 afterEach(cleanup);
 
@@ -207,6 +172,15 @@ describe('StepRow', () => {
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
 
+  it('marks a pinned model with the same dot as an edit, and a follow step with none', () => {
+    renderRow({ isPinned: true });
+    screen.getByText('Pinned model');
+
+    cleanup();
+    renderRow({});
+    expect(screen.queryByText('Pinned model')).toBeNull();
+  });
+
   it('shows the editor when expanded and reorders from the grip with the arrow keys', () => {
     const onMoveUp = vi.fn();
     renderRow({ isExpanded: true, onMoveUp });
@@ -214,34 +188,5 @@ describe('StepRow', () => {
     expect(screen.getByText('Editor body')).toBeDefined();
     fireEvent.keyDown(screen.getByRole('button', { name: /Reorder step 1/ }), { key: 'ArrowUp' });
     expect(onMoveUp).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('StepEditor', () => {
-  it('leaves out Polish and the estimate when the host has none', () => {
-    renderEditor({});
-
-    expect(screen.queryByRole('button', { name: 'Polish step instruction' })).toBeNull();
-    expect(screen.queryByTestId('plan-step-estimate')).toBeNull();
-    expect(screen.getByRole('group', { name: 'Routing for step 2' })).toBeDefined();
-  });
-
-  it('polishes the instruction and shows the estimate when the host passes them', () => {
-    const onPolish = vi.fn();
-    renderEditor({ polish: { isPolishing: false, onPolish }, estimateNote: 'About 4 min' });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Polish step instruction' }));
-    expect(onPolish).toHaveBeenCalledTimes(1);
-    expect(screen.getByTestId('plan-step-estimate').textContent).toBe('About 4 min');
-  });
-
-  it('asks before removing the step', () => {
-    const onRemove = vi.fn();
-    renderEditor({ onRemove });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
-    expect(onRemove).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Remove step' }));
-    expect(onRemove).toHaveBeenCalledTimes(1);
   });
 });

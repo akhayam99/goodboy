@@ -30,6 +30,7 @@ const storeMocks = vi.hoisted(() => ({
   sessionProjectMounts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
   sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
   closeWorkflowRun: vi.fn(async () => undefined),
+  pauseWorkflowRun: vi.fn(async () => undefined),
   workspaceDurationHistory: {} as Record<string, unknown>,
 }));
 
@@ -48,6 +49,7 @@ vi.mock('../../../../store', () => ({
       sessionProjectMounts: storeMocks.sessionProjectMounts,
       sessionPhaseRuns: storeMocks.sessionPhaseRuns,
       closeWorkflowRun: storeMocks.closeWorkflowRun,
+      pauseWorkflowRun: storeMocks.pauseWorkflowRun,
       workspaceDurationHistory: storeMocks.workspaceDurationHistory,
       sessionTurnSpans: { [SESSION_ID]: [] },
       agentTurnState: {},
@@ -228,6 +230,7 @@ beforeEach(() => {
   storeMocks.sessionProjectMounts = {};
   storeMocks.sessionPhaseRuns = {};
   storeMocks.closeWorkflowRun.mockClear();
+  storeMocks.pauseWorkflowRun.mockClear();
 });
 
 afterEach(() => {
@@ -295,7 +298,9 @@ describe('WorkflowRow detail dashboard', () => {
     expect(
       navigationSlot.contains(screen.getByRole('button', { name: 'Collapse Refactor workflow' })),
     ).toBe(true);
-    expect(lifecycleSlot.contains(screen.getByRole('switch', { name: 'Autorun' }))).toBe(true);
+    expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'When Refactor asks' }))).toBe(
+      true,
+    );
     expect(
       lifecycleSlot.contains(screen.getByRole('button', { name: 'Refactor workflow actions' })),
     ).toBe(true);
@@ -345,45 +350,35 @@ describe('WorkflowRow detail dashboard', () => {
     expect(lifecycleSlot.compareDocumentPosition(steps)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
-  it('separates the autorun toggle from the destructive cluster', () => {
+  it('keeps when to ask apart from the destructive cluster', () => {
     renderDetail();
 
-    const lifecycleSlot = screen.getByRole('group', { name: 'Workflow lifecycle actions' });
-    const toggle = screen.getByTestId('workflow-autorun-toggle');
+    const choice = screen.getByRole('button', { name: 'When Refactor asks' });
     const remove = screen.getByRole('button', { name: 'Refactor workflow actions' });
 
-    expect(within(toggle).getByRole('switch').getAttribute('aria-checked')).toBe('false');
-    expect(toggle.parentElement).not.toBe(remove.parentElement);
-    expect(toggle.compareDocumentPosition(remove)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(choice.compareDocumentPosition(remove)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(screen.queryByRole('switch', { name: 'Autorun' })).toBeNull();
   });
-
-  it('turns autorun off with no confirm when nothing is in flight', () => {
+  it('changes when to ask from the header menu and names the choice in the facts', () => {
     const setAutoRun = vi.fn(async () => undefined);
     renderDetail({ runOverride: { ...run, autoRun: true }, setWorkflowRunAutoRun: setAutoRun });
 
-    fireEvent.click(screen.getByRole('switch', { name: 'Autorun' }));
+    expect(screen.getByTestId('run-autonomy-fact').textContent).toBe('Run on its own');
+    fireEvent.click(screen.getByRole('button', { name: 'When Refactor asks' }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Ask before each step' }));
 
     expect(setAutoRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID, false);
-    expect(screen.queryByRole('group', { name: 'Stop now?' })).toBeNull();
   });
-
-  it('turns autorun off immediately while a step is in flight', () => {
-    const setAutoRun = vi.fn(async () => undefined);
+  it('pauses a static run from the header while a step is in flight', () => {
     const running = agents.map((agent, index) =>
       index === 1 ? { ...agent, status: 'running' as const } : agent,
     );
-    renderDetail({
-      runOverride: { ...run, autoRun: true },
-      agentsOverride: running,
-      setWorkflowRunAutoRun: setAutoRun,
-    });
+    renderDetail({ runOverride: { ...run, autoRun: true }, agentsOverride: running });
 
-    fireEvent.click(screen.getByRole('switch', { name: 'Autorun' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pause' }));
 
-    expect(setAutoRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID, false);
-    expect(screen.queryByRole('group', { name: 'Stop now?' })).toBeNull();
+    expect(storeMocks.pauseWorkflowRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
   });
-
   it('keeps completed detail navigation non-empty without lifecycle actions in it', () => {
     const completedAgents = agents.map((agent) => ({ ...agent, status: 'completed' as const }));
     renderDetail({ agentsOverride: completedAgents });
@@ -529,19 +524,12 @@ describe('WorkflowRow detail dashboard', () => {
 });
 
 describe('WorkflowRow step-in-flight predicate', () => {
-  it('turns autorun off while the orchestrator is deciding, even with no agent running', () => {
-    const setAutoRun = vi.fn(async () => undefined);
+  it('offers Pause while the orchestrator is deciding, even with no agent running', () => {
     storeMocks.orchestratingWorkflowRuns[RUN_ID] = true;
-    renderDetail({
-      runOverride: { ...run, autoRun: true },
-      setWorkflowRunAutoRun: setAutoRun,
-    });
+    renderDetail({ runOverride: { ...run, autoRun: true } });
 
-    fireEvent.click(screen.getByRole('switch', { name: 'Autorun' }));
-
-    expect(setAutoRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID, false);
+    screen.getByRole('button', { name: 'Pause' });
   });
-
   it('reads the collapsed row as stopping while the decision is still in flight', () => {
     storeMocks.orchestratingWorkflowRuns[RUN_ID] = true;
     renderDetail({
@@ -618,9 +606,7 @@ describe('WorkflowRow dynamic runs', () => {
     renderDetail({ runOverride: dynamicRun, agentsOverride: doneAgents, actionableStepId: null });
 
     expect(screen.queryByText('Completed')).toBeNull();
-    expect(screen.getByTestId('orchestrator-state').textContent).toContain(
-      'Paused · autorun is off',
-    );
+    expect(screen.getByTestId('orchestrator-state').textContent).toContain('Waiting for your go');
   });
 
   it('gives an orchestrated run the same next action as a static one', () => {
