@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Plus } from 'lucide-react';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { PromptField } from '../../../../../shared/components/PromptField';
@@ -8,12 +8,19 @@ type Props = {
   readonly identityIndex: number;
   readonly guidance: string;
   readonly disabled: boolean;
+  readonly footer?: ReactNode;
   readonly onGuidance: (guidance: string) => void;
 };
 
 const GUIDANCE_ID = 'orchestrated-workflow-guidance';
 
-export const GuidanceDisclosure = ({ identityIndex, guidance, disabled, onGuidance }: Props) => {
+export const GuidanceDisclosure = ({
+  identityIndex,
+  guidance,
+  disabled,
+  footer = null,
+  onGuidance,
+}: Props) => {
   const [isOpen, setIsOpen] = useState(() => guidance.trim() !== '');
   const [shouldFocus, setShouldFocus] = useState(false);
 
@@ -43,6 +50,7 @@ export const GuidanceDisclosure = ({ identityIndex, guidance, disabled, onGuidan
             maxRows={7}
             disabled={disabled}
           />
+          {footer}
         </div>
       ) : (
         <button

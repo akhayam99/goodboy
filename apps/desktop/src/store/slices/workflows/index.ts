@@ -39,6 +39,8 @@ import { startWorkflowRun } from './startWorkflowRun';
 import { stopWorkflowRunNow } from './stopWorkflowRunNow';
 import { pauseWorkflowRun } from './pauseWorkflowRun';
 import { resumeWorkflowRun } from './resumeWorkflowRun';
+import { approveWorkflowRunPlan } from './approveWorkflowRunPlan';
+import { setWorkflowRunAutonomy } from './setWorkflowRunAutonomy';
 import type { SliceDeps } from '../../slice-types';
 
 export const createWorkflowsSlice = ({ set, get }: SliceDeps) => {
@@ -61,11 +63,13 @@ export const createWorkflowsSlice = ({ set, get }: SliceDeps) => {
     restoreWorkflow: restoreWorkflow(set, get),
     renameWorkflowRun: renameWorkflowRun(set, get),
     setWorkflowRunAutoRun: setWorkflowRunAutoRun(set, get),
+    setWorkflowRunAutonomy: setWorkflowRunAutonomy(set, get),
     setWorkflowRunSpendLimit: setWorkflowRunSpendLimit(set, get),
     startWorkflowRun: startWorkflowRun(set, get),
     stopWorkflowRunNow: stopWorkflowRunNow(set, get),
     pauseWorkflowRun: pauseWorkflowRun(set, get),
     resumeWorkflowRun: resumeWorkflowRun(set, get),
+    approveWorkflowRunPlan: approveWorkflowRunPlan(set, get),
     closeWorkflowRun: closeWorkflowRun(set, get),
     reprocessGoalForWorkflow: reprocessGoalForWorkflow(set, get),
     activateWorkflowAgent: activateWorkflowAgent(set, get),

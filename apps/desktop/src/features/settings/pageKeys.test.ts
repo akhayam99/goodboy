@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { OverrideSettings } from '@goodboy/types';
+import { DEFAULT_WORKFLOW_RULES, type OverrideSettings } from '@goodboy/types';
 import { EMPTY_OVERRIDES } from '@goodboy/types/testing';
 import { FIELD_PAGE, isWorkspaceOwnedOverride, pageKeys } from './pageKeys';
 import { WORKSPACE_PAGES } from './components/SettingsStudio/workspacePages';
@@ -19,7 +19,7 @@ describe('pageKeys', () => {
     const owned = Object.keys(EMPTY_OVERRIDES).filter(isWorkspaceOwnedOverride);
     const providers = Object.keys(EMPTY_OVERRIDES).filter((key) => !isWorkspaceOwnedOverride(key));
 
-    expect(owned).toHaveLength(12);
+    expect(owned).toHaveLength(13);
     expect(providers.sort()).toEqual([
       'defaultProviderId',
       'providerBindings',
@@ -84,5 +84,34 @@ describe('workspace settings plans', () => {
 
     expect(plan.map((page) => page.page)).toEqual(['general']);
     expect(plan[0]?.items.map((item) => item.field)).toEqual(['verbosity']);
+  });
+
+  it('copies the workflow rules as one value and restores them to the defaults', () => {
+    const rules = { ...DEFAULT_WORKFLOW_RULES, autonomy: 'plan' as const, spendLimitUsd: 25 };
+    const copy = copyPlan({
+      scope: 'workflow-rules',
+      current: snapshot({}),
+      source: snapshot({ workflowRules: rules }),
+    });
+    const restore = restorePlan({
+      scope: 'workflow-rules',
+      current: snapshot({ workflowRules: rules }),
+    });
+    const untouched = restorePlan({
+      scope: 'workflow-rules',
+      current: snapshot({ workflowRules: DEFAULT_WORKFLOW_RULES }),
+    });
+
+    expect(copy[0]?.items.map((item) => [item.from, item.to, item.write])).toEqual([
+      [
+        'Ask before each step · No spend cap · No guidance',
+        'Ask after the plan · $25 cap, pause · No guidance',
+        { overrides: { workflowRules: rules } },
+      ],
+    ]);
+    expect(restore[0]?.items.map((item) => item.write)).toEqual([
+      { overrides: { workflowRules: null } },
+    ]);
+    expect(untouched).toEqual([]);
   });
 });

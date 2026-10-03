@@ -5,4 +5,5 @@ export const initialWorkflowStudioState: WorkflowStudioState = {
   workflowGenerations: {},
   visibleWorkflowStudioWorkspaceId: null,
   workflowStudioFocus: null,
+  workflowStudioView: 'workflows',
 };

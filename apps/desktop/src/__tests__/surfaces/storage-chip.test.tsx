@@ -132,7 +132,9 @@ describe('storage chip in the app header on the real store', () => {
     );
     await settle();
 
-    const space = screen.getByRole('region', { name: 'Free up space' });
+    const space = screen.getByRole('region', { name: 'Storage summary' });
+    expect(screen.getByRole('heading', { name: 'Storage' })).toBeDefined();
+    expect(screen.queryByRole('region', { name: 'Recently deleted' })).toBeNull();
     const headerRow = screen.getByRole('button', { name: /Check again/ }).parentElement!
       .parentElement!;
     expect(within(headerRow).getByLabelText('Storage scope')).toBeDefined();

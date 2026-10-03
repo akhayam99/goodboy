@@ -6,6 +6,7 @@ import {
   polishStepExpectedOutput,
   polishStepInstruction,
   polishWorkflowGoal,
+  polishWorkflowGuidance,
   type ExpectedOutputPolishInput,
   type GoalPolishDeps,
   type PlannerClientDeps,
@@ -388,6 +389,17 @@ type PolishGoalParams = {
 
 export const polishWorkflowGoalText = ({ deps, goal }: PolishGoalParams): Promise<string | null> =>
   polishWorkflowGoal({ ...deps, invokeFn: invokeCommand }, goal);
+
+type PolishGuidanceParams = {
+  readonly deps: PolishGoalParams['deps'];
+  readonly guidance: string;
+};
+
+export const polishWorkflowGuidanceText = ({
+  deps,
+  guidance,
+}: PolishGuidanceParams): Promise<string | null> =>
+  polishWorkflowGuidance({ ...deps, invokeFn: invokeCommand }, guidance);
 
 type PlannerParams = {
   readonly deps: Omit<PlannerClientDeps, 'invokeFn'>;

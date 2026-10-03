@@ -24,6 +24,7 @@ import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import type { AppStore } from '../../store';
 
 import { configuredRolePick } from './configuredRolePick';
+import { readHeadroom, type HeadroomMap } from '@goodboy/core';
 
 const UNKNOWN_PROFILE: WorkflowTaskProfile = {
   taskType: 'general',
@@ -65,6 +66,21 @@ type Params = {
   readonly workflowRunId?: WorkflowRunId | null;
 };
 
+type HeadroomParams = Pick<Params, 'state' | 'sessionId' | 'workflowRunId'>;
+
+const childHeadroom = ({ state, sessionId, workflowRunId }: HeadroomParams): HeadroomMap | null => {
+  const session = (state.sessions ?? []).find((candidate) => candidate.id === sessionId);
+  const run = session?.workflowRuns?.find((candidate) => candidate.id === workflowRunId);
+  if (session === undefined || run?.rulesSnapshot?.spreadByHeadroom !== true) {
+    return null;
+  }
+  return readHeadroom({
+    limits: state.providerLimits ?? {},
+    policy: state.workspaceOverrides?.[session.workspaceId]?.providerPool ?? null,
+    nowMs: Date.now(),
+  }).headroom;
+};
+
 export const resolveWorkflowChildRouting = ({
   state,
   sessionId,
@@ -84,10 +100,13 @@ export const resolveWorkflowChildRouting = ({
       : ((session.providerOverride ??
           session.providerPreference?.defaultProvider ??
           null) as ProviderId | null);
+  const headroom = childHeadroom({ state, sessionId, workflowRunId });
   const compiled = resolveRoleRouting({
     role,
     prefs: null,
-    ...(defaultProvider !== null && { auto: { defaultProvider } }),
+    ...(defaultProvider !== null && {
+      auto: { defaultProvider, ...(headroom !== null && { headroom }) },
+    }),
   });
   const resolution = resolveWorkflowRouting({
     agentLock: childLock,
@@ -99,7 +118,10 @@ export const resolveWorkflowChildRouting = ({
       profile,
     }),
     sessionDefault:
-      session === undefined || session.modelOverride == null || defaultProvider === null
+      session === undefined ||
+      session.modelOverride == null ||
+      defaultProvider === null ||
+      headroom !== null
         ? null
         : {
             provider: defaultProvider,
@@ -115,8 +137,9 @@ export const resolveWorkflowChildRouting = ({
       sessionId,
       isRunBudgetBlocked: false,
       nowMs: Date.now(),
-      ...workspacePolicyAvailability({ state: state }),
+      ...workspacePolicyAvailability({ state, sessionId }),
       providerPool: runProviderPool({ sessions: state.sessions ?? [], sessionId, workflowRunId }),
+      headroom,
     }),
     contextEstimate: null,
   });

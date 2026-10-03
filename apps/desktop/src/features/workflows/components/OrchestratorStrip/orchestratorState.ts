@@ -17,6 +17,7 @@ type OrchestratorPhase =
   | 'paused-budget'
   | 'blocked'
   | 'needs-approval'
+  | 'plan-approval'
   | 'failed'
   | 'step-failed'
   | 'stopped'
@@ -81,6 +82,12 @@ const STOP_PRESENTATION: Record<WorkflowOrchestrationStopKind, StopPresentation>
     tone: 'warning',
     sentence: 'Paused · needs your approval',
     showsMessage: true,
+  },
+  'plan-approval': {
+    phase: 'plan-approval',
+    tone: 'warning',
+    sentence: 'Plan ready · waiting for you',
+    showsMessage: false,
   },
   paused: {
     phase: 'paused',

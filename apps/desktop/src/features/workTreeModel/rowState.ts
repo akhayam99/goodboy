@@ -28,6 +28,7 @@ export type RowStateReason =
   | { readonly kind: 'closed' }
   | { readonly kind: 'skipped' }
   | { readonly kind: 'paused' }
+  | { readonly kind: 'planReady' }
   | { readonly kind: 'chained'; readonly afterTitle: string }
   | { readonly kind: 'awaitingFirstMessage' }
   | { readonly kind: 'discarded' }
@@ -213,6 +214,9 @@ const waitingRunState = ({
   }
   if (stop === 'paused') {
     return { phase: 'waiting', reason: { kind: 'paused' }, ask: null };
+  }
+  if (stop === 'plan-approval') {
+    return { phase: 'waiting', reason: { kind: 'planReady' }, ask: null };
   }
   if (advance?.kind === 'ready') {
     return {

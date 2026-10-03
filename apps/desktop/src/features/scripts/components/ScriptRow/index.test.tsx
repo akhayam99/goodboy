@@ -66,6 +66,8 @@ const renderRow = ({
       isSelected={isSelected}
       showSource={showSource}
       blockedReason={blockedReason}
+      isPinned={false}
+      onTogglePin={vi.fn()}
       target={{
         kind: 'script',
         facts: {

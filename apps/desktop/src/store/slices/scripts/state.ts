@@ -6,6 +6,12 @@ export type DiscoveredScriptScan = {
   readonly error: string | null;
 };
 
+export type ProjectRootScripts = {
+  readonly status: 'loading' | 'ready' | 'error';
+  readonly groups: ReadonlyArray<ScriptGroup>;
+  readonly error: string | null;
+};
+
 export type ScriptsSliceState = {
   readonly projectScripts: Readonly<Record<WorkspaceId, ReadonlyArray<ProjectScript>>>;
   readonly scriptRuns: Readonly<Record<SessionId, Readonly<Record<string, ScriptRunRecord>>>>;
@@ -15,6 +21,7 @@ export type ScriptsSliceState = {
   readonly discoveredScriptScans: Readonly<
     Record<SessionId, Readonly<Record<string, DiscoveredScriptScan>>>
   >;
+  readonly projectRootScripts: Readonly<Record<string, ProjectRootScripts>>;
 };
 
 export const initialScriptsState: ScriptsSliceState = {
@@ -22,4 +29,5 @@ export const initialScriptsState: ScriptsSliceState = {
   scriptRuns: {},
   discoveredScripts: {},
   discoveredScriptScans: {},
+  projectRootScripts: {},
 };

@@ -10,7 +10,7 @@ pub struct CodexRolloutContext {
     pub context_window: Option<u64>,
 }
 
-fn codex_home() -> Option<PathBuf> {
+pub(crate) fn codex_home() -> Option<PathBuf> {
     if let Ok(dir) = std::env::var("CODEX_HOME") {
         if !dir.is_empty() {
             return Some(PathBuf::from(dir));

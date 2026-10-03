@@ -1,4 +1,5 @@
 import { Chip, Eyebrow, WORK_NODE_GLYPH_SIZE, WorkNode } from '@goodboy/ui';
+import type { ReactNode } from 'react';
 import type { EffortLevel, ProviderId } from '@goodboy/types';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
@@ -9,6 +10,7 @@ import { StepTreeGutter } from '../../StepTree/StepTreeGutter';
 type Props = {
   readonly identityIndex: number;
   readonly guidance: string;
+  readonly guidanceFooter?: ReactNode;
   readonly providerOverride: ProviderId | '';
   readonly modelOverride: string;
   readonly effort: EffortLevel;
@@ -27,6 +29,7 @@ type Props = {
 export const OrchestratorRow = ({
   identityIndex,
   guidance,
+  guidanceFooter = null,
   providerOverride,
   modelOverride,
   effort,
@@ -50,6 +53,7 @@ export const OrchestratorRow = ({
           identityIndex={identityIndex}
           guidance={guidance}
           disabled={disabled}
+          footer={guidanceFooter}
           onGuidance={onGuidance}
         />
       }

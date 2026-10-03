@@ -163,6 +163,7 @@ export {
   updateWorkflowRunOrchestratorRouting,
   updateWorkflowRunOrchestratorSummary,
   updateWorkflowRunSpendLimit,
+  updateWorkflowRunRulesSnapshot,
   updateGeneratedWorkflowRunTitle,
   updateUserWorkflowRunTitle,
 } from './queries/session-workflow';
@@ -271,6 +272,7 @@ export {
 } from './queries/agent-write';
 export {
   listAgentsForSessions,
+  listProviderSessionIds,
   purgeAgentForDelete,
   updateAgentConfig,
   type AgentRoutingUpdate,

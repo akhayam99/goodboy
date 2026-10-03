@@ -68,6 +68,7 @@ const APP_QUIET: Readonly<Record<AppSection, string>> = {
   shortcuts: `${SHORTCUT_ROW_COUNT} shortcuts`,
   backup: 'Export or import your setup',
   storage: 'Disk space Goodboy uses',
+  branches: 'Merged and stale branches',
   'security-findings': 'Secrets in saved scripts',
   help: 'Guide and bug report',
   danger: 'Wipe local data',

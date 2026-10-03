@@ -37,6 +37,7 @@ const COLUMNS: readonly Column[] = [
     title: 'Project',
     links: [
       { label: 'GitHub', href: SITE.repo },
+      { label: 'Follow on X', href: SITE.x },
       { label: 'Changelog', href: SITE.changelog },
       { label: 'Security', href: SITE.security },
       { label: 'Report a bug', href: SITE.newIssue },

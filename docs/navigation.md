@@ -1136,14 +1136,20 @@ X`) and a `Reset` in its own ⋯ menu (`WorkspaceFieldRow`). Precedent:
   JetBrains Copy to Project and VS Code's Modified marker with Reset Setting.
 - **Storage is the one place for disk space, scoped by a picker.** App >
   Storage lists every worktree folder Goodboy made, grouped by repository,
-  under three filters: To review, In use and Kept. The page is two clusters
-  (`StorageCluster`), each with its own accent on a tinted icon and a left
-  rail: `Free up space` (primary: the summary, Worktrees, Artifacts from
-  deleted sessions, History and app data, Cleanup) and `Clean up branches`
-  (merged: Branches, then the scoped workspace's after-merge rule with a
-  `Change` link to Workspace settings). A scope picker
+  under three filters: To review, In use and Kept. Each part is a card
+  (`Band`) under a plain section title: the summary, Worktrees (with `Scan
+another repository` at its foot), Artifacts of deleted sessions, and
+  Transcripts and app data. Branches is its own App page (`branches` in
+  `appSections.ts`, `BranchesPage`): the scoped workspace's after-merge rule
+  with a `Change` link, `Recently deleted` (restore or delete for good,
+  loaded from `deleted_branches` on open, which also releases the refs of
+  deletions older than 14 days), then the branch list, safe ones first with
+  `Show all branches` and a `Made by` picker. A scope picker
   (`StorageScopePicker`, `Listbox`) sits in the page header row next to
-  `Check again` (`StorageHeaderActions`): the current
+  `Suggest cleanup after` and `Check again` (`StorageHeaderActions`); the
+  Branches header has the same picker without `Removed workspaces`
+  (`BranchesHeaderActions`). `openStorage`, the free space chip and the
+  cleanup notifications always land on Storage. The picker lists the current
   window's workspace, every other workspace with its own weight, `Removed
 workspaces` (folders whose owning workspace is gone or was never linked),
   and `All workspaces` with the machine total. The scope drives the summary
@@ -1166,27 +1172,31 @@ workspaces: <total>, <can go> can go` line under the numbers. The
   settings table (`storage.suggestAfterDays`, `storage.lastNudgeAt`,
   `storage.lastNudgeBytes`). Sizes are measured one folder at a time after
   boot, never on the boot path. The worktree scan itself sends nothing.
-  In the branches cluster, `Branches` (`BranchesSection`) lists local branches
+  On the Branches page, `BranchesSection` lists local branches
   only, in the same scope, grouped by project. It scans only when it opens:
   one `git for-each-ref` per project (`project_branches`), with the merge
   test cached by both tips and fed each branch's merged pull request head
-  (`listMergedRequestHeads`). A filter picks `Made by Goodboy` (the default,
-  branch names from `session_worktrees` and `retained_worktree_paths`),
-  `Yours` (plus branches whose tip is authored by the repo's `user.email`,
-  shown `By you`) or `All local`; protected branches never show. Tabs split
-  `Safe to delete` (merged by merge commit or rebase, merged by its pull
-  request with nothing after the merged head, or never used), `Needs a
-look` (`Merged, then N new commits`, unmerged and gone on origin, local
-  only for over 30 days, or older than 90 days; never preselected) and
-  `All`. Each row has
-  the session chip (`SessionChip`: stage dot, title, stage word, opens the
-  session), `On origin` / `Local only` / `Gone on origin`, the verdict and
-  the last commit's age. Delete goes through an InlineConfirm in the bulk
-  bar that counts the commits an unmerged branch takes with it and offers
-  `Also delete N on origin` only for Goodboy's own pushed branches in repos
-  where GitHub does not already delete merged branches. Deletes use the
-  same compare-and-delete and 14-day restore as the after-merge rule; a
-  success Notice carries `Undo` for the batch. A branch another worktree
+  (`listMergedRequestHeads`). The `Made by` picker shows all local branches
+  (the default), `Made by Goodboy` (branch names from `session_worktrees` and
+  `retained_worktree_paths`) or `Yours` (plus branches whose tip is authored
+  by the repo's `user.email`, shown `By you`); protected branches never show.
+  The list opens on `Safe to delete` (merged by merge commit or rebase,
+  merged by its pull request with nothing after the merged head, or never
+  used), and `Show all branches` adds the ones that need a look (`Merged,
+then N new commits`, unmerged and gone on origin, local only for over 30
+  days, or older than 90 days; never preselected) and the kept ones. Every
+  branch row and every Recently deleted row sit on one grid
+  (`BRANCH_TABLE_GRID`, each cell marked with its `data-cell` name): select, branch,
+  session title, session state, origin state (`On origin` / `Local only` /
+  `Gone on origin`), the status on one line with how it merged as a muted
+  suffix and in its tooltip, the last commit's age and the action. A
+  Recently deleted row puts the project, the days since, the short sha and
+  the days left in the same columns. Delete on a merged branch acts at once
+  and a toast carries `Undo`; an unmerged one confirms above the bulk bar,
+  which counts the commits it takes. `Also delete N on origin` sits above
+  the bar only for Goodboy's own pushed branches in repos where GitHub does
+  not already delete merged branches. Deletes use the same
+  compare-and-delete and 14-day restore as the after-merge rule. A branch another worktree
   holds reads Protected, so its folder goes first from Worktrees.
   In the space cluster, under Worktrees, "Artifacts from deleted sessions" lists plans, reports
   and wireframes whose session is gone, under To review and Kept, with Open,
@@ -1811,3 +1821,17 @@ mount's group or in place of the edited row. Saved scripts of workspace
 projects that are not in the session are named in one line under the groups.
 The session sidebar has no scripts section: `$` launches, the Now chip
 watches.
+
+Every row also has a pin, always visible. A pin belongs to the project, not
+the worktree: its id is the source, the folder and the name
+(`scriptPinId`, a saved script by its id), stored as a JSON list in the app
+setting `scripts.pinned.<projectId>` (`toggleScriptPin`, loaded by
+`loadScriptPins` through `useScriptPins`). Pinned scripts of the mounted
+projects sit in a `Pinned` strip at the top of the lens, one click runs one in
+its group's worktree, and the palette lists them under `$` with the project
+name (`scriptPinEntries`, run through `runPinnedScript`; saved scripts show
+their project name too). On the workspace Projects page every row has a
+`Scripts` fold (`ProjectScriptsFold`, closed by default) that reads the
+project folder only when it opens (`loadProjectRootScripts`, kept in memory
+by root path) and says `Scripts on <base>`, with the same pin; a project with
+no package.json or composer.json says so.

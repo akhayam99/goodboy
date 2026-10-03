@@ -146,7 +146,7 @@ export const ArtifactCreationPane = ({
         sessionId,
         isRunBudgetBlocked: false,
         nowMs: Date.now(),
-        ...workspacePolicyAvailability({ state: s }),
+        ...workspacePolicyAvailability({ state: s, sessionId }),
       });
       return availability.connectedProviders.filter(
         (provider) =>

@@ -1,3 +1,4 @@
+import type { WorkflowAutonomy } from '@goodboy/types';
 import { AnchoredPopover, IconButton, MenuItems, cn, useDropdown } from '@goodboy/ui';
 import type { OverflowMenuItem } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -11,9 +12,9 @@ type RoutingToggle = {
 
 type Props = {
   readonly label: string;
-  readonly autoRun: boolean;
+  readonly autonomy: WorkflowAutonomy;
   readonly routing?: RoutingToggle | null;
-  readonly onAutoRun: (autoRun: boolean) => void;
+  readonly onAutonomy: (autonomy: WorkflowAutonomy) => void;
 };
 
 const routingItems = ({ routing }: { readonly routing: RoutingToggle | null }) =>
@@ -31,7 +32,7 @@ const routingItems = ({ routing }: { readonly routing: RoutingToggle | null }) =
         } satisfies OverflowMenuItem,
       ];
 
-export const RunControlMenu = ({ label, autoRun, routing = null, onAutoRun }: Props) => {
+export const RunControlMenu = ({ label, autonomy, routing = null, onAutonomy }: Props) => {
   const items = routingItems({ routing });
   const dropdown = useDropdown({
     align: 'end',
@@ -61,13 +62,13 @@ export const RunControlMenu = ({ label, autoRun, routing = null, onAutoRun }: Pr
       }
     >
       <RunAutonomyItems
-        autoRun={autoRun}
+        autonomy={autonomy}
         onChange={(next) => {
           dropdown.close();
-          if (next === autoRun) {
+          if (next === autonomy) {
             return;
           }
-          onAutoRun(next);
+          onAutonomy(next);
         }}
       />
       {items.length === 0 ? null : (

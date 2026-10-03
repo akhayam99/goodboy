@@ -12,7 +12,9 @@ import { defaultClosedPackageKeys } from '../../defaultClosedPackageKeys';
 import { filterScriptGroups } from '../../filterScriptGroups';
 import { groupScriptsByPackage } from '../../groupScriptsByPackage';
 import { readCollapsedGroups, writeCollapsedGroups } from '../../groupsCollapsedStorage';
+import { useScriptPins } from '../../hooks/useScriptPins';
 import { useSessionScripts } from '../../hooks/useSessionScripts';
+import { scriptPinId } from '../../scriptPinId';
 import { useNow } from '../../../../shared/hooks/useNow';
 import {
   readPackagesCollapsedOverrides,
@@ -24,6 +26,7 @@ import { workspaceInvocation } from '../../workspaceInvocation';
 import { ScriptEditor } from '../ScriptEditor';
 import { ScriptRow } from '../ScriptRow';
 import { DiscardDraftConfirm } from './DiscardDraftConfirm';
+import { PinnedScriptsStrip, type PinnedScriptEntry } from './PinnedScriptsStrip';
 import { ScriptGroupSection } from './ScriptGroupSection';
 import { ScriptPackageSection } from './ScriptPackageSection';
 import { ScriptSavedSection } from './ScriptSavedSection';
@@ -91,6 +94,8 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
   const refreshDiscoveredScripts = useAppStore((state) => state.refreshDiscoveredScripts);
   const openDrawer = useAppStore((state) => state.openDrawer);
   const toggleDrawer = useAppStore((state) => state.toggleDrawer);
+  const toggleScriptPin = useAppStore((state) => state.toggleScriptPin);
+  const reportError = useAppStore((state) => state.reportError);
 
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState<ReadonlySet<MountId>>(() =>
@@ -128,6 +133,13 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
       return count === 0 ? [] : [{ projectName: project.name, count }];
     });
   }, [groups, saved, workspaceProjects]);
+  const pins = useScriptPins({ projectIds: groups.map((group) => group.projectId) });
+  const isPinned = ({ group, script }: RowParams): boolean =>
+    (pins[group.projectId] ?? []).includes(scriptPinId(script));
+  const togglePin = ({ group, script }: RowParams) =>
+    void toggleScriptPin({ projectId: group.projectId, pinId: scriptPinId(script) }).catch(
+      (error: unknown) => reportError({ title: "Couldn't pin the script", error }),
+    );
   const activeGroup =
     groups.find((group) => group.projectId === scopedProjectId) ??
     groups.find((group) => group.projectId === activeProjectId) ??
@@ -381,6 +393,8 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
         }
         blockedReason={group.isReady ? null : `${group.projectName} is still preparing`}
         target={targetFor({ group, script })}
+        isPinned={isPinned({ group, script })}
+        onTogglePin={() => togglePin({ group, script })}
         onOpen={() => onOpen({ group, script })}
         onRun={() => onRun({ group, script })}
         onStop={() => onStop({ script })}
@@ -456,6 +470,28 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
     );
   };
 
+  const seenPins = new Set<string>();
+  const pinnedEntries: ReadonlyArray<PinnedScriptEntry> = groups.flatMap((group) =>
+    group.scripts
+      .filter((script) => isPinned({ group, script }))
+      .filter((script) => {
+        const seenKey = `${group.projectId}:${scriptPinId(script)}`;
+        if (seenPins.has(seenKey)) {
+          return false;
+        }
+        seenPins.add(seenKey);
+        return true;
+      })
+      .map((script) => ({
+        key: `${group.mountId}:${script.key}`,
+        name: script.name,
+        projectName: group.projectName,
+        isRunning: recordFor({ runs, group, script })?.status === 'pending',
+        blockedReason: group.isReady ? null : `${group.projectName} is still preparing`,
+        onRun: () => onRun({ group, script }),
+      })),
+  );
+
   const meta = [
     plural({ count: projectCount, word: 'project' }),
     runningCount > 0 ? `${runningCount} running` : null,
@@ -511,6 +547,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
           onCancel={draft.keepEditing}
         />
       ) : null}
+      {groups.length === 0 ? null : <PinnedScriptsStrip entries={pinnedEntries} />}
       {query.trim() !== '' && visibleGroups.length === 0 ? (
         <p className="text-label text-muted-foreground">No scripts match "{query.trim()}".</p>
       ) : null}

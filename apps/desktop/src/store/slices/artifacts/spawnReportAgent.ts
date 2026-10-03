@@ -66,7 +66,7 @@ const usableProviders = ({ state, sessionId }: UsableParams): ReadonlyArray<Prov
     sessionId,
     isRunBudgetBlocked: false,
     nowMs: Date.now(),
-    ...workspacePolicyAvailability({ state: state }),
+    ...workspacePolicyAvailability({ state, sessionId }),
   });
   return availability.connectedProviders.filter(
     (provider) =>

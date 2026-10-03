@@ -13,6 +13,7 @@ type Props = {
   readonly status: WorkspaceGitStatus | null;
   readonly editorExtra?: ReactNode;
   readonly badge?: ReactNode;
+  readonly footer?: ReactNode;
   readonly onUnlink: (params: { readonly project: Project }) => Promise<void>;
 };
 
@@ -22,6 +23,7 @@ export const ProjectLinkCompactRow = ({
   status,
   editorExtra,
   badge,
+  footer,
   onUnlink,
 }: Props) => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -89,6 +91,7 @@ export const ProjectLinkCompactRow = ({
         )}
         <ProjectRowActions project={project} busy={busy} onArmUnlink={() => setConfirming(true)} />
       </div>
+      {footer}
       {isEditorOpen ? (
         <ProjectRowEditor
           project={project}

@@ -1,12 +1,12 @@
 import { cn } from '../cn';
 import { Skeleton } from './Skeleton';
 
-type SkeletonRowProps = {
+type Props = {
   readonly label: string;
   readonly className?: string;
 };
 
-export const SkeletonRow = ({ label, className }: SkeletonRowProps) => (
+export const SkeletonRow = ({ label, className }: Props) => (
   <div
     role="status"
     aria-label={label}

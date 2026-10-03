@@ -454,6 +454,7 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
       expect(mockAttach).toHaveBeenCalledWith('sess-1', saved.id, {
         autoRun: false,
         navigate: true,
+        rulesSnapshot: expect.objectContaining({ autonomy: 'step' }),
         goal: 'test goal',
       }),
     );
@@ -473,6 +474,7 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
       expect(mockAttach).toHaveBeenCalledWith('sess-1', expect.any(String), {
         autoRun: false,
         navigate: true,
+        rulesSnapshot: expect.objectContaining({ autonomy: 'step' }),
         goal: 'just the auth module',
       }),
     );
@@ -555,6 +557,7 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
       expect(mockAttach).toHaveBeenCalledWith('sess-1', expect.any(String), {
         autoRun: true,
         navigate: true,
+        rulesSnapshot: expect.objectContaining({ autonomy: 'run' }),
         goal: 'test goal',
       }),
     );
@@ -807,6 +810,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
       expect(mockAttach).toHaveBeenCalledWith('sess-1', saved.id, {
         autoRun: false,
         navigate: true,
+        rulesSnapshot: expect.objectContaining({ autonomy: 'step' }),
         goal: 'test goal',
         executionMode: 'dynamic',
       }),
@@ -849,6 +853,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
       expect(mockAttach).toHaveBeenCalledWith('sess-1', saved.id, {
         autoRun: false,
         navigate: true,
+        rulesSnapshot: expect.objectContaining({ autonomy: 'step' }),
         goal: 'test goal',
         executionMode: 'dynamic',
       }),
@@ -925,6 +930,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     expect(mockAttach).toHaveBeenCalledWith('sess-1', expect.any(String), {
       autoRun: false,
       navigate: true,
+      rulesSnapshot: expect.objectContaining({ autonomy: 'step' }),
       goal: 'test goal',
       executionMode: 'dynamic',
       spendLimitUsd: 15,
@@ -945,6 +951,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     expect(mockAttach).toHaveBeenCalledWith('sess-1', expect.any(String), {
       autoRun: false,
       navigate: true,
+      rulesSnapshot: expect.objectContaining({ autonomy: 'step' }),
       goal: 'test goal',
       executionMode: 'dynamic',
     });
@@ -1029,6 +1036,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     expect(mockAttach).toHaveBeenCalledWith('sess-1', expect.any(String), {
       autoRun: false,
       navigate: true,
+      rulesSnapshot: expect.objectContaining({ autonomy: 'step' }),
       goal: 'test goal',
       executionMode: 'dynamic',
     });
@@ -1211,6 +1219,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     expect(mockAttach).toHaveBeenCalledWith('sess-1', expect.any(String), {
       autoRun: false,
       navigate: true,
+      rulesSnapshot: expect.objectContaining({ autonomy: 'step' }),
       goal: 'test goal',
       executionMode: 'dynamic',
     });
@@ -1319,6 +1328,7 @@ describe('WorkflowBuilderView (preset mode)', () => {
       expect(mockAttach).toHaveBeenCalledWith('sess-1', 'wf-preset-1', {
         autoRun: false,
         navigate: true,
+        rulesSnapshot: expect.objectContaining({ autonomy: 'step' }),
         goal: 'review only the db layer',
       }),
     );
@@ -1400,6 +1410,7 @@ describe('WorkflowBuilderView (trigger modes)', () => {
       expect(mockAttach).toHaveBeenCalledWith('sess-1', expect.any(String), {
         autoRun: false,
         navigate: true,
+        rulesSnapshot: expect.objectContaining({ autonomy: 'step' }),
         goal: 'test goal',
         triggerMode: 'manual',
       }),
@@ -1441,6 +1452,7 @@ describe('WorkflowBuilderView (trigger modes)', () => {
       expect(mockAttach).toHaveBeenCalledWith('sess-1', 'wf-next', {
         autoRun: false,
         navigate: true,
+        rulesSnapshot: expect.objectContaining({ autonomy: 'step' }),
         goal: 'test goal',
         triggerMode: 'after_run',
         chainAfterId: 'run-prev',
@@ -1942,6 +1954,7 @@ describe('WorkflowBuilderView (workflow name)', () => {
       expect(mockAttach).toHaveBeenCalledWith('sess-1', 'wf-preset-1', {
         autoRun: false,
         navigate: true,
+        rulesSnapshot: expect.objectContaining({ autonomy: 'step' }),
         goal: 'test goal',
       }),
     );
@@ -1985,6 +1998,7 @@ describe('WorkflowBuilderView (workflow name)', () => {
       expect(mockAttach).toHaveBeenCalledWith('sess-1', saved.id, {
         autoRun: false,
         navigate: true,
+        rulesSnapshot: expect.objectContaining({ autonomy: 'step' }),
         goal: 'test goal',
       }),
     );

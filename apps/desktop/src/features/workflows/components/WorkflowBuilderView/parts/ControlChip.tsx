@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn, tintClasses } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
@@ -6,6 +7,7 @@ type Props = {
   readonly label: string;
   readonly isLabelShown?: boolean;
   readonly value: string;
+  readonly marker?: ReactNode;
   readonly isOpen: boolean;
   readonly isInvalid?: boolean;
   readonly disabled: boolean;
@@ -16,6 +18,7 @@ export const ControlChip = ({
   label,
   isLabelShown = true,
   value,
+  marker = null,
   isOpen,
   isInvalid = false,
   disabled,
@@ -35,6 +38,7 @@ export const ControlChip = ({
     )}
   >
     {isLabelShown ? <span className="shrink-0 text-faint-foreground">{label}</span> : null}
+    {marker}
     <span className="min-w-0 truncate text-foreground">{value}</span>
     <ChevronDown
       size={ICON_SIZE.row}

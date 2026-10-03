@@ -128,7 +128,8 @@ export const DiffReviewMock = ({ className }: Props) => (
             <span>{'·'} 9m ago</span>
             <Chip tone="primary" size="3xs" bordered={false} label="Open note" />
             <span className="dfrThreadActions">
-              <span>Resolve</span>
+              <span>Fix</span>
+              <span>Close note</span>
               <span>Delete</span>
             </span>
           </div>

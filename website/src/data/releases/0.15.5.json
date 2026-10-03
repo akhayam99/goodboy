@@ -1,0 +1,1400 @@
+{
+  "version": "0.15.5",
+  "summary": "Settings open on a home, each workspace sets which providers it runs on, finished runs fold into one row, and one composer and selection bar work everywhere.",
+  "new": [
+    {
+      "title": "Settings home",
+      "area": "settings",
+      "copy": "Settings, its footer button, Cmd+, and the palette open on a home with App, Workspace, Providers & models and Integrations as cards, each page with its status."
+    },
+    {
+      "title": "Provider order and Auto",
+      "area": "providers",
+      "copy": "Providers in Defaults is one ordered list where each provider is On, Backup only or Off."
+    },
+    {
+      "title": "Pause, resume and skip",
+      "area": "workflows",
+      "copy": "Pause lets the step in flight finish and starts nothing new."
+    },
+    {
+      "title": "Fix diff notes with one agent per note",
+      "area": "review",
+      "copy": "A note in the diff offers Fix, Close note and Delete, and the toolbar offers Fix N notes."
+    }
+  ],
+  "groups": [
+    {
+      "id": "set-up",
+      "title": "Set up",
+      "image": null,
+      "features": [
+        {
+          "id": "welcome-to-goodboy",
+          "title": "Welcome to Goodboy",
+          "copy": "Follow five short steps from install to a first agent reading your project: Provider, Project, Code host, Tasks and First session.",
+          "image": "setup-welcome",
+          "isNew": false
+        },
+        {
+          "id": "provider-connection",
+          "title": "Provider connection",
+          "copy": "Pick the provider you already pay for and connect it with a login or an API key.",
+          "image": "setup-provider-connection",
+          "isNew": false
+        },
+        {
+          "id": "one-page-per-provider",
+          "title": "One page per provider",
+          "copy": "Find everything about a provider on its own page in Providers & models: Usage with the weekly window, Models in the picker with a switch per model, Permissions, and Account with Sign in again and Disconnect.",
+          "image": "setup-provider-page",
+          "isNew": false
+        },
+        {
+          "id": "update-the-provider-cli",
+          "title": "Update the provider CLI",
+          "copy": "See when a model needs a newer CLI, right at the top of the provider page, and press Update Claude CLI to install it.",
+          "image": "setup-cli-update",
+          "isNew": false
+        },
+        {
+          "id": "permissions-for-each-provider",
+          "title": "Permissions for each provider",
+          "copy": "Check which permission modes a provider can honor before you pick one: Read only, Ask first, Edits allowed and Full access.",
+          "image": "setup-permissions",
+          "isNew": false
+        },
+        {
+          "id": "integrations",
+          "title": "Integrations",
+          "copy": "Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from one page.",
+          "image": "setup-integrations",
+          "isNew": false
+        },
+        {
+          "id": "about-you",
+          "title": "About you",
+          "copy": "Tell agents once who you are and how you like to work, in four short parts: Your roles, About your work, How agents should work with you and Explain more when it touches.",
+          "image": "setup-about-you",
+          "isNew": false
+        },
+        {
+          "id": "settings-home",
+          "title": "Settings home",
+          "copy": "Find any setting from one page.",
+          "image": null,
+          "isNew": true
+        }
+      ]
+    },
+    {
+      "id": "start-a-task",
+      "title": "Start a task",
+      "image": null,
+      "features": [
+        {
+          "id": "how-do-you-want-to-start",
+          "title": "How do you want to start?",
+          "copy": "The New session draft has three tabs: Pick up a task, Run a workflow and Ask an agent.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "pick-up-a-task-with-a-drafted-brief",
+          "title": "Pick up a task, with a drafted brief",
+          "copy": "Turn an issue into a briefed session in one pick.",
+          "image": "start-pick-task",
+          "isNew": false
+        },
+        {
+          "id": "run-a-workflow",
+          "title": "Run a workflow",
+          "copy": "The full workflow builder, right in the kickoff.",
+          "image": "start-run-workflow",
+          "isNew": false
+        },
+        {
+          "id": "ask-an-agent",
+          "title": "Ask an agent",
+          "copy": "Map an unfamiliar repo before you plan.",
+          "image": "start-ask-agent",
+          "isNew": false
+        },
+        {
+          "id": "start-blank",
+          "title": "Start blank",
+          "copy": "Start from the goal instead.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "named-by-goodboy",
+          "title": "Named by Goodboy",
+          "copy": "Get a short title without writing one.",
+          "image": null,
+          "isNew": false
+        }
+      ]
+    },
+    {
+      "id": "overview-and-activity",
+      "title": "Overview and activity",
+      "image": null,
+      "features": [
+        {
+          "id": "session-overview",
+          "title": "Session overview",
+          "copy": "Find the goal, linked issues, projects, cost and the buttons to start an agent or a workflow on one screen.",
+          "image": "overview-session",
+          "isNew": false
+        },
+        {
+          "id": "refresh-a-session",
+          "title": "Refresh a session",
+          "copy": "See pull requests made outside Goodboy without reloading.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "activity",
+          "title": "Activity",
+          "copy": "Read the whole session as one timeline of agents, workflows, questions, fixes, artifacts, pull requests and decisions.",
+          "image": "overview-activity",
+          "isNew": false
+        },
+        {
+          "id": "next",
+          "title": "Next",
+          "copy": "Know the one move that unblocks a task, like answering a question, fixing a failing check or opening a pull request.",
+          "image": "overview-next",
+          "isNew": false
+        },
+        {
+          "id": "time-left",
+          "title": "Time left",
+          "copy": "See how long a step has left, learned from your own past runs.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "file-versions",
+          "title": "File versions",
+          "copy": "Undo an agent's edit in a session without a branch: each file it changed is kept as it was, with Restore.",
+          "image": null,
+          "isNew": false
+        }
+      ]
+    },
+    {
+      "id": "switch-between-tasks",
+      "title": "Switch between tasks",
+      "image": null,
+      "features": [
+        {
+          "id": "activity-bar",
+          "title": "Activity bar",
+          "copy": "Move between tasks without losing your place.",
+          "image": "switch-display-options",
+          "isNew": false
+        },
+        {
+          "id": "now-chip",
+          "title": "Now chip",
+          "copy": "Know what needs you from any screen.",
+          "image": "switch-now-chip",
+          "isNew": false
+        },
+        {
+          "id": "notifications",
+          "title": "Notifications",
+          "copy": "Catch up in one place.",
+          "image": "switch-notifications",
+          "isNew": false
+        },
+        {
+          "id": "open-in-new-window",
+          "title": "Open in new window",
+          "copy": "Give each workspace its own window, so switching does not interrupt running agents.",
+          "image": null,
+          "isNew": false
+        }
+      ]
+    },
+    {
+      "id": "search-and-navigation",
+      "title": "Search and navigation",
+      "image": null,
+      "features": [
+        {
+          "id": "go-anywhere",
+          "title": "Go anywhere",
+          "copy": "Reach any screen without the mouse.",
+          "image": "search-go-anywhere",
+          "isNew": false
+        },
+        {
+          "id": "command-palette",
+          "title": "Command palette",
+          "copy": "Press ⌘K to act on what you are looking at.",
+          "image": "search-command-palette",
+          "isNew": false
+        },
+        {
+          "id": "search",
+          "title": "Search",
+          "copy": "Find a message, a plan, a decision, an issue or a branch with ⌘F.",
+          "image": "search-jump",
+          "isNew": false
+        },
+        {
+          "id": "right-click-menus",
+          "title": "Right click menus",
+          "copy": "Right click a session, agent, run, artifact, pull request, worktree row, diff file or message to see every action it has, at the pointer.",
+          "image": null,
+          "isNew": false
+        }
+      ]
+    },
+    {
+      "id": "workspace-and-projects",
+      "title": "Workspace and projects",
+      "image": null,
+      "features": [
+        {
+          "id": "start-a-project-from-nothing",
+          "title": "Start a project from nothing",
+          "copy": "Begin with an empty folder and no repository.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "workspace-with-several-projects",
+          "title": "Workspace with several projects",
+          "copy": "Keep your repos together as one workspace, and let one session work across several of them.",
+          "image": "workspace-several-projects",
+          "isNew": false
+        },
+        {
+          "id": "starred-projects-descriptions-and-base-branch",
+          "title": "Starred projects, descriptions and base branch",
+          "copy": "Point agents at the right repo without naming it.",
+          "image": "workspace-starred",
+          "isNew": false
+        },
+        {
+          "id": "worktrees",
+          "title": "Worktrees",
+          "copy": "Let agents edit in parallel without touching your checkout.",
+          "image": "workspace-worktrees",
+          "isNew": false
+        },
+        {
+          "id": "several-branches-per-project",
+          "title": "Several branches per project",
+          "copy": "Work on several branches of one repo in the same session: ledger-core shows two, each in its own worktree.",
+          "image": "workspace-branches",
+          "isNew": false
+        },
+        {
+          "id": "workspace-switcher-and-reconnect",
+          "title": "Workspace switcher and Reconnect",
+          "copy": "Jump between workspaces and projects from one search.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "repo-status-across-projects",
+          "title": "Repo status across projects",
+          "copy": "See which repos are behind, uncommitted or diverged from the N repos popover in the board header, and update the safe ones together with Update 1.",
+          "image": "workspace-repo-status",
+          "isNew": false
+        },
+        {
+          "id": "locate-moved-projects",
+          "title": "Locate moved projects",
+          "copy": "Moved your repos to a new folder?",
+          "image": "workspace-locate",
+          "isNew": false
+        },
+        {
+          "id": "keep-goodboy-out-of-git",
+          "title": "Keep .goodboy out of git",
+          "copy": "Keep Goodboy's own folder out of your commits with one click.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "copy-settings-from-another-workspace",
+          "title": "Copy settings from another workspace",
+          "copy": "Workspace settings has one page per area: Projects, About you, New sessions, After merge, Review replies, Permissions, Skills and Disconnect.",
+          "image": null,
+          "isNew": false
+        }
+      ]
+    },
+    {
+      "id": "branch-history",
+      "title": "Branch history",
+      "image": null,
+      "features": [
+        {
+          "id": "rewrite-history",
+          "title": "Rewrite history",
+          "copy": "Clean up a branch by hand.",
+          "image": "history-rewrite",
+          "isNew": false
+        },
+        {
+          "id": "safe-apply",
+          "title": "Safe apply",
+          "copy": "Apply here only and Apply and update online try the whole plan on a temporary copy first and check the result before your branch moves.",
+          "image": "history-trial",
+          "isNew": false
+        },
+        {
+          "id": "conflict-prediction",
+          "title": "Conflict prediction",
+          "copy": "While you edit the plan, Goodboy tries it in memory and marks each change that may conflict.",
+          "image": "history-conflicts",
+          "isNew": false
+        },
+        {
+          "id": "conflicts-merged-in-a-copy",
+          "title": "Conflicts merged in a copy",
+          "copy": "When a step stops on a conflict, the notice says which step and file, and your branch is untouched.",
+          "image": "history-stopped",
+          "isNew": false
+        },
+        {
+          "id": "push-with-lease-and-restore",
+          "title": "Push with lease and restore",
+          "copy": "Apply and update online replaces the online branch only when nothing newer is there, so a teammate's push is never overwritten.",
+          "image": "history-result",
+          "isNew": false
+        },
+        {
+          "id": "backups",
+          "title": "Backups",
+          "copy": "Open the ⋯ menu and choose Backups to see the older histories of this branch.",
+          "image": "history-backups",
+          "isNew": false
+        },
+        {
+          "id": "suggest-a-message",
+          "title": "Suggest a message",
+          "copy": "Get a commit message drafted for a squash or a reword.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "bring-them-into-the-plan",
+          "title": "Bring them into the plan",
+          "copy": "Someone pushed after you applied?",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "rebase-on-main",
+          "title": "Rebase on main",
+          "copy": "Rebase on main with the same engine, and bring in an agent only when there is a conflict.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "after-a-pull-request-merges",
+          "title": "After a pull request merges",
+          "copy": "Decide what happens to a merged branch, Ask me, Delete on this Mac or Also on origin, per workspace or project, with 14 days to restore it.",
+          "image": null,
+          "isNew": false
+        }
+      ]
+    },
+    {
+      "id": "review-resolve-and-pull-requests",
+      "title": "Review, resolve and pull requests",
+      "image": null,
+      "features": [
+        {
+          "id": "resolve",
+          "title": "Resolve",
+          "copy": "Turn review comments into commits without writing the fix yourself.",
+          "image": "review-resolve",
+          "isNew": false
+        },
+        {
+          "id": "review-sources",
+          "title": "Review sources",
+          "copy": "Read the comments of every request in the session from one place.",
+          "image": "review-sources",
+          "isNew": false
+        },
+        {
+          "id": "source-read-comments-reply",
+          "title": "Source                 | Read comments   | Reply",
+          "copy": "Resolve thread",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "github-pull-request-yes-yes",
+          "title": "GitHub pull request    | Yes             | Yes",
+          "copy": "Yes",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "gitlab-merge-request-yes-yes",
+          "title": "GitLab merge request   | Yes             | Yes",
+          "copy": "Yes",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "bitbucket-pull-request-inline-comments-yes",
+          "title": "Bitbucket pull request | Inline comments | Yes",
+          "copy": "No, the thread stays open",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "notes-on-this-machine-yes-no",
+          "title": "Notes on this machine  | Yes             | No",
+          "copy": "Close the note",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "comment-states",
+          "title": "Comment states",
+          "copy": "Know what each comment needs next.",
+          "image": "review-comment-states",
+          "isNew": false
+        },
+        {
+          "id": "failed-drafts",
+          "title": "Failed drafts",
+          "copy": "Know why a draft failed and what to do next.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "manage-a-resolve-from-its-brief",
+          "title": "Manage a resolve from its Brief",
+          "copy": "Click a resolve in Activity and its Brief holds the comment, the fix and the reply, with Accept, Edit, Reply and Skip.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "fixes-already-on-the-branch",
+          "title": "Fixes already on the branch",
+          "copy": "Review looks at origin before it pushes.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "a-fix-that-went-missing",
+          "title": "A fix that went missing",
+          "copy": "When the commit of a fix is no longer on the branch or on origin, the comment reads Fix went missing with its own detail, and the push blocker points to it.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "close-on-github",
+          "title": "Close on GitHub",
+          "copy": "Finish a review in one action.",
+          "image": "review-push-confirm",
+          "isNew": false
+        },
+        {
+          "id": "review-replies-in-your-voice",
+          "title": "Review replies in your voice",
+          "copy": "Get replies that sound like you, Terse, Friendly, Formal or Like my replies.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "fixes-on-a-branch-that-moved",
+          "title": "Fixes on a branch that moved",
+          "copy": "Accept a fix even after the branch got new commits: it lands on top of the latest one, and on a conflict the branch goes back to its old head.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "squash-and-fold-the-resolve-commits",
+          "title": "Squash and fold the resolve commits",
+          "copy": "Choose how the fixes land before anyone sees them.",
+          "image": "review-commits",
+          "isNew": false
+        },
+        {
+          "id": "notes-before-a-pull-request",
+          "title": "Notes before a pull request",
+          "copy": "Review your own diff before anyone else does.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "github-pull-request-page",
+          "title": "GitHub pull request page",
+          "copy": "Know whether a GitHub pull request can merge, in plain words, with details and checks, and merge, mark ready, draft or close it from there.",
+          "image": "review-pr-page",
+          "isNew": false
+        },
+        {
+          "id": "pull-request-diff-and-review-as-layers",
+          "title": "Pull request, Diff and Review as layers",
+          "copy": "Move between a pull request, its Diff and its Review without losing your place.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "write-it-for-me",
+          "title": "Write it for me",
+          "copy": "Get a pull request title, description and changelog entry in your repo's format when you open a pull request.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "pr-description-follows-the-push",
+          "title": "PR description follows the push",
+          "copy": "Keep a pull request description in step with its branch.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "diff",
+          "title": "Diff",
+          "copy": "Read changes with syntax colors, word-level highlights, a Unified or Split view and a Viewed tick per file (1 of 3 viewed here), and quote a line into a note or a question for an agent.",
+          "image": "review-diff",
+          "isNew": false
+        },
+        {
+          "id": "write-review",
+          "title": "Write review",
+          "copy": "Review someone else's pull request in a form under the diff, opened with Write review on its pull request page.",
+          "image": "review-write",
+          "isNew": false
+        }
+      ]
+    },
+    {
+      "id": "the-board",
+      "title": "The board",
+      "image": null,
+      "features": [
+        {
+          "id": "stage-board",
+          "title": "Stage board",
+          "copy": "See where each task stands without moving cards around.",
+          "image": "board-stage",
+          "isNew": false
+        },
+        {
+          "id": "session-card",
+          "title": "Session card",
+          "copy": "Read a task at a glance: the pull request or status line, the agent count, project and issue chips, cost and age.",
+          "image": "board-card",
+          "isNew": false
+        },
+        {
+          "id": "done-and-archived-dock",
+          "title": "Done and Archived dock",
+          "copy": "Keep finished work out of the way but close by.",
+          "image": "board-dock",
+          "isNew": false
+        },
+        {
+          "id": "bulk-select",
+          "title": "Bulk select",
+          "copy": "Tidy many sessions at once.",
+          "image": null,
+          "isNew": false
+        }
+      ]
+    },
+    {
+      "id": "workflows",
+      "title": "Workflows",
+      "image": null,
+      "features": [
+        {
+          "id": "workflow-builder",
+          "title": "Workflow builder",
+          "copy": "Shape a run before it starts: a name, a goal and a mode, with the plan previewed as a recipe, step 1 on top, in the same nodes the run will show.",
+          "image": "workflow-builder",
+          "isNew": false
+        },
+        {
+          "id": "orchestrated",
+          "title": "Orchestrated",
+          "copy": "Give a goal and let a model pick each next step, with its role, provider, model, effort and a reason, until it says done or blocked.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "preset-and-custom",
+          "title": "Preset and Custom",
+          "copy": "Write the steps yourself with Add step, describe them and press Generate plan, or press Draft with planner.",
+          "image": "workflow-builder-preset",
+          "isNew": false
+        },
+        {
+          "id": "built-in-workflows",
+          "title": "Built-in workflows",
+          "copy": "Start from Refactor, Plan and ship or Fix a bug.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "saved-steps",
+          "title": "Saved steps",
+          "copy": "Reuse steps across workflows.",
+          "image": "workflow-studio-steps",
+          "isNew": false
+        },
+        {
+          "id": "model-per-step",
+          "title": "Model per step",
+          "copy": "Put a light model on a scout and a strong one on the planner.",
+          "image": "workflow-model",
+          "isNew": false
+        },
+        {
+          "id": "autorun",
+          "title": "Autorun",
+          "copy": "Choose when a run asks: Ask before each step, or Run on its own to move to the next step without you, per run or for the whole session.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "pause-resume-and-skip",
+          "title": "Pause, resume and skip",
+          "copy": "Pause lets the step in flight finish and starts nothing new, even after a restart; Resume picks up where the run was.",
+          "image": null,
+          "isNew": true
+        },
+        {
+          "id": "spend-limit",
+          "title": "Spend limit",
+          "copy": "Cap what a run or a session can spend, and choose Pause workflows or Only warn me.",
+          "image": "workflow-spend",
+          "isNew": false
+        },
+        {
+          "id": "chained-starts",
+          "title": "Chained starts",
+          "copy": "Line work up behind work.",
+          "image": "workflow-starts",
+          "isNew": false
+        },
+        {
+          "id": "workflow-run",
+          "title": "Workflow run",
+          "copy": "Follow a run as a tree with one pinned next action, and add steps to a live or finished run.",
+          "image": "workflow-run",
+          "isNew": false
+        },
+        {
+          "id": "hints-to-the-orchestrator",
+          "title": "Hints to the orchestrator",
+          "copy": "Steer a run while it goes.",
+          "image": "workflow-hints",
+          "isNew": false
+        },
+        {
+          "id": "why-each-step-and-the-run-recap",
+          "title": "Why each step, and the run recap",
+          "copy": "See why each step was picked, with a short Recap of what is done and what is left, rewritten after each decision.",
+          "image": "workflow-recap",
+          "isNew": false
+        },
+        {
+          "id": "step-handoff-summary",
+          "title": "Step handoff summary",
+          "copy": "Start each step from a short brief instead of the whole previous chat.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "open-questions",
+          "title": "Open questions",
+          "copy": "Get each question as one card: who asks, whether it is Blocking, the question, and its answers as numbered tiles with the recommended one tagged.",
+          "image": "workflow-questions",
+          "isNew": false
+        },
+        {
+          "id": "let-an-agent-decide",
+          "title": "Let an agent decide",
+          "copy": "Hand a question to another agent with a hint and a model from Let an agent decide, then press Hand off.",
+          "image": "workflow-question-agent",
+          "isNew": false
+        },
+        {
+          "id": "import-workflows",
+          "title": "Import workflows",
+          "copy": "Bring custom workflows over from your other workspaces with Import in the Workflows studio.",
+          "image": null,
+          "isNew": false
+        }
+      ]
+    },
+    {
+      "id": "inbox-and-your-tools",
+      "title": "Inbox and your tools",
+      "image": null,
+      "features": [
+        {
+          "id": "supported-tools",
+          "title": "Supported tools",
+          "copy": "Connect the ones you use in Settings, Integrations.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "agents-use-your-tools",
+          "title": "Agents use your tools",
+          "copy": "Let agents on any provider read and act on GitHub, GitLab, Bitbucket, Jira, Linear, Sentry and Slack, as far as you connected them, without handing them your keys.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "inbox",
+          "title": "Inbox",
+          "copy": "Work from one list instead of seven tabs.",
+          "image": "inbox-list",
+          "isNew": false
+        },
+        {
+          "id": "find-any-issue-by-code-or-link",
+          "title": "Find any issue by code or link",
+          "copy": "Paste HBL-412, #318 or a link in the search box and open the issue, even when it is not assigned to you.",
+          "image": "inbox-lookup",
+          "isNew": false
+        },
+        {
+          "id": "starred-issues",
+          "title": "Starred issues",
+          "copy": "Star an issue to keep it on top of the Inbox and of Pick up a task.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "launch-a-session-from-any-item",
+          "title": "Launch a session from any item",
+          "copy": "Press Launch session on an issue, a Slack thread or an error to start a session with the brief already drafted.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "link-an-item-to-a-session",
+          "title": "Link an item to a session",
+          "copy": "Attach an inbox item to work that already exists.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "trackers",
+          "title": "Trackers",
+          "copy": "Read Sentry errors with stack trace, breadcrumbs and tags inside Goodboy, and filter them by project.",
+          "image": "inbox-sentry",
+          "isNew": false
+        },
+        {
+          "id": "code-hosts",
+          "title": "Code hosts",
+          "copy": "Work on GitHub pull requests and issues, GitLab merge requests, and Bitbucket comments, approvals and merges without leaving Goodboy.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "slack-what-agents-can-do",
+          "title": "Slack: what agents can do",
+          "copy": "Decide how far agents go in Slack.",
+          "image": "inbox-slack-permissions",
+          "isNew": false
+        },
+        {
+          "id": "reply-ready-for-channel",
+          "title": "Reply ready for #channel",
+          "copy": "Approve what goes out in Slack from where you already are.",
+          "image": "inbox-slack-reply",
+          "isNew": false
+        },
+        {
+          "id": "slack-signature",
+          "title": "Slack signature",
+          "copy": "Let people in a thread see when an agent wrote a reply.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "images-from-your-tools",
+          "title": "Images from your tools",
+          "copy": "See screenshots attached in Linear, Jira and GitHub inside Goodboy.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "records-read-the-same-way",
+          "title": "Records read the same way",
+          "copy": "Read items from any tool the same way: one list of labels and values, with who opened them and when.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "comment-threads",
+          "title": "Comment threads",
+          "copy": "Follow replies under the comment they answer, in Linear and GitLab, and fold long threads behind Show earlier replies.",
+          "image": "inbox-comment-threads",
+          "isNew": false
+        }
+      ]
+    },
+    {
+      "id": "plans-reports-and-wireframes",
+      "title": "Plans, reports and wireframes",
+      "image": null,
+      "features": [
+        {
+          "id": "artifacts",
+          "title": "Artifacts",
+          "copy": "Keep plans, reports and wireframes next to the task.",
+          "image": "artifact-list",
+          "isNew": false
+        },
+        {
+          "id": "plan-parts-and-run-plan",
+          "title": "Plan parts and Run plan",
+          "copy": "Check a plan before it runs.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "report-as-a-document",
+          "title": "Report as a document",
+          "copy": "Read a report as one document.",
+          "image": "artifact-report",
+          "isNew": false
+        },
+        {
+          "id": "files-on-disk",
+          "title": "Files on disk",
+          "copy": "Open any artifact as a folder, in your browser or your file manager.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "create-a-wireframe",
+          "title": "Create a wireframe",
+          "copy": "Describe the screen in a Brief, add Attachments, and choose the Fidelity (Plain wireframe or Repository styled wireframe) and the Target (Phone, Desktop or Phone and desktop).",
+          "image": "artifact-create",
+          "isNew": false
+        },
+        {
+          "id": "wireframes-scouted-first",
+          "title": "Wireframes scouted first",
+          "copy": "Get wireframes that start from your code.",
+          "image": "artifact-scouts",
+          "isNew": false
+        },
+        {
+          "id": "wireframe-versions",
+          "title": "Wireframe versions",
+          "copy": "Go back to any wireframe version with View, Compare and Restore.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "compare",
+          "title": "Compare",
+          "copy": "See what changed between two wireframe versions side by side.",
+          "image": "artifact-compare",
+          "isNew": false
+        },
+        {
+          "id": "ask-for-a-change",
+          "title": "Ask for a change",
+          "copy": "Point at what you want changed: pick elements on the wireframe, choose this screen or all screens, and ask.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "import-wireframe-json",
+          "title": "Import wireframe JSON",
+          "copy": "Bring in a wireframe made elsewhere, with a preview of any fixes before it lands.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "revisions-and-restore",
+          "title": "Revisions and Restore",
+          "copy": "Bring back an earlier plan, report or wireframe as a new revision, with its author, without losing the later ones.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "save-a-copy-and-new-variant",
+          "title": "Save a copy and New variant",
+          "copy": "Export a wireframe as a folder of pages, or redraw it at the other fidelity.",
+          "image": null,
+          "isNew": false
+        }
+      ]
+    },
+    {
+      "id": "shared-context",
+      "title": "Shared context",
+      "image": null,
+      "features": [
+        {
+          "id": "decisions",
+          "title": "Decisions",
+          "copy": "Record a decision once and have the agents after it read it.",
+          "image": "context-decisions",
+          "isNew": false
+        },
+        {
+          "id": "see-why-each-decision-was-made",
+          "title": "See why each decision was made",
+          "copy": "Read the reason behind a decision without opening the run.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "running-summary",
+          "title": "Running summary",
+          "copy": "Hand the next agent where things stand.",
+          "image": "context-summary",
+          "isNew": false
+        },
+        {
+          "id": "context-drawer",
+          "title": "Context drawer",
+          "copy": "Open goal, decisions and summary from any session page with the Context button, and use the copy icon at the top for Copy as brief.",
+          "image": "context-drawer",
+          "isNew": false
+        },
+        {
+          "id": "context-budgets",
+          "title": "Context budgets",
+          "copy": "Keep prompts small as a session grows.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "plans-handed-to-the-next-agent",
+          "title": "Plans handed to the next agent",
+          "copy": "Hand a plan straight to the implementer.",
+          "image": null,
+          "isNew": false
+        }
+      ]
+    },
+    {
+      "id": "providers-limits-and-cost",
+      "title": "Providers, limits and cost",
+      "image": null,
+      "features": [
+        {
+          "id": "usage-limits-chip",
+          "title": "Usage limits chip",
+          "copy": "See how much of your Claude and Codex plans is left before a run stops.",
+          "image": "providers-limits-chip",
+          "isNew": false
+        },
+        {
+          "id": "use-reset",
+          "title": "Use reset",
+          "copy": "Spend a free Codex reset at the right moment.",
+          "image": "providers-codex-reset",
+          "isNew": false
+        },
+        {
+          "id": "fallback-when-a-limit-is-hit",
+          "title": "Fallback when a limit is hit",
+          "copy": "Keep a task moving when a provider runs out.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "provider-order-and-auto",
+          "title": "Provider order and Auto",
+          "copy": "Choose which providers this workspace uses, and in what order.",
+          "image": "providers-fallback-auto",
+          "isNew": true
+        },
+        {
+          "id": "model-picker",
+          "title": "Model picker",
+          "copy": "Pick a model with the reason next to it.",
+          "image": "providers-model-picker",
+          "isNew": false
+        },
+        {
+          "id": "impact",
+          "title": "Impact",
+          "copy": "See what Goodboy got done and what it cost over 7 days, 30 days or All time.",
+          "image": "providers-impact-overview",
+          "isNew": false
+        },
+        {
+          "id": "monthly-cap-and-budget-alert",
+          "title": "Monthly cap and budget alert",
+          "copy": "Set a monthly cap per provider and hear about it before you reach it.",
+          "image": "providers-monthly-cap",
+          "isNew": false
+        }
+      ]
+    },
+    {
+      "id": "storage",
+      "title": "Storage",
+      "image": null,
+      "features": [
+        {
+          "id": "worktree-folders",
+          "title": "Worktree folders",
+          "copy": "Free disk space without guessing.",
+          "image": "storage-worktrees",
+          "isNew": false
+        },
+        {
+          "id": "branches",
+          "title": "Branches",
+          "copy": "Delete old branches with confidence.",
+          "image": "storage-branches",
+          "isNew": false
+        },
+        {
+          "id": "storage-scope",
+          "title": "Storage scope",
+          "copy": "Clean up this workspace, other workspaces, removed ones or all of them, each with its weight, from the picker in the page header.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "free-space-chip",
+          "title": "Free space chip",
+          "copy": "See reclaimable space at a glance.",
+          "image": "storage-free-space-chip",
+          "isNew": false
+        },
+        {
+          "id": "artifacts-from-deleted-sessions",
+          "title": "Artifacts from deleted sessions",
+          "copy": "Decide what to keep from sessions you deleted: their plans, reports and wireframes, with Keep or Delete.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "goodboy-can-free-n-gb",
+          "title": "Goodboy can free N GB",
+          "copy": "Hear about reclaimable space once, when idle safe folders pass 10 GB or the disk runs low.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "other-tools",
+          "title": "Other tools",
+          "copy": "See how much space the other coding tools keep, without risking their history.",
+          "image": null,
+          "isNew": false
+        }
+      ]
+    },
+    {
+      "id": "security-backup-and-updates",
+      "title": "Security, backup and updates",
+      "image": null,
+      "features": [
+        {
+          "id": "security-findings",
+          "title": "Security findings",
+          "copy": "Catch a token pasted into a saved script before it travels.",
+          "image": "security-findings",
+          "isNew": false
+        },
+        {
+          "id": "findings-kept-out-of-the-export",
+          "title": "Findings kept out of the export",
+          "copy": "Move your setup to a new machine without carrying a flagged token: an export leaves out the script that holds it, unless you include it on purpose.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "export-and-import-your-setup",
+          "title": "Export and import your setup",
+          "copy": "Move your setup to another Mac, or keep a copy.",
+          "image": "security-export-import",
+          "isNew": false
+        },
+        {
+          "id": "backup-before-a-data-update",
+          "title": "Backup before a data update",
+          "copy": "Update without worrying about your data.",
+          "image": "security-backup-notice",
+          "isNew": false
+        },
+        {
+          "id": "newer-data-guard",
+          "title": "Newer data guard",
+          "copy": "Open an older Goodboy on newer data without damage.",
+          "image": "security-newer-data",
+          "isNew": false
+        },
+        {
+          "id": "updates",
+          "title": "Updates",
+          "copy": "Get updates in the background, then see what is new.",
+          "image": "security-updates",
+          "isNew": false
+        },
+        {
+          "id": "changelog-in-the-app",
+          "title": "Changelog in the app",
+          "copy": "Read release notes inside the app, searchable, with links into the screen each change touched, like Sessions and App beside each fix.",
+          "image": "security-changelog-update",
+          "isNew": false
+        },
+        {
+          "id": "before-and-after-pictures",
+          "title": "Before and after pictures",
+          "copy": "See a change instead of reading about it.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "guide",
+          "title": "Guide",
+          "copy": "Learn how Goodboy works in 18 short chapters that follow a task, with search and links that open each screen.",
+          "image": null,
+          "isNew": false
+        }
+      ]
+    },
+    {
+      "id": "agents",
+      "title": "Agents",
+      "image": null,
+      "features": [
+        {
+          "id": "workspace-chat",
+          "title": "Workspace chat",
+          "copy": "Ask about the workspace without starting a session.",
+          "image": "agents-workspace-chat",
+          "isNew": false
+        },
+        {
+          "id": "roles",
+          "title": "Roles",
+          "copy": "Give each agent the job it is good at.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "agent-header",
+          "title": "Agent header",
+          "copy": "Read who an agent is without giving the transcript away.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "what-the-agent-received",
+          "title": "What the agent received",
+          "copy": "Check exactly what an agent was told.",
+          "image": "agents-what-received",
+          "isNew": false
+        },
+        {
+          "id": "agent-transcript",
+          "title": "Agent transcript",
+          "copy": "Follow one agent's work in order.",
+          "image": "agents-transcript",
+          "isNew": false
+        },
+        {
+          "id": "agent-suggests",
+          "title": "Agent suggests",
+          "copy": "When an agent recommends another role, its transcript shows Agent suggests with the reason.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "queue-or-send-now",
+          "title": "Queue or send now",
+          "copy": "Keep talking while an agent works.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "message-and-document-fields",
+          "title": "Message and document fields",
+          "copy": "Write to an agent the same way everywhere.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "stop-and-continue",
+          "title": "Stop and Continue",
+          "copy": "Stop an agent without losing its work.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "turn-footer",
+          "title": "Turn footer",
+          "copy": "See what each turn cost: provider, model, duration, tokens, cache share, estimated cost and a context meter.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "tool-call-states",
+          "title": "Tool call states",
+          "copy": "Tell at a glance what a tool call did: Running, Done, Failed, Needs approval, Stopped or Denied, with elapsed time and readable input and output.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "composer-plus-menu",
+          "title": "Composer plus menu",
+          "copy": "Do more from the message box.",
+          "image": "agents-composer-menu",
+          "isNew": false
+        },
+        {
+          "id": "attach-files",
+          "title": "Attach files",
+          "copy": "Hand an agent images, PDFs, CSV and text files, up to 10 at a time and 10 MB each, by paste, drop or pick.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "drift-warning",
+          "title": "Drift warning",
+          "copy": "Hear about it when an agent steps outside its role, like a planner editing files.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "subagents-from-plan-parts",
+          "title": "Subagents from plan parts",
+          "copy": "Run a plan part by part.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "history-rewriter-and-scribe",
+          "title": "History rewriter and Scribe",
+          "copy": "Let two helpers work on your history and your pull request text without the power to push.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "one-language-per-session",
+          "title": "One language per session",
+          "copy": "Get agents and summaries in the language of your goal.",
+          "image": null,
+          "isNew": false
+        }
+      ]
+    },
+    {
+      "id": "support-goodboy",
+      "title": "Support Goodboy",
+      "image": null,
+      "features": [
+        {
+          "id": "report-a-bug",
+          "title": "Report a bug",
+          "copy": "Tell us what broke in one line.",
+          "image": "support-report-bug",
+          "isNew": false
+        }
+      ]
+    },
+    {
+      "id": "keyboard-and-terminal",
+      "title": "Keyboard and terminal",
+      "image": null,
+      "features": [
+        {
+          "id": "terminal",
+          "title": "Terminal",
+          "copy": "Open a real login shell in the session's worktree.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "keyboard-shortcuts-back-and-forward",
+          "title": "Keyboard shortcuts, back and forward",
+          "copy": "Drive Goodboy from the keyboard: a ⌘⌥ key for each view, ⌘1 to ⌘9 for your other workspaces in the order the switcher numbers them, and ⌘[ and ⌘] through history.",
+          "image": "keyboard-shortcuts",
+          "isNew": false
+        },
+        {
+          "id": "script-drawer",
+          "title": "Script drawer",
+          "copy": "Pin the scripts you use from the Scripts lens or from the project row on the workspace Projects page: they sit in a Pinned strip at the top of the lens, one click away, and in the palette under $ with their project.",
+          "image": "keyboard-script-drawer",
+          "isNew": false
+        },
+        {
+          "id": "open-in-editor",
+          "title": "Open in editor",
+          "copy": "Jump into VS Code, Cursor, Zed, the JetBrains IDEs, Sublime Text, Vim or Neovim, at the worktree or the file.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "explore",
+          "title": "Explore",
+          "copy": "Browse the session folder as a file tree, with a preview of the selected file beside it, Open outside and Copy.",
+          "image": "keyboard-explore",
+          "isNew": false
+        }
+      ]
+    },
+    {
+      "id": "also-there",
+      "title": "Also there",
+      "image": null,
+      "features": [
+        {
+          "id": "written-by-goodboy",
+          "title": "Written by Goodboy",
+          "copy": "Comments Goodboy posts end with a line that says so, and a setting turns it off",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "resolve-again",
+          "title": "Resolve again",
+          "copy": "Rereads a comment and tries the fix once more",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "checks",
+          "title": "Checks",
+          "copy": "The pull request's checks with durations, and a failed one becomes a Next suggestion",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "settings-rail",
+          "title": "Settings rail",
+          "copy": "Each settings area says what needs you, like folders not found",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "update-pill",
+          "title": "Update pill",
+          "copy": "A quiet pill that enters once when an update is ready",
+          "image": null,
+          "isNew": false
+        }
+      ]
+    }
+  ]
+}
