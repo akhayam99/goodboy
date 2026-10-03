@@ -12,7 +12,6 @@ import {
   ScrollFade,
   SegmentedTabs,
   Skeleton,
-  Textarea,
 } from '@goodboy/ui';
 import {
   isChatProvider,
@@ -24,6 +23,7 @@ import {
   type SessionId,
 } from '@goodboy/types';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { PromptField } from '../../../../shared/components/PromptField';
 import { resolveScopedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import { kindRouting } from '../../../session/agent-kind';
 import { sessionTitle } from '../../../session/sessionTitle';
@@ -330,16 +330,18 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
                   onChange={(event) => patch({ title: event.target.value })}
                 />
               </label>
-              <label className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5">
                 <span className="text-label text-muted-foreground">Goal</span>
-                <Textarea
-                  autoGrow
+                <PromptField
+                  kind="document"
+                  label="Goal"
+                  hasPreview
                   minRows={4}
                   maxRows={10}
                   value={brief.goal}
-                  onChange={(event) => patch({ goal: event.target.value })}
+                  onChange={(goal) => patch({ goal })}
                 />
-              </label>
+              </div>
               <BriefItems
                 label="What we know"
                 items={brief.know}

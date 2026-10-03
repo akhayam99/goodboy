@@ -19,8 +19,8 @@ export const ClassicComposerKeysField = () => {
 
   return (
     <FieldRow
-      label="Classic keys when starting an agent"
-      help={`${shortcutGlyphs('composer.send')} adds a line and ${shortcutGlyphs('composer.submit')} starts, as before 0.15.5. Other message boxes keep ${shortcutGlyphs('composer.send')} to send.`}
+      label="Keys from before 0.15.5"
+      help={`Starting an agent adds a line on ${shortcutGlyphs('composer.send')} and starts on ${shortcutGlyphs('composer.submit')}, and review replies send on ${shortcutGlyphs('composer.send')}.`}
     >
       <Switch
         label={isClassic ? 'On' : 'Off'}

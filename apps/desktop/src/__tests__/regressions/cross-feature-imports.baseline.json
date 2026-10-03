@@ -103,7 +103,6 @@
     "storage -> settings": 1,
     "suggestions -> context": 1,
     "suggestions -> session": 3,
-    "workflows -> attachments": 1,
     "workflows -> budget": 2,
     "workflows -> context": 1,
     "workflows -> providers": 4,

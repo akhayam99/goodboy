@@ -132,6 +132,22 @@ const KEY_ROWS: ReadonlyArray<KeyRow> = [
     sends: null,
   },
   {
+    name: 'classic keys, Enter sends a changed document field',
+    kind: 'document',
+    canSendNow: false,
+    isClassic: true,
+    key: {},
+    sends: 'send',
+  },
+  {
+    name: 'classic keys, Shift+Enter adds a line in a changed document field',
+    kind: 'document',
+    canSendNow: false,
+    isClassic: true,
+    key: { shiftKey: true },
+    sends: null,
+  },
+  {
     name: 'classic keys, Cmd+Enter sends a changed message field',
     kind: 'message',
     canSendNow: false,

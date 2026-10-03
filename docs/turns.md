@@ -611,9 +611,15 @@ Every field that talks to an agent is a `PromptField`
 
 The keys come from the registry (`composer.send`, `composer.newLine`,
 `composer.submit` through `isSubmitChord`) and `promptKeyAction` decides one
-press. The kickoff boxes used to add a line on `Enter`; the
-`composer.classicKeys` setting (Settings, Shortcuts, Message boxes) gives
-them that back for this release, on the fields marked `hasChangedKeys`.
+press. Two kinds of field changed keys in 0.15.5 and carry `hasChangedKeys`:
+the kickoff boxes (Start agent and the issue kickoff now start on `Enter`)
+and the review reply boxes (Edit, Answer and Reply now send on `⌘Enter`).
+The `composer.classicKeys` setting (Settings, Shortcuts, Message boxes)
+swaps the two kinds back on those fields for this release.
+`composer-ratchet.test.ts` lists every file that renders a text area and
+says whether it talks to an agent and with which kind; a new agent field
+must be a `PromptField` of its kind. The workspace Chat bubble and the hint
+log read what you wrote as markdown.
 
 Files ride on `usePendingAttachments` (`shared/hooks`): paste, drop and
 **Attach files**, up to 10 files of 10 MB each, refused with a note in the

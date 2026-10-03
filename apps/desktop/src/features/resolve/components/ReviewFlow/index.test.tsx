@@ -420,7 +420,7 @@ describe('Review as one flow', () => {
     expect(focusedThread()).toBe(EXPANDED_THREAD_ID);
   });
 
-  it('replies without a change from one text box: R, type, Enter', async () => {
+  it('replies without a change from one text box: R, type, Cmd+Enter, Enter adds a line', async () => {
     const refuse = vi.fn<StoreState['refuseResolveQueueItem']>(async () => undefined);
     stub({ refuseResolveQueueItem: refuse });
     await mount({ threadId: EXPANDED_THREAD_ID });
@@ -429,7 +429,9 @@ describe('Review as one flow', () => {
     press('r', 'KeyR');
     const box = await within(comment()).findByRole('textbox', { name: 'Your reply' });
     fireEvent.change(box, { target: { value: 'We keep the cap at 6 on purpose.' } });
-    fireEvent.keyDown(box, { key: 'Enter', code: 'Enter' });
+    expect(fireEvent.keyDown(box, { key: 'Enter', code: 'Enter' })).toBe(true);
+    expect(refuse).not.toHaveBeenCalled();
+    fireEvent.keyDown(box, { key: 'Enter', code: 'Enter', metaKey: true });
 
     await waitFor(() => expect(refuse).toHaveBeenCalledOnce());
     expect(refuse).toHaveBeenCalledWith(

@@ -1,4 +1,5 @@
-import { Textarea, cn, Eyebrow } from '@goodboy/ui';
+import { cn, Eyebrow } from '@goodboy/ui';
+import { PromptField } from '../../../shared/components/PromptField';
 import { AGENT_FORM_GRAMMAR } from '../agent-form-grammar';
 
 type Props = {
@@ -16,16 +17,16 @@ export const AgentInstructionsField = ({ value, onChange, disabled, className }:
         {AGENT_FORM_GRAMMAR.instructions.optional}
       </span>
     </span>
-    <Textarea
-      aria-label={AGENT_FORM_GRAMMAR.instructions.ariaLabel}
+    <PromptField
+      kind="document"
+      label={AGENT_FORM_GRAMMAR.instructions.ariaLabel}
       value={value}
-      onChange={(event) => onChange(event.target.value)}
+      onChange={onChange}
       disabled={disabled}
       placeholder={AGENT_FORM_GRAMMAR.instructions.placeholder}
       minRows={2}
       maxRows={8}
-      autoGrow
-      className="text-label"
+      textClassName="text-label"
     />
   </div>
 );

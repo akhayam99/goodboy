@@ -23,11 +23,15 @@ type Params = {
 
 const ENTER_KEY = SHORTCUTS['composer.send'].combo;
 
+const CLASSIC_KIND: Readonly<Record<PromptFieldKind, PromptFieldKind>> = {
+  message: 'document',
+  document: 'message',
+};
+
 export const effectiveKind = ({
   kind,
   isClassic,
-}: Pick<Params, 'kind' | 'isClassic'>): PromptFieldKind =>
-  kind === 'message' && isClassic ? 'document' : kind;
+}: Pick<Params, 'kind' | 'isClassic'>): PromptFieldKind => (isClassic ? CLASSIC_KIND[kind] : kind);
 
 export const promptKeyAction = ({
   event,

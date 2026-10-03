@@ -73,9 +73,8 @@ import { parseSpendLimit } from '../../../budget/parseSpendLimit';
 import { DragGhost } from '../WorkflowStudio/DragGhost';
 import { useToast } from '../../../../shared/components/Toast';
 import { StudioShell } from '../../../../shared/components/StudioShell';
-import { PendingAttachmentChip } from '../../../attachments/components/PendingAttachmentChip';
 import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
-import { usePendingAttachments } from '../../../../shared/hooks/usePendingAttachments';
+import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
 import { runIdentity, runIdentitySeed } from '../../../session/timeline/runIdentity';
 import { BuilderTitleField } from './parts/BuilderTitleField';
 import { GoalField } from './parts/GoalField';
@@ -199,14 +198,8 @@ export const WorkflowBuilderView = (props: Props) => {
   const sessionWorktree = useSessionRepo({ sessionId: session?.id ?? null })?.worktreePath ?? null;
   const { showToast } = useToast();
 
-  const {
-    attachments,
-    isDragging: isDraggingFiles,
-    composerRef,
-    fileInputRef,
-    onFileInputChange,
-    removeAttachment,
-  } = usePendingAttachments({ showToast });
+  const goalFiles = usePromptFiles({ note: 'Files go to the agents of this run' });
+  const attachments = goalFiles.attachments;
 
   const presets = phaseTemplates.filter(isPresetWorkflow);
 
@@ -1189,19 +1182,8 @@ export const WorkflowBuilderView = (props: Props) => {
           canUndo={goalHistory.length > 0}
           isPolishing={polishing}
           disabled={busy}
-          files={{
-            isDragging: isDraggingFiles,
-            composerRef,
-            fileInputRef,
-            onFiles: onFileInputChange,
-            attachments: attachments.map((a) => (
-              <PendingAttachmentChip
-                key={a.id}
-                attachment={a}
-                onRemove={() => removeAttachment(a.id)}
-              />
-            )),
-          }}
+          files={goalFiles.files}
+          notice={goalFiles.notice}
           onChange={onGoalChange}
           onBlur={() => requestTitleSuggestion(goalText)}
           onUseSessionGoal={onUseSessionGoal}

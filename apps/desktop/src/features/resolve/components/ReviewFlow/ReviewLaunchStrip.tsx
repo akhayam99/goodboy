@@ -5,7 +5,6 @@ import {
   IconButton,
   KbdPill,
   SegmentedTabs,
-  Textarea,
   formatError,
   type SegmentedTabOption,
 } from '@goodboy/ui';
@@ -15,6 +14,7 @@ import {
   type SessionId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { PromptField } from '../../../../shared/components/PromptField';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { SUGGESTED_LABEL } from '../../../../shared/components/RoutingPicker/autoRecommendationCopy';
 import { eventMatches } from '../../../../shared/keyboard/dispatcher';
@@ -144,15 +144,17 @@ export const ReviewLaunchStrip = ({ sessionId, threadIds, onClose, onStarted }: 
           />
         </div>
       </div>
-      <Textarea
+      <PromptField
+        kind="document"
         autoFocus
-        autoGrow
+        minRows={1}
         maxRows={5}
         value={hint}
-        onChange={(event) => setHint(event.target.value)}
+        onChange={setHint}
         placeholder={REVIEW_LAUNCH_LABEL.hintPlaceholder}
-        aria-label={REVIEW_LAUNCH_LABEL.hintLabel}
+        label={REVIEW_LAUNCH_LABEL.hintLabel}
         disabled={isStarting}
+        className="bg-background"
       />
       <p className="text-secondary text-faint-foreground">{launchFactLine({ count, limit })}</p>
       {error !== null && (

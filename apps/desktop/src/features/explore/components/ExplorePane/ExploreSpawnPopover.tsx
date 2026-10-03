@@ -1,6 +1,7 @@
 import { clampEffortForModel } from '@goodboy/core';
 import { useEffect, useMemo, useState } from 'react';
-import { AnchoredPopover, Button, FormActions, Textarea, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, FormActions, useDropdown } from '@goodboy/ui';
+import { PromptField } from '../../../../shared/components/PromptField';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
@@ -122,13 +123,13 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
         <p className="truncate font-mono text-secondary text-muted-foreground">{entry.relPath}</p>
       </div>
       <div className="flex flex-col gap-2">
-        <Textarea
-          aria-label="What should the agent do with this file?"
+        <PromptField
+          kind="document"
+          label="What should the agent do with this file?"
           value={ask}
-          onChange={(event) => setAsk(event.target.value)}
+          onChange={setAsk}
           minRows={3}
           maxRows={10}
-          autoGrow
           placeholder="Describe what you want from this file."
           disabled={isSpawning}
         />

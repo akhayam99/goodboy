@@ -1,13 +1,5 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import {
-  Button,
-  FormActions,
-  KbdPill,
-  cn,
-  formatError,
-  Textarea,
-  inlineMarkdownText,
-} from '@goodboy/ui';
+import { useEffect, useRef, useState } from 'react';
+import { Button, FormActions, KbdPill, cn, formatError, inlineMarkdownText } from '@goodboy/ui';
 import { AlertTriangle, ArrowRight } from 'lucide-react';
 import type {
   ProjectId,
@@ -26,7 +18,7 @@ import { BriefStrip } from './BriefStrip';
 import { LaunchMountRow } from './LaunchMountRow';
 import type { LaunchMount } from '../../../inbox/launchMountFor';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
+import { PromptField } from '../../../../shared/components/PromptField';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 
 type ExternalTask = {
@@ -152,17 +144,6 @@ export const LaunchSessionPanel = ({
     }
   };
 
-  const onGoalKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (!isSubmitChord(event)) {
-      return;
-    }
-    event.preventDefault();
-    if (!canLaunch) {
-      return;
-    }
-    void launch();
-  };
-
   if (linkedSessionId != null) {
     return <LaunchedNotice sessionId={linkedSessionId} isLinkedToIssue onOpened={onClose} />;
   }
@@ -196,17 +177,19 @@ export const LaunchSessionPanel = ({
           }}
         />
       )}
-      <Textarea
+      <PromptField
+        variant="bare"
+        kind="document"
         value={goal}
-        onChange={(event) => setGoal(event.target.value)}
-        onKeyDown={onGoalKeyDown}
-        autoGrow
+        onChange={setGoal}
+        onSubmit={() => void launch()}
+        isSubmitBlocked={!canLaunch}
         minRows={2}
         maxRows={10}
         disabled={isBusy}
-        aria-label="Session goal"
+        label="Session goal"
         placeholder="What should this session do?"
-        className="border-0 bg-transparent px-2 leading-relaxed shadow-none focus-visible:shadow-none focus-visible:ring-0"
+        textClassName="px-2 leading-relaxed"
       />
 
       {error != null ? (

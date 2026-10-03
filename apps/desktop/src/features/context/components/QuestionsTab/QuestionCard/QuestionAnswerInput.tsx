@@ -1,4 +1,5 @@
-import { Textarea, cn } from '@goodboy/ui';
+import { cn } from '@goodboy/ui';
+import { PromptField } from '../../../../../shared/components/PromptField';
 import type { OpenQuestionSelectMode } from '@goodboy/types';
 import { AnswerOptionRow } from '../AnswerOptionRow';
 import type { AnswerInputMode } from '../AnswerSubmitButton/answerInputMode';
@@ -52,28 +53,24 @@ export const QuestionAnswerInput = ({
       );
     }
     return (
-      <Textarea
-        aria-label="Your answer"
+      <PromptField
+        kind="message"
+        label="Your answer"
         value={customAnswer}
         disabled={isHandedOff}
-        onChange={(event) => onSetCustomAnswer(event.target.value)}
+        onChange={onSetCustomAnswer}
+        onSubmit={onSubmit}
         onKeyDown={(event) => {
           event.stopPropagation();
-          if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault();
-            onSubmit();
-            return;
-          }
           if (event.key === 'Escape') {
             event.preventDefault();
             onEscape();
           }
         }}
         placeholder={`Type your answer for ${askerName ?? 'the agent'}`}
-        autoGrow
         minRows={isCompact ? 2 : 3}
         maxRows={8}
-        className={cn('w-full resize-none bg-fill text-body', isHandedOff && 'opacity-50')}
+        className="w-full"
       />
     );
   }

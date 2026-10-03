@@ -71,6 +71,8 @@ type Props = {
   readonly actions?: ReactNode;
   readonly onKeyDown?: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   readonly onBlur?: (event: FocusEvent<HTMLTextAreaElement>) => void;
+  readonly onPaste?: (event: ClipboardEvent<HTMLTextAreaElement>) => void;
+  readonly maxLength?: number;
   readonly fieldRef?: RefObject<HTMLDivElement | null>;
   readonly autoFocus?: boolean;
   readonly id?: string;
@@ -134,6 +136,8 @@ export const PromptField = ({
   actions,
   onKeyDown,
   onBlur,
+  onPaste,
+  maxLength,
   fieldRef,
   autoFocus,
   id,
@@ -190,7 +194,11 @@ export const PromptField = ({
       value={value}
       onChange={(event) => onChange(event.target.value)}
       onKeyDown={handleKeyDown}
-      onPaste={files?.onPaste}
+      onPaste={(event) => {
+        onPaste?.(event);
+        files?.onPaste(event);
+      }}
+      maxLength={maxLength}
       onBlur={onBlur}
       placeholder={placeholder}
       aria-label={label}
@@ -251,7 +259,10 @@ export const PromptField = ({
     );
   }
 
-  const hints = keyHints({ kind: keys, labels: keyLabels, canSendNow });
+  const hints =
+    onSubmit === undefined ? [] : keyHints({ kind: keys, labels: keyLabels, canSendNow });
+  const hasFooter =
+    files !== undefined || footerStart != null || actions != null || hints.length > 0;
 
   return (
     <div
@@ -294,39 +305,41 @@ export const PromptField = ({
           {notice}
         </p>
       ) : null}
-      <div className="flex min-h-8 min-w-0 items-center gap-2 px-1.5 pb-1.5">
-        {files !== undefined ? (
-          <>
-            <IconButton
-              icon={Paperclip}
-              label="Attach files"
-              variant="ghost"
-              iconSize={ICON_SIZE.control}
-              disabled={disabled || attachments.length >= ATTACHMENT_LIMIT}
-              onClick={() => files.fileInputRef.current?.click()}
-            />
-            <input
-              ref={files.fileInputRef}
-              type="file"
-              accept={ATTACHMENT_ACCEPT}
-              multiple
-              aria-label="Choose files to attach"
-              tabIndex={-1}
-              className="hidden"
-              onChange={files.onFileInputChange}
-            />
-          </>
-        ) : null}
-        {footerStart}
-        <PromptKeysHint hints={hints} />
-        <span className="flex-1" />
-        {attachments.length > 0 ? (
-          <span className="shrink-0 text-secondary tabular-nums text-faint-foreground">
-            {`${attachments.length} of ${ATTACHMENT_LIMIT} files`}
-          </span>
-        ) : null}
-        {actions}
-      </div>
+      {hasFooter ? (
+        <div className="flex min-h-8 min-w-0 items-center gap-2 px-1.5 pb-1.5">
+          {files !== undefined ? (
+            <>
+              <IconButton
+                icon={Paperclip}
+                label="Attach files"
+                variant="ghost"
+                iconSize={ICON_SIZE.control}
+                disabled={disabled || attachments.length >= ATTACHMENT_LIMIT}
+                onClick={() => files.fileInputRef.current?.click()}
+              />
+              <input
+                ref={files.fileInputRef}
+                type="file"
+                accept={ATTACHMENT_ACCEPT}
+                multiple
+                aria-label="Choose files to attach"
+                tabIndex={-1}
+                className="hidden"
+                onChange={files.onFileInputChange}
+              />
+            </>
+          ) : null}
+          {footerStart}
+          <PromptKeysHint hints={hints} />
+          <span className="flex-1" />
+          {attachments.length > 0 ? (
+            <span className="shrink-0 text-secondary tabular-nums text-faint-foreground">
+              {`${attachments.length} of ${ATTACHMENT_LIMIT} files`}
+            </span>
+          ) : null}
+          {actions}
+        </div>
+      ) : null}
     </div>
   );
 };
