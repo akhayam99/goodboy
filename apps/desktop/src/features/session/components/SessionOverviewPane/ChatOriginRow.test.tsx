@@ -56,6 +56,7 @@ const chatOf = (id: string, title: string): ChatSummary => ({
   lastActivityAt: NOW,
   preview: null,
   modelsUsed: [],
+  messageCount: 0,
 });
 
 const linkOf = (

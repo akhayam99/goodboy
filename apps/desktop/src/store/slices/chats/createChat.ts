@@ -35,7 +35,7 @@ export const createChat =
       chatsByWorkspace: {
         ...state.chatsByWorkspace,
         [workspaceId]: [
-          { ...chat, preview: null, modelsUsed: [] },
+          { ...chat, preview: null, modelsUsed: [], messageCount: 0 },
           ...(state.chatsByWorkspace[workspaceId] ?? []),
         ],
       },
