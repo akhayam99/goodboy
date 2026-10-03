@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE, parseHiddenModels } from '@goodboy/core';
-import type { AgentRole, ProviderId, SessionId } from '@goodboy/types';
+import type { AgentRole, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
@@ -14,8 +14,6 @@ type Params = {
   readonly role: AgentRole;
 };
 
-const EMPTY_POOL: ReadonlyArray<ProviderId> = [];
-
 export const useSuggestedRouting = ({ sessionId, role }: Params): SuggestedRouting => {
   const roleModels = useSessionRoleModels({ sessionId });
   const defaultProvider = useAppStore(
@@ -23,8 +21,8 @@ export const useSuggestedRouting = ({ sessionId, role }: Params): SuggestedRouti
       selectResolvedSettings({ state, sessionId })?.defaultProviderId ??
       DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider,
   );
-  const providerPool = useAppStore(
-    useShallow((state) => selectResolvedSettings({ state, sessionId })?.providerPool ?? EMPTY_POOL),
+  const policy = useAppStore(
+    (state) => selectResolvedSettings({ state, sessionId })?.providerPool ?? null,
   );
   const connected = useAppStore(
     useShallow((state) =>
@@ -44,11 +42,7 @@ export const useSuggestedRouting = ({ sessionId, role }: Params): SuggestedRouti
   });
   const hiddenRaw = useAppStore((state) => state.settings?.[SETTING_HIDDEN_MODELS] ?? null);
   const hidden = useMemo(() => parseHiddenModels(hiddenRaw), [hiddenRaw]);
-  const pool = providerPool.length === 0 ? connected : providerPool;
-  const fallbackOrder = [
-    defaultProvider,
-    ...connected.filter((id) => id !== defaultProvider && pool.includes(id)),
-  ];
+  const fallbackOrder = [defaultProvider, ...connected.filter((id) => id !== defaultProvider)];
   return suggestedRouting({
     role,
     roleModels,
@@ -56,6 +50,7 @@ export const useSuggestedRouting = ({ sessionId, role }: Params): SuggestedRouti
       defaultProvider,
       ...(connected.length > 0 && { connected }),
       fallbackOrder,
+      ...(policy !== null && { policy }),
       cliVersions,
       hidden,
     },

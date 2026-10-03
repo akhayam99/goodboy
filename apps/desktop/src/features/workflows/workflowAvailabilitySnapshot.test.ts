@@ -1,6 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { BudgetAlert, IsoDateTime, ProviderId, SessionId } from '@goodboy/types';
+import type {
+  BudgetAlert,
+  IsoDateTime,
+  ProviderId,
+  ProviderPolicy,
+  SessionId,
+} from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../providers/providers';
 import { workflowAvailabilitySnapshot } from './workflowAvailabilitySnapshot';
 
@@ -43,6 +49,34 @@ describe('workflowAvailabilitySnapshot', () => {
     const result = snapshot({ providerPool: ['codex', 'gemini'] });
 
     expect(result.connectedProviders).toEqual(['codex']);
+  });
+
+  it('drops an Off provider and orders the rest as the workspace policy says', () => {
+    const result = snapshot({
+      providers: [
+        provider('anthropic', 'connected'),
+        provider('codex', 'connected'),
+        provider('cursor', 'connected'),
+      ],
+      policy: [
+        { id: 'codex', state: 'on' },
+        { id: 'anthropic', state: 'on' },
+        { id: 'cursor', state: 'off' },
+      ],
+    });
+
+    expect(result.connectedProviders).toEqual(['codex', 'anthropic']);
+    expect(result.providerOrder).toEqual(['codex', 'anthropic']);
+  });
+
+  it('offers a Backup only provider once no On provider can work', () => {
+    const policy: ProviderPolicy = [
+      { id: 'codex', state: 'on' },
+      { id: 'anthropic', state: 'backup' },
+    ];
+
+    expect(snapshot({ policy }).connectedProviders).toEqual(['codex']);
+    expect(snapshot({ policy, atLimit: ['codex'] }).connectedProviders).toEqual(['anthropic']);
   });
 
   it('treats a missing run pool as every connected provider', () => {

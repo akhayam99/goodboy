@@ -16,6 +16,7 @@ import { repointWorkflowRunTemplate, type WorkflowRunStepRepoint } from '@goodbo
 import { tauriDatabase } from '../../../shared/lib/db';
 import { uniqueStepName } from '../../../features/workflows/uniqueStepName';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
+import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import {
   invokeWorkflowUpsert,
   type WorkflowStepUpsertArgs,
@@ -258,6 +259,7 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
         sessionId,
         isRunBudgetBlocked: false,
         nowMs: Date.now(),
+        ...workspacePolicyAvailability({ state: get() }),
         providerPool: run.providerPool ?? null,
       }),
     });

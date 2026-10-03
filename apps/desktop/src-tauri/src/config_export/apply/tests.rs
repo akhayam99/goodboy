@@ -250,6 +250,48 @@ fn workspace_overrides_json_round_trips_as_a_typed_value_not_a_string() {
 }
 
 #[test]
+fn a_provider_policy_travels_through_the_bundle_at_the_same_schema_version() {
+    let source = export_conn();
+    source
+        .execute_batch(
+            "INSERT INTO workspaces (id, name, created_at, updated_at, provider_pool)
+             VALUES ('w', 'W', 1, 1, '[{\"id\":\"codex\",\"state\":\"on\"},{\"id\":\"cursor\",\"state\":\"backup\",\"payAsYouGo\":true}]');",
+        )
+        .unwrap();
+    let policy = serde_json::json!([
+        { "id": "codex", "state": "on" },
+        { "id": "cursor", "state": "backup", "payAsYouGo": true }
+    ]);
+
+    let bundle =
+        build_bundle(&source, &ExportGroups::default(), &HashSet::new()).expect("export failed");
+    assert_eq!(bundle.schema_version, SCHEMA_VERSION);
+    assert_eq!(
+        bundle.workspaces[0].overrides.provider_pool,
+        Some(policy.clone())
+    );
+
+    let target = export_conn();
+    target
+        .execute_batch(
+            "INSERT INTO workspaces (id, name, created_at, updated_at) VALUES ('w', 'W', 1, 1);",
+        )
+        .unwrap();
+    apply_bundle(&target, bundle, &HashMap::new(), &HashMap::new()).expect("import failed");
+    let stored: String = target
+        .query_row(
+            "SELECT provider_pool FROM workspaces WHERE id = 'w'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&stored).unwrap(),
+        policy
+    );
+}
+
+#[test]
 fn integration_binding_import_creates_a_credential_with_no_secret_when_none_exists() {
     let conn = export_conn();
     conn.execute_batch(

@@ -213,20 +213,31 @@ describe('DefaultsPanel', () => {
     expect(cursor.getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('persists a restricted routing pool', () => {
+  it('turns a provider off in the policy and keeps the order', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'cursor' }));
 
     expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
       'ws-1',
-      expect.objectContaining({ providerPool: ['anthropic'] }),
+      expect.objectContaining({
+        providerPool: [
+          { id: 'anthropic', state: 'on' },
+          { id: 'cursor', state: 'off' },
+        ],
+      }),
     );
   });
 
-  it('adds a new default provider to a restricted routing pool', () => {
+  it('moves a new default provider to the top of the policy', () => {
     state.workspaceOverrides = {
-      'ws-1': { ...EMPTY_OVERRIDES, providerPool: ['anthropic'] },
+      'ws-1': {
+        ...EMPTY_OVERRIDES,
+        providerPool: [
+          { id: 'anthropic', state: 'on' },
+          { id: 'cursor', state: 'off' },
+        ],
+      },
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
@@ -236,7 +247,10 @@ describe('DefaultsPanel', () => {
       'ws-1',
       expect.objectContaining({
         defaultProviderId: 'cursor',
-        providerPool: ['anthropic', 'cursor'],
+        providerPool: [
+          { id: 'cursor', state: 'on' },
+          { id: 'anthropic', state: 'on' },
+        ],
       }),
     );
   });

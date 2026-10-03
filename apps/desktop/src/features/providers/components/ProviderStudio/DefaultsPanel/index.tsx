@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { RotateCcw } from 'lucide-react';
-import type { OverrideSettings, ProviderId, WorkspaceId } from '@goodboy/types';
+import type { OverrideSettings, ProviderId, ProviderPolicy, WorkspaceId } from '@goodboy/types';
 import {
   DEFAULT_GROUPS,
   DEFAULT_SESSION_PROVIDER_PREFERENCE,
   ROLE_REGISTRY,
   TASKS,
+  firstOnProvider,
+  seedProviderPolicy,
   type AutoContext,
 } from '@goodboy/core';
 import {
@@ -78,9 +80,16 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
     ),
   );
   const overrides = workspaceOverrides ?? EMPTY_OVERRIDES;
+  const policy = overrides.providerPool;
   const defaultProviderId =
-    overrides.defaultProviderId ?? DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider;
-  const providerPoolIds = new Set(overrides.providerPool ?? connectedProviderIds);
+    firstOnProvider({ policy }) ??
+    overrides.defaultProviderId ??
+    DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider;
+  const providerPoolIds = new Set<ProviderId>(
+    policy == null
+      ? connectedProviderIds
+      : policy.filter((entry) => entry.state !== 'off').map((entry) => entry.id),
+  );
   providerPoolIds.add(defaultProviderId);
   const orderedProviderIds = [
     ...connectedProviderIds.filter((id) => id === defaultProviderId),
@@ -92,6 +101,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
     defaultProvider: defaultProviderId,
     connected: connectedProviderIds,
     fallbackOrder,
+    ...(policy != null && { policy }),
     ...(limitContext?.hidden != null && { hidden: limitContext.hidden }),
     ...(limitContext?.cliVersions != null && { cliVersions: limitContext.cliVersions }),
   };
@@ -106,31 +116,34 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
   const pinnedChatCount = chatDefault.saved === null ? 0 : 1;
   const pinnedCount = pinnedTaskCount + pinnedRoleCount + pinnedChatCount;
 
+  const currentPolicy = (): ProviderPolicy =>
+    policy ??
+    seedProviderPolicy({ defaultProvider: defaultProviderId, connected: connectedProviderIds });
+
   const onDefaultProvider = ({ providerId }: ProviderParams) => {
-    const providerPool =
-      overrides.providerPool == null
-        ? null
-        : Array.from(new Set([...overrides.providerPool, providerId]));
-    void persistOverrides({ patch: { defaultProviderId: providerId, providerPool } });
+    const rest = currentPolicy().filter((entry) => entry.id !== providerId);
+    void persistOverrides({
+      patch: {
+        defaultProviderId: providerId,
+        providerPool: [{ id: providerId, state: 'on' }, ...rest],
+      },
+    });
   };
 
   const onToggleRoutingProvider = ({ providerId }: ProviderParams) => {
     if (providerId === defaultProviderId) {
       return;
     }
-    const nextProviderIds = new Set(providerPoolIds);
-    const isInPool = nextProviderIds.has(providerId);
-    if (isInPool) {
-      nextProviderIds.delete(providerId);
-    }
-    if (!isInPool) {
-      nextProviderIds.add(providerId);
-    }
-    nextProviderIds.add(defaultProviderId);
-    const selectedProviderIds = connectedProviderIds.filter((id) => nextProviderIds.has(id));
-    const isEveryProviderEnabled = selectedProviderIds.length === connectedProviderIds.length;
+    const isInPool = providerPoolIds.has(providerId);
+    const base = currentPolicy();
+    const missing: ProviderPolicy = [{ id: providerId, state: 'off' }];
+    const known = base.some((entry) => entry.id === providerId) ? base : [...base, ...missing];
     void persistOverrides({
-      patch: { providerPool: isEveryProviderEnabled ? null : selectedProviderIds },
+      patch: {
+        providerPool: known.map((entry) =>
+          entry.id === providerId ? { ...entry, state: isInPool ? 'off' : 'on' } : entry,
+        ),
+      },
     });
   };
 

@@ -1,46 +1,22 @@
-import { invokeCommand } from '../../../shared/lib/invokeCommand';
-import type { OverrideSettings, ProviderId, WorkspaceId } from '@goodboy/types';
-import type { GetFn, SetFn } from './types';
+import type { ProviderId, WorkspaceId } from '@goodboy/types';
+import type { GetFn } from './types';
 
-const EMPTY_OVERRIDE: OverrideSettings = {
-  defaultProviderId: null,
-  defaultBranchPrefix: null,
-  defaultVerbosity: null,
-  providerBindings: null,
-  taskModels: null,
-  roleModels: null,
-  parallelAgents: null,
-  providerPool: null,
-  attributionFooter: null,
-  replyVoice: null,
-  replyStyleNote: null,
-  replyTemplateFixed: null,
-  replyTemplateNoChange: null,
-  resolveOnGithub: null,
-  resolveCommitStyle: null,
-  afterMerge: null,
-};
-
-export const setWorkspaceProviderBinding = (set: SetFn, get: GetFn) => {
+export const setWorkspaceProviderBinding = (get: GetFn) => {
   return async (
     workspaceId: WorkspaceId,
     providerId: ProviderId,
     credentialId: string | null,
   ): Promise<void> => {
-    const current = get().workspaceOverrides[workspaceId] ?? EMPTY_OVERRIDE;
-    const bindings = { ...(current.providerBindings ?? {}) };
+    const bindings = { ...(get().workspaceOverrides[workspaceId]?.providerBindings ?? {}) };
     if (credentialId === null) {
       delete bindings[providerId];
-    } else {
+    }
+    if (credentialId !== null) {
       bindings[providerId] = credentialId;
     }
-    const next: OverrideSettings = {
-      ...current,
-      providerBindings: Object.keys(bindings).length > 0 ? bindings : null,
-    };
-    await invokeCommand('set_workspace_overrides', { workspaceId, overrides: next });
-    set((state) => ({
-      workspaceOverrides: { ...state.workspaceOverrides, [workspaceId]: next },
-    }));
+    await get().patchWorkspaceOverrides({
+      workspaceId,
+      patch: { providerBindings: Object.keys(bindings).length > 0 ? bindings : null },
+    });
   };
 };
