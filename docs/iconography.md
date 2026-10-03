@@ -209,6 +209,22 @@ glyph with `WORK_NODE_GLYPH_SIZE`, not `ICON_SIZE`, because every rail node is
 | Decisions       | `decisions`                               |
 | Issue           | `IntegrationGlyph` for the issue provider |
 
+## Row states
+
+A quiet final state in the state slot of a work row is an icon in its tone
+(`ICON_SIZE.control`), with the word in the tooltip and the accessible name.
+The table is `statePresentation.ts` in `features/workTreeModel/`. States that
+ask you or report trouble stay words and have no icon.
+
+| State      | Glyph          |
+| ---------- | -------------- |
+| Pushed     | `push`         |
+| Resolved   | `CheckCheck`   |
+| Accepted   | `Check`        |
+| Reply only | `Reply`        |
+| Skipped    | `SkipForward`  |
+| Closed     | `runCancelled` |
+
 ## Suggestions
 
 One map, `SUGGESTION_ICONS` in `features/suggestions/suggestionIcons.ts`.

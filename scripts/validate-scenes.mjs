@@ -231,6 +231,13 @@ const metaGaps = ({ cap }) =>
     return gap > cap ? [{ row: row.dataset.rowId, gap: Math.round(gap) }] : [];
   });
 
+const clippedTimes = () =>
+  [...document.querySelectorAll('[data-meta-column="time"]')].flatMap((cell) =>
+    cell.scrollWidth > cell.clientWidth + 0.5
+      ? [{ row: cell.closest('[data-row-id]')?.dataset.rowId ?? null, text: cell.textContent }]
+      : [],
+  );
+
 const main = async () => {
   const failures = [];
   const session = await browser();
@@ -261,6 +268,10 @@ const main = async () => {
         const gaps = await run(session.send, metaGaps, { cap: META_GAP_CAP_PX });
         if (gaps.length > 0) {
           failures.push({ scene, width, check: 'meta gap over the cap', gaps });
+        }
+        const clipped = await run(session.send, clippedTimes, null);
+        if (clipped.length > 0) {
+          failures.push({ scene, width, check: 'time wider than its column', clipped });
         }
       }
     }

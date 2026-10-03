@@ -13,6 +13,7 @@ import type { TimelineOpenTarget } from '../../../../hooks/useTimelineOpen';
 import type { TimelineAgentEntry } from '../../../../timeline/buildTimelineGroups';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 import { TimelineAgentMeta } from './TimelineAgentMeta';
+import { TimelineRowStateLine } from './TimelineRowStateLine';
 import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
 import { TimelineStreamRow, type TimelineRowAction } from './TimelineStreamRow';
 
@@ -80,8 +81,8 @@ export const TimelineAgentStreamRow = ({
       diffStat={diffStat}
       worktrees={worktrees}
       meta={<TimelineAgentMeta work={work} costUsd={costUsd} />}
+      state={<TimelineRowStateLine state={item.rowState} note={work.time?.note ?? null} />}
       progress={work.time?.progress ?? null}
-      stateNote={work.time?.note ?? null}
       isRevealed={isRevealed}
       lanes={lanes}
       runLane={runLane}

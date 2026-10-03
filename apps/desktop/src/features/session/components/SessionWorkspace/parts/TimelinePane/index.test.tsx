@@ -14,6 +14,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
+import { tooltipTextOf } from '../../../../../../__tests__/helpers/tooltip';
 
 type Worktree = {
   readonly id: string;
@@ -705,7 +706,7 @@ describe('TimelinePane run row menu', () => {
 
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    expect(within(runRow()).getByText('Closed by you')).toBeDefined();
+    expect(runRow().querySelector('[data-state-icon="Closed by you"]')).not.toBeNull();
   });
 
   it('lands the closure in the feed as its own row', () => {
@@ -892,6 +893,97 @@ describe('TimelinePane artifacts inside a workflow run', () => {
 
     expect(screen.queryByText('Rounding drift in ledger-core postings')).toBeNull();
     expect(screen.getByText('Round once per batch')).toBeDefined();
+  });
+});
+
+describe('TimelinePane log rows and the state slot', () => {
+  const resolver = {
+    id: 'resolver-1',
+    sessionId: 'session-1',
+    ordinal: 1,
+    name: 'resolve: tvarga on retry.ts:12',
+    kind: 'resolver',
+    status: 'completed',
+    startedAt: '2026-08-20T10:00:00.000Z',
+    completedAt: '2026-08-20T10:04:00.000Z',
+  };
+
+  const seed = () => {
+    storeState.sessionPhaseRuns = { 'session-1': [resolver] };
+    storeState.sessionEvents = {
+      'session-1': [
+        {
+          id: 'event-context',
+          sessionId: 'session-1',
+          kind: 'decisions_changed',
+          payload: { added: 1, replaced: 2 },
+          createdAt: '2026-08-20T10:06:00.000Z',
+        },
+      ],
+    };
+    resolveActivity.current = {
+      batchByAgentId: new Map(),
+      factsByAgentId: new Map([['resolver-1', { state: 'pushed', word: 'Pushed' }]]),
+    };
+  };
+
+  const rowById = (id: string) =>
+    Array.from(document.querySelectorAll<HTMLElement>('[data-row-id]')).find(
+      (element) => element.dataset.rowId === id,
+    );
+
+  it('reads a context row as words, with no diff colours', () => {
+    seed();
+    render(<TimelinePane session={SESSION} actions={null} />);
+    const row = rowById('event:event-context');
+
+    expect(row?.textContent).toContain('Context');
+    expect(row?.textContent).toContain('1 added, 2 replaced');
+    expect(row?.textContent).not.toMatch(/[+-]\d/);
+  });
+
+  it('turns a quiet final state into an icon that still says its word', () => {
+    seed();
+    render(<TimelinePane session={SESSION} actions={null} />);
+    const row = rowById('agent:resolver-1');
+    const state = within(row ?? document.body).getByTestId('timeline-row-state');
+
+    expect(state.querySelector('[data-state-icon]')?.getAttribute('aria-label')).toBe('Pushed');
+    expect(tooltipTextOf({ element: state.querySelector<HTMLElement>('[role="img"]')! })).toBe(
+      'Pushed',
+    );
+  });
+
+  it('puts the state after the title and right before the model', () => {
+    seed();
+    render(<TimelinePane session={SESSION} actions={null} />);
+    const row = rowById('agent:resolver-1');
+    const title = within(row ?? document.body).getByText('resolve: tvarga on retry.ts:12');
+    const state = within(row ?? document.body).getByTestId('timeline-row-state');
+    const meta = row?.querySelector('[data-testid="work-meta"]');
+
+    expect(title.compareDocumentPosition(state) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(meta === null || meta === undefined).toBe(false);
+    expect(state.nextElementSibling).toBe(meta);
+  });
+
+  it('keeps no empty action column on a closed session', () => {
+    seed();
+    render(
+      <TimelinePane
+        session={{ ...SESSION, archivedAt: '2026-08-21T09:00:00.000Z' as IsoDateTime }}
+        actions={null}
+      />,
+    );
+
+    expect(document.querySelectorAll('[data-action-slot]')).toHaveLength(0);
+  });
+
+  it('reserves the action column on an open session even when no row asks yet', () => {
+    seed();
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    expect(rowById('agent:resolver-1')?.querySelectorAll('[data-action-slot]')).toHaveLength(1);
   });
 });
 

@@ -31,7 +31,7 @@ export const TimelineMoreRow = ({ item, rail, railWidth, lanes, onShowAll }: Pro
         type="button"
         onClick={() => onShowAll({ id: item.explode.groupId })}
         className="flex min-w-0 items-center rounded-md pl-2 pr-1.5 text-label text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-        style={{ height: TIMELINE_RHYTHM.grade.step.height }}
+        style={{ height: TIMELINE_RHYTHM.grade.fact.height }}
       >
         {`Show ${item.hiddenCount} more`}
       </button>

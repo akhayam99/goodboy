@@ -1,4 +1,4 @@
-import type { KeyboardEvent, ReactNode } from 'react';
+import { useContext, type KeyboardEvent, type ReactNode } from 'react';
 import type { ObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
 import { Button, WORK_META_COLUMN, WORK_ROW, cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
@@ -13,6 +13,7 @@ import { rowStateTone } from '../../../../../workTreeModel/rowStateCopy';
 import { eventMatches } from '../../../../../../shared/keyboard/dispatcher';
 import { SHORTCUTS } from '../../../../../../shared/keyboard/registry';
 import { TIMELINE_GUTTER } from './timelineLayout';
+import { TimelineActionColumn } from './timelineActionColumn';
 import { TimelineRail, type TimelineLaneControl, type TimelineLaneTarget } from './TimelineRail';
 import { TimelineRowLabel } from './TimelineRowLabel';
 import { TimelineRowMarker } from './TimelineRowMarker';
@@ -40,8 +41,8 @@ type Props = {
   readonly diffStat?: MountDiffStat | null;
   readonly worktrees?: ReadonlyArray<string>;
   readonly meta?: ReactNode;
+  readonly state?: ReactNode;
   readonly progress?: number | null;
-  readonly stateNote?: string | null;
   readonly menu?: ReactNode;
   readonly lanes?: TimelineLaneControl | null;
   readonly runLane?: TimelineLaneTarget | null;
@@ -65,8 +66,8 @@ export const TimelineStreamRow = ({
   diffStat = null,
   worktrees,
   meta = null,
+  state = null,
   progress = null,
-  stateNote = null,
   menu = null,
   lanes = null,
   runLane = null,
@@ -82,6 +83,7 @@ export const TimelineStreamRow = ({
     hasUnread: item.hasUnread,
   });
   const boxHeight = TIMELINE_RHYTHM.grade[item.grade].height;
+  const hasActionColumn = useContext(TimelineActionColumn);
   const isWaiting =
     item.rowState.phase === 'waiting' &&
     item.rowState.ask?.kind !== 'reviewComment' &&
@@ -126,7 +128,6 @@ export const TimelineStreamRow = ({
           diffStat={diffStat}
           isLaneLit={isLaneLit}
           worktrees={worktrees}
-          stateNote={stateNote}
           isRevealed={isRevealed}
         />
       </span>
@@ -135,6 +136,7 @@ export const TimelineStreamRow = ({
           {`${openTarget.label} ↵`}
         </span>
       )}
+      {state}
       {meta}
     </>
   );
@@ -204,24 +206,27 @@ export const TimelineStreamRow = ({
               {content}
             </button>
           )}
-          <span
-            data-testid={action == null ? undefined : 'timeline-row-action'}
-            className={WORK_META_COLUMN.action}
-            style={{ height: boxHeight }}
-          >
-            {action == null ? null : (
-              <Button
-                variant={action.variant ?? 'ghost'}
-                emphasis={action.variant === 'warning' ? 'outline' : 'solid'}
-                size="sm"
-                className="h-6"
-                isBusy={action.isBusy === true}
-                onClick={action.onAct}
-              >
-                {action.label}
-              </Button>
-            )}
-          </span>
+          {action == null && !hasActionColumn ? null : (
+            <span
+              data-testid={action == null ? undefined : 'timeline-row-action'}
+              data-action-slot
+              className={hasActionColumn ? WORK_META_COLUMN.action : 'flex shrink-0 items-center'}
+              style={{ height: boxHeight }}
+            >
+              {action == null ? null : (
+                <Button
+                  variant={action.variant ?? 'ghost'}
+                  emphasis={action.variant === 'warning' ? 'outline' : 'solid'}
+                  size="sm"
+                  className="h-6"
+                  isBusy={action.isBusy === true}
+                  onClick={action.onAct}
+                >
+                  {action.label}
+                </Button>
+              )}
+            </span>
+          )}
           <span className={WORK_META_COLUMN.menu} style={{ height: boxHeight }}>
             {menu}
           </span>

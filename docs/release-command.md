@@ -2,7 +2,7 @@
 
 Before release screenshots, run `node scripts/fidelity-shots.mjs` with the website and app scene servers available. It writes paired mock and real-scene PNGs plus measured values for both themes and desktop and phone sizes.
 
-Before a release that touches the activity timeline, run `node scripts/validate-scenes.mjs --app <scene server>` against the mock scene server (`VITE_GOODBOY_MOCK=1`). It opens `activity-run` and `activity-resolves` in Chrome at 100% and 110% zoom and fails on a measure, not a picture: a timeline row that keeps a transform 500ms after its groups open, a group row that moves more than 1px while it opens or folds, a rail stroke that does not continue at the same x into the next row, and a gap over 80px between the model and the time at five widths.
+Before a release that touches the activity timeline, run `pnpm validate:scenes --app <scene server>` against the mock scene server (`VITE_GOODBOY_MOCK=1`). It opens `activity-run` and `activity-resolves` in Chrome at 100% and 110% zoom and fails on a measure, not a picture: a timeline row that keeps a transform 500ms after its groups open, a group row that moves more than 1px while it opens or folds, a rail stroke that does not continue at the same x into the next row, a gap over 80px between the model and the time, and a time wider than its column, at five widths.
 
 > **Read this when** an agent is executing a release and needs the step
 > order plus the gotchas that bit previous runs. **Not for** signing,

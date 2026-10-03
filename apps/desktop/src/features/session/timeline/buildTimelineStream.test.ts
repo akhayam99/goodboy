@@ -30,6 +30,7 @@ import {
   buildRunTreeStream,
   buildTimelineStream,
   type TimelineStreamItem,
+  type TimelineRowItem,
 } from './buildTimelineStream';
 import { dayLabel } from './dayLabel';
 import { needsYouRootIds } from './needsYou';
@@ -1006,7 +1007,7 @@ describe('buildTimelineStream', () => {
       'now',
       'step:agent:cluster-child',
       'day:Yesterday',
-      'entry:event:ev-decision',
+      'fact:event:ev-decision',
       'entry:agent:elenca',
       'entry:agent:cluster-parent',
     ]);
@@ -2172,10 +2173,42 @@ describe('buildTimelineStream, plan visibility and family anchoring', () => {
     }),
   ];
 
-  it('keeps an answered question in the stream by default', () => {
+  it('keeps an answered question in the stream by default, as a compact fact row', () => {
     const { items } = stream({ agents: ASKER_AGENTS, questions: [answeredQuestion] });
 
-    expect(items.map(labelOf)).toContain('entry:question:question-1');
+    expect(items.map(labelOf)).toContain('fact:question:question-1');
+  });
+
+  it('weighs a context row, an answered question and a lone plan the same, and a lane plan as a step', () => {
+    const { items } = stream({
+      workflows: PLAN_RUN_WORKFLOWS,
+      agents: [
+        ...PLAN_RUN_AGENTS,
+        ...ASKER_AGENTS,
+        agent({ id: 'loner', ordinal: 5, startedAt: localIso({ day: 18, hour: 6 }) }),
+      ],
+      plans: [runPlan, standalonePlan({ id: 'lone-plan', agentId: 'loner' })],
+      questions: [answeredQuestion],
+      events: [
+        sessionEvent({
+          id: 'ev-context',
+          kind: 'decisions_changed',
+          at: localIso({ day: 18, hour: 11, minute: 30 }),
+          payload: { added: 1, replaced: 2 },
+        }),
+      ],
+    });
+    const rowOf = (id: string) =>
+      items.find((item): item is TimelineRowItem => item.kind === 'row' && item.id === id);
+    const facts = ['event:ev-context', 'question:question-1', 'plan:lone-plan'].map(rowOf);
+
+    expect(facts.map((row) => row?.grade)).toEqual(['fact', 'fact', 'fact']);
+    const boxBelowMarker = (row: TimelineRowItem | undefined) =>
+      (row?.height ?? 0) - (row?.markerY ?? 0);
+    expect(new Set(facts.map(boxBelowMarker)).size).toBe(1);
+    expect(facts.every((row) => (row?.height ?? 0) <= 36)).toBe(true);
+    expect(boxBelowMarker(facts[0])).toBeLessThan(boxBelowMarker(rowOf('agent:asker')));
+    expect(rowOf('plan:plan-1')?.grade).toBe('step');
   });
 
   it('drops answered questions from the stream when questions are hidden', () => {
@@ -2185,7 +2218,7 @@ describe('buildTimelineStream, plan visibility and family anchoring', () => {
       showQuestions: false,
     });
 
-    expect(items.map(labelOf)).not.toContain('entry:question:question-1');
+    expect(items.map(labelOf)).not.toContain('fact:question:question-1');
     expect(items.map(labelOf)).toContain('entry:agent:asker');
   });
 

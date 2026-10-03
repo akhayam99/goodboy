@@ -393,9 +393,14 @@ Geometry is computed in
 `apps/desktop/src/features/workTreeModel/railGeometry.ts`. The lane offset is
 one 16px unit per level. Rows are laid out against
 `apps/desktop/src/features/workTreeModel/timelineRhythm.ts`. Its grades fix
-line height and box height (entry 40px, step 32px, queued 26px), so a node
-centres on its label's line and not on its row box. Every grade carries the
-same 20px node.
+line height and box height (entry 40px, step 32px, queued 26px, fact 28px),
+so a node centres on its label's line and not on its row box. Every grade
+carries the same 20px node. `fact` is the grade of every log row outside a
+lane: the Context row ("Context · 1 added, 2 replaced", words and no diff
+colours), an answered question, a plan or an artifact created outside a run
+("Plan created · Refund idempotency plan"), and every session event. It takes
+an 8px gap instead of 12px and a 12px muted label, so a log row weighs the same
+as a step and never as an agent.
 
 Two rules follow from the direction of time. Newer sits above older at every
 level. So a run's origin row is the bottom of its group and its steps stack
@@ -547,8 +552,17 @@ with `−`.
 
 What a row is doing is computed once, as a `RowState` (phase, reason, ask), in
 `apps/desktop/src/features/workTreeModel/rowState.ts`. Every surface reads that
-value: the node comes from `rowStateNode`, the short status sentence after the
-title from `rowStateSentence`, and the single visible action from the ask.
+value: the node comes from `rowStateNode`, the status in the row's state slot
+from `statePresentationOf` (`workTreeModel/statePresentation.ts`), and the
+single visible action from the ask. The state slot is a fixed 112px space
+(96px under 790px) at the right of the label, right before the meta, so every
+row says its state at the same x and the title takes the rest and truncates.
+Quiet final states (Pushed, Accepted, Resolved, Reply only, Skipped, Closed)
+show as an icon in their tone, with the word in the tooltip and for screen
+readers; states that ask you or report trouble (Needs you, Ready for you,
+Draft failed, Longer than usual, Step 3 ready) stay a word, in their short form,
+with the full sentence in the tooltip. A new state is a row in the
+`statePresentation` tables, never a branch in the component.
 When several conditions hold, failed wins, then waiting (an answer, then the
 next click, then the spend limit), then running, then queued, then done. The
 summarizer briefing the next step and a chat turn in flight are the machine
@@ -585,16 +599,17 @@ the need-you count includes it and the row itself is not tinted.
 The right end of a work row is `WorkMeta` in
 `packages/ui/src/components/WorkTree/`. Its columns have fixed widths from
 `WORK_META_COLUMN`, so every row reads down the same columns and a cost of
-`$12.40` never pushes the model of the row above out of line.
+`$12.40` never pushes the model of the row above out of line. A row says a duration one way, minutes and seconds ("4m 40s"),
+running or done, and so does every surface that reads `formatActiveTime`.
 
-| column     | width | holds                                                        | in a narrow row                                             |
-| ---------- | ----- | ------------------------------------------------------------ | ----------------------------------------------------------- |
-| routing    | 136px | provider glyph, model, then one detail (`Sonnet 5 · High`)   | detail goes under 720px, name under 440px, gone under 360px |
-| time       | 96px  | measured time or estimate ("~3-7m left", "~6-9m", "14m")     | 80px under 640px, gone under 360px                          |
-| cost       | 56px  | what the row has spent, empty before anything is spent       | under 560px it leaves the row                               |
-| cost range | 72px  | an estimated cost range before a step starts (`isCostRange`) | under 560px it leaves the row                               |
-| action     | 76px  | the one visible action, reserved even when empty             | never drops                                                 |
-| menu       | 24px  | the row menu, like Close workflow on a run row               | never drops                                                 |
+| column     | width | holds                                                                                                         | in a narrow row                                             |
+| ---------- | ----- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| routing    | 136px | provider glyph, model, then one detail (`Sonnet 5 · High`), right aligned so it sits next to the time         | detail goes under 720px, name under 440px, gone under 360px |
+| time       | 80px  | measured time or estimate ("~3-7m left", "~6-9m", "4m 40s")                                                   | "left" goes under 640px, gone under 360px                   |
+| cost       | 48px  | what the row has spent, empty before anything is spent                                                        | under 560px it leaves the row                               |
+| cost range | 72px  | an estimated cost range before a step starts (`isCostRange`)                                                  | under 560px it leaves the row                               |
+| action     | 76px  | the one visible action, reserved for a list that can ask: Activity of an open session, the tree of a live run | never drops                                                 |
+| menu       | 24px  | the row menu, like Close workflow on a run row                                                                | never drops                                                 |
 
 A row inside a `WorkTimeProvider` always renders the time column, empty when
 it has nothing to say, so the columns stay in line. The cost column follows
@@ -609,9 +624,9 @@ puts the container on each row's content box (`WORK_ROW.container`, right of
 the time gutter and the rail), so the widths above are the room the label and
 the meta share, not the width of the panel. The label always gets what the
 meta leaves: below 520px a role chip hugs its word and a run chip keeps only
-its glyph, and the row state after the title reads its short form ("Needs
-you", "Step 3 ready") under 880px, with the full sentence in its tooltip. The
-state never shrinks; the title truncates first, down to a 64px floor
+its glyph, and the state slot always reads the short form ("Needs you",
+"Step 3 ready"), with the full sentence in its tooltip. The slot never
+shrinks; the title truncates first, down to a 64px floor
 (`WORK_ROW.title`), and the meta leaves before the title reaches it: the
 routing detail, then cost, then the model name, then under 360px the glyph and
 the time, then under 320px the row state (the node and the action still say
@@ -1339,6 +1354,12 @@ width follows its content breaks the column for every row under it.
   prop). `auto` is for one-off chips in a detail panel, never a column. A
   fixed-width wrapper around the chip does not count. It aligns what comes
   after the chip and leaves the chip ragged.
+- The exception is a chip that leads a title (the role chip of an agent, the
+  Workflow chip of a run): it is part of the label, so it hugs its word and
+  the title follows it. The column a reader scans in those rows is the state
+  slot and the meta on the right. Every such chip is `Chip`, a pill tinted in
+  its role colour; `hand-made-chips.test.ts` counts hand-rolled pills per file
+  and the count only goes down.
 - A chip that works as a control next to buttons (the session overview's
   context, attention, linked-work and branch chips) is `Chip size="control"`
   with `shape="badge"`. That gives the `h-6` control height, the focus ring,

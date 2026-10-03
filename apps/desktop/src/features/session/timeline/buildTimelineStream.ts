@@ -1220,6 +1220,17 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
   return [...nested, origin];
 };
 
+const questionGradeOf = ({
+  entry,
+}: {
+  readonly entry: TimelineQuestionEntry;
+}): TimelineRowGrade => {
+  if (entry.lane != null) {
+    return 'step';
+  }
+  return entry.questions.some((question) => question.status === 'open') ? 'entry' : 'fact';
+};
+
 const isPendingStep = ({ draft }: { readonly draft: DraftRow }): boolean =>
   draft.isPending && draft.grade !== 'entry';
 
@@ -1385,9 +1396,9 @@ const streamItemsOf = ({ drafts }: StreamItemsParams): ReadonlyArray<TimelineStr
         familyId,
         hiddenCount: draft.hiddenCount,
         explode: draft.explode,
-        height: rowBoxHeight({ grade: 'step', gap: moreGap }),
+        height: rowBoxHeight({ grade: 'fact', gap: moreGap }),
         topY: 0,
-        markerY: markerCenterY({ grade: 'step', gap: moreGap }),
+        markerY: markerCenterY({ grade: 'fact', gap: moreGap }),
         groupId: draft.groupId,
         isPending: false,
         gap: moreGap,
@@ -1400,7 +1411,9 @@ const streamItemsOf = ({ drafts }: StreamItemsParams): ReadonlyArray<TimelineStr
         ? 'none'
         : familyId != null && previous.familyId === familyId
           ? 'sibling'
-          : 'entry';
+          : draft.grade === 'fact'
+            ? 'fact'
+            : 'entry';
     items.push({
       kind: 'row',
       id: draft.id,
@@ -1610,7 +1623,7 @@ export const buildTimelineStream = ({
         kind: 'row',
         id: entry.id,
         at: entry.at,
-        grade: entry.lane != null ? 'step' : 'entry',
+        grade: questionGradeOf({ entry }),
         entry,
         identity: entry.lane?.identity ?? null,
         familyId: entry.lane?.rootEntryId ?? null,
@@ -1627,7 +1640,7 @@ export const buildTimelineStream = ({
       kind: 'row',
       id: entry.id,
       at: entry.at,
-      grade: 'entry',
+      grade: 'fact',
       entry,
       identity: null,
       familyId: null,
