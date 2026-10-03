@@ -176,7 +176,7 @@ Watch how much of each plan is left, keep work moving when a provider runs out, 
 
 [More on providers, limits and cost](docs/features/providers.md)
 
-<a id="worktree-folders"></a><a id="branches"></a><a id="storage-scope"></a><a id="free-space-chip"></a><a id="artifacts-from-deleted-sessions"></a><a id="goodboy-can-free-n-gb"></a>
+<a id="worktree-folders"></a><a id="branches"></a><a id="storage-scope"></a><a id="free-space-chip"></a><a id="artifacts-from-deleted-sessions"></a><a id="goodboy-can-free-n-gb"></a><a id="other-tools"></a>
 
 ## Storage
 
@@ -185,6 +185,7 @@ Free disk space and clean up branches, with what is safe to remove spelled out.
 - Worktree folders
 - Branches
 - Goodboy can free N GB
+- Other tools
 
 [More on storage](docs/features/storage.md)
 

@@ -3,6 +3,8 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
+pub mod other_tools;
+
 use crate::worktree::{
     canonical_path, contained_worktrees_parent, git, in_progress_operation,
     local_only_commit_count, parse_porcelain, parse_working_tree, GitWorkingTree, RunGit,

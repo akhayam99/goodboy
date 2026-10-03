@@ -8,6 +8,12 @@ import type {
   StorageScope,
   StorageArtifact,
 } from './types';
+import type { OtherToolUsage } from '../../../features/storage/otherTools';
+
+type StorageOtherTools = {
+  readonly status: 'idle' | 'measuring' | 'ready' | 'failed';
+  readonly tools: ReadonlyArray<OtherToolUsage>;
+};
 
 export type StorageState = {
   readonly storageStats: StorageStats | null;
@@ -22,6 +28,7 @@ export type StorageState = {
   readonly storageScope: StorageScope | null;
   readonly storageArtifacts: ReadonlyArray<StorageArtifact>;
   readonly storageDeletingArtifacts: Readonly<Record<string, true>>;
+  readonly storageOtherTools: StorageOtherTools;
 };
 
 export const storageInitialState: StorageState = {
@@ -37,4 +44,5 @@ export const storageInitialState: StorageState = {
   storageScope: null,
   storageArtifacts: [],
   storageDeletingArtifacts: {},
+  storageOtherTools: { status: 'idle', tools: [] },
 };

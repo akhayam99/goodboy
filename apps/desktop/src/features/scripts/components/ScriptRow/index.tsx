@@ -1,4 +1,4 @@
-import { Play, Square, Terminal } from 'lucide-react';
+import { Pin, Play, Square, Terminal } from 'lucide-react';
 import { IconButton, InteractiveRow, Tooltip, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { RunnableScript } from '../../buildSessionScripts';
@@ -19,6 +19,8 @@ type Props = {
   readonly showSource: boolean;
   readonly blockedReason: string | null;
   readonly target: ScriptActionTarget;
+  readonly isPinned: boolean;
+  readonly onTogglePin: () => void;
   readonly onOpen: (script: RunnableScript) => void;
   readonly onRun: (script: RunnableScript) => void;
   readonly onStop: (script: RunnableScript) => void;
@@ -37,6 +39,8 @@ export const ScriptRow = ({
   showSource,
   blockedReason,
   target,
+  isPinned,
+  onTogglePin,
   onOpen,
   onRun,
   onStop,
@@ -80,6 +84,18 @@ export const ScriptRow = ({
         </span>
       ) : null}
       <LastRunCell lastRun={lastRun} blockedReason={blockedReason} />
+      <span className="flex w-7 shrink-0 justify-center">
+        <IconButton
+          variant="ghost"
+          icon={Pin}
+          iconSize={ICON_SIZE.row}
+          label={isPinned ? `Unpin ${script.name}` : `Pin ${script.name}`}
+          aria-pressed={isPinned}
+          tone={isPinned ? 'primary' : 'neutral'}
+          className="p-1"
+          onClick={onTogglePin}
+        />
+      </span>
       <span className="flex w-7 shrink-0 justify-center">
         {isRunning ? (
           <IconButton
