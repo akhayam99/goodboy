@@ -7,7 +7,6 @@ import type {
   ModelSelection,
   ProviderId,
 } from '@goodboy/types';
-import { PROVIDER_CAPABILITIES } from '../capabilities';
 import { MODEL_CATALOGS } from '../catalogs';
 import { cliGate, type CliRequirement } from '../cliGate';
 import { MODEL_COST_RANK } from '../modelCostRank';
@@ -15,19 +14,20 @@ import { isModelHidden, type HiddenModels } from '../modelVisibility';
 import { resolvedStoredModelId } from '../resolvedStoredModelId';
 import { strongestModelForTier } from '../strongestModelForTier';
 import { AUTO_DEFAULTS, isCuratedProvider, type AutoChoice } from './defaults';
+import {
+  policyDefaultProvider,
+  providerCandidates,
+  type ProviderCandidatesContext,
+} from './providerCandidates';
 
 export type AutoSlot =
   | { readonly kind: 'role'; readonly id: AgentRole }
   | { readonly kind: 'task'; readonly id: AuxTaskId };
 
-export type AutoContext = {
-  readonly defaultProvider: ProviderId;
-  readonly fallbackOrder?: ReadonlyArray<ProviderId> | null;
-  readonly connected?: ReadonlyArray<ProviderId> | null;
+export type AutoContext = ProviderCandidatesContext & {
   readonly cliVersions?: Partial<Record<ProviderId, string | null>>;
   readonly learned?: ReadonlyArray<CliRequirement>;
   readonly isCursorMaxModeOn?: boolean;
-  readonly atLimit?: ReadonlyArray<ProviderId> | null;
   readonly hidden?: HiddenModels | null;
 };
 
@@ -46,39 +46,7 @@ type Params = AutoContext & {
   readonly slot: AutoSlot;
 };
 
-type ProviderGateParams = {
-  readonly provider: ProviderId;
-  readonly context: AutoContext;
-};
-
-type ProviderGate = (params: ProviderGateParams) => boolean;
-
-const isConnected: ProviderGate = ({ provider, context }) =>
-  context.connected == null || context.connected.includes(provider);
-
-export const isUnderLimit: ProviderGate = ({ provider, context }) =>
-  context.atLimit == null || !context.atLimit.includes(provider);
-
-export const AUTO_PROVIDER_GATES: ReadonlyArray<ProviderGate> = [isConnected, isUnderLimit];
-
-const ALL_PROVIDERS: ReadonlyArray<ProviderId> = Object.keys(PROVIDER_CAPABILITIES).filter(
-  (id): id is ProviderId => id in PROVIDER_CAPABILITIES,
-);
-
 const THINKING_ROLES: ReadonlySet<string> = new Set(['planner', 'investigator', 'custom']);
-
-const candidateProviders = (context: AutoContext): ReadonlyArray<ProviderId> => {
-  const order = context.fallbackOrder ?? ALL_PROVIDERS;
-  const unique = [...new Set([context.defaultProvider, ...order])];
-  const usable = unique.filter((provider) =>
-    AUTO_PROVIDER_GATES.every((gate) => gate({ provider, context })),
-  );
-  const curatedFirst = usable.filter(
-    (provider) => provider === context.defaultProvider || isCuratedProvider(provider),
-  );
-  const rest = usable.filter((provider) => !curatedFirst.includes(provider));
-  return [...curatedFirst, ...rest];
-};
 
 type ChoiceParams = {
   readonly provider: ProviderId;
@@ -151,7 +119,7 @@ type StepParams = {
 };
 
 const stepOf = ({ provider, index, context }: StepParams): AutoStep => {
-  if (provider !== context.defaultProvider) {
+  if (provider !== policyDefaultProvider(context)) {
     return 'next-provider';
   }
   return index === 0 ? 'curated' : 'next-in-column';
@@ -258,7 +226,7 @@ const skippedAtLimitBefore = ({ pick, context }: SkippedParams): ReadonlyArray<P
   if (atLimit.length === 0) {
     return [];
   }
-  const ladder = candidateProviders({ ...context, atLimit: null });
+  const ladder = providerCandidates({ ...context, atLimit: null });
   const index = ladder.indexOf(pick.provider);
   return ladder
     .slice(0, index === -1 ? ladder.length : index)
@@ -266,7 +234,7 @@ const skippedAtLimitBefore = ({ pick, context }: SkippedParams): ReadonlyArray<P
 };
 
 export const resolveAuto = ({ slot, ...context }: Params): AutoPick | null => {
-  for (const provider of candidateProviders(context)) {
+  for (const provider of providerCandidates(context)) {
     const pick = isCuratedProvider(provider)
       ? curatedPick({ provider, slot, context })
       : tierPick({ provider, slot, context });

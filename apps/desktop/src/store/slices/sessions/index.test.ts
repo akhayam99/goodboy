@@ -1123,15 +1123,18 @@ describe('store contract', () => {
       expect(store.getState().sessionBranches[session.id]).toBe('');
     });
 
-    it('seeds the workspace routing pool and includes its default provider', async () => {
+    it('starts a session on the first On provider and drops the Off ones', async () => {
       const store = useAppStore;
       store.setState({
         currentWorkspaceId: WS_ID,
         workspaceOverrides: {
           [WS_ID]: {
             ...buildWorkspace().overrides,
-            defaultProviderId: 'codex',
-            providerPool: ['anthropic'],
+            providerPool: [
+              { id: 'codex', state: 'on' },
+              { id: 'cursor', state: 'off' },
+              { id: 'anthropic', state: 'backup' },
+            ],
           },
         },
       });
@@ -1143,7 +1146,7 @@ describe('store contract', () => {
       expect(session.providerPreference).toEqual({
         defaultProvider: 'codex',
         allowTurnOverride: true,
-        enabledProviders: ['anthropic', 'codex'],
+        enabledProviders: ['codex', 'anthropic'],
       });
     });
 

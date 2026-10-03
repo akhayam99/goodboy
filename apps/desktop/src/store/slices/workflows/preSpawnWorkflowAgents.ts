@@ -2,6 +2,7 @@ import type {
   Agent,
   EffortLevel,
   ProviderId,
+  ProviderPolicy,
   RoleModelPreferences,
   SessionId,
   Step,
@@ -26,6 +27,7 @@ type Params = {
   readonly sessionEffort?: EffortLevel | null;
   readonly defaultVerbosity?: VerbosityLevel;
   readonly availability?: WorkflowRoutingAvailabilitySnapshot;
+  readonly policy?: ProviderPolicy | null;
 };
 
 type BlockedWorkflowStep = Readonly<{
@@ -54,6 +56,7 @@ export const preSpawnWorkflowAgents = async ({
   sessionEffort,
   defaultVerbosity,
   availability,
+  policy = null,
 }: Params): Promise<PreSpawnWorkflowAgentsResult> => {
   const agents: Agent[] = [];
   const modelOverrides: Record<string, string> = {};
@@ -84,6 +87,7 @@ export const preSpawnWorkflowAgents = async ({
       sessionProvider: defaultProvider,
       sessionModel: sessionModel ?? null,
       sessionEffort: sessionEffort ?? null,
+      policy,
     });
     const provider = routing.provider;
     const model = resolveModelIdForProvider({ provider, modelId: routing.model });

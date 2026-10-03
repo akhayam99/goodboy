@@ -12,6 +12,7 @@ import { normalizeAgentRole } from '../roles';
 import { resolveModelArgs } from './resolveModelArgs';
 import { resolvedStoredModelId } from './resolvedStoredModelId';
 import { resolveStoredModelSelection } from './resolveStoredModelSelection';
+import { providerStanding } from './autoRouting/providerCandidates';
 import { resolveAuto, type AutoContext, type AutoStep } from './autoRouting/resolveAuto';
 
 export type ResolvedRoleFallback = Readonly<{
@@ -150,8 +151,13 @@ type UsableParams = {
   readonly auto: AutoContext | undefined;
 };
 
-const isUsable = ({ provider, auto }: UsableParams): boolean =>
-  auto?.connected == null || auto.connected.includes(provider);
+const isUsable = ({ provider, auto }: UsableParams): boolean => {
+  if (auto == null) {
+    return true;
+  }
+  const standing = providerStanding({ provider, context: auto });
+  return standing !== 'off' && standing !== 'not-connected';
+};
 
 export const resolveRoleRouting = ({ role, prefs, auto }: Params): ResolvedRoleRouting => {
   const normalizedRole = normalizeAgentRole({ role });

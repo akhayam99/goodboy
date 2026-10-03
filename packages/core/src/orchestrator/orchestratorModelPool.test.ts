@@ -48,6 +48,19 @@ describe('orchestratorModelPool', () => {
     expect(providers.has('anthropic')).toBe(true);
   });
 
+  it('lists only the providers in the given order, in that order', () => {
+    const pool = orchestratorModelPool({
+      availability: snapshot({
+        connectedProviders: ['anthropic', 'codex', 'cursor'],
+        providerOrder: ['codex', 'anthropic'],
+      }),
+      hidden: null,
+    });
+    const providers = [...new Set(pool.map((option) => option.provider))];
+
+    expect(providers).toEqual(['codex', 'anthropic']);
+  });
+
   it('offers nothing while a session-wide budget stop holds', () => {
     expect(
       orchestratorModelPool({

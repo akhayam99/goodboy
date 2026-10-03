@@ -263,12 +263,12 @@ describe('LimitsStrip', () => {
     window.removeEventListener('goodboy:open-settings', listener);
   });
 
-  it('asks to connect a provider when none is connected', () => {
+  it('leaves the call to connect to the footer when none is connected', () => {
     store.providers = connected([]);
-    render(<LimitsStrip />);
+    const { container } = render(<LimitsStrip />);
 
     expect(screen.queryByRole('toolbar')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Connect a provider' })).toBeTruthy();
+    expect(container.textContent).toBe('');
   });
 
   it('draws nothing while providers are still being detected', () => {

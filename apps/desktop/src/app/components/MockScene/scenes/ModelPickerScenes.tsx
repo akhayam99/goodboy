@@ -1,6 +1,10 @@
 import { Eyebrow } from '@goodboy/ui';
 import { useEffect, type ReactNode } from 'react';
-import type { ProviderId } from '@goodboy/types';
+import type { ProviderId, WorkspaceId } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
+import { sceneParam } from './audit/sceneParams';
+import { seedPolicyScene } from './providerPolicySeed';
+import { mockWorkspace } from './shellChrome';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 
 const noop = () => undefined;
@@ -152,8 +156,23 @@ const Frame = ({ children }: FrameProps) => (
   </main>
 );
 
+const POLICY_WORKSPACE = mockWorkspace({
+  id: 'mock-picker-workspace-harborline' as WorkspaceId,
+  name: 'Harborline',
+});
+
 export const ModelPickerScene = () => {
   useOpenPickers({ events: BOTH_EVENTS });
+  useEffect(() => {
+    if (sceneParam({ key: 'policy' }) !== '1') {
+      return;
+    }
+    useAppStore.setState({
+      workspaces: [POLICY_WORKSPACE],
+      currentWorkspaceId: POLICY_WORKSPACE.id,
+    });
+    seedPolicyScene({ workspaceId: POLICY_WORKSPACE.id });
+  }, []);
   return (
     <Frame>
       <CursorColumn />

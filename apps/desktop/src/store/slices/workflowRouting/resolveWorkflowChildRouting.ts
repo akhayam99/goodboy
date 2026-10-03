@@ -18,6 +18,7 @@ import {
   type WorkflowRoutingResolution,
 } from '@goodboy/core';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
+import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import { runProviderPool } from '../../../features/workflows/runProviderPool';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import type { AppStore } from '../../store';
@@ -127,6 +128,7 @@ export const resolveWorkflowChildRouting = ({
       sessionId,
       isRunBudgetBlocked: false,
       nowMs: Date.now(),
+      ...workspacePolicyAvailability({ state: state }),
       providerPool: runProviderPool({ sessions: state.sessions ?? [], sessionId, workflowRunId }),
     }),
     contextEstimate: null,

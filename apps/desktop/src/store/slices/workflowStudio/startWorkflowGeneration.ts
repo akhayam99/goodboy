@@ -15,6 +15,7 @@ import type {
 } from '../../../features/workflows/workflows';
 import { resolveGeneratedStepRouting } from '../../../features/workflows/resolveGeneratedStepRouting';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
+import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import { formatError } from '@goodboy/ui';
 import type { ProviderId, TaskModelPreference, WorkspaceId } from '@goodboy/types';
 import type { GetFn, SetFn, StartWorkflowGenerationParams } from './types';
@@ -55,6 +56,7 @@ const generationAvailability = ({ state }: MenuParams): WorkflowRoutingAvailabil
     sessionId: null,
     isRunBudgetBlocked: false,
     nowMs: Date.now(),
+    ...workspacePolicyAvailability({ state: state }),
   });
 
 type GeneratedStepParams = {

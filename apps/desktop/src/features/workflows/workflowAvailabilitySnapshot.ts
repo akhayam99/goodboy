@@ -1,5 +1,15 @@
-import { PROVIDER_ID_TO_NAME, type WorkflowRoutingAvailabilitySnapshot } from '@goodboy/core';
-import { PROVIDER_IDS, type BudgetAlert, type ProviderId, type SessionId } from '@goodboy/types';
+import {
+  PROVIDER_ID_TO_NAME,
+  workingProviders,
+  type WorkflowRoutingAvailabilitySnapshot,
+} from '@goodboy/core';
+import {
+  PROVIDER_IDS,
+  type BudgetAlert,
+  type ProviderId,
+  type ProviderPolicy,
+  type SessionId,
+} from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../providers/providers';
 import { providersCoolingDown } from '../providers/taskModelRouting';
 import type { ProviderCooldowns } from '../providers/routing';
@@ -12,6 +22,8 @@ type Params = {
   readonly isRunBudgetBlocked: boolean;
   readonly nowMs: number;
   readonly providerPool?: ReadonlyArray<ProviderId> | null;
+  readonly policy?: ProviderPolicy | null;
+  readonly atLimit?: ReadonlyArray<ProviderId>;
 };
 
 const liveAlerts = (alerts: ReadonlyArray<BudgetAlert>): ReadonlyArray<BudgetAlert> =>
@@ -25,6 +37,8 @@ export const workflowAvailabilitySnapshot = ({
   isRunBudgetBlocked,
   nowMs,
   providerPool = null,
+  policy = null,
+  atLimit = [],
 }: Params): WorkflowRoutingAvailabilitySnapshot => {
   const live = liveAlerts(alerts);
   const blockedNames = new Set(
@@ -35,11 +49,19 @@ export const workflowAvailabilitySnapshot = ({
   const budgetBlockedProviders: ReadonlyArray<ProviderId> = PROVIDER_IDS.filter((provider) =>
     blockedNames.has(PROVIDER_ID_TO_NAME[provider]),
   );
+  const connected = providers
+    .filter((provider) => provider.connection === 'connected')
+    .map((provider) => provider.id)
+    .filter((provider) => providerPool === null || providerPool.includes(provider));
+  const working = workingProviders({
+    defaultProvider: connected[0] ?? 'anthropic',
+    connected,
+    atLimit,
+    policy,
+  });
   return {
-    connectedProviders: providers
-      .filter((provider) => provider.connection === 'connected')
-      .map((provider) => provider.id)
-      .filter((provider) => providerPool === null || providerPool.includes(provider)),
+    connectedProviders: working ?? connected,
+    ...(working !== null && { providerOrder: working }),
     coolingDownProviders: providersCoolingDown({ cooldowns, nowMs }),
     budgetBlockedProviders,
     isSessionBudgetBlocked:

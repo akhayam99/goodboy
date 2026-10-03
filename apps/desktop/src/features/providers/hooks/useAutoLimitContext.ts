@@ -10,6 +10,11 @@ export const useAutoLimitContext = (): AutoLimitContext | null => {
   const providers = useAppStore((state) => state.providers);
   const providerLimits = useAppStore((state) => state.providerLimits);
   const hiddenRaw = useAppStore((state) => state.settings?.[SETTING_HIDDEN_MODELS] ?? null);
+  const policy = useAppStore((state) =>
+    state.currentWorkspaceId == null
+      ? null
+      : (state.workspaceOverrides?.[state.currentWorkspaceId]?.providerPool ?? null),
+  );
   return useMemo(
     () =>
       autoLimitContext({
@@ -18,7 +23,8 @@ export const useAutoLimitContext = (): AutoLimitContext | null => {
           providerLimits,
           settings: hiddenRaw === null ? {} : { [SETTING_HIDDEN_MODELS]: hiddenRaw },
         },
+        policy,
       }),
-    [hiddenRaw, providerLimits, providers],
+    [hiddenRaw, policy, providerLimits, providers],
   );
 };

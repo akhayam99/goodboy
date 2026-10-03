@@ -52,6 +52,7 @@ import {
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
 import { uniqueStepName } from '../../../features/workflows/uniqueStepName';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
+import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import { tauriDatabase } from '../../../shared/lib/db';
 import {
   budgetBlockMessage,
@@ -461,6 +462,7 @@ const appendStep = async ({
   const baseOrdinal =
     existingAgents.reduce((max, current) => Math.max(max, current.ordinal), -1) + 1;
   const spawned = await preSpawnWorkflowAgents({
+    policy: workspacePolicyAvailability({ state: get() }).policy,
     sessionId,
     workflowRunId,
     steps: [nextStep],
@@ -668,6 +670,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         sessionId,
         isRunBudgetBlocked: false,
         nowMs: Date.now(),
+        ...workspacePolicyAvailability({ state: get() }),
         providerPool: run.providerPool ?? null,
       });
       const modelMenu = orchestratorModelPool({

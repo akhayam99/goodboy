@@ -1,4 +1,4 @@
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core';
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE, firstOnProvider } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type {
   Agent,
@@ -35,6 +35,7 @@ import { clampTitle } from './titleLimit';
 import { preSpawnWorkflowAgents } from '../workflows/preSpawnWorkflowAgents';
 import { persistOrchestrationStop } from '../workflows/orchestrateNextStep';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
+import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import { discardUncreatedSession } from './discardUncreatedSession';
 import { rememberMaterializationSeed } from './materializationSeeds';
 import { resolveSessionProject } from './resolveSessionProject';
@@ -149,13 +150,20 @@ export const createSession = (set: SetFn, get: GetFn) => {
         .catch(() => undefined);
     }
     const workspaceOverrides = get().workspaceOverrides[workspaceId] ?? null;
-    const workspaceDefaultProvider = workspaceOverrides?.defaultProviderId ?? null;
+    const workspacePolicy = workspaceOverrides?.providerPool ?? null;
     const inheritedDefaultProvider =
-      workspaceDefaultProvider ?? DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider;
+      firstOnProvider({ policy: workspacePolicy }) ??
+      workspaceOverrides?.defaultProviderId ??
+      DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider;
     const inheritedEnabledProviders =
-      workspaceOverrides?.providerPool == null
+      workspacePolicy == null
         ? undefined
-        : Array.from(new Set([...workspaceOverrides.providerPool, inheritedDefaultProvider]));
+        : Array.from(
+            new Set([
+              inheritedDefaultProvider,
+              ...workspacePolicy.filter((entry) => entry.state !== 'off').map((entry) => entry.id),
+            ]),
+          );
     const inheritedPreference: SessionProviderPreference = {
       ...DEFAULT_SESSION_PROVIDER_PREFERENCE,
       defaultProvider: inheritedDefaultProvider,
@@ -341,6 +349,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
             sessionId: session.id,
             isRunBudgetBlocked: false,
             nowMs: Date.now(),
+            ...workspacePolicyAvailability({ state: get() }),
           }),
         });
         if (spawned.blocked.length > 0 && workflowRunId !== undefined) {

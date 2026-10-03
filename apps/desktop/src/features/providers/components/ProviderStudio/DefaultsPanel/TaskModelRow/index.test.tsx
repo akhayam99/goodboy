@@ -19,7 +19,7 @@ const renderRow = ({ preference, onChange }: RenderParams) =>
       help="writes the step summary"
       preference={preference}
       defaultProviderId="anthropic"
-      fallbackOrder={CONNECTED}
+      providerPolicy={null}
       connectedProviderIds={CONNECTED}
       disabled={false}
       onChange={onChange}

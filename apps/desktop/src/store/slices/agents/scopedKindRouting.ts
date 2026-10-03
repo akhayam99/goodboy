@@ -9,7 +9,10 @@ import { autoLimitContext } from '../providerLimits/autoLimitContext';
 
 type Params = {
   readonly state: AppStore;
-  readonly settings: Pick<ResolvedSettings, 'roleModels' | 'defaultProviderId'> | null;
+  readonly settings: Pick<
+    ResolvedSettings,
+    'roleModels' | 'defaultProviderId' | 'providerPool'
+  > | null;
   readonly kind: AgentKind;
 };
 
@@ -19,4 +22,5 @@ export const scopedKindRouting = ({ state, settings, kind }: Params): AgentKindR
     roleModels: settings?.roleModels ?? null,
     defaultProvider: settings?.defaultProviderId ?? null,
     limitContext: autoLimitContext({ state }),
+    ...(settings != null && { policy: settings.providerPool }),
   });

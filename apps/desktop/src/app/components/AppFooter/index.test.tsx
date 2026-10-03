@@ -1,6 +1,29 @@
+// @vitest-environment happy-dom
+
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../../store/storyHarness')).dbModuleMock());
+vi.mock('../../../shared/lib/db', async () =>
+  (await import('../../../store/storyHarness')).dbLibModuleMock(),
+);
+
 import type { ComponentProps } from 'react';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ProviderConnectionState, ProviderId, WorkspaceId } from '@goodboy/types';
+import { aWorkspace } from '@goodboy/types/testing';
+import type { ProviderDisplayInfo } from '../../../features/providers/providers';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  storySpies,
+  type StoryStore,
+} from '../../../store/storyHarness';
 import {
   integrationLabel,
   type IntegrationGlyphProvider,
@@ -27,6 +50,44 @@ vi.mock('./GoodboyChip', () => ({
     </span>
   ),
 }));
+
+const WORKSPACE = aWorkspace({ id: 'workspace-harborline' as WorkspaceId, name: 'Harborline' });
+
+type ProviderParams = {
+  readonly id: ProviderId;
+  readonly connection: ProviderConnectionState;
+};
+
+const providerInfo = ({ id, connection }: ProviderParams): ProviderDisplayInfo => ({
+  id,
+  binary: id,
+  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  connection,
+  version: null,
+  identity: null,
+  label: id,
+  error: null,
+  docsUrl: '',
+});
+
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+  useAppStore.setState({
+    workspaces: [WORKSPACE],
+    currentWorkspaceId: WORKSPACE.id,
+    providers: [
+      providerInfo({ id: 'anthropic', connection: 'connected' }),
+      providerInfo({ id: 'codex', connection: 'connected' }),
+      providerInfo({ id: 'opencode', connection: 'installed_disconnected' }),
+    ],
+  });
+});
 
 afterEach(() => {
   cleanup();
@@ -101,7 +162,7 @@ const rightNames = () =>
   );
 
 describe('AppFooter', () => {
-  it('keeps inbox, workflows, impact and settings one click away on the right, in that order', () => {
+  it('keeps inbox, workflows, impact, providers and settings on the right, in that order', () => {
     const onOpenInbox = vi.fn();
     const onOpenWorkflows = vi.fn();
     const onOpenImpact = vi.fn();
@@ -118,6 +179,7 @@ describe('AppFooter', () => {
       'Open the inbox for this workspace',
       'Open the workflow library for this workspace',
       'Open Impact for this workspace',
+      'Providers',
       SETTINGS_LABEL,
     ]);
 
@@ -134,15 +196,35 @@ describe('AppFooter', () => {
     expect(onOpenSettings).toHaveBeenCalledOnce();
   });
 
-  it('carries no providers launcher and no more menu', () => {
+  it('opens the providers menu on the cached providers, with the workspace order below', () => {
+    const refreshProviders = vi.fn(async () => undefined);
+    useAppStore.setState({ refreshProviders });
+    render(<AppFooter {...footerProps()} />);
+    storySpies.tauriInvoke.mockClear();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Providers' }));
+
+    const menu = screen.getByRole('dialog', { name: 'Providers' });
+    within(menu).getByText('For Harborline');
+    within(menu).getByRole('list', { name: 'Providers, in order, for Harborline' });
+    within(menu).getByRole('button', { name: /Connect OpenCode/ });
+    within(menu).getByRole('button', { name: /Open Providers & models/ });
+    expect(refreshProviders).not.toHaveBeenCalled();
+    expect(storySpies.tauriInvoke).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: /^More pages/ })).toBeNull();
+  });
+
+  it('pulses the providers button while no provider is connected', () => {
+    useAppStore.setState({
+      providers: [providerInfo({ id: 'anthropic', connection: 'installed_disconnected' })],
+    });
     render(<AppFooter {...footerProps()} />);
 
-    expect(
-      screen.queryByRole('button', { name: 'Connect and manage your provider accounts' }),
-    ).toBeNull();
-    expect(screen.queryByRole('button', { name: /^More pages/ })).toBeNull();
-    expect(screen.queryByText('Providers')).toBeNull();
-    expect(screen.queryByText('More')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Providers, none connected' }));
+
+    const menu = screen.getByRole('dialog', { name: 'Providers' });
+    within(menu).getByText('No provider is connected yet.');
+    expect(within(menu).queryByRole('list', { name: /Providers, in order/ })).toBeNull();
   });
 
   it('seats the Goodboy chip in the centre and hands it changelog and shortcuts', () => {

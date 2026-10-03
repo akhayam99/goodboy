@@ -22,6 +22,7 @@ import { shellArrangement } from '../../../shellArrangement';
 import { NOW, SESSION, WORKSPACE_ID, seedWorkflowScene } from './workflowSeed';
 import { sceneClock } from '../sceneClock';
 import { sceneParam } from './audit/sceneParams';
+import { seedPolicyScene } from './providerPolicySeed';
 
 const clock = sceneClock({ anchor: '2026-08-25T18:00:00.000Z' });
 
@@ -278,6 +279,9 @@ export const ShellScene = () => {
     seedWorkflowScene();
     seedShellChrome();
     seedChatOrigin();
+    if (sceneParam({ key: 'providers' }) === 'policy') {
+      seedPolicyScene({ workspaceId: WORKSPACE_ID });
+    }
     setIsReady(true);
   }, []);
 

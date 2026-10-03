@@ -18,6 +18,7 @@ import { selectSelectedMountId } from '../../../../store/slices/project-mounts/s
 import { LENS_ICON } from '../../../session/lens-labels';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { workflowAvailabilitySnapshot } from '../../../workflows/workflowAvailabilitySnapshot';
+import { workspacePolicyAvailability } from '../../../../store/slices/providerLimits/workspacePolicyAvailability';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { workflowKindName } from '../../../workspace/components/WorkspacesSidebar/lib';
 import { ARTIFACT_BRIEF_LIMITS } from '../../artifactBrief';
@@ -145,6 +146,7 @@ export const ArtifactCreationPane = ({
         sessionId,
         isRunBudgetBlocked: false,
         nowMs: Date.now(),
+        ...workspacePolicyAvailability({ state: s }),
       });
       return availability.connectedProviders.filter(
         (provider) =>
