@@ -4,6 +4,7 @@ import { IconButton, InteractiveRow, StatusDot, cn } from '@goodboy/ui';
 import type { ChatId, ChatModelUsed } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
+import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
 import { chatObjectKey } from '../../../actions/kinds/chat';
 import type { ObjectTarget } from '../../../actions/types';
@@ -48,6 +49,7 @@ const ChatListRowView = ({
   const renameChat = useAppStore((state) => state.renameChat);
   const markChatUnread = useAppStore((state) => state.markChatUnread);
   const markChatRead = useAppStore((state) => state.markChatRead);
+  const navigate = useAppStore((state) => state.navigate);
   const marker = useChatSessionMarker({ chatId });
   const [isRenaming, setIsRenaming] = useState(false);
   const anchorKey = `chat-row:${chatId}`;
@@ -138,7 +140,12 @@ const ChatListRowView = ({
             <span className="truncate">Enter saves · Esc cancels</span>
           ) : (
             <>
-              {marker === null ? null : <ChatSessionMark marker={marker} />}
+              {marker === null ? null : (
+                <ChatSessionMark
+                  marker={marker}
+                  onOpen={(sessionId) => navigate({ to: sessionPlace({ sessionId }) })}
+                />
+              )}
               <span className="min-w-0 truncate">{snippet}</span>
             </>
           )}

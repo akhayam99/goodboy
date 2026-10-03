@@ -1,15 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Button, Notice } from '@goodboy/ui';
+import { Button, Notice, Skeleton } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import { selectLapProject } from '../../../store/slices/bootstrap/firstLap';
 import { selectLiveWork } from '../../../store/slices/live-work/selectLiveWork';
 import { sessionPlace } from '../../../store/slices/navigation/place';
 import { changedCount } from '../../../shared/lib/gitStatus';
 import { MoveCard } from '../MoveCard';
 import { MoveReport } from '../MoveReport';
-import { PublishPanel } from '../PublishPanel';
 import { useBootstrapWatch } from '../hooks/useBootstrapWatch';
+import { useLapProject } from '../useLapProject';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -18,8 +17,7 @@ type Props = {
 const resumed = new Set<string>();
 
 export const FirstLapBanner = ({ sessionId }: Props) => {
-  const project = useAppStore((state) => selectLapProject({ state, sessionId })?.project ?? null);
-  const stage = useAppStore((state) => selectLapProject({ state, sessionId })?.stage ?? null);
+  const { project, stage } = useLapProject({ sessionId });
   const probe = useAppStore((state) =>
     project === null ? null : (state.bootstrapRemoteProbe[project.id]?.probe ?? null),
   );
@@ -30,10 +28,10 @@ export const FirstLapBanner = ({ sessionId }: Props) => {
     project === null ? false : selectLiveWork({ state }).liveSessionIds.includes(sessionId),
   );
   const loadProjectGitStatus = useAppStore((state) => state.loadProjectGitStatus);
-  const moveToBootstrap = useAppStore((state) => state.moveToBootstrap);
+  const probeProjectRemote = useAppStore((state) => state.probeProjectRemote);
   const resumeBootstrapMove = useAppStore((state) => state.resumeBootstrapMove);
   const navigate = useAppStore((state) => state.navigate);
-  const [isPublishing, setIsPublishing] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   useBootstrapWatch({ projectId: project?.id ?? null, enabled: stage === 'first-lap' });
 
@@ -84,51 +82,48 @@ export const FirstLapBanner = ({ sessionId }: Props) => {
     );
   }
 
+  const isChecking = hasRemote && (probe === null || isRetrying);
+  const retry = () => {
+    setIsRetrying(true);
+    void probeProjectRemote({ projectId: project.id }).finally(() => setIsRetrying(false));
+  };
+
   return (
     <div className="flex flex-col gap-3 bg-subtle px-4 py-3">
-      <div className="flex items-center gap-3">
-        <div className="flex min-w-0 flex-1 flex-col">
-          <span className="text-label text-foreground">{project.name} · project folder · main</span>
-          <span className="text-secondary text-muted-foreground">
-            {isOnRemote
-              ? 'main is on the remote now.'
-              : 'This session works in your project folder. Nothing is published yet.'}
-          </span>
-        </div>
-        {isOnRemote || isPublishing ? null : (
-          <Button size="sm" onClick={() => setIsPublishing(true)}>
-            Publish
-          </Button>
-        )}
+      <div className="flex min-w-0 flex-col">
+        <span className="text-label text-foreground">
+          {isOnRemote
+            ? `${project.name} · main is on the remote now.`
+            : `${project.name} · This session works in your project folder`}
+        </span>
+        <span className="text-secondary text-muted-foreground">
+          {isOnRemote
+            ? 'Move your work into bootstrap when you are ready.'
+            : 'Nothing is published yet.'}
+        </span>
       </div>
-      {probe?.kind === 'unreachable' && hasRemote ? (
-        <p role="status" className="text-secondary text-warning">
-          Couldn&apos;t check the remote
-        </p>
+      {isChecking && !isOnRemote ? (
+        <div role="status" aria-label="Checking the remote" className="flex items-center gap-2">
+          <Skeleton className="h-3.5 w-48" />
+          <span className="text-secondary text-faint-foreground">Checking the remote</span>
+        </div>
+      ) : null}
+      {!isChecking && probe?.kind === 'unreachable' && hasRemote ? (
+        <Notice
+          tone="warning"
+          placement="inline"
+          role="status"
+          title="Couldn't check the remote"
+          body="You can keep working here. Publishing needs the remote to answer."
+          actions={
+            <Button variant="secondary" size="sm" onClick={retry}>
+              Try again
+            </Button>
+          }
+        />
       ) : null}
       {isOnRemote ? (
         <MoveCard project={project} changedCount={changed} isTurnRunning={isTurnRunning} />
-      ) : null}
-      {isPublishing && !isOnRemote ? (
-        <PublishPanel
-          project={project}
-          primaryLabel={changed !== null && changed > 0 ? 'Publish and move my work' : 'Publish'}
-          onPublished={(result) => {
-            setIsPublishing(false);
-            if (result.kind === 'published') {
-              void moveToBootstrap({ projectId: project.id }).then((moved) => {
-                if (moved.kind === 'moved') {
-                  navigate({ to: sessionPlace({ sessionId: moved.session.id }) });
-                  return;
-                }
-                if (moved.kind === 'refused') {
-                  setNotice(moved.message);
-                }
-              });
-            }
-          }}
-          onCancel={() => setIsPublishing(false)}
-        />
       ) : null}
       {notice !== null ? (
         <Notice tone="warning" placement="inline" role="alert" title={notice} />

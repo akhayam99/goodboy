@@ -92,8 +92,8 @@ opens it on a mode. Commands is the first mode.
 - **Empty input.** The verbs of the scope under For this session (or agent, or commit),
   then Recent, then Go to, Actions and Help. Go to reaches studios by name:
   Back to board inside a session, Inbox, Workflows, Impact, Changelog,
-  Notifications and Workspace settings inside a workspace, and Add workspace
-  everywhere.
+  Notifications and Workspace settings inside a workspace, and Start a new
+  project and Open a folder everywhere.
 - **Typing gives one ranked list, never regrouped.** A fuzzy subsequence match
   with bonuses for word starts, camel boundaries and runs, so `pay export`
   finds "Speed up the payout export" (`score.ts`); then frecency, uses halved
@@ -363,9 +363,12 @@ screen edge, so a graze does not open it.
 
 **The session overview is the reference page.** It shows the whole surface
 grammar on one screen, so read it before designing a new surface. Here is its
-rhythm. Each section has an eyebrow label. A section header holds at most one
-action, and a section has at most one primary button. A `<Divider />` sits
-between sections, and a section never has a border. A section appears once its
+rhythm. Each section has an eyebrow label, and a section has at most one
+primary button. Projects, Next and Activity are peer sections in the pane body,
+one `PANE_RHYTHM.stack` gap apart: the header passes `headerRhythm="section"`,
+so the gap under it is the same. Space separates sections, never a
+`<Divider />`, and a section never has a border. The Activity header holds two
+controls, Filter and New. A section appears once its
 fact exists (a plan, a workflow run, a PR on a project). Before that it is one
 quiet action row (link an issue, start an agent, attach a workflow). So the
 empty session reads as a young version of the same document, not a wall of
@@ -1344,8 +1347,11 @@ agentId, pane })` asks for either, and the address prints it as a last
 
 ## Starting a project from nothing
 
-The empty screen and the workspace launcher offer **Start a new project** and
-**Open a folder**. The wizard's project step offers the same two. Start opens
+The empty screen, the workspace launcher, the workspace switcher and the
+command palette offer **Start a new project** and **Open a folder**, in that
+order. The wizard's project step offers the same two. Settings, Workspace,
+Projects names its form **Start a new project** too and opens the same form in
+line. **Add workspace** names only the studio that groups projects. Start opens
 one inline form (`NewProjectForm`), never a dialog: a name, a location (the
 last parent folder, else the home folder, changed with the system picker) and
 the four things the click does. A name that exists in the parent says so and

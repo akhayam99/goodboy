@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Chip, Skeleton, Tooltip, cn } from '@goodboy/ui';
+import { Chip, Skeleton, SkeletonChip } from '@goodboy/ui';
 import type { SessionId, WorktreeStatus } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
@@ -12,19 +12,18 @@ import { useObjectMenuTrigger } from '../../../../actions/useObjectMenuTrigger';
 import type { MountActionTarget } from '../../../../actions/types';
 import { useMountRemoteHostKind } from '../../../../worktree/useMountRemoteHostKind';
 import { AlsoInChip } from './AlsoInChip';
-import { BranchPresenceLabel } from './BranchPresenceLabel';
-import { MainDistanceLabel } from './MainDistanceLabel';
 import { MountBranchDecision } from './MountBranchDecision';
 import { MountChangeCell } from './MountChangeCell';
 import { MountKindGlyph } from './MountKindGlyph';
 import { MountPresence } from './MountPresence';
 import { MountRequestLink } from './MountRequestLink';
 import { MountResolveLink } from './MountResolveLink';
+import { MountStatusPhrase } from './MountStatusPhrase';
 import { ProjectBranchChip } from './ProjectBranchChip';
 import { RebaseStoppedNotice } from './RebaseStoppedNotice';
 import { MountRowAction } from './MountRowAction';
 import { useMountPresence } from './useMountPresence';
-import { mountOperationView, mountWorktreeState } from './mountRowState';
+import { mountWorktreeState } from './mountRowState';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -35,10 +34,8 @@ type Props = {
   readonly isStatusPending?: boolean;
   readonly isMerged?: boolean;
   readonly commitsAfterMerge?: number | null;
+  readonly isSkeleton?: boolean;
 };
-
-const CELL = 'flex items-center px-1';
-const NARROW_HIDDEN = '@max-[36rem]:px-0 @max-[36rem]:*:hidden';
 
 export const ProjectMountRow = ({
   sessionId,
@@ -49,6 +46,7 @@ export const ProjectMountRow = ({
   isStatusPending: isStatusPendingProp = false,
   isMerged = false,
   commitsAfterMerge = null,
+  isSkeleton = false,
 }: Props) => {
   const turnMountCount = useAppStore((state) => selectTurnMountCount({ state, sessionId }));
   const presence = useMountPresence({ sessionId, mountId: row.mountId });
@@ -63,7 +61,6 @@ export const ProjectMountRow = ({
     status: worktreeStatus,
     isPending: isStatusPendingProp,
   });
-  const operation = mountOperationView({ status: worktreeStatus, label });
   const target = useMemo<MountActionTarget>(
     () => ({
       kind: 'mount',
@@ -89,9 +86,9 @@ export const ProjectMountRow = ({
     >
       <div
         data-testid="project-mount-cells"
-        className="col-span-full grid min-h-8 grid-cols-subgrid items-center rounded-md px-1 py-1 hover:bg-hover"
+        className="col-span-full grid min-h-8 grid-cols-subgrid items-center gap-x-4 rounded-md px-1 py-1 hover:bg-hover"
       >
-        <div className={cn(CELL, 'min-w-0 gap-1')}>
+        <div className="flex min-w-0 items-center gap-2">
           <MountKindGlyph
             projectKind={row.projectKind}
             isMainCheckout={row.isMainCheckout}
@@ -110,23 +107,19 @@ export const ProjectMountRow = ({
               blockedReason={switchBranch?.blockedReason ?? null}
             />
           )}
-          {operation === null ? null : (
-            <Chip
-              tone="warning"
-              size="3xs"
-              bordered={false}
-              label={operation.label}
-              title={operation.title}
-              className="shrink-0"
-            />
-          )}
-          {isRepo && row.branch !== '' ? (
-            <BranchPresenceLabel
+          {row.branch === '' ? null : (
+            <MountStatusPhrase
+              label={label}
               status={worktreeStatus}
+              series={row.series}
+              isRepo={isRepo && row.isAttached}
+              isPending={isStatusPending}
+              isSkeleton={isSkeleton}
               isMerged={isMerged}
+              isRebasing={controls.pendingId === 'mount.rebase'}
               commitsAfterMerge={commitsAfterMerge}
             />
-          ) : null}
+          )}
           {isRepo && row.branch !== '' ? (
             <AlsoInChip sessionId={sessionId} projectId={row.projectId} branch={row.branch} />
           ) : null}
@@ -134,52 +127,17 @@ export const ProjectMountRow = ({
             <MountPresence sessionId={sessionId} label={label} agents={presence} />
           )}
         </div>
-        {row.series === null ? (
-          <span />
-        ) : (
-          <div className={CELL}>
-            <Tooltip content={`Part ${row.series.label} of ${row.series.name}`}>
-              <span className="truncate text-meta text-faint-foreground">
-                {`Part ${row.series.label}`}
-              </span>
-            </Tooltip>
-          </div>
-        )}
-        {isRepo && row.isAttached && !row.isCompleted ? (
-          <div className={cn(CELL, 'justify-center', NARROW_HIDDEN)}>
-            {isStatusPending ? (
-              <span data-testid="project-distance-skeleton" className="shrink-0">
-                <Skeleton className="h-5 w-20 rounded-md" />
-              </span>
-            ) : (
-              <MainDistanceLabel
-                status={worktreeStatus}
-                isRebasing={controls.pendingId === 'mount.rebase'}
-              />
-            )}
-          </div>
-        ) : (
-          <span />
-        )}
-        {!row.isAttached || !isRepo ? (
-          <span />
-        ) : (
-          <div className={cn(CELL, NARROW_HIDDEN)}>
-            <MountChangeCell
-              sessionId={sessionId}
-              label={label}
-              worktreePath={worktreePath}
-              diffStat={diffStat}
-              state={worktreeState}
-            />
-          </div>
-        )}
-        <div className={CELL}>
-          {row.isAttached ? (
-            <span className="flex min-w-0 items-center gap-1">
+        <div className="flex min-w-0 items-center gap-1">
+          {isSkeleton && row.isAttached ? (
+            <SkeletonChip width="lg" />
+          ) : row.isAttached ? (
+            <>
               <MountRequestLink sessionId={sessionId} row={row} label={label} />
+              {row.request === null && isRepo && !row.isCompleted && !row.isMainCheckout ? (
+                <span className="px-1.5 text-label text-faint-foreground">No PR yet</span>
+              ) : null}
               <MountResolveLink sessionId={sessionId} row={row} label={label} />
-            </span>
+            </>
           ) : (
             <Chip
               tone="neutral"
@@ -196,10 +154,25 @@ export const ProjectMountRow = ({
             />
           )}
         </div>
-        <div className={CELL}>
-          <MountRowAction sessionId={sessionId} row={row} label={label} controls={controls} />
+        <div className="flex items-center">
+          {!row.isAttached || !isRepo ? null : isSkeleton ? (
+            <Skeleton className="h-3.5 w-16" />
+          ) : (
+            <MountChangeCell
+              sessionId={sessionId}
+              label={label}
+              worktreePath={worktreePath}
+              diffStat={diffStat}
+              state={worktreeState}
+            />
+          )}
         </div>
-        <div className={cn(CELL, 'justify-end')}>
+        <div className="flex items-center justify-end gap-1">
+          {isSkeleton ? (
+            <SkeletonChip width="sm" />
+          ) : (
+            <MountRowAction sessionId={sessionId} row={row} label={label} controls={controls} />
+          )}
           <ObjectOverflowMenu
             target={target}
             label={`${label} actions`}

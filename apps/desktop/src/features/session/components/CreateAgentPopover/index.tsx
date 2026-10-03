@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { clampEffortForModel } from '@goodboy/core';
@@ -47,9 +47,16 @@ type Props = {
   readonly className?: string;
   readonly onSpawned?: () => void;
   readonly openEvent?: string;
+  readonly anchor?: ReactNode;
 };
 
-export const CreateAgentPopover = ({ sessionId, className, onSpawned, openEvent }: Props) => {
+export const CreateAgentPopover = ({
+  sessionId,
+  className,
+  onSpawned,
+  openEvent,
+  anchor,
+}: Props) => {
   const dropdown = useDropdown({
     align: 'center',
     expectedHeight: 460,
@@ -165,7 +172,9 @@ export const CreateAgentPopover = ({ sessionId, className, onSpawned, openEvent 
       ariaLabel="Start agent"
       className="flex max-h-[calc(100vh-1rem)] flex-col bg-subtle"
       anchorClassName="min-w-0"
-      trigger={<CreateAgentTrigger isOpen={open} className={className} onClick={toggle} />}
+      trigger={
+        anchor ?? <CreateAgentTrigger isOpen={open} className={className} onClick={toggle} />
+      }
     >
       <PopoverBody>
         {agentKinds.length > 1 ? (

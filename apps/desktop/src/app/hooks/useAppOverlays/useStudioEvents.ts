@@ -50,6 +50,10 @@ export const useStudioEvents = ({ open, close, openPalette }: Params) => {
       [IMPACT_STUDIO_EVENT, (event) => open({ overlay: impactOverlayFromEvent(event) })],
       ['goodboy:open-inbox', openInbox],
       ['goodboy:add-workspace', () => open({ overlay: { kind: 'addWorkspace' } })],
+      [
+        'goodboy:start-new-project',
+        () => open({ overlay: { kind: 'addWorkspace', start: 'new-project' } }),
+      ],
       ['goodboy:open-pair-device', () => open({ overlay: { kind: 'companion' } })],
       ['goodboy:open-workflow-studio', () => open({ overlay: { kind: 'workflow' } })],
       [CHANGELOG_STUDIO_EVENT, () => open({ overlay: { kind: 'changelog' } })],

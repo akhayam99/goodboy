@@ -15,6 +15,7 @@ type BaseProps = {
   readonly scroll?: 'pane' | 'body' | 'self';
   readonly tabs?: ReactNode;
   readonly dock?: ReactNode;
+  readonly headerRhythm?: 'title' | 'section';
   readonly children: ReactNode;
 };
 
@@ -48,6 +49,7 @@ export const PaneShell = (props: Props) => {
     scroll = 'pane',
     tabs,
     dock,
+    headerRhythm = 'title',
     children: content,
   } = props;
   const isUnderTrail = useContext(UnderTrailContext);
@@ -81,7 +83,12 @@ export const PaneShell = (props: Props) => {
   const header = (
     <div
       data-slot="pane-header"
-      className={cn('flex min-w-0 shrink-0 flex-col pb-4', !isUnderTrail && 'pt-3')}
+      data-rhythm={headerRhythm}
+      className={cn(
+        'flex min-w-0 shrink-0 flex-col',
+        PANE_RHYTHM.below[headerRhythm],
+        !isUnderTrail && 'pt-3',
+      )}
     >
       <div className={cn('flex min-w-0 flex-col gap-2', animationClassName)}>
         {props.header !== undefined ? (

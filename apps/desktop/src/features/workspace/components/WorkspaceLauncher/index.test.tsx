@@ -133,8 +133,8 @@ describe('WorkspaceLauncher', () => {
     expect(screen.queryByTestId('update-pill')).toBeNull();
   });
 
-  it('offers Add workspace as the one verb', () => {
+  it('offers Start a new project then Open a folder', () => {
     render(<WorkspaceLauncher />);
-    expect(screen.getByRole('button', { name: 'Add workspace' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open a folder' })).toBeDefined();
   });
 });

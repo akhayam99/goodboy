@@ -1,7 +1,6 @@
 import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { CheckCheck } from 'lucide-react';
-import { Button, IconButton, SectionHeader } from '@goodboy/ui';
+import { Button, SectionHeader } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
 import {
@@ -111,15 +110,7 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
         }
         action={
           <div className="flex items-center gap-1">
-            {hasUnreadAgents ? (
-              <IconButton
-                icon={CheckCheck}
-                label="Mark all seen"
-                variant="ghost"
-                onClick={() => void markAllAgentsSeen(sessionId)}
-              />
-            ) : null}
-            {hasFilter ? (
+            {hasFilter || hasUnreadAgents ? (
               <ActivityFilterPanel
                 filter={activity.filter}
                 hidden={activity.hidden}
@@ -130,6 +121,7 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
                 totalCount={entries.length}
                 onToggle={activity.setToggle}
                 onPreset={activity.applyPreset}
+                onMarkAllSeen={hasUnreadAgents ? () => void markAllAgentsSeen(sessionId) : null}
               />
             ) : null}
             {actions}

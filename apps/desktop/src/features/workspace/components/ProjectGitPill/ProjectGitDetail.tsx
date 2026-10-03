@@ -9,7 +9,7 @@ import {
   Pencil,
   Upload,
 } from 'lucide-react';
-import { Button, formatError } from '@goodboy/ui';
+import { Button, SkeletonRow, formatError } from '@goodboy/ui';
 import type { Project, WorkspaceGitStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { openInEditor } from '../../../../shared/lib/editor';
@@ -164,7 +164,7 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
   return (
     <div className="flex flex-col">
       {status == null ? (
-        <div className="p-3 text-label text-muted-foreground">Reading git status</div>
+        <SkeletonRow label="Reading git status" className="m-2" />
       ) : status.state === 'missing' ? (
         <div className="flex items-start gap-2 p-3 text-xs leading-relaxed text-danger">
           <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />

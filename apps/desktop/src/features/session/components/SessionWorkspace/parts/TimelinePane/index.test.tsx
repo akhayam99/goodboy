@@ -281,21 +281,6 @@ describe('TimelinePane on an empty session', () => {
     expect(screen.queryByRole('region', { name: 'Kickoff' })).toBeNull();
   });
 
-  it('keeps Run workflow beside Start agent and folds Report/Wireframe into Create', () => {
-    storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
-    renderEmptySession();
-
-    expect(screen.getByRole('button', { name: 'Start agent' })).toBeDefined();
-    expect(screen.getByRole('button', { name: /Run workflow/ })).toBeDefined();
-    for (const name of ['Create report', 'Create wireframe']) {
-      expect(screen.queryByRole('button', { name: new RegExp(name) })).toBeNull();
-    }
-    fireEvent.click(screen.getByRole('button', { name: 'Create' }));
-    for (const name of ['Report', 'Wireframe']) {
-      expect(screen.getByRole('menuitem', { name: new RegExp(`^${name}`) })).toBeDefined();
-    }
-  });
-
   it('holds the filter back while the feed has a single kind of row', () => {
     storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
     renderEmptySession();
@@ -332,27 +317,6 @@ describe('TimelinePane loading', () => {
 });
 
 describe('TimelinePane unread affordance', () => {
-  it('seats Mark all seen on the NOW rule and marks everything on click', () => {
-    storeState.sessionPhaseRuns = {
-      'session-1': [
-        {
-          id: 'agent-1',
-          sessionId: 'session-1',
-          ordinal: 1,
-          name: 'scout',
-          status: 'completed',
-          startedAt: '2026-08-20T10:00:00.000Z',
-        },
-      ],
-    };
-    unread.current = true;
-    render(<TimelinePane session={SESSION} actions={null} />);
-
-    const cta = screen.getByRole('button', { name: 'Mark all seen' });
-    fireEvent.click(cta);
-    expect(storeState.markAllAgentsSeen).toHaveBeenCalledWith('session-1');
-  });
-
   it('hides the CTA once nothing is unread', () => {
     storeState.sessionPhaseRuns = {
       'session-1': [

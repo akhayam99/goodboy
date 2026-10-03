@@ -898,10 +898,10 @@ with the one-line title (full name on hover), the Brief and Transcript tabs
 icon with an anchored `ConfirmPopover`, the overflow menu), then one 18px meta
 line with role, status, time and model. That is 70px with the 16px below, no
 separate tabs row, and the transcript under it starts 8px down (`ChatView`
-`topInset="tight"`). The session overview's `HeaderBand` holds the title, then one
+`topInset="tight"`). The session overview passes `headerRhythm="section"`, so the gap under its header is `PANE_RHYTHM.stack`, the same as between its body sections. Its `HeaderBand` holds the title, then one
 `Goal` line (an 11px faint label, the goal in muted text on one line with an
 ellipsis) only when the goal says more than the title, or `Add a goal` when
-there is none, then the chips, `Context` first. Goal, decisions and summary
+there is none, then one row of facts: `Context`, `Artifacts`, linked work, `Link work` and the cost. Goal, decisions and summary
 live in the Context drawer, never as a block in the column. `scroll="body"` keeps the header fixed above a scrolling body,
 `scroll="self"` hands the body a bounded region that scrolls itself (a
 transcript), and `dock` pins a chat composer to the bottom of the same column.
@@ -1223,6 +1223,16 @@ shape with `EmptyState size="inline"`: a caller passes only layout
 (`justify-center`, `basis-full`), never its own padding or fill, and
 `inline-empty-states-use-the-wrappers.test.ts` fails on any `size="inline"`
 under `apps/desktop/src`.
+
+An empty line inside a section ("No open worktrees.") is `EmptyLine`: one faint
+sentence, an optional glyph before it and an optional action after it. It is
+the only shape for a one-line empty, never bare text in its own style.
+
+**Loading keeps the page in place.** A part that reloads shows a skeleton of
+its own height: `SkeletonRow` (a row, with a `status` label naming what loads)
+or `SkeletonChip` (a chip). Only the parts that reload turn to skeleton; the
+title, the goal, the timeline and the cost stay. A session refresh shows them
+only after 250 ms (`useSessionSkeleton`), so a fast refresh never flashes.
 
 **Inline beats the centred hero** because the pane already has a title and a
 rhythm. A hero repeats the title in bigger type. It pretends the lens is a

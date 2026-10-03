@@ -1,7 +1,6 @@
 export const PROJECTS_HINT_DISMISSED_KEY = 'projects.hint.dismissed';
 
-export const PROJECTS_EXPLAINER =
-  'Where this session works. Each branch gets its own worktree: a separate folder next to your checkout, with its own changes and pull request.';
+export const PROJECTS_EXPLAINER = 'Where this session works. Each branch gets its own worktree.';
 
 type ShowParams = {
   readonly settings: Readonly<Record<string, string>> | undefined;

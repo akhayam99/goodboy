@@ -1,0 +1,94 @@
+{
+  "apps/desktop/src/features/bootstrap/FirstLapBanner/index.tsx": {
+    "notices": 2,
+    "emptyLines": 0
+  },
+  "apps/desktop/src/features/budget/components/SessionSpendPopover/AgentSpendList.tsx": {
+    "notices": 0,
+    "emptyLines": 1
+  },
+  "apps/desktop/src/features/budget/components/SessionSpendPopover/SpendLimitRow.tsx": {
+    "notices": 0,
+    "emptyLines": 1
+  },
+  "apps/desktop/src/features/changelog/components/ChangelogStudio/ChangelogRail.tsx": {
+    "notices": 0,
+    "emptyLines": 1
+  },
+  "apps/desktop/src/features/diff/components/DiffView/FileJumpPopover.tsx": {
+    "notices": 0,
+    "emptyLines": 1
+  },
+  "apps/desktop/src/features/history/components/RewriteHistoryPage/HistoryBackups.tsx": {
+    "notices": 0,
+    "emptyLines": 1
+  },
+  "apps/desktop/src/features/integrations/jira/AssigneePicker.tsx": {
+    "notices": 0,
+    "emptyLines": 1
+  },
+  "apps/desktop/src/features/permissions/components/PermissionsSettings/index.tsx": {
+    "notices": 0,
+    "emptyLines": 1
+  },
+  "apps/desktop/src/features/permissions/components/PermissionsSettings/RecentDecisions.tsx": {
+    "notices": 0,
+    "emptyLines": 1
+  },
+  "apps/desktop/src/features/resolve/components/ReviewFlow/ReviewComment.tsx": {
+    "notices": 1,
+    "emptyLines": 0
+  },
+  "apps/desktop/src/features/resolve/components/ReviewFlow/ThreadGitEvidence.tsx": {
+    "notices": 1,
+    "emptyLines": 0
+  },
+  "apps/desktop/src/features/review/components/ReviewPane/WriteReview/LineComment.tsx": {
+    "notices": 1,
+    "emptyLines": 0
+  },
+  "apps/desktop/src/features/scripts/components/ScriptsPanel/index.tsx": {
+    "notices": 0,
+    "emptyLines": 2
+  },
+  "apps/desktop/src/features/session/components/AgentTree/WorkflowRow.tsx": {
+    "notices": 0,
+    "emptyLines": 1
+  },
+  "apps/desktop/src/features/session/components/AgentTree/WorkflowRunAsk.tsx": {
+    "notices": 0,
+    "emptyLines": 1
+  },
+  "apps/desktop/src/features/session/components/ContextDrawer/DecisionsSection.tsx": {
+    "notices": 0,
+    "emptyLines": 1
+  },
+  "apps/desktop/src/features/session/components/SessionKickoff/IssueBriefProposal/BriefVerbatim.tsx": {
+    "notices": 0,
+    "emptyLines": 1
+  },
+  "apps/desktop/src/features/session/components/SessionKickoff/TaskStart.tsx": {
+    "notices": 0,
+    "emptyLines": 1
+  },
+  "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/MountProjectList.tsx": {
+    "notices": 0,
+    "emptyLines": 1
+  },
+  "apps/desktop/src/features/settings/components/GuideStudio/parts/GuideRail.tsx": {
+    "notices": 0,
+    "emptyLines": 1
+  },
+  "apps/desktop/src/features/storage/components/StoragePage/BulkRemoveBar.tsx": {
+    "notices": 0,
+    "emptyLines": 1
+  },
+  "apps/desktop/src/shared/components/RoutingPicker/NoConnectedProviders.tsx": {
+    "notices": 0,
+    "emptyLines": 1
+  },
+  "packages/ui/src/components/StatCard.tsx": {
+    "notices": 1,
+    "emptyLines": 0
+  }
+}
