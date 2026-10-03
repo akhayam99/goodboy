@@ -6,7 +6,7 @@ import {
   SLOT_LABELS,
   type SlotKey,
 } from '@goodboy/core';
-import type { ContextSlot, TurnEvent } from '@goodboy/types';
+import type { ContextSlot, SessionContextItem, TurnEvent } from '@goodboy/types';
 import { contextWindowFor } from '../../../features/session/contextWindowFor';
 import { estimateTokens } from '../../../shared/utils/estimate-tokens';
 
@@ -18,6 +18,7 @@ const CONTEXT_MARKER_HINT =
 export const buildContextPreamble = (
   sharedSlots: ReadonlyArray<ContextSlot>,
   slotFilter?: ReadonlyArray<SlotKey>,
+  contextItems: ReadonlyArray<SessionContextItem> = [],
 ): string => {
   const parts: string[] = [];
   const enabledSlots = sharedSlots.filter((slot) => slot.enabled !== false);
@@ -58,6 +59,14 @@ export const buildContextPreamble = (
   }
   if (rendered.length > 0) {
     parts.push('## shared context (already loaded by orchestrator, do not re-derive)\n' + rendered);
+  }
+  if (contextItems.length > 0) {
+    parts.push(
+      [
+        '## notes for your role',
+        ...contextItems.map((item) => `- ${item.title}: ${item.text}`),
+      ].join('\n'),
+    );
   }
   parts.push(CONTEXT_MARKER_HINT);
   return parts.join('\n\n');

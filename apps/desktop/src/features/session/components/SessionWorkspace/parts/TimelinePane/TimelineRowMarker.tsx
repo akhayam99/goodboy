@@ -1,4 +1,4 @@
-import { GitBranch, MessageSquareCheck } from 'lucide-react';
+import { BookOpen, GitBranch, MessageSquareCheck } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { WORK_NODE_GLYPH_SIZE, WorkNode, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
@@ -120,6 +120,9 @@ export const TimelineRowMarker = ({ item, progress = null }: Props) => {
   if (entry.kind === 'event') {
     const eventGlyph = sessionEventGlyph({ kind: entry.event.kind });
     return conceptNode({ ...eventGlyph, isEmphasized: false });
+  }
+  if (entry.kind === 'learning') {
+    return conceptNode({ icon: BookOpen, tone: 'neutral', label: 'Learned', isEmphasized: false });
   }
   if (entry.kind === 'plan') {
     return conceptNode({

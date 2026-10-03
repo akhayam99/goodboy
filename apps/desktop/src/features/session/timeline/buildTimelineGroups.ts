@@ -5,6 +5,7 @@ import type {
   PlanWithCount,
   ReportArtifact,
   SessionArtifact,
+  SessionContextItem,
   SessionEvent,
   SessionExternalTask,
   SessionId,
@@ -113,6 +114,13 @@ export type TimelineEventEntry = {
   readonly projectRun?: TimelineProjectRun;
 };
 
+export type TimelineLearningEntry = {
+  readonly kind: 'learning';
+  readonly id: string;
+  readonly at: string;
+  readonly item: SessionContextItem;
+};
+
 type TimelineAnswerEntry = {
   readonly kind: 'answer';
   readonly id: string;
@@ -153,6 +161,7 @@ export type TimelineTopLevelEntry =
   | TimelineIssueEntry
   | TimelineBranchEntry
   | TimelineEventEntry
+  | TimelineLearningEntry
   | TimelineRunEntry
   | TimelineQuestionEntry;
 
@@ -175,6 +184,7 @@ type Params = {
   readonly questions: ReadonlyArray<OpenQuestion>;
   readonly worktrees: ReadonlyArray<SessionWorktree>;
   readonly events: ReadonlyArray<SessionEvent>;
+  readonly learnings?: ReadonlyArray<SessionContextItem>;
   readonly agentKindOverride: Readonly<Record<string, AgentKind>>;
 };
 
@@ -258,6 +268,8 @@ const compareNewestFirst = (first: SortableEntry, second: SortableEntry): number
   return second.ordinal - first.ordinal || first.id.localeCompare(second.id);
 };
 
+const NO_LEARNINGS: ReadonlyArray<SessionContextItem> = [];
+
 export const buildTimelineGroups = ({
   sessionId,
   agents,
@@ -268,6 +280,7 @@ export const buildTimelineGroups = ({
   questions,
   worktrees,
   events,
+  learnings = NO_LEARNINGS,
   agentKindOverride,
 }: Params): TimelineModel => {
   const readableArtifacts: ReadonlyArray<ReportArtifact | WireframeArtifact> = artifacts.flatMap(
@@ -585,6 +598,10 @@ export const buildTimelineGroups = ({
     ];
   });
 
+  const learningEntries: ReadonlyArray<TimelineLearningEntry> = learnings
+    .filter((item) => item.kind === 'learning' && item.status === 'active')
+    .map((item) => ({ kind: 'learning', id: `learning:${item.id}`, at: item.createdAt, item }));
+
   const entries = [
     ...runEntries,
     ...standaloneAgents,
@@ -594,6 +611,7 @@ export const buildTimelineGroups = ({
     ...visibleIssues,
     ...branches,
     ...eventEntries,
+    ...learningEntries,
   ].sort((first, second) =>
     compareNewestFirst(
       { at: first.at, ordinal: first.kind === 'agent' ? first.ordinal : 0, id: first.id },

@@ -3,7 +3,7 @@ import type { ExploreEntry } from '../../../features/explore/explore';
 
 export type ArtifactDrawerTab = 'details' | 'chat';
 
-export type ContextDrawerTab = 'goal' | 'decisions' | 'summary';
+export type ContextDrawerTab = 'goal' | 'decisions' | 'summary' | 'learned';
 
 export type ContextDrawerView = 'current' | 'versions';
 

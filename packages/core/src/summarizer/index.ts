@@ -33,3 +33,12 @@ export {
   previewStepOutputSummary,
   summarizeStepOutput,
 } from './step-output';
+export {
+  LearningExtractor,
+  LearningExtractorError,
+  parseLearningCandidates,
+  type LearningCandidate,
+  type LearningExtractionInput,
+  type LearningExtractionResult,
+  type LearningExtractorDeps,
+} from './learning-extractor';

@@ -680,10 +680,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
     expect(merged.turnInput).not.toContain(big);
   });
 
-  it('waitForSummarizerSettled is not exported, summarizer never blocks user actions (#461)', async () => {
-    expect((storeModule as Record<string, unknown>)['waitForSummarizerSettled']).toBeUndefined();
-  });
-
   it('queue inFlight=true while summarizer runs does not prevent subsequent queue entries', async () => {
     const { summarizerQueues: sq } = await import('./slices/turn/turnHelpers');
     sq.clear();

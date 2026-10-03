@@ -21,6 +21,7 @@ import {
 } from '../../../features/artifacts/turnArtifactOutcome';
 import { NOT_BLOCKED } from './notBlocked';
 import type { TurnContext } from './turnContext';
+import { enqueueLearnings } from './learningQueue';
 
 type Params = Readonly<{
   set: SetFn;
@@ -93,6 +94,22 @@ export const settleTurn = async ({ set, get, ctx }: Params) => {
       turnInput: resolvedPrompt,
       turnOutput: assistantText,
       workingDir,
+    });
+    enqueueLearnings({
+      set,
+      get,
+      sessionId,
+      agentId: activeAgentId,
+      entry: {
+        role: ctx.turnRole,
+        turnOrdinal: (get().transcripts[activeAgentId] ?? []).filter(
+          (event) => event.kind === 'user_text',
+        ).length,
+        topics: ctx.explainMoreTopics,
+        turnInput: ctx.input.content,
+        turnOutput: assistantText,
+        workingDir,
+      },
     });
     const captured = await captureArtifactsFromTurn({
       set,

@@ -107,6 +107,8 @@ import { createBugReportDraftSlice } from './slices/bugReportDraft';
 import { createSessionDraftSlice } from './slices/sessionDraft';
 import { createContextDrawerSlice } from './slices/contextDrawer';
 import { initialContextDrawerState } from './slices/contextDrawer/state';
+import { createContextItemsSlice } from './slices/contextItems';
+import { initialContextItemsState } from './slices/contextItems/state';
 import { createDecisionsSlice } from './slices/decisions';
 import { initialDecisionsState } from './slices/decisions/state';
 import { initialSessionDraftState } from './slices/sessionDraft/state';
@@ -206,6 +208,7 @@ export type AppStore = AppState &
   ReturnType<typeof createBugReportDraftSlice> &
   ReturnType<typeof createSessionDraftSlice> &
   ReturnType<typeof createContextDrawerSlice> &
+  ReturnType<typeof createContextItemsSlice> &
   ReturnType<typeof createDecisionsSlice> &
   ReturnType<typeof createDrawerSlice> &
   ReturnType<typeof createNavigationSlice> &
@@ -266,6 +269,7 @@ export const initialState: AppState = {
   ...initialBugReportDraftState,
   ...initialSessionDraftState,
   ...initialContextDrawerState,
+  ...initialContextItemsState,
   ...initialDecisionsState,
   ...initialDrawerState,
   ...initialNavigationState,
@@ -418,6 +422,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createBugReportDraftSlice({ set, get }),
   ...createSessionDraftSlice({ set, get }),
   ...createContextDrawerSlice({ set, get }),
+  ...createContextItemsSlice({ set, get }),
   ...createDecisionsSlice({ set, get }),
   ...createDrawerSlice({ set, get }),
   ...createNavigationSlice({ set, get }),

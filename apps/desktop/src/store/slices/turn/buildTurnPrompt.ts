@@ -13,10 +13,10 @@ import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAv
 import { runProviderPool } from '../../../features/workflows/runProviderPool';
 import { verbosityDirective } from '../../../features/settings/verbosity';
 import { KIND_TO_ROLE } from '../../../features/session/agent-kind';
-import { slotsForKind } from '../../../features/providers/slot-routing';
 import { estimateTokens } from '../../../shared/utils/estimate-tokens';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from './preamble';
 import { buildGoalAttachmentsBlock } from './turnHelpers';
+import { resolveTurnAudience } from './turnAudience';
 import { clusterBoundaryMarker, composeClusterBoundary } from '../workflows/clusterImplementation';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { fanOutChildKind } from '../agents/fanOutChildKind';
@@ -81,11 +81,17 @@ export const buildTurnPrompt = async ({ get, ctx }: Params) => {
   const agentRowEarly =
     (get().sessionPhaseRuns[sessionId] ?? []).find((s) => s.id === activeAgentId) ?? null;
   const earlyAgentKind = turnAgentKind;
-  const slotFilter = slotsForKind(earlyAgentKind);
-  const contextPreamble = buildContextPreamble(sharedSlots, slotFilter);
+  const turnRole = phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind];
+  const audience = await resolveTurnAudience({
+    sessionId,
+    role: turnRole,
+    kind: earlyAgentKind,
+    settings: get().settings,
+  });
+  const contextPreamble = buildContextPreamble(sharedSlots, audience.slots, audience.items);
 
   const childRoutingBlock = composeChildRoutingPrompt({
-    role: phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind],
+    role: turnRole,
     hidden: selectHiddenModels({ state: get() }),
     availability: workflowAvailabilitySnapshot({
       providers: get().providers,
@@ -180,6 +186,7 @@ export const buildTurnPrompt = async ({ get, ctx }: Params) => {
     effectiveRules,
     agentRowEarly,
     earlyAgentKind,
+    turnRole,
     childRoutingBlock,
     clusterBoundary,
     goalAttachments,

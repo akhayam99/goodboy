@@ -24,6 +24,7 @@ import type {
   TimelineBranchEntry,
   TimelineEventEntry,
   TimelineIssueEntry,
+  TimelineLearningEntry,
   TimelinePlanEntry,
   TimelineQuestionEntry,
   TimelineResolveBatchEntry,
@@ -68,6 +69,7 @@ export type TimelineStreamEntry =
   | TimelineIssueEntry
   | TimelineBranchEntry
   | TimelineEventEntry
+  | TimelineLearningEntry
   | TimelineQuestionEntry
   | TimelineResolveBatchEntry
   | TimelineSubagentGroupEntry;
