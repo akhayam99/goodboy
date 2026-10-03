@@ -3,12 +3,12 @@ import { FolderPlus, Plus, Search, Unplug } from 'lucide-react';
 import {
   Button,
   Checkbox,
-  EmptyState,
   Eyebrow,
   IconButton,
   InlineConfirm,
   ScrollFade,
   Tooltip,
+  FilledEmptyState,
 } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
@@ -129,12 +129,10 @@ export const WorkspaceLauncher = () => {
           <ul className="flex flex-col gap-0.5">
             {filtered.length === 0 ? (
               <li>
-                <EmptyState
+                <FilledEmptyState
                   icon={CONCEPT_ICONS.workspace}
                   tone={CONCEPT_TONE.workspace}
                   title="No workspaces found"
-                  size="inline"
-                  className="px-3 py-8"
                 />
               </li>
             ) : (

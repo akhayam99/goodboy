@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import {
   Button,
   Chip,
-  EmptyState,
   formatTokens,
   formatUsd,
   formatUsdPrecise,
@@ -13,6 +12,7 @@ import {
   Tooltip,
   cn,
   type SegmentedTabOption,
+  FilledEmptyState,
 } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { ArrowUpRight } from 'lucide-react';
@@ -78,12 +78,11 @@ export const TurnsTable = ({
   return (
     <StudioWidget label="turns" action={action}>
       {sorted.length === 0 ? (
-        <EmptyState
+        <FilledEmptyState
           icon={CONCEPT_ICONS.budget}
           tone={CONCEPT_TONE.budget}
           title="No recorded turns yet"
-          size="inline"
-          className="justify-center py-4"
+          className="justify-center"
         />
       ) : (
         <div className="flex max-w-full flex-col gap-1">

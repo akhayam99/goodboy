@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
 import {
   Button,
-  EmptyState,
   ScrollFade,
   SectionHeader,
   SelectableRow,
   Skeleton,
+  FilledEmptyState,
 } from '@goodboy/ui';
 import { GitPullRequest, Search } from 'lucide-react';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -84,7 +84,7 @@ export const PrInbox = ({ groups, focusedPrId, onSelect, loading, error, onRefre
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex min-h-0 flex-1 items-center justify-center px-3">
-          <EmptyState
+          <FilledEmptyState
             icon={CONCEPT_ICONS.bitbucket}
             tone={CONCEPT_TONE.bitbucket}
             title={!hasQuery ? 'Inbox clear' : 'No matching pull requests'}
@@ -93,7 +93,6 @@ export const PrInbox = ({ groups, focusedPrId, onSelect, loading, error, onRefre
                 ? 'No pull requests on this repository yet.'
                 : 'Try a different search term.'
             }
-            size="inline"
             action={
               <Button variant="ghost" size="sm" onClick={hasQuery ? () => setQuery('') : onRefresh}>
                 {hasQuery ? 'Clear search' : 'Refresh'}

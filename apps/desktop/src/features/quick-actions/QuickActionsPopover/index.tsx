@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { EmptyState, ScrollFade, useEscapeLayer } from '@goodboy/ui';
+import { ScrollFade, useEscapeLayer, FilledEmptyState } from '@goodboy/ui';
 import { AgentKindChip } from '../../../shared/components/AgentKindChip';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import type { QuickActionItem } from '../types';
@@ -49,12 +49,10 @@ export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: P
   return (
     <div className="absolute bottom-full left-0 right-0 z-popover mb-1 overflow-hidden rounded-md border border-border bg-floating shadow-lg">
       {items.length === 0 ? (
-        <EmptyState
+        <FilledEmptyState
           icon={CONCEPT_ICONS.search}
           tone={CONCEPT_TONE.search}
           title={emptyHint}
-          size="inline"
-          className="px-3 py-2"
         />
       ) : (
         <ScrollFade className="max-h-48" viewportClassName="py-1">

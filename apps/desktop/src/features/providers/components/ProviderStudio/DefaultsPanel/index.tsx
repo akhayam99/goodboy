@@ -11,12 +11,12 @@ import {
 import {
   Band,
   BandStack,
-  EmptyState,
   Eyebrow,
   FieldRow,
   InlineConfirm,
   OverflowMenu,
   PaneShell,
+  FilledEmptyState,
 } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import { ROLE_LABEL } from '../../../../session/agent-kind';
@@ -192,11 +192,10 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
           help="If a provider is not connected or out of quota, Auto moves to the next one."
         >
           {connectedProviderIds.length === 0 ? (
-            <EmptyState
+            <FilledEmptyState
               icon={CONCEPT_ICONS.providers}
               tone={CONCEPT_TONE.providers}
               title="No providers connected"
-              size="inline"
             />
           ) : (
             <FallbackOrder

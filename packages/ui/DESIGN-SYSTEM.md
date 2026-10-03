@@ -1171,7 +1171,10 @@ example run and no grid of tiles.
 Inline empty states belong to a lens or a compact collection surface. A filled,
 borderless inline empty state belongs to a surface's own body and uses
 `FilledEmptyState`, which owns its inset and fill. Do not hand-roll either
-shape with `EmptyState size="inline"`.
+shape with `EmptyState size="inline"`: a caller passes only layout
+(`justify-center`, `basis-full`), never its own padding or fill, and
+`inline-empty-states-use-the-wrappers.test.ts` fails on any `size="inline"`
+under `apps/desktop/src`.
 
 **Inline beats the centred hero** because the pane already has a title and a
 rhythm. A hero repeats the title in bigger type. It pretends the lens is a
