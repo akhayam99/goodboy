@@ -622,7 +622,8 @@ and `maybeAutoAdvanceWorkflow`. `bypassGate` never skips it, so the step
 button, a skip, a read-now hint and a retry all stop at the hold.
 **Approve plan** (`approveWorkflowRunPlan`) marks the copy `planApproved`,
 clears the stop and lets the run advance; switching the run to another autonomy
-also drops the hold. A plan step that writes no plan never holds.
+also drops the hold. A plan step that writes no plan never holds. While it holds, the run's status reads
+**Plan ready**, not a failure.
 
 ### Pause is one admission check
 
