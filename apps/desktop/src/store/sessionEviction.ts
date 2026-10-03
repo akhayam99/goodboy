@@ -232,6 +232,7 @@ export const NON_SESSION_STATE_KEYS = [
   'stepLibrary',
   'unknownPayloadCounts',
   'detectedEditors',
+  'detectedBrowsers',
   'workspaceOverrides',
   'unreadWorkspaceIds',
   'githubStatus',

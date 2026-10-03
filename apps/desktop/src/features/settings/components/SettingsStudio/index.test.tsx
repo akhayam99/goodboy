@@ -58,6 +58,8 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
     relaunchApp: vi.fn(async () => undefined),
     loadDetectedEditors: vi.fn(async () => undefined),
     detectedEditors: [] as ReadonlyArray<{ binary: string; label: string }>,
+    loadDetectedBrowsers: vi.fn(async () => undefined),
+    detectedBrowsers: [] as ReadonlyArray<{ id: string; label: string }>,
     workspaceIntegrations: {},
     integrationCredentials: [],
     integrationCredentialUsage: {},
@@ -246,7 +248,7 @@ describe('SettingsStudio', () => {
       within(items).getByRole('button', { name: 'General' }).getAttribute('aria-current'),
     ).toBe('true');
     expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
-    expect(screen.getByText('Default editor')).toBeDefined();
+    expect(screen.getByText('Open with')).toBeDefined();
   });
 
   it('lists only App and Providers without a workspace, and lands providers on an account', () => {
