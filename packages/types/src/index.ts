@@ -289,6 +289,7 @@ export type {
   ResolveCommitStyle,
   AfterMergeRule,
   ResolvedSettings,
+  RoleModelChoice,
   RoleModelFallback,
   RoleModelPreference,
   RoleModelPreferences,
@@ -298,7 +299,12 @@ export type {
   TaskModelPreferences,
   VerbosityLevel,
 } from './settings';
-export { AFTER_MERGE_RULES, REPLY_VOICES, RESOLVE_COMMIT_STYLES } from './settings';
+export {
+  AFTER_MERGE_RULES,
+  REPLY_VOICES,
+  RESOLVE_COMMIT_STYLES,
+  ROLE_MODEL_SET_MAX,
+} from './settings';
 export type { ProviderPolicy, ProviderPolicyEntry, ProviderPolicyState } from './provider-policy';
 export { PROVIDER_POLICY_STATES, parseProviderPolicy } from './provider-policy';
 export type {

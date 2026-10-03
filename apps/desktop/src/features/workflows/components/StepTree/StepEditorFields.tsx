@@ -19,6 +19,7 @@ type Props = {
   readonly recommendedModel: string;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly isRoutingOverridden: boolean;
+  readonly roleSetLine?: string | null;
   readonly disabled: boolean;
   readonly polish: StepPolish | null;
   readonly onName: (name: string) => void;
@@ -42,6 +43,7 @@ export const StepEditorFields = ({
   recommendedModel,
   connectedProviders,
   isRoutingOverridden,
+  roleSetLine = null,
   disabled,
   polish,
   onName,
@@ -145,6 +147,11 @@ export const StepEditorFields = ({
             </button>
           ) : null}
         </div>
+        {roleSetLine !== null && !isRoutingOverridden ? (
+          <p className="px-2.5 text-secondary text-muted-foreground">
+            {`Follows the role: ${roleSetLine}`}
+          </p>
+        ) : null}
         <RoutingPicker
           presentation="inline"
           ariaLabel={routingLabel}

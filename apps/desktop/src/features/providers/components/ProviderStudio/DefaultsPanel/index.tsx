@@ -24,7 +24,7 @@ import { ROLE_LABEL } from '../../../../session/agent-kind';
 import { useAppStore } from '../../../../../store';
 import { useChatDefaultModel } from '../../../../../shared/hooks/useChatDefaultModel';
 import { ChatModelRow } from './ChatModelRow';
-import { RoleModelRow } from './RoleModelRow';
+import { RoleRow } from './RoleRow';
 import { TaskModelRow } from './TaskModelRow';
 import { ProvidersInOrder } from './ProvidersInOrder';
 import { useDefaultsPersistence } from './useDefaultsPersistence';
@@ -171,6 +171,9 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
 
       <section aria-label="Agents" className="flex flex-col gap-2">
         <Eyebrow label="Agents" />
+        <p className="text-secondary text-muted-foreground">
+          What Auto picks for each role, and why. Open a role to see how it works.
+        </p>
         <BandStack>
           {DEFAULT_GROUPS.agents.map((group) => (
             <div key={group.id} role="group" aria-label={group.label}>
@@ -179,13 +182,14 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
                 groupMeta={pluralize(group.members.length, 'role')}
               >
                 {group.members.map((role) => (
-                  <RoleModelRow
+                  <RoleRow
                     key={role}
                     role={role}
                     label={ROLE_LABEL[role]}
                     help={ROLE_REGISTRY[role].summary}
                     preference={overrides.roleModels?.[role] ?? null}
                     autoContext={autoContext}
+                    isParallelOn={overrides.parallelAgents === true}
                     connectedProviderIds={connectedProviderIds}
                     disabled={busy}
                     onChange={(preference) => persistRoleModel({ role, preference })}

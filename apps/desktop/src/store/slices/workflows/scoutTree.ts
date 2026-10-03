@@ -7,7 +7,14 @@ import type {
   SessionId,
   WorkflowRoutingProposal,
 } from '@goodboy/types';
-import { extractFanOut, fanOutCapabilityForRole, type ExtractedFanOutArea } from '@goodboy/core';
+import {
+  FAN_OUT_MAX_CHILDREN,
+  SCOUT_DEPTH_CAP,
+  extractFanOut,
+  fanOutCapabilityForRole,
+  fanOutDepthCapForRole,
+  type ExtractedFanOutArea,
+} from '@goodboy/core';
 import {
   invokeAgentInsertBatch,
   invokeAgentList,
@@ -31,10 +38,6 @@ import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch'
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
 import type { GetFn, SetFn } from './types';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
-
-export const SCOUT_DEPTH_CAP = 2;
-const FAN_OUT_DEPTH_CAP = 1;
-export const FAN_OUT_MAX_CHILDREN = 4;
 
 const synthesisStarted = new Set<string>();
 
@@ -70,13 +73,6 @@ const agentKindOf = ({ agent, agentKindOverride }: AgentKindLookupParams): Agent
   classifyAgent({ agent, override: agentKindOverride[agent.id] ?? null });
 
 const agentRoleOf = (params: AgentKindLookupParams): AgentRole => KIND_TO_ROLE[agentKindOf(params)];
-
-const depthCapForRole = (role: AgentRole): number => {
-  if (role === 'scout') {
-    return SCOUT_DEPTH_CAP;
-  }
-  return FAN_OUT_DEPTH_CAP;
-};
 
 const fanOutEnabled = (get: GetFn, sessionId: SessionId): boolean => {
   return selectResolvedSettings({ state: get(), sessionId })?.parallelAgents === true;
@@ -610,7 +606,7 @@ export const advanceScoutTree = (set: SetFn, get: GetFn) => {
       assistantText,
       emittingProvider: agentEmittingProvider({ state: get(), sessionId, agentId }),
     });
-    const roleDepthCap = depthCapForRole(role);
+    const roleDepthCap = fanOutDepthCapForRole(role);
     if (
       split != null &&
       split.length >= 2 &&

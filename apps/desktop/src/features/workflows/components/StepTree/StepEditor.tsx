@@ -21,6 +21,7 @@ type Props = {
   readonly recommendedModel: string;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly isRoutingOverridden: boolean;
+  readonly roleSetLine?: string | null;
   readonly disabled: boolean;
   readonly polish?: StepPolish;
   readonly isSavingAsStep?: boolean;
@@ -51,6 +52,7 @@ export const StepEditor = ({
   recommendedModel,
   connectedProviders,
   isRoutingOverridden,
+  roleSetLine = null,
   disabled,
   polish,
   isSavingAsStep = false,
@@ -90,6 +92,7 @@ export const StepEditor = ({
         recommendedModel={recommendedModel}
         connectedProviders={connectedProviders}
         isRoutingOverridden={isRoutingOverridden}
+        roleSetLine={roleSetLine}
         disabled={disabled}
         polish={polish ?? null}
         onName={onName}

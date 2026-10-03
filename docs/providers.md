@@ -160,11 +160,22 @@ uses when you leave a model on **Auto**. It is one page in three parts.
 - **Background tasks**: one row per side job, grouped as Writing for you, Running
   workflows, and Git
 
-Each row says what the role or job does and ends in a model picker. A row you have not
+Each task row says what the job does and ends in a model picker. A row you have not
 pinned reads **Auto**. Open the picker to see what Auto picks right now. Pick a model to
 pin it: the picker then shows that model and an **x** that goes back to Auto. The page
 header counts the pinned rows. **Reset all to Auto**, in the menu at the top right,
 clears them after a confirm.
+
+Each role row (`DefaultsPanel/RoleRow`) is a `Collapsible`. Closed, it shows what Auto
+picks, or the first model of its set and how many follow (`Opus 5.5 +2`). Open, it shows
+**How Scout runs**, read only, built from the engine and never from copy: the role's
+`explain` entry in `ROLE_REGISTRY`, the pick from `resolveRoleRouting`, and the split
+limits from `roleSplitLimits` (`FAN_OUT_MAX_CHILDREN`, `SCOUT_DEPTH_CAP`,
+`FAN_OUT_DEPTH_CAP` in `@goodboy/core`, the same constants `scoutTree` enforces). When
+Parallel agents is off for the workspace, the split line says the role runs as one
+agent. Below it, **Models for planning** is the role's set: up to three models added
+with the same picker, removed with their **x** or Backspace, moved with Alt and an
+arrow.
 
 - **Auto** picks the same way for roles and tasks: the model chosen for that job on
   the default provider, then the next model in that list when your CLI is too old
@@ -176,9 +187,16 @@ clears them after a confirm.
   writing jobs on Haiku 4.5, and plan drafting, Generalist, Report and the other
   roles on the newest Sonnet at Medium (Sonnet 5.5 today, Sonnet 5 on a Claude CLI
   older than 2.1.284)
-- **If unavailable**: a pinned row has this line at the bottom of its picker. It is
-  the second choice Goodboy uses when the pinned model cannot run. **Auto** lets the
-  ladder above choose
+- **Role model set**: a role with a set runs on one of its models. With no step size
+  (or a large step) it takes the first model that can run; a medium step takes the
+  first one at mid cost or cheaper, a small step the first cheap one, and when none
+  fits, the cheapest. A provider that is Off or not connected is skipped, and so is a
+  model that left the catalog. A role without a set runs on Auto, exactly as before
+- **Workflow steps** follow their role's set unless the step pins a model. The step
+  editor says so (`Follows the role: Planning models · Opus 5.5`). The orchestrator's
+  prompt lists each role's set, and a pick outside the set falls back to the set by
+  the difficulty the orchestrator named (light, standard, heavy as small, medium,
+  large)
 
 ## Models in the picker
 
@@ -708,22 +726,25 @@ When a provider ships or retires a model, update these together:
 - **Agent roles** are the union `AgentRole` in `@goodboy/types`. They are saved in
   `workspaces.role_models` and read through `resolveRoleRouting`, which takes an
   optional `auto` context (default provider, fallback order, connected providers,
-  CLI versions). Without one it answers for Claude. A pin on a provider the context
-  says is not connected moves to its fallback, then to Auto, and the result carries
-  `pinnedUnavailable` so the UI can say so
-- Role checks are forgiving. If an override names an unknown provider or an
-  unregistered model, the whole override goes back to the built-in default
+  CLI versions) and an optional step `size`. Without a context it answers for Claude.
+  The saved shape is `{ providerId, model, effort, models }`: `models` is the ordered
+  set and the first entry is mirrored in the old fields, so an older reader still sees
+  a pin. An older row `{ providerId, model, effort, fallback }` reads as a set of two
+  (`roleModelChoices`). No migration. When the first model of the set cannot run here,
+  the result carries `pinnedUnavailable` so the UI can say so
+- Role checks are forgiving. A set entry that names an unknown provider or an
+  unregistered model is skipped; when no entry is left, the role goes back to the
+  built-in default
 - If an effort is not on the ladder, it becomes the role's default effort when that
   one is on the ladder. Otherwise it becomes the top of the ladder
-- **Fallback** set to **Automatic** means the key is missing from the saved
-  preference. It is never a special string, because `auto` is a real Cursor model id
-- After a failure Goodboy recognizes, the first retry uses the fallback you set. The
-  second retry uses the `planTurnFallback` heuristic as a safety net. `MAX_ATTEMPTS`
-  stays 2, and the way failures are recognized does not change
-- The fallback uses the role's effort and gets checked on its own. Goodboy skips it
-  and uses the heuristic if it names an unknown provider or model, a disconnected
-  provider, or the same pair that failed on this turn. There is one fallback entry,
-  then the heuristic
+- After a failure Goodboy recognizes, the first retry uses the next model of the
+  role's set after the one that failed (`nextRoleModelChoice`). The second retry uses
+  the `planTurnFallback` heuristic as a safety net. `MAX_ATTEMPTS` stays 2, and the
+  way failures are recognized does not change
+- A set model uses its own effort when it has one, else the role's saved effort, and
+  gets checked on its own. Goodboy skips it and uses the heuristic if it names an
+  unknown provider or model, a disconnected provider, or the same pair that failed on
+  this turn
 
 ### Usage limits
 

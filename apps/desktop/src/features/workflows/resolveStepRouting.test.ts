@@ -242,4 +242,54 @@ describe('resolveStepRouting', () => {
     expect(plain.effort).toBe('high');
     expect(preferred.effort).toBe('medium');
   });
+
+  it('runs a planner step on its role set, by the size of the step', () => {
+    const roleModels = {
+      planner: {
+        providerId: 'anthropic',
+        model: 'claude-opus-5-5',
+        effort: 'high',
+        models: [
+          { providerId: 'anthropic', model: 'claude-opus-5-5' },
+          { providerId: 'anthropic', model: 'claude-haiku-4-5' },
+        ],
+      },
+    } as const;
+    const large = resolveStepRouting({
+      step: step({ role: 'planner', size: 'large' }),
+      kind: 'planner',
+      roleModels,
+    });
+    const small = resolveStepRouting({
+      step: step({ role: 'planner', size: 'small' }),
+      kind: 'planner',
+      roleModels,
+    });
+
+    expect(large.model).toBe('opus-5.5');
+    expect(small.model).toBe('haiku-4.5');
+  });
+
+  it('leaves a role without a set on Auto, whatever the step size', () => {
+    const roleModels = {
+      planner: {
+        providerId: 'anthropic',
+        model: 'claude-opus-5-5',
+        effort: 'high',
+        models: [{ providerId: 'anthropic', model: 'claude-haiku-4-5' }],
+      },
+    } as const;
+    const withoutSet = resolveStepRouting({
+      step: step({ role: 'implementer', size: 'small' }),
+      kind: 'implementer',
+      roleModels,
+    });
+    const auto = resolveStepRouting({
+      step: step({ role: 'implementer', size: 'small' }),
+      kind: 'implementer',
+      roleModels: null,
+    });
+
+    expect(withoutSet).toEqual(auto);
+  });
 });

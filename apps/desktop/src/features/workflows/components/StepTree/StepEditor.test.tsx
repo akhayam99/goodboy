@@ -28,6 +28,8 @@ const STEP: StepDraft = {
 type EditorParams = {
   readonly ordinal: number;
   readonly stepCount: number;
+  readonly roleSetLine?: string | null;
+  readonly isRoutingOverridden?: boolean;
   readonly onMoveUp?: () => void;
   readonly onMoveDown?: () => void;
 };
@@ -35,6 +37,8 @@ type EditorParams = {
 const renderEditor = ({
   ordinal,
   stepCount,
+  roleSetLine = null,
+  isRoutingOverridden = false,
   onMoveUp = vi.fn(),
   onMoveDown = vi.fn(),
 }: EditorParams) =>
@@ -47,7 +51,8 @@ const renderEditor = ({
       recommendedProvider="anthropic"
       recommendedModel="opus"
       connectedProviders={['anthropic']}
-      isRoutingOverridden={false}
+      isRoutingOverridden={isRoutingOverridden}
+      roleSetLine={roleSetLine}
       disabled={false}
       onName={vi.fn()}
       onRole={vi.fn()}
@@ -103,5 +108,24 @@ describe('StepEditor move buttons', () => {
 
     expect(isDisabled({ name: 'Move step up' })).toBe(true);
     expect(isDisabled({ name: 'Move step down' })).toBe(true);
+  });
+});
+
+describe('StepEditor role set line', () => {
+  it('says the step follows its role set until a model is pinned', () => {
+    renderEditor({ ordinal: 1, stepCount: 1, roleSetLine: 'Planning models · Opus 5.5' });
+
+    expect(screen.getByText('Follows the role: Planning models · Opus 5.5').tagName).toBe('P');
+  });
+
+  it('drops the line once the step pins its own model', () => {
+    renderEditor({
+      ordinal: 1,
+      stepCount: 1,
+      roleSetLine: 'Planning models · Opus 5.5',
+      isRoutingOverridden: true,
+    });
+
+    expect(screen.queryByText(/Follows the role/)).toBeNull();
   });
 });

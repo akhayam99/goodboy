@@ -1,7 +1,7 @@
 import {
   fallbackWantsThinker,
+  nextRoleModelChoice,
   planTurnFallback,
-  resolveRoleRouting,
   resolveStoredModelSelection,
 } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
@@ -110,10 +110,11 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce, r
     }));
   }
   const fallbackRole = phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind];
-  const preferredFallback = resolveRoleRouting({
+  const preferredFallback = nextRoleModelChoice({
     role: fallbackRole,
     prefs: selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null,
-  }).fallback;
+    failed: { provider, model: spawnModel },
+  });
   const fallbackPlan = cancelledBeforeFailure
     ? null
     : planTurnFallback({
