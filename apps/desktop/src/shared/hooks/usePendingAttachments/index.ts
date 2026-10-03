@@ -5,22 +5,25 @@ import {
   type ChangeEvent as ReactChangeEvent,
   type ClipboardEvent as ReactClipboardEvent,
 } from 'react';
-import { isAllowedAttachment, resolveAttachmentMime } from '../../../attachment-kinds';
-import type { ShowToast } from '../../../../../shared/components/Toast';
-import { useFileDropTarget } from '../../../../../shared/hooks/useFileDropTarget';
-import { readDroppedAttachment } from '../../../../../shared/lib/readDroppedAttachment';
+import {
+  isAllowedAttachment,
+  resolveAttachmentMime,
+} from '../../../features/chat/attachment-kinds';
+import type { ShowToast } from '../../components/Toast';
+import { useFileDropTarget } from '../useFileDropTarget';
+import { readDroppedAttachment } from '../../lib/readDroppedAttachment';
 import {
   ATTACHMENT_LIMIT,
   MAX_ATTACHMENT_BYTES,
+  base64ToBlob,
   extFromMime,
-  readFileAsDataUrl,
   type PendingAttachment,
-} from '../../../../attachments/pendingAttachment';
+} from '../../../features/attachments/pendingAttachment';
 
-type PersistArgs = {
+export type PersistArgs = {
   readonly id: string;
   readonly fileName: string;
-  readonly dataUrl: string;
+  readonly blob: Blob;
 };
 
 export type AttachmentDropNotices = Readonly<{
@@ -40,11 +43,22 @@ type DroppedPaths = {
   readonly paths: ReadonlyArray<string>;
 };
 
+type NameParams = {
+  readonly fileName: string;
+};
+
 const COMPOSER_DROP_NOTICES: AttachmentDropNotices = {
   ambiguous: 'Drop the file on a message box to attach it.',
   disabled: 'Connect the provider before attaching files.',
   unavailable: 'File drop is unavailable. Use Attach files instead.',
 };
+
+const MAX_ATTACHMENT_MB = MAX_ATTACHMENT_BYTES / (1024 * 1024);
+
+const ATTACHMENT_LIMIT_NOTICE = `Up to ${ATTACHMENT_LIMIT} files per message.`;
+
+const tooLargeNotice = ({ fileName }: NameParams): string =>
+  `${fileName} is over ${MAX_ATTACHMENT_MB} MB.`;
 
 const droppedFileName = ({ path }: { readonly path: string }): string =>
   path.split('/').pop() ?? path;
@@ -69,6 +83,25 @@ export const usePendingAttachments = ({
     [persistToDisk],
   );
 
+  const admit = useCallback(
+    (accepted: ReadonlyArray<PendingAttachment>) => {
+      if (accepted.length === 0) {
+        return;
+      }
+      setAttachments((previous) => {
+        const room = ATTACHMENT_LIMIT - previous.length;
+        if (accepted.length > room) {
+          showToast({ kind: 'warning', message: ATTACHMENT_LIMIT_NOTICE });
+        }
+        if (room <= 0) {
+          return previous;
+        }
+        return [...previous, ...accepted.slice(0, room)];
+      });
+    },
+    [showToast],
+  );
+
   const addFiles = useCallback(
     async (files: ReadonlyArray<File>) => {
       const allowed = files.filter(isAllowedAttachment);
@@ -79,42 +112,25 @@ export const usePendingAttachments = ({
           message: `Skipped ${skipped} file${skipped === 1 ? '' : 's'} of an unsupported type.`,
         });
       }
-      if (allowed.length === 0) {
-        return;
-      }
       const accepted: PendingAttachment[] = [];
       for (const file of allowed) {
+        const mimeType = resolveAttachmentMime(file);
+        const fileName = file.name || `pasted-file.${extFromMime(mimeType)}`;
         if (file.size > MAX_ATTACHMENT_BYTES) {
-          showToast({ kind: 'warning', message: `${file.name || 'This file'} is over 15MB.` });
+          showToast({ kind: 'warning', message: tooLargeNotice({ fileName }) });
           continue;
         }
         try {
-          const dataUrl = await readFileAsDataUrl(file);
-          const mimeType = resolveAttachmentMime(file);
           const id = crypto.randomUUID();
-          const fileName = file.name || `pasted-file.${extFromMime(mimeType)}`;
-          const relPath = await persist({ id, fileName, dataUrl });
-          accepted.push({ id, fileName, mimeType, dataUrl, relPath });
+          const relPath = await persist({ id, fileName, blob: file });
+          accepted.push({ id, fileName, mimeType, blob: file, relPath });
         } catch {
-          showToast({ kind: 'warning', message: `Couldn't read ${file.name || 'the file'}.` });
+          showToast({ kind: 'warning', message: `Couldn't read ${fileName}.` });
         }
       }
-      if (accepted.length === 0) {
-        return;
-      }
-      setAttachments((prev) => {
-        const room = ATTACHMENT_LIMIT - prev.length;
-        if (room <= 0) {
-          showToast({ kind: 'warning', message: `The limit is ${ATTACHMENT_LIMIT} attachments.` });
-          return prev;
-        }
-        if (accepted.length > room) {
-          showToast({ kind: 'warning', message: `The limit is ${ATTACHMENT_LIMIT} attachments.` });
-        }
-        return [...prev, ...accepted.slice(0, room)];
-      });
+      admit(accepted);
     },
-    [showToast, persist],
+    [showToast, persist, admit],
   );
 
   const removeAttachment = useCallback((id: string) => {
@@ -157,20 +173,14 @@ export const usePendingAttachments = ({
       const name = droppedFileName({ path });
       try {
         const result = await readDroppedAttachment({ absolutePath: path });
+        const blob = base64ToBlob({ dataBase64: result.dataBase64, mimeType: result.mimeType });
+        if (blob.size > MAX_ATTACHMENT_BYTES) {
+          showToast({ kind: 'warning', message: tooLargeNotice({ fileName: result.fileName }) });
+          continue;
+        }
         const id = crypto.randomUUID();
-        const dataUrl = `data:${result.mimeType};base64,${result.dataBase64}`;
-        const relPath = await persist({
-          id,
-          fileName: result.fileName,
-          dataUrl,
-        });
-        dropped.push({
-          id,
-          fileName: result.fileName,
-          mimeType: result.mimeType,
-          dataUrl,
-          relPath,
-        });
+        const relPath = await persist({ id, fileName: result.fileName, blob });
+        dropped.push({ id, fileName: result.fileName, mimeType: result.mimeType, blob, relPath });
       } catch {
         rejected.push(name);
       }
@@ -178,24 +188,11 @@ export const usePendingAttachments = ({
     if (rejected.length > 0) {
       const label =
         rejected.length === 1
-          ? `Couldn't attach ${rejected[0]}. It may be over 15MB.`
+          ? `Couldn't attach ${rejected[0]}. It may be over ${MAX_ATTACHMENT_MB} MB.`
           : `Couldn't read ${rejected.length} files.`;
       showToast({ kind: 'warning', message: label });
     }
-    if (dropped.length === 0) {
-      return;
-    }
-    setAttachments((previous) => {
-      const room = ATTACHMENT_LIMIT - previous.length;
-      if (room <= 0) {
-        showToast({ kind: 'warning', message: `The limit is ${ATTACHMENT_LIMIT} attachments.` });
-        return previous;
-      }
-      if (dropped.length > room) {
-        showToast({ kind: 'warning', message: `The limit is ${ATTACHMENT_LIMIT} attachments.` });
-      }
-      return [...previous, ...dropped.slice(0, room)];
-    });
+    admit(dropped);
   };
 
   const { isDragging } = useFileDropTarget({
