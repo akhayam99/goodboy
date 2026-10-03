@@ -1,12 +1,14 @@
 import {
   cloneElement,
   isValidElement,
+  useContext,
   useId,
   type ElementType,
   type ReactElement,
   type ReactNode,
 } from 'react';
 import { cn } from '../cn';
+import { BandDepthContext } from './Band/bandDepth';
 import { Checkbox } from './Checkbox';
 import { Input } from './Input';
 import { Listbox } from './Listbox';
@@ -46,6 +48,8 @@ export const FieldRow = ({
   className,
 }: FieldRowProps) => {
   const controlId = useId();
+  const isInsideBand = useContext(BandDepthContext);
+  const rhythm = isInsideBand ? 'py-2 first:pt-0 last:pb-0' : 'py-4 first:pt-0 last:pb-0';
   const labelable = isLabelableControl(children);
   const associate = labelable && children.props.id === undefined;
 
@@ -84,7 +88,7 @@ export const FieldRow = ({
 
   if (layout === 'stacked') {
     return (
-      <div className={cn('flex flex-col gap-2 py-4 first:pt-0 last:pb-0', className)}>
+      <div className={cn('flex flex-col gap-2', rhythm, className)}>
         {labelBlock}
         <div>{control}</div>
       </div>
@@ -94,7 +98,8 @@ export const FieldRow = ({
   return (
     <div
       className={cn(
-        'flex flex-col gap-2 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6',
+        'flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-6',
+        rhythm,
         className,
       )}
     >

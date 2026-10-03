@@ -7,12 +7,8 @@ import { workspacePageEntry } from './workspacePages';
 
 const STAYS = 'Stays: projects, folders, accounts, permission history.';
 
-const lowerFirst = (text: string): string => text.charAt(0).toLowerCase() + text.slice(1);
-
 const summaryOf = ({ items }: { readonly items: ReadonlyArray<PlanItem> }): string => {
-  const shown = items
-    .slice(0, 2)
-    .map((item) => `${lowerFirst(item.label)} ${item.from} → ${item.to}`);
+  const shown = items.slice(0, 2).map((item) => `${item.label}: ${item.from} → ${item.to}`);
   return items.length > 2 ? [...shown, `${items.length - 2} more`].join(', ') : shown.join(', ');
 };
 
