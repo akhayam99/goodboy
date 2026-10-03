@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { cn } from '../cn';
 import { tintClasses, type Tone } from '../tint';
 import { X, type LucideIcon } from 'lucide-react';
+import { Button } from './Button';
 import { Tooltip } from './Tooltip';
 
 type Props = {
@@ -46,21 +47,15 @@ export const OverlayHeader = ({
         </div>
         <div className="flex-1" />
         {children}
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={onClose}
           disabled={closeDisabled}
           aria-label={closeLabel}
-          className={cn(
-            'inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5',
-            'text-label font-semibold text-muted-foreground transition-colors',
-            'hover:bg-hover hover:text-foreground',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-            closeDisabled && 'cursor-not-allowed opacity-50',
-          )}
         >
-          <X size={13} aria-hidden /> Done
-        </button>
+          <X size={13} aria-hidden /> Close
+        </Button>
       </header>
     );
   }

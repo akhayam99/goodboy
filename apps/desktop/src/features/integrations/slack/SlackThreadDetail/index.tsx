@@ -196,7 +196,7 @@ export const SlackThreadDetail = ({
                 Send
               </Button>
               <Button
-                variant="secondary"
+                variant="ghost"
                 size="sm"
                 disabled={isSendingDraft}
                 onClick={() => slackDraft.discard()}
