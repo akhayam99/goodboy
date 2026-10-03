@@ -22,8 +22,7 @@ export type CreatedWorktree = {
 
 export type CreateWorktreeArgs = {
   readonly repoPath: string;
-  readonly branchPrefix: string;
-  readonly slug: string;
+  readonly branchName: string;
   readonly parentDir?: string;
   readonly existingBranch?: string;
   readonly fallbackRef?: string;

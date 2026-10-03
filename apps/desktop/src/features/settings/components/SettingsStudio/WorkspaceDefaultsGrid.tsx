@@ -8,6 +8,7 @@ import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overri
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 import { isAttributionEnabled } from '../../../../shared/utils/attribution';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { BranchTemplateField } from './BranchTemplateField';
 import { WorkspaceFieldRow } from './WorkspaceFieldRow';
 
 type Props = {
@@ -22,9 +23,12 @@ type PersistParams = {
 const sanitized = (input: string): string =>
   input
     .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, '')
-    .replace(/^-+/, '')
+    .replace(/[^a-z0-9/-]+/g, '')
+    .replace(/\/{2,}/g, '/')
+    .replace(/^[-/]+/, '')
     .slice(0, 16);
+
+const committedPrefix = (input: string): string => input.trim().replace(/[-/]+$/, '');
 
 export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
   const wsOverrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
@@ -61,7 +65,8 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
   };
 
   const commitBranchPrefix = async () => {
-    const next = branchPrefix.trim() || DEFAULT_BRANCH_PREFIX;
+    const cleaned = committedPrefix(branchPrefix);
+    const next = cleaned === '' ? DEFAULT_BRANCH_PREFIX : cleaned;
     if (next === savedBranchPrefix) {
       setBranchPrefix(next);
       return;
@@ -91,28 +96,34 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
         <WorkspaceFieldRow
           workspaceId={workspaceId}
           field="branchPrefix"
-          help="Every new session branch starts with this, then a slash and a short name."
+          help="Starts every new session branch. Letters, numbers, - and /."
         >
-          <span className="flex items-center gap-1">
-            <Input
-              type="text"
-              value={branchPrefix}
-              onChange={(e) => setBranchPrefix(sanitized(e.target.value))}
-              onBlur={() => void commitBranchPrefix()}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  void commitBranchPrefix();
-                }
-              }}
-              placeholder={DEFAULT_BRANCH_PREFIX}
-              disabled={busy}
-              maxLength={16}
-              size={10}
-              aria-label="Branch prefix"
-              className="w-auto font-mono"
-            />
-            <span className="text-code text-faint-foreground">/&lt;slug&gt;</span>
-          </span>
+          <Input
+            type="text"
+            value={branchPrefix}
+            onChange={(e) => setBranchPrefix(sanitized(e.target.value))}
+            onBlur={() => void commitBranchPrefix()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                void commitBranchPrefix();
+              }
+            }}
+            placeholder={DEFAULT_BRANCH_PREFIX}
+            disabled={busy}
+            maxLength={16}
+            spellCheck={false}
+            autoComplete="off"
+            aria-label="Branch prefix"
+            className="w-40 font-mono"
+          />
+        </WorkspaceFieldRow>
+        <WorkspaceFieldRow
+          workspaceId={workspaceId}
+          field="branchTemplate"
+          layout="stacked"
+          help="The name a new session branch gets. Existing branches keep their names."
+        >
+          <BranchTemplateField workspaceId={workspaceId} />
         </WorkspaceFieldRow>
         <WorkspaceFieldRow
           workspaceId={workspaceId}

@@ -1,4 +1,3 @@
-import { nextAvailableSlug } from '@goodboy/core';
 import { insertSessionMount } from '@goodboy/db';
 import type { IsoDateTime, MountId, SessionMountView } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
@@ -21,9 +20,9 @@ import {
 import { applyMountViews, loadMountViews, requireMountView } from './mountViews';
 import { requireMountContext } from './requireMountContext';
 import {
-  resolveMountBranchPrefix,
+  resolveForkBranchName,
+  resolveRequestedBranchName,
   resolveSessionSlug,
-  splitBranchName,
 } from './resolveMountNaming';
 import type { ForkMountInput, GetFn, SetFn } from './types';
 
@@ -103,30 +102,26 @@ export const forkMount = (set: SetFn, get: GetFn) => {
               return landed;
             }
             const mountId = (sameRequest ? planned : generatedMountId) as MountId;
-            const prefix = resolveMountBranchPrefix({ get, session, project });
-            const sessionSlug = resolveSessionSlug({ get, session, prefix });
+            const sessionSlug = resolveSessionSlug({ get, session, project });
             const remoteBranches = await listBranchNames({ repoPath: project.rootPath }).catch(
               () => [] as ReadonlyArray<string>,
             );
             const taken = [...remoteBranches, ...views.map((candidate) => candidate.branch)];
-            const split = splitBranchName({ branch: requested });
-            const branchPrefix = split.branchPrefix === '' ? prefix : split.branchPrefix;
-            const branchSlug =
+            const branchName =
               requested === ''
-                ? nextAvailableSlug({ base: sessionSlug, prefix, taken })
-                : split.branchSlug;
-            if (!adopt && requested !== '' && taken.includes(`${branchPrefix}/${branchSlug}`)) {
+                ? resolveForkBranchName({ get, session, project, taken })
+                : resolveRequestedBranchName({ get, session, project, requested });
+            if (!adopt && requested !== '' && taken.includes(branchName)) {
               await failMountOperation({ operation, errorCode: 'branch-taken' });
               throw mountError({
                 code: 'branch-taken',
-                message: `branch already exists: ${branchPrefix}/${branchSlug}`,
+                message: `branch already exists: ${branchName}`,
               });
             }
             const baseBranch = input.baseBranch ?? project.baseBranch ?? undefined;
             const request = {
               repoPath: project.rootPath,
-              branchPrefix,
-              slug: branchSlug,
+              branchName,
               parentDir: `${project.rootPath}/.goodboy/worktrees`,
               dirName: mountDirName({ sessionSlug, mountId }),
               ...(baseBranch !== undefined ? { baseBranch } : {}),
@@ -136,7 +131,7 @@ export const forkMount = (set: SetFn, get: GetFn) => {
             await rememberWorktreeRoot({ repoRoot: project.rootPath, addedBy: 'mount' });
             try {
               created = await createWorktree(
-                adopt ? { ...request, existingBranch: `${branchPrefix}/${branchSlug}` } : request,
+                adopt ? { ...request, existingBranch: branchName } : request,
               ).catch(async (error: unknown) => {
                 if (!adopt || worktreeErrorKind({ error }) !== 'branch_not_found') {
                   throw error;

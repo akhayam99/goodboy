@@ -41,7 +41,13 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
         sessionId,
         projectId: project.id,
         reason: MANUAL_REASON,
-        ...(preflight === null ? {} : { mountId: preflight.mountId, slug: preflight.slug }),
+        ...(preflight === null
+          ? {}
+          : {
+              mountId: preflight.mountId,
+              slug: preflight.slug,
+              ...(preflight.branch === null ? {} : { branch: preflight.branch }),
+            }),
       });
       setQuery('');
       setSelectedProjectId(null);

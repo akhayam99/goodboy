@@ -133,14 +133,10 @@ pub struct WorktreeDirectorySize {
 pub struct CreateArgs {
     #[serde(rename = "repoPath")]
     pub repo_path: String,
-    #[serde(rename = "branchPrefix")]
-    pub branch_prefix: String,
-    pub slug: String,
+    #[serde(rename = "branchName")]
+    pub branch_name: String,
     #[serde(rename = "parentDir")]
     pub parent_dir: Option<String>,
-    /// When set, the worktree is created from this existing local branch
-    /// instead of cutting a new one. `branch_prefix` and `slug` are still used
-    /// to derive the worktree directory name.
     #[serde(rename = "existingBranch", default)]
     pub existing_branch: Option<String>,
     #[serde(rename = "fallbackRef", default)]

@@ -1197,7 +1197,7 @@ describe('store contract', () => {
 
       expect(storySpies.createWorktree).toHaveBeenCalledWith(
         expect.objectContaining({
-          slug: 'grw-1220-applicare-nuove-icone-alla-navbar',
+          branchName: 'goodboy/grw-1220-applicare-nuove-icone-alla-navbar',
         }),
       );
     });
@@ -1235,7 +1235,7 @@ describe('store contract', () => {
       });
 
       expect(storySpies.createWorktree).toHaveBeenCalledWith(
-        expect.objectContaining({ branchPrefix: 'project-prefix' }),
+        expect.objectContaining({ branchName: 'project-prefix/study-plan' }),
       );
     });
 
@@ -1255,22 +1255,22 @@ describe('store contract', () => {
       });
 
       expect(storySpies.createWorktree).toHaveBeenCalledWith(
-        expect.objectContaining({ branchPrefix: 'workspace-prefix' }),
+        expect.objectContaining({ branchName: 'workspace-prefix/study-plan' }),
       );
     });
 
-    it('uses the session slug for an untitled mount', async () => {
+    it('names the branch of an untitled session after the session, with no id', async () => {
       const store = useAppStore;
       store.setState({ currentWorkspaceId: WS_ID });
 
-      const { session } = await store.getState().createSession({
+      await store.getState().createSession({
         workspaceId: WS_ID,
         projectId: PROJECT_ID,
         goal: 'Untitled session',
       });
 
       expect(storySpies.createWorktree).toHaveBeenCalledWith(
-        expect.objectContaining({ slug: `session-${session.id.slice(0, 8)}` }),
+        expect.objectContaining({ branchName: 'goodboy/session' }),
       );
     });
 
@@ -1286,7 +1286,7 @@ describe('store contract', () => {
       });
 
       expect(storySpies.createWorktree).toHaveBeenCalledWith(
-        expect.objectContaining({ slug: 'foreign-feature-exact' }),
+        expect.objectContaining({ branchName: 'goodboy/foreign-feature-exact' }),
       );
     });
 
@@ -1303,8 +1303,7 @@ describe('store contract', () => {
 
       expect(storySpies.createWorktree).toHaveBeenCalledWith(
         expect.objectContaining({
-          branchPrefix: 'alice',
-          slug: 'alice-fix-parser',
+          branchName: 'alice/fix-parser',
           existingBranch: 'alice/fix-parser',
         }),
       );
@@ -1578,12 +1577,14 @@ describe('store contract', () => {
       insertRow.mockImplementation(async (_db: unknown, record: unknown) => {
         persisted.push(record as Record<string, unknown>);
       });
-      storySpies.createWorktree.mockImplementation(async ({ slug }: { readonly slug: string }) => ({
-        worktreePath: `/tmp/mounts/${slug}-${crypto.randomUUID()}`,
-        branchName: `goodboy/${slug}`,
-        slug,
-        reused: false,
-      }));
+      storySpies.createWorktree.mockImplementation(
+        async ({ branchName }: { readonly branchName: string }) => ({
+          worktreePath: `/tmp/mounts/${branchName}-${crypto.randomUUID()}`,
+          branchName,
+          slug: branchName,
+          reused: false,
+        }),
+      );
       let indexes: ReadonlyArray<number> = [];
 
       try {

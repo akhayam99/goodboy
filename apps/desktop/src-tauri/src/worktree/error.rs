@@ -21,6 +21,8 @@ pub enum WorktreeError {
         "branch {branch} exists neither in this repository nor on origin, so there is nothing to adopt. cut it as a new branch instead"
     )]
     BranchNotFound { branch: String },
+    #[error("{branch} is not a branch name git accepts ({reason}). change the branch name template in the workspace settings")]
+    InvalidBranchName { branch: String, reason: String },
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
     #[error("invalid utf-8 in git output")]
@@ -50,6 +52,7 @@ impl WorktreeError {
             WorktreeError::Git { .. } => "git",
             WorktreeError::BranchInUse { .. } => "branch_in_use",
             WorktreeError::BranchNotFound { .. } => "branch_not_found",
+            WorktreeError::InvalidBranchName { .. } => "invalid_branch_name",
             WorktreeError::Io(_) => "io",
             WorktreeError::InvalidUtf8 => "invalid_utf8",
         }

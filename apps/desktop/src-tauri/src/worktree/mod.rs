@@ -1,4 +1,5 @@
 mod base;
+mod branch_name;
 mod branches;
 mod candidates;
 mod changed_files;
@@ -21,6 +22,7 @@ mod status;
 mod types;
 
 pub(crate) use base::*;
+pub(crate) use branch_name::branch_name_problem;
 pub(crate) use branches::*;
 pub(crate) use candidates::*;
 pub(crate) use changed_files::*;

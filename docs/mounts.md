@@ -22,9 +22,23 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
 - Branch and directory names come from one slug rule: ASCII letters and digits,
   everything else becomes a dash, at most 48 characters, and a short hash when
   nothing is left. `slugify` in `@goodboy/core` and `slugify` in `worktree/slug.rs`
-  give the same result for the same input. When another live session already
-  owns `<prefix>/<slug>`, the plan takes `-2`, `-3` and so on. An adopted
-  branch is never renamed.
+  give the same result for the same input.
+- The branch name comes from one builder, `buildBranchName` in `@goodboy/core`,
+  and the workspace template (Settings > Workspace > New sessions > Branch
+  name). The default is `{prefix}/{task-id}-{slug}`, the shape from before 0.16.0
+  without the session id at the end. The placeholders are `{prefix}`,
+  `{task-id}`, `{slug}` and `{user}` (the GitHub login). A placeholder with no
+  value disappears with the separator next to it, so a session without a task
+  gets `<prefix>/<slug>`. The task id only enters when the session starts from a
+  task: a task linked later never renames the branch. The prefix may hold `/`
+  (`team/ak`); the worktree folder stays flat because `/` becomes `-`.
+- When another live session, or the repository itself, already owns the name,
+  the plan takes `-2`, `-3` and so on. An adopted branch is never renamed. The
+  frontend sends the full name; `worktree_create` and `bootstrap_prepare` check
+  it with `branch_name_problem` (`worktree/branch_name.rs`), the same table
+  `isValidBranchName` in `@goodboy/core` is tested against
+  (`branch-name.fixture.json`), so a name the ref rules refuse fails before
+  anything is created.
 - A folder mount is a plain directory at `<project-root>/sessions/<name>`.
   Folder projects always keep their directory; no Goodboy action deletes it.
 
@@ -56,7 +70,7 @@ work goes into a worktree session named `bootstrap` in this order, and the
 project folder is untouched until the copy is verified:
 
 1. A temporary index records the folder as one commit object (`refs/goodboy/bootstrap/<project>` keeps it).
-2. A branch `<prefix>/bootstrap` is cut from `origin/<default branch>` and nothing else changes.
+2. A branch named by the workspace template with the slug `bootstrap` and no task (`<prefix>/bootstrap` by default) is cut from `origin/<default branch>` and nothing else changes.
 3. A session named `bootstrap` adopts that branch, so its worktree is an ordinary mount.
 4. The snapshot is applied in that worktree with a three-way pick and every listed path is hashed against the snapshot. A conflict or a mismatch undoes the session, the worktree and the branch.
 5. The folder is cleared by exact paths whose content still matches the snapshot. A file edited since stays and is listed. `git clean` and `git stash` never run.

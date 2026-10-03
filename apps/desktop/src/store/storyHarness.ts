@@ -772,6 +772,7 @@ export const worktreeModuleMock = () => ({
   removeWorktreeFolder: storySpies.removeWorktreeFolder,
   listBranchCommits: vi.fn(async () => []),
   worktreeIsAncestor: vi.fn(async () => true),
+  listBranchNames: vi.fn(async () => [] as ReadonlyArray<string>),
   worktreeRemoteHead: vi.fn(async () => ''),
 });
 

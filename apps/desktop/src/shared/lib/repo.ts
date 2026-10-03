@@ -212,9 +212,8 @@ export const initRepo = async ({ path }: InitPlainRepoParams): Promise<Initializ
 type BootstrapPrepareParams = {
   readonly projectPath: string;
   readonly projectKey: string;
-  readonly branchPrefix: string;
+  readonly branch: string;
   readonly baseBranch: string;
-  readonly slug?: string;
 };
 
 export const bootstrapPrepare = async (

@@ -1,4 +1,5 @@
 use super::base::{base_candidates_with, default_base_name, resolve_origin_head};
+use super::branch_name::branch_name_problem;
 use super::error::WorktreeError;
 use super::exclude::ensure_goodboy_excluded;
 use super::git::{git, RunGit};
@@ -38,31 +39,29 @@ pub(super) fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktr
         return Err(WorktreeError::NoCommit(args.repo_path.clone()));
     }
 
-    let slug = sanitize_slug(&args.slug);
-    let new_branch_name = format!("{}/{}", args.branch_prefix, slug);
+    let new_branch_name = args.branch_name.trim().to_string();
     let existing_branch = args
         .existing_branch
         .as_deref()
         .map(str::trim)
         .filter(|s| !s.is_empty());
+    if existing_branch.is_none() {
+        if let Some(reason) = branch_name_problem(&new_branch_name) {
+            return Err(WorktreeError::InvalidBranchName {
+                branch: new_branch_name,
+                reason: reason.to_string(),
+            });
+        }
+    }
     let branch_name = existing_branch
         .map(|b| b.to_string())
         .unwrap_or_else(|| new_branch_name.clone());
 
-    // Default location: <repo>/.goodboy/worktrees/<prefix>-<slug>. Keeps every
-    // session-scoped checkout inside the workspace folder so the user only has
-    // one project root to track. The .goodboy dir is excluded from the parent
-    // repo's status via .git/info/exclude (see ensure_goodboy_excluded).
     let parent = args
         .parent_dir
         .map(PathBuf::from)
         .unwrap_or_else(|| repo_path.join(".goodboy").join("worktrees"));
-    // For existing branches we still derive a unique directory from the
-    // sanitized branch (with slashes replaced) so two sessions adopting the
-    // same branch don't collide on disk.
-    let dir_slug = existing_branch
-        .map(sanitize_slug)
-        .unwrap_or_else(|| slug.clone());
+    let slug = sanitize_slug(&branch_name);
     let explicit_dir = args
         .dir_name
         .as_deref()
@@ -70,7 +69,7 @@ pub(super) fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktr
         .filter(|s| !s.is_empty());
     let worktree_path = match explicit_dir {
         Some(name) => parent.join(sanitize_slug(name)),
-        None => parent.join(format!("{}-{dir_slug}", args.branch_prefix)),
+        None => parent.join(&slug),
     };
 
     if worktree_path.starts_with(&repo_path) {
