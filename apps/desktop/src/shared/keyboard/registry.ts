@@ -9,12 +9,14 @@ export type ShortcutGroup =
   | 'session'
   | 'views'
   | 'lists'
+  | 'selection'
   | 'review'
   | 'diff'
   | 'window';
 
 export type ShortcutScope =
   | 'list'
+  | 'selection'
   | 'review'
   | 'diff'
   | 'terminal'
@@ -29,6 +31,7 @@ export type ShortcutScope =
 
 export const SHORTCUT_SCOPE_LABEL: Readonly<Record<ShortcutScope, string>> = {
   list: 'In the Inbox and Notifications lists',
+  selection: 'In a list with checkboxes',
   review: 'In the Review view',
   diff: 'In the Diff view',
   terminal: 'In the terminal',
@@ -52,6 +55,7 @@ export type ShortcutEntry = {
   readonly group: ShortcutGroup;
   readonly family?: ShortcutFamily;
   readonly scope?: ShortcutScope;
+  readonly yieldsToText?: boolean;
 };
 
 export const SHORTCUTS = {
@@ -368,6 +372,37 @@ export const SHORTCUTS = {
     scope: 'list',
   },
 
+  'selection.toggle': {
+    combo: 'KeyX',
+    label: 'Select the row under the pointer or focus',
+    plane: 'pane',
+    group: 'selection',
+    scope: 'selection',
+  },
+  'selection.all': {
+    combo: 'cmd+KeyA',
+    label: 'Select every row',
+    plane: 'app',
+    group: 'selection',
+    scope: 'selection',
+    yieldsToText: true,
+  },
+  'selection.clear': {
+    combo: 'Escape',
+    label: 'Clear the selection',
+    plane: 'pane',
+    group: 'selection',
+    scope: 'selection',
+  },
+  'selection.delete': {
+    combo: 'Backspace',
+    offMacCombo: 'Delete',
+    label: 'Delete the selection',
+    plane: 'pane',
+    group: 'selection',
+    scope: 'selection',
+  },
+
   'review.next': {
     combo: 'KeyJ',
     label: 'Next comment',
@@ -491,6 +526,7 @@ const KEY_LABEL: Record<string, string> = {
   BracketLeft: '[',
   BracketRight: ']',
   Backspace: 'Backspace',
+  Delete: 'Delete',
   Escape: 'Esc',
   Enter: 'Enter',
   Space: 'Space',

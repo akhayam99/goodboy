@@ -1,6 +1,6 @@
 import { Cloud, CloudOff, GitMerge, Laptop } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Button, Checkbox, Tooltip, cn } from '@goodboy/ui';
+import { Button, SelectionCheckbox, Tooltip, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { BranchOwnerCell } from './BranchOwnerCell';
 import { formatSpan } from '../../../../shared/utils/time/formatSpan';
@@ -20,6 +20,7 @@ export const BRANCH_ROW_GRID =
 
 type Props = {
   readonly entry: ClassifiedBranch;
+  readonly selectId: string;
   readonly base: string;
   readonly isSelected: boolean;
   readonly isBusy: boolean;
@@ -27,7 +28,15 @@ type Props = {
   readonly onDelete: () => void;
 };
 
-export const BranchRow = ({ entry, base, isSelected, isBusy, onToggle, onDelete }: Props) => {
+export const BranchRow = ({
+  entry,
+  selectId,
+  base,
+  isSelected,
+  isBusy,
+  onToggle,
+  onDelete,
+}: Props) => {
   const now = useNow(30_000);
   const { branch } = entry;
   const verdict = verdictCopy({ branch, base });
@@ -37,11 +46,14 @@ export const BranchRow = ({ entry, base, isSelected, isBusy, onToggle, onDelete 
       ? ''
       : formatSpan({ from: new Date(branch.lastCommitAt * 1000).toISOString(), to: now });
   return (
-    <li className={cn(BRANCH_ROW_GRID, 'h-[34px] rounded-md px-2 hover:bg-hover')}>
-      <Checkbox
+    <li
+      data-select-id={selectId}
+      className={cn(BRANCH_ROW_GRID, 'group/select-row h-[34px] rounded-md px-2 hover:bg-hover')}
+    >
+      <SelectionCheckbox
         checked={isSelected}
-        onChange={onToggle}
-        ariaLabel={`Select ${branch.name}`}
+        onToggle={() => onToggle(!isSelected)}
+        label={`Select ${branch.name}`}
         disabled={isBusy}
       />
       <Tooltip content={branch.name} anchorClassName="flex min-w-0">

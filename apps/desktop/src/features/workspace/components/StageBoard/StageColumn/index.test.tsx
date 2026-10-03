@@ -3,7 +3,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session, SessionId } from '@goodboy/types';
-import type { MultiSelect } from '../../../../../shared/hooks/useMultiSelect';
 import type { BoardNavigation } from '../useBoardNavigation';
 
 vi.mock('../StageBoardCard', () => ({
@@ -27,6 +26,8 @@ vi.mock('../StageBoardCard', () => ({
 
 import { StageColumn, type ColumnCollapse } from './index';
 
+type ColumnSelection = Parameters<typeof StageColumn>[0]['selection'];
+
 const nav = {} as BoardNavigation;
 
 const makeSession = (id: string, goal: string): Session =>
@@ -34,21 +35,17 @@ const makeSession = (id: string, goal: string): Session =>
 
 const noop = () => undefined;
 
-const makeSelection = (over: Partial<MultiSelect<SessionId>> = {}): MultiSelect<SessionId> => ({
-  selected: [],
+const makeSelection = (over: Partial<ColumnSelection> = {}): ColumnSelection => ({
   isSelected: () => false,
-  toggle: noop,
-  selectRange: noop,
-  selectAll: noop,
-  clear: noop,
-  selectIds: noop,
-  handleItemClick: noop,
+  getSelectedIds: () => [],
+  onItemClick: noop,
+  onToggle: noop,
   ...over,
 });
 
 const renderColumn = (
   sessions: ReadonlyArray<Session>,
-  selection: MultiSelect<SessionId> = makeSelection(),
+  selection: ColumnSelection = makeSelection(),
   spec: Parameters<typeof StageColumn>[0]['spec'] = { kind: 'stage', stage: 'building' },
   collapse?: ColumnCollapse,
 ) =>
@@ -58,7 +55,6 @@ const renderColumn = (
       sessions={sessions}
       nav={nav}
       selection={selection}
-      selectedIds={[]}
       onClearSelection={noop}
       onRestore={noop}
       collapse={collapse}
@@ -158,11 +154,11 @@ describe('StageColumn', () => {
   });
 
   it('routes a modifier click straight to the board selection', () => {
-    const handleItemClick = vi.fn();
-    renderColumn([makeSession('s-1', 'one')], makeSelection({ handleItemClick }));
+    const onItemClick = vi.fn();
+    renderColumn([makeSession('s-1', 'one')], makeSelection({ onItemClick }));
 
     fireEvent.click(screen.getByRole('button', { name: 'card one' }), { altKey: true });
 
-    expect(handleItemClick).toHaveBeenCalledWith('s-1', expect.anything());
+    expect(onItemClick).toHaveBeenCalledWith('s-1', expect.anything());
   });
 });

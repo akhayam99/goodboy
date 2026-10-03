@@ -1,4 +1,12 @@
-import { AppWindow, Command, Compass, List, PanelsTopLeft, type LucideIcon } from 'lucide-react';
+import {
+  AppWindow,
+  Command,
+  Compass,
+  List,
+  ListChecks,
+  PanelsTopLeft,
+  type LucideIcon,
+} from 'lucide-react';
 import { KbdPill, Band } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shortcutRangeGlyphs } from '../../../../shared/keyboard/registry';
@@ -12,6 +20,7 @@ const GROUP_LABEL: Readonly<Record<ShortcutGroup, string>> = {
   session: 'Session',
   views: 'Views',
   lists: 'Lists',
+  selection: 'Selection',
   review: 'Review',
   diff: 'Diff',
   window: 'Window',
@@ -24,6 +33,7 @@ const GROUP_ICON: Readonly<Record<ShortcutGroup, LucideIcon>> = {
   session: CONCEPT_ICONS.sessions,
   views: PanelsTopLeft,
   lists: List,
+  selection: ListChecks,
   review: CONCEPT_ICONS.review,
   diff: CONCEPT_ICONS.diff,
   window: AppWindow,

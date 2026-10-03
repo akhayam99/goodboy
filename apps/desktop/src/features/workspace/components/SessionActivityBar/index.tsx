@@ -17,7 +17,10 @@ import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { useMultiSelect } from '../../../../shared/hooks/useMultiSelect';
 import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { BulkActionBar } from '../BulkActionBar';
+import { useSelectionKeys } from '../../../../shared/hooks/useSelectionKeys';
+import { useActionControls } from '../../../actions/useActionControls';
+import { ObjectSelectionBar } from '../../../../shared/components/ObjectSelectionBar';
+import type { ObjectTarget } from '../../../actions/types';
 import { useSidebarPeekHold } from '../SidebarPeekOverlay/hold';
 import { SessionViewMenu } from './SessionViewMenu';
 import { ProjectFilter } from '../ProjectFilter';
@@ -25,6 +28,8 @@ import { SessionActivityItem } from './SessionActivityItem';
 import { NewSessionButton } from './NewSessionButton';
 
 type ActivityTab = 'active' | 'archived';
+
+const SELECTION_VERB_IDS = ['sessions.archive', 'sessions.restore', 'sessions.delete'];
 
 type GroupKeyParams = {
   readonly key: string;
@@ -95,7 +100,38 @@ export const SessionActivityBar = ({
   );
 
   const listRef = useRef<HTMLDivElement | null>(null);
-  const { selectIds } = selection;
+  const barRef = useRef<HTMLDivElement | null>(null);
+  const { selectIds, toggle, selectRange, selectAll } = selection;
+  const onToggleSelect = useCallback(
+    (id: SessionId, event: { readonly shiftKey: boolean }) => {
+      if (event.shiftKey) {
+        selectRange(id);
+        return;
+      }
+      toggle(id);
+    },
+    [selectRange, toggle],
+  );
+  const selectedIds = useMemo(
+    () => selectedSessions.map((session) => session.id as SessionId),
+    [selectedSessions],
+  );
+  const selectionTarget = useMemo<ObjectTarget | null>(
+    () => (selectedIds.length === 0 ? null : { kind: 'sessions', sessionIds: selectedIds }),
+    [selectedIds],
+  );
+  const selectionControls = useActionControls({ target: selectionTarget });
+  const triggerSelectionAction = selectionControls.trigger;
+  useSelectionKeys({
+    containerRef: barRef,
+    hasSelection: selectedIds.length > 0,
+    onToggle: (id) => toggle(id as SessionId),
+    onSelectAll: selectAll,
+    onDelete: () => triggerSelectionAction({ actionId: 'sessions.delete' }),
+  });
+  const focusFirstRow = useCallback(() => {
+    listRef.current?.querySelector<HTMLElement>('[data-select-id]')?.focus();
+  }, []);
   const onLassoSelect = useCallback(
     (ids: ReadonlyArray<SessionId>, mode: 'replace' | 'add') => selectIds(ids, mode),
     [selectIds],
@@ -124,7 +160,7 @@ export const SessionActivityBar = ({
     isSessionGroupCollapsed({ key, overrides: groupExpanded });
 
   return (
-    <div className="flex h-full min-h-0 w-full shrink-0 flex-col gap-2">
+    <div ref={barRef} className="relative flex h-full min-h-0 w-full shrink-0 flex-col gap-2">
       <div className="flex shrink-0 items-center justify-end gap-1 px-2 py-2">
         {!isArchivedView ? <NewSessionButton workspaceId={workspaceId} /> : null}
 
@@ -150,7 +186,11 @@ export const SessionActivityBar = ({
         <div
           ref={listRef}
           onPointerDown={lasso.onPointerDown}
-          className={cn('relative flex flex-col gap-4', PANE_RHYTHM.sessionList.pad)}
+          data-selecting={selectedIds.length > 0}
+          className={cn(
+            'group/select-list relative flex flex-col gap-4 data-[selecting=true]:pb-24',
+            PANE_RHYTHM.sessionList.pad,
+          )}
         >
           {visibleGroups.map((group) => {
             const isGroupCollapsed = isGrouped && isCollapsed({ key: group.key });
@@ -206,6 +246,7 @@ export const SessionActivityBar = ({
                         getSelectedIds={getSelectedIds}
                         onClearSelection={clearSelection}
                         onModifierClick={selection.handleItemClick}
+                        onToggleSelect={onToggleSelect}
                         onSelect={onSelectSession}
                       />
                     ))}
@@ -242,16 +283,16 @@ export const SessionActivityBar = ({
         </div>
       </ScrollFade>
 
-      {selectedSessions.length > 0 ? (
-        <div className="shrink-0 p-2">
-          <BulkActionBar
-            scope={isArchivedView ? 'archived' : 'active'}
-            sessions={selectedSessions}
-            onSelectAll={selection.selectAll}
-            onClear={clearSelection}
-          />
-        </div>
-      ) : null}
+      <ObjectSelectionBar
+        controls={selectionControls}
+        verbIds={SELECTION_VERB_IDS}
+        count={selectedIds.length}
+        total={totalVisible}
+        onClear={clearSelection}
+        onSelectAll={selectAll}
+        onDone={clearSelection}
+        onFocusReturn={focusFirstRow}
+      />
     </div>
   );
 };

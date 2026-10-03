@@ -11,6 +11,7 @@ const SKIPPED_DIRECTORIES: ReadonlySet<string> = new Set(['node_modules', 'dist'
 
 const STACK_HOME = 'packages/ui/src/escape.ts';
 const REGISTRY_HOME = 'apps/desktop/src/shared/keyboard/dispatcher.ts';
+const REGISTRY_ENTRIES = 'apps/desktop/src/shared/keyboard/registry.ts';
 
 type Rule = {
   readonly id: string;
@@ -23,7 +24,7 @@ const RULES: ReadonlyArray<Rule> = [
   {
     id: 'escape-literal',
     pattern: /['"]Escape['"]/g,
-    exempt: new Set([STACK_HOME]),
+    exempt: new Set([STACK_HOME, REGISTRY_ENTRIES]),
     hint: 'register a layer with useEscapeLayer or registerEscapeLayer from @goodboy/ui, so Esc closes the topmost layer only',
   },
   {
@@ -155,10 +156,12 @@ describe('escape and window keys go through the stack and the registry', () => {
     ).toBe(0);
   });
 
-  it('keeps the stack and the dispatcher as the only exempt files', () => {
+  it('keeps the stack, the dispatcher and the registry as the only exempt files', () => {
     const exempt = RULES.flatMap((rule) => [...rule.exempt]);
 
-    expect([...new Set(exempt)].sort()).toEqual([REGISTRY_HOME, STACK_HOME].sort());
+    expect([...new Set(exempt)].sort()).toEqual(
+      [REGISTRY_ENTRIES, REGISTRY_HOME, STACK_HOME].sort(),
+    );
   });
 
   it('adds no Escape literal or window key listener beyond the baseline', () => {

@@ -9,7 +9,7 @@ const { platform } = vi.hoisted(() => ({
 vi.mock('../platform', () => ({ currentPlatform: () => platform.current }));
 
 import { eventMatches, registerShortcut } from './dispatcher';
-import { SHORTCUTS } from './registry';
+import { SHORTCUTS, type ShortcutEntry } from './registry';
 
 const cleanups: Array<() => void> = [];
 
@@ -216,7 +216,8 @@ describe('shortcut dispatcher off darwin', () => {
 
   it('resolves a combo without the command key to the bare keys, never to ctrl', () => {
     for (const entry of Object.values(SHORTCUTS)) {
-      const combo: string = entry.combo;
+      const shaped: ShortcutEntry = entry;
+      const combo: string = shaped.offMacCombo ?? shaped.combo;
       if (combo.includes('cmd') || combo.includes('ctrl')) {
         continue;
       }
@@ -387,5 +388,51 @@ describe('shortcut dispatcher with a bare key', () => {
     typeInto({ target: field, init: { key: 'k', code: 'KeyK', metaKey: true } });
 
     expect(onPalette).toHaveBeenCalledOnce();
+  });
+});
+
+describe('shortcut dispatcher with a handler that can decline', () => {
+  beforeEach(() => {
+    platform.current = 'darwin';
+  });
+
+  it('leaves the key to the browser when the handler declines', () => {
+    const handler = vi.fn(() => false);
+    cleanups.push(registerShortcut('selection.all', handler, { canDecline: true }));
+
+    const event = press({ code: 'KeyA', metaKey: true });
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it('claims the key once the handler takes it', () => {
+    cleanups.push(registerShortcut('selection.all', () => true, { canDecline: true }));
+
+    const event = press({ code: 'KeyA', metaKey: true });
+
+    expect(event.defaultPrevented).toBe(true);
+  });
+
+  it('lets a text field keep select all, which the registry marks as the field own', () => {
+    const handler = vi.fn(() => true);
+    cleanups.push(registerShortcut('selection.all', handler, { canDecline: true }));
+    const field = document.createElement('textarea');
+    document.body.append(field);
+
+    const event = typeInto({ target: field, init: { code: 'KeyA', metaKey: true } });
+
+    expect(handler).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it('still claims first for a handler that never declines', () => {
+    const handler = vi.fn();
+    cleanups.push(registerShortcut('palette.open', handler));
+
+    const event = press({ code: 'KeyK', metaKey: true });
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(event.defaultPrevented).toBe(true);
   });
 });

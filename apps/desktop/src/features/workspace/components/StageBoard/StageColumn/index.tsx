@@ -6,7 +6,6 @@ import {
   stateDescription,
   type StatePresentation,
 } from '../../../../../shared/utils/statePresentation';
-import type { MultiSelect } from '../../../../../shared/hooks/useMultiSelect';
 import { StageBoardCard } from '../StageBoardCard';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { boardColumnIds } from '../boardColumnIds';
@@ -82,12 +81,25 @@ const viewFor = (spec: ColumnSpec): ColumnView => {
   };
 };
 
+type ColumnSelection = {
+  readonly isSelected: (id: SessionId) => boolean;
+  readonly getSelectedIds: () => ReadonlyArray<SessionId>;
+  readonly onItemClick: (id: SessionId, event: ModifierEvent) => void;
+  readonly onToggle: (id: SessionId, event: { readonly shiftKey: boolean }) => void;
+};
+
+type ModifierEvent = {
+  readonly shiftKey: boolean;
+  readonly metaKey: boolean;
+  readonly ctrlKey: boolean;
+  readonly altKey: boolean;
+};
+
 type StageColumnProps = {
   readonly spec: ColumnSpec;
   readonly sessions: ReadonlyArray<Session>;
   readonly nav: BoardNavigation;
-  readonly selection: MultiSelect<SessionId>;
-  readonly selectedIds: ReadonlyArray<SessionId>;
+  readonly selection: ColumnSelection;
   readonly onClearSelection: () => void;
   readonly onRestore: (session: Session) => void;
   readonly collapse?: ColumnCollapse;
@@ -98,7 +110,6 @@ export const StageColumn = ({
   sessions,
   nav,
   selection,
-  selectedIds,
   onClearSelection,
   onRestore,
   collapse,
@@ -167,7 +178,7 @@ export const StageColumn = ({
         <ScrollFade orientation="vertical" className="flex-1">
           <div
             className={cn(
-              'flex flex-col',
+              'flex flex-col group-data-[selecting=true]/select-list:pb-24',
               PANE_RHYTHM.board.cardGap,
               isFolding &&
                 'motion-safe:transition-opacity motion-safe:delay-80 motion-safe:duration-120 motion-safe:starting:opacity-0',
@@ -180,8 +191,9 @@ export const StageColumn = ({
                 nav={nav}
                 archived={view.archived}
                 selected={isSelected(session.id as SessionId)}
-                onModifierClick={selection.handleItemClick}
-                selectedIds={selectedIds}
+                onModifierClick={selection.onItemClick}
+                onToggleSelect={selection.onToggle}
+                getSelectedIds={selection.getSelectedIds}
                 onClearSelection={onClearSelection}
                 onRestore={onRestore}
               />

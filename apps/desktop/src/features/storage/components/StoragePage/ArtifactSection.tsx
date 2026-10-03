@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Button,
   Eyebrow,
@@ -13,8 +13,10 @@ import {
   isStorageArtifactSuggested,
   storageArtifactFilter,
 } from '../../../../store/slices/storage/classifyStorageArtifact';
+import type { ArtifactId } from '@goodboy/types';
 import type { StorageArtifactFilter, StorageScope } from '../../../../store/slices/storage/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { useSelectionKeys } from '../../../../shared/hooks/useSelectionKeys';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { storageOwnerMatchesScope } from '../../storageOwnerMatchesScope';
 import { useStorageSummary } from '../../useStorageSummary';
@@ -40,8 +42,10 @@ export const ArtifactSection = ({ scope }: Props) => {
   const allArtifacts = useAppStore((state) => state.storageArtifacts);
   const { suggestAfterDays, now } = useStorageSummary({ scope });
   const [filter, setFilter] = useState<StorageArtifactFilter>('review');
-  const [selected, setSelected] = useState<ReadonlySet<string> | null>(null);
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const [isConfirming, setIsConfirming] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
 
   const artifacts = useMemo(
     () =>
@@ -68,13 +72,50 @@ export const ArtifactSection = ({ scope }: Props) => {
     [byFilter.review, now, suggestAfterDays],
   );
 
+  const shownIds = useMemo(
+    () => (filter === 'review' ? byFilter.review : byFilter.kept).map((artifact) => artifact.id),
+    [byFilter, filter],
+  );
+
+  const clearSelection = useCallback(() => {
+    setSelected(new Set());
+    setIsConfirming(false);
+  }, []);
+
+  const onToggle = useCallback(({ id, isOn }: ToggleArtifactParams) => {
+    setIsConfirming(false);
+    setSelected((current) => {
+      const next = new Set(current);
+      if (isOn) {
+        next.add(id);
+        return next;
+      }
+      next.delete(id);
+      return next;
+    });
+  }, []);
+
+  const selectAll = useCallback(() => {
+    setIsConfirming(false);
+    setSelected(new Set(shownIds));
+  }, [shownIds]);
+
+  useSelectionKeys({
+    containerRef: sectionRef,
+    hasSelection: selected.size > 0 && filter === 'review',
+    isEnabled: filter === 'review',
+    onToggle: (id) => onToggle({ id: id as ArtifactId, isOn: !selected.has(id) }),
+    onSelectAll: selectAll,
+    onDelete: () => setIsConfirming(true),
+  });
+
   if (artifacts.length === 0) {
     return null;
   }
 
   const totalBytes = artifacts.reduce((sum, artifact) => sum + (artifact.sizeBytes ?? 0), 0);
   const shown = byFilter[filter];
-  const visible = isExpanded || selected !== null ? shown : shown.slice(0, VISIBLE_ROWS);
+  const visible = isExpanded || selected.size > 0 ? shown : shown.slice(0, VISIBLE_ROWS);
   const hidden = shown.length - visible.length;
   const suggested = byFilter.review.filter((artifact) => suggestedIds.has(artifact.id));
   const options: ReadonlyArray<SegmentedTabOption<StorageArtifactFilter>> = [
@@ -83,26 +124,17 @@ export const ArtifactSection = ({ scope }: Props) => {
   ];
 
   const onFilter = (next: StorageArtifactFilter) => {
-    setSelected(null);
+    clearSelection();
     setFilter(next);
   };
 
-  const onToggle = ({ id, isOn }: ToggleArtifactParams) =>
-    setSelected((current) => {
-      const next = new Set(current ?? []);
-      if (isOn) {
-        next.add(id);
-        return next;
-      }
-      next.delete(id);
-      return next;
-    });
-
   return (
     <section
+      ref={sectionRef}
       id="storage-artifacts"
       aria-label="Artifacts from deleted sessions"
-      className="flex flex-col gap-2"
+      data-selecting={selected.size > 0}
+      className="group/select-list flex flex-col gap-2"
     >
       <div className="flex flex-wrap items-center gap-3">
         <Eyebrow
@@ -126,7 +158,7 @@ export const ArtifactSection = ({ scope }: Props) => {
         <p className="py-3 text-label text-muted-foreground">{EMPTY_COPY[filter]}</p>
       ) : (
         <div className="@container flex flex-col">
-          <ArtifactColumns isSelecting={selected !== null} />
+          <ArtifactColumns />
           <div
             className={cn(
               'flex flex-col',
@@ -139,8 +171,8 @@ export const ArtifactSection = ({ scope }: Props) => {
                 artifact={artifact}
                 now={now}
                 suggestAfterDays={suggestAfterDays}
-                isSelecting={selected !== null}
-                isSelected={selected?.has(artifact.id) ?? false}
+                isSelecting={selected.size > 0}
+                isSelected={selected.has(artifact.id)}
                 isSuggested={suggestedIds.has(artifact.id)}
                 onToggle={onToggle}
               />
@@ -163,8 +195,17 @@ export const ArtifactSection = ({ scope }: Props) => {
           suggested={suggested}
           suggestAfterDays={suggestAfterDays}
           selected={selected}
-          onStart={() => setSelected(new Set(suggested.map((artifact) => artifact.id)))}
-          onDone={() => setSelected(null)}
+          total={shownIds.length}
+          isConfirming={isConfirming}
+          onStart={() => {
+            setSelected(new Set(suggested.map((artifact) => artifact.id)));
+            setIsConfirming(true);
+          }}
+          onArm={() => setIsConfirming(true)}
+          onCancel={() => setIsConfirming(false)}
+          onClear={clearSelection}
+          onSelectAll={selectAll}
+          onDone={clearSelection}
         />
       ) : null}
     </section>

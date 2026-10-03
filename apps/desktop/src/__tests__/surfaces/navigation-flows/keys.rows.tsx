@@ -913,6 +913,62 @@ const activeJumpFile = async (): Promise<string> => {
 
 let terminalTabCount = 0;
 
+const openBoardCard = async (): Promise<HTMLElement> => {
+  await press('session.board')();
+  await heading('Board');
+  const card = await waitFor(() => {
+    const found = document.querySelector<HTMLElement>('[data-select-id]');
+    expect(found).not.toBeNull();
+    return found as HTMLElement;
+  }, WAIT);
+  fireEvent.mouseOver(card);
+  return card;
+};
+
+const selectUnderPointer = async (): Promise<void> => {
+  await openBoardCard();
+  await pressed('selection.toggle', document.body);
+  await visible('toolbar', /^1 selected$/);
+};
+
+const SELECTION_KEY_ROWS: ReadonlyArray<Row> = [
+  keyRow({
+    id: 'selection.toggle',
+    open: async () => {
+      await openBoardCard();
+      await pressed('selection.toggle', document.body);
+    },
+    lands: () => visible('toolbar', /^1 selected$/),
+  }),
+  keyRow({
+    id: 'selection.all',
+    open: async () => {
+      await openBoardCard();
+      await pressed('selection.all', document.body);
+    },
+    lands: async () => {
+      const bar = await screen.findByRole('toolbar', { name: /^\d+ selected$/ }, WAIT);
+      expect(Number.parseInt(bar.getAttribute('aria-label') ?? '0', 10)).toBeGreaterThan(1);
+    },
+  }),
+  keyRow({
+    id: 'selection.clear',
+    open: async () => {
+      await selectUnderPointer();
+      await pressed('selection.clear', document.body);
+    },
+    lands: async () => waitFor(() => expect(screen.queryByRole('toolbar')).toBeNull(), WAIT),
+  }),
+  keyRow({
+    id: 'selection.delete',
+    open: async () => {
+      await selectUnderPointer();
+      await pressed('selection.delete', document.body);
+    },
+    lands: () => visible('group', 'Delete 1 session?'),
+  }),
+];
+
 export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
   keyRow({
     id: 'terminal.newTab',
@@ -1041,4 +1097,5 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       expect(screen.getByText('First alert')).toBeDefined();
     },
   }),
+  ...SELECTION_KEY_ROWS,
 ];
