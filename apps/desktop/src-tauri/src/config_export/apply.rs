@@ -76,8 +76,8 @@ pub(super) fn apply_bundle(
                     provider_bindings, task_models, role_models, parallel_agents,
                     provider_pool, attribution_footer, reply_voice, reply_style_note,
                     reply_template_fixed, reply_template_no_change, resolve_on_github,
-                    resolve_commit_style)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20)
+                    resolve_commit_style, default_branch_template)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21)
                  ON CONFLICT(id) DO UPDATE SET
                    name                      = excluded.name,
                    default_provider_id       = excluded.default_provider_id,
@@ -95,6 +95,7 @@ pub(super) fn apply_bundle(
                    reply_template_no_change  = excluded.reply_template_no_change,
                    resolve_on_github         = excluded.resolve_on_github,
                    resolve_commit_style      = excluded.resolve_commit_style,
+                   default_branch_template   = excluded.default_branch_template,
                    updated_at                = excluded.updated_at",
                 rusqlite::params![
                     w.id,
@@ -117,6 +118,7 @@ pub(super) fn apply_bundle(
                     w.overrides.reply_template_no_change,
                     w.overrides.resolve_on_github.map(|v| if v { 1 } else { 0 }),
                     w.overrides.resolve_commit_style,
+                    w.overrides.default_branch_template,
                 ],
             )?;
 

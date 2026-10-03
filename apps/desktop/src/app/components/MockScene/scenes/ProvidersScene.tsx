@@ -116,6 +116,7 @@ const WORKSPACE_OVERRIDES: OverrideSettings = {
   resolveOnGithub: null,
   resolveCommitStyle: null,
   afterMerge: null,
+  defaultBranchTemplate: null,
 };
 
 const WORKSPACE = mockWorkspace({ id: WORKSPACE_ID, name: 'Cascadia' });

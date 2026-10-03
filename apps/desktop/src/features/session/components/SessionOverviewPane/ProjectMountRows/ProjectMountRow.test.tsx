@@ -53,6 +53,8 @@ const { store, remoteKind } = vi.hoisted(() => ({
     loadAgentTranscript: vi.fn(async () => undefined),
     sessionGithub: {} as Record<string, unknown>,
     sessionResolveThreads: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionExternalTasks: {} as Record<string, ReadonlyArray<unknown>>,
+    openExternalTaskLens: vi.fn(),
   },
 }));
 

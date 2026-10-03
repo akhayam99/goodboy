@@ -357,10 +357,30 @@ export const isSessionExternalTaskProvider = (
   typeof value === 'string' &&
   SESSION_EXTERNAL_TASK_PROVIDERS.some((provider) => provider === value);
 
+export const EXTERNAL_TASK_SCOPES = ['session', 'branch'] as const;
+
+export type ExternalTaskScope = (typeof EXTERNAL_TASK_SCOPES)[number];
+
+export const EXTERNAL_TASK_RELATIONS = ['closes', 'part-of'] as const;
+
+export type ExternalTaskRelation = (typeof EXTERNAL_TASK_RELATIONS)[number];
+
 export type SessionExternalTask = Readonly<{
   sessionId: SessionId;
   projectId?: ProjectId;
   branch?: string;
+  scope?: ExternalTaskScope;
+  relation?: ExternalTaskRelation;
+  provider: SessionExternalTaskProvider;
+  externalId: string;
+  identifier: string;
+  url: string;
+  title: string;
+  createdAt: IsoDateTime;
+}>;
+
+export type WorkspaceExternalTask = Readonly<{
+  workspaceId: WorkspaceId;
   provider: SessionExternalTaskProvider;
   externalId: string;
   identifier: string;

@@ -46,7 +46,7 @@ Press **Launch session** on an issue, a Slack thread or an error to start a sess
 
 ### Link an item to a session
 
-Attach an inbox item to work that already exists. **Link to a session** sits next to **Launch session** and links the task to the session you pick. From a session it works the other way round: **Link work** in the Overview header, or **L**, opens one search across every connected tracker, with your recent inbox items on top. Filter by source, type an issue code, or paste a link.
+Attach an inbox item to work that already exists. **Link to a session** sits next to **Launch session** and links the task to the session you pick. From a session it works the other way round: **Link work** in the Overview header, or **L**, opens one search across every connected tracker, with your recent inbox items on top. Filter by source, type an issue code, or paste a link. Under the search, pick where the link lives: **This session** (the default), **This branch** (named after the branch the session is on), or **Whole workspace**. A session or branch link closes the task when its pull request merges; the line under the preview says so ("Will close ENG-412 when merged") and **Don’t close** turns it into "Part of ENG-412" in the pull request body instead. A whole-workspace task never closes from a pull request: it shows under **Ongoing** on the Board, not on any session until you link it there. A task linked from several sessions lists every one of them on its inbox record.
 
 ### Trackers
 

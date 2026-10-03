@@ -136,6 +136,8 @@ pub struct WorkspaceOverridesBundle {
     pub resolve_on_github: Option<bool>,
     #[serde(default)]
     pub resolve_commit_style: Option<String>,
+    #[serde(default)]
+    pub default_branch_template: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

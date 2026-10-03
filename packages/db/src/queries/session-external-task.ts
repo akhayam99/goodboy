@@ -1,5 +1,6 @@
 import {
   isSessionExternalTaskProvider,
+  type ExternalTaskScope,
   type IsoDateTime,
   type ProjectId,
   type SessionExternalTask,
@@ -19,6 +20,8 @@ type SessionExternalTaskRow = {
   readonly url: string;
   readonly title: string;
   readonly created_at: number;
+  readonly scope: string;
+  readonly relation: string;
 };
 
 type ToDomainParams = {
@@ -33,6 +36,8 @@ const toDomain = ({ row }: ToDomainParams): SessionExternalTask => {
     sessionId: row.session_id as SessionId,
     ...(row.project_id != null ? { projectId: row.project_id as ProjectId } : {}),
     ...(row.branch != null ? { branch: row.branch } : {}),
+    ...(row.scope === 'branch' ? { scope: 'branch' as const } : {}),
+    ...(row.relation === 'part-of' ? { relation: 'part-of' as const } : {}),
     provider: row.provider,
     externalId: row.external_id,
     identifier: row.identifier,
@@ -51,19 +56,27 @@ export const upsertSessionExternalTask = async ({ db, task }: UpsertParams): Pro
   if (isSessionExternalTaskProvider(task.provider) === false) {
     throw new Error(`invalid external task provider: ${task.provider}`);
   }
+  const scope = task.scope ?? 'session';
+  const branch = task.branch ?? null;
+  if (scope === 'branch' && (branch === null || branch === '')) {
+    throw new Error(`a branch link needs a branch: ${task.identifier}`);
+  }
   await db.execute(
     `INSERT INTO session_external_tasks
-       (session_id, project_id, branch, provider, external_id, identifier, url, title, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+       (session_id, project_id, branch, scope, relation, provider, external_id, identifier, url, title, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT DO UPDATE SET
        identifier = excluded.identifier,
        url = excluded.url,
        title = excluded.title,
+       relation = excluded.relation,
        branch = COALESCE(excluded.branch, session_external_tasks.branch)`,
     [
       task.sessionId,
       task.projectId ?? null,
-      task.branch ?? null,
+      branch,
+      scope,
+      task.relation ?? 'closes',
       task.provider,
       task.externalId,
       task.identifier,
@@ -84,11 +97,12 @@ export const listExternalTasksForWorkspace = async ({
   workspaceId,
 }: ListForWorkspaceParams): Promise<ReadonlyArray<SessionExternalTask>> => {
   const rows = await db.select<SessionExternalTaskRow>(
-    `SELECT t.session_id, t.project_id, t.branch, t.provider, t.external_id, t.identifier, t.url, t.title, t.created_at
+    `SELECT t.session_id, t.project_id, t.branch, t.scope, t.relation, t.provider, t.external_id, t.identifier, t.url, t.title, t.created_at
        FROM session_external_tasks t
        INNER JOIN sessions s ON s.id = t.session_id
       WHERE s.workspace_id = ?
-      ORDER BY t.created_at ASC, t.provider ASC, t.external_id ASC, t.project_id ASC`,
+      ORDER BY t.created_at ASC, t.provider ASC, t.external_id ASC, t.project_id ASC,
+               CASE t.scope WHEN 'session' THEN 0 ELSE 1 END, t.branch ASC`,
     [workspaceId],
   );
   return rows.map((row) => toDomain({ row }));
@@ -100,6 +114,8 @@ type DeleteParams = {
   readonly provider: SessionExternalTaskProvider;
   readonly externalId: string;
   readonly projectId?: ProjectId;
+  readonly scope?: ExternalTaskScope;
+  readonly branch?: string;
 };
 
 export const deleteSessionExternalTask = async ({
@@ -108,13 +124,16 @@ export const deleteSessionExternalTask = async ({
   provider,
   externalId,
   projectId,
+  scope = 'session',
+  branch,
 }: DeleteParams): Promise<void> => {
   await db.execute(
     `DELETE FROM session_external_tasks
       WHERE session_id = ?
         AND provider = ?
         AND external_id = ?
-        AND project_id IS ?`,
-    [sessionId, provider, externalId, projectId ?? null],
+        AND COALESCE(project_id, '') = ?
+        AND COALESCE(CASE scope WHEN 'branch' THEN branch END, '') = ?`,
+    [sessionId, provider, externalId, projectId ?? '', scope === 'branch' ? (branch ?? '') : ''],
   );
 };

@@ -103,8 +103,8 @@ export const insertProject = async ({ db, project }: InsertProjectParams): Promi
        default_verbosity, last_accessed_at, provider_bindings, parallel_agents, kind,
        task_models, role_models, provider_pool, base_branch, attribution_footer,
        description, starred_at, root_commit, remote_url, identity_checked_at,
-       ${REPLY_SETTING_COLUMNS}, after_merge
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       ${REPLY_SETTING_COLUMNS}, after_merge, default_branch_template
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       project.id,
       project.workspaceId,
@@ -136,6 +136,7 @@ export const insertProject = async ({ db, project }: InsertProjectParams): Promi
       project.identityCheckedAt === undefined ? null : Date.parse(project.identityCheckedAt),
       ...replySettingValues({ overrides: project.overrides }),
       project.overrides.afterMerge,
+      project.overrides.defaultBranchTemplate,
     ],
   );
 };

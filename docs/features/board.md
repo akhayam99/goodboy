@@ -9,7 +9,7 @@ The board shows every session of a workspace by stage. Workflows chain agents in
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-light.webp" alt="The Harborline board with 11 sessions in four columns: building 3, running 2, needs you 2 and in review 2, with the New session button and the Done and Archived icons at the right">
 </picture>
 
-See where each task stands without moving cards around. Each session sits in **building**, **running**, **needs you** or **in review** based on what is happening in it. Finished sessions fold into the icons at the right edge.
+See where each task stands without moving cards around. Each session sits in **building**, **running**, **needs you** or **in review** based on what is happening in it. Finished sessions fold into the icons at the right edge. Tasks linked to the whole workspace sit in one quiet row under the title, **Ongoing**: click a task to show only the sessions that link it, click it again or **Clear** to see them all, and its x stops tracking it.
 
 ### Session card
 

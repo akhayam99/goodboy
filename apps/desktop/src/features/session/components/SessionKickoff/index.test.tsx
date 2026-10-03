@@ -132,6 +132,7 @@ const PROJECT_OVERRIDES = {
   resolveOnGithub: null,
   resolveCommitStyle: null,
   afterMerge: null,
+  defaultBranchTemplate: null,
 };
 
 const project = (overrides: Partial<Project>): Project => ({

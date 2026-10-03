@@ -129,6 +129,8 @@ export type {
   GoodboyIgnoreMode,
   ProjectScript,
   SentryIntegrationConfig,
+  ExternalTaskRelation,
+  ExternalTaskScope,
   SessionExternalTask,
   SessionExternalTaskProvider,
   SlackIntegrationConfig,
@@ -137,6 +139,7 @@ export type {
   Workspace,
   WorkspaceGitState,
   WorkspaceGitStatus,
+  WorkspaceExternalTask,
   WorkspaceProfile,
   WorkflowRun,
   WorkflowExecutionMode,
@@ -150,6 +153,8 @@ export type {
   WorkspaceIntegrationProvider,
 } from './workspace';
 export {
+  EXTERNAL_TASK_RELATIONS,
+  EXTERNAL_TASK_SCOPES,
   isIntegrationBindingProvider,
   isSessionExternalTaskProvider,
   INTEGRATION_BINDING_PROVIDERS,

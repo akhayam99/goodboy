@@ -116,6 +116,11 @@ export {
   deleteSessionExternalTask,
 } from './queries/session-external-task';
 export {
+  upsertWorkspaceExternalTask,
+  listWorkspaceExternalTasks,
+  deleteWorkspaceExternalTask,
+} from './queries/workspace-external-task';
+export {
   insertSession,
   updateSessionState,
   updateSessionPermissionMode,

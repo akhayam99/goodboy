@@ -61,6 +61,7 @@ export type RoleModelPreferences = Readonly<Partial<Record<AgentRole, RoleModelP
 export type OverrideSettings = Readonly<{
   defaultProviderId: ProviderId | null;
   defaultBranchPrefix: string | null;
+  defaultBranchTemplate: string | null;
   defaultVerbosity: VerbosityLevel | null;
   providerBindings: ProviderBindings | null;
   taskModels: TaskModelPreferences | null;

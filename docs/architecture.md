@@ -468,6 +468,7 @@ cleanup) and moving those calls behind the commands is not done yet.
 | `telemetry_records`           | ts     |                                                                                                                     |
 | `turn_events`                 | ts     |                                                                                                                     |
 | `workflows`                   | ts     | `saveWorkflow` and `removeWorkflow`. Exception: the backup import.                                                  |
+| `workspace_external_tasks`    | ts     | Tasks linked to the whole workspace. They show on the Board and never close from a PR.                              |
 | `workspace_profiles`          | ts     | Exception: the backup import.                                                                                       |
 | `workspace_starred_issues`    | ts     |                                                                                                                     |
 | `workspaces`                  | ts     | Exceptions: the backup import and the per-workspace settings override (`settings_overrides.rs`).                    |

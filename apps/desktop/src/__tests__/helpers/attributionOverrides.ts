@@ -21,4 +21,5 @@ export const overridesWithAttribution = ({ attributionFooter }: Params): Overrid
   resolveOnGithub: null,
   resolveCommitStyle: null,
   afterMerge: null,
+  defaultBranchTemplate: null,
 });

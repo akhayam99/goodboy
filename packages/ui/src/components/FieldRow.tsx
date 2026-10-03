@@ -89,8 +89,15 @@ export const FieldRow = ({
   if (layout === 'stacked') {
     return (
       <div className={cn('flex flex-col gap-2', rhythm, className)}>
-        {labelBlock}
-        <div>{control}</div>
+        {menu == null ? (
+          labelBlock
+        ) : (
+          <div className="flex items-start justify-between gap-6">
+            {labelBlock}
+            {menu}
+          </div>
+        )}
+        <div className={menu == null ? undefined : 'pr-7'}>{associated}</div>
       </div>
     );
   }

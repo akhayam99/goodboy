@@ -13,6 +13,8 @@ import { ConversationScene } from './scenes/ConversationScene';
 import { MountsScene } from './scenes/MountsScene';
 import { OverviewFullScene } from './scenes/OverviewFullScene';
 import { OverviewManyScene } from './scenes/OverviewManyScene';
+import { OverviewBranchTasksScene } from './scenes/OverviewBranchTasksScene';
+import { LinkScopeScene } from './scenes/LinkScopeScene';
 import { OverviewRefreshingScene } from './scenes/OverviewRefreshingScene';
 import { MountMismatchScene } from './scenes/MountMismatchScene';
 import { ResolveScene } from './scenes/ResolveScene';
@@ -26,6 +28,7 @@ import { ResolveItemScene } from './scenes/ResolveItemScene';
 import { ResolveFailedHistoryScene } from './scenes/ResolveFailedHistoryScene';
 import { ResolveFailedRunScene } from './scenes/ResolveFailedRunScene';
 import { BoardScene } from './scenes/BoardScene';
+import { BoardOngoingScene } from './scenes/BoardOngoingScene';
 import { BoardSelectedScene } from './scenes/BoardSelectedScene';
 import { BoardDeleteConfirmScene } from './scenes/BoardDeleteConfirmScene';
 import { TranscriptMountScene } from './scenes/TranscriptMountScene';
@@ -164,6 +167,8 @@ export const MOCK_SCENES = {
   mounts: MountsScene,
   'overview-full': OverviewFullScene,
   'overview-projects-many': OverviewManyScene,
+  'overview-branch-tasks': OverviewBranchTasksScene,
+  'link-scope': LinkScopeScene,
   'overview-refreshing': OverviewRefreshingScene,
   'mount-mismatch': MountMismatchScene,
   resolve: ResolveScene,
@@ -177,6 +182,7 @@ export const MOCK_SCENES = {
   'resolve-gitlab': ResolveGitlabScene,
   'resolve-bitbucket': ResolveBitbucketScene,
   board: BoardScene,
+  'board-ongoing': BoardOngoingScene,
   'board-selected': BoardSelectedScene,
   'board-delete-confirm': BoardDeleteConfirmScene,
   'transcript-mount': TranscriptMountScene,

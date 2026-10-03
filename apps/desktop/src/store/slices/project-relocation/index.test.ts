@@ -61,6 +61,7 @@ const project: Project = {
     resolveOnGithub: null,
     resolveCommitStyle: null,
     afterMerge: null,
+    defaultBranchTemplate: null,
   },
   createdAt: NOW,
   updatedAt: NOW,

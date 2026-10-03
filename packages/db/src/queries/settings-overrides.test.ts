@@ -49,6 +49,7 @@ const EMPTY: OverrideSettings = {
   resolveOnGithub: null,
   resolveCommitStyle: null,
   afterMerge: null,
+  defaultBranchTemplate: null,
 };
 
 async function makeDb() {

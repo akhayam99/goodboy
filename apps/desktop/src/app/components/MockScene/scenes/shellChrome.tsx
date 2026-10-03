@@ -197,6 +197,7 @@ export const mockWorkspace = ({ id, name }: MockWorkspaceParams): Workspace => (
     resolveOnGithub: null,
     resolveCommitStyle: null,
     afterMerge: null,
+    defaultBranchTemplate: null,
   },
   createdAt: clock.iso({ at: '2026-08-01T09:00:00.000Z' }),
   updatedAt: clock.iso({ at: '2026-09-20T09:00:00.000Z' }),

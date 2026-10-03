@@ -27,6 +27,7 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   resolveOnGithub: null,
   resolveCommitStyle: null,
   afterMerge: null,
+  defaultBranchTemplate: null,
 };
 
 export const mergeWorkspaceOverrides = ({
@@ -55,6 +56,7 @@ export const mergeWorkspaceOverrides = ({
     resolveOnGithub: pick('resolveOnGithub'),
     resolveCommitStyle: pick('resolveCommitStyle'),
     afterMerge: pick('afterMerge'),
+    defaultBranchTemplate: pick('defaultBranchTemplate'),
   };
 };
 
