@@ -35,6 +35,7 @@ import {
 } from '../../../../store/storyHarness';
 import { bindTarget } from '../../../actions/registry';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { inFlowBefore, isLaidOver } from '../../../../test/flowLayout';
 import { StageBoard } from './index';
 
 const workspace = aWorkspace({ name: 'Harborline', slug: 'harborline' });
@@ -102,17 +103,35 @@ describe('StageBoard selection bar', () => {
     expect(checkboxOf(GOALS[1] ?? '').getAttribute('aria-checked')).toBe('false');
   });
 
-  it('seats each checkbox in the header row of its card, before the title', () => {
+  it('lines each title up with its meta line at rest and lays the checkbox over the rail', () => {
     mountBoard(sessionsOf(GOALS));
 
     for (const goal of GOALS) {
       const box = checkboxOf(goal);
       const title = screen.getByRole('button', { name: goal });
       const card = box.closest('article');
+      const titleRow = title.parentElement;
+      const column = titleRow?.parentElement;
       expect(card?.contains(title)).toBe(true);
-      expect(title.parentElement?.contains(box)).toBe(true);
-      expect(box.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+      expect(inFlowBefore(title)).toEqual([]);
+      expect(titleRow?.contains(box)).toBe(false);
+      expect(card === null ? false : isLaidOver(box, card)).toBe(true);
+      expect(column?.children.length).toBe(2);
+      expect(inFlowBefore(titleRow ?? title)).toEqual([]);
+      expect(inFlowBefore(column?.lastElementChild ?? title)).toEqual([titleRow]);
     }
+  });
+
+  it('reaches the checkbox from the keyboard on a focused card', () => {
+    mountBoard(sessionsOf(GOALS));
+    const title = screen.getByRole('button', { name: GOALS[2] ?? '' });
+
+    title.focus();
+    fireEvent.keyDown(title, { key: 'x', code: 'KeyX' });
+
+    expect(checkboxOf(GOALS[2] ?? '').getAttribute('aria-checked')).toBe('true');
+    expect(within(toolbar()).getByText('1 selected')).toBeDefined();
+    expect(document.activeElement).toBe(title);
   });
 
   it('offers every card on the board, and selects them all from the bar', () => {

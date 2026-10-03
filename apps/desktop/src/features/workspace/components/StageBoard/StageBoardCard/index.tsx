@@ -179,15 +179,16 @@ export const StageBoardCard = memo(function StageBoardCard({
       )}
     >
       <ToneBar tone={tone.tone} density="card" isBreathing={tone.isBreathing} />
+      {onToggleSelect !== undefined && (
+        <SelectionCheckbox
+          checked={selected === true}
+          label={`Select ${inlineMarkdownText({ text: sessionTitle({ session }) })}`}
+          onToggle={(event) => onToggleSelect(id, event)}
+          className="absolute top-2.5 -left-0.5"
+        />
+      )}
       <span className="flex min-w-0 flex-col justify-between">
         <span className="flex min-h-10 items-start gap-2">
-          {onToggleSelect !== undefined && (
-            <SelectionCheckbox
-              checked={selected === true}
-              label={`Select ${inlineMarkdownText({ text: sessionTitle({ session }) })}`}
-              onToggle={(event) => onToggleSelect(id, event)}
-            />
-          )}
           <PrRequestSlot
             linkedRequest={linkedRequest}
             isGitlab={isGitlab}
