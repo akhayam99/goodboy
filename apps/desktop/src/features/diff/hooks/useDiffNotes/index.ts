@@ -112,6 +112,7 @@ export const useDiffNotes = ({ sessionId }: Params): DiffNotes => {
       threads: fixes.map((fix) => threadOf({ fix, handlers })),
       submitLabel: 'Add note',
       composerLabel: 'Note',
+      noun: 'note',
       allowFileLevel: true,
       onSubmit: (filePath, anchor, body) =>
         void addDiffComment(sessionId, filePath, body, anchor ?? undefined),

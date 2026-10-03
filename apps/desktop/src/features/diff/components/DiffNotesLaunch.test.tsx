@@ -72,6 +72,7 @@ describe('DiffNotesLaunch', () => {
     render(<DiffNotesLaunch sessionId={SESSION_ID} />);
 
     const strip = screen.getByRole('region', { name: 'Fix launch' });
+    expect(within(strip).getByRole('heading').textContent).toBe('Fix 2 notes, one agent each');
     expect(spawnAgent).not.toHaveBeenCalled();
     fireEvent.click(within(strip).getByRole('button', { name: /^Start 2 agents/ }));
 

@@ -60,6 +60,7 @@ export const DiffNotesLaunch = ({ sessionId }: Props) => {
           threadIds={threadIds}
           onClose={close}
           onStarted={onStarted}
+          noun="note"
         />
       )}
     </>

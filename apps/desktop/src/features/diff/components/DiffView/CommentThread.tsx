@@ -26,6 +26,7 @@ export const CommentThread = ({ thread, comments }: Props) => {
   const [editing, setEditing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const tint = tintClasses(thread.tone);
+  const noun = comments.noun ?? 'comment';
   const lockReason = thread.lockReason ?? null;
   const isLocked = lockReason !== null;
 
@@ -64,7 +65,7 @@ export const CommentThread = ({ thread, comments }: Props) => {
   if (editing && comments.onEdit) {
     return (
       <CommentComposer
-        label="Edit comment"
+        label={`Edit ${noun}`}
         submitLabel="Save"
         initialBody={thread.body}
         onSubmit={(body) => {
@@ -163,7 +164,7 @@ export const CommentThread = ({ thread, comments }: Props) => {
         <InlineConfirm
           role="danger"
           icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-          title="Delete this comment?"
+          title={`Delete this ${noun}?`}
           confirmLabel="Delete"
           onConfirm={() => {
             comments.onDelete?.(thread.id);

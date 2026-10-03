@@ -41,6 +41,7 @@ export type DiffComments = {
   readonly threads: ReadonlyArray<DiffThread>;
   readonly submitLabel: string;
   readonly composerLabel: string;
+  readonly noun?: string;
   readonly allowFileLevel: boolean;
   readonly onSubmit: (filePath: string, anchor: DiffCommentAnchor | null, body: string) => void;
   readonly onAskAgent?: (target: DiffLineTarget) => void;

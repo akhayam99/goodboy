@@ -26,6 +26,7 @@ import {
   launchFactLine,
   launchStartLabel,
   launchTitle,
+  type LaunchNoun,
 } from './reviewLaunchCopy';
 import { startBatch } from './startBatch';
 import { useDraftRouting } from './components/ReviewFlow/useDraftRouting';
@@ -35,6 +36,7 @@ type Props = {
   readonly threadIds: ReadonlyArray<string>;
   readonly onClose: () => void;
   readonly onStarted: (params: { readonly count: number; readonly model: string }) => void;
+  readonly noun?: LaunchNoun;
 };
 
 const COMMIT_OPTIONS: ReadonlyArray<SegmentedTabOption<ResolveCommitStyle>> = [
@@ -52,7 +54,13 @@ const initialCommitStyle = ({
   return last ?? sessionResolveStyle({ state, sessionId }).commitStyle;
 };
 
-export const ReviewLaunchStrip = ({ sessionId, threadIds, onClose, onStarted }: Props) => {
+export const ReviewLaunchStrip = ({
+  sessionId,
+  threadIds,
+  onClose,
+  onStarted,
+  noun = 'comment',
+}: Props) => {
   const draft = useDraftRouting({ sessionId });
   const limit = useAppStore(
     (s) => s.sessionResolveParallelLimit[sessionId] ?? RESOLVE_PARALLEL_LIMIT_DEFAULT,
@@ -77,6 +85,7 @@ export const ReviewLaunchStrip = ({ sessionId, threadIds, onClose, onStarted }: 
         sessionId,
         threadIds,
         launchChoice: launchChoiceOf({ routing: draft.routing, commitStyle, hint }),
+        noun,
       });
       draft.save(draft.routing);
       onStarted({ count: agentIds.length, model: draft.routing.model });
@@ -111,7 +120,7 @@ export const ReviewLaunchStrip = ({ sessionId, threadIds, onClose, onStarted }: 
       className="flex min-w-0 flex-col gap-3 rounded-lg bg-subtle px-4 py-3.5 motion-safe:animate-studio-in"
     >
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-heading text-foreground">{launchTitle({ count })}</h2>
+        <h2 className="text-heading text-foreground">{launchTitle({ count, noun })}</h2>
         <IconButton icon={X} label={REVIEW_LAUNCH_LABEL.close} variant="ghost" onClick={onClose} />
       </div>
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
