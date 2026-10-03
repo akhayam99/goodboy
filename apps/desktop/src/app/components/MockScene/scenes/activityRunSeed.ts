@@ -76,6 +76,8 @@ const DEDUPE_ANSWER_AGENT_ID = 'mock-run-agent-dedupe-answer' as AgentId;
 const CONSOLE_STORE_AGENT_ID = 'mock-run-agent-console-store' as AgentId;
 const CONSOLE_BANNER_AGENT_ID = 'mock-run-agent-console-banner' as AgentId;
 const CONSOLE_TESTS_AGENT_ID = 'mock-run-agent-console-tests' as AgentId;
+const BANNER_COPY_AGENT_ID = 'mock-run-agent-banner-copy' as AgentId;
+const BANNER_STATES_AGENT_ID = 'mock-run-agent-banner-states' as AgentId;
 const REPORT_AGENT_ID = 'mock-run-agent-report' as AgentId;
 
 const CONSOLE_PROVIDER_RUN_ID = 'mock-run-provider-run-console-store' as ProviderRunId;
@@ -755,6 +757,33 @@ const AGENTS: ReadonlyArray<Agent> = [
     startedAt: at({ day: DAY_TWO, time: '09:40:00' }),
     providerOverride: 'cursor',
     modelOverride: 'kimi-k3',
+  },
+  {
+    id: BANNER_COPY_AGENT_ID,
+    sessionId: SESSION_ID,
+    parentAgentId: CONSOLE_BANNER_AGENT_ID,
+    ordinal: 6.1,
+    name: 'Read the support copy for stuck deliveries',
+    kind: 'scout',
+    status: 'completed',
+    outputSummary: 'Support calls a delivery stuck after the third retry.',
+    startedAt: at({ day: DAY_TWO, time: '09:42:00' }),
+    completedAt: at({ day: DAY_TWO, time: '09:44:00' }),
+    lastFinishedAt: at({ day: DAY_TWO, time: '09:44:00' }),
+    lastViewedAt: NOW,
+    providerOverride: 'anthropic',
+    modelOverride: 'claude-haiku-4-5',
+  },
+  {
+    id: BANNER_STATES_AGENT_ID,
+    sessionId: SESSION_ID,
+    parentAgentId: CONSOLE_BANNER_AGENT_ID,
+    ordinal: 6.2,
+    name: 'List the banner states to cover',
+    kind: 'scout',
+    status: 'pending',
+    providerOverride: 'anthropic',
+    modelOverride: 'claude-haiku-4-5',
   },
   {
     id: CONSOLE_TESTS_AGENT_ID,

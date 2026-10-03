@@ -131,6 +131,25 @@ const rowsOf = (items: ReadonlyArray<{ readonly kind: string }>): ReadonlyArray<
   items.filter((item): item is TimelineRowItem => item.kind === 'row');
 
 describe('buildTimelineStream subagent groups', () => {
+  it('keeps the group row above its parent when the first subagent starts the same second', () => {
+    const parent = agentAt({ id: PARENT, ordinal: 3, minute: 0 });
+    const children = [1, 2, 3].map((index) =>
+      agentAt({
+        id: `sub${index}`,
+        ordinal: 3 + index / 10,
+        minute: index - 1,
+        parentAgentId: PARENT,
+      }),
+    );
+    const { items, groups } = streamOf({ agents: [parent, ...children], expanded: [GROUP_ID] });
+    const ids = rowsOf(items).map((row) => row.id);
+
+    expect(ids.slice(-2)).toEqual([GROUP_ID, 'agent:lead']);
+    const layout = layoutTimelineRail({ rows: items, groups });
+    const header = layout.rows.find((rail) => rail.id === GROUP_ID);
+    expect(header?.markerColumn).toBe(layout.columnByGroupId.get(PARENT_LANE));
+  });
+
   it('leaves two subagents as plain rows', () => {
     const { items } = streamOf({ agents: [lead(), ...subagents({ count: 2 })] });
 
@@ -197,12 +216,9 @@ describe('buildTimelineStream subagent groups', () => {
         shape: 'merged',
       }),
     ]);
-    expect(rows.slice(0, 4).map((row) => row.explode)).toEqual([
-      { groupId: GROUP_ID, kind: 'subagents', order: 3, total: 4 },
-      { groupId: GROUP_ID, kind: 'subagents', order: 2, total: 4 },
-      { groupId: GROUP_ID, kind: 'subagents', order: 1, total: 4 },
-      { groupId: GROUP_ID, kind: 'subagents', order: 0, total: 4 },
-    ]);
+    expect(rows.slice(0, 4).map((row) => row.explode)).toEqual(
+      Array.from({ length: 4 }, () => ({ groupId: GROUP_ID, kind: 'subagents' })),
+    );
 
     const layout = layoutTimelineRail({ rows: items, groups });
     const groupRail = layout.rows[items.findIndex((item) => item.id === GROUP_ID)];

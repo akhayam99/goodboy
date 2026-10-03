@@ -10,15 +10,6 @@ afterEach(cleanup);
 
 const persistedKind = (value: string): AgentKind => JSON.parse(JSON.stringify(value));
 
-const widthOf = ({ kind }: { readonly kind: AgentKind }): string => {
-  const { container } = render(<AgentKindChip kind={kind} />);
-  const chip = container.firstElementChild;
-  return (chip?.className ?? '')
-    .split(' ')
-    .filter((token) => token.startsWith('w-'))
-    .join(' ');
-};
-
 describe('AgentKindChip', () => {
   it('renders the palette label for the given kind', () => {
     render(<AgentKindChip kind="planner" />);
@@ -46,16 +37,26 @@ describe('AgentKindChip', () => {
     expect(chip.className).not.toContain('uppercase');
   });
 
-  it('holds one width for every role so a column of chips stays aligned', () => {
-    const widths = new Set<string>();
-    for (const kind of AGENT_KIND_ORDER) {
-      widths.add(widthOf({ kind }));
-      cleanup();
-    }
-    widths.add(widthOf({ kind: persistedKind('gremlin') }));
+  it('draws the role as the app chip, a pill tinted in the colour of its role', () => {
+    const { container } = render(<AgentKindChip kind="resolver" />);
+    const chip = container.firstElementChild;
 
-    expect(widths.size).toBe(1);
-    expect([...widths][0]).toBe('w-20');
+    expect(chip?.className).toContain('rounded-full');
+    expect(chip?.className).toContain('text-agent-resolver');
+    expect(chip?.className).toContain('ring-1');
+  });
+
+  it('lets every chip hug its word instead of padding the short roles to one width', () => {
+    const widths = AGENT_KIND_ORDER.map((kind) => {
+      const { container } = render(<AgentKindChip kind={kind} />);
+      const width = (container.firstElementChild?.className ?? '')
+        .split(' ')
+        .filter((token) => token.startsWith('w-') || token.startsWith('min-w-'));
+      cleanup();
+      return width;
+    });
+
+    expect(widths.every((tokens) => tokens.length === 0)).toBe(true);
   });
 
   it('insets the label so the longest role never touches the chip edge', () => {
@@ -76,8 +77,9 @@ describe('AgentKindChip', () => {
   });
 
   it('renders the label density by default with the kind label, or the label it is given', () => {
-    render(<AgentKindChip kind="debugger" label="Debugger" />);
-    expect(screen.getByText('Debugger').className).toContain('w-20');
+    render(<AgentKindChip kind="debugger" label="Bug hunter" />);
+    expect(screen.getByText('Bug hunter')).toBeDefined();
+    expect(screen.queryByText('Debugger')).toBeNull();
   });
 
   it('renders the glyph density as the kind avatar named by its tooltip', () => {

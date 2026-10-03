@@ -66,10 +66,12 @@ const tenResolvers = ({ batchId = BATCH }: { readonly batchId?: string } = {}): 
 const streamOf = ({
   setup,
   expanded = [],
+  full = [],
   extraAgents = [],
 }: {
   readonly setup: Setup;
   readonly expanded?: ReadonlyArray<string>;
+  readonly full?: ReadonlyArray<string>;
   readonly extraAgents?: ReadonlyArray<Agent>;
 }) => {
   const entries = buildTimelineGroups({
@@ -95,6 +97,7 @@ const streamOf = ({
       resolveBatchByAgentId: setup.batchByAgentId,
       resolveFactsByAgentId: setup.factsByAgentId,
       expandedGroupIds: new Set(expanded),
+      fullGroupIds: new Set(full),
     }),
   };
 };
@@ -147,7 +150,11 @@ describe('buildTimelineStream resolve batches', () => {
   });
 
   it('grows the children upward above the group row on one lane', () => {
-    const { items, groups } = streamOf({ setup: tenResolvers(), expanded: [GROUP_ID] });
+    const { items, groups } = streamOf({
+      setup: tenResolvers(),
+      expanded: [GROUP_ID],
+      full: [GROUP_ID],
+    });
     const rows = rowsOf(items);
     const groupIndex = rows.findIndex((row) => row.id === GROUP_ID);
 
@@ -170,15 +177,33 @@ describe('buildTimelineStream resolve batches', () => {
     expect(topChild?.markerColumn).toBeGreaterThan(0);
   });
 
-  it('orders the exploded children newest first and numbers their slots from the group', () => {
-    const { items } = streamOf({ setup: tenResolvers(), expanded: [GROUP_ID] });
-    const children = rowsOf(items).slice(0, 10);
+  it('opens on the eight children nearest the group row, under a Show 2 more row', () => {
+    const { items, groups } = streamOf({ setup: tenResolvers(), expanded: [GROUP_ID] });
+    const groupIndex = items.findIndex((item) => item.id === GROUP_ID);
+    const opened = items.slice(0, groupIndex).filter((item) => item.kind !== 'now');
 
-    expect(children.map((row) => row.id)).toEqual(
+    expect(opened.map((item) => item.id)).toEqual([
+      `more:${GROUP_ID}`,
+      ...Array.from({ length: 8 }, (_, index) => `agent:r${7 - index}`),
+    ]);
+    const more = opened[0];
+    expect(more?.kind === 'more' ? more.hiddenCount : null).toBe(2);
+    expect(more?.groupId).toBe(groups.find((group) => group.originRowId === GROUP_ID)?.id);
+    expect(
+      rowsOf(opened).every(
+        (row) => row.explode?.groupId === GROUP_ID && row.explode.kind === 'batch',
+      ),
+    ).toBe(true);
+  });
+
+  it('shows every child and no more row once the group is shown in full', () => {
+    const { items } = streamOf({ setup: tenResolvers(), expanded: [GROUP_ID], full: [GROUP_ID] });
+    const groupIndex = items.findIndex((item) => item.id === GROUP_ID);
+
+    expect(items.some((item) => item.kind === 'more')).toBe(false);
+    expect(rowsOf(items.slice(0, groupIndex)).map((row) => row.id)).toEqual(
       Array.from({ length: 10 }, (_, index) => `agent:r${9 - index}`),
     );
-    expect(children.map((row) => row.explode?.order)).toEqual([9, 8, 7, 6, 5, 4, 3, 2, 1, 0]);
-    expect(children.every((row) => row.explode?.total === 10)).toBe(true);
   });
 
   it('stays newest first with the batch closed and open, the group at the batch start', () => {

@@ -1,9 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  EXPLODE_OUT_MS,
-  EXPLODE_OUT_STAGGER_MS,
-  EXPLODE_SETTLE_MS,
-} from '../../timeline/explodeTiming';
+import { useCallback, useState } from 'react';
 
 const NO_IDS: ReadonlySet<string> = new Set();
 
@@ -12,108 +7,60 @@ const prefersReducedMotion = (): boolean =>
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const without = ({ ids, id }: { readonly ids: ReadonlySet<string>; readonly id: string }) => {
+  if (!ids.has(id)) {
+    return ids;
+  }
   const next = new Set(ids);
   next.delete(id);
   return next;
 };
 
 const withId = ({ ids, id }: { readonly ids: ReadonlySet<string>; readonly id: string }) =>
-  new Set(ids).add(id);
+  ids.has(id) ? ids : new Set(ids).add(id);
+
+type IdParams = {
+  readonly id: string;
+};
 
 export type ExplodeGroups = {
   readonly expandedIds: ReadonlySet<string>;
   readonly leavingIds: ReadonlySet<string>;
-  readonly toggle: (params: { readonly id: string; readonly total: number }) => void;
-  readonly set: (params: {
-    readonly id: string;
-    readonly isExpanded: boolean;
-    readonly total: number;
-  }) => void;
+  readonly fullIds: ReadonlySet<string>;
+  readonly set: (params: { readonly id: string; readonly isExpanded: boolean }) => void;
+  readonly showAll: (params: IdParams) => void;
+  readonly settle: (params: IdParams) => void;
 };
 
 export const useExplodeGroups = (): ExplodeGroups => {
   const [expandedIds, setExpandedIds] = useState<ReadonlySet<string>>(NO_IDS);
   const [leavingIds, setLeavingIds] = useState<ReadonlySet<string>>(NO_IDS);
-  const timers = useRef(new Map<string, number>());
+  const [fullIds, setFullIds] = useState<ReadonlySet<string>>(NO_IDS);
 
-  useEffect(() => {
-    const pending = timers.current;
-    return () => {
-      for (const timer of pending.values()) {
-        window.clearTimeout(timer);
-      }
-      pending.clear();
-    };
+  const fold = useCallback(({ id }: IdParams) => {
+    setLeavingIds((current) => without({ ids: current, id }));
+    setExpandedIds((current) => without({ ids: current, id }));
+    setFullIds((current) => without({ ids: current, id }));
   }, []);
 
-  const clearTimer = useCallback(({ id }: { readonly id: string }) => {
-    const timer = timers.current.get(id);
-    if (timer === undefined) {
-      return;
-    }
-    window.clearTimeout(timer);
-    timers.current.delete(id);
-  }, []);
-
-  const expand = useCallback(
-    ({ id }: { readonly id: string }) => {
-      clearTimer({ id });
-      setLeavingIds((current) => without({ ids: current, id }));
-      setExpandedIds((current) => withId({ ids: current, id }));
-    },
-    [clearTimer],
-  );
-
-  const collapse = useCallback(
-    ({ id, total }: { readonly id: string; readonly total: number }) => {
-      clearTimer({ id });
-      const finish = () => {
-        timers.current.delete(id);
+  const set = useCallback(
+    ({ id, isExpanded }: { readonly id: string; readonly isExpanded: boolean }) => {
+      if (isExpanded) {
         setLeavingIds((current) => without({ ids: current, id }));
-        setExpandedIds((current) => without({ ids: current, id }));
-      };
+        setExpandedIds((current) => withId({ ids: current, id }));
+        return;
+      }
       if (prefersReducedMotion()) {
-        finish();
+        fold({ id });
         return;
       }
       setLeavingIds((current) => withId({ ids: current, id }));
-      timers.current.set(
-        id,
-        window.setTimeout(
-          finish,
-          EXPLODE_OUT_MS + total * EXPLODE_OUT_STAGGER_MS + EXPLODE_SETTLE_MS,
-        ),
-      );
     },
-    [clearTimer],
+    [fold],
   );
 
-  const set = useCallback(
-    ({
-      id,
-      isExpanded,
-      total,
-    }: {
-      readonly id: string;
-      readonly isExpanded: boolean;
-      readonly total: number;
-    }) => {
-      if (isExpanded) {
-        expand({ id });
-        return;
-      }
-      collapse({ id, total });
-    },
-    [collapse, expand],
-  );
+  const showAll = useCallback(({ id }: IdParams) => {
+    setFullIds((current) => withId({ ids: current, id }));
+  }, []);
 
-  const toggle = useCallback(
-    ({ id, total }: { readonly id: string; readonly total: number }) => {
-      const isOpen = expandedIds.has(id) && !leavingIds.has(id);
-      set({ id, isExpanded: !isOpen, total });
-    },
-    [expandedIds, leavingIds, set],
-  );
-
-  return { expandedIds, leavingIds, toggle, set };
+  return { expandedIds, leavingIds, fullIds, set, showAll, settle: fold };
 };

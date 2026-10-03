@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { WORK_ROW, cn } from '@goodboy/ui';
+import { Chip, WORK_ROW, cn } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import type { RunWorkflowKind } from '../../../../timeline/runWorkflowKind';
 
@@ -29,8 +29,8 @@ const KIND: Record<RunWorkflowKind, KindGlyph> = {
 const GLYPH_SIZE = 10;
 
 const CHIP_TONE = {
-  rest: 'bg-fill text-muted-foreground ring-border-soft',
-  muted: 'bg-transparent text-faint-foreground ring-border-soft',
+  rest: '',
+  muted: 'bg-transparent text-faint-foreground',
   lit: 'bg-hover text-foreground ring-border',
 } as const;
 
@@ -39,16 +39,16 @@ export const TimelineRunChip = ({ kind, workflowName, muted = false, lit = false
   const name = workflowName.trim();
   const tooltip = isNamedInTooltip && name.length > 0 ? `${name} ${label.toLowerCase()}` : label;
   return (
-    <span
+    <Chip
+      tone="neutral"
+      size="3xs"
+      title={tooltip}
+      icon={<Icon size={GLYPH_SIZE} aria-label={label} />}
+      label={<span className={WORK_ROW.chipLabel}>Workflow</span>}
       className={cn(
-        'inline-flex shrink-0 items-center justify-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium leading-none ring-1 ring-inset motion-safe:transition-colors',
-        WORK_ROW.chipBox,
+        'shrink-0 justify-center motion-safe:transition-colors',
         lit ? CHIP_TONE.lit : muted ? CHIP_TONE.muted : CHIP_TONE.rest,
       )}
-      title={tooltip}
-    >
-      <Icon size={GLYPH_SIZE} aria-label={label} />
-      <span className={WORK_ROW.chipLabel}>Workflow</span>
-    </span>
+    />
   );
 };

@@ -47,19 +47,6 @@ const railTouchesLane = ({ rail, laneId }: TouchesLaneParams): boolean =>
   rail.segments.some((segment) => segment.laneId === laneId) ||
   rail.joins.some((join) => join.laneId === laneId);
 
-const explodePhaseOf = ({
-  item,
-  leavingIds,
-}: {
-  readonly item: TimelineRowItem;
-  readonly leavingIds: ReadonlySet<string>;
-}): 'in' | 'out' | null => {
-  if (item.explode === undefined) {
-    return null;
-  }
-  return leavingIds.has(item.explode.groupId) ? 'out' : 'in';
-};
-
 export const useTimelineRowProps = ({
   session,
   explode,
@@ -99,9 +86,12 @@ export const useTimelineRowProps = ({
     return byId;
   }, [events, historyRowFor, stream.items]);
 
+  const latestLaneRuns = useRef(laneRuns);
+  latestLaneRuns.current = laneRuns;
+
   const laneTargetFor = useCallback(
     ({ laneId }: { readonly laneId: string }): TimelineLaneTarget | null => {
-      const entry = laneRuns.runByLaneId.get(laneId);
+      const entry = latestLaneRuns.current.runByLaneId.get(laneId);
       if (entry === undefined) {
         return null;
       }
@@ -111,7 +101,7 @@ export const useTimelineRowProps = ({
       }
       return { laneId, title: entry.run.title ?? entry.workflow.name, open: target.open };
     },
-    [laneRuns, openTargetFor],
+    [openTargetFor],
   );
 
   const onLaneHover = useCallback(
@@ -311,6 +301,9 @@ export const useTimelineRowProps = ({
     if (item.kind === 'day') {
       return { kind: 'day', item, rail, railWidth, sessionId, lanes };
     }
+    if (item.kind === 'more') {
+      return { kind: 'more', item, rail, railWidth, sessionId, lanes, onShowAll: explode.showAll };
+    }
     const { entry } = item;
     const isGroup = entry.kind === 'resolveBatch' || entry.kind === 'subagentGroup';
     const action = isGroup ? null : actionFor({ item });
@@ -339,7 +332,6 @@ export const useTimelineRowProps = ({
             ? (rows.spendByRunId.get(entry.run.id) ?? 0)
             : 0,
       isRevealed: rows.revealedRows.has(entry.id),
-      explodePhase: explodePhaseOf({ item, leavingIds: explode.leavingIds }),
       isExpanded: isGroup
         ? explode.expandedIds.has(entry.id) && !explode.leavingIds.has(entry.id)
         : rows.expandedRows.has(item.id),
