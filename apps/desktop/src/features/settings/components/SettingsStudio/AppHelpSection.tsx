@@ -4,6 +4,7 @@ import { reopenWizard } from '../../../onboarding/onboarding-store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { openReportSheet } from '../../../bug-report/openReportSheet';
+import { requestGuideChapter } from '../GuideStudio/guideChapterRequest';
 
 type Props = {
   readonly requestClose: () => void;
@@ -33,6 +34,22 @@ export const AppHelpSection = ({ requestClose }: Props) => {
           onClick={closeThen(() => window.dispatchEvent(new CustomEvent('goodboy:open-guide')))}
         >
           <CONCEPT_ICONS.guide size={ICON_SIZE.control} aria-hidden /> Open guide
+        </Button>
+      </FieldRow>
+
+      <FieldRow
+        label="How Goodboy listens"
+        help="Prefixes, list keys and the two kinds of field, on one page."
+      >
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={closeThen(() => {
+            requestGuideChapter('listens');
+            window.dispatchEvent(new CustomEvent('goodboy:open-guide'));
+          })}
+        >
+          Open
         </Button>
       </FieldRow>
 

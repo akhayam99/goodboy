@@ -174,7 +174,7 @@ export const HistoryResult = ({
           <RotateCcw size={ICON_SIZE.row} aria-hidden />
           Restore it
         </Button>
-        <Button variant="primary" disabled={isBusy} onClick={onDone}>
+        <Button variant="secondary" size="sm" disabled={isBusy} onClick={onDone}>
           Done
         </Button>
       </FormActions>

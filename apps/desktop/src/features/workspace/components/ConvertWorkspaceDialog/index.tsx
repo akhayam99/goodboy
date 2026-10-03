@@ -278,7 +278,9 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
             </p>
           </div>
           <FormActions>
-            <Button onClick={onClose}>Done</Button>
+            <Button variant="secondary" size="sm" onClick={onClose}>
+              Done
+            </Button>
           </FormActions>
         </div>
       ) : (

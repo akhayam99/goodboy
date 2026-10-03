@@ -57,6 +57,7 @@ import { LensSwitcherClosedScene, LensSwitcherScene } from './scenes/LensSwitche
 import { CardRailsScene } from './scenes/CardRailsScene';
 import { ProvidersScene } from './scenes/ProvidersScene';
 import { ImpactScene } from './scenes/ImpactScene';
+import { ImpactDeletedScene } from './scenes/ImpactDeletedScene';
 import {
   ModelPickerCodexScene,
   ModelPickerCursorScene,
@@ -90,6 +91,7 @@ import { UpdateConfirmScene } from './scenes/audit/UpdateConfirmScene';
 import { UpdateWhatsNewScene } from './scenes/audit/UpdateWhatsNewScene';
 import { NotificationsScene } from './scenes/audit/NotificationsScene';
 import { ChangelogScene } from './scenes/audit/ChangelogScene';
+import { GuideScene } from './scenes/audit/GuideScene';
 import { ArtifactStatesScene } from './scenes/audit/ArtifactStatesScene';
 import { InboxStatesScene } from './scenes/audit/InboxStatesScene';
 import { CompanionScene } from './scenes/audit/CompanionScene';
@@ -215,6 +217,7 @@ export const MOCK_SCENES = {
   'update-whats-new': UpdateWhatsNewScene,
   notifications: NotificationsScene,
   changelog: ChangelogScene,
+  guide: GuideScene,
   'artifact-states': ArtifactStatesScene,
   'inbox-states': InboxStatesScene,
   companion: CompanionScene,
@@ -224,6 +227,7 @@ export const MOCK_SCENES = {
   'workflow-builder-modes': WorkflowBuilderModesScene,
   forms: FormsAuditScene,
   'impact-scopes': ImpactScopesScene,
+  'impact-deleted': ImpactDeletedScene,
   explore: ExploreScene,
   'design-scale': DesignScaleScene,
   listbox: ListboxScene,

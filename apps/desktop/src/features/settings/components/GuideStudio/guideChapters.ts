@@ -3,7 +3,7 @@ import type { GuideLink } from './guideTarget';
 
 export type GuideGroup = 'start' | 'task' | 'reference';
 
-export type GuideExtra = 'stages' | 'shortcuts' | 'legend';
+export type GuideExtra = 'stages' | 'shortcuts' | 'listens' | 'legend';
 
 type GuidePoint = {
   readonly term: string;
@@ -556,6 +556,16 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
     ],
     extra: 'shortcuts',
+  },
+  {
+    id: 'listens',
+    group: 'task',
+    title: 'How Goodboy listens',
+    concept: 'shortcuts',
+    lead: 'The same few rules hold on every screen. This page reads the same constants the app does, so it cannot fall behind.',
+    points: [],
+    links: [],
+    extra: 'listens',
   },
   {
     id: 'tokens',
