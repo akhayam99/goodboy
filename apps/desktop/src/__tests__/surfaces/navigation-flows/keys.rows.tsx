@@ -152,7 +152,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   }),
   pressRow({
     id: 'settings.open',
-    lands: () => heading('Appearance'),
+    lands: () => heading('Settings'),
   }),
   pressRow({
     id: 'settings.shortcuts',
