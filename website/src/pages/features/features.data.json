@@ -307,6 +307,19 @@
           "also": "context drawer"
         },
         {
+          "title": "Who receives what",
+          "text": "Each part of the context says which roles receive it, so you see what goes into each agent's prompt.",
+          "group": "Shared context",
+          "also": "who receives what"
+        },
+        {
+          "title": "Learned",
+          "text": "List the topics you want explained, and read back what agents explained about them, grouped by topic.",
+          "group": "Shared context",
+          "also": "learned",
+          "shown": true
+        },
+        {
           "title": "Context budgets",
           "text": "Prompts stay small as a session grows. Each part of the shared brief has its own size, and the newest decisions are kept.",
           "group": "Shared context",
@@ -349,6 +362,13 @@
           "text": "Work on several branches of one repo in the same session. If a worktree drifts to another branch, a card offers clear choices.",
           "group": "Workspace and projects",
           "also": "several branches",
+          "shown": true
+        },
+        {
+          "title": "Branch names",
+          "text": "Pick how new session branches are named: task id first, without it, or your own template. The preview uses your last session.",
+          "group": "Workspace and projects",
+          "also": "branch names",
           "shown": true
         },
         {
@@ -440,7 +460,7 @@
         },
         {
           "title": "Autorun",
-          "text": "Let a run move to its next step without you. A guard stops an agent after four unattended turns in an hour.",
+          "text": "Choose when a run asks: before each step, once after the plan, or never. A guard stops an agent after four unattended turns in an hour.",
           "group": "Workflows",
           "also": "autorun",
           "shown": true
@@ -456,6 +476,13 @@
           "text": "Pause lets the step in flight finish and starts nothing new. Resume picks up where the run was, and Skip passes a step that is stuck.",
           "group": "Workflows",
           "also": "pause and resume",
+          "shown": true
+        },
+        {
+          "title": "Workflow rules",
+          "text": "Set once what every new run starts with: when it asks, a spend cap and standing guidance. Spread work by what each provider has left.",
+          "group": "Workflows",
+          "also": "workflow rules",
           "shown": true
         },
         {
@@ -785,7 +812,7 @@
         },
         {
           "title": "Link an item to a session",
-          "text": "Attach an Inbox item to work that already exists. Link work in a session searches every connected tracker at once.",
+          "text": "Attach an Inbox item to work that already exists, on a session, its branch or the whole workspace. Link work searches every connected tracker at once.",
           "group": "Inbox and your tools",
           "also": "link to a session"
         },
@@ -999,6 +1026,13 @@
           "text": "Ask about your repos without starting a session. The answer reads every project and never changes a file, and you can turn it into work later.",
           "group": "Agents",
           "main": true
+        },
+        {
+          "title": "Images in chat",
+          "text": "Paste, drop or attach up to 10 images to a chat message, and Claude or Codex reads them with your question.",
+          "group": "Agents",
+          "also": "chat images",
+          "shown": true
         },
         {
           "title": "Roles",

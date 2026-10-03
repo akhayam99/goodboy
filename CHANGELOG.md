@@ -12,6 +12,54 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.16.0
+
+Workflows follow your rules and can wait after the plan, branches take the name you set, tasks link to a branch or the workspace, and chats take images.
+
+This version updates your data in one direction. To go back to 0.15, restore the backup Goodboy made before updating.
+
+### New
+
+#### Workflow rules
+<!-- gb area=workflows screen=workflows image=workflow-rules -->
+
+A Rules tab in Workflows sets how every run in the workspace starts: when it asks you, a default spend cap per run, and standing guidance. Ask after the plan waits once, when the plan is written. Approve it and the rest runs on its own. Each run keeps the copy of the rules it started with, and the builder opens from them.
+
+Providers sums up your provider order and what each one has left. Spread by what I have left sends a step with no pinned provider to the one with room and puts a provider past 80% last. It starts on in workspaces created from 0.16.0, and off in the ones you already have.
+
+Polish tidies the standing guidance into one rule per line. Orchestrated runs send it to the orchestrator, and in other runs a Guidance tag marks each step that received it.
+
+#### Branch names
+<!-- gb area=sessions image=branch-names -->
+
+New sessions, in workspace settings, picks how branches are named: task id first, the default, without a task id, or Custom with placeholders for the prefix, the task id, a short name and your user. The preview shows the name your last session would get and says when git would refuse it.
+
+#### Tasks linked to a branch or the workspace
+<!-- gb area=inbox -->
+
+Link work links a task to This session, This branch or Whole workspace, or to the session and its branch at once, and says whether merging the pull request closes it. Don't close writes Part of in the pull request instead. Branch tasks show on their project row, workspace tasks in an Ongoing row on the Board that filters the cards, and the Inbox lists every session of a task.
+
+#### Learned
+<!-- gb area=agents image=learned -->
+
+List topics under Explain more when it touches, in About you, and Goodboy keeps what agents explained about them. You find it in the Learned tab of the Context drawer, under that field and as rows in Activity, with Dismiss and Undo. Learned items are written for you, and agents never receive them.
+
+#### Images in chat
+<!-- gb area=sessions -->
+
+Paste, drop or attach up to 10 images to a chat message, in PNG, JPEG, GIF or WebP. Claude and Codex read them with your message, and the message shows them as tiles. If a message fails to send, its text and images go back to the composer.
+
+### Improved
+
+#### Context for each role
+<!-- gb area=agents -->
+
+Reviewers, debuggers and resolvers now also read the session's decisions. Each tab of the Context drawer says under Visible to which roles receive it, and a folded run ends with Context +N when its agents added decisions or learnings.
+
+### Fixed
+
+- Board card titles line up with the line under them again, and the selection checkbox shows only on hover, on focus or while you select. <!-- gb area=sessions -->
+
 ## Goodboy v0.15.5
 
 Settings open on a home, each workspace sets which providers it runs on, finished runs fold into one row, and one composer and selection bar work everywhere.

@@ -133,7 +133,7 @@ export const WorkflowStudioScene = () => {
 
   return (
     <>
-      <WorkflowBuilderScene />
+      {IS_RULES ? null : <WorkflowBuilderScene />}
       {isReady && <WorkflowStudio workspaceId={WORKSPACE_ID} onClose={noop} />}
     </>
   );
