@@ -1,8 +1,7 @@
 import { openToolSettings } from '../../../integrations/openToolSettings';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Button,
-  Dialog,
   FormActions,
   formatError,
   Input,
@@ -10,7 +9,7 @@ import {
   SegmentedTabs,
   StatusDot,
 } from '@goodboy/ui';
-import type { Workspace } from '@goodboy/types';
+import type { Project, WorkspaceId } from '@goodboy/types';
 import {
   createGithubRepo,
   listOwnedRepos,
@@ -26,8 +25,8 @@ import { lastPathSegment } from '../WorkspaceLinkForm/lastPathSegment';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
-  readonly open: boolean;
-  readonly workspace: Workspace;
+  readonly workspaceId: WorkspaceId;
+  readonly project: Project;
   readonly onClose: () => void;
 };
 
@@ -77,15 +76,12 @@ type Orphan = {
   readonly url: string;
 };
 
-export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
+export const ConvertWorkspaceFlow = ({ workspaceId, project, onClose }: Props) => {
   const convertProjectToRepo = useAppStore((state) => state.convertProjectToRepo);
-  const project = useAppStore(
-    (state) => state.projects?.find((candidate) => candidate.workspaceId === workspace.id) ?? null,
-  );
-  const projectId = project?.id ?? null;
+  const projectId = project.id;
   const isGithubCliAvailable = useAppStore((s) => s.githubStatus?.available === true);
   const isGitlabConnected = useAppStore((s) =>
-    (s.workspaceIntegrations[workspace.id] ?? []).some(
+    (s.workspaceIntegrations[workspaceId] ?? []).some(
       (integration) => integration.provider === 'gitlab',
     ),
   );
@@ -96,13 +92,12 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
   const [reposState, setReposState] = useState<ReposState>({ kind: 'idle' });
   const [selectedRepo, setSelectedRepo] = useState(MANUAL_REPO);
   const [manualUrl, setManualUrl] = useState('');
-  const [repoName, setRepoName] = useState('');
+  const [repoName, setRepoName] = useState(() => lastPathSegment({ path: project.rootPath }));
   const [visibility, setVisibility] = useState<GithubRepoVisibility | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [orphan, setOrphan] = useState<Orphan | null>(null);
   const [isConverted, setIsConverted] = useState(false);
-  const keepDraftRef = useRef(false);
 
   const repos = reposState.kind === 'ok' ? reposState.repos : NO_REPOS;
   const areReposLoading = reposState.kind === 'loading';
@@ -111,28 +106,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
   const nameCheck = useMemo(() => validateGithubRepoName({ name: repoName }), [repoName]);
 
   useEffect(() => {
-    if (!open) {
-      return;
-    }
-    if (keepDraftRef.current) {
-      keepDraftRef.current = false;
-      return;
-    }
-    setAction('create');
-    setHost('github');
-    setReposState({ kind: 'idle' });
-    setSelectedRepo(MANUAL_REPO);
-    setManualUrl('');
-    setRepoName(lastPathSegment({ path: project?.rootPath ?? '' }));
-    setVisibility(null);
-    setIsBusy(false);
-    setError(null);
-    setOrphan(null);
-    setIsConverted(false);
-  }, [open, project?.rootPath ?? '']);
-
-  useEffect(() => {
-    if (!open || host !== 'github' || !isGithubCliAvailable) {
+    if (host !== 'github' || !isGithubCliAvailable) {
       return;
     }
     let cancelled = false;
@@ -151,7 +125,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
     return () => {
       cancelled = true;
     };
-  }, [open, host, isGithubCliAvailable]);
+  }, [host, isGithubCliAvailable]);
 
   const picked =
     host === 'github' ? (repos.find((repo) => repo.nameWithOwner === selectedRepo) ?? null) : null;
@@ -172,18 +146,13 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
   }, []);
 
   const onConnect = useCallback(() => {
-    keepDraftRef.current = true;
-    onClose();
     openToolSettings({ tool: host });
-  }, [host, onClose]);
+  }, [host]);
 
   const onConvert = useCallback(async () => {
     setIsBusy(true);
     setError(null);
     try {
-      if (projectId === null) {
-        throw new Error(`workspace has no projects: ${workspace.id}`);
-      }
       await convertProjectToRepo({ projectId, remoteUrl });
       setIsConverted(true);
     } catch (err) {
@@ -191,7 +160,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
     } finally {
       setIsBusy(false);
     }
-  }, [convertProjectToRepo, projectId, remoteUrl, workspace.id]);
+  }, [convertProjectToRepo, projectId, remoteUrl]);
 
   const onCreate = useCallback(async () => {
     if (nameCheck.kind !== 'ok' || visibility === null) {
@@ -231,9 +200,6 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
       }
 
       try {
-        if (projectId === null) {
-          throw new Error(`workspace has no projects: ${workspace.id}`);
-        }
         await convertProjectToRepo({ projectId, remoteUrl: result.repo.url });
       } catch (err) {
         setOrphan({ nameWithOwner: result.repo.nameWithOwner, url: result.repo.url });
@@ -246,32 +212,25 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
     } finally {
       setIsBusy(false);
     }
-  }, [convertProjectToRepo, githubOwner, nameCheck, projectId, visibility, workspace.id]);
+  }, [convertProjectToRepo, githubOwner, nameCheck, projectId, visibility]);
 
   const isCreating = action === 'create';
   const canCreate = isConnected && nameCheck.kind === 'ok' && visibility !== null;
   const primaryDisabled = isBusy || (isCreating ? !canCreate : !isConnected || remoteUrl === '');
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      size="md"
-      title={isConverted ? 'This is a dev project now' : 'Turn this into a dev project'}
-      description={
-        isConverted
-          ? undefined
-          : 'Give this project a git repository so sessions get their own branch and pull requests.'
-      }
+    <section
+      aria-label={isConverted ? 'This is a dev project now' : 'Turn this into a dev project'}
+      className="flex flex-col gap-4 rounded-lg border border-border-soft bg-background p-3"
     >
       {isConverted ? (
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-3">
             <span className="flex items-center gap-1.5 text-label text-success">
               <Check size={ICON_SIZE.row} aria-hidden />
-              {project?.name ?? workspace.name} is backed by git
+              {project.name} is backed by git
             </span>
-            <p className="text-xs leading-relaxed text-muted-foreground">
+            <p className="text-secondary text-muted-foreground">
               New sessions get their own branch and worktree. The sessions you already have keep
               working as plain folders, and nothing of yours was committed: add what you want
               tracked when you are ready.
@@ -284,10 +243,10 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
           </FormActions>
         </div>
       ) : (
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-4">
             {orphan != null && (
-              <p role="status" className="text-xs leading-relaxed text-warning">
+              <p role="status" className="text-secondary text-warning">
                 {orphan.nameWithOwner} was created on GitHub before this failed. It exists on GitHub
                 at {orphan.url} and was not removed. Delete it yourself if you do not want it, or
                 pick it from Link existing.
@@ -303,7 +262,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
             />
 
             {isCreating ? (
-              <p className="text-xs leading-relaxed text-muted-foreground">
+              <p className="text-secondary text-muted-foreground">
                 Goodboy creates the repository on GitHub. A GitLab project is linked from Link
                 existing instead.
               </p>
@@ -342,10 +301,10 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
             {isCreating && isConnected && (
               <>
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-label font-semibold text-foreground">repository name</span>
+                  <span className="text-row text-foreground">Repository name</span>
                   <Input
                     value={repoName}
-                    placeholder={lastPathSegment({ path: project?.rootPath ?? '' })}
+                    placeholder={lastPathSegment({ path: project.rootPath })}
                     onChange={(event) => setRepoName(event.target.value)}
                     disabled={isBusy}
                     aria-label="Repository name"
@@ -359,7 +318,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-label font-semibold text-foreground">visibility</span>
+                  <span className="text-row text-foreground">Visibility</span>
                   <div role="radiogroup" aria-label="Visibility" className="flex gap-2">
                     {VISIBILITY_OPTIONS.map((option) => (
                       <Button
@@ -382,7 +341,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
                 </div>
 
                 {nameCheck.kind === 'ok' && visibility !== null && (
-                  <p className="text-xs leading-relaxed text-foreground">
+                  <p className="text-secondary text-foreground">
                     Create {repoDestination({ owner: githubOwner, name: nameCheck.name })} as a{' '}
                     {visibility} repository and set it as this folder&apos;s origin remote.
                   </p>
@@ -392,7 +351,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
 
             {!isCreating && host === 'github' && isConnected && (
               <div className="flex flex-col gap-1.5">
-                <span className="text-label font-semibold text-foreground">repository</span>
+                <span className="text-row text-foreground">Repository</span>
                 <Listbox
                   isBlock
                   value={selectedRepo}
@@ -427,33 +386,33 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
 
             {!isCreating && (host === 'gitlab' || selectedRepo === MANUAL_REPO) && (
               <div className="flex flex-col gap-1.5">
-                <span className="text-label font-semibold text-foreground">remote url</span>
+                <span className="text-row text-foreground">Remote URL</span>
                 <Input
                   value={manualUrl}
                   placeholder={HOST_URL_PLACEHOLDER[host]}
                   onChange={(event) => setManualUrl(event.target.value)}
                   disabled={isBusy || !isConnected}
                 />
-                <p className="text-xs leading-relaxed text-muted-foreground">
+                <p className="text-secondary text-muted-foreground">
                   Create the repository on {HOST_NAME[host]} first, then paste its clone url here.
                 </p>
               </div>
             )}
 
             <div className="flex flex-col gap-1.5">
-              <span className="text-label font-semibold text-foreground">what happens</span>
-              <ul className="flex flex-col gap-1 text-xs leading-relaxed text-muted-foreground">
+              <span className="text-row text-foreground">What happens</span>
+              <ul className="flex flex-col gap-1 text-secondary text-muted-foreground">
                 <li className="flex items-center gap-1.5">
                   <GitBranch size={11} aria-hidden className="shrink-0" />
-                  git starts tracking {project?.rootPath ?? ''}
+                  Git starts tracking {project.rootPath}
                 </li>
-                <li>the first commit holds a .gitignore and nothing else</li>
-                <li>your files stay untracked until you add them yourself</li>
-                <li>your session folders and .goodboy stay out of version control</li>
+                <li>The first commit holds a .gitignore and nothing else.</li>
+                <li>Your files stay untracked until you add them yourself.</li>
+                <li>Your session folders and .goodboy stay out of version control.</li>
                 <li>
                   {isCreating
-                    ? 'the repository Goodboy creates becomes the origin remote'
-                    : 'the repository you picked becomes the origin remote'}
+                    ? 'The repository Goodboy creates becomes the origin remote.'
+                    : 'The repository you picked becomes the origin remote.'}
                 </li>
               </ul>
             </div>
@@ -481,6 +440,6 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
           </FormActions>
         </div>
       )}
-    </Dialog>
+    </section>
   );
 };

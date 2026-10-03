@@ -2,13 +2,13 @@ import { useEffect } from 'react';
 import { Star } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { usePickFolder } from '../../../../shared/hooks/usePickFolder';
 import { ProjectLinkList } from '../../../../shared/components/ProjectLinkList';
 import { GoodboyIgnoreCard } from '../../../workspace/components/GoodboyIgnoreCard';
 import { GoodboyIgnoreField } from './GoodboyIgnoreField';
 import { SentryLinkedBadge } from '../../../integrations/sentry/SentryLinkedBadge';
-import { Button, Eyebrow, Notice } from '@goodboy/ui';
+import { Button, Notice, SectionHeader } from '@goodboy/ui';
 import { useProjectGitStatuses } from '../../../workspace/hooks/useProjectGitStatuses';
 import { LocateMovedProjects } from '../../../workspace/components/LocateMovedProjects';
 
@@ -69,10 +69,12 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
         workspaceId={workspaceId}
         density="compact"
         heading={({ count }) => (
-          <h2 id="workspace-projects" className="flex items-center gap-1.5">
-            <Eyebrow label="Projects" />
-            <span className="text-eyebrow tabular-nums text-foreground">{count}</span>
-          </h2>
+          <SectionHeader
+            label="Projects"
+            headingLevel={2}
+            icon={<CONCEPT_ICONS.projectRepo size={ICON_SIZE.row} aria-hidden />}
+            meta={<span className="text-eyebrow tabular-nums text-foreground">{count}</span>}
+          />
         )}
         hint="Repositories and folders agents work in for this workspace."
         emptyHint="No projects linked yet. Add a repository or a folder."

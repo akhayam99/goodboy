@@ -84,7 +84,7 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
     name: 'settings rail: workspace',
     covers: ['openSettings', 'scope:workspace'],
     open: () => openSettingsRail(/^Workspace/),
-    lands: () => heading('About you'),
+    lands: () => visible('textbox', 'Workspace name'),
   },
   {
     name: 'settings rail: providers and models',

@@ -40,7 +40,7 @@ describe('WorkspaceProfileSection', () => {
   it('shows the stored fields under About you', () => {
     render(<WorkspaceProfileSection workspaceId={WORKSPACE_ID} />);
 
-    expect(screen.getByRole('heading', { name: /about you/i })).toBeDefined();
+    expect(screen.getByRole('heading', { name: /profile/i })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Remove Tech Lead' })).toBeDefined();
     expect((screen.getByLabelText(/About your work/) as HTMLTextAreaElement).value).toBe(
       'Leads the payments platform team.',

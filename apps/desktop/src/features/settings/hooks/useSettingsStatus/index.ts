@@ -13,6 +13,7 @@ import {
   type RailSubtitleState,
 } from '../../components/SettingsStudio/railSubtitles';
 import type { SettingsStatus } from '../../components/SettingsStudio/settingsDirectory';
+import { workspacePageStatus } from '../../components/SettingsStudio/workspacePageStatus';
 
 type Params = {
   readonly workspaceId: WorkspaceId | null;
@@ -34,6 +35,13 @@ export const useSettingsStatus = ({ workspaceId }: Params): SettingsStatus => {
       providerLimits: store.providerLimits,
       projects: store.projects,
       projectGitStatus: store.projectGitStatus,
+    })),
+  );
+  const workspaceState = useAppStore(
+    useShallow((store) => ({
+      workspace: store.workspaces.find((candidate) => candidate.id === workspaceId) ?? null,
+      overrides: workspaceId === null ? null : (store.workspaceOverrides[workspaceId] ?? null),
+      projectCount: store.projects.filter((project) => project.workspaceId === workspaceId).length,
     })),
   );
   const { integrations, connected, githubIdentity } = useToolConnections({ workspaceId });
@@ -58,8 +66,10 @@ export const useSettingsStatus = ({ workspaceId }: Params): SettingsStatus => {
   );
   const toolsInventory = useMemo(() => connectedInventory({ connected }), [connectedKey]);
 
+  const workspacePages = useMemo(() => workspacePageStatus(workspaceState), [workspaceState]);
+
   return useMemo(
-    () => ({ subtitles, providers, tools, toolsInventory }),
-    [subtitles, providers, tools, toolsInventory],
+    () => ({ subtitles, providers, tools, toolsInventory, workspacePages }),
+    [subtitles, providers, tools, toolsInventory, workspacePages],
   );
 };

@@ -29,6 +29,8 @@ const isLabelableControl = (child: ReactNode): child is ReactElement<{ id?: stri
 export type FieldRowProps = {
   readonly label: string;
   readonly help?: ReactNode;
+  readonly marker?: ReactNode;
+  readonly menu?: ReactNode;
   readonly children: ReactNode;
   readonly layout?: 'horizontal' | 'stacked';
   readonly className?: string;
@@ -37,6 +39,8 @@ export type FieldRowProps = {
 export const FieldRow = ({
   label,
   help,
+  marker,
+  menu,
   children,
   layout = 'horizontal',
   className,
@@ -45,20 +49,38 @@ export const FieldRow = ({
   const labelable = isLabelableControl(children);
   const associate = labelable && children.props.id === undefined;
 
+  const labelText = associate ? (
+    <label htmlFor={controlId} className="text-label font-medium text-foreground">
+      {label}
+    </label>
+  ) : (
+    <span className="text-label font-medium text-foreground">{label}</span>
+  );
+
   const labelBlock = (
     <div className="flex min-w-40 shrink flex-col gap-0.5">
-      {associate ? (
-        <label htmlFor={controlId} className="text-label font-medium text-foreground">
-          {label}
-        </label>
+      {marker == null ? (
+        labelText
       ) : (
-        <span className="text-label font-medium text-foreground">{label}</span>
+        <span className="flex min-w-0 items-center gap-1.5">
+          {labelText}
+          {marker}
+        </span>
       )}
       {help ? <p className="text-2xs leading-relaxed text-muted-foreground">{help}</p> : null}
     </div>
   );
 
-  const control = associate ? cloneElement(children, { id: controlId }) : children;
+  const associated = associate ? cloneElement(children, { id: controlId }) : children;
+  const control =
+    menu == null ? (
+      associated
+    ) : (
+      <span className="flex items-center gap-1">
+        {associated}
+        {menu}
+      </span>
+    );
 
   if (layout === 'stacked') {
     return (

@@ -1,53 +1,95 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { Workspace } from '@goodboy/types';
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
 
-const { state, listOwnedRepos, createGithubRepo } = vi.hoisted(() => ({
-  state: {
-    githubStatus: { available: true, user: 'acme' } as {
-      available: boolean;
-      user?: string;
-    } | null,
-    workspaceIntegrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
-    projects: [
-      { id: 'project-1', workspaceId: 'ws-1', kind: 'folder', rootPath: '/tmp/study-space' },
-    ],
-    convertProjectToRepo: vi.fn(async () => undefined),
-  },
+const { listOwnedRepos, createGithubRepo, convertProjectToRepo } = vi.hoisted(() => ({
   listOwnedRepos: vi.fn(),
   createGithubRepo: vi.fn(),
-}));
-
-vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (store: typeof state) => T) => selector(state),
+  convertProjectToRepo:
+    vi.fn<(params: { projectId: ProjectId; remoteUrl: string }) => Promise<Project>>(),
 }));
 
 vi.mock('@goodboy/core', async () => {
   const actual = await vi.importActual<typeof import('@goodboy/core')>('@goodboy/core');
   return {
+    ...actual,
     listOwnedRepos,
     createGithubRepo,
-    validateGithubRepoName: actual.validateGithubRepoName,
   };
 });
 
 vi.mock('../../../integrations/github/github', () => ({ tauriGhRunner: {} }));
 
-import { ConvertWorkspaceDialog } from './index';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type {
+  GitlabIntegrationBinding,
+  IntegrationBindingId,
+  IntegrationCredentialId,
+  Project,
+  ProjectId,
+} from '@goodboy/types';
+import { aProject, aWorkspace, TEST_NOW } from '@goodboy/types/testing';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../store/storyHarness';
+import { ConvertWorkspaceFlow } from './index';
 import { chooseListboxValue } from '../../../../__tests__/helpers/listbox';
 
-const workspace = {
-  id: 'ws-1',
-  name: 'Study space',
-} as unknown as Workspace;
+let useAppStore: StoryStore;
 
-beforeEach(() => {
-  state.githubStatus = { available: true, user: 'acme' };
-  state.workspaceIntegrations = {};
-  state.convertProjectToRepo.mockReset();
-  state.convertProjectToRepo.mockResolvedValue(undefined);
+const WORKSPACE = aWorkspace({ name: 'Study space' });
+
+const PROJECT: Project = aProject({
+  id: 'project-1' as ProjectId,
+  workspaceId: WORKSPACE.id,
+  kind: 'folder',
+  rootPath: '/tmp/study-space',
+});
+
+const GITLAB: GitlabIntegrationBinding = {
+  id: 'binding-gitlab' as IntegrationBindingId,
+  workspaceId: WORKSPACE.id,
+  projectId: null,
+  credentialId: 'credential-gitlab' as IntegrationCredentialId,
+  createdAt: TEST_NOW,
+  updatedAt: TEST_NOW,
+  provider: 'gitlab',
+  config: { userName: 'mara-quint', userId: '7', host: 'gitlab.com' },
+};
+
+const setGithub = ({ isAvailable }: { readonly isAvailable: boolean }) =>
+  useAppStore.setState({
+    githubStatus: isAvailable
+      ? { mode: 'gh-cli', available: true, user: 'acme', scopes: [] }
+      : { mode: 'absent', available: false },
+  });
+
+const connectGitlab = () =>
+  useAppStore.setState({ workspaceIntegrations: { [WORKSPACE.id]: [GITLAB] } });
+
+const renderFlow = ({ onClose = vi.fn() }: { readonly onClose?: () => void } = {}) =>
+  render(<ConvertWorkspaceFlow workspaceId={WORKSPACE.id} project={PROJECT} onClose={onClose} />);
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+  convertProjectToRepo.mockReset();
+  convertProjectToRepo.mockResolvedValue(PROJECT);
+  useAppStore.setState({ workspaces: [WORKSPACE], projects: [PROJECT], convertProjectToRepo });
+  setGithub({ isAvailable: true });
   createGithubRepo.mockReset();
   createGithubRepo.mockResolvedValue({
     kind: 'ok',
@@ -74,9 +116,16 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-describe('ConvertWorkspaceDialog', () => {
+describe('ConvertWorkspaceFlow', () => {
+  it('sits in the page as a region, never in a dialog', () => {
+    renderFlow();
+
+    screen.getByRole('region', { name: 'Turn this into a dev project' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
   it('converts with the repository the user picked', async () => {
-    render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
+    renderFlow();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Link existing' }));
     await waitFor(() =>
@@ -86,7 +135,7 @@ describe('ConvertWorkspaceDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Convert to dev project' }));
 
     await waitFor(() =>
-      expect(state.convertProjectToRepo).toHaveBeenCalledWith({
+      expect(convertProjectToRepo).toHaveBeenCalledWith({
         projectId: 'project-1',
         remoteUrl: 'https://github.com/acme/widgets',
       }),
@@ -96,7 +145,7 @@ describe('ConvertWorkspaceDialog', () => {
 
   it('ends the body with cancel and the primary inline, never in a footer bar', () => {
     const onClose = vi.fn();
-    render(<ConvertWorkspaceDialog open workspace={workspace} onClose={onClose} />);
+    renderFlow({ onClose });
 
     const primary = screen.getByRole('button', { name: 'Create repository' });
     const cancel = screen.getByRole('button', { name: 'Cancel' });
@@ -108,8 +157,8 @@ describe('ConvertWorkspaceDialog', () => {
   });
 
   it('blocks the conversion until the chosen host is connected', () => {
-    state.githubStatus = { available: false };
-    render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
+    setGithub({ isAvailable: false });
+    renderFlow();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Link existing' }));
     expect(screen.getByText('GitHub is not connected yet')).toBeDefined();
@@ -119,8 +168,8 @@ describe('ConvertWorkspaceDialog', () => {
   });
 
   it('takes a pasted remote url for GitLab', async () => {
-    state.workspaceIntegrations = { 'ws-1': [{ provider: 'gitlab' }] };
-    render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
+    connectGitlab();
+    renderFlow();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Link existing' }));
     fireEvent.click(screen.getByRole('tab', { name: 'GitLab' }));
@@ -130,7 +179,7 @@ describe('ConvertWorkspaceDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Convert to dev project' }));
 
     await waitFor(() =>
-      expect(state.convertProjectToRepo).toHaveBeenCalledWith({
+      expect(convertProjectToRepo).toHaveBeenCalledWith({
         projectId: 'project-1',
         remoteUrl: 'git@gitlab.com:acme/widgets.git',
       }),
@@ -138,8 +187,8 @@ describe('ConvertWorkspaceDialog', () => {
   });
 
   it('never sends the GitHub selection after the user switches to GitLab', async () => {
-    state.workspaceIntegrations = { 'ws-1': [{ provider: 'gitlab' }] };
-    render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
+    connectGitlab();
+    renderFlow();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Link existing' }));
     await waitFor(() =>
@@ -158,7 +207,7 @@ describe('ConvertWorkspaceDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Convert to dev project' }));
 
     await waitFor(() =>
-      expect(state.convertProjectToRepo).toHaveBeenCalledWith({
+      expect(convertProjectToRepo).toHaveBeenCalledWith({
         projectId: 'project-1',
         remoteUrl: 'git@gitlab.com:acme/widgets.git',
       }),
@@ -167,7 +216,7 @@ describe('ConvertWorkspaceDialog', () => {
 
   it('says the cli is signed out instead of pretending the account is empty', async () => {
     listOwnedRepos.mockResolvedValue({ kind: 'unauthenticated' });
-    render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
+    renderFlow();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Link existing' }));
     await waitFor(() => screen.getByText('the GitHub CLI is installed but not signed in'));
@@ -178,18 +227,18 @@ describe('ConvertWorkspaceDialog', () => {
 
   it('says the account owns no repositories when gh answers with an empty list', async () => {
     listOwnedRepos.mockResolvedValue({ kind: 'ok', repos: [] });
-    render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
+    renderFlow();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Link existing' }));
     await waitFor(() => screen.getByText('this account owns no repositories yet'));
   });
 
-  it('keeps the draft when the user leaves to connect the host', () => {
+  it('keeps the flow and its draft when the user goes to connect the host', () => {
     const onClose = vi.fn();
     const onOpenSettings = vi.fn();
     window.addEventListener('goodboy:open-settings', onOpenSettings);
-    state.githubStatus = { available: false };
-    render(<ConvertWorkspaceDialog open workspace={workspace} onClose={onClose} />);
+    setGithub({ isAvailable: false });
+    renderFlow({ onClose });
 
     fireEvent.click(screen.getByRole('tab', { name: 'Link existing' }));
     fireEvent.change(screen.getByPlaceholderText('https://github.com/owner/repo.git'), {
@@ -198,7 +247,7 @@ describe('ConvertWorkspaceDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Connect GitHub' }));
     window.removeEventListener('goodboy:open-settings', onOpenSettings);
 
-    expect(onClose).toHaveBeenCalledOnce();
+    expect(onClose).not.toHaveBeenCalled();
     expect(onOpenSettings).toHaveBeenCalledWith(
       expect.objectContaining({ detail: { scope: 'tools', tool: 'github' } }),
     );
@@ -208,7 +257,7 @@ describe('ConvertWorkspaceDialog', () => {
   });
 
   it('picks no visibility for the user and refuses to create until one is chosen', () => {
-    render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
+    renderFlow();
 
     expect(screen.getByRole('radio', { name: 'Public' }).getAttribute('aria-checked')).toBe(
       'false',
@@ -222,7 +271,7 @@ describe('ConvertWorkspaceDialog', () => {
   });
 
   it('names the destination and the visibility in one sentence before creating', async () => {
-    render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
+    renderFlow();
 
     fireEvent.click(screen.getByRole('radio', { name: 'Private' }));
 
@@ -243,7 +292,7 @@ describe('ConvertWorkspaceDialog', () => {
       }),
     );
     await waitFor(() =>
-      expect(state.convertProjectToRepo).toHaveBeenCalledWith({
+      expect(convertProjectToRepo).toHaveBeenCalledWith({
         projectId: 'project-1',
         remoteUrl: 'https://github.com/acme/study-space',
       }),
@@ -251,7 +300,7 @@ describe('ConvertWorkspaceDialog', () => {
   });
 
   it('rejects a repository name starting with a dash instead of cleaning it up', () => {
-    render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
+    renderFlow();
 
     fireEvent.change(screen.getByLabelText('Repository name'), {
       target: { value: '--upstream=evil' },
@@ -274,13 +323,13 @@ describe('ConvertWorkspaceDialog', () => {
       kind: 'failed',
       message: 'GraphQL: Name already exists on this account',
     });
-    render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
+    renderFlow();
 
     fireEvent.click(screen.getByRole('radio', { name: 'Public' }));
     fireEvent.click(screen.getByRole('button', { name: 'Create repository' }));
 
     await waitFor(() => screen.getByText('GraphQL: Name already exists on this account'));
-    expect(state.convertProjectToRepo).not.toHaveBeenCalled();
+    expect(convertProjectToRepo).not.toHaveBeenCalled();
   });
 
   it('sets no remote when what GitHub returned is not what was asked for', async () => {
@@ -294,19 +343,19 @@ describe('ConvertWorkspaceDialog', () => {
         isPrivate: false,
       },
     });
-    render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
+    renderFlow();
 
     fireEvent.click(screen.getByRole('radio', { name: 'Private' }));
     fireEvent.click(screen.getByRole('button', { name: 'Create repository' }));
 
     await waitFor(() => screen.getByText(/GitHub returned acme\/study-space, a public repository/));
     expect(screen.getByText(/was not removed/)).toBeDefined();
-    expect(state.convertProjectToRepo).not.toHaveBeenCalled();
+    expect(convertProjectToRepo).not.toHaveBeenCalled();
   });
 
   it('discloses the repository left on the account when the local half fails', async () => {
-    state.convertProjectToRepo.mockRejectedValue(new Error('git init refused'));
-    render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
+    convertProjectToRepo.mockRejectedValue(new Error('git init refused'));
+    renderFlow();
 
     fireEvent.click(screen.getByRole('radio', { name: 'Private' }));
     fireEvent.click(screen.getByRole('button', { name: 'Create repository' }));
@@ -325,12 +374,12 @@ describe('ConvertWorkspaceDialog', () => {
       message:
         'Goodboy created acme/study-space on GitHub but could not read it back: HTTP 502. It exists on GitHub and was not removed.',
     });
-    render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
+    renderFlow();
 
     fireEvent.click(screen.getByRole('radio', { name: 'Public' }));
     fireEvent.click(screen.getByRole('button', { name: 'Create repository' }));
 
     await waitFor(() => screen.getByText(/could not read it back/));
-    expect(state.convertProjectToRepo).not.toHaveBeenCalled();
+    expect(convertProjectToRepo).not.toHaveBeenCalled();
   });
 });
