@@ -1,6 +1,5 @@
 import { useAppStore } from '../../../../store';
 import { useRunningAgentCount } from '../../hooks/useRunningAgentCount';
-import { useUpdateSweep } from '../../hooks/useUpdateSweep';
 import { UpdateConfirm } from '../UpdateConfirm';
 import { QueuedRestartPopover } from './QueuedRestartPopover';
 import { UpdatePillVisual } from './UpdatePillVisual';
@@ -18,7 +17,6 @@ export const UpdatePill = ({ onOpenChangelog }: Props) => {
   const isReady = status === 'ready';
   const isAvailable = status === 'available';
   const isActive = isReady || isAvailable;
-  const sweepKey = useUpdateSweep({ active: isActive && !isQueued });
 
   if (!isActive && !isQueued) {
     return null;
@@ -30,7 +28,6 @@ export const UpdatePill = ({ onOpenChangelog }: Props) => {
       isReady={isReady}
       version={version}
       agentCount={runningCount}
-      sweepKey={sweepKey}
     />
   );
 

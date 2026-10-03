@@ -1,173 +1,34 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
-vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
-vi.mock('@tauri-apps/plugin-shell', () => ({ Command: { create: vi.fn() } }));
-vi.mock('@tauri-apps/plugin-sql', () => ({
-  default: { load: vi.fn().mockResolvedValue({}) },
-}));
-
-vi.mock('../../store', () => ({
-  useAppStore: vi.fn((selector: (s: unknown) => unknown) => {
-    const state = {
-      budgetAlerts: [],
-      notifications: [],
-      notificationCounts: [],
-      providers: [],
-      providerLifecycle: {
-        anthropic: {
-          phase: 'idle' as const,
-          runId: null,
-          action: null,
-          command: null,
-          exitCode: null,
-          startedAt: null,
-          errorTail: null,
-          detectedAuthUrl: null,
-        },
-        cursor: {
-          phase: 'idle' as const,
-          runId: null,
-          action: null,
-          command: null,
-          exitCode: null,
-          startedAt: null,
-          errorTail: null,
-          detectedAuthUrl: null,
-        },
-        codex: {
-          phase: 'idle' as const,
-          runId: null,
-          action: null,
-          command: null,
-          exitCode: null,
-          startedAt: null,
-          errorTail: null,
-          detectedAuthUrl: null,
-        },
-        gemini: {
-          phase: 'idle' as const,
-          runId: null,
-          action: null,
-          command: null,
-          exitCode: null,
-          startedAt: null,
-          errorTail: null,
-          detectedAuthUrl: null,
-        },
-      },
-      skills: {},
-      settings: {},
-      phaseTemplates: {},
-      sessionBudgets: {},
-      sessionWorktrees: {},
-      sessionBranches: {},
-      sessionTelemetry: {},
-      sessionSummary: null,
-      sessions: [],
-      sessionPhaseRuns: {},
-      sessionPlans: {},
-      workspaces: [],
-      projects: [],
-      workspaceIntegrations: {},
-      newSessionDrafts: {},
-      loadBudgetAlerts: vi.fn(),
-      dismissBudgetAlert: vi.fn(),
-      loadNotifications: vi.fn(),
-      markNotificationsRead: vi.fn(),
-      clearNotifications: vi.fn(),
-      refreshProviders: vi.fn(),
-      logoutProvider: vi.fn(),
-      cancelProviderLifecycle: vi.fn(),
-      loadSkills: vi.fn(),
-      saveSkill: vi.fn(),
-      deleteSkill: vi.fn(),
-      rescanSkills: vi.fn(),
-      createSession: vi.fn(),
-      setNewSessionDraft: vi.fn(),
-      clearNewSessionDraft: vi.fn(),
-      loadSetting: vi.fn().mockResolvedValue(null),
-      saveSetting: vi.fn(),
-      setSessionBudget: vi.fn(),
-      loadSessionBudget: vi.fn(),
-      setCurrentWorkspace: vi.fn(),
-      setCurrentSession: vi.fn(),
-      addWorkspace: vi.fn(),
-      deleteTask: vi.fn(),
-      archiveTask: vi.fn(),
-      sendTurn: vi.fn(),
-      cancelCurrentTurn: vi.fn(),
-      hydrate: vi.fn(),
-      hydrated: true,
-      bootPhase: 'ready' as const,
-      error: null,
-      budgetRules: [],
-      loadBudgetRules: vi.fn(),
-      saveBudgetRule: vi.fn(),
-      deleteBudgetRule: vi.fn(),
-    };
-    return selector(state);
-  }),
-  useCurrentSession: vi.fn().mockReturnValue(null),
-  useCurrentWorkspace: vi.fn().mockReturnValue(null),
-  useWorkspaces: vi.fn().mockReturnValue([]),
-  useSessions: vi.fn().mockReturnValue([]),
-  useSessionSlots: vi.fn().mockReturnValue([]),
-  useHasUnreadElsewhere: vi.fn().mockReturnValue(false),
-  EMPTY_ARRAY: [] as never[],
-}));
-
-vi.mock('../../features/permissions/permissions', () => ({
-  useEffectivePermissionRules: vi.fn().mockReturnValue([]),
-  invokePermissionRuleList: vi.fn().mockResolvedValue([]),
-  invokePermissionRuleUpsert: vi.fn().mockResolvedValue(undefined),
-  invokePermissionRuleDelete: vi.fn().mockResolvedValue(undefined),
-}));
-
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../store/storyHarness')).dbModuleMock());
+vi.mock('../../features/permissions/permissions', async () =>
+  (await import('../../store/storyHarness')).permissionsModuleMock(),
+);
+vi.mock('../../features/skills/skills', async () =>
+  (await import('../../store/storyHarness')).skillsModuleMock(),
+);
 vi.mock('../../shared/lib/editor', () => ({
   openInEditor: vi.fn(),
   openUrl: vi.fn(),
 }));
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { AppStore } from '../../store/store';
-import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
-import { useAppStore } from '../../store';
+import type { SessionId, WorkspaceId } from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../store/storyHarness';
 
-const IDLE_LIFECYCLE = {
-  phase: 'idle' as const,
-  runId: null,
-  action: null,
-  command: null,
-  exitCode: null,
-  startedAt: null,
-  errorTail: null,
-  detectedAuthUrl: null,
-};
-
-const DEFAULT_LIFECYCLE_MAP = {
-  anthropic: IDLE_LIFECYCLE,
-  cursor: IDLE_LIFECYCLE,
-  codex: IDLE_LIFECYCLE,
-  gemini: IDLE_LIFECYCLE,
-};
-
-function mockStore(partial: Partial<AppStore>): void {
-  vi.mocked(useAppStore).mockImplementation((selector: (state: AppStore) => unknown) =>
-    selector({
-      providerLifecycle: DEFAULT_LIFECYCLE_MAP,
-      newSessionDrafts: {},
-      workspaces: [],
-      projects: [],
-      sessionBranches: {},
-      setNewSessionDraft: vi.fn(),
-      clearNewSessionDraft: vi.fn(),
-      ...partial,
-    } as AppStore),
-  );
-}
 import { NoWorkspaceScreen } from '../../app/components/AppEmptyState';
 import { ChatEmptyState } from '../../features/chat/components/ChatView/ChatEmptyState';
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
@@ -186,22 +47,20 @@ import { TranscriptCard } from '../../features/chat/components/TranscriptCards';
 import { SessionOverviewLoading } from '../../features/session/components/SessionWorkspace/parts/SessionOverviewLoading';
 import { ToastProvider } from '../../shared/components/Toast';
 
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+});
+
 afterEach(cleanup);
 
 const WS_ID = 'ws-test' as WorkspaceId;
-
-function makeSession(overrides: Partial<Session> = {}): Session {
-  return {
-    id: 'sess-1' as SessionId,
-    workspaceId: WS_ID,
-    goal: 'test goal',
-    branchPrefix: 'test',
-    createdAt: '2026-01-01T00:00:00.000Z' as never,
-    state: { kind: 'idle' },
-    providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
-    ...overrides,
-  } as Session;
-}
+const SESSION_ID = 'sess-1' as SessionId;
 
 describe('empty states', () => {
   it('SkillsPanel: no skills', () => {
@@ -234,22 +93,28 @@ describe('empty states', () => {
   });
 
   it('NoWorkspaceScreen: no workspace, start and open CTAs', () => {
-    const { getByRole } = render(<NoWorkspaceScreen onAddWorkspace={vi.fn()} />);
-    expect(getByRole('button', { name: 'Start a new project' })).toBeTruthy();
-    expect(getByRole('button', { name: 'Open a folder' })).toBeTruthy();
+    const onAddWorkspace = vi.fn();
+    render(<NoWorkspaceScreen onAddWorkspace={onAddWorkspace} />);
+    screen.getByRole('heading', { name: 'Welcome to Goodboy' });
+    screen.getByRole('button', { name: 'Start a new project' });
+    fireEvent.click(screen.getByRole('button', { name: 'Open a folder' }));
+    expect(onAddWorkspace).toHaveBeenCalledOnce();
   });
 
   it('ChatEmptyState: fresh session, set-up-a-workflow CTA', () => {
-    const { getByRole } = render(
+    const listener = vi.fn();
+    window.addEventListener('goodboy:open-workflow-builder', listener);
+    render(
       <ChatEmptyState
-        sessionId={'sess-1' as SessionId}
+        sessionId={SESSION_ID}
         selectedAgentId={null}
         phaseRuns={[]}
         hasWorkflow={false}
       />,
     );
-    const workflowButton = getByRole('button', { name: /set up a workflow/i });
-    expect(workflowButton.querySelector('.lucide-waypoints')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /set up a workflow/i }));
+    window.removeEventListener('goodboy:open-workflow-builder', listener);
+    expect(listener).toHaveBeenCalledOnce();
   });
 });
 
@@ -262,8 +127,13 @@ describe('error states', () => {
   it('DeleteSessionConfirm: error state', async () => {
     const deleteTask = vi.fn().mockRejectedValue(new Error('session not found'));
     const onClose = vi.fn();
-    mockStore({ deleteTask });
-    render(<DeleteSessionConfirm session={makeSession()} onClose={onClose} />);
+    useAppStore.setState({ deleteTask });
+    render(
+      <DeleteSessionConfirm
+        session={aSession({ id: SESSION_ID, workspaceId: WS_ID })}
+        onClose={onClose}
+      />,
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     expect(await screen.findByText(/session not found/)).toBeDefined();
     expect(deleteTask).toHaveBeenCalledWith('sess-1');

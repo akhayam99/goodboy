@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight, ExternalLink, File, Folder, FolderSearch } from 'lucide-react';
-import { Button, cn, EmptyState, Skeleton, Tooltip, PaneShell } from '@goodboy/ui';
+import { Button, cn, Skeleton, Tooltip, PaneShell, FilledEmptyState } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { exploreList, exploreOpen, type ExploreEntry } from '../../explore';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
@@ -227,19 +227,17 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
                     <Skeleton className="h-6 w-10/12 rounded-md" />
                   </>
                 ) : childError != null ? (
-                  <EmptyState
+                  <FilledEmptyState
                     icon={CONCEPT_ICONS.errors}
                     tone={CONCEPT_TONE.errors}
                     title="Could not read this folder"
                     description={childError}
-                    size="inline"
                   />
                 ) : children.length === 0 ? (
-                  <EmptyState
+                  <FilledEmptyState
                     icon={CONCEPT_ICONS.explore}
                     tone={CONCEPT_TONE.explore}
                     title="This folder is empty"
-                    size="inline"
                   />
                 ) : (
                   <div className="flex flex-col gap-0.5">

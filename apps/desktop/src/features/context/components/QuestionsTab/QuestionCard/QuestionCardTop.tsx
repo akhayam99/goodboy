@@ -1,6 +1,6 @@
 import { X } from 'lucide-react';
 import { Chip, IconButton } from '@goodboy/ui';
-import { AgentAvatar } from '../../../../../shared/components/AgentAvatar';
+import { AgentKindChip } from '../../../../../shared/components/AgentKindChip';
 import type { AgentKind } from '../../../../session/agent-kind';
 import { QuestionPager, type QuestionPagerModel } from './QuestionPager';
 
@@ -22,7 +22,7 @@ export const QuestionCardTop = ({
   onDismiss,
 }: Props) => (
   <div className="flex min-h-6 min-w-0 items-center gap-2 text-label text-muted-foreground">
-    <AgentAvatar kind={askerKind ?? 'generic'} size="md" />
+    <AgentKindChip kind={askerKind ?? 'generic'} />
     <span className="min-w-0 truncate">
       <span className="text-foreground">{askerName ?? 'An agent'}</span> asks
     </span>

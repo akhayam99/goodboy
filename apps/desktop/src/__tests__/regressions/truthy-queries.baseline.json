@@ -1,7 +1,6 @@
 {
   "apps/desktop/src/__tests__/regressions/class-assertions.test.ts": 1,
   "apps/desktop/src/__tests__/regressions/truthy-queries.test.ts": 6,
-  "apps/desktop/src/__tests__/snapshots/empty-error-states.test.tsx": 2,
   "apps/desktop/src/app/components/AppTopBar/LimitsStrip/index.test.tsx": 2,
   "apps/desktop/src/features/chat/components/ChatInput/index.test.tsx": 4,
   "apps/desktop/src/features/chat/components/ChatInput/parts/QueuedMessages.test.tsx": 1,
@@ -25,7 +24,6 @@
   "apps/desktop/src/features/session/components/SessionOverviewPane/SessionDestructiveActions.test.tsx": 4,
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/FilesPane.test.tsx": 3,
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/FileVersionsPane/index.test.tsx": 1,
-  "apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/index.test.tsx": 4,
   "apps/desktop/src/features/session/components/StandaloneAgentsLane/index.test.tsx": 3,
   "apps/desktop/src/features/settings/components/SettingsStudio/AppGeneralSection.test.tsx": 2,
   "apps/desktop/src/features/settings/components/SettingsStudio/SearchIndexBand.test.tsx": 2,

@@ -1,7 +1,7 @@
 import { Checkbox } from '@goodboy/ui';
 import type { Workflow } from '@goodboy/types';
 import { classifyStep } from '../../../../session/agent-kind';
-import { AgentKindChip } from '../../../../session/components/AgentKindChip';
+import { AgentKindChip } from '../../../../../shared/components/AgentKindChip';
 
 type Props = {
   readonly workflow: Workflow;

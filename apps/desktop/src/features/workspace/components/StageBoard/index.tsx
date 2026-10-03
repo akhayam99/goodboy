@@ -1,16 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Plus } from 'lucide-react';
-import {
-  Button,
-  cn,
-  EmptyState,
-  ScrollFade,
-  Skeleton,
-  Tooltip,
-  tintClasses,
-  DogMascot,
-} from '@goodboy/ui';
+import { Button, cn, EmptyState, ScrollFade, Skeleton, Tooltip, tintClasses } from '@goodboy/ui';
 import type { Session, SessionId, SessionStage, WorkspaceId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -21,6 +12,7 @@ import {
 import { STAGE_ORDER } from '../../../../store/slices/session-view/types';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { BulkActionBar } from '../BulkActionBar';
+import { EmptyBoardStages } from './EmptyBoardStages';
 import { useProjectGitStatuses } from '../../hooks/useProjectGitStatuses';
 import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
 import { useSessionArchive } from '../../../session/hooks/useSessionArchive';
@@ -300,9 +292,9 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
       {!pending && hasProjects && empty && hasUsableProject && (
         <div className="flex flex-1 items-center justify-center">
           <EmptyState
-            illustration={<DogMascot size={72} className="text-primary" />}
+            illustration={<EmptyBoardStages />}
             title="Start your first session"
-            description="Describe an outcome; an agent picks it up in its own worktree and branch."
+            description="Sessions move across the board as agents work. Each one lands in a stage."
             action={
               <Button
                 size="md"

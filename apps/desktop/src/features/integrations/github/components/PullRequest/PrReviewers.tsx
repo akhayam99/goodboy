@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { PrDetail, ProjectId } from '@goodboy/types';
 import { CircleDashed } from 'lucide-react';
-import { EmptyState, Eyebrow } from '@goodboy/ui';
+import { Eyebrow, FilledEmptyState } from '@goodboy/ui';
 import { RailBlock } from '@goodboy/ui';
 import { latestTerminalReviewsByAuthor } from '../../utils/latest-terminal-reviews-by-author';
 import { Avatar } from '@goodboy/ui';
@@ -56,11 +56,10 @@ export const PrReviewers = ({
         />
       )}
       {reviewed.length === 0 && requests.length === 0 ? (
-        <EmptyState
+        <FilledEmptyState
           icon={CONCEPT_ICONS.review}
           tone={CONCEPT_TONE.review}
           title="No reviewers yet"
-          size="inline"
           className="basis-full"
         />
       ) : (

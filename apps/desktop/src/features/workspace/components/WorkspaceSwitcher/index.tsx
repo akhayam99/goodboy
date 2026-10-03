@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FolderGit2, Plus, Search } from 'lucide-react';
-import { Divider, EmptyState, KbdPill, ScrollFade } from '@goodboy/ui';
+import { Divider, KbdPill, ScrollFade, FilledEmptyState } from '@goodboy/ui';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
 import {
   useAppStore,
@@ -169,12 +169,10 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
           />
         ) : null}
         {filtered.length === 0 ? (
-          <EmptyState
+          <FilledEmptyState
             icon={CONCEPT_ICONS.workspace}
             tone={CONCEPT_TONE.workspace}
             title="No workspaces"
-            size="inline"
-            className="px-3 py-5"
           />
         ) : (
           filtered.map((w, i) => (

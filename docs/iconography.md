@@ -100,21 +100,29 @@ The stage board section of the guide uses it.
 
 ## Agent kinds
 
-Agent kinds do **not** get a lucide glyph. They are shown by the mascot plus
-a color per kind in `shared/components/AgentAvatar`, read through
-`agentKindPalette({ kind })` in `features/session/agent-kind.ts`. The list of
-kinds is `AGENT_KIND_META` in the same file. A second glyph system for the same
-kinds would compete with it. Use `AgentAvatar`.
+Each agent kind has one lucide glyph and one color, both on its entry in
+`AGENT_KIND_PALETTE` (`icon`, `fg`, `bg`) in `features/session/agent-kind.ts`,
+read through `agentKindPalette({ kind })`. A kind the app does not know falls
+back to `Bot` in the muted tone. Where a kind means the same thing as a concept,
+it reuses the concept glyph: report, wireframe, resolver (`resolve`) and
+rewriter (`history`). The rest are their own: scout `Telescope`, planner
+`MapIcon`, implementer `CodeXml`, debugger `BugPlay`, tester `FlaskConical`,
+reviewer `ScanEye`, PR reviewer `GitPullRequestArrow`, docs `BookOpen`, scribe
+`Feather`, generalist `Bot`. Kinds have no mascot drawing and no bare colored
+dot.
 
-A kind shown as a label always renders through `AgentKindChip`, one tinted
-recipe at two densities:
+A kind always renders through `AgentKindChip`
+(`shared/components/AgentKindChip`), one tinted recipe at two densities:
 
-- `label` (default): the fixed-width tinted chip, so a column of chips stays
-  lined up (tree rows, the timeline, step and library cards). `label` can
-  change the text where a surface names the role instead of the kind.
-- `glyph`: the kind avatar at `xs` with the label in a tooltip, for dense
-  strips such as preset cards.
+- `label` (default): the app `Chip` at `3xs`, tinted in the kind tone, with
+  the kind glyph and the name, hugging its word (tree rows, the timeline, step
+  and library cards, question rows, the spend list, the quick actions). `label`
+  can change the text where a surface names the role instead of the kind.
+- `glyph`: the kind glyph alone in its tinted circle, with the label in a
+  tooltip, for dense strips such as preset cards.
 
+A picker that already prints the kind name (the role select, the create-agent
+tiles) leads with the bare kind glyph in the kind tone instead of a chip.
 Never build a colored role word or an outlined kind chip by hand.
 
 ## Run states
