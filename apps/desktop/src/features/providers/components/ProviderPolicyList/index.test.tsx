@@ -118,6 +118,23 @@ describe('ProviderPolicyList', () => {
     screen.getByText('Used when no On provider can work');
   });
 
+  it('keeps each subtitle in its own column, beside the policy control and never under it', () => {
+    renderList();
+
+    const rows: ReadonlyArray<readonly [string, string]> = [
+      ['Codex', 'Used in this order'],
+      ['Cursor', 'Used when no On provider can work'],
+    ];
+    for (const [name, subtitle] of rows) {
+      const text = screen.getByText(subtitle);
+      const column = text.closest('button[aria-expanded]');
+      const control = screen.getByRole('radiogroup', { name: `${name} policy` });
+      expect(column?.contains(control)).toBe(false);
+      expect(control.contains(text)).toBe(false);
+      expect(column?.parentElement).toBe(control.parentElement);
+    }
+  });
+
   it('moves a provider up with Alt and the arrow and makes it the default', async () => {
     renderList();
     const codex = screen.getByRole('listitem', { name: /^Codex, position 2 of 3/ });

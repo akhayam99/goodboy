@@ -88,7 +88,7 @@ export const ProviderPolicyRow = ({
               </span>
             ) : null}
           </span>
-          <span className="block w-full truncate text-label text-muted-foreground">
+          <span className="w-full text-label text-muted-foreground">
             {status.text}
             {status.limit === null ? null : (
               <span className={tintClasses('warning').text}> · {status.limit}</span>
