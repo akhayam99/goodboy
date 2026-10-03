@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Button, FormActions, Input, Textarea } from '@goodboy/ui';
+import { Button, FormActions, Input } from '@goodboy/ui';
+import { PromptField } from '../../../../../shared/components/PromptField';
 import type { IssueBriefSource } from '../../../../../store/slices/issue-briefs/types';
 import { BriefHeader } from './BriefHeader';
 
@@ -30,14 +31,17 @@ export const BriefEditor = ({ source, initialTitle, initialGoal, onSave, onCance
         aria-label="Brief title"
         className="h-7 text-heading"
       />
-      <Textarea
+      <PromptField
+        kind="document"
         value={goal}
-        onChange={(event) => setGoal(event.target.value)}
-        autoGrow
+        onChange={setGoal}
+        onSubmit={() => onSave({ title: title.trim(), goal: goal.trim() })}
+        isSubmitBlocked={!canSave}
+        hasPreview
         minRows={3}
         maxRows={12}
-        aria-label="Brief goal"
-        className="text-xs leading-relaxed"
+        label="Brief goal"
+        textClassName="text-xs leading-relaxed"
       />
       <FormActions>
         <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={onCancel}>

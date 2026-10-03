@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   dataUrlToBase64,
   extFromMime,
-  readFileAsDataUrl,
-  toAttachmentInput,
+  fromStoredAttachment,
+  storedToAttachmentInput,
+  toAttachmentInputs,
+  toStoredAttachment,
   type PendingAttachment,
 } from './pendingAttachment';
 
@@ -37,27 +39,39 @@ describe('dataUrlToBase64', () => {
 });
 
 describe('toAttachmentInput', () => {
-  it('maps a pending attachment to provider input with decoded base64', () => {
+  it('reads the kept file into provider input only when the message is sent', async () => {
     const pending: PendingAttachment = {
       id: 'att_1',
       fileName: 'shot.png',
       mimeType: 'image/png',
-      dataUrl: 'data:image/png;base64,AAAB',
+      blob: new Blob(['ABC'], { type: 'image/png' }),
       relPath: null,
     };
-    expect(toAttachmentInput(pending)).toEqual({
-      id: 'att_1',
-      fileName: 'shot.png',
-      mimeType: 'image/png',
-      dataBase64: 'AAAB',
-    });
+    expect(await toAttachmentInputs([pending])).toEqual([
+      {
+        id: 'att_1',
+        fileName: 'shot.png',
+        mimeType: 'image/png',
+        dataBase64: 'QUJD',
+      },
+    ]);
   });
 });
 
-describe('readFileAsDataUrl', () => {
-  it('reads a file into a data url string', async () => {
-    const file = new File(['hello'], 'hello.txt', { type: 'text/plain' });
-    const result = await readFileAsDataUrl(file);
-    expect(result.startsWith('data:')).toBe(true);
+describe('stored attachments', () => {
+  it('round-trips a queued attachment through its stored data url', async () => {
+    const pending: PendingAttachment = {
+      id: 'att_2',
+      fileName: 'trace.png',
+      mimeType: 'image/png',
+      blob: new Blob(['ABC'], { type: 'image/png' }),
+      relPath: '.goodboy/attachments/att_2-trace.png',
+    };
+    const stored = await toStoredAttachment(pending);
+    expect(stored.dataUrl).toBe('data:image/png;base64,QUJD');
+    const back = fromStoredAttachment(stored);
+    expect(back.relPath).toBe(pending.relPath);
+    expect(await back.blob.text()).toBe('ABC');
+    expect(storedToAttachmentInput(stored).dataBase64).toBe('QUJD');
   });
 });

@@ -81,6 +81,17 @@ describe('lazy boundaries', () => {
     expect([...shikiOutside, ...tokenizerStatic]).toEqual([]);
   });
 
+  it('loads the markdown preview of PromptField only through a dynamic import', () => {
+    const preview = join(DESKTOP_SRC, 'shared', 'components', 'PromptField', 'PromptPreview');
+    const promptField = readFileSync(
+      join(DESKTOP_SRC, 'shared', 'components', 'PromptField', 'index.tsx'),
+      'utf8',
+    );
+    const offenders = edges.filter((edge) => resolved(edge) === preview).map(label);
+    expect(offenders).toEqual([]);
+    expect(promptField).toMatch(/lazy\(\(\) =>\s*import\('\.\/PromptPreview'\)/);
+  });
+
   it('loads the mock scenes only through a dynamic import from main', () => {
     const offenders = edges
       .filter((edge) => edge.file === join(DESKTOP_SRC, 'main.tsx'))

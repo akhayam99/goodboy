@@ -18,7 +18,7 @@ Free disk space without guessing. **Worktrees** lists the checkout folders of ar
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/storage-branches-light.webp" alt="Clean up branches: 9 local branches with the tabs Safe to delete 7, Needs a look 2 and All 9, grouped by repo under ledger-core, notify-relay and payments-api, each with its session, On origin or Gone on origin, and Safe to delete merged by merge commit, rebase or pull request, plus the button Select 7 safe to delete">
 </picture>
 
-Delete old branches with confidence. Local branches are sorted into **Safe to delete** and **Needs a look**, each with its session, whether it still exists on origin and how it was merged: merge commit, rebase or pull request. **Select 7 safe to delete** picks them together, and every deletion can be restored for 14 days.
+Delete old branches with confidence. Local branches are sorted into **Safe to delete** and **Needs a look**, each with its session, whether it still exists on origin and how it was merged: merge commit, rebase or pull request. **Select 7 safe to delete** picks them together, a row checkbox picks one, and the selection bar floats with the count, **Select all** and **Delete**, which confirms above the bar. Every deletion can be restored for 14 days.
 
 ### Storage scope
 

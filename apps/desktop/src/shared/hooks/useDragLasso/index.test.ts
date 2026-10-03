@@ -162,4 +162,74 @@ describe('useDragLasso', () => {
     expect(hook.result.current.rect).toBeNull();
     expect(hook.result.current.isDragging).toBe(false);
   });
+
+  describe('on a manual frame clock', () => {
+    const frames: FrameRequestCallback[] = [];
+    const flushFrame = () => {
+      const pending = frames.splice(0, frames.length);
+      act(() => {
+        for (const callback of pending) {
+          callback(0);
+        }
+      });
+    };
+
+    beforeEach(() => {
+      frames.length = 0;
+      vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+        frames.push(cb);
+        return frames.length;
+      });
+    });
+
+    it('measures the cards once per frame and reads the last pointer position', () => {
+      const { container, onSelect, hook } = setup();
+      const measured = vi.fn();
+      for (const node of container.querySelectorAll<HTMLElement>('[data-select-id]')) {
+        const read = node.getBoundingClientRect.bind(node);
+        node.getBoundingClientRect = () => {
+          measured();
+          return read();
+        };
+      }
+
+      act(() => hook.result.current.onPointerDown(down({ clientX: 5, clientY: 5 })));
+      act(() => {
+        window.dispatchEvent(move(20, 20));
+        window.dispatchEvent(move(60, 40));
+        window.dispatchEvent(move(120, 70));
+        window.dispatchEvent(move(200, 90));
+      });
+      expect(measured).not.toHaveBeenCalled();
+
+      flushFrame();
+
+      expect(measured).toHaveBeenCalledTimes(3);
+      expect(onSelect).toHaveBeenCalledTimes(1);
+      expect(onSelect).toHaveBeenCalledWith(['a', 'b'], 'replace');
+      expect(hook.result.current.rect).toEqual({ left: 5, top: 5, width: 195, height: 85 });
+    });
+
+    it('stays quiet on a frame that crosses the same cards', () => {
+      const { onSelect, hook } = setup();
+
+      act(() => hook.result.current.onPointerDown(down({ clientX: 5, clientY: 5 })));
+      act(() => {
+        window.dispatchEvent(move(200, 90));
+      });
+      flushFrame();
+      act(() => {
+        window.dispatchEvent(move(210, 95));
+      });
+      flushFrame();
+      expect(onSelect).toHaveBeenCalledTimes(1);
+
+      act(() => {
+        window.dispatchEvent(move(210, 320));
+      });
+      flushFrame();
+      expect(onSelect).toHaveBeenCalledTimes(2);
+      expect(onSelect).toHaveBeenLastCalledWith(['a', 'b', 'c'], 'replace');
+    });
+  });
 });

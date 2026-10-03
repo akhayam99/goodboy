@@ -1,5 +1,12 @@
-import type { IsoDateTime, OrchestratorHint, SessionId, WorkflowRunId } from '@goodboy/types';
+import type {
+  AttachmentInput,
+  IsoDateTime,
+  OrchestratorHint,
+  SessionId,
+  WorkflowRunId,
+} from '@goodboy/types';
 import { runsForWorkflowRun } from '@goodboy/core';
+import { saveGoalAttachments } from '../attachments/saveGoalAttachments';
 import { cancelRunningSteps } from './cancelRunningSteps';
 import { requestDecisionRestart } from './decisionRestart';
 import { findWorkflowRun } from './findWorkflowRun';
@@ -12,6 +19,42 @@ export type OrchestratorHintDelivery = 'queue' | 'now';
 export type OrchestratorHintDraft = {
   readonly text: string;
   readonly delivery: OrchestratorHintDelivery;
+  readonly attachments?: ReadonlyArray<AttachmentInput>;
+};
+
+const IMAGE_ONLY_HINT_TEXT = 'See the attached image.';
+
+const NO_WORKTREE_FOR_HINT_FILES =
+  'This session has no worktree yet, so the hint cannot keep files.';
+
+type SaveFilesParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly workflowRunId: WorkflowRunId;
+  readonly inputs: ReadonlyArray<AttachmentInput>;
+};
+
+const saveHintFiles = async ({
+  set,
+  get,
+  sessionId,
+  workflowRunId,
+  inputs,
+}: SaveFilesParams): Promise<ReadonlyArray<string>> => {
+  if (inputs.length === 0) {
+    return [];
+  }
+  const worktreeDir = get().sessionWorktrees[sessionId]?.[0];
+  if (worktreeDir === undefined) {
+    throw new Error(NO_WORKTREE_FOR_HINT_FILES);
+  }
+  return saveGoalAttachments({
+    set,
+    worktreeDir,
+    owner: { type: 'workflow_run', id: workflowRunId },
+    inputs,
+  });
 };
 
 type DeliverParams = {
@@ -62,14 +105,17 @@ export const addWorkflowOrchestratorHint = (set: SetFn, get: GetFn) => {
     draft: OrchestratorHintDraft,
   ) => {
     const run = findWorkflowRun({ get, sessionId, workflowRunId });
-    const text = draft.text.trim();
-    if (run == null || text === '') {
+    const inputs = draft.attachments ?? [];
+    const typed = draft.text.trim();
+    if (run == null || (typed === '' && inputs.length === 0)) {
       return;
     }
+    const attachmentIds = await saveHintFiles({ set, get, sessionId, workflowRunId, inputs });
     const hint: OrchestratorHint = {
       id: crypto.randomUUID(),
-      text,
+      text: typed === '' ? IMAGE_ONLY_HINT_TEXT : typed,
       createdAt: new Date().toISOString() as IsoDateTime,
+      ...(attachmentIds.length > 0 && { attachmentIds }),
     };
     await updateOrchestratorHints({
       set,

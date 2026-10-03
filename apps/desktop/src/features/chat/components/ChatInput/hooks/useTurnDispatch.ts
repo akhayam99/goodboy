@@ -3,8 +3,8 @@ import { formatError } from '@goodboy/ui';
 import type { AgentId, SessionId, TurnProviderOverride } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { isTranscriptOwnedTurnError } from '../../../turn-errors';
-import { toAttachmentInput } from '../../../../attachments/pendingAttachment';
-import type { QueuedTurn } from '../lib';
+import { toAttachmentInputs } from '../../../../attachments/pendingAttachment';
+import type { FailedTurn } from '../lib';
 import type { PendingAttachment } from '../../../../attachments/pendingAttachment';
 import type { SendTurnResult } from '../../../../../store/slices/turn/types';
 
@@ -25,7 +25,7 @@ export const useTurnDispatch = ({ sessionId, cleanupSentAttachments }: UseTurnDi
   const sendTurn = useAppStore((s) => s.sendTurn);
 
   const [error, setError] = useState<string | null>(null);
-  const [lastFailedTurn, setLastFailedTurn] = useState<Omit<QueuedTurn, 'id'> | null>(null);
+  const [lastFailedTurn, setLastFailedTurn] = useState<FailedTurn | null>(null);
 
   const dispatchTurn = useCallback(
     async ({
@@ -36,12 +36,13 @@ export const useTurnDispatch = ({ sessionId, cleanupSentAttachments }: UseTurnDi
       force = false,
     }: DispatchTurnParams): Promise<SendTurnResult> => {
       try {
+        const inputs = atts.length > 0 ? await toAttachmentInputs(atts) : [];
         const result = await sendTurn({
           sessionId,
           agentId,
           content,
           origin: 'operator',
-          ...(atts.length > 0 ? { attachments: atts.map(toAttachmentInput) } : {}),
+          ...(inputs.length > 0 ? { attachments: inputs } : {}),
           override,
           ...(force ? { force: true } : {}),
         });

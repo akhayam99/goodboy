@@ -4,8 +4,15 @@ import { useAppStore } from '../../../../../store';
 import type { DraftAttachment } from '../../../../../store/slices/agents/setAgentAttachments';
 import { deleteAttachment, readAttachment, writeAttachment } from '../../../turn';
 import type { ShowToast } from '../../../../../shared/components/Toast';
-import { dataUrlToBase64, type PendingAttachment } from '../../../../attachments/pendingAttachment';
-import { usePendingAttachments } from './usePendingAttachments';
+import {
+  dataUrlToBlob,
+  readBlobAsBase64,
+  type PendingAttachment,
+} from '../../../../attachments/pendingAttachment';
+import {
+  usePendingAttachments,
+  type PersistArgs,
+} from '../../../../../shared/hooks/usePendingAttachments';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -29,29 +36,22 @@ export const useAttachments = ({
   const attachmentsAgentIdRef = useRef<AgentId | null>(null);
   const pendingRestoreAgentRef = useRef<AgentId | null>(selectedAgentId);
 
-  const persistAttachmentToDisk = useCallback(
-    async (att: {
-      readonly id: string;
-      readonly fileName: string;
-      readonly dataUrl: string;
-    }): Promise<string | null> => {
-      const worktree = sessionWorktreeRef.current;
-      if (!worktree) {
-        return null;
-      }
-      try {
-        return await writeAttachment({
-          worktreeDir: worktree,
-          attachmentId: att.id,
-          fileName: att.fileName,
-          dataBase64: dataUrlToBase64(att.dataUrl),
-        });
-      } catch {
-        return null;
-      }
-    },
-    [],
-  );
+  const persistAttachmentToDisk = useCallback(async (att: PersistArgs): Promise<string | null> => {
+    const worktree = sessionWorktreeRef.current;
+    if (!worktree) {
+      return null;
+    }
+    try {
+      return await writeAttachment({
+        worktreeDir: worktree,
+        attachmentId: att.id,
+        fileName: att.fileName,
+        dataBase64: await readBlobAsBase64(att.blob),
+      });
+    } catch {
+      return null;
+    }
+  }, []);
 
   const {
     attachments,
@@ -83,7 +83,7 @@ export const useAttachments = ({
               id: att.id,
               fileName: att.fileName,
               mimeType: att.mimeType,
-              dataUrl,
+              blob: dataUrlToBlob({ dataUrl, mimeType: att.mimeType }),
               relPath: att.relPath,
             });
           } catch {}

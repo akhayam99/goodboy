@@ -1,12 +1,12 @@
-import { useId, useState, type ClipboardEvent, type KeyboardEvent } from 'react';
-import { GhostActionButton, SectionHeader, Textarea, cn } from '@goodboy/ui';
+import { useId, useState, type ClipboardEvent } from 'react';
+import { GhostActionButton, SectionHeader, cn } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import {
   ARTIFACT_BRIEF_COUNTER_FLOOR,
   ARTIFACT_BRIEF_LIMITS,
   formatBriefCount,
 } from '../../artifactBrief';
-import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
+import { PromptField } from '../../../../shared/components/PromptField';
 
 type Props = {
   readonly label: string;
@@ -67,13 +67,6 @@ export const ArtifactBriefField = ({
     setClipNote(`pasted text was cut at ${formatBriefCount({ value: LIMIT })} characters`);
   };
 
-  const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (isSubmitChord(event)) {
-      event.preventDefault();
-      onSubmit();
-    }
-  };
-
   return (
     <section className="flex min-w-0 flex-col gap-2">
       <SectionHeader
@@ -95,20 +88,23 @@ export const ArtifactBriefField = ({
           />
         }
       />
-      <Textarea
+      <PromptField
+        kind="document"
+        label={label}
         id={fieldId}
-        autoGrow
         minRows={4}
         maxRows={14}
         maxLength={LIMIT}
         value={value}
         placeholder={placeholder}
-        data-testid="artifact-brief"
+        testId="artifact-brief"
+        hasPreview
         onPaste={onPaste}
-        onKeyDown={onKeyDown}
-        onChange={(event) => {
+        onSubmit={onSubmit}
+        keyLabels={{ send: 'create' }}
+        onChange={(next) => {
           setClipNote(null);
-          onChange(event.target.value);
+          onChange(next);
         }}
       />
       {clipNote === null ? null : (

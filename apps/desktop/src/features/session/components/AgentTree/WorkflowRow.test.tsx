@@ -653,7 +653,7 @@ describe('WorkflowRow dynamic runs', () => {
 
   it('adds the agent count only when it differs from the step count', () => {
     renderDetail({ runOverride: dynamicRun, agentsOverride: doneAgents, actionableStepId: null });
-    expect(screen.queryByText(/agents?$/)).toBeNull();
+    expect(screen.queryByText(/^\d+ agents?$/)).toBeNull();
     cleanup();
 
     renderDetail({

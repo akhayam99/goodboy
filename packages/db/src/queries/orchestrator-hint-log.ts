@@ -13,6 +13,9 @@ const isUnknownRecord = (value: unknown): value is UnknownRecord =>
 const isIsoTimestamp = (value: unknown): value is IsoDateTime =>
   typeof value === 'string' && Number.isNaN(Date.parse(value)) === false;
 
+const isIdList = (value: unknown): value is ReadonlyArray<string> =>
+  Array.isArray(value) && value.every((item) => typeof item === 'string' && item !== '');
+
 type HintEntryParams = {
   readonly entry: unknown;
 };
@@ -25,7 +28,7 @@ const toHint = ({ entry }: HintEntryParams): OrchestratorHint | null => {
   if (isUnknownRecord(entry) === false) {
     return null;
   }
-  const { id, text, createdAt, consumedAt, consumedAtStep } = entry;
+  const { id, text, createdAt, consumedAt, consumedAtStep, attachmentIds } = entry;
   if (
     typeof id !== 'string' ||
     id === '' ||
@@ -42,6 +45,7 @@ const toHint = ({ entry }: HintEntryParams): OrchestratorHint | null => {
     ...(isIsoTimestamp(consumedAt) && { consumedAt }),
     ...(typeof consumedAtStep === 'number' &&
       Number.isInteger(consumedAtStep) && { consumedAtStep }),
+    ...(isIdList(attachmentIds) && attachmentIds.length > 0 && { attachmentIds }),
   };
 };
 

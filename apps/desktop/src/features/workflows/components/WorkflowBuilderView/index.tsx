@@ -73,12 +73,8 @@ import { parseSpendLimit } from '../../../budget/parseSpendLimit';
 import { DragGhost } from '../WorkflowStudio/DragGhost';
 import { useToast } from '../../../../shared/components/Toast';
 import { StudioShell } from '../../../../shared/components/StudioShell';
-import {
-  AttachmentChip,
-  pendingAttachmentProps,
-} from '../../../attachments/components/AttachmentChip';
-import { toAttachmentInput } from '../../../attachments/pendingAttachment';
-import { usePendingAttachments } from '../../../chat/components/ChatInput/hooks/usePendingAttachments';
+import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
+import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
 import { runIdentity, runIdentitySeed } from '../../../session/timeline/runIdentity';
 import { BuilderTitleField } from './parts/BuilderTitleField';
 import { GoalField } from './parts/GoalField';
@@ -202,14 +198,8 @@ export const WorkflowBuilderView = (props: Props) => {
   const sessionWorktree = useSessionRepo({ sessionId: session?.id ?? null })?.worktreePath ?? null;
   const { showToast } = useToast();
 
-  const {
-    attachments,
-    isDragging: isDraggingFiles,
-    composerRef,
-    fileInputRef,
-    onFileInputChange,
-    removeAttachment,
-  } = usePendingAttachments({ showToast });
+  const goalFiles = usePromptFiles({ note: 'Files go to the agents of this run' });
+  const attachments = goalFiles.attachments;
 
   const presets = phaseTemplates.filter(isPresetWorkflow);
 
@@ -744,7 +734,8 @@ export const WorkflowBuilderView = (props: Props) => {
     }
   };
 
-  const attachOptions = () => {
+  const attachOptions = async () => {
+    const attachmentInputs = await toAttachmentInputs(attachments);
     const goal = goalText.trim();
     const { triggerMode, chainAfterId } = startChoice;
     const spendLimitUsd =
@@ -755,7 +746,7 @@ export const WorkflowBuilderView = (props: Props) => {
       ...(goal.length > 0 && { goal }),
       ...(triggerMode !== 'immediate' && { triggerMode }),
       ...(triggerMode === 'after_run' && chainAfterId !== null && { chainAfterId }),
-      ...(attachments.length > 0 && { attachmentInputs: attachments.map(toAttachmentInput) }),
+      ...(attachmentInputs.length > 0 && { attachmentInputs }),
       ...(mode === 'dynamic' && {
         executionMode: DYNAMIC_EXECUTION_MODE,
       }),
@@ -840,7 +831,7 @@ export const WorkflowBuilderView = (props: Props) => {
 
   const runOn = async (target: Session): Promise<void> => {
     if (mode === 'preset' && selectedPreset !== null && !presetDirty && !isPresetRenamed) {
-      await attachWorkflowToSession(target.id, selectedPreset.id, attachOptions());
+      await attachWorkflowToSession(target.id, selectedPreset.id, await attachOptions());
       writeLastWorkflowMode({ workspaceId, mode });
       showToast({ kind: 'success', message: `Started ${selectedPreset.name}.` });
       return;
@@ -898,7 +889,7 @@ export const WorkflowBuilderView = (props: Props) => {
         process,
       );
     }
-    await attachWorkflowToSession(target.id, workflowId, attachOptions());
+    await attachWorkflowToSession(target.id, workflowId, await attachOptions());
     writeLastWorkflowMode({ workspaceId, mode });
     showToast({ kind: 'success', message: `Started ${saved?.name ?? name}.` });
   };
@@ -1198,19 +1189,8 @@ export const WorkflowBuilderView = (props: Props) => {
           canUndo={goalHistory.length > 0}
           isPolishing={polishing}
           disabled={busy}
-          files={{
-            isDragging: isDraggingFiles,
-            composerRef,
-            fileInputRef,
-            onFiles: onFileInputChange,
-            attachments: attachments.map((a) => (
-              <AttachmentChip
-                key={a.id}
-                {...pendingAttachmentProps(a)}
-                onRemove={() => removeAttachment(a.id)}
-              />
-            )),
-          }}
+          files={goalFiles.files}
+          notice={goalFiles.notice}
           onChange={onGoalChange}
           onBlur={() => requestTitleSuggestion(goalText)}
           onUseSessionGoal={onUseSessionGoal}

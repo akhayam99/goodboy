@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Play, RotateCcw, Wallet } from 'lucide-react';
 import { ClampedProse, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type {
   Agent,
   BudgetAlert,
+  GoalAttachment,
   OpenQuestion,
   OrchestratorHint,
   SessionId,
@@ -39,6 +40,7 @@ const EMPTY_QUESTIONS: ReadonlyArray<OpenQuestion> = [];
 const EMPTY_ALERTS: ReadonlyArray<BudgetAlert> = [];
 const EMPTY_HINTS: ReadonlyArray<OrchestratorHint> = [];
 const EMPTY_READING: ReadonlyArray<string> = [];
+const EMPTY_FILES: ReadonlyArray<GoalAttachment> = [];
 
 export const OrchestratorStrip = ({
   sessionId,
@@ -74,6 +76,19 @@ export const OrchestratorStrip = ({
   const [isRoutingOpen, setIsRoutingOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const hints = run.orchestratorHints ?? EMPTY_HINTS;
+  const runAttachments = useAppStore(
+    (state) => state.workflowRunAttachments[run.id] ?? EMPTY_FILES,
+  );
+  const hasLoadedFiles = useAppStore((state) => state.workflowRunAttachments[run.id] !== undefined);
+  const loadGoalAttachments = useAppStore((state) => state.loadGoalAttachments);
+  const hasHintFiles = hints.some((hint) => (hint.attachmentIds?.length ?? 0) > 0);
+
+  useEffect(() => {
+    if (!hasHintFiles || hasLoadedFiles) {
+      return;
+    }
+    void loadGoalAttachments({ type: 'workflow_run', id: run.id }).catch(() => undefined);
+  }, [hasHintFiles, hasLoadedFiles, loadGoalAttachments, run.id]);
 
   const state = resolveOrchestratorState({
     run,
@@ -286,6 +301,7 @@ export const OrchestratorStrip = ({
       <OrchestratorHintLog
         hints={hints}
         readingHintIds={readingHintIds}
+        runAttachments={runAttachments}
         onRemove={(hintId) =>
           void removeWorkflowOrchestratorHint(sessionId, run.id, hintId).catch((error: unknown) =>
             reportError({ title: "Couldn't remove the hint", error, sessionId }),

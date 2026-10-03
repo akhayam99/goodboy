@@ -267,6 +267,24 @@ never exists on one surface only.
 - **Selection, like Finder.** A right click on a row that is part of a
   multi-selection acts on the whole selection (the several sessions kind). On
   an unselected row it clears the selection and acts on that row alone.
+- **One selection bar.** The Board, the session list, Review, Branches and the
+  Storage lists share `SelectionBar` (`packages/ui`). A checkbox shows on the
+  row under the pointer and on every row once one is picked; modifier-click and
+  the lasso stay. The bar floats at the bottom of the surface that owns the
+  selection with Clear, the count, Select all and the verbs. The sessions bar
+  takes its verbs from the `sessions` kind through `ObjectSelectionBar`, so
+  its words are the menu's words (`shortLabel` on the bar, `label` for the
+  accessible name). A verb that undoes runs at once with the Undo toast; a
+  verb that does not asks in a confirmation above the bar with what goes and
+  what stays (`goes`, `stays`, `items` and `altActionId` on `ActionConfirm`).
+  The keys live in the `selection` group of the shortcut registry
+  (`selection.toggle` X, `selection.all` ⌘A, `selection.clear` Esc,
+  `selection.delete` Delete) and run through `useSelectionKeys`, which acts
+  only while the pointer or the focus is inside the list. Esc goes through the
+  escape stack: the confirmation closes first, then the selection clears. Review
+  keeps its own `review.select` and `review.selectAll`. The scroller of a
+  surface takes a bottom margin while something is selected, so the bar never
+  covers the last row.
 - **Confirm and undo.** A verb that loses work confirms inside the menu with
   `InlineConfirm` (Delete, Delete permanently, Discard, Close run, Merge, Close pull request,
   Delete script, Close worktree, Remove from session, Abort rebase). Detach
@@ -920,7 +938,8 @@ integration digits (⌘⌥1 to ⌘⌥6) open different lenses and keep a row eac
 A few entries are keys a focused control answers, not global chords: Submit
 (⌘↵, `composer.submit`, the one id behind every composer, editor and the
 workspace switcher; `isSubmitChord` reads it and keeps the lenient match that
-accepts Ctrl as well as ⌘) and Open the workflow of an activity row (⇧↵, the only combo
+accepts Ctrl as well as ⌘), the two message keys `PromptField` reads (↵
+`composer.send` and ⇧↵ `composer.newLine`, see docs/turns.md → One composer) and Open the workflow of an activity row (⇧↵, the only combo
 without ⌘). The list keys (`list.next`, `list.previous`, `list.open`,
 `list.openInTool`, `list.reply`, `list.star`, `list.dismiss`, `list.search`) are
 the same kind: `useListKeys` matches them against the registry, so the rail
@@ -928,7 +947,7 @@ hints, the Shortcuts page and the guide read the same entries. It keeps its own
 window listener because Enter must yield to a focused button (a row button of
 the list excepted). The Review view's Select every fixable comment (⌘A,
 `review.selectAll`) sits on the same footing, and the registry test lets it
-use ⌘A because the Review view only answers it outside a text field. They sit in the registry so the list and the tooltips name them.
+use ⌘A because the Review view only answers it outside a text field. The selection keys (`selection.toggle`, `selection.all`, `selection.clear`, `selection.delete`) are the same kind: `useSelectionKeys` matches the first, second and fourth against the registry, and `SelectionBar` answers Esc through the escape stack; the registry test lets `selection.all` use ⌘A because the hook yields to a text field. They sit in the registry so the list and the tooltips name them.
 The control that owns each one handles its own key event and never registers
 it with the dispatcher; the activity row matches through `eventMatches`, and so
 does Shift+F10 (`menu.open`), which opens the context menu of the focused row.

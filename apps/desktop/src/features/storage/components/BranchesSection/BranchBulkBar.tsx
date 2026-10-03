@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { AlertTriangle, Trash2 } from 'lucide-react';
 import type { ProjectId } from '@goodboy/types';
-import { Button, Checkbox, InlineConfirm } from '@goodboy/ui';
+import { Checkbox, SelectionBar, SelectionConfirm } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import { branchCount } from '../../branches/branchCopy';
 import {
@@ -20,9 +21,11 @@ export type SelectedBranch = {
 
 type Props = {
   readonly selected: ReadonlyArray<SelectedBranch>;
+  readonly total: number;
   readonly isConfirming: boolean;
   readonly isBusy: boolean;
   readonly onClear: () => void;
+  readonly onSelectAll: () => void;
   readonly onArm: () => void;
   readonly onCancel: () => void;
   readonly onConfirm: (params: { readonly alsoOrigin: boolean }) => void;
@@ -37,32 +40,17 @@ const joinNames = (names: ReadonlyArray<string>): string => {
 
 export const BranchBulkBar = ({
   selected,
+  total,
   isConfirming,
   isBusy,
   onClear,
+  onSelectAll,
   onArm,
   onCancel,
   onConfirm,
 }: Props) => {
   const [alsoOrigin, setAlsoOrigin] = useState(false);
-  if (selected.length === 0) {
-    return null;
-  }
   const count = selected.length;
-  if (!isConfirming) {
-    return (
-      <div className="flex flex-wrap items-center gap-3 px-2 py-1.5">
-        <span className="text-label text-foreground">{count} selected</span>
-        <Button variant="ghost" size="sm" onClick={onClear} disabled={isBusy}>
-          Clear
-        </Button>
-        <Button variant="secondary" size="sm" onClick={onArm} disabled={isBusy}>
-          <Trash2 size={ICON_SIZE.row} aria-hidden />
-          Delete {branchCount(count)}
-        </Button>
-      </div>
-    );
-  }
   const unmerged = selected.filter(({ entry }) => !isSafeVerdict(entry.verdict));
   const lostCommits = unmerged.reduce((sum, { entry }) => sum + unmergedCommits(entry), 0);
   const originEligible = selected.filter(
@@ -77,34 +65,60 @@ export const BranchBulkBar = ({
     lostCommits === 0
       ? `Delete ${branchCount(count)}`
       : `Delete ${branchCount(count)} and ${pluralize(lostCommits, 'commit')}`;
+
   return (
-    <InlineConfirm
-      role="danger"
-      icon={<AlertTriangle size={ICON_SIZE.row} aria-hidden />}
-      title={title}
-      description="Kept for 14 days so you can restore one."
-      confirmLabel={confirmLabel}
-      isBusy={isBusy}
-      onConfirm={() => onConfirm({ alsoOrigin: alsoOrigin && originEligible > 0 })}
-      onCancel={onCancel}
-      note={
-        unmerged.length === 0 ? null : (
-          <p className="text-label text-warning">
-            {unmerged.length === 1 ? "1 isn't merged" : `${unmerged.length} aren't merged`}:{' '}
-            {lostCommits === 1 ? '1 commit exists' : `${lostCommits} commits exist`} only in these
-            branches.
-          </p>
-        )
+    <SelectionBar
+      placement="sticky"
+      count={count}
+      total={total}
+      verbs={[
+        {
+          id: 'delete',
+          label: 'Delete',
+          ariaLabel: 'Delete selected branches',
+          tone: 'danger',
+          icon: <Trash2 size={ICON_SIZE.row} aria-hidden />,
+          isDisabled: isBusy,
+          onRun: onArm,
+        },
+      ]}
+      onClear={onClear}
+      onSelectAll={onSelectAll}
+      clearHint={shortcutGlyphs('selection.clear')}
+      selectAllHint={shortcutGlyphs('selection.all')}
+      onDismissConfirm={onCancel}
+      confirm={
+        isConfirming && count > 0 ? (
+          <SelectionConfirm
+            role="danger"
+            icon={<AlertTriangle size={ICON_SIZE.row} aria-hidden />}
+            title={title}
+            description="Kept for 14 days so you can restore one."
+            confirmLabel={confirmLabel}
+            isBusy={isBusy}
+            onConfirm={() => onConfirm({ alsoOrigin: alsoOrigin && originEligible > 0 })}
+            onCancel={onCancel}
+            note={
+              unmerged.length === 0 ? null : (
+                <p className="text-label text-warning">
+                  {unmerged.length === 1 ? "1 isn't merged" : `${unmerged.length} aren't merged`}:{' '}
+                  {lostCommits === 1 ? '1 commit exists' : `${lostCommits} commits exist`} only in
+                  these branches.
+                </p>
+              )
+            }
+          >
+            {originEligible === 0 ? null : (
+              <Checkbox
+                checked={alsoOrigin}
+                onChange={setAlsoOrigin}
+                disabled={isBusy}
+                label={`Also delete ${originEligible} on origin`}
+              />
+            )}
+          </SelectionConfirm>
+        ) : null
       }
-    >
-      {originEligible === 0 ? null : (
-        <Checkbox
-          checked={alsoOrigin}
-          onChange={setAlsoOrigin}
-          disabled={isBusy}
-          label={`Also delete ${originEligible} on origin`}
-        />
-      )}
-    </InlineConfirm>
+    />
   );
 };

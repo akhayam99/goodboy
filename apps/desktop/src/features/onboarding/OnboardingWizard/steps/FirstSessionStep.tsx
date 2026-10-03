@@ -1,12 +1,12 @@
 import { useId, useState, type KeyboardEvent } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Button, KbdPill, Textarea, cn } from '@goodboy/ui';
+import { Button, KbdPill, cn } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { StepHeading } from './StepHeading';
 import { NoIssueSource } from './NoIssueSource';
 import { HandOff } from './HandOff';
-import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
+import { PromptField } from '../../../../shared/components/PromptField';
 
 export type FirstSessionChoice = 'task' | 'workflow' | 'agent';
 
@@ -167,20 +167,15 @@ export const FirstSessionStep = ({
               ))}
             </div>
             <div className="flex flex-col rounded-lg border border-border-soft bg-subtle focus-within:border-border-strong">
-              <Textarea
+              <PromptField
+                variant="bare"
+                kind="document"
                 value={prompt}
-                aria-label="What Scout should do"
-                onChange={(event) => setPrompt(event.target.value)}
-                onKeyDown={(event) => {
-                  if (isSubmitChord(event)) {
-                    event.preventDefault();
-                    start();
-                  }
-                }}
+                label="What Scout should do"
+                onChange={setPrompt}
+                onSubmit={start}
                 minRows={3}
                 maxRows={8}
-                autoGrow
-                className="resize-none border-0 bg-transparent px-3 py-2 text-body text-foreground shadow-none focus-visible:border-0 focus-visible:shadow-none focus-visible:ring-0"
               />
               <div className="flex items-center justify-between gap-2 px-3 pb-2">
                 <span className="text-label text-muted-foreground">Scout · Auto</span>

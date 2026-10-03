@@ -15,7 +15,7 @@ type Props = {
   readonly group: StorageFolderGroup;
   readonly now: number;
   readonly suggestAfterDays: number;
-  readonly selected: ReadonlySet<string> | null;
+  readonly selected: ReadonlySet<string>;
   readonly onToggle: ToggleFolder;
 };
 
@@ -56,8 +56,8 @@ export const WorktreeGroup = ({ group, now, suggestAfterDays, selected, onToggle
             folder={folder}
             now={now}
             suggestAfterDays={suggestAfterDays}
-            isSelecting={selected !== null}
-            isSelected={selected?.has(folder.path) ?? false}
+            isSelecting={selected.size > 0}
+            isSelected={selected.has(folder.path)}
             isRemoving={removing[folder.path] === true}
             isMeasuring={measuringPath === folder.path}
             onToggle={onToggle}

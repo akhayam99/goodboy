@@ -127,6 +127,7 @@ export type OrchestratorHint = Readonly<{
   createdAt: IsoDateTime;
   consumedAt?: IsoDateTime;
   consumedAtStep?: number;
+  attachmentIds?: ReadonlyArray<string>;
 }>;
 
 export type WorkflowRun = Readonly<{

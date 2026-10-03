@@ -1,7 +1,10 @@
 import { useCallback } from 'react';
 import type { AgentId, Session, TurnProviderOverride } from '@goodboy/types';
 import { resolveStoredModelSelection } from '@goodboy/core';
-import type { PendingAttachment } from '../../../../../attachments/pendingAttachment';
+import {
+  toStoredAttachment,
+  type PendingAttachment,
+} from '../../../../../attachments/pendingAttachment';
 import type { QueuedTurn } from '../../lib';
 import type { useRightSizeNudge } from '../useRightSizeNudge';
 import type { useScopeNudge } from '../useScopeNudge';
@@ -75,7 +78,7 @@ export const useComposerSend = ({
           id: crypto.randomUUID(),
           agentId: selectedAgentId,
           content,
-          attachments: atts,
+          attachments: await Promise.all(atts.map(toStoredAttachment)),
           override,
         };
         if (delivery === 'now') {
