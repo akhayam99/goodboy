@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { MessageSquare } from 'lucide-react';
-import { Button, DrawerFrame, EmptyState } from '@goodboy/ui';
+import { Button, DrawerFrame, FilledEmptyState } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { openReview } from '../../../review/openReview';
@@ -48,12 +48,11 @@ export const DiffNotesDrawer = ({ sessionId, onClose }: Props) => {
       }
     >
       {groups.length === 0 ? (
-        <EmptyState
+        <FilledEmptyState
           icon={CONCEPT_ICONS.diff}
           tone={CONCEPT_TONE.diff}
           title={DIFF_NOTES_LABEL.emptyTitle}
           description={DIFF_NOTES_LABEL.emptyDescription}
-          size="inline"
         />
       ) : (
         <div className="flex flex-col gap-3">

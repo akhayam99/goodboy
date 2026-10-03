@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AnchoredPopover, EmptyState, ScrollFade, Skeleton, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, ScrollFade, Skeleton, useDropdown, FilledEmptyState } from '@goodboy/ui';
 import { Plus, Search } from 'lucide-react';
 import { useCurrentWorkspace } from '../../../../../store';
 import type { ProjectId } from '@goodboy/types';
@@ -97,12 +97,10 @@ export const ReviewerPicker = ({
           ))}
         </div>
       ) : candidates.length === 0 ? (
-        <EmptyState
+        <FilledEmptyState
           icon={CONCEPT_ICONS.search}
           tone={CONCEPT_TONE.search}
           title="No matches"
-          size="inline"
-          className="px-1.5 py-1"
         />
       ) : (
         <ScrollFade className="max-h-44" fadeSize={16}>

@@ -8,18 +8,22 @@ type Params = {
   readonly state: Pick<AppStore, 'storageFolders' | 'settings' | 'storageStats'>;
 };
 
-type Attention = {
+type StorageAttention = {
   readonly label: string;
   readonly tone: 'info' | 'warning';
 };
 
-const attentionOf = ({ state }: Params): Attention | null => {
+type AttentionParams = Params & {
+  readonly nowMs: number;
+};
+
+export const storageAttention = ({ state, nowMs }: AttentionParams): StorageAttention | null => {
   if (state.storageFolders.length === 0) {
     return null;
   }
   const summary = summarizeStorage({
     folders: state.storageFolders,
-    now: Date.now(),
+    now: nowMs,
     suggestAfterDays: suggestAfterDaysOf({ settings: state.settings }),
   });
   const canGoBytes = summary.canGo.bytes;
@@ -30,9 +34,3 @@ const attentionOf = ({ state }: Params): Attention | null => {
   }
   return canGoBytes >= NUDGE_MIN_BYTES ? { label, tone: 'info' } : null;
 };
-
-export const selectStorageAttention = ({ state }: Params): string | null =>
-  attentionOf({ state })?.label ?? null;
-
-export const selectStorageAttentionTone = ({ state }: Params): 'info' | 'warning' | null =>
-  attentionOf({ state })?.tone ?? null;

@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import type { AgentRole } from '@goodboy/types';
 import { WorkNode, cn } from '@goodboy/ui';
 import { ROLE_LABEL, type AgentKind } from '../../../../session/agent-kind';
-import { AgentKindChip } from '../../../../session/components/AgentKindChip';
+import { AgentKindChip } from '../../../../../shared/components/AgentKindChip';
 import { StepTreeGutter } from '../../StepTree/StepTreeGutter';
 import type { StepLaneSpan } from '../../StepTree/StepTreeLane';
 

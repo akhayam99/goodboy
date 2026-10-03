@@ -1,5 +1,5 @@
 import { ExternalLink, Heart } from 'lucide-react';
-import { Button, Divider, Eyebrow, DogMascot } from '@goodboy/ui';
+import { Button, Divider, Eyebrow, DogMascot, XIcon } from '@goodboy/ui';
 import { finish } from '../../../../features/onboarding/onboarding-store';
 import type { OnboardingProgress } from '../../../../features/onboarding/hooks/useOnboardingProgress';
 import { ChecklistBody } from '../../../../features/onboarding/SetupChecklist/ChecklistBody';
@@ -18,6 +18,7 @@ type Props = {
   readonly onOpenChangelog: () => void;
   readonly onOpenShortcuts: () => void;
   readonly onSponsor: () => void;
+  readonly onFollowX: () => void;
 };
 
 const MARK_SIZE = 16;
@@ -31,6 +32,7 @@ export const GoodboyMenu = ({
   onOpenChangelog,
   onOpenShortcuts,
   onSponsor,
+  onFollowX,
 }: Props) => {
   const showsSetup = !progress.finished && progress.hasProjects;
 
@@ -41,7 +43,7 @@ export const GoodboyMenu = ({
         <span className="truncate text-label font-semibold text-foreground">
           {version === null ? 'Goodboy' : `Goodboy ${version}`}
         </span>
-        <span className="text-secondary text-faint-foreground">beta</span>
+        <Eyebrow label="Beta" muted />
       </header>
       <Divider />
       <div className="flex flex-col gap-2 py-2">
@@ -103,6 +105,14 @@ export const GoodboyMenu = ({
               <ExternalLink size={ICON_SIZE.row} aria-hidden className="text-faint-foreground" />
             }
             onClick={onSponsor}
+          />
+          <MenuRow
+            icon={<XIcon size={ICON_SIZE.row} aria-hidden />}
+            label="Follow on X"
+            trailing={
+              <ExternalLink size={ICON_SIZE.row} aria-hidden className="text-faint-foreground" />
+            }
+            onClick={onFollowX}
           />
         </ul>
       </div>

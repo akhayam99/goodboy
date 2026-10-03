@@ -145,6 +145,7 @@ export const NotificationsStudio = ({ onClose }: Props) => {
         <StudioRailLayout
           railLabel="Notification filters"
           railWidth="narrow"
+          surface="notifications"
           rail={
             <NotificationFacetRail
               filters={filters}

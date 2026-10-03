@@ -70,6 +70,6 @@ Learn how Goodboy works in 18 short chapters that follow a task, with search and
 
 **Also in this area**
 
-| Feature     | What it does for you                         |
-| ----------- | -------------------------------------------- |
-| Update pill | A single light sweep when an update is ready |
+| Feature     | What it does for you                                  |
+| ----------- | ----------------------------------------------------- |
+| Update pill | A quiet pill that enters once when an update is ready |

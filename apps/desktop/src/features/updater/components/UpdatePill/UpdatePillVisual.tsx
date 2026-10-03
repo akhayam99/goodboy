@@ -6,10 +6,9 @@ type Props = {
   readonly isReady: boolean;
   readonly version: string | null;
   readonly agentCount: number;
-  readonly sweepKey: number | null;
 };
 
-export const UpdatePillVisual = ({ isQueued, isReady, version, agentCount, sweepKey }: Props) => {
+export const UpdatePillVisual = ({ isQueued, isReady, version, agentCount }: Props) => {
   const label = isQueued
     ? `Restarts after ${agentCount} agent${agentCount === 1 ? '' : 's'}`
     : `${version ?? 'update'} ${isReady ? 'ready' : 'available'}`;
@@ -18,23 +17,16 @@ export const UpdatePillVisual = ({ isQueued, isReady, version, agentCount, sweep
     : undefined;
 
   return (
-    <span className="relative inline-flex overflow-hidden rounded-full">
+    <span className="inline-flex rounded-full motion-safe:animate-studio-body-in">
       <Chip
         tone={isQueued ? 'info' : 'primary'}
-        emphasis="strong"
+        emphasis="soft"
         shape="pill"
         icon={isQueued ? <Clock size={11} aria-hidden /> : <ArrowUpCircle size={11} aria-hidden />}
         label={label}
         title={tooltip}
         testId="update-pill"
       />
-      {sweepKey !== null ? (
-        <span
-          key={sweepKey}
-          aria-hidden
-          className="update-sweep pointer-events-none absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-primary/35 to-transparent"
-        />
-      ) : null}
     </span>
   );
 };

@@ -7,7 +7,7 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { AgentKind, AgentKindRouting } from '../../agent-kind';
 import { useKindRouting } from '../../../../shared/hooks/useKindRouting';
 import { showsRunsOn } from '../../showsRunsOn';
-import { AgentKindChip } from '../AgentKindChip';
+import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 
 type Props = {
   readonly sessionId: SessionId;

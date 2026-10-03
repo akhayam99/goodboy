@@ -8,7 +8,6 @@ export const STORAGE_KEYS = {
   sessionSidebarCollapsed: `${PREFIX}sessions-sidebar-collapsed`,
   leftSidebarWidth: `${PREFIX}left-sidebar-width:v2`,
   changelogCache: `${PREFIX}changelog-cache:v1`,
-  updateSweep: `${PREFIX}update-sweep:v1`,
   paletteFrecency: `${PREFIX}palette-frecency:v1`,
   chatUnread: `${PREFIX}chat-unread:v1`,
   zoom: `${PREFIX}zoom`,

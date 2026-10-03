@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { EmptyState, ScrollFade, useEscapeLayer } from '@goodboy/ui';
-import { AgentAvatar } from '../../../shared/components/AgentAvatar';
+import { ScrollFade, useEscapeLayer, FilledEmptyState } from '@goodboy/ui';
+import { AgentKindChip } from '../../../shared/components/AgentKindChip';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import type { QuickActionItem } from '../types';
 
@@ -49,12 +49,10 @@ export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: P
   return (
     <div className="absolute bottom-full left-0 right-0 z-popover mb-1 overflow-hidden rounded-md border border-border bg-floating shadow-lg">
       {items.length === 0 ? (
-        <EmptyState
+        <FilledEmptyState
           icon={CONCEPT_ICONS.search}
           tone={CONCEPT_TONE.search}
           title={emptyHint}
-          size="inline"
-          className="px-3 py-2"
         />
       ) : (
         <ScrollFade className="max-h-48" viewportClassName="py-1">
@@ -81,12 +79,12 @@ export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: P
                     </span>
                   ) : null}
                 </div>
-                {item.trailing ? (
-                  <span className="flex shrink-0 items-center gap-1.5 text-secondary uppercase tracking-eyebrow text-muted-foreground">
-                    <span>{item.trailing.label}</span>
-                    {item.trailing.kind ? (
-                      <AgentAvatar kind={item.trailing.kind} size="sm" />
-                    ) : null}
+                {item.trailing?.kind !== undefined ? (
+                  <AgentKindChip kind={item.trailing.kind} label={item.trailing.label} />
+                ) : null}
+                {item.trailing !== undefined && item.trailing.kind === undefined ? (
+                  <span className="shrink-0 text-secondary uppercase tracking-eyebrow text-muted-foreground">
+                    {item.trailing.label}
                   </span>
                 ) : null}
               </li>

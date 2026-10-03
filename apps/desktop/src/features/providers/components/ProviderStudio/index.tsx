@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import type { ProviderId, ProviderLifecycleAction, WorkspaceId } from '@goodboy/types';
-import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
 import type { ScopeFrame } from '../../../settings/components/SettingsStudio/types';
 import { isConnectRunning } from '../ProviderConnect/isConnectRunning';
@@ -8,6 +7,7 @@ import { ProvidersRail } from './ProvidersRail';
 import { ProviderPage } from './ProviderPage';
 import { DefaultsPanel } from './DefaultsPanel';
 import { PROVIDER_ORDER } from './providerOrder';
+import { orderProviders } from '../../orderProviders';
 import { MODELS_SECTION } from './ProviderPage/ModelsGroup/constants';
 import { USAGE_SECTION } from './ProviderPage/UsageGroup/usageSectionId';
 
@@ -42,9 +42,7 @@ export const ProviderSettingsScope = ({
     setAutoUpdate(wantsUpdate);
   }, [initialAction, landing, wantsConnect, wantsUpdate]);
 
-  const ordered = PROVIDER_ORDER.map((id) => providers.find((p) => p.id === id)).filter(
-    (p): p is ProviderDisplayInfo => p !== undefined,
-  );
+  const ordered = orderProviders({ providers });
 
   const selected = ordered.find((p) => p.id === focused) ?? null;
 

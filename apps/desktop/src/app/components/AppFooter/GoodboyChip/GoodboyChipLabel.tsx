@@ -1,48 +1,34 @@
-import { cn, DogMascot } from '@goodboy/ui';
+import { cn, DogMascot, Eyebrow } from '@goodboy/ui';
 import { ONBOARDING_STEPS } from '../../../../features/onboarding/onboarding-store';
 import type { OnboardingProgress } from '../../../../features/onboarding/hooks/useOnboardingProgress';
 import { useAppStore } from '../../../../store';
 import { useRunningAgentCount } from '../../../../features/updater/hooks/useRunningAgentCount';
-import { useUpdateSweep } from '../../../../features/updater/hooks/useUpdateSweep';
 import { UpdatePillVisual } from '../../../../features/updater/components/UpdatePill/UpdatePillVisual';
+import { FOOTER_LABEL } from '../FooterButton';
 
 export type GoodboyChipState = 'update' | 'setup' | 'rest';
 
 type Props = {
   readonly state: GoodboyChipState;
   readonly progress: OnboardingProgress;
+  readonly installedVersion: string | null;
 };
 
 const MARK_SIZE = 14;
 
-export const GoodboyChipLabel = ({ state, progress }: Props) => {
+export const GoodboyChipLabel = ({ state, progress, installedVersion }: Props) => {
   const status = useAppStore((s) => s.updaterStatus);
   const version = useAppStore((s) => s.updateVersion);
   const isQueued = useAppStore((s) => s.updateQueuedUntilIdle);
   const runningCount = useRunningAgentCount();
-  const isReady = status === 'ready';
-  const isAvailable = status === 'available';
-  const sweepKey = useUpdateSweep({ active: (isReady || isAvailable) && !isQueued });
 
   if (state === 'update') {
-    if (isQueued) {
-      return (
-        <UpdatePillVisual
-          isQueued
-          isReady={false}
-          version={version}
-          agentCount={runningCount}
-          sweepKey={null}
-        />
-      );
-    }
     return (
       <UpdatePillVisual
-        isQueued={false}
-        isReady={isReady}
+        isQueued={isQueued}
+        isReady={!isQueued && status === 'ready'}
         version={version}
         agentCount={runningCount}
-        sweepKey={sweepKey}
       />
     );
   }
@@ -70,8 +56,12 @@ export const GoodboyChipLabel = ({ state, progress }: Props) => {
   return (
     <>
       <DogMascot size={MARK_SIZE} className="text-foreground" />
-      <span className="font-semibold text-foreground">Goodboy</span>
-      <span className="text-faint-foreground">beta</span>
+      <span className={cn(FOOTER_LABEL, 'font-semibold text-foreground')}>Goodboy</span>
+      <span aria-hidden className={cn(FOOTER_LABEL, 'h-3 w-px bg-border')} />
+      <Eyebrow label="Beta" muted className={FOOTER_LABEL} />
+      {installedVersion === null ? null : (
+        <span className="tabular-nums text-faint-foreground">v{installedVersion}</span>
+      )}
     </>
   );
 };

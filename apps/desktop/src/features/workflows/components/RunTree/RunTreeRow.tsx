@@ -8,7 +8,7 @@ import type {
 } from '@goodboy/types';
 import { isQuestionDelegate } from '../../../context/questionDelegate';
 import { useAgentRowWork } from '../../../session/hooks/useAgentRowWork';
-import { AgentKindChip } from '../../../session/components/AgentKindChip';
+import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { TimelineAgentMeta } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineAgentMeta';
 import { TimelineRail } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineRail';
 import { TimelineRowMarker } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineRowMarker';

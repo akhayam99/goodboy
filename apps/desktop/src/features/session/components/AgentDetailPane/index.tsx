@@ -9,7 +9,7 @@ import { useAppStore, useExecutedAgentRouting } from '../../../../store';
 import { effectiveAgentStatus } from './agentNowState';
 import { agentOpenTab, isOpenAgentReveal, type AgentTab } from './agentOpenTab';
 import { classifyAgent } from '../../agent-kind';
-import { AgentKindChip } from '../AgentKindChip';
+import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { AgentHeaderStatus } from './AgentHeaderStatus';
 import { AgentHeaderActions } from '../AgentHeaderActions';
 import { useAgentDetailWorkTime } from '../../hooks/useAgentDetailWorkTime';

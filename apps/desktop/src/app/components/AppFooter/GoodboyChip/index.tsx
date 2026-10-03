@@ -10,6 +10,7 @@ import { useHasBugReportDraft } from '../../../../features/settings/hooks/useHas
 import { UpdateArrivalCard } from '../../../../features/updater/components/UpdateArrivalCard';
 import { useRestartWhenIdle } from '../../../../features/updater/hooks/useRestartWhenIdle';
 import { openUrl } from '../../../../shared/lib/editor';
+import { SOCIAL_LINKS, SPONSOR_URL } from '../../../../shared/lib/productLinks';
 import { GoodboyChipLabel, type GoodboyChipState } from './GoodboyChipLabel';
 import { GoodboyMenu } from './GoodboyMenu';
 
@@ -19,7 +20,6 @@ type Props = {
 };
 
 const OPEN_GOODBOY_MENU_EVENT = 'goodboy:open-goodboy-menu';
-export const SPONSOR_URL = 'https://github.com/sponsors/akhayam99';
 
 const PANEL_WIDTH = 300;
 const PANEL_MAX_HEIGHT = 560;
@@ -98,7 +98,7 @@ export const GoodboyChip = ({ onOpenChangelog, onOpenShortcuts }: Props) => {
               isOpen ? 'bg-muted' : isBrandChip ? 'bg-background hover:bg-hover' : 'hover:bg-hover',
             )}
           >
-            <GoodboyChipLabel state={state} progress={progress} />
+            <GoodboyChipLabel state={state} progress={progress} installedVersion={version} />
           </button>
         }
       >
@@ -112,6 +112,9 @@ export const GoodboyChip = ({ onOpenChangelog, onOpenShortcuts }: Props) => {
           onOpenShortcuts={leaveFor({ action: onOpenShortcuts })}
           onSponsor={() => {
             void openUrl(SPONSOR_URL);
+          }}
+          onFollowX={() => {
+            void openUrl(SOCIAL_LINKS.x);
           }}
         />
       </AnchoredPopover>

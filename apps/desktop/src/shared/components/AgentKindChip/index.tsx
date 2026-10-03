@@ -1,6 +1,5 @@
 import { Chip, Tooltip, cn } from '@goodboy/ui';
-import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
-import { agentKindPalette, type AgentKind } from '../../agent-kind';
+import { agentKindPalette, type AgentKind } from '../../../features/session/agent-kind';
 
 type AgentKindChipDensity = 'label' | 'glyph';
 
@@ -13,6 +12,8 @@ type Props = {
   readonly className?: string;
 };
 
+const KIND_ICON_SIZE = 10;
+
 export const AgentKindChip = ({
   kind,
   density = 'label',
@@ -23,12 +24,22 @@ export const AgentKindChip = ({
 }: Props) => {
   const palette = agentKindPalette({ kind });
   const text = label ?? palette.label;
+  const Icon = palette.icon;
 
   if (density === 'glyph') {
     return (
       <Tooltip content={title ?? text} anchorClassName="inline-flex shrink-0">
-        <span role="img" aria-label={title ?? text} className={cn('inline-flex', className)}>
-          <AgentAvatar kind={kind} size="xs" />
+        <span
+          role="img"
+          aria-label={title ?? text}
+          className={cn(
+            'inline-flex size-4.5 items-center justify-center rounded-full',
+            palette.fg,
+            'bg-current/12',
+            className,
+          )}
+        >
+          <Icon size={KIND_ICON_SIZE} aria-hidden />
         </span>
       </Tooltip>
     );
@@ -38,6 +49,7 @@ export const AgentKindChip = ({
     <Chip
       tone="neutral"
       size="3xs"
+      icon={<Icon size={KIND_ICON_SIZE} aria-hidden className="shrink-0" />}
       label={text}
       title={title}
       className={cn(

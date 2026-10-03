@@ -1,8 +1,9 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { cn } from '../cn';
 import { SHEET_CLASSES, type ResizeActivity } from '../sheet';
 import { DrawerColumn } from './DrawerColumn';
 import { ResizeHandle } from './ResizeHandle';
+import { useResizableWidth } from '../useResizableWidth';
 
 export type AppShellProps = {
   readonly topBar?: ReactNode;
@@ -26,42 +27,13 @@ export const COLLAPSED_RAIL_WIDTH = 44;
 
 const HANDLE_WIDTH = 6;
 
-type ReadWidthParams = {
-  readonly key: string;
-  readonly fallback: number;
-  readonly min: number;
-  readonly max: number;
-};
-
-const readPersistedWidth = ({ key, fallback, min, max }: ReadWidthParams): number => {
-  if (typeof localStorage === 'undefined') {
-    return fallback;
-  }
-  const raw = localStorage.getItem(key);
-  if (raw === null || raw === '') {
-    return fallback;
-  }
-  const parsed = parseInt(raw, 10);
-  if (Number.isNaN(parsed)) {
-    return fallback;
-  }
-  return Math.max(min, Math.min(max, parsed));
-};
-
-const readPersistedLeftWidth = (): number =>
-  readPersistedWidth({
-    key: LEFT_SIDEBAR_STORAGE_KEY,
-    fallback: LEFT_SIDEBAR_DEFAULT,
-    min: LEFT_SIDEBAR_MIN,
-    max: LEFT_SIDEBAR_MAX,
-  });
+const LEFT_WIDTH_VAR = '--goodboy-left-sidebar-width';
 
 type LayoutParams = {
   readonly leftCollapsed: boolean;
   readonly leftHidden: boolean;
   readonly hasLeftSidebar: boolean;
   readonly hasFooter: boolean;
-  readonly leftWidthPx: number;
 };
 
 type Layout = {
@@ -73,15 +45,14 @@ type Layout = {
 const leftColumnWidth = ({
   leftCollapsed,
   leftHidden,
-  leftWidthPx,
-}: Pick<LayoutParams, 'leftCollapsed' | 'leftHidden' | 'leftWidthPx'>): number => {
+}: Pick<LayoutParams, 'leftCollapsed' | 'leftHidden'>): string => {
   if (leftHidden) {
-    return 0;
+    return '0px';
   }
   if (leftCollapsed) {
-    return COLLAPSED_RAIL_WIDTH;
+    return `${COLLAPSED_RAIL_WIDTH}px`;
   }
-  return leftWidthPx;
+  return `var(${LEFT_WIDTH_VAR})`;
 };
 
 const buildLayout = ({
@@ -89,7 +60,6 @@ const buildLayout = ({
   leftHidden,
   hasLeftSidebar,
   hasFooter,
-  leftWidthPx,
 }: LayoutParams): Layout => {
   const rows = hasFooter ? 'minmax(0,1fr) auto' : 'minmax(0,1fr)';
   if (!hasLeftSidebar) {
@@ -99,7 +69,7 @@ const buildLayout = ({
       templateRows: rows,
     };
   }
-  const leftCol = `${leftColumnWidth({ leftCollapsed, leftHidden, leftWidthPx })}px`;
+  const leftCol = leftColumnWidth({ leftCollapsed, leftHidden });
   const handleCol = leftHidden || leftCollapsed ? '0px' : `${HANDLE_WIDTH}px`;
   return {
     templateAreas: hasFooter ? '"left lhandle main" "footer footer footer"' : '"left lhandle main"',
@@ -123,25 +93,24 @@ export const AppShell = ({
   const hasFooter = footer != null;
   const hasLeftSidebar = leftSidebar != null;
   const isLeftResizeDisabled = leftHidden || leftSidebarCollapsed;
-  const [leftWidth, setLeftWidth] = useState<number>(readPersistedLeftWidth);
+  const left = useResizableWidth<HTMLDivElement>({
+    storageKey: LEFT_SIDEBAR_STORAGE_KEY,
+    defaultWidth: LEFT_SIDEBAR_DEFAULT,
+    min: LEFT_SIDEBAR_MIN,
+    max: LEFT_SIDEBAR_MAX,
+    cssVar: LEFT_WIDTH_VAR,
+  });
   const [leftResize, setLeftResize] = useState<ResizeActivity>('idle');
   const isSheetWrapped = hasLeftSidebar && !leftHidden;
-
-  useEffect(() => {
-    if (typeof localStorage === 'undefined') {
-      return;
-    }
-    localStorage.setItem(LEFT_SIDEBAR_STORAGE_KEY, String(leftWidth));
-  }, [leftWidth]);
 
   const layout = buildLayout({
     leftCollapsed: leftSidebarCollapsed,
     leftHidden,
     hasLeftSidebar,
     hasFooter,
-    leftWidthPx: leftWidth,
   });
   const gridStyle = {
+    ...left.style,
     gridTemplateAreas: layout.templateAreas,
     gridTemplateColumns: layout.templateColumns,
     gridTemplateRows: layout.templateRows,
@@ -155,6 +124,7 @@ export const AppShell = ({
           'grid min-h-0 w-full flex-1 overflow-hidden text-foreground motion-safe:transition-[grid-template-columns] duration-200 ease-out',
           className,
         )}
+        ref={left.targetRef}
         style={gridStyle}
       >
         {hasLeftSidebar ? (
@@ -175,11 +145,7 @@ export const AppShell = ({
           <div className="min-h-0" style={{ gridArea: 'lhandle' }}>
             {isLeftResizeDisabled ? null : (
               <ResizeHandle
-                value={leftWidth}
-                min={LEFT_SIDEBAR_MIN}
-                max={LEFT_SIDEBAR_MAX}
-                onChange={setLeftWidth}
-                onReset={() => setLeftWidth(LEFT_SIDEBAR_DEFAULT)}
+                {...left.handleProps}
                 ariaLabel="Resize left sidebar"
                 onActivityChange={setLeftResize}
                 drawsEdge={false}

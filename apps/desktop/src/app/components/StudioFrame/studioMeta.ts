@@ -11,6 +11,7 @@ type StudioMeta = {
   readonly title: string;
   readonly closeLabel: string;
   readonly skeleton: StudioSkeletonLayout;
+  readonly railWidth?: 'narrow' | 'standard';
 };
 
 export const STUDIO_META = {
@@ -20,6 +21,7 @@ export const STUDIO_META = {
     title: 'Settings',
     closeLabel: 'close settings',
     skeleton: 'rail',
+    railWidth: 'narrow',
   },
   guide: {
     icon: CONCEPT_ICONS.guide,
@@ -27,6 +29,7 @@ export const STUDIO_META = {
     title: 'Guide',
     closeLabel: 'close guide',
     skeleton: 'rail',
+    railWidth: 'standard',
   },
   companion: {
     icon: Smartphone,
@@ -82,5 +85,6 @@ export const STUDIO_META = {
     title: 'Chat',
     closeLabel: 'close chat',
     skeleton: 'rail',
+    railWidth: 'narrow',
   },
 } as const satisfies Record<StudioKind, StudioMeta>;
