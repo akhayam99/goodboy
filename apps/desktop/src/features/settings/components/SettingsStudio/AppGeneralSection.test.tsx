@@ -158,3 +158,32 @@ describe('AppGeneralSection open with', () => {
     expect(screen.queryByText(/is not installed any more/)).toBeNull();
   });
 });
+
+describe('AppGeneralSection row rhythm', () => {
+  const rowOf = (label: string): HTMLElement =>
+    screen.getByText(label).parentElement?.parentElement as HTMLElement;
+
+  const shapeOf = (row: HTMLElement) => ({
+    parts: row.children.length,
+    controls: row.children[1]?.children.length,
+  });
+
+  it.each([
+    { editors: 4, browsers: 3 },
+    { editors: 5, browsers: 4 },
+  ])(
+    'renders Editor and Browser as plain field rows like Theme ($editors editors, $browsers browsers)',
+    ({ editors, browsers }) => {
+      seed({ editors, browsers });
+      render(<AppGeneralSection />);
+
+      const theme = rowOf('Theme');
+      const editor = rowOf('Editor');
+      const browser = rowOf('Browser');
+
+      expect(editor.nextElementSibling).toBe(browser);
+      expect(shapeOf(editor)).toEqual(shapeOf(theme));
+      expect(shapeOf(browser)).toEqual(shapeOf(theme));
+    },
+  );
+});
