@@ -4,7 +4,7 @@ The full feature guide, in the same order as [goodboy-ai.dev](https://goodboy-ai
 
 Most pictures follow one team and one task. Harborline keeps three repos, payments-api, ledger-core and notify-relay, and issue HBL-412 says retried webhooks post a second credit. The pictures show that fix from the first brief to pull request #318.
 
-<a id="welcome-to-goodboy"></a><a id="provider-connection"></a><a id="one-page-per-provider"></a><a id="update-the-provider-cli"></a><a id="permissions-for-each-provider"></a><a id="integrations"></a><a id="about-you"></a>
+<a id="welcome-to-goodboy"></a><a id="provider-connection"></a><a id="one-page-per-provider"></a><a id="update-the-provider-cli"></a><a id="permissions-for-each-provider"></a><a id="integrations"></a><a id="about-you"></a><a id="settings-home"></a>
 
 ## Set up
 
@@ -112,7 +112,7 @@ The board shows every session of a workspace by stage. Workflows chain agents in
 
 [More on the board](docs/features/board.md)
 
-<a id="workflow-builder"></a><a id="orchestrated"></a><a id="preset-and-custom"></a><a id="built-in-workflows"></a><a id="saved-steps"></a><a id="model-per-step"></a><a id="autorun"></a><a id="workflow-rules"></a><a id="spend-limit"></a><a id="chained-starts"></a><a id="workflow-run"></a><a id="hints-to-the-orchestrator"></a><a id="why-each-step-and-the-run-recap"></a><a id="step-handoff-summary"></a><a id="open-questions"></a><a id="let-an-agent-decide"></a><a id="import-workflows"></a>
+<a id="workflow-builder"></a><a id="orchestrated"></a><a id="preset-and-custom"></a><a id="built-in-workflows"></a><a id="saved-steps"></a><a id="model-per-step"></a><a id="autorun"></a><a id="pause-resume-and-skip"></a><a id="workflow-rules"></a><a id="spend-limit"></a><a id="chained-starts"></a><a id="workflow-run"></a><a id="hints-to-the-orchestrator"></a><a id="why-each-step-and-the-run-recap"></a><a id="step-handoff-summary"></a><a id="open-questions"></a><a id="let-an-agent-decide"></a><a id="import-workflows"></a>
 
 ## Workflows
 
@@ -162,7 +162,7 @@ What one agent learns, the next one reads. The goal, decisions and a running sum
 
 [More on shared context](docs/features/context.md)
 
-<a id="usage-limits-chip"></a><a id="use-reset"></a><a id="fallback-when-a-limit-is-hit"></a><a id="fallback-order-and-auto"></a><a id="model-picker"></a><a id="impact"></a><a id="monthly-cap-and-budget-alert"></a>
+<a id="usage-limits-chip"></a><a id="use-reset"></a><a id="fallback-when-a-limit-is-hit"></a><a id="fallback-order-and-auto"></a><a id="provider-order-and-auto"></a><a id="model-picker"></a><a id="impact"></a><a id="monthly-cap-and-budget-alert"></a>
 
 ## Providers, limits and cost
 
@@ -176,7 +176,7 @@ Watch how much of each plan is left, keep work moving when a provider runs out, 
 
 [More on providers, limits and cost](docs/features/providers.md)
 
-<a id="worktree-folders"></a><a id="branches"></a><a id="storage-scope"></a><a id="free-space-chip"></a><a id="artifacts-from-deleted-sessions"></a><a id="goodboy-can-free-n-gb"></a>
+<a id="worktree-folders"></a><a id="branches"></a><a id="storage-scope"></a><a id="free-space-chip"></a><a id="artifacts-from-deleted-sessions"></a><a id="goodboy-can-free-n-gb"></a><a id="other-tools"></a>
 
 ## Storage
 
@@ -185,6 +185,7 @@ Free disk space and clean up branches, with what is safe to remove spelled out.
 - Worktree folders
 - Branches
 - Goodboy can free N GB
+- Other tools
 
 [More on storage](docs/features/storage.md)
 
@@ -200,7 +201,7 @@ Keep tokens out of what you save, move your setup between machines, and update w
 
 [More on security, backup and updates](docs/features/security.md)
 
-<a id="workspace-chat"></a><a id="roles"></a><a id="agent-header"></a><a id="what-the-agent-received"></a><a id="agent-transcript"></a><a id="agent-suggests"></a><a id="queue-or-send-now"></a><a id="stop-and-continue"></a><a id="turn-footer"></a><a id="tool-call-states"></a><a id="composer-plus-menu"></a><a id="attach-files"></a><a id="drift-warning"></a><a id="subagents-from-plan-parts"></a><a id="history-rewriter-and-scribe"></a><a id="one-language-per-session"></a>
+<a id="workspace-chat"></a><a id="roles"></a><a id="agent-header"></a><a id="what-the-agent-received"></a><a id="agent-transcript"></a><a id="agent-suggests"></a><a id="queue-or-send-now"></a><a id="message-and-document-fields"></a><a id="stop-and-continue"></a><a id="turn-footer"></a><a id="tool-call-states"></a><a id="composer-plus-menu"></a><a id="attach-files"></a><a id="drift-warning"></a><a id="subagents-from-plan-parts"></a><a id="history-rewriter-and-scribe"></a><a id="one-language-per-session"></a>
 
 ## Agents
 

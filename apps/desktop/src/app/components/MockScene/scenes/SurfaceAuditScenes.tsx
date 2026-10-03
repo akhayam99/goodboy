@@ -16,6 +16,9 @@ import type {
 } from '@goodboy/types';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { ScriptsPanel } from '../../../../features/scripts/components/ScriptsPanel';
+import { parseScriptPins } from '../../../../features/scripts/parseScriptPins';
+import { scriptPinId } from '../../../../features/scripts/scriptPinId';
+import { scriptPinsKey } from '../../../../features/scripts/scriptPinsKey';
 import { ReviewPane } from '../../../../features/review/components/ReviewPane';
 import { ArtifactStudio } from '../../../../features/artifacts/components/ArtifactStudio';
 import type { ScriptGroup, ScriptRunRecord } from '../../../../features/scripts/scripts';
@@ -551,8 +554,39 @@ const SCRIPT_RUNS: Readonly<Record<string, ScriptRunRecord>> = {
 
 const READY_SCAN: DiscoveredScriptScan = { status: 'ready', error: null };
 
+const pinOf = ({ group, name }: { readonly group: ScriptGroup; readonly name: string }) =>
+  scriptPinId({ source: group.source, relDir: group.relDir, name, savedId: null });
+
+const SCRIPT_PINS: Readonly<Record<string, string>> = {
+  [scriptPinsKey({ projectId: LEDGER_PROJECT_ID })]: JSON.stringify([
+    pinOf({ group: LEDGER_ROOT_GROUP, name: 'dev' }),
+    pinOf({ group: LEDGER_ROOT_GROUP, name: 'test' }),
+  ]),
+  [scriptPinsKey({ projectId: PAYMENTS_PROJECT_ID })]: JSON.stringify([
+    pinOf({ group: PAYMENTS_GROUP, name: 'test' }),
+  ]),
+};
+
+const toggleSceneScriptPin = async ({
+  projectId,
+  pinId,
+}: {
+  readonly projectId: ProjectId;
+  readonly pinId: string;
+}): Promise<void> => {
+  const key = scriptPinsKey({ projectId });
+  const pins = parseScriptPins({ raw: useAppStore.getState().settings[key] });
+  const next = pins.includes(pinId) ? pins.filter((pin) => pin !== pinId) : [...pins, pinId];
+  useAppStore.setState((state) => ({
+    settings: { ...state.settings, [key]: JSON.stringify(next) },
+  }));
+};
+
 const seedScriptsScene = (): void => {
   useAppStore.setState({
+    settings: { ...useAppStore.getState().settings, ...SCRIPT_PINS },
+    loadScriptPins: async () => undefined,
+    toggleScriptPin: toggleSceneScriptPin,
     workspaces: [SCRIPTS_WORKSPACE],
     currentWorkspaceId: SCRIPTS_WORKSPACE_ID,
     projects: SCRIPTS_PROJECTS,

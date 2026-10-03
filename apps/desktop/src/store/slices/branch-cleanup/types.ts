@@ -58,6 +58,10 @@ export type RestoreDeletedBranchesParams = {
   readonly ids: ReadonlyArray<string>;
 };
 
+export type ForgetDeletedBranchesParams = {
+  readonly ids: ReadonlyArray<string>;
+};
+
 export type BranchCleanupSlice = BranchCleanupState & {
   runAfterMergeCleanup(params: RunAfterMergeCleanupParams): Promise<AfterMergeOutcome>;
   restoreDeletedBranch(params: RestoreDeletedBranchParams): Promise<void>;
@@ -65,5 +69,6 @@ export type BranchCleanupSlice = BranchCleanupState & {
   loadProjectBranches(params: LoadProjectBranchesParams): Promise<void>;
   deleteBranches(params: DeleteBranchesParams): Promise<DeleteBranchesOutcome>;
   restoreDeletedBranches(params: RestoreDeletedBranchesParams): Promise<void>;
+  forgetDeletedBranches(params: ForgetDeletedBranchesParams): Promise<void>;
   checkMergedThen(params: CheckMergedThenParams): Promise<void>;
 };

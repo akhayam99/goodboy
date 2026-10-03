@@ -80,7 +80,7 @@ export const resolveWireframeRouting = ({
     sessionId,
     isRunBudgetBlocked: false,
     nowMs: Date.now(),
-    ...workspacePolicyAvailability({ state: state }),
+    ...workspacePolicyAvailability({ state, sessionId }),
   });
   const usable = availability.connectedProviders.filter(
     (provider) =>

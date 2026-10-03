@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Eyebrow, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
+import { Band, SectionHeader, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import {
   isStorageFolderSuggested,
@@ -12,6 +12,7 @@ import { useSelectionKeys } from '../../../../shared/hooks/useSelectionKeys';
 import { groupStorageFolders } from '../../groupStorageFolders';
 import { useStorageSummary } from '../../useStorageSummary';
 import { BulkRemoveBar } from './BulkRemoveBar';
+import { ScanRepositoryRow } from './ScanRepositoryRow';
 import { StorageOutcomeNotice } from './StorageOutcomeNotice';
 import { WorktreeColumns } from './WorktreeColumns';
 import { WorktreeGroup } from './WorktreeGroup';
@@ -126,42 +127,41 @@ export const WorktreeSection = ({ scope }: Props) => {
       data-selecting={selected.size > 0}
       className="group/select-list flex flex-col gap-2"
     >
-      <div className="flex flex-wrap items-center gap-3">
-        <Eyebrow
-          icon={<FolderIcon size={ICON_SIZE.row} aria-hidden />}
-          label={`Worktrees · ${formatBytes({ bytes: shownBytes })}`}
-        />
-        <SegmentedTabs
-          ariaLabel="Worktree folders"
-          size="sm"
-          options={options}
-          value={filter}
-          onChange={onFilter}
-          className="ml-auto"
-        />
-      </div>
-      <p className="text-secondary text-faint-foreground">
-        Checkout folders of sessions that are archived, deleted or gone. Branches always stay in the
-        repository.
-      </p>
+      <SectionHeader
+        label={`Worktrees · ${formatBytes({ bytes: shownBytes })}`}
+        icon={<FolderIcon size={ICON_SIZE.row} aria-hidden />}
+        hint="Checkout folders of sessions that are archived, deleted or gone. Branches always stay in the repository."
+        action={
+          <SegmentedTabs
+            ariaLabel="Worktree folders"
+            size="sm"
+            options={options}
+            value={filter}
+            onChange={onFilter}
+          />
+        }
+      />
       <StorageOutcomeNotice />
-      {groups.length === 0 ? (
-        <p className="py-3 text-label text-muted-foreground">{EMPTY_COPY[filter]}</p>
-      ) : (
-        <div className="@container flex flex-col">
-          <WorktreeColumns />
-          {groups.map((group) => (
-            <WorktreeGroup
-              key={group.root.repoRoot}
-              group={group}
-              now={now}
-              suggestAfterDays={suggestAfterDays}
-              selected={selected}
-              onToggle={onToggle}
-            />
-          ))}
-        </div>
-      )}
+      <Band>
+        {groups.length === 0 ? (
+          <p className="px-2 py-2 text-label text-muted-foreground">{EMPTY_COPY[filter]}</p>
+        ) : (
+          <div className="@container flex flex-col">
+            <WorktreeColumns />
+            {groups.map((group) => (
+              <WorktreeGroup
+                key={group.root.repoRoot}
+                group={group}
+                now={now}
+                suggestAfterDays={suggestAfterDays}
+                selected={selected}
+                onToggle={onToggle}
+              />
+            ))}
+          </div>
+        )}
+        <ScanRepositoryRow />
+      </Band>
       {filter === 'review' ? (
         <BulkRemoveBar
           suggested={suggested}

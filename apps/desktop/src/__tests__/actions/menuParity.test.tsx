@@ -165,6 +165,8 @@ describe('every ⋯ menu and its right click list the same actions in the same o
         isSelected={false}
         showSource
         blockedReason={null}
+        isPinned={false}
+        onTogglePin={vi.fn()}
         onOpen={vi.fn()}
         onRun={vi.fn()}
         onStop={vi.fn()}
