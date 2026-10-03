@@ -19,6 +19,7 @@ const TILED: ReadonlySet<PaletteKind> = new Set<PaletteKind>([
   'artifact',
   'workspace',
   'script',
+  'workflow',
 ]);
 
 export const CommandRowView = ({ row, id, isSelected, onHover, onRun }: Props) => {

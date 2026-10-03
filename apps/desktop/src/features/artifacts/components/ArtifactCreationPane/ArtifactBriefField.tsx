@@ -6,6 +6,7 @@ import {
   ARTIFACT_BRIEF_LIMITS,
   formatBriefCount,
 } from '../../artifactBrief';
+import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
 
 type Props = {
   readonly label: string;
@@ -67,7 +68,7 @@ export const ArtifactBriefField = ({
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+    if (isSubmitChord(event)) {
       event.preventDefault();
       onSubmit();
     }

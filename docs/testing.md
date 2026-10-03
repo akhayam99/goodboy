@@ -210,3 +210,15 @@ non-empty `orchestration_error` carries the message. Empty means no stop at all
 and the sidebar row expanded. The plain pill then hides itself and the strip
 shows instead. Nothing is written back. Relaunch without the variable and it
 shows **Stopped** again. Never persist the in-flight flag.
+
+## Keys are pressed on the real app
+
+A shortcut test presses the key on the element that has the focus, not on
+`window`. `pressShortcut` and `pressKey` (`apps/desktop/src/__tests__/helpers/pressKey.ts`)
+build the event from the registry entry, with its physical `code`, and fire it on
+a focused button, field or row. `__tests__/surfaces/navigation-flows/keys.test.tsx`
+mounts the whole app on the real store, presses every id of `SHORTCUTS` and checks
+an effect: the page, the store, an open popover or a write at the database boundary.
+An id that cannot reach its context sits in the exemption list of that file with its
+reason, and the list can only get shorter. Review and activity keys run on a seeded
+world of the same app (`bootWorld`).

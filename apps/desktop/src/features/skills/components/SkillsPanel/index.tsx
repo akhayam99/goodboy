@@ -17,6 +17,7 @@ import { CardAction } from '@goodboy/ui';
 import { CardActionSlot } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -325,7 +326,7 @@ const SkillEditor = ({
   isNew,
 }: SkillEditorProps) => {
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+    if (isSubmitChord(event)) {
       event.preventDefault();
       if (!saving) {
         onSave();

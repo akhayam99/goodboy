@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button, KbdPill, Textarea, cn, tintClasses } from '@goodboy/ui';
+import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
 
 type Props = {
   readonly label: string;
@@ -51,7 +52,7 @@ export const CommentComposer = ({
             onCancel();
             return;
           }
-          if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+          if (isSubmitChord(event)) {
             event.preventDefault();
             submit();
           }

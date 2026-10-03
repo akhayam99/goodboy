@@ -1,4 +1,5 @@
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
 
 type Params = {
   readonly popoverOpen: boolean;
@@ -19,6 +20,6 @@ export const composerKeyDown =
     }
     if (event.key === 'Enter' && !event.shiftKey && !popoverOpen) {
       event.preventDefault();
-      void (isRunning && (event.metaKey || event.ctrlKey) ? onSendNow() : onSend());
+      void (isRunning && isSubmitChord(event) ? onSendNow() : onSend());
     }
   };

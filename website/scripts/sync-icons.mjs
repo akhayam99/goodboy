@@ -58,17 +58,28 @@ const loadLucide = () => {
   return { packageDirectory, version, files };
 };
 
+const readNodes = (source) => {
+  const data = source.match(/const __iconData = (\{[\s\S]*?\n\});\n/);
+  if (data !== null) {
+    return new Function(`return ${data[1]};`)().node;
+  }
+  const legacy = source.match(/const __iconNode = (\[[\s\S]*?\]);\nconst /);
+  if (legacy !== null) {
+    return new Function(`return ${legacy[1]};`)();
+  }
+  return null;
+};
+
 const readIconNode = ({ lucide, name }) => {
   const file = lucide.files.get(name);
   if (file === undefined) {
     throw new Error(`lucide-react ${lucide.version} has no icon named ${name}`);
   }
   const source = readFileSync(resolve(lucide.packageDirectory, 'dist/esm/icons', file), 'utf8');
-  const match = source.match(/const __iconNode = (\[[\s\S]*?\]);\nconst /);
-  if (match === null) {
+  const nodes = readNodes(source);
+  if (nodes === null) {
     throw new Error(`Could not read the icon node of ${name}`);
   }
-  const nodes = new Function(`return ${match[1]};`)();
   return nodes.map(([tag, attributes]) => {
     const { key: _key, ...rest } = attributes;
     return [tag, rest];
