@@ -122,7 +122,7 @@ export const TimelineStreamRow = ({
   );
   const content = (
     <>
-      <span className="flex min-w-0 flex-1 items-baseline gap-2 overflow-hidden">
+      <span className={cn('flex flex-1 items-baseline gap-2 overflow-hidden', WORK_ROW.label)}>
         <TimelineRowLabel
           item={item}
           diffStat={diffStat}

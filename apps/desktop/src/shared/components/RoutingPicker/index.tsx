@@ -28,6 +28,7 @@ export type Props = {
   readonly onVerbosity?: (verbosity: VerbosityLevel) => void;
   readonly onReset?: () => void;
   readonly resetLabel?: string;
+  readonly hasTriggerReset?: boolean;
   readonly overridden?: boolean;
   readonly defaultSummary?: string;
   readonly variant?: 'field' | 'pill';
@@ -58,6 +59,7 @@ export const RoutingPicker = ({
   onVerbosity,
   onReset,
   resetLabel,
+  hasTriggerReset = true,
   overridden,
   defaultSummary,
   variant = 'field',
@@ -171,7 +173,7 @@ export const RoutingPicker = ({
       anchorClassName={cn('flex items-center gap-1', variant === 'field' && 'w-full')}
       trigger={
         <>
-          {onReset != null && isOverridden && !disabled && (
+          {onReset != null && hasTriggerReset && isOverridden && !disabled && (
             <Tooltip
               content={defaultSummary != null ? `${resetCopy} (${defaultSummary})` : resetCopy}
             >

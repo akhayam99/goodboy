@@ -38,6 +38,7 @@ type Props = {
   readonly loading: Readonly<Record<InboxProvider, boolean>>;
   readonly errors: Readonly<Record<InboxProvider, string | null>>;
   readonly projects?: ReadonlyArray<Project>;
+  readonly canReply?: boolean;
   readonly onFiltersChange: (filters: InboxFilters) => void;
   readonly onClearFilters: () => void;
 };
@@ -100,6 +101,7 @@ export const InboxFacetRail = ({
   loading,
   errors,
   projects = [],
+  canReply = true,
   onFiltersChange,
   onClearFilters,
 }: Props) => {
@@ -183,7 +185,13 @@ export const InboxFacetRail = ({
           onFiltersChange={change}
         />
       ) : null}
-      <FacetKeyHints hints={keyHintsOf(INBOX_KEY_SPECS)} />
+      <FacetKeyHints
+        hints={keyHintsOf(
+          canReply
+            ? INBOX_KEY_SPECS
+            : INBOX_KEY_SPECS.filter((spec) => !spec.ids.includes('list.reply')),
+        )}
+      />
       {hasActiveFilter ? (
         <button
           type="button"

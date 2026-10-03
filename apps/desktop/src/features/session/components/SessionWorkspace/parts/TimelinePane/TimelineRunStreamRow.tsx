@@ -2,6 +2,7 @@ import { useContext, type ReactNode } from 'react';
 import { useObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
 import type { EffortLevel, ProviderId, RoleModelPreferences, SessionId } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../../store';
+import { useRoutingScope } from '../../../../../../shared/hooks/useRoutingScope';
 import { WorkTimeContext } from '../../../../../workTreeModel/workTimeSource';
 import type { TimelineOpenTarget } from '../../../../hooks/useTimelineOpen';
 import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups';
@@ -52,6 +53,7 @@ export const TimelineRunStreamRow = ({
   isRevealed = false,
 }: Props) => {
   const source = useContext(WorkTimeContext);
+  const scope = useRoutingScope({ sessionId });
   const contextMenu = useObjectMenuTrigger({
     target: { kind: 'workflowRun', sessionId, runId: entry.run.id },
     anchorKey: `activity:${item.id}`,
@@ -66,6 +68,7 @@ export const TimelineRunStreamRow = ({
           roleModels,
           sessionProvider,
           sessionEffort,
+          scope,
         });
   return (
     <TimelineStreamRow

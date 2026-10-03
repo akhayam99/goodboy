@@ -13,11 +13,11 @@ export const TimelineFoldSummary = ({ summary }: Props) => {
     <span
       data-testid="fold-summary"
       title={groupSummaryText({ summary })}
-      className="flex shrink-0 whitespace-pre text-secondary text-muted-foreground"
+      className="flex flex-1 basis-0 whitespace-pre text-secondary text-muted-foreground"
     >
-      <span>{`${first.count} ${first.noun}`}</span>
+      <span className="shrink-0">{`${first.count} ${first.noun}`}</span>
       {rest.length === 0 ? null : (
-        <span className="@max-[272px]:hidden">
+        <span className="w-0 flex-1 overflow-hidden text-ellipsis @max-[272px]:hidden">
           {rest.map((part) => (
             <span key={part.state}>
               <span className="text-faint-foreground">{' · '}</span>

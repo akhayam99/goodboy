@@ -79,6 +79,30 @@ describe('OrchestratorRoutingRow', () => {
     });
   });
 
+  it('resets a pinned model from inside the picker, with no bare cross beside the chip', () => {
+    renderRow(run({ providerId: 'anthropic', model: 'sonnet-5', effort: 'medium' }));
+
+    expect(screen.queryByRole('button', { name: 'Reset routing override' })).toBeNull();
+    openPicker();
+    fireEvent.click(screen.getByRole('button', { name: 'reset' }));
+
+    expect(setWorkflowOrchestratorRouting).toHaveBeenCalledWith(SESSION_ID, RUN_ID, null);
+  });
+
+  it('writes the model name in the interface font, not the code font', () => {
+    renderRow(run({ providerId: 'anthropic', model: 'sonnet-5', effort: 'medium' }));
+
+    const trigger = screen.getByRole('button', { name: /^Orchestrator routing:/ });
+    const fonts = Array.from(trigger.querySelectorAll('span'))
+      .filter((span) => span.children.length === 0 && /Sonnet/.test(span.textContent ?? ''))
+      .map((span) =>
+        (span.getAttribute('class') ?? '')
+          .split(/\s+/)
+          .filter((token) => token.startsWith('font-') && token !== 'font-medium'),
+      );
+    expect(fonts).toEqual([['font-sans']]);
+  });
+
   it('never pairs a model with a provider that does not own it', () => {
     renderRow(run());
 

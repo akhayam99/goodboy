@@ -102,7 +102,7 @@ export const RoutingLabel = ({
         <span
           data-routing-part="name"
           data-model-id={model ?? undefined}
-          className="min-w-0 truncate font-mono font-medium text-foreground"
+          className="min-w-0 truncate font-sans font-medium text-foreground"
         >
           {routingNameText(shown.label)}
         </span>
