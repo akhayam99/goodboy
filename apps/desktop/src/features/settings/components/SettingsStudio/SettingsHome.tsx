@@ -33,7 +33,12 @@ export const SettingsHome = ({ groups, onOpen }: Props) => {
         {groups.map((group) => {
           const Icon = CONCEPT_ICONS[group.concept];
           return (
-            <section key={group.scope} aria-label={group.label} className="flex flex-col gap-2">
+            <section
+              key={group.scope}
+              aria-label={group.label}
+              data-settings-group={group.scope}
+              className="flex flex-col gap-2"
+            >
               <SectionHeader
                 label={group.label}
                 headingLevel={2}

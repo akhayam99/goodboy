@@ -1017,6 +1017,12 @@ one is open at a time.
   minute clock of `useNow`) and feed the home and the rail; the home starts no
   loading of its own (no storage scan, no branch scan, no provider refresh).
   Without a workspace the Workspace and Integrations groups are left out.
+  Opening a card morphs the home into the rail: every card shrinks and slides
+  into its rail row in 230ms (a page nested under Providers & models or
+  Integrations lands on its group row and fades), the rail shows once they
+  land and the page enters with `nav-step-in`. `useHomeToRailMorph` flies
+  copies of the cards on a layer above the studio, so no rendered row moves.
+  Reduced motion, or an engine without `Element.animate`, switches at once.
   Precedent: the Google Account home and the iOS settings list.
 - **Settings nests items in its rail.** The App items (General, Shortcuts,
   Backup, Storage, Security findings, Help, Danger zone) always sit under the

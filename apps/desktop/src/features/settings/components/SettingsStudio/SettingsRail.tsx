@@ -46,6 +46,7 @@ export const SettingsRail = ({
             <div
               key={group.scope}
               data-settings-page={nested === null ? group.scope : undefined}
+              data-settings-group={group.scope}
               className="flex flex-col gap-0.5"
             >
               <StatusRailItem

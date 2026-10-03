@@ -15,7 +15,7 @@ type Props = {
 const DANGER_ROW = 'text-danger hover:text-danger data-[selected=true]:text-danger';
 
 export const SettingsRailAppGroup = ({ group, scope, appSection, onSelect }: Props) => (
-  <div className="flex flex-col gap-0.5">
+  <div data-settings-group={group.scope} className="flex flex-col gap-0.5">
     <StatusRailItem
       icon={<CONCEPT_ICONS.settings size={ICON_SIZE.control} />}
       label={group.label}
