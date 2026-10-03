@@ -55,6 +55,7 @@ type Params = Readonly<{
   agents: ReadonlyArray<Agent>;
   openQuestionCount: number;
   askingAgentIds: ReadonlySet<AgentId>;
+  now: number;
 }>;
 
 const runByOf = ({
@@ -114,7 +115,7 @@ const planRow = ({
   const state = artifactStateOf({
     kind: 'plan',
     status: plan.status,
-    isOpened: true,
+    isNew: false,
     openQuestionCount,
     ...inputs,
   });
@@ -140,11 +141,27 @@ const planRow = ({
   };
 };
 
-const documentRow = ({ artifact }: { readonly artifact: SessionArtifact }): ArtifactListRow => {
+const NEW_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+const isNewArtifact = ({
+  artifact,
+  now,
+}: {
+  readonly artifact: SessionArtifact;
+  readonly now: number;
+}): boolean => artifact.openedAt === null && now - Date.parse(artifact.createdAt) < NEW_WINDOW_MS;
+
+const documentRow = ({
+  artifact,
+  now,
+}: {
+  readonly artifact: SessionArtifact;
+  readonly now: number;
+}): ArtifactListRow => {
   const state = artifactStateOf({
     kind: artifact.kind,
     status: artifact.status,
-    isOpened: artifact.openedAt !== null,
+    isNew: isNewArtifact({ artifact, now }),
     openQuestionCount: 0,
     ...NO_PLAN_STATE_INPUTS,
   });
@@ -177,13 +194,14 @@ export const buildArtifactListRows = ({
   agents,
   openQuestionCount,
   askingAgentIds,
+  now,
 }: Params): ReadonlyArray<ArtifactListRow> =>
   [
     ...generations.map((generation) => generationRow({ generation })),
     ...plans.map((plan) => planRow({ plan, agents, openQuestionCount, askingAgentIds })),
     ...artifacts
       .filter((artifact) => artifact.kind !== 'plan')
-      .map((artifact) => documentRow({ artifact })),
+      .map((artifact) => documentRow({ artifact, now })),
   ].sort(byNewest);
 
 const ARTIFACT_GROUP_ORDER: ReadonlyArray<ArtifactGroup> = [

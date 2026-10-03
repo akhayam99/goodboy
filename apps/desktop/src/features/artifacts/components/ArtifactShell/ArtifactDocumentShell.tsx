@@ -248,7 +248,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
   const state = artifactStateOf({
     kind: artifact.kind,
     status: artifact.status,
-    isOpened: true,
+    isNew: false,
     openQuestionCount,
     ...(plan === null ? NO_PLAN_STATE_INPUTS : planStateInputsOf({ plan, rows: partRows })),
   });

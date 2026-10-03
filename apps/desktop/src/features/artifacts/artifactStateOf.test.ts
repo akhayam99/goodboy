@@ -24,8 +24,8 @@ const NO_PLAN = { openQuestionCount: 0, partCount: 0, progress: null, hasPartAge
 const stored = (params: {
   readonly kind: 'plan' | 'report' | 'wireframe';
   readonly status: 'active' | 'consumed' | 'superseded' | 'discarded';
-  readonly isOpened?: boolean;
-}) => artifactStateOf({ ...NO_PLAN, isOpened: true, ...params });
+  readonly isNew?: boolean;
+}) => artifactStateOf({ ...NO_PLAN, isNew: false, ...params });
 
 describe('artifactStateOf', () => {
   it.each([
@@ -47,7 +47,7 @@ describe('artifactStateOf', () => {
       ...NO_PLAN,
       kind: 'plan',
       status: 'active',
-      isOpened: true,
+      isNew: false,
       openQuestionCount: 1,
     });
     expect(state).toMatchObject({ key: 'needs', detail: '1 question', group: 'needs' });
@@ -65,7 +65,7 @@ describe('artifactStateOf', () => {
       ...NO_PLAN,
       kind: 'plan',
       status: 'consumed',
-      isOpened: true,
+      isNew: false,
       partCount: 3,
       progress,
       hasPartAgents: true,
@@ -78,7 +78,7 @@ describe('artifactStateOf', () => {
       ...NO_PLAN,
       kind: 'plan',
       status: 'consumed',
-      isOpened: true,
+      isNew: false,
       partCount: 3,
       progress: { kind: 'waiting', done: 0, total: 3 },
       hasPartAgents: false,
@@ -86,37 +86,40 @@ describe('artifactStateOf', () => {
     expect(state?.label).toBe('Ran');
   });
 
-  it('shows New for a report or wireframe nobody opened, then nothing', () => {
-    expect(stored({ kind: 'report', status: 'active', isOpened: false })).toMatchObject({
+  it('shows New for a report or wireframe nobody opened, then Ready', () => {
+    expect(stored({ kind: 'report', status: 'active', isNew: true })).toMatchObject({
       key: 'new',
       detail: 'Report',
     });
-    expect(stored({ kind: 'wireframe', status: 'active', isOpened: false })?.detail).toBe(
-      'Wireframe',
-    );
-    expect(stored({ kind: 'report', status: 'active', isOpened: true })).toBeNull();
-    expect(stored({ kind: 'wireframe', status: 'consumed', isOpened: true })).toBeNull();
+    expect(stored({ kind: 'wireframe', status: 'active', isNew: true })?.detail).toBe('Wireframe');
+    expect(stored({ kind: 'report', status: 'active', isNew: false })).toMatchObject({
+      key: 'available',
+      label: 'Ready',
+      detail: 'Report',
+      group: 'ready',
+    });
+    expect(stored({ kind: 'wireframe', status: 'consumed', isNew: false })?.label).toBe('Ready');
   });
 
   it('gives every state a sentence-case word', () => {
     const states = [
       ...(['plan', 'report', 'wireframe'] as const).flatMap((kind) =>
         (['active', 'consumed', 'superseded', 'discarded'] as const).map((status) =>
-          artifactStateOf({ ...NO_PLAN, kind, status, isOpened: false }),
+          artifactStateOf({ ...NO_PLAN, kind, status, isNew: true }),
         ),
       ),
       artifactStateOf({
         ...NO_PLAN,
         kind: 'plan',
         status: 'active',
-        isOpened: true,
+        isNew: false,
         openQuestionCount: 1,
       }),
       artifactStateOf({
         ...NO_PLAN,
         kind: 'plan',
         status: 'consumed',
-        isOpened: true,
+        isNew: false,
         progress: { kind: 'running', part: 1, total: 2 },
         hasPartAgents: true,
       }),
@@ -124,7 +127,7 @@ describe('artifactStateOf', () => {
         ...NO_PLAN,
         kind: 'plan',
         status: 'consumed',
-        isOpened: true,
+        isNew: false,
         progress: { kind: 'failed', part: 1, total: 2 },
         hasPartAgents: true,
       }),
@@ -225,12 +228,13 @@ describe('the list and the document agree', () => {
       agents,
       openQuestionCount: 0,
       askingAgentIds: NO_ASKING,
+      now: Date.parse(NOW),
     });
     const rows = planPartRows({ plan: planFixture, agents, askingAgentIds: NO_ASKING });
     const documentState = artifactStateOf({
       kind: 'plan',
       status: planFixture.status,
-      isOpened: true,
+      isNew: false,
       openQuestionCount: 0,
       ...planStateInputsOf({ plan: planFixture, rows }),
     });

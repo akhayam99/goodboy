@@ -20,6 +20,8 @@ import {
 
 const SESSION_ID = 'session-1' as SessionId;
 const NO_ASKING: ReadonlySet<AgentId> = new Set();
+const NOW = Date.parse('2026-09-14T19:00:00.000Z');
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const agent = (id: string, name: string, overrides: Partial<Agent> = {}): Agent =>
   anAgent({ id: id as AgentId, sessionId: SESSION_ID, name, ...overrides });
@@ -88,6 +90,7 @@ const build = (params: {
     agents: params.agents ?? AGENTS,
     openQuestionCount: params.openQuestionCount ?? 0,
     askingAgentIds: NO_ASKING,
+    now: NOW,
   });
 
 describe('buildArtifactListRows', () => {
@@ -180,12 +183,24 @@ describe('buildArtifactListRows', () => {
     expect(gone?.state).toMatchObject({ key: 'ran', label: 'Ran' });
   });
 
-  it('marks a report nobody opened as new and drops the mark once it was opened', () => {
+  it('marks a fresh report nobody opened as New, and every other report as Ready', () => {
     const [fresh] = build({ artifacts: [report({ openedAt: null })] });
-    const [seen] = build({ artifacts: [report({})] });
+    const [opened] = build({ artifacts: [report({})] });
     expect(fresh?.state).toMatchObject({ key: 'new', label: 'New', detail: 'Report' });
-    expect(seen?.state).toBeNull();
-    expect(seen?.group).toBe('ready');
+    expect(opened?.state).toMatchObject({ key: 'available', label: 'Ready', detail: 'Report' });
+    expect(opened?.group).toBe('ready');
+  });
+
+  it('does not call an old artifact New just because it was never opened', () => {
+    const old = new Date(NOW - 3 * DAY_MS).toISOString() as IsoDateTime;
+    const justUnder = new Date(NOW - DAY_MS + 60_000).toISOString() as IsoDateTime;
+    const [stale, recent] = build({
+      artifacts: [
+        report({ id: 'old' as ArtifactId, openedAt: null, createdAt: old }),
+        report({ id: 'recent' as ArtifactId, openedAt: null, createdAt: justUnder }),
+      ],
+    });
+    expect([stale, recent].map((row) => row?.state?.label).sort()).toEqual(['New', 'Ready']);
   });
 
   it('sends a deleted artifact of any kind to Recently deleted, most recent first', () => {

@@ -503,7 +503,9 @@ Everything the app saves for itself lives in `~/.goodboy`.
   again. `session_artifacts`
   also stores `opened_at` (written when the artifact shell opens it, at most
   once per artifact every 10 minutes, and read back as `SessionArtifact.openedAt`
-  so a report or wireframe nobody opened shows New), `kept_at` and `kept_until`
+  so a report or wireframe nobody opened shows New for its first 24 hours; an older
+  one that was never opened reads Ready, since rows made before the column was
+  written have no open time), `kept_at` and `kept_until`
   for the Storage Keep action. The Delete verb of the Artifacts list sets the
   status to `discarded` (Recently deleted) and Undo sets it back. Delete
   permanently, offered only on a `discarded` artifact, removes the folder with

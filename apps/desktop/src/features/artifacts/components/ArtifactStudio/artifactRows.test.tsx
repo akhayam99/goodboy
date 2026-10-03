@@ -63,12 +63,14 @@ const READY_PLAN = 'artifact-ready-plan' as ArtifactId;
 const RAN_PLAN = 'artifact-ran-plan' as ArtifactId;
 const REPORT = 'artifact-report' as ArtifactId;
 const WIREFRAME = 'artifact-wireframe' as ArtifactId;
+const OLD_REPORT = 'artifact-old-report' as ArtifactId;
 
 const TITLES = {
   [READY_PLAN]: 'Add idempotency keys to payments-api charges',
   [RAN_PLAN]: 'Tighten rounding rules in payments-api invoices',
   [REPORT]: 'Q3 reconciliation drift, Northwind export',
   [WIREFRAME]: 'Acme refund approval flow',
+  [OLD_REPORT]: 'Payout timing summary',
 } as const;
 
 const titleOf = (id: ArtifactId): string =>
@@ -172,11 +174,30 @@ describe('artifact list rows', () => {
     await waitFor(() => expect(rowOf(RAN_PLAN)).not.toBeNull());
   });
 
-  it('shows the state of each row, with New on a wireframe nobody opened', async () => {
+  it('shows the state of every row, Ready included, with New on a fresh unopened wireframe', async () => {
     mountList();
     await waitFor(() => expect(rowOf(WIREFRAME)).not.toBeNull());
     const states = screen.getAllByTestId('artifact-row-state').map((node) => node.textContent);
-    expect(states).toEqual(expect.arrayContaining(['NewWireframe', 'Ready to run1 part']));
+    expect(states).toEqual(
+      expect.arrayContaining(['NewWireframe', 'ReadyReport', 'Ready to run1 part']),
+    );
+  });
+
+  it('does not flag an old unopened artifact as New on the real database', async () => {
+    await seedArtifact({ id: OLD_REPORT, kind: 'report' });
+    await storySqlite().execute('UPDATE session_artifacts SET created_at = ? WHERE id = ?', [
+      Date.now() - 5 * 24 * 60 * 60 * 1000,
+      OLD_REPORT,
+    ]);
+    await useAppStore.getState().loadSessionArtifacts(SESSION_ID);
+    mountList();
+    await waitFor(() => expect(rowOf(OLD_REPORT)).not.toBeNull());
+    const stateOf = (id: ArtifactId) =>
+      rowOf(id)
+        ?.closest('[data-testid="artifact-row-frame"]')
+        ?.querySelector('[data-testid="artifact-row-state"]')?.textContent;
+    expect(stateOf(OLD_REPORT)).toBe('ReadyReport');
+    expect(stateOf(WIREFRAME)).toBe('NewWireframe');
   });
 
   it('deletes a report from its row, then Undo puts the row back', async () => {

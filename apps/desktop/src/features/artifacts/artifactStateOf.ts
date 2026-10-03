@@ -1,4 +1,5 @@
 import {
+  Circle,
   CircleAlert,
   CircleDot,
   CircleDotDashed,
@@ -16,7 +17,16 @@ import { ARTIFACT_KIND_MARKER_LABEL } from './artifactPresentation';
 import type { PlanStateInputs } from '../plans/planStateInputs';
 
 type ArtifactStateKey =
-  'needs' | 'ready' | 'running' | 'ran' | 'partly' | 'stopped' | 'replaced' | 'deleted' | 'new';
+  | 'needs'
+  | 'ready'
+  | 'available'
+  | 'running'
+  | 'ran'
+  | 'partly'
+  | 'stopped'
+  | 'replaced'
+  | 'deleted'
+  | 'new';
 
 export type ArtifactGroup = 'needs' | 'ready' | 'running' | 'ran' | 'deleted';
 
@@ -77,6 +87,14 @@ const ARTIFACT_STATE_PRESENTATION = {
     icon: Square,
     group: 'needs',
   },
+  available: {
+    key: 'available',
+    label: 'Ready',
+    reason: 'nothing waits on you, open it to read it',
+    tone: 'neutral',
+    icon: Circle,
+    group: 'ready',
+  },
   replaced: {
     key: 'replaced',
     label: 'Replaced',
@@ -120,7 +138,7 @@ const partsDetail = ({ count }: { readonly count: number }): string | null =>
 type StoredParams = Readonly<{
   kind: ArtifactKind;
   status: ArtifactStatus;
-  isOpened: boolean;
+  isNew: boolean;
   openQuestionCount: number;
 }> &
   PlanStateInputs;
@@ -181,10 +199,10 @@ export const artifactStateOf = (params: StoredParams): ArtifactState | null => {
   if (params.kind === 'plan') {
     return planState(params);
   }
-  if (params.isOpened) {
-    return null;
-  }
-  return withDetail({ key: 'new', detail: ARTIFACT_KIND_MARKER_LABEL[params.kind] });
+  return withDetail({
+    key: params.isNew ? 'new' : 'available',
+    detail: ARTIFACT_KIND_MARKER_LABEL[params.kind],
+  });
 };
 
 export const generationStateOf = ({
