@@ -109,6 +109,7 @@ const CHAT: ChatSummary = {
   updatedAt: AT,
   preview: null,
   modelsUsed: [],
+  messageCount: 0,
 };
 
 type MessageSeed = Pick<ChatMessage, 'role' | 'content' | 'status'> &

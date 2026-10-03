@@ -57,6 +57,7 @@ const chatOf = (archivedAt: IsoDateTime | null): ChatSummary => ({
   updatedAt: AT,
   preview: null,
   modelsUsed: [],
+  messageCount: 0,
 });
 
 const renderRoom = (chat: ChatSummary) =>

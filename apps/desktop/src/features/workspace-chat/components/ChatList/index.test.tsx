@@ -145,6 +145,7 @@ const chatOf = ({ key, title, ageMs, isPinned = false }: ChatSeed): ChatSummary 
     updatedAt: at,
     preview: `**Answer for ${title}**`,
     modelsUsed: [],
+    messageCount: 0,
   };
 };
 

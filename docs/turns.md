@@ -661,7 +661,9 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   Every assistant message records the `provider`, `model` and `effort` that
   produced it (m214 backfills older answers with the chat's model), and
   `ChatSummary.modelsUsed` lists the distinct provider and model pairs of a
-  chat's answers, oldest first. `chat_session_links` saves each Start work or
+  chat's answers, oldest first, and `ChatSummary.messageCount` its messages.
+  Both come from the one grouped read in `listChats`, so the chat list costs
+  a single scan however many chats there are. `chat_session_links` saves each Start work or
   Add to a session (`new` or `add`, the chat, the session and the message it
   started from). Deleting a chat deletes its messages and links, never its
   sessions; deleting a session deletes its links. Idle is derived: a chat with

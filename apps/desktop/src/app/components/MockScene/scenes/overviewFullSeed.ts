@@ -40,6 +40,7 @@ const chatOf = ({ workspaceId, now, id, title }: ChatParams): ChatSummary => ({
   updatedAt: now,
   preview: null,
   modelsUsed: [],
+  messageCount: 0,
 });
 
 type LinkParams = SeedParams & {

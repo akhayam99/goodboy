@@ -56,10 +56,12 @@ type MessageRow = {
   readonly updatedAt: number;
 };
 
-type ModelUsedRow = {
+type MessageTallyRow = {
   readonly chatId: string;
-  readonly provider: string;
-  readonly model: string;
+  readonly provider: string | null;
+  readonly model: string | null;
+  readonly messages: number;
+  readonly replies: number;
 };
 
 type LinkRow = {
@@ -103,9 +105,10 @@ const isLinkKind = (value: string): value is ChatSessionLinkKind =>
 type ToSummaryParams = {
   readonly row: ChatRow;
   readonly modelsUsed: ReadonlyArray<ChatModelUsed>;
+  readonly messageCount: number;
 };
 
-const toSummary = ({ row, modelsUsed }: ToSummaryParams): ChatSummary | null => {
+const toSummary = ({ row, modelsUsed, messageCount }: ToSummaryParams): ChatSummary | null => {
   if (!isProviderId(row.provider)) {
     return null;
   }
@@ -123,6 +126,7 @@ const toSummary = ({ row, modelsUsed }: ToSummaryParams): ChatSummary | null => 
     updatedAt: toIso(row.updatedAt),
     preview: row.preview,
     modelsUsed,
+    messageCount,
   };
 };
 
@@ -163,18 +167,26 @@ export const listChats = async ({
      ORDER BY c.last_activity_at DESC, c.id`,
     [workspaceId],
   );
-  const used = await db.select<ModelUsedRow>(
-    `SELECT m.chat_id AS chatId, m.provider, m.model
+  const tally = await db.select<MessageTallyRow>(
+    `SELECT m.chat_id AS chatId, m.provider, m.model, COUNT(*) AS messages,
+       SUM(CASE WHEN m.role = 'assistant' THEN 1 ELSE 0 END) AS replies
      FROM chat_messages m JOIN chats c ON c.id = m.chat_id
-     WHERE c.workspace_id = ? AND m.role = 'assistant' AND m.provider IS NOT NULL
-       AND m.model IS NOT NULL
+     WHERE c.workspace_id = ?
      GROUP BY m.chat_id, m.provider, m.model
-     ORDER BY MIN(m.created_at), MIN(m.rowid)`,
+     ORDER BY MIN(CASE WHEN m.role = 'assistant' THEN m.created_at END),
+       MIN(CASE WHEN m.role = 'assistant' THEN m.rowid END)`,
     [workspaceId],
   );
   const modelsByChat = new Map<string, ReadonlyArray<ChatModelUsed>>();
-  for (const entry of used) {
-    if (!isProviderId(entry.provider)) {
+  const countByChat = new Map<string, number>();
+  for (const entry of tally) {
+    countByChat.set(entry.chatId, (countByChat.get(entry.chatId) ?? 0) + entry.messages);
+    if (
+      entry.replies === 0 ||
+      entry.provider === null ||
+      entry.model === null ||
+      !isProviderId(entry.provider)
+    ) {
       continue;
     }
     modelsByChat.set(entry.chatId, [
@@ -183,7 +195,11 @@ export const listChats = async ({
     ]);
   }
   return rows.flatMap((row) => {
-    const summary = toSummary({ row, modelsUsed: modelsByChat.get(row.id) ?? [] });
+    const summary = toSummary({
+      row,
+      modelsUsed: modelsByChat.get(row.id) ?? [],
+      messageCount: countByChat.get(row.id) ?? 0,
+    });
     return summary === null ? [] : [summary];
   });
 };
