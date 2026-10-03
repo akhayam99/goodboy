@@ -23,7 +23,7 @@ import {
   type ProviderId,
   type SessionId,
 } from '@goodboy/types';
-import { formatCombo } from '../../../../shared/keyboard/registry';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { resolveScopedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import { kindRouting } from '../../../session/agent-kind';
 import { sessionTitle } from '../../../session/sessionTitle';
@@ -42,6 +42,7 @@ import { ProjectField } from './ProjectField';
 import { RunsOnField } from './RunsOnField';
 import { SessionField } from './SessionField';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
+import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
 
 type Mode = 'new' | 'add';
 
@@ -270,7 +271,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
-    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+    if (isSubmitChord(event)) {
       event.preventDefault();
       void start();
     }
@@ -378,7 +379,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
             </Button>
             <Button size="sm" disabled={!canStart} isBusy={isStarting} onClick={() => void start()}>
               {MODE_COPY[mode].action}
-              <KbdPill aria-hidden>{formatCombo('cmd+Enter')}</KbdPill>
+              <KbdPill aria-hidden>{shortcutGlyphs('composer.submit')}</KbdPill>
             </Button>
           </FormActions>
         </div>
