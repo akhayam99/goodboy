@@ -35,7 +35,7 @@ export const providerRailStatus = ({ provider, state, nowMs }: Params): Provider
       learned: state.cliRequirements,
     }).length > 0;
   if (isOutdated) {
-    return { subtitle: 'update needed', tone: 'warning' };
+    return { subtitle: 'Update needed', tone: 'warning' };
   }
   const limitStatus =
     provider.connection === 'connected'

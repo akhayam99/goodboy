@@ -30,6 +30,6 @@ describe('toolRailEntries', () => {
       subtitle: 'harborline-bot',
       isConnected: true,
     });
-    expect(entries.find((entry) => entry.tool === 'slack')?.subtitle).toBe('not connected');
+    expect(entries.find((entry) => entry.tool === 'slack')?.subtitle).toBe('Not connected');
   });
 });
