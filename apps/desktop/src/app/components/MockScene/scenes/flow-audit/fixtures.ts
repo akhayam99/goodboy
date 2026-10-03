@@ -135,6 +135,8 @@ const SCENE_WORKFLOW_RULES: WorkflowRules = {
   ...DEFAULT_WORKFLOW_RULES,
   autonomy: 'plan',
   spendLimitUsd: 25,
+  standingGuidance:
+    '- Group the commits by concern at the end.\n- Never run the integration tests.\n- Open the PR as a draft.',
 };
 
 export const OVERRIDES = {

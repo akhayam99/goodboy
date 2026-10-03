@@ -5,6 +5,7 @@ import type {
   EffortLevel,
   WorkspaceId,
   WorkflowAutonomy,
+  AgentRole,
 } from '@goodboy/types';
 import type { PlannerOutput } from '@goodboy/core';
 import type { WorkflowDraft } from '../../../features/workflows/engine';
@@ -32,6 +33,8 @@ export type WorkflowBuilderDraft = {
   readonly selectedPresetId: WorkflowId | null;
   readonly basePresetId: WorkflowId | null;
   readonly processText: string;
+  readonly guidance?: string;
+  readonly guidanceRoles?: ReadonlyArray<AgentRole>;
   readonly plan: PlannerOutput | null;
   readonly workflow: WorkflowDraft;
   readonly saveAsPreset: boolean;

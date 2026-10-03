@@ -88,6 +88,7 @@ import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskMod
 import { sessionById } from '../sessions/sessionIndex';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
 import { resolveWorkflowHeadroom } from './resolveWorkflowHeadroom';
+import { orchestratorProcessText } from './standingGuidance';
 
 export type OrchestrateOptions = {
   readonly routing?: OrchestratorRouting;
@@ -689,7 +690,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       try {
         result = await client.decide({
           goal: run.goal ?? workflow.goal ?? session.goal,
-          processText: workflow.processText ?? '',
+          processText: orchestratorProcessText({ processText: workflow.processText, run }),
           completedSteps,
           openQuestionCount: openQuestions.length,
           ...(hints !== '' && { operatorHints: hints }),

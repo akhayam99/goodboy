@@ -153,6 +153,26 @@ pages.
 - **Autonomy**: Ask before each step, Ask after the plan or Run on its own
 - **Spend**: a default cap per run and what happens at it, pause or warn
 - **Spread by what I have left**: automatic picks look at each provider's 5h and weekly room
+- **Standing guidance**: text every run starts with, with its own **Polish**
+
+### Standing guidance
+
+The rules carry a markdown text every new run starts with. The builder's
+guidance field opens filled with it in all three modes, with **From your
+rules**, and once you edit it **Edited for this run**, **Reset** and **Save as
+default**. Where it goes:
+
+- an orchestrated run sends it to the orchestrator, merged once with the
+  workflow's own process text (`orchestratorProcessText`)
+- a custom or preset run adds it to the brief of the roles in the run's copy of
+  the rules, Implementer and Docs by default (`standingGuidanceSection`); the
+  tester or the reviewer get it only when you pick them under **Sent to**
+- an empty text adds nothing
+
+**Polish** on guidance uses `polishWorkflowGuidance` in `packages/core`, its own
+prompt next to the goal polish: one rule per line as a list, the language of the
+input, every rule kept and none added. The guidance links to the profile field
+it differs from: "Also sent to every agent: How agents should work with you".
 
 ### Spread by what I have left
 

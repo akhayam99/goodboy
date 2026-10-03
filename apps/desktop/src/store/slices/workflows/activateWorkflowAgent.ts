@@ -8,7 +8,12 @@ import {
   listConsumptionsForPlan as invokeListConsumptionsForPlan,
   listPlansForSession as invokeListPlansForSession,
 } from '../../../features/plans/plans';
-import { classifyAgent, kindConsumesPlan } from '../../../features/session/agent-kind';
+import {
+  KIND_TO_ROLE,
+  classifyAgent,
+  kindConsumesPlan,
+} from '../../../features/session/agent-kind';
+import { standingGuidanceSection } from './standingGuidance';
 import {
   buildGoalKickoffSection,
   buildPlanKickoffSection,
@@ -205,9 +210,14 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
     }
 
     const instruction = evidence?.text ?? promptPrefix;
+    const guidanceSection = standingGuidanceSection({
+      run,
+      role: step?.role ?? KIND_TO_ROLE[effectiveKind] ?? null,
+    });
     const kickoff = composeKickoff(
       goalSection,
       planSection,
+      guidanceSection,
       instruction,
       composeStepBoundary(agentId),
     );

@@ -5,6 +5,7 @@ import { useAppStore } from '../../../../store';
 import { useWorkflowRules, type WorkflowRulesSaveState } from '../../hooks/useWorkflowRules';
 import { RulesAutonomyBand } from './RulesAutonomyBand';
 import { RulesProvidersBand } from './RulesProvidersBand';
+import { RulesGuidanceBand } from './RulesGuidanceBand';
 import { RulesSpendBand } from './RulesSpendBand';
 
 type Props = {
@@ -50,6 +51,7 @@ export const WorkflowRulesPanel = ({ workspaceId }: Props) => {
       />
       <RulesAutonomyBand autonomy={rules.autonomy} onChange={(autonomy) => save({ autonomy })} />
       <RulesSpendBand rules={rules} onChange={save} />
+      <RulesGuidanceBand workspaceId={workspaceId} rules={rules} onChange={save} />
     </div>
   );
 };

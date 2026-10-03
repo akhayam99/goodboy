@@ -35,6 +35,8 @@ const SESSION = aSession({
   goal: 'Retry backoff for payments-api',
 });
 
+const GUIDANCE = '- Group the commits by concern at the end.\n- Open the PR as a draft.';
+
 const RULES: WorkflowRules = {
   ...DEFAULT_WORKFLOW_RULES,
   autonomy: 'plan',
@@ -123,5 +125,39 @@ describe('WorkflowBuilderView and the workflow rules', () => {
 
     expect(autonomyChip().getAttribute('aria-label')).toBe('When to ask: Ask after the plan');
     expect(screen.queryByRole('img', { name: /From: Workflow rules/ })).toBeNull();
+  });
+
+  it('opens the guidance from the rules, sends it to the orchestrator, and resets an edit', () => {
+    seedRules({ ...RULES, standingGuidance: GUIDANCE });
+    openBuilder();
+
+    const field = screen.getByLabelText(/guidance \(optional\)/i);
+    expect((field as HTMLTextAreaElement).value).toBe(GUIDANCE);
+    expect(screen.getByTestId('guidance-tools').textContent).toContain('From your rules');
+    expect(screen.getByText('the orchestrator').parentElement?.textContent).toBe(
+      'Sent to the orchestrator',
+    );
+
+    fireEvent.change(field, { target: { value: `${GUIDANCE}\n- Keep the diff small.` } });
+    expect(screen.getByTestId('guidance-tools').textContent).toContain('Edited for this run');
+    fireEvent.click(screen.getByRole('button', { name: /Reset/ }));
+
+    expect((screen.getByLabelText(/guidance \(optional\)/i) as HTMLTextAreaElement).value).toBe(
+      GUIDANCE,
+    );
+  });
+
+  it('sends the guidance of a custom run to the roles that write code', () => {
+    seedRules({ ...RULES, standingGuidance: GUIDANCE });
+    openBuilder();
+
+    fireEvent.click(screen.getByRole('tab', { name: /custom/i }));
+
+    expect(
+      (screen.getByRole('textbox', { name: 'Run guidance' }) as HTMLTextAreaElement).value,
+    ).toBe(GUIDANCE);
+    expect(screen.getByText('Implementer, Docs').parentElement?.textContent).toBe(
+      'Sent to Implementer, Docs',
+    );
   });
 });

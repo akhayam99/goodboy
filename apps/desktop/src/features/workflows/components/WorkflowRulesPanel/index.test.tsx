@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import {
   DEFAULT_WORKFLOW_RULES,
   type IsoDateTime,
@@ -177,5 +177,63 @@ describe('WorkflowRulesPanel', () => {
       'A step with no pinned provider goes to CodexClaude is at 85%, so it goes last.',
     );
     expect(screen.queryByRole('button', { name: 'Turn on' })).toBeNull();
+  });
+
+  it('saves standing guidance, polishes it into one rule per line and undoes the polish', async () => {
+    const polished = '- Group the commits by concern at the end.\n- Open the PR as a draft.';
+    stubStoryInvoke({
+      set_workspace_overrides: null,
+      summarize_session: {
+        stdout: JSON.stringify({ result: `<<guidance>>\n${polished}\n<</guidance>>` }),
+        stderr: '',
+        exitCode: 0,
+      },
+    });
+    panel();
+    const field = screen.getByRole('textbox', { name: 'Standing guidance' });
+
+    fireEvent.change(field, { target: { value: 'cluster commits at the end. open PR as draft' } });
+    fireEvent.blur(field);
+    await waitFor(() =>
+      expect(savedRules().at(-1)?.standingGuidance).toBe(
+        'cluster commits at the end. open PR as draft',
+      ),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Polish guidance' }));
+
+    await waitFor(() => expect(savedRules().at(-1)?.standingGuidance).toBe(polished));
+    expect(screen.getByText('Implementer, Docs').parentElement?.textContent).toBe(
+      'Sent to Implementer, Docs in Custom and Preset runs',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Undo guidance change' }));
+    await waitFor(() =>
+      expect(savedRules().at(-1)?.standingGuidance).toBe(
+        'cluster commits at the end. open PR as draft',
+      ),
+    );
+  });
+
+  it('adds the tester to the roles only when you pick it', async () => {
+    useAppStore.setState((state) => ({
+      workspaceOverrides: {
+        [HARBORLINE.id]: {
+          ...EMPTY_OVERRIDES,
+          providerPool: state.workspaceOverrides[HARBORLINE.id]?.providerPool ?? null,
+          workflowRules: {
+            ...DEFAULT_WORKFLOW_RULES,
+            standingGuidance: '- Open the PR as a draft.',
+          },
+        },
+      },
+    }));
+    panel();
+
+    const guidance = screen.getByRole('region', { name: 'Standing guidance' });
+    fireEvent.click(within(guidance).getByRole('button', { name: 'Edit', expanded: false }));
+    fireEvent.click(screen.getByRole('button', { name: 'Tester' }));
+
+    await waitFor(() =>
+      expect(savedRules().at(-1)?.guidanceRoles).toEqual(['implementer', 'docs', 'tester']),
+    );
   });
 });

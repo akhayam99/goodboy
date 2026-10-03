@@ -76,6 +76,7 @@ vi.mock('../features/plans/plans', async () => (await import('./storyHarness')).
 const WORKSPACE_ID = 'workspace-harborline' as WorkspaceId;
 const WORKFLOW_ID = 'workflow-retry-payments' as WorkflowId;
 const STEP_NAMES = ['Plan', 'Implement', 'Test'] as const;
+const STEP_ROLES = ['planner', 'implementer', 'tester'] as const;
 const AT = '2026-10-03T09:00:00.000Z' as IsoDateTime;
 
 const harborline = buildStoryWorkspace({
@@ -96,6 +97,7 @@ const template: Workflow = {
     workflowId: WORKFLOW_ID,
     ordinal,
     name,
+    role: STEP_ROLES[ordinal],
     promptPrefix: `${name} the retry changes in payments-api`,
   })),
   createdAt: STORY_NOW,
@@ -569,5 +571,72 @@ describe('store on sqlite: spread by what I have left', () => {
 
     expect(probe).toHaveBeenCalledOnce();
     expect(rows.map((row) => row.provider_override)).toEqual(['codex', 'codex', 'codex']);
+  });
+});
+
+const GUIDANCE = '- Never run the integration tests.\n- Open the PR as a draft.';
+
+const promptOf = (name: (typeof STEP_NAMES)[number]): string => {
+  const call = storySpies.runTurn.mock.calls.find(([args]) =>
+    String((args as { readonly prompt: string }).prompt).includes(
+      `<<step-done id="${agentIdOf(name)}">>`,
+    ),
+  );
+  return call === undefined ? '' : String((call[0] as { readonly prompt: string }).prompt);
+};
+
+describe('store on sqlite: standing guidance', () => {
+  const attachWithGuidance = async ({
+    guidance,
+    roles = ['implementer', 'docs'],
+  }: {
+    readonly guidance: string;
+    readonly roles?: WorkflowRules['guidanceRoles'];
+  }) => {
+    await useAppStore.getState().attachWorkflowToSession(sessionId, WORKFLOW_ID, {
+      autoRun: false,
+      triggerMode: 'manual',
+      rulesSnapshot: {
+        ...DEFAULT_WORKFLOW_RULES,
+        standingGuidance: guidance,
+        guidanceRoles: roles,
+      },
+    });
+  };
+
+  it('briefs the roles that write code with it and never the tester you did not pick', async () => {
+    await attachWithGuidance({ guidance: GUIDANCE });
+
+    const implement = await startStep('Implement');
+    turns[0]?.finish();
+    await implement.finished;
+    const test = await startStep('Test');
+    turns[1]?.finish();
+    await test.finished;
+
+    expect(promptOf('Implement')).toContain(`**Standing guidance**\n${GUIDANCE}`);
+    expect(promptOf('Test')).toContain('Test the retry changes in payments-api');
+    expect(promptOf('Test')).not.toContain('Never run the integration tests');
+  });
+
+  it('reaches the tester once you pick it', async () => {
+    await attachWithGuidance({ guidance: GUIDANCE, roles: ['tester'] });
+
+    const test = await startStep('Test');
+    turns[0]?.finish();
+    await test.finished;
+
+    expect(promptOf('Test')).toContain('**Standing guidance**');
+  });
+
+  it('adds nothing when the guidance is empty', async () => {
+    await attachWithGuidance({ guidance: '   ' });
+
+    const implement = await startStep('Implement');
+    turns[0]?.finish();
+    await implement.finished;
+
+    expect(promptOf('Implement')).toContain('Implement the retry changes in payments-api');
+    expect(promptOf('Implement')).not.toContain('Standing guidance');
   });
 });

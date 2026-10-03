@@ -24,6 +24,7 @@ import type {
   WorkspaceId,
   WorkflowAutonomy,
   WorkflowRules,
+  AgentRole,
 } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
@@ -82,6 +83,13 @@ import { PresetPicker } from './parts/PresetPicker';
 import { SpendCapChip } from './parts/SpendCapChip';
 import { AutonomyChip } from './parts/AutonomyChip';
 import { FromRulesRow } from './parts/FromRulesRow';
+import { GuidanceTools } from './parts/GuidanceTools';
+import { RuleDot } from './parts/RuleDot';
+import { RunGuidanceField } from './parts/RunGuidanceField';
+import { GuidanceRecipients } from '../WorkflowGuidance/GuidanceRecipients';
+import { AlsoSentLine } from '../WorkflowGuidance/AlsoSentLine';
+import { usePolishGuidance } from '../../hooks/usePolishGuidance';
+import { guidanceRoleNames, sameRoles } from '../../guidanceRoles';
 import { policyProvidersText } from '../../workflowRulesCopy';
 import { useWorkflowRules } from '../../hooks/useWorkflowRules';
 import { StartsChip, type ChainRun, type StartChoice } from './parts/StartsChip';
@@ -137,6 +145,8 @@ const isDraftEmpty = (d: WorkflowBuilderDraft, rules: WorkflowRules): boolean =>
   d.workflow.steps.length === 0 &&
   !d.saveAsPreset &&
   draftAutonomy(d) === rules.autonomy &&
+  (d.guidance ?? rules.standingGuidance) === rules.standingGuidance &&
+  sameRoles({ left: d.guidanceRoles ?? rules.guidanceRoles, right: rules.guidanceRoles }) &&
   d.title.trim() === '' &&
   d.orchestratorModel.providerOverride === '' &&
   d.orchestratorModel.modelOverride === '' &&
@@ -191,7 +201,7 @@ export const WorkflowBuilderView = (props: Props) => {
     (s) => s.providers ?? (EMPTY_ARRAY as ReadonlyArray<never>),
   ) as ReadonlyArray<ProviderEntry>;
   const workspaceOverrides = useAppStore((s) => s.workspaceOverrides?.[workspaceId] ?? null);
-  const { rules: workflowRules } = useWorkflowRules({ workspaceId });
+  const { rules: workflowRules, patch: patchWorkflowRules } = useWorkflowRules({ workspaceId });
   const roleModels = workspaceOverrides?.roleModels ?? null;
   const roleEffort = (role: StepDraft['role']): EffortLevel =>
     resolveRoleRouting({ role, prefs: roleModels }).effort as EffortLevel;
@@ -228,6 +238,17 @@ export const WorkflowBuilderView = (props: Props) => {
     initialDraft?.basePresetId ?? null,
   );
   const [processText, setProcessText] = useState(initialDraft?.processText ?? '');
+  const [guidance, setGuidance] = useState(
+    initialDraft?.guidance ?? workflowRules.standingGuidance,
+  );
+  const [guidanceRoles, setGuidanceRoles] = useState<ReadonlyArray<AgentRole>>(
+    initialDraft?.guidanceRoles ?? workflowRules.guidanceRoles,
+  );
+  const [guidanceUndo, setGuidanceUndo] = useState<string | null>(null);
+  const { polish: polishGuidance, isPolishing: isPolishingGuidance } = usePolishGuidance({
+    workspaceId,
+    workingDir: sessionWorktree,
+  });
   const [title, setTitle] = useState(initialDraft?.title ?? '');
   const [titleSuggestion, setTitleSuggestion] = useState<string | null>(null);
   const suggestedGoalRef = useRef<string | null>(null);
@@ -467,6 +488,8 @@ export const WorkflowBuilderView = (props: Props) => {
     selectedPresetId,
     basePresetId,
     processText,
+    guidance,
+    guidanceRoles,
     plan,
     workflow: {
       name: plan?.workflowName ?? '',
@@ -503,6 +526,8 @@ export const WorkflowBuilderView = (props: Props) => {
     selectedPresetId,
     basePresetId,
     processText,
+    guidance,
+    guidanceRoles,
     plan,
     steps,
     saveAsPreset,
@@ -528,6 +553,9 @@ export const WorkflowBuilderView = (props: Props) => {
     setSelectedPresetId(null);
     setBasePresetId(null);
     setProcessText('');
+    setGuidance(workflowRules.standingGuidance);
+    setGuidanceRoles(workflowRules.guidanceRoles);
+    setGuidanceUndo(null);
     setPlan(null);
     setSteps([]);
     setIsPlannerOpen(true);
@@ -748,6 +776,8 @@ export const WorkflowBuilderView = (props: Props) => {
         autonomy,
         spendLimitUsd,
         spendLimitMode,
+        standingGuidance: guidance.trim(),
+        guidanceRoles,
       },
     };
   };
@@ -835,7 +865,8 @@ export const WorkflowBuilderView = (props: Props) => {
           ? 'Steps are decided at runtime from the latest results.'
           : (selectedPreset?.description ?? basePreset?.description ?? '');
     const goal = goalText.trim();
-    const process = mode === 'custom' || mode === 'dynamic' ? processText.trim() : '';
+    const process =
+      mode === 'custom' ? processText.trim() : mode === 'dynamic' ? guidance.trim() : '';
     const workflow: Workflow = {
       id: workflowId,
       workspaceId,
@@ -1066,12 +1097,71 @@ export const WorkflowBuilderView = (props: Props) => {
     />
   );
 
+  const guidanceDiffers = guidance !== workflowRules.standingGuidance;
+  const guidanceRuleLines = workflowRules.standingGuidance
+    .split('\n')
+    .filter((line) => line.trim() !== '').length;
+  const guidanceRuleSummary =
+    guidanceRuleLines === 0
+      ? 'empty'
+      : `${guidanceRuleLines} ${guidanceRuleLines === 1 ? 'rule' : 'rules'}`;
+
+  const onPolishGuidance = async () => {
+    try {
+      const polished = await polishGuidance(guidance);
+      if (polished === null || polished === guidance) {
+        return;
+      }
+      setGuidanceUndo(guidance);
+      setGuidance(polished);
+    } catch (err) {
+      setError({ title: "Couldn't polish the guidance", message: formatError(err) });
+    }
+  };
+
+  const guidanceTools = (
+    <GuidanceTools
+      differs={guidanceDiffers}
+      isRuleEmpty={workflowRules.standingGuidance.trim() === ''}
+      canUndo={guidanceUndo !== null}
+      canPolish={guidance.trim() !== ''}
+      isPolishing={isPolishingGuidance}
+      disabled={blocked}
+      onReset={() => {
+        setGuidance(workflowRules.standingGuidance);
+        setGuidanceUndo(null);
+      }}
+      onSaveDefault={() => {
+        void patchWorkflowRules({ standingGuidance: guidance.trim(), guidanceRoles }).catch(
+          (err: unknown) =>
+            setError({ title: "Couldn't save the guidance", message: formatError(err) }),
+        );
+      }}
+      onUndo={() => {
+        if (guidanceUndo !== null) {
+          setGuidance(guidanceUndo);
+          setGuidanceUndo(null);
+        }
+      }}
+      onPolish={() => void onPolishGuidance()}
+    />
+  );
+
   const renderPlan = () => {
     if (mode === 'dynamic') {
       return (
         <OrchestratorRow
           identityIndex={identityIndex}
-          guidance={processText}
+          guidance={guidance}
+          guidanceFooter={
+            <>
+              {guidanceTools}
+              <span className="text-secondary text-muted-foreground">
+                Sent to <span className="text-foreground">the orchestrator</span>
+              </span>
+              <AlsoSentLine />
+            </>
+          }
           providerOverride={orchestratorProviderOverride}
           modelOverride={orchestratorModelOverride}
           effort={orchestratorEffort}
@@ -1080,7 +1170,7 @@ export const WorkflowBuilderView = (props: Props) => {
           allowedProviders={orchestratorProviders}
           isOverridden={isOrchestratorOverridden}
           disabled={blocked}
-          onGuidance={setProcessText}
+          onGuidance={setGuidance}
           onProvider={(next) => {
             setOrchestratorProviderOverride(next);
             setOrchestratorModelOverride('');
@@ -1227,6 +1317,40 @@ export const WorkflowBuilderView = (props: Props) => {
           />
         ) : null}
         {renderPlan()}
+        {mode === 'dynamic' ? null : (
+          <RunGuidanceField
+            guidance={guidance}
+            ruleSummary={guidanceRuleSummary}
+            differs={guidanceDiffers}
+            disabled={blocked}
+            tools={guidanceTools}
+            recipients={
+              guidance.trim() === '' ? (
+                <span className="text-secondary text-faint-foreground">Nothing to send.</span>
+              ) : (
+                <>
+                  <GuidanceRecipients
+                    roles={guidanceRoles}
+                    disabled={blocked}
+                    marker={
+                      sameRoles({
+                        left: guidanceRoles,
+                        right: workflowRules.guidanceRoles,
+                      }) ? null : (
+                        <RuleDot
+                          ruleValue={guidanceRoleNames({ roles: workflowRules.guidanceRoles })}
+                        />
+                      )
+                    }
+                    onRoles={setGuidanceRoles}
+                  />
+                  <AlsoSentLine />
+                </>
+              )
+            }
+            onGuidance={setGuidance}
+          />
+        )}
       </div>
       <div className="flex flex-col gap-3">
         {error === null ? null : (
