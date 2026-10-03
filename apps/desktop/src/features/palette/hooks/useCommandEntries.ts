@@ -34,9 +34,13 @@ import { agentEntries } from '../sources/agentEntries';
 import { artifactEntries } from '../sources/artifactEntries';
 import { sessionEntries } from '../sources/sessionEntries';
 import { workflowEntries } from '../sources/workflowEntries';
+import { scriptPinEntries, type PinnedScriptTarget } from '../sources/scriptPinEntries';
+import { useScriptPins } from '../../scripts';
+import { runPinnedScript } from '../../scripts/runPinnedScript';
 import { openSessionAnywhere } from '../openSessionAnywhere';
 import type { PaletteEntry } from '../types';
 import { useSessionsEverywhere } from './useSessionsEverywhere';
+import { projectById } from '../../../store/slices/projects/projectIndex';
 
 const PAIR_SEPARATOR = '\u0000';
 
@@ -92,6 +96,14 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const destinations = useLensDestinations({ sessionId });
   const runScript = useAppStore((s) => s.runScript);
+  const workspaceProjects = useMemo(
+    () =>
+      currentWorkspace === null
+        ? []
+        : projects.filter((project) => project.workspaceId === currentWorkspace.id),
+    [projects, currentWorkspace],
+  );
+  const scriptPins = useScriptPins({ projectIds: workspaceProjects.map((project) => project.id) });
   const reportError = useAppStore((s) => s.reportError);
   const refreshSession = useSessionRefresh();
   const { showToast } = useToast();
@@ -303,6 +315,46 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
       },
     );
 
+    const runPinned = (target: PinnedScriptTarget) => {
+      const missing = `Open a session with ${target.projectName} to run ${target.name}.`;
+      if (sessionId === null || currentWorkspace === null) {
+        showToast({ kind: 'warning', message: missing });
+        return;
+      }
+      const failureTitle = `Couldn't run ${target.name}`;
+      void runPinnedScript({
+        sessionId,
+        workspaceId: currentWorkspace.id,
+        projectId: target.projectId,
+        pinId: target.pinId,
+      })
+        .then((outcome) => {
+          if (outcome.kind === 'not-here') {
+            showToast({ kind: 'warning', message: missing });
+            return;
+          }
+          if (outcome.result.exitCode !== 0) {
+            void reportError({
+              title: failureTitle,
+              error: `Exited with code ${outcome.result.exitCode}.`,
+              sessionId,
+              action: { kind: 'open-lens', sessionId, lens: 'scripts' },
+            });
+            return;
+          }
+          showToast({ kind: 'success', message: `${target.name} finished.` });
+        })
+        .catch((error: unknown) => reportError({ title: failureTitle, error, sessionId }));
+    };
+    out.push(
+      ...scriptPinEntries({
+        projects: workspaceProjects,
+        pins: scriptPins,
+        saved: scripts,
+        run: runPinned,
+      }),
+    );
+
     for (const script of scripts) {
       out.push({
         key: `script:${script.id}`,
@@ -310,7 +362,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         kind: 'script',
         group: 'script',
         icon: CONCEPT_ICONS.scripts,
-        detail: 'Project script',
+        detail: projectById(projects, script.projectId)?.name ?? 'Project script',
         tag: 'Script',
         run: () => {
           if (sessionId === null) {
@@ -426,6 +478,8 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     workflows,
     attachWorkflowToSession,
     scripts,
+    scriptPins,
+    workspaceProjects,
     agentKindOverride,
     destinations,
     openWorkspace,

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FolderOpen, Trash2 } from 'lucide-react';
-import { Button, Eyebrow, InlineConfirm, cn, tintClasses } from '@goodboy/ui';
+import { Band, BandRow, Button, InlineConfirm, SectionHeader, cn, tintClasses } from '@goodboy/ui';
 import { useToast } from '../../../../shared/components/Toast';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -53,64 +53,72 @@ export const StorageHistory = () => {
   };
 
   return (
-    <section id="storage-history" aria-label="History and app data" className="flex flex-col gap-1">
-      <Eyebrow
+    <section
+      id="storage-history"
+      aria-label="Transcripts and app data"
+      className="flex flex-col gap-2"
+    >
+      <SectionHeader
+        label={`Transcripts and app data · ${formatBytes({
+          bytes: stats.archivedTranscriptBytes + stats.databaseBytes + stats.snapshotBytes,
+        })}`}
         icon={<HistoryIcon size={ICON_SIZE.row} aria-hidden />}
-        label="History and app data"
       />
-      <div className="flex min-h-10 items-center gap-3 px-2 text-body">
-        <div className="flex min-w-0 flex-1 flex-col">
-          <span className="text-foreground">Archived transcripts</span>
-          <span className="text-secondary text-faint-foreground">
-            Streamed events of {pluralize(stats.archivedSessionCount, 'archived session')}. Final
-            messages stay.
+      <Band>
+        <BandRow>
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="text-row text-foreground">Archived transcripts</span>
+            <span className="text-secondary text-faint-foreground">
+              Streamed events of {pluralize(stats.archivedSessionCount, 'archived session')}. Final
+              messages stay.
+            </span>
           </span>
-        </div>
-        <span className="text-secondary tabular-nums text-muted-foreground">
-          {formatBytes({ bytes: stats.archivedTranscriptBytes })}
-        </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={stats.archivedTranscriptRows === 0 || isConfirming}
-          onClick={() => setIsConfirming(true)}
-          className={cn('text-danger hover:text-danger', tintClasses('danger').hoverBg)}
-        >
-          Prune
-        </Button>
-      </div>
-      {isConfirming ? (
-        <InlineConfirm
-          role="danger"
-          icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-          title="Prune archived transcripts?"
-          description={PRUNE_CONFIRM}
-          confirmLabel="Prune"
-          isBusy={isBusy}
-          onConfirm={onPrune}
-          onCancel={() => setIsConfirming(false)}
-        />
-      ) : null}
-      <div className="flex min-h-10 items-center gap-3 px-2 text-body">
-        <div className="flex min-w-0 flex-1 flex-col">
-          <span className="text-foreground">App data</span>
-          <span className="text-secondary text-faint-foreground">
-            Database {formatBytes({ bytes: stats.databaseBytes })}
-            {copies === 0
-              ? '.'
-              : `, ${copies === 1 ? '1 safety copy' : `${copies} safety copies`} from updates ${formatBytes({ bytes: stats.snapshotBytes })}.`}
+          <span className="text-secondary tabular-nums text-muted-foreground">
+            {formatBytes({ bytes: stats.archivedTranscriptBytes })}
           </span>
-        </div>
-        <span className="text-secondary tabular-nums text-muted-foreground">
-          {formatBytes({ bytes: stats.databaseBytes + stats.snapshotBytes })}
-        </span>
-        {folder === null ? null : (
-          <Button variant="ghost" size="sm" onClick={onReveal}>
-            <FolderOpen size={ICON_SIZE.row} aria-hidden />
-            Show in Finder
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={stats.archivedTranscriptRows === 0 || isConfirming}
+            onClick={() => setIsConfirming(true)}
+            className={cn('text-danger hover:text-danger', tintClasses('danger').hoverBg)}
+          >
+            Prune
           </Button>
-        )}
-      </div>
+        </BandRow>
+        {isConfirming ? (
+          <InlineConfirm
+            role="danger"
+            icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
+            title="Prune archived transcripts?"
+            description={PRUNE_CONFIRM}
+            confirmLabel="Prune"
+            isBusy={isBusy}
+            onConfirm={onPrune}
+            onCancel={() => setIsConfirming(false)}
+          />
+        ) : null}
+        <BandRow>
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="text-row text-foreground">App data</span>
+            <span className="text-secondary text-faint-foreground">
+              Database {formatBytes({ bytes: stats.databaseBytes })}
+              {copies === 0
+                ? '.'
+                : `, ${copies === 1 ? '1 safety copy' : `${copies} safety copies`} from updates ${formatBytes({ bytes: stats.snapshotBytes })}.`}
+            </span>
+          </span>
+          <span className="text-secondary tabular-nums text-muted-foreground">
+            {formatBytes({ bytes: stats.databaseBytes + stats.snapshotBytes })}
+          </span>
+          {folder === null ? null : (
+            <Button variant="ghost" size="sm" onClick={onReveal}>
+              <FolderOpen size={ICON_SIZE.row} aria-hidden />
+              Show in Finder
+            </Button>
+          )}
+        </BandRow>
+      </Band>
     </section>
   );
 };
