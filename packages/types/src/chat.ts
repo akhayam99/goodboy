@@ -1,4 +1,5 @@
 import type {
+  ChatAttachmentId,
   ChatId,
   ChatMessageId,
   ChatSessionLinkId,
@@ -57,6 +58,17 @@ export type ChatSummary = Chat &
     messageCount: number;
   }>;
 
+export type ChatMessageAttachment = Readonly<{
+  id: ChatAttachmentId;
+  chatId: ChatId;
+  messageId: ChatMessageId;
+  position: number;
+  fileName: string;
+  mimeType: string;
+  byteSize: number;
+  createdAt: IsoDateTime;
+}>;
+
 export type ChatMessage = Readonly<{
   id: ChatMessageId;
   chatId: ChatId;
@@ -68,6 +80,7 @@ export type ChatMessage = Readonly<{
   provider: ProviderId | null;
   model: string | null;
   effort: EffortLevel | null;
+  attachments: ReadonlyArray<ChatMessageAttachment>;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
 }>;

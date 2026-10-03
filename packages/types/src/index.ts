@@ -3,6 +3,7 @@ export type {
   ChatId,
   ChatMessageId,
   ChatSessionLinkId,
+  ChatAttachmentId,
   CredentialId,
   FileVersionId,
   IntegrationCredentialId,
@@ -86,6 +87,7 @@ export {
 export type {
   Chat,
   ChatMessage,
+  ChatMessageAttachment,
   ChatMessageRole,
   ChatMessageStatus,
   ChatModelUsed,

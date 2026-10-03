@@ -13,6 +13,7 @@ const message = (patch: Partial<ChatMessage>): ChatMessage => ({
   content: 'Where is the consent step defined?',
   status: 'done',
   reads: [],
+  attachments: [],
   error: null,
   provider: null,
   model: null,

@@ -50,6 +50,7 @@ const draftMessage = ({
   content,
   status,
   reads: [],
+  attachments: [],
   error: null,
   provider: provider ?? null,
   model: model ?? null,
