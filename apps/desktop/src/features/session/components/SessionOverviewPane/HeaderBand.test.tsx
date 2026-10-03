@@ -93,6 +93,7 @@ const baseOf = ({ id, status = 'active' }: BaseParams) => ({
   sourceTurnId: null,
   createdAt: NOW,
   updatedAt: NOW,
+  openedAt: null,
 });
 
 const report = (params: BaseParams): ReportArtifact => ({

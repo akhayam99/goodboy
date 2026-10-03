@@ -74,6 +74,7 @@ const base = ({ sessionId, now, id, title }: ArtifactParams) => ({
   sourceTurnId: null,
   createdAt: now,
   updatedAt: now,
+  openedAt: null,
 });
 
 export const overviewFullSeed = (params: SeedParams) => {
