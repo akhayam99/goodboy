@@ -10,8 +10,10 @@ import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 import { useChatDefaultModel } from '../../../../../shared/hooks/useChatDefaultModel';
 import { chatModelId, chatModelKey, shownChatEffort } from '../../../../workspace-chat/chatRouting';
 import { defaultChatRouting } from '../../../../workspace-chat/defaultChatRouting';
-import { firstChatModelOf } from '../../../../workspace-chat/defaultChatModel';
+import { chatModelOf } from '../../../../workspace-chat/defaultChatModel';
 import { DefaultRow } from './DefaultRow';
+import { useAppStore } from '../../../../../store';
+import { selectWorkspaceResolvedSettings } from '../../../../../store/slices/overrides/selectResolvedSettings';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -26,9 +28,16 @@ type CommitParams = {
 
 export const ChatModelRow = ({ workspaceId, connectedProviderIds, disabled }: Props) => {
   const { saved, save, clear } = useChatDefaultModel({ workspaceId });
-  const automatic = defaultChatRouting({ connected: connectedProviderIds, saved: null });
+  const workspaceDefaultProvider = useAppStore(
+    (state) => selectWorkspaceResolvedSettings({ state, workspaceId }).defaultProviderOverride,
+  );
+  const automatic = defaultChatRouting({
+    connected: connectedProviderIds,
+    saved: null,
+    workspaceDefaultProvider,
+  });
   const preferredProvider = saved?.provider ?? automatic.provider;
-  const preferredModel = saved?.model ?? firstChatModelOf({ provider: preferredProvider });
+  const preferredModel = saved?.model ?? chatModelOf({ provider: preferredProvider });
   const [providerId, setProviderId] = useState<ProviderId>(preferredProvider);
   const pendingProvider = useRef<ProviderId>(preferredProvider);
   const pendingModel = useRef(preferredModel);
@@ -86,7 +95,7 @@ export const ChatModelRow = ({ workspaceId, connectedProviderIds, disabled }: Pr
           }
           setProviderId(next);
           pendingProvider.current = next;
-          const nextModel = firstChatModelOf({ provider: next });
+          const nextModel = chatModelOf({ provider: next });
           pendingModel.current = nextModel;
           if (saved === null || nextModel === null) {
             return;

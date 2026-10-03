@@ -16,7 +16,9 @@ const snapshot = (
 });
 
 const identities = (availability: WorkflowRoutingAvailabilitySnapshot): ReadonlyArray<string> =>
-  orchestratorModelPool({ availability }).map((option) => `${option.provider}/${option.model}`);
+  orchestratorModelPool({ availability, hidden: null }).map(
+    (option) => `${option.provider}/${option.model}`,
+  );
 
 describe('orchestratorModelPool', () => {
   it('includes connected catalog models absent from every role default', () => {
@@ -26,6 +28,7 @@ describe('orchestratorModelPool', () => {
   it('keeps duplicate model ids distinct across providers', () => {
     const pool = orchestratorModelPool({
       availability: snapshot({ connectedProviders: ['anthropic', 'cursor'] }),
+      hidden: null,
     });
     const shared = pool.filter((option) => option.model === 'opus-5');
 
@@ -38,7 +41,7 @@ describe('orchestratorModelPool', () => {
     ['hard blocked', snapshot({ budgetBlockedProviders: ['codex'] })],
   ])('excludes %s providers', (_label, availability) => {
     const providers = new Set<ProviderId>(
-      orchestratorModelPool({ availability }).map((option) => option.provider),
+      orchestratorModelPool({ availability, hidden: null }).map((option) => option.provider),
     );
 
     expect(providers.has('codex')).toBe(false);
@@ -47,16 +50,29 @@ describe('orchestratorModelPool', () => {
 
   it('offers nothing while a session-wide budget stop holds', () => {
     expect(
-      orchestratorModelPool({ availability: snapshot({ isSessionBudgetBlocked: true }) }),
+      orchestratorModelPool({
+        availability: snapshot({ isSessionBudgetBlocked: true }),
+        hidden: null,
+      }),
     ).toEqual([]);
   });
 
   it('carries the catalog label and the efforts each identity accepts', () => {
-    const option = orchestratorModelPool({ availability: snapshot() }).find(
+    const option = orchestratorModelPool({ availability: snapshot(), hidden: null }).find(
       (candidate) => candidate.provider === 'anthropic' && candidate.model === 'sonnet-5',
     );
 
     expect(option?.label).toBe('Sonnet 5');
     expect(option?.efforts.length).toBeGreaterThan(0);
+  });
+
+  it('never offers a model hidden from the pickers', () => {
+    const pool = orchestratorModelPool({
+      availability: snapshot(),
+      hidden: { anthropic: ['opus-5.5', 'fable-5.1'] },
+    }).map((option) => `${option.provider}/${option.model}`);
+    expect(pool).not.toContain('anthropic/opus-5.5');
+    expect(pool).not.toContain('anthropic/fable-5.1');
+    expect(pool).toContain('anthropic/opus-5');
   });
 });

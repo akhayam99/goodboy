@@ -76,6 +76,7 @@ type CancelTurnParams = {
 export type SummarizeForWorkParams = {
   readonly provider: ProviderId;
   readonly model: ModelKey;
+  readonly effort?: EffortLevel;
   readonly systemPrompt: string;
   readonly userMessage: string;
 };

@@ -12,6 +12,7 @@ const EFFORTS = [
 export const MOONSHOT_CATALOG = [
   {
     key: 'kimi-k3',
+    defaultTurn: true,
     label: 'Kimi K3',
     tier: 'turn',
     contextWindow: 1_048_576,

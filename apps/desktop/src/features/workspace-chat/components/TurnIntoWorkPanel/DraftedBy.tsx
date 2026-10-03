@@ -1,12 +1,12 @@
-import { resolveStoredModelSelection } from '@goodboy/core';
+import { clampEffortForModel, resolveStoredModelSelection } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
-import type { ChatModelChoice } from '../../defaultChatModel';
+import type { WorkDrafterChoice } from '../../workDrafter';
 
 type Props = {
-  readonly choice: ChatModelChoice;
+  readonly choice: WorkDrafterChoice;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
-  readonly onChange: (update: (current: ChatModelChoice) => ChatModelChoice) => void;
+  readonly onChange: (update: (current: WorkDrafterChoice) => WorkDrafterChoice) => void;
 };
 
 const DRAFTED_BY_LABEL = 'Drafted by';
@@ -19,11 +19,14 @@ export const DraftedBy = ({ choice, connectedProviders, onChange }: Props) => (
       variant="pill"
       align="start"
       availability="run"
-      isEffortHidden
       connectedProviders={connectedProviders}
       provider={choice.provider}
       model={choice.model}
-      effort={{ editable: false }}
+      effort={{
+        editable: true,
+        value: choice.effort ?? 'medium',
+        onChange: (effort) => onChange((current) => ({ ...current, effort })),
+      }}
       disabled={false}
       onProvider={(provider) => {
         if (provider === '') {
@@ -32,11 +35,23 @@ export const DraftedBy = ({ choice, connectedProviders, onChange }: Props) => (
         onChange((current) => ({ ...current, provider }));
       }}
       onModel={(model) =>
-        onChange((current) => ({
-          ...current,
-          model: resolveStoredModelSelection({ provider: current.provider, id: model }).selection
-            .key,
-        }))
+        onChange((current) => {
+          const key = resolveStoredModelSelection({ provider: current.provider, id: model })
+            .selection.key;
+          const effort =
+            current.effort == null
+              ? null
+              : clampEffortForModel({
+                  model: key,
+                  effort: current.effort,
+                  provider: current.provider,
+                });
+          return {
+            provider: current.provider,
+            model: key,
+            ...(effort != null && { effort }),
+          };
+        })
       }
     />
   </div>

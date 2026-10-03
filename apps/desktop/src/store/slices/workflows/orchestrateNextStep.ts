@@ -79,6 +79,7 @@ import type { GetFn, SetFn } from './types';
 import { autoLimitContext } from '../providerLimits/autoLimitContext';
 import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
 import { sessionById } from '../sessions/sessionIndex';
+import { selectHiddenModels } from '../settings/selectHiddenModels';
 
 export type OrchestrateOptions = {
   readonly routing?: OrchestratorRouting;
@@ -669,7 +670,10 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         nowMs: Date.now(),
         providerPool: run.providerPool ?? null,
       });
-      const modelMenu = orchestratorModelPool({ availability });
+      const modelMenu = orchestratorModelPool({
+        availability,
+        hidden: selectHiddenModels({ state: get() }),
+      });
       const client = new OrchestratorClient({
         ...routing,
         invokeFn: invokeCommand,

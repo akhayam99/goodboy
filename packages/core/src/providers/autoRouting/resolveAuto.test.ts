@@ -5,7 +5,40 @@ describe('resolveAuto', () => {
   it('starts from the curated default of the workspace default provider', () => {
     expect(
       resolveAuto({ slot: { kind: 'role', id: 'implementer' }, defaultProvider: 'codex' }),
-    ).toEqual({ provider: 'codex', model: 'gpt-5.6-sol', effort: 'medium', step: 'curated' });
+    ).toEqual({ provider: 'codex', model: 'gpt-6.1-sol', effort: 'medium', step: 'curated' });
+  });
+
+  it('keeps the older Sol for a codex CLI below the newest Sol floor', () => {
+    expect(
+      resolveAuto({
+        slot: { kind: 'role', id: 'implementer' },
+        defaultProvider: 'codex',
+        cliVersions: { codex: '0.155.0' },
+      }),
+    ).toEqual({
+      provider: 'codex',
+      model: 'gpt-5.6-sol',
+      effort: 'medium',
+      step: 'next-in-column',
+    });
+  });
+
+  it('runs Claude roles on the newest Sonnet and keeps the older one for an old CLI', () => {
+    expect(
+      resolveAuto({ slot: { kind: 'role', id: 'implementer' }, defaultProvider: 'anthropic' }),
+    ).toEqual({ provider: 'anthropic', model: 'sonnet-5.5', effort: 'medium', step: 'curated' });
+    expect(
+      resolveAuto({
+        slot: { kind: 'role', id: 'implementer' },
+        defaultProvider: 'anthropic',
+        cliVersions: { anthropic: '2.1.282' },
+      }),
+    ).toEqual({
+      provider: 'anthropic',
+      model: 'sonnet-5',
+      effort: 'medium',
+      step: 'next-in-column',
+    });
   });
 
   it('moves down the same column when the cli is too old for the first pick', () => {
@@ -97,7 +130,7 @@ describe('resolveAuto', () => {
       }),
     ).toEqual({
       provider: 'codex',
-      model: 'gpt-5.6-sol',
+      model: 'gpt-6.1-sol',
       effort: 'medium',
       step: 'next-provider',
       skippedAtLimit: ['anthropic'],
@@ -131,5 +164,65 @@ describe('resolveAuto', () => {
     expect(
       resolveAuto({ slot: { kind: 'role', id: 'reviewer' }, defaultProvider: 'cursor' })?.model,
     ).toBe('claude-4.6-sonnet-medium-thinking');
+  });
+
+  it('never proposes a hidden model for a role and moves to the next one of the line', () => {
+    expect(
+      resolveAuto({
+        slot: { kind: 'role', id: 'implementer' },
+        defaultProvider: 'anthropic',
+        hidden: { anthropic: ['sonnet-5.5'] },
+      }),
+    ).toEqual({
+      provider: 'anthropic',
+      model: 'sonnet-5',
+      effort: 'medium',
+      step: 'next-in-column',
+    });
+  });
+
+  it('keeps a hidden summarizer model rather than climbing to a dearer one', () => {
+    expect(
+      resolveAuto({
+        slot: { kind: 'task', id: 'summarizer' },
+        defaultProvider: 'anthropic',
+        hidden: { anthropic: ['haiku-4.5'] },
+      }),
+    ).toEqual({
+      provider: 'anthropic',
+      model: 'haiku-4.5',
+      effort: null,
+      step: 'curated',
+      keptHidden: true,
+    });
+  });
+
+  it('moves a background task to a visible model of the same cost tier', () => {
+    expect(
+      resolveAuto({
+        slot: { kind: 'task', id: 'summarizer' },
+        defaultProvider: 'gemini',
+        hidden: { gemini: ['gemini-3.8-flash'] },
+      }),
+    ).toEqual({
+      provider: 'gemini',
+      model: 'gemini-3.7-flash',
+      effort: 'low',
+      step: 'next-in-column',
+    });
+  });
+
+  it('skips a hidden model on a provider without a curated column', () => {
+    const visible = resolveAuto({
+      slot: { kind: 'role', id: 'implementer' },
+      defaultProvider: 'openrouter',
+    });
+    expect(visible).not.toBeNull();
+    const hidden = resolveAuto({
+      slot: { kind: 'role', id: 'implementer' },
+      defaultProvider: 'openrouter',
+      hidden: { openrouter: [visible?.model ?? ''] },
+    });
+    expect(hidden?.model).not.toBe(visible?.model);
   });
 });

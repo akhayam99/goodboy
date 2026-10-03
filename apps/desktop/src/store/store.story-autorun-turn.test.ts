@@ -451,7 +451,7 @@ describe('story: an autorun step turn and what follows it', () => {
       return `${String(provider)}/${String(model)}`;
     });
     expect(attempts.slice(0, 2)).toEqual([
-      'anthropic/claude-sonnet-5',
+      'anthropic/claude-sonnet-5-5',
       expect.stringMatching(/^codex\//),
     ]);
     expect(statusWrites({ agentId: IMPLEMENT_AGENT })).toContainEqual(
