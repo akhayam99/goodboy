@@ -1,19 +1,27 @@
-import { Check } from 'lucide-react';
+import { Check, RotateCcw } from 'lucide-react';
+import type { WorkflowAutonomy } from '@goodboy/types';
 import { AnchoredPopover, cn, useDropdown } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { RUN_AUTONOMY_HEADER, RUN_AUTONOMY_OPTIONS, runAutonomyOf } from '../../../runAutonomy';
 import { ControlChip } from './ControlChip';
+import { RuleDot } from './RuleDot';
 
 type Props = {
-  readonly autoRun: boolean;
+  readonly autonomy: WorkflowAutonomy;
+  readonly ruleAutonomy: WorkflowAutonomy;
   readonly disabled: boolean;
-  readonly onChange: (autoRun: boolean) => void;
+  readonly onChange: (autonomy: WorkflowAutonomy) => void;
 };
 
-export const AutonomyChip = ({ autoRun, disabled, onChange }: Props) => {
+const OPTION_ROW =
+  'flex min-w-0 items-start gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-hover';
+
+export const AutonomyChip = ({ autonomy, ruleAutonomy, disabled, onChange }: Props) => {
   const dropdown = useDropdown({ disabled, width: 'w-72' });
   const { open, close, toggle } = dropdown;
-  const current = runAutonomyOf({ autoRun });
+  const current = runAutonomyOf({ autoRun: autonomy !== 'step', autonomy });
+  const rule = runAutonomyOf({ autoRun: ruleAutonomy !== 'step', autonomy: ruleAutonomy });
+  const differs = autonomy !== ruleAutonomy;
 
   return (
     <AnchoredPopover
@@ -26,6 +34,7 @@ export const AutonomyChip = ({ autoRun, disabled, onChange }: Props) => {
           label={RUN_AUTONOMY_HEADER}
           isLabelShown={false}
           value={current.label}
+          marker={differs ? <RuleDot ruleValue={rule.label} /> : null}
           isOpen={open}
           disabled={disabled}
           onToggle={toggle}
@@ -42,13 +51,10 @@ export const AutonomyChip = ({ autoRun, disabled, onChange }: Props) => {
               role="radio"
               aria-checked={isActive}
               onClick={() => {
-                onChange(option.autoRun);
+                onChange(option.key);
                 close();
               }}
-              className={cn(
-                'flex min-w-0 items-start gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-hover',
-                isActive && 'bg-hover',
-              )}
+              className={cn(OPTION_ROW, isActive && 'bg-hover')}
             >
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate text-label text-foreground">{option.label}</span>
@@ -61,6 +67,20 @@ export const AutonomyChip = ({ autoRun, disabled, onChange }: Props) => {
           );
         })}
       </div>
+      {differs ? (
+        <button
+          type="button"
+          onClick={() => {
+            onChange(ruleAutonomy);
+            close();
+          }}
+          className={cn(OPTION_ROW, 'mt-1 items-center')}
+        >
+          <RotateCcw size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
+          <span className="min-w-0 flex-1 truncate text-label text-foreground">Reset</span>
+          <span className="truncate text-secondary text-faint-foreground">{rule.label}</span>
+        </button>
+      ) : null}
     </AnchoredPopover>
   );
 };

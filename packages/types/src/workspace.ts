@@ -15,6 +15,7 @@ import type { SessionProviderPreference } from './provider-preference';
 import type { EffortLevel, ProviderId } from './provider-registry';
 import type { ClaudePermissionMode } from './permission';
 import type { OverrideSettings } from './settings';
+import type { WorkflowRules } from './workflow-rules';
 import type { GitDistance, GitOperation, GitWorkingTree } from './worktree';
 
 export type WorkspaceGitState = 'missing' | 'absent' | 'unborn' | 'ready';
@@ -106,7 +107,14 @@ export type WorkflowExecutionMode = 'static' | 'dynamic';
 export type WorkflowOrchestrationOutcome = 'done' | 'blocked';
 
 export type WorkflowOrchestrationStopKind =
-  'failure' | 'budget' | 'questions' | 'operator' | 'closed' | 'needs-approval' | 'paused';
+  | 'failure'
+  | 'budget'
+  | 'questions'
+  | 'operator'
+  | 'closed'
+  | 'needs-approval'
+  | 'plan-approval'
+  | 'paused';
 
 export type WorkflowOrchestrationStop = Readonly<{
   kind: WorkflowOrchestrationStopKind;
@@ -151,6 +159,7 @@ export type WorkflowRun = Readonly<{
   title?: string;
   titleUserEdited?: boolean;
   providerPool?: ReadonlyArray<ProviderId>;
+  rulesSnapshot?: WorkflowRules;
   discardedAt?: IsoDateTime;
   createdAt?: IsoDateTime;
 }>;
@@ -357,10 +366,30 @@ export const isSessionExternalTaskProvider = (
   typeof value === 'string' &&
   SESSION_EXTERNAL_TASK_PROVIDERS.some((provider) => provider === value);
 
+export const EXTERNAL_TASK_SCOPES = ['session', 'branch'] as const;
+
+export type ExternalTaskScope = (typeof EXTERNAL_TASK_SCOPES)[number];
+
+export const EXTERNAL_TASK_RELATIONS = ['closes', 'part-of'] as const;
+
+export type ExternalTaskRelation = (typeof EXTERNAL_TASK_RELATIONS)[number];
+
 export type SessionExternalTask = Readonly<{
   sessionId: SessionId;
   projectId?: ProjectId;
   branch?: string;
+  scope?: ExternalTaskScope;
+  relation?: ExternalTaskRelation;
+  provider: SessionExternalTaskProvider;
+  externalId: string;
+  identifier: string;
+  url: string;
+  title: string;
+  createdAt: IsoDateTime;
+}>;
+
+export type WorkspaceExternalTask = Readonly<{
+  workspaceId: WorkspaceId;
   provider: SessionExternalTaskProvider;
   externalId: string;
   identifier: string;

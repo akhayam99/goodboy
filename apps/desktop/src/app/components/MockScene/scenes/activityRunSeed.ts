@@ -38,6 +38,7 @@ import { useAppStore } from '../../../../store';
 import { sceneClock } from '../sceneClock';
 import { sceneParam } from './audit/sceneParams';
 import type { SummarizerRound } from '../../../../store/slices/summaries/state';
+import { sceneSetContextItemStatus, sessionLearningsSeed } from './learningsSeed';
 
 const clock = sceneClock({ anchor: '2026-09-18T10:05:00.000Z' });
 
@@ -131,6 +132,7 @@ const OVERRIDES = {
   resolveOnGithub: null,
   resolveCommitStyle: null,
   afterMerge: null,
+  defaultBranchTemplate: null,
 };
 
 const WORKSPACE: Workspace = {
@@ -1058,6 +1060,24 @@ const SESSION_EVENTS = [
     createdAt: at({ day: DAY_ONE, time: '09:12:00' }),
   },
   {
+    id: 'mock-run-event-decisions-plan' as SessionEventId,
+    sessionId: SESSION_ID,
+    kind: 'decisions_changed',
+    payload: {
+      added: 2,
+      replaced: 0,
+      withdrawn: 0,
+      merged: 0,
+      restored: 0,
+      agentId: PLANNER_AGENT_ID,
+      decisionChanges: [
+        { kind: 'added', number: 5, text: 'Key the dedupe check on the processor event id' },
+        { kind: 'added', number: 6, text: 'Check the key inside the credit transaction' },
+      ],
+    },
+    createdAt: at({ day: DAY_ONE, time: '09:47:00' }),
+  },
+  {
     id: 'mock-run-event-pr' as SessionEventId,
     sessionId: SESSION_ID,
     kind: 'pr_created',
@@ -1316,6 +1336,14 @@ export const seedActivityRunScene = () => {
     sessionDecisions: { [SESSION_ID]: DECISIONS },
     sessionDecisionsBaseline: { [SESSION_ID]: DECISIONS_SEEN_AT },
     sessionContextSeenAt: { [SESSION_ID]: DECISIONS_SEEN_AT },
+    sessionContextItems: {
+      [SESSION_ID]: sessionLearningsSeed({
+        workspaceId: WORKSPACE_ID,
+        nowMs: Date.parse(NOW),
+        sessionIdFor: () => SESSION_ID,
+      }),
+    },
+    setContextItemStatus: sceneSetContextItemStatus,
     sessionLoading: {
       [SESSION_ID]: {
         agents: false,

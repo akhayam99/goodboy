@@ -29,6 +29,8 @@ const NULL_OVERRIDE: OverrideSettings = {
   resolveOnGithub: null,
   resolveCommitStyle: null,
   afterMerge: null,
+  defaultBranchTemplate: null,
+  workflowRules: null,
 };
 
 describe('resolveSettings', () => {
@@ -58,6 +60,8 @@ describe('resolveSettings', () => {
       resolveOnGithub: null,
       resolveCommitStyle: null,
       afterMerge: null,
+      defaultBranchTemplate: null,
+      workflowRules: null,
     };
     const result = resolveSettings({ global: GLOBAL, workspaceOverride: wsOverride });
     expect(result.defaultProviderId).toBe('cursor');
@@ -83,6 +87,8 @@ describe('resolveSettings', () => {
       resolveOnGithub: null,
       resolveCommitStyle: null,
       afterMerge: null,
+      defaultBranchTemplate: null,
+      workflowRules: null,
     };
     const result = resolveSettings({ global: GLOBAL, sessionOverride: sessOverride });
     expect(result.defaultProviderId).toBe('codex');
@@ -108,6 +114,8 @@ describe('resolveSettings', () => {
       resolveOnGithub: null,
       resolveCommitStyle: null,
       afterMerge: null,
+      defaultBranchTemplate: null,
+      workflowRules: null,
     };
     const sessOverride: OverrideSettings = {
       defaultProviderId: 'codex' as ProviderId,
@@ -126,6 +134,8 @@ describe('resolveSettings', () => {
       resolveOnGithub: null,
       resolveCommitStyle: null,
       afterMerge: null,
+      defaultBranchTemplate: null,
+      workflowRules: null,
     };
     const result = resolveSettings({
       global: GLOBAL,
@@ -172,6 +182,8 @@ describe('resolveSettings', () => {
       resolveOnGithub: null,
       resolveCommitStyle: null,
       afterMerge: null,
+      defaultBranchTemplate: null,
+      workflowRules: null,
     };
     const sessOverride: OverrideSettings = {
       defaultProviderId: null,
@@ -190,6 +202,8 @@ describe('resolveSettings', () => {
       resolveOnGithub: null,
       resolveCommitStyle: null,
       afterMerge: null,
+      defaultBranchTemplate: null,
+      workflowRules: null,
     };
     const result = resolveSettings({
       global: GLOBAL,

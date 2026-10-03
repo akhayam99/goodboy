@@ -49,6 +49,7 @@ const REASON_ICON: Record<RowStateReason['kind'], LucideIcon | null> = {
   closed: CONCEPT_ICONS.runCancelled,
   skipped: SkipForward,
   paused: null,
+  planReady: null,
   chained: null,
   awaitingFirstMessage: null,
   discarded: null,

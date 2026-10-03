@@ -8,7 +8,11 @@ import { formatError } from '@goodboy/ui';
 import type { MountId, Project, Session, SessionId, SessionProjectMount } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { tauriGhRunner } from '../../../features/integrations/github/github';
-import { createSessionDir, createWorktree } from '../../../features/worktree/worktree';
+import {
+  createSessionDir,
+  createWorktree,
+  listBranchNames,
+} from '../../../features/worktree/worktree';
 import { consumeAdoptionSeed, materializationSeedFor } from '../sessions/materializationSeeds';
 import { mountPlan } from '../sessions/mountPlan';
 import { branchInUseError } from './mountErrors';
@@ -79,6 +83,7 @@ type Params = {
   readonly parallelIndex: number;
   readonly taskIdentifiers?: ReadonlyArray<string>;
   readonly slug?: string;
+  readonly branch?: string;
 };
 
 export const createProjectMount = async ({
@@ -92,6 +97,7 @@ export const createProjectMount = async ({
   parallelIndex,
   taskIdentifiers,
   slug: plannedSlug,
+  branch: plannedBranch,
 }: Params): Promise<SessionProjectMount> =>
   withRepositoryAndMountLock({
     repoRoot: project.rootPath,
@@ -99,11 +105,18 @@ export const createProjectMount = async ({
     run: async () => {
       const sessionId = session.id;
       const projectId = project.id;
+      const repoBranches =
+        project.kind === 'repo' && plannedBranch === undefined
+          ? await listBranchNames({ repoPath: project.rootPath }).catch(
+              () => [] as ReadonlyArray<string>,
+            )
+          : [];
       const plan = mountPlan({
         state: get(),
         sessionId,
         projectId,
         mountId,
+        repoBranches,
         ...(taskIdentifiers === undefined ? {} : { taskIdentifiers }),
       });
       if (plan === null) {
@@ -125,8 +138,7 @@ export const createProjectMount = async ({
           project.kind === 'repo'
             ? await createWorktree({
                 repoPath: project.rootPath,
-                branchPrefix: plan.prefix,
-                slug: sessionSlug,
+                branchName: adoptedBranch ?? plannedBranch ?? plan.branch ?? '',
                 parentDir: `${project.rootPath}/.goodboy/worktrees`,
                 dirName: mountDirName({ sessionSlug, mountId }),
                 baseBranch: project.baseBranch ?? undefined,

@@ -12,6 +12,7 @@ import { useObjectMenuTrigger } from '../../../../actions/useObjectMenuTrigger';
 import type { MountActionTarget } from '../../../../actions/types';
 import { useMountRemoteHostKind } from '../../../../worktree/useMountRemoteHostKind';
 import { AlsoInChip } from './AlsoInChip';
+import { BranchTaskChips } from './BranchTaskChips';
 import { MountBranchDecision } from './MountBranchDecision';
 import { MountChangeCell } from './MountChangeCell';
 import { MountKindGlyph } from './MountKindGlyph';
@@ -105,6 +106,14 @@ export const ProjectMountRow = ({
               branch={row.branch}
               canSwitch={switchBranch !== null}
               blockedReason={switchBranch?.blockedReason ?? null}
+            />
+          )}
+          {row.branch === '' ? null : (
+            <BranchTaskChips
+              sessionId={sessionId}
+              projectId={row.projectId}
+              branch={row.branch}
+              isSkeleton={isSkeleton}
             />
           )}
           {row.branch === '' ? null : (

@@ -107,6 +107,7 @@ const overrides = {
   resolveOnGithub: null,
   resolveCommitStyle: null,
   afterMerge: null,
+  defaultBranchTemplate: null,
 } satisfies Project['overrides'];
 
 const project: Project = {

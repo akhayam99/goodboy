@@ -3,6 +3,7 @@ export type {
   ChatId,
   ChatMessageId,
   ChatSessionLinkId,
+  ChatAttachmentId,
   CredentialId,
   FileVersionId,
   IntegrationCredentialId,
@@ -17,6 +18,7 @@ export type {
   PermissionRequestId,
   PermissionRuleId,
   ProviderRunId,
+  SessionContextItemId,
   SessionEventId,
   SecurityFindingId,
   SessionId,
@@ -86,6 +88,7 @@ export {
 export type {
   Chat,
   ChatMessage,
+  ChatMessageAttachment,
   ChatMessageRole,
   ChatMessageStatus,
   ChatModelUsed,
@@ -129,6 +132,8 @@ export type {
   GoodboyIgnoreMode,
   ProjectScript,
   SentryIntegrationConfig,
+  ExternalTaskRelation,
+  ExternalTaskScope,
   SessionExternalTask,
   SessionExternalTaskProvider,
   SlackIntegrationConfig,
@@ -137,6 +142,7 @@ export type {
   Workspace,
   WorkspaceGitState,
   WorkspaceGitStatus,
+  WorkspaceExternalTask,
   WorkspaceProfile,
   WorkflowRun,
   WorkflowExecutionMode,
@@ -150,6 +156,16 @@ export type {
   WorkspaceIntegrationProvider,
 } from './workspace';
 export {
+  DEFAULT_WORKFLOW_RULES,
+  parseWorkflowRules,
+  parseWorkflowRulesText,
+  WORKFLOW_AUTONOMY_VALUES,
+  type WorkflowAutonomy,
+  type WorkflowRules,
+} from './workflow-rules';
+export {
+  EXTERNAL_TASK_RELATIONS,
+  EXTERNAL_TASK_SCOPES,
   isIntegrationBindingProvider,
   isSessionExternalTaskProvider,
   INTEGRATION_BINDING_PROVIDERS,
@@ -177,6 +193,13 @@ export type {
 } from './handoff';
 export { HANDOFF_SECTION_KINDS } from './handoff';
 export type { TelemetryKind, TelemetryRecord } from './telemetry';
+export type {
+  SessionContextItem,
+  SessionContextItemDraft,
+  SessionContextItemKind,
+  SessionContextItemSource,
+  SessionContextItemStatus,
+} from './session-context-item';
 export type {
   AgentTurnSpan,
   AgentTurnSpanEndReason,

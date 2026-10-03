@@ -189,8 +189,10 @@ code host, the work left in the folder moves into a session named `bootstrap`
 and every later session is an ordinary worktree ([mounts.md](mounts.md) → The
 first lap and the bootstrap move).
 
-The branch is named `<prefix>/<session-slug>`. It has the same name in every
-project the session touches. The repository name on each mount tells them
+The branch is named by the workspace template, `<prefix>/<task-id>-<session-slug>`
+by default, and `<prefix>/<session-slug>` when the session does not start from a
+task ([mounts.md](mounts.md)). It has the same name in every project the session
+touches. The repository name on each mount tells them
 apart.
 
 Before a project is materialized, agents can read its root folder. Every write
@@ -971,9 +973,18 @@ shows it under "See who reads what".
 - Implementer, tester and docs read roles and rules
 - Reviewer and resolver read roles, rules and topics
 - A custom role reads every field
-- Task models read nothing, and the profile never goes into text Goodboy posts
+- Task models read nothing, except **Learnings**, which reads the topics, and the
+  profile never goes into text Goodboy posts
 
 Empty fields add nothing. The profile lives only in the database.
+
+After a turn of a role that reads the topics, the Learnings task reads that
+turn and keeps a learning only when the agent concretely explained something
+about one of them. A learning is a `session_context_items` row of kind
+`learning`: topic, title, a few sentences, and the turns it came from. It is
+written for you, never sent to an agent, and it stays when its session is
+deleted. **Dismiss** hides it, with **Undo**. Setting `context.learnings` to
+`false` turns the task off.
 
 ## Integrations
 

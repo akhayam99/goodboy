@@ -4,15 +4,17 @@ import type { StepId, Workflow, WorkflowId } from '@goodboy/types';
 import { WorkflowStudio } from '../../../../../features/workflows/components/WorkflowStudio';
 import { useAppStore } from '../../../../../store';
 import { WorkflowBuilderScene } from '../flow-audit/WorkflowBuilderScene';
-import { NOW, WORKSPACE_ID } from '../flow-audit/fixtures';
+import { NOW, OVERRIDES, WORKSPACE_ID } from '../flow-audit/fixtures';
 import { sceneParam, sceneParamList } from './sceneParams';
 import { useSceneClicks } from './useSceneClicks';
+import { RULES_PROVIDERS, rulesProviderLimits } from './workflowRulesSeed';
 
 const noop = () => undefined;
 
 const IS_EMPTY = sceneParam({ key: 'v' }) === 'empty';
 const OPEN_LABELS = sceneParamList({ key: 'open', separator: ',' });
 const IS_CONFIRM_ERROR = sceneParam({ key: 'state' }) === 'confirm-error';
+const IS_RULES = sceneParam({ key: 'view' }) === 'rules';
 
 const editedBuiltin = (): Workflow | null => {
   const entry = WORKFLOW_LIBRARY[0];
@@ -41,6 +43,39 @@ const editedBuiltin = (): Workflow | null => {
   };
 };
 
+const seedRules = (): void => {
+  useAppStore.setState({
+    workflowStudioView: 'rules',
+    providers: RULES_PROVIDERS,
+    refreshProviders: async () => undefined,
+    providerLimits: rulesProviderLimits(),
+    workspaceOverrides: {
+      [WORKSPACE_ID]: {
+        ...OVERRIDES,
+        providerPool: [
+          { id: 'anthropic', state: 'on' },
+          { id: 'codex', state: 'on' },
+          { id: 'cursor', state: 'backup' },
+          { id: 'gemini', state: 'off' },
+        ],
+      },
+    },
+    patchWorkspaceOverrides: async ({ workspaceId, patch }) => {
+      useAppStore.setState((state) => {
+        const current = state.workspaceOverrides[workspaceId];
+        return current === undefined
+          ? {}
+          : {
+              workspaceOverrides: {
+                ...state.workspaceOverrides,
+                [workspaceId]: { ...current, ...patch },
+              },
+            };
+      });
+    },
+  });
+};
+
 const seedStudio = (): void => {
   useAppStore.setState({
     loadPhaseTemplates: async () => undefined,
@@ -56,6 +91,9 @@ const seedStudio = (): void => {
       return kept;
     },
   });
+  if (IS_RULES) {
+    seedRules();
+  }
   if (IS_CONFIRM_ERROR) {
     const workflow = editedBuiltin();
     useAppStore.setState({
@@ -95,7 +133,7 @@ export const WorkflowStudioScene = () => {
 
   return (
     <>
-      <WorkflowBuilderScene />
+      {IS_RULES ? null : <WorkflowBuilderScene />}
       {isReady && <WorkflowStudio workspaceId={WORKSPACE_ID} onClose={noop} />}
     </>
   );

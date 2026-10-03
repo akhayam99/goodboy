@@ -90,6 +90,7 @@ import { createHandoffsSlice } from './slices/handoffs';
 import { createSecurityFindingsSlice } from './slices/security-findings';
 import { createBranchCleanupSlice } from './slices/branch-cleanup';
 import { createStarredIssuesSlice } from './slices/starred-issues';
+import { createWorkspaceTasksSlice } from './slices/workspace-tasks';
 import { createSearchIndexSlice } from './slices/search-index';
 import { createChatsSlice } from './slices/chats';
 import { handoffsInitialState } from './slices/handoffs/state';
@@ -106,6 +107,8 @@ import { createBugReportDraftSlice } from './slices/bugReportDraft';
 import { createSessionDraftSlice } from './slices/sessionDraft';
 import { createContextDrawerSlice } from './slices/contextDrawer';
 import { initialContextDrawerState } from './slices/contextDrawer/state';
+import { createContextItemsSlice } from './slices/contextItems';
+import { initialContextItemsState } from './slices/contextItems/state';
 import { createDecisionsSlice } from './slices/decisions';
 import { initialDecisionsState } from './slices/decisions/state';
 import { initialSessionDraftState } from './slices/sessionDraft/state';
@@ -196,6 +199,7 @@ export type AppStore = AppState &
   ReturnType<typeof createSecurityFindingsSlice> &
   ReturnType<typeof createBranchCleanupSlice> &
   ReturnType<typeof createStarredIssuesSlice> &
+  ReturnType<typeof createWorkspaceTasksSlice> &
   ReturnType<typeof createSearchIndexSlice> &
   ReturnType<typeof createChatsSlice> &
   ReturnType<typeof createUpdaterSlice> &
@@ -204,6 +208,7 @@ export type AppStore = AppState &
   ReturnType<typeof createBugReportDraftSlice> &
   ReturnType<typeof createSessionDraftSlice> &
   ReturnType<typeof createContextDrawerSlice> &
+  ReturnType<typeof createContextItemsSlice> &
   ReturnType<typeof createDecisionsSlice> &
   ReturnType<typeof createDrawerSlice> &
   ReturnType<typeof createNavigationSlice> &
@@ -264,6 +269,7 @@ export const initialState: AppState = {
   ...initialBugReportDraftState,
   ...initialSessionDraftState,
   ...initialContextDrawerState,
+  ...initialContextItemsState,
   ...initialDecisionsState,
   ...initialDrawerState,
   ...initialNavigationState,
@@ -403,6 +409,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSecurityFindingsSlice({ set, get }),
   ...createBranchCleanupSlice({ set, get }),
   ...createStarredIssuesSlice({ set, get }),
+  ...createWorkspaceTasksSlice({ set, get }),
   ...createSearchIndexSlice({ set, get }),
   ...createChatsSlice({ set, get }),
   ...createPresenceSlice({ set, get }),
@@ -415,6 +422,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createBugReportDraftSlice({ set, get }),
   ...createSessionDraftSlice({ set, get }),
   ...createContextDrawerSlice({ set, get }),
+  ...createContextItemsSlice({ set, get }),
   ...createDecisionsSlice({ set, get }),
   ...createDrawerSlice({ set, get }),
   ...createNavigationSlice({ set, get }),

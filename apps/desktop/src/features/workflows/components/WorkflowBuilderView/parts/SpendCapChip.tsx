@@ -1,4 +1,6 @@
+import { RotateCcw } from 'lucide-react';
 import { AnchoredPopover, Switch, cn, formatUsd, useDropdown } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import type { WorkflowSpendLimitMode } from '@goodboy/types';
 import { SpendLimitFields } from '../../../../budget/components/SpendLimitFields';
 import { parseSpendLimit } from '../../../../budget/parseSpendLimit';
@@ -8,16 +10,19 @@ import {
   runModeOfBehavior,
 } from '../../../../budget/spendLimitBehavior';
 import { ControlChip } from './ControlChip';
+import { RuleDot } from './RuleDot';
 
 type Props = {
   readonly isEnabled: boolean;
   readonly amount: string;
   readonly mode: WorkflowSpendLimitMode;
   readonly isInvalid: boolean;
+  readonly rule: ValueParams;
   readonly disabled: boolean;
   readonly onEnabled: (isEnabled: boolean) => void;
   readonly onAmount: (amount: string) => void;
   readonly onMode: (mode: WorkflowSpendLimitMode) => void;
+  readonly onReset: () => void;
 };
 
 const AMOUNT_ID = 'builder-spend-limit-amount';
@@ -38,16 +43,25 @@ const chipValueOf = ({ isEnabled, amount, mode }: ValueParams): string => {
     : `${formatUsd(parsed)} · ${SPEND_LIMIT_BEHAVIOR_SHORT[behaviorOfRunMode({ mode })]}`;
 };
 
+const sameSpend = ({ left, right }: { readonly left: ValueParams; readonly right: ValueParams }) =>
+  left.isEnabled === right.isEnabled &&
+  (!left.isEnabled ||
+    (parseSpendLimit(left.amount) === parseSpendLimit(right.amount) && left.mode === right.mode));
+
 export const SpendCapChip = ({
   isEnabled,
   amount,
   mode,
   isInvalid,
+  rule,
   disabled,
   onEnabled,
   onAmount,
   onMode,
+  onReset,
 }: Props) => {
+  const differs = !sameSpend({ left: { isEnabled, amount, mode }, right: rule });
+  const ruleValue = chipValueOf(rule);
   const dropdown = useDropdown({ disabled, width: 'w-72' });
   const { open, toggle } = dropdown;
   const hasAmount = parseSpendLimit(amount) != null;
@@ -62,6 +76,7 @@ export const SpendCapChip = ({
         <ControlChip
           label="Spend cap"
           value={chipValueOf({ isEnabled, amount, mode })}
+          marker={differs ? <RuleDot ruleValue={ruleValue} /> : null}
           isOpen={open}
           isInvalid={isInvalid}
           disabled={disabled}
@@ -107,6 +122,17 @@ export const SpendCapChip = ({
                 : 'Set the maximum this run may spend.'}
           </p>
         </>
+      ) : null}
+      {differs ? (
+        <button
+          type="button"
+          onClick={onReset}
+          className="flex items-center gap-2 rounded-md px-1 py-1 text-left text-label text-foreground hover:bg-hover"
+        >
+          <RotateCcw size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
+          <span className="min-w-0 flex-1">Reset</span>
+          <span className="truncate text-secondary text-faint-foreground">{ruleValue}</span>
+        </button>
       ) : null}
     </AnchoredPopover>
   );

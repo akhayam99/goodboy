@@ -1,5 +1,8 @@
+import { DEFAULT_BRANCH_TEMPLATE } from '@goodboy/core';
 import {
   AFTER_MERGE_RULES,
+  DEFAULT_WORKFLOW_RULES,
+  parseWorkflowRulesText,
   REPLY_VOICES,
   RESOLVE_COMMIT_STYLES,
   type OverrideSettings,
@@ -14,6 +17,7 @@ import {
 } from '../../resolve/replySettings';
 import { COMMIT_STYLE_LABEL, VOICE_LABEL } from '../../resolve/replySettingsCopy';
 import { AFTER_MERGE_SHORT_LABEL } from '../components/SettingsStudio/afterMergeCopy';
+import { canonicalWorkflowRules, workflowRulesSummary } from '../../workflows/workflowRulesCopy';
 import { FIELD_PAGE, type WorkspaceSettingField } from '../pageKeys';
 import { DEFAULT_BRANCH_PREFIX } from '../settings';
 import { VERBOSITY_LABEL, VERBOSITY_LEVELS } from '../verbosity';
@@ -108,6 +112,16 @@ const WORKSPACE_FIELDS: ReadonlyArray<WorkspaceFieldDef> = [
     stored: ({ overrides }) => overrides?.defaultBranchPrefix ?? null,
     display: (value) => value,
     write: (value) => override('defaultBranchPrefix', value),
+  }),
+  erase({
+    id: 'branchTemplate',
+    label: 'Branch name',
+    fallback: DEFAULT_BRANCH_TEMPLATE,
+    parse: asText,
+    stored: ({ overrides }) => textOrNull(overrides?.defaultBranchTemplate),
+    display: (value) => value,
+    write: (value) =>
+      override('defaultBranchTemplate', value === DEFAULT_BRANCH_TEMPLATE ? null : value),
   }),
   erase({
     id: 'attribution',
@@ -254,6 +268,23 @@ const WORKSPACE_FIELDS: ReadonlyArray<WorkspaceFieldDef> = [
     stored: ({ profile }) => listOrNull(profile.explainMore),
     display: listText,
     write: (value) => ({ profile: { explainMore: value ?? [] } }),
+  }),
+  erase({
+    id: 'workflowRules',
+    label: 'Workflow rules',
+    fallback: canonicalWorkflowRules({ rules: DEFAULT_WORKFLOW_RULES }),
+    parse: (value) =>
+      typeof value === 'string' && parseWorkflowRulesText({ text: value }) !== null ? value : null,
+    stored: ({ overrides }) =>
+      overrides?.workflowRules == null
+        ? null
+        : canonicalWorkflowRules({ rules: overrides.workflowRules }),
+    display: (value) =>
+      workflowRulesSummary({
+        rules: parseWorkflowRulesText({ text: value }) ?? DEFAULT_WORKFLOW_RULES,
+      }),
+    write: (value) =>
+      override('workflowRules', value === null ? null : parseWorkflowRulesText({ text: value })),
   }),
 ];
 

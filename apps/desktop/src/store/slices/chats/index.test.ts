@@ -85,6 +85,7 @@ const harness = ({ projects, appStudio = null }: HarnessParams) => {
     ],
     workspaces: [WORKSPACE_ROW],
     appStudio,
+    settings: {},
   };
   return {
     slice,

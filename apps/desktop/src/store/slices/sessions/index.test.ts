@@ -125,6 +125,7 @@ function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
       resolveOnGithub: null,
       resolveCommitStyle: null,
       afterMerge: null,
+      defaultBranchTemplate: null,
     },
     createdAt: NOW,
     updatedAt: NOW,
@@ -1175,6 +1176,41 @@ describe('store contract', () => {
       expect(kinds).toEqual(['project_materialized', 'external_task_created']);
     });
 
+    it('writes the branch the session starts on into the task link', async () => {
+      const store = useAppStore;
+      const db = await import('@goodboy/db');
+      store.setState({ currentWorkspaceId: WS_ID });
+
+      storySpies.createWorktree.mockImplementationOnce(
+        async ({ branchName }: { readonly branchName: string }) => ({
+          worktreePath: '/tmp/mounts/har-212',
+          branchName,
+          slug: 'har-212',
+          reused: false,
+        }),
+      );
+
+      await store.getState().createSession({
+        workspaceId: WS_ID,
+        projectId: PROJECT_ID,
+        goal: 'Retry failed payments',
+        externalTasks: [
+          {
+            provider: 'linear',
+            externalId: 'lin-212',
+            identifier: 'HAR-212',
+            url: 'https://linear.app/harborline/issue/HAR-212',
+            title: 'Retry failed payments',
+          },
+        ],
+      });
+
+      const written = vi.mocked(db.upsertSessionExternalTask).mock.calls.map(([{ task }]) => task);
+      expect(written).toHaveLength(1);
+      expect(written[0]?.branch).toBe('goodboy/har-212-retry-failed-payments');
+      expect(written[0]?.scope).toBeUndefined();
+    });
+
     it('passes task identifiers into the initial materialization', async () => {
       const store = useAppStore;
       store.setState({ currentWorkspaceId: WS_ID });
@@ -1196,7 +1232,7 @@ describe('store contract', () => {
 
       expect(storySpies.createWorktree).toHaveBeenCalledWith(
         expect.objectContaining({
-          slug: 'grw-1220-applicare-nuove-icone-alla-navbar',
+          branchName: 'goodboy/grw-1220-applicare-nuove-icone-alla-navbar',
         }),
       );
     });
@@ -1234,7 +1270,7 @@ describe('store contract', () => {
       });
 
       expect(storySpies.createWorktree).toHaveBeenCalledWith(
-        expect.objectContaining({ branchPrefix: 'project-prefix' }),
+        expect.objectContaining({ branchName: 'project-prefix/study-plan' }),
       );
     });
 
@@ -1254,22 +1290,22 @@ describe('store contract', () => {
       });
 
       expect(storySpies.createWorktree).toHaveBeenCalledWith(
-        expect.objectContaining({ branchPrefix: 'workspace-prefix' }),
+        expect.objectContaining({ branchName: 'workspace-prefix/study-plan' }),
       );
     });
 
-    it('uses the session slug for an untitled mount', async () => {
+    it('names the branch of an untitled session after the session, with no id', async () => {
       const store = useAppStore;
       store.setState({ currentWorkspaceId: WS_ID });
 
-      const { session } = await store.getState().createSession({
+      await store.getState().createSession({
         workspaceId: WS_ID,
         projectId: PROJECT_ID,
         goal: 'Untitled session',
       });
 
       expect(storySpies.createWorktree).toHaveBeenCalledWith(
-        expect.objectContaining({ slug: `session-${session.id.slice(0, 8)}` }),
+        expect.objectContaining({ branchName: 'goodboy/session' }),
       );
     });
 
@@ -1285,7 +1321,7 @@ describe('store contract', () => {
       });
 
       expect(storySpies.createWorktree).toHaveBeenCalledWith(
-        expect.objectContaining({ slug: 'foreign-feature-exact' }),
+        expect.objectContaining({ branchName: 'goodboy/foreign-feature-exact' }),
       );
     });
 
@@ -1302,8 +1338,7 @@ describe('store contract', () => {
 
       expect(storySpies.createWorktree).toHaveBeenCalledWith(
         expect.objectContaining({
-          branchPrefix: 'alice',
-          slug: 'alice-fix-parser',
+          branchName: 'alice/fix-parser',
           existingBranch: 'alice/fix-parser',
         }),
       );
@@ -1577,12 +1612,14 @@ describe('store contract', () => {
       insertRow.mockImplementation(async (_db: unknown, record: unknown) => {
         persisted.push(record as Record<string, unknown>);
       });
-      storySpies.createWorktree.mockImplementation(async ({ slug }: { readonly slug: string }) => ({
-        worktreePath: `/tmp/mounts/${slug}-${crypto.randomUUID()}`,
-        branchName: `goodboy/${slug}`,
-        slug,
-        reused: false,
-      }));
+      storySpies.createWorktree.mockImplementation(
+        async ({ branchName }: { readonly branchName: string }) => ({
+          worktreePath: `/tmp/mounts/${branchName}-${crypto.randomUUID()}`,
+          branchName,
+          slug: branchName,
+          reused: false,
+        }),
+      );
       let indexes: ReadonlyArray<number> = [];
 
       try {

@@ -37,7 +37,7 @@ export const getWorkspaceOverrides = async (
   workspaceId: WorkspaceId,
 ): Promise<OverrideSettings | null> => {
   const rows = await db.select<OverrideRow>(
-    `SELECT default_provider_id, default_branch_prefix, default_verbosity, provider_bindings, task_models, role_models, parallel_agents, provider_pool, attribution_footer, ${REPLY_SETTING_COLUMNS}, after_merge
+    `SELECT default_provider_id, default_branch_prefix, default_verbosity, provider_bindings, task_models, role_models, parallel_agents, provider_pool, attribution_footer, ${REPLY_SETTING_COLUMNS}, after_merge, default_branch_template, workflow_rules
      FROM workspaces WHERE id = ?`,
     [workspaceId],
   );
@@ -68,6 +68,8 @@ export const setWorkspaceOverrides = async (
          resolve_on_github = ?,
          resolve_commit_style = ?,
          after_merge = ?,
+         default_branch_template = ?,
+         workflow_rules = ?,
          updated_at = ?
      WHERE id = ?`,
     [
@@ -82,6 +84,8 @@ export const setWorkspaceOverrides = async (
       overrides.attributionFooter === null ? null : overrides.attributionFooter ? 1 : 0,
       ...replySettingValues({ overrides }),
       overrides.afterMerge,
+      overrides.defaultBranchTemplate,
+      overrides.workflowRules == null ? null : JSON.stringify(overrides.workflowRules),
       Date.now(),
       workspaceId,
     ],

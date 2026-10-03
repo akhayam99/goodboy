@@ -292,6 +292,108 @@ fn a_provider_policy_travels_through_the_bundle_at_the_same_schema_version() {
 }
 
 #[test]
+fn the_branch_template_travels_through_the_bundle_at_the_same_schema_version() {
+    let source = export_conn();
+    source
+        .execute_batch(
+            "INSERT INTO workspaces (id, name, created_at, updated_at, default_branch_prefix, default_branch_template)
+             VALUES ('w', 'W', 1, 1, 'team/hl', '{prefix}/{user}/{task-id}-{slug}');",
+        )
+        .unwrap();
+
+    let bundle =
+        build_bundle(&source, &ExportGroups::default(), &HashSet::new()).expect("export failed");
+    assert_eq!(bundle.schema_version, SCHEMA_VERSION);
+    assert_eq!(
+        bundle.workspaces[0]
+            .overrides
+            .default_branch_template
+            .as_deref(),
+        Some("{prefix}/{user}/{task-id}-{slug}")
+    );
+
+    let target = export_conn();
+    target
+        .execute_batch(
+            "INSERT INTO workspaces (id, name, created_at, updated_at) VALUES ('w', 'W', 1, 1);",
+        )
+        .unwrap();
+    apply_bundle(&target, bundle, &HashMap::new(), &HashMap::new()).expect("import failed");
+    let stored: (String, String) = target
+        .query_row(
+            "SELECT default_branch_prefix, default_branch_template FROM workspaces WHERE id = 'w'",
+            [],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .unwrap();
+    assert_eq!(
+        stored,
+        (
+            "team/hl".to_string(),
+            "{prefix}/{user}/{task-id}-{slug}".to_string()
+        )
+    );
+}
+
+#[test]
+fn a_bundle_from_before_the_branch_template_imports_without_one() {
+    let overrides: WorkspaceOverridesBundle =
+        serde_json::from_str(r#"{"defaultProviderId":null,"defaultBranchPrefix":"hl"}"#)
+            .expect("an older bundle still parses");
+    assert_eq!(overrides.default_branch_prefix.as_deref(), Some("hl"));
+    assert_eq!(overrides.default_branch_template, None);
+}
+
+#[test]
+fn the_workflow_rules_travel_through_the_bundle_and_restore() {
+    let rules = r#"{"autonomy":"plan","spendLimitUsd":25,"spendLimitMode":"pause","spreadByHeadroom":false,"standingGuidance":"- Open the PR as a draft.","guidanceRoles":["implementer","docs"]}"#;
+    let source = export_conn();
+    source
+        .execute(
+            "INSERT INTO workspaces (id, name, created_at, updated_at, workflow_rules)
+             VALUES ('w', 'W', 1, 1, ?1)",
+            rusqlite::params![rules],
+        )
+        .unwrap();
+
+    let bundle =
+        build_bundle(&source, &ExportGroups::default(), &HashSet::new()).expect("export failed");
+    let exported = bundle.workspaces[0]
+        .overrides
+        .workflow_rules
+        .clone()
+        .expect("rules exported");
+    assert_eq!(exported["autonomy"], "plan");
+    assert_eq!(exported["spendLimitUsd"], 25);
+
+    let target = export_conn();
+    target
+        .execute_batch(
+            "INSERT INTO workspaces (id, name, created_at, updated_at) VALUES ('w', 'W', 1, 1);",
+        )
+        .unwrap();
+    apply_bundle(&target, bundle, &HashMap::new(), &HashMap::new()).expect("import failed");
+    let stored: String = target
+        .query_row(
+            "SELECT workflow_rules FROM workspaces WHERE id = 'w'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    let parsed: serde_json::Value = serde_json::from_str(&stored).unwrap();
+    let original: serde_json::Value = serde_json::from_str(rules).unwrap();
+    assert_eq!(parsed, original);
+}
+
+#[test]
+fn a_bundle_from_before_the_workflow_rules_imports_without_them() {
+    let overrides: WorkspaceOverridesBundle =
+        serde_json::from_str(r#"{"defaultProviderId":null,"defaultBranchPrefix":"hl"}"#)
+            .expect("an older bundle still parses");
+    assert_eq!(overrides.workflow_rules, None);
+}
+
+#[test]
 fn integration_binding_import_creates_a_credential_with_no_secret_when_none_exists() {
     let conn = export_conn();
     conn.execute_batch(

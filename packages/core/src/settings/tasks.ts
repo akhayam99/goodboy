@@ -31,6 +31,11 @@ export const TASKS: ReadonlyArray<{
     description: 'Turns a linked issue into a title and goal.',
   },
   {
+    id: 'learnings',
+    label: 'Learnings',
+    description: 'Writes short explanations when work touches a topic you follow.',
+  },
+  {
     id: 'workflow_orchestrator',
     label: 'Workflow orchestrator',
     description: 'Picks the next step in an orchestrated run.',

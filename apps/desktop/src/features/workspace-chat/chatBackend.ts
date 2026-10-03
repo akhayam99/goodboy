@@ -1,5 +1,6 @@
 import type {
   Chat,
+  ChatAttachmentId,
   ChatId,
   ChatMessage,
   ChatSessionLink,
@@ -69,6 +70,16 @@ type SettleParams = {
   readonly now: IsoDateTime;
 };
 
+type ChatImageRef = {
+  readonly chatId: ChatId;
+  readonly attachmentId: ChatAttachmentId;
+};
+
+type WriteChatImageParams = ChatImageRef & {
+  readonly fileName: string;
+  readonly blob: Blob;
+};
+
 type CancelTurnParams = {
   readonly runId: ProviderRunId;
 };
@@ -95,6 +106,8 @@ export type ChatBackend = {
   readonly rename: (params: RenameParams) => Promise<void>;
   readonly setModel: (params: SetModelParams) => Promise<void>;
   readonly settleStreaming: (params: SettleParams) => Promise<number>;
+  readonly writeImage: (params: WriteChatImageParams) => Promise<number>;
+  readonly readImage: (params: ChatImageRef) => Promise<Blob>;
   readonly runTurn: (params: RunChatTurnParams) => Promise<ChatTurnOutcome>;
   readonly cancelTurn: (params: CancelTurnParams) => Promise<void>;
   readonly summarizeForWork: (params: SummarizeForWorkParams) => Promise<string>;

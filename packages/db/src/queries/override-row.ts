@@ -1,6 +1,7 @@
 import {
   AFTER_MERGE_RULES,
   parseProviderPolicy,
+  parseWorkflowRulesText,
   REPLY_VOICES,
   RESOLVE_COMMIT_STYLES,
 } from '@goodboy/types';
@@ -35,6 +36,8 @@ export type OverrideRow = {
   readonly resolve_on_github?: number | null;
   readonly resolve_commit_style?: string | null;
   readonly after_merge?: string | null;
+  readonly default_branch_template?: string | null;
+  readonly workflow_rules?: string | null;
 };
 
 export const REPLY_SETTING_COLUMNS =
@@ -101,6 +104,7 @@ type Params = {
 export const overridesFromRow = ({ row }: Params): OverrideSettings => ({
   defaultProviderId: row.default_provider_id as ProviderId | null,
   defaultBranchPrefix: row.default_branch_prefix,
+  defaultBranchTemplate: row.default_branch_template ?? null,
   defaultVerbosity: row.default_verbosity as VerbosityLevel | null,
   providerBindings: parseJsonColumn<ProviderBindings | null>({
     value: row.provider_bindings,
@@ -130,4 +134,5 @@ export const overridesFromRow = ({ row }: Params): OverrideSettings => ({
   resolveOnGithub: row.resolve_on_github == null ? null : row.resolve_on_github !== 0,
   resolveCommitStyle: commitStyleOf({ raw: row.resolve_commit_style ?? null }),
   afterMerge: afterMergeOf({ raw: row.after_merge ?? null }),
+  workflowRules: parseWorkflowRulesText({ text: row.workflow_rules }),
 });

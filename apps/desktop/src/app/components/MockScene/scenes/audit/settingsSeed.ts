@@ -13,6 +13,11 @@ import { useAppStore } from '../../../../../store';
 import type { StorageFolder } from '../../../../../store/slices/storage/types';
 import { sceneClock } from '../../sceneClock';
 import { sceneParam } from './sceneParams';
+import {
+  LEARNING_TOPICS,
+  sceneSetContextItemStatus,
+  workspaceLearningsSeed,
+} from '../learningsSeed';
 
 const clock = sceneClock({ anchor: '2026-09-22T10:12:00.000Z' });
 
@@ -38,6 +43,7 @@ const SETTINGS_OVERRIDES: OverrideSettings = {
   resolveOnGithub: null,
   resolveCommitStyle: null,
   afterMerge: null,
+  defaultBranchTemplate: null,
 };
 
 export const SETTINGS_WORKSPACE: Workspace = {
@@ -49,7 +55,7 @@ export const SETTINGS_WORKSPACE: Workspace = {
     aboutWork:
       'Leads the payments platform team. Owns settlement correctness and the ledger schema.',
     workingRules: null,
-    explainMore: ['Rust'],
+    explainMore: LEARNING_TOPICS,
   },
   overrides: SETTINGS_OVERRIDES,
   createdAt: SETTINGS_NOW,
@@ -285,6 +291,14 @@ export const seedSettingsBase = (): void => {
     currentWorkspaceId: SETTINGS_WORKSPACE_ID,
     projects: [...SETTINGS_PROJECTS],
     workspaceOverrides: { [SETTINGS_WORKSPACE_ID]: SETTINGS_OVERRIDES },
+    workspaceLearnings: {
+      [SETTINGS_WORKSPACE_ID]: workspaceLearningsSeed({
+        workspaceId: SETTINGS_WORKSPACE_ID,
+        nowMs: Date.parse(SETTINGS_NOW),
+        sessionIdFor: (key) => `mock-settings-session-${key}` as SessionId,
+      }),
+    },
+    setContextItemStatus: sceneSetContextItemStatus,
     loadWorkspaceOverrides: async (workspaceId: WorkspaceId) => {
       const overrides = SIBLING_OVERRIDES[workspaceId];
       if (overrides === undefined) {

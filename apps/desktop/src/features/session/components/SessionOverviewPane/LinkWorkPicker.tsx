@@ -7,9 +7,20 @@ import type { LaunchExternalTask } from '../../../inbox/launchSpecFor';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { formatSpan } from '../../../../shared/utils/time/formatSpan';
+import { branchLeaf } from '../../../../store/slices/sessions/branchLeaf';
+import { LinkScopePreview } from './LinkScopePreview';
+import {
+  SCOPE_TAB_LABEL,
+  freeScope,
+  linkedLabel,
+  relationFor,
+  type LinkChoice,
+  type LinkScope,
+} from './linkScope';
 import {
   LINK_WORK_PROVIDER_LABEL,
   linkWorkView,
+  type LinkedScopes,
   type LinkWorkItem,
   type LinkWorkRow,
   type LinkWorkSource,
@@ -20,12 +31,13 @@ type Props = {
   readonly onQueryChange: (query: string) => void;
   readonly items: ReadonlyArray<LinkWorkItem>;
   readonly lookedUp: ReadonlyArray<LinkWorkItem>;
-  readonly linkedKeys: ReadonlySet<string>;
+  readonly linkedScopes: LinkedScopes;
   readonly sources: ReadonlyArray<SessionExternalTaskProvider>;
   readonly isLoading: boolean;
   readonly isLinking: boolean;
   readonly error: string | null;
-  readonly onLink: (task: LaunchExternalTask) => void;
+  readonly branch: string | null;
+  readonly onLink: (task: LaunchExternalTask, choice: LinkChoice) => void;
   readonly onClose: () => void;
 };
 
@@ -49,6 +61,9 @@ const placeholderOf = ({
     : `Search ${LIST_FORMAT.format(sources.map((source) => LINK_WORK_PROVIDER_LABEL[source]))} or paste a link`;
 
 const rowMeta = ({ row, now }: { readonly row: LinkWorkRow; readonly now: number }): string => {
+  if (row.linkedScopes.length > 0) {
+    return linkedLabel({ scopes: row.linkedScopes });
+  }
   if (row.section === 'inbox') {
     return formatSpan({ from: row.updatedAt, to: now });
   }
@@ -63,11 +78,12 @@ export const LinkWorkPicker = ({
   onQueryChange,
   items,
   lookedUp,
-  linkedKeys,
+  linkedScopes,
   sources,
   isLoading,
   isLinking,
   error,
+  branch,
   onLink,
   onClose,
 }: Props) => {
@@ -76,9 +92,11 @@ export const LinkWorkPicker = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const [source, setSource] = useState<LinkWorkSource>('all');
   const [activeIndex, setActiveIndex] = useState(0);
+  const [scope, setScope] = useState<LinkScope>('session');
+  const [isClosing, setIsClosing] = useState(true);
   const view = useMemo(
-    () => linkWorkView({ query, source, items, lookedUp, linkedKeys }),
-    [query, source, items, lookedUp, linkedKeys],
+    () => linkWorkView({ query, source, items, lookedUp, linkedScopes }),
+    [query, source, items, lookedUp, linkedScopes],
   );
   const rows = view.kind === 'unknownLink' ? [] : view.rows;
   const active = rows[Math.min(activeIndex, rows.length - 1)] ?? null;
@@ -93,12 +111,38 @@ export const LinkWorkPicker = ({
 
   const optionId = (key: string): string => `${listId}-${key}`;
 
+  const isDuplicate = (row: LinkWorkRow): boolean => row.linkedScopes.includes(scope);
+
   const link = (row: LinkWorkRow | null): void => {
-    if (row === null || isLinking) {
+    if (row === null || isLinking || isDuplicate(row)) {
       return;
     }
-    onLink(row.task);
+    onLink(row.task, { scope, relation: relationFor({ scope, isClosing }) });
   };
+
+  const pickScope = (next: LinkScope): void => {
+    setScope(next);
+    setIsClosing(true);
+  };
+
+  const scopeOptions = [
+    { value: 'session' as const, label: SCOPE_TAB_LABEL.session },
+    {
+      value: 'branch' as const,
+      label: SCOPE_TAB_LABEL.branch,
+      disabled: branch === null,
+      ...(branch === null
+        ? { hint: 'Open a branch first' }
+        : {
+            badge: (
+              <span className="max-w-36 truncate whitespace-nowrap font-mono text-faint-foreground">
+                {branchLeaf({ branch })}
+              </span>
+            ),
+          }),
+    },
+    { value: 'workspace' as const, label: SCOPE_TAB_LABEL.workspace },
+  ];
 
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
     switch (event.key) {
@@ -159,6 +203,15 @@ export const LinkWorkPicker = ({
           className="min-w-0 flex-1 bg-transparent text-body text-foreground outline-none placeholder:text-faint-foreground"
         />
       </div>
+      <div className="flex px-2 pb-2">
+        <SegmentedTabs
+          size="sm"
+          ariaLabel="Link scope"
+          options={scopeOptions}
+          value={scope}
+          onChange={pickScope}
+        />
+      </div>
       {sources.length > 1 && view.kind === 'list' ? (
         <div className="flex px-2 pb-2">
           <SegmentedTabs
@@ -217,7 +270,10 @@ export const LinkWorkPicker = ({
                 )}
                 onMouseMove={() => setActiveIndex(index)}
                 onMouseDown={(event) => event.preventDefault()}
-                onClick={() => link(row)}
+                onClick={() => {
+                  setActiveIndex(index);
+                  link(row);
+                }}
               >
                 <IntegrationGlyph provider={row.task.provider} size="xs" />
                 <span className="w-32 shrink-0 truncate text-code text-muted-foreground">
@@ -232,6 +288,30 @@ export const LinkWorkPicker = ({
           </ul>
         )}
       </ScrollFade>
+      {active === null ? null : (
+        <>
+          <LinkScopePreview
+            provider={active.task.provider}
+            identifier={active.task.identifier}
+            title={active.task.title}
+            scope={scope}
+            branch={branch}
+            isClosing={isClosing}
+            isLinking={isLinking}
+            {...(isDuplicate(active)
+              ? {
+                  duplicate: {
+                    scopes: active.linkedScopes,
+                    next: freeScope({ scopes: active.linkedScopes, hasBranch: branch !== null }),
+                  },
+                }
+              : {})}
+            onToggleClosing={() => setIsClosing((current) => !current)}
+            onLink={() => link(active)}
+            onCancel={onClose}
+          />
+        </>
+      )}
       {error !== null ? (
         <p role="alert" className="flex items-center gap-1 px-3 py-2 text-label text-danger">
           <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />

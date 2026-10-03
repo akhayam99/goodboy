@@ -10,6 +10,8 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, State};
 use thiserror::Error;
 
+use crate::attachment::sanitize_segment;
+use crate::chat_images::{ChatImageError, TurnImages};
 use crate::db::Db;
 use crate::live_child::{
     drain_tail_lossy, wait_and_remove, LiveChild, LiveChildRegistry, MAX_STDERR_BYTES,
@@ -99,6 +101,8 @@ pub enum ChatError {
     WriteArgument(String),
     #[error("chat not found: {0}")]
     NotFound(String),
+    #[error(transparent)]
+    Images(#[from] ChatImageError),
 }
 
 crate::util::impl_error_serialize!(ChatError);
@@ -116,6 +120,7 @@ impl ChatError {
             ChatError::MissingFolder => "missing_folder",
             ChatError::WriteArgument(_) => "write_argument",
             ChatError::NotFound(_) => "not_found",
+            ChatError::Images(_) => "images",
         }
     }
 }
@@ -145,6 +150,10 @@ pub struct ChatTurnArgs {
     pub system_prompt: Option<String>,
     #[serde(default)]
     pub effort: Option<String>,
+    #[serde(default)]
+    pub images: bool,
+    #[serde(default)]
+    pub message_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -270,14 +279,40 @@ fn load_chat_scope(conn: &Connection, chat_id: &str) -> Result<ChatScope, ChatEr
     Ok(ChatScope { provider, roots })
 }
 
-fn build_chat_cli_args(shape: &str, args: &ChatTurnArgs, roots: &ChatRoots) -> Vec<String> {
+const IMAGE_BLOCK_HEADER: &str =
+    "Images attached in this chat. Read the ones the question needs with your Read tool:";
+
+fn image_block(images: &TurnImages) -> String {
+    let mut lines = vec![IMAGE_BLOCK_HEADER.to_string()];
+    for image in &images.images {
+        let label = if image.is_current {
+            " (this message)"
+        } else {
+            ""
+        };
+        lines.push(format!(
+            "- {}{label}: {}",
+            sanitize_segment(&image.file_name),
+            image.path
+        ));
+    }
+    lines.join("\n")
+}
+
+fn build_chat_cli_args(
+    shape: &str,
+    args: &ChatTurnArgs,
+    roots: &ChatRoots,
+    images: Option<&TurnImages>,
+) -> Vec<String> {
     let allowed_tools: Vec<String> = CLAUDE_READ_TOOLS
         .iter()
         .map(|tool| tool.to_string())
         .collect();
     let disallowed_tools: Vec<String> = CLAUDE_DENIED.iter().map(|tool| tool.to_string()).collect();
-    let prompt = match (shape, args.system_prompt.as_deref()) {
-        ("codex", Some(system_prompt)) => format!("{system_prompt}\n\n{}", args.prompt),
+    let prompt = match (shape, args.system_prompt.as_deref(), images) {
+        ("codex", Some(system_prompt), _) => format!("{system_prompt}\n\n{}", args.prompt),
+        ("claude", _, Some(images)) => format!("{}\n\n{}", args.prompt, image_block(images)),
         _ => args.prompt.clone(),
     };
     let spawn = SpawnOneArgs {
@@ -306,27 +341,45 @@ fn build_chat_cli_args(shape: &str, args: &ChatTurnArgs, roots: &ChatRoots) -> V
     };
     let cli = turn_args(shape, &spawn);
     if shape == "codex" {
-        return harden_codex(cli);
+        return harden_codex(cli, images);
     }
-    harden_claude(cli, &prompt, &roots.read_roots)
+    let image_root = images.map(|images| images.root.as_str());
+    harden_claude(cli, &prompt, &roots.read_roots, image_root)
 }
 
-fn harden_codex(mut cli: Vec<String>) -> Vec<String> {
+fn harden_codex(mut cli: Vec<String>, images: Option<&TurnImages>) -> Vec<String> {
     let at = cli.iter().position(|arg| arg == "--").unwrap_or(cli.len());
-    let extra = [
+    let mut extra: Vec<String> = [
         "--ignore-user-config",
         "--ignore-rules",
         "--ephemeral",
         "-c",
         CODEX_NO_MCP,
-    ];
-    for (offset, arg) in extra.iter().enumerate() {
-        cli.insert(at + offset, arg.to_string());
+    ]
+    .iter()
+    .map(|arg| arg.to_string())
+    .collect();
+    for image in images
+        .map(|images| images.images.as_slice())
+        .unwrap_or_default()
+        .iter()
+        .filter(|image| image.is_current)
+    {
+        extra.push("--image".to_string());
+        extra.push(image.path.clone());
+    }
+    for (offset, arg) in extra.into_iter().enumerate() {
+        cli.insert(at + offset, arg);
     }
     cli
 }
 
-fn harden_claude(cli: Vec<String>, prompt: &str, read_roots: &[String]) -> Vec<String> {
+fn harden_claude(
+    cli: Vec<String>,
+    prompt: &str,
+    read_roots: &[String],
+    image_root: Option<&str>,
+) -> Vec<String> {
     let mut hardened: Vec<String> = Vec::with_capacity(cli.len() + 16);
     let mut skip_next = false;
     let mut replace_next = false;
@@ -361,7 +414,11 @@ fn harden_claude(cli: Vec<String>, prompt: &str, read_roots: &[String]) -> Vec<S
     }
     hardened.push(CLAUDE_READ_TOOLS.join(","));
     hardened.push("--no-session-persistence".to_string());
-    for root in read_roots {
+    for root in read_roots
+        .iter()
+        .map(|root| root.as_str())
+        .chain(image_root)
+    {
         hardened.push("--add-dir".to_string());
         hardened.push(root.to_string());
     }
@@ -442,6 +499,7 @@ fn prepare_chat_turn(
     args: &ChatTurnArgs,
     scope: &ChatScope,
     home: Option<&Path>,
+    images: Option<&TurnImages>,
 ) -> Result<PreparedChatTurn, ChatError> {
     if scope.provider != args.provider {
         return Err(ChatError::ProviderMismatch {
@@ -455,7 +513,14 @@ fn prepare_chat_turn(
         require_safe_value("effort", effort)?;
     }
     let roots = select_chat_roots(&scope.roots, home)?;
-    let cli = build_chat_cli_args(shape, args, &roots);
+    let images = images.filter(|images| {
+        !images.images.is_empty()
+            && !scope
+                .roots
+                .iter()
+                .any(|root| is_inside(&images.root, &trim_root(root)))
+    });
+    let cli = build_chat_cli_args(shape, args, &roots, images);
     assert_read_only(shape, &cli)?;
     Ok(PreparedChatTurn {
         binary: shape,
@@ -518,6 +583,7 @@ fn spawn_chat_turn(
     registry: &LiveChildRegistry,
     args: &ChatTurnArgs,
     prepared: PreparedChatTurn,
+    image_root: Option<PathBuf>,
 ) -> Result<String, ChatError> {
     let mut command = crate::path_env::command(prepared.binary);
     command.current_dir(&prepared.working_dir);
@@ -557,6 +623,9 @@ fn spawn_chat_turn(
         forward_lines(&sink, &live, stdout);
         let stderr_buf = stderr_handle.join().unwrap_or_default();
         let exit_code = wait_and_remove(&live, &registry_clone, &sink.run_id);
+        if let Some(root) = image_root.as_deref() {
+            crate::chat_images::remove_turn_root(root);
+        }
         sink.send(TurnEventPayload::End {
             exit_code,
             stderr: stderr_buf,
@@ -572,17 +641,38 @@ pub async fn chat_turn(
     db: State<'_, Db>,
     args: ChatTurnArgs,
 ) -> Result<String, ChatError> {
-    let scope = {
+    let (scope, images) = {
         let conn = db.0.lock().map_err(|_| ChatError::Poisoned)?;
-        load_chat_scope(&conn, &args.chat_id)?
+        let scope = load_chat_scope(&conn, &args.chat_id)?;
+        let images = if args.images {
+            crate::chat_images::load_chat_images(&conn, &args.chat_id)?
+        } else {
+            Vec::new()
+        };
+        (scope, images)
     };
     let scope = ChatScope {
         provider: scope.provider,
         roots: existing_roots(scope.roots),
     };
     let home: Option<PathBuf> = dirs::home_dir();
-    let prepared = prepare_chat_turn(&args, &scope, home.as_deref())?;
-    spawn_chat_turn(&app, &state.0, &args, prepared)
+    let turn_images = crate::chat_images::prepare_turn_images(
+        &args.chat_id,
+        &args.run_id,
+        &images,
+        args.message_id.as_deref(),
+    )?;
+    let image_root = turn_images
+        .as_ref()
+        .map(|images| PathBuf::from(&images.root));
+    let spawned = prepare_chat_turn(&args, &scope, home.as_deref(), turn_images.as_ref())
+        .and_then(|prepared| spawn_chat_turn(&app, &state.0, &args, prepared, image_root.clone()));
+    if spawned.is_err() {
+        if let Some(root) = image_root.as_deref() {
+            crate::chat_images::remove_turn_root(root);
+        }
+    }
+    spawned
 }
 
 #[tauri::command]
@@ -616,6 +706,8 @@ mod tests {
             prompt: "Where is the consent step defined?".to_string(),
             system_prompt: Some("Answer from the Harborline code.".to_string()),
             effort: Some("medium".to_string()),
+            images: false,
+            message_id: None,
         }
     }
 
@@ -630,7 +722,12 @@ mod tests {
     }
 
     fn prepare(args: &ChatTurnArgs) -> Result<PreparedChatTurn, ChatError> {
-        prepare_chat_turn(args, &scope_for(&args.provider), Some(Path::new(HOME)))
+        prepare_chat_turn(
+            args,
+            &scope_for(&args.provider),
+            Some(Path::new(HOME)),
+            None,
+        )
     }
 
     fn cli_for(provider: &str) -> Vec<String> {
@@ -815,10 +912,116 @@ mod tests {
     #[test]
     fn the_provider_comes_from_the_chat_row() {
         let args = args_for("codex");
-        let error = prepare_chat_turn(&args, &scope_for("anthropic"), Some(Path::new(HOME)))
+        let error = prepare_chat_turn(&args, &scope_for("anthropic"), Some(Path::new(HOME)), None)
             .err()
             .unwrap();
         assert!(matches!(error, ChatError::ProviderMismatch { .. }));
+    }
+
+    const IMAGE_ROOT: &str = "/private/var/folders/xy/T/goodboy-chat/run-1";
+
+    fn turn_images(root: &str) -> TurnImages {
+        TurnImages {
+            root: root.to_string(),
+            images: vec![
+                crate::chat_images::TurnImage {
+                    path: format!("{root}/0-checkout-502.png"),
+                    file_name: "checkout-502.png".to_string(),
+                    is_current: false,
+                },
+                crate::chat_images::TurnImage {
+                    path: format!("{root}/1-acme-trace.png"),
+                    file_name: "acme\ntrace.png".to_string(),
+                    is_current: true,
+                },
+            ],
+        }
+    }
+
+    fn prepare_with_images(provider: &str, root: &str) -> PreparedChatTurn {
+        let mut args = args_for(provider);
+        args.images = true;
+        prepare_chat_turn(
+            &args,
+            &scope_for(provider),
+            Some(Path::new(HOME)),
+            Some(&turn_images(root)),
+        )
+        .expect("read-only provider")
+    }
+
+    #[test]
+    fn claude_reads_chat_images_from_a_read_only_root_that_is_never_a_project() {
+        let prepared = prepare_with_images("anthropic", IMAGE_ROOT);
+        let cli = &prepared.cli;
+        assert_eq!(
+            prepared.working_dir,
+            "/Users/mara/code/harborline/payments-api"
+        );
+        let added: Vec<&str> = cli
+            .windows(2)
+            .filter(|pair| pair[0] == "--add-dir")
+            .map(|pair| pair[1].as_str())
+            .collect();
+        assert_eq!(
+            added,
+            vec!["/Users/mara/code/harborline/ledger-core", IMAGE_ROOT]
+        );
+        assert_eq!(flag_value(cli, "--permission-mode"), Some("plan"));
+        assert_eq!(flag_value(cli, "--tools"), Some("Read,Grep,Glob"));
+        assert!(!cli.iter().any(|arg| arg == "--image"));
+        let prompt = cli.last().unwrap();
+        assert!(prompt.starts_with("Where is the consent step defined?\n\n"));
+        assert!(prompt.contains(&format!(
+            "- checkout-502.png: {IMAGE_ROOT}/0-checkout-502.png"
+        )));
+        assert!(prompt.contains(&format!(
+            "- acme_trace.png (this message): {IMAGE_ROOT}/1-acme-trace.png"
+        )));
+        assert!(assert_read_only("claude", cli).is_ok());
+    }
+
+    #[test]
+    fn codex_attaches_only_the_images_of_the_new_message() {
+        let prepared = prepare_with_images("codex", IMAGE_ROOT);
+        let cli = &prepared.cli;
+        let separator = cli.iter().position(|arg| arg == "--").unwrap();
+        let attached: Vec<&str> = cli[..separator]
+            .windows(2)
+            .filter(|pair| pair[0] == "--image")
+            .map(|pair| pair[1].as_str())
+            .collect();
+        assert_eq!(attached, vec![format!("{IMAGE_ROOT}/1-acme-trace.png")]);
+        assert!(!cli.contains(&"--add-dir".to_string()));
+        assert!(!cli.last().unwrap().contains(IMAGE_ROOT));
+        assert!(assert_read_only("codex", cli).is_ok());
+    }
+
+    #[test]
+    fn an_image_root_inside_a_project_is_dropped() {
+        let inside = "/Users/mara/code/harborline/ledger-core/.cache/goodboy-chat/run-1";
+        let prepared = prepare_with_images("anthropic", inside);
+        assert!(!prepared.cli.iter().any(|arg| arg == inside));
+        assert!(!prepared.cli.last().unwrap().contains(inside));
+    }
+
+    #[test]
+    fn images_never_stand_in_for_a_missing_project() {
+        let mut args = args_for("anthropic");
+        args.images = true;
+        let scope = ChatScope {
+            provider: "anthropic".to_string(),
+            roots: vec![],
+        };
+        assert!(matches!(
+            prepare_chat_turn(
+                &args,
+                &scope,
+                Some(Path::new(HOME)),
+                Some(&turn_images(IMAGE_ROOT))
+            ),
+            Err(ChatError::MissingFolder)
+        ));
     }
 
     #[test]
@@ -839,6 +1042,8 @@ mod tests {
             ("binary", serde_json::json!("/tmp/evil")),
             ("allowedTools", serde_json::json!(["Bash"])),
             ("resumeSessionId", serde_json::json!("abc")),
+            ("imageRoot", serde_json::json!("/Users/mara")),
+            ("imagePaths", serde_json::json!(["/Users/mara/.ssh/id_rsa"])),
         ] {
             let mut payload = base.clone();
             payload[key] = value;

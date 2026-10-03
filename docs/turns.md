@@ -119,8 +119,14 @@ record a live turn already wrote wins.
 - A workflow step's first turn carries its predecessors' handoff summaries and
   the step prompt, and emits a `step_transition` event flagged `degraded` when
   the handoff it inherited was a fallback summary.
-- The session's context slots are prepended, filtered by what the agent kind
-  reads.
+- The session's context slots are prepended, filtered by what the turn's role
+  reads (`ROLE_SLOTS` in `slot-routing.ts`, one entry per role, so a new role
+  does not compile without one). The role is the step's role, or the one the
+  agent kind maps to; the same role picks the profile fields. Active
+  `session_context_items` whose audience names the role follow the slots as
+  "notes for your role". Both are resolved once per turn, before the prompt is
+  built. Setting `context.roleMap` to `false` goes back to the per-kind map and
+  sends no items.
 - A turn estimated at 85% or more of the model's context window raises a
   warning before it spawns.
 - `renderHandoff` (`@goodboy/core`) owns that stacking: from the composed
@@ -476,6 +482,18 @@ desktop state that reaches the mobile client through the snapshot, next to the
 paths-only `files_touched` slot the client falls back to. A git failure never
 fails the turn.
 
+## Learnings
+
+After a successful turn whose role received the "Explain more when the work
+touches" line, and only when that field has topics, the turn joins a learnings
+queue per agent (`learningQueue.ts`). One pass runs at a time per agent; turns
+that finish meanwhile are read together and the learning cites the merged turn
+range. It runs on the `learnings` task model (Defaults, Writing for you), off
+the summarizer queue, so no workflow step waits for it. A pass records its cost
+like the summarizer and writes `session_context_items` rows of kind `learning`
+only for concrete explanations of a listed topic. `context.learnings` set to
+`false` stops new passes.
+
 ## The session summarizer
 
 After each successful turn the session summarizer condenses what happened into
@@ -678,6 +696,32 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   database by chat id. The CLI runs in the first project (oldest first) and the
   other projects are extra read roots for Claude. It never widens to a shared
   parent folder, and never uses `/`, the home folder or a parent of it.
+- **Images.** The composer takes up to 10 PNG, JPEG, GIF or WebP images per
+  message, at most 10 MB each, by paste, drop or the paperclip. Before the
+  message is saved, `chat_attachment_write` stores each one read-only in the
+  app's `chat-attachments/<chat id>/` folder, next to the database, and the
+  message and its `chat_message_attachments` rows (m220) go in one
+  transaction. A failed image write sends nothing and puts the text and the
+  images back in the box. The frontend sends only `images: true` and the new
+  message id, never a path: Rust reads the chat's image rows and hard links
+  (or copies) them into a fresh temporary root, `goodboy-chat/<run id>/` in
+  the system temp folder, read-only, which it removes when the turn ends.
+  `~/.goodboy` stays on Claude's deny list, so the agent never reads the
+  store itself. Claude gets the root as one more `--add-dir`, never as the
+  working folder and never when it sits inside a project, and the prompt ends
+  with the list of image paths, the new message's marked "(this message)".
+  Codex gets the new message's images with `--image` (`codex exec --help`
+  lists the flag; the read-only probe ran on 0.160.0). Earlier messages name
+  their images in the history text. Deleting a chat removes its folder
+  (`chat_attachments_remove`). Every path that drops chats in bulk (a deleted
+  or merged workspace, a wiped database, any hygiene pass) leaves folders with
+  no `chats` row, and `chat_attachments_prune` removes those: after a merge,
+  after a wipe and at every boot. It skips a folder that is already gone. The thread loads each image through
+  `chat_attachment_read` as an object URL freed on unmount, and a user
+  message is memoized, so a streaming answer redraws only itself
+  (`ChatThread.redraw.test.tsx`, 50 images). The `chat.images` setting set
+  to `false` is the kill switch: no paperclip, no paste, and no image root
+  on any turn.
 - **Its own channel.** Output streams as `chat_event` with the chat id, never
   as `turn_event`, so no session sees it. There is no reload backlog: a reply
   still streaming when the window closes is marked stopped at the next load,
@@ -691,7 +735,8 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   trace. Codex reads through shell commands, so for Codex the trace takes the
   file arguments of `cat`, `nl`, `head`, `tail`, `sed -n`, `rg` or `grep` with
   a file, and `ls` of a file (`chatReadPath.ts`).
-- **Storage.** `chats`, `chat_messages` (m212) and `chat_session_links` (m214). A
+- **Storage.** `chats`, `chat_messages` (m212), `chat_session_links` (m214) and
+  `chat_message_attachments` (m220). A
   chat stores its model as a catalog key and, once the user sets one, an
   `effort` that the next turn uses instead of the effort the key implies.
   Every assistant message records the `provider`, `model` and `effort` that

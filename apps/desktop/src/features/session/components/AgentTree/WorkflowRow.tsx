@@ -85,7 +85,7 @@ type Props = {
   readonly workflowNameByRunId: ReadonlyMap<string, string>;
   readonly toggleWorkflowExpand: AppStore['toggleWorkflowExpand'];
   readonly startWorkflowRun: AppStore['startWorkflowRun'];
-  readonly setWorkflowRunAutoRun: AppStore['setWorkflowRunAutoRun'];
+  readonly setWorkflowRunAutonomy: AppStore['setWorkflowRunAutonomy'];
   readonly agentKindOverride: Readonly<Record<string, AgentKind>>;
   readonly agentModelOverride: Readonly<Record<string, string>>;
   readonly agentProviderOverride: Readonly<Record<string, ProviderId>>;
@@ -122,7 +122,7 @@ export const WorkflowRow = ({
   workflowNameByRunId,
   toggleWorkflowExpand,
   startWorkflowRun,
-  setWorkflowRunAutoRun,
+  setWorkflowRunAutonomy,
   agentKindOverride,
   agentModelOverride,
   agentProviderOverride,
@@ -319,7 +319,12 @@ export const WorkflowRow = ({
                       ) : null,
                       !isDiscarded && !isCompleted ? (
                         <span data-testid="run-autonomy-fact">
-                          {runAutonomyOf({ autoRun: run.autoRun }).label}
+                          {
+                            runAutonomyOf({
+                              autoRun: run.autoRun,
+                              autonomy: run.rulesSnapshot?.autonomy,
+                            }).label
+                          }
                         </span>
                       ) : null,
                     ]}
@@ -360,8 +365,8 @@ export const WorkflowRow = ({
                         isRunOver={isCompleted}
                         autonomyMenu={{
                           label: `When ${name} asks`,
-                          onAutoRun: (autoRun) =>
-                            void setWorkflowRunAutoRun(task.id, run.id, autoRun),
+                          onAutonomy: (autonomy) =>
+                            void setWorkflowRunAutonomy(task.id, run.id, autonomy),
                         }}
                       />
                     )}
@@ -455,6 +460,7 @@ export const WorkflowRow = ({
                       roleModels,
                       sessionProvider,
                       sessionEffort,
+                      run,
                     }}
                     selectedAgentId={selectedAgentId}
                     highlightedStepId={highlightedStepId}

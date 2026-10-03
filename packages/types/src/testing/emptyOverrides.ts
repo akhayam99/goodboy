@@ -3,6 +3,7 @@ import type { OverrideSettings } from '../settings';
 export const EMPTY_OVERRIDES: OverrideSettings = {
   defaultProviderId: null,
   defaultBranchPrefix: null,
+  defaultBranchTemplate: null,
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: null,
@@ -17,4 +18,5 @@ export const EMPTY_OVERRIDES: OverrideSettings = {
   resolveOnGithub: null,
   resolveCommitStyle: null,
   afterMerge: null,
+  workflowRules: null,
 };

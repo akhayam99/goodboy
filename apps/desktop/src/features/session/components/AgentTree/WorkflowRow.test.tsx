@@ -12,6 +12,7 @@ import type {
   Workflow,
   WorkflowId,
   WorkflowRun,
+  WorkflowAutonomy,
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
@@ -167,10 +168,10 @@ type RenderParams = {
   readonly childrenByParentId?: ReadonlyMap<string, Agent[]>;
   readonly onPickAgent?: (agentId: AgentId) => void;
   readonly startWorkflowRun?: (sessionId: SessionId, runId: WorkflowRunId) => Promise<void>;
-  readonly setWorkflowRunAutoRun?: (
+  readonly setWorkflowRunAutonomy?: (
     sessionId: SessionId,
     runId: WorkflowRunId,
-    autoRun: boolean,
+    autonomy: WorkflowAutonomy,
   ) => Promise<void>;
   readonly focusedWorkflowRunId?: WorkflowRunId | null;
   readonly taskOverride?: Session;
@@ -187,7 +188,7 @@ const renderDetail = ({
   childrenByParentId = new Map(),
   onPickAgent = vi.fn(),
   startWorkflowRun = vi.fn(async () => undefined),
-  setWorkflowRunAutoRun = vi.fn(async () => undefined),
+  setWorkflowRunAutonomy = vi.fn(async () => undefined),
   focusedWorkflowRunId = null,
   taskOverride = session,
   workflowExpand,
@@ -207,7 +208,7 @@ const renderDetail = ({
       workflowNameByRunId={new Map()}
       toggleWorkflowExpand={toggleWorkflowExpand}
       startWorkflowRun={startWorkflowRun}
-      setWorkflowRunAutoRun={setWorkflowRunAutoRun}
+      setWorkflowRunAutonomy={setWorkflowRunAutonomy}
       agentKindOverride={{}}
       agentModelOverride={{}}
       agentProviderOverride={{}}
@@ -360,14 +361,14 @@ describe('WorkflowRow detail dashboard', () => {
     expect(screen.queryByRole('switch', { name: 'Autorun' })).toBeNull();
   });
   it('changes when to ask from the header menu and names the choice in the facts', () => {
-    const setAutoRun = vi.fn(async () => undefined);
-    renderDetail({ runOverride: { ...run, autoRun: true }, setWorkflowRunAutoRun: setAutoRun });
+    const setAutonomy = vi.fn(async () => undefined);
+    renderDetail({ runOverride: { ...run, autoRun: true }, setWorkflowRunAutonomy: setAutonomy });
 
     expect(screen.getByTestId('run-autonomy-fact').textContent).toBe('Run on its own');
     fireEvent.click(screen.getByRole('button', { name: 'When Refactor asks' }));
     fireEvent.click(screen.getByRole('menuitemradio', { name: 'Ask before each step' }));
 
-    expect(setAutoRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID, false);
+    expect(setAutonomy).toHaveBeenCalledWith(SESSION_ID, RUN_ID, 'step');
   });
   it('pauses a static run from the header while a step is in flight', () => {
     const running = agents.map((agent, index) =>

@@ -7,7 +7,7 @@ import type {
   RemoteProbe,
   SessionProjectMount,
 } from '@goodboy/types';
-import { aProject, aSession, TEST_NOW } from '@goodboy/types/testing';
+import { aProject, aSession, EMPTY_OVERRIDES, TEST_NOW } from '@goodboy/types/testing';
 import { useAppStore, type AppStore } from '../../store';
 import type { GetFn, SetFn } from '../../slice-types';
 
@@ -173,7 +173,7 @@ describe('moveToBootstrap', () => {
         projectPath: '/games/cascadia',
         projectKey: PROJECT_ID,
         baseBranch: 'main',
-        slug: 'bootstrap',
+        branch: 'goodboy/bootstrap',
       }),
     );
     expect(createSession).toHaveBeenCalledWith(
@@ -270,6 +270,27 @@ describe('moveToBootstrap', () => {
     expect(createSession).not.toHaveBeenCalled();
   });
 
+  it('names the bootstrap branch with the workspace template and prefix, without a task', async () => {
+    const { set, get } = makeStore();
+    const project = get().projects[0];
+    if (project === undefined) {
+      throw new Error('the store has no project');
+    }
+    set({
+      workspaceOverrides: {
+        [project.workspaceId]: {
+          ...EMPTY_OVERRIDES,
+          defaultBranchPrefix: 'team/ak',
+          defaultBranchTemplate: '{prefix}/{task-id}-{slug}',
+        },
+      },
+    });
+
+    await moveToBootstrap(set, get)({ projectId: PROJECT_ID });
+
+    expect(h.prepare.mock.calls.map(([args]) => args.branch)).toEqual(['team/ak/bootstrap']);
+  });
+
   it('takes the next name when a branch called bootstrap already exists', async () => {
     h.prepare
       .mockRejectedValueOnce(new CommandError({ kind: 'branch_taken', message: 'taken' }))
@@ -278,7 +299,10 @@ describe('moveToBootstrap', () => {
 
     await moveToBootstrap(set, get)({ projectId: PROJECT_ID });
 
-    expect(h.prepare.mock.calls.map(([args]) => args.slug)).toEqual(['bootstrap', 'bootstrap-2']);
+    expect(h.prepare.mock.calls.map(([args]) => args.branch)).toEqual([
+      'goodboy/bootstrap',
+      'goodboy/bootstrap-2',
+    ]);
     expect(createSession).toHaveBeenCalledWith(
       expect.objectContaining({ existingBranch: 'goodboy/bootstrap-2' }),
     );

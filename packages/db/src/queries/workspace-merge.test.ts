@@ -124,6 +124,56 @@ describe('mergeWorkspaces', () => {
     expect(workspaces).toEqual([{ id: 'ws-source-b' }, { id: 'ws-target' }]);
   });
 
+  it('keeps the source learnings on the target, also those whose session was deleted', async () => {
+    const db = await seed();
+    await addSession({ db, id: 'sess-s', workspaceId: source });
+    const addItem = async (id: string, sessionId: string | null, workspaceId: WorkspaceId) =>
+      db.execute(
+        `INSERT INTO session_context_items
+           (id, session_id, workspace_id, kind, title, text, created_at, updated_at)
+         VALUES (?, ?, ?, 'learning', ?, 'text', ?, ?)`,
+        [id, sessionId, workspaceId, id, NOW, NOW],
+      );
+    await addItem('item-live', 'sess-s', source);
+    await addItem('item-orphan', null, source);
+    await addItem('item-other', null, sourceB);
+
+    await mergeWorkspaces({ db, sourceWorkspaceIds: [source], targetWorkspaceId: target });
+
+    const items = await db.select<{ id: string; session_id: string | null; workspace_id: string }>(
+      'SELECT id, session_id, workspace_id FROM session_context_items ORDER BY id',
+    );
+    expect(items).toEqual([
+      { id: 'item-live', session_id: 'sess-s', workspace_id: target },
+      { id: 'item-orphan', session_id: null, workspace_id: target },
+      { id: 'item-other', session_id: null, workspace_id: sourceB },
+    ]);
+  });
+
+  it('carries the board task links to the target and keeps the target copy on a clash', async () => {
+    const db = await seed();
+    const addTask = async (externalId: string, workspaceId: WorkspaceId, title: string) =>
+      db.execute(
+        `INSERT INTO workspace_external_tasks
+           (workspace_id, provider, external_id, identifier, url, title, created_at)
+         VALUES (?, 'linear', ?, ?, ?, ?, ?)`,
+        [workspaceId, externalId, externalId, `https://linear.example/${externalId}`, title, NOW],
+      );
+    await addTask('NW-1', target, 'target copy');
+    await addTask('NW-1', source, 'source copy');
+    await addTask('NW-2', source, 'only on source');
+
+    await mergeWorkspaces({ db, sourceWorkspaceIds: [source], targetWorkspaceId: target });
+
+    const tasks = await db.select<{ workspace_id: string; external_id: string; title: string }>(
+      'SELECT workspace_id, external_id, title FROM workspace_external_tasks ORDER BY external_id',
+    );
+    expect(tasks).toEqual([
+      { workspace_id: target, external_id: 'NW-1', title: 'target copy' },
+      { workspace_id: target, external_id: 'NW-2', title: 'only on source' },
+    ]);
+  });
+
   it('moves a workspace-level binding when the target lacks that provider', async () => {
     const db = await seed();
     await addProject({ db, id: 'proj-s', workspaceId: source });

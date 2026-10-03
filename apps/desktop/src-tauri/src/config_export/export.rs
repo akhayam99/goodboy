@@ -75,7 +75,7 @@ pub(super) fn build_bundle(
                     provider_bindings, task_models, role_models, parallel_agents,
                     provider_pool, attribution_footer, reply_voice, reply_style_note,
                     reply_template_fixed, reply_template_no_change, resolve_on_github,
-                    resolve_commit_style
+                    resolve_commit_style, default_branch_template, workflow_rules
              FROM workspaces
              WHERE deleted_at IS NULL AND disconnected_at IS NULL
              ORDER BY created_at ASC",
@@ -104,6 +104,8 @@ pub(super) fn build_bundle(
                     reply_template_no_change: row.get(16)?,
                     resolve_on_github: row.get::<_, Option<i64>>(17)?.map(|v| v != 0),
                     resolve_commit_style: row.get(18)?,
+                    default_branch_template: row.get(19)?,
+                    workflow_rules: json_text_to_value(row.get(20)?),
                 },
                 profile: None,
             })

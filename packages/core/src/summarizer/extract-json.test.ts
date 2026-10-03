@@ -39,4 +39,35 @@ describe('extractJson', () => {
   it('returns an empty string for an empty reply', () => {
     expect(extractJson({ raw: '   \n  ' })).toBe('');
   });
+
+  it.each([
+    ['a fenced json block at the edges', '```json\n{"a":1}\n```', '{"a":1}'],
+    ['an uppercase JSON tag', '```JSON\n{"a":1}\n```', '{"a":1}'],
+    ['a mixed case tag with mixed whitespace', '```Json  \t\n  [true]  \n\t```', '[true]'],
+    ['a fence with no tag', '```\n{"a":1}\n```', '{"a":1}'],
+    [
+      'a fence in the middle of prose',
+      'Here is the plan:\n```json\n[1, 2]\n```\nThanks.',
+      '[1, 2]',
+    ],
+    ['a non json tag in prose', 'see ```yaml\nkey: 1\n``` then', 'yaml\nkey: 1'],
+    ['an empty json fence', '```json\n```', '```json\n```'],
+    ['an empty fence', '```\n\n```', '```\n\n```'],
+    ['text with no fence', 'Nothing changed this turn.', 'Nothing changed this turn.'],
+  ])('matches the old fence regex for %s', (_label, raw, expected) => {
+    expect(extractJson({ raw })).toBe(expected);
+  });
+
+  it.each([
+    ['tabs after an open fence', `\`\`\`${'\t'.repeat(100_000)}`],
+    ['tabs before trailing text', `\`\`\`${'\t'.repeat(100_000)}x`],
+    ['a json tag and spaces before trailing text', `\`\`\`json${' '.repeat(100_000)}x`],
+  ])('returns fast on %s with no closing fence', (_label, raw) => {
+    const startedAt = performance.now();
+    const result = extractJson({ raw });
+    const elapsed = performance.now() - startedAt;
+
+    expect(result).toBe(raw.trim());
+    expect(elapsed).toBeLessThan(50);
+  });
 });

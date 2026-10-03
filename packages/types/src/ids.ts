@@ -22,6 +22,7 @@ export type PermissionRuleId = string & { readonly __brand: 'PermissionRuleId' }
 export type PermissionRequestId = string & { readonly __brand: 'PermissionRequestId' };
 
 export type SessionEventId = string & { readonly __brand: 'SessionEventId' };
+export type SessionContextItemId = string & { readonly __brand: 'SessionContextItemId' };
 
 export type SecurityFindingId = string & { readonly __brand: 'SecurityFindingId' };
 
@@ -35,3 +36,4 @@ export type IntegrationCredentialId = string & { readonly __brand: 'IntegrationC
 export type ChatId = string & { readonly __brand: 'ChatId' };
 export type ChatMessageId = string & { readonly __brand: 'ChatMessageId' };
 export type ChatSessionLinkId = string & { readonly __brand: 'ChatSessionLinkId' };
+export type ChatAttachmentId = string & { readonly __brand: 'ChatAttachmentId' };

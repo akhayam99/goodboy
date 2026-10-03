@@ -6,8 +6,10 @@ import { primaryProjectRoot } from '../../../workspace/primaryProjectRoot';
 import { WorkflowEditor } from '../WorkflowStudio/WorkflowEditor';
 import { ImportPopover } from '../WorkflowStudio/ImportPopover';
 import { SavedStepsList } from '../WorkflowStudio/SavedStepsList';
-import { StudioHomeTabs, type StudioHomeView } from '../WorkflowStudio/StudioHomeTabs';
+import { StudioHomeTabs } from '../WorkflowStudio/StudioHomeTabs';
+import type { StudioHomeView } from '../../studioHomeView';
 import { WorkflowList } from '../WorkflowStudio/WorkflowList';
+import { WorkflowRulesPanel } from '../WorkflowRulesPanel';
 import { useRemovedBuiltins } from '../../hooks/useRemovedBuiltins';
 import { useSavedSteps } from '../../hooks/useSavedSteps';
 import { isPresetWorkflow } from '../../isPresetWorkflow';
@@ -28,7 +30,9 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   const loadStepLibrary = useAppStore((state) => state.loadStepLibrary);
   const resetWorkflows = useAppStore((state) => state.resetWorkflows);
   const [isRestoring, setIsRestoring] = useState(false);
-  const [view, setView] = useState<StudioHomeView>('workflows');
+  const requestedView = useAppStore((state) => state.workflowStudioView);
+  const setWorkflowStudioView = useAppStore((state) => state.setWorkflowStudioView);
+  const [view, setView] = useState<StudioHomeView>(requestedView);
   const savedSteps = useSavedSteps({ workspaceId });
 
   const connectedProviders = useMemo<ReadonlyArray<ProviderId>>(
@@ -62,6 +66,13 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   }, [focusedWorkflowId, templates, openEditor, setWorkflowStudioFocus]);
 
   useEffect(() => () => setWorkflowStudioFocus({ workflowId: null }), [setWorkflowStudioFocus]);
+  useEffect(() => {
+    if (requestedView === 'workflows') {
+      return;
+    }
+    setView(requestedView);
+    setWorkflowStudioView('workflows');
+  }, [requestedView, setWorkflowStudioView]);
   const removedBuiltinIds = useRemovedBuiltins({ workspaceId, workflows: templates });
 
   useEffect(() => {
@@ -90,7 +101,12 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   return (
     <ScrollFade className="min-h-0 w-full flex-1">
       <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.body, 'flex flex-col')}>
-        {editor.editing !== null ? null : view === 'steps' ? (
+        {editor.editing !== null ? null : view === 'rules' ? (
+          <div className="flex min-w-0 flex-col gap-4">
+            {tabs}
+            <WorkflowRulesPanel workspaceId={workspaceId} />
+          </div>
+        ) : view === 'steps' ? (
           <SavedStepsList
             workspaceId={workspaceId}
             connectedProviders={connectedProviders}

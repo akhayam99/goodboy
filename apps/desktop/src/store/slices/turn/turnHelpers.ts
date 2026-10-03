@@ -153,6 +153,7 @@ type SummarizerQueueEntry = {
   readonly taskModelOverride?: TaskModelPreference;
   readonly turnCount?: number;
   readonly isRequested?: boolean;
+  readonly agentId?: AgentId;
 };
 
 type SummarizerTaskQueue = {
@@ -208,6 +209,8 @@ export const mergeQueuedSummarizerEntries = (
     oversizeRetried: false,
     turnCount: entryTurns({ entries }),
     ...(latest.taskModelOverride != null && { taskModelOverride: latest.taskModelOverride }),
+    ...(latest.agentId !== undefined &&
+      entries.every((entry) => entry.agentId === latest.agentId) && { agentId: latest.agentId }),
   };
 };
 
@@ -268,7 +271,7 @@ const mergeTelemetry = ({
   return [...recordsById.values()];
 };
 
-const scheduleIdle = ({ run }: { readonly run: () => void }): void => {
+export const scheduleIdle = ({ run }: { readonly run: () => void }): void => {
   if (typeof requestIdleCallback === 'function') {
     requestIdleCallback(() => run());
     return;
@@ -344,6 +347,7 @@ type EnqueueParams = {
   readonly turnOutput: string;
   readonly workingDir: string | null;
   readonly taskModelOverride?: TaskModelPreference;
+  readonly agentId?: AgentId;
 };
 
 export const enqueueSummarizer = ({
@@ -354,6 +358,7 @@ export const enqueueSummarizer = ({
   turnOutput,
   workingDir,
   taskModelOverride,
+  agentId,
 }: EnqueueParams): void => {
   enqueueSummarizerEntry({
     set,
@@ -365,6 +370,7 @@ export const enqueueSummarizer = ({
       workingDir,
       oversizeRetried: false,
       ...(taskModelOverride && { taskModelOverride }),
+      ...(agentId !== undefined && { agentId }),
     },
   });
 };
@@ -554,6 +560,7 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
         ...(entry.consolidatedAfter !== undefined && {
           consolidatedAfter: entry.consolidatedAfter,
         }),
+        ...(entry.agentId !== undefined && { agentId: entry.agentId }),
       });
       if (!isConsolidation && isLedgerOverBudget({ ledger: applied.ledger })) {
         enqueueContextConsolidation({

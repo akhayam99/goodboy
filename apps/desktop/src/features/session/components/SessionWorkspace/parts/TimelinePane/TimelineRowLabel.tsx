@@ -64,6 +64,10 @@ const detailOf = ({ entry, grade }: FactParams): string | null => {
   if (entry.kind === 'artifact' && grade === 'fact') {
     return entry.artifact.title;
   }
+  if (entry.kind === 'learning') {
+    const { topic, title } = entry.item;
+    return topic === null ? title : `${topic} · ${title}`;
+  }
   if (entry.kind !== 'event' || entry.projectRun != null) {
     return null;
   }
@@ -139,6 +143,9 @@ const segmentsOf = ({
       });
     }
     return sessionEventLabel({ event: entry.event });
+  }
+  if (entry.kind === 'learning') {
+    return [{ kind: 'text', text: 'Learned' }];
   }
   const isOpen = entry.questions.every((question) => question.status === 'open');
   const count = entry.questions.length;

@@ -1,6 +1,7 @@
-import { nextAvailableSlug } from '@goodboy/core';
+import { availableBranchName, slugify } from '@goodboy/core';
 import type { MountId } from '@goodboy/types';
 import { mountDirName } from '../../../../../../store/slices/project-mounts/mountDirName';
+import { branchLeaf } from '../../../../../../store/slices/sessions/branchLeaf';
 import type { MountPlan } from '../../../../../../store/slices/sessions/mountPlan';
 
 export type MountPreflight = {
@@ -33,11 +34,12 @@ export const resolveMountPreflight = ({ plan, repoBranches }: Params): MountPref
   if (!taken.includes(plan.branch)) {
     return proposed;
   }
-  const slug = nextAvailableSlug({ base: plan.baseSlug, prefix: plan.prefix, taken });
+  const branch = availableBranchName({ ...plan.naming, taken });
+  const slug = slugify({ input: branchLeaf({ branch }), fallback: plan.slug });
   return {
     mountId: plan.mountId,
     slug,
-    branch: `${plan.prefix}/${slug}`,
+    branch,
     baseBranch: plan.baseBranch,
     targetPath: `${plan.project.rootPath}/.goodboy/worktrees/${mountDirName({
       sessionSlug: slug,

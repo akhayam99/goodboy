@@ -59,7 +59,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'A branch only when needed',
-        desc: 'A project gets its own worktree and branch only when an agent needs to edit it, so your own checkout stays as it is.',
+        desc: 'A project gets its own worktree and branch only when an agent needs to edit it, so your own checkout stays as it is. New sessions, in workspace settings, sets the branch name: task id first, without a task id, or Custom with placeholders.',
       },
       {
         term: 'One window per workspace',
@@ -71,7 +71,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'About you',
-        desc: 'Tell agents once who you are and how you like to work. Settings shows which role reads each part.',
+        desc: 'Tell agents once who you are and how you like to work. Settings shows which role reads each part. Topics under Explain more when it touches collect what agents explained about them, in Learned.',
       },
       {
         term: 'Pinned scripts',
@@ -154,7 +154,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Chat',
-        desc: 'Chat, right of Board, answers a question about the whole workspace without a session. It only reads, on Claude or Codex, with the model and effort you pick for each chat. Make default in the picker saves them for new chats in the workspace. Start work drafts a brief, and Start session opens a new session with it, nothing running yet, or Add to a session leaves it in the message box of one you pick. Each chat row shows its model. Pin and archive a chat from its menu, delete it from its row or header, or select several and archive or delete them together.',
+        desc: 'Chat, right of Board, answers a question about the whole workspace without a session. It only reads, on Claude or Codex, with the model and effort you pick for each chat. Make default in the picker saves them for new chats in the workspace. Start work drafts a brief, and Start session opens a new session with it, nothing running yet, or Add to a session leaves it in the message box of one you pick. Paste, drop or attach up to 10 images to a message, and Claude or Codex reads them. Each chat row shows its model. Pin and archive a chat from its menu, delete it from its row or header, or select several and archive or delete them together.',
       },
       {
         term: 'Start blank',
@@ -188,7 +188,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Select many',
-        desc: 'Tick the checkbox before a title, press X on a card, or lasso or modifier-click cards across columns. The bar at the bottom archives, restores or deletes them together, and Esc clears. Lists with checkboxes elsewhere use the same bar.',
+        desc: 'Tick the checkbox that shows when you point at a card, press X on a card, or lasso or modifier-click cards across columns. The bar at the bottom archives, restores or deletes them together, and Esc clears. Lists with checkboxes elsewhere use the same bar.',
+      },
+      {
+        term: 'Ongoing',
+        desc: 'Tasks linked to the whole workspace sit in the Ongoing row. Pick one to show only its sessions.',
       },
       {
         term: 'Now chip',
@@ -222,6 +226,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Start from Refactor, Plan and ship or Fix a bug, or build your own. Each step follows its role or pins a model, and its menu holds Duplicate, Save as step, Move and Delete, with Undo. Restore built-in workflows, in the menu next to New workflow, brings back a built-in you deleted or changed. Deleting a run deletes its agents and their open questions.',
       },
       {
+        term: 'Rules',
+        desc: 'The Rules tab in Workflows sets what new runs start with: when to ask, a spend cap and standing guidance. Spread by what I have left sends steps to the provider with room. A run keeps the copy of the rules it started with.',
+      },
+      {
         term: 'Orchestrated',
         desc: 'Give a goal and let a model pick each next step with a reason, until it says done or blocked. Hints steer it while it runs, with several lines, markdown and images.',
       },
@@ -230,8 +238,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Pause lets the step in flight finish and starts nothing new. Resume picks up where the run was, Skip step cancels the step that is running, and Stop run ends it now. A step quiet for 15 minutes offers Ask it to continue.',
       },
       {
-        term: 'Autorun',
-        desc: 'A run can move to its next step without you. A guard stops an agent after 4 unattended turns in an hour.',
+        term: 'When to ask',
+        desc: 'Ask before each step, Ask after the plan or Run on its own. Ask after the plan waits once on the plan, and Approve plan runs the rest without you. A guard stops an agent after 4 unattended turns in an hour.',
       },
       {
         term: 'Open questions',
@@ -257,7 +265,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Context drawer',
-        desc: 'Open the goal, decisions and summary from any session page, and Copy as brief. A dot on Context means something changed since you last looked, and those changes come first. Context updates, at the top, shows the last update with its model and cost, and Update now queues one.',
+        desc: 'Open the goal, decisions and summary from any session page, and Copy as brief. A dot on Context means something changed since you last looked, and those changes come first. Context updates, at the top, shows the last update with its model and cost, and Update now queues one. Learned lists what agents explained about your topics, for you only, with Dismiss and Undo.',
+      },
+      {
+        term: 'Visible to',
+        desc: 'Each tab of the drawer says which roles receive it. Reviewers, debuggers and resolvers also read the decisions.',
       },
       {
         term: 'What the agent received',
@@ -283,7 +295,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Start from anything',
-        desc: 'Launch a session from an issue, a Slack thread or an error, with the brief already drafted. Link to a session attaches the item to one you already have, and Link work on a session, or L, searches your trackers from there.',
+        desc: 'Launch a session from an issue, a Slack thread or an error, with the brief already drafted. Link to a session attaches the item to one you already have, and Link work on a session, or L, searches your trackers from there. Link a task to This session, This branch or Whole workspace, and pick whether merging closes it.',
       },
       {
         term: 'Slack',
@@ -500,7 +512,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'App and workspace',
-        desc: 'Theme, updates and shortcuts are app-wide. Projects, About you, New sessions, After merge, Review replies, Permissions and Skills are pages of a workspace.',
+        desc: 'Theme, updates and shortcuts are app-wide. Projects, About you, New sessions, Workflow rules, After merge, Review replies, Permissions and Skills are pages of a workspace.',
       },
       {
         term: 'Copy and restore',

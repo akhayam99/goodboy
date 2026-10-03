@@ -62,8 +62,7 @@ import { resolveMountPreflight } from './resolveMountPreflight';
 const planFor = (overrides: Partial<MountPlan> = {}): MountPlan => ({
   project: repoProject,
   mountId: MID,
-  prefix: 'ak',
-  baseSlug: 'ship-it',
+  naming: { template: '{prefix}/{task-id}-{slug}', values: { prefix: 'ak', slug: 'ship-it' } },
   slug: 'ship-it',
   branch: 'ak/ship-it',
   adoptedBranch: null,
@@ -112,7 +111,7 @@ describe('resolveMountPreflight', () => {
   it('suffixes from the base slug once when the planned suffix is also taken in the repository', () => {
     const resolved = resolveMountPreflight({
       plan: planFor({
-        baseSlug: 'x',
+        naming: { template: '{prefix}/{slug}', values: { prefix: 'ak', slug: 'x' } },
         slug: 'x-2',
         branch: 'ak/x-2',
         targetPath: '/repos/goodboy/.goodboy/worktrees/x-2-mount-1',
@@ -159,7 +158,7 @@ describe('useMountPreflight', () => {
   });
 
   it('shows the plan while checking, then the repository verdict', async () => {
-    const derived = `${DEFAULT_BRANCH_PREFIX}/ship-the-rebase-row-ab12cd34`;
+    const derived = `${DEFAULT_BRANCH_PREFIX}/ship-the-rebase-row`;
     h.listBranchNames.mockResolvedValue(['main', derived]);
     const { result } = renderHook(() =>
       useMountPreflight({ sessionId: SID, project: repoProject }),
@@ -182,9 +181,7 @@ describe('useMountPreflight', () => {
 
     await waitFor(() => expect(result.current.status).toBe('ready'));
     expect(result.current.branchScanError).toContain('not a git repository');
-    expect(result.current.preflight?.branch).toBe(
-      `${DEFAULT_BRANCH_PREFIX}/ship-the-rebase-row-ab12cd34`,
-    );
+    expect(result.current.preflight?.branch).toBe(`${DEFAULT_BRANCH_PREFIX}/ship-the-rebase-row`);
   });
 
   it('skips the branch scan for a folder project', async () => {

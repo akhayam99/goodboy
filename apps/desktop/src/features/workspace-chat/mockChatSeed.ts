@@ -2,6 +2,7 @@ import type {
   Chat,
   EffortLevel,
   ProviderId,
+  ChatAttachmentId,
   ChatId,
   ChatMessage,
   ChatMessageId,
@@ -9,7 +10,8 @@ import type {
   ChatSessionLinkId,
   IsoDateTime,
 } from '@goodboy/types';
-import type { ChatSeed, ChatSeedParams } from './createMemoryChatBackend';
+import type { ChatSeed, ChatSeedImage, ChatSeedParams } from './createMemoryChatBackend';
+import { MOCK_CHAT_IMAGE_NAME, mockChatImageBlob } from './mockChatImage';
 import { MOCK_ARCHIVED_CHATS } from './mockArchivedChats';
 import { MOCK_CHAT_ANSWERS } from './mockChatAnswers';
 import { mockChatSessionId, type MockChatSessionKey } from './mockChatSessions';
@@ -39,6 +41,7 @@ type SeedChat = {
   readonly isPinned: boolean;
   readonly linkedSession?: MockChatSessionKey;
   readonly followUp?: FollowUp;
+  readonly hasImage?: boolean;
 };
 
 const SEED_CHATS: ReadonlyArray<SeedChat> = [
@@ -63,6 +66,7 @@ const SEED_CHATS: ReadonlyArray<SeedChat> = [
     ageMs: 5 * HOUR_MS,
     isPinned: false,
     routing: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+    hasImage: true,
   },
   {
     key: 'changes',
@@ -115,6 +119,7 @@ export const mockChatSeed = ({ workspaceId, now = Date.now() }: Params): ChatSee
   const chats: Chat[] = [];
   const messages: ChatMessage[] = [];
   const links: ChatSessionLink[] = [];
+  const images: ChatSeedImage[] = [];
   for (const seed of SEED_CHATS) {
     const answer = MOCK_CHAT_ANSWERS.find((candidate) => candidate.key === seed.key);
     if (answer === undefined) {
@@ -124,6 +129,11 @@ export const mockChatSeed = ({ workspaceId, now = Date.now() }: Params): ChatSee
     const askedAt = isoAt({ ms: now - seed.ageMs - 60_000 });
     const answeredAt = isoAt({ ms: now - seed.ageMs });
     const routing = seed.routing ?? DEFAULT_ROUTING;
+    const questionId = `${chatId}-question` as ChatMessageId;
+    const imageId = `${chatId}-image` as ChatAttachmentId;
+    if (seed.hasImage === true) {
+      images.push({ chatId, attachmentId: imageId, blob: mockChatImageBlob() });
+    }
     chats.push({
       id: chatId,
       workspaceId,
@@ -139,12 +149,27 @@ export const mockChatSeed = ({ workspaceId, now = Date.now() }: Params): ChatSee
     });
     messages.push(
       {
-        id: `${chatId}-question` as ChatMessageId,
+        id: questionId,
         chatId,
         role: 'user',
         content: answer.question,
         status: 'done',
         reads: [],
+        attachments:
+          seed.hasImage === true
+            ? [
+                {
+                  id: imageId,
+                  chatId,
+                  messageId: questionId,
+                  position: 0,
+                  fileName: MOCK_CHAT_IMAGE_NAME,
+                  mimeType: 'image/png',
+                  byteSize: 41_200,
+                  createdAt: askedAt,
+                },
+              ]
+            : [],
         error: null,
         provider: null,
         model: null,
@@ -159,6 +184,7 @@ export const mockChatSeed = ({ workspaceId, now = Date.now() }: Params): ChatSee
         content: answer.text,
         status: 'done',
         reads: answer.reads,
+        attachments: [],
         error: null,
         provider: routing.provider,
         model: routing.model,
@@ -178,6 +204,7 @@ export const mockChatSeed = ({ workspaceId, now = Date.now() }: Params): ChatSee
           content: seed.followUp.question,
           status: 'done',
           reads: [],
+          attachments: [],
           error: null,
           provider: null,
           model: null,
@@ -192,6 +219,7 @@ export const mockChatSeed = ({ workspaceId, now = Date.now() }: Params): ChatSee
           content: seed.followUp.answer,
           status: 'done',
           reads: seed.followUp.reads,
+          attachments: [],
           error: null,
           provider: 'codex',
           model: 'gpt-5.6-sol',
@@ -237,6 +265,7 @@ export const mockChatSeed = ({ workspaceId, now = Date.now() }: Params): ChatSee
         content: archived.question,
         status: 'done',
         reads: [],
+        attachments: [],
         error: null,
         provider: null,
         model: null,
@@ -251,6 +280,7 @@ export const mockChatSeed = ({ workspaceId, now = Date.now() }: Params): ChatSee
         content: archived.answer,
         status: 'done',
         reads: [],
+        attachments: [],
         error: null,
         provider: 'anthropic',
         model: 'sonnet-5',
@@ -260,5 +290,5 @@ export const mockChatSeed = ({ workspaceId, now = Date.now() }: Params): ChatSee
       },
     );
   }
-  return { chats, messages, links };
+  return { chats, messages, links, images };
 };

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Unlink } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
-import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import type {
   RecordFrame,
   RecordVerb,
@@ -9,6 +8,7 @@ import type {
 import { useOpenSession } from '../../../../shared/hooks/useOpenSession';
 import { useAppStore } from '../../../../store';
 import { LaunchSessionPopover } from '../../components/LaunchSessionPopover';
+import { LinkedSessionButtons } from '../../components/LinkedSessionButtons';
 import { LinkToSessionPicker } from '../../components/LinkToSessionPicker';
 import { launchSpecFor } from '../../launchSpecFor';
 import { useLaunchMount } from '../../useLaunchMount';
@@ -54,7 +54,10 @@ export const useRecordFrame = ({
 
   const primary =
     spec == null ? null : linkedSessionId != null ? (
-      <OpenSessionButton sessionId={linkedSessionId} onOpened={onLaunched} />
+      <LinkedSessionButtons
+        sessionIds={record.linkedSessionIds ?? [linkedSessionId]}
+        onOpened={onLaunched}
+      />
     ) : (
       <>
         <LaunchSessionPopover

@@ -2,6 +2,7 @@ import type { ProjectId, SessionId, WorkflowId, WorkspaceId } from './ids';
 import type { ProviderPolicy } from './provider-policy';
 import type { EffortLevel, ProviderId } from './provider-registry';
 import type { AgentRole } from './workflow';
+import type { WorkflowRules } from './workflow-rules';
 
 export type VerbosityLevel = 'brief' | 'normal' | 'verbose';
 
@@ -9,6 +10,7 @@ export type ProviderBindings = Partial<Record<ProviderId, string>>;
 
 export type AuxTaskId =
   | 'summarizer'
+  | 'learnings'
   | 'plan_generation'
   | 'prose_polish'
   | 'agent_naming'
@@ -61,6 +63,7 @@ export type RoleModelPreferences = Readonly<Partial<Record<AgentRole, RoleModelP
 export type OverrideSettings = Readonly<{
   defaultProviderId: ProviderId | null;
   defaultBranchPrefix: string | null;
+  defaultBranchTemplate: string | null;
   defaultVerbosity: VerbosityLevel | null;
   providerBindings: ProviderBindings | null;
   taskModels: TaskModelPreferences | null;
@@ -75,6 +78,7 @@ export type OverrideSettings = Readonly<{
   resolveOnGithub: boolean | null;
   resolveCommitStyle: ResolveCommitStyle | null;
   afterMerge: AfterMergeRule | null;
+  workflowRules?: WorkflowRules | null;
 }>;
 
 export const REPLY_VOICES = ['terse', 'friendly', 'formal', 'mine'] as const;

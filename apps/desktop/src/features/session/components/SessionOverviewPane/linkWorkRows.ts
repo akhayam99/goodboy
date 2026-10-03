@@ -1,6 +1,7 @@
 import type { SessionExternalTaskProvider } from '@goodboy/types';
 import type { LaunchExternalTask } from '../../../inbox/launchSpecFor';
 import { compareIsoDesc } from '../../../../shared/utils/compareIsoDesc';
+import type { LinkScope } from './linkScope';
 import { resolvePastedIssueCandidate } from '../SessionWorkspace/parts/IntegrationPane/resolvePastedIssueCandidate';
 
 export type LinkWorkSource = SessionExternalTaskProvider | 'all';
@@ -14,7 +15,14 @@ export type LinkWorkItem = {
 
 export type LinkWorkRow = LinkWorkItem & {
   readonly section: 'inbox' | 'results' | 'paste';
+  readonly linkedScopes: ReadonlyArray<LinkScope>;
 };
+
+export type LinkedScopes = ReadonlyMap<string, ReadonlyArray<LinkScope>>;
+
+const ALL_SCOPES: ReadonlyArray<LinkScope> = ['session', 'branch', 'workspace'];
+
+const NO_SCOPES: ReadonlyArray<LinkScope> = [];
 
 export type LinkWorkView =
   | { readonly kind: 'paste'; readonly rows: ReadonlyArray<LinkWorkRow> }
@@ -99,7 +107,7 @@ type ViewParams = {
   readonly source: LinkWorkSource;
   readonly items: ReadonlyArray<LinkWorkItem>;
   readonly lookedUp: ReadonlyArray<LinkWorkItem>;
-  readonly linkedKeys: ReadonlySet<string>;
+  readonly linkedScopes: LinkedScopes;
 };
 
 const matchesQuery = ({
@@ -119,20 +127,27 @@ export const linkWorkView = ({
   source,
   items,
   lookedUp,
-  linkedKeys,
+  linkedScopes,
 }: ViewParams): LinkWorkView => {
+  const scopesOf = (key: string): ReadonlyArray<LinkScope> => linkedScopes.get(key) ?? NO_SCOPES;
   if (isLinkLike({ value: query })) {
     const hit = lookedUp[0];
     if (hit !== undefined) {
-      return { kind: 'paste', rows: [{ ...hit, section: 'paste' }] };
+      return {
+        kind: 'paste',
+        rows: [{ ...hit, section: 'paste', linkedScopes: scopesOf(hit.key) }],
+      };
     }
     const task = pastedTaskOf({ value: query });
     if (task === null) {
       return { kind: 'unknownLink' };
     }
+    const key = taskKey({ task });
     return {
       kind: 'paste',
-      rows: [{ key: taskKey({ task }), task, status: '', updatedAt: '', section: 'paste' }],
+      rows: [
+        { key, task, status: '', updatedAt: '', section: 'paste', linkedScopes: scopesOf(key) },
+      ],
     };
   }
   const words = query
@@ -141,7 +156,7 @@ export const linkWorkView = ({
     .split(/\s+/)
     .filter((word) => word !== '');
   const fits = (item: LinkWorkItem): boolean =>
-    !linkedKeys.has(item.key) &&
+    !ALL_SCOPES.every((scope) => scopesOf(item.key).includes(scope)) &&
     (source === 'all' || item.task.provider === source) &&
     matchesQuery({ item, words });
   const recent = [...items]
@@ -163,8 +178,16 @@ export const linkWorkView = ({
   return {
     kind: 'list',
     rows: [
-      ...inbox.map((item): LinkWorkRow => ({ ...item, section: 'inbox' })),
-      ...results.map((item): LinkWorkRow => ({ ...item, section: 'results' })),
+      ...inbox.map((item): LinkWorkRow => ({
+        ...item,
+        section: 'inbox',
+        linkedScopes: scopesOf(item.key),
+      })),
+      ...results.map((item): LinkWorkRow => ({
+        ...item,
+        section: 'results',
+        linkedScopes: scopesOf(item.key),
+      })),
     ],
   };
 };

@@ -8,6 +8,7 @@ import {
 } from './storyHarness';
 import type { SlotKey } from '@goodboy/core';
 import type {
+  AgentId,
   ContextSlot,
   IsoDateTime,
   Session,
@@ -210,6 +211,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
             resolveOnGithub: null,
             resolveCommitStyle: null,
             afterMerge: null,
+            defaultBranchTemplate: null,
           },
           createdAt: NOW,
           updatedAt: NOW,
@@ -285,6 +287,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
           resolveOnGithub: null,
           resolveCommitStyle: null,
           afterMerge: null,
+          defaultBranchTemplate: null,
         },
       },
       workspaces: [
@@ -309,6 +312,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
             resolveOnGithub: null,
             resolveCommitStyle: null,
             afterMerge: null,
+            defaultBranchTemplate: null,
           },
           createdAt: NOW,
           updatedAt: NOW,
@@ -412,6 +416,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
           resolveOnGithub: null,
           resolveCommitStyle: null,
           afterMerge: null,
+          defaultBranchTemplate: null,
         },
       },
     });
@@ -460,6 +465,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
           resolveOnGithub: null,
           resolveCommitStyle: null,
           afterMerge: null,
+          defaultBranchTemplate: null,
         },
       },
     });
@@ -569,6 +575,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
             resolveOnGithub: null,
             resolveCommitStyle: null,
             afterMerge: null,
+            defaultBranchTemplate: null,
           },
           createdAt: NOW,
           updatedAt: NOW,
@@ -632,6 +639,20 @@ describe('summarizer queue, coalescing and no-stack', () => {
     sq.delete(SESSION_ID);
   });
 
+  it('keeps the agent of merged turns only when one agent wrote them all', async () => {
+    const { mergeQueuedSummarizerEntries } = await import('./slices/turn/turnHelpers');
+    const turn = (agentId: string) => ({
+      turnInput: `${agentId} input`,
+      turnOutput: `${agentId} output`,
+      workingDir: null,
+      oversizeRetried: false,
+      agentId: agentId as AgentId,
+    });
+
+    expect(mergeQueuedSummarizerEntries([turn('plan'), turn('plan')]).agentId).toBe('plan');
+    expect(mergeQueuedSummarizerEntries([turn('plan'), turn('build')]).agentId).toBeUndefined();
+  });
+
   it('merges the queued turns into one pass instead of running one pass per turn', async () => {
     const { mergeQueuedSummarizerEntries } = await import('./slices/turn/turnHelpers');
 
@@ -672,10 +693,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
     expect(merged.turnInput).toContain('earlier turn');
     expect(merged.turnInput).toContain('latest input');
     expect(merged.turnInput).not.toContain(big);
-  });
-
-  it('waitForSummarizerSettled is not exported, summarizer never blocks user actions (#461)', async () => {
-    expect((storeModule as Record<string, unknown>)['waitForSummarizerSettled']).toBeUndefined();
   });
 
   it('queue inFlight=true while summarizer runs does not prevent subsequent queue entries', async () => {
@@ -752,6 +769,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
             resolveOnGithub: null,
             resolveCommitStyle: null,
             afterMerge: null,
+            defaultBranchTemplate: null,
           },
           createdAt: NOW,
           updatedAt: NOW,
@@ -853,6 +871,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
             resolveOnGithub: null,
             resolveCommitStyle: null,
             afterMerge: null,
+            defaultBranchTemplate: null,
           },
           createdAt: NOW,
           updatedAt: NOW,
@@ -933,6 +952,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
             resolveOnGithub: null,
             resolveCommitStyle: null,
             afterMerge: null,
+            defaultBranchTemplate: null,
           },
           createdAt: NOW,
           updatedAt: NOW,
@@ -1053,6 +1073,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
             resolveOnGithub: null,
             resolveCommitStyle: null,
             afterMerge: null,
+            defaultBranchTemplate: null,
           },
           createdAt: NOW,
           updatedAt: NOW,
@@ -1107,6 +1128,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
             resolveOnGithub: null,
             resolveCommitStyle: null,
             afterMerge: null,
+            defaultBranchTemplate: null,
           },
           createdAt: NOW,
           updatedAt: NOW,

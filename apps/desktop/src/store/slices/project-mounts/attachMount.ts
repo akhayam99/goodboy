@@ -20,7 +20,7 @@ import {
 } from './mountOperations';
 import { applyMountViews, loadMountViews, requireMountView } from './mountViews';
 import { requireMountContext } from './requireMountContext';
-import { resolveSessionSlug, splitBranchName } from './resolveMountNaming';
+import { resolveSessionSlug } from './resolveMountNaming';
 import type { AttachMountInput, GetFn, SetFn } from './types';
 
 type ReuseParams = {
@@ -99,18 +99,12 @@ export const attachMount = (set: SetFn, get: GetFn) => {
               mountId,
             });
           }
-          const prefixed = splitBranchName({ branch: view.branch });
-          const sessionSlug = resolveSessionSlug({
-            get,
-            session,
-            prefix: prefixed.branchPrefix,
-          });
+          const sessionSlug = resolveSessionSlug({ get, session, project });
           await rememberWorktreeRoot({ repoRoot: view.repoRoot, addedBy: 'mount' });
           try {
             const created = await createWorktree({
               repoPath: view.repoRoot,
-              branchPrefix: prefixed.branchPrefix,
-              slug: prefixed.branchSlug,
+              branchName: view.branch,
               parentDir: `${view.repoRoot}/.goodboy/worktrees`,
               dirName: mountDirName({ sessionSlug, mountId }),
               existingBranch: view.branch,

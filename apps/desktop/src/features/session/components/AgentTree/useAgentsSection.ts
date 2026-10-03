@@ -23,7 +23,7 @@ import { useOpenQuestions } from '../../../context/components/QuestionsTab/useOp
 import { resolveWorkflowAdvance, type WorkflowBlockReason } from '../../../workflows/advanceGate';
 import { viewWorkflowAdvance } from '../../../workflows/workflowAdvanceView';
 import { WORKFLOW_BLOCK_COPY } from '../../../workflows/blockCopy';
-import { isRunPaused } from '../../../workflows/isRunPaused';
+import { heldAdmissionBlock } from '../../../../store/slices/workflows/workflowPlanApproval';
 import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate';
 import { classifyAgent, type AgentKind } from '../../agent-kind';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';
@@ -116,7 +116,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
   const attachedRuns = useAttachedWorkflowRuns({ session: task });
-  const setWorkflowRunAutoRun = useAppStore((s) => s.setWorkflowRunAutoRun);
+  const setWorkflowRunAutonomy = useAppStore((s) => s.setWorkflowRunAutonomy);
   const startWorkflowRun = useAppStore((s) => s.startWorkflowRun);
   const workflowNameByRunId = useMemo(() => {
     const map = new Map<string, string>();
@@ -167,7 +167,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
         }),
       });
       actionableStepIdByRunId.set(run.id, run.discardedAt ? null : (view.chainStep?.id ?? null));
-      blockReasonByRunId.set(run.id, isRunPaused({ run }) ? 'paused' : view.blockReason);
+      blockReasonByRunId.set(run.id, heldAdmissionBlock({ run }) ?? view.blockReason);
     }
     return { actionableStepIdByRunId, blockReasonByRunId };
   }, [attachedRuns, tree.agentsByRunId, openQuestions, summarizerBusy, agentTurnState]);
@@ -262,7 +262,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
     onStartStepAgent,
     selectedAgentId,
     setPanelSectionExpanded,
-    setWorkflowRunAutoRun,
+    setWorkflowRunAutonomy,
     spawnError,
     standaloneAgentCount,
     startWorkflowRun: onStartWorkflowRun,

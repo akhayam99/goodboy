@@ -47,6 +47,7 @@ const overrides = {
   resolveOnGithub: null,
   resolveCommitStyle: null,
   afterMerge: null,
+  defaultBranchTemplate: null,
 } as const;
 
 const workspace = (id: WorkspaceId, name: string): Workspace => ({

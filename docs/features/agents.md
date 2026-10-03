@@ -21,6 +21,10 @@ A chat remembers the work it started. Once a session came from it, the header sh
 
 The top bar shows when a chat is working: a pulsing dot and "1 chat running" on **Chat**, and a still **New reply** dot in the notification color on it, and on the chat in the list, until you open the chat.
 
+### Images in chat
+
+Paste, drop or attach images in the chat message box, up to 10 per message, in PNG, JPEG, GIF or WebP. The chat keeps them as tiles under your message, and the model reads them with your question, on Claude and on Codex. If a message fails to send, its text and images go back to the box.
+
 ### Roles
 
 Give each agent the job it is good at. Nine roles come with the app, **Scout**, **Debug**, **Plan**, **Implement**, **Review**, **Test**, **Resolve**, **Docs** and **Generalist**, and a role sets the agent's instructions, its default model and what it hands back.

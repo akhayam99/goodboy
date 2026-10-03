@@ -8,7 +8,14 @@ import {
   storySpies,
   type StoryStore,
 } from '../../storyHarness';
-import { SETTING_EDITOR_BINARY } from '../../../features/settings/settings';
+import {
+  SETTING_CHAT_IMAGES,
+  SETTING_CONTEXT_LEARNINGS,
+  SETTING_CONTEXT_ROLE_MAP,
+  SETTING_EDITOR_BINARY,
+} from '../../../features/settings/settings';
+import { isLearningsOn, isRoleMapOn } from '../../../features/context/contextSwitches';
+import { isChatImagesOn } from '../chats/isChatImagesOn';
 import { SETTING_CHANGELOG_SEEN } from '../changelog/state';
 import { NewerDatabaseError } from '../../../shared/lib/newerDatabase';
 import type {
@@ -125,6 +132,7 @@ function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
       resolveOnGithub: null,
       resolveCommitStyle: null,
       afterMerge: null,
+      defaultBranchTemplate: null,
     },
     createdAt: NOW,
     updatedAt: NOW,
@@ -412,6 +420,32 @@ describe('store contract', () => {
       expect(storySpies.listNotifications).toHaveBeenCalled();
     });
 
+    it('keeps the context and chat image switches off after a restart when they were turned off', async () => {
+      const store = useAppStore;
+      const off = new Set<string>([
+        SETTING_CONTEXT_LEARNINGS,
+        SETTING_CONTEXT_ROLE_MAP,
+        SETTING_CHAT_IMAGES,
+      ]);
+      storySpies.getSetting.mockImplementation(async (_db: unknown, key: string) =>
+        off.has(key) ? 'false' : null,
+      );
+      let switchesAtWorkspaces: ReadonlyArray<boolean> = [];
+      storySpies.listWorkspaces.mockImplementationOnce(async () => {
+        const settings = store.getState().settings;
+        switchesAtWorkspaces = [isLearningsOn({ settings }), isRoleMapOn({ settings })];
+        return [];
+      });
+
+      await store.getState().hydrate();
+
+      const state = store.getState();
+      expect(switchesAtWorkspaces).toEqual([false, false]);
+      expect(isLearningsOn({ settings: state.settings })).toBe(false);
+      expect(isRoleMapOn({ settings: state.settings })).toBe(false);
+      expect(isChatImagesOn({ state })).toBe(false);
+    });
+
     it('hydrates the changelog seen marker before the boot phase reaches ready', async () => {
       const store = useAppStore;
       let bootPhaseAtCall: string | null = null;
@@ -467,6 +501,7 @@ describe('store contract', () => {
             resolveOnGithub: null,
             resolveCommitStyle: null,
             afterMerge: null,
+            defaultBranchTemplate: null,
           },
           createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
           updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
@@ -496,6 +531,7 @@ describe('store contract', () => {
             resolveOnGithub: null,
             resolveCommitStyle: null,
             afterMerge: null,
+            defaultBranchTemplate: null,
           },
           createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
           updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,

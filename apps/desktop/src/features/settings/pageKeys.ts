@@ -3,6 +3,7 @@ import type { WorkspacePage } from './components/SettingsStudio/workspacePages';
 
 export type WorkspaceSettingField =
   | 'branchPrefix'
+  | 'branchTemplate'
   | 'attribution'
   | 'parallelAgents'
   | 'verbosity'
@@ -18,10 +19,12 @@ export type WorkspaceSettingField =
   | 'roles'
   | 'aboutWork'
   | 'workingRules'
-  | 'explainMore';
+  | 'explainMore'
+  | 'workflowRules';
 
 export const FIELD_PAGE: Readonly<Record<WorkspaceSettingField, WorkspacePage>> = {
   branchPrefix: 'general',
+  branchTemplate: 'general',
   attribution: 'general',
   parallelAgents: 'general',
   verbosity: 'general',
@@ -38,6 +41,7 @@ export const FIELD_PAGE: Readonly<Record<WorkspaceSettingField, WorkspacePage>> 
   aboutWork: 'profile',
   workingRules: 'profile',
   explainMore: 'profile',
+  workflowRules: 'workflow-rules',
 };
 
 type OverrideOwner =
@@ -46,6 +50,7 @@ type OverrideOwner =
 
 const OVERRIDE_OWNER: Readonly<Record<keyof OverrideSettings, OverrideOwner>> = {
   defaultBranchPrefix: { kind: 'field', field: 'branchPrefix' },
+  defaultBranchTemplate: { kind: 'field', field: 'branchTemplate' },
   attributionFooter: { kind: 'field', field: 'attribution' },
   parallelAgents: { kind: 'field', field: 'parallelAgents' },
   defaultVerbosity: { kind: 'field', field: 'verbosity' },
@@ -61,6 +66,7 @@ const OVERRIDE_OWNER: Readonly<Record<keyof OverrideSettings, OverrideOwner>> = 
   taskModels: { kind: 'providers' },
   roleModels: { kind: 'providers' },
   providerPool: { kind: 'providers' },
+  workflowRules: { kind: 'field', field: 'workflowRules' },
 };
 
 export const isWorkspaceOwnedOverride = (key: string): key is keyof OverrideSettings =>

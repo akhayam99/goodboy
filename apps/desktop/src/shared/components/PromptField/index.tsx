@@ -39,6 +39,8 @@ export type PromptFieldFiles = {
   readonly onFileInputChange: (event: ChangeEvent<HTMLInputElement>) => void;
   readonly onRemove: (id: string) => void;
   readonly note?: string;
+  readonly accept?: string;
+  readonly noun?: string;
 };
 
 type PromptKeyLabels = {
@@ -153,6 +155,7 @@ export const PromptField = ({
   const [previewHeight, setPreviewHeight] = useState(0);
   const bodyRef = useRef<HTMLDivElement>(null);
   const attachments = files?.attachments ?? [];
+  const noun = files?.noun ?? 'files';
   const isCard = variant === 'card';
 
   const switchTab = (next: Tab) => {
@@ -311,7 +314,7 @@ export const PromptField = ({
             <>
               <IconButton
                 icon={Paperclip}
-                label="Attach files"
+                label={`Attach ${noun}`}
                 variant="ghost"
                 iconSize={ICON_SIZE.control}
                 disabled={disabled || attachments.length >= ATTACHMENT_LIMIT}
@@ -320,9 +323,9 @@ export const PromptField = ({
               <input
                 ref={files.fileInputRef}
                 type="file"
-                accept={ATTACHMENT_ACCEPT}
+                accept={files.accept ?? ATTACHMENT_ACCEPT}
                 multiple
-                aria-label="Choose files to attach"
+                aria-label={`Choose ${noun} to attach`}
                 tabIndex={-1}
                 className="hidden"
                 onChange={files.onFileInputChange}
@@ -334,7 +337,7 @@ export const PromptField = ({
           <span className="flex-1" />
           {attachments.length > 0 ? (
             <span className="shrink-0 text-secondary tabular-nums text-faint-foreground">
-              {`${attachments.length} of ${ATTACHMENT_LIMIT} files`}
+              {`${attachments.length} of ${ATTACHMENT_LIMIT} ${noun}`}
             </span>
           ) : null}
           {actions}

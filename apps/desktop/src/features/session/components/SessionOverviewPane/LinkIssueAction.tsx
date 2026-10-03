@@ -16,7 +16,7 @@ export const LinkIssueAction = ({ session }: Props) => {
     align: 'end',
     expectedHeight: 440,
     expectedWidth: 480,
-    width: 'w-[30rem] max-w-[calc(100vw-2rem)]',
+    width: 'w-[34rem] max-w-[calc(100vw-2rem)]',
     openEvent: linkIssueEventName({ sessionId: session.id }),
   });
   const { open: isOpen, toggle } = dropdown;

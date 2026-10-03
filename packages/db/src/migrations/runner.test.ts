@@ -58,6 +58,8 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   resolveOnGithub: null,
   resolveCommitStyle: null,
   afterMerge: null,
+  defaultBranchTemplate: null,
+  workflowRules: null,
 };
 
 const insertCurrentWorkspace = async ({

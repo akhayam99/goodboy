@@ -16,6 +16,8 @@ const { invokeMock, state } = vi.hoisted(() => ({
     workflowStudioDrafts: {} as Record<string, unknown>,
     workflowGenerations: {} as Record<string, unknown>,
     workflowStudioFocus: null as string | null,
+    workflowStudioView: 'workflows' as const,
+    setWorkflowStudioView: vi.fn() as ReturnType<typeof vi.fn>,
     setWorkflowStudioFocus: vi.fn() as ReturnType<typeof vi.fn>,
     loadPhaseTemplates: vi.fn(async () => undefined),
     loadStepLibrary: vi.fn(async () => undefined),

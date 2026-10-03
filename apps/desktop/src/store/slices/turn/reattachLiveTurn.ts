@@ -255,6 +255,7 @@ export const reattachLiveTurn = async ({ set, get, runId, cursor }: Params): Pro
         turnInput: lastUserText({ events: get().transcripts[agentId] ?? [] }),
         turnOutput: assistantText,
         workingDir: owner.workingDir,
+        agentId,
       });
       const agentName =
         (get().sessionPhaseRuns[sessionId] ?? []).find((agent) => agent.id === agentId)?.name ??

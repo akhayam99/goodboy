@@ -9,7 +9,7 @@ The board shows every session of a workspace by stage. Workflows chain agents in
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-light.webp" alt="The Harborline board with 11 sessions in four columns: building 3, running 2, needs you 2 and in review 2, with the New session button and the Done and Archived icons at the right">
 </picture>
 
-See where each task stands without moving cards around. Each session sits in **building**, **running**, **needs you** or **in review** based on what is happening in it. Finished sessions fold into the icons at the right edge.
+See where each task stands without moving cards around. Each session sits in **building**, **running**, **needs you** or **in review** based on what is happening in it. Finished sessions fold into the icons at the right edge. Tasks linked to the whole workspace sit in one quiet row under the title, **Ongoing**: click a task to show only the sessions that link it, click it again or **Clear** to see them all, and its x stops tracking it.
 
 ### Session card
 
@@ -31,4 +31,4 @@ Keep finished work out of the way but close by. Done and archived sessions fold 
 
 ### Bulk select
 
-Tidy many sessions at once. Tick the checkbox that appears on a card when you point at it, or lasso and modifier-click cards across columns. Once one card is picked, every card shows its checkbox, and one bar floats at the bottom of the board with **Clear**, the count, **Select all** and the verbs: **Archive** or **Restore** run at once and can be undone, **Delete** asks first, above the bar, and says what goes and what stays. **X** picks the card under the pointer, **⌘A** picks every card, **Esc** clears and **Delete** opens the confirmation.
+Tidy many sessions at once. Tick the checkbox that appears at the top left of a card when you point at it or focus it, above its colored edge and without moving the title, or lasso and modifier-click cards across columns. Once one card is picked, every card shows its checkbox, and one bar floats at the bottom of the board with **Clear**, the count, **Select all** and the verbs: **Archive** or **Restore** run at once and can be undone, **Delete** asks first, above the bar, and says what goes and what stays. **X** picks the card under the pointer, **⌘A** picks every card, **Esc** clears and **Delete** opens the confirmation.

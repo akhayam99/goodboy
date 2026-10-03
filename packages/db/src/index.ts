@@ -116,6 +116,11 @@ export {
   deleteSessionExternalTask,
 } from './queries/session-external-task';
 export {
+  upsertWorkspaceExternalTask,
+  listWorkspaceExternalTasks,
+  deleteWorkspaceExternalTask,
+} from './queries/workspace-external-task';
+export {
   insertSession,
   updateSessionState,
   updateSessionPermissionMode,
@@ -139,6 +144,13 @@ export {
   type SessionTitleRef,
 } from './queries/session';
 export { getSessionContextSeenAt, setSessionContextSeenAt } from './queries/session-context-seen';
+export {
+  insertSessionContextItems,
+  listSessionContextItems,
+  listSessionContextItemsForRole,
+  listWorkspaceLearnings,
+  setSessionContextItemStatus,
+} from './queries/session-context-item';
 export { listSessionDecisions, saveSessionDecisions } from './queries/session-decision';
 export {
   attachWorkflowToSession,
@@ -158,6 +170,7 @@ export {
   updateWorkflowRunOrchestratorRouting,
   updateWorkflowRunOrchestratorSummary,
   updateWorkflowRunSpendLimit,
+  updateWorkflowRunRulesSnapshot,
   updateGeneratedWorkflowRunTitle,
   updateUserWorkflowRunTitle,
 } from './queries/session-workflow';
