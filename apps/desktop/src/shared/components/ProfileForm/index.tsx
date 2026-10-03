@@ -1,4 +1,4 @@
-import { useCallback, useId } from 'react';
+import { useCallback, useId, type ReactNode } from 'react';
 import { Eye } from 'lucide-react';
 import { matchRoleLibrary } from '@goodboy/core';
 import type { WorkspaceProfile } from '@goodboy/types';
@@ -12,6 +12,7 @@ type Props = {
   readonly disabled?: boolean;
   readonly onChange: (profile: WorkspaceProfile) => void;
   readonly onCommit: (profile: WorkspaceProfile) => void;
+  readonly learned?: ReactNode;
 };
 
 const suggestRoles = ({
@@ -31,7 +32,7 @@ const roleCustomLabel = ({ query }: { readonly query: string }) =>
 
 const topicCustomLabel = ({ query }: { readonly query: string }) => `Add "${query}"`;
 
-export const ProfileForm = ({ value, disabled = false, onChange, onCommit }: Props) => {
+export const ProfileForm = ({ value, disabled = false, onChange, onCommit, learned }: Props) => {
   const aboutWorkId = useId();
   const workingRulesId = useId();
 
@@ -107,6 +108,7 @@ export const ProfileForm = ({ value, disabled = false, onChange, onCommit }: Pro
           customLabel={topicCustomLabel}
           onChange={(next) => changeList({ key: 'explainMore', next })}
         />
+        {learned}
       </div>
       <div className="flex items-center gap-1.5 text-label text-faint-foreground">
         <Eye size={ICON_SIZE.row} aria-hidden className="shrink-0" />

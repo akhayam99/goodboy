@@ -2,7 +2,14 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { AgentId, IsoDateTime, SessionDecision, SessionId } from '@goodboy/types';
+import type {
+  AgentId,
+  IsoDateTime,
+  SessionContextItem,
+  SessionContextItemId,
+  SessionDecision,
+  SessionId,
+} from '@goodboy/types';
 import type { SummarizerPending, SummarizerRound } from '../../../../store/slices/summaries/state';
 
 const { store } = vi.hoisted(() => ({
@@ -19,6 +26,11 @@ const { store } = vi.hoisted(() => ({
     sessionDecisions: {} as Record<string, ReadonlyArray<SessionDecision>>,
     sessionDecisionsBaseline: {} as Record<string, string | null>,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<{ id: string; name: string }>>,
+    settings: {} as Record<string, string>,
+    sessionContextItems: {} as Record<string, ReadonlyArray<SessionContextItem>>,
+    loadSessionContextItems: vi.fn(async () => undefined),
+    setContextItemStatus: vi.fn(async () => undefined),
+    reportError: vi.fn(async () => undefined),
     loadSessionDecisions: vi.fn(async () => undefined),
     applySessionDecisionOps: vi.fn(async () => undefined),
     openContextDrawer: vi.fn(),
@@ -77,6 +89,8 @@ beforeEach(() => {
   store.sessionDecisions = {};
   store.sessionDecisionsBaseline = {};
   store.sessionPhaseRuns = {};
+  store.settings = {};
+  store.sessionContextItems = {};
   vi.clearAllMocks();
 });
 afterEach(cleanup);
@@ -104,6 +118,24 @@ const decision = (overrides: Partial<SessionDecision>): SessionDecision => ({
   ...overrides,
 });
 
+const learning = (overrides: Partial<SessionContextItem>): SessionContextItem => ({
+  id: 'l1' as SessionContextItemId,
+  sessionId: SID,
+  workspaceId: 'harborline' as SessionContextItem['workspaceId'],
+  kind: 'learning',
+  title: 'Why select! can drop a half-sent request',
+  text: 'It cancels the losing branch.',
+  topic: 'Rust',
+  source: { role: 'reviewer', agentId: null, turnStart: 4, turnEnd: 6 },
+  audience: [],
+  status: 'active',
+  projectName: 'notify-relay',
+  isSessionDeleted: false,
+  createdAt: AT,
+  updatedAt: AT,
+  ...overrides,
+});
+
 const ROUND: SummarizerRound = {
   finishedAt: AT,
   mode: 'turn',
@@ -121,7 +153,7 @@ const contextUpdatesRow = (): HTMLElement =>
   screen.getByRole('button', { name: (name) => name.startsWith('Context updates') });
 
 const renderDrawer = (
-  tab: 'goal' | 'decisions' | 'summary',
+  tab: 'goal' | 'decisions' | 'summary' | 'learned',
   view: 'current' | 'versions' = 'current',
   onClose = vi.fn(),
   highlight: ReadonlyArray<number> = [],
@@ -135,9 +167,76 @@ describe('ContextDrawer', () => {
     renderDrawer('summary');
 
     const tabs = screen.getAllByRole('tab');
-    expect(tabs.map((tab) => tab.textContent)).toEqual(['Goal', 'Decisions2', 'Summary']);
+    expect(tabs.map((tab) => tab.textContent)).toEqual([
+      'Goal',
+      'Decisions2',
+      'Summary',
+      'Learned',
+    ]);
     fireEvent.click(tabs[1]!);
     expect(store.openContextDrawer).toHaveBeenCalledWith({ sessionId: SID, tab: 'decisions' });
+  });
+
+  it('says which roles receive the open tab and lists them on demand', () => {
+    renderDrawer('decisions');
+
+    const toggle = screen.getByRole('button', { name: /^Visible to/ });
+    expect(toggle.textContent).toBe('Visible toAll roles except Scout, Docs');
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByText('Scout').getAttribute('title')).toBe('Does not receive this');
+    expect(screen.getByText('Reviewer').getAttribute('title')).toBeNull();
+    expect(
+      screen.getByText(
+        'You always see everything. This only limits what agents receive in their prompt.',
+      ).tagName,
+    ).toBe('P');
+  });
+
+  it('reads the Visible to line from the same map as the prompt, per tab', () => {
+    renderDrawer('summary');
+
+    expect(screen.getByRole('button', { name: /^Visible to/ }).textContent).toBe(
+      'Visible toAll roles except Resolver',
+    );
+  });
+
+  it('lists what this session learned, written for you only', () => {
+    store.sessionContextItems = {
+      [SID]: [
+        learning({
+          id: 'l1' as SessionContextItemId,
+          title: 'Why select! can drop a half-sent request',
+        }),
+        learning({ id: 'l2' as SessionContextItemId, title: 'An old one', status: 'dismissed' }),
+      ],
+    };
+    renderDrawer('learned');
+
+    expect(screen.getByRole('tab', { name: /Learned/ }).textContent).toBe('Learned1');
+    expect(screen.getByRole('button', { name: /^Visible to/ }).textContent).toBe(
+      'Visible toYou only',
+    );
+    const row = screen.getByRole('button', { name: /Why select! can drop/ });
+    expect(row.textContent).toContain('Turns 4 to 6 · Reviewer');
+    expect(screen.queryByText('An old one')).toBeNull();
+    fireEvent.click(row);
+    expect(screen.getByText('It cancels the losing branch.').tagName).toBe('P');
+    expect(screen.getByRole('button', { name: 'Dismiss' }).tagName).toBe('BUTTON');
+  });
+
+  it('says nothing was learned yet on an empty Learned tab', () => {
+    renderDrawer('learned');
+
+    expect(screen.getByText('Nothing learned in this session yet.').tagName).toBe('P');
+  });
+
+  it('hides Visible to when the role map is switched off', () => {
+    store.settings = { 'context.roleMap': 'false' };
+    renderDrawer('decisions');
+
+    expect(screen.queryByRole('button', { name: /^Visible to/ })).toBeNull();
   });
 
   it('shows the summary as State, Next and Learned, without Problem', () => {

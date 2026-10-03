@@ -1,14 +1,10 @@
 import { renderHandoff } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { AgentTurnSpan } from '@goodboy/types';
-import {
-  AGENT_KIND_DEFAULTS,
-  KIND_TO_ROLE,
-  kindWritesFiles,
-} from '../../../features/session/agent-kind';
+import { AGENT_KIND_DEFAULTS, kindWritesFiles } from '../../../features/session/agent-kind';
 import { isQueryBridgeServing } from '../../../features/integrations/queryBridge';
 import { buildIntegrationsGuard } from './integrationsGuard';
-import { buildProfileGuard } from './profileGuard';
+import { buildProfileGuard, explainMoreTopicsFor } from './profileGuard';
 import { isQuestionDelegate } from '../../../features/context/questionDelegate';
 import { buildScopeGuard } from '../project-mounts/scopeGuard';
 import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from './sessionLanguage';
@@ -75,6 +71,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
     isHandoffTurn,
     agentRowEarly,
     earlyAgentKind,
+    turnRole,
     childRoutingBlock,
     clusterBoundary,
     goalAttachments,
@@ -207,13 +204,15 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
     ],
     isBridgeServing,
   });
-  const profileGuard = buildProfileGuard({
-    profile: get().workspaces.find((candidate) => candidate.id === session.workspaceId)?.profile,
-    audience:
-      agentRowEarly !== null && isQuestionDelegate({ agent: agentRowEarly })
-        ? 'questionDelegate'
-        : (phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind]),
-  });
+  const profile = get().workspaces.find(
+    (candidate) => candidate.id === session.workspaceId,
+  )?.profile;
+  const profileAudience =
+    agentRowEarly !== null && isQuestionDelegate({ agent: agentRowEarly })
+      ? 'questionDelegate'
+      : turnRole;
+  const profileGuard = buildProfileGuard({ profile, audience: profileAudience });
+  const explainMoreTopics = explainMoreTopicsFor({ profile, audience: profileAudience });
   const guards = [scopeGuard, languageGuard, integrationsGuard, profileGuard]
     .filter((block) => block.length > 0)
     .join('\n\n');
@@ -293,7 +292,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
     sessionId,
     workspaceId: session.workspaceId,
     workflowRunId: phaseWorkflowRunId ?? agentRowEarly?.workflowRunId ?? null,
-    stepRole: phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind],
+    stepRole: turnRole,
     provider,
     model,
     effort: effortFlag ?? null,
@@ -328,6 +327,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
     isolatedCopyPath,
     turnSpanBase,
     touchedMountsForTurn,
+    explainMoreTopics,
     resolvedPrompt,
   };
 };

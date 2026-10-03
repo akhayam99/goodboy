@@ -5,6 +5,7 @@ import { useAppStore } from '../../../../store';
 import { ProfileForm } from '../../../../shared/components/ProfileForm';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { normalizeWorkspaceProfile } from '../../../../shared/utils/normalizeWorkspaceProfile';
+import { WorkspaceLearnings } from '../../../../shared/components/Learnings/WorkspaceLearnings';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -45,7 +46,12 @@ export const WorkspaceProfileSection = ({ workspaceId }: Props) => {
       icon={<CONCEPT_ICONS.profile size={ICON_SIZE.row} aria-hidden />}
       headingLevel={2}
     >
-      <ProfileForm value={draft} onChange={setDraft} onCommit={(next) => void commit(next)} />
+      <ProfileForm
+        value={draft}
+        onChange={setDraft}
+        onCommit={(next) => void commit(next)}
+        learned={<WorkspaceLearnings workspaceId={workspaceId} topics={stored.explainMore} />}
+      />
     </Band>
   );
 };

@@ -99,6 +99,8 @@ export const useTimelineRows = ({ session, activity, explode }: Params): Timelin
   const externalTasks = useAppStore((s) => s.sessionExternalTasks?.[sessionId] ?? EMPTY_ARRAY);
   const worktrees = useAppStore((s) => s.sessionWorktreeRecords?.[sessionId] ?? EMPTY_ARRAY);
   const events = useAppStore((s) => s.sessionEvents?.[sessionId] ?? EMPTY_ARRAY);
+  const learnings = useAppStore((s) => s.sessionContextItems[sessionId] ?? EMPTY_ARRAY);
+  const loadSessionContextItems = useAppStore((s) => s.loadSessionContextItems);
   const areEventsLoaded = useAppStore((s) => s.sessionEvents?.[sessionId] !== undefined);
   const areAgentsLoaded = useIsSessionCollectionLoaded({ sessionId, collection: 'agents' });
   const loadSessionEvents = useAppStore((s) => s.loadSessionEvents);
@@ -140,6 +142,10 @@ export const useTimelineRows = ({ session, activity, explode }: Params): Timelin
   }, [loadSessionArtifacts, sessionId]);
 
   useEffect(() => {
+    void loadSessionContextItems({ sessionId }).catch(() => undefined);
+  }, [loadSessionContextItems, sessionId]);
+
+  useEffect(() => {
     void loadSessionAnsweredQuestions(sessionId);
     void loadSessionDismissedQuestions(sessionId);
   }, [loadSessionAnsweredQuestions, loadSessionDismissedQuestions, sessionId]);
@@ -161,6 +167,7 @@ export const useTimelineRows = ({ session, activity, explode }: Params): Timelin
         questions,
         worktrees,
         events,
+        learnings,
         agentKindOverride,
       }),
     [
@@ -169,6 +176,7 @@ export const useTimelineRows = ({ session, activity, explode }: Params): Timelin
       artifacts,
       events,
       externalTasks,
+      learnings,
       plans,
       questions,
       sessionId,

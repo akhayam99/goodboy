@@ -11,6 +11,10 @@ const { state } = vi.hoisted(() => ({
     workspaces: [] as ReadonlyArray<{ id: string; profile?: WorkspaceProfile }>,
     updateWorkspaceProfile: vi.fn(async () => undefined),
     reportError: vi.fn(async () => undefined),
+    workspaceLearnings: {},
+    loadWorkspaceLearnings: vi.fn(async () => undefined),
+    setContextItemStatus: vi.fn(async () => undefined),
+    navigate: vi.fn(),
   },
 }));
 

@@ -22,6 +22,7 @@ export type PermissionRuleId = string & { readonly __brand: 'PermissionRuleId' }
 export type PermissionRequestId = string & { readonly __brand: 'PermissionRequestId' };
 
 export type SessionEventId = string & { readonly __brand: 'SessionEventId' };
+export type SessionContextItemId = string & { readonly __brand: 'SessionContextItemId' };
 
 export type SecurityFindingId = string & { readonly __brand: 'SecurityFindingId' };
 

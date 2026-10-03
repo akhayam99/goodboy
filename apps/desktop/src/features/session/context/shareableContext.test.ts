@@ -28,9 +28,10 @@ describe('shareableContext', () => {
     ).toBe('## Goal\n\nShip it');
   });
 
-  it('follows the order of the drawer tabs', () => {
-    expect(CONTEXT_TABS.map((tab) => CONTEXT_TAB_LABEL[tab])).toEqual(
-      CONTEXT_ORDER.slice(0, CONTEXT_TABS.length),
+  it('follows the order of the drawer tabs that agents read, leaving Learned out', () => {
+    const slotTabs = CONTEXT_TABS.filter((tab) => tab !== 'learned');
+    expect(slotTabs.map((tab) => CONTEXT_TAB_LABEL[tab])).toEqual(
+      CONTEXT_ORDER.slice(0, slotTabs.length),
     );
   });
 });

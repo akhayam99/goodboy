@@ -161,6 +161,7 @@
         "src/store/slices/review-drafts/resolveReviewTarget.ts": ["types"],
         "src/store/slices/sessions/mountPlan.ts": ["types"],
         "src/store/slices/slack-threads/state.ts": ["exports"],
+        "src/store/slices/turn/learningQueue.ts": ["exports"],
         "src/store/slices/turn/mountContinuations.ts": ["exports"],
         "src/store/slices/turn/planRestartResume.ts": ["exports"],
         "src/store/slices/turn/restartMarker.ts": ["exports"],

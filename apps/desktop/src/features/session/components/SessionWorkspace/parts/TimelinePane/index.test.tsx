@@ -69,6 +69,8 @@ const { storeState, diffStats, unread, questions, agentsLoaded, attachedRuns, re
       loadWorkspaceDurationHistory: vi.fn(async () => undefined),
       loadSessionEvents: vi.fn(async () => undefined),
       loadSessionArtifacts: vi.fn(async () => undefined),
+      sessionContextItems: {} as Record<string, ReadonlyArray<unknown>>,
+      loadSessionContextItems: vi.fn(async () => undefined),
       loadSessionAnsweredQuestions: vi.fn(async () => undefined),
       loadSessionDismissedQuestions: vi.fn(async () => undefined),
       markAllAgentsSeen: vi.fn(),
