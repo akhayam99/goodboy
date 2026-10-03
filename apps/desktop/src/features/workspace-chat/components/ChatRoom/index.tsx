@@ -24,6 +24,7 @@ import { ChatEmpty } from './ChatEmpty';
 import { ChatHeader } from './ChatHeader';
 import { ChatSessionsChip } from './ChatSessionsChip';
 import { ChatThread } from './ChatThread';
+import { useChatDrafts } from '../../hooks/useChatDrafts';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 
 type Props = {
@@ -76,6 +77,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
   const [draftRouting, setDraftRouting] = useState<ChatRouting | null>(null);
   const [work, setWork] = useState<WorkRequest | null>(null);
   const linked = useChatSessions({ chatId });
+  const drafts = useChatDrafts({ chatId });
   const { saved: savedDefault, read: readSavedDefault } = useChatDefaultModel({ workspaceId });
 
   useEffect(() => {
@@ -194,6 +196,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
           onStartWork={openWork}
           sessions={linked.entries}
           onOpenSession={openSession}
+          drafts={drafts}
         />
       )}
       <div className="shrink-0 pb-3.5 pt-1.5">

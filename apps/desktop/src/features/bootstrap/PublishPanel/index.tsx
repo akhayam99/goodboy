@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useState } from 'react';
-import { Button, Input, Notice, SegmentedTabs } from '@goodboy/ui';
+import { Button, FormActions, Input, Notice, SegmentedTabs } from '@goodboy/ui';
 import { validateGithubRepoName, type GithubRepoVisibility } from '@goodboy/core';
 import type { Project } from '@goodboy/types';
 import { useAppStore } from '../../../store';
@@ -233,7 +233,10 @@ export const PublishPanel = ({
         />
       ) : null}
 
-      <div className="flex items-center gap-2">
+      <FormActions>
+        <Button type="button" variant="ghost" disabled={busy} onClick={onCancel}>
+          Cancel
+        </Button>
         <Button
           type="button"
           disabled={busy || remote === null}
@@ -242,10 +245,7 @@ export const PublishPanel = ({
         >
           {primaryLabel}
         </Button>
-        <Button type="button" variant="ghost" disabled={busy} onClick={onCancel}>
-          Cancel
-        </Button>
-      </div>
+      </FormActions>
     </section>
   );
 };

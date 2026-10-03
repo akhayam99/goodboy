@@ -14,6 +14,7 @@ import { sessionTone } from '../../../session/components/sessionCardShell';
 import { useSessionSummary } from '../../hooks/useSessionSummary';
 import { SessionProgress } from '../SessionProgress';
 import { sessionTitle } from '../../../session/sessionTitle';
+import { ChatOriginGlyph } from '../../../../shared/components/ChatOriginGlyph';
 import { SessionRowMeta } from './SessionRowMeta';
 import { SessionRowNode } from './SessionRowNode';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
@@ -139,6 +140,7 @@ const SessionActivityItemView = ({
             text={sessionTitle({ session })}
             className="min-w-0 flex-1 truncate text-row text-foreground"
           />
+          <ChatOriginGlyph sessionId={session.id} />
           <span
             data-testid="session-row-trailing"
             className="w-12 shrink-0 text-right text-meta text-faint-foreground"

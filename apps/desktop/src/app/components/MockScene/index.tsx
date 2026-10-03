@@ -11,6 +11,9 @@ import { InboxScene } from './scenes/InboxScene';
 import { InboxSourceScene } from './scenes/InboxSourceScene';
 import { ConversationScene } from './scenes/ConversationScene';
 import { MountsScene } from './scenes/MountsScene';
+import { OverviewFullScene } from './scenes/OverviewFullScene';
+import { OverviewManyScene } from './scenes/OverviewManyScene';
+import { OverviewRefreshingScene } from './scenes/OverviewRefreshingScene';
 import { MountMismatchScene } from './scenes/MountMismatchScene';
 import { ResolveScene } from './scenes/ResolveScene';
 import { ResolveSelectScene } from './scenes/ResolveSelectScene';
@@ -70,6 +73,7 @@ import { RunsOnScene } from './scenes/RunsOnScene';
 import { FrameScene } from './scenes/audit/FrameScene';
 import { FirstRunScene } from './scenes/audit/FirstRunScene';
 import { FirstLapScene } from './scenes/audit/FirstLapScene';
+import { FirstLapOverviewScene } from './scenes/audit/FirstLapOverviewScene';
 import { FirstLapPublishScene } from './scenes/audit/FirstLapPublishScene';
 import { FirstLapMoveScene } from './scenes/audit/FirstLapMoveScene';
 import { FirstLapMovingScene } from './scenes/audit/FirstLapMovingScene';
@@ -150,6 +154,9 @@ export const MOCK_SCENES = {
   'inbox-source': InboxSourceScene,
   conversation: ConversationScene,
   mounts: MountsScene,
+  'overview-full': OverviewFullScene,
+  'overview-projects-many': OverviewManyScene,
+  'overview-refreshing': OverviewRefreshingScene,
   'mount-mismatch': MountMismatchScene,
   resolve: ResolveScene,
   'resolve-select': ResolveSelectScene,
@@ -201,6 +208,7 @@ export const MOCK_SCENES = {
   frame: FrameScene,
   'first-run': FirstRunScene,
   'first-lap': FirstLapScene,
+  'overview-first-lap': FirstLapOverviewScene,
   'first-lap-publish': FirstLapPublishScene,
   'first-lap-move': FirstLapMoveScene,
   'first-lap-moving': FirstLapMovingScene,

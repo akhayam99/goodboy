@@ -1,48 +1,37 @@
 // @vitest-environment happy-dom
 
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
+
 import type { ReactNode } from 'react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { Session } from '@goodboy/types';
-
-const { store } = vi.hoisted(() => ({
-  store: {
-    sessionGithub: {},
-    sessionExternalTasks: {},
-    sessionArtifacts: {} as Record<string, ReadonlyArray<{ readonly kind: string }>>,
-    diffComments: {},
-    sessionResolveQueueItems: {} as Record<
-      string,
-      ReadonlyArray<{
-        readonly item: Record<string, unknown>;
-        readonly thread: Record<string, unknown>;
-      }>
-    >,
-    sessionResolveAttempts: {},
-    sessionResolvePublications: {},
-    sessionOpenQuestions: {} as Record<string, ReadonlyArray<unknown>>,
-    goodboyNamedSessionId: null as string | null,
-  },
-}));
-
-vi.mock('../../../../store', () => ({
-  EMPTY_ARRAY: Object.freeze([]),
-  useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
-  useSessionOpenQuestions: (id: string) => store.sessionOpenQuestions[id] ?? [],
-}));
-
-vi.mock('../../hooks/useSessionTitleRename', () => ({
-  useSessionTitleRename: () => ({
-    editing: false,
-    draft: '',
-    maxLength: 60,
-    error: null,
-    start: vi.fn(),
-    setDraft: vi.fn(),
-    commit: vi.fn(),
-    onKeyDown: vi.fn(),
-  }),
-}));
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import type {
+  AgentId,
+  ArtifactId,
+  ArtifactStatus,
+  IsoDateTime,
+  OpenQuestion,
+  OpenQuestionId,
+  PlanArtifact,
+  ReportArtifact,
+  Session,
+  SessionId,
+  WireframeArtifact,
+  WorkspaceId,
+} from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../store/storyHarness';
 
 vi.mock('./SessionDestructiveActions', () => ({
   SessionDestructiveActions: () => (
@@ -61,41 +50,95 @@ vi.mock('./ContextChip', () => ({ ContextChip: () => <span>Context</span> }));
 vi.mock('./GoalTeaser', () => ({
   GoalTeaser: () => <button type="button">Goal: Keep the ledger balanced</button>,
 }));
-vi.mock('./SessionCostChip', () => ({
-  SessionCostChip: () => <span data-testid="session-cost-chip" />,
-}));
-vi.mock('./LinkedWorkChips', () => ({ LinkedWorkChips: () => <span>Linked work</span> }));
+vi.mock('./SessionCostChip', () => ({ SessionCostChip: () => <span>$3.47</span> }));
+vi.mock('./LinkedWorkChips', () => ({ LinkedWorkChips: () => <span>HAR-212</span> }));
 vi.mock('./LinkIssueAction', () => ({ LinkIssueAction: () => <button>Link work</button> }));
-vi.mock('./ProjectMountRows', () => ({
-  ProjectMountRows: () => <section aria-label="Projects" />,
-}));
 vi.mock('@goodboy/ui', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@goodboy/ui')>();
   return { ...actual, Tooltip: ({ children }: { readonly children: ReactNode }) => children };
 });
 
-import { HeaderBand } from './HeaderBand';
+let useAppStore: StoryStore;
+let HeaderBand: typeof import('./HeaderBand').HeaderBand;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+  ({ HeaderBand } = await import('./HeaderBand'));
+}, STORE_IMPORT_TIMEOUT_MS);
+
+const SESSION_ID = 'session-1' as SessionId;
+const NOW = '2026-09-28T09:00:00.000Z' as IsoDateTime;
+
+const session: Session = aSession({
+  id: SESSION_ID,
+  workspaceId: 'workspace-1' as WorkspaceId,
+  goal: 'Refactor auth',
+});
+
+type BaseParams = {
+  readonly id: string;
+  readonly status?: ArtifactStatus;
+};
+
+const baseOf = ({ id, status = 'active' }: BaseParams) => ({
+  id: id as ArtifactId,
+  sessionId: SESSION_ID,
+  agentId: 'agent-1' as AgentId,
+  workflowRunId: null,
+  schemaVersion: 1,
+  title: id,
+  sourceText: '',
+  status,
+  revision: 1,
+  sourceTurnId: null,
+  createdAt: NOW,
+  updatedAt: NOW,
+});
+
+const report = (params: BaseParams): ReportArtifact => ({
+  ...baseOf(params),
+  kind: 'report',
+  sourceFormat: 'markdown',
+  metadata: { reportType: 'summary' },
+});
+
+const wireframe = (params: BaseParams): WireframeArtifact => ({
+  ...baseOf(params),
+  kind: 'wireframe',
+  sourceFormat: 'json',
+  metadata: { fidelity: 'low', designProfile: {} },
+});
+
+const plan = (params: BaseParams): PlanArtifact => ({
+  ...baseOf(params),
+  kind: 'plan',
+  sourceFormat: 'markdown',
+  metadata: {},
+});
+
+const openQuestion: OpenQuestion = {
+  id: 'q1' as OpenQuestionId,
+  sessionId: SESSION_ID,
+  text: 'Which ledger?',
+  suggestedAnswers: [],
+  isBlocking: false,
+  userAnswer: null,
+  status: 'open',
+  createdAt: NOW,
+};
+
+beforeEach(async () => {
+  await resetStoryStore();
+  useAppStore.setState({ sessions: [session] });
+});
 
 afterEach(cleanup);
 
-const session = {
-  id: 'session-1',
-  workspaceId: 'workspace-1',
-  goal: 'Refactor auth',
-} as Session;
-
 describe('HeaderBand', () => {
-  beforeEach(() => {
-    store.sessionArtifacts = {};
-    store.sessionOpenQuestions = {};
-    store.sessionResolveQueueItems = {};
-    store.goodboyNamedSessionId = null;
-  });
-
   it('marks a title Goodboy wrote at the start until the user renames it', () => {
-    store.goodboyNamedSessionId = 'session-1';
+    useAppStore.setState({ goodboyNamedSessionId: SESSION_ID });
     const { unmount } = render(<HeaderBand session={session} onSelectLens={vi.fn()} />);
-    expect(screen.getByText('Named by Goodboy')).toBeDefined();
+    screen.getByText('Named by Goodboy');
     unmount();
 
     render(<HeaderBand session={{ ...session, titleUserEdited: true }} onSelectLens={vi.fn()} />);
@@ -104,79 +147,54 @@ describe('HeaderBand', () => {
 
   it('offers Link work on a live session and drops it once archived', () => {
     const { unmount } = render(<HeaderBand session={session} onSelectLens={vi.fn()} />);
-    expect(screen.getByRole('button', { name: 'Link work' })).toBeDefined();
+    screen.getByRole('button', { name: 'Link work' });
     unmount();
 
-    render(
-      <HeaderBand
-        session={{ ...session, archivedAt: '2026-09-28T09:00:00.000Z' } as Session}
-        onSelectLens={vi.fn()}
-      />,
-    );
+    render(<HeaderBand session={{ ...session, archivedAt: NOW }} onSelectLens={vi.fn()} />);
     expect(screen.queryByRole('button', { name: 'Link work' })).toBeNull();
   });
 
-  it('stays clear of attention chips when nothing is waiting', () => {
+  it('says what waits on the user only in the next step, never as header chips', () => {
+    useAppStore.setState({ sessionOpenQuestions: { [SESSION_ID]: [openQuestion] } });
     render(<HeaderBand session={session} onSelectLens={vi.fn()} />);
 
-    expect(screen.queryByRole('button', { name: /Artifacts/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /Questions/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Review/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Artifacts/ })).toBeNull();
   });
 
-  it('counts the artifacts this session wrote and opens their page', () => {
-    store.sessionArtifacts = {
-      'session-1': [{ kind: 'report' }, { kind: 'wireframe' }, { kind: 'plan' }],
-    };
-    store.sessionOpenQuestions = { 'session-1': [{ id: 'q1', status: 'open' }] };
+  it('counts reports, wireframes and plans in Artifacts and opens their page', () => {
+    useAppStore.setState({
+      sessionArtifacts: {
+        [SESSION_ID]: [
+          report({ id: 'a1' }),
+          wireframe({ id: 'a2' }),
+          plan({ id: 'a3' }),
+          report({ id: 'a4', status: 'discarded' }),
+        ],
+      },
+    });
     const onSelectLens = vi.fn();
     render(<HeaderBand session={session} onSelectLens={onSelectLens} />);
 
     const chip = screen.getByRole('button', { name: /Artifacts/ });
-    expect(chip.textContent).toContain('2');
-
+    expect(chip.textContent).toContain('3');
     fireEvent.click(chip);
     expect(onSelectLens).toHaveBeenCalledWith('plans');
-
-    fireEvent.click(screen.getByRole('button', { name: /Questions/ }));
-    expect(onSelectLens).toHaveBeenCalledWith('questions');
   });
 
-  it('counts the review comments waiting on the user and opens their page', () => {
-    store.sessionResolveQueueItems = {
-      'session-1': [
-        {
-          item: {
-            id: 'queue-1',
-            threadId: 'thread-1',
-            approvalState: 'none',
-            approvedRevision: null,
-            integratedSha: 'a1b2c3d',
-            deliveredAt: null,
-          },
-          thread: {
-            id: 'resolve-thread-1',
-            threadId: 'thread-1',
-            state: 'open',
-            stage: 'proposed',
-            stateReason: null,
-            revision: 1,
-            activeAttemptId: null,
-            replyDraft: null,
-            commitShas: null,
-            question: null,
-            createdAt: 1_760_000_000_000,
-          },
-        },
-      ],
-    };
-    const onSelectLens = vi.fn();
-    render(<HeaderBand session={session} onSelectLens={onSelectLens} />);
+  it('keeps every session fact on one row', () => {
+    useAppStore.setState({
+      sessionArtifacts: { [SESSION_ID]: [plan({ id: 'a1' })] },
+    });
+    render(<HeaderBand session={session} onSelectLens={vi.fn()} />);
 
-    const chip = screen.getByRole('button', { name: /Review/ });
-    expect(chip.textContent).toContain('1');
-
-    fireEvent.click(chip);
-    expect(onSelectLens).toHaveBeenCalledWith('review');
+    const facts = within(screen.getByLabelText('Session facts'));
+    facts.getByText('Context');
+    facts.getByRole('button', { name: /Artifacts/ });
+    facts.getByText('HAR-212');
+    facts.getByRole('button', { name: 'Link work' });
+    facts.getByText('$3.47');
   });
 
   it('keeps only refresh, archive and delete in the title action zone, in that order', () => {
@@ -184,36 +202,26 @@ describe('HeaderBand', () => {
 
     const refresh = screen.getByRole('button', { name: 'Refresh' });
     const archive = screen.getByRole('button', { name: 'Archive session' });
-    expect(screen.getByRole('button', { name: 'Delete session' })).toBeDefined();
+    screen.getByRole('button', { name: 'Delete session' });
     expect(
       refresh.compareDocumentPosition(archive) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Scripts' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Open worktree' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Mount a project' })).toBeNull();
   });
 
   it('drops refresh from an archived session', () => {
-    render(
-      <HeaderBand
-        session={{ ...session, archivedAt: '2026-09-01T00:00:00.000Z' } as Session}
-        onSelectLens={vi.fn()}
-      />,
-    );
+    render(<HeaderBand session={{ ...session, archivedAt: NOW }} onSelectLens={vi.fn()} />);
 
     expect(screen.queryByRole('button', { name: 'Refresh' })).toBeNull();
   });
 
-  it('reads the goal line before the chips and the projects', () => {
+  it('reads the goal line before the facts and leaves the projects to the body', () => {
     render(<HeaderBand session={session} onSelectLens={vi.fn()} />);
 
     const goal = screen.getByRole('button', { name: /^Goal:/ });
-    const context = screen.getByText('Context');
-    const projects = screen.getByRole('region', { name: 'Projects' });
-    expect(goal.compareDocumentPosition(context) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(
-      context.compareDocumentPosition(projects) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
+    const facts = screen.getByLabelText('Session facts');
+    expect(goal.compareDocumentPosition(facts) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByRole('region', { name: 'Projects' })).toBeNull();
   });
 
   it('separates the title zone with rhythm instead of a rule', () => {
@@ -223,8 +231,9 @@ describe('HeaderBand', () => {
   });
 
   it('renders a backticked title as inline code without the backticks', () => {
-    const marked = { ...session, goal: 'run `/explore` first' } as Session;
-    render(<HeaderBand session={marked} onSelectLens={vi.fn()} />);
+    render(
+      <HeaderBand session={{ ...session, goal: 'run `/explore` first' }} onSelectLens={vi.fn()} />,
+    );
 
     const title = screen.getByRole('button', { name: /run/ });
     expect(title.querySelector('code')?.textContent).toBe('/explore');
@@ -232,19 +241,8 @@ describe('HeaderBand', () => {
   });
 
   it('falls back to one untitled label when the session carries no title', () => {
-    const untitled = { ...session, goal: '   ' } as Session;
-    render(<HeaderBand session={untitled} onSelectLens={vi.fn()} />);
+    render(<HeaderBand session={{ ...session, goal: '   ' }} onSelectLens={vi.fn()} />);
 
-    expect(screen.getByRole('button', { name: 'Untitled session' })).toBeDefined();
-  });
-
-  it('renders the session cost at the right edge of the context row', () => {
-    render(<HeaderBand session={session} onSelectLens={vi.fn()} />);
-
-    const context = screen.getByText('Context');
-    const chip = screen.getByTestId('session-cost-chip');
-    const contextRow = context.parentElement?.parentElement;
-    expect(contextRow?.lastElementChild?.lastElementChild).toBe(chip);
-    expect(contextRow?.contains(context)).toBe(true);
+    screen.getByRole('button', { name: 'Untitled session' });
   });
 });

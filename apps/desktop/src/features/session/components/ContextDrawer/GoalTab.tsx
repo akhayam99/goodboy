@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Skeleton, Textarea } from '@goodboy/ui';
+import { Button, EmptyLine, Skeleton, Textarea } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
@@ -95,10 +95,16 @@ export const GoalTab = ({
   if (value.trim() === '') {
     return (
       <div className="flex flex-col items-start gap-2">
-        <p className="text-body text-muted-foreground">No goal yet. Every agent starts from it.</p>
-        <Button size="sm" disabled={isLocked} onClick={() => setIsEditing(true)}>
-          Write the goal
-        </Button>
+        <EmptyLine
+          className="self-stretch"
+          action={
+            <Button size="sm" disabled={isLocked} onClick={() => setIsEditing(true)}>
+              Write the goal
+            </Button>
+          }
+        >
+          No goal yet. Every agent starts from it.
+        </EmptyLine>
         {isLocked ? (
           <p className="text-secondary text-faint-foreground">
             Editing opens when the update finishes.

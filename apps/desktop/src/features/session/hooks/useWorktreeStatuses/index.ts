@@ -35,7 +35,7 @@ const sameStatuses = (
 const samePending = (current: ReadonlySet<string>, next: ReadonlySet<string>): boolean =>
   current.size === next.size && Array.from(next).every((path) => current.has(path));
 
-const useWorktreeStatusSnapshot = ({ targets }: Params): Snapshot => {
+export const useWorktreeStatusSnapshot = ({ targets }: Params): Snapshot => {
   const [snapshot, setSnapshot] = useState<Snapshot>(EMPTY_SNAPSHOT);
   const targetsKey = JSON.stringify(
     targets.map(({ worktreePath, baseBranch }) => [worktreePath, baseBranch ?? null]),
@@ -68,13 +68,14 @@ const useWorktreeStatusSnapshot = ({ targets }: Params): Snapshot => {
           pending.add(worktreePath);
         }
       });
-      setSnapshot((current) =>
-        sameStatuses(current.statuses, statuses) && samePending(current.pending, pending)
+      setSnapshot((current) => {
+        const nextStatuses = sameStatuses(current.statuses, statuses) ? current.statuses : statuses;
+        const nextPending = samePending(current.pending, pending) ? current.pending : pending;
+        return nextStatuses === current.statuses && nextPending === current.pending
           ? current
-          : { statuses, pending },
-      );
+          : { statuses: nextStatuses, pending: nextPending };
+      });
     };
-    setSnapshot(EMPTY_SNAPSHOT);
     const unsubscribes = keyed.map(({ key, worktreePath, baseBranch }) => {
       const pending = ensure({ key, worktreePath, baseBranch, maxAgeMs: MAX_AGE_MS });
       const unsubscribe = subscribe({ key, listener: publish });
@@ -93,6 +94,3 @@ const useWorktreeStatusSnapshot = ({ targets }: Params): Snapshot => {
 
 export const useWorktreeStatuses = ({ targets }: Params): ReadonlyMap<string, WorktreeStatus> =>
   useWorktreeStatusSnapshot({ targets }).statuses;
-
-export const useWorktreeStatusPending = ({ targets }: Params): ReadonlySet<string> =>
-  useWorktreeStatusSnapshot({ targets }).pending;

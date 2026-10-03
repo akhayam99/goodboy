@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ListFilter } from 'lucide-react';
+import { CheckCheck, ListFilter } from 'lucide-react';
 import {
   AnchoredPopover,
   Button,
@@ -51,6 +51,7 @@ type Props = {
     readonly enabled: boolean;
   }) => void;
   readonly onPreset: (params: { readonly preset: ActivityPreset }) => void;
+  readonly onMarkAllSeen?: (() => void) | null;
 };
 
 type SummaryParams = {
@@ -105,6 +106,7 @@ export const ActivityFilterPanel = ({
   totalCount,
   onToggle,
   onPreset,
+  onMarkAllSeen = null,
 }: Props) => {
   const dropdown = useDropdown({
     align: 'end',
@@ -165,6 +167,20 @@ export const ActivityFilterPanel = ({
       }
     >
       <div className="@container flex flex-col gap-3 p-3">
+        {onMarkAllSeen === null ? null : (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="self-start"
+            onClick={() => {
+              onMarkAllSeen();
+              dropdown.close();
+            }}
+          >
+            <CheckCheck size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+            Mark all seen
+          </Button>
+        )}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <SegmentedTabs<PresetOption>
             size="sm"

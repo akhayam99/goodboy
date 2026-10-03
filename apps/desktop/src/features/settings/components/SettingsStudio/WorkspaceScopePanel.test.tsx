@@ -287,7 +287,7 @@ describe('WorkspaceScopePanel', () => {
     expect(state.disconnectWorkspace).not.toHaveBeenCalled();
 
     const confirm = screen.getByRole('group', { name: 'Disconnect billing?' });
-    expect(within(confirm).getByText(/Choose Add workspace with the same folder/)).toBeDefined();
+    expect(within(confirm).getByText(/Choose Open a folder with the same folder/)).toBeDefined();
     fireEvent.click(within(confirm).getByRole('button', { name: 'Disconnect' }));
 
     await waitFor(() => expect(state.disconnectWorkspace).toHaveBeenCalledWith('ws-1'));

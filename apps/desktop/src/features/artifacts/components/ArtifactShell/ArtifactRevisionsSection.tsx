@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, formatError, SectionHeader } from '@goodboy/ui';
+import { Button, formatError, SectionHeader, SkeletonRow } from '@goodboy/ui';
 import type { ArtifactRevision } from '@goodboy/db';
 import type { SessionArtifact, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -65,9 +65,7 @@ export const ArtifactRevisionsSection = ({ sessionId, artifact, creatorName }: P
   return (
     <section aria-label="Revisions" className="flex min-w-0 flex-col gap-1.5">
       <SectionHeader label="Revisions" />
-      {state.kind === 'loading' ? (
-        <span className="text-secondary text-muted-foreground">Loading…</span>
-      ) : null}
+      {state.kind === 'loading' ? <SkeletonRow label="Loading revisions" /> : null}
       {state.kind === 'failed' ? (
         <span role="alert" className="text-secondary text-danger">
           {state.message}

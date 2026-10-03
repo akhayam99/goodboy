@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { NewProjectForm } from '../NewProjectForm';
 import type { Project, WorkspaceId } from '@goodboy/types';
 import type { ProjectAttachConflict } from '../../../store/slices/projects/addProject';
 import { useProjectLinking } from '../../hooks/useProjectLinking';
@@ -36,6 +37,7 @@ export const ProjectLinkList = ({
   const linking = useProjectLinking({ workspaceId, initialConflicts });
   const isCompact = density === 'compact';
   const [query, setQuery] = useState('');
+  const [isStarting, setIsStarting] = useState(false);
 
   return (
     <div className="flex flex-col gap-2">
@@ -59,7 +61,7 @@ export const ProjectLinkList = ({
             onPathChange={linking.setPath}
             onAdd={({ rootPath }) => void linking.link({ rootPath })}
             onBrowse={() => void linking.browse()}
-            onNewProject={() => void linking.newProject()}
+            onNewProject={() => setIsStarting(true)}
             onLinkPlainFolder={() => void linking.linkPlainFolder()}
           />
         </div>
@@ -107,9 +109,16 @@ export const ProjectLinkList = ({
           onPathChange={linking.setPath}
           onAdd={({ rootPath }) => void linking.link({ rootPath })}
           onBrowse={() => void linking.browse()}
-          onNewProject={() => void linking.newProject()}
+          onNewProject={() => setIsStarting(true)}
         />
       )}
+
+      {isStarting ? (
+        <NewProjectForm
+          onCreated={() => setIsStarting(false)}
+          onCancel={() => setIsStarting(false)}
+        />
+      ) : null}
 
       {linking.detected !== null && (
         <DetectedRepoList

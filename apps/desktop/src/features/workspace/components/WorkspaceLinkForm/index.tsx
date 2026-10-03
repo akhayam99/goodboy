@@ -147,7 +147,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
         return;
       }
       throw new Error(
-        `No git repository at ${picked}. Pick a folder with a .git directory, use New project to initialize one, or use Link a plain folder.`,
+        `No git repository at ${picked}. Pick a folder with a .git directory, use Start a new project to begin one, or use Link a plain folder.`,
       );
     });
 
@@ -345,11 +345,11 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
         <>
           <Button type="button" variant="secondary" disabled={busy} onClick={onNewProject}>
             <FolderPlus size={ICON_SIZE.control} aria-hidden />
-            New project
+            Start a new project
           </Button>
           <Button type="button" variant="primary" disabled={busy} onClick={onPickProjectFolder}>
             <FolderGit2 size={ICON_SIZE.control} aria-hidden />
-            Choose a folder
+            Open a folder
           </Button>
         </>
       ) : null}
@@ -411,8 +411,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
           {choice === 'project' ? (
             <div className="flex flex-col gap-2">
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Pick a folder with a git repository, or let New project start a repository in an
-                empty one.
+                Open a folder with a git repository, or start a new project in an empty one.
               </p>
               {reconnectCandidate !== null ? (
                 <Notice
@@ -554,7 +553,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
               <Plus size={ICON_SIZE.control} aria-hidden /> Add
             </Button>
             <Button type="button" variant="secondary" onClick={onNewLinkedProject} disabled={busy}>
-              <FolderPlus size={ICON_SIZE.control} aria-hidden /> New project
+              <FolderPlus size={ICON_SIZE.control} aria-hidden /> Start a new project
             </Button>
           </div>
 
