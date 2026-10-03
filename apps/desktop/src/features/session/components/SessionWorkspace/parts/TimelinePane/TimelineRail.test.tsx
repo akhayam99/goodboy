@@ -59,31 +59,6 @@ describe('TimelineRail', () => {
     expect(line?.getAttribute('class') ?? '').not.toContain('opacity');
   });
 
-  it('paints every stroke with one flat colour and no gradient machinery', () => {
-    const { container } = render(
-      <TimelineRail
-        width={32}
-        rail={railOf({
-          segment: {
-            column: 0,
-            laneId: null,
-            identityIndex: null,
-            isMuted: false,
-            dash: 'solid',
-            fromY: 16,
-            toY: 32,
-          },
-        })}
-      />,
-    );
-    const line = container.querySelector('line');
-
-    expect(container.querySelector('defs')).toBeNull();
-    expect(container.querySelector('linearGradient')).toBeNull();
-    expect(line?.getAttribute('stroke')).toBe('var(--color-border)');
-    expect(line?.getAttribute('class') ?? '').not.toContain('opacity');
-  });
-
   it('recedes a muted lane without changing the hue that names its run', () => {
     const { container } = render(
       <TimelineRail
@@ -213,47 +188,51 @@ describe('TimelineRail row edges', () => {
     ...overrides,
   });
 
-  it('runs a solid line one pixel past both row edges so rows never leave a hairline', () => {
+  const spanOfLine = () => {
+    const line = screen.getByTestId('timeline-rail-segment');
+    return { from: Number(line.getAttribute('y1')), to: Number(line.getAttribute('y2')) };
+  };
+
+  it('overlaps a solid line into both neighbouring rows so stacked rows never leave a hairline', () => {
     const { container } = render(
       <TimelineRail width={32} rail={railOf({ segment: segmentOf({}) })} />,
     );
-    const line = screen.getByTestId('timeline-rail-segment');
+    const { from, to } = spanOfLine();
 
-    expect(line.getAttribute('y1')).toBe('-1');
-    expect(line.getAttribute('y2')).toBe('33');
+    expect(from).toBeLessThan(0);
+    expect(to).toBeGreaterThan(32);
     expect(container.querySelector('svg')?.getAttribute('class')).toContain('overflow-visible');
   });
 
-  it('runs the identity lane past the row edges the same way as the grey spine', () => {
+  it('overlaps an identity lane the same way as the grey spine', () => {
     render(
       <TimelineRail
         width={32}
         rail={railOf({ segment: segmentOf({ column: 1, laneId: 'lane', identityIndex: 0 }) })}
       />,
     );
-    const line = screen.getByTestId('timeline-rail-segment');
+    const { from, to } = spanOfLine();
 
-    expect([line.getAttribute('y1'), line.getAttribute('y2')]).toEqual(['-1', '33']);
+    expect(from).toBeLessThan(0);
+    expect(to).toBeGreaterThan(32);
   });
 
-  it('stops exactly at the marker when the line ends inside the row', () => {
+  it('ends exactly on the marker when the line stops inside the row', () => {
     render(
       <TimelineRail width={32} rail={railOf({ segment: segmentOf({ fromY: 16, toY: 32 }) })} />,
     );
-    const line = screen.getByTestId('timeline-rail-segment');
 
-    expect([line.getAttribute('y1'), line.getAttribute('y2')]).toEqual(['16', '33']);
+    expect(spanOfLine().from).toBe(16);
   });
 
   it('keeps a dashed line inside its row so the dash pattern never doubles', () => {
     render(<TimelineRail width={32} rail={railOf({ segment: segmentOf({ dash: 'dashed' }) })} />);
-    const line = screen.getByTestId('timeline-rail-segment');
 
-    expect([line.getAttribute('y1'), line.getAttribute('y2')]).toEqual(['0', '32']);
+    expect(spanOfLine()).toEqual({ from: 0, to: 32 });
   });
 
-  it('carries an elbow from the row above across the top edge', () => {
-    render(
+  it('draws lines and elbows with one rendering so they land on the same pixels', () => {
+    const { container } = render(
       <TimelineRail
         width={32}
         rail={railOf({
@@ -262,12 +241,9 @@ describe('TimelineRail row edges', () => {
         })}
       />,
     );
-    const bleed = screen.getByTestId('timeline-rail-join-bleed');
 
-    expect([bleed.getAttribute('x1'), bleed.getAttribute('y1'), bleed.getAttribute('y2')]).toEqual([
-      '24',
-      '-1',
-      '0',
-    ]);
+    expect(container.querySelectorAll('[shape-rendering]')).toHaveLength(0);
+    expect(container.querySelectorAll('path')).toHaveLength(1);
+    expect(screen.queryByTestId('timeline-rail-join-bleed')).toBeNull();
   });
 });

@@ -24,6 +24,7 @@ import {
 } from '@goodboy/db';
 import type { WorkspaceId } from '@goodboy/types';
 import { tauriDatabase } from '../../../../shared/lib/db';
+import { useAppStore } from '../../../../store';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import {
   impactWindowMs,
@@ -230,6 +231,24 @@ export const useImpactMetrics = ({ workspaceId, windowId }: Params): ImpactMetri
     },
     [loadScope],
   );
+
+  const refreshDormantPullRequests = useAppStore((state) => state.refreshDormantPullRequests);
+  const retryRef = useRef(retry);
+  retryRef.current = retry;
+
+  useEffect(() => {
+    let isActive = true;
+    void refreshDormantPullRequests(workspaceId)
+      .then((settled) => {
+        if (isActive && settled > 0) {
+          retryRef.current('shipped');
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      isActive = false;
+    };
+  }, [refreshDormantPullRequests, workspaceId]);
 
   return {
     overview,

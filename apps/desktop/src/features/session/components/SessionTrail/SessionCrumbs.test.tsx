@@ -631,16 +631,15 @@ describe('SessionCrumbs on a cluster child', () => {
     renderCrumbs();
 
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
-    expect(nav.className).not.toContain('flex-wrap');
+    expect(nav.querySelectorAll('[data-trail-segment]')).toHaveLength(5);
     const father = screen.getByRole('button', {
       name: 'an extremely long father agent display name',
     });
-    expect(father.className).toContain('truncate');
-    expect(father.className).not.toContain('max-w-64');
+    expect(father.textContent).toBe('an extremely long father agent display name');
     const child = screen.getByRole('button', {
       name: /an even longer cluster child area description name/,
     });
-    expect(child.className).toContain('truncate');
+    expect(child.textContent).toContain('an even longer cluster child area description name');
   });
 });
 

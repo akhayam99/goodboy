@@ -72,7 +72,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   const restore = async (slugs: ReadonlyArray<string>) => {
     setIsRestoring(true);
     try {
-      await resetWorkflows(workspaceId, slugs);
+      await resetWorkflows({ workspaceId, slugs });
     } finally {
       setIsRestoring(false);
     }

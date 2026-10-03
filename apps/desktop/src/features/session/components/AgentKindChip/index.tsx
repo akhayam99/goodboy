@@ -1,4 +1,4 @@
-import { Tooltip, cn } from '@goodboy/ui';
+import { Chip, Tooltip, cn } from '@goodboy/ui';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import { agentKindPalette, type AgentKind } from '../../agent-kind';
 
@@ -35,15 +35,18 @@ export const AgentKindChip = ({
   }
 
   return (
-    <span
+    <Chip
+      tone="neutral"
+      size="3xs"
+      label={text}
+      title={title}
       className={cn(
-        'inline-flex h-4.5 w-20 shrink-0 items-center justify-center rounded-sm px-1.5 text-secondary font-medium',
-        muted ? 'bg-muted text-faint-foreground' : [palette.fg, 'bg-current/12'],
+        'shrink-0 whitespace-nowrap',
+        muted === true
+          ? 'bg-muted text-faint-foreground'
+          : [palette.fg, 'bg-current/12 ring-current/25'],
         className,
       )}
-      title={title}
-    >
-      {text}
-    </span>
+    />
   );
 };

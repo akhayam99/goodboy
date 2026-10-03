@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, StepId, WorkflowId, WorkspaceId } from '@goodboy/types';
+import type { IsoDateTime, StepId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
 import {
   deleteWorkflow,
   getWorkflow,
@@ -10,8 +10,14 @@ import {
 } from '@goodboy/db';
 import { migrate } from '@goodboy/db/migrations';
 import { WORKFLOW_LIBRARY } from './library';
-import { restoreWorkflowLibrary, seedMissingBuiltinWorkflows, seedWorkflowLibrary } from './seeder';
+import {
+  restoreWorkflowLibrary,
+  seedMissingBuiltinWorkflows,
+  seedWorkflowLibrary,
+  WorkflowRestoreError,
+} from './seeder';
 import { PROVIDER_CAPABILITIES } from '../providers/capabilities';
+import { normalizeAgentRole } from '../roles';
 import { makeTestDatabase } from '@goodboy/db/test-helpers';
 
 const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
@@ -179,6 +185,40 @@ describe('seedWorkflowLibrary', () => {
     const REFACTOR = 'refactor-example';
     const FIX = 'fix-a-bug';
 
+    type LegacyRefactorParams = {
+      readonly db: DbInterface;
+      readonly workspaceId: WorkspaceId;
+    };
+
+    const legacyRefactor = async ({ db, workspaceId }: LegacyRefactorParams): Promise<Workflow> => {
+      const entry = WORKFLOW_LIBRARY.find((candidate) => candidate.slug === REFACTOR);
+      if (entry === undefined) {
+        throw new Error('Refactor is missing from the workflow library');
+      }
+      const workflowId = `wf_seed_${REFACTOR}_legacy-container` as WorkflowId;
+      const workflow: Workflow = {
+        id: workflowId,
+        workspaceId,
+        name: 'Refactor ledger-core',
+        description: 'Edited before workspace containers',
+        origin: 'library',
+        isPreset: true,
+        steps: entry.steps.map((step, ordinal) => ({
+          id: `step_seed_${REFACTOR}_${ordinal}_legacy-container` as StepId,
+          workflowId,
+          role: normalizeAgentRole({ role: step.role }),
+          ordinal,
+          name: step.name,
+          promptPrefix: ordinal === 0 ? 'Map it differently.' : step.promptPrefix,
+          expectedOutput: step.expectedOutput,
+        })),
+        createdAt: now(),
+        updatedAt: now(),
+      };
+      await upsertWorkflow(db, workflow);
+      return workflow;
+    };
+
     it('puts back the steps of an edited built-in and drops the steps the user added', async () => {
       const { db, workspaceId } = await setup();
       await seedWorkflowLibrary({ db }, workspaceId);
@@ -220,6 +260,71 @@ describe('seedWorkflowLibrary', () => {
       const names = (await listWorkflows(db, workspaceId)).map((workflow) => workflow.name);
       expect(names).toContain('Fix a bug');
       expect(names).toContain('Refactor ledger-core');
+    });
+
+    it('restores a legacy-suffix row without adding another row and keeps step ids', async () => {
+      const { db, workspaceId } = await setup();
+      const legacy = await legacyRefactor({ db, workspaceId });
+
+      const result = await restoreWorkflowLibrary({ db }, { workspaceId, slugs: [REFACTOR] });
+
+      const workflows = await listWorkflows(db, workspaceId);
+      expect(result.seeded).toEqual([{ slug: REFACTOR, workflowId: legacy.id }]);
+      expect(workflows).toHaveLength(1);
+      expect(workflows[0]?.id).toBe(legacy.id);
+      expect(workflows[0]?.steps.map((step) => step.id)).toEqual(
+        legacy.steps.map((step) => step.id),
+      );
+    });
+
+    it('returns name_taken without writing when another workflow holds the name', async () => {
+      const { db, workspaceId } = await setup();
+      await upsertWorkflow(db, {
+        id: 'wf-own-refactor' as WorkflowId,
+        workspaceId,
+        name: 'Refactor',
+        description: 'Custom refactor workflow',
+        origin: 'custom',
+        isPreset: true,
+        steps: [],
+        createdAt: now(),
+        updatedAt: now(),
+      });
+
+      const failure = await restoreWorkflowLibrary({ db }, { workspaceId, slugs: [REFACTOR] }).then(
+        () => null,
+        (error: unknown) => error,
+      );
+      expect(failure).toBeInstanceOf(WorkflowRestoreError);
+      expect(failure).toMatchObject({
+        kind: 'name_taken',
+        message: 'A workflow named Refactor already exists. Rename it and try again.',
+      });
+      expect(await listWorkflows(db, workspaceId)).toHaveLength(1);
+    });
+
+    it('refuses a restore while that workflow has a live run', async () => {
+      const { db, workspaceId } = await setup();
+      const legacy = await legacyRefactor({ db, workspaceId });
+      await db.execute(
+        "INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at) VALUES ('session-live', ?, 'Northwind checkout', 'running', 1, 1)",
+        [workspaceId],
+      );
+      await db.execute(
+        "INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, created_at) VALUES ('run-live', 'session-live', ?, 0, 0, 1)",
+        [legacy.id],
+      );
+
+      const failure = await restoreWorkflowLibrary({ db }, { workspaceId, slugs: [REFACTOR] }).then(
+        () => null,
+        (error: unknown) => error,
+      );
+      expect(failure).toBeInstanceOf(WorkflowRestoreError);
+      expect(failure).toMatchObject({
+        kind: 'workflow_running',
+        message: 'Refactor is running in Northwind checkout. Restore it when the run ends.',
+      });
+      expect((await getWorkflow(db, legacy.id))?.name).toBe('Refactor ledger-core');
     });
   });
 

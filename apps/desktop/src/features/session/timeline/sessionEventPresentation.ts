@@ -161,7 +161,7 @@ const workflowSegment = ({ payload }: PayloadParams): TimelineLabelSegment =>
     ? { kind: 'text', text: 'Workflow' }
     : { kind: 'value', text: payload.workflowName, variant: 'workflow' };
 
-export type DecisionDiff = {
+type DecisionDiff = {
   readonly additions: number;
   readonly deletions: number;
 };
@@ -173,6 +173,23 @@ export const decisionDiff = ({ payload }: PayloadParams): DecisionDiff => {
     deletions:
       (payload?.removed ?? 0) + replaced + (payload?.withdrawn ?? 0) + (payload?.merged ?? 0),
   };
+};
+
+const DECISION_COUNT_WORDS = [
+  ['added', 'added'],
+  ['replaced', 'replaced'],
+  ['removed', 'removed'],
+  ['restored', 'restored'],
+  ['withdrawn', 'withdrawn'],
+  ['merged', 'merged'],
+] as const satisfies ReadonlyArray<readonly [keyof SessionEventPayload, string]>;
+
+export const decisionCountsText = ({ payload }: PayloadParams): string | null => {
+  const parts = DECISION_COUNT_WORDS.flatMap(([key, word]) => {
+    const count = payload?.[key] ?? 0;
+    return count > 0 ? [`${count} ${word}`] : [];
+  });
+  return parts.length === 0 ? null : parts.join(', ');
 };
 
 export const isEmptyDecisionDiff = ({ payload }: PayloadParams): boolean => {

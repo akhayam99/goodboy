@@ -1,8 +1,9 @@
 import type { BreadcrumbCrumb } from '../../breadcrumbCrumb';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { tintClasses } from '@goodboy/ui';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import type { LensKind, SessionStudio } from '../../../../store';
 import type { AgentHomeLens } from '../../agent-kind';
-import { LENS_ICON } from '../../lens-labels';
+import { LENS_ICON, lensIconClass } from '../../lens-labels';
 
 export type SessionBreadcrumbHandlers = {
   toOverview: () => void;
@@ -40,6 +41,11 @@ export type SessionBreadcrumbInput = {
   lensLabel: (lens: LensKind) => string;
   handlers: SessionBreadcrumbHandlers;
 };
+
+const lensIcon = ({ lens }: { readonly lens: LensKind }) => ({
+  icon: LENS_ICON[lens],
+  iconClassName: lensIconClass({ lens }),
+});
 
 const sealLast = (crumbs: BreadcrumbCrumb[]): BreadcrumbCrumb[] => {
   const copy = crumbs.map((crumb) => ({ ...crumb }));
@@ -86,13 +92,13 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
   const workflowsList: BreadcrumbCrumb = {
     id: 'workflows',
     label: 'Workflows',
-    icon: LENS_ICON.workflows,
+    ...lensIcon({ lens: 'workflows' }),
     onClick: handlers.toWorkflowsList,
   };
   const plansList: BreadcrumbCrumb = {
     id: 'plans',
     label: 'Artifacts',
-    icon: LENS_ICON.plans,
+    ...lensIcon({ lens: 'plans' }),
     onClick: handlers.toArtifactsList,
   };
 
@@ -110,7 +116,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
         {
           id: 'pr',
           label: lensLabel('pr'),
-          icon: LENS_ICON.pr,
+          ...lensIcon({ lens: 'pr' }),
           onClick: () => handlers.toLens('pr'),
         },
         { id: 'bitbucket', label: 'Bitbucket', icon: CONCEPT_ICONS.bitbucket },
@@ -121,7 +127,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
       {
         id: 'gitlab_issues',
         label: lensLabel('gitlab_issues'),
-        icon: LENS_ICON.gitlab_issues,
+        ...lensIcon({ lens: 'gitlab_issues' }),
         onClick: () => handlers.toLens('gitlab_issues'),
       },
       { id: 'mr', label: 'Merge request', icon: CONCEPT_ICONS.gitlab },
@@ -182,7 +188,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
         {
           id: `lens-${selectedChildHome}`,
           label: lensLabel(selectedChildHome),
-          icon: LENS_ICON[selectedChildHome],
+          ...lensIcon({ lens: selectedChildHome }),
           onClick: () => handlers.toLens(selectedChildHome),
         },
         ...thread,
@@ -239,7 +245,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     const pullRequest: BreadcrumbCrumb = {
       id: 'lens-pr',
       label: lensLabel('pr'),
-      icon: LENS_ICON.pr,
+      ...lensIcon({ lens: 'pr' }),
       onClick: handlers.toPullRequestHome,
     };
     const numbered: ReadonlyArray<BreadcrumbCrumb> =
@@ -263,11 +269,12 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
   if (lens === 'files' && diffBranchLabel != null && diffPageLabel != null) {
     return sealLast([
       overview,
-      { id: 'lens-files', label: lensLabel('files'), icon: LENS_ICON.files },
+      { id: 'lens-files', label: lensLabel('files'), ...lensIcon({ lens: 'files' }) },
       {
         id: 'diff-branch',
         label: diffBranchLabel,
         icon: CONCEPT_ICONS.branch,
+        iconClassName: tintClasses(CONCEPT_TONE.branch).icon,
         ...(handlers.toDiffBranch !== undefined && { onClick: handlers.toDiffBranch }),
       },
       { id: 'rewrite-history', label: diffPageLabel, icon: CONCEPT_ICONS.history },
@@ -277,15 +284,20 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
   if (lens === 'files' && diffBranchLabel != null) {
     return sealLast([
       overview,
-      { id: 'lens-files', label: lensLabel('files'), icon: LENS_ICON.files },
-      { id: 'diff-branch', label: diffBranchLabel, icon: CONCEPT_ICONS.branch },
+      { id: 'lens-files', label: lensLabel('files'), ...lensIcon({ lens: 'files' }) },
+      {
+        id: 'diff-branch',
+        label: diffBranchLabel,
+        icon: CONCEPT_ICONS.branch,
+        iconClassName: tintClasses(CONCEPT_TONE.branch).icon,
+      },
     ]);
   }
 
   if (lens != null) {
     return sealLast([
       overview,
-      { id: `lens-${lens}`, label: lensLabel(lens), icon: LENS_ICON[lens] },
+      { id: `lens-${lens}`, label: lensLabel(lens), ...lensIcon({ lens: lens }) },
     ]);
   }
 

@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
+import { tintClasses, type Tone } from '@goodboy/ui';
 import type { LensKind } from '../../store';
-import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../shared/components/conceptIcons';
 
 export const LENS_LABEL: Record<LensKind, string> = {
   questions: 'Questions',
@@ -45,6 +46,49 @@ export const LENS_ICON = {
   github_issue: CONCEPT_ICONS.issues,
   slack_threads: CONCEPT_ICONS.slack,
 } satisfies Record<LensKind, LucideIcon>;
+
+const LENS_TONE = {
+  questions: CONCEPT_TONE.questions,
+  agents: CONCEPT_TONE.agents,
+  workflows: CONCEPT_TONE.workflows,
+  review: CONCEPT_TONE.review,
+  plans: CONCEPT_TONE.plans,
+  scripts: CONCEPT_TONE.scripts,
+  terminal: CONCEPT_TONE.terminal,
+  context: CONCEPT_TONE.context,
+  goal: CONCEPT_TONE.goal,
+  decisions: CONCEPT_TONE.decisions,
+  last_output_summary: CONCEPT_TONE.sessionSummary,
+  pr: CONCEPT_TONE.pr,
+  files: CONCEPT_TONE.diff,
+  explore: CONCEPT_TONE.explore,
+  linear: CONCEPT_TONE.linear,
+  gitlab_issues: CONCEPT_TONE.gitlab,
+  jira_issues: CONCEPT_TONE.jira,
+  github_issue: CONCEPT_TONE.issues,
+  slack_threads: CONCEPT_TONE.slack,
+} satisfies Record<LensKind, Tone>;
+
+const LENS_BRAND_CLASS: Partial<Record<LensKind, string>> = {
+  linear: 'text-provider-linear',
+  gitlab_issues: 'text-provider-gitlab',
+  jira_issues: 'text-provider-jira',
+  github_issue: 'text-provider-github',
+  slack_threads: 'text-provider-slack',
+};
+
+type IconClassParams = {
+  readonly lens: LensKind;
+  readonly isQuiet?: boolean;
+};
+
+export const lensIconClass = ({ lens, isQuiet = false }: IconClassParams): string => {
+  const brand = LENS_BRAND_CLASS[lens];
+  if (brand !== undefined) {
+    return brand;
+  }
+  return isQuiet ? 'text-faint-foreground' : tintClasses(LENS_TONE[lens]).icon;
+};
 
 export const SIMPLE_LENSES = new Set<LensKind>([
   'workflows',

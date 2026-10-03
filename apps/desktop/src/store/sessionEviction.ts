@@ -290,6 +290,7 @@ export const NON_SESSION_STATE_KEYS = [
   'bootstrapPhase',
   'bootstrapRemoteProbe',
   'bootstrapMoveReport',
+  'dormantSpend',
 ] as const satisfies ReadonlyArray<keyof AppState>;
 
 type RegisteredKey =

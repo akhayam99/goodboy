@@ -20,36 +20,57 @@ const inboxOn = (provider: 'github' | 'linear'): StudioPlace => ({
   focus: { provider, kind: null, recordKey: null, sessionId: null },
 });
 
-const CASES: ReadonlyArray<readonly [string, StudioPlace | null, FooterTarget]> = [
-  ['nothing open', null, null],
-  ['app settings', { kind: 'settings', focus: { scope: 'app' } }, 'settings'],
-  ['workspace settings', { kind: 'settings', focus: { scope: 'workspace' } }, 'settings'],
-  ['providers settings', { kind: 'settings', focus: { scope: 'providers' } }, 'settings'],
-  ['tools settings without a tool', { kind: 'settings', focus: { scope: 'tools' } }, 'settings'],
+type Expected = {
+  readonly place: FooterTarget['place'];
+  readonly tool: FooterTarget['tool'];
+};
+
+const at = (place: FooterTarget['place'], tool: FooterTarget['tool'] = null): Expected => ({
+  place,
+  tool,
+});
+
+const CASES: ReadonlyArray<readonly [string, StudioPlace | null, Expected]> = [
+  ['nothing open', null, at(null)],
+  ['app settings', { kind: 'settings', focus: { scope: 'app' } }, at('settings')],
+  ['workspace settings', { kind: 'settings', focus: { scope: 'workspace' } }, at('settings')],
+  ['providers settings', { kind: 'settings', focus: { scope: 'providers' } }, at('settings')],
+  [
+    'tools settings without a tool',
+    { kind: 'settings', focus: { scope: 'tools' } },
+    at('settings'),
+  ],
   [
     'tools settings on a disconnected tool',
     { kind: 'settings', focus: { scope: 'tools', tool: 'linear' } },
-    'link',
+    at('link'),
   ],
   [
     'tools settings on a connected tool',
     { kind: 'settings', focus: { scope: 'tools', tool: 'github' } },
-    'settings',
+    at('settings'),
   ],
-  ['the whole inbox', { kind: 'inbox', focus: null }, 'inbox'],
-  ['the inbox on a connected glyph', inboxOn('github'), 'github'],
-  ['the inbox on a disconnected provider', inboxOn('linear'), 'inbox'],
-  ['workflows', { kind: 'workflow' }, 'workflows'],
-  ['impact', { kind: 'impact', scope: null }, 'impact'],
-  ['changelog', { kind: 'changelog' }, 'changelog'],
-  ['guide', { kind: 'guide' }, null],
-  ['companion', { kind: 'companion' }, null],
-  ['add workspace', { kind: 'addWorkspace' }, null],
-  ['notifications', { kind: 'notifications' }, null],
+  ['the whole inbox', { kind: 'inbox', focus: null }, at('inbox')],
+  ['the inbox on a connected glyph', inboxOn('github'), at('inbox', 'github')],
+  ['the inbox on a disconnected provider', inboxOn('linear'), at('inbox')],
+  ['workflows', { kind: 'workflow' }, at('workflows')],
+  ['impact', { kind: 'impact', scope: null }, at('impact')],
+  ['changelog', { kind: 'changelog' }, at('changelog')],
+  ['guide', { kind: 'guide' }, at(null)],
+  ['companion', { kind: 'companion' }, at(null)],
+  ['add workspace', { kind: 'addWorkspace' }, at(null)],
+  ['notifications', { kind: 'notifications' }, at(null)],
 ];
 
 describe('footerTarget', () => {
-  it.each(CASES)('lights the right control for %s', (_name, overlay, expected) => {
-    expect(footerTarget({ overlay, connected: GITHUB_CONNECTED })).toBe(expected);
+  it.each(CASES)('lights the right controls for %s', (_name, overlay, expected) => {
+    expect(footerTarget({ overlay, connected: GITHUB_CONNECTED })).toEqual(expected);
+  });
+
+  it('keeps the inbox lit while the glyph of the chosen tool is the only extra', () => {
+    const target = footerTarget({ overlay: inboxOn('github'), connected: GITHUB_CONNECTED });
+
+    expect(target.place).toBe('inbox');
+    expect(target.tool).toBe('github');
   });
 });

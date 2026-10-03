@@ -40,6 +40,9 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
       throw err;
     }
 
+    void get()
+      .loadDormantSpend(workspaceId)
+      .catch(() => undefined);
     await get().recordSessionEvent({ sessionId, kind: 'session_archived' });
 
     await get()

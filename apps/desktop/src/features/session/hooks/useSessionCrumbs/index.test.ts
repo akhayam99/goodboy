@@ -15,7 +15,8 @@ import { LENS_ICON } from '../../lens-labels';
 
 type StoreState = Record<string, unknown>;
 
-const { store, actions } = vi.hoisted(() => {
+const { store, actions, queueCalls } = vi.hoisted(() => {
+  const queueCalls: Array<{ readonly isEnabled?: boolean }> = [];
   const store: {
     state: StoreState;
     openQuestions: ReadonlyArray<Record<string, unknown>>;
@@ -29,11 +30,14 @@ const { store, actions } = vi.hoisted(() => {
     loadAgentTranscript: vi.fn(async () => undefined),
     setPullRequestMode: vi.fn(),
   };
-  return { store, actions };
+  return { store, actions, queueCalls };
 });
 
 vi.mock('../../../resolve/hooks/useResolveQueueRows', () => ({
-  useResolveQueueRows: () => [],
+  useResolveQueueRows: (params: { readonly isEnabled?: boolean }) => {
+    queueCalls.push(params);
+    return [];
+  },
 }));
 
 vi.mock('../../../../store', async () => ({
@@ -149,6 +153,7 @@ beforeEach(() => {
   };
   store.openQuestions = [];
   store.answeredQuestions = [];
+  queueCalls.length = 0;
 });
 
 describe('useSessionCrumbs code host layers', () => {
@@ -238,6 +243,22 @@ describe('useSessionCrumbs', () => {
 
   it('gives a resolver opened from the feed the review home as parent, named Agent', () => {
     expect(labelsOf(null, RESOLVER_AGENT_ID)).toEqual(['Overview', 'Review', 'Agent']);
+  });
+
+  it('asks for the resolve rows only when a resolver thread is selected', () => {
+    labelsOf(null, STEP_AGENT_ID);
+    expect(queueCalls.length).toBeGreaterThan(0);
+    expect(queueCalls.every((call) => call.isEnabled === false)).toBe(true);
+
+    queueCalls.length = 0;
+    store.state = {
+      ...store.state,
+      sessionResolveAttempts: {
+        [SESSION_ID]: [{ agentId: RESOLVER_AGENT_ID, threadIds: ['thread-1'] }],
+      },
+    };
+    labelsOf(null, RESOLVER_AGENT_ID);
+    expect(queueCalls.every((call) => call.isEnabled === true)).toBe(true);
   });
 
   it('parents a cluster child on its father, under the run', () => {

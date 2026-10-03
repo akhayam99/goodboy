@@ -151,7 +151,7 @@ const writeSpies = () => [
 ];
 
 const openConversation = async () => {
-  await waitFor(() => expect(screen.getByText(/one nit on the fuel constant/)).toBeTruthy());
+  await waitFor(() => screen.getByText(/one nit on the fuel constant/));
 };
 
 describe('PrDetailPanel', () => {
@@ -162,8 +162,8 @@ describe('PrDetailPanel', () => {
 
   it('shows the pull request title and description on the overview', async () => {
     renderPanel();
-    expect(screen.getByText('Raise the fuel constant')).toBeTruthy();
-    await waitFor(() => expect(screen.getByText('The tank was empty.')).toBeTruthy());
+    screen.getByText('Raise the fuel constant');
+    await waitFor(() => screen.getByText('The tank was empty.'));
   });
 
   it('rolls the bitbucket build statuses up into plain language above the check list', async () => {
@@ -172,7 +172,7 @@ describe('PrDetailPanel', () => {
     await waitFor(() =>
       expect(screen.getByTestId('checks-rollup').textContent).toBe('1 failed, 1 in progress'),
     );
-    expect(screen.getByText('unit tests')).toBeTruthy();
+    screen.getByText('unit tests');
   });
 
   it('renders the changed file from the raw unified diff bitbucket returns', async () => {
@@ -259,11 +259,11 @@ describe('PrDetailPanel', () => {
 
   it('never paints the previous pull request conversation while the next one loads', async () => {
     const view = render(panel(PR));
-    await waitFor(() => expect(screen.getByText(/one nit on the fuel constant/)).toBeTruthy());
+    await waitFor(() => screen.getByText(/one nit on the fuel constant/));
 
     view.rerender(panel({ ...PR, id: 43, title: 'Another one' }));
 
     expect(screen.queryByText(/one nit on the fuel constant/)).toBeNull();
-    expect(screen.getByRole('status', { name: 'Loading the conversation' })).toBeTruthy();
+    screen.getByRole('status', { name: 'Loading the conversation' });
   });
 });

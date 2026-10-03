@@ -57,7 +57,10 @@ a reason in its allowlist entry, never a waiver for a whole directory.
 
 `LENS_ICON` in `features/session/lens-labels.ts` reads straight from the
 registry, so a lens never picks its own glyph, and `LENS_LABEL` in the same
-file names it. Size is `control` in the lens switcher. `lensDestinations` in
+file names it. `LENS_TONE` in the same file gives each lens its tone, and
+`lensIconClass` turns it into the icon color the page menu and the breadcrumb
+use; linked tools keep their brand color, and Questions is muted until
+something is open. Size is `control` in the lens switcher. `lensDestinations` in
 `features/session/lens-destinations.ts` decides which lenses a session lists.
 
 | Lens (`LENS_LABEL`)         | Concept        | Glyph                   | Tone    | Listed                                     |
@@ -208,6 +211,22 @@ glyph with `WORK_NODE_GLYPH_SIZE`, not `ICON_SIZE`, because every rail node is
 | Workflow        | `workflows`, `delete` when deleted        |
 | Decisions       | `decisions`                               |
 | Issue           | `IntegrationGlyph` for the issue provider |
+
+## Row states
+
+A quiet final state in the state slot of a work row is an icon in its tone
+(`ICON_SIZE.control`), with the word in the tooltip and the accessible name.
+The table is `statePresentation.ts` in `features/workTreeModel/`. States that
+ask you or report trouble stay words and have no icon.
+
+| State      | Glyph          |
+| ---------- | -------------- |
+| Pushed     | `push`         |
+| Resolved   | `CheckCheck`   |
+| Accepted   | `Check`        |
+| Reply only | `Reply`        |
+| Skipped    | `SkipForward`  |
+| Closed     | `runCancelled` |
 
 ## Suggestions
 

@@ -14,6 +14,7 @@ describe('impactSummary', () => {
       windowId: 'last30',
       workspaceName: 'Northwind',
       sessionCount: 42,
+      deletedSessionCount: 0,
       mergedPullRequests: 18,
       spendText: '$312',
       workflowShare: 0.61,
@@ -35,6 +36,7 @@ describe('impactSummary', () => {
       windowId: 'last7',
       workspaceName: null,
       sessionCount: 1,
+      deletedSessionCount: 0,
       mergedPullRequests: null,
       spendText: null,
       workflowShare: null,
@@ -43,12 +45,30 @@ describe('impactSummary', () => {
     expect(text(parts)).toBe('In the last 7 days Goodboy ran 1 session.');
   });
 
+  it('notes the deleted sessions it counted, right after the session count', () => {
+    const parts = impactSummary({
+      windowId: 'all',
+      workspaceName: 'Harborline',
+      sessionCount: 90,
+      deletedSessionCount: 77,
+      mergedPullRequests: 20,
+      spendText: '$2,154.61',
+      workflowShare: null,
+    });
+
+    expect(text(parts)).toBe(
+      'So far Goodboy ran 90 sessions (77 deleted) in Harborline, merged 20 pull requests and spent $2,154.61.',
+    );
+    expect(parts?.find((part) => part.text.includes('deleted'))?.isStrong).toBe(false);
+  });
+
   it('says nothing for a window with no sessions', () => {
     expect(
       impactSummary({
         windowId: 'all',
         workspaceName: 'Northwind',
         sessionCount: 0,
+        deletedSessionCount: 0,
         mergedPullRequests: 0,
         spendText: null,
         workflowShare: null,
@@ -80,7 +100,7 @@ describe('impactDelta', () => {
 });
 
 describe('shippedSessions', () => {
-  it('ranks sessions by merged pull requests and sums what they cost', () => {
+  it('ranks sessions by merged pull requests and counts what each session cost once', () => {
     const payments = 'session-payments' as SessionId;
     const ledger = 'session-ledger' as SessionId;
     const rows = shippedSessions({
@@ -92,6 +112,7 @@ describe('shippedSessions', () => {
           title: 'a',
           state: 'merged',
           spendUsd: 3.4,
+          isDeleted: false,
         },
         {
           sessionId: payments,
@@ -100,6 +121,7 @@ describe('shippedSessions', () => {
           title: 'b',
           state: 'merged',
           spendUsd: 6,
+          isDeleted: false,
         },
         {
           sessionId: payments,
@@ -107,7 +129,8 @@ describe('shippedSessions', () => {
           number: 3,
           title: 'c',
           state: 'merged',
-          spendUsd: null,
+          spendUsd: 6,
+          isDeleted: false,
         },
         {
           sessionId: ledger,
@@ -116,9 +139,12 @@ describe('shippedSessions', () => {
           title: 'd',
           state: 'open',
           spendUsd: 1,
+          isDeleted: false,
         },
       ],
-      durations: [{ sessionId: payments, goal: 'Split payments-api refunds', value: 2.2 }],
+      durations: [
+        { sessionId: payments, goal: 'Split payments-api refunds', value: 2.2, isDeleted: false },
+      ],
       limit: 5,
     });
 

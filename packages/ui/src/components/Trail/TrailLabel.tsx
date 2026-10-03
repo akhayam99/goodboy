@@ -23,9 +23,9 @@ export const TrailLabel = ({ label, isCurrent, isIconOnly, delayStyle }: Props) 
       aria-hidden={isIconOnly ? true : undefined}
       style={delayStyle}
       className={cn(
-        'min-w-0 truncate pl-1.5',
-        'motion-safe:transition-opacity motion-safe:duration-120 motion-safe:ease-out motion-reduce:transition-opacity motion-reduce:duration-100',
-        isIconOnly ? 'opacity-0' : 'opacity-100',
+        'min-w-0 truncate',
+        'motion-safe:transition-[opacity,padding] motion-safe:duration-120 motion-safe:ease-out motion-reduce:transition-opacity motion-reduce:duration-100',
+        isIconOnly ? 'pl-0 opacity-0' : 'pl-1.5 opacity-100',
       )}
     >
       {label}

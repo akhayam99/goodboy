@@ -84,6 +84,7 @@ export const OverviewPanel = ({
           windowId,
           workspaceName,
           sessionCount: data.sessionCount,
+          deletedSessionCount: data.deletedSessionCount,
           mergedPullRequests: prs?.merged ?? null,
           spendText: data.spendUsd === null ? null : formatUsd(data.spendUsd),
           workflowShare: share,

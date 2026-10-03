@@ -146,7 +146,7 @@ export const ProvidersScene = () => {
 
   return (
     <StudioFrame
-      target="settings"
+      target={{ place: 'settings', tool: null }}
       main={
         <SettingsStudio
           currentWorkspace={WORKSPACE}

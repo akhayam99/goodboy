@@ -99,8 +99,8 @@ describe('NextStepSlot', () => {
   it('shows the top suggestion with its title and why', () => {
     suggestionState.list = [suggestion()];
     render(<NextStepSlot session={SESSION} onSelectLens={vi.fn()} />);
-    expect(screen.getByText('Answer open questions')).toBeTruthy();
-    expect(screen.getByText('2 questions blocking progress')).toBeTruthy();
+    screen.getByText('Answer open questions');
+    screen.getByText('2 questions blocking progress');
   });
 
   it('fires the primary action from the shared resolver', () => {
@@ -134,7 +134,7 @@ describe('NextStepSlot', () => {
     );
 
     expect(screen.queryByText('Approve for agent-shown')).toBeNull();
-    expect(screen.getByText('Approve for agent-other')).toBeTruthy();
+    screen.getByText('Approve for agent-other');
   });
 
   it('collapses the rest behind "N more" until expanded', () => {
@@ -146,8 +146,8 @@ describe('NextStepSlot', () => {
     render(<NextStepSlot session={SESSION} onSelectLens={vi.fn()} />);
     expect(screen.queryByText('Rebase web')).toBeNull();
     fireEvent.click(screen.getByText('2 more'));
-    expect(screen.getByText('Rebase web')).toBeTruthy();
-    expect(screen.getByText('Fix review conversations')).toBeTruthy();
+    screen.getByText('Rebase web');
+    screen.getByText('Fix review conversations');
   });
 
   it('drops a suggestion locally once dismissed with Not now', () => {
@@ -180,7 +180,7 @@ describe('NextStepSlot', () => {
     transcriptState.proposals = [{ projectId: 'project-web' }];
     render(<NextStepSlot session={SESSION} onSelectLens={vi.fn()} />);
     expect(screen.queryByText('Add web')).toBeNull();
-    expect(screen.getByText('Answer open questions')).toBeTruthy();
+    screen.getByText('Answer open questions');
   });
 
   it('keeps the clicked action busy until it settles, then clears it', async () => {

@@ -357,3 +357,94 @@ describe('agentWorkTime', () => {
     );
   });
 });
+
+describe('the time column', () => {
+  const TIME_COLUMN_PX = 80;
+  const GLYPH_PX: Readonly<Record<string, number>> = {
+    ' ': 3.2,
+    '~': 6.6,
+    '-': 4.6,
+    '.': 3,
+    '<': 6.6,
+    '≈': 6.6,
+    m: 9.6,
+    h: 6.8,
+    s: 5.6,
+    d: 6.8,
+    l: 2.8,
+    e: 6.6,
+    f: 4,
+    t: 4,
+  };
+  const DIGIT_PX = 7.2;
+  const widthOf = ({ label }: { readonly label: string }): number =>
+    [...label].reduce(
+      (total, glyph) => total + (/\d/.test(glyph) ? DIGIT_PX : (GLYPH_PX[glyph] ?? 9.6)),
+      0,
+    );
+  const estimateOf = ({ lowMs, highMs }: { readonly lowMs: number; readonly highMs: number }) => ({
+    lowMs,
+    midMs: (lowMs + highMs) / 2,
+    highMs,
+    isFallback: false,
+    basis: '',
+  });
+  const MINUTES = [0, 1, 2, 3, 5, 7, 9, 11, 14, 19, 25, 45, 59, 61, 90, 105, 119, 150, 400, 2000];
+  const labels = (): ReadonlyArray<string> => {
+    const found: string[] = [];
+    for (const low of MINUTES) {
+      for (const high of MINUTES.filter((minutes) => minutes >= low && minutes > 0)) {
+        const estimate = estimateOf({ lowMs: low * MINUTE, highMs: high * MINUTE });
+        found.push(timeLeftLabel({ lowMs: low * MINUTE, highMs: high * MINUTE }));
+        const queued = workTime({
+          phase: 'queued',
+          activeMs: 0,
+          hasStarted: false,
+          estimate,
+          unknownBasis: null,
+        });
+        found.push(queued?.label ?? '');
+      }
+      for (const seconds of [0, 7, 59]) {
+        const done = workTime({
+          phase: 'done',
+          activeMs: low * MINUTE + seconds * 1_000,
+          hasStarted: true,
+          estimate: null,
+          unknownBasis: null,
+        });
+        found.push(done?.label ?? '');
+      }
+    }
+    return found;
+  };
+
+  it('fits the widest real time string, "left" included, inside the 80px column', () => {
+    const widest = [...labels()].sort(
+      (first, second) => widthOf({ label: second }) - widthOf({ label: first }),
+    )[0];
+
+    expect(widest).toBeDefined();
+    expect(widthOf({ label: widest ?? '' })).toBeLessThanOrEqual(TIME_COLUMN_PX);
+  });
+
+  it('says a running row and a finished row the same way, minutes and seconds', () => {
+    const running = workTime({
+      phase: 'running',
+      activeMs: 4 * MINUTE + 40_000,
+      hasStarted: true,
+      estimate: null,
+      unknownBasis: null,
+    });
+    const done = workTime({
+      phase: 'done',
+      activeMs: 4 * MINUTE + 40_000,
+      hasStarted: true,
+      estimate: null,
+      unknownBasis: null,
+    });
+
+    expect(running?.label).toBe('4m 40s');
+    expect(done?.label).toBe('4m 40s');
+  });
+});

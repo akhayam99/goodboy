@@ -1,6 +1,16 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
-import type { Workflow } from '@goodboy/types';
+import { getWorkflow, insertWorkspace, saveWorkflow } from '@goodboy/db';
+import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';
+import { EMPTY_OVERRIDES } from '@goodboy/types/testing';
+import type {
+  IsoDateTime,
+  StepDefId,
+  StepId,
+  Workflow,
+  WorkflowId,
+  WorkspaceId,
+} from '@goodboy/types';
 import {
   addStep,
   draftFromPlannerSteps,
@@ -17,24 +27,28 @@ import {
 
 vi.stubGlobal('crypto', { randomUUID: vi.fn(() => `key-${Math.random()}`) });
 
-const workflow = {
-  id: 'workflow-1',
-  workspaceId: 'workspace-1',
+const WORKFLOW_ID = 'workflow-1' as WorkflowId;
+const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
+const CREATED_AT = '2026-01-01T00:00:00.000Z' as IsoDateTime;
+
+const workflow: Workflow = {
+  id: WORKFLOW_ID,
+  workspaceId: WORKSPACE_ID,
   name: ' Ship ',
   description: ' Prepare release ',
   goal: ' Deliver ',
   steps: [
     {
-      id: 'step-2',
-      workflowId: 'workflow-1',
+      id: 'step-2' as StepId,
+      workflowId: WORKFLOW_ID,
       ordinal: 1,
       name: 'Publish',
       promptPrefix: 'Publish it',
       role: 'implementer',
     },
     {
-      id: 'step-1',
-      workflowId: 'workflow-1',
+      id: 'step-1' as StepId,
+      workflowId: WORKFLOW_ID,
       ordinal: 0,
       name: 'Review',
       promptPrefix: 'Review it',
@@ -43,14 +57,14 @@ const workflow = {
       providerOverride: 'anthropic',
       modelOverride: 'claude-sonnet-4-5',
       effort: 'high',
-      verbosity: 'detailed',
+      verbosity: 'verbose',
     },
   ],
   isPreset: true,
   origin: 'custom',
-  createdAt: '2026-01-01T00:00:00.000Z',
-  updatedAt: '2026-01-01T00:00:00.000Z',
-} as unknown as Workflow;
+  createdAt: CREATED_AT,
+  updatedAt: CREATED_AT,
+};
 
 describe('workflow authoring engine', () => {
   it('round trips a workflow through a draft and upsert args', () => {
@@ -67,6 +81,100 @@ describe('workflow authoring engine', () => {
       steps: [
         { id: 'step-1', ordinal: 0, name: 'Review', promptPrefix: 'Review it' },
         { id: 'step-2', ordinal: 1, name: 'Publish', promptPrefix: 'Publish it' },
+      ],
+    });
+  });
+
+  it('round trips every authored workflow and step field through sqlite', async () => {
+    const db = await makeMigratedTestDatabase();
+    await insertWorkspace({
+      db,
+      workspace: {
+        id: WORKSPACE_ID,
+        name: 'Harborline',
+        slug: 'harborline',
+        overrides: EMPTY_OVERRIDES,
+        createdAt: CREATED_AT,
+        updatedAt: CREATED_AT,
+      },
+    });
+    const routingLock = {
+      version: 1,
+      pick: { provider: 'anthropic', model: 'claude-sonnet-4-6', effort: 'high' },
+      origin: 'user',
+    } as const;
+    const taskProfile = {
+      taskType: 'review',
+      difficulty: 'heavy',
+      basis: 'agent',
+    } as const;
+    const routingDecision = {
+      version: 1,
+      proposal: {
+        pick: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+        reason: 'The review spans the ledger boundary.',
+        source: 'agent',
+        profile: taskProfile,
+      },
+      selected: { provider: 'anthropic', model: 'claude-sonnet-4-6', effort: 'high' },
+      source: 'step_lock',
+      reason: 'The user locked this step.',
+      adjustment: 'none',
+      executed: { provider: 'anthropic', model: 'claude-sonnet-4-6', effort: 'high' },
+    } as const;
+    const complete: Workflow = {
+      ...workflow,
+      name: 'Review the ledger',
+      description: 'Check every settlement edge',
+      goal: 'Approve the Harborline close',
+      processText: 'Read the reconciliation, verify totals, then report gaps.',
+      origin: 'orchestrated',
+      isPreset: false,
+      steps: [
+        {
+          id: 'step-complete' as StepId,
+          workflowId: WORKFLOW_ID,
+          libraryStepId: 'seed_reviewer' as StepDefId,
+          role: 'reviewer',
+          ordinal: 0,
+          name: 'Review totals',
+          promptPrefix: 'Compare every ledger total.',
+          expectedOutput: 'A list of mismatches',
+          providerOverride: 'anthropic',
+          modelOverride: 'claude-sonnet-4-6',
+          effort: 'high',
+          verbosity: 'verbose',
+          orchestratorReason: 'The close needs an independent review.',
+          routingLock,
+          routingDecision,
+          taskProfile,
+          size: 'large',
+        },
+      ],
+    };
+
+    const args = upsertArgsFromDraft({
+      draft: draftFromWorkflow({ workflow: complete }),
+      workspaceId: WORKSPACE_ID,
+      id: WORKFLOW_ID,
+    });
+    await saveWorkflow(db, args);
+    const stored = await getWorkflow(db, WORKFLOW_ID);
+
+    expect(stored).toMatchObject({
+      id: WORKFLOW_ID,
+      workspaceId: WORKSPACE_ID,
+      name: complete.name,
+      description: complete.description,
+      goal: complete.goal,
+      processText: complete.processText,
+      origin: complete.origin,
+      isPreset: complete.isPreset,
+      steps: [
+        {
+          ...complete.steps[0],
+          workflowId: WORKFLOW_ID,
+        },
       ],
     });
   });

@@ -67,8 +67,8 @@ describe('OpenQuestionInlineCard', () => {
     expect(container.querySelector('[data-oq-anchor="oq-1"]')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
     fireEvent.click(screen.getByRole('button'));
-    expect(screen.getByText('You answered:')).toBeTruthy();
-    expect(screen.getByText('Postgres')).toBeTruthy();
+    screen.getByText('You answered:');
+    screen.getByText('Postgres');
   });
 
   it('keeps an answered question on the shared question tone', () => {
@@ -96,10 +96,10 @@ describe('OpenQuestionInlineCard', () => {
 
     render(<OpenQuestionInlineCard question={answered} sessionId={'sess-1' as never} />);
 
-    expect(screen.getByText('Use Postgres or SQLite?')).toBeTruthy();
+    screen.getByText('Use Postgres or SQLite?');
     expect(screen.queryByText('Postgres, because the migration path is shorter')).toBeNull();
     fireEvent.click(screen.getByRole('button'));
-    expect(screen.getByText('Postgres, because the migration path is shorter')).toBeTruthy();
+    screen.getByText('Postgres, because the migration path is shorter');
   });
 
   it('says an answer came from an agent rather than from the person', () => {
@@ -114,7 +114,7 @@ describe('OpenQuestionInlineCard', () => {
     render(<OpenQuestionInlineCard question={byAgent} sessionId={'sess-1' as never} />);
 
     fireEvent.click(screen.getByRole('button'));
-    expect(screen.getByText('Agent answered:')).toBeTruthy();
+    screen.getByText('Agent answered:');
     expect(screen.queryByText('You answered:')).toBeNull();
   });
 
@@ -131,7 +131,7 @@ describe('OpenQuestionInlineCard', () => {
     render(<OpenQuestionInlineCard question={byDelegate} sessionId={'sess-1' as never} />);
 
     fireEvent.click(screen.getByRole('button'));
-    expect(screen.getByText('answer: Use Postgres or SQLite? answered for you:')).toBeTruthy();
+    screen.getByText('answer: Use Postgres or SQLite? answered for you:');
     expect(screen.queryByText('You answered:')).toBeNull();
   });
 
@@ -148,7 +148,7 @@ describe('OpenQuestionInlineCard', () => {
     render(<OpenQuestionInlineCard question={byDelegate} sessionId={'sess-1' as never} />);
 
     fireEvent.click(screen.getByRole('button'));
-    expect(screen.getByText('Agent answered:')).toBeTruthy();
+    screen.getByText('Agent answered:');
   });
 
   it('renders the agent-resolved sentinel as a muted variant', () => {
@@ -162,7 +162,7 @@ describe('OpenQuestionInlineCard', () => {
     render(<OpenQuestionInlineCard question={resolved} sessionId={'sess-1' as never} />);
 
     fireEvent.click(screen.getByText('Use Postgres or SQLite?'));
-    expect(screen.getByText('resolved by agent')).toBeTruthy();
+    screen.getByText('resolved by agent');
     expect(screen.queryByText('You answered:')).toBeNull();
   });
 });

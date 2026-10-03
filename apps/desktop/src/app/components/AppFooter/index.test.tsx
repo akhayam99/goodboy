@@ -83,7 +83,7 @@ const targetFor = ({ overlay, connected = NONE_CONNECTED }: TargetParams) =>
 
 const footerProps = ({ overrides = {} }: Params = {}): FooterProps => ({
   scope: 'workspace',
-  target: null,
+  target: { place: null, tool: null },
   connected: NONE_CONNECTED,
   onOpenIntegration: vi.fn(),
   onOpenInbox: vi.fn(),
@@ -181,8 +181,8 @@ describe('AppFooter', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: SETTINGS_LABEL }).className).toContain(
-      'bg-muted text-foreground',
+    expect(screen.getByRole('button', { name: SETTINGS_LABEL }).getAttribute('aria-current')).toBe(
+      'page',
     );
   });
 
@@ -198,7 +198,7 @@ describe('AppFooter', () => {
     expect(row?.children.length).toBe(3);
   });
 
-  it('keeps studio buttons muted at rest and gives the active one a subtle surface', () => {
+  it('marks only the open studio button as the current page', () => {
     render(
       <AppFooter
         {...footerProps({ overrides: { target: targetFor({ overlay: { kind: 'workflow' } }) } })}
@@ -210,11 +210,11 @@ describe('AppFooter', () => {
       name: 'Open the workflow library for this workspace',
     });
 
-    expect(settings.className).toContain('text-muted-foreground');
-    expect(workflows.className).toContain('bg-muted text-foreground');
+    expect(settings.getAttribute('aria-current')).toBeNull();
+    expect(workflows.getAttribute('aria-current')).toBe('page');
   });
 
-  it('gives settings the muted active fill instead of the inversion it had in the top bar', () => {
+  it('marks settings as the current page while its studio is open', () => {
     render(
       <AppFooter
         {...footerProps({
@@ -227,8 +227,7 @@ describe('AppFooter', () => {
 
     const settings = screen.getByRole('button', { name: SETTINGS_LABEL });
 
-    expect(settings.className).toContain('bg-muted text-foreground');
-    expect(settings.className).not.toContain('bg-foreground text-background');
+    expect(settings.getAttribute('aria-current')).toBe('page');
   });
 
   it('invites the first connection when the workspace has none', () => {
@@ -340,13 +339,15 @@ describe('AppFooter', () => {
     const overlay: StudioPlace = { kind: 'settings', focus: { scope: 'tools', tool: 'sentry' } };
     render(<AppFooter {...footerProps({ overrides: { target: targetFor({ overlay }) } })} />);
 
-    expect(screen.getByRole('button', { name: 'Link your first integration' }).className).toContain(
-      'bg-muted text-foreground',
-    );
+    expect(
+      screen
+        .getByRole('button', { name: 'Link your first integration' })
+        .getAttribute('aria-current'),
+    ).toBe('page');
   });
 
-  it('moves that active state onto the glyph once its inbox is open', () => {
-    const connected = connectedWith(['sentry']);
+  it('keeps the inbox lit and rings the glyph of the tool whose inbox is open', () => {
+    const connected = connectedWith(['sentry', 'github']);
     const overlay: StudioPlace = {
       kind: 'inbox',
       focus: { provider: 'sentry', kind: null, recordKey: null, sessionId: null },
@@ -357,12 +358,35 @@ describe('AppFooter', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Sentry' }).className).toContain(
-      'bg-muted text-foreground',
+    expect(
+      screen
+        .getByRole('button', { name: 'Open the inbox for this workspace' })
+        .getAttribute('aria-current'),
+    ).toBe('page');
+    expect(screen.getByRole('button', { name: 'Sentry' }).getAttribute('aria-current')).toBe(
+      'page',
     );
-    expect(screen.getByRole('button', { name: 'Link integration' }).className).toContain(
-      'text-muted-foreground',
+    expect(screen.getByRole('button', { name: 'GitHub' }).getAttribute('aria-current')).toBeNull();
+    expect(
+      screen.getByRole('button', { name: 'Link integration' }).getAttribute('aria-current'),
+    ).toBeNull();
+  });
+
+  it('lights the inbox alone when the whole inbox is open', () => {
+    const connected = connectedWith(['sentry']);
+    const overlay: StudioPlace = { kind: 'inbox', focus: null };
+    render(
+      <AppFooter
+        {...footerProps({ overrides: { connected, target: targetFor({ overlay, connected }) } })}
+      />,
     );
+
+    expect(
+      screen
+        .getByRole('button', { name: 'Open the inbox for this workspace' })
+        .getAttribute('aria-current'),
+    ).toBe('page');
+    expect(screen.getByRole('button', { name: 'Sentry' }).getAttribute('aria-current')).toBeNull();
   });
 
   it('keeps the link action reachable with many connected integrations', () => {

@@ -245,6 +245,7 @@ export const WorkflowBuilderView = (props: Props) => {
     name: '',
     description: '',
     goal: '',
+    processText: '',
     steps: [],
     origin: 'custom',
     isPreset: false,

@@ -63,7 +63,7 @@ export const AppFooter = ({
                       label={label}
                       title={label}
                       onClick={() => onOpenIntegration({ provider: member.provider })}
-                      active={target === member.provider}
+                      isScoped={target.tool === member.provider}
                       showLabel={false}
                     />
                   );
@@ -77,7 +77,7 @@ export const AppFooter = ({
                 connected={connected}
                 onOpenIntegration={onOpenIntegration}
                 isEmpty={connectedMembers.length === 0}
-                active={target === 'link'}
+                active={target.place === 'link'}
               />
             </>
           )}
@@ -96,7 +96,7 @@ export const AppFooter = ({
                 tone={CONCEPT_TONE.inbox}
                 title="Open the inbox for this workspace"
                 onClick={onOpenInbox}
-                active={target === 'inbox'}
+                active={target.place === 'inbox'}
               />
               <FooterButton
                 icon={<CONCEPT_ICONS.workflows size={ICON_SIZE.control} aria-hidden />}
@@ -104,7 +104,7 @@ export const AppFooter = ({
                 tone={CONCEPT_TONE.workflows}
                 title="Open the workflow library for this workspace"
                 onClick={onOpenWorkflows}
-                active={target === 'workflows'}
+                active={target.place === 'workflows'}
               />
               <FooterButton
                 icon={<CONCEPT_ICONS.impact size={ICON_SIZE.control} aria-hidden />}
@@ -112,7 +112,7 @@ export const AppFooter = ({
                 tone={CONCEPT_TONE.impact}
                 title="Open Impact for this workspace"
                 onClick={onOpenImpact}
-                active={target === 'impact'}
+                active={target.place === 'impact'}
               />
             </>
           )}
@@ -122,7 +122,7 @@ export const AppFooter = ({
             tone={CONCEPT_TONE.settings}
             title={SETTINGS_LABEL}
             onClick={onOpenSettings}
-            active={target === 'settings'}
+            active={target.place === 'settings'}
           />
         </div>
       </div>

@@ -2,6 +2,7 @@ export const RAIL_SPINE_X = 8;
 export const RAIL_LANE_OFFSET = 16;
 const RAIL_EDGE_PAD = 8;
 const RAIL_CURVE_HANDLE = 8.84;
+export const RAIL_EDGE_BLEED = 1;
 
 type RailDash = 'solid' | 'dashed';
 
@@ -23,6 +24,7 @@ export type RailRowInput = {
   readonly markerY: number | null;
   readonly groupId: string | null;
   readonly isPending: boolean;
+  readonly opensLane?: boolean;
 };
 
 export type RailSegment = {
@@ -102,10 +104,61 @@ type JoinPathParams = {
 const joinPathOf = ({ join }: JoinPathParams): string => {
   const spineX = railColumnX({ column: join.spineColumn });
   const laneX = railColumnX({ column: join.laneColumn });
+  const edgeY = join.dash === 'solid' ? -RAIL_EDGE_BLEED : 0;
   if (join.kind === 'rejoin') {
-    return `M ${laneX} ${join.anchorY} C ${laneX} ${join.anchorY - RAIL_CURVE_HANDLE}, ${spineX + RAIL_CURVE_HANDLE} 0, ${spineX} 0`;
+    const radiusX = Math.abs(laneX - spineX);
+    const radiusY = Math.min(radiusX, join.anchorY);
+    const sweep = laneX > spineX ? 1 : 0;
+    return `M ${laneX} ${join.anchorY} A ${radiusX} ${radiusY} 0 0 ${sweep} ${spineX} ${join.anchorY - radiusY} L ${spineX} ${edgeY}`;
   }
-  return `M ${laneX} 0 C ${laneX} ${RAIL_CURVE_HANDLE}, ${spineX + RAIL_CURVE_HANDLE} ${join.anchorY}, ${spineX} ${join.anchorY}`;
+  return `M ${laneX} ${edgeY} L ${laneX} 0 C ${laneX} ${RAIL_CURVE_HANDLE}, ${spineX + RAIL_CURVE_HANDLE} ${join.anchorY}, ${spineX} ${join.anchorY}`;
+};
+
+const isSameInk = ({
+  first,
+  second,
+}: {
+  readonly first: RailSegment;
+  readonly second: RailSegment;
+}): boolean =>
+  first.column === second.column &&
+  first.laneId === second.laneId &&
+  first.identityIndex === second.identityIndex &&
+  first.isMuted === second.isMuted;
+
+export const mergeRailSegments = ({
+  segments,
+}: {
+  readonly segments: ReadonlyArray<RailSegment>;
+}): ReadonlyArray<RailSegment> => {
+  const ordered = [...segments].sort(
+    (first, second) => first.column - second.column || first.fromY - second.fromY,
+  );
+  const merged: RailSegment[] = [];
+  for (const segment of ordered) {
+    const last = merged.at(-1);
+    if (last === undefined || last.column !== segment.column || segment.fromY > last.toY) {
+      merged.push(segment);
+      continue;
+    }
+    if (last.dash === segment.dash && isSameInk({ first: last, second: segment })) {
+      merged[merged.length - 1] = { ...last, toY: Math.max(last.toY, segment.toY) };
+      continue;
+    }
+    if (last.dash === 'solid') {
+      if (segment.toY > last.toY) {
+        merged.push({ ...segment, fromY: last.toY });
+      }
+      continue;
+    }
+    const clipped = { ...last, toY: segment.fromY };
+    merged.splice(merged.length - 1, 1, ...(clipped.toY > clipped.fromY ? [clipped] : []));
+    merged.push(segment);
+    if (last.toY > segment.toY) {
+      merged.push({ ...last, fromY: segment.toY });
+    }
+  }
+  return merged;
 };
 
 export type RailLaneSpan = {
@@ -388,28 +441,41 @@ export const layoutTimelineRail = ({ rows, groups, hasSpine = true }: Params): R
     0,
   );
 
+  const reservedColumns = rows.reduce((widest, row) => {
+    if (row.opensLane !== true) {
+      return widest;
+    }
+    const column =
+      row.groupId == null
+        ? rootParentColumn
+        : (columnByGroupId.get(row.groupId) ?? rootParentColumn);
+    return column + 1 > widest ? column + 1 : widest;
+  }, maxColumn);
+
   return {
-    width: RAIL_SPINE_X + maxColumn * RAIL_LANE_OFFSET + RAIL_EDGE_PAD,
+    width: RAIL_SPINE_X + reservedColumns * RAIL_LANE_OFFSET + RAIL_EDGE_PAD,
     columnByGroupId,
     rows: rows.map((row, index) => ({
       id: row.id,
       height: row.height,
-      segments: [
-        ...(hasSpine
-          ? [
-              {
-                column: 0,
-                laneId: null,
-                identityIndex: null,
-                isMuted: false,
-                dash: 'solid',
-                fromY: row.topY,
-                toY: row.height,
-              } satisfies RailSegment,
-            ]
-          : []),
-        ...(laneSegmentsByIndex[index] ?? []),
-      ],
+      segments: mergeRailSegments({
+        segments: [
+          ...(hasSpine
+            ? [
+                {
+                  column: 0,
+                  laneId: null,
+                  identityIndex: null,
+                  isMuted: false,
+                  dash: 'solid',
+                  fromY: row.topY,
+                  toY: row.height,
+                } satisfies RailSegment,
+              ]
+            : []),
+          ...(laneSegmentsByIndex[index] ?? []),
+        ],
+      }),
       joins: (joinsByIndex[index] ?? []).map((join) => ({
         ...join,
         path: joinPathOf({ join }),

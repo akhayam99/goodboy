@@ -293,7 +293,7 @@ export const InboxScene = () => {
 
   return (
     <StudioFrame
-      target="inbox"
+      target={{ place: 'inbox', tool: null }}
       main={
         <StudioShell
           icon={CONCEPT_ICONS.inbox}

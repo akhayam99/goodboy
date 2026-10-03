@@ -26,13 +26,13 @@ secret-store-encrypted-session = ["keyring/crypto-rust"]
 secret-store-windows = ["keyring/windows-native"]
 
 [build-dependencies]
-tauri-build = { version = "2.6.1", features = [] }
+tauri-build = { version = "2.7.0", features = [] }
 
 [dependencies]
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
-tauri = { version = "2.11.1", features = [] }
+tauri = { version = "2.12.0", features = [] }
 tauri-plugin-log = "2"
 keyring = { version = "3", features = ["apple-native", "sync-secret-service", "crypto-rust", "windows-native"] }
 thiserror = "2"
@@ -60,4 +60,4 @@ core-foundation-sys = "0.8"
 windows-sys = { version = "0.61", features = ["Win32_UI_Shell", "Win32_Foundation"] }
 
 [dev-dependencies]
-tauri = { version = "2.11.1", features = ["test"] }
+tauri = { version = "2.12.0", features = ["test"] }
