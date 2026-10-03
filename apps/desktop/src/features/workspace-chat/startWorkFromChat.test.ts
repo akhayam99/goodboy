@@ -38,6 +38,7 @@ const messageOf = ({ role, content }: MessageSeed): ChatMessage => ({
   content,
   status: 'done',
   reads: [],
+  attachments: [],
   error: null,
   provider: null,
   model: null,

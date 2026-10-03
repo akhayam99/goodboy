@@ -97,6 +97,7 @@ describe('ChatRoom with an archived chat', () => {
     expect(store.sendChatMessage).toHaveBeenCalledWith({
       chatId: 'chat-archived',
       content: 'One more question',
+      attachments: [],
     });
     expect(store.restoreChats.mock.invocationCallOrder[0]).toBeLessThan(
       store.sendChatMessage.mock.invocationCallOrder[0] ?? 0,

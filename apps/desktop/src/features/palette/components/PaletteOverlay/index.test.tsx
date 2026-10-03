@@ -504,7 +504,7 @@ describe('PaletteOverlay, Ask in Chat', () => {
 
   it('opens a new chat with the query as its first message on Enter', async () => {
     const createChat = vi.fn(async () => 'chat-ask' as ChatId);
-    const sendChatMessage = vi.fn(async () => undefined);
+    const sendChatMessage = vi.fn(async () => true);
     const loadSetting = vi.fn(async () => null);
     useAppStore.setState({ createChat, sendChatMessage, loadSetting });
     const { input, onClose } = openIn(null);

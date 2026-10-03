@@ -11,6 +11,23 @@ const WORKSPACE = 'ws-harborline' as WorkspaceId;
 const NOW = Date.parse('2026-09-28T15:00:00.000Z');
 
 describe('mock chat backend', () => {
+  it('seeds the retry chat with a screenshot the thread can read back', async () => {
+    const backend = createMemoryChatBackend({
+      respond: mockChatResponder,
+      seed: ({ workspaceId }) => mockChatSeed({ workspaceId, now: NOW }),
+    });
+    const chats = await backend.listChats({ workspaceId: WORKSPACE });
+    const retry = chats.find((chat) => chat.title.startsWith('Why does notify-relay'));
+    const [question] = await backend.listMessages({ chatId: retry?.id ?? ('' as ChatId) });
+    const image = question?.attachments[0];
+    expect(image?.fileName).toBe('two-emails.png');
+    if (image === undefined) {
+      throw new Error('no seeded image');
+    }
+    const blob = await backend.readImage({ chatId: image.chatId, attachmentId: image.id });
+    expect(blob.type).toBe('image/svg+xml');
+  });
+
   it('seeds a Harborline list that fills every group', async () => {
     const backend = createMemoryChatBackend({
       respond: mockChatResponder,

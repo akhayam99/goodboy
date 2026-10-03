@@ -10,6 +10,7 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
+import type { PendingAttachment } from '../../../features/attachments/pendingAttachment';
 import type { ChatsState } from './state';
 
 export type { GetFn, SetFn } from '../../slice-types';
@@ -46,6 +47,7 @@ export type CreateChatParams = {
 
 export type SendChatMessageParams = ChatParams & {
   readonly content: string;
+  readonly attachments?: ReadonlyArray<PendingAttachment>;
 };
 
 export type ArchiveChatsParams = {
@@ -76,7 +78,7 @@ export type ChatsSlice = ChatsState & {
   loadArchivedChats(params: LoadChatsParams): Promise<ReadonlyArray<ChatSummary>>;
   loadChatMessages(params: ChatParams): Promise<void>;
   createChat(params: CreateChatParams): Promise<ChatId>;
-  sendChatMessage(params: SendChatMessageParams): Promise<void>;
+  sendChatMessage(params: SendChatMessageParams): Promise<boolean>;
   stopChatReply(params: ChatParams): Promise<void>;
   archiveChats(params: ArchiveChatsParams): Promise<void>;
   archiveIdleChats(params: ArchiveIdleChatsParams): Promise<ReadonlyArray<ChatId>>;

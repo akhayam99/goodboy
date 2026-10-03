@@ -6,6 +6,7 @@ import type { GetFn, SetFn } from './types';
 
 const h = vi.hoisted(() => ({
   mergeWorkspacesInDb: vi.fn(async () => undefined),
+  pruneChatImages: vi.fn(async () => undefined),
 }));
 
 vi.mock('@goodboy/db', async () =>
@@ -14,6 +15,9 @@ vi.mock('@goodboy/db', async () =>
   }),
 );
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
+vi.mock('../../../features/workspace-chat/pruneChatImages', () => ({
+  pruneChatImages: h.pruneChatImages,
+}));
 
 import { mergeWorkspaces } from './mergeWorkspaces';
 
@@ -113,6 +117,9 @@ describe('mergeWorkspaces slice action', () => {
       sourceWorkspaceIds: [SOURCE],
       targetWorkspaceId: TARGET,
     });
+    expect(h.pruneChatImages.mock.invocationCallOrder[0]).toBeGreaterThan(
+      h.mergeWorkspacesInDb.mock.invocationCallOrder[0] ?? Infinity,
+    );
     expect(store.state.workspaces.map((entry) => entry.id)).toEqual([TARGET]);
     expect(store.state.projects.map((entry) => entry.workspaceId)).toEqual([TARGET, TARGET]);
     expect(store.state.archivedSessions[SOURCE]).toBeUndefined();

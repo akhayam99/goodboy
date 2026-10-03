@@ -139,6 +139,7 @@ const storyInvokeHandlers = {
   integration_credential_forget: null,
   file_versions_list_staged_snapshots: { runs: [], skipped: [] },
   file_versions_purge_session: null,
+  chat_attachments_prune: 0,
   qa_deciding_workflow_runs: [],
   workspace_script_list_live: [],
   terminal_list_live: [],

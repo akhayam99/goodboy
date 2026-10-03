@@ -5,8 +5,10 @@ import {
   PROVIDER_IDS,
   isEffortLevel,
   type Chat,
+  type ChatAttachmentId,
   type ChatId,
   type ChatMessage,
+  type ChatMessageAttachment,
   type ChatMessageId,
   type ChatMessageRole,
   type ChatMessageStatus,
@@ -54,6 +56,17 @@ type MessageRow = {
   readonly effort: string | null;
   readonly createdAt: number;
   readonly updatedAt: number;
+};
+
+type AttachmentRow = {
+  readonly id: string;
+  readonly chatId: string;
+  readonly messageId: string;
+  readonly position: number;
+  readonly fileName: string;
+  readonly mimeType: string;
+  readonly byteSize: number;
+  readonly createdAt: number;
 };
 
 type MessageTallyRow = {
@@ -130,7 +143,25 @@ const toSummary = ({ row, modelsUsed, messageCount }: ToSummaryParams): ChatSumm
   };
 };
 
-const toMessage = (row: MessageRow): ChatMessage | null => {
+const NO_ATTACHMENTS: ReadonlyArray<ChatMessageAttachment> = [];
+
+const toAttachment = (row: AttachmentRow): ChatMessageAttachment => ({
+  id: row.id as ChatAttachmentId,
+  chatId: row.chatId as ChatId,
+  messageId: row.messageId as ChatMessageId,
+  position: row.position,
+  fileName: row.fileName,
+  mimeType: row.mimeType,
+  byteSize: row.byteSize,
+  createdAt: toIso(row.createdAt),
+});
+
+type ToMessageParams = {
+  readonly row: MessageRow;
+  readonly attachments: ReadonlyArray<ChatMessageAttachment>;
+};
+
+const toMessage = ({ row, attachments }: ToMessageParams): ChatMessage | null => {
   if (!isRole(row.role) || !isStatus(row.status)) {
     return null;
   }
@@ -145,6 +176,7 @@ const toMessage = (row: MessageRow): ChatMessage | null => {
     provider: row.provider !== null && isProviderId(row.provider) ? row.provider : null,
     model: row.model,
     effort: toEffort(row.effort),
+    attachments,
     createdAt: toIso(row.createdAt),
     updatedAt: toIso(row.updatedAt),
   };
@@ -337,8 +369,19 @@ export const listChatMessages = async ({
      ORDER BY created_at ASC, rowid ASC`,
     [chatId],
   );
+  const attachmentRows = await db.select<AttachmentRow>(
+    `SELECT id, chat_id AS chatId, message_id AS messageId, position, file_name AS fileName,
+       mime_type AS mimeType, byte_size AS byteSize, created_at AS createdAt
+     FROM chat_message_attachments WHERE chat_id = ?
+     ORDER BY message_id, position`,
+    [chatId],
+  );
+  const byMessage = new Map<string, ChatMessageAttachment[]>();
+  for (const row of attachmentRows) {
+    byMessage.set(row.messageId, [...(byMessage.get(row.messageId) ?? []), toAttachment(row)]);
+  }
   return rows.flatMap((row) => {
-    const message = toMessage(row);
+    const message = toMessage({ row, attachments: byMessage.get(row.id) ?? NO_ATTACHMENTS });
     return message === null ? [] : [message];
   });
 };
@@ -376,6 +419,21 @@ export const insertChatMessage = async ({
           toMs(message.updatedAt),
         ],
       },
+      ...message.attachments.map((attachment) => ({
+        sql: `INSERT INTO chat_message_attachments (id, chat_id, message_id, position, file_name,
+                mime_type, byte_size, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        params: [
+          attachment.id,
+          message.chatId,
+          message.id,
+          attachment.position,
+          attachment.fileName,
+          attachment.mimeType,
+          attachment.byteSize,
+          toMs(attachment.createdAt),
+        ],
+      })),
       {
         sql: `UPDATE chats SET last_activity_at = MAX(last_activity_at, ?), updated_at = ?
               WHERE id = ?`,

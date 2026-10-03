@@ -75,7 +75,14 @@ export const seedChats = async ({
     await backend.insertChat({ chat });
     const used = seed.used ?? [{ provider, model }];
     for (const [index, entry] of used.entries()) {
-      const base = { chatId, reads: [], error: null, createdAt: at, updatedAt: at };
+      const base = {
+        chatId,
+        reads: [],
+        attachments: [],
+        error: null,
+        createdAt: at,
+        updatedAt: at,
+      };
       const question: ChatMessage = {
         ...base,
         id: `${chatId}-q${index}` as ChatMessageId,
