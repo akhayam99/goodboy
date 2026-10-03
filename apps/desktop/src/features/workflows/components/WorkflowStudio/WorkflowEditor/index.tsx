@@ -32,6 +32,7 @@ import { useStepDeleteUndo } from '../../../hooks/useStepDeleteUndo';
 import { stepPolishFields } from '../../../stepPolishFields';
 import { polishWorkflowGoalText } from '../../../workflows';
 import { DragGhost } from '../DragGhost';
+import { roleSetLine } from '../../../roleSetLine';
 import { EditorTrail } from './EditorTrail';
 import { NoProvidersNotice } from './NoProvidersNotice';
 
@@ -274,6 +275,7 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
                   recommendedModel={recommendedModel(step)}
                   connectedProviders={connectedProviders}
                   isRoutingOverridden={step.provider !== '' || step.model !== ''}
+                  roleSetLine={roleSetLine({ role: step.role, roleModels })}
                   disabled={blocked}
                   polish={stepPolishFields({
                     polish,

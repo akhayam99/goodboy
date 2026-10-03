@@ -54,6 +54,7 @@ export type ChatSummary = Chat &
   Readonly<{
     preview: string | null;
     modelsUsed: ReadonlyArray<ChatModelUsed>;
+    messageCount: number;
   }>;
 
 export type ChatMessage = Readonly<{

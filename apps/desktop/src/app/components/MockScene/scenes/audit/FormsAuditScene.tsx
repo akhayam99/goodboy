@@ -4,7 +4,7 @@ import type { ProjectId, SessionBudget, Skill, Workspace, WorkflowRun } from '@g
 import { CreatePrPanel } from '../../../../../features/integrations/github/components/PullRequest/CreatePrPanel';
 import { CreateMrForm } from '../../../../../features/integrations/gitlab/MergeRequest/MrDetailPanel/CreateMrForm';
 import { WorkspaceLinkForm } from '../../../../../features/workspace/components/WorkspaceLinkForm';
-import { ConvertWorkspaceDialog } from '../../../../../features/workspace/components/ConvertWorkspaceDialog';
+import { ConvertWorkspaceFlow } from '../../../../../features/workspace/components/ConvertWorkspaceFlow';
 import { SkillsPanel } from '../../../../../features/skills/components/SkillsPanel';
 import { CreateAgentPopover } from '../../../../../features/session/components/CreateAgentPopover';
 import { RunSpendLimitPopover } from '../../../../../features/workflows/components/RunSpendLimitPopover';
@@ -129,8 +129,11 @@ const renderForm = ({ form }: { form: FormKey }): ReactNode => {
       );
     case 'convert': {
       const workspace = workspaceOf();
-      return workspace === null ? null : (
-        <ConvertWorkspaceDialog open workspace={workspace} onClose={noop} />
+      const project = PROJECTS[0];
+      return workspace === null || project === undefined ? null : (
+        <PageColumn className="flex flex-col gap-6 py-8">
+          <ConvertWorkspaceFlow workspaceId={workspace.id} project={project} onClose={noop} />
+        </PageColumn>
       );
     }
     case 'skills':

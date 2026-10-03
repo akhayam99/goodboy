@@ -80,6 +80,7 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
               workspaceId={workspaceId}
               chat={activeChat}
               onCreated={select}
+              onRemoved={() => select(null)}
             />
           }
         />

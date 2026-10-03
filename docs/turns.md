@@ -487,8 +487,10 @@ the chat's handoff, as the post-step summarizer is a workflow's
   together and the next pass reads them all (the oldest drop out past 20,000
   characters, with a note saying how many). It runs when the app is idle.
 - A consolidation pass waits behind them, at most one per session. It is
-  queued when a run finishes, when a pull request merges (`pr_merged`), and
-  when the active decisions go over their budget after a pass. It applies its
+  queued when a run finishes, when a pull request merges (`pr_merged`), when
+  the active decisions go over their budget after a pass, and when you press
+  **Update now** in the drawer (`you asked for an update`; a pass already
+  queued is marked as requested instead of adding a second one). It applies its
   operations like any pass and records `decisions_changed` with
   `consolidatedAfter` (`#612 merged`, `the run finished`, `decisions went over
 budget`).
@@ -503,6 +505,9 @@ budget`).
   sets the error state and offers a retry. The turn itself never fails because
   its summary did.
 - Its spend is recorded as summarizer telemetry, apart from turn spend.
+- Each finished pass stores its round in `summarizerRounds` (turns read,
+  provider, model, effort, tokens, cost, which of goal, decisions and summary
+  changed) for the drawer's **Context updates** row. It lives in memory only.
 
 ## The decisions ledger
 
@@ -692,7 +697,9 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   Every assistant message records the `provider`, `model` and `effort` that
   produced it (m214 backfills older answers with the chat's model), and
   `ChatSummary.modelsUsed` lists the distinct provider and model pairs of a
-  chat's answers, oldest first. `chat_session_links` saves each Start work or
+  chat's answers, oldest first, and `ChatSummary.messageCount` its messages.
+  Both come from the one grouped read in `listChats`, so the chat list costs
+  a single scan however many chats there are. `chat_session_links` saves each Start work or
   Add to a session (`new` or `add`, the chat, the session and the message it
   started from). Deleting a chat deletes its messages and links, never its
   sessions; deleting a session deletes its links. Idle is derived: a chat with

@@ -139,6 +139,7 @@ export const createMemoryChatBackend = ({ respond, seed, summarize }: Params): C
           ...chat,
           preview: previewOf({ chatId: chat.id }),
           modelsUsed: modelsUsedOf({ chatId: chat.id }),
+          messageCount: (messages.get(chat.id) ?? []).length,
         }));
     },
     listMessages: async ({ chatId }) => messages.get(chatId) ?? [],

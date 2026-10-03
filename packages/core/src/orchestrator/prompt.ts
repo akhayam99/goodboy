@@ -57,6 +57,27 @@ After the decision, on its own line, emit the running recap of the whole run as 
 
 Each entry is one short sentence of plain text, no markdown and no bullet glyphs. An empty left array means the run is complete. The recap is written for the operator, it replaces the previous one every time, and it covers the run so far rather than only the step you just decided. Emit it with every decision, including done and blocked.`;
 
+type RoleModelSetLinesParams = {
+  readonly roleDefaults: OrchestratorInput['roleDefaults'];
+};
+
+const roleModelSetLines = ({ roleDefaults }: RoleModelSetLinesParams): ReadonlyArray<string> => {
+  const withSets = roleDefaults.filter(
+    (entry) => entry.models !== undefined && entry.models.length > 0,
+  );
+  if (withSets.length === 0) {
+    return [];
+  }
+  return [
+    '',
+    'Role model sets (a step of these roles runs only on one of its listed models, pick by the size of the work):',
+    ...withSets.map(
+      (entry) =>
+        `${entry.role}: ${(entry.models ?? []).map((model) => `${model.provider}/${model.model}`).join(', ')}`,
+    ),
+  ];
+};
+
 export const buildOrchestratorUserPrompt = ({
   goal,
   processText,
@@ -114,6 +135,7 @@ export const buildOrchestratorUserPrompt = ({
       : roleDefaults
           .map((entry) => `${entry.role}=${entry.provider}/${entry.model}/${entry.effort}`)
           .join(', '),
+    ...roleModelSetLines({ roleDefaults }),
     '',
     'Completed steps (their summaries are written in English by contract, which says nothing about the language you answer in):',
   );

@@ -1,8 +1,9 @@
-import { createElement, useCallback, useState, type ReactNode } from 'react';
+import { createElement, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useEscapeLayer } from '@goodboy/ui';
 import type { Session, SessionId, Workspace } from '@goodboy/types';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
 import type { SettingsScopeChange } from '../../../features/settings/settingsFocus';
+import { DEV_PROJECT_SECTION_ID } from '../../../features/settings/components/SettingsStudio/workspacePages';
 import type { ImpactScope } from '../../../features/impact/lib';
 import type { ChangelogScreen } from '../../../features/changelog/changelogScreens';
 import { resolveChangelogScreenOverlay } from '../../../features/changelog/resolveChangelogScreenOverlay';
@@ -55,7 +56,7 @@ export const useAppOverlays = ({
   const [deleteSessionId, setDeleteSessionId] = useState<SessionId | null>(null);
   const deleteTargetSession = useSessionById(deleteSessionId);
   const [palette, setPalette] = useState<PaletteRequest | null>(null);
-  const [convertWorkspaceOpen, setConvertWorkspaceOpen] = useState(false);
+  const [isRepoOfferPending, setIsRepoOfferPending] = useState(false);
   useCommitDiff();
 
   const open = useCallback(
@@ -169,8 +170,20 @@ export const useAppOverlays = ({
   }, [currentSession]);
 
   const closePalette = useCallback(() => setPalette(null), []);
-  const offerWorkspaceRepo = useCallback(() => setConvertWorkspaceOpen(true), []);
-  const closeConvertWorkspace = useCallback(() => setConvertWorkspaceOpen(false), []);
+  const offerWorkspaceRepo = useCallback(() => setIsRepoOfferPending(true), []);
+
+  useEffect(() => {
+    if (!isRepoOfferPending || overlay !== null || currentWorkspace === null) {
+      return;
+    }
+    setIsRepoOfferPending(false);
+    openStudio({
+      studio: {
+        kind: 'settings',
+        focus: { scope: 'workspace', section: DEV_PROJECT_SECTION_ID },
+      },
+    });
+  }, [isRepoOfferPending, overlay, currentWorkspace, openStudio]);
   const closeDeleteConfirm = useCallback(() => {
     setDeleteOpen(false);
     setDeleteSessionId(null);
@@ -203,10 +216,8 @@ export const useAppOverlays = ({
     deleteOpen,
     deleteTargetSession,
     palette,
-    convertWorkspaceOpen,
     closePalette,
     offerWorkspaceRepo,
-    closeConvertWorkspace,
     closeDeleteConfirm,
   });
 

@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { AFTER_MERGE_RULES, type AfterMergeRule, type WorkspaceId } from '@goodboy/types';
-import { Collapsible, SectionHeader, SegmentedTabs } from '@goodboy/ui';
+import { Band, Collapsible, SegmentedTabs } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { DEFAULT_AFTER_MERGE_RULE } from '../../../../store/slices/branch-cleanup';
 import { repoDeletesMergedBranches } from '../../../../store/slices/branch-cleanup/repoDeletesMergedBranches';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { WorkspaceFieldRow } from './WorkspaceFieldRow';
 import {
   AFTER_MERGE_LABEL,
   AFTER_MERGE_NEVER,
@@ -96,13 +98,20 @@ export const WorkspaceAfterMergeSection = ({ workspaceId }: Props) => {
   };
 
   return (
-    <section aria-label="After a pull request merges" className="flex flex-col gap-2">
-      <SectionHeader
-        label="After a pull request merges"
-        hint="What happens to the branch, its folder and its worktree once a pull request lands."
-        headingLevel={2}
-      />
-      <div className="flex flex-col gap-1.5">
+    <Band
+      inset="content"
+      label="After a pull request merges"
+      ariaLabel="After a pull request merges"
+      hint="What happens to the branch, its folder and its worktree once a pull request lands."
+      icon={<CONCEPT_ICONS.merge size={ICON_SIZE.row} aria-hidden />}
+      headingLevel={2}
+    >
+      <WorkspaceFieldRow
+        workspaceId={workspaceId}
+        field="afterMerge"
+        layout="stacked"
+        help={AFTER_MERGE_NEVER}
+      >
         <SegmentedTabs
           ariaLabel="After a pull request merges"
           size="sm"
@@ -110,32 +119,31 @@ export const WorkspaceAfterMergeSection = ({ workspaceId }: Props) => {
           options={options}
           onChange={(next) => void choose(next)}
         />
-        <p className="text-secondary text-faint-foreground">{AFTER_MERGE_NEVER}</p>
-        {autoDeleting.length === 1 && (
-          <p className="text-secondary text-muted-foreground">
-            {githubAutoDeleteNote({ projectName: autoDeleting[0]! })}
-          </p>
-        )}
-        {autoDeleting.length > 1 && (
-          <Collapsible
-            open={isReposOpen}
-            onOpenChange={setIsReposOpen}
-            trigger={
-              <span className="text-secondary text-muted-foreground">
-                {githubAutoDeleteSummary({ count: autoDeleting.length })}
-              </span>
-            }
-          >
-            <ul className="flex flex-col gap-0.5">
-              {autoDeleting.map((projectName) => (
-                <li key={projectName} className="text-secondary text-muted-foreground">
-                  {projectName}
-                </li>
-              ))}
-            </ul>
-          </Collapsible>
-        )}
-      </div>
-    </section>
+      </WorkspaceFieldRow>
+      {autoDeleting.length === 1 && (
+        <p className="text-secondary text-muted-foreground">
+          {githubAutoDeleteNote({ projectName: autoDeleting[0]! })}
+        </p>
+      )}
+      {autoDeleting.length > 1 && (
+        <Collapsible
+          open={isReposOpen}
+          onOpenChange={setIsReposOpen}
+          trigger={
+            <span className="text-secondary text-muted-foreground">
+              {githubAutoDeleteSummary({ count: autoDeleting.length })}
+            </span>
+          }
+        >
+          <ul className="flex flex-col gap-0.5">
+            {autoDeleting.map((projectName) => (
+              <li key={projectName} className="text-secondary text-muted-foreground">
+                {projectName}
+              </li>
+            ))}
+          </ul>
+        </Collapsible>
+      )}
+    </Band>
   );
 };

@@ -22,7 +22,6 @@
     "apps/desktop/src/features/session/components/ContextDrawer/DecisionRowItem.tsx": 1,
     "apps/desktop/src/features/session/components/ContextDrawer/GoalTab.tsx": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/LinkWorkPicker.tsx": 1,
-    "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceTitle.tsx": 1,
     "apps/desktop/src/features/workflows/components/StepTree/StepEditor.tsx": 1,
     "apps/desktop/src/features/workflows/components/WorkflowStudio/SavedStepsList/SavedStepEditor.tsx": 1,
     "apps/desktop/src/features/workspace-chat/components/ChatList/ChatRenameInput.tsx": 1,

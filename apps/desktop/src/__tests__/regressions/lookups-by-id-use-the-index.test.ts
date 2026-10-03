@@ -17,7 +17,7 @@ const ALLOWED: Readonly<Record<string, number>> = {
   'features/integrations/linear/LinearStudio/useLinearIssues.ts': 1,
   'features/onboarding/OnboardingWizard/WizardFrame.tsx': 1,
   'features/search/grammar.ts': 1,
-  'features/workspace/components/ConvertWorkspaceDialog/index.tsx': 1,
+  'features/settings/components/SettingsStudio/WorkspaceDevProjectBand.tsx': 1,
   'features/workspace/components/WorkspaceLinkStudio/index.tsx': 1,
   'store/slices/sessions/deleteTask.ts': 1,
   'store/slices/turn/resolveSkillPrompt.ts': 1,

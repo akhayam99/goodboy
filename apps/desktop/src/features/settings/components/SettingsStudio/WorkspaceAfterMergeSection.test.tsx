@@ -8,6 +8,8 @@ const WORKSPACE = 'ws-harborline' as WorkspaceId;
 
 const { state, autoDelete } = vi.hoisted(() => ({
   state: {
+    workspaces: [] as ReadonlyArray<unknown>,
+    settings: {} as Record<string, string>,
     workspaceOverrides: {} as Record<string, { readonly afterMerge: string | null }>,
     projects: [] as ReadonlyArray<Record<string, unknown>>,
     patchWorkspaceOverrides: vi.fn(async () => undefined),

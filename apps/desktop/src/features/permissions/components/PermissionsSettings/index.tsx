@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
-import { ErrorStrip, Eyebrow, PanelLoading, STRIPED_LIST, cn } from '@goodboy/ui';
+import { Band, ErrorStrip, PanelLoading, STRIPED_LIST, cn } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { usePermissionRules } from '../../hooks/usePermissionRules';
 import { DEFAULT_PERMISSION_MODE, pickerModeOf, type PickerMode } from '../../modeCopy';
-import { PERMISSIONS_SECTION_ID } from '../../openPermissionSettings';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { hasIgnoredDeny } from '../../utils/providerSupport';
 import { DefaultModeCards } from './DefaultModeCards';
 import { IgnoredDenyNotice } from './IgnoredDenyNotice';
@@ -16,9 +16,12 @@ import { RecentDecisions } from './RecentDecisions';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
+  readonly renderDefaultRow?: (control: ReactNode) => ReactNode;
 };
 
-export const PermissionsSettings = ({ workspaceId }: Props) => {
+const asIs = (control: ReactNode): ReactNode => control;
+
+export const PermissionsSettings = ({ workspaceId, renderDefaultRow = asIs }: Props) => {
   const workspaceName = useAppStore(
     (s) => s.workspaces.find((workspace) => workspace.id === workspaceId)?.name ?? null,
   );
@@ -73,32 +76,33 @@ export const PermissionsSettings = ({ workspaceId }: Props) => {
   };
 
   return (
-    <section aria-labelledby={PERMISSIONS_SECTION_ID} className="flex flex-col gap-5">
-      <div className="flex flex-col gap-0.5">
-        <h2 id={PERMISSIONS_SECTION_ID}>
-          <Eyebrow label="Permissions" />
-        </h2>
-        <p className="text-label text-muted-foreground">
-          What agents may do in this workspace without asking you.
-        </p>
-      </div>
+    <>
+      <Band
+        inset="content"
+        label="Default"
+        ariaLabel="Default"
+        hint="Applies to every new session in this workspace."
+        icon={<CONCEPT_ICONS.approval size={ICON_SIZE.row} aria-hidden />}
+        headingLevel={2}
+      >
+        {renderDefaultRow(
+          <DefaultModeCards
+            value={pickerModeOf({ mode: defaultMode })}
+            isBusy={isSaving}
+            onChange={(mode) => void saveDefault(mode)}
+          />,
+        )}
+      </Band>
 
-      <div className="flex flex-col gap-2">
-        <h3 className="text-label text-foreground">Default for new sessions</h3>
-        <DefaultModeCards
-          value={pickerModeOf({ mode: defaultMode })}
-          isBusy={isSaving}
-          onChange={(mode) => void saveDefault(mode)}
-        />
-      </div>
+      <Band
+        inset="content"
+        label="Rules"
 
-      <div className="flex flex-col gap-2">
-        <h3 className="text-label text-foreground">What each provider does with these settings</h3>
-        <ProviderSupportTable />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <h3 className="text-label text-foreground">Rules</h3>
+        ariaLabel="Rules"
+        hint="Always allow, ask or deny a tool, whatever the default says."
+        icon={<CONCEPT_ICONS.checks size={ICON_SIZE.row} aria-hidden />}
+        headingLevel={2}
+      >
         <AddRuleForm onAdd={addRule} />
         <ErrorStrip label="permission rules" error={rules.error} onRetry={rules.retry} />
         {rules.isLoading && rules.rules.length === 0 ? (
@@ -124,12 +128,31 @@ export const PermissionsSettings = ({ workspaceId }: Props) => {
         {workspaceName !== null && hasIgnoredDeny({ rules: rules.rules, activeProviders }) ? (
           <IgnoredDenyNotice workspaceName={workspaceName} activeProviders={activeProviders} />
         ) : null}
-      </div>
+      </Band>
 
-      <div className="flex flex-col gap-2">
-        <h3 className="text-label text-foreground">Recent decisions</h3>
+      <Band
+        inset="content"
+        label="What each provider does"
+
+        ariaLabel="What each provider does"
+        hint="How each provider reads the default and the rules."
+        icon={<CONCEPT_ICONS.providers size={ICON_SIZE.row} aria-hidden />}
+        headingLevel={2}
+      >
+        <ProviderSupportTable />
+      </Band>
+
+      <Band
+        inset="content"
+        label="Recent decisions"
+
+        ariaLabel="Recent decisions"
+        hint="Stays on this workspace and is never copied."
+        icon={<CONCEPT_ICONS.history size={ICON_SIZE.row} aria-hidden />}
+        headingLevel={2}
+      >
         <RecentDecisions workspaceId={workspaceId} />
-      </div>
-    </section>
+      </Band>
+    </>
   );
 };

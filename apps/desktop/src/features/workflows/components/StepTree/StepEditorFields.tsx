@@ -23,6 +23,7 @@ type Props = {
   readonly recommendedModel: string;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly isRoutingOverridden: boolean;
+  readonly roleSetLine?: string | null;
   readonly disabled: boolean;
   readonly polish: StepPolishFields | null;
   readonly onName: (name: string) => void;
@@ -66,6 +67,7 @@ export const StepEditorFields = ({
   recommendedModel,
   connectedProviders,
   isRoutingOverridden,
+  roleSetLine = null,
   disabled,
   polish,
   onName,
@@ -190,7 +192,15 @@ export const StepEditorFields = ({
             }}
           />
         </div>
-        {source === 'follow' ? (
+        {source === 'follow' && roleSetLine !== null ? (
+          <p
+            data-testid="step-follows-role"
+            className="px-2.5 text-secondary text-muted-foreground"
+          >
+            {`Follows the role: ${roleSetLine}`}
+          </p>
+        ) : null}
+        {source === 'follow' && roleSetLine === null ? (
           <p
             data-testid="step-follows-role"
             className="px-2.5 text-secondary text-muted-foreground"
@@ -199,7 +209,8 @@ export const StepEditorFields = ({
             <span className="text-foreground">{followPick}</span>
             {' from the providers you can use now.'}
           </p>
-        ) : (
+        ) : null}
+        {source === 'follow' ? null : (
           <RoutingPicker
             presentation="inline"
             providerLayout="named"

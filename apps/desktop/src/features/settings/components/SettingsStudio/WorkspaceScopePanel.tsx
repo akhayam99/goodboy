@@ -1,147 +1,94 @@
 import { useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { Button, InlineConfirm, PaneShell } from '@goodboy/ui';
-import { Unplug } from 'lucide-react';
-import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
-import { WorkspaceAfterMergeSection } from './WorkspaceAfterMergeSection';
-import { WorkspaceProfileSection } from './WorkspaceProfileSection';
-import { WorkspaceProjectsSection } from './WorkspaceProjectsSection';
-import { WorkspaceDefaultsGrid } from './WorkspaceDefaultsGrid';
-import { WorkspaceReviewRepliesSection } from './WorkspaceReviewRepliesSection';
-import { REVIEW_REPLIES_SECTION_ID } from '../../../resolve/replySettingsCopy';
-import { WorkspaceTitle } from './WorkspaceTitle';
-import { PermissionsSettings } from '../../../permissions/components/PermissionsSettings';
-import { PERMISSIONS_SECTION_ID } from '../../../permissions/openPermissionSettings';
-import { WorkspaceStorageNotice } from '../../../../features/storage/components/WorkspaceStorageNotice';
-import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
+import { OverflowMenu, PaneShell } from '@goodboy/ui';
+import { Copy, RotateCcw } from 'lucide-react';
 import { useAppStore } from '../../../../store';
-import { useSectionAnchors } from '../../hooks/useSectionAnchors';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { selectLiveWork } from '../../../../store/slices/live-work/selectLiveWork';
+import { pluralize } from '../../../../shared/utils/pluralize';
+import type { SettingsScopeChange } from '../../settingsFocus';
+import { pageKeys } from '../../pageKeys';
+import { usePageChangedCount } from '../../hooks/usePageChangedCount';
 import { SETTINGS_PANE_ENTRY } from './settingsPaneEntry';
-
-type DisconnectTitleParams = {
-  readonly name: string;
-  readonly runningCount: number;
-};
-
-const disconnectTitle = ({ name, runningCount }: DisconnectTitleParams): string => {
-  if (runningCount === 0) {
-    return `Disconnect ${name}?`;
-  }
-  return `Disconnect ${name} and stop ${runningCount} active ${runningCount === 1 ? 'session' : 'sessions'}?`;
-};
+import { WorkspacePageBody } from './WorkspacePageBody';
+import { WorkspaceSettingsFlow, type FlowMode } from './WorkspaceSettingsFlow';
+import { workspacePageEntry, workspacePageOf, type WorkspacePage } from './workspacePages';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
-  readonly initialSection?: string;
+  readonly section?: string;
+  readonly onSelect: (change: SettingsScopeChange) => void;
   readonly requestClose: () => void;
 };
 
-export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose }: Props) => {
-  const disconnect = useAppStore((s) => s.disconnectWorkspace);
+export const WorkspaceScopePanel = ({ workspaceId, section, onSelect, requestClose }: Props) => {
   const workspaceName = useAppStore(
     (s) => s.workspaces.find((w) => w.id === workspaceId)?.name ?? null,
   );
-  const runningCount = useAppStore((s) =>
-    s.currentWorkspaceId === workspaceId ? selectLiveWork({ state: s }).liveSessionIds.length : 0,
-  );
-  const reportError = useAppStore((s) => s.reportError);
-  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
-  const [disconnecting, setDisconnecting] = useState(false);
+  const hasOtherWorkspace = useAppStore((s) => s.workspaces.some((w) => w.id !== workspaceId));
+  const page = workspacePageOf({ section });
+  const entry = workspacePageEntry({ page });
+  const ownsSettings = pageKeys({ page }).length > 0;
+  const changedCount = usePageChangedCount({ workspaceId, page });
+  const [flow, setFlow] = useState<{
+    readonly page: WorkspacePage;
+    readonly mode: FlowMode;
+  } | null>(null);
+  const openFlow = flow !== null && flow.page === page ? flow : null;
 
-  const { anchor } = useSectionAnchors({ section: initialSection });
-
-  const onDisconnect = async () => {
-    setDisconnecting(true);
-    try {
-      await disconnect(workspaceId);
-      requestClose();
-    } catch (err) {
-      void reportError({ title: "Couldn't disconnect the workspace", error: err, workspaceId });
-      setDisconnecting(false);
-    }
-  };
+  const menu = ownsSettings ? (
+    <OverflowMenu
+      label={`${entry.label} actions`}
+      items={[
+        {
+          kind: 'item',
+          key: 'restore',
+          label: 'Restore defaults',
+          icon: RotateCcw,
+          hint: changedCount === 0 ? 'Already default' : `${pluralize(changedCount, 'change')}`,
+          disabled: changedCount === 0,
+          onClick: () => setFlow({ page, mode: 'restore' }),
+        },
+        {
+          kind: 'item',
+          key: 'copy',
+          label: 'Copy from…',
+          icon: Copy,
+          hint: hasOtherWorkspace ? undefined : 'No other workspace',
+          disabled: !hasOtherWorkspace,
+          onClick: () => setFlow({ page, mode: 'copy' }),
+        },
+      ]}
+    />
+  ) : undefined;
 
   return (
     <PaneShell
+      key={page}
       animationClassName={SETTINGS_PANE_ENTRY}
-      header={<WorkspaceTitle workspaceId={workspaceId} />}
-    >
-      <div className="flex flex-col gap-6">
-        {workspaceName === null ? null : (
-          <>
-            <div id="projects" ref={anchor({ id: 'projects' })}>
-              <WorkspaceProjectsSection workspaceId={workspaceId} />
-            </div>
-
-            <div id="profile" ref={anchor({ id: 'profile' })}>
-              <WorkspaceProfileSection workspaceId={workspaceId} />
-            </div>
-          </>
-        )}
-
-        <div id="general" ref={anchor({ id: 'general' })}>
-          <WorkspaceDefaultsGrid workspaceId={workspaceId} />
-        </div>
-
-        <div id="after-merge" ref={anchor({ id: 'after-merge' })}>
-          <WorkspaceAfterMergeSection workspaceId={workspaceId} />
-        </div>
-
-        <div ref={anchor({ id: REVIEW_REPLIES_SECTION_ID })}>
-          <WorkspaceReviewRepliesSection workspaceId={workspaceId} />
-        </div>
-
-        <div ref={anchor({ id: PERMISSIONS_SECTION_ID })}>
-          <PermissionsSettings workspaceId={workspaceId} />
-        </div>
-
-        {WORKSPACE_FEATURES.skills ? (
-          <div ref={anchor({ id: 'skills' })}>
-            <SkillsPanel workspaceId={workspaceId} />
-          </div>
-        ) : null}
-
-        <WorkspaceStorageNotice workspaceId={workspaceId} />
-
-        <section
-          id="danger"
-          ref={anchor({ id: 'danger' })}
-          aria-label="Disconnect workspace"
-          className="flex flex-col items-start gap-2"
-        >
-          {confirmDisconnect ? (
-            <InlineConfirm
-              role="danger"
-              icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
-              title={disconnectTitle({
-                name: workspaceName ?? 'this workspace',
-                runningCount,
-              })}
-              description="Projects, branches and worktrees stay on disk. Choose Open a folder with the same folder to bring it back with its sessions."
-              confirmLabel="Disconnect"
-              isBusy={disconnecting}
-              onConfirm={onDisconnect}
-              onCancel={() => setConfirmDisconnect(false)}
-              className="self-stretch text-left"
+      title={entry.label}
+      meta={workspaceName ?? undefined}
+      actions={menu}
+      subheader={
+        <div className="flex flex-col gap-3">
+          <p className="text-label text-muted-foreground">{entry.hint}</p>
+          {openFlow === null ? null : (
+            <WorkspaceSettingsFlow
+              key={`${openFlow.page}:${openFlow.mode}`}
+              workspaceId={workspaceId}
+              scope={openFlow.page}
+              mode={openFlow.mode}
+              onClose={() => setFlow(null)}
             />
-          ) : (
-            <span className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setConfirmDisconnect(true)}
-                className="text-muted-foreground hover:text-danger"
-              >
-                <Unplug size={ICON_SIZE.row} aria-hidden />
-                Disconnect workspace
-              </Button>
-              <span className="text-label text-faint-foreground">Nothing on disk is deleted.</span>
-            </span>
           )}
-        </section>
-      </div>
+        </div>
+      }
+    >
+      <WorkspacePageBody
+        workspaceId={workspaceId}
+        page={page}
+        section={section}
+        onSelect={onSelect}
+        requestClose={requestClose}
+      />
     </PaneShell>
   );
 };

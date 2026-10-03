@@ -40,11 +40,20 @@ export type RoleModelFallback = Readonly<{
   effort?: EffortLevel;
 }>;
 
+export type RoleModelChoice = Readonly<{
+  providerId: ProviderId;
+  model: string;
+  effort?: EffortLevel;
+}>;
+
+export const ROLE_MODEL_SET_MAX = 3;
+
 export type RoleModelPreference = Readonly<{
   providerId: ProviderId;
   model: string;
   effort: EffortLevel;
   fallback?: RoleModelFallback;
+  models?: ReadonlyArray<RoleModelChoice>;
 }>;
 
 export type RoleModelPreferences = Readonly<Partial<Record<AgentRole, RoleModelPreference>>>;

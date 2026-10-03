@@ -148,6 +148,6 @@ export const FOOTER_AND_VERB_ROWS: ReadonlyArray<Row> = [
       await clickButton(/^Switch workspace/);
       await clickButton(/^Workspace settings/);
     },
-    lands: () => heading('About you'),
+    lands: () => visible('textbox', 'Workspace name'),
   },
 ];

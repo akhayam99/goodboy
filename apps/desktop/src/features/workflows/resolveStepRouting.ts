@@ -55,15 +55,22 @@ export const resolveStepRouting = ({
     };
   }
   const role = step?.role;
+  const size = step?.size ?? null;
   const roleRouting =
     role != null
-      ? resolveRoleRouting({ role, prefs: roleModels, ...(auto !== undefined && { auto }) })
+      ? resolveRoleRouting({
+          role,
+          prefs: roleModels,
+          size,
+          ...(auto !== undefined && { auto }),
+        })
       : null;
   const preference =
     roleRouting ??
     resolveRoleRouting({
       role: KIND_TO_ROLE[kind],
       prefs: roleModels,
+      size,
       ...(auto !== undefined && { auto }),
     });
   const preferredProvider = preference.isOverride ? preference.provider : null;
@@ -75,11 +82,11 @@ export const resolveStepRouting = ({
     roleRouting?.provider ??
     fallback.provider;
   const roleModel =
-    role != null ? recommendedModelForRole({ role, provider, prefs: roleModels }) : null;
+    role != null ? recommendedModelForRole({ role, provider, prefs: roleModels, size }) : null;
   const kindModel =
     provider === fallback.provider
       ? fallback.model
-      : recommendedModelForRole({ role: KIND_TO_ROLE[kind], provider, prefs: roleModels });
+      : recommendedModelForRole({ role: KIND_TO_ROLE[kind], provider, prefs: roleModels, size });
   const preferredEffort = preference.isOverride ? preference.effort : null;
   const sessionScopedModel = provider === sessionProvider ? sessionModel : null;
   return {

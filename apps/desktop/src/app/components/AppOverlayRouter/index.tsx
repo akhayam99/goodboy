@@ -1,7 +1,6 @@
 import { Suspense, lazy, type ReactNode } from 'react';
 import type { Session, Workspace } from '@goodboy/types';
 import { DeleteSessionConfirm } from '../../../features/session/components/DeleteSessionConfirm';
-import { ConvertWorkspaceDialog } from '../../../features/workspace/components/ConvertWorkspaceDialog';
 import { WorkspaceLauncher } from '../../../features/workspace/components/WorkspaceLauncher';
 import type { SettingsScopeChange } from '../../../features/settings/settingsFocus';
 import type { ImpactScope } from '../../../features/impact/lib';
@@ -76,10 +75,8 @@ type Props = {
   readonly deleteOpen: boolean;
   readonly deleteTargetSession: Session | null;
   readonly palette: PaletteRequest | null;
-  readonly convertWorkspaceOpen: boolean;
   readonly closePalette: () => void;
   readonly offerWorkspaceRepo: () => void;
-  readonly closeConvertWorkspace: () => void;
   readonly closeDeleteConfirm: () => void;
 };
 
@@ -220,10 +217,8 @@ export const AppOverlayRouter = ({
   deleteOpen,
   deleteTargetSession,
   palette,
-  convertWorkspaceOpen,
   closePalette,
   offerWorkspaceRepo,
-  closeConvertWorkspace,
   closeDeleteConfirm,
 }: Props) => {
   if (isWorkspaceLauncherBranch) {
@@ -261,13 +256,6 @@ export const AppOverlayRouter = ({
   return (
     <Suspense fallback={null}>
       <AppScopeOverlays studio={null} palette={palette} closePalette={closePalette} />
-      {currentWorkspace !== null ? (
-        <ConvertWorkspaceDialog
-          open={convertWorkspaceOpen}
-          workspace={currentWorkspace}
-          onClose={closeConvertWorkspace}
-        />
-      ) : null}
       {deleteTargetSession !== null && deleteOpen ? (
         <div className="fixed bottom-4 right-4 z-popover w-96 max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-floating shadow-lg">
           <DeleteSessionConfirm session={deleteTargetSession} onClose={closeDeleteConfirm} />

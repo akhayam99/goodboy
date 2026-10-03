@@ -82,7 +82,10 @@ export const ProviderSettingsScope = ({
     ),
     detail:
       focused === 'defaults' && workspaceId !== null ? (
-        <DefaultsPanel workspaceId={workspaceId} />
+        <DefaultsPanel
+          workspaceId={workspaceId}
+          {...(initialSection !== undefined && { focusSection: initialSection })}
+        />
       ) : (
         <ProviderPage
           info={selected}

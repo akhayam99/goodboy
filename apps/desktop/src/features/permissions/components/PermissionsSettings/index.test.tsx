@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
   setDefault: vi.fn(async () => undefined),
   reportError: vi.fn(async () => undefined),
   state: {
+    workspaceOverrides: {} as Record<string, unknown>,
+    settings: {} as Record<string, string>,
     workspaces: [] as ReadonlyArray<{ id: string; name: string; defaultPermissionMode?: string }>,
     sessions: [] as ReadonlyArray<{
       id?: string;

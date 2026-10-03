@@ -26,6 +26,9 @@ export {
 } from './workflowRoutingAvailability';
 export { buildOrchestratorUserPrompt, ORCHESTRATOR_SYSTEM_PROMPT } from './prompt';
 export { orchestratorModelPool } from './orchestratorModelPool';
+export { roleModelSetMenu } from './roleModelSetMenu';
+export { keepProposalInRoleSet } from './keepProposalInRoleSet';
+export { stepSizeForDifficulty } from './stepSizeForDifficulty';
 export { parseRunSummaryText, serializeRunSummary } from './runSummary';
 export {
   OrchestratorClient,

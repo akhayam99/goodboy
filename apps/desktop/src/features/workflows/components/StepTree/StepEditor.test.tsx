@@ -42,12 +42,13 @@ const draft = (key: string, name: string): StepDraft => ({
 
 type HostProps = {
   readonly polished: string;
+  readonly roleSetLine?: string | null;
   readonly onDone: () => void;
   readonly onPin: () => void;
   readonly onMoveDown: () => void;
 };
 
-const Host = ({ polished, onDone, onPin, onMoveDown }: HostProps) => {
+const Host = ({ polished, roleSetLine = null, onDone, onPin, onMoveDown }: HostProps) => {
   const [steps, setSteps] = useState<ReadonlyArray<StepDraft>>([
     draft('scout', 'Map the ledger flow'),
     draft('plan', 'Plan the retries'),
@@ -74,6 +75,7 @@ const Host = ({ polished, onDone, onPin, onMoveDown }: HostProps) => {
           recommendedModel="claude-sonnet-4-6"
           connectedProviders={['anthropic']}
           isRoutingOverridden={false}
+          roleSetLine={roleSetLine}
           disabled={false}
           polish={{
             prompt: {
@@ -221,6 +223,14 @@ describe('StepEditor', () => {
 
     expect(within(group).getByRole('tab', { name: 'Brief' }).getAttribute('aria-selected')).toBe(
       'true',
+    );
+  });
+
+  it('says the step follows its role set while it follows its role', () => {
+    renderHost({ ...callbacks(), roleSetLine: 'Planning models · Opus 5.5' });
+
+    expect(screen.getByTestId('step-follows-role').textContent).toBe(
+      'Follows the role: Planning models · Opus 5.5',
     );
   });
 });
