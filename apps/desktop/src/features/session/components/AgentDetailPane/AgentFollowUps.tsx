@@ -5,7 +5,7 @@ import { useAppStore } from '../../../../store';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
 import type { AgentKind } from '../../agent-kind';
 import { AGENT_KIND_META } from '../../agent-kind';
-import { AgentKindChip } from '../AgentKindChip';
+import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { agentFollowUpMoves, composeFollowUpSeed } from '../../followUpMoves';
 import type { FollowUpChild } from './followUpChildren';
 import { AgentFollowUpChild } from './AgentFollowUpChild';

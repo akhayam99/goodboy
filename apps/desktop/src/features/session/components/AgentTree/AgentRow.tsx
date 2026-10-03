@@ -9,7 +9,7 @@ import { fallbackModeLine } from '../../../permissions/utils/fallbackModeLine';
 import { formatCost } from '../../agent-row-format';
 import { agentKindPalette, type AgentKind } from '../../agent-kind';
 import { isAgentClosedByUser } from '../../agent-lifecycle';
-import { AgentKindChip } from '../AgentKindChip';
+import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { AgentCard } from '../AgentCard';
 import { AgentCardAction } from '../AgentCard/AgentCardAction';
 import { AgentStatusIcon } from '../AgentCard/AgentStatusIcon';

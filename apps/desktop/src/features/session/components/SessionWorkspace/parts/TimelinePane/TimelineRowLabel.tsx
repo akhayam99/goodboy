@@ -1,7 +1,7 @@
 import { ValueToken, WORK_ROW, cn } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import type { MountDiffStat } from '../../../../../../store';
-import { AgentKindChip } from '../../../AgentKindChip';
+import { AgentKindChip } from '../../../../../../shared/components/AgentKindChip';
 import type {
   TimelineResolveBatchEntry,
   TimelineRunEntry,

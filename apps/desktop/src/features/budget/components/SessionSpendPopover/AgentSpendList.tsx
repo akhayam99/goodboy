@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button, formatUsd } from '@goodboy/ui';
-import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
+import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import type { AgentSpend } from '../../sessionSpendByAgent';
 
 const AGENT_SPEND_VISIBLE = 6;
@@ -24,7 +24,7 @@ export const AgentSpendList = ({ agents }: Props) => {
           {visible.map((agent) => (
             <li key={agent.key} className="flex flex-col gap-1">
               <div className="flex min-w-0 items-center gap-2">
-                <AgentAvatar kind={agent.kind} size="md" />
+                <AgentKindChip kind={agent.kind} />
                 <span className="min-w-0 truncate text-body text-foreground">{agent.name}</span>
                 <span className="min-w-0 flex-1 truncate text-secondary text-faint-foreground">
                   {agent.model}

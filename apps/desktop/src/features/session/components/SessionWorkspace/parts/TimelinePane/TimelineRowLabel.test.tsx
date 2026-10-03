@@ -199,8 +199,8 @@ describe('TimelineRowLabel', () => {
   it('leaves the role chip unmarked when the agent belongs to no chain', () => {
     const { container } = renderKind({ agentKind: 'planner', name: 'Draft the migration' });
 
-    expect(screen.getByText(AGENT_KIND_META.planner.noun)).toBeDefined();
-    expect(container.querySelector('svg')).toBeNull();
+    screen.getByText(AGENT_KIND_META.planner.noun);
+    expect(container.querySelectorAll('svg')).toHaveLength(1);
   });
 
   it('renders the mounted project and its branch as value tokens, not as prose', () => {

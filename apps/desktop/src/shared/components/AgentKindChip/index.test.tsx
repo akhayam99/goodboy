@@ -2,9 +2,13 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
+import { tooltipTextOf } from '../../../__tests__/helpers/tooltip';
 import { AgentKindChip } from '.';
-import { AGENT_KIND_ORDER, type AgentKind } from '../../agent-kind';
+import {
+  AGENT_KIND_ORDER,
+  agentKindPalette,
+  type AgentKind,
+} from '../../../features/session/agent-kind';
 
 afterEach(cleanup);
 
@@ -55,7 +59,7 @@ describe('AgentKindChip', () => {
     widths.add(widthOf({ kind: persistedKind('gremlin') }));
 
     expect(widths.size).toBe(1);
-    expect([...widths][0]).toBe('w-20');
+    expect([...widths][0]).toBe('w-24');
   });
 
   it('insets the label so the longest role never touches the chip edge', () => {
@@ -69,18 +73,29 @@ describe('AgentKindChip', () => {
     expect(container.querySelector('[title="scout agent"]')).not.toBeNull();
   });
 
-  it('exposes the role label to assistive tech', () => {
+  it('exposes the role label to assistive tech and keeps the kind icon decorative', () => {
     const { container } = render(<AgentKindChip kind="tester" />);
-    expect(container.querySelector('[aria-hidden]')).toBeNull();
-    expect(screen.getByText('Tester')).toBeDefined();
+    expect(container.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+    screen.getByText('Tester');
+  });
+
+  it('leads every kind with its own icon from the kind registry, never a bare dot', () => {
+    const icons = new Set(AGENT_KIND_ORDER.map((kind) => agentKindPalette({ kind }).icon));
+    for (const kind of AGENT_KIND_ORDER) {
+      const { container } = render(<AgentKindChip kind={kind} />);
+      expect(container.querySelector('svg')).not.toBeNull();
+      cleanup();
+    }
+
+    expect(icons.size).toBe(AGENT_KIND_ORDER.length);
   });
 
   it('renders the label density by default with the kind label, or the label it is given', () => {
     render(<AgentKindChip kind="debugger" label="Debugger" />);
-    expect(screen.getByText('Debugger').className).toContain('w-20');
+    expect(screen.getByText('Debugger').parentElement?.className).toContain('w-24');
   });
 
-  it('renders the glyph density as the kind avatar named by its tooltip', () => {
+  it('renders the glyph density as the kind icon named by its tooltip', () => {
     render(<AgentKindChip kind="planner" density="glyph" />);
 
     const glyph = screen.getByRole('img', { name: 'Planner' });

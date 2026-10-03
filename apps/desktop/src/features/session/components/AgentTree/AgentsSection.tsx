@@ -1,6 +1,6 @@
-import { SectionHeader, cn, DogMascot } from '@goodboy/ui';
+import { SectionHeader, cn, tintClasses } from '@goodboy/ui';
 import type { Session, WorkflowRunId } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { StandaloneAgentsLane } from '../StandaloneAgentsLane';
 import { WorkflowAttachButton } from '../../../workflows/components/WorkflowAttachButton';
 import { SectionToggle } from './SectionToggle';
@@ -95,7 +95,13 @@ export const AgentsSection = ({ task, only, workflowRunId, showWorkflowAttach = 
         <>
           <SectionHeader
             className={SUBSEQUENT_HEADER_CLASS}
-            icon={<DogMascot size={ICON_SIZE.control} className="shrink-0 text-success" />}
+            icon={
+              <CONCEPT_ICONS.agents
+                size={ICON_SIZE.control}
+                aria-hidden
+                className={cn('shrink-0', tintClasses(CONCEPT_TONE.agents).icon)}
+              />
+            }
             label="Agents"
             action={
               <SectionToggle

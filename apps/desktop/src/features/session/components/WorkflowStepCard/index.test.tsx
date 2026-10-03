@@ -13,10 +13,6 @@ vi.mock('../RoleSelect', () => ({
   ),
 }));
 
-vi.mock('../../../../shared/components/AgentAvatar', () => ({
-  AgentAvatar: ({ kind }: { kind: string }) => <span data-testid="agent-avatar">{kind}</span>,
-}));
-
 import { WorkflowStepCard } from './index';
 
 const baseProps = {

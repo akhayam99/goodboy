@@ -3,8 +3,7 @@ import { GripVertical, Trash2 } from 'lucide-react';
 import { ClampedProse, cn, Input, Textarea, Tooltip, tintClasses, Eyebrow } from '@goodboy/ui';
 import type { AgentRole, EffortLevel, ProviderId, VerbosityLevel } from '@goodboy/types';
 import { agentKindPalette, ROLE_LABEL, type AgentKind } from '../../agent-kind';
-import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
-import { AgentKindChip } from '../AgentKindChip';
+import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { WORKFLOW_ROUTING_COPY } from '../../../workflows/workflowRoutingCopy';
@@ -149,7 +148,6 @@ export const WorkflowStepCard = ({
       <span className="w-4 shrink-0 text-right font-mono text-secondary tabular-nums text-muted-foreground">
         {String(ordinal + 1).padStart(2, '0')}
       </span>
-      <AgentAvatar kind={kind} size="sm" />
       <span className="flex min-w-0 flex-1 items-center gap-2">
         <span className="min-w-0 truncate text-label font-medium text-foreground">
           {displayName}
