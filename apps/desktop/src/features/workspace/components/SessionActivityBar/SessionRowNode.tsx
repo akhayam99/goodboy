@@ -11,6 +11,7 @@ type Props = {
   readonly tone: Tone;
   readonly prState: PullRequestStateKind | null;
   readonly isSelected?: boolean;
+  readonly className?: string;
 };
 
 type MarkParams = Pick<Props, 'attention'>;
@@ -25,7 +26,14 @@ const attentionMark = ({ attention }: MarkParams): string | null => {
   return ATTENTION_REASON_META[attention].tone === 'danger' ? '!' : null;
 };
 
-export const SessionRowNode = ({ stage, attention, tone, prState, isSelected = false }: Props) => {
+export const SessionRowNode = ({
+  stage,
+  attention,
+  tone,
+  prState,
+  isSelected = false,
+  className,
+}: Props) => {
   const mark = stage === 'attention' ? attentionMark({ attention }) : null;
   const isRunning = stage === 'running';
   const isAttention = stage === 'attention';
@@ -43,6 +51,7 @@ export const SessionRowNode = ({ stage, attention, tone, prState, isSelected = f
         'relative inline-flex size-5 shrink-0 items-center justify-center rounded-full',
         isAttention && !isSelected && tintClasses(tone).bgSoft,
         isSelected && 'bg-primary',
+        className,
       )}
     >
       {isSelected ? (

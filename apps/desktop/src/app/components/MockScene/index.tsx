@@ -23,6 +23,8 @@ import { ResolveItemScene } from './scenes/ResolveItemScene';
 import { ResolveFailedHistoryScene } from './scenes/ResolveFailedHistoryScene';
 import { ResolveFailedRunScene } from './scenes/ResolveFailedRunScene';
 import { BoardScene } from './scenes/BoardScene';
+import { BoardSelectedScene } from './scenes/BoardSelectedScene';
+import { BoardDeleteConfirmScene } from './scenes/BoardDeleteConfirmScene';
 import { TranscriptMountScene } from './scenes/TranscriptMountScene';
 import { BoardShellScene } from './scenes/BoardShellScene';
 import {
@@ -162,6 +164,8 @@ export const MOCK_SCENES = {
   'resolve-gitlab': ResolveGitlabScene,
   'resolve-bitbucket': ResolveBitbucketScene,
   board: BoardScene,
+  'board-selected': BoardSelectedScene,
+  'board-delete-confirm': BoardDeleteConfirmScene,
   'transcript-mount': TranscriptMountScene,
   'board-shell': BoardShellScene,
   'artifact-report': ArtifactReportScene,

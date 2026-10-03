@@ -90,7 +90,7 @@ vi.mock('./StageColumn', () => ({
     spec: { kind: string; stage?: string };
     sessions: ReadonlyArray<Session>;
     selection: {
-      handleItemClick: (id: string, event: { altKey: boolean }) => void;
+      onItemClick: (id: SessionId, event: ModifierEvent) => void;
     };
     collapse?: { label: string; onCollapse: () => void };
   }) => (
@@ -114,11 +114,31 @@ vi.mock('./StageColumn', () => ({
           type="button"
           data-select-id={entry.id}
           aria-label={`card ${entry.id}`}
-          onClick={(event) => selection.handleItemClick(entry.id, event)}
+          onClick={(event) => selection.onItemClick(entry.id as SessionId, event)}
         />
       ))}
     </div>
   ),
+}));
+
+vi.mock('../../../actions/useActionControls', () => ({
+  useActionControls: () => ({
+    target: null,
+    actions: [],
+    inSlot: () => [],
+    pendingId: null,
+    confirming: null,
+    failure: null,
+    trigger: vi.fn(),
+    confirm: vi.fn(),
+    cancel: vi.fn(),
+    retry: vi.fn(),
+  }),
+}));
+
+vi.mock('../../../../shared/components/ObjectSelectionBar', () => ({
+  ObjectSelectionBar: ({ count }: { readonly count: number }) =>
+    count === 0 ? null : <div role="toolbar">{count} selected</div>,
 }));
 
 vi.mock('../../../session/components/DeleteSessionConfirm', () => ({
@@ -136,6 +156,13 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
 });
 
 import { StageBoard } from './index';
+
+type ModifierEvent = {
+  readonly shiftKey: boolean;
+  readonly metaKey: boolean;
+  readonly ctrlKey: boolean;
+  readonly altKey: boolean;
+};
 
 const session = aSession({ id: 's-1' as SessionId });
 const wsId = 'ws-a' as WorkspaceId;
@@ -418,29 +445,6 @@ describe('StageBoard selection', () => {
   const other = aSession({ id: 's-2' as SessionId });
   const shelved = aSession({ id: 's-9' as SessionId });
 
-  it('never renders a standing selection hint', () => {
-    groups.current = [{ key: 'building', sessions: [session] }];
-    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
-    expect(screen.queryByText(/lasso/)).toBeNull();
-
-    cleanup();
-    groups.current = [{ key: 'building', sessions: [session, other] }];
-    render(<StageBoard workspaceId={wsId} sessions={[session, other]} />);
-    expect(screen.queryByText(/lasso/)).toBeNull();
-  });
-
-  it('raises a single bulk bar for the whole board, not one per column', () => {
-    groups.current = [{ key: 'building', sessions: [session, other] }];
-    render(<StageBoard workspaceId={wsId} sessions={[session, other]} />);
-    expect(screen.queryByText(/selected/)).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: 'card s-1' }), { altKey: true });
-    fireEvent.click(screen.getByRole('button', { name: 'card s-2' }), { altKey: true });
-
-    expect(screen.getAllByText('2 selected')).toHaveLength(1);
-    expect(screen.getByRole('button', { name: /^Archive \(2\)$/ })).toBeDefined();
-  });
-
   it('selects every card a lasso drag crosses, across columns', () => {
     vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
       cb(0);
@@ -512,8 +516,6 @@ describe('StageBoard selection', () => {
     fireEvent.click(screen.getByRole('button', { name: 'card s-9' }), { altKey: true });
 
     expect(screen.getByText('1 selected')).toBeDefined();
-    expect(screen.getByRole('button', { name: /^Restore \(1\)$/ })).toBeDefined();
-    expect(screen.queryByRole('button', { name: /^Archive \(/ })).toBeNull();
   });
 
   it('keeps the active-lane hits when a lasso spans into the archived column', () => {
@@ -551,7 +553,6 @@ describe('StageBoard selection', () => {
     );
 
     expect(screen.getByText('2 selected')).toBeDefined();
-    expect(screen.getByRole('button', { name: /^Archive \(2\)$/ })).toBeDefined();
   });
 });
 

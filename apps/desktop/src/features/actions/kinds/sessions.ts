@@ -52,6 +52,7 @@ export const SESSIONS_KIND: ObjectKindDefinition<SessionsActionTarget, SessionsF
     {
       id: 'sessions.archive',
       label: ({ facts }) => countLabel({ verb: 'Archive', count: facts.active.length }),
+      shortLabel: () => 'Archive',
       icon: CONCEPT_ICONS.archive,
       group: 'danger',
       isUndoable: true,
@@ -62,6 +63,7 @@ export const SESSIONS_KIND: ObjectKindDefinition<SessionsActionTarget, SessionsF
     {
       id: 'sessions.restore',
       label: ({ facts }) => countLabel({ verb: 'Restore', count: facts.archived.length }),
+      shortLabel: () => 'Restore',
       icon: CONCEPT_ICONS.restore,
       group: 'act',
       when: ({ facts }) => facts.archived.length > 0,
@@ -71,6 +73,7 @@ export const SESSIONS_KIND: ObjectKindDefinition<SessionsActionTarget, SessionsF
     {
       id: 'sessions.delete',
       label: ({ facts }) => countLabel({ verb: 'Delete', count: facts.sessions.length }),
+      shortLabel: () => 'Delete',
       icon: CONCEPT_ICONS.delete,
       group: 'danger',
       when: () => true,
@@ -78,8 +81,13 @@ export const SESSIONS_KIND: ObjectKindDefinition<SessionsActionTarget, SessionsF
         title: `${countLabel({ verb: 'Delete', count: facts.sessions.length })}?`,
         description:
           'Removes these sessions and their transcripts from this device. Branches and their commits stay in the repository. This cannot be undone.',
-        confirmLabel: `Delete (${facts.sessions.length})`,
+        confirmLabel: countLabel({ verb: 'Delete', count: facts.sessions.length }),
         role: 'danger',
+        goes: 'The sessions and their transcripts, from this device.',
+        stays:
+          'Branches and their commits. A worktree with uncommitted work is kept, under Settings, Storage.',
+        items: facts.sessions.map((session) => sessionTitle({ session })),
+        ...(facts.active.length > 0 && { altActionId: 'sessions.archive' }),
       }),
       run: async ({ facts, env }) => {
         await env.getState().bulkDeleteTask(facts.sessions.map((session) => session.id));

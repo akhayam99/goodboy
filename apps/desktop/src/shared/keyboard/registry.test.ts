@@ -49,6 +49,7 @@ const entries: ReadonlyArray<readonly [string, ShortcutEntry]> = Object.entries(
 
 const SCOPED_RESERVED: Readonly<Record<string, string>> = {
   'review.selectAll': 'cmd+KeyA',
+  'selection.all': 'cmd+KeyA',
 };
 
 const domainOf = (entry: ShortcutEntry): string => entry.scope ?? 'global';
@@ -103,6 +104,33 @@ describe('shortcut registry', () => {
     }
   });
 
+  it('puts every selection key in the selection group, on the selection scope', () => {
+    const selection = entries.filter(([id]) => id.startsWith('selection.'));
+    expect(selection.map(([id]) => id)).toEqual([
+      'selection.toggle',
+      'selection.all',
+      'selection.clear',
+      'selection.delete',
+    ]);
+    for (const [id, entry] of selection) {
+      expect(entry.group, `${id} is not in the selection group`).toBe('selection');
+      expect(entry.scope, `${id} is not on the selection scope`).toBe('selection');
+    }
+  });
+
+  it('spells the selection keys the way a person reads them', () => {
+    platform.current = 'darwin';
+    expect(shortcutGlyphs('selection.toggle')).toBe('X');
+    expect(shortcutGlyphs('selection.all')).toBe('⌘A');
+    expect(shortcutGlyphs('selection.clear')).toBe('⎋');
+    expect(shortcutGlyphs('selection.delete')).toBe('⌫');
+
+    platform.current = 'linux';
+    expect(shortcutGlyphs('selection.all')).toBe('Ctrl+A');
+    expect(shortcutGlyphs('selection.clear')).toBe('Esc');
+    expect(shortcutGlyphs('selection.delete')).toBe('Delete');
+  });
+
   it('binds every combo exactly once off macOS too, with per-OS combos resolved', () => {
     const seen = new Map<string, string>();
     for (const [id, entry] of entries) {
@@ -144,7 +172,7 @@ describe('shortcut registry', () => {
     for (const [id, entry] of entries) {
       const key = entry.combo.split('+').at(-1) ?? '';
       expect(
-        /^(Key[A-Z]|Digit[0-9]|F[0-9]{1,2}|Comma|Period|Slash|Minus|Equal|BracketLeft|BracketRight|Backspace|Escape|Enter)$/.test(
+        /^(Key[A-Z]|Digit[0-9]|F[0-9]{1,2}|Comma|Period|Slash|Minus|Equal|BracketLeft|BracketRight|Backspace|Delete|Escape|Enter)$/.test(
           key,
         ),
         `${id} uses ${key}, which is a character rather than a key code`,
