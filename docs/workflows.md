@@ -44,8 +44,9 @@ it. From the top:
 - **Mode**, with one line under it that says what the mode does, and the
   mode's own control on the right of the same row.
 - **Plan**: the steps as a tree that reads top down, step 1 first and **Add step** last.
-- **Launch bar**: when it starts, **Autorun**, the spend cap or **Save as
-  preset**, and **Start workflow**. The reason Start is off shows under it.
+- **Launch bar**: when it starts, when to ask (**Ask before each step** or
+  **Run on its own**), the spend cap or **Save as preset**, and **Start
+  workflow**. The reason Start is off shows under it.
 
 The three modes:
 
@@ -53,11 +54,20 @@ The three modes:
 2. **Custom**: write the steps yourself, or open **Draft with planner**, describe what you want and Goodboy drafts the steps for you to edit.
 3. **Preset**: pick a ready workflow from the **Preset** picker. Goodboy comes with three: **Refactor** (scout, plan, implement, test), **Plan and ship** (scout, plan, implement, review) and **Fix a bug** (investigate, implement, test). The last two are built from the built-in steps. A preset is a source: editing a step marks it, the name shows "Edited from" the preset, and switching to **Custom** keeps the steps.
 
-Click a step to edit it in place: title, role, instruction, expected output,
-and provider, model, variant and effort on the right. Its footer moves,
-duplicates or removes the step. Remove asks first. Escape or **Done** closes
-it. The grip on the row drags a step, and the arrow keys on the grip move it:
-up runs it earlier, down runs it later.
+Click a step to edit it in place: title, role, instruction and expected
+output on the left, the model on the right. Instruction and expected output
+are document fields (markdown with **Write** and **Preview**, Cmd+Enter
+closes the editor), each with **Polish** and, after a polish, **Undo
+polish**. The model block has two choices: **Follow role** (the default,
+which says what Auto picks for the role from the providers you can use now)
+or **Pin a model** (providers as named chips with their state, then model and
+effort), and **Reply verbosity** under both. A pinned step carries a dot on
+its row, like an edited one. The footer has one primary, **Done**, and a ⋯
+menu with **Duplicate**, **Save as step**, **Move up**, **Move down** and
+**Delete step**. Delete acts at once and the toast offers **Undo**. Escape
+closes the editor too. The grip on the row drags a step, and the arrow keys on
+the grip move it: up runs it earlier, down runs it later. A step added to a
+running run opens the same editor, with **Add step** as its primary.
 
 Once the workspace has measured 10 finished steps, every step row shows how
 long steps like it usually take and what they usually cost, as a range
@@ -65,7 +75,7 @@ long steps like it usually take and what they usually cost, as a range
 ("≈ 35-55m · $2.10-3.40"). A range with `~` leans on a broader history than
 this exact model and effort, a dash means there is not enough history for that
 step, and the tooltip always names the basis. When no step in the plan has an
-estimate yet, the rows show no time or cost columns at all. With **Autorun** off the total
+estimate yet, the rows show no time or cost columns at all. When the run asks before each step the total
 adds "+ your reviews", because your time between steps is not estimated. An
 orchestrated run shows a total only once the workspace has 5 finished
 orchestrated runs. The open editor repeats the step's estimate in its footer.
@@ -125,8 +135,10 @@ The **Starts** chip in the launch bar picks one:
 - **Manually**, when you press start
 - **After** another run that is still going, and then it carries on by itself
 
-**Autorun** is off by default: the run pauses after each step so you can
-review it. Turn it on and each next step starts on its own.
+When to ask is **Ask before each step** by default: the run waits for your go
+after each step so you can review it. **Run on its own** starts each next step
+by itself. The choice is stored as the run's autorun flag and can change later
+from the run's ⋯ menu.
 
 ## What a step carries
 

@@ -12,7 +12,7 @@ const noop = () => undefined;
 
 const IS_EMPTY = sceneParam({ key: 'v' }) === 'empty';
 const OPEN = sceneParam({ key: 'open' });
-const OPEN_LABELS: ReadonlyArray<string> = OPEN === null ? [] : [OPEN];
+const OPEN_LABELS: ReadonlyArray<string> = OPEN === null ? [] : OPEN.split(',');
 const IS_CONFIRM_ERROR = sceneParam({ key: 'state' }) === 'confirm-error';
 
 const editedBuiltin = (): Workflow | null => {
@@ -47,6 +47,15 @@ const seedStudio = (): void => {
     loadPhaseTemplates: async () => undefined,
     loadStepLibrary: async () => undefined,
     setWorkflowStudioVisible: noop,
+    savePhaseTemplate: async (args) => {
+      const kept = (useAppStore.getState().phaseTemplates[WORKSPACE_ID] ?? []).find(
+        (workflow) => workflow.id === args.id,
+      );
+      if (kept === undefined) {
+        throw new Error('This mock keeps the workflows it opened with.');
+      }
+      return kept;
+    },
   });
   if (IS_CONFIRM_ERROR) {
     const workflow = editedBuiltin();

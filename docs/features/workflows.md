@@ -9,7 +9,7 @@ A workflow runs several agents in one session, each step with its own role, mode
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-light.webp" alt="The workflow builder for Duplicate credit fix: a goal, the Orchestrated, Custom and Preset modes, the plan preview with the Orchestrator row on GPT-5.6 Sol, guidance, Starts Now, Autorun, Spend cap and Start workflow">
 </picture>
 
-Shape a run before it starts: a name, a goal and a mode, with the plan previewed as a recipe, step 1 on top, in the same nodes the run will show. **Starts**, **Autorun** and **Spend cap** sit under the plan.
+Shape a run before it starts: a name, a goal and a mode, with the plan previewed as a recipe, step 1 on top, in the same nodes the run will show. **Starts**, when to ask and **Spend cap** sit under the plan.
 
 ### Orchestrated
 
@@ -51,7 +51,7 @@ Reuse steps across workflows. The 8 built-in steps are read-only, and **Save a c
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-model-light.webp" alt="The model picker open on the Orchestrator row of the workflow builder, with the provider icons and the Model, Version, Variant and Effort rows set to GPT, 5.6, Sol and High">
 </picture>
 
-Put a light model on a scout and a strong one on the planner. Each step has its own provider, then **Model**, **Version**, **Variant** and **Effort**, and Goodboy records what actually ran.
+Put a light model on a scout and a strong one on the planner. A step follows its role by default; **Pin a model** picks its own provider, then **Model**, **Version**, **Variant** and **Effort**, and Goodboy records what actually ran.
 
 ### Autorun
 

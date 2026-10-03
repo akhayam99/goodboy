@@ -500,9 +500,11 @@ export {
   parsePolishedGoal,
   type GoalPolishDeps,
   polishStepInstruction,
+  polishStepExpectedOutput,
   parsePolishedStep,
   type StepPolishDeps,
   type StepPolishInput,
+  type ExpectedOutputPolishInput,
 } from './workflows';
 
 export {

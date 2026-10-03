@@ -1,16 +1,19 @@
-import { Eyebrow, Input, cn } from '@goodboy/ui';
+import { Eyebrow, Input, SegmentedTabs } from '@goodboy/ui';
 import { PromptField } from '../../../../shared/components/PromptField';
 import type { AgentRole, EffortLevel, ProviderId, VerbosityLevel } from '@goodboy/types';
 import type { StepDraft } from '../../engine';
+import type { PolishField, StepPolishFields } from '../../stepPolishFields';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { WORKFLOW_ROUTING_COPY } from '../../workflowRoutingCopy';
+import {
+  routingLabelParts,
+  routingNameText,
+} from '../../../../shared/components/RoutingPicker/routingSummary';
 import { RoleSelect } from '../../../session/components/RoleSelect';
+import { ROLE_LABEL } from '../../../session/agent-kind';
+import { VERBOSITY_LABEL, VERBOSITY_LEVELS } from '../../../settings/verbosity';
+import { StepFieldLabel } from './StepFieldLabel';
 
-type StepPolish = {
-  readonly isPolishing: boolean;
-  readonly onPolish: () => void;
-};
+type ModelSource = 'follow' | 'pin';
 
 type Props = {
   readonly step: StepDraft;
@@ -21,7 +24,7 @@ type Props = {
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly isRoutingOverridden: boolean;
   readonly disabled: boolean;
-  readonly polish: StepPolish | null;
+  readonly polish: StepPolishFields | null;
   readonly onName: (name: string) => void;
   readonly onRole: (role: AgentRole) => void;
   readonly onPrompt: (prompt: string) => void;
@@ -31,9 +34,29 @@ type Props = {
   readonly onEffort: (effort: EffortLevel) => void;
   readonly onVerbosity: (verbosity: VerbosityLevel) => void;
   readonly onRoutingReset: () => void;
+  readonly onPin: () => void;
+  readonly onSubmit?: () => void;
 };
 
 const FIELD_ID_PREFIX = 'plan-step';
+
+const MODEL_SOURCES = [
+  { value: 'follow', label: 'Follow role' },
+  { value: 'pin', label: 'Pin a model' },
+] as const satisfies ReadonlyArray<{ readonly value: ModelSource; readonly label: string }>;
+
+const VERBOSITY_OPTIONS = VERBOSITY_LEVELS.map((level) => ({
+  value: level,
+  label: VERBOSITY_LABEL[level],
+}));
+
+const fieldPolish = ({
+  polish,
+  field,
+}: {
+  readonly polish: StepPolishFields | null;
+  readonly field: keyof StepPolishFields;
+}): PolishField | null => (polish === null ? null : polish[field]);
 
 export const StepEditorFields = ({
   step,
@@ -54,60 +77,64 @@ export const StepEditorFields = ({
   onEffort,
   onVerbosity,
   onRoutingReset,
+  onPin,
+  onSubmit,
 }: Props) => {
   const idOf = (field: string): string => `${FIELD_ID_PREFIX}-${step.key}-${field}`;
+  const source: ModelSource = isRoutingOverridden ? 'pin' : 'follow';
+  const submit = onSubmit === undefined ? undefined : () => onSubmit();
+  const followLabel = routingLabelParts({
+    provider: recommendedProvider,
+    model: recommendedModel,
+    effort,
+  });
+  const followPick = [routingNameText(followLabel), ...followLabel.detail].join(' · ');
 
   return (
-    <div className="grid grid-cols-1 gap-4 @min-[560px]:grid-cols-2">
-      <div className="flex min-w-0 flex-col gap-2.5">
-        <div className="flex flex-col gap-1">
-          <label htmlFor={idOf('title')} className="text-secondary text-muted-foreground">
-            Title
-          </label>
-          <Input
-            id={idOf('title')}
-            value={step.name}
-            onChange={(event) => onName(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key !== 'Enter') {
-                return;
-              }
-              event.preventDefault();
-              document.getElementById(idOf('instruction'))?.focus();
-            }}
-            placeholder="step name"
-            disabled={disabled}
-            className="h-7 bg-background text-label"
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <span className="text-secondary text-muted-foreground">Role</span>
-          <RoleSelect value={step.role} onChange={onRole} disabled={disabled} />
-        </div>
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center justify-between gap-2">
-            <label htmlFor={idOf('instruction')} className="text-secondary text-muted-foreground">
-              Instruction
+    <div className="grid grid-cols-1 gap-5 @min-[560px]:grid-cols-2">
+      <div className="flex min-w-0 flex-col gap-3">
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className="flex min-w-0 flex-col gap-1">
+            <label htmlFor={idOf('title')} className="text-secondary text-muted-foreground">
+              Title
             </label>
-            {polish === null ? null : (
-              <button
-                type="button"
-                onClick={polish.onPolish}
-                disabled={disabled || polish.isPolishing || step.prompt.trim().length === 0}
-                aria-label="Polish step instruction"
-                className="inline-flex items-center gap-1 rounded-sm px-1 text-secondary text-faint-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <CONCEPT_ICONS.enhance size={ICON_SIZE.row} aria-hidden />
-                <span className={cn(polish.isPolishing && 'text-shimmer')}>Polish</span>
-              </button>
-            )}
+            <Input
+              id={idOf('title')}
+              value={step.name}
+              onChange={(event) => onName(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter') {
+                  return;
+                }
+                event.preventDefault();
+                document.getElementById(idOf('instruction'))?.focus();
+              }}
+              placeholder="step name"
+              disabled={disabled}
+              className="h-7 bg-background text-label"
+            />
           </div>
+          <div className="flex min-w-0 flex-col gap-1">
+            <span className="text-secondary text-muted-foreground">Role</span>
+            <RoleSelect value={step.role} onChange={onRole} disabled={disabled} />
+          </div>
+        </div>
+        <div className="flex flex-col gap-1">
+          <StepFieldLabel
+            htmlFor={idOf('instruction')}
+            label="Instruction"
+            hint="Markdown, Cmd+Enter saves"
+            polish={fieldPolish({ polish, field: 'prompt' })}
+            isPolishable={step.prompt.trim().length > 0}
+            disabled={disabled}
+          />
           <PromptField
             kind="document"
             label="Instruction"
             id={idOf('instruction')}
             value={step.prompt}
             onChange={onPrompt}
+            {...(submit !== undefined && { onSubmit: submit })}
             placeholder="what this agent should do…"
             hasPreview
             minRows={3}
@@ -117,16 +144,22 @@ export const StepEditorFields = ({
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor={idOf('expected')} className="text-secondary text-muted-foreground">
-            Expected output
-          </label>
+          <StepFieldLabel
+            htmlFor={idOf('expected')}
+            label="Expected output"
+            polish={fieldPolish({ polish, field: 'expectedOutput' })}
+            isPolishable={step.expectedOutput.trim().length > 0}
+            disabled={disabled}
+          />
           <PromptField
             kind="document"
             label="Expected output"
             id={idOf('expected')}
             value={step.expectedOutput}
             onChange={onExpectedOutput}
+            {...(submit !== undefined && { onSubmit: submit })}
             placeholder="what this step hands to the next one…"
+            hasPreview
             minRows={1}
             maxRows={4}
             disabled={disabled}
@@ -134,36 +167,68 @@ export const StepEditorFields = ({
           />
         </div>
       </div>
-      <div className="flex min-w-0 flex-col gap-1">
-        <div className="flex items-center justify-between gap-2 px-2.5">
+      <div className="flex min-w-0 flex-col gap-2.5">
+        <div className="px-2.5">
           <Eyebrow label="Model" muted />
-          {isRoutingOverridden ? (
-            <button
-              type="button"
-              onClick={onRoutingReset}
-              disabled={disabled}
-              className="text-secondary text-faint-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed"
-            >
-              {WORKFLOW_ROUTING_COPY.resetLabel}
-            </button>
-          ) : null}
         </div>
-        <RoutingPicker
-          presentation="inline"
-          ariaLabel={routingLabel}
-          connectedProviders={connectedProviders}
-          provider={step.provider}
-          model={step.model}
-          effort={{ editable: true, value: effort, onChange: onEffort }}
-          recommendation={{ provider: recommendedProvider, model: recommendedModel }}
-          recommendationKind="auto"
-          verbosity={step.verbosity}
-          onVerbosity={onVerbosity}
-          disabled={disabled}
-          overridden={isRoutingOverridden}
-          onProvider={onProvider}
-          onModel={onModel}
-        />
+        <div className="px-2.5">
+          <SegmentedTabs
+            ariaLabel="Model source"
+            size="sm"
+            fill
+            options={MODEL_SOURCES}
+            value={source}
+            onChange={(next) => {
+              if (disabled || next === source) {
+                return;
+              }
+              if (next === 'follow') {
+                onRoutingReset();
+                return;
+              }
+              onPin();
+            }}
+          />
+        </div>
+        {source === 'follow' ? (
+          <p
+            data-testid="step-follows-role"
+            className="px-2.5 text-secondary text-muted-foreground"
+          >
+            {`Follows the ${ROLE_LABEL[step.role]} role. Auto picks `}
+            <span className="text-foreground">{followPick}</span>
+            {' from the providers you can use now.'}
+          </p>
+        ) : (
+          <RoutingPicker
+            presentation="inline"
+            providerLayout="named"
+            ariaLabel={routingLabel}
+            connectedProviders={connectedProviders}
+            provider={step.provider}
+            model={step.model}
+            effort={{ editable: true, value: effort, onChange: onEffort }}
+            disabled={disabled}
+            overridden
+            onProvider={onProvider}
+            onModel={onModel}
+          />
+        )}
+        <div className="flex min-w-0 items-center justify-between gap-3 px-2.5">
+          <span className="text-secondary text-muted-foreground">Reply verbosity</span>
+          <SegmentedTabs
+            ariaLabel="Reply verbosity"
+            size="xs"
+            options={VERBOSITY_OPTIONS}
+            value={step.verbosity}
+            onChange={(next) => {
+              if (disabled) {
+                return;
+              }
+              onVerbosity(next);
+            }}
+          />
+        </div>
       </div>
     </div>
   );

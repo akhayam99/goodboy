@@ -39,6 +39,7 @@ export type Props = {
   readonly availability?: 'run' | 'setup';
   readonly presentation?: 'popover' | 'inline';
   readonly isEffortHidden?: boolean;
+  readonly providerLayout?: 'glyphs' | 'named';
   readonly budget?: ReactNode;
 };
 
@@ -68,6 +69,7 @@ export const RoutingPicker = ({
   availability = 'run',
   presentation = 'popover',
   isEffortHidden = false,
+  providerLayout = 'glyphs',
   budget,
 }: Props) => {
   const isInline = presentation === 'inline';
@@ -133,6 +135,7 @@ export const RoutingPicker = ({
       availability={availability}
       isInline={isInline}
       isEffortHidden={isEffortHidden}
+      providerLayout={providerLayout}
       onConnectionInFlightChange={setIsProviderConnectionInFlight}
       {...(!isInline && { focusRoot: dropdown.popupRef })}
       {...(recommendation != null && { recommendation })}

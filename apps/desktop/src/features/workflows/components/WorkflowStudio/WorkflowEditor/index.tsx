@@ -14,7 +14,6 @@ import {
   addStep,
   blankStepDraft,
   duplicateStep,
-  removeStep,
   reorderSteps,
   stepDraftWithModel,
   updateStep,
@@ -27,7 +26,11 @@ import { StepTree } from '../../StepTree';
 import { StepEditor } from '../../StepTree/StepEditor';
 import { StepRow } from '../../StepTree/StepRow';
 import type { useWorkflowEditor } from '../../WorkflowsPanel/useWorkflowEditor';
-import { useWorkflowPolish } from '../../WorkflowsPanel/useWorkflowPolish';
+import { usePolish } from '../../../hooks/usePolish';
+import { useProsePolishDeps } from '../../../hooks/useProsePolishDeps';
+import { useStepDeleteUndo } from '../../../hooks/useStepDeleteUndo';
+import { stepPolishFields } from '../../../stepPolishFields';
+import { polishWorkflowGoalText } from '../../../workflows';
 import { DragGhost } from '../DragGhost';
 import { EditorTrail } from './EditorTrail';
 import { NoProvidersNotice } from './NoProvidersNotice';
@@ -47,7 +50,9 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const { form, setForm, expandedKey, setExpandedKey } = editor;
   const steps = form.steps;
-  const polish = useWorkflowPolish({ workspaceId, workingDir, connectedProviders, form, setForm });
+  const polishDeps = useProsePolishDeps({ workspaceId, workingDir, connectedProviders });
+  const [polishError, setPolishError] = useState<string | null>(null);
+  const polish = usePolish({ onError: setPolishError });
   const blocked = editor.isGenerating;
   const hasProviders = connectedProviders.length > 0;
   const defaultProvider: ProviderId =
@@ -75,6 +80,12 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
     setSteps((current) => reorderSteps({ steps: current, from, to }));
   };
   const savedSteps = useSavedSteps({ workspaceId });
+  const deleteStep = useStepDeleteUndo({
+    steps,
+    setSteps,
+    onDeleted: (key) => setExpandedKey(expandedKey === key ? null : expandedKey),
+  });
+  const setGoal = (goal: string) => setForm((current) => ({ ...current, goal }));
   const insertStep = (picked: SavedStep | null) => {
     const step = picked === null ? blankStepDraft() : stepDraftFromSavedStep({ step: picked });
     setSteps((current) => addStep({ steps: current, step }));
@@ -145,7 +156,7 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
     <PlanDraftingBanner />
   ) : null;
 
-  const error = editor.formError ?? editor.generationError ?? polish.polishError ?? saveError;
+  const error = editor.formError ?? editor.generationError ?? polishError ?? saveError;
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
@@ -194,14 +205,22 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
           placeholder="what should this workflow accomplish? Draft steps writes the plan from it…"
           hasSessionGoal={false}
           isSessionGoal={false}
-          canUndo={polish.canUndoGoal}
-          isPolishing={polish.isPolishingGoal}
+          canUndo={polish.canUndo({ id: 'goal', current: form.goal })}
+          isPolishing={polish.polishingId === 'goal'}
           disabled={blocked}
-          onChange={(goal) => setForm((current) => ({ ...current, goal }))}
+          onChange={setGoal}
           onBlur={() => {}}
           onUseSessionGoal={() => {}}
-          onUndo={polish.undoGoal}
-          onPolish={() => void polish.polishGoal()}
+          onUndo={() => polish.undo({ id: 'goal', current: form.goal, apply: setGoal })}
+          onPolish={() =>
+            void polish.run({
+              id: 'goal',
+              current: form.goal,
+              keptMessage: 'Kept your wording. The goal could not be polished.',
+              polish: () => polishWorkflowGoalText({ deps: polishDeps, goal: form.goal }),
+              apply: setGoal,
+            })
+          }
         />
       </div>
       {hasProviders ? null : <NoProvidersNotice />}
@@ -236,6 +255,7 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
               identityIndex={IDENTITY_INDEX}
               isExpanded={expandedKey === step.key}
               isEdited={editor.editedKeys.has(step.key)}
+              isPinned={step.provider !== '' || step.model !== ''}
               isDragging={draggingKey === step.key}
               disabled={blocked}
               onToggle={() => setExpandedKey(expandedKey === step.key ? null : step.key)}
@@ -255,10 +275,13 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
                   connectedProviders={connectedProviders}
                   isRoutingOverridden={step.provider !== '' || step.model !== ''}
                   disabled={blocked}
-                  polish={{
-                    isPolishing: polish.polishingKey === step.key,
-                    onPolish: () => void polish.polishStep(step.key),
-                  }}
+                  polish={stepPolishFields({
+                    polish,
+                    deps: polishDeps,
+                    goal: form.goal,
+                    step,
+                    patchStep,
+                  })}
                   onName={(name) => patchStep(step.key, { name })}
                   onRole={(role) => patchStep(step.key, { role })}
                   onPrompt={(prompt) => patchStep(step.key, { prompt })}
@@ -278,6 +301,12 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
                   onEffort={(next) => patchStep(step.key, { effort: next })}
                   onVerbosity={(verbosity) => patchStep(step.key, { verbosity })}
                   onRoutingReset={() => patchStep(step.key, { provider: '', model: '' })}
+                  onPin={() =>
+                    patchStep(step.key, {
+                      provider: resolvedProvider(step),
+                      model: resolvedModel(step),
+                    })
+                  }
                   onMoveUp={() => moveStep(step.key, -1)}
                   onMoveDown={() => moveStep(step.key, 1)}
                   onDuplicate={() =>
@@ -288,10 +317,7 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
                     setSaveError(null);
                     void saveAsStep(step);
                   }}
-                  onRemove={() => {
-                    setSteps((current) => removeStep({ steps: current, key: step.key }));
-                    setExpandedKey(null);
-                  }}
+                  onDelete={() => deleteStep(step.key)}
                   onDone={() => setExpandedKey(null)}
                 />
               }
