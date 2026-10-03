@@ -102,6 +102,19 @@ describe('StageBoard selection bar', () => {
     expect(checkboxOf(GOALS[1] ?? '').getAttribute('aria-checked')).toBe('false');
   });
 
+  it('seats each checkbox in the header row of its card, before the title', () => {
+    mountBoard(sessionsOf(GOALS));
+
+    for (const goal of GOALS) {
+      const box = checkboxOf(goal);
+      const title = screen.getByRole('button', { name: goal });
+      const card = box.closest('article');
+      expect(card?.contains(title)).toBe(true);
+      expect(title.parentElement?.contains(box)).toBe(true);
+      expect(box.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+    }
+  });
+
   it('offers every card on the board, and selects them all from the bar', () => {
     mountBoard(sessionsOf(GOALS));
     fireEvent.click(checkboxOf(GOALS[0] ?? ''));
