@@ -1,11 +1,7 @@
 import { renderHandoff } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { AgentTurnSpan } from '@goodboy/types';
-import {
-  AGENT_KIND_DEFAULTS,
-  KIND_TO_ROLE,
-  kindWritesFiles,
-} from '../../../features/session/agent-kind';
+import { AGENT_KIND_DEFAULTS, kindWritesFiles } from '../../../features/session/agent-kind';
 import { isQueryBridgeServing } from '../../../features/integrations/queryBridge';
 import { buildIntegrationsGuard } from './integrationsGuard';
 import { buildProfileGuard } from './profileGuard';
@@ -75,6 +71,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
     isHandoffTurn,
     agentRowEarly,
     earlyAgentKind,
+    turnRole,
     childRoutingBlock,
     clusterBoundary,
     goalAttachments,
@@ -212,7 +209,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
     audience:
       agentRowEarly !== null && isQuestionDelegate({ agent: agentRowEarly })
         ? 'questionDelegate'
-        : (phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind]),
+        : turnRole,
   });
   const guards = [scopeGuard, languageGuard, integrationsGuard, profileGuard]
     .filter((block) => block.length > 0)
@@ -293,7 +290,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
     sessionId,
     workspaceId: session.workspaceId,
     workflowRunId: phaseWorkflowRunId ?? agentRowEarly?.workflowRunId ?? null,
-    stepRole: phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind],
+    stepRole: turnRole,
     provider,
     model,
     effort: effortFlag ?? null,

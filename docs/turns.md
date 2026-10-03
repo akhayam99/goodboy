@@ -119,8 +119,14 @@ record a live turn already wrote wins.
 - A workflow step's first turn carries its predecessors' handoff summaries and
   the step prompt, and emits a `step_transition` event flagged `degraded` when
   the handoff it inherited was a fallback summary.
-- The session's context slots are prepended, filtered by what the agent kind
-  reads.
+- The session's context slots are prepended, filtered by what the turn's role
+  reads (`ROLE_SLOTS` in `slot-routing.ts`, one entry per role, so a new role
+  does not compile without one). The role is the step's role, or the one the
+  agent kind maps to; the same role picks the profile fields. Active
+  `session_context_items` whose audience names the role follow the slots as
+  "notes for your role". Both are resolved once per turn, before the prompt is
+  built. Setting `context.roleMap` to `false` goes back to the per-kind map and
+  sends no items.
 - A turn estimated at 85% or more of the model's context window raises a
   warning before it spawns.
 - `renderHandoff` (`@goodboy/core`) owns that stacking: from the composed

@@ -33,6 +33,10 @@ Hand the next agent where things stand. After a turn the summary is updated with
 
 Open goal, decisions and summary from any session page with the **Context** button, and use the copy icon at the top for **Copy as brief**. **Context updates** at the top of the drawer says how the context engine is doing and opens to show the last update ("2 min ago, after 3 turns"), the model and effort it ran on with **Change model**, which goes to Step summaries in Defaults, the tokens and cost it used, and what it changed (Goal, 2 decisions, Summary). **Update now** joins the session's queue, one update at a time, and shows **Queued** until its turn; when an update failed the same button reads **Retry**. A dot on **Decisions** says something changed since you last looked, and **Changed since you last looked** lists added, removed and reworded decisions first. Active decisions show their reason under the text when they have one.
 
+### Who receives what
+
+See which agents read each part of the context. Under the tabs, **Visible to** says which roles receive the open tab ("All roles except Scout, Docs") and opens to one chip per role. Each role receives a fixed set: planners, implementers, reviewers, debuggers and resolvers get the decisions, scouts and docs agents do not, and the generalist, tester, report, scribe, wireframe and history rewriter get everything. You always see everything; the limit is only on what goes into an agent's prompt.
+
 ### Context budgets
 
 Keep prompts small as a session grows. Each part of the shared brief has its own size, and when decisions run over, the newest are kept.

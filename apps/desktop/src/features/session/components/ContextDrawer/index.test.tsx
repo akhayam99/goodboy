@@ -19,6 +19,7 @@ const { store } = vi.hoisted(() => ({
     sessionDecisions: {} as Record<string, ReadonlyArray<SessionDecision>>,
     sessionDecisionsBaseline: {} as Record<string, string | null>,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<{ id: string; name: string }>>,
+    settings: {} as Record<string, string>,
     loadSessionDecisions: vi.fn(async () => undefined),
     applySessionDecisionOps: vi.fn(async () => undefined),
     openContextDrawer: vi.fn(),
@@ -77,6 +78,7 @@ beforeEach(() => {
   store.sessionDecisions = {};
   store.sessionDecisionsBaseline = {};
   store.sessionPhaseRuns = {};
+  store.settings = {};
   vi.clearAllMocks();
 });
 afterEach(cleanup);
@@ -138,6 +140,38 @@ describe('ContextDrawer', () => {
     expect(tabs.map((tab) => tab.textContent)).toEqual(['Goal', 'Decisions2', 'Summary']);
     fireEvent.click(tabs[1]!);
     expect(store.openContextDrawer).toHaveBeenCalledWith({ sessionId: SID, tab: 'decisions' });
+  });
+
+  it('says which roles receive the open tab and lists them on demand', () => {
+    renderDrawer('decisions');
+
+    const toggle = screen.getByRole('button', { name: /^Visible to/ });
+    expect(toggle.textContent).toBe('Visible toAll roles except Scout, Docs');
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByText('Scout').getAttribute('title')).toBe('Does not receive this');
+    expect(screen.getByText('Reviewer').getAttribute('title')).toBeNull();
+    expect(
+      screen.getByText(
+        'You always see everything. This only limits what agents receive in their prompt.',
+      ).tagName,
+    ).toBe('P');
+  });
+
+  it('reads the Visible to line from the same map as the prompt, per tab', () => {
+    renderDrawer('summary');
+
+    expect(screen.getByRole('button', { name: /^Visible to/ }).textContent).toBe(
+      'Visible toAll roles except Resolver',
+    );
+  });
+
+  it('hides Visible to when the role map is switched off', () => {
+    store.settings = { 'context.roleMap': 'false' };
+    renderDrawer('decisions');
+
+    expect(screen.queryByRole('button', { name: /^Visible to/ })).toBeNull();
   });
 
   it('shows the summary as State, Next and Learned, without Problem', () => {

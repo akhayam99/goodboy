@@ -34,6 +34,9 @@ import { VersionsView } from './VersionsView';
 import { ContextUpdates } from './ContextUpdates';
 import { ContextLoadFailure } from './ContextLoadFailure';
 import { DecisionsBadge } from './DecisionsBadge';
+import { ContextVisibility } from './ContextVisibility';
+import { slotVisibility } from './roleVisibility';
+import { isRoleMapOn } from '../../../context/contextSwitches';
 
 type SlotValueParams = {
   readonly slots: ReturnType<typeof useSessionSlots>;
@@ -67,6 +70,7 @@ export const ContextDrawer = ({
   const openQuestions = useSessionOpenQuestions(sessionId);
   const summarizer = useSummarizerStatus(sessionId);
   const baseline = useAppStore((state) => state.sessionDecisionsBaseline[sessionId]);
+  const showsVisibility = useAppStore((state) => isRoleMapOn({ settings: state.settings }));
   const openContextDrawer = useAppStore((state) => state.openContextDrawer);
   const ensureSessionSlots = useAppStore((state) => state.ensureSessionSlots);
   const loadSessionSlots = useAppStore((state) => state.loadSessionSlots);
@@ -265,6 +269,9 @@ export const ContextDrawer = ({
           onChange={selectTab}
         />
       </div>
+      {showsVisibility && view === 'current' ? (
+        <ContextVisibility visibility={slotVisibility({ slot: slotKey })} />
+      ) : null}
       <ScrollFade className="min-h-0 flex-1" viewportClassName="px-4 py-3" fadeSize={24}>
         <div className="flex flex-col gap-4">
           {body}
