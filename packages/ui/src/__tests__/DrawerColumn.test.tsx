@@ -102,4 +102,24 @@ describe('DrawerColumn', () => {
 
     expect(localStorage.getItem(RIGHT_DRAWER_STORAGE_KEY)).toBe(String(RIGHT_DRAWER_DEFAULT + 8));
   });
+
+  it('follows a drag on the panel itself and saves once, on release', () => {
+    stubColumnWidth(2400);
+    renderColumn('drafts');
+    const setItem = vi.spyOn(localStorage, 'setItem');
+    const handle = screen.getByRole('separator', { name: 'Resize side panel' });
+
+    fireEvent.mouseDown(handle, { button: 0, clientX: 1000 });
+    Array.from({ length: 50 }).forEach((_, index) =>
+      fireEvent.mouseMove(window, { clientX: 1000 - index }),
+    );
+
+    expect(setItem).not.toHaveBeenCalled();
+    expect(panel().style.width).toBe(`${RIGHT_DRAWER_DEFAULT + 49 + DRAWER_INSET * 2}px`);
+
+    fireEvent.mouseUp(window);
+
+    expect(setItem).toHaveBeenCalledOnce();
+    expect(localStorage.getItem(RIGHT_DRAWER_STORAGE_KEY)).toBe(String(RIGHT_DRAWER_DEFAULT + 49));
+  });
 });

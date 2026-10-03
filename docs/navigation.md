@@ -993,6 +993,17 @@ one is open at a time.
   reply box, / focuses the search, and Escape closes the record before the
   studio. Below a 720px list column the rail folds into a Filters button in
   the list header.
+- **Every studio rail resizes.** `StudioRailLayout` (Settings, Guide, Chat,
+  Notifications, Changelog, Bitbucket) and the Inbox filters rail drag from
+  their right edge between 220 and 420px, step 8px (32 with Shift) with the
+  arrow keys, and go back to their default (256 narrow, 288 standard) on a
+  double click. Each studio keeps its own width
+  (`goodboy:studio-rail-width:<studio>:v1`), and the rail skeleton opens at
+  that width. `useResizableWidth` (`@goodboy/ui`) owns read, clamp and save
+  for these rails, the session sidebar and the drawer: while the pointer
+  moves the width lives in a CSS variable (the drawer writes its own style),
+  so nothing renders and nothing is saved until the drag ends. Precedent: VS
+  Code, Zed and Linear sidebars.
 - **Settings opens on a home that mirrors its rail.** The footer, ⌘, and the
   palette's Open settings land on it; a link that names a page (a scope, a
   section, a provider or a tool) skips it. It shows the rail's four groups
@@ -1337,7 +1348,8 @@ Every drawer is one primitive, `DrawerColumn` from `@goodboy/ui`, never a
 split nested inside a pane. `AppShell` puts one beside the main area, and a
 studio body puts one beside its list. It opens at 400px, resizes from 340 to
 560px from a handle on its left edge, and keeps one saved width
-(`goodboy:right-drawer-width:v1`, clamped on read) for every drawer. It is a
+(`goodboy:right-drawer-width:v1`, clamped on read and written once when a drag
+ends) for every drawer. It is a
 floating card: 8px from the top, right and bottom edges and from the column,
 radius 10 (`rounded-frame`), `bg-subtle`, a hairline border. When the main
 area minus the drawer and the two gutters would leave the content column

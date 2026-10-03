@@ -195,6 +195,7 @@ export const SettingsStudio = ({ currentWorkspace, focus, onScopeChange, onClose
             <StudioRailLayout
               railLabel="Settings scopes"
               railWidth="narrow"
+              surface="settings"
               rail={
                 <ScrollFade className="min-h-0 flex-1" fadeFrom="background">
                   <SettingsRail

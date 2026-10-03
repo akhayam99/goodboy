@@ -1,5 +1,5 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { cn, SHEET_CLASSES, useEscapeLayer } from '@goodboy/ui';
+import { cn, readStudioRailWidth, SHEET_CLASSES, useEscapeLayer } from '@goodboy/ui';
 import { StudioBand } from '../../../shared/components/StudioShell/StudioBand';
 import {
   StudioFrameContext,
@@ -84,7 +84,16 @@ export const StudioFrame = ({ kind, skeleton, onClose, children }: Props) => {
           )}
         >
           <Suspense
-            fallback={<StudioSkeleton layout={skeleton ?? meta.skeleton} title={meta.title} />}
+            fallback={
+              <StudioSkeleton
+                layout={skeleton ?? meta.skeleton}
+                title={meta.title}
+                railWidthPx={readStudioRailWidth({
+                  surface: kind,
+                  railWidth: 'railWidth' in meta ? meta.railWidth : 'narrow',
+                })}
+              />
+            }
           >
             {children}
           </Suspense>

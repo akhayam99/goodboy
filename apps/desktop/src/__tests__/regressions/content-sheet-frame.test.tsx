@@ -73,6 +73,7 @@ describe('the content is a sheet on the chrome', () => {
         detail={<div>detail</div>}
         railLabel="Sections"
         railWidth="standard"
+        surface="guide"
       />,
     );
     const detail = screen.getByText('detail').parentElement as HTMLElement;
