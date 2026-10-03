@@ -12,6 +12,7 @@ import { adaptSentryIssues } from '../../../../features/inbox/adapters/sentry';
 import { attachInboxProjects } from '../../../../features/inbox/attachInboxProjects';
 import { InboxDetail } from '../../../../features/inbox/components/InboxStudio/InboxDetail';
 import { InboxFacetRail } from '../../../../features/inbox/components/InboxStudio/InboxFacetRail';
+import { recordCanReply } from '../../../../features/inbox/recordCanReply';
 import { InboxList } from '../../../../features/inbox/components/InboxStudio/InboxList';
 import { InboxStudioLayout } from '../../../../features/inbox/components/InboxStudio/InboxStudioLayout';
 import {
@@ -320,6 +321,7 @@ export const InboxSourceScene = () => {
                   loading={NOT_LOADING}
                   errors={NO_ERRORS}
                   projects={projects}
+                  canReply={recordCanReply({ record: selected })}
                   onFiltersChange={setFilters}
                   onClearFilters={() => setFilters(NO_INBOX_FILTERS)}
                 />

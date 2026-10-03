@@ -103,7 +103,9 @@ The list is `TYPE_ROLES` in `typeRoles.ts`.
 The family is Inter: the variable Latin file in `apps/desktop/src/assets/fonts/`,
 declared once as a global face in `styles.css` and first in `--font-sans`, with
 the system stack behind it as the fallback. `--font-mono` stays the system mono
-stack. The body turns on `calt` and sets `font-optical-sizing: auto`, so the
+stack, for code only: a model name is a name, so the routing picker trigger
+(`TriggerLabel`) and the inline `RoutingLabel` set it in the sans family, the
+same as the Runs on row and the Defaults rows. The body turns on `calt` and sets `font-optical-sizing: auto`, so the
 drawing tightens along the file's optical axis (14 to 32) as the size grows.
 Tabular figures are not global: Inter's `tnum` also widens the hyphen, which
 set `storefront-web` apart as `storefront - web`. `text-meta` carries
@@ -614,21 +616,22 @@ The right end of a work row is `WorkMeta` in
 `$12.40` never pushes the model of the row above out of line. A row says a duration one way, minutes and seconds ("4m 40s"),
 running or done, and so does every surface that reads `formatActiveTime`.
 
-| column     | width | holds                                                                                                         | in a narrow row                                             |
-| ---------- | ----- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| routing    | 136px | provider glyph, model, then one detail (`Sonnet 5 · High`), right aligned so it sits next to the time         | detail goes under 720px, name under 440px, gone under 360px |
-| time       | 80px  | measured time or estimate ("~3-7m left", "~6-9m", "4m 40s")                                                   | "left" goes under 640px, gone under 360px                   |
-| cost       | 48px  | what the row has spent, empty before anything is spent                                                        | under 560px it leaves the row                               |
-| cost range | 72px  | an estimated cost range before a step starts (`isCostRange`)                                                  | under 560px it leaves the row                               |
-| action     | 76px  | the one visible action, reserved for a list that can ask: Activity of an open session, the tree of a live run | never drops                                                 |
-| menu       | 24px  | the row menu, like Close workflow on a run row                                                                | never drops                                                 |
+| column     | width | holds                                                                                                         | in a narrow row                           |
+| ---------- | ----- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| routing    | 136px | provider glyph, model, then one detail (`Sonnet 5 · High`), right aligned so it sits next to the time         | glyph only under 840px, gone under 360px  |
+| time       | 80px  | measured time or estimate ("~3-7m left", "~6-9m", "4m 40s")                                                   | "left" goes under 640px, gone under 500px |
+| cost       | 48px  | what the row has spent, empty before anything is spent                                                        | under 620px it leaves the row             |
+| cost range | 72px  | an estimated cost range before a step starts (`isCostRange`)                                                  | under 620px it leaves the row             |
+| action     | 76px  | the one visible action, reserved for a list that can ask: Activity of an open session, the tree of a live run | never drops                               |
+| menu       | 24px  | the row menu, like Close workflow on a run row                                                                | never drops                               |
 
 A row inside a `WorkTimeProvider` always renders the time column, empty when
 it has nothing to say, so the columns stay in line. The cost column follows
 the same rule: `cost={null}` keeps an empty column, and leaving `cost` out
 drops it, as the builder does for a plan with no measured estimate yet. A
 run row has no routing: its step progress sits in the routing column and its
-time in the time column.
+time in the time column (`WORK_META_COLUMN.progress`, which keeps its words
+when the model column folds to a glyph).
 
 The narrow rules are container queries, never window breakpoints, because
 the same feed sits in a wide overview and in a split pane. The activity feed
@@ -637,13 +640,18 @@ the time gutter and the rail), so the widths above are the room the label and
 the meta share, not the width of the panel. The label always gets what the
 meta leaves: below 520px a role chip hugs its word and a run chip keeps only
 its glyph, and the state slot always reads the short form ("Needs you",
-"Step 3 ready"), with the full sentence in its tooltip. The slot never
-shrinks; the title truncates first, down to a 64px floor
-(`WORK_ROW.title`), and the meta leaves before the title reaches it: the
-routing detail, then cost, then the model name, then under 360px the glyph and
-the time, then under 320px the row state (the node and the action still say
-it). The model outlives the cost because a narrow row, like the right drawer,
-still has to say who is working; the cost stays in the time tooltip. A list under 440px also
+"Step 3 ready"), with the full sentence in its tooltip. A row with no state
+word and no note draws no slot, so a finished row gives that room to its
+title. The slot never shrinks. The title keeps about 45% of the row: the
+meta gives way first, in this order, the model folds to its provider glyph
+under 840px (the name and effort stay in the tooltip and for screen
+readers), the cost leaves under 620px, the time under 500px. Only then does
+the title truncate, and the label keeps a 160px floor (`WORK_ROW.label`)
+until the row is under 440px. Under 360px the glyph goes, and under 320px
+the row state (the node and the action still say it). The glyph still says
+who is working; the cost stays in the time tooltip. A folded run or chain
+keeps its title whole before its summary: the summary takes the room left
+beside the title and truncates its tail first, then the title truncates. A list under 440px also
 drops the time gutter; the day and Now labels move beside the rail. Label segments keep their
 leading words and tokens whole ("Opened #612:") and only the last segment
 truncates. The "Open ↵" hint takes room only while a row of 640px or more is

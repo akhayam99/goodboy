@@ -12,6 +12,7 @@ import { useAppStore, useSessionById, type InboxStudioFocus } from '../../../../
 import { useWorkspaceIssueLookup } from '../../../integrations/hooks/useWorkspaceIssueLookup';
 import { placeholderRecordOf } from '../../../integrations/starred/placeholderRecordOf';
 import { recordSessionId } from '../../recordSessionId';
+import { recordCanReply } from '../../recordCanReply';
 import { useInboxRecords } from '../../useInboxRecords';
 import { attachLinkedSession } from '../../attachLinkedSession';
 import { useInboxLinkedSessions } from '../../useInboxLinkedSessions';
@@ -265,6 +266,7 @@ export const InboxStudio = ({
   const isFirstRowShown = selectedKey === null && !isFirstRowOff;
   const selectedRecord = pinnedRecord ?? (isFirstRowShown ? (orderedRecords[0] ?? null) : null);
   const activeKey = selectedRecord?.key ?? null;
+  const canReply = recordCanReply({ record: selectedRecord });
 
   const starOf = (record: InboxRecord): boolean | undefined =>
     canStar(record) ? isStarred(record) : undefined;
@@ -349,7 +351,7 @@ export const InboxStudio = ({
     onSelect: selectKey,
     onActivate: activate,
     onOpenInTool: openSelected,
-    onReply: focusReply,
+    ...(canReply && { onReply: focusReply }),
     onStar: starSelected,
     onSearch: focusSearch,
   });
@@ -378,6 +380,7 @@ export const InboxStudio = ({
       loading={loading}
       errors={errors}
       projects={projects}
+      canReply={canReply}
       onFiltersChange={setFilters}
       onClearFilters={clearFilters}
     />

@@ -41,6 +41,7 @@ import { rememberMaterializationSeed } from './materializationSeeds';
 import { resolveSessionProject } from './resolveSessionProject';
 import type { GetFn, SetFn } from './types';
 import { resolveScopedSettings } from '../overrides/selectResolvedSettings';
+import { scopedRoutingScope } from '../agents/scopedKindRouting';
 import { scopedKindRouting } from '../agents/scopedKindRouting';
 
 type ExternalTaskInput = {
@@ -339,6 +340,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
           baseOrdinal: 0,
           defaultProvider: session.providerPreference.defaultProvider,
           roleModels,
+          scope: scopedRoutingScope({ state: get(), settings: creationSettings }),
           sessionModel: session.modelOverride ?? null,
           sessionEffort: session.effort ?? null,
           ...(workspaceVerbositySeed != null && { defaultVerbosity: workspaceVerbositySeed }),

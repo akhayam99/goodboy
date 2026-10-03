@@ -14,8 +14,8 @@ export const TimelineRunMeta = ({ progress, time, costUsd }: Props) => {
     <WorkMeta
       routing={
         time === undefined ? undefined : (
-          <span data-meta-column="progress" className={WORK_META_COLUMN.routing}>
-            <span className={WORK_META_COLUMN.routingName}>{progress}</span>
+          <span data-meta-column="progress" className={WORK_META_COLUMN.progress}>
+            <span className={WORK_META_COLUMN.progressText}>{progress}</span>
           </span>
         )
       }

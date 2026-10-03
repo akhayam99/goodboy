@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { Button, Collapsible, Notice } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
@@ -124,16 +124,20 @@ export const ContextUpdates = ({ sessionId }: Props) => {
                   {changes.length === 0 ? (
                     <span className="text-muted-foreground">Nothing changed</span>
                   ) : (
-                    changes.map((change) => (
-                      <button
-                        key={change.label}
-                        type="button"
-                        onClick={() => openContextDrawer({ sessionId, tab: change.tab })}
-                        className="rounded-sm bg-subtle px-1.5 text-label text-foreground hover:bg-hover"
-                      >
-                        {change.label}
-                      </button>
-                    ))
+                    <span className="min-w-0">
+                      {changes.map((change, index) => (
+                        <Fragment key={change.label}>
+                          {index > 0 ? ', ' : null}
+                          <button
+                            type="button"
+                            onClick={() => openContextDrawer({ sessionId, tab: change.tab })}
+                            className="rounded-sm text-label text-foreground underline decoration-border underline-offset-2 hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                          >
+                            {change.label}
+                          </button>
+                        </Fragment>
+                      ))}
+                    </span>
                   )}
                 </dd>
               </>

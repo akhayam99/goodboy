@@ -34,7 +34,7 @@ describe('WorkMeta', () => {
 
   it('drops the cost in a narrow row and leaves the column out when there is no cost', () => {
     const { rerender } = render(<WorkMeta cost="$0.10" />);
-    expect(columnOf('cost')?.className).toContain('@max-[560px]:hidden');
+    expect(columnOf('cost')?.className).toContain('@max-[620px]:hidden');
 
     rerender(<WorkMeta cost={null} />);
     expect(columnOf('cost')?.textContent).toBe('');

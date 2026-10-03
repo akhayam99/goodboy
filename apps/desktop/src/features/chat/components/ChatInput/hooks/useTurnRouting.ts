@@ -21,6 +21,7 @@ import { agentPinApplies } from '../../../../../store/slices/turn/agentPinApplie
 import { agentReferenceRouting } from '../../../../../store/slices/turn/agentReferenceRouting';
 import { stepConfigForAgent } from '../../../../../store/slices/turn/stepConfigForAgent';
 import { asEffortLevel, asProvider } from '../lib';
+import { useRoutingScope } from '../../../../../shared/hooks/useRoutingScope';
 import { resolveSessionSettings } from '../../../../../store/slices/overrides/selectResolvedSettings';
 
 type Params = {
@@ -122,6 +123,7 @@ export const useTurnRouting = ({ session }: Params) => {
     provider: defaultProvider,
     modelId: defaultModelId,
   });
+  const routingScope = useRoutingScope({ sessionId: session.id });
   const stepConfig = useMemo(
     () => stepConfigForAgent({ agent: selectedAgent, session, workflows: workspaceWorkflows }),
     [selectedAgent, session, workspaceWorkflows],
@@ -134,8 +136,9 @@ export const useTurnRouting = ({ session }: Params) => {
         roleModels,
         session,
         kindOverride: selectedAgentKindOverride,
+        scope: routingScope,
       }),
-    [selectedAgent, stepConfig, roleModels, session, selectedAgentKindOverride],
+    [selectedAgent, stepConfig, roleModels, session, selectedAgentKindOverride, routingScope],
   );
   const referenceProvider = reference.provider;
   const referenceModel = reference.model;
