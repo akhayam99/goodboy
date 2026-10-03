@@ -64,6 +64,9 @@ const currentScreen = (): string | null => {
 const BENIGN_ERROR = /ResizeObserver loop/;
 
 let isCaptured = false;
+const MAX_REJECTION_REASONS = 3;
+let pendingRejections: Array<{ readonly message: string; readonly stack?: string }> = [];
+let isRejectionFlushQueued = false;
 
 type CaptureParams = {
   readonly source: LastCrashInput['source'];
@@ -120,11 +123,16 @@ const describeRejectedObject = ({ reason }: ReasonParams): string | null => {
     return null;
   }
   const message: unknown = Reflect.get(reason, 'message');
-  if (typeof message !== 'string' || message === '') {
+  if (typeof message === 'string' && message !== '') {
+    const kind: unknown = Reflect.get(reason, 'kind');
+    return typeof kind === 'string' && kind !== '' ? `${kind}: ${message}` : message;
+  }
+  try {
+    const serialized = JSON.stringify(reason);
+    return serialized === undefined || serialized === '{}' ? null : serialized;
+  } catch {
     return null;
   }
-  const kind: unknown = Reflect.get(reason, 'kind');
-  return typeof kind === 'string' && kind !== '' ? `${kind}: ${message}` : message;
 };
 
 const describeReason = ({
@@ -139,6 +147,34 @@ const describeReason = ({
   return { message: describeRejectedObject({ reason }) ?? 'Unhandled rejection' };
 };
 
+const flushRejectedReasons = (): void => {
+  isRejectionFlushQueued = false;
+  const rejected = pendingRejections;
+  pendingRejections = [];
+  if (rejected.length === 0) {
+    return;
+  }
+  const message =
+    rejected.length === 1
+      ? (rejected[0]?.message ?? 'Unhandled rejection')
+      : rejected.map((entry, index) => `${index + 1}. ${entry.message}`).join('\n');
+  captureCrash({ source: 'promise', message, stack: rejected[0]?.stack });
+};
+
+const captureRejectedReason = ({ reason }: ReasonParams): void => {
+  if (isCaptured) {
+    return;
+  }
+  if (pendingRejections.length < MAX_REJECTION_REASONS) {
+    pendingRejections.push(describeReason({ reason }));
+  }
+  if (isRejectionFlushQueued) {
+    return;
+  }
+  isRejectionFlushQueued = true;
+  queueMicrotask(flushRejectedReasons);
+};
+
 export const installCrashCapture = (): void => {
   followScreens();
   window.addEventListener('error', (event) => {
@@ -147,8 +183,7 @@ export const installCrashCapture = (): void => {
     captureCrash({ source: 'window', message: described.message, stack: described.stack });
   });
   window.addEventListener('unhandledrejection', (event) => {
-    const described = describeReason({ reason: event.reason });
-    captureCrash({ source: 'promise', message: described.message, stack: described.stack });
+    captureRejectedReason({ reason: event.reason });
   });
 };
 

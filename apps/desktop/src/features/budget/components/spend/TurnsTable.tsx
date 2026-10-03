@@ -17,6 +17,7 @@ import {
 import type { SessionId } from '@goodboy/types';
 import { ArrowUpRight } from 'lucide-react';
 import { STORAGE_KEYS, persistedPref } from '../../../../shared/lib/storage-keys';
+import { DeletedSessionTag } from '../../../../shared/components/DeletedSessionTag';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { StudioWidget } from '@goodboy/ui';
 import { sortTurns, type SortKey, type WorkspaceTurn } from './lib';
@@ -102,7 +103,7 @@ export const TurnsTable = ({
                 </tr>
               </thead>
               <tbody>
-                {shown.map(({ record, sessionId, sessionGoal }) => (
+                {shown.map(({ record, sessionId, sessionGoal, isSessionDeleted }) => (
                   <tr
                     key={record.id}
                     className={cn(
@@ -130,7 +131,10 @@ export const TurnsTable = ({
                         className="max-w-[12rem] truncate px-2 py-2 text-muted-foreground"
                         title={sessionGoal}
                       >
-                        {sessionGoal}
+                        <span className="flex items-center gap-2">
+                          <span className="min-w-0 truncate">{sessionGoal}</span>
+                          {isSessionDeleted ? <DeletedSessionTag /> : null}
+                        </span>
                       </td>
                     ) : null}
                     <td className="px-2 py-2 text-right font-mono tabular-nums text-muted-foreground">
@@ -146,16 +150,18 @@ export const TurnsTable = ({
                       {formatSpent(record.estimatedCostUsd)}
                     </td>
                     <td className="px-2 py-2">
-                      <Tooltip content={`Open session ${sessionGoal}`}>
-                        <button
-                          type="button"
-                          aria-label={`Open session ${sessionGoal}`}
-                          onClick={() => onOpenSession(sessionId)}
-                          className="inline-flex size-5 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-hover hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring group-hover:opacity-100"
-                        >
-                          <ArrowUpRight size={ICON_SIZE.row} aria-hidden />
-                        </button>
-                      </Tooltip>
+                      {isSessionDeleted ? null : (
+                        <Tooltip content={`Open session ${sessionGoal}`}>
+                          <button
+                            type="button"
+                            aria-label={`Open session ${sessionGoal}`}
+                            onClick={() => onOpenSession(sessionId)}
+                            className="inline-flex size-5 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-hover hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring group-hover:opacity-100"
+                          >
+                            <ArrowUpRight size={ICON_SIZE.row} aria-hidden />
+                          </button>
+                        </Tooltip>
+                      )}
                     </td>
                   </tr>
                 ))}

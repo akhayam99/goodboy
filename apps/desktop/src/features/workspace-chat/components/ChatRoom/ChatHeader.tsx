@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { PageColumn } from '@goodboy/ui';
 
 type Props = {
   readonly title: string;
@@ -7,10 +8,12 @@ type Props = {
 };
 
 export const ChatHeader = ({ title, sessions = null, action = null }: Props) => (
-  <header className="flex min-w-0 shrink-0 items-center gap-2 px-6 pb-2.5 pt-3">
-    <h2 className="min-w-0 truncate text-heading text-foreground">{title}</h2>
-    {sessions}
-    <span className="flex-1" />
-    {action}
+  <header className="shrink-0 pb-2.5 pt-3">
+    <PageColumn className="flex min-w-0 items-center gap-2">
+      <h2 className="min-w-0 truncate text-heading text-foreground">{title}</h2>
+      {sessions}
+      <span className="flex-1" />
+      {action}
+    </PageColumn>
   </header>
 );

@@ -1,5 +1,6 @@
 import type { IsoDateTime, ProviderRunId } from '@goodboy/types';
 import type { Database } from '../client';
+import { backfillMergedPullRequestEvents } from './backfillMergedPullRequestEvents';
 import { updateProviderRunStatusIfInFlight } from '../queries/provider-run';
 import {
   deleteOrphanedWorkflowAgents,
@@ -20,6 +21,7 @@ export type DatabaseHygieneResult = {
   readonly permissionAuditRowsDeleted: number;
   readonly turnEventRowsDeleted: number;
   readonly githubPrCacheRowsDeleted: number;
+  readonly mergedPullRequestEventsWritten: number;
   readonly providerRunsCancelled: number;
   readonly providerRunsDeleted: number;
   readonly orphanedWorkflowAgentsDeleted: number;
@@ -73,6 +75,8 @@ export const runDatabaseHygiene = async ({ db, now }: Params): Promise<DatabaseH
      )`,
   );
 
+  const mergedPullRequestEvents = await backfillMergedPullRequestEvents({ db });
+
   const orphanProviderRuns = await db.execute(
     `DELETE FROM provider_runs
      WHERE status_kind IN ('succeeded', 'failed', 'cancelled')
@@ -105,6 +109,7 @@ export const runDatabaseHygiene = async ({ db, now }: Params): Promise<DatabaseH
     permissionAuditRowsDeleted: oldPermissionRows.rowsAffected + excessPermissionRows.rowsAffected,
     turnEventRowsDeleted: oldTurnEvents.rowsAffected + excessTurnEvents.rowsAffected,
     githubPrCacheRowsDeleted: githubPrCacheRows.rowsAffected,
+    mergedPullRequestEventsWritten: mergedPullRequestEvents,
     providerRunsCancelled,
     providerRunsDeleted: orphanProviderRuns.rowsAffected,
     orphanedWorkflowAgentsDeleted: orphanedWorkflowAgents.agentsDeleted,

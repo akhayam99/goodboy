@@ -893,6 +893,13 @@ width: the column changes only when the window changes or the right drawer
 opens. `PANE_RHYTHM.hero` (640px) is only for the content of an empty state.
 [docs/styling.md](../../docs/styling.md) owns the column rules.
 
+**Trail separator.** Each segment except the last ends with one 24px chevron
+slot in `faint-foreground`: a button that opens the segment's menu, or a static
+separator when there is none. Segments sit 4px apart, the name and the chevron
+of a menu segment share one `hover` chip, and the chevron turns 90 degrees
+while the menu is open. Colour changes take 120ms `ease-out`; nothing else
+moves.
+
 **Crumb menus.** Every trail segment with siblings opens one `CrumbMenu`: a
 `floating` popover, radius 8, `border-soft`, 4px padding, a 26px heading
 (`Steps · Ship a fix`, count on the right), rows of 30px with five fixed slots
@@ -936,6 +943,7 @@ A verb blocked for a moment stays visible with its reason in the tooltip; a verb
 - **Menu swap**: a destructive item in an open menu or popover replaces the menu body with `InlineConfirm surface="plain"` in the same popover.
 
 A card `InlineConfirm` inside a popover, or one floated with `absolute top-full`, is a bug (`inline-confirm-placement.test.ts`). The trigger is ghost or secondary with danger text. The solid danger fill shows only on the confirm button. The title says what will happen. The description says what survives and how to undo it. Reversible actions use `role="alert"`, irreversible ones `role="danger"`.
+When confirmation fails, `InlineConfirm` stays open and shows the formatted reason with `role="alert"`. The same controls become available for a retry. An automatic disarm pauses until the error is cancelled or a retry succeeds.
 
 **Copy feedback lives on the control.** `useCopyLink().copy({ text, key })` keys the copied state, so in a list only the row whose `key` matches flips to "Copied". A successful copy never toasts; a failure shows inline while the control stays mounted, and only a menu item, which unmounts on click, reports a failure through a toast. `CopyButton` reads "Copy", "Copied", "Copy failed".
 
@@ -1199,9 +1207,13 @@ conversation is the wrapped sheet, and "Turn into work" is the
   shape and only drops a text step (`faint` title, `disabled` snippet); a
   group action ("Archive idle") is a quiet text button at the end of its
   heading, and its Undo line takes the group's place.
-- **The conversation** is one `max-w-2xl` column. The question is a `bg-subtle`
-  bubble on the right in `text-prose`; the answer is `Markdown` in
-  `text-prose` with no bubble. Under it, in order: `Read N files` (a quiet
+- **The conversation** sits on `PageColumn`, the same 960px column as every
+  other page: the header, the thread and the composer share one left and one
+  right edge. Prose (paragraphs, lists, quotes, headings) stops at a `72ch`
+  measure, left aligned; tables and code blocks take the whole column. The
+  question is a `bg-subtle` bubble on the right in `text-prose`; the answer is
+  `Markdown` in `text-prose` with no bubble. Under it, in order: `Read N files`
+  (a quiet
   disclosure listing paths in `text-code`), then one `h-7` row. Copy
   (`CopyButton` with `tone="faint"`) and "Start work from here" sit on the
   left, quiet `text-secondary` actions that show on hover or keyboard focus of

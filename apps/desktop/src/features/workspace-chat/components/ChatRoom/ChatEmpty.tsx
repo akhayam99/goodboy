@@ -22,7 +22,7 @@ const joinNames = ({ names }: ListParams): string => {
 };
 
 export const ChatEmpty = ({ workspaceName, projectNames, suggestions, onAsk }: Props) => (
-  <div className="mx-auto flex w-full max-w-md flex-col items-start gap-4 py-12">
+  <div className="flex w-full max-w-md flex-col items-start gap-4 py-12">
     <span className="flex size-8 items-center justify-center rounded-lg border border-border-soft bg-subtle text-muted-foreground">
       <ChatIcon size={ICON_SIZE.control} aria-hidden />
     </span>

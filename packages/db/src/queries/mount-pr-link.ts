@@ -5,6 +5,7 @@ import type {
   MountPullRequestState,
   ProjectId,
   SessionId,
+  WorkspaceId,
 } from '@goodboy/types';
 import type { Database } from '../client';
 import { isJsonValue, parseJsonColumn } from '../shared/parseJsonColumn';
@@ -145,4 +146,46 @@ export const listMergedRequestHeads = async ({
     [projectId],
   );
   return Object.fromEntries(rows.map((row) => [row.headBranch, row.mergedHeadSha]));
+};
+
+type ListDormantOpenParams = {
+  readonly db: Database;
+  readonly workspaceId: WorkspaceId;
+  readonly limit: number;
+};
+
+type DormantPullRequestLink = {
+  readonly sessionId: SessionId;
+  readonly projectId: ProjectId | null;
+  readonly link: MountPullRequestLink;
+};
+
+type DormantLinkRow = MountPullRequestLinkRow & {
+  readonly sessionId: SessionId;
+  readonly projectId: ProjectId | null;
+};
+
+export const listDormantOpenPullRequests = async ({
+  db,
+  workspaceId,
+  limit,
+}: ListDormantOpenParams): Promise<ReadonlyArray<DormantPullRequestLink>> => {
+  const rows = await db.select<DormantLinkRow>(
+    `SELECT ${MOUNT_PR_LINK_COLUMNS}, mount.session_id AS sessionId, mount.project_id AS projectId
+     FROM mount_pr_links link
+     JOIN session_worktrees mount ON mount.id = link.mount_id
+     JOIN sessions s ON s.id = mount.session_id
+     WHERE s.workspace_id = ?
+       AND (s.deleted_at IS NOT NULL OR s.archived_at IS NOT NULL)
+       AND link.provider = 'github'
+       AND link.state NOT IN ('merged', 'closed')
+     ORDER BY link.last_observed_at ASC, link.id
+     LIMIT ?`,
+    [workspaceId, limit],
+  );
+  return rows.map(({ sessionId, projectId, ...row }) => ({
+    sessionId,
+    projectId,
+    link: toMountPullRequestLink(row),
+  }));
 };

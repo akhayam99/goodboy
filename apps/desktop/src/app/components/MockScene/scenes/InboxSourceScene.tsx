@@ -301,7 +301,7 @@ export const InboxSourceScene = () => {
 
   return (
     <StudioFrame
-      target="inbox"
+      target={{ place: 'inbox', tool: filters.source }}
       main={
         <StudioShell
           icon={CONCEPT_ICONS.inbox}

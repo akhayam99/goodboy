@@ -1608,7 +1608,11 @@ export const buildRunTreeStream = ({
   const groups = context.groups.map((group) =>
     group.id === laneId && root !== null ? { ...group, originRowId: root.id } : group,
   );
-  return { items: streamItemsOf({ drafts: steps }), groups };
+  const isFinished = isRunFinished({ entry });
+  return {
+    items: streamItemsOf({ drafts: steps }).filter((item) => !isFinished || item.kind !== 'now'),
+    groups,
+  };
 };
 
 type AgentTreeParams = {

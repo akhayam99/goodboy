@@ -2,10 +2,9 @@ import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { compactTrail, type TrailSegmentState } from './compactTrail';
 import type { TrailSegmentModel } from './types';
 
-const ICON_WIDTH = 22;
-const SWITCHER_ICON_WIDTH = 40;
-const SEPARATOR_WIDTH = 24;
-const ELLIPSIS_WIDTH = 22;
+const ICON_WIDTH = 20;
+const SEPARATOR_WIDTH = 28;
+const ELLIPSIS_WIDTH = 20;
 const CHARACTER_WIDTH = 6.5;
 const CASCADE_MS = 40;
 
@@ -22,7 +21,7 @@ type Compaction = {
 };
 
 const estimateFullWidth = (segment: TrailSegmentModel): number =>
-  ICON_WIDTH + segment.label.length * CHARACTER_WIDTH + 12;
+  ICON_WIDTH + segment.label.length * CHARACTER_WIDTH + 14;
 
 export const useTrailCompaction = ({ segments, navRef, leadRef }: Params): Compaction => {
   const [available, setAvailable] = useState<number | null>(null);
@@ -53,9 +52,7 @@ export const useTrailCompaction = ({ segments, navRef, leadRef }: Params): Compa
   );
   const states = compactTrail({
     fullWidths,
-    iconWidths: segments.map((segment) =>
-      segment.menu != null ? SWITCHER_ICON_WIDTH : ICON_WIDTH,
-    ),
+    iconWidths: segments.map(() => ICON_WIDTH),
     pinned: segments.map((segment) => segment.isPinned === true),
     separatorWidth: SEPARATOR_WIDTH,
     ellipsisWidth: ELLIPSIS_WIDTH,
@@ -82,6 +79,8 @@ export const useTrailCompaction = ({ segments, navRef, leadRef }: Params): Compa
         ),
   );
 
+  const signature = `${segments.map(keyOf).join('|')}#${states.join(',')}`;
+
   useLayoutEffect(() => {
     previousStates.current = new Map(
       segments.map((segment, index) => [segment.id, states[index] ?? 'full']),
@@ -103,8 +102,8 @@ export const useTrailCompaction = ({ segments, navRef, leadRef }: Params): Compa
       if (states[index] !== 'full') {
         return;
       }
-      const crumb = nodes.get(segment.id)?.lastElementChild ?? null;
-      const width = crumb instanceof HTMLElement ? crumb.scrollWidth : 0;
+      const crumb = nodes.get(segment.id)?.querySelector<HTMLElement>('[data-trail-piece]') ?? null;
+      const width = crumb?.scrollWidth ?? 0;
       if (width <= 0 || next.get(keyOf(segment)) === width) {
         return;
       }
@@ -114,7 +113,7 @@ export const useTrailCompaction = ({ segments, navRef, leadRef }: Params): Compa
     if (hasChanged) {
       setMeasured(next);
     }
-  });
+  }, [signature]);
 
   return { states, delays, enteringIds };
 };

@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { Profiler } from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { InlineConfirm } from '../components/InlineConfirm';
 
@@ -58,6 +59,59 @@ describe('InlineConfirm', () => {
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Delete' })).toHaveProperty('disabled', false),
     );
+  });
+
+  it('shows a rejected confirmation inside the card and keeps it open', async () => {
+    render(
+      <InlineConfirm
+        role="alert"
+        icon={null}
+        title="Restore built-in workflows?"
+        confirmLabel="Restore 1"
+        onConfirm={async () => {
+          throw new Error(
+            'Refactor is running in Northwind checkout. Restore it when the run ends.',
+          );
+        }}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Restore 1' }));
+
+    await screen.findByRole('alert');
+    screen.getByRole('group', { name: 'Restore built-in workflows?' });
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Refactor is running in Northwind checkout. Restore it when the run ends.',
+    );
+  });
+
+  it('keeps the successful confirmation to its busy redraws', async () => {
+    let finish: () => void = () => undefined;
+    const pending = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    const commits: string[] = [];
+    render(
+      <Profiler id="confirm" onRender={(_id, phase) => commits.push(phase)}>
+        <InlineConfirm
+          role="alert"
+          icon={null}
+          title="Restore built-in workflows?"
+          confirmLabel="Restore 1"
+          onConfirm={() => pending}
+          onCancel={vi.fn()}
+        />
+      </Profiler>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Restore 1' }));
+    finish();
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Restore 1' })).toHaveProperty('disabled', false),
+    );
+
+    expect(commits).toEqual(['mount', 'update', 'update']);
   });
 
   it('cancels itself after the configured delay', () => {

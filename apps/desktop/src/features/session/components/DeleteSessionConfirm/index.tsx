@@ -7,6 +7,9 @@ import { useSessionArchive } from '../../hooks/useSessionArchive';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
+const KEPT_IN_IMPACT =
+  'Frees the transcript, file versions and images. Cost and shipped work stay in Impact.';
+
 type Props = {
   readonly session: Session;
   readonly onClose: () => void;
@@ -22,11 +25,8 @@ export const DeleteSessionConfirm = ({ session, onClose, className, surface }: P
   const [error, setError] = useState<string | null>(null);
   const isBranchless = isBranchlessSession({ branch: sessionBranch });
   const description = isBranchless
-    ? 'Removes this session, its transcripts and every saved file version from this device. Nothing of it is left on disk.'
-    : 'Removes this session and its transcripts from this device. The branch and its commits stay in the repository, and a worktree still holding uncommitted work is kept and listed under Settings, Storage.';
-  const warning = isBranchless
-    ? 'This cannot be undone. Saved file versions are deleted with this session.'
-    : 'This cannot be undone. To keep the history, archive instead.';
+    ? KEPT_IN_IMPACT
+    : `${KEPT_IN_IMPACT} The branch and its commits stay in the repository, and a worktree still holding uncommitted work is kept and listed under Settings, Storage.`;
 
   const onConfirm = async () => {
     setBusy(true);
@@ -77,7 +77,7 @@ export const DeleteSessionConfirm = ({ session, onClose, className, surface }: P
       <p className="truncate rounded-md border border-border-soft bg-subtle px-2 py-1 font-mono text-foreground">
         {sessionTitle({ session })}
       </p>
-      <p className="font-medium text-danger">{warning}</p>
+      <p className="font-medium text-danger">This cannot be undone.</p>
       {error != null && <p className="font-medium text-danger">{error}</p>}
     </InlineConfirm>
   );

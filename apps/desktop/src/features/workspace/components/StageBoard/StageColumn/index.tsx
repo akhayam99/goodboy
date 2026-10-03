@@ -13,7 +13,7 @@ import { boardColumnIds } from '../boardColumnIds';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { PANE_RHYTHM } from '@goodboy/ui';
 
-export type ColumnSpec =
+type ColumnSpec =
   { readonly kind: 'stage'; readonly stage: SessionStage } | { readonly kind: 'archived' };
 
 type ColumnKey = SessionStage | 'archived';

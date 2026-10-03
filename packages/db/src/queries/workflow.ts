@@ -17,7 +17,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { isStepSize, isWorkflowOrigin } from '@goodboy/types';
-import type { Database, GuardedStatement, PlainStatement } from '../client';
+import type { Database, GuardedStatement, PlainStatement, TransactionOutcome } from '../client';
 import { NotFoundError, UniqueViolationError } from '../shared/errors';
 import {
   isWorkflowRoutingDecision,
@@ -128,6 +128,38 @@ export const listWorkflows = async (
     [workspaceId],
   );
 
+  if (rows.length === 0) {
+    return [];
+  }
+  const workflowIds = rows.map((row) => row.id);
+  const stepRows = await db.select<StepRow>(
+    `SELECT * FROM steps
+     WHERE workflow_id IN (${workflowIds.map(() => '?').join(', ')}) AND deleted_at IS NULL
+     ORDER BY workflow_id, ordinal ASC`,
+    workflowIds,
+  );
+  const stepsByWorkflow = new Map<string, Step[]>();
+  for (const stepRow of stepRows) {
+    const bucket = stepsByWorkflow.get(stepRow.workflow_id) ?? [];
+    bucket.push(toStep(stepRow));
+    stepsByWorkflow.set(stepRow.workflow_id, bucket);
+  }
+  return rows.map((row) => toWorkflow(row, stepsByWorkflow.get(row.id) ?? []));
+};
+
+type ListWorkflowsIncludingDeletedParams = {
+  readonly db: Database;
+  readonly workspaceId: WorkspaceId;
+};
+
+export const listWorkflowsIncludingDeleted = async ({
+  db,
+  workspaceId,
+}: ListWorkflowsIncludingDeletedParams): Promise<ReadonlyArray<Workflow>> => {
+  const rows = await db.select<WorkflowRow>(
+    'SELECT * FROM workflows WHERE workspace_id = ? ORDER BY created_at ASC',
+    [workspaceId],
+  );
   if (rows.length === 0) {
     return [];
   }
@@ -268,18 +300,21 @@ type WriteWorkflowParams = {
   readonly db: Database;
   readonly workflow: Workflow;
   readonly guardName: boolean;
+  readonly guards?: ReadonlyArray<GuardedStatement>;
 };
 
 const writeWorkflow = async ({
   db,
   workflow,
   guardName,
-}: WriteWorkflowParams): Promise<boolean> => {
+  guards = [],
+}: WriteWorkflowParams): Promise<TransactionOutcome> => {
   const deletedAt = Date.now();
   const keptIds = workflow.steps.map((step) => step.id);
   const keptPlaceholders = keptIds.length === 0 ? "''" : keptIds.map(() => '?').join(', ');
   const outcome = await db.transaction({
     statements: [
+      ...guards,
       ...(guardName ? [freeNameGuard(workflow)] : []),
       ...upsertStatements(workflow),
       { sql: 'UPDATE workflows SET deleted_at = NULL WHERE id = ?', params: [workflow.id] },
@@ -290,11 +325,103 @@ const writeWorkflow = async ({
       },
     ],
   });
-  return outcome.status === 'committed';
+  return outcome;
 };
 
-export const restoreSeededWorkflow = async (db: Database, workflow: Workflow): Promise<void> => {
-  await writeWorkflow({ db, workflow, guardName: false });
+const WORKFLOW_RUNNING = 'workflow_running';
+
+const ACTIVE_RUN_PREDICATE = `sw.discarded_at IS NULL
+      AND NOT (
+        (sw.orchestration_stop_kind = 'closed' AND sw.orchestration_error IS NOT NULL)
+        OR (
+          sw.execution_mode = 'dynamic'
+          AND sw.orchestration_outcome = 'done'
+          AND NOT EXISTS (
+            SELECT 1 FROM live_agents child
+            WHERE child.workflow_run_id = sw.workflow_run_id
+              AND child.parent_agent_id IS NOT NULL
+              AND child.status NOT IN ('completed', 'skipped')
+          )
+        )
+        OR (
+          sw.execution_mode <> 'dynamic'
+          AND NOT EXISTS (
+            SELECT 1 FROM steps st
+            WHERE st.workflow_id = sw.workflow_id AND st.deleted_at IS NULL
+              AND NOT EXISTS (
+                SELECT 1 FROM live_agents agent
+                WHERE agent.workflow_run_id = sw.workflow_run_id
+                  AND agent.step_id = st.id
+                  AND agent.parent_agent_id IS NULL
+                  AND agent.status IN ('completed', 'skipped')
+              )
+          )
+          AND NOT EXISTS (
+            SELECT 1 FROM live_agents child
+            WHERE child.workflow_run_id = sw.workflow_run_id
+              AND child.parent_agent_id IS NOT NULL
+              AND child.status NOT IN ('completed', 'skipped')
+          )
+        )
+      )`;
+
+type ActiveRunGuardParams = {
+  readonly workflowId: WorkflowId;
+};
+
+const activeRunGuard = ({ workflowId }: ActiveRunGuardParams): GuardedStatement => ({
+  sql: `SELECT 1 AS present FROM session_workflows sw
+    WHERE sw.workflow_id = ? AND ${ACTIVE_RUN_PREDICATE}
+    LIMIT 1`,
+  params: [workflowId],
+  abortWhen: 'rows',
+  abortCode: WORKFLOW_RUNNING,
+});
+
+export type RestoreSeededWorkflowResult = 'restored' | 'name_taken' | 'workflow_running';
+
+type RestoreSeededWorkflowParams = {
+  readonly db: Database;
+  readonly workflow: Workflow;
+};
+
+export const restoreSeededWorkflow = async ({
+  db,
+  workflow,
+}: RestoreSeededWorkflowParams): Promise<RestoreSeededWorkflowResult> => {
+  const outcome = await writeWorkflow({
+    db,
+    workflow,
+    guardName: true,
+    guards: [activeRunGuard({ workflowId: workflow.id })],
+  });
+  if (outcome.status === 'committed') {
+    return 'restored';
+  }
+  return outcome.abortCode === WORKFLOW_RUNNING ? 'workflow_running' : 'name_taken';
+};
+
+type ActiveWorkflowRunRow = {
+  readonly session_title: string;
+};
+
+type FindActiveWorkflowRunTitleParams = {
+  readonly db: Database;
+  readonly workflowId: WorkflowId;
+};
+
+export const findActiveWorkflowRunTitle = async ({
+  db,
+  workflowId,
+}: FindActiveWorkflowRunTitleParams): Promise<string | null> => {
+  const rows = await db.select<ActiveWorkflowRunRow>(
+    `SELECT sessions.goal AS session_title FROM session_workflows sw
+     JOIN sessions ON sessions.id = sw.session_id
+     WHERE sw.workflow_id = ? AND ${ACTIVE_RUN_PREDICATE}
+     ORDER BY sw.ordinal ASC LIMIT 1`,
+    [workflowId],
+  );
+  return rows[0]?.session_title ?? null;
 };
 
 export type WorkflowStepInput = {
@@ -443,8 +570,8 @@ const draftWorkflow = async (db: Database, input: SaveWorkflowInput): Promise<Wo
 export const saveWorkflow = async (db: Database, input: SaveWorkflowInput): Promise<Workflow> => {
   for (let attempt = 0; attempt < MAX_NAME_ATTEMPTS; attempt += 1) {
     const workflow = await draftWorkflow(db, input);
-    const written = await writeWorkflow({ db, workflow, guardName: workflow.isPreset !== false });
-    if (!written) {
+    const outcome = await writeWorkflow({ db, workflow, guardName: workflow.isPreset !== false });
+    if (outcome.status === 'aborted') {
       continue;
     }
     const saved = await getWorkflow(db, workflow.id);

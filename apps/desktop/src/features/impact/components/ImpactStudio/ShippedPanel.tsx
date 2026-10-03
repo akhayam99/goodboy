@@ -1,17 +1,19 @@
 import type { ExternalTaskOutcomes, PullRequestOutcomes, ReviewOutcomes } from '@goodboy/db';
 import type { ReactElement } from 'react';
 import type { SessionId } from '@goodboy/types';
-import { ArrowUpRight } from 'lucide-react';
 import { ErrorStrip, PaneShell } from '@goodboy/ui';
 import { PanelLoading } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import { formatHours } from '../../utils/formatHours';
+import { PullRequestRow } from './PullRequestRow';
 import { SessionRows } from './SessionRows';
 import { StackedBar } from './StackedBar';
 import { TrendStatCard } from './TrendStatCard';
 import { StudioWidget } from '@goodboy/ui';
-import { EmptyState, StatCard, formatUsd, formatUsdPrecise } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { EmptyState, StatCard } from '@goodboy/ui';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+
+const FUNNEL_ROWS = 5;
 
 type Props = {
   readonly header: ReactElement;
@@ -76,34 +78,14 @@ export const ShippedPanel = ({
         />
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <StudioWidget label="PR funnel" hint="current cached state">
+        <StudioWidget label="PR funnel" hint="latest known state">
           <div className="flex flex-col gap-2">
-            {prs?.entries.map((entry) => (
-              <button
+            {prs?.entries.slice(0, FUNNEL_ROWS).map((entry) => (
+              <PullRequestRow
                 key={`${entry.sessionId}-${entry.number}`}
-                type="button"
-                onClick={() => onOpenSession(entry.sessionId)}
-                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-label hover:bg-hover"
-              >
-                <CONCEPT_ICONS.pr
-                  size={ICON_SIZE.row}
-                  aria-hidden
-                  className="shrink-0 text-success"
-                />
-                <span className="min-w-0 flex-1 truncate">
-                  #{entry.number} {entry.title}
-                </span>
-                {entry.spendUsd === null ? null : (
-                  <span
-                    title={formatUsdPrecise(entry.spendUsd)}
-                    className="shrink-0 font-mono tabular-nums text-muted-foreground"
-                  >
-                    {formatUsd(entry.spendUsd)}
-                  </span>
-                )}
-                <span className="shrink-0 capitalize text-muted-foreground">{entry.state}</span>
-                <ArrowUpRight size={ICON_SIZE.row} aria-hidden />
-              </button>
+                entry={entry}
+                onOpenSession={onOpenSession}
+              />
             ))}
             {prs !== null && prs.entries.length === 0 ? (
               <EmptyState
@@ -143,12 +125,15 @@ export const ShippedPanel = ({
             <span>1h to 1d {sameDayReviews}</span>
             <span>&gt;1d {slowReviews}</span>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <span className="rounded-md bg-muted px-2 py-1.5 text-label">
               Published drafts: {reviewData?.publishedDrafts ?? 0}
             </span>
             <span className="rounded-md bg-muted px-2 py-1.5 text-label">
               Pushed resolutions: {reviewData?.pushedResolutions ?? 0}
+            </span>
+            <span className="rounded-md bg-muted px-2 py-1.5 text-label">
+              Sent to agent: {reviewData?.sentToAgent ?? 0}
             </span>
           </div>
         </StudioWidget>

@@ -6,6 +6,9 @@ import type {
   StepSize,
   VerbosityLevel,
   WorkflowOrigin,
+  WorkflowRoutingDecision,
+  WorkflowRoutingLock,
+  WorkflowTaskProfile,
   EffortLevel,
 } from '@goodboy/types';
 
@@ -22,12 +25,17 @@ export type StepDraft = {
   readonly effort: EffortLevel;
   readonly verbosity: VerbosityLevel;
   readonly size: StepSize | null;
+  readonly orchestratorReason?: string | null;
+  readonly routingLock?: WorkflowRoutingLock | null;
+  readonly routingDecision?: WorkflowRoutingDecision | null;
+  readonly taskProfile?: WorkflowTaskProfile | null;
 };
 
 export type WorkflowDraft = {
   readonly name: string;
   readonly description: string;
   readonly goal: string;
+  readonly processText?: string;
   readonly steps: ReadonlyArray<StepDraft>;
   readonly origin: WorkflowOrigin;
   readonly isPreset: boolean;

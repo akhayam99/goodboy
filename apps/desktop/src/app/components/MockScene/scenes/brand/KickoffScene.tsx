@@ -172,5 +172,10 @@ export const BrandKickoffScene = () => {
     return null;
   }
 
-  return <StudioFrame target={null} main={<SessionDraftPane workspaceId={WORKSPACE_ID} />} />;
+  return (
+    <StudioFrame
+      target={{ place: null, tool: null }}
+      main={<SessionDraftPane workspaceId={WORKSPACE_ID} />}
+    />
+  );
 };

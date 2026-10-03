@@ -1,4 +1,4 @@
-import { ChevronRight, Ellipsis } from 'lucide-react';
+import { Ellipsis } from 'lucide-react';
 import { cn } from '../../cn';
 import { useDropdown } from '../../useDropdown';
 import { AnchoredPopover } from '../AnchoredPopover';
@@ -6,6 +6,7 @@ import { ScrollFade } from '../ScrollFade';
 import { Tooltip } from '../Tooltip';
 import type { TrailSegmentModel } from './types';
 import { TRAIL_CRUMB_CLASS, TRAIL_LINK_CLASS } from './trailClasses';
+import { TrailSeparator } from './TrailSeparator';
 
 type Props = {
   readonly segments: ReadonlyArray<TrailSegmentModel>;
@@ -21,11 +22,7 @@ export const TrailFold = ({ segments }: Props) => {
   const { open, close, toggle } = dropdown;
 
   return (
-    <span
-      data-trail-fold=""
-      className="flex shrink-0 items-center gap-1.5 motion-safe:animate-fade-in"
-    >
-      <ChevronRight size={12} aria-hidden className="shrink-0 text-faint-foreground" />
+    <span data-trail-fold="" className="flex shrink-0 items-center motion-safe:animate-fade-in">
       <AnchoredPopover
         dropdown={dropdown}
         role="menu"
@@ -74,6 +71,7 @@ export const TrailFold = ({ segments }: Props) => {
           </div>
         </ScrollFade>
       </AnchoredPopover>
+      <TrailSeparator />
     </span>
   );
 };
