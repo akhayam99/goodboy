@@ -2,7 +2,7 @@ import type { AgentId, ResolveLaunchChoice, SessionId } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
 import { sessionResolveStyle } from '../../store/sessionReplySettings';
 import type { CommentThread } from '../integrations/github/comment-threads';
-import { reviewRowsOf } from './reviewRows';
+import { launchRowsOf } from './reviewRows';
 import { startResolve } from './startResolve';
 
 type Params = {
@@ -27,7 +27,7 @@ export const startBatch = async ({
 }: Params): Promise<StartedBatch> => {
   const state = getState();
   const wanted = new Set(threadIds);
-  const threads = reviewRowsOf({ state, sessionId }).flatMap((row): ReadonlyArray<CommentThread> =>
+  const threads = launchRowsOf({ state, sessionId }).flatMap((row): ReadonlyArray<CommentThread> =>
     wanted.has(row.thread.threadId) && row.commentThread !== null ? [row.commentThread] : [],
   );
   if (threads.length === 0) {
