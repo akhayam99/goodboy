@@ -13,6 +13,7 @@ import { useActionControls } from '../../../actions/useActionControls';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import type { ArtifactActionTarget, ResolvedAction } from '../../../actions/types';
 import { ArtifactKindGlyph } from './ArtifactKindGlyph';
+import { ARTIFACT_ROW_GRID } from './artifactRowGrid';
 import { ArtifactRowParts } from './ArtifactRowParts';
 import { ArtifactStateBadge } from './ArtifactStateBadge';
 
@@ -117,15 +118,15 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
       : `${isDeleted ? 'Deleted ' : ''}${formatDateTime({ at, hasYear: true })}`;
 
   return (
-    <div className="flex min-w-0 flex-col" data-testid="artifact-row-frame">
+    <div className="@container flex min-w-0 flex-col" data-testid="artifact-row-frame">
       <InteractiveRow
         menu={menu}
         label={rowLabel}
         isSelected={false}
         onOpen={() => onOpenRow(row)}
         dataAttributes={{ 'data-artifact-row': row.id }}
-        frameClassName="@container group"
-        className="flex min-h-9 min-w-0 items-center gap-2.5 pr-1.5 pl-0.5"
+        frameClassName="group"
+        className={ARTIFACT_ROW_GRID.frame}
       >
         {hasParts ? (
           <Tooltip content="Parts">
@@ -134,7 +135,10 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
               aria-expanded={isPartsOpen}
               aria-label={`${isPartsOpen ? 'Hide' : 'Show'} parts of ${row.title}`}
               onClick={() => onTogglePartsOf(row.id)}
-              className="grid size-[18px] shrink-0 place-items-center rounded-sm text-faint-foreground hover:bg-hover hover:text-foreground"
+              className={cn(
+                ARTIFACT_ROW_GRID.lead,
+                'grid place-items-center rounded-sm text-faint-foreground hover:bg-hover hover:text-foreground',
+              )}
             >
               <ChevronRight
                 size={ICON_SIZE.control}
@@ -144,39 +148,60 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
             </button>
           </Tooltip>
         ) : (
-          <span aria-hidden className="size-[18px] shrink-0" />
+          <span aria-hidden className={ARTIFACT_ROW_GRID.lead} />
         )}
         <ArtifactKindGlyph
           kind={row.kind}
           size={ICON_SIZE.control}
-          className={cn('w-5', row.isFaint && 'text-faint-foreground')}
+          className={cn(ARTIFACT_ROW_GRID.glyph, row.isFaint && 'text-faint-foreground')}
         />
         <span
           title={row.title}
           className={cn(
-            'min-w-16 flex-1 truncate text-row',
+            ARTIFACT_ROW_GRID.title,
             row.isFaint ? 'text-faint-foreground' : 'text-foreground',
           )}
         >
           {row.title}
         </span>
-        <span
-          className={cn(
-            'flex w-52 min-w-0 shrink-0 items-center @max-[560px]:w-32 @max-[400px]:hidden',
-            row.isFaint && 'opacity-80',
-          )}
-        >
+        <span className={cn(ARTIFACT_ROW_GRID.state, row.isFaint && 'opacity-80')}>
           {row.state === null ? null : <ArtifactStateBadge state={row.state} />}
         </span>
-        <span
-          data-testid="artifact-row-time"
-          className="w-[72px] shrink-0 text-right text-secondary tabular-nums text-faint-foreground @max-[480px]:hidden"
-        >
+        <span data-testid="artifact-row-time" className={ARTIFACT_ROW_GRID.date}>
           {at === null ? null : <RelativeTime iso={at} title={atTitle} />}
         </span>
-        <span className="flex shrink-0 items-center gap-0.5">
-          {isDeleted ? null : (
-            <span className="mr-1 flex w-[92px] justify-end @max-[400px]:w-16">
+        {isDeleted ? (
+          <span className={ARTIFACT_ROW_GRID.deletedTail}>
+            <span className={ARTIFACT_ROW_GRID.primary}>
+              {restoreAction === null ? null : (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  emphasis="solid"
+                  isBusy={controls.pendingId === restoreAction.id}
+                  onClick={() => controls.trigger({ actionId: restoreAction.id })}
+                >
+                  Restore
+                </Button>
+              )}
+            </span>
+            <span className={ARTIFACT_ROW_GRID.deleted}>
+              {permanentAction === null ? null : (
+                <Button
+                  size="sm"
+                  variant="danger"
+                  emphasis="outline"
+                  isBusy={controls.pendingId === permanentAction.id}
+                  onClick={() => controls.trigger({ actionId: permanentAction.id })}
+                >
+                  Delete permanently
+                </Button>
+              )}
+            </span>
+          </span>
+        ) : (
+          <span className={ARTIFACT_ROW_GRID.tail}>
+            <span className={ARTIFACT_ROW_GRID.primary}>
               {primary === null ? null : (
                 <Button
                   size="sm"
@@ -191,9 +216,7 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
                 </Button>
               )}
             </span>
-          )}
-          {isDeleted ? null : (
-            <span className="pointer-events-none flex w-[84px] shrink-0 items-center justify-end opacity-0 transition-opacity group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100 @max-[560px]:hidden">
+            <span className={ARTIFACT_ROW_GRID.hover}>
               {hover.map((action) => (
                 <IconButton
                   key={action.id}
@@ -207,31 +230,7 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
                 />
               ))}
             </span>
-          )}
-          {restoreAction === null ? null : (
-            <Button
-              size="sm"
-              variant="secondary"
-              emphasis="solid"
-              isBusy={controls.pendingId === restoreAction.id}
-              onClick={() => controls.trigger({ actionId: restoreAction.id })}
-            >
-              Restore
-            </Button>
-          )}
-          {permanentAction === null ? null : (
-            <Button
-              size="sm"
-              variant="danger"
-              emphasis="outline"
-              isBusy={controls.pendingId === permanentAction.id}
-              onClick={() => controls.trigger({ actionId: permanentAction.id })}
-            >
-              Delete permanently
-            </Button>
-          )}
-          {isDeleted ? null : (
-            <span className="flex w-8 shrink-0 justify-center">
+            <span className={ARTIFACT_ROW_GRID.remove}>
               {deleteAction === null ? null : (
                 <IconButton
                   icon={deleteAction.icon}
@@ -244,15 +243,15 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
                 />
               )}
             </span>
-          )}
-          {isDeleted ? null : (
-            <ArtifactOverflowMenu
-              target={target}
-              anchorKey={anchorKey}
-              label={`More for ${row.title}`}
-            />
-          )}
-        </span>
+            <span className={ARTIFACT_ROW_GRID.menu}>
+              <ArtifactOverflowMenu
+                target={target}
+                anchorKey={anchorKey}
+                label={`More for ${row.title}`}
+              />
+            </span>
+          </span>
+        )}
       </InteractiveRow>
       {confirming === null || confirming.confirm === null ? null : (
         <InlineConfirm

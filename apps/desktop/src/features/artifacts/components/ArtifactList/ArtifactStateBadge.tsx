@@ -36,7 +36,7 @@ export const ArtifactStateBadge = ({ state }: Props) => {
           className="shrink-0"
         />
       ) : (
-        <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-muted-foreground">
+        <span className="inline-flex shrink-0 items-center gap-1.5 px-1.5 whitespace-nowrap text-muted-foreground">
           {mark}
           {state.label}
         </span>
