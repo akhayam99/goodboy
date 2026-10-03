@@ -273,6 +273,9 @@ export const activityCategoryOf = ({ entry }: EntryParams): ActivityCategory | n
   if (entry.kind === 'branch') {
     return 'worktree';
   }
+  if (entry.kind === 'learning') {
+    return 'decisions';
+  }
   return null;
 };
 

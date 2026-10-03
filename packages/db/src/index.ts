@@ -144,6 +144,13 @@ export {
   type SessionTitleRef,
 } from './queries/session';
 export { getSessionContextSeenAt, setSessionContextSeenAt } from './queries/session-context-seen';
+export {
+  insertSessionContextItems,
+  listSessionContextItems,
+  listSessionContextItemsForRole,
+  listWorkspaceLearnings,
+  setSessionContextItemStatus,
+} from './queries/session-context-item';
 export { listSessionDecisions, saveSessionDecisions } from './queries/session-decision';
 export {
   attachWorkflowToSession,

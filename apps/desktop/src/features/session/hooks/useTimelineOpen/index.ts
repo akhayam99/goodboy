@@ -175,6 +175,12 @@ export const useTimelineOpen = ({
           open: () => store.navigate({ to: sessionPlace({ sessionId, lens: target.lens }) }),
         };
       }
+      if (entry.kind === 'learning') {
+        return {
+          label: 'Open learned',
+          open: () => store.openContextDrawer({ sessionId, tab: 'learned' }),
+        };
+      }
       if (entry.kind === 'resolveBatch' || entry.kind === 'subagentGroup') {
         return null;
       }

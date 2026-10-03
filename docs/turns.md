@@ -119,8 +119,14 @@ record a live turn already wrote wins.
 - A workflow step's first turn carries its predecessors' handoff summaries and
   the step prompt, and emits a `step_transition` event flagged `degraded` when
   the handoff it inherited was a fallback summary.
-- The session's context slots are prepended, filtered by what the agent kind
-  reads.
+- The session's context slots are prepended, filtered by what the turn's role
+  reads (`ROLE_SLOTS` in `slot-routing.ts`, one entry per role, so a new role
+  does not compile without one). The role is the step's role, or the one the
+  agent kind maps to; the same role picks the profile fields. Active
+  `session_context_items` whose audience names the role follow the slots as
+  "notes for your role". Both are resolved once per turn, before the prompt is
+  built. Setting `context.roleMap` to `false` goes back to the per-kind map and
+  sends no items.
 - A turn estimated at 85% or more of the model's context window raises a
   warning before it spawns.
 - `renderHandoff` (`@goodboy/core`) owns that stacking: from the composed
@@ -475,6 +481,18 @@ the `files_touched_numstat` context slot. The slot is not a `SLOT_KEYS` entry: i
 desktop state that reaches the mobile client through the snapshot, next to the
 paths-only `files_touched` slot the client falls back to. A git failure never
 fails the turn.
+
+## Learnings
+
+After a successful turn whose role received the "Explain more when the work
+touches" line, and only when that field has topics, the turn joins a learnings
+queue per agent (`learningQueue.ts`). One pass runs at a time per agent; turns
+that finish meanwhile are read together and the learning cites the merged turn
+range. It runs on the `learnings` task model (Defaults, Writing for you), off
+the summarizer queue, so no workflow step waits for it. A pass records its cost
+like the summarizer and writes `session_context_items` rows of kind `learning`
+only for concrete explanations of a listed topic. `context.learnings` set to
+`false` stops new passes.
 
 ## The session summarizer
 

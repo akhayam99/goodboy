@@ -18,6 +18,7 @@ export type {
   PermissionRequestId,
   PermissionRuleId,
   ProviderRunId,
+  SessionContextItemId,
   SessionEventId,
   SecurityFindingId,
   SessionId,
@@ -192,6 +193,13 @@ export type {
 } from './handoff';
 export { HANDOFF_SECTION_KINDS } from './handoff';
 export type { TelemetryKind, TelemetryRecord } from './telemetry';
+export type {
+  SessionContextItem,
+  SessionContextItemDraft,
+  SessionContextItemKind,
+  SessionContextItemSource,
+  SessionContextItemStatus,
+} from './session-context-item';
 export type {
   AgentTurnSpan,
   AgentTurnSpanEndReason,

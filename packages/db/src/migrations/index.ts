@@ -217,6 +217,7 @@ import { m138SessionEventMaterializationProposals } from './m138-session-event-m
 import { m139SessionEventRebaseRequested } from './m139-session-event-rebase-requested';
 import { m217WorkflowRules } from './m217-workflow-rules';
 import { m218RunRulesSnapshot } from './m218-run-rules-snapshot';
+import { m219SessionContextItems } from './m219-session-context-items';
 
 export type Migration = {
   readonly version: number;
@@ -442,5 +443,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 216, sql: m216TaskLinksScope },
   { version: 217, sql: m217WorkflowRules },
   { version: 218, sql: m218RunRulesSnapshot },
+  { version: 219, sql: m219SessionContextItems },
   { version: 220, sql: m220ChatMessageAttachments },
 ];

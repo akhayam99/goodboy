@@ -26,7 +26,14 @@ export const DEFAULT_GROUPS: DefaultGroups = {
     {
       id: 'writing',
       label: 'Writing for you',
-      members: ['plan_generation', 'prose_polish', 'agent_naming', 'issue_brief', 'pr_draft'],
+      members: [
+        'plan_generation',
+        'prose_polish',
+        'agent_naming',
+        'issue_brief',
+        'pr_draft',
+        'learnings',
+      ],
     },
     {
       id: 'workflows',

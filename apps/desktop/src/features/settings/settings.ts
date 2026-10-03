@@ -12,4 +12,6 @@ export const DEFAULT_EDITOR_BINARY = 'code';
 export const DEFAULT_BROWSER_APP = 'system';
 export const DEFAULT_BRANCH_PREFIX = 'goodboy';
 export const SETTING_COMPOSER_CLASSIC_KEYS = 'composer.classicKeys';
+export const SETTING_CONTEXT_ROLE_MAP = 'context.roleMap';
+export const SETTING_CONTEXT_LEARNINGS = 'context.learnings';
 export const SETTING_CHAT_IMAGES = 'chat.images';

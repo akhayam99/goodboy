@@ -9,6 +9,8 @@ import type {
 } from '../../../../timeline/buildTimelineStream';
 import { DONE_ROW_STATE } from '../../../../../workTreeModel/rowState';
 import type { TimelineRowGrade } from '../../../../../workTreeModel/timelineRhythm';
+import type { TimelineLearningEntry } from '../../../../timeline/buildTimelineGroups';
+import type { IsoDateTime, SessionContextItemId, SessionId, WorkspaceId } from '@goodboy/types';
 import { TimelineRowLabel } from './TimelineRowLabel';
 
 afterEach(cleanup);
@@ -341,5 +343,39 @@ describe('TimelineRowLabel', () => {
     render(<TimelineRowLabel item={itemOf({ entry: mountEntry() })} isRevealed />);
 
     expect(screen.getByText('Shown because you started it')).toBeDefined();
+  });
+});
+
+describe('TimelineRowLabel, a learned row', () => {
+  it('reads Learned, then the topic and the title, as a compact fact', () => {
+    const at = '2026-08-17T09:04:00Z' as IsoDateTime;
+    const entry: TimelineLearningEntry = {
+      kind: 'learning',
+      id: 'learning:l1',
+      at,
+      item: {
+        id: 'l1' as SessionContextItemId,
+        sessionId: 'session-1' as SessionId,
+        workspaceId: 'harborline' as WorkspaceId,
+        kind: 'learning',
+        title: 'Why the borrow checker rejects this',
+        text: 'The guard lives until the end of the block.',
+        topic: 'Rust',
+        source: { role: 'investigator', agentId: null, turnStart: 4, turnEnd: 6 },
+        audience: [],
+        status: 'active',
+        projectName: 'notify-relay',
+        isSessionDeleted: false,
+        createdAt: at,
+        updatedAt: at,
+      },
+    };
+
+    const { container } = render(<TimelineRowLabel item={itemOf({ entry, grade: 'fact' })} />);
+
+    expect(container.textContent).toBe('Learned · Rust · Why the borrow checker rejects this');
+    expect(screen.getByTitle('Learned · Rust · Why the borrow checker rejects this').tagName).toBe(
+      'SPAN',
+    );
   });
 });

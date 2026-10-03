@@ -9,7 +9,7 @@ import {
   type SegmentedTabOption,
 } from '@goodboy/ui';
 import { parseDecisions } from '@goodboy/core';
-import type { SessionId } from '@goodboy/types';
+import type { SessionContextItem, SessionId } from '@goodboy/types';
 import {
   useAppStore,
   useSessionLoading,
@@ -26,7 +26,12 @@ import {
 } from '../../../../store/slices/contextDrawer/decisionChangesSince';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shareableContext } from '../../context/shareableContext';
-import { CONTEXT_TABS, CONTEXT_TAB_LABEL, CONTEXT_TAB_SLOT } from './contextTabs';
+import {
+  CONTEXT_TABS,
+  CONTEXT_TAB_LABEL,
+  CONTEXT_TAB_SLOT,
+  type ContextSlotTab,
+} from './contextTabs';
 import { GoalTab } from './GoalTab';
 import { DecisionsSection } from './DecisionsSection';
 import { SummarySection } from './SummarySection';
@@ -34,6 +39,11 @@ import { VersionsView } from './VersionsView';
 import { ContextUpdates } from './ContextUpdates';
 import { ContextLoadFailure } from './ContextLoadFailure';
 import { DecisionsBadge } from './DecisionsBadge';
+import { ContextVisibility } from './ContextVisibility';
+import { slotVisibility, youOnlyVisibility } from './roleVisibility';
+import { LearnedTab } from './LearnedTab';
+import { useLearningList } from '../../../../shared/hooks/useLearningList';
+import { isRoleMapOn } from '../../../context/contextSwitches';
 
 type SlotValueParams = {
   readonly slots: ReturnType<typeof useSessionSlots>;
@@ -42,6 +52,7 @@ type SlotValueParams = {
 
 const NO_HIGHLIGHT: ReadonlyArray<number> = [];
 const NO_PENDING_REMOVALS: ReadonlySet<number> = new Set();
+const NO_ITEMS: ReadonlyArray<SessionContextItem> = [];
 
 const slotValue = ({ slots, key }: SlotValueParams): string =>
   slots.find((slot) => slot.key === key)?.value ?? '';
@@ -67,6 +78,7 @@ export const ContextDrawer = ({
   const openQuestions = useSessionOpenQuestions(sessionId);
   const summarizer = useSummarizerStatus(sessionId);
   const baseline = useAppStore((state) => state.sessionDecisionsBaseline[sessionId]);
+  const showsVisibility = useAppStore((state) => isRoleMapOn({ settings: state.settings }));
   const openContextDrawer = useAppStore((state) => state.openContextDrawer);
   const ensureSessionSlots = useAppStore((state) => state.ensureSessionSlots);
   const loadSessionSlots = useAppStore((state) => state.loadSessionSlots);
@@ -75,7 +87,12 @@ export const ContextDrawer = ({
   const loadSessionContextSeen = useAppStore((state) => state.loadSessionContextSeen);
   const markSessionContextSeen = useAppStore((state) => state.markSessionContextSeen);
   const upsertSessionSlot = useAppStore((state) => state.upsertSessionSlot);
-  const slotKey = CONTEXT_TAB_SLOT[tab];
+  const isLearnedTab = tab === 'learned';
+  const slotTab: ContextSlotTab = tab === 'learned' ? 'summary' : tab;
+  const slotKey = CONTEXT_TAB_SLOT[slotTab];
+  const learnings = useAppStore((state) => state.sessionContextItems[sessionId] ?? NO_ITEMS);
+  const loadSessionContextItems = useAppStore((state) => state.loadSessionContextItems);
+  const learningList = useLearningList({ items: learnings });
   const historyCount = useSlotHistoryCount(sessionId, slotKey);
   const [isRawEditing, setIsRawEditing] = useState(false);
   const [pendingRemovals, setPendingRemovals] = useState<ReadonlySet<number>>(NO_PENDING_REMOVALS);
@@ -106,7 +123,14 @@ export const ContextDrawer = ({
     void ensureSessionSlots(sessionId);
     void loadSessionOpenQuestions(sessionId);
     void loadSessionContextSeen(sessionId);
-  }, [ensureSessionSlots, loadSessionContextSeen, loadSessionOpenQuestions, sessionId]);
+    void loadSessionContextItems({ sessionId });
+  }, [
+    ensureSessionSlots,
+    loadSessionContextItems,
+    loadSessionContextSeen,
+    loadSessionOpenQuestions,
+    sessionId,
+  ]);
 
   const hasLedger = ledger !== undefined;
   useEffect(() => {
@@ -144,6 +168,10 @@ export const ContextDrawer = ({
         (decisionCount > 0 || hasChanges) && {
           badge: <DecisionsBadge count={decisionCount} hasChanges={hasChanges} />,
         }),
+      ...(candidate === 'learned' &&
+        learningList.activeCount > 0 && {
+          badge: <DecisionsBadge count={learningList.activeCount} hasChanges={false} />,
+        }),
     }),
   );
 
@@ -156,6 +184,9 @@ export const ContextDrawer = ({
   };
 
   const body = (() => {
+    if (isLearnedTab) {
+      return <LearnedTab list={learningList} />;
+    }
     if (view === 'versions') {
       return (
         <VersionsView
@@ -230,7 +261,7 @@ export const ContextDrawer = ({
     );
   })();
 
-  const isEditableTab = tab !== 'goal' && view === 'current';
+  const isEditableTab = tab !== 'goal' && !isLearnedTab && view === 'current';
 
   return (
     <DrawerFrame
@@ -265,6 +296,11 @@ export const ContextDrawer = ({
           onChange={selectTab}
         />
       </div>
+      {(showsVisibility || isLearnedTab) && view === 'current' ? (
+        <ContextVisibility
+          visibility={isLearnedTab ? youOnlyVisibility() : slotVisibility({ slot: slotKey })}
+        />
+      ) : null}
       <ScrollFade className="min-h-0 flex-1" viewportClassName="px-4 py-3" fadeSize={24}>
         <div className="flex flex-col gap-4">
           {body}
