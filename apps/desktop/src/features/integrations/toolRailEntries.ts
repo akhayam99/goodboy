@@ -36,10 +36,10 @@ export const toolRailSubtitle = ({
   githubIdentity,
 }: SubtitleParams): string => {
   if (!connected[provider]) {
-    return 'not connected';
+    return 'Not connected';
   }
   if (provider === 'github') {
-    return githubIdentity ?? 'connected';
+    return githubIdentity ?? 'Connected';
   }
   return toolIdentity({
     binding: integrations.find((binding) => binding.provider === provider),

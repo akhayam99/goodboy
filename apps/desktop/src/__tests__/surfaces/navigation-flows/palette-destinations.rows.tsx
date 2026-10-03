@@ -128,7 +128,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     open: () => openPalette(/^Workspace settings/),
     lands: both(
       () => band('Settings'),
-      () => heading('About you'),
+      () => visible('textbox', 'Workspace name'),
     ),
   },
   {

@@ -26,6 +26,10 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'settings control, not an object in the map',
   'features/providers/components/ProviderStudio/ProviderPage/ProviderPageBody.tsx':
     'settings control, not an object in the map',
+  'features/settings/components/SettingsStudio/WorkspaceFieldRow.tsx':
+    'settings field menu (Reset to the default), not an object in the map',
+  'features/settings/components/SettingsStudio/WorkspaceScopePanel.tsx':
+    'settings page menu (Restore defaults, Copy from), page chrome',
   'features/wireframes/components/WireframeViewer/RevisionPicker.tsx':
     'revision picker inside the wireframe viewer',
   'features/workflows/components/OrchestratorStrip/OrchestratorMenu.tsx':

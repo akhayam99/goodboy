@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
 
 vi.mock('../../../store', async () => {
@@ -59,9 +59,6 @@ vi.mock('../../../features/palette/components/PaletteOverlay', () => ({
 vi.mock('../../../features/session/components/DeleteSessionConfirm', () => ({
   DeleteSessionConfirm: () => null,
 }));
-vi.mock('../../../features/workspace/components/ConvertWorkspaceDialog', () => ({
-  ConvertWorkspaceDialog: () => null,
-}));
 vi.mock('../../../features/workspace/components/WorkspaceLauncher', () => ({
   WorkspaceLauncher: () => <div data-testid="launcher" />,
 }));
@@ -79,7 +76,25 @@ vi.mock('../../../features/settings/components/GuideStudio', () => ({
   GuideStudio: () => <div data-testid="studio" data-kind="guide" />,
 }));
 vi.mock('../../../features/workspace/components/WorkspaceLinkStudio', () => ({
-  WorkspaceLinkStudio: () => <div data-testid="studio" data-kind="addWorkspace" />,
+  WorkspaceLinkStudio: ({
+    onClose,
+    onOfferRepo,
+  }: {
+    readonly onClose: () => void;
+    readonly onOfferRepo: () => void;
+  }) => (
+    <div data-testid="studio" data-kind="addWorkspace">
+      <button
+        type="button"
+        onClick={() => {
+          onOfferRepo();
+          onClose();
+        }}
+      >
+        Link a plain folder
+      </button>
+    </div>
+  ),
 }));
 vi.mock('../../../features/workflows/components/WorkflowStudio', () => ({
   WorkflowStudio: () => <div data-testid="studio" data-kind="workflow" />,
@@ -259,6 +274,18 @@ describe('app overlay hook, navigation', () => {
 });
 
 describe('app overlay hook', () => {
+  it('offers a repository on the Projects page once the add workspace studio has closed', async () => {
+    renderHarness();
+    fire({ name: 'goodboy:add-workspace' });
+    expect(await openStudios()).toEqual(['addWorkspace']);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Link a plain folder' }));
+
+    expect(await openStudios()).toEqual(['settings']);
+    expect(screen.getByTestId('studio').getAttribute('data-section')).toBe('dev-project');
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
   it('mounts settings from the open-settings event with the requested scope', async () => {
     renderHarness();
 

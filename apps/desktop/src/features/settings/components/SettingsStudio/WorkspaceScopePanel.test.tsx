@@ -1,372 +1,397 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../../store/storyHarness')).dbModuleMock({
+    renameWorkspace: vi.fn(async () => undefined),
+    upsertWorkspaceProfile: vi.fn(async () => undefined),
+    setWorkspacePermissionDefault: vi.fn(async () => undefined),
+  }),
+);
+vi.mock('../../../permissions/permissions', async () =>
+  (await import('../../../../store/storyHarness')).permissionsModuleMock(),
+);
+
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type {
-  Agent,
   OverrideSettings,
+  ProjectId,
   ProviderRunId,
-  Session,
-  TurnState,
+  Workspace,
   WorkspaceId,
 } from '@goodboy/types';
-import { aSession, aWorkflowRun, anAgent, TEST_NOW } from '@goodboy/types/testing';
+import { aProject, aSession, aWorkspace, EMPTY_OVERRIDES, TEST_NOW } from '@goodboy/types/testing';
 import {
-  mergeWorkspaceOverrides,
-  type WorkspaceOverridesPatch,
-} from '../../../../store/slices/overrides/patchWorkspaceOverrides';
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  storySpies,
+  stubStoryInvoke,
+  type StoryStore,
+} from '../../../../store/storyHarness';
+import { ToastProvider } from '../../../../shared/components/Toast';
+import type { SettingsScopeChange } from '../../settingsFocus';
+import { WORKSPACE_PAGES } from './workspacePages';
+import { WorkspaceScopePanel } from './WorkspaceScopePanel';
+import { SettingsHome } from './SettingsHome';
+import type { SettingsGroup } from './settingsDirectory';
 
-const { state, toastMock } = vi.hoisted(() => ({
-  state: {
-    settings: {} as Record<string, string>,
-    loadSetting: vi.fn(async () => null),
-    saveSetting: vi.fn(async () => undefined),
-    disconnectWorkspace: vi.fn(async () => undefined),
-    workspaces: [] as ReadonlyArray<{ id: string; name: string; rootPath: string }>,
-    projects: [] as ReadonlyArray<{ id: string; workspaceId: string }>,
-    renameWorkspace: vi.fn(async () => undefined),
-    workspaceOverrides: {} as Record<string, OverrideSettings>,
-    setWorkspaceOverrides: vi.fn(async (_workspaceId: string, _overrides: unknown) => undefined),
-    patchWorkspaceOverrides: async (_params: {
-      workspaceId: string;
-      patch: WorkspaceOverridesPatch;
-    }): Promise<void> => undefined,
-    workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
-    providers: [] as ReadonlyArray<{ id: string; connection: string }>,
-    orphanWorktrees: {} as Record<string, ReadonlyArray<{ path: string; name: string }>>,
-    retainedWorktreePaths: {} as Record<string, ReadonlyArray<unknown>>,
-    focusStorage: vi.fn(),
-    setStorageScope: vi.fn(),
-    currentWorkspaceId: null as string | null,
-    sessions: [] as ReadonlyArray<Session>,
-    sessionPhaseRuns: {} as Record<string, ReadonlyArray<Agent>>,
-    agentTurnState: {} as Record<string, TurnState>,
-    orchestratingWorkflowRuns: {} as Record<string, boolean>,
-  },
-  toastMock: vi.fn(),
-}));
+let useAppStore: StoryStore;
 
-vi.mock('../../../../store', () => ({
-  useAppStore: Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
-    getState: () => state,
-  }),
-}));
+const HARBORLINE: Workspace = aWorkspace({ name: 'Harborline', slug: 'harborline' });
+const NORTHWIND: Workspace = aWorkspace({ name: 'Northwind', slug: 'northwind' });
 
-vi.mock('../../../../shared/components/Toast', () => ({
-  useToast: () => ({ showToast: toastMock }),
-}));
-
-vi.mock('../../../../features/skills/components/SkillsPanel', () => ({
-  SkillsPanel: () => null,
-}));
-
-vi.mock('../../../../features/session/components/VerbositySelect', () => ({
-  VerbositySelect: () => null,
-}));
-
-vi.mock('../../../../features/chat/utils/chat-constants', () => ({
-  PROVIDER_LABEL: { anthropic: 'Claude', cursor: 'Cursor', codex: 'Codex', gemini: 'Gemini' },
-}));
-
-vi.mock('../../../../features/providers/components/provider-brand', () => ({
-  PROVIDER_BRAND: {
-    anthropic: { icon: () => null },
-    cursor: { icon: () => null },
-    codex: { icon: () => null },
-    gemini: { icon: () => null },
-  },
-  brandColor: () => '#000000',
-}));
-
-const EMPTY: OverrideSettings = {
-  defaultProviderId: null,
-  defaultBranchPrefix: null,
-  defaultVerbosity: null,
-  providerBindings: null,
-  taskModels: null,
-  roleModels: null,
-  parallelAgents: null,
-  providerPool: null,
-  attributionFooter: null,
-  replyVoice: null,
-  replyStyleNote: null,
-  replyTemplateFixed: null,
-  replyTemplateNoChange: null,
-  resolveOnGithub: null,
-  resolveCommitStyle: null,
-  afterMerge: null,
+const WORKSPACE_GROUP: SettingsGroup = {
+  scope: 'workspace',
+  label: 'Workspace',
+  concept: 'workspace',
+  place: 'Harborline',
+  subtitle: undefined,
+  tone: undefined,
+  needsWorkspace: true,
+  pages: [],
 };
 
-beforeEach(() => {
-  state.loadSetting = vi.fn(async () => null);
-  state.saveSetting = vi.fn(async () => undefined);
-  state.disconnectWorkspace = vi.fn(async () => undefined);
-  state.workspaces = [{ id: 'ws-1', name: 'billing', rootPath: '/repos/billing-api' }];
-  state.renameWorkspace = vi.fn(async () => undefined);
-  state.workspaceOverrides = {};
-  state.setWorkspaceOverrides = vi.fn(
-    async (_workspaceId: string, _overrides: unknown) => undefined,
-  );
-  state.patchWorkspaceOverrides = ({ workspaceId, patch }) =>
-    state.setWorkspaceOverrides(
-      workspaceId,
-      mergeWorkspaceOverrides({
-        base: state.workspaceOverrides[workspaceId] ?? EMPTY,
-        patch,
-      }),
-    );
-  state.workspaceIntegrations = {};
-  state.providers = [];
-  state.orphanWorktrees = {};
-  state.retainedWorktreePaths = {};
-  state.focusStorage = vi.fn();
-  state.setStorageScope = vi.fn();
-  state.currentWorkspaceId = null;
-  state.sessions = [];
-  state.sessionPhaseRuns = {};
-  state.agentTurnState = {};
-  state.orchestratingWorkflowRuns = {};
-  toastMock.mockReset();
+const overrides = (patch: Partial<OverrideSettings>): OverrideSettings => ({
+  ...EMPTY_OVERRIDES,
+  ...patch,
 });
+
+type InvokeCall = { readonly command: string; readonly args: unknown };
+
+const invokes = (command: string): ReadonlyArray<InvokeCall> =>
+  storySpies.tauriInvoke.mock.calls
+    .map(([name, args]) => ({ command: String(name), args }))
+    .filter((call) => call.command === command);
+
+const savedOverrides = (): ReadonlyArray<OverrideSettings> =>
+  invokes('set_workspace_overrides').map(
+    (call) => (call.args as { readonly overrides: OverrideSettings }).overrides,
+  );
+
+const seed = ({
+  harborline = EMPTY_OVERRIDES,
+  northwind = EMPTY_OVERRIDES,
+  settings = {},
+}: {
+  readonly harborline?: OverrideSettings;
+  readonly northwind?: OverrideSettings;
+  readonly settings?: Readonly<Record<string, string>>;
+} = {}) => {
+  stubStoryInvoke({
+    set_workspace_overrides: null,
+    get_workspace_overrides: (args: { readonly workspaceId: WorkspaceId }) =>
+      args.workspaceId === NORTHWIND.id ? northwind : harborline,
+  });
+  useAppStore.setState({
+    workspaces: [HARBORLINE, NORTHWIND],
+    currentWorkspaceId: HARBORLINE.id,
+    workspaceOverrides: { [HARBORLINE.id]: harborline },
+    settings: { ...settings },
+  });
+};
+
+const onSelect = vi.fn<(change: SettingsScopeChange) => void>();
+
+const renderPage = ({
+  section,
+  requestClose = vi.fn(),
+}: {
+  readonly section?: string;
+  readonly requestClose?: () => void;
+} = {}) =>
+  render(
+    <ToastProvider>
+      <WorkspaceScopePanel
+        workspaceId={HARBORLINE.id}
+        section={section}
+        onSelect={onSelect}
+        requestClose={requestClose}
+      />
+    </ToastProvider>,
+  );
+
+const pageMenu = (label: string) => {
+  fireEvent.click(screen.getByRole('button', { name: `${label} actions` }));
+  return screen.getByRole('menu', { name: `${label} actions` });
+};
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+  onSelect.mockReset();
+  seed();
+});
+
 afterEach(cleanup);
 
-import { overridesWithAttribution } from '../../../../__tests__/helpers/attributionOverrides';
-import { WorkspaceScopePanel } from './WorkspaceScopePanel';
+describe('WorkspaceScopePanel pages', () => {
+  it('opens on Projects with the workspace name, and one page per section', () => {
+    renderPage();
 
-const attributionSwitch = (): HTMLElement => {
-  const row = screen.getByText('Attribution line').parentElement?.parentElement;
-  if (row == null) {
-    throw new Error('attribution row not rendered');
-  }
-  return within(row).getByRole('switch');
-};
-
-describe('WorkspaceScopePanel', () => {
-  it('renders the one-page fields without a nav rail', () => {
-    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
-    expect(screen.getByLabelText(/branch prefix/i)).toBeDefined();
-    expect(screen.queryByText(/default provider/i)).toBeNull();
-    expect(screen.getByText(/parallel agents/i)).toBeDefined();
-    expect(screen.queryByText('Linear')).toBeNull();
-    expect(screen.queryByText('GitHub')).toBeNull();
-    expect(screen.queryByRole('button', { name: /^general$/i })).toBeNull();
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Projects');
+    expect(screen.getByLabelText<HTMLInputElement>('Workspace name').value).toBe('Harborline');
+    expect(screen.queryByRole('region', { name: 'Branches and comments' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Disconnect workspace' })).toBeNull();
   });
 
-  it('orders the sections projects, about you, new sessions, disconnect', () => {
-    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
-    const order = [
-      ...[/^projects/i, /^about you$/i, /^new sessions$/i].map((name) =>
-        screen.getByRole('heading', { level: 2, name }),
-      ),
-      screen.getByRole('region', { name: 'Disconnect workspace' }),
-    ];
-    for (let i = 0; i < order.length - 1; i += 1) {
-      expect(
-        order[i]!.compareDocumentPosition(order[i + 1]!) & Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBeTruthy();
-    }
-  });
+  it.each(WORKSPACE_PAGES.map((page) => page.id).filter((id) => id !== 'projects'))(
+    'puts every part of %s in a titled region with a card',
+    (section) => {
+      renderPage({ section });
 
-  it('folds parallel agents into the new sessions grid with its help behind the info mark', () => {
-    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
-    const section = screen.getByRole('region', { name: 'New sessions' });
-    expect(section.textContent).toContain('Parallel agents');
-    expect(
-      within(section).getByRole('img', {
-        name: 'Lets eligible agents split independent work and reconcile it in one output.',
-      }),
-    ).toBeDefined();
-  });
+      const regions = screen.getAllByRole('region');
+      expect(regions.length).toBeGreaterThan(0);
+      regions.forEach((region) => {
+        expect(within(region).getAllByRole('heading', { level: 2 }).length).toBeGreaterThan(0);
+        expect(region.querySelector('[data-band]')).not.toBeNull();
+      });
+    },
+  );
 
-  it('shows the attribution line as on until the workspace switches it off', () => {
-    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
-    const section = screen.getByRole('region', { name: 'New sessions' });
-    expect(section.textContent).toContain('Attribution line');
-    expect(attributionSwitch().getAttribute('aria-checked')).toBe('true');
-  });
-
-  it('persists the attribution switch on both edges', () => {
-    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
-
-    fireEvent.click(attributionSwitch());
-
-    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
-      'ws-1',
-      expect.objectContaining({ attributionFooter: false }),
-    );
-
+  it('lands old anchors on their page', () => {
+    renderPage({ section: 'after-merge' });
+    screen.getByRole('region', { name: 'After a pull request merges' });
     cleanup();
-    state.workspaceOverrides = {
-      'ws-1': overridesWithAttribution({ attributionFooter: false }),
-    };
-    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
 
-    expect(attributionSwitch().getAttribute('aria-checked')).toBe('false');
-    fireEvent.click(attributionSwitch());
+    renderPage({ section: 'review-replies' });
+    screen.getByRole('region', { name: 'Voice' });
+    cleanup();
 
-    expect(state.setWorkspaceOverrides).toHaveBeenLastCalledWith(
-      'ws-1',
-      expect.objectContaining({ attributionFooter: true }),
+    renderPage({ section: 'permissions' });
+    screen.getByRole('region', { name: 'Recent decisions' });
+  });
+
+  it('keeps the attribution line on New sessions and links to it from Review replies', () => {
+    renderPage({ section: 'review-replies' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit in New sessions' }));
+
+    expect(onSelect).toHaveBeenCalledWith({ scope: 'workspace', section: 'general' });
+  });
+
+  it('persists the attribution switch through the queued writer', async () => {
+    renderPage({ section: 'general' });
+    const region = screen.getByRole('region', { name: 'Branches and comments' });
+
+    fireEvent.click(within(region).getByRole('switch'));
+
+    await waitFor(() => expect(savedOverrides()).toHaveLength(1));
+    expect(savedOverrides()[0]).toEqual({ ...EMPTY_OVERRIDES, attributionFooter: false });
+  });
+});
+
+describe('workspace name', () => {
+  it('renames on blur and spends no write on an unchanged name', async () => {
+    renderPage();
+    const input = screen.getByLabelText('Workspace name');
+
+    fireEvent.change(input, { target: { value: '  Harborline  ' } });
+    fireEvent.blur(input);
+    expect(useAppStore.getState().workspaces[0]?.name).toBe('Harborline');
+
+    fireEvent.change(input, { target: { value: 'Harborline payments' } });
+    fireEvent.blur(input);
+
+    await waitFor(() =>
+      expect(useAppStore.getState().workspaces[0]?.name).toBe('Harborline payments'),
     );
   });
+});
 
-  it('leaves attribution footer null when saving an unrelated override', () => {
-    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
-
-    const input = screen.getByLabelText(/branch prefix/i);
-    fireEvent.change(input, { target: { value: 'feature' } });
-    fireEvent.blur(input);
-
-    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
-      'ws-1',
-      expect.objectContaining({ attributionFooter: null }),
-    );
-  });
-
-  it('writes only the parallel agents key, never a resolved verbosity', () => {
-    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
-    const row = screen.getByText('Parallel agents').parentElement?.parentElement;
-    if (row == null) {
-      throw new Error('parallel agents row not rendered');
-    }
-
-    fireEvent.click(within(row).getByRole('switch'));
-
-    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith('ws-1', {
-      ...EMPTY,
-      parallelAgents: true,
-    });
-  });
-
-  it('renames the workspace in the title on blur', () => {
-    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
-
-    expect(screen.getByRole('heading', { level: 1, name: 'billing' })).toBeDefined();
-    expect(screen.queryByLabelText(/display name/i)).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Rename billing' }));
-
-    const input = screen.getByLabelText('Workspace name');
-    expect((input as HTMLInputElement).value).toBe('billing');
-    fireEvent.change(input, { target: { value: 'Billing platform' } });
-    fireEvent.blur(input);
-
-    expect(state.renameWorkspace).toHaveBeenCalledWith({
-      workspaceId: 'ws-1',
-      name: 'Billing platform',
-    });
-  });
-
-  it('spends no write on a name that did not change', () => {
-    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Rename billing' }));
-
-    const input = screen.getByLabelText('Workspace name');
-    fireEvent.change(input, { target: { value: '  billing  ' } });
-    fireEvent.blur(input);
-
-    expect(state.renameWorkspace).not.toHaveBeenCalled();
-    expect(screen.getByRole('heading', { level: 1, name: 'billing' })).toBeDefined();
-  });
-
-  it('keeps the old name when the rename is escaped', () => {
-    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Rename billing' }));
-
-    const input = screen.getByLabelText('Workspace name');
-    fireEvent.change(input, { target: { value: 'Something else' } });
-    fireEvent.keyDown(input, { key: 'Escape' });
-
-    expect(state.renameWorkspace).not.toHaveBeenCalled();
-    expect(screen.getByRole('heading', { level: 1, name: 'billing' })).toBeDefined();
-  });
-
-  it('disconnects only after the row confirm and closes settings', async () => {
+describe('disconnect page', () => {
+  it('disconnects only after the inline confirm, then closes settings', async () => {
+    const disconnectWorkspace = vi.fn(async () => undefined);
+    useAppStore.setState({ disconnectWorkspace });
     const requestClose = vi.fn();
-    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={requestClose} />);
-    fireEvent.click(screen.getByRole('button', { name: /disconnect/i }));
-    expect(state.disconnectWorkspace).not.toHaveBeenCalled();
+    renderPage({ section: 'danger', requestClose });
 
-    const confirm = screen.getByRole('group', { name: 'Disconnect billing?' });
-    expect(within(confirm).getByText(/Choose Open a folder with the same folder/)).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Disconnect' }));
+    expect(disconnectWorkspace).not.toHaveBeenCalled();
+    const confirm = screen.getByRole('group', { name: 'Disconnect Harborline?' });
     fireEvent.click(within(confirm).getByRole('button', { name: 'Disconnect' }));
 
-    await waitFor(() => expect(state.disconnectWorkspace).toHaveBeenCalledWith('ws-1'));
+    await waitFor(() => expect(disconnectWorkspace).toHaveBeenCalledWith(HARBORLINE.id));
     await waitFor(() => expect(requestClose).toHaveBeenCalledOnce());
   });
 
-  it('cancels the disconnect back to its trigger', () => {
-    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /disconnect/i }));
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+  it('counts the active sessions it stops', () => {
+    useAppStore.setState({
+      sessions: [
+        aSession({
+          workspaceId: HARBORLINE.id,
+          state: { kind: 'running', runId: 'r-1' as ProviderRunId, startedAt: TEST_NOW },
+        }),
+        aSession({
+          workspaceId: HARBORLINE.id,
+          state: { kind: 'running', runId: 'r-2' as ProviderRunId, startedAt: TEST_NOW },
+        }),
+      ],
+    });
+    renderPage({ section: 'danger' });
 
-    expect(state.disconnectWorkspace).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: /disconnect/i })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Disconnect' }));
+
+    screen.getByRole('group', { name: 'Disconnect Harborline and stop 2 active sessions?' });
+  });
+});
+
+describe('changed from default', () => {
+  it('marks a value that differs from the default and resets it to null', async () => {
+    seed({ harborline: overrides({ defaultBranchPrefix: 'hl', defaultVerbosity: 'normal' }) });
+    renderPage({ section: 'general' });
+
+    screen.getByRole('img', { name: 'Changed from default. Default: goodboy' });
+    expect(screen.getAllByRole('img', { name: /Changed from default/ })).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Branch prefix options' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Reset/ }));
+
+    await waitFor(() => expect(savedOverrides()).toHaveLength(1));
+    expect(savedOverrides()[0]?.defaultBranchPrefix).toBeNull();
+    expect(screen.queryByRole('img', { name: /Changed from default/ })).toBeNull();
+  });
+});
+
+describe('restore defaults', () => {
+  it('previews what goes back and writes null in one patch, with undo', async () => {
+    seed({
+      harborline: overrides({
+        replyVoice: 'friendly',
+        resolveCommitStyle: 'fixup',
+        attributionFooter: false,
+      }),
+    });
+    renderPage({ section: 'review-replies' });
+
+    fireEvent.click(
+      within(pageMenu('Review replies')).getByRole('menuitem', { name: /Restore defaults/ }),
+    );
+    const flow = screen.getByRole('region', { name: 'Restore defaults' });
+    expect(flow.textContent).toContain('Goes back to the default: 2 settings on 1 page.');
+    fireEvent.click(within(flow).getByRole('button', { name: 'Restore 2 settings' }));
+
+    await waitFor(() => expect(savedOverrides()).toHaveLength(1));
+    expect(savedOverrides()[0]).toEqual({
+      ...EMPTY_OVERRIDES,
+      replyVoice: null,
+      resolveCommitStyle: null,
+      attributionFooter: false,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    await waitFor(() => expect(savedOverrides()).toHaveLength(2));
+    expect(savedOverrides()[1]?.replyVoice).toBe('friendly');
+  });
+});
+
+describe('copy from another workspace', () => {
+  it('copies one page in one atomic patch and leaves projects and bootstrap keys alone', async () => {
+    const editKey = `review.edit_posted_reply.${NORTHWIND.id}`;
+    seed({
+      harborline: overrides({ replyVoice: 'friendly', defaultBranchPrefix: 'hl' }),
+      northwind: overrides({ replyVoice: 'formal', resolveOnGithub: false, roleModels: {} }),
+      settings: {
+        [editKey]: '0',
+        [`bootstrap.phase.${'proj-northwind'}`]: 'publish',
+      },
+    });
+    useAppStore.setState({
+      projects: [aProject({ id: 'proj-northwind' as ProjectId, workspaceId: NORTHWIND.id })],
+    });
+    renderPage({ section: 'review-replies' });
+
+    fireEvent.click(
+      within(pageMenu('Review replies')).getByRole('menuitem', { name: /Copy from/ }),
+    );
+    const flow = screen.getByRole('region', { name: 'Copy settings from another workspace' });
+    fireEvent.click(await within(flow).findByRole('radio', { name: /Northwind/ }));
+    fireEvent.click(within(flow).getByRole('button', { name: 'Preview changes' }));
+
+    expect(flow.textContent).toContain('Will change 3 settings on 1 page.');
+    within(flow).getByText(
+      'Voice: Friendly → Formal, Resolve the thread after replying: On → Off, 1 more',
+    );
+    expect(flow.textContent).toContain('Stays: projects, folders, accounts, permission history.');
+    fireEvent.click(within(flow).getByRole('button', { name: 'Copy 3 settings' }));
+
+    await screen.findByText('Copied 3 settings from Northwind.');
+    expect(savedOverrides()).toEqual([
+      {
+        ...EMPTY_OVERRIDES,
+        replyVoice: 'formal',
+        resolveOnGithub: false,
+        defaultBranchPrefix: 'hl',
+      },
+    ]);
+    const settingWrites = storySpies.setSetting.mock.calls.map((call: ReadonlyArray<unknown>) =>
+      String(call[1]),
+    );
+    expect(settingWrites).toEqual([`review.edit_posted_reply.${HARBORLINE.id}`]);
+    expect(useAppStore.getState().projects).toHaveLength(1);
   });
 
-  it('counts the active sessions it stops when the workspace is current', () => {
-    state.currentWorkspaceId = 'ws-1';
-    state.sessions = [
-      aSession({ state: { kind: 'running', runId: 'r-1' as ProviderRunId, startedAt: TEST_NOW } }),
-      aSession({ state: { kind: 'running', runId: 'r-2' as ProviderRunId, startedAt: TEST_NOW } }),
-      aSession(),
-    ];
-    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /disconnect/i }));
+  it('copies the whole workspace from the home with a preview per page', async () => {
+    seed({
+      northwind: overrides({ defaultBranchPrefix: 'nw', afterMerge: 'ask', replyVoice: 'formal' }),
+    });
+    render(
+      <ToastProvider>
+        <SettingsHome groups={[WORKSPACE_GROUP]} workspaceId={HARBORLINE.id} onOpen={vi.fn()} />
+      </ToastProvider>,
+    );
 
+    fireEvent.click(screen.getByRole('button', { name: /Copy settings from/ }));
+    const flow = screen.getByRole('region', { name: 'Copy settings from another workspace' });
+    fireEvent.click(await within(flow).findByRole('radio', { name: /Northwind/ }));
+    fireEvent.click(within(flow).getByRole('button', { name: 'Preview changes' }));
+
+    expect(flow.textContent).toContain('Will change 3 settings on 3 pages.');
+    ['New sessions', 'After merge', 'Review replies'].forEach((page) =>
+      within(flow).getByRole('checkbox', { name: `Include ${page}` }),
+    );
+    fireEvent.click(within(flow).getByRole('checkbox', { name: 'Include After merge' }));
+    fireEvent.click(within(flow).getByRole('button', { name: 'Copy 2 settings' }));
+
+    await screen.findByText('Copied 2 settings from Northwind.');
+    expect(savedOverrides()).toEqual([
+      { ...EMPTY_OVERRIDES, defaultBranchPrefix: 'nw', replyVoice: 'formal' },
+    ]);
+  });
+});
+
+describe('dev project', () => {
+  it('converts a plain folder inline on Projects, never in a dialog', () => {
+    useAppStore.setState({
+      projects: [
+        aProject({
+          id: 'proj-runbooks' as ProjectId,
+          workspaceId: HARBORLINE.id,
+          name: 'runbooks',
+          kind: 'folder',
+          rootPath: '/work/harborline/runbooks',
+        }),
+      ],
+    });
+    renderPage({ section: 'dev-project' });
+
+    const region = screen.getByRole('region', { name: 'Turn this into a dev project' });
+    expect(screen.queryByRole('dialog')).toBeNull();
     expect(
-      screen.getByRole('group', { name: 'Disconnect billing and stop 2 active sessions?' }),
+      within(region).getByText(/Git starts tracking \/work\/harborline\/runbooks/),
     ).toBeDefined();
-  });
 
-  it('counts a session waiting on an approval and one deciding its next step', () => {
-    const waiting = aSession();
-    const agent = anAgent({ sessionId: waiting.id });
-    const run = aWorkflowRun();
-    state.currentWorkspaceId = 'ws-1';
-    state.sessions = [waiting, aSession({ workflowRuns: [run] }), aSession()];
-    state.sessionPhaseRuns = { [waiting.id]: [agent] };
-    state.agentTurnState = {
-      [agent.id]: { kind: 'blocked', runId: 'r-1' as ProviderRunId, blockedAt: TEST_NOW },
-    };
-    state.orchestratingWorkflowRuns = { [run.id]: true };
-    render(<WorkspaceScopePanel workspaceId={'ws-1' as WorkspaceId} requestClose={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /disconnect/i }));
-
-    expect(
-      screen.getByRole('group', { name: 'Disconnect billing and stop 2 active sessions?' }),
-    ).toBeDefined();
-  });
-
-  it('claims no stopped sessions for a workspace that is not current', () => {
-    state.currentWorkspaceId = 'ws-2';
-    state.sessions = [
-      aSession({ state: { kind: 'running', runId: 'r-1' as ProviderRunId, startedAt: TEST_NOW } }),
-    ];
-    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /disconnect/i }));
-
-    expect(screen.getByRole('group', { name: 'Disconnect billing?' })).toBeDefined();
-  });
-
-  it('hides the leftover folders notice when there is nothing to clean', () => {
-    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
-    expect(screen.queryByText(/left on disk/i)).toBeNull();
-  });
-
-  it('points the leftover folders to Storage filtered on this workspace', () => {
-    state.orphanWorktrees = {
-      'ws-1': [{ path: '/repo/.goodboy/worktrees/gb-ghost', name: 'gb-ghost' }],
-    };
-    const opened = vi.fn();
-    window.addEventListener('goodboy:open-settings', opened);
-    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
-
-    expect(screen.getByText('1 session folder from this workspace is left on disk.')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Review in Storage' }));
-
-    expect(state.focusStorage).toHaveBeenCalledWith({ filter: 'review' });
-    expect(state.setStorageScope).toHaveBeenCalledWith({ kind: 'workspace', id: 'ws-1' });
-    expect(opened).toHaveBeenCalledTimes(1);
-    window.removeEventListener('goodboy:open-settings', opened);
+    fireEvent.click(screen.getByRole('button', { name: 'Hide' }));
+    expect(screen.queryByRole('region', { name: 'Turn this into a dev project' })).toBeNull();
+    act(() => undefined);
   });
 });

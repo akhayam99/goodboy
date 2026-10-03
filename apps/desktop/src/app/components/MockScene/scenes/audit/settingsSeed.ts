@@ -1,4 +1,5 @@
 import type {
+  ClaudePermissionMode,
   MountId,
   OverrideSettings,
   Project,
@@ -30,7 +31,7 @@ const SETTINGS_OVERRIDES: OverrideSettings = {
   parallelAgents: true,
   providerPool: null,
   attributionFooter: true,
-  replyVoice: null,
+  replyVoice: 'friendly',
   replyStyleNote: null,
   replyTemplateFixed: null,
   replyTemplateNoChange: null,
@@ -53,6 +54,52 @@ export const SETTINGS_WORKSPACE: Workspace = {
   overrides: SETTINGS_OVERRIDES,
   createdAt: SETTINGS_NOW,
   updatedAt: SETTINGS_NOW,
+};
+
+const NORTHWIND_ID = 'mock-settings-workspace-northwind' as WorkspaceId;
+const ACME_ID = 'mock-settings-workspace-acme' as WorkspaceId;
+
+const NORTHWIND_OVERRIDES: OverrideSettings = {
+  ...SETTINGS_OVERRIDES,
+  defaultBranchPrefix: 'nw',
+  defaultVerbosity: 'brief',
+  parallelAgents: false,
+  afterMerge: 'ask',
+  replyVoice: 'formal',
+  resolveOnGithub: false,
+  resolveCommitStyle: 'fixup',
+};
+
+const ACME_OVERRIDES: OverrideSettings = {
+  ...SETTINGS_OVERRIDES,
+  defaultBranchPrefix: 'acme',
+  replyVoice: null,
+  defaultVerbosity: 'verbose',
+};
+
+const SIBLING_WORKSPACES: ReadonlyArray<Workspace> = [
+  {
+    id: NORTHWIND_ID,
+    name: 'Northwind',
+    slug: 'northwind',
+    overrides: NORTHWIND_OVERRIDES,
+    defaultPermissionMode: 'acceptEdits',
+    createdAt: SETTINGS_NOW,
+    updatedAt: SETTINGS_NOW,
+  },
+  {
+    id: ACME_ID,
+    name: 'Acme',
+    slug: 'acme',
+    overrides: ACME_OVERRIDES,
+    createdAt: SETTINGS_NOW,
+    updatedAt: SETTINGS_NOW,
+  },
+];
+
+const SIBLING_OVERRIDES: Readonly<Record<WorkspaceId, OverrideSettings>> = {
+  [NORTHWIND_ID]: NORTHWIND_OVERRIDES,
+  [ACME_ID]: ACME_OVERRIDES,
 };
 
 type ProjectParams = {
@@ -234,10 +281,45 @@ export const SETTINGS_STORAGE_FOLDERS: ReadonlyArray<StorageFolder> = [
 
 export const seedSettingsBase = (): void => {
   useAppStore.setState({
-    workspaces: [SETTINGS_WORKSPACE],
+    workspaces: [SETTINGS_WORKSPACE, ...SIBLING_WORKSPACES],
     currentWorkspaceId: SETTINGS_WORKSPACE_ID,
     projects: [...SETTINGS_PROJECTS],
     workspaceOverrides: { [SETTINGS_WORKSPACE_ID]: SETTINGS_OVERRIDES },
+    loadWorkspaceOverrides: async (workspaceId: WorkspaceId) => {
+      const overrides = SIBLING_OVERRIDES[workspaceId];
+      if (overrides === undefined) {
+        return;
+      }
+      useAppStore.setState((state) => ({
+        workspaceOverrides: { ...state.workspaceOverrides, [workspaceId]: overrides },
+      }));
+    },
+    setWorkspaceOverrides: async (workspaceId: WorkspaceId, overrides: OverrideSettings) => {
+      useAppStore.setState((state) => ({
+        workspaceOverrides: { ...state.workspaceOverrides, [workspaceId]: overrides },
+      }));
+    },
+    setWorkspacePermissionDefault: async ({
+      workspaceId,
+      mode,
+    }: {
+      readonly workspaceId: WorkspaceId;
+      readonly mode: ClaudePermissionMode;
+    }) => {
+      const workspace = useAppStore
+        .getState()
+        .workspaces.find((candidate) => candidate.id === workspaceId);
+      if (workspace === undefined) {
+        throw new Error(`workspace not found: ${workspaceId}`);
+      }
+      const updated: Workspace = { ...workspace, defaultPermissionMode: mode };
+      useAppStore.setState((state) => ({
+        workspaces: state.workspaces.map((candidate) =>
+          candidate.id === workspaceId ? updated : candidate,
+        ),
+      }));
+      return updated;
+    },
     providers: SETTINGS_PROVIDERS,
     refreshProviders: async () => undefined,
     detectedEditors: [

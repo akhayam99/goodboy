@@ -235,9 +235,8 @@ describe('WorkspaceProjectsSection', () => {
     ];
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
-    expect(screen.getByRole('heading', { level: 2, name: /projects/i }).textContent).toBe(
-      'Projects1',
-    );
+    const heading = screen.getByRole('heading', { level: 2, name: 'Projects' });
+    expect(heading.parentElement?.textContent).toBe('Projects1');
     expect(screen.queryByText('/repos/ledger-core')).toBeNull();
     expect(screen.getByText('All projects')).toBeDefined();
     expect(screen.getByRole('img', { name: 'Repository' })).toBeDefined();

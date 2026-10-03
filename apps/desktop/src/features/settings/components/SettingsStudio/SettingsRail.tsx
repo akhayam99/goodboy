@@ -1,14 +1,13 @@
 import { PANE_RHYTHM, Reveal, StatusRailItem, cn } from '@goodboy/ui';
 import type { SettingsPageScope, SettingsScopeChange } from '../../settingsFocus';
-import type { AppSection } from './appSections';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { SettingsGroup } from './settingsDirectory';
-import { SettingsRailAppGroup } from './SettingsRailAppGroup';
+import { SettingsRailPageGroup } from './SettingsRailPageGroup';
 import { isNestedScope, type NestedScope } from './settingsScopes';
 
 type Props = {
   readonly scope: SettingsPageScope;
-  readonly appSection: AppSection;
+  readonly pageKey: string | null;
   readonly groups: ReadonlyArray<SettingsGroup>;
   readonly nestedSlot: Readonly<Record<NestedScope, (element: HTMLDivElement | null) => void>>;
   readonly onNestedClosed: (params: { readonly scope: NestedScope }) => void;
@@ -17,7 +16,7 @@ type Props = {
 
 export const SettingsRail = ({
   scope,
-  appSection,
+  pageKey,
   groups,
   nestedSlot,
   onNestedClosed,
@@ -25,47 +24,41 @@ export const SettingsRail = ({
 }: Props) => (
   <nav aria-label="Settings scopes" className={`flex flex-col gap-3 ${PANE_RHYTHM.navRail.body}`}>
     {groups
-      .filter((group) => group.scope === 'app')
+      .filter((group) => !isNestedScope(group.scope))
       .map((group) => (
-        <SettingsRailAppGroup
+        <SettingsRailPageGroup
           key={group.scope}
           group={group}
-          scope={scope}
-          appSection={appSection}
+          isCurrentGroup={scope === group.scope}
+          pageKey={pageKey}
           onSelect={onSelect}
         />
       ))}
     <div className="flex flex-col gap-0.5">
-      {groups
-        .filter((group) => group.scope !== 'app')
-        .map((group) => {
-          const Icon = CONCEPT_ICONS[group.concept];
-          const isActive = scope === group.scope;
-          const nested = isNestedScope(group.scope) ? group.scope : null;
-          return (
-            <div
-              key={group.scope}
-              data-settings-page={nested === null ? group.scope : undefined}
-              data-settings-group={group.scope}
-              className="flex flex-col gap-0.5"
-            >
-              <StatusRailItem
-                icon={<Icon size={ICON_SIZE.control} />}
-                label={group.label}
-                subtitle={group.subtitle}
-                tone={group.tone}
-                selected={isActive && nested === null}
-                onClick={() => onSelect({ scope: group.scope })}
-                className={cn(isActive && 'text-foreground')}
-              />
-              {nested === null ? null : (
-                <Reveal open={isActive} onClosed={() => onNestedClosed({ scope: nested })}>
-                  <div ref={nestedSlot[nested]} />
-                </Reveal>
-              )}
-            </div>
-          );
-        })}
+      {groups.map((group) => {
+        if (!isNestedScope(group.scope)) {
+          return null;
+        }
+        const nested = group.scope;
+        const Icon = CONCEPT_ICONS[group.concept];
+        const isActive = scope === nested;
+        return (
+          <div key={nested} data-settings-group={nested} className="flex flex-col gap-0.5">
+            <StatusRailItem
+              icon={<Icon size={ICON_SIZE.control} />}
+              label={group.label}
+              subtitle={group.subtitle}
+              tone={group.tone}
+              selected={false}
+              onClick={() => onSelect({ scope: nested })}
+              className={cn(isActive && 'text-foreground')}
+            />
+            <Reveal open={isActive} onClosed={() => onNestedClosed({ scope: nested })}>
+              <div ref={nestedSlot[nested]} />
+            </Reveal>
+          </div>
+        );
+      })}
     </div>
   </nav>
 );

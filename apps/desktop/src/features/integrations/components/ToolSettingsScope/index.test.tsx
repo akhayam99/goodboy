@@ -182,13 +182,13 @@ describe('ToolSettingsScope', () => {
         .getAllByRole('button')
         .map((row) => row.textContent),
     ).toEqual([
-      'GitHubnot connected',
-      'GitLabnot connected',
-      'Bitbucketnot connected',
-      'Linearnot connected',
-      'Jiranot connected',
-      'Sentrynot connected',
-      'Slacknot connected',
+      'GitHubNot connected',
+      'GitLabNot connected',
+      'BitbucketNot connected',
+      'LinearNot connected',
+      'JiraNot connected',
+      'SentryNot connected',
+      'SlackNot connected',
     ]);
   });
 
@@ -203,7 +203,7 @@ describe('ToolSettingsScope', () => {
     await act(async () => {
       render(<ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} />);
     });
-    fireEvent.click(screen.getByRole('button', { name: `${label} not connected` }));
+    fireEvent.click(screen.getByRole('button', { name: `${label} Not connected` }));
     expect(screen.getByLabelText(field).id).toBe(id);
     expect(screen.getByLabelText(field)).toBe(document.activeElement);
     expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual([label]);
@@ -217,7 +217,7 @@ describe('ToolSettingsScope', () => {
     });
     expect(screen.getByLabelText('User token')).toBeDefined();
     expect(
-      screen.getByRole('button', { name: 'Slack not connected' }).getAttribute('aria-current'),
+      screen.getByRole('button', { name: 'Slack Not connected' }).getAttribute('aria-current'),
     ).toBe('true');
   });
 
@@ -337,7 +337,7 @@ describe('ToolSettingsScope', () => {
     });
     await waitFor(() => expect(screen.getByLabelText('Personal API key').id).toBe('gitlab-pat'));
     expect(
-      screen.getByRole('button', { name: 'GitLab not connected' }).getAttribute('aria-current'),
+      screen.getByRole('button', { name: 'GitLab Not connected' }).getAttribute('aria-current'),
     ).toBe('true');
   });
 
@@ -521,7 +521,7 @@ describe('ToolSettingsScope', () => {
       );
     });
     await screen.findByRole('button', { name: 'Use a different key' });
-    screen.getByRole('button', { name: 'GitHub not connected' }).focus();
+    screen.getByRole('button', { name: 'GitHub Not connected' }).focus();
     await user.tab();
     await user.keyboard('{Enter}');
     expect(screen.getByLabelText('Personal API key').id).toBe('gitlab-pat');
