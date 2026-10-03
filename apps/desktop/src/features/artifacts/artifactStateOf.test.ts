@@ -13,7 +13,7 @@ import { planPartRows } from '../plans/components/PlanParts/planPartRows';
 import { planStateInputsOf } from '../plans/planStateInputs';
 import type { ArtifactGeneration } from './artifactCollection';
 import { buildArtifactListRows } from './artifactListRows';
-import { ARTIFACT_STATE_PRESENTATION, artifactStateOf, generationStateOf } from './artifactStateOf';
+import { artifactStateOf, generationStateOf } from './artifactStateOf';
 
 const SESSION_ID = 'session-1' as SessionId;
 const NO_ASKING: ReadonlySet<AgentId> = new Set();
@@ -99,8 +99,50 @@ describe('artifactStateOf', () => {
   });
 
   it('gives every state a sentence-case word', () => {
-    const labels = Object.values(ARTIFACT_STATE_PRESENTATION).map((state) => state.label);
+    const states = [
+      ...(['plan', 'report', 'wireframe'] as const).flatMap((kind) =>
+        (['active', 'consumed', 'superseded', 'discarded'] as const).map((status) =>
+          artifactStateOf({ ...NO_PLAN, kind, status, isOpened: false }),
+        ),
+      ),
+      artifactStateOf({
+        ...NO_PLAN,
+        kind: 'plan',
+        status: 'active',
+        isOpened: true,
+        openQuestionCount: 1,
+      }),
+      artifactStateOf({
+        ...NO_PLAN,
+        kind: 'plan',
+        status: 'consumed',
+        isOpened: true,
+        progress: { kind: 'running', part: 1, total: 2 },
+        hasPartAgents: true,
+      }),
+      artifactStateOf({
+        ...NO_PLAN,
+        kind: 'plan',
+        status: 'consumed',
+        isOpened: true,
+        progress: { kind: 'failed', part: 1, total: 2 },
+        hasPartAgents: true,
+      }),
+    ];
+    const labels = states.flatMap((state) => (state === null ? [] : [state.label]));
     expect(labels.filter((label) => !/^[A-Z]/.test(label))).toEqual([]);
+    expect(new Set(labels)).toEqual(
+      new Set([
+        'Ready to run',
+        'Ran',
+        'Replaced',
+        'Deleted',
+        'New',
+        'Needs you',
+        'Running',
+        'Partly ran',
+      ]),
+    );
   });
 });
 

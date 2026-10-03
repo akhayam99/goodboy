@@ -15,7 +15,7 @@ import { ARTIFACT_GENERATION_PRESENTATION, type ArtifactGeneration } from './art
 import { ARTIFACT_KIND_MARKER_LABEL } from './artifactPresentation';
 import type { PlanStateInputs } from '../plans/planStateInputs';
 
-export type ArtifactStateKey =
+type ArtifactStateKey =
   'needs' | 'ready' | 'running' | 'ran' | 'partly' | 'stopped' | 'replaced' | 'deleted' | 'new';
 
 export type ArtifactGroup = 'needs' | 'ready' | 'running' | 'ran' | 'deleted';
@@ -28,7 +28,7 @@ export type ArtifactState = StatePresentation & {
 
 type Base = Omit<ArtifactState, 'detail'>;
 
-export const ARTIFACT_STATE_PRESENTATION = {
+const ARTIFACT_STATE_PRESENTATION = {
   needs: {
     key: 'needs',
     label: 'Needs you',

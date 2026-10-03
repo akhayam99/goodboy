@@ -186,7 +186,7 @@ export const buildArtifactListRows = ({
       .map((artifact) => documentRow({ artifact })),
   ].sort(byNewest);
 
-export const ARTIFACT_GROUP_ORDER: ReadonlyArray<ArtifactGroup> = [
+const ARTIFACT_GROUP_ORDER: ReadonlyArray<ArtifactGroup> = [
   'needs',
   'ready',
   'running',
