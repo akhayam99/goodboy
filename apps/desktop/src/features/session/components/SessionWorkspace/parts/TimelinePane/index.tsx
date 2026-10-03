@@ -60,6 +60,12 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
   const { stream, entries, visibleEntries, shownQuestions } = rows;
   const { isNeedsYou } = activity;
   const shownQuestionsKey = [...shownQuestions].sort().join(' ');
+  const shownRowIds = useRef<ReadonlySet<string>>(new Set());
+  const wasShown = shownRowIds.current;
+
+  useLayoutEffect(() => {
+    shownRowIds.current = new Set(rows.laidOutItems.map((item) => item.id));
+  }, [rows.laidOutItems]);
 
   useLayoutEffect(() => {
     onShownQuestionsChange?.(shownQuestions);
@@ -173,6 +179,7 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
                       key={item.id}
                       groupId={slot.groupId}
                       isLeaving={explode.leavingIds.has(slot.groupId)}
+                      isShown={wasShown.has(item.id)}
                       onSettled={explode.settle}
                     >
                       <TimelineRow {...props} />

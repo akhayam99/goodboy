@@ -588,6 +588,16 @@ sits on the lane of its parent agent, above the parent, at the start of its
 earliest subagent; its children explode upward on a lane nested in that one. A
 subagent that asks you a question counts the same way (`groupChild` ask).
 
+A finished workflow run or agent chain with three rows or more is a third group
+kind, `steps`: the run row itself is the group row, with its own node, the
+summary from `groupSummary` ("8 steps · 1 question answered") after the title,
+the hint "Open ↵" or "Fold ↵", and the chevron. A run that asks you something,
+failed or is still running is never folded. Every group row fills the routing,
+time and cost columns with the totals of what it holds (`groupTotals`), counted
+once, and its time is fixed: a group row never reads the shared work clock. A
+row already on screen never grows again: when a run finishes under the pointer
+its rows join the group already open.
+
 A resolver takes its row state from the comment it fixes, not from the agent:
 the `review` reason carries the Review state and its word (Ready for you,
 Drafting, Pushed, Draft failed), with Review's tone and node. A comment that

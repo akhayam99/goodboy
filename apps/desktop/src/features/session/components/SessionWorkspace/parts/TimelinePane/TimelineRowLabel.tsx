@@ -27,6 +27,7 @@ import { TimelineRowWorktrees } from './TimelineRowWorktrees';
 import { resolveBatchTitle } from '../../../../timeline/resolveBatchSummary';
 import { subagentGroupTitle } from '../../../../timeline/subagentGroups';
 import { TimelineGroupLabel } from './TimelineGroupLabel';
+import { TimelineGroupSummaryLine } from './TimelineGroupSummaryLine';
 import { TimelineRunLabel } from './TimelineRunLabel';
 import { DiffStat } from '../../../DiffStat';
 
@@ -205,13 +206,20 @@ export const TimelineRowLabel = ({
 }: Props) => {
   const { entry, grade } = item;
   if (entry.kind === 'run') {
-    return <TimelineRunLabel entry={entry} isLaneLit={isLaneLit} isRevealed={isRevealed} />;
+    return (
+      <TimelineRunLabel
+        entry={entry}
+        summary={item.fold?.summary ?? null}
+        isLaneLit={isLaneLit}
+        isRevealed={isRevealed}
+      />
+    );
   }
   if (entry.kind === 'resolveBatch') {
     return (
       <TimelineGroupLabel
         title={resolveBatchTitle({ total: entry.summary.total, prNumber: entry.prNumber })}
-        parts={entry.summary.parts}
+        summary={entry.summary}
       />
     );
   }
@@ -219,7 +227,7 @@ export const TimelineRowLabel = ({
     return (
       <TimelineGroupLabel
         title={subagentGroupTitle({ total: entry.summary.total })}
-        parts={entry.summary.parts}
+        summary={entry.summary}
       />
     );
   }
@@ -247,7 +255,9 @@ export const TimelineRowLabel = ({
         title={detail === null ? title : `${title} · ${detail}`}
         className={cn(
           'flex items-center overflow-hidden',
-          isAgent ? cn(WORK_ROW.title, 'flex-1') : 'min-w-0',
+          isAgent
+            ? cn(WORK_ROW.title, item.fold === undefined ? 'flex-1' : 'max-w-3/5 shrink-0')
+            : 'min-w-0',
           isStep ? 'text-label' : 'text-body',
           emphasis === 'muted' || isQueued || grade === 'fact'
             ? 'text-muted-foreground'
@@ -290,6 +300,9 @@ export const TimelineRowLabel = ({
         <span className="self-center">
           <DiffStat additions={diffStat.additions} deletions={diffStat.deletions} />
         </span>
+      )}
+      {item.fold === undefined ? null : (
+        <TimelineGroupSummaryLine summary={item.fold.summary} className="flex-1" />
       )}
       {isAgent && <TimelineRowWorktrees names={worktrees} />}
       {isRevealed ? <RevealedRowTag /> : null}

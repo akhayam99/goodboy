@@ -37,6 +37,7 @@ import {
 } from './scenes/ArtifactCreationScenes';
 import { ActivityFilterScene, ActivityTimelineScene } from './scenes/ActivityScenes';
 import { ActivityRunScene } from './scenes/ActivityRunScene';
+import { ActivityRunFinishedScene } from './scenes/ActivityRunFinishedScene';
 import { ActivityResolvesScene } from './scenes/ActivityResolvesScene';
 import { ActivityQuestionScene } from './scenes/ActivityQuestionScene';
 import { ActivityOneSignalScene } from './scenes/ActivityOneSignalScene';
@@ -170,6 +171,7 @@ export const MOCK_SCENES = {
   activity: ActivityTimelineScene,
   'activity-filter': ActivityFilterScene,
   'activity-run': ActivityRunScene,
+  'activity-run-finished': ActivityRunFinishedScene,
   'activity-resolves': ActivityResolvesScene,
   'activity-question': ActivityQuestionScene,
   'activity-one-signal': ActivityOneSignalScene,

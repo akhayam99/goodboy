@@ -29,6 +29,7 @@ export type ExplodeGroups = {
   readonly set: (params: { readonly id: string; readonly isExpanded: boolean }) => void;
   readonly showAll: (params: IdParams) => void;
   readonly settle: (params: IdParams) => void;
+  readonly keepOpen: (params: { readonly ids: ReadonlyArray<string> }) => void;
 };
 
 export const useExplodeGroups = (): ExplodeGroups => {
@@ -62,5 +63,11 @@ export const useExplodeGroups = (): ExplodeGroups => {
     setFullIds((current) => withId({ ids: current, id }));
   }, []);
 
-  return { expandedIds, leavingIds, fullIds, set, showAll, settle: fold };
+  const keepOpen = useCallback(({ ids }: { readonly ids: ReadonlyArray<string> }) => {
+    setExpandedIds((current) =>
+      ids.every((id) => current.has(id)) ? current : new Set([...current, ...ids]),
+    );
+  }, []);
+
+  return { expandedIds, leavingIds, fullIds, set, showAll, settle: fold, keepOpen };
 };

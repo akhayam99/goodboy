@@ -1201,30 +1201,37 @@ const EXTERNAL_TASKS: ReadonlyArray<SessionExternalTask> = [
 
 const MINUTE_MS = 60_000;
 
-const TURN_SPANS: ReadonlyArray<MeasuredTurnSpan> = AGENTS.flatMap((agent) => {
-  if (agent.status !== 'completed' || agent.startedAt == null) {
-    return [];
-  }
-  const startedAtMs = Date.parse(agent.startedAt);
-  return [
-    {
-      agentId: agent.id,
-      parentAgentId: agent.parentAgentId ?? null,
-      agentStatus: agent.status,
-      workflowRunId: agent.workflowRunId ?? null,
-      isOrchestratedRunDone: false,
-      stepRole: 'implementer',
-      provider: agent.providerOverride ?? 'anthropic',
-      model: agent.modelOverride ?? 'claude-sonnet-5',
-      effort: null,
-      startedAtMs,
-      endedAtMs: startedAtMs + (2 + (agent.ordinal % 5)) * MINUTE_MS + 40_000,
-      endReason: 'succeeded',
-      costUsd: null,
-      touchedMountIds: null,
-    },
-  ];
-});
+const turnSpansOf = ({
+  agents,
+}: {
+  readonly agents: ReadonlyArray<Agent>;
+}): ReadonlyArray<MeasuredTurnSpan> =>
+  agents.flatMap((agent) => {
+    if (agent.status !== 'completed' || agent.startedAt == null) {
+      return [];
+    }
+    const startedAtMs = Date.parse(agent.startedAt);
+    return [
+      {
+        agentId: agent.id,
+        parentAgentId: agent.parentAgentId ?? null,
+        agentStatus: agent.status,
+        workflowRunId: agent.workflowRunId ?? null,
+        isOrchestratedRunDone: false,
+        stepRole: 'implementer',
+        provider: agent.providerOverride ?? 'anthropic',
+        model: agent.modelOverride ?? 'claude-sonnet-5',
+        effort: null,
+        startedAtMs,
+        endedAtMs: startedAtMs + (2 + (agent.ordinal % 5)) * MINUTE_MS + 40_000,
+        endReason: 'succeeded',
+        costUsd: null,
+        touchedMountIds: null,
+      },
+    ];
+  });
+
+const TURN_SPANS = turnSpansOf({ agents: AGENTS });
 
 const HISTORY_ROLES: ReadonlyArray<DurationSample['role']> = [
   'scout',
@@ -1435,6 +1442,51 @@ export const seedActivityRunScene = () => {
     navigate: () => undefined,
     loadConsumptionsForPlan: async () => undefined,
     loadAgentTranscript: async () => undefined,
+  });
+};
+
+const FINISHED_AT: Readonly<Record<string, { readonly from: string; readonly to: string }>> = {
+  [CONSOLE_BANNER_AGENT_ID]: { from: '09:40:00', to: '10:01:00' },
+  [BANNER_STATES_AGENT_ID]: { from: '09:45:00', to: '09:49:00' },
+  [CONSOLE_TESTS_AGENT_ID]: { from: '10:01:00', to: '10:04:00' },
+};
+
+const finishedAgent = ({ agent }: { readonly agent: Agent }): Agent => {
+  const span = FINISHED_AT[agent.id];
+  if (span === undefined) {
+    return agent;
+  }
+  return {
+    ...agent,
+    status: 'completed',
+    startedAt: at({ day: DAY_TWO, time: span.from }),
+    completedAt: at({ day: DAY_TWO, time: span.to }),
+    lastFinishedAt: at({ day: DAY_TWO, time: span.to }),
+    doneAt: at({ day: DAY_TWO, time: span.to }),
+    lastViewedAt: NOW,
+  };
+};
+
+export const finishActivityRuns = () => {
+  const agents = AGENTS.map((agent) => finishedAgent({ agent }));
+  useAppStore.setState({
+    sessions: [{ ...SESSION, state: { kind: 'idle', lastActivityAt: NOW } }],
+    sessionPhaseRuns: { [SESSION_ID]: agents },
+    agentTurnState: {},
+    sessionTurnSpans: { [SESSION_ID]: turnSpansOf({ agents }) },
+    sessionOpenQuestions: { [SESSION_ID]: [] },
+    sessionAnsweredQuestions: {
+      [SESSION_ID]: [
+        ...ANSWERED_QUESTIONS,
+        ...OPEN_QUESTIONS.map((question) => ({
+          ...question,
+          userAnswer: 'HTTP 502 and 503, Read timeouts past 30 seconds',
+          status: 'answered' as const,
+          answeredAt: at({ day: DAY_TWO, time: '10:00:00' }),
+        })),
+      ],
+    },
+    selectedAgentId: { [SESSION_ID]: null },
   });
 };
 
