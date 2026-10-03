@@ -65,6 +65,10 @@ Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from one page.
 
 Tell agents once who you are and how you like to work, in four short parts: **Your roles**, **About your work**, **How agents should work with you** and **Explain more when it touches**. **See who reads what** shows which role reads each part.
 
+### Settings home
+
+Find any setting from one page. Settings, its footer button, **⌘,** and the palette open on a home with **App**, **Workspace**, **Providers & models** and **Integrations** as cards, each page with its status line. Pick a page and the cards move into the rail, and the **Settings** crumb brings you back; a link that names a page skips the home. **Open with**, in General, picks the editor worktrees open in and the browser for links and artifacts. Drag the edge of a rail, or use the keys or a double click, to resize it, and each one remembers its width.
+
 **Also in this area**
 
 | Feature       | What it does for you                                           |

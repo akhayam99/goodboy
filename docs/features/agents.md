@@ -55,6 +55,10 @@ When an agent recommends another role, its transcript shows **Agent suggests** w
 
 Keep talking while an agent works. **Enter** queues your message for its next turn, **⌘Enter** interrupts and sends it now, and the queue survives a restart.
 
+### Message and document fields
+
+Write to an agent the same way everywhere. Chat, kickoff, answers, review replies, diff comments, the goal, guidance and workflow steps share one field with **Write** and **Preview**, markdown, and files by paste, drop or **Attach** where the field takes them. A message sends on **Enter** and adds a line on **⇧Enter**; a document adds a line on **Enter** and saves on **⌘Enter**. **Start agent** and the issue kickoff start on **Enter**, and review replies send on **⌘Enter**. **Keys from before 0.15.5**, in Settings, Shortcuts, brings back the old keys.
+
 ### Stop and Continue
 
 Stop an agent without losing its work. Stopping keeps what it wrote and offers **Continue**. An agent that was working when you reload, restart or update Goodboy keeps going: a reload finds it still running, and after a restart it picks up where it stopped, with a note in its chat. One that cannot pick up says **Stopped by restart** and offers **Resume**. When a restart stops several, **Resume all** in overview **Next steps**, or above a workflow's steps, brings them all back.
