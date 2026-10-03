@@ -114,11 +114,11 @@ dot.
 A kind always renders through `AgentKindChip`
 (`shared/components/AgentKindChip`), one tinted recipe at two densities:
 
-- `label` (default): the kind glyph and the name in the kind tone, at one fixed
-  width so a column of chips stays lined up (tree rows, the timeline, step and
-  library cards, question rows, the spend list, the quick actions). `label` can
-  change the text where a surface names the role instead of the kind.
-- `glyph`: the kind glyph alone in its tinted square, with the label in a
+- `label` (default): the app `Chip` at `3xs`, tinted in the kind tone, with
+  the kind glyph and the name, hugging its word (tree rows, the timeline, step
+  and library cards, question rows, the spend list, the quick actions). `label`
+  can change the text where a surface names the role instead of the kind.
+- `glyph`: the kind glyph alone in its tinted circle, with the label in a
   tooltip, for dense strips such as preset cards.
 
 A picker that already prints the kind name (the role select, the create-agent
@@ -219,6 +219,22 @@ glyph with `WORK_NODE_GLYPH_SIZE`, not `ICON_SIZE`, because every rail node is
 | Workflow        | `workflows`, `delete` when deleted        |
 | Decisions       | `decisions`                               |
 | Issue           | `IntegrationGlyph` for the issue provider |
+
+## Row states
+
+A quiet final state in the state slot of a work row is an icon in its tone
+(`ICON_SIZE.control`), with the word in the tooltip and the accessible name.
+The table is `statePresentation.ts` in `features/workTreeModel/`. States that
+ask you or report trouble stay words and have no icon.
+
+| State      | Glyph          |
+| ---------- | -------------- |
+| Pushed     | `push`         |
+| Resolved   | `CheckCheck`   |
+| Accepted   | `Check`        |
+| Reply only | `Reply`        |
+| Skipped    | `SkipForward`  |
+| Closed     | `runCancelled` |
 
 ## Suggestions
 

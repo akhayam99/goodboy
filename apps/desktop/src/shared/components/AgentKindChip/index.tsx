@@ -1,4 +1,4 @@
-import { Tooltip, cn } from '@goodboy/ui';
+import { Chip, Tooltip, cn } from '@goodboy/ui';
 import { agentKindPalette, type AgentKind } from '../../../features/session/agent-kind';
 
 type AgentKindChipDensity = 'label' | 'glyph';
@@ -33,7 +33,7 @@ export const AgentKindChip = ({
           role="img"
           aria-label={title ?? text}
           className={cn(
-            'inline-flex size-4.5 items-center justify-center rounded-sm',
+            'inline-flex size-4.5 items-center justify-center rounded-full',
             palette.fg,
             'bg-current/12',
             className,
@@ -46,16 +46,19 @@ export const AgentKindChip = ({
   }
 
   return (
-    <span
+    <Chip
+      tone="neutral"
+      size="3xs"
+      icon={<Icon size={KIND_ICON_SIZE} aria-hidden className="shrink-0" />}
+      label={text}
+      title={title}
       className={cn(
-        'inline-flex h-4.5 w-24 shrink-0 items-center gap-1 rounded-sm px-1.5 text-secondary',
-        muted ? 'bg-muted text-faint-foreground' : [palette.fg, 'bg-current/12'],
+        'shrink-0 whitespace-nowrap',
+        muted === true
+          ? 'bg-muted text-faint-foreground'
+          : [palette.fg, 'bg-current/12 ring-current/25'],
         className,
       )}
-      title={title}
-    >
-      <Icon size={KIND_ICON_SIZE} aria-hidden className="shrink-0" />
-      <span className="min-w-0 truncate">{text}</span>
-    </span>
+    />
   );
 };

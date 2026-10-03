@@ -9,6 +9,8 @@ import type {
   ResolveStage,
   ResolveThread,
   ResolveThreadState,
+  SessionEvent,
+  SessionEventId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { NOW, SESSION, seedActivityRunScene } from './activityRunSeed';
@@ -294,6 +296,23 @@ const buildAttempt = ({
   launchChoice: null,
 });
 
+const CONTEXT_EVENTS: ReadonlyArray<SessionEvent> = [
+  {
+    id: 'mock-resolves-event-context-retry' as SessionEventId,
+    sessionId: SESSION.id,
+    kind: 'decisions_changed',
+    payload: { added: 1, replaced: 2 },
+    createdAt: isoOf({ minutesAgo: 34 }),
+  },
+  {
+    id: 'mock-resolves-event-context-logging' as SessionEventId,
+    sessionId: SESSION.id,
+    kind: 'decisions_changed',
+    payload: { replaced: 2 },
+    createdAt: isoOf({ minutesAgo: 42 }),
+  },
+];
+
 export const seedActivityResolvesScene = (): void => {
   seedActivityRunScene();
   const state = useAppStore.getState();
@@ -321,6 +340,10 @@ export const seedActivityResolvesScene = (): void => {
     sessionPhaseRuns: {
       ...state.sessionPhaseRuns,
       [SESSION.id]: [...agents, ...(state.sessionPhaseRuns[SESSION.id] ?? [])],
+    },
+    sessionEvents: {
+      ...state.sessionEvents,
+      [SESSION.id]: [...CONTEXT_EVENTS, ...(state.sessionEvents?.[SESSION.id] ?? [])],
     },
     sessionResolveQueueItems: { ...state.sessionResolveQueueItems, [SESSION.id]: items },
     sessionResolveAttempts: { ...state.sessionResolveAttempts, [SESSION.id]: attempts },

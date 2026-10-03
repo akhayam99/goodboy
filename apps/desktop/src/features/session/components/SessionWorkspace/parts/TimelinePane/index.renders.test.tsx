@@ -234,6 +234,50 @@ describe('TimelinePane, row renders', () => {
     expect(renders.day).toBe(0);
   });
 
+  it('re-renders only the rows a group changes when it opens among two hundred rows', () => {
+    const lead = {
+      id: 'lead',
+      sessionId: 'session-1',
+      ordinal: 500,
+      name: 'Implement the banner',
+      status: 'completed',
+      startedAt: '2026-08-21T10:00:00.000Z',
+      completedAt: '2026-08-21T10:20:00.000Z',
+    };
+    const children = [1, 2, 3].map((index) => ({
+      id: `sub-${index}`,
+      sessionId: 'session-1',
+      ordinal: 500 + index,
+      name: `Scout part ${index}`,
+      parentAgentId: 'lead',
+      status: 'completed',
+      startedAt: `2026-08-21T10:0${index}:00.000Z`,
+      completedAt: `2026-08-21T10:0${index}:30.000Z`,
+    }));
+    const many = Array.from({ length: 200 }, (_, index) => ({
+      id: `many-${index}`,
+      sessionId: 'session-1',
+      ordinal: -(index + 10),
+      name: `Older agent ${index}`,
+      status: 'completed',
+      startedAt: new Date(Date.parse('2026-08-19T10:00:00.000Z') - index * 60_000).toISOString(),
+      completedAt: new Date(Date.parse('2026-08-19T10:00:30.000Z') - index * 60_000).toISOString(),
+    }));
+    attachedRuns.list = [];
+    storeState.sessionPhaseRuns = { 'session-1': [lead, ...children, ...many] };
+    const view = render(pane({ actions: null }));
+    expect(view.container.querySelectorAll('[data-row-id]').length).toBe(202);
+    renders.entry = 0;
+    renders.now = 0;
+    renders.day = 0;
+
+    fireEvent.click(screen.getByRole('button', { name: /3 subagents/ }));
+
+    expect(view.container.querySelectorAll('[data-row-id]').length).toBe(205);
+    expect(renders.entry).toBeLessThanOrEqual(6);
+    expect(renders.day).toBe(0);
+  });
+
   it('re-renders the four rows on the lane again when the pointer leaves it', () => {
     render(pane({ actions: null }));
     const [first] = screen.getAllByTestId('timeline-lane-hit');

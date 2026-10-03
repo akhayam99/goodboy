@@ -1,44 +1,62 @@
-// @vitest-environment node
-import { describe, expect, it, vi } from 'vitest';
-import type { AgentId, ProviderRunId, SessionId, TurnEvent } from '@goodboy/types';
-import { allowAndContinue } from './allowAndContinue';
-import type { GetFn, SetFn } from './types';
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModuleMock());
+vi.mock('../../../shared/lib/db', async () =>
+  (await import('../../storyHarness')).dbLibModuleMock(),
+);
+vi.mock('../../../features/permissions/permissions', async () =>
+  (await import('../../storyHarness')).permissionsModuleMock(),
+);
 
-const SESSION_ID = 'session-1' as SessionId;
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AgentId, ProviderRunId, SessionId, TurnEvent } from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../storyHarness';
+
 const AGENT_ID = 'agent-1' as AgentId;
 const RUN_ID = 'run-1' as ProviderRunId;
+const session = aSession({ goal: 'Refund the duplicate payout' });
+const SESSION_ID: SessionId = session.id;
 
-type Harness = {
-  readonly set: SetFn;
-  readonly get: GetFn;
-  readonly appendTurnEvent: ReturnType<typeof vi.fn>;
-  readonly sendTurn: ReturnType<typeof vi.fn>;
-  readonly state: { volatilePermissionAllows: ReadonlySet<string> };
-};
+type Resumed = { readonly sessionId: SessionId; readonly permissionOnceAllow?: string };
 
-const createHarness = (): Harness => {
-  const state = { volatilePermissionAllows: new Set<string>() };
-  const appendTurnEvent = vi.fn();
-  const sendTurn = vi.fn(async () => undefined);
-  const set = ((update: unknown) => {
-    if (typeof update === 'function') {
-      Object.assign(state, (update as (s: typeof state) => Partial<typeof state>)(state));
-      return;
-    }
-    Object.assign(state, update);
-  }) as SetFn;
-  const get = (() => ({ ...state, appendTurnEvent, sendTurn })) as unknown as GetFn;
-  return { set, get, appendTurnEvent, sendTurn, state };
-};
+let useAppStore: StoryStore;
+let resumed: Resumed[];
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+  resumed = [];
+  useAppStore.setState({
+    sessions: [session],
+    sendTurn: async (input) => {
+      resumed.push({ sessionId: input.sessionId, permissionOnceAllow: input.permissionOnceAllow });
+      return { blockedOverBudget: false };
+    },
+  });
+});
+
+const decisionsOf = (): ReadonlyArray<Extract<TurnEvent, { kind: 'permission_decision' }>> =>
+  (useAppStore.getState().transcripts[AGENT_ID] ?? []).filter(
+    (event): event is Extract<TurnEvent, { kind: 'permission_decision' }> =>
+      event.kind === 'permission_decision',
+  );
 
 describe('allowAndContinue', () => {
   it('grants exactly the requested call and resumes the turn with the exact-command pattern', async () => {
-    const { set, get, sendTurn } = createHarness();
-
-    await allowAndContinue(
-      set,
-      get,
-    )({
+    await useAppStore.getState().allowAndContinue({
       sessionId: SESSION_ID,
       agentId: AGENT_ID,
       toolUseId: 'tu-1',
@@ -47,22 +65,15 @@ describe('allowAndContinue', () => {
       runId: RUN_ID,
     });
 
-    expect(sendTurn).toHaveBeenCalledWith(
-      expect.objectContaining({
-        sessionId: SESSION_ID,
-        agentId: AGENT_ID,
-        permissionOnceAllow: 'Bash(pnpm test --filter ledger-core)',
-      }),
-    );
+    expect(useAppStore.getState().volatilePermissionAllows.has('tu-1')).toBe(true);
+    expect(useAppStore.getState().volatilePermissionAllows.size).toBe(1);
+    expect(resumed).toEqual([
+      { sessionId: SESSION_ID, permissionOnceAllow: 'Bash(pnpm test --filter ledger-core)' },
+    ]);
   });
 
-  it('appends a permission_decision(once) event before resuming', async () => {
-    const { set, get, appendTurnEvent } = createHarness();
-
-    await allowAndContinue(
-      set,
-      get,
-    )({
+  it('records a once decision in the transcript before resuming', async () => {
+    await useAppStore.getState().allowAndContinue({
       sessionId: SESSION_ID,
       agentId: AGENT_ID,
       toolUseId: 'tu-2',
@@ -71,15 +82,9 @@ describe('allowAndContinue', () => {
       runId: RUN_ID,
     });
 
-    expect(appendTurnEvent).toHaveBeenCalledWith(
-      AGENT_ID,
-      SESSION_ID,
-      expect.objectContaining({
-        kind: 'permission_decision',
-        toolUseId: 'tu-2',
-        decision: 'allow',
-        scope: 'once',
-      } satisfies Partial<Extract<TurnEvent, { kind: 'permission_decision' }>>),
-    );
+    expect(
+      decisionsOf().map(({ toolUseId, decision, scope }) => ({ toolUseId, decision, scope })),
+    ).toEqual([{ toolUseId: 'tu-2', decision: 'allow', scope: 'once' }]);
+    expect(resumed).toHaveLength(1);
   });
 });

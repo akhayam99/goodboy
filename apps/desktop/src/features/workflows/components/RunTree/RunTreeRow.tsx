@@ -47,7 +47,7 @@ type AskParams = {
   readonly ask: RowAsk | null;
 };
 
-export const answerOf = ({ ask }: AskParams): { readonly question: OpenQuestion | null } | null => {
+const answerOf = ({ ask }: AskParams): { readonly question: OpenQuestion | null } | null => {
   if (ask == null) {
     return null;
   }
@@ -142,7 +142,7 @@ export const RunTreeRow = ({
                 title={agent.name}
                 className={cn(
                   WORK_ROW.title,
-                  'truncate',
+                  'flex-1 truncate',
                   isNested ? 'text-label' : 'text-body',
                   item.rowState.phase === 'queued'
                     ? 'text-muted-foreground'
@@ -158,8 +158,8 @@ export const RunTreeRow = ({
                   {`answering for ${answersFor}`}
                 </span>
               )}
-              <TimelineRowStateLine state={item.rowState} note={work.time?.note ?? null} />
             </span>
+            <TimelineRowStateLine state={item.rowState} note={work.time?.note ?? null} />
             <TimelineAgentMeta work={work} costUsd={costUsd} />
             {hasActionColumn ? (
               <span className={WORK_META_COLUMN.action}>

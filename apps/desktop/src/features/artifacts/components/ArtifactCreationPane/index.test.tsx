@@ -179,7 +179,7 @@ afterEach(() => {
 describe('ArtifactCreationPane', () => {
   it('opens with the report defaults and no agent spawned', () => {
     renderPane();
-    expect(screen.getByTestId('artifact-creation-pane')).toBeTruthy();
+    screen.getByTestId('artifact-creation-pane');
     expect(
       screen.getByRole('option', { name: /Session summary/ }).getAttribute('aria-selected'),
     ).toBe('true');
@@ -188,7 +188,7 @@ describe('ArtifactCreationPane', () => {
 
   it('shows the default request under an empty brief and hides it once typed', () => {
     renderPane();
-    expect(screen.getByText(/with no brief the agent is asked to/)).toBeTruthy();
+    screen.getByText(/with no brief the agent is asked to/);
     fireEvent.change(screen.getByTestId('artifact-brief'), { target: { value: 'the rounding' } });
     expect(screen.queryByText(/with no brief the agent is asked to/)).toBeNull();
   });
@@ -339,14 +339,10 @@ describe('ArtifactCreationPane', () => {
     state.phaseTemplates = { [WORKSPACE_ID]: [{ id: 'wf-1', name: 'Ship it', steps: [] }] };
     renderPane({ runs: [{ id: RUN_ID, workflowId: 'wf-1', ordinal: 0 }] });
     chooseListboxValue({ trigger: screen.getByTestId('artifact-based-on'), value: RUN_ID });
-    expect(
-      screen.getByText(
-        'Agents and artifacts come from this run. Session events, checks and the local change are session wide either way.',
-      ),
-    ).toBeTruthy();
-    expect(
-      screen.getByText('No project in this session, so no local change evidence.'),
-    ).toBeTruthy();
+    screen.getByText(
+      'Agents and artifacts come from this run. Session events, checks and the local change are session wide either way.',
+    );
+    screen.getByText('No project in this session, so no local change evidence.');
   });
 
   it('lists what the pack carries and what it cuts short', async () => {
@@ -413,28 +409,28 @@ describe('ArtifactCreationPane', () => {
     renderPane();
     fireEvent.change(screen.getByTestId('artifact-brief'), { target: { value: 'anything' } });
     expect(screen.getByTestId('artifact-generate').hasAttribute('disabled')).toBe(true);
-    expect(screen.getByText(/Run an agent or a workflow first/)).toBeTruthy();
+    screen.getByText(/Run an agent or a workflow first/);
   });
 
   it('refuses a wireframe with no brief when nothing has run', () => {
     state.sessionPhaseRuns = { [SESSION_ID]: [] };
     renderPane({ kind: 'wireframe' });
     expect(screen.getByTestId('artifact-generate').hasAttribute('disabled')).toBe(true);
-    expect(screen.getByText(/Describe the screen or flow/)).toBeTruthy();
+    screen.getByText(/Describe the screen or flow/);
   });
 
   it('stays blocked while the run is still going', () => {
     state.sessionPhaseRuns = { [SESSION_ID]: [finishedAgent({ status: 'running' })] };
     renderPane();
     expect(screen.getByTestId('artifact-generate').hasAttribute('disabled')).toBe(true);
-    expect(screen.getByText('The run is still going. Finish it first')).toBeTruthy();
+    screen.getByText('The run is still going. Finish it first');
   });
 
   it('disables generate when no provider is usable', () => {
     state.providers = [];
     renderPane();
     expect(screen.getByTestId('artifact-generate').hasAttribute('disabled')).toBe(true);
-    expect(screen.getByText('Connect a provider to generate')).toBeTruthy();
+    screen.getByText('Connect a provider to generate');
   });
 
   it('ends the form with its actions inline, never in a footer bar', () => {
@@ -551,7 +547,7 @@ describe('ArtifactCreationPane', () => {
         });
       });
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'Remove inbox.png' })).toBeTruthy();
+        screen.getByRole('button', { name: 'Remove inbox.png' });
       });
       fireEvent.click(screen.getByTestId('artifact-generate'));
       const spawn = kind === 'report' ? state.spawnReportAgent : state.spawnWireframeAgent;
@@ -580,7 +576,7 @@ describe('ArtifactCreationPane', () => {
       await Promise.resolve();
     });
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Remove inbox.png' })).toBeTruthy();
+      screen.getByRole('button', { name: 'Remove inbox.png' });
     });
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
@@ -595,16 +591,16 @@ describe('ArtifactCreationPane', () => {
   it('says nothing can be attached while the session has no worktree', () => {
     state.sessionWorktrees = {};
     renderPane();
-    expect(screen.getByText(/no worktree yet/)).toBeTruthy();
+    screen.getByText(/no worktree yet/);
   });
 
   it('asks a wireframe what it is drawn for, and offers no target on a report', () => {
     renderPane({ kind: 'wireframe' });
-    expect(screen.getByRole('listbox', { name: 'Target' })).toBeTruthy();
+    screen.getByRole('listbox', { name: 'Target' });
     expect(
       screen.getByRole('option', { name: /Phone and desktop/ }).getAttribute('aria-selected'),
     ).toBe('true');
-    expect(screen.getByRole('option', { name: /^Desktop/ })).toBeTruthy();
+    screen.getByRole('option', { name: /^Desktop/ });
     cleanup();
     renderPane();
     expect(screen.queryByRole('listbox', { name: 'Target' })).toBeNull();

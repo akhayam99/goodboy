@@ -1,6 +1,6 @@
-export type TimelineRowGrade = 'entry' | 'step' | 'pending';
+export type TimelineRowGrade = 'entry' | 'step' | 'pending' | 'fact';
 
-export type TimelineGap = 'none' | 'sibling' | 'entry';
+export type TimelineGap = 'none' | 'sibling' | 'entry' | 'fact';
 
 type GradeRhythm = {
   readonly lineHeight: number;
@@ -11,12 +11,14 @@ const GRADE: Record<TimelineRowGrade, GradeRhythm> = {
   entry: { lineHeight: 20, height: 40 },
   step: { lineHeight: 16, height: 32 },
   pending: { lineHeight: 16, height: 26 },
+  fact: { lineHeight: 16, height: 28 },
 };
 
 const GAP: Record<TimelineGap, number> = {
   none: 0,
   sibling: 4,
   entry: 12,
+  fact: 8,
 };
 
 export const TIMELINE_RHYTHM = {

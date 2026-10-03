@@ -19,11 +19,7 @@ type Props = {
   readonly sessionId: SessionId;
   readonly isExpanded: boolean;
   readonly lanes: TimelineLaneControl | null;
-  readonly onSetExpanded: (params: {
-    readonly id: string;
-    readonly isExpanded: boolean;
-    readonly total: number;
-  }) => void;
+  readonly onSetExpanded: (params: { readonly id: string; readonly isExpanded: boolean }) => void;
 };
 
 export const TimelineGroupStreamRow = ({
@@ -36,9 +32,8 @@ export const TimelineGroupStreamRow = ({
   lanes,
   onSetExpanded,
 }: Props) => {
-  const total = entry.children.length;
   const set = ({ isExpanded: next }: { readonly isExpanded: boolean }) =>
-    onSetExpanded({ id: entry.id, isExpanded: next, total });
+    onSetExpanded({ id: entry.id, isExpanded: next });
   return (
     <TimelineStreamRow
       item={item}

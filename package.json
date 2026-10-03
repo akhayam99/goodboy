@@ -33,6 +33,7 @@
     "changelog:shots": "node scripts/changelog-shots.mjs",
     "features:shots": "node scripts/feature-shots.mjs",
     "fidelity:shots": "node scripts/fidelity-shots.mjs",
+    "validate:scenes": "node scripts/validate-scenes.mjs",
     "readme:hero": "node scripts/readme-hero.mjs",
     "features:check": "node scripts/split-features.mjs --check",
     "features:snapshot": "node scripts/snapshot-features.mjs",
