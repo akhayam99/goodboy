@@ -144,7 +144,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
               sessionId,
               isRunBudgetBlocked: false,
               nowMs: Date.now(),
-              ...workspacePolicyAvailability({ state: get() }),
+              ...workspacePolicyAvailability({ state: get(), sessionId }),
             }),
           })
     ).catch(async (error: unknown) => {

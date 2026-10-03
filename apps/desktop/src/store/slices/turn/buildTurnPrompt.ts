@@ -94,7 +94,7 @@ export const buildTurnPrompt = async ({ get, ctx }: Params) => {
       sessionId,
       isRunBudgetBlocked: false,
       nowMs: Date.now(),
-      ...workspacePolicyAvailability({ state: get() }),
+      ...workspacePolicyAvailability({ state: get(), sessionId }),
       providerPool: runProviderPool({
         sessions: get().sessions,
         sessionId,

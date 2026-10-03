@@ -10,16 +10,16 @@ type Params = {
 
 export const useSessionSkeleton = ({ sessionId }: Params): boolean => {
   const isSyncing = useIsSessionSyncing({ sessionId });
-  const [isLate, setIsLate] = useState(false);
+  const [lateSessionId, setLateSessionId] = useState<SessionId | null>(null);
 
   useEffect(() => {
     if (!isSyncing) {
-      setIsLate(false);
+      setLateSessionId(null);
       return;
     }
-    const timer = setTimeout(() => setIsLate(true), SKELETON_DELAY_MS);
+    const timer = setTimeout(() => setLateSessionId(sessionId), SKELETON_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [isSyncing]);
+  }, [isSyncing, sessionId]);
 
-  return isSyncing && isLate;
+  return isSyncing && lateSessionId === sessionId;
 };

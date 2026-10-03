@@ -152,7 +152,7 @@ export const workflowNodeRoutingContext = ({
       sessionId,
       isRunBudgetBlocked: false,
       nowMs: Date.now(),
-      ...workspacePolicyAvailability({ state: state }),
+      ...workspacePolicyAvailability({ state, sessionId }),
     }),
   };
 };

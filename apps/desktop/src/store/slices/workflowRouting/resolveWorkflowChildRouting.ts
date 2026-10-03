@@ -115,7 +115,7 @@ export const resolveWorkflowChildRouting = ({
       sessionId,
       isRunBudgetBlocked: false,
       nowMs: Date.now(),
-      ...workspacePolicyAvailability({ state: state }),
+      ...workspacePolicyAvailability({ state, sessionId }),
       providerPool: runProviderPool({ sessions: state.sessions ?? [], sessionId, workflowRunId }),
     }),
     contextEstimate: null,

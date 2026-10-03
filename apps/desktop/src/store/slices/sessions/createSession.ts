@@ -351,7 +351,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
             sessionId: session.id,
             isRunBudgetBlocked: false,
             nowMs: Date.now(),
-            ...workspacePolicyAvailability({ state: get() }),
+            ...workspacePolicyAvailability({ state: get(), sessionId: session.id }),
           }),
         });
         if (spawned.blocked.length > 0 && workflowRunId !== undefined) {
