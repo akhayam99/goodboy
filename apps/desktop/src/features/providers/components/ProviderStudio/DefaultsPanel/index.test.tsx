@@ -21,6 +21,7 @@ const { state } = vi.hoisted(() => ({
       { id: 'cursor', connection: 'connected' },
     ],
     settings: {} as Record<string, string>,
+    providerLimits: {},
     loadSetting: vi.fn(async (_key: string) => null as string | null),
     saveSetting: vi.fn(async (_key: string, _value: string) => undefined),
     reportError: vi.fn(),
@@ -36,24 +37,6 @@ vi.mock('../../../../../store', () => ({
   useAppStore: Object.assign(<T,>(selector: (store: typeof state) => T) => selector(state), {
     getState: () => state,
   }),
-}));
-
-vi.mock('../../ProviderChip', () => ({
-  ProviderChip: ({
-    id,
-    selected,
-    disabled,
-    onClick,
-  }: {
-    id: string;
-    selected: boolean;
-    disabled: boolean;
-    onClick: () => void;
-  }) => (
-    <button type="button" aria-pressed={selected} disabled={disabled} onClick={onClick}>
-      {id}
-    </button>
-  ),
 }));
 
 vi.mock('../../../../../shared/components/RoutingPicker', () => ({
@@ -123,22 +106,6 @@ vi.mock('../../../../../shared/components/RoutingPicker', () => ({
   ),
 }));
 
-vi.mock('../../../../../shared/components/RoutingPicker/ProviderPicker', () => ({
-  ProviderPicker: ({
-    ariaLabel,
-    provider,
-    onProvider,
-  }: {
-    ariaLabel: string;
-    provider: string;
-    onProvider: (provider: string) => void;
-  }) => (
-    <button type="button" aria-label={ariaLabel} onClick={() => onProvider('cursor')}>
-      {provider}
-    </button>
-  ),
-}));
-
 const EMPTY_OVERRIDES: OverrideSettings = {
   defaultProviderId: null,
   defaultBranchPrefix: null,
@@ -202,43 +169,29 @@ const SONNET_TASK_LABELS: ReadonlySet<string> = new Set([
 ]);
 
 describe('DefaultsPanel', () => {
-  it('uses connected providers as the routing pool and locks the default', () => {
-    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-
-    const anthropic = screen.getByRole('button', { name: 'anthropic' });
-    const cursor = screen.getByRole('button', { name: 'cursor' });
-
-    expect(anthropic.getAttribute('aria-pressed')).toBe('true');
-    expect(anthropic.hasAttribute('disabled')).toBe(true);
-    expect(cursor.getAttribute('aria-pressed')).toBe('true');
-  });
-
-  it('persists a restricted routing pool', () => {
-    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'cursor' }));
-
-    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
-      'ws-1',
-      expect.objectContaining({ providerPool: ['anthropic'] }),
-    );
-  });
-
-  it('adds a new default provider to a restricted routing pool', () => {
+  it('sums up the provider policy and names the provider new work starts on', () => {
     state.workspaceOverrides = {
-      'ws-1': { ...EMPTY_OVERRIDES, providerPool: ['anthropic'] },
+      'ws-1': {
+        ...EMPTY_OVERRIDES,
+        providerPool: [
+          { id: 'cursor', state: 'on' },
+          { id: 'anthropic', state: 'backup' },
+        ],
+      },
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Default provider' }));
+    const trigger = screen.getByRole('button', { name: /Cursor · Claude as backup/ });
+    expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(
+      screen.getByText('New work starts on Cursor. Backup only runs when no On provider can work.'),
+    ).toBeDefined();
+  });
 
-    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
-      'ws-1',
-      expect.objectContaining({
-        defaultProviderId: 'cursor',
-        providerPool: ['anthropic', 'cursor'],
-      }),
-    );
+  it('reads every connected provider as On while no policy is saved', () => {
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+
+    expect(screen.getByRole('button', { name: /^Claude, Cursor/ })).toBeDefined();
   });
 
   it('renders every task model row', () => {
@@ -651,8 +604,7 @@ describe('DefaultsPanel', () => {
   it('shows the providers, agents and background tasks on one page', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    expect(screen.getByText('Default provider')).toBeDefined();
-    expect(screen.getByText('Fallback order')).toBeDefined();
+    expect(screen.getByText('Providers, in order')).toBeDefined();
     expect(screen.getByText('Step summaries')).toBeDefined();
     expect(screen.getByText('Scout')).toBeDefined();
     expect(screen.queryByRole('tab')).toBeNull();
@@ -674,15 +626,6 @@ describe('DefaultsPanel', () => {
     }
     const planner = screen.getByRole('group', { name: 'Explore and plan' });
     expect(planner.textContent).toContain(ROLE_REGISTRY.planner.summary);
-  });
-
-  it('bounds the default provider picker to the row picker width', () => {
-    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-
-    expect(screen.getByRole('button', { name: 'Default provider' }).parentElement?.className).toBe(
-      'w-[220px]',
-    );
-    expect(screen.getByRole('list', { name: 'Fallback order' })).toBeDefined();
   });
 
   it('clears a task override when auto is picked in the model picker', () => {

@@ -21,7 +21,7 @@ import {
 } from '../../../engine';
 import { useSaveAsStep } from '../../../hooks/useSaveAsStep';
 import { useSavedSteps } from '../../../hooks/useSavedSteps';
-import { useWorkflowDrag } from '../../../hooks/useWorkflowDrag';
+import { useWorkflowDrag } from '../../../../../shared/hooks/useWorkflowDrag';
 import { stepDraftFromSavedStep, type SavedStep } from '../../../savedSteps';
 import { StepTree } from '../../StepTree';
 import { StepEditor } from '../../StepTree/StepEditor';

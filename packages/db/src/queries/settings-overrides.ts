@@ -1,7 +1,6 @@
 import type {
   OverrideSettings,
   ProviderBindings,
-  ProviderId,
   RoleModelPreferences,
   TaskModelPreferences,
   WorkspaceId,
@@ -27,7 +26,7 @@ function serializeRoleModels(roleModels: RoleModelPreferences | null): string | 
 }
 
 type ProviderPool = {
-  readonly providerPool: ReadonlyArray<ProviderId> | null;
+  readonly providerPool: OverrideSettings['providerPool'];
 };
 
 const serializeProviderPool = ({ providerPool }: ProviderPool): string | null =>

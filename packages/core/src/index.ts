@@ -365,6 +365,15 @@ export {
   type AutoStep,
 } from './providers/autoRouting/resolveAuto';
 export {
+  firstOnProvider,
+  providerCandidates,
+  providerStanding,
+  seedProviderPolicy,
+  workingProviders,
+  type ProviderCandidatesContext,
+  type ProviderStanding,
+} from './providers/autoRouting/providerCandidates';
+export {
   AUTO_DEFAULTS,
   isCuratedProvider,
   type CuratedProviderId,

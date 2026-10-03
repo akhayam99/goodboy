@@ -19,8 +19,12 @@ pub struct SettingsOverrides {
     pub role_models: Option<serde_json::Value>,
     #[serde(rename = "parallelAgents")]
     pub parallel_agents: Option<bool>,
-    #[serde(rename = "providerPool")]
-    pub provider_pool: Option<Vec<String>>,
+    #[serde(
+        rename = "providerPool",
+        default,
+        deserialize_with = "provider_pool_from_wire"
+    )]
+    pub provider_pool: Option<serde_json::Value>,
     #[serde(rename = "attributionFooter")]
     pub attribution_footer: Option<bool>,
     #[serde(rename = "replyVoice", default)]
@@ -54,14 +58,47 @@ fn json_from_text(raw: Option<String>) -> Option<serde_json::Value> {
     raw.and_then(|s| serde_json::from_str(&s).ok())
 }
 
-fn string_array_to_text(value: &Option<Vec<String>>) -> Option<String> {
-    value
-        .as_ref()
-        .and_then(|items| serde_json::to_string(items).ok())
+const PROVIDER_POLICY_STATES: [&str; 3] = ["on", "backup", "off"];
+
+fn is_policy_entry(entry: &serde_json::Value) -> bool {
+    let Some(object) = entry.as_object() else {
+        return false;
+    };
+    let has_id = object.get("id").is_some_and(serde_json::Value::is_string);
+    let has_state = object
+        .get("state")
+        .and_then(serde_json::Value::as_str)
+        .is_some_and(|state| PROVIDER_POLICY_STATES.contains(&state));
+    has_id && has_state
 }
 
-fn string_array_from_text(raw: Option<String>) -> Option<Vec<String>> {
-    raw.and_then(|value| serde_json::from_str(&value).ok())
+fn provider_pool_shape(value: serde_json::Value) -> Option<serde_json::Value> {
+    let items = value.as_array()?;
+    let is_names = items.iter().all(serde_json::Value::is_string);
+    let is_policy = items.iter().all(is_policy_entry);
+    if is_names || is_policy {
+        return Some(value);
+    }
+    None
+}
+
+fn provider_pool_from_wire<'de, D>(deserializer: D) -> Result<Option<serde_json::Value>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let value = Option::<serde_json::Value>::deserialize(deserializer)?;
+    Ok(value.and_then(provider_pool_shape))
+}
+
+fn provider_pool_to_text(value: &Option<serde_json::Value>) -> Option<String> {
+    value
+        .clone()
+        .and_then(provider_pool_shape)
+        .map(|shape| shape.to_string())
+}
+
+fn provider_pool_from_text(raw: Option<String>) -> Option<serde_json::Value> {
+    json_from_text(raw).and_then(provider_pool_shape)
 }
 
 #[tauri::command]
@@ -87,7 +124,7 @@ pub async fn get_workspace_overrides(
             task_models: json_from_text(row.get(4)?),
             role_models: json_from_text(row.get(5)?),
             parallel_agents: parallel_agents_raw.map(|v| v != 0),
-            provider_pool: string_array_from_text(row.get(7)?),
+            provider_pool: provider_pool_from_text(row.get(7)?),
             attribution_footer: attribution_footer_raw.map(|v| v != 0),
             reply_voice: row.get(9)?,
             reply_style_note: row.get(10)?,
@@ -143,7 +180,7 @@ pub async fn set_workspace_overrides(
             json_to_text(&overrides.task_models),
             json_to_text(&overrides.role_models),
             parallel_agents_val,
-            string_array_to_text(&overrides.provider_pool),
+            provider_pool_to_text(&overrides.provider_pool),
             attribution_footer_val,
             overrides.reply_voice,
             overrides.reply_style_note,
@@ -218,7 +255,7 @@ mod tests {
 
         assert_eq!(
             overrides.provider_pool,
-            Some(vec!["anthropic".to_string(), "codex".to_string()])
+            Some(serde_json::json!(["anthropic", "codex"]))
         );
 
         let encoded = serde_json::to_value(&overrides).expect("serialize overrides");
@@ -270,15 +307,65 @@ mod tests {
             serde_json::from_value(serde_json::json!({})).expect("deserialize overrides");
 
         assert_eq!(overrides.provider_pool, None);
-        assert_eq!(string_array_to_text(&overrides.provider_pool), None);
+        assert_eq!(provider_pool_to_text(&overrides.provider_pool), None);
     }
 
     #[test]
     fn the_provider_pool_column_text_round_trips() {
-        let pool = Some(vec!["anthropic".to_string(), "codex".to_string()]);
-        let text = string_array_to_text(&pool);
+        let pool = Some(serde_json::json!(["anthropic", "codex"]));
+        let text = provider_pool_to_text(&pool);
 
         assert_eq!(text.as_deref(), Some(r#"["anthropic","codex"]"#));
-        assert_eq!(string_array_from_text(text), pool);
+        assert_eq!(provider_pool_from_text(text), pool);
+    }
+
+    #[test]
+    fn the_provider_policy_column_text_round_trips() {
+        let policy = Some(serde_json::json!([
+            { "id": "codex", "state": "on" },
+            { "id": "anthropic", "state": "on", "keepAfterLimit": true },
+            { "id": "cursor", "state": "backup", "payAsYouGo": true },
+            { "id": "gemini", "state": "off" }
+        ]));
+        let text = provider_pool_to_text(&policy);
+
+        assert_eq!(provider_pool_from_text(text), policy);
+    }
+
+    #[test]
+    fn the_provider_policy_survives_the_wire() {
+        let payload = serde_json::json!({
+            "providerPool": [{ "id": "codex", "state": "backup" }],
+        });
+
+        let overrides: SettingsOverrides =
+            serde_json::from_value(payload).expect("deserialize overrides");
+        let encoded = serde_json::to_value(&overrides).expect("serialize overrides");
+
+        assert_eq!(
+            encoded.get("providerPool"),
+            Some(&serde_json::json!([{ "id": "codex", "state": "backup" }]))
+        );
+    }
+
+    #[test]
+    fn a_provider_pool_of_neither_shape_reads_as_none() {
+        let mixed = Some(r#"["codex",{"id":"anthropic","state":"on"}]"#.to_string());
+        let unknown_state = Some(r#"[{"id":"codex","state":"sometimes"}]"#.to_string());
+        let not_a_list = Some(r#"{"codex":"on"}"#.to_string());
+
+        assert_eq!(provider_pool_from_text(mixed), None);
+        assert_eq!(provider_pool_from_text(unknown_state), None);
+        assert_eq!(provider_pool_from_text(not_a_list), None);
+    }
+
+    #[test]
+    fn the_older_reader_falls_back_to_every_provider_on_the_new_shape() {
+        let text = provider_pool_to_text(&Some(serde_json::json!([
+            { "id": "codex", "state": "on" }
+        ])));
+        let older: Option<Vec<String>> = text.and_then(|value| serde_json::from_str(&value).ok());
+
+        assert_eq!(older, None);
     }
 }

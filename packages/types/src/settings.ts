@@ -1,4 +1,5 @@
 import type { ProjectId, SessionId, WorkflowId, WorkspaceId } from './ids';
+import type { ProviderPolicy } from './provider-policy';
 import type { EffortLevel, ProviderId } from './provider-registry';
 import type { AgentRole } from './workflow';
 
@@ -56,7 +57,7 @@ export type OverrideSettings = Readonly<{
   taskModels: TaskModelPreferences | null;
   roleModels: RoleModelPreferences | null;
   parallelAgents: boolean | null;
-  providerPool: ReadonlyArray<ProviderId> | null;
+  providerPool: ProviderPolicy | null;
   attributionFooter: boolean | null;
   replyVoice: ReplyVoice | null;
   replyStyleNote: string | null;
@@ -87,7 +88,7 @@ export type ResolvedSettings = Readonly<{
   defaultVerbosity: VerbosityLevel;
   roleModels: RoleModelPreferences | null;
   taskModels: TaskModelPreferences | null;
-  providerPool: ReadonlyArray<ProviderId> | null;
+  providerPool: ProviderPolicy | null;
   parallelAgents: boolean;
   providerBindings: ProviderBindings;
 }>;

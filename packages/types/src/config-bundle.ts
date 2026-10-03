@@ -1,4 +1,5 @@
 import type { WorkspaceId } from './ids';
+import type { ProviderPolicy } from './provider-policy';
 import type { ProviderId } from './provider-registry';
 import type { ProviderBindings, RoleModelPreferences, TaskModelPreferences } from './settings';
 
@@ -33,7 +34,7 @@ export type ConfigBundleWorkspaceOverrides = Readonly<{
   taskModels: TaskModelPreferences | null;
   roleModels: RoleModelPreferences | null;
   parallelAgents: boolean | null;
-  providerPool: ReadonlyArray<ProviderId> | null;
+  providerPool: ReadonlyArray<ProviderId> | ProviderPolicy | null;
   attributionFooter: boolean | null;
   replyVoice: string | null;
   replyStyleNote: string | null;

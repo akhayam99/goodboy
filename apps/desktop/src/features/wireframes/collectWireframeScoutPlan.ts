@@ -9,6 +9,7 @@ import { modelLabel } from '../chat/utils/chat-constants';
 import { PROVIDER_LABEL } from '../providers/providerLabel';
 import { exploreList, exploreRead } from '../explore/explore';
 import { workflowAvailabilitySnapshot } from '../workflows/workflowAvailabilitySnapshot';
+import { workspacePolicyAvailability } from '../../store/slices/providerLimits/workspacePolicyAvailability';
 import {
   collectWireframeScoutRootCandidates,
   pinWireframeScoutRoot,
@@ -55,6 +56,7 @@ export const wireframeScoutGate = ({
     sessionId,
     isRunBudgetBlocked: false,
     nowMs: Date.now(),
+    ...workspacePolicyAvailability({ state: state }),
   });
   if (availability.isSessionBudgetBlocked) {
     return { kind: 'skipped', reason: WIREFRAME_SCOUT_SKIP_BUDGET };

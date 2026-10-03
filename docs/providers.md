@@ -145,11 +145,16 @@ Goodboy stores keys in your system keychain, not in its own database.
 Go to **Settings** → **Providers & models** → **Defaults** to choose what a workspace
 uses when you leave a model on **Auto**. It is one page in three parts.
 
-- **Providers**
-  - **Default provider**: where Auto starts. Only connected providers appear here
-  - **Fallback order**: the providers Auto moves through, in order, when one is not
-    connected or out of quota. Click a provider to stop or start using it. The
-    default provider is always first
+- **Providers, in order**: the workspace's provider policy, summed up on the row
+  ("Claude, Codex · Cursor as backup"). The row opens the list in place: drag a
+  provider by its handle or move it with Alt and an arrow, and set it **On**,
+  **Backup only** or **Off**. The first On provider is the default for new work, so
+  moving another On provider to the top changes the default in the same write.
+  Backup only runs only when no On provider can work; Off never runs, not even for a
+  role or task pinned to it. **Pay-as-you-go** is a mark that suggests Backup only;
+  **Keep using after the limit** keeps the provider in the order at its limit. A
+  provider connected later shows last as **New** and is unused until turned on.
+  **Reset** goes back to every connected provider On
 - **Agents**: one row per role, grouped as Explore and plan, Build, Review and write,
   and Other. If you pin a model on an agent or a workflow step, that pin beats the role
 - **Background tasks**: one row per side job, grouped as Writing for you, Running
@@ -634,12 +639,12 @@ When a provider ships or retires a model, update these together:
   (Claude, Codex, Gemini, Cursor) and one ordered list of jobs per role or task. A
   job names a line and an effort; `AUTO_DEFAULTS` is the table `latestInGroup`
   expands from it once, at load, into the non-legacy models of that line, newest
-  first. A resolve never expands again (`expandAtLoad.test.ts`). The ladder
-  tries the default provider first, then the fallback order; within a column it
+  first. A resolve never expands again (`expandAtLoad.test.ts`). With no policy the
+  ladder tries the default provider first, then the fallback order; within a column it
   skips a model the installed CLI is too old for (`cliGate`) or a Cursor combo that
   needs Max Mode when Max Mode is off. A provider with no column (OpenCode,
   OpenRouter, Moonshot) falls back to `strongestModelForTier`, after every curated
-  provider. `AUTO_PROVIDER_GATES` is the list of provider checks: connected, and not
+  provider. `providerCandidates` applies the provider checks: connected, and not
   at its usage limit (`atLimit`, from `providersAtLimit`: a provider whose last
   observation says a window is out and has not reset). A pick that passed a
   provider for its limit carries `skippedAtLimit`. The desktop fills `atLimit`
@@ -652,6 +657,27 @@ When a provider ships or retires a model, update these together:
   why, and a provider's Usage notice says where Auto sends new agents. No
   Cursor default needs Max Mode, and `defaults.test.ts` validates every cell against
   the catalogs and checks that each line cell starts on the newest model of its line
+- **Provider policy.** `workspaces.provider_pool` holds the policy, either the 0.15.4
+  list of names (`["anthropic","codex"]`: those On in that order, the rest Off, the
+  saved default moved first) or the list of entries
+  (`[{ "id": "codex", "state": "on", "keepAfterLimit": true }, ...]`). `null` means
+  every connected provider On, in today's order. `parseProviderPolicy`
+  (`@goodboy/types`), `override-row.ts` and `settings_overrides.rs` read both shapes;
+  a 0.15.4 build reads the entries as `null`, so it falls back to every provider and
+  never crashes, and the backup bundle carries either shape at the same schema
+  version. One writer, `setProviderPolicy` (overrides slice), patches the policy and
+  the default provider together; the slice queues `set_workspace_overrides` per
+  workspace and each write sends the latest row, so two quick edits keep both
+  fields. One reader, `providerCandidates` (`autoRouting/providerCandidates.ts`):
+  usable On providers in the policy order, then usable Backup only providers. The
+  user's order beats the curated-first rule, which stays only for a `null` policy.
+  `providerStanding` names why a provider is out (`not-connected`, `off`,
+  `at-limit`, `backup`); the picker's note and role and task pins read it, so a pin
+  on an Off provider falls back to Auto. `workingProviders` (On, or Backup only once
+  no On provider can work) filters `workflowAvailabilitySnapshot` for static steps,
+  fan-out children and the orchestrator, whose model menu follows
+  `availability.providerOrder`. `workspacePolicyAvailability` hands every snapshot the
+  current workspace policy and the providers at their limit
 - `ROLE_REGISTRY` holds no routing any more: the Claude column of `AUTO_DEFAULTS` is
   the reference. `kindRouting` maps an agent kind to its role and reads the same
   ladder; there is no separate cheap tier for Scout, Docs or Generalist

@@ -17,6 +17,7 @@ import {
 } from '@goodboy/core';
 import { KIND_TO_ROLE, classifyAgent, type AgentKind } from '../../../features/session/agent-kind';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
+import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import type { AppStore } from '../../store';
 import type { WorkflowRoutingNodeRef } from './types';
@@ -164,6 +165,7 @@ export const workflowNodeRoutingContext = ({
       sessionId,
       isRunBudgetBlocked: false,
       nowMs: Date.now(),
+      ...workspacePolicyAvailability({ state: state }),
     }),
   };
 };
