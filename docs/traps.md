@@ -125,7 +125,7 @@ file holds those explanations. Everything below has been "fixed" at least once a
   state or a ref. Nobody has ever widened the contract to close this. The same
   stale-pairing bug was fixed at the call site instead, separately, at least
   twice
-  (`RoleModelRow`/`TaskModelRow`, then the old step library form and
+  (the old role row and `TaskModelRow`, then the old step library form and
   `OrchestratorRoutingRow` in #1307). Each time the fix tracked the provider in
   a ref instead of adding a provider parameter to `onModel`. This matters for
   more than passing UI state when the consumer persists the pair, as

@@ -5,14 +5,13 @@ import { WorkflowStudio } from '../../../../../features/workflows/components/Wor
 import { useAppStore } from '../../../../../store';
 import { WorkflowBuilderScene } from '../flow-audit/WorkflowBuilderScene';
 import { NOW, WORKSPACE_ID } from '../flow-audit/fixtures';
-import { sceneParam } from './sceneParams';
+import { sceneParam, sceneParamList } from './sceneParams';
 import { useSceneClicks } from './useSceneClicks';
 
 const noop = () => undefined;
 
 const IS_EMPTY = sceneParam({ key: 'v' }) === 'empty';
-const OPEN = sceneParam({ key: 'open' });
-const OPEN_LABELS: ReadonlyArray<string> = OPEN === null ? [] : [OPEN];
+const OPEN_LABELS = sceneParamList({ key: 'open', separator: ',' });
 const IS_CONFIRM_ERROR = sceneParam({ key: 'state' }) === 'confirm-error';
 
 const editedBuiltin = (): Workflow | null => {

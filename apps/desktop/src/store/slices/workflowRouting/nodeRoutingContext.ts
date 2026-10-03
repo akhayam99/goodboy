@@ -23,30 +23,12 @@ import type { AppStore } from '../../store';
 import type { WorkflowRoutingNodeRef } from './types';
 import { isWorkflowNodeRoutingMutable } from './workflowNodeRoutingMutability';
 import { sessionById } from '../sessions/sessionIndex';
+import { configuredRolePick } from './configuredRolePick';
 
 const UNKNOWN_PROFILE: WorkflowTaskProfile = {
   taskType: 'general',
   difficulty: 'unknown',
   basis: 'unknown',
-};
-
-type ConfiguredRoleParams = {
-  readonly role: AgentRole | null;
-  readonly roleModels: RoleModelPreferences | null | undefined;
-};
-
-const configuredRolePick = ({
-  role,
-  roleModels,
-}: ConfiguredRoleParams): WorkflowModelPick | null => {
-  if (role === null) {
-    return null;
-  }
-  const routing = resolveRoleRouting({ role, prefs: roleModels });
-  if (routing.isOverride === false) {
-    return null;
-  }
-  return { provider: routing.provider, model: routing.model, effort: routing.effort };
 };
 
 type WorkflowNodeRoutingContext = Readonly<{
@@ -145,7 +127,12 @@ export const workflowNodeRoutingContext = ({
     decision,
     taskProfile,
     proposal: proposalOutcome({ decision, taskProfile }),
-    roleDefault: configuredRolePick({ role, roleModels: workspaceRoleModels }),
+    roleDefault: configuredRolePick({
+      role,
+      roleModels: workspaceRoleModels,
+      size: step?.size ?? null,
+      profile: taskProfile,
+    }),
     sessionDefault:
       session.modelOverride == null
         ? null

@@ -151,10 +151,13 @@ type SummarizerQueueEntry = {
   readonly parseRetried?: boolean;
   readonly providerAttempt?: number;
   readonly taskModelOverride?: TaskModelPreference;
+  readonly turnCount?: number;
+  readonly isRequested?: boolean;
 };
 
 type SummarizerTaskQueue = {
   inFlight: boolean;
+  scheduled: SummarizerQueueEntry | null;
   queued: ReadonlyArray<SummarizerQueueEntry>;
 };
 
@@ -203,8 +206,40 @@ export const mergeQueuedSummarizerEntries = (
     turnOutput,
     workingDir: latest.workingDir,
     oversizeRetried: false,
+    turnCount: entryTurns({ entries }),
     ...(latest.taskModelOverride != null && { taskModelOverride: latest.taskModelOverride }),
   };
+};
+
+type EntryTurnsParams = {
+  readonly entries: ReadonlyArray<SummarizerQueueEntry>;
+};
+
+const entryTurns = ({ entries }: EntryTurnsParams): number =>
+  entries
+    .filter((entry) => entry.mode !== 'consolidate')
+    .reduce((total, entry) => total + (entry.turnCount ?? 1), 0);
+
+type SyncPendingParams = {
+  readonly set: SetFn;
+  readonly sessionId: SessionId;
+};
+
+const syncSummarizerPending = ({ set, sessionId }: SyncPendingParams): void => {
+  const queue = summarizerQueues.get(sessionId);
+  const waiting =
+    queue == null ? [] : [...(queue.scheduled === null ? [] : [queue.scheduled]), ...queue.queued];
+  const pending = {
+    turns: entryTurns({ entries: waiting }),
+    isUpdateQueued: waiting.some((entry) => entry.isRequested === true),
+  };
+  set((state) => {
+    const current = state.summarizerPending[sessionId];
+    if (current?.turns === pending.turns && current.isUpdateQueued === pending.isUpdateQueued) {
+      return {};
+    }
+    return { summarizerPending: { ...state.summarizerPending, [sessionId]: pending } };
+  });
 };
 
 type Params = {
@@ -242,14 +277,21 @@ const scheduleIdle = ({ run }: { readonly run: () => void }): void => {
 };
 
 const runQueuedSummarizer = ({ set, get, sessionId, entry }: Params): void => {
+  const started = summarizerQueues.get(sessionId);
+  if (started != null) {
+    started.scheduled = null;
+  }
+  syncSummarizerPending({ set, sessionId });
   void runSummarizer({ set, get, sessionId, entry }).finally(() => {
     const queue = summarizerQueues.get(sessionId);
     if (queue == null) {
+      syncSummarizerPending({ set, sessionId });
       return;
     }
     const pending = queue.queued;
     if (pending.length === 0) {
       summarizerQueues.delete(sessionId);
+      syncSummarizerPending({ set, sessionId });
       void get().maybeAutoAdvanceWorkflow(sessionId);
       return;
     }
@@ -260,6 +302,8 @@ const runQueuedSummarizer = ({ set, get, sessionId, entry }: Params): void => {
       turns.length > 0 || consolidation === undefined
         ? mergeQueuedSummarizerEntries(turns.length > 0 ? turns : pending)
         : consolidation;
+    queue.scheduled = next;
+    syncSummarizerPending({ set, sessionId });
     scheduleIdle({ run: () => runQueuedSummarizer({ set, get, sessionId, entry: next }) });
   });
 };
@@ -275,17 +319,20 @@ const reenqueueSummarizer = ({ set, get, sessionId, entry }: Params): void => {
 const enqueueSummarizerEntry = ({ set, get, sessionId, entry }: Params): void => {
   let queue = summarizerQueues.get(sessionId);
   if (!queue) {
-    queue = { inFlight: false, queued: [] };
+    queue = { inFlight: false, scheduled: null, queued: [] };
     summarizerQueues.set(sessionId, queue);
   }
 
   if (queue.inFlight) {
     queue.queued = [...queue.queued, entry];
+    syncSummarizerPending({ set, sessionId });
     return;
   }
 
   queue.inFlight = true;
+  queue.scheduled = entry;
   queue.queued = [];
+  syncSummarizerPending({ set, sessionId });
   scheduleIdle({ run: () => runQueuedSummarizer({ set, get, sessionId, entry }) });
 };
 
@@ -327,6 +374,7 @@ type ConsolidationParams = {
   readonly get: GetFn;
   readonly sessionId: SessionId;
   readonly after: string;
+  readonly isRequested?: boolean;
 };
 
 export const enqueueContextConsolidation = ({
@@ -334,10 +382,17 @@ export const enqueueContextConsolidation = ({
   get,
   sessionId,
   after,
+  isRequested = false,
 }: ConsolidationParams): void => {
   const queue = summarizerQueues.get(sessionId);
-  const isQueued = queue?.queued.some((entry) => entry.mode === 'consolidate') === true;
-  if (isQueued) {
+  const queuedConsolidation = queue?.queued.find((entry) => entry.mode === 'consolidate');
+  if (queuedConsolidation !== undefined && queue !== undefined) {
+    if (isRequested && queuedConsolidation.isRequested !== true) {
+      queue.queued = queue.queued.map((entry) =>
+        entry === queuedConsolidation ? { ...entry, isRequested: true } : entry,
+      );
+      syncSummarizerPending({ set, sessionId });
+    }
     return;
   }
   enqueueSummarizerEntry({
@@ -351,6 +406,7 @@ export const enqueueContextConsolidation = ({
       consolidatedAfter: after,
       workingDir: null,
       oversizeRetried: false,
+      ...(isRequested && { isRequested }),
     },
   });
 };
@@ -478,6 +534,11 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
           hasConflict: false,
         };
       }),
+    );
+    const changedSlots = new Set(
+      upsertResults
+        .filter((upsert) => upsert.didChange && !upsert.hasConflict)
+        .map((upsert) => upsert.key),
     );
     const changedKeys = upsertResults
       .filter(
@@ -624,6 +685,25 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
             estimatedCostUsd: result.usage.estimatedCostUsd,
           },
           lastAttempt: null,
+        },
+      },
+      summarizerRounds: {
+        ...state.summarizerRounds,
+        [sessionId]: {
+          finishedAt: now(),
+          mode: isConsolidation ? 'consolidate' : 'turn',
+          turns: isConsolidation ? 0 : (entry.turnCount ?? 1),
+          provider: taskModel.providerId,
+          model: result.model,
+          effort: taskModel.effort ?? null,
+          inputTokens: result.usage.inputTokens,
+          outputTokens: result.usage.outputTokens,
+          costUsd: result.usage.estimatedCostUsd,
+          changed: {
+            goal: changedSlots.has('goal'),
+            decisions: result.delta.decisionOps.length,
+            summary: changedSlots.has('last_output_summary'),
+          },
         },
       },
       providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries),

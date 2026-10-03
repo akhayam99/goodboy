@@ -121,7 +121,7 @@ export const TaskModelRow = ({
   };
 
   return (
-    <DefaultRow label={label} summary={summary} isSummaryNoted={isShownHidden}>
+    <DefaultRow label={label} summary={summary} isSummaryNoted={isShownHidden} anchor={task}>
       <RoutingPicker
         ariaLabel={`${label} routing`}
         connectedProviders={availableProviderIds}

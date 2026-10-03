@@ -55,7 +55,7 @@ real app as soon as either one changes, and it shows.
 
 There are two cases, and each needs a different approach:
 
-**The component is pure props.** `RoleModelRow` works
+**The component is pure props.** `RoleHowItRuns` works
 this way. Read the component's prop type and build fake data that matches it.
 Use real branded id casts (e.g. `'x' as Agent['id']`) and real enum values.
 Pass it straight in. No store involved.

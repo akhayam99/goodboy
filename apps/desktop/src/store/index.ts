@@ -49,7 +49,11 @@ export {
   useSlotHistory,
   useSlotHistoryCount,
 } from './slices/slots/selectors';
-export { useSummarizerStatus } from './slices/summaries/selectors';
+export {
+  useSummarizerPending,
+  useSummarizerRound,
+  useSummarizerStatus,
+} from './slices/summaries/selectors';
 export {
   useCurrentWorkspace,
   useDisconnectedWorkspaces,

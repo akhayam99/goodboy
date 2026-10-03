@@ -1,5 +1,5 @@
 import type { AgentId, ArtifactScoutPlanEntry, MountId } from '@goodboy/types';
-import { FAN_OUT_MAX_CHILDREN } from '../../store/slices/workflows/scoutTree';
+import { FAN_OUT_MAX_CHILDREN } from '@goodboy/core';
 import type { ReportType } from '../reports/reportTypes';
 import type { WireframeFidelity } from '../wireframes/wireframeFidelity';
 import type { WireframeTarget } from '../wireframes/wireframeTarget';

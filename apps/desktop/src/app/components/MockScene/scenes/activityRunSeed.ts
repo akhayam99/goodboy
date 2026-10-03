@@ -36,6 +36,8 @@ import type {
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { sceneClock } from '../sceneClock';
+import { sceneParam } from './audit/sceneParams';
+import type { SummarizerRound } from '../../../../store/slices/summaries/state';
 
 const clock = sceneClock({ anchor: '2026-09-18T10:05:00.000Z' });
 
@@ -93,6 +95,21 @@ const QUESTION_BANNER_ID = 'mock-run-question-banner-threshold' as OpenQuestionI
 const DAY_ONE = '2026-09-17';
 const DAY_TWO = '2026-09-18';
 export const NOW = clock.iso({ at: `${DAY_TWO}T10:05:00.000Z` });
+
+const UPDATES = sceneParam({ key: 'updates' });
+
+const CONTEXT_ROUND: SummarizerRound = {
+  finishedAt: NOW,
+  mode: 'turn',
+  turns: 3,
+  provider: 'anthropic',
+  model: 'haiku-4.5',
+  effort: 'low',
+  inputTokens: 3184,
+  outputTokens: 412,
+  costUsd: 0.004,
+  changed: { goal: true, decisions: 2, summary: true },
+};
 const EARLIER = clock.iso({ at: `${DAY_ONE}T09:12:00.000Z` });
 
 const OVERRIDES = {
@@ -1311,12 +1328,19 @@ export const seedActivityRunScene = () => {
     },
     summarizerStatus: {
       [SESSION_ID]: {
-        status: 'idle',
+        status: UPDATES === 'failed' ? 'error' : 'idle',
         lastUpdate: NOW,
-        error: null,
+        error: UPDATES === 'failed' ? "Haiku 4.5 didn't answer in time." : null,
         lastUsage: null,
-        lastAttempt: null,
+        lastAttempt:
+          UPDATES === 'failed'
+            ? { turnInput: 'Ship the fix', turnOutput: 'Fixed', workingDir: null }
+            : null,
       },
+    },
+    summarizerRounds: { [SESSION_ID]: CONTEXT_ROUND },
+    summarizerPending: {
+      [SESSION_ID]: { turns: UPDATES === 'failed' ? 3 : 2, isUpdateQueued: UPDATES === 'queued' },
     },
     sessionPhaseRuns: { [SESSION_ID]: AGENTS },
     sessionOpenQuestions: { [SESSION_ID]: OPEN_QUESTIONS },

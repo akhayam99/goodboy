@@ -220,6 +220,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
     const state = useAppStore.getState();
     const queue = {
       inFlight: true,
+      scheduled: null,
       queued: [] as ReadonlyArray<{
         turnInput: string;
         turnOutput: string;
@@ -490,6 +491,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
 
     const queue = {
       inFlight: false,
+      scheduled: null,
       queued: [] as ReadonlyArray<{
         turnInput: string;
         turnOutput: string;
@@ -600,6 +602,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
 
     const queue = {
       inFlight: true,
+      scheduled: null,
       queued: [] as ReadonlyArray<{
         turnInput: string;
         turnOutput: string;
@@ -681,6 +684,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
 
     const queue = {
       inFlight: true,
+      scheduled: null,
       queued: [] as ReadonlyArray<{
         turnInput: string;
         turnOutput: string;
@@ -1122,5 +1126,131 @@ describe('summarizer queue, coalescing and no-stack', () => {
     await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
     expect(summarizeSpy).toHaveBeenCalledTimes(1);
     expect(upsertContextSlotSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('queues Update now behind the pass in flight and records what each round did', async () => {
+    let resolveFirst: () => void = () => undefined;
+    summarizeSpy
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveFirst = resolve;
+          }),
+      )
+      .mockResolvedValue(undefined);
+    summarizerUpsertSequence = [
+      [{ key: 'last_output_summary', value: 'first summary' }],
+      [{ key: 'goal', value: 'ship the queue' }],
+      [],
+    ];
+    const { enqueueSummarizer, summarizerQueues: queues } =
+      await import('./slices/turn/turnHelpers');
+    queues.clear();
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionSlots: { [SESSION_ID]: [] },
+      summarizerStatus: {},
+      summarizerRounds: {},
+      summarizerPending: {},
+    });
+    const turn = (label: string) =>
+      enqueueSummarizer({
+        set: useAppStore.setState,
+        get: useAppStore.getState,
+        sessionId: SESSION_ID,
+        turnInput: `${label} turn`,
+        turnOutput: `${label} output`,
+        workingDir: null,
+      });
+
+    turn('first');
+    await vi.waitFor(() => expect(summarizeSpy).toHaveBeenCalledTimes(1));
+    turn('second');
+    turn('third');
+    useAppStore.getState().requestContextUpdate(SESSION_ID);
+
+    expect(useAppStore.getState().summarizerPending[SESSION_ID]).toEqual({
+      turns: 2,
+      isUpdateQueued: true,
+    });
+    expect(summarizeSpy).toHaveBeenCalledTimes(1);
+    expect(useAppStore.getState().summarizerRounds[SESSION_ID]).toBeUndefined();
+
+    resolveFirst();
+    await vi.waitFor(() => expect(summarizeSpy).toHaveBeenCalledTimes(3));
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
+
+    expect(summarizeInputCalls[1]?.turnInput).toContain('third turn');
+    expect(summarizeInputCalls[2]).toEqual({ turnInput: '', turnOutput: '' });
+    expect(useAppStore.getState().summarizerRounds[SESSION_ID]).toMatchObject({
+      mode: 'consolidate',
+      turns: 0,
+      provider: 'anthropic',
+      model: 'claude-haiku-4-5',
+      changed: { goal: false, decisions: 0, summary: false },
+    });
+    expect(useAppStore.getState().summarizerPending[SESSION_ID]).toEqual({
+      turns: 0,
+      isUpdateQueued: false,
+    });
+  });
+
+  it('counts the turns a merged pass read and the slots it changed', async () => {
+    let resolveFirst: () => void = () => undefined;
+    let resolveSecond: () => void = () => undefined;
+    summarizeSpy
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveFirst = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveSecond = resolve;
+          }),
+      )
+      .mockResolvedValue(undefined);
+    summarizerUpsertSequence = [[], [{ key: 'goal', value: 'ship the queue' }]];
+    const { enqueueSummarizer, summarizerQueues: queues } =
+      await import('./slices/turn/turnHelpers');
+    queues.clear();
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionSlots: { [SESSION_ID]: [] },
+      summarizerStatus: {},
+      summarizerRounds: {},
+      summarizerPending: {},
+    });
+    const turn = (label: string) =>
+      enqueueSummarizer({
+        set: useAppStore.setState,
+        get: useAppStore.getState,
+        sessionId: SESSION_ID,
+        turnInput: `${label} turn`,
+        turnOutput: `${label} output`,
+        workingDir: null,
+      });
+
+    turn('first');
+    await vi.waitFor(() => expect(summarizeSpy).toHaveBeenCalledTimes(1));
+    turn('second');
+    turn('third');
+    turn('fourth');
+    resolveFirst();
+    await vi.waitFor(() => expect(summarizeSpy).toHaveBeenCalledTimes(2));
+    expect(useAppStore.getState().summarizerRounds[SESSION_ID]).toMatchObject({
+      mode: 'turn',
+      turns: 1,
+    });
+    resolveSecond();
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
+
+    expect(useAppStore.getState().summarizerRounds[SESSION_ID]).toMatchObject({
+      mode: 'turn',
+      turns: 3,
+      changed: { goal: true, decisions: 0, summary: false },
+    });
   });
 });

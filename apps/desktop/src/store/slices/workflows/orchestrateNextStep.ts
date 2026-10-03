@@ -27,7 +27,9 @@ import {
   ROLE_REGISTRY,
   SELECTABLE_AGENT_ROLES,
   hintedRoutingOutcome,
+  keepProposalInRoleSet,
   orchestratorModelPool,
+  roleModelSetMenu,
   parseWorkflowRoutingProposal,
   recommendedModelForRole,
   resolveRoleRouting,
@@ -37,6 +39,7 @@ import {
   isAgentStatusSettled,
   runsForWorkflowRun,
   serializeRunSummary,
+  type OrchestratorModelOption,
   type OrchestratorRoleDefault,
   type RunSummary,
   type WorkflowRoutingAvailabilitySnapshot,
@@ -52,6 +55,7 @@ import {
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
 import { uniqueStepName } from '../../../features/workflows/uniqueStepName';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
+import { configuredRolePick } from '../workflowRouting/configuredRolePick';
 import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import { tauriDatabase } from '../../../shared/lib/db';
 import {
@@ -104,36 +108,26 @@ const setDeciding = ({ set, workflowRunId, isDeciding }: DecidingParams): void =
 type RoleDefaultsParams = {
   readonly provider: ProviderId;
   readonly roleModels: RoleModelPreferences | null;
-};
-
-type ConfiguredRoleParams = {
-  readonly role: AgentRole;
-  readonly roleModels: RoleModelPreferences | null | undefined;
-};
-
-const configuredRolePick = ({
-  role,
-  roleModels,
-}: ConfiguredRoleParams): WorkflowModelPick | null => {
-  const routing = resolveRoleRouting({ role, prefs: roleModels });
-  if (routing.isOverride === false) {
-    return null;
-  }
-  return { provider: routing.provider, model: routing.model, effort: routing.effort };
+  readonly menu: ReadonlyArray<OrchestratorModelOption>;
 };
 
 const roleDefaultsFor = ({
   provider,
   roleModels,
+  menu,
 }: RoleDefaultsParams): ReadonlyArray<OrchestratorRoleDefault> =>
   SELECTABLE_AGENT_ROLES.filter((role) => ROLE_REGISTRY[role].workflowEligible).map((role) => {
     const routing = resolveRoleRouting({ role, prefs: roleModels });
     if (routing.isOverride === true) {
+      const setMenu = roleModelSetMenu({ menu, role, prefs: roleModels });
       return {
         role,
         provider: routing.provider,
         model: routing.model,
         effort: routing.effort,
+        ...(setMenu !== null && {
+          models: setMenu.map((option) => ({ provider: option.provider, model: option.model })),
+        }),
       };
     }
     return {
@@ -659,10 +653,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         .filter((entry) => entry !== '')
         .join('\n');
       const worktreePath = getSessionRepo({ get, sessionId })?.worktreePath ?? null;
-      const roleDefaults = roleDefaultsFor({
-        provider: defaultProvider,
-        roleModels: workspaceRoleModels,
-      });
       const availability = workflowAvailabilitySnapshot({
         providers: get().providers ?? [],
         cooldowns: get().providerCooldowns ?? {},
@@ -676,6 +666,11 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       const modelMenu = orchestratorModelPool({
         availability,
         hidden: selectHiddenModels({ state: get() }),
+      });
+      const roleDefaults = roleDefaultsFor({
+        provider: defaultProvider,
+        roleModels: workspaceRoleModels,
+        menu: modelMenu,
       });
       const client = new OrchestratorClient({
         ...routing,
@@ -818,9 +813,16 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           fields: proposed,
           emittingProvider: routing.providerId,
         });
-        const routingProposal = hintedRoutingOutcome({
-          outcome: parsedProposal,
-          promptText: proposed.promptPrefix,
+        const routingProposal = keepProposalInRoleSet({
+          outcome: hintedRoutingOutcome({
+            outcome: parsedProposal,
+            promptText: proposed.promptPrefix,
+          }),
+          setMenu: roleModelSetMenu({
+            menu: modelMenu,
+            role: proposed.role,
+            prefs: workspaceRoleModels,
+          }),
         });
         const resolution = resolveWorkflowRouting({
           agentLock: null,
@@ -829,6 +831,10 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           roleDefault: configuredRolePick({
             role: proposed.role,
             roleModels: workspaceRoleModels,
+            profile:
+              parsedProposal.kind === 'valid'
+                ? parsedProposal.proposal.profile
+                : parsedProposal.profile,
           }),
           sessionDefault:
             session.modelOverride == null

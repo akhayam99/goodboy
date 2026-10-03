@@ -98,7 +98,7 @@ const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
   decisions_changed: {
     icon: CONCEPT_ICONS.decisions,
     tone: CONCEPT_TONE.decisions,
-    label: 'Decisions',
+    label: 'Context',
   },
   project_materialized: { icon: CONCEPT_ICONS.mount, tone: CONCEPT_TONE.mount, label: 'Project' },
   project_materialization_refused: { icon: CONCEPT_ICONS.mount, tone: 'warning', label: 'Project' },

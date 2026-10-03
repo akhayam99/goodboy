@@ -1,9 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { AgentRole } from '@goodboy/types';
+import { AUTO_DEFAULTS } from './providers/autoRouting/defaults';
 import {
+  FAN_OUT_MAX_CHILDREN,
   ROLE_REGISTRY,
+  SCOUT_DEPTH_CAP,
   SELECTABLE_AGENT_ROLES,
   defaultsForRole,
   fanOutCapabilityForRole,
+  fanOutDepthCapForRole,
+  roleSplitLimits,
   isAgentRole,
   normalizeAgentRole,
   normalizeSelectableAgentRole,
@@ -209,5 +215,49 @@ describe('fanOutCapabilityForRole', () => {
     expect(fanOutCapabilityForRole('unknown')).toEqual(ROLE_REGISTRY.custom.fanOut);
     expect(warn).toHaveBeenCalledWith('[roles] unknown role "unknown"; using custom');
     warn.mockRestore();
+  });
+});
+
+describe('role explanations', () => {
+  it('gives every role its own does, auto reason and split note', () => {
+    for (const entry of Object.values(ROLE_REGISTRY)) {
+      expect(entry.explain.does.trim()).not.toBe('');
+      expect(entry.explain.autoReason.trim()).not.toBe('');
+      expect(entry.explain.splitNote.trim()).not.toBe('');
+    }
+  });
+
+  it('writes a launch note only for roles that never split', () => {
+    for (const entry of Object.values(ROLE_REGISTRY)) {
+      expect(entry.explain.launchNote === null).toBe(entry.fanOut.mode !== 'never');
+    }
+  });
+
+  it('gives every role a curated Auto default in every provider column', () => {
+    for (const column of Object.values(AUTO_DEFAULTS)) {
+      for (const role of Object.values(ROLE_REGISTRY).map((entry): AgentRole => entry.id)) {
+        expect(column[role].length).toBeGreaterThan(0);
+      }
+    }
+  });
+});
+
+describe('roleSplitLimits', () => {
+  it('lets a scout split into four children over two levels', () => {
+    expect(roleSplitLimits('scout')).toEqual({
+      maxChildren: FAN_OUT_MAX_CHILDREN,
+      levels: SCOUT_DEPTH_CAP,
+    });
+    expect(roleSplitLimits('scout')).toEqual({ maxChildren: 4, levels: 2 });
+  });
+
+  it('lets a conditional role split one level deep', () => {
+    expect(roleSplitLimits('reviewer')).toEqual({ maxChildren: 4, levels: 1 });
+    expect(fanOutDepthCapForRole('debugger')).toBe(1);
+  });
+
+  it('has no limits for a role that never splits', () => {
+    expect(roleSplitLimits('planner')).toBeNull();
+    expect(roleSplitLimits('custom')).toBeNull();
   });
 });

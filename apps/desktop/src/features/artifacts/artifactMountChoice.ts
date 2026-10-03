@@ -2,7 +2,7 @@ import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 import type { AppState } from '../../store/types';
 import { selectSelectedMountId } from '../../store/slices/project-mounts/selectedMountId';
 import { selectWritableMounts } from '../../store/slices/project-mounts/selectors';
-import { FAN_OUT_MAX_CHILDREN } from '../../store/slices/workflows/scoutTree';
+import { FAN_OUT_MAX_CHILDREN } from '@goodboy/core';
 
 export const ARTIFACT_MOUNT_CAP = FAN_OUT_MAX_CHILDREN;
 
