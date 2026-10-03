@@ -12,6 +12,7 @@ import { AppScopePanel } from './AppScopePanel';
 import { SettingsRail } from './SettingsRail';
 import { isNestedScope, settingsScopeAvailable, type NestedScope } from './settingsScopes';
 import { appSectionOf } from './appSections';
+import { workspacePageOf } from './workspacePages';
 import type { ScopeFrame } from './types';
 import type { SettingsFocus, SettingsPageScope, SettingsScopeChange } from '../../settingsFocus';
 import { WorkspaceScopePanel } from './WorkspaceScopePanel';
@@ -160,7 +161,8 @@ export const SettingsStudio = ({ currentWorkspace, focus, onScopeChange, onClose
       return (
         <WorkspaceScopePanel
           workspaceId={currentWorkspace.id}
-          initialSection={focus.section}
+          section={focus.section}
+          onSelect={onScopeChange}
           requestClose={requestClose}
         />
       );
@@ -188,6 +190,7 @@ export const SettingsStudio = ({ currentWorkspace, focus, onScopeChange, onClose
             segments={settingsTrail({
               scope: isHome ? 'home' : availableScope,
               appSection: appSectionOf({ section: focus.section }),
+              workspacePage: workspacePageOf({ section: focus.section }),
               workspaceName,
               onSelect: onScopeChange,
             })}
@@ -196,6 +199,7 @@ export const SettingsStudio = ({ currentWorkspace, focus, onScopeChange, onClose
             {isHome ? (
               <SettingsHome
                 groups={groups}
+                workspaceId={workspaceId}
                 onOpen={(page) => {
                   morph.begin();
                   onScopeChange(page.target);
@@ -210,7 +214,7 @@ export const SettingsStudio = ({ currentWorkspace, focus, onScopeChange, onClose
                   <ScrollFade className="min-h-0 flex-1" fadeFrom="background">
                     <SettingsRail
                       scope={availableScope}
-                      appSection={appSectionOf({ section: focus.section })}
+                      pageKey={pageKey}
                       groups={groups}
                       nestedSlot={slotRefs.rail}
                       onNestedClosed={({ scope }) =>

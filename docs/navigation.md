@@ -1087,7 +1087,10 @@ one is open at a time.
   Backup, Storage, Security findings, Help, Danger zone) always sit under the
   App row as indented
   rows, whichever scope is active, so switching scope never moves a row above
-  the pointer. The panel shows one item at a time. Providers & models nests
+  the pointer. The Workspace pages (Projects, About you, New sessions, After
+  merge, Review replies, Permissions, Disconnect) sit the same way under the
+  Workspace row (`workspacePages.ts`, `SettingsRailPageGroup`). The panel
+  shows one item at a time. Providers & models nests
   Defaults and one row per provider, and Integrations nests one row per tool. Those
   two lists open and close with `Reveal`, and the rail stays one mounted
   element across scopes: `SettingsStudio` portals each scope's nested list and
@@ -1096,6 +1099,40 @@ one is open at a time.
   (`SETTINGS_PANE_ENTRY`). So no scope adds a second rail column. Every scope
   panel keeps the reading width. Precedent: the VS Code settings table of
   contents and Linear's settings sidebar.
+- **Workspace settings is one page per area, each part in a card.** A
+  workspace page carries the page title, the workspace name and one line of
+  help; every part is a `Band` with one heading style (eyebrow, icon, hint
+  under it) and help written under each field, never in a tooltip. Only the
+  page on screen mounts, so Permissions and Review replies compute nothing
+  while another page is open. The old anchors (`projects`, `profile`,
+  `general`, `after-merge`, `review-replies`, `permissions`, `danger`) now
+  pick a page (`workspacePageOf`); `dev-project` lands on Projects with the
+  conversion open. The workspace is renamed from the Projects page. The
+  attribution line lives on New sessions only, and Review replies links to it.
+  Turning a plain folder into a dev project is an inline flow in the Projects
+  page (`ConvertWorkspaceFlow`), never a dialog: linking a plain folder opens
+  Settings there once the add workspace studio has closed. Skills stays
+  hidden behind its feature flag. Precedent: GitHub repository settings and
+  Linear's settings pages.
+- **Restore defaults and copy from another workspace share one inline
+  flow.** The page menu (⋯ in the title row) of every page that owns settings
+  offers `Restore defaults` and `Copy from…`; the Workspace group of the
+  Settings home offers `Copy settings from…` and `Restore defaults` for every
+  page at once. The flow opens under the title as a band, never as a
+  popover: pick the workspace, then a preview grouped by page with a
+  checkbox per page and the from and to values, then the action row (`Copy N
+settings`, `Back`, `Cancel`). It ends on a status line with `Undo`. The
+  preview is computed when the flow opens (`loadFlowSources`), not on every
+  render. Which keys a page owns comes from `pageKeys` (`features/settings/
+pageKeys.ts`), typed so a new override key does not compile until it has
+  an owner; provider defaults belong to Providers & models and are never
+  copied, and neither are projects, folders, integration accounts,
+  permission history or `bootstrap.*` keys. Restoring writes `null`; every
+  override change of one copy or restore is one `patchWorkspaceOverrides`
+  through the queued workspace writer. A field whose value differs from the
+  default shows a faint dot after its label (`Changed from default. Default:
+X`) and a `Reset` in its own ⋯ menu (`WorkspaceFieldRow`). Precedent:
+  JetBrains Copy to Project and VS Code's Modified marker with Reset Setting.
 - **Storage is the one place for disk space, scoped by a picker.** App >
   Storage lists every worktree folder Goodboy made, grouped by repository,
   under three filters: To review, In use and Kept. The page is two clusters

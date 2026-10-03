@@ -1,18 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
+import type { WorkspaceId } from '@goodboy/types';
 import { PaneShell, SectionHeader } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { SettingsGroup, SettingsPage } from './settingsDirectory';
 import { SettingsHomeCard } from './SettingsHomeCard';
 import { SETTINGS_PANE_ENTRY } from './settingsPaneEntry';
 import { readLastSettingsPage } from './lastSettingsPage';
+import { WorkspaceSettingsFlow, type FlowMode } from './WorkspaceSettingsFlow';
+import { SettingsHomeWorkspaceTools } from './SettingsHomeWorkspaceTools';
 
 type Props = {
   readonly groups: ReadonlyArray<SettingsGroup>;
+  readonly workspaceId: WorkspaceId | null;
   readonly onOpen: (page: SettingsPage) => void;
 };
 
-export const SettingsHome = ({ groups, onOpen }: Props) => {
+export const SettingsHome = ({ groups, workspaceId, onOpen }: Props) => {
   const [lastPageKey] = useState(readLastSettingsPage);
+  const [flowMode, setFlowMode] = useState<FlowMode | null>(null);
   const focusRef = useRef<HTMLButtonElement | null>(null);
   const pages = groups.flatMap((group) => group.pages);
   const focusKey = pages.some((page) => page.key === lastPageKey)
@@ -32,6 +37,7 @@ export const SettingsHome = ({ groups, onOpen }: Props) => {
       <div className="flex flex-col gap-6">
         {groups.map((group) => {
           const Icon = CONCEPT_ICONS[group.concept];
+          const hasTools = group.scope === 'workspace' && workspaceId !== null;
           return (
             <section
               key={group.scope}
@@ -44,7 +50,24 @@ export const SettingsHome = ({ groups, onOpen }: Props) => {
                 headingLevel={2}
                 icon={<Icon size={ICON_SIZE.row} aria-hidden />}
                 meta={<span className="text-secondary text-faint-foreground">{group.place}</span>}
+                action={
+                  hasTools ? (
+                    <SettingsHomeWorkspaceTools
+                      mode={flowMode}
+                      onOpen={(mode) => setFlowMode((current) => (current === mode ? null : mode))}
+                    />
+                  ) : undefined
+                }
               />
+              {hasTools && flowMode !== null ? (
+                <WorkspaceSettingsFlow
+                  key={flowMode}
+                  workspaceId={workspaceId}
+                  scope="all"
+                  mode={flowMode}
+                  onClose={() => setFlowMode(null)}
+                />
+              ) : null}
               <ul
                 aria-label={`${group.label} pages`}
                 className="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-1.5"

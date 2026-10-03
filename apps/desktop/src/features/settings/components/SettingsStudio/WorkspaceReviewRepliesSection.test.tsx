@@ -9,8 +9,9 @@ import { WorkspaceReviewRepliesSection } from './WorkspaceReviewRepliesSection';
 
 const WORKSPACE = 'workspace-1' as WorkspaceId;
 
-const { state, learn } = vi.hoisted(() => ({
+const { state, learn, editAttribution } = vi.hoisted(() => ({
   state: {
+    workspaces: [] as ReadonlyArray<unknown>,
     workspaceOverrides: {} as Record<string, OverrideSettings>,
     patchWorkspaceOverrides: vi.fn(
       async (_params: { workspaceId: string; patch: WorkspaceOverridesPatch }) => undefined,
@@ -29,6 +30,7 @@ const { state, learn } = vi.hoisted(() => ({
     ],
   },
   learn: vi.fn(),
+  editAttribution: vi.fn(),
 }));
 
 vi.mock('../../../resolve/learnWorkspaceReplyStyle', () => ({
@@ -43,7 +45,9 @@ const renderWith = (patch: Partial<OverrideSettings> = {}) => {
   state.workspaceOverrides = {
     [WORKSPACE]: { ...overridesWithAttribution({ attributionFooter: null }), ...patch },
   };
-  return render(<WorkspaceReviewRepliesSection workspaceId={WORKSPACE} />);
+  return render(
+    <WorkspaceReviewRepliesSection workspaceId={WORKSPACE} onEditAttribution={editAttribution} />,
+  );
 };
 
 beforeEach(() => {
@@ -150,7 +154,7 @@ describe('WorkspaceReviewRepliesSection', () => {
   it('turns off resolving on GitHub and picks the fixup commit style', () => {
     renderWith();
 
-    const [, resolveSwitch] = screen.getAllByRole('switch');
+    const [resolveSwitch] = screen.getAllByRole('switch');
     if (resolveSwitch === undefined) {
       throw new Error('resolve switch missing');
     }
@@ -172,7 +176,7 @@ describe('WorkspaceReviewRepliesSection', () => {
   it('edits the posted reply by default and saves the switch per workspace', () => {
     renderWith();
 
-    const [, , editSwitch] = screen.getAllByRole('switch');
+    const [, editSwitch] = screen.getAllByRole('switch');
     if (editSwitch === undefined) {
       throw new Error('edit switch missing');
     }
@@ -183,24 +187,12 @@ describe('WorkspaceReviewRepliesSection', () => {
     expect(state.saveSetting).toHaveBeenCalledWith(`review.edit_posted_reply.${WORKSPACE}`, '0');
   });
 
-  it('resets every reply setting after a confirm and keeps signing as it is', async () => {
-    renderWith({ replyVoice: 'friendly', attributionFooter: false });
+  it('sends the attribution line to New sessions instead of a second switch', () => {
+    renderWith({ attributionFooter: false });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reset to default' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+    expect(screen.getAllByRole('switch')).toHaveLength(2);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit in New sessions' }));
 
-    await waitFor(() =>
-      expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
-        workspaceId: WORKSPACE,
-        patch: {
-          replyVoice: null,
-          replyStyleNote: null,
-          replyTemplateFixed: null,
-          replyTemplateNoChange: null,
-          resolveOnGithub: null,
-          resolveCommitStyle: null,
-        },
-      }),
-    );
+    expect(editAttribution).toHaveBeenCalledOnce();
   });
 });

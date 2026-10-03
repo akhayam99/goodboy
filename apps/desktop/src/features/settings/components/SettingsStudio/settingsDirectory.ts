@@ -8,6 +8,7 @@ import { APP_SECTIONS, type AppSection } from './appSections';
 import type { RailSubtitles } from './railSubtitles';
 import { SHORTCUT_ROW_COUNT } from './shortcutRows';
 import { SCOPE_ITEMS } from './settingsScopes';
+import { WORKSPACE_PAGES, workspacePageOf, type WorkspacePage } from './workspacePages';
 
 type Concept = keyof typeof CONCEPT_ICONS;
 
@@ -54,6 +55,7 @@ export type SettingsStatus = {
   readonly providers: ReadonlyArray<SettingsProviderEntry>;
   readonly tools: ReadonlyArray<ToolRailEntry>;
   readonly toolsInventory: string;
+  readonly workspacePages: Readonly<Partial<Record<WorkspacePage, string>>>;
 };
 
 type Params = {
@@ -145,21 +147,22 @@ const workspaceGroup = ({ status, workspaceName }: Params): SettingsGroup => ({
   place: workspaceName ?? 'This workspace',
   subtitle: status.subtitles.workspaceText ?? workspaceName ?? undefined,
   tone: status.subtitles.workspaceTone,
-  pages: [
-    {
-      key: 'workspace',
-      label: 'Workspace',
-      glyph: { kind: 'concept', concept: 'workspace' },
-      tone: CONCEPT_TONE.workspace,
-      quiet: 'Projects, defaults and permissions',
-      attention: attentionOf({
-        text: status.subtitles.workspaceText,
-        tone: status.subtitles.workspaceTone,
-      }),
-      target: { scope: 'workspace' },
-      isDanger: false,
-    },
-  ],
+  pages: WORKSPACE_PAGES.map((page): SettingsPage => ({
+    key: `workspace:${page.id}`,
+    label: page.label,
+    glyph: { kind: 'concept', concept: page.concept },
+    tone: CONCEPT_TONE[page.concept],
+    quiet: status.workspacePages[page.id] ?? page.hint,
+    attention:
+      page.id === 'projects'
+        ? attentionOf({
+            text: status.subtitles.workspaceText,
+            tone: status.subtitles.workspaceTone,
+          })
+        : null,
+    target: { scope: 'workspace', section: page.id },
+    isDanger: page.id === 'danger',
+  })),
 });
 
 const providerPages = ({ status, workspaceName }: Params): ReadonlyArray<SettingsPage> => {
@@ -260,5 +263,5 @@ export const settingsPageKey = ({ scope, section, provider, tool }: PageKeyParam
   if (scope === 'tools') {
     return tool === undefined ? 'tools' : `tool:${tool}`;
   }
-  return 'workspace';
+  return `workspace:${workspacePageOf({ section })}`;
 };

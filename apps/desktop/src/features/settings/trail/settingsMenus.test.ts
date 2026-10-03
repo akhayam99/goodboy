@@ -6,6 +6,7 @@ describe('settingsTrail', () => {
     const segments = settingsTrail({
       scope: 'app',
       appSection: 'general',
+      workspacePage: 'projects',
       workspaceName: 'Harborline',
       onSelect: vi.fn(),
     });
@@ -29,6 +30,7 @@ describe('settingsTrail first segment', () => {
       const [first] = settingsTrail({
         scope,
         appSection: 'general',
+        workspacePage: 'projects',
         workspaceName: 'Harborline',
         onSelect,
       });
@@ -43,10 +45,31 @@ describe('settingsTrail first segment', () => {
     const segments = settingsTrail({
       scope: 'home',
       appSection: 'general',
+      workspacePage: 'projects',
       workspaceName: null,
       onSelect: vi.fn(),
     });
 
     expect(segments.map((segment) => segment.id)).toEqual(['settings']);
+  });
+});
+
+describe('settingsTrail workspace pages', () => {
+  it('names the workspace page and switches between pages from its menu', () => {
+    const onSelect = vi.fn();
+    const segments = settingsTrail({
+      scope: 'workspace',
+      appSection: 'general',
+      workspacePage: 'review-replies',
+      workspaceName: 'Harborline',
+      onSelect,
+    });
+    const page = segments.find((segment) => segment.id === 'section');
+    const rows = page?.menu?.groups.flatMap((group) => group.rows) ?? [];
+
+    expect(page?.label).toBe('Review replies');
+    expect(rows.find((row) => row.isCurrent)?.label).toBe('Review replies');
+    rows.find((row) => row.id === 'permissions')?.onSelect();
+    expect(onSelect).toHaveBeenCalledWith({ scope: 'workspace', section: 'permissions' });
   });
 });

@@ -4,16 +4,16 @@ import {
   Band,
   BandStack,
   Button,
-  Eyebrow,
-  InlineConfirm,
+  FieldRow,
   Markdown,
+  SectionHeader,
   SegmentedTabs,
   Switch,
 } from '@goodboy/ui';
-import { RotateCcw } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { useAppStore } from '../../../../store';
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { buildResolutionReplyBody } from '../../../../store/slices/github/buildResolutionReplyBody';
 import {
   EDIT_POSTED_REPLY_OFF,
@@ -28,32 +28,23 @@ import {
 } from '../../../resolve/replySettings';
 import {
   COMMIT_STYLE_LABEL,
-  REVIEW_REPLIES_SECTION_ID,
   VOICE_HELP,
   VOICE_LABEL,
   VOICE_SAMPLE,
 } from '../../../resolve/replySettingsCopy';
 import { ReplyStyleNoteField } from './ReplyStyleNoteField';
 import { ReplyTemplateField } from './ReplyTemplateField';
-import { WorkspaceDefaultRow } from './WorkspaceDefaultRow';
+import { WorkspaceFieldRow } from './WorkspaceFieldRow';
 
 const PREVIEW_SHA = '4f21c8b9a7d3e6015482ba9c7d3e6f0158249bcd';
 const PREVIEW_PR_URL = 'https://github.com/acme/payments-api/pull/528';
 
-const RESET_PATCH: WorkspaceOverridesPatch = {
-  replyVoice: null,
-  replyStyleNote: null,
-  replyTemplateFixed: null,
-  replyTemplateNoChange: null,
-  resolveOnGithub: null,
-  resolveCommitStyle: null,
-};
-
 type Props = {
   readonly workspaceId: WorkspaceId;
+  readonly onEditAttribution: () => void;
 };
 
-export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
+export const WorkspaceReviewRepliesSection = ({ workspaceId, onEditAttribution }: Props) => {
   const overrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
   const patchWorkspaceOverrides = useAppStore((s) => s.patchWorkspaceOverrides);
   const reportError = useAppStore((s) => s.reportError);
@@ -62,7 +53,6 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
   const [isBusy, setIsBusy] = useState(false);
-  const [isResetting, setIsResetting] = useState(false);
   const settings = replySettingsOf({ layers: [overrides] });
 
   useEffect(() => {
@@ -109,19 +99,22 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
   });
 
   return (
-    <section aria-labelledby={REVIEW_REPLIES_SECTION_ID} className="flex flex-col gap-3">
-      <div className="flex flex-col gap-0.5">
-        <h2 id={REVIEW_REPLIES_SECTION_ID}>
-          <Eyebrow label="Review replies" />
-        </h2>
-        <p className="text-label text-muted-foreground">
-          How Goodboy answers review comments on your pull requests.
-        </p>
-      </div>
-      <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
-        <div className="flex min-w-0 flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <span className="text-label font-medium text-foreground">Voice</span>
+    <div className="grid grid-cols-1 gap-6 @3xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+      <div className="flex min-w-0 flex-col gap-4">
+        <Band
+          inset="content"
+          label="Voice"
+          ariaLabel="Voice"
+          hint="The tone every reply starts from."
+          icon={<CONCEPT_ICONS.message size={ICON_SIZE.row} aria-hidden />}
+          headingLevel={2}
+        >
+          <WorkspaceFieldRow
+            workspaceId={workspaceId}
+            field="replyVoice"
+            layout="stacked"
+            help={VOICE_HELP[settings.voice]}
+          >
             <SegmentedTabs
               ariaLabel="Reply voice"
               size="sm"
@@ -133,8 +126,7 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
               }))}
               onChange={(voice) => void persist({ patch: { replyVoice: voice } })}
             />
-            <p className="text-secondary text-muted-foreground">{VOICE_HELP[settings.voice]}</p>
-          </div>
+          </WorkspaceFieldRow>
           {settings.voice === 'mine' && (
             <ReplyStyleNoteField
               workspaceId={workspaceId}
@@ -143,6 +135,15 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
               onSave={(note) => void persist({ patch: { replyStyleNote: note } })}
             />
           )}
+        </Band>
+        <Band
+          inset="content"
+          label="Templates"
+          ariaLabel="Templates"
+          hint="What a reply says around the reason."
+          icon={<CONCEPT_ICONS.report size={ICON_SIZE.row} aria-hidden />}
+          headingLevel={2}
+        >
           <ReplyTemplateField
             label="When fixed"
             value={settings.templateFixed}
@@ -167,42 +168,57 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
               })
             }
           />
-          <div className="flex flex-col gap-1">
-            <WorkspaceDefaultRow
-              label="Sign replies"
-              help='Adds "Written by Goodboy". The same switch as the attribution line.'
-            >
-              <Switch
-                label={settings.isSigned ? 'On' : 'Off'}
-                checked={settings.isSigned}
-                disabled={isBusy}
-                onChange={(next) => void persist({ patch: { attributionFooter: next } })}
-              />
-            </WorkspaceDefaultRow>
-            <WorkspaceDefaultRow
-              label="Resolve the thread after replying"
-              help="Off leaves it open for the reviewer to resolve. Bitbucket threads always stay open."
-            >
-              <Switch
-                label={settings.resolveOnGithub ? 'On' : 'Off'}
-                checked={settings.resolveOnGithub}
-                disabled={isBusy}
-                onChange={(next) => void persist({ patch: { resolveOnGithub: next } })}
-              />
-            </WorkspaceDefaultRow>
-            <WorkspaceDefaultRow
-              label="Edit the posted reply"
-              help="After a squash or fixup, adds an Update line to a reply Goodboy already posted. GitHub may notify people."
-            >
-              <Switch
-                label={isEditPostedReplyOn({ raw: rawEdit }) ? 'On' : 'Off'}
-                checked={isEditPostedReplyOn({ raw: rawEdit })}
-                onChange={(next) => saveEditPostedReply({ isOn: next })}
-              />
-            </WorkspaceDefaultRow>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <span className="text-label font-medium text-foreground">Commits</span>
+        </Band>
+        <Band
+          inset="content"
+          label="Threads"
+          ariaLabel="Threads"
+          hint="What happens to a thread after a reply."
+          icon={<CONCEPT_ICONS.comments size={ICON_SIZE.row} aria-hidden />}
+          headingLevel={2}
+        >
+          <WorkspaceFieldRow
+            workspaceId={workspaceId}
+            field="resolveOnGithub"
+            help="Off leaves it open for the reviewer to resolve. Bitbucket threads always stay open."
+          >
+            <Switch
+              label={settings.resolveOnGithub ? 'On' : 'Off'}
+              checked={settings.resolveOnGithub}
+              disabled={isBusy}
+              onChange={(next) => void persist({ patch: { resolveOnGithub: next } })}
+            />
+          </WorkspaceFieldRow>
+          <WorkspaceFieldRow
+            workspaceId={workspaceId}
+            field="editPostedReply"
+            help="After a squash or fixup, adds an Update line to a reply Goodboy already posted. GitHub may notify people."
+          >
+            <Switch
+              label={isEditPostedReplyOn({ raw: rawEdit }) ? 'On' : 'Off'}
+              checked={isEditPostedReplyOn({ raw: rawEdit })}
+              onChange={(next) => saveEditPostedReply({ isOn: next })}
+            />
+          </WorkspaceFieldRow>
+          <FieldRow
+            label="Attribution line"
+            help={`Adds "Written by Goodboy". One setting for comments and replies, so it lives on New sessions. It is ${settings.isSigned ? 'on' : 'off'}.`}
+          >
+            <Button variant="ghost" size="sm" onClick={onEditAttribution}>
+              Edit in New sessions
+              <ChevronRight size={ICON_SIZE.row} aria-hidden />
+            </Button>
+          </FieldRow>
+        </Band>
+        <Band
+          inset="content"
+          label="Commits"
+          ariaLabel="Commits"
+          hint="For fixes made to answer a comment."
+          icon={<CONCEPT_ICONS.commits size={ICON_SIZE.row} aria-hidden />}
+          headingLevel={2}
+        >
+          <WorkspaceFieldRow workspaceId={workspaceId} field="resolveCommitStyle" layout="stacked">
             <SegmentedTabs
               ariaLabel="Commit style"
               size="sm"
@@ -214,54 +230,34 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
               }))}
               onChange={(style) => void persist({ patch: { resolveCommitStyle: style } })}
             />
-          </div>
-          {isResetting ? (
-            <InlineConfirm
-              role="alert"
-              icon={<RotateCcw size={ICON_SIZE.row} aria-hidden />}
-              title="Reset review replies to the default?"
-              description="Voice, style note, templates, resolving on GitHub, editing the posted reply and the commit style go back to the default. Signing stays as it is."
-              confirmLabel="Reset"
-              isBusy={isBusy}
-              onConfirm={() => {
-                saveEditPostedReply({ isOn: true });
-                void persist({ patch: RESET_PATCH }).then(() => setIsResetting(false));
-              }}
-              onCancel={() => setIsResetting(false)}
-            />
-          ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="self-start text-muted-foreground"
-              onClick={() => setIsResetting(true)}
-            >
-              Reset to default
-            </Button>
-          )}
-        </div>
-        <div className="flex min-w-0 flex-col gap-2" aria-label="Reply preview">
-          <span className="text-label font-medium text-foreground">Preview</span>
-          <BandStack>
-            <Band inset="content">
-              <p className="text-secondary text-muted-foreground">When fixed</p>
-              {preview !== null && (
-                <Markdown text={preview} variant="preview" className="text-label text-foreground" />
-              )}
-            </Band>
-            <Band inset="content">
-              <p className="text-secondary text-muted-foreground">When not changing</p>
-              {noChangePreview !== null && (
-                <Markdown
-                  text={noChangePreview}
-                  variant="preview"
-                  className="text-label text-foreground"
-                />
-              )}
-            </Band>
-          </BandStack>
-        </div>
+          </WorkspaceFieldRow>
+        </Band>
       </div>
-    </section>
+      <section aria-label="Reply preview" className="flex min-w-0 flex-col gap-2">
+        <SectionHeader
+          label="Preview"
+          hint="A reply with the settings on this page."
+          headingLevel={2}
+        />
+        <BandStack>
+          <Band inset="content">
+            <p className="text-secondary text-muted-foreground">When fixed</p>
+            {preview !== null && (
+              <Markdown text={preview} variant="preview" className="text-label text-foreground" />
+            )}
+          </Band>
+          <Band inset="content">
+            <p className="text-secondary text-muted-foreground">When not changing</p>
+            {noChangePreview !== null && (
+              <Markdown
+                text={noChangePreview}
+                variant="preview"
+                className="text-label text-foreground"
+              />
+            )}
+          </Band>
+        </BandStack>
+      </section>
+    </div>
   );
 };
