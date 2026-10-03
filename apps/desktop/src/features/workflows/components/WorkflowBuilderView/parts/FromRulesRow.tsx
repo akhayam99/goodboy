@@ -8,9 +8,10 @@ import { autonomyLabel, guidanceRuleText, spendRuleText } from '../../../workflo
 type Props = {
   readonly rules: WorkflowRules;
   readonly providers: string;
+  readonly changed: ReadonlyArray<string>;
 };
 
-export const FromRulesRow = ({ rules, providers }: Props) => {
+export const FromRulesRow = ({ rules, providers, changed }: Props) => {
   const items = [
     autonomyLabel({ rules }),
     spendRuleText({ rules }),
@@ -27,6 +28,15 @@ export const FromRulesRow = ({ rules, providers }: Props) => {
         From your rules
       </span>
       <span className="min-w-0 flex-1 truncate text-muted-foreground">{items.join(' · ')}</span>
+      {changed.length === 0 ? null : (
+        <span
+          data-testid="run-changes"
+          className="inline-flex shrink-0 items-center gap-1.5 text-secondary text-info"
+        >
+          <span aria-hidden className="block size-1.5 shrink-0 rounded-full bg-info" />
+          Changed for this run: {changed.join(', ')}
+        </span>
+      )}
       <Button variant="ghost" size="sm" onClick={openWorkflowRules}>
         Edit
       </Button>

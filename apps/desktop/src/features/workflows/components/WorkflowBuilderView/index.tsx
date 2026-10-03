@@ -132,9 +132,6 @@ const stepsFromPlan = ({ plan, roleModels }: StepsFromPlanParams): ReadonlyArray
     effort: resolveRoleRouting({ role: step.role, prefs: roleModels }).effort as EffortLevel,
   }));
 
-const draftAutonomy = (d: WorkflowBuilderDraft): WorkflowAutonomy =>
-  d.autonomy ?? (d.autoRun ? 'run' : 'step');
-
 const isDraftEmpty = (d: WorkflowBuilderDraft, rules: WorkflowRules): boolean =>
   d.goalText.trim() === '' &&
   d.goalHistory.length === 0 &&
@@ -144,7 +141,7 @@ const isDraftEmpty = (d: WorkflowBuilderDraft, rules: WorkflowRules): boolean =>
   d.plan === null &&
   d.workflow.steps.length === 0 &&
   !d.saveAsPreset &&
-  draftAutonomy(d) === rules.autonomy &&
+  (d.autonomy ?? rules.autonomy) === rules.autonomy &&
   (d.guidance ?? rules.standingGuidance) === rules.standingGuidance &&
   sameRoles({ left: d.guidanceRoles ?? rules.guidanceRoles, right: rules.guidanceRoles }) &&
   d.title.trim() === '' &&
@@ -280,11 +277,13 @@ export const WorkflowBuilderView = (props: Props) => {
   const [planning, setPlanning] = useState(false);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [saveAsPreset, setSaveAsPreset] = useState(initialDraft?.saveAsPreset ?? false);
-  const [autonomy, setAutonomy] = useState<WorkflowAutonomy>(
-    initialDraft?.autonomy ??
-      (initialDraft === undefined ? workflowRules.autonomy : initialDraft.autoRun ? 'run' : 'step'),
+  const [autonomyOverride, setAutonomyOverride] = useState<WorkflowAutonomy | null>(
+    initialDraft?.autonomy ?? null,
   );
+  const autonomy = autonomyOverride ?? workflowRules.autonomy;
   const autoRun = autonomy !== 'step';
+  const chooseAutonomy = (next: WorkflowAutonomy) =>
+    setAutonomyOverride(next === workflowRules.autonomy ? null : next);
   const [startChoice, setStartChoice] = useState<StartChoice>(IMMEDIATE_START);
   const [isSpendLimitEnabled, setIsSpendLimitEnabled] = useState(
     workflowRules.spendLimitUsd !== null,
@@ -501,7 +500,7 @@ export const WorkflowBuilderView = (props: Props) => {
     },
     saveAsPreset,
     autoRun,
-    autonomy,
+    ...(autonomyOverride !== null && { autonomy: autonomyOverride }),
     title,
     orchestratorModel: {
       providerOverride: orchestratorProviderOverride,
@@ -532,7 +531,7 @@ export const WorkflowBuilderView = (props: Props) => {
     steps,
     saveAsPreset,
     autoRun,
-    autonomy,
+    autonomyOverride,
     title,
     orchestratorProviderOverride,
     orchestratorModelOverride,
@@ -560,7 +559,7 @@ export const WorkflowBuilderView = (props: Props) => {
     setSteps([]);
     setIsPlannerOpen(true);
     setSaveAsPreset(false);
-    setAutonomy(workflowRules.autonomy);
+    setAutonomyOverride(null);
     setTitle('');
     setTitleSuggestion(null);
     suggestedGoalRef.current = null;
@@ -1098,6 +1097,11 @@ export const WorkflowBuilderView = (props: Props) => {
   );
 
   const guidanceDiffers = guidance !== workflowRules.standingGuidance;
+  const spendDiffers =
+    isSpendLimitEnabled !== (workflowRules.spendLimitUsd !== null) ||
+    (isSpendLimitEnabled &&
+      (parseSpendLimit(spendLimitDraft) !== workflowRules.spendLimitUsd ||
+        spendLimitMode !== workflowRules.spendLimitMode));
   const guidanceRuleLines = workflowRules.standingGuidance
     .split('\n')
     .filter((line) => line.trim() !== '').length;
@@ -1219,7 +1223,7 @@ export const WorkflowBuilderView = (props: Props) => {
         autonomy={autonomy}
         ruleAutonomy={workflowRules.autonomy}
         disabled={busy}
-        onChange={setAutonomy}
+        onChange={chooseAutonomy}
       />
       <SpendCapChip
         isEnabled={isSpendLimitEnabled}
@@ -1365,6 +1369,11 @@ export const WorkflowBuilderView = (props: Props) => {
         <FromRulesRow
           rules={workflowRules}
           providers={policyProvidersText({ policy: workspaceOverrides?.providerPool })}
+          changed={[
+            ...(autonomyOverride === null ? [] : ['when to ask']),
+            ...(spendDiffers ? ['spend cap'] : []),
+            ...(guidanceDiffers ? ['guidance'] : []),
+          ]}
         />
         <LaunchBar
           controls={launchControls}
