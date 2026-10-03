@@ -189,6 +189,29 @@ pub(crate) fn remove_chat_in(store: &Path, chat_id: &str) -> Result<(), ChatImag
     }
 }
 
+pub(crate) fn prune_orphans_in(store: &Path, conn: &Connection) -> Result<u64, ChatImageError> {
+    let entries = match fs::read_dir(store) {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(0),
+        Err(error) => return Err(error.into()),
+    };
+    let mut stmt = conn.prepare("SELECT 1 FROM chats WHERE id = ?1")?;
+    let mut removed = 0;
+    for entry in entries {
+        let entry = entry?;
+        if !entry.file_type()?.is_dir() {
+            continue;
+        }
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if !is_safe_id(&name) || stmt.exists([&name])? {
+            continue;
+        }
+        remove_chat_in(store, &name)?;
+        removed += 1;
+    }
+    Ok(removed)
+}
+
 pub(crate) fn load_chat_images(
     conn: &Connection,
     chat_id: &str,
@@ -366,6 +389,13 @@ pub async fn chat_attachments_remove(chat_ids: Vec<String>) -> Result<(), ChatIm
     })
     .await
     .map_err(|e| ChatImageError::Io(std::io::Error::other(e.to_string())))?
+}
+
+#[tauri::command(async)]
+pub fn chat_attachments_prune(db: State<'_, Db>) -> Result<u64, ChatImageError> {
+    let store = store_root()?;
+    let conn = db.0.lock().map_err(|_| ChatImageError::Poisoned)?;
+    prune_orphans_in(&store, &conn)
 }
 
 #[cfg(test)]

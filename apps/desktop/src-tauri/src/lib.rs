@@ -376,6 +376,7 @@ pub fn run() {
             chat_images::chat_attachment_write,
             chat_images::chat_attachment_read,
             chat_images::chat_attachments_remove,
+            chat_images::chat_attachments_prune,
             worktree_writer::worktree_writer_acquire,
             worktree_writer::worktree_writer_release,
             worktree_writer::worktree_writer_cancel,

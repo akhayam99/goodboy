@@ -166,3 +166,45 @@ fn the_images_of_a_chat_are_read_from_its_rows_in_order() {
         "an image is read only through its own chat"
     );
 }
+
+#[test]
+fn deleting_a_workspace_removes_its_chat_images_from_disk() {
+    let store = scratch("workspace-delete");
+    let conn = Connection::open_in_memory().unwrap();
+    conn.execute_batch(
+        "PRAGMA foreign_keys = ON;
+         CREATE TABLE workspaces (id TEXT PRIMARY KEY);
+         CREATE TABLE chats (id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL
+           REFERENCES workspaces(id) ON DELETE CASCADE);
+         CREATE TABLE chat_message_attachments (id TEXT PRIMARY KEY, chat_id TEXT NOT NULL
+           REFERENCES chats(id) ON DELETE CASCADE, message_id TEXT, position INTEGER,
+           file_name TEXT, mime_type TEXT, byte_size INTEGER, created_at INTEGER);
+         INSERT INTO workspaces VALUES ('harborline'), ('northwind');
+         INSERT INTO chats VALUES ('6f616b42-0ed8-471e-823f-ee4aca6b7ce9', 'harborline');
+         INSERT INTO chats VALUES ('kept-chat', 'northwind');
+         INSERT INTO chat_message_attachments VALUES
+           ('img-1', '6f616b42-0ed8-471e-823f-ee4aca6b7ce9', 'm1', 0, 'checkout-502.png', 'image/png', 7, 1);",
+    )
+    .unwrap();
+    write_image_in(&store, CHAT, "img-1", "checkout-502.png", PNG).unwrap();
+    write_image_in(&store, "kept-chat", "img-2", "acme-trace.png", PNG).unwrap();
+    let image = store.join(CHAT).join("img-1-checkout-502.png");
+    assert!(image.is_file());
+
+    assert_eq!(prune_orphans_in(&store, &conn).unwrap(), 0);
+    conn.execute("DELETE FROM workspaces WHERE id = 'harborline'", [])
+        .unwrap();
+    assert_eq!(prune_orphans_in(&store, &conn).unwrap(), 1);
+
+    assert!(!image.exists());
+    assert!(!store.join(CHAT).exists());
+    assert!(store
+        .join("kept-chat")
+        .join("img-2-acme-trace.png")
+        .is_file());
+    assert_eq!(prune_orphans_in(&store, &conn).unwrap(), 0);
+    assert_eq!(
+        prune_orphans_in(&store.join("never-created"), &conn).unwrap(),
+        0
+    );
+}

@@ -713,7 +713,10 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   Codex gets the new message's images with `--image` (`codex exec --help`
   lists the flag; the read-only probe ran on 0.160.0). Earlier messages name
   their images in the history text. Deleting a chat removes its folder
-  (`chat_attachments_remove`). The thread loads each image through
+  (`chat_attachments_remove`). Every path that drops chats in bulk (a deleted
+  or merged workspace, a wiped database, any hygiene pass) leaves folders with
+  no `chats` row, and `chat_attachments_prune` removes those: after a merge,
+  after a wipe and at every boot. It skips a folder that is already gone. The thread loads each image through
   `chat_attachment_read` as an object URL freed on unmount, and a user
   message is memoized, so a streaming answer redraws only itself
   (`ChatThread.redraw.test.tsx`, 50 images). The `chat.images` setting set
