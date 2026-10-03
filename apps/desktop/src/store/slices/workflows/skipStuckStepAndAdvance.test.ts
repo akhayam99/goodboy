@@ -63,7 +63,7 @@ const session: Session = {
       workflowId: WORKFLOW_ID,
       ordinal: 0,
       currentStep: 0,
-      autoRun: false,
+      autoRun: true,
       triggerMode: 'manual',
       executionMode: 'static',
     },
@@ -236,7 +236,7 @@ describe('skipStuckStepAndAdvance', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: "Couldn't skip the blocked step",
+        title: "Couldn't skip the step",
         body: 'agent row is gone',
         sessionId: SESSION_ID,
       }),

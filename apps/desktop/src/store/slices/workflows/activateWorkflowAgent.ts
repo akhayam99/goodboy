@@ -1,5 +1,5 @@
 import { formatError } from '@goodboy/ui';
-import type { AgentId, IsoDateTime, PlanId, SessionId } from '@goodboy/types';
+import type { Agent, AgentId, IsoDateTime, PlanId, SessionId } from '@goodboy/types';
 import { recordArtifactProvenance } from '../../../features/artifacts/artifactProvenance';
 import { selectDefaultArtifactMountIds } from '../../../features/artifacts/artifactMountChoice';
 import { prepareArtifactEvidence } from '../../../features/artifacts/prepareArtifactEvidence';
@@ -24,6 +24,7 @@ import {
   selectFanOutPlan,
   unsettledClusterChildren,
 } from './clusterImplementation';
+import { isRunPaused } from '../../../features/workflows/isRunPaused';
 import { isWatchingWorkflowLens } from './isWatchingWorkflowLens';
 import { WorkflowGateError, findWorkflowActivationBlock } from './workflowActivationGate';
 import type { GetFn, SetFn } from './types';
@@ -35,6 +36,21 @@ export type ActivateWorkflowAgentParams = {
   readonly explicitPlanId?: PlanId;
   readonly focus?: SpawnFocus;
   readonly bypassGate?: boolean;
+};
+
+type PauseCheckParams = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly agent: Agent;
+};
+
+const throwWhenPaused = ({ get, sessionId, agent }: PauseCheckParams): void => {
+  const run = sessionById(get().sessions, sessionId)?.workflowRuns.find(
+    (candidate) => candidate.id === agent.workflowRunId,
+  );
+  if (isRunPaused({ run })) {
+    throw new WorkflowGateError({ reason: 'paused' });
+  }
 };
 
 export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
@@ -56,6 +72,8 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
       throw new Error('session has no workflow');
     }
 
+    throwWhenPaused({ get, sessionId, agent });
+
     if (bypassGate !== true) {
       const blocked = await findWorkflowActivationBlock({
         sessionId,
@@ -69,6 +87,7 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
       }
     }
 
+    throwWhenPaused({ get, sessionId, agent });
     if (unsettledClusterChildren(runs, agentId).length > 0) {
       await resumeClusterChildren({ set, get, sessionId, container: agent });
       return;
@@ -131,6 +150,7 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
           })
         : null;
 
+    throwWhenPaused({ get, sessionId, agent });
     if (consumesPlan && planToConsume) {
       await invokeAddPlanConsumption(planToConsume.id, agentId);
       const refreshedPlans = await invokeListPlansForSession(sessionId);
@@ -181,6 +201,7 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
       composeStepBoundary(agentId),
     );
     const handedPlan = planSection === '' ? null : (explicitPlan ?? latestPlan);
+    throwWhenPaused({ get, sessionId, agent });
     if (kickoff.length > 0) {
       await get().sendTurn({
         sessionId,

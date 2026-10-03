@@ -44,8 +44,9 @@ it. From the top:
 - **Mode**, with one line under it that says what the mode does, and the
   mode's own control on the right of the same row.
 - **Plan**: the steps as a tree that reads top down, step 1 first and **Add step** last.
-- **Launch bar**: when it starts, **Autorun**, the spend cap or **Save as
-  preset**, and **Start workflow**. The reason Start is off shows under it.
+- **Launch bar**: when it starts, when to ask (**Ask before each step** or
+  **Run on its own**), the spend cap or **Save as preset**, and **Start
+  workflow**. The reason Start is off shows under it.
 
 The three modes:
 
@@ -53,11 +54,20 @@ The three modes:
 2. **Custom**: write the steps yourself, or open **Draft with planner**, describe what you want and Goodboy drafts the steps for you to edit.
 3. **Preset**: pick a ready workflow from the **Preset** picker. Goodboy comes with three: **Refactor** (scout, plan, implement, test), **Plan and ship** (scout, plan, implement, review) and **Fix a bug** (investigate, implement, test). The last two are built from the built-in steps. A preset is a source: editing a step marks it, the name shows "Edited from" the preset, and switching to **Custom** keeps the steps.
 
-Click a step to edit it in place: title, role, instruction, expected output,
-and provider, model, variant and effort on the right. Its footer moves,
-duplicates or removes the step. Remove asks first. Escape or **Done** closes
-it. The grip on the row drags a step, and the arrow keys on the grip move it:
-up runs it earlier, down runs it later.
+Click a step to edit it in place: title, role, instruction and expected
+output on the left, the model on the right. Instruction and expected output
+are document fields (markdown with **Write** and **Preview**, Cmd+Enter
+closes the editor), each with **Polish** and, after a polish, **Undo
+polish**. The model block has two choices: **Follow role** (the default,
+which says what Auto picks for the role from the providers you can use now)
+or **Pin a model** (providers as named chips with their state, then model and
+effort), and **Reply verbosity** under both. A pinned step carries a dot on
+its row, like an edited one. The footer has one primary, **Done**, and a ⋯
+menu with **Duplicate**, **Save as step**, **Move up**, **Move down** and
+**Delete step**. Delete acts at once and the toast offers **Undo**. Escape
+closes the editor too. The grip on the row drags a step, and the arrow keys on
+the grip move it: up runs it earlier, down runs it later. A step added to a
+running run opens the same editor, with **Add step** as its primary.
 
 Once the workspace has measured 10 finished steps, every step row shows how
 long steps like it usually take and what they usually cost, as a range
@@ -65,7 +75,7 @@ long steps like it usually take and what they usually cost, as a range
 ("≈ 35-55m · $2.10-3.40"). A range with `~` leans on a broader history than
 this exact model and effort, a dash means there is not enough history for that
 step, and the tooltip always names the basis. When no step in the plan has an
-estimate yet, the rows show no time or cost columns at all. With **Autorun** off the total
+estimate yet, the rows show no time or cost columns at all. When the run asks before each step the total
 adds "+ your reviews", because your time between steps is not estimated. An
 orchestrated run shows a total only once the workspace has 5 finished
 orchestrated runs. The open editor repeats the step's estimate in its footer.
@@ -125,8 +135,10 @@ The **Starts** chip in the launch bar picks one:
 - **Manually**, when you press start
 - **After** another run that is still going, and then it carries on by itself
 
-**Autorun** is off by default: the run pauses after each step so you can
-review it. Turn it on and each next step starts on its own.
+When to ask is **Ask before each step** by default: the run waits for your go
+after each step so you can review it. **Run on its own** starts each next step
+by itself. The choice is stored as the run's autorun flag and can change later
+from the run's ⋯ menu.
 
 ## What a step carries
 
@@ -165,16 +177,19 @@ providers it may pick from with **Can use**.
 In the workflow detail, an orchestrated run shows the orchestrator as one row
 (`OrchestratorStrip`): what it is doing ("Choosing the next step", "Waiting on
 step 3 · Implement"), how long the running step has taken, the model it runs
-on, the **Autorun** switch and a menu. The row says its state with the colour
-of its left rail, never with a filled background. It shows at most one action:
-**Decide next step** only while autorun is off, **Resume the run** after you
-stopped it, **Retry** after a failed decision, **Continue the run** once it is
-complete, or the spend limit on a budget pause. A failed step and an open
+on, the run controls and a menu. The row says its state with the colour
+of its left rail, never with a filled background. **Pause** shows while a step
+or a decision is in flight, **Resume** while the run is paused, and **Stop**
+(with an inline confirmation) in both. Besides them it shows at most one
+action: **Decide next step** only when the run asks before each step,
+**Continue the run** after you stopped it or once it is complete, **Retry**
+after a failed decision, or the spend limit on a budget pause. A failed step and an open
 question are left to the Next action strip, so the row only says the run is
 paused, on a neutral rail: the strip above carries the tone. When the pane is
 too narrow for the sentence and the controls on one line, the controls wrap to
-a second line on the right instead of cutting the sentence. **Stop now** and **Model per step** (the model each step runs on, and
-why) sit in the menu. The hint field sits under the row, always open.
+a second line on the right instead of cutting the sentence. When to ask
+(**Ask before each step** or **Run on its own**) and **Model per step** (the
+model each step runs on, and why) sit in the menu. The hint field sits under the row, always open.
 
 ### Why each step
 
@@ -337,8 +352,9 @@ agent opens on Transcript, pinned to the latest line. A resolver that is still
 working shows its live line at the top of its Brief. Orchestrated runs get the same strip, and the
 orchestrator strip carries no answer or skip button of its own.
 
-- A failed step: "Implement stopped before finishing." with the steps that wait on it. **Check completion** asks the same agent to verify its work and finish, **Skip step** skips it. The error the turn ended with sits behind **Show details**
-- A blocked step: "Implement stopped without finishing and without asking you anything. Tell it what to do next." with the same **Check completion** and **Skip step**, on the warning rail instead of the danger one. Writing to the agent in its chat also resumes it
+- A failed step: "Implement stopped before finishing." with the steps that wait on it. **Ask it to continue** asks the same agent to verify its work and finish, **Skip** skips it after an inline confirmation. The error the turn ended with sits behind **Show details**
+- A blocked step: "Implement stopped without finishing and without asking you anything. Tell it what to do next." with the same **Ask it to continue** and **Skip**, on the warning rail instead of the danger one. Writing to the agent in its chat also resumes it
+- A quiet step: "No output for 20 min" with the last event the turn sent ("Last event: read_file src/retry/backoff.ts") once a running step has said nothing for 15 minutes. **Ask it to continue** stops the silent turn and sends the agent a message to check where it stands and finish; **Skip** skips it. The clock is the shared `useNow` tick, no timer per agent, and it holds while a tool call or a permission request is still open, because a build or a test suite can print nothing for minutes (`quietSignal.ts`, `useQuietStep`). Goodboy never skips on its own
 - A stopped step: no strip. The agent header already offers Continue, and a step you stopped is never an alarm. The orchestrator strip says "Step 2 stopped by you" in a neutral tone
 - An open question that no row of the run tree shows, such as one the orchestrator holds or one a question delegate asked: "Answer for Implement asks: ...", or "An agent asks: ..." when no agent asked, with the step that waits on it, and **Answer**, which opens the agent that asked at its question, or the questions view when no agent asked. A question a run tree agent asked stays on that agent's row, which already carries the question mark and **Answer**, so the strip never repeats it. This shows in the workflow detail only, because the agent detail already shows its own questions
 - The summarizer holding the run: "Writing the handoff from Plan." with nothing to click
@@ -353,11 +369,15 @@ tree is open, because the asking agent's row shows it. Collapsed, the header
 keeps one quiet needs-you count in place of the status, and clicking it opens
 the run again on the row that waits on you.
 
-### Skipping a failed step
+### Skipping a step
 
-Getting past a blocked run always takes more than one click. A failed step
-takes two. First you confirm the skip, then the next agent starts. The failed
-step is marked **skipped**, not left as failed.
+Every step that has not finished, live or stuck, has one verb: **Skip**, on
+its row in the run tree and in the Next action strip. It asks inline first and
+says what follows ("Its turn is cancelled and the step is marked Skipped. Its
+changes stay in the worktree. The run moves on to Test."). Confirming cancels
+only that step's turn, marks the step **skipped** (never failed) and, when the
+run runs on its own and is not paused, starts the next step once. When the run
+asks before each step, the next step waits for your go.
 
 ### Closing a workflow
 
@@ -403,8 +423,9 @@ without its own setting follows the session.
 
 - The session's autorun also covers agents running outside a workflow
 - A workflow you add to a session with autorun on starts with autorun on
-- **Stop now** ends a hands-free run. Goodboy asks you to confirm first. The step that is running is cancelled and marked skipped, and everything it already wrote is kept
-- **Resume the run** starts a stopped run again. It turns autorun back on and asks for the next step
+- **Pause** lets the step in flight finish its turn and starts nothing new: no next step, no orchestrator decision, no read-now hint, no step button, not even turning autorun back on. The pause survives a restart. **Resume** starts where the run left off, static or orchestrated, and never changes when to ask
+- **Stop** ends a run at once. Goodboy asks you to confirm first. The step that is running is cancelled and marked skipped, and everything it already wrote is kept
+- **Continue the run** starts a stopped run again. It turns autorun back on and asks for the next step
 
 A hands-free run still stops and waits for you when:
 
@@ -514,7 +535,25 @@ that click.
 
 An open question and a failed step both still show with autorun on, because
 autorun stops on both. `maybeAutoAdvanceWorkflow` skips a run with open
-questions. It only starts the next agent when every agent is `completed` or
+questions and a paused run.
+
+### Pause is one admission check
+
+A pause is a saved stop, `orchestrationStop { kind: 'paused' }`, in the
+existing `orchestration_stop_kind` and `orchestration_error` columns, so it
+needs no migration and survives a restart. An older build reads it as a stop
+it does not recognize. `isRunPaused` is the one admission check:
+`activateWorkflowAgent` throws a `WorkflowGateError` with reason `paused`
+before it starts, before it consumes a plan and again right before the turn,
+so a pause that lands while an activation is in flight starts nothing. The
+check ignores `bypassGate`, which still means only "skip the question gate".
+`orchestrateNextStep` returns at once on a paused run and drops a decision
+that comes back after the pause, `maybeAutoAdvanceWorkflow` leaves paused
+runs out, a read-now hint stays queued, and a skip marks the step but starts
+nothing. `pauseWorkflowRun` and `resumeWorkflowRun` write and clear the stop;
+resume calls `maybeAutoAdvanceWorkflow`, so the run moves only when it runs
+on its own, and `auto_run` is never touched. `continueWorkflowRun` also takes a
+static run, through the same auto advance. It only starts the next agent when every agent is `completed` or
 `skipped`, and a `failed` or `blocked` agent is never either.
 
 One check decides when a run is finished: `isWorkflowRunComplete`. The chain
@@ -550,8 +589,11 @@ Autorun never passes a stopped step (`stopped-step`), and a stopped step does
 not count as needing you. Any later status change clears the stop.
 
 A step has no Close. Closing an agent is for agents outside a workflow (see
-[concepts.md](concepts.md#agents)). A stuck step is unblocked with Skip step,
-which says what the run does next.
+[concepts.md](concepts.md#agents)). A stuck or live step is passed with
+Skip, which says what the run does next. `skipStuckStepAndAdvance` takes
+`force` and `agentId` for a live step: it cancels only that agent's turn,
+marks it `skipped`, and starts the next step once without waiting for its
+turn.
 
 A hands-free run (`auto_run`, set on the run or taken from the session) waits
 for a busy summarizer. It checks every 100ms for up to 60 seconds, then moves
@@ -589,12 +631,14 @@ an `orchestrator_decision` event, and its spend is recorded against the run.
   which reads `session_budgets.on_exceed` first), the run's spend limit in
   pause mode, and open
   questions that block the run. Each one saves a `budget` or `questions` stop.
-  A failed or unreadable call saves `failure`. **Stop now** saves `operator`,
+  A failed or unreadable call saves `failure`. **Stop** saves `operator`,
   turns autorun off and skips the running steps, keeping what they wrote.
+  **Pause** saves `paused`, which keeps the step in flight and starts nothing.
   **Close workflow** (`closeWorkflowRun`) saves `closed` next to the `done`
   outcome, on static runs too, so `isWorkflowRunClosedByUser` is the one test
   for a closed run and `isWorkflowRunComplete` reads it as ended. A decision
-  in flight is thrown away when it returns, as after an operator stop.
+  in flight is thrown away when it returns, as after an operator stop or a
+  pause.
   Nothing decides again until you continue. Continuing or retrying clears the
   outcome and the stop, and a retry after an operator stop turns autorun back
   on.
@@ -691,5 +735,5 @@ one of two states:
 - `blocked`: the agent is alive but did not finish, and asked nothing. The
   runaway breaker (too many unattended workflow turns in an hour) and a
   sub-agent whose plan instructions are no longer readable also end in
-  `blocked`. A blocked agent resumes when you write to it, or through Check
-  completion and Skip step.
+  `blocked`. A blocked agent resumes when you write to it, or through Ask it
+  to continue and Skip.

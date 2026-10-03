@@ -106,7 +106,7 @@ export type WorkflowExecutionMode = 'static' | 'dynamic';
 export type WorkflowOrchestrationOutcome = 'done' | 'blocked';
 
 export type WorkflowOrchestrationStopKind =
-  'failure' | 'budget' | 'questions' | 'operator' | 'closed' | 'needs-approval';
+  'failure' | 'budget' | 'questions' | 'operator' | 'closed' | 'needs-approval' | 'paused';
 
 export type WorkflowOrchestrationStop = Readonly<{
   kind: WorkflowOrchestrationStopKind;

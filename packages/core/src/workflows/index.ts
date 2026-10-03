@@ -44,7 +44,9 @@ export {
 export { polishWorkflowGoal, parsePolishedGoal, type GoalPolishDeps } from './polish';
 export {
   polishStepInstruction,
+  polishStepExpectedOutput,
   parsePolishedStep,
   type StepPolishDeps,
   type StepPolishInput,
+  type ExpectedOutputPolishInput,
 } from './polish-step';

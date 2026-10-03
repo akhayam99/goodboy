@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   buildStepPolishUserPrompt,
+  polishStepExpectedOutput,
   polishStepInstruction,
   type StepPolishDeps,
 } from './polish-step';
@@ -125,5 +126,39 @@ describe('polishStepInstruction', () => {
         args: expect.objectContaining({ model: 'claude-sonnet-4-6', effort: 'high' }),
       }),
     );
+  });
+});
+
+describe('polishStepExpectedOutput', () => {
+  it('asks for the deliverable and returns the block the model wrote', async () => {
+    const recorder = recordPolish();
+
+    const polished = await polishStepExpectedOutput(
+      { providerId: 'anthropic', model: 'sonnet-4.6', invokeFn: recorder.invokeFn },
+      {
+        role: 'scout',
+        name: 'Map the ledger flow',
+        instruction: 'List the files in scope for the ledger-core retry',
+        expectedOutput: 'a map of files',
+      },
+    );
+
+    expect(polished).toBe('Polished instruction.');
+    expect(String(recorder.spawnArgs()['userMessage'])).toContain(
+      'EXPECTED OUTPUT (rough draft):\na map of files',
+    );
+    expect(String(recorder.spawnArgs()['systemPrompt'])).toContain('Describe the deliverable');
+  });
+
+  it('spawns nothing for an empty expected output', async () => {
+    const recorder = recordPolish();
+
+    const polished = await polishStepExpectedOutput(
+      { providerId: 'anthropic', model: 'sonnet-4.6', invokeFn: recorder.invokeFn },
+      { role: 'scout', name: 'Map', instruction: 'List the files', expectedOutput: '  ' },
+    );
+
+    expect(polished).toBeNull();
+    expect(recorder.spawnArgs()).toEqual({});
   });
 });

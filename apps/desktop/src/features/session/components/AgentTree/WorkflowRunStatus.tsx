@@ -5,6 +5,7 @@ import { Chip, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { WorkflowBlockReason } from '../../../workflows/advanceGate';
 import { isWorkflowRunClosedByUser } from '../../../workflows/isWorkflowRunClosedByUser';
+import { isRunPaused } from '../../../workflows/isRunPaused';
 
 type Props = {
   readonly run: WorkflowRun;
@@ -83,6 +84,18 @@ export const WorkflowRunStatus = ({
     );
   }
   const stop = run.orchestrationStop;
+  if (isRunPaused({ run }) && !hasOrchestratorStrip) {
+    return (
+      <span
+        className={cn(baseClass, 'bg-muted text-muted-foreground')}
+        title={stop?.message}
+        data-testid="workflow-run-paused"
+      >
+        <Pause size={10} aria-hidden />
+        Paused
+      </span>
+    );
+  }
   if (stop?.kind === 'operator' && isOrchestrating && !hasOrchestratorStrip) {
     return (
       <span

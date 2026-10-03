@@ -22,7 +22,7 @@ Turn an issue into a briefed session in one pick. Pick HBL-412 and Goodboy draft
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-run-workflow-light.webp" alt="New session with the Run a workflow tab selected: an Orchestrated workflow with the goal Stop retried webhooks posting a second credit, the Orchestrated, Custom and Preset switch, the Plan with an Orchestrator row and example steps Scout, Planner and Implementer, and the Starts Now, Autorun and Spend cap None controls next to Start workflow">
 </picture>
 
-The full workflow builder, right in the kickoff. Write the goal, pick **Orchestrated**, **Custom** or **Preset**, and read the **Plan** you will run. Under the plan, set **Starts**, **Autorun** and a **Spend cap**. **Start workflow** creates the session and starts the run in one step.
+The full workflow builder, right in the kickoff. Write the goal, pick **Orchestrated**, **Custom** or **Preset**, and read the **Plan** you will run. Under the plan, set **Starts**, when to ask and a **Spend cap**. **Start workflow** creates the session and starts the run in one step.
 
 ### Ask an agent
 

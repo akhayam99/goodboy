@@ -105,7 +105,7 @@
     "workflows -> budget": 2,
     "workflows -> context": 1,
     "workflows -> providers": 4,
-    "workflows -> session": 10,
+    "workflows -> session": 9,
     "workflows -> workTreeModel": 2,
     "workspace -> actions": 1,
     "workspace -> integrations": 3,

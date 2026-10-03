@@ -78,7 +78,8 @@ import { clearHintsReading, markHintsReading } from './orchestratorReadingHints'
 import { updateOrchestratorHints } from './updateOrchestratorHints';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
 import { recordOrchestratorUsage } from './recordOrchestratorUsage';
-import { findWorkflowActivationBlock } from './workflowActivationGate';
+import { WorkflowGateError, findWorkflowActivationBlock } from './workflowActivationGate';
+import { isRunPaused } from '../../../features/workflows/isRunPaused';
 import { waitForSessionSummarizer } from './summarizerGate';
 import { WORKFLOW_BLOCK_COPY } from '../../../features/workflows/blockCopy';
 import type { GetFn, SetFn } from './types';
@@ -342,7 +343,7 @@ const hasOperatorStop = ({ get, sessionId, workflowRunId }: OperatorStopParams):
     (candidate) => candidate.id === workflowRunId,
   );
   const kind = current?.orchestrationStop?.kind;
-  return kind === 'operator' || kind === 'closed';
+  return kind === 'operator' || kind === 'closed' || kind === 'paused';
 };
 
 export const isRoutingModelKnown = ({ providerId, model }: OrchestratorRouting): boolean =>
@@ -540,7 +541,8 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         run.executionMode !== 'dynamic' ||
         run.discardedAt != null ||
         run.orchestrationOutcome != null ||
-        run.orchestrationStop?.kind === 'operator'
+        run.orchestrationStop?.kind === 'operator' ||
+        isRunPaused({ run })
       ) {
         return;
       }
@@ -935,12 +937,18 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           model: result.model,
           usage: result.usage,
         });
-        await get().activateWorkflowAgent({
-          sessionId,
-          agentId: agent.id,
-          focus: 'announce',
-          bypassGate: true,
-        });
+        try {
+          await get().activateWorkflowAgent({
+            sessionId,
+            agentId: agent.id,
+            focus: 'announce',
+            bypassGate: true,
+          });
+        } catch (error) {
+          if (!(error instanceof WorkflowGateError) || error.reason !== 'paused') {
+            throw error;
+          }
+        }
         return;
       }
       if (isDecisionDiscarded()) {
