@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Check } from 'lucide-react';
-import type { OrchestratorHint } from '@goodboy/types';
+import type { GoalAttachment, OrchestratorHint } from '@goodboy/types';
 import { CountToggle } from '@goodboy/ui';
 import { OrchestratorHintRow } from './OrchestratorHintRow';
 import { orchestratorHintStatus, type OrchestratorHintStatus } from './orchestratorHintStatus';
@@ -8,7 +8,23 @@ import { orchestratorHintStatus, type OrchestratorHintStatus } from './orchestra
 type Props = {
   readonly hints: ReadonlyArray<OrchestratorHint>;
   readonly readingHintIds: ReadonlyArray<string>;
+  readonly runAttachments: ReadonlyArray<GoalAttachment>;
   readonly onRemove: (hintId: string) => void;
+};
+
+type FilesParams = {
+  readonly hint: OrchestratorHint;
+  readonly runAttachments: ReadonlyArray<GoalAttachment>;
+};
+
+const NO_FILES: ReadonlyArray<GoalAttachment> = [];
+
+const filesOf = ({ hint, runAttachments }: FilesParams): ReadonlyArray<GoalAttachment> => {
+  const ids = hint.attachmentIds ?? [];
+  if (ids.length === 0) {
+    return NO_FILES;
+  }
+  return runAttachments.filter((attachment) => ids.includes(attachment.id));
 };
 
 type Entry = {
@@ -32,7 +48,7 @@ const readStepsLabel = ({ entries }: ReadStepsParams): string | null => {
   return `Read at step ${steps.join(', ')}`;
 };
 
-export const OrchestratorHintLog = ({ hints, readingHintIds, onRemove }: Props) => {
+export const OrchestratorHintLog = ({ hints, readingHintIds, runAttachments, onRemove }: Props) => {
   const [isReadShown, setIsReadShown] = useState(false);
   if (hints.length === 0) {
     return null;
@@ -53,6 +69,7 @@ export const OrchestratorHintLog = ({ hints, readingHintIds, onRemove }: Props) 
               key={hint.id}
               hint={hint}
               status={status}
+              attachments={filesOf({ hint, runAttachments })}
               onRemove={() => onRemove(hint.id)}
             />
           ))}

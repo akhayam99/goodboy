@@ -590,11 +590,42 @@ for {role}` while a turn runs, `{role}` being the agent's own name over its
   `WORKSPACE_FEATURES.skills` is off, so a message starting with `/` sends as
   plain text instead of failing with "unknown skill" while skills are
   disabled.
-- Sending: `Enter` in this composer, because it talks to an agent;
-  `⌘Enter` is for a composer that talks to a person (a PR comment, a Linear
-  or Slack reply). Both are already the rule elsewhere in the app
-  (`ConversationComposer`), this just names it: an agent composer sends on
-  Enter, a people composer on ⌘Enter.
+- Sending: the text box is a `PromptField` of kind `message` in its `bare`
+  variant (the shell, tray and toolbar stay `ChatInput`'s own): `Enter`
+  sends, `Shift+Enter` adds a line, `⌘Enter` sends now while a turn runs.
+  The quick-actions popover blocks the send keys while it is open.
+
+## One composer
+
+Every field that talks to an agent is a `PromptField`
+(`shared/components/PromptField`), and declares one of two kinds:
+
+- **message** (agent chat, workspace Chat, the orchestrator hint, the
+  kickoff boxes): `Enter` sends, `Shift+Enter` adds a line, `⌘Enter` sends
+  now where a now exists.
+- **document** (diff comment, review reply and hint, workflow goal and
+  guidance, step instruction, brief, change request, answers): `Enter` adds
+  a line, `⌘Enter` saves or sends. A document can offer **Write** and
+  **Preview**; the preview is markdown, rendered from the text at the moment
+  you switch (never on each key) and loaded through a dynamic import.
+
+The keys come from the registry (`composer.send`, `composer.newLine`,
+`composer.submit` through `isSubmitChord`) and `promptKeyAction` decides one
+press. Two kinds of field changed keys in 0.15.5 and carry `hasChangedKeys`:
+the kickoff boxes (Start agent and the issue kickoff now start on `Enter`)
+and the review reply boxes (Edit, Answer and Reply now send on `⌘Enter`).
+The `composer.classicKeys` setting (Settings, Shortcuts, Message boxes)
+swaps the two kinds back on those fields for this release.
+`composer-ratchet.test.ts` lists every file that renders a text area and
+says whether it talks to an agent and with which kind; a new agent field
+must be a `PromptField` of its kind. The workspace Chat bubble and the hint
+log read what you wrote as markdown.
+
+Files ride on `usePendingAttachments` (`shared/hooks`): paste, drop and
+**Attach files**, up to 10 files of 10 MB each, refused with a note in the
+field. A staged file stays a `Blob` with an object url thumbnail freed when
+its chip unmounts, and is read into base64 only when the message leaves. The
+agent queue keeps its stored data url format (`StoredAttachment`).
 
 A workflow agent's own handoff (`summarizeAgentOutput`) runs once per agent at
 a time with a 90 second timeout, and a failure falls back to the deterministic

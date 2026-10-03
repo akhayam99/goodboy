@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { Button, Textarea } from '@goodboy/ui';
+import { Button } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
@@ -12,6 +12,9 @@ import { AgentStartFields, type AgentStartRouting } from '../AgentStartFields';
 import { StartFooter } from './StartFooter';
 import { useDraftStart } from './useDraftStart';
 import { useWorkspaceKindRouting } from '../../../../shared/hooks/useWorkspaceKindRouting';
+import { PromptField } from '../../../../shared/components/PromptField';
+import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
+import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -53,6 +56,16 @@ export const AgentStart = ({ workspaceId }: Props) => {
   const roleDefault = useWorkspaceKindRouting({ workspaceId, kind });
   const suggestion = resolveSpawnRouting({ kind, roleDefault, session: null });
   const { start, isStarting, error } = useDraftStart({ workspaceId });
+  const hasProject = draft.projectId !== null;
+  const promptFiles = usePromptFiles({
+    note: 'Images go to the agent you start',
+    isEnabled: hasProject,
+    notices: {
+      ambiguous: 'Drop the file on the instructions box to attach it.',
+      disabled: 'Pick a project to attach files.',
+      unavailable: 'File drop is unavailable. Use Attach files instead.',
+    },
+  });
   const isScout = kind === 'scout';
   const hasPrompt = draft.agentPrompt.trim() !== '';
   const canStart = isScout || hasPrompt;
@@ -64,16 +77,20 @@ export const AgentStart = ({ workspaceId }: Props) => {
     const prompt = isScout
       ? scoutKickoffPrompt({ focus: draft.agentPrompt })
       : draft.agentPrompt.trim();
+    const staged = hasProject ? promptFiles.attachments : [];
+    const attachmentInputs = staged.length === 0 ? [] : await toAttachmentInputs(staged);
     const isStarted = await start({
       kind: 'scout',
       agentKind: kind,
       focus: draft.agentPrompt,
       prompt,
       routing: draft.agentRouting,
+      ...(attachmentInputs.length > 0 && { attachmentInputs }),
     });
     if (!isStarted) {
       return;
     }
+    promptFiles.clear();
     window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
   };
 
@@ -85,18 +102,21 @@ export const AgentStart = ({ workspaceId }: Props) => {
 
   return (
     <div className="flex flex-col gap-2">
-      <Textarea
+      <PromptField
+        kind="message"
         value={draft.agentPrompt}
-        onChange={(event) =>
-          patchSessionDraft({ workspaceId, patch: { agentPrompt: event.target.value } })
-        }
-        aria-label={isScout ? 'Scout focus' : 'Agent instructions'}
+        onChange={(agentPrompt) => patchSessionDraft({ workspaceId, patch: { agentPrompt } })}
+        onSubmit={() => void startAgent()}
+        isSubmitBlocked={!canStart || isStarting}
+        hasChangedKeys
+        label={isScout ? 'Scout focus' : 'Agent instructions'}
         placeholder={placeholder}
-        data-kickoff-field
-        autoGrow
-        rows={4}
+        isKickoffField
+        minRows={4}
         maxRows={14}
-        className="text-body"
+        keyLabels={{ send: 'start' }}
+        notice={promptFiles.notice}
+        {...(hasProject && { files: promptFiles.files })}
       />
       <div className="flex items-center justify-between gap-2">
         <AgentStartFields

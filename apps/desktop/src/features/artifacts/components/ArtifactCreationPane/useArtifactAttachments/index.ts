@@ -5,8 +5,9 @@ import { useAppStore } from '../../../../../store';
 import {
   usePendingAttachments,
   type AttachmentDropNotices,
-} from '../../../../chat/components/ChatInput/hooks/usePendingAttachments';
-import { dataUrlToBase64 } from '../../../../attachments/pendingAttachment';
+  type PersistArgs,
+} from '../../../../../shared/hooks/usePendingAttachments';
+import { readBlobAsBase64 } from '../../../../attachments/pendingAttachment';
 import { deleteAttachment, writeAttachment } from '../../../../chat/turn';
 import type { ArtifactAttachment } from '../../../artifactAttachments';
 
@@ -44,29 +45,22 @@ export const useArtifactAttachments = ({
   worktreeRef.current = worktree;
   const [note, setNote] = useState<string | null>(null);
 
-  const persistToDisk = useCallback(
-    async (att: {
-      readonly id: string;
-      readonly fileName: string;
-      readonly dataUrl: string;
-    }): Promise<string | null> => {
-      const dir = worktreeRef.current;
-      if (dir === null) {
-        return null;
-      }
-      try {
-        return await writeAttachment({
-          worktreeDir: dir,
-          attachmentId: att.id,
-          fileName: att.fileName,
-          dataBase64: dataUrlToBase64(att.dataUrl),
-        });
-      } catch {
-        return null;
-      }
-    },
-    [],
-  );
+  const persistToDisk = useCallback(async (att: PersistArgs): Promise<string | null> => {
+    const dir = worktreeRef.current;
+    if (dir === null) {
+      return null;
+    }
+    try {
+      return await writeAttachment({
+        worktreeDir: dir,
+        attachmentId: att.id,
+        fileName: att.fileName,
+        dataBase64: await readBlobAsBase64(att.blob),
+      });
+    } catch {
+      return null;
+    }
+  }, []);
 
   const { attachments, setAttachments, isDragging, composerRef, fileInputRef, onFileInputChange } =
     usePendingAttachments({

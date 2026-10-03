@@ -1,6 +1,6 @@
 import type { KeyboardEvent } from 'react';
 import { Pencil } from 'lucide-react';
-import { Textarea } from '@goodboy/ui';
+import { PromptField } from '../../../../../shared/components/PromptField';
 import type { OpenQuestionSelectMode } from '@goodboy/types';
 import { AnswerOptionRow } from '../AnswerOptionRow';
 
@@ -31,11 +31,6 @@ export const CustomAnswerField = ({
 }: Props) => {
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     event.stopPropagation();
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      onSubmit();
-      return;
-    }
     if (event.key === 'Escape') {
       event.preventDefault();
       onEscape();
@@ -53,17 +48,18 @@ export const CustomAnswerField = ({
       onToggle={onToggle}
     >
       {open && !disabled ? (
-        <Textarea
+        <PromptField
+          kind="message"
           autoFocus
-          aria-label="Your answer"
+          label="Your answer"
           value={value}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={onChange}
+          onSubmit={onSubmit}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          autoGrow
           minRows={2}
           maxRows={6}
-          className="relative z-10 w-full resize-none bg-background text-body"
+          className="relative z-10 w-full bg-background"
         />
       ) : (
         <span className="text-label text-muted-foreground">

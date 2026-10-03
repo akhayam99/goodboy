@@ -15,6 +15,7 @@ import type { GetFn } from './types';
 type Params = {
   attachmentInputs: ReadonlyArray<AttachmentInput>;
   workingDir: string;
+  attachmentDir?: string;
   activeAgentId: AgentId;
   sessionId: SessionId;
   resolvedPrompt: string;
@@ -23,7 +24,15 @@ type Params = {
 
 export const persistAttachments = async (
   get: GetFn,
-  { attachmentInputs, workingDir, activeAgentId, sessionId, resolvedPrompt, now }: Params,
+  {
+    attachmentInputs,
+    workingDir,
+    attachmentDir = workingDir,
+    activeAgentId,
+    sessionId,
+    resolvedPrompt,
+    now,
+  }: Params,
 ): Promise<
   | { ok: true; attachmentRefs: ReadonlyArray<MessageAttachment>; resolvedPrompt: string }
   | { ok: false }
@@ -34,7 +43,7 @@ export const persistAttachments = async (
       attachmentRefs = await Promise.all(
         attachmentInputs.map(async (a): Promise<MessageAttachment> => {
           const relPath = await writeAttachment({
-            worktreeDir: workingDir,
+            worktreeDir: attachmentDir,
             attachmentId: a.id,
             fileName: a.fileName,
             dataBase64: a.dataBase64,
@@ -60,7 +69,11 @@ export const persistAttachments = async (
     return {
       ok: true,
       attachmentRefs,
-      resolvedPrompt: `${resolvedPrompt}\n\n${buildAttachmentPromptBlock(attachmentRefs)}`,
+      resolvedPrompt: `${resolvedPrompt}\n\n${buildAttachmentPromptBlock(
+        attachmentDir === workingDir
+          ? attachmentRefs
+          : attachmentRefs.map((ref) => ({ ...ref, relPath: `${attachmentDir}/${ref.relPath}` })),
+      )}`,
     };
   }
   return { ok: true, attachmentRefs, resolvedPrompt };

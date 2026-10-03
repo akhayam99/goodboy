@@ -1,12 +1,12 @@
 import { Paperclip } from 'lucide-react';
 import { cn, tintClasses } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly isDragging: boolean;
 };
 
-export const ComposerDropOverlay = ({ isDragging }: Props) => (
+export const PromptDropOverlay = ({ isDragging }: Props) => (
   <div
     className={cn(
       'pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-lg border-2 border-dashed transition-opacity duration-150',
@@ -15,6 +15,7 @@ export const ComposerDropOverlay = ({ isDragging }: Props) => (
       isDragging ? 'opacity-100' : 'opacity-0',
     )}
     aria-hidden
+    data-state={isDragging ? 'dragging' : 'idle'}
   >
     <div
       className={cn(
@@ -24,7 +25,7 @@ export const ComposerDropOverlay = ({ isDragging }: Props) => (
       )}
     >
       <Paperclip size={ICON_SIZE.control} aria-hidden />
-      Drop to attach · up to 10 files, 15 MB each
+      Drop to attach · up to 10 files, 10 MB each
     </div>
   </div>
 );
