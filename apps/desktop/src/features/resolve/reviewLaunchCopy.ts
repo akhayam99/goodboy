@@ -4,7 +4,6 @@ export const REVIEW_LAUNCH_LABEL = {
   clearSelection: 'Clear',
   selectionBar: 'Selected comments',
   strip: 'Fix launch',
-  model: 'Model',
   commit: 'Commit',
   commitStyle: 'Commit style',
   newCommit: 'New commit',
