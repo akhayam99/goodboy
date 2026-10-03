@@ -57,8 +57,8 @@ afterEach(cleanup);
 describe('OperationsCluster', () => {
   it('renders collapsed with a count and hides children', () => {
     render(<OperationsCluster items={[tool('a'), tool('b')]} />);
-    expect(screen.getByText('operations')).toBeTruthy();
-    expect(screen.getByText('2')).toBeTruthy();
+    screen.getByText('operations');
+    screen.getByText('2');
     expect(screen.queryByTestId('card')).toBeNull();
     expect(screen.getByRole('button').getAttribute('aria-expanded')).toBe('false');
   });
@@ -71,7 +71,7 @@ describe('OperationsCluster', () => {
 
   it('shows the running tool name in the header while collapsed', () => {
     render(<OperationsCluster items={[tool('a'), tool('b', false)]} />);
-    expect(screen.getByText('grep')).toBeTruthy();
+    screen.getByText('grep');
   });
 
   it('shows no running label when all tools have ended', () => {
@@ -81,19 +81,19 @@ describe('OperationsCluster', () => {
 
   it('surfaces a success and failure breakdown when a collapsed child errored', () => {
     render(<OperationsCluster items={[tool('a'), tool('b', true, true)]} />);
-    expect(screen.getByText('1 success')).toBeTruthy();
-    expect(screen.getByText('1 failed')).toBeTruthy();
+    screen.getByText('1 success');
+    screen.getByText('1 failed');
   });
 
   it('suppresses the failure badge while a tool is still running', () => {
     render(<OperationsCluster items={[tool('a', true, true), tool('b', false)]} />);
     expect(screen.queryByText(/failed/)).toBeNull();
-    expect(screen.getByText('grep')).toBeTruthy();
+    screen.getByText('grep');
   });
 
   it('shows grouped tool-name summary when all ended and no errors', () => {
     render(<OperationsCluster items={[tool('a'), tool('c'), tool('b')]} />);
-    expect(screen.getByText('2 read · 1 grep')).toBeTruthy();
+    screen.getByText('2 read · 1 grep');
   });
 
   it('aria-label uses singular "item" for single item', () => {
@@ -120,7 +120,7 @@ describe('OperationsCluster', () => {
 
   it('renders count badge with correct number', () => {
     render(<OperationsCluster items={[tool('a')]} />);
-    expect(screen.getByText('1')).toBeTruthy();
+    screen.getByText('1');
   });
 
   it('carries state on the icon and drops the rail once the cluster is neutral', () => {
@@ -142,7 +142,7 @@ describe('OperationsCluster', () => {
     const rail = screen.getByRole('button').parentElement!;
     expect(rail.className).toContain('border-l-2');
     expect(rail.className).toContain('border-warning');
-    expect(screen.getByText('Waiting for your approval')).toBeTruthy();
+    screen.getByText('Waiting for your approval');
   });
 
   it('keeps a user-opened cluster open once the run completes', () => {
@@ -160,12 +160,12 @@ describe('OperationsCluster', () => {
     act(() => {
       vi.advanceTimersByTime(3_000);
     });
-    expect(screen.getByText('3s')).toBeTruthy();
+    screen.getByText('3s');
     rerender(<OperationsCluster items={[tool('b', true, false, '2026-06-08T10:00:03.000Z')]} />);
     act(() => {
       vi.advanceTimersByTime(30_000);
     });
-    expect(screen.getByText('3s')).toBeTruthy();
+    screen.getByText('3s');
     vi.useRealTimers();
   });
 

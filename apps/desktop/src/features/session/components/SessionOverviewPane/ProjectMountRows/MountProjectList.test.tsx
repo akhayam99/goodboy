@@ -75,9 +75,9 @@ describe('MountProjectList', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add goodboy' }));
 
     expect(h.ensureProjectMounted).not.toHaveBeenCalled();
-    expect(screen.getByText('main')).toBeTruthy();
-    expect(screen.getByText('ak/ship-it')).toBeTruthy();
-    expect(screen.getByText('/repos/goodboy/.goodboy/worktrees/ship-it-mount-1')).toBeTruthy();
+    screen.getByText('main');
+    screen.getByText('ak/ship-it');
+    screen.getByText('/repos/goodboy/.goodboy/worktrees/ship-it-mount-1');
   });
 
   it('creates with exactly the branch and the mount the preview showed', async () => {
@@ -114,7 +114,7 @@ describe('MountProjectList', () => {
     );
     fireEvent.click(back);
 
-    expect(screen.getByRole('button', { name: 'Add goodboy' })).toBeTruthy();
+    screen.getByRole('button', { name: 'Add goodboy' });
     expect(h.ensureProjectMounted).not.toHaveBeenCalled();
   });
   it('names what is running while the branches are read and while it creates', async () => {
@@ -122,7 +122,7 @@ describe('MountProjectList', () => {
     renderList();
     fireEvent.click(screen.getByRole('button', { name: 'Add goodboy' }));
 
-    expect(screen.getByText('Reading the branches already in the repository…')).toBeTruthy();
+    screen.getByText('Reading the branches already in the repository…');
 
     h.preflight.status = 'ready';
     const deferred: { resolve: () => void } = { resolve: () => undefined };
@@ -133,7 +133,7 @@ describe('MountProjectList', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
 
-    await waitFor(() => expect(screen.getByText('Creating the worktree…')).toBeTruthy());
+    await waitFor(() => screen.getByText('Creating the worktree…'));
     deferred.resolve();
   });
 
@@ -147,7 +147,7 @@ describe('MountProjectList', () => {
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('cannot find base ref: tried origin/main');
-    expect(screen.getByText('Technical detail')).toBeTruthy();
+    screen.getByText('Technical detail');
     expect(alert.parentElement?.textContent).toContain('path: /repos/goodboy');
 
     const retry = screen.getByRole('button', { name: 'Try again' });

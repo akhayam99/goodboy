@@ -84,11 +84,11 @@ describe('UsageGroup', () => {
       '5-hour window82% usedResets 14:30 · in 2h 30m',
       expect.stringMatching(/^Weekly47% usedResets \S+ 09:00 · in 3 days$/),
     ]);
-    expect(screen.getByText('Claude is about to run out.')).toBeTruthy();
-    expect(screen.getByText('The 5-hour window resets at 14:30.')).toBeTruthy();
-    expect(screen.getByText('Updated 3m ago')).toBeTruthy();
-    expect(screen.getByText(/never reads your sign-in/)).toBeTruthy();
-    await waitFor(() => expect(screen.getByText('$18.40')).toBeTruthy());
+    screen.getByText('Claude is about to run out.');
+    screen.getByText('The 5-hour window resets at 14:30.');
+    screen.getByText('Updated 3m ago');
+    screen.getByText(/never reads your sign-in/);
+    await waitFor(() => screen.getByText('$18.40'));
     expect(invokeSpy).toHaveBeenCalledWith(
       'provider_budget_overview',
       expect.objectContaining({ provider: 'anthropic' }),
@@ -115,7 +115,7 @@ describe('UsageGroup', () => {
     };
     render(<UsageGroup providerId="codex" billing="plan" planLabel={null} />);
 
-    expect(screen.getByText('Codex is out for the week.')).toBeTruthy();
+    screen.getByText('Codex is out for the week.');
     expect(screen.getByRole('listitem').textContent).toMatch(/100% usedOut until \S+ 18:12$/);
     expect(screen.queryByText(/Auto routes new agents/)).toBeNull();
   });
@@ -144,27 +144,27 @@ describe('UsageGroup', () => {
     };
     render(<UsageGroup providerId="codex" billing="plan" planLabel={null} />);
 
-    expect(screen.getByText(/Auto routes new agents to Claude until then\.$/)).toBeTruthy();
+    screen.getByText(/Auto routes new agents to Claude until then\.$/);
     state.providers = [];
   });
 
   it('tells a provider without limits apart from one still waiting for a turn', () => {
     render(<UsageGroup providerId="cursor" billing="plan" planLabel={null} />);
-    expect(screen.getByText("Cursor doesn't share usage with other apps.")).toBeTruthy();
+    screen.getByText("Cursor doesn't share usage with other apps.");
     expect(screen.queryByText(/plan covers this/)).toBeNull();
     cleanup();
 
     render(<UsageGroup providerId="anthropic" billing="plan" planLabel={null} />);
-    expect(screen.getByText('No Claude usage yet.')).toBeTruthy();
-    expect(screen.getByText(/Claude plan covers this/)).toBeTruthy();
+    screen.getByText('No Claude usage yet.');
+    screen.getByText(/Claude plan covers this/);
   });
 
   it('bills an api key provider per token, with spend only', () => {
     render(<UsageGroup providerId="openrouter" billing="token" planLabel={null} />);
 
-    expect(screen.getByText('Billed per token by your key. No usage windows.')).toBeTruthy();
+    screen.getByText('Billed per token by your key. No usage windows.');
     expect(screen.queryByRole('list')).toBeNull();
-    expect(screen.getByRole('region', { name: 'Spend in Goodboy' })).toBeTruthy();
+    screen.getByRole('region', { name: 'Spend in Goodboy' });
   });
 
   it('shows the budget next to the spend and opens Impact on the provider', async () => {
@@ -184,9 +184,7 @@ describe('UsageGroup', () => {
     render(<UsageGroup providerId="anthropic" billing="plan" planLabel={null} />);
 
     await waitFor(() =>
-      expect(
-        screen.getByText(/^Budget \$80\.00 a month, 76% used across all workspaces, resets /),
-      ).toBeTruthy(),
+      screen.getByText(/^Budget \$80\.00 a month, 76% used across all workspaces, resets /),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Open in Impact' }));
     expect((listener.mock.calls[0]?.[0] as CustomEvent).detail).toEqual({
@@ -208,12 +206,12 @@ describe('UsageGroup', () => {
     const { rerender } = render(
       <UsageGroup providerId="anthropic" billing="plan" planLabel={null} />,
     );
-    await waitFor(() => expect(screen.getByText('$18.40')).toBeTruthy());
+    await waitFor(() => screen.getByText('$18.40'));
 
     state.budgetRules = [{ ...rule }];
     rerender(<UsageGroup providerId="anthropic" billing="plan" planLabel={null} />);
 
-    expect(screen.getByText('$18.40')).toBeTruthy();
+    screen.getByText('$18.40');
     expect(invokeSpy).toHaveBeenCalledTimes(1);
   });
 
@@ -223,7 +221,7 @@ describe('UsageGroup', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Check Codex usage now' }));
 
     expect(state.refreshCodexLimits).toHaveBeenCalledWith({ withResetDetails: true });
-    expect(screen.getByText(/Your Plus plan covers this/)).toBeTruthy();
+    screen.getByText(/Your Plus plan covers this/);
   });
 
   it('says when three checks in a row failed and offers another try', () => {
@@ -232,7 +230,7 @@ describe('UsageGroup', () => {
     };
     render(<UsageGroup providerId="anthropic" billing="plan" planLabel={null} />);
 
-    expect(screen.getByText("Couldn't check Claude usage.")).toBeTruthy();
+    screen.getByText("Couldn't check Claude usage.");
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(state.refreshClaudeUsage).toHaveBeenCalled();
     state.providerLimitsProbe = {};
@@ -255,7 +253,7 @@ describe('UsageGroup', () => {
     };
     render(<UsageGroup providerId="anthropic" billing="plan" planLabel={null} />);
 
-    expect(screen.getByText(/can only be used on claude.ai or in Claude Desktop/)).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Open Claude usage' })).toBeTruthy();
+    screen.getByText(/can only be used on claude.ai or in Claude Desktop/);
+    screen.getByRole('button', { name: 'Open Claude usage' });
   });
 });
