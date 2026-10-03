@@ -29,6 +29,7 @@ import { StepRow } from '../../StepTree/StepRow';
 import type { useWorkflowEditor } from '../../WorkflowsPanel/useWorkflowEditor';
 import { useWorkflowPolish } from '../../WorkflowsPanel/useWorkflowPolish';
 import { DragGhost } from '../DragGhost';
+import { roleSetLine } from '../../../roleSetLine';
 import { EditorTrail } from './EditorTrail';
 import { NoProvidersNotice } from './NoProvidersNotice';
 
@@ -254,6 +255,7 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
                   recommendedModel={recommendedModel(step)}
                   connectedProviders={connectedProviders}
                   isRoutingOverridden={step.provider !== '' || step.model !== ''}
+                  roleSetLine={roleSetLine({ role: step.role, roleModels })}
                   disabled={blocked}
                   polish={{
                     isPolishing: polish.polishingKey === step.key,

@@ -1458,15 +1458,25 @@ drawer marks it seen when it opens, on any tab, and again when it closes. A
 session never looked at starts its baseline the first time it loads, so the
 rows it already had never read as new. The chip shows
 a pulsing dot while the summarizer writes and a danger glyph when it failed,
-with Retry in the drawer's status line. The old addresses `s/{session}/context`
+with Retry in the drawer's **Context updates** row. The old addresses `s/{session}/context`
 and `context/goal`, `context/decisions`, `context/summary` resolve in
 `canonicalLocation` to the overview with this drawer open on the matching tab.
 The drawer header has one action, **Copy as brief**, which copies Goal,
 Decisions, Summary and Open questions in that order (`shareableContext`).
 
-The drawer sits on the `subtle` panel surface, like every `DrawerFrame`. Its
-tabs are a `SegmentedTabs` strip at its own width, with the status line on the
-same row; the Decisions tab carries the count and the change dot.
+The drawer sits on the `subtle` panel surface, like every `DrawerFrame`.
+**Context updates** (`ContextUpdates`, a `Collapsible`) sits above the tabs:
+closed, it says `Updated 2 min ago`, `Queued`, `Updating…` or `Couldn't update`;
+open, it lists the last round (`summarizerRounds`: when, how many turns or a
+full pass, model and effort, tokens and cost, what changed as links to the
+tabs), **Change model** (Settings, Providers & models, Defaults, scrolled to
+Step summaries) and **Update now**. Update now queues a consolidation pass
+through `requestContextUpdate`, behind any pass in flight and never beside it;
+`summarizerPending` holds the turns waiting and whether a requested update is
+queued, and the row reads only that queue state. The tabs are a
+`SegmentedTabs` strip at its own width; the Decisions tab carries the count and
+the change dot. The engine has one name, **Context**, in Activity, in the
+drawer and in these docs.
 
 Every tab reads as labelled blocks (`ContextBlock`: a `fill` band with an
 eyebrow title, an icon and a count). A block shows its key line first and

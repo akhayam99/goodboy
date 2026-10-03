@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_GROUPS, ROLE_REGISTRY, TASKS } from '@goodboy/core';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { OverrideSettings, TaskModelPreference, WorkspaceId } from '@goodboy/types';
 import {
   mergeWorkspaceOverrides,
@@ -150,6 +150,9 @@ beforeEach(() => {
 afterEach(cleanup);
 
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
+
+const roleRow = (label: string): HTMLElement =>
+  screen.getByRole('button', { name: (name) => name.startsWith(label) });
 
 const TASK_LABELS = [
   'Step summaries',
@@ -310,69 +313,159 @@ describe('DefaultsPanel', () => {
     expect(screen.getByText('Generalist')).toBeDefined();
   });
 
-  it('reads the resolver role with no override as its compiled default', () => {
+  it('shows what Auto picks on each closed role row', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    expect(screen.getByRole('button', { name: 'Resolver routing model' }).textContent).toBe(
-      'sonnet-5.5',
-    );
-    expect(screen.queryByRole('button', { name: 'Resolver routing reset' })).toBeNull();
+    expect(roleRow('Planner').textContent).toContain('Opus 5.5');
+    expect(roleRow('Scout').textContent).toContain('Haiku 4.5');
+    expect(roleRow('Planner').getAttribute('aria-expanded')).toBe('false');
   });
 
-  it('persists a resolver role model of its own', () => {
+  it('opens a role to show how it runs, read only, from the engine', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Resolver routing model' }));
+    fireEvent.click(roleRow('Scout'));
+
+    const how = screen.getByRole('region', { name: 'How Scout runs' });
+    expect(how.textContent).toContain('Read only');
+    expect(how.textContent).toContain(ROLE_REGISTRY.scout.explain.does);
+    expect(how.textContent).toContain('Up to 4 scouts, 2 levels');
+    expect(how.textContent).toContain('Parallel agents is off in this workspace');
+    expect(how.textContent).toContain(
+      'Scouts it starts use the same providers as the parent, filtered by your provider order.',
+    );
+  });
+
+  it('says a planner never splits and launches nothing', () => {
+    state.workspaceOverrides = { 'ws-1': { ...EMPTY_OVERRIDES, parallelAgents: true } };
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+
+    fireEvent.click(roleRow('Planner'));
+
+    const how = screen.getByRole('region', { name: 'How Planner runs' });
+    expect(how.textContent).toContain('Never splits');
+    expect(how.textContent).toContain('Nothing. It hands the plan to the steps that follow.');
+    expect(how.textContent).not.toContain('Parallel agents is off');
+  });
+
+  it('starts a role with no set and adds a model to it', () => {
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+
+    fireEvent.click(roleRow('Planner'));
+    const set = screen.getByRole('region', { name: 'Models for planning' });
+    expect(set.textContent).toContain('Not set. Auto picks the model');
+    fireEvent.click(screen.getByRole('button', { name: 'Add model' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Planner add model model' }));
 
     expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
       'ws-1',
       expect.objectContaining({
         roleModels: {
-          resolver: { providerId: 'anthropic', model: 'sonnet-4.6', effort: 'medium' },
+          planner: {
+            providerId: 'anthropic',
+            model: 'claude-sonnet-4-6',
+            effort: 'high',
+            models: [{ providerId: 'anthropic', model: 'claude-sonnet-4-6' }],
+          },
         },
       }),
     );
   });
 
-  it('reads a role with no override as its compiled default', () => {
+  it('reads an old pin and fallback as a set of two and shows it on the row', () => {
+    state.workspaceOverrides = {
+      'ws-1': {
+        ...EMPTY_OVERRIDES,
+        roleModels: {
+          planner: {
+            providerId: 'anthropic',
+            model: 'claude-opus-5',
+            effort: 'high',
+            fallback: { providerId: 'anthropic', model: 'claude-haiku-4-5' },
+          },
+        },
+      },
+    };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    expect(screen.getByRole('button', { name: 'Planner routing model' }).textContent).toBe(
-      'opus-5.5',
+    expect(roleRow('Planner').textContent).toContain('Opus 5 +1');
+    fireEvent.click(roleRow('Planner'));
+    const chips = within(screen.getByRole('list', { name: 'Planner models' })).getAllByRole(
+      'group',
     );
+    expect(chips.map((chip) => chip.getAttribute('aria-label'))).toEqual([
+      'Opus 5, position 1',
+      'Haiku 4.5, position 2',
+    ]);
   });
 
-  it('persists a role model with an effort the model supports', () => {
+  it('moves a model with alt and an arrow, and removes one with backspace', async () => {
+    state.workspaceOverrides = {
+      'ws-1': {
+        ...EMPTY_OVERRIDES,
+        roleModels: {
+          planner: {
+            providerId: 'anthropic',
+            model: 'claude-opus-5-5',
+            effort: 'high',
+            models: [
+              { providerId: 'anthropic', model: 'claude-opus-5-5' },
+              { providerId: 'anthropic', model: 'claude-haiku-4-5' },
+            ],
+          },
+        },
+      },
+    };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+    fireEvent.click(roleRow('Planner'));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Scout routing model' }));
+    fireEvent.keyDown(screen.getByRole('group', { name: 'Opus 5.5, position 1' }), {
+      key: 'ArrowRight',
+      altKey: true,
+    });
 
-    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
+    expect(state.setWorkspaceOverrides).toHaveBeenLastCalledWith(
       'ws-1',
       expect.objectContaining({
         roleModels: {
-          scout: { providerId: 'anthropic', model: 'sonnet-4.6', effort: 'low' },
+          planner: {
+            providerId: 'anthropic',
+            model: 'claude-haiku-4-5',
+            effort: 'high',
+            models: [
+              { providerId: 'anthropic', model: 'claude-haiku-4-5' },
+              { providerId: 'anthropic', model: 'claude-opus-5-5' },
+            ],
+          },
         },
       }),
     );
-  });
 
-  it('pins a role to a cheap model with no effort ladder instead of clearing it', () => {
-    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Remove Haiku 4.5' }).hasAttribute('disabled'),
+      ).toBe(false),
+    );
+    fireEvent.keyDown(screen.getByRole('group', { name: /^Haiku 4.5, position/ }), {
+      key: 'Backspace',
+    });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Debugger routing cheap model' }));
-
-    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
+    expect(state.setWorkspaceOverrides).toHaveBeenLastCalledWith(
       'ws-1',
       expect.objectContaining({
         roleModels: {
-          investigator: { providerId: 'anthropic', model: 'haiku-4.5', effort: 'high' },
+          planner: {
+            providerId: 'anthropic',
+            model: 'claude-opus-5-5',
+            effort: 'high',
+            models: [{ providerId: 'anthropic', model: 'claude-opus-5-5' }],
+          },
         },
       }),
     );
   });
 
-  it('drops an effort the newly picked model cannot reach', () => {
+  it('clears the role when its last model is removed', () => {
     state.workspaceOverrides = {
       'ws-1': {
         ...EMPTY_OVERRIDES,
@@ -382,203 +475,53 @@ describe('DefaultsPanel', () => {
       },
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+    fireEvent.click(roleRow('Reviewer'));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reviewer routing model' }));
-
-    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
-      'ws-1',
-      expect.objectContaining({
-        roleModels: {
-          reviewer: { providerId: 'anthropic', model: 'sonnet-4.6', effort: 'high' },
-        },
-      }),
-    );
-  });
-
-  it('offers no fallback control while the role runs on its compiled default', () => {
-    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-
-    expect(screen.queryByRole('button', { name: /Planner if unavailable/ })).toBeNull();
-    expect(screen.queryByRole('button', { name: /Planner fallback routing/ })).toBeNull();
-  });
-
-  it('reads an unset fallback as automatic once the role is pinned', () => {
-    state.workspaceOverrides = {
-      'ws-1': {
-        ...EMPTY_OVERRIDES,
-        roleModels: {
-          planner: { providerId: 'anthropic', model: 'claude-opus-5', effort: 'high' },
-        },
-      },
-    };
-    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-
-    expect(screen.getByRole('button', { name: 'Planner if unavailable: Auto' }).textContent).toBe(
-      'Auto',
-    );
-  });
-
-  it('persists a fallback without an effort of its own', () => {
-    state.workspaceOverrides = {
-      'ws-1': {
-        ...EMPTY_OVERRIDES,
-        roleModels: {
-          planner: { providerId: 'anthropic', model: 'claude-opus-5', effort: 'high' },
-        },
-      },
-    };
-    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Planner if unavailable: Auto' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Planner fallback routing cheap model' }));
-
-    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
-      'ws-1',
-      expect.objectContaining({
-        roleModels: {
-          planner: {
-            providerId: 'anthropic',
-            model: 'opus-5',
-            effort: 'high',
-            fallback: { providerId: 'anthropic', model: 'haiku-4.5' },
-          },
-        },
-      }),
-    );
-  });
-
-  it('shows the primary effort on the fallback and refuses to edit it', () => {
-    state.workspaceOverrides = {
-      'ws-1': {
-        ...EMPTY_OVERRIDES,
-        roleModels: {
-          planner: {
-            providerId: 'anthropic',
-            model: 'claude-opus-5',
-            effort: 'low',
-            fallback: { providerId: 'anthropic', model: 'haiku-4.5' },
-          },
-        },
-      },
-    };
-    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-
-    fireEvent.click(screen.getByRole('button', { name: /^Planner if unavailable:/ }));
-    const effort = screen.getByRole('button', { name: 'Planner fallback routing high effort' });
-    expect(effort.textContent).toBe('low');
-    expect(effort.hasAttribute('disabled')).toBe(true);
-  });
-
-  it('keeps the fallback when the role changes its primary model', () => {
-    state.workspaceOverrides = {
-      'ws-1': {
-        ...EMPTY_OVERRIDES,
-        roleModels: {
-          planner: {
-            providerId: 'anthropic',
-            model: 'claude-opus-5',
-            effort: 'high',
-            fallback: { providerId: 'anthropic', model: 'haiku-4.5' },
-          },
-        },
-      },
-    };
-    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Planner routing cheap model' }));
-
-    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
-      'ws-1',
-      expect.objectContaining({
-        roleModels: {
-          planner: {
-            providerId: 'anthropic',
-            model: 'haiku-4.5',
-            effort: 'high',
-            fallback: { providerId: 'anthropic', model: 'haiku-4.5' },
-          },
-        },
-      }),
-    );
-  });
-
-  it('deletes the fallback key on reset and keeps the pin', () => {
-    state.workspaceOverrides = {
-      'ws-1': {
-        ...EMPTY_OVERRIDES,
-        roleModels: {
-          planner: {
-            providerId: 'anthropic',
-            model: 'claude-opus-5',
-            effort: 'high',
-            fallback: { providerId: 'anthropic', model: 'haiku-4.5' },
-          },
-        },
-      },
-    };
-    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-
-    fireEvent.click(screen.getByRole('button', { name: /^Planner if unavailable:/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Planner fallback routing auto' }));
-
-    expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
-      'ws-1',
-      expect.objectContaining({
-        roleModels: {
-          planner: { providerId: 'anthropic', model: 'opus-5', effort: 'high' },
-        },
-      }),
-    );
-  });
-
-  it('drops a fallback the registry cannot resolve instead of storing it back', () => {
-    state.workspaceOverrides = {
-      'ws-1': {
-        ...EMPTY_OVERRIDES,
-        roleModels: {
-          planner: {
-            providerId: 'anthropic',
-            model: 'claude-opus-5',
-            effort: 'high',
-            fallback: { providerId: 'anthropic', model: 'claude-opus-99' },
-          },
-        },
-      },
-    };
-    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-
-    expect(screen.getByRole('button', { name: 'Planner if unavailable: Auto' })).toBeDefined();
-  });
-
-  it('resets a stored role override to the selected default provider', async () => {
-    state.workspaceOverrides = {
-      'ws-1': {
-        ...EMPTY_OVERRIDES,
-        defaultProviderId: 'cursor',
-        roleModels: {
-          reviewer: { providerId: 'anthropic', model: 'claude-opus-5', effort: 'max' },
-        },
-      },
-    };
-    const { rerender } = render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-
-    expect(screen.getByRole('button', { name: 'Reviewer routing model' }).textContent).toBe(
-      'opus-5',
-    );
-    const reset = screen.getByRole('button', { name: 'Reviewer routing reset' });
-    await waitFor(() => expect(reset.hasAttribute('disabled')).toBe(false));
-    fireEvent.click(reset);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Opus 5' }));
 
     expect(state.setWorkspaceOverrides).toHaveBeenLastCalledWith(
       'ws-1',
       expect.objectContaining({ roleModels: null }),
     );
+  });
 
-    rerender(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    expect(screen.queryByRole('button', { name: 'Reviewer routing reset' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Reviewer routing provider' }).textContent).toBe(
-      'cursor',
-    );
+  it('scrolls to the background task the link came for', () => {
+    const scrolled: Array<string | null> = [];
+    const original = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function scrollIntoView(this: Element) {
+      scrolled.push(this.getAttribute('data-default-row'));
+    };
+    render(<DefaultsPanel workspaceId={'ws-1' as never} focusSection="summarizer" />);
+    Element.prototype.scrollIntoView = original;
+
+    expect(scrolled).toEqual(['summarizer']);
+  });
+
+  it('strikes out a model that left the catalog and stops at three', () => {
+    state.workspaceOverrides = {
+      'ws-1': {
+        ...EMPTY_OVERRIDES,
+        roleModels: {
+          planner: {
+            providerId: 'anthropic',
+            model: 'claude-opus-5-5',
+            effort: 'high',
+            models: [
+              { providerId: 'anthropic', model: 'claude-opus-5-5' },
+              { providerId: 'codex', model: 'gpt-6.1-sol' },
+              { providerId: 'anthropic', model: 'claude-fable-1' },
+            ],
+          },
+        },
+      },
+    };
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+    fireEvent.click(roleRow('Planner'));
+
+    const gone = screen.getByRole('group', { name: /position 3, no longer in the catalog$/ });
+    expect(gone.textContent).toContain('Gone, skipped');
+    const add = screen.getByRole('button', { name: 'Up to 3' });
+    expect(add.hasAttribute('disabled')).toBe(true);
   });
 
   it('keeps provider changes local while automatic is selected', () => {
@@ -615,7 +558,7 @@ describe('DefaultsPanel', () => {
 
     const agents = screen.getByRole('region', { name: 'Agents' });
     const tasks = screen.getByRole('region', { name: 'Background tasks' });
-    expect(agents.querySelectorAll('[aria-label$=" routing model"]')).toHaveLength(11);
+    expect(within(agents).getAllByRole('button', { expanded: false })).toHaveLength(11);
     expect(tasks.querySelectorAll('[aria-label$=" routing model"]')).toHaveLength(10);
     for (const group of DEFAULT_GROUPS.tasks) {
       const node = screen.getByRole('group', { name: group.label });

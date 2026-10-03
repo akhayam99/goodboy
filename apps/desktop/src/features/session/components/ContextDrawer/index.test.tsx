@@ -3,6 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { AgentId, IsoDateTime, SessionDecision, SessionId } from '@goodboy/types';
+import type { SummarizerPending, SummarizerRound } from '../../../../store/slices/summaries/state';
 
 const { store } = vi.hoisted(() => ({
   store: {
@@ -29,6 +30,9 @@ const { store } = vi.hoisted(() => ({
     upsertSessionSlot: vi.fn(async () => undefined),
     loadSlotHistory: vi.fn(async () => undefined),
     retrySummarizer: vi.fn(),
+    requestContextUpdate: vi.fn(),
+    round: null as SummarizerRound | null,
+    pending: { turns: 0, isUpdateQueued: false } as SummarizerPending,
   },
 }));
 
@@ -41,6 +45,8 @@ vi.mock('../../../../store', () => ({
   useSlotHistoryCount: () => store.historyCount,
   useSlotHistory: () => store.history,
   useSummarizerStatus: () => store.summarizer,
+  useSummarizerRound: () => store.round,
+  useSummarizerPending: () => store.pending,
 }));
 
 vi.mock('../../../context/components/ContextPanel/strips/GoalAttachmentsStrip', () => ({
@@ -64,6 +70,8 @@ beforeEach(() => {
     '#### Problem\nwhy\n\n#### State\n- fix merged\n\n#### Next\n- backfill',
   );
   store.summarizer = { status: 'idle', lastUpdate: null, lastAttempt: null };
+  store.round = null;
+  store.pending = { turns: 0, isUpdateQueued: false };
   store.historyCount = 0;
   store.sessionContextSeenAt = {};
   store.sessionDecisions = {};
@@ -95,6 +103,22 @@ const decision = (overrides: Partial<SessionDecision>): SessionDecision => ({
   updatedAt: AT,
   ...overrides,
 });
+
+const ROUND: SummarizerRound = {
+  finishedAt: AT,
+  mode: 'turn',
+  turns: 3,
+  provider: 'anthropic',
+  model: 'haiku-4.5',
+  effort: 'low',
+  inputTokens: 3184,
+  outputTokens: 412,
+  costUsd: 0.004,
+  changed: { goal: true, decisions: 2, summary: true },
+};
+
+const contextUpdatesRow = (): HTMLElement =>
+  screen.getByRole('button', { name: (name) => name.startsWith('Context updates') });
 
 const renderDrawer = (
   tab: 'goal' | 'decisions' | 'summary',
@@ -419,15 +443,73 @@ describe('ContextDrawer', () => {
   });
 
   it('says it is updating while the summarizer writes, and offers a retry when it failed', () => {
-    store.summarizer = { status: 'running', lastUpdate: null, lastAttempt: null };
+    store.summarizer = { status: 'running', lastUpdate: AT, lastAttempt: null };
     const { unmount } = renderDrawer('decisions');
-    expect(screen.getByText('Updating…')).toBeDefined();
+    expect(contextUpdatesRow().textContent).toContain('Updating…');
     unmount();
 
-    store.summarizer = { status: 'error', lastUpdate: null, lastAttempt: { turnInput: '' } };
+    store.summarizer = { status: 'error', lastUpdate: AT, lastAttempt: { turnInput: 'x' } };
     renderDrawer('decisions');
+    expect(contextUpdatesRow().textContent).toContain("Couldn't update");
+    fireEvent.click(contextUpdatesRow());
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(store.retrySummarizer).toHaveBeenCalledWith(SID);
+    expect(store.requestContextUpdate).not.toHaveBeenCalled();
+  });
+
+  it('opens Context updates on the last round: model, usage and what changed', () => {
+    store.summarizer = { status: 'idle', lastUpdate: AT, lastAttempt: null };
+    store.round = ROUND;
+    store.pending = { turns: 2, isUpdateQueued: false };
+    renderDrawer('summary');
+
+    fireEvent.click(contextUpdatesRow());
+
+    const panel = screen.getByRole('definition', { name: 'Last update' });
+    expect(panel.textContent).toContain('after 3 turns');
+    expect(screen.getByRole('definition', { name: 'Model' }).textContent).toContain(
+      'Haiku 4.5 · low effort',
+    );
+    expect(screen.getByRole('definition', { name: 'Used' }).textContent).toBe(
+      '3,184 in · 412 out · about <$0.01',
+    );
+    expect(screen.getByText(/2 new turns since the last update\./).tagName).toBe('SPAN');
+    fireEvent.click(screen.getByRole('button', { name: '2 decisions' }));
+    expect(store.openContextDrawer).toHaveBeenCalledWith({ sessionId: SID, tab: 'decisions' });
+    expect(screen.getByRole('button', { name: 'Goal' }).textContent).toBe('Goal');
+  });
+
+  it('queues Update now in the session queue and shows it as queued', () => {
+    store.summarizer = { status: 'idle', lastUpdate: AT, lastAttempt: null };
+    store.round = ROUND;
+    const { rerender } = renderDrawer('decisions');
+    fireEvent.click(contextUpdatesRow());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Update now' }));
+    expect(store.requestContextUpdate).toHaveBeenCalledWith(SID);
+
+    store.pending = { turns: 0, isUpdateQueued: true };
+    rerender(<ContextDrawer sessionId={SID} tab="decisions" view="current" onClose={vi.fn()} />);
+    const queued = screen.getByRole('button', { name: 'Queued' });
+    expect(queued.hasAttribute('disabled')).toBe(true);
+    expect(contextUpdatesRow().textContent).toContain('Queued');
+  });
+
+  it('sends Change model to the step summaries row in Defaults', () => {
+    store.summarizer = { status: 'idle', lastUpdate: AT, lastAttempt: null };
+    const opened = vi.fn();
+    window.addEventListener('goodboy:open-settings', opened);
+    renderDrawer('decisions');
+    fireEvent.click(contextUpdatesRow());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Change model' }));
+
+    window.removeEventListener('goodboy:open-settings', opened);
+    const event = opened.mock.calls[0]?.[0];
+    expect(event instanceof CustomEvent ? event.detail : null).toEqual({
+      scope: 'providers',
+      section: 'summarizer',
+    });
   });
 
   it('keeps the goal editable in place, and locked while the context updates', () => {

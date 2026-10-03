@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { ProviderId, RoleModelPreferences } from '@goodboy/types';
 import { AUTO_DEFAULTS } from './autoRouting/defaults';
-import { resolveRoleRouting } from './role-models';
+import {
+  nextRoleModelChoice,
+  resolveRoleRouting,
+  roleModelChoices,
+  roleModelSetPreference,
+} from './role-models';
 
 describe('resolveRoleRouting', () => {
   it('resolves a role with no stored preference to its compiled default', () => {
@@ -111,7 +116,7 @@ describe('resolveRoleRouting', () => {
     });
   });
 
-  it('gives the resolver role its own pin and fallback, not the custom one', () => {
+  it('gives the resolver role its own set, not the custom one', () => {
     const prefs: RoleModelPreferences = {
       custom: { providerId: 'anthropic', model: 'claude-haiku-4-5', effort: 'low' },
       resolver: {
@@ -126,7 +131,7 @@ describe('resolveRoleRouting', () => {
     expect(resolved.model).toBe('opus-5');
     expect(resolved.effort).toBe('high');
     expect(resolved.isOverride).toBe(true);
-    expect(resolved.fallback).toEqual({ provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' });
+    expect(roleModelChoices({ preference: prefs.resolver! })).toHaveLength(2);
   });
 
   it('leaves the resolver on its compiled default when only the custom role is pinned', () => {
@@ -139,143 +144,162 @@ describe('resolveRoleRouting', () => {
     expect(resolved.isOverride).toBe(false);
   });
 
-  it('leaves the fallback absent when the role has no stored preference', () => {
-    expect(resolveRoleRouting({ role: 'planner', prefs: null }).fallback).toBeUndefined();
+  it('reads the old pin and fallback shape as a set of two, in order', () => {
+    const preference = {
+      providerId: 'anthropic',
+      model: 'claude-opus-5',
+      effort: 'high',
+      fallback: { providerId: 'codex', model: 'gpt-5.6' },
+    } as const;
+
+    expect(roleModelChoices({ preference })).toEqual([
+      { providerId: 'anthropic', model: 'claude-opus-5', effort: 'high' },
+      { providerId: 'codex', model: 'gpt-5.6', effort: 'high' },
+    ]);
   });
 
-  it('leaves the fallback absent when the preference stores none', () => {
-    const prefs: RoleModelPreferences = {
-      planner: { providerId: 'anthropic', model: 'claude-opus-5', effort: 'high' },
-    };
+  it('reads the new shape and keeps at most three models', () => {
+    const preference = {
+      providerId: 'anthropic',
+      model: 'claude-opus-5-5',
+      effort: 'high',
+      models: [
+        { providerId: 'anthropic', model: 'claude-opus-5-5' },
+        { providerId: 'codex', model: 'gpt-6.1-sol' },
+        { providerId: 'anthropic', model: 'claude-sonnet-5-5' },
+        { providerId: 'anthropic', model: 'claude-haiku-4-5' },
+      ],
+    } as const;
 
-    expect(resolveRoleRouting({ role: 'planner', prefs }).fallback).toBeUndefined();
+    expect(roleModelChoices({ preference }).map((choice) => choice.model)).toEqual([
+      'claude-opus-5-5',
+      'gpt-6.1-sol',
+      'claude-sonnet-5-5',
+    ]);
   });
 
-  it('resolves a stored fallback and inherits the primary effort', () => {
+  it('writes a set whose first model is also the old pin fields', () => {
+    const written = roleModelSetPreference({
+      choices: [
+        { providerId: 'codex', model: 'gpt-6.1-sol' },
+        { providerId: 'anthropic', model: 'claude-opus-5-5', effort: 'max' },
+      ],
+      effort: 'high',
+    });
+
+    expect(written).toEqual({
+      providerId: 'codex',
+      model: 'gpt-6.1-sol',
+      effort: 'high',
+      models: [
+        { providerId: 'codex', model: 'gpt-6.1-sol' },
+        { providerId: 'anthropic', model: 'claude-opus-5-5', effort: 'max' },
+      ],
+    });
+    expect(roleModelSetPreference({ choices: [], effort: 'high' })).toBeNull();
+  });
+
+  it('runs an unsized step on the first model of the set', () => {
     const prefs: RoleModelPreferences = {
       planner: {
         providerId: 'anthropic',
-        model: 'claude-opus-5',
+        model: 'claude-opus-5-5',
         effort: 'high',
-        fallback: { providerId: 'codex', model: 'gpt-5.6' },
+        models: [
+          { providerId: 'anthropic', model: 'claude-opus-5-5' },
+          { providerId: 'anthropic', model: 'claude-haiku-4-5' },
+        ],
       },
     };
 
-    expect(resolveRoleRouting({ role: 'planner', prefs }).fallback).toEqual({
-      provider: 'codex',
-      model: 'gpt-5.6-sol',
-      effort: 'high',
+    expect(resolveRoleRouting({ role: 'planner', prefs })).toMatchObject({
+      provider: 'anthropic',
+      model: 'opus-5.5',
+      isOverride: true,
     });
   });
 
-  it('inherits the clamped primary effort, not the stored one', () => {
+  it('runs a small step on the first cheap model of the set and a large one on the first', () => {
     const prefs: RoleModelPreferences = {
-      reviewer: {
+      planner: {
         providerId: 'anthropic',
-        model: 'claude-sonnet-4-6',
-        effort: 'max',
-        fallback: { providerId: 'codex', model: 'gpt-5.6' },
+        model: 'claude-opus-5-5',
+        effort: 'high',
+        models: [
+          { providerId: 'anthropic', model: 'claude-opus-5-5' },
+          { providerId: 'anthropic', model: 'claude-sonnet-5-5' },
+          { providerId: 'anthropic', model: 'claude-haiku-4-5' },
+        ],
       },
     };
-    const resolved = resolveRoleRouting({ role: 'reviewer', prefs });
 
+    expect(resolveRoleRouting({ role: 'planner', prefs, size: 'small' }).model).toBe('haiku-4.5');
+    expect(resolveRoleRouting({ role: 'planner', prefs, size: 'medium' }).model).toBe('sonnet-5.5');
+    expect(resolveRoleRouting({ role: 'planner', prefs, size: 'large' }).model).toBe('opus-5.5');
+  });
+
+  it('takes the cheapest model of the set when none fits a small step', () => {
+    const prefs: RoleModelPreferences = {
+      planner: {
+        providerId: 'anthropic',
+        model: 'claude-opus-5-5',
+        effort: 'high',
+        models: [
+          { providerId: 'anthropic', model: 'claude-opus-5-5' },
+          { providerId: 'anthropic', model: 'claude-sonnet-5-5' },
+        ],
+      },
+    };
+
+    expect(resolveRoleRouting({ role: 'planner', prefs, size: 'small' }).model).toBe('sonnet-5.5');
+  });
+
+  it('skips a model that left the catalog and keeps the rest of the set', () => {
+    const prefs: RoleModelPreferences = {
+      planner: {
+        providerId: 'anthropic',
+        model: 'claude-opus-99',
+        effort: 'high',
+        models: [
+          { providerId: 'anthropic', model: 'claude-opus-99' },
+          { providerId: 'codex', model: 'gpt-5.6' },
+        ],
+      },
+    };
+    const resolved = resolveRoleRouting({ role: 'planner', prefs });
+
+    expect(resolved).toMatchObject({ provider: 'codex', model: 'gpt-5.6-sol', isOverride: true });
+    expect(resolved.pinnedUnavailable).toBeUndefined();
     expect(resolved.effort).toBe('high');
-    expect(resolved.fallback?.effort).toBe('high');
   });
 
-  it('prefers an explicit fallback effort over the inherited one', () => {
+  it('clamps an effort the chosen model cannot reach', () => {
     const prefs: RoleModelPreferences = {
       planner: {
-        providerId: 'anthropic',
-        model: 'claude-opus-5',
-        effort: 'high',
-        fallback: { providerId: 'codex', model: 'gpt-5.6', effort: 'low' },
+        providerId: 'codex',
+        model: 'gpt-5.5',
+        effort: 'max',
       },
     };
 
-    expect(resolveRoleRouting({ role: 'planner', prefs }).fallback?.effort).toBe('low');
-  });
-
-  it('clamps a fallback effort the fallback model cannot reach', () => {
-    const prefs: RoleModelPreferences = {
-      planner: {
-        providerId: 'anthropic',
-        model: 'claude-opus-5',
-        effort: 'high',
-        fallback: { providerId: 'codex', model: 'gpt-5.5', effort: 'max' },
-      },
-    };
-
-    expect(resolveRoleRouting({ role: 'planner', prefs }).fallback).toEqual({
+    expect(resolveRoleRouting({ role: 'planner', prefs })).toMatchObject({
       provider: 'codex',
       model: 'gpt-5.5',
       effort: 'xhigh',
     });
   });
 
-  it('normalizes a fallback stored under its legacy cli id', () => {
+  it('normalizes a set model stored under its legacy cli id', () => {
     const prefs: RoleModelPreferences = {
       planner: {
         providerId: 'anthropic',
-        model: 'claude-opus-5',
-        effort: 'high',
-        fallback: { providerId: 'anthropic', model: 'claude-haiku-4-5' },
+        model: 'claude-haiku-4-5',
+        effort: 'low',
+        models: [{ providerId: 'anthropic', model: 'claude-haiku-4-5' }],
       },
     };
 
-    expect(resolveRoleRouting({ role: 'planner', prefs }).fallback?.model).toBe('haiku-4.5');
-  });
-
-  it('drops a fallback whose model the catalogue does not know, keeping the pin', () => {
-    const prefs: RoleModelPreferences = {
-      planner: {
-        providerId: 'anthropic',
-        model: 'claude-opus-5',
-        effort: 'high',
-        fallback: { providerId: 'anthropic', model: 'claude-opus-99' },
-      },
-    };
-    const resolved = resolveRoleRouting({ role: 'planner', prefs });
-
-    expect(resolved.fallback).toBeUndefined();
-    expect(resolved.model).toBe('opus-5');
-    expect(resolved.isOverride).toBe(true);
-  });
-
-  it('drops a fallback whose provider is unknown to the registry, keeping the pin', () => {
-    const prefs: RoleModelPreferences = {
-      planner: {
-        providerId: 'anthropic',
-        model: 'claude-opus-5',
-        effort: 'high',
-        fallback: { providerId: 'ollama' as ProviderId, model: 'llama-4' },
-      },
-    };
-    const resolved = resolveRoleRouting({ role: 'planner', prefs });
-
-    expect(resolved.fallback).toBeUndefined();
-    expect(resolved.model).toBe('opus-5');
-    expect(resolved.isOverride).toBe(true);
-  });
-
-  it('drops the fallback along with a pin the registry rejects', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    const prefs: RoleModelPreferences = {
-      planner: {
-        providerId: 'anthropic',
-        model: 'claude-opus-99',
-        effort: 'high',
-        fallback: { providerId: 'codex', model: 'gpt-5.6' },
-      },
-    };
-    const resolved = resolveRoleRouting({ role: 'planner', prefs });
-
-    expect(resolved.isOverride).toBe(false);
-    expect(resolved.fallback).toBeUndefined();
-    expect(warn).toHaveBeenCalledWith(
-      '[role-models] invalid planner model claude-opus-99 for anthropic; using the anthropic default model',
-    );
-    warn.mockRestore();
+    expect(resolveRoleRouting({ role: 'planner', prefs }).model).toBe('haiku-4.5');
   });
 
   it('routes an unknown role through the custom preference, like the compiled default does', () => {
@@ -340,7 +364,7 @@ describe('resolveRoleRouting', () => {
     }
   });
 
-  it('names an unavailable pin and takes its fallback', () => {
+  it('names an unavailable first model and takes the next one in the set', () => {
     const prefs: RoleModelPreferences = {
       reviewer: {
         providerId: 'anthropic',
@@ -358,7 +382,7 @@ describe('resolveRoleRouting', () => {
     expect(resolved.pinnedUnavailable?.provider).toBe('anthropic');
   });
 
-  it('names an unavailable pin with no fallback and uses Auto', () => {
+  it('names an unavailable set of one and uses Auto', () => {
     const prefs: RoleModelPreferences = {
       reviewer: { providerId: 'cursor', model: 'composer-2.5', effort: 'medium' },
     };
@@ -374,5 +398,57 @@ describe('resolveRoleRouting', () => {
       isOverride: false,
       pinnedUnavailable: { provider: 'cursor', model: 'composer-2.5' },
     });
+  });
+});
+
+describe('nextRoleModelChoice', () => {
+  const prefs: RoleModelPreferences = {
+    planner: {
+      providerId: 'anthropic',
+      model: 'claude-opus-5-5',
+      effort: 'high',
+      models: [
+        { providerId: 'anthropic', model: 'claude-opus-5-5' },
+        { providerId: 'codex', model: 'gpt-6.1-sol' },
+        { providerId: 'anthropic', model: 'claude-haiku-4-5' },
+      ],
+    },
+  };
+
+  it('retries on the model after the one that failed', () => {
+    expect(
+      nextRoleModelChoice({
+        role: 'planner',
+        prefs,
+        failed: { provider: 'codex', model: 'gpt-6.1-sol' },
+      })?.model,
+    ).toBe('haiku-4.5');
+  });
+
+  it('retries on the second model when the failed one is not in the set', () => {
+    expect(
+      nextRoleModelChoice({
+        role: 'planner',
+        prefs,
+        failed: { provider: 'anthropic', model: 'sonnet-5' },
+      })?.model,
+    ).toBe('gpt-6.1-sol');
+  });
+
+  it('has nothing left after the last model or for a set of one', () => {
+    expect(
+      nextRoleModelChoice({
+        role: 'planner',
+        prefs,
+        failed: { provider: 'anthropic', model: 'haiku-4.5' },
+      }),
+    ).toBeNull();
+    expect(
+      nextRoleModelChoice({
+        role: 'planner',
+        prefs: { planner: { providerId: 'anthropic', model: 'claude-opus-5-5', effort: 'high' } },
+        failed: { provider: 'anthropic', model: 'sonnet-5' },
+      }),
+    ).toBeNull();
   });
 });

@@ -73,7 +73,8 @@ vi.mock('./summarizeWorkflowAgentOutput', () => ({
   summarizeWorkflowAgentOutput: hoisted.summarizeWorkflowAgentOutput,
 }));
 
-import { FAN_OUT_MAX_CHILDREN, advanceScoutTree, fanOutAgents } from './scoutTree';
+import { FAN_OUT_MAX_CHILDREN } from '@goodboy/core';
+import { advanceScoutTree, fanOutAgents } from './scoutTree';
 
 const SID = 'sess-1' as SessionId;
 
