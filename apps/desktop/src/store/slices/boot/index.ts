@@ -1,4 +1,5 @@
 import { hydrate, retryHydrate } from './hydrate';
+import { loadDetectedBrowsers } from './loadDetectedBrowsers';
 import { loadDetectedEditors } from './loadDetectedEditors';
 import { quitApp } from './quitApp';
 import { restoreNewerDatabaseBackup } from './restoreNewerDatabaseBackup';
@@ -11,5 +12,6 @@ export const createBootSlice = ({ set, get }: SliceDeps) => {
     restoreNewerDatabaseBackup: restoreNewerDatabaseBackup(get),
     quitApp: quitApp(),
     loadDetectedEditors: loadDetectedEditors(set, get),
+    loadDetectedBrowsers: loadDetectedBrowsers(set, get),
   };
 };
