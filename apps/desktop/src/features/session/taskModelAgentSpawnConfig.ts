@@ -1,9 +1,10 @@
 import { clampEffortForModel } from '@goodboy/core';
-import type { AuxTaskId, ProviderId, TaskModelPreferences } from '@goodboy/types';
+import type { AgentEffort, AuxTaskId, ProviderId, TaskModelPreferences } from '@goodboy/types';
 import type { AutoLimitContext } from '../../store/slices/providerLimits/autoLimitContext';
 import { resolveLimitedTaskModel } from '../../store/slices/providerLimits/resolveLimitedTaskModel';
-import { kindRouting } from './agent-kind';
 import type { AgentSpawnConfigValue } from './agentSpawnConfigValue';
+
+const TASK_FALLBACK_EFFORT: AgentEffort = 'medium';
 
 type Params = {
   readonly task: AuxTaskId;
@@ -27,7 +28,7 @@ export const taskModelAgentSpawnConfig = ({
     workspaceDefaultProviderId,
     sessionDefaultProviderId,
   });
-  const requestedEffort = taskModel.effort ?? kindRouting({ kind: 'generic' }).effort;
+  const requestedEffort = taskModel.effort ?? TASK_FALLBACK_EFFORT;
   return {
     hint: '',
     provider: taskModel.providerId,

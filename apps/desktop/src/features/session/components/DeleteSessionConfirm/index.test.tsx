@@ -1,111 +1,77 @@
 // @vitest-environment happy-dom
 
-import type { ReactNode } from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-
-type InlineConfirmProps = {
-  readonly role: string;
-  readonly title: string;
-  readonly children: ReactNode;
-  readonly altAction?: { readonly label: string; readonly onClick: () => void };
-};
-
-vi.mock('@goodboy/ui', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@goodboy/ui')>()),
-  InlineConfirm: ({ role, title, children, altAction }: InlineConfirmProps) => (
-    <div data-confirm-role={role}>
-      {title}
-      {children}
-      {altAction != null && (
-        <button type="button" onClick={altAction.onClick}>
-          {altAction.label}
-        </button>
-      )}
-    </div>
-  ),
-  formatError: (err: unknown) => String(err),
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: vi.fn(async () => new Promise<never>(() => undefined)),
 }));
+vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
-const { archiveMock, restoreMock } = vi.hoisted(() => ({
+const { archiveMock } = vi.hoisted(() => ({
   archiveMock: vi.fn(async () => undefined),
-  restoreMock: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../hooks/useSessionArchive', () => ({
-  useSessionArchive: () => ({ archive: archiveMock, restore: restoreMock }),
+  useSessionArchive: () => ({ archive: archiveMock, restore: vi.fn(async () => undefined) }),
 }));
 
-const { state } = vi.hoisted(() => ({
-  state: {
-    deleteTask: vi.fn(async () => undefined),
-    archiveTask: vi.fn(async () => undefined),
-    workspaces: [] as ReadonlyArray<{ id: string; kind: string }>,
-    sessionBranches: {} as Record<string, string>,
-  },
-}));
-
-vi.mock('../../../../store', () => ({
-  useAppStore: (selector: (s: typeof state) => unknown) => selector(state),
-}));
-
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { SessionId } from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../store/storyHarness';
 import { DeleteSessionConfirm } from '.';
+
+const SESSION_ID = 'session-ledger-export' as SessionId;
+const KEPT =
+  'Frees the transcript, file versions and images. Cost and shipped work stay in Impact.';
+
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+});
 
 afterEach(() => {
   cleanup();
-  state.workspaces = [];
-  state.sessionBranches = {};
-  state.archiveTask.mockClear();
   archiveMock.mockClear();
 });
 
-describe('DeleteSessionConfirm branch-aware copy', () => {
-  it('warns about the branch-preserving path for a repo session with a branch', () => {
-    state.workspaces = [{ id: 'workspace-1', kind: 'repo' }];
-    state.sessionBranches = { 'session-1': 'feature/x' };
-    const session = { id: 'session-1', workspaceId: 'workspace-1', goal: 'Ship it' } as never;
+const session = aSession({ id: SESSION_ID, goal: 'Reconcile the ledger export' });
+
+describe('DeleteSessionConfirm copy', () => {
+  it('says the cost and shipped work stay in Impact, and the branch stays in the repository', () => {
+    useAppStore.setState({ sessionBranches: { [SESSION_ID]: 'mq/ledger-export' } });
 
     render(<DeleteSessionConfirm session={session} onClose={vi.fn()} />);
 
-    expect(
-      screen.getByText('This cannot be undone. To keep the history, archive instead.'),
-    ).toBeDefined();
-    expect(
-      screen.queryByText(
-        'This cannot be undone. Saved file versions are deleted with this session.',
-      ),
-    ).toBeNull();
+    screen.getByText(new RegExp(`^${KEPT} The branch and its commits stay in the repository`));
+    screen.getByText('This cannot be undone.');
+    expect(screen.queryByText(/archive instead/i, { selector: 'p' })).toBeNull();
   });
 
-  it('warns about permanent file-version loss for a branchless session', () => {
-    state.workspaces = [{ id: 'workspace-1', kind: 'repo' }];
-    state.sessionBranches = { 'session-1': '' };
-    const session = { id: 'session-1', workspaceId: 'workspace-1', goal: 'Ship it' } as never;
+  it('says the same for a branchless session, without a branch to keep', () => {
+    useAppStore.setState({ sessionBranches: { [SESSION_ID]: '' } });
 
     render(<DeleteSessionConfirm session={session} onClose={vi.fn()} />);
 
-    expect(
-      screen.getByText('This cannot be undone. Saved file versions are deleted with this session.'),
-    ).toBeDefined();
-    expect(
-      screen.queryByText('This cannot be undone. To keep the history, archive instead.'),
-    ).toBeNull();
+    screen.getByText(KEPT);
+    expect(screen.queryByText(/The branch and its commits/)).toBeNull();
   });
 });
 
 describe('DeleteSessionConfirm archive instead', () => {
   it('archives through the shared path, so the safer option still offers an undo', async () => {
-    const session = {
-      id: 'session-1',
-      workspaceId: 'workspace-1',
-      goal: 'Ship it',
-      archivedAt: null,
-    } as never;
-
     render(<DeleteSessionConfirm session={session} onClose={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Archive instead' }));
 
     await waitFor(() => expect(archiveMock).toHaveBeenCalledWith({ sessions: [session] }));
-    expect(state.archiveTask).not.toHaveBeenCalled();
   });
 });

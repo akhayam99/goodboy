@@ -7,7 +7,7 @@ import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedTo
 import { AgentSpawnConfig } from '../../../session/components/AgentSpawnConfig';
 import { AGENT_KIND_META } from '../../../session/agent-kind';
 import { resolveSpawnRouting } from '../../../session/spawn-routing';
-import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
+import { useKindRouting } from '../../../../shared/hooks/useKindRouting';
 import type { AgentSpawnConfigValue } from '../../../session/agentSpawnConfigValue';
 import { appendOperatorNotes } from '../../../session/utils/appendOperatorNotes';
 import { type ExploreEntry } from '../../explore';
@@ -38,8 +38,8 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
   const spawnAgent = useAppStore((state) => state.spawnAgent);
   const announceAgentStarted = useAgentStartedToast();
   const session = useAppStore((state) => sessionById(state.sessions, sessionId) ?? null);
-  const roleModels = useSessionRoleModels({ sessionId });
-  const spawnRouting = resolveSpawnRouting({ kind: 'scout', roleModels, session });
+  const roleDefault = useKindRouting({ sessionId, kind: 'scout' });
+  const spawnRouting = resolveSpawnRouting({ kind: 'scout', roleDefault, session });
   const defaultConfig = useMemo<AgentSpawnConfigValue>(
     () => ({
       hint: '',

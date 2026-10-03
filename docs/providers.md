@@ -165,20 +165,28 @@ clears them after a confirm.
 - **Auto** picks the same way for roles and tasks: the model chosen for that job on
   the default provider, then the next model in that list when your CLI is too old
   for the first one, then the next provider in the fallback order when the default
-  is not connected. On Claude, the Planner runs on Opus 5.5 (Opus 5 on an older CLI),
-  the Debugger and the Reviewer on Sonnet 5 High, Docs on Sonnet 5 Low, Scout and
-  the small writing jobs on Haiku 4.5, and plan drafting, Generalist, Report and the
-  other roles on Sonnet 5 Medium
+  is not connected. Each job names a model line, never a version, so a new model
+  in the catalog reaches Auto on its own. On Claude, the Planner runs on the newest
+  Opus (Opus 5.5, Opus 5 on an older CLI), the Debugger and the Reviewer on the
+  newest Sonnet at High, Docs on the newest Sonnet at Low, Scout and the small
+  writing jobs on Haiku 4.5, and plan drafting, Generalist, Report and the other
+  roles on the newest Sonnet at Medium (Sonnet 5.5 today, Sonnet 5 on a Claude CLI
+  older than 2.1.284)
 - **If unavailable**: a pinned row has this line at the bottom of its picker. It is
   the second choice Goodboy uses when the pinned model cannot run. **Auto** lets the
   ladder above choose
 
 ## Models in the picker
 
-Each provider page has a **Models in the picker** group under Usage. It changes
-only what the model picker lists, for every workspace in the app. Auto and pinned
-models keep working. Its header says how many show (`Showing 6 of 11`) next to
-**Show all**.
+Each provider page has a **Models in the picker** group under Usage. A model you
+turn off is never offered for a new choice, for every workspace in the app: the
+pickers drop it, Auto skips it for roles and the workflow orchestrator never sees
+it in its model menu. A model you already pinned keeps running and its Defaults row
+says so (`Opus 5.5 · hidden, still runs because you pinned it`). A background task
+never climbs a cost tier because its model is hidden: Auto takes a visible model of
+the same tier or cheaper from the task's list, and when there is none it keeps the
+hidden one and the row says it (`Haiku 4.5 · hidden, still used for step
+summaries`). Its header says how many show (`Showing 6 of 11`) next to **Show all**.
 
 - Each family (Opus, Sonnet, Haiku and so on) has a switch, then one chip per
   version. A lit chip shows in the picker
@@ -558,10 +566,12 @@ What the catalogs do not tell you:
   and `gpt-5.6-luna`. Each has its own cost tier and price in `codex/cost.ts` (4/20,
   2/12 and 0.2/1.2 per Mtok). The picker shows them as version chips
 - `gpt-6.1-sol` (Codex CLI 0.160 or newer) is the newest Sol and a fourth id of its own,
-  priced 2/10 per Mtok with cached input at 0.10 in `codex/cost.ts` and
-  `features/providers/pricing.json`. Its catalog `costTier` is `expensive` on purpose,
-  like Astra: `mid` would make it the codex mid model in place of Terra. The same
-  model sits in the OpenRouter catalog as `openrouter/openai/gpt-6.1-sol`
+  priced 2/10 per Mtok with cached input at 0.10 in `codex/cost.ts`. Its catalog
+  carries `minCliVersion: '0.160.0'`, so Auto keeps `gpt-5.6-sol` on an older Codex
+  CLI. Its catalog `costTier` is `expensive` on purpose, like Astra: `mid` would make
+  it the codex mid model in place of Terra. The same model sits in the OpenRouter
+  catalog as `openrouter/openai/gpt-6.1-sol`. `gpt-5.6-sol` is `expensive` on both
+  Codex and OpenRouter: OpenAI's standard rate is 4/20, twice the newer Sol
 - Cursor is the only provider whose `getCheapModel` is set by hand. It is set to
   `auto` in `cli-defaults.ts`
 - Old ids still work through `parseLegacyId.ts`. So an id missing from the catalog is
@@ -584,29 +594,48 @@ What the catalogs do not tell you:
   `model-price.test.ts` checks that every anthropic, cursor, codex and gemini
   catalog model has a price
 - A rate the vendor has not published yet is copied from the model it follows and
-  carries `assumed: true` in its `cost.ts` (no model does today), so
-  `costCoverage` reports its spend as approximate. `pricing.json` keeps measured
-  rates only
+  carries `assumed: true` in its `cost.ts` (Cursor `auto` does: Cursor bills Auto at
+  the rate of the model it routes to), so `costCoverage` reports its spend as
+  approximate. Each provider has one price table, its `cost.ts`. Telemetry, budgets
+  and estimates all read it; there is no second table that wins at runtime
 - Gemini 3.6, 3.7 and 3.8 Flash bill 0.75/3.75 per Mtok (cached 0.075) in
   `gemini/cost.ts` until December 31, 2026. Google lists 1.50/7.50 (cached 0.15)
-  from January 1, 2027, so move the three rows then
+  from January 1, 2027, so move the three rows then. `priceSources.test.ts` turns
+  red on that day so the move cannot be forgotten
+- Cursor bills by its own list (`cursor.com/docs/models`), not the vendor's: Gemini
+  3.8 and 3.7 Flash are 0.75/3.5, 3.6 Flash 1.5/7.5 and Gemini 3 Flash 0.5/3
 
-When a provider ships or retires a model, update three files under
-`packages/core/src/providers/<cli>/` together:
+When a provider ships or retires a model, update these together:
 
-1. `catalog.ts`: the entry, keeping the array order (the default model is the
-   first entry).
-2. `agent-model-ids.ts`: the ids the CLI accepts, copied from its model
+1. `<cli>/catalog.ts`: the entry with its `presentation.group`, `checkpoint` and
+   `order`. Order decides which model of a line is newest. Set `minCliVersion` to
+   the first CLI whose model list describes the id (for Claude, probe the
+   `@anthropic-ai/claude-code-<platform>` package of each version in a scratch
+   folder, never a global install). One entry per provider carries
+   `defaultTurn: true`; array order never decides a default.
+2. `<cli>/agent-model-ids.ts`: the ids the CLI accepts, copied from its model
    listing (for cursor, `cursor-agent models`). Keep it hand-written. It is the
    independent check the catalog tests compare against.
-3. `cost.ts`: the per-Mtok rate for every new id.
+3. `<cli>/cost.ts`: the per-Mtok rate for every new id, from the vendor's official
+   price page. A rate you cannot confirm keeps `assumed: true`.
+4. `catalogDescriptor.ts`: a `WEIGHT_BY_KEY` row. `catalogDescriptor.test.ts` fails
+   on a model without one.
+5. Nothing else. Auto (`autoRouting/defaults.ts`) and the chat default
+   (`workspace-chat/defaultChatModel.ts`) name a line (`{ group: 'Sonnet' }`) and pick
+   its newest model through `latestInGroup`. A cell that must hold a version back
+   names the key with a written `pinnedBecause`. A source scan
+   (`model-versions-live-in-the-catalog.test.ts`) fails when product code outside
+   the catalog layer writes a versioned id.
 
 ### Defaults internals
 
 - **Auto** is one ladder for roles and tasks, `resolveAuto` in
   `packages/core/src/providers/autoRouting/resolveAuto.ts`. The curated picks live in
-  `AUTO_DEFAULTS` (`autoRouting/defaults.ts`), one column per curated provider
-  (Claude, Codex, Gemini, Cursor) and one ordered list per role or task. The ladder
+  `AUTO_JOBS` (`autoRouting/defaults.ts`), one column per curated provider
+  (Claude, Codex, Gemini, Cursor) and one ordered list of jobs per role or task. A
+  job names a line and an effort; `AUTO_DEFAULTS` is the table `latestInGroup`
+  expands from it once, at load, into the non-legacy models of that line, newest
+  first. A resolve never expands again (`expandAtLoad.test.ts`). The ladder
   tries the default provider first, then the fallback order; within a column it
   skips a model the installed CLI is too old for (`cliGate`) or a Cursor combo that
   needs Max Mode when Max Mode is off. A provider with no column (OpenCode,
@@ -623,10 +652,27 @@ When a provider ships or retires a model, update three files under
   task pickers and the orchestrator picker then says which provider it left and
   why, and a provider's Usage notice says where Auto sends new agents. No
   Cursor default needs Max Mode, and `defaults.test.ts` validates every cell against
-  the catalogs and snapshots the table
+  the catalogs and checks that each line cell starts on the newest model of its line
 - `ROLE_REGISTRY` holds no routing any more: the Claude column of `AUTO_DEFAULTS` is
   the reference. `kindRouting` maps an agent kind to its role and reads the same
   ladder; there is no separate cheap tier for Scout, Docs or Generalist
+- **One calculation for "what runs here".** Every agent launch asks
+  `selectKindRouting` (a session) or `selectWorkspaceKindRouting` (the kickoff, which
+  has no session yet). Both go through `scopedKindRouting`, the same call
+  `spawnAgent` makes: role pins, the workspace default provider, providers at their
+  limit, hidden models and installed CLI versions (`autoLimitContext` carries the
+  last three). So the model a launch shows is the model it runs, in a Codex
+  workspace too. `one-routing-calculation.test.ts` fails on a bare `kindRouting(`
+  anywhere else; `resolveStepRouting` is the one written exception and moves with
+  the provider policy switch. Resolve, its next-step card, Start agent, the kickoff,
+  Explore and Start work from a chat now follow the workspace default provider
+- **Runs on.** A one-click start of an expensive role (Implementer, Resolver,
+  Reviewer, PR reviewer, Debugger) shows `Runs on Sonnet 5.5 · Medium · Change`
+  under the button (`shared/components/RunsOn`). Change opens the routing picker
+  body for that one launch; nothing is saved. Cheaper follow-ups name the model in
+  the toast after the launch
+- **Re-checks** are the `recheck` task in Defaults, Review group. A re-check no
+  longer pins the cheapest model of the draft's provider by hand
 - **Task models** are saved in `workspaces.task_models` and read through
   `resolveTaskModel` in `@goodboy/core`. A pin may carry an effort and a `fallback`.
   A pin without an effort runs at `medium`, clamped to the model's ladder. Models

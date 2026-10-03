@@ -374,7 +374,7 @@ export const ImpactScene = () => {
 
   return (
     <StudioFrame
-      target="impact"
+      target={{ place: 'impact', tool: null }}
       main={
         <ImpactStudio
           workspaceId={WORKSPACE_ID}

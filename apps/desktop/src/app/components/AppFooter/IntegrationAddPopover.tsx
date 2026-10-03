@@ -55,6 +55,7 @@ export const IntegrationAddPopover = ({
             onClick={dropdown.toggle}
             aria-label={actionLabel}
             aria-expanded={dropdown.open}
+            aria-current={active ? 'page' : undefined}
             className={cn(
               'flex items-center rounded-md py-1 text-secondary font-medium transition-colors',
               isEmpty ? 'gap-1.5 px-2' : FOOTER_LABELED_PAD,

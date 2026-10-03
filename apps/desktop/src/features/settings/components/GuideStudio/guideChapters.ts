@@ -97,6 +97,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Usage, the models in your picker, permissions and your account, in one place. Providers billed per token say so instead of showing usage windows.',
       },
       {
+        term: 'Auto',
+        desc: 'Auto runs each role on the newest model of its line, Sonnet 5.5 on Claude today, and Defaults shows what it picks now. A model you turn off in Models in the picker is left out of Auto and the workflow orchestrator.',
+      },
+      {
         term: 'Usage limits',
         desc: 'The top bar shows each provider as its icon and two bars, the 5-hour window and the week. A bar changes color as it fills, and the tooltip gives the percentage and when it resets.',
       },
@@ -110,7 +114,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Cost',
-        desc: 'Impact shows what got done and what it cost. A monthly cap per provider warns you before you reach it.',
+        desc: 'Impact shows what got done and what it cost, deleted sessions included. A monthly cap per provider warns you before you reach it.',
       },
     ],
     links: [
@@ -172,7 +176,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Done and archived',
-        desc: 'Finished and archived sessions fold into two icons at the side of the board. Archive keeps everything and can be undone. Delete removes it for good.',
+        desc: 'Finished and archived sessions fold into two icons at the side of the board. Archive keeps everything and can be undone. Delete removes the transcript and files for good, and its cost and merged pull requests still count in Impact.',
       },
       {
         term: 'Select many',
@@ -207,7 +211,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Workflows',
-        desc: 'Start from Refactor, Plan and ship or Fix a bug, or build your own. Each step has its own provider, model and effort. Deleting a run deletes its agents and their open questions.',
+        desc: 'Start from Refactor, Plan and ship or Fix a bug, or build your own. Each step has its own provider, model and effort. Restore built-in workflows, in the menu next to New workflow, brings back a built-in you deleted or changed. Deleting a run deletes its agents and their open questions.',
       },
       {
         term: 'Orchestrated',

@@ -28,6 +28,7 @@ vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [],
   useSessions: () => [],
   useTelemetryForSessions: () => h.store.sessionTelemetry,
+  useDormantSpend: () => [],
   useAppStore: <T>(selector: (state: typeof h.store) => T) => selector(h.store),
 }));
 

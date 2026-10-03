@@ -21,7 +21,7 @@ const PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = [
     binary: 'claude',
     capabilities: CAPABILITIES,
     connection: 'connected',
-    version: '2.1.260',
+    version: '2.1.284',
     identity: 'cascadia-platform',
     label: 'Claude',
     error: null,
@@ -146,7 +146,7 @@ export const ProvidersScene = () => {
 
   return (
     <StudioFrame
-      target="settings"
+      target={{ place: 'settings', tool: null }}
       main={
         <SettingsStudio
           currentWorkspace={WORKSPACE}

@@ -23,6 +23,7 @@ const emptyWorkflowDraft = (): WorkflowDraft => ({
   name: '',
   description: '',
   goal: '',
+  processText: '',
   steps: [],
   origin: 'custom',
   isPreset: true,

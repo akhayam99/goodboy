@@ -1,9 +1,16 @@
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
+import {
+  selectPullRequestFacts,
+  summarizePullRequests,
+  type PullRequestOutcomes,
+} from './impact-pull-requests';
 
 const WINDOW_MS = 30 * 86_400_000;
 
-const PR_CACHE_MAX_READ_AGE_MS = 180 * 86_400_000;
+const ACTIVITY_AT = 'COALESCE(s.last_activity_at, s.updated_at)';
+
+const IS_DELETED = 'CASE WHEN s.deleted_at IS NOT NULL THEN 1 ELSE 0 END';
 
 export type ImpactQueryParams = {
   readonly db: Database;
@@ -16,10 +23,12 @@ export type ImpactSession = {
   readonly sessionId: SessionId;
   readonly goal: string;
   readonly value: number;
+  readonly isDeleted: boolean;
 };
 
 export type ImpactOverview = {
   readonly sessionCount: number;
+  readonly deletedSessionCount: number;
   readonly orchestratedSessions: number;
   readonly previousSessionCount: number | null;
   readonly previousOrchestratedSessions: number | null;
@@ -28,24 +37,6 @@ export type ImpactOverview = {
   readonly sessions: ReadonlyArray<ImpactSession>;
   readonly spendUsd: number | null;
   readonly spendSessions: ReadonlyArray<ImpactSession>;
-};
-
-export type PullRequestEntry = {
-  readonly sessionId: SessionId;
-  readonly goal: string;
-  readonly number: number;
-  readonly title: string;
-  readonly state: string;
-  readonly spendUsd: number | null;
-};
-
-export type PullRequestOutcomes = {
-  readonly open: number;
-  readonly merged: number;
-  readonly closed: number;
-  readonly previousOpen: number | null;
-  readonly previousMerged: number | null;
-  readonly entries: ReadonlyArray<PullRequestEntry>;
 };
 
 export type ResolutionOutcome = {
@@ -61,6 +52,7 @@ export type HotFile = {
 export type ReviewOutcomes = {
   readonly commentsResolved: number;
   readonly previousCommentsResolved: number | null;
+  readonly sentToAgent: number;
   readonly medianResolveHours: number | null;
   readonly publishedDrafts: number;
   readonly pushedResolutions: number;
@@ -130,33 +122,29 @@ type CountRow = {
 type OverviewRow = {
   session_count: number;
   orchestrated_sessions: number;
+  deleted_sessions: number;
 };
 
 type SessionDurationRow = {
   session_id: string;
   goal: string;
+  is_deleted: number;
   duration_hours: number;
-};
-
-type PullRequestRow = {
-  session_id: string;
-  goal: string;
-  number: number;
-  title: string;
-  state: string;
-  spend_usd: number | null;
 };
 
 type SessionSpendRow = {
   session_id: string;
   goal: string;
+  is_deleted: number;
   spend_usd: number;
 };
 
 type ReviewDurationRow = {
   session_id: string;
   goal: string;
+  is_deleted: number;
   file_path: string;
+  status: string;
   duration_hours: number;
 };
 
@@ -174,6 +162,7 @@ END`;
 type ExternalTaskRow = {
   session_id: string;
   goal: string;
+  is_deleted: number;
   launched: number;
 };
 
@@ -280,15 +269,15 @@ const selectOverview = async ({
                 AND (a.parent_agent_id IS NOT NULL OR a.kind = 'resolver')
            )
          THEN 1 ELSE 0 END
-       ), 0) AS orchestrated_sessions
+       ), 0) AS orchestrated_sessions,
+       COALESCE(SUM(${IS_DELETED}), 0) AS deleted_sessions
      FROM sessions s
     WHERE s.workspace_id = ?
-      AND s.deleted_at IS NULL
-      AND (? IS NULL OR s.updated_at >= ?)
-      AND (? IS NULL OR s.updated_at < ?)`,
+      AND (? IS NULL OR ${ACTIVITY_AT} >= ?)
+      AND (? IS NULL OR ${ACTIVITY_AT} < ?)`,
     [workspaceId, startMs, startMs, endMs, endMs],
   );
-  return rows[0] ?? { session_count: 0, orchestrated_sessions: 0 };
+  return rows[0] ?? { session_count: 0, orchestrated_sessions: 0, deleted_sessions: 0 };
 };
 
 type SessionDurationParams = ImpactQueryParams & {
@@ -308,13 +297,13 @@ const selectSessionDurations = async ({
     `SELECT
        s.id AS session_id,
        s.goal AS goal,
-       MAX(s.updated_at - s.created_at, 0) / 3600000.0 AS duration_hours
+       ${IS_DELETED} AS is_deleted,
+       MAX(${ACTIVITY_AT} - s.created_at, 0) / 3600000.0 AS duration_hours
      FROM sessions s
     WHERE s.workspace_id = ?
-      AND s.deleted_at IS NULL
-      AND (? IS NULL OR s.updated_at >= ?)
-      AND (? IS NULL OR s.updated_at < ?)
-    ORDER BY duration_hours DESC, s.updated_at DESC
+      AND (? IS NULL OR ${ACTIVITY_AT} >= ?)
+      AND (? IS NULL OR ${ACTIVITY_AT} < ?)
+    ORDER BY duration_hours DESC, ${ACTIVITY_AT} DESC
     LIMIT COALESCE(?, -1)`,
     [workspaceId, startMs, startMs, endMs, endMs, limit],
   );
@@ -335,18 +324,16 @@ const selectSessionSpend = async ({
     `SELECT
        s.id AS session_id,
        s.goal AS goal,
+       ${IS_DELETED} AS is_deleted,
        SUM(tr.estimated_cost_usd) AS spend_usd
      FROM sessions s
      JOIN telemetry_records tr ON tr.session_id = s.id
     WHERE s.workspace_id = ?
-      AND s.deleted_at IS NULL
-      AND (? IS NULL OR s.updated_at >= ?)
-      AND (? IS NULL OR s.updated_at < ?)
       AND (? IS NULL OR tr.recorded_at >= ?)
       AND (? IS NULL OR tr.recorded_at < ?)
     GROUP BY s.id
     ORDER BY spend_usd DESC`,
-    [workspaceId, startMs, startMs, endMs, endMs, startMs, startMs, endMs, endMs],
+    [workspaceId, startMs, startMs, endMs, endMs],
   );
 };
 
@@ -357,6 +344,18 @@ const sumSpend = ({ rows }: { readonly rows: ReadonlyArray<SessionSpendRow> }): 
   }
   return total;
 };
+
+type ToImpactSessionParams = {
+  readonly row: { readonly session_id: string; readonly goal: string; readonly is_deleted: number };
+  readonly value: number;
+};
+
+const toImpactSession = ({ row, value }: ToImpactSessionParams): ImpactSession => ({
+  sessionId: row.session_id as SessionId,
+  goal: row.goal,
+  value,
+  isDeleted: row.is_deleted === 1,
+});
 
 export const getImpactOverview = async ({
   db,
@@ -398,6 +397,7 @@ export const getImpactOverview = async ({
   ]);
   return {
     sessionCount: readCount({ value: current.session_count }),
+    deletedSessionCount: readCount({ value: current.deleted_sessions }),
     orchestratedSessions: readCount({ value: current.orchestrated_sessions }),
     previousSessionCount: previous === null ? null : readCount({ value: previous.session_count }),
     previousOrchestratedSessions:
@@ -410,69 +410,15 @@ export const getImpactOverview = async ({
       values: previousDurations.map((row) => row.duration_hours),
       percentile: 0.5,
     }),
-    sessions: durations.slice(0, 5).map((row) => ({
-      sessionId: row.session_id as SessionId,
-      goal: row.goal,
-      value: row.duration_hours,
-    })),
+    sessions: durations
+      .slice(0, 5)
+      .map((row) => toImpactSession({ row, value: row.duration_hours })),
     spendUsd: sumSpend({ rows: spend }),
     spendSessions: spend
       .filter((row) => row.spend_usd > 0)
       .slice(0, 5)
-      .map((row) => ({
-        sessionId: row.session_id as SessionId,
-        goal: row.goal,
-        value: row.spend_usd,
-      })),
+      .map((row) => toImpactSession({ row, value: row.spend_usd })),
   };
-};
-
-type PullRequestRangeParams = ImpactQueryParams & {
-  readonly startMs: number | null;
-  readonly endMs: number | null;
-};
-
-const selectPullRequests = async ({
-  db,
-  workspaceId,
-  startMs,
-  endMs,
-}: PullRequestRangeParams): Promise<ReadonlyArray<PullRequestRow>> => {
-  const startIso = startMs === null ? null : new Date(startMs).toISOString();
-  const endIso = endMs === null ? null : new Date(endMs).toISOString();
-  const oldestCacheMs = Date.now() - PR_CACHE_MAX_READ_AGE_MS;
-  return db.select<PullRequestRow>(
-    `SELECT
-       s.id AS session_id,
-       s.goal AS goal,
-       CAST(json_extract(g.pr_json, '$.number') AS INTEGER) AS number,
-       COALESCE(json_extract(g.pr_json, '$.title'), 'Untitled pull request') AS title,
-       COALESCE(json_extract(g.pr_json, '$.state'), 'open') AS state,
-       NULLIF(
-         (SELECT SUM(tr.estimated_cost_usd)
-            FROM telemetry_records tr
-           WHERE tr.session_id IN (
-             SELECT sw2.session_id
-               FROM session_worktrees sw2
-               JOIN sessions s2 ON s2.id = sw2.session_id
-              WHERE sw2.branch = g.branch
-                AND sw2.repo_slug = g.repo_slug
-                AND s2.workspace_id = s.workspace_id
-           )),
-         0
-       ) AS spend_usd
-     FROM github_pr_cache g
-     JOIN session_worktrees sw ON sw.branch = g.branch AND sw.repo_slug = g.repo_slug
-     JOIN sessions s ON s.id = sw.session_id
-    WHERE s.workspace_id = ?
-      AND g.pr_json IS NOT NULL
-      AND g.fetched_at >= ?
-      AND (? IS NULL OR julianday(json_extract(g.pr_json, '$.updatedAt')) >= julianday(?))
-      AND (? IS NULL OR julianday(json_extract(g.pr_json, '$.updatedAt')) < julianday(?))
-    GROUP BY g.repo_slug, g.branch
-    ORDER BY julianday(json_extract(g.pr_json, '$.updatedAt')) DESC`,
-    [workspaceId, oldestCacheMs, startIso, startIso, endIso, endIso],
-  );
 };
 
 export const getPullRequestOutcomes = async ({
@@ -482,43 +428,13 @@ export const getPullRequestOutcomes = async ({
   windowMs,
 }: ImpactQueryParams): Promise<PullRequestOutcomes> => {
   const bounds = windowBounds({ sinceMs, windowMs });
-  const [current, previous] = await Promise.all([
-    selectPullRequests({
-      db,
-      workspaceId,
-      sinceMs,
-      startMs: bounds.currentStart,
-      endMs: null,
-    }),
-    sinceMs === null
-      ? Promise.resolve([])
-      : selectPullRequests({
-          db,
-          workspaceId,
-          sinceMs,
-          startMs: bounds.previousStart,
-          endMs: bounds.previousEnd,
-        }),
-  ]);
-  return {
-    open: current.filter((entry) => entry.state !== 'merged' && entry.state !== 'closed').length,
-    merged: current.filter((entry) => entry.state === 'merged').length,
-    closed: current.filter((entry) => entry.state === 'closed').length,
-    previousOpen:
-      sinceMs === null
-        ? null
-        : previous.filter((entry) => entry.state !== 'merged' && entry.state !== 'closed').length,
-    previousMerged:
-      sinceMs === null ? null : previous.filter((entry) => entry.state === 'merged').length,
-    entries: current.slice(0, 5).map((entry) => ({
-      sessionId: entry.session_id as SessionId,
-      goal: entry.goal,
-      number: entry.number,
-      title: entry.title,
-      state: entry.state,
-      spendUsd: entry.spend_usd,
-    })),
-  };
+  const facts = await selectPullRequestFacts({ db, workspaceId });
+  return summarizePullRequests({
+    facts,
+    currentStart: bounds.currentStart,
+    previousStart: bounds.previousStart,
+    previousEnd: bounds.previousEnd,
+  });
 };
 
 type ReviewDurationParams = ImpactQueryParams & {
@@ -536,13 +452,14 @@ const selectReviewDurations = async ({
     `SELECT
        s.id AS session_id,
        s.goal AS goal,
+       ${IS_DELETED} AS is_deleted,
        d.file_path AS file_path,
+       d.status AS status,
        MAX(COALESCE(d.resolved_at, d.consumed_at) - d.created_at, 0) / 3600000.0
          AS duration_hours
      FROM diff_comments d
      JOIN sessions s ON s.id = d.session_id
     WHERE s.workspace_id = ?
-      AND s.deleted_at IS NULL
       AND d.status IN ('resolved', 'consumed')
       AND COALESCE(d.resolved_at, d.consumed_at) IS NOT NULL
       AND (? IS NULL OR COALESCE(d.resolved_at, d.consumed_at) >= ?)
@@ -559,7 +476,7 @@ export const getReviewOutcomes = async ({
   windowMs,
 }: ImpactQueryParams): Promise<ReviewOutcomes> => {
   const bounds = windowBounds({ sinceMs, windowMs });
-  const [durations, previousDurations, draftRows, resolutionRows, outcomeRows] = await Promise.all([
+  const [reviewed, previousReviewed, draftRows, resolutionRows, outcomeRows] = await Promise.all([
     selectReviewDurations({
       db,
       workspaceId,
@@ -582,7 +499,6 @@ export const getReviewOutcomes = async ({
          JOIN sessions s ON s.id = d.session_id
         WHERE d.status = 'published'
           AND s.workspace_id = ?
-          AND s.deleted_at IS NULL
           AND (? IS NULL OR d.created_at >= ?)`,
       [workspaceId, sinceMs, sinceMs],
     ),
@@ -617,7 +533,6 @@ export const getReviewOutcomes = async ({
           )
         )
           AND s.workspace_id = ?
-          AND s.deleted_at IS NULL
           AND (? IS NULL OR r.created_at >= ?)`,
       [workspaceId, sinceMs, sinceMs],
     ),
@@ -627,27 +542,25 @@ export const getReviewOutcomes = async ({
          JOIN sessions s ON s.id = r.session_id
         WHERE r.disposition IS NOT NULL
           AND s.workspace_id = ?
-          AND s.deleted_at IS NULL
           AND (? IS NULL OR r.created_at >= ?)
         GROUP BY outcome
         ORDER BY outcome_count DESC, outcome ASC`,
       [workspaceId, sinceMs, sinceMs],
     ),
   ]);
+  const durations = reviewed.filter((row) => row.status === 'resolved');
+  const previousDurations = previousReviewed.filter((row) => row.status === 'resolved');
   const hotFiles = new Map<string, number>();
   const sessions = new Map<string, ImpactSession>();
   for (const row of durations) {
     hotFiles.set(row.file_path, (hotFiles.get(row.file_path) ?? 0) + 1);
     const current = sessions.get(row.session_id);
-    sessions.set(row.session_id, {
-      sessionId: row.session_id as SessionId,
-      goal: row.goal,
-      value: (current?.value ?? 0) + 1,
-    });
+    sessions.set(row.session_id, toImpactSession({ row, value: (current?.value ?? 0) + 1 }));
   }
   return {
     commentsResolved: durations.length,
     previousCommentsResolved: sinceMs === null ? null : previousDurations.length,
+    sentToAgent: reviewed.length - durations.length,
     medianResolveHours: percentile({
       values: durations.map((row) => row.duration_hours),
       percentile: 0.5,
@@ -676,11 +589,11 @@ export const getExternalTaskOutcomes = async ({
     `SELECT
        s.id AS session_id,
        s.goal AS goal,
+       ${IS_DELETED} AS is_deleted,
        MAX(CASE WHEN t.created_at - s.created_at <= 60000 THEN 1 ELSE 0 END) AS launched
      FROM session_external_tasks t
      JOIN sessions s ON s.id = t.session_id
     WHERE s.workspace_id = ?
-      AND s.deleted_at IS NULL
       AND (? IS NULL OR t.created_at >= ?)
     GROUP BY s.id
     ORDER BY MAX(t.created_at) DESC`,
@@ -689,11 +602,7 @@ export const getExternalTaskOutcomes = async ({
   return {
     linked: rows.length,
     launched: rows.filter((row) => row.launched > 0).length,
-    sessions: rows.slice(0, 5).map((row) => ({
-      sessionId: row.session_id as SessionId,
-      goal: row.goal,
-      value: row.launched,
-    })),
+    sessions: rows.slice(0, 5).map((row) => toImpactSession({ row, value: row.launched })),
   };
 };
 
@@ -712,7 +621,6 @@ export const getAgentDurations = async ({
      FROM agents a
      JOIN sessions s ON s.id = a.session_id
     WHERE s.workspace_id = ?
-      AND s.deleted_at IS NULL
       AND a.deleted_at IS NULL
       AND a.started_at IS NOT NULL
       AND COALESCE(a.done_at, a.last_finished_at) IS NOT NULL
@@ -758,7 +666,6 @@ export const getFlowHealth = async ({
        FROM open_questions q
        JOIN sessions s ON s.id = q.session_id
       WHERE s.workspace_id = ?
-        AND s.deleted_at IS NULL
         AND q.answered_at IS NOT NULL
         AND (? IS NULL OR q.created_at >= ?)`,
       [workspaceId, sinceMs, sinceMs],
@@ -769,7 +676,6 @@ export const getFlowHealth = async ({
          JOIN sessions s ON s.id = q.session_id
         WHERE q.status = 'open'
           AND s.workspace_id = ?
-          AND s.deleted_at IS NULL
           AND (? IS NULL OR q.created_at >= ?)`,
       [workspaceId, sinceMs, sinceMs],
     ),
@@ -779,7 +685,6 @@ export const getFlowHealth = async ({
          JOIN sessions s ON s.id = q.session_id
         WHERE q.status = 'open'
           AND s.workspace_id = ?
-          AND s.deleted_at IS NULL
           AND q.created_at <= (CAST(strftime('%s', 'now') AS INTEGER) * 1000 - 86400000)
           AND (? IS NULL OR q.created_at >= ?)`,
       [workspaceId, sinceMs, sinceMs],
@@ -791,7 +696,6 @@ export const getFlowHealth = async ({
         WHERE a.status = 'failed'
           AND a.deleted_at IS NULL
           AND s.workspace_id = ?
-          AND s.deleted_at IS NULL
           AND (? IS NULL OR a.started_at >= ?)`,
       [workspaceId, sinceMs, sinceMs],
     ),
@@ -801,7 +705,6 @@ export const getFlowHealth = async ({
          JOIN sessions s ON s.id = b.session_id
         WHERE b.dismissed_at IS NULL
           AND s.workspace_id = ?
-          AND s.deleted_at IS NULL
           AND (? IS NULL OR b.created_at >= ?)`,
       [workspaceId, sinceMs, sinceMs],
     ),
@@ -817,11 +720,9 @@ export const getFlowHealth = async ({
     staleQuestions: readCount({ value: staleRows[0]?.count }),
     failedAgents: readCount({ value: failedRows[0]?.count }),
     budgetAlerts: readCount({ value: alertRows[0]?.count }),
-    sessions: sessions.slice(0, 5).map((row) => ({
-      sessionId: row.session_id as SessionId,
-      goal: row.goal,
-      value: row.duration_hours,
-    })),
+    sessions: sessions
+      .slice(0, 5)
+      .map((row) => toImpactSession({ row, value: row.duration_hours })),
   };
 };
 
@@ -839,7 +740,6 @@ export const getCacheEfficiency = async ({
      FROM telemetry_records tr
      JOIN sessions s ON s.id = tr.session_id
     WHERE s.workspace_id = ?
-      AND s.deleted_at IS NULL
       AND tr.kind = 'turn'
       AND (? IS NULL OR tr.recorded_at >= ?)
     GROUP BY tr.provider
@@ -868,7 +768,6 @@ export const getContextGrowth = async ({
        FROM telemetry_records tr
        JOIN sessions s ON s.id = tr.session_id
       WHERE s.workspace_id = ?
-        AND s.deleted_at IS NULL
         AND tr.kind = 'turn'
         AND tr.context_tokens IS NOT NULL
         AND (? IS NULL OR tr.recorded_at >= ?)
@@ -898,7 +797,6 @@ export const getTurnDistribution = async ({
             AND tr.kind = 'turn'
             AND (? IS NULL OR tr.recorded_at >= ?)
           WHERE s.workspace_id = ?
-            AND s.deleted_at IS NULL
             AND a.deleted_at IS NULL
           GROUP BY a.id
        )
@@ -923,7 +821,6 @@ export const getRightSizeNudgeOutcomes = async ({
        JOIN sessions s ON s.id = n.session_id
       WHERE n.kind = 'model-rightsize'
         AND s.workspace_id = ?
-        AND s.deleted_at IS NULL
         AND (? IS NULL OR n.created_at >= ?)
       GROUP BY n.outcome`,
     [workspaceId, sinceMs, sinceMs],

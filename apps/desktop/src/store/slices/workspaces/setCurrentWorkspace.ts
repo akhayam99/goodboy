@@ -250,6 +250,9 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         console.log(`[perf] workspace:firstPaint ${(performance.now() - tWsLoad).toFixed(0)}ms`);
       }
 
+      void get()
+        .loadDormantSpend(id)
+        .catch(() => undefined);
       void (async (): Promise<void> => {
         const tWsDefer = performance.now();
         const [

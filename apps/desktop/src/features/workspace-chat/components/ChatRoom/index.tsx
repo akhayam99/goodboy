@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Play } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { Button, DrawerColumn } from '@goodboy/ui';
+import { Button, DrawerColumn, PageColumn } from '@goodboy/ui';
 import type {
   ChatId,
   ChatMessage,
@@ -24,6 +24,7 @@ import { ChatEmpty } from './ChatEmpty';
 import { ChatHeader } from './ChatHeader';
 import { ChatSessionsChip } from './ChatSessionsChip';
 import { ChatThread } from './ChatThread';
+import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -84,12 +85,18 @@ export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
     void loadChatMessages({ chatId });
   }, [chatId, messages, loadChatMessages]);
 
+  const workspaceDefaultProvider = useAppStore(
+    (state) => selectWorkspaceResolvedSettings({ state, workspaceId }).defaultProviderOverride,
+  );
   const model = useMemo<ChatRouting>(() => {
     if (chat !== null) {
       return { provider: chat.provider, model: chat.model, effort: chat.effort };
     }
-    return draftRouting ?? defaultChatRouting({ connected, saved: savedDefault });
-  }, [chat, draftRouting, connected, savedDefault]);
+    return (
+      draftRouting ??
+      defaultChatRouting({ connected, saved: savedDefault, workspaceDefaultProvider })
+    );
+  }, [chat, draftRouting, connected, savedDefault, workspaceDefaultProvider]);
 
   const send = async (text: string): Promise<void> => {
     if (chatId !== null) {
@@ -100,7 +107,12 @@ export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
       return;
     }
     const routing =
-      draftRouting ?? defaultChatRouting({ connected, saved: await readSavedDefault() });
+      draftRouting ??
+      defaultChatRouting({
+        connected,
+        saved: await readSavedDefault(),
+        workspaceDefaultProvider,
+      });
     const created = await createChat({
       workspaceId,
       provider: routing.provider,
@@ -167,14 +179,14 @@ export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
         }
       />
       {shown.length === 0 ? (
-        <div className="flex min-h-0 flex-1 flex-col px-6">
+        <PageColumn className="flex min-h-0 flex-1 flex-col">
           <ChatEmpty
             workspaceName={workspaceName}
             projectNames={projectNames}
             suggestions={chatSuggestions({ projectNames })}
             onAsk={(question) => void send(question)}
           />
-        </div>
+        </PageColumn>
       ) : (
         <ChatThread
           messages={shown}
@@ -184,28 +196,30 @@ export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
           onOpenSession={openSession}
         />
       )}
-      <div className="flex shrink-0 flex-col gap-1.5 px-6 pb-3.5 pt-1.5">
-        {chat === null || chat.archivedAt === null ? null : (
-          <ChatArchivedBanner
-            onRestore={() => void restoreChats({ workspaceId, chatIds: [chat.id] })}
+      <div className="shrink-0 pb-3.5 pt-1.5">
+        <PageColumn className="flex flex-col gap-1.5">
+          {chat === null || chat.archivedAt === null ? null : (
+            <ChatArchivedBanner
+              onRestore={() => void restoreChats({ workspaceId, chatIds: [chat.id] })}
+            />
+          )}
+          <ChatComposer
+            workspaceId={workspaceId}
+            placeholder={`Ask anything about ${workspaceName}`}
+            routing={model}
+            projectCount={projectNames.length}
+            isStreaming={stream !== undefined}
+            isStopping={stream?.isStopping === true}
+            isAutoFocused={chatId === null}
+            onSend={(text) => void send(text)}
+            onStop={() => {
+              if (chatId !== null) {
+                void stopChatReply({ chatId });
+              }
+            }}
+            onRouting={pickRouting}
           />
-        )}
-        <ChatComposer
-          workspaceId={workspaceId}
-          placeholder={`Ask anything about ${workspaceName}`}
-          routing={model}
-          projectCount={projectNames.length}
-          isStreaming={stream !== undefined}
-          isStopping={stream?.isStopping === true}
-          isAutoFocused={chatId === null}
-          onSend={(text) => void send(text)}
-          onStop={() => {
-            if (chatId !== null) {
-              void stopChatReply({ chatId });
-            }
-          }}
-          onRouting={pickRouting}
-        />
+        </PageColumn>
       </div>
     </section>
   );

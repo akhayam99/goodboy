@@ -128,7 +128,6 @@
     "apps/desktop/src/features/workflows/components/WorkflowDecisions/index.test.tsx": 1,
     "apps/desktop/src/features/workflows/components/WorkflowsPanel/useWorkflowAutosave/index.test.ts": 1,
     "apps/desktop/src/features/workflows/components/WorkflowStudio/SavedStepsList/SavedStepEditor.test.tsx": 1,
-    "apps/desktop/src/features/workflows/engine/index.test.ts": 1,
     "apps/desktop/src/features/workflows/hooks/useWorkflowDrag/index.test.ts": 1,
     "apps/desktop/src/features/workflows/isImportableWorkflow.test.ts": 1,
     "apps/desktop/src/features/workflows/isPresetWorkflow.test.ts": 1,

@@ -25,6 +25,7 @@ export type BaseModel = {
   readonly presentation: ModelPresentation;
   readonly minCliVersion?: string;
   readonly legacy?: true;
+  readonly defaultTurn?: true;
 };
 
 export type AnthropicModel = BaseModel & {

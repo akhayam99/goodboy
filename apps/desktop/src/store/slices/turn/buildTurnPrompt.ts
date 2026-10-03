@@ -24,6 +24,7 @@ import type { PreparedTurn } from './prepareTurn';
 import type { RoutedTurn } from './routeTurn';
 import type { LeasedTurn } from './leaseTurnWriter';
 import type { StartedTurn } from './startTurnRun';
+import { selectHiddenModels } from '../settings/selectHiddenModels';
 
 type Params = Readonly<{
   get: GetFn;
@@ -84,6 +85,7 @@ export const buildTurnPrompt = async ({ get, ctx }: Params) => {
 
   const childRoutingBlock = composeChildRoutingPrompt({
     role: phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind],
+    hidden: selectHiddenModels({ state: get() }),
     availability: workflowAvailabilitySnapshot({
       providers: get().providers,
       cooldowns: get().providerCooldowns,

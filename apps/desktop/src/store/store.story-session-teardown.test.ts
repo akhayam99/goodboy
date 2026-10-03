@@ -76,6 +76,7 @@ const {
 vi.mock('@goodboy/db', async () =>
   (await import('../test/dbMock')).createDbMock({
     archiveSession,
+    listDormantSessionTelemetry: vi.fn(async () => []),
     listWorktreesForSession,
     detachSessionMounts,
     updateSessionWorktreeBranch,

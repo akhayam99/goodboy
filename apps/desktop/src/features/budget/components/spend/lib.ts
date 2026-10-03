@@ -10,6 +10,7 @@ export type WorkspaceTurn = {
   readonly record: TelemetryRecord;
   readonly sessionId: SessionId;
   readonly sessionGoal: string;
+  readonly isSessionDeleted: boolean;
 };
 
 export type SessionSpend = {
@@ -18,6 +19,7 @@ export type SessionSpend = {
   readonly spentUsd: number;
   readonly turnCount: number;
   readonly isCurrent: boolean;
+  readonly isDeleted: boolean;
 };
 
 export type ModelBreakdownEntry = {

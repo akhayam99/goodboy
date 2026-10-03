@@ -25,7 +25,7 @@ const dirtyStatus: WorkspaceGitStatus = {
   inProgress: null,
 };
 
-export type FirstLapState = 'lap' | 'publish' | 'move' | 'moving' | 'report';
+type FirstLapState = 'lap' | 'publish' | 'move' | 'moving' | 'report';
 
 type SceneProps = {
   readonly state: FirstLapState;

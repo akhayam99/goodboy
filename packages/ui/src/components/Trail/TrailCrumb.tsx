@@ -43,6 +43,7 @@ export const TrailCrumb = ({ segment, isCurrent, isIconOnly, delayStyle }: Props
     const button = (
       <button
         type="button"
+        data-trail-piece=""
         onClick={segment.onSelect}
         aria-label={isIconOnly ? segment.label : undefined}
         className={cn(TRAIL_CRUMB_CLASS, TRAIL_LINK_CLASS)}
@@ -60,6 +61,7 @@ export const TrailCrumb = ({ segment, isCurrent, isIconOnly, delayStyle }: Props
   }
   return (
     <span
+      data-trail-piece=""
       aria-label={isIconOnly ? segment.label : undefined}
       className={cn(TRAIL_CRUMB_CLASS, isCurrent ? TRAIL_CURRENT_CLASS : TRAIL_LINK_CLASS)}
     >

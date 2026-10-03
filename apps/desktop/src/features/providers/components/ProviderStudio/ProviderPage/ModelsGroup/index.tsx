@@ -82,7 +82,7 @@ export const ModelsGroup = ({ providerId, isFocused }: Props) => {
       <Band
         label="Models in the picker"
         ariaLabel="Models in the picker"
-        hint="Only changes what you see in the model picker. Auto and pinned models keep working."
+        hint="A model you turn off is hidden from pickers and Auto. A model you pinned keeps running."
         action={
           <div className="flex items-center gap-2">
             <span className="text-secondary text-faint-foreground">

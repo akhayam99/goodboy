@@ -3,7 +3,7 @@ import { HISTORY_ACTION_CLASSES } from '../../historyActionClasses';
 import { lanePath } from '../../historyGraphGeometry';
 import type { HistoryAction } from '../../historyRowMarks';
 
-export type LaneColor = HistoryAction | 'lane';
+type LaneColor = HistoryAction | 'lane';
 
 export type LaneNode = {
   readonly key: string;

@@ -10,6 +10,10 @@ updates:
       prefix: chore
       prefix-development: chore
       include: scope
+    ignore:
+      - dependency-name: '@types/node'
+        update-types:
+          - version-update:semver-major
     groups:
       workspace-minor-patch:
         update-types:
@@ -41,6 +45,11 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    ignore:
+      - dependency-name: base64
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
     groups:
       cargo-minor-patch:
         update-types:

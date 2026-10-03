@@ -3107,6 +3107,75 @@ describe('buildRunTreeStream', () => {
     ]);
   });
 
+  it('ends a finished run on its last step, with no NOW, and keeps NOW on a live one', () => {
+    const finishedAgents: ReadonlyArray<Agent> = [
+      agent({
+        id: 'step-1',
+        ordinal: 1,
+        status: 'completed',
+        startedAt: localIso({ day: 18, hour: 8, minute: 10 }),
+        completedAt: localIso({ day: 18, hour: 8, minute: 20 }),
+        workflowRunId: RUN_ID,
+      }),
+      agent({
+        id: 'step-2',
+        ordinal: 2,
+        status: 'completed',
+        startedAt: localIso({ day: 18, hour: 8, minute: 30 }),
+        completedAt: localIso({ day: 18, hour: 8, minute: 50 }),
+        workflowRunId: RUN_ID,
+      }),
+    ];
+    const finished = runTree({
+      agents: finishedAgents,
+      workflow: attachedWorkflow({
+        createdAt: localIso({ day: 18, hour: 8 }),
+        executionMode: 'dynamic',
+        orchestrationOutcome: 'done',
+      }),
+    });
+    const live = runTree({ agents: nestedRun });
+
+    expect(finished.items.some((item) => item.kind === 'now')).toBe(false);
+    expect(finished.items.map(labelOf)).toEqual(['step:agent:step-2', 'step:agent:step-1']);
+    expect(live.items[0]?.kind).toBe('now');
+  });
+
+  it('draws no loose NOW on a finished run and ties it to the lane on a live one', () => {
+    const finished = runTree({
+      agents: [
+        agent({
+          id: 'step-1',
+          ordinal: 1,
+          status: 'completed',
+          startedAt: localIso({ day: 18, hour: 8, minute: 10 }),
+          completedAt: localIso({ day: 18, hour: 8, minute: 20 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+      workflow: attachedWorkflow({
+        createdAt: localIso({ day: 18, hour: 8 }),
+        executionMode: 'dynamic',
+        orchestrationOutcome: 'done',
+      }),
+    });
+    const live = runTree({ agents: nestedRun });
+    const finishedLayout = layoutTimelineRail({
+      rows: finished.items,
+      groups: finished.groups,
+      hasSpine: false,
+    });
+    const liveLayout = layoutTimelineRail({
+      rows: live.items,
+      groups: live.groups,
+      hasSpine: false,
+    });
+
+    expect(finishedLayout.rows.every((row) => row.id !== 'now')).toBe(true);
+    expect(liveLayout.rows[0]?.id).toBe('now');
+    expect(liveLayout.rows[0]?.segments.length).toBeGreaterThan(0);
+  });
+
   it('roots the run lane on the first step so the rail needs no session spine', () => {
     const { items, groups } = runTree({ agents: nestedRun });
     const layout = layoutTimelineRail({ rows: items, groups, hasSpine: false });

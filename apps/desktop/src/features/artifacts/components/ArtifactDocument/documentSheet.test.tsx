@@ -75,24 +75,73 @@ const renderSheet = (): HTMLElement => {
 type DeclaredParams = {
   readonly selector: string;
   readonly property: string;
-  readonly media?: string;
 };
 
-const declared = ({ selector, property, media }: DeclaredParams): string => {
+const declared = ({ selector, property }: DeclaredParams): string => {
   const rules = Array.from(sheetStyle.sheet?.cssRules ?? []);
-  const scoped =
-    media === undefined
-      ? rules
-      : rules.flatMap((rule) => {
-          const group = rule as unknown as {
-            conditionText?: string;
-            cssRules?: ArrayLike<CSSRule>;
-          };
-          return group.conditionText === media ? Array.from(group.cssRules ?? []) : [];
-        });
-  const match = scoped.find((rule) => (rule as CSSStyleRule).selectorText === selector);
+  const match = rules.find((rule) => (rule as CSSStyleRule).selectorText === selector);
   return (match as CSSStyleRule | undefined)?.style.getPropertyValue(property) ?? '';
 };
+
+type CssBlock = {
+  readonly selector: string;
+  readonly declarations: Readonly<Record<string, string>>;
+  readonly children: ReadonlyArray<CssBlock>;
+};
+
+const parseBlock = (text: string, selector: string, start: number): [CssBlock, number] => {
+  const declarations: Record<string, string> = {};
+  const children: CssBlock[] = [];
+  let head = '';
+  let index = start;
+  while (index < text.length) {
+    const char = text[index] as string;
+    index += 1;
+    if (char === '}') {
+      break;
+    }
+    if (char === '{') {
+      const [child, next] = parseBlock(text, head.trim().replace(/\s+/g, ' '), index);
+      children.push(child);
+      head = '';
+      index = next;
+      continue;
+    }
+    if (char === ';') {
+      const at = head.indexOf(':');
+      declarations[head.slice(0, at).trim()] = head.slice(at + 1).trim();
+      head = '';
+      continue;
+    }
+    head += char;
+  }
+  return [{ selector, declarations, children }, index];
+};
+
+const SHEET_TREE = (parseBlock(SHEET_CSS, '', 0)[0] as CssBlock).children;
+
+const childNamed = (parent: { readonly children: ReadonlyArray<CssBlock> }, selector: string) => {
+  const found = parent.children.find((child) => child.selector === selector);
+  if (found === undefined) {
+    throw new Error(`artifactDocument.css has no ${selector} block`);
+  }
+  return found;
+};
+
+const printBlock = (): CssBlock => ({
+  selector: '@media print',
+  declarations: {},
+  children: SHEET_TREE.filter((block) => block.selector === '@media print').flatMap(
+    (block) => block.children,
+  ),
+});
+
+const screenSelectors = (): ReadonlyArray<string> =>
+  SHEET_TREE.filter((block) => block.selector !== '@media print').flatMap(
+    function collect(block): ReadonlyArray<string> {
+      return [block.selector, ...block.children.flatMap(collect)];
+    },
+  );
 
 describe('artifactDocument.css', () => {
   it('reads Inter from the global face, never its own face or a runtime style tag', () => {
@@ -136,17 +185,23 @@ describe('artifactDocument.css', () => {
     expect(getComputedStyle(cell).borderBottomWidth).toBe('0px');
   });
 
-  it('carries a page-number and title footer for the printed paper', () => {
+  it('hides the footer title on screen and feeds it to the printed page footer', () => {
     const title = renderSheet().querySelector('.print-footer-title') as Element;
+    const print = printBlock();
+    const footerTitle = childNamed(print, '.print-footer-title');
+    const margins = childNamed(print, '@page');
+    const left = childNamed(margins, '@bottom-left');
+    const right = childNamed(margins, '@bottom-right');
+    const named = /^(\S+) content\(\)$/.exec(footerTitle.declarations['string-set'] ?? '');
 
     expect(title.textContent).toContain(report.title);
-    expect(
-      declared({ selector: '.print-footer-title', property: 'string-set', media: 'print' }),
-    ).toBe('gb-doc-title content()');
-    expect(SHEET_CSS).toMatch(/@bottom-left \{[^}]*content: string\(gb-doc-title\);/);
-    expect(SHEET_CSS).toMatch(
-      /@bottom-right \{[^}]*content: 'Page ' counter\(page\) ' of ' counter\(pages\);/,
-    );
+    expect(getComputedStyle(title).overflow).toBe('hidden');
+    expect(getComputedStyle(title).height).toBe('0px');
+    expect(named).not.toBeNull();
+    expect(left.declarations.content).toBe(`string(${named?.[1]})`);
+    expect(right.declarations.content).toBe("'Page ' counter(page) ' of ' counter(pages)");
+    expect(screenSelectors()).not.toContain('@bottom-left');
+    expect(screenSelectors()).not.toContain('@bottom-right');
   });
 
   it('pins the A4 paper and lets the page margin alone set the text block', () => {

@@ -1,4 +1,5 @@
 import type { MountId, SessionEventPayload, SessionId } from '@goodboy/types';
+import { githubRequestHost } from './mountPrLink';
 import { prEventPayload } from './prEventPayload';
 import type { GetFn } from './types';
 
@@ -16,11 +17,22 @@ export const mountPrEventPayload = ({
   number,
 }: Params): SessionEventPayload => {
   const state = get();
+  const mount = mountId === undefined ? undefined : state.mountGithub[mountId];
   const mountPr =
-    mountId === undefined
-      ? null
-      : ((state.mountGithub[mountId]?.prs ?? []).find((pr) => pr.number === number) ??
-        state.mountGithub[mountId]?.pr ??
-        null);
-  return prEventPayload({ number, pr: mountPr ?? state.sessionGithub[sessionId]?.pr ?? null });
+    mount === undefined ? null : (mount.prs.find((pr) => pr.number === number) ?? mount.pr ?? null);
+  const base = prEventPayload({
+    number,
+    pr: mountPr ?? state.sessionGithub[sessionId]?.pr ?? null,
+  });
+  if (mountId === undefined || mount === undefined || mount.repository == null) {
+    return base;
+  }
+  const url = typeof base.url === 'string' ? base.url : null;
+  return {
+    mountId,
+    provider: 'github',
+    host: mount.host ?? (url === null ? 'github.com' : githubRequestHost({ url })),
+    repository: mount.repository,
+    ...base,
+  };
 };

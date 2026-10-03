@@ -28,7 +28,7 @@ export const SettingsFrame = ({ focus, hasWorkspace = true, seed = noop }: Props
   return (
     <ToastProvider>
       <SceneStudioFrame
-        target="settings"
+        target={{ place: 'settings', tool: null }}
         main={
           <StudioFrame kind="settings" onClose={noop}>
             <SettingsStudio

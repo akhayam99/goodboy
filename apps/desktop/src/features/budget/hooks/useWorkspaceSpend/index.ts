@@ -5,9 +5,15 @@ import type {
   ProviderBudgetStatus,
   ProviderName,
   SessionId,
-  TelemetryRecord,
 } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useSessions, useTelemetryForSessions } from '../../../../store';
+import {
+  EMPTY_ARRAY,
+  useAppStore,
+  useDormantSpend,
+  useSessions,
+  useTelemetryForSessions,
+} from '../../../../store';
+import { spendSources } from '../../../../shared/utils/spendSources';
 import type { ProviderSpendEntry } from '../../../../store';
 import type { SessionSpend, WorkspaceTurn } from '../../components/spend/lib';
 import { useBudgetData, type BudgetData } from '../useBudgetData';
@@ -47,7 +53,6 @@ export type WorkspaceSpend = {
   readonly removeProviderCap: (params: RemoveProviderCapParams) => Promise<void>;
 };
 
-const EMPTY_TELEMETRY = EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>;
 const EMPTY_SPEND = EMPTY_ARRAY as ReadonlyArray<ProviderSpendEntry>;
 const EMPTY_STATUSES = {} as const;
 
@@ -56,6 +61,7 @@ export const useWorkspaceSpend = ({ sinceMs }: Params): WorkspaceSpend => {
   const currentSessionId = useAppStore((s) => s.currentSessionId);
   const currentWorkspaceId = useAppStore((s) => s.currentWorkspaceId);
   const telemetryMap = useTelemetryForSessions({ sessions });
+  const dormant = useDormantSpend();
   const storedProviders = useAppStore((s) => s.providerSpendBreakdown ?? EMPTY_SPEND);
   const budgetStatuses = useAppStore((s) => s.providerBudgetStatus ?? EMPTY_STATUSES);
   const alerts = useAppStore((s) => s.budgetAlerts);
@@ -120,24 +126,25 @@ export const useWorkspaceSpend = ({ sinceMs }: Params): WorkspaceSpend => {
 
   const windowedSessions = useMemo(
     () =>
-      sessions
-        .map((session) => ({
-          session,
-          records: (telemetryMap[session.id] ?? EMPTY_TELEMETRY).filter(
+      spendSources({ sessions, telemetryMap, dormant })
+        .map((source) => ({
+          ...source,
+          records: source.records.filter(
             (record) => sinceMs === null || Date.parse(record.recordedAt) >= sinceMs,
           ),
         }))
         .filter(({ records }) => sinceMs === null || records.length > 0),
-    [sessions, sinceMs, telemetryMap],
+    [dormant, sessions, sinceMs, telemetryMap],
   );
 
   const turns = useMemo<ReadonlyArray<WorkspaceTurn>>(
     () =>
-      windowedSessions.flatMap(({ session, records }) =>
+      windowedSessions.flatMap(({ sessionId, goal, isDeleted, records }) =>
         records.map((record) => ({
           record,
-          sessionId: session.id,
-          sessionGoal: session.goal,
+          sessionId,
+          sessionGoal: goal,
+          isSessionDeleted: isDeleted,
         })),
       ),
     [windowedSessions],
@@ -146,12 +153,13 @@ export const useWorkspaceSpend = ({ sinceMs }: Params): WorkspaceSpend => {
   const spendSessions = useMemo<ReadonlyArray<SessionSpend>>(
     () =>
       windowedSessions
-        .map(({ session, records }) => ({
-          sessionId: session.id,
-          goal: session.goal,
+        .map(({ sessionId, goal, isDeleted, records }) => ({
+          sessionId,
+          goal,
           spentUsd: records.reduce((sum, record) => sum + record.estimatedCostUsd, 0),
           turnCount: records.filter((record) => record.kind === 'turn').length,
-          isCurrent: session.id === currentSessionId,
+          isCurrent: sessionId === currentSessionId,
+          isDeleted,
         }))
         .sort((a, b) => b.spentUsd - a.spentUsd),
     [currentSessionId, windowedSessions],

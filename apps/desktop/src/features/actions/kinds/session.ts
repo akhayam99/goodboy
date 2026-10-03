@@ -56,10 +56,10 @@ const NO_MOUNT_REASON = 'Add a project to this session first';
 const NO_WORKTREE_REASON = 'This session has no worktree yet';
 
 const BRANCHLESS_DELETE =
-  'Removes this session, its transcripts and every saved file version from this device. Nothing of it is left on disk. This cannot be undone.';
+  'Frees the transcript, file versions and images. Cost and shipped work stay in Impact. This cannot be undone.';
 
 const BRANCHED_DELETE =
-  'Removes this session and its transcripts from this device. The branch and its commits stay in the repository, and a worktree still holding uncommitted work is kept and listed under Settings, Storage. This cannot be undone.';
+  'Frees the transcript, file versions and images. Cost and shipped work stay in Impact. The branch and its commits stay in the repository, and a worktree still holding uncommitted work is kept and listed under Settings, Storage. This cannot be undone.';
 
 type OpenLensParams = {
   readonly env: ActionEnv;

@@ -15,7 +15,8 @@ export type AuxTaskId =
   | 'workflow_orchestrator'
   | 'question_delegate'
   | 'pr_draft'
-  | 'rebase';
+  | 'rebase'
+  | 'recheck';
 
 export type TaskModelFallback = Readonly<{
   providerId: ProviderId;

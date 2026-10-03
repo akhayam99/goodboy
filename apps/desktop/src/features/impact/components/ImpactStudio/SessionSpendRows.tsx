@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { Button, InlineMarkdown, STRIPED_LIST, cn, formatUsd } from '@goodboy/ui';
+import { DeletedSessionTag } from '../../../../shared/components/DeletedSessionTag';
 import type { SessionSpend } from '../../../budget/components/spend/lib';
 
 type Props = {
@@ -8,7 +9,26 @@ type Props = {
   readonly onSelectSession: (sessionId: SessionId) => void;
 };
 
+type ContentParams = {
+  readonly session: SessionSpend;
+};
+
 const VISIBLE_ROWS = 5;
+
+const ROW = 'flex w-full items-center gap-3 rounded-sm px-2 py-1.5 text-left text-label';
+
+const rowContent = ({ session }: ContentParams): ReactNode => (
+  <>
+    <InlineMarkdown text={session.goal} className="min-w-0 flex-1 truncate text-foreground" />
+    {session.isDeleted ? <DeletedSessionTag /> : null}
+    <span className="shrink-0 tabular-nums text-muted-foreground">
+      {session.turnCount} {session.turnCount === 1 ? 'turn' : 'turns'}
+    </span>
+    <span className="w-16 shrink-0 text-right tabular-nums text-foreground">
+      {formatUsd(session.spentUsd)}
+    </span>
+  </>
+);
 
 export const SessionSpendRows = ({ sessions, onSelectSession }: Props) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -19,22 +39,17 @@ export const SessionSpendRows = ({ sessions, onSelectSession }: Props) => {
       <ol className={cn('flex flex-col', STRIPED_LIST)}>
         {visible.map((session) => (
           <li key={session.sessionId}>
-            <button
-              type="button"
-              onClick={() => onSelectSession(session.sessionId)}
-              className="flex w-full items-center gap-3 rounded-sm px-2 py-1.5 text-left text-label motion-safe:transition-colors hover:bg-hover"
-            >
-              <InlineMarkdown
-                text={session.goal}
-                className="min-w-0 flex-1 truncate text-foreground"
-              />
-              <span className="shrink-0 tabular-nums text-muted-foreground">
-                {session.turnCount} {session.turnCount === 1 ? 'turn' : 'turns'}
-              </span>
-              <span className="w-16 shrink-0 text-right tabular-nums text-foreground">
-                {formatUsd(session.spentUsd)}
-              </span>
-            </button>
+            {session.isDeleted ? (
+              <div className={ROW}>{rowContent({ session })}</div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onSelectSession(session.sessionId)}
+                className={cn(ROW, 'motion-safe:transition-colors hover:bg-hover')}
+              >
+                {rowContent({ session })}
+              </button>
+            )}
           </li>
         ))}
       </ol>

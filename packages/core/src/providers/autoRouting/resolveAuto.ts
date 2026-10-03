@@ -10,6 +10,8 @@ import type {
 import { PROVIDER_CAPABILITIES } from '../capabilities';
 import { MODEL_CATALOGS } from '../catalogs';
 import { cliGate, type CliRequirement } from '../cliGate';
+import { MODEL_COST_RANK } from '../modelCostRank';
+import { isModelHidden, type HiddenModels } from '../modelVisibility';
 import { resolvedStoredModelId } from '../resolvedStoredModelId';
 import { strongestModelForTier } from '../strongestModelForTier';
 import { AUTO_DEFAULTS, isCuratedProvider, type AutoChoice } from './defaults';
@@ -26,6 +28,7 @@ export type AutoContext = {
   readonly learned?: ReadonlyArray<CliRequirement>;
   readonly isCursorMaxModeOn?: boolean;
   readonly atLimit?: ReadonlyArray<ProviderId> | null;
+  readonly hidden?: HiddenModels | null;
 };
 
 export type AutoStep = 'curated' | 'next-in-column' | 'next-provider' | 'cost-tier';
@@ -36,6 +39,7 @@ export type AutoPick = {
   readonly effort: EffortLevel | null;
   readonly step: AutoStep;
   readonly skippedAtLimit?: ReadonlyArray<ProviderId>;
+  readonly keptHidden?: true;
 };
 
 type Params = AutoContext & {
@@ -126,6 +130,14 @@ const isChoiceUsable = ({ provider, choice, context }: GateParams): boolean => {
   );
 };
 
+const isChoiceHidden = ({ provider, choice, context }: GateParams): boolean =>
+  context.hidden != null && isModelHidden({ provider, hidden: context.hidden, key: choice.key });
+
+const costRankOf = ({ provider, choice }: ChoiceParams): number => {
+  const tier = catalogModelOf({ provider, choice })?.presentation.costTier ?? 'mid';
+  return MODEL_COST_RANK[tier];
+};
+
 const slotTier = (slot: AutoSlot): ModelCostTier => {
   const reference = AUTO_DEFAULTS.anthropic[slot.id][0];
   const model = MODEL_CATALOGS.anthropic.find((candidate) => candidate.key === reference?.key);
@@ -151,29 +163,84 @@ type ProviderPickParams = {
   readonly context: AutoContext;
 };
 
-const curatedPick = ({ provider, slot, context }: ProviderPickParams): AutoPick | null => {
-  if (!isCuratedProvider(provider)) {
-    return null;
-  }
-  const column = AUTO_DEFAULTS[provider][slot.id];
-  const index = column.findIndex((choice) => isChoiceUsable({ provider, choice, context }));
-  const choice = column[index];
-  if (choice == null) {
-    return null;
-  }
-  return {
-    provider,
-    model: resolvedStoredModelId({ provider, selection: selectionOf({ choice }) }),
-    effort: choice.effort ?? null,
-    step: stepOf({ provider, index, context }),
-  };
+type IndexedChoice = {
+  readonly choice: AutoChoice;
+  readonly index: number;
 };
 
-const tierPick = ({ provider, slot }: ProviderPickParams): AutoPick | null => {
+const usableChoices = ({
+  provider,
+  slot,
+  context,
+}: ProviderPickParams): ReadonlyArray<IndexedChoice> => {
+  if (!isCuratedProvider(provider)) {
+    return [];
+  }
+  return AUTO_DEFAULTS[provider][slot.id]
+    .map((choice, index) => ({ choice, index }))
+    .filter(({ choice }) => isChoiceUsable({ provider, choice, context }));
+};
+
+type VisibleTaskParams = {
+  readonly provider: ProviderId;
+  readonly usable: ReadonlyArray<IndexedChoice>;
+  readonly context: AutoContext;
+};
+
+const visibleTaskChoice = ({
+  provider,
+  usable,
+  context,
+}: VisibleTaskParams): IndexedChoice | null => {
+  const first = usable[0];
+  if (first == null) {
+    return null;
+  }
+  const ceiling = costRankOf({ provider, choice: first.choice });
+  return (
+    usable.find(
+      ({ choice }) =>
+        !isChoiceHidden({ provider, choice, context }) &&
+        costRankOf({ provider, choice }) <= ceiling,
+    ) ?? null
+  );
+};
+
+type PickOfParams = {
+  readonly provider: ProviderId;
+  readonly picked: IndexedChoice;
+  readonly context: AutoContext;
+};
+
+const pickOf = ({ provider, picked, context }: PickOfParams): AutoPick => ({
+  provider,
+  model: resolvedStoredModelId({ provider, selection: selectionOf({ choice: picked.choice }) }),
+  effort: picked.choice.effort ?? null,
+  step: stepOf({ provider, index: picked.index, context }),
+});
+
+const curatedPick = ({ provider, slot, context }: ProviderPickParams): AutoPick | null => {
+  const usable = usableChoices({ provider, slot, context });
+  if (slot.kind === 'task') {
+    const visible = visibleTaskChoice({ provider, usable, context });
+    if (visible != null) {
+      return pickOf({ provider, picked: visible, context });
+    }
+    const kept = usable[0];
+    return kept == null
+      ? null
+      : { ...pickOf({ provider, picked: kept, context }), keptHidden: true };
+  }
+  const picked = usable.find(({ choice }) => !isChoiceHidden({ provider, choice, context }));
+  return picked == null ? null : pickOf({ provider, picked, context });
+};
+
+const tierPick = ({ provider, slot, context }: ProviderPickParams): AutoPick | null => {
   const model = strongestModelForTier({
     provider,
     tier: slotTier(slot),
     wantsThinker: slot.kind === 'role' && THINKING_ROLES.has(slot.id),
+    ...(context.hidden != null && { hidden: context.hidden }),
   });
   if (model == null) {
     return null;

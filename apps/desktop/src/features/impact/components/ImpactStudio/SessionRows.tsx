@@ -3,6 +3,7 @@ import type { SessionId } from '@goodboy/types';
 import { ArrowUpRight } from 'lucide-react';
 import { FilledEmptyState, InlineMarkdown, STRIPED_LIST, STRIPED_MIN_ROWS, cn } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { DeletedSessionTag } from '../../../../shared/components/DeletedSessionTag';
 
 type Props = {
   readonly sessions: ReadonlyArray<ImpactSession>;
@@ -10,6 +11,8 @@ type Props = {
   readonly formatValue: (value: number) => string;
   readonly onOpenSession: (sessionId: SessionId) => void;
 };
+
+const ROW = 'flex items-center gap-3 rounded-sm px-2 py-1.5 text-left text-label';
 
 export const SessionRows = ({ sessions, valueLabel, formatValue, onOpenSession }: Props) => {
   if (sessions.length === 0) {
@@ -25,24 +28,42 @@ export const SessionRows = ({ sessions, valueLabel, formatValue, onOpenSession }
     <div
       className={cn('flex flex-col', sessions.length >= STRIPED_MIN_ROWS ? STRIPED_LIST : 'gap-1')}
     >
-      {sessions.map((session) => (
-        <button
-          key={session.sessionId}
-          type="button"
-          onClick={() => onOpenSession(session.sessionId)}
-          className="flex items-center gap-3 rounded-sm px-2 py-1.5 text-left text-label transition-colors hover:bg-hover"
-        >
+      {sessions.map((session) => {
+        const goal = (
           <InlineMarkdown text={session.goal} className="min-w-0 flex-1 truncate text-foreground" />
+        );
+        const value = (
           <span className="shrink-0 font-mono tabular-nums text-muted-foreground">
             {formatValue(session.value)} {valueLabel}
           </span>
-          <ArrowUpRight
-            size={ICON_SIZE.row}
-            aria-hidden
-            className="shrink-0 text-muted-foreground"
-          />
-        </button>
-      ))}
+        );
+        if (session.isDeleted) {
+          return (
+            <div key={session.sessionId} className={ROW}>
+              {goal}
+              <DeletedSessionTag />
+              {value}
+              <ArrowUpRight size={ICON_SIZE.row} aria-hidden className="invisible shrink-0" />
+            </div>
+          );
+        }
+        return (
+          <button
+            key={session.sessionId}
+            type="button"
+            onClick={() => onOpenSession(session.sessionId)}
+            className={cn(ROW, 'transition-colors hover:bg-hover')}
+          >
+            {goal}
+            {value}
+            <ArrowUpRight
+              size={ICON_SIZE.row}
+              aria-hidden
+              className="shrink-0 text-muted-foreground"
+            />
+          </button>
+        );
+      })}
     </div>
   );
 };

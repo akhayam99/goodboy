@@ -253,8 +253,10 @@ shows.
 The workflow detail draws the run as a run tree (`RunTree`), the same stream
 the activity feed builds, limited to one run (`buildRunTreeStream`). Time runs
 the same way: the first step sits at the bottom, queued steps sit above the
-running one, and NOW closes the tree at the top. The run lane starts on the
-first step, so the tree has no session spine and no time column. Sub-agents
+running one, and NOW closes the tree at the top of a live run. A finished run
+has no NOW: its story ends on the last step, as the agent tree does. The run
+lane starts on the first step, so the tree has no session spine and no time
+column. Sub-agents
 sit one column right, on the run's colour. The view scrolls to the row that is
 running or waiting on you when it opens. The run header and the Next action
 strip stay pinned while the tree scrolls. A long run name wraps to a second

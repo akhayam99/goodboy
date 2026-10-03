@@ -1004,7 +1004,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     const orchestrator = orchestratorPicker();
     expect(
       within(orchestrator).getByRole('button', { name: /^model:auto$/i }).dataset.recommendedModel,
-    ).toBe('sonnet-5');
+    ).toBe('sonnet-5.5');
 
     fireEvent.click(startBtn());
 
@@ -1763,7 +1763,7 @@ describe('WorkflowBuilderView (planner model picker)', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     setGoal();
     const modelBtn = screen.getByRole('button', { name: /^model:auto$/i });
-    expect(modelBtn.dataset['recommendedModel']).toBe('sonnet-5');
+    expect(modelBtn.dataset['recommendedModel']).toBe('sonnet-5.5');
     expect(screen.queryByText(/cheap-tier/i)).toBeNull();
   });
 
@@ -1778,7 +1778,7 @@ describe('WorkflowBuilderView (planner model picker)', () => {
     await waitFor(() => screen.getByText('2 steps'));
 
     expect(vi.mocked(PlannerClient)).toHaveBeenCalledWith(
-      expect.objectContaining({ providerId: 'anthropic', model: 'sonnet-5' }),
+      expect.objectContaining({ providerId: 'anthropic', model: 'sonnet-5.5' }),
     );
   });
 

@@ -132,7 +132,11 @@ be used inside ToastProvider`.** `main.tsx` renders `MockScene` in place of
   opens on renders nothing from it. Filling the store cannot reach that hook,
   because it does not go through a store action. When a scene mounts a studio,
   open it on the scope whose panels read from the store. Check the console
-  before you trust a screenshot that looks full.
+  before you trust a screenshot that looks full. `?scene=impact-deleted` fills
+  every panel instead: it answers the Impact queries through `mockIPC`
+  (`impactDeletedSeed.ts` matches each SELECT by its text) and seeds the
+  deleted sessions into `dormantSpend`. Capture it without `&brand=1`: the brand
+  chrome pins the top bar spend to a fixed figure that ignores deleted sessions.
 
 ## Capture the actual image, not a browser-pane screenshot
 
@@ -209,6 +213,8 @@ questions cluster, the transcript and the command palette over one Harborline
 session. `?scene=workflow-run&run=parallel` shows the same run earlier, on its
 first step: three scouts working side by side, one done, and the orchestrator
 waiting on the step (`scenes/flow-audit/parallelRun.ts`).
+`?scene=workflow-run&run=finished` shows the run done, with every step complete
+and no NOW (`scenes/flow-audit/finishedRun.ts`).
 
 The README and feature-area guide docs are captured from these scenes. The
 `brand-*` scenes in `scenes/brand/` tell one Harborline story (issue HBL-412,

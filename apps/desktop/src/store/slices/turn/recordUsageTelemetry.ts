@@ -17,10 +17,6 @@ import type {
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeBudgetAlertsList, invokeBudgetEmitAlerts } from '../../../features/budget/budget';
-import {
-  getCodexPriceOverride,
-  getGeminiPriceOverride,
-} from '../../../features/providers/provider-pricing';
 import { buildProviderSpendBreakdown, loadCurrentProviderBudgetStatuses } from '../budget';
 import { notifyBudgetAlerts } from './notifyBudgetAlerts';
 import type { GetFn, SetFn } from './types';
@@ -40,17 +36,10 @@ export const recordUsageTelemetry = async (
   get: GetFn,
   { event, provider, model, runId, sessionId, now }: Params,
 ): Promise<void> => {
-  const priceOverride =
-    provider === 'codex'
-      ? getCodexPriceOverride(null, model)
-      : provider === 'gemini'
-        ? getGeminiPriceOverride(null, model)
-        : null;
   const cost = computeProviderCostUsd({
     providerId: provider,
     usage: event.usage,
     model,
-    priceOverride,
   });
   const record: TelemetryRecord = {
     id: crypto.randomUUID() as TelemetryRecordId,

@@ -1,5 +1,12 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { insertAgent, insertWorkspace } from '@goodboy/db';
+import {
+  getWorkflow,
+  insertAgent,
+  insertWorkspace,
+  listWorkflows,
+  upsertWorkflow,
+} from '@goodboy/db';
+import { WORKFLOW_LIBRARY, WorkflowRestoreError, normalizeAgentRole } from '@goodboy/core';
 import { purgedAgentIds } from './slices/sessions/sessionMutators';
 import type { AgentInsertArgs } from '../features/workflows/workflows';
 import type { AgentId, SessionId, StepId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
@@ -225,5 +232,106 @@ describe('store on sqlite: removing a workflow run from a session', () => {
     expect((await agentRows(sessionId)).map((row) => row.deleted_at)).toEqual([null, null]);
     expect(storedRunIds(sessionId)).toEqual([runId]);
     expect(purgedAgentIds.has('agent-0' as AgentId)).toBe(false);
+  });
+});
+
+describe('store on sqlite: restoring built-in workflows', () => {
+  it('runs the real restore through the store and reloads the preserved row', async () => {
+    const entry = WORKFLOW_LIBRARY[0];
+    if (entry === undefined) {
+      throw new Error('the workflow library is empty');
+    }
+    const workflowId = `wf_seed_${entry.slug}_legacy-container` as WorkflowId;
+    const stepIds = entry.steps.map(
+      (_step, ordinal) => `step_seed_${entry.slug}_${ordinal}_legacy-container` as StepId,
+    );
+    await upsertWorkflow(storySqlite(), {
+      id: workflowId,
+      workspaceId: WORKSPACE_ID,
+      name: `${entry.name} ledger-core`,
+      description: entry.description,
+      origin: 'library',
+      isPreset: true,
+      steps: entry.steps.map((step, ordinal) => ({
+        id: `step_seed_${entry.slug}_${ordinal}_legacy-container` as StepId,
+        workflowId,
+        role: normalizeAgentRole({ role: step.role }),
+        ordinal,
+        name: step.name,
+        promptPrefix: 'Edited prompt',
+        expectedOutput: step.expectedOutput,
+      })),
+      createdAt: STORY_NOW,
+      updatedAt: STORY_NOW,
+    });
+    storySpies.invokeWorkflowList.mockImplementation(() =>
+      listWorkflows(storySqlite(), WORKSPACE_ID),
+    );
+
+    await useAppStore.getState().resetWorkflows({
+      workspaceId: WORKSPACE_ID,
+      slugs: [entry.slug],
+    });
+
+    const stored = await getWorkflow(storySqlite(), workflowId);
+    expect(stored?.name).toBe(entry.name);
+    expect(stored?.steps.map((step) => step.id)).toEqual(stepIds);
+    expect(useAppStore.getState().phaseTemplates[WORKSPACE_ID]?.[0]?.id).toBe(WORKFLOW_ID);
+    expect(useAppStore.getState().phaseTemplates[WORKSPACE_ID]?.[1]?.id).toBe(workflowId);
+  });
+
+  it('reloads the workflows a partial restore already wrote before it refused', async () => {
+    const [restored, refused] = WORKFLOW_LIBRARY;
+    if (restored === undefined || refused === undefined) {
+      throw new Error('the workflow library needs two entries');
+    }
+    await storySqlite().execute('UPDATE workflows SET name = ? WHERE id = ?', [
+      refused.name,
+      WORKFLOW_ID,
+    ]);
+    storySpies.invokeWorkflowList.mockImplementation(() =>
+      listWorkflows(storySqlite(), WORKSPACE_ID),
+    );
+
+    const failure = await useAppStore
+      .getState()
+      .resetWorkflows({ workspaceId: WORKSPACE_ID, slugs: [restored.slug, refused.slug] })
+      .then(
+        () => null,
+        (error: unknown) => error,
+      );
+
+    expect(failure).toMatchObject({ kind: 'name_taken' });
+    expect(
+      useAppStore.getState().phaseTemplates[WORKSPACE_ID]?.map((template) => template.name),
+    ).toContain(restored.name);
+  });
+
+  it('keeps the typed refusal when a name is taken and leaves rows unchanged', async () => {
+    const entry = WORKFLOW_LIBRARY[0];
+    if (entry === undefined) {
+      throw new Error('the workflow library is empty');
+    }
+    await storySqlite().execute('UPDATE workflows SET name = ? WHERE id = ?', [
+      entry.name,
+      WORKFLOW_ID,
+    ]);
+
+    const failure = await useAppStore
+      .getState()
+      .resetWorkflows({
+        workspaceId: WORKSPACE_ID,
+        slugs: [entry.slug],
+      })
+      .then(
+        () => null,
+        (error: unknown) => error,
+      );
+    expect(failure).toBeInstanceOf(WorkflowRestoreError);
+    expect(failure).toMatchObject({ kind: 'name_taken' });
+
+    expect(await rowsOf({ sql: 'SELECT id FROM workflows ORDER BY id' })).toEqual([
+      { id: WORKFLOW_ID },
+    ]);
   });
 });

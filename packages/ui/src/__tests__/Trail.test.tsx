@@ -4,8 +4,25 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { Circle } from 'lucide-react';
 import { Trail } from '../components/Trail';
+import type { CrumbMenuModel } from '../components/Trail/crumbMenuTypes';
 
 afterEach(cleanup);
+
+const MENU: CrumbMenuModel = {
+  title: 'Pages',
+  context: null,
+  count: null,
+  triggerLabel: 'Switch page',
+  groups: [],
+  actions: [],
+  width: 'narrow',
+  filterPlaceholder: null,
+};
+
+const lastTailOf = (segment: Element): Element | null => {
+  const tails = segment.querySelectorAll('[data-trail-tail]');
+  return tails.item(tails.length - 1);
+};
 
 describe('Trail', () => {
   it('marks the last segment as the page and lets an ancestor go up', () => {
@@ -25,21 +42,76 @@ describe('Trail', () => {
     expect(onOverview).toHaveBeenCalledTimes(1);
   });
 
-  it('draws one chevron between segments', () => {
+  it('ends every segment but the page with the same chevron, with or without a menu', () => {
     const { container } = render(
       <Trail
         lead={<span data-testid="lead" />}
         segments={[
           { id: 'overview', label: 'Overview', icon: Circle },
-          { id: 'pages', label: 'Pages', icon: Circle },
+          { id: 'pages', label: 'Pages', icon: Circle, menu: MENU, onSelect: vi.fn() },
           { id: 'run', label: 'Ship a fix', icon: Circle },
         ]}
       />,
     );
 
     expect(screen.getByTestId('lead')).toBeDefined();
-    expect(container.querySelectorAll('[data-trail-segment]')).toHaveLength(3);
-    expect(container.querySelectorAll('[data-trail-segment] > svg')).toHaveLength(2);
+    const segments = Array.from(container.querySelectorAll('[data-trail-segment]'));
+    expect(segments).toHaveLength(3);
+    const [withoutMenu, withMenu, page] = segments;
+    const plain = lastTailOf(withoutMenu!);
+    const menu = lastTailOf(withMenu!);
+    expect(plain).not.toBeNull();
+    expect(menu).not.toBeNull();
+    expect(plain?.tagName).not.toBe(menu?.tagName);
+    expect(plain?.className).toContain('w-6');
+    expect(menu?.className).toContain('w-6');
+    expect(plain?.querySelector('svg')?.getAttribute('class')).toContain('lucide-chevron-right');
+    expect(menu?.querySelector('svg')?.getAttribute('class')).toContain('lucide-chevron-right');
+    expect(page?.querySelector('[data-trail-tail]')).toBeNull();
+    expect(container.querySelectorAll('[data-trail-tail]')).toHaveLength(2);
+  });
+
+  it('keeps the menu chevron visible at rest', () => {
+    render(
+      <Trail
+        segments={[
+          { id: 'pages', label: 'Pages', icon: Circle, menu: MENU, onSelect: vi.fn() },
+          { id: 'run', label: 'Ship a fix', icon: Circle },
+        ]}
+      />,
+    );
+
+    const chevron = screen.getByRole('button', { name: 'Switch page: Pages' });
+    expect(chevron.className).not.toContain('opacity-0');
+  });
+
+  it('measures the segments once for ten renders with the same input', () => {
+    const reads = vi.fn();
+    const scrollWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollWidth');
+    Object.defineProperty(HTMLElement.prototype, 'scrollWidth', {
+      configurable: true,
+      get() {
+        reads();
+        return 80;
+      },
+    });
+    try {
+      const make = () => [
+        { id: 'overview', label: 'Overview', icon: Circle },
+        { id: 'run', label: 'Ship a fix', icon: Circle },
+      ];
+      const { rerender } = render(<Trail segments={make()} />);
+      const afterFirst = reads.mock.calls.length;
+      expect(afterFirst).toBeGreaterThan(0);
+      for (let index = 0; index < 10; index += 1) {
+        rerender(<Trail segments={make()} />);
+      }
+      expect(reads.mock.calls.length).toBe(afterFirst);
+    } finally {
+      if (scrollWidth !== undefined) {
+        Object.defineProperty(HTMLElement.prototype, 'scrollWidth', scrollWidth);
+      }
+    }
   });
 
   it('turns the anchor into an icon from depth four and keeps the last two full', () => {

@@ -13,6 +13,18 @@ type Props = {
   readonly onStartWork?: (messageId: ChatMessageId) => void;
 };
 
+const PROSE_CLASS = [
+  'text-prose',
+  '[&>div>p]:max-w-[72ch]',
+  '[&>div>ul]:max-w-[72ch]',
+  '[&>div>ol]:max-w-[72ch]',
+  '[&>div>blockquote]:max-w-[72ch]',
+  '[&>div>h1]:max-w-[72ch]',
+  '[&>div>h2]:max-w-[72ch]',
+  '[&>div>h3]:max-w-[72ch]',
+  '[&>div>h4]:max-w-[72ch]',
+].join(' ');
+
 const ChatAssistantMessageView = ({ message, workspaceName, onStartWork }: Props) => {
   const isStreaming = message.status === 'streaming';
   const hasText = message.content.trim() !== '';
@@ -20,7 +32,7 @@ const ChatAssistantMessageView = ({ message, workspaceName, onStartWork }: Props
   if (message.status === 'failed') {
     return (
       <div data-chat-message="assistant" className="flex flex-col gap-2">
-        {hasText ? <Markdown text={message.content} className="text-prose" /> : null}
+        {hasText ? <Markdown text={message.content} className={PROSE_CLASS} /> : null}
         <Notice
           tone="danger"
           placement="inline"
@@ -37,7 +49,7 @@ const ChatAssistantMessageView = ({ message, workspaceName, onStartWork }: Props
       aria-busy={isStreaming ? true : undefined}
       className="group/answer flex flex-col gap-2"
     >
-      {hasText ? <Markdown text={message.content} className="text-prose" /> : null}
+      {hasText ? <Markdown text={message.content} className={PROSE_CLASS} /> : null}
       {isStreaming && !hasText ? <ChatTyping workspaceName={workspaceName} /> : null}
       <ChatReads reads={message.reads} />
       {message.status === 'stopped' ? (

@@ -15,12 +15,17 @@ import { useResolveDeliveryReceipts } from '../useResolveDeliveryReceipts';
 const EMPTY_QUEUE_ITEMS: ReadonlyArray<ResolveQueueItemWithThread> = [];
 const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
 const EMPTY_PUBLICATIONS: ReadonlyArray<ResolvePublication> = [];
+const NO_ROWS: ReadonlyArray<ResolveQueueRow> = [];
 
 type Params = {
   readonly sessionId: SessionId;
+  readonly isEnabled?: boolean;
 };
 
-export const useResolveQueueRows = ({ sessionId }: Params): ReadonlyArray<ResolveQueueRow> => {
+export const useResolveQueueRows = ({
+  sessionId,
+  isEnabled = true,
+}: Params): ReadonlyArray<ResolveQueueRow> => {
   const { source } = useActiveReviewSource({ sessionId });
   const comments = source?.comments ?? (EMPTY_ARRAY as ReadonlyArray<PrComment>);
   const notes = useAppStore(
@@ -35,13 +40,15 @@ export const useResolveQueueRows = ({ sessionId }: Params): ReadonlyArray<Resolv
 
   return useMemo(
     () =>
-      buildResolveQueueRows({
-        entries: queueItems,
-        attempts,
-        deliveryReceipts,
-        comments,
-        notes,
-      }),
-    [attempts, comments, deliveryReceipts, notes, queueItems],
+      isEnabled
+        ? buildResolveQueueRows({
+            entries: queueItems,
+            attempts,
+            deliveryReceipts,
+            comments,
+            notes,
+          })
+        : NO_ROWS,
+    [attempts, comments, deliveryReceipts, isEnabled, notes, queueItems],
   );
 };

@@ -89,7 +89,7 @@ type FooterProvider = 'linear' | 'slack' | 'bitbucket' | 'github';
 
 type FooterProps = {
   readonly scope: 'workspace' | 'app';
-  readonly target: string | null;
+  readonly target: { readonly place: string | null; readonly tool: string | null };
   readonly connected: Readonly<Record<FooterProvider, boolean>>;
   readonly onOpenIntegration: (params: { readonly provider: FooterProvider }) => void;
   readonly onOpenSettings: () => void;
@@ -114,7 +114,12 @@ vi.mock('../app/components/AppFooter', () => ({
     onOpenChangelog,
     onOpenShortcuts,
   }: FooterProps) => (
-    <div data-testid="footer" data-scope={scope} data-target={target ?? ''}>
+    <div
+      data-testid="footer"
+      data-scope={scope}
+      data-place={target.place ?? ''}
+      data-tool={target.tool ?? ''}
+    >
       {FOOTER_LABELS.map(([provider, openLabel, connectLabel]) => (
         <button key={provider} type="button" onClick={() => onOpenIntegration({ provider })}>
           {connected[provider] ? openLabel : connectLabel}
@@ -449,15 +454,18 @@ describe('Spend reachability through the impact studio', () => {
 });
 
 describe('Footer highlight follows the open studio', () => {
-  const litTarget = (): string | null => screen.getByTestId('footer').getAttribute('data-target');
+  const litTarget = () => ({
+    place: screen.getByTestId('footer').getAttribute('data-place'),
+    tool: screen.getByTestId('footer').getAttribute('data-tool'),
+  });
 
-  it('lights the github glyph while its inbox is open', () => {
+  it('lights the inbox and rings the github glyph while its inbox is open', () => {
     githubAuth.isAuthenticated = true;
     render(<App />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Review pull requests and issues' }));
 
-    expect(litTarget()).toBe('github');
+    expect(litTarget()).toEqual({ place: 'inbox', tool: 'github' });
   });
 
   it('lights settings while the providers scope is open, since providers is a settings scope', () => {
@@ -470,7 +478,7 @@ describe('Footer highlight follows the open studio', () => {
     });
 
     expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('providers');
-    expect(litTarget()).toBe('settings');
+    expect(litTarget()).toEqual({ place: 'settings', tool: '' });
   });
 
   it('lights the link action while a disconnected glyph opens its tools form', () => {
@@ -478,7 +486,7 @@ describe('Footer highlight follows the open studio', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Connect Linear' }));
 
-    expect(litTarget()).toBe('link');
+    expect(litTarget()).toEqual({ place: 'link', tool: '' });
   });
 });
 

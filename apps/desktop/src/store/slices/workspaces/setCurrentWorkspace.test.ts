@@ -180,6 +180,7 @@ const harness = (initial: Partial<AppStore> = {}): Harness => {
     loadIntegrations: vi.fn(async () => undefined),
     loadWorkspaceOverrides: vi.fn(),
     refreshUnreadWorkspaces: vi.fn(),
+    loadDormantSpend: vi.fn(async () => undefined),
     setCurrentSession: vi.fn(async () => undefined),
     ...initial,
   } as unknown as AppStore;

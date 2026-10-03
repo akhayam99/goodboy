@@ -7,6 +7,7 @@ export type ShippedSession = {
   readonly merged: number;
   readonly spendUsd: number | null;
   readonly hours: number | null;
+  readonly isDeleted: boolean;
 };
 
 type Params = {
@@ -15,16 +16,16 @@ type Params = {
   readonly limit: number;
 };
 
-type AddSpendParams = {
+type SessionSpendParams = {
   readonly total: number | null;
   readonly spendUsd: number | null;
 };
 
-const addSpend = ({ total, spendUsd }: AddSpendParams): number | null => {
+const sessionSpend = ({ total, spendUsd }: SessionSpendParams): number | null => {
   if (spendUsd === null) {
     return total;
   }
-  return (total ?? 0) + spendUsd;
+  return Math.max(total ?? 0, spendUsd);
 };
 
 export const shippedSessions = ({
@@ -42,8 +43,9 @@ export const shippedSessions = ({
       sessionId: entry.sessionId,
       goal: entry.goal,
       merged: (current?.merged ?? 0) + 1,
-      spendUsd: addSpend({ total: current?.spendUsd ?? null, spendUsd: entry.spendUsd }),
+      spendUsd: sessionSpend({ total: current?.spendUsd ?? null, spendUsd: entry.spendUsd }),
       hours: durations.find((session) => session.sessionId === entry.sessionId)?.value ?? null,
+      isDeleted: entry.isDeleted,
     });
   }
   return [...bySession.values()]

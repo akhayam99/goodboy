@@ -40,6 +40,7 @@ import { rememberMaterializationSeed } from './materializationSeeds';
 import { resolveSessionProject } from './resolveSessionProject';
 import type { GetFn, SetFn } from './types';
 import { resolveScopedSettings } from '../overrides/selectResolvedSettings';
+import { scopedKindRouting } from '../agents/scopedKindRouting';
 
 type ExternalTaskInput = {
   provider: SessionExternalTaskProvider;
@@ -370,7 +371,12 @@ export const createSession = (set: SetFn, get: GetFn) => {
       }
     } else if (firstAgentKind !== undefined) {
       const agentName = AGENT_KIND_META[firstAgentKind].label.toLowerCase();
-      const model = requestedModel ?? kindRouting({ kind: firstAgentKind, roleModels }).model;
+      const firstRouting = scopedKindRouting({
+        state: get(),
+        settings: creationSettings,
+        kind: firstAgentKind,
+      });
+      const model = requestedModel ?? firstRouting.model;
       const singleAgent = await invokeAgentInsert({
         sessionId: session.id,
         ordinal: 0,
@@ -381,6 +387,9 @@ export const createSession = (set: SetFn, get: GetFn) => {
       });
       if (model !== null) {
         agentModelOverrides[singleAgent.id] = model;
+      }
+      if (requestedModel == null) {
+        agentProviderOverrides[singleAgent.id] = firstRouting.provider;
       }
       agentKindOverrides[singleAgent.id] = firstAgentKind;
       prespawnedRuns = [singleAgent];

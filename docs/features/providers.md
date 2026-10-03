@@ -31,7 +31,7 @@ Keep a task moving when a provider runs out. With another eligible provider conn
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-fallback-auto-light.webp" alt="Settings, Providers and models, Defaults: Default provider set to Claude with the note Auto starts here, Fallback order with Claude first, and the Explore and plan roles Scout, Debugger and Planner, each with an Auto picker">
 </picture>
 
-Choose where **Auto** starts and how it falls back. **Default provider** says where Auto starts, and **Fallback order** lists the providers it moves through when one is not connected or is out of quota. Each role below, from Scout to Planner, has its own picker, set to **Auto** or pinned to a model.
+Choose where **Auto** starts and how it falls back. **Default provider** says where Auto starts, and **Fallback order** lists the providers it moves through when one is not connected or is out of quota. Each role below, from Scout to Planner, has its own picker, set to **Auto** or pinned to a model. Auto runs each role on the newest model of its line: Sonnet 5.5 for most Claude roles and Opus 5.5 for the Planner, GPT-6.1 Sol for the heavier Codex roles. On an older Claude or Codex CLI it keeps the newest model that CLI can run.
 
 ### Model picker
 
@@ -40,7 +40,7 @@ Choose where **Auto** starts and how it falls back. **Default provider** says wh
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-model-picker-light.webp" alt="The model picker opened on the Implementer role in Defaults: Auto with what it resolves to now, Claude Sonnet 5 Medium, then Provider icons, Model chips Haiku, Sonnet, Opus and Fable, Version 4.6 and 5, and Effort from Low to Max">
 </picture>
 
-Pick a model with the reason next to it. The picker leads with **Auto** and what it resolves to right now, then the provider, the model family, the version and the effort. The settings icon beside **Provider** opens **Models in the picker**, where you choose which models appear. When you create an agent, the picker also offers a **Suggested** model with the reason and **Last used here**.
+Pick a model with the reason next to it. The picker leads with **Auto** and what it resolves to right now, then the provider, the model family, the version and the effort. The settings icon beside **Provider** opens **Models in the picker**, where you choose which models appear; a model you turn off is also left out of Auto and the workflow orchestrator. When you create an agent, the picker also offers a **Suggested** model with the reason and **Last used here**.
 
 ### Impact
 
@@ -49,7 +49,7 @@ Pick a model with the reason next to it. The picker leads with **Auto** and what
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-impact-overview-light.webp" alt="Impact, Overview, over 30 days: In the last 30 days Goodboy ran 24 sessions in Harborline, merged 17 pull requests and spent $250.77, then the tiles Pull requests merged 17, Reviews resolved 46, Run by workflows 63% and Median session 1.4h, and the sessions that shipped the most">
 </picture>
 
-See what Goodboy got done and what it cost over **7 days**, **30 days** or **All time**. **Overview** opens on one sentence built from your numbers, then tiles for **Pull requests merged**, **Reviews resolved**, **Run by workflows** and **Median session**, each against the period before, and the sessions that shipped the most. **Shipped**, **Flow** and **Spend** go deeper.
+See what Goodboy got done and what it cost over **7 days**, **30 days** or **All time**. **Overview** opens on one sentence built from your numbers, then tiles for **Pull requests merged**, **Reviews resolved**, **Run by workflows** and **Median session**, each against the period before, and the sessions that shipped the most. **Shipped**, **Flow** and **Spend** go deeper. The summary says how many of the sessions were deleted. **Reviews resolved** counts only comments that were resolved, and comments sent to an agent show apart in **Shipped**. Impact, the **Spend** tab and the cost in the top bar add up spend the same way. Deleting a session frees its transcript, file versions and images, but its cost and the pull requests it merged still count here, on a row marked **Deleted**.
 
 ### Monthly cap and budget alert
 
