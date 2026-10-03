@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { Button, SegmentedTabs, Textarea, type SegmentedTabOption } from '@goodboy/ui';
+import { Button, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import type { ProjectId, Session, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
@@ -24,6 +24,9 @@ import { KICKOFF_GOAL_PLACEHOLDER } from './WorkflowStart';
 import { StartFooter } from './StartFooter';
 import { useDraftStart } from './useDraftStart';
 import { useWorkspaceKindRouting } from '../../../../shared/hooks/useWorkspaceKindRouting';
+import { PromptField } from '../../../../shared/components/PromptField';
+import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
+import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
 
 type How = 'workflow' | 'agent';
 
@@ -79,6 +82,16 @@ export const HowToWorkOnIt = ({ workspaceId, candidate, title, goal }: Props) =>
   const draftMount: SessionDraftMount | null =
     mount === null ? null : { projectId, reason: mount.reason };
   const trimmed = text.trim();
+  const hasProject = projectId !== null;
+  const promptFiles = usePromptFiles({
+    note: 'Images go to the agent you start',
+    isEnabled: hasProject && how === 'agent',
+    notices: {
+      ambiguous: 'Drop the file on the instructions box to attach it.',
+      disabled: 'Pick a project to attach files.',
+      unavailable: 'File drop is unavailable. Use Attach files instead.',
+    },
+  });
 
   const taskStart = (then: SessionDraftThen): SessionDraftStart => ({
     kind: 'task',
@@ -103,13 +116,19 @@ export const HowToWorkOnIt = ({ workspaceId, candidate, title, goal }: Props) =>
     },
   };
 
-  const startAgentRun = () => {
+  const startAgentRun = async () => {
     if (trimmed === '') {
       return;
     }
-    void startAgent(
-      taskStart({ kind: 'agent', agentKind: kind, prompt: trimmed, routing: agentRouting }),
-    );
+    const staged = hasProject ? promptFiles.attachments : [];
+    const attachmentInputs = staged.length === 0 ? [] : await toAttachmentInputs(staged);
+    const isStarted = await startAgent({
+      ...taskStart({ kind: 'agent', agentKind: kind, prompt: trimmed, routing: agentRouting }),
+      ...(attachmentInputs.length > 0 && { attachmentInputs }),
+    });
+    if (isStarted) {
+      promptFiles.clear();
+    }
   };
 
   return (
@@ -135,15 +154,20 @@ export const HowToWorkOnIt = ({ workspaceId, candidate, title, goal }: Props) =>
         <WorkflowBuilderView kickoff={kickoff} />
       ) : (
         <div className="flex flex-col gap-2">
-          <Textarea
+          <PromptField
+            kind="message"
             value={text}
-            onChange={(event) => setText(event.target.value)}
-            aria-label="Agent instructions"
-            data-kickoff-field
+            onChange={setText}
+            onSubmit={() => void startAgentRun()}
+            isSubmitBlocked={trimmed === '' || isStarting}
+            hasChangedKeys
+            label="Agent instructions"
+            isKickoffField
             minRows={2}
             maxRows={8}
-            autoGrow
-            className="text-body"
+            keyLabels={{ send: 'start' }}
+            notice={promptFiles.notice}
+            {...(hasProject && { files: promptFiles.files })}
           />
           <AgentStartFields
             kinds={kinds}
@@ -163,7 +187,7 @@ export const HowToWorkOnIt = ({ workspaceId, candidate, title, goal }: Props) =>
               disabled={trimmed === '' || isStarting}
               isBusy={isStarting}
               busyLabel={`Starting ${kindLabel}`}
-              onClick={startAgentRun}
+              onClick={() => void startAgentRun()}
             >
               {`Start ${kindLabel}`}
             </Button>

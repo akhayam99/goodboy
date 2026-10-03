@@ -11,3 +11,4 @@ export const SETTING_BROWSER_APP = 'browser.app';
 export const DEFAULT_EDITOR_BINARY = 'code';
 export const DEFAULT_BROWSER_APP = 'system';
 export const DEFAULT_BRANCH_PREFIX = 'goodboy';
+export const SETTING_COMPOSER_CLASSIC_KEYS = 'composer.classicKeys';

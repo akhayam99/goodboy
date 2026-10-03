@@ -54,6 +54,7 @@ export const PRICING_SESSION_ID = 'mock-flow-session-pricing-tiers' as SessionId
 
 const DYNAMIC_WORKFLOW_ID = 'mock-flow-workflow-settlement' as WorkflowId;
 export const DYNAMIC_RUN_ID = 'mock-flow-run-settlement' as WorkflowRunId;
+export const FLOW_HINT_TRACE_ID = 'mock-flow-hint-trace-image';
 const PRESET_TRACE_ID = 'mock-flow-preset-trace-and-fix' as WorkflowId;
 const PRESET_HARDEN_ID = 'mock-flow-preset-harden-endpoint' as WorkflowId;
 const PRESET_MIGRATE_ID = 'mock-flow-preset-migrate-contract' as WorkflowId;
@@ -510,6 +511,12 @@ const DYNAMIC_RUN: WorkflowRun = {
       id: 'flow-hint-queued',
       text: 'Replay the event from the Sentry trace before the tester signs off.',
       createdAt: clock.iso({ at: '2026-09-16T09:40:00.000Z' }),
+    },
+    {
+      id: 'flow-hint-trace',
+      text: 'Northwind sandbox still returns 502 on checkout:\n- keep the idempotency key per request\n- do not touch `ledger-core/src/retry.ts`\n\nThe trace is attached.',
+      createdAt: clock.iso({ at: '2026-09-16T09:42:00.000Z' }),
+      attachmentIds: [FLOW_HINT_TRACE_ID],
     },
   ],
   orchestratorSummary:

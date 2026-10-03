@@ -940,7 +940,8 @@ integration digits (⌘⌥1 to ⌘⌥6) open different lenses and keep a row eac
 A few entries are keys a focused control answers, not global chords: Submit
 (⌘↵, `composer.submit`, the one id behind every composer, editor and the
 workspace switcher; `isSubmitChord` reads it and keeps the lenient match that
-accepts Ctrl as well as ⌘) and Open the workflow of an activity row (⇧↵, the only combo
+accepts Ctrl as well as ⌘), the two message keys `PromptField` reads (↵
+`composer.send` and ⇧↵ `composer.newLine`, see docs/turns.md → One composer) and Open the workflow of an activity row (⇧↵, the only combo
 without ⌘). The list keys (`list.next`, `list.previous`, `list.open`,
 `list.openInTool`, `list.reply`, `list.star`, `list.dismiss`, `list.search`) are
 the same kind: `useListKeys` matches them against the registry, so the rail

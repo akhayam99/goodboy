@@ -78,7 +78,7 @@ Do more from the message box. The **+** opens **Attach files**, **Run a script**
 
 ### Attach files
 
-Hand an agent images, PDFs, CSV and text files, up to 10 at a time, by paste, drop or pick.
+Hand an agent images, PDFs, CSV and text files, up to 10 at a time and 10 MB each, by paste, drop or pick.
 
 ### Drift warning
 

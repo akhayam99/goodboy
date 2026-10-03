@@ -1,4 +1,5 @@
-import { Eyebrow, Input, Textarea, cn } from '@goodboy/ui';
+import { Eyebrow, Input, cn } from '@goodboy/ui';
+import { PromptField } from '../../../../shared/components/PromptField';
 import type { AgentRole, EffortLevel, ProviderId, VerbosityLevel } from '@goodboy/types';
 import type { StepDraft } from '../../engine';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
@@ -101,33 +102,35 @@ export const StepEditorFields = ({
               </button>
             )}
           </div>
-          <Textarea
+          <PromptField
+            kind="document"
+            label="Instruction"
             id={idOf('instruction')}
             value={step.prompt}
-            onChange={(event) => onPrompt(event.target.value)}
+            onChange={onPrompt}
             placeholder="what this agent should do…"
-            autoGrow
+            hasPreview
             minRows={3}
             maxRows={7}
             disabled={disabled}
-            className="resize-none bg-background text-xs leading-relaxed"
+            textClassName="text-xs leading-relaxed"
           />
         </div>
         <div className="flex flex-col gap-1">
           <label htmlFor={idOf('expected')} className="text-secondary text-muted-foreground">
             Expected output
           </label>
-          <Textarea
+          <PromptField
+            kind="document"
+            label="Expected output"
             id={idOf('expected')}
             value={step.expectedOutput}
-            onChange={(event) => onExpectedOutput(event.target.value)}
+            onChange={onExpectedOutput}
             placeholder="what this step hands to the next one…"
-            autoGrow
             minRows={1}
             maxRows={4}
             disabled={disabled}
-            aria-label="Expected output"
-            className="resize-none bg-background text-xs leading-relaxed"
+            textClassName="text-xs leading-relaxed"
           />
         </div>
       </div>

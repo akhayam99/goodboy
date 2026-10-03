@@ -176,7 +176,7 @@ describe('the resolver Brief', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Reply/ }));
     const box = await screen.findByRole('textbox', { name: 'Your reply' });
     fireEvent.change(box, { target: { value: 'We keep the cap at 6 on purpose.' } });
-    fireEvent.keyDown(box, { key: 'Enter', code: 'Enter' });
+    fireEvent.keyDown(box, { key: 'Enter', code: 'Enter', metaKey: true });
 
     await waitFor(() => expect(refuse).toHaveBeenCalledOnce());
     expect(refuse).toHaveBeenCalledWith(

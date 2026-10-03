@@ -1,5 +1,8 @@
 import { useRef, useState } from 'react';
-import { Button, Input } from '@goodboy/ui';
+import { Button } from '@goodboy/ui';
+import { PromptField, type PromptSubmitMode } from '../../../../shared/components/PromptField';
+import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
+import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
 import type {
   OrchestratorHintDelivery,
   OrchestratorHintDraft,
@@ -30,23 +33,37 @@ const readNowCopy = ({ isDeciding, isStepRunning }: ReadNowParams): string => {
   return 'Read now asks for a decision right away.';
 };
 
+const DELIVERY: Readonly<Record<PromptSubmitMode, OrchestratorHintDelivery>> = {
+  send: 'queue',
+  now: 'now',
+};
+
 export const OrchestratorHintComposer = ({ isDeciding, isStepRunning, onSubmit }: Props) => {
   const [text, setText] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-  const canSend = text.trim() !== '';
+  const fieldRef = useRef<HTMLDivElement>(null);
+  const files = usePromptFiles({ note: 'Images go to the next agent' });
+  const canSend = text.trim() !== '' || files.attachments.length > 0;
 
   const send = async ({ delivery }: SendParams) => {
     const draft = text;
-    if (draft.trim() === '') {
+    const staged = files.attachments;
+    if (draft.trim() === '' && staged.length === 0) {
       return;
     }
     setText('');
-    inputRef.current?.focus();
-    const isSaved = await onSubmit({ text: draft, delivery });
+    files.clear();
+    fieldRef.current?.querySelector('textarea')?.focus();
+    const attachments = staged.length === 0 ? [] : await toAttachmentInputs(staged);
+    const isSaved = await onSubmit({
+      text: draft,
+      delivery,
+      ...(attachments.length > 0 && { attachments }),
+    });
     if (isSaved) {
       return;
     }
     setText((current) => (current === '' ? draft : current));
+    files.setAttachments((current) => (current.length === 0 ? staged : current));
   };
 
   return (
@@ -58,36 +75,46 @@ export const OrchestratorHintComposer = ({ isDeciding, isStepRunning, onSubmit }
         void send({ delivery: 'queue' });
       }}
     >
-      <div className="flex min-w-0 items-center gap-1.5">
-        <Input
-          ref={inputRef}
-          id="orchestrator-hint-field"
-          value={text}
-          onChange={(event) => setText(event.target.value)}
-          placeholder="Tell the orchestrator something"
-          aria-label="Hint for the orchestrator"
-          data-testid="orchestrator-hint-input"
-          className="h-7 min-w-0 flex-1 text-secondary"
-        />
-        <Button
-          type="submit"
-          size="sm"
-          variant="ghost"
-          disabled={canSend === false}
-          data-testid="orchestrator-hint-queue"
-        >
-          Queue
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          disabled={canSend === false}
-          data-testid="orchestrator-hint-now"
-          onClick={() => void send({ delivery: 'now' })}
-        >
-          Read now
-        </Button>
-      </div>
+      <PromptField
+        kind="message"
+        label="Hint for the orchestrator"
+        placeholder="Tell the orchestrator something"
+        value={text}
+        onChange={setText}
+        onSubmit={(mode) => void send({ delivery: DELIVERY[mode] })}
+        canSendNow
+        hasPreview
+        notice={files.notice}
+        keyLabels={{ send: 'queue', now: 'read now' }}
+        fieldRef={fieldRef}
+        id="orchestrator-hint-field"
+        testId="orchestrator-hint-input"
+        minRows={2}
+        maxRows={6}
+        files={files.files}
+        actions={
+          <>
+            <Button
+              type="submit"
+              size="sm"
+              variant="ghost"
+              disabled={canSend === false}
+              data-testid="orchestrator-hint-queue"
+            >
+              Queue
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              disabled={canSend === false}
+              data-testid="orchestrator-hint-now"
+              onClick={() => void send({ delivery: 'now' })}
+            >
+              Read now
+            </Button>
+          </>
+        }
+      />
       <span data-testid="orchestrator-hint-timing" className="text-secondary text-muted-foreground">
         Queue waits for the next decision. {readNowCopy({ isDeciding, isStepRunning })}
       </span>

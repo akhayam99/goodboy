@@ -1,4 +1,5 @@
-import { Button, Textarea, cn } from '@goodboy/ui';
+import { Button, cn } from '@goodboy/ui';
+import { PromptField } from '../../../../../shared/components/PromptField';
 import type { EffortLevel, ProviderId } from '@goodboy/types';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 
@@ -43,15 +44,19 @@ export const PlannerDraftRow = ({
     <label htmlFor={PROCESS_ID} className="text-secondary text-muted-foreground">
       Describe the steps
     </label>
-    <Textarea
+    <PromptField
+      variant="bare"
+      kind="document"
+      label="Describe the steps"
       id={PROCESS_ID}
       value={process}
-      onChange={(event) => onProcess(event.target.value)}
+      onChange={onProcess}
+      onSubmit={onPlan}
+      isSubmitBlocked={disabled || isPlanning || process.trim() === ''}
       placeholder="describe the process you expect (e.g. read the existing GitHub integration, study how it works, then plan the GitLab equivalent, then implement)…"
-      autoGrow
       minRows={2}
       maxRows={7}
-      className="min-h-12 resize-none border-0 bg-transparent px-0 py-0 text-body shadow-none focus-visible:ring-0"
+      textClassName="min-h-12 px-0 py-0"
     />
     <div className="flex items-center justify-end gap-2">
       <RoutingPicker

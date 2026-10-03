@@ -1,6 +1,7 @@
 import { type ReactNode, useRef } from 'react';
 import { GripVertical, Trash2 } from 'lucide-react';
-import { ClampedProse, cn, Input, Textarea, Tooltip, tintClasses, Eyebrow } from '@goodboy/ui';
+import { ClampedProse, cn, Input, Tooltip, tintClasses, Eyebrow } from '@goodboy/ui';
+import { PromptField } from '../../../../shared/components/PromptField';
 import type { AgentRole, EffortLevel, ProviderId, VerbosityLevel } from '@goodboy/types';
 import { agentKindPalette, ROLE_LABEL, type AgentKind } from '../../agent-kind';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
@@ -231,15 +232,16 @@ export const WorkflowStepCard = ({
               className={cn('h-7 text-label font-medium', pal.fg)}
             />
             <div className="relative">
-              <Textarea
+              <PromptField
+                kind="document"
+                label="Step instruction"
                 value={promptPrefix}
-                onChange={(e) => onPrompt(e.target.value)}
+                onChange={onPrompt}
                 placeholder="role instructions for this step…"
-                autoGrow
                 minRows={2}
                 maxRows={8}
                 disabled={disabled}
-                className="pr-8 text-2xs leading-relaxed"
+                textClassName="pr-8 text-2xs leading-relaxed"
               />
               {onPolish != null ? (
                 <button
@@ -261,16 +263,16 @@ export const WorkflowStepCard = ({
             {expectedOutput !== undefined && onExpectedOutput !== undefined ? (
               <div className="flex flex-col gap-1">
                 <FieldLabel>Expected output</FieldLabel>
-                <Textarea
+                <PromptField
+                  kind="document"
+                  label="Expected output"
                   value={expectedOutput}
-                  onChange={(e) => onExpectedOutput(e.target.value)}
+                  onChange={onExpectedOutput}
                   placeholder="what this step hands to the next one…"
-                  autoGrow
                   minRows={1}
                   maxRows={4}
                   disabled={disabled}
-                  aria-label="Expected output"
-                  className="text-2xs leading-relaxed"
+                  textClassName="text-2xs leading-relaxed"
                 />
               </div>
             ) : null}

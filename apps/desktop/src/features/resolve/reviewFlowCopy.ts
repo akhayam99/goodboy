@@ -21,7 +21,7 @@ export const REVIEW_FLOW_LABEL = {
   editReply: 'Edit the reply',
   saveReply: 'Save reply',
   cancel: 'Cancel',
-  keysHint: '↵ sends, ⇧↵ new line, Esc cancels',
+  keysHint: 'Esc cancels',
   previous: 'Previous comment',
   next: 'Next comment',
   noChangeCaptured: 'The agent changed no code for this comment.',

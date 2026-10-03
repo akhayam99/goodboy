@@ -1,14 +1,9 @@
 import type { AgentId, IsoDateTime, TurnProviderOverride } from '@goodboy/types';
+import type { StoredAttachment } from '../../../features/attachments/pendingAttachment';
 
 export type { SetFn, GetFn } from '../../slice-types';
 
-export type QueuedAttachment = Readonly<{
-  id: string;
-  fileName: string;
-  mimeType: string;
-  dataUrl: string;
-  relPath: string | null;
-}>;
+export type QueuedAttachment = StoredAttachment;
 
 export type AgentQueuedStatus = 'queued' | 'sending';
 

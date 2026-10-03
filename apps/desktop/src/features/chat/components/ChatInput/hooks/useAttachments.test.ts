@@ -14,7 +14,7 @@ type PendingAttachmentsArgs = {
   readonly persistToDisk: (att: {
     readonly id: string;
     readonly fileName: string;
-    readonly dataUrl: string;
+    readonly blob: Blob;
   }) => Promise<string | null>;
 };
 
@@ -26,7 +26,7 @@ vi.mock('../../../turn', () => ({
   deleteAttachment: deleteAttachmentSpy,
 }));
 
-vi.mock('./usePendingAttachments', () => ({
+vi.mock('../../../../../shared/hooks/usePendingAttachments', () => ({
   usePendingAttachments: (args: PendingAttachmentsArgs) => {
     lastPendingArgs.current = args;
     const [attachments, setAttachments] = useState<ReadonlyArray<PendingAttachment>>([]);
@@ -100,7 +100,7 @@ describe('useAttachments', () => {
     const persisted = await lastPendingArgs.current?.persistToDisk({
       id: 'att-1',
       fileName: 'a.png',
-      dataUrl: 'data:image/png;base64,QUJD',
+      blob: new Blob(['ABC'], { type: 'image/png' }),
     });
     expect(persisted).toBeNull();
     expect(writeAttachmentSpy).not.toHaveBeenCalled();
@@ -111,7 +111,7 @@ describe('useAttachments', () => {
     const persisted = await lastPendingArgs.current?.persistToDisk({
       id: 'att-1',
       fileName: 'a.png',
-      dataUrl: 'data:image/png;base64,QUJD',
+      blob: new Blob(['ABC'], { type: 'image/png' }),
     });
     expect(persisted).toBe('attachments/a.png');
     expect(writeAttachmentSpy).toHaveBeenCalledWith({
@@ -128,7 +128,7 @@ describe('useAttachments', () => {
     const persisted = await lastPendingArgs.current?.persistToDisk({
       id: 'att-1',
       fileName: 'a.png',
-      dataUrl: 'data:image/png;base64,QUJD',
+      blob: new Blob(['ABC'], { type: 'image/png' }),
     });
     expect(persisted).toBeNull();
   });
@@ -173,8 +173,8 @@ describe('useAttachments', () => {
     const { result } = mount({ worktree: '/tmp/wt' });
     act(() => {
       result.current.cleanupSentAttachments([
-        { ...draft, dataUrl: 'data:image/png;base64,QUJD' },
-        { ...draft, id: 'att-2', relPath: null, dataUrl: 'data:image/png;base64,QUJD' },
+        { ...draft, blob: new Blob(['ABC']) },
+        { ...draft, id: 'att-2', relPath: null, blob: new Blob(['ABC']) },
       ]);
     });
     expect(deleteAttachmentSpy).toHaveBeenCalledTimes(1);

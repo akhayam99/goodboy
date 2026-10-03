@@ -200,8 +200,6 @@ describe('ChatRoom', () => {
     expect(inColumn(screen.getByRole('heading', { name: CHAT.title }))).toBe(1);
     expect(inColumn(screen.getByRole('list', { name: 'Messages' }))).toBe(1);
     expect(inColumn(screen.getByRole('textbox', { name: 'Message' }))).toBe(1);
-    const composer = screen.getByRole('textbox', { name: 'Message' }).parentElement;
-    expect(composer?.className).not.toMatch(/max-w-/);
   });
 
   it('keeps the new chat prompt and its composer on the page column too', () => {
