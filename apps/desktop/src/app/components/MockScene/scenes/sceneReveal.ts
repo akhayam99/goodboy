@@ -32,8 +32,10 @@ export const useShowCompletedMounts = ({ isReady }: RevealParams) => {
       return;
     }
     return pollUntil(() => {
-      const toggle = [...document.querySelectorAll<HTMLButtonElement>('button')].find((button) =>
-        button.textContent?.startsWith('Show completed'),
+      const toggle = [...document.querySelectorAll<HTMLButtonElement>('button')].find(
+        (button) =>
+          button.textContent?.startsWith('Completed') === true &&
+          button.getAttribute('aria-expanded') === 'false',
       );
       if (toggle === undefined) {
         return false;

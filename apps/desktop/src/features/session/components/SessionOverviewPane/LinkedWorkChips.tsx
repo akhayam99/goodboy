@@ -1,4 +1,4 @@
-import { Chip } from '@goodboy/ui';
+import { Chip, SkeletonChip } from '@goodboy/ui';
 import type {
   LinkedIssue,
   SessionExternalTask,
@@ -8,6 +8,7 @@ import type {
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
+import { useSessionSkeleton } from '../../hooks/useSessionSkeleton';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -67,12 +68,29 @@ export const LinkedWorkChips = ({ sessionId, onSelectLens }: Props) => {
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
   const setFocusedGithubIssueNumber = useAppStore((s) => s.setFocusedGithubIssueNumber);
   const openExternalTaskLens = useAppStore((s) => s.openExternalTaskLens);
+  const isSkeleton = useSessionSkeleton({ sessionId });
   const linkedIssues = github?.linkedIssues ?? [];
   const orderedTasks = [...externalTasks].sort(
     (left, right) => PROVIDER_ORDER[left.provider] - PROVIDER_ORDER[right.provider],
   );
   if (linkedIssues.length === 0 && orderedTasks.length === 0) {
     return null;
+  }
+  if (isSkeleton) {
+    return (
+      <div
+        role="status"
+        aria-label="Refreshing linked work"
+        className="flex min-w-0 flex-wrap items-center gap-2"
+      >
+        {[
+          ...linkedIssues.map((issue) => issue.url),
+          ...orderedTasks.map((task) => task.externalId),
+        ].map((key) => (
+          <SkeletonChip key={key} />
+        ))}
+      </div>
+    );
   }
   return (
     <div aria-label="Linked work" className="flex min-w-0 flex-wrap items-center gap-2">

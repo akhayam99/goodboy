@@ -1197,6 +1197,16 @@ borderless inline empty state belongs to a surface's own body and uses
 `FilledEmptyState`, which owns its inset and fill. Do not hand-roll either
 shape with `EmptyState size="inline"`.
 
+An empty line inside a section ("No open worktrees.") is `EmptyLine`: one faint
+sentence, an optional glyph before it and an optional action after it. It is
+the only shape for a one-line empty, never bare text in its own style.
+
+**Loading keeps the page in place.** A part that reloads shows a skeleton of
+its own height: `SkeletonRow` (a row, with a `status` label naming what loads)
+or `SkeletonChip` (a chip). Only the parts that reload turn to skeleton; the
+title, the goal, the timeline and the cost stay. A session refresh shows them
+only after 250 ms (`useSessionSkeleton`), so a fast refresh never flashes.
+
 **Inline beats the centred hero** because the pane already has a title and a
 rhythm. A hero repeats the title in bigger type. It pretends the lens is a
 landing page, when it is one of a rail full of destinations.

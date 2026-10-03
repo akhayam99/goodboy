@@ -552,7 +552,6 @@
     "apps/desktop/src/features/session/components/SessionOverviewPane/LinkIssueAction.test.tsx": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/OverviewActions/index.test.tsx": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/AlsoInChip.test.tsx": 1,
-    "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/index.test.tsx": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/mountFailure.test.ts": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/MountProjectList.test.tsx": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/SessionCostChip.test.tsx": 1,
