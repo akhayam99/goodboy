@@ -1,5 +1,7 @@
 import type {
   Chat,
+  EffortLevel,
+  ProviderId,
   ChatId,
   ChatMessage,
   ChatMessageId,
@@ -21,8 +23,17 @@ type FollowUp = {
   readonly reads: ReadonlyArray<string>;
 };
 
+type Routing = {
+  readonly provider: ProviderId;
+  readonly model: string;
+  readonly effort: EffortLevel;
+};
+
+const DEFAULT_ROUTING: Routing = { provider: 'anthropic', model: 'sonnet-5', effort: 'medium' };
+
 type SeedChat = {
   readonly key: string;
+  readonly routing?: Routing;
   readonly title: string;
   readonly ageMs: number;
   readonly isPinned: boolean;
@@ -36,12 +47,14 @@ const SEED_CHATS: ReadonlyArray<SeedChat> = [
     title: 'Release checklist for payments-api',
     ageMs: 5 * DAY_MS,
     isPinned: true,
+    routing: { provider: 'anthropic', model: 'sonnet-5.5', effort: 'medium' },
   },
   {
     key: 'consent',
     title: 'Where is the consent step defined?',
     ageMs: 2 * HOUR_MS,
     isPinned: false,
+    routing: { provider: 'anthropic', model: 'sonnet-5.5', effort: 'medium' },
     linkedSession: 'consent',
   },
   {
@@ -49,6 +62,7 @@ const SEED_CHATS: ReadonlyArray<SeedChat> = [
     title: 'Why does notify-relay retry twice?',
     ageMs: 5 * HOUR_MS,
     isPinned: false,
+    routing: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
   },
   {
     key: 'changes',
@@ -67,11 +81,24 @@ const SEED_CHATS: ReadonlyArray<SeedChat> = [
     title: 'Ledger rounding on refunds',
     ageMs: 4 * DAY_MS,
     isPinned: false,
+    routing: { provider: 'anthropic', model: 'opus-5.5', effort: 'high' },
     linkedSession: 'rounding',
   },
-  { key: 'lunch', title: 'Lunch ideas near the office', ageMs: 9 * DAY_MS, isPinned: false },
+  {
+    key: 'lunch',
+    title: 'Lunch ideas near the office',
+    ageMs: 9 * DAY_MS,
+    isPinned: false,
+    routing: { provider: 'anthropic', model: 'sonnet-5', effort: 'low' },
+  },
   { key: 'webhook', title: 'Rename the webhook table?', ageMs: 14 * DAY_MS, isPinned: false },
-  { key: 'flaky', title: 'Flaky test in ledger-core', ageMs: 21 * DAY_MS, isPinned: false },
+  {
+    key: 'flaky',
+    title: 'Flaky test in ledger-core',
+    ageMs: 21 * DAY_MS,
+    isPinned: false,
+    routing: { provider: 'anthropic', model: 'sonnet-5.5', effort: 'low' },
+  },
 ];
 
 type Params = ChatSeedParams & {
@@ -96,13 +123,14 @@ export const mockChatSeed = ({ workspaceId, now = Date.now() }: Params): ChatSee
     const chatId = `mock-chat-${workspaceId}-${seed.key}` as ChatId;
     const askedAt = isoAt({ ms: now - seed.ageMs - 60_000 });
     const answeredAt = isoAt({ ms: now - seed.ageMs });
+    const routing = seed.routing ?? DEFAULT_ROUTING;
     chats.push({
       id: chatId,
       workspaceId,
       title: seed.title,
-      provider: 'anthropic',
-      model: 'sonnet-5',
-      effort: null,
+      provider: seed.followUp === undefined ? routing.provider : 'codex',
+      model: seed.followUp === undefined ? routing.model : 'gpt-5.6-sol',
+      effort: seed.followUp === undefined ? routing.effort : 'high',
       pinnedAt: seed.isPinned ? askedAt : null,
       archivedAt: null,
       lastActivityAt: answeredAt,
@@ -132,9 +160,9 @@ export const mockChatSeed = ({ workspaceId, now = Date.now() }: Params): ChatSee
         status: 'done',
         reads: answer.reads,
         error: null,
-        provider: 'anthropic',
-        model: 'sonnet-5',
-        effort: 'medium',
+        provider: routing.provider,
+        model: routing.model,
+        effort: routing.effort,
         createdAt: answeredAt,
         updatedAt: answeredAt,
       },

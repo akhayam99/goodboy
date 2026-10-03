@@ -61,7 +61,9 @@ const chatOf = (archivedAt: IsoDateTime | null): ChatSummary => ({
 });
 
 const renderRoom = (chat: ChatSummary) =>
-  render(<ChatRoom workspaceId={WORKSPACE_ID} chat={chat} onCreated={vi.fn()} />);
+  render(
+    <ChatRoom workspaceId={WORKSPACE_ID} chat={chat} onCreated={vi.fn()} onRemoved={vi.fn()} />,
+  );
 
 afterEach(() => {
   cleanup();

@@ -89,7 +89,9 @@ type RoomParams = {
 };
 
 const renderRoom = ({ chat, onCreated = vi.fn() }: RoomParams) =>
-  render(<ChatRoom workspaceId={WORKSPACE_ID} chat={chat} onCreated={onCreated} />);
+  render(
+    <ChatRoom workspaceId={WORKSPACE_ID} chat={chat} onCreated={onCreated} onRemoved={vi.fn()} />,
+  );
 
 const WORKSPACE_ID = 'ws-harborline' as WorkspaceId;
 const CHAT_ID = 'chat-consent' as ChatId;
