@@ -1,10 +1,11 @@
-import type { OverrideSettings, Workspace } from '@goodboy/types';
+import { DEFAULT_WORKFLOW_RULES, type OverrideSettings, type Workspace } from '@goodboy/types';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import { DEFAULT_AFTER_MERGE_RULE } from '../../../../store/slices/branch-cleanup';
 import { MODE_COPY, DEFAULT_PERMISSION_MODE, pickerModeOf } from '../../../permissions/modeCopy';
 import { replySettingsOf } from '../../../resolve/replySettings';
 import { VOICE_LABEL } from '../../../resolve/replySettingsCopy';
 import { DEFAULT_BRANCH_PREFIX } from '../../settings';
+import { autonomyLabel, spendRuleText } from '../../../workflows/workflowRulesCopy';
 import { AFTER_MERGE_SHORT_LABEL } from './afterMergeCopy';
 import type { WorkspacePage } from './workspacePages';
 
@@ -32,6 +33,10 @@ export const workspacePageStatus = ({
       overrides?.parallelAgents === true
         ? `Prefix ${prefix} · parallel agents`
         : `Prefix ${prefix}`,
+    'workflow-rules': [
+      autonomyLabel({ rules: overrides?.workflowRules ?? DEFAULT_WORKFLOW_RULES }),
+      spendRuleText({ rules: overrides?.workflowRules ?? DEFAULT_WORKFLOW_RULES }),
+    ].join(' · '),
     'after-merge': AFTER_MERGE_SHORT_LABEL[overrides?.afterMerge ?? DEFAULT_AFTER_MERGE_RULE],
     'review-replies': `${VOICE_LABEL[replySettingsOf({ layers: [overrides] }).voice]} voice`,
     permissions: MODE_COPY[mode].label,

@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { Pause, Play } from 'lucide-react';
-import type { Agent, SessionId, WorkflowRun } from '@goodboy/types';
+import { Check, Pause, Play } from 'lucide-react';
+import type { Agent, SessionId, WorkflowAutonomy, WorkflowRun } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { isRunPaused } from '../../isRunPaused';
+import { runAutonomyOf } from '../../runAutonomy';
 import { OrchestratorAction } from '../OrchestratorStrip/OrchestratorAction';
 import { RunControlMenu } from './RunControlMenu';
 import { RunStopButton } from './RunStopButton';
 
 type AutonomyMenu = {
   readonly label: string;
-  readonly onAutoRun: (autoRun: boolean) => void;
+  readonly onAutonomy: (autonomy: WorkflowAutonomy) => void;
 };
 
 type Props = {
@@ -31,9 +32,11 @@ export const RunControls = ({
 }: Props) => {
   const pauseWorkflowRun = useAppStore((state) => state.pauseWorkflowRun);
   const resumeWorkflowRun = useAppStore((state) => state.resumeWorkflowRun);
+  const approveWorkflowRunPlan = useAppStore((state) => state.approveWorkflowRunPlan);
   const stopWorkflowRunNow = useAppStore((state) => state.stopWorkflowRunNow);
   const [isBusy, setIsBusy] = useState(false);
   const isPaused = isRunPaused({ run });
+  const isHeldForPlan = run.orchestrationStop?.kind === 'plan-approval';
   const isStopped = run.orchestrationStop?.kind === 'operator';
   const hasStepInFlight = agents.some((agent) => agent.status === 'running');
   const isLive = isOrchestrating || hasStepInFlight;
@@ -55,6 +58,17 @@ export const RunControls = ({
 
   return (
     <>
+      {isHeldForPlan ? (
+        <OrchestratorAction
+          icon={Check}
+          label="Approve plan"
+          variant="primary"
+          testId="run-approve-plan"
+          title="Approve the plan and let the rest run on its own"
+          disabled={isBusy}
+          onClick={() => void guard(() => approveWorkflowRunPlan(sessionId, run.id))}
+        />
+      ) : null}
       {isPaused ? (
         <OrchestratorAction
           icon={Play}
@@ -77,7 +91,7 @@ export const RunControls = ({
           onClick={() => void guard(() => pauseWorkflowRun(sessionId, run.id))}
         />
       ) : null}
-      {isPaused || isLive ? (
+      {isPaused || isHeldForPlan || isLive ? (
         <RunStopButton
           hasStepInFlight={hasStepInFlight}
           disabled={isBusy}
@@ -87,8 +101,10 @@ export const RunControls = ({
       {autonomyMenu === null ? null : (
         <RunControlMenu
           label={autonomyMenu.label}
-          autoRun={run.autoRun === true}
-          onAutoRun={autonomyMenu.onAutoRun}
+          autonomy={
+            runAutonomyOf({ autoRun: run.autoRun, autonomy: run.rulesSnapshot?.autonomy }).key
+          }
+          onAutonomy={autonomyMenu.onAutonomy}
         />
       )}
     </>

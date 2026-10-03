@@ -33,6 +33,7 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   resolveCommitStyle: null,
   afterMerge: null,
   defaultBranchTemplate: null,
+  workflowRules: null,
 };
 
 const at = ({ value }: { readonly value: string }): IsoDateTime =>

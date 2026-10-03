@@ -55,9 +55,13 @@ Put a light model on a scout and a strong one on the planner. A step follows its
 
 ### Autorun
 
-Choose when a run asks: **Ask before each step**, or **Run on its own** to move to the next step without you, per run or for the whole session. A guard stops an agent after 4 unattended turns in an hour, and anything you write to it resets the count.
+Choose when a run asks: **Ask before each step**, **Ask after the plan** to stop once for your **Approve plan** and then run on its own, or **Run on its own** to move to the next step without you, per run or for the whole session. A guard stops an agent after 4 unattended turns in an hour, and anything you write to it resets the count.
 
 **Pause** lets the step in flight finish and starts nothing new, even after a restart; **Resume** picks up where the run was. **Skip** passes any step that has not finished, live or stuck, after one inline confirmation, and keeps what it already wrote. When a running step says nothing for 15 minutes, the run says so and offers **Ask it to continue** or **Skip**.
+
+### Workflow rules
+
+The **Rules** tab of Workflows sets what every new run starts with: how it asks, the default spend cap, and a summary of your providers. The builder opens filled from them and says so in a **From your rules** line; a control you change for one run gets a dot and a **Reset**. A run keeps the rules it started with.
 
 ### Spend limit
 

@@ -24,11 +24,11 @@ import {
   selectFanOutPlan,
   unsettledClusterChildren,
 } from './clusterImplementation';
-import { isRunPaused } from '../../../features/workflows/isRunPaused';
 import { isWatchingWorkflowLens } from './isWatchingWorkflowLens';
 import { WorkflowGateError, findWorkflowActivationBlock } from './workflowActivationGate';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
+import { admitWorkflowRun, heldAdmissionBlock } from './workflowPlanApproval';
 
 export type ActivateWorkflowAgentParams = {
   readonly sessionId: SessionId;
@@ -48,8 +48,9 @@ const throwWhenPaused = ({ get, sessionId, agent }: PauseCheckParams): void => {
   const run = sessionById(get().sessions, sessionId)?.workflowRuns.find(
     (candidate) => candidate.id === agent.workflowRunId,
   );
-  if (isRunPaused({ run })) {
-    throw new WorkflowGateError({ reason: 'paused' });
+  const held = heldAdmissionBlock({ run });
+  if (held !== null) {
+    throw new WorkflowGateError({ reason: held });
   }
 };
 
@@ -70,6 +71,16 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
     const session = sessionById(get().sessions, sessionId);
     if (!session || session.workflowRuns.length === 0) {
       throw new Error('session has no workflow');
+    }
+
+    const workflowRun = session.workflowRuns.find(
+      (candidate) => candidate.id === agent.workflowRunId,
+    );
+    if (workflowRun !== undefined) {
+      const admission = await admitWorkflowRun({ set, sessionId, run: workflowRun });
+      if (admission !== null) {
+        throw new WorkflowGateError({ reason: admission });
+      }
     }
 
     throwWhenPaused({ get, sessionId, agent });

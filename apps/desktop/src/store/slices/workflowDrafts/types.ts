@@ -1,4 +1,11 @@
-import type { ProviderId, SessionId, WorkflowId, EffortLevel, WorkspaceId } from '@goodboy/types';
+import type {
+  ProviderId,
+  SessionId,
+  WorkflowId,
+  EffortLevel,
+  WorkspaceId,
+  WorkflowAutonomy,
+} from '@goodboy/types';
 import type { PlannerOutput } from '@goodboy/core';
 import type { WorkflowDraft } from '../../../features/workflows/engine';
 
@@ -29,6 +36,7 @@ export type WorkflowBuilderDraft = {
   readonly workflow: WorkflowDraft;
   readonly saveAsPreset: boolean;
   readonly autoRun: boolean;
+  readonly autonomy?: WorkflowAutonomy;
   readonly title: string;
   readonly orchestratorModel: OrchestratorModelDraft;
   readonly providerPool: ReadonlyArray<ProviderId> | null;

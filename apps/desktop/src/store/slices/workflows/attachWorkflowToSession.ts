@@ -11,7 +11,9 @@ import type {
   WorkflowRunId,
   WorkflowSpendLimitMode,
   WorkflowTriggerMode,
+  WorkflowRules,
 } from '@goodboy/types';
+import { DEFAULT_WORKFLOW_RULES } from '@goodboy/types';
 import {
   attachWorkflowToSession as attachWorkflowToSessionInDb,
   detachWorkflowFromSession as detachWorkflowFromSessionInDb,
@@ -43,6 +45,7 @@ type Options = {
   spendLimitMode?: WorkflowSpendLimitMode;
   providerPool?: ReadonlyArray<ProviderId>;
   navigate?: boolean;
+  rulesSnapshot?: WorkflowRules;
 };
 
 export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
@@ -75,6 +78,10 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       options.providerPool.length > 0
         ? options.providerPool
         : undefined;
+    const rulesSnapshot = options?.rulesSnapshot ?? {
+      ...(get().workspaceOverrides?.[session.workspaceId]?.workflowRules ?? DEFAULT_WORKFLOW_RULES),
+      autonomy: autoRun ? 'run' : 'step',
+    };
     let triggerMode: WorkflowTriggerMode = options?.triggerMode ?? 'immediate';
     if (triggerMode === 'after_run' && chainAfterId) {
       const predecessor = session.workflowRuns.find((r) => r.id === chainAfterId);
@@ -110,6 +117,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       ...(spendLimitUsd != null && { spendLimitUsd }),
       spendLimitMode,
       ...(providerPool != null && { providerPool }),
+      rulesSnapshot,
     });
 
     const existingRuns = get().sessionPhaseRuns[sessionId] ?? [];
@@ -170,6 +178,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       ...(spendLimitUsd != null && { spendLimitUsd }),
       spendLimitMode,
       ...(providerPool != null && { providerPool }),
+      rulesSnapshot,
     };
 
     const transcriptEntries: Record<string, ReadonlyArray<never>> = {};

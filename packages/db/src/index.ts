@@ -163,6 +163,7 @@ export {
   updateWorkflowRunOrchestratorRouting,
   updateWorkflowRunOrchestratorSummary,
   updateWorkflowRunSpendLimit,
+  updateWorkflowRunRulesSnapshot,
   updateGeneratedWorkflowRunTitle,
   updateUserWorkflowRunTitle,
 } from './queries/session-workflow';

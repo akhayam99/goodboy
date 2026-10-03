@@ -28,7 +28,9 @@ import type {
   WorkflowRunId,
   Workspace,
   WorkspaceId,
+  WorkflowRules,
 } from '@goodboy/types';
+import { DEFAULT_WORKFLOW_RULES } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../../../features/providers/providers';
 import type { AgentKind } from '../../../../../features/session/agent-kind';
 import type { WorkflowBuilderDraft } from '../../../../../store/slices/workflowDrafts/types';
@@ -129,6 +131,12 @@ export const THREAD_BACKOFF = 'PRRT_thread_retry_backoff';
 export const THREAD_ERROR_SHAPE = 'PRRT_thread_error_shape';
 export const THREAD_SPELLING = 'PRRT_thread_field_spelling';
 
+const SCENE_WORKFLOW_RULES: WorkflowRules = {
+  ...DEFAULT_WORKFLOW_RULES,
+  autonomy: 'plan',
+  spendLimitUsd: 25,
+};
+
 export const OVERRIDES = {
   defaultProviderId: null,
   defaultWorkflowId: null,
@@ -149,6 +157,7 @@ export const OVERRIDES = {
   resolveCommitStyle: null,
   afterMerge: null,
   defaultBranchTemplate: null,
+  workflowRules: SCENE_WORKFLOW_RULES,
 };
 
 export const WORKSPACE: Workspace = {

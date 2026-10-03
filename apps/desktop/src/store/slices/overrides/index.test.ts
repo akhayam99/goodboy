@@ -256,6 +256,7 @@ describe('store contract', () => {
       expect(store.getState().workspaceOverrides[WS_ID]).toEqual({
         ...buildWorkspace().overrides,
         defaultBranchPrefix: 'nw',
+        workflowRules: null,
       });
     });
 

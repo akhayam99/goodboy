@@ -79,7 +79,7 @@ import { updateOrchestratorHints } from './updateOrchestratorHints';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
 import { recordOrchestratorUsage } from './recordOrchestratorUsage';
 import { WorkflowGateError, findWorkflowActivationBlock } from './workflowActivationGate';
-import { isRunPaused } from '../../../features/workflows/isRunPaused';
+import { admitWorkflowRun } from './workflowPlanApproval';
 import { waitForSessionSummarizer } from './summarizerGate';
 import { WORKFLOW_BLOCK_COPY } from '../../../features/workflows/blockCopy';
 import type { GetFn, SetFn } from './types';
@@ -541,8 +541,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         run.executionMode !== 'dynamic' ||
         run.discardedAt != null ||
         run.orchestrationOutcome != null ||
-        run.orchestrationStop?.kind === 'operator' ||
-        isRunPaused({ run })
+        run.orchestrationStop?.kind === 'operator'
       ) {
         return;
       }
@@ -550,6 +549,9 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         (candidate) => candidate.id === run.workflowId,
       );
       if (workflow == null) {
+        return;
+      }
+      if ((await admitWorkflowRun({ set, sessionId, run })) !== null) {
         return;
       }
       const sessionBlock = await sessionBudgetBlockAfterLoad({ get, sessionId });

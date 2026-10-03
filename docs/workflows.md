@@ -135,10 +135,32 @@ The **Starts** chip in the launch bar picks one:
 - **Manually**, when you press start
 - **After** another run that is still going, and then it carries on by itself
 
-When to ask is **Ask before each step** by default: the run waits for your go
-after each step so you can review it. **Run on its own** starts each next step
-by itself. The choice is stored as the run's autorun flag and can change later
-from the run's ⋯ menu.
+When to ask comes from the workspace rules, **Ask before each step** until you
+change them: the run waits for your go after each step so you can review it.
+**Ask after the plan** runs on its own but holds once when the plan is written,
+until you press **Approve plan**. **Run on its own** starts each next step by
+itself. The choice is stored as the run's autorun flag plus the run's copy of
+the rules, and can change later from the run's ⋯ menu.
+
+## Workflow rules
+
+Rules are the workspace defaults every new run starts from. They live in the
+**Rules** tab of the Workflows studio and on the **Workflow rules** page of the
+workspace settings, with the same Restore defaults and Copy from as the other
+pages.
+
+- **Providers**: a summary of the provider policy in Defaults. Rules do not own it
+- **Autonomy**: Ask before each step, Ask after the plan or Run on its own
+- **Spend**: a default cap per run and what happens at it, pause or warn
+
+The builder opens filled from the rules and shows them in one **From your
+rules** line with **Edit**. A launch control that leaves the rules shows a dot
+whose tooltip names the rule, and its menu offers **Reset**. A run copies the
+rules when it is attached (`session_workflows.rules_snapshot`), so changing them
+later never touches a run that already started, even after a restart. The
+workspace rules are one JSON column, `workspaces.workflow_rules`; `null` means
+the defaults. Runs attached from elsewhere (palette, chat, suggestions) copy the
+rules with the autonomy their caller asked for.
 
 ## What a step carries
 
@@ -539,6 +561,20 @@ that click.
 An open question and a failed step both still show with autorun on, because
 autorun stops on both. `maybeAutoAdvanceWorkflow` skips a run with open
 questions and a paused run.
+
+### Ask after the plan
+
+A run whose copy of the rules says `plan` holds once a plan for that run exists
+(`active` or `consumed`). The hold is a saved stop,
+`orchestrationStop { kind: 'plan-approval' }`, in the same columns as a pause,
+so it survives a restart. `admitWorkflowRun` is the admission check for both:
+it returns `paused`, `plan-approval` or nothing, writes the hold the first time
+it sees the plan, and runs inside `activateWorkflowAgent`, `orchestrateNextStep`
+and `maybeAutoAdvanceWorkflow`. `bypassGate` never skips it, so the step
+button, a skip, a read-now hint and a retry all stop at the hold.
+**Approve plan** (`approveWorkflowRunPlan`) marks the copy `planApproved`,
+clears the stop and lets the run advance; switching the run to another autonomy
+also drops the hold. A plan step that writes no plan never holds.
 
 ### Pause is one admission check
 

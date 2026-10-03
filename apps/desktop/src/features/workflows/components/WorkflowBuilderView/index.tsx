@@ -22,6 +22,8 @@ import type {
   WorkflowId,
   WorkflowSpendLimitMode,
   WorkspaceId,
+  WorkflowAutonomy,
+  WorkflowRules,
 } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
@@ -79,6 +81,9 @@ import { PlanDraftingBanner } from './parts/PlanDraftingBanner';
 import { PresetPicker } from './parts/PresetPicker';
 import { SpendCapChip } from './parts/SpendCapChip';
 import { AutonomyChip } from './parts/AutonomyChip';
+import { FromRulesRow } from './parts/FromRulesRow';
+import { policyProvidersText } from '../../workflowRulesCopy';
+import { useWorkflowRules } from '../../hooks/useWorkflowRules';
 import { StartsChip, type ChainRun, type StartChoice } from './parts/StartsChip';
 import { StepTree } from '../StepTree';
 import { StepEditor } from '../StepTree/StepEditor';
@@ -119,7 +124,10 @@ const stepsFromPlan = ({ plan, roleModels }: StepsFromPlanParams): ReadonlyArray
     effort: resolveRoleRouting({ role: step.role, prefs: roleModels }).effort as EffortLevel,
   }));
 
-const isDraftEmpty = (d: WorkflowBuilderDraft): boolean =>
+const draftAutonomy = (d: WorkflowBuilderDraft): WorkflowAutonomy =>
+  d.autonomy ?? (d.autoRun ? 'run' : 'step');
+
+const isDraftEmpty = (d: WorkflowBuilderDraft, rules: WorkflowRules): boolean =>
   d.goalText.trim() === '' &&
   d.goalHistory.length === 0 &&
   d.selectedPresetId === null &&
@@ -128,7 +136,7 @@ const isDraftEmpty = (d: WorkflowBuilderDraft): boolean =>
   d.plan === null &&
   d.workflow.steps.length === 0 &&
   !d.saveAsPreset &&
-  !d.autoRun &&
+  draftAutonomy(d) === rules.autonomy &&
   d.title.trim() === '' &&
   d.orchestratorModel.providerOverride === '' &&
   d.orchestratorModel.modelOverride === '' &&
@@ -183,6 +191,7 @@ export const WorkflowBuilderView = (props: Props) => {
     (s) => s.providers ?? (EMPTY_ARRAY as ReadonlyArray<never>),
   ) as ReadonlyArray<ProviderEntry>;
   const workspaceOverrides = useAppStore((s) => s.workspaceOverrides?.[workspaceId] ?? null);
+  const { rules: workflowRules } = useWorkflowRules({ workspaceId });
   const roleModels = workspaceOverrides?.roleModels ?? null;
   const roleEffort = (role: StepDraft['role']): EffortLevel =>
     resolveRoleRouting({ role, prefs: roleModels }).effort as EffortLevel;
@@ -250,11 +259,21 @@ export const WorkflowBuilderView = (props: Props) => {
   const [planning, setPlanning] = useState(false);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [saveAsPreset, setSaveAsPreset] = useState(initialDraft?.saveAsPreset ?? false);
-  const [autoRun, setAutoRun] = useState(initialDraft?.autoRun ?? false);
+  const [autonomy, setAutonomy] = useState<WorkflowAutonomy>(
+    initialDraft?.autonomy ??
+      (initialDraft === undefined ? workflowRules.autonomy : initialDraft.autoRun ? 'run' : 'step'),
+  );
+  const autoRun = autonomy !== 'step';
   const [startChoice, setStartChoice] = useState<StartChoice>(IMMEDIATE_START);
-  const [isSpendLimitEnabled, setIsSpendLimitEnabled] = useState(false);
-  const [spendLimitDraft, setSpendLimitDraft] = useState('');
-  const [spendLimitMode, setSpendLimitMode] = useState<WorkflowSpendLimitMode>('pause');
+  const [isSpendLimitEnabled, setIsSpendLimitEnabled] = useState(
+    workflowRules.spendLimitUsd !== null,
+  );
+  const [spendLimitDraft, setSpendLimitDraft] = useState(
+    workflowRules.spendLimitUsd?.toString() ?? '',
+  );
+  const [spendLimitMode, setSpendLimitMode] = useState<WorkflowSpendLimitMode>(
+    workflowRules.spendLimitMode,
+  );
   const [orchestratorProviderOverride, setOrchestratorProviderOverride] = useState<ProviderId | ''>(
     initialDraft?.orchestratorModel.providerOverride ?? '',
   );
@@ -459,6 +478,7 @@ export const WorkflowBuilderView = (props: Props) => {
     },
     saveAsPreset,
     autoRun,
+    autonomy,
     title,
     orchestratorModel: {
       providerOverride: orchestratorProviderOverride,
@@ -467,7 +487,7 @@ export const WorkflowBuilderView = (props: Props) => {
     },
     providerPool,
   };
-  const draftEmpty = isDraftEmpty(draft);
+  const draftEmpty = isDraftEmpty(draft, workflowRules);
 
   useEffect(() => {
     if (draftEmpty) {
@@ -487,6 +507,7 @@ export const WorkflowBuilderView = (props: Props) => {
     steps,
     saveAsPreset,
     autoRun,
+    autonomy,
     title,
     orchestratorProviderOverride,
     orchestratorModelOverride,
@@ -511,16 +532,16 @@ export const WorkflowBuilderView = (props: Props) => {
     setSteps([]);
     setIsPlannerOpen(true);
     setSaveAsPreset(false);
-    setAutoRun(false);
+    setAutonomy(workflowRules.autonomy);
     setTitle('');
     setTitleSuggestion(null);
     suggestedGoalRef.current = null;
     resetOrchestratorModel();
     setProviderPool(null);
     setStartChoice(IMMEDIATE_START);
-    setIsSpendLimitEnabled(false);
-    setSpendLimitDraft('');
-    setSpendLimitMode('pause');
+    setIsSpendLimitEnabled(workflowRules.spendLimitUsd !== null);
+    setSpendLimitDraft(workflowRules.spendLimitUsd?.toString() ?? '');
+    setSpendLimitMode(workflowRules.spendLimitMode);
     setError(null);
     setExpandedKey(null);
     clearWorkflowDraft(draftKey);
@@ -701,8 +722,7 @@ export const WorkflowBuilderView = (props: Props) => {
     const attachmentInputs = await toAttachmentInputs(attachments);
     const goal = goalText.trim();
     const { triggerMode, chainAfterId } = startChoice;
-    const spendLimitUsd =
-      mode === 'dynamic' && isSpendLimitEnabled ? parseSpendLimit(spendLimitDraft) : null;
+    const spendLimitUsd = isSpendLimitEnabled ? parseSpendLimit(spendLimitDraft) : null;
     return {
       autoRun,
       navigate: true,
@@ -723,6 +743,12 @@ export const WorkflowBuilderView = (props: Props) => {
         }),
       ...(spendLimitUsd != null && { spendLimitUsd, spendLimitMode }),
       ...(mode === 'dynamic' && effectivePool !== null && { providerPool: effectivePool }),
+      rulesSnapshot: {
+        ...workflowRules,
+        autonomy,
+        spendLimitUsd,
+        spendLimitMode,
+      },
     };
   };
 
@@ -1099,19 +1125,32 @@ export const WorkflowBuilderView = (props: Props) => {
         disabled={blocked}
         onChange={setStartChoice}
       />
-      <AutonomyChip autoRun={autoRun} disabled={busy} onChange={setAutoRun} />
-      {mode === 'dynamic' ? (
-        <SpendCapChip
-          isEnabled={isSpendLimitEnabled}
-          amount={spendLimitDraft}
-          mode={spendLimitMode}
-          isInvalid={spendLimitInvalid}
-          disabled={blocked}
-          onEnabled={setIsSpendLimitEnabled}
-          onAmount={setSpendLimitDraft}
-          onMode={setSpendLimitMode}
-        />
-      ) : null}
+      <AutonomyChip
+        autonomy={autonomy}
+        ruleAutonomy={workflowRules.autonomy}
+        disabled={busy}
+        onChange={setAutonomy}
+      />
+      <SpendCapChip
+        isEnabled={isSpendLimitEnabled}
+        amount={spendLimitDraft}
+        mode={spendLimitMode}
+        isInvalid={spendLimitInvalid}
+        rule={{
+          isEnabled: workflowRules.spendLimitUsd !== null,
+          amount: workflowRules.spendLimitUsd?.toString() ?? '',
+          mode: workflowRules.spendLimitMode,
+        }}
+        disabled={blocked}
+        onEnabled={setIsSpendLimitEnabled}
+        onAmount={setSpendLimitDraft}
+        onMode={setSpendLimitMode}
+        onReset={() => {
+          setIsSpendLimitEnabled(workflowRules.spendLimitUsd !== null);
+          setSpendLimitDraft(workflowRules.spendLimitUsd?.toString() ?? '');
+          setSpendLimitMode(workflowRules.spendLimitMode);
+        }}
+      />
       {mode !== 'dynamic' && canSaveAsPreset ? (
         <Switch
           label="Save as preset"
@@ -1199,6 +1238,10 @@ export const WorkflowBuilderView = (props: Props) => {
             body={error.message}
           />
         )}
+        <FromRulesRow
+          rules={workflowRules}
+          providers={policyProvidersText({ policy: workspaceOverrides?.providerPool })}
+        />
         <LaunchBar
           controls={launchControls}
           reason={startGate.reason}

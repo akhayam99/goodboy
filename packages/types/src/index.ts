@@ -153,6 +153,14 @@ export type {
   WorkspaceIntegrationProvider,
 } from './workspace';
 export {
+  DEFAULT_WORKFLOW_RULES,
+  parseWorkflowRules,
+  parseWorkflowRulesText,
+  WORKFLOW_AUTONOMY_VALUES,
+  type WorkflowAutonomy,
+  type WorkflowRules,
+} from './workflow-rules';
+export {
   EXTERNAL_TASK_RELATIONS,
   EXTERNAL_TASK_SCOPES,
   isIntegrationBindingProvider,
