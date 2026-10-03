@@ -1,5 +1,4 @@
 import {
-  EmptyState,
   STRIPED_MIN_ROWS,
   STRIPED_ROW,
   STRIPED_TABLE,
@@ -7,6 +6,7 @@ import {
   formatTokens,
   formatUsd,
   formatUsdPrecise,
+  FilledEmptyState,
 } from '@goodboy/ui';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { CoverageChip } from './CoverageChip';
@@ -16,23 +16,16 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 type Props = {
   readonly entries: ReadonlyArray<ModelBreakdownEntry>;
   readonly formatSpent?: (value: number) => string;
-  readonly borderedEmptyState?: boolean;
 };
 
-export const ModelTable = ({
-  entries,
-  formatSpent = formatUsd,
-  borderedEmptyState = true,
-}: Props) => {
+export const ModelTable = ({ entries, formatSpent = formatUsd }: Props) => {
   if (entries.length === 0) {
     return (
-      <EmptyState
-        bordered={borderedEmptyState}
+      <FilledEmptyState
         icon={CONCEPT_ICONS.budget}
         tone={CONCEPT_TONE.budget}
         title="No model usage recorded yet"
-        size="inline"
-        className="justify-center bg-subtle px-3 py-4"
+        className="justify-center"
       />
     );
   }

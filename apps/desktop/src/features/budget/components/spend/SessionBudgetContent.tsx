@@ -47,7 +47,7 @@ export const SessionBudgetContent = ({ sessionId, turns, onOpenSession }: Props)
         onEditingChange={setIsEditing}
       />
       <StudioWidget label="by model">
-        <ModelTable entries={models} formatSpent={formatUsd} borderedEmptyState />
+        <ModelTable entries={models} formatSpent={formatUsd} />
       </StudioWidget>
       {onOpenSession !== undefined ? (
         <>

@@ -1,7 +1,7 @@
 import type { ExternalTaskOutcomes, PullRequestOutcomes, ReviewOutcomes } from '@goodboy/db';
 import type { ReactElement } from 'react';
 import type { SessionId } from '@goodboy/types';
-import { ErrorStrip, PaneShell } from '@goodboy/ui';
+import { ErrorStrip, PaneShell, FilledEmptyState } from '@goodboy/ui';
 import { PanelLoading } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import { formatHours } from '../../utils/formatHours';
@@ -10,7 +10,7 @@ import { SessionRows } from './SessionRows';
 import { StackedBar } from './StackedBar';
 import { TrendStatCard } from './TrendStatCard';
 import { StudioWidget } from '@goodboy/ui';
-import { EmptyState, StatCard } from '@goodboy/ui';
+import { StatCard } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 const FUNNEL_ROWS = 5;
@@ -88,11 +88,10 @@ export const ShippedPanel = ({
               />
             ))}
             {prs !== null && prs.entries.length === 0 ? (
-              <EmptyState
+              <FilledEmptyState
                 icon={CONCEPT_ICONS.pr}
                 tone={CONCEPT_TONE.pr}
                 title="No pull requests in this window"
-                size="inline"
               />
             ) : null}
           </div>

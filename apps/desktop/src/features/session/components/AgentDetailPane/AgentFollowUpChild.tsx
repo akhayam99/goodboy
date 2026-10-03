@@ -4,7 +4,7 @@ import type { AgentStatus, SessionId } from '@goodboy/types';
 import { useAppStore, useSessionOpenQuestions, agentPlace } from '../../../../store';
 import { useTranscript } from '../../../../store/slices/transcripts/selectors';
 import { attachedQuestionsFor } from '../../timeline/attachedQuestions';
-import { AgentKindChip } from '../AgentKindChip';
+import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { AgentStatusIcon } from '../AgentCard/AgentStatusIcon';
 import { agentStatusWord } from '../../agentStatusWord';
 import { agentNowState } from './agentNowState';

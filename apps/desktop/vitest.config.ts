@@ -1,11 +1,16 @@
+import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 const A11Y_TESTS = 'src/__tests__/a11y/**';
 const PERF_TESTS = '**/*.perf.test.{ts,tsx}';
+const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    __APP_VERSION__: JSON.stringify(version),
+  },
   test: {
     environment: 'happy-dom',
     passWithNoTests: true,

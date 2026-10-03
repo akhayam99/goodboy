@@ -4,12 +4,12 @@ import {
   AnchoredPopover,
   cn,
   Divider,
-  EmptyState,
   SegmentedTabs,
   Skeleton,
   Tooltip,
   useDropdown,
   type SegmentedTabOption,
+  FilledEmptyState,
 } from '@goodboy/ui';
 import type { Notification } from '@goodboy/db';
 import { useAppStore } from '../../../../store';
@@ -172,7 +172,7 @@ export const NotificationCenter = () => {
             ))}
           </div>
         ) : shownGroups.length === 0 ? (
-          <EmptyState
+          <FilledEmptyState
             icon={Bell}
             tone={CONCEPT_TONE.notifications}
             title={notifications.length === 0 ? 'No notifications' : 'You are caught up'}
@@ -181,8 +181,6 @@ export const NotificationCenter = () => {
                 ? 'Run activity and alerts land here.'
                 : 'Everything new has been seen. All shows the history.'
             }
-            size="inline"
-            className="px-3 py-6"
           />
         ) : (
           <ul className="flex flex-col py-1">

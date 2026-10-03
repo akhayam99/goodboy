@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import type { SearchHit, WorkspaceId } from '@goodboy/types';
-import { EmptyState, ScrollFade } from '@goodboy/ui';
+import { ScrollFade, FilledEmptyState } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { openUrl } from '../../../../shared/lib/editor';
@@ -318,7 +318,7 @@ export const SearchMode = ({
             ))}
           </ul>
           {showEmpty ? (
-            <EmptyState
+            <FilledEmptyState
               icon={CONCEPT_ICONS.search}
               tone={CONCEPT_TONE.search}
               title={
@@ -331,8 +331,7 @@ export const SearchMode = ({
                   ? 'Search could not read its index. Try again, or rebuild it in Settings.'
                   : undefined
               }
-              size="inline"
-              className="justify-center px-4 py-6"
+              className="justify-center"
             />
           ) : null}
           {showEmpty && scope.kind !== 'all' ? (

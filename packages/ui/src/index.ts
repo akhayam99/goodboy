@@ -109,6 +109,7 @@ export {
   MoonshotIcon,
   SentryIcon,
   SlackIcon,
+  XIcon,
 } from './components/brandIcons';
 export type { ButtonEmphasis, ButtonProps, ButtonSize, ButtonVariant } from './components/Button';
 export type { CardActionProps } from './components/CardAction';
