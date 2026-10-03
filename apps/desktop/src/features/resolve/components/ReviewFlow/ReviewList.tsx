@@ -21,7 +21,11 @@ export const ReviewList = ({
   checked,
   onToggle,
 }: Props) => (
-  <nav aria-label={REVIEW_FLOW_LABEL.list} className="flex min-w-0 flex-col gap-5">
+  <nav
+    aria-label={REVIEW_FLOW_LABEL.list}
+    data-selecting={checked.size > 0}
+    className="group/select-list flex min-w-0 flex-col gap-5"
+  >
     {groups.map((group) => (
       <section
         key={group.group}

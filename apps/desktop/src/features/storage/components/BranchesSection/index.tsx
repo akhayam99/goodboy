@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { GitBranch, X } from 'lucide-react';
 import type { DeletedBranch, Project, ProjectId, SessionId } from '@goodboy/types';
@@ -15,6 +15,7 @@ import type { BranchScanEntry } from '../../../../store/slices/branch-cleanup';
 import { repoDeletesMergedBranches } from '../../../../store/slices/branch-cleanup/repoDeletesMergedBranches';
 import type { StorageScope } from '../../../../store/slices/storage/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { useSelectionKeys } from '../../../../shared/hooks/useSelectionKeys';
 import { BRANCHES_HELP, branchCount, deletedNotice } from '../../branches/branchCopy';
 import { storageOwnerMatchesScope } from '../../storageOwnerMatchesScope';
 import {
@@ -166,6 +167,15 @@ export const BranchesSection = ({ scope }: Props) => {
       .map((entry) => keyOf(group.project.id, entry.branch.name)),
   );
 
+  const allInView = visibleGroups.flatMap((group) =>
+    group.entries.map((entry) => keyOf(group.project.id, entry.branch.name)),
+  );
+  const sectionRef = useRef<HTMLElement>(null);
+  const clearSelection = useCallback(() => {
+    setSelected(new Set());
+    setIsConfirming(false);
+  }, []);
+
   const toggle = (key: string, isOn: boolean) => {
     setIsConfirming(false);
     setSelected((current) => {
@@ -183,6 +193,17 @@ export const BranchesSection = ({ scope }: Props) => {
     setSelected(new Set([key]));
     setIsConfirming(true);
   };
+
+  useSelectionKeys({
+    containerRef: sectionRef,
+    hasSelection: selected.size > 0,
+    onToggle: (key) => toggle(key, !selected.has(key)),
+    onSelectAll: () => {
+      setIsConfirming(false);
+      setSelected(new Set(allInView));
+    },
+    onDelete: () => setIsConfirming(true),
+  });
 
   const confirm = async ({ alsoOrigin }: { readonly alsoOrigin: boolean }) => {
     setIsBusy(true);
@@ -219,7 +240,13 @@ export const BranchesSection = ({ scope }: Props) => {
   };
 
   return (
-    <section id="storage-branches" aria-label="Branches" className="flex flex-col gap-2">
+    <section
+      ref={sectionRef}
+      id="storage-branches"
+      aria-label="Branches"
+      data-selecting={selected.size > 0}
+      className="group/select-list flex flex-col gap-2"
+    >
       <div className="flex flex-wrap items-center gap-3">
         <Eyebrow
           icon={<GitBranch size={ICON_SIZE.row} aria-hidden />}
@@ -299,6 +326,7 @@ export const BranchesSection = ({ scope }: Props) => {
                       <BranchRow
                         key={key}
                         entry={entry}
+                        selectId={key}
                         base={group.project.baseBranch ?? 'main'}
                         isSelected={selected.has(key)}
                         isBusy={isBusy}
@@ -327,11 +355,13 @@ export const BranchesSection = ({ scope }: Props) => {
       ) : null}
       <BranchBulkBar
         selected={selectedBranches}
+        total={allInView.length}
         isConfirming={isConfirming}
         isBusy={isBusy}
-        onClear={() => {
-          setSelected(new Set());
+        onClear={clearSelection}
+        onSelectAll={() => {
           setIsConfirming(false);
+          setSelected(new Set(allInView));
         }}
         onArm={() => setIsConfirming(true)}
         onCancel={() => setIsConfirming(false)}

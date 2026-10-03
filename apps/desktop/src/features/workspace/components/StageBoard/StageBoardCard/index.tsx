@@ -5,6 +5,7 @@ import {
   cn,
   formatUsd,
   Input,
+  SelectionCheckbox,
   Tooltip,
   InlineMarkdown,
   inlineMarkdownText,
@@ -57,22 +58,25 @@ type StageBoardCardProps = {
   readonly nav: BoardNavigation;
   readonly archived?: boolean;
   readonly selected?: boolean;
-  readonly selectedIds?: ReadonlyArray<SessionId>;
+  readonly getSelectedIds?: () => ReadonlyArray<SessionId>;
   readonly onClearSelection?: () => void;
   readonly onModifierClick?: (id: SessionId, event: CardSelectionEvent) => void;
+  readonly onToggleSelect?: (id: SessionId, event: { readonly shiftKey: boolean }) => void;
   readonly onRestore?: (session: Session) => void;
 };
 
 const NO_SELECTION: ReadonlyArray<SessionId> = [];
+const noSelectedIds = (): ReadonlyArray<SessionId> => NO_SELECTION;
 
 export const StageBoardCard = memo(function StageBoardCard({
   session,
   nav,
   archived,
   selected,
-  selectedIds = NO_SELECTION,
+  getSelectedIds = noSelectedIds,
   onClearSelection,
   onModifierClick,
+  onToggleSelect,
   onRestore,
 }: StageBoardCardProps) {
   const id = session.id as SessionId;
@@ -125,7 +129,7 @@ export const StageBoardCard = memo(function StageBoardCard({
     onBeforeOpen: () =>
       sessionSelectionTarget({
         sessionId: id,
-        selectedIds,
+        selectedIds: getSelectedIds(),
         clearSelection: () => onClearSelection?.(),
       }),
   });
@@ -170,13 +174,20 @@ export const StageBoardCard = memo(function StageBoardCard({
         nav.selectCard(session);
       }}
       className={cn(
-        'group/session-card grid h-28 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] gap-x-2 gap-y-1 p-3 pl-4.5 text-left',
+        'group/session-card group/select-row grid h-28 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] gap-x-2 gap-y-1 p-3 pl-4.5 text-left',
         sessionCardShell({ selected }),
       )}
     >
       <ToneBar tone={tone.tone} density="card" isBreathing={tone.isBreathing} />
       <span className="flex min-w-0 flex-col justify-between">
         <span className="flex min-h-10 items-start gap-2">
+          {onToggleSelect !== undefined && (
+            <SelectionCheckbox
+              checked={selected === true}
+              label={`Select ${inlineMarkdownText({ text: sessionTitle({ session }) })}`}
+              onToggle={(event) => onToggleSelect(id, event)}
+            />
+          )}
           <PrRequestSlot
             linkedRequest={linkedRequest}
             isGitlab={isGitlab}

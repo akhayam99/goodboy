@@ -53,6 +53,16 @@ describe('shortcutRows', () => {
     expect(groupWhere({ group: 'lists' })).toBe('In the Inbox and Notifications lists');
   });
 
+  it('lists the selection keys under their own group with one shared place', () => {
+    expect(shortcutRows({ group: 'selection' }).map((row) => row.first)).toEqual([
+      'selection.toggle',
+      'selection.all',
+      'selection.clear',
+      'selection.delete',
+    ]);
+    expect(groupWhere({ group: 'selection' })).toBe('In a list with checkboxes');
+  });
+
   it('says where a conditional key works, on its row', () => {
     const rows = shortcutRows({ group: 'session' });
 

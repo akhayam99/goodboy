@@ -122,6 +122,16 @@ export {
 export type { ButtonEmphasis, ButtonProps, ButtonSize, ButtonVariant } from './components/Button';
 export type { CardActionProps } from './components/CardAction';
 export { Checkbox } from './components/Checkbox';
+export { SelectionCheckbox } from './components/SelectionCheckbox';
+export type { SelectionCheckboxProps } from './components/SelectionCheckbox';
+export { SelectionBar } from './components/SelectionBar';
+export type {
+  SelectionBarPlacement,
+  SelectionBarProps,
+  SelectionVerb,
+} from './components/SelectionBar';
+export { SelectionConfirm } from './components/SelectionBar/SelectionConfirm';
+export type { SelectionConfirmProps } from './components/SelectionBar/SelectionConfirm';
 export type { CheckboxProps } from './components/Checkbox';
 export { Chip, chipClasses } from './components/Chip';
 export type { ChipClassParams, ChipEmphasis, ChipProps, ChipSize } from './components/Chip';

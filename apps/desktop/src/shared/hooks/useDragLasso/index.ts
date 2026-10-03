@@ -48,11 +48,15 @@ export const useDragLasso = <T extends string>({
   const originRef = useRef<Origin | null>(null);
   const draggedRef = useRef(false);
   const frameRef = useRef<number | null>(null);
+  const pointerRef = useRef<{ readonly clientX: number; readonly clientY: number } | null>(null);
+  const emittedRef = useRef<string | null>(null);
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
 
   const reset = useCallback(() => {
     originRef.current = null;
+    pointerRef.current = null;
+    emittedRef.current = null;
     if (frameRef.current != null) {
       cancelAnimationFrame(frameRef.current);
       frameRef.current = null;
@@ -73,6 +77,7 @@ export const useDragLasso = <T extends string>({
       if (!event.altKey && (requireAlt || target.closest(ACTION_SELECTOR) != null)) {
         return;
       }
+      emittedRef.current = null;
       originRef.current = {
         pointerId: event.pointerId,
         clientX: event.clientX,
@@ -102,22 +107,28 @@ export const useDragLasso = <T extends string>({
         container.setPointerCapture?.(origin.pointerId);
       }
 
-      const bounds = container.getBoundingClientRect();
-      const left = Math.min(origin.clientX, event.clientX);
-      const top = Math.min(origin.clientY, event.clientY);
-      const width = Math.abs(event.clientX - origin.clientX);
-      const height = Math.abs(event.clientY - origin.clientY);
-
+      pointerRef.current = { clientX: event.clientX, clientY: event.clientY };
       setIsDragging(true);
-      setRect({ left: left - bounds.left, top: top - bounds.top, width, height });
 
       if (frameRef.current != null) {
         return;
       }
       frameRef.current = requestAnimationFrame(() => {
         frameRef.current = null;
+        const current = originRef.current;
+        const pointer = pointerRef.current;
+        const host = containerRef.current;
+        if (current == null || pointer == null || host == null) {
+          return;
+        }
+        const bounds = host.getBoundingClientRect();
+        const left = Math.min(current.clientX, pointer.clientX);
+        const top = Math.min(current.clientY, pointer.clientY);
+        const width = Math.abs(current.clientX - pointer.clientX);
+        const height = Math.abs(current.clientY - pointer.clientY);
+        setRect({ left: left - bounds.left, top: top - bounds.top, width, height });
         const ids: Array<T> = [];
-        for (const node of container.querySelectorAll<HTMLElement>('[data-select-id]')) {
+        for (const node of host.querySelectorAll<HTMLElement>('[data-select-id]')) {
           const id = node.dataset.selectId;
           const box = node.getBoundingClientRect();
           if (
@@ -130,7 +141,12 @@ export const useDragLasso = <T extends string>({
             ids.push(id as T);
           }
         }
-        onSelectRef.current(ids, origin.additive ? 'add' : 'replace');
+        const signature = ids.join('\u0000');
+        if (signature === emittedRef.current) {
+          return;
+        }
+        emittedRef.current = signature;
+        onSelectRef.current(ids, current.additive ? 'add' : 'replace');
       });
     };
 
