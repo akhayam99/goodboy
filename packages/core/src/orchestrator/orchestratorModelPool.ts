@@ -1,6 +1,7 @@
 import { PROVIDER_IDS } from '@goodboy/types';
 import { MODEL_CATALOGS } from '../providers/catalogs';
 import { getProviderModelPrice } from '../providers/model-price';
+import { isModelHidden, type HiddenModels } from '../providers/modelVisibility';
 import { workflowModelProfile } from '../providers/workflowModelProfiles';
 import type { OrchestratorModelOption } from './types';
 import type { WorkflowRoutingAvailabilitySnapshot } from './workflowRoutingAvailability';
@@ -9,14 +10,19 @@ import { defaultModelEffort, supportedModelEfforts } from './workflowModelEffort
 
 type Params = {
   readonly availability: WorkflowRoutingAvailabilitySnapshot;
+  readonly hidden: HiddenModels | null;
 };
 
 export const orchestratorModelPool = ({
   availability,
+  hidden,
 }: Params): ReadonlyArray<OrchestratorModelOption> => {
   const options: Array<OrchestratorModelOption> = [];
   for (const provider of PROVIDER_IDS) {
     for (const model of MODEL_CATALOGS[provider]) {
+      if (hidden != null && isModelHidden({ provider, hidden, key: model.key })) {
+        continue;
+      }
       const status = workflowRoutingAvailability({
         pick: {
           provider,

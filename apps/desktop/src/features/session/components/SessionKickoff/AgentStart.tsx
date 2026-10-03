@@ -11,6 +11,7 @@ import { AGENT_KIND_META, visibleAgentKinds } from '../../agent-kind';
 import { AgentStartFields, type AgentStartRouting } from '../AgentStartFields';
 import { StartFooter } from './StartFooter';
 import { useDraftStart } from './useDraftStart';
+import { useWorkspaceKindRouting } from '../../../../shared/hooks/useWorkspaceKindRouting';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -49,12 +50,8 @@ export const AgentStart = ({ workspaceId }: Props) => {
       patchSessionDraft({ workspaceId, patch: { projectId: firstProjectId } });
     }
   }, [draft.projectId, projects, patchSessionDraft, workspaceId]);
-  const suggestion = resolveSpawnRouting({
-    kind,
-    roleModels: null,
-    session: null,
-    defaultProvider,
-  });
+  const roleDefault = useWorkspaceKindRouting({ workspaceId, kind });
+  const suggestion = resolveSpawnRouting({ kind, roleDefault, session: null });
   const { start, isStarting, error } = useDraftStart({ workspaceId });
   const isScout = kind === 'scout';
   const hasPrompt = draft.agentPrompt.trim() !== '';

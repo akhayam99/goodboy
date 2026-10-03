@@ -314,14 +314,17 @@ describe('AGENT_KIND_DEFAULTS', () => {
 
   it('scout → haiku, docs → sonnet low, generic → sonnet medium', () => {
     expect(kindRouting({ kind: 'scout' })).toMatchObject({ model: 'haiku-4.5', effort: 'low' });
-    expect(kindRouting({ kind: 'docs' })).toMatchObject({ model: 'sonnet-5', effort: 'low' });
-    expect(kindRouting({ kind: 'generic' })).toMatchObject({ model: 'sonnet-5', effort: 'medium' });
+    expect(kindRouting({ kind: 'docs' })).toMatchObject({ model: 'sonnet-5.5', effort: 'low' });
+    expect(kindRouting({ kind: 'generic' })).toMatchObject({
+      model: 'sonnet-5.5',
+      effort: 'medium',
+    });
   });
 
   it('starts on the workspace default provider when one is given', () => {
     expect(kindRouting({ kind: 'implementer', defaultProvider: 'codex' })).toEqual({
       provider: 'codex',
-      model: 'gpt-5.6-sol',
+      model: 'gpt-6.1-sol',
       effort: 'medium',
     });
   });

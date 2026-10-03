@@ -5,6 +5,8 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SUGGESTION_ICONS } from '../../suggestionIcons';
 import type { NextStepBand, SessionSuggestion } from '../../types';
 import type { SuggestionActionChoice, SuggestionActions } from '../../useSuggestionActions';
+import type { AgentKindRouting } from '../../../session/agent-kind';
+import { NextStepRunsOn } from './NextStepRunsOn';
 
 const BAND_TONE: Record<NextStepBand, 'warning' | 'info' | 'primary' | 'neutral'> = {
   0: 'warning',
@@ -47,14 +49,17 @@ export const NextStepRow = ({
   const tone = BAND_TONE[suggestion.band];
   const dropdown = useDropdown({ align: 'end', expectedWidth: 160, expectedHeight: 80 });
   const [isConfirming, setIsConfirming] = useState(false);
+  const [routingOverride, setRoutingOverride] = useState<AgentKindRouting | null>(null);
 
   useEffect(() => {
     setIsConfirming(false);
+    setRoutingOverride(null);
   }, [suggestion.id]);
 
   const primary = actions.primary;
   const isArmed = primary?.requiresConfirm === true && isConfirming;
   const choices = primary?.choices ?? [];
+  const runsOn = primary?.runsOn ?? null;
   const isChoicePending = pendingChoiceIds.size > 0;
 
   return (
@@ -70,6 +75,15 @@ export const NextStepRow = ({
         <span className="truncate text-row text-foreground">{suggestion.title}</span>
         {!compact && suggestion.detail != null && (
           <span className="truncate text-label text-muted-foreground">{suggestion.detail}</span>
+        )}
+        {!compact && runsOn !== null && (
+          <NextStepRunsOn
+            sessionId={suggestion.sessionId}
+            kind={runsOn.kind}
+            override={routingOverride}
+            onChange={setRoutingOverride}
+            disabled={isPending}
+          />
         )}
       </span>
       {isArmed && !isPending && (
@@ -110,6 +124,10 @@ export const NextStepRow = ({
               return;
             }
             setIsConfirming(false);
+            if (runsOn !== null && routingOverride !== null) {
+              void runsOn.runWith(routingOverride);
+              return;
+            }
             void primary.run();
           }}
         >

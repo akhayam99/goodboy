@@ -30,12 +30,16 @@ import { sessionTitle } from '../../../session/sessionTitle';
 import { useAppStore } from '../../../../store';
 import { activeChatBackend } from '../../activeChatBackend';
 import type { ChatHandoff } from '../../chatHandoff';
-import type { ChatModelChoice } from '../../defaultChatModel';
 import { landOnSession } from '../../landOnSession';
 import { startWorkFromChat, type WorkRouting } from '../../startWorkFromChat';
 import { summarizeChatForWork } from '../../summarizeChatForWork';
 import type { WorkBrief } from '../../workBrief';
-import { parseWorkDrafter, serializeWorkDrafter, workDrafterSettingKey } from '../../workDrafter';
+import {
+  parseWorkDrafter,
+  serializeWorkDrafter,
+  workDrafterSettingKey,
+  type WorkDrafterChoice,
+} from '../../workDrafter';
 import { BriefItems } from './BriefItems';
 import { DraftedBy } from './DraftedBy';
 import { ProjectField } from './ProjectField';
@@ -43,6 +47,7 @@ import { RunsOnField } from './RunsOnField';
 import { SessionField } from './SessionField';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
+import { useWorkspaceKindRouting } from '../../../../shared/hooks/useWorkspaceKindRouting';
 
 type Mode = 'new' | 'add';
 
@@ -116,27 +121,15 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
         .map((provider) => provider.id),
     ),
   );
-  const defaultRouting = useAppStore(
-    useShallow((state): WorkRouting =>
-      kindRouting({
-        kind: 'generic',
-        roleModels: resolveScopedSettings({
-          state,
-          workspaceId: chat.workspaceId,
-          projectId: null,
-          sessionId: null,
-          defaultProviderId:
-            state.workspaceOverrides?.[chat.workspaceId]?.defaultProviderId ??
-            DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider,
-        }).roleModels,
-      }),
-    ),
-  );
+  const defaultRouting: WorkRouting = useWorkspaceKindRouting({
+    workspaceId: chat.workspaceId,
+    kind: 'generic',
+  });
   const loadSetting = useAppStore((state) => state.loadSetting);
   const saveSetting = useAppStore((state) => state.saveSetting);
   const drafterKey = workDrafterSettingKey({ workspaceId: chat.workspaceId });
   const [brief, setBrief] = useState<WorkBrief | null>(null);
-  const [drafter, setDrafter] = useState<ChatModelChoice | null>(null);
+  const [drafter, setDrafter] = useState<WorkDrafterChoice | null>(null);
   const [isDrafterPicked, setIsDrafterPicked] = useState(false);
   const [runsOn, setRunsOn] = useState<WorkRouting | null>(null);
   const [pickedProjectIds, setProjectIds] = useState<ReadonlyArray<ProjectId> | null>(null);
@@ -172,7 +165,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
       return;
     }
     void saveSetting(drafterKey, serializeWorkDrafter({ choice: drafter })).catch(() => undefined);
-  }, [drafter?.provider, drafter?.model, isDrafterPicked]);
+  }, [drafter?.provider, drafter?.model, drafter?.effort, isDrafterPicked]);
 
   useEffect(() => {
     if (drafter === null) {
@@ -183,7 +176,12 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
     setProjectIds(null);
     void summarizeChatForWork({
       backend: activeChatBackend,
-      chat: { title: chat.title, provider: drafter.provider, model: drafter.model },
+      chat: {
+        title: chat.title,
+        provider: drafter.provider,
+        model: drafter.model,
+        ...(drafter.effort != null && { effort: drafter.effort }),
+      },
       messages: upTo({ messages, anchorMessageId }),
       projectNames: projects.map((project) => project.name),
     }).then((next) => {
@@ -195,9 +193,9 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
     return () => {
       isCurrent = false;
     };
-  }, [chat.id, anchorMessageId, drafter?.provider, drafter?.model]);
+  }, [chat.id, anchorMessageId, drafter?.provider, drafter?.model, drafter?.effort]);
 
-  const changeDrafter = (update: (current: ChatModelChoice) => ChatModelChoice): void => {
+  const changeDrafter = (update: (current: WorkDrafterChoice) => WorkDrafterChoice): void => {
     setIsDrafterPicked(true);
     setDrafter((current) => update(current ?? { provider: chat.provider, model: chat.model }));
   };

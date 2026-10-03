@@ -18,6 +18,7 @@ import { workflowAvailabilitySnapshot } from '../../../features/workflows/workfl
 import { formatError } from '@goodboy/ui';
 import type { ProviderId, TaskModelPreference, WorkspaceId } from '@goodboy/types';
 import type { GetFn, SetFn, StartWorkflowGenerationParams } from './types';
+import { selectHiddenModels } from '../settings/selectHiddenModels';
 
 type GenerationModelParams = {
   readonly state: ReturnType<GetFn>;
@@ -119,6 +120,7 @@ export const startWorkflowGeneration = (set: SetFn, get: GetFn) => {
       const availability = generationAvailability({ state: get() });
       const modelMenu: ReadonlyArray<OrchestratorModelOption> = orchestratorModelPool({
         availability,
+        hidden: selectHiddenModels({ state: get() }),
       });
       const formatted = await formatWorkflowFromNL({
         deps: {

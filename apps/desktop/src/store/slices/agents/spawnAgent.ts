@@ -23,7 +23,6 @@ import {
   listPlansForSession as invokeListPlansForSession,
 } from '../../../features/plans/plans';
 import {
-  kindRouting,
   kindConsumesPlan,
   resolveAgentKind,
   type AgentKind,
@@ -43,6 +42,7 @@ import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { autoLimitContext } from '../providerLimits/autoLimitContext';
 import { isReportedError } from '../notifications/reportedError';
 import { sessionById } from '../sessions/sessionIndex';
+import { scopedKindRouting } from './scopedKindRouting';
 
 const spawnQueue = createKeyedQueue();
 
@@ -126,12 +126,7 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
           override: args.kindOverride ?? null,
         });
         const roleModels = settings?.roleModels ?? null;
-        const routing = kindRouting({
-          kind: resolvedKind,
-          roleModels,
-          defaultProvider: settings?.defaultProviderId ?? null,
-          limitContext: autoLimitContext({ state: get() }),
-        });
+        const routing = scopedKindRouting({ state: get(), settings, kind: resolvedKind });
         const sourceThreadId = args.sourceThreadIds?.[0] ?? args.sourceThreadId;
         const inserted = await invokeAgentInsert({
           sessionId,

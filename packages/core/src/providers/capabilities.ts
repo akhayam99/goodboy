@@ -1,7 +1,7 @@
 import type { ProviderId, ProviderRegistryCapabilities } from '@goodboy/types';
 import { MODEL_CATALOGS } from './catalogs';
 import { catalogDescriptor } from './catalogDescriptor';
-import { GEMINI_DEFAULT_MODEL } from './gemini/constants';
+import { defaultTurnModel } from './defaultTurnModel';
 
 export const PROVIDER_CAPABILITIES: Readonly<Record<ProviderId, ProviderRegistryCapabilities>> = {
   anthropic: {
@@ -56,10 +56,5 @@ export const getCapabilities = ({ id }: Params): ProviderRegistryCapabilities =>
   return PROVIDER_CAPABILITIES[id];
 };
 
-export const getDefaultTurnModel = ({ id }: Params): string => {
-  if (id === 'gemini') {
-    return GEMINI_DEFAULT_MODEL;
-  }
-  const caps = PROVIDER_CAPABILITIES[id];
-  return caps.models.find((model) => model.tier === 'turn')?.id ?? caps.models[0]!.id;
-};
+export const getDefaultTurnModel = ({ id }: Params): string =>
+  defaultTurnModel({ provider: id }).key;

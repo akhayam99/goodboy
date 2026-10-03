@@ -21,6 +21,7 @@ export const GEMINI_CATALOG = [
   },
   {
     key: 'gemini-3.8-flash',
+    defaultTurn: true,
     label: '3.8 Flash',
     tier: 'cheap',
     contextWindow: 1_000_000,

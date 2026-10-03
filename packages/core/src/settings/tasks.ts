@@ -50,4 +50,9 @@ export const TASKS: ReadonlyArray<{
     label: 'Rebase',
     description: 'Model for the agent that rebases the branch.',
   },
+  {
+    id: 'recheck',
+    label: 'Re-checks',
+    description: 'Checks a fixed comment again against the new commits.',
+  },
 ];

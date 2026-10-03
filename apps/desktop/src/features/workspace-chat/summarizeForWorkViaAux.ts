@@ -5,12 +5,14 @@ import type { SummarizeForWorkParams } from './chatBackend';
 export const summarizeForWorkViaAux = async ({
   provider,
   model,
+  effort,
   systemPrompt,
   userMessage,
 }: SummarizeForWorkParams): Promise<string> => {
   const result = await runAuxOneShot({
     providerId: provider,
     model,
+    ...(effort != null && { effort }),
     binary: getDefaultBinary(provider),
     userMessage,
     systemPrompt,

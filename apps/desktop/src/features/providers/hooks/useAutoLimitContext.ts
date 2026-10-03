@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useAppStore } from '../../../store';
+import { SETTING_HIDDEN_MODELS } from '../../settings/settings';
 import {
   autoLimitContext,
   type AutoLimitContext,
@@ -8,8 +9,16 @@ import {
 export const useAutoLimitContext = (): AutoLimitContext | null => {
   const providers = useAppStore((state) => state.providers);
   const providerLimits = useAppStore((state) => state.providerLimits);
+  const hiddenRaw = useAppStore((state) => state.settings?.[SETTING_HIDDEN_MODELS] ?? null);
   return useMemo(
-    () => autoLimitContext({ state: { providers, providerLimits } }),
-    [providerLimits, providers],
+    () =>
+      autoLimitContext({
+        state: {
+          providers,
+          providerLimits,
+          settings: hiddenRaw === null ? {} : { [SETTING_HIDDEN_MODELS]: hiddenRaw },
+        },
+      }),
+    [hiddenRaw, providerLimits, providers],
   );
 };

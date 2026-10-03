@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { PROVIDER_CAPABILITIES, clampEffortForModel } from '@goodboy/core';
+import {
+  PROVIDER_CAPABILITIES,
+  clampEffortForModel,
+  isModelHidden,
+  resolveStoredModelSelection,
+} from '@goodboy/core';
 import { resolveLimitedTaskModel } from '../../../../../../store/slices/providerLimits/resolveLimitedTaskModel';
 import type { AuxTaskId, EffortLevel, ProviderId, TaskModelPreference } from '@goodboy/types';
 import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
@@ -8,6 +13,8 @@ import { autoLimitReason } from '../../../../../../shared/components/RoutingPick
 import { useAutoLimitContext } from '../../../../hooks/useAutoLimitContext';
 import { DefaultRow } from '../DefaultRow';
 import { FallbackRow, type FallbackChoice } from '../FallbackRow';
+import { useHiddenModels } from '../../../../hooks/useHiddenModels';
+import { hiddenModelNote } from '../hiddenModelNote';
 
 const DEFAULT_EFFORT: EffortLevel = 'medium';
 
@@ -61,6 +68,22 @@ export const TaskModelRow = ({
   const effortModel = model === '' ? recommendedModel : model;
   const effortValue = preference?.effort ?? automatic.effort ?? DEFAULT_EFFORT;
   const pendingModel = useRef(effortModel);
+  const hidden = useHiddenModels();
+  const shownModel = preference ?? automatic;
+  const isShownHidden = isModelHidden({
+    provider: shownModel.providerId,
+    hidden,
+    key: resolveStoredModelSelection({ provider: shownModel.providerId, id: shownModel.model })
+      .selection.key,
+  });
+  const summary = !isShownHidden
+    ? help
+    : hiddenModelNote({
+        provider: shownModel.providerId,
+        model: shownModel.model,
+        isPinned: preference != null,
+        job: label,
+      });
   const limitReason = autoLimitReason({
     defaultProvider: defaultProviderId,
     pickedProvider: automatic.providerId,
@@ -92,7 +115,7 @@ export const TaskModelRow = ({
   };
 
   return (
-    <DefaultRow label={label} summary={help}>
+    <DefaultRow label={label} summary={summary} isSummaryNoted={isShownHidden}>
       <RoutingPicker
         ariaLabel={`${label} routing`}
         connectedProviders={availableProviderIds}
