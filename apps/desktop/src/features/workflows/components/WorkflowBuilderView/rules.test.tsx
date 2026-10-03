@@ -8,10 +8,11 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
   DEFAULT_WORKFLOW_RULES,
   type SessionId,
+  type WorkflowId,
   type WorkflowRules,
   type Workspace,
 } from '@goodboy/types';
@@ -23,6 +24,7 @@ import {
   stubStoryInvoke,
   type StoryStore,
 } from '../../../../store/storyHarness';
+import type { AppStore } from '../../../../store/store';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { WorkflowBuilderView } from './index';
 
@@ -159,5 +161,79 @@ describe('WorkflowBuilderView and the workflow rules', () => {
     expect(screen.getByText('Implementer, Docs').parentElement?.textContent).toBe(
       'Sent to Implementer, Docs',
     );
+  });
+
+  it('starts a run on the rules autonomy when the chip was left alone', async () => {
+    const attach = vi.fn<AppStore['attachWorkflowToSession']>(async () => undefined);
+    useAppStore.setState({
+      attachWorkflowToSession: attach,
+      savePhaseTemplate: async (args) => ({
+        id: args.id ?? ('wf-backoff' as WorkflowId),
+        workspaceId: args.workspaceId,
+        name: args.name,
+        description: args.description,
+        steps: [],
+        createdAt: SESSION.createdAt,
+        updatedAt: SESSION.createdAt,
+      }),
+      generateWorkflowTitle: async () => undefined,
+    });
+    openBuilder();
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Goal' }), {
+      target: { value: 'Add backoff to the payments-api retry worker' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+
+    await waitFor(() => expect(attach).toHaveBeenCalledOnce());
+    expect(autonomyChip().getAttribute('aria-label')).toBe('When to ask: Ask after the plan');
+    expect(screen.queryByTestId('run-changes')).toBeNull();
+    expect(attach.mock.calls[0]?.[2]).toMatchObject({
+      autoRun: true,
+      rulesSnapshot: { autonomy: 'plan' },
+    });
+  });
+
+  it('opens a draft saved before the rules on the rules autonomy', () => {
+    useAppStore.setState({
+      workflowDrafts: {
+        [SESSION.id]: {
+          mode: 'dynamic',
+          goalText: 'Add backoff to the payments-api retry worker',
+          goalHistory: [],
+          selectedPresetId: null,
+          basePresetId: null,
+          processText: '',
+          plan: null,
+          workflow: {
+            name: '',
+            description: '',
+            goal: '',
+            steps: [],
+            origin: 'custom',
+            isPreset: false,
+          },
+          saveAsPreset: false,
+          autoRun: true,
+          title: '',
+          orchestratorModel: { providerOverride: '', modelOverride: '', effortOverride: null },
+          providerPool: null,
+        },
+      },
+    });
+    openBuilder();
+
+    expect(autonomyChip().getAttribute('aria-label')).toBe('When to ask: Ask after the plan');
+    expect(screen.queryByTestId('run-changes')).toBeNull();
+  });
+
+  it('says in the summary when this run asks differently from the rules', () => {
+    openBuilder();
+
+    fireEvent.click(autonomyChip());
+    fireEvent.click(screen.getByRole('radio', { name: /Run on its own/ }));
+
+    expect(screen.getByTestId('run-changes').textContent).toBe('Changed for this run: when to ask');
+    expect(fromRules()).toContain('Ask after the plan');
   });
 });
