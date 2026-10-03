@@ -233,10 +233,14 @@ export const useImpactMetrics = ({ workspaceId, windowId }: Params): ImpactMetri
   );
 
   const refreshDormantPullRequests = useAppStore((state) => state.refreshDormantPullRequests);
+  const githubAvailable = useAppStore((state) => state.githubStatus?.available === true);
   const retryRef = useRef(retry);
   retryRef.current = retry;
 
   useEffect(() => {
+    if (!githubAvailable) {
+      return;
+    }
     let isActive = true;
     void refreshDormantPullRequests(workspaceId)
       .then((settled) => {
@@ -248,7 +252,7 @@ export const useImpactMetrics = ({ workspaceId, windowId }: Params): ImpactMetri
     return () => {
       isActive = false;
     };
-  }, [refreshDormantPullRequests, workspaceId]);
+  }, [githubAvailable, refreshDormantPullRequests, workspaceId]);
 
   return {
     overview,

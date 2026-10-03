@@ -205,6 +205,40 @@ describe('what impact keeps when something goes away', () => {
     expect(events[0]?.count).toBe(1);
   });
 
+  it('writes one merge event per host when two hosts share a repository and number', async () => {
+    const db = await seedWorld();
+    await addImpactMount({
+      db,
+      seed: {
+        id: 'm-enterprise',
+        sessionId: GONE,
+        branch: 'mq/ledger-mirror',
+        at: NOW - 19 * DAY_MS,
+      },
+    });
+    await addImpactLink({
+      db,
+      seed: {
+        id: 'l-enterprise',
+        mountId: 'm-enterprise',
+        host: 'git.harborline.dev',
+        number: 412,
+        state: 'merged',
+        at: NOW - 18 * DAY_MS,
+      },
+    });
+
+    const first = await runDatabaseHygiene({ db, now: NOW });
+    const second = await runDatabaseHygiene({ db, now: NOW });
+    const hosts = await db.select<{ host: string }>(
+      "SELECT json_extract(payload_json, '$.host') AS host FROM session_events WHERE kind = 'pr_merged' ORDER BY host",
+    );
+
+    expect(first.mergedPullRequestEventsWritten).toBe(2);
+    expect(second.mergedPullRequestEventsWritten).toBe(0);
+    expect(hosts).toEqual([{ host: 'git.harborline.dev' }, { host: 'github.com' }]);
+  });
+
   it('keeps everything under a workspace that was removed', async () => {
     const db = await seedWorld();
     await disconnectWorkspace({
