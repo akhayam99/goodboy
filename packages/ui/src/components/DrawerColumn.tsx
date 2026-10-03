@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode, type Ref } from 'react';
 import { cn } from '../cn';
 import { ResizeHandle } from './ResizeHandle';
+import { useResizableWidth } from '../useResizableWidth';
 
 const RIGHT_DRAWER_MIN = 340;
 export const RIGHT_DRAWER_MAX = 560;
@@ -17,26 +18,6 @@ type PushParams = {
 
 export const canDrawerPush = ({ mainWidthPx, drawerWidthPx }: PushParams): boolean =>
   mainWidthPx - drawerWidthPx - COLUMN_GUTTERS >= COLUMN_MIN_PUSH;
-
-const clampWidth = (width: number): number =>
-  Math.max(RIGHT_DRAWER_MIN, Math.min(RIGHT_DRAWER_MAX, width));
-
-const readDrawerWidth = (): number => {
-  try {
-    const parsed = Number.parseInt(localStorage.getItem(RIGHT_DRAWER_STORAGE_KEY) ?? '', 10);
-    return Number.isNaN(parsed) ? RIGHT_DRAWER_DEFAULT : clampWidth(parsed);
-  } catch {
-    return RIGHT_DRAWER_DEFAULT;
-  }
-};
-
-const writeDrawerWidth = (width: number): void => {
-  try {
-    localStorage.setItem(RIGHT_DRAWER_STORAGE_KEY, String(width));
-  } catch {
-    return;
-  }
-};
 
 const useMeasuredWidth = () => {
   const ref = useRef<HTMLDivElement | null>(null);
@@ -78,17 +59,39 @@ export const DrawerColumn = ({
   className,
 }: DrawerColumnProps) => {
   const column = useMeasuredWidth();
-  const [width, setWidth] = useState<number>(readDrawerWidth);
+  const asideRef = useRef<HTMLElement | null>(null);
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const resizable = useResizableWidth<HTMLElement>({
+    storageKey: RIGHT_DRAWER_STORAGE_KEY,
+    defaultWidth: RIGHT_DRAWER_DEFAULT,
+    min: RIGHT_DRAWER_MIN,
+    max: RIGHT_DRAWER_MAX,
+    cssVar: '--goodboy-drawer-width',
+    onPreview: (next) => {
+      const track = `${next + DRAWER_INSET * 2}px`;
+      asideRef.current?.style.setProperty('width', track);
+      trackRef.current?.style.setProperty('min-width', track);
+    },
+  });
+  const width = resizable.width;
+  const setAside = useCallback(
+    (node: HTMLElement | null) => {
+      asideRef.current = node;
+      if (typeof drawerRef === 'function') {
+        drawerRef(node);
+        return;
+      }
+      if (drawerRef != null) {
+        drawerRef.current = node;
+      }
+    },
+    [drawerRef],
+  );
   const isOpen = drawer != null;
   const isOverlay =
     column.width !== null && !canDrawerPush({ mainWidthPx: column.width, drawerWidthPx: width });
   const mode = !isOpen ? 'closed' : isOverlay ? 'overlay' : 'push';
   const trackWidth = width + DRAWER_INSET * 2;
-
-  const resize = (next: number) => {
-    setWidth(next);
-    writeDrawerWidth(next);
-  };
 
   return (
     <div
@@ -97,7 +100,7 @@ export const DrawerColumn = ({
     >
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">{main}</div>
       <aside
-        ref={drawerRef}
+        ref={setAside}
         aria-label={ariaLabel}
         data-drawer-mode={mode}
         inert={!isOpen}
@@ -113,18 +116,11 @@ export const DrawerColumn = ({
         {isOpen ? (
           <div
             className={cn('flex min-h-0 min-w-0 flex-1', isOverlay && 'pointer-events-auto')}
+            ref={trackRef}
             style={{ minWidth: trackWidth }}
           >
             <div className="flex w-2 shrink-0 justify-center">
-              <ResizeHandle
-                value={width}
-                min={RIGHT_DRAWER_MIN}
-                max={RIGHT_DRAWER_MAX}
-                onChange={resize}
-                onReset={() => resize(RIGHT_DRAWER_DEFAULT)}
-                side="right"
-                ariaLabel={resizeLabel}
-              />
+              <ResizeHandle {...resizable.handleProps} side="right" ariaLabel={resizeLabel} />
             </div>
             <div
               data-drawer-card=""

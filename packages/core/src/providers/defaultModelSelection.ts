@@ -1,5 +1,6 @@
 import type { ModelSelection, ProviderId } from '@goodboy/types';
 import { MODEL_CATALOGS } from './catalogs';
+import { defaultTurnModel } from './defaultTurnModel';
 
 type Params = {
   readonly provider: ProviderId;
@@ -8,10 +9,10 @@ type Params = {
 
 export const defaultModelSelection = ({ provider, tier = 'turn' }: Params): ModelSelection => {
   const catalog = MODEL_CATALOGS[provider];
-  const model = catalog.find((candidate) => candidate.tier === tier) ?? catalog[0];
-  if (model == null) {
-    throw new Error(`provider catalog is empty: ${provider}`);
-  }
+  const model =
+    tier === 'turn'
+      ? defaultTurnModel({ provider })
+      : (catalog.find((candidate) => candidate.tier === tier) ?? defaultTurnModel({ provider }));
   switch (model.provider) {
     case 'anthropic':
     case 'gemini':

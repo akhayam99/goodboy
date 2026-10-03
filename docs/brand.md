@@ -50,6 +50,12 @@ light theme, next to the same word. The mask file and its ratios do not
 change. This is the title bar convention of Linear, Cursor and Arc: a
 monochrome glyph in the chrome, the tile on the dock icon.
 
+The app shows the mark in two places only: the footer Goodboy chip (and the
+header of its menu) and the boot splash. Empty states, onboarding, the
+workspace launcher and agent kinds draw no dog. They use a concept tile
+(`ConceptTile`), the stage chips or the kind chip. A ratchet
+(`dog-mascot-only-marks-the-brand.test.ts`) keeps `DogMascot` to those files.
+
 The tile has one shape everywhere, and no other shape exists:
 
 | Ratio       | Value   | Meaning                             |

@@ -43,7 +43,7 @@ describe('askInChat', () => {
     expect(store.createChat).toHaveBeenCalledWith({
       workspaceId: WORKSPACE,
       provider: 'anthropic',
-      model: 'sonnet-5',
+      model: 'sonnet-5.5',
     });
     expect(store.setChatModel).not.toHaveBeenCalled();
   });
@@ -85,7 +85,7 @@ describe('askInChat', () => {
     await askInChat({ question: 'where is auth?' });
 
     expect(store.createChat).toHaveBeenCalledWith(
-      expect.objectContaining({ provider: 'anthropic', model: 'sonnet-5' }),
+      expect.objectContaining({ provider: 'anthropic', model: 'sonnet-5.5' }),
     );
     expect(store.reportError).not.toHaveBeenCalled();
   });

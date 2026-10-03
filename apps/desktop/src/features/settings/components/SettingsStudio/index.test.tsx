@@ -435,28 +435,3 @@ describe('SettingsStudio', () => {
     expect(screen.getByRole('button', { name: 'Import' })).toBeDefined();
   });
 });
-
-describe('SettingsStudio trail', () => {
-  it('names the studio, the scope and the section, with a menu on the section', () => {
-    render(
-      <SettingsStudio
-        currentWorkspace={null}
-        focus={{ scope: 'app', section: 'shortcuts' }}
-        onScopeChange={vi.fn()}
-        onClose={vi.fn()}
-      />,
-    );
-
-    const trail = screen.getByRole('navigation', { name: 'Breadcrumb' });
-    expect(trail.textContent).toContain('Settings');
-    expect(trail.textContent).toContain('App');
-    expect(trail.textContent).toContain('Shortcuts');
-    fireEvent.click(within(trail).getByRole('button', { name: /Shortcuts/ }));
-    const menu = screen.getByRole('menu', { name: 'Switch section' });
-    expect(
-      within(menu)
-        .getByRole('menuitemradio', { name: /Shortcuts/ })
-        .getAttribute('aria-checked'),
-    ).toBe('true');
-  });
-});

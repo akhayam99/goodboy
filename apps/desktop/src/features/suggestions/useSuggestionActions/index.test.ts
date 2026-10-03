@@ -121,14 +121,11 @@ vi.mock('../../../store', async () => {
     useAppStore,
   };
 });
-vi.mock('../../../shared/hooks/useSessionRoleModels', () => ({
-  useSessionRoleModels: () => ({}),
+vi.mock('../../../shared/hooks/useKindRouting', () => ({
+  useKindRouting: () => ({ provider: 'anthropic', model: 'claude', effort: 'medium' }),
 }));
 vi.mock('../../../shared/hooks/useAgentStartedToast', () => ({
   useAgentStartedToast: () => spies.announceAgentStarted,
-}));
-vi.mock('../../session/agent-kind', () => ({
-  kindRouting: () => ({ provider: 'anthropic', model: 'claude', effort: 'medium' }),
 }));
 vi.mock('../../session/hooks/useWorktreeStatuses', () => ({
   useWorktreeStatuses: spies.worktreeStatuses,

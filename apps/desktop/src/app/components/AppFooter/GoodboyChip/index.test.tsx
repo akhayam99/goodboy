@@ -1,17 +1,22 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: vi.fn(async () => new Promise<never>(() => undefined)),
+}));
+vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { OnboardingStepId } from '../../../../features/onboarding/onboarding-store';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../store/storyHarness';
 
 const { mocks } = vi.hoisted(() => ({
   mocks: {
-    store: {
-      updaterStatus: 'idle' as 'idle' | 'available' | 'downloading',
-      updateVersion: '0.5.2' as string | null,
-      updateFailure: null,
-      installUpdate: vi.fn(async () => undefined),
-    },
     progress: {
       completedCount: 3,
       totalCount: 6,
@@ -29,10 +34,6 @@ const { mocks } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (state: typeof mocks.store) => T) => selector(mocks.store),
-}));
-
 vi.mock('../../../../features/onboarding/onboarding-store', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   collapse: mocks.collapse,
@@ -45,10 +46,6 @@ vi.mock('../../../../features/onboarding/hooks/useOnboardingProgress', () => ({
 
 vi.mock('../../../../features/onboarding/SetupChecklist/ChecklistBody', () => ({
   ChecklistBody: () => <div data-testid="checklist" />,
-}));
-
-vi.mock('../../../../features/changelog/hooks/useInstalledVersion', () => ({
-  useInstalledVersion: () => '0.5.2',
 }));
 
 vi.mock('../../../../features/settings/hooks/useHasBugReportDraft', () => ({
@@ -64,13 +61,22 @@ vi.mock('../../../../shared/lib/editor', () => ({
 }));
 
 import { applyDocumentTheme } from '../../../../shared/lib/theme';
-import { GoodboyChip, SPONSOR_URL } from './index';
+import { APP_VERSION } from '../../../../shared/lib/appVersion';
+import { SOCIAL_LINKS, SPONSOR_URL } from '../../../../shared/lib/productLinks';
+import { GoodboyChip } from './index';
 import { OPEN_REPORT_SHEET_EVENT } from '../../../../features/bug-report/openReportSheet';
 
 const REST_LABEL = 'Goodboy beta: version, help and sponsor';
 
-beforeEach(() => {
-  mocks.store.updaterStatus = 'idle';
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+  useAppStore.setState({ updateVersion: '0.5.2' });
   mocks.progress.collapsed = true;
   mocks.progress.finished = false;
   mocks.progress.isDone = false;
@@ -99,12 +105,12 @@ const openMenu = () => {
 };
 
 describe('GoodboyChip', () => {
-  it('names Goodboy beta at rest', () => {
+  it('names Goodboy, beta and the version the build stamped at rest', () => {
     mocks.progress.finished = true;
     renderChip();
 
     const chip = screen.getByRole('button', { name: REST_LABEL });
-    expect(chip.textContent).toBe('Goodboybeta');
+    expect(chip.textContent).toBe(`GoodboyBetav${APP_VERSION}`);
   });
 
   it('leaves the rest mark bare in dark mode', () => {
@@ -140,7 +146,7 @@ describe('GoodboyChip', () => {
   });
 
   it('puts a ready update ahead of setup', () => {
-    mocks.store.updaterStatus = 'available';
+    useAppStore.setState({ updaterStatus: 'available' });
     renderChip();
 
     const chip = screen.getByRole('button', { name: 'Goodboy: an update is ready' });
@@ -153,7 +159,7 @@ describe('GoodboyChip', () => {
 
     const menu = openMenu();
 
-    expect(within(menu).getByText('Goodboy 0.5.2')).toBeDefined();
+    within(menu).getByText(`Goodboy ${APP_VERSION}`);
     expect(within(menu).getByTestId('checklist')).toBeDefined();
     ['Report a bug', "What's new", 'Keyboard shortcuts', 'Sponsor on GitHub'].forEach((row) => {
       expect(within(menu).getByText(row)).toBeDefined();
@@ -188,6 +194,15 @@ describe('GoodboyChip', () => {
 
     expect(mocks.openUrl).toHaveBeenCalledExactlyOnceWith(SPONSOR_URL);
     expect(SPONSOR_URL).toBe('https://github.com/sponsors/akhayam99');
+  });
+
+  it('opens the exact X profile', () => {
+    renderChip();
+
+    fireEvent.click(within(openMenu()).getByText('Follow on X'));
+
+    expect(mocks.openUrl).toHaveBeenCalledExactlyOnceWith(SOCIAL_LINKS.x);
+    expect(SOCIAL_LINKS.x).toBe('https://x.com/GoodboyWorks');
   });
 
   it('leads with report a bug, says a draft is saved, and hands off to the report sheet', () => {

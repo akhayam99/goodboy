@@ -188,7 +188,11 @@ export const AppStudio = ({
     return null;
   }
   return (
-    <StudioFrame kind={overlay.kind} onClose={close}>
+    <StudioFrame
+      kind={overlay.kind}
+      {...(overlay.kind === 'settings' && overlay.focus.scope === 'home' && { skeleton: 'grid' })}
+      onClose={close}
+    >
       {renderStudio({
         overlay,
         close,

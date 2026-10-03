@@ -117,9 +117,9 @@ describe('HandoffBlock', () => {
   it('shows who sent the agent, the ask and the why, closed, without chips', () => {
     renderBlock();
 
-    expect(screen.getByText('Orchestrator · step 4')).toBeTruthy();
-    expect(screen.getByText('Backfill the settled batches behind a flag.')).toBeTruthy();
-    expect(screen.getByText('Why: Rounding now lands once per batch.')).toBeTruthy();
+    screen.getByText('Orchestrator · step 4');
+    screen.getByText('Backfill the settled batches behind a flag.');
+    screen.getByText('Why: Rounding now lands once per batch.');
     expect(screen.queryByTestId('handoff-chips')).toBeNull();
     expect(screen.queryByTestId('handoff-section-ask')).toBeNull();
   });
@@ -140,7 +140,7 @@ describe('HandoffBlock', () => {
     const planChip = screen.getByRole('button', { name: 'Plan' });
 
     fireEvent.click(planChip);
-    expect(screen.getByTestId('handoff-section-plan')).toBeTruthy();
+    screen.getByTestId('handoff-section-plan');
     expect(planChip.getAttribute('aria-pressed')).toBe('true');
 
     fireEvent.click(planChip);
@@ -151,7 +151,7 @@ describe('HandoffBlock', () => {
   it('hides the chips again when the block closes', () => {
     renderBlock();
     fireEvent.click(screen.getByRole('button', { name: 'Expand what the agent received' }));
-    expect(screen.getByTestId('handoff-chips')).toBeTruthy();
+    screen.getByTestId('handoff-chips');
 
     fireEvent.click(screen.getByRole('button', { name: 'Collapse what the agent received' }));
 
@@ -163,11 +163,11 @@ describe('HandoffBlock', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Expand what the agent received' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Plan' }));
-    expect(screen.getByTestId('handoff-section-plan')).toBeTruthy();
+    screen.getByTestId('handoff-section-plan');
 
     fireEvent.click(screen.getByRole('button', { name: 'Implementer instructions' }));
     expect(screen.queryByTestId('handoff-section-plan')).toBeNull();
-    expect(screen.getByTestId('handoff-section-role')).toBeTruthy();
+    screen.getByTestId('handoff-section-role');
   });
 
   it('Escape closes the open section and returns focus to its chip', () => {
@@ -216,17 +216,17 @@ describe('HandoffBlock', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'All' }));
 
-    expect(screen.getByTestId('handoff-section-ask')).toBeTruthy();
-    expect(screen.getByTestId('handoff-section-plan')).toBeTruthy();
-    expect(screen.getByTestId('handoff-section-role')).toBeTruthy();
+    screen.getByTestId('handoff-section-ask');
+    screen.getByTestId('handoff-section-plan');
+    screen.getByTestId('handoff-section-role');
   });
 
   it('opens by itself while the agent has not answered yet', () => {
     state.transcripts = { [AGENT]: [] };
     renderBlock();
 
-    expect(screen.getByTestId('handoff-section-ask')).toBeTruthy();
-    expect(screen.getByTestId('handoff-chips')).toBeTruthy();
+    screen.getByTestId('handoff-section-ask');
+    screen.getByTestId('handoff-chips');
   });
 
   it('opens the block on the section a chip names, and an earlier step opens that agent', () => {
@@ -260,8 +260,8 @@ describe('HandoffBlock', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'View as sent to Claude' }));
 
-    expect(screen.getByText(/System prompt/)).toBeTruthy();
-    expect(screen.getByText(/Message · /)).toBeTruthy();
+    screen.getByText(/System prompt/);
+    screen.getByText(/Message · /);
     expect(screen.queryByText(/no separate system prompt/)).toBeNull();
   });
 
@@ -272,11 +272,9 @@ describe('HandoffBlock', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'View as sent to Codex' }));
 
-    expect(
-      screen.getByText(
-        'Codex has no separate system prompt, so scope, profile and role come first in the message.',
-      ),
-    ).toBeTruthy();
+    screen.getByText(
+      'Codex has no separate system prompt, so scope, profile and role come first in the message.',
+    );
     expect(screen.queryByText(/System prompt ·/)).toBeNull();
   });
 
@@ -284,7 +282,7 @@ describe('HandoffBlock', () => {
     state.agentHandoffs = { [AGENT]: handoff({ sender: { kind: 'you' } }) };
     renderBlock({ text: 'Which services read the per-line totals?' });
 
-    expect(screen.getByText('Which services read the per-line totals?')).toBeTruthy();
+    screen.getByText('Which services read the per-line totals?');
     expect(screen.getByTestId('handoff-also-received').textContent).toContain('Also received');
     expect(screen.getByTestId('handoff-chips').textContent).toBe(
       '1 earlier stepPlanImplementer instructionsAll',

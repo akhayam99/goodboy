@@ -1,11 +1,12 @@
 import { useCallback, useMemo, type ReactNode } from 'react';
-import { Button, Eyebrow, cn, DogMascot } from '@goodboy/ui';
+import { Button, Eyebrow, cn } from '@goodboy/ui';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { SECTION_ICONS } from '../../../../shared/components/section-icons';
 import { classifyAgent } from '../../../session/agent-kind';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ConceptTile } from '../../../../shared/components/ConceptTile';
 import { AgentFocusEmpty } from './AgentFocusEmpty';
 
 type NoAgentScenario = 'fresh' | 'workflow_no_agent' | 'pick_agent';
@@ -111,7 +112,7 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
         {scenario === 'pick_agent' ? (
           <span className="text-display tabular-nums text-foreground">{phaseRuns.length}</span>
         ) : (
-          <DogMascot size={128} className="text-primary" />
+          <ConceptTile icon={CONCEPT_ICONS.chat} tone={CONCEPT_TONE.chat} />
         )}
       </div>
       <div className="flex flex-col gap-1.5">

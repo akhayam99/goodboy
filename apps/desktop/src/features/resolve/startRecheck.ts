@@ -1,8 +1,10 @@
-import { strongestModelForTier } from '@goodboy/core';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
+import { selectResolvedSettings } from '../../store/slices/overrides/selectResolvedSettings';
+import { autoLimitContext } from '../../store/slices/providerLimits/autoLimitContext';
+import { resolveLimitedTaskModel } from '../../store/slices/providerLimits/resolveLimitedTaskModel';
+import { sessionById } from '../../store/slices/sessions/sessionIndex';
 import { startFixAttempt } from '../review/startFixAttempt';
-import { draftRoutingOf } from './draftRouting';
 import { recheckParentOf } from './recheckParentOf';
 import { reviewRowsOf } from './reviewRows';
 
@@ -14,12 +16,22 @@ type Params = {
 
 const NOTHING_TO_RECHECK = 'This comment is no longer on the pull request';
 
-export const recheckModelOf = ({
-  provider,
-}: {
-  readonly provider: Parameters<typeof strongestModelForTier>[0]['provider'];
-}): string | null =>
-  strongestModelForTier({ provider, tier: 'cheap', wantsThinker: false })?.id ?? null;
+type RecheckModelParams = {
+  readonly state: AppStore;
+  readonly sessionId: SessionId;
+};
+
+export const recheckModelOf = ({ state, sessionId }: RecheckModelParams) => {
+  const settings = selectResolvedSettings({ state, sessionId });
+  return resolveLimitedTaskModel({
+    limitContext: autoLimitContext({ state }),
+    task: 'recheck',
+    preferences: settings?.taskModels,
+    workspaceDefaultProviderId: settings?.defaultProviderOverride,
+    sessionDefaultProviderId:
+      sessionById(state.sessions, sessionId)?.providerPreference.defaultProvider ?? 'anthropic',
+  });
+};
 
 export const startRecheck = async ({
   getState,
@@ -33,16 +45,16 @@ export const startRecheck = async ({
   if (row === undefined || row.commentThread === null) {
     throw new Error(NOTHING_TO_RECHECK);
   }
-  const routing = draftRoutingOf({ state, sessionId });
-  const model = recheckModelOf({ provider: routing.provider });
+  const taskModel = recheckModelOf({ state, sessionId });
   const shas = row.thread.commitShas ?? [];
   return startFixAttempt({
     sessionId,
     threads: [row.commentThread],
     pr: state.sessionGithub[sessionId]?.pr ?? null,
     choice: {
-      provider: routing.provider,
-      ...(model !== null && { model }),
+      provider: taskModel.providerId,
+      model: taskModel.model,
+      ...(taskModel.effort != null && { effort: taskModel.effort }),
     },
     mode: 'recheck',
     priorContext: [

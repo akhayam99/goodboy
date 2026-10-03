@@ -11,12 +11,12 @@ import {
 import {
   Band,
   BandStack,
-  EmptyState,
   Eyebrow,
   FieldRow,
   InlineConfirm,
   OverflowMenu,
   PaneShell,
+  FilledEmptyState,
 } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import { ROLE_LABEL } from '../../../../session/agent-kind';
@@ -35,6 +35,7 @@ import {
 import { ProviderPicker } from '../../../../../shared/components/RoutingPicker/ProviderPicker';
 import { pluralize } from '../../../../../shared/utils/pluralize';
 import { SETTINGS_PANE_ENTRY } from '../../../../settings/components/SettingsStudio/settingsPaneEntry';
+import { useAutoLimitContext } from '../../../hooks/useAutoLimitContext';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -86,10 +87,13 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
     ...connectedProviderIds.filter((id) => id !== defaultProviderId),
   ];
   const fallbackOrder = orderedProviderIds.filter((id) => providerPoolIds.has(id));
+  const limitContext = useAutoLimitContext();
   const autoContext: AutoContext = {
     defaultProvider: defaultProviderId,
     connected: connectedProviderIds,
     fallbackOrder,
+    ...(limitContext?.hidden != null && { hidden: limitContext.hidden }),
+    ...(limitContext?.cliVersions != null && { cliVersions: limitContext.cliVersions }),
   };
 
   const chatDefault = useChatDefaultModel({ workspaceId });
@@ -192,11 +196,10 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
           help="If a provider is not connected or out of quota, Auto moves to the next one."
         >
           {connectedProviderIds.length === 0 ? (
-            <EmptyState
+            <FilledEmptyState
               icon={CONCEPT_ICONS.providers}
               tone={CONCEPT_TONE.providers}
               title="No providers connected"
-              size="inline"
             />
           ) : (
             <FallbackOrder

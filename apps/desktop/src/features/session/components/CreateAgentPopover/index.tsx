@@ -36,6 +36,7 @@ import { CreateAgentTrigger } from './CreateAgentTrigger';
 import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
+import { useKindRouting } from '../../../../shared/hooks/useKindRouting';
 
 const ROUTING_PANEL_ID = 'create-agent-routing';
 
@@ -82,15 +83,8 @@ export const CreateAgentPopover = ({
   );
   const roleModels = useSessionRoleModels({ sessionId });
   const session = useAppStore((state) => sessionById(state.sessions, sessionId) ?? null);
-  const defaultProvider = useAppStore(
-    (state) => selectResolvedSettings({ state, sessionId })?.defaultProviderId ?? null,
-  );
-  const spawnDefault = resolveSpawnRouting({
-    kind: selectedKind,
-    roleModels,
-    session,
-    defaultProvider,
-  });
+  const roleDefault = useKindRouting({ sessionId, kind: selectedKind });
+  const spawnDefault = resolveSpawnRouting({ kind: selectedKind, roleDefault, session });
   const activePlan = useAppStore((state) => {
     const plans = state.sessionPlans[sessionId] ?? [];
     const latest = plans[plans.length - 1] ?? null;

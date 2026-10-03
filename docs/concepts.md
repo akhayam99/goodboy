@@ -827,7 +827,7 @@ once · each works on its own copy of the branch`, no price: nothing
   model, `Try again with the hint` with a hint), **Try another model** (the
   picker opens inline under the buttons) and **Add a hint** (F is Try again).
   `…` holds Reply yourself, Skip and Open transcript. The earlier attempts of
-  the comment fold into one line above (`Attempt 1 · Sonnet 5 · Medium ·
+  the comment fold into one line above (`Attempt 1 · Sonnet 5.5 · Medium ·
 failed`) that opens to their reasons. A failed step after the run shows its
   own verb: `Push again`, `Post the reply again` or `Open on GitHub` when
   Goodboy could not confirm the reply landed

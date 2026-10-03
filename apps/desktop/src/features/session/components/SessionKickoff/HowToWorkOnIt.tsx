@@ -23,6 +23,7 @@ import {
 import { KICKOFF_GOAL_PLACEHOLDER } from './WorkflowStart';
 import { StartFooter } from './StartFooter';
 import { useDraftStart } from './useDraftStart';
+import { useWorkspaceKindRouting } from '../../../../shared/hooks/useWorkspaceKindRouting';
 
 type How = 'workflow' | 'agent';
 
@@ -71,12 +72,8 @@ export const HowToWorkOnIt = ({ workspaceId, candidate, title, goal }: Props) =>
       state.providers.filter((provider) => provider.connection === 'connected').map((p) => p.id),
     ),
   );
-  const suggestion = resolveSpawnRouting({
-    kind,
-    roleModels: null,
-    session: null,
-    defaultProvider,
-  });
+  const roleDefault = useWorkspaceKindRouting({ workspaceId, kind });
+  const suggestion = resolveSpawnRouting({ kind, roleDefault, session: null });
 
   const projectId = pickedProjectId === undefined ? (mount?.selectedId ?? null) : pickedProjectId;
   const draftMount: SessionDraftMount | null =

@@ -7,6 +7,7 @@ const SONNET_EFFORTS = ['low', 'medium', 'high'] satisfies ReadonlyArray<EffortL
 export const ANTHROPIC_CATALOG = [
   {
     key: 'opus-5',
+    defaultTurn: true,
     label: 'Opus 5',
     tier: 'turn',
     contextWindow: 1_000_000,
@@ -144,6 +145,8 @@ export const ANTHROPIC_CATALOG = [
     cliId: 'claude-sonnet-5-5',
     efforts: OPUS_EFFORTS,
     defaultEffort: 'medium',
+
+    minCliVersion: '2.1.284',
   },
   {
     key: 'sonnet-5',

@@ -49,6 +49,19 @@ describe('StudioFrame', () => {
     expect(screen.getByRole('banner', { name: 'Workflows' })).toBeDefined();
   });
 
+  it('loads the settings home behind cards instead of a rail', () => {
+    const Pending = lazy(() => new Promise<never>(() => undefined));
+    const { container } = render(
+      <StudioFrame kind="settings" skeleton="grid" onClose={() => undefined}>
+        <Pending />
+      </StudioFrame>,
+    );
+
+    expect(screen.getByRole('status', { name: 'Loading Settings' })).toBeDefined();
+    expect(container.querySelector('[data-studio-skeleton="grid"]')).not.toBeNull();
+    expect(container.querySelector('[data-studio-skeleton="rail"]')).toBeNull();
+  });
+
   it('names the studio with the trail primitive in its band', () => {
     render(
       <StudioFrame kind="inbox" onClose={() => undefined}>

@@ -68,6 +68,7 @@ import {
   ModelPickerTriggersScene,
 } from './scenes/ModelPickerScenes';
 import { ModelPickerClaudeScene } from './scenes/ModelPickerClaudeScene';
+import { RunsOnScene } from './scenes/RunsOnScene';
 
 import { FrameScene } from './scenes/audit/FrameScene';
 import { FirstRunScene } from './scenes/audit/FirstRunScene';
@@ -85,6 +86,7 @@ import { FeaturesWriteReviewScene } from './scenes/features/WriteReviewScene';
 import { SessionStartScene } from './scenes/audit/SessionStartScene';
 import { WorkspaceStatesScene } from './scenes/audit/WorkspaceStatesScene';
 import { SettingsAppScene } from './scenes/audit/SettingsAppScene';
+import { SettingsHomeScene } from './scenes/audit/SettingsHomeScene';
 import { SettingsNoWorkspaceScene } from './scenes/audit/SettingsNoWorkspaceScene';
 import { SettingsProvidersScene } from './scenes/audit/SettingsProvidersScene';
 import { SettingsToolsScene } from './scenes/audit/SettingsToolsScene';
@@ -201,6 +203,7 @@ export const MOCK_SCENES = {
   'model-picker-codex': ModelPickerCodexScene,
   'model-picker-claude': ModelPickerClaudeScene,
   'model-picker-triggers': ModelPickerTriggersScene,
+  'runs-on-codex-default': RunsOnScene,
   frame: FrameScene,
   'first-run': FirstRunScene,
   'first-lap': FirstLapScene,
@@ -214,6 +217,7 @@ export const MOCK_SCENES = {
   'session-start': SessionStartScene,
   'workspace-states': WorkspaceStatesScene,
   'settings-app': SettingsAppScene,
+  'settings-home': SettingsHomeScene,
   'settings-no-workspace': SettingsNoWorkspaceScene,
   'settings-providers': SettingsProvidersScene,
   'settings-tools': SettingsToolsScene,

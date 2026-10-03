@@ -425,7 +425,7 @@ describe('sendTurn on sqlite: retry', () => {
 
     expect(storySpies.runTurn).toHaveBeenCalledTimes(2);
     expect(storySpies.runTurn.mock.calls[0]?.[0]).toEqual(
-      expect.objectContaining({ provider: 'anthropic', model: 'claude-sonnet-5' }),
+      expect.objectContaining({ provider: 'anthropic', model: 'claude-sonnet-5-5' }),
     );
     expect(storySpies.runTurn.mock.calls[1]?.[0]).toEqual(
       expect.objectContaining({ provider: 'anthropic', model: 'claude-haiku-4-5' }),

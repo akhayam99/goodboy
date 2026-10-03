@@ -1,78 +1,39 @@
-// @vitest-environment node
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createStore } from 'zustand';
-import type {
-  BudgetAlert,
-  IsoDateTime,
-  ProviderRunId,
-  Session,
-  SessionId,
-  TelemetryRecord,
-  TurnEvent,
-  WorkspaceId,
-} from '@goodboy/types';
+const emitAlerts = vi.hoisted(() => ({ invokeBudgetEmitAlerts: vi.fn() }));
 
-const {
-  insertTelemetry,
-  invokeBudgetAlertsList,
-  invokeBudgetEmitAlerts,
-  invokeBudgetRuleList,
-  summarizeSessionTelemetry,
-  summarizeWorkspaceProviderTelemetry,
-  summarizeWorkspaceTelemetry,
-} = vi.hoisted(() => ({
-  insertTelemetry: vi.fn(async () => undefined),
-  invokeBudgetAlertsList: vi.fn(async () => [] as ReadonlyArray<BudgetAlert>),
-  invokeBudgetEmitAlerts: vi.fn(async () => [] as ReadonlyArray<BudgetAlert>),
-  invokeBudgetRuleList: vi.fn(async () => []),
-  summarizeSessionTelemetry: vi.fn(async () => null),
-  summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
-  summarizeWorkspaceTelemetry: vi.fn(async () => null),
-}));
-
-vi.mock('@goodboy/core', () => ({
-  computeProviderCostUsd: vi.fn(() => 2.5),
-}));
-
-vi.mock('@goodboy/db', async () =>
-  (await import('../../../test/dbMock')).createDbMock({
-    insertTelemetry,
-    summarizeSessionTelemetry,
-    summarizeWorkspaceProviderTelemetry,
-    summarizeWorkspaceTelemetry,
-  }),
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../storyHarness')).tauriCoreModuleMock(),
 );
-
-vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
-
-vi.mock('../../../features/budget/budget', () => ({
-  invokeBudgetAlertsList,
-  invokeBudgetEmitAlerts,
-  invokeBudgetRuleList,
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('../../../shared/lib/db', async () =>
+  (await import('../../storyHarness')).sqliteDbLibModuleMock(),
+);
+vi.mock('../../../features/budget/budget', async () => ({
+  ...(await import('../../storyHarness')).budgetModuleMock(),
+  ...emitAlerts,
 }));
 
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { insertSession, insertWorkspace } from '@goodboy/db';
+import type { BudgetAlert, IsoDateTime, ProviderRunId, SessionId, TurnEvent } from '@goodboy/types';
+import { aSession, aWorkspace } from '@goodboy/types/testing';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  openStorySqlite,
+  resetStoryStore,
+  rowsOf,
+  storySpies,
+  storySqlite,
+  type StoryStore,
+} from '../../storyHarness';
 import { recordUsageTelemetry } from './recordUsageTelemetry';
 
-const SESSION_ID = 'session-1' as SessionId;
-const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
-const FIRST_RUN_ID = 'run-1' as ProviderRunId;
-const SECOND_RUN_ID = 'run-2' as ProviderRunId;
 const NOW = '2026-08-02T12:00:00.000Z' as IsoDateTime;
-
-const session = {
-  id: SESSION_ID,
-  workspaceId: WORKSPACE_ID,
-  goal: 'Finish the budget path',
-  state: { kind: 'idle', lastActivityAt: NOW },
-  contextSlots: [],
-  providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
-  permissionMode: 'bypassPermissions',
-  autoRun: false,
-  titleUserEdited: false,
-  workflowRuns: [],
-  createdAt: NOW,
-  updatedAt: NOW,
-} satisfies Session;
+const workspace = aWorkspace({ name: 'Harborline' });
+const session = aSession({ workspaceId: workspace.id, goal: 'Finish the budget path' });
+const SESSION_ID: SessionId = session.id;
 
 const alert = {
   id: 'alert-1',
@@ -83,79 +44,85 @@ const alert = {
   createdAt: NOW,
 } satisfies BudgetAlert;
 
-type TestState = {
-  sessions: ReadonlyArray<Session>;
-  sessionTelemetry: Record<string, ReadonlyArray<TelemetryRecord>>;
-  sessionSummary: unknown;
-  workspaceSummary: unknown;
-  providerSpendBreakdown: ReadonlyArray<unknown>;
-  budgetAlerts: ReadonlyArray<BudgetAlert>;
-  sessionBudgets: Record<string, unknown>;
-  emitNotification: ReturnType<typeof vi.fn>;
+const usage = {
+  inputTokens: 1_000,
+  outputTokens: 500,
+  cachedInputTokens: 0,
+  estimatedCostUsd: 2.5,
 };
 
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+  const db = await openStorySqlite();
+  await insertWorkspace({ db, workspace });
+  await insertSession(db, session);
+  useAppStore.setState({ workspaces: [workspace], sessions: [session] });
+  storySpies.invokeBudgetAlertsList.mockResolvedValue([alert]);
+  emitAlerts.invokeBudgetEmitAlerts.mockReset();
+  emitAlerts.invokeBudgetEmitAlerts.mockResolvedValueOnce([alert]).mockResolvedValueOnce([]);
+});
+
+const recordTurn = async (runId: ProviderRunId) => {
+  await storySqlite().execute(
+    `INSERT INTO provider_runs (id, session_id, provider, model, status_kind, created_at)
+     VALUES (?, ?, 'anthropic', 'claude-sonnet-4-5', 'succeeded', ?)`,
+    [runId, SESSION_ID, Date.parse(NOW)],
+  );
+  await recordUsageTelemetry(useAppStore.setState, useAppStore.getState, {
+    event: { kind: 'usage', runId, usage, at: NOW } satisfies Extract<TurnEvent, { kind: 'usage' }>,
+    provider: 'anthropic',
+    model: 'claude-sonnet-4-5',
+    runId,
+    sessionId: SESSION_ID,
+    now: () => NOW,
+  });
+};
+
+const budgetNotifications = () =>
+  useAppStore.getState().notifications.filter((entry) => entry.kind === 'budget-cap');
+
 describe('recordUsageTelemetry', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    invokeBudgetAlertsList.mockResolvedValue([alert]);
-    invokeBudgetEmitAlerts.mockResolvedValueOnce([alert]).mockResolvedValueOnce([]);
+  it('stores the turn usage in the database and in the session telemetry', async () => {
+    await recordTurn('run-1' as ProviderRunId);
+
+    const rows = await rowsOf<{ run_id: string; input_tokens: number; output_tokens: number }>({
+      sql: 'SELECT run_id, input_tokens, output_tokens FROM telemetry_records WHERE session_id = ?',
+      params: [SESSION_ID],
+    });
+    expect(rows).toEqual([{ run_id: 'run-1', input_tokens: 1_000, output_tokens: 500 }]);
+    expect(
+      useAppStore.getState().sessionTelemetry[SESSION_ID]?.map((entry) => entry.runId),
+    ).toEqual(['run-1']);
   });
 
   it('emits one notification for the first session cap breach and none for the next turn', async () => {
-    const emitNotification = vi.fn(async () => undefined);
-    const store = createStore<TestState>(() => ({
-      sessions: [session],
-      sessionTelemetry: {},
-      sessionSummary: null,
-      workspaceSummary: null,
-      providerSpendBreakdown: [],
-      budgetAlerts: [],
-      sessionBudgets: {},
-      emitNotification,
-    }));
-    const usage = {
-      inputTokens: 1_000,
-      outputTokens: 500,
-      cachedInputTokens: 0,
-      estimatedCostUsd: 2.5,
-    };
+    await recordTurn('run-1' as ProviderRunId);
 
-    await recordUsageTelemetry(store.setState as never, store.getState as never, {
-      event: { kind: 'usage', runId: FIRST_RUN_ID, usage, at: NOW } satisfies Extract<
-        TurnEvent,
-        { kind: 'usage' }
-      >,
-      provider: 'anthropic',
-      model: 'claude-sonnet-4-5',
-      runId: FIRST_RUN_ID,
-      sessionId: SESSION_ID,
-      now: () => NOW,
-    });
-
-    expect(emitNotification).toHaveBeenCalledOnce();
-    expect(emitNotification).toHaveBeenCalledWith(
-      expect.objectContaining({
-        kind: 'budget-cap',
+    expect(
+      budgetNotifications().map(({ severity, title, body, sessionId }) => ({
+        severity,
+        title,
+        body,
+        sessionId,
+      })),
+    ).toEqual([
+      {
         severity: 'error',
         title: 'Finish the budget path paused its workflows at the $10.00 spend limit.',
         body: '$12.30 spent so far.',
         sessionId: SESSION_ID,
-        action: { kind: 'open-budget', sessionId: SESSION_ID },
-      }),
-    );
+      },
+    ]);
 
-    await recordUsageTelemetry(store.setState as never, store.getState as never, {
-      event: { kind: 'usage', runId: SECOND_RUN_ID, usage, at: NOW } satisfies Extract<
-        TurnEvent,
-        { kind: 'usage' }
-      >,
-      provider: 'anthropic',
-      model: 'claude-sonnet-4-5',
-      runId: SECOND_RUN_ID,
-      sessionId: SESSION_ID,
-      now: () => NOW,
-    });
+    await recordTurn('run-2' as ProviderRunId);
 
-    expect(emitNotification).toHaveBeenCalledOnce();
+    expect(budgetNotifications()).toHaveLength(1);
+    expect(useAppStore.getState().sessionTelemetry[SESSION_ID]).toHaveLength(2);
   });
 });

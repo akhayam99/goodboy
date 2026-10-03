@@ -93,6 +93,15 @@ describe('OrchestratorRoutingRow', () => {
   });
 
   it('emits model and effort with the same provider scoped representation', () => {
+    Object.assign(storeState, {
+      workspaceOverrides: {
+        'workspace-1': {
+          taskModels: {
+            workflow_orchestrator: { providerId: 'anthropic', model: 'sonnet-5', effort: 'medium' },
+          },
+        },
+      },
+    });
     renderRow(run());
 
     openPicker();

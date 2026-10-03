@@ -66,7 +66,7 @@ describe('ToolCallCard', () => {
         </ChatImageLoaderProvider>,
       );
       fireEvent.click(screen.getByRole('button', { expanded: false }));
-      expect(screen.getByRole('button', { name: /chars/, expanded: false })).toBeTruthy();
+      screen.getByRole('button', { name: /chars/, expanded: false });
       expect(screen.queryByRole('button', { name: 'Load image' })).toBeNull();
       expect(document.querySelector('img')).toBeNull();
       expect(invoke).not.toHaveBeenCalled();
@@ -88,7 +88,7 @@ describe('ToolCallCard', () => {
     expect(invoke).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Load image' }));
     expect(await screen.findByAltText('out/chart.png')).toBeTruthy();
-    expect(screen.getByText('out/chart.png')).toBeTruthy();
+    screen.getByText('out/chart.png');
   });
 
   it('keeps image paths as text when no session is available', () => {
@@ -99,7 +99,7 @@ describe('ToolCallCard', () => {
       </ChatImageLoaderProvider>,
     );
     fireEvent.click(screen.getByRole('button', { expanded: false }));
-    expect(screen.getByText('out/chart.png')).toBeTruthy();
+    screen.getByText('out/chart.png');
     expect(document.querySelector('img')).toBeNull();
     expect(invoke).not.toHaveBeenCalled();
   });
@@ -124,8 +124,8 @@ describe('ToolCallCard', () => {
       sessionId: 'session-1',
       path: '/repo/out/chart.png',
     });
-    expect(screen.getByText('/repo/out/chart.png')).toBeTruthy();
-    expect(screen.getByText('/repo/out/report.txt')).toBeTruthy();
+    screen.getByText('/repo/out/chart.png');
+    screen.getByText('/repo/out/report.txt');
     fireEvent.click(screen.getByRole('button', { name: 'Open image /repo/out/chart.png' }));
     expect(document.querySelectorAll('img')).toHaveLength(2);
   });
@@ -138,7 +138,7 @@ describe('ToolCallCard', () => {
       </ChatImageLoaderProvider>,
     );
     fireEvent.click(screen.getByRole('button', { expanded: false }));
-    expect(screen.getByText('/repo/out/report.txt')).toBeTruthy();
+    screen.getByText('/repo/out/report.txt');
     expect(document.querySelector('img')).toBeNull();
     expect(invoke).not.toHaveBeenCalled();
   });
@@ -153,21 +153,21 @@ describe('ToolCallCard', () => {
     fireEvent.click(screen.getByRole('button', { expanded: false }));
     fireEvent.click(screen.getByRole('button', { name: 'Load image' }));
     await screen.findByRole('button', { name: 'Try again' });
-    expect(screen.getByText('/outside/chart.png')).toBeTruthy();
+    screen.getByText('/outside/chart.png');
     expect(document.querySelector('img')).toBeNull();
   });
 
   it('renders collapsed with tool name', () => {
     render(<ToolCallCard item={tool()} />);
-    expect(screen.getByText('read')).toBeTruthy();
+    screen.getByText('read');
     expect(screen.getByRole('button').getAttribute('aria-expanded')).toBe('false');
   });
 
   it('shows structured input and output when expanded', () => {
     render(<ToolCallCard item={tool()} />);
     fireEvent.click(screen.getByRole('button', { expanded: false }));
-    expect(screen.getByText('/foo.ts')).toBeTruthy();
-    expect(screen.getByText('file content')).toBeTruthy();
+    screen.getByText('/foo.ts');
+    screen.getByText('file content');
   });
 
   it('shows a running node while the tool is in flight', () => {
@@ -197,7 +197,7 @@ describe('ToolCallCard', () => {
 
   it('shows error badge when isError', () => {
     render(<ToolCallCard item={tool({ overrides: { isError: true } })} />);
-    expect(screen.getByText('error')).toBeTruthy();
+    screen.getByText('error');
   });
 
   it('appends the run duration to the header once the tool ends', () => {
@@ -212,7 +212,7 @@ describe('ToolCallCard', () => {
     rerender(
       <ToolCallCard item={tool({ overrides: { endedAt: iso('2026-06-08T10:00:02.000Z') } })} />,
     );
-    expect(screen.getByText('2s')).toBeTruthy();
+    screen.getByText('2s');
     vi.useRealTimers();
   });
 
@@ -227,7 +227,7 @@ describe('ToolCallCard', () => {
   it('does not render output when still running', () => {
     render(<ToolCallCard item={tool({ overrides: { ended: false, output: null } })} />);
     fireEvent.click(screen.getByRole('button', { expanded: false }));
-    expect(screen.getByText('/foo.ts')).toBeTruthy();
+    screen.getByText('/foo.ts');
     expect(screen.queryByText('file content')).toBeNull();
   });
 
@@ -255,14 +255,14 @@ describe('ToolCallCard', () => {
   it('handles null input gracefully', () => {
     render(<ToolCallCard item={tool({ overrides: { input: null, output: 'ok' } })} />);
     fireEvent.click(screen.getByRole('button', { expanded: false }));
-    expect(screen.getByText('null')).toBeTruthy();
+    screen.getByText('null');
   });
 
   it('renders nested object input in structured mode', () => {
     render(<ToolCallCard item={tool({ overrides: { input: { nested: { deep: true } } } })} />);
     fireEvent.click(screen.getByRole('button', { expanded: false }));
-    expect(screen.getByText('nested')).toBeTruthy();
-    expect(screen.getByText('deep')).toBeTruthy();
-    expect(screen.getByText('true')).toBeTruthy();
+    screen.getByText('nested');
+    screen.getByText('deep');
+    screen.getByText('true');
   });
 });

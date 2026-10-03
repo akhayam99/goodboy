@@ -1,83 +1,133 @@
 // @vitest-environment happy-dom
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
-import type { SessionId } from '@goodboy/types';
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
+vi.mock('../../../../shared/lib/db', async () =>
+  (await import('../../../../store/storyHarness')).dbLibModuleMock(),
+);
 
-const h = vi.hoisted(() => ({
-  state: {} as Record<string, unknown>,
-  diff: vi.fn(),
-  status: vi.fn(),
-  commits: vi.fn(),
-}));
-
-vi.mock('../../../../store', () => ({
-  useAppStore: <T>(selector: (state: Record<string, unknown>) => T) => selector(h.state),
-  useSummarizerStatus: () => ({ status: 'idle' }),
-}));
-
-vi.mock('../../../worktree/worktree', () => ({
-  listBranchCommits: h.commits,
-  worktreeDiff: h.diff,
-  worktreeDiffCommit: vi.fn(),
-  worktreeDiffWorking: vi.fn(),
-  worktreeStatus: h.status,
-}));
-
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, renderHook, waitFor } from '@testing-library/react';
+import type { MountId, SessionProjectMount, WorktreeStatus } from '@goodboy/types';
+import { aProject, aSession } from '@goodboy/types/testing';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  stubStoryInvoke,
+  type StoryStore,
+} from '../../../../store/storyHarness';
 import { useSessionDiff } from '.';
 
-const SESSION_ID = 'session-diff' as SessionId;
 const WORKTREE = '/repo/ledger-core';
+const session = aSession({ goal: 'Check the ledger diff' });
+const SESSION_ID = session.id;
 
-const stateWith = ({
+type BaseArgs = { readonly worktreePath: string; readonly baseBranch: string | null };
+
+const nameOf = (baseBranch: string | null): string =>
+  `against-${(baseBranch ?? 'default').replace('/', '-')}`;
+
+const patchFor = (baseBranch: string | null): string =>
+  [
+    `diff --git a/${nameOf(baseBranch)}.txt b/${nameOf(baseBranch)}.txt`,
+    'index 1111111..2222222 100644',
+    `--- a/${nameOf(baseBranch)}.txt`,
+    `+++ b/${nameOf(baseBranch)}.txt`,
+    '@@ -1 +1 @@',
+    '-before',
+    '+after',
+    '',
+  ].join('\n');
+
+const statusFor = (baseBranch: string | null): WorktreeStatus => ({
+  branch: nameOf(baseBranch),
+  head: 'abc1234',
+  headSubject: 'Tighten the refund rounding',
+  upstreamDistance: { kind: 'unknown', reason: 'rev-list-failed' },
+  mainDistance: { kind: 'unknown', reason: 'rev-list-failed' },
+  workingTree: { kind: 'unknown', reason: 'status-read-failed' },
+  upstream: null,
+  inProgress: null,
+});
+
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+const openWith = ({
   mountBase,
   projectBase,
 }: {
   readonly mountBase: string | null;
   readonly projectBase: string | null;
-}) => ({
-  projects: [{ id: 'project-ledger', baseBranch: projectBase }],
-  sessionProjectMounts: {
-    [SESSION_ID]: [{ projectId: 'project-ledger', worktreePath: WORKTREE, baseBranch: mountBase }],
-  },
-  loadDiffComments: vi.fn(),
+}) => {
+  const project = aProject({ baseBranch: projectBase });
+  const mount: SessionProjectMount = {
+    mountId: 'mount-ledger' as MountId,
+    sessionId: SESSION_ID,
+    projectId: project.id,
+    mountName: 'ledger-core',
+    worktreePath: WORKTREE,
+    lastWorktreePath: null,
+    repoRoot: WORKTREE,
+    branch: 'goodboy/check-ledger',
+    baseBranch: mountBase,
+    parallelIndex: 0,
+    isAttached: true,
+    diskState: 'present',
+    revision: 0,
+  };
+  useAppStore.setState({
+    projects: [project],
+    sessions: [session],
+    sessionProjectMounts: { [SESSION_ID]: [mount] },
+  });
+  return renderHook(() => useSessionDiff({ sessionId: SESSION_ID, worktreePath: WORKTREE }));
+};
+
+beforeEach(async () => {
+  await resetStoryStore();
+  stubStoryInvoke({
+    worktree_diff: ({ baseBranch }: BaseArgs) => patchFor(baseBranch),
+    worktree_status: ({ baseBranch }: BaseArgs) => statusFor(baseBranch),
+    worktree_commits: [],
+  });
 });
 
-beforeEach(() => {
-  h.diff.mockReset().mockResolvedValue('');
-  h.status.mockReset().mockResolvedValue({ head: 'abc', mainDistance: { ahead: 0, behind: 0 } });
-  h.commits.mockReset().mockResolvedValue([]);
-});
+afterEach(cleanup);
 
 describe('useSessionDiff base branch', () => {
-  it('sends the base the user picked to the diff and to the status', async () => {
-    h.state = stateWith({ mountBase: null, projectBase: 'develop' });
+  it('shows the diff and the status against the base the user picked', async () => {
+    const { result } = openWith({ mountBase: null, projectBase: 'develop' });
 
-    renderHook(() => useSessionDiff({ sessionId: SESSION_ID, worktreePath: WORKTREE }));
-
-    await waitFor(() => expect(h.diff).toHaveBeenCalled());
-    await waitFor(() => expect(h.status).toHaveBeenCalled());
-    expect(h.diff).toHaveBeenCalledWith({ worktreePath: WORKTREE, baseBranch: 'develop' });
-    expect(h.status).toHaveBeenCalledWith({ worktreePath: WORKTREE, baseBranch: 'develop' });
+    await waitFor(() =>
+      expect(result.current.files.map((file) => file.path)).toEqual(['against-develop.txt']),
+    );
+    await waitFor(() => expect(result.current.status?.branch).toBe('against-develop'));
   });
 
   it('prefers the base recorded on the mount', async () => {
-    h.state = stateWith({ mountBase: 'release/9', projectBase: 'develop' });
+    const { result } = openWith({ mountBase: 'release/9', projectBase: 'develop' });
 
-    renderHook(() => useSessionDiff({ sessionId: SESSION_ID, worktreePath: WORKTREE }));
-
-    await waitFor(() => expect(h.diff).toHaveBeenCalled());
-    expect(h.diff).toHaveBeenCalledWith({ worktreePath: WORKTREE, baseBranch: 'release/9' });
+    await waitFor(() =>
+      expect(result.current.files.map((file) => file.path)).toEqual(['against-release-9.txt']),
+    );
   });
 
   it('keeps the backend default when the session has no explicit base', async () => {
-    h.state = stateWith({ mountBase: null, projectBase: null });
+    const { result } = openWith({ mountBase: null, projectBase: null });
 
-    renderHook(() => useSessionDiff({ sessionId: SESSION_ID, worktreePath: WORKTREE }));
-
-    await waitFor(() => expect(h.diff).toHaveBeenCalled());
-    await waitFor(() => expect(h.status).toHaveBeenCalled());
-    expect(h.diff).toHaveBeenCalledWith({ worktreePath: WORKTREE, baseBranch: null });
-    expect(h.status).toHaveBeenCalledWith({ worktreePath: WORKTREE, baseBranch: null });
+    await waitFor(() =>
+      expect(result.current.files.map((file) => file.path)).toEqual(['against-default.txt']),
+    );
+    await waitFor(() => expect(result.current.status?.branch).toBe('against-default'));
   });
 });

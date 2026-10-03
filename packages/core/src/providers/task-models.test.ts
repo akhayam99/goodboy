@@ -95,7 +95,7 @@ describe('resolveTaskModel', () => {
       }),
     ).toEqual({
       providerId: 'anthropic',
-      model: 'sonnet-5',
+      model: 'sonnet-5.5',
     });
   });
 
@@ -127,7 +127,7 @@ describe('resolveTaskModel', () => {
       sessionDefaultProviderId: 'anthropic',
     });
 
-    expect(anthropic).toEqual({ providerId: 'anthropic', model: 'sonnet-5', effort: 'medium' });
+    expect(anthropic).toEqual({ providerId: 'anthropic', model: 'sonnet-5.5', effort: 'medium' });
     expect(codex).toEqual({ providerId: 'codex', model: 'gpt-5.6-terra', effort: 'medium' });
     expect(anthropic.model).not.toBe(getCheapModel('anthropic'));
     expect(codex.model).not.toBe(getCheapModel('codex'));
@@ -262,7 +262,7 @@ describe('resolveTaskModel', () => {
     ).toEqual({ providerId: 'gemini', model: 'gemini-3.1-pro', effort: 'high' });
   });
 
-  it('drafts plans on Sonnet 5 by default', () => {
+  it('drafts plans on the newest Sonnet by default', () => {
     expect(
       resolveTaskModel({
         task: 'plan_generation',
@@ -270,7 +270,7 @@ describe('resolveTaskModel', () => {
         workspaceDefaultProviderId: 'anthropic',
         sessionDefaultProviderId: 'anthropic',
       }),
-    ).toEqual({ providerId: 'anthropic', model: 'sonnet-5', effort: 'medium' });
+    ).toEqual({ providerId: 'anthropic', model: 'sonnet-5.5', effort: 'medium' });
   });
 
   it('moves an automatic task off a default provider at its usage limit', () => {

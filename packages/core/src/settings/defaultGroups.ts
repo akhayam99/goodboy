@@ -34,5 +34,6 @@ export const DEFAULT_GROUPS: DefaultGroups = {
       members: ['summarizer', 'workflow_orchestrator', 'question_delegate'],
     },
     { id: 'git', label: 'Git', members: ['rebase'] },
+    { id: 'review-checks', label: 'Review', members: ['recheck'] },
   ],
 };

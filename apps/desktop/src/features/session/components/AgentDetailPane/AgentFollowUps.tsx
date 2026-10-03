@@ -1,15 +1,14 @@
-import { ArrowRight } from 'lucide-react';
-import { Band, cn } from '@goodboy/ui';
+import { Band } from '@goodboy/ui';
 import type { Agent, PlanId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
-import type { AgentKind } from '../../agent-kind';
+import type { AgentKind, AgentKindRouting } from '../../agent-kind';
 import { AGENT_KIND_META } from '../../agent-kind';
-import { AgentKindChip } from '../AgentKindChip';
 import { agentFollowUpMoves, composeFollowUpSeed } from '../../followUpMoves';
 import type { FollowUpChild } from './followUpChildren';
 import { AgentFollowUpChild } from './AgentFollowUpChild';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { routingShortText } from '../../../../shared/components/RoutingPicker/routingSummary';
+import { AgentFollowUpMove } from './AgentFollowUpMove';
 
 type Props = {
   readonly sourceAgent: Agent;
@@ -45,11 +44,12 @@ export const AgentFollowUps = ({
   const spawnedKinds = new Set(followUps.map((entry) => entry.kind));
   const pending = moves.filter((move) => !spawnedKinds.has(move.kind));
 
-  const onSpawn = (nextKind: AgentKind) => {
+  const onSpawn = (nextKind: AgentKind, routing: AgentKindRouting) => {
     const planDriven = nextKind === 'implementer' && activePlanId != null;
     void (async () => {
       const agentId = await spawnAgent(sessionId, {
         kindOverride: nextKind,
+        ...routing,
         ...(planDriven
           ? { triggeredPlanId: activePlanId }
           : { initialPrompt: composeFollowUpSeed({ sourceAgent, summary }) }),
@@ -60,7 +60,7 @@ export const AgentFollowUps = ({
         sessionId,
         agentId,
         title: `${AGENT_KIND_META[nextKind].label} started`,
-        message: `Picking up where ${sourceAgent.name} left off.`,
+        message: `Picking up where ${sourceAgent.name} left off. Runs on ${routingShortText(routing)}.`,
       });
     })();
   };
@@ -80,23 +80,14 @@ export const AgentFollowUps = ({
           <AgentFollowUpChild key={entry.child.agent.id} entry={entry} sessionId={sessionId} />
         ))}
         {pending.map((move) => (
-          <button
+          <AgentFollowUpMove
             key={move.kind}
-            type="button"
-            onClick={() => onSpawn(move.kind)}
-            className={cn(
-              'group flex items-center gap-2 rounded-md border border-border-soft bg-elevated px-3 py-2 text-left text-label transition-colors hover:border-border',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-            )}
-          >
-            <AgentKindChip kind={move.kind} title={move.label} />
-            <span className="min-w-0 flex-1 text-foreground">{move.hint}</span>
-            <ArrowRight
-              size={ICON_SIZE.row}
-              aria-hidden
-              className="shrink-0 text-faint-foreground transition-transform group-hover:translate-x-0.5"
-            />
-          </button>
+            sessionId={sessionId}
+            kind={move.kind}
+            label={move.label}
+            hint={move.hint}
+            onSpawn={(routing) => onSpawn(move.kind, routing)}
+          />
         ))}
       </div>
     </Band>

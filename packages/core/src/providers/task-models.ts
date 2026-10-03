@@ -12,6 +12,7 @@ import { clampEffortForModel } from './clampEffortForModel';
 import { resolvedStoredModelId } from './resolvedStoredModelId';
 import { resolveStoredModelSelection } from './resolveStoredModelSelection';
 import { resolveAuto, type AutoContext } from './autoRouting/resolveAuto';
+import type { HiddenModels } from './modelVisibility';
 
 type EffortParams = {
   readonly task: AuxTaskId;
@@ -44,6 +45,8 @@ type Params = {
   readonly connectedProviders?: ReadonlyArray<ProviderId> | null;
   readonly fallbackOrder?: ReadonlyArray<ProviderId> | null;
   readonly atLimitProviders?: ReadonlyArray<ProviderId> | null;
+  readonly hiddenModels?: HiddenModels | null;
+  readonly cliVersions?: Partial<Record<ProviderId, string | null>> | null;
 };
 
 type AutomaticParams = {
@@ -54,7 +57,11 @@ type AutomaticParams = {
 const automaticTaskModel = ({ task, auto }: AutomaticParams): TaskModelPreference => {
   const pick =
     resolveAuto({ slot: { kind: 'task', id: task }, ...auto }) ??
-    resolveAuto({ slot: { kind: 'task', id: task }, defaultProvider: auto.defaultProvider });
+    resolveAuto({
+      slot: { kind: 'task', id: task },
+      defaultProvider: auto.defaultProvider,
+      ...(auto.hidden != null && { hidden: auto.hidden }),
+    });
   if (pick == null) {
     throw new Error(`no automatic model for task ${task} on ${auto.defaultProvider}`);
   }
@@ -115,6 +122,8 @@ export const resolveTaskModel = ({
   connectedProviders,
   fallbackOrder,
   atLimitProviders,
+  hiddenModels,
+  cliVersions,
 }: Params): TaskModelPreference => {
   const defaultProviderId = workspaceDefaultProviderId ?? sessionDefaultProviderId;
   const auto: AutoContext = {
@@ -122,6 +131,8 @@ export const resolveTaskModel = ({
     ...(connectedProviders != null && { connected: connectedProviders }),
     ...(fallbackOrder != null && { fallbackOrder }),
     ...(atLimitProviders != null && { atLimit: atLimitProviders }),
+    ...(hiddenModels != null && { hidden: hiddenModels }),
+    ...(cliVersions != null && { cliVersions }),
   };
   const preference = preferences?.[task];
   const preferred =

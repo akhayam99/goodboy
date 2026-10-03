@@ -1,9 +1,11 @@
 import { RotateCcw, Smartphone } from 'lucide-react';
-import { Button, FieldRow, KbdPill } from '@goodboy/ui';
+import { Button, FieldRow, KbdPill, XIcon } from '@goodboy/ui';
 import { reopenWizard } from '../../../onboarding/onboarding-store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { openReportSheet } from '../../../bug-report/openReportSheet';
+import { openUrl } from '../../../../shared/lib/editor';
+import { SOCIAL_LINKS } from '../../../../shared/lib/productLinks';
 
 type Props = {
   readonly requestClose: () => void;
@@ -55,6 +57,18 @@ export const AppHelpSection = ({ requestClose }: Props) => {
         <Button variant="secondary" size="sm" onClick={() => openReportSheet()}>
           <CONCEPT_ICONS.reportIssue size={ICON_SIZE.control} aria-hidden /> Report a bug
           <KbdPill>{shortcutGlyphs('report.open')}</KbdPill>
+        </Button>
+      </FieldRow>
+
+      <FieldRow label="Follow Goodboy" help="Release news and what is coming next.">
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            void openUrl(SOCIAL_LINKS.x);
+          }}
+        >
+          <XIcon size={ICON_SIZE.control} aria-hidden /> Follow on X
         </Button>
       </FieldRow>
     </div>

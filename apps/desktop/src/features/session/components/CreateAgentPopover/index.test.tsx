@@ -161,7 +161,7 @@ describe('CreateAgentPopover', () => {
     expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
       kindOverride: 'docs',
       provider: 'anthropic',
-      model: 'sonnet-5',
+      model: 'sonnet-5.5',
       effort: 'low',
       focus: 'agent',
     });
@@ -410,7 +410,7 @@ describe('CreateAgentPopover', () => {
     expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
       kindOverride: 'generic',
       provider: 'anthropic',
-      model: 'sonnet-5',
+      model: 'sonnet-5.5',
       effort: 'medium',
       focus: 'agent',
     });

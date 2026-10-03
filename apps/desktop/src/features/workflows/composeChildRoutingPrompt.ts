@@ -1,6 +1,7 @@
 import {
   formatWorkflowModelMenu,
   orchestratorModelPool,
+  type HiddenModels,
   type WorkflowRoutingAvailabilitySnapshot,
 } from '@goodboy/core';
 import type { AgentRole } from '@goodboy/types';
@@ -33,14 +34,15 @@ const INSTRUCTION = [
 type Params = {
   readonly role: AgentRole;
   readonly availability: WorkflowRoutingAvailabilitySnapshot;
+  readonly hidden: HiddenModels | null;
 };
 
-export const composeChildRoutingPrompt = ({ role, availability }: Params): string => {
+export const composeChildRoutingPrompt = ({ role, availability, hidden }: Params): string => {
   const marker = childRoutingMarkerForRole({ role });
   if (marker === null) {
     return '';
   }
-  const options = orchestratorModelPool({ availability });
+  const options = orchestratorModelPool({ availability, hidden });
   if (options.length === 0) {
     return '';
   }

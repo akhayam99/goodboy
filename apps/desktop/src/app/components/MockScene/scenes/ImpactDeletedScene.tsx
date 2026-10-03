@@ -95,7 +95,7 @@ export const ImpactDeletedScene = () => {
 
   return (
     <StudioFrame
-      target="impact"
+      target={{ place: 'impact', tool: null }}
       main={
         <ImpactStudio
           workspaceId={IMPACT_DELETED_WORKSPACE_ID}

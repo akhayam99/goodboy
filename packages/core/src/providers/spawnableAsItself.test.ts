@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MODEL_CATALOGS } from './catalogs';
-import { getCheapModel, getMidModel } from './cli-defaults';
+import { getDefaultTurnModel } from './capabilities';
+import { getCheapModel } from './cli-defaults';
 import { cliModelId } from './cliModelId';
 import { CURSOR_AUTO_MODEL } from './cursor/models';
 import { isSpawnableAsItself } from './spawnableAsItself';
@@ -30,10 +31,10 @@ describe('isSpawnableAsItself', () => {
 });
 
 describe('cursor defaults that reach a cliModelId consumer', () => {
-  it('never picks a mid model cliModelId would swap for Auto', () => {
-    const mid = getMidModel('cursor');
-    expect(MAX_MODE_ONLY_CURSOR_KEYS).not.toContain(mid);
-    expect(cliModelId({ provider: 'cursor', model: mid })).not.toBe(CURSOR_AUTO_MODEL);
+  it('never picks a default turn model cliModelId would swap for Auto', () => {
+    const turn = getDefaultTurnModel({ id: 'cursor' });
+    expect(MAX_MODE_ONLY_CURSOR_KEYS).not.toContain(turn);
+    expect(cliModelId({ provider: 'cursor', model: turn })).not.toBe(CURSOR_AUTO_MODEL);
   });
 
   it('never picks a cheap model cliModelId would swap for something else', () => {

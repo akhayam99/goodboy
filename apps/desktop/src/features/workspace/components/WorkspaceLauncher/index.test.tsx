@@ -133,22 +133,6 @@ describe('WorkspaceLauncher', () => {
     expect(screen.queryByTestId('update-pill')).toBeNull();
   });
 
-  it('opens app settings from the launcher corner', () => {
-    const details: Array<unknown> = [];
-    const onOpenSettings = (event: Event) => {
-      if (event instanceof CustomEvent) {
-        details.push(event.detail);
-      }
-    };
-    window.addEventListener('goodboy:open-settings', onOpenSettings);
-    render(<WorkspaceLauncher />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Open settings' }));
-
-    window.removeEventListener('goodboy:open-settings', onOpenSettings);
-    expect(details).toEqual([{ scope: 'app' }]);
-  });
-
   it('offers Start a new project then Open a folder', () => {
     render(<WorkspaceLauncher />);
     expect(screen.getByRole('button', { name: 'Open a folder' })).toBeDefined();

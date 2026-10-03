@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { RotateCcw } from 'lucide-react';
-import { EmptyState, Markdown } from '@goodboy/ui';
+import { Markdown, FilledEmptyState } from '@goodboy/ui';
 import type { ContextSlotHistoryEntry } from '@goodboy/types';
 import { AuthorshipChip } from './AuthorshipChip';
 import { formatAge } from '../../../../../shared/utils/time/formatAge';
@@ -90,11 +90,10 @@ export const SlotHistoryPanel = ({ renderAsMarkdown, entries, onRestore }: Props
 
   if (entries.length === 0) {
     return (
-      <EmptyState
+      <FilledEmptyState
         icon={CONCEPT_ICONS.sessionSummary}
         tone={CONCEPT_TONE.sessionSummary}
         title="No history yet"
-        size="inline"
       />
     );
   }

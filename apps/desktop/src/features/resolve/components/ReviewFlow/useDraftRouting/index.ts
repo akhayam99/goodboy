@@ -2,8 +2,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { clampEffortForModel } from '@goodboy/core';
 import type { ProviderId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { selectResolvedSettings } from '../../../../../store/slices/overrides/selectResolvedSettings';
-import { kindRouting, type AgentKindRouting } from '../../../../session/agent-kind';
+import type { AgentKindRouting } from '../../../../session/agent-kind';
+import { useKindRouting } from '../../../../../shared/hooks/useKindRouting';
 import { draftRoutingOf } from '../../../draftRouting';
 
 export type DraftRouting = {
@@ -19,14 +19,7 @@ export type DraftRouting = {
 
 export const useDraftRouting = ({ sessionId }: { readonly sessionId: SessionId }): DraftRouting => {
   const routing = useAppStore(useShallow((s) => draftRoutingOf({ state: s, sessionId })));
-  const suggested = useAppStore(
-    useShallow((s) =>
-      kindRouting({
-        kind: 'resolver',
-        roleModels: selectResolvedSettings({ state: s, sessionId })?.roleModels ?? null,
-      }),
-    ),
-  );
+  const suggested = useKindRouting({ sessionId, kind: 'resolver' });
   const isOverridden = useAppStore((s) => s.resolveQueueView[sessionId]?.lastRouting != null);
   const connectedProviders = useAppStore(
     useShallow((s) =>

@@ -19,3 +19,34 @@ describe('settingsTrail', () => {
     ).toEqual(['app', 'workspace', 'providers', 'tools']);
   });
 });
+
+describe('settingsTrail first segment', () => {
+  it('turns Settings into a button that goes back to the home from any page', () => {
+    const onSelect = vi.fn();
+    const pages = ['app', 'workspace', 'providers', 'tools'] as const;
+
+    pages.forEach((scope) => {
+      const [first] = settingsTrail({
+        scope,
+        appSection: 'general',
+        workspaceName: 'Harborline',
+        onSelect,
+      });
+      first?.onSelect?.();
+    });
+
+    expect(onSelect).toHaveBeenCalledTimes(pages.length);
+    expect(onSelect.mock.calls.every(([change]) => change.scope === 'home')).toBe(true);
+  });
+
+  it('shows only Settings on the home', () => {
+    const segments = settingsTrail({
+      scope: 'home',
+      appSection: 'general',
+      workspaceName: null,
+      onSelect: vi.fn(),
+    });
+
+    expect(segments.map((segment) => segment.id)).toEqual(['settings']);
+  });
+});
