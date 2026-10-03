@@ -35,8 +35,6 @@ const renderList = (onImported = vi.fn()) => {
       filter="all"
       onFilterChange={vi.fn()}
       onOpen={vi.fn()}
-      onStop={vi.fn()}
-      onRetry={vi.fn()}
       onImported={onImported}
     />,
   );

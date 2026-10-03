@@ -7,7 +7,7 @@ import type {
   ProviderId,
   SessionArtifact,
 } from '@goodboy/types';
-import { ARTIFACT_KIND_LABEL } from './artifact-status';
+import { ARTIFACT_KIND_LABEL } from './artifactPresentation';
 import {
   hasLiveWireframeScout,
   wireframeScoutProgress,

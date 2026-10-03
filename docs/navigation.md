@@ -239,7 +239,8 @@ never exists on one surface only.
   workflow run: Open run, View diff; Answer, Start run, Continue step, Restart
   step, Start the next step, Restore; Copy run summary; Close, Discard and
   Delete, each confirmed. An artifact: the viewer's verbs by kind and status,
-  from the list row too. A plan part, an inbox record (with the tool verbs of
+  from the list row too, plus Delete on any stored artifact that is not already
+  deleted (Undo, no confirm) and Delete permanently on a deleted one (confirmed). A plan part, an inbox record (with the tool verbs of
   an open record), a pull request, a worktree row of the Overview (`mount`), a
   project, the Diff of a branch (`diff`), a diff file, a commit on the rewrite
   page, a storage worktree, a script, a transcript message and a link in
@@ -267,10 +268,10 @@ never exists on one surface only.
   multi-selection acts on the whole selection (the several sessions kind). On
   an unselected row it clears the selection and acts on that row alone.
 - **Confirm and undo.** A verb that loses work confirms inside the menu with
-  `InlineConfirm` (Delete, Discard, Close run, Merge, Close pull request,
+  `InlineConfirm` (Delete, Delete permanently, Discard, Close run, Merge, Close pull request,
   Delete script, Close worktree, Remove from session, Abort rebase). Detach
   project and a storage worktree's Remove keep their detailed confirm (the
-  detach plan, the forced remove) in their own menu. A reversible verb runs at once with an Undo toast (Archive,
+  detach plan, the forced remove) in their own menu. A reversible verb runs at once with an Undo toast (Archive, Delete on an artifact,
   Close agent). A draft verb on the rewrite page (Drop) needs neither.
 - **Blocked verbs stay.** A verb that cannot run now stays in the menu, dimmed,
   with its reason under the label, and does nothing when chosen. A verb that

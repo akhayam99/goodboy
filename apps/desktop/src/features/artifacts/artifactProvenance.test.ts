@@ -79,6 +79,7 @@ const artifact: SessionArtifact = {
   sourceTurnId: null,
   createdAt: NOW,
   updatedAt: NOW,
+  openedAt: null,
 };
 
 const inventory = (sourceIds: ReadonlyArray<string>, sourceWorkflowRunId: WorkflowRunId | null) =>

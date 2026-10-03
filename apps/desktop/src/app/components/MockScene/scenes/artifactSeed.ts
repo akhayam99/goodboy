@@ -522,6 +522,7 @@ const REPORT_ARTIFACT: ReportArtifact = {
   sourceTurnId: 'mock-artifact-turn-report',
   createdAt: clock.iso({ at: '2026-09-14T16:27:00.000Z' }),
   updatedAt: clock.iso({ at: '2026-09-14T16:27:00.000Z' }),
+  openedAt: null,
 };
 
 const CHANGE_REPORT_ARTIFACT: ReportArtifact = {
@@ -540,6 +541,7 @@ const CHANGE_REPORT_ARTIFACT: ReportArtifact = {
   sourceTurnId: 'mock-artifact-turn-change-report',
   createdAt: clock.iso({ at: '2026-09-14T16:22:00.000Z' }),
   updatedAt: clock.iso({ at: '2026-09-14T16:22:00.000Z' }),
+  openedAt: null,
 };
 
 const PLAN_ARTIFACT: SessionArtifact = {
@@ -558,6 +560,7 @@ const PLAN_ARTIFACT: SessionArtifact = {
   sourceTurnId: 'mock-artifact-turn-plan',
   createdAt: clock.iso({ at: '2026-09-14T15:31:00.000Z' }),
   updatedAt: clock.iso({ at: '2026-09-14T15:31:00.000Z' }),
+  openedAt: null,
 };
 
 const BATCHES_CHILDREN: ReadonlyArray<WireframeNode> = [
@@ -912,6 +915,7 @@ const WIREFRAME_LOW_ARTIFACT: WireframeArtifact = {
   sourceTurnId: 'mock-artifact-turn-wireframe-low',
   createdAt: clock.iso({ at: '2026-09-14T16:34:00.000Z' }),
   updatedAt: clock.iso({ at: '2026-09-14T16:34:00.000Z' }),
+  openedAt: null,
 };
 
 const WIREFRAME_HIGH_ARTIFACT: WireframeArtifact = {
@@ -941,6 +945,7 @@ const WIREFRAME_HIGH_ARTIFACT: WireframeArtifact = {
   sourceTurnId: 'mock-artifact-turn-wireframe-high',
   createdAt: clock.iso({ at: '2026-09-14T16:38:00.000Z' }),
   updatedAt: clock.iso({ at: '2026-09-14T16:38:00.000Z' }),
+  openedAt: null,
 };
 
 const SESSION_EVENTS = [

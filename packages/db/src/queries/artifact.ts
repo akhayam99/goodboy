@@ -33,6 +33,7 @@ type ArtifactRow = {
   readonly source_turn_id: string | null;
   readonly created_at: number;
   readonly updated_at: number;
+  readonly opened_at: number | null;
 };
 
 export type InsertArtifactInput = {
@@ -87,7 +88,7 @@ type SessionParams = DatabaseParams & {
 
 const ARTIFACT_SELECT = `SELECT id, session_id, agent_id, workflow_run_id, kind,
   schema_version, title, source_format, source_text, metadata_json, status,
-  revision, source_turn_id, created_at, updated_at FROM session_artifacts`;
+  revision, source_turn_id, created_at, updated_at, opened_at FROM session_artifacts`;
 
 const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -230,6 +231,8 @@ const toDomain = (row: ArtifactRow): SessionArtifact => {
     sourceTurnId: row.source_turn_id,
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
     updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
+    openedAt:
+      row.opened_at === null ? null : (new Date(row.opened_at).toISOString() as IsoDateTime),
   };
   if (kind === 'plan') {
     if (row.source_format !== 'markdown') {
@@ -373,7 +376,8 @@ type ArtifactMirrorPageParams = DatabaseParams & {
 
 const MIRROR_SELECT = `SELECT a.id, a.session_id, a.agent_id, a.workflow_run_id, a.kind,
   a.schema_version, a.title, a.source_format, a.source_text, a.metadata_json, a.status,
-  a.revision, a.source_turn_id, a.created_at, a.updated_at, w.slug AS workspace_slug
+  a.revision, a.source_turn_id, a.created_at, a.updated_at, a.opened_at,
+  w.slug AS workspace_slug
   FROM session_artifacts a
   JOIN sessions s ON s.id = a.session_id
   JOIN workspaces w ON w.id = s.workspace_id`;

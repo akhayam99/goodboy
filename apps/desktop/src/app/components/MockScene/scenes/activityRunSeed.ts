@@ -846,6 +846,7 @@ const PLAN_ARTIFACT: SessionArtifact = {
   sourceTurnId: 'mock-run-turn-plan',
   createdAt: at({ day: DAY_ONE, time: '09:47:00' }),
   updatedAt: at({ day: DAY_ONE, time: '09:47:00' }),
+  openedAt: null,
 };
 
 const WIREFRAME_DOCUMENT = {
@@ -916,6 +917,7 @@ const WIREFRAME_ARTIFACT: WireframeArtifact = {
   sourceTurnId: 'mock-run-turn-wireframe',
   createdAt: at({ day: DAY_ONE, time: '09:46:00' }),
   updatedAt: at({ day: DAY_ONE, time: '09:46:00' }),
+  openedAt: null,
 };
 
 const PLANS: ReadonlyArray<PlanWithCount> = [
@@ -984,6 +986,7 @@ const REPORT_ARTIFACT: ReportArtifact = {
   sourceTurnId: 'mock-run-turn-report',
   createdAt: at({ day: DAY_TWO, time: '10:04:00' }),
   updatedAt: at({ day: DAY_TWO, time: '10:04:00' }),
+  openedAt: null,
 };
 
 const ANSWERED_QUESTIONS: ReadonlyArray<OpenQuestion> = [

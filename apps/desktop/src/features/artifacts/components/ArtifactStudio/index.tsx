@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
+import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -13,9 +13,9 @@ import { ArtifactCreationPane } from '../ArtifactCreationPane';
 import { ArtifactList } from '../ArtifactList';
 import { ArtifactShell } from '../ArtifactShell';
 import type { ArtifactShellSubject } from '../ArtifactShell/artifactShellSubject';
-import { loadArtifactProvenance } from '../../artifactProvenance';
-import { ARTIFACT_RETRY_MISSING_BRIEF, artifactRetryDraft } from '../../artifactRetryDraft';
-import { resolveArtifactGenerations, type ArtifactGeneration } from '../../artifactCollection';
+import { resolveArtifactGenerations } from '../../artifactCollection';
+import { askingAgentIdsOf } from '../../../plans/askingAgentIdsOf';
+import { keepEqualById } from '../../../../shared/utils/keepEqualById';
 import {
   buildArtifactListRows,
   countArtifactRows,
@@ -47,10 +47,7 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
   const creation = useAppStore((s) => s.artifactCreation[sessionId] ?? null);
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[sessionId] ?? null);
   const sessionStudio = useAppStore((s) => s.sessionStudio[sessionId] ?? null);
-  const openArtifactCreation = useAppStore((s) => s.openArtifactCreation);
   const closeArtifactCreation = useAppStore((s) => s.closeArtifactCreation);
-  const setArtifactDraft = useAppStore((s) => s.setArtifactDraft);
-  const stopArtifactGeneration = useAppStore((s) => s.stopArtifactGeneration);
   const verifications = useAppStore((s) => s.wireframeScoutVerification);
   const isArtifactDrawerOpen = useAppStore((s) => {
     const kind = selectOpenDrawer(s)?.kind ?? null;
@@ -163,57 +160,47 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
     return focusedRun === null ? null : { kind: 'generation', generation: focusedRun };
   }, [focusedArtifactId, plans, artifacts, focusedRun]);
 
-  const rows = useMemo(
-    () =>
-      buildArtifactListRows({
+  const askingAgentIds = useMemo(
+    () => askingAgentIdsOf({ questions: openQuestions }),
+    [openQuestions],
+  );
+  const rowCache = useRef<ReadonlyMap<string, ArtifactListRow>>(new Map());
+  const rows = useMemo(() => {
+    const kept = keepEqualById({
+      previous: rowCache.current,
+      next: buildArtifactListRows({
         plans,
         artifacts,
         generations,
         agents,
         openQuestionCount: openQuestions.length,
+        askingAgentIds,
       }),
-    [plans, artifacts, generations, agents, openQuestions.length],
-  );
+    });
+    rowCache.current = new Map(kept.map((row) => [row.id, row]));
+    return kept;
+  }, [plans, artifacts, generations, agents, openQuestions.length, askingAgentIds]);
   const counts = useMemo(() => countArtifactRows({ rows }), [rows]);
   const visibleRows = useMemo(() => filterArtifactRows({ rows, filter }), [rows, filter]);
 
-  const retryGeneration = (generation: ArtifactGeneration) => {
-    loadArtifactProvenance(generation.agentId)
-      .catch(() => null)
-      .then((provenance) => {
-        const now = new Date().toISOString() as IsoDateTime;
-        setArtifactDraft({
-          sessionId,
-          draft: artifactRetryDraft({ generation, provenance, now }),
-        });
-        openArtifactCreation({
-          sessionId,
-          kind: generation.kind,
-          workflowRunId: provenance?.sourceWorkflowRunId ?? null,
-          note: provenance === null ? ARTIFACT_RETRY_MISSING_BRIEF : null,
-        });
-      });
-  };
-
-  const openRow = (row: ArtifactListRow) => {
-    if (row.target.kind === 'artifact') {
-      setFocusedArtifactId(sessionId, row.target.artifactId);
-      return;
-    }
-    const { generation } = row.target;
-    if (generation.state === 'unproduced') {
-      navigate({ to: agentPlace({ sessionId, agentId: generation.agentId }) });
-      return;
-    }
-    if (focusedArtifactId !== null) {
-      setFocusedArtifactId(sessionId, null);
-    }
-    setFocusedRunAgentId(generation.agentId);
-  };
-
-  const stopGeneration = (generation: ArtifactGeneration) => {
-    void stopArtifactGeneration({ sessionId, agentId: generation.agentId });
-  };
+  const openRow = useCallback(
+    (row: ArtifactListRow) => {
+      if (row.target.kind === 'artifact') {
+        setFocusedArtifactId(sessionId, row.target.artifactId);
+        return;
+      }
+      const { generation } = row.target;
+      if (generation.state === 'unproduced') {
+        navigate({ to: agentPlace({ sessionId, agentId: generation.agentId }) });
+        return;
+      }
+      if (focusedArtifactId !== null) {
+        setFocusedArtifactId(sessionId, null);
+      }
+      setFocusedRunAgentId(generation.agentId);
+    },
+    [focusedArtifactId, navigate, sessionId, setFocusedArtifactId],
+  );
 
   const backToList = useCallback(() => {
     setFocusedRunAgentId(null);
@@ -252,8 +239,6 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
       filter={filter}
       onFilterChange={(next) => setArtifactFilter({ sessionId, filter: next })}
       onOpen={openRow}
-      onStop={stopGeneration}
-      onRetry={retryGeneration}
       onImported={(artifactId) => setFocusedArtifactId(sessionId, artifactId)}
     />
   );

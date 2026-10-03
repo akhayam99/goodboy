@@ -37,6 +37,7 @@ const plan: PlanArtifact = {
   sourceTurnId: null,
   createdAt: NOW,
   updatedAt: NOW,
+  openedAt: null,
 };
 
 describe('collectReportSourceLinks', () => {

@@ -1251,7 +1251,9 @@ Other identifiers:
   `openrouter`, `moonshot`, shown as Claude, Cursor, Codex, Gemini, OpenCode,
   OpenRouter and Moonshot
 - `ArtifactKind`: `plan`, `report`, `wireframe`
-- `ArtifactStatus`: `active`, `consumed`, `superseded`, `discarded`
+- `ArtifactStatus`: `active`, `consumed`, `superseded`, `discarded`. The UI
+  words are Ready to run or New, Ran, Replaced and Deleted
+  (`artifactStateOf`); `discarded` is what Delete writes, for every kind
 - Plans sit between `<<plan>>` and `<</plan>>` markers
 - Reports and wireframes sit inside an `<<artifact v=1 kind=...>>` envelope.
   The line after the marker is a JSON header with title, format and metadata.
