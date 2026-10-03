@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { BranchCommit, HistoryStep, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
@@ -51,7 +51,10 @@ export const useHistoryPlan = ({ sessionId, worktreePath }: Params) => {
     () => new Map(commits.map((commit) => [commit.sha, commit])),
     [commits],
   );
-  const titleOf = (sha: string): string => commitBySha.get(sha)?.subject ?? sha.slice(0, 7);
+  const titleOf = useCallback(
+    (sha: string): string => commitBySha.get(sha)?.subject ?? sha.slice(0, 7),
+    [commitBySha],
+  );
   const marks = useMemo(() => historyRowMarks({ items, original }), [items, original]);
   const edits = useMemo(
     () => deriveHistoryEdits({ items, original, onto, behind: graph?.behind ?? 0 }),

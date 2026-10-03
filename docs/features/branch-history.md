@@ -45,7 +45,7 @@ When a step stops on a conflict, the notice says which step and file, and your b
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-result-light.webp" alt="History rewritten, 7 commits became 4, listing the five changes made, Online copy updated with a safe force push and PR #214 shows the new version, a backup of hl/ledger-export with Copy ref, and the Restore it and Done buttons">
 </picture>
 
-**Apply and update online** replaces the online branch only when nothing newer is there, so a teammate's push is never overwritten. The result lists what changed and confirms the online copy. **Restore it** takes the old history back, and the backup stays for 30 days.
+**Apply and update online** replaces the online branch only when nothing newer is there, so a teammate's push is never overwritten. The result says how many commits became how many, counts each kind of change in colored chips ("25 folded · 1 renamed") and confirms the online copy. Up to five changes are listed one per line; past five, the new commit shows **Absorbed 25 commits**, which opens into groups by type (feat, refactor, test, fix) and each group into its titles. The graph ends at the last row. Branches up to 200 commits stay smooth: moving rows animate only up to 60. **Restore it** takes the old history back, and the backup stays for 30 days.
 
 ### Backups
 

@@ -123,6 +123,7 @@ import { BrandDiffManyFilesScene } from './scenes/brand/DiffManyFilesScene';
 import { BrandHistoryScene } from './scenes/brand/HistoryScene';
 import { BrandHistoryPlanScene } from './scenes/brand/HistoryPlanScene';
 import { BrandHistoryResultScene } from './scenes/brand/HistoryResultScene';
+import { BrandHistorySquashScene } from './scenes/brand/HistorySquashScene';
 import { BrandHistoryStoppedScene } from './scenes/brand/HistoryStoppedScene';
 import { BrandHistoryTrialScene } from './scenes/brand/HistoryTrialScene';
 import { BrandLimitsScene } from './scenes/brand/LimitsScene';
@@ -255,6 +256,7 @@ export const MOCK_SCENES = {
   'brand-history-trial': BrandHistoryTrialScene,
   'brand-history-stopped': BrandHistoryStoppedScene,
   'brand-history-result': BrandHistoryResultScene,
+  'brand-history-squash': BrandHistorySquashScene,
   'brand-limits': BrandLimitsScene,
   'brand-codex': BrandCodexScene,
   'brand-storage': BrandStorageScene,
