@@ -5,6 +5,12 @@ import { DYNAMIC_RUN_ID, FLOW_SESSION, FLOW_SESSION_ID, NOW, SESSIONS } from './
 import { FINISHED_SESSION } from './finishedRun';
 import { PARALLEL_SESSION } from './parallelRun';
 import { seedWorkflowRun, seedWorkflowRunFinished, seedWorkflowRunParallel } from './seeds';
+import {
+  PAUSED_SESSION,
+  seedRecentBackfillOutput,
+  seedWorkflowRunPaused,
+  seedWorkflowRunQuiet,
+} from './runControl';
 
 const runVariant = () => new URLSearchParams(window.location.search).get('run');
 
@@ -13,14 +19,28 @@ const sessionFor = () => {
   if (variant === 'parallel') {
     return PARALLEL_SESSION;
   }
+  if (variant === 'paused') {
+    return PAUSED_SESSION;
+  }
   return variant === 'finished' ? FINISHED_SESSION : FLOW_SESSION;
+};
+
+const seedLiveRun = () => {
+  seedWorkflowRun();
+  seedRecentBackfillOutput();
 };
 
 const seedFor = ({ session }: { readonly session: typeof FLOW_SESSION }) => {
   if (session === PARALLEL_SESSION) {
     return seedWorkflowRunParallel;
   }
-  return session === FINISHED_SESSION ? seedWorkflowRunFinished : seedWorkflowRun;
+  if (session === PAUSED_SESSION) {
+    return seedWorkflowRunPaused;
+  }
+  if (runVariant() === 'quiet') {
+    return seedWorkflowRunQuiet;
+  }
+  return session === FINISHED_SESSION ? seedWorkflowRunFinished : seedLiveRun;
 };
 
 export const WorkflowRunScene = () => {

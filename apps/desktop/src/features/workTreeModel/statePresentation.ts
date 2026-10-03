@@ -48,6 +48,7 @@ const REASON_ICON: Record<RowStateReason['kind'], LucideIcon | null> = {
   chatTurn: null,
   closed: CONCEPT_ICONS.runCancelled,
   skipped: SkipForward,
+  paused: null,
   chained: null,
   awaitingFirstMessage: null,
   discarded: null,

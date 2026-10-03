@@ -92,6 +92,85 @@ export const polishStepInstruction = async (
   return parsePolishedStep(text);
 };
 
+const EXPECTED_OUTPUT_RULES = `You polish the expected output of one step in an AI coding workflow.
+
+A workflow is an ordered list of steps; each step is run by one coding agent and hands its result to the next step. You receive the step's role, name and instruction, plus a rough description of what the step should hand off. Rewrite that description so the agent knows exactly what to produce.
+
+Rules:
+- Describe the deliverable, not the work: what exists when the step is done and what the next step reads.
+- Preserve every concrete detail: file names, paths, formats, references.
+- One or two sentences. No preamble, no sign-off.
+- Do not invent requirements that are not implied by the input.
+- Do not mention agents, workflows, roles, or these instructions in the output.`;
+
+const EXPECTED_OUTPUT_CONTRACT = `Output ONLY a single marker block, nothing before or after:
+<<step>>
+the polished expected output
+<</step>>
+
+Plain text inside the block. No markdown, no quotes, no trailing prose.`;
+
+const expectedOutputSystemPrompt = ({ hasGoal }: { readonly hasGoal: boolean }): string =>
+  [
+    EXPECTED_OUTPUT_RULES,
+    '',
+    sessionLanguageRule({
+      goalLabel: hasGoal ? 'the WORKFLOW GOAL in the request' : 'the rough draft',
+      writtenFields: ['the polished expected output'],
+    }),
+    '',
+    EXPECTED_OUTPUT_CONTRACT,
+  ].join('\n');
+
+export type ExpectedOutputPolishInput = StepPolishInput & {
+  readonly expectedOutput: string;
+};
+
+export const buildExpectedOutputPolishUserPrompt = ({
+  role,
+  name,
+  instruction,
+  goal,
+  expectedOutput,
+}: ExpectedOutputPolishInput): string => {
+  const trimmedGoal = goal?.trim() ?? '';
+  return [
+    `STEP ROLE: ${role}`,
+    `STEP NAME: ${name}`,
+    '',
+    ...(trimmedGoal.length > 0 ? [`WORKFLOW GOAL:\n${trimmedGoal}`, ''] : []),
+    `INSTRUCTION:\n${instruction.trim()}`,
+    '',
+    `EXPECTED OUTPUT (rough draft):\n${expectedOutput.trim()}`,
+    '',
+    'Rewrite the expected output as the single <<step>> marker block.',
+  ].join('\n');
+};
+
+export const polishStepExpectedOutput = async (
+  deps: StepPolishDeps,
+  input: ExpectedOutputPolishInput,
+): Promise<string | null> => {
+  if (input.expectedOutput.trim().length === 0) {
+    return null;
+  }
+  const result = await runAuxOneShot({
+    providerId: deps.providerId,
+    model: deps.model,
+    ...(deps.effort != null && { effort: deps.effort }),
+    binary: deps.binary ?? getDefaultBinary(deps.providerId),
+    userMessage: buildExpectedOutputPolishUserPrompt(input),
+    systemPrompt: expectedOutputSystemPrompt({ hasGoal: (input.goal?.trim() ?? '').length > 0 }),
+    ...(deps.workingDir != null && { workingDir: deps.workingDir }),
+    invokeFn: deps.invokeFn,
+  });
+  if ((result.exitCode ?? 0) !== 0) {
+    return null;
+  }
+  const text = extractAuxOutput({ providerId: deps.providerId, stdout: result.stdout }).text;
+  return parsePolishedStep(text);
+};
+
 const STEP_MARKER_OPEN = '<<step>>';
 const STEP_MARKER_CLOSE = '<</step>>';
 

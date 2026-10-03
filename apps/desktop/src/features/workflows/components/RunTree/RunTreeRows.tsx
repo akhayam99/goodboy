@@ -6,6 +6,7 @@ import { TimelineNowRule } from '../../../session/components/SessionWorkspace/pa
 import { useAgentSpendById } from '../../hooks/useAgentSpendById';
 import type { RowPhase } from '../../../workTreeModel/rowState';
 import { RunTreeRow, type RunTreeRouting } from './RunTreeRow';
+import type { RunStepSkipAction } from './RunStepSkip';
 import type { RunTreeModel } from './useRunTree';
 
 type Props = {
@@ -17,6 +18,7 @@ type Props = {
   readonly routing: RunTreeRouting;
   readonly selectedAgentId: AgentId | null;
   readonly highlightedStepId?: string | null;
+  readonly skip?: RunStepSkipAction | null;
   readonly onHighlight?: (stepId: string | null) => void;
   readonly onSelect: (id: AgentId) => void;
   readonly onAnswer: (question: OpenQuestion | null) => void;
@@ -42,6 +44,7 @@ export const RunTreeRows = ({
   routing,
   selectedAgentId,
   highlightedStepId = null,
+  skip = null,
   onHighlight,
   onSelect,
   onAnswer,
@@ -124,6 +127,7 @@ export const RunTreeRows = ({
               parentStepName={parentNameOf({ entry: item.entry })}
               isSelected={item.entry.agent.id === selectedAgentId}
               isHighlighted={stepId !== null && stepId === highlightedStepId}
+              skip={skip}
               onHighlight={
                 onHighlight === undefined || stepId === null
                   ? undefined

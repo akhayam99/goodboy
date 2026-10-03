@@ -112,7 +112,7 @@ export const WorkflowNextStepCta = ({
           <button
             type="button"
             onClick={advance.onTrigger}
-            disabled={advance.isBusy}
+            disabled={advance.isBusy || blockReason === 'paused'}
             data-testid="workflow-next-step-cta"
             title={
               blockReason != null

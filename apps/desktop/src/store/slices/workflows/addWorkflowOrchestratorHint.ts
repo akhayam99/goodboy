@@ -10,6 +10,7 @@ import { saveGoalAttachments } from '../attachments/saveGoalAttachments';
 import { cancelRunningSteps } from './cancelRunningSteps';
 import { requestDecisionRestart } from './decisionRestart';
 import { findWorkflowRun } from './findWorkflowRun';
+import { isRunPaused } from '../../../features/workflows/isRunPaused';
 import { markHintsReading, releaseHintsReading } from './orchestratorReadingHints';
 import type { GetFn, SetFn } from './types';
 import { updateOrchestratorHints } from './updateOrchestratorHints';
@@ -124,7 +125,13 @@ export const addWorkflowOrchestratorHint = (set: SetFn, get: GetFn) => {
       workflowRunId,
       update: (hints) => [...hints, hint],
     });
-    if (draft.delivery === 'queue' || run.executionMode !== 'dynamic' || run.discardedAt != null) {
+    const current = findWorkflowRun({ get, sessionId, workflowRunId });
+    if (
+      draft.delivery === 'queue' ||
+      run.executionMode !== 'dynamic' ||
+      run.discardedAt != null ||
+      isRunPaused({ run: current })
+    ) {
       return;
     }
     void readNow({ set, get, sessionId, workflowRunId, hintId: hint.id });

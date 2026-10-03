@@ -6,6 +6,8 @@ import { useWorkflowRunAdvance } from '../../hooks/useWorkflowRunAdvance';
 import { resolveNextAction, type NextAction } from '../../resolveNextAction';
 import { NextActionButtons } from './NextActionButtons';
 import { NextActionDetails } from './NextActionDetails';
+import { QuietStepStrip } from './QuietStepStrip';
+import { useQuietStep } from '../../hooks/useQuietStep';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -39,8 +41,12 @@ export const NextActionStrip = ({ sessionId, run, workflow, subjectAgentId, clas
     questions,
     subjectAgentId,
   });
+  const quiet = useQuietStep({ agents: runAgents });
   if (action.kind === 'none') {
-    return null;
+    const isOtherAgent = subjectAgentId != null && quiet?.agent.id !== subjectAgentId;
+    return quiet === null || isOtherAgent ? null : (
+      <QuietStepStrip sessionId={sessionId} run={run} agents={runAgents} quiet={quiet} />
+    );
   }
   const isBlocked = action.kind === 'recover' && action.isBlocked;
   const tint = tintClasses(isBlocked ? 'warning' : TONE[action.kind]);
