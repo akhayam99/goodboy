@@ -838,6 +838,8 @@ const standaloneAgent = (ctx: Ctx): string => {
   return agent.id;
 };
 
+const composerKeys: { last: KeyboardEvent | null } = { last: null };
+
 const openAgentChat = async (ctx: Ctx): Promise<HTMLElement> => {
   hydrateBranches();
   useAppStore.getState().navigate({
@@ -1025,6 +1027,37 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       await pressed('session.permissions', composer);
     },
     lands: () => visible('dialog', 'Permission mode'),
+  }),
+  keyRow({
+    id: 'composer.newLine',
+    open: async (ctx) => {
+      const composer = await openAgentChat(ctx);
+      fireEvent.change(composer, { target: { value: 'Map the retry budget' } });
+      composerKeys.last = pressShortcut({ id: 'composer.newLine', target: composer });
+      await settle();
+    },
+    lands: async () => {
+      const composer = await screen.findByRole('textbox', { name: 'Message to the agent' });
+      expect(composer).toHaveProperty('value', 'Map the retry budget');
+      expect(composerKeys.last?.defaultPrevented).toBe(false);
+    },
+  }),
+  keyRow({
+    id: 'composer.send',
+    open: async (ctx) => {
+      const composer = await openAgentChat(ctx);
+      fireEvent.change(composer, { target: { value: 'Map the retry budget' } });
+      composerKeys.last = pressShortcut({ id: 'composer.send', target: composer });
+      await settle();
+    },
+    lands: async () => {
+      expect(composerKeys.last?.defaultPrevented).toBe(true);
+      expect(
+        screen
+          .getByRole('textbox', { name: 'Message to the agent' })
+          .getAttribute('data-prompt-kind'),
+      ).toBe('message');
+    },
   }),
   keyRow({
     id: 'menu.open',

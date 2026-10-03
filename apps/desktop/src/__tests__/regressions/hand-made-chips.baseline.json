@@ -7,7 +7,7 @@
   "apps/desktop/src/app/components/AppTopBar/SpendButton.tsx": 1,
   "apps/desktop/src/app/components/AppTopBar/StorageChip.tsx": 1,
   "apps/desktop/src/features/attachments/components/AttachmentChip/index.tsx": 1,
-  "apps/desktop/src/features/chat/components/ChatInput/parts/ComposerDropOverlay.tsx": 1,
+  "apps/desktop/src/shared/components/PromptField/PromptDropOverlay.tsx": 1,
   "apps/desktop/src/features/chat/components/ChatInput/parts/SuggestionStack.tsx": 1,
   "apps/desktop/src/features/chat/components/ChatView/ChatEmptyState.tsx": 1,
   "apps/desktop/src/features/chat/components/ChatView/index.tsx": 1,

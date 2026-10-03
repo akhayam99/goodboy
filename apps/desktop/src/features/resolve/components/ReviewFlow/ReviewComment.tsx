@@ -1,7 +1,8 @@
 import { useMemo, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Check } from 'lucide-react';
 import { REVIEW_SOURCE_CAPABILITIES, REVIEW_SOURCE_LABEL } from '@goodboy/core';
-import { Button, Chip, KbdPill, Markdown, SectionHeader, Textarea, Tooltip, cn } from '@goodboy/ui';
+import { Button, Chip, KbdPill, Markdown, SectionHeader, Tooltip, cn } from '@goodboy/ui';
+import { PromptField } from '../../../../shared/components/PromptField';
 import type { ResolveAttempt, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -75,18 +76,13 @@ const verbsOf = (actions: ReadonlyArray<ResolvedAction>): ReadonlyArray<Resolved
 const isComposeBlocked = ({ compose }: { readonly compose: ReviewCompose }): boolean =>
   compose.mode !== 'redraft' && compose.text.trim() === '';
 
-const onSubmitKeys =
-  ({ onSubmit, onCancel }: { readonly onSubmit: () => void; readonly onCancel: () => void }) =>
+const onCancelKey =
+  ({ onCancel }: { readonly onCancel: () => void }) =>
   (event: KeyboardEvent<HTMLTextAreaElement>): void => {
     if (event.key === 'Escape') {
       event.preventDefault();
       event.stopPropagation();
       onCancel();
-      return;
-    }
-    if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
-      event.preventDefault();
-      onSubmit();
     }
   };
 
@@ -346,16 +342,19 @@ export const ReviewComment = ({
           />
           {isEditingReply ? (
             <div className="flex min-w-0 flex-col gap-2">
-              <Textarea
-                aria-label={REVIEW_FLOW_LABEL.editReply}
+              <PromptField
+                kind="document"
+                label={REVIEW_FLOW_LABEL.editReply}
                 value={replyText}
                 autoFocus
-                autoGrow
+                hasPreview
+                hasChangedKeys
                 minRows={3}
                 maxRows={12}
-                className="text-body"
-                onChange={(event) => setReplyText(event.target.value)}
-                onKeyDown={onSubmitKeys({ onSubmit: saveReply, onCancel: onReplyDone })}
+                onChange={setReplyText}
+                onSubmit={saveReply}
+                keyLabels={{ send: 'save' }}
+                onKeyDown={onCancelKey({ onCancel: onReplyDone })}
               />
               <div className="flex items-center justify-end gap-2">
                 <span className="mr-auto text-secondary text-faint-foreground">
@@ -421,25 +420,22 @@ export const ReviewComment = ({
       {compose !== null && composeCopy !== null ? (
         <div className="flex min-w-0 flex-col gap-2">
           <SectionHeader label={composeCopy.label} headingLevel={2} />
-          <Textarea
-            aria-label={composeCopy.label}
+          <PromptField
+            kind="document"
+            label={composeCopy.label}
             placeholder={composeCopy.placeholder}
             value={compose.text}
             autoFocus
-            autoGrow
+            hasPreview
+            hasChangedKeys
             minRows={3}
             maxRows={12}
             disabled={isSubmitting}
-            className="text-body"
-            onChange={(event) => onComposeChange(event.target.value)}
-            onKeyDown={onSubmitKeys({
-              onSubmit: () => {
-                if (!isComposeBlocked({ compose })) {
-                  onComposeSubmit();
-                }
-              },
-              onCancel: onComposeCancel,
-            })}
+            onChange={onComposeChange}
+            onSubmit={onComposeSubmit}
+            keyLabels={{ send: 'send' }}
+            isSubmitBlocked={isComposeBlocked({ compose })}
+            onKeyDown={onCancelKey({ onCancel: onComposeCancel })}
           />
           <div className="flex items-center justify-end gap-2">
             <span className="mr-auto text-secondary text-faint-foreground">

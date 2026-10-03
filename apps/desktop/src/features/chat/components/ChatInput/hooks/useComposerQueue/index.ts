@@ -1,6 +1,9 @@
 import { useCallback, type RefObject } from 'react';
 import type { AgentId, SessionId } from '@goodboy/types';
-import type { PendingAttachment } from '../../../../../attachments/pendingAttachment';
+import {
+  fromStoredAttachment,
+  type PendingAttachment,
+} from '../../../../../attachments/pendingAttachment';
 import { focusComposerTextarea } from '../../focusComposerTextarea';
 import type { QueuedTurn } from '../../lib';
 import { useMessageQueue } from '../useMessageQueue';
@@ -26,7 +29,7 @@ export const useComposerQueue = ({
   const onEditQueued = useCallback(
     (item: QueuedTurn) => {
       setValue(item.content);
-      setAttachments(item.attachments);
+      setAttachments(item.attachments.map(fromStoredAttachment));
       routing.setSelectedProviderState(item.override?.providerId ?? null);
       routing.setSelectedModelState(item.override?.model ?? item.override?.selection?.key ?? null);
       if (item.override?.selection?.effort != null) {

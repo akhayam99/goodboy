@@ -167,6 +167,8 @@ const resetStore = () => {
       issueBriefs: {},
       sessionDrafts: {},
       projectSentryLinks: {},
+      settings: { 'composer.classicKeys': 'false' },
+      loadSetting: async () => null,
       phaseTemplates: {
         'ws-1': [
           { id: 'wf-1', name: 'Plan and build', description: 'Plan, then implement' },

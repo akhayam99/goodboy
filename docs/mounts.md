@@ -39,6 +39,10 @@ one settings row per project (`bootstrap.phase.<project-id>`: `first-lap`,
   on `main`. Its turns get a write destination of kind `root`
   (`writeDestination.ts`), and the scope guard says nothing is committed or
   pushed for it. There is no mount and no worktree.
+- Files you attach to its messages are written to the session's scratch
+  folder (`scratch_dir_prepare`), never under the project folder, and the
+  prompt names them by full path (`persistAttachments`, `attachmentDir`), so
+  the bootstrap move never picks up an attachment as work.
 - Every path that cuts a worktree for that project refuses with one typed
   message (`ensureProjectMounted`, `FIRST_LAP_REFUSAL`): the first-turn rule,
   the + project chip, workflow steps and the query bridge. Starting a session

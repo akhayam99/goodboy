@@ -27,7 +27,7 @@ export const A11Y_BASELINE = {
   'scene activity': [],
   'scene activity-filter': [],
   'scene activity-run': [],
-  'scene workflow-builder': ['label'],
+  'scene workflow-builder': [],
   'scene resolve-queue-shell': [],
   'scene resolve-publish-blocked': [],
   'scene artifacts-lens-shell': [],
@@ -37,8 +37,8 @@ export const A11Y_BASELINE = {
   'scene session-start': [],
   'scene workspace-states': [],
   'scene review-modes': [],
-  'scene workflow-studio': ['label'],
-  'scene workflow-builder-modes': ['label'],
+  'scene workflow-studio': [],
+  'scene workflow-builder-modes': [],
   'scene brand-lookup': ['aria-required-parent'],
 } satisfies Record<string, ReadonlyArray<string>>;
 

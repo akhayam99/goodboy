@@ -1,4 +1,4 @@
-import type { ProjectId, Session, WorkspaceId } from '@goodboy/types';
+import type { AttachmentInput, ProjectId, Session, WorkspaceId } from '@goodboy/types';
 import type { IssueCandidate } from '../../../features/integrations/fetchIssueCandidates';
 import {
   AGENT_KIND_META,
@@ -35,6 +35,7 @@ export type SessionDraftStart =
       readonly goal: string;
       readonly then?: SessionDraftThen;
       readonly mount?: SessionDraftMount;
+      readonly attachmentInputs?: ReadonlyArray<AttachmentInput>;
     }
   | {
       readonly kind: 'workflow-run';
@@ -47,6 +48,7 @@ export type SessionDraftStart =
       readonly focus: string;
       readonly prompt: string;
       readonly routing: AgentKindRouting | null;
+      readonly attachmentInputs?: ReadonlyArray<AttachmentInput>;
     };
 
 export type StartSessionFromDraftParams = {
@@ -163,8 +165,10 @@ export const startSessionFromDraft = (set: SetFn, get: GetFn) => {
     const mount = start.kind === 'task' ? (start.mount ?? null) : null;
     const projectId =
       mount === null ? (get().sessionDrafts[workspaceId]?.projectId ?? null) : mount.projectId;
+    const attachmentInputs = start.kind === 'workflow-run' ? [] : (start.attachmentInputs ?? []);
     const { session } = await get().createSession({
       workspaceId,
+      ...(attachmentInputs.length > 0 && { attachmentInputs }),
       goal: goal === '' ? title : goal,
       title,
       omitGoalSlot: goal === '',
