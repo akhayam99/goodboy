@@ -9,7 +9,7 @@ Open a session and read everything about the task in one place: its goal, its pr
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-session-light.webp" alt="The overview of the session Stop retried webhooks posting a second credit, with Context, Questions 1 and Artifacts 2, the linked pull request #57, HBL-412 and PAYMENTS-API-3F2, a cost of $3.47, and the projects payments-api (pull request #318 In review) and notify-relay (pull request #57 In review), above an Activity header with Filter, Open run and Start agent">
 </picture>
 
-Find the goal, linked issues, projects, cost and the buttons to start an agent or a workflow on one screen. Each project lists its branches with their changes and pull request state. **Run workflow** turns into **Open run** while a run is live, so a second one does not start on top.
+Find the goal, linked issues, projects, cost and the buttons to start an agent or a workflow on one screen. One row under the title holds the facts: **Context**, **Artifacts** (reports, wireframes and plans), linked work, **Link work** and the cost. What waits on you is said once, in **Next**. Each project lists its branches with their changes and pull request state. The Activity header has two controls: **Filter**, which also holds **Mark all seen**, and **New**, with **Run workflow**, **Start agent**, **Report** and **Wireframe**. **Run workflow** turns into **Open run** while a run is live, so a second one does not start on top.
 
 ### Refresh a session
 

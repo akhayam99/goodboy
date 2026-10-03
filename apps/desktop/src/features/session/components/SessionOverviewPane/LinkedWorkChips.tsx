@@ -75,7 +75,7 @@ export const LinkedWorkChips = ({ sessionId, onSelectLens }: Props) => {
     return null;
   }
   return (
-    <div aria-label="Linked work" className="flex min-w-0 flex-wrap items-center justify-end gap-1">
+    <div aria-label="Linked work" className="flex min-w-0 flex-wrap items-center gap-2">
       {linkedIssues.map((issue) => (
         <IssueChip
           key={issue.url}

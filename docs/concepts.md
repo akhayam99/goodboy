@@ -307,7 +307,7 @@ sentence, no Answer, only a neutral "Waiting on a step" node. It names the
 question only when neither is in view (a sub-agent and question rows both
 filtered out), and then its Answer opens the asking agent at the question.
 The activity reports which open questions its rows show (`shownQuestionIds`),
-so Next steps and the needs-you callout above it do not repeat them. The
+so Next steps do not repeat them. The
 needs-you count counts each family once, so one question never counts twice.
 
 ## Next steps

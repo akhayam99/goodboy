@@ -363,9 +363,12 @@ screen edge, so a graze does not open it.
 
 **The session overview is the reference page.** It shows the whole surface
 grammar on one screen, so read it before designing a new surface. Here is its
-rhythm. Each section has an eyebrow label. A section header holds at most one
-action, and a section has at most one primary button. A `<Divider />` sits
-between sections, and a section never has a border. A section appears once its
+rhythm. Each section has an eyebrow label, and a section has at most one
+primary button. Projects, Next and Activity are peer sections in the pane body,
+one `PANE_RHYTHM.stack` gap apart: the header passes `headerRhythm="section"`,
+so the gap under it is the same. Space separates sections, never a
+`<Divider />`, and a section never has a border. The Activity header holds two
+controls, Filter and New. A section appears once its
 fact exists (a plan, a workflow run, a PR on a project). Before that it is one
 quiet action row (link an issue, start an agent, attach a workflow). So the
 empty session reads as a young version of the same document, not a wall of
