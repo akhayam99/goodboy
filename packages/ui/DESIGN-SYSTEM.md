@@ -592,9 +592,11 @@ subagent that asks you a question counts the same way (`groupChild` ask).
 
 A finished workflow run or agent chain with three rows or more is a third group
 kind, `steps`: the run row itself is the group row, with its own node, the
-summary from `groupSummary` ("8 steps · 1 question answered") after the title,
-never truncated: the title gives way first, down to 96px, then the summary keeps
-only its first clause ("8 steps"),
+summary from `groupSummary` ("8 steps · 1 question answered · Context +2") after
+the title, never truncated: the title gives way first, down to 96px, then the
+summary keeps only its first clause and the kept `Context +N` part ("8 steps ·
+Context +2"); `Context +N` counts what the run's agents added to the decisions and
+learnings and shows only when N > 0,
 the hint "Open ↵" or "Fold ↵", and the chevron. A run that asks you something,
 failed or is still running is never folded. Every group row fills the routing,
 time and cost columns with the totals of what it holds (`groupTotals`), counted

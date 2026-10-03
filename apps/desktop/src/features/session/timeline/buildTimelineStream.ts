@@ -37,7 +37,7 @@ import { runIdentity, runIdentitySeed, type RunIdentity } from './runIdentity';
 import { groupResolveBatches } from './resolveBatchGroups';
 import { resolverRowState, type ResolveActivityFacts } from './resolveActivity';
 import { resolveBatchRowState, type ResolveBatchRef } from './resolveBatchSummary';
-import { isEmptyDecisionDiff } from './sessionEventPresentation';
+import { decisionDiff, isEmptyDecisionDiff } from './sessionEventPresentation';
 import { stepsGroupSummary, type GroupSummary, type StepsGroupKind } from './groupSummary';
 import {
   SUBAGENT_GROUP_MIN_MEMBERS,
@@ -1332,6 +1332,58 @@ const laneFactsByRootId = ({
   return facts;
 };
 
+const treeAgentIds = ({ entry }: { readonly entry: TimelineAgentEntry }): ReadonlyArray<string> => [
+  entry.agent.id,
+  ...entry.children.flatMap((child) => treeAgentIds({ entry: child })),
+];
+
+const contextAgentIdOf = ({
+  entry,
+}: {
+  readonly entry: TimelineTopLevelEntry;
+}): { readonly agentId: string; readonly added: number } | null => {
+  if (entry.kind === 'learning') {
+    const agentId = entry.item.source?.agentId ?? null;
+    return agentId === null ? null : { agentId, added: 1 };
+  }
+  if (entry.kind !== 'event' || entry.event.kind !== 'decisions_changed') {
+    return null;
+  }
+  const agentId = entry.event.payload?.agentId ?? null;
+  if (agentId === null) {
+    return null;
+  }
+  return { agentId, added: decisionDiff({ payload: entry.event.payload }).additions };
+};
+
+const contextAddedByRunId = ({
+  entries,
+}: {
+  readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
+}): ReadonlyMap<string, number> => {
+  const runOfAgent = new Map<string, string>();
+  for (const entry of entries) {
+    if (entry.kind !== 'run') {
+      continue;
+    }
+    for (const child of entry.children) {
+      if (child.kind === 'agent') {
+        treeAgentIds({ entry: child }).forEach((agentId) => runOfAgent.set(agentId, entry.id));
+      }
+    }
+  }
+  const added = new Map<string, number>();
+  for (const entry of entries) {
+    const update = contextAgentIdOf({ entry });
+    const runId = update === null ? undefined : runOfAgent.get(update.agentId);
+    if (update === null || runId === undefined) {
+      continue;
+    }
+    added.set(runId, (added.get(runId) ?? 0) + update.added);
+  }
+  return added;
+};
+
 const isRunChildShown = ({
   child,
   context,
@@ -1352,12 +1404,14 @@ type FoldParams<Entry> = {
   readonly entry: Entry;
   readonly lane: LaneFacts;
   readonly context: EmitContext;
+  readonly contextAdded?: number;
 };
 
 const runFoldOf = ({
   entry,
   lane,
   context,
+  contextAdded = 0,
 }: FoldParams<TimelineRunEntry>): TimelineRowFold | null => {
   const expanded = context.expandedGroupIds;
   if (expanded === null || lane.hasOpen) {
@@ -1378,7 +1432,12 @@ const runFoldOf = ({
   return {
     kind: 'run',
     isExpanded: expanded.has(entry.id),
-    summary: stepsGroupSummary({ kind: 'run', steps, answered: lane.answered }),
+    summary: stepsGroupSummary({
+      kind: 'run',
+      steps,
+      answered: lane.answered,
+      contextAdded,
+    }),
   };
 };
 
@@ -1452,12 +1511,13 @@ const foldsOf = ({
   readonly context: EmitContext;
 }): ReadonlyMap<string, TimelineRowFold> => {
   const lanes = laneFactsByRootId({ entries, context });
+  const contextAdded = contextAddedByRunId({ entries });
   const folds = new Map<string, TimelineRowFold>();
   for (const entry of entries) {
     const lane = lanes.get(entry.id) ?? NO_LANE_FACTS;
     const fold =
       entry.kind === 'run'
-        ? runFoldOf({ entry, lane, context })
+        ? runFoldOf({ entry, lane, context, contextAdded: contextAdded.get(entry.id) ?? 0 })
         : entry.kind === 'agent'
           ? chainFoldOf({ entry, lane, context })
           : null;

@@ -185,7 +185,11 @@ export const finalizeTurnStream = async ({ set, get, ctx }: Params) => {
         sessionSlots: { ...state.sessionSlots, [sessionId]: refreshedSlots },
       }));
     }
-    await get().noteDecisionChanges({ sessionId, changes: result.decisionChanges });
+    await get().noteDecisionChanges({
+      sessionId,
+      changes: result.decisionChanges,
+      agentId: activeAgentId,
+    });
     if (result.openQuestionsChanged) {
       await get().loadSessionOpenQuestions(sessionId);
       if (resolveAttemptId !== undefined && agentRowEarly !== null && !wasCancelled) {

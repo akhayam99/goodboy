@@ -6,6 +6,11 @@ import type {
   IsoDateTime,
   OpenQuestion,
   OpenQuestionId,
+  SessionContextItem,
+  SessionContextItemId,
+  SessionEvent,
+  SessionEventId,
+  SessionEventPayload,
   SessionId,
   Step,
   StepId,
@@ -136,6 +141,8 @@ type StreamParams = {
   readonly expanded?: ReadonlyArray<string>;
   readonly foldsFinished?: boolean;
   readonly hasWorkflow?: boolean;
+  readonly events?: ReadonlyArray<SessionEvent>;
+  readonly learnings?: ReadonlyArray<SessionContextItem>;
 };
 
 const streamOf = ({
@@ -144,6 +151,8 @@ const streamOf = ({
   expanded = [],
   foldsFinished = true,
   hasWorkflow = true,
+  events = [],
+  learnings = [],
 }: StreamParams) => {
   const entries = buildTimelineGroups({
     sessionId: SESSION_ID,
@@ -154,7 +163,8 @@ const streamOf = ({
     externalTasks: [],
     questions,
     worktrees: [],
-    events: [],
+    events,
+    learnings,
     agentKindOverride: {},
   }).entries;
   return {
@@ -190,7 +200,65 @@ const rowOf = ({
   return found;
 };
 
+const contextEvent = ({
+  id,
+  payload,
+}: {
+  readonly id: string;
+  readonly payload: SessionEventPayload;
+}): SessionEvent => ({
+  id: id as SessionEventId,
+  sessionId: SESSION_ID,
+  kind: 'decisions_changed',
+  payload,
+  createdAt: at({ hour: 9, minute: 13 }),
+});
+
+const learning = ({ id, agentId }: { readonly id: string; readonly agentId: string }) =>
+  ({
+    id: id as SessionContextItemId,
+    sessionId: SESSION_ID,
+    workspaceId: 'workspace-1' as WorkspaceId,
+    kind: 'learning',
+    title: 'Refunds keep the ledger key',
+    text: 'Refunds keep the ledger key',
+    topic: null,
+    source: { role: 'implementer', agentId: agentId as AgentId, turnStart: 1, turnEnd: 1 },
+    audience: [],
+    status: 'active',
+    createdAt: at({ hour: 9, minute: 14 }),
+    projectName: null,
+    isSessionDeleted: false,
+    updatedAt: at({ hour: 9, minute: 14 }),
+  }) satisfies SessionContextItem;
+
 describe('buildTimelineStream steps group', () => {
+  it('counts the context the run added as Context +N', () => {
+    const { items } = streamOf({
+      agents: finishedSteps(),
+      events: [
+        contextEvent({ id: 'e1', payload: { added: 1, replaced: 1, agentId: 'plan' } }),
+        contextEvent({ id: 'e2', payload: { withdrawn: 2, agentId: 'scout' } }),
+        contextEvent({ id: 'e3', payload: { added: 4 } }),
+        contextEvent({ id: 'e4', payload: { added: 5, agentId: 'elsewhere' } }),
+      ],
+      learnings: [learning({ id: 'l1', agentId: 'build' })],
+    });
+    const fold = rowOf({ items, id: RUN_ROW }).fold;
+    expect(fold === undefined ? null : groupSummaryText({ summary: fold.summary })).toBe(
+      '3 steps · Context +3',
+    );
+  });
+
+  it('leaves Context out when the run only took context away', () => {
+    const { items } = streamOf({
+      agents: finishedSteps(),
+      events: [contextEvent({ id: 'e1', payload: { withdrawn: 1, agentId: 'plan' } })],
+    });
+    const fold = rowOf({ items, id: RUN_ROW }).fold;
+    expect(fold === undefined ? null : groupSummaryText({ summary: fold.summary })).toBe('3 steps');
+  });
+
   it('shows a finished run as its one row with what was inside', () => {
     const { items } = streamOf({
       agents: finishedSteps(),
