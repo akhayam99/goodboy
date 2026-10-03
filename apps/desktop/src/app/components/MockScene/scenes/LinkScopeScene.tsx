@@ -30,19 +30,19 @@ const item = ({
 
 const ITEMS: ReadonlyArray<LinkWorkItem> = [
   item({
-    identifier: 'HAR-212',
-    title: 'Duplicate credit on webhook redelivery',
+    identifier: 'HBL-412',
+    title: 'Retried webhooks post a second credit',
     status: 'In progress',
     hoursAgo: 2,
   }),
   item({
-    identifier: 'HAR-231',
-    title: 'Show retry attempts on each delivery',
+    identifier: 'HBL-398',
+    title: 'Show the retry count on each delivery',
     status: 'Todo',
     hoursAgo: 5,
   }),
-  item({ identifier: 'HAR-400', title: 'Payments revamp', status: 'Ongoing', hoursAgo: 30 }),
-  item({ identifier: 'HAR-388', title: 'Ledger cleanup', status: 'Ongoing', hoursAgo: 50 }),
+  item({ identifier: 'HBL-400', title: 'Payments revamp', status: 'Ongoing', hoursAgo: 30 }),
+  item({ identifier: 'HBL-388', title: 'Ledger cleanup', status: 'Ongoing', hoursAgo: 50 }),
 ];
 
 export const LinkScopeScene = () => {

@@ -95,7 +95,7 @@ const insertLink = ({ db, scope, branch }: InsertLinkParams) =>
   db.execute(
     `INSERT INTO session_external_tasks
        (session_id, branch, scope, provider, external_id, identifier, url, title, created_at)
-     VALUES ('s-0', ?, ?, 'linear', 'lin-umbrella', 'HAR-400', 'https://linear.app/x/HAR-400', 'Payments revamp', ?)`,
+     VALUES ('s-0', ?, ?, 'linear', 'lin-umbrella', 'HBL-400', 'https://linear.app/x/HBL-400', 'Payments revamp', ?)`,
     [branch, scope, NOW],
   );
 
@@ -234,7 +234,7 @@ describe('m216 task links scope', () => {
     await migrate(db, migrations);
     await db.execute(
       `INSERT INTO workspace_external_tasks (workspace_id, provider, external_id, identifier, url, title, created_at)
-       VALUES ('harborline', 'linear', 'lin-400', 'HAR-400', 'https://linear.app/x/HAR-400', 'Payments revamp', ?)`,
+       VALUES ('harborline', 'linear', 'lin-400', 'HBL-400', 'https://linear.app/x/HBL-400', 'Payments revamp', ?)`,
       [NOW],
     );
     await db.execute('PRAGMA foreign_keys = ON');

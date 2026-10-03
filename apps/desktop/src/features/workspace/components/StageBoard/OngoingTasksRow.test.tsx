@@ -42,8 +42,8 @@ const REVAMP: WorkspaceExternalTask = {
   workspaceId: WORKSPACE,
   provider: 'linear',
   externalId: 'lin-400',
-  identifier: 'HAR-400',
-  url: 'https://linear.app/harborline/issue/HAR-400',
+  identifier: 'HBL-400',
+  url: 'https://linear.app/harborline/issue/HBL-400',
   title: 'Payments revamp',
   createdAt: NOW,
 };
@@ -100,7 +100,7 @@ describe('OngoingTasksRow', () => {
     const onFilter = vi.fn();
     render(<OngoingTasksRow workspaceId={WORKSPACE} filter="linear:lin-400" onFilter={onFilter} />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Stop tracking HAR-400' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Stop tracking HBL-400' }));
 
     await waitFor(() =>
       expect(h.deleteWorkspaceExternalTask).toHaveBeenCalledWith(
@@ -109,7 +109,7 @@ describe('OngoingTasksRow', () => {
     );
     expect(onFilter).toHaveBeenCalledWith(null);
     await waitFor(() =>
-      expect(screen.queryByRole('button', { name: 'Stop tracking HAR-400' })).toBeNull(),
+      expect(screen.queryByRole('button', { name: 'Stop tracking HBL-400' })).toBeNull(),
     );
   });
 });

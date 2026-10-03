@@ -101,11 +101,11 @@ const DOCS: ReadonlyArray<MockDoc> = [
   },
   {
     ...base,
-    id: 'task:webhooks:linear:har-231',
+    id: 'task:webhooks:linear:hbl-412',
     kind: 'issue',
     provider: 'linear',
-    container: 'HAR-231',
-    title: 'HAR-231 Retried webhook posts a second credit',
+    container: 'HBL-412',
+    title: 'HBL-412 Retried webhooks post a second credit',
     body: '',
   },
   {

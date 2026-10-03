@@ -14,7 +14,7 @@ import type {
 import { CTX_PAYMENTS_MOUNT_ID, CTX_SESSION_ID } from './contextBase';
 
 const BRANCH = 'ak/ledger-batching-3f9a';
-const TICKET = '[HAR-212]';
+const TICKET = '[HBL-212]';
 const OLD_TARGET = `feat: add ledger batching foundations ${TICKET}`;
 const NEW_TARGET = `feat: ledger batching foundations ${TICKET}`;
 const BASE = '1b6029c4e8a2d6f0b4c8e2a6d0f4b8c2e6a0d4f8';
@@ -97,7 +97,7 @@ const GRAPH: HistoryGraph = {
   baseRef: 'origin/main',
   mergeBase: {
     sha: BASE,
-    subject: 'fix: ledger rounding in the nightly close [HAR-198] (#9883)',
+    subject: 'fix: ledger rounding in the nightly close [HBL-198] (#9883)',
     author: 'Ines Okafor',
     timestamp: hoursAgo({ hours: 72 }),
   },
