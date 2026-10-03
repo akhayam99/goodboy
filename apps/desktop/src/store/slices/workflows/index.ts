@@ -3,6 +3,7 @@ import { addStepToWorkflowRun } from './addStepToWorkflowRun';
 import { advanceClusterImplementation } from './clusterImplementation';
 import { retryStepSummary } from './retryStepSummary';
 import { recoverStuckStep } from './recoverStuckStep';
+import { askAgentToContinue } from './askAgentToContinue';
 import { attachWorkflowToSession } from './attachWorkflowToSession';
 import { closeWorkflowRun } from './closeWorkflowRun';
 import { deleteStepDef } from './deleteStepDef';
@@ -36,6 +37,8 @@ import { setWorkflowRunAutoRun } from './setWorkflowRunAutoRun';
 import { setWorkflowRunSpendLimit } from './setWorkflowRunSpendLimit';
 import { startWorkflowRun } from './startWorkflowRun';
 import { stopWorkflowRunNow } from './stopWorkflowRunNow';
+import { pauseWorkflowRun } from './pauseWorkflowRun';
+import { resumeWorkflowRun } from './resumeWorkflowRun';
 import type { SliceDeps } from '../../slice-types';
 
 export const createWorkflowsSlice = ({ set, get }: SliceDeps) => {
@@ -61,6 +64,8 @@ export const createWorkflowsSlice = ({ set, get }: SliceDeps) => {
     setWorkflowRunSpendLimit: setWorkflowRunSpendLimit(set, get),
     startWorkflowRun: startWorkflowRun(set, get),
     stopWorkflowRunNow: stopWorkflowRunNow(set, get),
+    pauseWorkflowRun: pauseWorkflowRun(set, get),
+    resumeWorkflowRun: resumeWorkflowRun(set, get),
     closeWorkflowRun: closeWorkflowRun(set, get),
     reprocessGoalForWorkflow: reprocessGoalForWorkflow(set, get),
     activateWorkflowAgent: activateWorkflowAgent(set, get),
@@ -78,5 +83,6 @@ export const createWorkflowsSlice = ({ set, get }: SliceDeps) => {
     setWorkflowOrchestratorRouting: setWorkflowOrchestratorRouting(set, get),
     retryStepSummary: retryStepSummary(set, get),
     recoverStuckStep: recoverStuckStep(get),
+    askAgentToContinue: askAgentToContinue(get),
   };
 };

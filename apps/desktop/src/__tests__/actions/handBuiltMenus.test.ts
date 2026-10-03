@@ -28,8 +28,8 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'settings control, not an object in the map',
   'features/wireframes/components/WireframeViewer/RevisionPicker.tsx':
     'revision picker inside the wireframe viewer',
-  'features/workflows/components/OrchestratorStrip/OrchestratorMenu.tsx':
-    'orchestrator strip control with its own in-place confirm',
+  'features/workflows/components/RunControls/RunControlMenu.tsx':
+    'run control: when to ask and model routing, not an object in the map',
   'features/workflows/components/WorkflowStudio/WorkflowEditor/EditorTrail.tsx':
     'workflow editor band actions, studio chrome',
   'features/workflows/components/WorkflowStudio/WorkflowList/index.tsx':

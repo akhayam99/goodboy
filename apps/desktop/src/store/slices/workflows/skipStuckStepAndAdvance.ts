@@ -1,83 +1,146 @@
-import type { IsoDateTime, SessionId, WorkflowRunId } from '@goodboy/types';
+import type { Agent, AgentId, IsoDateTime, SessionId, WorkflowRunId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
-import { classifyWorkflowChain, findReusableAgent, runsForWorkflowRun } from '@goodboy/core';
+import {
+  classifyWorkflowChain,
+  findReusableAgent,
+  isAgentStatusSettled,
+  runsForWorkflowRun,
+} from '@goodboy/core';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
+import { isRunPaused } from '../../../features/workflows/isRunPaused';
+import { findWorkflowRun } from './findWorkflowRun';
+import { notifyWorkflowGateBlock } from './notifyWorkflowGateBlock';
+import { WorkflowGateError } from './workflowActivationGate';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 
 const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
+
+export type SkipStepOptions = {
+  readonly onlyWhenBlocked?: boolean;
+  readonly force?: boolean;
+  readonly agentId?: AgentId;
+};
 
 type SkipParams = {
   readonly set: SetFn;
   readonly get: GetFn;
   readonly sessionId: SessionId;
   readonly workflowRunId: WorkflowRunId;
-  readonly onlyWhenBlocked: boolean;
+  readonly options: SkipStepOptions;
 };
 
-const runSkipAndAdvance = async ({
-  set,
-  get,
-  sessionId,
-  workflowRunId,
-  onlyWhenBlocked,
-}: SkipParams): Promise<void> => {
+type TargetParams = SkipParams & {
+  readonly runs: ReadonlyArray<Agent>;
+};
+
+const isTurnLive = ({ get, agentId }: { readonly get: GetFn; readonly agentId: AgentId }) => {
+  const turn = get().agentTurnState[agentId];
+  return turn?.kind === 'running' || turn?.kind === 'starting';
+};
+
+const findTarget = ({ get, sessionId, workflowRunId, options, runs }: TargetParams) => {
   const session = sessionById(get().sessions, sessionId);
-  if (!session) {
-    return;
+  const run = session?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
+  if (session == null || run == null || run.discardedAt != null) {
+    return null;
   }
-  const run = session.workflowRuns.find((r) => r.id === workflowRunId);
-  if (!run || run.discardedAt) {
-    return;
+  const template = (get().phaseTemplates[session.workspaceId] ?? []).find(
+    (candidate) => candidate.id === run.workflowId,
+  );
+  if (template == null) {
+    return null;
   }
-  const templates = get().phaseTemplates[session.workspaceId] ?? [];
-  const template = templates.find((t) => t.id === run.workflowId);
-  if (!template) {
-    return;
+  if (options.agentId !== undefined) {
+    const named = runs.find((agent) => agent.id === options.agentId) ?? null;
+    if (named == null || isAgentStatusSettled({ status: named.status })) {
+      return null;
+    }
+    return { run, template, agent: named };
   }
-  const runs = runsForWorkflowRun(get().sessionPhaseRuns[sessionId] ?? [], workflowRunId);
   const chain = classifyWorkflowChain(template, runs);
   if (chain.kind === 'complete') {
+    return null;
+  }
+  if (options.onlyWhenBlocked === true && chain.kind !== 'blocked') {
+    return null;
+  }
+  const step = chain.kind === 'blocked' ? chain.failedStep : chain.step;
+  const agent = findReusableAgent(runs, step.id);
+  if (agent == null || agent.status === 'pending') {
+    return null;
+  }
+  return { run, template, agent };
+};
+
+type NextStepErrorParams = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly error: unknown;
+};
+
+const notifyNextStepError = ({ get, sessionId, error }: NextStepErrorParams): void => {
+  if (error instanceof WorkflowGateError) {
+    notifyWorkflowGateBlock({ error, sessionId, emitNotification: get().emitNotification });
     return;
   }
-  if (onlyWhenBlocked && chain.kind !== 'blocked') {
+  void get().emitNotification({
+    kind: 'error',
+    severity: 'warning',
+    title: "The next step didn't start",
+    body: formatError(error),
+    sessionId,
+  });
+};
+
+const runSkipAndAdvance = async (params: SkipParams): Promise<void> => {
+  const { set, get, sessionId, workflowRunId, options } = params;
+  const runs = runsForWorkflowRun(get().sessionPhaseRuns[sessionId] ?? [], workflowRunId);
+  const target = findTarget({ ...params, runs });
+  if (target == null) {
     return;
   }
-  const stuckStep = chain.kind === 'blocked' ? chain.failedStep : chain.step;
-  const stuckAgent = findReusableAgent(runs, stuckStep.id);
-  if (!stuckAgent || stuckAgent.status === 'pending') {
+  const { template, agent } = target;
+  const isLive = isTurnLive({ get, agentId: agent.id });
+  const isUnseededRunning = agent.status === 'running' && get().agentTurnState[agent.id] == null;
+  if ((isLive || isUnseededRunning) && options.force !== true) {
     return;
   }
-  const turn = get().agentTurnState[stuckAgent.id];
-  if (turn?.kind === 'running' || turn?.kind === 'starting') {
-    return;
+  if (isLive) {
+    await get().cancelCurrentTurn(sessionId, agent.id);
   }
-  if (stuckAgent.status === 'running' && turn === undefined) {
-    return;
-  }
-  await invokeAgentUpdateStatus(stuckAgent.id, { status: 'skipped', completedAt: nowIso() });
+  await invokeAgentUpdateStatus(agent.id, { status: 'skipped', completedAt: nowIso() });
   const refreshed = await invokeAgentList(sessionId);
   set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
   void get().refreshUnreadWorkspaces();
 
+  const current = findWorkflowRun({ get, sessionId, workflowRunId });
+  if (current == null || current.autoRun !== true || isRunPaused({ run: current })) {
+    return;
+  }
   const refreshedRunAgents = runsForWorkflowRun(refreshed, workflowRunId);
+  if (refreshedRunAgents.some((candidate) => candidate.status === 'running')) {
+    return;
+  }
   const nextChain = classifyWorkflowChain(template, refreshedRunAgents);
   if (nextChain.kind === 'step') {
     const nextAgent = refreshedRunAgents.find(
       (candidate) => candidate.stepId === nextChain.step.id && candidate.status === 'pending',
     );
     if (nextAgent != null) {
-      await get().activateWorkflowAgent({
-        sessionId,
-        agentId: nextAgent.id,
-        focus: 'agent',
-        bypassGate: true,
-      });
+      void get()
+        .activateWorkflowAgent({
+          sessionId,
+          agentId: nextAgent.id,
+          focus: 'agent',
+          bypassGate: true,
+        })
+        .catch((error: unknown) => notifyNextStepError({ get, sessionId, error }));
       return;
     }
   }
-  if (run.executionMode === 'dynamic' && run.orchestrationOutcome == null) {
-    await get().orchestrateNextStep(sessionId, workflowRunId, { bypassGate: true });
+  if (current.executionMode === 'dynamic' && current.orchestrationOutcome == null) {
+    void get().orchestrateNextStep(sessionId, workflowRunId, { bypassGate: true });
   }
 };
 
@@ -85,21 +148,15 @@ export const skipStuckStepAndAdvance = (set: SetFn, get: GetFn) => {
   return async (
     sessionId: SessionId,
     workflowRunId: WorkflowRunId,
-    options?: { readonly onlyWhenBlocked?: boolean },
+    options: SkipStepOptions = {},
   ): Promise<void> => {
     try {
-      await runSkipAndAdvance({
-        set,
-        get,
-        sessionId,
-        workflowRunId,
-        onlyWhenBlocked: options?.onlyWhenBlocked === true,
-      });
+      await runSkipAndAdvance({ set, get, sessionId, workflowRunId, options });
     } catch (error) {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: "Couldn't skip the blocked step",
+        title: "Couldn't skip the step",
         body: formatError(error),
         sessionId,
       });

@@ -73,6 +73,8 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
       return 'Closed by you';
     case 'skipped':
       return 'Skipped';
+    case 'paused':
+      return 'Paused by you';
     case 'chained':
       return `Starts after ${reason.afterTitle}`;
     case 'awaitingFirstMessage':
@@ -99,6 +101,8 @@ const reasonShortSentence = ({ reason }: ReasonParams): string | null => {
       return null;
     case 'budget':
       return 'At spend limit';
+    case 'paused':
+      return 'Paused';
     case 'orchestratorFailed':
       return 'Orchestrator failed';
     case 'stopped':
@@ -204,7 +208,7 @@ const nodeStateOf = ({ state }: StateParams): RowNode['state'] => {
       if (state.reason?.kind === 'stepAsking') {
         return 'queued';
       }
-      if (state.reason?.kind === 'budget') {
+      if (state.reason?.kind === 'budget' || state.reason?.kind === 'paused') {
         return 'budget';
       }
       if (
@@ -240,6 +244,9 @@ export const rowStateNode = ({ state }: StateParams): RowNode => {
   }
   if (state.reason?.kind === 'discarded') {
     return { state: node, label: 'Discarded' };
+  }
+  if (state.reason?.kind === 'paused') {
+    return { state: node, label: 'Paused by you' };
   }
   if (state.reason?.kind === 'stepAsking') {
     return { state: node, label: 'Waiting on a step' };

@@ -27,6 +27,7 @@ export type RowStateReason =
   | { readonly kind: 'chatTurn' }
   | { readonly kind: 'closed' }
   | { readonly kind: 'skipped' }
+  | { readonly kind: 'paused' }
   | { readonly kind: 'chained'; readonly afterTitle: string }
   | { readonly kind: 'awaitingFirstMessage' }
   | { readonly kind: 'discarded' }
@@ -209,6 +210,9 @@ const waitingRunState = ({
       reason: { kind: 'question', stepLabel: null },
       ask: { kind: 'answer', question: null },
     };
+  }
+  if (stop === 'paused') {
+    return { phase: 'waiting', reason: { kind: 'paused' }, ask: null };
   }
   if (advance?.kind === 'ready') {
     return {

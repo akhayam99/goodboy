@@ -380,8 +380,8 @@ pushed yet` when origin has no copy, and `Branch diverged from origin`
   only - rebase-project keeps its own narrower per-request check; and the
   demotion window (above) reads the session, not the workspace. A failed
   workflow step has no suggestion: its own row in Activity carries the one
-  **Restart the step**, which opens the step where Check completion and Skip
-  step live. approve-tool opens the agent's
+  **Restart the step**, which opens the step where Ask it to continue and
+  Skip live. approve-tool opens the agent's
   chat rather than the permission card directly; sign-in dispatches the
   same `goodboy:open-settings` event the palette's "Connect a provider"
   uses. continue-with-workflow always offers the workspace's first library
