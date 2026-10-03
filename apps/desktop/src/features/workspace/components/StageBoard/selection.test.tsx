@@ -35,6 +35,7 @@ import {
 } from '../../../../store/storyHarness';
 import { bindTarget } from '../../../actions/registry';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { borderOf, spacingOf } from '../../../../test/boxGeometry';
 import { inFlowBefore, isLaidOver } from '../../../../test/flowLayout';
 import { StageBoard } from './index';
 
@@ -119,6 +120,45 @@ describe('StageBoard selection bar', () => {
       expect(column?.children.length).toBe(2);
       expect(inFlowBefore(titleRow ?? title)).toEqual([]);
       expect(inFlowBefore(column?.lastElementChild ?? title)).toEqual([titleRow]);
+    }
+  });
+
+  it('keeps 6px between the checkbox, the card edge and the title, and gaps the rail under it', () => {
+    mountBoard(sessionsOf(GOALS));
+    const shown = [
+      new Set(['group-hover/select-row']),
+      new Set(['group-focus-within/select-row']),
+      new Set(['group-data-[selecting=true]/select-list']),
+    ];
+
+    for (const goal of GOALS) {
+      const box = checkboxOf(goal);
+      const card = box.closest('article');
+      const anchor = box.parentElement;
+      const square = box.querySelector('span[aria-hidden]');
+      const rail = card?.querySelector('[data-testid="tone-bar"]');
+      if (card == null || anchor == null || square == null || rail == null) {
+        throw new Error(`card parts missing for ${goal}`);
+      }
+      const border = borderOf({ element: card });
+      const inset =
+        (spacingOf({ element: anchor, property: 'size' }) -
+          spacingOf({ element: square, property: 'size' })) /
+        2;
+      const squareSize = spacingOf({ element: square, property: 'size' });
+      const left = border + spacingOf({ element: anchor, property: 'left' }) + inset;
+      const top = border + spacingOf({ element: anchor, property: 'top' }) + inset;
+      const titleLeft = border + spacingOf({ element: card, property: 'pl' });
+
+      expect(squareSize).toBe(16);
+      expect(left).toBeGreaterThanOrEqual(6);
+      expect(top).toBeGreaterThanOrEqual(6);
+      expect(titleLeft - (left + squareSize)).toBeGreaterThanOrEqual(6);
+      for (const states of shown) {
+        expect(border + spacingOf({ element: rail, property: 'top', states })).toBeGreaterThan(
+          top + squareSize,
+        );
+      }
     }
   });
 
