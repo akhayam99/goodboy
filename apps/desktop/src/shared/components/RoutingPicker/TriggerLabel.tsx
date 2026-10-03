@@ -14,7 +14,7 @@ export const TriggerLabel = ({ provider, label }: Props) => {
   return (
     <>
       <ProviderGlyph size={12} className="shrink-0 text-muted-foreground" aria-hidden />
-      <span className="min-w-0 truncate font-mono font-medium text-foreground">
+      <span className="min-w-0 truncate font-sans font-medium text-foreground">
         {routingNameText(label)}
       </span>
       {label.detail.map((segment) => (

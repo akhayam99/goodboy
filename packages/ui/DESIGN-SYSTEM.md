@@ -103,7 +103,9 @@ The list is `TYPE_ROLES` in `typeRoles.ts`.
 The family is Inter: the variable Latin file in `apps/desktop/src/assets/fonts/`,
 declared once as a global face in `styles.css` and first in `--font-sans`, with
 the system stack behind it as the fallback. `--font-mono` stays the system mono
-stack. The body turns on `calt` and sets `font-optical-sizing: auto`, so the
+stack, for code only: a model name is a name, so the routing picker trigger
+(`TriggerLabel`) and the inline `RoutingLabel` set it in the sans family, the
+same as the Runs on row and the Defaults rows. The body turns on `calt` and sets `font-optical-sizing: auto`, so the
 drawing tightens along the file's optical axis (14 to 32) as the size grows.
 Tabular figures are not global: Inter's `tnum` also widens the hyphen, which
 set `storefront-web` apart as `storefront - web`. `text-meta` carries
