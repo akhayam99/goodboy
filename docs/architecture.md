@@ -455,6 +455,7 @@ cleanup) and moving those calls behind the commands is not done yet.
 | `security_findings`           | ts     |                                                                                                                     |
 | `session_artifacts`           | ts     |                                                                                                                     |
 | `session_budgets`             | rust   | `budget.rs`                                                                                                         |
+| `session_context_items`       | ts     | Learnings and role notes. They outlive the session; only a workspace delete removes them.                           |
 | `session_decisions`           | ts     |                                                                                                                     |
 | `session_events`              | ts     |                                                                                                                     |
 | `session_external_tasks`      | ts     |                                                                                                                     |
