@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useIsSessionSyncing } from '../useIsSessionSyncing';
 
-export const SKELETON_DELAY_MS = 250;
+const SKELETON_DELAY_MS = 250;
 
 type Params = {
   readonly sessionId: SessionId;
