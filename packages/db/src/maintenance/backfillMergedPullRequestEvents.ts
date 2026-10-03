@@ -45,11 +45,12 @@ export const backfillMergedPullRequestEvents = async ({ db }: Params): Promise<n
            AND CAST(json_extract(e.payload_json, '$.number') AS INTEGER) = link.pr_number
            AND COALESCE(json_extract(e.payload_json, '$.repository'), link.repo_slug)
              = link.repo_slug
+           AND COALESCE(json_extract(e.payload_json, '$.host'), link.host) = link.host
       )`,
   );
   const unique = [
     ...new Map(
-      rows.map((row) => [`${row.session_id}:${row.repo_slug}:${row.pr_number}`, row]),
+      rows.map((row) => [`${row.session_id}:${row.host}:${row.repo_slug}:${row.pr_number}`, row]),
     ).values(),
   ];
   for (const row of unique) {
