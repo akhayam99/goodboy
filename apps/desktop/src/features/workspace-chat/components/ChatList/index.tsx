@@ -305,7 +305,7 @@ export const ChatList = ({
           ref={listRef}
           aria-label="Chats"
           data-selecting={selectedIds.length > 0}
-          className="group/select-list flex flex-col gap-3 pb-3 pr-3.5 data-[selecting=true]:pb-24"
+          className="group/select-list flex flex-col gap-3 pb-3 pr-3.5"
         >
           {archived !== null && !archived.isIdle ? undoRow : null}
           <ChatListGroup
@@ -374,6 +374,8 @@ export const ChatList = ({
         onSelectAll={selectAll}
         onDone={clear}
         onFocusReturn={focusFirstRow}
+        placement="flow"
+        className="shrink-0 pb-1"
       />
       {archivedChats.length === 0 ? null : (
         <div className="shrink-0 pb-2">

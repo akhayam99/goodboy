@@ -136,6 +136,30 @@ describe('ChatList selection', () => {
     expect(boxOf('refund').getAttribute('aria-checked')).toBe('false');
   });
 
+  it('reserves the bar its own space under the scroll area while a selection is open, and gives it back on clear', async () => {
+    await renderList();
+    const list = screen.getByRole('navigation', { name: 'Chats' });
+    expect(list.getAttribute('data-selecting')).toBe('false');
+    expect(document.querySelector('[data-selection-dock]')).toBeNull();
+
+    fireEvent.click(boxOf('consent'));
+
+    const dock = document.querySelector('[data-selection-dock]') as HTMLElement;
+    expect(list.getAttribute('data-selecting')).toBe('true');
+    expect(dock.getAttribute('data-placement')).toBe('flow');
+    expect(list.contains(dock)).toBe(false);
+    let scrollArea: HTMLElement = list;
+    while (scrollArea.parentElement !== dock.parentElement) {
+      scrollArea = scrollArea.parentElement as HTMLElement;
+    }
+    expect(scrollArea.compareDocumentPosition(dock) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+
+    expect(document.querySelector('[data-selection-dock]')).toBeNull();
+    expect(list.getAttribute('data-selecting')).toBe('false');
+  });
+
   it('does not open the chat when a checkbox is clicked', async () => {
     const { onSelect } = await renderList();
 

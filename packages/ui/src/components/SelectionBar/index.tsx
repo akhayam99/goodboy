@@ -131,6 +131,7 @@ export const SelectionBar = ({
     <div
       ref={dockRef}
       data-selection-dock
+      data-placement={placement}
       aria-live="polite"
       className={cn(PLACEMENT_CLASSES[placement], className)}
     >
