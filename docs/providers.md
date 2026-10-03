@@ -22,8 +22,7 @@ what each provider needs and how to connect it, then how it works under the hood
 Every provider lives in the same place:
 
 1. Open **Settings** (`⌘,` on macOS)
-2. Choose **Providers & models**
-3. Pick the provider in the list
+2. Pick the provider under **Providers & models**
 
 The card shows whether the provider is installed, which account is signed in, and
 its **API keys**. Goodboy runs the provider's own sign-in, so your credentials never
@@ -146,21 +145,37 @@ Goodboy stores keys in your system keychain, not in its own database.
 Go to **Settings** → **Providers & models** → **Defaults** to choose what a workspace
 uses when you leave a model on **Auto**. It is one page in three parts.
 
-- **Providers**
-  - **Default provider**: where Auto starts. Only connected providers appear here
-  - **Fallback order**: the providers Auto moves through, in order, when one is not
-    connected or out of quota. Click a provider to stop or start using it. The
-    default provider is always first
+- **Providers, in order**: the workspace's provider policy, summed up on the row
+  ("Claude, Codex · Cursor as backup"). The row opens the list in place: drag a
+  provider by its handle or move it with Alt and an arrow, and set it **On**,
+  **Backup only** or **Off**. The first On provider is the default for new work, so
+  moving another On provider to the top changes the default in the same write.
+  Backup only runs only when no On provider can work; Off never runs, not even for a
+  role or task pinned to it. **Pay-as-you-go** is a mark that suggests Backup only;
+  **Keep using after the limit** keeps the provider in the order at its limit. A
+  provider connected later shows last as **New** and is unused until turned on.
+  **Reset** goes back to every connected provider On
 - **Agents**: one row per role, grouped as Explore and plan, Build, Review and write,
   and Other. If you pin a model on an agent or a workflow step, that pin beats the role
 - **Background tasks**: one row per side job, grouped as Writing for you, Running
   workflows, and Git
 
-Each row says what the role or job does and ends in a model picker. A row you have not
+Each task row says what the job does and ends in a model picker. A row you have not
 pinned reads **Auto**. Open the picker to see what Auto picks right now. Pick a model to
 pin it: the picker then shows that model and an **x** that goes back to Auto. The page
 header counts the pinned rows. **Reset all to Auto**, in the menu at the top right,
 clears them after a confirm.
+
+Each role row (`DefaultsPanel/RoleRow`) is a `Collapsible`. Closed, it shows what Auto
+picks, or the first model of its set and how many follow (`Opus 5.5 +2`). Open, it shows
+**How Scout runs**, read only, built from the engine and never from copy: the role's
+`explain` entry in `ROLE_REGISTRY`, the pick from `resolveRoleRouting`, and the split
+limits from `roleSplitLimits` (`FAN_OUT_MAX_CHILDREN`, `SCOUT_DEPTH_CAP`,
+`FAN_OUT_DEPTH_CAP` in `@goodboy/core`, the same constants `scoutTree` enforces). When
+Parallel agents is off for the workspace, the split line says the role runs as one
+agent. Below it, **Models for planning** is the role's set: up to three models added
+with the same picker, removed with their **x** or Backspace, moved with Alt and an
+arrow.
 
 - **Auto** picks the same way for roles and tasks: the model chosen for that job on
   the default provider, then the next model in that list when your CLI is too old
@@ -172,9 +187,16 @@ clears them after a confirm.
   writing jobs on Haiku 4.5, and plan drafting, Generalist, Report and the other
   roles on the newest Sonnet at Medium (Sonnet 5.5 today, Sonnet 5 on a Claude CLI
   older than 2.1.284)
-- **If unavailable**: a pinned row has this line at the bottom of its picker. It is
-  the second choice Goodboy uses when the pinned model cannot run. **Auto** lets the
-  ladder above choose
+- **Role model set**: a role with a set runs on one of its models. With no step size
+  (or a large step) it takes the first model that can run; a medium step takes the
+  first one at mid cost or cheaper, a small step the first cheap one, and when none
+  fits, the cheapest. A provider that is Off or not connected is skipped, and so is a
+  model that left the catalog. A role without a set runs on Auto, exactly as before
+- **Workflow steps** follow their role's set unless the step pins a model. The step
+  editor says so (`Follows the role: Planning models · Opus 5.5`). The orchestrator's
+  prompt lists each role's set, and a pick outside the set falls back to the set by
+  the difficulty the orchestrator named (light, standard, heavy as small, medium,
+  large)
 
 ## Models in the picker
 
@@ -635,12 +657,12 @@ When a provider ships or retires a model, update these together:
   (Claude, Codex, Gemini, Cursor) and one ordered list of jobs per role or task. A
   job names a line and an effort; `AUTO_DEFAULTS` is the table `latestInGroup`
   expands from it once, at load, into the non-legacy models of that line, newest
-  first. A resolve never expands again (`expandAtLoad.test.ts`). The ladder
-  tries the default provider first, then the fallback order; within a column it
+  first. A resolve never expands again (`expandAtLoad.test.ts`). With no policy the
+  ladder tries the default provider first, then the fallback order; within a column it
   skips a model the installed CLI is too old for (`cliGate`) or a Cursor combo that
   needs Max Mode when Max Mode is off. A provider with no column (OpenCode,
   OpenRouter, Moonshot) falls back to `strongestModelForTier`, after every curated
-  provider. `AUTO_PROVIDER_GATES` is the list of provider checks: connected, and not
+  provider. `providerCandidates` applies the provider checks: connected, and not
   at its usage limit (`atLimit`, from `providersAtLimit`: a provider whose last
   observation says a window is out and has not reset). A pick that passed a
   provider for its limit carries `skippedAtLimit`. The desktop fills `atLimit`
@@ -653,6 +675,28 @@ When a provider ships or retires a model, update these together:
   why, and a provider's Usage notice says where Auto sends new agents. No
   Cursor default needs Max Mode, and `defaults.test.ts` validates every cell against
   the catalogs and checks that each line cell starts on the newest model of its line
+- **Provider policy.** `workspaces.provider_pool` holds the policy, either the 0.15.4
+  list of names (`["anthropic","codex"]`: those On in that order, the rest Off, the
+  saved default moved first) or the list of entries
+  (`[{ "id": "codex", "state": "on", "keepAfterLimit": true }, ...]`). `null` means
+  every connected provider On, in today's order. `parseProviderPolicy`
+  (`@goodboy/types`), `override-row.ts` and `settings_overrides.rs` read both shapes;
+  a 0.15.4 build reads the entries as `null`, so it falls back to every provider and
+  never crashes, and the backup bundle carries either shape at the same schema
+  version. One writer, `setProviderPolicy` (overrides slice), patches the policy and
+  the default provider together; the slice queues `set_workspace_overrides` per
+  workspace and each write sends the latest row, so two quick edits keep both
+  fields. One reader, `providerCandidates` (`autoRouting/providerCandidates.ts`):
+  usable On providers in the policy order, then usable Backup only providers. The
+  user's order beats the curated-first rule, which stays only for a `null` policy.
+  `providerStanding` names why a provider is out (`not-connected`, `off`,
+  `at-limit`, `backup`); the picker's note and role and task pins read it, so a pin
+  on an Off provider falls back to Auto. `workingProviders` (On, or Backup only once
+  no On provider can work) filters `workflowAvailabilitySnapshot` for static steps,
+  fan-out children and the orchestrator, whose model menu follows
+  `availability.providerOrder`. `workspacePolicyAvailability` hands every snapshot the
+  policy of the workspace that owns the session (the current workspace only when
+  no session is known) and the providers at their limit
 - `ROLE_REGISTRY` holds no routing any more: the Claude column of `AUTO_DEFAULTS` is
   the reference. `kindRouting` maps an agent kind to its role and reads the same
   ladder; there is no separate cheap tier for Scout, Docs or Generalist
@@ -663,8 +707,12 @@ When a provider ships or retires a model, update these together:
   limit, hidden models and installed CLI versions (`autoLimitContext` carries the
   last three). So the model a launch shows is the model it runs, in a Codex
   workspace too. `one-routing-calculation.test.ts` fails on a bare `kindRouting(`
-  anywhere else; `resolveStepRouting` is the one written exception and moves with
-  the provider policy switch. Resolve, its next-step card, Start agent, the kickoff,
+  anywhere else, with no exception. Step routing (`resolveStepRouting`) takes the
+  same scope from `selectRoutingScope`, or `useRoutingScope` in a component: the
+  next step button, agent rows, the reference a turn starts from, pre-spawned step
+  agents, the step estimate and the run time left. A provider set to Off is never
+  offered or estimated there, even when it is the session default; the test also
+  fails on a step routing call without its scope. Resolve, its next-step card, Start agent, the kickoff,
   Explore and Start work from a chat now follow the workspace default provider
 - **Runs on.** A one-click start of an expensive role (Implementer, Resolver,
   Reviewer, PR reviewer, Debugger) shows `Runs on Sonnet 5.5 · Medium · Change`
@@ -683,22 +731,27 @@ When a provider ships or retires a model, update these together:
 - **Agent roles** are the union `AgentRole` in `@goodboy/types`. They are saved in
   `workspaces.role_models` and read through `resolveRoleRouting`, which takes an
   optional `auto` context (default provider, fallback order, connected providers,
-  CLI versions). Without one it answers for Claude. A pin on a provider the context
-  says is not connected moves to its fallback, then to Auto, and the result carries
-  `pinnedUnavailable` so the UI can say so
-- Role checks are forgiving. If an override names an unknown provider or an
-  unregistered model, the whole override goes back to the built-in default
+  CLI versions) and an optional step `size`. Without a context it answers for Claude.
+  The saved shape is `{ providerId, model, effort, models }`: `models` is the ordered
+  set and the first entry is mirrored in the old fields, so an older reader still sees
+  a pin. An older row `{ providerId, model, effort, fallback }` reads as a set of two
+  (`roleModelChoices`). No migration. When the first model of the set cannot run here,
+  the result carries `pinnedUnavailable` so the UI can say so
+- Role checks are forgiving. A set entry that names an unknown provider or an
+  unregistered model is skipped; when no entry is left, the role goes back to the
+  built-in default
 - If an effort is not on the ladder, it becomes the role's default effort when that
   one is on the ladder. Otherwise it becomes the top of the ladder
-- **Fallback** set to **Automatic** means the key is missing from the saved
-  preference. It is never a special string, because `auto` is a real Cursor model id
-- After a failure Goodboy recognizes, the first retry uses the fallback you set. The
-  second retry uses the `planTurnFallback` heuristic as a safety net. `MAX_ATTEMPTS`
-  stays 2, and the way failures are recognized does not change
-- The fallback uses the role's effort and gets checked on its own. Goodboy skips it
-  and uses the heuristic if it names an unknown provider or model, a disconnected
-  provider, or the same pair that failed on this turn. There is one fallback entry,
-  then the heuristic
+- After a failure Goodboy recognizes, the first retry uses the next model of the
+  role's set after the one that failed, or the second model of the set when the
+  failed one is not in it (`nextRoleModelChoice`). A set of one has no retry of its
+  own. The second retry uses
+  the `planTurnFallback` heuristic as a safety net. `MAX_ATTEMPTS` stays 2, and the
+  way failures are recognized does not change
+- A set model uses its own effort when it has one, else the role's saved effort, and
+  gets checked on its own. Goodboy skips it and uses the heuristic if it names an
+  unknown provider or model, a disconnected provider, or the same pair that failed on
+  this turn
 
 ### Usage limits
 

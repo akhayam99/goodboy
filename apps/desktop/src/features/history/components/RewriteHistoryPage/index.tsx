@@ -14,6 +14,7 @@ import { HistoryLegend } from './HistoryLegend';
 import { HistoryNowColumn } from './HistoryNowColumn';
 import { HistoryPageActions } from './HistoryPageActions';
 import { HistoryPlannedSection } from './HistoryPlannedSection';
+import { HistoryResultHead } from './HistoryResultHead';
 import { HistoryStatusSlot } from './HistoryStatusSlot';
 import { buildHistoryRowRenderer } from './buildHistoryRowRenderer';
 import { historyLaneNodes } from './historyLaneNodes';
@@ -25,6 +26,7 @@ import { useHistoryKeys } from './useHistoryKeys';
 import { useHistoryPlan } from './useHistoryPlan';
 import { useHistoryPlanDrag } from './useHistoryPlanDrag';
 import { useHistoryPrediction } from './useHistoryPrediction';
+import { useHistoryRowCallbacks } from './useHistoryRowCallbacks';
 import { useHistoryRows } from './useHistoryRows';
 import { useHistoryRunFlow } from './useHistoryRunFlow';
 import { useHistoryScribe } from './useHistoryScribe';
@@ -131,6 +133,9 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
     setLive: editing.setLive,
   });
   const scribe = useHistoryScribe({ sessionId, mountId, editingSha });
+  const callbacksFor = useHistoryRowCallbacks({
+    latest: { items, titleOf, drag, editing, setEditingSha, setHover, toggleExpanded },
+  });
 
   if (mountId === null || mount === null || flow === null) {
     return (
@@ -180,8 +185,7 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
     editing,
     scribe,
     setEditingSha,
-    setHover,
-    toggleExpanded,
+    callbacksFor,
   });
   const meta = (
     <span className="flex flex-wrap items-center gap-1.5">
@@ -240,6 +244,7 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
             onClose={backups.hideBackups}
           />
         ) : null}
+        {applied !== null && run !== null ? <HistoryResultHead applied={applied} /> : null}
         <div className="flex flex-col gap-4">
           <div
             ref={stage.ref}
@@ -351,7 +356,7 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
       tone={CONCEPT_TONE.history}
       meta={meta}
       actions={actions}
-      scroll="body"
+      scroll="pane"
     >
       {body}
     </PaneShell>

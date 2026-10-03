@@ -4,7 +4,9 @@ import type { TimelineAgentEntry } from '../../../session/timeline/buildTimeline
 import type { TimelineRowItem } from '../../../session/timeline/buildTimelineStream';
 import { TimelineNowRule } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineNowRule';
 import { useAgentSpendById } from '../../hooks/useAgentSpendById';
-import { RunTreeRow, answerOf, type RunTreeRouting } from './RunTreeRow';
+import type { RowPhase } from '../../../workTreeModel/rowState';
+import { RunTreeRow, type RunTreeRouting } from './RunTreeRow';
+import type { RunStepSkipAction } from './RunStepSkip';
 import type { RunTreeModel } from './useRunTree';
 
 type Props = {
@@ -16,10 +18,13 @@ type Props = {
   readonly routing: RunTreeRouting;
   readonly selectedAgentId: AgentId | null;
   readonly highlightedStepId?: string | null;
+  readonly skip?: RunStepSkipAction | null;
   readonly onHighlight?: (stepId: string | null) => void;
   readonly onSelect: (id: AgentId) => void;
   readonly onAnswer: (question: OpenQuestion | null) => void;
 };
+
+const LIVE_PHASES: ReadonlySet<RowPhase> = new Set<RowPhase>(['queued', 'running', 'waiting']);
 
 type AgentRowItem = TimelineRowItem & { readonly entry: TimelineAgentEntry };
 
@@ -39,6 +44,7 @@ export const RunTreeRows = ({
   routing,
   selectedAgentId,
   highlightedStepId = null,
+  skip = null,
   onHighlight,
   onSelect,
   onAnswer,
@@ -63,7 +69,7 @@ export const RunTreeRows = ({
   }, [activeRowId, scrollKey]);
 
   const hasActionColumn = stream.items.some(
-    (item) => item.kind === 'row' && answerOf({ ask: item.rowState.ask }) !== null,
+    (item) => item.kind === 'row' && LIVE_PHASES.has(item.rowState.phase),
   );
   const agentById = new Map<string, Agent>();
   for (const item of stream.items) {
@@ -121,6 +127,7 @@ export const RunTreeRows = ({
               parentStepName={parentNameOf({ entry: item.entry })}
               isSelected={item.entry.agent.id === selectedAgentId}
               isHighlighted={stepId !== null && stepId === highlightedStepId}
+              skip={skip}
               onHighlight={
                 onHighlight === undefined || stepId === null
                   ? undefined

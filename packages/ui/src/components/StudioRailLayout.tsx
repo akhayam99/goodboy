@@ -1,34 +1,88 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { cn } from '../cn';
-import { SHEET_CLASSES } from '../sheet';
+import { SHEET_CLASSES, type ResizeActivity } from '../sheet';
+import { readStoredWidth, useResizableWidth } from '../useResizableWidth';
+import { ResizeHandle } from './ResizeHandle';
 
-const RAIL_WIDTH_CLASSES = {
-  narrow: 'w-64',
-  standard: 'w-72',
-  wide: 'w-80',
-  xwide: 'w-[26rem]',
-} satisfies Record<string, string>;
+export const STUDIO_RAIL_WIDTHS = {
+  narrow: 256,
+  standard: 288,
+} as const satisfies Record<string, number>;
+
+export const STUDIO_RAIL_MIN = 220;
+export const STUDIO_RAIL_MAX = 420;
+
+type RailWidth = keyof typeof STUDIO_RAIL_WIDTHS;
+
+const RAIL_WIDTH_VAR = '--goodboy-studio-rail-width';
+
+export const studioRailStorageKey = ({ surface }: { readonly surface: string }): string =>
+  `goodboy:studio-rail-width:${surface}:v1`;
+
+export const readStudioRailWidth = ({
+  surface,
+  railWidth,
+}: {
+  readonly surface: string;
+  readonly railWidth: RailWidth;
+}): number =>
+  readStoredWidth({
+    storageKey: studioRailStorageKey({ surface }),
+    fallback: STUDIO_RAIL_WIDTHS[railWidth],
+    min: STUDIO_RAIL_MIN,
+    max: STUDIO_RAIL_MAX,
+  });
 
 type Props = {
   readonly rail: ReactNode;
   readonly detail: ReactNode;
   readonly railLabel: string;
-  readonly railWidth: keyof typeof RAIL_WIDTH_CLASSES;
+  readonly railWidth: RailWidth;
+  readonly surface: string;
 };
 
-export const StudioRailLayout = ({ rail, detail, railLabel, railWidth }: Props) => (
-  <div data-studio-rail="" className="flex h-full min-h-0 flex-1 bg-chrome">
-    <aside
-      aria-label={railLabel}
-      className={cn('flex min-h-0 shrink-0 flex-col', RAIL_WIDTH_CLASSES[railWidth])}
-    >
-      {rail}
-    </aside>
+export const StudioRailLayout = ({ rail, detail, railLabel, railWidth, surface }: Props) => {
+  const resizable = useResizableWidth<HTMLDivElement>({
+    storageKey: studioRailStorageKey({ surface }),
+    defaultWidth: STUDIO_RAIL_WIDTHS[railWidth],
+    min: STUDIO_RAIL_MIN,
+    max: STUDIO_RAIL_MAX,
+    cssVar: RAIL_WIDTH_VAR,
+  });
+  const [activity, setActivity] = useState<ResizeActivity>('idle');
+
+  return (
     <div
-      data-sheet="wrapped"
-      className={cn('min-h-0 min-w-0 flex-1 overflow-hidden bg-background', SHEET_CLASSES.wrapped)}
+      ref={resizable.targetRef}
+      data-studio-rail=""
+      style={resizable.style}
+      className="flex h-full min-h-0 flex-1 bg-chrome"
     >
-      {detail}
+      <aside
+        aria-label={railLabel}
+        style={{ width: `var(${RAIL_WIDTH_VAR})` }}
+        className="relative flex min-h-0 shrink-0 flex-col"
+      >
+        {rail}
+        <div className="absolute inset-y-0 -right-1 z-10 flex">
+          <ResizeHandle
+            {...resizable.handleProps}
+            ariaLabel={`Resize ${railLabel.toLowerCase()}`}
+            onActivityChange={setActivity}
+            drawsEdge={false}
+          />
+        </div>
+      </aside>
+      <div
+        data-sheet="wrapped"
+        data-left-resize={activity}
+        className={cn(
+          'min-h-0 min-w-0 flex-1 overflow-hidden bg-background',
+          SHEET_CLASSES.wrapped,
+        )}
+      >
+        {detail}
+      </div>
     </div>
-  </div>
-);
+  );
+};

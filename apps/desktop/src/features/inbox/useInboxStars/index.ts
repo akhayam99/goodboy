@@ -73,12 +73,15 @@ export const useInboxStars = ({ workspaceId, records, refreshOnOpen = true }: Pa
     [starred, loadedByKey, fresh],
   );
 
-  const isStarred = (record: InboxRecord): boolean => {
-    const key = recordStarKey(record);
-    return key !== null && starredKeys.has(key);
-  };
+  const isStarred = useCallback(
+    (record: InboxRecord): boolean => {
+      const key = recordStarKey(record);
+      return key !== null && starredKeys.has(key);
+    },
+    [starredKeys],
+  );
 
-  const canStar = (record: InboxRecord): boolean => recordStarKey(record) !== null;
+  const canStar = useCallback((record: InboxRecord): boolean => recordStarKey(record) !== null, []);
 
   const toggle = useCallback(
     async (record: InboxRecord): Promise<void> => {

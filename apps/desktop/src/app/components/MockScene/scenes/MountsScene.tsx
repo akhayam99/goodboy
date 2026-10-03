@@ -32,6 +32,7 @@ import { useAppStore } from '../../../../store';
 import { useHoveredMountRow, useShowCompletedMounts } from './sceneReveal';
 import { ShellFrame, seedShellChrome } from './shellChrome';
 import { sceneClock } from '../sceneClock';
+import { overviewFullSeed } from './overviewFullSeed';
 
 const clock = sceneClock({ anchor: '2026-09-07T13:15:00.000Z' });
 
@@ -167,40 +168,73 @@ const MOUNT_SEEDS: ReadonlyArray<MountSeed> = [
   },
 ];
 
-const MOUNT_VIEWS: ReadonlyArray<SessionMountView> = MOUNT_SEEDS.map((seed) => ({
-  id: seed.id,
-  sessionId: SESSION_ID,
-  projectId: seed.projectId,
-  worktreePath: seed.worktreePath,
-  lastWorktreePath: seed.lastWorktreePath,
-  branch: seed.branch,
-  baseBranch: 'main',
-  parallelIndex: seed.parallelIndex,
-  mountName: seed.mountName,
-  repoSlug: `harborline/${seed.mountName}`,
-  repoRoot: seed.repoRoot,
-  isAttached: seed.isAttached,
-  diskState: 'present',
-  revision: 4,
-  createdAt: NOW,
-  updatedAt: NOW,
-}));
+const EXTRA_SEEDS: ReadonlyArray<MountSeed> = [
+  {
+    id: 'mock-mount-ledger-audit' as MountId,
+    projectId: LEDGER_ID,
+    mountName: 'ledger-core',
+    branch: 'fix/ledger-reconciliation-audit-trail',
+    repoRoot: LEDGER_ROOT,
+    worktreePath: `${LEDGER_ROOT}-audit`,
+    lastWorktreePath: `${LEDGER_ROOT}-audit`,
+    isAttached: true,
+    parallelIndex: 3,
+  },
+  {
+    id: 'mock-mount-relay-jitter' as MountId,
+    projectId: RELAY_ID,
+    mountName: 'notify-relay',
+    branch: 'fix/notify-relay-backoff-jitter',
+    repoRoot: RELAY_ROOT,
+    worktreePath: `${RELAY_ROOT}-jitter`,
+    lastWorktreePath: `${RELAY_ROOT}-jitter`,
+    isAttached: true,
+    parallelIndex: 1,
+  },
+];
 
-const PROJECT_MOUNTS: ReadonlyArray<SessionProjectMount> = MOUNT_SEEDS.map((seed) => ({
-  mountId: seed.id,
-  projectId: seed.projectId,
-  mountName: seed.mountName,
-  worktreePath: seed.worktreePath ?? seed.lastWorktreePath ?? seed.repoRoot,
-  lastWorktreePath: seed.lastWorktreePath,
-  repoRoot: seed.repoRoot,
-  branch: seed.branch,
-  baseBranch: 'main',
-  parallelIndex: seed.parallelIndex,
-  diskState: 'present',
-  revision: 4,
-  sessionId: SESSION_ID,
-  isAttached: true,
-}));
+type MountsVariant = 'mounts' | 'many' | 'refreshing' | 'full';
+
+type Props = {
+  readonly variant?: MountsVariant;
+};
+
+const viewsOf = (seeds: ReadonlyArray<MountSeed>): ReadonlyArray<SessionMountView> =>
+  seeds.map((seed) => ({
+    id: seed.id,
+    sessionId: SESSION_ID,
+    projectId: seed.projectId,
+    worktreePath: seed.worktreePath,
+    lastWorktreePath: seed.lastWorktreePath,
+    branch: seed.branch,
+    baseBranch: 'main',
+    parallelIndex: seed.parallelIndex,
+    mountName: seed.mountName,
+    repoSlug: `harborline/${seed.mountName}`,
+    repoRoot: seed.repoRoot,
+    isAttached: seed.isAttached,
+    diskState: 'present',
+    revision: 4,
+    createdAt: NOW,
+    updatedAt: NOW,
+  }));
+
+const projectMountsOf = (seeds: ReadonlyArray<MountSeed>): ReadonlyArray<SessionProjectMount> =>
+  seeds.map((seed) => ({
+    mountId: seed.id,
+    projectId: seed.projectId,
+    mountName: seed.mountName,
+    worktreePath: seed.worktreePath ?? seed.lastWorktreePath ?? seed.repoRoot,
+    lastWorktreePath: seed.lastWorktreePath,
+    repoRoot: seed.repoRoot,
+    branch: seed.branch,
+    baseBranch: 'main',
+    parallelIndex: seed.parallelIndex,
+    diskState: 'present',
+    revision: 4,
+    sessionId: SESSION_ID,
+    isAttached: true,
+  }));
 
 const SESSION: Session = {
   id: SESSION_ID,
@@ -539,8 +573,10 @@ const SERIES: PrSeriesView = {
   ],
 };
 
-export const MountsScene = () => {
+export const MountsScene = ({ variant = 'mounts' }: Props) => {
   const [isReady, setIsReady] = useState(false);
+  const seeds = variant === 'many' ? [...MOUNT_SEEDS, ...EXTRA_SEEDS] : MOUNT_SEEDS;
+  const views = viewsOf(seeds);
 
   useEffect(() => {
     useAppStore.setState({
@@ -549,8 +585,11 @@ export const MountsScene = () => {
       projects: PROJECTS,
       sessions: [SESSION],
       currentSessionId: SESSION_ID,
-      sessionMounts: { [SESSION_ID]: MOUNT_VIEWS },
-      sessionProjectMounts: { [SESSION_ID]: PROJECT_MOUNTS },
+      sessionMounts: { [SESSION_ID]: views },
+      sessionProjectMounts: { [SESSION_ID]: projectMountsOf(seeds) },
+      sessionSyncing: variant === 'refreshing' ? { [SESSION_ID]: true } : {},
+      ...(variant === 'full' &&
+        overviewFullSeed({ workspaceId: WORKSPACE_ID, sessionId: SESSION_ID, now: NOW })),
       sessionActiveMount: { [SESSION_ID]: POSTINGS_MOUNT },
       sessionActiveProject: { [SESSION_ID]: LEDGER_ID },
       mountBranchObservations: { [SESSION_ID]: [] },
@@ -582,12 +621,12 @@ export const MountsScene = () => {
       mountGitlabMr: {},
       mountBitbucketPr: {},
       sessionWorktrees: {
-        [SESSION_ID]: MOUNT_SEEDS.flatMap((seed) =>
+        [SESSION_ID]: seeds.flatMap((seed) =>
           seed.worktreePath === null ? [] : [seed.worktreePath],
         ),
       },
       sessionWorktreeRecords: {
-        [SESSION_ID]: MOUNT_SEEDS.map((seed, index) => ({
+        [SESSION_ID]: seeds.map((seed, index) => ({
           id: `mock-worktree-${index}`,
           sessionId: SESSION_ID,
           worktreePath: seed.worktreePath ?? seed.lastWorktreePath ?? seed.repoRoot,
@@ -664,7 +703,7 @@ export const MountsScene = () => {
       terminalTabs: { [SESSION_ID]: [] },
       scriptRuns: { [SESSION_ID]: {} },
       projectScripts: { [WORKSPACE_ID]: [] },
-      loadSessionMounts: async () => MOUNT_VIEWS,
+      loadSessionMounts: async () => views,
       loadPrSeries: async () => [SERIES],
       loadMountCleanupProposals: async () => [],
     });

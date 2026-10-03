@@ -1,16 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Plus } from 'lucide-react';
-import {
-  Button,
-  cn,
-  EmptyState,
-  ScrollFade,
-  Skeleton,
-  Tooltip,
-  tintClasses,
-  DogMascot,
-} from '@goodboy/ui';
+import { Button, cn, EmptyState, ScrollFade, Skeleton, Tooltip, tintClasses } from '@goodboy/ui';
 import type { Session, SessionId, SessionStage, WorkspaceId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -20,9 +11,13 @@ import {
 } from '../../../../store';
 import { STAGE_ORDER } from '../../../../store/slices/session-view/types';
 import { PANE_RHYTHM } from '@goodboy/ui';
-import { BulkActionBar } from '../BulkActionBar';
+import { EmptyBoardStages } from './EmptyBoardStages';
 import { useProjectGitStatuses } from '../../hooks/useProjectGitStatuses';
 import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
+import { useSelectionKeys } from '../../../../shared/hooks/useSelectionKeys';
+import { useActionControls } from '../../../actions/useActionControls';
+import { ObjectSelectionBar } from '../../../../shared/components/ObjectSelectionBar';
+import type { ObjectTarget } from '../../../actions/types';
 import { useSessionArchive } from '../../../session/hooks/useSessionArchive';
 import { ProjectsStep } from '../../../onboarding/OnboardingWizard/steps/ProjectsStep';
 import { StageColumn, type ColumnCollapse } from './StageColumn';
@@ -45,6 +40,8 @@ const STAGES: ReadonlyArray<SessionStage> = (
 const BOARD_COLLAPSIBLE_COLUMNS: ReadonlyArray<BoardCollapsibleColumn> = ['done', 'archived'];
 
 const SKELETON_COLUMNS = [3, 2, 2, 1];
+
+const SELECTION_VERB_IDS = ['sessions.archive', 'sessions.restore', 'sessions.delete'];
 
 const BoardSkeleton = () => (
   <div
@@ -134,10 +131,14 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
     [byStage],
   );
   const selection = useBoardSelection({ activeSessions, archivedSessions: filteredArchived });
-  const selectedIds = useMemo(
-    () => selection.selectedSessions.map((session) => session.id as SessionId),
-    [selection.selectedSessions],
+  const { selectedIds } = selection;
+  const boardRef = useRef<HTMLDivElement | null>(null);
+  const selectionTarget = useMemo<ObjectTarget | null>(
+    () => (selectedIds.length === 0 ? null : { kind: 'sessions', sessionIds: selectedIds }),
+    [selectedIds],
   );
+  const selectionControls = useActionControls({ target: selectionTarget });
+  const triggerSelectionAction = selectionControls.trigger;
   const columnsRef = useRef<HTMLDivElement | null>(null);
   const onLassoSelect = useCallback(
     (ids: ReadonlyArray<SessionId>, mode: 'replace' | 'add') => {
@@ -157,6 +158,24 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
     onSelect: onLassoSelect,
     ignoreSelector: '[data-board-dock]',
   });
+  const onSelectionKeyToggle = useCallback(
+    (id: string) => selection.onToggle(id as SessionId),
+    [selection],
+  );
+  const onSelectionKeyDelete = useCallback(
+    () => triggerSelectionAction({ actionId: 'sessions.delete' }),
+    [triggerSelectionAction],
+  );
+  useSelectionKeys({
+    containerRef: boardRef,
+    hasSelection: selectedIds.length > 0,
+    onToggle: onSelectionKeyToggle,
+    onSelectAll: selection.selectAll,
+    onDelete: onSelectionKeyDelete,
+  });
+  const focusFirstCard = useCallback(() => {
+    columnsRef.current?.querySelector<HTMLElement>('[data-select-id] button')?.focus();
+  }, []);
 
   const { collapsed, setCollapsed } = useBoardCollapse({ workspaceId });
   const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
@@ -253,8 +272,9 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
 
   return (
     <div
+      ref={boardRef}
       className={cn(
-        'mx-auto flex h-full w-full',
+        'relative mx-auto flex h-full w-full',
         PANE_RHYTHM.board.maxWidth,
         PANE_RHYTHM.stack,
         'gap-6',
@@ -300,9 +320,9 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
       {!pending && hasProjects && empty && hasUsableProject && (
         <div className="flex flex-1 items-center justify-center">
           <EmptyState
-            illustration={<DogMascot size={72} className="text-primary" />}
+            illustration={<EmptyBoardStages />}
             title="Start your first session"
-            description="Describe an outcome; an agent picks it up in its own worktree and branch."
+            description="Sessions move across the board as agents work. Each one lands in a stage."
             action={
               <Button
                 size="md"
@@ -350,8 +370,9 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
           <div
             ref={columnsRef}
             onPointerDown={lasso.onPointerDown}
+            data-selecting={selectedIds.length > 0}
             className={cn(
-              'relative flex h-full min-h-0 w-max min-w-full',
+              'group/select-list relative flex h-full min-h-0 w-max min-w-full',
               PANE_RHYTHM.board.colGap,
             )}
           >
@@ -361,8 +382,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
                 spec={{ kind: 'stage', stage }}
                 sessions={byStage.get(stage) ?? EMPTY_ARRAY}
                 nav={nav}
-                selection={selection.active}
-                selectedIds={selectedIds}
+                selection={selection}
                 onClearSelection={selection.clearAll}
                 onRestore={onRestore}
                 collapse={stage === 'done' ? collapseFor('done') : undefined}
@@ -374,8 +394,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
                 spec={{ kind: 'archived' }}
                 sessions={filteredArchived}
                 nav={nav}
-                selection={selection.archived}
-                selectedIds={selectedIds}
+                selection={selection}
                 onClearSelection={selection.clearAll}
                 onRestore={onRestore}
                 collapse={collapseFor('archived')}
@@ -408,19 +427,16 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
         </ScrollFade>
       )}
 
-      {selection.selectedSessions.length > 0 && (
-        <BulkActionBar
-          scope={selection.scope}
-          sessions={selection.selectedSessions}
-          onSelectAll={
-            selection.scope === 'archived'
-              ? selection.archived.selectAll
-              : selection.active.selectAll
-          }
-          onClear={selection.clearAll}
-          className="shrink-0"
-        />
-      )}
+      <ObjectSelectionBar
+        controls={selectionControls}
+        verbIds={SELECTION_VERB_IDS}
+        count={selectedIds.length}
+        total={selection.total}
+        onClear={selection.clearAll}
+        onSelectAll={selection.selectAll}
+        onDone={selection.clearAll}
+        onFocusReturn={focusFirstCard}
+      />
     </div>
   );
 };

@@ -332,6 +332,39 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
     expect(getState().agentEffortOverride[INSERTED_ID]).toBe('high');
   });
 
+  it('starts on the first On provider of the policy when no default is saved', async () => {
+    const { getState, spawn } = buildHarness([]);
+    Object.assign(getState().workspaceOverrides, {
+      [WS_ID]: {
+        providerPool: [
+          { id: 'codex', state: 'on' },
+          { id: 'anthropic', state: 'on' },
+        ],
+      },
+    });
+
+    await spawn(SESSION_ID, { kindOverride: 'implementer' });
+
+    expect(getState().agentProviderOverride[INSERTED_ID]).toBe('codex');
+  });
+
+  it('never starts an agent on an Off provider, even the session default', async () => {
+    const { getState, spawn } = buildHarness([]);
+    Object.assign(getState().workspaceOverrides, {
+      [WS_ID]: {
+        providerPool: [
+          { id: 'anthropic', state: 'off' },
+          { id: 'cursor', state: 'backup' },
+          { id: 'codex', state: 'on' },
+        ],
+      },
+    });
+
+    await spawn(SESSION_ID, { kindOverride: 'reviewer' });
+
+    expect(getState().agentProviderOverride[INSERTED_ID]).toBe('codex');
+  });
+
   it('keeps an explicit model while seeding omitted routing fields', async () => {
     const { getState, spawn } = buildHarness([]);
 

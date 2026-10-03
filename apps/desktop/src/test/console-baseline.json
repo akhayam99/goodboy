@@ -9,14 +9,6 @@
       "message": "[cursor-adapter] dropped a stream-json line that is not json"
     },
     {
-      "file": "src/features/providers/components/ProviderStudio/DefaultsPanel/RoleModelRow/index.test.tsx",
-      "message": "[role-models] invalid planner model auto for anthropic; using the anthropic default model"
-    },
-    {
-      "file": "src/features/providers/components/ProviderStudio/DefaultsPanel/RoleModelRow/index.test.tsx",
-      "message": "[role-models] invalid planner model kimi-k#-low for anthropic; using the anthropic default model"
-    },
-    {
       "file": "src/features/session/agent-kind.test.ts",
       "message": "[role-models] invalid reviewer model claude-opus-# for anthropic; using the anthropic default model"
     },

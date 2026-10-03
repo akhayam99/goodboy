@@ -1,6 +1,17 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
+vi.mock('../../../../shared/lib/db', async () =>
+  (await import('../../../../store/storyHarness')).dbLibModuleMock(),
+);
+
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type {
   Agent,
@@ -18,16 +29,23 @@ import type {
   WorkflowRun,
   WorkflowRunId,
 } from '@goodboy/types';
+import type { AppStore } from '../../../../store/store';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../store/storyHarness';
 
 import { WorkTimeContext, type WorkTimeSource } from '../../../workTreeModel/workTimeSource';
 
-const { storeState } = vi.hoisted(() => ({
-  storeState: {} as Record<string, unknown>,
-}));
+const storeState: Record<string, unknown> = {};
 
-vi.mock('../../../../store/store', () => ({
-  useAppStore: (selector: (state: Record<string, unknown>) => unknown) => selector(storeState),
-}));
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
 
 import { OrchestratorStrip } from './index';
 
@@ -102,8 +120,9 @@ const renderStrip = ({
   costUsd = 0,
   isOrchestrating = false,
   source = null,
-}: RenderParams = {}) =>
-  render(
+}: RenderParams = {}) => {
+  useAppStore.setState(storeState as Partial<AppStore>);
+  return render(
     <WorkTimeContext.Provider value={source}>
       <OrchestratorStrip
         sessionId={SESSION_ID}
@@ -115,6 +134,7 @@ const renderStrip = ({
       />
     </WorkTimeContext.Provider>,
   );
+};
 
 const HINT_AT = '2026-09-23T10:00:00.000Z' as IsoDateTime;
 
@@ -131,7 +151,8 @@ const openMenu = () => {
   fireEvent.click(screen.getByRole('button', { name: 'Orchestrator actions' }));
 };
 
-beforeEach(() => {
+beforeEach(async () => {
+  await resetStoryStore();
   Object.assign(storeState, {
     orchestrateNextStep: vi.fn(async () => undefined),
     retryWorkflowOrchestration: vi.fn(async () => undefined),
@@ -141,9 +162,13 @@ beforeEach(() => {
     setWorkflowOrchestratorRouting: vi.fn(async () => undefined),
     setWorkflowRunAutoRun: vi.fn(async () => undefined),
     stopWorkflowRunNow: vi.fn(async () => undefined),
+    pauseWorkflowRun: vi.fn(async () => undefined),
+    resumeWorkflowRun: vi.fn(async () => undefined),
     setWorkflowRunSpendLimit: vi.fn(async () => undefined),
     sessionOpenQuestions: {},
     orchestratorReadingHints: {},
+    workflowRunAttachments: {},
+    loadGoalAttachments: vi.fn(async () => undefined),
     budgetAlerts: [],
     sessionBudgets: {},
     sessionTelemetry: {},
@@ -177,12 +202,11 @@ describe('OrchestratorStrip state ladder', () => {
   it('says where the run got to before offering the next decision', () => {
     renderStrip({ agents: [agent(0, 'completed'), agent(1, 'completed')] });
 
-    expect(sentence()).toContain('Paused · autorun is off');
+    expect(sentence()).toContain('Waiting for your go');
     fireEvent.click(screen.getByTestId('workflow-orchestrate-next-cta'));
 
     expect(storeState['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
   });
-
   it('offers no next step control while autorun drives the run', () => {
     renderStrip({ runOverride: run({ autoRun: true }), agents: [agent(0, 'completed')] });
 
@@ -270,33 +294,48 @@ describe('OrchestratorStrip state ladder', () => {
     expect(screen.queryByTestId('orchestrator-elapsed')).toBeNull();
   });
 
-  it('confirms Stop now from the overflow and dispatches the hard stop', () => {
+  it('confirms Stop on the strip and dispatches the hard stop', async () => {
     renderStrip({
       runOverride: run({ autoRun: true }),
       agents: [agent(0, 'running')],
     });
 
-    expect(screen.queryByRole('button', { name: 'Stop now' })).toBeNull();
-    openMenu();
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Stop now' }));
-
-    const confirm = screen.getByRole('group', { name: 'Stop now?' });
+    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
+    const confirm = await screen.findByRole('group', { name: 'Stop the run?' });
     expect(confirm.textContent).toContain(
-      'The step in flight is cancelled and marked skipped. Everything it already wrote is kept.',
+      'The step in flight is cancelled and marked Skipped. Everything it already wrote is kept.',
     );
-    fireEvent.click(within(confirm).getByRole('button', { name: 'Stop now' }));
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Stop run' }));
 
-    expect(storeState['stopWorkflowRunNow']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+    await waitFor(() =>
+      expect(storeState['stopWorkflowRunNow']).toHaveBeenCalledWith(SESSION_ID, RUN_ID),
+    );
   });
-
-  it('keeps Stop now available during a graceful pause', () => {
+  it('pauses a live run from the strip and keeps Stop on offer', () => {
     renderStrip({ agents: [agent(0, 'running')] });
 
-    expect(sentence()).toContain('Finishing the step in flight · autorun is off');
-    openMenu();
-    expect(screen.getByRole('menuitem', { name: 'Stop now' })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Pause' }));
+
+    expect(storeState['pauseWorkflowRun']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+    screen.getByRole('button', { name: 'Stop' });
   });
 
+  it('says it is paused, what finishes, and resumes on Resume', () => {
+    renderStrip({
+      runOverride: run({ autoRun: true, orchestrationStop: { kind: 'paused', message: 'paused' } }),
+      agents: [agent(0, 'running', { name: 'Reviewer' })],
+    });
+
+    expect(sentence()).toBe('Paused by you');
+    expect(screen.getByTestId('orchestrator-detail').textContent).toContain(
+      'Reviewer finishes its turn.',
+    );
+    expect(screen.queryByRole('button', { name: 'Pause' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Resume' }));
+
+    expect(storeState['resumeWorkflowRun']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+    expect(storeState['setWorkflowRunAutoRun']).not.toHaveBeenCalled();
+  });
   it('names a gating question and leaves the answer to the next action strip', () => {
     Object.assign(storeState, {
       sessionOpenQuestions: {
@@ -364,12 +403,11 @@ describe('OrchestratorStrip state ladder', () => {
       agents: [agent(0, 'completed')],
     });
 
-    expect(sentence()).toContain('Paused · autorun is off');
+    expect(sentence()).toContain('Waiting for your go');
     fireEvent.click(screen.getByTestId('workflow-orchestrate-next-cta'));
 
     expect(storeState['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
   });
-
   it('reads an operator stop as a stop, and resumes hands-free from it', () => {
     renderStrip({
       runOverride: run({
@@ -475,18 +513,17 @@ describe('OrchestratorStrip state ladder', () => {
 });
 
 describe('OrchestratorStrip layout', () => {
-  it('reads as one row with the model, autorun and the overflow, and the hint field under it', () => {
+  it('reads as one row with Pause, the model and the overflow, and the hint field under it', () => {
     renderStrip({ agents: [agent(0, 'running')], runOverride: run({ autoRun: true }) });
 
     const row = screen.getByTestId('orchestrator-strip-row');
+    expect(row.contains(screen.getByRole('button', { name: 'Pause' }))).toBe(true);
     expect(row.contains(screen.getByTestId('orchestrator-routing'))).toBe(true);
-    expect(row.contains(screen.getByTestId('workflow-autorun-toggle'))).toBe(true);
     expect(row.contains(screen.getByRole('button', { name: 'Orchestrator actions' }))).toBe(true);
     expect(row.contains(screen.getByTestId('orchestrator-hint-input'))).toBe(false);
-    expect(row.className).not.toMatch(/\bbg-(info|warning|danger|success)/u);
+    expect(screen.queryByRole('switch', { name: 'Autorun' })).toBeNull();
   });
-
-  it('keeps Stop now and the model per step behind the overflow', () => {
+  it('keeps when to ask and the model per step behind the overflow', () => {
     const running = agent(0, 'running', { name: 'Scout the parser' });
     Object.assign(storeState, {
       sessionPhaseRuns: { [SESSION_ID]: [running] },
@@ -497,9 +534,11 @@ describe('OrchestratorStrip layout', () => {
 
     expect(screen.queryByRole('region', { name: 'Model per step' })).toBeNull();
     openMenu();
+    expect(
+      screen.getAllByRole('menuitemradio').map((item) => item.getAttribute('aria-checked')),
+    ).toEqual(['false', 'true']);
     expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
       'Model per step',
-      'Stop now',
     ]);
     fireEvent.click(screen.getByRole('menuitem', { name: 'Model per step' }));
 
@@ -507,13 +546,13 @@ describe('OrchestratorStrip layout', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Hide model per step' }));
     expect(screen.queryByRole('region', { name: 'Model per step' })).toBeNull();
   });
-
-  it('shows no overflow when there is nothing to stop and no step to route', () => {
+  it('offers when to ask before the first step, with no step to route', () => {
     renderStrip();
 
-    expect(screen.queryByRole('button', { name: 'Orchestrator actions' })).toBeNull();
+    openMenu();
+    expect(screen.getByRole('menuitemradio', { name: 'Ask before each step' })).toBeDefined();
+    expect(screen.queryByRole('menuitem', { name: 'Model per step' })).toBeNull();
   });
-
   it('offers no Decide next step while autorun is on, even before the first step', () => {
     renderStrip({ runOverride: run({ autoRun: true }) });
 
@@ -675,25 +714,23 @@ describe('OrchestratorStrip hints and money', () => {
     );
   });
 
-  it('carries autorun in its own header, so the chat header does not need one', () => {
-    renderStrip({ runOverride: run({ autoRun: true }), agents: [agent(0, 'completed')] });
+  it('changes when to ask from the overflow', () => {
+    renderStrip({ runOverride: run({ autoRun: false }), agents: [agent(0, 'completed')] });
 
-    const toggle = screen.getByRole('switch', { name: 'Autorun' });
-    expect(toggle.getAttribute('aria-checked')).toBe('true');
+    openMenu();
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Run on its own' }));
 
-    fireEvent.click(toggle);
-    expect(storeState['setWorkflowRunAutoRun']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, false);
+    expect(storeState['setWorkflowRunAutoRun']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, true);
   });
-
-  it('drops the autorun switch once the run is over', () => {
+  it('drops Pause and Stop once the run is over', () => {
     renderStrip({
       runOverride: run({ orchestrationOutcome: 'done' }),
       agents: [agent(0, 'completed')],
     });
 
-    expect(screen.queryByTestId('workflow-autorun-toggle')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Pause' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
   });
-
   it('says a queued hint once, in the log, not again in the state sentence', () => {
     renderStrip({
       runOverride: run({ orchestratorHints: [hint({ id: 'queued-1' }), hint({ id: 'queued-2' })] }),

@@ -30,6 +30,15 @@ describe('orchestrator hint log', () => {
     expect(toOrchestratorHintLog({ value })).toEqual([HINT]);
   });
 
+  it('keeps the attachment ids a hint carries and drops a malformed list', () => {
+    const withImage = { ...HINT, id: 'hint-4', attachmentIds: ['att-1', 'att-2'] };
+    const value = JSON.stringify([
+      withImage,
+      { ...HINT, id: 'hint-5', attachmentIds: ['att-3', 7] },
+    ]);
+    expect(toOrchestratorHintLog({ value })).toEqual([withImage, { ...HINT, id: 'hint-5' }]);
+  });
+
   it('reads garbage as an empty log', () => {
     expect(toOrchestratorHintLog({ value: '{not json' })).toEqual([]);
     expect(toOrchestratorHintLog({ value: null })).toEqual([]);

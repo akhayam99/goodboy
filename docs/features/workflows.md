@@ -9,7 +9,7 @@ A workflow runs several agents in one session, each step with its own role, mode
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-light.webp" alt="The workflow builder for Duplicate credit fix: a goal, the Orchestrated, Custom and Preset modes, the plan preview with the Orchestrator row on GPT-5.6 Sol, guidance, Starts Now, Autorun, Spend cap and Start workflow">
 </picture>
 
-Shape a run before it starts: a name, a goal and a mode, with the plan previewed as a recipe, step 1 on top, in the same nodes the run will show. **Starts**, **Autorun** and **Spend cap** sit under the plan.
+Shape a run before it starts: a name, a goal and a mode, with the plan previewed as a recipe, step 1 on top, in the same nodes the run will show. **Starts**, when to ask and **Spend cap** sit under the plan.
 
 ### Orchestrated
 
@@ -51,11 +51,15 @@ Reuse steps across workflows. The 8 built-in steps are read-only, and **Save a c
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-model-light.webp" alt="The model picker open on the Orchestrator row of the workflow builder, with the provider icons and the Model, Version, Variant and Effort rows set to GPT, 5.6, Sol and High">
 </picture>
 
-Put a light model on a scout and a strong one on the planner. Each step has its own provider, then **Model**, **Version**, **Variant** and **Effort**, and Goodboy records what actually ran.
+Put a light model on a scout and a strong one on the planner. A step follows its role by default; **Pin a model** picks its own provider, then **Model**, **Version**, **Variant** and **Effort**, and Goodboy records what actually ran.
 
 ### Autorun
 
-Let a run move to its next step without you, per run or for the whole session. A guard stops an agent after 4 unattended turns in an hour, and anything you write to it resets the count.
+Choose when a run asks: **Ask before each step**, or **Run on its own** to move to the next step without you, per run or for the whole session. A guard stops an agent after 4 unattended turns in an hour, and anything you write to it resets the count.
+
+### Pause, resume and skip
+
+**Pause** lets the step in flight finish and starts nothing new, even after a restart; **Resume** picks up where the run was. **Skip** passes any step that has not finished, live or stuck, after one inline confirmation, and keeps what it already wrote. When a running step says nothing for 15 minutes, the run says so and offers **Ask it to continue** or **Skip**.
 
 ### Spend limit
 
@@ -91,7 +95,7 @@ Follow a run as a tree with one pinned next action, and add steps to a live or f
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-hints-light.webp" alt="The orchestrator strip on step 4 with the Tell the orchestrator something box, Queue and Read now, a queued hint reading Replay the event from the Sentry trace before the tester signs off, and Show read (2)">
 </picture>
 
-Steer a run while it goes. **Queue** waits for the next decision, and **Read now** stops the step in flight, keeps what it wrote and decides again. A queued hint shows **Waits for the next decision**, and read ones show the step they were read at.
+Steer a run while it goes. Write a hint on as many lines as you need, in markdown, with images the next agent gets. **Queue** waits for the next decision, and **Read now** stops the step in flight, keeps what it wrote and decides again. A queued hint shows **Waits for the next decision**, and read ones show the step they were read at.
 
 ### Why each step, and the run recap
 

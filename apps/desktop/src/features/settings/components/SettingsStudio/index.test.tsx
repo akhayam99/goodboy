@@ -58,6 +58,8 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
     relaunchApp: vi.fn(async () => undefined),
     loadDetectedEditors: vi.fn(async () => undefined),
     detectedEditors: [] as ReadonlyArray<{ binary: string; label: string }>,
+    loadDetectedBrowsers: vi.fn(async () => undefined),
+    detectedBrowsers: [] as ReadonlyArray<{ id: string; label: string }>,
     workspaceIntegrations: {},
     integrationCredentials: [],
     integrationCredentialUsage: {},
@@ -69,6 +71,9 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
     storageStatsLoading: false,
     reconcileOrphanWorktrees: vi.fn(async () => undefined),
     loadStorage: vi.fn(async () => undefined),
+    storageOtherTools: { status: 'idle', tools: [] },
+    loadOtherTools: vi.fn(async () => undefined),
+    cancelOtherTools: vi.fn(async () => undefined),
     pruneArchivedTranscripts: vi.fn(async () => 0),
     storageFolders: [],
     storageArtifacts: [],
@@ -95,6 +100,8 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
     openSecurityFindings: {} as Record<string, ReadonlyArray<unknown>>,
     projects: [] as ReadonlyArray<unknown>,
     projectGitStatus: {} as Record<string, unknown>,
+    workspaces: [] as ReadonlyArray<unknown>,
+    workspaceOverrides: {} as Record<string, unknown>,
   },
   toastMock: vi.fn(),
 }));
@@ -238,6 +245,7 @@ describe('SettingsStudio', () => {
       'shortcuts',
       'backup',
       'storage',
+      'branches',
       'security-findings',
       'help',
       'danger',
@@ -246,7 +254,7 @@ describe('SettingsStudio', () => {
       within(items).getByRole('button', { name: 'General' }).getAttribute('aria-current'),
     ).toBe('true');
     expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
-    expect(screen.getByText('Default editor')).toBeDefined();
+    expect(screen.getByText('Open with')).toBeDefined();
   });
 
   it('lists only App and Providers without a workspace, and lands providers on an account', () => {
@@ -433,30 +441,5 @@ describe('SettingsStudio', () => {
     expect(screen.getByRole('heading', { name: 'Backup' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Export' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Import' })).toBeDefined();
-  });
-});
-
-describe('SettingsStudio trail', () => {
-  it('names the studio, the scope and the section, with a menu on the section', () => {
-    render(
-      <SettingsStudio
-        currentWorkspace={null}
-        focus={{ scope: 'app', section: 'shortcuts' }}
-        onScopeChange={vi.fn()}
-        onClose={vi.fn()}
-      />,
-    );
-
-    const trail = screen.getByRole('navigation', { name: 'Breadcrumb' });
-    expect(trail.textContent).toContain('Settings');
-    expect(trail.textContent).toContain('App');
-    expect(trail.textContent).toContain('Shortcuts');
-    fireEvent.click(within(trail).getByRole('button', { name: /Shortcuts/ }));
-    const menu = screen.getByRole('menu', { name: 'Switch section' });
-    expect(
-      within(menu)
-        .getByRole('menuitemradio', { name: /Shortcuts/ })
-        .getAttribute('aria-checked'),
-    ).toBe('true');
   });
 });

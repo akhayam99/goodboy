@@ -16,6 +16,7 @@ type Props = {
   readonly onUnlink: (params: { readonly project: Project }) => Promise<void>;
   readonly editorExtra?: (params: { readonly project: Project }) => ReactNode;
   readonly rowBadge?: (params: { readonly project: Project }) => ReactNode;
+  readonly rowFooter?: (params: { readonly project: Project }) => ReactNode;
 };
 
 export const ProjectGroups = ({
@@ -26,6 +27,7 @@ export const ProjectGroups = ({
   onUnlink,
   editorExtra,
   rowBadge,
+  rowFooter,
 }: Props) => {
   const [isPointerInside, setIsPointerInside] = useState(false);
   const [isFocusInside, setIsFocusInside] = useState(false);
@@ -57,6 +59,7 @@ export const ProjectGroups = ({
       onUnlink={onUnlink}
       editorExtra={editorExtra?.({ project })}
       badge={rowBadge?.({ project })}
+      footer={rowFooter?.({ project })}
     />
   );
 

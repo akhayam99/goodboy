@@ -114,6 +114,50 @@ describe('preSpawnWorkflowAgents', () => {
     expect(insert['taskProfile']).toMatchObject({ taskType: 'implementation' });
   });
 
+  it('never spawns a static step on an Off provider, even when the role is pinned there', async () => {
+    await preSpawnWorkflowAgents({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      steps: [step()],
+      baseOrdinal: 0,
+      defaultProvider: 'codex',
+      roleModels: { implementer: { providerId: 'anthropic', model: 'sonnet-5', effort: 'medium' } },
+      availability: availability(),
+      scope: {
+        defaultProvider: 'codex',
+        policy: [
+          { id: 'codex', state: 'on' },
+          { id: 'anthropic', state: 'off' },
+        ],
+      },
+    });
+
+    const insert = invokeAgentInsertSpy.mock.calls[0]![0] as Record<string, unknown>;
+    expect(insert['providerOverride']).toBe('codex');
+  });
+
+  it('keeps the role pin when every provider is On', async () => {
+    await preSpawnWorkflowAgents({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      steps: [step()],
+      baseOrdinal: 0,
+      defaultProvider: 'codex',
+      roleModels: { implementer: { providerId: 'anthropic', model: 'sonnet-5', effort: 'medium' } },
+      availability: availability(),
+      scope: {
+        defaultProvider: 'codex',
+        policy: [
+          { id: 'codex', state: 'on' },
+          { id: 'anthropic', state: 'on' },
+        ],
+      },
+    });
+
+    const insert = invokeAgentInsertSpy.mock.calls[0]![0] as Record<string, unknown>;
+    expect(insert['providerOverride']).toBe('anthropic');
+  });
+
   it('never spawns on a provider that started cooling down after planning', async () => {
     await preSpawnWorkflowAgents({
       sessionId: SESSION_ID,

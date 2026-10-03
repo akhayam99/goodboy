@@ -8,6 +8,7 @@ export type WorkflowRoutingAvailabilitySnapshot = Readonly<{
   isSessionBudgetBlocked: boolean;
   isRunBudgetBlocked: boolean;
   nowMs: number;
+  providerOrder?: ReadonlyArray<ProviderId>;
 }>;
 
 export type WorkflowRoutingUnavailableCause =

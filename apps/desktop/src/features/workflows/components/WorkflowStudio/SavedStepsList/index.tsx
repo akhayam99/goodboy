@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Plus } from 'lucide-react';
-import { Button, EmptyState, formatError } from '@goodboy/ui';
+import { Button, formatError, LensEmptyState } from '@goodboy/ui';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE, recommendedModelForRole } from '@goodboy/core';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
@@ -228,13 +228,11 @@ export const SavedStepsList = ({ workspaceId, connectedProviders, tabs }: Props)
         {groups.workspace.map(renderRow)}
         {groups.workspace.length === 0 && !isCreating ? (
           <li>
-            <EmptyState
+            <LensEmptyState
               icon={CONCEPT_ICONS.workflows}
               tone={CONCEPT_TONE.workflows}
               title="No saved steps yet"
               description="Save a step from any workflow, or copy a built-in step to change it."
-              size="inline"
-              bordered
             />
           </li>
         ) : null}

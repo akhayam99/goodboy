@@ -1,3 +1,4 @@
+import type { AutoContext } from '@goodboy/core';
 import type { Agent, EffortLevel, ProviderId, RoleModelPreferences, Step } from '@goodboy/types';
 import { estimateKeyOf, workEstimateFor } from '../../workTreeModel/agentWorkTime';
 import type { WorkEstimate } from '../../workTreeModel/workTime';
@@ -13,6 +14,7 @@ type Params = {
   readonly roleModels: RoleModelPreferences | null;
   readonly sessionProvider: ProviderId | null;
   readonly sessionEffort: EffortLevel | null;
+  readonly scope?: AutoContext | null;
 };
 
 export const stepWorkEstimate = ({
@@ -23,6 +25,7 @@ export const stepWorkEstimate = ({
   roleModels,
   sessionProvider,
   sessionEffort,
+  scope = null,
 }: Params): WorkEstimate | null => {
   const stepKind = kind ?? kindForRole({ role: step.role ?? 'custom' });
   const routing = agentRowRouting({
@@ -35,6 +38,7 @@ export const stepWorkEstimate = ({
     effortOverride: agent?.effort ?? null,
     sessionProvider,
     sessionEffort,
+    scope,
   });
   return workEstimateFor({
     key: estimateKeyOf({

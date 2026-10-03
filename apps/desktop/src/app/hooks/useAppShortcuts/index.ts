@@ -1,10 +1,13 @@
 import { useCallback } from 'react';
 import { useShortcut } from '../../../shared/keyboard/useShortcut';
 import { isTerminalFocused } from '../../../shared/keyboard/isTerminalFocused';
+import { WORKSPACE_DIGIT_IDS } from '../../../shared/keyboard/registry';
+import { workspacesByDigit } from '../../../features/workspace/recent';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { useAppStore, useCurrentWorkspace, useWorkspaces, type LensKind } from '../../../store';
 import { requestNewSession } from '../../../features/session/requestNewSession';
 import { openLens } from '../../../features/session/openLens';
+import { isLensReachable } from '../../../features/session/isLensReachable';
 import type { OpenPaletteParams } from '../../../features/palette/paletteModeTypes';
 import type { ContextDrawerTab } from '../../../store/slices/drawer/state';
 import { useMouseHistoryButtons } from '../useMouseHistoryButtons';
@@ -47,13 +50,17 @@ export const useAppShortcuts = ({
 
   const selectWorkspaceByIndex = useCallback(
     ({ index }: IndexParams) => {
-      const workspace = workspaces[index];
+      const workspace = workspacesByDigit({
+        workspaces,
+        currentId: currentWorkspace?.id ?? null,
+        limit: WORKSPACE_DIGIT_IDS.length,
+      })[index];
       if (workspace === undefined) {
         return;
       }
       void openWorkspace({ id: workspace.id, title: workspace.name, onRunning: 'new-window' });
     },
-    [workspaces, openWorkspace],
+    [workspaces, currentWorkspace, openWorkspace],
   );
 
   const navigateSession = useSessionNavigation();
@@ -70,7 +77,7 @@ export const useAppShortcuts = ({
   const goToLens = useCallback(({ kind }: LensParams) => {
     const state = useAppStore.getState();
     const sessionId = state.currentSessionId;
-    if (sessionId == null) {
+    if (sessionId == null || !isLensReachable({ state, sessionId, lens: kind })) {
       return;
     }
     openLens({

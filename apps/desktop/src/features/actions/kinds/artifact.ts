@@ -23,6 +23,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import { planAsArtifact } from '../../plans/planAsArtifact';
+import { planConsumerLabel, resolvePlanConsumer } from '../../../shared/utils/planConsumer';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { agentPlace, sessionPlace } from '../../../store/slices/navigation/place';
 import type { ArtifactGeneration } from '../../artifacts/artifactCollection';
@@ -62,6 +63,7 @@ export type ArtifactFacts = {
   readonly plan: PlanWithCount | null;
   readonly stored: SessionArtifact | null;
   readonly planStatus: ArtifactStatus | null;
+  readonly status: ArtifactStatus | null;
   readonly isPlanRunning: boolean;
   readonly generation: ArtifactGeneration | null;
   readonly kickoff: string | null;
@@ -111,6 +113,20 @@ const planIn = ({
   isIdlePlan({ facts }) && facts.planStatus !== null && statuses.includes(facts.planStatus);
 
 const isStored = ({ facts }: FactsOnly): boolean => facts.plan !== null || facts.stored !== null;
+
+const isDeleted = ({ facts }: FactsOnly): boolean => facts.status === 'discarded';
+
+const isLiveStored = ({ facts }: FactsOnly): boolean =>
+  isStored({ facts }) && !isDeleted({ facts });
+
+const runHistoryOf = ({ facts }: FactsOnly): string | null => {
+  const consumer = facts.plan?.lastConsumer ?? null;
+  if (facts.plan === null || consumer === null || facts.plan.consumptionCount === 0) {
+    return null;
+  }
+  const { name } = resolvePlanConsumer({ agentId: consumer.agentId, agentName: consumer.name });
+  return planConsumerLabel({ name, count: facts.plan.consumptionCount });
+};
 
 const agentOf = ({ facts }: FactsOnly): AgentId | null =>
   facts.generation?.agentId ?? artifactOf({ facts })?.agentId ?? null;
@@ -213,7 +229,8 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
     group: 'act',
     slot: () => 'secondary',
     when: ({ facts }) =>
-      planIn({ facts, statuses: ['active'] }) || (facts.kind === 'report' && isStored({ facts })),
+      planIn({ facts, statuses: ['active'] }) ||
+      (facts.kind === 'report' && isLiveStored({ facts })),
     run: ported({
       id: 'edit',
       fallback: ({ facts, env }) => {
@@ -248,13 +265,13 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
     icon: ArchiveRestore,
     group: 'act',
     slot: () => 'secondary',
-    when: ({ facts }) => planIn({ facts, statuses: ['discarded'] }),
+    when: ({ facts }) => isStored({ facts }) && isDeleted({ facts }),
     run: ported({
       id: 'restore',
       fallback: async ({ facts, env }) => {
-        const planId = idOf({ facts });
-        if (planId !== null) {
-          await env.getState().restorePlan(facts.sessionId, planId);
+        const artifactId = idOf({ facts });
+        if (artifactId !== null) {
+          await env.getState().restoreArtifact({ sessionId: facts.sessionId, artifactId });
         }
       },
     }),
@@ -264,7 +281,7 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
     label: 'Regenerate',
     icon: RotateCcw,
     group: 'act',
-    when: ({ facts }) => facts.kind === 'report' && isStored({ facts }),
+    when: ({ facts }) => facts.kind === 'report' && isLiveStored({ facts }),
     description: ({ facts }) => (facts.kickoff === null ? null : REGENERATE_READY_HINT),
     blockedReason: ({ facts }) =>
       portBlocked({ facts, id: 'regenerate' }) ??
@@ -290,7 +307,7 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
     label: 'New variant',
     icon: RotateCcw,
     group: 'act',
-    when: ({ facts }) => facts.kind === 'wireframe' && isStored({ facts }),
+    when: ({ facts }) => facts.kind === 'wireframe' && isLiveStored({ facts }),
     description: ({ facts }) => wireframeDescription({ artifact: wireframeOf({ facts }) }),
     blockedReason: ({ facts }) => portBlocked({ facts, id: 'newVariant' }),
     isBusy: ({ facts }) => portBusy({ facts, id: 'newVariant' }),
@@ -442,26 +459,64 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
     }),
   },
   {
-    id: 'artifact.discard',
-    label: 'Discard',
+    id: 'artifact.delete',
+    label: 'Delete',
     icon: Trash2,
     group: 'danger',
-    when: ({ facts }) => planIn({ facts, statuses: ['active', 'superseded'] }),
-    confirm: ({ facts }) => ({
-      title: `Discard "${facts.title}"?`,
-      description: 'It stays in the list, faint, and can be restored.',
-      confirmLabel: 'Discard',
-      role: 'danger',
-    }),
+    slot: () => 'inline',
+    isUndoable: true,
+    description: () => 'Moves it to Recently deleted. Restore it any time.',
+    when: ({ facts }) => isLiveStored({ facts }),
     run: ported({
-      id: 'discard',
+      id: 'delete',
       fallback: async ({ facts, env }) => {
-        const planId = idOf({ facts });
-        if (planId !== null) {
-          await env.getState().deletePlan(facts.sessionId, planId);
+        const artifactId = idOf({ facts });
+        if (artifactId === null) {
+          return;
         }
+        const { sessionId, title } = facts;
+        const previous = await env.getState().deleteArtifact({ sessionId, artifactId });
+        if (previous === null) {
+          return;
+        }
+        env.showToast({
+          kind: 'info',
+          title: `Deleted "${title}"`,
+          message: 'It moved to Recently deleted.',
+          action: {
+            label: 'Undo',
+            onClick: () =>
+              void env.getState().restoreArtifact({ sessionId, artifactId, status: previous }),
+          },
+        });
       },
     }),
+  },
+  {
+    id: 'artifact.deletePermanently',
+    label: 'Delete permanently',
+    icon: Trash2,
+    group: 'danger',
+    slot: () => 'inline',
+    when: ({ facts }) => isStored({ facts }) && isDeleted({ facts }),
+    confirm: ({ facts }) => {
+      const history = runHistoryOf({ facts });
+      return {
+        title: `Delete "${facts.title}" for good?`,
+        description:
+          history === null
+            ? 'It is removed from this device. This cannot be undone.'
+            : `It is removed from this device, with its run history (${history}). This cannot be undone.`,
+        confirmLabel: 'Delete permanently',
+        role: 'danger',
+      };
+    },
+    run: async ({ facts, env }) => {
+      const artifactId = idOf({ facts });
+      if (artifactId !== null) {
+        await env.getState().deleteArtifactPermanently({ sessionId: facts.sessionId, artifactId });
+      }
+    },
   },
 ];
 
@@ -482,6 +537,7 @@ export const ARTIFACT_KIND: ObjectKindDefinition<ArtifactActionTarget, ArtifactF
         plan: null,
         stored: null,
         planStatus: null,
+        status: null,
         isPlanRunning: false,
         generation,
         kickoff: null,
@@ -509,6 +565,7 @@ export const ARTIFACT_KIND: ObjectKindDefinition<ArtifactActionTarget, ArtifactF
       plan,
       stored,
       planStatus: plan?.status ?? (stored?.kind === 'plan' ? stored.status : null),
+      status: plan?.status ?? stored?.status ?? null,
       isPlanRunning,
       generation: null,
       kickoff:

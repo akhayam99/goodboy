@@ -2,7 +2,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { Workspace, WorkspaceId } from '@goodboy/types';
+import type { IsoDateTime, Workspace, WorkspaceId } from '@goodboy/types';
+import { aWorkspace } from '@goodboy/types/testing';
 import type { OpenWorkspaceResult } from '../../../../store/slices/presence/openWorkspace';
 
 const { state } = vi.hoisted(() => ({
@@ -51,6 +52,7 @@ vi.mock('../../../../store', () => ({
     }),
 }));
 
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { WorkspaceSwitcher } from './index';
 
 beforeEach(() => {
@@ -104,6 +106,37 @@ describe('WorkspaceSwitcher', () => {
       });
     },
   );
+
+  it('numbers the rows with the keys that open them, most recent first', () => {
+    state.workspaces = [
+      aWorkspace({ name: 'alpha', lastAccessedAt: '2026-09-01T10:00:00Z' as IsoDateTime }),
+      aWorkspace({ name: 'bravo', lastAccessedAt: '2026-09-02T10:00:00Z' as IsoDateTime }),
+      aWorkspace({ name: 'charlie', lastAccessedAt: '2026-09-03T10:00:00Z' as IsoDateTime }),
+      aWorkspace({ name: 'delta', lastAccessedAt: '2026-09-04T10:00:00Z' as IsoDateTime }),
+    ];
+    state.currentWorkspace = state.workspaces[0] ?? null;
+    render(<WorkspaceSwitcher onClose={vi.fn()} />);
+
+    const digits = (name: string): string =>
+      screen.getByText(name).closest('div[class*="group"]')?.querySelector('kbd')?.textContent ??
+      '';
+
+    expect(digits('delta')).toBe(shortcutGlyphs('workspace.1'));
+    expect(digits('charlie')).toBe(shortcutGlyphs('workspace.2'));
+    expect(digits('bravo')).toBe(shortcutGlyphs('workspace.3'));
+  });
+
+  it('hides the numbers while a search narrows the list', () => {
+    render(<WorkspaceSwitcher onClose={vi.fn()} />);
+
+    fireEvent.change(screen.getByPlaceholderText('Find a workspace or project'), {
+      target: { value: 'bra' },
+    });
+
+    expect(
+      screen.getByText('bravo').closest('div[class*="group"]')?.querySelector('kbd')?.textContent,
+    ).not.toBe(shortcutGlyphs('workspace.1'));
+  });
 
   it('opens the picked workspace here on a bare Enter', async () => {
     const onClose = vi.fn();
@@ -169,7 +202,7 @@ describe('WorkspaceSwitcher', () => {
     const spy = vi.fn();
     window.addEventListener('goodboy:add-workspace', spy);
     render(<WorkspaceSwitcher onClose={onClose} />);
-    fireEvent.click(screen.getByText('Add workspace'));
+    fireEvent.click(screen.getByText('Open a folder'));
     expect(spy).toHaveBeenCalledOnce();
     expect(onClose).toHaveBeenCalledOnce();
     window.removeEventListener('goodboy:add-workspace', spy);

@@ -156,8 +156,8 @@ describe('SessionCostChip', () => {
     expect(dialog.textContent).toContain('$3.64');
     expect(dialog.textContent).toContain('No limit');
     expect(screen.getAllByRole('listitem').map((row) => row.textContent)).toEqual([
-      'Implementerclaude-sonnet-5$2.50',
-      'Reviewerclaude-sonnet-5$1.00',
+      'ImplementerImplementerclaude-sonnet-5$2.50',
+      'ReviewerReviewerclaude-sonnet-5$1.00',
     ]);
     expect(dialog.textContent).toContain('Keeping context up to date: $0.14');
     expect(store.loadSessionTelemetry).toHaveBeenCalledWith(SID);

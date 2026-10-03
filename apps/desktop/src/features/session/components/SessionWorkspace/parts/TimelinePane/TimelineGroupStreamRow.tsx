@@ -1,13 +1,13 @@
-import { ChevronRight } from 'lucide-react';
-import { cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 import type { RailRow } from '../../../../../workTreeModel/railGeometry';
 import type {
   TimelineResolveBatchEntry,
   TimelineSubagentGroupEntry,
 } from '../../../../timeline/buildTimelineGroups';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
+import type { GroupTotals } from '../../../../timeline/groupTotals';
+import { TimelineGroupChevron } from './TimelineGroupChevron';
+import { TimelineGroupMeta } from './TimelineGroupMeta';
 import type { TimelineLaneControl } from './TimelineRail';
 import { TimelineStreamRow } from './TimelineStreamRow';
 
@@ -18,12 +18,9 @@ type Props = {
   readonly railWidth: number;
   readonly sessionId: SessionId;
   readonly isExpanded: boolean;
+  readonly totals: GroupTotals | null;
   readonly lanes: TimelineLaneControl | null;
-  readonly onSetExpanded: (params: {
-    readonly id: string;
-    readonly isExpanded: boolean;
-    readonly total: number;
-  }) => void;
+  readonly onSetExpanded: (params: { readonly id: string; readonly isExpanded: boolean }) => void;
 };
 
 export const TimelineGroupStreamRow = ({
@@ -33,12 +30,12 @@ export const TimelineGroupStreamRow = ({
   railWidth,
   sessionId,
   isExpanded,
+  totals,
   lanes,
   onSetExpanded,
 }: Props) => {
-  const total = entry.children.length;
   const set = ({ isExpanded: next }: { readonly isExpanded: boolean }) =>
-    onSetExpanded({ id: entry.id, isExpanded: next, total });
+    onSetExpanded({ id: entry.id, isExpanded: next });
   return (
     <TimelineStreamRow
       item={item}
@@ -53,14 +50,10 @@ export const TimelineGroupStreamRow = ({
       action={null}
       lanes={lanes}
       meta={
-        <ChevronRight
-          size={ICON_SIZE.control}
-          aria-hidden
-          className={cn(
-            'shrink-0 self-center text-faint-foreground motion-safe:transition-transform',
-            isExpanded && '-rotate-90',
-          )}
-        />
+        <>
+          <TimelineGroupMeta totals={totals} />
+          <TimelineGroupChevron isExpanded={isExpanded} />
+        </>
       }
     />
   );

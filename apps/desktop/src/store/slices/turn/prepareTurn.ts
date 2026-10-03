@@ -193,6 +193,10 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
       : await persistAttachments(get, {
           attachmentInputs,
           workingDir,
+          ...(firstLapProject !== null &&
+            attachmentInputs.length > 0 && {
+              attachmentDir: await scratchDirPrepare({ sessionId }),
+            }),
           activeAgentId,
           sessionId,
           resolvedPrompt,

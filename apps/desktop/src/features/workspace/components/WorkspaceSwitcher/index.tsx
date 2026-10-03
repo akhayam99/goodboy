@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FolderGit2, Plus, Search } from 'lucide-react';
-import { Divider, EmptyState, KbdPill, ScrollFade } from '@goodboy/ui';
+import { FolderGit2, FolderOpen, FolderPlus, Search } from 'lucide-react';
+import { Divider, FilledEmptyState, KbdPill, ScrollFade } from '@goodboy/ui';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
 import {
   useAppStore,
@@ -11,11 +11,12 @@ import {
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
 import { openSettings } from '../../../settings/openSettings';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { WORKSPACE_DIGIT_IDS, shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { CurrentWorkspaceRow } from './CurrentWorkspaceRow';
 import { OtherWorkspaceRow } from './OtherWorkspaceRow';
 import { DisconnectedWorkspaces } from './DisconnectedWorkspaces';
 import { WorkspaceOpenConfirm } from './WorkspaceOpenConfirm';
+import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
 
 type Props = {
   readonly onClose: () => void;
@@ -121,7 +122,7 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
       setActiveIndex((i) => Math.max(i - 1, 0));
       return;
     }
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+    if (isSubmitChord(e)) {
       e.preventDefault();
       const picked = filtered[activeIndex];
       if (picked !== undefined) {
@@ -169,12 +170,10 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
           />
         ) : null}
         {filtered.length === 0 ? (
-          <EmptyState
+          <FilledEmptyState
             icon={CONCEPT_ICONS.workspace}
             tone={CONCEPT_TONE.workspace}
             title="No workspaces"
-            size="inline"
-            className="px-3 py-5"
           />
         ) : (
           filtered.map((w, i) => (
@@ -182,6 +181,7 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
               <OtherWorkspaceRow
                 workspace={w}
                 highlighted={i === activeIndex}
+                digitShortcut={query.trim() === '' ? (WORKSPACE_DIGIT_IDS[i] ?? null) : null}
                 onOpen={() => void open(w)}
                 onOpenNewWindow={() => void openNewWindow(w)}
               />
@@ -207,13 +207,24 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
       <button
         type="button"
         onClick={() => {
+          window.dispatchEvent(new CustomEvent('goodboy:start-new-project'));
+          onClose();
+        }}
+        className={actionClass}
+      >
+        <FolderPlus size={ICON_SIZE.row} aria-hidden />
+        Start a new project
+      </button>
+      <button
+        type="button"
+        onClick={() => {
           window.dispatchEvent(new CustomEvent('goodboy:add-workspace'));
           onClose();
         }}
         className={actionClass}
       >
-        <Plus size={ICON_SIZE.row} aria-hidden />
-        Add workspace
+        <FolderOpen size={ICON_SIZE.row} aria-hidden />
+        Open a folder
       </button>
       {currentWorkspace !== null ? (
         <button

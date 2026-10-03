@@ -76,7 +76,7 @@ const thread = (overrides: Partial<DiffThread> = {}): DiffThread => ({
   statusLabel: 'Open note',
   isResolved: false,
   canEdit: false,
-  canResolve: true,
+  canClose: true,
   canReopen: false,
   ...overrides,
 });
@@ -88,7 +88,7 @@ const commentsWith = (threads: ReadonlyArray<DiffThread>): DiffComments => ({
   allowFileLevel: true,
   onSubmit: vi.fn(),
   onAskAgent: vi.fn(),
-  onResolve: vi.fn(),
+  onClose: vi.fn(),
   onReopen: vi.fn(),
   onDelete: vi.fn(),
 });
@@ -109,7 +109,7 @@ describe('DiffView rendering', () => {
   it('draws rows as a grid, not a table', () => {
     render(<DiffView files={[LEDGER]} />);
     expect(document.querySelector('table')).toBeNull();
-    expect(screen.getByRole('grid', { name: `Changes in ${LEDGER.path}` })).toBeTruthy();
+    screen.getByRole('grid', { name: `Changes in ${LEDGER.path}` });
     expect(screen.getAllByRole('row').length).toBeGreaterThan(6);
   });
 
@@ -143,7 +143,7 @@ describe('DiffView rendering', () => {
         viewed={{ stateOf: (file) => (viewed.has(file.path) ? 'viewed' : 'none'), onToggle }}
       />,
     );
-    expect(screen.getByText('0 of 2 viewed')).toBeTruthy();
+    screen.getByText('0 of 2 viewed');
     const header = screen.getByRole('region', { name: RELAY.path });
     fireEvent.click(within(header).getByRole('checkbox', { name: /Viewed/ }));
     expect(onToggle).toHaveBeenCalledWith(RELAY, true);
@@ -153,7 +153,7 @@ describe('DiffView rendering', () => {
         viewed={{ stateOf: (file) => (viewed.has(file.path) ? 'viewed' : 'none'), onToggle }}
       />,
     );
-    expect(screen.getByText('1 of 2 viewed')).toBeTruthy();
+    screen.getByText('1 of 2 viewed');
     expect(within(header).queryByRole('grid')).toBeNull();
   });
 
@@ -162,7 +162,7 @@ describe('DiffView rendering', () => {
     render(<DiffView files={[lock]} />);
     expect(screen.queryByRole('grid')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Show file' }));
-    expect(screen.getByRole('grid')).toBeTruthy();
+    screen.getByRole('grid');
   });
 });
 
@@ -215,7 +215,7 @@ describe('DiffView comments', () => {
       button: 0,
       shiftKey: true,
     });
-    expect(screen.getByRole('textbox', { name: 'Note on lines 39 to 42' })).toBeTruthy();
+    screen.getByRole('textbox', { name: 'Note on lines 39 to 42' });
   });
 
   it('cancels the composer with escape', () => {
@@ -241,21 +241,38 @@ describe('DiffView comments', () => {
     });
   });
 
-  it('shows a thread under its line and resolves it', () => {
-    const comments = commentsWith([thread()]);
+  it('shows a note under its line with Fix and Close note, and no control says Resolve', () => {
+    const onFix = vi.fn();
+    const comments = commentsWith([
+      thread({ actions: [{ id: 'fix', label: 'Fix', isPrimary: true, onClick: onFix }] }),
+    ]);
     render(<DiffView files={[LEDGER]} comments={comments} />);
-    expect(screen.getByText('Guard the residual when a weight is zero')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Resolve' }));
-    expect(comments.onResolve).toHaveBeenCalledWith('n1');
+    screen.getByText('Guard the residual when a weight is zero');
+    fireEvent.click(screen.getByRole('button', { name: 'Fix' }));
+    expect(onFix).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole('button', { name: 'Close note' }));
+    expect(comments.onClose).toHaveBeenCalledWith('n1');
+    expect(screen.queryAllByRole('button', { name: /^Resolve/ })).toEqual([]);
+  });
+
+  it('blocks Close note and Delete on a note a fixer is working on, and says why', () => {
+    const reason = 'A fixer is working on this note';
+    const comments = commentsWith([thread({ lockReason: reason, meta: 'Sonnet 5.5 · Medium' })]);
+    render(<DiffView files={[LEDGER]} comments={comments} />);
+    const close = screen.getByRole('button', { name: 'Close note' });
+    expect(close.hasAttribute('disabled')).toBe(true);
+    expect(close.getAttribute('title')).toBe(reason);
+    expect(screen.getByRole('button', { name: 'Delete' }).hasAttribute('disabled')).toBe(true);
+    screen.getByText(reason);
   });
 
   it('collapses a resolved thread to one line with reopen', () => {
     const comments = commentsWith([
-      thread({ isResolved: true, statusLabel: 'Resolved', canResolve: false, canReopen: true }),
+      thread({ isResolved: true, statusLabel: 'Closed', canClose: false, canReopen: true }),
     ]);
     render(<DiffView files={[LEDGER]} comments={comments} />);
     const resolved = document.querySelector('[data-thread-state="resolved"]');
-    expect(resolved?.textContent).toContain('Resolved');
+    expect(resolved?.textContent).toContain('Closed');
     fireEvent.click(screen.getByRole('button', { name: 'Reopen' }));
     expect(comments.onReopen).toHaveBeenCalledWith('n1');
   });
@@ -431,7 +448,7 @@ describe('DiffView file renders', () => {
     fileRenders.current = 0;
 
     fireEvent.keyDown(window, { code: 'KeyT', key: 't' });
-    expect(screen.getByRole('combobox', { name: 'Filter files' })).toBeTruthy();
+    screen.getByRole('combobox', { name: 'Filter files' });
 
     expect(fileRenders.current).toBe(0);
   });
@@ -443,7 +460,7 @@ describe('DiffView file renders', () => {
 
     rerender(<DiffView files={[LEDGER, RELAY]} comments={comments} footer={<p>Footer</p>} />);
 
-    expect(screen.getByText('Footer')).toBeTruthy();
+    screen.getByText('Footer');
     expect(fileRenders.current).toBe(0);
   });
 });

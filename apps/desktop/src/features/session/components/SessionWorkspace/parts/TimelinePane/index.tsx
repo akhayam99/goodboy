@@ -1,7 +1,6 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { CheckCheck } from 'lucide-react';
-import { Button, IconButton, SectionHeader } from '@goodboy/ui';
+import { Button, SectionHeader } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
 import {
@@ -11,10 +10,13 @@ import {
 } from '../../../../timeline/activityFilter';
 import { firstNeedsYouRowId, hasWaitingRow } from '../../../../timeline/needsYou';
 import { useActivityFilter } from '../../../../hooks/useActivityFilter';
-import { useExplodeGroups } from '../../../../hooks/useExplodeGroups';
+import { useExplodeGroups, type ExplodeGroups } from '../../../../hooks/useExplodeGroups';
+import { useScrollAnchor } from '../../../../hooks/useScrollAnchor';
 import { WorkTimeProvider } from '../../../../../workTreeModel/components/WorkTimeProvider';
 import { ActivityFilterPanel } from './ActivityFilterPanel';
 import { NeedsYouChip } from './NeedsYouChip';
+import { TimelineActionColumn } from './timelineActionColumn';
+import { TimelineRevealRow } from './TimelineRevealRow';
 import { TimelineRow } from './TimelineRow';
 import { TimelineSkeleton } from './TimelineSkeleton';
 import { useTimelineRowProps } from './useTimelineRowProps';
@@ -30,18 +32,43 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
   const sessionId: SessionId = session.id;
   const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
   const activity = useActivityFilter();
-  const explode = useExplodeGroups();
+  const listRef = useRef<HTMLDivElement>(null);
+  const anchor = useScrollAnchor({ listRef });
+  const groups = useExplodeGroups();
+  const { set: setGroup, showAll: showAllGroup } = groups;
+  const setAnchored = useCallback<ExplodeGroups['set']>(
+    ({ id, isExpanded }) => {
+      anchor({ rowId: id });
+      setGroup({ id, isExpanded });
+    },
+    [anchor, setGroup],
+  );
+  const showAllAnchored = useCallback<ExplodeGroups['showAll']>(
+    ({ id }) => {
+      anchor({ rowId: id });
+      showAllGroup({ id });
+    },
+    [anchor, showAllGroup],
+  );
+  const explode = useMemo(
+    (): ExplodeGroups => ({ ...groups, set: setAnchored, showAll: showAllAnchored }),
+    [groups, setAnchored, showAllAnchored],
+  );
   const rows = useTimelineRows({ session, activity, explode });
   const rowPropsFor = useTimelineRowProps({ session, explode, rows });
   const { stream, entries, visibleEntries, shownQuestions } = rows;
   const { isNeedsYou } = activity;
   const shownQuestionsKey = [...shownQuestions].sort().join(' ');
+  const shownRowIds = useRef<ReadonlySet<string>>(new Set());
+  const wasShown = shownRowIds.current;
+
+  useLayoutEffect(() => {
+    shownRowIds.current = new Set(rows.laidOutItems.map((item) => item.id));
+  }, [rows.laidOutItems]);
 
   useLayoutEffect(() => {
     onShownQuestionsChange?.(shownQuestions);
   }, [onShownQuestionsChange, shownQuestionsKey]);
-
-  const listRef = useRef<HTMLDivElement>(null);
 
   const revealNeedsYou = () => {
     const rowId = firstNeedsYouRowId({ items: stream.items });
@@ -89,15 +116,7 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
         }
         action={
           <div className="flex items-center gap-1">
-            {hasUnreadAgents ? (
-              <IconButton
-                icon={CheckCheck}
-                label="Mark all seen"
-                variant="ghost"
-                onClick={() => void markAllAgentsSeen(sessionId)}
-              />
-            ) : null}
-            {hasFilter ? (
+            {hasFilter || hasUnreadAgents ? (
               <ActivityFilterPanel
                 filter={activity.filter}
                 hidden={activity.hidden}
@@ -108,6 +127,7 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
                 totalCount={entries.length}
                 onToggle={activity.setToggle}
                 onPreset={activity.applyPreset}
+                onMarkAllSeen={hasUnreadAgents ? () => void markAllAgentsSeen(sessionId) : null}
               />
             ) : null}
             {actions}
@@ -134,12 +154,32 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
       ) : (
         <div className="flex flex-col gap-1">
           <WorkTimeProvider sessionId={sessionId} workspaceId={session.workspaceId}>
-            <div ref={listRef} className="@container flex flex-col">
-              {rows.laidOutItems.map((item, index) => {
-                const props = rowPropsFor({ item, index });
-                return props === null ? null : <TimelineRow key={item.id} {...props} />;
-              })}
-            </div>
+            <TimelineActionColumn.Provider value={session.archivedAt == null}>
+              <div ref={listRef} className="@container flex flex-col [overflow-anchor:none]">
+                {rows.laidOutItems.map((item, index) => {
+                  const props = rowPropsFor({ item, index });
+                  if (props === null) {
+                    return null;
+                  }
+                  const slot =
+                    item.kind === 'row' || item.kind === 'more' ? item.explode : undefined;
+                  if (slot === undefined) {
+                    return <TimelineRow key={item.id} {...props} />;
+                  }
+                  return (
+                    <TimelineRevealRow
+                      key={item.id}
+                      groupId={slot.groupId}
+                      isLeaving={explode.leavingIds.has(slot.groupId)}
+                      isShown={wasShown.has(item.id)}
+                      onSettled={explode.settle}
+                    >
+                      <TimelineRow {...props} />
+                    </TimelineRevealRow>
+                  );
+                })}
+              </div>
+            </TimelineActionColumn.Provider>
           </WorkTimeProvider>
         </div>
       )}

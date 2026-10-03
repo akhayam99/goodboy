@@ -164,6 +164,29 @@ describe('buildOrchestratorUserPrompt', () => {
 
     expect(prompt).toContain('Role defaults (the fallback for a step you leave unrouted)');
     expect(prompt).toContain('implementer=anthropic/sonnet-5/medium');
+    expect(prompt).not.toContain('Role model sets');
+  });
+
+  it('lists the models a role set allows, in their order', () => {
+    const prompt = buildOrchestratorUserPrompt(
+      input({
+        roleDefaults: [
+          {
+            role: 'planner',
+            provider: 'anthropic',
+            model: 'opus-5.5',
+            effort: 'high',
+            models: [
+              { provider: 'anthropic', model: 'opus-5.5' },
+              { provider: 'codex', model: 'gpt-6.1-sol' },
+            ],
+          },
+        ],
+      }),
+    );
+
+    expect(prompt).toContain('Role model sets');
+    expect(prompt).toContain('planner: anthropic/opus-5.5, codex/gpt-6.1-sol');
   });
 
   it('labels the goal as the source of the session language', () => {

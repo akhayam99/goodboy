@@ -1,165 +1,64 @@
-import { useShallow } from 'zustand/react/shallow';
-import type { WorkspaceId } from '@goodboy/types';
 import { PANE_RHYTHM, Reveal, StatusRailItem, cn } from '@goodboy/ui';
-import type { SettingsScopeChange, SettingsStudioScope } from '../../settingsFocus';
-import { APP_SECTIONS, type AppSection } from './appSections';
+import type { SettingsPageScope, SettingsScopeChange } from '../../settingsFocus';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { useAppStore } from '../../../../store';
-import { railSubtitles } from './railSubtitles';
-import { useToolConnections } from '../../../integrations/useToolConnections';
-import { connectedInventory } from '../../../integrations/connectedInventory';
-
-export type NestedScope = 'providers' | 'tools';
+import type { SettingsGroup } from './settingsDirectory';
+import { SettingsRailPageGroup } from './SettingsRailPageGroup';
+import { isNestedScope, type NestedScope } from './settingsScopes';
 
 type Props = {
-  readonly scope: SettingsStudioScope;
-  readonly appSection: AppSection;
-  readonly workspaceId: WorkspaceId | null;
-  readonly workspaceName: string | null;
-  readonly hasWorkspace: boolean;
+  readonly scope: SettingsPageScope;
+  readonly pageKey: string | null;
+  readonly groups: ReadonlyArray<SettingsGroup>;
   readonly nestedSlot: Readonly<Record<NestedScope, (element: HTMLDivElement | null) => void>>;
   readonly onNestedClosed: (params: { readonly scope: NestedScope }) => void;
   readonly onSelect: (params: SettingsScopeChange) => void;
 };
 
-export const SCOPE_ITEMS = [
-  { scope: 'workspace', label: 'Workspace', icon: CONCEPT_ICONS.workspace, needsWorkspace: true },
-  {
-    scope: 'providers',
-    label: 'Providers & models',
-    icon: CONCEPT_ICONS.providers,
-    needsWorkspace: false,
-  },
-  {
-    scope: 'tools',
-    label: 'Integrations',
-    icon: CONCEPT_ICONS.integrations,
-    needsWorkspace: true,
-  },
-] as const satisfies ReadonlyArray<{
-  scope: Exclude<SettingsStudioScope, 'app'>;
-  label: string;
-  icon: (typeof CONCEPT_ICONS)[keyof typeof CONCEPT_ICONS];
-  needsWorkspace: boolean;
-}>;
-
-const DANGER_ROW = 'text-danger hover:text-danger data-[selected=true]:text-danger';
-
-export const isNestedScope = (scope: SettingsStudioScope): scope is NestedScope =>
-  scope === 'providers' || scope === 'tools';
-
-export const settingsScopeAvailable = ({
-  scope,
-  hasWorkspace,
-}: {
-  readonly scope: SettingsStudioScope;
-  readonly hasWorkspace: boolean;
-}): boolean =>
-  scope === 'app' ||
-  hasWorkspace ||
-  SCOPE_ITEMS.some((item) => item.scope === scope && !item.needsWorkspace);
-
 export const SettingsRail = ({
   scope,
-  appSection,
-  workspaceId,
-  workspaceName,
-  hasWorkspace,
+  pageKey,
+  groups,
   nestedSlot,
   onNestedClosed,
   onSelect,
-}: Props) => {
-  const rail = useAppStore(useShallow((state) => railSubtitles({ state, workspaceId })));
-  const { connected } = useToolConnections({ workspaceId });
-  const integrationsInventory = connectedInventory({ connected });
-
-  return (
-    <nav aria-label="Settings scopes" className={`flex flex-col gap-3 ${PANE_RHYTHM.navRail.body}`}>
-      <div className="flex flex-col gap-0.5">
-        <StatusRailItem
-          icon={<CONCEPT_ICONS.settings size={ICON_SIZE.control} />}
-          label="App"
-          selected={false}
-          onClick={() => onSelect({ scope: 'app' })}
-          className={cn(scope === 'app' && 'text-foreground')}
+}: Props) => (
+  <nav aria-label="Settings scopes" className={`flex flex-col gap-3 ${PANE_RHYTHM.navRail.body}`}>
+    {groups
+      .filter((group) => !isNestedScope(group.scope))
+      .map((group) => (
+        <SettingsRailPageGroup
+          key={group.scope}
+          group={group}
+          isCurrentGroup={scope === group.scope}
+          pageKey={pageKey}
+          onSelect={onSelect}
         />
-        <ul
-          aria-label="App settings"
-          className={cn('flex flex-col gap-0.5', PANE_RHYTHM.navRail.nest)}
-        >
-          {APP_SECTIONS.map((section) => {
-            const Icon = CONCEPT_ICONS[section.concept];
-            const subtitleText =
-              section.id === 'general'
-                ? rail.generalText
-                : section.id === 'storage'
-                  ? rail.storageText
-                  : section.id === 'security-findings'
-                    ? rail.securityFindingsText
-                    : undefined;
-            const subtitleTone =
-              section.id === 'general'
-                ? rail.generalTone
-                : section.id === 'storage'
-                  ? rail.storageTone
-                  : section.id === 'security-findings'
-                    ? rail.securityFindingsTone
-                    : undefined;
-            return (
-              <li key={section.id}>
-                <StatusRailItem
-                  icon={<Icon size={ICON_SIZE.row} />}
-                  label={section.label}
-                  density="compact"
-                  subtitle={subtitleText}
-                  tone={subtitleTone}
-                  statusLabel={section.id === 'general' ? subtitleText : undefined}
-                  selected={scope === 'app' && appSection === section.id}
-                  onClick={() => onSelect({ scope: 'app', section: section.id })}
-                  className={cn(section.id === 'danger' && DANGER_ROW)}
-                />
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-      <div className="flex flex-col gap-0.5">
-        {SCOPE_ITEMS.filter((item) => hasWorkspace || !item.needsWorkspace).map((item) => {
-          const Icon = item.icon;
-          const isActive = scope === item.scope;
-          const nested = isNestedScope(item.scope) ? item.scope : null;
-          const attentionText = item.scope === 'providers' ? rail.providersText : undefined;
-          const attentionTone = item.scope === 'providers' ? rail.providersTone : undefined;
-          const workspaceSubtitle =
-            item.scope === 'workspace'
-              ? (rail.workspaceText ?? workspaceName ?? undefined)
-              : undefined;
-          return (
-            <div key={item.scope} className="flex flex-col gap-0.5">
-              <StatusRailItem
-                icon={<Icon size={ICON_SIZE.control} />}
-                label={item.label}
-                subtitle={
-                  item.scope === 'workspace'
-                    ? workspaceSubtitle
-                    : item.scope === 'tools'
-                      ? integrationsInventory
-                      : attentionText
-                }
-                tone={item.scope === 'workspace' ? rail.workspaceTone : attentionTone}
-                selected={isActive && nested === null}
-                onClick={() => onSelect({ scope: item.scope })}
-                className={cn(isActive && 'text-foreground')}
-              />
-              {nested === null ? null : (
-                <Reveal open={isActive} onClosed={() => onNestedClosed({ scope: nested })}>
-                  <div ref={nestedSlot[nested]} />
-                </Reveal>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </nav>
-  );
-};
+      ))}
+    <div className="flex flex-col gap-0.5">
+      {groups.map((group) => {
+        if (!isNestedScope(group.scope)) {
+          return null;
+        }
+        const nested = group.scope;
+        const Icon = CONCEPT_ICONS[group.concept];
+        const isActive = scope === nested;
+        return (
+          <div key={nested} data-settings-group={nested} className="flex flex-col gap-0.5">
+            <StatusRailItem
+              icon={<Icon size={ICON_SIZE.control} />}
+              label={group.label}
+              subtitle={group.subtitle}
+              tone={group.tone}
+              selected={false}
+              onClick={() => onSelect({ scope: nested })}
+              className={cn(isActive && 'text-foreground')}
+            />
+            <Reveal open={isActive} onClosed={() => onNestedClosed({ scope: nested })}>
+              <div ref={nestedSlot[nested]} />
+            </Reveal>
+          </div>
+        );
+      })}
+    </div>
+  </nav>
+);

@@ -1,15 +1,10 @@
-import { useState, type KeyboardEvent } from 'react';
-import { ArrowDown, ArrowUp, Copy, Save, Trash2 } from 'lucide-react';
-import { Button, IconButton, InlineConfirm } from '@goodboy/ui';
+import type { KeyboardEvent } from 'react';
+import { Button } from '@goodboy/ui';
 import type { AgentRole, EffortLevel, ProviderId, VerbosityLevel } from '@goodboy/types';
 import type { StepDraft } from '../../engine';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import type { StepPolishFields } from '../../stepPolishFields';
 import { StepEditorFields } from './StepEditorFields';
-
-type StepPolish = {
-  readonly isPolishing: boolean;
-  readonly onPolish: () => void;
-};
+import { StepEditorMenu } from './StepEditorMenu';
 
 type Props = {
   readonly step: StepDraft;
@@ -21,9 +16,12 @@ type Props = {
   readonly recommendedModel: string;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly isRoutingOverridden: boolean;
+  readonly roleSetLine?: string | null;
   readonly disabled: boolean;
-  readonly polish?: StepPolish;
+  readonly polish?: StepPolishFields;
   readonly isSavingAsStep?: boolean;
+  readonly doneLabel?: string;
+  readonly isDoneDisabled?: boolean;
   readonly onName: (name: string) => void;
   readonly onRole: (role: AgentRole) => void;
   readonly onPrompt: (prompt: string) => void;
@@ -33,12 +31,15 @@ type Props = {
   readonly onEffort: (effort: EffortLevel) => void;
   readonly onVerbosity: (verbosity: VerbosityLevel) => void;
   readonly onRoutingReset: () => void;
-  readonly onMoveUp: () => void;
-  readonly onMoveDown: () => void;
-  readonly onDuplicate: () => void;
+  readonly onPin: () => void;
+  readonly onMoveUp?: () => void;
+  readonly onMoveDown?: () => void;
+  readonly onDuplicate?: () => void;
   readonly onSaveAsStep?: () => void;
-  readonly onRemove: () => void;
+  readonly deleteLabel?: string;
+  readonly onDelete: () => void;
   readonly onDone: () => void;
+  readonly onEscape?: () => void;
 };
 
 export const StepEditor = ({
@@ -51,9 +52,12 @@ export const StepEditor = ({
   recommendedModel,
   connectedProviders,
   isRoutingOverridden,
+  roleSetLine = null,
   disabled,
   polish,
   isSavingAsStep = false,
+  doneLabel = 'Done',
+  isDoneDisabled = false,
   onName,
   onRole,
   onPrompt,
@@ -63,25 +67,31 @@ export const StepEditor = ({
   onEffort,
   onVerbosity,
   onRoutingReset,
+  onPin,
   onMoveUp,
   onMoveDown,
   onDuplicate,
   onSaveAsStep,
-  onRemove,
+  deleteLabel = 'Delete step',
+  onDelete,
   onDone,
+  onEscape = onDone,
 }: Props) => {
-  const [isConfirmingRemove, setIsConfirmingRemove] = useState(false);
-
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'Escape' || event.defaultPrevented) {
       return;
     }
     event.stopPropagation();
-    onDone();
+    onEscape();
   };
 
   return (
-    <div className="@container flex flex-col gap-3 px-3 pb-3 pt-1" onKeyDown={onKeyDown}>
+    <div
+      className="@container flex flex-col gap-4 px-3 pb-3 pt-1"
+      role="group"
+      aria-label={`Edit step ${ordinal}`}
+      onKeyDown={onKeyDown}
+    >
       <StepEditorFields
         step={step}
         routingLabel={`Routing for step ${ordinal}`}
@@ -90,6 +100,7 @@ export const StepEditor = ({
         recommendedModel={recommendedModel}
         connectedProviders={connectedProviders}
         isRoutingOverridden={isRoutingOverridden}
+        roleSetLine={roleSetLine}
         disabled={disabled}
         polish={polish ?? null}
         onName={onName}
@@ -101,73 +112,32 @@ export const StepEditor = ({
         onEffort={onEffort}
         onVerbosity={onVerbosity}
         onRoutingReset={onRoutingReset}
+        onPin={onPin}
+        onSubmit={onDone}
       />
-      {isConfirmingRemove ? (
-        <InlineConfirm
-          role="danger"
-          icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-          title={`Remove step ${ordinal}?`}
-          description="Its instruction and model choice go with it."
-          confirmLabel="Remove step"
-          onConfirm={onRemove}
-          onCancel={() => setIsConfirmingRemove(false)}
+      <div className="flex min-w-0 items-center gap-2">
+        <StepEditorMenu
+          ordinal={ordinal}
+          stepCount={stepCount}
+          disabled={disabled || isSavingAsStep}
+          canSaveAsStep={step.name.trim() !== ''}
+          deleteLabel={deleteLabel}
+          {...(onDuplicate !== undefined && { onDuplicate })}
+          {...(onSaveAsStep !== undefined && { onSaveAsStep })}
+          {...(onMoveUp !== undefined && { onMoveUp })}
+          {...(onMoveDown !== undefined && { onMoveDown })}
+          onDelete={onDelete}
         />
-      ) : (
-        <div className="flex items-center justify-end gap-1">
-          {estimateNote === null ? null : (
-            <p
-              data-testid="plan-step-estimate"
-              className="min-w-0 flex-1 truncate text-secondary tabular-nums text-faint-foreground"
-            >
-              {estimateNote}
-            </p>
-          )}
-          <IconButton
-            icon={ArrowUp}
-            label="Move step up"
-            variant="ghost"
-            iconSize={ICON_SIZE.control}
-            onClick={onMoveUp}
-            disabled={disabled || ordinal === 1}
-          />
-          <IconButton
-            icon={ArrowDown}
-            label="Move step down"
-            variant="ghost"
-            iconSize={ICON_SIZE.control}
-            onClick={onMoveDown}
-            disabled={disabled || ordinal === stepCount}
-          />
-          <Button variant="ghost" size="sm" onClick={onDuplicate} disabled={disabled}>
-            <Copy size={ICON_SIZE.row} aria-hidden />
-            Duplicate
-          </Button>
-          {onSaveAsStep === undefined ? null : (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onSaveAsStep}
-              disabled={disabled || step.name.trim() === ''}
-              isBusy={isSavingAsStep}
-            >
-              <Save size={ICON_SIZE.row} aria-hidden />
-              Save as step
-            </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsConfirmingRemove(true)}
-            disabled={disabled}
-            className="text-danger"
-          >
-            Remove
-          </Button>
-          <Button variant="secondary" size="sm" onClick={onDone}>
-            Done
-          </Button>
-        </div>
-      )}
+        <p
+          data-testid="plan-step-estimate"
+          className="min-w-0 flex-1 truncate text-secondary tabular-nums text-faint-foreground"
+        >
+          {isSavingAsStep ? 'Saving as a step' : (estimateNote ?? '')}
+        </p>
+        <Button variant="primary" size="sm" onClick={onDone} disabled={isDoneDisabled}>
+          {doneLabel}
+        </Button>
+      </div>
     </div>
   );
 };

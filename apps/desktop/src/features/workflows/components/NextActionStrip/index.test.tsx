@@ -1,12 +1,22 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
+vi.mock('../../../../shared/lib/db', async () =>
+  (await import('../../../../store/storyHarness')).dbLibModuleMock(),
+);
+
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
   IsoDateTime,
-  OpenQuestion,
   OpenQuestionId,
   SessionId,
   StepId,
@@ -16,39 +26,47 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
+import type { AppStore } from '../../../../store/store';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../store/storyHarness';
 
 type Store = {
-  sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
-  sessionOpenQuestions: Record<string, ReadonlyArray<OpenQuestion>>;
-  agentTurnState: Record<string, { kind: string; message?: string }>;
-  summarizerStatus: Record<string, { status: string }>;
-  recoverStuckStep: ReturnType<typeof vi.fn>;
-  skipStuckStepAndAdvance: ReturnType<typeof vi.fn>;
-  navigate: ReturnType<typeof vi.fn>;
-  loadAgentTranscript: ReturnType<typeof vi.fn>;
-  requestOpenQuestionScroll: ReturnType<typeof vi.fn>;
+  sessionPhaseRuns: AppStore['sessionPhaseRuns'];
+  sessionOpenQuestions: AppStore['sessionOpenQuestions'];
+  agentTurnState: AppStore['agentTurnState'];
+  transcripts: AppStore['transcripts'];
+  summarizerStatus: AppStore['summarizerStatus'];
+  recoverStuckStep: Mock<AppStore['recoverStuckStep']>;
+  askAgentToContinue: Mock<AppStore['askAgentToContinue']>;
+  skipStuckStepAndAdvance: Mock<AppStore['skipStuckStepAndAdvance']>;
+  navigate: Mock<AppStore['navigate']>;
+  loadAgentTranscript: Mock<AppStore['loadAgentTranscript']>;
+  requestOpenQuestionScroll: Mock<AppStore['requestOpenQuestionScroll']>;
 };
 
-const { store } = vi.hoisted(() => ({
-  store: {
-    sessionPhaseRuns: {},
-    sessionOpenQuestions: {},
-    agentTurnState: {},
-    summarizerStatus: {},
-    recoverStuckStep: vi.fn(async () => undefined),
-    skipStuckStepAndAdvance: vi.fn(async () => undefined),
-    navigate: vi.fn(),
-    loadAgentTranscript: vi.fn(async () => undefined),
-    requestOpenQuestionScroll: vi.fn(),
-  } as Store,
-}));
+const store: Store = {
+  sessionPhaseRuns: {},
+  sessionOpenQuestions: {},
+  agentTurnState: {},
+  transcripts: {},
+  summarizerStatus: {},
+  recoverStuckStep: vi.fn<AppStore['recoverStuckStep']>(async () => undefined),
+  askAgentToContinue: vi.fn<AppStore['askAgentToContinue']>(async () => undefined),
+  skipStuckStepAndAdvance: vi.fn<AppStore['skipStuckStepAndAdvance']>(async () => undefined),
+  navigate: vi.fn<AppStore['navigate']>(),
+  loadAgentTranscript: vi.fn<AppStore['loadAgentTranscript']>(async () => undefined),
+  requestOpenQuestionScroll: vi.fn<AppStore['requestOpenQuestionScroll']>(),
+};
 
-vi.mock('../../../../store', async () => ({
-  ...(await import('../../../../store/slices/navigation/place')),
-  EMPTY_ARRAY: Object.freeze([]),
-  useAppStore: <T,>(selector: (state: Store) => T) => selector(store),
-  useSessionOpenQuestions: (sessionId: string) => store.sessionOpenQuestions[sessionId] ?? [],
-}));
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
 
 import { NextActionStrip } from './index';
 import { QUESTION_DELEGATE_SOURCE_KIND } from '../../../context/questionDelegate';
@@ -96,8 +114,9 @@ const agent = (index: number, status: Agent['status']): Agent => ({
 
 const renderStrip = ({
   subjectAgentId = null,
-}: { readonly subjectAgentId?: AgentId | null } = {}) =>
-  render(
+}: { readonly subjectAgentId?: AgentId | null } = {}) => {
+  useAppStore.setState(store);
+  return render(
     <NextActionStrip
       sessionId={SESSION_ID}
       run={run}
@@ -105,8 +124,13 @@ const renderStrip = ({
       subjectAgentId={subjectAgentId}
     />,
   );
+};
 
-beforeEach(() => {
+beforeEach(async () => {
+  await resetStoryStore();
+  store.transcripts = {};
+  store.askAgentToContinue.mockReset();
+  store.askAgentToContinue.mockResolvedValue(undefined);
   store.sessionPhaseRuns = {};
   store.sessionOpenQuestions = {};
   store.agentTurnState = {};
@@ -139,8 +163,8 @@ describe('NextActionStrip', () => {
     expect(strip.className).not.toContain('bg-danger');
     expect(within(strip).getByText('Implement stopped before finishing.')).toBeDefined();
     expect(within(strip).getByText('Test waits on this step.')).toBeDefined();
-    expect(within(strip).getByRole('button', { name: 'Check completion' })).toBeDefined();
-    expect(within(strip).getByRole('button', { name: 'Skip step' })).toBeDefined();
+    expect(within(strip).getByRole('button', { name: 'Ask it to continue' })).toBeDefined();
+    within(strip).getByRole('button', { name: 'Skip' });
   });
 
   it('puts a blocked step on the warning rail, never the danger one', () => {
@@ -150,7 +174,7 @@ describe('NextActionStrip', () => {
     const strip = screen.getByRole('region', { name: 'Next action: recover the step' });
     expect(strip.className).toContain('border-l-warning');
     expect(strip.className).not.toContain('border-l-danger');
-    expect(within(strip).getByRole('button', { name: 'Check completion' })).toBeDefined();
+    expect(within(strip).getByRole('button', { name: 'Ask it to continue' })).toBeDefined();
   });
 
   it('draws nothing for a step you stopped', () => {
@@ -164,7 +188,7 @@ describe('NextActionStrip', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'failed')] };
     renderStrip();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Check completion' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ask it to continue' }));
 
     expect(store.recoverStuckStep).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
@@ -178,21 +202,21 @@ describe('NextActionStrip', () => {
     store.recoverStuckStep.mockReturnValue(new Promise<void>(() => undefined));
     renderStrip();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Check completion' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ask it to continue' }));
 
-    expect(screen.getByRole('button', { name: 'Checking step' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Skip step' }).hasAttribute('disabled')).toBe(true);
+    screen.getByRole('button', { name: 'Asking' });
+    expect(screen.getByRole('button', { name: 'Skip' }).hasAttribute('disabled')).toBe(true);
   });
 
   it('skips the step only after an explicit confirmation', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'failed')] };
     renderStrip();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Skip step' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
     expect(store.skipStuckStepAndAdvance).not.toHaveBeenCalled();
-    expect(screen.getByText(/implement will be marked skipped/i)).toBeDefined();
+    screen.getByText(/implement is marked skipped/i);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Skip and continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Skip step' }));
 
     expect(store.skipStuckStepAndAdvance).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {
       onlyWhenBlocked: true,
@@ -201,7 +225,13 @@ describe('NextActionStrip', () => {
 
   it('keeps the technical cause behind a disclosure', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'failed')] };
-    store.agentTurnState = { 'agent-1': { kind: 'error', message: 'codex exited with code 1' } };
+    store.agentTurnState = {
+      ['agent-1' as AgentId]: {
+        kind: 'error',
+        message: 'codex exited with code 1',
+        failedAt: NOW,
+      },
+    };
     renderStrip();
 
     expect(screen.queryByText('codex exited with code 1')).toBeNull();
@@ -290,7 +320,15 @@ describe('NextActionStrip', () => {
 
   it('says whose handoff is being written, with nothing to click', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'pending')] };
-    store.summarizerStatus = { [SESSION_ID]: { status: 'running' } };
+    store.summarizerStatus = {
+      [SESSION_ID]: {
+        status: 'running',
+        lastUpdate: null,
+        error: null,
+        lastUsage: null,
+        lastAttempt: null,
+      },
+    };
     renderStrip();
 
     const strip = screen.getByRole('region', { name: 'Next action: waiting on the next brief' });

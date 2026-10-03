@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { SettingsStudio } from '../../../../../features/settings/components/SettingsStudio';
-import type { SettingsFocus } from '../../../../../features/settings/settingsFocus';
+import type {
+  SettingsFocus,
+  SettingsScopeChange,
+} from '../../../../../features/settings/settingsFocus';
 import { SETTINGS_WORKSPACE, seedSettingsBase } from './settingsSeed';
 import { SettingsToastProbe } from './SettingsToastProbe';
 import { StudioFrame } from '../../../StudioFrame';
@@ -17,6 +20,8 @@ type Props = {
 
 export const SettingsFrame = ({ focus, hasWorkspace = true, seed = noop }: Props) => {
   const [isReady, setIsReady] = useState(false);
+  const [current, setCurrent] = useState<SettingsFocus>(focus);
+  const changeScope = (change: SettingsScopeChange) => setCurrent(change);
   useEffect(() => {
     seedSettingsBase();
     seed();
@@ -33,8 +38,8 @@ export const SettingsFrame = ({ focus, hasWorkspace = true, seed = noop }: Props
           <StudioFrame kind="settings" onClose={noop}>
             <SettingsStudio
               currentWorkspace={hasWorkspace ? SETTINGS_WORKSPACE : null}
-              focus={focus}
-              onScopeChange={noop}
+              focus={current}
+              onScopeChange={changeScope}
               onClose={noop}
             />
           </StudioFrame>

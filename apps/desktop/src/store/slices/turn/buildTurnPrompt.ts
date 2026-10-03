@@ -9,6 +9,7 @@ import type { PermissionRule } from '@goodboy/types';
 import { invokePermissionRuleList } from '../../../features/permissions/permissions';
 import { composeChildRoutingPrompt } from '../../../features/workflows/composeChildRoutingPrompt';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
+import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import { runProviderPool } from '../../../features/workflows/runProviderPool';
 import { verbosityDirective } from '../../../features/settings/verbosity';
 import { KIND_TO_ROLE } from '../../../features/session/agent-kind';
@@ -93,6 +94,7 @@ export const buildTurnPrompt = async ({ get, ctx }: Params) => {
       sessionId,
       isRunBudgetBlocked: false,
       nowMs: Date.now(),
+      ...workspacePolicyAvailability({ state: get(), sessionId }),
       providerPool: runProviderPool({
         sessions: get().sessions,
         sessionId,

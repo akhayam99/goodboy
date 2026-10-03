@@ -1,5 +1,28 @@
 import { useEffect, useRef } from 'react';
-import { isTypingTarget } from '../../keyboard/isTypingTarget';
+import { eventMatches, plainKeyYields } from '../../keyboard/dispatcher';
+import { SHORTCUTS, type ShortcutId } from '../../keyboard/registry';
+
+const LIST_KEY_IDS = [
+  'list.next',
+  'list.previous',
+  'list.open',
+  'list.openInTool',
+  'list.reply',
+  'list.star',
+  'list.dismiss',
+  'list.search',
+] as const satisfies ReadonlyArray<ShortcutId>;
+
+type ListKeyId = (typeof LIST_KEY_IDS)[number];
+
+const CHARACTER_ALIASES: Readonly<Partial<Record<ListKeyId, ReadonlySet<string>>>> = {
+  'list.next': new Set(['ArrowDown']),
+  'list.previous': new Set(['ArrowUp']),
+  'list.open': new Set(['Enter']),
+  'list.search': new Set(['/']),
+};
+
+type KeyHandler = (selectedKey: string | null) => void;
 
 type Params = {
   readonly keys: ReadonlyArray<string>;
@@ -7,38 +30,48 @@ type Params = {
   readonly onSelect: (key: string) => void;
   readonly onActivate: (key: string) => void;
   readonly onDismiss?: (key: string) => void;
-  readonly extraKeys?: Readonly<Record<string, (selectedKey: string | null) => void>>;
+  readonly onOpenInTool?: KeyHandler;
+  readonly onReply?: KeyHandler;
+  readonly onStar?: KeyHandler;
+  readonly onSearch?: KeyHandler;
 };
 
-const NEXT_KEYS: ReadonlySet<string> = new Set(['j', 'ArrowDown']);
-const PREVIOUS_KEYS: ReadonlySet<string> = new Set(['k', 'ArrowUp']);
+type MatchParams = {
+  readonly event: KeyboardEvent;
+};
 
-export const useListKeys = ({
-  keys,
-  selectedKey,
-  onSelect,
-  onActivate,
-  onDismiss,
-  extraKeys,
-}: Params): void => {
-  const latest = useRef({ keys, selectedKey, onSelect, onActivate, onDismiss, extraKeys });
-  latest.current = { keys, selectedKey, onSelect, onActivate, onDismiss, extraKeys };
+const isOtherButton = (target: EventTarget | null): boolean =>
+  target instanceof HTMLButtonElement && target.getAttribute('role') !== 'option';
+
+const matchedListKey = ({ event }: MatchParams): ListKeyId | null =>
+  LIST_KEY_IDS.find(
+    (id) =>
+      eventMatches({ event, entry: SHORTCUTS[id] }) ||
+      CHARACTER_ALIASES[id]?.has(event.key) === true,
+  ) ?? null;
+
+export const useListKeys = (params: Params): void => {
+  const latest = useRef(params);
+  latest.current = params;
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.metaKey || event.ctrlKey || event.altKey || event.defaultPrevented) {
+      if (event.metaKey || event.ctrlKey || event.altKey || plainKeyYields(event)) {
         return;
       }
-      if (isTypingTarget(event.target)) {
+      const id = matchedListKey({ event });
+      if (id === null) {
         return;
       }
       const current = latest.current;
       const index = current.selectedKey == null ? -1 : current.keys.indexOf(current.selectedKey);
-      const isNext = NEXT_KEYS.has(event.key);
-      if (isNext || PREVIOUS_KEYS.has(event.key)) {
-        const next = isNext
-          ? current.keys[Math.min(index + 1, current.keys.length - 1)]
-          : current.keys[Math.max(index - 1, 0)];
+      const selected = index < 0 ? null : current.selectedKey;
+
+      if (id === 'list.next' || id === 'list.previous') {
+        const next =
+          id === 'list.next'
+            ? current.keys[Math.min(index + 1, current.keys.length - 1)]
+            : current.keys[Math.max(index - 1, 0)];
         if (next == null) {
           return;
         }
@@ -46,23 +79,31 @@ export const useListKeys = ({
         current.onSelect(next);
         return;
       }
-      const extra = current.extraKeys?.[event.key];
-      if (extra != null) {
+
+      const keyHandlers: Partial<Record<ListKeyId, KeyHandler | undefined>> = {
+        'list.openInTool': current.onOpenInTool,
+        'list.reply': current.onReply,
+        'list.star': current.onStar,
+        'list.search': current.onSearch,
+      };
+      const handler = keyHandlers[id];
+      if (handler != null) {
         event.preventDefault();
-        extra(index < 0 ? null : current.selectedKey);
+        handler(selected);
         return;
       }
-      if (current.selectedKey == null || index < 0) {
+
+      if (selected === null) {
         return;
       }
-      if (event.key === 'e' && current.onDismiss != null) {
+      if (id === 'list.dismiss' && current.onDismiss != null) {
         event.preventDefault();
-        current.onDismiss(current.selectedKey);
+        current.onDismiss(selected);
         return;
       }
-      if (event.key === 'Enter' && !(event.target instanceof HTMLButtonElement)) {
+      if (id === 'list.open' && !isOtherButton(event.target)) {
         event.preventDefault();
-        current.onActivate(current.selectedKey);
+        current.onActivate(selected);
       }
     };
     window.addEventListener('keydown', handleKeyDown);

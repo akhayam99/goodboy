@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { cn } from '@goodboy/ui';
 import { RoutingLabel } from '../../../../../shared/components/RoutingLabel';
 import { ROLE_LABEL, kindForRole } from '../../../../session/agent-kind';
-import { AgentKindChip } from '../../../../session/components/AgentKindChip';
+import { AgentKindChip } from '../../../../../shared/components/AgentKindChip';
 import type { SavedStep } from '../../../savedSteps';
 
 type Props = {

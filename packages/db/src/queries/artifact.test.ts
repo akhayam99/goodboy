@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { AgentId, ArtifactId, SessionId, WorkflowRunId } from '@goodboy/types';
 import type { Database } from '../client';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
+import { markArtifactOpened } from './artifact-orphan';
 import {
   deleteArtifact,
   getArtifact,
@@ -151,6 +152,15 @@ describe('artifact queries', () => {
     );
     await removeArtifact({ db, artifactId: 'report-1' as ArtifactId });
     expect(await getArtifact({ db, artifactId: 'report-1' as ArtifactId })).toBeNull();
+  });
+
+  it('reads when an artifact was first opened, and nothing before', async () => {
+    const db = await seed();
+    await insertReport(db, 'report-1');
+    expect((await getArtifact({ db, artifactId: 'report-1' as ArtifactId }))?.openedAt).toBeNull();
+    await markArtifactOpened({ db, artifactId: 'report-1' as ArtifactId, openedAt: 900 });
+    const [listed] = await listArtifactsForSession({ db, sessionId });
+    expect(listed?.openedAt).toBe(new Date(900).toISOString());
   });
 
   it('refuses to consume a report', async () => {

@@ -11,6 +11,9 @@ import { InboxScene } from './scenes/InboxScene';
 import { InboxSourceScene } from './scenes/InboxSourceScene';
 import { ConversationScene } from './scenes/ConversationScene';
 import { MountsScene } from './scenes/MountsScene';
+import { OverviewFullScene } from './scenes/OverviewFullScene';
+import { OverviewManyScene } from './scenes/OverviewManyScene';
+import { OverviewRefreshingScene } from './scenes/OverviewRefreshingScene';
 import { MountMismatchScene } from './scenes/MountMismatchScene';
 import { ResolveScene } from './scenes/ResolveScene';
 import { ResolveSelectScene } from './scenes/ResolveSelectScene';
@@ -23,6 +26,8 @@ import { ResolveItemScene } from './scenes/ResolveItemScene';
 import { ResolveFailedHistoryScene } from './scenes/ResolveFailedHistoryScene';
 import { ResolveFailedRunScene } from './scenes/ResolveFailedRunScene';
 import { BoardScene } from './scenes/BoardScene';
+import { BoardSelectedScene } from './scenes/BoardSelectedScene';
+import { BoardDeleteConfirmScene } from './scenes/BoardDeleteConfirmScene';
 import { TranscriptMountScene } from './scenes/TranscriptMountScene';
 import { BoardShellScene } from './scenes/BoardShellScene';
 import {
@@ -37,6 +42,7 @@ import {
 } from './scenes/ArtifactCreationScenes';
 import { ActivityFilterScene, ActivityTimelineScene } from './scenes/ActivityScenes';
 import { ActivityRunScene } from './scenes/ActivityRunScene';
+import { ActivityRunFinishedScene } from './scenes/ActivityRunFinishedScene';
 import { ActivityResolvesScene } from './scenes/ActivityResolvesScene';
 import { ActivityQuestionScene } from './scenes/ActivityQuestionScene';
 import { ActivityOneSignalScene } from './scenes/ActivityOneSignalScene';
@@ -70,6 +76,7 @@ import { RunsOnScene } from './scenes/RunsOnScene';
 import { FrameScene } from './scenes/audit/FrameScene';
 import { FirstRunScene } from './scenes/audit/FirstRunScene';
 import { FirstLapScene } from './scenes/audit/FirstLapScene';
+import { FirstLapOverviewScene } from './scenes/audit/FirstLapOverviewScene';
 import { FirstLapPublishScene } from './scenes/audit/FirstLapPublishScene';
 import { FirstLapMoveScene } from './scenes/audit/FirstLapMoveScene';
 import { FirstLapMovingScene } from './scenes/audit/FirstLapMovingScene';
@@ -82,6 +89,7 @@ import { FeaturesWriteReviewScene } from './scenes/features/WriteReviewScene';
 import { SessionStartScene } from './scenes/audit/SessionStartScene';
 import { WorkspaceStatesScene } from './scenes/audit/WorkspaceStatesScene';
 import { SettingsAppScene } from './scenes/audit/SettingsAppScene';
+import { SettingsHomeScene } from './scenes/audit/SettingsHomeScene';
 import { SettingsNoWorkspaceScene } from './scenes/audit/SettingsNoWorkspaceScene';
 import { SettingsProvidersScene } from './scenes/audit/SettingsProvidersScene';
 import { SettingsToolsScene } from './scenes/audit/SettingsToolsScene';
@@ -92,6 +100,7 @@ import { UpdateConfirmScene } from './scenes/audit/UpdateConfirmScene';
 import { UpdateWhatsNewScene } from './scenes/audit/UpdateWhatsNewScene';
 import { NotificationsScene } from './scenes/audit/NotificationsScene';
 import { ChangelogScene } from './scenes/audit/ChangelogScene';
+import { GuideScene } from './scenes/audit/GuideScene';
 import { ArtifactStatesScene } from './scenes/audit/ArtifactStatesScene';
 import { InboxStatesScene } from './scenes/audit/InboxStatesScene';
 import { CompanionScene } from './scenes/audit/CompanionScene';
@@ -120,9 +129,14 @@ import { BrandContextScene } from './scenes/brand/ContextScene';
 import { BrandCompareScene } from './scenes/brand/CompareScene';
 import { BrandDiffScene } from './scenes/brand/DiffScene';
 import { BrandDiffManyFilesScene } from './scenes/brand/DiffManyFilesScene';
+import { DiffNotesScene } from './scenes/brand/DiffNotesScene';
+import { ResolveNotesScene } from './scenes/ResolveNotesScene';
+import { DiffNotesFixScene } from './scenes/brand/DiffNotesFixScene';
+import { DiffNotesSummaryScene } from './scenes/brand/DiffNotesSummaryScene';
 import { BrandHistoryScene } from './scenes/brand/HistoryScene';
 import { BrandHistoryPlanScene } from './scenes/brand/HistoryPlanScene';
 import { BrandHistoryResultScene } from './scenes/brand/HistoryResultScene';
+import { BrandHistorySquashScene } from './scenes/brand/HistorySquashScene';
 import { BrandHistoryStoppedScene } from './scenes/brand/HistoryStoppedScene';
 import { BrandHistoryTrialScene } from './scenes/brand/HistoryTrialScene';
 import { BrandLimitsScene } from './scenes/brand/LimitsScene';
@@ -148,6 +162,9 @@ export const MOCK_SCENES = {
   'inbox-source': InboxSourceScene,
   conversation: ConversationScene,
   mounts: MountsScene,
+  'overview-full': OverviewFullScene,
+  'overview-projects-many': OverviewManyScene,
+  'overview-refreshing': OverviewRefreshingScene,
   'mount-mismatch': MountMismatchScene,
   resolve: ResolveScene,
   'resolve-select': ResolveSelectScene,
@@ -160,6 +177,8 @@ export const MOCK_SCENES = {
   'resolve-gitlab': ResolveGitlabScene,
   'resolve-bitbucket': ResolveBitbucketScene,
   board: BoardScene,
+  'board-selected': BoardSelectedScene,
+  'board-delete-confirm': BoardDeleteConfirmScene,
   'transcript-mount': TranscriptMountScene,
   'board-shell': BoardShellScene,
   'artifact-report': ArtifactReportScene,
@@ -171,6 +190,7 @@ export const MOCK_SCENES = {
   activity: ActivityTimelineScene,
   'activity-filter': ActivityFilterScene,
   'activity-run': ActivityRunScene,
+  'activity-run-finished': ActivityRunFinishedScene,
   'activity-resolves': ActivityResolvesScene,
   'activity-question': ActivityQuestionScene,
   'activity-one-signal': ActivityOneSignalScene,
@@ -199,6 +219,7 @@ export const MOCK_SCENES = {
   frame: FrameScene,
   'first-run': FirstRunScene,
   'first-lap': FirstLapScene,
+  'overview-first-lap': FirstLapOverviewScene,
   'first-lap-publish': FirstLapPublishScene,
   'first-lap-move': FirstLapMoveScene,
   'first-lap-moving': FirstLapMovingScene,
@@ -208,6 +229,7 @@ export const MOCK_SCENES = {
   'session-start': SessionStartScene,
   'workspace-states': WorkspaceStatesScene,
   'settings-app': SettingsAppScene,
+  'settings-home': SettingsHomeScene,
   'settings-no-workspace': SettingsNoWorkspaceScene,
   'settings-providers': SettingsProvidersScene,
   'settings-tools': SettingsToolsScene,
@@ -218,6 +240,7 @@ export const MOCK_SCENES = {
   'update-whats-new': UpdateWhatsNewScene,
   notifications: NotificationsScene,
   changelog: ChangelogScene,
+  guide: GuideScene,
   'artifact-states': ArtifactStatesScene,
   'inbox-states': InboxStatesScene,
   companion: CompanionScene,
@@ -250,11 +273,16 @@ export const MOCK_SCENES = {
   'brand-compare': BrandCompareScene,
   'brand-diff': BrandDiffScene,
   'brand-diff-many': BrandDiffManyFilesScene,
+  'diff-notes': DiffNotesScene,
+  'diff-notes-fix': DiffNotesFixScene,
+  'diff-notes-summary': DiffNotesSummaryScene,
+  'resolve-notes': ResolveNotesScene,
   'brand-history': BrandHistoryScene,
   'brand-history-plan': BrandHistoryPlanScene,
   'brand-history-trial': BrandHistoryTrialScene,
   'brand-history-stopped': BrandHistoryStoppedScene,
   'brand-history-result': BrandHistoryResultScene,
+  'brand-history-squash': BrandHistorySquashScene,
   'brand-limits': BrandLimitsScene,
   'brand-codex': BrandCodexScene,
   'brand-storage': BrandStorageScene,

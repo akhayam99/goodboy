@@ -28,6 +28,15 @@ export type RecordChatLinkParams = ChatParams & {
   readonly kind: ChatSessionLinkKind;
 };
 
+export type PendingChatLinkParams = ChatParams & {
+  readonly sessionId: SessionId;
+  readonly messageId: ChatMessageId | null;
+};
+
+export type SessionChatLinksParams = {
+  readonly sessionId: SessionId;
+};
+
 export type CreateChatParams = {
   readonly workspaceId: WorkspaceId;
   readonly provider: ProviderId;
@@ -74,6 +83,8 @@ export type ChatsSlice = ChatsState & {
   restoreChats(params: ArchiveChatsParams): Promise<void>;
   deleteChats(params: ArchiveChatsParams): Promise<void>;
   recordChatLink(params: RecordChatLinkParams): Promise<ChatSessionLink>;
+  queueChatLink(params: PendingChatLinkParams): void;
+  flushChatLinks(params: SessionChatLinksParams): Promise<void>;
   pinChat(params: PinChatParams): Promise<void>;
   renameChat(params: RenameChatParams): Promise<void>;
   setChatModel(params: SetChatModelParams): Promise<void>;

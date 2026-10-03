@@ -2,6 +2,7 @@ import { useContext, type ReactNode } from 'react';
 import { useObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
 import type { EffortLevel, ProviderId, RoleModelPreferences, SessionId } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../../store';
+import { useRoutingScope } from '../../../../../../shared/hooks/useRoutingScope';
 import { WorkTimeContext } from '../../../../../workTreeModel/workTimeSource';
 import type { TimelineOpenTarget } from '../../../../hooks/useTimelineOpen';
 import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups';
@@ -10,6 +11,7 @@ import { runStepProgress } from '../../../../timeline/runStepProgress';
 import { runWorkTime } from '../../../../timeline/runWorkTime';
 import type { RailRow } from '../../../../../workTreeModel/railGeometry';
 import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
+import { TimelineRowStateLine } from './TimelineRowStateLine';
 import { TimelineRunMeta } from './TimelineRunMeta';
 import { TimelineStreamRow, type TimelineRowAction } from './TimelineStreamRow';
 
@@ -51,6 +53,7 @@ export const TimelineRunStreamRow = ({
   isRevealed = false,
 }: Props) => {
   const source = useContext(WorkTimeContext);
+  const scope = useRoutingScope({ sessionId });
   const contextMenu = useObjectMenuTrigger({
     target: { kind: 'workflowRun', sessionId, runId: entry.run.id },
     anchorKey: `activity:${item.id}`,
@@ -65,6 +68,7 @@ export const TimelineRunStreamRow = ({
           roleModels,
           sessionProvider,
           sessionEffort,
+          scope,
         });
   return (
     <TimelineStreamRow
@@ -76,8 +80,8 @@ export const TimelineRunStreamRow = ({
       action={action}
       diffStat={diffStat}
       meta={<TimelineRunMeta progress={runStepProgress({ entry })} time={time} costUsd={costUsd} />}
+      state={<TimelineRowStateLine state={item.rowState} note={time?.note ?? null} />}
       progress={time?.progress ?? null}
-      stateNote={time?.note ?? null}
       isRevealed={isRevealed}
       menu={menu}
       contextMenu={contextMenu}

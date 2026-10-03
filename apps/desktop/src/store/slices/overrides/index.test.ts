@@ -12,7 +12,9 @@ import type {
   AgentId,
   IsoDateTime,
   PlanId,
+  OverrideSettings,
   PlanWithCount,
+  ProviderPolicy,
   ProviderRunId,
   Session,
   SessionId,
@@ -94,6 +96,20 @@ const AGENT_ID_2 = 'agent-2' as AgentId;
 const RUN_ID = 'run-1' as ProviderRunId;
 const PLAN_ID = 'plan-1' as PlanId;
 const NOW = '2026-05-28T00:00:00.000Z' as IsoDateTime;
+const ANTHROPIC_ONLY: ProviderPolicy = [{ id: 'anthropic', state: 'on' }];
+const POLICY: ProviderPolicy = [
+  { id: 'codex', state: 'on' },
+  { id: 'anthropic', state: 'on' },
+  { id: 'cursor', state: 'backup' },
+];
+
+type OverridesPayload = {
+  readonly workspaceId: string;
+  readonly overrides: OverrideSettings;
+};
+
+const isOverridesPayload = (value: unknown): value is OverridesPayload =>
+  typeof value === 'object' && value !== null && 'overrides' in value;
 
 function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
   return {
@@ -213,7 +229,7 @@ describe('store contract', () => {
       const base = buildWorkspace().overrides;
       store.setState({
         workspaceOverrides: {
-          [WS_ID]: { ...base, defaultBranchPrefix: 'hb', providerPool: ['anthropic'] },
+          [WS_ID]: { ...base, defaultBranchPrefix: 'hb', providerPool: ANTHROPIC_ONLY },
         },
       });
 
@@ -224,7 +240,7 @@ describe('store contract', () => {
       expect(store.getState().workspaceOverrides[WS_ID]).toEqual({
         ...base,
         defaultBranchPrefix: 'hb',
-        providerPool: ['anthropic'],
+        providerPool: ANTHROPIC_ONLY,
         parallelAgents: true,
       });
     });
@@ -261,7 +277,9 @@ describe('store contract', () => {
     it('patchWorkspaceOverrides maps an undefined patch value to null', async () => {
       const store = useAppStore;
       store.setState({
-        workspaceOverrides: { [WS_ID]: { ...buildWorkspace().overrides, providerPool: ['codex'] } },
+        workspaceOverrides: {
+          [WS_ID]: { ...buildWorkspace().overrides, providerPool: [{ id: 'codex', state: 'on' }] },
+        },
       });
 
       await store
@@ -269,6 +287,88 @@ describe('store contract', () => {
         .patchWorkspaceOverrides({ workspaceId: WS_ID, patch: { providerPool: undefined } });
 
       expect(store.getState().workspaceOverrides[WS_ID]?.providerPool).toBeNull();
+    });
+
+    it('setProviderPolicy moves the order and the default in one write', async () => {
+      const store = useAppStore;
+      const { invoke } = await import('@tauri-apps/api/core');
+
+      await store.getState().setProviderPolicy({ workspaceId: WS_ID, policy: POLICY });
+
+      const writes = vi
+        .mocked(invoke)
+        .mock.calls.filter(([command]) => command === 'set_workspace_overrides');
+      expect(writes).toHaveLength(1);
+      const payload = writes[0]?.[1];
+      expect(isOverridesPayload(payload) ? payload.overrides.providerPool : null).toEqual(POLICY);
+      expect(isOverridesPayload(payload) ? payload.overrides.defaultProviderId : null).toBe(
+        'codex',
+      );
+    });
+
+    it('setProviderPolicy writes null only on reset and keeps the default', async () => {
+      const store = useAppStore;
+      await store.getState().setProviderPolicy({ workspaceId: WS_ID, policy: POLICY });
+
+      await store.getState().setProviderPolicy({ workspaceId: WS_ID, policy: null });
+
+      expect(store.getState().workspaceOverrides[WS_ID]?.providerPool).toBeNull();
+      expect(store.getState().workspaceOverrides[WS_ID]?.defaultProviderId).toBe('codex');
+    });
+
+    it('queues overlapping writes so the last one on disk carries both changes', async () => {
+      const store = useAppStore;
+      const { invoke } = await import('@tauri-apps/api/core');
+      let releaseFirstWrite = (): void => undefined;
+      const firstWrite = new Promise<void>((done) => {
+        releaseFirstWrite = done;
+      });
+      const disk: Array<OverrideSettings> = [];
+      let writeCount = 0;
+      vi.mocked(invoke).mockImplementation(async (command, args) => {
+        if (command !== 'set_workspace_overrides' || !isOverridesPayload(args)) {
+          return null;
+        }
+        writeCount += 1;
+        if (writeCount === 1) {
+          await firstWrite;
+        }
+        disk.push(args.overrides);
+        return null;
+      });
+
+      const policyWrite = store
+        .getState()
+        .setProviderPolicy({ workspaceId: WS_ID, policy: POLICY });
+      const bindingWrite = store
+        .getState()
+        .setWorkspaceProviderBinding(WS_ID, 'anthropic', 'credential-harborline');
+      releaseFirstWrite();
+      await Promise.all([policyWrite, bindingWrite]);
+
+      const last = disk.at(-1);
+      expect(disk).toHaveLength(2);
+      expect(last?.providerPool).toEqual(POLICY);
+      expect(last?.providerBindings).toEqual({ anthropic: 'credential-harborline' });
+    });
+
+    it('loadWorkspaceOverrides reads a legacy list of names as a policy', async () => {
+      const store = useAppStore;
+      const { invoke } = await import('@tauri-apps/api/core');
+      vi.mocked(invoke).mockImplementation(async (command) =>
+        command === 'get_workspace_overrides'
+          ? { ...buildWorkspace().overrides, providerPool: ['codex', 'anthropic'] }
+          : null,
+      );
+
+      await store.getState().loadWorkspaceOverrides(WS_ID);
+
+      const policy = store.getState().workspaceOverrides[WS_ID]?.providerPool ?? [];
+      expect(policy.slice(0, 2)).toEqual([
+        { id: 'codex', state: 'on' },
+        { id: 'anthropic', state: 'on' },
+      ]);
+      expect(policy.slice(2).every((entry) => entry.state === 'off')).toBe(true);
     });
 
     it('patchWorkspaceOverrides rolls back when the write fails', async () => {
@@ -285,6 +385,68 @@ describe('store contract', () => {
       ).rejects.toThrow('disk full');
 
       expect(store.getState().workspaceOverrides[WS_ID]).toEqual(previous);
+    });
+
+    it('a later queued write that fails leaves memory on what the disk holds', async () => {
+      const store = useAppStore;
+      const original = { ...buildWorkspace().overrides, defaultBranchPrefix: 'hb' };
+      store.setState({ workspaceOverrides: { [WS_ID]: original } });
+      const { invoke } = await import('@tauri-apps/api/core');
+      let releaseFirstWrite = (): void => undefined;
+      const firstWrite = new Promise<void>((done) => {
+        releaseFirstWrite = done;
+      });
+      const disk: Array<OverrideSettings> = [];
+      let writeCount = 0;
+      vi.mocked(invoke).mockImplementation(async (command, args) => {
+        if (command !== 'set_workspace_overrides' || !isOverridesPayload(args)) {
+          return null;
+        }
+        writeCount += 1;
+        if (writeCount === 1) {
+          await firstWrite;
+          disk.push(args.overrides);
+          return null;
+        }
+        throw new Error('disk full');
+      });
+
+      const first = store
+        .getState()
+        .patchWorkspaceOverrides({ workspaceId: WS_ID, patch: { defaultBranchPrefix: 'nw' } });
+      const second = store
+        .getState()
+        .patchWorkspaceOverrides({ workspaceId: WS_ID, patch: { parallelAgents: true } });
+      releaseFirstWrite();
+      await first;
+      await expect(second).rejects.toThrow('disk full');
+
+      expect(disk).toEqual([{ ...original, defaultBranchPrefix: 'nw' }]);
+      expect(store.getState().workspaceOverrides[WS_ID]).toEqual(disk.at(-1));
+    });
+
+    it('two queued writes that both fail roll memory back to the last saved row', async () => {
+      const store = useAppStore;
+      const original = { ...buildWorkspace().overrides, defaultBranchPrefix: 'hb' };
+      store.setState({ workspaceOverrides: { [WS_ID]: original } });
+      const { invoke } = await import('@tauri-apps/api/core');
+      vi.mocked(invoke).mockImplementation(async (command) => {
+        if (command === 'set_workspace_overrides') {
+          throw new Error('disk full');
+        }
+        return null;
+      });
+
+      const first = store
+        .getState()
+        .patchWorkspaceOverrides({ workspaceId: WS_ID, patch: { defaultBranchPrefix: 'nw' } });
+      const second = store
+        .getState()
+        .patchWorkspaceOverrides({ workspaceId: WS_ID, patch: { parallelAgents: true } });
+      await expect(first).rejects.toThrow('disk full');
+      await expect(second).rejects.toThrow('disk full');
+
+      expect(store.getState().workspaceOverrides[WS_ID]).toEqual(original);
     });
   });
 });

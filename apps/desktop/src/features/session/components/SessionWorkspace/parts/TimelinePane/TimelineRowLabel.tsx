@@ -1,14 +1,15 @@
 import { ValueToken, WORK_ROW, cn } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import type { MountDiffStat } from '../../../../../../store';
-import { AgentKindChip } from '../../../AgentKindChip';
+import { AgentKindChip } from '../../../../../../shared/components/AgentKindChip';
 import type {
   TimelineResolveBatchEntry,
   TimelineRunEntry,
   TimelineSubagentGroupEntry,
 } from '../../../../timeline/buildTimelineGroups';
+import { ARTIFACT_KIND_MARKER_LABEL } from '../../../../../artifacts/artifactPresentation';
 import {
-  decisionDiff,
+  decisionCountsText,
   segmentsToText,
   sessionEventEmphasis,
   sessionEventLabel,
@@ -22,11 +23,11 @@ import type {
 } from '../../../../timeline/buildTimelineStream';
 import type { TimelineRowGrade } from '../../../../../workTreeModel/timelineRhythm';
 import { RevealedRowTag } from './RevealedRowTag';
-import { TimelineRowStateLine } from './TimelineRowStateLine';
 import { TimelineRowWorktrees } from './TimelineRowWorktrees';
 import { resolveBatchTitle } from '../../../../timeline/resolveBatchSummary';
 import { subagentGroupTitle } from '../../../../timeline/subagentGroups';
 import { TimelineGroupLabel } from './TimelineGroupLabel';
+import { TimelineFoldTitle } from './TimelineFoldTitle';
 import { TimelineRunLabel } from './TimelineRunLabel';
 import { DiffStat } from '../../../DiffStat';
 
@@ -35,8 +36,44 @@ type Props = {
   readonly diffStat?: MountDiffStat | null;
   readonly isLaneLit?: boolean;
   readonly worktrees?: ReadonlyArray<string>;
-  readonly stateNote?: string | null;
   readonly isRevealed?: boolean;
+};
+
+type FactParams = {
+  readonly entry: LabelEntry;
+  readonly grade: TimelineRowGrade;
+};
+
+const factHeadOf = ({ entry, grade }: FactParams): string | null => {
+  if (grade !== 'fact') {
+    return null;
+  }
+  if (entry.kind === 'plan') {
+    return `${ARTIFACT_KIND_MARKER_LABEL.plan} created`;
+  }
+  if (entry.kind === 'artifact') {
+    return `${ARTIFACT_KIND_MARKER_LABEL[entry.artifact.kind]} created`;
+  }
+  return null;
+};
+
+const detailOf = ({ entry, grade }: FactParams): string | null => {
+  if (entry.kind === 'plan' && grade === 'fact') {
+    return entry.plan.title;
+  }
+  if (entry.kind === 'artifact' && grade === 'fact') {
+    return entry.artifact.title;
+  }
+  if (entry.kind !== 'event' || entry.projectRun != null) {
+    return null;
+  }
+  if (
+    entry.event.kind === 'decisions_changed' &&
+    entry.event.payload?.consolidatedAfter === undefined
+  ) {
+    return decisionCountsText({ payload: entry.event.payload });
+  }
+  return sessionEventSecondary({ event: entry.event });
 };
 
 const NO_WORKTREES: ReadonlyArray<string> = [];
@@ -165,7 +202,6 @@ export const TimelineRowLabel = ({
   diffStat = null,
   isLaneLit = false,
   worktrees = NO_WORKTREES,
-  stateNote = null,
   isRevealed = false,
 }: Props) => {
   const { entry, grade } = item;
@@ -173,9 +209,8 @@ export const TimelineRowLabel = ({
     return (
       <TimelineRunLabel
         entry={entry}
-        rowState={item.rowState}
+        summary={item.fold?.summary ?? null}
         isLaneLit={isLaneLit}
-        stateNote={stateNote}
         isRevealed={isRevealed}
       />
     );
@@ -184,7 +219,7 @@ export const TimelineRowLabel = ({
     return (
       <TimelineGroupLabel
         title={resolveBatchTitle({ total: entry.summary.total, prNumber: entry.prNumber })}
-        parts={entry.summary.parts}
+        summary={entry.summary}
       />
     );
   }
@@ -192,7 +227,7 @@ export const TimelineRowLabel = ({
     return (
       <TimelineGroupLabel
         title={subagentGroupTitle({ total: entry.summary.total })}
-        parts={entry.summary.parts}
+        summary={entry.summary}
       />
     );
   }
@@ -200,15 +235,59 @@ export const TimelineRowLabel = ({
   const isQueued = item.rowState.phase === 'queued';
   const emphasis =
     entry.kind === 'event' ? sessionEventEmphasis({ kind: entry.event.kind }) : 'plain';
-  const secondary =
-    entry.kind === 'event' && entry.projectRun == null
-      ? sessionEventSecondary({ event: entry.event })
-      : null;
-  const segments = segmentsOf({ entry, isBatchChild: item.explode?.kind === 'batch' });
-  const stat =
-    entry.kind === 'event' && entry.event.kind === 'decisions_changed'
-      ? decisionDiff({ payload: entry.event.payload })
-      : diffStat;
+  const head = factHeadOf({ entry, grade });
+  const detail = detailOf({ entry, grade });
+  const segments: ReadonlyArray<TimelineLabelSegment> =
+    head === null
+      ? segmentsOf({ entry, isBatchChild: item.explode?.kind === 'batch' })
+      : [{ kind: 'text', text: head }];
+  const title = titleOf({ entry, segments });
+  const isAgent = entry.kind === 'agent';
+  const titleNode = (
+    <span
+      title={detail === null ? title : `${title} · ${detail}`}
+      className={cn(
+        'flex items-center overflow-hidden',
+        isAgent ? (item.fold === undefined ? cn(WORK_ROW.title, 'flex-1') : 'min-w-24') : 'min-w-0',
+        isStep ? 'text-label' : 'text-body',
+        emphasis === 'muted' || isQueued || grade === 'fact'
+          ? 'text-muted-foreground'
+          : item.rowState.phase === 'running' || item.hasUnread
+            ? 'font-medium text-foreground'
+            : 'text-foreground',
+      )}
+    >
+      {segments.map((segment, index) =>
+        segment.kind === 'value' ? (
+          <ValueToken
+            key={`${segment.variant}:${index}`}
+            value={segment.text}
+            className={cn(index < segments.length - 1 && 'shrink-0')}
+          />
+        ) : (
+          <span
+            key={`text:${index}`}
+            className={cn(
+              'min-w-0 overflow-hidden text-ellipsis whitespace-pre',
+              (index < segments.length - 1 || detail !== null) && 'shrink-0',
+            )}
+          >
+            {segment.text}
+          </span>
+        ),
+      )}
+      {detail === null ? null : (
+        <>
+          <span aria-hidden className="shrink-0 whitespace-pre text-faint-foreground">
+            {' · '}
+          </span>
+          <span className="min-w-0 overflow-hidden text-ellipsis whitespace-pre text-faint-foreground">
+            {detail}
+          </span>
+        </>
+      )}
+    </span>
+  );
   return (
     <>
       {item.ordinal != null ? (
@@ -217,49 +296,17 @@ export const TimelineRowLabel = ({
         </span>
       ) : null}
       {chipOf({ entry, grade })}
-      <span
-        title={titleOf({ entry, segments })}
-        className={cn(
-          'flex items-center overflow-hidden',
-          entry.kind === 'agent' ? WORK_ROW.title : 'min-w-0',
-          isStep ? 'text-label' : 'text-body',
-          emphasis === 'muted' || isQueued
-            ? 'text-muted-foreground'
-            : item.rowState.phase === 'running' || item.hasUnread
-              ? 'font-medium text-foreground'
-              : 'text-foreground',
-        )}
-      >
-        {segments.map((segment, index) =>
-          segment.kind === 'value' ? (
-            <ValueToken
-              key={`${segment.variant}:${index}`}
-              value={segment.text}
-              className={cn(index < segments.length - 1 && 'shrink-0')}
-            />
-          ) : (
-            <span
-              key={`text:${index}`}
-              className={cn(
-                'min-w-0 overflow-hidden text-ellipsis whitespace-pre',
-                index < segments.length - 1 && 'shrink-0',
-              )}
-            >
-              {segment.text}
-            </span>
-          ),
-        )}
-      </span>
-      {stat == null ? null : (
+      {item.fold === undefined ? (
+        titleNode
+      ) : (
+        <TimelineFoldTitle summary={item.fold.summary}>{titleNode}</TimelineFoldTitle>
+      )}
+      {diffStat == null ? null : (
         <span className="self-center">
-          <DiffStat additions={stat.additions} deletions={stat.deletions} />
+          <DiffStat additions={diffStat.additions} deletions={diffStat.deletions} />
         </span>
       )}
-      {secondary != null ? (
-        <span className="min-w-0 truncate text-secondary text-muted-foreground">{secondary}</span>
-      ) : null}
-      {entry.kind === 'agent' && <TimelineRowStateLine state={item.rowState} note={stateNote} />}
-      {entry.kind === 'agent' && <TimelineRowWorktrees names={worktrees} />}
+      {isAgent && <TimelineRowWorktrees names={worktrees} />}
       {isRevealed ? <RevealedRowTag /> : null}
     </>
   );

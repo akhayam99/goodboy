@@ -1,120 +1,126 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
+
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { SessionId, WorkspaceId } from '@goodboy/types';
+import type {
+  ChatId,
+  ChatSessionLink,
+  ChatSessionLinkId,
+  ChatSessionLinkKind,
+  ChatSummary,
+  IsoDateTime,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../store/storyHarness';
 
-const { store } = vi.hoisted(() => ({
-  store: {
-    chatsByWorkspace: {} as Record<string, ReadonlyArray<unknown>>,
-    archivedChatsByWorkspace: {} as Record<string, ReadonlyArray<unknown>>,
-    chatLinks: {} as Record<string, ReadonlyArray<unknown>>,
-    loadChats: vi.fn(async () => undefined),
-    loadArchivedChats: vi.fn(async () => []),
-    openStudio: vi.fn(),
-  },
-}));
+let useAppStore: StoryStore;
+let ChatOriginRow: typeof import('./ChatOriginRow').ChatOriginRow;
 
-vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
-}));
+beforeAll(async () => {
+  useAppStore = await importStore();
+  ({ ChatOriginRow } = await import('./ChatOriginRow'));
+}, STORE_IMPORT_TIMEOUT_MS);
 
-import { ChatOriginRow } from './ChatOriginRow';
+const WORKSPACE_ID = 'ws-harborline' as WorkspaceId;
+const SESSION_ID = 'session-duplicate-credit' as SessionId;
+const NOW = '2026-09-28T09:00:00.000Z' as IsoDateTime;
 
-const SESSION = aSession({
-  id: 'session-consent' as SessionId,
-  workspaceId: 'ws-harborline' as WorkspaceId,
+const SESSION = aSession({ id: SESSION_ID, workspaceId: WORKSPACE_ID });
+
+const chatOf = (id: string, title: string): ChatSummary => ({
+  id: id as ChatId,
+  workspaceId: WORKSPACE_ID,
+  title,
+  provider: 'anthropic',
+  model: 'sonnet-5',
+  effort: null,
+  pinnedAt: null,
+  archivedAt: null,
+  createdAt: NOW,
+  updatedAt: NOW,
+  lastActivityAt: NOW,
+  preview: null,
+  modelsUsed: [],
+  messageCount: 0,
 });
 
-const linkOf = (chatId: string, sessionId: string, createdAt: string, kind = 'new') => ({
-  id: `link-${chatId}-${sessionId}`,
-  chatId,
+const linkOf = (
+  chatId: string,
+  kind: ChatSessionLinkKind,
+  sessionId = SESSION_ID,
+): ChatSessionLink => ({
+  id: `link-${chatId}-${kind}` as ChatSessionLinkId,
+  chatId: chatId as ChatId,
   sessionId,
   messageId: null,
   kind,
-  createdAt,
+  createdAt: NOW,
 });
 
-beforeEach(() => {
-  store.chatsByWorkspace = {
-    'ws-harborline': [
-      { id: 'chat-consent', title: 'Where is the consent step defined?' },
-      { id: 'chat-other', title: 'Another chat' },
-    ],
-  };
-  store.archivedChatsByWorkspace = { 'ws-harborline': [] };
-  store.chatLinks = {};
+beforeEach(async () => {
+  await resetStoryStore();
+  useAppStore.setState({
+    chatsByWorkspace: {
+      [WORKSPACE_ID]: [
+        chatOf('chat-retry', 'Payments retry design'),
+        chatOf('chat-rounding', 'Ledger rounding'),
+      ],
+    },
+    archivedChatsByWorkspace: { [WORKSPACE_ID]: [] },
+    chatLinks: {},
+  });
 });
 
-afterEach(() => {
-  cleanup();
-  vi.clearAllMocks();
-});
+afterEach(cleanup);
 
 describe('ChatOriginRow', () => {
-  it('shows nothing for a session no chat started', () => {
-    store.chatLinks = { 'chat-other': [linkOf('chat-other', 'session-x', '2026-09-28T10:00:00Z')] };
-    render(<ChatOriginRow session={SESSION} />);
-
-    expect(screen.queryByText(/From chat/)).toBeNull();
-  });
-
-  it('shows nothing for a session a chat was only added to', () => {
-    store.chatLinks = {
-      'chat-consent': [linkOf('chat-consent', 'session-consent', '2026-09-28T10:00:00Z', 'add')],
-    };
-    render(<ChatOriginRow session={SESSION} />);
-
-    expect(screen.queryByText(/From chat/)).toBeNull();
-  });
-
-  it('ignores a chat that was added later and names the one that started the session', () => {
-    store.chatLinks = {
-      'chat-other': [linkOf('chat-other', 'session-consent', '2026-09-28T09:00:00Z', 'add')],
-      'chat-consent': [linkOf('chat-consent', 'session-consent', '2026-09-28T10:00:00Z')],
-    };
-    render(<ChatOriginRow session={SESSION} />);
-
-    expect(screen.getByText('Where is the consent step defined?')).toBeDefined();
-  });
-
-  it('names the chat and opens it in the chat studio', () => {
-    store.chatLinks = {
-      'chat-consent': [linkOf('chat-consent', 'session-consent', '2026-09-28T10:00:00Z')],
-    };
-    render(<ChatOriginRow session={SESSION} />);
-
-    expect(screen.getByText('Where is the consent step defined?')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: /From chat/ }));
-
-    expect(store.openStudio).toHaveBeenCalledWith({
-      studio: { kind: 'chat', chatId: 'chat-consent' },
+  it('shows nothing for a session no chat touched', () => {
+    useAppStore.setState({
+      chatLinks: { ['chat-retry' as ChatId]: [linkOf('chat-retry', 'new', 'other' as SessionId)] },
     });
-  });
-
-  it('follows the first chat when several sent a brief to the session', () => {
-    store.chatLinks = {
-      'chat-other': [linkOf('chat-other', 'session-consent', '2026-09-28T12:00:00Z')],
-      'chat-consent': [linkOf('chat-consent', 'session-consent', '2026-09-28T10:00:00Z')],
-    };
     render(<ChatOriginRow session={SESSION} />);
 
-    expect(screen.getByText('Where is the consent step defined?')).toBeDefined();
+    expect(screen.queryByText(/From chat|Fed by chat/)).toBeNull();
   });
 
-  it('finds the chat among the archived ones and loads the chats that are missing', () => {
-    store.chatsByWorkspace = {};
-    store.archivedChatsByWorkspace = {
-      'ws-harborline': [{ id: 'chat-consent', title: 'Archived consent chat' }],
-    };
-    store.chatLinks = {
-      'chat-consent': [linkOf('chat-consent', 'session-consent', '2026-09-28T10:00:00Z')],
-    };
+  it('names the chat that started the session and the chat that fed it, one line each', () => {
+    useAppStore.setState({
+      chatLinks: {
+        ['chat-rounding' as ChatId]: [linkOf('chat-rounding', 'add')],
+        ['chat-retry' as ChatId]: [linkOf('chat-retry', 'new')],
+      },
+    });
     render(<ChatOriginRow session={SESSION} />);
 
-    expect(screen.getByText('Archived consent chat')).toBeDefined();
-    expect(store.loadChats).toHaveBeenCalledWith({ workspaceId: 'ws-harborline' });
-    expect(store.loadArchivedChats).not.toHaveBeenCalled();
+    const [first, second] = screen.getAllByRole('button');
+    expect(first?.textContent).toBe('From chat ·Payments retry design');
+    expect(second?.textContent).toBe('Fed by chat ·Ledger rounding');
+  });
+
+  it('opens the chat from its line', () => {
+    useAppStore.setState({
+      chatLinks: { ['chat-retry' as ChatId]: [linkOf('chat-retry', 'new')] },
+    });
+    render(<ChatOriginRow session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Payments retry design/ }));
+
+    const studio = useAppStore.getState().appStudio;
+    expect(studio).toEqual({ kind: 'chat', chatId: 'chat-retry' });
   });
 });

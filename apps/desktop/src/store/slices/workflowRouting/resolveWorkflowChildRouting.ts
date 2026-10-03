@@ -18,30 +18,17 @@ import {
   type WorkflowRoutingResolution,
 } from '@goodboy/core';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
+import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import { runProviderPool } from '../../../features/workflows/runProviderPool';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import type { AppStore } from '../../store';
+
+import { configuredRolePick } from './configuredRolePick';
 
 const UNKNOWN_PROFILE: WorkflowTaskProfile = {
   taskType: 'general',
   difficulty: 'unknown',
   basis: 'unknown',
-};
-
-type ConfiguredRoleParams = {
-  readonly role: AgentRole;
-  readonly roleModels: RoleModelPreferences | null | undefined;
-};
-
-const configuredRolePick = ({
-  role,
-  roleModels,
-}: ConfiguredRoleParams): WorkflowModelPick | null => {
-  const routing = resolveRoleRouting({ role, prefs: roleModels });
-  if (routing.isOverride === false) {
-    return null;
-  }
-  return { provider: routing.provider, model: routing.model, effort: routing.effort };
 };
 
 type OutcomeParams = {
@@ -109,6 +96,7 @@ export const resolveWorkflowChildRouting = ({
     roleDefault: configuredRolePick({
       role,
       roleModels: selectResolvedSettings({ state, sessionId })?.roleModels ?? null,
+      profile,
     }),
     sessionDefault:
       session === undefined || session.modelOverride == null || defaultProvider === null
@@ -127,6 +115,7 @@ export const resolveWorkflowChildRouting = ({
       sessionId,
       isRunBudgetBlocked: false,
       nowMs: Date.now(),
+      ...workspacePolicyAvailability({ state, sessionId }),
       providerPool: runProviderPool({ sessions: state.sessions ?? [], sessionId, workflowRunId }),
     }),
     contextEstimate: null,

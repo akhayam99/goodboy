@@ -1,4 +1,5 @@
 import type {
+  DeletedBranch,
   IsoDateTime,
   MountId,
   ProjectId,
@@ -11,6 +12,7 @@ import type { BranchMergeState } from '../../../../../features/worktree/worktree
 import type { BranchLocation, ProjectBranch } from '../../../../../features/worktree/branchCleanup';
 import type { BranchScanEntry } from '../../../../../store/slices/branch-cleanup';
 import type { StorageFolder, StorageRoot } from '../../../../../store/slices/storage/types';
+import type { OtherToolUsage } from '../../../../../features/storage/otherTools';
 import { useAppStore } from '../../../../../store';
 import { SettingsFrame } from '../audit/SettingsFrame';
 import { SETTINGS_PROJECTS, SETTINGS_WORKSPACE_ID } from '../audit/settingsSeed';
@@ -316,7 +318,86 @@ const scrollToBranches = (): void => {
   }, 600);
 };
 
-const seedStorage = (): void => {
+const deletedOf = ({
+  id,
+  projectId,
+  branch,
+  sha,
+  days,
+}: {
+  readonly id: string;
+  readonly projectId: ProjectId;
+  readonly branch: string;
+  readonly sha: string;
+  readonly days: number;
+}): DeletedBranch => ({
+  id,
+  workspaceId: SETTINGS_WORKSPACE_ID,
+  projectId,
+  sessionId: null,
+  repoRoot: rootOf(projectId),
+  branch,
+  sha,
+  keepRef: `refs/goodboy/deleted/${id}`,
+  onOrigin: false,
+  deletedAt: daysAgoIso(days),
+  restoredAt: null,
+});
+
+const DELETED: ReadonlyArray<DeletedBranch> = [
+  deletedOf({
+    id: 'mock-deleted-fee-rounding',
+    projectId: PAYMENTS_ID,
+    branch: 'hl/fee-rounding',
+    sha: '3f9a1c2',
+    days: 2,
+  }),
+  deletedOf({
+    id: 'mock-deleted-ledger-index',
+    projectId: LEDGER_ID,
+    branch: 'hl/ledger-index',
+    sha: 'a41d7e0',
+    days: 6,
+  }),
+  deletedOf({
+    id: 'mock-deleted-queue-backoff',
+    projectId: PAYMENTS_ID,
+    branch: 'theo/spike-queue-backoff',
+    sha: '9be0c55',
+    days: 12,
+  }),
+];
+
+const MB = 1024 * 1024;
+
+const OTHER_TOOLS: ReadonlyArray<OtherToolUsage> = [
+  {
+    id: 'claude-code',
+    path: '/mock/home/.claude',
+    displayPath: '~/.claude',
+    bytes: 6_100 * MB,
+    sessions: 4_405,
+    goodboyBytes: 312 * MB,
+  },
+  {
+    id: 'codex',
+    path: '/mock/home/.codex',
+    displayPath: '~/.codex',
+    bytes: 976 * MB,
+    sessions: 1_275,
+    goodboyBytes: 104 * MB,
+  },
+  {
+    id: 'cursor',
+    path: '/mock/home/.cursor',
+    displayPath: '~/.cursor',
+    bytes: 2_000 * MB,
+    sessions: 2_916,
+    goodboyBytes: 86 * MB,
+  },
+];
+
+export const seedStorageScene = (): void => {
   seedBrandSettings();
   const state = useAppStore.getState();
   useAppStore.setState({
@@ -336,11 +417,18 @@ const seedStorage = (): void => {
     },
     loadProjectBranches: async () => undefined,
     loadDeletedBranches: async () => undefined,
-    deletedBranches: { [SETTINGS_WORKSPACE_ID]: [] },
+    deletedBranches: { [SETTINGS_WORKSPACE_ID]: DELETED },
+    storageOtherTools: { status: 'ready', tools: OTHER_TOOLS },
+    loadOtherTools: async () => undefined,
+    cancelOtherTools: async () => undefined,
   });
+};
+
+const seedBrandStorage = (): void => {
+  seedStorageScene();
   scrollToBranches();
 };
 
 export const BrandStorageScene = () => (
-  <SettingsFrame focus={{ scope: 'app', section: 'storage' }} seed={seedStorage} />
+  <SettingsFrame focus={{ scope: 'app', section: 'storage' }} seed={seedBrandStorage} />
 );

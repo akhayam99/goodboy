@@ -6,6 +6,8 @@ import { planOrder } from '../../../historyPlan';
 import { useRowPositions } from '../../../useRowPositions';
 import type { HistoryRowView } from '../historyRowLine';
 
+const FLIP_ROW_LIMIT = 60;
+
 type Params = {
   readonly view: HistoryRowView;
   readonly commits: ReadonlyArray<BranchCommit>;
@@ -43,6 +45,10 @@ export const useHistoryRows = ({
     listRef,
     layoutKey: `${orderKey}|${view}|${editingSha ?? ''}|${[...expanded].join(',')}|${stageWidth ?? 0}|${editCount}`,
   });
-  useFlipList({ containerRef: listRef, orderKey: `${view}:${orderKey}` });
+  useFlipList({
+    containerRef: listRef,
+    orderKey: `${view}:${orderKey}`,
+    isEnabled: rows.length <= FLIP_ROW_LIMIT,
+  });
   return { rows, positions };
 };

@@ -14,6 +14,7 @@ import type {
 import { classifyStep } from '../../../../features/session/agent-kind';
 import { modelLabel } from '../../../chat/utils/chat-constants';
 import { resolveStepRouting } from '../../resolveStepRouting';
+import { useRoutingScope } from '../../../../shared/hooks/useRoutingScope';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import type { WorkflowBlockReason } from '../../advanceGate';
 import { WORKFLOW_BLOCK_COPY } from '../../blockCopy';
@@ -61,6 +62,7 @@ export const WorkflowNextStepCta = ({
   const chain = useMemo(() => classifyWorkflowChain(workflow, runs), [workflow, runs]);
   const next = chain.kind === 'step' ? chain.step : null;
   const kind = useMemo(() => (next != null ? classifyStep({ step: next }) : 'generic'), [next]);
+  const scope = useRoutingScope({ sessionId: runs[0]?.sessionId ?? null });
   const routing = resolveStepRouting({
     step: next,
     kind,
@@ -70,6 +72,7 @@ export const WorkflowNextStepCta = ({
     agentEffort,
     sessionProvider,
     sessionEffort,
+    scope,
   });
   const effortText = routing.effort ?? 'model default';
   const advance = useStartAnywayConfirm({
@@ -112,7 +115,7 @@ export const WorkflowNextStepCta = ({
           <button
             type="button"
             onClick={advance.onTrigger}
-            disabled={advance.isBusy}
+            disabled={advance.isBusy || blockReason === 'paused'}
             data-testid="workflow-next-step-cta"
             title={
               blockReason != null

@@ -125,7 +125,7 @@ file holds those explanations. Everything below has been "fixed" at least once a
   state or a ref. Nobody has ever widened the contract to close this. The same
   stale-pairing bug was fixed at the call site instead, separately, at least
   twice
-  (`RoleModelRow`/`TaskModelRow`, then the old step library form and
+  (the old role row and `TaskModelRow`, then the old step library form and
   `OrchestratorRoutingRow` in #1307). Each time the fix tracked the provider in
   a ref instead of adding a provider parameter to `onModel`. This matters for
   more than passing UI state when the consumer persists the pair, as
@@ -164,6 +164,12 @@ status` directly. A branch cut from a remote-tracking ref (`worktree add -b
   text, a run reads like a log. Aligning one to the other, or copying the
   `flex-col-reverse` of the run back into the plan, breaks the lane geometry in
   `StepTreeLane` and the reorder keys, where up means earlier.
+- Every timeline row draws its own piece of the rail in its own `<svg>`, so
+  the joins only stay seamless while every row shares one pixel grid. Never
+  animate a row with a `transform` that outlives the animation (a keyframe
+  with `fill-mode: both` leaves one behind and puts the row on its own layer),
+  and never give lines and elbows different `shape-rendering`. Grow rows with
+  `Reveal`, which moves only the grid track.
 
 ## Hand-maintained lists the compiler does not check
 

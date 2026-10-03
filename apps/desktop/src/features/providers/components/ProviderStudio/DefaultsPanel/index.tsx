@@ -1,48 +1,45 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
-import type { OverrideSettings, ProviderId, WorkspaceId } from '@goodboy/types';
+import type { OverrideSettings, WorkspaceId } from '@goodboy/types';
 import {
   DEFAULT_GROUPS,
   DEFAULT_SESSION_PROVIDER_PREFERENCE,
   ROLE_REGISTRY,
   TASKS,
+  firstOnProvider,
   type AutoContext,
 } from '@goodboy/core';
 import {
   Band,
   BandStack,
-  EmptyState,
   Eyebrow,
   FieldRow,
   InlineConfirm,
   OverflowMenu,
   PaneShell,
+  FilledEmptyState,
 } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import { ROLE_LABEL } from '../../../../session/agent-kind';
 import { useAppStore } from '../../../../../store';
 import { useChatDefaultModel } from '../../../../../shared/hooks/useChatDefaultModel';
 import { ChatModelRow } from './ChatModelRow';
-import { RoleModelRow } from './RoleModelRow';
+import { RoleRow } from './RoleRow';
 import { TaskModelRow } from './TaskModelRow';
-import { FallbackOrder } from './FallbackOrder';
+import { ProvidersInOrder } from './ProvidersInOrder';
 import { useDefaultsPersistence } from './useDefaultsPersistence';
 import {
   CONCEPT_ICONS,
   CONCEPT_TONE,
   ICON_SIZE,
 } from '../../../../../shared/components/conceptIcons';
-import { ProviderPicker } from '../../../../../shared/components/RoutingPicker/ProviderPicker';
 import { pluralize } from '../../../../../shared/utils/pluralize';
 import { SETTINGS_PANE_ENTRY } from '../../../../settings/components/SettingsStudio/settingsPaneEntry';
 import { useAutoLimitContext } from '../../../hooks/useAutoLimitContext';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
-};
-
-type ProviderParams = {
-  readonly providerId: ProviderId;
+  readonly focusSection?: string;
 };
 
 const TASK_BY_ID = new Map(TASKS.map((task) => [task.id, task]));
@@ -66,7 +63,16 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   afterMerge: null,
 };
 
-export const DefaultsPanel = ({ workspaceId }: Props) => {
+export const DefaultsPanel = ({ workspaceId, focusSection }: Props) => {
+  const tasksRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (focusSection === undefined || !TASKS.some((task) => task.id === focusSection)) {
+      return;
+    }
+    tasksRef.current
+      ?.querySelector(`[data-default-row="${focusSection}"]`)
+      ?.scrollIntoView({ block: 'center' });
+  }, [focusSection]);
   const workspaceOverrides = useAppStore(
     (state) => state.workspaceOverrides?.[workspaceId] ?? null,
   );
@@ -78,20 +84,16 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
     ),
   );
   const overrides = workspaceOverrides ?? EMPTY_OVERRIDES;
+  const policy = overrides.providerPool;
   const defaultProviderId =
-    overrides.defaultProviderId ?? DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider;
-  const providerPoolIds = new Set(overrides.providerPool ?? connectedProviderIds);
-  providerPoolIds.add(defaultProviderId);
-  const orderedProviderIds = [
-    ...connectedProviderIds.filter((id) => id === defaultProviderId),
-    ...connectedProviderIds.filter((id) => id !== defaultProviderId),
-  ];
-  const fallbackOrder = orderedProviderIds.filter((id) => providerPoolIds.has(id));
+    firstOnProvider({ policy }) ??
+    overrides.defaultProviderId ??
+    DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider;
   const limitContext = useAutoLimitContext();
   const autoContext: AutoContext = {
     defaultProvider: defaultProviderId,
     connected: connectedProviderIds,
-    fallbackOrder,
+    ...(policy != null && { policy }),
     ...(limitContext?.hidden != null && { hidden: limitContext.hidden }),
     ...(limitContext?.cliVersions != null && { cliVersions: limitContext.cliVersions }),
   };
@@ -105,34 +107,6 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
   const pinnedRoleCount = Object.keys(overrides.roleModels ?? {}).length;
   const pinnedChatCount = chatDefault.saved === null ? 0 : 1;
   const pinnedCount = pinnedTaskCount + pinnedRoleCount + pinnedChatCount;
-
-  const onDefaultProvider = ({ providerId }: ProviderParams) => {
-    const providerPool =
-      overrides.providerPool == null
-        ? null
-        : Array.from(new Set([...overrides.providerPool, providerId]));
-    void persistOverrides({ patch: { defaultProviderId: providerId, providerPool } });
-  };
-
-  const onToggleRoutingProvider = ({ providerId }: ProviderParams) => {
-    if (providerId === defaultProviderId) {
-      return;
-    }
-    const nextProviderIds = new Set(providerPoolIds);
-    const isInPool = nextProviderIds.has(providerId);
-    if (isInPool) {
-      nextProviderIds.delete(providerId);
-    }
-    if (!isInPool) {
-      nextProviderIds.add(providerId);
-    }
-    nextProviderIds.add(defaultProviderId);
-    const selectedProviderIds = connectedProviderIds.filter((id) => nextProviderIds.has(id));
-    const isEveryProviderEnabled = selectedProviderIds.length === connectedProviderIds.length;
-    void persistOverrides({
-      patch: { providerPool: isEveryProviderEnabled ? null : selectedProviderIds },
-    });
-  };
 
   const onResetAll = async () => {
     chatDefault.clear();
@@ -179,39 +153,17 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
 
       <section aria-label="Providers" className="flex flex-col gap-1">
         <Eyebrow label="Providers" />
-        <FieldRow label="Default provider" help="Auto starts here.">
-          <div className="w-[220px]">
-            <ProviderPicker
-              connectedProviders={connectedProviderIds}
-              provider={defaultProviderId}
-              disabled={busy}
-              onProvider={(providerId) => onDefaultProvider({ providerId })}
-              align="end"
-              ariaLabel="Default provider"
-            />
-          </div>
-        </FieldRow>
-        <FieldRow
-          label="Fallback order"
-          help="If a provider is not connected or out of quota, Auto moves to the next one."
-        >
-          {connectedProviderIds.length === 0 ? (
-            <EmptyState
+        {connectedProviderIds.length === 0 ? (
+          <FieldRow label="Providers, in order">
+            <FilledEmptyState
               icon={CONCEPT_ICONS.providers}
               tone={CONCEPT_TONE.providers}
               title="No providers connected"
-              size="inline"
             />
-          ) : (
-            <FallbackOrder
-              providerIds={orderedProviderIds}
-              poolIds={providerPoolIds}
-              defaultProviderId={defaultProviderId}
-              disabled={busy}
-              onToggle={(providerId) => onToggleRoutingProvider({ providerId })}
-            />
-          )}
-        </FieldRow>
+          </FieldRow>
+        ) : (
+          <ProvidersInOrder workspaceId={workspaceId} />
+        )}
       </section>
 
       <section aria-label="Chat" className="flex flex-col gap-2">
@@ -229,6 +181,9 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
 
       <section aria-label="Agents" className="flex flex-col gap-2">
         <Eyebrow label="Agents" />
+        <p className="text-secondary text-muted-foreground">
+          What Auto picks for each role, and why. Open a role to see how it works.
+        </p>
         <BandStack>
           {DEFAULT_GROUPS.agents.map((group) => (
             <div key={group.id} role="group" aria-label={group.label}>
@@ -237,13 +192,14 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
                 groupMeta={pluralize(group.members.length, 'role')}
               >
                 {group.members.map((role) => (
-                  <RoleModelRow
+                  <RoleRow
                     key={role}
                     role={role}
                     label={ROLE_LABEL[role]}
                     help={ROLE_REGISTRY[role].summary}
                     preference={overrides.roleModels?.[role] ?? null}
                     autoContext={autoContext}
+                    isParallelOn={overrides.parallelAgents === true}
                     connectedProviderIds={connectedProviderIds}
                     disabled={busy}
                     onChange={(preference) => persistRoleModel({ role, preference })}
@@ -255,7 +211,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
         </BandStack>
       </section>
 
-      <section aria-label="Background tasks" className="flex flex-col gap-2">
+      <section ref={tasksRef} aria-label="Background tasks" className="flex flex-col gap-2">
         <Eyebrow label="Background tasks" />
         <BandStack>
           {DEFAULT_GROUPS.tasks.map((group) => (
@@ -277,7 +233,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
                       help={task.description}
                       preference={overrides.taskModels?.[task.id] ?? null}
                       defaultProviderId={defaultProviderId}
-                      fallbackOrder={fallbackOrder}
+                      providerPolicy={policy}
                       connectedProviderIds={connectedProviderIds}
                       disabled={busy}
                       onChange={(preference) => persistTaskModel({ task: task.id, preference })}

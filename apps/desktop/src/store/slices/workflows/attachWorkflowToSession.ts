@@ -21,7 +21,9 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { isWorkflowRunComplete } from '../../../features/workflows/isWorkflowRunComplete';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
+import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
+import { selectRoutingScope } from '../agents/selectRoutingScope';
 import { persistOrchestrationStop } from './orchestrateNextStep';
 import { activateWorkflowAgentOrNotify } from './activateWorkflowAgentOrNotify';
 import { generateWorkflowRunTitle } from './generateWorkflowRunTitle';
@@ -126,6 +128,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
             blocked: [],
           })
         : preSpawnWorkflowAgents({
+            scope: selectRoutingScope({ state: get(), sessionId }),
             sessionId,
             workflowRunId,
             steps: template.steps,
@@ -141,6 +144,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
               sessionId,
               isRunBudgetBlocked: false,
               nowMs: Date.now(),
+              ...workspacePolicyAvailability({ state: get(), sessionId }),
             }),
           })
     ).catch(async (error: unknown) => {

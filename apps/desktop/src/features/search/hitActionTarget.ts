@@ -1,5 +1,6 @@
 import type { ArtifactId, SearchHit } from '@goodboy/types';
 import type { AppState } from '../../store/types';
+import { askingAgentIdsOf } from '../plans/askingAgentIdsOf';
 import { buildArtifactListRows } from '../artifacts/artifactListRows';
 import type { ObjectTarget } from '../actions/types';
 
@@ -7,8 +8,6 @@ type Params = {
   readonly hit: SearchHit;
   readonly state: AppState;
 };
-
-const RUNNING_NODES: ReadonlySet<string> = new Set(['running', 'question']);
 
 export const hitPlanRunning = ({ hit, state }: Params): boolean => {
   if (hit.sessionId === null) {
@@ -20,9 +19,13 @@ export const hitPlanRunning = ({ hit, state }: Params): boolean => {
     generations: [],
     agents: state.sessionPhaseRuns[hit.sessionId] ?? [],
     openQuestionCount: (state.sessionOpenQuestions[hit.sessionId] ?? []).length,
+    now: Date.now(),
+    askingAgentIds: askingAgentIdsOf({
+      questions: state.sessionOpenQuestions[hit.sessionId] ?? [],
+    }),
   });
-  const row = rows.find((candidate) => candidate.key === `artifact:${hit.refId}`);
-  return row !== undefined && RUNNING_NODES.has(row.node);
+  const row = rows.find((candidate) => candidate.id === `artifact:${hit.refId}`);
+  return row !== undefined && row.isPlanRunning;
 };
 
 type HitParams = {

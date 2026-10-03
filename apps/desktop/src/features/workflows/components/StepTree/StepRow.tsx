@@ -6,7 +6,7 @@ import type { StepDraft } from '../../engine';
 import { WorkTimeCell } from '../../../workTreeModel/components/WorkTimeCell';
 import type { PlanStepEstimate } from '../WorkflowBuilderView/planEstimates';
 import { ROLE_LABEL, type AgentKind } from '../../../session/agent-kind';
-import { AgentKindChip } from '../../../session/components/AgentKindChip';
+import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { StepTreeGutter } from './StepTreeGutter';
@@ -24,6 +24,7 @@ type Props = {
   readonly identityIndex: number;
   readonly isExpanded: boolean;
   readonly isEdited: boolean;
+  readonly isPinned: boolean;
   readonly isDragging: boolean;
   readonly disabled: boolean;
   readonly editor: ReactNode;
@@ -45,6 +46,7 @@ export const StepRow = ({
   identityIndex,
   isExpanded,
   isEdited,
+  isPinned,
   isDragging,
   disabled,
   editor,
@@ -115,6 +117,12 @@ export const StepRow = ({
               <span className="inline-flex shrink-0 items-center">
                 <span aria-hidden className="size-1.5 rounded-full bg-warning" />
                 <span className="sr-only">Edited</span>
+              </span>
+            ) : null}
+            {isPinned ? (
+              <span className="inline-flex shrink-0 items-center" title="Pinned model">
+                <span aria-hidden className="size-1.5 rounded-full bg-primary" />
+                <span className="sr-only">Pinned model</span>
               </span>
             ) : null}
           </button>

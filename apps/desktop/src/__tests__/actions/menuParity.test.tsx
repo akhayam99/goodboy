@@ -165,6 +165,8 @@ describe('every ⋯ menu and its right click list the same actions in the same o
         isSelected={false}
         showSource
         blockedReason={null}
+        isPinned={false}
+        onTogglePin={vi.fn()}
         onOpen={vi.fn()}
         onRun={vi.fn()}
         onStop={vi.fn()}
@@ -378,6 +380,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
         titleOf={(sha) => sha}
         conflictFiles={[]}
         includes={[]}
+        absorbed={[]}
         takenIn={[]}
         pills={{ isHead: true, remote: null, prNumber: null }}
         isNew={false}

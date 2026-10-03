@@ -131,8 +131,14 @@ export {
   normalizeAgentRole,
   normalizeSelectableAgentRole,
   presentationKeyForRole,
+  roleSplitLimits,
+  fanOutDepthCapForRole,
+  FAN_OUT_MAX_CHILDREN,
+  SCOUT_DEPTH_CAP,
   type AgentEffort,
   type AgentRole,
+  type RoleExplain,
+  type RoleSplitLimits,
   type RoleFanOutCapability,
   type RoleFanOutMode,
   type RoleFanOutPartitionKey,
@@ -352,9 +358,13 @@ export type {
 export { resolveTaskModel } from './providers/task-models';
 
 export {
+  nextRoleModelChoice,
+  resolveRoleChoice,
   resolveRoleRouting,
+  roleModelChoices,
+  roleModelSetPreference,
   type PinnedUnavailable,
-  type ResolvedRoleFallback,
+  type ResolvedRoleChoice,
   type ResolvedRoleRouting,
 } from './providers/role-models';
 export {
@@ -364,6 +374,15 @@ export {
   type AutoSlot,
   type AutoStep,
 } from './providers/autoRouting/resolveAuto';
+export {
+  firstOnProvider,
+  providerCandidates,
+  providerStanding,
+  seedProviderPolicy,
+  workingProviders,
+  type ProviderCandidatesContext,
+  type ProviderStanding,
+} from './providers/autoRouting/providerCandidates';
 export {
   AUTO_DEFAULTS,
   isCuratedProvider,
@@ -491,9 +510,11 @@ export {
   parsePolishedGoal,
   type GoalPolishDeps,
   polishStepInstruction,
+  polishStepExpectedOutput,
   parsePolishedStep,
   type StepPolishDeps,
   type StepPolishInput,
+  type ExpectedOutputPolishInput,
 } from './workflows';
 
 export {
@@ -671,6 +692,9 @@ export {
   workflowRoutingAvailability,
   buildOrchestratorUserPrompt,
   orchestratorModelPool,
+  roleModelSetMenu,
+  keepProposalInRoleSet,
+  stepSizeForDifficulty,
   parseRunSummaryText,
   serializeRunSummary,
   ORCHESTRATOR_SYSTEM_PROMPT,

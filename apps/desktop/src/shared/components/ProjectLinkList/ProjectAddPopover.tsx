@@ -95,7 +95,7 @@ export const ProjectAddPopover = ({
           disabled={busy}
         >
           <FolderPlus size={ICON_SIZE.row} aria-hidden />
-          New project
+          Start a new project
         </Button>
         <Button variant="primary" size="sm" onClick={add} disabled={busy || trimmed.length === 0}>
           Add

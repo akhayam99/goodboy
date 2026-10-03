@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Button, KbdPill, Textarea, cn, tintClasses } from '@goodboy/ui';
+import { Button, KbdPill, cn, tintClasses } from '@goodboy/ui';
+import { PromptField } from '../../../../shared/components/PromptField';
 
 type Props = {
   readonly label: string;
@@ -35,25 +36,22 @@ export const CommentComposer = ({
       )}
     >
       <span className="text-secondary font-medium text-muted-foreground">{label}</span>
-      <Textarea
+      <PromptField
+        kind="document"
         autoFocus
         value={body}
-        onChange={(event) => setBody(event.target.value)}
-        aria-label={label}
-        className="text-body"
-        autoGrow
+        onChange={setBody}
+        label={label}
+        hasPreview
         minRows={2}
         maxRows={10}
+        onSubmit={submit}
+        className="bg-background"
         onKeyDown={(event) => {
           if (event.key === 'Escape') {
             event.preventDefault();
             event.stopPropagation();
             onCancel();
-            return;
-          }
-          if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-            event.preventDefault();
-            submit();
           }
         }}
       />

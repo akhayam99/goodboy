@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FolderPlus, Plus, Search, Unplug } from 'lucide-react';
+import { FolderOpen, FolderPlus, Plus, Search, Unplug } from 'lucide-react';
 import {
   Button,
   Checkbox,
-  EmptyState,
   Eyebrow,
   IconButton,
   InlineConfirm,
   ScrollFade,
   Tooltip,
-  DogMascot,
+  FilledEmptyState,
 } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
@@ -20,6 +19,7 @@ import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { WorkspaceListRow } from '../WorkspaceListRow';
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
 import { NewProjectForm } from '../../../../shared/components/NewProjectForm';
+import { ConceptTile } from '../../../../shared/components/ConceptTile';
 
 export const WorkspaceLauncher = () => {
   const workspaces = useWorkspaces();
@@ -95,14 +95,14 @@ export const WorkspaceLauncher = () => {
           variant="ghost"
           onClick={() =>
             window.dispatchEvent(
-              new CustomEvent('goodboy:open-settings', { detail: { scope: 'app' } }),
+              new CustomEvent('goodboy:open-settings', { detail: { scope: 'home' } }),
             )
           }
         />
       </div>
       <div className="flex w-full max-w-xl flex-col gap-6 motion-safe:animate-fade-in">
         <div className="flex flex-col items-center gap-3 pb-2 text-center">
-          <DogMascot size={56} className="text-primary" />
+          <ConceptTile icon={CONCEPT_ICONS.workspace} tone={CONCEPT_TONE.workspace} />
           <h1 className="text-title text-foreground">Open a workspace</h1>
         </div>
 
@@ -129,12 +129,10 @@ export const WorkspaceLauncher = () => {
           <ul className="flex flex-col gap-0.5">
             {filtered.length === 0 ? (
               <li>
-                <EmptyState
+                <FilledEmptyState
                   icon={CONCEPT_ICONS.workspace}
                   tone={CONCEPT_TONE.workspace}
                   title="No workspaces found"
-                  size="inline"
-                  className="px-3 py-8"
                 />
               </li>
             ) : (
@@ -187,8 +185,8 @@ export const WorkspaceLauncher = () => {
             Start a new project
           </Button>
           <Button variant="secondary" onClick={addWorkspace} className="w-fit">
-            <Plus size={ICON_SIZE.control} aria-hidden />
-            Add workspace
+            <FolderOpen size={ICON_SIZE.control} aria-hidden />
+            Open a folder
           </Button>
         </div>
 

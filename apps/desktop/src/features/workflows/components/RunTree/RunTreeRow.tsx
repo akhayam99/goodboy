@@ -8,7 +8,7 @@ import type {
 } from '@goodboy/types';
 import { isQuestionDelegate } from '../../../context/questionDelegate';
 import { useAgentRowWork } from '../../../session/hooks/useAgentRowWork';
-import { AgentKindChip } from '../../../session/components/AgentKindChip';
+import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { TimelineAgentMeta } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineAgentMeta';
 import { TimelineRail } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineRail';
 import { TimelineRowMarker } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineRowMarker';
@@ -18,6 +18,7 @@ import type { TimelineRowItem } from '../../../session/timeline/buildTimelineStr
 import { railColumnX, type RailRow } from '../../../workTreeModel/railGeometry';
 import type { RowAsk } from '../../../workTreeModel/rowState';
 import { TIMELINE_RHYTHM } from '../../../workTreeModel/timelineRhythm';
+import { RunStepSkip, type RunStepSkipAction } from './RunStepSkip';
 
 export type RunTreeRouting = {
   readonly stepById: ReadonlyMap<string, Step>;
@@ -38,6 +39,7 @@ type Props = {
   readonly parentStepName: string | null;
   readonly isSelected: boolean;
   readonly isHighlighted: boolean;
+  readonly skip: RunStepSkipAction | null;
   readonly onHighlight?: (isOn: boolean) => void;
   readonly onSelect: () => void;
   readonly onAnswer: (question: OpenQuestion | null) => void;
@@ -47,7 +49,7 @@ type AskParams = {
   readonly ask: RowAsk | null;
 };
 
-export const answerOf = ({ ask }: AskParams): { readonly question: OpenQuestion | null } | null => {
+const answerOf = ({ ask }: AskParams): { readonly question: OpenQuestion | null } | null => {
   if (ask == null) {
     return null;
   }
@@ -79,6 +81,7 @@ export const RunTreeRow = ({
   parentStepName,
   isSelected,
   isHighlighted,
+  skip,
   onHighlight,
   onSelect,
   onAnswer,
@@ -142,7 +145,7 @@ export const RunTreeRow = ({
                 title={agent.name}
                 className={cn(
                   WORK_ROW.title,
-                  'truncate',
+                  'flex-1 truncate',
                   isNested ? 'text-label' : 'text-body',
                   item.rowState.phase === 'queued'
                     ? 'text-muted-foreground'
@@ -158,11 +161,14 @@ export const RunTreeRow = ({
                   {`answering for ${answersFor}`}
                 </span>
               )}
-              <TimelineRowStateLine state={item.rowState} note={work.time?.note ?? null} />
             </span>
+            <TimelineRowStateLine state={item.rowState} note={work.time?.note ?? null} />
             <TimelineAgentMeta work={work} costUsd={costUsd} />
             {hasActionColumn ? (
               <span className={WORK_META_COLUMN.action}>
+                {answer === null && skip !== null && !isNested && agent.status === 'running' ? (
+                  <RunStepSkip agent={agent} skip={skip} />
+                ) : null}
                 {answer === null ? null : (
                   <Button
                     variant="secondary"

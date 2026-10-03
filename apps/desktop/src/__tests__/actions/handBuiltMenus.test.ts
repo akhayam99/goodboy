@@ -26,10 +26,16 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'settings control, not an object in the map',
   'features/providers/components/ProviderStudio/ProviderPage/ProviderPageBody.tsx':
     'settings control, not an object in the map',
+  'features/settings/components/SettingsStudio/WorkspaceFieldRow.tsx':
+    'settings field menu (Reset to the default), not an object in the map',
+  'features/settings/components/SettingsStudio/WorkspaceScopePanel.tsx':
+    'settings page menu (Restore defaults, Copy from), page chrome',
   'features/wireframes/components/WireframeViewer/RevisionPicker.tsx':
     'revision picker inside the wireframe viewer',
-  'features/workflows/components/OrchestratorStrip/OrchestratorMenu.tsx':
-    'orchestrator strip control with its own in-place confirm',
+  'features/workflows/components/StepTree/StepEditorMenu.tsx':
+    'step draft actions inside the step editor, a draft is not an object in the map',
+  'features/workflows/components/RunControls/RunControlMenu.tsx':
+    'run control: when to ask and model routing, not an object in the map',
   'features/workflows/components/WorkflowStudio/WorkflowEditor/EditorTrail.tsx':
     'workflow editor band actions, studio chrome',
   'features/workflows/components/WorkflowStudio/WorkflowList/index.tsx':

@@ -14,3 +14,9 @@ export const ARTIFACT_KIND_MARKER_LABEL: Record<ArtifactKind, string> = {
   report: 'Report',
   wireframe: 'Wireframe',
 };
+
+export const ARTIFACT_KIND_LABEL: Record<ArtifactKind, string> = {
+  plan: 'Plans',
+  report: 'Reports',
+  wireframe: 'Wireframes',
+};

@@ -67,10 +67,16 @@ export const FOOTER_AND_VERB_ROWS: ReadonlyArray<Row> = [
     lands: async () => expect(await screen.findByText('Delete session?', {}, WAIT)).toBeDefined(),
   },
   {
-    name: 'palette: Add workspace',
-    covers: ['openStudio', 'studio:addWorkspace', 'openAddWorkspace', 'palette:Add workspace'],
-    open: () => openPalette(/^Add workspace/, 'Add workspace'),
+    name: 'palette: Open a folder',
+    covers: ['openStudio', 'studio:addWorkspace', 'openAddWorkspace', 'palette:Open a folder'],
+    open: () => openPalette(/^Open a folder/, 'Open a folder'),
     lands: () => band('Add workspace'),
+  },
+  {
+    name: 'palette: Start a new project',
+    covers: ['palette:Start a new project'],
+    open: () => openPalette(/^Start a new project/, 'Start a new project'),
+    lands: () => band('Start a new project'),
   },
   {
     name: 'footer: inbox',
@@ -92,9 +98,9 @@ export const FOOTER_AND_VERB_ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'footer: settings',
-    covers: ['openSettings', 'studio:settings', 'settings:general'],
+    covers: ['openSettings', 'studio:settings', 'scope:home'],
     open: () => clickButton(/^Open settings/),
-    lands: () => heading('Appearance'),
+    lands: () => visible('list', 'App pages'),
   },
   {
     name: 'footer: integrations',
@@ -142,6 +148,6 @@ export const FOOTER_AND_VERB_ROWS: ReadonlyArray<Row> = [
       await clickButton(/^Switch workspace/);
       await clickButton(/^Workspace settings/);
     },
-    lands: () => heading('About you'),
+    lands: () => visible('textbox', 'Workspace name'),
   },
 ];

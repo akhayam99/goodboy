@@ -9,7 +9,11 @@ import type {
   VerbosityLevel,
   WorkflowRunId,
 } from '@goodboy/types';
-import { resolveModelIdForProvider, type WorkflowRoutingAvailabilitySnapshot } from '@goodboy/core';
+import {
+  resolveModelIdForProvider,
+  type AutoContext,
+  type WorkflowRoutingAvailabilitySnapshot,
+} from '@goodboy/core';
 import { classifyStep } from '../../../features/session/agent-kind';
 import { resolveStepRouting } from '../../../features/workflows/resolveStepRouting';
 import { revalidateStepRouting } from '../../../features/workflows/revalidateStepRouting';
@@ -26,6 +30,7 @@ type Params = {
   readonly sessionEffort?: EffortLevel | null;
   readonly defaultVerbosity?: VerbosityLevel;
   readonly availability?: WorkflowRoutingAvailabilitySnapshot;
+  readonly scope?: AutoContext | null;
 };
 
 type BlockedWorkflowStep = Readonly<{
@@ -54,6 +59,7 @@ export const preSpawnWorkflowAgents = async ({
   sessionEffort,
   defaultVerbosity,
   availability,
+  scope = null,
 }: Params): Promise<PreSpawnWorkflowAgentsResult> => {
   const agents: Agent[] = [];
   const modelOverrides: Record<string, string> = {};
@@ -84,6 +90,7 @@ export const preSpawnWorkflowAgents = async ({
       sessionProvider: defaultProvider,
       sessionModel: sessionModel ?? null,
       sessionEffort: sessionEffort ?? null,
+      scope,
     });
     const provider = routing.provider;
     const model = resolveModelIdForProvider({ provider, modelId: routing.model });

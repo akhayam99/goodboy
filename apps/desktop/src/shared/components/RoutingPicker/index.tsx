@@ -28,6 +28,7 @@ export type Props = {
   readonly onVerbosity?: (verbosity: VerbosityLevel) => void;
   readonly onReset?: () => void;
   readonly resetLabel?: string;
+  readonly hasTriggerReset?: boolean;
   readonly overridden?: boolean;
   readonly defaultSummary?: string;
   readonly variant?: 'field' | 'pill';
@@ -39,6 +40,7 @@ export type Props = {
   readonly availability?: 'run' | 'setup';
   readonly presentation?: 'popover' | 'inline';
   readonly isEffortHidden?: boolean;
+  readonly providerLayout?: 'glyphs' | 'named';
   readonly budget?: ReactNode;
 };
 
@@ -57,6 +59,7 @@ export const RoutingPicker = ({
   onVerbosity,
   onReset,
   resetLabel,
+  hasTriggerReset = true,
   overridden,
   defaultSummary,
   variant = 'field',
@@ -68,6 +71,7 @@ export const RoutingPicker = ({
   availability = 'run',
   presentation = 'popover',
   isEffortHidden = false,
+  providerLayout = 'glyphs',
   budget,
 }: Props) => {
   const isInline = presentation === 'inline';
@@ -133,6 +137,7 @@ export const RoutingPicker = ({
       availability={availability}
       isInline={isInline}
       isEffortHidden={isEffortHidden}
+      providerLayout={providerLayout}
       onConnectionInFlightChange={setIsProviderConnectionInFlight}
       {...(!isInline && { focusRoot: dropdown.popupRef })}
       {...(recommendation != null && { recommendation })}
@@ -168,7 +173,7 @@ export const RoutingPicker = ({
       anchorClassName={cn('flex items-center gap-1', variant === 'field' && 'w-full')}
       trigger={
         <>
-          {onReset != null && isOverridden && !disabled && (
+          {onReset != null && hasTriggerReset && isOverridden && !disabled && (
             <Tooltip
               content={defaultSummary != null ? `${resetCopy} (${defaultSummary})` : resetCopy}
             >

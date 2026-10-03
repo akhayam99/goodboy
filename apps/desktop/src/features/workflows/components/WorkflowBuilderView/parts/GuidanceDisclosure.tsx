@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { Textarea } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { PromptField } from '../../../../../shared/components/PromptField';
 import { StepTreeGutter } from '../../StepTree/StepTreeGutter';
 
 type Props = {
@@ -25,10 +25,12 @@ export const GuidanceDisclosure = ({ identityIndex, guidance, disabled, onGuidan
           <label htmlFor={GUIDANCE_ID} className="text-secondary text-muted-foreground">
             Guidance (optional)
           </label>
-          <Textarea
+          <PromptField
+            kind="document"
+            label="Guidance (optional)"
             id={GUIDANCE_ID}
             value={guidance}
-            onChange={(event) => onGuidance(event.target.value)}
+            onChange={onGuidance}
             onBlur={() => {
               if (guidance.trim() === '') {
                 setIsOpen(false);
@@ -36,11 +38,10 @@ export const GuidanceDisclosure = ({ identityIndex, guidance, disabled, onGuidan
             }}
             placeholder="anything to respect or avoid, and when to stop (e.g. leave the payments module alone, stop once the PR is open)…"
             autoFocus={shouldFocus}
-            autoGrow
+            hasPreview
             minRows={3}
             maxRows={7}
             disabled={disabled}
-            className="resize-none bg-subtle text-body"
           />
         </div>
       ) : (

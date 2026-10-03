@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { WorkspaceId, WorkspaceProfile } from '@goodboy/types';
-import { SectionHeader } from '@goodboy/ui';
+import { Band } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { ProfileForm } from '../../../../shared/components/ProfileForm';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { normalizeWorkspaceProfile } from '../../../../shared/utils/normalizeWorkspaceProfile';
 
 type Props = {
@@ -36,13 +37,15 @@ export const WorkspaceProfileSection = ({ workspaceId }: Props) => {
   };
 
   return (
-    <section aria-label="About you" className="flex flex-col gap-3">
-      <SectionHeader
-        label="About you"
-        hint="What agents already know about you and how you like to work."
-        headingLevel={2}
-      />
+    <Band
+      inset="content"
+      label="Profile"
+      ariaLabel="Profile"
+      hint="What agents already know about you and how you like to work. It stays in this workspace."
+      icon={<CONCEPT_ICONS.profile size={ICON_SIZE.row} aria-hidden />}
+      headingLevel={2}
+    >
       <ProfileForm value={draft} onChange={setDraft} onCommit={(next) => void commit(next)} />
-    </section>
+    </Band>
   );
 };

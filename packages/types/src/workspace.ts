@@ -106,7 +106,7 @@ export type WorkflowExecutionMode = 'static' | 'dynamic';
 export type WorkflowOrchestrationOutcome = 'done' | 'blocked';
 
 export type WorkflowOrchestrationStopKind =
-  'failure' | 'budget' | 'questions' | 'operator' | 'closed' | 'needs-approval';
+  'failure' | 'budget' | 'questions' | 'operator' | 'closed' | 'needs-approval' | 'paused';
 
 export type WorkflowOrchestrationStop = Readonly<{
   kind: WorkflowOrchestrationStopKind;
@@ -127,6 +127,7 @@ export type OrchestratorHint = Readonly<{
   createdAt: IsoDateTime;
   consumedAt?: IsoDateTime;
   consumedAtStep?: number;
+  attachmentIds?: ReadonlyArray<string>;
 }>;
 
 export type WorkflowRun = Readonly<{

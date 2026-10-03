@@ -5,13 +5,19 @@ import {
   type TrailSegmentModel,
 } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
-import { SCOPE_ITEMS } from '../components/SettingsStudio/SettingsRail';
+import { SCOPE_ITEMS } from '../components/SettingsStudio/settingsScopes';
 import { APP_SECTIONS, type AppSection } from '../components/SettingsStudio/appSections';
-import type { SettingsScopeChange, SettingsStudioScope } from '../settingsFocus';
+import {
+  WORKSPACE_PAGES,
+  workspacePageEntry,
+  type WorkspacePage,
+} from '../components/SettingsStudio/workspacePages';
+import type { SettingsPageScope, SettingsScopeChange, SettingsStudioScope } from '../settingsFocus';
 
 type Params = {
   readonly scope: SettingsStudioScope;
   readonly appSection: AppSection;
+  readonly workspacePage: WorkspacePage;
   readonly workspaceName: string | null;
   readonly onSelect: (change: SettingsScopeChange) => void;
 };
@@ -20,7 +26,7 @@ const scopeLabel = ({
   scope,
   workspaceName,
 }: {
-  readonly scope: SettingsStudioScope;
+  readonly scope: SettingsPageScope;
   readonly workspaceName: string | null;
 }): string => {
   if (scope === 'app') {
@@ -32,7 +38,11 @@ const scopeLabel = ({
   return SCOPE_ITEMS.find((item) => item.scope === scope)?.label ?? 'Settings';
 };
 
-const scopeMenu = ({ scope, workspaceName, onSelect }: Params): CrumbMenuModel => {
+type PageParams = Omit<Params, 'scope'> & {
+  readonly scope: SettingsPageScope;
+};
+
+const scopeMenu = ({ scope, workspaceName, onSelect }: PageParams): CrumbMenuModel => {
   const available = SCOPE_ITEMS.filter((item) => workspaceName !== null || !item.needsWorkspace);
   const rows: ReadonlyArray<CrumbMenuRow> = [
     {
@@ -49,7 +59,7 @@ const scopeMenu = ({ scope, workspaceName, onSelect }: Params): CrumbMenuModel =
     },
     ...available.map((item): CrumbMenuRow => ({
       id: item.scope,
-      lead: { kind: 'icon', icon: item.icon },
+      lead: { kind: 'icon', icon: CONCEPT_ICONS[item.concept] },
       label: scopeLabel({ scope: item.scope, workspaceName }),
       secondary: null,
       metaA: null,
@@ -72,7 +82,7 @@ const scopeMenu = ({ scope, workspaceName, onSelect }: Params): CrumbMenuModel =
   };
 };
 
-const sectionMenu = ({ appSection, onSelect }: Params): CrumbMenuModel => ({
+const sectionMenu = ({ appSection, onSelect }: PageParams): CrumbMenuModel => ({
   title: 'Sections',
   context: 'App',
   count: APP_SECTIONS.length,
@@ -100,24 +110,74 @@ const sectionMenu = ({ appSection, onSelect }: Params): CrumbMenuModel => ({
   filterPlaceholder: null,
 });
 
+const workspacePageMenu = ({
+  workspacePage,
+  workspaceName,
+  onSelect,
+}: PageParams): CrumbMenuModel => ({
+  title: 'Pages',
+  context: workspaceName,
+  count: WORKSPACE_PAGES.length,
+  triggerLabel: 'Switch page',
+  groups: [
+    {
+      id: 'pages',
+      label: null,
+      rows: WORKSPACE_PAGES.map((page): CrumbMenuRow => ({
+        id: page.id,
+        lead: { kind: 'icon', icon: CONCEPT_ICONS[page.concept] },
+        label: page.label,
+        secondary: null,
+        metaA: null,
+        state: null,
+        isCurrent: page.id === workspacePage,
+        isDisabled: false,
+        indent: 0,
+        onSelect: () => onSelect({ scope: 'workspace', section: page.id }),
+      })),
+    },
+  ],
+  actions: [],
+  width: 'narrow',
+  filterPlaceholder: null,
+});
+
 export const settingsTrail = (params: Params): ReadonlyArray<TrailSegmentModel> => {
   const { scope, appSection, onSelect } = params;
+  const home: TrailSegmentModel = {
+    id: 'settings',
+    label: 'Settings',
+    icon: CONCEPT_ICONS.settings,
+    iconClassName: tintClasses(CONCEPT_TONE.settings).icon,
+    onSelect: () => onSelect({ scope: 'home' }),
+  };
+  if (scope === 'home') {
+    return [home];
+  }
+  const pageParams: PageParams = { ...params, scope };
   const scopeItem = SCOPE_ITEMS.find((item) => item.scope === scope);
   const segments: Array<TrailSegmentModel> = [
-    {
-      id: 'settings',
-      label: 'Settings',
-      icon: CONCEPT_ICONS.settings,
-      iconClassName: tintClasses(CONCEPT_TONE.settings).icon,
-    },
+    home,
     {
       id: 'scope',
       label: scopeLabel({ scope, workspaceName: params.workspaceName }),
-      icon: scopeItem?.icon ?? CONCEPT_ICONS.settings,
-      ...(scope === 'app' && { onSelect: () => onSelect({ scope: 'app' }) }),
-      menu: scopeMenu(params),
+      icon: scopeItem === undefined ? CONCEPT_ICONS.settings : CONCEPT_ICONS[scopeItem.concept],
+      ...((scope === 'app' || scope === 'workspace') && { onSelect: () => onSelect({ scope }) }),
+      menu: scopeMenu(pageParams),
     },
   ];
+  if (scope === 'workspace') {
+    const page = workspacePageEntry({ page: params.workspacePage });
+    return [
+      ...segments,
+      {
+        id: 'section',
+        label: page.label,
+        icon: CONCEPT_ICONS[page.concept],
+        menu: workspacePageMenu(pageParams),
+      },
+    ];
+  }
   if (scope !== 'app') {
     return segments;
   }
@@ -128,7 +188,7 @@ export const settingsTrail = (params: Params): ReadonlyArray<TrailSegmentModel> 
       id: 'section',
       label: section?.label ?? 'General',
       icon: CONCEPT_ICONS[section?.concept ?? 'appearance'],
-      menu: sectionMenu(params),
+      menu: sectionMenu(pageParams),
     },
   ];
 };

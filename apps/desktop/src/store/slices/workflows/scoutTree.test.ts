@@ -1,7 +1,8 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
-import { SCOUT_DEPTH_CAP, FAN_OUT_MAX_CHILDREN, scoutDepth } from './scoutTree';
+import { FAN_OUT_MAX_CHILDREN, SCOUT_DEPTH_CAP } from '@goodboy/core';
+import { scoutDepth } from './scoutTree';
 
 const SID = 'sess-1' as SessionId;
 

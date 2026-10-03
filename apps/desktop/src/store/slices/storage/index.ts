@@ -4,6 +4,7 @@ import { keepStorageArtifact } from './keepStorageArtifact';
 import { keepStorageFolder } from './keepStorageFolder';
 import { loadStorage } from './loadStorage';
 import { loadStorageArtifacts } from './loadStorageArtifacts';
+import { cancelOtherTools, loadOtherTools } from './loadOtherTools';
 import { measureStorageSizes } from './measureStorageSizes';
 import { openStorageArtifact } from './openStorageArtifact';
 import { pruneArchivedTranscripts } from './pruneArchivedTranscripts';
@@ -25,6 +26,8 @@ export const createStorageSlice = ({ set, get }: SliceDeps) => {
     openStorageArtifact: openStorageArtifact(set, get),
     scanStorageRepository: scanStorageRepository(set, get),
     checkStorageNudge: checkStorageNudge(set, get),
+    loadOtherTools: loadOtherTools(set, get),
+    cancelOtherTools: cancelOtherTools(),
     focusStorage: (focus: StorageFocus | null) => set({ storageFocus: focus }),
     setStorageScope: (scope: StorageScope) => set({ storageScope: scope }),
     dismissStorageOutcome: () => set({ storageOutcome: null }),

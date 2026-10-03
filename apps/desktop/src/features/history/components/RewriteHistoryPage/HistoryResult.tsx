@@ -1,4 +1,4 @@
-import { Check, Cloud, RotateCcw, ShieldCheck } from 'lucide-react';
+import { Cloud, RotateCcw, ShieldCheck } from 'lucide-react';
 import { Button, CopyButton, FormActions, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type {
@@ -8,6 +8,7 @@ import type {
 } from '../../../../store/slices/history/types';
 import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { formatDate } from '../../../../shared/utils/time/formatDate';
+import { APPLIED_LIST_LIMIT } from '../../groupAppliedEdits';
 import { HISTORY_ACTION_CLASSES } from '../../historyActionClasses';
 import { historyBackupTimeMs } from '../../historyBackupRef';
 
@@ -99,27 +100,18 @@ export const HistoryResult = ({
     );
   return (
     <section aria-labelledby="history-result" className="flex flex-col gap-3">
-      <div className="flex items-center gap-2">
-        <Check size={ICON_SIZE.hero} aria-hidden className="shrink-0 text-success" />
-        <h2 id="history-result" className="text-heading text-foreground">
-          History rewritten
-        </h2>
-        <span className="text-label text-faint-foreground tabular-nums">
-          {applied.before} {applied.before === 1 ? 'commit' : 'commits'} became {applied.after}
-        </span>
-      </div>
-      {applied.lines.length > 0 ? (
-        <ul className="flex flex-col gap-1 text-body text-muted-foreground">
+      {applied.lines.length > 0 && applied.lines.length <= APPLIED_LIST_LIMIT ? (
+        <ul aria-label="Changes" className="flex flex-col gap-1 text-body text-muted-foreground">
           {applied.lines.map((line) => (
-            <li key={line.text} className="flex items-center gap-2">
+            <li key={line.text} className="flex items-start gap-2">
               <span
                 aria-hidden
                 className={cn(
-                  'size-1.5 shrink-0 rounded-full',
+                  'mt-2 size-1.5 shrink-0 rounded-full',
                   HISTORY_ACTION_CLASSES[line.action].solid,
                 )}
               />
-              <span className="min-w-0 truncate">{line.text}</span>
+              <span className="min-w-0 break-words">{line.text}</span>
             </li>
           ))}
         </ul>
@@ -174,7 +166,7 @@ export const HistoryResult = ({
           <RotateCcw size={ICON_SIZE.row} aria-hidden />
           Restore it
         </Button>
-        <Button variant="primary" disabled={isBusy} onClick={onDone}>
+        <Button variant="secondary" size="sm" disabled={isBusy} onClick={onDone}>
           Done
         </Button>
       </FormActions>

@@ -52,7 +52,11 @@ const isInboxKind = (value: unknown): value is InboxKind =>
   typeof value === 'string' && INBOX_KINDS.some((kind) => kind === value);
 
 const isSettingsScope = (value: unknown): value is SettingsStudioScope =>
-  value === 'app' || value === 'workspace' || value === 'providers' || value === 'tools';
+  value === 'home' ||
+  value === 'app' ||
+  value === 'workspace' ||
+  value === 'providers' ||
+  value === 'tools';
 
 const readImpactScope = (value: unknown): ImpactScope | null => {
   if (typeof value !== 'object' || value === null) {
@@ -91,7 +95,7 @@ export const settingsOverlayFromEvent = (event: Event): StudioPlace => {
   return {
     kind: 'settings',
     focus: {
-      scope: isSettingsScope(scope) ? scope : 'app',
+      scope: isSettingsScope(scope) ? scope : 'home',
       tool: isInboxProvider(tool) ? tool : undefined,
       section: typeof section === 'string' ? section : undefined,
       provider: isProviderId(provider) ? provider : undefined,

@@ -8,7 +8,7 @@ import {
   resolveStoredModelSelection,
   visibleCatalog,
 } from '@goodboy/core';
-import { Button, cn, Divider } from '@goodboy/ui';
+import { Button, cn, Divider, tintClasses } from '@goodboy/ui';
 import type {
   CatalogModel,
   EffortLevel,
@@ -20,6 +20,7 @@ import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { VERBOSITY_LABEL, VERBOSITY_LEVELS } from '../../../features/settings/verbosity';
 import { useCliGate } from '../../../features/providers/hooks/useCliGate';
 import { useHiddenModels } from '../../../features/providers/hooks/useHiddenModels';
+import { useProviderStanding } from '../../../features/providers/hooks/useProviderStanding';
 import { ModelVisibilityLink } from './ModelVisibilityLink';
 import { ProviderInlineConnect } from '../../../features/providers/components/ProviderInlineConnect';
 import { AxesSection } from './AxesSection';
@@ -82,6 +83,7 @@ type Props = {
   readonly availability?: 'run' | 'setup';
   readonly isInline?: boolean;
   readonly isEffortHidden?: boolean;
+  readonly providerLayout?: 'glyphs' | 'named';
   readonly focusRoot?: RefObject<HTMLElement | null>;
   readonly onConnectionInFlightChange?: (isInFlight: boolean) => void;
 };
@@ -106,6 +108,7 @@ export const RoutingPickerBody = ({
   availability = 'run',
   isInline = true,
   isEffortHidden = false,
+  providerLayout = 'glyphs',
   focusRoot,
   onConnectionInFlightChange,
 }: Props) => {
@@ -166,6 +169,8 @@ export const RoutingPickerBody = ({
   const maxModeModels = useCursorMaxModeModels({ models: cursorModels });
   const hasMaxModeAdvisory = viewProvider === 'cursor' && maxModeModels.has(viewedModel.key);
   const viewedCliGate = useCliGate({ provider: viewProvider, modelId: viewedModel.key });
+  const standing = useProviderStanding({ provider: viewProvider });
+  const standingNote = standing === null || standing.standing === 'not-connected' ? null : standing;
 
   useEffect(() => {
     if (!isInline) {
@@ -312,9 +317,10 @@ export const RoutingPickerBody = ({
       )}
       <PickerSection
         label="Provider"
-        {...(!isApiProvider({ id: viewProvider }) && {
-          action: <ModelVisibilityLink provider={viewProvider} onNavigate={onClose} />,
-        })}
+        {...(!isApiProvider({ id: viewProvider }) &&
+          providerLayout !== 'named' && {
+            action: <ModelVisibilityLink provider={viewProvider} onNavigate={onClose} />,
+          })}
       >
         {connectedProviders.length === 0 && availability === 'run' ? (
           <NoConnectedProviders onNavigate={onClose} />
@@ -324,6 +330,7 @@ export const RoutingPickerBody = ({
             activeProvider={isViewingAuto ? null : viewProvider}
             secondaryProvider={isViewingAuto ? (recommendedProvider ?? null) : null}
             showDisconnected={availability === 'setup'}
+            isNamed={providerLayout === 'named'}
             onNavigateProviders={onClose}
             onSelect={(id) => {
               const isConnected = connectedProviders.includes(id);
@@ -348,6 +355,19 @@ export const RoutingPickerBody = ({
           />
         )}
       </PickerSection>
+      {standingNote !== null ? (
+        <p
+          role="note"
+          className={cn(
+            'px-2.5 pb-1.5 text-secondary',
+            standingNote.standing === 'at-limit'
+              ? tintClasses('warning').text
+              : 'text-muted-foreground',
+          )}
+        >
+          {PROVIDER_LABEL[viewProvider]} · {standingNote.text}
+        </p>
+      ) : null}
       {separator}
       {connectProvider != null ? (
         <section aria-label="Connect provider" className="min-h-0">

@@ -6,6 +6,8 @@ import { FOOTER_INTEGRATIONS } from './categories';
 import { FooterButton } from './FooterButton';
 import { GoodboyChip } from './GoodboyChip';
 import { IntegrationAddPopover } from './IntegrationAddPopover';
+import { ProvidersMenu } from './ProvidersMenu';
+import { useAppStore } from '../../../store';
 import {
   IntegrationGlyph,
   integrationLabel,
@@ -42,6 +44,7 @@ export const AppFooter = ({
 }: Props) => {
   const connectedMembers = FOOTER_INTEGRATIONS.filter((member) => connected[member.provider]);
   const isWorkspace = scope === 'workspace';
+  const currentWorkspaceId = useAppStore((state) => state.currentWorkspaceId);
 
   return (
     <div className="flex shrink-0 flex-col">
@@ -116,6 +119,9 @@ export const AppFooter = ({
               />
             </>
           )}
+          {isWorkspace && currentWorkspaceId !== null ? (
+            <ProvidersMenu workspaceId={currentWorkspaceId} />
+          ) : null}
           <FooterButton
             icon={<CONCEPT_ICONS.settings size={ICON_SIZE.control} aria-hidden />}
             label="Settings"

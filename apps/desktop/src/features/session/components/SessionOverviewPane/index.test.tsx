@@ -1,134 +1,119 @@
 // @vitest-environment happy-dom
 
-import type { ReactNode } from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
-import type { Session } from '@goodboy/types';
-
-vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (state: Record<string, unknown>) => T) =>
-    selector({ loadSlotHistory: vi.fn(), toggleDrawer: vi.fn() }),
-  useSessionSlots: () => [],
-  useSessionLoading: () => ({ slots: false }),
-  useSlotHistoryCount: () => 0,
-  useSummarizerStatus: () => ({ status: 'idle' }),
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
+vi.mock('./HeaderBand', () => ({ HeaderBand: () => <h1>Overview title</h1> }));
+vi.mock('./ProjectMountRows', () => ({
+  ProjectMountRows: () => <section aria-label="Projects" />,
 }));
-
-vi.mock('@goodboy/ui', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@goodboy/ui')>()),
-  PaneShell: ({ header, children }: { header: ReactNode; children: ReactNode }) => (
-    <div>
-      {header}
-      {children}
-    </div>
+vi.mock('./OverviewActions', () => ({ OverviewActions: () => <button type="button">New</button> }));
+vi.mock('../../../suggestions/components/NextStepSlot', () => ({
+  NextStepSlot: () => <section aria-label="Next step" />,
+}));
+vi.mock('../SessionWorkspace/parts/TimelinePane', () => ({
+  TimelinePane: ({ actions }: { readonly actions: ReactNode }) => (
+    <section aria-label="Activity">{actions}</section>
   ),
 }));
 
-vi.mock('./HeaderBand', () => ({
-  HeaderBand: () => <header data-testid="header" />,
-}));
+import type { ReactNode } from 'react';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import type {
+  IsoDateTime,
+  OpenQuestion,
+  OpenQuestionId,
+  Session,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../store/storyHarness';
 
-const { shown } = vi.hoisted(() => ({
-  shown: {
-    reported: new Set<string>(),
-    slot: null as ReadonlySet<string> | null,
-    slotAgents: null as ReadonlySet<string> | null,
-    callout: null as boolean | null,
-    attention: {
-      stage: { stage: 'running', reason: '', attention: null },
-      target: null,
-    } as Record<string, unknown>,
-  },
-}));
+let useAppStore: StoryStore;
+let SessionOverviewPane: typeof import('./index').SessionOverviewPane;
 
-vi.mock('./useAttentionTarget', () => ({ useAttentionTarget: () => shown.attention }));
+beforeAll(async () => {
+  useAppStore = await importStore();
+  ({ SessionOverviewPane } = await import('./index'));
+}, STORE_IMPORT_TIMEOUT_MS);
 
-vi.mock('../SessionWorkspace/parts/TimelinePane', async () => {
-  const { useLayoutEffect } = await import('react');
-  return {
-    TimelinePane: ({
-      onShownQuestionsChange,
-    }: {
-      onShownQuestionsChange?: (ids: ReadonlySet<string>) => void;
-    }) => {
-      useLayoutEffect(() => {
-        onShownQuestionsChange?.(shown.reported);
-      }, [onShownQuestionsChange]);
-      return <section aria-label="Activity" />;
-    },
-  };
+const SESSION_ID = 'session-1' as SessionId;
+
+const SESSION: Session = aSession({
+  id: SESSION_ID,
+  workspaceId: 'workspace-1' as WorkspaceId,
+  goal: 'Stop retried webhooks posting a second credit',
 });
 
-vi.mock('./AttentionCallout', () => ({
-  AttentionCallout: ({ isQuestionShownBelow }: { isQuestionShownBelow?: boolean }) => {
-    shown.callout = isQuestionShownBelow ?? false;
-    return null;
-  },
-}));
-vi.mock('./OverviewActions', () => ({ OverviewActions: () => null }));
-vi.mock('../../../suggestions/components/NextStepSlot', () => ({
-  NextStepSlot: ({
-    shownQuestionIds,
-    shownAgentIds,
-  }: {
-    shownQuestionIds?: ReadonlySet<string>;
-    shownAgentIds?: ReadonlySet<string>;
-  }) => {
-    shown.slot = shownQuestionIds ?? null;
-    shown.slotAgents = shownAgentIds ?? null;
-    return null;
-  },
-}));
-
-import { SessionOverviewPane } from './index';
-
-afterEach(() => {
-  cleanup();
-  shown.reported = new Set();
-  shown.slot = null;
-  shown.slotAgents = null;
-  shown.callout = null;
-  shown.attention = {
-    stage: { stage: 'running', reason: '', attention: null },
-    target: null,
-  };
+beforeEach(async () => {
+  await resetStoryStore();
+  useAppStore.setState({
+    sessions: [SESSION],
+    sessionProjectMounts: { [SESSION_ID]: [] },
+    sessionMounts: { [SESSION_ID]: [] },
+  });
 });
 
-const session = (archivedAt: string | null): Session =>
-  ({ id: 'sess-1', workspaceId: 'ws-1', goal: 'Untitled session', archivedAt }) as Session;
+afterEach(cleanup);
+
+type PaneParams = {
+  readonly session?: Session;
+};
+
+const renderPane = ({ session = SESSION }: PaneParams = {}) =>
+  render(<SessionOverviewPane session={session} onSelectLens={vi.fn()} />);
 
 describe('SessionOverviewPane', () => {
-  it('shows the activity of a live session, never a kickoff', () => {
-    render(<SessionOverviewPane session={session(null)} onSelectLens={vi.fn()} />);
+  it('stacks Projects and Activity as body sections on the one pane rhythm', () => {
+    const { container } = renderPane();
 
-    expect(screen.getByRole('region', { name: 'Activity' })).toBeDefined();
-    expect(screen.queryByRole('region', { name: 'Kickoff' })).toBeNull();
-    expect(screen.getByTestId('header')).toBeDefined();
+    const body = container.querySelector('[data-slot="pane-body"]');
+    const header = container.querySelector('[data-slot="pane-header"]');
+    expect(screen.getByRole('region', { name: 'Projects' }).parentElement).toBe(body);
+    expect(screen.getByRole('region', { name: 'Next step' }).parentElement).toBe(body);
+    expect(screen.getByRole('region', { name: 'Activity' }).parentElement).toBe(body);
+    expect(header?.getAttribute('data-rhythm')).toBe('section');
   });
 
-  it('tells the next step which questions the activity already shows', () => {
-    shown.reported = new Set(['q-1']);
-    render(<SessionOverviewPane session={session(null)} onSelectLens={vi.fn()} />);
+  it('says what waits on the user in the next step, never as a callout above it', () => {
+    useAppStore.setState({
+      sessionOpenQuestions: {
+        [SESSION_ID]: [
+          {
+            id: 'q1' as OpenQuestionId,
+            sessionId: SESSION_ID,
+            text: 'Which ledger?',
+            suggestedAnswers: [],
+            isBlocking: false,
+            userAnswer: null,
+            status: 'open',
+            createdAt: '2026-09-28T09:00:00.000Z' as IsoDateTime,
+          } satisfies OpenQuestion,
+        ],
+      },
+    });
+    renderPane();
 
-    expect([...(shown.slot ?? [])]).toEqual(['q-1']);
-    expect(shown.callout).toBe(true);
+    expect(screen.queryByRole('region', { name: 'Needs you' })).toBeNull();
   });
 
-  it('tells the next step which agent approval the needs-you callout already shows', () => {
-    shown.attention = {
-      stage: { stage: 'attention', reason: 'Needs approval', attention: 'needs-approval' },
-      target: { kind: 'agent', agentId: 'agent-7', home: 'agents', label: 'Answer the approval' },
-    };
-    render(<SessionOverviewPane session={session(null)} onSelectLens={vi.fn()} />);
+  it('keeps New on a live session and disables it once archived', () => {
+    const { unmount } = renderPane();
+    screen.getByRole('button', { name: /New/ });
+    unmount();
 
-    expect([...(shown.slotAgents ?? [])]).toEqual(['agent-7']);
-  });
-
-  it('shows the activity of an archived session', () => {
-    render(
-      <SessionOverviewPane session={session('2026-09-01T00:00:00.000Z')} onSelectLens={vi.fn()} />,
-    );
-
-    expect(screen.getByRole('region', { name: 'Activity' })).toBeDefined();
+    renderPane({ session: { ...SESSION, archivedAt: '2026-09-01T00:00:00.000Z' as IsoDateTime } });
+    expect(screen.getByRole('button', { name: /New/ }).closest('fieldset')?.disabled).toBe(true);
   });
 });

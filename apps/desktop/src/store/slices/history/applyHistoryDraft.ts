@@ -1,7 +1,11 @@
 import { formatError } from '@goodboy/ui';
 import type { HistoryPlanArgs, HistoryTrialResult } from '@goodboy/types';
 import { runHistoryPlan } from '../../../features/history/historyEngine';
-import { deriveHistoryEdits, afterCount } from '../../../features/history/historyEdits';
+import {
+  deriveHistoryEdits,
+  afterCount,
+  type HistoryEdit,
+} from '../../../features/history/historyEdits';
 import {
   commitCount,
   historyEditAction,
@@ -17,7 +21,9 @@ import type {
   ApplyHistoryDraftInput,
   ApplyHistoryRewriteOutcome,
   GetFn,
+  HistoryAbsorbed,
   HistoryApplied,
+  HistoryAppliedLine,
   HistoryDraft,
   HistoryMountInput,
   HistoryStop,
@@ -50,10 +56,49 @@ type SummaryParams = {
   readonly prHeadSha: string | null;
 };
 
+const editShas = ({
+  edit,
+}: {
+  readonly edit: HistoryEdit;
+}): Pick<HistoryAppliedLine, 'sha' | 'target'> => {
+  switch (edit.kind) {
+    case 'fixup':
+    case 'squash':
+      return { sha: edit.sha, target: edit.target };
+    case 'move':
+      return {
+        sha: edit.sha,
+        target: edit.move.relation.where === 'bottom' ? null : edit.move.relation.sha,
+      };
+    case 'reword':
+    case 'drop':
+      return { sha: edit.sha, target: null };
+    case 'rebase':
+      return { sha: null, target: edit.onto };
+    default: {
+      const exhaustive: never = edit;
+      return exhaustive;
+    }
+  }
+};
+
 const appliedSummary = ({ draft, trial, prHeadSha }: SummaryParams): HistoryApplied => {
   const original = [...draft.commits].reverse().map((commit) => commit.sha);
   const titles = new Map(draft.commits.map((commit) => [commit.sha, commit.subject]));
   const titleOf = (sha: string): string => titles.get(sha) ?? sha.slice(0, 7);
+  const renamed = new Map(
+    draft.items.flatMap((step) =>
+      step.verb === 'reword' && step.message != null
+        ? [[step.sha, step.message.split('\n')[0] ?? step.message] as const]
+        : [],
+    ),
+  );
+  const finalTitleOf = (sha: string): string => renamed.get(sha) ?? titleOf(sha);
+  const modeOf = new Map(
+    draft.items.flatMap((step) =>
+      step.verb === 'fixup' || step.verb === 'squash' ? [[step.sha, step.verb] as const] : [],
+    ),
+  );
   const edits = deriveHistoryEdits({
     items: draft.items,
     original,
@@ -61,6 +106,7 @@ const appliedSummary = ({ draft, trial, prHeadSha }: SummaryParams): HistoryAppl
     behind: draft.graph?.behind ?? 0,
   });
   const includes: Record<string, string[]> = {};
+  const absorbed: Record<string, HistoryAbsorbed[]> = {};
   const owner = new Map<string, string>();
   for (const moved of trial.map) {
     if (moved.to === null) {
@@ -72,6 +118,10 @@ const appliedSummary = ({ draft, trial, prHeadSha }: SummaryParams): HistoryAppl
       continue;
     }
     includes[moved.to] = [...(includes[moved.to] ?? []), titleOf(moved.from)];
+    absorbed[moved.to] = [
+      ...(absorbed[moved.to] ?? []),
+      { sha: moved.from, title: titleOf(moved.from), mode: modeOf.get(moved.from) ?? 'fixup' },
+    ];
   }
   const model = historyGraphModel({
     commits: draft.commits,
@@ -86,9 +136,11 @@ const appliedSummary = ({ draft, trial, prHeadSha }: SummaryParams): HistoryAppl
     after: afterCount({ items: draft.items }),
     lines: edits.map((edit) => ({
       action: historyEditAction({ edit }),
-      text: historyEditText({ edit, titleOf }),
+      text: historyEditText({ edit, titleOf, targetTitleOf: finalTitleOf }),
+      ...editShas({ edit }),
     })),
     includes,
+    absorbed,
     newShas: [
       ...new Set(
         trial.map.flatMap((moved) =>

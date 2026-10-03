@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Plus, Smartphone } from 'lucide-react';
-import type { AgentId, ProjectScript, SessionId } from '@goodboy/types';
+import type { AgentId, ProjectScript, SessionId, Workflow } from '@goodboy/types';
 import {
   BOARD_PLACE,
   EMPTY_ARRAY,
@@ -33,9 +33,14 @@ import { useToast } from '../../../shared/components/Toast';
 import { agentEntries } from '../sources/agentEntries';
 import { artifactEntries } from '../sources/artifactEntries';
 import { sessionEntries } from '../sources/sessionEntries';
+import { workflowEntries } from '../sources/workflowEntries';
+import { scriptPinEntries, type PinnedScriptTarget } from '../sources/scriptPinEntries';
+import { useScriptPins } from '../../scripts';
+import { runPinnedScript } from '../../scripts/runPinnedScript';
 import { openSessionAnywhere } from '../openSessionAnywhere';
 import type { PaletteEntry } from '../types';
 import { useSessionsEverywhere } from './useSessionsEverywhere';
+import { projectById } from '../../../store/slices/projects/projectIndex';
 
 const PAIR_SEPARATOR = '\u0000';
 
@@ -77,6 +82,10 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const scripts = useAppStore((s) =>
     currentWorkspace ? (s.projectScripts[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
   ) as ReadonlyArray<ProjectScript>;
+  const workflows = useAppStore((s) =>
+    currentWorkspace ? (s.phaseTemplates[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
+  ) as ReadonlyArray<Workflow>;
+  const attachWorkflowToSession = useAppStore((s) => s.attachWorkflowToSession);
   const agents = useAppStore((s) =>
     sessionId === null ? EMPTY_ARRAY : (s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY),
   );
@@ -87,6 +96,14 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const destinations = useLensDestinations({ sessionId });
   const runScript = useAppStore((s) => s.runScript);
+  const workspaceProjects = useMemo(
+    () =>
+      currentWorkspace === null
+        ? []
+        : projects.filter((project) => project.workspaceId === currentWorkspace.id),
+    [projects, currentWorkspace],
+  );
+  const scriptPins = useScriptPins({ projectIds: workspaceProjects.map((project) => project.id) });
   const reportError = useAppStore((s) => s.reportError);
   const refreshSession = useSessionRefresh();
   const { showToast } = useToast();
@@ -125,6 +142,16 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           kindOf: ({ agent }) =>
             classifyAgent({ agent, override: agentKindOverride[agent.id as AgentId] ?? null }),
           open: ({ agentId }) => navigate({ to: agentPlace({ sessionId, agentId }) }),
+        }),
+        ...workflowEntries({
+          workflows,
+          start: (workflow) => {
+            void attachWorkflowToSession(sessionId, workflow.id, { navigate: true })
+              .then(() => showToast({ kind: 'success', message: `Started ${workflow.name}.` }))
+              .catch((error: unknown) =>
+                reportError({ title: `Couldn't start ${workflow.name}`, error, sessionId }),
+              );
+          },
         }),
         ...artifactEntries({
           sessionId,
@@ -269,14 +296,64 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         },
       );
     }
-    out.push({
-      key: 'goto:add-workspace',
-      label: 'Add workspace',
-      kind: 'goto',
-      group: null,
-      icon: Plus,
-      run: () => fire({ name: 'goodboy:add-workspace' }),
-    });
+    out.push(
+      {
+        key: 'goto:start-new-project',
+        label: 'Start a new project',
+        kind: 'goto',
+        group: null,
+        icon: Plus,
+        run: () => fire({ name: 'goodboy:start-new-project' }),
+      },
+      {
+        key: 'goto:add-workspace',
+        label: 'Open a folder',
+        kind: 'goto',
+        group: null,
+        icon: Plus,
+        run: () => fire({ name: 'goodboy:add-workspace' }),
+      },
+    );
+
+    const runPinned = (target: PinnedScriptTarget) => {
+      const missing = `Open a session with ${target.projectName} to run ${target.name}.`;
+      if (sessionId === null || currentWorkspace === null) {
+        showToast({ kind: 'warning', message: missing });
+        return;
+      }
+      const failureTitle = `Couldn't run ${target.name}`;
+      void runPinnedScript({
+        sessionId,
+        workspaceId: currentWorkspace.id,
+        projectId: target.projectId,
+        pinId: target.pinId,
+      })
+        .then((outcome) => {
+          if (outcome.kind === 'not-here') {
+            showToast({ kind: 'warning', message: missing });
+            return;
+          }
+          if (outcome.result.exitCode !== 0) {
+            void reportError({
+              title: failureTitle,
+              error: `Exited with code ${outcome.result.exitCode}.`,
+              sessionId,
+              action: { kind: 'open-lens', sessionId, lens: 'scripts' },
+            });
+            return;
+          }
+          showToast({ kind: 'success', message: `${target.name} finished.` });
+        })
+        .catch((error: unknown) => reportError({ title: failureTitle, error, sessionId }));
+    };
+    out.push(
+      ...scriptPinEntries({
+        projects: workspaceProjects,
+        pins: scriptPins,
+        saved: scripts,
+        run: runPinned,
+      }),
+    );
 
     for (const script of scripts) {
       out.push({
@@ -285,7 +362,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         kind: 'script',
         group: 'script',
         icon: CONCEPT_ICONS.scripts,
-        detail: 'Project script',
+        detail: projectById(projects, script.projectId)?.name ?? 'Project script',
         tag: 'Script',
         run: () => {
           if (sessionId === null) {
@@ -319,7 +396,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         group: 'action',
         icon: CONCEPT_ICONS.settings,
         shortcut: 'settings.open',
-        run: () => openSettings({ scope: 'app' }),
+        run: () => openSettings({ scope: 'home' }),
       },
       ...APP_SECTIONS.filter((section) => section.id !== 'shortcuts').map(
         (section): PaletteEntry => ({
@@ -398,7 +475,11 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     agents,
     artifacts,
     plans,
+    workflows,
+    attachWorkflowToSession,
     scripts,
+    scriptPins,
+    workspaceProjects,
     agentKindOverride,
     destinations,
     openWorkspace,

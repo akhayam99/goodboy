@@ -5,7 +5,7 @@ type Params = {
   readonly sessionId: SessionId;
   readonly notes: ReadonlyArray<DiffComment>;
   readonly addReviewDraft: (input: AddReviewDraftInput) => Promise<unknown>;
-  readonly resolveDiffComment: (sessionId: SessionId, commentId: string) => Promise<void>;
+  readonly closeNote: (noteId: string) => Promise<void>;
 };
 
 export type PostNotesResult = {
@@ -52,7 +52,7 @@ export const postNotesToPr = async ({
   sessionId,
   notes,
   addReviewDraft,
-  resolveDiffComment,
+  closeNote,
 }: Params): Promise<PostNotesResult> => {
   let posted = 0;
   let skipped = 0;
@@ -63,7 +63,7 @@ export const postNotesToPr = async ({
       continue;
     }
     await addReviewDraft(draft);
-    await resolveDiffComment(sessionId, note.id);
+    await closeNote(note.id);
     posted += 1;
   }
   return { posted, skipped };

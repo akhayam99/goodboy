@@ -5,6 +5,7 @@ import type {
   ChatSessionLink,
   ChatSummary,
   ProviderRunId,
+  SessionId,
   WorkspaceId,
 } from '@goodboy/types';
 
@@ -14,10 +15,16 @@ type ChatStream = {
   readonly isStopping: boolean;
 };
 
+export type PendingChatLink = {
+  readonly chatId: ChatId;
+  readonly messageId: ChatMessageId | null;
+};
+
 export type ChatsState = {
   readonly chatsByWorkspace: Readonly<Record<WorkspaceId, ReadonlyArray<ChatSummary>>>;
   readonly archivedChatsByWorkspace: Readonly<Record<WorkspaceId, ReadonlyArray<ChatSummary>>>;
   readonly chatLinks: Readonly<Record<ChatId, ReadonlyArray<ChatSessionLink>>>;
+  readonly pendingChatLinks: Readonly<Record<SessionId, ReadonlyArray<PendingChatLink>>>;
   readonly chatMessages: Readonly<Record<ChatId, ReadonlyArray<ChatMessage>>>;
   readonly chatStreams: Readonly<Record<ChatId, ChatStream>>;
   readonly hasSettledChatStreams: boolean;
@@ -28,6 +35,7 @@ export const chatsInitialState: ChatsState = {
   chatsByWorkspace: {},
   archivedChatsByWorkspace: {},
   chatLinks: {},
+  pendingChatLinks: {},
   chatMessages: {},
   chatStreams: {},
   hasSettledChatStreams: false,

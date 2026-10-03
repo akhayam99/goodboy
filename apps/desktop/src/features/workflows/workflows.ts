@@ -3,8 +3,10 @@ import { tauriDatabase } from '../../shared/lib/db';
 import {
   normalizeAgentRole,
   PlannerClient,
+  polishStepExpectedOutput,
   polishStepInstruction,
   polishWorkflowGoal,
+  type ExpectedOutputPolishInput,
   type GoalPolishDeps,
   type PlannerClientDeps,
   type StepPolishDeps,
@@ -367,6 +369,17 @@ type PolishStepParams = {
 
 export const polishWorkflowStep = ({ deps, input }: PolishStepParams): Promise<string | null> =>
   polishStepInstruction({ ...deps, invokeFn: invokeCommand }, input);
+
+type PolishExpectedOutputParams = {
+  readonly deps: Omit<StepPolishDeps, 'invokeFn'>;
+  readonly input: ExpectedOutputPolishInput;
+};
+
+export const polishWorkflowExpectedOutput = ({
+  deps,
+  input,
+}: PolishExpectedOutputParams): Promise<string | null> =>
+  polishStepExpectedOutput({ ...deps, invokeFn: invokeCommand }, input);
 
 type PolishGoalParams = {
   readonly deps: Omit<GoalPolishDeps, 'invokeFn'>;

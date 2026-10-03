@@ -29,7 +29,7 @@ const NODE_CENTER = join(
   'WorkNodeCenter.tsx',
 );
 
-const ANIMATION = /animate-(?!explode-)|spin-border|attention-ring/;
+const ANIMATION = /animate-(?!explode-)|spin-border/;
 
 const listSourceFiles = (dir: string, acc: string[] = []): string[] => {
   for (const entry of readdirSync(dir)) {

@@ -1,51 +1,97 @@
-// @vitest-environment node
-import { describe, expect, it, vi } from 'vitest';
+const dbStubs = vi.hoisted(() => ({
+  countNotifications: vi.fn(),
+}));
 
-const countNotifications = vi.fn();
-
-vi.mock('@goodboy/db', async () =>
-  (await import('../../../test/dbMock')).createDbMock({ countNotifications }),
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../storyHarness')).tauriCoreModuleMock(),
 );
-vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModuleMock(dbStubs));
+vi.mock('../../../shared/lib/db', async () =>
+  (await import('../../storyHarness')).dbLibModuleMock(),
+);
 
-const { refreshNotificationCounts } = await import('./refreshNotificationCounts');
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { NotificationCountBucket } from '@goodboy/db';
+import type { WorkspaceId } from '@goodboy/types';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../storyHarness';
 
-type Deferred = {
-  readonly promise: Promise<unknown>;
-  readonly resolve: (value: unknown) => void;
+const bucket = (count: number): NotificationCountBucket => ({
+  severity: 'info',
+  kind: 'pr-created',
+  hasSession: false,
+  hasAction: false,
+  read: false,
+  inWorkspace: true,
+  count,
+});
+
+type Deferred<T> = {
+  readonly promise: Promise<T>;
+  readonly resolve: (value: T) => void;
 };
 
-const deferred = (): Deferred => {
-  let resolve: (value: unknown) => void = () => undefined;
-  const promise = new Promise<unknown>((done) => {
+const deferred = <T>(): Deferred<T> => {
+  let resolve: (value: T) => void = () => undefined;
+  const promise = new Promise<T>((done) => {
     resolve = done;
   });
   return { promise, resolve };
 };
 
-describe('refreshNotificationCounts', () => {
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+  dbStubs.countNotifications.mockReset();
+  useAppStore.setState({ currentWorkspaceId: 'ws-a' as WorkspaceId, notificationCounts: [] });
+});
+
+describe('notification counts after a change', () => {
   it('drops counts that resolve after the workspace changed', async () => {
-    const pending = deferred();
-    countNotifications.mockReturnValueOnce(pending.promise);
-    const state = { currentWorkspaceId: 'ws-a' };
-    const set = vi.fn();
-    const refresh = refreshNotificationCounts({
-      set,
-      get: () => state as never,
-    });
-    state.currentWorkspaceId = 'ws-b';
-    pending.resolve({ total: 3 });
-    await refresh;
-    expect(set).not.toHaveBeenCalled();
+    const pending = deferred<ReadonlyArray<NotificationCountBucket>>();
+    dbStubs.countNotifications.mockReturnValueOnce(pending.promise);
+
+    const marking = useAppStore.getState().markNotificationsRead();
+    await vi.waitFor(() => expect(dbStubs.countNotifications).toHaveBeenCalledTimes(1));
+    useAppStore.setState({ currentWorkspaceId: 'ws-b' as WorkspaceId });
+    pending.resolve([bucket(3)]);
+    await marking;
+
+    expect(useAppStore.getState().notificationCounts).toEqual([]);
   });
 
   it('stores counts for the workspace it asked about', async () => {
-    countNotifications.mockResolvedValueOnce({ total: 2 });
-    const set = vi.fn();
-    await refreshNotificationCounts({
-      set,
-      get: () => ({ currentWorkspaceId: 'ws-a' }) as never,
-    });
-    expect(set).toHaveBeenCalledWith({ notificationCounts: { total: 2 } });
+    dbStubs.countNotifications.mockResolvedValueOnce([bucket(2)]);
+
+    await useAppStore.getState().markNotificationsRead();
+
+    expect(useAppStore.getState().notificationCounts).toEqual([bucket(2)]);
+  });
+
+  it('keeps only the answer of the latest request when two overlap', async () => {
+    const first = deferred<ReadonlyArray<NotificationCountBucket>>();
+    dbStubs.countNotifications
+      .mockReturnValueOnce(first.promise)
+      .mockResolvedValueOnce([bucket(1)]);
+
+    const earlier = useAppStore.getState().markNotificationsRead();
+    await vi.waitFor(() => expect(dbStubs.countNotifications).toHaveBeenCalledTimes(1));
+    await useAppStore.getState().markNotificationsRead();
+    first.resolve([bucket(9)]);
+    await earlier;
+
+    expect(useAppStore.getState().notificationCounts).toEqual([bucket(1)]);
   });
 });

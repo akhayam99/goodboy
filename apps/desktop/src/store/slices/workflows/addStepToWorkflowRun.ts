@@ -16,12 +16,14 @@ import { repointWorkflowRunTemplate, type WorkflowRunStepRepoint } from '@goodbo
 import { tauriDatabase } from '../../../shared/lib/db';
 import { uniqueStepName } from '../../../features/workflows/uniqueStepName';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
+import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import {
   invokeWorkflowUpsert,
   type WorkflowStepUpsertArgs,
 } from '../../../features/workflows/workflows';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
+import { selectRoutingScope } from '../agents/selectRoutingScope';
 import { clearOrchestrationOutcome } from './clearOrchestrationOutcome';
 import { isWorkflowRunClosedByUser } from '../../../features/workflows/isWorkflowRunClosedByUser';
 import { patchWorkflowRun } from './patchWorkflowRun';
@@ -242,6 +244,7 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
       return rollback('the step could not be saved');
     }
     const spawned = await preSpawnWorkflowAgents({
+      scope: selectRoutingScope({ state: get(), sessionId }),
       sessionId,
       workflowRunId,
       steps: [savedStep],
@@ -258,6 +261,7 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
         sessionId,
         isRunBudgetBlocked: false,
         nowMs: Date.now(),
+        ...workspacePolicyAvailability({ state: get(), sessionId }),
         providerPool: run.providerPool ?? null,
       }),
     });

@@ -41,6 +41,10 @@ const { state, repoMocks } = vi.hoisted(() => ({
     workspaceIntegrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
     projectSentryLinks: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
     loadProjectSentryLinks: vi.fn(async () => undefined),
+    projectRootScripts: {} as Record<string, unknown>,
+    loadProjectRootScripts: vi.fn(async () => undefined),
+    loadScriptPins: vi.fn(async () => undefined),
+    toggleScriptPin: vi.fn(async () => undefined),
   },
   repoMocks: {
     validateGitRepo: vi.fn(async () => ({
@@ -235,9 +239,8 @@ describe('WorkspaceProjectsSection', () => {
     ];
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
-    expect(screen.getByRole('heading', { level: 2, name: /projects/i }).textContent).toBe(
-      'Projects1',
-    );
+    const heading = screen.getByRole('heading', { level: 2, name: 'Projects' });
+    expect(heading.parentElement?.textContent).toBe('Projects1');
     expect(screen.queryByText('/repos/ledger-core')).toBeNull();
     expect(screen.getByText('All projects')).toBeDefined();
     expect(screen.getByRole('img', { name: 'Repository' })).toBeDefined();
@@ -248,7 +251,7 @@ describe('WorkspaceProjectsSection', () => {
     const popover = screen.getByRole('dialog', { name: 'Add project' });
     expect(within(popover).getByLabelText('Project path')).toBeDefined();
     expect(within(popover).getByRole('button', { name: 'Browse' })).toBeDefined();
-    expect(within(popover).getByRole('button', { name: 'New project' })).toBeDefined();
+    expect(within(popover).getByRole('button', { name: 'Start a new project' })).toBeDefined();
     expect(within(popover).getByRole('button', { name: 'Link a plain folder' })).toBeDefined();
   });
 

@@ -128,16 +128,16 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     open: () => openPalette(/^Workspace settings/),
     lands: both(
       () => band('Settings'),
-      () => heading('About you'),
+      () => visible('textbox', 'Workspace name'),
     ),
   },
   {
     name: 'palette: Open settings',
-    covers: ['openStudio', 'studio:settings', 'scope:app', 'palette:Open settings'],
+    covers: ['openStudio', 'studio:settings', 'scope:home', 'palette:Open settings'],
     open: () => openPalette(/^Open settings/),
     lands: both(
       () => band('Settings'),
-      () => heading('Appearance'),
+      () => visible('list', 'App pages'),
     ),
   },
   {

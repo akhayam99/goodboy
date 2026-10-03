@@ -1,14 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Button,
-  Chip,
-  EmptyState,
-  FormPage,
-  Notice,
-  Switch,
-  Tooltip,
-  formatError,
-} from '@goodboy/ui';
+import { Button, Chip, FormPage, Notice, Switch, formatError, FilledEmptyState } from '@goodboy/ui';
 import {
   DEFAULT_SESSION_PROVIDER_PREFERENCE,
   PROVIDER_CAPABILITIES,
@@ -34,7 +25,10 @@ import type {
 } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
-import { createWorkflowPlanner, polishWorkflowGoalText, polishWorkflowStep } from '../../workflows';
+import { createWorkflowPlanner, polishWorkflowGoalText } from '../../workflows';
+import { usePolish } from '../../hooks/usePolish';
+import { useStepDeleteUndo } from '../../hooks/useStepDeleteUndo';
+import { stepPolishFields } from '../../stepPolishFields';
 import { EMPTY_ARRAY, useAppStore, useSessionSlots } from '../../../../store';
 import { buildProfileGuard } from '../../../../store/slices/turn/profileGuard';
 import { buildWorkspaceProjectsBlock } from '../../../../store/slices/workflows/buildWorkspaceProjectsBlock';
@@ -55,7 +49,6 @@ import {
   draftFromPlannerSteps,
   draftFromWorkflow,
   duplicateStep as duplicateDraftStep,
-  removeStep as removeDraftStep,
   reorderSteps as reorderDraftSteps,
   stepDraftWithModel,
   updateStep as updateDraftStep,
@@ -65,7 +58,7 @@ import { useWorkflowDraft } from '../../engine/useWorkflowDraft';
 import { ROLE_LABEL, classifyStep } from '../../../session/agent-kind';
 import { isWorkflowRunComplete } from '../../isWorkflowRunComplete';
 import { isPresetWorkflow } from '../../isPresetWorkflow';
-import { useWorkflowDrag } from '../../hooks/useWorkflowDrag';
+import { useWorkflowDrag } from '../../../../shared/hooks/useWorkflowDrag';
 import { useSaveAsStep } from '../../hooks/useSaveAsStep';
 import { useSavedSteps } from '../../hooks/useSavedSteps';
 import { stepDraftFromSavedStep, type SavedStep } from '../../savedSteps';
@@ -73,12 +66,8 @@ import { parseSpendLimit } from '../../../budget/parseSpendLimit';
 import { DragGhost } from '../WorkflowStudio/DragGhost';
 import { useToast } from '../../../../shared/components/Toast';
 import { StudioShell } from '../../../../shared/components/StudioShell';
-import {
-  AttachmentChip,
-  pendingAttachmentProps,
-} from '../../../attachments/components/AttachmentChip';
-import { toAttachmentInput } from '../../../attachments/pendingAttachment';
-import { usePendingAttachments } from '../../../chat/components/ChatInput/hooks/usePendingAttachments';
+import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
+import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
 import { runIdentity, runIdentitySeed } from '../../../session/timeline/runIdentity';
 import { BuilderTitleField } from './parts/BuilderTitleField';
 import { GoalField } from './parts/GoalField';
@@ -89,6 +78,7 @@ import { effectiveProviderPool } from './providerPool';
 import { PlanDraftingBanner } from './parts/PlanDraftingBanner';
 import { PresetPicker } from './parts/PresetPicker';
 import { SpendCapChip } from './parts/SpendCapChip';
+import { AutonomyChip } from './parts/AutonomyChip';
 import { StartsChip, type ChainRun, type StartChoice } from './parts/StartsChip';
 import { StepTree } from '../StepTree';
 import { StepEditor } from '../StepTree/StepEditor';
@@ -202,14 +192,8 @@ export const WorkflowBuilderView = (props: Props) => {
   const sessionWorktree = useSessionRepo({ sessionId: session?.id ?? null })?.worktreePath ?? null;
   const { showToast } = useToast();
 
-  const {
-    attachments,
-    isDragging: isDraggingFiles,
-    composerRef,
-    fileInputRef,
-    onFileInputChange,
-    removeAttachment,
-  } = usePendingAttachments({ showToast });
+  const goalFiles = usePromptFiles({ note: 'Files go to the agents of this run' });
+  const attachments = goalFiles.attachments;
 
   const presets = phaseTemplates.filter(isPresetWorkflow);
 
@@ -264,7 +248,6 @@ export const WorkflowBuilderView = (props: Props) => {
     () => initialWorkflowDraft.steps.length === 0 || (initialDraft?.processText ?? '') !== '',
   );
   const [planning, setPlanning] = useState(false);
-  const [polishingKey, setPolishingKey] = useState<string | null>(null);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [saveAsPreset, setSaveAsPreset] = useState(initialDraft?.saveAsPreset ?? false);
   const [autoRun, setAutoRun] = useState(initialDraft?.autoRun ?? false);
@@ -359,11 +342,18 @@ export const WorkflowBuilderView = (props: Props) => {
     [limitContext, workspaceOverrides, providerId],
   );
 
-  const orchestratorProviders = useMemo<ReadonlyArray<ProviderId>>(
-    () =>
-      connectedProviders.filter((candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0),
-    [connectedProviders],
-  );
+  const workspacePolicy = workspaceOverrides?.providerPool ?? null;
+  const orchestratorProviders = useMemo<ReadonlyArray<ProviderId>>(() => {
+    const capable = connectedProviders.filter(
+      (candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0,
+    );
+    if (workspacePolicy === null) {
+      return capable;
+    }
+    return workspacePolicy
+      .filter((entry) => entry.state !== 'off' && capable.includes(entry.id))
+      .map((entry) => entry.id);
+  }, [connectedProviders, workspacePolicy]);
   const effectivePool = effectiveProviderPool({
     providers: orchestratorProviders,
     pool: providerPool,
@@ -568,11 +558,6 @@ export const WorkflowBuilderView = (props: Props) => {
   const patchStep = (key: string, patch: Partial<StepDraft>) =>
     setSteps((previous) => updateDraftStep({ steps: previous, key, patch }));
 
-  const removeStep = (key: string) => {
-    setSteps((previous) => removeDraftStep({ steps: previous, key }));
-    setExpandedKey((cur) => (cur === key ? null : cur));
-  };
-
   const moveStep = (key: string, dir: -1 | 1) =>
     setSteps((previous) => {
       const i = previous.findIndex((step) => step.key === key);
@@ -620,43 +605,18 @@ export const WorkflowBuilderView = (props: Props) => {
   const resolvedModel = (step: StepDraft): string =>
     step.model !== '' ? step.model : recommendedModel(step);
 
-  const onPolishStep = async (key: string) => {
-    const step = steps.find((s) => s.key === key);
-    if (step === undefined || step.prompt.trim().length === 0 || polishingKey !== null) {
-      return;
-    }
-    setError(null);
-    setPolishingKey(key);
-    try {
-      const polished = await polishWorkflowStep({
-        deps: {
-          ...resolvedProsePolishTaskModel,
-          ...(sessionWorktree != null && { workingDir: sessionWorktree }),
-        },
-        input: {
-          role: step.role,
-          name: step.name,
-          instruction: step.prompt,
-          ...(goalText.trim().length > 0 && { goal: goalText }),
-        },
-      });
-      if (polished !== null && polished !== step.prompt) {
-        patchStep(key, { prompt: polished });
-        return;
-      }
-      if (!polished) {
-        showToast({
-          kind: 'warning',
-          message: 'Kept your wording. The step could not be polished.',
-        });
-        return;
-      }
-    } catch (err) {
-      setError({ title: "Couldn't polish the step", message: formatError(err) });
-    } finally {
-      setPolishingKey(null);
-    }
+  const stepPolish = usePolish({
+    onError: (message) => setError({ title: "Couldn't polish the step", message }),
+  });
+  const stepPolishDeps = {
+    ...resolvedProsePolishTaskModel,
+    ...(sessionWorktree != null && { workingDir: sessionWorktree }),
   };
+  const deleteStep = useStepDeleteUndo({
+    steps,
+    setSteps,
+    onDeleted: (key) => setExpandedKey((cur) => (cur === key ? null : cur)),
+  });
 
   const sessionGoal = (sessionSlots.find((s) => s.key === 'goal')?.value ?? '').trim();
   const selectedPreset = presets.find((t) => t.id === selectedPresetId) ?? null;
@@ -737,7 +697,8 @@ export const WorkflowBuilderView = (props: Props) => {
     }
   };
 
-  const attachOptions = () => {
+  const attachOptions = async () => {
+    const attachmentInputs = await toAttachmentInputs(attachments);
     const goal = goalText.trim();
     const { triggerMode, chainAfterId } = startChoice;
     const spendLimitUsd =
@@ -748,7 +709,7 @@ export const WorkflowBuilderView = (props: Props) => {
       ...(goal.length > 0 && { goal }),
       ...(triggerMode !== 'immediate' && { triggerMode }),
       ...(triggerMode === 'after_run' && chainAfterId !== null && { chainAfterId }),
-      ...(attachments.length > 0 && { attachmentInputs: attachments.map(toAttachmentInput) }),
+      ...(attachmentInputs.length > 0 && { attachmentInputs }),
       ...(mode === 'dynamic' && {
         executionMode: DYNAMIC_EXECUTION_MODE,
       }),
@@ -833,7 +794,7 @@ export const WorkflowBuilderView = (props: Props) => {
 
   const runOn = async (target: Session): Promise<void> => {
     if (mode === 'preset' && selectedPreset !== null && !presetDirty && !isPresetRenamed) {
-      await attachWorkflowToSession(target.id, selectedPreset.id, attachOptions());
+      await attachWorkflowToSession(target.id, selectedPreset.id, await attachOptions());
       writeLastWorkflowMode({ workspaceId, mode });
       showToast({ kind: 'success', message: `Started ${selectedPreset.name}.` });
       return;
@@ -891,7 +852,7 @@ export const WorkflowBuilderView = (props: Props) => {
         process,
       );
     }
-    await attachWorkflowToSession(target.id, workflowId, attachOptions());
+    await attachWorkflowToSession(target.id, workflowId, await attachOptions());
     writeLastWorkflowMode({ workspaceId, mode });
     showToast({ kind: 'success', message: `Started ${saved?.name ?? name}.` });
   };
@@ -1009,6 +970,7 @@ export const WorkflowBuilderView = (props: Props) => {
             identityIndex={identityIndex}
             isExpanded={expandedKey === step.key}
             isEdited={editedKeys.has(step.key)}
+            isPinned={step.provider !== '' || step.model !== ''}
             isDragging={draggingKey === step.key}
             disabled={blocked}
             onToggle={() => setExpandedKey((cur) => (cur === step.key ? null : step.key))}
@@ -1029,10 +991,13 @@ export const WorkflowBuilderView = (props: Props) => {
                 connectedProviders={connectedProviders}
                 isRoutingOverridden={step.provider !== '' || step.model !== ''}
                 disabled={blocked}
-                polish={{
-                  isPolishing: polishingKey === step.key,
-                  onPolish: () => void onPolishStep(step.key),
-                }}
+                polish={stepPolishFields({
+                  polish: stepPolish,
+                  deps: stepPolishDeps,
+                  goal: goalText,
+                  step,
+                  patchStep,
+                })}
                 onName={(name) => patchStep(step.key, { name })}
                 onRole={(role) => patchStep(step.key, { role })}
                 onPrompt={(prompt) => patchStep(step.key, { prompt })}
@@ -1052,6 +1017,12 @@ export const WorkflowBuilderView = (props: Props) => {
                 onEffort={(next) => patchStep(step.key, { effort: next })}
                 onVerbosity={(verbosity) => patchStep(step.key, { verbosity })}
                 onRoutingReset={() => patchStep(step.key, { provider: '', model: '' })}
+                onPin={() =>
+                  patchStep(step.key, {
+                    provider: resolvedProvider(step),
+                    model: resolvedModel(step),
+                  })
+                }
                 onMoveUp={() => moveStep(step.key, -1)}
                 onMoveDown={() => moveStep(step.key, 1)}
                 onDuplicate={() =>
@@ -1059,7 +1030,7 @@ export const WorkflowBuilderView = (props: Props) => {
                 }
                 isSavingAsStep={savingKey === step.key}
                 onSaveAsStep={() => void saveAsStep(step)}
-                onRemove={() => removeStep(step.key)}
+                onDelete={() => deleteStep(step.key)}
                 onDone={() => setExpandedKey(null)}
               />
             }
@@ -1096,13 +1067,11 @@ export const WorkflowBuilderView = (props: Props) => {
     }
     if (mode === 'preset' && presets.length === 0) {
       return (
-        <EmptyState
+        <FilledEmptyState
           tone={CONCEPT_TONE.workflows}
           icon={CONCEPT_ICONS.workflows}
           title="No presets in this workspace yet"
           description="Save a workflow as a preset when you start it, and it shows up here."
-          size="inline"
-          className="items-start text-left"
           action={
             <Chip
               as="button"
@@ -1130,15 +1099,7 @@ export const WorkflowBuilderView = (props: Props) => {
         disabled={blocked}
         onChange={setStartChoice}
       />
-      <Tooltip
-        content={
-          autoRun
-            ? 'Each next step starts on its own.'
-            : 'Pauses after each step so you can review it.'
-        }
-      >
-        <Switch label="Autorun" checked={autoRun} onChange={setAutoRun} disabled={busy} />
-      </Tooltip>
+      <AutonomyChip autoRun={autoRun} disabled={busy} onChange={setAutoRun} />
       {mode === 'dynamic' ? (
         <SpendCapChip
           isEnabled={isSpendLimitEnabled}
@@ -1193,19 +1154,8 @@ export const WorkflowBuilderView = (props: Props) => {
           canUndo={goalHistory.length > 0}
           isPolishing={polishing}
           disabled={busy}
-          files={{
-            isDragging: isDraggingFiles,
-            composerRef,
-            fileInputRef,
-            onFiles: onFileInputChange,
-            attachments: attachments.map((a) => (
-              <AttachmentChip
-                key={a.id}
-                {...pendingAttachmentProps(a)}
-                onRemove={() => removeAttachment(a.id)}
-              />
-            )),
-          }}
+          files={goalFiles.files}
+          notice={goalFiles.notice}
           onChange={onGoalChange}
           onBlur={() => requestTitleSuggestion(goalText)}
           onUseSessionGoal={onUseSessionGoal}

@@ -1,3 +1,4 @@
+import type { AutoContext } from '@goodboy/core';
 import type { AgentId, EffortLevel, ProviderId, RoleModelPreferences } from '@goodboy/types';
 import type { RowPhase } from '../../workTreeModel/rowState';
 import { workTime, type WorkEstimate, type WorkTime } from '../../workTreeModel/workTime';
@@ -12,6 +13,7 @@ type Params = {
   readonly roleModels: RoleModelPreferences | null;
   readonly sessionProvider: ProviderId | null;
   readonly sessionEffort: EffortLevel | null;
+  readonly scope?: AutoContext | null;
 };
 
 const RUN_BASIS =
@@ -37,6 +39,7 @@ const runEstimate = ({
   roleModels,
   sessionProvider,
   sessionEffort,
+  scope = null,
 }: Omit<Params, 'phase'>): WorkEstimate | null => {
   if (entry.run.executionMode === 'dynamic') {
     return null;
@@ -69,6 +72,7 @@ const runEstimate = ({
       roleModels,
       sessionProvider,
       sessionEffort,
+      scope,
     });
     if (estimate === null) {
       return null;

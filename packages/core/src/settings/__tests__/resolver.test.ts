@@ -321,13 +321,19 @@ describe('resolveSettings', () => {
   it('provider pool: the first scope that sets one wins', () => {
     const result = resolveSettings({
       global: GLOBAL,
-      workspaceOverride: { ...NULL_OVERRIDE, providerPool: ['anthropic' as ProviderId] },
+      workspaceOverride: { ...NULL_OVERRIDE, providerPool: [{ id: 'anthropic', state: 'on' }] },
       projectOverride: {
         ...NULL_OVERRIDE,
-        providerPool: ['codex' as ProviderId, 'cursor' as ProviderId],
+        providerPool: [
+          { id: 'codex', state: 'on' },
+          { id: 'cursor', state: 'backup' },
+        ],
       },
     });
-    expect(result.providerPool).toEqual(['codex', 'cursor']);
+    expect(result.providerPool).toEqual([
+      { id: 'codex', state: 'on' },
+      { id: 'cursor', state: 'backup' },
+    ]);
   });
 
   it('parallel agents: an explicit false below wins over true above', () => {

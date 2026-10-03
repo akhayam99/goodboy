@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Button, InlineConfirm } from '@goodboy/ui';
+import { Button, SelectionBar, SelectionConfirm } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { StorageArtifact } from '../../../../store/slices/storage/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import { storageScopeLabel } from '../../storageScopeLabel';
@@ -11,8 +12,14 @@ import { storageScopeLabel } from '../../storageScopeLabel';
 type Props = {
   readonly suggested: ReadonlyArray<StorageArtifact>;
   readonly suggestAfterDays: number;
-  readonly selected: ReadonlySet<string> | null;
+  readonly selected: ReadonlySet<string>;
+  readonly total: number;
+  readonly isConfirming: boolean;
   readonly onStart: () => void;
+  readonly onArm: () => void;
+  readonly onCancel: () => void;
+  readonly onClear: () => void;
+  readonly onSelectAll: () => void;
   readonly onDone: () => void;
 };
 
@@ -27,7 +34,13 @@ export const ArtifactBulkDeleteBar = ({
   suggested,
   suggestAfterDays,
   selected,
+  total,
+  isConfirming,
   onStart,
+  onArm,
+  onCancel,
+  onClear,
+  onSelectAll,
   onDone,
 }: Props) => {
   const artifacts = useAppStore((state) => state.storageArtifacts);
@@ -36,7 +49,7 @@ export const ArtifactBulkDeleteBar = ({
   const [isBusy, setIsBusy] = useState(false);
   const rule = `Session deleted over ${suggestAfterDays} days ago and not used for ${2 * suggestAfterDays}.`;
 
-  if (selected === null) {
+  if (selected.size === 0) {
     if (suggested.length === 0) {
       return (
         <p className="px-2 text-secondary text-faint-foreground">
@@ -78,16 +91,41 @@ export const ArtifactBulkDeleteBar = ({
   };
 
   return (
-    <InlineConfirm
-      role="danger"
-      icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-      title={`Delete ${pluralize(chosen.length, 'artifact')} (${formatBytes({ bytes: bytesOf({ artifacts: chosen }) })})?`}
-      description="Their copies on disk and their records in Goodboy go away."
-      confirmLabel="Delete"
-      isConfirmDisabled={chosen.length === 0}
-      isBusy={isBusy}
-      onConfirm={onConfirm}
-      onCancel={onDone}
+    <SelectionBar
+      placement="sticky"
+      count={selected.size}
+      total={total}
+      verbs={[
+        {
+          id: 'delete',
+          label: 'Delete',
+          ariaLabel: 'Delete selected artifacts',
+          tone: 'danger',
+          icon: <Trash2 size={ICON_SIZE.row} aria-hidden />,
+          isDisabled: isBusy,
+          onRun: onArm,
+        },
+      ]}
+      onClear={onClear}
+      onSelectAll={onSelectAll}
+      clearHint={shortcutGlyphs('selection.clear')}
+      selectAllHint={shortcutGlyphs('selection.all')}
+      onDismissConfirm={onCancel}
+      confirm={
+        isConfirming ? (
+          <SelectionConfirm
+            role="danger"
+            icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
+            title={`Delete ${pluralize(chosen.length, 'artifact')} (${formatBytes({ bytes: bytesOf({ artifacts: chosen }) })})?`}
+            description="Their copies on disk and their records in Goodboy go away."
+            confirmLabel="Delete"
+            isConfirmDisabled={chosen.length === 0}
+            isBusy={isBusy}
+            onConfirm={onConfirm}
+            onCancel={onCancel}
+          />
+        ) : null
+      }
     />
   );
 };

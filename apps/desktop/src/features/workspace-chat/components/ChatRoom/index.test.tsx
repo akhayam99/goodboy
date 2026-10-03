@@ -49,6 +49,8 @@ const { store, summarize } = vi.hoisted(() => ({
     })),
     setSessionConfig: vi.fn(async () => undefined),
     recordChatLink: vi.fn(async () => ({})),
+    queueChatLink: vi.fn(),
+    pendingChatLinks: {},
     loadPhaseRunsForSession: vi.fn(async () => undefined),
     setAgentDraft: vi.fn(),
     loadSetting: vi.fn(async (_key: string) => null as string | null),
@@ -87,7 +89,9 @@ type RoomParams = {
 };
 
 const renderRoom = ({ chat, onCreated = vi.fn() }: RoomParams) =>
-  render(<ChatRoom workspaceId={WORKSPACE_ID} chat={chat} onCreated={onCreated} />);
+  render(
+    <ChatRoom workspaceId={WORKSPACE_ID} chat={chat} onCreated={onCreated} onRemoved={vi.fn()} />,
+  );
 
 const WORKSPACE_ID = 'ws-harborline' as WorkspaceId;
 const CHAT_ID = 'chat-consent' as ChatId;
@@ -107,6 +111,7 @@ const CHAT: ChatSummary = {
   updatedAt: AT,
   preview: null,
   modelsUsed: [],
+  messageCount: 0,
 };
 
 type MessageSeed = Pick<ChatMessage, 'role' | 'content' | 'status'> &
@@ -195,8 +200,6 @@ describe('ChatRoom', () => {
     expect(inColumn(screen.getByRole('heading', { name: CHAT.title }))).toBe(1);
     expect(inColumn(screen.getByRole('list', { name: 'Messages' }))).toBe(1);
     expect(inColumn(screen.getByRole('textbox', { name: 'Message' }))).toBe(1);
-    const composer = screen.getByRole('textbox', { name: 'Message' }).parentElement;
-    expect(composer?.className).not.toMatch(/max-w-/);
   });
 
   it('keeps the new chat prompt and its composer on the page column too', () => {
@@ -260,6 +263,29 @@ describe('ChatRoom', () => {
     expect(screen.getByText('disk full')).toBeDefined();
     expect(store.recordChatLink).not.toHaveBeenCalled();
     expect(store.navigate).not.toHaveBeenCalled();
+  });
+
+  it('says when the chat could not be linked and links it on Try again', async () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    store.recordChatLink.mockRejectedValueOnce(new Error('disk full'));
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Start session' }));
+    });
+
+    screen.getByText("Couldn't link the chat to the session");
+    expect(store.navigate).not.toHaveBeenCalled();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    });
+
+    expect(screen.queryByText("Couldn't link the chat to the session")).toBeNull();
+    expect(store.navigate).toHaveBeenCalledWith({
+      to: expect.objectContaining({ at: 'session', sessionId: 'session-new' }),
+    });
   });
 
   it('picks several projects in the popover and starts the session in all of them', async () => {
@@ -399,8 +425,9 @@ describe('ChatRoom', () => {
     });
 
     expect(store.createSession).not.toHaveBeenCalled();
-    expect(store.recordChatLink).toHaveBeenCalledWith(
-      expect.objectContaining({ sessionId: 'session-refunds', kind: 'add' }),
+    expect(store.recordChatLink).not.toHaveBeenCalled();
+    expect(store.queueChatLink).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId: 'session-refunds' }),
     );
     expect(store.setAgentDraft).toHaveBeenCalledWith(
       'agent-refunds',

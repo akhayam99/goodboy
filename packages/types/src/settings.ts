@@ -1,4 +1,5 @@
 import type { ProjectId, SessionId, WorkflowId, WorkspaceId } from './ids';
+import type { ProviderPolicy } from './provider-policy';
 import type { EffortLevel, ProviderId } from './provider-registry';
 import type { AgentRole } from './workflow';
 
@@ -39,11 +40,20 @@ export type RoleModelFallback = Readonly<{
   effort?: EffortLevel;
 }>;
 
+export type RoleModelChoice = Readonly<{
+  providerId: ProviderId;
+  model: string;
+  effort?: EffortLevel;
+}>;
+
+export const ROLE_MODEL_SET_MAX = 3;
+
 export type RoleModelPreference = Readonly<{
   providerId: ProviderId;
   model: string;
   effort: EffortLevel;
   fallback?: RoleModelFallback;
+  models?: ReadonlyArray<RoleModelChoice>;
 }>;
 
 export type RoleModelPreferences = Readonly<Partial<Record<AgentRole, RoleModelPreference>>>;
@@ -56,7 +66,7 @@ export type OverrideSettings = Readonly<{
   taskModels: TaskModelPreferences | null;
   roleModels: RoleModelPreferences | null;
   parallelAgents: boolean | null;
-  providerPool: ReadonlyArray<ProviderId> | null;
+  providerPool: ProviderPolicy | null;
   attributionFooter: boolean | null;
   replyVoice: ReplyVoice | null;
   replyStyleNote: string | null;
@@ -87,7 +97,7 @@ export type ResolvedSettings = Readonly<{
   defaultVerbosity: VerbosityLevel;
   roleModels: RoleModelPreferences | null;
   taskModels: TaskModelPreferences | null;
-  providerPool: ReadonlyArray<ProviderId> | null;
+  providerPool: ProviderPolicy | null;
   parallelAgents: boolean;
   providerBindings: ProviderBindings;
 }>;

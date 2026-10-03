@@ -2,7 +2,6 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { WORK_META_COLUMN } from '@goodboy/ui';
 import { tooltipTextOf } from '../../../__tests__/helpers/tooltip';
 import { RoutingLabel } from './index';
 
@@ -196,22 +195,6 @@ describe('RoutingLabel', () => {
 
       expect(container.querySelectorAll('[data-routing-part="detail"]')).toHaveLength(1);
       expect(partOf(container, 'detail')).toBe('Thinking');
-    });
-
-    it('sheds the detail, then the name, then the whole cell as the row narrows', () => {
-      const { container } = render(
-        <RoutingLabel isColumn provider="anthropic" model="claude-sonnet-5" effort="high" />,
-      );
-
-      const cell = container.querySelector('[data-meta-column="routing"]')!;
-      const name = container.querySelector('[data-routing-part="name"]')!;
-      const detail = container.querySelector('[data-routing-part="detail"]')!.parentElement!;
-      expect(detail.className).toContain('@max-[720px]:sr-only');
-      expect(name.className).toContain('@max-[440px]:sr-only');
-      expect(cell.className).toContain('@max-[440px]:w-3');
-      expect(cell.className).toContain('@max-[360px]:hidden');
-      expect(WORK_META_COLUMN.cost).toContain('@max-[560px]:hidden');
-      expect(WORK_META_COLUMN.time).toContain('@max-[360px]:hidden');
     });
 
     it('draws a planned effort in faint and an observed one in the row tone', () => {

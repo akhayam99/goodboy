@@ -10,6 +10,7 @@ import type { RunWorkflowKind } from '../../../../timeline/runWorkflowKind';
 import { ORCHESTRATOR_DECIDING_SENTENCE } from '../../../../../workflows/orchestratorCopy';
 import { resolveRunRowState } from '../../../../../workTreeModel/rowState';
 import { runOpenQuestion } from '../../../../timeline/runOpenQuestion';
+import { TimelineRowStateLine } from './TimelineRowStateLine';
 import { TimelineRunLabel } from './TimelineRunLabel';
 
 afterEach(cleanup);
@@ -21,21 +22,22 @@ type LabelProps = {
 };
 
 const Label = ({ entry, isDeciding = false, isRevealed = false }: LabelProps) => (
-  <TimelineRunLabel
-    entry={entry}
-    isRevealed={isRevealed}
-    rowState={resolveRunRowState({
-      run: entry.run,
-      advance: null,
-      isFinished: false,
-      isDeciding,
-      hasRunningStep: false,
-      failedStep: null,
-      question: runOpenQuestion({ entry }),
-      readyStep: null,
-      chainedAfterTitle: null,
-    })}
-  />
+  <>
+    <TimelineRunLabel entry={entry} isRevealed={isRevealed} />
+    <TimelineRowStateLine
+      state={resolveRunRowState({
+        run: entry.run,
+        advance: null,
+        isFinished: false,
+        isDeciding,
+        hasRunningStep: false,
+        failedStep: null,
+        question: runOpenQuestion({ entry }),
+        readyStep: null,
+        chainedAfterTitle: null,
+      })}
+    />
+  </>
 );
 
 const ORIGIN_OF: Record<RunWorkflowKind, string> = {
@@ -182,11 +184,11 @@ describe('TimelineRunLabel', () => {
       />,
     );
 
-    expect(screen.getByTestId('timeline-row-state').className).toContain('text-warning');
-    expect(screen.getByText('Needs your answer in step 2').className).toContain(
-      '@max-[880px]:hidden',
-    );
-    expect(screen.getByText('Needs you').className).toContain('@min-[880px]:hidden');
+    const state = screen.getByTestId('timeline-row-state');
+    expect(state.className).toContain('text-warning');
+    expect(state.getAttribute('title')).toBe('Needs your answer in step 2');
+    expect(screen.getByText('Needs your answer in step 2').className).toContain('sr-only');
+    expect(screen.getByText('Needs you').getAttribute('aria-hidden')).toBe('true');
   });
 
   it('names the step of the oldest open question, nested steps included', () => {

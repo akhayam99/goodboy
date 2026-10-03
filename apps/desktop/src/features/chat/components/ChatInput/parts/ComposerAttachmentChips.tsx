@@ -1,8 +1,5 @@
 import type { PendingAttachment } from '../../../../attachments/pendingAttachment';
-import {
-  AttachmentChip,
-  pendingAttachmentProps,
-} from '../../../../attachments/components/AttachmentChip';
+import { PendingAttachmentChip } from '../../../../attachments/components/PendingAttachmentChip';
 
 type Props = {
   readonly attachments: ReadonlyArray<PendingAttachment>;
@@ -16,7 +13,7 @@ export const ComposerAttachmentChips = ({ attachments, onRemove }: Props) => {
   return (
     <div className="flex flex-wrap gap-2 px-3 pb-1 pt-3">
       {attachments.map((a) => (
-        <AttachmentChip key={a.id} {...pendingAttachmentProps(a)} onRemove={() => onRemove(a.id)} />
+        <PendingAttachmentChip key={a.id} attachment={a} onRemove={() => onRemove(a.id)} />
       ))}
     </div>
   );

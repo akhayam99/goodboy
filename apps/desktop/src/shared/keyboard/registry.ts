@@ -3,7 +3,47 @@ import { currentPlatform } from '../platform';
 type ShortcutPlane = 'app' | 'session' | 'lens' | 'pane';
 
 export type ShortcutGroup =
-  'general' | 'workspaces' | 'navigate' | 'session' | 'views' | 'review' | 'diff' | 'window';
+  | 'general'
+  | 'workspaces'
+  | 'navigate'
+  | 'session'
+  | 'views'
+  | 'lists'
+  | 'selection'
+  | 'review'
+  | 'diff'
+  | 'window';
+
+export type ShortcutScope =
+  | 'list'
+  | 'selection'
+  | 'review'
+  | 'diff'
+  | 'terminal'
+  | 'composer'
+  | 'find'
+  | 'overview'
+  | 'row'
+  | 'activityRow'
+  | 'workspace'
+  | 'codeSession'
+  | 'exploreSession';
+
+export const SHORTCUT_SCOPE_LABEL: Readonly<Record<ShortcutScope, string>> = {
+  list: 'In the Inbox and Notifications lists',
+  selection: 'In a list with checkboxes',
+  review: 'In the Review view',
+  diff: 'In the Diff view',
+  terminal: 'In the terminal',
+  composer: 'Where a chat composer is open',
+  find: 'After a search in the view',
+  overview: 'On a session overview',
+  row: 'On a focused row',
+  activityRow: 'On an activity row',
+  workspace: 'With a workspace open',
+  codeSession: 'In a session with a branch',
+  exploreSession: 'In an explore session',
+};
 
 export type ShortcutFamily = 'workspace-digit';
 
@@ -14,6 +54,8 @@ export type ShortcutEntry = {
   readonly plane: ShortcutPlane;
   readonly group: ShortcutGroup;
   readonly family?: ShortcutFamily;
+  readonly scope?: ShortcutScope;
+  readonly yieldsToText?: boolean;
 };
 
 export const SHORTCUTS = {
@@ -41,6 +83,7 @@ export const SHORTCUTS = {
     label: 'Switch workspace',
     plane: 'app',
     group: 'workspaces',
+    scope: 'workspace',
   },
   'workspace.1': {
     combo: 'cmd+Digit1',
@@ -108,12 +151,19 @@ export const SHORTCUTS = {
 
   'nav.back': { combo: 'cmd+BracketLeft', label: 'Back', plane: 'app', group: 'navigate' },
   'nav.forward': { combo: 'cmd+BracketRight', label: 'Forward', plane: 'app', group: 'navigate' },
-  'find.next': { combo: 'cmd+KeyG', label: 'Next match', plane: 'app', group: 'navigate' },
+  'find.next': {
+    combo: 'cmd+KeyG',
+    label: 'Next match',
+    plane: 'app',
+    group: 'navigate',
+    scope: 'find',
+  },
   'find.previous': {
     combo: 'cmd+shift+KeyG',
     label: 'Previous match',
     plane: 'session',
     group: 'navigate',
+    scope: 'find',
   },
   'column.toggle': {
     combo: 'cmd+KeyB',
@@ -145,12 +195,14 @@ export const SHORTCUTS = {
     label: 'Model picker',
     plane: 'session',
     group: 'session',
+    scope: 'composer',
   },
   'session.permissions': {
     combo: 'cmd+shift+KeyP',
     label: 'Permission picker',
     plane: 'session',
     group: 'session',
+    scope: 'composer',
   },
   'composer.submit': {
     combo: 'cmd+Enter',
@@ -158,17 +210,33 @@ export const SHORTCUTS = {
     plane: 'app',
     group: 'session',
   },
+  'composer.send': {
+    combo: 'Enter',
+    label: 'Send a message, new line in a document',
+    plane: 'pane',
+    group: 'session',
+    scope: 'composer',
+  },
+  'composer.newLine': {
+    combo: 'shift+Enter',
+    label: 'New line in a message',
+    plane: 'session',
+    group: 'session',
+    scope: 'composer',
+  },
   'menu.open': {
     combo: 'shift+F10',
     label: 'Open the menu of the focused row',
     plane: 'session',
     group: 'general',
+    scope: 'row',
   },
   'activity.openRun': {
     combo: 'shift+Enter',
     label: 'Open the workflow of an activity row',
     plane: 'session',
     group: 'session',
+    scope: 'activityRow',
   },
   'terminal.newTab': {
     combo: 'cmd+KeyT',
@@ -176,6 +244,7 @@ export const SHORTCUTS = {
     label: 'New terminal tab',
     plane: 'app',
     group: 'session',
+    scope: 'terminal',
   },
   'session.archive': {
     combo: 'cmd+shift+KeyA',
@@ -194,6 +263,7 @@ export const SHORTCUTS = {
     label: 'Link work, on the overview',
     plane: 'app',
     group: 'session',
+    scope: 'overview',
   },
   'session.refresh': {
     combo: 'cmd+shift+KeyR',
@@ -221,8 +291,20 @@ export const SHORTCUTS = {
   'lens.agents': { combo: 'cmd+alt+KeyA', label: 'Agents', plane: 'lens', group: 'views' },
   'lens.review': { combo: 'cmd+alt+KeyR', label: 'Review', plane: 'lens', group: 'views' },
   'lens.questions': { combo: 'cmd+alt+KeyQ', label: 'Questions', plane: 'lens', group: 'views' },
-  'lens.files': { combo: 'cmd+alt+KeyF', label: 'Diff', plane: 'lens', group: 'views' },
-  'lens.explore': { combo: 'cmd+alt+KeyX', label: 'Explore', plane: 'lens', group: 'views' },
+  'lens.files': {
+    combo: 'cmd+alt+KeyF',
+    label: 'Diff',
+    plane: 'lens',
+    group: 'views',
+    scope: 'codeSession',
+  },
+  'lens.explore': {
+    combo: 'cmd+alt+KeyX',
+    label: 'Explore',
+    plane: 'lens',
+    group: 'views',
+    scope: 'exploreSession',
+  },
   'lens.plans': { combo: 'cmd+alt+KeyP', label: 'Artifacts', plane: 'lens', group: 'views' },
   'lens.scripts': { combo: 'cmd+alt+KeyS', label: 'Scripts', plane: 'lens', group: 'views' },
   'lens.terminal': { combo: 'cmd+alt+KeyT', label: 'Terminal', plane: 'lens', group: 'views' },
@@ -247,35 +329,169 @@ export const SHORTCUTS = {
     group: 'views',
   },
 
-  'review.next': { combo: 'KeyJ', label: 'Next comment', plane: 'app', group: 'review' },
+  'list.next': {
+    combo: 'KeyJ',
+    label: 'Next row',
+    plane: 'pane',
+    group: 'lists',
+    scope: 'list',
+  },
+  'list.previous': {
+    combo: 'KeyK',
+    label: 'Previous row',
+    plane: 'pane',
+    group: 'lists',
+    scope: 'list',
+  },
+  'list.open': {
+    combo: 'Enter',
+    label: 'Open the row, or launch from it',
+    plane: 'pane',
+    group: 'lists',
+    scope: 'list',
+  },
+  'list.openInTool': {
+    combo: 'KeyO',
+    label: 'Open in the tool',
+    plane: 'pane',
+    group: 'lists',
+    scope: 'list',
+  },
+  'list.reply': {
+    combo: 'KeyR',
+    label: 'Reply',
+    plane: 'pane',
+    group: 'lists',
+    scope: 'list',
+  },
+  'list.star': {
+    combo: 'KeyS',
+    label: 'Star or unstar',
+    plane: 'pane',
+    group: 'lists',
+    scope: 'list',
+  },
+  'list.dismiss': {
+    combo: 'KeyE',
+    label: 'Dismiss',
+    plane: 'pane',
+    group: 'lists',
+    scope: 'list',
+  },
+  'list.search': {
+    combo: 'Slash',
+    label: 'Search the list',
+    plane: 'pane',
+    group: 'lists',
+    scope: 'list',
+  },
+
+  'selection.toggle': {
+    combo: 'KeyX',
+    label: 'Select the row under the pointer or focus',
+    plane: 'pane',
+    group: 'selection',
+    scope: 'selection',
+  },
+  'selection.all': {
+    combo: 'cmd+KeyA',
+    label: 'Select every row',
+    plane: 'app',
+    group: 'selection',
+    scope: 'selection',
+    yieldsToText: true,
+  },
+  'selection.clear': {
+    combo: 'Escape',
+    label: 'Clear the selection',
+    plane: 'pane',
+    group: 'selection',
+    scope: 'selection',
+  },
+  'selection.delete': {
+    combo: 'Backspace',
+    offMacCombo: 'Delete',
+    label: 'Delete the selection',
+    plane: 'pane',
+    group: 'selection',
+    scope: 'selection',
+  },
+
+  'review.next': {
+    combo: 'KeyJ',
+    label: 'Next comment',
+    plane: 'app',
+    group: 'review',
+    scope: 'review',
+  },
   'review.previous': {
     combo: 'KeyK',
     label: 'Previous comment',
     plane: 'app',
     group: 'review',
+    scope: 'review',
   },
-  'review.accept': { combo: 'KeyA', label: 'Accept', plane: 'app', group: 'review' },
-  'review.edit': { combo: 'KeyE', label: 'Edit or answer', plane: 'app', group: 'review' },
-  'review.reply': { combo: 'KeyR', label: 'Reply', plane: 'app', group: 'review' },
-  'review.skip': { combo: 'KeyS', label: 'Skip', plane: 'app', group: 'review' },
-  'review.undo': { combo: 'KeyU', label: 'Undo', plane: 'app', group: 'review' },
-  'review.fix': { combo: 'KeyF', label: 'Fix', plane: 'app', group: 'review' },
-  'review.select': { combo: 'KeyX', label: 'Select comment', plane: 'app', group: 'review' },
+  'review.accept': {
+    combo: 'KeyA',
+    label: 'Accept',
+    plane: 'app',
+    group: 'review',
+    scope: 'review',
+  },
+  'review.edit': {
+    combo: 'KeyE',
+    label: 'Edit or answer',
+    plane: 'app',
+    group: 'review',
+    scope: 'review',
+  },
+  'review.reply': { combo: 'KeyR', label: 'Reply', plane: 'app', group: 'review', scope: 'review' },
+  'review.skip': { combo: 'KeyS', label: 'Skip', plane: 'app', group: 'review', scope: 'review' },
+  'review.undo': { combo: 'KeyU', label: 'Undo', plane: 'app', group: 'review', scope: 'review' },
+  'review.fix': { combo: 'KeyF', label: 'Fix', plane: 'app', group: 'review', scope: 'review' },
+  'review.select': {
+    combo: 'KeyX',
+    label: 'Select comment',
+    plane: 'app',
+    group: 'review',
+    scope: 'review',
+  },
+  'review.selectAll': {
+    combo: 'cmd+KeyA',
+    label: 'Select every fixable comment',
+    plane: 'app',
+    group: 'review',
+    scope: 'review',
+  },
   'review.view': {
     combo: 'KeyV',
     label: 'Comments or commits',
     plane: 'app',
     group: 'review',
+    scope: 'review',
   },
 
-  'diff.jump': { combo: 'KeyT', label: 'Jump to a file', plane: 'pane', group: 'diff' },
+  'diff.jump': {
+    combo: 'KeyT',
+    label: 'Jump to a file',
+    plane: 'pane',
+    group: 'diff',
+    scope: 'diff',
+  },
   'diff.previousFile': {
     combo: 'BracketLeft',
     label: 'Previous file',
     plane: 'pane',
     group: 'diff',
+    scope: 'diff',
   },
-  'diff.nextFile': { combo: 'BracketRight', label: 'Next file', plane: 'pane', group: 'diff' },
+  'diff.nextFile': {
+    combo: 'BracketRight',
+    label: 'Next file',
+    plane: 'pane',
+    group: 'diff',
+    scope: 'diff',
+  },
 
   'zoom.in': { combo: 'cmd+Equal', label: 'Zoom in', plane: 'app', group: 'window' },
   'zoom.out': { combo: 'cmd+Minus', label: 'Zoom out', plane: 'app', group: 'window' },
@@ -283,6 +499,10 @@ export const SHORTCUTS = {
 } as const satisfies Record<string, ShortcutEntry>;
 
 export type ShortcutId = keyof typeof SHORTCUTS;
+
+export const WORKSPACE_DIGIT_IDS: ReadonlyArray<ShortcutId> = (
+  Object.keys(SHORTCUTS) as ReadonlyArray<ShortcutId>
+).filter((id) => (SHORTCUTS[id] as ShortcutEntry).family === 'workspace-digit');
 
 export const SHORTCUT_FAMILY_LABEL: Readonly<Record<ShortcutFamily, string>> = {
   'workspace-digit': 'Go to workspace 1 to 9',
@@ -320,6 +540,7 @@ const KEY_LABEL: Record<string, string> = {
   BracketLeft: '[',
   BracketRight: ']',
   Backspace: 'Backspace',
+  Delete: 'Delete',
   Escape: 'Esc',
   Enter: 'Enter',
   Space: 'Space',

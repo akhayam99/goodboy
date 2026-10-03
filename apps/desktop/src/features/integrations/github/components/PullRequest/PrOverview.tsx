@@ -1,6 +1,6 @@
 import { useEffect, useState, type ClipboardEvent, type MouseEvent } from 'react';
 import type { PullRequestState, SessionId } from '@goodboy/types';
-import { cn, formatError, Markdown, SectionHeader, Textarea } from '@goodboy/ui';
+import { cn, EmptyLine, formatError, Markdown, SectionHeader, Textarea } from '@goodboy/ui';
 import { ImagePlus, Pencil } from 'lucide-react';
 import { useAppStore, useSessionById } from '../../../../../store';
 import { isInteractiveClick } from '../../../../../shared/utils/isInteractiveClick';
@@ -206,7 +206,7 @@ export const PrOverview = ({ pr, sessionId, canEdit, editEventName, onMutated }:
             )}
           </div>
         ) : !canEdit ? (
-          <p className="px-3 py-2 text-body text-faint-foreground">No description.</p>
+          <EmptyLine className="px-3">No description.</EmptyLine>
         ) : (
           <button
             type="button"

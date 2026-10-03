@@ -21,6 +21,7 @@ import { collectReportDiffEvidence } from '../../../features/reports/collectRepo
 import { REPORT_TYPE_LABEL, type ReportType } from '../../../features/reports/reportTypes';
 import { WIREFRAME_SCOUT_DEADLINE_MS } from '../../../features/wireframes/wireframeScoutReports';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
+import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import type { SpawnFocus } from '../session-view/spawnFocus';
 import type { ArtifactRunMount } from './artifactScoutRun';
 import type { GetFn } from './types';
@@ -65,6 +66,7 @@ const usableProviders = ({ state, sessionId }: UsableParams): ReadonlyArray<Prov
     sessionId,
     isRunBudgetBlocked: false,
     nowMs: Date.now(),
+    ...workspacePolicyAvailability({ state, sessionId }),
   });
   return availability.connectedProviders.filter(
     (provider) =>

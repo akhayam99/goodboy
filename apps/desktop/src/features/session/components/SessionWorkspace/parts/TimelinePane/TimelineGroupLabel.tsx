@@ -1,18 +1,13 @@
-import { WORK_ROW, cn, tintClasses } from '@goodboy/ui';
-
-type GroupLabelPart = {
-  readonly state: string;
-  readonly count: number;
-  readonly noun: string;
-  readonly isFailure: boolean;
-};
+import { WORK_ROW, cn } from '@goodboy/ui';
+import type { GroupSummary } from '../../../../timeline/groupSummary';
+import { TimelineGroupSummaryLine } from './TimelineGroupSummaryLine';
 
 type Props = {
   readonly title: string;
-  readonly parts: ReadonlyArray<GroupLabelPart>;
+  readonly summary: GroupSummary;
 };
 
-export const TimelineGroupLabel = ({ title, parts }: Props) => (
+export const TimelineGroupLabel = ({ title, summary }: Props) => (
   <>
     <span
       title={title}
@@ -23,20 +18,6 @@ export const TimelineGroupLabel = ({ title, parts }: Props) => (
     >
       <span className="min-w-0 overflow-hidden text-ellipsis whitespace-pre">{title}</span>
     </span>
-    <span
-      data-testid="resolve-batch-summary"
-      className="min-w-0 truncate text-secondary text-muted-foreground"
-    >
-      {parts.map((part, index) => (
-        <span key={part.state}>
-          {index === 0 ? null : (
-            <span className="whitespace-pre text-faint-foreground">{' · '}</span>
-          )}
-          <span className={part.isFailure ? tintClasses('danger').text : undefined}>
-            {`${part.count} ${part.noun}`}
-          </span>
-        </span>
-      ))}
-    </span>
+    <TimelineGroupSummaryLine summary={summary} />
   </>
 );

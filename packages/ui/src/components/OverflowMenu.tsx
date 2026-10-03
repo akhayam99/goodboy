@@ -6,7 +6,7 @@ import { Tooltip } from './Tooltip';
 import { useDropdown } from '../useDropdown';
 import { MenuItems, type OverflowMenuItem } from './MenuItems';
 
-type OverflowMenuProps = {
+type Props = {
   readonly items: ReadonlyArray<OverflowMenuItem>;
   readonly label?: string;
   readonly tooltip?: string;
@@ -24,7 +24,7 @@ export const OverflowMenu = ({
   trigger,
   disabled,
   align = 'right',
-}: OverflowMenuProps) => {
+}: Props) => {
   const dropdown = useDropdown({
     disabled,
     align: align === 'right' ? 'end' : 'start',

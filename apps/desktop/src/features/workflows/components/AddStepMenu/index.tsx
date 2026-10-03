@@ -3,7 +3,7 @@ import { Plus, Search } from 'lucide-react';
 import { AnchoredPopover, Input, KbdPill, useDropdown } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ROLE_LABEL, kindForRole } from '../../../session/agent-kind';
-import { AgentKindChip } from '../../../session/components/AgentKindChip';
+import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { savedStepNote, type SavedStep, type SavedStepGroups } from '../../savedSteps';
 import { AddStepMenuOption } from './AddStepMenuOption';
 

@@ -43,6 +43,7 @@ const stored: SessionArtifact = {
   sourceTurnId: SOURCE_TURN_ID,
   createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
   updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+  openedAt: null,
 };
 
 const create = async () =>

@@ -9,10 +9,10 @@ import {
   IconButton,
   Input,
   KbdPill,
+  Notice,
   ScrollFade,
   SegmentedTabs,
   Skeleton,
-  Textarea,
 } from '@goodboy/ui';
 import {
   isChatProvider,
@@ -23,7 +23,8 @@ import {
   type ProviderId,
   type SessionId,
 } from '@goodboy/types';
-import { formatCombo } from '../../../../shared/keyboard/registry';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { PromptField } from '../../../../shared/components/PromptField';
 import { resolveScopedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import { kindRouting } from '../../../session/agent-kind';
 import { sessionTitle } from '../../../session/sessionTitle';
@@ -46,6 +47,7 @@ import { ProjectField } from './ProjectField';
 import { RunsOnField } from './RunsOnField';
 import { SessionField } from './SessionField';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
+import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
 import { useWorkspaceKindRouting } from '../../../../shared/hooks/useWorkspaceKindRouting';
 
 type Mode = 'new' | 'add';
@@ -86,12 +88,20 @@ const upTo = ({ messages, anchorMessageId }: UpToParams): ReadonlyArray<ChatMess
 
 export const TURN_INTO_WORK_LABEL = 'Turn into work';
 
+type Landed = {
+  readonly sessionId: SessionId;
+  readonly draft: string | null;
+  readonly title: string;
+  readonly label: string;
+};
+
 export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, onDone }: Props) => {
   const allProjects = useAppStore((state) => state.projects);
   const allSessions = useAppStore((state) => state.sessions);
   const createSession = useAppStore((state) => state.createSession);
   const setSessionConfig = useAppStore((state) => state.setSessionConfig);
   const recordChatLink = useAppStore((state) => state.recordChatLink);
+  const queueChatLink = useAppStore((state) => state.queueChatLink);
   const navigate = useAppStore((state) => state.navigate);
   const loadPhaseRunsForSession = useAppStore((state) => state.loadPhaseRunsForSession);
   const setAgentDraft = useAppStore((state) => state.setAgentDraft);
@@ -136,6 +146,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
   const [sessionId, setSessionId] = useState<SessionId | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [unlinked, setUnlinked] = useState<Landed | null>(null);
 
   const drafterProviders = useMemo<ReadonlyArray<ProviderId>>(() => {
     const offered: ReadonlyArray<ProviderId> = connectedProviders.filter(isChatProvider);
@@ -217,6 +228,41 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
     !isStarting &&
     (mode === 'new' || target !== null);
 
+  const finish = (landed: Landed): void => {
+    setUnlinked(null);
+    onDone({
+      id: crypto.randomUUID(),
+      label: landed.label,
+      title: landed.title,
+      sessionId: landed.sessionId,
+    });
+    void landOnSession({
+      sessionId: landed.sessionId,
+      draft: landed.draft,
+      navigate,
+      loadPhaseRunsForSession,
+      readAgents: ({ sessionId: id }) => useAppStore.getState().sessionPhaseRuns[id] ?? [],
+      readDraft: ({ agentId }) => useAppStore.getState().agentDraft[agentId] ?? '',
+      setAgentDraft,
+    });
+  };
+
+  const linkThenFinish = async (landed: Landed): Promise<void> => {
+    try {
+      await recordChatLink({
+        chatId: chat.id,
+        sessionId: landed.sessionId,
+        messageId: anchorMessageId,
+        kind: 'new',
+      });
+    } catch {
+      setUnlinked(landed);
+      setIsStarting(false);
+      return;
+    }
+    finish(landed);
+  };
+
   const start = async (): Promise<void> => {
     if (brief === null || !canStart) {
       return;
@@ -237,30 +283,25 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
         createSession,
         setSessionConfig,
       });
-      await recordChatLink({
-        chatId: chat.id,
-        sessionId: started.sessionId,
-        messageId: anchorMessageId,
-        kind: mode,
-      }).catch(() => undefined);
-      onDone({
-        id: crypto.randomUUID(),
-        label:
-          mode === 'add' && target !== null
-            ? `Added to ${sessionTitle({ session: target })}`
-            : 'Started a session',
-        title,
-        sessionId: started.sessionId,
-      });
-      void landOnSession({
+      const landed: Landed = {
         sessionId: started.sessionId,
         draft: started.draft,
-        navigate,
-        loadPhaseRunsForSession,
-        readAgents: ({ sessionId: id }) => useAppStore.getState().sessionPhaseRuns[id] ?? [],
-        readDraft: ({ agentId }) => useAppStore.getState().agentDraft[agentId] ?? '',
-        setAgentDraft,
-      });
+        title,
+        label:
+          mode === 'add' && target !== null
+            ? `Draft added to ${sessionTitle({ session: target })}`
+            : 'Started a session',
+      };
+      if (mode === 'add') {
+        queueChatLink({
+          chatId: chat.id,
+          sessionId: started.sessionId,
+          messageId: anchorMessageId,
+        });
+        finish(landed);
+        return;
+      }
+      await linkThenFinish(landed);
     } catch (failure) {
       setError(formatError(failure));
       setIsStarting(false);
@@ -268,7 +309,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
-    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+    if (isSubmitChord(event)) {
       event.preventDefault();
       void start();
     }
@@ -329,16 +370,18 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
                   onChange={(event) => patch({ title: event.target.value })}
                 />
               </label>
-              <label className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5">
                 <span className="text-label text-muted-foreground">Goal</span>
-                <Textarea
-                  autoGrow
+                <PromptField
+                  kind="document"
+                  label="Goal"
+                  hasPreview
                   minRows={4}
                   maxRows={10}
                   value={brief.goal}
-                  onChange={(event) => patch({ goal: event.target.value })}
+                  onChange={(goal) => patch({ goal })}
                 />
-              </label>
+              </div>
               <BriefItems
                 label="What we know"
                 items={brief.know}
@@ -370,13 +413,36 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
               ) : null}
             </>
           )}
+          {unlinked === null ? null : (
+            <Notice
+              tone="danger"
+              placement="inline"
+              role="alert"
+              title="Couldn't link the chat to the session"
+              body="The session is ready. The link between them was not saved."
+              actions={
+                <>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => void linkThenFinish(unlinked)}
+                  >
+                    Try again
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => finish(unlinked)}>
+                    Open the session
+                  </Button>
+                </>
+              }
+            />
+          )}
           <FormActions error={error}>
             <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={onClose}>
               Cancel
             </Button>
             <Button size="sm" disabled={!canStart} isBusy={isStarting} onClick={() => void start()}>
               {MODE_COPY[mode].action}
-              <KbdPill aria-hidden>{formatCombo('cmd+Enter')}</KbdPill>
+              <KbdPill aria-hidden>{shortcutGlyphs('composer.submit')}</KbdPill>
             </Button>
           </FormActions>
         </div>

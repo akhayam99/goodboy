@@ -10,13 +10,13 @@ describe('ComposerPlusMenu', () => {
   it('shows the prefix next to each menu entry, so the syntax is learned here', () => {
     render(<ComposerPlusMenu onAttachFiles={vi.fn()} onInsertPrefix={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'More actions' }));
-    expect(screen.getByText('Run a script')).toBeTruthy();
-    expect(screen.getByText('$')).toBeTruthy();
-    expect(screen.getByText('Start a workflow')).toBeTruthy();
-    expect(screen.getByText('~')).toBeTruthy();
-    expect(screen.getByText('Ask another agent')).toBeTruthy();
-    expect(screen.getByText('@')).toBeTruthy();
-    expect(screen.getByText('Attach files')).toBeTruthy();
+    screen.getByText('Run a script');
+    screen.getByText('$');
+    screen.getByText('Start a workflow');
+    screen.getByText('~');
+    screen.getByText('Ask another agent');
+    screen.getByText('@');
+    screen.getByText('Attach files');
   });
 
   it('calls onAttachFiles and closes when that entry is picked', () => {

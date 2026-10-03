@@ -9,9 +9,20 @@ const BARE_KIND_ROUTING = /\bkindRouting\(/;
 
 const CALCULATION = 'store/slices/agents/scopedKindRouting.ts';
 
-const WAITING_FOR_THE_POLICY_SWITCH: ReadonlyArray<string> = [
-  'features/workflows/resolveStepRouting.ts',
-];
+const STEP_ROUTING_CALL = 'resolveStepRouting({';
+
+const stepRoutingCalls = (text: string): ReadonlyArray<string> =>
+  text
+    .split(STEP_ROUTING_CALL)
+    .slice(1)
+    .map((rest) => {
+      let depth = 1;
+      const end = [...rest].findIndex((char) => {
+        depth += char === '{' ? 1 : char === '}' ? -1 : 0;
+        return depth === 0;
+      });
+      return rest.slice(0, end);
+    });
 
 const isSource = (path: string): boolean =>
   /\.(ts|tsx)$/.test(path) &&
@@ -28,6 +39,13 @@ const walk = (dir: string): ReadonlyArray<string> =>
     return isSource(path) ? [path] : [];
   });
 
+const stepRoutingCallsWithoutScope = (): ReadonlyArray<string> =>
+  walk(SRC).flatMap((path) =>
+    stepRoutingCalls(readFileSync(path, 'utf8'))
+      .filter((call) => !/\bscope\b/.test(call))
+      .map(() => relative(SRC, path).split(sep).join('/')),
+  );
+
 const callers = (): ReadonlyArray<string> =>
   walk(SRC)
     .filter((path) => BARE_KIND_ROUTING.test(readFileSync(path, 'utf8')))
@@ -35,15 +53,13 @@ const callers = (): ReadonlyArray<string> =>
 
 describe('one routing calculation', () => {
   it('asks what runs here only through selectKindRouting and its workspace twin', () => {
-    expect(
-      callers().filter(
-        (path) => path !== CALCULATION && !WAITING_FOR_THE_POLICY_SWITCH.includes(path),
-      ),
-    ).toEqual([]);
+    expect(callers().filter((path) => path !== CALCULATION)).toEqual([]);
   });
 
-  it('only shrinks the written exceptions', () => {
-    const found = callers();
-    expect(WAITING_FOR_THE_POLICY_SWITCH.filter((path) => !found.includes(path))).toEqual([]);
+  it('hands every step routing the workspace scope, so no path skips the provider policy', () => {
+    expect(
+      walk(SRC).filter((path) => stepRoutingCalls(readFileSync(path, 'utf8')).length > 0).length,
+    ).toBeGreaterThan(3);
+    expect(stepRoutingCallsWithoutScope()).toEqual([]);
   });
 });

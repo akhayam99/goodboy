@@ -92,8 +92,8 @@ opens it on a mode. Commands is the first mode.
 - **Empty input.** The verbs of the scope under For this session (or agent, or commit),
   then Recent, then Go to, Actions and Help. Go to reaches studios by name:
   Back to board inside a session, Inbox, Workflows, Impact, Changelog,
-  Notifications and Workspace settings inside a workspace, and Add workspace
-  everywhere.
+  Notifications and Workspace settings inside a workspace, and Start a new
+  project and Open a folder everywhere.
 - **Typing gives one ranked list, never regrouped.** A fuzzy subsequence match
   with bonuses for word starts, camel boundaries and runs, so `pay export`
   finds "Speed up the payout export" (`score.ts`); then frecency, uses halved
@@ -239,7 +239,8 @@ never exists on one surface only.
   workflow run: Open run, View diff; Answer, Start run, Continue step, Restart
   step, Start the next step, Restore; Copy run summary; Close, Discard and
   Delete, each confirmed. An artifact: the viewer's verbs by kind and status,
-  from the list row too. A plan part, an inbox record (with the tool verbs of
+  from the list row too, plus Delete on any stored artifact that is not already
+  deleted (Undo, no confirm) and Delete permanently on a deleted one (confirmed). A plan part, an inbox record (with the tool verbs of
   an open record), a pull request, a worktree row of the Overview (`mount`), a
   project, the Diff of a branch (`diff`), a diff file, a commit on the rewrite
   page, a storage worktree, a script, a transcript message and a link in
@@ -264,13 +265,33 @@ never exists on one surface only.
   submenu level, Escape closes and gives focus back. The row the menu acts on
   keeps a primary outline (`data-menu-open`) while the menu is open.
 - **Selection, like Finder.** A right click on a row that is part of a
-  multi-selection acts on the whole selection (the several sessions kind). On
-  an unselected row it clears the selection and acts on that row alone.
+  multi-selection acts on the whole selection (the several sessions kind, and
+  the several chats kind in the chat list). On an unselected row it clears the
+  selection and acts on that row alone.
+- **One selection bar.** The Board, the session list, the chat list, Review,
+  Branches and the Storage lists share `SelectionBar` (`packages/ui`). A checkbox shows on the
+  row under the pointer and on every row once one is picked; modifier-click and
+  the lasso stay. The bar floats at the bottom of the surface that owns the
+  selection with Clear, the count, Select all and the verbs. The sessions bar
+  takes its verbs from the `sessions` kind through `ObjectSelectionBar`, so
+  its words are the menu's words (`shortLabel` on the bar, `label` for the
+  accessible name); the chat list does the same with the `chats` kind (Archive,
+  Delete). A verb that undoes runs at once with the Undo toast; a
+  verb that does not asks in a confirmation above the bar with what goes and
+  what stays (`goes`, `stays`, `items` and `altActionId` on `ActionConfirm`).
+  The keys live in the `selection` group of the shortcut registry
+  (`selection.toggle` X, `selection.all` ⌘A, `selection.clear` Esc,
+  `selection.delete` Delete) and run through `useSelectionKeys`, which acts
+  only while the pointer or the focus is inside the list. Esc goes through the
+  escape stack: the confirmation closes first, then the selection clears. Review
+  keeps its own `review.select` and `review.selectAll`. The scroller of a
+  surface takes a bottom margin while something is selected, so the bar never
+  covers the last row.
 - **Confirm and undo.** A verb that loses work confirms inside the menu with
-  `InlineConfirm` (Delete, Discard, Close run, Merge, Close pull request,
+  `InlineConfirm` (Delete, Delete permanently, Discard, Close run, Merge, Close pull request,
   Delete script, Close worktree, Remove from session, Abort rebase). Detach
   project and a storage worktree's Remove keep their detailed confirm (the
-  detach plan, the forced remove) in their own menu. A reversible verb runs at once with an Undo toast (Archive,
+  detach plan, the forced remove) in their own menu. A reversible verb runs at once with an Undo toast (Archive, Delete on an artifact,
   Close agent). A draft verb on the rewrite page (Drop) needs neither.
 - **Blocked verbs stay.** A verb that cannot run now stays in the menu, dimmed,
   with its reason under the label, and does nothing when chosen. A verb that
@@ -363,9 +384,12 @@ screen edge, so a graze does not open it.
 
 **The session overview is the reference page.** It shows the whole surface
 grammar on one screen, so read it before designing a new surface. Here is its
-rhythm. Each section has an eyebrow label. A section header holds at most one
-action, and a section has at most one primary button. A `<Divider />` sits
-between sections, and a section never has a border. A section appears once its
+rhythm. Each section has an eyebrow label, and a section has at most one
+primary button. Projects, Next and Activity are peer sections in the pane body,
+one `PANE_RHYTHM.stack` gap apart: the header passes `headerRhythm="section"`,
+so the gap under it is the same. Space separates sections, never a
+`<Divider />`, and a section never has a border. The Activity header holds two
+controls, Filter and New. A section appears once its
 fact exists (a plan, a workflow run, a PR on a project). Before that it is one
 quiet action row (link an issue, start an agent, attach a workflow). So the
 empty session reads as a young version of the same document, not a wall of
@@ -399,7 +423,7 @@ on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
   or Ask an agent choice as the other two tabs, precompiled with that goal,
   Run a workflow preselected. Run a workflow is the same embedded
   `WorkflowBuilderView` as the Workflow tab (Orchestrated, Custom or Preset,
-  the plan, guidance, Can use, Starts, Autorun, Spend cap), with the issue as
+  the plan, guidance, Can use, Starts, when to ask, Spend cap), with the issue as
   its goal and its own draft under `kickoff-task:<workspace>`. When the issue
   maps to a project (`launchMountFor`, the Inbox rule: a GitHub or GitLab repo
   path, or a Sentry project linked or code-mapped to a project) a
@@ -451,7 +475,7 @@ reach NW-230 anymore`. Pick up a task shows only the open starred issues,
   with a `kickoff` target), the same one Overview > Workflows > Create opens:
   title, goal card with Add files and Polish, the Orchestrated / Custom /
   Preset switch, Can use, the plan preview with the orchestrator row or the
-  editable steps, guidance, Starts, Autorun, Spend cap and Start workflow with
+  editable steps, guidance, Starts, when to ask, Spend cap and Start workflow with
   its reason. Its goal field is the kickoff goal (`workflowGoal` in the
   draft), the only one on screen. Its draft lives under `kickoff:<workspace>`
   in `workflowDrafts`, so it survives leaving the kickoff, and Discard draft
@@ -602,8 +626,9 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   section. The scope segment lists App, the workspace, Providers & models and
   Tools; the section segment lists the App sections. Neither carries an
   action: Settings has no project scope, so there is no `Use workspace values`
-  to offer. The first segment of a
-  studio has no menu: studios change from the footer.
+  to offer. The first segment of a studio has no menu (studios change from the
+  footer) and is always a button back to that studio's start: Settings goes to
+  its home, Workflows to its list. On the Settings home it is the only segment.
 - **Every menu row has five slots**: lead, label with a faint second part,
   meta, a state that is always a word (from `agentStateWord`, the same reading
   `isAgentFinished` makes), and a check on the current row, which is there even
@@ -724,7 +749,7 @@ only drop under zoom.
   row, never in a modal: the primary keeps them going in a new window, the
   ghost alternative stops them and opens here. A closed `Disconnected` group
   lists workspaces removed from disk, each with a small `Reconnect`. Settings
-  opens on App > General; only Workspace settings lives behind this popover,
+  opens on its home; only Workspace settings lives behind this popover,
   so the bar holds no second settings control.
 - **Identity is pinned and mounted once.** Workspace identity stays at the left
   of the top bar on the board, inside sessions, and under studios. Exactly one
@@ -759,9 +784,16 @@ flow.
 Centre: the Goodboy chip. It holds everything about Goodboy itself, the way
 the Apple menu or Linear's help menu does. Its label says one thing, in this
 order: an update is ready, setup is unfinished (with its progress), or
-"Goodboy beta". Its popover leads with Report a bug (with ⌘I, and Draft saved
+"Goodboy | BETA v<version>" with the installed version. Below the
+`chrome-labels` width it keeps only the mark and the version. The version is
+`APP_VERSION` (`shared/lib/appVersion.ts`), which the build stamps from
+`apps/desktop/package.json` as `__APP_VERSION__`, so it never waits on Tauri
+and shows in mock scenes too. The update pill is soft, enters once and holds
+still. Its popover leads with Report a bug (with ⌘I, and Draft saved
 when a draft waits), then the version and release notes, the update, the setup
-checklist, What's new, keyboard shortcuts and Sponsor. Report a bug closes the
+checklist, What's new, keyboard shortcuts, Sponsor and Follow on X. The
+addresses live in `shared/lib/productLinks.ts`; **Settings > Help** has the
+same X link under Follow Goodboy. Report a bug closes the
 popover and opens the report sheet. The popover opens by itself once, when the
 first agent finishes a turn, and never while the setup wizard is open; the
 checklist has no floating card.
@@ -829,14 +861,22 @@ items (provider, project, code host, task manager, first session, profile); a
 skipped code host or task manager reopens its own step, and the first session
 ticks when an agent finishes a turn, not when a session row exists.
 
-Right: Inbox, Workflows, Impact and Settings. Settings always opens App >
-General, with or without a workspace; Workspace settings opens only from the
+Right: Inbox, Workflows, Impact, Providers and Settings. Settings (and ⌘,)
+always opens the Settings home, with or without a workspace; Workspace settings
+opens only from the
 gear on the current-workspace row of the workspace popover. Impact is a
 destination, so it has a launcher; the launcher opens its Overview tab, while
 the spend figure in the top bar and the `Impact: Spend` palette entry open its
-Spend tab. Providers & models is a Settings scope, reached from the Settings
-rail and the palette, so it has no footer launcher. Changelog opens from the
-Goodboy chip and the palette, so it earns no footer entry either.
+Spend tab. **Providers** is not a door to the Providers & models page: it opens
+a menu that changes things in place (`AppFooter/ProvidersMenu`). On top, every
+connected provider with its 5-hour and weekly limits; under "For <workspace>",
+the same `ProviderPolicyList` as Defaults > Providers, in order, writing through
+the same `setProviderPolicy`; then Connect for each CLI provider that is not
+connected, and Open Providers & models. It reads the cached providers and never
+refreshes them on open. With no provider connected the button pulses; that pulse
+replaced the top bar's old Connect a provider chip, so the limits strip shows
+nothing until a provider is connected. Changelog opens from the Goodboy chip and
+the palette, so it earns no footer entry.
 
 The footer is an `@container/footer` on the same `chrome-labels` step as the
 top bar. Below it, every launcher label and the **Link integration** label
@@ -857,8 +897,8 @@ Goodboy chip never hides. Past that the glyph strip scrolls.
   Opening any studio closes the others.
 - **Before any workspace exists, the footer keeps its app half**: Settings and
   the Goodboy chip. The integration strip, Inbox and Workflows belong to a
-  workspace and wait for one. Settings then opens on App and lists only App and
-  Providers & models, and Providers opens on an account instead of on the
+  workspace and wait for one. Settings then opens its home with only the App and
+  Providers & models groups, and Providers opens on an account instead of on the
   workspace defaults. Precedent: VS Code keeps its status bar and Manage gear
   with no folder open.
 
@@ -884,15 +924,32 @@ open, and when something below already claimed the event. A surface registers
 its plain keys with `useShortcut` and an enabled flag, never with its own
 window listener.
 Every entry also names the task `group` it belongs to (General, Workspaces,
-Navigate, Session, Views, Review, Diff, Window), and Settings > App > Shortcuts lists the
-groups in that order, read top to bottom per column. Entries that share a
+Navigate, Session, Views, Lists, Review, Diff, Window), and Settings > App > Shortcuts lists the
+groups in that order, read top to bottom per column. An entry that works only in
+one place carries a `scope` (the Inbox and Notifications lists, the Review view,
+the Diff view, the terminal, a chat composer, an activity row, a workspace
+open, a code or an explore session). The page prints the place under the group
+name when the whole group shares it, or under the row when it does not. A scope
+also lets two surfaces use the same plain key: J, K, R, S and E mean other
+things in a list than in Review, and the registry test only asks the combos to
+be unique inside one scope and never to shadow a global one. Entries that share a
 `family` (only the nine workspace digits today) render as one row, "Go to
 workspace 1 to 9" with ⌘1-9, while the registry keeps one entry per chord. A
 family is only for chords that do the same thing to a different index: the
 integration digits (⌘⌥1 to ⌘⌥6) open different lenses and keep a row each.
 A few entries are keys a focused control answers, not global chords: Submit
-comment (⌘↵) and Open the workflow of an activity row (⇧↵, the only combo
-without ⌘). They sit in the registry so the list and the tooltips name them.
+(⌘↵, `composer.submit`, the one id behind every composer, editor and the
+workspace switcher; `isSubmitChord` reads it and keeps the lenient match that
+accepts Ctrl as well as ⌘), the two message keys `PromptField` reads (↵
+`composer.send` and ⇧↵ `composer.newLine`, see docs/turns.md → One composer) and Open the workflow of an activity row (⇧↵, the only combo
+without ⌘). The list keys (`list.next`, `list.previous`, `list.open`,
+`list.openInTool`, `list.reply`, `list.star`, `list.dismiss`, `list.search`) are
+the same kind: `useListKeys` matches them against the registry, so the rail
+hints, the Shortcuts page and the guide read the same entries. It keeps its own
+window listener because Enter must yield to a focused button (a row button of
+the list excepted). The Review view's Select every fixable comment (⌘A,
+`review.selectAll`) sits on the same footing, and the registry test lets it
+use ⌘A because the Review view only answers it outside a text field. The selection keys (`selection.toggle`, `selection.all`, `selection.clear`, `selection.delete`) are the same kind: `useSelectionKeys` matches the first, second and fourth against the registry, and `SelectionBar` answers Esc through the escape stack; the registry test lets `selection.all` use ⌘A because the hook yields to a text field. They sit in the registry so the list and the tooltips name them.
 The control that owns each one handles its own key event and never registers
 it with the dispatcher; the activity row matches through `eventMatches`, and so
 does Shift+F10 (`menu.open`), which opens the context menu of the focused row.
@@ -938,13 +995,14 @@ one is open at a time.
 - **One frame for every studio.** `StudioFrame` (`app/components/StudioFrame`)
   mounts only while a studio is open and stays mounted from Inbox to Workflows
   to Settings. It owns the 40px band (the studio's icon and name, the body's
-  subtitle and accessory, Done), the Esc layer and the motion: `studio-in` when
+  subtitle and accessory, Close), the Esc layer and the motion: `studio-in` when
   it opens, `studio-out` when it closes, and on a switch only the band's name
   fades while the new body enters in 160ms. A studio body still renders
   `StudioShell`; inside the frame it only hands its chrome to the band. Until a
   body's chunk arrives, the frame shows one of three opaque skeletons: `list`
   (Inbox, Notifications, Add workspace, Impact), `rail`
-  (Settings) or `grid` (Workflows, Changelog, the guide, pairing). With no studio
+  (a Settings page) or `grid` (Workflows, Changelog, the guide, pairing, the
+  Settings home). With no studio
   open, no frame node exists, so nothing covers the page.
 - **One Esc stack.** The frame, a body that holds Esc (the Inbox with a record
   open), the agent overlay and the delete confirm all register with
@@ -980,22 +1038,60 @@ one is open at a time.
   its own workspace, or its session's, and a row with neither is app-wide and
   shows in every workspace. Mark all read and Delete all act on that same scope.
   In the studio, rows are grouped by day (Today, Yesterday, This week, Older),
-  j and k or the arrow keys move, Enter runs the row's action and e dismisses.
+  J and K or the arrow keys move, Enter runs the row's action and E dismisses.
   The rail rows (`packages/ui` `FacetRail`), the list keys
   (`shared/hooks/useListKeys`) and the day grouping (`shared/utils/groupByDay`)
   are shared primitives. The inbox uses all three: its rail filters by view,
   type and source (one pick per section, a tool that did not load says so in
   its row), its one-line rows are grouped by the same days in time order, and
-  j and k move the selection while the record follows beside the list. Enter
-  launches or opens the session, o opens the record in its tool, r focuses the
-  reply box, / focuses the search, and Escape closes the record before the
-  studio. Below a 720px list column the rail folds into a Filters button in
+  J and K move the selection while the record follows beside the list. The
+  inbox opens with its first row chosen, so those keys act at once; Enter opens
+  the launch popover on that row (⌘↵ in the panel launches) or the session once
+  one is linked, O opens the record in its tool, R focuses the reply box when
+  the record has one (a Sentry issue has none: the rail drops Reply and R does
+  nothing there, `recordCanReply`), S stars or unstars, / focuses the search, and Escape in
+  the search leaves the field. Escape closes a record you picked before the
+  studio, and closes the studio when the first row was only chosen for you. Below a 720px list column the rail folds into a Filters button in
   the list header.
+- **Every studio rail resizes.** `StudioRailLayout` (Settings, Guide, Chat,
+  Notifications, Changelog, Bitbucket) and the Inbox filters rail drag from
+  their right edge between 220 and 420px, step 8px (32 with Shift) with the
+  arrow keys, and go back to their default (256 narrow, 288 standard) on a
+  double click. Each studio keeps its own width
+  (`goodboy:studio-rail-width:<studio>:v1`), and the rail skeleton opens at
+  that width. `useResizableWidth` (`@goodboy/ui`) owns read, clamp and save
+  for these rails, the session sidebar and the drawer: while the pointer
+  moves the width lives in a CSS variable (the drawer writes its own style),
+  so nothing renders and nothing is saved until the drag ends. Precedent: VS
+  Code, Zed and Linear sidebars.
+- **Settings opens on a home that mirrors its rail.** The footer, ⌘, and the
+  palette's Open settings land on it; a link that names a page (a scope, a
+  section, a provider or a tool) skips it. It shows the rail's four groups
+  (App, Workspace, Providers & models, Integrations), each titled with where
+  it applies, and every page of a group as a card: the concept icon on its
+  tone, the name and the same status line the rail shows (a quiet hint when
+  nothing needs doing). Cards and rail rows come from one list,
+  `settingsDirectory`, so no card exists without a rail row. The page opened
+  last carries `Last opened` and takes the focus, so Enter goes back to it.
+  The status lines are read once per studio (`useSettingsStatus`, on the
+  minute clock of `useNow`) and feed the home and the rail; the home starts no
+  loading of its own (no storage scan, no branch scan, no provider refresh).
+  Without a workspace the Workspace and Integrations groups are left out.
+  Opening a card morphs the home into the rail: every card shrinks and slides
+  into its rail row in 230ms (a page nested under Providers & models or
+  Integrations lands on its group row and fades), the rail shows once they
+  land and the page enters with `nav-step-in`. `useHomeToRailMorph` flies
+  copies of the cards on a layer above the studio, so no rendered row moves.
+  Reduced motion, or an engine without `Element.animate`, switches at once.
+  Precedent: the Google Account home and the iOS settings list.
 - **Settings nests items in its rail.** The App items (General, Shortcuts,
   Backup, Storage, Security findings, Help, Danger zone) always sit under the
   App row as indented
   rows, whichever scope is active, so switching scope never moves a row above
-  the pointer. The panel shows one item at a time. Providers & models nests
+  the pointer. The Workspace pages (Projects, About you, New sessions, After
+  merge, Review replies, Permissions, Disconnect) sit the same way under the
+  Workspace row (`workspacePages.ts`, `SettingsRailPageGroup`). The panel
+  shows one item at a time. Providers & models nests
   Defaults and one row per provider, and Integrations nests one row per tool. Those
   two lists open and close with `Reveal`, and the rail stays one mounted
   element across scopes: `SettingsStudio` portals each scope's nested list and
@@ -1004,16 +1100,56 @@ one is open at a time.
   (`SETTINGS_PANE_ENTRY`). So no scope adds a second rail column. Every scope
   panel keeps the reading width. Precedent: the VS Code settings table of
   contents and Linear's settings sidebar.
+- **Workspace settings is one page per area, each part in a card.** A
+  workspace page carries the page title, the workspace name and one line of
+  help; every part is a `Band` with one heading style (eyebrow, icon, hint
+  under it) and help written under each field, never in a tooltip. Only the
+  page on screen mounts, so Permissions and Review replies compute nothing
+  while another page is open. The old anchors (`projects`, `profile`,
+  `general`, `after-merge`, `review-replies`, `permissions`, `danger`) now
+  pick a page (`workspacePageOf`); `dev-project` lands on Projects with the
+  conversion open. The workspace is renamed from the Projects page. The
+  attribution line lives on New sessions only, and Review replies links to it.
+  Turning a plain folder into a dev project is an inline flow in the Projects
+  page (`ConvertWorkspaceFlow`), never a dialog: linking a plain folder opens
+  Settings there once the add workspace studio has closed. Skills stays
+  hidden behind its feature flag. Precedent: GitHub repository settings and
+  Linear's settings pages.
+- **Restore defaults and copy from another workspace share one inline
+  flow.** The page menu (⋯ in the title row) of every page that owns settings
+  offers `Restore defaults` and `Copy from…`; the Workspace group of the
+  Settings home offers `Copy settings from…` and `Restore defaults` for every
+  page at once. The flow opens under the title as a band, never as a
+  popover: pick the workspace, then a preview grouped by page with a
+  checkbox per page and the from and to values, then the action row (`Copy N
+settings`, `Back`, `Cancel`). It ends on a status line with `Undo`. The
+  preview is computed when the flow opens (`loadFlowSources`), not on every
+  render. Which keys a page owns comes from `pageKeys` (`features/settings/
+pageKeys.ts`), typed so a new override key does not compile until it has
+  an owner; provider defaults belong to Providers & models and are never
+  copied, and neither are projects, folders, integration accounts,
+  permission history or `bootstrap.*` keys. Restoring writes `null`; every
+  override change of one copy or restore is one `patchWorkspaceOverrides`
+  through the queued workspace writer. A field whose value differs from the
+  default shows a faint dot after its label (`Changed from default. Default:
+X`) and a `Reset` in its own ⋯ menu (`WorkspaceFieldRow`). Precedent:
+  JetBrains Copy to Project and VS Code's Modified marker with Reset Setting.
 - **Storage is the one place for disk space, scoped by a picker.** App >
   Storage lists every worktree folder Goodboy made, grouped by repository,
-  under three filters: To review, In use and Kept. The page is two clusters
-  (`StorageCluster`), each with its own accent on a tinted icon and a left
-  rail: `Free up space` (primary: the summary, Worktrees, Artifacts from
-  deleted sessions, History and app data, Cleanup) and `Clean up branches`
-  (merged: Branches, then the scoped workspace's after-merge rule with a
-  `Change` link to Workspace settings). A scope picker
+  under three filters: To review, In use and Kept. Each part is a card
+  (`Band`) under a plain section title: the summary, Worktrees (with `Scan
+another repository` at its foot), Artifacts of deleted sessions, and
+  Transcripts and app data. Branches is its own App page (`branches` in
+  `appSections.ts`, `BranchesPage`): the scoped workspace's after-merge rule
+  with a `Change` link, `Recently deleted` (restore or delete for good,
+  loaded from `deleted_branches` on open, which also releases the refs of
+  deletions older than 14 days), then the branch list, safe ones first with
+  `Show all branches` and a `Made by` picker. A scope picker
   (`StorageScopePicker`, `Listbox`) sits in the page header row next to
-  `Check again` (`StorageHeaderActions`): the current
+  `Suggest cleanup after` and `Check again` (`StorageHeaderActions`); the
+  Branches header has the same picker without `Removed workspaces`
+  (`BranchesHeaderActions`). `openStorage`, the free space chip and the
+  cleanup notifications always land on Storage. The picker lists the current
   window's workspace, every other workspace with its own weight, `Removed
 workspaces` (folders whose owning workspace is gone or was never linked),
   and `All workspaces` with the machine total. The scope drives the summary
@@ -1036,27 +1172,31 @@ workspaces: <total>, <can go> can go` line under the numbers. The
   settings table (`storage.suggestAfterDays`, `storage.lastNudgeAt`,
   `storage.lastNudgeBytes`). Sizes are measured one folder at a time after
   boot, never on the boot path. The worktree scan itself sends nothing.
-  In the branches cluster, `Branches` (`BranchesSection`) lists local branches
+  On the Branches page, `BranchesSection` lists local branches
   only, in the same scope, grouped by project. It scans only when it opens:
   one `git for-each-ref` per project (`project_branches`), with the merge
   test cached by both tips and fed each branch's merged pull request head
-  (`listMergedRequestHeads`). A filter picks `Made by Goodboy` (the default,
-  branch names from `session_worktrees` and `retained_worktree_paths`),
-  `Yours` (plus branches whose tip is authored by the repo's `user.email`,
-  shown `By you`) or `All local`; protected branches never show. Tabs split
-  `Safe to delete` (merged by merge commit or rebase, merged by its pull
-  request with nothing after the merged head, or never used), `Needs a
-look` (`Merged, then N new commits`, unmerged and gone on origin, local
-  only for over 30 days, or older than 90 days; never preselected) and
-  `All`. Each row has
-  the session chip (`SessionChip`: stage dot, title, stage word, opens the
-  session), `On origin` / `Local only` / `Gone on origin`, the verdict and
-  the last commit's age. Delete goes through an InlineConfirm in the bulk
-  bar that counts the commits an unmerged branch takes with it and offers
-  `Also delete N on origin` only for Goodboy's own pushed branches in repos
-  where GitHub does not already delete merged branches. Deletes use the
-  same compare-and-delete and 14-day restore as the after-merge rule; a
-  success Notice carries `Undo` for the batch. A branch another worktree
+  (`listMergedRequestHeads`). The `Made by` picker shows all local branches
+  (the default), `Made by Goodboy` (branch names from `session_worktrees` and
+  `retained_worktree_paths`) or `Yours` (plus branches whose tip is authored
+  by the repo's `user.email`, shown `By you`); protected branches never show.
+  The list opens on `Safe to delete` (merged by merge commit or rebase,
+  merged by its pull request with nothing after the merged head, or never
+  used), and `Show all branches` adds the ones that need a look (`Merged,
+then N new commits`, unmerged and gone on origin, local only for over 30
+  days, or older than 90 days; never preselected) and the kept ones. Every
+  branch row and every Recently deleted row sit on one grid
+  (`BRANCH_TABLE_GRID`, each cell marked with its `data-cell` name): select, branch,
+  session title, session state, origin state (`On origin` / `Local only` /
+  `Gone on origin`), the status on one line with how it merged as a muted
+  suffix and in its tooltip, the last commit's age and the action. A
+  Recently deleted row puts the project, the days since, the short sha and
+  the days left in the same columns. Delete on a merged branch acts at once
+  and a toast carries `Undo`; an unmerged one confirms above the bulk bar,
+  which counts the commits it takes. `Also delete N on origin` sits above
+  the bar only for Goodboy's own pushed branches in repos where GitHub does
+  not already delete merged branches. Deletes use the same
+  compare-and-delete and 14-day restore as the after-merge rule. A branch another worktree
   holds reads Protected, so its folder goes first from Worktrees.
   In the space cluster, under Worktrees, "Artifacts from deleted sessions" lists plans, reports
   and wireframes whose session is gone, under To review and Kept, with Open,
@@ -1075,15 +1215,17 @@ look` (`Merged, then N new commits`, unmerged and gone on origin, local
   workspace; without one it says so instead of scanning anything.
 - **Settings rail tone is state, never decoration.** Each row carries its
   concept icon from `CONCEPT_ICONS`. One reader, `railSubtitles({ state,
-workspaceId })`, owns every row's subtitle and tone (it replaced three
-  separate selectors read straight from `SettingsRail`, and a regression test
-  spies on `invoke` to keep it invoke-free at render). A dot appears only
+workspaceId, nowMs })`, owns every row's subtitle and tone (it replaced three
+  separate selectors read straight from `SettingsRail`). `useSettingsStatus`
+  calls it once per studio and hands the result to the rail and the home, and
+  a test mounts the home on the strict `invoke` mock to keep it free of
+  commands and loads at render. A dot appears only
   when something needs doing: warning on Providers & models when a connected
   CLI is too old for a model it serves or no provider is connected
   (`selectProviderAttention`, with the reason as the row subtitle), info on
   General while an app update is ready, info on Storage with "N GB can go" as
   its subtitle once clean idle folders pass 10 GB (warning when the disk has
-  under 10 GB free and at least 1 GB can go, `selectStorageAttention`),
+  under 10 GB free and at least 1 GB can go, `storageAttention`),
   warning on Security findings with "N open" once the current workspace has
   an undismissed finding (`selectSecurityFindingsAttention`), and warning on
   Workspace with "N folders not found" once one of its projects reads
@@ -1255,7 +1397,10 @@ agentId, pane })` asks for either, and the address prints it as a last
   no verbs there, only **Open in Review (N)**, which calls `openReview` with
   the destination `{ kind: 'threads', threadIds }`. That destination needs no
   mount and no pull request: Review focuses the first thread of the set it
-  has, and the set stays in `reviewSelections[sessionId]`. Back, or Up when
+  has, and the set stays in `reviewSelections[sessionId]`. The destination
+  `{ kind: 'notes', threadIds }` does the same for diff notes and first sets
+  the review source to the local notes, so it lands on your notes even with a
+  pull request open. Back, or Up when
   Review is the entry below, returns to Review with that comment focused, and
   Up from a page reached any other way opens Review on that comment. There are
   no return pills: the Diff and the resolver page come back through Back.
@@ -1283,8 +1428,11 @@ agentId, pane })` asks for either, and the address prints it as a last
 
 ## Starting a project from nothing
 
-The empty screen and the workspace launcher offer **Start a new project** and
-**Open a folder**. The wizard's project step offers the same two. Start opens
+The empty screen, the workspace launcher, the workspace switcher and the
+command palette offer **Start a new project** and **Open a folder**, in that
+order. The wizard's project step offers the same two. Settings, Workspace,
+Projects names its form **Start a new project** too and opens the same form in
+line. **Add workspace** names only the studio that groups projects. Start opens
 one inline form (`NewProjectForm`), never a dialog: a name, a location (the
 last parent folder, else the home folder, changed with the system picker) and
 the four things the click does. A name that exists in the parent says so and
@@ -1319,7 +1467,8 @@ Every drawer is one primitive, `DrawerColumn` from `@goodboy/ui`, never a
 split nested inside a pane. `AppShell` puts one beside the main area, and a
 studio body puts one beside its list. It opens at 400px, resizes from 340 to
 560px from a handle on its left edge, and keeps one saved width
-(`goodboy:right-drawer-width:v1`, clamped on read) for every drawer. It is a
+(`goodboy:right-drawer-width:v1`, clamped on read and written once when a drag
+ends) for every drawer. It is a
 floating card: 8px from the top, right and bottom edges and from the column,
 radius 10 (`rounded-frame`), `bg-subtle`, a hairline border. When the main
 area minus the drawer and the two gutters would leave the content column
@@ -1357,15 +1506,25 @@ drawer marks it seen when it opens, on any tab, and again when it closes. A
 session never looked at starts its baseline the first time it loads, so the
 rows it already had never read as new. The chip shows
 a pulsing dot while the summarizer writes and a danger glyph when it failed,
-with Retry in the drawer's status line. The old addresses `s/{session}/context`
+with Retry in the drawer's **Context updates** row. The old addresses `s/{session}/context`
 and `context/goal`, `context/decisions`, `context/summary` resolve in
 `canonicalLocation` to the overview with this drawer open on the matching tab.
 The drawer header has one action, **Copy as brief**, which copies Goal,
 Decisions, Summary and Open questions in that order (`shareableContext`).
 
-The drawer sits on the `subtle` panel surface, like every `DrawerFrame`. Its
-tabs are a `SegmentedTabs` strip at its own width, with the status line on the
-same row; the Decisions tab carries the count and the change dot.
+The drawer sits on the `subtle` panel surface, like every `DrawerFrame`.
+**Context updates** (`ContextUpdates`, a `Collapsible`) sits above the tabs:
+closed, it says `Updated 2 min ago`, `Queued`, `Updating…` or `Couldn't update`;
+open, it lists the last round (`summarizerRounds`: when, how many turns or a
+full pass, model and effort, tokens and cost, what changed as a comma list of
+links to the tabs, every value on the same column), **Change model** (Settings, Providers & models, Defaults, scrolled to
+Step summaries) and **Update now**. Update now queues a consolidation pass
+through `requestContextUpdate`, behind any pass in flight and never beside it;
+`summarizerPending` holds the turns waiting and whether a requested update is
+queued, and the row reads only that queue state. The tabs are a
+`SegmentedTabs` strip at its own width; the Decisions tab carries the count and
+the change dot. The engine has one name, **Context**, in Activity, in the
+drawer and in these docs.
 
 Every tab reads as labelled blocks (`ContextBlock`: a `fill` band with an
 eyebrow title, an icon and a count). A block shows its key line first and
@@ -1447,8 +1606,13 @@ page. The source is a worktree (a file opened from the chat) or a commit (a
 GitHub commit link clicked anywhere in a session; outside a session the link
 opens in the browser). It shows unified and wrapped, and a worktree peek offers
 `Open in Diff`, which opens the Diff lens on that mount with the file in focus.
-`diff-notes` lists the open notes of the Diff lens by file; the count in the diff
-toolbar opens it.
+`diff-notes` is the notes summary of the Diff lens: the notes grouped by state
+(Not started, Working, Needs you, Ready to accept, Failed, and Done folded),
+each with file and line, a one-line excerpt, the model, effort and commit style
+of its fixer, and Fix or Open brief. `Open in Review` sits in its header. The
+count in the diff toolbar opens it, and Start in the fix strip opens it too. It
+reads the notes, their queue items and their attempts only (`useNoteFixes`),
+never the rows of the pull request.
 
 ## The Diff lens
 
@@ -1592,8 +1756,17 @@ on file); a viewed file collapses, and generated or binary files start
 collapsed. Rows are a CSS grid with `role="grid"`, never a table. Click a line
 number to comment, drag or shift-click to cover a range; the composer and the
 threads sit under the last line of the range. ⌘Enter saves, Escape cancels.
-The diff toolbar carries `N notes` and `Resolve in Review` in the Diff lens,
-which opens Review on the same notes; neither is a footer bar. Write review puts
+The diff toolbar carries `N notes`, `Open in Review` and `Fix N notes` in the
+Diff lens; none is a footer bar. `Open in Review` opens Review on your notes
+with the review destination `{ kind: 'notes' }`, which picks the local source
+even when a pull request is open. A note shows `Fix` (primary), `Close note`
+and `Delete`; Fix and `Fix N notes` open the fix strip under the diff toolbar
+(the same `ReviewLaunchStrip` as Review, with the Runs on row) and never start
+an agent on the first click. Start launches one fixer per note through
+`startBatch` and opens the notes summary. While a fixer works on a note, Close
+note and Delete are disabled with "A fixer is working on this note". Close note
+goes through `closeResolvedNote`, the same path Review uses. A first lap
+session gets the first lap refusal in place of the strip. Write review puts
 its form under the last file: the line comments with Edit and Delete on hover (Delete offers Undo), the verdict,
 the summary, and one primary that says the verdict (`Approve`,
 `Request changes`, `Submit comments`), ⌘↵ from the summary. The form's `⋯`
@@ -1648,3 +1821,17 @@ mount's group or in place of the edited row. Saved scripts of workspace
 projects that are not in the session are named in one line under the groups.
 The session sidebar has no scripts section: `$` launches, the Now chip
 watches.
+
+Every row also has a pin, always visible. A pin belongs to the project, not
+the worktree: its id is the source, the folder and the name
+(`scriptPinId`, a saved script by its id), stored as a JSON list in the app
+setting `scripts.pinned.<projectId>` (`toggleScriptPin`, loaded by
+`loadScriptPins` through `useScriptPins`). Pinned scripts of the mounted
+projects sit in a `Pinned` strip at the top of the lens, one click runs one in
+its group's worktree, and the palette lists them under `$` with the project
+name (`scriptPinEntries`, run through `runPinnedScript`; saved scripts show
+their project name too). On the workspace Projects page every row has a
+`Scripts` fold (`ProjectScriptsFold`, closed by default) that reads the
+project folder only when it opens (`loadProjectRootScripts`, kept in memory
+by root path) and says `Scripts on <base>`, with the same pin; a project with
+no package.json or composer.json says so.

@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { Input, SectionHeader, Switch } from '@goodboy/ui';
+import { Band, Input, Switch } from '@goodboy/ui';
 import { VerbositySelect } from '../../../../features/session/components/VerbositySelect';
 import { DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
 import { useAppStore } from '../../../../store';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 import { isAttributionEnabled } from '../../../../shared/utils/attribution';
-import { WorkspaceDefaultRow } from './WorkspaceDefaultRow';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { WorkspaceFieldRow } from './WorkspaceFieldRow';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -78,14 +79,20 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
   };
 
   return (
-    <section aria-label="New sessions" className="flex flex-col gap-2">
-      <SectionHeader
-        label="New sessions"
-        hint="Defaults every new session in this workspace starts with."
+    <>
+      <Band
+        inset="content"
+        label="Branches and comments"
+        ariaLabel="Branches and comments"
+        hint="How the work is named and signed."
+        icon={<CONCEPT_ICONS.branch size={ICON_SIZE.row} aria-hidden />}
         headingLevel={2}
-      />
-      <div className="grid grid-cols-1 gap-x-8 gap-y-1 @xl:grid-cols-2">
-        <WorkspaceDefaultRow label="Branch prefix" help="Prefixes every new session branch.">
+      >
+        <WorkspaceFieldRow
+          workspaceId={workspaceId}
+          field="branchPrefix"
+          help="Every new session branch starts with this, then a slash and a short name."
+        >
           <span className="flex items-center gap-1">
             <Input
               type="text"
@@ -106,10 +113,38 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
             />
             <span className="text-code text-faint-foreground">/&lt;slug&gt;</span>
           </span>
-        </WorkspaceDefaultRow>
+        </WorkspaceFieldRow>
+        <WorkspaceFieldRow
+          workspaceId={workspaceId}
+          field="attribution"
+          help="Signs every comment Goodboy posts to GitHub, GitLab, Bitbucket, Jira, Linear and Slack, review replies included."
+        >
+          <Switch
+            label={attributionFooter ? 'On' : 'Off'}
+            checked={attributionFooter}
+            disabled={busy}
+            onChange={(next) =>
+              void persistOverrides({
+                patch: { attributionFooter: next },
+                failureTitle: "Couldn't save the attribution line setting",
+              })
+            }
+          />
+        </WorkspaceFieldRow>
+      </Band>
 
-        <WorkspaceDefaultRow
-          label="Parallel agents"
+      <Band
+        inset="content"
+        label="Agents"
+
+        ariaLabel="Agents"
+        hint="How much runs at once, and how agents talk."
+        icon={<CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden />}
+        headingLevel={2}
+      >
+        <WorkspaceFieldRow
+          workspaceId={workspaceId}
+          field="parallelAgents"
           help="Lets eligible agents split independent work and reconcile it in one output."
         >
           <Switch
@@ -123,40 +158,24 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
               })
             }
           />
-        </WorkspaceDefaultRow>
-
-        <WorkspaceDefaultRow label="Output verbosity" help="Response style for agents.">
-          <div className="w-36">
-            <VerbositySelect
-              value={verbosity}
-              onChange={(v) =>
-                void persistOverrides({
-                  patch: { defaultVerbosity: v },
-                  failureTitle: "Couldn't save the output verbosity",
-                })
-              }
-              disabled={busy}
-            />
-          </div>
-        </WorkspaceDefaultRow>
-
-        <WorkspaceDefaultRow
-          label="Attribution line"
-          help="Signs every comment Goodboy posts to GitHub, GitLab, Bitbucket, Jira, Linear and Slack."
+        </WorkspaceFieldRow>
+        <WorkspaceFieldRow
+          workspaceId={workspaceId}
+          field="verbosity"
+          help="How much agents explain while they work."
         >
-          <Switch
-            label={attributionFooter ? 'On' : 'Off'}
-            checked={attributionFooter}
-            disabled={busy}
-            onChange={(next) =>
+          <VerbositySelect
+            value={verbosity}
+            onChange={(v) =>
               void persistOverrides({
-                patch: { attributionFooter: next },
-                failureTitle: "Couldn't save the attribution line setting",
+                patch: { defaultVerbosity: v },
+                failureTitle: "Couldn't save the output verbosity",
               })
             }
+            disabled={busy}
           />
-        </WorkspaceDefaultRow>
-      </div>
-    </section>
+        </WorkspaceFieldRow>
+      </Band>
+    </>
   );
 };

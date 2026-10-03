@@ -22,14 +22,17 @@ import { TURN_INTO_WORK_LABEL, TurnIntoWorkPanel } from '../TurnIntoWorkPanel';
 import { ChatArchivedBanner } from './ChatArchivedBanner';
 import { ChatEmpty } from './ChatEmpty';
 import { ChatHeader } from './ChatHeader';
+import { ChatHeaderDelete } from './ChatHeaderDelete';
 import { ChatSessionsChip } from './ChatSessionsChip';
 import { ChatThread } from './ChatThread';
+import { useChatDrafts } from '../../hooks/useChatDrafts';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly chat: ChatSummary | null;
   readonly onCreated: (chatId: ChatId) => void;
+  readonly onRemoved: () => void;
 };
 
 type WorkRequest = {
@@ -41,7 +44,7 @@ const NO_MESSAGES: ReadonlyArray<ChatMessage> = [];
 
 const NEW_CHAT_HEADING = 'New chat';
 
-export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
+export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => {
   const chatId = chat?.id ?? null;
   const workspaceName = useAppStore(
     (state) => state.workspaces.find((workspace) => workspace.id === workspaceId)?.name ?? '',
@@ -76,6 +79,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
   const [draftRouting, setDraftRouting] = useState<ChatRouting | null>(null);
   const [work, setWork] = useState<WorkRequest | null>(null);
   const linked = useChatSessions({ chatId });
+  const drafts = useChatDrafts({ chatId });
   const { saved: savedDefault, read: readSavedDefault } = useChatDefaultModel({ workspaceId });
 
   useEffect(() => {
@@ -165,16 +169,19 @@ export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
         }
         action={
           chat === null ? null : (
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={!canStartWork}
-              aria-expanded={work !== null}
-              onClick={() => openWork(null)}
-            >
-              <Play size={ICON_SIZE.row} aria-hidden />
-              Start work
-            </Button>
+            <>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={!canStartWork}
+                aria-expanded={work !== null}
+                onClick={() => openWork(null)}
+              >
+                <Play size={ICON_SIZE.row} aria-hidden />
+                Start work
+              </Button>
+              <ChatHeaderDelete chat={chat} onRemoved={onRemoved} />
+            </>
           )
         }
       />
@@ -194,6 +201,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
           onStartWork={openWork}
           sessions={linked.entries}
           onOpenSession={openSession}
+          drafts={drafts}
         />
       )}
       <div className="shrink-0 pb-3.5 pt-1.5">

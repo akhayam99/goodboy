@@ -103,7 +103,9 @@ The list is `TYPE_ROLES` in `typeRoles.ts`.
 The family is Inter: the variable Latin file in `apps/desktop/src/assets/fonts/`,
 declared once as a global face in `styles.css` and first in `--font-sans`, with
 the system stack behind it as the fallback. `--font-mono` stays the system mono
-stack. The body turns on `calt` and sets `font-optical-sizing: auto`, so the
+stack, for code only: a model name is a name, so the routing picker trigger
+(`TriggerLabel`) and the inline `RoutingLabel` set it in the sans family, the
+same as the Runs on row and the Defaults rows. The body turns on `calt` and sets `font-optical-sizing: auto`, so the
 drawing tightens along the file's optical axis (14 to 32) as the size grows.
 Tabular figures are not global: Inter's `tnum` also widens the hyphen, which
 set `storefront-web` apart as `storefront - web`. `text-meta` carries
@@ -393,9 +395,14 @@ Geometry is computed in
 `apps/desktop/src/features/workTreeModel/railGeometry.ts`. The lane offset is
 one 16px unit per level. Rows are laid out against
 `apps/desktop/src/features/workTreeModel/timelineRhythm.ts`. Its grades fix
-line height and box height (entry 40px, step 32px, queued 26px), so a node
-centres on its label's line and not on its row box. Every grade carries the
-same 20px node.
+line height and box height (entry 40px, step 32px, queued 26px, fact 28px),
+so a node centres on its label's line and not on its row box. Every grade
+carries the same 20px node. `fact` is the grade of every log row outside a
+lane: the Context row ("Context · 1 added, 2 replaced", words and no diff
+colours), an answered question, a plan or an artifact created outside a run
+("Plan created · Refund idempotency plan"), and every session event. It takes
+an 8px gap instead of 12px and a 12px muted label, so a log row weighs the same
+as a step and never as an agent.
 
 Two rules follow from the direction of time. Newer sits above older at every
 level. So a run's origin row is the bottom of its group and its steps stack
@@ -403,9 +410,13 @@ upward. And a dash always points toward NOW, because dashed means future.
 
 Queued steps follow the same direction. They sort by step path, not by the
 order the agents were created in, so a run's 7, 6 and 5 sit above step 4's
-queued 4.3 and 4.2. One dash per run reaches NOW. A child lane that still has
+queued 4.3 and 4.2. A queued step is future, so it sits above every dated row:
+an agent you start after step 1 stays between step 1 and the queued step 2.
+One dash per run reaches NOW. A child lane that still has
 work queued ends at its newest row and rejoins its parent lane there with a
-dashed join (the `rejoining` group shape), under the parent's next step. A
+dashed join (the `rejoining` group shape), under the parent's next step. The
+join is a quarter circle into the parent column and a straight run up to the
+row top, so it meets the lane above vertically. A
 child lane with no ancestor lane continuing above it stays open to NOW instead.
 A child lane closes on its newest row once its parent and every child have
 settled, and at once when you close the parent. An agent you closed counts as
@@ -543,8 +554,17 @@ with `−`.
 
 What a row is doing is computed once, as a `RowState` (phase, reason, ask), in
 `apps/desktop/src/features/workTreeModel/rowState.ts`. Every surface reads that
-value: the node comes from `rowStateNode`, the short status sentence after the
-title from `rowStateSentence`, and the single visible action from the ask.
+value: the node comes from `rowStateNode`, the status in the row's state slot
+from `statePresentationOf` (`workTreeModel/statePresentation.ts`), and the
+single visible action from the ask. The state slot is a fixed 112px space
+(96px under 790px) at the right of the label, right before the meta, so every
+row says its state at the same x and the title takes the rest and truncates.
+Quiet final states (Pushed, Accepted, Resolved, Reply only, Skipped, Closed)
+show as an icon in their tone, with the word in the tooltip and for screen
+readers; states that ask you or report trouble (Needs you, Ready for you,
+Draft failed, Longer than usual, Step 3 ready) stay a word, in their short form,
+with the full sentence in the tooltip. A new state is a row in the
+`statePresentation` tables, never a branch in the component.
 When several conditions hold, failed wins, then waiting (an answer, then the
 next click, then the spend limit), then running, then queued, then done. The
 summarizer briefing the next step and a chat turn in flight are the machine
@@ -555,15 +575,32 @@ succeeded.
 A group row (a batch of resolves, or three or more subagents of one agent) is closed by default and draws the `mixed`
 node. Activity is newest first, so its children come out above it, on the
 group's own lane with the existing upward elbows, and fold back down into it.
-Each child fades in over 180ms from 6px below, staggered 24ms from the nearest
-one; folding takes 130ms with a 10ms stagger from the farthest. The group opens
-with a click, Enter, Space or the right arrow and closes with a second click or
-the left arrow. Reduced motion skips the animation and swaps the rows at once.
+Each child grows from zero height with `Reveal` (200ms, all at once, no
+stagger), and while they grow the scroller moves by the same amount every frame,
+so the group row you clicked stays under the pointer; folding runs the same
+transition backwards and removes the rows when it settles. A group of more than
+eight children opens on the eight nearest its row, under a compact "Show 12
+more" row that brings the rest. The group opens with a click, Enter, Space or
+the right arrow and closes with a second click or the left arrow. Reduced
+motion skips the transition and swaps the rows at once. The rail reserves the
+lane a closed group would open, so opening it never moves the list sideways.
 A failed child never opens the group: its arc is `danger`, the summary says
 "1 failed" in `danger` text and the need-you count includes it. A subagent group
 sits on the lane of its parent agent, above the parent, at the start of its
 earliest subagent; its children explode upward on a lane nested in that one. A
 subagent that asks you a question counts the same way (`groupChild` ask).
+
+A finished workflow run or agent chain with three rows or more is a third group
+kind, `steps`: the run row itself is the group row, with its own node, the
+summary from `groupSummary` ("8 steps · 1 question answered") after the title,
+never truncated: the title gives way first, down to 96px, then the summary keeps
+only its first clause ("8 steps"),
+the hint "Open ↵" or "Fold ↵", and the chevron. A run that asks you something,
+failed or is still running is never folded. Every group row fills the routing,
+time and cost columns with the totals of what it holds (`groupTotals`), counted
+once, and its time is fixed: a group row never reads the shared work clock. A
+row already on screen never grows again: when a run finishes under the pointer
+its rows join the group already open.
 
 A resolver takes its row state from the comment it fixes, not from the agent:
 the `review` reason carries the Review state and its word (Ready for you,
@@ -576,23 +613,25 @@ the need-you count includes it and the row itself is not tinted.
 The right end of a work row is `WorkMeta` in
 `packages/ui/src/components/WorkTree/`. Its columns have fixed widths from
 `WORK_META_COLUMN`, so every row reads down the same columns and a cost of
-`$12.40` never pushes the model of the row above out of line.
+`$12.40` never pushes the model of the row above out of line. A row says a duration one way, minutes and seconds ("4m 40s"),
+running or done, and so does every surface that reads `formatActiveTime`.
 
-| column     | width | holds                                                        | in a narrow row                                             |
-| ---------- | ----- | ------------------------------------------------------------ | ----------------------------------------------------------- |
-| routing    | 136px | provider glyph, model, then one detail (`Sonnet 5 · High`)   | detail goes under 720px, name under 440px, gone under 360px |
-| time       | 96px  | measured time or estimate ("~3-7m left", "~6-9m", "14m")     | 80px under 640px, gone under 360px                          |
-| cost       | 56px  | what the row has spent, empty before anything is spent       | under 560px it leaves the row                               |
-| cost range | 72px  | an estimated cost range before a step starts (`isCostRange`) | under 560px it leaves the row                               |
-| action     | 76px  | the one visible action, reserved even when empty             | never drops                                                 |
-| menu       | 24px  | the row menu, like Close workflow on a run row               | never drops                                                 |
+| column     | width | holds                                                                                                         | in a narrow row                           |
+| ---------- | ----- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| routing    | 136px | provider glyph, model, then one detail (`Sonnet 5 · High`), right aligned so it sits next to the time         | glyph only under 840px, gone under 360px  |
+| time       | 80px  | measured time or estimate ("~3-7m left", "~6-9m", "4m 40s")                                                   | "left" goes under 640px, gone under 500px |
+| cost       | 48px  | what the row has spent, empty before anything is spent                                                        | under 620px it leaves the row             |
+| cost range | 72px  | an estimated cost range before a step starts (`isCostRange`)                                                  | under 620px it leaves the row             |
+| action     | 76px  | the one visible action, reserved for a list that can ask: Activity of an open session, the tree of a live run | never drops                               |
+| menu       | 24px  | the row menu, like Close workflow on a run row                                                                | never drops                               |
 
 A row inside a `WorkTimeProvider` always renders the time column, empty when
 it has nothing to say, so the columns stay in line. The cost column follows
 the same rule: `cost={null}` keeps an empty column, and leaving `cost` out
 drops it, as the builder does for a plan with no measured estimate yet. A
 run row has no routing: its step progress sits in the routing column and its
-time in the time column.
+time in the time column (`WORK_META_COLUMN.progress`, which keeps its words
+when the model column folds to a glyph).
 
 The narrow rules are container queries, never window breakpoints, because
 the same feed sits in a wide overview and in a split pane. The activity feed
@@ -600,14 +639,19 @@ puts the container on each row's content box (`WORK_ROW.container`, right of
 the time gutter and the rail), so the widths above are the room the label and
 the meta share, not the width of the panel. The label always gets what the
 meta leaves: below 520px a role chip hugs its word and a run chip keeps only
-its glyph, and the row state after the title reads its short form ("Needs
-you", "Step 3 ready") under 880px, with the full sentence in its tooltip. The
-state never shrinks; the title truncates first, down to a 64px floor
-(`WORK_ROW.title`), and the meta leaves before the title reaches it: the
-routing detail, then cost, then the model name, then under 360px the glyph and
-the time, then under 320px the row state (the node and the action still say
-it). The model outlives the cost because a narrow row, like the right drawer,
-still has to say who is working; the cost stays in the time tooltip. A list under 440px also
+its glyph, and the state slot always reads the short form ("Needs you",
+"Step 3 ready"), with the full sentence in its tooltip. A row with no state
+word and no note draws no slot, so a finished row gives that room to its
+title. The slot never shrinks. The title keeps about 45% of the row: the
+meta gives way first, in this order, the model folds to its provider glyph
+under 840px (the name and effort stay in the tooltip and for screen
+readers), the cost leaves under 620px, the time under 500px. Only then does
+the title truncate, and the label keeps a 160px floor (`WORK_ROW.label`)
+until the row is under 440px. Under 360px the glyph goes, and under 320px
+the row state (the node and the action still say it). The glyph still says
+who is working; the cost stays in the time tooltip. A folded run or chain
+keeps its title whole before its summary: the summary takes the room left
+beside the title and truncates its tail first, then the title truncates. A list under 440px also
 drops the time gutter; the day and Now labels move beside the rail. Label segments keep their
 leading words and tokens whole ("Opened #612:") and only the last segment
 truncates. The "Open ↵" hint takes room only while a row of 640px or more is
@@ -874,10 +918,10 @@ with the one-line title (full name on hover), the Brief and Transcript tabs
 icon with an anchored `ConfirmPopover`, the overflow menu), then one 18px meta
 line with role, status, time and model. That is 70px with the 16px below, no
 separate tabs row, and the transcript under it starts 8px down (`ChatView`
-`topInset="tight"`). The session overview's `HeaderBand` holds the title, then one
+`topInset="tight"`). The session overview passes `headerRhythm="section"`, so the gap under its header is `PANE_RHYTHM.stack`, the same as between its body sections. Its `HeaderBand` holds the title, then one
 `Goal` line (an 11px faint label, the goal in muted text on one line with an
 ellipsis) only when the goal says more than the title, or `Add a goal` when
-there is none, then the chips, `Context` first. Goal, decisions and summary
+there is none, then one row of facts: `Context`, `Artifacts`, linked work, `Link work` and the cost. Goal, decisions and summary
 live in the Context drawer, never as a block in the column. `scroll="body"` keeps the header fixed above a scrolling body,
 `scroll="self"` hands the body a bounded region that scrolls itself (a
 transcript), and `dock` pins a chat composer to the bottom of the same column.
@@ -941,9 +985,12 @@ A verb blocked for a moment stays visible with its reason in the tooltip; a verb
 - **Row swap**: a trigger inside a row with width (a `FieldRow`, a section footer) is replaced in the same slot by the `card` surface.
 - **Anchored**: a small trigger (icon button, sidebar row action, header action, rail row) opens `ConfirmPopover`, which shows the `plain` surface in an `AnchoredPopover`. Escape and a click outside cancel. The popover stays open and busy while the confirm runs.
 - **Menu swap**: a destructive item in an open menu or popover replaces the menu body with `InlineConfirm surface="plain"` in the same popover.
+- **Above the selection bar**: a destructive verb of a selection confirms in `SelectionConfirm`, a card `InlineConfirm` that sits directly above `SelectionBar`, because the verb lives in the bar and the confirmation must stay with it.
 
 A card `InlineConfirm` inside a popover, or one floated with `absolute top-full`, is a bug (`inline-confirm-placement.test.ts`). The trigger is ghost or secondary with danger text. The solid danger fill shows only on the confirm button. The title says what will happen. The description says what survives and how to undo it. Reversible actions use `role="alert"`, irreversible ones `role="danger"`.
 When confirmation fails, `InlineConfirm` stays open and shows the formatted reason with `role="alert"`. The same controls become available for a retry. An automatic disarm pauses until the error is cancelled or a retry succeeds.
+
+**Selection bar.** `SelectionBar` is the one bar of every list that can pick rows (Board, session list, Review, Branches, Storage). It is a `floating` surface (level 4) of `rounded-lg` that sits at the bottom centre of the surface that owns the selection: `placement="overlay"` inside a `relative` region, `"sticky"` inside a scrolling page, `"flow"` where neither fits. Left to right it holds the X (Clear, tooltip with Esc), the count, `Select all N` while some rows are left, and the verbs as ghost buttons. A verb that undoes runs at once; a verb that does not passes a `confirm` node, which renders above the bar, takes focus on Cancel and gives it back to the verb when it closes. Escape closes the confirmation first, then clears the selection, through the escape stack. Rows carry `SelectionCheckbox`: a 16px box in a 20px target, revealed by `group/select-row` hover or focus and on every row once the list carries `group/select-list` with `data-selecting`, never a tab stop (the keys are X, Cmd+A, Esc and Delete, in the `selection` group of the shortcut registry). The row element carries `data-select-id` so the lasso and the keys find it, and the scroller takes `pb-24` while something is selected, so the bar never covers the last row. A surface fed by the action registry renders `ObjectSelectionBar`, so the bar's words are the menu's words.
 
 **Copy feedback lives on the control.** `useCopyLink().copy({ text, key })` keys the copied state, so in a list only the row whose `key` matches flips to "Copied". A successful copy never toasts; a failure shows inline while the control stays mounted, and only a menu item, which unmounts on click, reports a failure through a toast. `CopyButton` reads "Copy", "Copied", "Copy failed".
 
@@ -1023,7 +1070,7 @@ usage windows and Models in the picker stripe this way.
 
 A metadata line is not a section and does not get a band.
 
-`Eyebrow` is a label primitive for metadata, statistics and small internal groups. It is also the only uppercase label. A standalone label with `uppercase` renders `Eyebrow` (inside a heading element when it titles a region), never a hand-made `uppercase tracking-*` span. Chips and badges use sentence case: `Chip` has no uppercase option, and a status or kind chip has a sentence-case label. Arbitrary `tracking-[…]` values are rejected (`uppercase-label-uses-eyebrow.test.ts`). `Eyebrow` does not replace `SectionHeader` when a section also needs an action or description. `FieldRow` owns a form field's label, help copy and control alignment. It does not title a section. When these roles overlap, `SectionHeader` wins for the section, and then `FieldRow` labels the controls inside it. `Divider` is a sibling between chrome and content, never decoration after every heading or field, and never a separator between two pieces of content: use `gap`, a `Band`, or a labeled rule like `Eyebrow` instead.
+`Eyebrow` is a label primitive for metadata, statistics and small internal groups. It is also the only uppercase label. A standalone label with `uppercase` renders `Eyebrow` (inside a heading element when it titles a region), never a hand-made `uppercase tracking-*` span. Chips and badges use sentence case: `Chip` has no uppercase option, and a status or kind chip has a sentence-case label. Arbitrary `tracking-[…]` values are rejected (`uppercase-label-uses-eyebrow.test.ts`). `Eyebrow` does not replace `SectionHeader` when a section also needs an action or description. `FieldRow` owns a form field's label, help copy and control alignment. It does not title a section. Its `marker` slot sits right after the label (the faint changed-from-default dot of workspace settings) and its `menu` slot right after the control (the field's ⋯ with `Reset`). Inside a `Band` its rows sit on an 8px rhythm, so a marker, a menu or a wider control never makes one row look taller than its neighbour. When these roles overlap, `SectionHeader` wins for the section, and then `FieldRow` labels the controls inside it. `Divider` is a sibling between chrome and content, never decoration after every heading or field, and never a separator between two pieces of content: use `gap`, a `Band`, or a labeled rule like `Eyebrow` instead.
 
 ## Prose disclosure
 
@@ -1083,6 +1130,30 @@ box around the whole thing. Secondary controls go in `SectionHeader`'s
 `action` slot. Related options sit in one container, not one card each. One
 action row comes right after the last section: error on the left, exactly one
 primary button on the right, cancel and alternates as ghost or secondary.
+
+## One way to ask
+
+Four rules keep the same intent in the same shape. `apps/desktop/src/shared/lib/interactionRules.ts`
+holds the constants, the guide chapter How Goodboy listens prints them, and
+`apps/desktop/src/__tests__/regressions/interaction-rules.test.ts` checks the code.
+
+- **One verb per intent, one button variant per verb.** **Done** finishes an
+  edit in place (`secondary`, `sm`). **Close** leaves a panel (`ghost`, `sm`),
+  including the studio band. **Dismiss** hides a notice (`ghost`, `sm`).
+  **Discard** abandons an unsaved draft (`ghost`, `sm`), the way the New
+  workflow form does. **Delete** removes an object and confirms first. A verb is
+  never drawn with a hand-made `<button>`.
+- **Choosing a value.** Up to four options that fit the row are a
+  `SegmentedTabs`. Five or more, or a list that depends on data, is a `Listbox`.
+  A segmented control never carries a More segment. Reply verbosity and Theme
+  are segmented, the default editor is a list.
+- **Two kinds of field, one key each.** A message sends with Enter, goes to a
+  new line with Shift+Enter and sends now with ⌘↵. A document takes a new line on
+  Enter and saves or sends with ⌘↵. Every ⌘↵ check reads the `composer.submit`
+  id through `isSubmitChord`, and every hint prints `shortcutGlyphs`.
+- **A key you can see works.** The rail hints, the pills and the Shortcuts page
+  read the registry. `navigation-flows/keys.test.tsx` presses every id on the
+  real app and has a short exemption list that may only shrink.
 
 ## Form actions
 
@@ -1171,7 +1242,20 @@ example run and no grid of tiles.
 Inline empty states belong to a lens or a compact collection surface. A filled,
 borderless inline empty state belongs to a surface's own body and uses
 `FilledEmptyState`, which owns its inset and fill. Do not hand-roll either
-shape with `EmptyState size="inline"`.
+shape with `EmptyState size="inline"`: a caller passes only layout
+(`justify-center`, `basis-full`), never its own padding or fill, and
+`inline-empty-states-use-the-wrappers.test.ts` fails on any `size="inline"`
+under `apps/desktop/src`.
+
+An empty line inside a section ("No open worktrees.") is `EmptyLine`: one faint
+sentence, an optional glyph before it and an optional action after it. It is
+the only shape for a one-line empty, never bare text in its own style.
+
+**Loading keeps the page in place.** A part that reloads shows a skeleton of
+its own height: `SkeletonRow` (a row, with a `status` label naming what loads)
+or `SkeletonChip` (a chip). Only the parts that reload turn to skeleton; the
+title, the goal, the timeline and the cost stay. A session refresh shows them
+only after 250 ms (`useSessionSkeleton`), so a fast refresh never flashes.
 
 **Inline beats the centred hero** because the pane already has a title and a
 rhythm. A hero repeats the title in bigger type. It pretends the lens is a
@@ -1279,9 +1363,6 @@ update only themselves.
   (a `WorkNode`'s ring). A session card or row carries its tone in a
   `ToneBar` instead, a bar inside the surface rather than a border around it,
   breathing through `soft-pulse` while running.
-- `attention-ring`: something new arrived. It is a short outward breath (three
-  cycles, then rest) on an element that now needs the user, never one that
-  is working.
 - `soft-pulse`: the only animation in the app for a lasting state. It breathes
   a state that holds and is alive: the centre dot of a running
   `WorkNode` that carries no step number, the head of a running `WorkNode`'s
@@ -1294,10 +1375,10 @@ update only themselves.
   place in 160ms; with reduced motion it changes in place.
 - `text-shimmer`: a label whose action is in flight, such as a handoff while
   its agent starts. It replaces a spinner next to the label.
-- `update-sweep`: a new version arrived. One 1.2s light sweep across the
-  update pill, on arrival and again when the window regains focus at least
-  an hour after the last sweep, capped at six a day. Never loops, never
-  wraps the pill in a ring.
+- The update pill has no animation of its own. It enters once with
+  `studio-body-in` (opacity and 4px) when a new version arrives, then holds
+  still in the soft primary tone. The arrival card announces it; nothing
+  sweeps, rings or repeats on focus.
 - Skeleton pulse (`animate-pulse` inside `Skeleton` only): loading.
 
 `no-token-bypass.test.ts` rejects any `animate-pulse` or `animate-ping`
@@ -1342,6 +1423,12 @@ width follows its content breaks the column for every row under it.
   prop). `auto` is for one-off chips in a detail panel, never a column. A
   fixed-width wrapper around the chip does not count. It aligns what comes
   after the chip and leaves the chip ragged.
+- The exception is a chip that leads a title (the role chip of an agent, the
+  Workflow chip of a run): it is part of the label, so it hugs its word and
+  the title follows it. The column a reader scans in those rows is the state
+  slot and the meta on the right. Every such chip is `Chip`, a pill tinted in
+  its role colour; `hand-made-chips.test.ts` counts hand-rolled pills per file
+  and the count only goes down.
 - A chip that works as a control next to buttons (the session overview's
   context, attention, linked-work and branch chips) is `Chip size="control"`
   with `shape="badge"`. That gives the `h-6` control height, the focus ring,

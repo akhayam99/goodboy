@@ -57,9 +57,6 @@ export const verdictCopy = ({
   }
 };
 
-export const BRANCHES_HELP = (base: string): string =>
-  `Local branches only. Safe to delete means merged into ${base}, nothing new after the merge, no folder with changes, not held by another worktree.`;
-
 export const branchCount = (count: number): string =>
   count === 1 ? '1 branch' : `${count} branches`;
 

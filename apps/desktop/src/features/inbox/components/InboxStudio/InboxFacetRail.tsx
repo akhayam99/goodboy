@@ -10,15 +10,10 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { Project } from '@goodboy/types';
-import {
-  StatusDot,
-  FacetRail,
-  FacetKeyHints,
-  type FacetKeyHint,
-  FacetRow,
-  FacetSection,
-} from '@goodboy/ui';
+import { StatusDot, FacetRail, FacetKeyHints, FacetRow, FacetSection } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { keyHintsOf } from '../../../../shared/keyboard/keyHints';
+import type { ShortcutId } from '../../../../shared/keyboard/registry';
 import {
   IntegrationGlyph,
   integrationLabel,
@@ -43,6 +38,7 @@ type Props = {
   readonly loading: Readonly<Record<InboxProvider, boolean>>;
   readonly errors: Readonly<Record<InboxProvider, string | null>>;
   readonly projects?: ReadonlyArray<Project>;
+  readonly canReply?: boolean;
   readonly onFiltersChange: (filters: InboxFilters) => void;
   readonly onClearFilters: () => void;
 };
@@ -66,13 +62,17 @@ const TYPE_PRESENTATION = {
   error: { label: 'Errors', icon: Bug },
 } satisfies Record<InboxTypeFacet, Presentation>;
 
-const INBOX_KEY_HINTS = [
-  { keys: ['j', 'k'], label: 'Next or previous' },
-  { keys: ['↵'], label: 'Launch or open session' },
-  { keys: ['o'], label: 'Open in the tool' },
-  { keys: ['r'], label: 'Reply' },
-  { keys: ['/'], label: 'Search' },
-] satisfies ReadonlyArray<FacetKeyHint>;
+const INBOX_KEY_SPECS: ReadonlyArray<{
+  readonly ids: ReadonlyArray<ShortcutId>;
+  readonly label: string;
+}> = [
+  { ids: ['list.next', 'list.previous'], label: 'Next or previous' },
+  { ids: ['list.open'], label: 'Launch or open session' },
+  { ids: ['list.openInTool'], label: 'Open in the tool' },
+  { ids: ['list.reply'], label: 'Reply' },
+  { ids: ['list.star'], label: 'Star' },
+  { ids: ['list.search'], label: 'Search' },
+];
 
 type SourceTrailingParams = {
   readonly isLoading: boolean;
@@ -101,6 +101,7 @@ export const InboxFacetRail = ({
   loading,
   errors,
   projects = [],
+  canReply = true,
   onFiltersChange,
   onClearFilters,
 }: Props) => {
@@ -184,7 +185,13 @@ export const InboxFacetRail = ({
           onFiltersChange={change}
         />
       ) : null}
-      <FacetKeyHints hints={INBOX_KEY_HINTS} />
+      <FacetKeyHints
+        hints={keyHintsOf(
+          canReply
+            ? INBOX_KEY_SPECS
+            : INBOX_KEY_SPECS.filter((spec) => !spec.ids.includes('list.reply')),
+        )}
+      />
       {hasActiveFilter ? (
         <button
           type="button"

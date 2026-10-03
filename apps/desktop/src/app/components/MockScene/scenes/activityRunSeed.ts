@@ -36,6 +36,8 @@ import type {
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { sceneClock } from '../sceneClock';
+import { sceneParam } from './audit/sceneParams';
+import type { SummarizerRound } from '../../../../store/slices/summaries/state';
 
 const clock = sceneClock({ anchor: '2026-09-18T10:05:00.000Z' });
 
@@ -76,6 +78,8 @@ const DEDUPE_ANSWER_AGENT_ID = 'mock-run-agent-dedupe-answer' as AgentId;
 const CONSOLE_STORE_AGENT_ID = 'mock-run-agent-console-store' as AgentId;
 const CONSOLE_BANNER_AGENT_ID = 'mock-run-agent-console-banner' as AgentId;
 const CONSOLE_TESTS_AGENT_ID = 'mock-run-agent-console-tests' as AgentId;
+const BANNER_COPY_AGENT_ID = 'mock-run-agent-banner-copy' as AgentId;
+const BANNER_STATES_AGENT_ID = 'mock-run-agent-banner-states' as AgentId;
 const REPORT_AGENT_ID = 'mock-run-agent-report' as AgentId;
 
 const CONSOLE_PROVIDER_RUN_ID = 'mock-run-provider-run-console-store' as ProviderRunId;
@@ -91,6 +95,21 @@ const QUESTION_BANNER_ID = 'mock-run-question-banner-threshold' as OpenQuestionI
 const DAY_ONE = '2026-09-17';
 const DAY_TWO = '2026-09-18';
 export const NOW = clock.iso({ at: `${DAY_TWO}T10:05:00.000Z` });
+
+const UPDATES = sceneParam({ key: 'updates' });
+
+const CONTEXT_ROUND: SummarizerRound = {
+  finishedAt: NOW,
+  mode: 'turn',
+  turns: 3,
+  provider: 'anthropic',
+  model: 'haiku-4.5',
+  effort: 'low',
+  inputTokens: 3184,
+  outputTokens: 412,
+  costUsd: 0.004,
+  changed: { goal: true, decisions: 2, summary: true },
+};
 const EARLIER = clock.iso({ at: `${DAY_ONE}T09:12:00.000Z` });
 
 const OVERRIDES = {
@@ -757,6 +776,33 @@ const AGENTS: ReadonlyArray<Agent> = [
     modelOverride: 'kimi-k3',
   },
   {
+    id: BANNER_COPY_AGENT_ID,
+    sessionId: SESSION_ID,
+    parentAgentId: CONSOLE_BANNER_AGENT_ID,
+    ordinal: 6.1,
+    name: 'Read the support copy for stuck deliveries',
+    kind: 'scout',
+    status: 'completed',
+    outputSummary: 'Support calls a delivery stuck after the third retry.',
+    startedAt: at({ day: DAY_TWO, time: '09:42:00' }),
+    completedAt: at({ day: DAY_TWO, time: '09:44:00' }),
+    lastFinishedAt: at({ day: DAY_TWO, time: '09:44:00' }),
+    lastViewedAt: NOW,
+    providerOverride: 'anthropic',
+    modelOverride: 'claude-haiku-4-5',
+  },
+  {
+    id: BANNER_STATES_AGENT_ID,
+    sessionId: SESSION_ID,
+    parentAgentId: CONSOLE_BANNER_AGENT_ID,
+    ordinal: 6.2,
+    name: 'List the banner states to cover',
+    kind: 'scout',
+    status: 'pending',
+    providerOverride: 'anthropic',
+    modelOverride: 'claude-haiku-4-5',
+  },
+  {
     id: CONSOLE_TESTS_AGENT_ID,
     sessionId: SESSION_ID,
     stepId: CONSOLE_TESTS_STEP_ID,
@@ -817,6 +863,7 @@ const PLAN_ARTIFACT: SessionArtifact = {
   sourceTurnId: 'mock-run-turn-plan',
   createdAt: at({ day: DAY_ONE, time: '09:47:00' }),
   updatedAt: at({ day: DAY_ONE, time: '09:47:00' }),
+  openedAt: null,
 };
 
 const WIREFRAME_DOCUMENT = {
@@ -887,6 +934,7 @@ const WIREFRAME_ARTIFACT: WireframeArtifact = {
   sourceTurnId: 'mock-run-turn-wireframe',
   createdAt: at({ day: DAY_ONE, time: '09:46:00' }),
   updatedAt: at({ day: DAY_ONE, time: '09:46:00' }),
+  openedAt: null,
 };
 
 const PLANS: ReadonlyArray<PlanWithCount> = [
@@ -955,6 +1003,7 @@ const REPORT_ARTIFACT: ReportArtifact = {
   sourceTurnId: 'mock-run-turn-report',
   createdAt: at({ day: DAY_TWO, time: '10:04:00' }),
   updatedAt: at({ day: DAY_TWO, time: '10:04:00' }),
+  openedAt: null,
 };
 
 const ANSWERED_QUESTIONS: ReadonlyArray<OpenQuestion> = [
@@ -1172,30 +1221,37 @@ const EXTERNAL_TASKS: ReadonlyArray<SessionExternalTask> = [
 
 const MINUTE_MS = 60_000;
 
-const TURN_SPANS: ReadonlyArray<MeasuredTurnSpan> = AGENTS.flatMap((agent) => {
-  if (agent.status !== 'completed' || agent.startedAt == null) {
-    return [];
-  }
-  const startedAtMs = Date.parse(agent.startedAt);
-  return [
-    {
-      agentId: agent.id,
-      parentAgentId: agent.parentAgentId ?? null,
-      agentStatus: agent.status,
-      workflowRunId: agent.workflowRunId ?? null,
-      isOrchestratedRunDone: false,
-      stepRole: 'implementer',
-      provider: agent.providerOverride ?? 'anthropic',
-      model: agent.modelOverride ?? 'claude-sonnet-5',
-      effort: null,
-      startedAtMs,
-      endedAtMs: startedAtMs + (2 + (agent.ordinal % 5)) * MINUTE_MS + 40_000,
-      endReason: 'succeeded',
-      costUsd: null,
-      touchedMountIds: null,
-    },
-  ];
-});
+const turnSpansOf = ({
+  agents,
+}: {
+  readonly agents: ReadonlyArray<Agent>;
+}): ReadonlyArray<MeasuredTurnSpan> =>
+  agents.flatMap((agent) => {
+    if (agent.status !== 'completed' || agent.startedAt == null) {
+      return [];
+    }
+    const startedAtMs = Date.parse(agent.startedAt);
+    return [
+      {
+        agentId: agent.id,
+        parentAgentId: agent.parentAgentId ?? null,
+        agentStatus: agent.status,
+        workflowRunId: agent.workflowRunId ?? null,
+        isOrchestratedRunDone: false,
+        stepRole: 'implementer',
+        provider: agent.providerOverride ?? 'anthropic',
+        model: agent.modelOverride ?? 'claude-sonnet-5',
+        effort: null,
+        startedAtMs,
+        endedAtMs: startedAtMs + (2 + (agent.ordinal % 5)) * MINUTE_MS + 40_000,
+        endReason: 'succeeded',
+        costUsd: null,
+        touchedMountIds: null,
+      },
+    ];
+  });
+
+const TURN_SPANS = turnSpansOf({ agents: AGENTS });
 
 const HISTORY_ROLES: ReadonlyArray<DurationSample['role']> = [
   'scout',
@@ -1272,12 +1328,19 @@ export const seedActivityRunScene = () => {
     },
     summarizerStatus: {
       [SESSION_ID]: {
-        status: 'idle',
+        status: UPDATES === 'failed' ? 'error' : 'idle',
         lastUpdate: NOW,
-        error: null,
+        error: UPDATES === 'failed' ? "Haiku 4.5 didn't answer in time." : null,
         lastUsage: null,
-        lastAttempt: null,
+        lastAttempt:
+          UPDATES === 'failed'
+            ? { turnInput: 'Ship the fix', turnOutput: 'Fixed', workingDir: null }
+            : null,
       },
+    },
+    summarizerRounds: { [SESSION_ID]: CONTEXT_ROUND },
+    summarizerPending: {
+      [SESSION_ID]: { turns: UPDATES === 'failed' ? 3 : 2, isUpdateQueued: UPDATES === 'queued' },
     },
     sessionPhaseRuns: { [SESSION_ID]: AGENTS },
     sessionOpenQuestions: { [SESSION_ID]: OPEN_QUESTIONS },
@@ -1406,6 +1469,51 @@ export const seedActivityRunScene = () => {
     navigate: () => undefined,
     loadConsumptionsForPlan: async () => undefined,
     loadAgentTranscript: async () => undefined,
+  });
+};
+
+const FINISHED_AT: Readonly<Record<string, { readonly from: string; readonly to: string }>> = {
+  [CONSOLE_BANNER_AGENT_ID]: { from: '09:40:00', to: '10:01:00' },
+  [BANNER_STATES_AGENT_ID]: { from: '09:45:00', to: '09:49:00' },
+  [CONSOLE_TESTS_AGENT_ID]: { from: '10:01:00', to: '10:04:00' },
+};
+
+const finishedAgent = ({ agent }: { readonly agent: Agent }): Agent => {
+  const span = FINISHED_AT[agent.id];
+  if (span === undefined) {
+    return agent;
+  }
+  return {
+    ...agent,
+    status: 'completed',
+    startedAt: at({ day: DAY_TWO, time: span.from }),
+    completedAt: at({ day: DAY_TWO, time: span.to }),
+    lastFinishedAt: at({ day: DAY_TWO, time: span.to }),
+    doneAt: at({ day: DAY_TWO, time: span.to }),
+    lastViewedAt: NOW,
+  };
+};
+
+export const finishActivityRuns = () => {
+  const agents = AGENTS.map((agent) => finishedAgent({ agent }));
+  useAppStore.setState({
+    sessions: [{ ...SESSION, state: { kind: 'idle', lastActivityAt: NOW } }],
+    sessionPhaseRuns: { [SESSION_ID]: agents },
+    agentTurnState: {},
+    sessionTurnSpans: { [SESSION_ID]: turnSpansOf({ agents }) },
+    sessionOpenQuestions: { [SESSION_ID]: [] },
+    sessionAnsweredQuestions: {
+      [SESSION_ID]: [
+        ...ANSWERED_QUESTIONS,
+        ...OPEN_QUESTIONS.map((question) => ({
+          ...question,
+          userAnswer: 'HTTP 502 and 503, Read timeouts past 30 seconds',
+          status: 'answered' as const,
+          answeredAt: at({ day: DAY_TWO, time: '10:00:00' }),
+        })),
+      ],
+    },
+    selectedAgentId: { [SESSION_ID]: null },
   });
 };
 

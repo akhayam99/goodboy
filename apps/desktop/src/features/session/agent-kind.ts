@@ -8,15 +8,30 @@ import {
   resolveRoleRouting,
   WIREFRAME_SCHEMA_BRIEF,
   type AgentKindLabel,
-  type AutoContext,
 } from '@goodboy/core';
+import {
+  BookOpen,
+  Bot,
+  BugPlay,
+  CodeXml,
+  Feather,
+  FlaskConical,
+  GitPullRequestArrow,
+  MapIcon,
+  ScanEye,
+  Telescope,
+  type LucideIcon,
+} from 'lucide-react';
 import type { AutoLimitContext } from '../../store/slices/providerLimits/autoLimitContext';
+import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
+import { kindAutoContext } from './kindAutoContext';
 import type {
   Agent,
   AgentEffort,
   AgentId,
   AgentRole,
   ProviderId,
+  ProviderPolicy,
   RoleModelPreferences,
 } from '@goodboy/types';
 
@@ -252,6 +267,7 @@ export type AgentKindPaletteEntry = {
   readonly bg: string;
   readonly fg: string;
   readonly label: string;
+  readonly icon: LucideIcon;
 };
 
 export const AGENT_KIND_PALETTE: Record<AgentKind, AgentKindPaletteEntry> = {
@@ -259,71 +275,85 @@ export const AGENT_KIND_PALETTE: Record<AgentKind, AgentKindPaletteEntry> = {
     bg: 'bg-agent-scout',
     fg: 'text-agent-scout',
     label: AGENT_KIND_META.scout.noun,
+    icon: Telescope,
   },
   planner: {
     bg: 'bg-agent-planner',
     fg: 'text-agent-planner',
     label: AGENT_KIND_META.planner.noun,
+    icon: MapIcon,
   },
   implementer: {
     bg: 'bg-agent-implementer',
     fg: 'text-agent-implementer',
     label: AGENT_KIND_META.implementer.noun,
+    icon: CodeXml,
   },
   debugger: {
     bg: 'bg-agent-debugger',
     fg: 'text-agent-debugger',
     label: AGENT_KIND_META.debugger.noun,
+    icon: BugPlay,
   },
   tester: {
     bg: 'bg-agent-tester',
     fg: 'text-agent-tester',
     label: AGENT_KIND_META.tester.noun,
+    icon: FlaskConical,
   },
   reviewer: {
     bg: 'bg-agent-reviewer',
     fg: 'text-agent-reviewer',
     label: AGENT_KIND_META.reviewer.noun,
+    icon: ScanEye,
   },
   'pr-reviewer': {
     bg: 'bg-agent-pr-reviewer',
     fg: 'text-agent-pr-reviewer',
     label: AGENT_KIND_META['pr-reviewer'].noun,
+    icon: GitPullRequestArrow,
   },
   docs: {
     bg: 'bg-agent-docs',
     fg: 'text-agent-docs',
     label: AGENT_KIND_META.docs.noun,
+    icon: BookOpen,
   },
   report: {
     bg: 'bg-agent-report',
     fg: 'text-agent-report',
     label: AGENT_KIND_META.report.noun,
+    icon: CONCEPT_ICONS.report,
   },
   wireframe: {
     bg: 'bg-agent-wireframe',
     fg: 'text-agent-wireframe',
     label: AGENT_KIND_META.wireframe.noun,
+    icon: CONCEPT_ICONS.wireframe,
   },
   resolver: {
     bg: 'bg-agent-resolver',
     fg: 'text-agent-resolver',
     label: AGENT_KIND_META.resolver.noun,
+    icon: CONCEPT_ICONS.resolve,
   },
   rewriter: {
     bg: 'bg-agent-rewriter',
     fg: 'text-agent-rewriter',
     label: AGENT_KIND_META.rewriter.noun,
+    icon: CONCEPT_ICONS.history,
   },
   scribe: {
     bg: 'bg-agent-scribe',
     fg: 'text-agent-scribe',
     label: AGENT_KIND_META.scribe.noun,
+    icon: Feather,
   },
   generic: {
     bg: 'bg-agent-generic',
     fg: 'text-agent-generic',
     label: AGENT_KIND_META.generic.noun,
+    icon: Bot,
   },
 };
 
@@ -332,7 +362,8 @@ const UNKNOWN_KIND_LABEL_LENGTH = 9;
 const UNKNOWN_KIND_STYLE = {
   bg: 'bg-faint-foreground',
   fg: 'text-muted-foreground',
-} satisfies Pick<AgentKindPaletteEntry, 'bg' | 'fg'>;
+  icon: Bot,
+} satisfies Pick<AgentKindPaletteEntry, 'bg' | 'fg' | 'icon'>;
 
 const PALETTE_BY_KIND: ReadonlyMap<string, AgentKindPaletteEntry> = new Map(
   Object.entries(AGENT_KIND_PALETTE),
@@ -439,21 +470,7 @@ type KindRoutingParams = {
   readonly roleModels?: RoleModelPreferences | null;
   readonly defaultProvider?: ProviderId | null;
   readonly limitContext?: AutoLimitContext | null;
-};
-
-type KindAutoParams = Pick<KindRoutingParams, 'defaultProvider' | 'limitContext'>;
-
-const kindAutoContext = ({ defaultProvider, limitContext }: KindAutoParams): AutoContext | null => {
-  if (limitContext == null) {
-    return defaultProvider == null ? null : { defaultProvider };
-  }
-  const isLimited = limitContext.atLimit.length > 0;
-  return {
-    defaultProvider: defaultProvider ?? 'anthropic',
-    ...(isLimited && { connected: limitContext.connected, atLimit: limitContext.atLimit }),
-    ...(limitContext.hidden != null && { hidden: limitContext.hidden }),
-    ...(limitContext.cliVersions != null && { cliVersions: limitContext.cliVersions }),
-  };
+  readonly policy?: ProviderPolicy | null;
 };
 
 export const kindRouting = ({
@@ -461,8 +478,9 @@ export const kindRouting = ({
   roleModels,
   defaultProvider,
   limitContext,
+  policy,
 }: KindRoutingParams): AgentKindRouting => {
-  const auto = kindAutoContext({ defaultProvider, limitContext });
+  const auto = kindAutoContext({ defaultProvider, limitContext, policy });
   const role = resolveRoleRouting({
     role: KIND_TO_ROLE[kind],
     prefs: roleModels,

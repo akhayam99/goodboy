@@ -3,7 +3,7 @@ import type { GuideLink } from './guideTarget';
 
 export type GuideGroup = 'start' | 'task' | 'reference';
 
-export type GuideExtra = 'stages' | 'shortcuts' | 'legend';
+export type GuideExtra = 'stages' | 'shortcuts' | 'listens' | 'legend';
 
 type GuidePoint = {
   readonly term: string;
@@ -73,6 +73,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         term: 'About you',
         desc: 'Tell agents once who you are and how you like to work. Settings shows which role reads each part.',
       },
+      {
+        term: 'Pinned scripts',
+        desc: 'Pin a script per project from Scripts in a session or from the Scripts list on Projects. It holds across worktrees and shows under $ in the palette.',
+      },
     ],
     links: [
       {
@@ -82,7 +86,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
           studio: { kind: 'settings', focus: { scope: 'workspace', section: 'projects' } },
         },
       },
-      { label: 'Add a workspace', target: { kind: 'studio', studio: { kind: 'addWorkspace' } } },
+      { label: 'Open a folder', target: { kind: 'studio', studio: { kind: 'addWorkspace' } } },
     ],
   },
   {
@@ -98,7 +102,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Auto',
-        desc: 'Auto runs each role on the newest model of its line, Sonnet 5.5 on Claude today, and Defaults shows what it picks now. A model you turn off in Models in the picker is left out of Auto and the workflow orchestrator.',
+        desc: 'Auto runs each role on the newest model of its line, Sonnet 5.5 on Claude today, and Defaults shows what it picks now. Open a role to see how it runs, and give it up to three models for Auto to pick from. A model you turn off in Models in the picker is left out of Auto and the workflow orchestrator.',
+      },
+      {
+        term: 'Providers, in order',
+        desc: 'Defaults lists the providers of the workspace in order, each On, Backup only or Off. New work starts on the first On provider, Backup only runs when no On provider can, and Off is never offered. Drag a row, or press Alt and an arrow, to move it. The footer Providers button opens your limits and the same list.',
       },
       {
         term: 'Usage limits',
@@ -110,7 +118,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Fallback',
-        desc: 'When a provider runs out, the turn can move to another connected provider, and the chat records where it went.',
+        desc: 'When a provider runs out, the turn can move to another provider the list allows, and the chat records where it went.',
       },
       {
         term: 'Cost',
@@ -146,7 +154,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Chat',
-        desc: 'Chat, right of Board, answers a question about the whole workspace without a session. It only reads, on Claude or Codex, with the model and effort you pick for each chat. Make default in the picker saves them for new chats in the workspace. Start work drafts a brief, and Start session opens a new session with it, nothing running yet, or Add to a session leaves it in the message box of one you pick. Pin, archive and delete chats from their menu.',
+        desc: 'Chat, right of Board, answers a question about the whole workspace without a session. It only reads, on Claude or Codex, with the model and effort you pick for each chat. Make default in the picker saves them for new chats in the workspace. Start work drafts a brief, and Start session opens a new session with it, nothing running yet, or Add to a session leaves it in the message box of one you pick. Each chat row shows its model. Pin and archive a chat from its menu, delete it from its row or header, or select several and archive or delete them together.',
       },
       {
         term: 'Start blank',
@@ -180,7 +188,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Select many',
-        desc: 'Lasso or modifier-click cards across columns, then archive, restore or delete them together.',
+        desc: 'Tick the checkbox before a title, press X on a card, or lasso or modifier-click cards across columns. The bar at the bottom archives, restores or deletes them together, and Esc clears. Lists with checkboxes elsewhere use the same bar.',
       },
       {
         term: 'Now chip',
@@ -211,11 +219,15 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Workflows',
-        desc: 'Start from Refactor, Plan and ship or Fix a bug, or build your own. Each step has its own provider, model and effort. Restore built-in workflows, in the menu next to New workflow, brings back a built-in you deleted or changed. Deleting a run deletes its agents and their open questions.',
+        desc: 'Start from Refactor, Plan and ship or Fix a bug, or build your own. Each step follows its role or pins a model, and its menu holds Duplicate, Save as step, Move and Delete, with Undo. Restore built-in workflows, in the menu next to New workflow, brings back a built-in you deleted or changed. Deleting a run deletes its agents and their open questions.',
       },
       {
         term: 'Orchestrated',
-        desc: 'Give a goal and let a model pick each next step with a reason, until it says done or blocked. Hints steer it while it runs.',
+        desc: 'Give a goal and let a model pick each next step with a reason, until it says done or blocked. Hints steer it while it runs, with several lines, markdown and images.',
+      },
+      {
+        term: 'Pause and resume',
+        desc: 'Pause lets the step in flight finish and starts nothing new. Resume picks up where the run was, Skip step cancels the step that is running, and Stop run ends it now. A step quiet for 15 minutes offers Ask it to continue.',
       },
       {
         term: 'Autorun',
@@ -245,7 +257,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Context drawer',
-        desc: 'Open the goal, decisions and summary from any session page, and Copy as brief. A dot on Context means something changed since you last looked, and those changes come first.',
+        desc: 'Open the goal, decisions and summary from any session page, and Copy as brief. A dot on Context means something changed since you last looked, and those changes come first. Context updates, at the top, shows the last update with its model and cost, and Update now queues one.',
       },
       {
         term: 'What the agent received',
@@ -303,6 +315,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       {
         term: 'Diff',
         desc: 'Split or unified, with word-level highlights and a Viewed tick per file. Quote a line into a note or a question for an agent. The header offers the next step for the branch.',
+      },
+      {
+        term: 'Fix notes',
+        desc: 'Fix on a note, or Fix N notes in the diff toolbar, opens the fix strip with the model the fixers run on, and Start launches one agent per note. The notes drawer groups your notes by state, and a note an agent works on cannot be closed or deleted.',
       },
       {
         term: 'Review',
@@ -412,6 +428,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         term: 'Revisions',
         desc: 'Restoring an earlier version adds it as a new revision, so nothing later is lost.',
       },
+      {
+        term: 'By state',
+        desc: 'Artifact lists group into Needs you, Ready, Running, Ran and Recently deleted, and New marks one from the last day you have not opened. Delete has Undo, and Recently deleted restores.',
+      },
     ],
     links: [],
   },
@@ -428,7 +448,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Branches',
-        desc: 'Sorted into Safe to delete and Needs a look, each with its session and whether it still exists on origin.',
+        desc: 'Branches has its own page: each branch with its session, its state and whether it still exists on origin, counted as safe to delete or needing a look. Recently deleted restores a branch you removed.',
+      },
+      {
+        term: 'Other tools',
+        desc: 'Storage also lists the Claude Code, Codex and Cursor folders on this Mac, read only, with their size and how much of it came from Goodboy sessions.',
       },
       {
         term: 'Scope',
@@ -448,6 +472,13 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         },
       },
       {
+        label: 'Open Branches',
+        target: {
+          kind: 'studio',
+          studio: { kind: 'settings', focus: { scope: 'app', section: 'branches' } },
+        },
+      },
+      {
         label: 'Open Security findings',
         target: {
           kind: 'studio',
@@ -464,8 +495,20 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     lead: 'App settings apply everywhere, workspace settings to one workspace. Your whole setup can move to another machine.',
     points: [
       {
+        term: 'Settings home',
+        desc: 'Settings opens on a home with App, Workspace, Providers & models and Integrations as cards, each page with its status. Pick a page and the cards become the rail, and the Settings crumb brings you back. Drag the edge of a rail to resize it.',
+      },
+      {
         term: 'App and workspace',
-        desc: 'Theme, updates and shortcuts are app-wide. Projects, defaults, permissions and review replies belong to a workspace.',
+        desc: 'Theme, updates and shortcuts are app-wide. Projects, About you, New sessions, After merge, Review replies, Permissions and Skills are pages of a workspace.',
+      },
+      {
+        term: 'Copy and restore',
+        desc: 'Copy settings from another workspace, or Restore defaults, previews every change before it applies. A field that differs from its default has a dot and its own Reset.',
+      },
+      {
+        term: 'Open with',
+        desc: 'In General, pick the editor worktrees open in and the browser for links and artifacts. Browser starts at System default and says when the one you chose is gone.',
       },
       {
         term: 'Export',
@@ -483,10 +526,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     links: [
       {
         label: 'Open Settings',
-        target: {
-          kind: 'studio',
-          studio: { kind: 'settings', focus: { scope: 'app', section: 'general' } },
-        },
+        target: { kind: 'studio', studio: { kind: 'settings', focus: { scope: 'home' } } },
       },
       {
         label: 'Open Backup',
@@ -545,6 +585,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Any session, agent, run, artifact, pull request, worktree row, diff file or message opens a menu with every action it has. Shift+F10 opens it on the focused row.',
       },
       {
+        term: 'Composer keys',
+        desc: 'In a message, Enter sends and ⇧Enter adds a line. In a document, Enter adds a line and ⌘Enter saves. Start agent and the issue kickoff start on Enter, and Keys from before 0.15.5, in Shortcuts, brings back the old ones.',
+      },
+      {
         term: 'Esc',
         desc: 'Closes the menu, panel or dialog in front. It never takes the window out of macOS full screen.',
       },
@@ -560,6 +604,16 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
     ],
     extra: 'shortcuts',
+  },
+  {
+    id: 'listens',
+    group: 'task',
+    title: 'How Goodboy listens',
+    concept: 'shortcuts',
+    lead: 'The same few rules hold on every screen. This page reads the same constants the app does, so it cannot fall behind.',
+    points: [],
+    links: [],
+    extra: 'listens',
   },
   {
     id: 'tokens',

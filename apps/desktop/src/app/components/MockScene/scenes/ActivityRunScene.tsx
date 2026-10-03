@@ -3,7 +3,12 @@ import type { IsoDateTime, ProviderRunId, Session, SessionId } from '@goodboy/ty
 import { useAppStore } from '../../../../store';
 import type { ContextDrawerTab } from '../../../../store/slices/drawer/state';
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
-import { SESSION, seedActivityRunScene, seedSiblingStages } from './activityRunSeed';
+import {
+  SESSION,
+  finishActivityRuns,
+  seedActivityRunScene,
+  seedSiblingStages,
+} from './activityRunSeed';
 import { useHoveredMountRow, useShowCompletedMounts } from './sceneReveal';
 import { ShellFrame, seedShellChrome } from './shellChrome';
 
@@ -78,9 +83,15 @@ const SIBLINGS: ReadonlyArray<Session> = [
 
 type Props = {
   readonly contextTab?: ContextDrawerTab;
+  readonly isFinished?: boolean;
 };
 
-export const ActivityRunScene = ({ contextTab }: Props) => {
+const IDLE_SESSION: Session = {
+  ...SESSION,
+  state: { kind: 'idle', lastActivityAt: SESSION.updatedAt },
+};
+
+export const ActivityRunScene = ({ contextTab, isFinished = false }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -104,11 +115,14 @@ export const ActivityRunScene = ({ contextTab }: Props) => {
       reviewBranch: 'hl/reconcile-settlement-export',
     });
     useAppStore.setState({ selectedAgentId: {} });
+    if (isFinished) {
+      finishActivityRuns();
+    }
     if (contextTab !== undefined) {
       useAppStore.getState().openContextDrawer({ sessionId: SESSION.id, tab: contextTab });
     }
     setIsReady(true);
-  }, [contextTab]);
+  }, [contextTab, isFinished]);
 
   useShowCompletedMounts({ isReady });
   useHoveredMountRow({ isReady, rowLabel: 'nw/backfill-processed-events' });
@@ -119,9 +133,14 @@ export const ActivityRunScene = ({ contextTab }: Props) => {
 
   return (
     <ShellFrame
-      session={SESSION}
+      session={isFinished ? IDLE_SESSION : SESSION}
       sidebar="expanded"
-      main={<SessionOverviewPane session={SESSION} onSelectLens={() => undefined} />}
+      main={
+        <SessionOverviewPane
+          session={isFinished ? IDLE_SESSION : SESSION}
+          onSelectLens={() => undefined}
+        />
+      }
     />
   );
 };

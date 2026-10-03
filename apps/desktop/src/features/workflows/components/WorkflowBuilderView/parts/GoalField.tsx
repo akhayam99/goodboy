@@ -1,16 +1,7 @@
-import type { ChangeEvent, ReactNode, RefObject } from 'react';
-import { Paperclip, Target, Undo2 } from 'lucide-react';
-import { Textarea, cn, tintClasses } from '@goodboy/ui';
+import { Target, Undo2 } from 'lucide-react';
+import { cn } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { ATTACHMENT_ACCEPT } from '../../../../chat/attachment-kinds';
-
-type GoalFiles = {
-  readonly attachments: ReactNode;
-  readonly isDragging: boolean;
-  readonly composerRef: RefObject<HTMLDivElement | null>;
-  readonly fileInputRef: RefObject<HTMLInputElement | null>;
-  readonly onFiles: (event: ChangeEvent<HTMLInputElement>) => void;
-};
+import { PromptField, type PromptFieldFiles } from '../../../../../shared/components/PromptField';
 
 type Props = {
   readonly value: string;
@@ -20,7 +11,8 @@ type Props = {
   readonly canUndo: boolean;
   readonly isPolishing: boolean;
   readonly disabled: boolean;
-  readonly files?: GoalFiles;
+  readonly files?: PromptFieldFiles;
+  readonly notice?: string | null;
   readonly onChange: (value: string) => void;
   readonly onBlur: () => void;
   readonly onUseSessionGoal: () => void;
@@ -43,61 +35,28 @@ export const GoalField = ({
   isPolishing,
   disabled,
   files,
+  notice = null,
   onChange,
   onBlur,
   onUseSessionGoal,
   onUndo,
   onPolish,
 }: Props) => (
-  <div
-    ref={files?.composerRef}
-    data-drop-composer
-    className={cn(
-      'flex flex-col gap-1 rounded-lg bg-subtle px-3 pb-1.5 pt-2 ring-1 transition-shadow focus-within:ring-foreground/15',
-      files?.isDragging === true
-        ? cn('ring-primary', tintClasses('primary').bgSoft)
-        : 'ring-border-soft',
-    )}
-  >
-    <label htmlFor="workflow-goal" className="sr-only">
-      Goal
-    </label>
-    <Textarea
-      id="workflow-goal"
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      onBlur={onBlur}
-      placeholder={placeholder}
-      autoGrow
-      minRows={2}
-      maxRows={6}
-      disabled={disabled || isPolishing}
-      className="resize-none border-0 bg-transparent px-0 py-0 text-body shadow-none focus-visible:ring-0 focus-visible:shadow-none"
-    />
-    <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-      <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-        {files === undefined ? null : (
-          <>
-            <input
-              ref={files.fileInputRef}
-              type="file"
-              accept={ATTACHMENT_ACCEPT}
-              multiple
-              hidden
-              onChange={files.onFiles}
-            />
-            <button
-              type="button"
-              onClick={() => files.fileInputRef.current?.click()}
-              disabled={disabled}
-              className={TOOL_CLASS}
-            >
-              <Paperclip size={ICON_SIZE.row} aria-hidden /> Add files
-            </button>
-            {files.attachments}
-          </>
-        )}
-      </div>
+  <PromptField
+    kind="document"
+    label="Goal"
+    id="workflow-goal"
+    value={value}
+    onChange={onChange}
+    onBlur={onBlur}
+    placeholder={placeholder}
+    disabled={disabled || isPolishing}
+    hasPreview
+    notice={notice}
+    minRows={2}
+    maxRows={6}
+    {...(files !== undefined && { files })}
+    actions={
       <div className="flex shrink-0 items-center gap-1">
         {hasSessionGoal ? (
           <button
@@ -131,6 +90,6 @@ export const GoalField = ({
           <span className={cn(isPolishing && 'text-shimmer')}>Polish</span>
         </button>
       </div>
-    </div>
-  </div>
+    }
+  />
 );

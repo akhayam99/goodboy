@@ -20,4 +20,10 @@ describe('PANE_RHYTHM', () => {
     expect(PANE_RHYTHM.hero).toBe('max-w-[640px]');
     expect(Object.keys(PANE_RHYTHM)).not.toContain('measure');
   });
+
+  it('puts a header that reads as a section one stack gap above the body', () => {
+    const stackGap = PANE_RHYTHM.stack.split(' ').find((entry) => entry.startsWith('gap-'));
+    expect(PANE_RHYTHM.below.section.replace('pb-', 'gap-')).toBe(stackGap);
+    expect(PANE_RHYTHM.below.title).toBe('pb-4');
+  });
 });

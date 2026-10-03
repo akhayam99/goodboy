@@ -1,6 +1,7 @@
 import type { AgentId, OpenQuestion, SessionId, WorkflowRunId } from '@goodboy/types';
 import type { RunTreeRouting } from './RunTreeRow';
 import { RunTreeRows } from './RunTreeRows';
+import type { RunStepSkipAction } from './RunStepSkip';
 import type { RunTreeModel } from './useRunTree';
 
 type Props = {
@@ -10,6 +11,7 @@ type Props = {
   readonly routing: RunTreeRouting;
   readonly selectedAgentId: AgentId | null;
   readonly highlightedStepId: string | null;
+  readonly skip?: RunStepSkipAction | null;
   readonly onHighlight: (stepId: string | null) => void;
   readonly onSelect: (id: AgentId) => void;
   readonly onAnswer: (question: OpenQuestion | null) => void;
@@ -22,6 +24,7 @@ export const RunTree = ({
   routing,
   selectedAgentId,
   highlightedStepId,
+  skip = null,
   onHighlight,
   onSelect,
   onAnswer,
@@ -39,6 +42,7 @@ export const RunTree = ({
       routing={routing}
       selectedAgentId={selectedAgentId}
       highlightedStepId={highlightedStepId}
+      skip={skip}
       onHighlight={onHighlight}
       onSelect={onSelect}
       onAnswer={onAnswer}

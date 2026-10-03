@@ -1,4 +1,4 @@
-import { estimateOrchestratedRun, isAgentStatusSettled } from '@goodboy/core';
+import { estimateOrchestratedRun, isAgentStatusSettled, type AutoContext } from '@goodboy/core';
 import type {
   Agent,
   EffortLevel,
@@ -24,6 +24,7 @@ type Params = {
   readonly roleModels: RoleModelPreferences | null;
   readonly sessionProvider: ProviderId | null;
   readonly sessionEffort: EffortLevel | null;
+  readonly scope?: AutoContext | null;
 };
 
 const MACHINE_TIME_NOTE = 'Waiting on you is not counted.';
@@ -68,6 +69,7 @@ const stepsTimeLeft = ({
   roleModels,
   sessionProvider,
   sessionEffort,
+  scope = null,
 }: Params): RunTimeLeft | null => {
   if (source.history === null) {
     return null;
@@ -89,6 +91,7 @@ const stepsTimeLeft = ({
       roleModels,
       sessionProvider,
       sessionEffort,
+      scope,
     });
     if (estimate === null) {
       return null;

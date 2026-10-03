@@ -103,7 +103,7 @@ describe('theme switch is a class swap on the html element', () => {
       tree: <KeepAliveWorkSurface sessionId={sessionId} isActive />,
     });
     const surface = screen.getByTestId('measured');
-    const startAgent = screen.getByRole('button', { name: 'Start agent' });
+    const newControl = screen.getByRole('button', { name: 'New' });
     const textBefore = surface.textContent;
     const changed: Array<Node> = [];
     const observer = new MutationObserver((records) => {
@@ -118,7 +118,7 @@ describe('theme switch is a class swap on the html element', () => {
 
     expect(counts).toEqual({ tree: 0, toggle: 3 });
     expect(changed).toEqual([]);
-    expect(screen.getByRole('button', { name: 'Start agent' })).toBe(startAgent);
+    expect(screen.getByRole('button', { name: 'New' })).toBe(newControl);
     expect(surface.textContent).toBe(textBefore);
   });
 

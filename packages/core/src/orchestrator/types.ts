@@ -70,6 +70,7 @@ export type OrchestratorRoleDefault = {
   readonly provider: ProviderId;
   readonly model: string;
   readonly effort: EffortLevel;
+  readonly models?: ReadonlyArray<Readonly<{ provider: ProviderId; model: string }>>;
 };
 
 export type OrchestratorInput = {

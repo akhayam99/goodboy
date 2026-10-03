@@ -67,3 +67,7 @@ Moved your repos to a new folder? The warning in the workspace settings names th
 ### Keep .goodboy out of git
 
 Keep Goodboy's own folder out of your commits with one click. The card shows up only when git does not already ignore `.goodboy`, your global rules included.
+
+### Copy settings from another workspace
+
+Workspace settings has one page per area: Projects, About you, New sessions, After merge, Review replies, Permissions, Skills and Disconnect. A dot after a label means the value is not the default; its menu has **Reset**. From the menu of a page, **Restore defaults** puts that page back, and **Copy from…** takes the values of another workspace. **Copy settings from…** on the Settings home does the same for every page at once. You see what changes, page by page, before anything is saved, and **Undo** puts it back. Projects, folders, accounts and permission history are never copied.

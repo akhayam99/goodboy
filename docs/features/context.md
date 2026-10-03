@@ -22,7 +22,7 @@ Read the reason behind a decision without opening the run. When Goodboy records 
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-summary-light.webp" alt="The Context drawer on Summary with the blocks State 4, Next 3, Open questions 1 and Learned 2, each with its key line first and Show more links for the rest">
 </picture>
 
-Hand the next agent where things stand. After each turn a summary is updated with **State**, **Next**, **Open questions** and **Learned**, and an edit you made in the meantime is kept. Each block shows its key line first and folds the rest behind **Show 3 more**.
+Hand the next agent where things stand. After a turn the summary is updated with **State**, **Next**, **Open questions** and **Learned**, and an edit you made in the meantime is kept. Turns that finish while an update runs wait together and the next update reads them all, so one update can cover several turns. Each block shows its key line first and folds the rest behind **Show 3 more**.
 
 ### Context drawer
 
@@ -31,7 +31,7 @@ Hand the next agent where things stand. After each turn a summary is updated wit
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-drawer-light.webp" alt="The Context drawer of the session Stop retried webhooks posting a second credit on Decisions 5, with Changed since you last looked (4 rows: Added, Replaced by 7, Withdrawn, Reworded) above the Active list">
 </picture>
 
-Open goal, decisions and summary from any session page with the **Context** button, and use the copy icon at the top for **Copy as brief**. A dot on **Decisions** says something changed since you last looked, and **Changed since you last looked** lists added, removed and reworded decisions first. Active decisions show their reason under the text when they have one.
+Open goal, decisions and summary from any session page with the **Context** button, and use the copy icon at the top for **Copy as brief**. **Context updates** at the top of the drawer says how the context engine is doing and opens to show the last update ("2 min ago, after 3 turns"), the model and effort it ran on with **Change model**, which goes to Step summaries in Defaults, the tokens and cost it used, and what it changed (Goal, 2 decisions, Summary). **Update now** joins the session's queue, one update at a time, and shows **Queued** until its turn; when an update failed the same button reads **Retry**. A dot on **Decisions** says something changed since you last looked, and **Changed since you last looked** lists added, removed and reworded decisions first. Active decisions show their reason under the text when they have one.
 
 ### Context budgets
 

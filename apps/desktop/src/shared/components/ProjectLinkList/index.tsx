@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { NewProjectForm } from '../NewProjectForm';
 import type { Project, WorkspaceId } from '@goodboy/types';
 import type { ProjectAttachConflict } from '../../../store/slices/projects/addProject';
 import { useProjectLinking } from '../../hooks/useProjectLinking';
@@ -18,6 +19,7 @@ type Props = {
   readonly emptyHint?: string;
   readonly editorExtra?: (params: { readonly project: Project }) => ReactNode;
   readonly rowBadge?: (params: { readonly project: Project }) => ReactNode;
+  readonly rowFooter?: (params: { readonly project: Project }) => ReactNode;
   readonly density?: ProjectLinkDensity;
   readonly heading?: (params: { readonly count: number }) => ReactNode;
   readonly hint?: string;
@@ -29,6 +31,7 @@ export const ProjectLinkList = ({
   emptyHint,
   editorExtra,
   rowBadge,
+  rowFooter,
   density = 'comfortable',
   heading,
   hint,
@@ -36,6 +39,7 @@ export const ProjectLinkList = ({
   const linking = useProjectLinking({ workspaceId, initialConflicts });
   const isCompact = density === 'compact';
   const [query, setQuery] = useState('');
+  const [isStarting, setIsStarting] = useState(false);
 
   return (
     <div className="flex flex-col gap-2">
@@ -59,7 +63,7 @@ export const ProjectLinkList = ({
             onPathChange={linking.setPath}
             onAdd={({ rootPath }) => void linking.link({ rootPath })}
             onBrowse={() => void linking.browse()}
-            onNewProject={() => void linking.newProject()}
+            onNewProject={() => setIsStarting(true)}
             onLinkPlainFolder={() => void linking.linkPlainFolder()}
           />
         </div>
@@ -85,6 +89,7 @@ export const ProjectLinkList = ({
           onUnlink={linking.unlink}
           editorExtra={editorExtra}
           rowBadge={rowBadge}
+          rowFooter={rowFooter}
         />
       ) : null}
       {linking.linked.length > 0 && !isCompact ? (
@@ -107,9 +112,16 @@ export const ProjectLinkList = ({
           onPathChange={linking.setPath}
           onAdd={({ rootPath }) => void linking.link({ rootPath })}
           onBrowse={() => void linking.browse()}
-          onNewProject={() => void linking.newProject()}
+          onNewProject={() => setIsStarting(true)}
         />
       )}
+
+      {isStarting ? (
+        <NewProjectForm
+          onCreated={() => setIsStarting(false)}
+          onCancel={() => setIsStarting(false)}
+        />
+      ) : null}
 
       {linking.detected !== null && (
         <DetectedRepoList

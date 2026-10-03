@@ -12,6 +12,7 @@ import { useAppStore, useSessionById, type InboxStudioFocus } from '../../../../
 import { useWorkspaceIssueLookup } from '../../../integrations/hooks/useWorkspaceIssueLookup';
 import { placeholderRecordOf } from '../../../integrations/starred/placeholderRecordOf';
 import { recordSessionId } from '../../recordSessionId';
+import { recordCanReply } from '../../recordCanReply';
 import { useInboxRecords } from '../../useInboxRecords';
 import { attachLinkedSession } from '../../attachLinkedSession';
 import { useInboxLinkedSessions } from '../../useInboxLinkedSessions';
@@ -145,6 +146,7 @@ export const InboxStudio = ({
     initialFilters({ workspaceId, initialKind, initialProvider }),
   );
   const [selectedKey, setSelectedKey] = useState<string | null>(initialRecordKey);
+  const [isFirstRowOff, setFirstRowOff] = useState(false);
   const [sessionFilter, setSessionFilter] = useState<SessionId | null>(initialSessionId);
   const [launchFocusRequest, setLaunchFocusRequest] = useState(0);
   const filteredSession = useSessionById(sessionFilter);
@@ -186,39 +188,53 @@ export const InboxStudio = ({
   })();
 
   const stars = useInboxStars({ workspaceId, records });
+  const { isStarred, canStar, toggle: toggleStar } = stars;
   const [unstarredClosed, setUnstarredClosed] = useState<ReadonlyArray<StarredIssue>>([]);
   const days = useMemo(
     () =>
       groupByDay({
         items: orderInboxRecords({
           records: filterInboxRecords({ records: scopedRecords, query, filters }).filter(
-            (record) => !stars.isStarred(record),
+            (record) => !isStarred(record),
           ),
         }),
         timestampOf: (record) => record.updatedAt,
         now: new Date(),
       }),
-    [scopedRecords, query, filters, stars.isStarred],
+    [scopedRecords, query, filters, isStarred],
   );
-  const needle = query.trim().toLowerCase();
-  const starredRows = stars.rows.filter((row) =>
-    row.record === null
-      ? needle === '' ||
-        row.issue.identifier.toLowerCase().includes(needle) ||
-        row.issue.title.toLowerCase().includes(needle)
-      : filterInboxRecords({ records: [row.record], query, filters }).length > 0,
+  const starredRows = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return stars.rows.filter((row) =>
+      row.record === null
+        ? needle === '' ||
+          row.issue.identifier.toLowerCase().includes(needle) ||
+          row.issue.title.toLowerCase().includes(needle)
+        : filterInboxRecords({ records: [row.record], query, filters }).length > 0,
+    );
+  }, [stars.rows, query, filters]);
+  const starredRecords = useMemo(
+    () =>
+      starredRows.flatMap((row) => {
+        if (row.record !== null) {
+          return [row.record];
+        }
+        const placeholder = placeholderRecordOf(row.issue);
+        return placeholder === null
+          ? []
+          : [attachLinkedSession({ record: placeholder, linked: linkedSessions })];
+      }),
+    [starredRows, linkedSessions],
   );
-  const starredRecords = starredRows.flatMap((row) => {
-    if (row.record !== null) {
-      return [row.record];
-    }
-    const placeholder = placeholderRecordOf(row.issue);
-    return placeholder === null
-      ? []
-      : [attachLinkedSession({ record: placeholder, linked: linkedSessions })];
-  });
-  const orderedRecords = [...starredRecords, ...days.flatMap((day) => day.items)];
-  const counts = inboxFacetCounts({ records: scopedRecords, query, filters });
+  const orderedRecords = useMemo(
+    () => [...starredRecords, ...days.flatMap((day) => day.items)],
+    [starredRecords, days],
+  );
+  const orderedKeys = useMemo(() => orderedRecords.map((record) => record.key), [orderedRecords]);
+  const counts = useMemo(
+    () => inboxFacetCounts({ records: scopedRecords, query, filters }),
+    [scopedRecords, query, filters],
+  );
 
   const workspaceName = useAppStore(
     (state) => state.workspaces.find((workspace) => workspace.id === workspaceId)?.name ?? '',
@@ -232,26 +248,33 @@ export const InboxStudio = ({
     query,
     isKnown: (code) => records.some((record) => record.identifier.toUpperCase() === code),
   });
-  const lookupRecords =
-    lookup.state.status === 'done'
-      ? lookup.state.value.result.hits.map((hit) =>
-          attachLinkedSession({ record: hit.record, linked: linkedSessions }),
-        )
-      : [];
+  const lookupRecords = useMemo(
+    () =>
+      lookup.state.status === 'done'
+        ? lookup.state.value.result.hits.map((hit) =>
+            attachLinkedSession({ record: hit.record, linked: linkedSessions }),
+          )
+        : [],
+    [lookup.state, linkedSessions],
+  );
 
-  const selectedRecord =
+  const pinnedRecord =
     scopedRecords.find((record) => record.key === selectedKey) ??
     starredRecords.find((record) => record.key === selectedKey) ??
     lookupRecords.find((record) => record.key === selectedKey) ??
     null;
+  const isFirstRowShown = selectedKey === null && !isFirstRowOff;
+  const selectedRecord = pinnedRecord ?? (isFirstRowShown ? (orderedRecords[0] ?? null) : null);
+  const activeKey = selectedRecord?.key ?? null;
+  const canReply = recordCanReply({ record: selectedRecord });
 
   const starOf = (record: InboxRecord): boolean | undefined =>
-    stars.canStar(record) ? stars.isStarred(record) : undefined;
+    canStar(record) ? isStarred(record) : undefined;
 
   const toggleSelectedStar = (key: string | null): void => {
     const record = [...orderedRecords, ...lookupRecords].find((entry) => entry.key === key);
     if (record !== undefined) {
-      void stars.toggle(record);
+      void toggleStar(record);
     }
   };
 
@@ -271,12 +294,14 @@ export const InboxStudio = ({
 
   const deselect = (): void => {
     setSelectedKey(null);
+    setFirstRowOff(true);
   };
 
-  useEscapeLayer(deselect, selectedRecord != null);
+  useEscapeLayer(deselect, pinnedRecord != null);
 
   const selectKey = useCallback((key: string): void => {
     setSelectedKey(key);
+    setFirstRowOff(false);
     requestAnimationFrame(() => {
       document
         .querySelector(`[data-inbox-key="${CSS.escape(key)}"]`)
@@ -286,6 +311,7 @@ export const InboxStudio = ({
 
   const activate = useCallback((key: string): void => {
     setSelectedKey(key);
+    setFirstRowOff(false);
     setLaunchFocusRequest((current) => current + 1);
   }, []);
 
@@ -293,30 +319,41 @@ export const InboxStudio = ({
 
   const activateRecord = useCallback((record: InboxRecord) => activate(record.key), [activate]);
 
-  const openSelected = (key: string | null): void => {
-    const url = orderedRecords.find((record) => record.key === key)?.url ?? '';
+  const orderedRecordsRef = useRef(orderedRecords);
+  orderedRecordsRef.current = orderedRecords;
+
+  const openSelected = useCallback((key: string | null): void => {
+    const url = orderedRecordsRef.current.find((record) => record.key === key)?.url ?? '';
     if (url === '') {
       return;
     }
     void openUrl(url);
-  };
+  }, []);
 
-  const focusReply = (): void => {
+  const focusReply = useCallback((): void => {
     const composer = detailRef.current?.querySelector('textarea');
     composer?.focus();
-  };
+  }, []);
+
+  const focusSearch = useCallback((): void => {
+    searchRef.current?.focus();
+  }, []);
+
+  const selectedStarRef = useRef(toggleSelectedStar);
+  selectedStarRef.current = toggleSelectedStar;
+  const starSelected = useCallback((key: string | null): void => {
+    selectedStarRef.current(key);
+  }, []);
 
   useListKeys({
-    keys: orderedRecords.map((record) => record.key),
-    selectedKey,
+    keys: orderedKeys,
+    selectedKey: activeKey,
     onSelect: selectKey,
     onActivate: activate,
-    extraKeys: {
-      o: openSelected,
-      r: focusReply,
-      s: toggleSelectedStar,
-      '/': () => searchRef.current?.focus(),
-    },
+    onOpenInTool: openSelected,
+    ...(canReply && { onReply: focusReply }),
+    onStar: starSelected,
+    onSearch: focusSearch,
   });
 
   const clearFilters = (): void => {
@@ -343,6 +380,7 @@ export const InboxStudio = ({
       loading={loading}
       errors={errors}
       projects={projects}
+      canReply={canReply}
       onFiltersChange={setFilters}
       onClearFilters={clearFilters}
     />
@@ -354,7 +392,7 @@ export const InboxStudio = ({
       tone={CONCEPT_TONE.inbox}
       title="Inbox"
       closeLabel="close inbox"
-      isEscapeEnabled={selectedRecord == null}
+      isEscapeEnabled={pinnedRecord == null}
       onClose={onClose}
     >
       {(requestClose) => (
@@ -389,15 +427,15 @@ export const InboxStudio = ({
               <InboxLookupGroup
                 lookup={lookup}
                 workspaceName={workspaceName}
-                selectedKey={selectedKey}
+                selectedKey={activeKey}
                 onSelect={(hit) => selectKey(hit.record.key)}
                 onActivate={activateRecord}
                 starOf={starOf}
-                onToggleStar={stars.toggle}
+                onToggleStar={toggleStar}
               />
               <InboxStarredGroup
                 rows={starredRows}
-                selectedKey={selectedKey}
+                selectedKey={activeKey}
                 unstarredCount={unstarredClosed.length}
                 onSelect={selectRecord}
                 onActivate={activateRecord}
@@ -419,10 +457,10 @@ export const InboxStudio = ({
                 isLoading={isLoading}
                 failures={failures}
                 hasFiltersActive={hasFiltersActive}
-                selectedKey={selectedKey}
+                selectedKey={activeKey}
                 onSelect={selectRecord}
                 onActivate={activateRecord}
-                onToggleStar={stars.toggle}
+                onToggleStar={toggleStar}
                 onRetry={refetch}
                 onOpenSettings={openSettings}
                 onClearFilters={clearFilters}

@@ -21,6 +21,7 @@ import {
 } from '../../../features/wireframes/wireframeFidelity';
 import type { WireframeTarget } from '../../../features/wireframes/wireframeTarget';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
+import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import type { SpawnFocus } from '../session-view/spawnFocus';
 import type { GetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
@@ -79,6 +80,7 @@ export const resolveWireframeRouting = ({
     sessionId,
     isRunBudgetBlocked: false,
     nowMs: Date.now(),
+    ...workspacePolicyAvailability({ state, sessionId }),
   });
   const usable = availability.connectedProviders.filter(
     (provider) =>

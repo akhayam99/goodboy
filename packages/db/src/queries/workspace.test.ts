@@ -73,7 +73,10 @@ describe('workspace queries', () => {
           ...EMPTY_OVERRIDES,
           defaultProviderId: 'codex',
           defaultBranchPrefix: 'ak/',
-          providerPool: ['codex', 'anthropic'],
+          providerPool: [
+            { id: 'codex', state: 'on' },
+            { id: 'anthropic', state: 'backup' },
+          ],
         },
       },
     });

@@ -1,5 +1,6 @@
 import type { SessionId, TaskModelPreference } from '@goodboy/types';
-import { enqueueSummarizer } from './turnHelpers';
+import { CONTEXT_UPDATE_REASON } from './requestContextUpdate';
+import { enqueueContextConsolidation, enqueueSummarizer } from './turnHelpers';
 import type { GetFn, SetFn } from './types';
 
 export const retrySummarizer = (set: SetFn, get: GetFn) => {
@@ -9,6 +10,18 @@ export const retrySummarizer = (set: SetFn, get: GetFn) => {
       return;
     }
     if (!status.lastAttempt) {
+      return;
+    }
+    const isConsolidation =
+      status.lastAttempt.turnInput === '' && status.lastAttempt.turnOutput === '';
+    if (isConsolidation && taskModelOverride === undefined) {
+      enqueueContextConsolidation({
+        set,
+        get,
+        sessionId,
+        after: CONTEXT_UPDATE_REASON,
+        isRequested: true,
+      });
       return;
     }
     enqueueSummarizer({

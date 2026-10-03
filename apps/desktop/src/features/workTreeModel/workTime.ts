@@ -30,21 +30,10 @@ type MsParams = {
   readonly ms: number;
 };
 
-export const formatActiveTime = ({ ms }: MsParams): string => {
-  const seconds = Math.floor(ms / 1_000);
-  if (seconds < 60) {
-    return `${seconds}s`;
-  }
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) {
-    return `${minutes}m`;
-  }
-  const rest = minutes % 60;
-  return rest === 0 ? `${Math.floor(minutes / 60)}h` : `${Math.floor(minutes / 60)}h ${rest}m`;
-};
-
 const exactActiveTime = ({ ms }: MsParams): string =>
   ms < 1_000 ? '0s' : formatDuration({ durationMs: ms });
+
+export const formatActiveTime = ({ ms }: MsParams): string => exactActiveTime({ ms });
 
 const estimateMinutes = ({ ms }: MsParams): number => {
   const minutes = ms / MINUTE_MS;
@@ -160,10 +149,18 @@ type LeftParams = {
   readonly highMs: number;
 };
 
-export const timeLeftLabel = ({ lowMs, highMs }: LeftParams): string =>
-  lowMs > 0
-    ? `${approxRangeLabel({ lowMs, midMs: (lowMs + highMs) / 2, highMs })} left`
-    : `~${formatEstimateTime({ ms: highMs })} left`;
+export const TIME_LEFT_SUFFIX = ' left';
+
+const LEFT_RANGE_MAX_CHARS = 7;
+
+export const timeLeftLabel = ({ lowMs, highMs }: LeftParams): string => {
+  const range = lowMs > 0 ? approxRangeLabel({ lowMs, midMs: (lowMs + highMs) / 2, highMs }) : null;
+  const shown =
+    range !== null && range.length <= LEFT_RANGE_MAX_CHARS
+      ? range
+      : `~${formatEstimateTime({ ms: highMs })}`;
+  return `${shown}${TIME_LEFT_SUFFIX}`;
+};
 
 type Params = {
   readonly phase: RowPhase;

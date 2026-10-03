@@ -155,31 +155,6 @@ export const planPartsProgress = ({
   return done === total ? { kind: 'done', total } : { kind: 'waiting', done, total };
 };
 
-export const planPartsSentence = ({
-  progress,
-}: {
-  readonly progress: PlanPartsProgress;
-}): string => {
-  switch (progress.kind) {
-    case 'notRun':
-      return progress.total === 1 ? '1 part' : `${progress.total} parts`;
-    case 'failed':
-      return `Part ${progress.part} failed`;
-    case 'question':
-      return `Part ${progress.part} needs your answer`;
-    case 'running':
-      return `Running part ${progress.part} of ${progress.total}`;
-    case 'waiting':
-      return `${progress.done} of ${progress.total} parts done`;
-    case 'done':
-      return `Ran · ${progress.total} of ${progress.total} parts done`;
-    default: {
-      const exhaustive: never = progress;
-      return exhaustive;
-    }
-  }
-};
-
 export const planSplitSentence = ({
   count,
   plannerName,

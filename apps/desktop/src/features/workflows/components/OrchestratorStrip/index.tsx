@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Play, RotateCcw, Wallet } from 'lucide-react';
 import { ClampedProse, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type {
   Agent,
   BudgetAlert,
+  GoalAttachment,
   OpenQuestion,
   OrchestratorHint,
   SessionId,
@@ -15,13 +16,13 @@ import { useAppStore } from '../../../../store/store';
 import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate';
 import { requestSessionSpendLimitEdit } from '../../../budget/requestSessionSpendLimitEdit';
 import { isBudgetBlocked } from '../../../../store/slices/workflows/budgetBlock';
-import { WorkflowAutorunToggle } from '../WorkflowAutorunToggle';
 import { WorkflowNodeRouting } from '../WorkflowNodeRouting';
 import { RunSpendLimitPopover } from '../RunSpendLimitPopover';
 import { OrchestratorAction } from './OrchestratorAction';
 import { OrchestratorHintComposer } from './OrchestratorHintComposer';
 import { OrchestratorHintLog } from './OrchestratorHintLog';
-import { OrchestratorMenu } from './OrchestratorMenu';
+import { RunControlMenu } from '../RunControls/RunControlMenu';
+import { RunControls } from '../RunControls';
 import { OrchestratorRoutingRow } from './OrchestratorRoutingRow';
 import { resolveOrchestratorState } from './orchestratorState';
 import { useElapsedLabel } from './useElapsedLabel';
@@ -39,6 +40,7 @@ const EMPTY_QUESTIONS: ReadonlyArray<OpenQuestion> = [];
 const EMPTY_ALERTS: ReadonlyArray<BudgetAlert> = [];
 const EMPTY_HINTS: ReadonlyArray<OrchestratorHint> = [];
 const EMPTY_READING: ReadonlyArray<string> = [];
+const EMPTY_FILES: ReadonlyArray<GoalAttachment> = [];
 
 export const OrchestratorStrip = ({
   sessionId,
@@ -57,7 +59,6 @@ export const OrchestratorStrip = ({
     (state) => state.removeWorkflowOrchestratorHint,
   );
   const setWorkflowRunAutoRun = useAppStore((state) => state.setWorkflowRunAutoRun);
-  const stopWorkflowRunNow = useAppStore((state) => state.stopWorkflowRunNow);
   const openQuestions = useAppStore(
     (state) => state.sessionOpenQuestions[sessionId] ?? EMPTY_QUESTIONS,
   );
@@ -74,6 +75,19 @@ export const OrchestratorStrip = ({
   const [isRoutingOpen, setIsRoutingOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const hints = run.orchestratorHints ?? EMPTY_HINTS;
+  const runAttachments = useAppStore(
+    (state) => state.workflowRunAttachments[run.id] ?? EMPTY_FILES,
+  );
+  const hasLoadedFiles = useAppStore((state) => state.workflowRunAttachments[run.id] !== undefined);
+  const loadGoalAttachments = useAppStore((state) => state.loadGoalAttachments);
+  const hasHintFiles = hints.some((hint) => (hint.attachmentIds?.length ?? 0) > 0);
+
+  useEffect(() => {
+    if (!hasHintFiles || hasLoadedFiles) {
+      return;
+    }
+    void loadGoalAttachments({ type: 'workflow_run', id: run.id }).catch(() => undefined);
+  }, [hasHintFiles, hasLoadedFiles, loadGoalAttachments, run.id]);
 
   const state = resolveOrchestratorState({
     run,
@@ -84,15 +98,10 @@ export const OrchestratorStrip = ({
   });
   const elapsed = useElapsedLabel({ agentId: state.waitingOnAgentId });
   const isPulsing =
-    state.phase === 'deciding' ||
-    state.phase === 'automatic' ||
-    state.phase === 'stopping' ||
-    state.phase === 'stopping-graceful';
+    state.phase === 'deciding' || state.phase === 'automatic' || state.phase === 'stopping';
   const pulseTone = state.tone === 'neutral' ? 'info' : state.tone;
   const isRunOver = state.phase === 'done';
   const isStepRunning = agents.some((agent) => agent.status === 'running');
-  const canStopNow =
-    (isOrchestrating || isStepRunning) && run.orchestrationStop?.kind !== 'operator';
   const hasRouting = agents.length > 0;
 
   const guard = async (action: () => Promise<void>) => {
@@ -140,11 +149,11 @@ export const OrchestratorStrip = ({
         return (
           <OrchestratorAction
             icon={Play}
-            label="Resume the run"
+            label="Continue the run"
             variant="primary"
             tone="warning"
             testId="orchestrator-resume"
-            title="Clear the stop, put autorun back on, and ask for the next step"
+            title="Clear the stop and ask for the next step"
             disabled={busy}
             onClick={() => void guard(() => retryWorkflowOrchestration(sessionId, run.id))}
           />
@@ -174,7 +183,7 @@ export const OrchestratorStrip = ({
           />
         );
       case 'deciding':
-      case 'stopping-graceful':
+      case 'paused':
       case 'stopping':
       case 'waiting':
       case 'automatic':
@@ -240,23 +249,27 @@ export const OrchestratorStrip = ({
           className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1.5"
         >
           {primaryAction}
+          <RunControls
+            sessionId={sessionId}
+            run={run}
+            agents={agents}
+            isOrchestrating={isOrchestrating}
+            isRunOver={isRunOver}
+          />
           <OrchestratorRoutingRow
             sessionId={sessionId}
             run={run}
             disabled={busy || isOrchestrating}
           />
-          {isRunOver ? null : (
-            <WorkflowAutorunToggle
-              isOn={run.autoRun === true}
-              onToggle={() => void setWorkflowRunAutoRun(sessionId, run.id, run.autoRun !== true)}
-            />
-          )}
-          <OrchestratorMenu
-            canStopNow={canStopNow}
-            hasRouting={hasRouting}
-            isRoutingOpen={isRoutingOpen}
-            onToggleRouting={() => setIsRoutingOpen((open) => !open)}
-            onStopNow={() => void stopWorkflowRunNow(sessionId, run.id)}
+          <RunControlMenu
+            label="Orchestrator actions"
+            autoRun={run.autoRun === true}
+            routing={
+              hasRouting
+                ? { isOpen: isRoutingOpen, onToggle: () => setIsRoutingOpen((open) => !open) }
+                : null
+            }
+            onAutoRun={(autoRun) => void setWorkflowRunAutoRun(sessionId, run.id, autoRun)}
           />
         </div>
         {state.detail != null && state.detail !== '' ? (
@@ -273,6 +286,7 @@ export const OrchestratorStrip = ({
       <OrchestratorHintComposer
         isDeciding={isOrchestrating}
         isStepRunning={isStepRunning}
+        isPaused={state.phase === 'paused'}
         onSubmit={async (draft) => {
           try {
             await addWorkflowOrchestratorHint(sessionId, run.id, draft);
@@ -286,6 +300,7 @@ export const OrchestratorStrip = ({
       <OrchestratorHintLog
         hints={hints}
         readingHintIds={readingHintIds}
+        runAttachments={runAttachments}
         onRemove={(hintId) =>
           void removeWorkflowOrchestratorHint(sessionId, run.id, hintId).catch((error: unknown) =>
             reportError({ title: "Couldn't remove the hint", error, sessionId }),

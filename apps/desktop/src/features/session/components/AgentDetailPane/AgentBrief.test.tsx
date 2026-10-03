@@ -160,7 +160,7 @@ describe('AgentBrief summary', () => {
 
     expect(screen.queryByText('Outcome')).toBeNull();
     expect(screen.queryByText('completed 2 clusters')).toBeNull();
-    expect(screen.getByText('part one')).toBeTruthy();
+    screen.getByText('part one');
   });
 
   it('keeps the outcome of a scout that spawned subagents', () => {
@@ -255,11 +255,11 @@ describe('AgentBrief statistics', () => {
       <AgentBrief session={session} agent={makeAgent({ outputSummary: 'shipped the refactor' })} />,
     );
 
-    expect(screen.getByRole('button', { name: 'Usage detail' })).toBeTruthy();
-    expect(screen.getByText(/in ·/)).toBeTruthy();
-    expect(screen.getByText('~$0.12')).toBeTruthy();
-    expect(screen.getByText('47% cached')).toBeTruthy();
-    expect(screen.getByText('3 turns')).toBeTruthy();
+    screen.getByRole('button', { name: 'Usage detail' });
+    screen.getByText(/in ·/);
+    screen.getByText('~$0.12');
+    screen.getByText('47% cached');
+    screen.getByText('3 turns');
   });
 
   it('leads with the outcome and leaves the usage footer behind it', () => {
@@ -424,7 +424,7 @@ describe('AgentBrief delegated answers', () => {
 
     render(<AgentBrief session={session} agent={makeAgent({})} />);
 
-    expect(screen.getByText('Delegated answers')).toBeTruthy();
+    screen.getByText('Delegated answers');
     const row = screen.getByTestId(`delegate-brief-row-${delegateId}`);
     expect(row.textContent).toContain('pick a database');
     expect(row.textContent).toContain('running');
@@ -461,8 +461,8 @@ describe('AgentBrief delegated answers', () => {
 
     render(<AgentBrief session={session} agent={makeAgent({})} />);
 
-    expect(screen.getByText('Subagents')).toBeTruthy();
-    expect(screen.getByText('cluster one')).toBeTruthy();
+    screen.getByText('Subagents');
+    screen.getByText('cluster one');
     expect(screen.queryByText('answer: pick a database')).toBeNull();
   });
 
@@ -484,8 +484,8 @@ describe('AgentBrief delegated answers', () => {
 
     render(<AgentBrief session={session} agent={delegate()} />);
 
-    expect(screen.getByText('Answering for')).toBeTruthy();
-    expect(screen.getByText('pick a database')).toBeTruthy();
+    screen.getByText('Answering for');
+    screen.getByText('pick a database');
     fireEvent.click(screen.getByRole('button', { name: 'asked by plan the work' }));
     expect(navigate).toHaveBeenCalledWith({
       to: { at: 'agent', sessionId: sessionId, agentId: agentId },

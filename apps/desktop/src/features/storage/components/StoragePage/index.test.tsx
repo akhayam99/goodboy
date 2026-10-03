@@ -63,7 +63,6 @@ vi.mock('../../../../shared/components/Toast', () => ({
 }));
 
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn(async () => null) }));
-vi.mock('../BranchesSection', () => ({ BranchesSection: () => null }));
 
 import { StoragePage } from './index';
 
@@ -157,6 +156,9 @@ beforeEach(() => {
     storageMeasuringPath: null,
     settings: {},
     loadStorage: vi.fn(async () => undefined),
+    storageOtherTools: { status: 'idle', tools: [] },
+    loadOtherTools: vi.fn(async () => undefined),
+    cancelOtherTools: vi.fn(async () => undefined),
     reportError: vi.fn(async () => undefined),
     focusStorage: vi.fn(),
     dismissStorageOutcome: vi.fn(),
@@ -180,31 +182,6 @@ afterEach(() => {
 });
 
 describe('StoragePage', () => {
-  it('splits space from branches into two named clusters', () => {
-    render(<StoragePage />);
-
-    const space = screen.getByRole('region', { name: 'Free up space' });
-    const branches = screen.getByRole('region', { name: 'Clean up branches' });
-    expect(within(space).getByRole('region', { name: 'Storage summary' })).toBeDefined();
-    expect(within(space).getByRole('region', { name: 'Worktrees' })).toBeDefined();
-    expect(within(space).getByRole('region', { name: 'History and app data' })).toBeDefined();
-    expect(within(space).getByRole('region', { name: 'Cleanup' })).toBeDefined();
-    expect(within(branches).queryByRole('region', { name: 'Worktrees' })).toBeNull();
-  });
-
-  it('shows the after merge rule of the scoped workspace with the branches', () => {
-    Object.assign(state, {
-      storageScope: { kind: 'workspace', id: 'harborline' as WorkspaceId },
-      workspaces: [{ id: 'harborline', name: 'Harborline' }],
-      workspaceOverrides: { harborline: { afterMerge: 'local' } },
-    });
-    render(<StoragePage />);
-
-    const branches = screen.getByRole('region', { name: 'Clean up branches' });
-    expect(within(branches).getByText('After a merge')).toBeDefined();
-    expect(within(branches).getByText('Delete on this Mac')).toBeDefined();
-  });
-
   it('leads with what can go and states every folder with a word', () => {
     render(<StoragePage />);
 
@@ -221,10 +198,13 @@ describe('StoragePage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Remove 1 safe folder/ }));
 
-    const dirtyBox = screen.getByRole('checkbox', { name: 'Select goodboy/ledger-close' });
-    const untrackedBox = screen.getByRole('checkbox', { name: 'Select goodboy/fx-rates' });
-    expect((dirtyBox as HTMLInputElement).disabled).toBe(true);
-    expect((untrackedBox as HTMLInputElement).disabled).toBe(true);
+    expect(screen.queryByRole('checkbox', { name: 'Select goodboy/ledger-close' })).toBeNull();
+    expect(screen.queryByRole('checkbox', { name: 'Select goodboy/fx-rates' })).toBeNull();
+    expect(
+      screen
+        .getByRole('checkbox', { name: `Select ${safeIdle.branch}` })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
     const confirm = screen.getByRole('group', { name: /Remove 1 folder/ });
     expect(
       within(confirm).getByText(/including 1 with commits that were never pushed/),
@@ -236,6 +216,23 @@ describe('StoragePage', () => {
       paths: [safeIdle.path],
       mode: 'safe',
     });
+  });
+
+  it('floats a selection bar from a row checkbox and confirms above it', () => {
+    render(<StoragePage />);
+
+    fireEvent.click(screen.getByRole('checkbox', { name: `Select ${safeIdle.branch}` }));
+
+    const toolbar = screen.getByRole('toolbar', { name: '1 selected' });
+    fireEvent.click(within(toolbar).getByRole('button', { name: 'Remove selected folders' }));
+    const confirm = screen.getByRole('group', { name: /Remove 1 folder/ });
+    expect(confirm.compareDocumentPosition(toolbar) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+    expect(screen.queryByRole('group', { name: /Remove 1 folder/ })).toBeNull();
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+    expect(screen.queryByRole('toolbar')).toBeNull();
+    expect(state.removeStorageFolders).not.toHaveBeenCalled();
   });
 
   it('names the scope on the bulk buttons', () => {

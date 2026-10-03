@@ -6,8 +6,8 @@ import { describe, expect, it } from 'vitest';
 import { toEntryId, type ConsoleBaseline } from '../../test/consoleKey';
 
 const DESKTOP_ROOT = join(import.meta.dirname, '..', '..', '..');
-const BASELINE_CEILING = 21;
-const BASELINE_SHA256 = 'a3c2a296cdf4128cc84202eb4f0a1ec5926ceec07fd6e86ea44f50f26fe3a597';
+const BASELINE_CEILING = 19;
+const BASELINE_SHA256 = 'ca5d06f690a469ab6a2cb2b4ba3fecc38fa3e9f86f78a5aa3843bfebefb55331';
 
 const digest = (): string =>
   createHash('sha256').update(baseline.entries.map(toEntryId).sort().join('\n')).digest('hex');
