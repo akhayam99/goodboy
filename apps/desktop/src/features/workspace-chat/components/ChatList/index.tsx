@@ -1,15 +1,21 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronRight, Search, SquarePen } from 'lucide-react';
 import { Button, ScrollFade } from '@goodboy/ui';
 import type { ChatId, ChatSummary, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { markdownPreview } from '../../../../shared/utils/markdownPreview';
 import { pluralize } from '../../../../shared/utils/pluralize';
+import { useSelectionKeys } from '../../../../shared/hooks/useSelectionKeys';
+import { useMultiSelect } from '../../../../shared/hooks/useMultiSelect';
+import { ObjectSelectionBar } from '../../../../shared/components/ObjectSelectionBar';
 import { useAppStore } from '../../../../store';
 import { selectChatGroups } from '../../../../store/slices/chats/selectChatGroups';
+import type { ObjectTarget } from '../../../actions/types';
+import { useActionControls } from '../../../actions/useActionControls';
 import { chatRowTime } from '../../chatRowTime';
 import { ChatArchivedView } from './ChatArchivedView';
 import { ChatListGroup, type ChatListGroupRow } from './ChatListGroup';
+import type { ChatRowSelection } from './ChatListRow';
 import { ChatUndoRow } from './ChatUndoRow';
 
 type Props = {
@@ -43,6 +49,8 @@ const NO_ANSWER = 'No answer yet';
 
 const NO_CHATS: ReadonlyArray<ChatSummary> = [];
 
+const SELECTION_VERB_IDS = ['chats.archive', 'chats.delete'];
+
 const rowsOf = ({ chats, now, isIdle }: RowsParams): ReadonlyArray<ChatListGroupRow> =>
   chats.map((chat) => {
     const preview = markdownPreview({ text: chat.preview });
@@ -54,6 +62,10 @@ const rowsOf = ({ chats, now, isIdle }: RowsParams): ReadonlyArray<ChatListGroup
       isIdle,
       isPinned: chat.pinnedAt !== null,
       models: chat.modelsUsed,
+      provider: chat.provider,
+      model: chat.model,
+      effort: chat.effort,
+      messageCount: chat.messageCount,
     };
   });
 
@@ -107,12 +119,33 @@ export const ChatList = ({
     };
   }, [chats, needle]);
 
-  const archiveOne = (chatId: ChatId): void => {
-    const title = chats.find((chat) => chat.id === chatId)?.title ?? 'Chat';
-    void archiveChats({ workspaceId, chatIds: [chatId] });
-    setArchived({ chatIds: [chatId], label: `Archived ${title}`, isIdle: false });
-    onArchived([chatId]);
-  };
+  const latest = useRef({ chats, onSelect, onArchived, onDeleted });
+  latest.current = { chats, onSelect, onArchived, onDeleted };
+
+  const select = useCallback((chatId: ChatId) => latest.current.onSelect(chatId), []);
+
+  const archiveMany = useCallback(
+    (chatIds: ReadonlyArray<ChatId>): void => {
+      const [first] = chatIds;
+      if (first === undefined) {
+        return;
+      }
+      const title = latest.current.chats.find((chat) => chat.id === first)?.title ?? 'Chat';
+      void archiveChats({ workspaceId, chatIds });
+      setArchived({
+        chatIds,
+        label:
+          chatIds.length === 1
+            ? `Archived ${title}`
+            : `${pluralize(chatIds.length, 'chat')} archived`,
+        isIdle: false,
+      });
+      latest.current.onArchived(chatIds);
+    },
+    [archiveChats, workspaceId],
+  );
+
+  const archiveOne = useCallback((chatId: ChatId): void => archiveMany([chatId]), [archiveMany]);
 
   const archiveIdle = async (): Promise<void> => {
     const chatIds = await archiveIdleChats({ workspaceId });
@@ -135,16 +168,100 @@ export const ChatList = ({
     setArchived(null);
   };
 
-  const deleteMany = async (chatIds: ReadonlyArray<ChatId>): Promise<void> => {
-    await deleteChats({ workspaceId, chatIds });
-    onDeleted(chatIds);
-  };
+  const deleteMany = useCallback(
+    async (chatIds: ReadonlyArray<ChatId>): Promise<void> => {
+      await deleteChats({ workspaceId, chatIds });
+      latest.current.onDeleted(chatIds);
+    },
+    [deleteChats, workspaceId],
+  );
 
-  const deleteOne = (chatId: ChatId): Promise<void> => deleteMany([chatId]);
+  const deleteOne = useCallback(
+    (chatId: ChatId): Promise<void> => deleteMany([chatId]),
+    [deleteMany],
+  );
 
-  const onPin = ({ chatId, isPinned }: PinParams): void => {
-    void pinChat({ chatId, isPinned });
-  };
+  const onPin = useCallback(
+    ({ chatId, isPinned }: PinParams): void => {
+      void pinChat({ chatId, isPinned });
+    },
+    [pinChat],
+  );
+
+  const order = useMemo(
+    () =>
+      [...groups.pinned, ...groups.today, ...groups.week, ...groups.idle].map((row) => row.chatId),
+    [groups],
+  );
+  const multi = useMultiSelect(order);
+  const { selected, clear, toggle, selectRange, selectAll, selectIds, handleItemClick } = multi;
+  const selectedIds = useMemo(() => {
+    const chosen = new Set<ChatId>(selected);
+    return order.filter((chatId) => chosen.has(chatId));
+  }, [order, selected]);
+  const checkedIds = useMemo<ReadonlySet<ChatId>>(() => new Set(selectedIds), [selectedIds]);
+
+  useEffect(() => {
+    if (selectedIds.length !== selected.length) {
+      selectIds(selectedIds, 'replace');
+    }
+  }, [selectedIds, selected.length, selectIds]);
+
+  const selectionTarget = useMemo<ObjectTarget | null>(
+    () =>
+      selectedIds.length === 0
+        ? null
+        : {
+            kind: 'chats',
+            facts: {
+              chatIds: selectedIds,
+              titles: selectedIds.map(
+                (chatId) => chats.find((chat) => chat.id === chatId)?.title ?? 'Chat',
+              ),
+              onArchive: () => archiveMany(selectedIds),
+              onDelete: () => deleteMany(selectedIds),
+            },
+          },
+    [archiveMany, chats, deleteMany, selectedIds],
+  );
+  const selectionControls = useActionControls({ target: selectionTarget });
+  const triggerSelectionAction = selectionControls.trigger;
+
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const listRef = useRef<HTMLElement | null>(null);
+
+  useSelectionKeys({
+    containerRef: rootRef,
+    hasSelection: selectedIds.length > 0,
+    onToggle: (chatId) => toggle(chatId as ChatId),
+    onSelectAll: selectAll,
+    onDelete: () => triggerSelectionAction({ actionId: 'chats.delete' }),
+    isEnabled: !isArchivedView,
+  });
+
+  useEffect(() => {
+    if (isArchivedView) {
+      clear();
+    }
+  }, [isArchivedView, clear]);
+
+  const selectionState = useRef({ ids: selectedIds, target: selectionTarget });
+  selectionState.current = { ids: selectedIds, target: selectionTarget };
+
+  const rowSelection = useMemo<ChatRowSelection>(
+    () => ({
+      getSelectedIds: () => selectionState.current.ids,
+      getTarget: () => selectionState.current.target,
+      clear,
+      onToggle: (chatId, event) => (event.shiftKey ? selectRange(chatId) : toggle(chatId)),
+      onModifierClick: handleItemClick,
+    }),
+    [clear, handleItemClick, selectRange, toggle],
+  );
+
+  const focusFirstRow = useCallback(() => {
+    listRef.current?.querySelector<HTMLElement>('[data-select-id]')?.focus();
+  }, []);
 
   const undoRow = archived === null ? null : <ChatUndoRow label={archived.label} onUndo={undo} />;
   const isEmpty =
@@ -164,7 +281,10 @@ export const ChatList = ({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-2 px-2 pt-2">
+    <div
+      ref={rootRef}
+      className="@container/chat-list relative flex min-h-0 flex-1 flex-col gap-2 px-2 pt-2"
+    >
       <Button variant="secondary" className="justify-start" onClick={onNew}>
         <SquarePen size={ICON_SIZE.control} aria-hidden />
         New chat
@@ -181,13 +301,20 @@ export const ChatList = ({
         />
       </label>
       <ScrollFade className="flex-1">
-        <nav aria-label="Chats" className="flex flex-col gap-3 pb-3 pr-3.5">
+        <nav
+          ref={listRef}
+          aria-label="Chats"
+          data-selecting={selectedIds.length > 0}
+          className="group/select-list flex flex-col gap-3 pb-3 pr-3.5"
+        >
           {archived !== null && !archived.isIdle ? undoRow : null}
           <ChatListGroup
             title="Pinned"
             rows={groups.pinned}
             selectedId={selectedId}
-            onSelect={onSelect}
+            checkedIds={checkedIds}
+            selection={rowSelection}
+            onSelect={select}
             onPin={onPin}
             onArchive={archiveOne}
             onDelete={deleteOne}
@@ -196,7 +323,9 @@ export const ChatList = ({
             title="Today"
             rows={groups.today}
             selectedId={selectedId}
-            onSelect={onSelect}
+            checkedIds={checkedIds}
+            selection={rowSelection}
+            onSelect={select}
             onPin={onPin}
             onArchive={archiveOne}
             onDelete={deleteOne}
@@ -205,7 +334,9 @@ export const ChatList = ({
             title="This week"
             rows={groups.week}
             selectedId={selectedId}
-            onSelect={onSelect}
+            checkedIds={checkedIds}
+            selection={rowSelection}
+            onSelect={select}
             onPin={onPin}
             onArchive={archiveOne}
             onDelete={deleteOne}
@@ -214,7 +345,9 @@ export const ChatList = ({
             title="Idle"
             rows={groups.idle}
             selectedId={selectedId}
-            onSelect={onSelect}
+            checkedIds={checkedIds}
+            selection={rowSelection}
+            onSelect={select}
             onPin={onPin}
             onArchive={archiveOne}
             onDelete={deleteOne}
@@ -232,6 +365,18 @@ export const ChatList = ({
           ) : null}
         </nav>
       </ScrollFade>
+      <ObjectSelectionBar
+        controls={selectionControls}
+        verbIds={SELECTION_VERB_IDS}
+        count={selectedIds.length}
+        total={order.length}
+        onClear={clear}
+        onSelectAll={selectAll}
+        onDone={clear}
+        onFocusReturn={focusFirstRow}
+        placement="flow"
+        className="shrink-0 pb-1"
+      />
       {archivedChats.length === 0 ? null : (
         <div className="shrink-0 pb-2">
           <button

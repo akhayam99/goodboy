@@ -226,7 +226,6 @@
   "apps/desktop/src/features/workflows/useStartAnywayConfirm/index.test.ts": 1,
   "apps/desktop/src/features/workflows/useWorkflowAdvanceStates.test.ts": 1,
   "apps/desktop/src/features/workspace-chat/askInChat.test.ts": 1,
-  "apps/desktop/src/features/workspace-chat/components/ChatList/index.test.tsx": 1,
   "apps/desktop/src/features/workspace-chat/components/ChatRoom/archived.test.tsx": 1,
   "apps/desktop/src/features/workspace-chat/components/ChatRoom/index.test.tsx": 1,
   "apps/desktop/src/features/workspace-chat/hooks/useChatActivity/index.test.ts": 1,
