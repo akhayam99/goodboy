@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { CURSOR_AGENT_MODEL_IDS } from './agent-model-ids';
 import { CURSOR_CATALOG } from './catalog';
-import { CURSOR_AUTO_MODEL, CURSOR_DEFAULT_MODEL } from './models';
+import { getDefaultTurnModel } from '../capabilities';
+import { CURSOR_AUTO_MODEL } from './models';
 import { CURSOR_PRICES } from './cost';
 
 const accepted = new Set<string>(CURSOR_AGENT_MODEL_IDS);
@@ -91,7 +92,7 @@ describe('cursor model ids', () => {
   });
 
   it('the default and auto slugs are emittable and accepted', () => {
-    for (const slug of [CURSOR_DEFAULT_MODEL, CURSOR_AUTO_MODEL]) {
+    for (const slug of [getDefaultTurnModel({ id: 'cursor' }), CURSOR_AUTO_MODEL]) {
       expect(emittable.has(slug)).toBe(true);
       expect(accepted.has(slug)).toBe(true);
     }

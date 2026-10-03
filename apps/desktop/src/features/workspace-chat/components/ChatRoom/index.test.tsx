@@ -630,7 +630,7 @@ describe('ChatRoom', () => {
     expect(store.createChat).toHaveBeenCalledWith({
       workspaceId: WORKSPACE_ID,
       provider: 'anthropic',
-      model: 'sonnet-5',
+      model: 'sonnet-5.5',
     });
     expect(onCreated).toHaveBeenCalledWith('chat-new');
     expect(store.sendChatMessage).toHaveBeenCalledWith({
@@ -833,7 +833,7 @@ describe('ChatRoom', () => {
     expect(store.createChat).toHaveBeenCalledWith({
       workspaceId: WORKSPACE_ID,
       provider: 'anthropic',
-      model: 'sonnet-5',
+      model: 'sonnet-5.5',
     });
     expect(store.reportError).toHaveBeenCalled();
   });

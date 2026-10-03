@@ -192,7 +192,7 @@ describe('startWorkflowGeneration', () => {
       expect.objectContaining({
         deps: expect.objectContaining({
           providerId: 'anthropic',
-          model: 'sonnet-5',
+          model: 'sonnet-5.5',
         }),
       }),
     );

@@ -5,7 +5,40 @@ describe('resolveAuto', () => {
   it('starts from the curated default of the workspace default provider', () => {
     expect(
       resolveAuto({ slot: { kind: 'role', id: 'implementer' }, defaultProvider: 'codex' }),
-    ).toEqual({ provider: 'codex', model: 'gpt-5.6-sol', effort: 'medium', step: 'curated' });
+    ).toEqual({ provider: 'codex', model: 'gpt-6.1-sol', effort: 'medium', step: 'curated' });
+  });
+
+  it('keeps the older Sol for a codex CLI below the newest Sol floor', () => {
+    expect(
+      resolveAuto({
+        slot: { kind: 'role', id: 'implementer' },
+        defaultProvider: 'codex',
+        cliVersions: { codex: '0.155.0' },
+      }),
+    ).toEqual({
+      provider: 'codex',
+      model: 'gpt-5.6-sol',
+      effort: 'medium',
+      step: 'next-in-column',
+    });
+  });
+
+  it('runs Claude roles on the newest Sonnet and keeps the older one for an old CLI', () => {
+    expect(
+      resolveAuto({ slot: { kind: 'role', id: 'implementer' }, defaultProvider: 'anthropic' }),
+    ).toEqual({ provider: 'anthropic', model: 'sonnet-5.5', effort: 'medium', step: 'curated' });
+    expect(
+      resolveAuto({
+        slot: { kind: 'role', id: 'implementer' },
+        defaultProvider: 'anthropic',
+        cliVersions: { anthropic: '2.1.282' },
+      }),
+    ).toEqual({
+      provider: 'anthropic',
+      model: 'sonnet-5',
+      effort: 'medium',
+      step: 'next-in-column',
+    });
   });
 
   it('moves down the same column when the cli is too old for the first pick', () => {
@@ -97,7 +130,7 @@ describe('resolveAuto', () => {
       }),
     ).toEqual({
       provider: 'codex',
-      model: 'gpt-5.6-sol',
+      model: 'gpt-6.1-sol',
       effort: 'medium',
       step: 'next-provider',
       skippedAtLimit: ['anthropic'],

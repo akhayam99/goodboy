@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PROVIDER_IDS } from '@goodboy/types';
 import { getCapabilities, getDefaultTurnModel } from './capabilities';
-import { GEMINI_DEFAULT_MODEL } from './gemini/constants';
+import { defaultModelSelection } from './defaultModelSelection';
 
 describe('getCapabilities', () => {
   it('returns anthropic capabilities with correct flags', () => {
@@ -35,9 +35,18 @@ describe('getCapabilities', () => {
     expect(caps.models.some((m) => m.tier === 'cheap')).toBe(true);
   });
 
-  it('getDefaultTurnModel for gemini returns the cheap default, not the pro turn model', () => {
-    expect(getDefaultTurnModel({ id: 'gemini' })).toBe(GEMINI_DEFAULT_MODEL);
+  it('getDefaultTurnModel and defaultModelSelection agree on every provider', () => {
+    for (const id of PROVIDER_IDS) {
+      expect(defaultModelSelection({ provider: id }).key, id).toBe(getDefaultTurnModel({ id }));
+    }
+  });
+
+  it('getDefaultTurnModel for gemini returns the flash default', () => {
     expect(getDefaultTurnModel({ id: 'gemini' })).toBe('gemini-3.8-flash');
+  });
+
+  it('getDefaultTurnModel for openrouter returns the newest sonnet, not the first entry', () => {
+    expect(getDefaultTurnModel({ id: 'openrouter' })).toBe('sonnet-5.5');
   });
 
   it('getDefaultTurnModel for anthropic returns the newest opus', () => {

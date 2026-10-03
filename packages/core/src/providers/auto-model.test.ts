@@ -93,10 +93,10 @@ describe('autoModelForRole', () => {
       };
       expect(autoModelForRole({ role: 'implementer', providers: ['anthropic'], prefs })).toEqual({
         provider: 'anthropic',
-        model: 'sonnet-5',
+        model: 'sonnet-5.5',
       });
       expect(recommendedModelForRole({ role: 'implementer', provider: 'anthropic', prefs })).toBe(
-        'sonnet-5',
+        'sonnet-5.5',
       );
     });
 

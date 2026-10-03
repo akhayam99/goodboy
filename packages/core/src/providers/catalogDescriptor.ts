@@ -7,7 +7,7 @@ type Params = {
 
 const THINKER_ONLY_KEYS: ReadonlySet<string> = new Set(['fable-5', 'fable-5.1']);
 
-const WEIGHT_BY_KEY: Readonly<Record<string, number>> = {
+export const WEIGHT_BY_KEY: Readonly<Record<string, number>> = {
   'opus-5.5': 88,
   'opus-5': 85,
   'fable-5.1': 95,
@@ -41,6 +41,27 @@ const WEIGHT_BY_KEY: Readonly<Record<string, number>> = {
   'grok-4.7': 14,
   'grok-4.6': 13,
   'glm-5.2': 11,
+  'gpt-6-astra': 29,
+  'gpt-5.3-codex': 19,
+  'muse-spark-1.3': 7,
+  'muse-spark-1.2': 6,
+  'big-pickle': 12,
+  'mimo-v2.5': 8,
+  'nemotron-3-ultra': 7,
+  'nemotron-3.5-lightning': 6,
+  'ling-3.0-flash-fin': 6,
+  'deepseek-v4-pro': 9,
+  'deepseek-v4.1-flash': 6,
+  'deepseek-v4-flash': 5,
+  'kimi-k2.7-code-highspeed': 11,
+  'kimi-k2.6': 10,
+  'kimi-k2.5': 9,
+  'kimi-k2': 8,
+  'glm-5.3': 12,
+  'glm-5.1': 10,
+  'glm-5': 8,
+  'grok-4.5': 12,
+  'grok-4.3': 11,
 };
 
 const effortFor = ({ model }: Params) => {

@@ -3,6 +3,7 @@ import type { CursorModel } from '@goodboy/types';
 export const CURSOR_CATALOG = [
   {
     key: 'composer-2.5',
+    defaultTurn: true,
     label: 'Composer 2.5',
     tier: 'turn',
     contextWindow: 200_000,

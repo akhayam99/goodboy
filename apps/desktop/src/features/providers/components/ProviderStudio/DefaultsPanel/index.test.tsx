@@ -254,7 +254,7 @@ describe('DefaultsPanel', () => {
 
     for (const label of TASK_LABELS) {
       expect(screen.getByRole('button', { name: `${label} routing model` }).textContent).toBe(
-        SONNET_TASK_LABELS.has(label) ? 'sonnet-5' : 'haiku-4.5',
+        SONNET_TASK_LABELS.has(label) ? 'sonnet-5.5' : 'haiku-4.5',
       );
     }
     expect(screen.queryByRole('button', { name: 'Step summaries routing reset' })).toBeNull();
@@ -361,7 +361,7 @@ describe('DefaultsPanel', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
     expect(screen.getByRole('button', { name: 'Resolver routing model' }).textContent).toBe(
-      'sonnet-5',
+      'sonnet-5.5',
     );
     expect(screen.queryByRole('button', { name: 'Resolver routing reset' })).toBeNull();
   });

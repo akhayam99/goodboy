@@ -370,6 +370,7 @@ export {
   type CuratedProviderId,
 } from './providers/autoRouting/defaults';
 export { workflowModelProfile } from './providers/workflowModelProfiles';
+export { latestInGroup, type ModelLine } from './providers/latestInGroup';
 
 export { getCheapModel, getDefaultBinary } from './providers/cli-defaults';
 export {
@@ -397,7 +398,7 @@ export { assessTurnWeight, type TurnWeight } from './providers/turn-weight';
 export { costCoverage, type CostCoverage } from './providers/cost-coverage';
 
 export { computeCursorCostUsd } from './providers/cursor/cost';
-export { CURSOR_AUTO_MODEL, CURSOR_DEFAULT_MODEL, CURSOR_MODELS } from './providers/cursor/models';
+export { CURSOR_AUTO_MODEL, CURSOR_MODELS } from './providers/cursor/models';
 export { parseCursorStreamLine } from './providers/cursor/parser';
 
 export {
@@ -415,7 +416,6 @@ export { OPENROUTER_MODELS } from './providers/openrouter/constants';
 export { computeOpenCodeCostUsd } from './providers/opencode/cost';
 export { parseJsonLine as parseOpenCodeJsonLine } from './providers/opencode/parser';
 
-export { GEMINI_DEFAULT_MODEL } from './providers/gemini/constants';
 export { computeGeminiCostUsd } from './providers/gemini/cost';
 export { parseJsonLine as parseGeminiJsonLine } from './providers/gemini/parser';
 

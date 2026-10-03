@@ -33,7 +33,7 @@ The row above the provider chips is one component with two meanings.
 - **Configuring surfaces** (Defaults, the workflow builder, the Studio) call it
   **Auto**. Saving Auto means "follow the ladder", not a model. The closed
   trigger reads `Auto` and the open row says what Auto picks right now
-  (`Now: Claude · Sonnet 5 · Medium`). A pinned trigger shows the model and an
+  (`Now: Claude · Sonnet 5.5 · Medium`). A pinned trigger shows the model and an
   x back to Auto
 - **Launching popovers** (Start agent, Resolve) call it **Suggested**. It fixes a
   concrete model at launch and says why in one line, from the ladder step that

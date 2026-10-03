@@ -37,7 +37,7 @@ const STEPS: readonly Step[] = [
   { role: 'Implement', tone: 'implementer', brand: 'codex', model: 'GPT 5.6 Sol', run: 2.35 },
   { role: 'Test', tone: 'tester', brand: 'anthropic', model: 'Haiku 4.5', run: 2.56 },
   { role: 'Review', tone: 'reviewer', brand: 'codex', model: 'GPT 5.6 Terra', run: 2.85 },
-  { role: 'Resolve', tone: 'resolver', brand: 'anthropic', model: 'Sonnet 5', run: 3.07 },
+  { role: 'Resolve', tone: 'resolver', brand: 'anthropic', model: 'Sonnet 5.5', run: 3.07 },
 ];
 
 const TOTAL_ONE_AGENT = 9.8;

@@ -80,6 +80,17 @@ const GEMINI_FLASH_PRICE: ModelPrice = {
   outputPerMtok: 3.5,
   cachedInputPerMtok: 0.075,
 };
+const GEMINI_36_FLASH_PRICE: ModelPrice = {
+  inputPerMtok: 1.5,
+  outputPerMtok: 7.5,
+  cachedInputPerMtok: 0.15,
+};
+const GEMINI_3_FLASH_PRICE: ModelPrice = {
+  inputPerMtok: 0.5,
+  outputPerMtok: 3,
+  cachedInputPerMtok: 0.05,
+};
+const AUTO_PRICE: ModelPrice = { ...COMPOSER_PRICE, assumed: true };
 const GEMINI_35_FLASH_PRICE: ModelPrice = {
   inputPerMtok: 1.5,
   outputPerMtok: 9,
@@ -114,7 +125,7 @@ const GLM_PRICE: ModelPrice = {
 export const CURSOR_PRICES: Record<string, ModelPrice> = {
   'composer-2.5-fast': COMPOSER_FAST_PRICE,
   'composer-2.5': COMPOSER_PRICE,
-  auto: COMPOSER_PRICE,
+  auto: AUTO_PRICE,
 
   'claude-opus-5-5-low': OPUS_55_PRICE,
   'claude-opus-5-5-medium': OPUS_55_PRICE,
@@ -168,11 +179,11 @@ export const CURSOR_PRICES: Record<string, ModelPrice> = {
   'gemini-3.7-flash-low': GEMINI_FLASH_PRICE,
   'gemini-3.7-flash-medium': GEMINI_FLASH_PRICE,
   'gemini-3.7-flash-high': GEMINI_FLASH_PRICE,
-  'gemini-3.6-flash-low': GEMINI_FLASH_PRICE,
-  'gemini-3.6-flash-medium': GEMINI_FLASH_PRICE,
-  'gemini-3.6-flash-high': GEMINI_FLASH_PRICE,
+  'gemini-3.6-flash-low': GEMINI_36_FLASH_PRICE,
+  'gemini-3.6-flash-medium': GEMINI_36_FLASH_PRICE,
+  'gemini-3.6-flash-high': GEMINI_36_FLASH_PRICE,
   'gemini-3.5-flash': GEMINI_35_FLASH_PRICE,
-  'gemini-3-flash': GEMINI_FLASH_PRICE,
+  'gemini-3-flash': GEMINI_3_FLASH_PRICE,
 
   'muse-spark-1.3-low': MUSE_SPARK_PRICE,
   'muse-spark-1.3-medium': MUSE_SPARK_PRICE,

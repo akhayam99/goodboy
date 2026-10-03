@@ -79,7 +79,7 @@ describe('resolveSpawnRouting', () => {
 
     expect(routing).toEqual({
       provider: 'anthropic',
-      model: 'sonnet-5',
+      model: 'sonnet-5.5',
       effort: 'medium',
       origin: 'role-default',
     });
