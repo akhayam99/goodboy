@@ -174,6 +174,7 @@ const ARTIFACTS: ReadonlyArray<SessionArtifact> = [
     sourceTurnId: null,
     createdAt: clock.iso({ at: '2026-09-04T12:30:00.000Z' }),
     updatedAt: clock.iso({ at: '2026-09-04T12:30:00.000Z' }),
+    openedAt: null,
   },
   {
     id: REPORT_ARTIFACT_ID,
@@ -191,6 +192,7 @@ const ARTIFACTS: ReadonlyArray<SessionArtifact> = [
     sourceTurnId: null,
     createdAt: clock.iso({ at: '2026-09-04T11:48:00.000Z' }),
     updatedAt: clock.iso({ at: '2026-09-04T11:48:00.000Z' }),
+    openedAt: null,
   },
 ];
 

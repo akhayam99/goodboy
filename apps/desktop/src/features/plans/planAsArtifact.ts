@@ -21,6 +21,7 @@ export const planAsArtifact = ({ plan, stored }: Params): PlanArtifact => ({
   sourceTurnId: stored?.sourceTurnId ?? null,
   createdAt: plan.createdAt,
   updatedAt: plan.updatedAt,
+  openedAt: stored?.openedAt ?? null,
 });
 
 export const planFromArtifact = ({

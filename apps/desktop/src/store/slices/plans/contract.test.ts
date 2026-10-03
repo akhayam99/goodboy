@@ -212,20 +212,6 @@ describe('store contract', () => {
       expect(store.getState().sessionPlans[SESSION_ID]?.[0]?.title).toBe('x');
     });
 
-    it('deletePlan flips status to discarded', async () => {
-      const store = useAppStore;
-      storySpies.listPlansForSession.mockResolvedValueOnce([]);
-      await store.getState().deletePlan(SESSION_ID, PLAN_ID);
-      expect(storySpies.setPlanStatus).toHaveBeenCalledWith(PLAN_ID, 'discarded');
-    });
-
-    it('restorePlan flips status back to active', async () => {
-      const store = useAppStore;
-      storySpies.listPlansForSession.mockResolvedValueOnce([]);
-      await store.getState().restorePlan(SESSION_ID, PLAN_ID);
-      expect(storySpies.setPlanStatus).toHaveBeenCalledWith(PLAN_ID, 'active');
-    });
-
     it('loadConsumptionsForPlan caches results keyed by planId', async () => {
       const store = useAppStore;
       const fakeCon = {

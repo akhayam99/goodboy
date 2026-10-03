@@ -772,6 +772,7 @@ const evidenceArtifact = ({ workflowRunId }: EvidenceArtifactParams): SessionArt
   sourceTurnId: null,
   createdAt: NOW,
   updatedAt: NOW,
+  openedAt: null,
 });
 
 describe('activateWorkflowAgent, artifact evidence', () => {
