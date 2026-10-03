@@ -40,6 +40,7 @@ import {
 } from '../../store/storyHarness';
 import { selectRoutingScope } from '../../store/slices/agents/selectRoutingScope';
 import { agentReferenceRouting } from '../../store/slices/turn/agentReferenceRouting';
+import { buildTurnPrompt } from '../../store/slices/turn/buildTurnPrompt';
 import { useRoutingScope } from '../../shared/hooks/useRoutingScope';
 import { agentRowRouting } from '../session/timeline/agentRowRouting';
 import { runTimeLeft } from '../session/timeline/runTimeLeft';
@@ -53,6 +54,7 @@ const SESSION = aSession({
   workspaceId: WORKSPACE.id,
   goal: 'Draft the payout delay notice',
 });
+const OTHER_WORKSPACE = aWorkspace({ id: 'workspace-northwind' as WorkspaceId, name: 'Northwind' });
 const STEP_ID = 'step-implement' as StepId;
 const WORKFLOW_ID = 'workflow-ship' as WorkflowId;
 const MINUTE = 60_000;
@@ -62,6 +64,13 @@ const ANTHROPIC_OFF: ProviderPolicy = [
   { id: 'codex', state: 'on' },
   { id: 'anthropic', state: 'off' },
 ];
+
+const ANTHROPIC_ON: ProviderPolicy = [
+  { id: 'anthropic', state: 'on' },
+  { id: 'codex', state: 'on' },
+];
+
+type TurnContext = Parameters<typeof buildTurnPrompt>[0]['ctx'];
 
 const providerInfo = ({ id }: { readonly id: ProviderId }): ProviderDisplayInfo => ({
   id,
@@ -261,6 +270,33 @@ describe('a provider set to Off', () => {
     await waitFor(() => expect(onAdvance).toHaveBeenCalledTimes(1));
     const model = (onAdvance.mock.calls[0]?.[0] as { readonly model: string }).model;
     expect(modelIdsOf({ provider: 'codex' })).toContain(model);
+  });
+
+  it('is never offered to a turn whose session lives in a workspace that turned it Off', async () => {
+    useAppStore.setState({
+      workspaces: [WORKSPACE, OTHER_WORKSPACE],
+      currentWorkspaceId: OTHER_WORKSPACE.id,
+      workspaceOverrides: {
+        [WORKSPACE.id]: { ...WORKSPACE.overrides, providerPool: ANTHROPIC_OFF },
+        [OTHER_WORKSPACE.id]: { ...OTHER_WORKSPACE.overrides, providerPool: ANTHROPIC_ON },
+      },
+    });
+    const scout = anAgent({ sessionId: SESSION.id, status: 'running', kind: 'scout' });
+    const ctx = {
+      input: { sessionId: SESSION.id },
+      session: SESSION,
+      activeAgentId: scout.id,
+      phaseDefinition: null,
+      provider: 'codex',
+      model: modelIdsOf({ provider: 'codex' })[0],
+      turnAgentKind: 'scout',
+      resolvedPrompt: 'Map the payout delay notice',
+    } as TurnContext;
+
+    const built = await buildTurnPrompt({ get: useAppStore.getState, ctx });
+
+    expect(built.childRoutingBlock).toContain('codex');
+    expect(built.childRoutingBlock).not.toContain('anthropic');
   });
 
   it('reads the same scope from the hook a row renders with', () => {

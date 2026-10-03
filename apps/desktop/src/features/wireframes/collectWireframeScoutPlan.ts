@@ -56,7 +56,7 @@ export const wireframeScoutGate = ({
     sessionId,
     isRunBudgetBlocked: false,
     nowMs: Date.now(),
-    ...workspacePolicyAvailability({ state: state }),
+    ...workspacePolicyAvailability({ state, sessionId }),
   });
   if (availability.isSessionBudgetBlocked) {
     return { kind: 'skipped', reason: WIREFRAME_SCOUT_SKIP_BUDGET };

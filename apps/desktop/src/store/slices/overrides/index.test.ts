@@ -386,5 +386,67 @@ describe('store contract', () => {
 
       expect(store.getState().workspaceOverrides[WS_ID]).toEqual(previous);
     });
+
+    it('a later queued write that fails leaves memory on what the disk holds', async () => {
+      const store = useAppStore;
+      const original = { ...buildWorkspace().overrides, defaultBranchPrefix: 'hb' };
+      store.setState({ workspaceOverrides: { [WS_ID]: original } });
+      const { invoke } = await import('@tauri-apps/api/core');
+      let releaseFirstWrite = (): void => undefined;
+      const firstWrite = new Promise<void>((done) => {
+        releaseFirstWrite = done;
+      });
+      const disk: Array<OverrideSettings> = [];
+      let writeCount = 0;
+      vi.mocked(invoke).mockImplementation(async (command, args) => {
+        if (command !== 'set_workspace_overrides' || !isOverridesPayload(args)) {
+          return null;
+        }
+        writeCount += 1;
+        if (writeCount === 1) {
+          await firstWrite;
+          disk.push(args.overrides);
+          return null;
+        }
+        throw new Error('disk full');
+      });
+
+      const first = store
+        .getState()
+        .patchWorkspaceOverrides({ workspaceId: WS_ID, patch: { defaultBranchPrefix: 'nw' } });
+      const second = store
+        .getState()
+        .patchWorkspaceOverrides({ workspaceId: WS_ID, patch: { parallelAgents: true } });
+      releaseFirstWrite();
+      await first;
+      await expect(second).rejects.toThrow('disk full');
+
+      expect(disk).toEqual([{ ...original, defaultBranchPrefix: 'nw' }]);
+      expect(store.getState().workspaceOverrides[WS_ID]).toEqual(disk.at(-1));
+    });
+
+    it('two queued writes that both fail roll memory back to the last saved row', async () => {
+      const store = useAppStore;
+      const original = { ...buildWorkspace().overrides, defaultBranchPrefix: 'hb' };
+      store.setState({ workspaceOverrides: { [WS_ID]: original } });
+      const { invoke } = await import('@tauri-apps/api/core');
+      vi.mocked(invoke).mockImplementation(async (command) => {
+        if (command === 'set_workspace_overrides') {
+          throw new Error('disk full');
+        }
+        return null;
+      });
+
+      const first = store
+        .getState()
+        .patchWorkspaceOverrides({ workspaceId: WS_ID, patch: { defaultBranchPrefix: 'nw' } });
+      const second = store
+        .getState()
+        .patchWorkspaceOverrides({ workspaceId: WS_ID, patch: { parallelAgents: true } });
+      await expect(first).rejects.toThrow('disk full');
+      await expect(second).rejects.toThrow('disk full');
+
+      expect(store.getState().workspaceOverrides[WS_ID]).toEqual(original);
+    });
   });
 });

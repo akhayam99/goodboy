@@ -56,7 +56,7 @@ const generationAvailability = ({ state }: MenuParams): WorkflowRoutingAvailabil
     sessionId: null,
     isRunBudgetBlocked: false,
     nowMs: Date.now(),
-    ...workspacePolicyAvailability({ state: state }),
+    ...workspacePolicyAvailability({ state, sessionId: null }),
   });
 
 type GeneratedStepParams = {
