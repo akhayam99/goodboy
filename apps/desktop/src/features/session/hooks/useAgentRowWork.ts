@@ -1,5 +1,6 @@
 import type { Agent, EffortLevel, ProviderId, RoleModelPreferences, Step } from '@goodboy/types';
 import { useAppStore, useExecutedAgentRouting } from '../../../store';
+import { useRoutingScope } from '../../../shared/hooks/useRoutingScope';
 import { useAgentWorkTime } from '../../workTreeModel/hooks/useAgentWorkTime';
 import type { RowPhase } from '../../workTreeModel/rowState';
 import type { WorkTime } from '../../workTreeModel/workTime';
@@ -40,6 +41,7 @@ export const useAgentRowWork = ({
     (state) => state.agentEffortOverride[agent.id] ?? agent.effort ?? null,
   );
   const executed = useExecutedAgentRouting({ agent });
+  const scope = useRoutingScope({ sessionId: agent.sessionId });
   const routing = agentRowRouting({
     executed,
     step,
@@ -50,6 +52,7 @@ export const useAgentRowWork = ({
     effortOverride,
     sessionProvider,
     sessionEffort,
+    scope,
   });
   const time = useAgentWorkTime({
     agentId: agent.id,

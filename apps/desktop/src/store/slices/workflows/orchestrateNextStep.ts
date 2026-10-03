@@ -71,6 +71,7 @@ import { buildProfileGuard } from '../turn/profileGuard';
 import { buildWorkspaceProjectsBlock } from './buildWorkspaceProjectsBlock';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
+import { selectRoutingScope } from '../agents/selectRoutingScope';
 import { consumeOrchestratorHints, formatOrchestratorHints } from './orchestratorHintQueue';
 import { decisionRestartMark } from './decisionRestart';
 import { clearHintsReading, markHintsReading } from './orchestratorReadingHints';
@@ -456,7 +457,7 @@ const appendStep = async ({
   const baseOrdinal =
     existingAgents.reduce((max, current) => Math.max(max, current.ordinal), -1) + 1;
   const spawned = await preSpawnWorkflowAgents({
-    policy: workspacePolicyAvailability({ state: get() }).policy,
+    scope: selectRoutingScope({ state: get(), sessionId }),
     sessionId,
     workflowRunId,
     steps: [nextStep],

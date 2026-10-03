@@ -1,12 +1,11 @@
-import { recommendedModelForRole, resolveRoleRouting } from '@goodboy/core';
-import type {
-  EffortLevel,
-  ProviderId,
-  ProviderPolicy,
-  RoleModelPreferences,
-  Step,
-} from '@goodboy/types';
-import { KIND_TO_ROLE, kindRouting, type AgentKind } from '../session/agent-kind';
+import {
+  providerStanding,
+  recommendedModelForRole,
+  resolveRoleRouting,
+  type AutoContext,
+} from '@goodboy/core';
+import type { EffortLevel, ProviderId, RoleModelPreferences, Step } from '@goodboy/types';
+import { KIND_TO_ROLE, type AgentKind } from '../session/agent-kind';
 
 type Params = {
   readonly step: Step | null;
@@ -18,7 +17,23 @@ type Params = {
   readonly sessionProvider?: ProviderId | null;
   readonly sessionModel?: string | null;
   readonly sessionEffort?: EffortLevel | null;
-  readonly policy?: ProviderPolicy | null;
+  readonly scope?: AutoContext | null;
+};
+
+type OfferedParams = {
+  readonly provider: ProviderId | null | undefined;
+  readonly auto: AutoContext | undefined;
+};
+
+const offered = ({ provider, auto }: OfferedParams): ProviderId | null => {
+  if (provider == null) {
+    return null;
+  }
+  if (auto === undefined) {
+    return provider;
+  }
+  const standing = providerStanding({ provider, context: auto });
+  return standing === 'off' || standing === 'not-connected' ? null : provider;
 };
 
 type StepRouting = {
@@ -37,14 +52,16 @@ export const resolveStepRouting = ({
   sessionProvider,
   sessionModel,
   sessionEffort,
-  policy = null,
+  scope = null,
 }: Params): StepRouting => {
   const auto =
-    policy === null ? undefined : { defaultProvider: sessionProvider ?? 'anthropic', policy };
-  const fallback = kindRouting({
-    kind,
-    roleModels,
-    ...(auto !== undefined && { defaultProvider: auto.defaultProvider, policy }),
+    scope === null
+      ? undefined
+      : { ...scope, defaultProvider: sessionProvider ?? scope.defaultProvider };
+  const fallback = resolveRoleRouting({
+    role: KIND_TO_ROLE[kind],
+    prefs: roleModels,
+    ...(auto !== undefined && { auto }),
   });
   const decided = step?.routingLock?.pick ?? step?.routingDecision?.selected ?? null;
   if (decided !== null) {
@@ -78,7 +95,7 @@ export const resolveStepRouting = ({
     step?.providerOverride ??
     agentProvider ??
     preferredProvider ??
-    sessionProvider ??
+    offered({ provider: sessionProvider, auto }) ??
     roleRouting?.provider ??
     fallback.provider;
   const roleModel =

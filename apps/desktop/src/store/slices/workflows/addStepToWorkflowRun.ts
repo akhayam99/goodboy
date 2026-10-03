@@ -23,6 +23,7 @@ import {
 } from '../../../features/workflows/workflows';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
+import { selectRoutingScope } from '../agents/selectRoutingScope';
 import { clearOrchestrationOutcome } from './clearOrchestrationOutcome';
 import { isWorkflowRunClosedByUser } from '../../../features/workflows/isWorkflowRunClosedByUser';
 import { patchWorkflowRun } from './patchWorkflowRun';
@@ -243,7 +244,7 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
       return rollback('the step could not be saved');
     }
     const spawned = await preSpawnWorkflowAgents({
-      policy: workspacePolicyAvailability({ state: get() }).policy,
+      scope: selectRoutingScope({ state: get(), sessionId }),
       sessionId,
       workflowRunId,
       steps: [savedStep],

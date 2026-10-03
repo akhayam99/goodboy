@@ -1,3 +1,4 @@
+import type { AutoContext } from '@goodboy/core';
 import type { EffortLevel, ProviderId, RoleModelPreferences, Step } from '@goodboy/types';
 import type { ExecutedAgentRouting } from '../../../store/slices/turn/executedAgentRouting';
 import { EFFORT_LEVELS } from '../../chat/utils/chat-constants';
@@ -29,6 +30,7 @@ type Params = {
   readonly effortOverride: EffortLevel | null;
   readonly sessionProvider: ProviderId | null;
   readonly sessionEffort: EffortLevel | null;
+  readonly scope?: AutoContext | null;
 };
 
 export const agentRowRouting = ({
@@ -41,6 +43,7 @@ export const agentRowRouting = ({
   effortOverride,
   sessionProvider,
   sessionEffort,
+  scope = null,
 }: Params): AgentRowRouting => {
   const observedEffort = EFFORT_LEVELS.find((level) => level === executed?.effort) ?? null;
   if (step == null) {
@@ -66,6 +69,7 @@ export const agentRowRouting = ({
     agentEffort: effortOverride,
     sessionProvider,
     sessionEffort,
+    scope,
   });
   return {
     provider: executed?.provider ?? routing.provider,
