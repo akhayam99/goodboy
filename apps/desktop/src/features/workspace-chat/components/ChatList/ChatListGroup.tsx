@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Eyebrow } from '@goodboy/ui';
-import type { ChatId, ChatModelUsed } from '@goodboy/types';
-import { ChatListRow } from './ChatListRow';
+import type { ChatId, ChatModelUsed, EffortLevel, ProviderId } from '@goodboy/types';
+import { ChatListRow, type ChatRowSelection } from './ChatListRow';
 
 export type ChatListGroupRow = {
   readonly chatId: ChatId;
@@ -11,6 +11,10 @@ export type ChatListGroupRow = {
   readonly isIdle: boolean;
   readonly isPinned: boolean;
   readonly models: ReadonlyArray<ChatModelUsed>;
+  readonly provider: ProviderId;
+  readonly model: string;
+  readonly effort: EffortLevel | null;
+  readonly messageCount: number;
 };
 
 type GroupAction = {
@@ -22,6 +26,8 @@ type Props = {
   readonly title: string;
   readonly rows: ReadonlyArray<ChatListGroupRow>;
   readonly selectedId: ChatId | null;
+  readonly checkedIds: ReadonlySet<ChatId>;
+  readonly selection: ChatRowSelection;
   readonly onSelect: (chatId: ChatId) => void;
   readonly onPin: (params: { readonly chatId: ChatId; readonly isPinned: boolean }) => void;
   readonly onArchive: (chatId: ChatId) => void;
@@ -34,6 +40,8 @@ export const ChatListGroup = ({
   title,
   rows,
   selectedId,
+  checkedIds,
+  selection,
   onSelect,
   onPin,
   onArchive,
@@ -70,7 +78,13 @@ export const ChatListGroup = ({
               isIdle={row.isIdle}
               isPinned={row.isPinned}
               models={row.models}
+              provider={row.provider}
+              model={row.model}
+              effort={row.effort}
+              messageCount={row.messageCount}
               isSelected={row.chatId === selectedId}
+              isChecked={checkedIds.has(row.chatId)}
+              selection={selection}
               onSelect={onSelect}
               onPin={onPin}
               onArchive={onArchive}

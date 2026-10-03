@@ -216,6 +216,7 @@ describe('chats slice', () => {
     });
     expect(read().chatStreams[chatId]).toBeUndefined();
     expect(read().chatsByWorkspace[WORKSPACE]?.[0]?.preview).toBe('**It lives in payments-api.**');
+    expect(read().chatsByWorkspace[WORKSPACE]?.[0]?.messageCount).toBe(2);
     const saved = await holder.backend?.listMessages({ chatId });
     expect(saved?.[1]).toMatchObject({
       status: 'done',
@@ -255,6 +256,9 @@ describe('chats slice', () => {
       { provider: 'anthropic', model: 'sonnet-5' },
       { provider: 'codex', model: 'gpt-5.6-sol' },
     ]);
+    expect(read().chatsByWorkspace[WORKSPACE]?.[0]?.messageCount).toBe(
+      (read().chatMessages[chatId] ?? []).length,
+    );
   });
 
   it('runs the turn on the effort saved on the chat, else on the one the model key implies', async () => {

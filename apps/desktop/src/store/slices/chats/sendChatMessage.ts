@@ -84,6 +84,7 @@ const finishReply = async ({ set, get, chatId, messageId, outcome }: FinishParam
     error: status === 'failed' && outcome.status === 'failed' ? outcome.error : null,
     updatedAt: at,
   };
+  const known = findChat({ state: get(), chatId });
   set((state) => {
     const { [chatId]: _finishedStream, ...streams } = state.chatStreams;
     return {
@@ -94,6 +95,7 @@ const finishReply = async ({ set, get, chatId, messageId, outcome }: FinishParam
         patch: {
           lastActivityAt: at,
           updatedAt: at,
+          ...(known !== null && { messageCount: known.messageCount + 2 }),
           ...(finished.content !== '' && { preview: finished.content.slice(0, PREVIEW_LENGTH) }),
         },
       }),
