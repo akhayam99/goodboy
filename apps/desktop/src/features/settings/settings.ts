@@ -9,3 +9,4 @@ export const SETTING_UPDATER_SNOOZED_VERSION = 'updater.snoozedVersion';
 export const SETTING_UPDATER_SNOOZED_AT = 'updater.snoozedAt';
 export const DEFAULT_EDITOR_BINARY = 'code';
 export const DEFAULT_BRANCH_PREFIX = 'goodboy';
+export const SETTING_COMPOSER_CLASSIC_KEYS = 'composer.classicKeys';

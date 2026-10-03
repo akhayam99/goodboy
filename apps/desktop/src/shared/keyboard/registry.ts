@@ -206,6 +206,20 @@ export const SHORTCUTS = {
     plane: 'app',
     group: 'session',
   },
+  'composer.send': {
+    combo: 'Enter',
+    label: 'Send a message, new line in a document',
+    plane: 'pane',
+    group: 'session',
+    scope: 'composer',
+  },
+  'composer.newLine': {
+    combo: 'shift+Enter',
+    label: 'New line in a message',
+    plane: 'session',
+    group: 'session',
+    scope: 'composer',
+  },
   'menu.open': {
     combo: 'shift+F10',
     label: 'Open the menu of the focused row',

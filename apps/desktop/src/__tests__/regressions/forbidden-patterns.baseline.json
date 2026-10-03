@@ -404,7 +404,7 @@
     "apps/desktop/src/features/budget/components/spend/ModelTable.tsx": 1,
     "apps/desktop/src/features/budget/components/spend/TurnsTable.tsx": 1,
     "apps/desktop/src/features/chat/components/ArtifactBlockCard/index.tsx": 2,
-    "apps/desktop/src/features/chat/components/ChatInput/parts/ComposerDropOverlay.tsx": 1,
+    "apps/desktop/src/shared/components/PromptField/PromptDropOverlay.tsx": 1,
     "apps/desktop/src/features/chat/components/ChatInput/parts/SuggestionStack.tsx": 1,
     "apps/desktop/src/features/chat/components/ChatView/AgentFocusEmpty.tsx": 1,
     "apps/desktop/src/features/chat/components/ChatView/AnsweredCard.tsx": 2,
