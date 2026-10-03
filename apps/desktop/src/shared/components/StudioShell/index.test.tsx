@@ -72,7 +72,7 @@ describe('StudioShell header', () => {
 });
 
 describe('StudioShell close behavior', () => {
-  it('clicking Done triggers onClose after animation delay', () => {
+  it('clicking Close triggers onClose after animation delay', () => {
     vi.useFakeTimers();
     const onClose = vi.fn();
     render(
@@ -146,6 +146,6 @@ describe('StudioShell subtitle', () => {
       </StudioShell>,
     );
     const header = screen.getByRole('banner', { name: 'Changelog' });
-    expect(header.textContent?.replace(/\s+/g, '')).toBe('ChangelogDone');
+    expect(header.textContent?.replace(/\s+/g, '')).toBe('ChangelogClose');
   });
 });

@@ -13,7 +13,6 @@ const GUIDE_SHORTCUTS: ReadonlyArray<ShortcutId> = [
   'workspace.switcher',
   'nav.back',
   'nav.forward',
-  'terminal.newTab',
   'settings.open',
   'settings.shortcuts',
 ];

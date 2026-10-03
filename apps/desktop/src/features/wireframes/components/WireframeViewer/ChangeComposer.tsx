@@ -3,7 +3,8 @@ import { Crosshair, X } from 'lucide-react';
 import { Button, Chip, KbdPill, SegmentedTabs, Textarea } from '@goodboy/ui';
 import type { WireframeChangeScope, WireframePickedNode } from '../../buildWireframeChangeRequest';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { formatCombo } from '../../../../shared/keyboard/registry';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
 
 const SCOPE_OPTIONS = [
   { value: 'screen', label: 'This screen' },
@@ -41,7 +42,7 @@ export const ChangeComposer = ({
 }: Props) => {
   const canSend = !isBusy && ask.trim().length > 0;
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey) && canSend) {
+    if (isSubmitChord(event) && canSend) {
       event.preventDefault();
       onSend();
     }
@@ -116,7 +117,7 @@ export const ChangeComposer = ({
             data-testid="wireframe-change-send"
           >
             Ask
-            <KbdPill>{formatCombo('cmd+Enter')}</KbdPill>
+            <KbdPill>{shortcutGlyphs('composer.submit')}</KbdPill>
           </Button>
         </span>
       </div>

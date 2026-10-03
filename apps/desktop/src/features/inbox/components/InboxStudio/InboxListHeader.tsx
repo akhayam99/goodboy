@@ -3,6 +3,7 @@ import type { ReactNode, RefObject } from 'react';
 import { ListFilter, RefreshCw, Search, X } from 'lucide-react';
 import { AnchoredPopover, Chip, IconButton, KbdPill, cn, useDropdown } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 
 type Props = {
   readonly query: string;
@@ -54,10 +55,14 @@ export const InboxListHeader = ({
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
           onKeyDown={(event) => {
-            if (event.key !== 'Escape' || query === '') {
+            if (event.key !== 'Escape') {
               return;
             }
             event.preventDefault();
+            if (query === '') {
+              event.currentTarget.blur();
+              return;
+            }
             onQueryChange('');
           }}
           placeholder={ISSUE_SEARCH_PLACEHOLDER}
@@ -65,7 +70,7 @@ export const InboxListHeader = ({
           autoComplete="off"
           className="min-w-0 flex-1 bg-transparent text-label text-foreground outline-none placeholder:text-faint-foreground"
         />
-        <KbdPill>/</KbdPill>
+        <KbdPill>{shortcutGlyphs('list.search')}</KbdPill>
       </div>
       {isFacetFolded ? (
         <AnchoredPopover

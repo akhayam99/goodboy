@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Notification, NotificationCountBucket } from '@goodboy/db';
 import type { IsoDateTime } from '@goodboy/types';
+import { pressShortcut } from '../../../../__tests__/helpers/pressKey';
 
 const { state } = vi.hoisted(() => ({
   state: {
@@ -229,7 +230,7 @@ describe('NotificationsStudio', () => {
     expect(state.dismissNotification).toHaveBeenCalledWith('second');
   });
 
-  it('moves with j, dismisses with e, and leaves the row list keyboard only', () => {
+  it('moves and dismisses with the list keys, and leaves the row list keyboard only', () => {
     seedNotifications({
       notifications: [
         buildNotification({
@@ -242,15 +243,15 @@ describe('NotificationsStudio', () => {
     });
     renderStudio();
 
-    fireEvent.keyDown(window, { key: 'j' });
+    pressShortcut({ id: 'list.next', target: document.body });
     expect(screen.getByRole('button', { name: 'Top row' }).getAttribute('aria-expanded')).toBe(
       'true',
     );
-    fireEvent.keyDown(window, { key: 'j' });
+    pressShortcut({ id: 'list.next', target: document.body });
     expect(screen.getByRole('button', { name: 'Bottom row' }).getAttribute('aria-expanded')).toBe(
       'true',
     );
-    fireEvent.keyDown(window, { key: 'e' });
+    pressShortcut({ id: 'list.dismiss', target: document.body });
 
     expect(state.dismissNotification).toHaveBeenCalledWith('bottom');
   });
