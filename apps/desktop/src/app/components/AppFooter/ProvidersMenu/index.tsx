@@ -3,6 +3,7 @@ import { isApiProvider } from '@goodboy/core';
 import type { ProviderConnectionState, ProviderId, WorkspaceId } from '@goodboy/types';
 import {
   AnchoredPopover,
+  EmptyLine,
   Eyebrow,
   StatusDot,
   Tooltip,
@@ -111,7 +112,7 @@ export const ProvidersMenu = ({ workspaceId }: Props) => {
           ))}
         </ul>
       ) : (
-        <p className="px-2 text-secondary text-faint-foreground">No provider is connected yet.</p>
+        <EmptyLine className="px-2">No provider is connected yet.</EmptyLine>
       )}
       {connected.length > 0 ? (
         <>
