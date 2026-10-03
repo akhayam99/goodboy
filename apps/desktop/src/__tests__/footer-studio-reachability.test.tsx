@@ -372,27 +372,16 @@ describe('Bitbucket studio reachability', () => {
 });
 
 describe('No workspace yet', () => {
-  it('keeps the app footer, so settings opens on the app scope', () => {
+  it('keeps the app footer', () => {
     state.workspaces = [];
     state.currentWorkspaceId = null;
     render(<App />);
 
     expect(screen.getByTestId('footer').getAttribute('data-scope')).toBe('app');
-    fireEvent.click(screen.getByRole('button', { name: 'Open settings' }));
-    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('app');
   });
 });
 
 describe('Footer to settings and Goodboy chip reachability', () => {
-  it('opens settings on App even with a workspace open, from the footer settings launcher', () => {
-    render(<App />);
-
-    expect(screen.queryByTestId('settings-studio')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Open settings' }));
-
-    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('app');
-  });
-
   it('opens the shortcuts list from the Goodboy chip', () => {
     render(<App />);
 

@@ -5,6 +5,7 @@ import { railSubtitles } from './railSubtitles';
 
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
 const OTHER_WORKSPACE_ID = 'ws-2' as WorkspaceId;
+const NOW_MS = Date.parse('2026-09-30T10:00:00Z');
 
 const gitStatus = (state: WorkspaceGitStatus['state']): WorkspaceGitStatus => ({
   state,
@@ -32,6 +33,7 @@ const baseState = {
 describe('railSubtitles', () => {
   it('flags an available update on General', () => {
     const subtitles = railSubtitles({
+      nowMs: NOW_MS,
       state: { ...baseState, updaterStatus: 'available' },
       workspaceId: null,
     });
@@ -41,7 +43,7 @@ describe('railSubtitles', () => {
   });
 
   it('reports no rows needing attention when nothing does', () => {
-    const subtitles = railSubtitles({ state: baseState, workspaceId: null });
+    const subtitles = railSubtitles({ state: baseState, workspaceId: null, nowMs: NOW_MS });
 
     expect(subtitles).toEqual({
       generalText: undefined,
@@ -59,6 +61,7 @@ describe('railSubtitles', () => {
 
   it('surfaces open security findings for the current workspace only', () => {
     const subtitles = railSubtitles({
+      nowMs: NOW_MS,
       state: {
         ...baseState,
         openSecurityFindings: { [WORKSPACE_ID]: [{}, {}] } as never,
@@ -75,6 +78,7 @@ describe('railSubtitles', () => {
     const p2 = 'p2' as ProjectId;
     const p3 = 'p3' as ProjectId;
     const subtitles = railSubtitles({
+      nowMs: NOW_MS,
       state: {
         ...baseState,
         projects: [
@@ -98,6 +102,7 @@ describe('railSubtitles', () => {
   it('never counts missing folders without a current workspace', () => {
     const p1 = 'p1' as ProjectId;
     const subtitles = railSubtitles({
+      nowMs: NOW_MS,
       state: {
         ...baseState,
         projects: [{ id: p1, workspaceId: WORKSPACE_ID }] as never,

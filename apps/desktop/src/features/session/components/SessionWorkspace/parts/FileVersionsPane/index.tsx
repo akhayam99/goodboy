@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Divider, formatError, cn, tintClasses, PaneShell } from '@goodboy/ui';
+import { Button, Divider, formatError, cn, tintClasses, PaneShell } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import type { FileVersion, FileVersionId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
@@ -167,13 +167,9 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
           title="No versions yet"
           description="When an agent edits a file, Goodboy stores the file as it was before the edit. The first change will appear here."
           action={
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex rounded-md border border-border px-2 py-1 text-label font-medium text-foreground transition-colors hover:bg-hover"
-            >
+            <Button variant="ghost" size="sm" onClick={onClose}>
               Close
-            </button>
+            </Button>
           }
         />
       )}

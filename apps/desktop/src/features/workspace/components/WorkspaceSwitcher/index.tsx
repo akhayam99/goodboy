@@ -11,11 +11,12 @@ import {
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
 import { openSettings } from '../../../settings/openSettings';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { WORKSPACE_DIGIT_IDS, shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { CurrentWorkspaceRow } from './CurrentWorkspaceRow';
 import { OtherWorkspaceRow } from './OtherWorkspaceRow';
 import { DisconnectedWorkspaces } from './DisconnectedWorkspaces';
 import { WorkspaceOpenConfirm } from './WorkspaceOpenConfirm';
+import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
 
 type Props = {
   readonly onClose: () => void;
@@ -121,7 +122,7 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
       setActiveIndex((i) => Math.max(i - 1, 0));
       return;
     }
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+    if (isSubmitChord(e)) {
       e.preventDefault();
       const picked = filtered[activeIndex];
       if (picked !== undefined) {
@@ -180,6 +181,7 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
               <OtherWorkspaceRow
                 workspace={w}
                 highlighted={i === activeIndex}
+                digitShortcut={query.trim() === '' ? (WORKSPACE_DIGIT_IDS[i] ?? null) : null}
                 onOpen={() => void open(w)}
                 onOpenNewWindow={() => void openNewWindow(w)}
               />

@@ -49,7 +49,7 @@ export const ChevronRight = createIcon([['path', { d: 'm9 18 6-6-6-6' }]]);
 export const Circle = createIcon([['circle', { cx: '12', cy: '12', r: '10' }]]);
 export const CircleCheck = createIcon([
   ['circle', { cx: '12', cy: '12', r: '10' }],
-  ['path', { d: 'm9 12 2 2 4-4' }],
+  ['path', { d: 'm16 9-5.5 5.5L8 12' }],
 ]);
 export const CircleHelp = createIcon([
   ['circle', { cx: '12', cy: '12', r: '10' }],

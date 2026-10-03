@@ -5,7 +5,8 @@ import { composerPlaceholder } from './composerPlaceholder';
 import { ReplyBar } from './ReplyBar';
 import type { ConversationSource } from './types';
 import type { ConversationModel } from './useConversation';
-import { formatCombo } from '../../keyboard/registry';
+import { shortcutGlyphs } from '../../keyboard/registry';
+import { isSubmitChord } from '../../keyboard/isSubmitChord';
 
 type Props = {
   readonly source: ConversationSource;
@@ -37,7 +38,7 @@ export const ConversationComposer = ({ source, model }: Props) => {
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+    if (isSubmitChord(event)) {
       event.preventDefault();
       submit();
       return;
@@ -74,7 +75,7 @@ export const ConversationComposer = ({ source, model }: Props) => {
         />
         <div className="flex min-w-0 items-center justify-between gap-2 px-2.5 pb-1.5">
           <span className="flex items-center gap-1 text-meta text-faint-foreground">
-            <KbdPill className="h-4 text-meta">{formatCombo('cmd+Enter')}</KbdPill>
+            <KbdPill className="h-4 text-meta">{shortcutGlyphs('composer.submit')}</KbdPill>
             to send
           </span>
           <IconButton icon={ArrowUp} label="Send" disabled={isEmpty} onClick={submit} />

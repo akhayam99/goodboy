@@ -7,6 +7,7 @@ vi.mock('../platform', () => ({ currentPlatform: () => platform.current }));
 
 import {
   SHORTCUTS,
+  SHORTCUT_SCOPE_LABEL,
   formatCombo,
   shortcutGlyphs,
   shortcutRangeGlyphs,
@@ -44,30 +45,72 @@ const RESERVED_COMBOS: ReadonlyArray<string> = [
   'cmd+ArrowDown',
 ];
 
-const entries = Object.entries(SHORTCUTS);
+const entries: ReadonlyArray<readonly [string, ShortcutEntry]> = Object.entries(SHORTCUTS);
+
+const SCOPED_RESERVED: Readonly<Record<string, string>> = {
+  'review.selectAll': 'cmd+KeyA',
+};
+
+const domainOf = (entry: ShortcutEntry): string => entry.scope ?? 'global';
 
 afterEach(() => {
   platform.current = 'darwin';
 });
 
 describe('shortcut registry', () => {
-  it('binds every combo exactly once', () => {
+  it('binds every combo exactly once inside its scope', () => {
     const seen = new Map<string, string>();
     for (const [id, entry] of entries) {
-      const clash = seen.get(entry.combo);
-      expect(clash, `${id} and ${clash} both bind ${entry.combo}`).toBeUndefined();
-      seen.set(entry.combo, id);
+      const slot = `${domainOf(entry)}|${entry.combo}`;
+      const clash = seen.get(slot);
+      expect(
+        clash,
+        `${id} and ${clash} both bind ${entry.combo} in ${domainOf(entry)}`,
+      ).toBeUndefined();
+      seen.set(slot, id);
+    }
+  });
+
+  it('never lets a scoped combo shadow a global one', () => {
+    const globals = new Map(
+      entries
+        .filter(([, entry]) => entry.scope === undefined)
+        .map(([id, entry]) => [entry.combo, id]),
+    );
+    for (const [id, entry] of entries) {
+      if (entry.scope === undefined) {
+        continue;
+      }
+      const shadowed = globals.get(entry.combo);
+      expect(shadowed, `${id} in ${entry.scope} shadows ${shadowed}`).toBeUndefined();
+    }
+  });
+
+  it('names a place for every scope in the page captions', () => {
+    for (const [id, entry] of entries) {
+      if (entry.scope !== undefined) {
+        expect(SHORTCUT_SCOPE_LABEL[entry.scope], `${id} has no caption`).not.toBe('');
+      }
+    }
+  });
+
+  it('puts every list key in the lists group, on the list scope', () => {
+    const list = entries.filter(([id]) => id.startsWith('list.'));
+    expect(list.length).toBeGreaterThan(0);
+    for (const [id, entry] of list) {
+      expect(entry.group, `${id} is not in the lists group`).toBe('lists');
+      expect(entry.scope, `${id} is not on the list scope`).toBe('list');
     }
   });
 
   it('binds every combo exactly once off macOS too, with per-OS combos resolved', () => {
     const seen = new Map<string, string>();
     for (const [id, entry] of entries) {
-      const combo: string =
-        'offMacCombo' in entry ? entry.offMacCombo : entry.combo.replace('cmd', 'ctrl');
-      const clash = seen.get(combo);
+      const combo: string = entry.offMacCombo ?? entry.combo.replace('cmd', 'ctrl');
+      const slot = `${domainOf(entry)}|${combo}`;
+      const clash = seen.get(slot);
       expect(clash, `${id} and ${clash} both bind ${combo} off macOS`).toBeUndefined();
-      seen.set(combo, id);
+      seen.set(slot, id);
     }
   });
 
@@ -90,6 +133,9 @@ describe('shortcut registry', () => {
 
   it('never binds a combo macOS reserves, or the text field owns', () => {
     for (const [id, entry] of entries) {
+      if (SCOPED_RESERVED[id] === entry.combo && entry.scope !== undefined) {
+        continue;
+      }
       expect(RESERVED_COMBOS, `${id} binds the reserved ${entry.combo}`).not.toContain(entry.combo);
     }
   });

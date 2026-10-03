@@ -6,6 +6,7 @@ import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { openReportSheet } from '../../../bug-report/openReportSheet';
 import { openUrl } from '../../../../shared/lib/editor';
 import { SOCIAL_LINKS } from '../../../../shared/lib/productLinks';
+import { requestGuideChapter } from '../GuideStudio/guideChapterRequest';
 
 type Props = {
   readonly requestClose: () => void;
@@ -38,6 +39,22 @@ export const AppHelpSection = ({ requestClose }: Props) => {
         </Button>
       </FieldRow>
 
+      <FieldRow
+        label="How Goodboy listens"
+        help="Prefixes, list keys and the two kinds of field, on one page."
+      >
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={closeThen(() => {
+            requestGuideChapter('listens');
+            window.dispatchEvent(new CustomEvent('goodboy:open-guide'));
+          })}
+        >
+          Open
+        </Button>
+      </FieldRow>
+
       <FieldRow label="iPhone" help="Follow your sessions from your phone.">
         <Button
           variant="secondary"
@@ -60,7 +77,7 @@ export const AppHelpSection = ({ requestClose }: Props) => {
         </Button>
       </FieldRow>
 
-      <FieldRow label="Follow Goodboy" help="Release news and what is coming next.">
+      <FieldRow label="Follow Goodboy" help="Release news as each version ships.">
         <Button
           variant="secondary"
           size="sm"

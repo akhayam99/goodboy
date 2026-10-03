@@ -159,7 +159,7 @@
         },
         {
           "title": "Next",
-          "text": "Goodboy shows the one move that unblocks a task, like answering a question or opening a pull request. Put a suggestion away until things change.",
+          "text": "Goodboy shows the one move that unblocks a task, like answering a question or opening a pull request. A move that starts an agent says which model it runs on. Put a suggestion away until things change.",
           "group": "Overview and activity",
           "also": "next step"
         },
@@ -407,7 +407,7 @@
         },
         {
           "title": "Built-in workflows",
-          "text": "Start from Refactor, Plan and ship or Fix a bug. A built-in you delete stays deleted until you restore it.",
+          "text": "Start from Refactor, Plan and ship or Fix a bug. A built-in you delete or change stays that way until you restore it.",
           "group": "Workflows",
           "also": "built-in workflows"
         },
@@ -931,20 +931,20 @@
         },
         {
           "title": "Fallback order and Auto",
-          "text": "Choose where Auto starts and the order it falls back through. Each role can use Auto or be pinned to a model.",
+          "text": "Choose where Auto starts and the order it falls back through. Auto runs the newest model of each line, like Sonnet 5.5, and each role can be pinned to a model.",
           "group": "Providers, limits and cost",
           "also": "fallback order",
           "shown": true
         },
         {
           "title": "Model picker",
-          "text": "Pick a model with the reason next to it. The picker leads with Auto and shows what it resolves to right now.",
+          "text": "Pick a model with the reason next to it. The picker leads with Auto and shows what it resolves to right now. A model you turn off is left out of Auto.",
           "group": "Providers, limits and cost",
           "main": true
         },
         {
           "title": "Impact",
-          "text": "See what Goodboy got done and what it cost over 7 days, 30 days or all time. Tiles compare each figure with the period before.",
+          "text": "See what Goodboy got done and what it cost over 7 days, 30 days or all time, deleted sessions included. Tiles compare each figure with the period before.",
           "group": "Providers, limits and cost",
           "main": true
         },

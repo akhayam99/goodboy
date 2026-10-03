@@ -22,8 +22,7 @@ what each provider needs and how to connect it, then how it works under the hood
 Every provider lives in the same place:
 
 1. Open **Settings** (`⌘,` on macOS)
-2. Choose **Providers & models**
-3. Pick the provider in the list
+2. Pick the provider under **Providers & models**
 
 The card shows whether the provider is installed, which account is signed in, and
 its **API keys**. Goodboy runs the provider's own sign-in, so your credentials never

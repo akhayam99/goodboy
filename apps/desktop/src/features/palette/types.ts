@@ -21,7 +21,8 @@ export type CommitScope = CommitActionTarget & {
 
 export type PaletteScope = WorkspaceScope | SessionActionTarget | AgentActionTarget | CommitScope;
 
-type PaletteGroup = 'agent' | 'session' | 'workspace' | 'script' | 'action' | 'help';
+type PaletteGroup =
+  'agent' | 'session' | 'workspace' | 'skill' | 'workflow' | 'script' | 'action' | 'help';
 
 export type PaletteKind =
   | 'verb'
@@ -32,6 +33,7 @@ export type PaletteKind =
   | 'goto'
   | 'setting'
   | 'script'
+  | 'workflow'
   | 'action'
   | 'help';
 

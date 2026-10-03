@@ -7,7 +7,7 @@ import {
   integrationLabel,
   type IntegrationGlyphProvider,
 } from '../IntegrationGlyph';
-import { toolIdentity } from './toolIdentity';
+import { toolRailSubtitle } from '../../toolRailEntries';
 
 type Props = {
   readonly focusedId: IntegrationGlyphProvider | null;
@@ -29,13 +29,7 @@ export const ToolsRail = ({
     className={cn('flex flex-col gap-0.5', PANE_RHYTHM.navRail.nest)}
   >
     {FOOTER_INTEGRATIONS.map(({ provider }) => {
-      const subtitle = !connected[provider]
-        ? 'not connected'
-        : provider === 'github'
-          ? (githubIdentity ?? 'connected')
-          : toolIdentity({
-              binding: integrations.find((binding) => binding.provider === provider),
-            });
+      const subtitle = toolRailSubtitle({ provider, integrations, connected, githubIdentity });
       return (
         <li key={provider}>
           <StatusRailItem
