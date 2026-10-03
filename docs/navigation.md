@@ -759,9 +759,16 @@ flow.
 Centre: the Goodboy chip. It holds everything about Goodboy itself, the way
 the Apple menu or Linear's help menu does. Its label says one thing, in this
 order: an update is ready, setup is unfinished (with its progress), or
-"Goodboy beta". Its popover leads with Report a bug (with ⌘I, and Draft saved
+"Goodboy | BETA v<version>" with the installed version. Below the
+`chrome-labels` width it keeps only the mark and the version. The version is
+`APP_VERSION` (`shared/lib/appVersion.ts`), which the build stamps from
+`apps/desktop/package.json` as `__APP_VERSION__`, so it never waits on Tauri
+and shows in mock scenes too. The update pill is soft, enters once and holds
+still. Its popover leads with Report a bug (with ⌘I, and Draft saved
 when a draft waits), then the version and release notes, the update, the setup
-checklist, What's new, keyboard shortcuts and Sponsor. Report a bug closes the
+checklist, What's new, keyboard shortcuts, Sponsor and Follow on X. The
+addresses live in `shared/lib/productLinks.ts`; **Settings > Help** has the
+same X link under Follow Goodboy. Report a bug closes the
 popover and opens the report sheet. The popover opens by itself once, when the
 first agent finishes a turn, and never while the setup wizard is open; the
 checklist has no floating card.
