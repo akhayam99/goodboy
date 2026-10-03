@@ -70,12 +70,12 @@ type SettleParams = {
   readonly now: IsoDateTime;
 };
 
-export type ChatImageRef = {
+type ChatImageRef = {
   readonly chatId: ChatId;
   readonly attachmentId: ChatAttachmentId;
 };
 
-export type WriteChatImageParams = ChatImageRef & {
+type WriteChatImageParams = ChatImageRef & {
   readonly fileName: string;
   readonly blob: Blob;
 };
