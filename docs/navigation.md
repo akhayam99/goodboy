@@ -92,8 +92,8 @@ opens it on a mode. Commands is the first mode.
 - **Empty input.** The verbs of the scope under For this session (or agent, or commit),
   then Recent, then Go to, Actions and Help. Go to reaches studios by name:
   Back to board inside a session, Inbox, Workflows, Impact, Changelog,
-  Notifications and Workspace settings inside a workspace, and Add workspace
-  everywhere.
+  Notifications and Workspace settings inside a workspace, and Start a new
+  project and Open a folder everywhere.
 - **Typing gives one ranked list, never regrouped.** A fuzzy subsequence match
   with bonuses for word starts, camel boundaries and runs, so `pay export`
   finds "Speed up the payout export" (`score.ts`); then frecency, uses halved
@@ -239,7 +239,8 @@ never exists on one surface only.
   workflow run: Open run, View diff; Answer, Start run, Continue step, Restart
   step, Start the next step, Restore; Copy run summary; Close, Discard and
   Delete, each confirmed. An artifact: the viewer's verbs by kind and status,
-  from the list row too. A plan part, an inbox record (with the tool verbs of
+  from the list row too, plus Delete on any stored artifact that is not already
+  deleted (Undo, no confirm) and Delete permanently on a deleted one (confirmed). A plan part, an inbox record (with the tool verbs of
   an open record), a pull request, a worktree row of the Overview (`mount`), a
   project, the Diff of a branch (`diff`), a diff file, a commit on the rewrite
   page, a storage worktree, a script, a transcript message and a link in
@@ -266,11 +267,29 @@ never exists on one surface only.
 - **Selection, like Finder.** A right click on a row that is part of a
   multi-selection acts on the whole selection (the several sessions kind). On
   an unselected row it clears the selection and acts on that row alone.
+- **One selection bar.** The Board, the session list, Review, Branches and the
+  Storage lists share `SelectionBar` (`packages/ui`). A checkbox shows on the
+  row under the pointer and on every row once one is picked; modifier-click and
+  the lasso stay. The bar floats at the bottom of the surface that owns the
+  selection with Clear, the count, Select all and the verbs. The sessions bar
+  takes its verbs from the `sessions` kind through `ObjectSelectionBar`, so
+  its words are the menu's words (`shortLabel` on the bar, `label` for the
+  accessible name). A verb that undoes runs at once with the Undo toast; a
+  verb that does not asks in a confirmation above the bar with what goes and
+  what stays (`goes`, `stays`, `items` and `altActionId` on `ActionConfirm`).
+  The keys live in the `selection` group of the shortcut registry
+  (`selection.toggle` X, `selection.all` ⌘A, `selection.clear` Esc,
+  `selection.delete` Delete) and run through `useSelectionKeys`, which acts
+  only while the pointer or the focus is inside the list. Esc goes through the
+  escape stack: the confirmation closes first, then the selection clears. Review
+  keeps its own `review.select` and `review.selectAll`. The scroller of a
+  surface takes a bottom margin while something is selected, so the bar never
+  covers the last row.
 - **Confirm and undo.** A verb that loses work confirms inside the menu with
-  `InlineConfirm` (Delete, Discard, Close run, Merge, Close pull request,
+  `InlineConfirm` (Delete, Delete permanently, Discard, Close run, Merge, Close pull request,
   Delete script, Close worktree, Remove from session, Abort rebase). Detach
   project and a storage worktree's Remove keep their detailed confirm (the
-  detach plan, the forced remove) in their own menu. A reversible verb runs at once with an Undo toast (Archive,
+  detach plan, the forced remove) in their own menu. A reversible verb runs at once with an Undo toast (Archive, Delete on an artifact,
   Close agent). A draft verb on the rewrite page (Drop) needs neither.
 - **Blocked verbs stay.** A verb that cannot run now stays in the menu, dimmed,
   with its reason under the label, and does nothing when chosen. A verb that
@@ -363,9 +382,12 @@ screen edge, so a graze does not open it.
 
 **The session overview is the reference page.** It shows the whole surface
 grammar on one screen, so read it before designing a new surface. Here is its
-rhythm. Each section has an eyebrow label. A section header holds at most one
-action, and a section has at most one primary button. A `<Divider />` sits
-between sections, and a section never has a border. A section appears once its
+rhythm. Each section has an eyebrow label, and a section has at most one
+primary button. Projects, Next and Activity are peer sections in the pane body,
+one `PANE_RHYTHM.stack` gap apart: the header passes `headerRhythm="section"`,
+so the gap under it is the same. Space separates sections, never a
+`<Divider />`, and a section never has a border. The Activity header holds two
+controls, Filter and New. A section appears once its
 fact exists (a plan, a workflow run, a PR on a project). Before that it is one
 quiet action row (link an issue, start an agent, attach a workflow). So the
 empty session reads as a young version of the same document, not a wall of
@@ -837,14 +859,22 @@ items (provider, project, code host, task manager, first session, profile); a
 skipped code host or task manager reopens its own step, and the first session
 ticks when an agent finishes a turn, not when a session row exists.
 
-Right: Inbox, Workflows, Impact and Settings. Settings (and ⌘,) always opens
-the Settings home, with or without a workspace; Workspace settings opens only from the
+Right: Inbox, Workflows, Impact, Providers and Settings. Settings (and ⌘,)
+always opens the Settings home, with or without a workspace; Workspace settings
+opens only from the
 gear on the current-workspace row of the workspace popover. Impact is a
 destination, so it has a launcher; the launcher opens its Overview tab, while
 the spend figure in the top bar and the `Impact: Spend` palette entry open its
-Spend tab. Providers & models is a Settings scope, reached from the Settings
-rail and the palette, so it has no footer launcher. Changelog opens from the
-Goodboy chip and the palette, so it earns no footer entry either.
+Spend tab. **Providers** is not a door to the Providers & models page: it opens
+a menu that changes things in place (`AppFooter/ProvidersMenu`). On top, every
+connected provider with its 5-hour and weekly limits; under "For <workspace>",
+the same `ProviderPolicyList` as Defaults > Providers, in order, writing through
+the same `setProviderPolicy`; then Connect for each CLI provider that is not
+connected, and Open Providers & models. It reads the cached providers and never
+refreshes them on open. With no provider connected the button pulses; that pulse
+replaced the top bar's old Connect a provider chip, so the limits strip shows
+nothing until a provider is connected. Changelog opens from the Goodboy chip and
+the palette, so it earns no footer entry.
 
 The footer is an `@container/footer` on the same `chrome-labels` step as the
 top bar. Below it, every launcher label and the **Link integration** label
@@ -917,7 +947,7 @@ hints, the Shortcuts page and the guide read the same entries. It keeps its own
 window listener because Enter must yield to a focused button (a row button of
 the list excepted). The Review view's Select every fixable comment (⌘A,
 `review.selectAll`) sits on the same footing, and the registry test lets it
-use ⌘A because the Review view only answers it outside a text field. They sit in the registry so the list and the tooltips name them.
+use ⌘A because the Review view only answers it outside a text field. The selection keys (`selection.toggle`, `selection.all`, `selection.clear`, `selection.delete`) are the same kind: `useSelectionKeys` matches the first, second and fourth against the registry, and `SelectionBar` answers Esc through the escape stack; the registry test lets `selection.all` use ⌘A because the hook yields to a text field. They sit in the registry so the list and the tooltips name them.
 The control that owns each one handles its own key event and never registers
 it with the dispatcher; the activity row matches through `eventMatches`, and so
 does Shift+F10 (`menu.open`), which opens the context menu of the focused row.
@@ -1317,7 +1347,10 @@ agentId, pane })` asks for either, and the address prints it as a last
   no verbs there, only **Open in Review (N)**, which calls `openReview` with
   the destination `{ kind: 'threads', threadIds }`. That destination needs no
   mount and no pull request: Review focuses the first thread of the set it
-  has, and the set stays in `reviewSelections[sessionId]`. Back, or Up when
+  has, and the set stays in `reviewSelections[sessionId]`. The destination
+  `{ kind: 'notes', threadIds }` does the same for diff notes and first sets
+  the review source to the local notes, so it lands on your notes even with a
+  pull request open. Back, or Up when
   Review is the entry below, returns to Review with that comment focused, and
   Up from a page reached any other way opens Review on that comment. There are
   no return pills: the Diff and the resolver page come back through Back.
@@ -1345,8 +1378,11 @@ agentId, pane })` asks for either, and the address prints it as a last
 
 ## Starting a project from nothing
 
-The empty screen and the workspace launcher offer **Start a new project** and
-**Open a folder**. The wizard's project step offers the same two. Start opens
+The empty screen, the workspace launcher, the workspace switcher and the
+command palette offer **Start a new project** and **Open a folder**, in that
+order. The wizard's project step offers the same two. Settings, Workspace,
+Projects names its form **Start a new project** too and opens the same form in
+line. **Add workspace** names only the studio that groups projects. Start opens
 one inline form (`NewProjectForm`), never a dialog: a name, a location (the
 last parent folder, else the home folder, changed with the system picker) and
 the four things the click does. A name that exists in the parent says so and
@@ -1510,8 +1546,13 @@ page. The source is a worktree (a file opened from the chat) or a commit (a
 GitHub commit link clicked anywhere in a session; outside a session the link
 opens in the browser). It shows unified and wrapped, and a worktree peek offers
 `Open in Diff`, which opens the Diff lens on that mount with the file in focus.
-`diff-notes` lists the open notes of the Diff lens by file; the count in the diff
-toolbar opens it.
+`diff-notes` is the notes summary of the Diff lens: the notes grouped by state
+(Not started, Working, Needs you, Ready to accept, Failed, and Done folded),
+each with file and line, a one-line excerpt, the model, effort and commit style
+of its fixer, and Fix or Open brief. `Open in Review` sits in its header. The
+count in the diff toolbar opens it, and Start in the fix strip opens it too. It
+reads the notes, their queue items and their attempts only (`useNoteFixes`),
+never the rows of the pull request.
 
 ## The Diff lens
 
@@ -1655,8 +1696,17 @@ on file); a viewed file collapses, and generated or binary files start
 collapsed. Rows are a CSS grid with `role="grid"`, never a table. Click a line
 number to comment, drag or shift-click to cover a range; the composer and the
 threads sit under the last line of the range. ⌘Enter saves, Escape cancels.
-The diff toolbar carries `N notes` and `Resolve in Review` in the Diff lens,
-which opens Review on the same notes; neither is a footer bar. Write review puts
+The diff toolbar carries `N notes`, `Open in Review` and `Fix N notes` in the
+Diff lens; none is a footer bar. `Open in Review` opens Review on your notes
+with the review destination `{ kind: 'notes' }`, which picks the local source
+even when a pull request is open. A note shows `Fix` (primary), `Close note`
+and `Delete`; Fix and `Fix N notes` open the fix strip under the diff toolbar
+(the same `ReviewLaunchStrip` as Review, with the Runs on row) and never start
+an agent on the first click. Start launches one fixer per note through
+`startBatch` and opens the notes summary. While a fixer works on a note, Close
+note and Delete are disabled with "A fixer is working on this note". Close note
+goes through `closeResolvedNote`, the same path Review uses. A first lap
+session gets the first lap refusal in place of the strip. Write review puts
 its form under the last file: the line comments with Edit and Delete on hover (Delete offers Undo), the verdict,
 the summary, and one primary that says the verdict (`Approve`,
 `Request changes`, `Submit comments`), ⌘↵ from the summary. The form's `⋯`

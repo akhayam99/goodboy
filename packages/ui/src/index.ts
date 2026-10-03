@@ -122,6 +122,16 @@ export {
 export type { ButtonEmphasis, ButtonProps, ButtonSize, ButtonVariant } from './components/Button';
 export type { CardActionProps } from './components/CardAction';
 export { Checkbox } from './components/Checkbox';
+export { SelectionCheckbox } from './components/SelectionCheckbox';
+export type { SelectionCheckboxProps } from './components/SelectionCheckbox';
+export { SelectionBar } from './components/SelectionBar';
+export type {
+  SelectionBarPlacement,
+  SelectionBarProps,
+  SelectionVerb,
+} from './components/SelectionBar';
+export { SelectionConfirm } from './components/SelectionBar/SelectionConfirm';
+export type { SelectionConfirmProps } from './components/SelectionBar/SelectionConfirm';
 export type { CheckboxProps } from './components/Checkbox';
 export { Chip, chipClasses } from './components/Chip';
 export type { ChipClassParams, ChipEmphasis, ChipProps, ChipSize } from './components/Chip';
@@ -138,6 +148,7 @@ export type { DialogProps, DialogSize } from './components/Dialog';
 export { Divider } from './components/Divider';
 export type { DividerProps } from './components/Divider';
 export { DogMascot } from './components/DogMascot';
+export { EmptyLine } from './components/EmptyLine';
 export { EmptyState, FilledEmptyState, LensEmptyState } from './components/EmptyState';
 export type { EmptyStateProps } from './components/EmptyState';
 export { Eyebrow } from './components/Eyebrow';
@@ -244,6 +255,8 @@ export { useListboxKeyboard } from './components/Listbox/useListboxKeyboard';
 export { SelectableRow } from './components/SelectableRow';
 export type { SelectableRowProps } from './components/SelectableRow';
 export { Skeleton, SkeletonText } from './components/Skeleton';
+export { SkeletonChip } from './components/SkeletonChip';
+export { SkeletonRow } from './components/SkeletonRow';
 export { StatCard } from './components/StatCard';
 export type { StatCardProps } from './components/StatCard';
 export { StatusRailItem } from './components/StatusRailItem';

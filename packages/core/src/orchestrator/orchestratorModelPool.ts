@@ -18,7 +18,7 @@ export const orchestratorModelPool = ({
   hidden,
 }: Params): ReadonlyArray<OrchestratorModelOption> => {
   const options: Array<OrchestratorModelOption> = [];
-  for (const provider of PROVIDER_IDS) {
+  for (const provider of availability.providerOrder ?? PROVIDER_IDS) {
     for (const model of MODEL_CATALOGS[provider]) {
       if (hidden != null && isModelHidden({ provider, hidden, key: model.key })) {
         continue;

@@ -20,15 +20,11 @@ const updateSourceSpy = vi.fn<(args: unknown) => Promise<void>>(async () => unde
 const setStatusSpy = vi.fn<(artifactId: ArtifactId, status: string) => Promise<void>>(
   async () => undefined,
 );
-const discardSpy = vi.fn<(artifactId: ArtifactId) => Promise<void>>(async () => undefined);
-const restoreSpy = vi.fn<(artifactId: ArtifactId) => Promise<void>>(async () => undefined);
 
 vi.mock('../../../features/artifacts/artifacts', () => ({
   listArtifactsForSession: (sessionId: SessionId) => listSpy(sessionId),
   updateArtifactSource: (args: unknown) => updateSourceSpy(args),
   setArtifactStatus: (artifactId: ArtifactId, status: string) => setStatusSpy(artifactId, status),
-  discardArtifact: (artifactId: ArtifactId) => discardSpy(artifactId),
-  restoreArtifact: (artifactId: ArtifactId) => restoreSpy(artifactId),
 }));
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -53,6 +49,7 @@ const planArtifact: PlanArtifact = {
   sourceTurnId: null,
   createdAt: NOW,
   updatedAt: NOW,
+  openedAt: null,
 };
 
 const reportArtifact: ReportArtifact = {
@@ -114,12 +111,5 @@ describe('artifacts slice', () => {
       status: 'superseded',
     });
     expect(setStatusSpy).toHaveBeenCalledWith(PLAN_ID, 'superseded');
-  });
-
-  it('deleteArtifact discards and restoreArtifact reactivates', async () => {
-    await slice().deleteArtifact({ sessionId: SESSION_ID, artifactId: PLAN_ID });
-    expect(discardSpy).toHaveBeenCalledWith(PLAN_ID);
-    await slice().restoreArtifact({ sessionId: SESSION_ID, artifactId: PLAN_ID });
-    expect(restoreSpy).toHaveBeenCalledWith(PLAN_ID);
   });
 });

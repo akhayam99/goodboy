@@ -1,18 +1,23 @@
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { LensEmptyState, PaneShell } from '@goodboy/ui';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 import { WireframeImportNotice } from '../../../wireframes/components/WireframeImportNotice';
 import { useWireframeImport } from '../../../wireframes/useWireframeImport';
 import { useFileDropTarget } from '../../../../shared/hooks/useFileDropTarget';
 import { useAppStore } from '../../../../store';
-import type { ArtifactFilter, ArtifactGeneration } from '../../artifactCollection';
-import type { ArtifactListCounts, ArtifactListRow as Row } from '../../artifactListRows';
+import type { ArtifactFilter } from '../../artifactCollection';
+import {
+  groupArtifactRows,
+  type ArtifactListCounts,
+  type ArtifactListRow as Row,
+} from '../../artifactListRows';
 import { ARTIFACT_KIND_CONCEPT } from '../../artifactPresentation';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { ArtifactFilterTabs } from '../ArtifactStudio/ArtifactFilterTabs';
 import { ArtifactListOverflowMenu } from './ArtifactListOverflowMenu';
-import { ArtifactListRow } from './ArtifactListRow';
+import { ArtifactListGroup } from './ArtifactListGroup';
 import { ArtifactNewMenu } from './ArtifactNewMenu';
+import { useArtifactGroups } from './useArtifactGroups';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -21,8 +26,6 @@ type Props = {
   readonly filter: ArtifactFilter;
   readonly onFilterChange: (filter: ArtifactFilter) => void;
   readonly onOpen: (row: Row) => void;
-  readonly onStop: (generation: ArtifactGeneration) => void;
-  readonly onRetry: (generation: ArtifactGeneration) => void;
   readonly onImported: (artifactId: ArtifactId) => void;
 };
 
@@ -54,8 +57,6 @@ export const ArtifactList = ({
   filter,
   onFilterChange,
   onOpen,
-  onStop,
-  onRetry,
   onImported,
 }: Props) => {
   const empty = EMPTY_COPY[filter];
@@ -81,6 +82,8 @@ export const ArtifactList = ({
       }
     },
   });
+  const { closedGroups, openPartsIds, toggleGroup, toggleParts } = useArtifactGroups({ rows });
+  const groups = useMemo(() => groupArtifactRows({ rows }), [rows]);
   const concept = filter === 'all' ? 'artifacts' : ARTIFACT_KIND_CONCEPT[filter];
 
   return (
@@ -132,38 +135,21 @@ export const ArtifactList = ({
             description={empty.description}
           />
         ) : (
-          <ul data-testid="artifact-list" className="flex min-w-0 flex-col">
-            {rows.map((row) => (
-              <li key={row.key} className="min-w-0">
-                <ArtifactListRow
-                  row={row}
-                  target={{
-                    kind: 'artifact',
-                    sessionId,
-                    subject:
-                      row.target.kind === 'generation'
-                        ? { kind: 'generation', generation: row.target.generation }
-                        : {
-                            kind: 'stored',
-                            artifactId: row.target.artifactId,
-                            isPlanRunning: row.node === 'running' || row.node === 'question',
-                          },
-                  }}
-                  onOpen={() => onOpen(row)}
-                  onStop={() => {
-                    if (row.target.kind === 'generation') {
-                      onStop(row.target.generation);
-                    }
-                  }}
-                  onRetry={() => {
-                    if (row.target.kind === 'generation') {
-                      onRetry(row.target.generation);
-                    }
-                  }}
-                />
-              </li>
+          <div data-testid="artifact-list" className="flex min-w-0 flex-col gap-3">
+            {groups.map((entry) => (
+              <ArtifactListGroup
+                key={entry.group}
+                group={entry.group}
+                rows={entry.rows}
+                sessionId={sessionId}
+                isOpen={!closedGroups.has(entry.group)}
+                openPartsIds={openPartsIds}
+                onToggleGroup={toggleGroup}
+                onTogglePartsOf={toggleParts}
+                onOpenRow={onOpen}
+              />
             ))}
-          </ul>
+          </div>
         )}
       </div>
     </PaneShell>

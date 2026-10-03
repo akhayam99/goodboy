@@ -49,6 +49,9 @@ export type ActionConfirm = {
   readonly role: ActionConfirmRole;
   readonly notes?: ReadonlyArray<string>;
   readonly altActionId?: string;
+  readonly goes?: string;
+  readonly stays?: string;
+  readonly items?: ReadonlyArray<string>;
 };
 
 export type ActionChoice = {
@@ -179,7 +182,7 @@ export type ArtifactPortId =
   | 'saveSource'
   | 'openInBrowser'
   | 'showInFinder'
-  | 'discard';
+  | 'delete';
 
 export type ArtifactPort = {
   readonly run: () => void | Promise<void>;

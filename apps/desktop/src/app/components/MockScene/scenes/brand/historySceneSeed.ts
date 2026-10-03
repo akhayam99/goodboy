@@ -270,24 +270,41 @@ export const LEDGER_RESULT_RUN: HistoryRun = {
       {
         action: 'fixup',
         text: 'Folded “Fix typo in CSV header” into “Add ledger export endpoint”, keeping its title',
+        sha: SHA.f,
+        target: SHA.a,
       },
       {
         action: 'squash',
         text: 'Combined “wip export tests” with “Add retries to the export job”, both messages kept',
+        sha: SHA.e,
+        target: SHA.d,
       },
-      { action: 'drop', text: 'Removed “Add debug logging to the export”' },
+      {
+        action: 'drop',
+        text: 'Removed “Add debug logging to the export”',
+        sha: SHA.x,
+        target: null,
+      },
       {
         action: 'move',
-        text: 'Moved “Add retries to the export job” below “Fix webhook signature check”',
+        text: 'Moved “Add retries to the export job” below “Verify webhook signatures before crediting”',
+        sha: SHA.d,
+        target: SHA.c,
       },
       {
         action: 'reword',
         text: 'Renamed “Fix webhook signature check” to “Verify webhook signatures before crediting”',
+        sha: SHA.c,
+        target: null,
       },
     ],
     includes: {
       [RESULT_SHA.d]: ['wip export tests'],
       [RESULT_SHA.a]: ['Fix typo in CSV header'],
+    },
+    absorbed: {
+      [RESULT_SHA.d]: [{ sha: SHA.e, title: 'wip export tests', mode: 'squash' }],
+      [RESULT_SHA.a]: [{ sha: SHA.f, title: 'Fix typo in CSV header', mode: 'fixup' }],
     },
     newShas: Object.values(RESULT_SHA),
     touchedOnline: 3,

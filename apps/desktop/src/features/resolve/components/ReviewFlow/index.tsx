@@ -16,6 +16,7 @@ import {
   ScrollFade,
   SegmentedTabs,
   Skeleton,
+  cn,
   formatError,
   PaneShell,
 } from '@goodboy/ui';
@@ -56,7 +57,7 @@ import { ReviewComment } from './ReviewComment';
 import { ReviewHeaderActions } from './ReviewHeaderActions';
 import { ReviewHeaderMeta } from './ReviewHeaderMeta';
 import { PushBanner } from './PushBanner';
-import { ReviewLaunchStrip } from './ReviewLaunchStrip';
+import { ReviewLaunchStrip } from '../../ReviewLaunchStrip';
 import { ReviewList } from './ReviewList';
 import { ReviewListMenu } from './ReviewListMenu';
 import { ReviewSelectionBar } from './ReviewSelectionBar';
@@ -130,6 +131,12 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
     [fixableIds, selectedIds],
   );
   const checked = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const shownFixableIds = useMemo(
+    () =>
+      shownEntries.filter((entry) => fixableIds.has(entry.threadId)).map((entry) => entry.threadId),
+    [fixableIds, shownEntries],
+  );
+  const selectAllFixable = () => setReviewSelection({ sessionId, threadIds: shownFixableIds });
   const { source } = useActiveReviewSource({ sessionId });
   const selectedThreadId = useAppStore((s) =>
     s.drawer?.kind === 'conversation' && s.drawer.sessionId === sessionId
@@ -369,17 +376,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
     }
     if (eventMatches({ event: native, entry: SHORTCUTS['review.selectAll'] })) {
       event.preventDefault();
-      setReviewSelection({
-        sessionId,
-        threadIds: shownEntries
-          .filter((entry) => fixableIds.has(entry.threadId))
-          .map((entry) => entry.threadId),
-      });
-      return;
-    }
-    if (native.key === 'Escape' && selectedIds.length > 0) {
-      event.preventDefault();
-      clearReviewSelection({ sessionId });
+      selectAllFixable();
       return;
     }
     if (focusedThreadId === null) {
@@ -486,18 +483,13 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
     }
     return (
       <div className="flex min-h-0 min-w-0 flex-1 gap-8">
-        <div className="hidden min-h-0 w-[300px] shrink-0 flex-col @4xl:flex">
-          {selectedIds.length > 0 ? (
-            <ReviewSelectionBar
-              count={selectedIds.length}
-              fixCount={fixSelectedIds.length}
-              onClear={() => clearReviewSelection({ sessionId })}
-              onFix={() => openLaunch(fixSelectedIds)}
-            />
-          ) : (
-            <ReviewListMenu filter={filter} onFilter={setFilter} />
-          )}
-          <ScrollFade className="min-h-0 flex-1" viewportClassName="pb-5 pr-2" fadeSize="h-6">
+        <div className="relative hidden min-h-0 w-[300px] shrink-0 flex-col @4xl:flex">
+          <ReviewListMenu filter={filter} onFilter={setFilter} />
+          <ScrollFade
+            className="min-h-0 flex-1"
+            viewportClassName={cn('pr-2', selectedIds.length > 0 ? 'pb-24' : 'pb-5')}
+            fadeSize="h-6"
+          >
             <div ref={listRef}>
               <ReviewList
                 groups={shownGroups}
@@ -514,6 +506,14 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
               )}
             </div>
           </ScrollFade>
+          <ReviewSelectionBar
+            count={selectedIds.length}
+            total={shownFixableIds.length}
+            fixCount={fixSelectedIds.length}
+            onClear={() => clearReviewSelection({ sessionId })}
+            onSelectAll={selectAllFixable}
+            onFix={() => openLaunch(fixSelectedIds)}
+          />
         </div>
         <ScrollFade className="min-h-0 min-w-0 flex-1" viewportClassName="pb-8 pr-4" fadeSize="h-6">
           <div className="mb-4 flex items-center gap-1 @4xl:hidden">

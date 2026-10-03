@@ -31,6 +31,7 @@ import type {
   AgentId,
   AgentRole,
   ProviderId,
+  ProviderPolicy,
   RoleModelPreferences,
 } from '@goodboy/types';
 
@@ -469,18 +470,30 @@ type KindRoutingParams = {
   readonly roleModels?: RoleModelPreferences | null;
   readonly defaultProvider?: ProviderId | null;
   readonly limitContext?: AutoLimitContext | null;
+  readonly policy?: ProviderPolicy | null;
 };
 
-type KindAutoParams = Pick<KindRoutingParams, 'defaultProvider' | 'limitContext'>;
+type KindAutoParams = Pick<KindRoutingParams, 'defaultProvider' | 'limitContext' | 'policy'>;
 
-const kindAutoContext = ({ defaultProvider, limitContext }: KindAutoParams): AutoContext | null => {
+const kindAutoContext = ({
+  defaultProvider,
+  limitContext,
+  policy,
+}: KindAutoParams): AutoContext | null => {
+  const scopedPolicy = policy === undefined ? (limitContext?.policy ?? null) : policy;
   if (limitContext == null) {
-    return defaultProvider == null ? null : { defaultProvider };
+    if (defaultProvider == null) {
+      return null;
+    }
+    return { defaultProvider, ...(scopedPolicy !== null && { policy: scopedPolicy }) };
   }
   const isLimited = limitContext.atLimit.length > 0;
+  const needsConnection = isLimited || scopedPolicy !== null;
   return {
     defaultProvider: defaultProvider ?? 'anthropic',
-    ...(isLimited && { connected: limitContext.connected, atLimit: limitContext.atLimit }),
+    ...(needsConnection && { connected: limitContext.connected }),
+    ...(isLimited && { atLimit: limitContext.atLimit }),
+    ...(scopedPolicy !== null && { policy: scopedPolicy }),
     ...(limitContext.hidden != null && { hidden: limitContext.hidden }),
     ...(limitContext.cliVersions != null && { cliVersions: limitContext.cliVersions }),
   };
@@ -491,8 +504,9 @@ export const kindRouting = ({
   roleModels,
   defaultProvider,
   limitContext,
+  policy,
 }: KindRoutingParams): AgentKindRouting => {
-  const auto = kindAutoContext({ defaultProvider, limitContext });
+  const auto = kindAutoContext({ defaultProvider, limitContext, policy });
   const role = resolveRoleRouting({
     role: KIND_TO_ROLE[kind],
     prefs: roleModels,

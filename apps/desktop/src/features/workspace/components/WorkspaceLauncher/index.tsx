@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FolderPlus, Plus, Search, Unplug } from 'lucide-react';
+import { FolderOpen, FolderPlus, Plus, Search, Unplug } from 'lucide-react';
 import {
   Button,
   Checkbox,
@@ -185,8 +185,8 @@ export const WorkspaceLauncher = () => {
             Start a new project
           </Button>
           <Button variant="secondary" onClick={addWorkspace} className="w-fit">
-            <Plus size={ICON_SIZE.control} aria-hidden />
-            Add workspace
+            <FolderOpen size={ICON_SIZE.control} aria-hidden />
+            Open a folder
           </Button>
         </div>
 

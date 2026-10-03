@@ -3,7 +3,6 @@ import type { LimitsChip as LimitsChipModel } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
 import { useLimitsChips } from '../../../../features/providers/hooks/useLimitsChips';
 import { openProviderUsage } from '../../../../features/providers/openProviderUsage';
-import { ConnectProviderChip } from './ConnectProviderChip';
 import { LimitsChip } from './LimitsChip';
 import { LimitsOverflowPopover } from './LimitsOverflowPopover';
 
@@ -61,10 +60,7 @@ const moveFocus = (event: KeyboardEvent<HTMLDivElement>): void => {
 };
 
 export const LimitsStrip = ({ openProviderId = null }: Props) => {
-  const { chips, hasNoProvider, nowMs } = useLimitsChips();
-  if (hasNoProvider) {
-    return <ConnectProviderChip />;
-  }
+  const { chips, nowMs } = useLimitsChips();
   if (chips.length === 0) {
     return null;
   }

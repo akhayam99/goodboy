@@ -1,13 +1,13 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { ChatId, Session, SessionStage } from '@goodboy/types';
+import type { ChatId, Session, SessionId, SessionStage } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import { SESSION_STAGE_META, STAGE_TONE } from '../../../session/session-stage';
 import { sessionTitle } from '../../../session/sessionTitle';
 import { useAppStore, useSessionStages } from '../../../../store';
 
 type ChatSessionEntry = {
-  readonly sessionId: string;
+  readonly sessionId: SessionId;
   readonly title: string;
   readonly stage: SessionStage;
   readonly stageLabel: string;

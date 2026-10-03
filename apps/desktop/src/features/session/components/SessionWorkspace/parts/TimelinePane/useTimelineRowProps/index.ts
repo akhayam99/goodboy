@@ -305,7 +305,8 @@ export const useTimelineRowProps = ({
       return { kind: 'more', item, rail, railWidth, sessionId, lanes, onShowAll: explode.showAll };
     }
     const { entry } = item;
-    const isGroup = entry.kind === 'resolveBatch' || entry.kind === 'subagentGroup';
+    const isGroup =
+      entry.kind === 'resolveBatch' || entry.kind === 'subagentGroup' || item.fold !== undefined;
     const action = isGroup ? null : actionFor({ item });
     const agentId = entry.kind === 'agent' ? entry.agent.id : null;
     const stepId = entry.kind === 'agent' ? entry.agent.stepId : null;
@@ -331,6 +332,7 @@ export const useTimelineRowProps = ({
           : entry.kind === 'run'
             ? (rows.spendByRunId.get(entry.run.id) ?? 0)
             : 0,
+      groupTotals: rows.groupTotals.get(item.id) ?? null,
       isRevealed: rows.revealedRows.has(entry.id),
       isExpanded: isGroup
         ? explode.expandedIds.has(entry.id) && !explode.leavingIds.has(entry.id)

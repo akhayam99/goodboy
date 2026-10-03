@@ -232,6 +232,7 @@ pub fn run() {
             secrets::secret_set,
             secrets::secret_delete,
             editor::detect_editors,
+            editor::detect_browsers,
             editor::open_in_editor,
             editor::open_file_in_workspace,
             editor::open_url,

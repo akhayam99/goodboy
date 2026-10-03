@@ -119,7 +119,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                 name: workspaceName ?? 'this workspace',
                 runningCount,
               })}
-              description="Projects, branches and worktrees stay on disk. Choose Add workspace with the same folder to bring it back with its sessions."
+              description="Projects, branches and worktrees stay on disk. Choose Open a folder with the same folder to bring it back with its sessions."
               confirmLabel="Disconnect"
               isBusy={disconnecting}
               onConfirm={onDisconnect}

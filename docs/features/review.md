@@ -110,7 +110,7 @@ Keep a pull request description in step with its branch. After a history push, a
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-diff-light.webp" alt="The Diff of payments-api on hl/fix-duplicate-credit, branch vs main with 3 files +47 -12, 1 of 3 viewed, Unified and Split, an open note under line 26 of applyWebhook.ts, 1 note, and Resolve in Review and Rewrite history buttons">
 </picture>
 
-Read changes with syntax colors, word-level highlights, a **Unified** or **Split** view and a **Viewed** tick per file (**1 of 3 viewed** here), and quote a line into a note or a question for an agent. A note shows under its line with **Resolve** and **Delete**, and **Resolve in Review** in the toolbar carries the notes into Review. The header offers the next step for the branch, such as **Rebase on main**, **Push N commits** or **Create PR**, next to **Rewrite history**.
+Read changes with syntax colors, word-level highlights, a **Unified** or **Split** view and a **Viewed** tick per file (**1 of 3 viewed** here), and quote a line into a note or a question for an agent. A note shows under its line with **Fix**, **Close note** and **Delete**. **Fix 2 notes** in the toolbar opens a strip with the model, the commit style and a hint, and **Start** gives each note its own agent and opens a summary of your notes grouped by state. **Open in Review** carries the notes into Review, even when a pull request is open. The header offers the next step for the branch, such as **Rebase on main**, **Push N commits** or **Create PR**, next to **Rewrite history**.
 
 ### Write review
 

@@ -4,6 +4,8 @@ import { useAppStore } from '../../../../../store';
 import { SETTING_HIDDEN_MODELS } from '../../../../../features/settings/settings';
 import { SettingsFrame } from './SettingsFrame';
 import { sceneParam } from './sceneParams';
+import { seedPolicyScene } from '../providerPolicySeed';
+import { SETTINGS_WORKSPACE_ID } from './settingsSeed';
 
 type ProviderParams = {
   readonly value: string | null;
@@ -31,6 +33,13 @@ const seedHidden = () => {
   }));
 };
 
+const HAS_NEW_PROVIDER = sceneParam({ key: 'new' }) === '1';
+
+const seedScene = () => {
+  seedPolicyScene({ workspaceId: SETTINGS_WORKSPACE_ID, hasNewProvider: HAS_NEW_PROVIDER });
+  seedHidden();
+};
+
 export const SettingsProvidersScene = () => (
-  <SettingsFrame focus={{ scope: 'providers', provider: PROVIDER }} seed={seedHidden} />
+  <SettingsFrame focus={{ scope: 'providers', provider: PROVIDER }} seed={seedScene} />
 );

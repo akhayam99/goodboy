@@ -4,6 +4,8 @@ import type { ChatMessage, ChatMessageId, SessionId } from '@goodboy/types';
 import type { ChatSessionEntry } from '../../chatSessionEntries';
 import { ChatAssistantMessage } from './ChatAssistantMessage';
 import { ChatHandoffNote } from './ChatHandoffNote';
+import { ChatDraftNote } from './ChatDraftNote';
+import type { ChatDraft } from '../../hooks/useChatDrafts';
 import { ChatUserMessage } from './ChatUserMessage';
 
 type Props = {
@@ -12,9 +14,12 @@ type Props = {
   readonly onStartWork?: (messageId: ChatMessageId) => void;
   readonly sessions: ReadonlyArray<ChatSessionEntry>;
   readonly onOpenSession: (sessionId: SessionId) => void;
+  readonly drafts?: ReadonlyArray<ChatDraft>;
 };
 
 const STICK_PX = 48;
+
+const NO_DRAFTS: ReadonlyArray<ChatDraft> = [];
 
 type NotesParams = {
   readonly messages: ReadonlyArray<ChatMessage>;
@@ -42,6 +47,7 @@ export const ChatThread = ({
   onStartWork,
   sessions,
   onOpenSession,
+  drafts = NO_DRAFTS,
 }: Props) => {
   const notes = useMemo(() => notesByMessage({ messages, sessions }), [messages, sessions]);
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -53,7 +59,7 @@ export const ChatThread = ({
       return;
     }
     viewport.scrollTop = viewport.scrollHeight;
-  }, [messages, sessions]);
+  }, [messages, sessions, drafts]);
 
   const onScroll = (): void => {
     const viewport = viewportRef.current;
@@ -91,6 +97,11 @@ export const ChatThread = ({
           {notes.trailing.map((entry) => (
             <li key={entry.link.id} className="flex flex-col">
               <ChatHandoffNote entry={entry} onOpen={onOpenSession} />
+            </li>
+          ))}
+          {drafts.map((draft) => (
+            <li key={`draft-${draft.session.id}`} className="flex flex-col">
+              <ChatDraftNote draft={draft} onOpen={onOpenSession} />
             </li>
           ))}
         </ol>

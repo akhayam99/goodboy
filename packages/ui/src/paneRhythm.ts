@@ -4,6 +4,10 @@ export const PANE_RHYTHM = {
   body: 'px-6 py-5',
   dock: 'px-6 py-4',
   stack: 'flex flex-col gap-5',
+  below: {
+    title: 'pb-4',
+    section: 'pb-5',
+  },
   column: 'mx-auto w-full max-w-[var(--column-max)]',
   hero: 'max-w-[640px]',
   detail: {

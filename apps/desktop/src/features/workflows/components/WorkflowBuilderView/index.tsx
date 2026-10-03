@@ -65,7 +65,7 @@ import { useWorkflowDraft } from '../../engine/useWorkflowDraft';
 import { ROLE_LABEL, classifyStep } from '../../../session/agent-kind';
 import { isWorkflowRunComplete } from '../../isWorkflowRunComplete';
 import { isPresetWorkflow } from '../../isPresetWorkflow';
-import { useWorkflowDrag } from '../../hooks/useWorkflowDrag';
+import { useWorkflowDrag } from '../../../../shared/hooks/useWorkflowDrag';
 import { useSaveAsStep } from '../../hooks/useSaveAsStep';
 import { useSavedSteps } from '../../hooks/useSavedSteps';
 import { stepDraftFromSavedStep, type SavedStep } from '../../savedSteps';
@@ -349,11 +349,18 @@ export const WorkflowBuilderView = (props: Props) => {
     [limitContext, workspaceOverrides, providerId],
   );
 
-  const orchestratorProviders = useMemo<ReadonlyArray<ProviderId>>(
-    () =>
-      connectedProviders.filter((candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0),
-    [connectedProviders],
-  );
+  const workspacePolicy = workspaceOverrides?.providerPool ?? null;
+  const orchestratorProviders = useMemo<ReadonlyArray<ProviderId>>(() => {
+    const capable = connectedProviders.filter(
+      (candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0,
+    );
+    if (workspacePolicy === null) {
+      return capable;
+    }
+    return workspacePolicy
+      .filter((entry) => entry.state !== 'off' && capable.includes(entry.id))
+      .map((entry) => entry.id);
+  }, [connectedProviders, workspacePolicy]);
   const effectivePool = effectiveProviderPool({
     providers: orchestratorProviders,
     pool: providerPool,

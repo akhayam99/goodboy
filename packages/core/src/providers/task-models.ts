@@ -2,6 +2,7 @@ import type {
   AuxTaskId,
   EffortLevel,
   ProviderId,
+  ProviderPolicy,
   TaskModelFallback,
   TaskModelPreference,
   TaskModelPreferences,
@@ -11,6 +12,7 @@ import { PROVIDER_CAPABILITIES } from './capabilities';
 import { clampEffortForModel } from './clampEffortForModel';
 import { resolvedStoredModelId } from './resolvedStoredModelId';
 import { resolveStoredModelSelection } from './resolveStoredModelSelection';
+import { providerStanding } from './autoRouting/providerCandidates';
 import { resolveAuto, type AutoContext } from './autoRouting/resolveAuto';
 import type { HiddenModels } from './modelVisibility';
 
@@ -44,6 +46,7 @@ type Params = {
   readonly sessionDefaultProviderId: ProviderId;
   readonly connectedProviders?: ReadonlyArray<ProviderId> | null;
   readonly fallbackOrder?: ReadonlyArray<ProviderId> | null;
+  readonly providerPolicy?: ProviderPolicy | null;
   readonly atLimitProviders?: ReadonlyArray<ProviderId> | null;
   readonly hiddenModels?: HiddenModels | null;
   readonly cliVersions?: Partial<Record<ProviderId, string | null>> | null;
@@ -108,11 +111,13 @@ const preferredTaskModel = ({
 
 type UsableParams = {
   readonly provider: ProviderId;
-  readonly connectedProviders: ReadonlyArray<ProviderId> | null | undefined;
+  readonly auto: AutoContext;
 };
 
-const isUsable = ({ provider, connectedProviders }: UsableParams): boolean =>
-  connectedProviders == null || connectedProviders.includes(provider);
+const isUsable = ({ provider, auto }: UsableParams): boolean => {
+  const standing = providerStanding({ provider, context: auto });
+  return standing !== 'off' && standing !== 'not-connected';
+};
 
 export const resolveTaskModel = ({
   task,
@@ -121,6 +126,7 @@ export const resolveTaskModel = ({
   sessionDefaultProviderId,
   connectedProviders,
   fallbackOrder,
+  providerPolicy,
   atLimitProviders,
   hiddenModels,
   cliVersions,
@@ -130,6 +136,7 @@ export const resolveTaskModel = ({
     defaultProvider: defaultProviderId,
     ...(connectedProviders != null && { connected: connectedProviders }),
     ...(fallbackOrder != null && { fallbackOrder }),
+    ...(providerPolicy != null && { policy: providerPolicy }),
     ...(atLimitProviders != null && { atLimit: atLimitProviders }),
     ...(hiddenModels != null && { hidden: hiddenModels }),
     ...(cliVersions != null && { cliVersions }),
@@ -137,14 +144,14 @@ export const resolveTaskModel = ({
   const preference = preferences?.[task];
   const preferred =
     preference == null ? null : preferredTaskModel({ task, preference, defaultProviderId });
-  if (preferred != null && isUsable({ provider: preferred.providerId, connectedProviders })) {
+  if (preferred != null && isUsable({ provider: preferred.providerId, auto })) {
     return preferred;
   }
   const fallback =
     preferred == null || preference?.fallback == null
       ? null
       : preferredTaskModel({ task, preference: preference.fallback, defaultProviderId });
-  if (fallback != null && isUsable({ provider: fallback.providerId, connectedProviders })) {
+  if (fallback != null && isUsable({ provider: fallback.providerId, auto })) {
     return fallback;
   }
   return automaticTaskModel({ task, auto });

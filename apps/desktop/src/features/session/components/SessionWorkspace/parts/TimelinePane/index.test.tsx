@@ -281,21 +281,6 @@ describe('TimelinePane on an empty session', () => {
     expect(screen.queryByRole('region', { name: 'Kickoff' })).toBeNull();
   });
 
-  it('keeps Run workflow beside Start agent and folds Report/Wireframe into Create', () => {
-    storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
-    renderEmptySession();
-
-    expect(screen.getByRole('button', { name: 'Start agent' })).toBeDefined();
-    expect(screen.getByRole('button', { name: /Run workflow/ })).toBeDefined();
-    for (const name of ['Create report', 'Create wireframe']) {
-      expect(screen.queryByRole('button', { name: new RegExp(name) })).toBeNull();
-    }
-    fireEvent.click(screen.getByRole('button', { name: 'Create' }));
-    for (const name of ['Report', 'Wireframe']) {
-      expect(screen.getByRole('menuitem', { name: new RegExp(`^${name}`) })).toBeDefined();
-    }
-  });
-
   it('holds the filter back while the feed has a single kind of row', () => {
     storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
     renderEmptySession();
@@ -332,27 +317,6 @@ describe('TimelinePane loading', () => {
 });
 
 describe('TimelinePane unread affordance', () => {
-  it('seats Mark all seen on the NOW rule and marks everything on click', () => {
-    storeState.sessionPhaseRuns = {
-      'session-1': [
-        {
-          id: 'agent-1',
-          sessionId: 'session-1',
-          ordinal: 1,
-          name: 'scout',
-          status: 'completed',
-          startedAt: '2026-08-20T10:00:00.000Z',
-        },
-      ],
-    };
-    unread.current = true;
-    render(<TimelinePane session={SESSION} actions={null} />);
-
-    const cta = screen.getByRole('button', { name: 'Mark all seen' });
-    fireEvent.click(cta);
-    expect(storeState.markAllAgentsSeen).toHaveBeenCalledWith('session-1');
-  });
-
   it('hides the CTA once nothing is unread', () => {
     storeState.sessionPhaseRuns = {
       'session-1': [
@@ -1588,5 +1552,157 @@ describe('TimelinePane subagent group', () => {
 
     fireEvent.keyDown(toggle(), { key: 'ArrowRight' });
     expect(toggle().getAttribute('aria-expanded')).toBe('true');
+  });
+});
+
+describe('TimelinePane finished run', () => {
+  const STEPS = ['scout', 'plan', 'build'] as const;
+  const RUN = {
+    run: {
+      id: 'run-fold',
+      workflowId: 'workflow-fold',
+      ordinal: 0,
+      currentStep: 2,
+      autoRun: true,
+      triggerMode: 'immediate',
+      executionMode: 'static',
+      createdAt: '2026-08-20T09:00:00.000Z',
+    },
+    workflow: {
+      id: 'workflow-fold',
+      workspaceId: 'ws-1',
+      name: 'Refund keys',
+      description: '',
+      steps: STEPS.map((name, index) => ({
+        id: `step-${name}`,
+        workflowId: 'workflow-fold',
+        ordinal: index,
+        name,
+        promptPrefix: '',
+      })),
+      createdAt: '2026-08-20T09:00:00.000Z',
+      updatedAt: '2026-08-20T09:00:00.000Z',
+    },
+  };
+  const stepAgent = ({
+    name,
+    index,
+    status,
+  }: {
+    readonly name: string;
+    readonly index: number;
+    readonly status: string;
+  }) => ({
+    id: `agent-${name}`,
+    sessionId: 'session-1',
+    stepId: `step-${name}`,
+    workflowRunId: 'run-fold',
+    runId: `provider-${name}`,
+    ordinal: index + 1,
+    name: `Step ${name}`,
+    status,
+    startedAt: `2026-08-20T09:0${index}:00.000Z`,
+    ...(status === 'completed' ? { completedAt: `2026-08-20T09:0${index}:40.000Z` } : {}),
+  });
+  const agentsWith = ({ last }: { readonly last: string }) =>
+    STEPS.map((name, index) =>
+      stepAgent({ name, index, status: index === STEPS.length - 1 ? last : 'completed' }),
+    );
+  const span = ({ name, index }: { readonly name: string; readonly index: number }) => ({
+    agentId: `agent-${name}`,
+    parentAgentId: null,
+    agentStatus: 'completed',
+    workflowRunId: 'run-fold',
+    isOrchestratedRunDone: false,
+    stepRole: 'implementer',
+    provider: index === 1 ? 'codex' : 'anthropic',
+    model: index === 1 ? 'gpt-5.6-sol' : 'claude-sonnet-5',
+    effort: null,
+    startedAtMs: Date.parse(`2026-08-20T09:0${index}:00.000Z`),
+    endedAtMs: Date.parse(`2026-08-20T09:0${index}:40.000Z`),
+    endReason: 'succeeded',
+    costUsd: null,
+    touchedMountIds: null,
+  });
+  const runRow = (): HTMLElement => {
+    const row = screen
+      .getAllByRole('button', { name: /Refund keys/ })
+      .find((button) => button.hasAttribute('aria-expanded'));
+    if (row === undefined) {
+      throw new Error('run row missing');
+    }
+    return row;
+  };
+
+  beforeEach(() => {
+    attachedRuns.list = [RUN];
+    storeState.sessionTurnSpans = {
+      'session-1': STEPS.map((name, index) => span({ name, index })),
+    };
+    storeState.sessionTelemetry = {
+      'session-1': STEPS.map((name) => ({
+        kind: 'turn',
+        runId: `provider-${name}`,
+        provider: 'anthropic',
+        model: 'claude-sonnet-5',
+        estimatedCostUsd: 0.5,
+        recordedAt: '2026-08-20T09:10:00.000Z',
+      })),
+    };
+  });
+
+  afterEach(() => {
+    storeState.sessionTurnSpans = {};
+  });
+
+  it('shows a finished run as one row with its totals, and opens it on click', () => {
+    storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'completed' }) };
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    expect(screen.queryByText('Step plan')).toBeNull();
+    expect(runRow().getAttribute('aria-expanded')).toBe('false');
+    expect(within(runRow()).getByText('3 steps')).toBeDefined();
+    const meta = within(runRow()).getByTestId('work-meta');
+    expect(within(meta).getByText('2 models')).toBeDefined();
+    expect(within(meta).getByText('$1.50')).toBeDefined();
+    expect(within(meta).getByText('2m')).toBeDefined();
+
+    fireEvent.click(runRow());
+
+    expect(runRow().getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByText('Step plan')).toBeDefined();
+  });
+
+  it('keeps the whole summary of a folded run beside its title', () => {
+    storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'completed' }) };
+    questions.answered = [
+      aQuestion({
+        id: 'question-fold' as OpenQuestionId,
+        text: 'Key on the event id?',
+        userAnswer: 'Yes',
+        status: 'answered',
+        createdAt: '2026-08-20T09:01:10.000Z' as IsoDateTime,
+        answeredAt: '2026-08-20T09:01:20.000Z' as IsoDateTime,
+        createdByAgentId: 'agent-plan' as AgentId,
+      }),
+    ];
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    const summary = within(runRow()).getByTestId('fold-summary');
+    expect(summary.textContent).toBe('3 steps · 1 question answered');
+    expect(summary.getAttribute('title')).toBe('3 steps · 1 question answered');
+    expect(within(runRow()).getByTitle('Refund keys').textContent).toBe('Refund keys');
+  });
+
+  it('keeps a run open when it finishes while on screen', () => {
+    storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'running' }) };
+    const view = render(<TimelinePane session={SESSION} actions={null} />);
+    expect(screen.getByText('Step build')).toBeDefined();
+
+    storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'completed' }) };
+    view.rerender(<TimelinePane session={SESSION} actions={null} />);
+
+    expect(screen.getByText('Step build')).toBeDefined();
+    expect(runRow().getAttribute('aria-expanded')).toBe('true');
   });
 });

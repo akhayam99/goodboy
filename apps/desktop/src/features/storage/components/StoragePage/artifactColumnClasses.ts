@@ -1,5 +1,4 @@
 export const ARTIFACT_COLUMN = {
-  check: 'flex w-4 shrink-0 items-center',
   node: 'flex w-5 shrink-0 items-center',
   workspace: 'w-24 shrink-0 truncate @max-[720px]:hidden',
   age: 'w-20 shrink-0 text-right tabular-nums @max-[560px]:hidden',

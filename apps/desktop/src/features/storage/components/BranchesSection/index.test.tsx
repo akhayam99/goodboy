@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { WorkspaceId } from '@goodboy/types';
 
 const WORKSPACE = 'ws-harborline' as WorkspaceId;
@@ -149,7 +149,7 @@ describe('BranchesSection', () => {
     render(<BranchesSection scope={{ kind: 'workspace', id: WORKSPACE }} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Select 1 safe to delete' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Delete 1 branch' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete selected branches' }));
     expect(await screen.findByText('Also delete 1 on origin')).toBeDefined();
 
     cleanup();
@@ -158,7 +158,7 @@ describe('BranchesSection', () => {
     await waitFor(() => expect(autoDelete).toHaveBeenCalled());
     await Promise.resolve();
     fireEvent.click(screen.getByRole('button', { name: 'Select 1 safe to delete' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Delete 1 branch' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete selected branches' }));
     await waitFor(() => expect(screen.queryByText('Also delete 1 on origin')).toBeNull());
   });
 
@@ -177,5 +177,69 @@ describe('BranchesSection', () => {
     await waitFor(() =>
       expect(state.restoreDeletedBranches).toHaveBeenCalledWith({ ids: ['deleted-1'] }),
     );
+  });
+
+  describe('selection bar', () => {
+    const mergedPair = () =>
+      ready([branch({}), branch({ name: 'goodboy/rates-cache', sha: 'sha-rates' })]);
+
+    const bar = () => screen.queryByRole('toolbar');
+
+    it('starts from a row checkbox and offers every branch in view', () => {
+      state.branchScans = mergedPair();
+      render(<BranchesSection scope={{ kind: 'workspace', id: WORKSPACE }} />);
+      expect(bar()).toBeNull();
+
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Select goodboy/ledger-close' }));
+
+      expect(within(screen.getByRole('toolbar')).getByText('1 selected')).toBeDefined();
+      fireEvent.click(screen.getByRole('button', { name: 'Select all 2' }));
+      expect(within(screen.getByRole('toolbar')).getByText('2 selected')).toBeDefined();
+      expect(screen.queryByRole('button', { name: /^Select all/ })).toBeNull();
+    });
+
+    it('selects every branch with the select all key and clears with Escape', () => {
+      state.branchScans = mergedPair();
+      render(<BranchesSection scope={{ kind: 'workspace', id: WORKSPACE }} />);
+
+      fireEvent.mouseOver(screen.getByText('goodboy/ledger-close'));
+      fireEvent.keyDown(window, { key: 'a', code: 'KeyA', ctrlKey: true });
+      expect(within(screen.getByRole('toolbar')).getByText('2 selected')).toBeDefined();
+
+      fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+      expect(bar()).toBeNull();
+    });
+
+    it('toggles the row under the pointer with X', () => {
+      state.branchScans = mergedPair();
+      render(<BranchesSection scope={{ kind: 'workspace', id: WORKSPACE }} />);
+
+      fireEvent.mouseOver(screen.getByText('goodboy/rates-cache'));
+      fireEvent.keyDown(window, { key: 'x', code: 'KeyX' });
+
+      expect(
+        screen
+          .getByRole('checkbox', { name: 'Select goodboy/rates-cache' })
+          .getAttribute('aria-checked'),
+      ).toBe('true');
+      expect(within(screen.getByRole('toolbar')).getByText('1 selected')).toBeDefined();
+    });
+
+    it('opens the confirmation above the bar, and Escape closes it first', () => {
+      state.branchScans = mergedPair();
+      render(<BranchesSection scope={{ kind: 'workspace', id: WORKSPACE }} />);
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Select goodboy/ledger-close' }));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Delete selected branches' }));
+      const confirm = screen.getByRole('group', { name: /Delete 1 merged branch in ledger-core/ });
+      expect(
+        confirm.compareDocumentPosition(screen.getByRole('toolbar')) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).not.toBe(0);
+
+      fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+      expect(screen.queryByRole('group', { name: /Delete 1 merged branch/ })).toBeNull();
+      expect(within(screen.getByRole('toolbar')).getByText('1 selected')).toBeDefined();
+    });
   });
 });

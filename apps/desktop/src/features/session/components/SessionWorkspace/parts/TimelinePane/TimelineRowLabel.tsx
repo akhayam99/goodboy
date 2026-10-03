@@ -27,6 +27,7 @@ import { TimelineRowWorktrees } from './TimelineRowWorktrees';
 import { resolveBatchTitle } from '../../../../timeline/resolveBatchSummary';
 import { subagentGroupTitle } from '../../../../timeline/subagentGroups';
 import { TimelineGroupLabel } from './TimelineGroupLabel';
+import { TimelineFoldTitle } from './TimelineFoldTitle';
 import { TimelineRunLabel } from './TimelineRunLabel';
 import { DiffStat } from '../../../DiffStat';
 
@@ -205,13 +206,20 @@ export const TimelineRowLabel = ({
 }: Props) => {
   const { entry, grade } = item;
   if (entry.kind === 'run') {
-    return <TimelineRunLabel entry={entry} isLaneLit={isLaneLit} isRevealed={isRevealed} />;
+    return (
+      <TimelineRunLabel
+        entry={entry}
+        summary={item.fold?.summary ?? null}
+        isLaneLit={isLaneLit}
+        isRevealed={isRevealed}
+      />
+    );
   }
   if (entry.kind === 'resolveBatch') {
     return (
       <TimelineGroupLabel
         title={resolveBatchTitle({ total: entry.summary.total, prNumber: entry.prNumber })}
-        parts={entry.summary.parts}
+        summary={entry.summary}
       />
     );
   }
@@ -219,7 +227,7 @@ export const TimelineRowLabel = ({
     return (
       <TimelineGroupLabel
         title={subagentGroupTitle({ total: entry.summary.total })}
-        parts={entry.summary.parts}
+        summary={entry.summary}
       />
     );
   }
@@ -235,6 +243,51 @@ export const TimelineRowLabel = ({
       : [{ kind: 'text', text: head }];
   const title = titleOf({ entry, segments });
   const isAgent = entry.kind === 'agent';
+  const titleNode = (
+    <span
+      title={detail === null ? title : `${title} · ${detail}`}
+      className={cn(
+        'flex items-center overflow-hidden',
+        isAgent ? (item.fold === undefined ? cn(WORK_ROW.title, 'flex-1') : 'min-w-24') : 'min-w-0',
+        isStep ? 'text-label' : 'text-body',
+        emphasis === 'muted' || isQueued || grade === 'fact'
+          ? 'text-muted-foreground'
+          : item.rowState.phase === 'running' || item.hasUnread
+            ? 'font-medium text-foreground'
+            : 'text-foreground',
+      )}
+    >
+      {segments.map((segment, index) =>
+        segment.kind === 'value' ? (
+          <ValueToken
+            key={`${segment.variant}:${index}`}
+            value={segment.text}
+            className={cn(index < segments.length - 1 && 'shrink-0')}
+          />
+        ) : (
+          <span
+            key={`text:${index}`}
+            className={cn(
+              'min-w-0 overflow-hidden text-ellipsis whitespace-pre',
+              (index < segments.length - 1 || detail !== null) && 'shrink-0',
+            )}
+          >
+            {segment.text}
+          </span>
+        ),
+      )}
+      {detail === null ? null : (
+        <>
+          <span aria-hidden className="shrink-0 whitespace-pre text-faint-foreground">
+            {' · '}
+          </span>
+          <span className="min-w-0 overflow-hidden text-ellipsis whitespace-pre text-faint-foreground">
+            {detail}
+          </span>
+        </>
+      )}
+    </span>
+  );
   return (
     <>
       {item.ordinal != null ? (
@@ -243,49 +296,11 @@ export const TimelineRowLabel = ({
         </span>
       ) : null}
       {chipOf({ entry, grade })}
-      <span
-        title={detail === null ? title : `${title} · ${detail}`}
-        className={cn(
-          'flex items-center overflow-hidden',
-          isAgent ? cn(WORK_ROW.title, 'flex-1') : 'min-w-0',
-          isStep ? 'text-label' : 'text-body',
-          emphasis === 'muted' || isQueued || grade === 'fact'
-            ? 'text-muted-foreground'
-            : item.rowState.phase === 'running' || item.hasUnread
-              ? 'font-medium text-foreground'
-              : 'text-foreground',
-        )}
-      >
-        {segments.map((segment, index) =>
-          segment.kind === 'value' ? (
-            <ValueToken
-              key={`${segment.variant}:${index}`}
-              value={segment.text}
-              className={cn(index < segments.length - 1 && 'shrink-0')}
-            />
-          ) : (
-            <span
-              key={`text:${index}`}
-              className={cn(
-                'min-w-0 overflow-hidden text-ellipsis whitespace-pre',
-                (index < segments.length - 1 || detail !== null) && 'shrink-0',
-              )}
-            >
-              {segment.text}
-            </span>
-          ),
-        )}
-        {detail === null ? null : (
-          <>
-            <span aria-hidden className="shrink-0 whitespace-pre text-faint-foreground">
-              {' · '}
-            </span>
-            <span className="min-w-0 overflow-hidden text-ellipsis whitespace-pre text-faint-foreground">
-              {detail}
-            </span>
-          </>
-        )}
-      </span>
+      {item.fold === undefined ? (
+        titleNode
+      ) : (
+        <TimelineFoldTitle summary={item.fold.summary}>{titleNode}</TimelineFoldTitle>
+      )}
       {diffStat == null ? null : (
         <span className="self-center">
           <DiffStat additions={diffStat.additions} deletions={diffStat.deletions} />

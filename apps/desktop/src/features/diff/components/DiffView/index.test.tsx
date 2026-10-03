@@ -76,7 +76,7 @@ const thread = (overrides: Partial<DiffThread> = {}): DiffThread => ({
   statusLabel: 'Open note',
   isResolved: false,
   canEdit: false,
-  canResolve: true,
+  canClose: true,
   canReopen: false,
   ...overrides,
 });
@@ -88,7 +88,7 @@ const commentsWith = (threads: ReadonlyArray<DiffThread>): DiffComments => ({
   allowFileLevel: true,
   onSubmit: vi.fn(),
   onAskAgent: vi.fn(),
-  onResolve: vi.fn(),
+  onClose: vi.fn(),
   onReopen: vi.fn(),
   onDelete: vi.fn(),
 });
@@ -241,21 +241,38 @@ describe('DiffView comments', () => {
     });
   });
 
-  it('shows a thread under its line and resolves it', () => {
-    const comments = commentsWith([thread()]);
+  it('shows a note under its line with Fix and Close note, and no control says Resolve', () => {
+    const onFix = vi.fn();
+    const comments = commentsWith([
+      thread({ actions: [{ id: 'fix', label: 'Fix', isPrimary: true, onClick: onFix }] }),
+    ]);
     render(<DiffView files={[LEDGER]} comments={comments} />);
     screen.getByText('Guard the residual when a weight is zero');
-    fireEvent.click(screen.getByRole('button', { name: 'Resolve' }));
-    expect(comments.onResolve).toHaveBeenCalledWith('n1');
+    fireEvent.click(screen.getByRole('button', { name: 'Fix' }));
+    expect(onFix).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole('button', { name: 'Close note' }));
+    expect(comments.onClose).toHaveBeenCalledWith('n1');
+    expect(screen.queryAllByRole('button', { name: /^Resolve/ })).toEqual([]);
+  });
+
+  it('blocks Close note and Delete on a note a fixer is working on, and says why', () => {
+    const reason = 'A fixer is working on this note';
+    const comments = commentsWith([thread({ lockReason: reason, meta: 'Sonnet 5.5 · Medium' })]);
+    render(<DiffView files={[LEDGER]} comments={comments} />);
+    const close = screen.getByRole('button', { name: 'Close note' });
+    expect(close.hasAttribute('disabled')).toBe(true);
+    expect(close.getAttribute('title')).toBe(reason);
+    expect(screen.getByRole('button', { name: 'Delete' }).hasAttribute('disabled')).toBe(true);
+    screen.getByText(reason);
   });
 
   it('collapses a resolved thread to one line with reopen', () => {
     const comments = commentsWith([
-      thread({ isResolved: true, statusLabel: 'Resolved', canResolve: false, canReopen: true }),
+      thread({ isResolved: true, statusLabel: 'Closed', canClose: false, canReopen: true }),
     ]);
     render(<DiffView files={[LEDGER]} comments={comments} />);
     const resolved = document.querySelector('[data-thread-state="resolved"]');
-    expect(resolved?.textContent).toContain('Resolved');
+    expect(resolved?.textContent).toContain('Closed');
     fireEvent.click(screen.getByRole('button', { name: 'Reopen' }));
     expect(comments.onReopen).toHaveBeenCalledWith('n1');
   });

@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Button, InlineConfirm } from '@goodboy/ui';
+import { Button, SelectionBar, SelectionConfirm } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { StorageFolder } from '../../../../store/slices/storage/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import { storageScopeLabel } from '../../storageScopeLabel';
@@ -12,9 +13,14 @@ type Props = {
   readonly suggested: ReadonlyArray<StorageFolder>;
   readonly suggestAfterDays: number;
   readonly workspaceName: string | null;
-  readonly selected: ReadonlySet<string> | null;
+  readonly selected: ReadonlySet<string>;
+  readonly total: number;
+  readonly isConfirming: boolean;
   readonly onStart: () => void;
+  readonly onArm: () => void;
   readonly onCancel: () => void;
+  readonly onClear: () => void;
+  readonly onSelectAll: () => void;
   readonly onDone: () => void;
 };
 
@@ -30,8 +36,13 @@ export const BulkRemoveBar = ({
   suggestAfterDays,
   workspaceName,
   selected,
+  total,
+  isConfirming,
   onStart,
+  onArm,
   onCancel,
+  onClear,
+  onSelectAll,
   onDone,
 }: Props) => {
   const scope = storageScopeLabel({ workspaceName });
@@ -40,7 +51,7 @@ export const BulkRemoveBar = ({
   const reportError = useAppStore((state) => state.reportError);
   const [isBusy, setIsBusy] = useState(false);
 
-  if (selected === null) {
+  if (selected.size === 0) {
     if (suggested.length === 0) {
       return (
         <p className="px-2 text-secondary text-faint-foreground">
@@ -67,6 +78,7 @@ export const BulkRemoveBar = ({
   const withCommits = chosen.filter((folder) => (folder.facts?.localOnlyCommits ?? 0) > 0).length;
   const commitsClause =
     withCommits === 0 ? '' : `, including ${withCommits} with commits that were never pushed`;
+  const sizeLabel = formatBytes({ bytes: bytesOf({ folders: chosen }) });
 
   const onConfirm = async () => {
     setIsBusy(true);
@@ -81,16 +93,41 @@ export const BulkRemoveBar = ({
   };
 
   return (
-    <InlineConfirm
-      role="danger"
-      icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-      title={`Remove ${pluralize(chosen.length, 'folder')} ${scope} (${formatBytes({ bytes: bytesOf({ folders: chosen }) })})?`}
-      description={`Branches stay${commitsClause}. Folders with changes are skipped.`}
-      confirmLabel="Remove"
-      isConfirmDisabled={chosen.length === 0}
-      isBusy={isBusy}
-      onConfirm={onConfirm}
-      onCancel={onCancel}
+    <SelectionBar
+      placement="sticky"
+      count={selected.size}
+      total={total}
+      verbs={[
+        {
+          id: 'remove',
+          label: 'Remove',
+          ariaLabel: 'Remove selected folders',
+          tone: 'danger',
+          icon: <Trash2 size={ICON_SIZE.row} aria-hidden />,
+          isDisabled: isBusy,
+          onRun: onArm,
+        },
+      ]}
+      onClear={onClear}
+      onSelectAll={onSelectAll}
+      clearHint={shortcutGlyphs('selection.clear')}
+      selectAllHint={shortcutGlyphs('selection.all')}
+      onDismissConfirm={onCancel}
+      confirm={
+        isConfirming ? (
+          <SelectionConfirm
+            role="danger"
+            icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
+            title={`Remove ${pluralize(chosen.length, 'folder')} ${scope} (${sizeLabel})?`}
+            description={`Branches stay${commitsClause}. Folders with changes are skipped.`}
+            confirmLabel="Remove"
+            isConfirmDisabled={chosen.length === 0}
+            isBusy={isBusy}
+            onConfirm={onConfirm}
+            onCancel={onCancel}
+          />
+        ) : null
+      }
     />
   );
 };

@@ -90,13 +90,13 @@ every turn running in the one it had, so opening a workspace only switches
 this window in place when nothing is running here. When agents are running,
 the workspace popover asks first and offers a new window, which keeps them
 going; a side door that used to switch silently (a notification, an inbox
-item, Add workspace) now opens that workspace's own window instead of
+item, Open a folder) now opens that workspace's own window instead of
 touching this one. `⌘Enter` on a workspace row always opens a new window,
 no question asked.
 
 **Disconnect** keeps a workspace and its projects in the database with
 everything they hold, it only hides them. Re-adding the same folder through
-Add workspace, or a project through Add project, reconnects it and its
+Open a folder, or a project through Add project, reconnects it and its
 sessions instead of creating a duplicate. If the folder moved since it was
 disconnected, Goodboy recognizes it by repository identity and offers to
 locate it the same way a moved project is located while connected.
@@ -307,7 +307,7 @@ sentence, no Answer, only a neutral "Waiting on a step" node. It names the
 question only when neither is in view (a sub-agent and question rows both
 filtered out), and then its Answer opens the asking agent at the question.
 The activity reports which open questions its rows show (`shownQuestionIds`),
-so Next steps and the needs-you callout above it do not repeat them. The
+so Next steps do not repeat them. The
 needs-you count counts each family once, so one question never counts twice.
 
 ## Next steps
@@ -396,6 +396,10 @@ pushed yet` when origin has no copy, and `Branch diverged from origin`
   started", with an "Open the agent" action) - the toast the standalone
   PlanReadySuggestion component used to show before the unified resolver
   replaced it in E7-5, restored here.
+- The resolve-threads card ("Draft fixes for N") starts its fixers with the
+  Runs on row and stays where you are. The same toast says how many agents
+  started and on which model, and its action is "Open summary", which opens
+  Review on those comments instead of the agent.
 
 ## Agents
 
@@ -1178,9 +1182,13 @@ cannot make its scripts run when you use a skill.
 ## Editor
 
 When you want to type code yourself, Goodboy opens your editor on the right
-worktree and branch. It finds **VS Code** and **Cursor** by itself. If you have
-both, a dropdown lets you pick. When you are done, you pick the task up again
-in Goodboy.
+worktree and branch. It finds the editors installed on your computer by
+itself. **Settings → App → General → Open with** picks the editor and the
+browser. With up to four options the choice is a segmented control like Theme;
+with more it is a list. The browser starts at **System default**, and links and
+artifacts open there. If the browser you picked is removed, links open in the
+system browser and a note in Settings says so. When you are done, you pick the
+task up again in Goodboy.
 
 ## Under the hood
 
@@ -1251,7 +1259,9 @@ Other identifiers:
   `openrouter`, `moonshot`, shown as Claude, Cursor, Codex, Gemini, OpenCode,
   OpenRouter and Moonshot
 - `ArtifactKind`: `plan`, `report`, `wireframe`
-- `ArtifactStatus`: `active`, `consumed`, `superseded`, `discarded`
+- `ArtifactStatus`: `active`, `consumed`, `superseded`, `discarded`. The UI
+  words are Ready to run or New, Ran, Replaced and Deleted
+  (`artifactStateOf`); `discarded` is what Delete writes, for every kind
 - Plans sit between `<<plan>>` and `<</plan>>` markers
 - Reports and wireframes sit inside an `<<artifact v=1 kind=...>>` envelope.
   The line after the marker is a JSON header with title, format and metadata.

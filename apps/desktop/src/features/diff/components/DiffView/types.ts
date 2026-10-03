@@ -3,6 +3,13 @@ import type { DiffCommentAnchor, FileDiff, IsoDateTime } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import type { ViewedState } from '../../lib/reviewedFiles';
 
+export type DiffThreadAction = {
+  readonly id: string;
+  readonly label: string;
+  readonly isPrimary: boolean;
+  readonly onClick: () => void;
+};
+
 export type DiffThread = {
   readonly id: string;
   readonly filePath: string;
@@ -16,9 +23,12 @@ export type DiffThread = {
   readonly isResolved: boolean;
   readonly footer?: ReactNode;
   readonly canEdit: boolean;
-  readonly canResolve: boolean;
+  readonly canClose: boolean;
   readonly canReopen: boolean;
   readonly canDelete?: boolean;
+  readonly actions?: ReadonlyArray<DiffThreadAction>;
+  readonly lockReason?: string | null;
+  readonly meta?: string | null;
 };
 
 export type DiffLineTarget = {
@@ -31,11 +41,12 @@ export type DiffComments = {
   readonly threads: ReadonlyArray<DiffThread>;
   readonly submitLabel: string;
   readonly composerLabel: string;
+  readonly noun?: string;
   readonly allowFileLevel: boolean;
   readonly onSubmit: (filePath: string, anchor: DiffCommentAnchor | null, body: string) => void;
   readonly onAskAgent?: (target: DiffLineTarget) => void;
   readonly onEdit?: (id: string, body: string) => void;
-  readonly onResolve?: (id: string) => void;
+  readonly onClose?: (id: string) => void;
   readonly onReopen?: (id: string) => void;
   readonly onDelete?: (id: string) => void;
 };

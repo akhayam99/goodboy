@@ -265,7 +265,7 @@ describe('Review as one flow', () => {
     const bar = screen.getByRole('toolbar', { name: 'Selected comments' });
     expect(within(bar).getByText('1 selected')).toBeDefined();
     expect(list().querySelectorAll('[data-fix-row]').length).toBe(0);
-    fireEvent.click(within(bar).getByRole('button', { name: 'Clear' }));
+    fireEvent.click(within(bar).getByRole('button', { name: 'Clear selection' }));
     expect(screen.queryByRole('toolbar', { name: 'Selected comments' })).toBeNull();
   });
 

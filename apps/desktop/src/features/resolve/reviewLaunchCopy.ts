@@ -4,7 +4,6 @@ export const REVIEW_LAUNCH_LABEL = {
   clearSelection: 'Clear',
   selectionBar: 'Selected comments',
   strip: 'Fix launch',
-  model: 'Model',
   commit: 'Commit',
   commitStyle: 'Commit style',
   newCommit: 'New commit',
@@ -16,8 +15,20 @@ export const REVIEW_LAUNCH_LABEL = {
   close: 'Close',
 } as const;
 
-export const launchTitle = ({ count }: { readonly count: number }): string =>
-  count === 1 ? 'Fix this comment' : `Fix ${count} comments, one agent each`;
+export type LaunchNoun = 'comment' | 'note';
+
+export const launchTitle = ({
+  count,
+  noun = 'comment',
+}: {
+  readonly count: number;
+  readonly noun?: LaunchNoun;
+}): string => {
+  if (noun === 'note') {
+    return count === 1 ? 'Fix 1 note' : `Fix ${count} notes, one agent each`;
+  }
+  return count === 1 ? 'Fix this comment' : `Fix ${count} comments, one agent each`;
+};
 
 export const launchStartLabel = ({ count }: { readonly count: number }): string =>
   count === 1 ? 'Start' : `Start ${count} agents`;
@@ -40,8 +51,6 @@ export const startedLine = ({
   readonly count: number;
   readonly modelName: string;
 }): string => `${count} ${count === 1 ? 'agent' : 'agents'} started on ${modelName}`;
-
-export const selectedLabel = ({ count }: { readonly count: number }): string => `${count} selected`;
 
 export const fixSelectedLabel = ({ count }: { readonly count: number }): string =>
   count === 1 ? 'Fix' : `Fix ${count} separately`;

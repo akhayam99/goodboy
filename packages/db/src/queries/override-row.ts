@@ -1,6 +1,6 @@
 import {
   AFTER_MERGE_RULES,
-  PROVIDER_IDS,
+  parseProviderPolicy,
   REPLY_VOICES,
   RESOLVE_COMMIT_STYLES,
 } from '@goodboy/types';
@@ -9,6 +9,7 @@ import type {
   OverrideSettings,
   ProviderBindings,
   ProviderId,
+  ProviderPolicy,
   ReplyVoice,
   ResolveCommitStyle,
   RoleModelPreferences,
@@ -77,25 +78,20 @@ const isTaskModelPreferences = (value: unknown): value is TaskModelPreferences =
 const isRoleModelPreferences = (value: unknown): value is RoleModelPreferences =>
   isJsonRecord(value);
 
-const PROVIDER_ID_SET: ReadonlySet<string> = new Set(PROVIDER_IDS);
+type ProviderPoolParams = ParseJsonParams & {
+  readonly defaultProviderId: string | null;
+};
 
-const parseProviderPool = ({ raw }: ParseJsonParams): ReadonlyArray<ProviderId> | null => {
+const parseProviderPool = ({
+  raw,
+  defaultProviderId,
+}: ProviderPoolParams): ProviderPolicy | null => {
   const parsed = parseJsonColumn<ReadonlyArray<unknown> | null>({
     value: raw,
     isValid: isJsonArray,
     fallback: null,
   });
-  if (parsed === null) {
-    return null;
-  }
-  const providerPool: ProviderId[] = [];
-  for (const value of parsed) {
-    if (typeof value !== 'string' || PROVIDER_ID_SET.has(value) === false) {
-      return null;
-    }
-    providerPool.push(value as ProviderId);
-  }
-  return providerPool;
+  return parseProviderPolicy({ value: parsed, defaultProviderId });
 };
 
 type Params = {
@@ -122,7 +118,10 @@ export const overridesFromRow = ({ row }: Params): OverrideSettings => ({
     fallback: null,
   }),
   parallelAgents: row.parallel_agents === null ? null : row.parallel_agents !== 0,
-  providerPool: parseProviderPool({ raw: row.provider_pool }),
+  providerPool: parseProviderPool({
+    raw: row.provider_pool,
+    defaultProviderId: row.default_provider_id,
+  }),
   attributionFooter: row.attribution_footer == null ? null : row.attribution_footer !== 0,
   replyVoice: replyVoiceOf({ raw: row.reply_voice ?? null }),
   replyStyleNote: row.reply_style_note ?? null,

@@ -34,6 +34,7 @@ type Props = {
   readonly presentation?: 'pane' | 'peek' | 'inline';
   readonly footer?: ReactNode;
   readonly toolbarEnd?: ReactNode;
+  readonly belowToolbar?: ReactNode;
 };
 
 const EMPTY_THREADS: ReadonlyArray<DiffThread> = [];
@@ -57,6 +58,7 @@ export const DiffView = ({
   presentation = 'pane',
   footer,
   toolbarEnd,
+  belowToolbar = null,
 }: Props) => {
   const isPeek = presentation === 'peek';
   const [savedLayout, setLayout] = useDiffLayoutMode();
@@ -407,6 +409,7 @@ export const DiffView = ({
     return (
       <div data-slot="diff-view" className="flex min-w-0 flex-col gap-3">
         {toolbar}
+        {belowToolbar}
         {body}
       </div>
     );
@@ -415,7 +418,10 @@ export const DiffView = ({
   return (
     <div data-slot="diff-view" className="flex min-h-0 min-w-0 flex-1 flex-col">
       <div className="shrink-0">
-        <PageColumn className="pb-3">{toolbar}</PageColumn>
+        <PageColumn className="flex flex-col gap-3 pb-3">
+          {toolbar}
+          {belowToolbar}
+        </PageColumn>
       </div>
       <ScrollFade className="min-h-0 flex-1" viewportRef={viewportRef} fadeSize={24}>
         <PageColumn>{body}</PageColumn>

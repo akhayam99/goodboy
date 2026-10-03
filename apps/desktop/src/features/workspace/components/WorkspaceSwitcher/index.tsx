@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FolderGit2, Plus, Search } from 'lucide-react';
-import { Divider, KbdPill, ScrollFade, FilledEmptyState } from '@goodboy/ui';
+import { FolderGit2, FolderOpen, FolderPlus, Search } from 'lucide-react';
+import { Divider, FilledEmptyState, KbdPill, ScrollFade } from '@goodboy/ui';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
 import {
   useAppStore,
@@ -207,13 +207,24 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
       <button
         type="button"
         onClick={() => {
+          window.dispatchEvent(new CustomEvent('goodboy:start-new-project'));
+          onClose();
+        }}
+        className={actionClass}
+      >
+        <FolderPlus size={ICON_SIZE.row} aria-hidden />
+        Start a new project
+      </button>
+      <button
+        type="button"
+        onClick={() => {
           window.dispatchEvent(new CustomEvent('goodboy:add-workspace'));
           onClose();
         }}
         className={actionClass}
       >
-        <Plus size={ICON_SIZE.row} aria-hidden />
-        Add workspace
+        <FolderOpen size={ICON_SIZE.row} aria-hidden />
+        Open a folder
       </button>
       {currentWorkspace !== null ? (
         <button

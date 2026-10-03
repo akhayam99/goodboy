@@ -1,5 +1,11 @@
 import { recommendedModelForRole, resolveRoleRouting } from '@goodboy/core';
-import type { EffortLevel, ProviderId, RoleModelPreferences, Step } from '@goodboy/types';
+import type {
+  EffortLevel,
+  ProviderId,
+  ProviderPolicy,
+  RoleModelPreferences,
+  Step,
+} from '@goodboy/types';
 import { KIND_TO_ROLE, kindRouting, type AgentKind } from '../session/agent-kind';
 
 type Params = {
@@ -12,6 +18,7 @@ type Params = {
   readonly sessionProvider?: ProviderId | null;
   readonly sessionModel?: string | null;
   readonly sessionEffort?: EffortLevel | null;
+  readonly policy?: ProviderPolicy | null;
 };
 
 type StepRouting = {
@@ -30,8 +37,15 @@ export const resolveStepRouting = ({
   sessionProvider,
   sessionModel,
   sessionEffort,
+  policy = null,
 }: Params): StepRouting => {
-  const fallback = kindRouting({ kind, roleModels });
+  const auto =
+    policy === null ? undefined : { defaultProvider: sessionProvider ?? 'anthropic', policy };
+  const fallback = kindRouting({
+    kind,
+    roleModels,
+    ...(auto !== undefined && { defaultProvider: auto.defaultProvider, policy }),
+  });
   const decided = step?.routingLock?.pick ?? step?.routingDecision?.selected ?? null;
   if (decided !== null) {
     return {
@@ -41,9 +55,17 @@ export const resolveStepRouting = ({
     };
   }
   const role = step?.role;
-  const roleRouting = role != null ? resolveRoleRouting({ role, prefs: roleModels }) : null;
+  const roleRouting =
+    role != null
+      ? resolveRoleRouting({ role, prefs: roleModels, ...(auto !== undefined && { auto }) })
+      : null;
   const preference =
-    roleRouting ?? resolveRoleRouting({ role: KIND_TO_ROLE[kind], prefs: roleModels });
+    roleRouting ??
+    resolveRoleRouting({
+      role: KIND_TO_ROLE[kind],
+      prefs: roleModels,
+      ...(auto !== undefined && { auto }),
+    });
   const preferredProvider = preference.isOverride ? preference.provider : null;
   const provider =
     step?.providerOverride ??

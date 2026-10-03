@@ -1,17 +1,18 @@
 import type { RefObject } from 'react';
 import type { BranchCommit, HistoryStep, HistoryStepPrediction, SessionId } from '@goodboy/types';
 import type { CommitActionTarget } from '../../../actions/types';
-import type { HistoryApplied } from '../../../../store/slices/history/types';
-import { canRemove, combineDown, moveBy, rewordStep, targetOf } from '../../historyPlan';
+import type { HistoryAbsorbed, HistoryApplied } from '../../../../store/slices/history/types';
+import { APPLIED_LIST_LIMIT } from '../../groupAppliedEdits';
+import { canRemove, combineDown, rewordStep, targetOf } from '../../historyPlan';
 import type { HistoryGraphModel } from '../../historyGraphModel';
 import type { HistoryRowMark } from '../../historyRowMarks';
 import { HistoryCommitRow } from './HistoryCommitRow';
 import type { HistoryRowView } from './historyRowLine';
 import { RewordEditor } from './RewordEditor';
 import { focusHistoryRow } from './focusHistoryRow';
-import type { HistoryHover } from './useHistoryFocus';
 import type { useHistoryEditing } from './useHistoryEditing';
 import type { useHistoryPlanDrag } from './useHistoryPlanDrag';
+import type { HistoryRowCallbacksFor } from './useHistoryRowCallbacks';
 import type { useHistoryScribe } from './useHistoryScribe';
 
 type Params = {
@@ -37,9 +38,12 @@ type Params = {
   readonly editing: ReturnType<typeof useHistoryEditing>;
   readonly scribe: ReturnType<typeof useHistoryScribe>;
   readonly setEditingSha: (sha: string | null) => void;
-  readonly setHover: (hover: HistoryHover | null) => void;
-  readonly toggleExpanded: (sha: string) => void;
+  readonly callbacksFor: HistoryRowCallbacksFor;
 };
+
+const NO_INCLUDES: ReadonlyArray<string> = [];
+
+const NO_ABSORBED: ReadonlyArray<HistoryAbsorbed> = [];
 
 export const buildHistoryRowRenderer =
   ({
@@ -65,11 +69,13 @@ export const buildHistoryRowRenderer =
     editing,
     scribe,
     setEditingSha,
-    setHover,
-    toggleExpanded,
+    callbacksFor,
   }: Params) =>
   (commit: BranchCommit) => {
-    const { arrival, change, foldDown, toggleRemove, setMode, separate } = editing;
+    const { arrival, change } = editing;
+    const callbacks = callbacksFor({ sha: commit.sha });
+    const isEditing = editingSha === commit.sha;
+    const isGrouped = applied !== null && applied.lines.length > APPLIED_LIST_LIMIT;
     const conflictSha = conflictStep?.sha ?? null;
     const step = items.find((candidate) => candidate.sha === commit.sha);
     const mark = isDone ? null : (marks.get(commit.sha) ?? null);
@@ -101,17 +107,12 @@ export const buildHistoryRowRenderer =
             canFoldDown:
               step !== undefined &&
               combineDown({ items, sha: commit.sha, mode: 'fixup' }) !== items,
-            onRename: () => setEditingSha(commit.sha),
-            onFoldDown: () => foldDown({ sha: commit.sha, mode: 'fixup' }),
-            onSquashDown: () => foldDown({ sha: commit.sha, mode: 'squash' }),
-            onToggleRemove: () => toggleRemove({ sha: commit.sha }),
-            onSeparate: () => separate({ sha: commit.sha }),
-            onMove: (direction) =>
-              change({
-                items: moveBy({ items, sha: commit.sha, direction }),
-                arrive: { sha: commit.sha, action: 'move' },
-                message: `Moved ${titleOf(commit.sha)}`,
-              }),
+            onRename: callbacks.onRename,
+            onFoldDown: callbacks.onFoldDown,
+            onSquashDown: callbacks.onSquashDown,
+            onToggleRemove: callbacks.onToggleRemove,
+            onSeparate: callbacks.onSeparateSelf,
+            onMove: callbacks.onMove,
           },
         }
       : null;
@@ -124,7 +125,8 @@ export const buildHistoryRowRenderer =
         mark={mark}
         titleOf={titleOf}
         conflictFiles={!isDone && carrier === commit.sha ? (conflictStep?.files ?? []) : []}
-        includes={applied?.includes[commit.sha] ?? []}
+        includes={isGrouped ? NO_INCLUDES : (applied?.includes[commit.sha] ?? NO_INCLUDES)}
+        absorbed={isGrouped ? (applied?.absorbed[commit.sha] ?? NO_ABSORBED) : NO_ABSORBED}
         takenIn={takenIn}
         pills={{
           isHead: commit.sha === headSha,
@@ -144,41 +146,38 @@ export const buildHistoryRowRenderer =
         isDropInto={drag.drag?.target?.mode === 'into' && drag.drag.target.sha === commit.sha}
         arrival={arrival !== null && arrival.sha === commit.sha ? arrival : null}
         isInteractive={isInteractive}
-        isEditing={editingSha === commit.sha}
+        isEditing={isEditing}
         isExpanded={expanded.has(commit.sha)}
         nowMs={nowMs}
         target={target}
         editor={
-          <RewordEditor
-            initialMessage={step?.message ?? commit.subject}
-            suggestion={scribe.suggestion}
-            isSuggesting={scribe.isSuggestingFor(commit.sha)}
-            onSuggest={() => scribe.suggest({ commit })}
-            onSave={(message) => {
-              setEditingSha(null);
-              change({
-                items: rewordStep({ items, sha: commit.sha, message, original: commit.subject }),
-                arrive: { sha: commit.sha, action: 'reword' },
-                message: `Renamed ${commit.subject}`,
-              });
-              focusHistoryRow({ list: listRef.current, sha: commit.sha });
-            }}
-            onCancel={() => {
-              setEditingSha(null);
-              focusHistoryRow({ list: listRef.current, sha: commit.sha });
-            }}
-          />
+          isEditing ? (
+            <RewordEditor
+              initialMessage={step?.message ?? commit.subject}
+              suggestion={scribe.suggestion}
+              isSuggesting={scribe.isSuggestingFor(commit.sha)}
+              onSuggest={() => scribe.suggest({ commit })}
+              onSave={(message) => {
+                setEditingSha(null);
+                change({
+                  items: rewordStep({ items, sha: commit.sha, message, original: commit.subject }),
+                  arrive: { sha: commit.sha, action: 'reword' },
+                  message: `Renamed ${commit.subject}`,
+                });
+                focusHistoryRow({ list: listRef.current, sha: commit.sha });
+              }}
+              onCancel={() => {
+                setEditingSha(null);
+                focusHistoryRow({ list: listRef.current, sha: commit.sha });
+              }}
+            />
+          ) : null
         }
-        onPointerDown={(event) => drag.onPointerDown(event, commit.sha)}
-        onHover={(isOver) => {
-          if (drag.drag !== null) {
-            return;
-          }
-          setHover(isOver ? { kind: 'row', sha: commit.sha } : null);
-        }}
-        onSeparate={(sha) => separate({ sha })}
-        onModeChange={(sha, mode) => setMode({ sha, mode })}
-        onToggleExpanded={() => toggleExpanded(commit.sha)}
+        onPointerDown={callbacks.onPointerDown}
+        onHover={callbacks.onHover}
+        onSeparate={callbacks.onSeparate}
+        onModeChange={callbacks.onModeChange}
+        onToggleExpanded={callbacks.onToggleExpanded}
       />
     );
   };

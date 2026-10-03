@@ -10,9 +10,8 @@ import { LinkIssueAction } from './LinkIssueAction';
 import { ContextChip } from './ContextChip';
 import { GoalTeaser } from './GoalTeaser';
 import { LinkedWorkChips } from './LinkedWorkChips';
-import { AttentionChips } from './AttentionChips';
+import { ArtifactsChip } from './ArtifactsChip';
 import { ChatOriginRow } from './ChatOriginRow';
-import { ProjectMountRows } from './ProjectMountRows';
 import { SessionCostChip } from './SessionCostChip';
 import { ArchivedRestore } from './ArchivedRestore';
 import { useRenameRequest } from '../../../actions/useRenameRequest';
@@ -38,68 +37,61 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
   );
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-2">
-          {rename.editing ? (
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <Input
-                autoFocus
-                value={rename.draft}
-                maxLength={rename.maxLength}
-                onChange={(e) => rename.setDraft(e.target.value)}
-                onBlur={() => void rename.commit()}
-                onKeyDown={rename.onKeyDown}
-                aria-label="Session title"
-                className="text-xl font-semibold"
-              />
-              <div className="flex items-center justify-between gap-2 text-secondary">
-                <span className="min-w-0 truncate text-danger">{rename.error ?? ''}</span>
-                <span className="shrink-0 font-mono tabular-nums text-muted-foreground">
-                  {rename.draft.length}/{rename.maxLength}
-                </span>
-              </div>
+    <div className="flex min-w-0 flex-col gap-2">
+      <div className="flex items-center gap-2">
+        {rename.editing ? (
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <Input
+              autoFocus
+              value={rename.draft}
+              maxLength={rename.maxLength}
+              onChange={(e) => rename.setDraft(e.target.value)}
+              onBlur={() => void rename.commit()}
+              onKeyDown={rename.onKeyDown}
+              aria-label="Session title"
+              className="text-xl font-semibold"
+            />
+            <div className="flex items-center justify-between gap-2 text-secondary">
+              <span className="min-w-0 truncate text-danger">{rename.error ?? ''}</span>
+              <span className="shrink-0 font-mono tabular-nums text-muted-foreground">
+                {rename.draft.length}/{rename.maxLength}
+              </span>
             </div>
-          ) : (
-            <h1 className="flex min-w-0 flex-1 text-title text-foreground">
-              <Tooltip content="Click to rename">
-                <button
-                  type="button"
-                  onClick={rename.start}
-                  title={inlineMarkdownText({ text: titleText })}
-                  className="line-clamp-2 min-w-0 flex-1 cursor-text rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                >
-                  <span key={titleText} className="motion-safe:animate-fade-in">
-                    <InlineMarkdown text={titleText} />
-                  </span>
-                </button>
-              </Tooltip>
-            </h1>
-          )}
-          {isNamedByGoodboy && !rename.editing ? (
-            <span className="shrink-0 text-secondary text-faint-foreground">Named by Goodboy</span>
-          ) : null}
-          <div className="flex shrink-0 items-center gap-1">
-            {isArchived ? null : <SessionRefreshAction sessionId={sessionId} />}
-            <SessionDestructiveActions session={session} />
           </div>
-        </div>
-        <ChatOriginRow session={session} />
-        <GoalTeaser session={session} />
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex min-w-0 flex-auto flex-wrap items-center gap-2">
-            {isArchived ? <ArchivedRestore session={session} /> : null}
-            <ContextChip sessionId={sessionId} />
-            <AttentionChips sessionId={sessionId} onSelectLens={onSelectLens} />
-          </div>
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <LinkedWorkChips sessionId={sessionId} onSelectLens={onSelectLens} />
-            {isArchived ? null : <LinkIssueAction session={session} />}
-            <SessionCostChip sessionId={sessionId} />
-          </div>
+        ) : (
+          <h1 className="flex min-w-0 flex-1 text-title text-foreground">
+            <Tooltip content="Click to rename">
+              <button
+                type="button"
+                onClick={rename.start}
+                title={inlineMarkdownText({ text: titleText })}
+                className="line-clamp-2 min-w-0 flex-1 cursor-text rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              >
+                <span key={titleText} className="motion-safe:animate-fade-in">
+                  <InlineMarkdown text={titleText} />
+                </span>
+              </button>
+            </Tooltip>
+          </h1>
+        )}
+        {isNamedByGoodboy && !rename.editing ? (
+          <span className="shrink-0 text-secondary text-faint-foreground">Named by Goodboy</span>
+        ) : null}
+        <div className="flex shrink-0 items-center gap-1">
+          {isArchived ? null : <SessionRefreshAction sessionId={sessionId} />}
+          <SessionDestructiveActions session={session} />
         </div>
       </div>
-      <ProjectMountRows session={session} />
+      <ChatOriginRow session={session} />
+      <GoalTeaser session={session} />
+      <div aria-label="Session facts" className="flex min-w-0 flex-wrap items-center gap-2">
+        {isArchived ? <ArchivedRestore session={session} /> : null}
+        <ContextChip sessionId={sessionId} />
+        <ArtifactsChip sessionId={sessionId} onSelectLens={onSelectLens} />
+        <LinkedWorkChips sessionId={sessionId} onSelectLens={onSelectLens} />
+        {isArchived ? null : <LinkIssueAction session={session} />}
+        <SessionCostChip sessionId={sessionId} />
+      </div>
     </div>
   );
 };

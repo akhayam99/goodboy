@@ -280,6 +280,33 @@ describe('store on sqlite: restoring built-in workflows', () => {
     expect(useAppStore.getState().phaseTemplates[WORKSPACE_ID]?.[1]?.id).toBe(workflowId);
   });
 
+  it('reloads the workflows a partial restore already wrote before it refused', async () => {
+    const [restored, refused] = WORKFLOW_LIBRARY;
+    if (restored === undefined || refused === undefined) {
+      throw new Error('the workflow library needs two entries');
+    }
+    await storySqlite().execute('UPDATE workflows SET name = ? WHERE id = ?', [
+      refused.name,
+      WORKFLOW_ID,
+    ]);
+    storySpies.invokeWorkflowList.mockImplementation(() =>
+      listWorkflows(storySqlite(), WORKSPACE_ID),
+    );
+
+    const failure = await useAppStore
+      .getState()
+      .resetWorkflows({ workspaceId: WORKSPACE_ID, slugs: [restored.slug, refused.slug] })
+      .then(
+        () => null,
+        (error: unknown) => error,
+      );
+
+    expect(failure).toMatchObject({ kind: 'name_taken' });
+    expect(
+      useAppStore.getState().phaseTemplates[WORKSPACE_ID]?.map((template) => template.name),
+    ).toContain(restored.name);
+  });
+
   it('keeps the typed refusal when a name is taken and leaves rows unchanged', async () => {
     const entry = WORKFLOW_LIBRARY[0];
     if (entry === undefined) {

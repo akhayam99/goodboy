@@ -17,8 +17,6 @@ export const resetWorkflows = ({ get }: FactoryParams) => {
   return async ({ workspaceId, slugs }: ResetWorkflowsParams): Promise<void> => {
     try {
       await restoreWorkflowLibrary({ db: tauriDatabase }, { workspaceId, slugs });
-      await get().loadPhaseTemplates(workspaceId);
-      await get().loadStepLibrary(workspaceId);
     } catch (error) {
       await get().reportError({
         title: "Couldn't restore built-in workflows",
@@ -26,6 +24,9 @@ export const resetWorkflows = ({ get }: FactoryParams) => {
         workspaceId,
       });
       throw error;
+    } finally {
+      await get().loadPhaseTemplates(workspaceId);
+      await get().loadStepLibrary(workspaceId);
     }
   };
 };

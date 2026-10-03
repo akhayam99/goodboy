@@ -4,7 +4,6 @@ import { formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 import { usePickFolder } from '../usePickFolder';
 import type { ProjectAttachConflict } from '../../../store/slices/projects/addProject';
-import { initRepo } from '../../lib/repo';
 import { useChildRepoDetection } from '../useChildRepoDetection';
 import { useProjectAdoption } from '../useProjectAdoption';
 
@@ -96,17 +95,6 @@ export const useProjectLinking = ({ workspaceId, initialConflicts }: Params) => 
     setPath(picked);
   };
 
-  const newProject = async () => {
-    const picked = await pickFolder();
-    if (picked === null) {
-      return;
-    }
-    await run(async () => {
-      const initialized = await initRepo({ path: picked });
-      await linkPath({ rootPath: initialized.rootPath, requireRepo: true });
-    });
-  };
-
   const linkPlainFolder = async () => {
     const picked = await pickFolder();
     if (picked === null) {
@@ -133,7 +121,6 @@ export const useProjectLinking = ({ workspaceId, initialConflicts }: Params) => 
     moveConflict,
     keepConflict,
     browse,
-    newProject,
     linkPlainFolder,
     unlink,
   };

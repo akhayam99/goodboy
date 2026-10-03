@@ -10,6 +10,7 @@ type AnnounceParams = {
   readonly message: string;
   readonly actionLabel?: string;
   readonly onOpen?: () => void;
+  readonly open?: () => void;
 };
 
 export const useAgentStartedToast = (): ((params: AnnounceParams) => void) => {
@@ -23,6 +24,7 @@ export const useAgentStartedToast = (): ((params: AnnounceParams) => void) => {
       message,
       actionLabel = 'Open the agent',
       onOpen,
+      open,
     }: AnnounceParams) => {
       if (agentId == null) {
         return;
@@ -34,10 +36,12 @@ export const useAgentStartedToast = (): ((params: AnnounceParams) => void) => {
         action: {
           label: actionLabel,
           onClick: () => {
-            void (async () => {
-              navigate({ to: agentPlace({ sessionId, agentId }) });
-              onOpen?.();
-            })();
+            if (open !== undefined) {
+              open();
+              return;
+            }
+            navigate({ to: agentPlace({ sessionId, agentId }) });
+            onOpen?.();
           },
         },
       });
