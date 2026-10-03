@@ -1,6 +1,7 @@
 import type { SessionId, Step, Workflow, WorkflowRun } from '@goodboy/types';
 import { cn, PANE_RHYTHM } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
+import { isRunHeldForPlan } from '../../../../store/slices/workflows/workflowPlanApproval';
 import { notifyWorkflowGateBlock } from '../../../../store/slices/workflows/notifyWorkflowGateBlock';
 import { WorkflowGateError } from '../../../../store/slices/workflows/workflowActivationGate';
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
@@ -53,7 +54,7 @@ export const WorkflowAdvance = ({ sessionId, run, workflow }: Props) => {
     effortOverride,
   });
 
-  if (state.kind === 'complete' || state.kind === 'automatic') {
+  if (state.kind === 'complete' || state.kind === 'automatic' || isRunHeldForPlan({ run })) {
     return null;
   }
 

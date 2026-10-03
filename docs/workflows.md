@@ -623,7 +623,8 @@ button, a skip, a read-now hint and a retry all stop at the hold.
 **Approve plan** (`approveWorkflowRunPlan`) marks the copy `planApproved`,
 clears the stop and lets the run advance; switching the run to another autonomy
 also drops the hold. A plan step that writes no plan never holds. While it holds, the run's status reads
-**Plan ready**, not a failure.
+**Plan ready**, not a failure, and **Run next step** is hidden, so **Approve plan**
+is the only way on; it comes back once the plan is approved.
 
 ### Pause is one admission check
 
