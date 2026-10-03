@@ -31,7 +31,7 @@ import { GoalTab } from './GoalTab';
 import { DecisionsSection } from './DecisionsSection';
 import { SummarySection } from './SummarySection';
 import { VersionsView } from './VersionsView';
-import { StatusLine } from './StatusLine';
+import { ContextUpdates } from './ContextUpdates';
 import { ContextLoadFailure } from './ContextLoadFailure';
 import { DecisionsBadge } from './DecisionsBadge';
 
@@ -253,7 +253,10 @@ export const ContextDrawer = ({
         )
       }
     >
-      <div className="flex shrink-0 items-center justify-between gap-3 px-4 pt-3">
+      <div className="shrink-0 px-2 pt-2">
+        <ContextUpdates sessionId={sessionId} />
+      </div>
+      <div className="flex shrink-0 items-center justify-between gap-3 px-4 pt-2">
         <SegmentedTabs
           size="sm"
           ariaLabel="Context"
@@ -261,7 +264,6 @@ export const ContextDrawer = ({
           value={tab}
           onChange={selectTab}
         />
-        {tab === 'goal' ? null : <StatusLine sessionId={sessionId} />}
       </div>
       <ScrollFade className="min-h-0 flex-1" viewportClassName="px-4 py-3" fadeSize={24}>
         <div className="flex flex-col gap-4">

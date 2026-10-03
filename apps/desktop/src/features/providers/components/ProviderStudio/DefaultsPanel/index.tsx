@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 import type { OverrideSettings, WorkspaceId } from '@goodboy/types';
 import {
@@ -39,6 +39,7 @@ import { useAutoLimitContext } from '../../../hooks/useAutoLimitContext';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
+  readonly focusSection?: string;
 };
 
 const TASK_BY_ID = new Map(TASKS.map((task) => [task.id, task]));
@@ -62,7 +63,16 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   afterMerge: null,
 };
 
-export const DefaultsPanel = ({ workspaceId }: Props) => {
+export const DefaultsPanel = ({ workspaceId, focusSection }: Props) => {
+  const tasksRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (focusSection === undefined || !TASKS.some((task) => task.id === focusSection)) {
+      return;
+    }
+    tasksRef.current
+      ?.querySelector(`[data-default-row="${focusSection}"]`)
+      ?.scrollIntoView({ block: 'center' });
+  }, [focusSection]);
   const workspaceOverrides = useAppStore(
     (state) => state.workspaceOverrides?.[workspaceId] ?? null,
   );
@@ -201,7 +211,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
         </BandStack>
       </section>
 
-      <section aria-label="Background tasks" className="flex flex-col gap-2">
+      <section ref={tasksRef} aria-label="Background tasks" className="flex flex-col gap-2">
         <Eyebrow label="Background tasks" />
         <BandStack>
           {DEFAULT_GROUPS.tasks.map((group) => (

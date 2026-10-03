@@ -64,6 +64,8 @@ export const SESSION_EVICTION = [
   { key: 'slotHistoryCounts', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionSlotsLoad', keyedBy: 'session', evictOn: 'archive' },
   { key: 'summarizerStatus', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'summarizerRounds', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'summarizerPending', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionContextSeenAt', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionDecisions', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionDecisionsBaseline', keyedBy: 'session', evictOn: 'archive' },

@@ -485,6 +485,18 @@ describe('DefaultsPanel', () => {
     );
   });
 
+  it('scrolls to the background task the link came for', () => {
+    const scrolled: Array<string | null> = [];
+    const original = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function scrollIntoView(this: Element) {
+      scrolled.push(this.getAttribute('data-default-row'));
+    };
+    render(<DefaultsPanel workspaceId={'ws-1' as never} focusSection="summarizer" />);
+    Element.prototype.scrollIntoView = original;
+
+    expect(scrolled).toEqual(['summarizer']);
+  });
+
   it('strikes out a model that left the catalog and stops at three', () => {
     state.workspaceOverrides = {
       'ws-1': {
