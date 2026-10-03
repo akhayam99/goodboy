@@ -35,6 +35,7 @@ import {
 import { ProviderPicker } from '../../../../../shared/components/RoutingPicker/ProviderPicker';
 import { pluralize } from '../../../../../shared/utils/pluralize';
 import { SETTINGS_PANE_ENTRY } from '../../../../settings/components/SettingsStudio/settingsPaneEntry';
+import { useAutoLimitContext } from '../../../hooks/useAutoLimitContext';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -86,10 +87,13 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
     ...connectedProviderIds.filter((id) => id !== defaultProviderId),
   ];
   const fallbackOrder = orderedProviderIds.filter((id) => providerPoolIds.has(id));
+  const limitContext = useAutoLimitContext();
   const autoContext: AutoContext = {
     defaultProvider: defaultProviderId,
     connected: connectedProviderIds,
     fallbackOrder,
+    ...(limitContext?.hidden != null && { hidden: limitContext.hidden }),
+    ...(limitContext?.cliVersions != null && { cliVersions: limitContext.cliVersions }),
   };
 
   const chatDefault = useChatDefaultModel({ workspaceId });

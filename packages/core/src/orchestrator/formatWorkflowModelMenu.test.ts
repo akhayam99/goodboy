@@ -39,7 +39,7 @@ const option = (overrides: Partial<OrchestratorModelOption> = {}): OrchestratorM
 
 describe('formatWorkflowModelMenu', () => {
   it('all available identities survive the size budget', () => {
-    const options = orchestratorModelPool({ availability: everythingConnected });
+    const options = orchestratorModelPool({ availability: everythingConnected, hidden: null });
     const menu = formatWorkflowModelMenu({ options });
 
     expect(options.length).toBeGreaterThan(0);

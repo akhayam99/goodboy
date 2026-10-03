@@ -178,10 +178,15 @@ clears them after a confirm.
 
 ## Models in the picker
 
-Each provider page has a **Models in the picker** group under Usage. It changes
-only what the model picker lists, for every workspace in the app. Auto and pinned
-models keep working. Its header says how many show (`Showing 6 of 11`) next to
-**Show all**.
+Each provider page has a **Models in the picker** group under Usage. A model you
+turn off is never offered for a new choice, for every workspace in the app: the
+pickers drop it, Auto skips it for roles and the workflow orchestrator never sees
+it in its model menu. A model you already pinned keeps running and its Defaults row
+says so (`Opus 5.5 · hidden, still runs because you pinned it`). A background task
+never climbs a cost tier because its model is hidden: Auto takes a visible model of
+the same tier or cheaper from the task's list, and when there is none it keeps the
+hidden one and the row says it (`Haiku 4.5 · hidden, still used for step
+summaries`). Its header says how many show (`Showing 6 of 11`) next to **Show all**.
 
 - Each family (Opus, Sonnet, Haiku and so on) has a switch, then one chip per
   version. A lit chip shows in the picker
@@ -651,6 +656,23 @@ When a provider ships or retires a model, update these together:
 - `ROLE_REGISTRY` holds no routing any more: the Claude column of `AUTO_DEFAULTS` is
   the reference. `kindRouting` maps an agent kind to its role and reads the same
   ladder; there is no separate cheap tier for Scout, Docs or Generalist
+- **One calculation for "what runs here".** Every agent launch asks
+  `selectKindRouting` (a session) or `selectWorkspaceKindRouting` (the kickoff, which
+  has no session yet). Both go through `scopedKindRouting`, the same call
+  `spawnAgent` makes: role pins, the workspace default provider, providers at their
+  limit, hidden models and installed CLI versions (`autoLimitContext` carries the
+  last three). So the model a launch shows is the model it runs, in a Codex
+  workspace too. `one-routing-calculation.test.ts` fails on a bare `kindRouting(`
+  anywhere else; `resolveStepRouting` is the one written exception and moves with
+  the provider policy switch. Resolve, its next-step card, Start agent, the kickoff,
+  Explore and Start work from a chat now follow the workspace default provider
+- **Runs on.** A one-click start of an expensive role (Implementer, Resolver,
+  Reviewer, PR reviewer, Debugger) shows `Runs on Sonnet 5.5 · Medium · Change`
+  under the button (`shared/components/RunsOn`). Change opens the routing picker
+  body for that one launch; nothing is saved. Cheaper follow-ups name the model in
+  the toast after the launch
+- **Re-checks** are the `recheck` task in Defaults, Review group. A re-check no
+  longer pins the cheapest model of the draft's provider by hand
 - **Task models** are saved in `workspaces.task_models` and read through
   `resolveTaskModel` in `@goodboy/core`. A pin may carry an effort and a `fallback`.
   A pin without an effort runs at `medium`, clamped to the model's ladder. Models

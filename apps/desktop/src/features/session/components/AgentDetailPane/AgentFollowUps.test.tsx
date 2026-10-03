@@ -11,6 +11,10 @@ const state = vi.hoisted(() => ({
   spawnAgent: vi.fn(async () => 'agent-2' as AgentId),
   navigate: vi.fn(),
   loadAgentTranscript: vi.fn(async () => undefined),
+  providers: [],
+  sessions: [],
+  settings: {},
+  providerLimits: {},
 }));
 
 const announce = vi.hoisted(() => vi.fn());

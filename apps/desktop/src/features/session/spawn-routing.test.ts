@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
+import { kindRouting } from './agent-kind';
 import { resolveSpawnRouting } from './spawn-routing';
 
 const NOW = '2026-07-27T00:00:00.000Z' as IsoDateTime;
@@ -25,7 +26,7 @@ describe('resolveSpawnRouting', () => {
   it('gives a generic agent the model the chat is currently on', () => {
     const routing = resolveSpawnRouting({
       kind: 'generic',
-      roleModels: null,
+      roleDefault: kindRouting({ kind: 'generic', roleModels: null }),
       session: makeSession({
         providerOverride: 'anthropic',
         modelOverride: 'claude-opus-5',
@@ -44,7 +45,7 @@ describe('resolveSpawnRouting', () => {
   it('routes a chat on gemini-3.1-pro with no pinned provider to Gemini, not Cursor', () => {
     const routing = resolveSpawnRouting({
       kind: 'generic',
-      roleModels: null,
+      roleDefault: kindRouting({ kind: 'generic', roleModels: null }),
       session: makeSession({ modelOverride: 'gemini-3.1-pro', effort: 'high' }),
     });
 
@@ -54,7 +55,7 @@ describe('resolveSpawnRouting', () => {
   it('keeps the role default for an explicit kind, whatever the chat is on', () => {
     const routing = resolveSpawnRouting({
       kind: 'scout',
-      roleModels: null,
+      roleDefault: kindRouting({ kind: 'scout', roleModels: null }),
       session: makeSession({
         providerOverride: 'anthropic',
         modelOverride: 'claude-opus-5',
@@ -73,7 +74,7 @@ describe('resolveSpawnRouting', () => {
   it('falls back to the Custom default when the chat has no model pinned', () => {
     const routing = resolveSpawnRouting({
       kind: 'generic',
-      roleModels: null,
+      roleDefault: kindRouting({ kind: 'generic', roleModels: null }),
       session: makeSession(),
     });
 
@@ -88,7 +89,7 @@ describe('resolveSpawnRouting', () => {
   it('infers the provider from the chat model when the session pins none', () => {
     const routing = resolveSpawnRouting({
       kind: 'generic',
-      roleModels: null,
+      roleDefault: kindRouting({ kind: 'generic', roleModels: null }),
       session: makeSession({ modelOverride: 'gpt-5.6-sol' }),
     });
 
@@ -99,7 +100,10 @@ describe('resolveSpawnRouting', () => {
   it('reports a workspace role override as a plain role default, not a right-sized one', () => {
     const routing = resolveSpawnRouting({
       kind: 'scout',
-      roleModels: { scout: { providerId: 'anthropic', model: 'claude-opus-5', effort: 'high' } },
+      roleDefault: kindRouting({
+        kind: 'scout',
+        roleModels: { scout: { providerId: 'anthropic', model: 'claude-opus-5', effort: 'high' } },
+      }),
       session: makeSession(),
     });
 

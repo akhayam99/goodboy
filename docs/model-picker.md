@@ -47,8 +47,11 @@ The row above the provider chips is one component with two meanings.
 Which models the list shows is a per app choice, stored in the settings key
 value store (`providers.hiddenModels`). Catalog entries marked `legacy` start
 hidden. The body filters the catalog before `modelAxes` builds the rows, so a
-family with every version hidden leaves the Model row. The filter never touches
-routing, and the current value always shows, marked `Hidden in the picker`. The
+family with every version hidden leaves the Model row. The same list reaches
+routing: Auto skips a hidden model for roles, a background task keeps it only when
+no visible model of the same cost tier or cheaper exists, and the orchestrator
+model menu (`orchestratorModelPool`, which takes `hidden`) leaves it out. The
+current value always shows, marked `Hidden in the picker`. The
 settings icon next to **Provider** opens that provider's **Models in the picker**
 section.
 

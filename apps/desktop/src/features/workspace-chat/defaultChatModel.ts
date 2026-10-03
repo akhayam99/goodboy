@@ -31,6 +31,7 @@ export const chatModelOf = ({ provider }: ProviderParams): ModelKey | null => {
 
 type Params = {
   readonly connected: ReadonlyArray<ProviderId>;
+  readonly workspaceDefaultProvider?: ProviderId | null;
 };
 
 const choiceFor = ({ provider }: ProviderParams): ChatModelChoice | null => {
@@ -46,7 +47,16 @@ const preferredChoice = (): ChatModelChoice => {
   return choice;
 };
 
-export const defaultChatModel = ({ connected }: Params): ChatModelChoice => {
+export const defaultChatModel = ({
+  connected,
+  workspaceDefaultProvider = null,
+}: Params): ChatModelChoice => {
+  if (workspaceDefaultProvider !== null && connected.includes(workspaceDefaultProvider)) {
+    const workspaceChoice = choiceFor({ provider: workspaceDefaultProvider });
+    if (workspaceChoice !== null) {
+      return workspaceChoice;
+    }
+  }
   if (connected.includes(PREFERRED_CHAT_PROVIDER)) {
     return preferredChoice();
   }

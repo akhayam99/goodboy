@@ -26,6 +26,27 @@ describe('defaultChatModel', () => {
     );
   });
 
+  it('starts on the workspace default provider when a chat can run on it', () => {
+    expect(
+      defaultChatModel({ connected: ['anthropic', 'codex'], workspaceDefaultProvider: 'codex' }),
+    ).toEqual({ provider: 'codex', model: chatModelOf({ provider: 'codex' }) });
+  });
+
+  it('never starts a chat on a Cursor default, it falls back to the Sonnet line', () => {
+    const choice = defaultChatModel({
+      connected: ['cursor', 'codex', 'anthropic'],
+      workspaceDefaultProvider: 'cursor',
+    });
+    expect(choice.provider).toBe('anthropic');
+    expect(choice.model).toBe(latestInGroup({ provider: 'anthropic', group: 'Sonnet' })[0]?.key);
+  });
+
+  it('skips a workspace default that is not connected', () => {
+    expect(
+      defaultChatModel({ connected: ['anthropic'], workspaceDefaultProvider: 'codex' }).provider,
+    ).toBe('anthropic');
+  });
+
   it('offers no chat model for a provider a chat refuses', () => {
     expect(chatModelOf({ provider: 'cursor' })).toBeNull();
   });

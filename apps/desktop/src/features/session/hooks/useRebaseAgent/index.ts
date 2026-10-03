@@ -17,6 +17,7 @@ import { taskModelAgentSpawnConfig } from '../../taskModelAgentSpawnConfig';
 import { useAutoLimitContext } from '../../../providers/hooks/useAutoLimitContext';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
+import { routingShortText } from '../../../../shared/components/RoutingPicker/routingSummary';
 
 type Params = {
   readonly sessionId: SessionId | null;
@@ -326,7 +327,11 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
       });
       showToast({
         kind: 'info',
-        message: `An agent is rebasing this branch on ${target.baseBranch}. You can keep working.`,
+        message: `An agent on ${routingShortText({
+          provider: config.provider,
+          model: config.model,
+          effort: config.effort,
+        })} is rebasing this branch on ${target.baseBranch}. You can keep working.`,
         title: 'Rebase started',
         action: {
           label: 'Open the rebase agent',

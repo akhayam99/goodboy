@@ -62,6 +62,7 @@ const ANTHROPIC: JobColumn = {
   question_delegate: [SONNET_MEDIUM],
   pr_draft: [SONNET],
   rebase: [SONNET],
+  recheck: [HAIKU],
 };
 
 const LUNA_LOW: AutoJob = { group: 'GPT', checkpoint: 'Luna', effort: 'low' };
@@ -95,6 +96,7 @@ const CODEX: JobColumn = {
   question_delegate: [TERRA_MEDIUM],
   pr_draft: [TERRA],
   rebase: [TERRA],
+  recheck: [LUNA_LOW],
 };
 
 const FLASH_LOW: AutoJob = { group: 'Gemini', checkpoint: 'Flash', effort: 'low' };
@@ -127,6 +129,7 @@ const GEMINI: JobColumn = {
   question_delegate: [PRO_LOW],
   pr_draft: [FLASH],
   rebase: [PRO],
+  recheck: [FLASH_LOW],
 };
 
 const AUTO: AutoJob = { group: 'Auto' };
@@ -162,6 +165,7 @@ const CURSOR: JobColumn = {
   question_delegate: [COMPOSER],
   pr_draft: [AUTO],
   rebase: [COMPOSER],
+  recheck: [AUTO],
 };
 
 export const AUTO_JOBS: Readonly<Record<CuratedProviderId, JobColumn>> = {

@@ -6,7 +6,20 @@ import type { SessionId } from '@goodboy/types';
 
 const h = vi.hoisted(() => ({
   state: {
-    sessions: [] as ReadonlyArray<unknown>,
+    sessions: [
+      {
+        id: 'session-1',
+        workspaceId: 'workspace-1',
+        providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
+      },
+    ] as ReadonlyArray<unknown>,
+    workspaceOverrides: {
+      'workspace-1': {
+        roleModels: { scout: { providerId: 'codex', model: 'gpt-5.6-luna', effort: 'medium' } },
+      },
+    },
+    settings: {},
+    providerLimits: {},
     providers: [
       { id: 'anthropic', connection: 'connected' },
       { id: 'codex', connection: 'connected' },
@@ -23,11 +36,6 @@ const h = vi.hoisted(() => ({
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (s: typeof h.state) => T) => selector(h.state),
-}));
-vi.mock('../../../../shared/hooks/useSessionRoleModels', () => ({
-  useSessionRoleModels: () => ({
-    scout: { providerId: 'codex', model: 'gpt-5.6-luna', effort: 'medium' },
-  }),
 }));
 vi.mock('../../../../shared/hooks/useAgentStartedToast', () => ({
   useAgentStartedToast: () => vi.fn(),

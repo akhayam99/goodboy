@@ -13,9 +13,14 @@ export const resolveLimitedTaskModel = ({
   if (limitContext === null) {
     return resolveTaskModel(params);
   }
+  const isLimited = limitContext.atLimit.length > 0;
   return resolveTaskModel({
     ...params,
-    connectedProviders: params.connectedProviders ?? limitContext.connected,
-    atLimitProviders: limitContext.atLimit,
+    ...(isLimited && {
+      connectedProviders: params.connectedProviders ?? limitContext.connected,
+      atLimitProviders: limitContext.atLimit,
+    }),
+    ...(limitContext.hidden != null && { hiddenModels: limitContext.hidden }),
+    ...(limitContext.cliVersions != null && { cliVersions: limitContext.cliVersions }),
   });
 };

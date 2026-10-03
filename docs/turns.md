@@ -135,7 +135,7 @@ record a live turn already wrote wins.
 - An agent that ends a turn with a `<<handoff kind=... reason="...">>` marker
   shows a "Suggested next" card under that message (`HandoffChip`). Its
   routing picker starts on the target role's routing (`selectKindRouting`, the
-  same `kindRouting` that `spawnAgent` uses) and can be changed before Start.
+  same `scopedKindRouting` that `spawnAgent` uses) and can be changed before Start.
   Start, from the card or from the live nudge (`acceptSessionNudgeHandoff`),
   seeds the new agent's first turn with the reason and what the source agent
   wrote (`composeHandoffSeed`, `handoffSourceOutput`), passed as `seedPrompt`.
@@ -670,8 +670,11 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
 - **Default model for new chats.** Without a saved default a new chat starts
   on the newest Sonnet when Claude is connected, else on the newest GPT Terra
   when Codex is (`defaultChatModel`, through `latestInGroup`). It
-  never starts above the mid cost tier. Picking Claude in Providers, Defaults, Chat
-  proposes the same model. The user can save a provider, model and effort
+  never starts above the mid cost tier. When the workspace default provider can run
+  a chat (Claude or Codex) and is connected, the chat starts on its line instead; a
+  Cursor or OpenCode default never reaches a chat. Picking Claude in Providers,
+  Defaults, Chat proposes the same model. **Start work** drafts its brief with the
+  model and effort in **Drafted by**, remembered per workspace. The user can save a provider, model and effort
   per workspace in the `settings` table under `chat.default_model.<workspaceId>`
   (JSON, an empty string means cleared), from Providers, Defaults, Chat, or with
   Make default in the chat model picker. `defaultChatRouting` applies it to the
