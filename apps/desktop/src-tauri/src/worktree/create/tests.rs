@@ -83,8 +83,7 @@ fn adopting_a_branch_another_worktree_holds_names_that_worktree() {
 
     let error = worktree_create_blocking(CreateArgs {
         repo_path: root.to_string_lossy().into_owned(),
-        branch_prefix: "feature".to_string(),
-        slug: "shared".to_string(),
+        branch_name: "feature/shared".to_string(),
         parent_dir: Some(parent_dir.to_string_lossy().into_owned()),
         existing_branch: Some("feature/shared".to_string()),
         fallback_ref: None,
@@ -120,8 +119,7 @@ fn adopting_a_branch_that_exists_nowhere_names_the_branch() {
 
     let error = worktree_create_blocking(CreateArgs {
         repo_path: root.to_string_lossy().into_owned(),
-        branch_prefix: "ak".to_string(),
-        slug: "second-half".to_string(),
+        branch_name: "ak/second-half".to_string(),
         parent_dir: Some(parent_dir.to_string_lossy().into_owned()),
         existing_branch: Some("ak/second-half".to_string()),
         fallback_ref: None,
@@ -159,8 +157,7 @@ fn keeps_adoption_failing_when_origin_cannot_be_reached() {
 
     let error = worktree_create_blocking(CreateArgs {
         repo_path: root.to_string_lossy().into_owned(),
-        branch_prefix: "ak".to_string(),
-        slug: "second-half".to_string(),
+        branch_name: "ak/second-half".to_string(),
         parent_dir: Some(parent_dir.to_string_lossy().into_owned()),
         existing_branch: Some("ak/second-half".to_string()),
         fallback_ref: None,
@@ -182,8 +179,7 @@ fn names_the_failed_fetch_when_the_base_ref_cannot_be_found() {
 
     let error = worktree_create_blocking(CreateArgs {
         repo_path: root.to_string_lossy().into_owned(),
-        branch_prefix: "ak".to_string(),
-        slug: "first".to_string(),
+        branch_name: "ak/first".to_string(),
         existing_branch: None,
         fallback_ref: None,
         base_branch: Some("release-42".to_string()),
@@ -224,8 +220,7 @@ fn refuses_to_create_a_worktree_before_the_repository_exists() {
 
     let plain = worktree_create_blocking(CreateArgs {
         repo_path: root.to_string_lossy().into_owned(),
-        branch_prefix: "ak".to_string(),
-        slug: "first".to_string(),
+        branch_name: "ak/first".to_string(),
         existing_branch: None,
         fallback_ref: None,
         base_branch: None,
@@ -245,8 +240,7 @@ fn refuses_to_create_a_worktree_before_the_first_commit() {
 
     let unborn = worktree_create_blocking(CreateArgs {
         repo_path: root.to_string_lossy().into_owned(),
-        branch_prefix: "ak".to_string(),
-        slug: "first".to_string(),
+        branch_name: "ak/first".to_string(),
         existing_branch: None,
         fallback_ref: None,
         base_branch: None,
@@ -264,8 +258,7 @@ fn create_session_mount(root: &Path, slug: &str) -> CreatedWorktree {
     let parent = root.join(".goodboy").join("worktrees");
     worktree_create_blocking(CreateArgs {
         repo_path: root.to_string_lossy().into_owned(),
-        branch_prefix: "goodboy".to_string(),
-        slug: slug.to_string(),
+        branch_name: format!("goodboy/{slug}"),
         parent_dir: Some(parent.to_string_lossy().into_owned()),
         existing_branch: None,
         fallback_ref: None,
@@ -295,8 +288,7 @@ fn selected_split_keeps_the_parent_worktree_while_resolving_a_cherry_pick() {
     let parent_dir = root.join(".goodboy").join("worktrees");
     let parent = worktree_create_blocking(CreateArgs {
         repo_path: root.to_string_lossy().into_owned(),
-        branch_prefix: "feature".to_string(),
-        slug: "eng-3240-draft".to_string(),
+        branch_name: "feature/eng-3240-draft".to_string(),
         parent_dir: Some(parent_dir.to_string_lossy().into_owned()),
         existing_branch: None,
         fallback_ref: None,
@@ -320,8 +312,7 @@ fn selected_split_keeps_the_parent_worktree_while_resolving_a_cherry_pick() {
     let parent_head = git_ok(&parent_path, &["rev-parse", "HEAD"]);
     let split = worktree_create_blocking(CreateArgs {
         repo_path: root.to_string_lossy().into_owned(),
-        branch_prefix: "feature".to_string(),
-        slug: "eng-3240-auth".to_string(),
+        branch_name: "feature/eng-3240-auth".to_string(),
         parent_dir: Some(parent_dir.to_string_lossy().into_owned()),
         existing_branch: None,
         fallback_ref: None,
@@ -386,5 +377,63 @@ fn a_session_mount_lands_under_goodboy_worktrees_and_stays_out_of_status() {
     let status = git_ok(&root, &["status", "--porcelain"]);
     assert!(!status.contains(".goodboy"), "{status}");
     assert!(!root.join(".gitignore").exists());
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn a_prefix_with_a_slash_cuts_the_full_name_into_one_flat_folder() {
+    let root = std::fs::canonicalize(init_repo("nested-prefix")).unwrap();
+    commit(&root, "base.txt", "base\n", "base");
+    push_to_new_remote(&root);
+    let parent = root.join(".goodboy").join("worktrees");
+
+    let created = worktree_create_blocking(CreateArgs {
+        repo_path: root.to_string_lossy().into_owned(),
+        branch_name: "team/ak/har-212-payments-retry".to_string(),
+        parent_dir: Some(parent.to_string_lossy().into_owned()),
+        existing_branch: None,
+        fallback_ref: None,
+        base_branch: None,
+        dir_name: None,
+    })
+    .unwrap();
+
+    assert_eq!(created.branch_name, "team/ak/har-212-payments-retry");
+    assert_eq!(
+        PathBuf::from(&created.worktree_path),
+        parent.join("team-ak-har-212-payments-retry")
+    );
+    assert_eq!(
+        std::fs::read_dir(&parent).unwrap().count(),
+        1,
+        "the prefix must not open a folder per segment"
+    );
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn a_branch_name_the_validator_refuses_fails_before_anything_is_created() {
+    let root = std::fs::canonicalize(init_repo("invalid-branch")).unwrap();
+    commit(&root, "base.txt", "base\n", "base");
+    push_to_new_remote(&root);
+    let parent = root.join(".goodboy").join("worktrees");
+
+    let error = worktree_create_blocking(CreateArgs {
+        repo_path: root.to_string_lossy().into_owned(),
+        branch_name: "hl/payments..retry".to_string(),
+        parent_dir: Some(parent.to_string_lossy().into_owned()),
+        existing_branch: None,
+        fallback_ref: None,
+        base_branch: None,
+        dir_name: Some("payments".to_string()),
+    })
+    .unwrap_err();
+
+    let WorktreeError::InvalidBranchName { branch, reason } = error else {
+        panic!("expected an invalid branch name error, found {error:?}");
+    };
+    assert_eq!(branch, "hl/payments..retry");
+    assert_eq!(reason, "double-dot");
+    assert!(!parent.join("payments").exists());
     std::fs::remove_dir_all(root).unwrap();
 }

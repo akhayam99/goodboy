@@ -21,7 +21,7 @@ type Params = {
 };
 
 const workItemKey = ({ task }: { readonly task: SessionExternalTask }): string =>
-  `${task.provider}:${task.externalId}:${task.projectId ?? ''}:${task.branch ?? ''}`;
+  `${task.provider}:${task.externalId}:${task.projectId ?? ''}:${task.branch ?? ''}:${task.scope ?? 'session'}`;
 
 export const buildWorkItems = ({ tasks, currentBranch, branchPrs }: Params): WorkItemGroups => {
   const items = tasks.map((task) => {

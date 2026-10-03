@@ -21,7 +21,6 @@ use snapshot::{
 };
 
 const LARGE_FILE_BYTES: u64 = 100 * 1024 * 1024;
-const DEFAULT_SLUG: &str = "bootstrap";
 
 #[derive(Debug, Error)]
 pub enum BootstrapError {
@@ -86,10 +85,8 @@ impl BootstrapError {
 pub struct PrepareArgs {
     pub project_path: String,
     pub project_key: String,
-    pub branch_prefix: String,
+    pub branch: String,
     pub base_branch: String,
-    #[serde(default)]
-    pub slug: Option<String>,
 }
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
@@ -219,19 +216,16 @@ pub(crate) fn prepare(args: PrepareArgs) -> Result<BootstrapPrepared, BootstrapE
             "the project key has characters that are not allowed".to_string(),
         ));
     }
-    if !is_safe_branch(&args.base_branch) || !is_safe_branch(&args.branch_prefix) {
+    if !is_safe_branch(&args.base_branch) {
         return Err(BootstrapError::InvalidInput(
             "the branch names have characters that are not allowed".to_string(),
         ));
     }
-    let slug = args
-        .slug
-        .clone()
-        .unwrap_or_else(|| DEFAULT_SLUG.to_string());
-    if !is_safe_token(&slug) {
-        return Err(BootstrapError::InvalidInput(
-            "the session name has characters that are not allowed".to_string(),
-        ));
+    if let Some(reason) = crate::worktree::branch_name_problem(&args.branch) {
+        return Err(BootstrapError::InvalidInput(format!(
+            "{} is not a branch name git accepts ({reason})",
+            args.branch
+        )));
     }
     let _lock = MoveLock::acquire(&absolute_git_dir(&root)?)?;
     if let Some(operation) = in_progress_operation(&root) {
@@ -249,7 +243,7 @@ pub(crate) fn prepare(args: PrepareArgs) -> Result<BootstrapPrepared, BootstrapE
             args.base_branch.clone(),
         ));
     }
-    let branch = format!("{}/{}", args.branch_prefix, slug);
+    let branch = args.branch.clone();
     if rev(&root, &format!("refs/heads/{branch}")).is_some() {
         return Err(BootstrapError::BranchTaken(branch));
     }

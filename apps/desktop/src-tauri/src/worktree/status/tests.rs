@@ -402,8 +402,7 @@ fn create_session_mount(root: &Path, slug: &str) -> CreatedWorktree {
     let parent = root.join(".goodboy").join("worktrees");
     worktree_create_blocking(CreateArgs {
         repo_path: root.to_string_lossy().into_owned(),
-        branch_prefix: "goodboy".to_string(),
-        slug: slug.to_string(),
+        branch_name: format!("goodboy/{slug}"),
         parent_dir: Some(parent.to_string_lossy().into_owned()),
         existing_branch: None,
         fallback_ref: None,

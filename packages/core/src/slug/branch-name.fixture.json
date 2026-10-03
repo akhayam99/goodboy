@@ -1,0 +1,42 @@
+{
+  "maxLength": 100,
+  "cases": [
+    { "name": "prefix and slug", "input": "hl/payments-retry", "problem": null },
+    { "name": "nested prefix", "input": "team/ak/har-212-payments-retry", "problem": null },
+    { "name": "underscores and dots inside", "input": "hl/v1.2_fix", "problem": null },
+    { "name": "plain name", "input": "bootstrap", "problem": null },
+    { "name": "empty", "input": "", "problem": "empty" },
+    { "name": "space", "input": "hl/payments retry", "problem": "whitespace" },
+    { "name": "tab", "input": "hl/payments\tretry", "problem": "whitespace" },
+    { "name": "tilde", "input": "hl/fix~1", "problem": "character" },
+    { "name": "caret", "input": "hl/fix^", "problem": "character" },
+    { "name": "colon", "input": "hl:fix", "problem": "character" },
+    { "name": "question mark", "input": "hl/fix?", "problem": "character" },
+    { "name": "asterisk", "input": "hl/*", "problem": "character" },
+    { "name": "open bracket", "input": "hl/[fix]", "problem": "character" },
+    { "name": "backslash", "input": "hl\\fix", "problem": "character" },
+    { "name": "control character", "input": "hl/fix\u0001", "problem": "character" },
+    { "name": "two dots", "input": "hl/fix..retry", "problem": "double-dot" },
+    { "name": "at brace", "input": "hl/fix@{1}", "problem": "at-brace" },
+    { "name": "lone at", "input": "@", "problem": "lone-at" },
+    { "name": "at inside is fine", "input": "hl/fix@home", "problem": null },
+    { "name": "leading dash", "input": "-hl/fix", "problem": "starts-with-dash" },
+    { "name": "leading slash", "input": "/hl/fix", "problem": "slash" },
+    { "name": "trailing slash", "input": "hl/fix/", "problem": "slash" },
+    { "name": "double slash", "input": "hl//fix", "problem": "slash" },
+    { "name": "segment starting with a dot", "input": "hl/.fix", "problem": "dot-segment" },
+    { "name": "segment ending in lock", "input": "hl.lock/fix", "problem": "lock-segment" },
+    { "name": "name ending in lock", "input": "hl/fix.lock", "problem": "lock-segment" },
+    { "name": "trailing dot", "input": "hl/fix.", "problem": "trailing-dot" },
+    {
+      "name": "one past the longest",
+      "input": "hl/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "problem": "too-long"
+    },
+    {
+      "name": "exactly the longest",
+      "input": "hl/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "problem": null
+    }
+  ]
+}

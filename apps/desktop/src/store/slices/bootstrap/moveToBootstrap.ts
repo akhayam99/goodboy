@@ -1,5 +1,5 @@
-import type { BootstrapPhase, ProjectId, Session } from '@goodboy/types';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core';
+import type { BootstrapPhase, Project, ProjectId, Session } from '@goodboy/types';
+import { buildBranchName } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import { setSetting } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -14,8 +14,8 @@ import {
 import { CommandError } from '../../../shared/lib/invokeCommand';
 import type { GetFn, SetFn } from '../../slice-types';
 import { selectLiveWork } from '../live-work/selectLiveWork';
-import { resolveScopedSettings } from '../overrides/selectResolvedSettings';
 import { projectById } from '../projects/projectIndex';
+import { branchNamingSettings } from '../sessions/branchNamingSettings';
 import { discardUncreatedSession } from '../sessions/discardUncreatedSession';
 import { sessionById } from '../sessions/sessionIndex';
 import { bootstrapPhaseKey, freshBootstrapPhase, serializeBootstrapPhase } from './phase';
@@ -233,18 +233,28 @@ const continueMove = async ({
   return { kind: 'moved', session, report };
 };
 
-const branchPrefixOf = (get: GetFn, projectId: ProjectId): string => {
-  const project = projectById(get().projects, projectId);
-  if (project === undefined) {
-    return 'goodboy';
-  }
-  return resolveScopedSettings({
+const bootstrapBranchFor = ({
+  get,
+  project,
+  attempt,
+}: {
+  readonly get: GetFn;
+  readonly project: Project;
+  readonly attempt: number;
+}): string => {
+  const settings = branchNamingSettings({
     state: get(),
     workspaceId: project.workspaceId,
-    projectId,
-    sessionId: null,
-    defaultProviderId: DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider,
-  }).defaultBranchPrefix;
+    project,
+  });
+  return buildBranchName({
+    template: settings.template,
+    values: {
+      prefix: settings.prefix,
+      slug: slugFor(attempt),
+      ...(settings.user === null ? {} : { user: settings.user }),
+    },
+  });
 };
 
 export const moveToBootstrap = (set: SetFn, get: GetFn) => {
@@ -265,16 +275,14 @@ export const moveToBootstrap = (set: SetFn, get: GetFn) => {
     ) {
       return refused('turn-running', 'Wait for the running turn to finish, then move your work.');
     }
-    const branchPrefix = branchPrefixOf(get, projectId);
     for (let attempt = 0; attempt < MAX_SLUG_TRIES; attempt += 1) {
       let prepared;
       try {
         prepared = await bootstrapPrepare({
           projectPath: project.rootPath,
           projectKey: project.id,
-          branchPrefix,
+          branch: bootstrapBranchFor({ get, project, attempt }),
           baseBranch: probe.branch,
-          slug: slugFor(attempt),
         });
       } catch (error) {
         if (errorKind(error) === 'branch_taken') {

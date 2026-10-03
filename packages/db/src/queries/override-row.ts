@@ -35,6 +35,7 @@ export type OverrideRow = {
   readonly resolve_on_github?: number | null;
   readonly resolve_commit_style?: string | null;
   readonly after_merge?: string | null;
+  readonly default_branch_template?: string | null;
 };
 
 export const REPLY_SETTING_COLUMNS =
@@ -101,6 +102,7 @@ type Params = {
 export const overridesFromRow = ({ row }: Params): OverrideSettings => ({
   defaultProviderId: row.default_provider_id as ProviderId | null,
   defaultBranchPrefix: row.default_branch_prefix,
+  defaultBranchTemplate: row.default_branch_template ?? null,
   defaultVerbosity: row.default_verbosity as VerbosityLevel | null,
   providerBindings: parseJsonColumn<ProviderBindings | null>({
     value: row.provider_bindings,

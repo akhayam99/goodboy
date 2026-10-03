@@ -7,6 +7,9 @@ import type { LaunchExternalTask } from '../../../inbox/launchSpecFor';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { formatSpan } from '../../../../shared/utils/time/formatSpan';
+import { branchLeaf } from '../../../../store/slices/sessions/branchLeaf';
+import { LinkScopePreview } from './LinkScopePreview';
+import { relationFor, type LinkChoice, type LinkScope } from './linkScope';
 import {
   LINK_WORK_PROVIDER_LABEL,
   linkWorkView,
@@ -25,7 +28,8 @@ type Props = {
   readonly isLoading: boolean;
   readonly isLinking: boolean;
   readonly error: string | null;
-  readonly onLink: (task: LaunchExternalTask) => void;
+  readonly branch: string | null;
+  readonly onLink: (task: LaunchExternalTask, choice: LinkChoice) => void;
   readonly onClose: () => void;
 };
 
@@ -68,6 +72,7 @@ export const LinkWorkPicker = ({
   isLoading,
   isLinking,
   error,
+  branch,
   onLink,
   onClose,
 }: Props) => {
@@ -76,6 +81,8 @@ export const LinkWorkPicker = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const [source, setSource] = useState<LinkWorkSource>('all');
   const [activeIndex, setActiveIndex] = useState(0);
+  const [scope, setScope] = useState<LinkScope>('session');
+  const [isClosing, setIsClosing] = useState(true);
   const view = useMemo(
     () => linkWorkView({ query, source, items, lookedUp, linkedKeys }),
     [query, source, items, lookedUp, linkedKeys],
@@ -97,8 +104,32 @@ export const LinkWorkPicker = ({
     if (row === null || isLinking) {
       return;
     }
-    onLink(row.task);
+    onLink(row.task, { scope, relation: relationFor({ scope, isClosing }) });
   };
+
+  const pickScope = (next: LinkScope): void => {
+    setScope(next);
+    setIsClosing(true);
+  };
+
+  const scopeOptions = [
+    { value: 'session' as const, label: 'This session' },
+    {
+      value: 'branch' as const,
+      label: 'This branch',
+      disabled: branch === null,
+      ...(branch === null
+        ? { hint: 'Open a branch first' }
+        : {
+            badge: (
+              <span className="max-w-36 truncate whitespace-nowrap font-mono text-faint-foreground">
+                {branchLeaf({ branch })}
+              </span>
+            ),
+          }),
+    },
+    { value: 'workspace' as const, label: 'Whole workspace' },
+  ];
 
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
     switch (event.key) {
@@ -157,6 +188,15 @@ export const LinkWorkPicker = ({
           onChange={(event) => onQueryChange(event.target.value)}
           onKeyDown={onKeyDown}
           className="min-w-0 flex-1 bg-transparent text-body text-foreground outline-none placeholder:text-faint-foreground"
+        />
+      </div>
+      <div className="flex px-2 pb-2">
+        <SegmentedTabs
+          size="sm"
+          ariaLabel="Link scope"
+          options={scopeOptions}
+          value={scope}
+          onChange={pickScope}
         />
       </div>
       {sources.length > 1 && view.kind === 'list' ? (
@@ -232,6 +272,22 @@ export const LinkWorkPicker = ({
           </ul>
         )}
       </ScrollFade>
+      {active === null ? null : (
+        <>
+          <LinkScopePreview
+            provider={active.task.provider}
+            identifier={active.task.identifier}
+            title={active.task.title}
+            scope={scope}
+            branch={branch}
+            isClosing={isClosing}
+            isLinking={isLinking}
+            onToggleClosing={() => setIsClosing((current) => !current)}
+            onLink={() => link(active)}
+            onCancel={onClose}
+          />
+        </>
+      )}
       {error !== null ? (
         <p role="alert" className="flex items-center gap-1 px-3 py-2 text-label text-danger">
           <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />

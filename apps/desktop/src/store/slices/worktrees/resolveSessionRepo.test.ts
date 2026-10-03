@@ -33,6 +33,7 @@ const OVERRIDES: OverrideSettings = {
   resolveOnGithub: null,
   resolveCommitStyle: null,
   afterMerge: null,
+  defaultBranchTemplate: null,
 };
 const PROJECT: Project = {
   id: PROJECT_ID,

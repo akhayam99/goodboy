@@ -118,15 +118,14 @@ beforeEach(async () => {
   h.inspectWorktree.mockResolvedValue({ kind: 'registered' });
   h.createWorktree.mockImplementation(
     async (args: {
-      branchPrefix: string;
-      slug: string;
+      branchName: string;
       parentDir: string;
       dirName: string;
       existingBranch?: string;
     }) => ({
       worktreePath: `${args.parentDir}/${args.dirName}`,
-      branchName: args.existingBranch ?? `${args.branchPrefix}/${args.slug}`,
-      slug: args.slug,
+      branchName: args.existingBranch ?? args.branchName,
+      slug: args.dirName,
       reused: false,
     }),
   );

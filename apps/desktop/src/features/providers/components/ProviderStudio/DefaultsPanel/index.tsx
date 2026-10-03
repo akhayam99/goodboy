@@ -61,6 +61,7 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   resolveOnGithub: null,
   resolveCommitStyle: null,
   afterMerge: null,
+  defaultBranchTemplate: null,
 };
 
 export const DefaultsPanel = ({ workspaceId, focusSection }: Props) => {

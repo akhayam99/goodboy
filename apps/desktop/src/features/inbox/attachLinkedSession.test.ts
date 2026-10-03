@@ -124,4 +124,19 @@ describe('attachLinkedSession', () => {
 
     expect(attachLinkedSession({ record: LINEAR, linked })).toBe(LINEAR);
   });
+
+  it('keeps every session that links the task, the first one opening by default', () => {
+    const linked = indexLinkedSessions({
+      sessionIds: [SESSION, OTHER],
+      sessionExternalTasks: {
+        [SESSION]: [task({}), task({ scope: 'branch', branch: 'hl/payments-retry' })],
+        [OTHER]: [task({ sessionId: OTHER, externalId: 'ENG-1', identifier: 'eng-1' })],
+      },
+    });
+
+    const record = attachLinkedSession({ record: LINEAR, linked });
+
+    expect(record.linkedSessionIds).toEqual([SESSION, OTHER]);
+    expect(recordSessionId({ record })).toBe(SESSION);
+  });
 });

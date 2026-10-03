@@ -210,6 +210,7 @@ describe('the advertised verbs', () => {
         resolveOnGithub: null,
         resolveCommitStyle: null,
         afterMerge: null,
+        defaultBranchTemplate: null,
       },
       createdAt: now,
       updatedAt: now,

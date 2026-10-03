@@ -189,8 +189,10 @@ code host, the work left in the folder moves into a session named `bootstrap`
 and every later session is an ordinary worktree ([mounts.md](mounts.md) → The
 first lap and the bootstrap move).
 
-The branch is named `<prefix>/<session-slug>`. It has the same name in every
-project the session touches. The repository name on each mount tells them
+The branch is named by the workspace template, `<prefix>/<task-id>-<session-slug>`
+by default, and `<prefix>/<session-slug>` when the session does not start from a
+task ([mounts.md](mounts.md)). It has the same name in every project the session
+touches. The repository name on each mount tells them
 apart.
 
 Before a project is materialized, agents can read its root folder. Every write

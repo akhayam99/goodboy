@@ -19,7 +19,7 @@ describe('pageKeys', () => {
     const owned = Object.keys(EMPTY_OVERRIDES).filter(isWorkspaceOwnedOverride);
     const providers = Object.keys(EMPTY_OVERRIDES).filter((key) => !isWorkspaceOwnedOverride(key));
 
-    expect(owned).toHaveLength(11);
+    expect(owned).toHaveLength(12);
     expect(providers.sort()).toEqual([
       'defaultProviderId',
       'providerBindings',

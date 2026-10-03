@@ -58,6 +58,7 @@ const boundOverride: OverrideSettings = {
   resolveOnGithub: null,
   resolveCommitStyle: null,
   afterMerge: null,
+  defaultBranchTemplate: null,
 };
 
 const makeHarness = ({ boundBy }: { readonly boundBy: ReadonlyArray<WorkspaceId> }) => {

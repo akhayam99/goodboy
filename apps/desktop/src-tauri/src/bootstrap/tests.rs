@@ -77,9 +77,8 @@ fn args(fixture: &Fixture) -> PrepareArgs {
     PrepareArgs {
         project_path: fixture.root.to_string_lossy().into_owned(),
         project_key: "proj-cascadia".to_string(),
-        branch_prefix: "ak".to_string(),
+        branch: "ak/bootstrap".to_string(),
         base_branch: "main".to_string(),
-        slug: None,
     }
 }
 
@@ -357,6 +356,34 @@ fn conflicted_files_refuse_the_move() {
         result,
         Err(BootstrapError::Unmerged(_)) | Err(BootstrapError::OperationInProgress(_))
     ));
+    finish(&fixture);
+}
+
+#[test]
+fn the_bootstrap_branch_takes_the_full_name_built_from_the_workspace_template() {
+    let fixture = fixture("nested-bootstrap");
+    first_lap_work(&fixture.root);
+    let mut nested = args(&fixture);
+    nested.branch = "team/ak/bootstrap".to_string();
+
+    let prepared = prepare(nested).unwrap();
+
+    assert_eq!(prepared.branch, "team/ak/bootstrap");
+    finish(&fixture);
+}
+
+#[test]
+fn a_bootstrap_branch_the_validator_refuses_is_refused_before_the_snapshot() {
+    let fixture = fixture("invalid-bootstrap");
+    first_lap_work(&fixture.root);
+    let mut invalid = args(&fixture);
+    invalid.branch = "ak/boot..strap".to_string();
+    let before = status(&fixture.root);
+
+    let result = prepare(invalid);
+
+    assert!(matches!(result, Err(BootstrapError::InvalidInput(_))));
+    assert_eq!(status(&fixture.root), before);
     finish(&fixture);
 }
 

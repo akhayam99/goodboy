@@ -51,6 +51,7 @@ async function setup() {
         resolveOnGithub: null,
         resolveCommitStyle: null,
         afterMerge: null,
+        defaultBranchTemplate: null,
       },
       createdAt: now(),
       updatedAt: now(),

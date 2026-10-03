@@ -419,7 +419,13 @@ describe('IntegrationPane', () => {
     expect(h.store.unlinkSessionExternalTask).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Unlink GB-42' }));
     await waitFor(() =>
-      expect(h.store.unlinkSessionExternalTask).toHaveBeenCalledWith(SESSION_ID, 'linear', 'GB-42'),
+      expect(h.store.unlinkSessionExternalTask).toHaveBeenCalledWith(
+        SESSION_ID,
+        'linear',
+        'GB-42',
+        undefined,
+        undefined,
+      ),
     );
   });
 

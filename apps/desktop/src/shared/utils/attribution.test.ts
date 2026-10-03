@@ -25,6 +25,7 @@ const overridesWith = (attributionFooter: boolean | null): OverrideSettings => (
   resolveOnGithub: null,
   resolveCommitStyle: null,
   afterMerge: null,
+  defaultBranchTemplate: null,
 });
 
 describe('isAttributionEnabled', () => {

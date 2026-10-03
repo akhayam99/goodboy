@@ -68,11 +68,9 @@ describe('mountPlan', () => {
     const plan = mountPlan({ state: stateWith(), sessionId: SID, projectId: PID, mountId: MID });
 
     expect(plan?.baseBranch).toBe('main');
-    expect(plan?.branch).toBe(`${plan?.prefix}/${plan?.slug}`);
-    expect(plan?.slug).toBe('ship-the-rebase-row-ab12cd34');
-    expect(plan?.targetPath).toBe(
-      '/repos/goodboy/.goodboy/worktrees/ship-the-rebase-row-ab12cd34-mount-1',
-    );
+    expect(plan?.branch).toBe(`${DEFAULT_BRANCH_PREFIX}/ship-the-rebase-row`);
+    expect(plan?.slug).toBe('ship-the-rebase-row');
+    expect(plan?.targetPath).toBe('/repos/goodboy/.goodboy/worktrees/ship-the-rebase-row-mount-1');
   });
 
   it('leaves branch and base empty for a folder project and targets the sessions dir', () => {
@@ -86,7 +84,7 @@ describe('mountPlan', () => {
 
     expect(plan?.branch).toBeNull();
     expect(plan?.baseBranch).toBeNull();
-    expect(plan?.targetPath).toBe('/notes/sessions/ship-the-rebase-row-ab12cd34');
+    expect(plan?.targetPath).toBe('/notes/sessions/ship-the-rebase-row');
   });
 
   it('reports the branches already taken by other live sessions', () => {
@@ -138,6 +136,7 @@ describe('mountPlan', () => {
     const plan = mountPlan({ state: stateWith(), sessionId: SID, projectId: PID, mountId: MID });
 
     expect(plan?.slug).toBe('session-ab12cd34');
+    expect(plan?.branch).toBe(`${DEFAULT_BRANCH_PREFIX}/session-ab12cd34`);
     expect(plan?.targetPath).toBe('/repos/goodboy/.goodboy/worktrees/session-ab12cd34-mount-1');
   });
 
@@ -157,8 +156,7 @@ describe('mountPlan', () => {
     const plan = mountPlan({ state, sessionId: SID, projectId: PID, mountId: MID });
 
     expect(plan?.slug).toBe('812-fix-the-login-flow-2');
-    expect(plan?.baseSlug).toBe('812-fix-the-login-flow');
-    expect(plan?.branch).toBe(`${plan?.prefix}/812-fix-the-login-flow-2`);
+    expect(plan?.branch).toBe(`${DEFAULT_BRANCH_PREFIX}/812-fix-the-login-flow-2`);
     expect(plan?.targetPath).toBe(
       '/repos/goodboy/.goodboy/worktrees/812-fix-the-login-flow-2-mount-1',
     );
@@ -207,6 +205,56 @@ describe('mountPlan', () => {
 
     expect(plan?.slug).toBe('812-harborline-checkout-totals-drift-after-refun');
     expect(plan?.slug.length).toBeLessThanOrEqual(48);
+  });
+
+  it('names the branch from the workspace template, with the task id and the user', () => {
+    const state = stateWith({
+      workspaceOverrides: {
+        [WID]: {
+          ...emptyOverrides,
+          defaultBranchPrefix: 'team/hl',
+          defaultBranchTemplate: '{prefix}/{user}/{task-id}-{slug}',
+        },
+      },
+      githubStatus: { user: 'Mara-Quint' } as MountPlanState['githubStatus'],
+    });
+
+    const plan = mountPlan({
+      state,
+      sessionId: SID,
+      projectId: PID,
+      mountId: MID,
+      taskIdentifiers: ['HAR-212'],
+    });
+
+    expect(plan?.branch).toBe('team/hl/mara-quint/har-212-ship-the-rebase-row');
+    expect(plan?.targetPath).toBe(
+      '/repos/goodboy/.goodboy/worktrees/har-212-ship-the-rebase-row-mount-1',
+    );
+  });
+
+  it('drops the task id and the user when the session has neither', () => {
+    const state = stateWith({
+      workspaceOverrides: {
+        [WID]: { ...emptyOverrides, defaultBranchTemplate: '{prefix}/{user}/{task-id}-{slug}' },
+      },
+    });
+
+    const plan = mountPlan({ state, sessionId: SID, projectId: PID, mountId: MID });
+
+    expect(plan?.branch).toBe(`${DEFAULT_BRANCH_PREFIX}/ship-the-rebase-row`);
+  });
+
+  it('adds -2 when the repository already has the branch, outside any session', () => {
+    const plan = mountPlan({
+      state: stateWith(),
+      sessionId: SID,
+      projectId: PID,
+      mountId: MID,
+      repoBranches: [`${DEFAULT_BRANCH_PREFIX}/ship-the-rebase-row`],
+    });
+
+    expect(plan?.branch).toBe(`${DEFAULT_BRANCH_PREFIX}/ship-the-rebase-row-2`);
   });
 
   it('returns null when the project does not belong to the session workspace', () => {

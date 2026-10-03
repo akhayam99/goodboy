@@ -464,6 +464,7 @@ export const storyDbStubs = () => ({
   insertAgentHandoff: vi.fn(async () => undefined),
   countUserTextEvents: vi.fn(async () => 0),
   listSessionDecisions: vi.fn(async () => []),
+  listWorkspaceExternalTasks: vi.fn(async () => []),
   listProviderLimits: vi.fn(async () => []),
   listArtifactsForSession: vi.fn(async () => []),
   listSessionEvents: vi.fn(async () => []),
@@ -771,6 +772,7 @@ export const worktreeModuleMock = () => ({
   diskFree: vi.fn(async () => ({ freeBytes: null, totalBytes: null })),
   removeWorktreeFolder: storySpies.removeWorktreeFolder,
   listBranchCommits: vi.fn(async () => []),
+  listBranchNames: vi.fn(async () => [] as ReadonlyArray<string>),
   worktreeIsAncestor: vi.fn(async () => true),
   worktreeRemoteHead: vi.fn(async () => ''),
 });
