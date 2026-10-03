@@ -6,7 +6,7 @@ describe('defaultChatRouting', () => {
   it('falls back to the automatic model when nothing is saved', () => {
     expect(defaultChatRouting({ connected: ['codex', 'anthropic'], saved: null })).toEqual({
       provider: 'anthropic',
-      model: 'sonnet-5',
+      model: 'sonnet-5.5',
       effort: null,
     });
   });
@@ -22,7 +22,7 @@ describe('defaultChatRouting', () => {
 
     expect(defaultChatRouting({ connected: ['anthropic'], saved })).toEqual({
       provider: 'anthropic',
-      model: 'sonnet-5',
+      model: 'sonnet-5.5',
       effort: null,
     });
   });

@@ -1,6 +1,7 @@
 import { useAppStore } from '../../store';
 import { chatDefaultModelKey, parseChatDefaultModel } from './chatDefaultModelSetting';
 import { defaultChatRouting } from './defaultChatRouting';
+import { selectWorkspaceResolvedSettings } from '../../store/slices/overrides/selectResolvedSettings';
 
 type Params = {
   readonly question: string;
@@ -22,6 +23,8 @@ export const askInChat = async ({ question }: Params): Promise<void> => {
     const { provider, model, effort } = defaultChatRouting({
       connected,
       saved: parseChatDefaultModel({ raw }),
+      workspaceDefaultProvider: selectWorkspaceResolvedSettings({ state, workspaceId })
+        .defaultProviderOverride,
     });
     const chatId = await state.createChat({ workspaceId, provider, model });
     if (effort !== null) {

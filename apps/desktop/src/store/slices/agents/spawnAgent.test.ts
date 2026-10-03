@@ -59,6 +59,7 @@ vi.mock('../workflows/clusterImplementation', async (importOriginal) => {
 });
 
 import { spawnAgent } from './spawnAgent';
+import { kindRouting, type AgentKind } from '../../../features/session/agent-kind';
 import { beginSessionCreation, endSessionCreation } from '../session-view/sessionCreation';
 import { revealActivityRow } from '../session-view/revealActivityRow';
 import type { SetFn } from '../../slice-types';
@@ -640,5 +641,60 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
 
     expectFannedOut(TWO_CLUSTERS);
     expect(sendTurn).not.toHaveBeenCalled();
+  });
+});
+
+describe('spawnAgent runs what every launch point shows', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    listConsumptionsForPlanSpy.mockResolvedValue([]);
+  });
+
+  const KINDS: ReadonlyArray<AgentKind> = [
+    'resolver',
+    'reviewer',
+    'implementer',
+    'debugger',
+    'scout',
+    'generic',
+  ];
+
+  it('runs each kind on the workspace default provider and its pins, as the launch shows it', async () => {
+    for (const kind of KINDS) {
+      updateAgentConfigSpy.mockClear();
+      const { getState, spawn } = buildHarness([]);
+      const roleModels = {
+        reviewer: { providerId: 'anthropic', model: 'claude-opus-5', effort: 'high' },
+      } as const;
+      Object.assign(getState(), {
+        workspaceOverrides: { [WS_ID]: { defaultProviderId: 'codex', roleModels } },
+      });
+      const shown = kindRouting({ kind, roleModels, defaultProvider: 'codex' });
+
+      await spawn(SESSION_ID, { kindOverride: kind });
+
+      const ran = {
+        providerOverride: shown.provider,
+        modelOverride: shown.model,
+        effort: shown.effort,
+      };
+      expect(updateAgentConfigSpy, kind).toHaveBeenCalledWith(expect.anything(), INSERTED_ID, ran);
+      expect(shown.provider, kind).toBe(kind === 'reviewer' ? 'anthropic' : 'codex');
+    }
+  });
+
+  it('never runs a model hidden from the pickers', async () => {
+    const { getState, spawn } = buildHarness([]);
+    Object.assign(getState(), {
+      settings: { 'providers.hiddenModels': JSON.stringify({ anthropic: ['sonnet-5.5'] }) },
+    });
+
+    await spawn(SESSION_ID, { kindOverride: 'implementer' });
+
+    expect(updateAgentConfigSpy).toHaveBeenCalledWith(expect.anything(), INSERTED_ID, {
+      providerOverride: 'anthropic',
+      modelOverride: 'sonnet-5',
+      effort: 'medium',
+    });
   });
 });

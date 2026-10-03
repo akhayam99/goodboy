@@ -1,4 +1,4 @@
-import type { ChatMessage, ChatSummary } from '@goodboy/types';
+import type { ChatMessage, ChatSummary, EffortLevel } from '@goodboy/types';
 import type { ChatBackend } from './chatBackend';
 import { draftWorkBrief, parseWorkBrief, type WorkBrief } from './workBrief';
 
@@ -8,7 +8,9 @@ const SUMMARY_TIMEOUT_MS = 45_000;
 
 type Params = {
   readonly backend: Pick<ChatBackend, 'summarizeForWork'>;
-  readonly chat: Pick<ChatSummary, 'title' | 'provider' | 'model'>;
+  readonly chat: Pick<ChatSummary, 'title' | 'provider' | 'model'> & {
+    readonly effort?: EffortLevel;
+  };
   readonly messages: ReadonlyArray<ChatMessage>;
   readonly projectNames: ReadonlyArray<string>;
 };
@@ -70,6 +72,7 @@ export const summarizeChatForWork = async ({
       promise: backend.summarizeForWork({
         provider: chat.provider,
         model: chat.model,
+        ...(chat.effort != null && { effort: chat.effort }),
         systemPrompt: workBriefSystemPrompt({ projectNames }),
         userMessage: transcriptOf({ messages }),
       }),

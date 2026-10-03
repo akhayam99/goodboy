@@ -558,7 +558,7 @@ describe('fan-out child routing precedence', () => {
     expect(persisted.routingDecision.source).toBe('kind_default');
     expect(persisted.routingDecision.selected).toEqual({
       provider: 'anthropic',
-      model: 'sonnet-5',
+      model: 'sonnet-5.5',
       effort: 'medium',
     });
   });

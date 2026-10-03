@@ -1,6 +1,17 @@
 import { MODEL_CATALOGS } from '@goodboy/core';
-import { PROVIDER_IDS, isChatProvider, type ProviderId, type WorkspaceId } from '@goodboy/types';
+import {
+  PROVIDER_IDS,
+  isChatProvider,
+  isEffortLevel,
+  type EffortLevel,
+  type ProviderId,
+  type WorkspaceId,
+} from '@goodboy/types';
 import type { ChatModelChoice } from './defaultChatModel';
+
+export type WorkDrafterChoice = ChatModelChoice & {
+  readonly effort?: EffortLevel;
+};
 
 type KeyParams = {
   readonly workspaceId: WorkspaceId;
@@ -16,7 +27,7 @@ type ParseParams = {
 const isProviderId = (value: unknown): value is ProviderId =>
   typeof value === 'string' && PROVIDER_IDS.some((candidate) => candidate === value);
 
-export const parseWorkDrafter = ({ raw }: ParseParams): ChatModelChoice | null => {
+export const parseWorkDrafter = ({ raw }: ParseParams): WorkDrafterChoice | null => {
   if (raw === null || raw === '') {
     return null;
   }
@@ -31,15 +42,25 @@ export const parseWorkDrafter = ({ raw }: ParseParams): ChatModelChoice | null =
       return null;
     }
     const isKnown = MODEL_CATALOGS[provider].some((entry) => entry.key === model);
-    return isKnown ? { provider, model } : null;
+    if (!isKnown) {
+      return null;
+    }
+    const effort: unknown = Reflect.get(parsed, 'effort');
+    return typeof effort === 'string' && isEffortLevel(effort)
+      ? { provider, model, effort }
+      : { provider, model };
   } catch {
     return null;
   }
 };
 
 type SerializeParams = {
-  readonly choice: ChatModelChoice;
+  readonly choice: WorkDrafterChoice;
 };
 
 export const serializeWorkDrafter = ({ choice }: SerializeParams): string =>
-  JSON.stringify({ provider: choice.provider, model: choice.model });
+  JSON.stringify({
+    provider: choice.provider,
+    model: choice.model,
+    ...(choice.effort != null && { effort: choice.effort }),
+  });

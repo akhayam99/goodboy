@@ -8,7 +8,6 @@ import {
 import { modelLabel } from '../chat/utils/chat-constants';
 import { PROVIDER_LABEL } from '../providers/providerLabel';
 import { exploreList, exploreRead } from '../explore/explore';
-import { kindRouting } from '../session/agent-kind';
 import { workflowAvailabilitySnapshot } from '../workflows/workflowAvailabilitySnapshot';
 import {
   collectWireframeScoutRootCandidates,
@@ -23,6 +22,7 @@ import {
 } from './wireframeScoutPlan';
 import { WIREFRAME_SCOUTS } from './wireframeScoutRoles';
 import { selectResolvedSettings } from '../../store/slices/overrides/selectResolvedSettings';
+import { selectKindRouting } from '../../store/slices/agents/selectKindRouting';
 
 type WireframeScoutGate =
   | Readonly<{ kind: 'skipped'; reason: string }>
@@ -80,8 +80,7 @@ export const wireframeScoutGate = ({
   if (routing.kind === 'blocked') {
     return { kind: 'skipped', reason: wireframeScoutSkipRouting({ reason: routing.reason }) };
   }
-  const roleModels = selectResolvedSettings({ state, sessionId })?.roleModels ?? null;
-  const fallback = kindRouting({ kind: 'scout', roleModels });
+  const fallback = selectKindRouting({ state, sessionId, kind: 'scout' });
   const first = routing.entries[0];
   const provider = first?.providerOverride ?? fallback.provider;
   const model = first?.modelOverride ?? fallback.model;

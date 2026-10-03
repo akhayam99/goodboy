@@ -65,6 +65,7 @@ import {
   ModelPickerTriggersScene,
 } from './scenes/ModelPickerScenes';
 import { ModelPickerClaudeScene } from './scenes/ModelPickerClaudeScene';
+import { RunsOnScene } from './scenes/RunsOnScene';
 
 import { FrameScene } from './scenes/audit/FrameScene';
 import { FirstRunScene } from './scenes/audit/FirstRunScene';
@@ -194,6 +195,7 @@ export const MOCK_SCENES = {
   'model-picker-codex': ModelPickerCodexScene,
   'model-picker-claude': ModelPickerClaudeScene,
   'model-picker-triggers': ModelPickerTriggersScene,
+  'runs-on-codex-default': RunsOnScene,
   frame: FrameScene,
   'first-run': FirstRunScene,
   'first-lap': FirstLapScene,

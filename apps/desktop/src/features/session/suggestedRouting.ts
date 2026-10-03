@@ -5,6 +5,7 @@ import {
   resolveRoleRouting,
   type AutoContext,
   type ResolvedRoleRouting,
+  isModelHidden,
 } from '@goodboy/core';
 import type { AgentRole, CatalogModel, ProviderId, RoleModelPreferences } from '@goodboy/types';
 import { PROVIDER_LABEL } from '../providers/providerLabel';
@@ -66,6 +67,13 @@ const reasonFor = ({ role, auto, workspaceName, resolved }: ReasonParams): strin
   switch (resolved.autoStep) {
     case 'next-in-column': {
       const wanted = wantedModel({ provider: resolved.provider, role });
+      const isWantedHidden =
+        wanted != null &&
+        auto.hidden != null &&
+        isModelHidden({ provider: resolved.provider, hidden: auto.hidden, key: wanted.key });
+      if (wanted != null && isWantedHidden) {
+        return `${wanted.label} is hidden. Using ${picked} instead.`;
+      }
       if (wanted?.minCliVersion == null) {
         return `${roleLabel} default on ${providerLabel}.`;
       }

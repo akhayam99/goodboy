@@ -139,3 +139,8 @@ export const routingLabelParts = ({
     ...(verbosity != null && { verbosity }),
   });
 };
+
+export const routingShortText = ({ provider, model, effort = null }: LabelPartsParams): string => {
+  const label = routingLabelParts({ provider, model, effort });
+  return [routingNameText(label), ...label.detail].join(' · ');
+};

@@ -12,6 +12,7 @@ const EFFORTS = [
 export const OPENCODE_CATALOG = [
   {
     key: 'big-pickle',
+    defaultTurn: true,
     label: 'Big Pickle',
     tier: 'turn',
     contextWindow: 200_000,

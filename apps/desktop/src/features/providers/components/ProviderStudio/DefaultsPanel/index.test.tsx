@@ -254,7 +254,7 @@ describe('DefaultsPanel', () => {
 
     for (const label of TASK_LABELS) {
       expect(screen.getByRole('button', { name: `${label} routing model` }).textContent).toBe(
-        SONNET_TASK_LABELS.has(label) ? 'sonnet-5' : 'haiku-4.5',
+        SONNET_TASK_LABELS.has(label) ? 'sonnet-5.5' : 'haiku-4.5',
       );
     }
     expect(screen.queryByRole('button', { name: 'Step summaries routing reset' })).toBeNull();
@@ -361,7 +361,7 @@ describe('DefaultsPanel', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
     expect(screen.getByRole('button', { name: 'Resolver routing model' }).textContent).toBe(
-      'sonnet-5',
+      'sonnet-5.5',
     );
     expect(screen.queryByRole('button', { name: 'Resolver routing reset' })).toBeNull();
   });
@@ -658,13 +658,13 @@ describe('DefaultsPanel', () => {
     expect(screen.queryByRole('tab')).toBeNull();
   });
 
-  it('renders 11 roles and 9 tasks inside their groups', () => {
+  it('renders 11 roles and 10 tasks inside their groups', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
     const agents = screen.getByRole('region', { name: 'Agents' });
     const tasks = screen.getByRole('region', { name: 'Background tasks' });
     expect(agents.querySelectorAll('[aria-label$=" routing model"]')).toHaveLength(11);
-    expect(tasks.querySelectorAll('[aria-label$=" routing model"]')).toHaveLength(9);
+    expect(tasks.querySelectorAll('[aria-label$=" routing model"]')).toHaveLength(10);
     for (const group of DEFAULT_GROUPS.tasks) {
       const node = screen.getByRole('group', { name: group.label });
       for (const id of group.members) {

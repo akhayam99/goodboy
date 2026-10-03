@@ -33,7 +33,7 @@ The row above the provider chips is one component with two meanings.
 - **Configuring surfaces** (Defaults, the workflow builder, the Studio) call it
   **Auto**. Saving Auto means "follow the ladder", not a model. The closed
   trigger reads `Auto` and the open row says what Auto picks right now
-  (`Now: Claude · Sonnet 5 · Medium`). A pinned trigger shows the model and an
+  (`Now: Claude · Sonnet 5.5 · Medium`). A pinned trigger shows the model and an
   x back to Auto
 - **Launching popovers** (Start agent, Resolve) call it **Suggested**. It fixes a
   concrete model at launch and says why in one line, from the ladder step that
@@ -47,8 +47,11 @@ The row above the provider chips is one component with two meanings.
 Which models the list shows is a per app choice, stored in the settings key
 value store (`providers.hiddenModels`). Catalog entries marked `legacy` start
 hidden. The body filters the catalog before `modelAxes` builds the rows, so a
-family with every version hidden leaves the Model row. The filter never touches
-routing, and the current value always shows, marked `Hidden in the picker`. The
+family with every version hidden leaves the Model row. The same list reaches
+routing: Auto skips a hidden model for roles, a background task keeps it only when
+no visible model of the same cost tier or cheaper exists, and the orchestrator
+model menu (`orchestratorModelPool`, which takes `hidden`) leaves it out. The
+current value always shows, marked `Hidden in the picker`. The
 settings icon next to **Provider** opens that provider's **Models in the picker**
 section.
 

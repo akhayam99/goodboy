@@ -4,10 +4,31 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { SessionSuggestion } from '../../types';
 import type { SuggestionActions } from '../../useSuggestionActions';
+import type { AgentKindRouting } from '../../../session/agent-kind';
 import { NextStepRow } from './NextStepRow';
+import { useAppStore } from '../../../../store';
+import { getCapabilities } from '@goodboy/core';
+import type { ProviderId } from '@goodboy/types';
+import type { ProviderDisplayInfo } from '../../../providers/providers';
 
 afterEach(() => {
   cleanup();
+});
+
+type ProviderParams = {
+  readonly id: ProviderId;
+};
+
+const connectedProvider = ({ id }: ProviderParams): ProviderDisplayInfo => ({
+  id,
+  binary: id,
+  capabilities: getCapabilities({ id }),
+  connection: 'connected',
+  version: null,
+  identity: null,
+  label: id,
+  error: null,
+  docsUrl: '',
 });
 
 const suggestion = (overrides: Partial<SessionSuggestion> = {}): SessionSuggestion =>
@@ -316,5 +337,70 @@ describe('NextStepRow', () => {
     expect(screen.getByRole('button', { name: 'Start reviewer' }).hasAttribute('disabled')).toBe(
       true,
     );
+  });
+
+  it('says where a one click reviewer runs and starts it on the model picked from Change', async () => {
+    useAppStore.setState({
+      providers: [connectedProvider({ id: 'anthropic' }), connectedProvider({ id: 'codex' })],
+    });
+    const run = vi.fn(async () => undefined);
+    const runWith = vi.fn(async (_routing: AgentKindRouting) => undefined);
+    const actions: SuggestionActions = {
+      primary: {
+        label: 'Start reviewer',
+        isDisabled: false,
+        failureTitle: 'Failed',
+        run,
+        runsOn: { kind: 'reviewer', runWith },
+      },
+      onDismiss: null,
+    };
+    render(
+      <NextStepRow
+        suggestion={suggestion({ kind: 'check-changes' })}
+        actions={actions}
+        compact={false}
+        isPending={false}
+        onNotNow={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId('runs-on').textContent).toContain('Runs on Sonnet 5.5 · High');
+
+    fireEvent.click(screen.getByRole('button', { name: /Change/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Codex' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start reviewer' }));
+
+    expect(run).not.toHaveBeenCalled();
+    expect(runWith).toHaveBeenCalledTimes(1);
+    expect(runWith.mock.calls[0]?.[0]).toMatchObject({ provider: 'codex' });
+  });
+
+  it('runs the shown default when nothing was changed', () => {
+    const run = vi.fn(async () => undefined);
+    const runWith = vi.fn(async () => undefined);
+    render(
+      <NextStepRow
+        suggestion={suggestion({ kind: 'check-changes' })}
+        actions={{
+          primary: {
+            label: 'Start reviewer',
+            isDisabled: false,
+            failureTitle: 'Failed',
+            run,
+            runsOn: { kind: 'reviewer', runWith },
+          },
+          onDismiss: null,
+        }}
+        compact={false}
+        isPending={false}
+        onNotNow={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start reviewer' }));
+
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(runWith).not.toHaveBeenCalled();
   });
 });
