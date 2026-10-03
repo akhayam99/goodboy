@@ -3,7 +3,7 @@ import { ImageOff, X } from 'lucide-react';
 import { IconButton, Skeleton } from '@goodboy/ui';
 import { attachmentKindFor, fileIconFor } from '../../../chat/attachment-kinds';
 import { ImageLightbox } from '../../../chat/components/ImageLightbox';
-import { dataUrlToBase64, type PendingAttachment } from '../../pendingAttachment';
+import type { PendingAttachment } from '../../pendingAttachment';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 export type AttachmentThumbnail =
@@ -24,23 +24,25 @@ type Props = {
   readonly onRemove?: () => void;
 };
 
-export const pendingAttachmentProps = (attachment: PendingAttachment) => {
+type PendingPropsParams = {
+  readonly attachment: PendingAttachment;
+  readonly url: string | null;
+};
+
+export const pendingAttachmentProps = ({ attachment, url }: PendingPropsParams) => {
   const shared = { fileName: attachment.fileName, mimeType: attachment.mimeType };
   if (attachmentKindFor(attachment.mimeType) === 'image') {
+    if (url === null) {
+      return { ...shared, thumbnail: { status: 'loading' } as const };
+    }
     return {
       ...shared,
-      thumbnail: { status: 'ready', src: attachment.dataUrl } as const,
-      preview: { src: attachment.dataUrl },
+      thumbnail: { status: 'ready', src: url } as const,
+      preview: { src: url },
     };
   }
-  if (attachment.mimeType === 'application/pdf') {
-    return {
-      ...shared,
-      preview: {
-        src: `data:application/pdf;base64,${dataUrlToBase64(attachment.dataUrl)}`,
-        media: 'pdf' as const,
-      },
-    };
+  if (attachment.mimeType === 'application/pdf' && url !== null) {
+    return { ...shared, preview: { src: url, media: 'pdf' as const } };
   }
   return shared;
 };

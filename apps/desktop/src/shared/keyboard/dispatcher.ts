@@ -42,11 +42,16 @@ export const eventMatches = ({ event, entry }: MatchParams): boolean => {
   );
 };
 
-type Handler = (event: KeyboardEvent) => void;
+type Handler = (event: KeyboardEvent) => void | boolean;
+
+type RegistrationOptions = {
+  readonly canDecline?: boolean;
+};
 
 type Registration = {
   readonly id: ShortcutId;
   readonly handler: Handler;
+  readonly canDecline: boolean;
 };
 
 const registrations = new Map<ShortcutId, Registration>();
@@ -84,8 +89,16 @@ const onKeyDown = (event: KeyboardEvent): void => {
     if (!eventMatches({ event, entry })) {
       continue;
     }
-    if (isPlainKey(entry) && plainKeyYields(event)) {
+    if ((isPlainKey(entry) || entry.yieldsToText === true) && plainKeyYields(event)) {
       continue;
+    }
+    if (registration.canDecline) {
+      if (registration.handler(event) === false) {
+        continue;
+      }
+      event.preventDefault();
+      recordShortcut({ id: registration.id });
+      return;
     }
     event.preventDefault();
     recordShortcut({ id: registration.id });
@@ -110,11 +123,15 @@ const stopListening = (): void => {
   listening = false;
 };
 
-export const registerShortcut = (id: ShortcutId, handler: Handler): (() => void) => {
+export const registerShortcut = (
+  id: ShortcutId,
+  handler: Handler,
+  options: RegistrationOptions = {},
+): (() => void) => {
   if (import.meta.env.DEV && registrations.has(id)) {
     console.warn(`[shortcuts] ${id} registered twice, the later registration wins`);
   }
-  registrations.set(id, { id, handler });
+  registrations.set(id, { id, handler, canDecline: options.canDecline === true });
   startListening();
   return () => {
     if (registrations.get(id)?.handler === handler) {

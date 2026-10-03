@@ -1,5 +1,6 @@
 import { Bot, RotateCcw } from 'lucide-react';
-import { cn, Textarea, Tooltip } from '@goodboy/ui';
+import { cn, Tooltip } from '@goodboy/ui';
+import { PromptField } from '../../../../../shared/components/PromptField';
 import type { ProviderId } from '@goodboy/types';
 import { clampEffortForModel, getDefaultTurnModel } from '@goodboy/core';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
@@ -87,16 +88,16 @@ export const DelegateAnswerRow = ({
             {QUESTION_DELEGATE_COPY.cancel}
           </button>
         </div>
-        <Textarea
-          aria-label="Hints for the delegated agent"
+        <PromptField
+          kind="document"
+          label="Hints for the delegated agent"
           value={hints}
-          onChange={(event) => onHints(event.target.value)}
+          onChange={onHints}
           onKeyDown={(event) => event.stopPropagation()}
           placeholder={QUESTION_DELEGATE_COPY.hintsPlaceholder}
-          autoGrow
           minRows={1}
           maxRows={4}
-          className="text-label"
+          textClassName="text-label"
         />
       </div>
     );

@@ -1,10 +1,9 @@
-import type { KeyboardEvent } from 'react';
 import { Crosshair, X } from 'lucide-react';
-import { Button, Chip, KbdPill, SegmentedTabs, Textarea } from '@goodboy/ui';
+import { Button, Chip, KbdPill, SegmentedTabs } from '@goodboy/ui';
 import type { WireframeChangeScope, WireframePickedNode } from '../../buildWireframeChangeRequest';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
-import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
+import { PromptField } from '../../../../shared/components/PromptField';
 
 const SCOPE_OPTIONS = [
   { value: 'screen', label: 'This screen' },
@@ -41,12 +40,6 @@ export const ChangeComposer = ({
   onSend,
 }: Props) => {
   const canSend = !isBusy && ask.trim().length > 0;
-  const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (isSubmitChord(event) && canSend) {
-      event.preventDefault();
-      onSend();
-    }
-  };
   return (
     <section
       aria-label="Ask for a change"
@@ -70,19 +63,20 @@ export const ChangeComposer = ({
           ))}
         </div>
       )}
-      <Textarea
-        aria-label="Ask for a change"
+      <PromptField
+        kind="document"
+        label="Ask for a change"
         placeholder={
           screenTitle === null ? 'Ask for a change' : `Ask for a change to ${screenTitle}`
         }
         value={ask}
-        onChange={(event) => onAskChange(event.target.value)}
-        onKeyDown={onKeyDown}
+        onChange={onAskChange}
+        onSubmit={onSend}
+        isSubmitBlocked={!canSend}
         disabled={isBusy}
-        autoGrow
         minRows={2}
         maxRows={8}
-        className="w-full text-body"
+        className="bg-background"
       />
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         <Button

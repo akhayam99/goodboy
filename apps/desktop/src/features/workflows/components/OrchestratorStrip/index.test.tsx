@@ -144,6 +144,8 @@ beforeEach(() => {
     setWorkflowRunSpendLimit: vi.fn(async () => undefined),
     sessionOpenQuestions: {},
     orchestratorReadingHints: {},
+    workflowRunAttachments: {},
+    loadGoalAttachments: vi.fn(async () => undefined),
     budgetAlerts: [],
     sessionBudgets: {},
     sessionTelemetry: {},

@@ -5,7 +5,6 @@ import {
   Button,
   IconButton,
   InlineConfirm,
-  Textarea,
   tintClasses,
   useDropdown,
 } from '@goodboy/ui';
@@ -15,6 +14,7 @@ import type { TranscriptItem } from '../../../chat/utils/transcript-items';
 import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { TranscriptShell } from '../../../chat/components/TranscriptShell';
 import { formatRequestInput } from './formatRequestInput';
+import { PromptField } from '../../../../shared/components/PromptField';
 import { modeCopyOf } from '../../modeCopy';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { useAppStore } from '../../../../store';
@@ -305,14 +305,16 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
             )}
             {overflowView === 'denyReason' && (
               <div className="flex flex-col gap-2 p-2.5">
-                <Textarea
+                <PromptField
+                  kind="document"
+                  label="Why you deny it"
                   value={denyReason}
-                  onChange={(e) => setDenyReason(e.target.value)}
+                  onChange={setDenyReason}
                   placeholder="Say why, so it does not try again this way"
                   minRows={2}
                   maxRows={4}
-                  autoGrow
-                  className="w-full rounded-md border border-border bg-elevated px-2 py-1.5 text-label text-foreground"
+                  className="w-full bg-elevated"
+                  textClassName="text-label"
                 />
                 <div className="flex justify-end gap-2">
                   <Button variant="ghost" size="sm" disabled={busy} onClick={closeOverflow}>

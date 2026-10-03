@@ -56,4 +56,52 @@ describe('useBoardSelection', () => {
     expect(result.current.selectedSessions).toEqual([]);
     expect(result.current.scope).toBe('active');
   });
+
+  it('keeps the callbacks the cards hold the same while the selection changes', () => {
+    const { result } = setup();
+    const before = {
+      onItemClick: result.current.onItemClick,
+      onToggle: result.current.onToggle,
+      getSelectedIds: result.current.getSelectedIds,
+    };
+
+    act(() => result.current.onToggle(sid('a')));
+    act(() => result.current.onToggle(sid('b')));
+
+    expect(result.current.onItemClick).toBe(before.onItemClick);
+    expect(result.current.onToggle).toBe(before.onToggle);
+    expect(result.current.getSelectedIds).toBe(before.getSelectedIds);
+    expect(result.current.getSelectedIds()).toEqual(['a', 'b']);
+  });
+
+  it('toggles a card, and extends to a range on shift', () => {
+    const { result } = setup();
+
+    act(() => result.current.onToggle(sid('a')));
+    act(() => result.current.onToggle(sid('c'), { shiftKey: true }));
+
+    expect(result.current.selectedIds).toEqual(['a', 'b', 'c']);
+    act(() => result.current.onToggle(sid('b')));
+    expect(result.current.isSelected(sid('b'))).toBe(false);
+  });
+
+  it('routes an archived card to the archived half and counts its lane for Select all', () => {
+    const { result } = setup();
+
+    act(() => result.current.onToggle(sid('x')));
+
+    expect(result.current.scope).toBe('archived');
+    expect(result.current.total).toBe(2);
+    act(() => result.current.selectAll());
+    expect(result.current.selectedIds).toEqual(['x', 'y']);
+  });
+
+  it('selects the active lane when nothing is picked yet', () => {
+    const { result } = setup();
+
+    expect(result.current.total).toBe(3);
+    act(() => result.current.selectAll());
+
+    expect(result.current.selectedIds).toEqual(['a', 'b', 'c']);
+  });
 });

@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
-import { act, cleanup, renderHook } from '@testing-library/react';
-import type { ShowToast } from '../../../../../shared/components/Toast';
+import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
+import type { ShowToast } from '../../components/Toast';
 
 type DragHandler = (event: { payload: unknown }) => void;
 
@@ -29,15 +29,15 @@ vi.mock('@tauri-apps/api/webview', () => ({
   }),
 }));
 
-vi.mock('../../../../../shared/lib/zoom', () => ({
+vi.mock('../../lib/zoom', () => ({
   currentZoom: () => hooks.zoom,
 }));
 
-vi.mock('../../../../../shared/lib/readDroppedAttachment', () => ({
+vi.mock('../../lib/readDroppedAttachment', () => ({
   readDroppedAttachment: ({ absolutePath }: { absolutePath: string }) => hooks.read(absolutePath),
 }));
 
-import { usePendingAttachments } from './usePendingAttachments';
+import { usePendingAttachments } from '.';
 
 const COMPOSER_RECT = { left: 100, right: 300, top: 400, bottom: 500 };
 
@@ -179,5 +179,60 @@ describe('usePendingAttachments drop target', () => {
       kind: 'warning',
       message: expect.stringContaining('Drop the file on a message box'),
     });
+  });
+});
+
+const image = (name: string, bytes = 4): File =>
+  new File([new Uint8Array(bytes)], name, { type: 'image/png' });
+
+describe('usePendingAttachments limits', () => {
+  it('turns down the eleventh image and keeps the first ten', async () => {
+    const showToast = vi.fn<ShowToast>();
+    const { result } = renderHook(() => usePendingAttachments({ showToast }));
+    const files = Array.from({ length: 11 }, (_, index) => image(`shot-${index + 1}.png`));
+    await act(async () => {
+      await result.current.addFiles(files);
+    });
+    expect(result.current.attachments.map((entry) => entry.fileName)).toEqual(
+      files.slice(0, 10).map((file) => file.name),
+    );
+    expect(showToast).toHaveBeenCalledWith({
+      kind: 'warning',
+      message: 'Up to 10 files per message.',
+    });
+  });
+
+  it('turns down an image over 10 MB and names it', async () => {
+    const showToast = vi.fn<ShowToast>();
+    const { result } = renderHook(() => usePendingAttachments({ showToast }));
+    await act(async () => {
+      await result.current.addFiles([image('huge.png', 10 * 1024 * 1024 + 1), image('ok.png')]);
+    });
+    expect(result.current.attachments.map((entry) => entry.fileName)).toEqual(['ok.png']);
+    expect(showToast).toHaveBeenCalledWith({ kind: 'warning', message: 'huge.png is over 10 MB.' });
+  });
+
+  it('keeps a pasted image as the file itself, never as a data url', async () => {
+    const showToast = vi.fn<ShowToast>();
+    const latest: { current: ReturnType<typeof usePendingAttachments> | null } = { current: null };
+    const Field = () => {
+      const pending = usePendingAttachments({ showToast });
+      latest.current = pending;
+      return <textarea aria-label="Message" onPaste={pending.onPaste} />;
+    };
+    render(<Field />);
+    const pasted = image('');
+    let isPrevented = false;
+    await act(async () => {
+      isPrevented = !fireEvent.paste(screen.getByRole('textbox', { name: 'Message' }), {
+        clipboardData: { files: [pasted] },
+      });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const [attachment] = latest.current?.attachments ?? [];
+    expect(isPrevented).toBe(true);
+    expect(attachment?.blob).toBe(pasted);
+    expect(attachment?.fileName).toBe('pasted-file.png');
+    expect(Object.keys(attachment ?? {})).not.toContain('dataUrl');
   });
 });

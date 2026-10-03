@@ -1,5 +1,5 @@
 import type { SessionId, UserTurnSentVia } from '@goodboy/types';
-import { toAttachmentInput } from '../../../features/attachments/pendingAttachment';
+import { storedToAttachmentInput } from '../../../features/attachments/pendingAttachment';
 import { isTranscriptOwnedTurnError } from '../../../features/chat/turn-errors';
 import type { AgentQueuedTurn, GetFn } from './types';
 
@@ -25,7 +25,7 @@ export const deliverQueuedTurn = async ({
       content: turn.content,
       origin: 'operator',
       ...(turn.attachments.length > 0 && {
-        attachments: turn.attachments.map(toAttachmentInput),
+        attachments: turn.attachments.map(storedToAttachmentInput),
       }),
       ...(turn.override !== undefined && { override: turn.override }),
       sentVia,

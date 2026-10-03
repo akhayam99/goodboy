@@ -4,11 +4,13 @@ import type { Session, SessionId } from '@goodboy/types';
 import {
   Input,
   PANE_RHYTHM,
+  SelectionCheckbox,
   TERMINAL_DIM,
   ToneBar,
   cn,
   formatUsd,
   InlineMarkdown,
+  inlineMarkdownText,
 } from '@goodboy/ui';
 import { sessionTone } from '../../../session/components/sessionCardShell';
 import { useSessionSummary } from '../../hooks/useSessionSummary';
@@ -38,6 +40,7 @@ type Props = {
   readonly getSelectedIds: () => ReadonlyArray<SessionId>;
   readonly onClearSelection: () => void;
   readonly onModifierClick: (id: SessionId, event: SelectionClickEvent) => void;
+  readonly onToggleSelect: (id: SessionId, event: { readonly shiftKey: boolean }) => void;
   readonly onSelect: (id: SessionId) => void;
 };
 
@@ -49,6 +52,7 @@ const SessionActivityItemView = ({
   getSelectedIds,
   onClearSelection,
   onModifierClick,
+  onToggleSelect,
   onSelect,
 }: Props) => {
   const summary = useSessionSummary({ session });
@@ -97,79 +101,88 @@ const SessionActivityItemView = ({
   }
 
   return (
-    <button
-      type="button"
-      data-select-id={session.id}
-      aria-pressed={isSelected}
-      aria-keyshortcuts="Alt+Enter Alt+Space Shift+F10"
-      onClick={(event) => {
-        if (event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) {
-          onModifierClick(session.id as SessionId, event);
-          return;
-        }
-        onSelect(sessionId);
-      }}
-      onContextMenu={menu.onContextMenu}
-      onKeyDown={(event) => {
-        menu.onKeyDown(event);
-        if (!event.altKey || (event.key !== 'Enter' && event.key !== ' ')) {
-          return;
-        }
-        event.preventDefault();
-        onModifierClick(session.id as SessionId, event);
-      }}
-      className={cn(
-        '@container group/session-row relative flex w-full cursor-pointer items-start gap-2 rounded-md text-left motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-        PANE_RHYTHM.navRail.row,
-        'pl-3.5',
-        (isActive || isSelected) && 'bg-selected font-medium text-foreground',
-        isDimmed && TERMINAL_DIM,
-      )}
-    >
-      <ToneBar tone={tone.tone} density="row" isBreathing={tone.isBreathing} />
-      <SessionRowNode
-        stage={summary.stage}
-        attention={summary.attention}
-        tone={summary.tone}
-        prState={summary.prState}
-        isSelected={isSelected}
+    <div className="group/select-row relative">
+      <SelectionCheckbox
+        checked={isSelected}
+        label={`Select ${inlineMarkdownText({ text: sessionTitle({ session }) })}`}
+        onToggle={(event) => onToggleSelect(sessionId, event)}
+        className="absolute left-3.5 top-1.5"
       />
-      <span className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="flex w-full min-w-0 items-baseline gap-2">
-          <InlineMarkdown
-            text={sessionTitle({ session })}
-            className="min-w-0 flex-1 truncate text-row text-foreground"
-          />
-          <ChatOriginGlyph sessionId={session.id} />
-          <span
-            data-testid="session-row-trailing"
-            className="w-12 shrink-0 text-right text-meta text-faint-foreground"
-          >
-            <span className={cn(hasCost && 'group-hover/session-row:hidden')}>{summary.age}</span>
-            {hasCost ? (
-              <CostBadge
-                value={summary.cost}
-                title={`Session spend: ${formatUsd(summary.cost)} (excludes summarizer)`}
-                className="hidden font-sans text-meta font-medium text-muted-foreground group-hover/session-row:inline"
-              />
-            ) : null}
+      <button
+        type="button"
+        data-select-id={session.id}
+        aria-pressed={isSelected}
+        aria-keyshortcuts="Alt+Enter Alt+Space Shift+F10"
+        onClick={(event) => {
+          if (event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) {
+            onModifierClick(session.id as SessionId, event);
+            return;
+          }
+          onSelect(sessionId);
+        }}
+        onContextMenu={menu.onContextMenu}
+        onKeyDown={(event) => {
+          menu.onKeyDown(event);
+          if (!event.altKey || (event.key !== 'Enter' && event.key !== ' ')) {
+            return;
+          }
+          event.preventDefault();
+          onModifierClick(session.id as SessionId, event);
+        }}
+        className={cn(
+          '@container group/session-row relative flex w-full cursor-pointer items-start gap-2 rounded-md text-left motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+          PANE_RHYTHM.navRail.row,
+          'pl-3.5',
+          (isActive || isSelected) && 'bg-selected font-medium text-foreground',
+          isDimmed && TERMINAL_DIM,
+        )}
+      >
+        <ToneBar tone={tone.tone} density="row" isBreathing={tone.isBreathing} />
+        <SessionRowNode
+          stage={summary.stage}
+          attention={summary.attention}
+          tone={summary.tone}
+          prState={summary.prState}
+          isSelected={isSelected}
+          className="group-focus-within/select-row:invisible group-hover/select-row:invisible group-data-[selecting=true]/select-list:invisible"
+        />
+        <span className="flex min-w-0 flex-1 flex-col gap-1">
+          <span className="flex w-full min-w-0 items-baseline gap-2">
+            <InlineMarkdown
+              text={sessionTitle({ session })}
+              className="min-w-0 flex-1 truncate text-row text-foreground"
+            />
+            <ChatOriginGlyph sessionId={session.id} />
+            <span
+              data-testid="session-row-trailing"
+              className="w-12 shrink-0 text-right text-meta text-faint-foreground"
+            >
+              <span className={cn(hasCost && 'group-hover/session-row:hidden')}>{summary.age}</span>
+              {hasCost ? (
+                <CostBadge
+                  value={summary.cost}
+                  title={`Session spend: ${formatUsd(summary.cost)} (excludes summarizer)`}
+                  className="hidden font-sans text-meta font-medium text-muted-foreground group-hover/session-row:inline"
+                />
+              ) : null}
+            </span>
+          </span>
+          <span className="flex w-full min-w-0 items-center gap-2">
+            {summary.progress !== null ? (
+              <SessionProgress progress={summary.progress} tone={summary.tone} className="flex-1" />
+            ) : (
+              <span className="min-w-0 flex-1 truncate text-secondary text-muted-foreground">
+                {isReasonInMeta ? null : summary.reason}
+              </span>
+            )}
+            {summary.meta.map((item) => (
+              <SessionRowMeta key={item.kind} item={item} />
+            ))}
           </span>
         </span>
-        <span className="flex w-full min-w-0 items-center gap-2">
-          {summary.progress !== null ? (
-            <SessionProgress progress={summary.progress} tone={summary.tone} className="flex-1" />
-          ) : (
-            <span className="min-w-0 flex-1 truncate text-secondary text-muted-foreground">
-              {isReasonInMeta ? null : summary.reason}
-            </span>
-          )}
-          {summary.meta.map((item) => (
-            <SessionRowMeta key={item.kind} item={item} />
-          ))}
-        </span>
-      </span>
-      <span className="sr-only">{summary.description}</span>
-    </button>
+        <span className="sr-only">{summary.description}</span>
+      </button>
+    </div>
   );
 };
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Checkbox, InlineConfirm, cn } from '@goodboy/ui';
+import { InlineConfirm, SelectionCheckbox, cn } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import {
   isStorageArtifactKept,
@@ -81,22 +81,28 @@ export const ArtifactRow = ({
     <div className="flex flex-col">
       <div
         data-testid="storage-artifact-row"
+        data-select-id={isDeleting ? undefined : artifact.id}
         className={cn(
-          'group flex h-10 items-center gap-2.5 rounded-sm px-2 text-body hover:bg-hover',
+          'group group/select-row relative flex h-10 items-center gap-2.5 rounded-sm px-2 text-body hover:bg-hover',
           isDeleting && 'opacity-60',
         )}
       >
-        {isSelecting ? (
-          <span className={ARTIFACT_COLUMN.check}>
-            <Checkbox
-              checked={isSelected}
-              disabled={isDeleting}
-              ariaLabel={`Select ${artifact.title}`}
-              onChange={(isOn) => onToggle({ id: artifact.id, isOn })}
-            />
-          </span>
-        ) : null}
-        <span className={cn(ARTIFACT_COLUMN.node, 'text-muted-foreground')}>
+        {isDeleting ? null : (
+          <SelectionCheckbox
+            checked={isSelected}
+            label={`Select ${artifact.title}`}
+            onToggle={() => onToggle({ id: artifact.id, isOn: !isSelected })}
+            className="absolute left-2 top-2.5"
+          />
+        )}
+        <span
+          className={cn(
+            ARTIFACT_COLUMN.node,
+            'text-muted-foreground',
+            !isDeleting &&
+              'group-focus-within/select-row:invisible group-hover/select-row:invisible group-data-[selecting=true]/select-list:invisible',
+          )}
+        >
           <Icon size={ICON_SIZE.row} aria-label={kindLabel} />
         </span>
         <div className="flex min-w-0 flex-1 flex-col">

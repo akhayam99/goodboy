@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { cn, Textarea, tintClasses, PANE_RHYTHM } from '@goodboy/ui';
+import { cn, tintClasses, PANE_RHYTHM } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { RoutingIndicator } from '../RoutingIndicator';
@@ -25,7 +25,8 @@ import { focusComposerTextarea } from './focusComposerTextarea';
 import { ComposerAttachmentChips } from './parts/ComposerAttachmentChips';
 import { ComposerCliGate } from './parts/ComposerCliGate';
 import { ComposerDispatchError } from './parts/ComposerDispatchError';
-import { ComposerDropOverlay } from './parts/ComposerDropOverlay';
+import { PromptField } from '../../../../shared/components/PromptField';
+import { PromptDropOverlay } from '../../../../shared/components/PromptField/PromptDropOverlay';
 import { ComposerToolbar } from './parts/ComposerToolbar';
 import { ComposerTray } from './parts/ComposerTray';
 
@@ -171,7 +172,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
 
   useFirstMessageFocus({ wrapperRef, selectedAgentId, shouldFocusFirstMessage });
 
-  const onKeyDown = composerKeyDown({ popoverOpen, isRunning, onSend, onSendNow });
+  const onKeyDown = composerKeyDown({ popoverOpen });
 
   const hasTray = queue.length > 0 || suggestions.length > 0;
   const insertPrefix = (symbol: string) => {
@@ -215,7 +216,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                   ),
             )}
           >
-            <ComposerDropOverlay isDragging={isDragging} />
+            <PromptDropOverlay isDragging={isDragging} />
             <ComposerCliGate
               provider={routing.effectiveProvider}
               modelId={routing.effectiveModelId}
@@ -230,17 +231,29 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                   onDismiss={dismissPopover}
                 />
               ) : null}
-              <Textarea
+              <PromptField
+                variant="bare"
+                kind="message"
+                label="Message to the agent"
                 value={value}
-                onChange={(e) => onValueChange(e.target.value)}
+                onChange={onValueChange}
+                onSubmit={(mode) => void (mode === 'now' && isRunning ? onSendNow() : onSend())}
+                canSendNow={isRunning}
+                isSubmitBlocked={popoverOpen}
                 onKeyDown={onKeyDown}
-                onPaste={onPaste}
+                files={{
+                  attachments,
+                  isDragging,
+                  composerRef,
+                  fileInputRef,
+                  onPaste,
+                  onFileInputChange,
+                  onRemove: removeAttachment,
+                }}
                 placeholder={placeholder}
                 disabled={isBlocked}
-                autoGrow
-                rows={1}
+                minRows={1}
                 maxRows={12}
-                className="resize-none border-0 bg-transparent px-3 py-2 text-body text-foreground shadow-none placeholder:text-faint-foreground focus-visible:border-0 focus-visible:shadow-none focus-visible:ring-0"
               />
             </div>
             <ComposerToolbar

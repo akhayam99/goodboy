@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { useWorktreeActionTarget } from './useWorktreeActionTarget';
-import { Checkbox, Skeleton, Tooltip, cn } from '@goodboy/ui';
+import { SelectionCheckbox, Skeleton, Tooltip, cn } from '@goodboy/ui';
 import {
   isStorageFolderIdle,
   storageFolderLastChange,
@@ -60,6 +60,7 @@ export const WorktreeRow = ({
     folder.origin !== 'in-use' &&
     !isStorageFolderIdle({ folder, now, suggestAfterDays });
   const lastChange = storageFolderLastChange({ folder });
+  const isSelectable = status === 'safe' && !isRemoving;
   const actions = useWorktreeActionTarget({ folder, status, onRemove: setIntent });
   const menu = useObjectMenuTrigger({
     target: actions.target,
@@ -71,23 +72,28 @@ export const WorktreeRow = ({
       <div
         data-testid="storage-folder-row"
         data-status={status}
+        data-select-id={isSelectable ? folder.path : undefined}
         onContextMenu={menu.onContextMenu}
         className={cn(
-          'group flex h-10 items-center gap-2.5 rounded-sm px-2 text-body hover:bg-hover',
+          'group group/select-row relative flex h-10 items-center gap-2.5 rounded-sm px-2 text-body hover:bg-hover',
           isRemoving && 'opacity-60',
         )}
       >
-        {isSelecting ? (
-          <span className={STORAGE_COLUMN.check}>
-            <Checkbox
-              checked={isSelected}
-              disabled={status !== 'safe' || isRemoving}
-              ariaLabel={`Select ${title}`}
-              onChange={(isOn) => onToggle({ path: folder.path, isOn })}
-            />
-          </span>
+        {isSelectable ? (
+          <SelectionCheckbox
+            checked={isSelected}
+            label={`Select ${title}`}
+            onToggle={() => onToggle({ path: folder.path, isOn: !isSelected })}
+            className="absolute left-2 top-2.5"
+          />
         ) : null}
-        <span className={STORAGE_COLUMN.node}>
+        <span
+          className={cn(
+            STORAGE_COLUMN.node,
+            isSelectable &&
+              'group-focus-within/select-row:invisible group-hover/select-row:invisible group-data-[selecting=true]/select-list:invisible',
+          )}
+        >
           <FolderNode status={status} label={statusLabel} />
         </span>
         <div className="flex min-w-0 flex-1 flex-col">

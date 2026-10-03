@@ -198,7 +198,9 @@ with the step where the orchestrator first read it.
 
 - **Queue** waits until the next decision
 - **Read now** restarts a decision that is in progress. If a step is running, it stops that step, keeps what it wrote, and decides again
-- The field stays open while the orchestrator decides, and it empties as soon as you send. If the hint can't be saved, your text comes back
+- The field is a message box: Enter queues, Shift+Enter adds a line, ⌘Enter reads now. **Preview** shows it as markdown, and the hint log reads it as markdown too
+- Paste, drop or attach images. They are saved as files of the run, so the next agent gets them, and the hint keeps their ids
+- The field stays open while the orchestrator decides, and it empties as soon as you send. If the hint can't be saved, your text and your images come back
 - Each hint says where it stands: **Waits for the next decision**, **Reading now** while a decision has it, or **Read at step N**. Read hints sit behind a count
 - You can remove a hint, except while a decision is reading it
 
@@ -610,7 +612,11 @@ an `orchestrator_decision` event, and its spend is recorded against the run.
   pool is moved the same way as a pick on a provider in cooldown. The
   orchestrator's own model is not bound by the pool.
 - **Hints.** Hints are saved in the run's hint log (`orchestrator_hint_log` on
-  `session_workflows`) and survive a restart. **Read now** on a live
+  `session_workflows`) and survive a restart. A hint with images carries
+  `attachmentIds`; the files are `goal_attachments` rows owned by the run, so
+  every step agent's kickoff lists them. The decision reads each hint as one
+  `- [new]` line, and every further line of the hint is indented by two
+  spaces, so a line inside a hint can never pose as a hint of its own. **Read now** on a live
   orchestrated run marks a decision in flight for restart: its answer is
   thrown away when it returns (its spend still counts) and a fresh decision
   reads the hint. Running steps are cancelled and marked skipped before a new

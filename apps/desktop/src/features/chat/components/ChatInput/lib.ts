@@ -1,5 +1,5 @@
 import type { AgentId, ProviderId, TurnProviderOverride, EffortLevel } from '@goodboy/types';
-import type { PendingAttachment } from '../../../attachments/pendingAttachment';
+import type { PendingAttachment, StoredAttachment } from '../../../attachments/pendingAttachment';
 import { PREFIXES, type QuickActionGroup } from '../../../quick-actions/grammar';
 import { EFFORT_LEVELS } from '../../utils/chat-constants';
 
@@ -52,12 +52,16 @@ type ValidProvidersAreTotal =
   Exclude<ProviderId, (typeof VALID_PROVIDERS)[number]> extends never ? true : false;
 type _ValidProvidersTotalCheck = Expect<ValidProvidersAreTotal>;
 
-export type QueuedTurn = {
-  readonly id: string;
+export type FailedTurn = {
   readonly agentId: AgentId;
   readonly content: string;
   readonly attachments: ReadonlyArray<PendingAttachment>;
   readonly override: TurnProviderOverride | undefined;
+};
+
+export type QueuedTurn = Omit<FailedTurn, 'attachments'> & {
+  readonly id: string;
+  readonly attachments: ReadonlyArray<StoredAttachment>;
 };
 
 export const asEffortLevel = (v: string | undefined | null): EffortLevel | null => {
