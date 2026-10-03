@@ -242,6 +242,7 @@ describe('SettingsStudio', () => {
       'shortcuts',
       'backup',
       'storage',
+      'branches',
       'security-findings',
       'help',
       'danger',

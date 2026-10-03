@@ -15,7 +15,7 @@ const LOCATION_ICON: Readonly<Record<BranchLocation, LucideIcon>> = {
   'gone-on-origin': CloudOff,
 };
 
-export const BRANCH_ROW_GRID =
+const BRANCH_ROW_GRID =
   'grid grid-cols-[20px_minmax(0,1fr)_220px_110px_200px_70px_70px] items-center gap-2';
 
 type Props = {

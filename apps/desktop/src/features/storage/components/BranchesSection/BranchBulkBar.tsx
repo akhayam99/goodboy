@@ -79,9 +79,27 @@ export const BranchBulkBar = ({
           tone: 'danger',
           icon: <Trash2 size={ICON_SIZE.row} aria-hidden />,
           isDisabled: isBusy,
-          onRun: onArm,
+          onRun: () => {
+            if (unmerged.length > 0) {
+              onArm();
+              return;
+            }
+            onConfirm({ alsoOrigin: alsoOrigin && originEligible > 0 });
+          },
         },
       ]}
+      note={
+        isConfirming || originEligible === 0 || count === 0 ? null : (
+          <div className="rounded-lg border border-border bg-floating px-3 py-1.5 shadow-lg">
+            <Checkbox
+              checked={alsoOrigin}
+              onChange={setAlsoOrigin}
+              disabled={isBusy}
+              label={`Also delete ${originEligible} on origin`}
+            />
+          </div>
+        )
+      }
       onClear={onClear}
       onSelectAll={onSelectAll}
       clearHint={shortcutGlyphs('selection.clear')}

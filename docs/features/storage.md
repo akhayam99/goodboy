@@ -18,11 +18,13 @@ Free disk space without guessing. **Worktrees** lists the checkout folders of ar
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/storage-branches-light.webp" alt="Clean up branches: 9 local branches with the tabs Safe to delete 7, Needs a look 2 and All 9, grouped by repo under ledger-core, notify-relay and payments-api, each with its session, On origin or Gone on origin, and Safe to delete merged by merge commit, rebase or pull request, plus the button Select 7 safe to delete">
 </picture>
 
-Delete old branches with confidence. Local branches are sorted into **Safe to delete** and **Needs a look**, each with its session, whether it still exists on origin and how it was merged: merge commit, rebase or pull request. **Select 7 safe to delete** picks them together, a row checkbox picks one, and the selection bar floats with the count, **Select all** and **Delete**, which confirms above the bar. Every deletion can be restored for 14 days.
+Delete old branches with confidence. **Branches** has its own page under App settings, next to **Storage**. It opens on the branches that are **Safe to delete**, with how many **need a look**; **Show all branches** brings in the rest, and the **Made by** picker narrows them to **Made by Goodboy** or **Yours**. Each row shows its session, whether it still exists on origin and how it was merged: merge commit, rebase or pull request. **Delete** on a merged branch acts at once and offers **Undo**; an unmerged one asks first, above the selection bar. A row checkbox, X or ⌘A picks several, and the bar can also delete them on origin.
+
+Every deleted branch goes to **Recently deleted** at the top of the page, with the days it has left, **Restore** and **Delete permanently**, which asks inline. The list comes from the database, so it is still there after you leave the page or restart. Opening the page releases the kept refs of deletions older than 14 days.
 
 ### Storage scope
 
-Clean up this workspace, other workspaces, removed ones or all of them, each with its weight, from the picker in the page header. Bulk actions name the scope they act on. The page reads as two groups: **Free up space** and **Clean up branches**.
+Clean up this workspace, other workspaces, removed ones or all of them, each with its weight, from the picker in the page header. Bulk actions name the scope they act on. **Branches** shares the scope but has no removed workspaces, since a branch lives in a project you still have. **Suggest cleanup after** sits beside the scope on **Storage**, and **Scan another repository** at the foot of **Worktrees** reads a repository from a workspace you removed. The free space chip, the cleanup notice and every other way in land on **Storage**, never on **Branches**.
 
 ### Free space chip
 

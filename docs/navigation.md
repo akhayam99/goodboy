@@ -1135,14 +1135,20 @@ X`) and a `Reset` in its own ⋯ menu (`WorkspaceFieldRow`). Precedent:
   JetBrains Copy to Project and VS Code's Modified marker with Reset Setting.
 - **Storage is the one place for disk space, scoped by a picker.** App >
   Storage lists every worktree folder Goodboy made, grouped by repository,
-  under three filters: To review, In use and Kept. The page is two clusters
-  (`StorageCluster`), each with its own accent on a tinted icon and a left
-  rail: `Free up space` (primary: the summary, Worktrees, Artifacts from
-  deleted sessions, History and app data, Cleanup) and `Clean up branches`
-  (merged: Branches, then the scoped workspace's after-merge rule with a
-  `Change` link to Workspace settings). A scope picker
+  under three filters: To review, In use and Kept. Each part is a card
+  (`Band`) under a plain section title: the summary, Worktrees (with `Scan
+another repository` at its foot), Artifacts of deleted sessions, and
+  Transcripts and app data. Branches is its own App page (`branches` in
+  `appSections.ts`, `BranchesPage`): the scoped workspace's after-merge rule
+  with a `Change` link, `Recently deleted` (restore or delete for good,
+  loaded from `deleted_branches` on open, which also releases the refs of
+  deletions older than 14 days), then the branch list, safe ones first with
+  `Show all branches` and a `Made by` picker. A scope picker
   (`StorageScopePicker`, `Listbox`) sits in the page header row next to
-  `Check again` (`StorageHeaderActions`): the current
+  `Suggest cleanup after` and `Check again` (`StorageHeaderActions`); the
+  Branches header has the same picker without `Removed workspaces`
+  (`BranchesHeaderActions`). `openStorage`, the free space chip and the
+  cleanup notifications always land on Storage. The picker lists the current
   window's workspace, every other workspace with its own weight, `Removed
 workspaces` (folders whose owning workspace is gone or was never linked),
   and `All workspaces` with the machine total. The scope drives the summary

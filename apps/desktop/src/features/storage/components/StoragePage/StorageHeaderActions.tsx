@@ -2,6 +2,7 @@ import { useAppStore } from '../../../../store';
 import { resolveStorageScope } from '../../resolveStorageScope';
 import { StorageCheckAgain } from './StorageCheckAgain';
 import { StorageScopePicker } from './StorageScopePicker';
+import { StorageSuggestAfterPicker } from './StorageSuggestAfterPicker';
 
 export const StorageHeaderActions = () => {
   const storedScope = useAppStore((state) => state.storageScope);
@@ -11,6 +12,7 @@ export const StorageHeaderActions = () => {
   return (
     <>
       <StorageScopePicker scope={scope} onChange={setStorageScope} />
+      <StorageSuggestAfterPicker />
       <StorageCheckAgain />
     </>
   );

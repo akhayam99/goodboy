@@ -1,4 +1,5 @@
 import type {
+  DeletedBranch,
   IsoDateTime,
   MountId,
   ProjectId,
@@ -316,7 +317,57 @@ const scrollToBranches = (): void => {
   }, 600);
 };
 
-const seedStorage = (): void => {
+const deletedOf = ({
+  id,
+  projectId,
+  branch,
+  sha,
+  days,
+}: {
+  readonly id: string;
+  readonly projectId: ProjectId;
+  readonly branch: string;
+  readonly sha: string;
+  readonly days: number;
+}): DeletedBranch => ({
+  id,
+  workspaceId: SETTINGS_WORKSPACE_ID,
+  projectId,
+  sessionId: null,
+  repoRoot: rootOf(projectId),
+  branch,
+  sha,
+  keepRef: `refs/goodboy/deleted/${id}`,
+  onOrigin: false,
+  deletedAt: daysAgoIso(days),
+  restoredAt: null,
+});
+
+const DELETED: ReadonlyArray<DeletedBranch> = [
+  deletedOf({
+    id: 'mock-deleted-fee-rounding',
+    projectId: PAYMENTS_ID,
+    branch: 'hl/fee-rounding',
+    sha: '3f9a1c2',
+    days: 2,
+  }),
+  deletedOf({
+    id: 'mock-deleted-ledger-index',
+    projectId: LEDGER_ID,
+    branch: 'hl/ledger-index',
+    sha: 'a41d7e0',
+    days: 6,
+  }),
+  deletedOf({
+    id: 'mock-deleted-queue-backoff',
+    projectId: PAYMENTS_ID,
+    branch: 'theo/spike-queue-backoff',
+    sha: '9be0c55',
+    days: 12,
+  }),
+];
+
+export const seedStorageScene = (): void => {
   seedBrandSettings();
   const state = useAppStore.getState();
   useAppStore.setState({
@@ -336,11 +387,15 @@ const seedStorage = (): void => {
     },
     loadProjectBranches: async () => undefined,
     loadDeletedBranches: async () => undefined,
-    deletedBranches: { [SETTINGS_WORKSPACE_ID]: [] },
+    deletedBranches: { [SETTINGS_WORKSPACE_ID]: DELETED },
   });
+};
+
+const seedBrandStorage = (): void => {
+  seedStorageScene();
   scrollToBranches();
 };
 
 export const BrandStorageScene = () => (
-  <SettingsFrame focus={{ scope: 'app', section: 'storage' }} seed={seedStorage} />
+  <SettingsFrame focus={{ scope: 'app', section: 'storage' }} seed={seedBrandStorage} />
 );
