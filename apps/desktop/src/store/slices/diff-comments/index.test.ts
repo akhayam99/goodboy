@@ -211,13 +211,6 @@ describe('store contract', () => {
       expect(store.getState().diffComments[SESSION_ID]?.[0]?.id).toBe('fresh');
     });
 
-    it('resolveDiffComment writes through then refreshes the list', async () => {
-      const store = useAppStore;
-      storySpies.listDiffCommentsForSession.mockResolvedValueOnce([]);
-      await store.getState().resolveDiffComment(SESSION_ID, 'd1');
-      expect(storySpies.resolveDiffComment).toHaveBeenCalledWith(expect.anything(), 'd1');
-    });
-
     it('deleteDiffComment writes through then refreshes', async () => {
       const store = useAppStore;
       storySpies.listDiffCommentsForSession.mockResolvedValueOnce([]);

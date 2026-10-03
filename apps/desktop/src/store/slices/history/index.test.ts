@@ -769,16 +769,49 @@ describe('apply a planned rewrite', () => {
         before: 2,
         after: 1,
         includes: { x1: ['Retry duplicate events'] },
+        absorbed: { x1: [{ sha: 'b2', title: 'Retry duplicate events', mode: 'fixup' }] },
         lines: [
           {
             action: 'fixup',
             text: 'Folded “Retry duplicate events” into “Guard the settlement batch”, keeping its title',
+            sha: 'b2',
+            target: 'a1',
           },
-          { action: 'rebase', text: "Started the branch from today's main" },
+          {
+            action: 'rebase',
+            text: "Started the branch from today's main",
+            sha: null,
+            target: 'main-sha',
+          },
         ],
       }),
     );
     expect(engine.pushWithLease).not.toHaveBeenCalled();
+  });
+
+  it('names a fold target by its new title when the same rewrite renamed it', async () => {
+    const harnessed = harness();
+    seedDraft({
+      harnessed,
+      items: [
+        { sha: 'a1', verb: 'reword', message: 'Guard every settlement batch\n\nBody' },
+        { sha: 'b2', verb: 'fixup', target: 'a1' },
+      ],
+    });
+    engine.runHistoryPlan.mockResolvedValue({ kind: 'tried', result: TRIED });
+
+    await harnessed.slice.applyHistoryDraft({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      shouldPush: false,
+    });
+
+    expect(harnessed.read().historyRuns[MOUNT_ID]?.applied?.lines.map((line) => line.text)).toEqual(
+      [
+        'Folded “Retry duplicate events” into “Guard every settlement batch”, keeping its title',
+        'Renamed “Guard the settlement batch” to “Guard every settlement batch”',
+      ],
+    );
   });
 
   it('counts as new only the commits the rewrite made, never one it kept as it was', async () => {

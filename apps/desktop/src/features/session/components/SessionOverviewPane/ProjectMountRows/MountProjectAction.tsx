@@ -7,6 +7,7 @@ import { useAppStore } from '../../../../../store';
 import { MountProjectList } from './MountProjectList';
 import { starredProjectsFirst } from '../../../../../shared/utils/starredProjectsFirst';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { isProjectInFirstLap } from '../../../../../store/slices/bootstrap/firstLap';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -32,6 +33,7 @@ export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'ico
       return state.projects.filter(
         (project) =>
           project.workspaceId === workspaceId &&
+          !isProjectInFirstLap({ state, projectId: project.id }) &&
           mounts.every((mount) => mount.projectId !== project.id),
       );
     }),

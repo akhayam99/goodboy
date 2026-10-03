@@ -27,6 +27,7 @@ import {
 import { sessionCardShell, sessionTone } from '../../../../session/components/sessionCardShell';
 import { useOpenSession } from '../../../../../shared/hooks/useOpenSession';
 import { sessionTitle } from '../../../../session/sessionTitle';
+import { ChatOriginGlyph } from '../../../../../shared/components/ChatOriginGlyph';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { getLinkedRequest } from './getLinkedRequest';
 import { PrRequestSlot } from './PrRequestSlot';
@@ -232,6 +233,7 @@ export const StageBoardCard = memo(function StageBoardCard({
               />
             </button>
           )}
+          <ChatOriginGlyph sessionId={session.id} />
         </span>
 
         {progress !== null ? (

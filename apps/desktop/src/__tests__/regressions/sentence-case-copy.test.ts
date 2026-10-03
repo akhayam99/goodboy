@@ -1,7 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { ARTIFACT_GENERATION_PRESENTATION } from '../../features/artifacts/artifactCollection';
-import { ARTIFACT_STATUS_PRESENTATION } from '../../features/artifacts/artifact-status';
 import { ARTIFACT_CTA_BLOCK_COPY } from '../../features/artifacts/artifactCtaState';
 import { REVIEW_COMMENT_GROUP_LABEL } from '../../features/resolve/reviewCommentState';
 import { COMPOSE_COPY, REVIEW_FLOW_LABEL } from '../../features/resolve/reviewFlowCopy';
@@ -19,9 +18,6 @@ const BRAND_LOWERCASE = ['pnpm', 'npm', 'gh', 'git'];
 const NAMED_COPY: Readonly<Record<string, ReadonlyArray<string | null>>> = {
   ARTIFACT_GENERATION_PRESENTATION: Object.values(ARTIFACT_GENERATION_PRESENTATION).flatMap(
     (states) => Object.values(states).map((presentation) => presentation.label),
-  ),
-  ARTIFACT_STATUS_PRESENTATION: Object.values(ARTIFACT_STATUS_PRESENTATION).map(
-    (presentation) => presentation.label,
   ),
   ARTIFACT_CTA_BLOCK_COPY: Object.values(ARTIFACT_CTA_BLOCK_COPY),
   REVIEW_COMMENT_GROUP_LABEL: Object.values(REVIEW_COMMENT_GROUP_LABEL),

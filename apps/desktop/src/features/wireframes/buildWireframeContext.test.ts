@@ -71,6 +71,7 @@ const planWith = ({ title }: { readonly title: string }): PlanArtifact => ({
   sourceTurnId: null,
   createdAt: NOW,
   updatedAt: NOW,
+  openedAt: null,
 });
 
 const transcripts: Readonly<Record<string, ReadonlyArray<TurnEvent>>> = {

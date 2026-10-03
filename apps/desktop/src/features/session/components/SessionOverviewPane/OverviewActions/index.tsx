@@ -1,7 +1,13 @@
-import { LayoutTemplate } from 'lucide-react';
+import { ChevronDown, LayoutTemplate, Plus } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { Button, OverflowMenu, tintClasses, type OverflowMenuItem } from '@goodboy/ui';
-import type { Session } from '@goodboy/types';
+import {
+  AnchoredPopover,
+  Button,
+  MenuItems,
+  useDropdown,
+  type OverflowMenuItem,
+} from '@goodboy/ui';
+import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { hasActiveWorkflowRun } from '../../../../workflows/activeWorkflowRuns';
@@ -15,6 +21,13 @@ type Props = {
   readonly onOpenRun: () => void;
 };
 
+type EventParams = {
+  readonly sessionId: SessionId;
+};
+
+const startAgentEventOf = ({ sessionId }: EventParams): string =>
+  `goodboy:overview-start-agent:${sessionId}`;
+
 export const OverviewActions = ({ session, onOpenWorkflowBuilder, onOpenRun }: Props) => {
   const sessionId = session.id;
   const openArtifactCreation = useAppStore((state) => state.openArtifactCreation);
@@ -22,15 +35,35 @@ export const OverviewActions = ({ session, onOpenWorkflowBuilder, onOpenRun }: P
     useShallow((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY),
   );
   const isRunActive = hasActiveWorkflowRun({ workflowRuns: session.workflowRuns, agents });
+  const dropdown = useDropdown({
+    align: 'end',
+    width: 'min-w-[200px]',
+    expectedHeight: 200,
+  });
+  const startAgentEvent = startAgentEventOf({ sessionId });
 
-  const createItems: ReadonlyArray<OverflowMenuItem> = [
+  const items: ReadonlyArray<OverflowMenuItem> = [
+    {
+      kind: 'item',
+      key: 'workflow',
+      label: isRunActive ? 'Open run' : 'Run workflow',
+      icon: CONCEPT_ICONS.workflows,
+      onClick: isRunActive ? onOpenRun : onOpenWorkflowBuilder,
+    },
+    {
+      kind: 'item',
+      key: 'agent',
+      label: 'Start agent',
+      icon: CONCEPT_ICONS.agents,
+      onClick: () => window.dispatchEvent(new CustomEvent(startAgentEvent)),
+    },
+    { kind: 'separator', key: 'artifacts' },
     {
       kind: 'item',
       key: 'report',
       label: 'Report',
       description: reportCreationAdapter.ctaTitle,
       icon: CONCEPT_ICONS.changelog,
-      tone: 'info',
       onClick: () => openArtifactCreation({ sessionId, kind: 'report', workflowRunId: null }),
     },
     {
@@ -39,27 +72,33 @@ export const OverviewActions = ({ session, onOpenWorkflowBuilder, onOpenRun }: P
       label: 'Wireframe',
       description: wireframeCreationAdapter.ctaTitle,
       icon: LayoutTemplate,
-      tone: 'primary',
       onClick: () => openArtifactCreation({ sessionId, kind: 'wireframe', workflowRunId: null }),
     },
   ];
 
-  return (
-    <div className="flex shrink-0 items-center gap-1.5">
-      <Button
-        variant="secondary"
-        size="sm"
-        onClick={isRunActive ? onOpenRun : onOpenWorkflowBuilder}
-      >
-        <CONCEPT_ICONS.workflows
-          size={ICON_SIZE.control}
-          aria-hidden
-          className={tintClasses('primary').icon}
-        />
-        {isRunActive ? 'Open run' : 'Run workflow'}
-      </Button>
-      <CreateAgentPopover sessionId={sessionId} />
-      <OverflowMenu label="Create" items={createItems} />
-    </div>
+  const menu = (
+    <AnchoredPopover
+      dropdown={dropdown}
+      role="menu"
+      ariaLabel="New"
+      className="py-1"
+      trigger={
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={dropdown.toggle}
+          aria-haspopup="menu"
+          aria-expanded={dropdown.open}
+        >
+          <Plus size={ICON_SIZE.control} aria-hidden className="shrink-0" />
+          New
+          <ChevronDown size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+        </Button>
+      }
+    >
+      <MenuItems items={items} onClose={dropdown.close} />
+    </AnchoredPopover>
   );
+
+  return <CreateAgentPopover sessionId={sessionId} openEvent={startAgentEvent} anchor={menu} />;
 };

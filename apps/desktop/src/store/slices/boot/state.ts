@@ -1,5 +1,5 @@
 import type { NewerDatabase } from '../../../shared/lib/newerDatabase';
-import type { DetectedEditor } from '../../../shared/lib/editor';
+import type { DetectedBrowser, DetectedEditor } from '../../../shared/lib/editor';
 
 export type BootPhase =
   | 'pending'
@@ -18,6 +18,7 @@ export type BootState = {
   readonly newerDatabase: NewerDatabase | null;
   readonly error: string | null;
   readonly detectedEditors: ReadonlyArray<DetectedEditor>;
+  readonly detectedBrowsers: ReadonlyArray<DetectedBrowser>;
   readonly boardReady: boolean;
 };
 
@@ -28,5 +29,6 @@ export const bootInitialState: BootState = {
   newerDatabase: null,
   error: null,
   detectedEditors: [],
+  detectedBrowsers: [],
   boardReady: true,
 };

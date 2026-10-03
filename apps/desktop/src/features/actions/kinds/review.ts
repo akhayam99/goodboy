@@ -2,7 +2,7 @@ import { ArrowUp, Cpu, MessageSquarePlus, RotateCw } from 'lucide-react';
 import type { DiffComment, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { sessionPlace } from '../../../store/slices/navigation/place';
-import { isOpenNote } from '../../resolve/notes/noteThread';
+import { isOpenNote, noteThreadId } from '../../resolve/notes/noteThread';
 import {
   POST_NOTES_LABEL,
   postNotesResultMessage,
@@ -154,7 +154,11 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
             isOpenNote({ note }),
           ),
           addReviewDraft: state.addReviewDraft,
-          resolveDiffComment: state.resolveDiffComment,
+          closeNote: (noteId) =>
+            state.closeResolvedNote({
+              sessionId: facts.sessionId,
+              threadId: noteThreadId({ noteId }),
+            }),
         });
         env.showToast({ kind: 'success', message: postNotesResultMessage(result) });
       },

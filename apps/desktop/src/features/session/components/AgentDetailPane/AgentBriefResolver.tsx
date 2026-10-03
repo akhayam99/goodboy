@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { ArrowUp } from 'lucide-react';
-import { Button } from '@goodboy/ui';
+import { Button, Notice } from '@goodboy/ui';
 import type { Agent, Session, SessionId } from '@goodboy/types';
 import { useAppStore, agentPlace } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -52,36 +52,40 @@ export const AgentBriefResolver = ({ session, agent, brief }: Props) => {
   ];
 
   const batchActions = (
-    <div className="flex min-w-0 flex-col gap-3 rounded-lg bg-subtle px-4 py-3">
-      <p className="text-secondary text-muted-foreground">{batchChildNotice({ total })}</p>
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          size="sm"
-          variant="primary"
-          onClick={() =>
-            void openReview({
-              sessionId,
-              destination: {
-                kind: 'threads',
-                mountId: brief.attempt.mountTarget?.mountId ?? null,
-                threadIds: ordered,
-              },
-            })
-          }
-        >
-          {`${RESOLVER_BRIEF_COPY.openInReview} (${total})`}
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() =>
-            navigate({ to: agentPlace({ sessionId, agentId: agent.id, pane: 'transcript' }) })
-          }
-        >
-          {RESOLVER_BRIEF_COPY.openTranscript}
-        </Button>
-      </div>
-    </div>
+    <Notice
+      tone="info"
+      placement="inline"
+      title={batchChildNotice({ total })}
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={() =>
+              void openReview({
+                sessionId,
+                destination: {
+                  kind: 'threads',
+                  mountId: brief.attempt.mountTarget?.mountId ?? null,
+                  threadIds: ordered,
+                },
+              })
+            }
+          >
+            {`${RESOLVER_BRIEF_COPY.openInReview} (${total})`}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() =>
+              navigate({ to: agentPlace({ sessionId, agentId: agent.id, pane: 'transcript' }) })
+            }
+          >
+            {RESOLVER_BRIEF_COPY.openTranscript}
+          </Button>
+        </div>
+      }
+    />
   );
 
   const pushNow = PUSHABLE.has(entry.state) ? (

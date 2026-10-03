@@ -73,7 +73,7 @@ describe('useDiffReviewThreads', () => {
       anchor: { side: 'new', lineNumber: 42 },
       statusLabel: REVIEW_MARKER_LABEL,
       canEdit: false,
-      canResolve: false,
+      canClose: false,
       canReopen: false,
       canDelete: false,
     });

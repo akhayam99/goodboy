@@ -1,5 +1,5 @@
 import { useId, type FormEvent } from 'react';
-import { Button, Eyebrow, Input, Notice } from '@goodboy/ui';
+import { Button, Eyebrow, FormActions, Input, Notice } from '@goodboy/ui';
 import { useNewProject } from '../../hooks/useNewProject';
 
 type Props = {
@@ -104,16 +104,16 @@ export const NewProjectForm = ({ onCreated, onCancel, autoFocus = true }: Props)
         />
       ) : null}
 
-      <div className="flex items-center gap-2">
-        <Button type="submit" disabled={!model.canSubmit} aria-busy={model.busy}>
-          Create project
-        </Button>
+      <FormActions>
         {onCancel === undefined ? null : (
           <Button type="button" variant="ghost" disabled={model.busy} onClick={onCancel}>
             Cancel
           </Button>
         )}
-      </div>
+        <Button type="submit" disabled={!model.canSubmit} aria-busy={model.busy}>
+          Create project
+        </Button>
+      </FormActions>
     </form>
   );
 };

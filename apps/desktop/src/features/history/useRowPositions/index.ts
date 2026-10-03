@@ -1,6 +1,7 @@
 import { useLayoutEffect, useState } from 'react';
 import type { RefObject } from 'react';
 import { HISTORY_GRAPH } from '../historyGraphGeometry';
+import { historyGraphHeight } from '../historyGraphHeight';
 
 export type RowPositions = {
   readonly height: number;
@@ -32,7 +33,12 @@ const measure = ({ list }: { readonly list: HTMLElement }): RowPositions => {
       topWithin({ row, list }) + Math.min(row.offsetHeight / 2, HISTORY_GRAPH.nodeOffset),
     );
   }
-  return { height: list.scrollHeight, y };
+  const boxes = Array.from(list.children).flatMap((child) =>
+    child instanceof HTMLElement && child.dataset.historySlot === undefined
+      ? [{ top: child.offsetTop, height: child.offsetHeight }]
+      : [],
+  );
+  return { height: historyGraphHeight({ boxes }), y };
 };
 
 const isSame = ({ left, right }: { readonly left: RowPositions; readonly right: RowPositions }) =>

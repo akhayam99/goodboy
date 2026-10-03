@@ -12,7 +12,7 @@
     "apps/desktop/src/features/permissions/components/DiffViewSelector/index.tsx": 1,
     "apps/desktop/src/features/resolve/components/ReviewCommits/ReviewCommitRow.tsx": 1,
     "apps/desktop/src/features/resolve/components/ReviewFlow/ReviewComment.tsx": 1,
-    "apps/desktop/src/features/resolve/components/ReviewFlow/ReviewLaunchStrip.tsx": 1,
+    "apps/desktop/src/features/resolve/ReviewLaunchStrip.tsx": 1,
     "apps/desktop/src/features/review/components/ReviewPane/WriteReview/LineComment.tsx": 1,
     "apps/desktop/src/features/scripts/components/ScriptEditor/index.tsx": 1,
     "apps/desktop/src/features/scripts/components/ScriptsPanel/ScriptsFilterInput.tsx": 1,

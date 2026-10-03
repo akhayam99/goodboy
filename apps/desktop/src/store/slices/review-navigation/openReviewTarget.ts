@@ -2,6 +2,7 @@ import { formatError } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { selectActiveMountId } from '../project-mounts/selectors';
 import { sessionPlace } from '../navigation/place';
+import { LOCAL_SOURCE_KEY } from '../review-source/types';
 import { setPullRequestMode } from './setPullRequestMode';
 import {
   REVIEW_HOME,
@@ -65,6 +66,11 @@ export const openReviewTarget = async ({
   const requestId = crypto.randomUUID();
   if (destination.kind === 'threads') {
     get().setReviewSelection({ sessionId, threadIds: reviewThreadIds({ destination }) });
+  }
+  if (destination.kind === 'notes') {
+    set((state) => ({
+      reviewSourceKeys: { ...state.reviewSourceKeys, [sessionId]: LOCAL_SOURCE_KEY },
+    }));
   }
   const base = {
     requestId,

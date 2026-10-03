@@ -1,5 +1,7 @@
 import { deleteArtifact } from './deleteArtifact';
+import { deleteArtifactPermanently } from './deleteArtifactPermanently';
 import { loadSessionArtifacts } from './loadSessionArtifacts';
+import { markArtifactOpened } from './markArtifactOpened';
 import { restoreArtifact } from './restoreArtifact';
 import { restoreArtifactRevision } from './restoreArtifactRevision';
 import { importWireframe, replaceWireframeSpec } from './importWireframe';
@@ -25,8 +27,10 @@ export const createArtifactsSlice = ({ set, get }: SliceDeps) => {
     loadSessionArtifacts: loadSessionArtifacts(set),
     updateArtifactSource: updateArtifactSource(set),
     setArtifactStatus: setArtifactStatus(set),
-    deleteArtifact: deleteArtifact(set),
-    restoreArtifact: restoreArtifact(set),
+    deleteArtifact: deleteArtifact(set, get),
+    deleteArtifactPermanently: deleteArtifactPermanently(set, get),
+    restoreArtifact: restoreArtifact(set, get),
+    markArtifactOpened: markArtifactOpened(set),
     restoreArtifactRevision: restoreArtifactRevision(set),
     importWireframe: importWireframe(set, get),
     replaceWireframeSpec: replaceWireframeSpec(set),

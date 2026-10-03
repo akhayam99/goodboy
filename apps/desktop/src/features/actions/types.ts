@@ -182,7 +182,7 @@ export type ArtifactPortId =
   | 'saveSource'
   | 'openInBrowser'
   | 'showInFinder'
-  | 'discard';
+  | 'delete';
 
 export type ArtifactPort = {
   readonly run: () => void | Promise<void>;

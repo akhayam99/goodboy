@@ -11,6 +11,7 @@ import type { ProviderDisplayInfo } from '../../../../../features/providers/prov
 import { useAppStore } from '../../../../../store';
 import type { StorageFolder } from '../../../../../store/slices/storage/types';
 import { sceneClock } from '../../sceneClock';
+import { sceneParam } from './sceneParams';
 
 const clock = sceneClock({ anchor: '2026-09-22T10:12:00.000Z' });
 
@@ -243,9 +244,18 @@ export const seedSettingsBase = (): void => {
       { binary: 'code', label: 'VS Code' },
       { binary: 'cursor', label: 'Cursor' },
       { binary: 'zed', label: 'Zed' },
+      { binary: 'webstorm', label: 'WebStorm' },
+      { binary: 'nvim', label: 'Neovim' },
     ],
     loadDetectedEditors: async () => undefined,
-    loadSetting: async () => 'code',
+    detectedBrowsers: [
+      { id: 'safari', label: 'Safari' },
+      { id: 'chrome', label: 'Chrome' },
+      { id: 'arc', label: 'Arc' },
+    ],
+    loadDetectedBrowsers: async () => undefined,
+    loadSetting: async (key: string) =>
+      key === 'browser.app' ? (sceneParam({ key: 'browser' }) ?? 'system') : 'code',
     saveSetting: async () => undefined,
     githubStatus: { mode: 'pat', available: true, user: 'harborline-bot', scopes: ['repo'] },
     refreshGithubStatus: async () => undefined,

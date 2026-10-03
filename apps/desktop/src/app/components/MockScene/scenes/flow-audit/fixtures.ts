@@ -98,6 +98,7 @@ export const CHAT_ARTIFACTS = [
     sourceTurnId: CHAT_REPORT_RUN_ID,
     createdAt: clock.iso({ at: '2026-09-16T10:36:00.000Z' }),
     updatedAt: clock.iso({ at: '2026-09-16T10:36:00.000Z' }),
+    openedAt: null,
   },
   {
     id: 'mock-flow-artifact-replay-wireframe' as ArtifactId,
@@ -115,6 +116,7 @@ export const CHAT_ARTIFACTS = [
     sourceTurnId: CHAT_WIREFRAME_RUN_ID,
     createdAt: clock.iso({ at: '2026-09-16T10:41:00.000Z' }),
     updatedAt: clock.iso({ at: '2026-09-16T10:41:00.000Z' }),
+    openedAt: null,
   },
 ] satisfies ReadonlyArray<SessionArtifact>;
 

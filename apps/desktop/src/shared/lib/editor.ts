@@ -9,6 +9,15 @@ export const detectEditors = async (): Promise<ReadonlyArray<DetectedEditor>> =>
   return invokeCommand<DetectedEditor[]>('detect_editors');
 };
 
+export type DetectedBrowser = {
+  readonly id: string;
+  readonly label: string;
+};
+
+export const detectBrowsers = async (): Promise<ReadonlyArray<DetectedBrowser>> => {
+  return invokeCommand<DetectedBrowser[]>('detect_browsers');
+};
+
 type OpenInEditorParams = {
   readonly path: string;
   readonly editor: string;

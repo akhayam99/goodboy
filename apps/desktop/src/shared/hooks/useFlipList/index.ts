@@ -7,18 +7,20 @@ const FLIP_EASING = 'cubic-bezier(0.2, 0, 0, 1)';
 type Params = {
   readonly containerRef: RefObject<HTMLElement | null>;
   readonly orderKey: string;
+  readonly isEnabled?: boolean;
 };
 
 const prefersReducedMotion = (): boolean =>
   typeof window.matchMedia === 'function' &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-export const useFlipList = ({ containerRef, orderKey }: Params): void => {
+export const useFlipList = ({ containerRef, orderKey, isEnabled = true }: Params): void => {
   const lastTops = useRef<ReadonlyMap<string, number>>(new Map());
 
   useLayoutEffect(() => {
     const container = containerRef.current;
-    if (container === null) {
+    if (container === null || !isEnabled) {
+      lastTops.current = new Map();
       return;
     }
     const isReduced = prefersReducedMotion();
@@ -41,5 +43,5 @@ export const useFlipList = ({ containerRef, orderKey }: Params): void => {
       );
     }
     lastTops.current = nextTops;
-  }, [containerRef, orderKey]);
+  }, [containerRef, isEnabled, orderKey]);
 };

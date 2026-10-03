@@ -1,14 +1,12 @@
 import { PaneShell } from '@goodboy/ui';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
 import type { LensKind } from '../../../../store';
 import { HeaderBand } from './HeaderBand';
 import { ArchivedGate } from './ArchivedGate';
 import { TimelinePane } from '../SessionWorkspace/parts/TimelinePane';
 import { OverviewActions } from './OverviewActions';
-import { AttentionCallout } from './AttentionCallout';
-import { useAttentionTarget } from './useAttentionTarget';
-import { isAttentionCalloutShown } from './lib';
+import { ProjectMountRows } from './ProjectMountRows';
 import { NextStepSlot } from '../../../suggestions/components/NextStepSlot';
 
 type Props = {
@@ -18,22 +16,10 @@ type Props = {
 
 const NO_SHOWN_QUESTIONS: ReadonlySet<string> = new Set();
 
-const NO_AGENTS: ReadonlySet<string> = new Set();
-
 export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   const sessionId: SessionId = session.id;
   const isArchived = session.archivedAt != null;
   const [shownQuestionIds, setShownQuestionIds] = useState<ReadonlySet<string>>(NO_SHOWN_QUESTIONS);
-  const attention = useAttentionTarget({ session });
-  const calloutAgentId =
-    attention.target?.kind === 'agent' &&
-    isAttentionCalloutShown({ attention, isQuestionShownBelow: true })
-      ? attention.target.agentId
-      : null;
-  const shownApprovalAgentIds = useMemo(
-    () => (calloutAgentId === null ? NO_AGENTS : new Set<string>([calloutAgentId])),
-    [calloutAgentId],
-  );
 
   const openWorkflowBuilder = () => {
     window.dispatchEvent(
@@ -44,19 +30,14 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   return (
     <PaneShell
       header={<HeaderBand session={session} onSelectLens={onSelectLens} />}
+      headerRhythm="section"
       animationClassName="animate-fade-in"
     >
-      <AttentionCallout
-        sessionId={sessionId}
-        attention={attention}
-        onSelectLens={onSelectLens}
-        isQuestionShownBelow
-      />
+      <ProjectMountRows session={session} />
       <NextStepSlot
         session={session}
         onSelectLens={onSelectLens}
         shownQuestionIds={shownQuestionIds}
-        shownAgentIds={shownApprovalAgentIds}
       />
       <TimelinePane
         session={session}

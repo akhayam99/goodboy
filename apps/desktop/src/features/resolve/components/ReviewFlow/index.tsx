@@ -57,7 +57,7 @@ import { ReviewComment } from './ReviewComment';
 import { ReviewHeaderActions } from './ReviewHeaderActions';
 import { ReviewHeaderMeta } from './ReviewHeaderMeta';
 import { PushBanner } from './PushBanner';
-import { ReviewLaunchStrip } from './ReviewLaunchStrip';
+import { ReviewLaunchStrip } from '../../ReviewLaunchStrip';
 import { ReviewList } from './ReviewList';
 import { ReviewListMenu } from './ReviewListMenu';
 import { ReviewSelectionBar } from './ReviewSelectionBar';

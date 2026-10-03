@@ -51,6 +51,7 @@ export const ArtifactStatesScene = () => {
   useEffect(() => {
     seedArtifactScene({
       focusedArtifactId: VARIANT === 'detail-failed' ? REPORT_ARTIFACT_ID : null,
+      withStates: VARIANT === 'collection',
     });
     seedShellChrome({
       session: SESSION,

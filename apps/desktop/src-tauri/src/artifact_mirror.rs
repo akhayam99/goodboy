@@ -372,7 +372,12 @@ fn windows_default_browser_command() -> Option<String> {
     }
 }
 
-fn open_with_browser(path: &Path) -> std::io::Result<()> {
+fn open_with_browser(app: &tauri::AppHandle, path: &Path) -> std::io::Result<()> {
+    if let Some(launch) = crate::editor::chosen_browser_launch(app, &path.to_string_lossy()) {
+        if crate::editor::run_browser_launch(&launch) {
+            return Ok(());
+        }
+    }
     #[cfg(target_os = "macos")]
     {
         if let Some(app_path) = macos_default_browser_app_path() {
@@ -495,13 +500,14 @@ pub(crate) fn mirror_file(
 
 #[tauri::command]
 pub async fn artifact_mirror_open(
+    app: tauri::AppHandle,
     workspace_slug: String,
     folder: String,
     file: String,
 ) -> Result<(), ArtifactExportError> {
     tauri::async_runtime::spawn_blocking(move || {
         let path = mirror_file(&home()?, &workspace_slug, &folder, &file)?;
-        open_with_browser(&path)?;
+        open_with_browser(&app, &path)?;
         Ok(())
     })
     .await

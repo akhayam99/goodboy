@@ -66,6 +66,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     if (input.origin !== 'mount-continuation') {
       resetMountContinuationChain({ sessionId: input.sessionId });
     }
+    if (input.origin === undefined || input.origin === 'operator') {
+      void get().flushChatLinks({ sessionId: input.sessionId });
+    }
     if (input.agentId !== undefined && input.origin === 'workflow') {
       const claim = claimWorkflowTurn({ agentId: input.agentId, nowMs: Date.now() });
       if (claim === 'tripped') {

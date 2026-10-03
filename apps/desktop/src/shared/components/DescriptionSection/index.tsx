@@ -1,6 +1,6 @@
 import { useState, type MouseEvent } from 'react';
 import { Pencil } from 'lucide-react';
-import { Button, Markdown, Textarea, cn } from '@goodboy/ui';
+import { Button, cn, EmptyLine, Markdown, Textarea } from '@goodboy/ui';
 import { useInlineProseEdit } from '../../hooks/useInlineProseEdit';
 import { isInteractiveClick } from '../../utils/isInteractiveClick';
 import { StudioWidget } from '@goodboy/ui';
@@ -106,7 +106,7 @@ export const DescriptionSection = ({ text, onSave }: Props) => {
             <Markdown text={text} className="text-prose" />
           </div>
         ) : (
-          <p className="text-body italic text-faint-foreground">No description.</p>
+          <EmptyLine>No description.</EmptyLine>
         )}
       </div>
       {overflowsClamp({ text }) ? (

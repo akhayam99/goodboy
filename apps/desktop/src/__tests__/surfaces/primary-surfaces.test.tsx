@@ -303,7 +303,7 @@ describe('primary surfaces mount on real store selectors', () => {
     await mountSurface({ ui: <KeepAliveWorkSurface sessionId={sessionId} isActive /> });
 
     expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Start agent' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'New' })).toBeDefined();
     expect(screen.getByTestId('context-chip')).toBeDefined();
     expectNoRenderLoop();
   });

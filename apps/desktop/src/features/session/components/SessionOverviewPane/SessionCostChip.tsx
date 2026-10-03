@@ -8,6 +8,7 @@ import {
   tintClasses,
   useDropdown,
 } from '@goodboy/ui';
+import { useShallow } from 'zustand/react/shallow';
 import type { SessionId } from '@goodboy/types';
 import { openImpactStudio } from '../../../impact/openImpactStudio';
 import { SessionSpendPopover } from '../../../budget/components/SessionSpendPopover';
@@ -16,13 +17,11 @@ import { sessionSpendPresentation } from '../../../budget/sessionSpendPresentati
 import { SESSION_SPEND_LIMIT_EDIT_EVENT } from '../../../budget/requestSessionSpendLimitEdit';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { manageDialogFocus } from './manageDialogFocus';
+import { pickKeys } from '../../../../shared/utils/pickKeys';
 
 type Props = {
   readonly sessionId: SessionId;
 };
-
-const EMPTY_KIND_OVERRIDES = {};
-const EMPTY_RUN_HISTORY = {};
 
 type EditRequestParams = {
   readonly event: Event;
@@ -45,8 +44,13 @@ const isEditRequestFor = ({ event, sessionId }: EditRequestParams): boolean => {
 export const SessionCostChip = ({ sessionId }: Props) => {
   const records = useAppStore((state) => state.sessionTelemetry[sessionId] ?? EMPTY_ARRAY);
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
-  const agentRunHistory = useAppStore((state) => state.agentRunHistory ?? EMPTY_RUN_HISTORY);
-  const agentKindOverride = useAppStore((state) => state.agentKindOverride ?? EMPTY_KIND_OVERRIDES);
+  const agentIds = useMemo(() => agents.map((agent) => agent.id), [agents]);
+  const agentRunHistory = useAppStore(
+    useShallow((state) => pickKeys({ source: state.agentRunHistory, keys: agentIds })),
+  );
+  const agentKindOverride = useAppStore(
+    useShallow((state) => pickKeys({ source: state.agentKindOverride, keys: agentIds })),
+  );
   const limit = useAppStore((state) => state.sessionBudgets[sessionId] ?? null);
   const loadSessionTelemetry = useAppStore((state) => state.loadSessionTelemetry);
   const loadSessionBudget = useAppStore((state) => state.loadSessionBudget);

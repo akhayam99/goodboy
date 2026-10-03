@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Bot, Trash2 } from 'lucide-react';
+import { Bot, Lock, Trash2 } from 'lucide-react';
 import { Avatar, Chip, InlineConfirm, Markdown, cn, tintClasses } from '@goodboy/ui';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { DiffComments, DiffThread } from './types';
+import { THREAD_ACTION_CLASS as ACTION_CLASS } from './threadActionClass';
+import { ThreadActionButton } from './ThreadActionButton';
 import { CommentComposer } from './CommentComposer';
 import { useNow } from '../../../../shared/hooks/useNow';
 
@@ -12,8 +14,7 @@ type Props = {
   readonly comments: DiffComments;
 };
 
-const ACTION_CLASS =
-  'rounded-sm px-1 text-secondary text-muted-foreground transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
+const CLOSE_NOTE_LABEL = 'Close note';
 
 const excerpt = (body: string): string => {
   const line = body.split('\n')[0] ?? '';
@@ -25,6 +26,9 @@ export const CommentThread = ({ thread, comments }: Props) => {
   const [editing, setEditing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const tint = tintClasses(thread.tone);
+  const noun = comments.noun ?? 'comment';
+  const lockReason = thread.lockReason ?? null;
+  const isLocked = lockReason !== null;
 
   if (thread.isResolved) {
     return (
@@ -36,6 +40,12 @@ export const CommentThread = ({ thread, comments }: Props) => {
         <span className="shrink-0 font-medium">{thread.statusLabel}</span>
         <span aria-hidden>·</span>
         <span className="min-w-0 truncate">&ldquo;{excerpt(thread.body)}&rdquo;</span>
+        {(thread.actions ?? []).map((action) => (
+          <span key={action.id} className="flex shrink-0 items-center gap-1.5">
+            <span aria-hidden>·</span>
+            <ThreadActionButton action={action} />
+          </span>
+        ))}
         {thread.canReopen && comments.onReopen ? (
           <>
             <span aria-hidden>·</span>
@@ -55,7 +65,7 @@ export const CommentThread = ({ thread, comments }: Props) => {
   if (editing && comments.onEdit) {
     return (
       <CommentComposer
-        label="Edit comment"
+        label={`Edit ${noun}`}
         submitLabel="Save"
         initialBody={thread.body}
         onSubmit={(body) => {
@@ -91,18 +101,23 @@ export const CommentThread = ({ thread, comments }: Props) => {
         <span>· {formatAge({ from: thread.createdAt, now })}</span>
         <Chip tone={thread.tone} size="3xs" bordered={false} label={thread.statusLabel} />
         <span className="ml-auto flex shrink-0 items-center gap-1">
+          {(thread.actions ?? []).map((action) => (
+            <ThreadActionButton key={action.id} action={action} />
+          ))}
           {thread.canEdit && comments.onEdit ? (
             <button type="button" className={ACTION_CLASS} onClick={() => setEditing(true)}>
               Edit
             </button>
           ) : null}
-          {thread.canResolve && comments.onResolve ? (
+          {thread.canClose && comments.onClose ? (
             <button
               type="button"
               className={ACTION_CLASS}
-              onClick={() => comments.onResolve?.(thread.id)}
+              disabled={isLocked}
+              title={lockReason ?? undefined}
+              onClick={() => comments.onClose?.(thread.id)}
             >
-              Resolve
+              {CLOSE_NOTE_LABEL}
             </button>
           ) : null}
           {thread.canReopen && comments.onReopen ? (
@@ -118,6 +133,8 @@ export const CommentThread = ({ thread, comments }: Props) => {
             <button
               type="button"
               className={ACTION_CLASS}
+              disabled={isLocked}
+              title={lockReason ?? undefined}
               onClick={() => setConfirmingDelete(true)}
             >
               Delete
@@ -128,12 +145,26 @@ export const CommentThread = ({ thread, comments }: Props) => {
       <div className="min-w-0 text-body text-foreground">
         <Markdown text={thread.body} variant="preview" />
       </div>
+      {isLocked || (thread.meta ?? null) !== null ? (
+        <div className="flex min-w-0 items-center gap-1.5 text-secondary text-faint-foreground">
+          {isLocked ? (
+            <>
+              <Lock size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+              <span className="shrink-0">{lockReason}</span>
+            </>
+          ) : null}
+          {isLocked && (thread.meta ?? null) !== null ? <span aria-hidden>·</span> : null}
+          {(thread.meta ?? null) !== null ? (
+            <span className="min-w-0 truncate">{thread.meta}</span>
+          ) : null}
+        </div>
+      ) : null}
       {thread.footer ?? null}
       {confirmingDelete ? (
         <InlineConfirm
           role="danger"
           icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-          title="Delete this comment?"
+          title={`Delete this ${noun}?`}
           confirmLabel="Delete"
           onConfirm={() => {
             comments.onDelete?.(thread.id);
