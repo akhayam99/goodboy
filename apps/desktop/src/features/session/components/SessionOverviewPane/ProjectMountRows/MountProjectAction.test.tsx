@@ -7,6 +7,7 @@ import type { SessionId, WorkspaceId } from '@goodboy/types';
 const { store } = vi.hoisted(() => ({
   store: {
     projects: [] as ReadonlyArray<Record<string, unknown>>,
+    bootstrapPhase: {},
     sessionProjectMounts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
     ensureProjectMounted: vi.fn(async () => undefined),
     emitNotification: vi.fn(),

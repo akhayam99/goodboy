@@ -50,7 +50,7 @@ export const ProjectLinkAddRow = ({
         <Plus size={ICON_SIZE.row} aria-hidden /> Add
       </Button>
       <Button variant="secondary" size="sm" onClick={onNewProject} disabled={busy}>
-        <FolderPlus size={ICON_SIZE.row} aria-hidden /> New project
+        <FolderPlus size={ICON_SIZE.row} aria-hidden /> Start a new project
       </Button>
     </div>
   );

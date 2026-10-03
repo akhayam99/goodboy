@@ -78,17 +78,17 @@ export const ProjectStep = ({
       ) : (
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-2">
-            <Button variant="primary" disabled={busy} onClick={() => void pick(null)}>
-              <FolderOpen size={ICON_SIZE.control} aria-hidden />
-              Choose a folder
-            </Button>
             <Button
-              variant="secondary"
+              variant="primary"
               disabled={busy || isStarting}
               onClick={() => setIsStarting(true)}
             >
               <FolderPlus size={ICON_SIZE.control} aria-hidden />
               Start a new project
+            </Button>
+            <Button variant="secondary" disabled={busy} onClick={() => void pick(null)}>
+              <FolderOpen size={ICON_SIZE.control} aria-hidden />
+              Open a folder
             </Button>
           </div>
           {isStarting ? (
