@@ -12,7 +12,7 @@ import {
 } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { openUrl } from '../../../shared/lib/editor';
-import { formatCombo } from '../../../shared/keyboard/registry';
+import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { ISSUE_TYPE_OPTIONS, type IssueTypeValue } from '../../settings/reportIssueTypes';
 import {
   NEVER_SENT,
@@ -285,7 +285,7 @@ export const ReportComposer = ({
       submitIcon={
         direct || github == null ? undefined : <ExternalLink size={ICON_SIZE.row} aria-hidden />
       }
-      submitHint={formatCombo('cmd+Enter')}
+      submitHint={shortcutGlyphs('composer.submit')}
       isSubmitting={sendState === 'sending'}
       canSubmit={report.title !== '' && github != null && sendState === 'idle'}
       onSubmit={() => void submit()}

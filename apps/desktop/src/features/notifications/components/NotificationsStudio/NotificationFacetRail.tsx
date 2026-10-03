@@ -5,11 +5,12 @@ import {
   type SegmentedTabOption,
   FacetRail,
   FacetKeyHints,
-  type FacetKeyHint,
   FacetRow,
   FacetSection,
 } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { keyHintsOf } from '../../../../shared/keyboard/keyHints';
+import type { ShortcutId } from '../../../../shared/keyboard/registry';
 import type { NotificationScope } from '../../../../store/slices/notifications/state';
 import {
   NOTIFICATION_SEVERITY_FACETS,
@@ -56,11 +57,14 @@ const SOURCE_ICON = {
   system: CONCEPT_ICONS.settings,
 } satisfies Record<NotificationSource, LucideIcon>;
 
-const KEY_HINTS = [
-  { keys: ['j', 'k'], label: 'Next or previous' },
-  { keys: ['↵'], label: 'Run the action' },
-  { keys: ['e'], label: 'Dismiss' },
-] satisfies ReadonlyArray<FacetKeyHint>;
+const KEY_SPECS: ReadonlyArray<{
+  readonly ids: ReadonlyArray<ShortcutId>;
+  readonly label: string;
+}> = [
+  { ids: ['list.next', 'list.previous'], label: 'Next or previous' },
+  { ids: ['list.open'], label: 'Run the action' },
+  { ids: ['list.dismiss'], label: 'Dismiss' },
+];
 
 export const NotificationFacetRail = ({
   filters,
@@ -142,7 +146,7 @@ export const NotificationFacetRail = ({
           />
         </section>
       )}
-      <FacetKeyHints hints={KEY_HINTS} />
+      <FacetKeyHints hints={keyHintsOf(KEY_SPECS)} />
     </FacetRail>
   );
 };

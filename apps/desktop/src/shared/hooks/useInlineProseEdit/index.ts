@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { formatError } from '@goodboy/ui';
+import { isSubmitChord } from '../../keyboard/isSubmitChord';
 
 type Params = {
   readonly value: string;
@@ -81,7 +82,7 @@ export const useInlineProseEdit = ({ value, onCommit }: Params): Result => {
       cancel();
       return;
     }
-    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+    if (isSubmitChord(event)) {
       event.preventDefault();
       void commit();
     }

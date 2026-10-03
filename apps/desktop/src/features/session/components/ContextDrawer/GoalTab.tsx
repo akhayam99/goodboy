@@ -7,6 +7,7 @@ import { ContextBlock } from './ContextBlock';
 import { KeyLineList } from './KeyLineList';
 import { summaryItems } from './summaryItems';
 import { GoalAttachmentsStrip } from '../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
+import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -68,7 +69,7 @@ export const GoalTab = ({
               setIsEditing(false);
               return;
             }
-            if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+            if (isSubmitChord(event)) {
               event.preventDefault();
               save();
             }

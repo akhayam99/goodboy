@@ -1,4 +1,5 @@
 import { Textarea } from '@goodboy/ui';
+import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
 
 type Props = {
   readonly value: string;
@@ -22,7 +23,7 @@ export const BlockEditor = ({ value, label, minRows = 3, onChange, onCommit, onC
         onCancel();
         return;
       }
-      if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+      if (isSubmitChord(event)) {
         event.preventDefault();
         onCommit();
       }

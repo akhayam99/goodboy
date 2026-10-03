@@ -1,6 +1,7 @@
 import { GitCommitHorizontal, GitMerge } from 'lucide-react';
 import { Button, Eyebrow, FormActions, KbdPill, Notice, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { REVIEW_COMMITS_LABEL, commitCountLabel, rewriteNote } from '../../reviewCommitsCopy';
 import { ReviewCommitsCheck } from './ReviewCommitsCheck';
 import { ReviewCommitsDone } from './ReviewCommitsDone';
@@ -104,7 +105,9 @@ export const ReviewCommitsAfter = ({ model }: Props) => {
             {model.replaced > 0
               ? REVIEW_COMMITS_LABEL.rewriteAndPush
               : REVIEW_COMMITS_LABEL.rewrite}
-            <KbdPill className="border-transparent bg-transparent text-current">⌘↵</KbdPill>
+            <KbdPill className="border-transparent bg-transparent text-current">
+              {shortcutGlyphs('composer.submit')}
+            </KbdPill>
           </Button>
         </FormActions>
       )}

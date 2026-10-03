@@ -1,4 +1,4 @@
-import type { Project, Workspace } from '@goodboy/types';
+import type { Project, Workspace, WorkspaceId } from '@goodboy/types';
 
 export const sortWorkspacesByRecent = (
   list: ReadonlyArray<Workspace>,
@@ -12,6 +12,22 @@ export const sortWorkspacesByRecent = (
     return a.name.localeCompare(b.name);
   });
 };
+
+type DigitParams = {
+  readonly workspaces: ReadonlyArray<Workspace>;
+  readonly currentId: WorkspaceId | null;
+  readonly limit: number;
+};
+
+export const workspacesByDigit = ({
+  workspaces,
+  currentId,
+  limit,
+}: DigitParams): ReadonlyArray<Workspace> =>
+  sortWorkspacesByRecent(workspaces.filter((workspace) => workspace.id !== currentId)).slice(
+    0,
+    limit,
+  );
 
 type FilterParams = {
   readonly workspaces: ReadonlyArray<Workspace>;
