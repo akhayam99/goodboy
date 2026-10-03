@@ -9,15 +9,12 @@ vi.mock('@tauri-apps/api/event', async () =>
 vi.mock('../../../../shared/lib/db', async () =>
   (await import('../../../../store/storyHarness')).sqliteDbLibModuleMock(),
 );
-vi.mock('../../../../shared/components/SessionChip', () => ({
-  SessionChip: ({ sessionId }: { readonly sessionId: string }) => <span>session {sessionId}</span>,
-}));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { insertDeletedBranch, insertProject, insertWorkspace } from '@goodboy/db';
 import type { DeletedBranch, IsoDateTime, Project, Workspace } from '@goodboy/types';
-import { aProject, aWorkspace } from '@goodboy/types/testing';
+import { aProject, aSession, aWorkspace } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -32,9 +29,11 @@ import {
 import { forgetRepoAutoDeleteCache } from '../../../../store/slices/branch-cleanup/repoDeletesMergedBranches';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { pressKey, pressShortcut } from '../../../../__tests__/helpers/pressKey';
+import type { ProjectBranch } from '../../../worktree/branchCleanup';
 import { BranchesPage } from './index';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const ROW_CELLS = ['select', 'branch', 'session', 'state', 'origin', 'status', 'age', 'action'];
 const nowS = Math.floor(Date.now() / 1000);
 
 let useAppStore: StoryStore;
@@ -47,9 +46,9 @@ const LEDGER: Project = aProject({
   kind: 'repo',
 });
 
-type BranchPatch = Readonly<Record<string, unknown>>;
+type BranchPatch = Partial<ProjectBranch>;
 
-const branch = (patch: BranchPatch = {}) => ({
+const branch = (patch: BranchPatch = {}): ProjectBranch => ({
   name: 'goodboy/ledger-close',
   sha: 'sha-close',
   authorEmail: 'mara@harborline.test',
@@ -273,5 +272,60 @@ describe('BranchesPage', () => {
       pressKey({ code: 'Escape', key: 'Escape', target: window });
     });
     expect(screen.queryByRole('toolbar')).toBeNull();
+  });
+
+  it('lays every branch and every deleted branch on the same cells in the same order', async () => {
+    const session = aSession({ workspaceId: HARBORLINE.id, goal: 'Reconcile the ledger close' });
+    await insertDeletedBranch({
+      db: storySqlite(),
+      entry: deletedEntry({ id: 'del-fee', name: 'goodboy/fee-rounding', daysAgo: 2 }),
+    });
+    useAppStore.setState({
+      sessions: [session],
+      loadProjectBranches: async () => undefined,
+      branchScans: {
+        [LEDGER.id]: {
+          status: 'ready',
+          scan: {
+            userEmail: 'mara@harborline.test',
+            branches: [
+              branch(),
+              branch({ name: 'theo/spike', sha: 'sha-spike', authorEmail: 'theo@harborline.test' }),
+              branch({
+                name: 'goodboy/ledger-reconcile-with-a-very-long-branch-name',
+                sha: 'sha-long',
+                mergeState: { kind: 'merged-via-merge' },
+              }),
+            ],
+          },
+          goodboy: [
+            {
+              projectId: LEDGER.id,
+              branch: 'goodboy/ledger-reconcile-with-a-very-long-branch-name',
+              sessionId: session.id,
+            },
+          ],
+        },
+      },
+    });
+    renderPage();
+    const group = await openRecentlyDeleted();
+    await within(group).findByText('goodboy/fee-rounding');
+    const list = screen.getByRole('region', { name: 'Branches' });
+    within(list).getByRole('button', { name: /Reconcile the ledger close/ });
+
+    const cellsOf = (row: Element) =>
+      [...row.children].map((cell) => cell.getAttribute('data-cell'));
+    const branchRows = within(list).getAllByRole('listitem');
+    const deletedRows = within(group)
+      .getAllByRole('listitem')
+      .map((item) => item.firstElementChild)
+      .filter((row): row is Element => row !== null);
+
+    expect(branchRows).toHaveLength(3);
+    expect(deletedRows).toHaveLength(1);
+    for (const row of [...branchRows, ...deletedRows]) {
+      expect(cellsOf(row)).toEqual(ROW_CELLS);
+    }
   });
 });

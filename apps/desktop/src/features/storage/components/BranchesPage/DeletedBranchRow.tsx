@@ -2,10 +2,8 @@ import { Clock, Trash2, Undo2 } from 'lucide-react';
 import type { DeletedBranch } from '@goodboy/types';
 import { Button, Chip, IconButton, InlineConfirm, Tooltip } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { BRANCH_TABLE_GRID } from '../../branches/branchTableGrid';
 import { deletedBranchDays } from '../../branches/deletedBranchDays';
-
-const DELETED_BRANCH_ROW_GRID =
-  'grid grid-cols-[minmax(0,1fr)_96px_72px_104px_auto] items-center gap-3';
 
 const NEAR_EXPIRY_DAYS = 3;
 
@@ -35,24 +33,32 @@ export const DeletedBranchRow = ({
   const { ago, left } = deletedBranchDays({ deletedAt: entry.deletedAt, now });
   return (
     <li className="flex flex-col gap-1">
-      <div className={`${DELETED_BRANCH_ROW_GRID} min-h-10 rounded-md px-2 hover:bg-hover`}>
-        <span className="flex min-w-0 flex-col">
+      <div className={`${BRANCH_TABLE_GRID} rounded-md px-2 hover:bg-hover`}>
+        <span data-cell="select" />
+        <span data-cell="branch" className="flex min-w-0">
           <Tooltip content={entry.branch} anchorClassName="flex min-w-0">
             <span className="truncate font-mono text-code text-foreground">{entry.branch}</span>
           </Tooltip>
-          <span className="truncate text-secondary text-faint-foreground">{projectName}</span>
         </span>
-        <span className="text-secondary tabular-nums text-muted-foreground">
+        <span data-cell="session" className="truncate text-label text-muted-foreground">
+          {projectName}
+        </span>
+        <span data-cell="state" className="truncate text-label tabular-nums text-muted-foreground">
           {ago === 0 ? 'Today' : ago === 1 ? '1 day ago' : `${ago} days ago`}
         </span>
-        <span className="font-mono text-meta text-faint-foreground">{entry.sha.slice(0, 7)}</span>
-        <Chip
-          tone={left <= NEAR_EXPIRY_DAYS ? 'warning' : 'neutral'}
-          size="xs"
-          icon={<Clock size={ICON_SIZE.control} aria-hidden />}
-          label={left === 1 ? '1 day left' : `${left} days left`}
-        />
-        <span className="flex items-center gap-1">
+        <span data-cell="origin" className="truncate font-mono text-meta text-faint-foreground">
+          {entry.sha.slice(0, 7)}
+        </span>
+        <span data-cell="status" className="flex min-w-0">
+          <Chip
+            tone={left <= NEAR_EXPIRY_DAYS ? 'warning' : 'neutral'}
+            size="xs"
+            icon={<Clock size={ICON_SIZE.control} aria-hidden />}
+            label={left === 1 ? '1 day left' : `${left} days left`}
+          />
+        </span>
+        <span data-cell="age" />
+        <span data-cell="action" className="flex items-center justify-end gap-1">
           <Button
             variant="secondary"
             size="sm"

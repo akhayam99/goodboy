@@ -1171,27 +1171,31 @@ workspaces: <total>, <can go> can go` line under the numbers. The
   settings table (`storage.suggestAfterDays`, `storage.lastNudgeAt`,
   `storage.lastNudgeBytes`). Sizes are measured one folder at a time after
   boot, never on the boot path. The worktree scan itself sends nothing.
-  In the branches cluster, `Branches` (`BranchesSection`) lists local branches
+  On the Branches page, `BranchesSection` lists local branches
   only, in the same scope, grouped by project. It scans only when it opens:
   one `git for-each-ref` per project (`project_branches`), with the merge
   test cached by both tips and fed each branch's merged pull request head
-  (`listMergedRequestHeads`). A filter picks `Made by Goodboy` (the default,
-  branch names from `session_worktrees` and `retained_worktree_paths`),
-  `Yours` (plus branches whose tip is authored by the repo's `user.email`,
-  shown `By you`) or `All local`; protected branches never show. Tabs split
-  `Safe to delete` (merged by merge commit or rebase, merged by its pull
-  request with nothing after the merged head, or never used), `Needs a
-look` (`Merged, then N new commits`, unmerged and gone on origin, local
-  only for over 30 days, or older than 90 days; never preselected) and
-  `All`. Each row has
-  the session chip (`SessionChip`: stage dot, title, stage word, opens the
-  session), `On origin` / `Local only` / `Gone on origin`, the verdict and
-  the last commit's age. Delete goes through an InlineConfirm in the bulk
-  bar that counts the commits an unmerged branch takes with it and offers
-  `Also delete N on origin` only for Goodboy's own pushed branches in repos
-  where GitHub does not already delete merged branches. Deletes use the
-  same compare-and-delete and 14-day restore as the after-merge rule; a
-  success Notice carries `Undo` for the batch. A branch another worktree
+  (`listMergedRequestHeads`). The `Made by` picker shows all local branches
+  (the default), `Made by Goodboy` (branch names from `session_worktrees` and
+  `retained_worktree_paths`) or `Yours` (plus branches whose tip is authored
+  by the repo's `user.email`, shown `By you`); protected branches never show.
+  The list opens on `Safe to delete` (merged by merge commit or rebase,
+  merged by its pull request with nothing after the merged head, or never
+  used), and `Show all branches` adds the ones that need a look (`Merged,
+then N new commits`, unmerged and gone on origin, local only for over 30
+  days, or older than 90 days; never preselected) and the kept ones. Every
+  branch row and every Recently deleted row sit on one grid
+  (`BRANCH_TABLE_GRID`, each cell marked with its `data-cell` name): select, branch,
+  session title, session state, origin state (`On origin` / `Local only` /
+  `Gone on origin`), the status on one line with how it merged as a muted
+  suffix and in its tooltip, the last commit's age and the action. A
+  Recently deleted row puts the project, the days since, the short sha and
+  the days left in the same columns. Delete on a merged branch acts at once
+  and a toast carries `Undo`; an unmerged one confirms above the bulk bar,
+  which counts the commits it takes. `Also delete N on origin` sits above
+  the bar only for Goodboy's own pushed branches in repos where GitHub does
+  not already delete merged branches. Deletes use the same
+  compare-and-delete and 14-day restore as the after-merge rule. A branch another worktree
   holds reads Protected, so its folder goes first from Worktrees.
   In the space cluster, under Worktrees, "Artifacts from deleted sessions" lists plans, reports
   and wireframes whose session is gone, under To review and Kept, with Open,

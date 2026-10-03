@@ -2,21 +2,19 @@ import { Cloud, CloudOff, GitMerge, Laptop } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Button, SelectionCheckbox, Tooltip, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { BranchOwnerCell } from './BranchOwnerCell';
 import { formatSpan } from '../../../../shared/utils/time/formatSpan';
 import type { BranchLocation } from '../../../worktree/branchCleanup';
 import { LOCATION_LABEL, verdictCopy } from '../../branches/branchCopy';
+import { BRANCH_TABLE_GRID } from '../../branches/branchTableGrid';
 import type { ClassifiedBranch } from '../../branches/classifyBranch';
 import { useNow } from '../../../../shared/hooks/useNow';
+import { BranchSessionCells } from './BranchSessionCells';
 
 const LOCATION_ICON: Readonly<Record<BranchLocation, LucideIcon>> = {
   'on-origin': Cloud,
   'local-only': Laptop,
   'gone-on-origin': CloudOff,
 };
-
-const BRANCH_ROW_GRID =
-  'grid grid-cols-[20px_minmax(0,1fr)_220px_110px_200px_70px_70px] items-center gap-2';
 
 type Props = {
   readonly entry: ClassifiedBranch;
@@ -45,47 +43,64 @@ export const BranchRow = ({
     branch.lastCommitAt === null
       ? ''
       : formatSpan({ from: new Date(branch.lastCommitAt * 1000).toISOString(), to: now });
+  const status = verdict.detail === null ? verdict.label : `${verdict.label} · ${verdict.detail}`;
   return (
     <li
       data-select-id={selectId}
-      className={cn(BRANCH_ROW_GRID, 'group/select-row h-[34px] rounded-md px-2 hover:bg-hover')}
+      className={cn(BRANCH_TABLE_GRID, 'group/select-row rounded-md px-2 hover:bg-hover')}
     >
-      <SelectionCheckbox
-        checked={isSelected}
-        onToggle={() => onToggle(!isSelected)}
-        label={`Select ${branch.name}`}
-        disabled={isBusy}
-      />
-      <Tooltip content={branch.name} anchorClassName="flex min-w-0">
-        <span className="truncate font-mono text-code text-foreground">{branch.name}</span>
-      </Tooltip>
-      <span className="flex min-w-0">
-        <BranchOwnerCell entry={entry} />
+      <span data-cell="select" className="flex items-center">
+        <SelectionCheckbox
+          checked={isSelected}
+          onToggle={() => onToggle(!isSelected)}
+          label={`Select ${branch.name}`}
+          disabled={isBusy}
+        />
       </span>
-      <span className="flex items-center gap-1 text-label text-muted-foreground">
-        <LocationIcon size={ICON_SIZE.control} aria-hidden />
-        {LOCATION_LABEL[branch.location]}
+      <span data-cell="branch" className="flex min-w-0">
+        <Tooltip content={branch.name} anchorClassName="flex min-w-0">
+          <span className="truncate font-mono text-code text-foreground">{branch.name}</span>
+        </Tooltip>
       </span>
-      <span className="flex min-w-0 flex-col">
-        <span
-          className={cn(
-            'flex items-center gap-1 truncate text-label',
-            verdict.isSafe ? 'text-success' : 'text-foreground',
-          )}
-        >
-          {verdict.isSafe && entry.verdict === 'safe-merged' ? (
-            <GitMerge size={ICON_SIZE.control} aria-hidden />
-          ) : null}
-          {verdict.label}
-        </span>
-        {verdict.detail === null ? null : (
-          <span className="truncate text-secondary text-faint-foreground">{verdict.detail}</span>
-        )}
+      <BranchSessionCells entry={entry} />
+      <span
+        data-cell="origin"
+        className="flex min-w-0 items-center gap-1 text-label text-muted-foreground"
+      >
+        <LocationIcon size={ICON_SIZE.control} aria-hidden className="shrink-0" />
+        <span className="truncate">{LOCATION_LABEL[branch.location]}</span>
       </span>
-      <span className="text-secondary tabular-nums text-muted-foreground">{age}</span>
-      <Button variant="ghost" size="sm" disabled={isBusy} onClick={onDelete}>
-        {verdict.isSafe ? 'Delete' : 'Delete…'}
-      </Button>
+      <span data-cell="status" className="flex min-w-0">
+        <Tooltip content={status} anchorClassName="flex min-w-0">
+          <span
+            className={cn(
+              'flex min-w-0 items-center gap-1 text-label',
+              verdict.isSafe ? 'text-success' : 'text-foreground',
+            )}
+          >
+            {verdict.isSafe && entry.verdict === 'safe-merged' ? (
+              <GitMerge size={ICON_SIZE.control} aria-hidden className="shrink-0" />
+            ) : null}
+            <span className="truncate">
+              {verdict.label}
+              {verdict.detail === null ? null : (
+                <span className="text-faint-foreground"> {verdict.detail}</span>
+              )}
+            </span>
+          </span>
+        </Tooltip>
+      </span>
+      <span
+        data-cell="age"
+        className="text-right text-secondary tabular-nums text-muted-foreground"
+      >
+        {age}
+      </span>
+      <span data-cell="action" className="flex justify-end">
+        <Button variant="ghost" size="sm" disabled={isBusy} onClick={onDelete}>
+          {verdict.isSafe ? 'Delete' : 'Delete…'}
+        </Button>
+      </span>
     </li>
   );
 };
