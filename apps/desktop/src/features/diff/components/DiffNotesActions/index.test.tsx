@@ -1,43 +1,86 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { DiffComment, SessionId } from '@goodboy/types';
-
-const h = vi.hoisted(() => ({
-  toggleDrawer: vi.fn(),
-  openReview: vi.fn(async () => undefined),
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: vi.fn(() => new Promise<never>(() => undefined)),
 }));
+vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
-vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (state: unknown) => T) =>
-    selector({ toggleDrawer: h.toggleDrawer, drawer: null }),
-}));
-vi.mock('../../../../store/slices/drawer/selectOpenDrawer', () => ({
-  selectOpenDrawer: () => null,
-}));
-vi.mock('../../../review/openReview', () => ({ openReview: h.openReview }));
-
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../store/storyHarness';
+import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
+import { selectedReviewEntryOf } from '../../../../store/slices/review-source/activeReviewSource';
+import { SESSION_ID } from '../../../../app/components/MockScene/scenes/resolveSeed';
+import {
+  NOTE_IDS,
+  seedResolveNotes,
+} from '../../../../app/components/MockScene/scenes/resolveNotesSeed';
+import { noteThreadId } from '../../../resolve/notes/noteThread';
+import { reviewRowsOf } from '../../../resolve/reviewRows';
+import { useNoteFixes } from '../../hooks/useNoteFixes';
 import { DiffNotesActions } from './index';
 
-const SESSION_ID = 'session-1' as SessionId;
-const NOTES = [{ id: 'n-1' }, { id: 'n-2' }] as unknown as ReadonlyArray<DiffComment>;
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+  seedResolveNotes();
+});
 
 afterEach(cleanup);
 
+const Actions = () => {
+  const fixes = useNoteFixes({ sessionId: SESSION_ID });
+  return <DiffNotesActions sessionId={SESSION_ID} fixes={fixes} />;
+};
+
 describe('DiffNotesActions', () => {
-  it('opens the notes drawer and hands the notes to Review, with no footer bar', () => {
-    const { container } = render(<DiffNotesActions sessionId={SESSION_ID} openNotes={NOTES} />);
+  it('counts the notes still in play and opens the notes drawer', () => {
+    render(<Actions />);
 
-    fireEvent.click(screen.getByRole('button', { name: '2 notes' }));
-    expect(h.toggleDrawer).toHaveBeenCalledWith({
-      kind: 'diff-notes',
-      sessionId: SESSION_ID,
-      payload: {},
-    });
+    fireEvent.click(screen.getByRole('button', { name: '6 notes' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Resolve in Review' }));
-    expect(h.openReview).toHaveBeenCalledWith({ sessionId: SESSION_ID });
-    expect(container.querySelector('footer')).toBeNull();
+    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('diff-notes');
+  });
+
+  it('opens Review on your notes even when a pull request is open', async () => {
+    render(<Actions />);
+    expect(
+      selectedReviewEntryOf({ state: useAppStore.getState(), sessionId: SESSION_ID }).kind,
+    ).toBe('github');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open in Review' }));
+
+    await waitFor(() =>
+      expect(
+        selectedReviewEntryOf({ state: useAppStore.getState(), sessionId: SESSION_ID }).kind,
+      ).toBe('local'),
+    );
+    const origins = reviewRowsOf({ state: useAppStore.getState(), sessionId: SESSION_ID }).map(
+      (row) => row.thread.originKind,
+    );
+    expect(origins.length).toBeGreaterThan(0);
+    expect(new Set(origins)).toEqual(new Set(['diff_comment']));
+  });
+
+  it('opens the launch strip for the notes nobody started, without starting anything', () => {
+    render(<Actions />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fix 2 notes' }));
+
+    expect(useAppStore.getState().diffNoteLaunch[SESSION_ID]).toEqual([
+      noteThreadId({ noteId: NOTE_IDS.open }),
+      noteThreadId({ noteId: NOTE_IDS.openSecond }),
+    ]);
+    expect(useAppStore.getState().sessionResolveBatches[SESSION_ID] ?? []).toEqual([]);
   });
 });

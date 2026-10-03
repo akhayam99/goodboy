@@ -29,9 +29,10 @@ type FirstLapState = 'lap' | 'publish' | 'move' | 'moving' | 'report';
 
 type SceneProps = {
   readonly state: FirstLapState;
+  readonly isOverview?: boolean;
 };
 
-export const FirstLapFrame = ({ state }: SceneProps) => {
+export const FirstLapFrame = ({ state, isOverview = false }: SceneProps) => {
   const [project, setProject] = useState<Project | null>(null);
 
   useEffect(() => {
@@ -40,20 +41,27 @@ export const FirstLapFrame = ({ state }: SceneProps) => {
     if (seeded === undefined) {
       return;
     }
-    const lapProject: Project = { ...seeded, name: 'cascadia', kind: 'repo' };
+    const lapProject: Project = {
+      ...seeded,
+      name: 'cascadia',
+      kind: 'repo',
+      ...(isOverview && { remoteUrl: 'https://example.invalid/northwind/cascadia.git' }),
+    };
     const isOnRemote = state === 'move' || state === 'moving' || state === 'report';
     useAppStore.setState({
       projects: [lapProject],
       sessionProjectMounts: { [SESSION.id]: [] },
       bootstrapPhase: { [lapProject.id]: phaseFor({ state }) },
-      bootstrapRemoteProbe: isOnRemote
-        ? {
-            [lapProject.id]: {
-              probe: { kind: 'main-present', branch: 'main', sha: 'abc1234' },
-              readAt: NOW,
-            },
-          }
-        : {},
+      bootstrapRemoteProbe: isOverview
+        ? { [lapProject.id]: { probe: { kind: 'unreachable', reason: 'offline' }, readAt: NOW } }
+        : isOnRemote
+          ? {
+              [lapProject.id]: {
+                probe: { kind: 'main-present', branch: 'main', sha: 'abc1234' },
+                readAt: NOW,
+              },
+            }
+          : {},
       bootstrapMoveReport:
         state === 'report'
           ? {
@@ -69,6 +77,7 @@ export const FirstLapFrame = ({ state }: SceneProps) => {
             }
           : {},
       projectGitStatus: { [lapProject.id]: dirtyStatus },
+      ...(isOverview && { selectedAgentId: { [SESSION.id]: null } }),
       probeProjectRemote: async () => ({ kind: 'reachable-no-main' }),
       resumeBootstrapMove: async () => ({
         kind: 'refused',
@@ -77,7 +86,7 @@ export const FirstLapFrame = ({ state }: SceneProps) => {
       }),
     });
     setProject(lapProject);
-  }, [state]);
+  }, [isOverview, state]);
 
   if (project === null) {
     return null;

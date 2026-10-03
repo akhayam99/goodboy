@@ -390,7 +390,6 @@ describe('ProjectMountRow one action by state', () => {
       row: { ...baseRow, request: openRequest },
     });
 
-    expect(screen.getByText('Behind main by 4')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Rebase on main for API' }));
 
     await waitFor(() =>
@@ -518,88 +517,6 @@ describe('ProjectMountRow availability', () => {
   });
 });
 
-const slotsOf = (): ReadonlyArray<Element> =>
-  Array.from(screen.getByTestId('project-mount-cells').children);
-
-describe('ProjectMountRow column grammar', () => {
-  const detached: MountRowView = { ...baseRow, isAttached: false, worktreePath: null };
-
-  it('fills the seven grid columns in the same order in every state', () => {
-    renderRow({
-      diffStat: { additions: 3, deletions: 1 },
-      row: { ...baseRow, request: openRequest },
-    });
-    const attached = slotsOf();
-    cleanup();
-    store.sessionMounts = {};
-    renderRow({ row: detached });
-    const unmounted = slotsOf();
-
-    expect(attached).toHaveLength(7);
-    expect(unmounted).toHaveLength(7);
-    expect(screen.getByTestId('project-mount-cells').className).toContain('grid-cols-subgrid');
-  });
-
-  it('leads with the branch', () => {
-    renderRow({ row: { ...baseRow, request: openRequest } });
-    const [branch] = slotsOf();
-
-    expect(branch?.querySelector('[data-testid="branch-chip"]')).not.toBeNull();
-  });
-
-  it('renders an empty cell with no width of its own where a column has nothing', () => {
-    renderRow({ row: baseRow });
-    const series = slotsOf()[1];
-    expect(series?.tagName).toBe('SPAN');
-    expect(series?.className).toBe('');
-    cleanup();
-
-    renderRow({
-      row: {
-        ...baseRow,
-        series: {
-          seriesId: 'series-1',
-          name: 'restyle',
-          position: 3,
-          plannedCount: 6,
-          label: '3/6',
-        },
-      },
-    });
-
-    expect(slotsOf()[1]?.textContent).toBe('Part 3/6');
-  });
-
-  it('holds the state of a row in one cell, request state and number together', () => {
-    renderRow({
-      diffStat: { additions: 3, deletions: 1 },
-      row: { ...baseRow, request: openRequest },
-    });
-    expect(slotsOf()[4]?.textContent).toBe('PR #12In review');
-    cleanup();
-    store.sessionMounts = {};
-
-    renderRow({ row: detached });
-    expect(slotsOf()[4]?.textContent).toBe('Files kept');
-  });
-
-  it('keeps the one action in the action cell and the menu last', () => {
-    renderRow({ row: detached });
-    const slots = slotsOf();
-
-    expect(slots[5]?.textContent).toBe('Reopen');
-    expect(slots.at(-1)?.querySelector('[aria-label="API actions"]')).not.toBeNull();
-  });
-
-  it('hides the distance and the diff in a narrow container without dropping their cells', () => {
-    renderRow({ diffStat: { additions: 3, deletions: 1 } });
-    const slots = slotsOf();
-
-    expect(slots[2]?.className).toContain('@max-[36rem]:*:hidden');
-    expect(slots[3]?.className).toContain('@max-[36rem]:*:hidden');
-  });
-});
-
 describe('ProjectMountRow menu', () => {
   it('lists every action of the worktree, grouped, with the editors one level down', () => {
     store.detectedEditors = [{ binary: 'code', label: 'VS Code' }];
@@ -670,27 +587,6 @@ describe('ProjectMountRow lens opening, write destination isolation', () => {
 });
 
 describe('ProjectMountRow loading placeholders', () => {
-  it('holds a distance placeholder while the git status is still pending', () => {
-    renderRow({ isStatusPending: true });
-
-    expect(screen.getByTestId('project-distance-skeleton')).not.toBeNull();
-  });
-
-  it('swaps the placeholder for the distance once the status lands', () => {
-    renderRow({
-      worktreeStatus: statusWith({ mainDistance: { kind: 'known', ahead: 1, behind: 3 } }),
-    });
-
-    expect(screen.queryByTestId('project-distance-skeleton')).toBeNull();
-    expect(screen.getByText('Behind main by 3')).toBeDefined();
-  });
-
-  it('says nothing about the distance when the branch is up to date', () => {
-    renderRow({ worktreeStatus: statusWith({}) });
-
-    expect(screen.queryByText(/Behind main/)).toBeNull();
-  });
-
   it('holds a branch placeholder instead of an empty branch cell', () => {
     renderRow({ isStatusPending: true, row: { ...baseRow, branch: '' } });
 
@@ -701,7 +597,7 @@ describe('ProjectMountRow loading placeholders', () => {
   it('leaves a folder mount without any git placeholder', () => {
     renderRow({ isStatusPending: true, row: { ...baseRow, projectKind: 'folder' } });
 
-    expect(screen.queryByTestId('project-distance-skeleton')).toBeNull();
+    expect(screen.queryByTestId('mount-status-skeleton')).toBeNull();
     expect(screen.queryByTestId('project-branch-skeleton')).toBeNull();
   });
 });

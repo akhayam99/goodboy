@@ -160,7 +160,7 @@ describe('WorkspaceLinkStudio', () => {
     render(<WorkspaceLinkStudio variant="fullscreen" onClose={onClose} onOfferRepo={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
-    fireEvent.click(screen.getByRole('button', { name: /choose a folder/i }));
+    fireEvent.click(screen.getByRole('button', { name: /open a folder/i }));
 
     await waitFor(() =>
       expect(state.addWorkspace).toHaveBeenCalledWith({ rootPath: '/some/repo' }),
@@ -201,7 +201,7 @@ describe('WorkspaceLinkStudio', () => {
     );
 
     fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
-    fireEvent.click(screen.getByRole('button', { name: /choose a folder/i }));
+    fireEvent.click(screen.getByRole('button', { name: /open a folder/i }));
 
     await waitFor(() => expect(state.addWorkspace).toHaveBeenCalled());
     expect(onOfferRepo).not.toHaveBeenCalled();
@@ -212,7 +212,7 @@ describe('WorkspaceLinkStudio', () => {
     render(<WorkspaceLinkStudio variant="fullscreen" onClose={vi.fn()} onOfferRepo={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
-    fireEvent.click(screen.getByRole('button', { name: /choose a folder/i }));
+    fireEvent.click(screen.getByRole('button', { name: /open a folder/i }));
 
     await waitFor(() => expect(onboarding.reopenWizard).toHaveBeenCalledWith('setup'));
   });

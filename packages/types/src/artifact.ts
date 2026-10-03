@@ -50,6 +50,7 @@ type SessionArtifactBase<
   sourceTurnId: string | null;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
+  openedAt: IsoDateTime | null;
 }>;
 
 export type PlanArtifact = SessionArtifactBase<'plan', 'markdown', PlanArtifactMetadata>;

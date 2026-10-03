@@ -29,6 +29,12 @@ import type {
 } from '@goodboy/core';
 import { useAppStore } from '../../../../store';
 import { sceneClock } from '../sceneClock';
+import {
+  statesAgents,
+  statesArtifacts,
+  statesPlans,
+  statesStoreActions,
+} from './artifactStatesSeed';
 
 const clock = sceneClock({ anchor: '2026-09-14T16:40:00.000Z' });
 
@@ -522,6 +528,7 @@ const REPORT_ARTIFACT: ReportArtifact = {
   sourceTurnId: 'mock-artifact-turn-report',
   createdAt: clock.iso({ at: '2026-09-14T16:27:00.000Z' }),
   updatedAt: clock.iso({ at: '2026-09-14T16:27:00.000Z' }),
+  openedAt: null,
 };
 
 const CHANGE_REPORT_ARTIFACT: ReportArtifact = {
@@ -540,6 +547,7 @@ const CHANGE_REPORT_ARTIFACT: ReportArtifact = {
   sourceTurnId: 'mock-artifact-turn-change-report',
   createdAt: clock.iso({ at: '2026-09-14T16:22:00.000Z' }),
   updatedAt: clock.iso({ at: '2026-09-14T16:22:00.000Z' }),
+  openedAt: null,
 };
 
 const PLAN_ARTIFACT: SessionArtifact = {
@@ -558,6 +566,7 @@ const PLAN_ARTIFACT: SessionArtifact = {
   sourceTurnId: 'mock-artifact-turn-plan',
   createdAt: clock.iso({ at: '2026-09-14T15:31:00.000Z' }),
   updatedAt: clock.iso({ at: '2026-09-14T15:31:00.000Z' }),
+  openedAt: null,
 };
 
 const BATCHES_CHILDREN: ReadonlyArray<WireframeNode> = [
@@ -912,6 +921,7 @@ const WIREFRAME_LOW_ARTIFACT: WireframeArtifact = {
   sourceTurnId: 'mock-artifact-turn-wireframe-low',
   createdAt: clock.iso({ at: '2026-09-14T16:34:00.000Z' }),
   updatedAt: clock.iso({ at: '2026-09-14T16:34:00.000Z' }),
+  openedAt: null,
 };
 
 const WIREFRAME_HIGH_ARTIFACT: WireframeArtifact = {
@@ -941,6 +951,7 @@ const WIREFRAME_HIGH_ARTIFACT: WireframeArtifact = {
   sourceTurnId: 'mock-artifact-turn-wireframe-high',
   createdAt: clock.iso({ at: '2026-09-14T16:38:00.000Z' }),
   updatedAt: clock.iso({ at: '2026-09-14T16:38:00.000Z' }),
+  openedAt: null,
 };
 
 const SESSION_EVENTS = [
@@ -1028,9 +1039,22 @@ const PLANS: ReadonlyArray<PlanWithCount> = [
 
 type SeedParams = Readonly<{
   focusedArtifactId: ArtifactId | null;
+  withStates?: boolean;
 }>;
 
-export const seedArtifactScene = ({ focusedArtifactId }: SeedParams) => {
+const stateSeed = { sessionId: SESSION_ID, plannerId: PLANNER_AGENT_ID };
+
+export const seedArtifactScene = ({ focusedArtifactId, withStates = false }: SeedParams) => {
+  const agents = withStates ? [...AGENTS, ...statesAgents(stateSeed)] : AGENTS;
+  const plans = withStates ? [...PLANS, ...statesPlans(stateSeed)] : PLANS;
+  const artifacts = withStates
+    ? [
+        ...ARTIFACTS.map((artifact) =>
+          artifact.id === REPORT_ARTIFACT_ID ? artifact : { ...artifact, openedAt: NOW },
+        ),
+        ...statesArtifacts(stateSeed),
+      ]
+    : ARTIFACTS;
   useAppStore.setState({
     workspaces: [WORKSPACE],
     currentWorkspaceId: WORKSPACE_ID,
@@ -1040,7 +1064,7 @@ export const seedArtifactScene = ({ focusedArtifactId }: SeedParams) => {
     sessionProjectMounts: { [SESSION_ID]: MOUNTS },
     sessionActiveProject: { [SESSION_ID]: LEDGER_ID },
     sessionWorktrees: { [SESSION_ID]: MOUNTS.map((mount) => mount.worktreePath) },
-    sessionPhaseRuns: { [SESSION_ID]: AGENTS },
+    sessionPhaseRuns: { [SESSION_ID]: agents },
     transcripts: {
       [REPORT_AGENT_ID]: transcriptOf({
         runId: 'mock-artifact-run-report',
@@ -1058,7 +1082,7 @@ export const seedArtifactScene = ({ focusedArtifactId }: SeedParams) => {
         at: clock.iso({ at: '2026-09-14T16:28:00.000Z' }),
       }),
     },
-    sessionArtifacts: { [SESSION_ID]: ARTIFACTS },
+    sessionArtifacts: { [SESSION_ID]: artifacts },
     wireframeScoutVerification: {
       [SCREENS_SCOUT_AGENT_ID]: { verified: 8, cited: 11 },
     },
@@ -1069,7 +1093,7 @@ export const seedArtifactScene = ({ focusedArtifactId }: SeedParams) => {
         startedAt: NOW,
       },
     },
-    sessionPlans: { [SESSION_ID]: PLANS },
+    sessionPlans: { [SESSION_ID]: plans },
     sessionEvents: { [SESSION_ID]: SESSION_EVENTS },
     sessionWorktreeRecords: {
       [SESSION_ID]: MOUNTS.map((mount, index) => ({
@@ -1119,6 +1143,7 @@ export const seedArtifactScene = ({ focusedArtifactId }: SeedParams) => {
     sessionAttachments: { [SESSION_ID]: [] },
     slotHistory: { [SESSION_ID]: {} },
     slotHistoryCounts: { [SESSION_ID]: {} },
+    ...(withStates ? statesStoreActions() : {}),
     loadSessionArtifacts: async () => undefined,
     loadSessionEvents: async () => undefined,
     loadSessionAnsweredQuestions: async () => undefined,

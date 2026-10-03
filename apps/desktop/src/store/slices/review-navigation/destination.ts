@@ -2,6 +2,7 @@ import type { MountId } from '@goodboy/types';
 
 export type ReviewDestination =
   | { readonly kind: 'home' }
+  | { readonly kind: 'notes'; readonly threadIds: ReadonlyArray<string> }
   | { readonly kind: 'mount'; readonly mountId: MountId }
   | {
       readonly kind: 'pull_request';
@@ -32,7 +33,7 @@ type Params = {
 export const REVIEW_HOME: ReviewDestination = { kind: 'home' };
 
 export const reviewMountId = ({ destination }: Params): MountId | null =>
-  destination.kind === 'home' ? null : destination.mountId;
+  destination.kind === 'home' || destination.kind === 'notes' ? null : destination.mountId;
 
 export const reviewPrNumber = ({ destination }: Params): number | null =>
   destination.kind === 'pull_request' ||
@@ -45,7 +46,7 @@ export const reviewThreadId = ({ destination }: Params): string | null =>
   destination.kind === 'thread' ? destination.threadId : null;
 
 export const reviewThreadIds = ({ destination }: Params): ReadonlyArray<string> =>
-  destination.kind === 'threads'
+  destination.kind === 'threads' || destination.kind === 'notes'
     ? destination.threadIds
     : destination.kind === 'thread'
       ? [destination.threadId]

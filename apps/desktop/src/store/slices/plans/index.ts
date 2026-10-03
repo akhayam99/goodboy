@@ -1,7 +1,5 @@
-import { deletePlan } from './deletePlan';
 import { loadConsumptionsForPlan } from './loadConsumptionsForPlan';
 import { loadSessionPlans } from './loadSessionPlans';
-import { restorePlan } from './restorePlan';
 import { runPlan } from './runPlan';
 import { setPlanStatus } from './setPlanStatus';
 import { updatePlanBody } from './updatePlanBody';
@@ -12,8 +10,6 @@ export const createPlansSlice = ({ set, get }: SliceDeps) => {
     loadSessionPlans: loadSessionPlans(set),
     setPlanStatus: setPlanStatus(set),
     updatePlanBody: updatePlanBody(set),
-    deletePlan: deletePlan(set),
-    restorePlan: restorePlan(set),
     loadConsumptionsForPlan: loadConsumptionsForPlan(set),
     runPlan: runPlan(get),
   };

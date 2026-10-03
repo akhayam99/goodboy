@@ -17,7 +17,9 @@ import type {
   TimelineStreamEntry,
 } from '../../../../timeline/buildTimelineStream';
 import { DecisionChangesDetail } from './DecisionChangesDetail';
+import type { GroupTotals } from '../../../../timeline/groupTotals';
 import { TimelineAgentStreamRow } from './TimelineAgentStreamRow';
+import { TimelineFoldStreamRow } from './TimelineFoldStreamRow';
 import { TimelineGroupStreamRow } from './TimelineGroupStreamRow';
 import type { TimelineLaneControl } from './TimelineRail';
 import { TimelineRunStreamRow } from './TimelineRunStreamRow';
@@ -54,6 +56,7 @@ export type TimelineEntryRowProps = {
   readonly worktrees: ReadonlyArray<string>;
   readonly step: Step | null;
   readonly costUsd: number;
+  readonly groupTotals: GroupTotals | null;
   readonly isRevealed: boolean;
   readonly isExpanded: boolean;
   readonly decisionDetail: DecisionChangeDetail | null;
@@ -89,6 +92,7 @@ export const TimelineEntryRow = ({
   worktrees,
   step,
   costUsd,
+  groupTotals,
   isRevealed,
   isExpanded,
   decisionDetail,
@@ -106,7 +110,25 @@ export const TimelineEntryRow = ({
         railWidth={railWidth}
         sessionId={sessionId}
         isExpanded={isExpanded}
+        totals={groupTotals}
         lanes={lanes}
+        onSetExpanded={handlers.setGroupExpanded}
+      />
+    );
+  }
+  const runLane = runLaneId === null ? null : lanes.targetFor({ laneId: runLaneId });
+  if (item.fold !== undefined && (entry.kind === 'run' || entry.kind === 'agent')) {
+    return (
+      <TimelineFoldStreamRow
+        item={item}
+        entry={entry}
+        rail={rail}
+        railWidth={railWidth}
+        sessionId={sessionId}
+        isExpanded={isExpanded}
+        totals={groupTotals}
+        lanes={lanes}
+        runLane={runLane}
         onSetExpanded={handlers.setGroupExpanded}
       />
     );
@@ -121,7 +143,6 @@ export const TimelineEntryRow = ({
           ...(actionVariant !== null && { variant: actionVariant }),
           ...(actionBusy && { isBusy: true }),
         };
-  const runLane = runLaneId === null ? null : lanes.targetFor({ laneId: runLaneId });
   if (entry.kind === 'agent') {
     return (
       <TimelineAgentStreamRow

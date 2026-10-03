@@ -32,6 +32,7 @@ const base = {
   revision: 1,
   createdAt: '2026-09-14T10:00:00.000Z' as IsoDateTime,
   updatedAt: '2026-09-14T10:00:00.000Z' as IsoDateTime,
+  openedAt: null,
 };
 
 const artifactOf = ({

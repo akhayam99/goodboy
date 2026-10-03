@@ -132,12 +132,12 @@ describe('WorkspaceLinkForm', () => {
     expect(container.querySelector('[role="separator"]')).toBeNull();
   });
 
-  it('ends the project shape with New project and Choose a folder in the action row', () => {
+  it('ends the project shape with Start a new project and Open a folder in the action row', () => {
     renderForm();
     fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
 
-    const choose = screen.getByRole('button', { name: /choose a folder/i });
-    const newProject = screen.getByRole('button', { name: /new project/i });
+    const choose = screen.getByRole('button', { name: /open a folder/i });
+    const newProject = screen.getByRole('button', { name: /start a new project/i });
     expect(choose.closest('[data-slot="form-actions"]')?.parentElement?.tagName).toBe('FORM');
     expect(newProject.parentElement).toBe(choose.parentElement);
     expect(newProject.compareDocumentPosition(choose) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
@@ -149,7 +149,7 @@ describe('WorkspaceLinkForm', () => {
     const onComplete = vi.fn();
     renderForm({ onComplete });
     fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
-    fireEvent.click(screen.getByRole('button', { name: /choose a folder/i }));
+    fireEvent.click(screen.getByRole('button', { name: /open a folder/i }));
 
     await waitFor(() =>
       expect(state.addWorkspace).toHaveBeenCalledWith({ rootPath: '/repos/alpha' }),
@@ -179,7 +179,7 @@ describe('WorkspaceLinkForm', () => {
     dialogMock.open.mockResolvedValue('/parent');
     renderForm();
     fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
-    fireEvent.click(screen.getByRole('button', { name: /choose a folder/i }));
+    fireEvent.click(screen.getByRole('button', { name: /open a folder/i }));
 
     await waitFor(() => screen.getByText(/2 repositories found in this folder/i));
     fireEvent.click(screen.getByRole('button', { name: /link 2 projects/i }));
@@ -202,7 +202,7 @@ describe('WorkspaceLinkForm', () => {
     dialogMock.open.mockResolvedValue('/empty');
     renderForm();
     fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
-    fireEvent.click(screen.getByRole('button', { name: /choose a folder/i }));
+    fireEvent.click(screen.getByRole('button', { name: /open a folder/i }));
 
     await waitFor(() => screen.getByRole('alert'));
     expect(screen.getByRole('alert').textContent).toContain('No git repository at /empty');
@@ -221,7 +221,7 @@ describe('WorkspaceLinkForm', () => {
     state.addWorkspace.mockResolvedValueOnce({ id: 'ws-gone', name: 'Harborline' });
     renderForm({ onComplete });
     fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
-    fireEvent.click(screen.getByRole('button', { name: /choose a folder/i }));
+    fireEvent.click(screen.getByRole('button', { name: /open a folder/i }));
 
     await waitFor(() => screen.getByText(/This folder was part of Harborline, disconnected/));
     expect(screen.getByText(/with 48 sessions/)).toBeDefined();
@@ -249,7 +249,7 @@ describe('WorkspaceLinkForm', () => {
     });
     renderForm({ onComplete });
     fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
-    fireEvent.click(screen.getByRole('button', { name: /choose a folder/i }));
+    fireEvent.click(screen.getByRole('button', { name: /open a folder/i }));
 
     await waitFor(() => screen.getByText(/This looks like it moved from Harborline, disconnected/));
 
@@ -280,7 +280,7 @@ describe('WorkspaceLinkForm', () => {
     });
     renderForm();
     fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
-    fireEvent.click(screen.getByRole('button', { name: /choose a folder/i }));
+    fireEvent.click(screen.getByRole('button', { name: /open a folder/i }));
     await waitFor(() => screen.getByRole('button', { name: 'Choose a different folder' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Choose a different folder' }));

@@ -1,48 +1,49 @@
-import { parseWireframeSource } from '@goodboy/core';
 import type {
   Agent,
+  AgentId,
   ArtifactId,
   ArtifactKind,
-  ArtifactStatus,
   IsoDateTime,
   PlanWithCount,
   SessionArtifact,
 } from '@goodboy/types';
+import type { ArtifactFilter, ArtifactGeneration } from './artifactCollection';
+import {
+  artifactStateOf,
+  generationStateOf,
+  type ArtifactGroup,
+  type ArtifactState,
+} from './artifactStateOf';
+import { planConsumerLabel, resolvePlanConsumer } from '../../shared/utils/planConsumer';
 import type { WorkNodeState } from '@goodboy/ui';
-import {
-  ARTIFACT_GENERATION_PRESENTATION,
-  type ArtifactFilter,
-  type ArtifactGeneration,
-} from './artifactCollection';
-import { REPORT_TYPE_LABEL, asReportType } from '../reports/reportTypes';
-import {
-  planPartRows,
-  planPartsProgress,
-  planPartsSentence,
-  type PlanPartsProgress,
-} from '../plans/components/PlanParts/planPartRows';
-
-type ArtifactRowTone = 'warning' | 'info' | 'danger' | 'neutral';
+import { planPartRows } from '../plans/components/PlanParts/planPartRows';
+import { NO_PLAN_STATE_INPUTS, planStateInputsOf } from '../plans/planStateInputs';
 
 type ArtifactRowTarget =
   | Readonly<{ kind: 'artifact'; artifactId: ArtifactId }>
   | Readonly<{ kind: 'generation'; generation: ArtifactGeneration }>;
 
-type ArtifactRowAction = 'stop' | 'retry';
+export type ArtifactRowPart = Readonly<{
+  index: number;
+  title: string;
+  nodeState: WorkNodeState;
+  nodeLabel: string;
+}>;
 
 export type ArtifactListRow = Readonly<{
-  key: string;
+  id: string;
   target: ArtifactRowTarget;
   kind: ArtifactKind;
   title: string;
-  node: WorkNodeState;
-  sentence: string;
-  sentenceTone: ArtifactRowTone;
-  author: string | null;
-  revision: number | null;
+  state: ArtifactState | null;
+  group: ArtifactGroup;
   at: IsoDateTime | null;
+  deletedAt: IsoDateTime | null;
+  partCount: number;
+  parts: ReadonlyArray<ArtifactRowPart>;
+  runBy: string | null;
+  isPlanRunning: boolean;
   isFaint: boolean;
-  action: ArtifactRowAction | null;
 }>;
 
 export type ArtifactListCounts = Readonly<Record<ArtifactFilter, number>>;
@@ -53,176 +54,138 @@ type Params = Readonly<{
   generations: ReadonlyArray<ArtifactGeneration>;
   agents: ReadonlyArray<Agent>;
   openQuestionCount: number;
+  askingAgentIds: ReadonlySet<AgentId>;
+  now: number;
 }>;
 
-const isRetired = ({ status }: { readonly status: ArtifactStatus }): boolean =>
-  status === 'superseded' || status === 'discarded';
-
-const partsLabel = ({ plan }: { readonly plan: PlanWithCount }): string | null => {
-  const count = plan.clusters?.length ?? 0;
-  if (count === 0) {
+const runByOf = ({
+  plan,
+  agents,
+}: {
+  readonly plan: PlanWithCount;
+  readonly agents: ReadonlyArray<Agent>;
+}): string | null => {
+  const last = plan.lastConsumer ?? null;
+  if (last === null || plan.consumptionCount === 0) {
     return null;
   }
-  return count === 1 ? '1 part' : `${count} parts`;
+  const consumer = resolvePlanConsumer({ agentId: last.agentId, agentName: last.name, agents });
+  return planConsumerLabel({ name: consumer.name, count: plan.consumptionCount });
 };
 
-type PlanState = Pick<ArtifactListRow, 'node' | 'sentence' | 'sentenceTone'>;
-
-const PROGRESS_NODE = {
-  notRun: { node: 'done', sentenceTone: 'neutral' },
-  running: { node: 'running', sentenceTone: 'info' },
-  question: { node: 'question', sentenceTone: 'warning' },
-  failed: { node: 'failed', sentenceTone: 'danger' },
-  waiting: { node: 'queued', sentenceTone: 'neutral' },
-  done: { node: 'done', sentenceTone: 'neutral' },
-} as const satisfies Record<
-  PlanPartsProgress['kind'],
-  Pick<ArtifactListRow, 'node' | 'sentenceTone'>
->;
-
-const ranState = ({
-  plan,
-  agents,
-}: {
-  readonly plan: PlanWithCount;
-  readonly agents: ReadonlyArray<Agent>;
-}): PlanState => {
-  const rows = planPartRows({ plan, agents, askingAgentIds: new Set() });
-  if (rows.length === 0) {
-    return { node: 'done', sentence: 'Ran', sentenceTone: 'neutral' };
-  }
-  const progress = planPartsProgress({ rows, hasRun: true });
-  return { ...PROGRESS_NODE[progress.kind], sentence: planPartsSentence({ progress }) };
-};
-
-const planState = ({
-  plan,
-  agents,
-  openQuestionCount,
-}: {
-  readonly plan: PlanWithCount;
-  readonly agents: ReadonlyArray<Agent>;
-  readonly openQuestionCount: number;
-}): PlanState => {
-  switch (plan.status) {
-    case 'active': {
-      if (openQuestionCount > 0) {
-        return { node: 'question', sentence: 'Needs your answer', sentenceTone: 'warning' };
-      }
-      const parts = partsLabel({ plan });
-      return {
-        node: 'ready',
-        sentence: parts === null ? 'Ready to run' : `Ready to run · ${parts}`,
-        sentenceTone: 'warning',
-      };
-    }
-    case 'consumed':
-      return ranState({ plan, agents });
-    case 'superseded':
-      return { node: 'skipped', sentence: 'Replaced by a newer revision', sentenceTone: 'neutral' };
-    case 'discarded':
-      return { node: 'stopped', sentence: 'Discarded', sentenceTone: 'neutral' };
-    default: {
-      const exhaustive: never = plan.status;
-      return exhaustive;
-    }
-  }
-};
-
-const screensLabel = ({ sourceText }: { readonly sourceText: string }): string => {
-  const parsed = parseWireframeSource({ source: sourceText });
-  if (parsed.status !== 'valid') {
-    return 'Screens could not be read';
-  }
-  const count = parsed.document.screens.length;
-  return count === 1 ? '1 screen' : `${count} screens`;
-};
-
-const restingSentence = ({ artifact }: { readonly artifact: SessionArtifact }): string => {
-  if (artifact.status === 'superseded') {
-    return 'Replaced by a newer revision';
-  }
-  if (artifact.status === 'discarded') {
-    return 'Discarded';
-  }
-  if (artifact.kind === 'report') {
-    const type = asReportType({ value: artifact.metadata.reportType });
-    return type === null ? 'Report' : REPORT_TYPE_LABEL[type];
-  }
-  if (artifact.kind === 'wireframe') {
-    return screensLabel({ sourceText: artifact.sourceText });
-  }
-  return 'Plan';
-};
-
-const restingNode = ({ status }: { readonly status: ArtifactStatus }): WorkNodeState => {
-  if (status === 'superseded') {
-    return 'skipped';
-  }
-  if (status === 'discarded') {
-    return 'stopped';
-  }
-  return 'marker';
-};
-
-const scoutSentence = ({ generation }: { readonly generation: ArtifactGeneration }): string => {
-  const total = generation.scouts.length;
-  if (total === 0) {
-    return 'Writing';
-  }
-  const done = generation.scouts.filter((scout) => scout.state === 'done').length;
-  return `${done} of ${total} scouts done`;
-};
+const groupOf = ({ state }: { readonly state: ArtifactState | null }): ArtifactGroup =>
+  state === null ? 'ready' : state.group;
 
 const generationRow = ({
   generation,
 }: {
   readonly generation: ArtifactGeneration;
 }): ArtifactListRow => {
-  const base = {
-    key: `generation:${generation.agentId}`,
+  const state = generationStateOf({ generation });
+  return {
+    id: `generation:${generation.agentId}`,
     target: { kind: 'generation', generation },
     kind: generation.kind,
     title: generation.title,
-    author: generation.title,
-    revision: null,
+    state,
+    group: state.group,
     at: generation.startedAt,
+    deletedAt: null,
+    partCount: 0,
+    parts: [],
+    runBy: null,
+    isPlanRunning: false,
     isFaint: false,
-  } as const satisfies Partial<ArtifactListRow>;
-  switch (generation.state) {
-    case 'generating':
-      return {
-        ...base,
-        node: 'running',
-        sentence: scoutSentence({ generation }),
-        sentenceTone: 'info',
-        action: generation.canStop ? 'stop' : null,
-      };
-    case 'waiting':
-      return {
-        ...base,
-        node: 'question',
-        sentence: 'Needs your answer',
-        sentenceTone: 'warning',
-        action: null,
-      };
-    case 'unproduced':
-      return {
-        ...base,
-        node: 'failed',
-        sentence: ARTIFACT_GENERATION_PRESENTATION[generation.kind].unproduced.label,
-        sentenceTone: 'danger',
-        action: 'retry',
-      };
-    default: {
-      const exhaustive: never = generation.state;
-      return exhaustive;
-    }
-  }
+  };
 };
 
+const planRow = ({
+  plan,
+  agents,
+  openQuestionCount,
+  askingAgentIds,
+}: {
+  readonly plan: PlanWithCount;
+  readonly agents: ReadonlyArray<Agent>;
+  readonly openQuestionCount: number;
+  readonly askingAgentIds: ReadonlySet<AgentId>;
+}): ArtifactListRow => {
+  const partRows = planPartRows({ plan, agents, askingAgentIds });
+  const inputs = planStateInputsOf({ plan, rows: partRows });
+  const state = artifactStateOf({
+    kind: 'plan',
+    status: plan.status,
+    isNew: false,
+    openQuestionCount,
+    ...inputs,
+  });
+  return {
+    id: `artifact:${plan.id}`,
+    target: { kind: 'artifact', artifactId: plan.id },
+    kind: 'plan',
+    title: plan.title,
+    state,
+    group: groupOf({ state }),
+    at: plan.createdAt,
+    deletedAt: plan.status === 'discarded' ? plan.updatedAt : null,
+    partCount: inputs.partCount,
+    parts: partRows.map((part) => ({
+      index: part.index,
+      title: part.title,
+      nodeState: part.node.state,
+      nodeLabel: part.node.label,
+    })),
+    runBy: runByOf({ plan, agents }),
+    isPlanRunning: state?.key === 'running' || state?.key === 'needs',
+    isFaint: state?.key === 'deleted' || state?.key === 'replaced',
+  };
+};
+
+const NEW_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+const isNewArtifact = ({
+  artifact,
+  now,
+}: {
+  readonly artifact: SessionArtifact;
+  readonly now: number;
+}): boolean => artifact.openedAt === null && now - Date.parse(artifact.createdAt) < NEW_WINDOW_MS;
+
+const documentRow = ({
+  artifact,
+  now,
+}: {
+  readonly artifact: SessionArtifact;
+  readonly now: number;
+}): ArtifactListRow => {
+  const state = artifactStateOf({
+    kind: artifact.kind,
+    status: artifact.status,
+    isNew: isNewArtifact({ artifact, now }),
+    openQuestionCount: 0,
+    ...NO_PLAN_STATE_INPUTS,
+  });
+  return {
+    id: `artifact:${artifact.id}`,
+    target: { kind: 'artifact', artifactId: artifact.id },
+    kind: artifact.kind,
+    title: artifact.title,
+    state,
+    group: groupOf({ state }),
+    at: artifact.createdAt,
+    deletedAt: artifact.status === 'discarded' ? artifact.updatedAt : null,
+    partCount: 0,
+    parts: [],
+    runBy: null,
+    isPlanRunning: false,
+    isFaint: state?.key === 'deleted' || state?.key === 'replaced',
+  };
+};
+
+const sortKey = (row: ArtifactListRow): string => row.deletedAt ?? row.at ?? '';
+
 const byNewest = (left: ArtifactListRow, right: ArtifactListRow): number =>
-  (right.at ?? '').localeCompare(left.at ?? '');
+  sortKey(right).localeCompare(sortKey(left));
 
 export const buildArtifactListRows = ({
   plans,
@@ -230,49 +193,42 @@ export const buildArtifactListRows = ({
   generations,
   agents,
   openQuestionCount,
-}: Params): ReadonlyArray<ArtifactListRow> => {
-  const agentName = (agentId: string): string | null =>
-    agents.find((agent) => agent.id === agentId)?.name ?? null;
-  const revisionOf = (artifactId: ArtifactId): number | null =>
-    artifacts.find((artifact) => artifact.id === artifactId)?.revision ?? null;
-  const planRows = plans.map((plan): ArtifactListRow => ({
-    key: `artifact:${plan.id}`,
-    target: { kind: 'artifact', artifactId: plan.id },
-    kind: 'plan',
-    title: plan.title,
-    ...planState({ plan, agents, openQuestionCount }),
-    author: agentName(plan.agentId),
-    revision: revisionOf(plan.id),
-    at: plan.createdAt,
-    isFaint: isRetired({ status: plan.status }),
-    action: null,
-  }));
-  const artifactRows = artifacts
-    .filter((artifact) => artifact.kind !== 'plan')
-    .map((artifact): ArtifactListRow => ({
-      key: `artifact:${artifact.id}`,
-      target: { kind: 'artifact', artifactId: artifact.id },
-      kind: artifact.kind,
-      title: artifact.title,
-      node: restingNode({ status: artifact.status }),
-      sentence: restingSentence({ artifact }),
-      sentenceTone: 'neutral',
-      author: agentName(artifact.agentId),
-      revision: artifact.revision,
-      at: artifact.createdAt,
-      isFaint: isRetired({ status: artifact.status }),
-      action: null,
-    }));
-  const rows = [
+  askingAgentIds,
+  now,
+}: Params): ReadonlyArray<ArtifactListRow> =>
+  [
     ...generations.map((generation) => generationRow({ generation })),
-    ...planRows,
-    ...artifactRows,
-  ];
-  return [
-    ...rows.filter((row) => !row.isFaint).sort(byNewest),
-    ...rows.filter((row) => row.isFaint).sort(byNewest),
-  ];
+    ...plans.map((plan) => planRow({ plan, agents, openQuestionCount, askingAgentIds })),
+    ...artifacts
+      .filter((artifact) => artifact.kind !== 'plan')
+      .map((artifact) => documentRow({ artifact, now })),
+  ].sort(byNewest);
+
+const ARTIFACT_GROUP_ORDER: ReadonlyArray<ArtifactGroup> = [
+  'needs',
+  'ready',
+  'running',
+  'ran',
+  'deleted',
+];
+
+export const ARTIFACT_GROUP_LABEL: Readonly<Record<ArtifactGroup, string>> = {
+  needs: 'Needs you',
+  ready: 'Ready',
+  running: 'Running',
+  ran: 'Ran',
+  deleted: 'Recently deleted',
 };
+
+export const groupArtifactRows = ({
+  rows,
+}: {
+  readonly rows: ReadonlyArray<ArtifactListRow>;
+}): ReadonlyArray<Readonly<{ group: ArtifactGroup; rows: ReadonlyArray<ArtifactListRow> }>> =>
+  ARTIFACT_GROUP_ORDER.map((group) => ({
+    group,
+    rows: rows.filter((row) => row.group === group),
+  })).filter((entry) => entry.rows.length > 0);
 
 export const filterArtifactRows = ({
   rows,
@@ -287,9 +243,12 @@ export const countArtifactRows = ({
   rows,
 }: {
   readonly rows: ReadonlyArray<ArtifactListRow>;
-}): ArtifactListCounts => ({
-  all: rows.length,
-  plan: rows.filter((row) => row.kind === 'plan').length,
-  report: rows.filter((row) => row.kind === 'report').length,
-  wireframe: rows.filter((row) => row.kind === 'wireframe').length,
-});
+}): ArtifactListCounts => {
+  const live = rows.filter((row) => row.group !== 'deleted');
+  return {
+    all: live.length,
+    plan: live.filter((row) => row.kind === 'plan').length,
+    report: live.filter((row) => row.kind === 'report').length,
+    wireframe: live.filter((row) => row.kind === 'wireframe').length,
+  };
+};

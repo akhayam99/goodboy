@@ -1,4 +1,4 @@
-import type { PointerEvent as ReactPointerEvent, ReactNode } from 'react';
+import { memo, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { Cloud, GitMerge, GripVertical } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { BranchCommit, SessionId } from '@goodboy/types';
@@ -11,6 +11,8 @@ import {
   type HistoryAction,
   type HistoryRowMark,
 } from '../../historyRowMarks';
+import type { HistoryAbsorbed } from '../../../../store/slices/history/types';
+import { HistoryAbsorbedList } from './HistoryAbsorbedList';
 import { HistoryModeSwitch } from './HistoryModeSwitch';
 import { HistoryRowActions } from './HistoryRowActions';
 import { HistoryRowMarkList } from './HistoryRowMarkList';
@@ -20,6 +22,7 @@ import { historyRowLine, type HistoryRowView } from './historyRowLine';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import type { CommitActionTarget } from '../../../actions/types';
 import { useHeldPaletteScope } from '../../../palette/useHeldPaletteScope';
+import { isSameData } from '../../../../shared/utils/isSameData';
 
 type HistoryTakenInRow = {
   readonly commit: BranchCommit;
@@ -34,6 +37,7 @@ type Props = {
   readonly titleOf: (sha: string) => string;
   readonly conflictFiles: ReadonlyArray<string>;
   readonly includes: ReadonlyArray<string>;
+  readonly absorbed: ReadonlyArray<HistoryAbsorbed>;
   readonly takenIn: ReadonlyArray<HistoryTakenInRow>;
   readonly pills: HistoryRowPillState;
   readonly isNew: boolean;
@@ -54,7 +58,7 @@ type Props = {
   readonly onToggleExpanded: () => void;
 };
 
-export const HistoryCommitRow = ({
+const HistoryCommitRowView = ({
   sessionId,
   commit,
   view,
@@ -62,6 +66,7 @@ export const HistoryCommitRow = ({
   titleOf,
   conflictFiles,
   includes,
+  absorbed,
   takenIn,
   pills,
   isNew,
@@ -229,6 +234,7 @@ export const HistoryCommitRow = ({
                 ) : null}
               </span>
               <HistoryRowPlanLine parts={parts} conflictFiles={conflictFiles} />
+              {absorbed.length === 0 ? null : <HistoryAbsorbedList absorbed={absorbed} />}
               {showExpanded ? (
                 <span className="mt-1.5 flex flex-col gap-0.5 border-l border-border-soft pl-2.5">
                   {takenIn.map((taken) => (
@@ -262,3 +268,7 @@ export const HistoryCommitRow = ({
     </div>
   );
 };
+
+export const HistoryCommitRow = memo(HistoryCommitRowView, (previous, next) =>
+  isSameData({ first: previous, second: next }),
+);

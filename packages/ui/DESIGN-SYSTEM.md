@@ -588,6 +588,18 @@ sits on the lane of its parent agent, above the parent, at the start of its
 earliest subagent; its children explode upward on a lane nested in that one. A
 subagent that asks you a question counts the same way (`groupChild` ask).
 
+A finished workflow run or agent chain with three rows or more is a third group
+kind, `steps`: the run row itself is the group row, with its own node, the
+summary from `groupSummary` ("8 steps · 1 question answered") after the title,
+never truncated: the title gives way first, down to 96px, then the summary keeps
+only its first clause ("8 steps"),
+the hint "Open ↵" or "Fold ↵", and the chevron. A run that asks you something,
+failed or is still running is never folded. Every group row fills the routing,
+time and cost columns with the totals of what it holds (`groupTotals`), counted
+once, and its time is fixed: a group row never reads the shared work clock. A
+row already on screen never grows again: when a run finishes under the pointer
+its rows join the group already open.
+
 A resolver takes its row state from the comment it fixes, not from the agent:
 the `review` reason carries the Review state and its word (Ready for you,
 Drafting, Pushed, Draft failed), with Review's tone and node. A comment that
@@ -898,10 +910,10 @@ with the one-line title (full name on hover), the Brief and Transcript tabs
 icon with an anchored `ConfirmPopover`, the overflow menu), then one 18px meta
 line with role, status, time and model. That is 70px with the 16px below, no
 separate tabs row, and the transcript under it starts 8px down (`ChatView`
-`topInset="tight"`). The session overview's `HeaderBand` holds the title, then one
+`topInset="tight"`). The session overview passes `headerRhythm="section"`, so the gap under its header is `PANE_RHYTHM.stack`, the same as between its body sections. Its `HeaderBand` holds the title, then one
 `Goal` line (an 11px faint label, the goal in muted text on one line with an
 ellipsis) only when the goal says more than the title, or `Add a goal` when
-there is none, then the chips, `Context` first. Goal, decisions and summary
+there is none, then one row of facts: `Context`, `Artifacts`, linked work, `Link work` and the cost. Goal, decisions and summary
 live in the Context drawer, never as a block in the column. `scroll="body"` keeps the header fixed above a scrolling body,
 `scroll="self"` hands the body a bounded region that scrolls itself (a
 transcript), and `dock` pins a chat composer to the bottom of the same column.
@@ -1223,6 +1235,16 @@ shape with `EmptyState size="inline"`: a caller passes only layout
 (`justify-center`, `basis-full`), never its own padding or fill, and
 `inline-empty-states-use-the-wrappers.test.ts` fails on any `size="inline"`
 under `apps/desktop/src`.
+
+An empty line inside a section ("No open worktrees.") is `EmptyLine`: one faint
+sentence, an optional glyph before it and an optional action after it. It is
+the only shape for a one-line empty, never bare text in its own style.
+
+**Loading keeps the page in place.** A part that reloads shows a skeleton of
+its own height: `SkeletonRow` (a row, with a `status` label naming what loads)
+or `SkeletonChip` (a chip). Only the parts that reload turn to skeleton; the
+title, the goal, the timeline and the cost stay. A session refresh shows them
+only after 250 ms (`useSessionSkeleton`), so a fast refresh never flashes.
 
 **Inline beats the centred hero** because the pane already has a title and a
 rhythm. A hero repeats the title in bigger type. It pretends the lens is a

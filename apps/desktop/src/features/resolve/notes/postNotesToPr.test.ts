@@ -19,7 +19,10 @@ const noteOf = (patch: Partial<DiffComment>): DiffComment => ({
 describe('postNotesToPr', () => {
   it('turns anchored notes into draft review comments and closes them', async () => {
     const addReviewDraft = vi.fn(async () => undefined);
-    const resolveDiffComment = vi.fn(async () => undefined);
+    const closed: Array<string> = [];
+    const closeNote = async (noteId: string): Promise<void> => {
+      closed.push(noteId);
+    };
 
     const result = await postNotesToPr({
       sessionId: SESSION_ID,
@@ -28,7 +31,7 @@ describe('postNotesToPr', () => {
         noteOf({ id: 'file-level' }),
       ],
       addReviewDraft,
-      resolveDiffComment,
+      closeNote,
     });
 
     expect(addReviewDraft).toHaveBeenCalledWith({
@@ -39,8 +42,7 @@ describe('postNotesToPr', () => {
       side: 'new',
       body: 'Round half even',
     });
-    expect(resolveDiffComment).toHaveBeenCalledWith(SESSION_ID, 'rounding');
-    expect(resolveDiffComment).not.toHaveBeenCalledWith(SESSION_ID, 'file-level');
+    expect(closed).toEqual(['rounding']);
     expect(result).toEqual({ posted: 1, skipped: 1 });
     expect(postNotesResultMessage(result)).toBe(
       '1 note is now a draft review comment. 1 without a line stayed as notes',

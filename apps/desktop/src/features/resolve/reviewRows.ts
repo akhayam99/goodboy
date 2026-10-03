@@ -25,16 +25,20 @@ const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
 const EMPTY_COMMENTS: ReadonlyArray<PrComment> = [];
 const EMPTY_NOTES: ReadonlyArray<DiffComment> = [];
 
-export const reviewRowsOf = ({ state, sessionId }: Params): ReadonlyArray<ResolveQueueRow> => {
-  const rows = buildResolveQueueRows({
+export const launchRowsOf = ({ state, sessionId }: Params): ReadonlyArray<ResolveQueueRow> =>
+  buildResolveQueueRows({
     entries: state.sessionResolveQueueItems[sessionId] ?? EMPTY_ENTRIES,
     attempts: state.sessionResolveAttempts[sessionId] ?? EMPTY_ATTEMPTS,
     deliveryReceipts: [],
     comments: activeReviewSourceOf({ state, sessionId })?.comments ?? EMPTY_COMMENTS,
     notes: state.diffComments[sessionId] ?? EMPTY_NOTES,
   });
+
+export const reviewRowsOf = ({ state, sessionId }: Params): ReadonlyArray<ResolveQueueRow> => {
   const entry = selectedReviewEntryOf({ state, sessionId });
-  return rows.filter((row) => rowBelongsToSource({ row: row.thread, entry }));
+  return launchRowsOf({ state, sessionId }).filter((row) =>
+    rowBelongsToSource({ row: row.thread, entry }),
+  );
 };
 
 type DraftParams = {

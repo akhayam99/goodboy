@@ -1,32 +1,37 @@
 // @vitest-environment happy-dom
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { BootstrapPhase, RemoteProbe } from '@goodboy/types';
+
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../../store/storyHarness')).dbModuleMock());
+vi.mock('../hooks/useBootstrapWatch', () => ({ useBootstrapWatch: () => undefined }));
+
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { BootstrapPhase, RemoteProbe, WorkspaceGitStatus } from '@goodboy/types';
 import { aProject, aSession, TEST_NOW } from '@goodboy/types/testing';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../store/storyHarness';
+
+let useAppStore: StoryStore;
+let FirstLapBanner: typeof import('./index').FirstLapBanner;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+  ({ FirstLapBanner } = await import('./index'));
+}, STORE_IMPORT_TIMEOUT_MS);
 
 const session = aSession({ goal: 'First lap' });
 const project = aProject({ workspaceId: session.workspaceId, name: 'cascadia', kind: 'repo' });
-const bootstrapSession = aSession({ goal: 'bootstrap' });
-
-const h = vi.hoisted(() => ({
-  live: [] as string[],
-  store: {} as Record<string, unknown>,
-}));
-
-vi.mock('../../../store', () => ({
-  useAppStore: <T,>(selector: (state: Record<string, unknown>) => T) => selector(h.store),
-}));
-vi.mock('../../../store/slices/live-work/selectLiveWork', () => ({
-  selectLiveWork: () => ({ liveSessionIds: h.live }),
-}));
-vi.mock('../hooks/useBootstrapWatch', () => ({ useBootstrapWatch: vi.fn() }));
-vi.mock('../PublishPanel', () => ({
-  PublishPanel: ({ primaryLabel }: { primaryLabel?: string }) => (
-    <div>publish panel {primaryLabel}</div>
-  ),
-}));
-
-import { FirstLapBanner } from './index';
+const withRemote = { ...project, remoteUrl: 'https://example.invalid/cascadia.git' };
+const bootstrapSession = aSession({ goal: 'bootstrap', workspaceId: session.workspaceId });
 
 const phase = (patch: Partial<BootstrapPhase> = {}): BootstrapPhase => ({
   stage: 'first-lap',
@@ -39,86 +44,114 @@ const phase = (patch: Partial<BootstrapPhase> = {}): BootstrapPhase => ({
   ...patch,
 });
 
-const workingTree = (changed: number) => ({
+const gitStatus = (changed: number): WorkspaceGitStatus => ({
   state: 'ready',
+  branch: 'main',
+  headSubject: 'chore: track this project with git',
+  upstreamDistance: { kind: 'unknown', reason: 'no-upstream' },
   workingTree: { kind: 'known', staged: 0, unstaged: changed, untracked: 0, unmerged: 0, changed },
+  upstream: null,
+  inProgress: null,
 });
 
-const setStore = ({ stage = phase(), probe = null as RemoteProbe | null, changed = 0 } = {}) => {
-  h.store = {
-    sessions: [session],
-    projects: [project],
-    bootstrapPhase: { [project.id]: stage },
-    bootstrapRemoteProbe: probe === null ? {} : { [project.id]: { probe, readAt: TEST_NOW } },
-    bootstrapMoveReport: {},
-    projectGitStatus: { [project.id]: workingTree(changed) },
-    loadProjectGitStatus: vi.fn(async () => undefined),
-    moveToBootstrap: vi.fn(async () => ({ kind: 'moved', session: bootstrapSession, report: {} })),
-    resumeBootstrapMove: vi.fn(async () => ({
-      kind: 'moved',
-      session: bootstrapSession,
-      report: {},
-    })),
-    dismissBootstrapReport: vi.fn(),
-    navigate: vi.fn(),
-  };
+type SeedParams = {
+  readonly stage?: BootstrapPhase;
+  readonly probe?: RemoteProbe | null;
+  readonly hasRemote?: boolean;
+  readonly answer?: RemoteProbe;
 };
 
-beforeEach(() => {
-  h.live = [];
-  setStore();
+const seed = ({
+  stage = phase(),
+  probe = null,
+  hasRemote = false,
+  answer = { kind: 'main-present', branch: 'main', sha: 'abc1234' },
+}: SeedParams = {}) => {
+  useAppStore.setState({
+    sessions: [session, bootstrapSession],
+    projects: [hasRemote ? withRemote : project],
+    bootstrapPhase: { [project.id]: stage },
+    bootstrapRemoteProbe: probe === null ? {} : { [project.id]: { probe, readAt: TEST_NOW } },
+    projectGitStatus: { [project.id]: gitStatus(2) },
+    loadProjectGitStatus: async () => undefined,
+    probeProjectRemote: async ({ projectId }) => {
+      useAppStore.setState((state) => ({
+        bootstrapRemoteProbe: {
+          ...state.bootstrapRemoteProbe,
+          [projectId]: { probe: answer, readAt: TEST_NOW },
+        },
+      }));
+      return answer;
+    },
+  });
+};
+
+beforeEach(async () => {
+  await resetStoryStore();
+  seed();
 });
 
 afterEach(cleanup);
 
 describe('FirstLapBanner', () => {
-  it('says where the session works and offers Publish', () => {
+  it('says where the session works and leaves Publish to the Projects row', () => {
     render(<FirstLapBanner sessionId={session.id} />);
 
-    expect(screen.getByText('cascadia · project folder · main')).toBeDefined();
-    expect(
-      screen.getByText('This session works in your project folder. Nothing is published yet.'),
-    ).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
-    expect(screen.getByText(/publish panel/)).toBeDefined();
-  });
-
-  it('folds the move into Publish when there is work to move', () => {
-    setStore({ changed: 4 });
-    render(<FirstLapBanner sessionId={session.id} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
-
-    expect(screen.getByText('publish panel Publish and move my work')).toBeDefined();
-  });
-
-  it('shows the move card once main is on the remote', () => {
-    setStore({ probe: { kind: 'main-present', branch: 'main', sha: 'abc' }, changed: 2 });
-    render(<FirstLapBanner sessionId={session.id} />);
-
-    expect(screen.getByText('main is on the remote now.')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Move my work' })).toBeDefined();
+    screen.getByText('cascadia · This session works in your project folder');
+    screen.getByText('Nothing is published yet.');
     expect(screen.queryByRole('button', { name: 'Publish' })).toBeNull();
   });
 
-  it('says it cannot check the remote only when the project has one', () => {
-    setStore({ probe: { kind: 'unreachable', reason: 'offline' } });
-    const first = render(<FirstLapBanner sessionId={session.id} />);
-    expect(screen.queryByText("Couldn't check the remote")).toBeNull();
-    first.unmount();
-
-    h.store = { ...h.store, projects: [{ ...project, remoteUrl: 'https://example.com/a/b.git' }] };
+  it('shows the move card once main is on the remote', () => {
+    seed({ probe: { kind: 'main-present', branch: 'main', sha: 'abc' } });
     render(<FirstLapBanner sessionId={session.id} />);
-    expect(screen.getByText("Couldn't check the remote")).toBeDefined();
+
+    screen.getByText('cascadia · main is on the remote now.');
+    screen.getByRole('button', { name: 'Move my work' });
+  });
+
+  it('holds a placeholder while it checks a remote it has not read yet', () => {
+    seed({ hasRemote: true });
+    render(<FirstLapBanner sessionId={session.id} />);
+
+    screen.getByRole('status', { name: 'Checking the remote' });
+    expect(screen.queryByText("Couldn't check the remote")).toBeNull();
+  });
+
+  it('says it cannot check the remote as a notice, and tries again on demand', async () => {
+    seed({ hasRemote: true, probe: { kind: 'unreachable', reason: 'offline' } });
+    render(<FirstLapBanner sessionId={session.id} />);
+
+    screen.getByText("Couldn't check the remote");
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    });
+
+    await waitFor(() => screen.getByRole('button', { name: 'Move my work' }));
+    expect(screen.queryByText("Couldn't check the remote")).toBeNull();
+  });
+
+  it('stays quiet about the remote when the project has none', () => {
+    seed({ probe: { kind: 'unreachable', reason: 'offline' } });
+    render(<FirstLapBanner sessionId={session.id} />);
+
+    expect(screen.queryByText("Couldn't check the remote")).toBeNull();
   });
 
   it('resumes an interrupted move once and opens bootstrap when it finishes', async () => {
-    setStore({ stage: phase({ stage: 'moving' }) });
+    let resumed = 0;
+    seed({ stage: phase({ stage: 'moving' }) });
+    useAppStore.setState({
+      resumeBootstrapMove: async () => {
+        resumed += 1;
+        return { kind: 'refused', reason: 'failed', message: 'The copy did not match.' };
+      },
+    });
     render(<FirstLapBanner sessionId={session.id} />);
 
-    expect(screen.getByText('Moving your work into bootstrap')).toBeDefined();
-    await waitFor(() => expect(h.store.navigate).toHaveBeenCalledTimes(1));
-    expect(h.store.resumeBootstrapMove).toHaveBeenCalledTimes(1);
+    screen.getByText('Moving your work into bootstrap');
+    await waitFor(() => screen.getByText('The copy did not match.'));
+    expect(resumed).toBe(1);
   });
 
   it('renders nothing for a session that is not a first lap', () => {

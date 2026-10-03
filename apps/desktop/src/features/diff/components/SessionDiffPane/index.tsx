@@ -36,6 +36,7 @@ import { useDiffReviewThreads } from '../../hooks/useDiffReviewThreads';
 import { useSessionDiff } from '../../hooks/useSessionDiff';
 import { DiffView } from '../DiffView';
 import { DiffNotesActions } from '../DiffNotesActions';
+import { DiffNotesLaunch } from '../DiffNotesLaunch';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
 
 export const DIFF_PANE_TITLE = 'Diff';
@@ -90,7 +91,7 @@ export const SessionDiffPane = ({
   branchRevision,
 }: Props) => {
   const diff = useSessionDiff({ sessionId, worktreePath, diffFocus, branchRevision });
-  const { comments: noteComments, openNotes } = useDiffNotes({ sessionId });
+  const { comments: noteComments, fixes } = useDiffNotes({ sessionId });
   const mountId = useAppStore(
     (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.mountId ?? null,
   );
@@ -330,10 +331,9 @@ export const SessionDiffPane = ({
       focusPath={diff.focusPath}
       onFocusHandled={diff.clearFocus}
       toolbarEnd={
-        openNotes.length > 0 ? (
-          <DiffNotesActions sessionId={sessionId} openNotes={openNotes} />
-        ) : undefined
+        fixes.length > 0 ? <DiffNotesActions sessionId={sessionId} fixes={fixes} /> : undefined
       }
+      belowToolbar={<DiffNotesLaunch sessionId={sessionId} />}
     />
   );
 

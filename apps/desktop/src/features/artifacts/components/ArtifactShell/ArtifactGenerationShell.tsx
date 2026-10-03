@@ -6,10 +6,8 @@ import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { OpenQuestionCluster } from '../../../chat/components/ChatView/OpenQuestionCluster';
 import { modelLabel } from '../../../chat/utils/chat-constants';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
-import {
-  ARTIFACT_GENERATION_PRESENTATION,
-  type ArtifactGeneration,
-} from '../../artifactCollection';
+import type { ArtifactGeneration } from '../../artifactCollection';
+import { generationStateOf } from '../../artifactStateOf';
 import { ArtifactScouts } from '../ArtifactStudio/ArtifactScouts';
 import { ArtifactShellActions } from './ArtifactShellActions';
 import { ArtifactShellHeader } from './ArtifactShellHeader';
@@ -40,11 +38,7 @@ export const ArtifactGenerationShell = ({ sessionId, generation }: Props) => {
         <ArtifactShellHeader
           kind={generation.kind}
           title={generation.title}
-          chip={
-            <ArtifactStateChip
-              presentation={ARTIFACT_GENERATION_PRESENTATION[generation.kind][generation.state]}
-            />
-          }
+          chip={<ArtifactStateChip state={generationStateOf({ generation })} />}
           actions={
             <ArtifactShellActions
               target={{ kind: 'artifact', sessionId, subject: { kind: 'generation', generation } }}

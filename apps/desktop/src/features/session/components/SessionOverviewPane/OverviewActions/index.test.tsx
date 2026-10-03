@@ -1,51 +1,41 @@
 // @vitest-environment happy-dom
 
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../../../store/storyHarness')).dbModuleMock(),
+);
+
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type {
-  Agent,
-  IsoDateTime,
-  Session,
-  SessionId,
-  WorkflowRun,
-  WorkspaceId,
-} from '@goodboy/types';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Agent, Session, SessionId, WorkflowRun, WorkspaceId } from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../../store/storyHarness';
 
-const { state } = vi.hoisted(() => ({
-  state: {
-    openArtifactCreation: vi.fn(),
-    sessionPhaseRuns: {} as Record<string, ReadonlyArray<Agent>>,
-  },
-}));
+let useAppStore: StoryStore;
+let OverviewActions: typeof import('./index').OverviewActions;
 
-vi.mock('../../../../../store', () => ({
-  EMPTY_ARRAY: Object.freeze([]),
-  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
-}));
+beforeAll(async () => {
+  useAppStore = await importStore();
+  ({ OverviewActions } = await import('./index'));
+}, STORE_IMPORT_TIMEOUT_MS);
 
-vi.mock('../../CreateAgentPopover', () => ({
-  CreateAgentPopover: () => <button type="button">Start agent</button>,
-}));
+const SESSION_ID = 'session-1' as SessionId;
 
-import { OverviewActions } from './index';
-
-const SESSION_ID: SessionId = JSON.parse(JSON.stringify('session-1'));
-const NOW = '2026-08-01T00:00:00.000Z' as IsoDateTime;
-
-const SESSION = {
+const SESSION: Session = aSession({
   id: SESSION_ID,
-  workspaceId: JSON.parse(JSON.stringify('workspace-1')) as WorkspaceId,
+  workspaceId: 'workspace-1' as WorkspaceId,
   goal: 'Ship the thing',
-  state: { kind: 'draft' },
-  contextSlots: [],
-  providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
-  permissionMode: 'bypassPermissions',
-  workflowRuns: [],
-  autoRun: false,
-  titleUserEdited: false,
-  createdAt: NOW,
-  updatedAt: NOW,
-} satisfies Session;
+});
 
 const RUN = {
   id: JSON.parse(JSON.stringify('run-1')),
@@ -57,96 +47,99 @@ const RUN = {
   executionMode: 'static',
 } satisfies WorkflowRun;
 
-beforeEach(() => {
-  vi.clearAllMocks();
-  state.sessionPhaseRuns = {};
+beforeEach(async () => {
+  await resetStoryStore();
+  useAppStore.setState({ sessions: [SESSION] });
 });
 
 afterEach(cleanup);
 
-describe('OverviewActions', () => {
-  it('offers Run workflow and Start agent when the session has no active run', () => {
-    render(
-      <OverviewActions session={SESSION} onOpenWorkflowBuilder={vi.fn()} onOpenRun={vi.fn()} />,
-    );
+type RenderParams = {
+  readonly session?: Session;
+  readonly onOpenWorkflowBuilder?: () => void;
+  readonly onOpenRun?: () => void;
+};
 
-    expect(screen.getByRole('button', { name: 'Start agent' })).toBeDefined();
-    expect(screen.getByRole('button', { name: /Run workflow/ })).toBeDefined();
-    expect(screen.queryByRole('button', { name: /Open run/ })).toBeNull();
+const renderActions = ({
+  session = SESSION,
+  onOpenWorkflowBuilder = vi.fn(),
+  onOpenRun = vi.fn(),
+}: RenderParams = {}) => {
+  render(
+    <OverviewActions
+      session={session}
+      onOpenWorkflowBuilder={onOpenWorkflowBuilder}
+      onOpenRun={onOpenRun}
+    />,
+  );
+  fireEvent.click(screen.getByRole('button', { name: /New/ }));
+};
+
+const itemLabels = () =>
+  screen
+    .getAllByRole('menuitem')
+    .map((item) => item.querySelector('.font-medium')?.textContent ?? item.textContent);
+
+describe('OverviewActions', () => {
+  it('keeps one New control that lists workflow, agent, report and wireframe', () => {
+    renderActions();
+
+    expect(itemLabels()).toEqual(['Run workflow', 'Start agent', 'Report', 'Wireframe']);
+    expect(screen.queryByRole('button', { name: 'Create' })).toBeNull();
   });
 
-  it('calls onOpenWorkflowBuilder from Run workflow', () => {
+  it('opens the workflow builder from Run workflow', () => {
     const onOpenWorkflowBuilder = vi.fn();
-    render(
-      <OverviewActions
-        session={SESSION}
-        onOpenWorkflowBuilder={onOpenWorkflowBuilder}
-        onOpenRun={vi.fn()}
-      />,
-    );
+    renderActions({ onOpenWorkflowBuilder });
 
-    fireEvent.click(screen.getByRole('button', { name: /Run workflow/ }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Run workflow/ }));
 
     expect(onOpenWorkflowBuilder).toHaveBeenCalledOnce();
   });
 
-  it('swaps to Open run when the session has an active workflow run', () => {
+  it('swaps to Open run while a workflow run is active', () => {
     const onOpenRun = vi.fn();
-    const session = { ...SESSION, workflowRuns: [RUN] } satisfies Session;
-    render(
-      <OverviewActions session={session} onOpenWorkflowBuilder={vi.fn()} onOpenRun={onOpenRun} />,
-    );
+    renderActions({ session: { ...SESSION, workflowRuns: [RUN] }, onOpenRun });
 
-    expect(screen.queryByRole('button', { name: /Run workflow/ })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /Open run/ }));
+    expect(screen.queryByRole('menuitem', { name: /Run workflow/ })).toBeNull();
+    fireEvent.click(screen.getByRole('menuitem', { name: /Open run/ }));
 
     expect(onOpenRun).toHaveBeenCalledOnce();
   });
 
   it('treats a run whose agents all concluded as inactive', () => {
-    state.sessionPhaseRuns[SESSION_ID] = [
-      {
-        id: JSON.parse(JSON.stringify('agent-1')),
-        workflowRunId: RUN.id,
-        status: 'completed',
-      } as Agent,
-    ];
-    const session = { ...SESSION, workflowRuns: [RUN] } satisfies Session;
-    render(
-      <OverviewActions session={session} onOpenWorkflowBuilder={vi.fn()} onOpenRun={vi.fn()} />,
-    );
+    useAppStore.setState({
+      sessionPhaseRuns: {
+        [SESSION_ID]: [
+          {
+            id: JSON.parse(JSON.stringify('agent-1')),
+            workflowRunId: RUN.id,
+            status: 'completed',
+          } as Agent,
+        ],
+      },
+    });
+    renderActions({ session: { ...SESSION, workflowRuns: [RUN] } });
 
-    expect(screen.getByRole('button', { name: /Run workflow/ })).toBeDefined();
+    screen.getByRole('menuitem', { name: /Run workflow/ });
   });
 
-  it('puts Report and Wireframe in the Create menu, not Workflow', () => {
-    render(
-      <OverviewActions session={SESSION} onOpenWorkflowBuilder={vi.fn()} onOpenRun={vi.fn()} />,
-    );
+  it('opens the agent form from Start agent', () => {
+    renderActions();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create' }));
-    const items = screen.getAllByRole('menuitem');
-    expect(items.map((item) => item.querySelector('.font-medium')?.textContent)).toEqual([
-      'Report',
-      'Wireframe',
-    ]);
+    fireEvent.click(screen.getByRole('menuitem', { name: /Start agent/ }));
+
+    screen.getByRole('dialog', { name: 'Start agent' });
   });
 
   it.each([
     ['Report', 'report'],
     ['Wireframe', 'wireframe'],
   ] as const)('opens the %s creation from its item', (label, kind) => {
-    render(
-      <OverviewActions session={SESSION} onOpenWorkflowBuilder={vi.fn()} onOpenRun={vi.fn()} />,
-    );
+    renderActions();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create' }));
     fireEvent.click(screen.getByRole('menuitem', { name: new RegExp(`^${label}`) }));
 
-    expect(state.openArtifactCreation).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      kind,
-      workflowRunId: null,
-    });
+    expect(useAppStore.getState().artifactCreation[SESSION_ID]).toEqual({ kind, note: null });
   });
 });
