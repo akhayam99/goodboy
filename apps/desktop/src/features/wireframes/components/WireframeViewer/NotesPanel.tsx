@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { Eyebrow, IconButton, SelectableRow, WorkNode } from '@goodboy/ui';
+import { EmptyLine, Eyebrow, IconButton, SelectableRow, WorkNode } from '@goodboy/ui';
 import type { WireframeNodeNote, WireframeScreenLink } from '../../wireframeNotes';
 
 type Props = {
@@ -28,7 +28,7 @@ export const NotesPanel = ({
     </div>
     {screenNote === null ? null : <p className="text-body text-foreground">{screenNote}</p>}
     {notes.length === 0 && screenNote === null ? (
-      <p className="text-secondary text-muted-foreground">No notes on this screen.</p>
+      <EmptyLine>No notes on this screen.</EmptyLine>
     ) : null}
     {notes.length === 0 ? null : (
       <ol className="flex min-w-0 flex-col gap-1">

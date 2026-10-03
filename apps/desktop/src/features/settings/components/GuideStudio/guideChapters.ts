@@ -82,7 +82,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
           studio: { kind: 'settings', focus: { scope: 'workspace', section: 'projects' } },
         },
       },
-      { label: 'Add a workspace', target: { kind: 'studio', studio: { kind: 'addWorkspace' } } },
+      { label: 'Open a folder', target: { kind: 'studio', studio: { kind: 'addWorkspace' } } },
     ],
   },
   {

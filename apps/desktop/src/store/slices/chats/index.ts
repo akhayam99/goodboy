@@ -9,6 +9,7 @@ import { markChatRead } from './markChatRead';
 import { markChatUnread } from './markChatUnread';
 import { pinChat } from './pinChat';
 import { recordChatLink } from './recordChatLink';
+import { flushChatLinks, queueChatLink } from './pendingChatLinks';
 import { renameChat } from './renameChat';
 import { restoreChats } from './restoreChats';
 import { sendChatMessage } from './sendChatMessage';
@@ -33,6 +34,8 @@ export const createChatsSlice = ({ set, get }: SliceDeps): ChatsSlice => ({
   restoreChats: restoreChats(set),
   deleteChats: deleteChats(set, get),
   recordChatLink: recordChatLink(set),
+  queueChatLink: queueChatLink(set),
+  flushChatLinks: flushChatLinks(set, get),
   pinChat: pinChat(set),
   renameChat: renameChat(set),
   setChatModel: setChatModel(set),

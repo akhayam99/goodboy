@@ -32,6 +32,7 @@ import { useAppStore } from '../../../../store';
 import { useHoveredMountRow, useShowCompletedMounts } from './sceneReveal';
 import { ShellFrame, seedShellChrome } from './shellChrome';
 import { sceneClock } from '../sceneClock';
+import { overviewFullSeed } from './overviewFullSeed';
 
 const clock = sceneClock({ anchor: '2026-09-07T13:15:00.000Z' });
 
@@ -192,7 +193,7 @@ const EXTRA_SEEDS: ReadonlyArray<MountSeed> = [
   },
 ];
 
-type MountsVariant = 'mounts' | 'many' | 'refreshing';
+type MountsVariant = 'mounts' | 'many' | 'refreshing' | 'full';
 
 type Props = {
   readonly variant?: MountsVariant;
@@ -587,6 +588,8 @@ export const MountsScene = ({ variant = 'mounts' }: Props) => {
       sessionMounts: { [SESSION_ID]: views },
       sessionProjectMounts: { [SESSION_ID]: projectMountsOf(seeds) },
       sessionSyncing: variant === 'refreshing' ? { [SESSION_ID]: true } : {},
+      ...(variant === 'full' &&
+        overviewFullSeed({ workspaceId: WORKSPACE_ID, sessionId: SESSION_ID, now: NOW })),
       sessionActiveMount: { [SESSION_ID]: POSTINGS_MOUNT },
       sessionActiveProject: { [SESSION_ID]: LEDGER_ID },
       mountBranchObservations: { [SESSION_ID]: [] },

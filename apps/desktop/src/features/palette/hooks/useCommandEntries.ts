@@ -269,14 +269,24 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         },
       );
     }
-    out.push({
-      key: 'goto:add-workspace',
-      label: 'Add workspace',
-      kind: 'goto',
-      group: null,
-      icon: Plus,
-      run: () => fire({ name: 'goodboy:add-workspace' }),
-    });
+    out.push(
+      {
+        key: 'goto:start-new-project',
+        label: 'Start a new project',
+        kind: 'goto',
+        group: null,
+        icon: Plus,
+        run: () => fire({ name: 'goodboy:start-new-project' }),
+      },
+      {
+        key: 'goto:add-workspace',
+        label: 'Open a folder',
+        kind: 'goto',
+        group: null,
+        icon: Plus,
+        run: () => fire({ name: 'goodboy:add-workspace' }),
+      },
+    );
 
     for (const script of scripts) {
       out.push({

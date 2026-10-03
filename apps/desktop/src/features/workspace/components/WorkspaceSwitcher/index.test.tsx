@@ -169,7 +169,7 @@ describe('WorkspaceSwitcher', () => {
     const spy = vi.fn();
     window.addEventListener('goodboy:add-workspace', spy);
     render(<WorkspaceSwitcher onClose={onClose} />);
-    fireEvent.click(screen.getByText('Add workspace'));
+    fireEvent.click(screen.getByText('Open a folder'));
     expect(spy).toHaveBeenCalledOnce();
     expect(onClose).toHaveBeenCalledOnce();
     window.removeEventListener('goodboy:add-workspace', spy);

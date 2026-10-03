@@ -145,10 +145,10 @@ export const CREATE_AND_SEARCH_ROWS: ReadonlyArray<Row> = [
     lands: both(lens('files'), () => heading('Diff')),
   },
   ...(['Report', 'Wireframe'] as const).map((kind): Row => ({
-    name: `overview create menu: ${kind.toLowerCase()}`,
+    name: `overview new menu: ${kind.toLowerCase()}`,
     covers: ['openArtifactCreation'],
     open: async () => {
-      await clickButton(/^Create$/);
+      await clickButton(/^New$/);
       await click(await screen.findByRole('menuitem', { name: new RegExp(`^${kind}`) }));
     },
     lands: () => heading(`Create ${kind.toLowerCase()}`),

@@ -92,8 +92,8 @@ opens it on a mode. Commands is the first mode.
 - **Empty input.** The verbs of the scope under For this session (or agent, or commit),
   then Recent, then Go to, Actions and Help. Go to reaches studios by name:
   Back to board inside a session, Inbox, Workflows, Impact, Changelog,
-  Notifications and Workspace settings inside a workspace, and Add workspace
-  everywhere.
+  Notifications and Workspace settings inside a workspace, and Start a new
+  project and Open a folder everywhere.
 - **Typing gives one ranked list, never regrouped.** A fuzzy subsequence match
   with bonuses for word starts, camel boundaries and runs, so `pay export`
   finds "Speed up the payout export" (`score.ts`); then frecency, uses halved
@@ -1286,8 +1286,11 @@ agentId, pane })` asks for either, and the address prints it as a last
 
 ## Starting a project from nothing
 
-The empty screen and the workspace launcher offer **Start a new project** and
-**Open a folder**. The wizard's project step offers the same two. Start opens
+The empty screen, the workspace launcher, the workspace switcher and the
+command palette offer **Start a new project** and **Open a folder**, in that
+order. The wizard's project step offers the same two. Settings, Workspace,
+Projects names its form **Start a new project** too and opens the same form in
+line. **Add workspace** names only the studio that groups projects. Start opens
 one inline form (`NewProjectForm`), never a dialog: a name, a location (the
 last parent folder, else the home folder, changed with the system picker) and
 the four things the click does. A name that exists in the parent says so and

@@ -35,7 +35,7 @@ export const MoveReport = ({ sessionId }: Props) => {
   ].filter((note): note is string => note !== null);
 
   return (
-    <div className="flex flex-col gap-2 bg-subtle px-4 py-3">
+    <div className="flex flex-col px-4 py-3">
       <Notice
         tone="success"
         placement="inline"
@@ -51,14 +51,15 @@ export const MoveReport = ({ sessionId }: Props) => {
             Dismiss
           </Button>
         }
-      />
-      {notes.length > 0 ? (
-        <ul className="flex flex-col gap-1 text-secondary text-muted-foreground">
-          {notes.map((note) => (
-            <li key={note}>{note}</li>
-          ))}
-        </ul>
-      ) : null}
+      >
+        {notes.length > 0 ? (
+          <ul className="flex flex-col gap-1 text-secondary text-muted-foreground">
+            {notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        ) : null}
+      </Notice>
     </div>
   );
 };

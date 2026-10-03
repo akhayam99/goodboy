@@ -87,7 +87,6 @@
     "session -> workTreeModel": 7,
     "session -> workflows": 23,
     "session -> workspace": 7,
-    "session -> workspace-chat": 1,
     "settings -> backup": 1,
     "settings -> changelog": 1,
     "settings -> integrations": 2,

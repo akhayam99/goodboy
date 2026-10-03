@@ -124,6 +124,7 @@ const renderStudio = ({
       return (
         <WorkspaceLinkStudio
           variant="fullscreen"
+          isNewProject={overlay.start === 'new-project'}
           onClose={close}
           onOfferRepo={offerWorkspaceRepo}
         />
@@ -241,6 +242,7 @@ export const AppOverlayRouter = ({
         {overlay?.kind === 'addWorkspace' ? (
           <WorkspaceLinkStudio
             variant="viewport"
+            isNewProject={overlay.start === 'new-project'}
             onClose={close}
             onOfferRepo={offerWorkspaceRepo}
           />

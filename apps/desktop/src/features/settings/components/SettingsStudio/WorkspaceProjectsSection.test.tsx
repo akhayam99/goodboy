@@ -248,7 +248,7 @@ describe('WorkspaceProjectsSection', () => {
     const popover = screen.getByRole('dialog', { name: 'Add project' });
     expect(within(popover).getByLabelText('Project path')).toBeDefined();
     expect(within(popover).getByRole('button', { name: 'Browse' })).toBeDefined();
-    expect(within(popover).getByRole('button', { name: 'New project' })).toBeDefined();
+    expect(within(popover).getByRole('button', { name: 'Start a new project' })).toBeDefined();
     expect(within(popover).getByRole('button', { name: 'Link a plain folder' })).toBeDefined();
   });
 

@@ -11,6 +11,7 @@ import { InboxScene } from './scenes/InboxScene';
 import { InboxSourceScene } from './scenes/InboxSourceScene';
 import { ConversationScene } from './scenes/ConversationScene';
 import { MountsScene } from './scenes/MountsScene';
+import { OverviewFullScene } from './scenes/OverviewFullScene';
 import { OverviewManyScene } from './scenes/OverviewManyScene';
 import { OverviewRefreshingScene } from './scenes/OverviewRefreshingScene';
 import { MountMismatchScene } from './scenes/MountMismatchScene';
@@ -150,6 +151,7 @@ export const MOCK_SCENES = {
   'inbox-source': InboxSourceScene,
   conversation: ConversationScene,
   mounts: MountsScene,
+  'overview-full': OverviewFullScene,
   'overview-projects-many': OverviewManyScene,
   'overview-refreshing': OverviewRefreshingScene,
   'mount-mismatch': MountMismatchScene,

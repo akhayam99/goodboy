@@ -90,13 +90,13 @@ every turn running in the one it had, so opening a workspace only switches
 this window in place when nothing is running here. When agents are running,
 the workspace popover asks first and offers a new window, which keeps them
 going; a side door that used to switch silently (a notification, an inbox
-item, Add workspace) now opens that workspace's own window instead of
+item, Open a folder) now opens that workspace's own window instead of
 touching this one. `⌘Enter` on a workspace row always opens a new window,
 no question asked.
 
 **Disconnect** keeps a workspace and its projects in the database with
 everything they hold, it only hides them. Re-adding the same folder through
-Add workspace, or a project through Add project, reconnects it and its
+Open a folder, or a project through Add project, reconnects it and its
 sessions instead of creating a duplicate. If the folder moved since it was
 disconnected, Goodboy recognizes it by repository identity and offers to
 locate it the same way a moved project is located while connected.
