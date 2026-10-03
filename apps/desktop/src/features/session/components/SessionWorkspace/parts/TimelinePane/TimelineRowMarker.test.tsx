@@ -9,7 +9,6 @@ import type {
   TimelineStreamEntry,
 } from '../../../../timeline/buildTimelineStream';
 import { DONE_ROW_STATE } from '../../../../../workTreeModel/rowState';
-import { TIMELINE_RHYTHM } from '../../../../../workTreeModel/timelineRhythm';
 import { TimelineRowMarker } from './TimelineRowMarker';
 
 afterEach(cleanup);
@@ -42,7 +41,7 @@ const itemOf = ({ entry }: { readonly entry: TimelineStreamEntry }): TimelineRow
   nodeIndex: null,
   rowState: DONE_ROW_STATE,
   hasUnread: false,
-  height: TIMELINE_RHYTHM.grade.entry.height,
+  height: 52,
   topY: 0,
   markerY: 18,
   groupId: null,

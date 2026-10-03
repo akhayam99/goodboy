@@ -1,9 +1,9 @@
 import { TERMINAL_DIM } from '@goodboy/ui';
 import { runIdentityStroke } from '../../../../timeline/runIdentity';
 import {
+  RAIL_EDGE_BLEED,
   railColumnX,
   railLaneSpans,
-  type RailJoin,
   type RailRow,
   type RailSegment,
 } from '../../../../../workTreeModel/railGeometry';
@@ -59,8 +59,6 @@ const strokeWidthOf = ({ identityIndex, laneId, hoveredLaneId }: WidthParams): n
 const segmentKey = ({ segment }: { readonly segment: RailSegment }): string =>
   `${segment.column}:${segment.fromY}:${segment.toY}:${segment.dash}`;
 
-const RAIL_EDGE_BLEED = 1;
-
 type BleedParams = {
   readonly segment: RailSegment;
   readonly height: number;
@@ -75,9 +73,6 @@ const bleedSegmentEnds = ({ segment, height }: BleedParams) => {
     y2: segment.toY >= height ? height + RAIL_EDGE_BLEED : segment.toY,
   };
 };
-
-const joinEdgeColumnOf = ({ join }: { readonly join: RailJoin }): number =>
-  join.kind === 'branch' ? join.laneColumn : join.spineColumn;
 
 export const TimelineRail = ({ rail, width, lanes = null }: Props) => {
   const hoveredLaneId = lanes?.hoveredLaneId ?? null;
@@ -125,7 +120,6 @@ export const TimelineRail = ({ rail, width, lanes = null }: Props) => {
             })}
             strokeDasharray={dashArrayOf({ dash: segment.dash })}
             strokeLinecap="butt"
-            shapeRendering="crispEdges"
           />
         ))}
         {rail.joins.map((join) => (
@@ -145,27 +139,6 @@ export const TimelineRail = ({ rail, width, lanes = null }: Props) => {
             strokeLinejoin="round"
           />
         ))}
-        {rail.joins.map((join) =>
-          join.dash === 'solid' ? (
-            <line
-              key={`bleed:${join.kind}:${join.laneColumn}:${join.anchorY}`}
-              data-testid="timeline-rail-join-bleed"
-              className={dimOf({ isMuted: join.isMuted })}
-              x1={railColumnX({ column: joinEdgeColumnOf({ join }) })}
-              y1={-RAIL_EDGE_BLEED}
-              x2={railColumnX({ column: joinEdgeColumnOf({ join }) })}
-              y2={0}
-              stroke={strokeOf({ identityIndex: join.identityIndex })}
-              strokeWidth={strokeWidthOf({
-                identityIndex: join.identityIndex,
-                laneId: join.laneId,
-                hoveredLaneId,
-              })}
-              strokeLinecap="butt"
-              shapeRendering="crispEdges"
-            />
-          ) : null,
-        )}
       </svg>
       {lanes === null
         ? null

@@ -1,4 +1,4 @@
-import type { KeyboardEvent, ReactNode } from 'react';
+import { useContext, type KeyboardEvent, type ReactNode } from 'react';
 import type { ObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
 import { Button, WORK_META_COLUMN, WORK_ROW, cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
@@ -6,7 +6,6 @@ import type { MountDiffStat } from '../../../../../../store';
 import { formatClock } from '../../../../../../shared/utils/time/formatClock';
 import { useHoverMarkViewed } from '../../../../hooks/useHoverMarkViewed';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
-import { EXPLODE_IN_STAGGER_MS, EXPLODE_OUT_STAGGER_MS } from '../../../../timeline/explodeTiming';
 import type { TimelineOpenTarget } from '../../../../hooks/useTimelineOpen';
 import { railColumnX, type RailRow } from '../../../../../workTreeModel/railGeometry';
 import { TIMELINE_RHYTHM } from '../../../../../workTreeModel/timelineRhythm';
@@ -14,6 +13,7 @@ import { rowStateTone } from '../../../../../workTreeModel/rowStateCopy';
 import { eventMatches } from '../../../../../../shared/keyboard/dispatcher';
 import { SHORTCUTS } from '../../../../../../shared/keyboard/registry';
 import { TIMELINE_GUTTER } from './timelineLayout';
+import { TimelineActionColumn } from './timelineActionColumn';
 import { TimelineRail, type TimelineLaneControl, type TimelineLaneTarget } from './TimelineRail';
 import { TimelineRowLabel } from './TimelineRowLabel';
 import { TimelineRowMarker } from './TimelineRowMarker';
@@ -41,8 +41,8 @@ type Props = {
   readonly diffStat?: MountDiffStat | null;
   readonly worktrees?: ReadonlyArray<string>;
   readonly meta?: ReactNode;
+  readonly state?: ReactNode;
   readonly progress?: number | null;
-  readonly stateNote?: string | null;
   readonly menu?: ReactNode;
   readonly lanes?: TimelineLaneControl | null;
   readonly runLane?: TimelineLaneTarget | null;
@@ -50,24 +50,7 @@ type Props = {
   readonly detail?: ReactNode;
   readonly detailHeight?: number;
   readonly expansion?: TimelineRowExpansion | null;
-  readonly explodePhase?: 'in' | 'out' | null;
   readonly contextMenu?: ObjectMenuTrigger;
-};
-
-const explodeDelayOf = ({
-  item,
-  explodePhase,
-}: {
-  readonly item: TimelineRowItem;
-  readonly explodePhase: 'in' | 'out' | null;
-}): string | undefined => {
-  if (item.explode === undefined || explodePhase === null) {
-    return undefined;
-  }
-  if (explodePhase === 'in') {
-    return `${item.explode.order * EXPLODE_IN_STAGGER_MS}ms`;
-  }
-  return `${(item.explode.total - 1 - item.explode.order) * EXPLODE_OUT_STAGGER_MS}ms`;
 };
 
 const agentIdOf = ({ item }: { readonly item: TimelineRowItem }): AgentId | null =>
@@ -83,8 +66,8 @@ export const TimelineStreamRow = ({
   diffStat = null,
   worktrees,
   meta = null,
+  state = null,
   progress = null,
-  stateNote = null,
   menu = null,
   lanes = null,
   runLane = null,
@@ -92,7 +75,6 @@ export const TimelineStreamRow = ({
   detail = null,
   detailHeight = 0,
   expansion = null,
-  explodePhase = null,
   contextMenu,
 }: Props) => {
   const hover = useHoverMarkViewed({
@@ -101,6 +83,7 @@ export const TimelineStreamRow = ({
     hasUnread: item.hasUnread,
   });
   const boxHeight = TIMELINE_RHYTHM.grade[item.grade].height;
+  const hasActionColumn = useContext(TimelineActionColumn);
   const isWaiting =
     item.rowState.phase === 'waiting' &&
     item.rowState.ask?.kind !== 'reviewComment' &&
@@ -145,7 +128,6 @@ export const TimelineStreamRow = ({
           diffStat={diffStat}
           isLaneLit={isLaneLit}
           worktrees={worktrees}
-          stateNote={stateNote}
           isRevealed={isRevealed}
         />
       </span>
@@ -154,6 +136,7 @@ export const TimelineStreamRow = ({
           {`${openTarget.label} ↵`}
         </span>
       )}
+      {state}
       {meta}
     </>
   );
@@ -161,13 +144,8 @@ export const TimelineStreamRow = ({
   return (
     <div
       data-row-id={item.id}
-      data-explode={explodePhase ?? undefined}
-      className={cn(
-        'group flex min-w-0',
-        explodePhase === 'in' && 'motion-safe:animate-explode-in',
-        explodePhase === 'out' && 'motion-safe:animate-explode-out',
-      )}
-      style={{ height: item.height, animationDelay: explodeDelayOf({ item, explodePhase }) }}
+      className="group flex min-w-0"
+      style={{ height: item.height }}
       onMouseEnter={hover.onMouseEnter}
       onMouseLeave={hover.onMouseLeave}
       onContextMenu={contextMenu?.onContextMenu}
@@ -228,24 +206,27 @@ export const TimelineStreamRow = ({
               {content}
             </button>
           )}
-          <span
-            data-testid={action == null ? undefined : 'timeline-row-action'}
-            className={WORK_META_COLUMN.action}
-            style={{ height: boxHeight }}
-          >
-            {action == null ? null : (
-              <Button
-                variant={action.variant ?? 'ghost'}
-                emphasis={action.variant === 'warning' ? 'outline' : 'solid'}
-                size="sm"
-                className="h-6"
-                isBusy={action.isBusy === true}
-                onClick={action.onAct}
-              >
-                {action.label}
-              </Button>
-            )}
-          </span>
+          {action == null && !hasActionColumn ? null : (
+            <span
+              data-testid={action == null ? undefined : 'timeline-row-action'}
+              data-action-slot
+              className={hasActionColumn ? WORK_META_COLUMN.action : 'flex shrink-0 items-center'}
+              style={{ height: boxHeight }}
+            >
+              {action == null ? null : (
+                <Button
+                  variant={action.variant ?? 'ghost'}
+                  emphasis={action.variant === 'warning' ? 'outline' : 'solid'}
+                  size="sm"
+                  className="h-6"
+                  isBusy={action.isBusy === true}
+                  onClick={action.onAct}
+                >
+                  {action.label}
+                </Button>
+              )}
+            </span>
+          )}
           <span className={WORK_META_COLUMN.menu} style={{ height: boxHeight }}>
             {menu}
           </span>

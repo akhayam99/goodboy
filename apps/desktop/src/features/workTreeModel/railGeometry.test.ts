@@ -9,6 +9,7 @@ import {
   type RailGroupInput,
   type RailGroupShape,
   type RailRowInput,
+  type RailSegment,
 } from './railGeometry';
 
 type RowParams = {
@@ -70,6 +71,88 @@ const lanesOf = (layout: ReturnType<typeof layoutTimelineRail>, id: string) =>
 const spanOf = (layout: ReturnType<typeof layoutTimelineRail>, id: string) =>
   lanesOf(layout, id).map((segment) => `${segment.column}:${segment.fromY}-${segment.toY}`);
 
+type Point = { readonly x: number; readonly y: number };
+
+type Direction = { readonly dx: number; readonly dy: number };
+
+type PathEnds = {
+  readonly start: Point;
+  readonly startDirection: Direction;
+  readonly end: Point;
+  readonly endDirection: Direction;
+};
+
+const roundUnit = (value: number): number => Math.round(value * 1000) / 1000 + 0;
+
+const unit = ({ dx, dy }: Direction): Direction => {
+  const length = Math.hypot(dx, dy);
+  return { dx: roundUnit(dx / length), dy: roundUnit(dy / length) };
+};
+
+const arcDirections = ({
+  from,
+  to,
+  isPositive,
+}: {
+  readonly from: Point;
+  readonly to: Point;
+  readonly isPositive: boolean;
+}): readonly [Direction, Direction] => {
+  const centers: ReadonlyArray<Point> = [
+    { x: from.x, y: to.y },
+    { x: to.x, y: from.y },
+  ];
+  const center =
+    centers.find((candidate) => {
+      const cross =
+        (from.x - candidate.x) * (to.y - candidate.y) -
+        (from.y - candidate.y) * (to.x - candidate.x);
+      return isPositive ? cross > 0 : cross < 0;
+    }) ?? from;
+  const turn = ({ point }: { readonly point: Point }): Direction =>
+    isPositive
+      ? { dx: -(point.y - center.y), dy: point.x - center.x }
+      : { dx: point.y - center.y, dy: -(point.x - center.x) };
+  return [turn({ point: from }), turn({ point: to })];
+};
+
+const pathEnds = ({ path }: { readonly path: string }): PathEnds => {
+  const commands = [...path.matchAll(/([MLCA])([^MLCA]*)/g)].map(([, name, args]) => ({
+    name,
+    values: (args ?? '')
+      .split(/[\s,]+/)
+      .filter((part) => part !== '')
+      .map(Number),
+  }));
+  let current: Point = { x: 0, y: 0 };
+  let start: Point = current;
+  let startDirection: Direction | null = null;
+  let endDirection: Direction = { dx: 0, dy: 0 };
+  for (const { name, values } of commands) {
+    const take = (index: number): Point => ({ x: values[index] ?? 0, y: values[index + 1] ?? 0 });
+    if (name === 'M') {
+      current = take(0);
+      start = current;
+      continue;
+    }
+    const next = name === 'C' ? take(4) : name === 'A' ? take(5) : take(0);
+    const straight: Direction = { dx: next.x - current.x, dy: next.y - current.y };
+    const directions: readonly [Direction, Direction] =
+      name === 'C'
+        ? [
+            { dx: take(0).x - current.x, dy: take(0).y - current.y },
+            { dx: next.x - take(2).x, dy: next.y - take(2).y },
+          ]
+        : name === 'A'
+          ? arcDirections({ from: current, to: next, isPositive: values[4] === 1 })
+          : [straight, straight];
+    startDirection = startDirection ?? unit(directions[0]);
+    endDirection = unit(directions[1]);
+    current = next;
+  }
+  return { start, startDirection: startDirection ?? { dx: 0, dy: 0 }, end: current, endDirection };
+};
+
 describe('layoutTimelineRail', () => {
   it('branches a run out of its origin marker and climbs to the newest step', () => {
     const layout = layoutTimelineRail({
@@ -91,10 +174,10 @@ describe('layoutTimelineRail', () => {
         isMuted: false,
         dash: 'solid',
         anchorY: 18,
-        path: 'M 24 0 C 24 8.84, 16.84 18, 8 18',
+        path: 'M 24 -1 L 24 0 C 24 8.84, 16.84 18, 8 18',
       },
     ]);
-    expect(spanOf(layout, 'step-1')).toEqual(['1:18-36', '1:0-18']);
+    expect(spanOf(layout, 'step-1')).toEqual(['1:0-36']);
     expect(spanOf(layout, 'step-2')).toEqual(['1:18-36']);
     expect(lanesOf(layout, 'step-2').every((segment) => segment.dash === 'solid')).toBe(true);
   });
@@ -135,8 +218,10 @@ describe('layoutTimelineRail', () => {
     expect(layout.columnByGroupId.get('stub')).toBe(2);
     expect(railRow(layout, 'step-1').joins.map((join) => join.laneColumn)).toEqual([2]);
     expect(railRow(layout, 'step-1').joins[0]?.spineColumn).toBe(1);
-    expect(railRow(layout, 'step-1').joins[0]?.path).toBe('M 40 0 C 40 8.84, 32.84 18, 24 18');
-    expect(spanOf(layout, 'child-1')).toEqual(['2:18-36', '2:0-18']);
+    expect(railRow(layout, 'step-1').joins[0]?.path).toBe(
+      'M 40 -1 L 40 0 C 40 8.84, 32.84 18, 24 18',
+    );
+    expect(spanOf(layout, 'child-1')).toEqual(['2:0-36']);
     expect(spanOf(layout, 'child-2')).toEqual(['2:18-36']);
   });
 
@@ -253,8 +338,8 @@ describe('layoutTimelineRail', () => {
         toY: 36,
       },
     ]);
-    expect(spanOf(layout, 'step-1')).toEqual(['1:18-36', '1:0-18']);
-    expect(lanesOf(layout, 'step-1').map((segment) => segment.dash)).toEqual(['solid', 'dashed']);
+    expect(spanOf(layout, 'step-1')).toEqual(['1:0-18', '1:18-36']);
+    expect(lanesOf(layout, 'step-1').map((segment) => segment.dash)).toEqual(['dashed', 'solid']);
   });
 
   it('ends a closed lane on its newest row with no dash toward NOW and no rejoin', () => {
@@ -300,21 +385,22 @@ describe('layoutTimelineRail', () => {
 
     expect(layout.columnByGroupId.get('child')).toBe(2);
     expect(spanOf(layout, 'now')).toEqual(['1:12-48']);
-    expect(spanOf(layout, 'step-5')).toEqual(['1:18-36', '1:0-18']);
+    expect(spanOf(layout, 'step-5')).toEqual(['1:0-36']);
     expect(spanOf(layout, 'child-2')).toEqual(['1:0-36', '2:18-36']);
     expect(railRow(layout, 'child-2').joins).toEqual([
-      {
+      expect.objectContaining({
         kind: 'rejoin',
         spineColumn: 1,
         laneColumn: 2,
         laneId: 'lane',
-        identityIndex: 0,
-        isMuted: false,
         dash: 'dashed',
         anchorY: 18,
-        path: 'M 40 18 C 40 9.16, 32.84 0, 24 0',
-      },
+      }),
     ]);
+    const elbow = pathEnds({ path: railRow(layout, 'child-2').joins[0]?.path ?? '' });
+    expect(elbow.start).toEqual({ x: 40, y: 18 });
+    expect(elbow.end).toEqual({ x: 24, y: 0 });
+    expect(elbow.endDirection).toEqual({ dx: 0, dy: -1 });
   });
 
   it('keeps a rejoining lane open to NOW when no ancestor lane continues above it', () => {
@@ -378,7 +464,7 @@ describe('layoutTimelineRail', () => {
     });
 
     expect(lanesOf(layout, 'pending').map((segment) => segment.dash)).toEqual(['dashed']);
-    expect(lanesOf(layout, 'running').map((segment) => segment.dash)).toEqual(['solid', 'dashed']);
+    expect(lanesOf(layout, 'running').map((segment) => segment.dash)).toEqual(['dashed', 'solid']);
     expect(railRow(layout, 'origin').joins.map((join) => join.dash)).toEqual(['solid']);
   });
 
@@ -644,7 +730,22 @@ describe('junction integrity', () => {
     ],
   };
 
-  const fixtures: ReadonlyArray<Fixture> = [nested, dangling, concurrent];
+  const rejoining: Fixture = {
+    rows: [
+      nowRow(),
+      row({ id: 'step-5', groupId: 'lane', isPending: true }),
+      row({ id: 'child-2', groupId: 'child', isPending: true }),
+      row({ id: 'child-1', groupId: 'child' }),
+      row({ id: 'step-4', groupId: 'lane' }),
+      row({ id: 'origin' }),
+    ],
+    groups: [
+      group({ id: 'lane', originRowId: 'origin', shape: 'open' }),
+      group({ id: 'child', originRowId: 'step-4', shape: 'rejoining', parentGroupId: 'lane' }),
+    ],
+  };
+
+  const fixtures: ReadonlyArray<Fixture> = [nested, dangling, concurrent, rejoining];
 
   it('keeps every stroke inside the box of its row', () => {
     for (const fixture of fixtures) {
@@ -664,54 +765,111 @@ describe('junction integrity', () => {
     }
   });
 
-  it('leaves the elbow row free of a straight run in the column it turns into', () => {
+  it('leaves a branch row free of a straight run in the column it turns into', () => {
     for (const fixture of fixtures) {
       const layout = layoutTimelineRail(fixture);
       for (const rail of layout.rows) {
-        for (const join of rail.joins) {
+        for (const join of rail.joins.filter((candidate) => candidate.kind === 'branch')) {
           expect(rail.segments.filter((segment) => segment.column === join.laneColumn)).toEqual([]);
         }
       }
     }
   });
 
-  it('continues every column that crosses a row edge into the neighbouring row', () => {
+  it('continues every lane across every row edge in global coordinates', () => {
     for (const fixture of fixtures) {
       const layout = layoutTimelineRail(fixture);
-      const widest = Math.max(0, ...layout.columnByGroupId.values());
+      const tops = layout.rows.reduce<ReadonlyArray<number>>(
+        (acc, rail) => [...acc, (acc.at(-1) ?? 0) + rail.height],
+        [0],
+      );
+      const edgeXs = ({
+        index,
+        edge,
+      }: {
+        readonly index: number;
+        readonly edge: 'top' | 'bottom';
+      }): ReadonlyArray<number> => {
+        const rail = layout.rows[index];
+        const top = tops[index] ?? 0;
+        if (rail === undefined) {
+          return [];
+        }
+        const boundary = edge === 'top' ? top : top + rail.height;
+        const fromSegments = rail.segments.flatMap((segment) => {
+          const reaches =
+            edge === 'top' ? top + segment.fromY <= boundary : top + segment.toY >= boundary;
+          return reaches ? [railColumnX({ column: segment.column })] : [];
+        });
+        const fromJoins = rail.joins.flatMap((join) => {
+          const ends = pathEnds({ path: join.path });
+          return [ends.start, ends.end].flatMap((point) =>
+            edge === 'top' && top + point.y <= boundary ? [point.x] : [],
+          );
+        });
+        return [...new Set([...fromSegments, ...fromJoins])].sort(
+          (first, second) => first - second,
+        );
+      };
       for (let index = 0; index < layout.rows.length - 1; index += 1) {
-        const upper = layout.rows[index];
-        const lower = layout.rows[index + 1];
-        const lowerTopY = fixture.rows[index + 1]?.topY ?? 0;
-        if (upper === undefined || lower === undefined) {
+        if ((fixture.rows[index + 1]?.topY ?? 0) > 0) {
           continue;
         }
-        for (let column = 1; column <= widest; column += 1) {
-          const bottomTouch = upper.segments.some(
-            (segment) => segment.column === column && segment.toY === upper.height,
-          );
-          const topTouch =
-            lower.segments.some(
-              (segment) => segment.column === column && segment.fromY === lowerTopY,
-            ) || lower.joins.some((join) => join.laneColumn === column);
-          expect(bottomTouch).toBe(topTouch);
+        expect(edgeXs({ index, edge: 'bottom' })).toEqual(
+          edgeXs({ index: index + 1, edge: 'top' }),
+        );
+      }
+    }
+  });
+
+  it('leaves every branch straight down from the row top and lands it flat on its marker', () => {
+    for (const fixture of fixtures) {
+      const layout = layoutTimelineRail(fixture);
+      for (const rail of layout.rows) {
+        for (const join of rail.joins.filter((candidate) => candidate.kind === 'branch')) {
+          const ends = pathEnds({ path: join.path });
+          const spineX = railColumnX({ column: join.spineColumn });
+
+          expect(ends.start.x).toBe(railColumnX({ column: join.laneColumn }));
+          expect(ends.start.y).toBeLessThanOrEqual(0);
+          expect(ends.startDirection).toEqual({ dx: 0, dy: 1 });
+          expect(ends.end).toEqual({ x: spineX, y: join.anchorY });
+          expect(ends.endDirection.dy).toBe(0);
+          expect(railColumnX({ column: rail.markerColumn })).toBe(spineX);
         }
       }
     }
   });
 
-  it('anchors every elbow on its own row marker and leaves it at the row top', () => {
-    for (const fixture of fixtures) {
-      const layout = layoutTimelineRail(fixture);
-      for (const rail of layout.rows) {
-        for (const join of rail.joins) {
-          const laneX = railColumnX({ column: join.laneColumn });
-          const spineX = railColumnX({ column: join.spineColumn });
+  it('brings every rejoin up into the lane above vertically, never flat at the row edge', () => {
+    const rejoins = fixtures.flatMap((fixture) =>
+      layoutTimelineRail(fixture).rows.flatMap((rail) =>
+        rail.joins.filter((join) => join.kind === 'rejoin'),
+      ),
+    );
+    expect(rejoins.length).toBeGreaterThan(0);
+    for (const join of rejoins) {
+      const ends = pathEnds({ path: join.path });
 
-          expect(join.path).toBe(
-            `M ${laneX} 0 C ${laneX} 8.84, ${spineX + 8.84} ${join.anchorY}, ${spineX} ${join.anchorY}`,
-          );
-          expect(railColumnX({ column: rail.markerColumn })).toBe(spineX);
+      expect(ends.start).toEqual({ x: railColumnX({ column: join.laneColumn }), y: join.anchorY });
+      expect(ends.end.x).toBe(railColumnX({ column: join.spineColumn }));
+      expect(ends.end.y).toBeLessThanOrEqual(0);
+      expect(ends.endDirection).toEqual({ dx: 0, dy: -1 });
+    }
+  });
+
+  it('never draws two strokes over the same stretch of one column', () => {
+    for (const fixture of fixtures) {
+      for (const rail of layoutTimelineRail(fixture).rows) {
+        const byColumn = new Map<number, ReadonlyArray<RailSegment>>();
+        for (const segment of rail.segments) {
+          byColumn.set(segment.column, [...(byColumn.get(segment.column) ?? []), segment]);
+        }
+        for (const stretches of byColumn.values()) {
+          const ordered = [...stretches].sort((first, second) => first.fromY - second.fromY);
+          for (let index = 1; index < ordered.length; index += 1) {
+            expect(ordered[index]?.fromY).toBeGreaterThanOrEqual(ordered[index - 1]?.toY ?? 0);
+          }
         }
       }
     }
@@ -766,8 +924,8 @@ describe('layoutTimelineRail without a spine', () => {
       },
     ]);
     expect(railRow(layout, 'step-2').segments.map((segment) => segment.dash)).toEqual([
-      'solid',
       'dashed',
+      'solid',
     ]);
     expect(railRow(layout, 'now').segments).toEqual([
       {

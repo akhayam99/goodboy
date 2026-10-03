@@ -14,6 +14,7 @@ import {
   sessionEventLabel,
   sessionEventProjectRunLabel,
   sessionEventSecondary,
+  decisionCountsText,
 } from './sessionEventPresentation';
 
 type MakeParams = {
@@ -517,5 +518,19 @@ describe('durable state change events', () => {
         }),
       }),
     ).toBe('Question brought back: Which base branch?');
+  });
+});
+
+describe('decisionCountsText', () => {
+  it('words the context counts instead of a code diff', () => {
+    expect(decisionCountsText({ payload: { added: 1, replaced: 2 } })).toBe('1 added, 2 replaced');
+    expect(decisionCountsText({ payload: { removed: 3, withdrawn: 1, merged: 2 } })).toBe(
+      '3 removed, 1 withdrawn, 2 merged',
+    );
+  });
+
+  it('says nothing when nothing changed', () => {
+    expect(decisionCountsText({ payload: { added: 0, removed: 0 } })).toBeNull();
+    expect(decisionCountsText({ payload: null })).toBeNull();
   });
 });

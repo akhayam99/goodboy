@@ -35,7 +35,6 @@ export type TimelineEntryRowHandlers = {
   readonly setGroupExpanded: (params: {
     readonly id: string;
     readonly isExpanded: boolean;
-    readonly total: number;
   }) => void;
 };
 
@@ -56,7 +55,6 @@ export type TimelineEntryRowProps = {
   readonly step: Step | null;
   readonly costUsd: number;
   readonly isRevealed: boolean;
-  readonly explodePhase: 'in' | 'out' | null;
   readonly isExpanded: boolean;
   readonly decisionDetail: DecisionChangeDetail | null;
   readonly roleModels: RoleModelPreferences | null;
@@ -92,7 +90,6 @@ export const TimelineEntryRow = ({
   step,
   costUsd,
   isRevealed,
-  explodePhase,
   isExpanded,
   decisionDetail,
   roleModels,
@@ -138,7 +135,6 @@ export const TimelineEntryRow = ({
         diffStat={diffStat}
         worktrees={worktrees}
         isRevealed={isRevealed}
-        explodePhase={explodePhase}
         lanes={lanes}
         runLane={runLane}
         step={step}
