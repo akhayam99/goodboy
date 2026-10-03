@@ -1,11 +1,26 @@
-import { Button, InteractiveRow, WORK_META_COLUMN, WORK_ROW, cn } from '@goodboy/ui';
+import { SlidersHorizontal } from 'lucide-react';
+import {
+  Button,
+  InteractiveRow,
+  Tooltip,
+  WORK_META_COLUMN,
+  WORK_ROW,
+  cn,
+  tintClasses,
+} from '@goodboy/ui';
 import type {
   EffortLevel,
   OpenQuestion,
   ProviderId,
   RoleModelPreferences,
   Step,
+  WorkflowRun,
 } from '@goodboy/types';
+import { KIND_TO_ROLE } from '../../../session/agent-kind';
+import {
+  guidanceSentTo,
+  guidanceTagTip,
+} from '../../../../store/slices/workflows/standingGuidance';
 import { isQuestionDelegate } from '../../../context/questionDelegate';
 import { useAgentRowWork } from '../../../session/hooks/useAgentRowWork';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
@@ -25,6 +40,7 @@ export type RunTreeRouting = {
   readonly roleModels: RoleModelPreferences | null;
   readonly sessionProvider: ProviderId | null;
   readonly sessionEffort: EffortLevel | null;
+  readonly run?: Pick<WorkflowRun, 'executionMode' | 'rulesSnapshot'> | null;
 };
 
 type Props = {
@@ -98,6 +114,12 @@ export const RunTreeRow = ({
     sessionEffort: routing.sessionEffort,
     phase: item.rowState.phase,
   });
+  const guidance = isNested
+    ? null
+    : guidanceSentTo({
+        run: routing.run,
+        role: step?.role ?? KIND_TO_ROLE[entry.agentKind] ?? null,
+      });
   const answer = answerOf({ ask: item.rowState.ask });
   const answersFor = isQuestionDelegate({ agent }) ? parentStepName : null;
   const boxHeight = TIMELINE_RHYTHM.grade[item.grade].height;
@@ -156,6 +178,20 @@ export const RunTreeRow = ({
               >
                 {agent.name}
               </span>
+              {guidance === null ? null : (
+                <Tooltip content={guidanceTagTip({ text: guidance })} side="top">
+                  <span
+                    aria-label={`Guidance: ${guidanceTagTip({ text: guidance })}`}
+                    className={cn(
+                      'pointer-events-auto inline-flex shrink-0 cursor-default items-center gap-1 text-meta',
+                      tintClasses('info').text,
+                    )}
+                  >
+                    <SlidersHorizontal size={11} aria-hidden />
+                    Guidance
+                  </span>
+                </Tooltip>
+              )}
               {answersFor === null ? null : (
                 <span className="max-w-40 shrink-0 truncate text-meta text-muted-foreground">
                   {`answering for ${answersFor}`}

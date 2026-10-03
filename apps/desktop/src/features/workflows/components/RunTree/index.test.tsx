@@ -148,6 +148,7 @@ type RenderParams = {
   readonly onAnswer?: (question: OpenQuestion | null) => void;
   readonly highlightedStepId?: string | null;
   readonly onHighlight?: (stepId: string | null) => void;
+  readonly guidanceRun?: WorkflowRun | null;
 };
 
 type HarnessProps = {
@@ -156,6 +157,7 @@ type HarnessProps = {
   readonly onHighlight: (stepId: string | null) => void;
   readonly onSelect: (id: AgentId) => void;
   readonly onAnswer: (question: OpenQuestion | null) => void;
+  readonly guidanceRun: WorkflowRun | null;
 };
 
 const Harness = ({
@@ -164,6 +166,7 @@ const Harness = ({
   onHighlight,
   onSelect,
   onAnswer,
+  guidanceRun,
 }: HarnessProps) => {
   const tree = useRunTree({ session, run, workflow, agentKindOverride: {} });
   return (
@@ -176,6 +179,7 @@ const Harness = ({
         roleModels: null,
         sessionProvider: null,
         sessionEffort: null,
+        run: guidanceRun,
       }}
       selectedAgentId={selectedAgentId}
       highlightedStepId={highlightedStepId}
@@ -196,6 +200,7 @@ const renderTree = ({
   onAnswer = vi.fn(),
   highlightedStepId = null,
   onHighlight = vi.fn(),
+  guidanceRun = null,
 }: RenderParams = {}) => {
   useAppStore.setState({
     sessionPhaseRuns: { [SESSION_ID]: [...agents] },
@@ -211,6 +216,7 @@ const renderTree = ({
       onHighlight={onHighlight}
       onSelect={onSelect}
       onAnswer={onAnswer}
+      guidanceRun={guidanceRun}
     />,
   );
 };
@@ -421,5 +427,40 @@ describe('RunTree', () => {
     onHighlight.mockClear();
     fireEvent.mouseEnter(rowOf('child-1'));
     expect(onHighlight).not.toHaveBeenCalled();
+  });
+});
+
+describe('RunTree standing guidance', () => {
+  const GUIDANCE = '- Group the commits by concern at the end.\n- Open the PR as a draft.';
+  const withRules = (executionMode: WorkflowRun['executionMode']): WorkflowRun => ({
+    ...run,
+    executionMode,
+    rulesSnapshot: {
+      autonomy: 'step',
+      spendLimitUsd: null,
+      spendLimitMode: 'pause',
+      spreadByHeadroom: false,
+      standingGuidance: GUIDANCE,
+      guidanceRoles: ['implementer'],
+    },
+  });
+  const tagOf = (id: string): HTMLElement | null =>
+    within(rowOf(id)).queryByLabelText(/^Guidance:/u);
+
+  it('tags the step whose role got the guidance, quoting its first line', () => {
+    renderTree({ guidanceRun: withRules('static') });
+
+    expect(tagOf(implement.id)?.getAttribute('aria-label')).toBe(
+      'Guidance: \u201cGroup the commits by concern at the end.\u201d, and 1 more',
+    );
+    expect(tagOf(implement.id)?.textContent).toBe('Guidance');
+    expect(tagOf(scout.id)).toBeNull();
+    expect(tagOf(review.id)).toBeNull();
+  });
+
+  it('tags no step of an orchestrated run', () => {
+    renderTree({ guidanceRun: withRules('dynamic') });
+
+    expect(screen.queryAllByLabelText(/^Guidance:/u)).toEqual([]);
   });
 });

@@ -169,6 +169,10 @@ default**. Where it goes:
   tester or the reviewer get it only when you pick them under **Sent to**
 - an empty text adds nothing
 
+On the run page, each step whose role got the guidance (`guidanceSentTo`, the
+same check the brief uses) shows a small **Guidance** tag; its tooltip quotes
+the first line. An orchestrated run tags no step.
+
 **Polish** on guidance uses `polishWorkflowGuidance` in `packages/core`, its own
 prompt next to the goal polish: one rule per line as a list, the language of the
 input, every rule kept and none added. The guidance links to the profile field

@@ -460,6 +460,7 @@ export const WorkflowRow = ({
                       roleModels,
                       sessionProvider,
                       sessionEffort,
+                      run,
                     }}
                     selectedAgentId={selectedAgentId}
                     highlightedStepId={highlightedStepId}
