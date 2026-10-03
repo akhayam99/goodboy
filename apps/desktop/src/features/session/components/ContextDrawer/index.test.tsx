@@ -477,6 +477,9 @@ describe('ContextDrawer', () => {
     fireEvent.click(screen.getByRole('button', { name: '2 decisions' }));
     expect(store.openContextDrawer).toHaveBeenCalledWith({ sessionId: SID, tab: 'decisions' });
     expect(screen.getByRole('button', { name: 'Goal' }).textContent).toBe('Goal');
+    expect(screen.getByRole('definition', { name: 'Changed' }).textContent).toBe(
+      'Goal, 2 decisions, Summary',
+    );
   });
 
   it('queues Update now in the session queue and shows it as queued', () => {

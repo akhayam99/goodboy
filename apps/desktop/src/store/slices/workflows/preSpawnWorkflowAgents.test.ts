@@ -123,10 +123,13 @@ describe('preSpawnWorkflowAgents', () => {
       defaultProvider: 'codex',
       roleModels: { implementer: { providerId: 'anthropic', model: 'sonnet-5', effort: 'medium' } },
       availability: availability(),
-      policy: [
-        { id: 'codex', state: 'on' },
-        { id: 'anthropic', state: 'off' },
-      ],
+      scope: {
+        defaultProvider: 'codex',
+        policy: [
+          { id: 'codex', state: 'on' },
+          { id: 'anthropic', state: 'off' },
+        ],
+      },
     });
 
     const insert = invokeAgentInsertSpy.mock.calls[0]![0] as Record<string, unknown>;
@@ -142,10 +145,13 @@ describe('preSpawnWorkflowAgents', () => {
       defaultProvider: 'codex',
       roleModels: { implementer: { providerId: 'anthropic', model: 'sonnet-5', effort: 'medium' } },
       availability: availability(),
-      policy: [
-        { id: 'codex', state: 'on' },
-        { id: 'anthropic', state: 'on' },
-      ],
+      scope: {
+        defaultProvider: 'codex',
+        policy: [
+          { id: 'codex', state: 'on' },
+          { id: 'anthropic', state: 'on' },
+        ],
+      },
     });
 
     const insert = invokeAgentInsertSpy.mock.calls[0]![0] as Record<string, unknown>;

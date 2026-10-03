@@ -189,7 +189,10 @@ paused, on a neutral rail: the strip above carries the tone. When the pane is
 too narrow for the sentence and the controls on one line, the controls wrap to
 a second line on the right instead of cutting the sentence. When to ask
 (**Ask before each step** or **Run on its own**) and **Model per step** (the
-model each step runs on, and why) sit in the menu. The hint field sits under the row, always open.
+model each step runs on, and why) sit in the menu. A model picked for the
+orchestrator turns its chip amber, and the picker itself says "Overriding
+default" with **reset**; the row draws no separate cross beside the chip
+(`hasTriggerReset={false}`). The hint field sits under the row, always open.
 
 ### Why each step
 

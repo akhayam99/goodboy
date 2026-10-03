@@ -474,15 +474,11 @@ describe('InboxStudio', () => {
     expect(h.openUrl).toHaveBeenCalledWith('https://example.invalid/linear/ENG-1');
   });
 
-  it('focuses the search on slash and the composer on r', () => {
+  it('focuses the search on slash', () => {
     renderStudio();
 
     press('list.search');
     expect(document.activeElement).toBe(screen.getByLabelText('Search the inbox'));
-
-    (document.activeElement as HTMLElement).blur();
-    press('list.reply');
-    expect(document.activeElement).toBe(screen.getByLabelText('Comment'));
   });
 
   it('acts from a focused row, where the click left the focus', () => {

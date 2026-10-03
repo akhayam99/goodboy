@@ -10,6 +10,9 @@ type Props = {
 
 export const TimelineRowStateLine = ({ state, note = null }: Props) => {
   const shown = statePresentationOf({ state });
+  if (shown === null && note === null) {
+    return null;
+  }
   const tone =
     shown === null
       ? 'text-faint-foreground'

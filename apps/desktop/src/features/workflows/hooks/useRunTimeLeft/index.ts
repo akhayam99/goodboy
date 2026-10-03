@@ -7,6 +7,7 @@ import type {
   Step,
   WorkflowRun,
 } from '@goodboy/types';
+import { useRoutingScope } from '../../../../shared/hooks/useRoutingScope';
 import { runTimeLeft, type RunTimeLeft } from '../../../session/timeline/runTimeLeft';
 import { WorkTimeContext } from '../../../workTreeModel/workTimeSource';
 
@@ -30,8 +31,18 @@ export const useRunTimeLeft = ({
   isShown,
 }: Params): RunTimeLeft | null => {
   const source = useContext(WorkTimeContext);
+  const scope = useRoutingScope({ sessionId: agents[0]?.sessionId ?? null });
   if (source === null || !isShown) {
     return null;
   }
-  return runTimeLeft({ run, steps, agents, source, roleModels, sessionProvider, sessionEffort });
+  return runTimeLeft({
+    run,
+    steps,
+    agents,
+    source,
+    roleModels,
+    sessionProvider,
+    sessionEffort,
+    scope,
+  });
 };

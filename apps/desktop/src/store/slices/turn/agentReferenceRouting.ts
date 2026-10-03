@@ -7,6 +7,7 @@ import type {
   Step,
 } from '@goodboy/types';
 import {
+  type AutoContext,
   PROVIDER_CAPABILITIES,
   getDefaultTurnModel,
   resolveModelIdForProvider,
@@ -20,6 +21,7 @@ type Params = {
   readonly roleModels: RoleModelPreferences | null;
   readonly session: Session;
   readonly kindOverride?: AgentKind | null;
+  readonly scope?: AutoContext | null;
 };
 
 type AgentReferenceRouting = {
@@ -42,6 +44,7 @@ export const agentReferenceRouting = ({
   roleModels,
   session,
   kindOverride = null,
+  scope = null,
 }: Params): AgentReferenceRouting => {
   if (agent == null) {
     const provider = session.providerPreference.defaultProvider;
@@ -60,6 +63,7 @@ export const agentReferenceRouting = ({
     roleModels,
     sessionProvider: sessionProviderOf({ session }),
     sessionEffort: session.effort ?? null,
+    scope,
   });
   return {
     provider: routing.provider,
