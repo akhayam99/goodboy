@@ -14,28 +14,29 @@ import {
   type ResolveCommitStyle,
   type SessionId,
 } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
-import { SUGGESTED_LABEL } from '../../../../shared/components/RoutingPicker/autoRecommendationCopy';
-import { eventMatches } from '../../../../shared/keyboard/dispatcher';
-import { SHORTCUTS, shortcutGlyphs } from '../../../../shared/keyboard/registry';
-import { sessionResolveStyle } from '../../../../store/sessionReplySettings';
-import { isReportedError } from '../../../../store/slices/notifications/reportedError';
-import { launchChoiceOf } from '../../launchChoice';
+import { useAppStore } from '../../store';
+import { RunsOn } from '../../shared/components/RunsOn';
+import { eventMatches } from '../../shared/keyboard/dispatcher';
+import { SHORTCUTS, shortcutGlyphs } from '../../shared/keyboard/registry';
+import { sessionResolveStyle } from '../../store/sessionReplySettings';
+import { isReportedError } from '../../store/slices/notifications/reportedError';
+import { launchChoiceOf } from './launchChoice';
 import {
   REVIEW_LAUNCH_LABEL,
   launchFactLine,
   launchStartLabel,
   launchTitle,
-} from '../../reviewLaunchCopy';
-import { startBatch } from '../../startBatch';
-import { useDraftRouting } from './useDraftRouting';
+  type LaunchNoun,
+} from './reviewLaunchCopy';
+import { startBatch } from './startBatch';
+import { useDraftRouting } from './components/ReviewFlow/useDraftRouting';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly threadIds: ReadonlyArray<string>;
   readonly onClose: () => void;
   readonly onStarted: (params: { readonly count: number; readonly model: string }) => void;
+  readonly noun?: LaunchNoun;
 };
 
 const COMMIT_OPTIONS: ReadonlyArray<SegmentedTabOption<ResolveCommitStyle>> = [
@@ -53,7 +54,13 @@ const initialCommitStyle = ({
   return last ?? sessionResolveStyle({ state, sessionId }).commitStyle;
 };
 
-export const ReviewLaunchStrip = ({ sessionId, threadIds, onClose, onStarted }: Props) => {
+export const ReviewLaunchStrip = ({
+  sessionId,
+  threadIds,
+  onClose,
+  onStarted,
+  noun = 'comment',
+}: Props) => {
   const draft = useDraftRouting({ sessionId });
   const limit = useAppStore(
     (s) => s.sessionResolveParallelLimit[sessionId] ?? RESOLVE_PARALLEL_LIMIT_DEFAULT,
@@ -78,6 +85,7 @@ export const ReviewLaunchStrip = ({ sessionId, threadIds, onClose, onStarted }: 
         sessionId,
         threadIds,
         launchChoice: launchChoiceOf({ routing: draft.routing, commitStyle, hint }),
+        noun,
       });
       draft.save(draft.routing);
       onStarted({ count: agentIds.length, model: draft.routing.model });
@@ -112,27 +120,16 @@ export const ReviewLaunchStrip = ({ sessionId, threadIds, onClose, onStarted }: 
       className="flex min-w-0 flex-col gap-3 rounded-lg bg-subtle px-4 py-3.5 motion-safe:animate-studio-in"
     >
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-heading text-foreground">{launchTitle({ count })}</h2>
+        <h2 className="text-heading text-foreground">{launchTitle({ count, noun })}</h2>
         <IconButton icon={X} label={REVIEW_LAUNCH_LABEL.close} variant="ghost" onClick={onClose} />
       </div>
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-        <div className="flex items-center gap-2">
-          <span className="text-label text-faint-foreground">{REVIEW_LAUNCH_LABEL.model}</span>
-          <RoutingPicker
-            variant="pill"
-            connectedProviders={draft.connectedProviders}
-            provider={draft.routing.provider}
-            model={draft.routing.model}
-            effort={{ editable: true, value: draft.routing.effort, onChange: draft.setEffort }}
-            disabled={isStarting}
-            onProvider={draft.setProvider}
-            onModel={draft.setModel}
-            recommendation={{ ...draft.suggested, label: SUGGESTED_LABEL }}
-            overridden={draft.isOverridden}
-            onReset={() => draft.save(null)}
-            ariaLabel={REVIEW_LAUNCH_LABEL.model}
-          />
-        </div>
+        <RunsOn
+          suggested={draft.suggested}
+          override={draft.isOverridden ? draft.routing : null}
+          onChange={draft.save}
+          disabled={isStarting}
+        />
         <div className="flex items-center gap-2">
           <span className="text-label text-faint-foreground">{REVIEW_LAUNCH_LABEL.commit}</span>
           <SegmentedTabs

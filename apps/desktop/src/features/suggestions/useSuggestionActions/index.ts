@@ -8,6 +8,8 @@ import { distanceBehind } from '../../../shared/lib/gitStatus';
 import { useAgentStartedToast } from '../../../shared/hooks/useAgentStartedToast';
 import { launchChoiceOf } from '../../resolve/launchChoice';
 import { startResolve } from '../../resolve/startResolve';
+import { startedLine } from '../../resolve/reviewLaunchCopy';
+import { modelLabel } from '../../chat/utils/chat-constants';
 import type { AgentKind, AgentKindRouting } from '../../session/agent-kind';
 import { showsRunsOn } from '../../session/showsRunsOn';
 import { useKindRouting } from '../../../shared/hooks/useKindRouting';
@@ -28,6 +30,9 @@ const openProviderSignIn = ({ providerId }: { readonly providerId: string }) =>
       detail: { scope: 'providers', provider: providerId, action: 'login' },
     }),
   );
+
+const FIXERS_STARTED_TITLE = 'Fixers started';
+const OPEN_SUMMARY_LABEL = 'Open summary';
 
 type Params = {
   readonly session: Session;
@@ -153,8 +158,9 @@ export const useSuggestionActions = ({
     if (pullRequest == null || unresolvedThreads.length === 0) {
       return;
     }
+    const routing = picked ?? resolverRouting;
     const launchChoice = launchChoiceOf({
-      routing: picked ?? resolverRouting,
+      routing,
       commitStyle: resolveStyle.commitStyle,
       hint: null,
     });
@@ -165,7 +171,7 @@ export const useSuggestionActions = ({
       ),
       launchChoice,
     });
-    await startResolve({
+    const agentIds = await startResolve({
       sessionId,
       threads: unresolvedThreads,
       pr: pullRequest,
@@ -174,7 +180,14 @@ export const useSuggestionActions = ({
       spawnAgent,
       setAgentConfig,
     });
-    navigate({ to: sessionPlace({ sessionId, lens: 'review' }) });
+    announceAgentStarted({
+      sessionId,
+      agentId: agentIds[0] ?? null,
+      title: FIXERS_STARTED_TITLE,
+      message: startedLine({ count: agentIds.length, modelName: modelLabel(routing.model) }),
+      actionLabel: OPEN_SUMMARY_LABEL,
+      open: () => navigate({ to: sessionPlace({ sessionId, lens: 'review' }) }),
+    });
   };
 
   const startRebase = ({ target }: StartRebaseParams): Promise<void> =>

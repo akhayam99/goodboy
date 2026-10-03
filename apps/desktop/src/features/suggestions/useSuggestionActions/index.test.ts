@@ -249,11 +249,18 @@ describe('useSuggestionActions', () => {
     await vi.waitFor(() => expect(spies.spawnAgent).toHaveBeenCalledTimes(1));
     expect(spies.spawnAgent.mock.calls[0]?.[1].sourceThreadIds).toEqual(['thread-1']);
     expect(spies.spawnAgent.mock.calls[0]?.[1].kindOverride).toBe('resolver');
-    await vi.waitFor(() =>
-      expect(spies.navigate).toHaveBeenCalledWith({
-        to: sessionPlace({ sessionId: SESSION_ID, lens: 'review' }),
-      }),
-    );
+    await vi.waitFor(() => expect(spies.announceAgentStarted).toHaveBeenCalledOnce());
+    const [toast] = spies.announceAgentStarted.mock.calls[0] ?? [];
+    expect(toast).toMatchObject({
+      sessionId: SESSION_ID,
+      actionLabel: 'Open summary',
+      message: '1 agent started on Claude',
+    });
+    expect(spies.navigate).not.toHaveBeenCalled();
+    toast.open();
+    expect(spies.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: SESSION_ID, lens: 'review' }),
+    });
   });
 
   it('gives every eligible conversation its own agent inside one batch', async () => {
