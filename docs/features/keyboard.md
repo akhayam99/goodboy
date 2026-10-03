@@ -20,7 +20,7 @@ Drive Goodboy from the keyboard: a **⌘⌥** key for each view, **⌘1** to **�
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-script-drawer-light.webp" alt="The Scripts page with the Check posting drift drawer open on the right: Failed after 12s in ledger-core on nw/fix-settlement-replay, a Command line, the failing vitest output, Run again, Exit 1 and Copy output">
 </picture>
 
-Watch a script's live output in a drawer beside the list. **Stop** ends a running script, **Run again** starts it over, the footer shows the exit code and the time (**Exit 1 · 12s**) with **Copy output**, and the drawer comes back after a reload.
+Pin the scripts you use from the Scripts lens or from the project row on the workspace Projects page: they sit in a **Pinned** strip at the top of the lens, one click away, and in the palette under `$` with their project. Watch a script's live output in a drawer beside the list. **Stop** ends a running script, **Run again** starts it over, the footer shows the exit code and the time (**Exit 1 · 12s**) with **Copy output**, and the drawer comes back after a reload.
 
 ### Open in editor
 

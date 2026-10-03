@@ -41,6 +41,10 @@ const { state, repoMocks } = vi.hoisted(() => ({
     workspaceIntegrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
     projectSentryLinks: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
     loadProjectSentryLinks: vi.fn(async () => undefined),
+    projectRootScripts: {} as Record<string, unknown>,
+    loadProjectRootScripts: vi.fn(async () => undefined),
+    loadScriptPins: vi.fn(async () => undefined),
+    toggleScriptPin: vi.fn(async () => undefined),
   },
   repoMocks: {
     validateGitRepo: vi.fn(async () => ({

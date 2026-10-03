@@ -1,12 +1,15 @@
 import { cancelScript } from './cancelScript';
 import { deleteScript } from './deleteScript';
 import { loadDiscoveredScripts } from './loadDiscoveredScripts';
+import { loadProjectRootScripts } from './loadProjectRootScripts';
+import { loadScriptPins } from './loadScriptPins';
 import { loadScripts } from './loadScripts';
 import { reattachScriptRuns } from './reattachScriptRuns';
 import { refreshDiscoveredScripts } from './refreshDiscoveredScripts';
 import { runDiscoveredScript } from './runDiscoveredScript';
 import { runScript } from './runScript';
 import { saveScript } from './saveScript';
+import { toggleScriptPin } from './toggleScriptPin';
 import type { SliceDeps } from '../../slice-types';
 
 export const createScriptsSlice = ({ set, get }: SliceDeps) => {
@@ -20,5 +23,8 @@ export const createScriptsSlice = ({ set, get }: SliceDeps) => {
     runDiscoveredScript: runDiscoveredScript(set, get),
     reattachScriptRuns: reattachScriptRuns(set, get),
     cancelScript: cancelScript(set, get),
+    loadScriptPins: loadScriptPins(set),
+    toggleScriptPin: toggleScriptPin(get),
+    loadProjectRootScripts: loadProjectRootScripts(set, get),
   };
 };

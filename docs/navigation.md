@@ -1816,3 +1816,17 @@ mount's group or in place of the edited row. Saved scripts of workspace
 projects that are not in the session are named in one line under the groups.
 The session sidebar has no scripts section: `$` launches, the Now chip
 watches.
+
+Every row also has a pin, always visible. A pin belongs to the project, not
+the worktree: its id is the source, the folder and the name
+(`scriptPinId`, a saved script by its id), stored as a JSON list in the app
+setting `scripts.pinned.<projectId>` (`toggleScriptPin`, loaded by
+`loadScriptPins` through `useScriptPins`). Pinned scripts of the mounted
+projects sit in a `Pinned` strip at the top of the lens, one click runs one in
+its group's worktree, and the palette lists them under `$` with the project
+name (`scriptPinEntries`, run through `runPinnedScript`; saved scripts show
+their project name too). On the workspace Projects page every row has a
+`Scripts` fold (`ProjectScriptsFold`, closed by default) that reads the
+project folder only when it opens (`loadProjectRootScripts`, kept in memory
+by root path) and says `Scripts on <base>`, with the same pin; a project with
+no package.json or composer.json says so.
