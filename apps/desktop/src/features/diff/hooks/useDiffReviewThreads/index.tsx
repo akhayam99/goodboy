@@ -52,7 +52,7 @@ export const useDiffReviewThreads = ({ sessionId, mountId }: Params): ReadonlyAr
           statusLabel: REVIEW_MARKER_LABEL,
           isResolved: false,
           canEdit: false,
-          canResolve: false,
+          canClose: false,
           canReopen: false,
           canDelete: false,
           footer: (

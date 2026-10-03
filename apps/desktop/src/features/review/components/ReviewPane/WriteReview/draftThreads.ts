@@ -17,7 +17,7 @@ export const draftThread = (draft: PrReviewDraft): DiffThread => {
     statusLabel: draft.stale ? 'Stale, skipped on submit' : 'Draft',
     isResolved: false,
     canEdit: true,
-    canResolve: false,
+    canClose: false,
     canReopen: false,
   };
 };

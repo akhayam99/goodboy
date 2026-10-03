@@ -1320,7 +1320,10 @@ agentId, pane })` asks for either, and the address prints it as a last
   no verbs there, only **Open in Review (N)**, which calls `openReview` with
   the destination `{ kind: 'threads', threadIds }`. That destination needs no
   mount and no pull request: Review focuses the first thread of the set it
-  has, and the set stays in `reviewSelections[sessionId]`. Back, or Up when
+  has, and the set stays in `reviewSelections[sessionId]`. The destination
+  `{ kind: 'notes', threadIds }` does the same for diff notes and first sets
+  the review source to the local notes, so it lands on your notes even with a
+  pull request open. Back, or Up when
   Review is the entry below, returns to Review with that comment focused, and
   Up from a page reached any other way opens Review on that comment. There are
   no return pills: the Diff and the resolver page come back through Back.
@@ -1516,8 +1519,13 @@ page. The source is a worktree (a file opened from the chat) or a commit (a
 GitHub commit link clicked anywhere in a session; outside a session the link
 opens in the browser). It shows unified and wrapped, and a worktree peek offers
 `Open in Diff`, which opens the Diff lens on that mount with the file in focus.
-`diff-notes` lists the open notes of the Diff lens by file; the count in the diff
-toolbar opens it.
+`diff-notes` is the notes summary of the Diff lens: the notes grouped by state
+(Not started, Working, Needs you, Ready to accept, Failed, and Done folded),
+each with file and line, a one-line excerpt, the model, effort and commit style
+of its fixer, and Fix or Open brief. `Open in Review` sits in its header. The
+count in the diff toolbar opens it, and Start in the fix strip opens it too. It
+reads the notes, their queue items and their attempts only (`useNoteFixes`),
+never the rows of the pull request.
 
 ## The Diff lens
 
@@ -1661,8 +1669,17 @@ on file); a viewed file collapses, and generated or binary files start
 collapsed. Rows are a CSS grid with `role="grid"`, never a table. Click a line
 number to comment, drag or shift-click to cover a range; the composer and the
 threads sit under the last line of the range. ⌘Enter saves, Escape cancels.
-The diff toolbar carries `N notes` and `Resolve in Review` in the Diff lens,
-which opens Review on the same notes; neither is a footer bar. Write review puts
+The diff toolbar carries `N notes`, `Open in Review` and `Fix N notes` in the
+Diff lens; none is a footer bar. `Open in Review` opens Review on your notes
+with the review destination `{ kind: 'notes' }`, which picks the local source
+even when a pull request is open. A note shows `Fix` (primary), `Close note`
+and `Delete`; Fix and `Fix N notes` open the fix strip under the diff toolbar
+(the same `ReviewLaunchStrip` as Review, with the Runs on row) and never start
+an agent on the first click. Start launches one fixer per note through
+`startBatch` and opens the notes summary. While a fixer works on a note, Close
+note and Delete are disabled with "A fixer is working on this note". Close note
+goes through `closeResolvedNote`, the same path Review uses. A first lap
+session gets the first lap refusal in place of the strip. Write review puts
 its form under the last file: the line comments with Edit and Delete on hover (Delete offers Undo), the verdict,
 the summary, and one primary that says the verdict (`Approve`,
 `Request changes`, `Submit comments`), ⌘↵ from the summary. The form's `⋯`

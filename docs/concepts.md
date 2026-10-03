@@ -396,6 +396,10 @@ pushed yet` when origin has no copy, and `Branch diverged from origin`
   started", with an "Open the agent" action) - the toast the standalone
   PlanReadySuggestion component used to show before the unified resolver
   replaced it in E7-5, restored here.
+- The resolve-threads card ("Draft fixes for N") starts its fixers with the
+  Runs on row and stays where you are. The same toast says how many agents
+  started and on which model, and its action is "Open summary", which opens
+  Review on those comments instead of the agent.
 
 ## Agents
 

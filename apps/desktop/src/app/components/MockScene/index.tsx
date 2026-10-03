@@ -127,6 +127,10 @@ import { BrandContextScene } from './scenes/brand/ContextScene';
 import { BrandCompareScene } from './scenes/brand/CompareScene';
 import { BrandDiffScene } from './scenes/brand/DiffScene';
 import { BrandDiffManyFilesScene } from './scenes/brand/DiffManyFilesScene';
+import { DiffNotesScene } from './scenes/brand/DiffNotesScene';
+import { ResolveNotesScene } from './scenes/ResolveNotesScene';
+import { DiffNotesFixScene } from './scenes/brand/DiffNotesFixScene';
+import { DiffNotesSummaryScene } from './scenes/brand/DiffNotesSummaryScene';
 import { BrandHistoryScene } from './scenes/brand/HistoryScene';
 import { BrandHistoryPlanScene } from './scenes/brand/HistoryPlanScene';
 import { BrandHistoryResultScene } from './scenes/brand/HistoryResultScene';
@@ -265,6 +269,10 @@ export const MOCK_SCENES = {
   'brand-compare': BrandCompareScene,
   'brand-diff': BrandDiffScene,
   'brand-diff-many': BrandDiffManyFilesScene,
+  'diff-notes': DiffNotesScene,
+  'diff-notes-fix': DiffNotesFixScene,
+  'diff-notes-summary': DiffNotesSummaryScene,
+  'resolve-notes': ResolveNotesScene,
   'brand-history': BrandHistoryScene,
   'brand-history-plan': BrandHistoryPlanScene,
   'brand-history-trial': BrandHistoryTrialScene,
