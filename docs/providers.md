@@ -639,12 +639,12 @@ When a provider ships or retires a model, update these together:
   (Claude, Codex, Gemini, Cursor) and one ordered list of jobs per role or task. A
   job names a line and an effort; `AUTO_DEFAULTS` is the table `latestInGroup`
   expands from it once, at load, into the non-legacy models of that line, newest
-  first. A resolve never expands again (`expandAtLoad.test.ts`). The ladder
-  tries the default provider first, then the fallback order; within a column it
+  first. A resolve never expands again (`expandAtLoad.test.ts`). With no policy the
+  ladder tries the default provider first, then the fallback order; within a column it
   skips a model the installed CLI is too old for (`cliGate`) or a Cursor combo that
   needs Max Mode when Max Mode is off. A provider with no column (OpenCode,
   OpenRouter, Moonshot) falls back to `strongestModelForTier`, after every curated
-  provider. `AUTO_PROVIDER_GATES` is the list of provider checks: connected, and not
+  provider. `providerCandidates` applies the provider checks: connected, and not
   at its usage limit (`atLimit`, from `providersAtLimit`: a provider whose last
   observation says a window is out and has not reset). A pick that passed a
   provider for its limit carries `skippedAtLimit`. The desktop fills `atLimit`
