@@ -269,6 +269,7 @@ const ARTIFACT: WireframeArtifact = {
   sourceTurnId: 'mock-brand-compare-turn',
   createdAt: minutesAgo(95),
   updatedAt: minutesAgo(6),
+  openedAt: null,
 };
 
 export const BrandCompareScene = () => {

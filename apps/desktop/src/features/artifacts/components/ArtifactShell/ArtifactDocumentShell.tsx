@@ -4,14 +4,13 @@ import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore, useSessionOpenQuestions, agentPlace } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
-import { describeArtifactStatus } from '../../artifact-status';
-import { describePlanStatus } from '../../../plans/plan-status';
+import { artifactStateOf } from '../../artifactStateOf';
+import { NO_PLAN_STATE_INPUTS, planStateInputsOf } from '../../../plans/planStateInputs';
 import { parsePlanSource, planToSource } from '../../../plans/planSource';
 import {
   planPartsProgress,
   planSplitSentence,
 } from '../../../plans/components/PlanParts/planPartRows';
-import { planPartsPresentation } from '../../../plans/components/PlanParts/planPartsPresentation';
 import { usePlanPartRows } from '../../../plans/components/PlanParts/usePlanPartRows';
 import { useArtifactExport } from '../../hooks/useArtifactExport';
 import { useArtifactSavedCopy } from '../../hooks/useArtifactSavedCopy';
@@ -59,7 +58,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
   const openDrawer = useAppStore((s) => s.openDrawer);
   const exporter = useArtifactExport({ artifact });
   const savedCopy = useArtifactSavedCopy({ sessionId, artifact });
-  useRecordArtifactOpened({ artifactId: artifact.id });
+  useRecordArtifactOpened({ sessionId, artifactId: artifact.id });
   const regenerate = useReportRegenerate({ sessionId, artifact });
   const announceAgentStarted = useAgentStartedToast();
   const [draft, setDraft] = useState<string | null>(null);
@@ -246,23 +245,21 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
     );
 
   const creator = agents.find((agent) => agent.id === artifact.agentId) ?? null;
+  const state = artifactStateOf({
+    kind: artifact.kind,
+    status: artifact.status,
+    isNew: false,
+    openQuestionCount,
+    ...(plan === null ? NO_PLAN_STATE_INPUTS : planStateInputsOf({ plan, rows: partRows })),
+  });
   const chip =
     subject.kind === 'wireframe' ? (
       <>
-        <ArtifactStateChip
-          presentation={describeArtifactStatus({ kind: 'wireframe', status: artifact.status })}
-        />
+        <ArtifactStateChip state={state} />
         <WireframeDivergenceChip artifact={subject.artifact} creatorName={creator?.name ?? null} />
       </>
     ) : (
-      <ArtifactStateChip
-        presentation={
-          plan === null
-            ? describeArtifactStatus({ kind: artifact.kind, status: artifact.status })
-            : (planPartsPresentation({ progress }) ??
-              describePlanStatus({ status: plan.status, openQuestionCount }))
-        }
-      />
+      <ArtifactStateChip state={state} />
     );
 
   const alert = error ?? regenerate.error;

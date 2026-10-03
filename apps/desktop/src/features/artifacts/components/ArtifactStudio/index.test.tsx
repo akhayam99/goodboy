@@ -27,8 +27,7 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
       loadConsumptionsForPlan: vi.fn(async () => undefined),
       updatePlanBody: vi.fn(async () => undefined),
       updateArtifactSource: vi.fn(async () => undefined),
-      deletePlan: vi.fn(async () => undefined),
-      restorePlan: vi.fn(async () => undefined),
+      markArtifactOpened: vi.fn(),
       runPlan: vi.fn(async () => 'agent-impl'),
       spawnReportAgent: vi.fn(async () => 'agent-report-3'),
       spawnWireframeAgent: vi.fn(async () => 'agent-wireframe-3'),
@@ -239,20 +238,20 @@ describe('ArtifactStudio list', () => {
     expect(screen.getByText('No artifacts yet')).toBeDefined();
   });
 
-  it('lists plans, reports and wireframes as one list of rows, newest first, with no group eyebrows', () => {
+  it('lists plans, reports and wireframes as rows of one group, newest first', () => {
     state.plans = [plan];
     state.sessionArtifacts = { 'sess-1': [report, wireframe] };
     renderStudio();
     const list = screen.getByTestId('artifact-list');
-    const titles = within(list)
-      .getAllByRole('button')
-      .map((button) => button.getAttribute('aria-label'));
+    const titles = Array.from(list.querySelectorAll('[data-artifact-row]')).map((button) =>
+      button.getAttribute('aria-label'),
+    );
     expect(titles).toEqual([
       'Plan Backfill the settled batches, Ready to run',
-      'Wireframe Settlement review flow, 1 screen',
-      'Report Rounding drift in ledger-core postings, Session summary',
+      'Wireframe Settlement review flow, Ready',
+      'Report Rounding drift in ledger-core postings, Ready',
     ]);
-    expect(screen.queryByRole('heading', { level: 2 })).toBeNull();
+    expect(within(list).getByRole('button', { name: /^Ready 3$/ })).toBeDefined();
     expect(screen.queryByText(/Show finished/)).toBeNull();
   });
 
@@ -286,7 +285,7 @@ describe('ArtifactStudio list', () => {
     };
     state.agentTurnState = { 'agent-report-2': { kind: 'running' } };
     renderStudio();
-    expect(screen.getByText('Writing')).toBeDefined();
+    expect(screen.getByTestId('artifact-row-state').textContent).toContain('Running');
     fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
     expect(state.stopArtifactGeneration).toHaveBeenCalledWith({
       sessionId: 'sess-1',
@@ -297,7 +296,7 @@ describe('ArtifactStudio list', () => {
   it('offers try again on a generation that produced nothing', async () => {
     state.sessionPhaseRuns = { 'sess-1': [reportAgent] };
     renderStudio();
-    expect(screen.getByText('No report')).toBeDefined();
+    expect(screen.getByText('Stopped')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     await waitFor(() => {
       expect(state.openArtifactCreation).toHaveBeenCalledWith({
@@ -312,7 +311,7 @@ describe('ArtifactStudio list', () => {
   it('opens the agent behind a generation that produced nothing', () => {
     state.sessionPhaseRuns = { 'sess-1': [reportAgent] };
     renderStudio();
-    openRow(/Report 2/);
+    openRow(/^Report Report 2,/);
     expect(state.navigate).toHaveBeenCalledWith({
       to: { at: 'agent', sessionId: 'sess-1', agentId: 'agent-report-2' },
     });
@@ -339,7 +338,7 @@ describe('ArtifactStudio list', () => {
     state.plans = [plan];
     state.sessionArtifacts = { 'sess-1': [report] };
     renderStudio();
-    openRow(/Backfill the settled batches/);
+    openRow(/^Plan Backfill the settled batches/);
     expect(state.setFocusedArtifactId).toHaveBeenLastCalledWith('sess-1', 'plan-1');
     expect(screen.getByTestId('artifact-shell').getAttribute('data-artifact-kind')).toBe('plan');
   });
@@ -379,6 +378,7 @@ describe('ArtifactStudio shell', () => {
       'Save markdown to…',
       expect.stringContaining('Open in browser'),
       expect.stringContaining('Show in Finder'),
+      expect.stringContaining('Delete'),
     ]);
   });
 
@@ -440,14 +440,14 @@ describe('ArtifactStudio shell', () => {
     );
   });
 
-  it('never offers discard on a plan that already ran, and asks before running it again', async () => {
+  it('offers Delete on a plan that already ran, and asks before running it again', async () => {
     state.plans = [{ ...plan, status: 'consumed', consumptionCount: 1 }];
     focus('plan-1');
     renderStudio();
     expect(screen.queryByTestId('artifact-action-runPlan')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
     const menu = screen.getByRole('menu', { name: 'More' });
-    expect(within(menu).queryByRole('menuitem', { name: /Discard/ })).toBeNull();
+    expect(within(menu).getByRole('menuitem', { name: /Delete/ })).toBeDefined();
     fireEvent.keyDown(menu, { key: 'Escape' });
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(state.setFocusedArtifactId).not.toHaveBeenCalled();
@@ -606,7 +606,8 @@ describe('ArtifactStudio plan parts', () => {
     };
     focus('plan-1');
     renderStudio();
-    expect(screen.getByTestId('artifact-state-chip').textContent).toContain('Running part 2 of 2');
+    expect(screen.getByTestId('artifact-state-chip').textContent).toContain('Running');
+    expect(screen.getByTestId('artifact-state-detail').textContent).toBe('part 2 of 2');
     expect(screen.queryByTestId('artifact-action-runAgain')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /Part 1, Add a dry run/ }));
     expect(state.navigate).toHaveBeenCalledWith({
@@ -634,7 +635,7 @@ describe('ArtifactStudio generating run', () => {
 
   it('opens the run in the same shell, with Stop as its secondary and the agent under More', () => {
     renderStudio();
-    openRow(/High fidelity/);
+    openRow(/^Wireframe High fidelity,/);
     expect(screen.getByTestId('artifact-run-detail')).toBeDefined();
     fireEvent.click(screen.getByTestId('artifact-action-stop'));
     expect(state.stopArtifactGeneration).toHaveBeenCalledWith({
@@ -650,7 +651,7 @@ describe('ArtifactStudio generating run', () => {
 
   it('follows the run to the artifact it produced', () => {
     const { rerender } = renderStudio();
-    openRow(/High fidelity/);
+    openRow(/^Wireframe High fidelity,/);
     state.sessionArtifacts = { 'sess-1': [{ ...wireframe, agentId: 'agent-wireframe-live' }] };
     rerender(<ArtifactStudio sessionId={'sess-1' as never} />);
     expect(state.setFocusedArtifactId).toHaveBeenLastCalledWith('sess-1', 'artifact-wireframe');

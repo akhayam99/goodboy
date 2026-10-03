@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
-import type { Agent, AgentId, PlanWithCount, SessionId } from '@goodboy/types';
+import type { Agent, PlanWithCount, SessionId } from '@goodboy/types';
 import { useSessionOpenQuestions } from '../../../../store';
+import { askingAgentIdsOf } from '../../askingAgentIdsOf';
 import { planPartRows, type PlanPartRow } from './planPartRows';
 
 type Params = {
@@ -17,17 +18,7 @@ export const usePlanPartRows = ({
   agents,
 }: Params): ReadonlyArray<PlanPartRow> => {
   const questions = useSessionOpenQuestions(sessionId);
-  const askingAgentIds = useMemo(
-    () =>
-      new Set<AgentId>(
-        questions.flatMap((question) =>
-          question.status === 'open' && question.createdByAgentId != null
-            ? [question.createdByAgentId]
-            : [],
-        ),
-      ),
-    [questions],
-  );
+  const askingAgentIds = useMemo(() => askingAgentIdsOf({ questions }), [questions]);
   return useMemo(
     () => (plan === null ? NO_ROWS : planPartRows({ plan, agents, askingAgentIds })),
     [plan, agents, askingAgentIds],

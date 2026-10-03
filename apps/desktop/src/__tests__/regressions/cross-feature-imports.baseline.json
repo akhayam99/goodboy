@@ -6,7 +6,7 @@
     "artifacts -> actions": 1,
     "artifacts -> attachments": 2,
     "artifacts -> chat": 3,
-    "artifacts -> plans": 6,
+    "artifacts -> plans": 5,
     "artifacts -> reports": 3,
     "artifacts -> wireframes": 5,
     "artifacts -> workspace": 1,

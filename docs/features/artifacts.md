@@ -9,7 +9,9 @@ Plans, reports and wireframes live next to the task, not inside a chat.
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-list-light.webp" width="694" alt="The Artifacts list of the Harborline session, 8 items under the tabs All, Plans, Reports and Wireframes: a wireframe at 1 of 2 scouts done, Deliveries screen with 4 screens, a plan marked Ready to run, two reports and two plans marked Ran, each with its kind on the right">
 </picture>
 
-Keep plans, reports and wireframes next to the task, each row with its kind on the right (**Wireframe**, **Plan** or **Report**). The tabs **All**, **Plans**, **Reports** and **Wireframes** filter the list. A row shows its state at a glance: **1 of 2 scouts done**, **Ready to run** or **Ran**.
+Keep plans, reports and wireframes next to the task. The tabs **All**, **Plans**, **Reports** and **Wireframes** filter the list, and the rows sit in groups: **Needs you**, **Ready** and **Running** on top, then **Ran** and **Recently deleted**, both closed until you open them. Each row shows the kind, the title, a state (**Needs you**, **Ready to run**, **Running**, **Ran**, **Partly ran**, **Replaced**, **Ready** for a report or wireframe at rest, or **New** for one made in the last day that you have not opened) with a short detail such as **part 2 of 3**, and when it was made. The same word heads the artifact when you open it. A plan with parts opens in the list to show them.
+
+Each row has its action in place: **Run plan** or **Answer**, **Stop** while it generates, **Try again** when it produced nothing. Edit, Copy and Open in browser show when you point at the row, and **Delete** and the **...** menu are always there. **Delete** works on every kind in every state except a generation in progress. It acts at once, shows **Undo**, and moves the artifact to **Recently deleted**, where **Restore** brings it back. **Delete permanently** exists only there; it asks first and says the **Run by** history goes with it.
 
 ### Plan parts and Run plan
 

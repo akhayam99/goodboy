@@ -12,13 +12,12 @@ import {
   type ArtifactRevision,
   type ArtifactRevisionNote,
   annotateArtifactRevision as dbAnnotateArtifactRevision,
-  deleteArtifact as dbDeleteArtifact,
   listArtifactRevisions as dbListArtifactRevisions,
   loadArtifactRevision as dbLoadArtifactRevision,
   getArtifactBySourceTurn as dbGetArtifactBySourceTurn,
   insertArtifact as dbInsertArtifact,
   listArtifactsForSession as dbListArtifactsForSession,
-  restoreArtifact as dbRestoreArtifact,
+  removeArtifact as dbRemoveArtifact,
   setArtifactStatus as dbSetArtifactStatus,
   updateArtifactSource as dbUpdateArtifactSource,
 } from '@goodboy/db';
@@ -107,12 +106,8 @@ export const setArtifactStatus = async (
   await dbSetArtifactStatus({ db: tauriDatabase, artifactId, status });
 };
 
-export const discardArtifact = async (artifactId: ArtifactId): Promise<void> => {
-  await dbDeleteArtifact({ db: tauriDatabase, artifactId });
-};
-
-export const restoreArtifact = async (artifactId: ArtifactId): Promise<void> => {
-  await dbRestoreArtifact({ db: tauriDatabase, artifactId });
+export const removeArtifactForGood = async (artifactId: ArtifactId): Promise<void> => {
+  await dbRemoveArtifact({ db: tauriDatabase, artifactId });
 };
 
 export const listArtifactRevisions = async (

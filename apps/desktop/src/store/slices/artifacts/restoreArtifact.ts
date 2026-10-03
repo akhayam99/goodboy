@@ -1,16 +1,21 @@
-import type { ArtifactId, SessionId } from '@goodboy/types';
-import { restoreArtifact as invokeRestoreArtifact } from '../../../features/artifacts/artifacts';
-import { refreshSessionArtifacts } from './refresh';
-import type { SetFn } from './types';
+import type { ArtifactId, ArtifactStatus, SessionId } from '@goodboy/types';
+import { setArtifactStatus as invokeSetArtifactStatus } from '../../../features/artifacts/artifacts';
+import { refreshSessionArtifactsAndPlans } from './refresh';
+import type { GetFn, SetFn } from './types';
 
 export type RestoreArtifactParams = {
   readonly sessionId: SessionId;
   readonly artifactId: ArtifactId;
+  readonly status?: ArtifactStatus;
 };
 
-export const restoreArtifact = (set: SetFn) => {
-  return async (params: RestoreArtifactParams) => {
-    await invokeRestoreArtifact(params.artifactId);
-    await refreshSessionArtifacts(set, params.sessionId);
+export const restoreArtifact = (set: SetFn, get: GetFn) => {
+  return async ({ sessionId, artifactId, status }: RestoreArtifactParams): Promise<void> => {
+    const plan = (get().sessionPlans[sessionId] ?? []).find(
+      (candidate) => candidate.id === artifactId,
+    );
+    const hasRun = plan !== undefined && plan.consumptionCount > 0;
+    await invokeSetArtifactStatus(artifactId, status ?? (hasRun ? 'consumed' : 'active'));
+    await refreshSessionArtifactsAndPlans(set, sessionId);
   };
 };

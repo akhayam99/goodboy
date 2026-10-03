@@ -502,8 +502,15 @@ Everything the app saves for itself lives in `~/.goodboy`.
   row. If the row survives a failed delete, the next backfill writes its copy
   again. `session_artifacts`
   also stores `opened_at` (written when the artifact shell opens it, at most
-  once per artifact every 10 minutes), `kept_at` and `kept_until` for the
-  Storage Keep action.
+  once per artifact every 10 minutes, and read back as `SessionArtifact.openedAt`
+  so a report or wireframe nobody opened shows New for its first 24 hours; an older
+  one that was never opened reads Ready, since rows made before the column was
+  written have no open time), `kept_at` and `kept_until`
+  for the Storage Keep action. The Delete verb of the Artifacts list sets the
+  status to `discarded` (Recently deleted) and Undo sets it back. Delete
+  permanently, offered only on a `discarded` artifact, removes the folder with
+  `artifact_mirror_remove` and then the row, which takes its plan consumptions
+  (the Run by history) with it.
 - `file-versions/`: saved versions of files.
 - `query/query-<pid>.sock`: the socket a running app uses for the query bridge, in its own owner-only folder (see [query-bridge.md](query-bridge.md)).
 - `history-copies/`: the temporary copies Rewrite history replays a plan in.

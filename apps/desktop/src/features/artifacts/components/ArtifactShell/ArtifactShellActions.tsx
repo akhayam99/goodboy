@@ -1,11 +1,10 @@
 import { useContext, useEffect } from 'react';
-import { Ellipsis } from 'lucide-react';
 import { Button } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
 import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
 import { ArtifactHeaderMenuContext, artifactViewingOf } from './artifactHeaderMenu';
+import { ArtifactOverflowMenu } from './ArtifactOverflowMenu';
 import type { ActionSlot, ArtifactActionTarget, ResolvedAction } from '../../../actions/types';
 
 type Props = {
@@ -57,11 +56,9 @@ export const ArtifactShellActions = ({ target, onArm }: Props) => {
         </Button>
       ))}
       {actions.length > 0 ? (
-        <ObjectOverflowMenu
+        <ArtifactOverflowMenu
           target={target}
           label="More"
-          tooltip="More actions"
-          trigger={<Ellipsis size={ICON_SIZE.control} aria-hidden />}
           triggerClassName="p-1.5"
           viewing={viewing}
         />

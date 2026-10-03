@@ -101,6 +101,7 @@ const reportArtifact = (overrides: Partial<ReportArtifact>): ReportArtifact => (
   sourceTurnId: null,
   createdAt: NOW,
   updatedAt: NOW,
+  openedAt: null,
   ...overrides,
 });
 
@@ -576,6 +577,7 @@ describe('buildReportContext', () => {
       sourceTurnId: null,
       createdAt: NOW,
       updatedAt: NOW,
+      openedAt: null,
     };
     const event: SessionEvent = {
       id: 'event-1' as SessionEventId,

@@ -39,6 +39,7 @@ const report: SessionArtifact = {
   sourceTurnId: 'turn-1',
   createdAt: NOW,
   updatedAt: NOW,
+  openedAt: null,
 };
 
 const wireframe: SessionArtifact = {

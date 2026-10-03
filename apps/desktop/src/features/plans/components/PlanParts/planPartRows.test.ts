@@ -8,12 +8,7 @@ import type {
   PlanWithCount,
   SessionId,
 } from '@goodboy/types';
-import {
-  planPartRows,
-  planPartsProgress,
-  planPartsSentence,
-  planSplitSentence,
-} from './planPartRows';
+import { planPartRows, planPartsProgress, planSplitSentence } from './planPartRows';
 
 const CLUSTERS = [
   {
@@ -119,9 +114,11 @@ describe('planPartRows', () => {
       askingAgentIds: new Set(['agent-part-1' as AgentId]),
     });
     expect(rows.map((row) => row.node.state)).toEqual(['failed', 'question', 'queued']);
-    expect(planPartsSentence({ progress: planPartsProgress({ rows, hasRun: true }) })).toBe(
-      'Part 1 failed',
-    );
+    expect(planPartsProgress({ rows, hasRun: true })).toEqual({
+      kind: 'failed',
+      part: 1,
+      total: 3,
+    });
   });
 
   it('lets a one part plan take the state of its single implementer', () => {
@@ -147,17 +144,17 @@ describe('planPartsProgress', () => {
       agents: [CONTAINER, ...children(['pending', 'running', 'completed'])],
       askingAgentIds: new Set(),
     });
-    expect(
-      planPartsSentence({ progress: planPartsProgress({ rows: running, hasRun: true }) }),
-    ).toBe('Running part 2 of 3');
+    expect(planPartsProgress({ rows: running, hasRun: true })).toEqual({
+      kind: 'running',
+      part: 2,
+      total: 3,
+    });
     const done = planPartRows({
       plan: plan(RAN),
       agents: [CONTAINER, ...children(['completed', 'completed', 'completed'])],
       askingAgentIds: new Set(),
     });
-    expect(planPartsSentence({ progress: planPartsProgress({ rows: done, hasRun: true }) })).toBe(
-      'Ran · 3 of 3 parts done',
-    );
+    expect(planPartsProgress({ rows: done, hasRun: true })).toEqual({ kind: 'done', total: 3 });
   });
 });
 
