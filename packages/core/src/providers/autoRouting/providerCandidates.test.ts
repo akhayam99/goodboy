@@ -195,3 +195,43 @@ describe('providerStanding', () => {
     expect(providerStanding({ provider: 'opencode', context })).toBe('not-connected');
   });
 });
+
+describe('providerCandidates spread by headroom', () => {
+  const policy: ProviderPolicy = [
+    { id: 'anthropic', state: 'on' },
+    { id: 'codex', state: 'on' },
+    { id: 'cursor', state: 'backup' },
+  ];
+
+  it('keeps the order of the policy when no headroom is given', () => {
+    expect(providerCandidates({ ...CONTEXT, policy })).toEqual(['anthropic', 'codex', 'cursor']);
+  });
+
+  it('puts a tight On provider after the other On ones but before the backup', () => {
+    expect(
+      providerCandidates({ ...CONTEXT, policy, headroom: { anthropic: 'tight', codex: 'ok' } }),
+    ).toEqual(['codex', 'anthropic', 'cursor']);
+  });
+
+  it('gives no new work to a provider that is out and sends the role Auto elsewhere', () => {
+    const context = { ...CONTEXT, policy, headroom: { anthropic: 'out' as const } };
+
+    expect(providerCandidates(context)).toEqual(['codex', 'cursor']);
+    expect(resolveAuto({ ...context, slot: { kind: 'role', id: 'implementer' } })?.provider).toBe(
+      'codex',
+    );
+    expect(
+      resolveAuto({ ...CONTEXT, policy, slot: { kind: 'role', id: 'implementer' } })?.provider,
+    ).toBe('anthropic');
+  });
+
+  it('falls back to the menu of today when every provider is out', () => {
+    expect(
+      providerCandidates({
+        ...CONTEXT,
+        policy,
+        headroom: { anthropic: 'out', codex: 'out', cursor: 'out' },
+      }),
+    ).toEqual(['anthropic', 'codex', 'cursor']);
+  });
+});

@@ -7,6 +7,7 @@ import { WorkflowBuilderScene } from '../flow-audit/WorkflowBuilderScene';
 import { NOW, OVERRIDES, WORKSPACE_ID } from '../flow-audit/fixtures';
 import { sceneParam, sceneParamList } from './sceneParams';
 import { useSceneClicks } from './useSceneClicks';
+import { RULES_PROVIDERS, rulesProviderLimits } from './workflowRulesSeed';
 
 const noop = () => undefined;
 
@@ -45,6 +46,9 @@ const editedBuiltin = (): Workflow | null => {
 const seedRules = (): void => {
   useAppStore.setState({
     workflowStudioView: 'rules',
+    providers: RULES_PROVIDERS,
+    refreshProviders: async () => undefined,
+    providerLimits: rulesProviderLimits(),
     workspaceOverrides: {
       [WORKSPACE_ID]: {
         ...OVERRIDES,

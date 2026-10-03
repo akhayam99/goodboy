@@ -12,6 +12,7 @@ import type {
   WorkflowSpendLimitMode,
   WorkflowTriggerMode,
   WorkflowRules,
+  WorkspaceId,
 } from '@goodboy/types';
 import { DEFAULT_WORKFLOW_RULES } from '@goodboy/types';
 import {
@@ -32,6 +33,8 @@ import { generateWorkflowRunTitle } from './generateWorkflowRunTitle';
 import { sessionPlace } from '../navigation/place';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
+import { resolveWorkflowHeadroom } from './resolveWorkflowHeadroom';
+import { withHeadroom } from './withHeadroom';
 
 type Options = {
   autoRun?: boolean;
@@ -46,6 +49,19 @@ type Options = {
   providerPool?: ReadonlyArray<ProviderId>;
   navigate?: boolean;
   rulesSnapshot?: WorkflowRules;
+};
+
+type RulesParams = {
+  readonly get: GetFn;
+  readonly workspaceId: WorkspaceId;
+};
+
+const workspaceRulesFor = ({ get, workspaceId }: RulesParams): WorkflowRules => {
+  const overrides = get().workspaceOverrides?.[workspaceId];
+  if (overrides === undefined) {
+    return { ...DEFAULT_WORKFLOW_RULES, spreadByHeadroom: false };
+  }
+  return overrides.workflowRules ?? DEFAULT_WORKFLOW_RULES;
 };
 
 export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
@@ -79,7 +95,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
         ? options.providerPool
         : undefined;
     const rulesSnapshot = options?.rulesSnapshot ?? {
-      ...(get().workspaceOverrides?.[session.workspaceId]?.workflowRules ?? DEFAULT_WORKFLOW_RULES),
+      ...workspaceRulesFor({ get, workspaceId: session.workspaceId }),
       autonomy: autoRun ? 'run' : 'step',
     };
     let triggerMode: WorkflowTriggerMode = options?.triggerMode ?? 'immediate';
@@ -125,6 +141,10 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
     const sessionDefaultProvider = (session.providerOverride ??
       session.providerPreference.defaultProvider) as ProviderId;
     const roleModels = selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null;
+    const headroom =
+      executionMode === 'dynamic'
+        ? null
+        : await resolveWorkflowHeadroom({ get, sessionId, rules: rulesSnapshot });
     const spawned = await (
       executionMode === 'dynamic'
         ? Promise.resolve({
@@ -136,7 +156,10 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
             blocked: [],
           })
         : preSpawnWorkflowAgents({
-            scope: selectRoutingScope({ state: get(), sessionId }),
+            scope: withHeadroom({
+              scope: selectRoutingScope({ state: get(), sessionId }),
+              headroom,
+            }),
             sessionId,
             workflowRunId,
             steps: template.steps,
@@ -153,6 +176,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
               isRunBudgetBlocked: false,
               nowMs: Date.now(),
               ...workspacePolicyAvailability({ state: get() }),
+              headroom,
             }),
           })
     ).catch(async (error: unknown) => {

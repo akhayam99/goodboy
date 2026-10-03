@@ -92,7 +92,7 @@ describe('WorkflowBuilderView and the workflow rules', () => {
     expect(autonomyChip().getAttribute('aria-label')).toBe('When to ask: Ask after the plan');
     expect(spendChip().getAttribute('aria-label')).toBe('Spend cap: $25.00 · Pause');
     expect(fromRules()).toBe(
-      'From your rulesAsk after the plan · $25 cap, pause · Claude, Codex · No guidanceEdit',
+      'From your rulesAsk after the plan · $25 cap, pause · Claude, Codex · spread on · No guidanceEdit',
     );
     expect(screen.queryByRole('img', { name: /From: Workflow rules/ })).toBeNull();
   });

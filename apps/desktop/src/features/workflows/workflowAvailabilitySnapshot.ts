@@ -1,6 +1,8 @@
 import {
   PROVIDER_ID_TO_NAME,
+  providersByHeadroom,
   workingProviders,
+  type HeadroomMap,
   type WorkflowRoutingAvailabilitySnapshot,
 } from '@goodboy/core';
 import {
@@ -24,6 +26,7 @@ type Params = {
   readonly providerPool?: ReadonlyArray<ProviderId> | null;
   readonly policy?: ProviderPolicy | null;
   readonly atLimit?: ReadonlyArray<ProviderId>;
+  readonly headroom?: HeadroomMap | null;
 };
 
 const liveAlerts = (alerts: ReadonlyArray<BudgetAlert>): ReadonlyArray<BudgetAlert> =>
@@ -39,6 +42,7 @@ export const workflowAvailabilitySnapshot = ({
   providerPool = null,
   policy = null,
   atLimit = [],
+  headroom = null,
 }: Params): WorkflowRoutingAvailabilitySnapshot => {
   const live = liveAlerts(alerts);
   const blockedNames = new Set(
@@ -58,10 +62,13 @@ export const workflowAvailabilitySnapshot = ({
     connected,
     atLimit,
     policy,
+    headroom,
   });
+  const usable = working ?? connected;
+  const ordered = headroom === null ? usable : providersByHeadroom({ providers: usable, headroom });
   return {
-    connectedProviders: working ?? connected,
-    ...(working !== null && { providerOrder: working }),
+    connectedProviders: ordered,
+    ...((working !== null || headroom !== null) && { providerOrder: ordered }),
     coolingDownProviders: providersCoolingDown({ cooldowns, nowMs }),
     budgetBlockedProviders,
     isSessionBudgetBlocked:

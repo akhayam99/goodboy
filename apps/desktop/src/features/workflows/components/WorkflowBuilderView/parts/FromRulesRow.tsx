@@ -14,7 +14,7 @@ export const FromRulesRow = ({ rules, providers }: Props) => {
   const items = [
     autonomyLabel({ rules }),
     spendRuleText({ rules }),
-    providers,
+    providers === '' || !rules.spreadByHeadroom ? providers : `${providers} · spread on`,
     guidanceRuleText({ rules }),
   ].filter((item) => item !== '');
   return (

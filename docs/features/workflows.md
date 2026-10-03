@@ -61,7 +61,7 @@ Choose when a run asks: **Ask before each step**, **Ask after the plan** to stop
 
 ### Workflow rules
 
-The **Rules** tab of Workflows sets what every new run starts with: how it asks, the default spend cap, and a summary of your providers. The builder opens filled from them and says so in a **From your rules** line; a control you change for one run gets a dot and a **Reset**. A run keeps the rules it started with.
+The **Rules** tab of Workflows sets what every new run starts with: how it asks, the default spend cap, and a summary of your providers. **Spread by what I have left** sends steps with no pinned provider to the provider with the most 5h and weekly room, keeps a provider at its limit out of new work, and tells you where the next step goes. The builder opens filled from them and says so in a **From your rules** line; a control you change for one run gets a dot and a **Reset**. A run keeps the rules it started with.
 
 ### Spend limit
 

@@ -1,6 +1,7 @@
 import type { ProviderId, ProviderPolicy, ProviderPolicyEntry } from '@goodboy/types';
 import { PROVIDER_CAPABILITIES } from '../capabilities';
 import { isCuratedProvider } from './defaults';
+import { providersByHeadroom, type HeadroomMap } from '../limits/providerHeadroom';
 
 export type ProviderCandidatesContext = {
   readonly defaultProvider: ProviderId;
@@ -8,6 +9,7 @@ export type ProviderCandidatesContext = {
   readonly connected?: ReadonlyArray<ProviderId> | null;
   readonly atLimit?: ReadonlyArray<ProviderId> | null;
   readonly policy?: ProviderPolicy | null;
+  readonly headroom?: HeadroomMap | null;
 };
 
 export type ProviderStanding = 'usable' | 'not-connected' | 'off' | 'backup' | 'at-limit';
@@ -86,15 +88,24 @@ export const providerCandidates = (
   context: ProviderCandidatesContext,
 ): ReadonlyArray<ProviderId> => {
   const policy = context.policy;
+  const headroom = context.headroom;
+  const spread = (providers: ReadonlyArray<ProviderId>): ReadonlyArray<ProviderId> =>
+    headroom == null ? providers : providersByHeadroom({ providers, headroom });
   if (policy == null) {
-    return legacyCandidates(context);
+    return spread(legacyCandidates(context));
   }
   const usableIn = ({ state }: StateParams): ReadonlyArray<ProviderId> =>
     policy
       .filter((entry) => entry.state === state)
       .map((entry) => entry.id)
       .filter((provider) => canWork({ provider, context }));
-  return [...usableIn({ state: 'on' }), ...usableIn({ state: 'backup' })];
+  const on = usableIn({ state: 'on' });
+  const backup = usableIn({ state: 'backup' });
+  if (headroom == null) {
+    return [...on, ...backup];
+  }
+  const kept = new Set(spread([...on, ...backup]));
+  return [...spread(on), ...spread(backup)].filter((provider) => kept.has(provider));
 };
 
 export const workingProviders = (

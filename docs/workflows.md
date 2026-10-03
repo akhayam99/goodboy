@@ -152,6 +152,30 @@ pages.
 - **Providers**: a summary of the provider policy in Defaults. Rules do not own it
 - **Autonomy**: Ask before each step, Ask after the plan or Run on its own
 - **Spend**: a default cap per run and what happens at it, pause or warn
+- **Spread by what I have left**: automatic picks look at each provider's 5h and weekly room
+
+### Spread by what I have left
+
+`providerHeadroom` in `packages/core` reads the limit snapshots the app already
+has, with the thresholds of the limit chips: _ok_, _tight_ (80% used or more),
+_out_, _unknown_. A snapshot older than 30 minutes, twice the re-read time, is
+_unknown_; a workflow decision that finds one asks for one re-read
+(`probeProviderLimits`) and then decides, so a decision reads the headroom once
+and no new poll exists. Limits that arrive with a turn count as fresh. A
+provider marked **Keep using after the limit** counts as tight, not out.
+
+With the rule on (the run's copy, `spreadByHeadroom`):
+
+- the orchestrator menu drops the _out_ providers and puts the _tight_ ones last
+  (`workflowAvailabilitySnapshot` with `headroom`)
+- static steps and fan-out children pick through Auto with the headroom, and the
+  role's Auto wins over the session provider (`resolveStepRouting`,
+  `resolveWorkflowChildRouting`); a provider pinned on the step still wins
+- if dropping the _out_ providers empties the menu, the menu of today comes back
+
+With the rule off nothing changes. Workspaces that existed before 0.16.0 start
+with it off (m217) and the Rules tab suggests it when an On provider is above
+80% used; new workspaces start with it on.
 
 The builder opens filled from the rules and shows them in one **From your
 rules** line with **Edit**. A launch control that leaves the rules shows a dot

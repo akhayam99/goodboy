@@ -87,6 +87,7 @@ import { autoLimitContext } from '../providerLimits/autoLimitContext';
 import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
 import { sessionById } from '../sessions/sessionIndex';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { resolveWorkflowHeadroom } from './resolveWorkflowHeadroom';
 
 export type OrchestrateOptions = {
   readonly routing?: OrchestratorRouting;
@@ -658,6 +659,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         .filter((entry) => entry !== '')
         .join('\n');
       const worktreePath = getSessionRepo({ get, sessionId })?.worktreePath ?? null;
+      const headroom = await resolveWorkflowHeadroom({ get, sessionId, rules: run.rulesSnapshot });
       const availability = workflowAvailabilitySnapshot({
         providers: get().providers ?? [],
         cooldowns: get().providerCooldowns ?? {},
@@ -667,6 +669,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         nowMs: Date.now(),
         ...workspacePolicyAvailability({ state: get() }),
         providerPool: run.providerPool ?? null,
+        headroom,
       });
       const modelMenu = orchestratorModelPool({
         availability,

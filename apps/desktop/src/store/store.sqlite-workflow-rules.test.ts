@@ -12,6 +12,7 @@ import {
   type IsoDateTime,
   type PlanId,
   type PlanWithCount,
+  type ProviderLimits,
   type ProviderRunId,
   type SessionId,
   type StepId,
@@ -24,6 +25,7 @@ import {
 } from '@goodboy/types';
 import { EMPTY_OVERRIDES } from '@goodboy/types/testing';
 import type { AgentInsertArgs } from '../features/workflows/workflows';
+import type { ProviderDisplayInfo } from '../features/providers/providers';
 import { summarizerQueues } from './slices/turn/turnHelpers';
 import { WorkflowGateError } from './slices/workflows/workflowActivationGate';
 import {
@@ -460,5 +462,112 @@ describe('store on sqlite: ask after the plan', () => {
 
     await vi.waitFor(() => expect(startedNames()).toEqual(['Plan', 'Implement']));
     expect((await storedRun(workflowRunId))?.rulesSnapshot?.autonomy).toBe('run');
+  });
+});
+
+const MINUTE = 60_000;
+
+const connectedProvider = (id: 'anthropic' | 'codex', binary: string): ProviderDisplayInfo => ({
+  id,
+  binary,
+  label: id,
+  docsUrl: 'https://docs.harborline.test',
+  error: null,
+  connection: 'connected',
+  version: '9.9.9',
+  identity: 'mara@harborline.test',
+  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+});
+
+const claudeLimits = ({
+  used,
+  ageMinutes = 0,
+}: {
+  readonly used: number;
+  readonly ageMinutes?: number;
+}): ProviderLimits => ({
+  providerId: 'anthropic',
+  plan: 'max',
+  status: 'ok',
+  windows: [
+    {
+      kind: 'fiveHour',
+      model: null,
+      status: 'ok',
+      usedFraction: used,
+      resetsAt: new Date(Date.now() + 60 * MINUTE).toISOString() as IsoDateTime,
+    },
+  ],
+  observedAt: new Date(Date.now() - ageMinutes * MINUTE).toISOString() as IsoDateTime,
+});
+
+const seedTwoProviders = ({ claude }: { readonly claude: ProviderLimits }) => {
+  useAppStore.setState({
+    providers: [connectedProvider('anthropic', 'claude'), connectedProvider('codex', 'codex')],
+    providerLimits: { anthropic: claude },
+    workspaceOverrides: {
+      [WORKSPACE_ID]: {
+        ...EMPTY_OVERRIDES,
+        providerPool: [
+          { id: 'anthropic', state: 'on' },
+          { id: 'codex', state: 'on' },
+        ],
+      },
+    },
+  });
+};
+
+const attachedProviders = async ({ spread }: { readonly spread: boolean }) => {
+  await useAppStore.getState().attachWorkflowToSession(sessionId, WORKFLOW_ID, {
+    autoRun: false,
+    triggerMode: 'manual',
+    rulesSnapshot: { ...DEFAULT_WORKFLOW_RULES, spreadByHeadroom: spread },
+  });
+  return rowsOf<{ name: string; provider_override: string }>({
+    sql: 'SELECT name, provider_override FROM agents WHERE session_id = ? AND step_id IS NOT NULL ORDER BY ordinal',
+    params: [sessionId],
+  });
+};
+
+describe('store on sqlite: spread by what I have left', () => {
+  it('sends the steps of a new run past a tight session provider to the one with room', async () => {
+    seedTwoProviders({ claude: claudeLimits({ used: 0.85 }) });
+
+    const rows = await attachedProviders({ spread: true });
+
+    expect(rows.map((row) => row.provider_override)).toEqual(['codex', 'codex', 'codex']);
+  });
+
+  it('gives no step of a new run to a provider at its limit', async () => {
+    seedTwoProviders({ claude: claudeLimits({ used: 1 }) });
+
+    const rows = await attachedProviders({ spread: true });
+
+    expect(rows.map((row) => row.provider_override)).toEqual(['codex', 'codex', 'codex']);
+  });
+
+  it('keeps the session provider with the switch off', async () => {
+    seedTwoProviders({ claude: claudeLimits({ used: 0.85 }) });
+
+    const rows = await attachedProviders({ spread: false });
+
+    expect(rows.map((row) => row.provider_override)).toEqual([
+      'anthropic',
+      'anthropic',
+      'anthropic',
+    ]);
+  });
+
+  it('re-reads limits older than 30 minutes once before it decides', async () => {
+    seedTwoProviders({ claude: claudeLimits({ used: 0.2, ageMinutes: 31 }) });
+    const probe = vi.fn(async () => {
+      useAppStore.setState({ providerLimits: { anthropic: claudeLimits({ used: 0.9 }) } });
+    });
+    useAppStore.setState({ probeProviderLimits: probe });
+
+    const rows = await attachedProviders({ spread: true });
+
+    expect(probe).toHaveBeenCalledOnce();
+    expect(rows.map((row) => row.provider_override)).toEqual(['codex', 'codex', 'codex']);
   });
 });

@@ -29,6 +29,8 @@ import { isWorkflowRunClosedByUser } from '../../../features/workflows/isWorkflo
 import { patchWorkflowRun } from './patchWorkflowRun';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
+import { resolveWorkflowHeadroom } from './resolveWorkflowHeadroom';
+import { withHeadroom } from './withHeadroom';
 
 export type AddStepToWorkflowRunParams = {
   readonly sessionId: SessionId;
@@ -243,8 +245,9 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
     if (savedStep == null) {
       return rollback('the step could not be saved');
     }
+    const headroom = await resolveWorkflowHeadroom({ get, sessionId, rules: run.rulesSnapshot });
     const spawned = await preSpawnWorkflowAgents({
-      scope: selectRoutingScope({ state: get(), sessionId }),
+      scope: withHeadroom({ scope: selectRoutingScope({ state: get(), sessionId }), headroom }),
       sessionId,
       workflowRunId,
       steps: [savedStep],
@@ -263,6 +266,7 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
         nowMs: Date.now(),
         ...workspacePolicyAvailability({ state: get() }),
         providerPool: run.providerPool ?? null,
+        headroom,
       }),
     });
 

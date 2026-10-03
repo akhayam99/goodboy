@@ -293,3 +293,51 @@ describe('resolveStepRouting', () => {
     expect(withoutSet).toEqual(auto);
   });
 });
+
+describe('resolveStepRouting spread by headroom', () => {
+  const scope = {
+    defaultProvider: 'anthropic' as const,
+    connected: ['anthropic', 'codex'] as const,
+    policy: [
+      { id: 'anthropic' as const, state: 'on' as const },
+      { id: 'codex' as const, state: 'on' as const },
+    ],
+  };
+  const implementer = step({ role: 'implementer' });
+
+  it('sends a step with no pin past the tight session provider to the one with room', () => {
+    const routing = resolveStepRouting({
+      step: implementer,
+      kind: 'implementer',
+      roleModels: null,
+      sessionProvider: 'anthropic',
+      scope: { ...scope, headroom: { anthropic: 'tight', codex: 'ok' } },
+    });
+
+    expect(routing.provider).toBe('codex');
+  });
+
+  it('keeps the session provider first with the switch off', () => {
+    const routing = resolveStepRouting({
+      step: implementer,
+      kind: 'implementer',
+      roleModels: null,
+      sessionProvider: 'anthropic',
+      scope,
+    });
+
+    expect(routing.provider).toBe('anthropic');
+  });
+
+  it('still honours a provider pinned on the step', () => {
+    const routing = resolveStepRouting({
+      step: step({ role: 'implementer', providerOverride: 'anthropic' }),
+      kind: 'implementer',
+      roleModels: null,
+      sessionProvider: 'anthropic',
+      scope: { ...scope, headroom: { anthropic: 'tight', codex: 'ok' } },
+    });
+
+    expect(routing.provider).toBe('anthropic');
+  });
+});

@@ -1,11 +1,12 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core';
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE, readHeadroom } from '@goodboy/core';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { policyRows } from '../../../providers/policy/policyRows';
 import { policySummary } from '../../../providers/policy/policySummary';
+import { rulesProviderRooms } from '../../rulesHeadroom';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
@@ -33,5 +34,14 @@ export const useRulesProviders = ({ workspaceId }: Params) => {
     [connected, defaultProvider, limits, nowMs, policy],
   );
   const summary = useMemo(() => policySummary({ rows }), [rows]);
-  return { rows, summary, limits, nowMs };
+  const rooms = useMemo(
+    () =>
+      rulesProviderRooms({
+        rows,
+        headroom: readHeadroom({ limits, policy, nowMs }).headroom,
+        limits,
+      }),
+    [limits, nowMs, policy, rows],
+  );
+  return { summary, rooms };
 };
