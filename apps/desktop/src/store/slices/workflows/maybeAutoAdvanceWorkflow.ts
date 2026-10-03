@@ -8,7 +8,6 @@ import {
 } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { isWorkflowRunComplete } from '../../../features/workflows/isWorkflowRunComplete';
-import { isRunPaused } from '../../../features/workflows/isRunPaused';
 import { workflowRunHasOpenQuestions } from '../../../features/context/openQuestionsGate';
 import {
   budgetBlockMessage,
@@ -22,6 +21,7 @@ import { resumeClusterChildren, unsettledClusterChildren } from './clusterImplem
 import { waitForSessionSummarizer } from './summarizerGate';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
+import { admitWorkflowRun, heldAdmissionBlock } from './workflowPlanApproval';
 
 const advanceInFlight = new Set<SessionId>();
 
@@ -82,7 +82,7 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
         r.autoRun &&
         r.discardedAt == null &&
         r.triggerMode === 'immediate' &&
-        !isRunPaused({ run: r }),
+        heldAdmissionBlock({ run: r }) === null,
     )
     .sort((a, b) => a.ordinal - b.ordinal);
   if (activeRuns.length === 0) {
@@ -219,6 +219,13 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
         announcedWorkflowBlocks: { ...(current.announcedWorkflowBlocks ?? {}), ...fresh },
       }));
     }
+    return;
+  }
+  const nextRun = runnableRuns.find((run) => run.id === nextPendingAgent.workflowRunId);
+  if (
+    nextRun !== undefined &&
+    (await admitWorkflowRun({ set, sessionId, run: nextRun })) !== null
+  ) {
     return;
   }
   await activateWorkflowAgentOrNotify({

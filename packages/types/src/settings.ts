@@ -2,6 +2,7 @@ import type { ProjectId, SessionId, WorkflowId, WorkspaceId } from './ids';
 import type { ProviderPolicy } from './provider-policy';
 import type { EffortLevel, ProviderId } from './provider-registry';
 import type { AgentRole } from './workflow';
+import type { WorkflowRules } from './workflow-rules';
 
 export type VerbosityLevel = 'brief' | 'normal' | 'verbose';
 
@@ -77,6 +78,7 @@ export type OverrideSettings = Readonly<{
   resolveOnGithub: boolean | null;
   resolveCommitStyle: ResolveCommitStyle | null;
   afterMerge: AfterMergeRule | null;
+  workflowRules?: WorkflowRules | null;
 }>;
 
 export const REPLY_VOICES = ['terse', 'friendly', 'formal', 'mine'] as const;

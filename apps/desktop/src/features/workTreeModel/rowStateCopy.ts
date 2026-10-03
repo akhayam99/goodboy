@@ -75,6 +75,8 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
       return 'Skipped';
     case 'paused':
       return 'Paused by you';
+    case 'planReady':
+      return 'Plan ready, approve it to go on';
     case 'chained':
       return `Starts after ${reason.afterTitle}`;
     case 'awaitingFirstMessage':
@@ -103,6 +105,8 @@ const reasonShortSentence = ({ reason }: ReasonParams): string | null => {
       return 'At spend limit';
     case 'paused':
       return 'Paused';
+    case 'planReady':
+      return 'Plan ready';
     case 'orchestratorFailed':
       return 'Orchestrator failed';
     case 'stopped':
@@ -259,6 +263,9 @@ export const rowStateNode = ({ state }: StateParams): RowNode => {
   }
   if (state.reason?.kind === 'needsApproval') {
     return { state: node, label: 'Needs approval' };
+  }
+  if (state.reason?.kind === 'planReady') {
+    return { state: node, label: 'Plan ready' };
   }
   if (state.reason?.kind === 'agentStopped' && state.reason.by === 'app') {
     return { state: node, label: 'Stopped by restart' };

@@ -9,7 +9,12 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
-import { getAgentById, listAgentsForSessions, purgeAgentForDelete } from './agent';
+import {
+  getAgentById,
+  listAgentsForSessions,
+  listProviderSessionIds,
+  purgeAgentForDelete,
+} from './agent';
 import { addPlanConsumption, listConsumptionsForPlan, upsertPlan } from './plan';
 import {
   insertOpenQuestion,
@@ -159,5 +164,30 @@ describe('agent queries', () => {
     const stored = await getAgentById(db, agentId);
     expect(stored?.providerSessionId).toBe('codex-session');
     expect(stored?.providerSessionProviderId).toBe('codex');
+  });
+
+  it('lists the session ids one provider gave to Goodboy agents, once each', async () => {
+    const rows: ReadonlyArray<readonly [string, string | null, string | null]> = [
+      ['agent-a', 'thread-ledger', 'codex'],
+      ['agent-b', 'thread-ledger', 'codex'],
+      ['agent-c', 'thread-fx', 'codex'],
+      ['agent-d', 'chat-relay', 'cursor'],
+      ['agent-e', null, 'codex'],
+    ];
+    for (const [index, [id, providerSessionId, providerId]] of rows.entries()) {
+      await db.execute(
+        `INSERT INTO agents (
+           id, session_id, ordinal, name, status, provider_session_id,
+           provider_session_provider_id
+         ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [id, sessionId, index, id, 'completed', providerSessionId, providerId],
+      );
+    }
+
+    expect(await listProviderSessionIds({ db, providerId: 'codex' })).toEqual([
+      'thread-fx',
+      'thread-ledger',
+    ]);
+    expect(await listProviderSessionIds({ db, providerId: 'cursor' })).toEqual(['chat-relay']);
   });
 });

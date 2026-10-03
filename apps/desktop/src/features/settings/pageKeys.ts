@@ -19,7 +19,8 @@ export type WorkspaceSettingField =
   | 'roles'
   | 'aboutWork'
   | 'workingRules'
-  | 'explainMore';
+  | 'explainMore'
+  | 'workflowRules';
 
 export const FIELD_PAGE: Readonly<Record<WorkspaceSettingField, WorkspacePage>> = {
   branchPrefix: 'general',
@@ -40,6 +41,7 @@ export const FIELD_PAGE: Readonly<Record<WorkspaceSettingField, WorkspacePage>> 
   aboutWork: 'profile',
   workingRules: 'profile',
   explainMore: 'profile',
+  workflowRules: 'workflow-rules',
 };
 
 type OverrideOwner =
@@ -64,6 +66,7 @@ const OVERRIDE_OWNER: Readonly<Record<keyof OverrideSettings, OverrideOwner>> = 
   taskModels: { kind: 'providers' },
   roleModels: { kind: 'providers' },
   providerPool: { kind: 'providers' },
+  workflowRules: { kind: 'field', field: 'workflowRules' },
 };
 
 export const isWorkspaceOwnedOverride = (key: string): key is keyof OverrideSettings =>

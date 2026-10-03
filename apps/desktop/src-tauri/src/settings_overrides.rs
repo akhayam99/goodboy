@@ -43,6 +43,8 @@ pub struct SettingsOverrides {
     pub after_merge: Option<String>,
     #[serde(rename = "defaultBranchTemplate", default)]
     pub default_branch_template: Option<String>,
+    #[serde(rename = "workflowRules", default)]
+    pub workflow_rules: Option<serde_json::Value>,
 }
 
 fn bool_to_int(value: Option<bool>) -> Option<i64> {
@@ -112,7 +114,7 @@ pub async fn get_workspace_overrides(
     let mut stmt = conn.prepare(
         "SELECT default_provider_id, default_branch_prefix, default_verbosity, provider_bindings, task_models, role_models, parallel_agents, provider_pool, attribution_footer,
                 reply_voice, reply_style_note, reply_template_fixed, reply_template_no_change, resolve_on_github, resolve_commit_style, after_merge,
-                default_branch_template
+                default_branch_template, workflow_rules
          FROM workspaces WHERE id = ?1",
     )?;
     let mut rows = stmt.query_map(rusqlite::params![workspace_id], |row| {
@@ -137,6 +139,7 @@ pub async fn get_workspace_overrides(
             resolve_commit_style: row.get(14)?,
             after_merge: row.get(15)?,
             default_branch_template: row.get(16)?,
+            workflow_rules: json_from_text(row.get(17)?),
         })
     })?;
     match rows.next() {
@@ -175,8 +178,9 @@ pub async fn set_workspace_overrides(
              resolve_commit_style = ?15,
              after_merge = ?16,
              default_branch_template = ?17,
-             updated_at = ?18
-         WHERE id = ?19",
+             workflow_rules = ?18,
+             updated_at = ?19
+         WHERE id = ?20",
         rusqlite::params![
             overrides.default_provider_id,
             overrides.default_branch_prefix,
@@ -195,6 +199,7 @@ pub async fn set_workspace_overrides(
             overrides.resolve_commit_style,
             overrides.after_merge,
             overrides.default_branch_template,
+            json_to_text(&overrides.workflow_rules),
             now,
             workspace_id,
         ],
@@ -231,6 +236,7 @@ pub async fn get_session_overrides(
             resolve_commit_style: None,
             after_merge: None,
             default_branch_template: None,
+            workflow_rules: None,
         })
     })?;
     match rows.next() {
@@ -306,6 +312,26 @@ mod tests {
             encoded.get("replyStyleNote"),
             Some(&serde_json::Value::Null)
         );
+    }
+
+    #[test]
+    fn the_workflow_rules_travel_on_the_wire_and_store_as_text() {
+        let payload = serde_json::json!({
+            "workflowRules": { "autonomy": "plan", "spreadByHeadroom": false },
+        });
+
+        let overrides: SettingsOverrides =
+            serde_json::from_value(payload).expect("deserialize overrides");
+
+        let text = json_to_text(&overrides.workflow_rules).expect("rules stored as text");
+        assert_eq!(
+            json_from_text(Some(text)),
+            Some(serde_json::json!({ "autonomy": "plan", "spreadByHeadroom": false }))
+        );
+        let cleared: SettingsOverrides =
+            serde_json::from_value(serde_json::json!({ "workflowRules": null }))
+                .expect("deserialize cleared rules");
+        assert_eq!(json_to_text(&cleared.workflow_rules), None);
     }
 
     #[test]

@@ -28,6 +28,7 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   resolveCommitStyle: null,
   afterMerge: null,
   defaultBranchTemplate: null,
+  workflowRules: null,
 };
 
 export const mergeWorkspaceOverrides = ({
@@ -57,6 +58,7 @@ export const mergeWorkspaceOverrides = ({
     resolveCommitStyle: pick('resolveCommitStyle'),
     afterMerge: pick('afterMerge'),
     defaultBranchTemplate: pick('defaultBranchTemplate'),
+    workflowRules: pick('workflowRules'),
   };
 };
 

@@ -15,6 +15,7 @@ import type { SessionProviderPreference } from './provider-preference';
 import type { EffortLevel, ProviderId } from './provider-registry';
 import type { ClaudePermissionMode } from './permission';
 import type { OverrideSettings } from './settings';
+import type { WorkflowRules } from './workflow-rules';
 import type { GitDistance, GitOperation, GitWorkingTree } from './worktree';
 
 export type WorkspaceGitState = 'missing' | 'absent' | 'unborn' | 'ready';
@@ -106,7 +107,14 @@ export type WorkflowExecutionMode = 'static' | 'dynamic';
 export type WorkflowOrchestrationOutcome = 'done' | 'blocked';
 
 export type WorkflowOrchestrationStopKind =
-  'failure' | 'budget' | 'questions' | 'operator' | 'closed' | 'needs-approval' | 'paused';
+  | 'failure'
+  | 'budget'
+  | 'questions'
+  | 'operator'
+  | 'closed'
+  | 'needs-approval'
+  | 'plan-approval'
+  | 'paused';
 
 export type WorkflowOrchestrationStop = Readonly<{
   kind: WorkflowOrchestrationStopKind;
@@ -151,6 +159,7 @@ export type WorkflowRun = Readonly<{
   title?: string;
   titleUserEdited?: boolean;
   providerPool?: ReadonlyArray<ProviderId>;
+  rulesSnapshot?: WorkflowRules;
   discardedAt?: IsoDateTime;
   createdAt?: IsoDateTime;
 }>;

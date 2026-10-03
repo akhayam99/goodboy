@@ -177,6 +177,24 @@ export const listLiveChildAgents = async (
   return rows.map((row) => toAgent({ row }));
 };
 
+type ListProviderSessionIdsParams = {
+  readonly db: Database;
+  readonly providerId: ProviderId;
+};
+
+export const listProviderSessionIds = async ({
+  db,
+  providerId,
+}: ListProviderSessionIdsParams): Promise<ReadonlyArray<string>> => {
+  const rows = await db.select<{ readonly provider_session_id: string }>(
+    `SELECT DISTINCT provider_session_id FROM agents
+     WHERE provider_session_provider_id = ? AND provider_session_id IS NOT NULL
+     ORDER BY provider_session_id`,
+    [providerId],
+  );
+  return rows.map((row) => row.provider_session_id);
+};
+
 export const getAgentById = async (db: Database, id: AgentId): Promise<Agent | null> => {
   const rows = await db.select<AgentRow>('SELECT * FROM agents WHERE id = ?', [id]);
   const row = rows[0];

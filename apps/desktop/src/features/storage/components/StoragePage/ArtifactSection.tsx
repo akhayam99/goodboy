@@ -1,9 +1,10 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
+  Band,
   Button,
-  Eyebrow,
   STRIPED_BLOCK_LIST,
   STRIPED_MIN_ROWS,
+  SectionHeader,
   SegmentedTabs,
   cn,
   type SegmentedTabOption,
@@ -136,60 +137,58 @@ export const ArtifactSection = ({ scope }: Props) => {
       data-selecting={selected.size > 0}
       className="group/select-list flex flex-col gap-2"
     >
-      <div className="flex flex-wrap items-center gap-3">
-        <Eyebrow
-          icon={<ReportIcon size={ICON_SIZE.row} aria-hidden />}
-          label={`Artifacts from deleted sessions · ${artifacts.length} · ${formatBytes({ bytes: totalBytes })}`}
-        />
-        <SegmentedTabs
-          ariaLabel="Artifacts from deleted sessions"
-          size="sm"
-          options={options}
-          value={filter}
-          onChange={onFilter}
-          className="ml-auto"
-        />
-      </div>
-      <p className="text-secondary text-faint-foreground">
-        Copies in ~/.goodboy/workspaces/&lt;workspace&gt;/artifacts. They are small: clean them to
-        tidy up, not for space. Opening one in the reader counts as use.
-      </p>
-      {shown.length === 0 ? (
-        <p className="py-3 text-label text-muted-foreground">{EMPTY_COPY[filter]}</p>
-      ) : (
-        <div className="@container flex flex-col">
-          <ArtifactColumns />
-          <div
-            className={cn(
-              'flex flex-col',
-              visible.length >= STRIPED_MIN_ROWS && STRIPED_BLOCK_LIST,
-            )}
-          >
-            {visible.map((artifact) => (
-              <ArtifactRow
-                key={artifact.id}
-                artifact={artifact}
-                now={now}
-                suggestAfterDays={suggestAfterDays}
-                isSelecting={selected.size > 0}
-                isSelected={selected.has(artifact.id)}
-                isSuggested={suggestedIds.has(artifact.id)}
-                onToggle={onToggle}
-              />
-            ))}
-          </div>
-          {hidden > 0 ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="self-start"
-              onClick={() => setIsExpanded(true)}
+      <SectionHeader
+        label={`Artifacts of deleted sessions · ${artifacts.length} · ${formatBytes({ bytes: totalBytes })}`}
+        icon={<ReportIcon size={ICON_SIZE.row} aria-hidden />}
+        hint="Copies kept after their session was deleted. They are small: clean them to tidy up, not for space. Opening one in the reader counts as use."
+        action={
+          <SegmentedTabs
+            ariaLabel="Artifacts from deleted sessions"
+            size="sm"
+            options={options}
+            value={filter}
+            onChange={onFilter}
+          />
+        }
+      />
+      <Band>
+        {shown.length === 0 ? (
+          <p className="px-2 py-2 text-label text-muted-foreground">{EMPTY_COPY[filter]}</p>
+        ) : (
+          <div className="@container flex flex-col">
+            <ArtifactColumns />
+            <div
+              className={cn(
+                'flex flex-col',
+                visible.length >= STRIPED_MIN_ROWS && STRIPED_BLOCK_LIST,
+              )}
             >
-              Show {hidden} more
-            </Button>
-          ) : null}
-        </div>
-      )}
+              {visible.map((artifact) => (
+                <ArtifactRow
+                  key={artifact.id}
+                  artifact={artifact}
+                  now={now}
+                  suggestAfterDays={suggestAfterDays}
+                  isSelecting={selected.size > 0}
+                  isSelected={selected.has(artifact.id)}
+                  isSuggested={suggestedIds.has(artifact.id)}
+                  onToggle={onToggle}
+                />
+              ))}
+            </div>
+            {hidden > 0 ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="self-start"
+                onClick={() => setIsExpanded(true)}
+              >
+                Show {hidden} more
+              </Button>
+            ) : null}
+          </div>
+        )}
+      </Band>
       {filter === 'review' ? (
         <ArtifactBulkDeleteBar
           suggested={suggested}

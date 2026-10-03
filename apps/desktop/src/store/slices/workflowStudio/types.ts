@@ -1,5 +1,6 @@
 import type { Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
 import type { WorkflowDraft } from '../../../features/workflows/engine';
+import type { StudioHomeView } from '../../../features/workflows/studioHomeView';
 
 export type { GetFn, SetFn } from '../../slice-types';
 
@@ -33,4 +34,5 @@ export type WorkflowStudioState = {
   readonly workflowGenerations: Readonly<Record<WorkspaceId, WorkflowGeneration | undefined>>;
   readonly visibleWorkflowStudioWorkspaceId: WorkspaceId | null;
   readonly workflowStudioFocus: WorkflowId | null;
+  readonly workflowStudioView: StudioHomeView;
 };

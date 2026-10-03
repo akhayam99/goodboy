@@ -142,6 +142,8 @@ const storyInvokeHandlers = {
   qa_deciding_workflow_runs: [],
   workspace_script_list_live: [],
   terminal_list_live: [],
+  other_tools_scan: { status: 'ready', tools: [] },
+  other_tools_cancel: null,
   summarize_session: storySummarizeSession('The step finished.'),
 };
 

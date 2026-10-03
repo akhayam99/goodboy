@@ -26,8 +26,8 @@ pub(super) fn export_conn() -> rusqlite::Connection {
             task_models TEXT, role_models TEXT, parallel_agents INTEGER, provider_pool TEXT,
             attribution_footer INTEGER, reply_voice TEXT, reply_style_note TEXT,
             reply_template_fixed TEXT, reply_template_no_change TEXT, resolve_on_github INTEGER,
-            resolve_commit_style TEXT, default_branch_template TEXT, deleted_at INTEGER,
-            disconnected_at INTEGER
+            resolve_commit_style TEXT, default_branch_template TEXT, workflow_rules TEXT,
+            deleted_at INTEGER, disconnected_at INTEGER
         );
         CREATE TABLE projects (
             id TEXT PRIMARY KEY, workspace_id TEXT, name TEXT NOT NULL, root_path TEXT NOT NULL,

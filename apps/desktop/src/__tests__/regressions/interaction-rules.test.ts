@@ -60,12 +60,26 @@ type VerbButton = {
   readonly variant: string | null;
 };
 
-const textOf = (children: string): string =>
-  children
-    .replace(/<[^<>]*\/>/g, '')
-    .replace(/<[^<>]*>/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+const withoutTags = (children: string): string => {
+  const kept: Array<string> = [];
+  const opens: Array<number> = [];
+  for (const char of children) {
+    if (char === '<') {
+      opens.push(kept.length);
+      kept.push(char);
+      continue;
+    }
+    const open = char === '>' ? opens.pop() : undefined;
+    if (open !== undefined) {
+      kept.length = open;
+      continue;
+    }
+    kept.push(char);
+  }
+  return kept.join('');
+};
+
+const textOf = (children: string): string => withoutTags(children).replace(/\s+/g, ' ').trim();
 
 const variantOf = (attrs: string): string | null => {
   const literal = /\bvariant="(\w+)"/.exec(attrs);

@@ -11,6 +11,7 @@ import { SentryLinkedBadge } from '../../../integrations/sentry/SentryLinkedBadg
 import { Button, Notice, SectionHeader } from '@goodboy/ui';
 import { useProjectGitStatuses } from '../../../workspace/hooks/useProjectGitStatuses';
 import { LocateMovedProjects } from '../../../workspace/components/LocateMovedProjects';
+import { ProjectScriptsFold } from '../../../scripts';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -82,6 +83,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
           project.kind === 'repo' ? <GoodboyIgnoreField project={project} /> : null
         }
         rowBadge={({ project }) => <SentryLinkedBadge project={project} />}
+        rowFooter={({ project }) => <ProjectScriptsFold project={project} />}
       />
       {hasProjects && (
         <p className="flex items-center gap-1.5 px-2 text-label text-faint-foreground">

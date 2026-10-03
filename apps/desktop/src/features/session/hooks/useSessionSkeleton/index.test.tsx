@@ -94,4 +94,28 @@ describe('useSessionSkeleton', () => {
 
     expect(renders).toBe(before);
   });
+
+  it('restarts the delay when the open session changes while both refresh', () => {
+    setSyncing({ sessionId: OPEN_ID, isSyncing: true });
+    setSyncing({ sessionId: OTHER_ID, isSyncing: true });
+    const seen: Array<boolean> = [];
+    const view = renderHook(
+      ({ sessionId }: { sessionId: SessionId }) => {
+        const isShown = useSessionSkeleton({ sessionId });
+        seen.push(isShown);
+        return isShown;
+      },
+      { initialProps: { sessionId: OPEN_ID } },
+    );
+    act(() => vi.advanceTimersByTime(250));
+    expect(view.result.current).toBe(true);
+
+    seen.length = 0;
+    view.rerender({ sessionId: OTHER_ID });
+    act(() => vi.advanceTimersByTime(249));
+    expect(seen).not.toContain(true);
+
+    act(() => vi.advanceTimersByTime(1));
+    expect(view.result.current).toBe(true);
+  });
 });

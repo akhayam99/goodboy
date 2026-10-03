@@ -106,6 +106,13 @@
           "group": "Set up",
           "also": "settings rail",
           "shown": true
+        },
+        {
+          "title": "Settings home",
+          "text": "Settings opens on a home with every area as a card and its status. Pick a page and the cards become the rail.",
+          "group": "Set up",
+          "also": "settings home",
+          "shown": true
         }
       ]
     },
@@ -250,7 +257,7 @@
         },
         {
           "title": "Bulk select",
-          "text": "Lasso or modifier-click cards across columns, then archive, restore or delete them together.",
+          "text": "Tick a card, press X or lasso cards across columns, then archive, restore or delete them together from one bar.",
           "group": "The board",
           "also": "bulk select",
           "shown": true
@@ -345,6 +352,12 @@
           "shown": true
         },
         {
+          "title": "Copy settings from another workspace",
+          "text": "Take the settings of another workspace, or restore the defaults, page by page. You see every change before it is saved.",
+          "group": "Workspace and projects",
+          "also": "copy settings"
+        },
+        {
           "title": "Workspace switcher and Reconnect",
           "text": "Jump between workspaces and projects from one search. Disconnecting keeps the history, and adding the folder again offers Reconnect.",
           "group": "Workspace and projects",
@@ -437,6 +450,13 @@
           "text": "Cap what a run or a session can spend, then choose to pause workflows or only be warned. A paused run offers Raise limit.",
           "group": "Workflows",
           "main": true
+        },
+        {
+          "title": "Pause, resume and skip",
+          "text": "Pause lets the step in flight finish and starts nothing new. Resume picks up where the run was, and Skip passes a step that is stuck.",
+          "group": "Workflows",
+          "also": "pause and resume",
+          "shown": true
         },
         {
           "title": "Chained starts",
@@ -645,7 +665,7 @@
         },
         {
           "title": "Notes before a pull request",
-          "text": "Review your own diff first. Leave notes on lines, resolve them like review comments, and post the open ones to the pull request later.",
+          "text": "Review your own diff first. Leave notes on lines, give each one its own agent with Fix, and post the open ones to the pull request later.",
           "group": "Review, resolve and pull requests",
           "also": "notes before a PR"
         },
@@ -930,10 +950,10 @@
           "main": true
         },
         {
-          "title": "Fallback order and Auto",
-          "text": "Choose where Auto starts and the order it falls back through. Auto runs the newest model of each line, like Sonnet 5.5, and each role can be pinned to a model.",
+          "title": "Provider order and Auto",
+          "text": "Set each provider On, Backup only or Off, in the order new work tries them. Auto runs the newest model of each line, like Sonnet 5.5, and each role shows how it runs.",
           "group": "Providers, limits and cost",
-          "also": "fallback order",
+          "also": "provider order",
           "shown": true
         },
         {
@@ -1044,6 +1064,12 @@
           "also": "plus menu"
         },
         {
+          "title": "Message and document fields",
+          "text": "Every field that talks to an agent has Write and Preview, markdown and files. A message sends on Enter, a document saves on ⌘Enter.",
+          "group": "Agents",
+          "also": "one composer"
+        },
+        {
           "title": "Attach files",
           "text": "Hand an agent images, PDFs, CSV and text files, up to 10 at a time, by paste, drop or pick.",
           "group": "Agents",
@@ -1084,7 +1110,7 @@
         },
         {
           "title": "Keyboard shortcuts, back and forward",
-          "text": "Drive Goodboy from the keyboard with 57 shortcuts. ⌘/ opens the list, and ⌘[ and ⌘] move through history.",
+          "text": "Drive Goodboy from the keyboard with 77 shortcuts. ⌘/ opens the list, and ⌘[ and ⌘] move through history.",
           "group": "Keyboard and terminal",
           "main": true
         },
@@ -1097,7 +1123,7 @@
         },
         {
           "title": "Open in editor",
-          "text": "Jump into VS Code, Cursor, Zed, the JetBrains IDEs, Sublime Text, Vim or Neovim, at the worktree or the file.",
+          "text": "Jump into VS Code, Cursor, Zed, the JetBrains IDEs, Sublime Text, Vim or Neovim, at the worktree or the file. Open with picks the editor and the browser.",
           "group": "Keyboard and terminal",
           "also": "open in editor",
           "shown": true
@@ -1139,7 +1165,7 @@
         },
         {
           "title": "Branches",
-          "text": "Local branches are sorted into safe to delete and needs a look. Every deletion can be restored for 14 days.",
+          "text": "Branches has its own page, sorted into safe to delete and needs a look. Recently deleted restores a branch for 14 days.",
           "group": "Storage",
           "main": true
         },
@@ -1162,6 +1188,12 @@
           "text": "Decide what to keep from sessions you deleted: their plans, reports and wireframes.",
           "group": "Storage",
           "also": "deleted artifacts"
+        },
+        {
+          "title": "Other tools",
+          "text": "See how much space the Claude Code, Codex and Cursor folders take on your Mac, read only, and how much came from Goodboy sessions.",
+          "group": "Storage",
+          "also": "other tools"
         },
         {
           "title": "Goodboy can free N GB",

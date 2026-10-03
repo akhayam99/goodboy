@@ -224,7 +224,7 @@ export const insertSession = async (db: Database, session: Session): Promise<voi
         ],
       },
       ...session.workflowRuns.map((run) => ({
-        sql: 'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, title, title_user_edited, provider_pool, discarded_at, execution_mode, orchestration_outcome, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        sql: 'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, title, title_user_edited, provider_pool, rules_snapshot, discarded_at, execution_mode, orchestration_outcome, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         params: [
           run.id,
           session.id,
@@ -236,6 +236,7 @@ export const insertSession = async (db: Database, session: Session): Promise<voi
           run.title ?? null,
           run.titleUserEdited === true ? 1 : 0,
           serializeProviderPool({ pool: run.providerPool }),
+          run.rulesSnapshot === undefined ? null : JSON.stringify(run.rulesSnapshot),
           run.discardedAt != null ? Date.parse(run.discardedAt) : null,
           run.executionMode,
           run.orchestrationOutcome ?? null,

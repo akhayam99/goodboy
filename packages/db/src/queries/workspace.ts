@@ -112,6 +112,12 @@ const serializeProviderPool = ({
   readonly providerPool: OverrideSettings['providerPool'];
 }): string | null => (providerPool === null ? null : JSON.stringify(providerPool));
 
+const serializeWorkflowRules = ({
+  workflowRules,
+}: {
+  readonly workflowRules: OverrideSettings['workflowRules'];
+}): string | null => (workflowRules == null ? null : JSON.stringify(workflowRules));
+
 type InsertWorkspaceParams = {
   readonly db: Database;
   readonly workspace: Workspace;
@@ -126,10 +132,10 @@ export const insertWorkspace = async ({ db, workspace }: InsertWorkspaceParams):
     `INSERT INTO workspaces (
        id, name, slug, default_provider_id,
        default_branch_prefix, default_verbosity, provider_bindings,
-       task_models, role_models, parallel_agents, provider_pool, created_at, updated_at,
+       task_models, role_models, parallel_agents, provider_pool, workflow_rules, created_at, updated_at,
        deleted_at, disconnected_at, last_accessed_at, attribution_footer,
        default_permission_mode, ${REPLY_SETTING_COLUMNS}, default_branch_template
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       workspace.id,
       workspace.name,
@@ -146,6 +152,7 @@ export const insertWorkspace = async ({ db, workspace }: InsertWorkspaceParams):
           ? 1
           : 0,
       serializeProviderPool({ providerPool: workspace.overrides.providerPool }),
+      serializeWorkflowRules({ workflowRules: workspace.overrides.workflowRules }),
       createdAt,
       updatedAt,
       workspace.deletedAt === undefined ? null : Date.parse(workspace.deletedAt),

@@ -21,6 +21,9 @@ import { settingsDirectory, settingsPageKey } from './settingsDirectory';
 import { SettingsHome } from './SettingsHome';
 import { writeLastSettingsPage } from './lastSettingsPage';
 import { useHomeToRailMorph } from '../../hooks/useHomeToRailMorph';
+import { openWorkflowRules } from '../../../workflows/openWorkflowRules';
+
+const WORKFLOW_RULES_PAGE_KEY = 'workspace:workflow-rules';
 
 type Props = {
   readonly currentWorkspace: Workspace | null;
@@ -201,6 +204,11 @@ export const SettingsStudio = ({ currentWorkspace, focus, onScopeChange, onClose
                 groups={groups}
                 workspaceId={workspaceId}
                 onOpen={(page) => {
+                  if (page.key === WORKFLOW_RULES_PAGE_KEY) {
+                    openWorkflowRules();
+                    requestClose();
+                    return;
+                  }
                   morph.begin();
                   onScopeChange(page.target);
                 }}

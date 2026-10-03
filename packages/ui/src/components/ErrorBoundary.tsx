@@ -10,7 +10,7 @@ export type ErrorReportRequest = {
   readonly componentStack: string | null;
 };
 
-type ErrorBoundaryProps = {
+type Props = {
   readonly children: ReactNode;
   readonly describeError?: (error: Error) => string;
   readonly renderReport?: (request: ErrorReportRequest) => ReactNode;
@@ -26,7 +26,7 @@ const CLEARED_STATE: ErrorBoundaryState = {
   componentStack: null,
 };
 
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends Component<Props, ErrorBoundaryState> {
   override state: ErrorBoundaryState = CLEARED_STATE;
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
