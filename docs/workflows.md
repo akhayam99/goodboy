@@ -135,10 +135,76 @@ The **Starts** chip in the launch bar picks one:
 - **Manually**, when you press start
 - **After** another run that is still going, and then it carries on by itself
 
-When to ask is **Ask before each step** by default: the run waits for your go
-after each step so you can review it. **Run on its own** starts each next step
-by itself. The choice is stored as the run's autorun flag and can change later
-from the run's ⋯ menu.
+When to ask comes from the workspace rules, **Ask before each step** until you
+change them: the run waits for your go after each step so you can review it.
+**Ask after the plan** runs on its own but holds once when the plan is written,
+until you press **Approve plan**. **Run on its own** starts each next step by
+itself. The choice is stored as the run's autorun flag plus the run's copy of
+the rules, and can change later from the run's ⋯ menu.
+
+## Workflow rules
+
+Rules are the workspace defaults every new run starts from. They live in the
+**Rules** tab of the Workflows studio and on the **Workflow rules** page of the
+workspace settings, with the same Restore defaults and Copy from as the other
+pages.
+
+- **Providers**: a summary of the provider policy in Defaults. Rules do not own it
+- **Autonomy**: Ask before each step, Ask after the plan or Run on its own
+- **Spend**: a default cap per run and what happens at it, pause or warn
+- **Spread by what I have left**: automatic picks look at each provider's 5h and weekly room
+- **Standing guidance**: text every run starts with, with its own **Polish**
+
+### Standing guidance
+
+The rules carry a markdown text every new run starts with. The builder's
+guidance field opens filled with it in all three modes, with **From your
+rules**, and once you edit it **Edited for this run**, **Reset** and **Save as
+default**. Where it goes:
+
+- an orchestrated run sends it to the orchestrator, merged once with the
+  workflow's own process text (`orchestratorProcessText`)
+- a custom or preset run adds it to the brief of the roles in the run's copy of
+  the rules, Implementer and Docs by default (`standingGuidanceSection`); the
+  tester or the reviewer get it only when you pick them under **Sent to**
+- an empty text adds nothing
+
+**Polish** on guidance uses `polishWorkflowGuidance` in `packages/core`, its own
+prompt next to the goal polish: one rule per line as a list, the language of the
+input, every rule kept and none added. The guidance links to the profile field
+it differs from: "Also sent to every agent: How agents should work with you".
+
+### Spread by what I have left
+
+`providerHeadroom` in `packages/core` reads the limit snapshots the app already
+has, with the thresholds of the limit chips: _ok_, _tight_ (80% used or more),
+_out_, _unknown_. A snapshot older than 30 minutes, twice the re-read time, is
+_unknown_; a workflow decision that finds one asks for one re-read
+(`probeProviderLimits`) and then decides, so a decision reads the headroom once
+and no new poll exists. Limits that arrive with a turn count as fresh. A
+provider marked **Keep using after the limit** counts as tight, not out.
+
+With the rule on (the run's copy, `spreadByHeadroom`):
+
+- the orchestrator menu drops the _out_ providers and puts the _tight_ ones last
+  (`workflowAvailabilitySnapshot` with `headroom`)
+- static steps and fan-out children pick through Auto with the headroom, and the
+  role's Auto wins over the session provider (`resolveStepRouting`,
+  `resolveWorkflowChildRouting`); a provider pinned on the step still wins
+- if dropping the _out_ providers empties the menu, the menu of today comes back
+
+With the rule off nothing changes. Workspaces that existed before 0.16.0 start
+with it off (m217) and the Rules tab suggests it when an On provider is above
+80% used; new workspaces start with it on.
+
+The builder opens filled from the rules and shows them in one **From your
+rules** line with **Edit**. A launch control that leaves the rules shows a dot
+whose tooltip names the rule, and its menu offers **Reset**. A run copies the
+rules when it is attached (`session_workflows.rules_snapshot`), so changing them
+later never touches a run that already started, even after a restart. The
+workspace rules are one JSON column, `workspaces.workflow_rules`; `null` means
+the defaults. Runs attached from elsewhere (palette, chat, suggestions) copy the
+rules with the autonomy their caller asked for.
 
 ## What a step carries
 
@@ -539,6 +605,20 @@ that click.
 An open question and a failed step both still show with autorun on, because
 autorun stops on both. `maybeAutoAdvanceWorkflow` skips a run with open
 questions and a paused run.
+
+### Ask after the plan
+
+A run whose copy of the rules says `plan` holds once a plan for that run exists
+(`active` or `consumed`). The hold is a saved stop,
+`orchestrationStop { kind: 'plan-approval' }`, in the same columns as a pause,
+so it survives a restart. `admitWorkflowRun` is the admission check for both:
+it returns `paused`, `plan-approval` or nothing, writes the hold the first time
+it sees the plan, and runs inside `activateWorkflowAgent`, `orchestrateNextStep`
+and `maybeAutoAdvanceWorkflow`. `bypassGate` never skips it, so the step
+button, a skip, a read-now hint and a retry all stop at the hold.
+**Approve plan** (`approveWorkflowRunPlan`) marks the copy `planApproved`,
+clears the stop and lets the run advance; switching the run to another autonomy
+also drops the hold. A plan step that writes no plan never holds.
 
 ### Pause is one admission check
 

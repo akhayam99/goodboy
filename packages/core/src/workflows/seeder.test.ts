@@ -52,6 +52,7 @@ async function setup() {
         resolveCommitStyle: null,
         afterMerge: null,
         defaultBranchTemplate: null,
+        workflowRules: null,
       },
       createdAt: now(),
       updatedAt: now(),

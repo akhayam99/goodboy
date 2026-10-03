@@ -8,7 +8,12 @@ import {
   listConsumptionsForPlan as invokeListConsumptionsForPlan,
   listPlansForSession as invokeListPlansForSession,
 } from '../../../features/plans/plans';
-import { classifyAgent, kindConsumesPlan } from '../../../features/session/agent-kind';
+import {
+  KIND_TO_ROLE,
+  classifyAgent,
+  kindConsumesPlan,
+} from '../../../features/session/agent-kind';
+import { standingGuidanceSection } from './standingGuidance';
 import {
   buildGoalKickoffSection,
   buildPlanKickoffSection,
@@ -24,11 +29,11 @@ import {
   selectFanOutPlan,
   unsettledClusterChildren,
 } from './clusterImplementation';
-import { isRunPaused } from '../../../features/workflows/isRunPaused';
 import { isWatchingWorkflowLens } from './isWatchingWorkflowLens';
 import { WorkflowGateError, findWorkflowActivationBlock } from './workflowActivationGate';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
+import { admitWorkflowRun, heldAdmissionBlock } from './workflowPlanApproval';
 
 export type ActivateWorkflowAgentParams = {
   readonly sessionId: SessionId;
@@ -48,8 +53,9 @@ const throwWhenPaused = ({ get, sessionId, agent }: PauseCheckParams): void => {
   const run = sessionById(get().sessions, sessionId)?.workflowRuns.find(
     (candidate) => candidate.id === agent.workflowRunId,
   );
-  if (isRunPaused({ run })) {
-    throw new WorkflowGateError({ reason: 'paused' });
+  const held = heldAdmissionBlock({ run });
+  if (held !== null) {
+    throw new WorkflowGateError({ reason: held });
   }
 };
 
@@ -70,6 +76,16 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
     const session = sessionById(get().sessions, sessionId);
     if (!session || session.workflowRuns.length === 0) {
       throw new Error('session has no workflow');
+    }
+
+    const workflowRun = session.workflowRuns.find(
+      (candidate) => candidate.id === agent.workflowRunId,
+    );
+    if (workflowRun !== undefined) {
+      const admission = await admitWorkflowRun({ set, sessionId, run: workflowRun });
+      if (admission !== null) {
+        throw new WorkflowGateError({ reason: admission });
+      }
     }
 
     throwWhenPaused({ get, sessionId, agent });
@@ -194,9 +210,14 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
     }
 
     const instruction = evidence?.text ?? promptPrefix;
+    const guidanceSection = standingGuidanceSection({
+      run,
+      role: step?.role ?? KIND_TO_ROLE[effectiveKind] ?? null,
+    });
     const kickoff = composeKickoff(
       goalSection,
       planSection,
+      guidanceSection,
       instruction,
       composeStepBoundary(agentId),
     );

@@ -79,7 +79,7 @@ import { updateOrchestratorHints } from './updateOrchestratorHints';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
 import { recordOrchestratorUsage } from './recordOrchestratorUsage';
 import { WorkflowGateError, findWorkflowActivationBlock } from './workflowActivationGate';
-import { isRunPaused } from '../../../features/workflows/isRunPaused';
+import { admitWorkflowRun } from './workflowPlanApproval';
 import { waitForSessionSummarizer } from './summarizerGate';
 import { WORKFLOW_BLOCK_COPY } from '../../../features/workflows/blockCopy';
 import type { GetFn, SetFn } from './types';
@@ -87,6 +87,8 @@ import { autoLimitContext } from '../providerLimits/autoLimitContext';
 import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
 import { sessionById } from '../sessions/sessionIndex';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { resolveWorkflowHeadroom } from './resolveWorkflowHeadroom';
+import { orchestratorProcessText } from './standingGuidance';
 
 export type OrchestrateOptions = {
   readonly routing?: OrchestratorRouting;
@@ -541,8 +543,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         run.executionMode !== 'dynamic' ||
         run.discardedAt != null ||
         run.orchestrationOutcome != null ||
-        run.orchestrationStop?.kind === 'operator' ||
-        isRunPaused({ run })
+        run.orchestrationStop?.kind === 'operator'
       ) {
         return;
       }
@@ -550,6 +551,9 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         (candidate) => candidate.id === run.workflowId,
       );
       if (workflow == null) {
+        return;
+      }
+      if ((await admitWorkflowRun({ set, sessionId, run })) !== null) {
         return;
       }
       const sessionBlock = await sessionBudgetBlockAfterLoad({ get, sessionId });
@@ -656,6 +660,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         .filter((entry) => entry !== '')
         .join('\n');
       const worktreePath = getSessionRepo({ get, sessionId })?.worktreePath ?? null;
+      const headroom = await resolveWorkflowHeadroom({ get, sessionId, rules: run.rulesSnapshot });
       const availability = workflowAvailabilitySnapshot({
         providers: get().providers ?? [],
         cooldowns: get().providerCooldowns ?? {},
@@ -665,6 +670,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         nowMs: Date.now(),
         ...workspacePolicyAvailability({ state: get(), sessionId }),
         providerPool: run.providerPool ?? null,
+        headroom,
       });
       const modelMenu = orchestratorModelPool({
         availability,
@@ -684,7 +690,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       try {
         result = await client.decide({
           goal: run.goal ?? workflow.goal ?? session.goal,
-          processText: workflow.processText ?? '',
+          processText: orchestratorProcessText({ processText: workflow.processText, run }),
           completedSteps,
           openQuestionCount: openQuestions.length,
           ...(hints !== '' && { operatorHints: hints }),

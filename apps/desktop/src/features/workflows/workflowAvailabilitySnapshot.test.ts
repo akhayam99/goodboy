@@ -8,6 +8,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../providers/providers';
+import { orchestratorModelPool } from '@goodboy/core';
 import { workflowAvailabilitySnapshot } from './workflowAvailabilitySnapshot';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -122,5 +123,44 @@ describe('workflowAvailabilitySnapshot', () => {
 
   it('carries the run pause state through untouched', () => {
     expect(snapshot({ isRunBudgetBlocked: true }).isRunBudgetBlocked).toBe(true);
+  });
+});
+
+describe('workflowAvailabilitySnapshot spread by headroom', () => {
+  const threeConnected = [
+    provider('anthropic', 'connected'),
+    provider('codex', 'connected'),
+    provider('cursor', 'connected'),
+  ];
+
+  it('drops a provider that is out and puts a tight one at the end of the menu', () => {
+    const result = snapshot({
+      providers: threeConnected,
+      headroom: { anthropic: 'tight', codex: 'out' },
+    });
+
+    expect(result.connectedProviders).toEqual(['cursor', 'anthropic']);
+    expect(result.providerOrder).toEqual(['cursor', 'anthropic']);
+    expect(
+      orchestratorModelPool({ availability: result, hidden: null }).map(
+        (option) => option.provider,
+      ),
+    ).not.toContain('codex');
+    expect(orchestratorModelPool({ availability: result, hidden: null }).at(-1)?.provider).toBe(
+      'anthropic',
+    );
+  });
+
+  it('gives back the menu of today when every provider is out', () => {
+    const result = snapshot({ headroom: { anthropic: 'out', codex: 'out' } });
+
+    expect(result.connectedProviders).toEqual(['anthropic', 'codex']);
+  });
+
+  it('leaves the menu as it is today with the switch off', () => {
+    const result = snapshot({ providers: threeConnected });
+
+    expect(result.connectedProviders).toEqual(['anthropic', 'codex', 'cursor']);
+    expect(result.providerOrder).toBeUndefined();
   });
 });

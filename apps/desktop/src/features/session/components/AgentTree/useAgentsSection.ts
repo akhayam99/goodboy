@@ -116,7 +116,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
   const attachedRuns = useAttachedWorkflowRuns({ session: task });
-  const setWorkflowRunAutoRun = useAppStore((s) => s.setWorkflowRunAutoRun);
+  const setWorkflowRunAutonomy = useAppStore((s) => s.setWorkflowRunAutonomy);
   const startWorkflowRun = useAppStore((s) => s.startWorkflowRun);
   const workflowNameByRunId = useMemo(() => {
     const map = new Map<string, string>();
@@ -262,7 +262,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
     onStartStepAgent,
     selectedAgentId,
     setPanelSectionExpanded,
-    setWorkflowRunAutoRun,
+    setWorkflowRunAutonomy,
     spawnError,
     standaloneAgentCount,
     startWorkflowRun: onStartWorkflowRun,
