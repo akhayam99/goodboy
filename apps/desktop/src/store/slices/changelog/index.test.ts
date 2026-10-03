@@ -64,7 +64,7 @@ describe('changelog slice', () => {
   it('has every release from CHANGELOG.md available synchronously, with no fetch', () => {
     const { getState } = harness();
 
-    expect(getState().changelogReleases.length).toBe(110);
+    expect(getState().changelogReleases.length).toBe(111);
     expect(fetchReleasesMock).not.toHaveBeenCalled();
   });
 

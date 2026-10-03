@@ -93,6 +93,7 @@ import { UpdateConfirmScene } from './scenes/audit/UpdateConfirmScene';
 import { UpdateWhatsNewScene } from './scenes/audit/UpdateWhatsNewScene';
 import { NotificationsScene } from './scenes/audit/NotificationsScene';
 import { ChangelogScene } from './scenes/audit/ChangelogScene';
+import { GuideScene } from './scenes/audit/GuideScene';
 import { ArtifactStatesScene } from './scenes/audit/ArtifactStatesScene';
 import { InboxStatesScene } from './scenes/audit/InboxStatesScene';
 import { CompanionScene } from './scenes/audit/CompanionScene';
@@ -224,6 +225,7 @@ export const MOCK_SCENES = {
   'update-whats-new': UpdateWhatsNewScene,
   notifications: NotificationsScene,
   changelog: ChangelogScene,
+  guide: GuideScene,
   'artifact-states': ArtifactStatesScene,
   'inbox-states': InboxStatesScene,
   companion: CompanionScene,

@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -15,6 +15,7 @@ import {
 } from '../../../../store/storyHarness';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { GUIDE_CHAPTERS } from './guideChapters';
+import { peekGuideChapter, requestGuideChapter } from './guideChapterRequest';
 import { GuideStudio } from './index';
 
 let useAppStore: StoryStore;
@@ -106,6 +107,35 @@ describe('GuideStudio', () => {
     const keyboard = screen.getByRole('region', { name: 'Keyboard' });
     expect(within(keyboard).getByText('Command palette', { selector: 'span' })).toBeDefined();
     expect(within(keyboard).getByText(shortcutGlyphs('palette.open'))).toBeDefined();
+  });
+
+  it('leaves the terminal tab key out of the keys to learn first', () => {
+    render(<GuideStudio onClose={vi.fn()} />);
+
+    const keyboard = screen.getByRole('region', { name: 'Keyboard' });
+    expect(within(keyboard).queryByText('New terminal tab')).toBeNull();
+  });
+
+  it('opens on the chapter a caller asked for', async () => {
+    requestGuideChapter('listens');
+    render(<GuideStudio onClose={vi.fn()} />);
+
+    await waitFor(() =>
+      expect(
+        within(rail())
+          .getByRole('button', { name: 'How Goodboy listens' })
+          .getAttribute('aria-current'),
+      ).toBe('true'),
+    );
+    expect(peekGuideChapter()).toBeNull();
+  });
+
+  it('opens on the first chapter when nobody asked for one', () => {
+    render(<GuideStudio onClose={vi.fn()} />);
+
+    expect(
+      within(rail()).getByRole('button', { name: 'What is Goodboy' }).getAttribute('aria-current'),
+    ).toBe('true');
   });
 
   it('names the board columns the way the board does', () => {

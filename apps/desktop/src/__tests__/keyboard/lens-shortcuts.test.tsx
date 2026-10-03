@@ -23,7 +23,7 @@ const { sessionList, sidebarOrder, state } = vi.hoisted(() => {
       hydrated: false,
       bootPhase: 'loading' as const,
       error: null,
-      workspaceIntegrations: {},
+      workspaceIntegrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
       workspaces: [
         {
           id: 'workspace-1',
@@ -191,6 +191,7 @@ beforeEach(() => {
   state.currentWorkspaceId = 'workspace-1';
   state.currentSessionId = 'session-1';
   state.activeLens = {};
+  state.workspaceIntegrations = {};
   state.navigate.mockClear();
   state.back.mockClear();
   state.forward.mockClear();
@@ -297,12 +298,16 @@ describe('App lens shortcuts on darwin', () => {
     ]);
   });
 
-  it('reaches the integration lenses that had no binding before', () => {
+  it('reaches the integration lenses of the tools that are connected', () => {
+    state.workspaceIntegrations = {
+      'workspace-1': [{ provider: 'linear' }, { provider: 'gitlab' }, { provider: 'slack' }],
+    };
     render(<App />);
 
     press({ code: 'Digit2', key: '2', metaKey: true, altKey: true });
     press({ code: 'Digit3', key: '3', metaKey: true, altKey: true });
     press({ code: 'Digit4', key: '4', metaKey: true, altKey: true });
+    press({ code: 'Digit5', key: '5', metaKey: true, altKey: true });
     press({ code: 'Digit6', key: '6', metaKey: true, altKey: true });
 
     expect(lensCalls()).toEqual([
@@ -310,6 +315,17 @@ describe('App lens shortcuts on darwin', () => {
       ['session-1', 'gitlab_issues'],
       ['session-1', 'slack_threads'],
     ]);
+  });
+
+  it('leaves the integration lenses alone when the tool is not connected', () => {
+    render(<App />);
+
+    press({ code: 'Digit2', key: '2', metaKey: true, altKey: true });
+    press({ code: 'Digit4', key: '4', metaKey: true, altKey: true });
+    press({ code: 'Digit5', key: '5', metaKey: true, altKey: true });
+    press({ code: 'Digit6', key: '6', metaKey: true, altKey: true });
+
+    expect(lensCalls()).toEqual([]);
   });
 
   it('walks to the previous session from the bracket key', () => {

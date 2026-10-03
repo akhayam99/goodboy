@@ -4,6 +4,7 @@ import type { Project, ProjectId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ProjectSelect } from './ProjectSelect';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
+import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
 
 type Props = {
   readonly label: string;
@@ -47,7 +48,7 @@ export const ScriptEditor = ({
           onCancel();
           return;
         }
-        if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+        if (isSubmitChord(event)) {
           event.preventDefault();
           onSave();
         }

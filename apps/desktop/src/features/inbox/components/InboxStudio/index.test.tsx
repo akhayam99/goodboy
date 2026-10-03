@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { pressKey, pressShortcut } from '../../../../__tests__/helpers/pressKey';
+import type { ShortcutId } from '../../../../shared/keyboard/registry';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { InboxProvider, InboxRecord } from '../../types';
 
@@ -32,6 +34,9 @@ const h = vi.hoisted(() => ({
   refetch: vi.fn(),
   openUrl: vi.fn(async () => undefined),
   isEscapeEnabled: true as boolean,
+  toggleStar: vi.fn<(record: InboxRecord) => Promise<void>>(async () => undefined),
+  orderCalls: 0,
+  stars: null as unknown,
 }));
 
 vi.mock('../../../../shared/components/StudioShell', () => ({
@@ -61,14 +66,25 @@ vi.mock('../../../../store', () => ({
   ) => selector({ workspaces: [], sessions: [], sessionExternalTasks: {} }),
 }));
 
-vi.mock('../../useInboxStars', () => ({
-  useInboxStars: () => ({
+vi.mock('../../useInboxStars', () => {
+  h.stars = {
     rows: [],
     isStarred: () => false,
-    canStar: () => false,
-    toggle: async () => undefined,
-  }),
-}));
+    canStar: () => true,
+    toggle: h.toggleStar,
+  };
+  return { useInboxStars: () => h.stars };
+});
+
+vi.mock('../../orderInboxRecords', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../orderInboxRecords')>();
+  return {
+    orderInboxRecords: (params: Parameters<typeof actual.orderInboxRecords>[0]) => {
+      h.orderCalls += 1;
+      return actual.orderInboxRecords(params);
+    },
+  };
+});
 
 vi.mock('../../../integrations/hooks/useWorkspaceIssueLookup', () => ({
   useWorkspaceIssueLookup: () => ({
@@ -286,7 +302,10 @@ const facet = (section: string, name: RegExp) =>
     }),
   ).getByRole('button', { name });
 
-const press = (key: string) => fireEvent.keyDown(window, { key, code: key });
+const press = (id: ShortcutId, target?: Element) =>
+  pressShortcut({ id, target: target ?? document.body });
+
+const openRow = (name: RegExp): HTMLElement => screen.getByRole('option', { name });
 
 beforeEach(() => {
   localStorage.clear();
@@ -304,6 +323,8 @@ beforeEach(() => {
   };
   h.refetch.mockReset();
   h.openUrl.mockClear();
+  h.toggleStar.mockClear();
+  h.orderCalls = 0;
 });
 
 afterEach(() => {
@@ -371,77 +392,178 @@ describe('InboxStudio', () => {
     expect(screen.queryByText('Fix the flaky test')).toBeNull();
   });
 
-  it('opens with nothing selected and opens the detail on a click', () => {
+  it('opens with the first row selected, so the row keys act at once', () => {
     renderStudio();
 
-    expect(detailText()).toBe('none');
+    expect(detailText()).toBe('GBY-1');
+    expect(openRow(/TypeError boom/).getAttribute('aria-selected')).toBe('true');
+  });
 
-    fireEvent.click(screen.getByRole('option', { name: /Ship the inbox/ }));
+  it('opens the detail of another row on a click', () => {
+    renderStudio();
+
+    fireEvent.click(openRow(/Ship the inbox/));
 
     expect(detailText()).toBe('ENG-1');
+  });
+
+  it('opens on the requested record, not the first row', () => {
+    renderStudio({ initialRecordKey: 'github:issue:1' });
+
+    expect(detailText()).toBe('#1');
+  });
+
+  it('starts empty and selects the first row once the records arrive', () => {
+    h.records = [];
+    const view = renderStudio();
+    expect(detailText()).toBe('none');
+
+    h.records = [sentryError, linearIssue];
+    view.rerender(<InboxStudio workspaceId={workspaceId} rootPath="/repo" onClose={vi.fn()} />);
+
+    expect(detailText()).toBe('GBY-1');
   });
 
   it('closes the detail from its close control and keeps the list', () => {
     renderStudio();
 
-    fireEvent.click(screen.getByRole('option', { name: /Ship the inbox/ }));
     fireEvent.click(screen.getByTestId('detail-deselect'));
 
     expect(detailText()).toBe('none');
     expect(screen.getByText('Ship the inbox')).toBeDefined();
   });
 
-  it('moves with j and k and the detail follows', () => {
+  it('keeps the detail closed after a close, until a row is chosen again', () => {
     renderStudio();
 
-    press('j');
-    expect(detailText()).toBe('GBY-1');
+    fireEvent.click(screen.getByTestId('detail-deselect'));
+    expect(detailText()).toBe('none');
 
-    press('j');
-    expect(detailText()).toBe('ENG-1');
-
-    press('k');
+    press('list.next');
     expect(detailText()).toBe('GBY-1');
   });
 
-  it('runs the primary action on Enter', () => {
+  it('moves with the next and previous keys and the detail follows', () => {
     renderStudio();
 
-    press('j');
+    press('list.next');
+    expect(detailText()).toBe('ENG-1');
+
+    press('list.next');
+    expect(detailText()).toBe('#eng');
+
+    press('list.previous');
+    expect(detailText()).toBe('ENG-1');
+  });
+
+  it('launches on Enter from the first row without touching the list first', () => {
+    renderStudio();
     expect(screen.getByTestId('detail').getAttribute('data-launch-request')).toBe('0');
 
-    press('Enter');
+    press('list.open');
 
     expect(screen.getByTestId('detail').getAttribute('data-launch-request')).toBe('1');
   });
 
-  it('opens the selected record in its tool on o', () => {
+  it('opens the first row in its tool on o', () => {
     h.records = [{ ...linearIssue, url: 'https://example.invalid/linear/ENG-1' }];
     renderStudio();
 
-    press('j');
-    press('o');
+    press('list.openInTool');
 
     expect(h.openUrl).toHaveBeenCalledWith('https://example.invalid/linear/ENG-1');
   });
 
-  it('focuses the search on / and the composer on r', () => {
+  it('focuses the search on slash and the composer on r', () => {
     renderStudio();
 
-    press('/');
+    press('list.search');
     expect(document.activeElement).toBe(screen.getByLabelText('Search the inbox'));
 
     (document.activeElement as HTMLElement).blur();
-    press('j');
-    press('r');
+    press('list.reply');
     expect(document.activeElement).toBe(screen.getByLabelText('Comment'));
   });
 
-  it('closes the detail on Escape before the studio', () => {
+  it('acts from a focused row, where the click left the focus', () => {
+    renderStudio();
+    const row = openRow(/Ship the inbox/);
+    fireEvent.click(row);
+    row.focus();
+    expect(document.activeElement).toBe(row);
+
+    press('list.next', row);
+    expect(detailText()).toBe('#eng');
+
+    press('list.open', openRow(/ping the team/));
+    expect(screen.getByTestId('detail').getAttribute('data-launch-request')).toBe('1');
+  });
+
+  it('leaves the keys to the search field while typing in it', () => {
+    renderStudio();
+    const search = screen.getByLabelText('Search the inbox');
+    search.focus();
+
+    const next = press('list.next', search);
+    pressKey({ code: 'KeyO', target: search });
+
+    expect(next.defaultPrevented).toBe(false);
+    expect(h.openUrl).not.toHaveBeenCalled();
+    expect(detailText()).toBe('GBY-1');
+  });
+
+  it('leaves the search field on Escape and gives the keys back to the list', () => {
+    renderStudio();
+    const search = screen.getByLabelText('Search the inbox');
+    search.focus();
+
+    pressKey({ code: 'Escape', target: search });
+    expect(document.activeElement).not.toBe(search);
+
+    press('list.next');
+    expect(detailText()).toBe('ENG-1');
+  });
+
+  it('keeps the order of the rows while the keys move the selection', () => {
+    renderStudio();
+    const ordered = h.orderCalls;
+    expect(ordered).toBeGreaterThan(0);
+
+    press('list.next');
+    press('list.next');
+    press('list.previous');
+    press('list.reply');
+    press('list.star');
+    press('list.openInTool');
+
+    expect(detailText()).toBe('ENG-1');
+    expect(h.orderCalls).toBe(ordered);
+  });
+
+  it('stars the selected row on s from the page body', () => {
+    renderStudio();
+
+    press('list.star');
+
+    expect(h.toggleStar).toHaveBeenCalledTimes(1);
+    expect(h.toggleStar.mock.calls[0]?.[0]).toMatchObject({ identifier: 'GBY-1' });
+  });
+
+  it('stars the selected row on s with the focus on a star button', () => {
+    renderStudio();
+    const star = screen.getByRole('button', { name: 'Star GBY-1' });
+    star.focus();
+
+    press('list.star', star);
+
+    expect(h.toggleStar).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes the detail on Escape before the studio, once a row was chosen', () => {
     renderStudio();
 
     expect(h.isEscapeEnabled).toBe(true);
-    fireEvent.click(screen.getByRole('option', { name: /Ship the inbox/ }));
+    fireEvent.click(openRow(/Ship the inbox/));
     expect(h.isEscapeEnabled).toBe(false);
 
     fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });

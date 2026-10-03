@@ -892,15 +892,31 @@ open, and when something below already claimed the event. A surface registers
 its plain keys with `useShortcut` and an enabled flag, never with its own
 window listener.
 Every entry also names the task `group` it belongs to (General, Workspaces,
-Navigate, Session, Views, Review, Diff, Window), and Settings > App > Shortcuts lists the
-groups in that order, read top to bottom per column. Entries that share a
+Navigate, Session, Views, Lists, Review, Diff, Window), and Settings > App > Shortcuts lists the
+groups in that order, read top to bottom per column. An entry that works only in
+one place carries a `scope` (the Inbox and Notifications lists, the Review view,
+the Diff view, the terminal, a chat composer, an activity row, a workspace
+open, a code or an explore session). The page prints the place under the group
+name when the whole group shares it, or under the row when it does not. A scope
+also lets two surfaces use the same plain key: J, K, R, S and E mean other
+things in a list than in Review, and the registry test only asks the combos to
+be unique inside one scope and never to shadow a global one. Entries that share a
 `family` (only the nine workspace digits today) render as one row, "Go to
 workspace 1 to 9" with ⌘1-9, while the registry keeps one entry per chord. A
 family is only for chords that do the same thing to a different index: the
 integration digits (⌘⌥1 to ⌘⌥6) open different lenses and keep a row each.
 A few entries are keys a focused control answers, not global chords: Submit
-comment (⌘↵) and Open the workflow of an activity row (⇧↵, the only combo
-without ⌘). They sit in the registry so the list and the tooltips name them.
+(⌘↵, `composer.submit`, the one id behind every composer, editor and the
+workspace switcher; `isSubmitChord` reads it and keeps the lenient match that
+accepts Ctrl as well as ⌘) and Open the workflow of an activity row (⇧↵, the only combo
+without ⌘). The list keys (`list.next`, `list.previous`, `list.open`,
+`list.openInTool`, `list.reply`, `list.star`, `list.dismiss`, `list.search`) are
+the same kind: `useListKeys` matches them against the registry, so the rail
+hints, the Shortcuts page and the guide read the same entries. It keeps its own
+window listener because Enter must yield to a focused button (a row button of
+the list excepted). The Review view's Select every fixable comment (⌘A,
+`review.selectAll`) sits on the same footing, and the registry test lets it
+use ⌘A because the Review view only answers it outside a text field. They sit in the registry so the list and the tooltips name them.
 The control that owns each one handles its own key event and never registers
 it with the dispatcher; the activity row matches through `eventMatches`, and so
 does Shift+F10 (`menu.open`), which opens the context menu of the focused row.
@@ -946,7 +962,7 @@ one is open at a time.
 - **One frame for every studio.** `StudioFrame` (`app/components/StudioFrame`)
   mounts only while a studio is open and stays mounted from Inbox to Workflows
   to Settings. It owns the 40px band (the studio's icon and name, the body's
-  subtitle and accessory, Done), the Esc layer and the motion: `studio-in` when
+  subtitle and accessory, Close), the Esc layer and the motion: `studio-in` when
   it opens, `studio-out` when it closes, and on a switch only the band's name
   fades while the new body enters in 160ms. A studio body still renders
   `StudioShell`; inside the frame it only hands its chrome to the band. Until a
@@ -989,16 +1005,19 @@ one is open at a time.
   its own workspace, or its session's, and a row with neither is app-wide and
   shows in every workspace. Mark all read and Delete all act on that same scope.
   In the studio, rows are grouped by day (Today, Yesterday, This week, Older),
-  j and k or the arrow keys move, Enter runs the row's action and e dismisses.
+  J and K or the arrow keys move, Enter runs the row's action and E dismisses.
   The rail rows (`packages/ui` `FacetRail`), the list keys
   (`shared/hooks/useListKeys`) and the day grouping (`shared/utils/groupByDay`)
   are shared primitives. The inbox uses all three: its rail filters by view,
   type and source (one pick per section, a tool that did not load says so in
   its row), its one-line rows are grouped by the same days in time order, and
-  j and k move the selection while the record follows beside the list. Enter
-  launches or opens the session, o opens the record in its tool, r focuses the
-  reply box, / focuses the search, and Escape closes the record before the
-  studio. Below a 720px list column the rail folds into a Filters button in
+  J and K move the selection while the record follows beside the list. The
+  inbox opens with its first row chosen, so those keys act at once; Enter opens
+  the launch popover on that row (⌘↵ in the panel launches) or the session once
+  one is linked, O opens the record in its tool, R focuses the reply box when
+  the record has one, S stars or unstars, / focuses the search, and Escape in
+  the search leaves the field. Escape closes a record you picked before the
+  studio, and closes the studio when the first row was only chosen for you. Below a 720px list column the rail folds into a Filters button in
   the list header.
 - **Every studio rail resizes.** `StudioRailLayout` (Settings, Guide, Chat,
   Notifications, Changelog, Bitbucket) and the Inbox filters rail drag from

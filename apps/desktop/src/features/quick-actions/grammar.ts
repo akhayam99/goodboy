@@ -30,6 +30,31 @@ export const PREFIXES: ReadonlyArray<PrefixMeta> = ALL_PREFIXES.filter(
   (prefix) => GROUP_ENABLED[prefix.group] ?? true,
 );
 
+export const COMPOSER_PREFIX_GROUPS: ReadonlyArray<QuickActionGroup> = [
+  'skill',
+  'workflow',
+  'agent',
+  'script',
+];
+
+export const PALETTE_PREFIX_GROUPS: ReadonlyArray<QuickActionGroup> = [
+  'agent',
+  'session',
+  'workspace',
+  'script',
+  'action',
+  'help',
+  'workflow',
+  'skill',
+];
+
+type SurfaceParams = {
+  readonly groups: ReadonlyArray<QuickActionGroup>;
+};
+
+export const prefixesOf = ({ groups }: SurfaceParams): ReadonlyArray<PrefixMeta> =>
+  groups.flatMap((group) => PREFIXES.filter((prefix) => prefix.group === group));
+
 export type ParsedQuery = {
   readonly prefix: PrefixMeta | null;
   readonly query: string;

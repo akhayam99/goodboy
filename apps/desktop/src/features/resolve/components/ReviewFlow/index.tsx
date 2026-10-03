@@ -367,12 +367,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
       step(-1);
       return;
     }
-    if (
-      (native.metaKey || native.ctrlKey) &&
-      !native.altKey &&
-      !native.shiftKey &&
-      native.code === 'KeyA'
-    ) {
+    if (eventMatches({ event: native, entry: SHORTCUTS['review.selectAll'] })) {
       event.preventDefault();
       setReviewSelection({
         sessionId,

@@ -2,16 +2,16 @@
 
 ### Terminal
 
-Open a real login shell in the session's worktree. **⌘⌥T** opens the Terminal view, **⌘T** adds a tab, and the shell is still there after a reload. **⌘F** finds in its scrollback.
+Open a real login shell in the session's worktree. **⌘⌥T** opens the Terminal view, **⌘T** adds a tab while the terminal has the focus, and the shell is still there after a reload. **⌘F** finds in its scrollback.
 
 ### Keyboard shortcuts, back and forward
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-shortcuts-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-shortcuts-light.webp" alt="The Shortcuts page, 57 shortcuts, in the groups General, Workspaces, Navigate and Views, with Command palette on ⌘K, Report a bug on ⌘I, Back on ⌘[ and Forward on ⌘], and a ⌘⌥ key for each view from Overview to Slack threads">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-shortcuts-light.webp" alt="The Shortcuts page in the groups General, Workspaces, Navigate and Views, with Command palette on ⌘K, Report a bug on ⌘I, Back on ⌘[ and Forward on ⌘], and a ⌘⌥ key for each view from Overview to Slack threads">
 </picture>
 
-Drive Goodboy from the keyboard: 57 shortcuts, a **⌘⌥** key for each view, workspaces 1 to 9 on **⌘1** to **⌘9**, and **⌘[** and **⌘]** through history. **⌘/** opens the list. One registry drives the keys, this page and the tooltips. **Esc** closes what is open inside the app and never takes the window out of macOS full screen.
+Drive Goodboy from the keyboard: a **⌘⌥** key for each view, **⌘1** to **⌘9** for your other workspaces in the order the switcher numbers them, and **⌘[** and **⌘]** through history. **⌘/** opens the list, and a key that only works in one place says where. The Inbox opens with its first row chosen, so **J** and **K** move, **↵** launches, **O** opens the tool, **R** replies, **S** stars and **/** searches at once. **How Goodboy listens**, in the Guide and in Settings, Help, puts the prefixes, the list keys and the two kinds of field on one page. One registry drives the keys, that page, the Shortcuts list and the tooltips. **Esc** closes what is open inside the app and never takes the window out of macOS full screen.
 
 ### Script drawer
 

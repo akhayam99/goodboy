@@ -12,6 +12,43 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.15.4
+
+Impact counts deleted sessions and what they shipped, Auto runs the newest model of each line, and one-click agents show their model before they start.
+
+### Improved
+
+#### Impact counts deleted sessions
+<!-- gb area=providers screen=impact image=impact-deleted -->
+
+Impact now counts every session you ran, archived and deleted ones too: their sessions, spend, merged pull requests and time. The summary says how many were deleted, and their rows carry a Deleted label and do not open. A pull request still open when you deleted its session is checked again when Impact opens, so a later merge still counts.
+
+Reviews resolved counts only comments that were resolved, and comments sent to an agent show apart in Shipped. Impact, the Spend tab and the cost in the top bar add up spend the same way. Deleting a session now says that its cost and shipped work stay in Impact.
+
+#### One-click agents show their model first
+<!-- gb area=agents image=runs-on -->
+
+Next steps that start an implementer, reviewer, resolver, PR reviewer or debugger in one click show Runs on with the model and effort the agent starts on. Change picks another one for that start. The next moves offered under a finished agent show the same line.
+
+#### Auto runs the newest model of each line
+<!-- gb area=providers screen=settings/providers -->
+
+Roles that ran on Sonnet 5 now run on Sonnet 5.5, and Codex roles on GPT-6.1 Sol. On a Claude CLI older than 2.1.284, or a Codex CLI older than 0.160, Auto keeps Sonnet 5 and GPT-5.6 Sol. New chats without a default model start on the newest Sonnet.
+
+A model you turn off under Models in the picker is left out of Auto and the workflow orchestrator, and a background task never moves to a more expensive model because of it. Re-checks of fixed comments get their own row under Review in Defaults.
+
+### Fixed
+
+- Restore built-in workflows works again instead of stopping on an error. <!-- gb area=workflows screen=workflows -->
+- A confirmation whose action fails stays open and says why, instead of closing with nothing done. <!-- gb area=app -->
+- A workflow keeps every setting you saved after you reopen it. <!-- gb area=workflows screen=workflows -->
+- Resolve, the session kickoff, Explore and Next steps start agents on the workspace's default provider and the models pinned per role. <!-- gb area=agents -->
+- Cost estimates for Gemini 3.6 Flash and Gemini 3 Flash on Cursor use Cursor's prices. <!-- gb area=providers -->
+- The breadcrumb ends every part but the last with the same chevron, and page icons take their page's color. <!-- gb area=app -->
+- Inbox stays lit in the footer while you filter it by a tool, and that tool's icon gets a ring. <!-- gb area=inbox screen=inbox -->
+- Chat sits on the same column as the other pages, with text at reading width and tables and code at full width. <!-- gb area=agents -->
+- A finished workflow run ends on its last step, without a Now line. <!-- gb area=workflows -->
+
 ## Goodboy v0.15.3
 
 Start a project from an empty folder, pick the model new chats start on, and read context changes as a diff in the activity timeline.

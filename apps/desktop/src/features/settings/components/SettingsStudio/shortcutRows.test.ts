@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { SHORTCUTS } from '../../../../shared/keyboard/registry';
-import { SHORTCUT_COLUMNS, SHORTCUT_ROW_COUNT, shortcutRows } from './shortcutRows';
+import { SHORTCUT_COLUMNS, SHORTCUT_ROW_COUNT, groupWhere, shortcutRows } from './shortcutRows';
 
 describe('shortcutRows', () => {
   it('folds the nine workspace digits into one row after the switcher', () => {
@@ -11,12 +11,14 @@ describe('shortcutRows', () => {
         label: 'Switch workspace',
         first: 'workspace.switcher',
         last: 'workspace.switcher',
+        where: 'With a workspace open',
       },
       {
         key: 'workspace-digit',
         label: 'Go to workspace 1 to 9',
         first: 'workspace.1',
         last: 'workspace.9',
+        where: null,
       },
     ]);
   });
@@ -35,6 +37,31 @@ describe('shortcutRows', () => {
       'diff.previousFile',
       'diff.nextFile',
     ]);
+  });
+
+  it('puts the list keys on their own group with one shared place', () => {
+    expect(shortcutRows({ group: 'lists' }).map((row) => row.first)).toEqual([
+      'list.next',
+      'list.previous',
+      'list.open',
+      'list.openInTool',
+      'list.reply',
+      'list.star',
+      'list.dismiss',
+      'list.search',
+    ]);
+    expect(groupWhere({ group: 'lists' })).toBe('In the Inbox and Notifications lists');
+  });
+
+  it('says where a conditional key works, on its row', () => {
+    const rows = shortcutRows({ group: 'session' });
+
+    expect(rows.find((row) => row.first === 'terminal.newTab')?.where).toBe('In the terminal');
+    expect(rows.find((row) => row.first === 'session.model')?.where).toBe(
+      'Where a chat composer is open',
+    );
+    expect(rows.find((row) => row.first === 'session.archive')?.where).toBeNull();
+    expect(groupWhere({ group: 'session' })).toBeNull();
   });
 
   it('lays every group out exactly once across the columns', () => {
