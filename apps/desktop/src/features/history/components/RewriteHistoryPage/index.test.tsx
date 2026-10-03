@@ -8,12 +8,14 @@ import {
   initialPlanItems,
   moveAbove,
   resetStep,
+  rewordStep,
   setCombineMode,
   setVerb,
 } from '../../historyPlan';
 import { LEDGER, LEDGER_COMMITS, LEDGER_GRAPH } from '../../testing/ledgerFixture';
 import { LEDGER_PRESET } from '../../testing/ledgerPreset';
 import { historyBackupRef } from '../../historyBackupRef';
+import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
 
 vi.useFakeTimers({ toFake: ['Date'] });
 vi.setSystemTime(new Date(2026, 8, 30, 12, 0, 0));
@@ -61,7 +63,13 @@ vi.mock('../../../../shared/hooks/useElementWidth', () => ({
   useElementWidth: () => ({ ref: () => undefined, width: h.width }),
 }));
 
+vi.mock('./historyRowLine', async () => {
+  const actual = await vi.importActual<typeof import('./historyRowLine')>('./historyRowLine');
+  return { ...actual, historyRowLine: vi.fn(actual.historyRowLine) };
+});
+
 import { RewriteHistoryPage } from './index';
+import { historyRowLine } from './historyRowLine';
 
 const clean = (items: ReadonlyArray<HistoryStep>): HistoryPlanPrediction => ({
   isSupported: true,
@@ -77,14 +85,16 @@ type Setup = {
   readonly run?: unknown;
   readonly onto?: string | null;
   readonly graph?: typeof LEDGER_GRAPH;
+  readonly commits?: typeof LEDGER_COMMITS;
 };
 
-const setup = ({
+const seed = ({
   items = BASE,
   prediction,
   run = null,
   onto = null,
   graph = LEDGER_GRAPH,
+  commits = LEDGER_COMMITS,
 }: Setup = {}) => {
   const actions = {
     loadHistoryDraft: vi.fn(async () => undefined),
@@ -117,8 +127,8 @@ const setup = ({
         planId: 'plan-1',
         branch: 'hl/ledger-export',
         baseSha: LEDGER_GRAPH.mergeBase.sha,
-        headSha: f,
-        commits: LEDGER_COMMITS,
+        headSha: commits[0]?.sha ?? f,
+        commits,
         items,
         onto,
         graph,
@@ -129,6 +139,11 @@ const setup = ({
       },
     },
   };
+  return actions;
+};
+
+const setup = (params: Setup = {}) => {
+  const actions = seed(params);
   render(<RewriteHistoryPage sessionId={SESSION_ID} worktreePath="/w/payments" />);
   return actions;
 };
@@ -156,6 +171,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe('RewriteHistoryPage', () => {
@@ -487,8 +503,16 @@ describe('RewriteHistoryPage', () => {
         applied: {
           before: 7,
           after: 4,
-          lines: [{ action: 'drop', text: 'Removed “Add debug logging to the export”' }],
+          lines: [
+            {
+              action: 'drop',
+              text: 'Removed “Add debug logging to the export”',
+              sha: x,
+              target: null,
+            },
+          ],
           includes: {},
+          absorbed: {},
           newShas: [],
           touchedOnline: 3,
           isSameCode: false,
@@ -499,7 +523,13 @@ describe('RewriteHistoryPage', () => {
       },
     });
     expect(screen.getByText('History rewritten')).toBeDefined();
-    expect(screen.getByText('7 commits became 4')).toBeDefined();
+    expect(screen.getByRole('heading', { name: '7 commits became 4' })).toBeDefined();
+    expect(within(screen.getByLabelText('What changed')).getByText('removed')).toBeDefined();
+    expect(
+      within(screen.getByRole('list', { name: 'Changes' })).getByText(
+        'Removed “Add debug logging to the export”',
+      ),
+    ).toBeDefined();
     expect(screen.getByText(/^Backup of/).textContent).toMatch(
       /^Backup of hl\/ledger-export · today \d/,
     );
@@ -618,5 +648,194 @@ describe('RewriteHistoryPage drag and drop', () => {
   it('never uses html5 drag, so the native file drop keeps its events', () => {
     setup();
     expect(row(d).getAttribute('draggable')).toBeNull();
+  });
+});
+
+describe('RewriteHistoryPage after a squash', () => {
+  const SQUASHED = {
+    sha: '5a5a5a5aa0000000000000000000000000000000',
+    shortSha: '5a5a5a5',
+    subject: 'feat: ledger export',
+    author: 'Mara Quint',
+    timestamp: 1_790_000_000,
+    pushed: false,
+    parentSha: LEDGER_GRAPH.mergeBase.sha,
+  } satisfies (typeof LEDGER_COMMITS)[number];
+  const ABSORBED = [
+    'refactor: name the batch size',
+    'refactor: drop the legacy flush route',
+    'test: cover the retry path',
+    'feat: stream rows in batches',
+    'refactor: reuse retry copy',
+    'fix: retry outside the window',
+  ];
+  const appliedRun = {
+    sessionId: SESSION_ID,
+    mountId: MOUNT_ID,
+    origin: 'plan',
+    phase: 'applied',
+    planId: 'plan-1',
+    agentId: null,
+    copyPath: null,
+    stop: null,
+    result: null,
+    backupRef: BACKUP_REF,
+    remoteSha: null,
+    holder: null,
+    progress: null,
+    applied: {
+      before: 7,
+      after: 1,
+      lines: [
+        ...ABSORBED.map((title, index) => ({
+          action: 'fixup',
+          text: `Folded “${title}” into “feat: ledger export”, keeping its title`,
+          sha: `absorbed-${index}`,
+          target: a,
+        })),
+        {
+          action: 'reword',
+          text: 'Renamed “Add ledger export endpoint” to “feat: ledger export”',
+          sha: a,
+          target: null,
+        },
+      ],
+      includes: { [SQUASHED.sha]: ABSORBED },
+      absorbed: {
+        [SQUASHED.sha]: ABSORBED.map((title, index) => ({
+          sha: `absorbed-${index}`,
+          title,
+          mode: 'fixup',
+        })),
+      },
+      newShas: [SQUASHED.sha],
+      touchedOnline: 0,
+      isSameCode: true,
+      isOnMain: false,
+      removedFiles: [],
+    },
+    updatedAt: 2,
+  };
+
+  it('groups the absorbed commits by type instead of one line per fold', () => {
+    setup({
+      commits: [SQUASHED],
+      items: initialPlanItems({ commits: [SQUASHED] }),
+      run: appliedRun,
+    });
+    expect(screen.getByRole('heading', { name: '7 commits became 1' })).toBeDefined();
+    const chips = screen.getByLabelText('What changed');
+    expect(within(chips).getByText('folded')).toBeDefined();
+    expect(within(chips).getByText('renamed')).toBeDefined();
+    expect(screen.queryByRole('list', { name: 'Changes' })).toBeNull();
+
+    const absorbed = screen.getByRole('button', { name: /Absorbed 6 commits/ });
+    expect(absorbed.textContent).toContain('refactor 3 · test 1 · feat 1 · fix 1');
+    fireEvent.click(absorbed);
+    const refactor = screen.getByRole('button', { name: /^refactor/ });
+    expect(refactor.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(refactor);
+    expect(refactor.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByText('drop the legacy flush route')).toBeDefined();
+  });
+
+  it('ends the graph at the last row when the page goes from planned to applied', () => {
+    const observers = installFakeResizeObserver();
+    const height = (element: HTMLElement): number => {
+      if (element.dataset.graphKey !== undefined) {
+        return 56;
+      }
+      if (element.getAttribute('role') === 'list') {
+        return Array.from(element.children).reduce(
+          (total, child) => total + (child instanceof HTMLElement ? height(child) : 0),
+          0,
+        );
+      }
+      return 0;
+    };
+    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      return height(this);
+    });
+    vi.spyOn(HTMLElement.prototype, 'offsetTop', 'get').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      let top = 0;
+      for (
+        let node = this.previousElementSibling;
+        node !== null;
+        node = node.previousElementSibling
+      ) {
+        top += node instanceof HTMLElement ? height(node) : 0;
+      }
+      return top;
+    });
+    const lane = (): number =>
+      Number(
+        screen
+          .getByRole('list', { name: 'Commits' })
+          .parentElement?.querySelector(':scope > svg')
+          ?.getAttribute('height'),
+      );
+
+    seed();
+    const view = render(<RewriteHistoryPage sessionId={SESSION_ID} worktreePath="/w/payments" />);
+    const before = lane();
+    expect(before).toBe(56 * (LEDGER_COMMITS.length + 2));
+
+    seed({
+      commits: [SQUASHED],
+      items: initialPlanItems({ commits: [SQUASHED] }),
+      run: appliedRun,
+    });
+    view.rerender(<RewriteHistoryPage sessionId={SESSION_ID} worktreePath="/w/payments" />);
+    act(() => observers.resizeAll());
+
+    expect(observers.observedCount()).toBeGreaterThan(0);
+    expect(lane()).toBe(56 * 3);
+    expect(lane()).toBeLessThan(before);
+  });
+});
+
+describe('RewriteHistoryPage on a long branch', () => {
+  const COUNT = 200;
+  const shaAt = ({ index }: { readonly index: number }) =>
+    `${index.toString(16).padStart(4, '0')}`.padEnd(40, 'a');
+  const LONG = Array.from({ length: COUNT }, (_, index) => ({
+    sha: shaAt({ index }),
+    shortSha: shaAt({ index }).slice(0, 7),
+    subject: `refactor: step ${index} of the ledger batching`,
+    author: 'Theo Varga',
+    timestamp: 1_790_000_000 - index * 60,
+    pushed: false,
+    parentSha: index === COUNT - 1 ? LEDGER_GRAPH.mergeBase.sha : shaAt({ index: index + 1 }),
+  })) satisfies typeof LEDGER_COMMITS;
+  const LONG_ITEMS = initialPlanItems({ commits: LONG });
+  const renders = vi.mocked(historyRowLine);
+
+  it('redraws only the row that changed', () => {
+    seed({ commits: LONG, items: LONG_ITEMS });
+    const view = render(<RewriteHistoryPage sessionId={SESSION_ID} worktreePath="/w/payments" />);
+    expect(renders.mock.calls.length).toBeGreaterThanOrEqual(COUNT);
+
+    renders.mockClear();
+    fireEvent.pointerEnter(row(shaAt({ index: 40 })));
+    expect(renders.mock.calls.length).toBeLessThanOrEqual(2);
+
+    renders.mockClear();
+    const sha = shaAt({ index: 120 });
+    seed({
+      commits: LONG,
+      items: rewordStep({
+        items: LONG_ITEMS,
+        sha,
+        message: 'refactor: name the batch step',
+        original: `refactor: step 120 of the ledger batching`,
+      }),
+    });
+    view.rerender(<RewriteHistoryPage sessionId={SESSION_ID} worktreePath="/w/payments" />);
+    expect(renders.mock.calls.length).toBeGreaterThan(0);
+    expect(renders.mock.calls.length).toBeLessThanOrEqual(2);
   });
 });

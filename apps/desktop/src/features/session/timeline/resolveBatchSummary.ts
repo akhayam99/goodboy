@@ -1,6 +1,6 @@
-import type { Tone } from '@goodboy/ui';
 import { REVIEW_COMMENT_TONE, type ReviewCommentState } from '../../resolve/reviewCommentState';
 import type { RowState } from '../../workTreeModel/rowState';
+import { groupSummaryParts, type GroupSummary } from './groupSummary';
 import {
   isResolveAttention,
   latestAttemptByAgentId,
@@ -43,20 +43,7 @@ const BUCKET_NOUN: Record<Bucket, string> = {
   failed: 'failed',
 };
 
-type ResolveSummaryPart = {
-  readonly state: ReviewCommentState;
-  readonly tone: Tone;
-  readonly count: number;
-  readonly noun: string;
-  readonly isFailure: boolean;
-};
-
-export type ResolveBatchSummary = {
-  readonly total: number;
-  readonly parts: ReadonlyArray<ResolveSummaryPart>;
-  readonly attentionCount: number;
-  readonly failedCount: number;
-};
+export type ResolveBatchSummary = GroupSummary<ReviewCommentState>;
 
 const bucketOf = ({ state }: { readonly state: ReviewCommentState }): Bucket =>
   state === 'edited' ? 'ready' : state;
@@ -71,20 +58,12 @@ export const resolveBatchSummary = ({
     const bucket = bucketOf({ state: fact.state });
     counts.set(bucket, (counts.get(bucket) ?? 0) + 1);
   }
-  const parts = BUCKET_ORDER.flatMap((bucket): ReadonlyArray<ResolveSummaryPart> => {
-    const count = counts.get(bucket) ?? 0;
-    if (count === 0) {
-      return [];
-    }
-    return [
-      {
-        state: bucket,
-        tone: REVIEW_COMMENT_TONE[bucket],
-        count,
-        noun: BUCKET_NOUN[bucket],
-        isFailure: bucket === 'failed',
-      },
-    ];
+  const parts = groupSummaryParts<Bucket>({
+    counts,
+    order: BUCKET_ORDER,
+    nounOf: ({ state }) => BUCKET_NOUN[state],
+    toneOf: ({ state }) => REVIEW_COMMENT_TONE[state],
+    failure: 'failed',
   });
   return {
     total: facts.length,

@@ -12,6 +12,7 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
+import type { CombineMode } from '../../../features/history/historyPlan';
 import type { HistoryAction } from '../../../features/history/historyRowMarks';
 
 export type { SetFn, GetFn } from '../../slice-types';
@@ -93,9 +94,17 @@ export type HistoryRun = {
   readonly updatedAt: number;
 };
 
-type HistoryAppliedLine = {
+export type HistoryAppliedLine = {
   readonly action: HistoryAction;
   readonly text: string;
+  readonly sha: string | null;
+  readonly target: string | null;
+};
+
+export type HistoryAbsorbed = {
+  readonly sha: string;
+  readonly title: string;
+  readonly mode: CombineMode;
 };
 
 export type HistoryApplied = {
@@ -103,6 +112,7 @@ export type HistoryApplied = {
   readonly after: number;
   readonly lines: ReadonlyArray<HistoryAppliedLine>;
   readonly includes: Readonly<Record<string, ReadonlyArray<string>>>;
+  readonly absorbed: Readonly<Record<string, ReadonlyArray<HistoryAbsorbed>>>;
   readonly newShas: ReadonlyArray<string>;
   readonly touchedOnline: number;
   readonly isSameCode: boolean;

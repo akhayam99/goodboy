@@ -7,11 +7,12 @@ import { useFlipList } from './index';
 
 type Props = {
   readonly order: ReadonlyArray<string>;
+  readonly isEnabled?: boolean;
 };
 
-const List = ({ order }: Props) => {
+const List = ({ order, isEnabled = true }: Props) => {
   const ref = useRef<HTMLDivElement | null>(null);
-  useFlipList({ containerRef: ref, orderKey: order.join(',') });
+  useFlipList({ containerRef: ref, orderKey: order.join(','), isEnabled });
   return (
     <div ref={ref}>
       {order.map((key) => (
@@ -68,6 +69,15 @@ describe('useFlipList', () => {
     vi.spyOn(window, 'matchMedia').mockReturnValue({ matches: true } as MediaQueryList);
     const { rerender } = render(<List order={['a', 'b']} />);
     rerender(<List order={['b', 'a']} />);
+    expect(animate).not.toHaveBeenCalled();
+  });
+
+  it('stays still while it is off, as on a long history', () => {
+    placeByOrder();
+    const animate = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'animate', { value: animate, configurable: true });
+    const { rerender } = render(<List order={['a', 'b', 'c']} isEnabled={false} />);
+    rerender(<List order={['c', 'a', 'b']} isEnabled={false} />);
     expect(animate).not.toHaveBeenCalled();
   });
 });
