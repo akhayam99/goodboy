@@ -256,6 +256,8 @@ describe('chats', () => {
       { provider: 'codex', model: 'gpt-6' },
     ]);
     expect(chats.find((entry) => entry.id === RETRY)?.modelsUsed).toEqual([]);
+    expect(chats.find((entry) => entry.id === CONSENT)?.messageCount).toBe(4);
+    expect(chats.find((entry) => entry.id === RETRY)?.messageCount).toBe(0);
 
     await finishChatMessage({
       db,

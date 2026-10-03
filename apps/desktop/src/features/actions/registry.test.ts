@@ -8,6 +8,7 @@ import { PLAN_PART_KIND } from './kinds/planPart';
 import { PROJECT_KIND } from './kinds/project';
 import { PULL_REQUEST_KIND } from './kinds/pullRequest';
 import { CHAT_KIND } from './kinds/chat';
+import { CHATS_KIND } from './kinds/chats';
 import { COMMIT_KIND } from './kinds/commit';
 import { DIFF_FILE_KIND } from './kinds/diffFile';
 import { MOUNT_KIND } from './kinds/mount';
@@ -43,6 +44,7 @@ const KINDS: ReadonlyArray<readonly [string, ReadonlyArray<AnyDefinition>]> = [
   ['script', SCRIPT_KIND.actions],
   ['message', MESSAGE_KIND.actions],
   ['chat', CHAT_KIND.actions],
+  ['chats', CHATS_KIND.actions],
   ['diff', DIFF_KIND.actions],
   ['link', LINK_KIND.actions],
   ['review', REVIEW_KIND.actions],

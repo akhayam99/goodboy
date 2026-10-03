@@ -73,7 +73,6 @@
   "apps/desktop/src/features/workflows/components/WorkflowAdvance/index.test.tsx": 1,
   "apps/desktop/src/features/workflows/components/WorkflowBuilderView/index.test.tsx": 1,
   "apps/desktop/src/features/workflows/components/WorkflowNextStepCta/index.test.tsx": 5,
-  "apps/desktop/src/features/workspace-chat/components/ChatList/index.test.tsx": 6,
   "apps/desktop/src/features/workspace-chat/components/ChatRoom/index.test.tsx": 7,
   "apps/desktop/src/features/workspace/components/SessionActivityBar/index.test.tsx": 7,
   "apps/desktop/src/features/workspace/components/StageBoard/BoardDock/index.test.tsx": 6,

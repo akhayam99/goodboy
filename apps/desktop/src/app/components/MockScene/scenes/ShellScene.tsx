@@ -253,6 +253,7 @@ const seedChatOrigin = (): void => {
           updatedAt: at,
           preview: 'It lives in payments-api: the questionnaire declares consent as step 4.',
           modelsUsed: [],
+          messageCount: 0,
         },
       ],
     },

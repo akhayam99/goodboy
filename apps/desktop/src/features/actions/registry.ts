@@ -3,6 +3,7 @@ import { resolveActions } from './resolveActions';
 import { AGENT_KIND } from './kinds/agent';
 import { ARTIFACT_KIND } from './kinds/artifact';
 import { CHAT_KIND } from './kinds/chat';
+import { CHATS_KIND } from './kinds/chats';
 import { COMMIT_KIND } from './kinds/commit';
 import { DIFF_KIND } from './kinds/diff';
 import { DIFF_FILE_KIND } from './kinds/diffFile';
@@ -130,6 +131,8 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: MESSAGE_KIND, state, target });
     case 'chat':
       return bind({ definition: CHAT_KIND, state, target });
+    case 'chats':
+      return bind({ definition: CHATS_KIND, state, target });
     case 'link':
       return bind({ definition: LINK_KIND, state, target });
     case 'review':
