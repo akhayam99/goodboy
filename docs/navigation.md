@@ -1048,7 +1048,8 @@ one is open at a time.
   inbox opens with its first row chosen, so those keys act at once; Enter opens
   the launch popover on that row (⌘↵ in the panel launches) or the session once
   one is linked, O opens the record in its tool, R focuses the reply box when
-  the record has one, S stars or unstars, / focuses the search, and Escape in
+  the record has one (a Sentry issue has none: the rail drops Reply and R does
+  nothing there, `recordCanReply`), S stars or unstars, / focuses the search, and Escape in
   the search leaves the field. Escape closes a record you picked before the
   studio, and closes the studio when the first row was only chosen for you. Below a 720px list column the rail folds into a Filters button in
   the list header.
@@ -1505,8 +1506,8 @@ The drawer sits on the `subtle` panel surface, like every `DrawerFrame`.
 **Context updates** (`ContextUpdates`, a `Collapsible`) sits above the tabs:
 closed, it says `Updated 2 min ago`, `Queued`, `Updating…` or `Couldn't update`;
 open, it lists the last round (`summarizerRounds`: when, how many turns or a
-full pass, model and effort, tokens and cost, what changed as links to the
-tabs), **Change model** (Settings, Providers & models, Defaults, scrolled to
+full pass, model and effort, tokens and cost, what changed as a comma list of
+links to the tabs, every value on the same column), **Change model** (Settings, Providers & models, Defaults, scrolled to
 Step summaries) and **Update now**. Update now queues a consolidation pass
 through `requestContextUpdate`, behind any pass in flight and never beside it;
 `summarizerPending` holds the turns waiting and whether a requested update is
