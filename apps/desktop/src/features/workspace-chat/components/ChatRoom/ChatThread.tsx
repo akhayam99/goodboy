@@ -78,7 +78,7 @@ export const ChatThread = ({
             <Fragment key={message.id}>
               <li className="flex flex-col">
                 {message.role === 'user' ? (
-                  <ChatUserMessage content={message.content} />
+                  <ChatUserMessage message={message} />
                 ) : (
                   <ChatAssistantMessage
                     message={message}

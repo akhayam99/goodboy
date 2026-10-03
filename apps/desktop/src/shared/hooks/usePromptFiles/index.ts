@@ -1,11 +1,22 @@
 import { useState } from 'react';
 import type { PromptFieldFiles } from '../../components/PromptField';
-import { usePendingAttachments, type AttachmentDropNotices } from '../usePendingAttachments';
+import {
+  usePendingAttachments,
+  type AttachableFile,
+  type AttachmentDropNotices,
+} from '../usePendingAttachments';
+
+export type PromptFileFilter = {
+  readonly accept: string;
+  readonly noun: string;
+  readonly isAccepted: (file: AttachableFile) => boolean;
+};
 
 type Params = {
   readonly note: string;
   readonly isEnabled?: boolean;
   readonly notices?: AttachmentDropNotices;
+  readonly only?: PromptFileFilter;
 };
 
 const DROP_NOTICES: AttachmentDropNotices = {
@@ -14,7 +25,12 @@ const DROP_NOTICES: AttachmentDropNotices = {
   unavailable: 'File drop is unavailable. Use Attach files instead.',
 };
 
-export const usePromptFiles = ({ note, isEnabled = true, notices = DROP_NOTICES }: Params) => {
+export const usePromptFiles = ({
+  note,
+  isEnabled = true,
+  notices = DROP_NOTICES,
+  only,
+}: Params) => {
   const [notice, setNotice] = useState<string | null>(null);
   const pending = usePendingAttachments({
     showToast: ({ message }) => {
@@ -25,6 +41,7 @@ export const usePromptFiles = ({ note, isEnabled = true, notices = DROP_NOTICES 
     },
     enabled: isEnabled,
     notices,
+    ...(only !== undefined && { isAccepted: only.isAccepted }),
   });
 
   const files: PromptFieldFiles = {
@@ -39,6 +56,7 @@ export const usePromptFiles = ({ note, isEnabled = true, notices = DROP_NOTICES 
       pending.removeAttachment(id);
     },
     note,
+    ...(only !== undefined && { accept: only.accept, noun: only.noun }),
   };
 
   const clear = () => {

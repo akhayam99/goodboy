@@ -1,6 +1,7 @@
 import type { WorkspaceId } from '@goodboy/types';
 import { mergeWorkspaces as mergeWorkspacesInDb } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { pruneChatImages } from '../../../features/workspace-chat/pruneChatImages';
 import type { GetFn, SetFn } from './types';
 
 type Input = {
@@ -25,6 +26,7 @@ export const mergeWorkspaces = (set: SetFn, get: GetFn) => {
       sourceWorkspaceIds: sources,
       targetWorkspaceId,
     });
+    await pruneChatImages();
 
     const sourceSet = new Set<WorkspaceId>(sources);
     set((current) => {

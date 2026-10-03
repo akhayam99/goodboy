@@ -62,10 +62,13 @@ export const runDbMigrations = async (): Promise<MigrateResult> => {
   }).catch(() => undefined);
   await seedMissingBuiltinWorkflows({ db: tauriDatabase }).catch(() => undefined);
   await invokeDb('attachment_cleanup_orphans', {});
+  await invokeDb('chat_attachments_prune', {}).catch(() => undefined);
   return result;
 };
 
 export const wipeDb = async (): Promise<MigrateResult> => {
   await invokeDb('db_wipe', {});
-  return runMigrations(tauriDatabase);
+  const result = await runMigrations(tauriDatabase);
+  await invokeDb('chat_attachments_prune', {}).catch(() => undefined);
+  return result;
 };

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type {
   Chat,
+  ChatAttachmentId,
   ChatId,
   ChatMessage,
   ChatMessageId,
@@ -60,6 +61,7 @@ const message = (patch: Partial<ChatMessage>): ChatMessage => ({
   provider: null,
   model: null,
   effort: null,
+  attachments: [],
   createdAt: MONDAY,
   updatedAt: MONDAY,
   ...patch,
@@ -83,6 +85,56 @@ const seed = async () => {
   );
   return db;
 };
+
+const screenshot = (position: number) => ({
+  id: `image-${position}` as ChatAttachmentId,
+  chatId: CONSENT,
+  messageId: 'message-1' as ChatMessageId,
+  position,
+  fileName: `checkout-502-${position}.png`,
+  mimeType: 'image/png',
+  byteSize: 2048 + position,
+  createdAt: MONDAY,
+});
+
+describe('chat message attachments', () => {
+  it('reads the images of a message back in order after a reload', async () => {
+    const db = await seed();
+    await insertChat({ db, chat: chat({}) });
+    await insertChatMessage({
+      db,
+      message: message({ attachments: [screenshot(1), screenshot(0)] }),
+    });
+    await insertChatMessage({
+      db,
+      message: message({
+        id: 'message-2' as ChatMessageId,
+        role: 'assistant',
+        content: 'The 502 comes from notify-relay.',
+      }),
+    });
+
+    const [asked, answered] = await listChatMessages({ db, chatId: CONSENT });
+    expect(asked?.attachments.map((attachment) => attachment.fileName)).toEqual([
+      'checkout-502-0.png',
+      'checkout-502-1.png',
+    ]);
+    expect(asked?.attachments[1]).toEqual(screenshot(1));
+    expect(answered?.attachments).toEqual([]);
+  });
+
+  it('writes the message and its images together or not at all', async () => {
+    const db = await seed();
+    await insertChat({ db, chat: chat({}) });
+    await expect(
+      insertChatMessage({
+        db,
+        message: message({ attachments: [{ ...screenshot(0), mimeType: 'application/pdf' }] }),
+      }),
+    ).rejects.toThrow();
+    expect(await listChatMessages({ db, chatId: CONSENT })).toEqual([]);
+  });
+});
 
 describe('chats', () => {
   it('lists the workspace chats by last activity and leaves archived ones out', async () => {
