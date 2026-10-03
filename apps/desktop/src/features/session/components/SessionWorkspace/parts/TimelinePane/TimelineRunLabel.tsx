@@ -3,7 +3,7 @@ import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups'
 import type { GroupSummary } from '../../../../timeline/groupSummary';
 import { runWorkflowKind } from '../../../../timeline/runWorkflowKind';
 import { RevealedRowTag } from './RevealedRowTag';
-import { TimelineGroupSummaryLine } from './TimelineGroupSummaryLine';
+import { TimelineFoldTitle } from './TimelineFoldTitle';
 import { TimelineRunChip } from './TimelineRunChip';
 
 type Props = {
@@ -29,17 +29,30 @@ export const TimelineRunLabel = ({
         muted={isDiscarded}
         lit={isLaneLit}
       />
-      <span
-        title={title}
-        className={cn(
-          summary === null ? 'flex-1 truncate text-body' : 'max-w-3/5 shrink-0 truncate text-body',
-          WORK_ROW.title,
-          isDiscarded ? 'text-muted-foreground' : 'text-foreground',
-        )}
-      >
-        {title}
-      </span>
-      {summary === null ? null : <TimelineGroupSummaryLine summary={summary} className="flex-1" />}
+      {summary === null ? (
+        <span
+          title={title}
+          className={cn(
+            'flex-1 truncate text-body',
+            WORK_ROW.title,
+            isDiscarded ? 'text-muted-foreground' : 'text-foreground',
+          )}
+        >
+          {title}
+        </span>
+      ) : (
+        <TimelineFoldTitle summary={summary}>
+          <span
+            title={title}
+            className={cn(
+              'min-w-24 truncate text-body',
+              isDiscarded ? 'text-muted-foreground' : 'text-foreground',
+            )}
+          >
+            {title}
+          </span>
+        </TimelineFoldTitle>
+      )}
       {isRevealed ? <RevealedRowTag /> : null}
     </>
   );

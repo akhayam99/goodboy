@@ -1709,6 +1709,27 @@ describe('TimelinePane finished run', () => {
     expect(screen.getByText('Step plan')).toBeDefined();
   });
 
+  it('keeps the whole summary of a folded run beside its title', () => {
+    storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'completed' }) };
+    questions.answered = [
+      aQuestion({
+        id: 'question-fold' as OpenQuestionId,
+        text: 'Key on the event id?',
+        userAnswer: 'Yes',
+        status: 'answered',
+        createdAt: '2026-08-20T09:01:10.000Z' as IsoDateTime,
+        answeredAt: '2026-08-20T09:01:20.000Z' as IsoDateTime,
+        createdByAgentId: 'agent-plan' as AgentId,
+      }),
+    ];
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    const summary = within(runRow()).getByTestId('fold-summary');
+    expect(summary.textContent).toBe('3 steps · 1 question answered');
+    expect(summary.getAttribute('title')).toBe('3 steps · 1 question answered');
+    expect(within(runRow()).getByTitle('Refund keys').textContent).toBe('Refund keys');
+  });
+
   it('keeps a run open when it finishes while on screen', () => {
     storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'running' }) };
     const view = render(<TimelinePane session={SESSION} actions={null} />);
