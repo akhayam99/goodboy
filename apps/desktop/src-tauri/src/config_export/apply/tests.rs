@@ -345,6 +345,55 @@ fn a_bundle_from_before_the_branch_template_imports_without_one() {
 }
 
 #[test]
+fn the_workflow_rules_travel_through_the_bundle_and_restore() {
+    let rules = r#"{"autonomy":"plan","spendLimitUsd":25,"spendLimitMode":"pause","spreadByHeadroom":false,"standingGuidance":"- Open the PR as a draft.","guidanceRoles":["implementer","docs"]}"#;
+    let source = export_conn();
+    source
+        .execute(
+            "INSERT INTO workspaces (id, name, created_at, updated_at, workflow_rules)
+             VALUES ('w', 'W', 1, 1, ?1)",
+            rusqlite::params![rules],
+        )
+        .unwrap();
+
+    let bundle =
+        build_bundle(&source, &ExportGroups::default(), &HashSet::new()).expect("export failed");
+    let exported = bundle.workspaces[0]
+        .overrides
+        .workflow_rules
+        .clone()
+        .expect("rules exported");
+    assert_eq!(exported["autonomy"], "plan");
+    assert_eq!(exported["spendLimitUsd"], 25);
+
+    let target = export_conn();
+    target
+        .execute_batch(
+            "INSERT INTO workspaces (id, name, created_at, updated_at) VALUES ('w', 'W', 1, 1);",
+        )
+        .unwrap();
+    apply_bundle(&target, bundle, &HashMap::new(), &HashMap::new()).expect("import failed");
+    let stored: String = target
+        .query_row(
+            "SELECT workflow_rules FROM workspaces WHERE id = 'w'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    let parsed: serde_json::Value = serde_json::from_str(&stored).unwrap();
+    let original: serde_json::Value = serde_json::from_str(rules).unwrap();
+    assert_eq!(parsed, original);
+}
+
+#[test]
+fn a_bundle_from_before_the_workflow_rules_imports_without_them() {
+    let overrides: WorkspaceOverridesBundle =
+        serde_json::from_str(r#"{"defaultProviderId":null,"defaultBranchPrefix":"hl"}"#)
+            .expect("an older bundle still parses");
+    assert_eq!(overrides.workflow_rules, None);
+}
+
+#[test]
 fn integration_binding_import_creates_a_credential_with_no_secret_when_none_exists() {
     let conn = export_conn();
     conn.execute_batch(

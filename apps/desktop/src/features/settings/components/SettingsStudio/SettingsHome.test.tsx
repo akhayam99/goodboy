@@ -174,7 +174,7 @@ describe('SettingsHome', () => {
       refreshProviders: async () => undefined,
     });
     openHome({ workspace: WORKSPACE });
-    const keys = cardKeys();
+    const keys = cardKeys().filter((key) => key !== 'workspace:workflow-rules');
     expect(keys.length).toBeGreaterThan(15);
 
     for (const key of keys) {
@@ -194,6 +194,18 @@ describe('SettingsHome', () => {
       fireEvent.click(within(trail).getByRole('button', { name: 'Settings' }));
       home();
     }
+  });
+
+  it('opens the Rules tab of Workflows from the Workflow rules card', () => {
+    const opened = vi.fn();
+    window.addEventListener('goodboy:open-workflow-studio', opened);
+    openHome({ workspace: WORKSPACE });
+
+    fireEvent.click(cardOf('workspace:workflow-rules'));
+
+    window.removeEventListener('goodboy:open-workflow-studio', opened);
+    expect(opened).toHaveBeenCalledOnce();
+    expect(useAppStore.getState().workflowStudioView).toBe('rules');
   });
 
   it('marks the page opened last and gives it the focus', () => {

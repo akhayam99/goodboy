@@ -25,6 +25,7 @@ import { RunControlMenu } from '../RunControls/RunControlMenu';
 import { RunControls } from '../RunControls';
 import { OrchestratorRoutingRow } from './OrchestratorRoutingRow';
 import { resolveOrchestratorState } from './orchestratorState';
+import { runAutonomyOf } from '../../runAutonomy';
 import { useElapsedLabel } from './useElapsedLabel';
 
 type Props = {
@@ -58,7 +59,7 @@ export const OrchestratorStrip = ({
   const removeWorkflowOrchestratorHint = useAppStore(
     (state) => state.removeWorkflowOrchestratorHint,
   );
-  const setWorkflowRunAutoRun = useAppStore((state) => state.setWorkflowRunAutoRun);
+  const setWorkflowRunAutonomy = useAppStore((state) => state.setWorkflowRunAutonomy);
   const openQuestions = useAppStore(
     (state) => state.sessionOpenQuestions[sessionId] ?? EMPTY_QUESTIONS,
   );
@@ -183,6 +184,7 @@ export const OrchestratorStrip = ({
           />
         );
       case 'deciding':
+      case 'plan-approval':
       case 'paused':
       case 'stopping':
       case 'waiting':
@@ -263,13 +265,15 @@ export const OrchestratorStrip = ({
           />
           <RunControlMenu
             label="Orchestrator actions"
-            autoRun={run.autoRun === true}
+            autonomy={
+              runAutonomyOf({ autoRun: run.autoRun, autonomy: run.rulesSnapshot?.autonomy }).key
+            }
             routing={
               hasRouting
                 ? { isOpen: isRoutingOpen, onToggle: () => setIsRoutingOpen((open) => !open) }
                 : null
             }
-            onAutoRun={(autoRun) => void setWorkflowRunAutoRun(sessionId, run.id, autoRun)}
+            onAutonomy={(autonomy) => void setWorkflowRunAutonomy(sessionId, run.id, autonomy)}
           />
         </div>
         {state.detail != null && state.detail !== '' ? (

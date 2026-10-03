@@ -214,6 +214,8 @@ import { m136ProjectBaseBranch } from './m136-project-base-branch';
 import { m137NotificationCoalesceKey } from './m137-notification-coalesce-key';
 import { m138SessionEventMaterializationProposals } from './m138-session-event-materialization-proposals';
 import { m139SessionEventRebaseRequested } from './m139-session-event-rebase-requested';
+import { m217WorkflowRules } from './m217-workflow-rules';
+import { m218RunRulesSnapshot } from './m218-run-rules-snapshot';
 
 export type Migration = {
   readonly version: number;
@@ -437,4 +439,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 214, sql: m214ChatModelsLinks },
   { version: 215, sql: m215IndexAudit },
   { version: 216, sql: m216TaskLinksScope },
+  { version: 217, sql: m217WorkflowRules },
+  { version: 218, sql: m218RunRulesSnapshot },
 ];

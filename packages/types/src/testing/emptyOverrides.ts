@@ -18,4 +18,5 @@ export const EMPTY_OVERRIDES: OverrideSettings = {
   resolveOnGithub: null,
   resolveCommitStyle: null,
   afterMerge: null,
+  workflowRules: null,
 };

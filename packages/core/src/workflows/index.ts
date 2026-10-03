@@ -43,6 +43,11 @@ export {
 } from './format';
 export { polishWorkflowGoal, parsePolishedGoal, type GoalPolishDeps } from './polish';
 export {
+  GUIDANCE_POLISH_SYSTEM_PROMPT,
+  parsePolishedGuidance,
+  polishWorkflowGuidance,
+} from './polishGuidance';
+export {
   polishStepInstruction,
   polishStepExpectedOutput,
   parsePolishedStep,

@@ -26,6 +26,8 @@ const AGENT_COMPOSERS: Readonly<Record<string, ReadonlyArray<Kind>>> = {
   'features/workflows/components/WorkflowBuilderView/parts/GoalField.tsx': ['document'],
   'features/workflows/components/WorkflowBuilderView/parts/GuidanceDisclosure.tsx': ['document'],
   'features/workflows/components/WorkflowBuilderView/parts/PlannerDraftRow.tsx': ['document'],
+  'features/workflows/components/WorkflowBuilderView/parts/RunGuidanceField.tsx': ['document'],
+  'features/workflows/components/WorkflowRulesPanel/RulesGuidanceBand.tsx': ['document'],
   'features/workflows/components/StepTree/StepEditorFields.tsx': ['document', 'document'],
   'features/artifacts/components/ArtifactCreationPane/ArtifactBriefField.tsx': ['document'],
   'features/wireframes/components/WireframeViewer/ChangeComposer.tsx': ['document'],

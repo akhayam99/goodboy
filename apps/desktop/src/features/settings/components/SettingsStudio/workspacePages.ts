@@ -8,6 +8,7 @@ export type WorkspacePage =
   | 'profile'
   | 'general'
   | 'after-merge'
+  | 'workflow-rules'
   | typeof REVIEW_REPLIES_SECTION_ID
   | typeof PERMISSIONS_SECTION_ID
   | 'skills'
@@ -40,6 +41,12 @@ const ALL_WORKSPACE_PAGES = [
     label: 'New sessions',
     concept: 'terminal',
     hint: 'What every new session in this workspace starts with.',
+  },
+  {
+    id: 'workflow-rules',
+    label: 'Workflow rules',
+    concept: 'workflows',
+    hint: 'Defaults every new workflow run starts with.',
   },
   {
     id: 'after-merge',

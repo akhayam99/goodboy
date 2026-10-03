@@ -50,6 +50,7 @@ const EMPTY: OverrideSettings = {
   resolveCommitStyle: null,
   afterMerge: null,
   defaultBranchTemplate: null,
+  workflowRules: null,
 };
 
 async function makeDb() {

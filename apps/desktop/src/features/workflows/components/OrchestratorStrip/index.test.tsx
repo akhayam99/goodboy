@@ -160,10 +160,11 @@ beforeEach(async () => {
     addWorkflowOrchestratorHint: vi.fn(async () => undefined),
     removeWorkflowOrchestratorHint: vi.fn(async () => undefined),
     setWorkflowOrchestratorRouting: vi.fn(async () => undefined),
-    setWorkflowRunAutoRun: vi.fn(async () => undefined),
+    setWorkflowRunAutonomy: vi.fn(async () => undefined),
     stopWorkflowRunNow: vi.fn(async () => undefined),
     pauseWorkflowRun: vi.fn(async () => undefined),
     resumeWorkflowRun: vi.fn(async () => undefined),
+    approveWorkflowRunPlan: vi.fn(async () => undefined),
     setWorkflowRunSpendLimit: vi.fn(async () => undefined),
     sessionOpenQuestions: {},
     orchestratorReadingHints: {},
@@ -334,7 +335,22 @@ describe('OrchestratorStrip state ladder', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Resume' }));
 
     expect(storeState['resumeWorkflowRun']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
-    expect(storeState['setWorkflowRunAutoRun']).not.toHaveBeenCalled();
+    expect(storeState['setWorkflowRunAutonomy']).not.toHaveBeenCalled();
+  });
+  it('says the plan is ready and approves it from the strip', () => {
+    renderStrip({
+      runOverride: run({
+        autoRun: true,
+        orchestrationStop: { kind: 'plan-approval', message: 'The plan is ready.' },
+      }),
+      agents: [agent(0, 'completed', { name: 'Planner' })],
+    });
+
+    expect(sentence()).toBe('Plan ready · waiting for you');
+    fireEvent.click(screen.getByRole('button', { name: 'Approve plan' }));
+
+    expect(storeState['approveWorkflowRunPlan']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+    expect(storeState['orchestrateNextStep']).not.toHaveBeenCalled();
   });
   it('names a gating question and leaves the answer to the next action strip', () => {
     Object.assign(storeState, {
@@ -536,7 +552,7 @@ describe('OrchestratorStrip layout', () => {
     openMenu();
     expect(
       screen.getAllByRole('menuitemradio').map((item) => item.getAttribute('aria-checked')),
-    ).toEqual(['false', 'true']);
+    ).toEqual(['false', 'false', 'true']);
     expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
       'Model per step',
     ]);
@@ -720,7 +736,7 @@ describe('OrchestratorStrip hints and money', () => {
     openMenu();
     fireEvent.click(screen.getByRole('menuitemradio', { name: 'Run on its own' }));
 
-    expect(storeState['setWorkflowRunAutoRun']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, true);
+    expect(storeState['setWorkflowRunAutonomy']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, 'run');
   });
   it('drops Pause and Stop once the run is over', () => {
     renderStrip({

@@ -399,6 +399,15 @@ export {
   type ProviderStanding,
 } from './providers/autoRouting/providerCandidates';
 export {
+  PROVIDER_HEADROOM_STALE_MS,
+  providerHeadroom,
+  providersByHeadroom,
+  readHeadroom,
+  type HeadroomMap,
+  type HeadroomReading,
+  type ProviderHeadroom,
+} from './providers/limits/providerHeadroom';
+export {
   AUTO_DEFAULTS,
   isCuratedProvider,
   type CuratedProviderId,
@@ -524,6 +533,9 @@ export {
   polishWorkflowGoal,
   parsePolishedGoal,
   type GoalPolishDeps,
+  GUIDANCE_POLISH_SYSTEM_PROMPT,
+  parsePolishedGuidance,
+  polishWorkflowGuidance,
   polishStepInstruction,
   polishStepExpectedOutput,
   parsePolishedStep,

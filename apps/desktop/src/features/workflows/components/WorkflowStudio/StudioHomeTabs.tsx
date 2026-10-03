@@ -1,6 +1,5 @@
 import { SegmentedTabs } from '@goodboy/ui';
-
-export type StudioHomeView = 'workflows' | 'steps';
+import type { StudioHomeView } from '../../studioHomeView';
 
 type Props = {
   readonly value: StudioHomeView;
@@ -23,6 +22,7 @@ export const StudioHomeTabs = ({ value, workflowCount, stepCount, onChange }: Pr
         ...(workflowCount > 0 && { badge: workflowCount }),
       },
       { value: 'steps', label: 'Saved steps', ...(stepCount > 0 && { badge: stepCount }) },
+      { value: 'rules', label: 'Rules' },
     ]}
   />
 );
