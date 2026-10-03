@@ -154,3 +154,32 @@ describe('nextFreeBranchName', () => {
     ).toBe('team/ak/payments-retry-2');
   });
 });
+
+describe('buildBranchName separator tidy', () => {
+  it.each([
+    ['-_./HL//x.-_', 'hl/x'],
+    ['///a///b///', 'a/b'],
+    ['..--__', ''],
+    ['a//-//b', 'a/-/b'],
+    ['-/-/a/-/-', 'a'],
+    ['A.B_C-D', 'a.b_c-d'],
+    ['/', ''],
+    ['a_.b//./c.', 'a_.b/./c'],
+  ])('tidies %j to %j', (template, expected) => {
+    expect(buildBranchName({ template, values: {} })).toBe(expected);
+  });
+
+  it('keeps separators around placeholders the same way', () => {
+    expect(
+      buildBranchName({ template: '--{prefix}//{slug}..', values: { prefix: 'hl', slug: 'x' } }),
+    ).toBe('hl/x');
+  });
+
+  it('stays linear on a long run of dashes', () => {
+    const template = `a${'-'.repeat(50_000)}b${'-'.repeat(50_000)}`;
+    const started = performance.now();
+    const name = buildBranchName({ template, values: {} });
+    expect(performance.now() - started).toBeLessThan(50);
+    expect(name).toBe(`a${'-'.repeat(50_000)}b`);
+  });
+});

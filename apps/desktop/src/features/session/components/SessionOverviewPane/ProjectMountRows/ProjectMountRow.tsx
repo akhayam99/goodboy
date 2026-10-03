@@ -109,7 +109,12 @@ export const ProjectMountRow = ({
             />
           )}
           {row.branch === '' ? null : (
-            <BranchTaskChips sessionId={sessionId} branch={row.branch} isSkeleton={isSkeleton} />
+            <BranchTaskChips
+              sessionId={sessionId}
+              projectId={row.projectId}
+              branch={row.branch}
+              isSkeleton={isSkeleton}
+            />
           )}
           {row.branch === '' ? null : (
             <MountStatusPhrase

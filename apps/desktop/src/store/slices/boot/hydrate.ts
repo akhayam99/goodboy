@@ -12,6 +12,9 @@ import { sessionPlace } from '../navigation/place';
 import { restoreLaunchLayout, type LaunchLayout } from './restoreLaunchLayout';
 import { reopenSecondaryWindows } from './reopenSecondaryWindows';
 import {
+  SETTING_CHAT_IMAGES,
+  SETTING_CONTEXT_LEARNINGS,
+  SETTING_CONTEXT_ROLE_MAP,
   SETTING_EDITOR_BINARY,
   SETTING_HIDDEN_MODELS,
   SETTING_LAST_SESSION_ID,
@@ -76,30 +79,27 @@ export const hydrate = (set: SetFn, get: GetFn) => {
 
         const loadingSettingsAt = Date.now();
         set({ bootPhase: 'loading-settings' });
-        const [editorBinary, lastWorkspaceRaw, lastSessionRaw, reopenLastRaw, hiddenModelsRaw] =
-          await Promise.all([
-            getSetting(tauriDatabase, SETTING_EDITOR_BINARY),
-            getSetting(tauriDatabase, SETTING_LAST_WORKSPACE_ID),
-            getSetting(tauriDatabase, SETTING_LAST_SESSION_ID),
-            getSetting(tauriDatabase, SETTING_REOPEN_LAST),
-            getSetting(tauriDatabase, SETTING_HIDDEN_MODELS),
-          ]);
+        const bootKeys = [
+          SETTING_EDITOR_BINARY,
+          SETTING_LAST_WORKSPACE_ID,
+          SETTING_LAST_SESSION_ID,
+          SETTING_REOPEN_LAST,
+          SETTING_HIDDEN_MODELS,
+          SETTING_CONTEXT_ROLE_MAP,
+          SETTING_CONTEXT_LEARNINGS,
+          SETTING_CHAT_IMAGES,
+        ] as const;
+        const bootValues = await Promise.all(bootKeys.map((key) => getSetting(tauriDatabase, key)));
+        const stored = new Map(bootKeys.map((key, index) => [key, bootValues[index] ?? null]));
+        const lastWorkspaceRaw = stored.get(SETTING_LAST_WORKSPACE_ID) ?? null;
+        const lastSessionRaw = stored.get(SETTING_LAST_SESSION_ID) ?? null;
+        const reopenLastRaw = stored.get(SETTING_REOPEN_LAST) ?? null;
         set((state) => {
           const next = { ...state.settings };
-          if (editorBinary !== null) {
-            next[SETTING_EDITOR_BINARY] = editorBinary;
-          }
-          if (lastWorkspaceRaw !== null) {
-            next[SETTING_LAST_WORKSPACE_ID] = lastWorkspaceRaw;
-          }
-          if (lastSessionRaw !== null) {
-            next[SETTING_LAST_SESSION_ID] = lastSessionRaw;
-          }
-          if (reopenLastRaw !== null) {
-            next[SETTING_REOPEN_LAST] = reopenLastRaw;
-          }
-          if (hiddenModelsRaw !== null) {
-            next[SETTING_HIDDEN_MODELS] = hiddenModelsRaw;
+          for (const [key, value] of stored) {
+            if (value !== null) {
+              next[key] = value;
+            }
           }
           return { settings: next };
         });

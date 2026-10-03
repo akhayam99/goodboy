@@ -1,5 +1,9 @@
-import type { WorkspaceId } from '@goodboy/types';
-import { mergeWorkspaces as mergeWorkspacesInDb } from '@goodboy/db';
+import type { SessionContextItem, SessionId, WorkspaceId } from '@goodboy/types';
+import {
+  listWorkspaceExternalTasks,
+  listWorkspaceLearnings,
+  mergeWorkspaces as mergeWorkspacesInDb,
+} from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { pruneChatImages } from '../../../features/workspace-chat/pruneChatImages';
 import type { GetFn, SetFn } from './types';
@@ -27,19 +31,37 @@ export const mergeWorkspaces = (set: SetFn, get: GetFn) => {
       targetWorkspaceId,
     });
     await pruneChatImages();
+    const [targetLearnings, targetTasks] = await Promise.all([
+      listWorkspaceLearnings({ db: tauriDatabase, workspaceId: targetWorkspaceId }),
+      listWorkspaceExternalTasks({ db: tauriDatabase, workspaceId: targetWorkspaceId }),
+    ]);
 
     const sourceSet = new Set<WorkspaceId>(sources);
+    const retarget = (item: SessionContextItem): SessionContextItem =>
+      sourceSet.has(item.workspaceId) ? { ...item, workspaceId: targetWorkspaceId } : item;
     set((current) => {
       const archivedSessions = { ...current.archivedSessions };
       const workspaceIntegrations = { ...current.workspaceIntegrations };
       const projectScripts = { ...current.projectScripts };
       const workspaceOverrides = { ...current.workspaceOverrides };
+      const workspaceLearnings = { ...current.workspaceLearnings };
+      const workspaceExternalTasks = { ...current.workspaceExternalTasks };
       for (const id of sources) {
         delete archivedSessions[id];
         delete workspaceIntegrations[id];
         delete projectScripts[id];
         delete workspaceOverrides[id];
+        delete workspaceLearnings[id];
+        delete workspaceExternalTasks[id];
       }
+      workspaceLearnings[targetWorkspaceId] = targetLearnings;
+      workspaceExternalTasks[targetWorkspaceId] = targetTasks;
+      const sessionContextItems = Object.fromEntries(
+        Object.entries(current.sessionContextItems).map(([sessionId, items]) => [
+          sessionId,
+          items.map(retarget),
+        ]),
+      ) as Readonly<Record<SessionId, ReadonlyArray<SessionContextItem>>>;
       return {
         workspaces: current.workspaces.filter((workspace) => !sourceSet.has(workspace.id)),
         projects: current.projects.map((project) =>
@@ -51,6 +73,9 @@ export const mergeWorkspaces = (set: SetFn, get: GetFn) => {
         workspaceIntegrations,
         projectScripts,
         workspaceOverrides,
+        workspaceLearnings,
+        workspaceExternalTasks,
+        sessionContextItems,
       };
     });
 

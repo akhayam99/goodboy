@@ -225,6 +225,19 @@ const planBindingMerge = ({
         sql: 'UPDATE sessions SET workspace_id = ? WHERE workspace_id = ?',
         params: [targetId, source.id],
       },
+      {
+        sql: 'UPDATE session_context_items SET workspace_id = ? WHERE workspace_id = ?',
+        params: [targetId, source.id],
+      },
+      {
+        sql: `INSERT OR IGNORE INTO workspace_external_tasks
+           (workspace_id, provider, external_id, identifier, url, title, created_at)
+         SELECT ?, provider, external_id, identifier, url, title, created_at
+           FROM workspace_external_tasks
+          WHERE workspace_id = ?`,
+        params: [targetId, source.id],
+      },
+      { sql: 'DELETE FROM workspace_external_tasks WHERE workspace_id = ?', params: [source.id] },
       { sql: 'DELETE FROM workspace_profiles WHERE workspace_id = ?', params: [source.id] },
       {
         sql: 'DELETE FROM settings WHERE key = ?',

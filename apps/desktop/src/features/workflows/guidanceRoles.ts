@@ -1,4 +1,6 @@
+import { PROFILE_ACCESS } from '@goodboy/core';
 import type { AgentRole } from '@goodboy/types';
+import { ROLE_LABEL } from '../session/agent-kind';
 
 export const GUIDANCE_ROLE_CHOICES: ReadonlyArray<{
   readonly role: AgentRole;
@@ -35,3 +37,10 @@ export const sameRoles = ({
   readonly left: ReadonlyArray<AgentRole>;
   readonly right: ReadonlyArray<AgentRole>;
 }): boolean => left.length === right.length && left.every((role) => right.includes(role));
+
+export const workingRulesSkippedText = (): string => {
+  const skipped = (Object.keys(ROLE_LABEL) as ReadonlyArray<AgentRole>)
+    .filter((role) => !PROFILE_ACCESS[role].includes('workingRules'))
+    .map((role) => ROLE_LABEL[role]);
+  return skipped.length === 0 ? 'every agent' : `every agent but ${skipped.join(', ')}`;
+};

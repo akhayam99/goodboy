@@ -2,7 +2,7 @@
 
 import type { MountActionTarget } from '../../../../actions/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { IsoDateTime, MountId, ProjectId, SessionId, WorktreeStatus } from '@goodboy/types';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
 
@@ -231,6 +231,7 @@ beforeEach(() => {
   store.mountGithub = {};
   store.sessionGithub = {};
   store.sessionResolveThreads = {};
+  store.sessionExternalTasks = {};
 });
 
 afterEach(cleanup);
@@ -476,6 +477,51 @@ describe('ProjectMountRow availability', () => {
 
     expect(screen.queryByRole('menuitem', { name: /Open terminal/ })).toBeNull();
     expect(screen.getByRole('menuitem', { name: /Remove from session/ })).toBeDefined();
+  });
+
+  it('shows a branch task only on the project it was linked in, not on a namesake branch', () => {
+    const shared = 'feat/shared';
+    store.projects = [
+      { id: 'api', kind: 'repo', baseBranch: 'main' },
+      { id: 'web', kind: 'repo', baseBranch: 'main' },
+    ];
+    store.sessionExternalTasks = {
+      [sessionId]: [
+        {
+          sessionId,
+          projectId: 'api',
+          branch: shared,
+          scope: 'branch',
+          provider: 'linear',
+          externalId: 'ext-41',
+          identifier: 'NW-41',
+          url: 'https://linear.example/NW-41',
+          title: 'Ledger export',
+          createdAt: '2026-09-27T10:00:00.000Z',
+        },
+      ],
+    };
+    const apiRow: MountRowView = { ...baseRow, branch: shared };
+    const webRow: MountRowView = {
+      ...baseRow,
+      mountId: 'mount-2' as MountId,
+      projectId: 'web' as ProjectId,
+      projectName: 'Web',
+      mountName: 'Web',
+      branch: shared,
+      worktreePath: '/web',
+      lastWorktreePath: '/web',
+      repoRoot: '/repo/web',
+    };
+    store.sessionMounts = { [sessionId]: [viewOf({ row: apiRow }), viewOf({ row: webRow })] };
+
+    renderRow({ row: apiRow, label: 'API' });
+    renderRow({ row: webRow, label: 'Web' });
+
+    const apiItem = screen.getByRole('listitem', { name: 'API' });
+    const webItem = screen.getByRole('listitem', { name: 'Web' });
+    expect(within(apiItem).getByRole('button', { name: `Open NW-41 on ${shared}` })).toBeDefined();
+    expect(within(webItem).queryByRole('button', { name: `Open NW-41 on ${shared}` })).toBeNull();
   });
 
   it('names the row and its action menu after the mount label', () => {

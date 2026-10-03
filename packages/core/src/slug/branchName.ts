@@ -24,6 +24,8 @@ const PLACEHOLDER = /(\{[a-z-]+\})/;
 
 const WHOLE_PLACEHOLDER = /^\{[a-z-]+\}$/;
 
+const SEPARATORS = new Set(['-', '_', '/', '.']);
+
 type Part =
   | { readonly kind: 'text'; readonly text: string }
   | { readonly kind: 'token'; readonly name: string };
@@ -40,6 +42,26 @@ const partsOf = (template: string): ReadonlyArray<Part> =>
         ? { kind: 'token', name: piece.slice(1, -1) }
         : { kind: 'text', text: piece },
     );
+
+const tidyBranchName = (value: string): string => {
+  let start = 0;
+  let end = value.length;
+  while (start < end && SEPARATORS.has(value.charAt(start))) {
+    start += 1;
+  }
+  while (end > start && SEPARATORS.has(value.charAt(end - 1))) {
+    end -= 1;
+  }
+  const kept: Array<string> = [];
+  for (let index = start; index < end; index += 1) {
+    const character = value.charAt(index);
+    if (character === '/' && kept[kept.length - 1] === '/') {
+      continue;
+    }
+    kept.push(character);
+  }
+  return kept.join('');
+};
 
 const cleanValue = ({
   name,
@@ -109,12 +131,7 @@ export const buildBranchName = ({ template, values }: BuildParams): string => {
       pieces[index - 1] = previous.slice(0, -1);
     }
   });
-  return pieces
-    .join('')
-    .toLowerCase()
-    .replace(/\/{2,}/g, '/')
-    .replace(/^[-_/.]+/, '')
-    .replace(/[-_/.]+$/, '');
+  return tidyBranchName(pieces.join('').toLowerCase());
 };
 
 export type BranchNameProblem =
