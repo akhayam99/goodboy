@@ -2,13 +2,13 @@ import { PROVIDER_API_KEY_ENV } from '@goodboy/core';
 import { useCallback, useMemo, useState } from 'react';
 import {
   Button,
-  EmptyState,
   InlineConfirm,
   Input,
   SectionHeader,
   Tooltip,
   cn,
   tintClasses,
+  FilledEmptyState,
 } from '@goodboy/ui';
 import { KeyRound, Plus, Trash2 } from 'lucide-react';
 import { type CredentialId, type ProviderId } from '@goodboy/types';
@@ -97,13 +97,10 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
       />
 
       {mine.length === 0 && !adding ? (
-        <EmptyState
-          bordered
+        <FilledEmptyState
           icon={CONCEPT_ICONS.providers}
           tone={CONCEPT_TONE.providers}
           title="No API keys yet"
-          size="inline"
-          className="bg-subtle py-8"
         />
       ) : null}
 

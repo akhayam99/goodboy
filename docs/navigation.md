@@ -603,8 +603,9 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   section. The scope segment lists App, the workspace, Providers & models and
   Tools; the section segment lists the App sections. Neither carries an
   action: Settings has no project scope, so there is no `Use workspace values`
-  to offer. The first segment of a
-  studio has no menu: studios change from the footer.
+  to offer. The first segment of a studio has no menu (studios change from the
+  footer) and is always a button back to that studio's start: Settings goes to
+  its home, Workflows to its list. On the Settings home it is the only segment.
 - **Every menu row has five slots**: lead, label with a faint second part,
   meta, a state that is always a word (from `agentStateWord`, the same reading
   `isAgentFinished` makes), and a check on the current row, which is there even
@@ -725,7 +726,7 @@ only drop under zoom.
   row, never in a modal: the primary keeps them going in a new window, the
   ghost alternative stops them and opens here. A closed `Disconnected` group
   lists workspaces removed from disk, each with a small `Reconnect`. Settings
-  opens on App > General; only Workspace settings lives behind this popover,
+  opens on its home; only Workspace settings lives behind this popover,
   so the bar holds no second settings control.
 - **Identity is pinned and mounted once.** Workspace identity stays at the left
   of the top bar on the board, inside sessions, and under studios. Exactly one
@@ -760,9 +761,16 @@ flow.
 Centre: the Goodboy chip. It holds everything about Goodboy itself, the way
 the Apple menu or Linear's help menu does. Its label says one thing, in this
 order: an update is ready, setup is unfinished (with its progress), or
-"Goodboy beta". Its popover leads with Report a bug (with ⌘I, and Draft saved
+"Goodboy | BETA v<version>" with the installed version. Below the
+`chrome-labels` width it keeps only the mark and the version. The version is
+`APP_VERSION` (`shared/lib/appVersion.ts`), which the build stamps from
+`apps/desktop/package.json` as `__APP_VERSION__`, so it never waits on Tauri
+and shows in mock scenes too. The update pill is soft, enters once and holds
+still. Its popover leads with Report a bug (with ⌘I, and Draft saved
 when a draft waits), then the version and release notes, the update, the setup
-checklist, What's new, keyboard shortcuts and Sponsor. Report a bug closes the
+checklist, What's new, keyboard shortcuts, Sponsor and Follow on X. The
+addresses live in `shared/lib/productLinks.ts`; **Settings > Help** has the
+same X link under Follow Goodboy. Report a bug closes the
 popover and opens the report sheet. The popover opens by itself once, when the
 first agent finishes a turn, and never while the setup wizard is open; the
 checklist has no floating card.
@@ -830,8 +838,8 @@ items (provider, project, code host, task manager, first session, profile); a
 skipped code host or task manager reopens its own step, and the first session
 ticks when an agent finishes a turn, not when a session row exists.
 
-Right: Inbox, Workflows, Impact and Settings. Settings always opens App >
-General, with or without a workspace; Workspace settings opens only from the
+Right: Inbox, Workflows, Impact and Settings. Settings (and ⌘,) always opens
+the Settings home, with or without a workspace; Workspace settings opens only from the
 gear on the current-workspace row of the workspace popover. Impact is a
 destination, so it has a launcher; the launcher opens its Overview tab, while
 the spend figure in the top bar and the `Impact: Spend` palette entry open its
@@ -858,8 +866,8 @@ Goodboy chip never hides. Past that the glyph strip scrolls.
   Opening any studio closes the others.
 - **Before any workspace exists, the footer keeps its app half**: Settings and
   the Goodboy chip. The integration strip, Inbox and Workflows belong to a
-  workspace and wait for one. Settings then opens on App and lists only App and
-  Providers & models, and Providers opens on an account instead of on the
+  workspace and wait for one. Settings then opens its home with only the App and
+  Providers & models groups, and Providers opens on an account instead of on the
   workspace defaults. Precedent: VS Code keeps its status bar and Manage gear
   with no folder open.
 
@@ -945,7 +953,8 @@ one is open at a time.
   `StudioShell`; inside the frame it only hands its chrome to the band. Until a
   body's chunk arrives, the frame shows one of three opaque skeletons: `list`
   (Inbox, Notifications, Add workspace, Impact), `rail`
-  (Settings) or `grid` (Workflows, Changelog, the guide, pairing). With no studio
+  (a Settings page) or `grid` (Workflows, Changelog, the guide, pairing, the
+  Settings home). With no studio
   open, no frame node exists, so nothing covers the page.
 - **One Esc stack.** The frame, a body that holds Esc (the Inbox with a record
   open), the agent overlay and the delete confirm all register with
@@ -992,6 +1001,37 @@ one is open at a time.
   reply box, / focuses the search, and Escape closes the record before the
   studio. Below a 720px list column the rail folds into a Filters button in
   the list header.
+- **Every studio rail resizes.** `StudioRailLayout` (Settings, Guide, Chat,
+  Notifications, Changelog, Bitbucket) and the Inbox filters rail drag from
+  their right edge between 220 and 420px, step 8px (32 with Shift) with the
+  arrow keys, and go back to their default (256 narrow, 288 standard) on a
+  double click. Each studio keeps its own width
+  (`goodboy:studio-rail-width:<studio>:v1`), and the rail skeleton opens at
+  that width. `useResizableWidth` (`@goodboy/ui`) owns read, clamp and save
+  for these rails, the session sidebar and the drawer: while the pointer
+  moves the width lives in a CSS variable (the drawer writes its own style),
+  so nothing renders and nothing is saved until the drag ends. Precedent: VS
+  Code, Zed and Linear sidebars.
+- **Settings opens on a home that mirrors its rail.** The footer, ⌘, and the
+  palette's Open settings land on it; a link that names a page (a scope, a
+  section, a provider or a tool) skips it. It shows the rail's four groups
+  (App, Workspace, Providers & models, Integrations), each titled with where
+  it applies, and every page of a group as a card: the concept icon on its
+  tone, the name and the same status line the rail shows (a quiet hint when
+  nothing needs doing). Cards and rail rows come from one list,
+  `settingsDirectory`, so no card exists without a rail row. The page opened
+  last carries `Last opened` and takes the focus, so Enter goes back to it.
+  The status lines are read once per studio (`useSettingsStatus`, on the
+  minute clock of `useNow`) and feed the home and the rail; the home starts no
+  loading of its own (no storage scan, no branch scan, no provider refresh).
+  Without a workspace the Workspace and Integrations groups are left out.
+  Opening a card morphs the home into the rail: every card shrinks and slides
+  into its rail row in 230ms (a page nested under Providers & models or
+  Integrations lands on its group row and fades), the rail shows once they
+  land and the page enters with `nav-step-in`. `useHomeToRailMorph` flies
+  copies of the cards on a layer above the studio, so no rendered row moves.
+  Reduced motion, or an engine without `Element.animate`, switches at once.
+  Precedent: the Google Account home and the iOS settings list.
 - **Settings nests items in its rail.** The App items (General, Shortcuts,
   Backup, Storage, Security findings, Help, Danger zone) always sit under the
   App row as indented
@@ -1076,15 +1116,17 @@ look` (`Merged, then N new commits`, unmerged and gone on origin, local
   workspace; without one it says so instead of scanning anything.
 - **Settings rail tone is state, never decoration.** Each row carries its
   concept icon from `CONCEPT_ICONS`. One reader, `railSubtitles({ state,
-workspaceId })`, owns every row's subtitle and tone (it replaced three
-  separate selectors read straight from `SettingsRail`, and a regression test
-  spies on `invoke` to keep it invoke-free at render). A dot appears only
+workspaceId, nowMs })`, owns every row's subtitle and tone (it replaced three
+  separate selectors read straight from `SettingsRail`). `useSettingsStatus`
+  calls it once per studio and hands the result to the rail and the home, and
+  a test mounts the home on the strict `invoke` mock to keep it free of
+  commands and loads at render. A dot appears only
   when something needs doing: warning on Providers & models when a connected
   CLI is too old for a model it serves or no provider is connected
   (`selectProviderAttention`, with the reason as the row subtitle), info on
   General while an app update is ready, info on Storage with "N GB can go" as
   its subtitle once clean idle folders pass 10 GB (warning when the disk has
-  under 10 GB free and at least 1 GB can go, `selectStorageAttention`),
+  under 10 GB free and at least 1 GB can go, `storageAttention`),
   warning on Security findings with "N open" once the current workspace has
   an undismissed finding (`selectSecurityFindingsAttention`), and warning on
   Workspace with "N folders not found" once one of its projects reads
@@ -1320,7 +1362,8 @@ Every drawer is one primitive, `DrawerColumn` from `@goodboy/ui`, never a
 split nested inside a pane. `AppShell` puts one beside the main area, and a
 studio body puts one beside its list. It opens at 400px, resizes from 340 to
 560px from a handle on its left edge, and keeps one saved width
-(`goodboy:right-drawer-width:v1`, clamped on read) for every drawer. It is a
+(`goodboy:right-drawer-width:v1`, clamped on read and written once when a drag
+ends) for every drawer. It is a
 floating card: 8px from the top, right and bottom edges and from the column,
 radius 10 (`rounded-frame`), `bg-subtle`, a hairline border. When the main
 area minus the drawer and the two gutters would leave the content column

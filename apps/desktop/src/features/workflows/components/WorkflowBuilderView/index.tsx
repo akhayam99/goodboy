@@ -2,12 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Button,
   Chip,
-  EmptyState,
   FormPage,
   Notice,
   Switch,
   Tooltip,
   formatError,
+  FilledEmptyState,
 } from '@goodboy/ui';
 import {
   DEFAULT_SESSION_PROVIDER_PREFERENCE,
@@ -1096,13 +1096,11 @@ export const WorkflowBuilderView = (props: Props) => {
     }
     if (mode === 'preset' && presets.length === 0) {
       return (
-        <EmptyState
+        <FilledEmptyState
           tone={CONCEPT_TONE.workflows}
           icon={CONCEPT_ICONS.workflows}
           title="No presets in this workspace yet"
           description="Save a workflow as a preset when you start it, and it shows up here."
-          size="inline"
-          className="items-start text-left"
           action={
             <Chip
               as="button"

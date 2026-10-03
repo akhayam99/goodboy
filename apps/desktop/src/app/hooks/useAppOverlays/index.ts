@@ -85,7 +85,7 @@ export const useAppOverlays = ({
   const openSettings = useCallback(() => {
     clearCurrentSessionStudio();
     open({
-      overlay: { kind: 'settings', focus: { scope: 'app', section: 'general' } },
+      overlay: { kind: 'settings', focus: { scope: 'home' } },
     });
   }, [open]);
 
@@ -135,11 +135,16 @@ export const useAppOverlays = ({
   );
 
   const changeSettingsScope = useCallback(
-    ({ scope, section }: SettingsScopeChange) =>
+    ({ scope, section, tool, provider }: SettingsScopeChange) =>
       amendStudio({
         studio: {
           kind: 'settings',
-          focus: section === undefined ? { scope } : { scope, section },
+          focus: {
+            scope,
+            ...(section !== undefined && { section }),
+            ...(tool !== undefined && { tool }),
+            ...(provider !== undefined && { provider }),
+          },
         },
       }),
     [amendStudio],

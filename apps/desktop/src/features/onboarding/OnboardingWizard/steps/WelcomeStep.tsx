@@ -1,4 +1,5 @@
-import { DogMascot } from '@goodboy/ui';
+import { ConceptTile } from '../../../../shared/components/ConceptTile';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 const WELCOME_LINES = [
   { label: 'Connect the AI you already use', time: '1 min' },
@@ -9,7 +10,7 @@ const WELCOME_LINES = [
 
 export const WelcomeStep = () => (
   <div className="flex flex-col gap-6">
-    <DogMascot size={56} className="text-primary" />
+    <ConceptTile icon={CONCEPT_ICONS.agents} tone={CONCEPT_TONE.agents} />
     <div className="flex flex-col gap-1.5">
       <h2 tabIndex={-1} data-step-title className="text-display text-foreground outline-none">
         Welcome to Goodboy

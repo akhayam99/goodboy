@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { Button, CopyButton, Divider, EmptyState, Markdown, Skeleton } from '@goodboy/ui';
+import { Button, CopyButton, Divider, Markdown, Skeleton, FilledEmptyState } from '@goodboy/ui';
 import { ExternalLink } from 'lucide-react';
 import { ImageLightbox } from '../../../chat/components/ImageLightbox';
 import { type ExploreEntry } from '../../explore';
@@ -101,12 +101,11 @@ export const ExplorePreviewPanel = ({
     }
     if (previewState.status === 'error') {
       return (
-        <EmptyState
+        <FilledEmptyState
           icon={CONCEPT_ICONS.errors}
           tone={CONCEPT_TONE.errors}
           title="Could not read this file"
           description={previewState.message}
-          size="inline"
         />
       );
     }

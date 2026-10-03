@@ -7,6 +7,7 @@ export type ResizeHandleProps = {
   readonly min: number;
   readonly max: number;
   readonly onChange: (width: number) => void;
+  readonly onCommit?: (width: number) => void;
   readonly onReset?: () => void;
   readonly side?: 'left' | 'right';
   readonly ariaLabel: string;
@@ -32,6 +33,7 @@ export const ResizeHandle = ({
   min,
   max,
   onChange,
+  onCommit,
   onReset,
   side = 'left',
   ariaLabel,
@@ -39,6 +41,11 @@ export const ResizeHandle = ({
   drawsEdge = true,
 }: ResizeHandleProps) => {
   const dragStateRef = useRef<DragState | null>(null);
+  const handleRef = useRef<HTMLDivElement | null>(null);
+  const liveValueRef = useRef(value);
+  liveValueRef.current = dragStateRef.current === null ? value : liveValueRef.current;
+  const commitRef = useRef(onCommit);
+  commitRef.current = onCommit;
   const isHoveredRef = useRef(false);
   const activityRef = useRef(onActivityChange);
   activityRef.current = onActivityChange;
@@ -59,19 +66,24 @@ export const ResizeHandle = ({
       }
       event.preventDefault();
       const direction = side === 'left' ? 1 : -1;
-      onChange(
-        clamp({
-          value: dragState.startValue + (event.clientX - dragState.startX) * direction,
-          min,
-          max,
-        }),
-      );
+      const next = clamp({
+        value: dragState.startValue + (event.clientX - dragState.startX) * direction,
+        min,
+        max,
+      });
+      if (next === liveValueRef.current) {
+        return;
+      }
+      liveValueRef.current = next;
+      handleRef.current?.setAttribute('aria-valuenow', String(next));
+      onChange(next);
     };
     const onUp = () => {
       if (dragStateRef.current === null) {
         return;
       }
       dragStateRef.current = null;
+      commitRef.current?.(liveValueRef.current);
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
       report();
@@ -97,6 +109,7 @@ export const ResizeHandle = ({
       startValue: value,
       startX: event.clientX,
     };
+    liveValueRef.current = value;
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
     report();
@@ -115,17 +128,18 @@ export const ResizeHandle = ({
     const step = event.shiftKey ? 32 : 8;
     const keyDirection = event.key === 'ArrowLeft' ? -1 : 1;
     const sideDirection = side === 'left' ? 1 : -1;
-    onChange(
-      clamp({
-        value: value + step * keyDirection * sideDirection,
-        min,
-        max,
-      }),
-    );
+    const next = clamp({
+      value: value + step * keyDirection * sideDirection,
+      min,
+      max,
+    });
+    onChange(next);
+    onCommit?.(next);
   };
 
   return (
     <div
+      ref={handleRef}
       role="separator"
       aria-orientation="vertical"
       aria-label={ariaLabel}

@@ -8,7 +8,7 @@ import {
   type KeyboardEvent,
 } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { Divider, EmptyState, Eyebrow, ScrollFade } from '@goodboy/ui';
+import { Divider, Eyebrow, ScrollFade, FilledEmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { parseQuery } from '../../../quick-actions/grammar';
 import {
@@ -456,7 +456,7 @@ export const CommandsMode = ({
             >
               {rows.length === 0 ? (
                 <li role="presentation">
-                  <EmptyState
+                  <FilledEmptyState
                     icon={CONCEPT_ICONS.search}
                     tone={CONCEPT_TONE.search}
                     title={
@@ -464,8 +464,7 @@ export const CommandsMode = ({
                         ? 'Nothing to do here yet'
                         : `Nothing matches “${(level === null ? query : filter).trim()}”`
                     }
-                    size="inline"
-                    className="justify-center px-4 py-6"
+                    className="justify-center"
                   />
                 </li>
               ) : (

@@ -108,7 +108,7 @@
     "workflows -> chat": 1,
     "workflows -> context": 1,
     "workflows -> providers": 4,
-    "workflows -> session": 17,
+    "workflows -> session": 10,
     "workflows -> workTreeModel": 2,
     "workspace -> actions": 1,
     "workspace -> integrations": 3,

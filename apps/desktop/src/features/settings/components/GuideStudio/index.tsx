@@ -51,6 +51,7 @@ export const GuideStudio = ({ onClose }: Props) => {
         <StudioRailLayout
           railLabel="Guide chapters"
           railWidth="standard"
+          surface="guide"
           rail={
             <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
               <GuideRail

@@ -319,7 +319,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         group: 'action',
         icon: CONCEPT_ICONS.settings,
         shortcut: 'settings.open',
-        run: () => openSettings({ scope: 'app' }),
+        run: () => openSettings({ scope: 'home' }),
       },
       ...APP_SECTIONS.filter((section) => section.id !== 'shortcuts').map(
         (section): PaletteEntry => ({
