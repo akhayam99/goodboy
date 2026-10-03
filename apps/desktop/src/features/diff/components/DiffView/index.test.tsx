@@ -109,7 +109,7 @@ describe('DiffView rendering', () => {
   it('draws rows as a grid, not a table', () => {
     render(<DiffView files={[LEDGER]} />);
     expect(document.querySelector('table')).toBeNull();
-    expect(screen.getByRole('grid', { name: `Changes in ${LEDGER.path}` })).toBeTruthy();
+    screen.getByRole('grid', { name: `Changes in ${LEDGER.path}` });
     expect(screen.getAllByRole('row').length).toBeGreaterThan(6);
   });
 
@@ -143,7 +143,7 @@ describe('DiffView rendering', () => {
         viewed={{ stateOf: (file) => (viewed.has(file.path) ? 'viewed' : 'none'), onToggle }}
       />,
     );
-    expect(screen.getByText('0 of 2 viewed')).toBeTruthy();
+    screen.getByText('0 of 2 viewed');
     const header = screen.getByRole('region', { name: RELAY.path });
     fireEvent.click(within(header).getByRole('checkbox', { name: /Viewed/ }));
     expect(onToggle).toHaveBeenCalledWith(RELAY, true);
@@ -153,7 +153,7 @@ describe('DiffView rendering', () => {
         viewed={{ stateOf: (file) => (viewed.has(file.path) ? 'viewed' : 'none'), onToggle }}
       />,
     );
-    expect(screen.getByText('1 of 2 viewed')).toBeTruthy();
+    screen.getByText('1 of 2 viewed');
     expect(within(header).queryByRole('grid')).toBeNull();
   });
 
@@ -162,7 +162,7 @@ describe('DiffView rendering', () => {
     render(<DiffView files={[lock]} />);
     expect(screen.queryByRole('grid')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Show file' }));
-    expect(screen.getByRole('grid')).toBeTruthy();
+    screen.getByRole('grid');
   });
 });
 
@@ -215,7 +215,7 @@ describe('DiffView comments', () => {
       button: 0,
       shiftKey: true,
     });
-    expect(screen.getByRole('textbox', { name: 'Note on lines 39 to 42' })).toBeTruthy();
+    screen.getByRole('textbox', { name: 'Note on lines 39 to 42' });
   });
 
   it('cancels the composer with escape', () => {
@@ -244,7 +244,7 @@ describe('DiffView comments', () => {
   it('shows a thread under its line and resolves it', () => {
     const comments = commentsWith([thread()]);
     render(<DiffView files={[LEDGER]} comments={comments} />);
-    expect(screen.getByText('Guard the residual when a weight is zero')).toBeTruthy();
+    screen.getByText('Guard the residual when a weight is zero');
     fireEvent.click(screen.getByRole('button', { name: 'Resolve' }));
     expect(comments.onResolve).toHaveBeenCalledWith('n1');
   });
@@ -431,7 +431,7 @@ describe('DiffView file renders', () => {
     fileRenders.current = 0;
 
     fireEvent.keyDown(window, { code: 'KeyT', key: 't' });
-    expect(screen.getByRole('combobox', { name: 'Filter files' })).toBeTruthy();
+    screen.getByRole('combobox', { name: 'Filter files' });
 
     expect(fileRenders.current).toBe(0);
   });
@@ -443,7 +443,7 @@ describe('DiffView file renders', () => {
 
     rerender(<DiffView files={[LEDGER, RELAY]} comments={comments} footer={<p>Footer</p>} />);
 
-    expect(screen.getByText('Footer')).toBeTruthy();
+    screen.getByText('Footer');
     expect(fileRenders.current).toBe(0);
   });
 });
