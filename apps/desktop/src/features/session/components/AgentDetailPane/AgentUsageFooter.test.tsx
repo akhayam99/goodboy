@@ -27,11 +27,11 @@ describe('AgentUsageFooter', () => {
       />,
     );
 
-    expect(screen.getByText('Opus 5')).toBeTruthy();
-    expect(screen.getByText(/in ·/)).toBeTruthy();
-    expect(screen.getByText('47% cached')).toBeTruthy();
-    expect(screen.getByText('~$0.12')).toBeTruthy();
-    expect(screen.getByText('3 turns')).toBeTruthy();
+    screen.getByText('Opus 5');
+    screen.getByText(/in ·/);
+    screen.getByText('47% cached');
+    screen.getByText('~$0.12');
+    screen.getByText('3 turns');
   });
 
   it('never shows $0.00: hides the cost entry when it is unknown', () => {
@@ -57,8 +57,8 @@ describe('AgentUsageFooter', () => {
 
     expect(screen.queryByText('Input')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Usage detail' }));
-    expect(screen.getByText('Input')).toBeTruthy();
-    expect(screen.getByText('Output')).toBeTruthy();
+    screen.getByText('Input');
+    screen.getByText('Output');
   });
 
   it('says nothing when the agent produced no tokens yet', () => {

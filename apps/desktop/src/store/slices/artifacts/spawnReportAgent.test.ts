@@ -410,7 +410,7 @@ describe('resolveReportRouting', () => {
       sessionId: SESSION_ID,
       picked: null,
     });
-    expect(routing).toEqual({ provider: 'anthropic', model: 'sonnet-5', effort: 'medium' });
+    expect(routing).toEqual({ provider: 'anthropic', model: 'sonnet-5.5', effort: 'medium' });
   });
 
   it('honours an explicit pick over the default', () => {

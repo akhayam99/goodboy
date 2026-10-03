@@ -31,16 +31,16 @@ afterEach(() => {
 describe('ThinkingIndicator', () => {
   it('shows a phrase from the active context bucket', () => {
     render(<ThinkingIndicator context="search" />);
-    expect(screen.getByText('searching')).toBeTruthy();
+    screen.getByText('searching');
   });
 
   it('rotates the phrase on the tick interval', () => {
     render(<ThinkingIndicator context="run" />);
-    expect(screen.getByText('running')).toBeTruthy();
+    screen.getByText('running');
     act(() => {
       vi.advanceTimersByTime(2600);
     });
-    expect(screen.getByText('executing')).toBeTruthy();
+    screen.getByText('executing');
   });
 
   it('settles into a reassurance phrase after a long wait', () => {
@@ -48,17 +48,17 @@ describe('ThinkingIndicator', () => {
     act(() => {
       vi.advanceTimersByTime(2600 * 8);
     });
-    expect(screen.getByText('still working')).toBeTruthy();
+    screen.getByText('still working');
   });
 
   it('freezes on the first phrase under reduced motion', () => {
     mockMatchMedia(true);
     render(<ThinkingIndicator context="think" />);
-    expect(screen.getByText('reasoning')).toBeTruthy();
+    screen.getByText('reasoning');
     act(() => {
       vi.advanceTimersByTime(2600 * 4);
     });
-    expect(screen.getByText('reasoning')).toBeTruthy();
+    screen.getByText('reasoning');
   });
 
   it('shows the running node and a live duration instead of a pulsing border', () => {
@@ -68,6 +68,6 @@ describe('ThinkingIndicator', () => {
     act(() => {
       vi.advanceTimersByTime(2_000);
     });
-    expect(screen.getByText('· 2s')).toBeTruthy();
+    screen.getByText('· 2s');
   });
 });

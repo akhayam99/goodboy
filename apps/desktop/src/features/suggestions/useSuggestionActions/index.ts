@@ -6,10 +6,11 @@ import { sessionResolveStyle } from '../../../store/sessionReplySettings';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
 import { useAgentStartedToast } from '../../../shared/hooks/useAgentStartedToast';
-import { useSessionRoleModels } from '../../../shared/hooks/useSessionRoleModels';
 import { launchChoiceOf } from '../../resolve/launchChoice';
 import { startResolve } from '../../resolve/startResolve';
-import { kindRouting } from '../../session/agent-kind';
+import type { AgentKind, AgentKindRouting } from '../../session/agent-kind';
+import { showsRunsOn } from '../../session/showsRunsOn';
+import { useKindRouting } from '../../../shared/hooks/useKindRouting';
 import { REBASE_FAILURE_TITLE, useRebaseBranch } from '../../session/hooks/useRebaseBranch';
 import { useWorktreeStatuses } from '../../session/hooks/useWorktreeStatuses';
 import { useAdvanceWorkflowAgent } from '../../workflows/useAdvanceWorkflowAgent';
@@ -41,6 +42,12 @@ type SuggestionAction = {
   readonly run: () => Promise<void>;
   readonly choices?: ReadonlyArray<SuggestionActionChoice>;
   readonly requiresConfirm?: boolean;
+  readonly runsOn?: SuggestionRunsOn;
+};
+
+type SuggestionRunsOn = {
+  readonly kind: AgentKind;
+  readonly runWith: (routing: AgentKindRouting) => Promise<void>;
 };
 
 export type SuggestionActionChoice = {
@@ -87,7 +94,6 @@ export const useSuggestionActions = ({
       ),
     ),
   );
-  const roleModels = useSessionRoleModels({ sessionId });
   const spawnAgent = useAppStore((state) => state.spawnAgent);
   const resumeStoppedAgents = useAppStore((state) => state.resumeStoppedAgents);
   const setAgentConfig = useAppStore((state) => state.setAgentConfig);
@@ -139,15 +145,16 @@ export const useSuggestionActions = ({
     status: behind?.status ?? null,
   });
 
+  const resolverRouting = useKindRouting({ sessionId, kind: 'resolver' });
   const unresolvedThreads = useMemo(() => eligibleReviewThreads({ github, rows }), [github, rows]);
 
   const pullRequest = github?.pr ?? null;
-  const startResolving = async (): Promise<void> => {
+  const startResolving = async (picked?: AgentKindRouting): Promise<void> => {
     if (pullRequest == null || unresolvedThreads.length === 0) {
       return;
     }
     const launchChoice = launchChoiceOf({
-      routing: kindRouting({ kind: 'resolver', roleModels }),
+      routing: picked ?? resolverRouting,
       commitStyle: resolveStyle.commitStyle,
       hint: null,
     });
@@ -216,7 +223,8 @@ export const useSuggestionActions = ({
           label: draftFixesLabel({ fresh: unresolvedThreads.length }),
           isDisabled: false,
           failureTitle: "The fix didn't start",
-          run: startResolving,
+          run: () => startResolving(),
+          runsOn: { kind: 'resolver', runWith: startResolving },
         },
         onDismiss: null,
       };
@@ -346,6 +354,18 @@ export const useSuggestionActions = ({
               focus: 'none',
             });
           },
+          ...(showsRunsOn({ kind: suggestion.payload.agentKind }) && {
+            runsOn: {
+              kind: suggestion.payload.agentKind,
+              runWith: async (routing: AgentKindRouting) => {
+                await spawnAgent(sessionId, {
+                  kindOverride: suggestion.payload.agentKind,
+                  focus: 'none',
+                  ...routing,
+                });
+              },
+            },
+          }),
         },
         onDismiss: null,
       };
@@ -358,6 +378,12 @@ export const useSuggestionActions = ({
           failureTitle: "Couldn't start the reviewer",
           run: async () => {
             await spawnAgent(sessionId, { kindOverride: 'reviewer', focus: 'none' });
+          },
+          runsOn: {
+            kind: 'reviewer',
+            runWith: async (routing) => {
+              await spawnAgent(sessionId, { kindOverride: 'reviewer', focus: 'none', ...routing });
+            },
           },
           choices: [
             {
@@ -386,6 +412,17 @@ export const useSuggestionActions = ({
               mountId: suggestion.payload.mountId,
               focus: 'none',
             });
+          },
+          runsOn: {
+            kind: 'debugger',
+            runWith: async (routing) => {
+              await spawnAgent(sessionId, {
+                kindOverride: 'debugger',
+                mountId: suggestion.payload.mountId,
+                focus: 'none',
+                ...routing,
+              });
+            },
           },
         },
         onDismiss: null,

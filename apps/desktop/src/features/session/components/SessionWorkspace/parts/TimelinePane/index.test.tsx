@@ -1370,15 +1370,15 @@ describe('TimelinePane resolve batch', () => {
     fireEvent.click(screen.getByRole('button', { name: /20 resolves on PR #318/ }));
 
     expect(revealFrames()).toHaveLength(9);
-    expect(screen.getByRole('button', { name: 'Show 12 more' })).toBeTruthy();
-    expect(screen.getByText('tvarga on wide0.ts:1')).toBeTruthy();
+    screen.getByRole('button', { name: 'Show 12 more' });
+    screen.getByText('tvarga on wide0.ts:1');
     expect(screen.queryByText('tvarga on wide19.ts:20')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Show 12 more' }));
 
     expect(revealFrames()).toHaveLength(20);
     expect(screen.queryByRole('button', { name: /more$/ })).toBeNull();
-    expect(screen.getByText('tvarga on wide19.ts:20')).toBeTruthy();
+    screen.getByText('tvarga on wide19.ts:20');
   });
 
   it('draws one closed row with the state summary and no child rows', () => {
@@ -1412,9 +1412,9 @@ describe('TimelinePane resolve batch', () => {
     fireEvent.click(toggle());
 
     expect(toggle().getAttribute('aria-expanded')).toBe('true');
-    expect(screen.getByText('tvarga on file0.ts:1')).toBeTruthy();
+    screen.getByText('tvarga on file0.ts:1');
     expect(screen.getAllByText('Ready for you').length).toBeGreaterThan(0);
-    expect(screen.getByText('Draft failed')).toBeTruthy();
+    screen.getByText('Draft failed');
     const rowIds = Array.from(document.querySelectorAll('[data-row-id]')).map((element) =>
       element.getAttribute('data-row-id'),
     );
@@ -1433,7 +1433,7 @@ describe('TimelinePane resolve batch', () => {
     fireEvent.click(toggle());
 
     expect(toggle().getAttribute('aria-expanded')).toBe('false');
-    expect(screen.getByText('tvarga on file0.ts:1')).toBeTruthy();
+    screen.getByText('tvarga on file0.ts:1');
     const leaving = Array.from(document.querySelectorAll<HTMLElement>('[data-leaving="true"]'));
     expect(leaving).toHaveLength(4);
     expect(leaving.every((row) => row.inert)).toBe(true);
@@ -1551,7 +1551,7 @@ describe('TimelinePane subagent group', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(screen.queryByRole('button', { name: /subagents/ })).toBeNull();
-    expect(screen.getByText('Scout thresholds')).toBeTruthy();
+    screen.getByText('Scout thresholds');
   });
 
   it('explodes upward on click and folds back on the second click', () => {
@@ -1563,7 +1563,7 @@ describe('TimelinePane subagent group', () => {
     fireEvent.click(toggle());
 
     expect(toggle().getAttribute('aria-expanded')).toBe('true');
-    expect(screen.getByText('Scout thresholds')).toBeTruthy();
+    screen.getByText('Scout thresholds');
     const ids = rowIds().filter(
       (id) => id?.startsWith('agent:sub') || id?.startsWith('subagents:'),
     );

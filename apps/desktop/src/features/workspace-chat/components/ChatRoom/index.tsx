@@ -24,6 +24,7 @@ import { ChatEmpty } from './ChatEmpty';
 import { ChatHeader } from './ChatHeader';
 import { ChatSessionsChip } from './ChatSessionsChip';
 import { ChatThread } from './ChatThread';
+import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -84,12 +85,18 @@ export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
     void loadChatMessages({ chatId });
   }, [chatId, messages, loadChatMessages]);
 
+  const workspaceDefaultProvider = useAppStore(
+    (state) => selectWorkspaceResolvedSettings({ state, workspaceId }).defaultProviderOverride,
+  );
   const model = useMemo<ChatRouting>(() => {
     if (chat !== null) {
       return { provider: chat.provider, model: chat.model, effort: chat.effort };
     }
-    return draftRouting ?? defaultChatRouting({ connected, saved: savedDefault });
-  }, [chat, draftRouting, connected, savedDefault]);
+    return (
+      draftRouting ??
+      defaultChatRouting({ connected, saved: savedDefault, workspaceDefaultProvider })
+    );
+  }, [chat, draftRouting, connected, savedDefault, workspaceDefaultProvider]);
 
   const send = async (text: string): Promise<void> => {
     if (chatId !== null) {
@@ -100,7 +107,12 @@ export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
       return;
     }
     const routing =
-      draftRouting ?? defaultChatRouting({ connected, saved: await readSavedDefault() });
+      draftRouting ??
+      defaultChatRouting({
+        connected,
+        saved: await readSavedDefault(),
+        workspaceDefaultProvider,
+      });
     const created = await createChat({
       workspaceId,
       provider: routing.provider,

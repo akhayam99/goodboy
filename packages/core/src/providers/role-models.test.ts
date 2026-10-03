@@ -327,14 +327,14 @@ describe('resolveRoleRouting', () => {
   it('starts a role on the workspace default provider, not on Claude', () => {
     expect(
       resolveRoleRouting({ role: 'implementer', prefs: null, auto: { defaultProvider: 'codex' } }),
-    ).toMatchObject({ provider: 'codex', model: 'gpt-5.6-sol', effort: 'medium' });
+    ).toMatchObject({ provider: 'codex', model: 'gpt-6.1-sol', effort: 'medium' });
   });
 
-  it('runs Custom and Report on Sonnet 5 Medium', () => {
+  it('runs Custom and Report on the newest Sonnet at Medium', () => {
     for (const role of ['custom', 'report']) {
       expect(resolveRoleRouting({ role, prefs: null })).toMatchObject({
         provider: 'anthropic',
-        model: 'sonnet-5',
+        model: 'sonnet-5.5',
         effort: 'medium',
       });
     }
@@ -369,7 +369,7 @@ describe('resolveRoleRouting', () => {
     });
     expect(resolved).toMatchObject({
       provider: 'anthropic',
-      model: 'sonnet-5',
+      model: 'sonnet-5.5',
       effort: 'high',
       isOverride: false,
       pinnedUnavailable: { provider: 'cursor', model: 'composer-2.5' },

@@ -444,14 +444,16 @@ type KindRoutingParams = {
 type KindAutoParams = Pick<KindRoutingParams, 'defaultProvider' | 'limitContext'>;
 
 const kindAutoContext = ({ defaultProvider, limitContext }: KindAutoParams): AutoContext | null => {
-  if (limitContext != null) {
-    return {
-      defaultProvider: defaultProvider ?? 'anthropic',
-      connected: limitContext.connected,
-      atLimit: limitContext.atLimit,
-    };
+  if (limitContext == null) {
+    return defaultProvider == null ? null : { defaultProvider };
   }
-  return defaultProvider == null ? null : { defaultProvider };
+  const isLimited = limitContext.atLimit.length > 0;
+  return {
+    defaultProvider: defaultProvider ?? 'anthropic',
+    ...(isLimited && { connected: limitContext.connected, atLimit: limitContext.atLimit }),
+    ...(limitContext.hidden != null && { hidden: limitContext.hidden }),
+    ...(limitContext.cliVersions != null && { cliVersions: limitContext.cliVersions }),
+  };
 };
 
 export const kindRouting = ({

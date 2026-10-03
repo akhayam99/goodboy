@@ -80,7 +80,7 @@ describe('outdatedCliModels', () => {
       installedVersion: '2.1.240',
       learned: [],
     });
-    expect(gates.map((gate) => gate.model.key)).toEqual(['fable-5.1', 'opus-5.5']);
+    expect(gates.map((gate) => gate.model.key)).toEqual(['fable-5.1', 'opus-5.5', 'sonnet-5.5']);
   });
 
   it('is empty on a current CLI', () => {

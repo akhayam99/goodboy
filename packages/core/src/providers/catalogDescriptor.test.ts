@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MODEL_CATALOGS } from './catalogs';
-import { catalogDescriptor } from './catalogDescriptor';
+import { PROVIDER_IDS } from '@goodboy/types';
+import { catalogDescriptor, WEIGHT_BY_KEY } from './catalogDescriptor';
 
 describe('catalogDescriptor weights', () => {
   it('ranks Astra one notch above Sol and below Fable 5.1', () => {
@@ -23,12 +24,26 @@ describe('catalogDescriptor weights', () => {
     expect(catalogDescriptor({ model: next }).weight).toBe(28);
   });
 
-  it('ranks kimi-k3 above the unlisted-model fallback and below sonnet-4.5', () => {
+  it('ranks kimi-k3 above the older kimi-k2 and below sonnet-4.5', () => {
     const kimi = MODEL_CATALOGS.moonshot.find((model) => model.key === 'kimi-k3');
     const sonnet = MODEL_CATALOGS.anthropic.find((model) => model.key === 'sonnet-4.5');
-    const unlisted = MODEL_CATALOGS.openrouter.find((model) => model.key === 'kimi-k2');
+    const older = MODEL_CATALOGS.openrouter.find((model) => model.key === 'kimi-k2');
     expect(catalogDescriptor({ model: kimi! }).weight).toBe(12);
-    expect(catalogDescriptor({ model: unlisted! }).weight).toBe(10);
+    expect(catalogDescriptor({ model: older! }).weight).toBe(8);
     expect(catalogDescriptor({ model: sonnet! }).weight).toBe(14);
+  });
+
+  it('gives every catalog model a weight row of its own', () => {
+    const missing = PROVIDER_IDS.flatMap((provider) =>
+      MODEL_CATALOGS[provider]
+        .filter((model) => !(model.key in WEIGHT_BY_KEY))
+        .map((model) => `${provider}:${model.key}`),
+    );
+    expect(missing).toEqual([]);
+  });
+
+  it('weighs the openrouter Astra like the codex one', () => {
+    const astra = MODEL_CATALOGS.openrouter.find((model) => model.key === 'gpt-6-astra');
+    expect(catalogDescriptor({ model: astra! }).weight).toBe(29);
   });
 });

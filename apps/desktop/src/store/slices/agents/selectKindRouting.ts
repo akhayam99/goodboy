@@ -1,12 +1,8 @@
 import type { SessionId } from '@goodboy/types';
-import {
-  kindRouting,
-  type AgentKind,
-  type AgentKindRouting,
-} from '../../../features/session/agent-kind';
+import type { AgentKind, AgentKindRouting } from '../../../features/session/agent-kind';
 import type { AppStore } from '../../store';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
-import { autoLimitContext } from '../providerLimits/autoLimitContext';
+import { scopedKindRouting } from './scopedKindRouting';
 
 type Params = {
   readonly state: AppStore;
@@ -14,12 +10,5 @@ type Params = {
   readonly kind: AgentKind;
 };
 
-export const selectKindRouting = ({ state, sessionId, kind }: Params): AgentKindRouting => {
-  const settings = selectResolvedSettings({ state, sessionId });
-  return kindRouting({
-    kind,
-    roleModels: settings?.roleModels ?? null,
-    defaultProvider: settings?.defaultProviderId ?? null,
-    limitContext: autoLimitContext({ state }),
-  });
-};
+export const selectKindRouting = ({ state, sessionId, kind }: Params): AgentKindRouting =>
+  scopedKindRouting({ state, settings: selectResolvedSettings({ state, sessionId }), kind });

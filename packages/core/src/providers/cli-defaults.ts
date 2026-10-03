@@ -1,7 +1,6 @@
 import type { ProviderId } from '@goodboy/types';
-import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from './capabilities';
+import { PROVIDER_CAPABILITIES } from './capabilities';
 import { CURSOR_AUTO_MODEL } from './cursor/models';
-import { isSpawnableAsItself } from './spawnableAsItself';
 
 export const getCheapModel = (providerId: ProviderId): string => {
   if (providerId === 'cursor') {
@@ -9,21 +8,6 @@ export const getCheapModel = (providerId: ProviderId): string => {
   }
   const caps = PROVIDER_CAPABILITIES[providerId];
   return caps.models.find((model) => model.tier === 'cheap')?.id ?? caps.models[0]!.id;
-};
-
-export const getMidModel = (providerId: ProviderId): string => {
-  const strongestMid = PROVIDER_CAPABILITIES[providerId].models
-    .filter((model) => model.costTier === 'mid')
-    .filter((model) => isSpawnableAsItself({ providerId, modelId: model.id }))
-    .reduce<{
-      id: string;
-      weight: number;
-    } | null>(
-      (best, model) =>
-        best == null || model.weight > best.weight ? { id: model.id, weight: model.weight } : best,
-      null,
-    );
-  return strongestMid?.id ?? getDefaultTurnModel({ id: providerId });
 };
 
 export const getDefaultBinary = (providerId: ProviderId): string => {

@@ -4,7 +4,14 @@ import { MODEL_CATALOGS } from '../catalogs';
 import { modelHasEffortAxis } from '../modelHasEffortAxis';
 import { SELECTABLE_AGENT_ROLES } from '../../roles';
 import { TASKS } from '../../settings/tasks';
-import { AUTO_DEFAULTS, type AutoChoice, type CuratedProviderId } from './defaults';
+import { latestInGroup } from '../latestInGroup';
+import {
+  AUTO_DEFAULTS,
+  AUTO_JOBS,
+  isPinnedJob,
+  type AutoChoice,
+  type CuratedProviderId,
+} from './defaults';
 
 const PROVIDERS = Object.keys(AUTO_DEFAULTS).filter(
   (id): id is CuratedProviderId => id in AUTO_DEFAULTS,
@@ -73,28 +80,42 @@ describe('AUTO_DEFAULTS', () => {
     }
   });
 
-  it('keeps the Claude column of 0.5 except the picks this round changes on purpose', () => {
-    const firstPick = (slot: (typeof SLOTS)[number]) => AUTO_DEFAULTS.anthropic[slot][0];
-    expect(firstPick('scout')).toEqual({ key: 'haiku-4.5', effort: 'low' });
-    expect(firstPick('implementer')).toEqual({ key: 'sonnet-5', effort: 'medium' });
-    expect(firstPick('tester')).toEqual({ key: 'sonnet-5', effort: 'medium' });
-    expect(firstPick('resolver')).toEqual({ key: 'sonnet-5', effort: 'medium' });
-    expect(firstPick('wireframe')).toEqual({ key: 'sonnet-5', effort: 'medium' });
-    expect(firstPick('rebase')).toEqual({ key: 'sonnet-5' });
-    expect(firstPick('summarizer')).toEqual({ key: 'haiku-4.5' });
-    expect(firstPick('investigator')).toEqual({ key: 'sonnet-5', effort: 'high' });
-    expect(firstPick('reviewer')).toEqual({ key: 'sonnet-5', effort: 'high' });
-    expect(firstPick('docs')).toEqual({ key: 'sonnet-5', effort: 'low' });
-    expect(firstPick('report')).toEqual({ key: 'sonnet-5', effort: 'medium' });
-    expect(firstPick('custom')).toEqual({ key: 'sonnet-5', effort: 'medium' });
-    expect(firstPick('plan_generation')).toEqual({ key: 'sonnet-5', effort: 'medium' });
-    expect(AUTO_DEFAULTS.anthropic.planner.map((choice) => choice.key)).toEqual([
-      'opus-5.5',
-      'opus-5',
-    ]);
+  it('starts every line cell on the newest non-legacy model of its line', () => {
+    for (const provider of PROVIDERS) {
+      for (const slot of SLOTS) {
+        const job = AUTO_JOBS[provider][slot][0];
+        if (job == null || isPinnedJob(job)) {
+          continue;
+        }
+        const newest = latestInGroup({ provider, group: job.group, checkpoint: job.checkpoint })[0];
+        expect(AUTO_DEFAULTS[provider][slot][0]?.key, `${provider} ${slot}`).toBe(newest?.key);
+      }
+    }
   });
 
-  it('shows every change to the table in the diff', () => {
-    expect(AUTO_DEFAULTS).toMatchSnapshot();
+  it('writes down why a cell holds a version back', () => {
+    const pinned = PROVIDERS.flatMap((provider) =>
+      SLOTS.flatMap((slot) => AUTO_JOBS[provider][slot].filter(isPinnedJob)),
+    );
+    for (const job of pinned) {
+      expect(job.pinnedBecause.length, job.key).toBeGreaterThan(20);
+    }
+    expect(new Set(pinned.map((job) => job.key))).toEqual(new Set(['sonnet-4.6']));
+  });
+
+  it('keeps the older models of a line as the fallback after the newest', () => {
+    expect(AUTO_DEFAULTS.anthropic.implementer.map((choice) => choice.key)).toEqual(
+      latestInGroup({ provider: 'anthropic', group: 'Sonnet' }).map((model) => model.key),
+    );
+    expect(AUTO_DEFAULTS.anthropic.implementer.length).toBeGreaterThan(1);
+  });
+
+  it('never lists the same model twice in one cell', () => {
+    for (const provider of PROVIDERS) {
+      for (const slot of SLOTS) {
+        const keys = AUTO_DEFAULTS[provider][slot].map((choice) => choice.key);
+        expect(new Set(keys).size, `${provider} ${slot}`).toBe(keys.length);
+      }
+    }
   });
 });
