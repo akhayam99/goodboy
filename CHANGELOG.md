@@ -12,6 +12,32 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.17.1
+
+The resolver Brief always shows its comment and next action, a step's subagents hang from the step, and every provider page has the same CLI row.
+
+### Improved
+
+#### The resolver Brief is never blank
+<!-- gb area=review -->
+
+The Brief of a resolver shows the review comment, the reply, the commit, the state in plain words and the next action, also when the thread belongs to another pull request. A thread that is gone says so and offers Open in Review.
+
+#### One shape for Providers and models
+<!-- gb area=providers screen=settings/providers -->
+
+The row for the provider order is now When a provider is out. A role and a chat row summarize their models in the same shape, and each provider page shows how many models are pinned.
+
+#### The same CLI row on every provider page
+<!-- gb area=providers screen=settings/providers -->
+
+The CLI row and its update notice sit under the Account rows of every provider page, also before you sign in.
+
+### Fixed
+
+- A step's subagents hang from the step's ball in Activity, not from the group above it. <!-- gb area=sessions -->
+- A CLI update always ends as updated, unchanged with the binary on your PATH, or failed. <!-- gb area=providers screen=settings/providers -->
+
 ## Goodboy v0.17.0
 
 Every Activity group hangs on a numbered ball, a review comment is the message the agent gets, and each thing has one name.

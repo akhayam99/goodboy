@@ -38,7 +38,7 @@
         },
         {
           "title": "Update the provider CLI",
-          "text": "A banner tells you when a model needs a newer provider tool. One button updates it once running turns finish.",
+          "text": "A notice under the account rows tells you when a model needs a newer provider tool. One button updates it once running turns finish, and it ends as updated, unchanged or failed.",
           "group": "Set up",
           "also": "CLI updates",
           "shown": true
