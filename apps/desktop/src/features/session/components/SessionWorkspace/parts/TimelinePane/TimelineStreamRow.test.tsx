@@ -206,13 +206,15 @@ describe('TimelineStreamRow', () => {
   });
 
   it('prints no clock on an answered question that sits in a lane', () => {
-    const answered = {
-      kind: 'question',
-      id: 'question:q1',
-      at: '2026-08-17T15:04:00Z',
-      questions: [{ id: 'q1', text: 'Which key?', status: 'answered', userAnswer: 'yes' }],
-      lane: { identity: runIdentity({ laneIndex: 0, seed: 0 }), rootEntryId: 'run:one' },
-    } as unknown as TimelineQuestionEntry;
+    const answered: TimelineQuestionEntry = JSON.parse(
+      JSON.stringify({
+        kind: 'question',
+        id: 'question:q1',
+        at: '2026-08-17T15:04:00Z',
+        questions: [{ id: 'q1', text: 'Which key?', status: 'answered', userAnswer: 'yes' }],
+        lane: { identity: runIdentity({ laneIndex: 0, seed: 0 }), rootEntryId: 'run:one' },
+      }),
+    );
     render(
       <TimelineStreamRow
         item={{ ...itemOf(), id: 'question:q1', grade: 'fact', entry: answered }}

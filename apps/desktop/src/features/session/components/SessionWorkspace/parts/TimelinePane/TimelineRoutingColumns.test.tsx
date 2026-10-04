@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import type { AgentRowWork } from '../../../../hooks/useAgentRowWork';
 import { DONE_ROW_STATE } from '../../../../../workTreeModel/rowState';
@@ -8,6 +8,16 @@ import { TimelineAgentMeta } from './TimelineAgentMeta';
 import { TimelineProviderGlyph } from './TimelineProviderGlyph';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
 import { TimelineRouting, type TimelineRoutingFacts } from './timelineRouting';
+
+vi.mock('../../../../../../shared/components/RoutingLabel', () => ({
+  RoutingLabel: ({ hideGlyph, hideName }: { hideGlyph?: boolean; hideName?: boolean }) => (
+    <span
+      data-testid="routing"
+      data-hide-glyph={String(hideGlyph)}
+      data-hide-name={String(hideName)}
+    />
+  ),
+}));
 
 afterEach(cleanup);
 
@@ -29,8 +39,13 @@ const mixed: TimelineRoutingFacts = {
   modelShownAgentIds: new Set(['odd']),
 };
 
-const nameOf = (container: HTMLElement): Element | null =>
-  container.querySelector('[data-routing-part="name"]');
+const flagsOf = (container: HTMLElement) => {
+  const node = container.querySelector('[data-testid="routing"]');
+  return {
+    glyph: node?.getAttribute('data-hide-glyph'),
+    name: node?.getAttribute('data-hide-name'),
+  };
+};
 
 describe('TimelineProviderGlyph', () => {
   it('shows the glyph with no facts, like every list outside the activity', () => {
@@ -64,8 +79,7 @@ describe('TimelineAgentMeta routing column', () => {
   it('shows glyph and name with no facts', () => {
     const { container } = render(<TimelineAgentMeta work={work} costUsd={0} agentId="same" />);
 
-    expect(container.querySelector('svg')).not.toBeNull();
-    expect(nameOf(container)?.classList.contains('sr-only')).toBe(false);
+    expect(flagsOf(container)).toEqual({ glyph: 'false', name: 'false' });
   });
 
   it('drops the glyph and the name of a row that matches its group', () => {
@@ -75,8 +89,7 @@ describe('TimelineAgentMeta routing column', () => {
       </TimelineRouting.Provider>,
     );
 
-    expect(container.querySelector('svg')).toBeNull();
-    expect(nameOf(container)?.classList.contains('sr-only')).toBe(true);
+    expect(flagsOf(container)).toEqual({ glyph: 'true', name: 'true' });
   });
 
   it('keeps the name of the row that differs from its group', () => {
@@ -86,8 +99,17 @@ describe('TimelineAgentMeta routing column', () => {
       </TimelineRouting.Provider>,
     );
 
-    expect(container.querySelector('svg')).not.toBeNull();
-    expect(nameOf(container)?.classList.contains('sr-only')).toBe(false);
+    expect(flagsOf(container)).toEqual({ glyph: 'false', name: 'false' });
+  });
+
+  it('keeps the glyph but drops the name of a matching row in a mixed session', () => {
+    const { container } = render(
+      <TimelineRouting.Provider value={mixed}>
+        <TimelineAgentMeta work={work} costUsd={0} agentId="same" />
+      </TimelineRouting.Provider>,
+    );
+
+    expect(flagsOf(container)).toEqual({ glyph: 'false', name: 'true' });
   });
 });
 

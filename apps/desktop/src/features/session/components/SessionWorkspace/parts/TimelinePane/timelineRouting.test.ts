@@ -25,7 +25,9 @@ const route = (
 });
 
 const agentEntry = (id: string, children: ReadonlyArray<TimelineAgentEntry> = []) =>
-  ({ kind: 'agent', id: `agent:${id}`, agent: { id }, children }) as unknown as TimelineAgentEntry;
+  JSON.parse(
+    JSON.stringify({ kind: 'agent', id: `agent:${id}`, agent: { id }, children }),
+  ) as TimelineAgentEntry;
 
 describe('routingFactsOf', () => {
   it('shows the glyph only when the session uses two providers or more', () => {
@@ -104,7 +106,9 @@ describe('agentGroupsOf', () => {
     const nested = agentEntry('nested');
     const parent = agentEntry('parent', [nested]);
     const inRun = agentEntry('inRun');
-    const run = { kind: 'run', id: 'run:1', children: [inRun] } as unknown as TimelineRunEntry;
+    const run: TimelineRunEntry = JSON.parse(
+      JSON.stringify({ kind: 'run', id: 'run:1', children: [inRun] }),
+    );
     const entries: ReadonlyArray<TimelineTopLevelEntry> = [agentEntry('top'), parent, run];
 
     const groups = agentGroupsOf({ entries }).map(({ agent, groupId }) => [

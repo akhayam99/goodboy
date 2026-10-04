@@ -66,22 +66,26 @@ export const useExecutedAgentRoutings = ({
   agents,
 }: ExecutedRoutingsParams): ReadonlyMap<string, ExecutedAgentRouting | null> => {
   const records = useAppStore((state) => state.sessionTelemetry[sessionId] ?? EMPTY_TELEMETRY);
-  const runHistory = useAppStore((state) => state.agentRunHistory);
-  const liveRouting = useAppStore((state) => state.runRouting);
+  const runHistories = useAppStore(
+    useShallow((state) => agents.map((agent) => state.agentRunHistory[agent.id])),
+  );
+  const liveRoutings = useAppStore(
+    useShallow((state) => agents.map((agent) => state.runRouting[agent.id])),
+  );
   return useMemo(
     () =>
       new Map(
-        agents.map((agent) => [
+        agents.map((agent, index) => [
           agent.id,
           executedAgentRouting({
             agentRunId: agent.runId ?? null,
-            runHistory: runHistory[agent.id] ?? EMPTY_RUN_IDS,
+            runHistory: runHistories[index] ?? EMPTY_RUN_IDS,
             records,
-            liveRouting: liveRouting[agent.id] ?? EMPTY_RUN_ROUTING,
+            liveRouting: liveRoutings[index] ?? EMPTY_RUN_ROUTING,
           }),
         ]),
       ),
-    [agents, runHistory, liveRouting, records],
+    [agents, runHistories, liveRoutings, records],
   );
 };
 
