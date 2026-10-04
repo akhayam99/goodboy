@@ -38,6 +38,7 @@ export const NAMES = {
   yourJob: 'Your job',
   markThreadResolved: 'Mark thread as resolved',
   hasASession: 'Has a session',
+  guidance: 'Guidance',
   role: {
     scout: 'Scout',
     planner: 'Planner',
@@ -73,6 +74,7 @@ const FORMER_NAMES: Readonly<Record<string, ReadonlyArray<string>>> = {
   [NAMES.yourJob]: ['Your roles'],
   [NAMES.markThreadResolved]: ['Resolve the thread after replying'],
   [NAMES.hasASession]: ['With a session'],
+  [NAMES.guidance]: ['Standing guidance'],
 };
 
 export const formerNamesOf = (name: string): ReadonlyArray<string> => FORMER_NAMES[name] ?? [];
