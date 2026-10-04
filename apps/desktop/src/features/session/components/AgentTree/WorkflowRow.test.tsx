@@ -661,7 +661,7 @@ describe('WorkflowRow dynamic runs', () => {
     expect(screen.getByTitle('$3.5000 for this run')).toBeDefined();
   });
 
-  it('offers the spend limit next to what the dynamic run has cost', () => {
+  it('offers the spend cap next to what the dynamic run has cost', () => {
     renderDetail({
       runOverride: { ...dynamicRun, spendLimitUsd: 20 },
       agentsOverride: doneAgents,
@@ -669,7 +669,7 @@ describe('WorkflowRow dynamic runs', () => {
     });
 
     const [trigger] = screen.getAllByTestId('run-spend-limit-trigger');
-    expect(trigger?.textContent).toContain('Spend limit $20.00');
+    expect(trigger?.textContent).toContain('Spend cap $20.00');
   });
 
   it('marks the dynamic run completed only on a persisted done outcome', () => {

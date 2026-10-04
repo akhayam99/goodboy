@@ -80,7 +80,7 @@ talking to a market. There are two voices:
 - **Options never say "I", "me" or "my".** An option says what the app does:
   "Write it", "Your replies", "Run in terminal", "Warn only".
 - **One scale for "stop and ask".** "Ask first" is the only label for it, in
-  Settings, Slack, after-merge cleanup and spend limits.
+  Settings, Slack, after-merge cleanup and spend caps.
 - **Code identifiers in backticks**: `pnpm tauri:dev`, not "the pnpm tauri:dev
   command".
 

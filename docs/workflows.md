@@ -266,7 +266,7 @@ or a decision is in flight, **Resume** while the run is paused, and **Stop**
 (with an inline confirmation) in both. Besides them it shows at most one
 action: **Decide next step** only when the run asks before each step,
 **Continue the run** after you stopped it or once it is complete, **Retry**
-after a failed decision, or the spend limit on a budget pause. A failed step and an open
+after a failed decision, or the spend cap on a budget pause. A failed step and an open
 question are left to the Next action strip, so the row only says the run is
 paused, on a neutral rail: the strip above carries the tone. When the pane is
 too narrow for the sentence and the controls on one line, the controls wrap to
@@ -307,19 +307,19 @@ with the step where the orchestrator first read it.
 
 Asking for a certain provider or model on a step is a hint too.
 
-### Spend limit
+### Spend cap
 
-Each run can have a spending limit in dollars. You set it on the run, in the
+Each run can have a spend cap in dollars. You set it on the run, in the
 orchestrator strip or in the creation form. You also choose what happens when
 the run reaches it: **Pause workflows** or **Warn only**, the same editor
-and words as the session's spend limit. The limit starts at unlimited. The
+and words as the session's spend cap. The cap starts at unlimited. The
 orchestrator decides how many steps to plan based on the goal.
 
-A session has its own spend limit, set from the spend chip in its header. With
+A session has its own spend cap, set from the spend chip in its header. With
 **Pause workflows** (the default) every workflow of the session stops at the
-limit and its strip says `Paused at the $10.00 spend limit for this session.`
-with **Raise limit**, which opens the chip on the editor. With **Warn only**
-nothing stops: one notification says the session passed its limit. Single
+cap and its strip says `Paused at the $10.00 spend cap for this session.`
+with **Raise spend cap**, which opens the chip on the editor. With **Warn only**
+nothing stops: one notification says the session passed its cap. Single
 agents are never stopped by it.
 
 ## How a run advances
@@ -337,7 +337,7 @@ A run waits when:
 
 When a run waits for more than one reason, its row in the activity feed says
 one thing only. A failed or blocked step comes first, then an open question, then a step
-waiting for your click, then the spend limit. A summarizer writing the handoff
+waiting for your click, then the spend cap. A summarizer writing the handoff
 and an agent still running are Goodboy at work, so the row shows them as
 running, never as waiting on you. The rule lives in `resolveRunRowState`.
 
@@ -729,8 +729,8 @@ an `orchestrator_decision` event, and its spend is recorded against the run.
 - **One decision at a time.** A request that comes in while the run is
   deciding waits in a queue and runs once the current decision settles.
 - **Stops are saved, with a kind.** Before the call, the orchestrator checks
-  for a session paused by its spend limit (`sessionBudgetBlockAfterLoad`,
-  which reads `session_budgets.on_exceed` first), the run's spend limit in
+  for a session paused by its spend cap (`sessionBudgetBlockAfterLoad`,
+  which reads `session_budgets.on_exceed` first), the run's spend cap in
   pause mode, and open
   questions that block the run. Each one saves a `budget` or `questions` stop.
   A failed or unreadable call saves `failure`. **Stop** saves `operator`,

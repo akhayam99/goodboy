@@ -867,7 +867,7 @@ describe('resolve queue scheduler', () => {
     expect(h.slots.get(SHARED_PATH)?.holder).toBe(AGENT_2);
   });
 
-  it('reports a request the budget cap turned away instead of leaving it running', async () => {
+  it('reports a request the spend cap turned away instead of leaving it running', async () => {
     const harness = createHarness({ worktreePathBySession: { [SESSION_A]: SHARED_PATH } });
     harness.sendTurn.mockResolvedValueOnce({
       blockedOverBudget: true,
@@ -885,7 +885,7 @@ describe('resolve queue scheduler', () => {
     );
 
     expect((harness.get().sessionResolveAttempts[SESSION_A] ?? [])[0]?.error).toBe(
-      'every provider is over its budget cap',
+      'every provider is over its spend cap',
     );
     expect(h.slots.size).toBe(0);
   });

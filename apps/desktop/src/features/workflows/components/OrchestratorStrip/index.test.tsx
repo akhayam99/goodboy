@@ -369,16 +369,16 @@ describe('OrchestratorStrip state ladder', () => {
       runOverride: run({
         orchestrationStop: {
           kind: 'budget',
-          message: 'Paused at the $12.00 spend limit for this run.',
+          message: 'Paused at the $12.00 spend cap for this run.',
         },
       }),
     });
 
-    expect(sentence()).toBe('Paused at the $12.00 spend limit for this run.');
+    expect(sentence()).toBe('Paused at the $12.00 spend cap for this run.');
     expect(screen.queryByTestId('orchestrator-retry')).toBeNull();
     fireEvent.click(screen.getByTestId('run-spend-limit-trigger'));
 
-    expect(screen.getByRole('dialog', { name: 'Spend limit for this run' })).toBeDefined();
+    expect(screen.getByRole('dialog', { name: 'Spend cap for this run' })).toBeDefined();
   });
 
   it('reads a budget pause worded differently as a pause all the same', () => {
@@ -386,9 +386,9 @@ describe('OrchestratorStrip state ladder', () => {
       runOverride: run({ orchestrationStop: { kind: 'budget', message: 'any other wording' } }),
     });
 
-    expect(sentence()).toBe('Paused at the spend limit');
+    expect(sentence()).toBe('Paused at the spend cap');
     expect(screen.getByTestId('run-spend-limit-trigger').textContent).toContain(
-      'Raise the spend limit',
+      'Raise the spend cap',
     );
   });
 
@@ -763,7 +763,7 @@ describe('OrchestratorStrip hints and money', () => {
     expect(screen.queryByTestId('run-spend-limit-trigger')).toBeNull();
   });
 
-  it('leaves one spend limit control on a budget pause and no budget button', () => {
+  it('leaves one spend cap control on a budget pause and no budget button', () => {
     renderStrip({
       runOverride: run({ orchestrationStop: { kind: 'budget', message: 'cap reached' } }),
     });
@@ -782,11 +782,11 @@ describe('OrchestratorStrip hints and money', () => {
     expect(screen.queryByTestId('orchestrator-budget')).toBeNull();
   });
 
-  it('keeps the spend limit out of the state sentence', () => {
+  it('keeps the spend cap out of the state sentence', () => {
     renderStrip({ runOverride: run({ spendLimitUsd: 12, spendLimitMode: 'notify' }) });
 
     expect(screen.queryByTestId('orchestrator-spend-limit')).toBeNull();
-    expect(screen.getByTestId('orchestrator-strip').textContent).not.toContain('Spend limit');
+    expect(screen.getByTestId('orchestrator-strip').textContent).not.toContain('Spend cap');
   });
 
   it('sends a session limit pause to the session limit editor, not to the run limit', () => {
@@ -818,7 +818,7 @@ describe('OrchestratorStrip hints and money', () => {
     expect(screen.getByTestId('run-spend-limit-trigger')).toBeDefined();
   });
 
-  it('saves a spend limit for the run from the budget pause', () => {
+  it('saves a spend cap for the run from the budget pause', () => {
     renderStrip({
       runOverride: run({ orchestrationStop: { kind: 'budget', message: 'cap reached' } }),
     });

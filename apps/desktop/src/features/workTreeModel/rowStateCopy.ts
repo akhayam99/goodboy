@@ -11,7 +11,7 @@ export const ROW_NODE_LABEL: Record<RowNodeState, string> = {
   ready: 'Ready to run',
   running: 'Running',
   question: 'Waiting on your answer',
-  budget: 'Paused at the spend limit',
+  budget: 'Paused at the spend cap',
   approval: 'Waiting for your approval',
   failed: 'Failed',
   done: 'Done',
@@ -37,8 +37,8 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
       return null;
     case 'budget':
       return reason.limitUsd == null
-        ? 'Paused at the spend limit'
-        : `Paused at the ${formatUsd(reason.limitUsd)} spend limit`;
+        ? 'Paused at the spend cap'
+        : `Paused at the ${formatUsd(reason.limitUsd)} spend cap`;
     case 'failed':
       return 'Failed';
     case 'blocked':
@@ -102,7 +102,7 @@ const reasonShortSentence = ({ reason }: ReasonParams): string | null => {
     case 'openQuestions':
       return null;
     case 'budget':
-      return 'At spend limit';
+      return 'At spend cap';
     case 'paused':
       return 'Paused';
     case 'planReady':

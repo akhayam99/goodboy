@@ -93,7 +93,7 @@ database.
 The route is resolved once per turn, in this precedence: a fallback retry, a
 model the user explicitly picked for this turn, the workflow node's routing,
 the turn override, then the agent's own pin. `resolveProviderForTurn` then
-applies budget caps and cooldowns. When every provider is over its cap the turn
+applies spend caps and cooldowns. When every provider is over its cap the turn
 does not start and says so; when budget moved it to another provider, the
 transcript carries a notice. A turn that ran on anything other than the model
 the user picked raises a warning notification naming both. A disconnected

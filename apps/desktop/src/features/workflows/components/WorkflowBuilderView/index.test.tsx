@@ -884,7 +884,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     expect(document.getElementById(afterGoal ?? '')?.textContent).toMatch(/ to start$/);
   });
 
-  it('says why an unparsable spend limit blocks start instead of going mute', () => {
+  it('says why an unparsable spend cap blocks start instead of going mute', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     setGoal();
     fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
@@ -892,33 +892,33 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
       target: { value: 'Inspect each result and stop after tests pass.' },
     });
     openSpendCap();
-    fireEvent.click(screen.getByRole('switch', { name: /spend limit/i }));
-    fireEvent.change(screen.getByLabelText('Spend limit in dollars'), {
+    fireEvent.click(screen.getByRole('switch', { name: /spend cap/i }));
+    fireEvent.change(screen.getByLabelText('Spend cap in dollars'), {
       target: { value: 'not a number' },
     });
 
     expect(startBtn().hasAttribute('disabled')).toBe(true);
-    expect(screen.getByText('Enter a valid spend limit to start')).toBeDefined();
+    expect(screen.getByText('Enter a valid spend cap to start')).toBeDefined();
   });
 
-  it('keeps spend limit collapsed until enabled and reveals the outcome after an amount', async () => {
+  it('keeps spend cap collapsed until enabled and reveals the outcome after an amount', async () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     setGoal();
     fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
     openSpendCap();
-    expect(screen.queryByLabelText('Spend limit in dollars')).toBeNull();
+    expect(screen.queryByLabelText('Spend cap in dollars')).toBeNull();
     expect(screen.queryByRole('tab', { name: /Warn only/ })).toBeNull();
     expect(screen.queryByRole('tab', { name: /Pause workflows/ })).toBeNull();
 
-    fireEvent.click(screen.getByRole('switch', { name: /spend limit/i }));
-    expect(screen.getByLabelText('Spend limit in dollars')).toBeDefined();
+    fireEvent.click(screen.getByRole('switch', { name: /spend cap/i }));
+    expect(screen.getByLabelText('Spend cap in dollars')).toBeDefined();
     expect(screen.queryByRole('tab', { name: /Warn only/ })).toBeNull();
     expect(screen.queryByRole('tab', { name: /Pause workflows/ })).toBeNull();
 
     fireEvent.change(guidanceField(), {
       target: { value: 'Inspect each result and stop after tests pass.' },
     });
-    fireEvent.change(screen.getByLabelText('Spend limit in dollars'), {
+    fireEvent.change(screen.getByLabelText('Spend cap in dollars'), {
       target: { value: '15' },
     });
     expect(screen.getByRole('tab', { name: /Warn only/ })).toBeDefined();
@@ -938,7 +938,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     });
   });
 
-  it('leaves the run uncapped when the spend limit is left empty', async () => {
+  it('leaves the run uncapped when the spend cap is left empty', async () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     setGoal();
     fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
