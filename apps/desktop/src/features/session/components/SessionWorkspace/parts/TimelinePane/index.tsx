@@ -99,10 +99,7 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
   const rowKindCount = new Set(entries.map((entry) => activityCategoryOf({ entry }))).size;
   const hasFilter = rowKindCount >= 2 || activity.hidden.length > 0 || isNeedsYou;
   const isLoading = !rows.isLoaded && entries.length === 0;
-  const emptyHint =
-    rows.isLoaded && entries.length === 0
-      ? 'Nothing yet. Agents, workflows and session facts land here as they happen.'
-      : undefined;
+  const emptyHint = rows.isLoaded && entries.length === 0 ? 'Nothing yet' : undefined;
 
   return (
     <section aria-label="Activity" className="@container/activity flex flex-col gap-2">

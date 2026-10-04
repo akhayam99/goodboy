@@ -165,7 +165,6 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
           tone={CONCEPT_TONE.diff}
           icon={CONCEPT_ICONS.diff}
           title="No versions yet"
-          description="When an agent edits a file, Goodboy stores the file as it was before the edit. The first change will appear here."
           action={
             <Button variant="ghost" size="sm" onClick={onClose}>
               Close

@@ -195,8 +195,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
         <LensEmptyState
           tone={CONCEPT_TONE.questions}
           icon={CONCEPT_ICONS.questions}
-          title="No open questions"
-          description="When an agent needs a decision, it shows up here."
+          title="No questions"
         />
       </PaneShell>
     );
@@ -244,10 +243,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
           {question === null || selectedRow === null ? (
             <div className="flex h-full flex-col items-center justify-center gap-1.5 p-6 text-center">
               <CircleCheck size={ICON_SIZE.control} aria-hidden className="text-success" />
-              <span className="text-heading text-foreground">Nothing needs you right now</span>
-              <span className="text-label text-faint-foreground">
-                Agents ask here when they need a call from you.
-              </span>
+              <span className="text-heading text-foreground">No questions</span>
             </div>
           ) : (
             <div className="mx-auto w-full max-w-[40rem] px-10 py-6 @max-[56rem]:px-6">

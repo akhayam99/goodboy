@@ -42,7 +42,6 @@ export const GitlabIssueDetail = ({ issue, workspaceId, projectId, frame = null 
       onPost: post == null ? null : ({ body, threadId }) => post({ body, discussionId: threadId }),
       onResolve: null,
       resolveError: null,
-      emptyDescription: 'Notes on this issue show up here.',
       footnote: systemNoteFootnote({ count: conversation.systemNoteCount }),
       composerNote: null,
       renderMessageFooter: null,

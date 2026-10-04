@@ -56,11 +56,7 @@ export const RecentDecisions = ({ workspaceId }: Props) => {
     return <p className="text-secondary text-danger">{`Couldn't read the decisions: ${error}`}</p>;
   }
   if (!isLoading && decisions.length === 0) {
-    return (
-      <p className="text-secondary text-muted-foreground">
-        No decisions yet. Approvals and rule matches show up here.
-      </p>
-    );
+    return <p className="text-secondary text-muted-foreground">No decisions yet</p>;
   }
   return (
     <ul

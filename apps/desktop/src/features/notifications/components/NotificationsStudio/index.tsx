@@ -186,8 +186,7 @@ export const NotificationsStudio = ({ onClose }: Props) => {
                 <EmptyState
                   icon={CONCEPT_ICONS.notifications}
                   tone={CONCEPT_TONE.notifications}
-                  title="Nothing to catch up on"
-                  description="Session milestones, retries and budget alerts land here as they happen."
+                  title="No notifications"
                   size="lg"
                   headingLevel={2}
                 />

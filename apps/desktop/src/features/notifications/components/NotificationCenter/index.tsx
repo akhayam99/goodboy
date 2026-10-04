@@ -175,10 +175,10 @@ export const NotificationCenter = () => {
           <FilledEmptyState
             icon={Bell}
             tone={CONCEPT_TONE.notifications}
-            title={notifications.length === 0 ? 'No notifications' : 'You are caught up'}
+            title={notifications.length === 0 ? 'No notifications' : "You're caught up"}
             description={
               notifications.length === 0
-                ? 'Run activity and alerts land here.'
+                ? undefined
                 : 'Everything new has been seen. All shows the history.'
             }
           />

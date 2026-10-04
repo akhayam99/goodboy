@@ -109,8 +109,7 @@ export const InboxList = ({
         <EmptyState
           icon={CONCEPT_ICONS.inbox}
           tone={CONCEPT_TONE.inbox}
-          title="Connect a tool to fill the inbox"
-          description="Issues, pull requests, threads and errors assigned to you land here."
+          title="Nothing assigned to you"
           action={
             <Button variant="secondary" size="sm" onClick={onOpenSettings}>
               Connect a tool
@@ -125,7 +124,6 @@ export const InboxList = ({
           icon={CONCEPT_ICONS.inbox}
           tone={CONCEPT_TONE.inbox}
           title="Nothing assigned to you"
-          description="Connected tools have no open issues, reviews, threads or errors for you."
           size="lg"
           headingLevel={2}
         />
