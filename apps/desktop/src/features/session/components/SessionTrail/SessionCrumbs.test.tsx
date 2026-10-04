@@ -222,7 +222,7 @@ const openStepSurface = () => {
 
 beforeEach(() => {
   h.currentSession = session;
-  h.stage = { stage: 'running', reason: 'running', attention: null, prState: null };
+  h.stage = { stage: 'running', reason: 'running', addsFact: true, attention: null, prState: null };
   h.crumbs = [
     { id: 'overview', label: 'Overview', onClick: vi.fn() },
     { id: 'lens-agents', label: 'Agents', onClick: vi.fn() },
@@ -256,7 +256,13 @@ describe('SessionCrumbs', () => {
   });
 
   it('marks a session whose pull request was closed as abandoned, not integrated', () => {
-    h.stage = { stage: 'done', reason: 'PR #12 closed', attention: null, prState: 'closed' };
+    h.stage = {
+      stage: 'done',
+      reason: 'PR #12 closed',
+      addsFact: true,
+      attention: null,
+      prState: 'closed',
+    };
     renderCrumbs();
 
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
@@ -266,7 +272,13 @@ describe('SessionCrumbs', () => {
   });
 
   it('still marks a merged session as integrated', () => {
-    h.stage = { stage: 'done', reason: 'PR #12 merged', attention: null, prState: 'merged' };
+    h.stage = {
+      stage: 'done',
+      reason: 'PR #12 merged',
+      addsFact: true,
+      attention: null,
+      prState: 'merged',
+    };
     renderCrumbs();
 
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });

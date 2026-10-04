@@ -245,7 +245,7 @@ export const StageBoardCard = memo(function StageBoardCard({
 
         {progress !== null ? (
           <SessionProgress progress={progress} tone={summary.tone} />
-        ) : reason !== '' ? (
+        ) : reason !== '' && summary.addsFact ? (
           <span className="truncate text-secondary text-muted-foreground">{reason}</span>
         ) : null}
       </span>

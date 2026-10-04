@@ -30,6 +30,7 @@ export type SessionSummary = {
   readonly attention: SessionAttentionReason | null;
   readonly tone: Tone;
   readonly reason: string;
+  readonly addsFact: boolean;
   readonly description: string;
   readonly prState: PullRequestStateKind | null;
   readonly progress: WorkflowProgress | null;
@@ -94,6 +95,7 @@ export const useSessionSummary = ({ session }: Params): SessionSummary => {
     attention: stageInfo.attention,
     tone: presentation.tone,
     reason: stageInfo.reason,
+    addsFact: stageInfo.addsFact,
     description: stateDescription({ presentation }),
     prState: stageInfo.prState,
     progress,

@@ -61,6 +61,7 @@ const SessionActivityItemView = ({
   const title = sessionDisplayTitle({ session, tasks: summary.tasks });
   const isReasonInMeta =
     summary.attention === 'open-question' && summary.actionable?.kind === 'questions';
+  const shownReason = isReasonInMeta || !summary.addsFact ? '' : summary.reason;
   const sessionId = session.id as SessionId;
   const anchorKey = `sidebar:${sessionId}`;
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
@@ -173,7 +174,7 @@ const SessionActivityItemView = ({
               <SessionProgress progress={summary.progress} tone={summary.tone} className="flex-1" />
             ) : (
               <span className="min-w-0 flex-1 truncate text-secondary text-muted-foreground">
-                {isReasonInMeta ? null : summary.reason}
+                {shownReason}
               </span>
             )}
             {summary.meta.map((item) => (
