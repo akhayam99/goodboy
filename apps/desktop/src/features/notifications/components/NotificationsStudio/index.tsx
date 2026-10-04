@@ -138,7 +138,7 @@ export const NotificationsStudio = ({ onClose }: Props) => {
       icon={CONCEPT_ICONS.notifications}
       tone={CONCEPT_TONE.notifications}
       title="Notifications"
-      closeLabel="close notifications"
+      closeLabel="Close notifications"
       onClose={onClose}
     >
       {() => (

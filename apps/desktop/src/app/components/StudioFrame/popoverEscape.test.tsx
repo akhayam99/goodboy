@@ -43,7 +43,7 @@ describe('a popover inside a studio', () => {
     const onClose = vi.fn();
     render(
       <StudioFrame kind="workflow" onClose={onClose}>
-        <StudioShell title="Workflows" closeLabel="close workflows" onClose={() => undefined}>
+        <StudioShell title="Workflows" closeLabel="Close workflows" onClose={() => undefined}>
           {() => <ImportPopover workspaceId={WORKSPACE_ID} takenNames={new Set()} />}
         </StudioShell>
       </StudioFrame>,

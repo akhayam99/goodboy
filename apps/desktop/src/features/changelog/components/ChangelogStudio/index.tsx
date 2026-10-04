@@ -153,7 +153,7 @@ export const ChangelogStudio = ({ onClose, onOpenScreen }: Props) => {
       tone={CONCEPT_TONE.changelog}
       title="Changelog"
       {...(installedVersion !== null && { subtitle: `Installed ${installedVersion}` })}
-      closeLabel="close changelog"
+      closeLabel="Close changelog"
       onClose={onClose}
     >
       {() => (

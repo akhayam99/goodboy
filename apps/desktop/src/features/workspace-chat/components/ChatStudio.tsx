@@ -47,7 +47,7 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
       icon={CONCEPT_ICONS.chat}
       tone={CONCEPT_TONE.chat}
       title="Chat"
-      closeLabel="close chat"
+      closeLabel="Close chat"
       onClose={onClose}
     >
       {() => (

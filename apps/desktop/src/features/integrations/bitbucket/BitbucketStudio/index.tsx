@@ -69,7 +69,7 @@ export const BitbucketStudio = ({ sessionId, onClose }: Props) => {
     <StudioShell
       glyph={<IntegrationGlyph provider="bitbucket" size={20} />}
       title="Bitbucket"
-      closeLabel="close bitbucket"
+      closeLabel="Close bitbucket"
       headerAccessory={
         isConnected && workspaceId != null ? (
           <IntegrationDisconnect

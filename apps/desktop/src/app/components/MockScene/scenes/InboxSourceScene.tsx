@@ -308,7 +308,7 @@ export const InboxSourceScene = () => {
           icon={CONCEPT_ICONS.inbox}
           tone={CONCEPT_TONE.inbox}
           title="Inbox"
-          closeLabel="close inbox"
+          closeLabel="Close inbox"
           onClose={noop}
         >
           {() => (
