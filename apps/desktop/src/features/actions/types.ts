@@ -4,6 +4,7 @@ import type {
   ArtifactId,
   MountId,
   ProjectId,
+  SessionExternalTaskProvider,
   SessionId,
   WorkflowRunId,
   WorktreeStatus,
@@ -304,6 +305,14 @@ export type WriteReviewActionTarget = {
   readonly draftId: string | null;
 };
 
+export type TaskActionTarget = {
+  readonly kind: 'task';
+  readonly sessionId: SessionId;
+  readonly provider: SessionExternalTaskProvider;
+  readonly externalId: string;
+  readonly branch: string | null;
+};
+
 export type ObjectTarget =
   | SessionActionTarget
   | SessionsActionTarget
@@ -326,4 +335,5 @@ export type ObjectTarget =
   | LinkActionTarget
   | ReviewActionTarget
   | ReviewCommentActionTarget
-  | WriteReviewActionTarget;
+  | WriteReviewActionTarget
+  | TaskActionTarget;

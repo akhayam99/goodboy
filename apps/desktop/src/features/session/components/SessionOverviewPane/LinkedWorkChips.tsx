@@ -1,16 +1,12 @@
-import { GitBranch } from 'lucide-react';
 import { Chip, SkeletonChip } from '@goodboy/ui';
-import type {
-  LinkedIssue,
-  SessionExternalTask,
-  SessionExternalTaskProvider,
-  SessionId,
-} from '@goodboy/types';
+import type { LinkedIssue, SessionExternalTaskProvider, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
 import { externalTaskLinkKey } from '../../../../store/slices/sessions/externalTaskLinkKey';
 import { useSessionSkeleton } from '../../hooks/useSessionSkeleton';
+import { TaskChipMenu } from '../TaskChipMenu';
+import { distinctTasks } from '../TaskChipMenu/distinctTasks';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -46,52 +42,14 @@ const IssueChip = ({ issue, onOpen }: IssueChipProps) => (
   />
 );
 
-type TaskChipProps = {
-  readonly task: SessionExternalTask;
-  readonly onOpen: () => void;
-};
-
-const TaskChip = ({ task, onOpen }: TaskChipProps) => {
-  const onBranch = task.scope === 'branch' ? (task.branch ?? null) : null;
-  return (
-    <Chip
-      as="button"
-      tone="neutral"
-      shape="badge"
-      size="control"
-      onClick={onOpen}
-      title={
-        onBranch === null
-          ? `${task.identifier}: ${task.title}`
-          : `${task.identifier} on ${onBranch}: ${task.title}`
-      }
-      ariaLabel={
-        onBranch === null ? `Open ${task.identifier}` : `Open ${task.identifier} on ${onBranch}`
-      }
-      icon={
-        onBranch === null ? (
-          <IntegrationGlyph provider={task.provider} size="xs" />
-        ) : (
-          <span className="flex items-center gap-1">
-            <IntegrationGlyph provider={task.provider} size="xs" />
-            <GitBranch size={11} aria-hidden />
-          </span>
-        )
-      }
-      label={<span className="font-mono">{task.identifier}</span>}
-    />
-  );
-};
-
 export const LinkedWorkChips = ({ sessionId, onSelectLens }: Props) => {
   const github = useAppStore((s) => s.sessionGithub[sessionId]);
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
   const setFocusedGithubIssueNumber = useAppStore((s) => s.setFocusedGithubIssueNumber);
-  const openExternalTaskLens = useAppStore((s) => s.openExternalTaskLens);
   const isSkeleton = useSessionSkeleton({ sessionId });
   const linkedIssues = github?.linkedIssues ?? [];
-  const orderedTasks = [...externalTasks].sort(
-    (left, right) => PROVIDER_ORDER[left.provider] - PROVIDER_ORDER[right.provider],
+  const orderedTasks = [...distinctTasks({ tasks: externalTasks })].sort(
+    (left, right) => PROVIDER_ORDER[left.task.provider] - PROVIDER_ORDER[right.task.provider],
   );
   if (linkedIssues.length === 0 && orderedTasks.length === 0) {
     return null;
@@ -105,7 +63,7 @@ export const LinkedWorkChips = ({ sessionId, onSelectLens }: Props) => {
       >
         {[
           ...linkedIssues.map((issue) => issue.url),
-          ...orderedTasks.map((task) => externalTaskLinkKey({ task })),
+          ...orderedTasks.map(({ task }) => externalTaskLinkKey({ task })),
         ].map((key) => (
           <SkeletonChip key={key} />
         ))}
@@ -124,11 +82,13 @@ export const LinkedWorkChips = ({ sessionId, onSelectLens }: Props) => {
           }}
         />
       ))}
-      {orderedTasks.map((task) => (
-        <TaskChip
-          key={externalTaskLinkKey({ task })}
+      {orderedTasks.map(({ task, branches }) => (
+        <TaskChipMenu
+          key={externalTaskLinkKey({ task: { ...task, scope: 'session' } })}
+          sessionId={sessionId}
           task={task}
-          onOpen={() => openExternalTaskLens(sessionId, task)}
+          branch={null}
+          branches={branches}
         />
       ))}
     </div>

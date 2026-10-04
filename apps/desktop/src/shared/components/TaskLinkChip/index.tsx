@@ -8,6 +8,7 @@ type Props = {
   readonly identifier: string;
   readonly title?: string;
   readonly isOnBranch?: boolean;
+  readonly extraBranches?: number;
   readonly size?: ChipSize;
   readonly isActive?: boolean;
   readonly tooltip?: string;
@@ -20,6 +21,7 @@ export const TaskLinkChip = ({
   identifier,
   title,
   isOnBranch = false,
+  extraBranches = 0,
   size = 'control',
   isActive,
   tooltip,
@@ -47,7 +49,12 @@ export const TaskLinkChip = ({
     }
     label={
       title === undefined ? (
-        <span className="font-mono">{identifier}</span>
+        <span className="flex items-center gap-1">
+          <span className="font-mono">{identifier}</span>
+          {extraBranches > 0 ? (
+            <span className="text-muted-foreground">{`+${extraBranches}`}</span>
+          ) : null}
+        </span>
       ) : (
         <span className="flex min-w-0 items-center gap-1.5">
           <span className="font-mono">{identifier}</span>

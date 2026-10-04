@@ -16,6 +16,7 @@ import { setSessionAutoRun } from './setSessionAutoRun';
 import { setSessionConfig } from './setSessionConfig';
 import { setSessionPermissionMode } from './setSessionPermissionMode';
 import { unarchiveTask } from './unarchiveTask';
+import { takeOffSessionExternalTask } from './takeOffSessionExternalTask';
 import { unlinkSessionExternalTask } from './unlinkSessionExternalTask';
 import type { SliceDeps } from '../../slice-types';
 
@@ -38,6 +39,7 @@ export const createSessionsSlice = ({ set, get }: SliceDeps) => {
     linkSessionExternalTask: linkSessionExternalTask({ set, get }),
     unlinkSessionExternalTask: unlinkSessionExternalTask({ set, get }),
     assignSessionExternalTask: assignSessionExternalTask({ get }),
+    takeOffSessionExternalTask: takeOffSessionExternalTask({ get }),
     setCurrentSession: setCurrentSession(set, get),
   };
 };
