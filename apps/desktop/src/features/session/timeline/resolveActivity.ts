@@ -64,6 +64,10 @@ export type ResolveReviewState = {
 export type ResolveAttemptLike = {
   readonly agentId: string;
   readonly batchId: string | null;
+  readonly launchId?: string | null;
+  readonly retryOfLaunchId?: string | null;
+  readonly provider?: string;
+  readonly mountTarget?: { readonly mountId: string } | null;
   readonly prNumber: number | null;
   readonly threadIds: ReadonlyArray<string>;
   readonly phase: 'queued' | 'running' | 'waiting' | 'finished' | 'failed' | 'cancelled';

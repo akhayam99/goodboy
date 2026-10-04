@@ -25,7 +25,7 @@ import type { TimelineRowGrade } from '../../../../../workTreeModel/timelineRhyt
 import { RevealedRowTag } from './RevealedRowTag';
 import { TimelineProviderGlyph } from './TimelineProviderGlyph';
 import { TimelineRowWorktrees } from './TimelineRowWorktrees';
-import { resolveBatchTitle } from '../../../../timeline/resolveBatchSummary';
+import { resolveBatchTag, resolveBatchTitle } from '../../../../timeline/resolveBatchSummary';
 import { TimelineGroupLabel } from './TimelineGroupLabel';
 import { TimelineFoldTitle } from './TimelineFoldTitle';
 import { TimelineRunLabel } from './TimelineRunLabel';
@@ -220,6 +220,7 @@ export const TimelineRowLabel = ({
       <TimelineGroupLabel
         title={resolveBatchTitle({ total: entry.summary.total, prNumber: entry.prNumber })}
         summary={entry.summary}
+        tag={resolveBatchTag({ origin: entry.origin, retryCount: entry.retryCount })}
       />
     );
   }

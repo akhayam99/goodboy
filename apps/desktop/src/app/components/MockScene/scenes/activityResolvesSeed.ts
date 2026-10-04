@@ -2,6 +2,7 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
+  MountId,
   ProviderRunId,
   ResolveAttempt,
   ResolveQueueItem,
@@ -19,6 +20,7 @@ export const ACTIVITY_RESOLVES_SESSION = SESSION;
 
 const PR_NUMBER = 318;
 const BATCH_ID = 'mock-batch-pr-318';
+const RETRY_LAUNCH_ID = 'mock-launch-retry-pr-318';
 const NOW_MS = Date.parse(NOW);
 
 type Kind = 'ready' | 'drafting' | 'pushed' | 'failed';
@@ -27,6 +29,15 @@ type ResolveSeed = {
   readonly author: string;
   readonly file: string;
   readonly kind: Kind;
+  readonly origin?: 'legacy' | 'retry';
+  readonly minutesBack?: number;
+};
+
+const LEGACY_BACK = 26 * 60;
+const MOUNT_TARGET = {
+  mountId: 'mock-mount-payments-api' as MountId,
+  mountRevision: 1,
+  worktreePath: '/Users/dev/harborline/payments-api',
 };
 
 const SEEDS: ReadonlyArray<ResolveSeed> = [
@@ -40,6 +51,35 @@ const SEEDS: ReadonlyArray<ResolveSeed> = [
   { author: 'tvarga', file: 'retryPolicy.ts:88', kind: 'ready' },
   { author: 'mquint', file: 'idempotency.ts:20', kind: 'pushed' },
   { author: 'iokafor', file: 'config.ts:51', kind: 'drafting' },
+  { author: 'mquint', file: 'logging.ts:64', kind: 'ready', origin: 'retry' },
+  {
+    author: 'tvarga',
+    file: 'ledger.ts:4',
+    kind: 'pushed',
+    origin: 'legacy',
+    minutesBack: LEGACY_BACK,
+  },
+  {
+    author: 'tvarga',
+    file: 'ledger.ts:18',
+    kind: 'pushed',
+    origin: 'legacy',
+    minutesBack: LEGACY_BACK + 2,
+  },
+  {
+    author: 'iokafor',
+    file: 'rounding.ts:31',
+    kind: 'pushed',
+    origin: 'legacy',
+    minutesBack: LEGACY_BACK + 4,
+  },
+  {
+    author: 'mquint',
+    file: 'rounding.ts:8',
+    kind: 'failed',
+    origin: 'legacy',
+    minutesBack: LEGACY_BACK + 5,
+  },
 ];
 
 const STAGE: Record<Kind, ResolveStage> = {
@@ -83,7 +123,7 @@ const buildAgent = ({
   readonly seed: ResolveSeed;
   readonly index: number;
 }): Agent => {
-  const minutesAgo = index + 1;
+  const minutesAgo = index + 1 + (seed.minutesBack ?? 0);
   const isRunning = seed.kind === 'drafting';
   return {
     id: agentIdOf({ index }),
@@ -275,26 +315,31 @@ const buildAttempt = ({
   readonly seed: ResolveSeed;
   readonly thread: ResolveThread;
   readonly index: number;
-}): ResolveAttempt => ({
-  id: `mock-resolves-attempt-${index}`,
-  sessionId: SESSION.id,
-  agentId: agentIdOf({ index }),
-  prNumber: PR_NUMBER,
-  threadIds: [thread.threadId],
-  provider: 'anthropic',
-  model: 'claude-sonnet-5',
-  effort: null,
-  instructions: null,
-  phase: ATTEMPT_PHASE[seed.kind],
-  mountTarget: null,
-  startedAt: NOW_MS - (index + 2) * 60_000,
-  endedAt: seed.kind === 'drafting' ? null : NOW_MS - (index + 1) * 60_000,
-  error: seed.kind === 'failed' ? 'The draft stopped before it produced a change.' : null,
-  createdAt: NOW_MS - (index + 2) * 60_000,
-  batchId: BATCH_ID,
-  copyPath: null,
-  launchChoice: null,
-});
+}): ResolveAttempt => {
+  const back = (seed.minutesBack ?? 0) * 60_000;
+  return {
+    id: `mock-resolves-attempt-${index}`,
+    sessionId: SESSION.id,
+    agentId: agentIdOf({ index }),
+    prNumber: PR_NUMBER,
+    threadIds: [thread.threadId],
+    provider: 'anthropic',
+    model: 'claude-sonnet-5',
+    effort: null,
+    instructions: null,
+    phase: ATTEMPT_PHASE[seed.kind],
+    mountTarget: MOUNT_TARGET,
+    startedAt: NOW_MS - (index + 2) * 60_000 - back,
+    endedAt: seed.kind === 'drafting' ? null : NOW_MS - (index + 1) * 60_000 - back,
+    error: seed.kind === 'failed' ? 'The draft stopped before it produced a change.' : null,
+    createdAt: NOW_MS - (index + 2) * 60_000 - back,
+    batchId: seed.origin === 'legacy' ? null : BATCH_ID,
+    launchId: seed.origin === 'retry' ? RETRY_LAUNCH_ID : null,
+    retryOfLaunchId: seed.origin === 'retry' ? BATCH_ID : null,
+    copyPath: null,
+    launchChoice: null,
+  };
+};
 
 const CONTEXT_EVENTS: ReadonlyArray<SessionEvent> = [
   {

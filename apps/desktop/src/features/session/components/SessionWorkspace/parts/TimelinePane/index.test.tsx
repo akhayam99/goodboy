@@ -1350,7 +1350,7 @@ describe('TimelinePane resolve batch', () => {
     };
   };
 
-  const toggle = () => screen.getByRole('button', { name: /4 resolves on PR #318/ });
+  const toggle = () => screen.getByRole('button', { name: /Resolve #318 · 4 agents/ });
 
   const seedWideBatch = ({ count }: { readonly count: number }) => {
     const agents = Array.from({ length: count }, (_, index) => ({
@@ -1378,7 +1378,7 @@ describe('TimelinePane resolve batch', () => {
     seedWideBatch({ count: 20 });
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /20 resolves on PR #318/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Resolve #318 · 20 agents/ }));
 
     expect(revealFrames()).toHaveLength(9);
     screen.getByRole('button', { name: 'Show 12 more' });
