@@ -5,7 +5,7 @@ import {
   selectActiveMount,
   selectMountById,
 } from '../../../../store/slices/project-mounts/selectors';
-import { listBranchCommits } from '../../../worktree/worktree';
+import { listBranchCommits, worktreeIsAncestor } from '../../../worktree/worktree';
 
 export type ResolverCommit = {
   readonly sha: string;
@@ -40,17 +40,16 @@ export const useResolverCommit = ({
       return;
     }
     let isCurrent = true;
-    void listBranchCommits(worktreePath)
-      .then((commits) => {
+    void Promise.all([
+      worktreeIsAncestor({ worktreePath, sha, head: 'HEAD' }),
+      listBranchCommits(worktreePath).catch(() => []),
+    ])
+      .then(([isOnBranch, commits]) => {
         if (!isCurrent) {
           return;
         }
         const commit = commits.find((candidate) => candidate.sha.startsWith(sha.slice(0, 7)));
-        setFound({
-          sha,
-          subject: commit?.subject ?? null,
-          isOnBranch: commit !== undefined,
-        });
+        setFound({ sha, subject: commit?.subject ?? null, isOnBranch });
       })
       .catch(() => undefined);
     return () => {

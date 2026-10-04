@@ -89,7 +89,7 @@ export const RoleRow = ({
       <RoleModelSummary
         provider={shownEntry.choice.providerId}
         model={shownEntry.choice.model}
-        effort={preference?.effort ?? null}
+        effort={shownEntry.choice.effort ?? preference?.effort ?? null}
         moreCount={entries.length - 1}
       />
     );

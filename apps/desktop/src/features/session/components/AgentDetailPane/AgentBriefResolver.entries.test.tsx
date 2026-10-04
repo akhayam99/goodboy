@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 
-const { listBranchCommits } = vi.hoisted(() => ({
+const { listBranchCommits, worktreeIsAncestor } = vi.hoisted(() => ({
   listBranchCommits: vi.fn<(path: string) => Promise<ReadonlyArray<BranchCommit>>>(),
+  worktreeIsAncestor: vi.fn<() => Promise<boolean>>(),
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({
@@ -11,6 +12,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 vi.mock('../../../worktree/worktree', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../../worktree/worktree')>()),
   listBranchCommits,
+  worktreeIsAncestor,
 }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -99,6 +101,8 @@ beforeEach(async () => {
   await resetStoryStore();
   listBranchCommits.mockReset();
   listBranchCommits.mockResolvedValue([]);
+  worktreeIsAncestor.mockReset();
+  worktreeIsAncestor.mockResolvedValue(true);
 });
 
 afterEach(() => {

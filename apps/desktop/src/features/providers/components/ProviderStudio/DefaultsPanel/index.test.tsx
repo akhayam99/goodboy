@@ -413,6 +413,28 @@ describe('DefaultsPanel', () => {
     );
   });
 
+  it('shows the effort of the model that runs when a choice overrides the role effort', () => {
+    state.workspaceOverrides = {
+      'ws-1': {
+        ...EMPTY_OVERRIDES,
+        roleModels: {
+          planner: {
+            providerId: 'anthropic',
+            model: 'claude-opus-5-5',
+            effort: 'high',
+            models: [
+              { providerId: 'anthropic', model: 'claude-opus-5-5', effort: 'low' },
+              { providerId: 'anthropic', model: 'claude-sonnet-5-5' },
+            ],
+          },
+        },
+      },
+    };
+    render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
+
+    expect(roleSummary('Planner').textContent).toBe('Opus 5.5·Low+1');
+  });
+
   it('reads an old pin and fallback as a set of two and shows it on the row', () => {
     state.workspaceOverrides = {
       'ws-1': {
