@@ -15,6 +15,7 @@ import {
 } from '../../../../../shared/components/conceptIcons';
 import { SETTINGS_PANE_ENTRY } from '../../../../settings/components/SettingsStudio/settingsPaneEntry';
 import { AccountGroup, type AccountConfirm } from './AccountGroup';
+import { CliGroup } from './AccountGroup/CliGroup';
 import { ModelsGroup } from './ModelsGroup';
 import { PermissionsGroup } from './PermissionsGroup';
 import { UsageGroup } from './UsageGroup';
@@ -77,6 +78,11 @@ export const ProviderPageBody = ({
     ? info.connection !== 'missing' && info.connection !== 'error' && info.connection !== 'unknown'
     : info.connection === 'connected' && settled;
   const hasDetectionError = !isApi && info.connection === 'error' && settled;
+  const hasDetectedCli =
+    !isApi &&
+    (info.connection === 'connected' ||
+      info.connection === 'installed_disconnected' ||
+      (info.connection === 'error' && info.version !== null));
   const canReauth = !isApi && PROVIDER_CONNECT_CAPABILITIES[id].tier !== 'manual';
   const reauth = () => {
     if (PROVIDER_CONNECT_CAPABILITIES[id].reauthSignsOut) {
@@ -154,6 +160,7 @@ export const ProviderPageBody = ({
           onDone={() => void onRefresh()}
         />
       ) : null}
+      {hasDetectedCli && !isReady ? <CliGroup info={info} autoUpdate={autoUpdate} /> : null}
       {isReady || isApi ? (
         <>
           {isReady ? (

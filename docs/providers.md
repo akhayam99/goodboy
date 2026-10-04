@@ -265,6 +265,9 @@ path**. A provider that is not connected shows only its connect card.
   the same place on every CLI provider), and **Use an API key instead of your
   plan**, which opens the API keys. When a model needs a newer CLI, the update
   notice (`CliUpdateNotice`) sits right under the Account rows, below that CLI row.
+  A provider that is not signed in but has its CLI installed shows the same CLI row
+  and notice under its connect card (`AccountGroup/CliGroup`), and an `update`
+  deep link starts the update there too
   Keys you already have show directly, with the workspace credentials under them
 - The provider's row in the rail turns warning from 80% of a window and danger
   when the provider is out, with the reason under its name
