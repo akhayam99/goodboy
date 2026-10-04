@@ -30,6 +30,7 @@ export const TaskChipMenu = ({ sessionId, task, branch, branches, size = 'contro
     sessionId,
     provider: task.provider,
     externalId: task.externalId,
+    projectId: task.projectId ?? null,
     branch,
   } satisfies ObjectTarget;
   const key = taskKeyOf(target);

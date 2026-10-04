@@ -1,7 +1,10 @@
 import type { SessionExternalTask, SessionId } from '@goodboy/types';
-import type { GetFn } from './types';
+import { removeSessionExternalTask } from './removeSessionExternalTask';
+import { writeSessionExternalTask } from './writeSessionExternalTask';
+import type { GetFn, SetFn } from './types';
 
 type Params = {
+  readonly set: SetFn;
   readonly get: GetFn;
 };
 
@@ -10,7 +13,9 @@ type TakeOffParams = {
   readonly task: SessionExternalTask;
 };
 
-export const takeOffSessionExternalTask = ({ get }: Params) => {
+export const takeOffSessionExternalTask = ({ set, get }: Params) => {
+  const write = writeSessionExternalTask({ set, get });
+  const remove = removeSessionExternalTask({ set, get });
   return async ({ sessionId, task }: TakeOffParams): Promise<void> => {
     if (task.scope !== 'branch') {
       return;
@@ -19,18 +24,19 @@ export const takeOffSessionExternalTask = ({ get }: Params) => {
       (candidate) =>
         candidate.provider === task.provider &&
         candidate.externalId === task.externalId &&
+        candidate.projectId === task.projectId &&
         candidate.scope === 'branch' &&
-        !(candidate.branch === task.branch && candidate.projectId === task.projectId),
+        candidate.branch !== task.branch,
     );
     if (remaining.length === 0) {
-      await get().linkSessionExternalTask(sessionId, { ...task, scope: 'session' });
+      await write({ sessionId, task: { ...task, scope: 'session' } });
     }
-    await get().unlinkSessionExternalTask(
+    await remove({
       sessionId,
-      task.provider,
-      task.externalId,
-      task.projectId,
-      task.branch,
-    );
+      provider: task.provider,
+      externalId: task.externalId,
+      projectId: task.projectId,
+      branchLink: task.branch,
+    });
   };
 };

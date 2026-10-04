@@ -1,6 +1,12 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { insertSession, insertWorkspace } from '@goodboy/db';
-import type { IsoDateTime, SessionExternalTask, SessionId, WorkspaceId } from '@goodboy/types';
+import type {
+  IsoDateTime,
+  ProjectId,
+  SessionExternalTask,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import {
   buildStoryWorkspace,
@@ -45,6 +51,16 @@ const storedLinks = () =>
     sql: 'SELECT scope, branch FROM session_external_tasks ORDER BY scope, branch',
   });
 
+const eventKinds = async () =>
+  (
+    await rowsOf<{ kind: string }>({
+      sql: "SELECT kind FROM session_events WHERE kind IN ('issue_linked', 'issue_unlinked') ORDER BY id",
+    })
+  ).map((row) => row.kind);
+
+const PAYMENTS = 'project-payments-api' as ProjectId;
+const STOREFRONT = 'project-storefront-web' as ProjectId;
+
 beforeAll(async () => {
   useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
@@ -78,5 +94,43 @@ describe('takeOffSessionExternalTask', () => {
     await takeOffSessionExternalTask({ sessionId: SESSION_ID, task: TASK });
 
     expect(await storedLinks()).toEqual([{ scope: 'branch', branch: 'hl/notify-retry' }]);
+  });
+
+  it('records no link or unlink history while it moves the task back to the session', async () => {
+    const { linkSessionExternalTask, takeOffSessionExternalTask } = useAppStore.getState();
+    await linkSessionExternalTask(SESSION_ID, TASK);
+    expect(await eventKinds()).toEqual(['issue_linked']);
+
+    await takeOffSessionExternalTask({ sessionId: SESSION_ID, task: TASK });
+
+    expect(await eventKinds()).toEqual(['issue_linked']);
+  });
+
+  it('restores session scope when only another project holds a branch for the same id', async () => {
+    const { linkSessionExternalTask, takeOffSessionExternalTask } = useAppStore.getState();
+    const payments: SessionExternalTask = {
+      ...TASK,
+      provider: 'github',
+      externalId: '42',
+      projectId: PAYMENTS,
+    };
+    const storefront: SessionExternalTask = {
+      ...payments,
+      projectId: STOREFRONT,
+      branch: 'sf/other',
+    };
+    await linkSessionExternalTask(SESSION_ID, payments);
+    await linkSessionExternalTask(SESSION_ID, storefront);
+
+    await takeOffSessionExternalTask({ sessionId: SESSION_ID, task: payments });
+
+    expect(
+      await rowsOf<{ project_id: string; scope: string }>({
+        sql: 'SELECT project_id, scope FROM session_external_tasks ORDER BY project_id',
+      }),
+    ).toEqual([
+      { project_id: PAYMENTS, scope: 'session' },
+      { project_id: STOREFRONT, scope: 'branch' },
+    ]);
   });
 });

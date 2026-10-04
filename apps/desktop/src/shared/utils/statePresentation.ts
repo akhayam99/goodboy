@@ -13,7 +13,11 @@ type DescriptionParams = {
   readonly subject?: string | null;
 };
 
-const joinable = (reason: string): string => {
+type JoinableParams = {
+  readonly reason: string;
+};
+
+const joinable = ({ reason }: JoinableParams): string => {
   const first = reason.charAt(0);
   const second = reason.charAt(1);
   const isWord = first !== first.toLowerCase() && second === second.toLowerCase();
@@ -25,5 +29,7 @@ export const stateDescription = ({ presentation, subject = null }: DescriptionPa
     subject === null || subject === ''
       ? presentation.label
       : `${subject} ${presentation.label.toLowerCase()}`;
-  return presentation.reason === '' ? head : `${head}, ${joinable(presentation.reason)}`;
+  return presentation.reason === ''
+    ? head
+    : `${head}, ${joinable({ reason: presentation.reason })}`;
 };

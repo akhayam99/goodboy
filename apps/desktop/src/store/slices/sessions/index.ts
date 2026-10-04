@@ -38,8 +38,8 @@ export const createSessionsSlice = ({ set, get }: SliceDeps) => {
     createSession: createSession(set, get),
     linkSessionExternalTask: linkSessionExternalTask({ set, get }),
     unlinkSessionExternalTask: unlinkSessionExternalTask({ set, get }),
-    assignSessionExternalTask: assignSessionExternalTask({ get }),
-    takeOffSessionExternalTask: takeOffSessionExternalTask({ get }),
+    assignSessionExternalTask: assignSessionExternalTask({ set, get }),
+    takeOffSessionExternalTask: takeOffSessionExternalTask({ set, get }),
     setCurrentSession: setCurrentSession(set, get),
   };
 };

@@ -45,6 +45,13 @@ const storedLinks = () =>
     sql: 'SELECT scope, branch, relation FROM session_external_tasks ORDER BY scope, branch',
   });
 
+const eventKinds = async () =>
+  (
+    await rowsOf<{ kind: string }>({
+      sql: "SELECT kind FROM session_events WHERE kind IN ('issue_linked', 'issue_unlinked') ORDER BY id",
+    })
+  ).map((row) => row.kind);
+
 beforeAll(async () => {
   useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
@@ -106,6 +113,23 @@ describe('assignSessionExternalTask', () => {
     });
 
     expect(await storedLinks()).toHaveLength(1);
+  });
+
+  it('records no link or unlink history when the task only changes placement', async () => {
+    const { linkSessionExternalTask, assignSessionExternalTask } = useAppStore.getState();
+    await linkSessionExternalTask(SESSION_ID, TASK);
+    expect(await eventKinds()).toEqual(['issue_linked']);
+
+    await assignSessionExternalTask({
+      sessionId: SESSION_ID,
+      task: TASK,
+      branch: 'hl/notify-retry',
+    });
+    const onBranch: SessionExternalTask = { ...TASK, scope: 'branch', branch: 'hl/notify-retry' };
+    await assignSessionExternalTask({ sessionId: SESSION_ID, task: onBranch, branch: 'hl/other' });
+    await assignSessionExternalTask({ sessionId: SESSION_ID, task: onBranch, branch: 'hl/other' });
+
+    expect(await eventKinds()).toEqual(['issue_linked']);
   });
 
   it('keeps the session link when the branch row cannot be written', async () => {

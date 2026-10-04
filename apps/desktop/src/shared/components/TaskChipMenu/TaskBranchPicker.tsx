@@ -4,6 +4,7 @@ import { Check, GitBranch, Plus } from 'lucide-react';
 import { FOCUS_RING, MenuList, cn, type MenuEntry } from '@goodboy/ui';
 import type { SessionExternalTask, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
+import { taskIdentityKey } from '../../utils/taskIdentityKey';
 import { ICON_SIZE } from '../conceptIcons';
 import { taskBranchPreview } from './taskBranchPreview';
 import { taskPlacementLabel } from './taskPlacement';
@@ -20,8 +21,7 @@ export const TaskBranchPicker = ({ sessionId, task, onWorktree, onClose }: Props
   const rows = useAppStore(
     useShallow((state) =>
       (state.sessionExternalTasks[sessionId] ?? []).filter(
-        (candidate) =>
-          candidate.provider === task.provider && candidate.externalId === task.externalId,
+        (candidate) => taskIdentityKey({ task: candidate }) === taskIdentityKey({ task }),
       ),
     ),
   );

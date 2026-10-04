@@ -32,6 +32,7 @@ const facts = ({
   sessionId: SESSION,
   provider: task.provider,
   externalId: task.externalId,
+  projectId: task.projectId ?? null,
   identifier: task.identifier,
   row: task,
   branch,

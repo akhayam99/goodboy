@@ -6,6 +6,7 @@ import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { MOUNT_ADD_TASK_EVENT, mountEventName } from '../../../features/actions/kinds/mount';
 import { linkIssueEventName } from '../../../features/actions/kinds/session';
+import { taskIdentityKey } from '../../utils/taskIdentityKey';
 import { distinctTasks } from './distinctTasks';
 import { taskPlacementLabel } from './taskPlacement';
 
@@ -34,8 +35,7 @@ export const AddTaskPopover = ({ sessionId, mountId, projectId, branch }: Props)
         (group) =>
           !rows.some(
             (candidate) =>
-              candidate.provider === group.task.provider &&
-              candidate.externalId === group.task.externalId &&
+              taskIdentityKey({ task: candidate }) === taskIdentityKey({ task: group.task }) &&
               candidate.scope === 'branch' &&
               candidate.branch === branch &&
               (candidate.projectId === undefined || candidate.projectId === projectId),
@@ -54,7 +54,7 @@ export const AddTaskPopover = ({ sessionId, mountId, projectId, branch }: Props)
           ]
         : available.map(({ task, branches }): MenuEntry => ({
             kind: 'item',
-            key: `${task.provider}:${task.externalId}`,
+            key: taskIdentityKey({ task }),
             label: `${task.identifier} · ${task.title}`,
             icon: ListPlus,
             description: taskPlacementLabel({ branches }),

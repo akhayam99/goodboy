@@ -310,6 +310,7 @@ export type TaskActionTarget = {
   readonly sessionId: SessionId;
   readonly provider: SessionExternalTaskProvider;
   readonly externalId: string;
+  readonly projectId: ProjectId | null;
   readonly branch: string | null;
 };
 

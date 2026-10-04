@@ -136,6 +136,12 @@ describe('TimelineRowLabel', () => {
     expect(screen.queryByText('resolve: tvarga on retry.ts:12')).toBeNull();
   });
 
+  it('keeps a resolve prefix that a user typed on an agent that is not a resolver', () => {
+    renderKind({ agentKind: 'planner', name: 'resolve: dependencies' });
+
+    expect(screen.getByText('resolve: dependencies')).toBeDefined();
+  });
+
   it('spells the role out in full rather than abbreviating it', () => {
     renderKind({ agentKind: 'generic', name: 'Look into the failing build' });
 

@@ -96,7 +96,9 @@ type EntryParams = {
 
 const segmentsOf = ({ entry }: EntryParams): ReadonlyArray<TimelineLabelSegment> => {
   if (entry.kind === 'agent') {
-    return [{ kind: 'text', text: agentDisplayName({ name: entry.agent.name }) }];
+    return [
+      { kind: 'text', text: agentDisplayName({ name: entry.agent.name, kind: entry.agentKind }) },
+    ];
   }
   if (entry.kind === 'plan') {
     return [{ kind: 'text', text: entry.plan.title }];

@@ -4,6 +4,7 @@ import { useAppStore } from '../../../../store';
 import { useInlineRename } from '../../../../shared/hooks/useInlineRename';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { agentDisplayName } from '../../../../shared/utils/agentDisplayName';
+import { classifyAgent } from '../../agent-kind';
 
 type Props = {
   readonly agent: Agent;
@@ -36,14 +37,15 @@ export const AgentTitle = ({ agent, sessionId }: Props) => {
     );
   }
 
+  const displayName = agentDisplayName({
+    name: agent.name,
+    kind: classifyAgent({ agent, override: null }),
+  });
+
   return (
     <span className="group/title flex min-w-0 items-center gap-1.5">
-      <span
-        className="min-w-0 truncate"
-        onDoubleClick={rename.start}
-        title={agentDisplayName({ name: agent.name })}
-      >
-        {agentDisplayName({ name: agent.name })}
+      <span className="min-w-0 truncate" onDoubleClick={rename.start} title={displayName}>
+        {displayName}
       </span>
       <Tooltip content="Rename agent" side="top">
         <button
