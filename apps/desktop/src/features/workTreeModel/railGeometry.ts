@@ -306,6 +306,7 @@ export const layoutTimelineRail = ({ rows, groups, hasSpine = true }: Params): R
   const ordered = [...spans].sort(
     (first, second) =>
       depthOf({ group: first.group }) - depthOf({ group: second.group }) ||
+      Number(second.group.shape === 'head') - Number(first.group.shape === 'head') ||
       first.interval.from - second.interval.from ||
       first.topIndex - second.topIndex ||
       first.group.id.localeCompare(second.group.id),

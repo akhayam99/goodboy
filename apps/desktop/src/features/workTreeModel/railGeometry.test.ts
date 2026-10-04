@@ -1056,6 +1056,50 @@ describe('layoutTimelineRail head lane', () => {
     expect(railRow(layout, 'a-child').markerColumn).toBe(2);
     expect(railRow(layout, 'b-child').markerColumn).toBe(2);
   });
+
+  it('keeps the ball one column past its owner next to an open top-level lane', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({ id: 'child', groupId: 'lane' }),
+        row({ id: 'origin', groupId: 'head' }),
+        row({ id: 'agent-step', groupId: 'agent' }),
+        row({ id: 'agent-origin', groupId: 'agent' }),
+      ],
+      groups: [
+        group({ id: 'agent', originRowId: 'agent-origin', shape: 'open', identityIndex: 1 }),
+        group({ id: 'head', originRowId: 'origin', shape: 'head', identityIndex: 2 }),
+        group({ id: 'lane', originRowId: 'origin', parentGroupId: 'head', identityIndex: 2 }),
+      ],
+    });
+
+    expect(layout.columnByGroupId.get('head')).toBe(1);
+    expect(railRow(layout, 'origin').markerColumn).toBe(1);
+    expect(railRow(layout, 'origin').joins.find((join) => join.kind === 'stub')?.laneColumn).toBe(
+      1,
+    );
+    const crossing = railRow(layout, 'origin').segments.filter((segment) => segment.column === 1);
+    expect(crossing).toEqual([]);
+  });
+
+  it('keeps every ball one column past its owner whatever order the lanes arrive in', () => {
+    const rows = [
+      row({ id: 'child', groupId: 'lane' }),
+      row({ id: 'origin', groupId: 'head' }),
+      row({ id: 'agent-step', groupId: 'agent' }),
+      row({ id: 'agent-origin', groupId: 'agent' }),
+    ];
+    const groups = [
+      group({ id: 'head', originRowId: 'origin', shape: 'head', identityIndex: 2 }),
+      group({ id: 'lane', originRowId: 'origin', parentGroupId: 'head', identityIndex: 2 }),
+      group({ id: 'agent', originRowId: 'agent-origin', shape: 'open', identityIndex: 1 }),
+    ];
+
+    const forward = layoutTimelineRail({ rows, groups });
+    const reversed = layoutTimelineRail({ rows, groups: [...groups].reverse() });
+
+    expect(forward.columnByGroupId.get('head')).toBe(1);
+    expect(reversed.columnByGroupId.get('head')).toBe(1);
+  });
 });
 
 describe('layoutTimelineRail without a spine', () => {
