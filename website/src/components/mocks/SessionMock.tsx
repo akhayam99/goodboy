@@ -207,7 +207,7 @@ export const SessionMock = () => {
                 <span>5 steps</span>
                 <span>10 agents</span>
                 <span>$2.74</span>
-                <span>Spend limit $12.00</span>
+                <span>Spend cap $12.00</span>
               </p>
             </div>
           </div>

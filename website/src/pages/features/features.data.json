@@ -160,7 +160,7 @@
         },
         {
           "title": "Activity",
-          "text": "Read the whole session as one timeline of agents, questions, fixes, pull requests and decisions. Related steps fold into a single row.",
+          "text": "Read the whole session as one timeline of agents, questions, fixes, pull requests and decisions. Related steps fold into a group that hangs on a numbered ball.",
           "group": "Overview and activity",
           "main": true
         },
@@ -459,15 +459,15 @@
           "shown": true
         },
         {
-          "title": "Autorun",
-          "text": "Choose when a run asks: before each step, once after the plan, or never. A guard stops an agent after four unattended turns in an hour.",
+          "title": "When to ask",
+          "text": "Choose when a run asks: before each step, once after the plan, or run on its own. A guard stops an agent after four unattended turns in an hour.",
           "group": "Workflows",
-          "also": "autorun",
+          "also": "when to ask",
           "shown": true
         },
         {
-          "title": "Spend limit",
-          "text": "Cap what a run or a session can spend, then choose to pause workflows or only be warned. A paused run offers Raise limit.",
+          "title": "Spend cap",
+          "text": "Cap what a run or a session can spend, then choose to pause workflows or only be warned. A paused run offers Raise spend cap.",
           "group": "Workflows",
           "main": true
         },
@@ -479,10 +479,10 @@
           "shown": true
         },
         {
-          "title": "Workflow rules",
-          "text": "Set once what every new run starts with: when it asks, a spend cap and standing guidance. Spread work by what each provider has left.",
+          "title": "Run defaults",
+          "text": "Set once what every new run starts with: when it asks, a spend cap and guidance. Spread work by what each provider has left.",
           "group": "Workflows",
-          "also": "workflow rules",
+          "also": "run defaults",
           "shown": true
         },
         {
