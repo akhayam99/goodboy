@@ -1,4 +1,4 @@
-import { useContext, type KeyboardEvent, type ReactNode } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
 import type { ObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
 import { Button, Tooltip, WORK_META_COLUMN, WORK_ROW, cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
@@ -13,7 +13,6 @@ import { rowStateTone } from '../../../../../workTreeModel/rowStateCopy';
 import { eventMatches } from '../../../../../../shared/keyboard/dispatcher';
 import { SHORTCUTS } from '../../../../../../shared/keyboard/registry';
 import { TIMELINE_GUTTER } from './timelineLayout';
-import { TimelineActionColumn } from './timelineActionColumn';
 import { CLOCK_ORDER_TOOLTIP, isClocklessRow } from './timelineClock';
 import { TimelineRail, type TimelineLaneControl, type TimelineLaneTarget } from './TimelineRail';
 import { TimelineRowLabel } from './TimelineRowLabel';
@@ -86,7 +85,6 @@ export const TimelineStreamRow = ({
     hasUnread: item.hasUnread,
   });
   const boxHeight = TIMELINE_RHYTHM.grade[item.grade].height;
-  const hasActionColumn = useContext(TimelineActionColumn);
   const isWaiting =
     item.rowState.phase === 'waiting' &&
     item.rowState.ask?.kind !== 'reviewComment' &&
@@ -210,30 +208,30 @@ export const TimelineStreamRow = ({
               {content}
             </button>
           )}
-          {action == null && !hasActionColumn ? null : (
+          {action == null ? null : (
             <span
-              data-testid={action == null ? undefined : 'timeline-row-action'}
+              data-testid="timeline-row-action"
               data-action-slot
-              className={hasActionColumn ? WORK_META_COLUMN.action : 'flex shrink-0 items-center'}
+              className="flex shrink-0 items-center"
               style={{ height: boxHeight }}
             >
-              {action == null ? null : (
-                <Button
-                  variant={action.variant ?? 'ghost'}
-                  emphasis={action.variant === 'warning' ? 'outline' : 'solid'}
-                  size="sm"
-                  className="h-6"
-                  isBusy={action.isBusy === true}
-                  onClick={action.onAct}
-                >
-                  {action.label}
-                </Button>
-              )}
+              <Button
+                variant={action.variant ?? 'ghost'}
+                emphasis={action.variant === 'warning' ? 'outline' : 'solid'}
+                size="sm"
+                className="h-6"
+                isBusy={action.isBusy === true}
+                onClick={action.onAct}
+              >
+                {action.label}
+              </Button>
             </span>
           )}
-          <span className={WORK_META_COLUMN.menu} style={{ height: boxHeight }}>
-            {menu}
-          </span>
+          {menu == null ? null : (
+            <span className={WORK_META_COLUMN.menu} style={{ height: boxHeight }}>
+              {menu}
+            </span>
+          )}
         </div>
         {detail}
       </div>

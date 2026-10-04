@@ -23,6 +23,7 @@ type Forbidden = {
 const NO_EXCEPTION: ReadonlySet<string> = new Set();
 
 const FORBIDDEN_WIDTHS: ReadonlyArray<Forbidden> = [
+  { pattern: /\bmax-w-\[(?!72ch\])\d+ch\]/, allowed: NO_EXCEPTION },
   { pattern: /PANE_RHYTHM\.measure/, allowed: NO_EXCEPTION },
   { pattern: /DIFF_CAPPED_COLUMN_CLASS/, allowed: NO_EXCEPTION },
   { pattern: /\bmax-w-(3xl|4xl|5xl|6xl|7xl)\b/, allowed: NO_EXCEPTION },

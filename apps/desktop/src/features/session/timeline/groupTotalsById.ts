@@ -14,7 +14,6 @@ type Params = {
 
 type Context = Omit<Params, 'items' | 'agents' | 'spans' | 'previous'> & {
   readonly source: WorkTimeSource;
-  readonly agentById: ReadonlyMap<string, Agent>;
 };
 
 const isSameTotals = ({
@@ -26,13 +25,7 @@ const isSameTotals = ({
 }): boolean =>
   left.costUsd === right.costUsd &&
   left.time?.label === right.time?.label &&
-  left.time?.detail === right.time?.detail &&
-  left.routes.length === right.routes.length &&
-  left.routes.every(
-    (route, index) =>
-      route.provider === right.routes[index]?.provider &&
-      route.model === right.routes[index]?.model,
-  );
+  left.time?.detail === right.time?.detail;
 
 const totalsOf = ({
   item,
@@ -42,14 +35,13 @@ const totalsOf = ({
   readonly context: Context;
 }): GroupTotals | null => {
   const { entry } = item;
-  const { source, agentById, spendByAgentId, spendByRunId } = context;
+  const { source, spendByAgentId, spendByRunId } = context;
   if (entry.kind === 'run' && item.fold !== undefined) {
     return groupTotals({
       roots: entry.children.flatMap((child) => (child.kind === 'agent' ? [child.agent.id] : [])),
       costUsd: spendByRunId.get(entry.run.id) ?? 0,
       isSettled: true,
       source,
-      agentById,
     });
   }
   if (entry.kind === 'agent' && item.fold !== undefined) {
@@ -58,7 +50,6 @@ const totalsOf = ({
       costUsd: spendByAgentId.get(entry.agent.id) ?? 0,
       isSettled: true,
       source,
-      agentById,
     });
   }
   if (entry.kind !== 'subagentGroup' && entry.kind !== 'resolveBatch') {
@@ -70,7 +61,6 @@ const totalsOf = ({
     costUsd: rootsCost({ roots, spendByAgentId }),
     isSettled: item.rowState.phase === 'done',
     source,
-    agentById,
   });
 };
 
@@ -86,7 +76,6 @@ export const groupTotalsById = ({
     spendByAgentId,
     spendByRunId,
     source: settledTimeSource({ spans, agents }),
-    agentById: new Map(agents.map((agent) => [agent.id, agent])),
   };
   const totals = new Map<string, GroupTotals>();
   for (const item of items) {

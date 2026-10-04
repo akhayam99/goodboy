@@ -127,7 +127,7 @@ vi.mock('./ActivityFilterPanel', () => ({
   ActivityFilterPanel: () => <button type="button">Filter</button>,
 }));
 import { TimelinePane } from './index';
-import { shownElementsAt, visibleTextAt } from '../../../../../../test/containerView';
+import { visibleTextAt } from '../../../../../../test/containerView';
 import { useOpenQuestions } from '../../../../../context/components/QuestionsTab/useOpenQuestions';
 import { OverviewActions } from '../../../SessionOverviewPane/OverviewActions';
 import { DEFAULT_ACTIVITY_FILTER, writeActivityFilter } from '../../../../timeline/activityFilter';
@@ -947,11 +947,11 @@ describe('TimelinePane log rows and the state slot', () => {
     expect(document.querySelectorAll('[data-action-slot]')).toHaveLength(0);
   });
 
-  it('reserves the action column on an open session even when no row asks yet', () => {
+  it('reserves no action slot on an open session for a row that cannot ask', () => {
     seed();
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    expect(rowById('agent:resolver-1')?.querySelectorAll('[data-action-slot]')).toHaveLength(1);
+    expect(rowById('agent:resolver-1')?.querySelectorAll('[data-action-slot]')).toHaveLength(0);
   });
 });
 
@@ -1049,22 +1049,23 @@ describe('TimelinePane row meta', () => {
     ]);
   });
 
-  it('shows the model that ran, its effort and its cost on a finished step', () => {
+  it('shows the cost of a finished step and no model column', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
-    const meta = within(rowOf('Plan the fix')).getByTestId('work-meta');
+    const row = rowOf('Plan the fix');
+    const meta = within(row).getByTestId('work-meta');
 
-    expect(within(meta).getByText('Opus 4.5')).toBeDefined();
-    expect(within(meta).getByText('High')).toBeDefined();
     expect(within(meta).getByText('$0.62')).toBeDefined();
+    expect(meta.querySelector('[data-meta-column="routing"]')).toBeNull();
+    expect(row.textContent).not.toContain('Opus 4.5');
+    expect(row.querySelector('[data-provider="anthropic"]')).not.toBeNull();
     expect(meta.className).toContain('text-muted-foreground');
   });
 
-  it('shows the planned routing in faint on a queued step, with no cost', () => {
+  it('shows a queued step in faint, with no cost and no model', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
     const meta = within(rowOf('Build the fix')).getByTestId('work-meta');
 
-    expect(within(meta).getByText('Sonnet 4.5')).toBeDefined();
-    expect(within(meta).getByText('Medium')).toBeDefined();
+    expect(meta.textContent).not.toContain('Sonnet 4.5');
     expect(meta.className).toContain('text-faint-foreground');
     expect(meta.querySelector('[data-meta-column="cost"]')?.textContent).toBe('');
   });
@@ -1117,7 +1118,7 @@ describe('TimelinePane row meta', () => {
       expect(time.textContent).toBe('6m 40s');
     });
 
-    it('lets the model fold to its glyph, then the cost, then the time go before the title', () => {
+    it('lets the cost, then the time go before the title', () => {
       storeState.sessionTurnSpans = { 'session-1': [span('agent-plan', 0, 6 * MINUTE + 40_000)] };
       storeState.workspaceDurationHistory = {
         'ws-1': {
@@ -1129,38 +1130,21 @@ describe('TimelinePane row meta', () => {
       };
       render(<TimelinePane session={SESSION} actions={null} />);
       const row = rowOf('Plan the fix');
-      const routing = within(row)
-        .getByTestId('work-meta')
-        .querySelector('[data-meta-column="routing"]');
-      if (routing === null) {
-        throw new Error('the step row has no routing column');
-      }
-      const seen = (width: number) => ({
-        text: visibleTextAt({ root: row, width }),
-        glyphs: shownElementsAt({ root: routing, width, selector: 'svg' }).length,
-      });
+      const seen = (width: number) => visibleTextAt({ root: row, width });
 
       const wide = seen(900);
-      expect(wide.text).toContain('Plan the fix');
-      expect(wide.text).toContain('Opus 4.5');
-      expect(wide.text).toContain('6m 40s');
-      expect(wide.text).toContain('$0.62');
-
-      const glyph = seen(700);
-      expect(glyph.text).not.toContain('Opus 4.5');
-      expect(glyph.glyphs).toBe(1);
-      expect(routing.textContent).toContain('Opus 4.5');
-      expect(glyph.text).toContain('$0.62');
-      expect(glyph.text).toContain('6m 40s');
+      expect(wide).toContain('Plan the fix');
+      expect(wide).not.toContain('Opus 4.5');
+      expect(wide).toContain('6m 40s');
+      expect(wide).toContain('$0.62');
 
       const noCost = seen(560);
-      expect(noCost.text).not.toContain('$0.62');
-      expect(noCost.text).toContain('6m 40s');
-      expect(noCost.glyphs).toBe(1);
+      expect(noCost).not.toContain('$0.62');
+      expect(noCost).toContain('6m 40s');
 
       const narrow = seen(460);
-      expect(narrow.text).not.toContain('6m 40s');
-      expect(narrow.text).toContain('Plan the fix');
+      expect(narrow).not.toContain('6m 40s');
+      expect(narrow).toContain('Plan the fix');
       expect(within(row).getByTitle('Plan the fix').textContent).toBe('Plan the fix');
     });
 
@@ -1727,7 +1711,7 @@ describe('TimelinePane finished run', () => {
     expect(runRow().getAttribute('aria-expanded')).toBe('false');
     expect(within(runRow()).getByText('3 steps')).toBeDefined();
     const meta = within(runRow()).getByTestId('work-meta');
-    expect(within(meta).getByText('2 models')).toBeDefined();
+    expect(meta.textContent).not.toContain('models');
     expect(within(meta).getByText('$1.50')).toBeDefined();
     expect(within(meta).getByText('2m')).toBeDefined();
 
@@ -1779,22 +1763,12 @@ describe('TimelinePane finished run', () => {
     expect(within(runRow()).getByTitle('Refund keys').textContent).toBe('Refund keys');
   });
 
-  it('folds the models of a finished run to glyphs before its title gives way', () => {
+  it('lets the cost and the time of a finished run go before its title gives way', () => {
     storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'completed' }) };
     render(<TimelinePane session={SESSION} actions={null} />);
     const row = runRow();
-    const routing = within(row)
-      .getByTestId('work-meta')
-      .querySelector('[data-meta-column="routing"]');
-    if (routing === null) {
-      throw new Error('the folded run has no routing column');
-    }
 
-    expect(visibleTextAt({ root: row, width: 900 })).toContain('2 models');
-    expect(visibleTextAt({ root: row, width: 700 })).not.toContain('2 models');
-    expect(shownElementsAt({ root: routing, width: 700, selector: 'svg' }).length).toBeGreaterThan(
-      0,
-    );
+    expect(visibleTextAt({ root: row, width: 900 })).not.toContain('2 models');
     expect(visibleTextAt({ root: row, width: 700 })).toContain('$1.50');
     expect(visibleTextAt({ root: row, width: 560 })).not.toContain('$1.50');
     const narrow = visibleTextAt({ root: row, width: 460 });

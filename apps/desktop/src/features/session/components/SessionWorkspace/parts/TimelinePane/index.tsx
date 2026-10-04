@@ -15,12 +15,9 @@ import { useScrollAnchor } from '../../../../hooks/useScrollAnchor';
 import { WorkTimeProvider } from '../../../../../workTreeModel/components/WorkTimeProvider';
 import { ActivityFilterPanel } from './ActivityFilterPanel';
 import { NeedsYouChip } from './NeedsYouChip';
-import { TimelineActionColumn } from './timelineActionColumn';
 import { TimelineRevealRow } from './TimelineRevealRow';
 import { TimelineRow } from './TimelineRow';
 import { TimelineSkeleton } from './TimelineSkeleton';
-import { TimelineRouting } from './timelineRouting';
-import { useTimelineRoutingFacts } from './useTimelineRoutingFacts';
 import { useTimelineRowProps } from './useTimelineRowProps';
 import { useTimelineRows } from './useTimelineRows';
 
@@ -58,7 +55,6 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
   );
   const rows = useTimelineRows({ session, activity, explode });
   const rowPropsFor = useTimelineRowProps({ session, explode, rows });
-  const routingFacts = useTimelineRoutingFacts({ session, rows });
   const { stream, entries, visibleEntries, shownQuestions } = rows;
   const { isNeedsYou } = activity;
   const shownQuestionsKey = [...shownQuestions].sort().join(' ');
@@ -154,34 +150,29 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
       ) : (
         <div className="flex flex-col gap-1">
           <WorkTimeProvider sessionId={sessionId} workspaceId={session.workspaceId}>
-            <TimelineActionColumn.Provider value={session.archivedAt == null}>
-              <TimelineRouting.Provider value={routingFacts}>
-                <div ref={listRef} className="@container flex flex-col [overflow-anchor:none]">
-                  {rows.laidOutItems.map((item, index) => {
-                    const props = rowPropsFor({ item, index });
-                    if (props === null) {
-                      return null;
-                    }
-                    const slot =
-                      item.kind === 'row' || item.kind === 'more' ? item.explode : undefined;
-                    if (slot === undefined) {
-                      return <TimelineRow key={item.id} {...props} />;
-                    }
-                    return (
-                      <TimelineRevealRow
-                        key={item.id}
-                        groupId={slot.groupId}
-                        isLeaving={explode.leavingIds.has(slot.groupId)}
-                        isShown={wasShown.has(item.id)}
-                        onSettled={explode.settle}
-                      >
-                        <TimelineRow {...props} />
-                      </TimelineRevealRow>
-                    );
-                  })}
-                </div>
-              </TimelineRouting.Provider>
-            </TimelineActionColumn.Provider>
+            <div ref={listRef} className="@container flex flex-col [overflow-anchor:none]">
+              {rows.laidOutItems.map((item, index) => {
+                const props = rowPropsFor({ item, index });
+                if (props === null) {
+                  return null;
+                }
+                const slot = item.kind === 'row' || item.kind === 'more' ? item.explode : undefined;
+                if (slot === undefined) {
+                  return <TimelineRow key={item.id} {...props} />;
+                }
+                return (
+                  <TimelineRevealRow
+                    key={item.id}
+                    groupId={slot.groupId}
+                    isLeaving={explode.leavingIds.has(slot.groupId)}
+                    isShown={wasShown.has(item.id)}
+                    onSettled={explode.settle}
+                  >
+                    <TimelineRow {...props} />
+                  </TimelineRevealRow>
+                );
+              })}
+            </div>
           </WorkTimeProvider>
         </div>
       )}
