@@ -33,7 +33,7 @@ afterEach(cleanup);
 
 describe('ModelsGroup', () => {
   it('hides the legacy versions by default and counts what shows', () => {
-    render(<ModelsGroup providerId="anthropic" isFocused={false} />);
+    render(<ModelsGroup providerId="anthropic" workspaceId={null} isFocused={false} />);
 
     const total = MODEL_CATALOGS.anthropic.length;
     expect(screen.getByText(`Showing ${total - 3} of ${total}`)).toBeDefined();
@@ -43,7 +43,7 @@ describe('ModelsGroup', () => {
   });
 
   it('shows every version with Show all and saves the choice for the app', () => {
-    render(<ModelsGroup providerId="anthropic" isFocused={false} />);
+    render(<ModelsGroup providerId="anthropic" workspaceId={null} isFocused={false} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
 
@@ -53,7 +53,7 @@ describe('ModelsGroup', () => {
 
   it('turns a whole family off with its switch', () => {
     state.settings = { [SETTING_HIDDEN_MODELS]: '{}' };
-    render(<ModelsGroup providerId="anthropic" isFocused={false} />);
+    render(<ModelsGroup providerId="anthropic" workspaceId={null} isFocused={false} />);
 
     fireEvent.click(screen.getByRole('switch', { name: 'Haiku' }));
 
@@ -63,7 +63,7 @@ describe('ModelsGroup', () => {
   it('never lets the last visible model go', () => {
     const keys = MODEL_CATALOGS.gemini.map((model) => model.key);
     state.settings = { [SETTING_HIDDEN_MODELS]: JSON.stringify({ gemini: keys.slice(1) }) };
-    render(<ModelsGroup providerId="gemini" isFocused={false} />);
+    render(<ModelsGroup providerId="gemini" workspaceId={null} isFocused={false} />);
 
     const last = screen.getAllByRole('button', { pressed: true });
     expect(last).toHaveLength(1);

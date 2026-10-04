@@ -161,9 +161,11 @@ uses when you leave a model on **Auto**. It is one page in three parts.
 
 Each task row says what the job does and ends in a model picker. A row you have not
 pinned reads **Auto**. Open the picker to see what Auto picks right now. Pick a model to
-pin it: the picker then shows that model and an **x** that goes back to Auto. The page
-header counts the pinned rows. **Reset all to Auto**, in the menu at the top right,
-clears them after a confirm.
+pin it: the picker then shows that model and an **x** that goes back to Auto. **Reset
+all to Auto**, in the menu at the top right, clears every pin after a confirm that says
+how many. The page header carries no count. Each provider page counts its own pins in
+the Models group header (`ProviderPage/ModelsGroup/PinnedCount`, `3 pinned`): the chat
+model, the roles and the tasks of this workspace that use that provider.
 
 Each role row (`DefaultsPanel/RoleRow`) is a `Collapsible`. Closed, it shows one
 shape, the same as the chat row: the provider glyph, the model, its effort when the

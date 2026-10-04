@@ -121,7 +121,6 @@ export const DefaultsPanel = ({ workspaceId, focusSection }: Props) => {
       scroll="body"
       animationClassName={SETTINGS_PANE_ENTRY}
       title={NAMES.models}
-      {...(pinnedCount > 0 && { meta: `${pinnedCount} pinned` })}
       actions={
         <OverflowMenu
           label="Models actions"

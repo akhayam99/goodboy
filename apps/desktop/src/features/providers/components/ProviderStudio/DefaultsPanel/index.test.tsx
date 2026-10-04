@@ -242,7 +242,7 @@ describe('DefaultsPanel', () => {
     );
 
     rerender(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    expect(screen.getByText('1 pinned')).toBeDefined();
+    expect(screen.queryByText(/\d pinned$/)).toBeNull();
     const reset = screen.getByRole('button', { name: 'Step summaries routing reset' });
     await waitFor(() => expect(reset.hasAttribute('disabled')).toBe(false));
     fireEvent.click(reset);
@@ -641,8 +641,11 @@ describe('DefaultsPanel', () => {
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    expect(screen.getByText('1 pinned')).toBeDefined();
     expect(screen.queryByText('Branch naming')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Models actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Reset all to Auto/ }));
+    expect(screen.getByText('Reset 1 pinned model to Auto?')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Step summaries routing auto' }));
 
@@ -667,9 +670,10 @@ describe('DefaultsPanel', () => {
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    expect(screen.getByText('3 pinned')).toBeDefined();
+    expect(screen.queryByText(/\d pinned$/)).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Models actions' }));
     fireEvent.click(screen.getByRole('menuitem', { name: /Reset all to Auto/ }));
+    expect(screen.getByText('Reset 3 pinned models to Auto?')).toBeDefined();
     expect(state.setWorkspaceOverrides).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Reset all' }));
 
@@ -690,9 +694,9 @@ describe('DefaultsPanel', () => {
     };
     render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
 
-    expect(screen.getByText('1 pinned')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Models actions' }));
     fireEvent.click(screen.getByRole('menuitem', { name: /Reset all to Auto/ }));
+    expect(screen.getByText('Reset 1 pinned model to Auto?')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Reset all' }));
 
     await waitFor(() =>
