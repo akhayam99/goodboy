@@ -198,7 +198,7 @@ const WORKSPACE_FIELDS: ReadonlyArray<WorkspaceFieldDef> = [
   }),
   erase({
     id: 'resolveOnGithub',
-    label: 'Resolve the thread after replying',
+    label: NAMES.markThreadResolved,
     fallback: REPLY_SETTINGS_DEFAULT.resolveOnGithub,
     parse: asFlag,
     stored: ({ overrides }) => overrides?.resolveOnGithub ?? null,

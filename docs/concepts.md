@@ -880,7 +880,7 @@ e31b9f4` when a history rewrite folded the fix. Reply and page always read
   reason, then `Fixed in {commit_story}.` or `Leaving this as is.`
 - **Sign replies** is the attribution line switch, so one value signs
   everything Goodboy posts
-- **Resolve the thread after replying** (on by default) and **Commits** (new
+- **Mark thread as resolved** (on by default, it resolves the thread after the reply) and **Commits** (new
   commit, or fixup of the commit that added the line)
 - **Edit the posted reply** (on by default, stored per workspace in the
   `settings` table under `review.edit_posted_reply.<workspaceId>`, `0` = off).
