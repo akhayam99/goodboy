@@ -52,8 +52,10 @@ const EMPTY_RECHECKS: Readonly<Record<string, ThreadRecheck>> = {};
 
 export const useReviewEntries = ({
   sessionId,
+  isSourceScoped = true,
 }: {
   readonly sessionId: SessionId;
+  readonly isSourceScoped?: boolean;
 }): {
   readonly entries: ReadonlyArray<ReviewEntry>;
   readonly groups: ReadonlyArray<ReviewGroup>;
@@ -66,9 +68,11 @@ export const useReviewEntries = ({
   const threadGit = useAppStore((s) => s.sessionThreadGit[sessionId] ?? EMPTY_GIT);
   const rechecks = useAppStore((s) => s.sessionThreadRechecks[sessionId] ?? EMPTY_RECHECKS);
   return useMemo(() => {
-    const shown = rows.filter((row) =>
-      rowBelongsToSource({ row: row.thread, entry: { kind, projectId, number } }),
-    );
+    const shown = isSourceScoped
+      ? rows.filter((row) =>
+          rowBelongsToSource({ row: row.thread, entry: { kind, projectId, number } }),
+        )
+      : rows;
     const ordered = groupConversationsByFile({ rows: shown }).flatMap((group) => group.rows);
     const entries = ordered.map((row): ReviewEntry => {
       const state = reviewCommentStateOf({
@@ -111,5 +115,5 @@ export const useReviewEntries = ({
       entries: entries.filter((entry) => entry.group === group),
     })).filter((group) => group.entries.length > 0);
     return { entries: groups.flatMap((group) => group.entries), groups };
-  }, [changes, drafts, kind, number, projectId, rechecks, rows, threadGit]);
+  }, [changes, drafts, isSourceScoped, kind, number, projectId, rechecks, rows, threadGit]);
 };
