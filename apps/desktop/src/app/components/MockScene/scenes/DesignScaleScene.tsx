@@ -16,9 +16,8 @@ const ROLE_SAMPLES = [
     sample: 'The ledger-core cache keeps a failed lookup for the whole session.',
   },
   { role: 'text-label', className: 'text-label', sample: 'Step 3 ready' },
-  { role: 'text-secondary', className: 'text-secondary', sample: 'PR #231 awaiting review' },
+  { role: 'text-meta', className: 'text-meta', sample: 'PR #231 awaiting review' },
   { role: 'text-eyebrow', className: 'text-eyebrow', sample: 'In review' },
-  { role: 'text-meta', className: 'text-meta', sample: '19:34 · $2.15 · 25m' },
   { role: 'text-chip', className: 'text-chip', sample: 'Needs you' },
   { role: 'text-code', className: 'text-code', sample: 'nw/fix-posting-rounding' },
 ] as const;
@@ -109,7 +108,7 @@ export const DesignScaleScene = () => (
         {RADII.map(({ name, className }) => (
           <li key={name} className="flex flex-col items-center gap-2">
             <span className={className} />
-            <span className="text-secondary text-muted-foreground">{name}</span>
+            <span className="text-meta text-muted-foreground">{name}</span>
           </li>
         ))}
       </ul>
@@ -118,7 +117,7 @@ export const DesignScaleScene = () => (
       <Eyebrow label="Elevation" />
       <div className="flex max-w-xl flex-col gap-3 rounded-l-frame border border-r-0 border-frame-edge bg-background p-3">
         {LEVELS.map(({ name, className }) => (
-          <div key={name} className={cn('text-secondary', className)}>
+          <div key={name} className={cn('text-meta', className)}>
             {name}
           </div>
         ))}

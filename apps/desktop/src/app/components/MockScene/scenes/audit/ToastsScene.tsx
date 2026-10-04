@@ -36,7 +36,7 @@ export const ToastsScene = () => {
     <ToastProvider>
       <main className="flex h-screen flex-col bg-background text-foreground">
         <div className="flex h-9 items-center justify-end gap-3 border-b border-border px-3">
-          <span className="text-secondary text-muted-foreground">footer pill</span>
+          <span className="text-meta text-muted-foreground">footer pill</span>
           <UpdatePill />
         </div>
         <div className="flex-1" />

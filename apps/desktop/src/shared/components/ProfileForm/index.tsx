@@ -54,7 +54,7 @@ export const ProfileForm = ({ value, disabled = false, onChange, onCommit, learn
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <span className="text-label font-medium text-muted-foreground">{NAMES.yourJob}</span>
         <ChipsInput
           label={NAMES.yourJob}
@@ -66,7 +66,7 @@ export const ProfileForm = ({ value, disabled = false, onChange, onCommit, learn
           onChange={(next) => changeList({ key: 'roles', next })}
         />
       </div>
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <label htmlFor={aboutWorkId} className="text-label font-medium text-muted-foreground">
           About your work{' '}
           <span className="font-normal text-faint-foreground">what you do and for whom</span>
@@ -82,7 +82,7 @@ export const ProfileForm = ({ value, disabled = false, onChange, onCommit, learn
           className="w-full"
         />
       </div>
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <label htmlFor={workingRulesId} className="text-label font-medium text-muted-foreground">
           How agents should work with you
         </label>
@@ -97,7 +97,7 @@ export const ProfileForm = ({ value, disabled = false, onChange, onCommit, learn
           className="w-full"
         />
       </div>
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <span className="text-label font-medium text-muted-foreground">
           Explain more when it touches
         </span>
@@ -111,7 +111,7 @@ export const ProfileForm = ({ value, disabled = false, onChange, onCommit, learn
         />
         {learned}
       </div>
-      <div className="flex items-center gap-1.5 text-label text-faint-foreground">
+      <div className="flex items-center gap-2 text-label text-faint-foreground">
         <Eye size={ICON_SIZE.row} aria-hidden className="shrink-0" />
         Agents read these fields by role.
         <ProfileAccessPopover />

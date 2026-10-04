@@ -84,7 +84,7 @@ export const RoutingLabel = ({
 
   if (shown.label == null) {
     return (
-      <span className={cn('inline-flex min-w-0 items-center gap-1 text-secondary', className)}>
+      <span className={cn('inline-flex min-w-0 items-center gap-1 text-meta', className)}>
         <span className="text-faint-foreground">{MISSING_LABEL}</span>
       </span>
     );
@@ -94,7 +94,7 @@ export const RoutingLabel = ({
       <span
         data-testid={shown.isDiverged ? 'routing-divergence' : undefined}
         className={cn(
-          'inline-flex min-w-0 items-center gap-1 text-secondary',
+          'inline-flex min-w-0 items-center gap-1 text-meta',
           muted && 'opacity-60',
           shown.isDiverged && DIVERGED_CLASS,
           className,

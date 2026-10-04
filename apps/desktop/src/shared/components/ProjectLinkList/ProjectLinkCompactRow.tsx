@@ -63,7 +63,7 @@ export const ProjectLinkCompactRow = ({
             {project.name}
           </button>
         </Tooltip>
-        <span className="flex min-w-0 items-center gap-1.5">
+        <span className="flex min-w-0 items-center gap-2">
           <span className="min-w-0 truncate text-label text-muted-foreground">
             {description !== '' ? (
               description
@@ -77,7 +77,7 @@ export const ProjectLinkCompactRow = ({
         <span className="flex shrink-0 items-center gap-2">
           {badge}
           {project.baseBranch != null && project.baseBranch !== '' ? (
-            <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-code text-muted-foreground">
+            <span className="shrink-0 rounded-sm bg-muted px-2 py-0.5 text-code text-muted-foreground">
               {project.baseBranch}
             </span>
           ) : null}

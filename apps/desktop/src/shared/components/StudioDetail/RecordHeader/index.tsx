@@ -78,7 +78,7 @@ export const RecordHeader = ({
     <div data-slot="record-header" className="flex min-w-0 flex-col gap-2">
       <div className="flex h-7 min-w-0 items-center gap-2">
         <IntegrationGlyph provider={provider} size="xs" useBrandColor />
-        <span className="shrink-0 font-mono text-secondary tabular-nums text-muted-foreground">
+        <span className="shrink-0 font-mono text-meta tabular-nums text-muted-foreground">
           {identifier}
         </span>
         {state}
@@ -98,7 +98,7 @@ export const RecordHeader = ({
           label={`More actions for ${identifier}`}
           anchorKey={`record-header:${identifier}`}
           trigger={<Ellipsis size={ICON_SIZE.control} aria-hidden />}
-          triggerClassName="p-1.5"
+          triggerClassName="p-2"
           omit={RECORD_HEADER_OMISSIONS}
         />
         {frame?.onClose != null ? (

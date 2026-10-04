@@ -29,7 +29,7 @@ export const FinishedRegister = ({
         <h2>
           <Eyebrow label={label} />
         </h2>
-        <span className="text-secondary tabular-nums text-muted-foreground">{count}</span>
+        <span className="text-meta tabular-nums text-muted-foreground">{count}</span>
       </div>
       {visible}
       {earlierCount > 0 ? (

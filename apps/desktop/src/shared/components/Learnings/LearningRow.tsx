@@ -30,7 +30,7 @@ export const LearningRow = ({
     return (
       <div className="flex flex-col gap-1 rounded-md px-2 py-2">
         <span className="truncate text-label text-faint-foreground line-through">{item.title}</span>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <Chip tone="neutral" size="3xs" label="Dismissed" />
           <span className="flex-1" />
           <Button
@@ -80,9 +80,9 @@ export const LearningRow = ({
       </button>
       {isOpen ? (
         <>
-          <p className="text-secondary text-muted-foreground">{item.text}</p>
-          <div className="-mx-1.5 flex flex-wrap items-center gap-1">
-            <span className={cn(META, 'inline-flex items-center gap-1 px-1.5')}>
+          <p className="text-meta text-muted-foreground">{item.text}</p>
+          <div className="-mx-2 flex flex-wrap items-center gap-1">
+            <span className={cn(META, 'inline-flex items-center gap-1 px-2')}>
               {isWorkspace ? null : <Eye size={11} aria-hidden />}
               {isWorkspace ? learningSourceLine({ item, now }) : 'Visible to you only'}
             </span>

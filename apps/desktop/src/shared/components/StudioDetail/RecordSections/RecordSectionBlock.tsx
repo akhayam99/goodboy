@@ -24,7 +24,7 @@ export const RecordSectionBlock = ({ section }: Props) => {
         className="flex min-w-0 flex-col gap-2"
       >
         {section.kind === 'description' ? null : (
-          <div className="flex items-baseline gap-1.5">
+          <div className="flex items-baseline gap-2">
             <Eyebrow label={section.label} />
             {count}
           </div>
@@ -58,11 +58,9 @@ export const RecordSectionBlock = ({ section }: Props) => {
             isOpen && 'rotate-90',
           )}
         />
-        <span className="shrink-0 text-secondary font-semibold text-foreground">
-          {section.label}
-        </span>
+        <span className="shrink-0 text-meta font-semibold text-foreground">{section.label}</span>
         {section.summary == null ? null : (
-          <span className="min-w-0 truncate text-secondary text-muted-foreground">
+          <span className="min-w-0 truncate text-meta text-muted-foreground">
             {section.summary}
           </span>
         )}

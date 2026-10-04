@@ -39,13 +39,13 @@ export const RecommendationRow = ({
         aria-pressed={active}
         aria-label={isAuto ? `${AUTO_LABEL}, now ${summary}` : `${label} ${summary}`}
         className={cn(
-          'flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-label transition-colors',
+          'flex w-full items-center justify-between gap-2 px-3 py-2 text-label transition-colors',
           active
             ? 'bg-background font-medium text-foreground'
             : 'text-muted-foreground hover:bg-background hover:text-foreground',
         )}
       >
-        <span className="flex shrink-0 items-center gap-1.5">
+        <span className="flex shrink-0 items-center gap-2">
           {isAuto ? (
             <CONCEPT_ICONS.autoRouting
               size={12}
@@ -61,7 +61,7 @@ export const RecommendationRow = ({
           )}
           {shownLabel}
         </span>
-        <span className="flex min-w-0 items-center gap-1 text-secondary font-normal">
+        <span className="flex min-w-0 items-center gap-1 text-meta font-normal">
           {isAuto ? (
             <span className="truncate text-faint-foreground">Now: {summary}</span>
           ) : routing.label === null ? (
@@ -77,7 +77,7 @@ export const RecommendationRow = ({
         </span>
       </button>
       {reason != null && reason !== '' ? (
-        <p className="px-2.5 pb-1.5 text-2xs leading-relaxed text-muted-foreground">{reason}</p>
+        <p className="px-3 pb-1 text-meta text-muted-foreground">{reason}</p>
       ) : null}
     </div>
   );

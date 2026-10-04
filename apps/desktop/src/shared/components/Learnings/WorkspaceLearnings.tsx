@@ -44,7 +44,7 @@ export const WorkspaceLearnings = ({ workspaceId, topics }: Props) => {
 
   return (
     <div className="flex flex-col">
-      <div className="flex h-7 items-center gap-1.5 px-0.5 text-label text-faint-foreground">
+      <div className="flex h-7 items-center gap-2 px-0.5 text-label text-faint-foreground">
         <BookOpen size={ICON_SIZE.control} aria-hidden className="text-muted-foreground" />
         <span className="text-muted-foreground">Learned</span>
         <span aria-hidden>·</span>
@@ -68,7 +68,7 @@ export const WorkspaceLearnings = ({ workspaceId, topics }: Props) => {
         <div className="flex flex-col gap-1 pt-1">
           {groups.map((group) => (
             <section key={group.topic} aria-label={group.topic} className="flex flex-col">
-              <h3 className="flex items-center gap-2 px-2 pb-1 pt-1.5 text-heading text-foreground">
+              <h3 className="flex items-center gap-2 px-2 pb-1 pt-2 text-heading text-foreground">
                 {group.topic}
                 <span className="text-meta text-faint-foreground">
                   {group.items.filter((item) => item.status === 'active').length}

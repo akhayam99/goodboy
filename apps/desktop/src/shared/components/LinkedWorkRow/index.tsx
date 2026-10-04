@@ -63,7 +63,7 @@ export const LinkedWorkRow = ({
     <div
       data-selected={isSelected ? 'true' : undefined}
       className={cn(
-        'group flex w-full items-center gap-2 rounded-lg border bg-elevated px-3.5 py-2.5 shadow-sm transition-colors',
+        'group flex w-full items-center gap-2 rounded-lg border bg-elevated px-4 py-3 shadow-sm transition-colors',
         isSelected
           ? cn(tintClasses('primary').border, 'ring-1', tintClasses('primary').ring)
           : 'border-border-soft hover:border-border',

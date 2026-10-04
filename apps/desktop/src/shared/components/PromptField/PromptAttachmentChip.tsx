@@ -35,10 +35,10 @@ export const PromptAttachmentChip = ({ attachment, onRemove }: Props) => {
           <Icon size={ICON_SIZE.control} aria-hidden />
         )}
       </span>
-      <span className="min-w-0 max-w-40 truncate text-secondary text-foreground">
+      <span className="min-w-0 max-w-40 truncate text-meta text-foreground">
         {attachment.fileName}
       </span>
-      <span className="shrink-0 text-secondary tabular-nums text-faint-foreground">
+      <span className="shrink-0 text-meta tabular-nums text-faint-foreground">
         {formatSize({ bytes: attachment.blob.size })}
       </span>
       <IconButton
