@@ -24,16 +24,7 @@ Every deleted branch goes to **Recently deleted** at the top of the page, with t
 
 ### Storage scope
 
-Clean up this workspace, other workspaces, removed ones or all of them, each with its weight, from the picker in the page header. Bulk actions name the scope they act on. **Branches** shares the scope but has no removed workspaces, since a branch lives in a project you still have. **Suggest cleanup after** sits beside the scope on **Storage**, and **Scan another repository** at the foot of **Worktrees** reads a repository from a workspace you removed. The free space chip, the cleanup notice and every other way in land on **Storage**, never on **Branches**.
-
-### Free space chip
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/storage-free-space-chip-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/storage-free-space-chip-light.webp" width="680" alt="The top bar with the Free 4 GB chip hovered: Goodboy can free 4.1 GB of worktree folders nobody uses. Open storage. Beside it are 2 need you, 2 running and $9.62 today">
-</picture>
-
-See reclaimable space at a glance. While at least 1 GB of worktree folders can go, the top bar shows **Free 4 GB**. Hover it for the exact size, 4.1 GB here, and click to open Storage across all workspaces.
+Clean up this workspace, other workspaces, removed ones or all of them, each with its weight, from the picker in the page header. Bulk actions name the scope they act on. **Branches** shares the scope but has no removed workspaces, since a branch lives in a project you still have. **Suggest cleanup after** sits beside the scope on **Storage**, and **Scan another repository** at the foot of **Worktrees** reads a repository from a workspace you removed. The cleanup notice and every other way in land on **Storage**, never on **Branches**.
 
 ### Artifacts from deleted sessions
 

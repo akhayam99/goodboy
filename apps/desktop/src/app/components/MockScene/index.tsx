@@ -93,8 +93,6 @@ import { FeaturesWriteReviewScene } from './scenes/features/WriteReviewScene';
 import { SessionStartScene } from './scenes/audit/SessionStartScene';
 import { WorkspaceStatesScene } from './scenes/audit/WorkspaceStatesScene';
 import { SettingsAppScene } from './scenes/audit/SettingsAppScene';
-import { SettingsHomeScene } from './scenes/audit/SettingsHomeScene';
-import { SettingsHomeFullScene } from './scenes/audit/SettingsHomeFullScene';
 import { SettingsNoWorkspaceScene } from './scenes/audit/SettingsNoWorkspaceScene';
 import { SettingsProvidersScene } from './scenes/audit/SettingsProvidersScene';
 import { SettingsToolsScene } from './scenes/audit/SettingsToolsScene';
@@ -239,8 +237,6 @@ export const MOCK_SCENES = {
   'session-start': SessionStartScene,
   'workspace-states': WorkspaceStatesScene,
   'settings-app': SettingsAppScene,
-  'settings-home': SettingsHomeScene,
-  'settings-home-full': SettingsHomeFullScene,
   'settings-no-workspace': SettingsNoWorkspaceScene,
   'settings-providers': SettingsProvidersScene,
   'settings-tools': SettingsToolsScene,

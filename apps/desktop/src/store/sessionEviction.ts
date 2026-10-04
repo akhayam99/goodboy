@@ -285,6 +285,7 @@ export const NON_SESSION_STATE_KEYS = [
   'drawer',
   'navigation',
   'appStudio',
+  'lastSettingsFocus',
   'slackChannels',
   'slackUsers',
   'slackThreadHeads',

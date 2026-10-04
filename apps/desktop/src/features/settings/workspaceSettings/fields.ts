@@ -21,14 +21,14 @@ import { canonicalWorkflowRules, workflowRulesSummary } from '../../workflows/wo
 import { FIELD_PAGE, type WorkspaceSettingField } from '../pageKeys';
 import { DEFAULT_BRANCH_PREFIX } from '../settings';
 import { VERBOSITY_LABEL, VERBOSITY_LEVELS } from '../verbosity';
-import type { WorkspacePage } from '../components/SettingsStudio/workspacePages';
+import type { PlanPage } from '../components/SettingsStudio/workspacePages';
 import type { WorkspaceSettingsSnapshot, WorkspaceSettingsWrite } from './snapshot';
 
 export type FieldValue = string | boolean | ReadonlyArray<string>;
 
 export type WorkspaceFieldDef = {
   readonly id: WorkspaceSettingField;
-  readonly page: WorkspacePage;
+  readonly page: PlanPage;
   readonly label: string;
   readonly fallback: FieldValue;
   readonly stored: (snapshot: WorkspaceSettingsSnapshot) => FieldValue | null;

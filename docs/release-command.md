@@ -193,7 +193,7 @@ pr=<numbers> -->` (`area` required, the rest optional, no spaces inside a
 
 ## Align the in-app Guide
 
-The Guide (Settings, App, Help, Open guide) explains Goodboy chapter by
+The Guide (palette, Open the guide) explains Goodboy chapter by
 chapter, in the order a task lives. Its text is in
 `apps/desktop/src/features/settings/components/GuideStudio/guideChapters.ts`.
 

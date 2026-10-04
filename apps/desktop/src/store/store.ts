@@ -37,6 +37,7 @@ import type {
 } from './slices/review-drafts';
 import { createIntegrationsSlice } from './slices/integrations';
 import { createSidebarSlice } from './slices/sidebar';
+import { createSettingsLastPageSlice } from './slices/settings-last-page';
 import { createSessionViewSlice } from './slices/session-view';
 import { createSessionFiltersSlice } from './slices/sessionFilters';
 import { createInitialSessionViewState } from './slices/session-view/createInitialSessionViewState';
@@ -135,6 +136,7 @@ import { transcriptsInitialState } from './slices/transcripts/state';
 import { worktreesInitialState } from './slices/worktrees/state';
 import { overridesInitialState } from './slices/overrides/state';
 import { sidebarInitialState } from './slices/sidebar/state';
+import { settingsLastPageInitialState } from './slices/settings-last-page/state';
 import { turnInitialState } from './slices/turn/state';
 import { workflowsInitialState } from './slices/workflows/state';
 import { agentsInitialState } from './slices/agents/state';
@@ -213,6 +215,7 @@ export type AppStore = AppState &
   ReturnType<typeof createDrawerSlice> &
   ReturnType<typeof createNavigationSlice> &
   ReturnType<typeof createSidebarSlice> &
+  ReturnType<typeof createSettingsLastPageSlice> &
   ReturnType<typeof createSessionFiltersSlice> &
   ReturnType<typeof createSettingsSlice> &
   ReturnType<typeof createBootSlice> &
@@ -313,6 +316,7 @@ export const initialState: AppState = {
   ...agentsInitialState,
   ...overridesInitialState,
   ...sidebarInitialState,
+  ...settingsLastPageInitialState,
   ...githubInitialState,
   ...initialGitlabMrState,
   ...initialBitbucketPrState,
@@ -365,6 +369,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createReviewDraftsSlice({ set, get }),
   ...createIntegrationsSlice({ set, get }),
   ...createSidebarSlice({ set, get }),
+  ...createSettingsLastPageSlice({ set, get }),
   ...createSessionViewSlice({ set, get }),
   ...createSessionFiltersSlice({ set, get }),
   ...createTerminalSlice({ set, get }),

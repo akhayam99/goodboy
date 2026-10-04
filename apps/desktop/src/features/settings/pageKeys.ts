@@ -1,5 +1,5 @@
 import type { OverrideSettings } from '@goodboy/types';
-import type { WorkspacePage } from './components/SettingsStudio/workspacePages';
+import type { PlanPage } from './components/SettingsStudio/workspacePages';
 
 export type WorkspaceSettingField =
   | 'branchPrefix'
@@ -22,7 +22,7 @@ export type WorkspaceSettingField =
   | 'explainMore'
   | 'workflowRules';
 
-export const FIELD_PAGE: Readonly<Record<WorkspaceSettingField, WorkspacePage>> = {
+export const FIELD_PAGE: Readonly<Record<WorkspaceSettingField, PlanPage>> = {
   branchPrefix: 'general',
   branchTemplate: 'general',
   attribution: 'general',
@@ -81,5 +81,5 @@ const FIELDS = Object.keys(FIELD_PAGE).filter((key): key is WorkspaceSettingFiel
 export const pageKeys = ({
   page,
 }: {
-  readonly page: WorkspacePage;
+  readonly page: PlanPage;
 }): ReadonlyArray<WorkspaceSettingField> => FIELDS.filter((field) => FIELD_PAGE[field] === page);

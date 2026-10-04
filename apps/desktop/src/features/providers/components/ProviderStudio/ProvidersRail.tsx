@@ -16,13 +16,7 @@ type Props = {
 };
 
 export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults }: Props) => {
-  const state = useAppStore(
-    useShallow((store) => ({
-      cliRequirements: store.cliRequirements,
-      providerLimits: store.providerLimits,
-    })),
-  );
-  const nowMs = Date.now();
+  const state = useAppStore(useShallow((store) => ({ cliRequirements: store.cliRequirements })));
   return (
     <ul
       aria-label="Providers & models settings"
@@ -48,7 +42,7 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
       {providers.map((p) => {
         const id = p.id as ProviderId;
         const Icon = PROVIDER_BRAND[id].icon;
-        const { subtitle, tone } = providerRailStatus({ provider: p, state, nowMs });
+        const { subtitle, tone } = providerRailStatus({ provider: p, state });
         return (
           <li key={id}>
             <StatusRailItem

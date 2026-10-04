@@ -8,11 +8,9 @@ export type WorkspacePage =
   | 'profile'
   | 'general'
   | 'after-merge'
-  | 'workflow-rules'
   | typeof REVIEW_REPLIES_SECTION_ID
   | typeof PERMISSIONS_SECTION_ID
-  | 'skills'
-  | 'danger';
+  | 'skills';
 
 export const DEV_PROJECT_SECTION_ID = 'dev-project';
 
@@ -43,12 +41,6 @@ const ALL_WORKSPACE_PAGES = [
     hint: 'Session defaults',
   },
   {
-    id: 'workflow-rules',
-    label: 'Workflow rules',
-    concept: 'workflows',
-    hint: 'Run defaults',
-  },
-  {
     id: 'after-merge',
     label: 'After merge',
     concept: 'merge',
@@ -72,12 +64,6 @@ const ALL_WORKSPACE_PAGES = [
     concept: 'skills',
     hint: 'Instructions for agents',
   },
-  {
-    id: 'danger',
-    label: 'Disconnect',
-    concept: 'disconnect',
-    hint: 'Remove from this Mac',
-  },
 ] as const satisfies ReadonlyArray<WorkspacePageEntry>;
 
 export const WORKSPACE_PAGES: ReadonlyArray<WorkspacePageEntry> = ALL_WORKSPACE_PAGES.filter(
@@ -100,3 +86,15 @@ export const workspacePageOf = ({ section }: { readonly section?: string }): Wor
 
 export const workspacePageEntry = ({ page }: { readonly page: WorkspacePage }) =>
   WORKSPACE_PAGES.find((entry) => entry.id === page) ?? ALL_WORKSPACE_PAGES[0];
+
+const WORKFLOW_RULES_PLAN_PAGE = 'workflow-rules';
+
+export type PlanPage = WorkspacePage | typeof WORKFLOW_RULES_PLAN_PAGE;
+
+export const PLAN_PAGES: ReadonlyArray<PlanPage> = [
+  ...WORKSPACE_PAGES.map((entry) => entry.id),
+  WORKFLOW_RULES_PLAN_PAGE,
+];
+
+export const planPageLabel = ({ page }: { readonly page: PlanPage }): string =>
+  page === WORKFLOW_RULES_PLAN_PAGE ? 'Workflow rules' : workspacePageEntry({ page }).label;

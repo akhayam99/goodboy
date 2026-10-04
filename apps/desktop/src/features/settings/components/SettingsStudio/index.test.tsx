@@ -102,6 +102,8 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
     projectGitStatus: {} as Record<string, unknown>,
     workspaces: [] as ReadonlyArray<unknown>,
     workspaceOverrides: {} as Record<string, unknown>,
+    lastSettingsFocus: null as unknown,
+    rememberSettingsFocus: vi.fn(),
   },
   toastMock: vi.fn(),
 }));
@@ -145,7 +147,6 @@ vi.mock('../../../onboarding/onboarding-store', () => ({
 import { SettingsStudio } from './index';
 import { APP_SECTIONS } from './appSections';
 import type { SettingsScopeChange } from '../../settingsFocus';
-import { OPEN_REPORT_SHEET_EVENT } from '../../../bug-report/openReportSheet';
 import { shortcutGlyphs, shortcutRangeGlyphs } from '../../../../shared/keyboard/registry';
 import { SHORTCUT_ROW_COUNT } from './shortcutRows';
 
@@ -248,8 +249,6 @@ describe('SettingsStudio', () => {
       'storage',
       'branches',
       'security-findings',
-      'help',
-      'danger',
     ]);
     expect(
       within(items).getByRole('button', { name: 'General' }).getAttribute('aria-current'),
@@ -293,7 +292,7 @@ describe('SettingsStudio', () => {
     expect(screen.getAllByRole('navigation', { name: 'Settings scopes' })).toHaveLength(1);
   });
 
-  it('keeps one rail mounted across scopes, with the App list always open', () => {
+  it('keeps one rail mounted across scopes, opening Providers only for a page inside it', () => {
     const { rerender } = renderApp();
     const rail = screen.getByRole('navigation', { name: /settings scopes/i });
 
@@ -351,6 +350,24 @@ describe('SettingsStudio', () => {
     }
   });
 
+  it('says how many providers the closed group holds, with no tone and no usage', () => {
+    state.providers = [
+      { id: 'anthropic', label: 'Claude', connection: 'connected', version: '9.9.9' },
+      { id: 'codex', label: 'Codex', connection: 'connected', version: '9.9.9' },
+    ];
+    try {
+      renderApp();
+      const rail = screen.getByRole('navigation', { name: /settings scopes/i });
+      const group = within(rail).getByRole('button', { name: /^Providers & models/ });
+
+      expect(group.textContent).toContain('2 providers');
+      expect(within(rail).queryByRole('img')).toBeNull();
+      expect(within(rail).queryByRole('list', { name: 'Providers & models settings' })).toBeNull();
+    } finally {
+      state.providers = [];
+    }
+  });
+
   it('reports rail clicks as focus changes instead of switching on its own', () => {
     const onScopeChange = vi.fn();
     renderApp({ onScopeChange });
@@ -401,7 +418,7 @@ describe('SettingsStudio', () => {
   });
 
   it('wipes only after the row confirm and offers a restart', async () => {
-    renderApp({ section: 'danger' });
+    renderApp({ section: 'backup' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Wipe' }));
     expect(state.wipeLocalDatabase).not.toHaveBeenCalled();
@@ -416,7 +433,7 @@ describe('SettingsStudio', () => {
   });
 
   it('cancels the wipe back to its trigger', () => {
-    renderApp({ section: 'danger' });
+    renderApp({ section: 'backup' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Wipe' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
@@ -425,15 +442,71 @@ describe('SettingsStudio', () => {
     expect(screen.getByRole('button', { name: 'Wipe' })).toBeDefined();
   });
 
-  it('opens the report sheet from Help', () => {
-    const listener = vi.fn();
-    window.addEventListener(OPEN_REPORT_SHEET_EVENT, listener);
+  it('has no Help page, and the old Help anchor lands on General', () => {
     renderApp({ section: 'help' });
 
-    fireEvent.click(screen.getByRole('button', { name: /report a bug/i }));
+    const rail = screen.getByRole('navigation', { name: 'Settings scopes' });
+    expect(within(rail).queryByRole('button', { name: 'Help' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
+  });
 
-    expect(listener).toHaveBeenCalledOnce();
-    window.removeEventListener(OPEN_REPORT_SHEET_EVENT, listener);
+  const renderHome = (onScopeChange = vi.fn()) =>
+    render(
+      <SettingsStudio
+        currentWorkspace={null}
+        onScopeChange={onScopeChange}
+        focus={{ scope: 'home' }}
+        onClose={vi.fn()}
+      />,
+    );
+
+  it('opens on General the first time and keeps the rail in view', () => {
+    const onScopeChange = vi.fn();
+    renderHome(onScopeChange);
+
+    expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
+    expect(screen.getByRole('navigation', { name: 'Settings scopes' })).toBeDefined();
+    expect(onScopeChange).toHaveBeenCalledWith({ scope: 'app', section: 'general' });
+  });
+
+  it('opens on the last visited page', () => {
+    state.lastSettingsFocus = { scope: 'app', section: 'backup' };
+    try {
+      const onScopeChange = vi.fn();
+      renderHome(onScopeChange);
+
+      expect(screen.getByRole('heading', { name: 'Backup' })).toBeDefined();
+      expect(onScopeChange).toHaveBeenCalledWith({ scope: 'app', section: 'backup' });
+    } finally {
+      state.lastSettingsFocus = null;
+    }
+  });
+
+  it('opens on General when the last page needs a workspace and there is none', () => {
+    state.lastSettingsFocus = { scope: 'workspace', section: 'projects' };
+    try {
+      renderHome();
+
+      expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
+    } finally {
+      state.lastSettingsFocus = null;
+    }
+  });
+
+  it('remembers the page it shows', () => {
+    state.rememberSettingsFocus.mockClear();
+    renderApp({ section: 'storage' });
+
+    expect(state.rememberSettingsFocus).toHaveBeenCalledWith({ scope: 'app', section: 'storage' });
+  });
+
+  it('loads nothing heavy when it opens on General', () => {
+    state.loadStorage.mockClear();
+    state.scanStorageRepository.mockClear();
+    renderHome();
+
+    expect(state.loadStorage).not.toHaveBeenCalled();
+    expect(state.scanStorageRepository).not.toHaveBeenCalled();
   });
 
   it('offers export and import under Backup', () => {

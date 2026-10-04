@@ -79,8 +79,6 @@ vi.mock('../../../store', () => ({
   BOARD_PLACE: { at: 'board' },
 }));
 
-vi.mock('./StorageChip', () => ({ StorageChip: () => null }));
-
 vi.mock('../../../features/notifications/components/NotificationCenter', () => ({
   NotificationCenter: () => <span data-testid="notification-center" />,
 }));

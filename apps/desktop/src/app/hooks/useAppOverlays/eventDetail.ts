@@ -92,6 +92,7 @@ export const settingsOverlayFromEvent = (event: Event): StudioPlace => {
   const provider =
     eventValue({ event, key: 'provider' }) ?? eventValue({ event, key: 'providerId' });
   const action = eventValue({ event, key: 'action' });
+  const flow = eventValue({ event, key: 'flow' });
   return {
     kind: 'settings',
     focus: {
@@ -100,6 +101,7 @@ export const settingsOverlayFromEvent = (event: Event): StudioPlace => {
       section: typeof section === 'string' ? section : undefined,
       provider: isProviderId(provider) ? provider : undefined,
       action: isProviderLifecycleAction(action) ? action : undefined,
+      flow: flow === 'copy' || flow === 'restore' ? flow : undefined,
     },
   };
 };

@@ -14,7 +14,6 @@ import { WorkspaceDisconnectBand } from './WorkspaceDisconnectBand';
 import { WorkspaceDevProjectBand } from './WorkspaceDevProjectBand';
 import { WorkspaceFieldRow } from './WorkspaceFieldRow';
 import { DEV_PROJECT_SECTION_ID, type WorkspacePage } from './workspacePages';
-import { WorkflowRulesPage } from './WorkflowRulesPage';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -42,14 +41,13 @@ export const WorkspacePageBody = ({
             isInitiallyOpen={section === DEV_PROJECT_SECTION_ID}
           />
           <WorkspaceStorageNotice workspaceId={workspaceId} />
+          <WorkspaceDisconnectBand workspaceId={workspaceId} requestClose={requestClose} />
         </>
       );
     case 'profile':
       return <WorkspaceProfileSection workspaceId={workspaceId} />;
     case 'general':
       return <WorkspaceDefaultsGrid workspaceId={workspaceId} />;
-    case 'workflow-rules':
-      return <WorkflowRulesPage workspaceId={workspaceId} requestClose={requestClose} />;
     case 'after-merge':
       return <WorkspaceAfterMergeSection workspaceId={workspaceId} />;
     case 'review-replies':
@@ -72,8 +70,6 @@ export const WorkspacePageBody = ({
       );
     case 'skills':
       return <SkillsPanel workspaceId={workspaceId} />;
-    case 'danger':
-      return <WorkspaceDisconnectBand workspaceId={workspaceId} requestClose={requestClose} />;
     default: {
       const exhaustive: never = page;
       return exhaustive;

@@ -1,14 +1,14 @@
 import type { ProviderId } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import { CONCEPT_TONE, type CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { pluralize } from '../../../../shared/utils/pluralize';
 import type { ToolRailEntry } from '../../../integrations/toolRailEntries';
 import type { ProviderRailStatus } from '../../../providers/providerRailStatus';
 import type { SettingsPageScope, SettingsScopeChange } from '../../settingsFocus';
 import { APP_SECTIONS, type AppSection } from './appSections';
 import type { RailSubtitles } from './railSubtitles';
-import { SHORTCUT_ROW_COUNT } from './shortcutRows';
 import { SCOPE_ITEMS } from './settingsScopes';
-import { WORKSPACE_PAGES, workspacePageOf, type WorkspacePage } from './workspacePages';
+import { WORKSPACE_PAGES, workspacePageOf } from './workspacePages';
 
 type Concept = keyof typeof CONCEPT_ICONS;
 
@@ -22,15 +22,13 @@ type SettingsAttention = {
   readonly tone: Tone;
 };
 
-export type SettingsPage = {
+type SettingsPage = {
   readonly key: string;
   readonly label: string;
   readonly glyph: SettingsPageGlyph;
   readonly tone: Tone;
-  readonly quiet: string;
   readonly attention: SettingsAttention | null;
   readonly target: SettingsScopeChange;
-  readonly isDanger: boolean;
 };
 
 export type SettingsGroup = {
@@ -55,23 +53,11 @@ export type SettingsStatus = {
   readonly providers: ReadonlyArray<SettingsProviderEntry>;
   readonly tools: ReadonlyArray<ToolRailEntry>;
   readonly toolsInventory: string;
-  readonly workspacePages: Readonly<Partial<Record<WorkspacePage, string>>>;
 };
 
 type Params = {
   readonly status: SettingsStatus;
   readonly workspaceName: string | null;
-};
-
-const APP_QUIET: Readonly<Record<AppSection, string>> = {
-  general: 'Updates, theme, editor',
-  shortcuts: `${SHORTCUT_ROW_COUNT} shortcuts`,
-  backup: 'Export or import',
-  storage: 'Disk space Goodboy uses',
-  branches: 'Merged, stale branches',
-  'security-findings': 'Secrets in saved scripts',
-  help: 'Guide and bug report',
-  danger: 'Wipe local data',
 };
 
 const scopeMeta = (
@@ -136,10 +122,8 @@ const appGroup = ({ status }: Pick<Params, 'status'>): SettingsGroup => ({
     label: section.label,
     glyph: { kind: 'concept', concept: section.concept },
     tone: CONCEPT_TONE[section.concept],
-    quiet: APP_QUIET[section.id],
     attention: appAttention({ section: section.id, subtitles: status.subtitles }),
     target: { scope: 'app', section: section.id },
-    isDanger: section.id === 'danger',
   })),
 });
 
@@ -153,7 +137,6 @@ const workspaceGroup = ({ status, workspaceName }: Params): SettingsGroup => ({
     label: page.label,
     glyph: { kind: 'concept', concept: page.concept },
     tone: CONCEPT_TONE[page.concept],
-    quiet: status.workspacePages[page.id] ?? page.hint,
     attention:
       page.id === 'projects'
         ? attentionOf({
@@ -162,7 +145,6 @@ const workspaceGroup = ({ status, workspaceName }: Params): SettingsGroup => ({
           })
         : null,
     target: { scope: 'workspace', section: page.id },
-    isDanger: page.id === 'danger',
   })),
 });
 
@@ -176,10 +158,8 @@ const providerPages = ({ status, workspaceName }: Params): ReadonlyArray<Setting
             label: 'Defaults',
             glyph: { kind: 'defaults' },
             tone: 'primary',
-            quiet: 'Model for each job',
             attention: null,
             target: { scope: 'providers' },
-            isDanger: false,
           },
         ];
   const accounts = status.providers.map((provider): SettingsPage => ({
@@ -187,10 +167,8 @@ const providerPages = ({ status, workspaceName }: Params): ReadonlyArray<Setting
     label: provider.label,
     glyph: { kind: 'provider', provider: provider.id },
     tone: 'neutral',
-    quiet: provider.status.subtitle,
     attention: attentionOf({ text: provider.status.subtitle, tone: provider.status.tone }),
     target: { scope: 'providers', provider: provider.id },
-    isDanger: false,
   }));
   if (defaults.length + accounts.length > 0) {
     return [...defaults, ...accounts];
@@ -201,21 +179,22 @@ const providerPages = ({ status, workspaceName }: Params): ReadonlyArray<Setting
       label: 'Providers & models',
       glyph: { kind: 'concept', concept: 'providers' },
       tone: CONCEPT_TONE.providers,
-      quiet: 'Connect a provider',
       attention: attentionOf({
         text: status.subtitles.providersText,
         tone: status.subtitles.providersTone,
       }),
       target: { scope: 'providers' },
-      isDanger: false,
     },
   ];
 };
 
+const providerCount = (count: number): string | undefined =>
+  count === 0 ? undefined : pluralize(count, 'provider');
+
 const providersGroup = (params: Params): SettingsGroup => ({
   ...scopeMeta('providers'),
   place: params.workspaceName ?? 'This Mac',
-  subtitle: params.status.subtitles.providersText,
+  subtitle: params.status.subtitles.providersText ?? providerCount(params.status.providers.length),
   tone: params.status.subtitles.providersTone,
   pages: providerPages(params),
 });
@@ -230,10 +209,8 @@ const toolsGroup = ({ status, workspaceName }: Params): SettingsGroup => ({
     label: entry.label,
     glyph: { kind: 'concept', concept: entry.tool },
     tone: CONCEPT_TONE[entry.tool],
-    quiet: entry.subtitle,
     attention: null,
     target: { scope: 'tools', tool: entry.tool },
-    isDanger: false,
   })),
 });
 
