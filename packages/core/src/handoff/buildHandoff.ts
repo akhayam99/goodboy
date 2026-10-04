@@ -46,6 +46,7 @@ export type BuildHandoffParams = Readonly<{
   createdAt: IsoDateTime;
   sender: HandoffSender;
   instruction: string;
+  machineInstructions: string | null;
   why: string | null;
   doneWhen: string | null;
   goal: string | null;
@@ -109,6 +110,19 @@ const askSection = ({ params }: SectionParams): HandoffSection | null => {
     kind: 'ask',
     summary: doneWhen === '' ? summary : `${summary} Done when: ${handoffLine({ text: doneWhen })}`,
     bodyMd: instruction,
+    refs: [],
+  };
+};
+
+const instructionsSection = ({ params }: SectionParams): HandoffSection | null => {
+  const rules = params.machineInstructions?.trim() ?? '';
+  if (rules === '') {
+    return null;
+  }
+  return {
+    kind: 'instructions',
+    summary: 'Added by Goodboy',
+    bodyMd: rules,
     refs: [],
   };
 };
@@ -234,6 +248,7 @@ const roleSection = ({ params }: SectionParams): HandoffSection | null => {
 
 const SECTION_BUILDERS = [
   askSection,
+  instructionsSection,
   goalSection,
   earlierStepsSection,
   planSection,

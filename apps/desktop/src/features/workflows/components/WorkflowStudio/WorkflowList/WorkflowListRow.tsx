@@ -24,7 +24,7 @@ const metaOf = ({ workflow, builtin, now }: MetaParams): string => {
   const count = workflow.steps.length;
   const steps = `${count} ${count === 1 ? 'step' : 'steps'}`;
   if (builtin === 'builtin') {
-    return `${steps} · built in`;
+    return steps;
   }
   const age = formatSpan({ from: workflow.updatedAt, to: now });
   return age === '' ? steps : `${steps} · edited ${age} ago`;

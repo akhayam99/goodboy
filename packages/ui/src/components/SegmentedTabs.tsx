@@ -11,6 +11,7 @@ export type SegmentedTabOption<T extends string = string> = {
   readonly icon?: LucideIcon;
   readonly glyph?: ReactNode;
   readonly hint?: string;
+  readonly tooltip?: string;
   readonly badge?: ReactNode;
   readonly disabled?: boolean;
   readonly accent?: string;
@@ -184,7 +185,7 @@ export const SegmentedTabs = <T extends string>({
             aria-selected={isActive}
             tabIndex={isActive ? 0 : -1}
             disabled={option.disabled}
-            title={isMedium ? option.hint : undefined}
+            title={option.tooltip ?? (isMedium ? option.hint : undefined)}
             onClick={() => onChange(option.value)}
             onKeyDown={(event) => onKeyDown({ event, index })}
             style={activeStyle}

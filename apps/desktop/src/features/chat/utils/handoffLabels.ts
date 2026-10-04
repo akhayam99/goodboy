@@ -34,6 +34,16 @@ export const handoffSenderLabel = ({ sender, names }: SenderLabelParams): string
         ? `Resolve · ${count}`
         : `Resolve · ${count} on #${sender.prNumber}`;
     }
+    case 'recheck': {
+      const count = pluralize(sender.threadIds.length, 'comment');
+      return sender.prNumber === null
+        ? `Re-check · ${count}`
+        : `Re-check · ${count} on #${sender.prNumber}`;
+    }
+    case 'scribe':
+      return 'Scribe';
+    case 'historyRewrite':
+      return 'History rewrite';
     case 'parent':
       return withDetail({
         head: `From ${names.agentName ?? 'another agent'}`,
@@ -52,6 +62,7 @@ export const handoffSenderLabel = ({ sender, names }: SenderLabelParams): string
 
 export const HANDOFF_SECTION_LABEL: Readonly<Record<HandoffSectionKind, string>> = {
   ask: 'Ask',
+  instructions: 'Instructions',
   goal: NAMES.goal,
   earlierSteps: 'Earlier steps',
   plan: NAMES.plan,
@@ -77,6 +88,7 @@ export const handoffChipLabel = ({ section }: ChipLabelParams): string => {
     case 'role':
       return `${(section.summary.split(' · ')[0] ?? 'Role').replace(/ instructions$/i, '')} instructions`;
     case 'ask':
+    case 'instructions':
     case 'goal':
     case 'plan':
     case 'scope':

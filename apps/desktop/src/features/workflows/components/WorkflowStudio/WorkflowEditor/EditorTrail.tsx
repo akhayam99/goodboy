@@ -47,7 +47,7 @@ export const EditorTrail = ({
   const undoItem: OverflowMenuItem = {
     kind: 'item',
     key: 'undo',
-    label: 'Undo changes since opened',
+    label: 'Undo changes',
     icon: Undo2,
     onClick: onUndo,
   };

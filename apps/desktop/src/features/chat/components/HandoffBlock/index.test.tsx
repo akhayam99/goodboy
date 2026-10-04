@@ -264,6 +264,61 @@ describe('HandoffBlock', () => {
     expect(screen.queryByText(/comment-resolved/)).toBeNull();
   });
 
+  it('splits what the human wrote from the rules Goodboy added for a re-check', () => {
+    useAppStore.setState({
+      agentHandoffs: {
+        [AGENT]: handoff({
+          sender: { kind: 'recheck', threadIds: ['thread-1'], prNumber: 412 },
+          ask: 'Check whether the retry cap is still on this branch.',
+          sections: [
+            {
+              kind: 'ask',
+              summary: 'Check whether the retry cap is still on this branch.',
+              bodyMd: 'Check whether the retry cap is still on this branch.',
+              refs: [],
+            },
+            {
+              kind: 'instructions',
+              summary: 'Added by Goodboy',
+              bodyMd: 'Reply contract: end with the resolved marker.',
+              refs: [],
+            },
+          ],
+          sentMessage:
+            'Check whether the retry cap is still on this branch.\n\nReply contract: end with the resolved marker.',
+        }),
+      },
+    });
+    renderBlock();
+
+    screen.getByText('Re-check · 1 comment on #412');
+    screen.getByText('Check whether the retry cap is still on this branch.');
+    expect(screen.queryByText(/Reply contract/)).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand what the agent received' }));
+    expect(screen.getByTestId('handoff-chips').textContent).toBe('AskInstructionsAll');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Instructions' }));
+    expect(screen.getByTestId('handoff-section-instructions').textContent).toContain(
+      'Reply contract: end with the resolved marker.',
+    );
+  });
+
+  it('names the scribe and the history rewrite as their own senders', () => {
+    useAppStore.setState({
+      agentHandoffs: { [AGENT]: handoff({ sender: { kind: 'scribe' } }) },
+    });
+    const first = renderBlock();
+    screen.getByText('Scribe');
+    first.unmount();
+
+    useAppStore.setState({
+      agentHandoffs: { [AGENT]: handoff({ sender: { kind: 'historyRewrite' } }) },
+    });
+    renderBlock();
+    screen.getByText('History rewrite');
+  });
+
   it('opens the block on the section a chip names, and an earlier step opens that agent', () => {
     renderBlock();
     fireEvent.click(screen.getByRole('button', { name: 'Expand what the agent received' }));

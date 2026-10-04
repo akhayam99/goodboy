@@ -115,6 +115,7 @@ export const HandoffSectionBody = ({ section, doneWhen, sessionId }: Props) => {
           )}
         </div>
       );
+    case 'instructions':
     case 'profile':
     case 'role':
       return <HandoffRawText text={section.bodyMd} />;

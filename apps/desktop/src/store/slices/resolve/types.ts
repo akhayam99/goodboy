@@ -42,6 +42,7 @@ export type AttemptParams = SessionParams & {
   readonly model: string;
   readonly effort: string | null;
   readonly instructions: string | null;
+  readonly humanInstructions?: string | null;
   readonly phase: 'queued' | 'running';
   readonly threadIds?: ReadonlyArray<string>;
   readonly candidateMode?: ResolveCandidateMode;
