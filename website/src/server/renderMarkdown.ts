@@ -7,6 +7,12 @@ type Params = {
 };
 
 const COMMENT = /<!--[\s\S]*?-->/g;
+const COMMENT_FRAGMENT = /<!--|-->/g;
+
+const stripComments = (source: string): string => {
+  const next = source.replace(COMMENT, '').replace(COMMENT_FRAGMENT, '');
+  return next === source ? next : stripComments(next);
+};
 const FEATURE_DOC = /^\/docs\/features\/([a-z-]+)\.md$/;
 const EXTERNAL = /^(?:[a-z]+:|#)/i;
 
@@ -81,5 +87,5 @@ export const renderMarkdown = ({ source, directory }: Params) => {
       },
     },
   });
-  return marked.parse(source.replace(COMMENT, ''), { async: false });
+  return marked.parse(stripComments(source), { async: false });
 };
