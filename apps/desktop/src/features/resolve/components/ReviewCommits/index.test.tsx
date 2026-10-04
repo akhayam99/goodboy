@@ -21,7 +21,7 @@ import {
 } from '../../../../app/components/MockScene/scenes/resolveSeed';
 import { reviewDraftSignature } from '../../reviewCommits';
 import { seedResolveCommitsScene } from '../../../../app/components/MockScene/scenes/resolveCommitsSeed';
-import { ReviewFlow } from '../ReviewFlow';
+import { BranchPage } from '../../../branch/components/BranchPage';
 
 type StoreState = ReturnType<StoryStore['getState']>;
 
@@ -49,7 +49,7 @@ const mount = async (): Promise<void> => {
   seedResolveCommitsScene();
   render(
     <ToastProvider>
-      <ReviewFlow session={SESSION} />
+      <BranchPage session={SESSION} workingDir={null} />
     </ToastProvider>,
   );
   await settle();
@@ -63,10 +63,11 @@ const openCommits = async (): Promise<void> => {
 const commitList = (): HTMLElement => screen.getByRole('list', { name: 'Branch commits' });
 
 describe('Review commits view', () => {
-  it('switches views with V and lists the branch commits oldest first', async () => {
+  it('opens the Commits tab in the address and lists the branch commits oldest first', async () => {
     await mount();
-    fireEvent.keyDown(screen.getByRole('tab', { name: /^Comments/ }), { key: 'v', code: 'KeyV' });
-    await settle();
+    await openCommits();
+
+    expect(useAppStore.getState().branchTab[SESSION.id]).toBe('commits');
 
     const rows = within(commitList()).getAllByRole('listitem');
     expect(rows.map((row) => row.getAttribute('data-sha')?.slice(0, 7))).toEqual([
@@ -188,7 +189,7 @@ const mountWithPlan = async ({ isOwn }: { readonly isOwn: boolean }) => {
   });
   render(
     <ToastProvider>
-      <ReviewFlow session={SESSION} />
+      <BranchPage session={SESSION} workingDir={null} />
     </ToastProvider>,
   );
   await settle();

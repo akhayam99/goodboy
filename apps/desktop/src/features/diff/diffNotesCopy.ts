@@ -10,7 +10,6 @@ export const DIFF_NOTES_LABEL = {
 export const NOTE_ACTION_LABEL = {
   fix: 'Fix',
   openBrief: 'Open brief',
-  openInReview: 'Open in Review',
 } as const;
 
 export const notesCountLabel = ({ count }: { readonly count: number }): string =>

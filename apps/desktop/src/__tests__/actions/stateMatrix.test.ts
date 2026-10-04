@@ -795,7 +795,6 @@ const UX5_PR_STATES: ReadonlyArray<
     { isDraft: true },
     [
       'pullRequest.openOnGithub secondary',
-      'pullRequest.openDiff nudge',
       'pullRequest.checkLog hover',
       'pullRequest.markReady primary',
       ...PR_OWN_TAIL,
@@ -808,7 +807,6 @@ const UX5_PR_STATES: ReadonlyArray<
     { checks: 'pending', reviewDecision: 'review_required' },
     [
       'pullRequest.openOnGithub secondary',
-      'pullRequest.openDiff nudge',
       'pullRequest.checkLog hover',
       'pullRequest.merge secondary (Checks are still running.)',
       ...PR_OWN_TAIL,
@@ -822,8 +820,6 @@ const UX5_PR_STATES: ReadonlyArray<
     { checks: 'failure', reviewDecision: 'changes_requested', openThreads: 3 },
     [
       'pullRequest.openOnGithub secondary',
-      'pullRequest.openReview nudge',
-      'pullRequest.openDiff nudge',
       'pullRequest.checkLog hover',
       'pullRequest.merge secondary (1 check failing: unit tests.)',
       ...PR_OWN_TAIL,
@@ -837,8 +833,6 @@ const UX5_PR_STATES: ReadonlyArray<
     { reviewDecision: 'changes_requested', openThreads: 3 },
     [
       'pullRequest.openOnGithub secondary',
-      'pullRequest.openReview nudge',
-      'pullRequest.openDiff nudge',
       'pullRequest.checkLog hover',
       'pullRequest.merge secondary (kenji-w asked for changes.)',
       ...PR_OWN_TAIL,
@@ -852,7 +846,6 @@ const UX5_PR_STATES: ReadonlyArray<
     { reviewDecision: 'approved' },
     [
       'pullRequest.openOnGithub secondary',
-      'pullRequest.openDiff nudge',
       'pullRequest.checkLog hover',
       'pullRequest.merge primary',
       ...PR_OWN_TAIL,
@@ -866,7 +859,6 @@ const UX5_PR_STATES: ReadonlyArray<
     { reviewDecision: 'approved', mergeable: false },
     [
       'pullRequest.openOnGithub secondary',
-      'pullRequest.openDiff nudge',
       'pullRequest.checkLog hover',
       'pullRequest.merge secondary (Conflicts with main. Rebase in the Diff.)',
       ...PR_OWN_TAIL,
@@ -875,27 +867,17 @@ const UX5_PR_STATES: ReadonlyArray<
       'pullRequest.close menu',
     ],
   ],
-  [
-    'merged',
-    { state: 'merged' },
-    ['pullRequest.openOnGithub secondary', 'pullRequest.openDiff nudge', ...PR_COPIES],
-  ],
+  ['merged', { state: 'merged' }, ['pullRequest.openOnGithub secondary', ...PR_COPIES]],
   [
     'closed',
     { state: 'closed' },
-    [
-      'pullRequest.openOnGithub secondary',
-      'pullRequest.openDiff nudge',
-      'pullRequest.reopen secondary',
-      ...PR_COPIES,
-    ],
+    ['pullRequest.openOnGithub secondary', 'pullRequest.reopen secondary', ...PR_COPIES],
   ],
   [
     "someone else's",
     { reviewDecision: 'review_required', author: 'kenji-w' },
     [
       'pullRequest.openOnGithub secondary',
-      'pullRequest.openDiff nudge',
       'pullRequest.checkLog hover',
       'pullRequest.merge secondary (Needs an approving review.)',
       'pullRequest.writeReview secondary',
@@ -1238,12 +1220,7 @@ const DIFF_STATES: ReadonlyArray<
     'on origin, PR open',
     'open',
     gitStatus({}),
-    [
-      'diff.openPullRequest secondary',
-      ...DIFF_TOOLS,
-      'diff.rewriteHistory secondary',
-      ...DIFF_TAIL,
-    ],
+    [...DIFF_TOOLS, 'diff.rewriteHistory secondary', ...DIFF_TAIL],
   ],
   [
     '3 not pushed, no PR',
@@ -1260,32 +1237,19 @@ const DIFF_STATES: ReadonlyArray<
     '2 not pushed, PR open',
     'open',
     gitStatus({ ahead: 6, unpushed: 2 }),
-    [
-      'diff.openPullRequest secondary',
-      ...DIFF_TOOLS,
-      'diff.push primary',
-      'diff.rewriteHistory secondary',
-      ...DIFF_TAIL,
-    ],
+    [...DIFF_TOOLS, 'diff.push primary', 'diff.rewriteHistory secondary', ...DIFF_TAIL],
   ],
   [
     'behind main by 4',
     'open',
     gitStatus({ behind: 4 }),
-    [
-      'diff.openPullRequest secondary',
-      ...DIFF_TOOLS,
-      'diff.rebase primary',
-      'diff.rewriteHistory secondary',
-      ...DIFF_TAIL,
-    ],
+    [...DIFF_TOOLS, 'diff.rebase primary', 'diff.rewriteHistory secondary', ...DIFF_TAIL],
   ],
   [
     '2 uncommitted',
     'open',
     gitStatus({ behind: 4, changed: 2 }),
     [
-      'diff.openPullRequest secondary',
       ...DIFF_TOOLS,
       'diff.rebase primary (Commit or discard the 2 uncommitted changes first.)',
       'diff.rewriteHistory secondary (Commit or discard the 2 uncommitted changes first.)',
@@ -1299,7 +1263,6 @@ const DIFF_STATES: ReadonlyArray<
     'open',
     gitStatus({ unpushed: 1, originAhead: 1 }),
     [
-      'diff.openPullRequest secondary',
       ...DIFF_TOOLS,
       'diff.push menu (Origin has a commit this branch lacks. Rebase on it first; Rewrite history owns force pushes.)',
       'diff.rewriteHistory secondary',
@@ -1311,7 +1274,6 @@ const DIFF_STATES: ReadonlyArray<
     'open',
     gitStatus({ changed: 3, rebase: true }),
     [
-      'diff.openPullRequest secondary',
       'diff.continueRebase primary',
       'diff.openInEditor menu',
       'diff.abortRebase secondary',
@@ -1759,11 +1721,7 @@ describe('review and comment menus in every state', () => {
   });
 
   it('offers the Review layer actions for a pull request with a comment waiting', () => {
-    expect(matrixOf({ kind: 'review', sessionId: REVIEW_SESSION })).toEqual([
-      'review.openPullRequest',
-      'review.push',
-      'review.draftModel',
-    ]);
+    expect(matrixOf({ kind: 'review', sessionId: REVIEW_SESSION })).toEqual(['review.push']);
   });
 
   it.each(REVIEW_COMMENT_STATES)('%s', (_state, threadId, expected) => {
@@ -1914,9 +1872,11 @@ describe('actions run against the real store', () => {
   it('opens Review and Diff through the one door', async () => {
     seed({ mounts: [mountFixture()] });
     await run(SESSION_TARGET, 'session.review');
-    expect(useAppStore.getState().activeLens[SESSION]).toBe('review');
+    expect(useAppStore.getState().activeLens[SESSION]).toBe('branch');
+    expect(useAppStore.getState().branchTab[SESSION]).toBe('comments');
     await run(SESSION_TARGET, 'session.diff');
-    expect(useAppStore.getState().activeLens[SESSION]).toBe('files');
+    expect(useAppStore.getState().activeLens[SESSION]).toBe('branch');
+    expect(useAppStore.getState().branchTab[SESSION]).toBe('files');
   });
 
   it('never runs a blocked verb', async () => {

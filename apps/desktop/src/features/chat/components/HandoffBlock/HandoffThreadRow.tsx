@@ -32,7 +32,7 @@ export const HandoffThreadRow = ({ entry, sessionId }: Props) => {
         {reviewSessionId !== null && threadId !== null ? (
           <GhostActionButton
             icon={ArrowUpRight}
-            label="Open in Review"
+            label="Open comment"
             onClick={() =>
               void openReviewThread({ sessionId: reviewSessionId, threadId, prUrl: link })
             }

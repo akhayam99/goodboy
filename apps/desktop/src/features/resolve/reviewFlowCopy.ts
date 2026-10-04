@@ -1,15 +1,8 @@
 import type { ReviewComposeMode } from '../review/reviewRequest';
 
-export const REVIEW_TITLE = 'Review';
-
 export const REVIEW_FLOW_LABEL = {
   list: 'Comments',
-  listMenu: 'Filter comments',
-  noMatch: 'No comment in this state',
   comment: 'Comment',
-  commentActions: 'Comment actions',
-  reviewActions: 'Review actions',
-  sourcePicker: 'Review source',
   proposedChange: 'Proposed change',
   fix: 'Fix',
   agentAsks: 'The agent asks',
@@ -22,8 +15,6 @@ export const REVIEW_FLOW_LABEL = {
   saveReply: 'Save reply',
   cancel: 'Cancel',
   keysHint: 'Esc cancels',
-  previous: 'Previous comment',
-  next: 'Next comment',
   noChangeCaptured: 'The agent changed no code for this comment.',
   waitingForSlot: 'Waiting for a free slot',
   tooLarge: 'The change is too large to show here.',
@@ -117,14 +108,6 @@ export const decidedNote = ({
     }
   }
 };
-
-export const counterLabel = ({
-  index,
-  total,
-}: {
-  readonly index: number;
-  readonly total: number;
-}): string => `${index} of ${total}`;
 
 export const sharedFixLine = ({ count }: { readonly count: number }): string =>
   count === 1

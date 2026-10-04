@@ -1,43 +1,20 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  ErrorStrip,
-  LensEmptyState,
-  PageColumn,
-  Skeleton,
-  cn,
-  formatError,
-  PaneShell,
-} from '@goodboy/ui';
+import { useCallback, useMemo, type ReactNode } from 'react';
+import { PencilLine } from 'lucide-react';
+import { Button, ErrorStrip, LensEmptyState, PageColumn, Skeleton, formatError } from '@goodboy/ui';
 import type { DiffView as DiffViewKind, SessionId } from '@goodboy/types';
-import { useAppStore, type DiffFocus } from '../../../../store';
+import { useAppStore } from '../../../../store';
 import {
   selectMountBaseBranch,
   selectMountForPath,
 } from '../../../../store/slices/project-mounts/selectors';
-import { isMountRequestMerged } from '../../../../store/slices/project-mounts/mountRowModel';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { openFileInWorkspace } from '../../../../shared/lib/editor';
 import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
-import { distanceAhead, distanceBehind } from '../../../../shared/lib/gitStatus';
-import { branchStateOf } from '../../../session/trail/menus/branchMenu';
-import { ActionButtons } from '../../../actions/components/ActionControls/ActionButtons';
-import { ActionConfirmPanel } from '../../../actions/components/ActionControls/ActionConfirmPanel';
-import { ActionStatusLine } from '../../../actions/components/ActionControls/ActionStatusLine';
-import { DIFF_CHANGE_BASE_EVENT, diffEventName } from '../../../actions/kinds/diff';
-import type { DiffActionTarget } from '../../../actions/types';
-import { useActionControls } from '../../../actions/useActionControls';
-import { useMountRemoteHostKind } from '../../../worktree/useMountRemoteHostKind';
-import { DiffBaseBranchRow } from './DiffBaseBranchRow';
-import { useRebaseBranch } from '../../../session/hooks/useRebaseBranch';
-import { useRebasePrediction } from '../../../history/useRebasePrediction';
 import { DiffViewSelector } from '../../../permissions/components/DiffViewSelector';
 import { useDiffNotes } from '../../hooks/useDiffNotes';
 import { useDiffReviewThreads } from '../../hooks/useDiffReviewThreads';
-import { useSessionDiff } from '../../hooks/useSessionDiff';
+import type { SessionDiff } from '../../hooks/useSessionDiff';
 import { DiffView } from '../DiffView';
-import { DiffNotesActions } from '../DiffNotesActions';
-import { DiffNotesLaunch } from '../DiffNotesLaunch';
-import { projectById } from '../../../../store/slices/projects/projectIndex';
 
 export const DIFF_PANE_TITLE = 'Diff';
 
@@ -45,8 +22,9 @@ type Props = {
   readonly sessionId: SessionId;
   readonly workingDir: string | null;
   readonly worktreePath: string;
-  readonly diffFocus: DiffFocus | null;
-  readonly branchRevision: number;
+  readonly diff: SessionDiff;
+  readonly onWriteReview: (() => void) | null;
+  readonly toolbarExtra?: ReactNode;
 };
 
 const baseWord = (baseBranch: string | null): string => baseBranch ?? 'its base branch';
@@ -87,11 +65,11 @@ export const SessionDiffPane = ({
   sessionId,
   workingDir,
   worktreePath,
-  diffFocus,
-  branchRevision,
+  diff,
+  onWriteReview,
+  toolbarExtra = null,
 }: Props) => {
-  const diff = useSessionDiff({ sessionId, worktreePath, diffFocus, branchRevision });
-  const { comments: noteComments, fixes } = useDiffNotes({ sessionId });
+  const { comments: noteComments } = useDiffNotes({ sessionId });
   const mountId = useAppStore(
     (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.mountId ?? null,
   );
@@ -103,38 +81,13 @@ export const SessionDiffPane = ({
         : { ...noteComments, threads: [...noteComments.threads, ...reviewThreads] },
     [noteComments, reviewThreads],
   );
-  const isRequestMerged = useAppStore((s) =>
-    mountId === null ? false : isMountRequestMerged({ state: s, mountId }),
-  );
-  const rebase = useRebaseBranch({ sessionId, mountId, status: diff.status });
   const editorBinary = useAppStore((s) => resolveEditorBinary({ settings: s.settings }));
   const emitNotification = useAppStore((s) => s.emitNotification);
-
-  const isEmpty = !diff.loading && diff.error === null && diff.files.length === 0;
-  const mountBaseBranch = useAppStore(
-    (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.baseBranch ?? null,
-  );
-  const mountRepoRoot = useAppStore(
-    (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.repoRoot ?? null,
-  );
-  const mountProjectId = useAppStore(
-    (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.projectId ?? null,
-  );
-  const projectRoot = useAppStore((s) => projectById(s.projects, mountProjectId)?.rootPath ?? '');
-  const projectBaseBranch = useAppStore(
-    (s) => projectById(s.projects, mountProjectId)?.baseBranch ?? null,
-  );
-  const remoteKind = useMountRemoteHostKind({ sessionId, repoRoot: mountRepoRoot });
-  const [isChangingBase, setIsChangingBase] = useState(false);
-  const mountName = useAppStore(
-    (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.mountName ?? null,
-  );
-  const mountBranch = useAppStore(
-    (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.branch ?? null,
-  );
   const baseBranch = useAppStore((s) =>
     selectMountBaseBranch({ state: s, sessionId, path: worktreePath }),
   );
+
+  const isEmpty = !diff.loading && diff.error === null && diff.files.length === 0;
 
   const openInEditor = useCallback(
     async (filePath: string) => {
@@ -170,79 +123,9 @@ export const SessionDiffPane = ({
       ),
     [diff.files],
   );
-  const mainDistance = diff.status?.mainDistance ?? null;
-  const ahead = mainDistance === null ? null : distanceAhead({ distance: mainDistance });
-  const behind = mainDistance === null ? null : distanceBehind({ distance: mainDistance });
 
-  const branchState = branchStateOf({
-    status: diff.status,
-    mount:
-      mountRepoRoot === null
-        ? null
-        : { baseBranch: mountBaseBranch, worktreePath, repoRoot: mountRepoRoot },
-    isRequestMerged,
-  });
-  const meta = (
-    <span className="flex flex-wrap items-center gap-2">
-      {mountName !== null ? <span>{mountName}</span> : null}
-      {ahead !== null ? (
-        <>
-          <span aria-hidden>·</span>
-          <span>
-            {ahead} {ahead === 1 ? 'commit' : 'commits'}
-          </span>
-        </>
-      ) : null}
-      {branchState !== null ? (
-        <>
-          <span aria-hidden>·</span>
-          <span
-            className={cn(
-              'inline-flex items-center gap-1',
-              branchState.tone === 'warning' && 'text-warning',
-            )}
-          >
-            {branchState.glyph !== undefined ? <branchState.glyph size={10} aria-hidden /> : null}
-            {branchState.word}
-          </span>
-        </>
-      ) : null}
-    </span>
-  );
-  const canRebase = rebase.canRebase && mountId !== null && behind !== null && behind > 0;
-  const rebasePrediction = useRebasePrediction({
-    worktreePath,
-    baseBranch,
-    head: diff.status?.head ?? null,
-    isEnabled: canRebase && !rebase.isRunning,
-  });
-
-  const conflictCount = rebasePrediction?.conflictFiles.length ?? 0;
-  const target = useMemo<DiffActionTarget>(
-    () => ({
-      kind: 'diff',
-      sessionId,
-      worktreePath,
-      status: diff.status,
-      remoteKind,
-      patch: diff.patch,
-      rebaseConflicts: conflictCount,
-    }),
-    [conflictCount, diff.patch, diff.status, remoteKind, sessionId, worktreePath],
-  );
-  const controls = useActionControls({ target });
-
-  useEffect(() => {
-    const name = diffEventName({ name: DIFF_CHANGE_BASE_EVENT, sessionId });
-    const onChange = () => setIsChangingBase(true);
-    window.addEventListener(name, onChange);
-    return () => window.removeEventListener(name, onChange);
-  }, [sessionId]);
-
-  const actions = <ActionButtons controls={controls} menuLabel="Diff actions" />;
-
-  const toolbar = (
-    <div className="flex min-w-0 items-center gap-2">
+  const selector = (
+    <PageColumn className="flex min-w-0 items-center gap-2 pb-3">
       <DiffViewSelector
         view={diff.view}
         onChange={diff.setView}
@@ -260,44 +143,17 @@ export const SessionDiffPane = ({
           <span className="text-danger">−{totals.dels}</span>
         </span>
       )}
-    </div>
+    </PageColumn>
   );
 
-  const hasStatusLine =
-    controls.failure !== null ||
-    [...controls.inSlot({ slot: 'primary' }), ...controls.inSlot({ slot: 'secondary' })].some(
-      (action) => action.blockedReason !== null,
-    );
-  const hasNotices =
-    rebase.error !== null ||
-    diff.metaError !== null ||
-    controls.confirming !== null ||
-    hasStatusLine ||
-    (isChangingBase && mountProjectId !== null);
-  const notices = hasNotices ? (
-    <PageColumn className="flex flex-col gap-2 pb-2">
-      <ActionStatusLine controls={controls} />
-      <ActionConfirmPanel controls={controls} />
-      {isChangingBase && mountProjectId !== null ? (
-        <DiffBaseBranchRow
-          projectId={mountProjectId}
-          repoPath={projectRoot}
-          value={projectBaseBranch}
-          onDone={() => setIsChangingBase(false)}
-        />
-      ) : null}
-      {rebase.error !== null ? (
-        <p role="alert" className="text-meta text-danger" title={rebase.error}>
-          {rebase.error}
-        </p>
-      ) : null}
-      {diff.metaError !== null ? (
+  const metaNotice =
+    diff.metaError === null ? null : (
+      <PageColumn className="pb-2">
         <p role="status" className="text-meta text-muted-foreground" title={diff.metaError}>
           Couldn't read this branch's commits.
         </p>
-      ) : null}
-    </PageColumn>
-  ) : null;
+      </PageColumn>
+    );
 
   const body = diff.loading ? (
     <PageColumn className="flex flex-col gap-3">
@@ -331,18 +187,26 @@ export const SessionDiffPane = ({
       focusPath={diff.focusPath}
       onFocusHandled={diff.clearFocus}
       toolbarEnd={
-        fixes.length > 0 ? <DiffNotesActions sessionId={sessionId} fixes={fixes} /> : undefined
+        onWriteReview === null && toolbarExtra === null ? undefined : (
+          <>
+            {toolbarExtra}
+            {onWriteReview === null ? null : (
+              <Button size="sm" variant="secondary" onClick={onWriteReview}>
+                <PencilLine size={ICON_SIZE.row} aria-hidden />
+                Write review
+              </Button>
+            )}
+          </>
+        )
       }
-      belowToolbar={<DiffNotesLaunch sessionId={sessionId} />}
     />
   );
 
   return (
-    <PaneShell title={DIFF_PANE_TITLE} meta={meta} actions={actions} tabs={toolbar} scroll="self">
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        {notices}
-        {body}
-      </div>
-    </PaneShell>
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      {selector}
+      {metaNotice}
+      {body}
+    </div>
   );
 };

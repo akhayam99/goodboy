@@ -18,11 +18,13 @@ export const HistorySceneShell = ({ draft, run, github, isLedger }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    seedContextBase({ lens: 'files' });
+    seedContextBase({ lens: 'branch' });
     useAppStore.setState({
       ...(isLedger ? { sessionProjectMounts: { [CTX_SESSION_ID]: [...LEDGER_MOUNTS] } } : {}),
       diffFocus: {},
       diffPage: { [CTX_SESSION_ID]: 'history' },
+      branchTab: { [CTX_SESSION_ID]: 'commits' },
+      branchThreadId: {},
       historyDrafts: { [CTX_PAYMENTS_MOUNT_ID]: draft },
       historyRuns: run === null ? {} : { [CTX_PAYMENTS_MOUNT_ID]: run },
       mountGithub: github === null ? {} : { [CTX_PAYMENTS_MOUNT_ID]: github },

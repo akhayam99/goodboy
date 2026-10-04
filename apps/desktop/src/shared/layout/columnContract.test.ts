@@ -93,16 +93,9 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
     kind: 'shell',
     files: ['features/session/components/SessionWorkspace/parts/PrPane.tsx'],
   },
-  PullRequestPage: {
+  BranchPage: {
     kind: 'shell',
-    files: ['features/review/components/PullRequestPage/index.tsx'],
-  },
-  ReviewPane: {
-    kind: 'shell',
-    files: [
-      'features/review/components/ReviewPane/index.tsx',
-      'features/resolve/components/ReviewFlow/index.tsx',
-    ],
+    files: ['features/branch/components/BranchPage/index.tsx'],
   },
   GithubTaskDetail: {
     kind: 'shell',

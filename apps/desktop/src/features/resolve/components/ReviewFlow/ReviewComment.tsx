@@ -13,7 +13,6 @@ import {
   PARTIAL_REFUSAL,
 } from '../../../../store/slices/resolve/acceptResolveQueueItem';
 import type { ResolveCandidateWithItems } from '../../../../store/slices/resolve/state';
-import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
 import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
 import type { ResolvedAction } from '../../../actions/types';
@@ -59,6 +58,7 @@ type Props = ReviewCommentBinding & {
   readonly onTryAgain: () => void;
   readonly onRetryDelivery: () => void;
   readonly onSync: () => void;
+  readonly hunk?: ReactNode;
   readonly variant?: 'review' | 'brief';
   readonly actionsPrefix?: ReactNode;
   readonly actionsReplacement?: ReactNode;
@@ -105,6 +105,7 @@ export const ReviewComment = ({
   onTryAgain,
   onRetryDelivery,
   onSync,
+  hunk = null,
   variant = 'review',
   actionsPrefix = null,
   actionsReplacement = null,
@@ -112,6 +113,7 @@ export const ReviewComment = ({
   const isBrief = variant === 'brief';
   const { row, state, word, threadId } = entry;
   const provider = REVIEW_SOURCE_LABEL[row.thread.sourceKind ?? 'github'];
+  const originLabel = row.thread.sourceKind === 'local' ? 'Local' : provider;
   const canResolve = REVIEW_SOURCE_CAPABILITIES[row.thread.sourceKind ?? 'github'].canResolve;
   const target = useMemo(
     () => ({ kind: 'reviewComment' as const, sessionId, threadId }),
@@ -242,10 +244,10 @@ export const ReviewComment = ({
         {row.commentThread?.head.outdated === true && (
           <Chip tone="neutral" size="3xs" label={REVIEW_FLOW_LABEL.lineMoved} />
         )}
-        <span className="ml-auto flex shrink-0 items-center">
-          <ObjectOverflowMenu target={target} label={REVIEW_FLOW_LABEL.commentActions} />
-        </span>
+        <Chip tone="neutral" size="3xs" label={originLabel} />
       </header>
+
+      {hunk}
 
       {isBrief && <SectionHeader label={REVIEW_FLOW_LABEL.comment} headingLevel={2} />}
       <div className="min-w-0 rounded-lg bg-subtle px-4 py-3">
@@ -276,7 +278,7 @@ export const ReviewComment = ({
         </p>
       )}
 
-      {!isBrief && row.attempt !== null && !isOwnFixGone && (
+      {!isBrief && row.attempt !== null && !isOwnFixGone && (state === 'drafting' || isFailed) && (
         <AgentLine attempt={row.attempt} state={state} word={word} attemptNumber={attemptNumber} />
       )}
 

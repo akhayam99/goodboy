@@ -19,6 +19,9 @@ import { OverviewRefreshingScene } from './scenes/OverviewRefreshingScene';
 import { MountMismatchScene } from './scenes/MountMismatchScene';
 import { ResolveScene } from './scenes/ResolveScene';
 import { ResolveSelectScene } from './scenes/ResolveSelectScene';
+import { BranchCommentsScene } from './scenes/BranchCommentsScene';
+import { BranchNarrowScene } from './scenes/BranchNarrowScene';
+import { BranchPushScene } from './scenes/BranchPushScene';
 import { ResolveDriftScene } from './scenes/ResolveDriftScene';
 import { ResolveCommitStoryScene } from './scenes/ResolveCommitStoryScene';
 import { ResolveCommitsScene } from './scenes/ResolveCommitsScene';
@@ -135,8 +138,6 @@ import { BrandDiffScene } from './scenes/brand/DiffScene';
 import { BrandDiffManyFilesScene } from './scenes/brand/DiffManyFilesScene';
 import { DiffNotesScene } from './scenes/brand/DiffNotesScene';
 import { ResolveNotesScene } from './scenes/ResolveNotesScene';
-import { DiffNotesFixScene } from './scenes/brand/DiffNotesFixScene';
-import { DiffNotesSummaryScene } from './scenes/brand/DiffNotesSummaryScene';
 import { BrandHistoryScene } from './scenes/brand/HistoryScene';
 import { BrandHistoryPlanScene } from './scenes/brand/HistoryPlanScene';
 import { BrandHistoryResultScene } from './scenes/brand/HistoryResultScene';
@@ -174,6 +175,10 @@ export const MOCK_SCENES = {
   'mount-mismatch': MountMismatchScene,
   resolve: ResolveScene,
   'resolve-select': ResolveSelectScene,
+  'branch-comments': BranchCommentsScene,
+  'branch-files': BrandDiffScene,
+  'branch-narrow': BranchNarrowScene,
+  'branch-push': BranchPushScene,
   'resolve-item': ResolveItemScene,
   'resolve-failed': ResolveFailedRunScene,
   'resolve-failed-history': ResolveFailedHistoryScene,
@@ -284,8 +289,6 @@ export const MOCK_SCENES = {
   'brand-diff': BrandDiffScene,
   'brand-diff-many': BrandDiffManyFilesScene,
   'diff-notes': DiffNotesScene,
-  'diff-notes-fix': DiffNotesFixScene,
-  'diff-notes-summary': DiffNotesSummaryScene,
   'resolve-notes': ResolveNotesScene,
   'brand-history': BrandHistoryScene,
   'brand-history-plan': BrandHistoryPlanScene,

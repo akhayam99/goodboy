@@ -83,7 +83,7 @@ export const FileDiffDrawer = ({ sessionId, source, path, onClose }: Props) => {
       action={
         openInDiff === null ? null : (
           <Button variant="ghost" size="sm" onClick={openInDiff}>
-            Open in Diff
+            Open in Files
             <ArrowUpRight size={ICON_SIZE.row} aria-hidden />
           </Button>
         )

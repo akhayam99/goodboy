@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { FilesPane } from '../../../../../features/session/components/SessionWorkspace/parts/FilesPane';
-import { CTX_PAYMENTS_WORKTREE, CTX_SESSION_ID } from './contextBase';
+import { BranchPage } from '../../../../../features/branch/components/BranchPage';
+import { CTX_PAYMENTS_WORKTREE, CTX_SESSION } from './contextBase';
 import { CTX_COMMITS, CTX_STATUS } from './contextBranch';
 import { CTX_PATCH } from './contextDiffPatch';
 import { useFakeTauri, type FakeHandlers } from './fakeTauri';
@@ -47,13 +47,5 @@ type Props = {
 export const DiffStage = ({ handlers = DEFAULT_HANDLERS, centerNote = true }: Props) => {
   useFakeTauri({ handlers, holdMs: 1500 });
   useCenterNote(centerNote);
-  return (
-    <FilesPane
-      sessionId={CTX_SESSION_ID}
-      sessionDir={CTX_PAYMENTS_WORKTREE}
-      worktreePath={CTX_PAYMENTS_WORKTREE}
-      isBranchless={false}
-      onClose={() => undefined}
-    />
-  );
+  return <BranchPage session={CTX_SESSION} workingDir={CTX_PAYMENTS_WORKTREE} />;
 };

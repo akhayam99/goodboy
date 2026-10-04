@@ -86,7 +86,7 @@ describe('useDiffReviewThreads', () => {
     );
 
     render(<>{result.current[0]?.footer}</>);
-    fireEvent.click(screen.getByRole('button', { name: /Open in Review/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Open in Comments/ }));
 
     expect(h.openReviewTarget).toHaveBeenCalledWith({
       sessionId: SESSION_ID,

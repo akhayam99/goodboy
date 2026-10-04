@@ -69,8 +69,10 @@ export const useReviewEntries = ({
   const rechecks = useAppStore((s) => s.sessionThreadRechecks[sessionId] ?? EMPTY_RECHECKS);
   return useMemo(() => {
     const shown = isSourceScoped
-      ? rows.filter((row) =>
-          rowBelongsToSource({ row: row.thread, entry: { kind, projectId, number } }),
+      ? rows.filter(
+          (row) =>
+            row.thread.originKind === 'diff_comment' ||
+            rowBelongsToSource({ row: row.thread, entry: { kind, projectId, number } }),
         )
       : rows;
     const ordered = groupConversationsByFile({ rows: shown }).flatMap((group) => group.rows);

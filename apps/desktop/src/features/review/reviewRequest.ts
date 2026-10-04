@@ -11,8 +11,7 @@ type ReviewRequest =
   | { readonly kind: 'compose'; readonly threadId: string; readonly mode: ReviewComposeMode }
   | { readonly kind: 'edit_reply'; readonly threadId: string }
   | { readonly kind: 'fix'; readonly threadIds: ReadonlyArray<string> }
-  | { readonly kind: 'push' }
-  | { readonly kind: 'draft_model' };
+  | { readonly kind: 'push' };
 
 export type ReviewRequestDetail = {
   readonly sessionId: SessionId;

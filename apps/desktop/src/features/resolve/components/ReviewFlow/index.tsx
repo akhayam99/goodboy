@@ -7,31 +7,21 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from 'react';
-import { AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
-import {
-  EmptyState,
-  ErrorStrip,
-  IconButton,
-  PageColumn,
-  ScrollFade,
-  SegmentedTabs,
-  Skeleton,
-  cn,
-  formatError,
-  PaneShell,
-} from '@goodboy/ui';
+import { AlertTriangle, ChevronLeft } from 'lucide-react';
+import { Button, EmptyState, ErrorStrip, PageColumn, ScrollFade, Skeleton, cn } from '@goodboy/ui';
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { branchPlace } from '../../../../store/slices/navigation/place';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { eventMatches } from '../../../../shared/keyboard/dispatcher';
 import { isTypingTarget } from '../../../../shared/keyboard/isTypingTarget';
 import { SHORTCUTS, type ShortcutId } from '../../../../shared/keyboard/registry';
-import { isReportedError } from '../../../../store/slices/notifications/reportedError';
-import { selectActiveMountId } from '../../../../store/slices/project-mounts/selectors';
 import { reviewFocusThreadId } from '../../../../store/slices/review-navigation';
 import { bindTarget, runObjectAction } from '../../../actions/registry';
 import { useActionEnv } from '../../../actions/useActionEnv';
+import { ThreadHunk } from '../../../branch/components/ThreadHunk';
+import { ThreadProperties } from '../../../branch/components/ThreadProperties';
 import { openReview } from '../../../review/openReview';
 import {
   REVIEW_TARGET_REASON_COPY,
@@ -42,35 +32,22 @@ import { REVIEW_REQUEST_EVENT, isReviewRequest } from '../../../review/reviewReq
 import { useActiveReviewSource } from '../../hooks/useActiveReviewSource';
 import { useReviewCommentController } from '../../hooks/useReviewCommentController';
 import { resolveQueueRefreshLabel } from '../../resolveQueueCopy';
-import { REVIEW_FLOW_LABEL, REVIEW_TITLE, counterLabel } from '../../reviewFlowCopy';
+import { REVIEW_FLOW_LABEL } from '../../reviewFlowCopy';
 import { startedLine } from '../../reviewLaunchCopy';
-import {
-  isPushFailure,
-  matchesReviewStateFilter,
-  type ReviewStateFilter,
-} from '../../reviewCommentState';
-import { replyOnlyLine } from '../../reviewRemote';
-import { REVIEW_VIEW_LABEL } from '../../reviewCommitsCopy';
-import { ReviewCommits } from '../ReviewCommits';
+import { isPushFailure } from '../../reviewCommentState';
 import { ReviewEmptyState } from './ReviewEmptyState';
 import { ReviewComment } from './ReviewComment';
-import { ReviewHeaderActions } from './ReviewHeaderActions';
-import { ReviewHeaderMeta } from './ReviewHeaderMeta';
-import { PushBanner } from './PushBanner';
 import { ReviewLaunchStrip } from '../../ReviewLaunchStrip';
 import { ReviewList } from './ReviewList';
-import { ReviewListMenu } from './ReviewListMenu';
 import { ReviewSelectionBar } from './ReviewSelectionBar';
 import { modelLabel } from '../../../chat/utils/chat-constants';
-import { useReviewPush } from './useReviewPush';
-import { useReviewEntries, type ReviewEntry } from './useReviewEntries';
+import type { ReviewPush } from './useReviewPush';
+import { useReviewEntries } from './useReviewEntries';
 
 type Props = {
   readonly session: Session;
-  readonly noPullRequestLine?: ReactNode;
+  readonly push: ReviewPush;
 };
-
-type ReviewView = 'comments' | 'commits';
 
 const COMMENT_KEYS: ReadonlyArray<readonly [ShortcutId, ReadonlyArray<string>]> = [
   [
@@ -95,24 +72,11 @@ type StartedNote = {
 
 const SKELETON_ROWS = [0, 1, 2];
 
-export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
+export const ReviewFlow = ({ session, push }: Props) => {
   const sessionId = session.id as SessionId;
   const env = useActionEnv({ origin: 'button' });
   const { entries, groups } = useReviewEntries({ sessionId });
-  const [filter, setFilter] = useState<ReviewStateFilter>('all');
-  const shownGroups = useMemo(
-    () =>
-      groups
-        .map((group) => ({
-          ...group,
-          entries: group.entries.filter((entry) =>
-            matchesReviewStateFilter({ state: entry.state, filter }),
-          ),
-        }))
-        .filter((group) => group.entries.length > 0),
-    [filter, groups],
-  );
-  const shownEntries = useMemo(() => shownGroups.flatMap((group) => group.entries), [shownGroups]);
+  const shownEntries = entries;
   const storedSelection = useAppStore((s) => s.reviewSelection[sessionId]);
   const setReviewSelection = useAppStore((s) => s.setReviewSelection);
   const toggleReviewSelection = useAppStore((s) => s.toggleReviewSelection);
@@ -138,12 +102,9 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
   );
   const selectAllFixable = () => setReviewSelection({ sessionId, threadIds: shownFixableIds });
   const { source } = useActiveReviewSource({ sessionId });
-  const selectedThreadId = useAppStore((s) =>
-    s.drawer?.kind === 'conversation' && s.drawer.sessionId === sessionId
-      ? s.drawer.payload.threadId
-      : null,
-  );
-  const openDrawer = useAppStore((s) => s.openDrawer);
+  const addressThreadId = useAppStore((s) => s.branchThreadId[sessionId] ?? null);
+  const navigate = useAppStore((s) => s.navigate);
+  const up = useAppStore((s) => s.up);
   const loadResolveSession = useAppStore((s) => s.loadResolveSession);
   const refreshReviewSource = useAppStore((s) => s.refreshReviewSource);
   const refreshThreadGitState = useAppStore((s) => s.refreshThreadGitState);
@@ -158,19 +119,11 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
       focusRow(threadId);
     },
   });
-  const { compose, editingReplyId, runVerb, setError } = controller;
-  const [modelPickerRequest, setModelPickerRequest] = useState(0);
+  const { compose, editingReplyId, runVerb } = controller;
   const [launch, setLaunch] = useState<ReviewLaunch | null>(null);
   const [started, setStarted] = useState<StartedNote | null>(null);
-  const [view, setView] = useState<ReviewView>('comments');
-  const commitCount = useAppStore((s) => {
-    const mountId = selectActiveMountId({ state: s, sessionId });
-    return mountId === null ? null : (s.historyDrafts[mountId]?.commits.length ?? null);
-  });
   const listRef = useRef<HTMLDivElement | null>(null);
   const provider = source === null ? null : REVIEW_SOURCE_LABEL[source.kind];
-  const push = useReviewPush({ sessionId });
-  const hasPushFailure = entries.some((entry) => isPushFailure({ row: entry.row }));
   const isPushBusy =
     push.phase.kind === 'preparing' ||
     push.phase.kind === 'pushing' ||
@@ -196,12 +149,10 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
     void refreshThreadGitState({ sessionId }).catch(() => undefined);
   }, [gitKey, hasComments, refreshThreadGitState, sessionId]);
 
-  const replyOnlyCount = entries.filter(
-    (entry) => entry.remote === 'on_origin' && entry.group === 'open',
-  ).length;
-
+  const hasAddressThread =
+    addressThreadId !== null && entries.some((entry) => entry.threadId === addressThreadId);
   const focused =
-    entries.find((entry) => entry.threadId === selectedThreadId) ??
+    entries.find((entry) => entry.threadId === addressThreadId) ??
     entries.find((entry) => entry.group === 'open') ??
     entries[0] ??
     null;
@@ -212,10 +163,10 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
       if (reviewTarget !== null) {
         consumeReviewTarget({ sessionId, requestId: reviewTarget.requestId });
       }
-      openDrawer({ kind: 'conversation', sessionId, payload: { threadId } });
+      navigate({ to: branchPlace({ sessionId, threadId }), mode: 'replace' });
       controller.resetFor(threadId);
     },
-    [consumeReviewTarget, controller.resetFor, openDrawer, reviewTarget, sessionId],
+    [consumeReviewTarget, controller.resetFor, navigate, reviewTarget, sessionId],
   );
 
   const focusRow = useCallback((threadId: string): void => {
@@ -285,23 +236,11 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
       if (request.kind === 'fix') {
         event.preventDefault();
         openLaunch(request.threadIds);
-        return;
-      }
-      if (request.kind === 'push') {
-        event.preventDefault();
-        if (!isPushBusy) {
-          void push.arm({ isRetry: hasPushFailure });
-        }
-        return;
-      }
-      if (request.kind === 'draft_model') {
-        event.preventDefault();
-        setModelPickerRequest((count) => count + 1);
       }
     };
     window.addEventListener(REVIEW_REQUEST_EVENT, onRequest);
     return () => window.removeEventListener(REVIEW_REQUEST_EVENT, onRequest);
-  }, [hasPushFailure, isPushBusy, openLaunch, push, select, sessionId]);
+  }, [openLaunch, sessionId]);
 
   useEffect(() => {
     if (reviewTarget === null || reviewTarget.status !== 'ready') {
@@ -322,25 +261,8 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
     consumeReviewTarget({ sessionId, requestId: reviewTarget.requestId });
   }, [consumeReviewTarget, entries, reviewTarget, select, sessionId]);
 
-  const switchView = (event: KeyboardEvent<HTMLDivElement>): boolean => {
-    if (
-      isTypingTarget(event.target) ||
-      compose !== null ||
-      editingReplyId !== null ||
-      !eventMatches({ event: event.nativeEvent, entry: SHORTCUTS['review.view'] })
-    ) {
-      return false;
-    }
-    event.preventDefault();
-    setView((current) => (current === 'comments' ? 'commits' : 'comments'));
-    return true;
-  };
-
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     const native = event.nativeEvent;
-    if (switchView(event) || view === 'commits') {
-      return;
-    }
     if (eventMatches({ event: native, entry: SHORTCUTS['composer.submit'] })) {
       if (compose !== null || editingReplyId !== null) {
         return;
@@ -441,7 +363,6 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
           ? reviewTarget.error
           : null;
   const retry = (): void => void refreshReviewSource({ sessionId, force: true });
-  const index = entries.findIndex((entry) => entry.threadId === focusedThreadId);
 
   const body = (): ReactNode => {
     if (isWholeError && refreshError !== null) {
@@ -451,6 +372,11 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
           tone="danger"
           title={`Couldn't read comments from ${provider ?? 'GitHub'}`}
           description={refreshError}
+          action={
+            <Button size="sm" variant="secondary" onClick={retry}>
+              Retry
+            </Button>
+          }
         />
       );
     }
@@ -466,25 +392,17 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
         </div>
       );
     }
-    if (view === 'commits') {
-      return (
-        <ReviewCommits
-          sessionId={sessionId}
-          entries={entries}
-          onOpenThread={(threadId) => {
-            setView('comments');
-            select(threadId);
-          }}
-        />
-      );
-    }
     if (focused === null) {
       return <ReviewEmptyState provider={provider} />;
     }
     return (
-      <div className="flex min-h-0 min-w-0 flex-1 gap-8">
-        <div className="relative hidden min-h-0 w-[300px] shrink-0 flex-col @4xl:flex">
-          <ReviewListMenu filter={filter} onFilter={setFilter} />
+      <div className="flex min-h-0 min-w-0 flex-1 gap-6">
+        <div
+          className={cn(
+            'relative min-h-0 w-full shrink-0 flex-col @4xl:flex @4xl:w-[280px]',
+            hasAddressThread ? 'hidden' : 'flex',
+          )}
+        >
           <ScrollFade
             className="min-h-0 flex-1"
             viewportClassName={cn('pr-2', selectedIds.length > 0 ? 'pb-24' : 'pb-5')}
@@ -492,18 +410,13 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
           >
             <div ref={listRef}>
               <ReviewList
-                groups={shownGroups}
+                groups={groups}
                 focusedThreadId={focusedThreadId}
                 onSelect={select}
                 onFix={(threadId) => openLaunch([threadId])}
                 checked={checked}
                 onToggle={(threadId) => toggleReviewSelection({ sessionId, threadId })}
               />
-              {shownGroups.length === 0 && (
-                <p className="px-3 py-2 text-meta text-muted-foreground">
-                  {REVIEW_FLOW_LABEL.noMatch}
-                </p>
-              )}
             </div>
           </ScrollFade>
           <ReviewSelectionBar
@@ -515,126 +428,94 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
             onFix={() => openLaunch(fixSelectedIds)}
           />
         </div>
-        <ScrollFade className="min-h-0 min-w-0 flex-1" viewportClassName="pb-8 pr-4" fadeSize="h-6">
-          <div className="mb-4 flex items-center gap-1 @4xl:hidden">
-            <span className="text-meta tabular-nums text-muted-foreground">
-              {counterLabel({ index: index + 1, total: entries.length })}
-            </span>
-            <IconButton
-              icon={ChevronUp}
-              label={REVIEW_FLOW_LABEL.previous}
-              variant="ghost"
-              disabled={index <= 0}
-              onClick={() => step(-1)}
-            />
-            <IconButton
-              icon={ChevronDown}
-              label={REVIEW_FLOW_LABEL.next}
-              variant="ghost"
-              disabled={index >= entries.length - 1}
-              onClick={() => step(1)}
-            />
+        <ScrollFade
+          className={cn('min-h-0 min-w-0 flex-1 @4xl:block', hasAddressThread ? 'block' : 'hidden')}
+          viewportClassName="pb-8 pr-4"
+          fadeSize="h-6"
+        >
+          <button
+            type="button"
+            onClick={() => up()}
+            className="mb-4 inline-flex items-center gap-1 rounded-sm text-meta text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring @4xl:hidden"
+          >
+            <ChevronLeft size={ICON_SIZE.row} aria-hidden />
+            {REVIEW_FLOW_LABEL.list}
+          </button>
+          <div className="flex min-w-0 gap-6">
+            <div className="flex min-w-0 flex-1 flex-col gap-4">
+              <ReviewComment
+                key={focused.threadId}
+                sessionId={sessionId}
+                entry={focused}
+                entries={entries}
+                hunk={
+                  <ThreadHunk
+                    entry={focused}
+                    onOpenInDiff={() =>
+                      void runVerb({
+                        threadId: focused.threadId,
+                        actionId: 'reviewComment.openInDiff',
+                      })
+                    }
+                  />
+                }
+                {...controller.bind(focused.threadId)}
+                onSelect={select}
+                onTryAgain={() => void controller.retryRun(focused.threadId)}
+                onRetryDelivery={retryDelivery}
+                onSync={push.askSync}
+              />
+              <div className="@6xl:hidden">
+                <ThreadProperties sessionId={sessionId} entry={focused} layout="inline" />
+              </div>
+            </div>
+            <aside className="hidden w-[200px] shrink-0 @6xl:block">
+              <ThreadProperties sessionId={sessionId} entry={focused} layout="rail" />
+            </aside>
           </div>
-          <ReviewComment
-            key={focused.threadId}
-            sessionId={sessionId}
-            entry={focused}
-            entries={entries}
-            {...controller.bind(focused.threadId)}
-            onSelect={select}
-            onTryAgain={() => void controller.retryRun(focused.threadId)}
-            onRetryDelivery={retryDelivery}
-            onSync={push.askSync}
-          />
         </ScrollFade>
       </div>
     );
   };
 
   return (
-    <PaneShell
-      title={REVIEW_TITLE}
-      icon={CONCEPT_ICONS.review}
-      tone={CONCEPT_TONE.review}
-      scroll="self"
-      actions={
-        <ReviewHeaderActions
-          sessionId={sessionId}
-          modelPickerRequest={modelPickerRequest}
-          busyActionId={isPushBusy ? 'review.push' : null}
-          replyOnlyLine={replyOnlyCount === 0 ? null : replyOnlyLine({ count: replyOnlyCount })}
-        />
-      }
-      subheader={
-        <div className="flex flex-col gap-3 pl-6" onKeyDown={(event) => void switchView(event)}>
-          <ReviewHeaderMeta
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col" onKeyDown={onKeyDown}>
+      <PageColumn className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
+        {launch !== null && (
+          <ReviewLaunchStrip
+            key={launch.threadIds.join(',')}
             sessionId={sessionId}
-            entries={entries}
-            noPullRequestLine={noPullRequestLine}
+            threadIds={launch.threadIds}
+            onClose={closeLaunch}
+            onStarted={onLaunchStarted}
           />
-          <SegmentedTabs<ReviewView>
-            ariaLabel={REVIEW_VIEW_LABEL.group}
-            size="sm"
-            className="w-fit"
-            value={view}
-            onChange={setView}
-            options={[
-              {
-                value: 'comments',
-                label: REVIEW_VIEW_LABEL.comments,
-                badge: <span className="tabular-nums text-faint-foreground">{entries.length}</span>,
-              },
-              {
-                value: 'commits',
-                label: REVIEW_VIEW_LABEL.commits,
-                ...(commitCount !== null && {
-                  badge: <span className="tabular-nums text-faint-foreground">{commitCount}</span>,
-                }),
-              },
-            ]}
+        )}
+        {started !== null && launch === null && (
+          <p role="status" className="text-meta text-muted-foreground">
+            {startedLine({ count: started.count, modelName: started.model })}
+          </p>
+        )}
+        {refreshError !== null && !isWholeError && (
+          <ErrorStrip
+            label={resolveQueueRefreshLabel({ provider: provider ?? 'GitHub' })}
+            error={new Error(refreshError)}
+            onRetry={retry}
           />
-        </div>
-      }
-    >
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col" onKeyDown={onKeyDown}>
-        <PageColumn className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
-          <PushBanner sessionId={sessionId} push={push} />
-          {launch !== null && (
-            <ReviewLaunchStrip
-              key={launch.threadIds.join(',')}
-              sessionId={sessionId}
-              threadIds={launch.threadIds}
-              onClose={closeLaunch}
-              onStarted={onLaunchStarted}
-            />
-          )}
-          {started !== null && launch === null && (
-            <p role="status" className="text-meta text-muted-foreground">
-              {startedLine({ count: started.count, modelName: started.model })}
-            </p>
-          )}
-          {refreshError !== null && !isWholeError && (
-            <ErrorStrip
-              label={resolveQueueRefreshLabel({ provider: provider ?? 'GitHub' })}
-              error={new Error(refreshError)}
-              onRetry={retry}
-            />
-          )}
-          {reviewTarget?.status === 'pending' && (
-            <p role="status" className="text-meta text-muted-foreground">
-              {reviewTargetPending({ hasThread: targetThreadId !== null })}
-            </p>
-          )}
-          {targetError !== null && reviewTarget !== null && (
-            <ErrorStrip
-              label={reviewTargetErrorLabel({ hasThread: targetThreadId !== null })}
-              error={new Error(targetError)}
-              onRetry={() => void openReview({ sessionId, destination: reviewTarget.destination })}
-            />
-          )}
-          {body()}
-        </PageColumn>
-      </div>
-    </PaneShell>
+        )}
+        {reviewTarget?.status === 'pending' && (
+          <p role="status" className="text-meta text-muted-foreground">
+            {reviewTargetPending({ hasThread: targetThreadId !== null })}
+          </p>
+        )}
+        {targetError !== null && reviewTarget !== null && (
+          <ErrorStrip
+            label={reviewTargetErrorLabel({ hasThread: targetThreadId !== null })}
+            error={new Error(targetError)}
+            onRetry={() => void openReview({ sessionId, destination: reviewTarget.destination })}
+          />
+        )}
+        {body()}
+      </PageColumn>
+    </div>
   );
 };
