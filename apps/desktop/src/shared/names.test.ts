@@ -6,7 +6,8 @@ import { LENS_LABEL } from '../features/session/lens-labels';
 import { SESSION_STAGE_META } from '../features/session/session-stage';
 import { VERBOSITY_LABEL, verbosityDirective } from '../features/settings/verbosity';
 import { RUN_AUTONOMY_HEADER } from '../features/workflows/runAutonomy';
-import { NAMES, RETIRED_NAMES } from './names';
+import { RETIRED_NAMES } from '../__tests__/regressions/retiredNames';
+import { NAMES } from './names';
 
 describe('names', () => {
   it('feeds the lens, role, handoff, stage, autonomy and reply length labels', () => {

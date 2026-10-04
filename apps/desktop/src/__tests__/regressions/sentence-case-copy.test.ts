@@ -11,7 +11,10 @@ import {
   ACTIVITY_PRESET_LABEL,
 } from '../../features/session/timeline/activityFilter';
 import { ARCHIVED_SESSION_REASON } from '../../features/session/archivedSession';
+import { AGENT_STATUS_PRESENTATION } from '../../features/session/agent-status';
 import { ROW_NODE_LABEL } from '../../features/workTreeModel/rowStateCopy';
+import { RUN_AUTONOMY_OPTIONS } from '../../features/workflows/runAutonomy';
+import { EMPTY_COPY } from '../../features/workspace/components/StageBoard/StageColumn/emptyCopy';
 
 const BRAND_LOWERCASE = ['pnpm', 'npm', 'gh', 'git'];
 
@@ -31,6 +34,11 @@ const NAMED_COPY: Readonly<Record<string, ReadonlyArray<string | null>>> = {
   ACTIVITY_PRESET_LABEL: Object.values(ACTIVITY_PRESET_LABEL),
   ARCHIVED_SESSION_REASON: [ARCHIVED_SESSION_REASON],
   ROW_NODE_LABEL: Object.values(ROW_NODE_LABEL),
+  AGENT_STATUS_PRESENTATION: Object.values(AGENT_STATUS_PRESENTATION).map(
+    (presentation) => presentation.label,
+  ),
+  RUN_AUTONOMY_OPTIONS: RUN_AUTONOMY_OPTIONS.flatMap((option) => [option.label, option.hint]),
+  EMPTY_COPY: Object.values(EMPTY_COPY).flatMap((copy) => [copy.title, copy.description]),
 };
 
 const startsLowercase = (text: string): boolean =>

@@ -1233,8 +1233,8 @@ task up again in Goodboy.
   sections, session stages, the autonomy header and the reply length live in
   `apps/desktop/src/shared/names.ts` (`NAMES`), and the maps that show them read
   from there. `names.test.ts` pins that. A word that goes away goes into
-  `RETIRED_NAMES` with the word to use instead, and `copy-budget.test.ts` fails
-  on it.
+  `RETIRED_NAMES` (`__tests__/regressions/retiredNames.ts`) with the word to use
+  instead, and `copy-budget.test.ts` fails on it.
 - **Reply length** is **Short**, **Normal** or **Long**. The stored keys
   (`brief`, `normal`, `verbose`) and the directive sent to the provider do not
   change. **Brief** stays the name of the agent tab and of a text you edit
