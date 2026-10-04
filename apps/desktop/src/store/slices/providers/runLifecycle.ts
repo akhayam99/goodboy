@@ -1,5 +1,7 @@
+import { cleanCliVersion } from '@goodboy/core';
 import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
+import { cliUpdateResultOf } from '../../../features/providers/cliUpdateResult';
 import {
   buildProviderList,
   type ProviderAuthResults,
@@ -150,9 +152,13 @@ export const runLifecycle = async (
         startedAt,
         errorTail: null,
         detectedAuthUrl: null,
+        update: null,
       },
     },
   }));
+  const versionBefore = cleanCliVersion({
+    raw: get().providers.find((provider) => provider.id === providerId)?.version ?? null,
+  });
 
   let outputTail = '';
   let authScore = 0;
@@ -196,6 +202,10 @@ export const runLifecycle = async (
       curr.phase === 'cancelled' ? 'cancelled' : restingPhase(action, payload);
     const errorTail =
       finalPhase === 'error' ? stripAnsi({ text: outputTail }).slice(-ERROR_TAIL_CAP) : null;
+    const update =
+      action === 'update' && finalPhase === 'installed'
+        ? cliUpdateResultOf({ before: versionBefore, status: payload.status })
+        : null;
 
     const sharesOpencodeBinary = OPENCODE_BINARY_PROVIDERS.has(providerId);
 
@@ -234,6 +244,7 @@ export const runLifecycle = async (
             phase: finalPhase,
             exitCode: payload.exitCode,
             errorTail,
+            update,
           },
         },
       };

@@ -51,16 +51,24 @@ const setup = () => {
 type ExitParams = {
   readonly exitCode: number;
   readonly version: string;
+  readonly path?: string;
 };
 
-const exit = ({ exitCode, version }: ExitParams) => {
+const exit = ({ exitCode, version, path }: ExitParams) => {
   const invocation = lifecycleMocks.invokeProviderLifecycleRun.mock.calls[0]?.[0];
   lifecycleMocks.exitHandler?.({
     runId: invocation?.runId,
     providerId: 'anthropic',
     action: 'update',
     exitCode,
-    status: { id: 'anthropic', binary: 'claude', available: true, version, error: null },
+    status: {
+      id: 'anthropic',
+      binary: 'claude',
+      available: true,
+      version,
+      error: null,
+      path: path ?? null,
+    },
     auth: { state: 'connected', identity: null },
   });
 };
@@ -97,6 +105,22 @@ describe('updateProviderCli', () => {
         body: 'It was 2.1.259.',
       }),
     );
+  });
+
+  it('reports an unchanged version with the PATH binary and logs no success', async () => {
+    const { set, get, emitNotification, read } = setup();
+    await updateProviderCli(set as never, get as never)('anthropic');
+    exit({ exitCode: 0, version: '2.1.259 (Claude Code)', path: '/opt/homebrew/bin/claude' });
+
+    const settled = read().providerLifecycle as typeof INITIAL_LIFECYCLE_MAP;
+    expect(settled.anthropic.phase).toBe('installed');
+    expect(settled.anthropic.update).toEqual({
+      outcome: 'unchanged',
+      before: '2.1.259',
+      after: '2.1.259',
+      binaryPath: '/opt/homebrew/bin/claude',
+    });
+    expect(emitNotification).not.toHaveBeenCalled();
   });
 
   it('marks a failed update as an error and logs nothing', async () => {

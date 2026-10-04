@@ -1,4 +1,5 @@
 import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
+import type { CliUpdateResult } from '../../../features/providers/cliUpdateResult';
 
 export type { SetFn, GetFn } from '../../slice-types';
 
@@ -25,6 +26,7 @@ export type ProviderLifecycleState = {
   readonly startedAt: number | null;
   readonly errorTail: string | null;
   readonly detectedAuthUrl: string | null;
+  readonly update: CliUpdateResult | null;
 };
 
 export const IDLE_LIFECYCLE: ProviderLifecycleState = {
@@ -36,6 +38,7 @@ export const IDLE_LIFECYCLE: ProviderLifecycleState = {
   startedAt: null,
   errorTail: null,
   detectedAuthUrl: null,
+  update: null,
 };
 
 export type ProviderConnectPhase =

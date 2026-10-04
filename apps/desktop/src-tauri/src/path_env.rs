@@ -31,6 +31,31 @@ pub fn command(binary: &str) -> Command {
     cmd
 }
 
+/// Path of the first executable named `binary` on the resolved PATH, the one
+/// `command(binary)` would run. A name with a separator is returned as given.
+pub fn which(binary: &str) -> Option<String> {
+    if binary.contains('/') {
+        return Some(binary.to_string());
+    }
+    std::env::split_paths(resolved_path())
+        .map(|dir| dir.join(binary))
+        .find(|candidate| is_executable_file(candidate))
+        .map(|found| found.to_string_lossy().into_owned())
+}
+
+#[cfg(unix)]
+fn is_executable_file(path: &std::path::Path) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::metadata(path)
+        .map(|meta| meta.is_file() && meta.permissions().mode() & 0o111 != 0)
+        .unwrap_or(false)
+}
+
+#[cfg(not(unix))]
+fn is_executable_file(path: &std::path::Path) -> bool {
+    path.is_file()
+}
+
 pub fn resolved_env() -> &'static [(String, String)] {
     RESOLVED_ENV.get_or_init(compute_env)
 }
@@ -255,6 +280,18 @@ fn common_install_paths() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(unix)]
+    #[test]
+    fn which_finds_the_first_executable_on_the_resolved_path() {
+        let found = which("sh").expect("sh is on every unix PATH");
+        assert!(found.ends_with("/sh"), "got: {}", found);
+        assert_eq!(
+            which("/opt/custom/claude").as_deref(),
+            Some("/opt/custom/claude")
+        );
+        assert_eq!(which("goodboy-no-such-binary"), None);
+    }
 
     #[test]
     fn resolved_path_is_non_empty_and_contains_bin() {

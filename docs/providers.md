@@ -379,6 +379,22 @@ command again, which is how the cursor and gemini installers update:
 - codex: `npm install -g @openai/codex@latest`
 - opencode, openrouter, moonshot: `npm install -g opencode-ai@latest`
 
+An update run ends in exactly one of three states. Rust re-detects the status
+after the exit and reports the first matching binary on the resolved PATH in
+`ProviderStatus.path`. The store compares the version before the run with the
+one detected after it (`cliUpdateResultOf`):
+
+- updated: the version changed. The notice says "updated to X" and the toast
+  fires. A run that exits 0 without a changed version never toasts
+- unchanged: the run exited 0 but the version is the same. The notice is a
+  warning that names the binary on PATH and the update command, keeps the
+  terminal visible and offers Retry. `claude update` can update another install
+  than the one first on PATH
+- failed: a non-zero exit, the existing error notice with the terminal
+
+`CliUpdateNotice` and the chat `CliTooOldNotice` share the three states through
+`useCliUpdate`.
+
 ### CLI version gate
 
 - `minCliVersion` on a catalog model is the oldest CLI that runs it. Opus 5.5
