@@ -794,8 +794,7 @@ and shows in mock scenes too. The update pill is soft, enters once and holds
 still. Its popover leads with Report a bug (with ⌘I, and Draft saved
 when a draft waits), then the version and release notes, the update, the setup
 checklist, What's new, keyboard shortcuts, Sponsor and Follow on X. The
-addresses live in `shared/lib/productLinks.ts`; **Settings > Help** has the
-same X link under Follow Goodboy. Report a bug closes the
+addresses live in `shared/lib/productLinks.ts`. Report a bug closes the
 popover and opens the report sheet. The popover opens by itself once, when the
 first agent finishes a turn, and never while the setup wizard is open; the
 checklist has no floating card.
@@ -806,8 +805,8 @@ One sheet files every report. `ReportSheetHost`
 (`features/bug-report/components/ReportSheetHost`) floats it above the footer
 chip, centred, with no overlay: the page under it stays live. Every door lands
 there: ⌘I from anywhere, Report a bug in the Goodboy chip, Report a bug in the
-palette (it also answers bug, issue, feedback, crash and broken), **Settings >
-App > Help**, **Help > Report a bug** in the macOS menu bar (`help_menu.rs`
+palette (it also answers bug, issue, feedback, crash and broken),
+**Help > Report a bug** in the macOS menu bar (`help_menu.rs`
 emits `goodboy://report-open` to the focused window), and Report this on a
 warning or error notification, which attaches that notification. Opening the sheet reads the screen you are on
 before anything moves, so Settings stays open under it.
@@ -1076,7 +1075,10 @@ one is open at a time.
   amends the history entry to the concrete page. The rail is the only index:
   its four groups (App, Workspace, Providers & models, Integrations) come
   from `settingsDirectory`, with the status line of a row shown only when
-  something needs doing (no quiet hints). Every page is also a palette entry
+  something needs doing (no quiet hints). A provider row says only what is
+  wrong (Update needed, Not signed in, Error) or Not connected, never an
+  identity or usage; the closed Providers & models group says how many
+  providers it holds ("2 providers") unless one of them needs attention. Every page is also a palette entry
   (`settingsEntries`, `Settings: Storage`, `Providers: Claude`), built from
   the same list, so ⌘K and the rail cannot disagree. The status lines are read
   once per studio (`useSettingsStatus`, on the minute clock of `useNow`);
@@ -1085,7 +1087,7 @@ one is open at a time.
   Integrations groups are left out. Precedent: the VS Code settings editor and
   Linear's settings sidebar.
 - **Settings nests items in its rail.** The App items (General, Shortcuts,
-  Backup, Storage, Security findings, Help) always sit under the
+  Backup, Storage, Security findings) always sit under the
   App row as indented
   rows, whichever scope is active, so switching scope never moves a row above
   the pointer. The Workspace pages (Projects, About you, New sessions, After

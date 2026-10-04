@@ -5,7 +5,6 @@ import { APP_SECTIONS, type AppSection } from './appSections';
 import { BackupPage } from '../../../backup/components/BackupPage';
 import { AppResetSection } from './AppResetSection';
 import { AppGeneralSection } from './AppGeneralSection';
-import { AppHelpSection } from './AppHelpSection';
 import { SecurityFindingsSection } from './SecurityFindingsSection';
 import { ShortcutsSection } from './ShortcutsSection';
 import { SHORTCUT_ROW_COUNT } from './shortcutRows';
@@ -15,7 +14,6 @@ import { SETTINGS_PANE_ENTRY } from './settingsPaneEntry';
 type Props = {
   readonly section: AppSection;
   readonly workspaceId: WorkspaceId | null;
-  readonly requestClose: () => void;
 };
 
 const SECTION_META: Readonly<Partial<Record<AppSection, string>>> = {
@@ -30,7 +28,7 @@ const SECTION_ACTIONS: Readonly<Partial<Record<AppSection, ReactNode>>> = {
   branches: STORAGE_APP_PAGES.branches.actions,
 };
 
-const SectionBody = ({ section, workspaceId, requestClose }: Props) => {
+const SectionBody = ({ section, workspaceId }: Props) => {
   switch (section) {
     case 'general':
       return <AppGeneralSection />;
@@ -49,8 +47,6 @@ const SectionBody = ({ section, workspaceId, requestClose }: Props) => {
       return STORAGE_APP_PAGES.branches.body;
     case 'security-findings':
       return <SecurityFindingsSection workspaceId={workspaceId} />;
-    case 'help':
-      return <AppHelpSection requestClose={requestClose} />;
     default: {
       const exhaustive: never = section;
       return exhaustive;
@@ -58,7 +54,7 @@ const SectionBody = ({ section, workspaceId, requestClose }: Props) => {
   }
 };
 
-export const AppScopePanel = ({ section, workspaceId, requestClose }: Props) => {
+export const AppScopePanel = ({ section, workspaceId }: Props) => {
   const label = APP_SECTIONS.find((entry) => entry.id === section)?.label ?? section;
   return (
     <PaneShell
@@ -68,7 +64,7 @@ export const AppScopePanel = ({ section, workspaceId, requestClose }: Props) => 
       meta={SECTION_META[section]}
       actions={SECTION_ACTIONS[section]}
     >
-      <SectionBody section={section} workspaceId={workspaceId} requestClose={requestClose} />
+      <SectionBody section={section} workspaceId={workspaceId} />
     </PaneShell>
   );
 };

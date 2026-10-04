@@ -36,7 +36,6 @@
     "features/session/components/SessionWorkspace/parts/FileVersionsPane/index.tsx": 1,
     "features/session/hooks/useTrailMenus/trailMenuActions.ts": 1,
     "features/settings/components/SettingsStudio/AppResetSection.tsx": 2,
-    "features/settings/components/SettingsStudio/AppHelpSection.tsx": 1,
     "features/settings/components/SettingsStudio/ClassicComposerKeysField.tsx": 1,
     "features/settings/components/SettingsStudio/SearchIndexBand.tsx": 2,
     "features/settings/components/SettingsStudio/WorkspaceAfterMergeSection.tsx": 1,

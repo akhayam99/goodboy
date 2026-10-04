@@ -48,9 +48,9 @@ export const useSettingsStatus = ({ workspaceId }: Params): SettingsStatus => {
       orderProviders({ providers: state.providers }).map((provider) => ({
         id: provider.id as ProviderId,
         label: provider.label,
-        status: providerRailStatus({ provider, state, nowMs }),
+        status: providerRailStatus({ provider, state }),
       })),
-    [state, nowMs],
+    [state],
   );
   const tools = useMemo(
     () => toolRailEntries({ integrations, connected, githubIdentity }),

@@ -1,6 +1,7 @@
 import type { ProviderId } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import { CONCEPT_TONE, type CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { pluralize } from '../../../../shared/utils/pluralize';
 import type { ToolRailEntry } from '../../../integrations/toolRailEntries';
 import type { ProviderRailStatus } from '../../../providers/providerRailStatus';
 import type { SettingsPageScope, SettingsScopeChange } from '../../settingsFocus';
@@ -187,10 +188,13 @@ const providerPages = ({ status, workspaceName }: Params): ReadonlyArray<Setting
   ];
 };
 
+const providerCount = (count: number): string | undefined =>
+  count === 0 ? undefined : pluralize(count, 'provider');
+
 const providersGroup = (params: Params): SettingsGroup => ({
   ...scopeMeta('providers'),
   place: params.workspaceName ?? 'This Mac',
-  subtitle: params.status.subtitles.providersText,
+  subtitle: params.status.subtitles.providersText ?? providerCount(params.status.providers.length),
   tone: params.status.subtitles.providersTone,
   pages: providerPages(params),
 });

@@ -147,7 +147,6 @@ vi.mock('../../../onboarding/onboarding-store', () => ({
 import { SettingsStudio } from './index';
 import { APP_SECTIONS } from './appSections';
 import type { SettingsScopeChange } from '../../settingsFocus';
-import { OPEN_REPORT_SHEET_EVENT } from '../../../bug-report/openReportSheet';
 import { shortcutGlyphs, shortcutRangeGlyphs } from '../../../../shared/keyboard/registry';
 import { SHORTCUT_ROW_COUNT } from './shortcutRows';
 
@@ -250,7 +249,6 @@ describe('SettingsStudio', () => {
       'storage',
       'branches',
       'security-findings',
-      'help',
     ]);
     expect(
       within(items).getByRole('button', { name: 'General' }).getAttribute('aria-current'),
@@ -294,7 +292,7 @@ describe('SettingsStudio', () => {
     expect(screen.getAllByRole('navigation', { name: 'Settings scopes' })).toHaveLength(1);
   });
 
-  it('keeps one rail mounted across scopes, with the App list always open', () => {
+  it('keeps one rail mounted across scopes, opening Providers only for a page inside it', () => {
     const { rerender } = renderApp();
     const rail = screen.getByRole('navigation', { name: /settings scopes/i });
 
@@ -348,6 +346,24 @@ describe('SettingsStudio', () => {
       ).toContain('Claude CLI needs an update');
     } finally {
       state.updaterStatus = 'idle';
+      state.providers = [];
+    }
+  });
+
+  it('says how many providers the closed group holds, with no tone and no usage', () => {
+    state.providers = [
+      { id: 'anthropic', label: 'Claude', connection: 'connected', version: '9.9.9' },
+      { id: 'codex', label: 'Codex', connection: 'connected', version: '9.9.9' },
+    ];
+    try {
+      renderApp();
+      const rail = screen.getByRole('navigation', { name: /settings scopes/i });
+      const group = within(rail).getByRole('button', { name: /^Providers & models/ });
+
+      expect(group.textContent).toContain('2 providers');
+      expect(within(rail).queryByRole('img')).toBeNull();
+      expect(within(rail).queryByRole('list', { name: 'Providers & models settings' })).toBeNull();
+    } finally {
       state.providers = [];
     }
   });
@@ -426,15 +442,12 @@ describe('SettingsStudio', () => {
     expect(screen.getByRole('button', { name: 'Wipe' })).toBeDefined();
   });
 
-  it('opens the report sheet from Help', () => {
-    const listener = vi.fn();
-    window.addEventListener(OPEN_REPORT_SHEET_EVENT, listener);
+  it('has no Help page, and the old Help anchor lands on General', () => {
     renderApp({ section: 'help' });
 
-    fireEvent.click(screen.getByRole('button', { name: /report a bug/i }));
-
-    expect(listener).toHaveBeenCalledOnce();
-    window.removeEventListener(OPEN_REPORT_SHEET_EVENT, listener);
+    const rail = screen.getByRole('navigation', { name: 'Settings scopes' });
+    expect(within(rail).queryByRole('button', { name: 'Help' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
   });
 
   const renderHome = (onScopeChange = vi.fn()) =>

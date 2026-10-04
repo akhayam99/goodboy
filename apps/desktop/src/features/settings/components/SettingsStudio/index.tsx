@@ -181,7 +181,6 @@ export const SettingsStudio = ({
       <AppScopePanel
         section={appSectionOf({ section: focus.section })}
         workspaceId={currentWorkspace?.id ?? null}
-        requestClose={requestClose}
       />
     );
   };
