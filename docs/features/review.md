@@ -18,7 +18,7 @@ Turn review comments into commits without writing the fix yourself. Review lists
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-sources-light.webp" width="520" alt="The Review header of notify-relay !57 with the source picker open: payments-api #318 on GitHub with 9 open, notify-relay !57 on GitLab with 3 open and checked, and Notes on this machine with 2 open">
 </picture>
 
-Read the comments of every request in the session from one place. The picker under the Review title lists each pull request and merge request of the session with its provider icon and open count, and **Notes on this machine** last. A session with two projects on two providers shows two entries, and picking one makes its project the active one. Draft, reply and push work the same everywhere. Where a provider cannot resolve a thread, the comment offers **Reply** and no resolve, and the push confirm says the thread stays open for the reviewer.
+Read the comments of a branch and your own notes in one list. Each comment carries a label, **Local**, **GitHub**, **GitLab** or **Bitbucket**, and the branch picker in the trail makes another branch the active one. Draft, reply and push work the same everywhere. Where a provider cannot resolve a thread, the comment offers **Reply** and no resolve, and the push confirm says the thread stays open for the reviewer.
 
 | Source                 | Read comments   | Reply | Resolve thread            |
 | ---------------------- | --------------- | ----- | ------------------------- |
@@ -34,7 +34,7 @@ Read the comments of every request in the session from one place. The picker und
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-comment-states-light.webp" width="420" alt="The comment list of Review for PR #318 under the summary 6 open, 1 drafting, 1 ready to push, 2 done and the Comments and Commits switch, with a filter menu and the groups Open 6, Ready to push 1 and Done 2, each row marked Comment changed, Needs you, Drafting, Ready, Not started, Accepted, Skipped or Pushed">
 </picture>
 
-Know what each comment needs next. Each one shows a state like **Not started**, **Drafting**, **Needs you**, **Ready** or **Comment changed**, grouped as **Open**, **Ready to push** and **Done**. A single summary line under the title counts them, and the list menu filters by state. A comment is marked changed only when the reviewer really edited the original comment after the draft (a new reply shows as **New reply from** the author and never blocks Accept): the card shows the text before and after and who wrote it, and you choose **Redraft with the new comment** or **Keep the draft**. A comment whose line moved on GitHub says so, and stays as it is.
+Know what each comment needs next. Each one shows a state like **Not started**, **Drafting**, **Needs you**, **Ready** or **Comment changed**, grouped as **Open**, **Ready to push** and **Done**. A comment is marked changed only when the reviewer really edited the original comment after the draft (a new reply shows as **New reply from** the author and never blocks Accept): the card shows the text before and after and who wrote it, and you choose **Redraft with the new comment** or **Keep the draft**. A comment whose line moved on GitHub says so, and stays as it is.
 
 ### Failed drafts
 
