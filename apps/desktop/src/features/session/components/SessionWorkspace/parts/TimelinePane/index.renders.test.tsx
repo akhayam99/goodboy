@@ -62,6 +62,7 @@ vi.mock('../../../../../../store', async () => {
     useIsSessionCollectionLoaded: () => true,
     useExecutedAgentRouting: ({ agent }: { readonly agent: { readonly id: string } }) =>
       storeState.executed.get(agent.id) ?? null,
+    useExecutedAgentRoutings: () => storeState.executed,
   };
 });
 vi.mock('../../../../../../shared/hooks/useSessionRoleModels', () => ({

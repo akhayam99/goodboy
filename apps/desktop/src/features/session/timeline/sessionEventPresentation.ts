@@ -197,10 +197,12 @@ export const isEmptyDecisionDiff = ({ payload }: PayloadParams): boolean => {
   return additions === 0 && deletions === 0;
 };
 
+export const CONTEXT_LABEL = 'Context';
+
 const decisionsChangedLabel = ({ payload }: PayloadParams): string =>
   payload?.consolidatedAfter === undefined
-    ? 'Context'
-    : `Context consolidated after ${payload.consolidatedAfter}`;
+    ? CONTEXT_LABEL
+    : `${CONTEXT_LABEL} consolidated after ${payload.consolidatedAfter}`;
 
 type TitleParams = {
   readonly event: SessionEvent;

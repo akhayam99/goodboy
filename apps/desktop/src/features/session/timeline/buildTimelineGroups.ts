@@ -112,6 +112,7 @@ export type TimelineEventEntry = {
   readonly at: string;
   readonly event: SessionEvent;
   readonly projectRun?: TimelineProjectRun;
+  readonly lane?: TimelineArtifactLane;
 };
 
 export type TimelineLearningEntry = {
@@ -119,6 +120,7 @@ export type TimelineLearningEntry = {
   readonly id: string;
   readonly at: string;
   readonly item: SessionContextItem;
+  readonly lane?: TimelineArtifactLane;
 };
 
 type TimelineAnswerEntry = {
@@ -269,6 +271,32 @@ const compareNewestFirst = (first: SortableEntry, second: SortableEntry): number
 };
 
 const NO_LEARNINGS: ReadonlyArray<SessionContextItem> = [];
+
+const agentIdsOfTree = ({
+  entry,
+}: {
+  readonly entry: TimelineAgentEntry;
+}): ReadonlyArray<string> => [
+  entry.agent.id,
+  ...entry.children.flatMap((child) => agentIdsOfTree({ entry: child })),
+];
+
+const runLaneByAgentIdOf = ({
+  runEntries,
+}: {
+  readonly runEntries: ReadonlyArray<TimelineRunEntry>;
+}): ReadonlyMap<string, TimelineArtifactLane> => {
+  const laneByAgentId = new Map<string, TimelineArtifactLane>();
+  for (const runEntry of runEntries) {
+    const lane = { identity: runEntry.identity, rootEntryId: runEntry.id };
+    for (const child of runEntry.children) {
+      if (child.kind === 'agent') {
+        agentIdsOfTree({ entry: child }).forEach((agentId) => laneByAgentId.set(agentId, lane));
+      }
+    }
+  }
+  return laneByAgentId;
+};
 
 export const buildTimelineGroups = ({
   sessionId,
@@ -443,6 +471,15 @@ export const buildTimelineGroups = ({
   });
 
   const runIds = new Set(runEntries.map((entry) => entry.run.id));
+  const runLaneByAgentId = runLaneByAgentIdOf({ runEntries });
+  const contextLaneFor = ({
+    agentId,
+  }: {
+    readonly agentId: string | null | undefined;
+  }): { readonly lane: TimelineArtifactLane } | Record<string, never> => {
+    const lane = agentId == null ? undefined : runLaneByAgentId.get(agentId);
+    return lane === undefined ? {} : { lane };
+  };
   const groupedPlanIds = new Set(
     runEntries
       .flatMap((entry) => entry.children)
@@ -594,13 +631,22 @@ export const buildTimelineGroups = ({
         id: `event:${event.id}`,
         at: event.createdAt,
         event,
+        ...(event.kind === 'decisions_changed'
+          ? contextLaneFor({ agentId: event.payload?.agentId })
+          : {}),
       },
     ];
   });
 
   const learningEntries: ReadonlyArray<TimelineLearningEntry> = learnings
     .filter((item) => item.kind === 'learning' && item.status === 'active')
-    .map((item) => ({ kind: 'learning', id: `learning:${item.id}`, at: item.createdAt, item }));
+    .map((item) => ({
+      kind: 'learning',
+      id: `learning:${item.id}`,
+      at: item.createdAt,
+      item,
+      ...contextLaneFor({ agentId: item.source?.agentId }),
+    }));
 
   const entries = [
     ...runEntries,

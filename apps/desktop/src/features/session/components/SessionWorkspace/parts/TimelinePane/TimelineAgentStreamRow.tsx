@@ -81,8 +81,13 @@ export const TimelineAgentStreamRow = ({
       diffStat={diffStat}
       worktrees={worktrees}
       provider={work.routing.provider}
-      meta={<TimelineAgentMeta work={work} costUsd={costUsd} />}
-      state={<TimelineRowStateLine state={item.rowState} note={work.time?.note ?? null} />}
+      meta={<TimelineAgentMeta work={work} costUsd={costUsd} agentId={entry.agent.id} />}
+      state={
+        <TimelineRowStateLine
+          state={item.rowState}
+          note={item.rowState.phase === 'running' ? (work.time?.note ?? null) : null}
+        />
+      }
       progress={work.time?.progress ?? null}
       isRevealed={isRevealed}
       lanes={lanes}

@@ -89,6 +89,107 @@ const freshCount = <T extends { readonly id: string }>({
     .length;
 };
 
+const CHAINS = 120;
+
+const chainAgents = Array.from({ length: CHAINS }, (_, chain) => {
+  const leadId = `chain-${chain}`;
+  const base = chain * 10;
+  return [
+    agentOf({ id: leadId, ordinal: 10_000 + base, minutes: base }),
+    ...[1, 2].map((child) =>
+      agentOf({
+        id: `${leadId}-${child}`,
+        ordinal: 10_000 + base + child,
+        minutes: base + child,
+        parentAgentId: leadId,
+      }),
+    ),
+    agentOf({
+      id: `${leadId}-3`,
+      ordinal: 10_000 + base + 3,
+      minutes: base + 3,
+      parentAgentId: `${leadId}-1`,
+    }),
+  ];
+}).flat();
+
+const chainEntries = buildTimelineGroups({
+  sessionId: SESSION_ID,
+  agents: chainAgents,
+  workflows: [],
+  plans: [],
+  artifacts: [],
+  externalTasks: [],
+  questions: [],
+  worktrees: [],
+  events: [],
+  agentKindOverride: {},
+}).entries;
+
+const chainStreamOf = ({ expanded }: { readonly expanded: ReadonlyArray<string> }) =>
+  buildTimelineStream({
+    entries: chainEntries,
+    unreadAgentIds: new Set(),
+    advanceByRunId: new Map(),
+    decidingRunIds: new Set(),
+    dayLabelFor: ({ at: when }) => dayLabel({ at: when, now: NOW }),
+    expandedGroupIds: new Set(expanded),
+    foldsFinished: true,
+  });
+
+const bestOf = ({ runs, task }: { readonly runs: number; readonly task: () => void }): number => {
+  task();
+  return Math.min(
+    ...Array.from({ length: runs }, () => {
+      const start = performance.now();
+      task();
+      return performance.now() - start;
+    }),
+  );
+};
+
+describe('layoutTimelineRail with a head lane per group', () => {
+  const expanded = Array.from({ length: CHAINS }, (_, chain) => `agent:chain-${chain}`);
+  const headed = chainStreamOf({ expanded });
+  const headIds = new Set(
+    headed.groups.filter((group) => group.shape === 'head').map((group) => group.id),
+  );
+
+  it('adds one head per opened chain and no more', () => {
+    expect(headIds.size).toBe(CHAINS);
+    expect(headed.groups.length).toBe(CHAINS * 3);
+  });
+
+  it('lays out within twice the time the same rows take without heads', () => {
+    const headless = {
+      rows: headed.items.map((item) =>
+        item.kind === 'row' && item.groupId !== null && headIds.has(item.groupId)
+          ? { ...item, groupId: null }
+          : item,
+      ),
+      groups: headed.groups
+        .filter((group) => group.shape !== 'head')
+        .map((group) => ({
+          ...group,
+          parentGroupId:
+            group.parentGroupId !== null && headIds.has(group.parentGroupId)
+              ? null
+              : group.parentGroupId,
+        })),
+    };
+    const withHeads = bestOf({
+      runs: 15,
+      task: () => layoutTimelineRail({ rows: headed.items, groups: headed.groups }),
+    });
+    const withoutHeads = bestOf({
+      runs: 15,
+      task: () => layoutTimelineRail(headless),
+    });
+
+    expect(withHeads).toBeLessThanOrEqual(Math.max(withoutHeads * 2, 1));
+  });
+});
+
 describe('buildTimelineStream at five hundred rows', () => {
   it('builds new items only for the rows a group adds or changes when it opens', () => {
     const closed = streamOf({ expanded: [] });

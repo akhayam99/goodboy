@@ -161,20 +161,28 @@ describe('buildTimelineStream resolve batches', () => {
     expect(rows).toHaveLength(11);
     expect(groupIndex).toBe(10);
     expect(rows.slice(0, 10).every((row) => row.groupId === `lane:${GROUP_ID}`)).toBe(true);
+    expect(rows[groupIndex]?.groupId).toBe(`head:${GROUP_ID}`);
     expect(groups).toEqual([
+      expect.objectContaining({
+        id: `head:${GROUP_ID}`,
+        originRowId: GROUP_ID,
+        parentGroupId: null,
+        shape: 'head',
+      }),
       expect.objectContaining({
         id: `lane:${GROUP_ID}`,
         originRowId: GROUP_ID,
-        parentGroupId: null,
+        parentGroupId: `head:${GROUP_ID}`,
         shape: 'merged',
       }),
     ]);
 
     const layout = layoutTimelineRail({ rows: items, groups });
     const groupRail = layout.rows[items.findIndex((item) => item.id === GROUP_ID)];
-    expect(groupRail?.joins.map((join) => join.kind)).toEqual(['branch']);
+    expect(groupRail?.joins.map((join) => join.kind)).toEqual(['stub', 'branch']);
+    expect(groupRail?.markerColumn).toBe(1);
     const topChild = layout.rows[items.findIndex((item) => item.id === rows[0]?.id)];
-    expect(topChild?.markerColumn).toBeGreaterThan(0);
+    expect(topChild?.markerColumn).toBe(2);
   });
 
   it('opens on the eight children nearest the group row, under a Show 2 more row', () => {
@@ -188,7 +196,7 @@ describe('buildTimelineStream resolve batches', () => {
     ]);
     const more = opened[0];
     expect(more?.kind === 'more' ? more.hiddenCount : null).toBe(2);
-    expect(more?.groupId).toBe(groups.find((group) => group.originRowId === GROUP_ID)?.id);
+    expect(more?.groupId).toBe(`lane:${GROUP_ID}`);
     expect(
       rowsOf(opened).every(
         (row) => row.explode?.groupId === GROUP_ID && row.explode.kind === 'batch',
