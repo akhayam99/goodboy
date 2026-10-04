@@ -1,4 +1,9 @@
-import { providersByHeadroom, type HeadroomMap, type ProviderHeadroom } from '@goodboy/core';
+import {
+  PROVIDERS_REPORTING_LIMITS,
+  providersByHeadroom,
+  type HeadroomMap,
+  type ProviderHeadroom,
+} from '@goodboy/core';
 import type { ProviderId, ProviderLimits } from '@goodboy/types';
 import type { PolicyRow } from '../providers/policy/policyRows';
 import { PROVIDER_LABEL } from '../providers/providerLabel';
@@ -6,17 +11,11 @@ import { PROVIDER_LABEL } from '../providers/providerLabel';
 export type RulesProviderRoom = Readonly<{
   id: ProviderId;
   name: string;
-  stateLabel: string;
+  state: PolicyRow['state'];
+  reportsLimits: boolean;
   headroom: ProviderHeadroom;
-  fiveHour: number | null;
-  weekly: number | null;
+  used: number | null;
 }>;
-
-const STATE_LABEL: Readonly<Record<PolicyRow['state'], string>> = {
-  on: 'On',
-  backup: 'Backup only',
-  off: 'Off',
-};
 
 type WindowParams = {
   readonly limits: ProviderLimits | undefined;
@@ -25,6 +24,12 @@ type WindowParams = {
 
 const usedOf = ({ limits, kind }: WindowParams): number | null =>
   limits?.windows.find((window) => window.kind === kind)?.usedFraction ?? null;
+
+const mostUsedOf = ({ limits }: Pick<WindowParams, 'limits'>): number | null => {
+  const fiveHour = usedOf({ limits, kind: 'fiveHour' });
+  const weekly = usedOf({ limits, kind: 'weekly' });
+  return fiveHour === null && weekly === null ? null : Math.max(fiveHour ?? 0, weekly ?? 0);
+};
 
 type RoomsParams = {
   readonly rows: ReadonlyArray<PolicyRow>;
@@ -42,34 +47,39 @@ export const rulesProviderRooms = ({
     .map((row) => ({
       id: row.id,
       name: PROVIDER_LABEL[row.id],
-      stateLabel: STATE_LABEL[row.state],
+      state: row.state,
+      reportsLimits: PROVIDERS_REPORTING_LIMITS.includes(row.id),
       headroom: headroom[row.id] ?? 'unknown',
-      fiveHour: usedOf({ limits: limits[row.id], kind: 'fiveHour' }),
-      weekly: usedOf({ limits: limits[row.id], kind: 'weekly' }),
+      used: mostUsedOf({ limits: limits[row.id] }),
     }));
 
-const percent = (fraction: number): string => `${Math.round(fraction * 100)}%`;
-
-const mostUsed = (room: RulesProviderRoom): number =>
-  Math.max(room.fiveHour ?? 0, room.weekly ?? 0);
-
-export const roomUsedText = (room: RulesProviderRoom): string => percent(mostUsed(room));
+export const canSpreadByHeadroom = ({
+  rooms,
+}: {
+  readonly rooms: ReadonlyArray<RulesProviderRoom>;
+}): boolean => rooms.some((room) => room.state === 'on' && room.reportsLimits);
 
 type PickParams = {
   readonly rooms: ReadonlyArray<RulesProviderRoom>;
   readonly spread: boolean;
 };
 
-export type RulesPick = Readonly<{ name: string; why: string }>;
+type RulesPickReason =
+  | Readonly<{ kind: 'first-in-order' }>
+  | Readonly<{ kind: 'most-room' }>
+  | Readonly<{ kind: 'passed-tight'; passed: string; used: number }>
+  | Readonly<{ kind: 'passed-out'; passed: string }>;
+
+export type RulesPick = Readonly<{ name: string; reason: RulesPickReason }>;
 
 export const nextStepPick = ({ rooms, spread }: PickParams): RulesPick | null => {
-  const on = rooms.filter((room) => room.stateLabel === 'On');
+  const on = rooms.filter((room) => room.state === 'on');
   const first = on[0];
   if (first === undefined) {
     return null;
   }
   if (!spread) {
-    return { name: first.name, why: 'First in your order.' };
+    return { name: first.name, reason: { kind: 'first-in-order' } };
   }
   const headroom = Object.fromEntries(on.map((room) => [room.id, room.headroom]));
   const order = providersByHeadroom({ providers: on.map((room) => room.id), headroom });
@@ -78,25 +88,12 @@ export const nextStepPick = ({ rooms, spread }: PickParams): RulesPick | null =>
     (room) => room !== picked && on.indexOf(room) < on.indexOf(picked) && room.headroom !== 'ok',
   );
   if (passed === undefined) {
-    return { name: picked.name, why: 'It has the most room left.' };
+    return { name: picked.name, reason: { kind: 'most-room' } };
   }
   return passed.headroom === 'out'
-    ? { name: picked.name, why: `${passed.name} is at its limit, so it gets no new work.` }
-    : { name: picked.name, why: `${passed.name} is at ${roomUsedText(passed)}, so it goes last.` };
-};
-
-export const spreadSuggestion = ({
-  rooms,
-}: {
-  readonly rooms: ReadonlyArray<RulesProviderRoom>;
-}) => {
-  const on = rooms.filter((room) => room.stateLabel === 'On');
-  const tight = on.find((room) => mostUsed(room) >= 0.8);
-  const roomy = on.find(
-    (room) => room !== tight && room.headroom !== 'tight' && room.headroom !== 'out',
-  );
-  if (tight === undefined || roomy === undefined) {
-    return null;
-  }
-  return `${tight.name} is at ${roomUsedText(tight)} used. Spreading would send new steps to ${roomy.name} first while ${tight.name} is tight.`;
+    ? { name: picked.name, reason: { kind: 'passed-out', passed: passed.name } }
+    : {
+        name: picked.name,
+        reason: { kind: 'passed-tight', passed: passed.name, used: passed.used ?? 0 },
+      };
 };
