@@ -29,26 +29,12 @@ type Props = {
   readonly onImported: (artifactId: ArtifactId) => void;
 };
 
-const EMPTY_COPY: Record<ArtifactFilter, { readonly title: string; readonly description: string }> =
-  {
-    all: {
-      title: 'No artifacts yet',
-      description:
-        'Plans, reports and wireframes made in this session collect here. Agents write plans as they work. Start a report or a wireframe with New.',
-    },
-    plan: {
-      title: 'No plans yet',
-      description: 'Plans appear here once an agent drafts one.',
-    },
-    report: {
-      title: 'No reports yet',
-      description: 'A report writes up what this session has done so far.',
-    },
-    wireframe: {
-      title: 'No wireframes yet',
-      description: 'A wireframe draws the screens and the flow you describe.',
-    },
-  };
+const EMPTY_TITLE: Record<ArtifactFilter, string> = {
+  all: 'No artifacts yet',
+  plan: 'No plans yet',
+  report: 'No reports yet',
+  wireframe: 'No wireframes yet',
+};
 
 export const ArtifactList = ({
   sessionId,
@@ -59,7 +45,6 @@ export const ArtifactList = ({
   onOpen,
   onImported,
 }: Props) => {
-  const empty = EMPTY_COPY[filter];
   const dropRef = useRef<HTMLDivElement>(null);
   const importWireframe = useAppStore((state) => state.importWireframe);
   const importer = useWireframeImport({
@@ -131,8 +116,7 @@ export const ArtifactList = ({
           <LensEmptyState
             tone={CONCEPT_TONE[concept]}
             icon={CONCEPT_ICONS[concept]}
-            title={empty.title}
-            description={empty.description}
+            title={EMPTY_TITLE[filter]}
           />
         ) : (
           <div data-testid="artifact-list" className="flex min-w-0 flex-col gap-3">

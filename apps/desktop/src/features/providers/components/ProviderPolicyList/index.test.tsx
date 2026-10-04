@@ -144,7 +144,9 @@ describe('ProviderPolicyList', () => {
     const last = writtenRows().at(-1);
     expect(last?.providerPool?.map((entry) => entry.id)).toEqual(['codex', 'anthropic', 'cursor']);
     expect(last?.defaultProviderId).toBe('codex');
-    screen.getByText('Codex is now the default for new work');
+    expect(screen.getByRole('status').textContent).toContain(
+      'Codex is now the default for new work',
+    );
   });
 
   it('reorders by dragging the handle onto another row', async () => {
@@ -194,21 +196,20 @@ describe('ProviderPolicyList', () => {
     );
   });
 
-  it('keeps the two marks on the provider and suggests Backup only for pay-as-you-go', async () => {
+  it('keeps one mark on the provider, Keep using after the limit', async () => {
     renderList();
 
     fireEvent.click(screen.getByRole('button', { name: /^Codex/, expanded: false }));
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Pay-as-you-go' }));
+    expect(screen.queryByRole('checkbox', { name: 'Pay-as-you-go' })).toBeNull();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Keep using after the limit' }));
 
     await waitFor(() =>
       expect(writtenRows().at(-1)?.providerPool?.[1]).toEqual({
         id: 'codex',
         state: 'on',
-        payAsYouGo: true,
+        keepAfterLimit: true,
       }),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Set Backup only' }));
-    await waitFor(() => expect(writtenRows().at(-1)?.providerPool?.[1]?.state).toBe('backup'));
   });
 
   it('resets to every connected provider On with null', async () => {

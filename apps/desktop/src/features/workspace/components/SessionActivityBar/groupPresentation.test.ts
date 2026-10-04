@@ -19,7 +19,7 @@ describe('sessionGroupPresentation', () => {
     const running = sessionGroupPresentation({ key: 'running', groupMode: 'stage' });
 
     expect(running?.label).toBe('running');
-    expect(running?.reason).toBe('an agent is working right now');
+    expect(running?.reason).toBe('An agent is working right now');
   });
 
   it('has no presentation for an ungrouped list or an unknown key', () => {

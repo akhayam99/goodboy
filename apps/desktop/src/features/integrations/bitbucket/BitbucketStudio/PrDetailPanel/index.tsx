@@ -114,7 +114,6 @@ export const PrDetailPanel = ({
               threadId == null ? comment(body) : reply({ parentCommentId: Number(threadId), body }),
       onResolve: null,
       resolveError: null,
-      emptyDescription: 'Comments on this pull request show up here.',
       footnote: actions.canAct ? null : POST_BLOCKED,
       composerNote: null,
       renderMessageFooter: null,

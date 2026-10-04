@@ -9,7 +9,7 @@ import { WorkspaceReviewRepliesSection } from './WorkspaceReviewRepliesSection';
 
 const WORKSPACE = 'workspace-1' as WorkspaceId;
 
-const { state, learn, editAttribution } = vi.hoisted(() => ({
+const { state, learn } = vi.hoisted(() => ({
   state: {
     workspaces: [] as ReadonlyArray<unknown>,
     workspaceOverrides: {} as Record<string, OverrideSettings>,
@@ -30,7 +30,6 @@ const { state, learn, editAttribution } = vi.hoisted(() => ({
     ],
   },
   learn: vi.fn(),
-  editAttribution: vi.fn(),
 }));
 
 vi.mock('../../../resolve/learnWorkspaceReplyStyle', () => ({
@@ -45,9 +44,7 @@ const renderWith = (patch: Partial<OverrideSettings> = {}) => {
   state.workspaceOverrides = {
     [WORKSPACE]: { ...overridesWithAttribution({ attributionFooter: null }), ...patch },
   };
-  return render(
-    <WorkspaceReviewRepliesSection workspaceId={WORKSPACE} onEditAttribution={editAttribution} />,
-  );
+  return render(<WorkspaceReviewRepliesSection workspaceId={WORKSPACE} />);
 };
 
 beforeEach(() => {
@@ -187,12 +184,10 @@ describe('WorkspaceReviewRepliesSection', () => {
     expect(state.saveSetting).toHaveBeenCalledWith(`review.edit_posted_reply.${WORKSPACE}`, '0');
   });
 
-  it('sends the attribution line to New sessions instead of a second switch', () => {
+  it('leaves the attribution line to New sessions', () => {
     renderWith({ attributionFooter: false });
 
     expect(screen.getAllByRole('switch')).toHaveLength(2);
-    fireEvent.click(screen.getByRole('button', { name: 'Edit in New sessions' }));
-
-    expect(editAttribution).toHaveBeenCalledOnce();
+    expect(screen.queryByText('Attribution line')).toBeNull();
   });
 });

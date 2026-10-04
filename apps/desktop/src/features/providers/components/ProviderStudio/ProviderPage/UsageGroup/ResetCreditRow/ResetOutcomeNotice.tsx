@@ -16,7 +16,7 @@ export const ResetOutcomeNotice = ({ outcome, usedAtMs, onRetry }: Props) => {
         tone="success"
         placement="inline"
         role="status"
-        title="Reset used."
+        title="Reset used"
         body={`Codex is at 0% for the 5-hour window and the week. Next weekly refill: ${nextWeeklyRefillAfterReset({ nowMs: usedAtMs })}.`}
       />
     );
@@ -27,13 +27,13 @@ export const ResetOutcomeNotice = ({ outcome, usedAtMs, onRetry }: Props) => {
         tone="info"
         placement="inline"
         role="status"
-        title="Nothing to reset right now."
+        title="Nothing to reset right now"
         body="Codex says no window can be reset. Your reset is still yours."
       />
     );
   }
   if (outcome === 'noCredit') {
-    return <Notice tone="info" placement="inline" role="status" title="No free resets left." />;
+    return <Notice tone="info" placement="inline" role="status" title="No free resets left" />;
   }
   return (
     <Notice

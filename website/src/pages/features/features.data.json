@@ -709,7 +709,7 @@
           "also": "review layers"
         },
         {
-          "title": "Write it for me",
+          "title": "Write it",
           "text": "Get a pull request title, description and changelog entry in your repo's format. Linked issues become closing references.",
           "group": "Review, resolve and pull requests",
           "also": "PR text",

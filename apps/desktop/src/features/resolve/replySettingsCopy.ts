@@ -6,7 +6,7 @@ export const VOICE_LABEL: Record<ReplyVoice, string> = {
   terse: 'Terse',
   friendly: 'Friendly',
   formal: 'Formal',
-  mine: 'Like my replies',
+  mine: 'Your replies',
 };
 
 export const VOICE_HELP: Record<ReplyVoice, string> = {

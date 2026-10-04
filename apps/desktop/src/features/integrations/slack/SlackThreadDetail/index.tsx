@@ -113,7 +113,6 @@ export const SlackThreadDetail = ({
       onPost: reply == null ? null : ({ body }) => reply(body),
       onResolve: null,
       resolveError: null,
-      emptyDescription: 'The messages in this thread show up here.',
       footnote: null,
       composerNote: 'Sent as plain text, posted as you in Slack.',
       renderMessageFooter: (message) => {

@@ -172,7 +172,6 @@ export const SettingsStudio = ({
           workspaceId={currentWorkspace.id}
           section={focus.section}
           initialFlow={focus.flow}
-          onSelect={onScopeChange}
           requestClose={requestClose}
         />
       );

@@ -39,8 +39,7 @@ export const FolderCard = ({
           </span>
         ) : (
           <span className="text-secondary text-faint-foreground">
-            Not a git folder. Agents can read and write documents here. Branches, pull requests and
-            the Code host step don&apos;t apply.
+            Not a git folder. Agents read and write documents here. No branches or pull requests.
           </span>
         )}
       </div>

@@ -89,7 +89,6 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
         inset="content"
         label="Branches and comments"
         ariaLabel="Branches and comments"
-        hint="How the work is named and signed."
         icon={<CONCEPT_ICONS.branch size={ICON_SIZE.row} aria-hidden />}
         headingLevel={2}
       >
@@ -128,7 +127,7 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
         <WorkspaceFieldRow
           workspaceId={workspaceId}
           field="attribution"
-          help="Signs every comment Goodboy posts to GitHub, GitLab, Bitbucket, Jira, Linear and Slack, review replies included."
+          help="Signs every comment and review reply Goodboy posts."
         >
           <Switch
             label={attributionFooter ? 'On' : 'Off'}
@@ -149,7 +148,6 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
         label="Agents"
 
         ariaLabel="Agents"
-        hint="How much runs at once, and how agents talk."
         icon={<CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden />}
         headingLevel={2}
       >

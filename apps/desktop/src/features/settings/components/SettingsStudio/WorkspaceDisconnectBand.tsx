@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { Band, Button, FieldRow, InlineConfirm } from '@goodboy/ui';
+import { Button, FieldRow, InlineConfirm } from '@goodboy/ui';
 import { Unplug } from 'lucide-react';
 import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -50,7 +50,7 @@ export const WorkspaceDisconnectBand = ({ workspaceId, requestClose }: Props) =>
   };
 
   return (
-    <Band inset="content" label="Disconnect" ariaLabel="Disconnect workspace" headingLevel={2}>
+    <section aria-label="Disconnect workspace" className="flex flex-col gap-2">
       {isConfirming ? (
         <InlineConfirm
           role="danger"
@@ -64,12 +64,12 @@ export const WorkspaceDisconnectBand = ({ workspaceId, requestClose }: Props) =>
           className="self-stretch text-left"
         />
       ) : (
-        <FieldRow label={workspaceName ?? 'This workspace'} help={DISCONNECT_NOTE}>
+        <FieldRow label={`Disconnect ${workspaceName ?? 'this workspace'}`} help={DISCONNECT_NOTE}>
           <Button variant="danger" size="sm" onClick={() => setIsConfirming(true)}>
             Disconnect
           </Button>
         </FieldRow>
       )}
-    </Band>
+    </section>
   );
 };

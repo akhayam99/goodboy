@@ -19,7 +19,7 @@ export const ReviewCommitsDone = ({ model }: Props) => {
         tone="success"
         placement="inline"
         role="status"
-        title="Branch rewritten."
+        title="Branch rewritten"
         body={<span className="text-code">{backupLine({ backupRef: run.backupRef })}</span>}
         actions={
           <Button variant="ghost" size="sm" onClick={() => void model.undo()}>

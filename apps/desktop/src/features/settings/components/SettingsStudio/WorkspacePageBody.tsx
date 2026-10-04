@@ -3,7 +3,6 @@ import type { WorkspaceId } from '@goodboy/types';
 import { SkillsPanel } from '../../../skills/components/SkillsPanel';
 import { PermissionsSettings } from '../../../permissions/components/PermissionsSettings';
 import { WorkspaceStorageNotice } from '../../../storage/components/WorkspaceStorageNotice';
-import type { SettingsScopeChange } from '../../settingsFocus';
 import { WorkspaceAfterMergeSection } from './WorkspaceAfterMergeSection';
 import { WorkspaceProfileSection } from './WorkspaceProfileSection';
 import { WorkspaceProjectsSection } from './WorkspaceProjectsSection';
@@ -19,7 +18,6 @@ type Props = {
   readonly workspaceId: WorkspaceId;
   readonly page: WorkspacePage;
   readonly section?: string;
-  readonly onSelect: (change: SettingsScopeChange) => void;
   readonly requestClose: () => void;
 };
 
@@ -27,7 +25,6 @@ export const WorkspacePageBody = ({
   workspaceId,
   page,
   section,
-  onSelect,
   requestClose,
 }: Props): ReactNode => {
   switch (page) {
@@ -51,12 +48,7 @@ export const WorkspacePageBody = ({
     case 'after-merge':
       return <WorkspaceAfterMergeSection workspaceId={workspaceId} />;
     case 'review-replies':
-      return (
-        <WorkspaceReviewRepliesSection
-          workspaceId={workspaceId}
-          onEditAttribution={() => onSelect({ scope: 'workspace', section: 'general' })}
-        />
-      );
+      return <WorkspaceReviewRepliesSection workspaceId={workspaceId} />;
     case 'permissions':
       return (
         <PermissionsSettings

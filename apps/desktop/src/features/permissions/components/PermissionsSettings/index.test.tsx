@@ -99,9 +99,15 @@ describe('PermissionsSettings', () => {
     expect(mocks.setDefault).toHaveBeenCalledWith({ workspaceId: WORKSPACE_ID, mode: 'plan' });
   });
 
-  it('says what each provider does with a mode it cannot honor', () => {
+  it('keeps what each provider does behind one folded row', () => {
     render(<PermissionsSettings workspaceId={WORKSPACE_ID} />);
 
+    expect(screen.queryByRole('row', { name: /ask first/i })).toBeNull();
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: "Some providers can't ask first or ignore rules. See each provider.",
+      }),
+    );
     const askFirst = screen.getByRole('row', { name: /ask first/i });
     expect(within(askFirst).getAllByText('Runs Read only')).toHaveLength(4);
     const rulesRow = screen.getByRole('row', { name: /^rules/i });
@@ -120,7 +126,7 @@ describe('PermissionsSettings', () => {
   it('warns that a deny rule only stops Claude when another provider runs here', async () => {
     render(<PermissionsSettings workspaceId={WORKSPACE_ID} />);
 
-    expect(await screen.findByText('Deny rules only stop Claude.')).toBeDefined();
+    expect(await screen.findByText('Deny rules only stop Claude')).toBeDefined();
   });
 
   it('stays quiet about deny rules when only Claude runs here', async () => {
@@ -130,7 +136,7 @@ describe('PermissionsSettings', () => {
     render(<PermissionsSettings workspaceId={WORKSPACE_ID} />);
 
     await screen.findByText('Commands starting with "git push"');
-    expect(screen.queryByText('Deny rules only stop Claude.')).toBeNull();
+    expect(screen.queryByText('Deny rules only stop Claude')).toBeNull();
   });
 
   it('removes a rule after an inline confirm', async () => {

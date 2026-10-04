@@ -21,7 +21,7 @@ type Props = {
   readonly dropIndex: number | undefined;
   readonly onToggleExpand: () => void;
   readonly onState: (state: ProviderPolicyState) => void;
-  readonly onToggleMark: (mark: 'payAsYouGo' | 'keepAfterLimit') => void;
+  readonly onToggleKeepAfterLimit: () => void;
   readonly onGripDown: (event: PointerEvent) => void;
   readonly onKeyDown: (event: KeyboardEvent<HTMLLIElement>) => void;
 };
@@ -36,7 +36,7 @@ export const ProviderPolicyRow = ({
   dropIndex,
   onToggleExpand,
   onState,
-  onToggleMark,
+  onToggleKeepAfterLimit,
   onGripDown,
   onKeyDown,
 }: Props) => {
@@ -103,7 +103,9 @@ export const ProviderPolicyRow = ({
           <PolicyStateSegment label={`${name} policy`} value={row.state} onChange={onState} />
         )}
       </div>
-      {isExpanded ? <PolicyMarks row={row} onToggleMark={onToggleMark} onState={onState} /> : null}
+      {isExpanded ? (
+        <PolicyMarks row={row} onToggleKeepAfterLimit={onToggleKeepAfterLimit} />
+      ) : null}
     </li>
   );
 };

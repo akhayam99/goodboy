@@ -4,8 +4,8 @@ import type { SessionBudgetOnExceed } from '@goodboy/types';
 import { parseSpendLimit } from '../parseSpendLimit';
 
 const BEHAVIOR_OPTIONS: ReadonlyArray<SegmentedTabOption<SessionBudgetOnExceed>> = [
-  { value: 'pause', label: 'Pause workflows', hint: 'stop at the limit', icon: Pause },
-  { value: 'warn', label: 'Only warn me', hint: 'keep going, tell me once', icon: Bell },
+  { value: 'pause', label: 'Pause workflows', hint: 'Stop at the limit', icon: Pause },
+  { value: 'warn', label: 'Warn only', hint: 'Keep going, notify once', icon: Bell },
 ];
 
 type Props = {

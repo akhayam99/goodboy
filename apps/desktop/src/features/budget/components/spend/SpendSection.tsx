@@ -56,7 +56,7 @@ export const SpendSection = ({
       <SectionHeader
         label="Spend"
         icon={<CONCEPT_ICONS.budget size={ICON_SIZE.control} aria-hidden />}
-        hint="Spend in this workspace for the window. Caps count the whole month across all workspaces. Pick a provider to edit its cap."
+        hint="Caps count the whole month, across workspaces."
         headingLevel={2}
       />
       <ErrorStrip label="budget rules" error={rulesResult.error} onRetry={onRetryRules} />

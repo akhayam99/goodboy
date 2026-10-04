@@ -182,9 +182,6 @@ export const DefaultsPanel = ({ workspaceId, focusSection }: Props) => {
 
       <section aria-label="Agents" className="flex flex-col gap-2">
         <Eyebrow label="Agents" />
-        <p className="text-secondary text-muted-foreground">
-          What Auto picks for each role, and why. Open a role to see how it works.
-        </p>
         <BandStack>
           {DEFAULT_GROUPS.agents.map((group) => (
             <div key={group.id} role="group" aria-label={group.label}>

@@ -342,12 +342,12 @@ new commits` (`checkMergedThen`, one git check per tip, kept in
   untracked work. The local branch survives every one of them except the
   after-merge rule below, and `mount attach` recreates a worktree from it.
 - **After a pull request merges, a rule decides.** Workspace settings carry
-  `After a pull request merges` (`workspaces.after_merge`): `Ask me`,
+  `After a pull request merges` (`workspaces.after_merge`): `Ask first`,
   `Delete folder and branch on this Mac` or `Also delete the branch on
 origin`. A repo project can override it from its row editor
   (`projects.after_merge`, `Same as workspace · …` first). Workspaces from
-  before the rule stay on `Ask me`; a workspace that never chose deletes on
-  this Mac. When polling sees the merge and the rule is not `Ask me`,
+  before the rule stay on `Ask first`; a workspace that never chose deletes on
+  this Mac. When polling sees the merge and the rule is not `Ask first`,
   `runAfterMergeCleanup` deletes only a branch Goodboy created
   (`session_worktrees.branch_origin = 'created'`; older rows read `unknown`
   and are never deleted by the rule), only if `branch_merge_state` says it

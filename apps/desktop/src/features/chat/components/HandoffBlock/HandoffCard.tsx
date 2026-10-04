@@ -38,7 +38,7 @@ export const HandoffCard = ({ handoff, sessionId, at }: Props) => {
             grouped
             tone="neutral"
             icon={<Icon size={ICON_SIZE.row} aria-hidden />}
-            eyebrow="sent by"
+            eyebrow="Sent by"
             preview={handoffSenderLabel({ sender: handoff.sender, names })}
             meta={formatClock({ at })}
             open={disclosure.open}

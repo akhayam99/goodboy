@@ -1,16 +1,6 @@
 import { useEffect, useState } from 'react';
 import { REPLY_VOICES, RESOLVE_COMMIT_STYLES, type WorkspaceId } from '@goodboy/types';
-import {
-  Band,
-  BandStack,
-  Button,
-  FieldRow,
-  Markdown,
-  SectionHeader,
-  SegmentedTabs,
-  Switch,
-} from '@goodboy/ui';
-import { ChevronRight } from 'lucide-react';
+import { Band, BandStack, Markdown, SectionHeader, SegmentedTabs, Switch } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -41,10 +31,9 @@ const PREVIEW_PR_URL = 'https://github.com/acme/payments-api/pull/528';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
-  readonly onEditAttribution: () => void;
 };
 
-export const WorkspaceReviewRepliesSection = ({ workspaceId, onEditAttribution }: Props) => {
+export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
   const overrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
   const patchWorkspaceOverrides = useAppStore((s) => s.patchWorkspaceOverrides);
   const reportError = useAppStore((s) => s.reportError);
@@ -200,15 +189,6 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId, onEditAttribution }
               onChange={(next) => saveEditPostedReply({ isOn: next })}
             />
           </WorkspaceFieldRow>
-          <FieldRow
-            label="Attribution line"
-            help={`Adds "Written by Goodboy". One setting for comments and replies, so it lives on New sessions. It is ${settings.isSigned ? 'on' : 'off'}.`}
-          >
-            <Button variant="ghost" size="sm" onClick={onEditAttribution}>
-              Edit in New sessions
-              <ChevronRight size={ICON_SIZE.row} aria-hidden />
-            </Button>
-          </FieldRow>
         </Band>
         <Band
           inset="content"
@@ -234,11 +214,7 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId, onEditAttribution }
         </Band>
       </div>
       <section aria-label="Reply preview" className="flex min-w-0 flex-col gap-2">
-        <SectionHeader
-          label="Preview"
-          hint="A reply with the settings on this page."
-          headingLevel={2}
-        />
+        <SectionHeader label="Preview" headingLevel={2} />
         <BandStack>
           <Band inset="content">
             <p className="text-secondary text-muted-foreground">When fixed</p>

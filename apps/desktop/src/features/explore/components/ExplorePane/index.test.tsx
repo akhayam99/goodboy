@@ -204,10 +204,10 @@ describe('ExplorePane', () => {
     render(<PaneWithDrawer />);
 
     await waitFor(() =>
-      expect(screen.getByText('Could not read this session folder')).toBeDefined(),
+      expect(screen.getByText("Couldn't read this session folder")).toBeDefined(),
     );
     expect(screen.getByText('io error: permission denied')).toBeDefined();
-    expect(screen.queryByText('This session folder is empty')).toBeNull();
+    expect(screen.queryByText('No new files')).toBeNull();
   });
 
   it('renders markdown as markdown, text as text, and offers external open for unsupported files', async () => {

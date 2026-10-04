@@ -9,7 +9,7 @@ Get from install to a first agent: connect a provider, check what it can do, lin
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-welcome-light.webp" alt="The Welcome to Goodboy screen: a Setup stepper with Provider, Project, Code host, Tasks and First session, the line Five short steps, then an agent reads your project, four rows with their time, and a Get started button">
 </picture>
 
-Follow five short steps from install to a first agent reading your project: **Provider**, **Project**, **Code host**, **Tasks** and **First session**. Code host and tasks are optional, steps that do not apply to you are skipped, and **I've used Goodboy before: skip setup** takes you straight in. The last step hands you a session draft already filled in.
+Follow five short steps from install to a first agent reading your project: **Provider**, **Project**, **Code host**, **Tasks** and **First session**. Code host and tasks are optional, steps that do not apply to you are skipped, and **Skip setup** takes you straight in. The last step hands you a session draft already filled in.
 
 ### Provider connection
 
