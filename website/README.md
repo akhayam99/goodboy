@@ -33,6 +33,14 @@ an effect or a handler, never while it renders. The nav takes the current
 section as a prop for the same reason. `?fidelity=<Mock>` skips hydration and
 renders the mock alone.
 
+The templates hold no title or social tags. `pageHead` in `src/server/` writes
+them at each template's `<!--app-head-->` mark from the page's meta (the home
+and features meta live in `src/server/STATIC_PAGES.ts`): title, description,
+canonical, Open Graph and X card, all from one title and one description. A
+title names what the page is for in the words people search, such as AI coding
+agent orchestrator, Claude Code, Codex, Cursor or git worktrees, in about 70
+characters; a description stays under 160.
+
 ## Pages
 
 - `/`, the landing page, from `website/index.html` and `website/src/App.tsx`.
