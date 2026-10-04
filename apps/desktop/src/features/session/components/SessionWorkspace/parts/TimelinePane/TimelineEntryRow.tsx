@@ -19,6 +19,7 @@ import type {
 import { DecisionChangesDetail } from './DecisionChangesDetail';
 import type { GroupTotals } from '../../../../timeline/groupTotals';
 import { TimelineAgentStreamRow } from './TimelineAgentStreamRow';
+import { TimelineFoldAgentStreamRow } from './TimelineFoldAgentStreamRow';
 import { TimelineFoldStreamRow } from './TimelineFoldStreamRow';
 import { TimelineGroupStreamRow } from './TimelineGroupStreamRow';
 import type { TimelineLaneControl } from './TimelineRail';
@@ -117,7 +118,23 @@ export const TimelineEntryRow = ({
     );
   }
   const runLane = runLaneId === null ? null : lanes.targetFor({ laneId: runLaneId });
-  if (item.fold !== undefined && (entry.kind === 'run' || entry.kind === 'agent')) {
+  if (item.fold !== undefined && entry.kind === 'agent') {
+    return (
+      <TimelineFoldAgentStreamRow
+        item={item}
+        entry={entry}
+        rail={rail}
+        railWidth={railWidth}
+        sessionId={sessionId}
+        isExpanded={isExpanded}
+        totals={groupTotals}
+        lanes={lanes}
+        runLane={runLane}
+        onSetExpanded={handlers.setGroupExpanded}
+      />
+    );
+  }
+  if (item.fold !== undefined && entry.kind === 'run') {
     return (
       <TimelineFoldStreamRow
         item={item}
