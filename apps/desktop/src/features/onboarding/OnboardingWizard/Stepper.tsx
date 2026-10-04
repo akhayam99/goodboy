@@ -67,7 +67,7 @@ export const Stepper = ({ current, steps }: Props) => {
               <span
                 aria-hidden
                 className={cn(
-                  'flex shrink-0 items-center justify-center rounded-full border text-meta',
+                  'flex shrink-0 items-center justify-center rounded-full border text-chip',
                   state === 'done' && cn('border-transparent bg-hover text-foreground'),
                   state === 'current' && cn(primaryTint.solid, primaryTint.border),
                   state === 'later' && 'border-border-soft text-faint-foreground',

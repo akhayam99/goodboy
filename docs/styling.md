@@ -79,10 +79,11 @@ Radius comes from the scale and is never written inline. The mapping and
 values are in [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#radius-scale)'s
 radius table.
 
-Type takes a role (`text-row`, `text-body`, `text-label`, `text-meta` and the
-rest), never a size, a weight, a leading and a tracking written one by one. The
-roles and the ratchet that counts the raw classes are in
-[DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#type-scale).
+Type takes a role (`text-row`, `text-body`, `text-label`, `text-meta`,
+`text-chip` and the rest), never a size, a weight, a leading and a tracking
+written one by one. Spacing takes whole steps of the 4px grid, never a half
+step. The roles and the ratchets that count the raw classes and the half steps
+are in [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#type-scale).
 
 `no-token-bypass.test.ts` rejects any `text-[Npx]`, a display grade above `2xl`,
 `font-bold`, `rounded-xs` or `rounded-xl` and up, and an arbitrary `shadow-[`.

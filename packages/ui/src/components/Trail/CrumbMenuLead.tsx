@@ -7,7 +7,7 @@ type Props = {
 export const CrumbMenuLead = ({ lead }: Props) => {
   if (lead.kind === 'number') {
     return (
-      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-fill text-meta text-muted-foreground">
+      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-fill text-chip text-muted-foreground">
         {lead.value}
       </span>
     );

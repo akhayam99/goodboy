@@ -158,7 +158,7 @@ export const RunTreeRow = ({
             frameClassName={cn('min-w-0 flex-1', isHighlighted && 'bg-hover text-foreground')}
             className="flex h-full min-w-0 items-center gap-2 pl-2 pr-1.5"
           >
-            <span className="w-6 shrink-0 text-right text-meta text-faint-foreground">
+            <span className="w-6 shrink-0 text-right text-chip text-faint-foreground">
               {entry.stepLabel}
             </span>
             <AgentKindChip kind={entry.agentKind} className={WORK_ROW.kindChip} />
@@ -183,7 +183,7 @@ export const RunTreeRow = ({
                   <span
                     aria-label={`Guidance: ${guidanceTagTip({ text: guidance })}`}
                     className={cn(
-                      'pointer-events-auto inline-flex shrink-0 cursor-default items-center gap-1 text-meta',
+                      'pointer-events-auto inline-flex shrink-0 cursor-default items-center gap-1 text-chip',
                       tintClasses('info').text,
                     )}
                   >

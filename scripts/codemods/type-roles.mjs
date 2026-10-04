@@ -88,7 +88,7 @@ const RULES = [
     when: (tokens) => leadingIsAbsentOr(tokens, ['leading-4']),
   },
   {
-    role: 'text-meta',
+    role: 'text-chip',
     needs: ['text-3xs'],
     drops: ['tabular-nums', 'tabular'],
     when: (tokens) => leadingOf(tokens).length === 0,

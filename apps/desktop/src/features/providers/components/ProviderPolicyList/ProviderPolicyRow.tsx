@@ -66,7 +66,7 @@ export const ProviderPolicyRow = ({
             <GripVertical size={ICON_SIZE.control} aria-hidden />
           </button>
         </Tooltip>
-        <span className="w-3 shrink-0 text-meta text-faint-foreground">{rank}</span>
+        <span className="w-3 shrink-0 text-chip text-faint-foreground">{rank}</span>
         <ProviderGlyph id={row.id} size={ICON_SIZE.control} />
         <button
           type="button"
@@ -79,7 +79,7 @@ export const ProviderPolicyRow = ({
             {row.isNew ? (
               <span
                 className={cn(
-                  'rounded-sm px-1 text-meta',
+                  'rounded-sm px-1 text-chip',
                   tintClasses('primary').bgSoft,
                   tintClasses('primary').text,
                 )}

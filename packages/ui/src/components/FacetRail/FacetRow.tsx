@@ -54,7 +54,7 @@ export const FacetRow = ({
       <span className={cn('min-w-0 flex-1 truncate', isEmpty && 'text-faint-foreground')}>
         {label}
       </span>
-      {trailing ?? <span className="shrink-0 text-meta text-faint-foreground">{count}</span>}
+      {trailing ?? <span className="shrink-0 text-chip text-faint-foreground">{count}</span>}
     </SelectableRow>
   );
 };

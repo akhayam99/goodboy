@@ -70,7 +70,7 @@ export const MountPresence = ({ sessionId, label, agents }: Props) => {
           );
         })}
       </span>
-      {hidden > 0 && <span className="text-meta text-muted-foreground">{`+${hidden}`}</span>}
+      {hidden > 0 && <span className="text-chip text-muted-foreground">{`+${hidden}`}</span>}
       <span className="truncate text-meta text-faint-foreground">
         {countLabel({ count: agents.length })}
       </span>

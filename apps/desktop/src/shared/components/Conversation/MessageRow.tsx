@@ -61,7 +61,7 @@ export const MessageRow = ({
           </div>
         )}
         {anchor == null ? null : (
-          <span className="inline-flex h-4.5 w-fit max-w-full items-center truncate rounded-sm bg-muted px-1.5 font-mono text-meta text-muted-foreground">
+          <span className="inline-flex h-4.5 w-fit max-w-full items-center truncate rounded-sm bg-muted px-1.5 font-mono text-chip text-muted-foreground">
             {anchor}
           </span>
         )}

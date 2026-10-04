@@ -51,7 +51,7 @@ export const WorkflowListRow = ({ workflow, builtin, onOpen }: Props) => {
         <span className="flex min-w-0 flex-1 items-center gap-2">
           <span className="truncate text-body text-foreground">{workflow.name}</span>
           {builtin === 'custom' ? null : (
-            <span className="shrink-0 text-meta font-semibold uppercase tracking-eyebrow text-faint-foreground">
+            <span className="shrink-0 text-chip font-semibold uppercase tracking-eyebrow text-faint-foreground">
               Built in
             </span>
           )}

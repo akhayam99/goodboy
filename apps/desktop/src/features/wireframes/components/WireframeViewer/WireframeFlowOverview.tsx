@@ -1191,7 +1191,7 @@ export const WireframeFlowOverview = ({
                 x={edge.label.x + edge.label.width / 2}
                 y={edge.label.y + edge.label.height / 2 + 3.5}
                 textAnchor="middle"
-                className={cn('text-meta', EDGE_PAINT[edge.role].ink)}
+                className={cn('text-chip', EDGE_PAINT[edge.role].ink)}
               >
                 {edge.label.glyph === null ? null : (
                   <tspan aria-hidden>{`${edge.label.glyph} `}</tspan>

@@ -204,7 +204,9 @@ describe('the app is set in Inter', () => {
   });
 
   it('keeps tabular figures on the meta role, off running text where they widen the hyphen', () => {
-    expect(styles).toMatch(/\.text-meta \{\s*font-variant-numeric: tabular-nums;\s*\}/);
+    expect(styles).toMatch(
+      /\.text-meta,\s*\.text-chip \{\s*font-variant-numeric: tabular-nums;\s*\}/,
+    );
     expect(bodyFeatureTags()).not.toContain('tnum');
   });
 });
