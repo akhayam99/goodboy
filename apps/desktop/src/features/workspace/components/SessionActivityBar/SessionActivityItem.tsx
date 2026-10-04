@@ -15,7 +15,7 @@ import {
 import { sessionTone } from '../../../session/components/sessionCardShell';
 import { useSessionSummary } from '../../hooks/useSessionSummary';
 import { SessionProgress } from '../SessionProgress';
-import { sessionTitle } from '../../../session/sessionTitle';
+import { sessionDisplayTitle } from '../../../session/sessionTitle';
 import { ChatOriginGlyph } from '../../../../shared/components/ChatOriginGlyph';
 import { SessionRowMeta } from './SessionRowMeta';
 import { SessionRowNode } from './SessionRowNode';
@@ -58,6 +58,7 @@ const SessionActivityItemView = ({
   const summary = useSessionSummary({ session });
   const tone = sessionTone({ stage: summary.stage, attention: summary.attention });
   const hasCost = summary.cost > 0;
+  const title = sessionDisplayTitle({ session, tasks: summary.tasks });
   const isReasonInMeta =
     summary.attention === 'open-question' && summary.actionable?.kind === 'questions';
   const sessionId = session.id as SessionId;
@@ -104,7 +105,7 @@ const SessionActivityItemView = ({
     <div className="group/select-row relative">
       <SelectionCheckbox
         checked={isSelected}
-        label={`Select ${inlineMarkdownText({ text: sessionTitle({ session }) })}`}
+        label={`Select ${inlineMarkdownText({ text: title })}`}
         onToggle={(event) => onToggleSelect(sessionId, event)}
         className="absolute left-3.5 top-1.5"
       />
@@ -149,7 +150,7 @@ const SessionActivityItemView = ({
         <span className="flex min-w-0 flex-1 flex-col gap-1">
           <span className="flex w-full min-w-0 items-baseline gap-2">
             <InlineMarkdown
-              text={sessionTitle({ session })}
+              text={title}
               className="min-w-0 flex-1 truncate text-row text-foreground"
             />
             <ChatOriginGlyph sessionId={session.id} />
