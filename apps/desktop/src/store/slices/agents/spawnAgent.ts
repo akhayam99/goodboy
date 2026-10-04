@@ -17,6 +17,7 @@ import { updateAgentConfig } from '@goodboy/db';
 import { invokeAgentInsert, invokeAgentList } from '../../../features/workflows/workflows';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { EFFORT_LEVELS } from '../../../features/chat/utils/chat-constants';
+import { rulesOfKickoff } from '../../../features/chat/utils/resolverKickoffParts';
 import {
   addPlanConsumption as invokeAddPlanConsumption,
   listConsumptionsForPlan as invokeListConsumptionsForPlan,
@@ -55,6 +56,7 @@ type SpawnArgs = {
   provider?: ProviderId;
   effort?: string;
   initialPrompt?: string;
+  humanPrompt?: string;
   seedPrompt?: string;
   triggeredPlanId?: PlanId;
   kindOverride?: AgentKind;
@@ -259,6 +261,11 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
   }
 
   const kickoff = composeKickoff(planSection, baseKickoff);
+  const humanPrompt =
+    args.humanPrompt !== undefined && kickoff === args.initialPrompt ? args.humanPrompt : null;
+  const machineRules =
+    humanPrompt === null ? null : rulesOfKickoff({ message: kickoff, human: humanPrompt });
+  const isRecheck = args.sourceKind === 'comment_recheck';
   if (resolvedKind === 'resolver') {
     await get().recordResolveAttempt({
       sessionId,
@@ -267,6 +274,7 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
       model: resolvedModel,
       effort: resolvedEffort,
       instructions: kickoff,
+      humanInstructions: machineRules === null ? null : humanPrompt,
       phase: 'queued',
       mountTarget: requireMountTarget({ get, sessionId }),
       ...(args.resolveBatch !== undefined && { batch: args.resolveBatch }),
@@ -282,10 +290,22 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
         agentId: inserted.id,
         content: kickoff,
         ...(args.mountId !== undefined && { mountId: args.mountId }),
-        handoff: {
-          instruction: baseKickoff,
-          plan: handedPlan === null ? null : { id: handedPlan.id, title: handedPlan.title },
-        },
+        handoff:
+          isRecheck && humanPrompt !== null && machineRules !== null
+            ? {
+                sender: {
+                  kind: 'recheck',
+                  threadIds: args.sourceThreadIds ?? [],
+                  prNumber: null,
+                },
+                instruction: humanPrompt,
+                machineInstructions: machineRules,
+                plan: null,
+              }
+            : {
+                instruction: baseKickoff,
+                plan: handedPlan === null ? null : { id: handedPlan.id, title: handedPlan.title },
+              },
       })
       .catch((error: unknown) => {
         if (isReportedError(error)) {

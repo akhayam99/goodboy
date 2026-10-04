@@ -88,7 +88,7 @@ describe('WorkflowList', () => {
     const pristine = screen.getByRole('button', { name: `Open ${entry?.name}` });
     expect(within(pristine).getByText('Built in')).toBeDefined();
     expect(within(pristine).queryByText('Edited')).toBeNull();
-    expect(pristine.textContent).toContain('· built in');
+    expect(pristine.textContent).not.toContain('· built in');
     const edited = screen.getByRole('button', { name: 'Open Refactor, tuned' });
     expect(within(edited).getByText('Built in')).toBeDefined();
     expect(within(edited).getByText('Edited')).toBeDefined();
@@ -123,8 +123,9 @@ describe('WorkflowList', () => {
       name: 'Restore built-in workflows in Harborline?',
     });
     expect(confirm.textContent).toContain(
-      'Plan and ship and Fix a bug go back to their original steps. Your own workflows and other workspaces are not touched.',
+      'Plan and ship and Fix a bug go back to their original steps.',
     );
+    expect(confirm.textContent).not.toContain('not touched');
     fireEvent.click(within(confirm).getByRole('button', { name: 'Restore 2' }));
     await vi.waitFor(() => expect(onRestore).toHaveBeenCalledWith(['plan-and-ship', 'fix-a-bug']));
   });

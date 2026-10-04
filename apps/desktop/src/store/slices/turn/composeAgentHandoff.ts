@@ -12,6 +12,7 @@ import type {
   AgentId,
   GoalAttachment,
   HandoffDraft,
+  HandoffSender,
   IsoDateTime,
   MessageAttachment,
   ProviderId,
@@ -33,6 +34,13 @@ import {
 import { deriveHandoffSender } from './deriveHandoffSender';
 import { isTurnWritableMount } from './turnWritableRoots';
 import type { GetFn } from './types';
+
+const GOALLESS_SENDERS: ReadonlySet<HandoffSender['kind']> = new Set([
+  'resolve',
+  'recheck',
+  'scribe',
+  'historyRewrite',
+]);
 
 type HandoffRuleTexts = Readonly<{
   scope: string;
@@ -210,13 +218,16 @@ export const composeAgentHandoff = ({
       prNumber,
     });
   const role = step?.role ?? KIND_TO_ROLE[agentKind];
-  const goal = draft?.goal ?? workflowRun?.goal ?? template?.goal ?? session.goal;
+  const goal = GOALLESS_SENDERS.has(sender.kind)
+    ? null
+    : (draft?.goal ?? workflowRun?.goal ?? template?.goal ?? session.goal);
   return buildHandoff({
     agentId,
     provider,
     createdAt,
     sender,
     instruction: draft?.instruction ?? content,
+    machineInstructions: draft?.machineInstructions ?? null,
     why: draft?.why ?? step?.orchestratorReason ?? null,
     doneWhen: step?.expectedOutput ?? AGENT_KIND_META[agentKind].expectedOutput,
     goal: goal ?? null,

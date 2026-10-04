@@ -14,9 +14,14 @@ describe('agent brief resolver live seed', () => {
 
     expect(handoff.sentMessage).toContain('Thread 1 of 1');
     expect(handoff.sentMessage).toContain('<<comment-resolved');
-    expect(handoff.sections.find((section) => section.kind === 'ask')?.bodyMd).toBe(
-      handoff.sentMessage,
-    );
+    const ask = handoff.sections.find((section) => section.kind === 'ask')?.bodyMd ?? '';
+    const instructions =
+      handoff.sections.find((section) => section.kind === 'instructions')?.bodyMd ?? '';
+    expect(ask).toContain('Thread 1 of 1');
+    expect(ask).not.toContain('<<comment-resolved');
+    expect(instructions).toContain('<<comment-resolved');
+    expect(handoff.sentMessage.startsWith(ask.split('\n')[0] ?? '')).toBe(true);
+    expect(handoff.sentMessage).toContain(instructions);
     expect(transcript).toHaveLength(1);
     expect(transcript[0]).toMatchObject({ kind: 'user_text', text: handoff.sentMessage });
   });
