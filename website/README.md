@@ -13,8 +13,25 @@ deployed by Vercel from `website/vercel.json`.
 - Install from `website/` with `pnpm install --ignore-workspace`. The site
   keeps its own lockfile; why that matters is in
   [CONVENTIONS.md](../CONVENTIONS.md) → pnpm.
-- `pnpm dev` serves the page locally; `pnpm build` typechecks and builds
-  `dist/`.
+- `pnpm dev` serves the page locally; `pnpm build` typechecks, builds
+  `dist/` and prerenders every page. `pnpm preview` serves the built pages
+  without `.html`, as Vercel does.
+
+## Prerender
+
+Every page ships its full text as HTML, so a crawler or a link preview that
+runs no JavaScript reads the same page a visitor does. `scripts/prerender.mjs`
+runs the client build, then a server build of `src/server/renderSite.tsx`, and
+writes what `renderSite` returns into `dist/`: each template's
+`<!--app-html-->` mark gets the page rendered with `react-dom/server`. The
+client entries then `hydrateRoot` that HTML instead of rendering from scratch.
+
+Both builds share one star count (`GOODBOY_STARS`), so the server and the
+client render the same button. Server and client must render the same first
+frame: a component reads the browser (`window`, `matchMedia`, storage) only in
+an effect or a handler, never while it renders. The nav takes the current
+section as a prop for the same reason. `?fidelity=<Mock>` skips hydration and
+renders the mock alone.
 
 ## Pages
 

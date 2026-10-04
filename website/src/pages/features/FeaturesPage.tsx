@@ -19,7 +19,7 @@ export const FeaturesPage = () => {
 
   return (
     <>
-      <Nav />
+      <Nav current="features" />
       <main id="main" className="featuresPage">
         <div className="shell">
           <div className="ftPage">

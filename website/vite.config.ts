@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, type Connect, type Plugin } from 'vite';
@@ -22,6 +23,16 @@ const fetchStarCount = async (): Promise<number | null> => {
   }
 };
 
+const readStarCount = async (): Promise<number | null> => {
+  const cached = process.env.GOODBOY_STARS;
+  if (cached !== undefined) {
+    return JSON.parse(cached) as number | null;
+  }
+  const count = await fetchStarCount();
+  process.env.GOODBOY_STARS = JSON.stringify(count);
+  return count;
+};
+
 const CLEAN_URLS: Record<string, string> = {
   '/features': '/features.html',
   '/features/': '/features.html',
@@ -36,20 +47,29 @@ const rewriteCleanUrls: Connect.NextHandleFunction = (request, _response, next) 
   next();
 };
 
+const rewriteBuiltPages: Connect.NextHandleFunction = (request, _response, next) => {
+  const path = (request.url?.split('?')[0] ?? '').replace(/\/$/, '');
+  const target = `${path}.html`;
+  if (path !== '' && existsSync(resolve(ROOT, 'dist', `.${target}`))) {
+    request.url = target;
+  }
+  next();
+};
+
 const cleanUrls = (): Plugin => ({
   name: 'goodboy-clean-urls',
   configureServer: (server) => {
     server.middlewares.use(rewriteCleanUrls);
   },
   configurePreviewServer: (server) => {
-    server.middlewares.use(rewriteCleanUrls);
+    server.middlewares.use(rewriteBuiltPages);
   },
 });
 
 export default defineConfig(async () => ({
   plugins: [react(), tailwindcss(), cleanUrls()],
   define: {
-    __GOODBOY_STARS__: JSON.stringify(await fetchStarCount()),
+    __GOODBOY_STARS__: JSON.stringify(await readStarCount()),
   },
   server: {
     port: 1499,
