@@ -14,7 +14,7 @@ vi.mock('../../../shared/lib/db', async () =>
 import type { ComponentProps } from 'react';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ProviderConnectionState, ProviderId, WorkspaceId } from '@goodboy/types';
+import type { IsoDateTime, ProviderConnectionState, ProviderId, WorkspaceId } from '@goodboy/types';
 import { aWorkspace } from '@goodboy/types/testing';
 import type { ProviderDisplayInfo } from '../../../features/providers/providers';
 import {
@@ -213,6 +213,36 @@ describe('AppFooter', () => {
     expect(refreshProviders).not.toHaveBeenCalled();
     expect(storySpies.tauriInvoke).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: /^More pages/ })).toBeNull();
+  });
+
+  it('keeps the limit meters out of the menu, which is policy and links only', () => {
+    useAppStore.setState({
+      providerLimits: {
+        anthropic: {
+          providerId: 'anthropic',
+          plan: 'max',
+          status: 'ok',
+          windows: [
+            {
+              kind: 'fiveHour',
+              model: null,
+              status: 'ok',
+              usedFraction: 0.42,
+              resetsAt: new Date(Date.now() + 3_600_000).toISOString() as IsoDateTime,
+            },
+          ],
+          observedAt: new Date().toISOString() as IsoDateTime,
+        },
+      },
+    });
+    render(<AppFooter {...footerProps()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Providers' }));
+
+    const menu = screen.getByRole('dialog', { name: 'Providers' });
+    expect(within(menu).queryByRole('list', { name: 'Provider limits' })).toBeNull();
+    expect(within(menu).queryByText(/42/)).toBeNull();
+    expect(within(menu).queryByText(/\b5h\b/)).toBeNull();
   });
 
   it('pulses the providers button while no provider is connected', () => {
