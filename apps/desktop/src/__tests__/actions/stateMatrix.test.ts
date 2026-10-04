@@ -1035,7 +1035,11 @@ const mountRowTarget = (status: WorktreeStatus | null): ObjectTarget => ({
 
 const WT_TOOLS = ['mount.openTerminal menu', 'mount.openInEditor menu', 'mount.scripts menu'];
 const WT_COPIES = ['mount.copyBranch menu', 'mount.copyPath menu'];
-const WT_HISTORY = ['mount.rewriteHistory menu', 'mount.switchBranch chip', 'mount.addTask menu'];
+const WT_HISTORY = [
+  'mount.rewriteHistory menu',
+  'mount.switchBranch chip',
+  'mount.putTaskOnBranch chip',
+];
 const WT_PR = ['mount.openPullRequest inline', 'mount.openDiff inline'];
 
 const MOUNT_STATES: ReadonlyArray<
@@ -1108,7 +1112,7 @@ const MOUNT_STATES: ReadonlyArray<
       'mount.rebase inline (Commit or discard the 2 uncommitted changes first.)',
       'mount.rewriteHistory menu (Commit or discard the 2 uncommitted changes first.)',
       'mount.switchBranch chip (The 2 uncommitted changes would follow you. Commit or discard them first.)',
-      'mount.addTask menu',
+      'mount.putTaskOnBranch chip',
       ...WT_COPIES,
       'mount.close menu',
     ],
@@ -1137,7 +1141,7 @@ const MOUNT_STATES: ReadonlyArray<
       'mount.scripts menu',
       'mount.abortRebase notice',
       'mount.rewriteHistory menu (Finish or abort the rebase first.)',
-      'mount.addTask menu',
+      'mount.putTaskOnBranch chip',
       ...WT_COPIES,
     ],
   ],
@@ -1149,7 +1153,7 @@ const MOUNT_STATES: ReadonlyArray<
       'mount.openPullRequest inline',
       ...WT_TOOLS,
       'mount.switchBranch chip',
-      'mount.addTask menu',
+      'mount.putTaskOnBranch chip',
       ...WT_COPIES,
       'mount.close inline',
     ],
@@ -1177,7 +1181,7 @@ const MOUNT_STATES: ReadonlyArray<
     [
       ...WT_TOOLS,
       'mount.switchBranch chip',
-      'mount.addTask menu',
+      'mount.putTaskOnBranch chip',
       'mount.startTurnsHere menu',
       ...WT_COPIES,
       'mount.close menu',

@@ -1,3 +1,6 @@
+import { useShowToast } from '../../../../shared/components/Toast/useShowToast';
+import { dispatchAfterNavigation } from '../../../actions/dispatchAfterNavigation';
+import { linkIssueEventName } from '../../../actions/kinds/session';
 import { useCallback } from 'react';
 import type { SessionId } from '@goodboy/types';
 import type { SessionEventKind } from '@goodboy/types';
@@ -17,7 +20,7 @@ const EVENT_TARGET: Record<SessionEventKind, EventTarget | null> = {
   branch_deleted: null,
   branch_restored: { lens: 'files', label: 'Open files' },
   issue_linked: { lens: null, label: 'Open overview' },
-  issue_unlinked: { lens: null, label: 'Open overview' },
+  issue_unlinked: { lens: null, label: 'Re-link' },
   pr_created: { lens: 'pr', label: 'Open PR' },
   pr_discovered: { lens: 'pr', label: 'Open PR' },
   pr_ready: { lens: 'pr', label: 'Open PR' },
@@ -66,8 +69,9 @@ type TargetParams = {
 
 export const useTimelineOpen = ({
   sessionId,
-}: Params): ((params: TargetParams) => TimelineOpenTarget | null) =>
-  useCallback(
+}: Params): ((params: TargetParams) => TimelineOpenTarget | null) => {
+  const showToast = useShowToast();
+  return useCallback(
     ({ entry }: TargetParams): TimelineOpenTarget | null => {
       const store = useAppStore.getState();
       if (entry.kind === 'run') {
@@ -156,6 +160,36 @@ export const useTimelineOpen = ({
           },
         };
       }
+      if (entry.kind === 'event' && entry.event.kind === 'issue_unlinked') {
+        const payload = entry.event.payload;
+        const operation = payload?.taskOperation;
+        return {
+          label: 'Re-link',
+          open: () => {
+            if (operation !== undefined) {
+              void store
+                .relinkSessionTaskOperation({ sessionId, operation })
+                .then((isRestored) => {
+                  showToast({
+                    kind: isRestored ? 'success' : 'info',
+                    message: isRestored
+                      ? `Re-linked ${payload?.identifier ?? 'task'}`
+                      : 'This task changed or was re-linked. Nothing changed.',
+                  });
+                })
+                .catch((error: unknown) =>
+                  store.reportError({ title: "Couldn't re-link the task", error, sessionId }),
+                );
+              return;
+            }
+            store.navigate({ to: sessionPlace({ sessionId, lens: null }) });
+            dispatchAfterNavigation({
+              name: linkIssueEventName({ sessionId }),
+              detail: { query: payload?.url ?? payload?.identifier ?? '' },
+            });
+          },
+        };
+      }
       if (entry.kind === 'event') {
         const target = eventOpenTarget({ kind: entry.event.kind });
         if (target == null) {
@@ -189,5 +223,6 @@ export const useTimelineOpen = ({
         open: () => store.navigate({ to: sessionPlace({ sessionId, lens: 'questions' }) }),
       };
     },
-    [sessionId],
+    [sessionId, showToast],
   );
+};

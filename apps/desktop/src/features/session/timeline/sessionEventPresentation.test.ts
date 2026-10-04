@@ -75,7 +75,7 @@ describe('sessionEventLabel as text', () => {
           }),
         }),
       }),
-    ).toBe('Removed link to GB-1: Persist the trace');
+    ).toBe('Unlinked GB-1: Persist the trace');
   });
 
   it('reads a pull request by number', () => {

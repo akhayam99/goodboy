@@ -12,7 +12,7 @@ import { useObjectMenuTrigger } from '../../../../actions/useObjectMenuTrigger';
 import type { MountActionTarget } from '../../../../actions/types';
 import { useMountRemoteHostKind } from '../../../../worktree/useMountRemoteHostKind';
 import { AlsoInChip } from './AlsoInChip';
-import { AddTaskPopover } from '../../../../../shared/components/TaskChipMenu/AddTaskPopover';
+import { PutOnBranchPopover } from '../../TaskPlacement/PutOnBranchPopover';
 import { BranchTaskChips } from './BranchTaskChips';
 import { MountBranchDecision } from './MountBranchDecision';
 import { MountChangeCell } from './MountChangeCell';
@@ -117,8 +117,8 @@ export const ProjectMountRow = ({
               isSkeleton={isSkeleton}
             />
           )}
-          {row.branch === '' ? null : (
-            <AddTaskPopover
+          {row.branch === '' || !row.isAttached ? null : (
+            <PutOnBranchPopover
               sessionId={sessionId}
               mountId={row.mountId}
               projectId={row.projectId}

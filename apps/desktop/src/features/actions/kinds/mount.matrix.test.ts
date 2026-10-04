@@ -39,7 +39,7 @@ const facts = (overrides: Partial<MountFacts>): MountFacts => ({
 
 const TOOLS = ['mount.openTerminal menu', 'mount.openInEditor menu', 'mount.scripts menu'];
 const COPIES = ['mount.copyBranch menu', 'mount.copyPath menu'];
-const ADD_TASK = 'mount.addTask menu';
+const ADD_TASK = 'mount.putTaskOnBranch chip';
 const HISTORY = ['mount.rewriteHistory menu', 'mount.switchBranch chip', ADD_TASK];
 const WITH_PR = ['mount.openPullRequest inline', 'mount.openDiff inline'];
 const DIRTY_2 = 'Commit or discard the 2 uncommitted changes first.';

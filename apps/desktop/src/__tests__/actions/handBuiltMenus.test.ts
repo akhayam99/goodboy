@@ -50,10 +50,8 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'search preview: lists the registry verbs of the hit through toMenuEntries',
   'features/storage/components/StoragePage/ArtifactRowActions.tsx':
     'artifact files from deleted sessions: storage keep and delete',
-  'shared/components/TaskChipMenu/TaskBranchPicker.tsx':
-    'branch picker: chooses where a task sits, a value picker rather than object verbs',
-  'shared/components/TaskChipMenu/AddTaskPopover.tsx':
-    'task picker: chooses which task to link to a branch, a value picker rather than object verbs',
+  'features/session/components/TaskPlacement/PutOnBranchPopover.tsx':
+    'task picker: chooses a linked task for a branch, a value picker',
 };
 
 const isSource = (path: string): boolean =>

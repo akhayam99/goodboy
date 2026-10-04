@@ -321,7 +321,7 @@ export const sessionEventLabel = ({ event }: TitleParams): ReadonlyArray<Timelin
     case 'issue_linked':
       return [{ kind: 'text', text: 'Linked ' }, ...issueSegments({ payload })];
     case 'issue_unlinked':
-      return [{ kind: 'text', text: 'Removed link to ' }, ...issueSegments({ payload })];
+      return [{ kind: 'text', text: 'Unlinked ' }, ...issueSegments({ payload })];
     case 'pr_created':
       return payload?.title == null
         ? [{ kind: 'text', text: 'Opened ' }, prSegment({ payload })]

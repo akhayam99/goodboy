@@ -13,6 +13,8 @@ type Props = {
   readonly isActive?: boolean;
   readonly tooltip?: string;
   readonly ariaLabel?: string;
+  readonly isBordered?: boolean;
+  readonly className?: string;
   readonly onClick?: () => void;
 };
 
@@ -26,12 +28,16 @@ export const TaskLinkChip = ({
   isActive,
   tooltip,
   ariaLabel,
+  isBordered = true,
+  className,
   onClick,
 }: Props) => (
   <Chip
     as={onClick === undefined ? 'span' : 'button'}
     tone={isActive === true ? 'primary' : 'neutral'}
     shape="badge"
+    bordered={isBordered}
+    className={className}
     size={size}
     {...(isActive === undefined ? {} : { ariaPressed: isActive })}
     {...(tooltip === undefined ? {} : { title: tooltip })}

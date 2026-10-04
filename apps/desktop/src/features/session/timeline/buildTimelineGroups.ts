@@ -1,3 +1,5 @@
+import { distinctTasks } from '../../../shared/utils/distinctTasks';
+import { taskIdentityKey } from '../../../shared/utils/taskIdentityKey';
 import type { SessionWorktree } from '@goodboy/db';
 import type {
   Agent,
@@ -586,12 +588,14 @@ export const buildTimelineGroups = ({
     lane: questionLaneFor({ authorAgentId: authorAgentIdByQuestionId.get(question.id) }),
   }));
 
-  const issues: ReadonlyArray<TimelineIssueEntry> = externalTasks.map((task) => ({
-    kind: 'issue',
-    id: `issue:${task.provider}:${task.externalId}`,
-    at: task.createdAt,
-    task,
-  }));
+  const issues: ReadonlyArray<TimelineIssueEntry> = distinctTasks({ tasks: externalTasks }).map(
+    ({ task }) => ({
+      kind: 'issue',
+      id: `issue:${taskIdentityKey({ task })}`,
+      at: task.createdAt,
+      task,
+    }),
+  );
   const linkedIssueUrls = new Set(
     events.flatMap((event) =>
       event.kind === 'issue_linked' && event.payload?.url != null ? [event.payload.url] : [],

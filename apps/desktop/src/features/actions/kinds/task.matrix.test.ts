@@ -22,12 +22,10 @@ const facts = ({
   task,
   branch,
   branchCount = 0,
-  canPut = true,
 }: {
   readonly task: SessionExternalTask;
   readonly branch: string | null;
   readonly branchCount?: number;
-  readonly canPut?: boolean;
 }): TaskFacts => ({
   sessionId: SESSION,
   provider: task.provider,
@@ -37,17 +35,16 @@ const facts = ({
   row: task,
   branch,
   branchCount,
-  canPut,
 });
 
 describe('task actions', () => {
-  it('offers open, put on a branch and unlink on a task not on a branch yet', () => {
+  it('offers open and unlink on a task not on a branch yet', () => {
     expect(
       matrixOf({
         definitions: TASK_KIND.actions,
         facts: facts({ task: row({}), branch: null }),
       }),
-    ).toEqual(['task.open menu', 'task.putOnBranch menu', 'task.unlink menu']);
+    ).toEqual(['task.open chip', 'task.unlink hover']);
   });
 
   it('adds take off on a branch row', () => {
@@ -60,24 +57,15 @@ describe('task actions', () => {
           branchCount: 1,
         }),
       }),
-    ).toEqual(['task.open menu', 'task.takeOff menu', 'task.putOnBranch menu', 'task.unlink menu']);
+    ).toEqual(['task.open chip', 'task.takeOff hover', 'task.unlink menu']);
   });
 
-  it('hides put on a branch while the session has no worktree', () => {
-    expect(
-      matrixOf({
-        definitions: TASK_KIND.actions,
-        facts: facts({ task: row({}), branch: null, canPut: false }),
-      }),
-    ).toEqual(['task.open menu', 'task.unlink menu']);
-  });
-
-  it('says what unlink does to a task that sits on branches', () => {
+  it('runs reversible removals without confirmation', () => {
     const unlink = TASK_KIND.actions.find((action) => action.id === 'task.unlink');
-    const confirm = unlink?.confirm?.({
-      facts: facts({ task: row({}), branch: null, branchCount: 2 }),
-    });
-    expect(confirm?.title).toBe('Remove link to HBL-412 from this session?');
-    expect(confirm?.description).toBe('It also leaves 2 branches.');
+    const takeOff = TASK_KIND.actions.find((action) => action.id === 'task.takeOff');
+    expect(unlink?.confirm).toBeUndefined();
+    expect(unlink?.isUndoable).toBe(true);
+    expect(takeOff?.confirm).toBeUndefined();
+    expect(takeOff?.isUndoable).toBe(true);
   });
 });
