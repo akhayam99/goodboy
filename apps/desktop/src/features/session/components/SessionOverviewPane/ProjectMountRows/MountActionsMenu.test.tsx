@@ -118,7 +118,7 @@ const renderMenu = () =>
 
 const openConfirm = () => {
   fireEvent.click(screen.getByRole('button', { name: 'api actions' }));
-  fireEvent.click(screen.getByRole('menuitem', { name: 'Detach project' }));
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Remove from session' }));
 };
 
 afterEach(cleanup);
@@ -168,8 +168,8 @@ describe('MountActionsMenu', () => {
     openConfirm();
 
     expect(screen.getByText('Checking files and commits')).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Detach and remove' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Detach and delete files' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Remove and delete worktree' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Remove and delete files' })).toBeNull();
   });
 
   it('cancels an in-flight assessment without reopening the confirmation', async () => {
@@ -183,24 +183,24 @@ describe('MountActionsMenu', () => {
     openConfirm();
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(screen.getByRole('menuitem', { name: 'Detach project' })).toBeDefined();
+    expect(screen.getByRole('menuitem', { name: 'Remove from session' })).toBeDefined();
 
     resolveAssessment(assessed({ affectedFiles: 0, localOnlyCommits: 0, hasUpstream: true }));
-    await waitFor(() => expect(screen.queryByText('Detach api?')).toBeNull());
-    expect(screen.getByRole('menuitem', { name: 'Detach project' })).toBeDefined();
+    await waitFor(() => expect(screen.queryByText('Remove api from the session?')).toBeNull());
+    expect(screen.getByRole('menuitem', { name: 'Remove from session' })).toBeDefined();
   });
 
   it('offers a plain removal for a clean published worktree', async () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Detach and remove' })));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete worktree' })));
     expect(
       screen.getByText(
         'Remove the clean worktree at /worktrees/api: 0 uncommitted files, 0 unpushed commits, and ak/feat is merged into origin/main.',
       ),
     ).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Detach and remove' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove and delete worktree' }));
     await waitFor(() =>
       expect(state.detachProject).toHaveBeenCalledWith({
         sessionId: 'session-1',
@@ -210,7 +210,7 @@ describe('MountActionsMenu', () => {
     );
     expect(showToast).toHaveBeenCalledWith({
       kind: 'info',
-      message: 'Detached api and removed its worktree.',
+      message: 'Removed api from the session and deleted its worktree.',
     });
   });
 
@@ -221,7 +221,7 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Detach and delete files' })));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete files' })));
     expect(
       screen.getByText(
         'Remove the worktree at /worktrees/api for ak/feat, which has 2 unpushed commits.',
@@ -317,7 +317,7 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Detach and delete files' })));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete files' })));
     expect(worktreeDetachAssessment).toHaveBeenCalledTimes(2);
     expect(worktreeDetachAssessment).not.toHaveBeenCalledWith({ worktreePath: '/worktrees/web' });
     expect(
@@ -326,7 +326,7 @@ describe('MountActionsMenu', () => {
       ),
     ).toBeDefined();
     expect(screen.getByText('3 uncommitted files will be deleted.')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Detach details for api' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Removal details for api' }));
     expect(
       screen.getByText(
         'ak/one at /worktrees/api-one: 2 uncommitted files, 0 unpushed commits, merged into origin/main',
@@ -346,7 +346,7 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Detach and delete files' })));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete files' })));
     expect(
       screen.getByText('Remove the worktree at /worktrees/api for ak/feat, which has no upstream.'),
     ).toBeDefined();
@@ -360,13 +360,13 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Detach and delete files' })));
-    expect(screen.queryByRole('button', { name: 'Detach and keep files' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Detach details for api' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete files' })));
+    expect(screen.queryByRole('button', { name: 'Remove and keep files' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Removal details for api' }));
 
     expect(screen.getByText('Files affected (3)')).toBeDefined();
     expect(screen.getByText('Unpushed commits (0)')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Detach and keep files' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove and keep files' }));
     await waitFor(() =>
       expect(state.detachProject).toHaveBeenCalledWith({
         sessionId: 'session-1',
@@ -384,10 +384,10 @@ describe('MountActionsMenu', () => {
     expect(worktreeDetachAssessment).not.toHaveBeenCalled();
     expect(
       screen.getByText(
-        'Detach api from this session; its folder at /worktrees/api will stay on disk.',
+        'Remove api from this session; its folder at /worktrees/api will stay on disk.',
       ),
     ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Detach and keep files' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Remove and keep files' })).toBeDefined();
   });
 
   it('never offers removal when the safety of the worktree is unknown', async () => {
@@ -395,10 +395,10 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Detach and keep files' })));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and keep files' })));
     expect(
       screen.getByText(
-        'The safety of ak/feat at /worktrees/api could not be verified; detach will keep the directory.',
+        'The safety of ak/feat at /worktrees/api could not be verified; removing it will keep the directory.',
       ),
     ).toBeDefined();
     expect(screen.getByRole('button', { name: 'Check again' })).toBeDefined();
@@ -454,15 +454,15 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Detach and keep files' })));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and keep files' })));
     expect(
       screen.getByText(
-        'Whether ak/feat is merged into its base branch is unknown; detach will keep its files at /worktrees/api.',
+        'Whether ak/feat is merged into its base branch is unknown; removing it will keep its files at /worktrees/api.',
       ),
     ).toBeDefined();
     expect(screen.getByRole('button', { name: 'Check again' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Detach and remove' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Detach and delete files' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Remove and delete worktree' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Remove and delete files' })).toBeNull();
   });
 
   it('says a clean branch has not reached its base instead of implying it landed', async () => {
@@ -477,14 +477,14 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Detach and remove' })));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete worktree' })));
     expect(
       screen.getByText(
         'Remove the clean worktree at /worktrees/api: 0 uncommitted files, 0 unpushed commits, and ak/feat is not merged into origin/develop yet.',
       ),
     ).toBeDefined();
     expect(screen.getByText('The branch and its commits stay in the repository.')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Detach details for api' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Removal details for api' }));
     expect(screen.getByText('Branches not merged into the base (1)')).toBeDefined();
   });
 
@@ -494,18 +494,18 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Detach and remove' })));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete worktree' })));
     expect(
       screen.getByText(
-        "The directory at /worktrees/api is already absent; detach will remove only the session's record of it.",
+        "The directory at /worktrees/api is already absent; removing it will drop only the session's record of it.",
       ),
     ).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Detach and remove' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove and delete worktree' }));
 
     await waitFor(() =>
       expect(showToast).toHaveBeenCalledWith({
         kind: 'info',
-        message: 'Detached api. Its directory was already absent.',
+        message: 'Removed api from the session. Its directory was already absent.',
       }),
     );
   });
@@ -519,7 +519,7 @@ describe('MountActionsMenu', () => {
     expect(
       screen.getByText('Work is still running in api; stop it before removing this worktree.'),
     ).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Detach and keep files' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Remove and keep files' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDefined();
   });
 
@@ -535,7 +535,7 @@ describe('MountActionsMenu', () => {
       screen.getByText('A terminal is open in api; close it before removing this worktree.'),
     ).toBeDefined();
     expect(screen.queryByText(/Work is still running/)).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Detach and keep files' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Remove and keep files' })).toBeNull();
   });
 
   it('leaves a way out of a blocked confirmation instead of an empty popover', () => {
@@ -543,10 +543,10 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    expect(screen.getByText('Detach api?')).toBeDefined();
+    expect(screen.getByText('Remove api from the session?')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
-    expect(screen.getByRole('menuitem', { name: 'Detach project' })).toBeDefined();
+    expect(screen.getByRole('menuitem', { name: 'Remove from session' })).toBeDefined();
   });
 
   it('keeps the confirmation open and reports a removal failure', async () => {
@@ -554,29 +554,29 @@ describe('MountActionsMenu', () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Detach and remove' })));
-    fireEvent.click(screen.getByRole('button', { name: 'Detach and remove' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete worktree' })));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove and delete worktree' }));
 
     await waitFor(() =>
       expect(state.reportError).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: "Couldn't detach api",
+          title: "Couldn't remove api from the session",
           error:
             'Could not remove /worktrees/api. It stays in the session; check again before retrying.',
         }),
       ),
     );
-    expect(screen.getByText('Detach api?')).toBeDefined();
+    expect(screen.getByText('Remove api from the session?')).toBeDefined();
   });
 
   it('returns to the item list on cancel', async () => {
     renderMenu();
     openConfirm();
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Detach and remove' })));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Remove and delete worktree' })));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
-    expect(screen.getByRole('menuitem', { name: 'Detach project' })).toBeDefined();
+    expect(screen.getByRole('menuitem', { name: 'Remove from session' })).toBeDefined();
     expect(state.detachProject).not.toHaveBeenCalled();
   });
 

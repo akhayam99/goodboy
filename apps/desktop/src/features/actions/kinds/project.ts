@@ -1,5 +1,6 @@
 import { Unlink } from 'lucide-react';
 import type { ProjectId, SessionId } from '@goodboy/types';
+import { NAMES } from '../../../shared/names';
 import type { ObjectKindDefinition, ProjectActionTarget } from '../types';
 
 export const PROJECT_DETACH_EVENT = 'goodboy:project-detach';
@@ -38,7 +39,7 @@ export const PROJECT_KIND: ObjectKindDefinition<ProjectActionTarget, ProjectFact
   actions: [
     {
       id: 'project.detach',
-      label: 'Detach project',
+      label: NAMES.removeFromSession,
       icon: Unlink,
       group: 'danger',
       hasCustomConfirm: true,

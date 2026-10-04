@@ -310,9 +310,9 @@ never exists on one surface only.
   covers the last row.
 - **Confirm and undo.** A verb that loses work confirms inside the menu with
   `InlineConfirm` (Delete, Delete permanently, Discard, Close run, Merge, Close pull request,
-  Delete script, Close worktree, Remove from session, Abort rebase). Detach
-  project and a storage worktree's Remove keep their detailed confirm (the
-  detach plan, the forced remove) in their own menu. A reversible verb runs at once with an Undo toast (Archive, Delete on an artifact,
+  Delete script, Close worktree, Remove from session, Abort rebase). Remove
+  from session and a storage worktree's Remove keep their detailed confirm (the
+  removal plan, the forced remove) in their own menu. A reversible verb runs at once with an Undo toast (Archive, Delete on an artifact,
   Close agent). A draft verb on the rewrite page (Drop) needs neither.
 - **Blocked verbs stay.** A verb that cannot run now stays in the menu, dimmed,
   with its reason under the label, and does nothing when chosen. A verb that

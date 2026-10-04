@@ -274,7 +274,7 @@ describe('TimelineRowLabel', () => {
       expect(screen.getByText(value).className).toContain('font-mono');
     }
     expect(screen.getByText('Added').className).not.toContain('font-mono');
-    expect(screen.getByText(', detached')).toBeDefined();
+    expect(screen.getByText(', removed')).toBeDefined();
   });
 
   it('names every project in the tooltip, even the ones the row counts', () => {
@@ -284,7 +284,7 @@ describe('TimelineRowLabel', () => {
     );
 
     expect(container.querySelector('[title]')?.getAttribute('title')).toBe(
-      'Detached api, storefront-web, infra, db and edge',
+      'Removed api, storefront-web, infra, db and edge',
     );
     expect(screen.getByText('and 2 more')).toBeDefined();
   });

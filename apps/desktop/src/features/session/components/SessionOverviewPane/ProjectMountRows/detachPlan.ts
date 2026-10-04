@@ -246,12 +246,12 @@ const unverifiedLines = ({
   const only = unknown[0];
   if (total === 1 && only !== undefined) {
     return [
-      `Whether ${only.branch} is merged into its base branch is unknown; detach will keep its files at ${only.path}.`,
+      `Whether ${only.branch} is merged into its base branch is unknown; removing it will keep its files at ${only.path}.`,
       CHECK_AGAIN_SENTENCE,
     ];
   }
   return [
-    `Whether ${countLabel({ count: unknown.length, singular: 'branch' })} in ${projectName} reached the base branch is unknown; detach will keep every directory.`,
+    `Whether ${countLabel({ count: unknown.length, singular: 'branch' })} in ${projectName} reached the base branch is unknown; removing it will keep every directory.`,
     CHECK_AGAIN_SENTENCE,
   ];
 };
@@ -370,9 +370,9 @@ const missingLine = ({
 }): string => {
   const only = measured[0];
   if (measured.length === 1 && only !== undefined) {
-    return `The directory at ${only.path} is already absent; detach will remove only the session's record of it.`;
+    return `The directory at ${only.path} is already absent; removing it will drop only the session's record of it.`;
   }
-  return `Every directory of ${projectName} is already absent; detach will remove only the session's records of them.`;
+  return `Every directory of ${projectName} is already absent; removing it will drop only the session's records of them.`;
 };
 
 const unavailableLine = ({
@@ -386,9 +386,9 @@ const unavailableLine = ({
 }): string => {
   const only = unread[0];
   if (total === 1 && only !== undefined) {
-    return `The safety of ${branchLabelFor({ assessed: null, fallback: only.branch })} at ${only.worktreePath} could not be verified; detach will keep the directory.`;
+    return `The safety of ${branchLabelFor({ assessed: null, fallback: only.branch })} at ${only.worktreePath} could not be verified; removing it will keep the directory.`;
   }
-  return `The safety of ${unread.length} of ${total} worktrees in ${projectName} could not be verified; detach will keep every directory.`;
+  return `The safety of ${unread.length} of ${total} worktrees in ${projectName} could not be verified; removing it will keep every directory.`;
 };
 
 export const buildDetachPlan = ({
@@ -411,7 +411,7 @@ export const buildDetachPlan = ({
       kind: 'keep',
       reason: 'folder',
       lines: [
-        `Detach ${projectName} from this session; its folder at ${worktreePath} will stay on disk.`,
+        `Remove ${projectName} from this session; its folder at ${worktreePath} will stay on disk.`,
       ],
       details: NO_DETAILS,
     };
@@ -505,13 +505,13 @@ export const detachActionFor = ({ plan }: { readonly plan: DetachPlan }): Detach
     case 'keep':
       return plan.reason === 'blocked'
         ? null
-        : { label: 'Detach and keep files', disposition: 'keep-files', role: 'primary' };
+        : { label: 'Remove and keep files', disposition: 'keep-files', role: 'primary' };
     case 'missing':
-      return { label: 'Detach and remove', disposition: 'remove-clean', role: 'primary' };
+      return { label: 'Remove and delete worktree', disposition: 'remove-clean', role: 'primary' };
     case 'safe':
-      return { label: 'Detach and remove', disposition: 'remove-clean', role: 'primary' };
+      return { label: 'Remove and delete worktree', disposition: 'remove-clean', role: 'primary' };
     case 'risky':
-      return { label: 'Detach and delete files', disposition: 'delete-files', role: 'danger' };
+      return { label: 'Remove and delete files', disposition: 'delete-files', role: 'danger' };
   }
 };
 
@@ -528,11 +528,11 @@ export const detachOutcomeMessage = ({
 }): string => {
   switch (kind) {
     case 'removed':
-      return `Detached ${projectName} and removed its worktree.`;
+      return `Removed ${projectName} from the session and deleted its worktree.`;
     case 'missing':
-      return `Detached ${projectName}. Its directory was already absent.`;
+      return `Removed ${projectName} from the session. Its directory was already absent.`;
     case 'kept':
-      return `Detached ${projectName}. Files remain at ${worktreePath}.`;
+      return `Removed ${projectName} from the session. Files remain at ${worktreePath}.`;
     case 'failed':
       return 'Could not finish removing the worktree. It stays in the session; check again before retrying.';
   }
@@ -556,7 +556,7 @@ export const detachFailureMessage = ({ outcomes }: DetachFailureMessageParams): 
   }
   const settledCount = outcomes.length - failed.length;
   const reason = first.reason != null && first.reason !== '' ? `: ${first.reason}` : '';
-  const lead = settledCount > 0 ? `Detached ${settledCount} of ${outcomes.length} worktrees. ` : '';
+  const lead = settledCount > 0 ? `Removed ${settledCount} of ${outcomes.length} worktrees. ` : '';
   const target =
     failed.length === 1
       ? `Could not remove ${first.worktreePath}${reason}.`

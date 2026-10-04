@@ -41,6 +41,7 @@ export const NAMES = {
   guidance: 'Guidance',
   stopWorkflow: 'Stop workflow',
   archiveWorkflow: 'Archive workflow',
+  removeFromSession: 'Remove from session',
   role: {
     scout: 'Scout',
     planner: 'Planner',
@@ -79,6 +80,7 @@ const FORMER_NAMES: Readonly<Record<string, ReadonlyArray<string>>> = {
   [NAMES.guidance]: ['Standing guidance'],
   [NAMES.stopWorkflow]: ['Close workflow'],
   [NAMES.archiveWorkflow]: ['Discard workflow'],
+  [NAMES.removeFromSession]: ['Detach project', 'Detach'],
 };
 
 export const formerNamesOf = (name: string): ReadonlyArray<string> => FORMER_NAMES[name] ?? [];

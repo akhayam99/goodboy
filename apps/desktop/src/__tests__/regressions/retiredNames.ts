@@ -39,6 +39,11 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
     pattern: /\bDiscard workflow\b(?! draft)/,
     use: NAMES.archiveWorkflow,
   },
+  {
+    id: 'detach-project',
+    pattern: /\bDetach(?:ed)? (?:project|and|a project|details)\b/,
+    use: NAMES.removeFromSession,
+  },
   { id: 'your-roles', pattern: /\bYour roles\b/, use: NAMES.yourJob },
   { id: 'defaults-page', pattern: /\b(?:in|then|Open) Defaults\b/, use: NAMES.models },
 ];

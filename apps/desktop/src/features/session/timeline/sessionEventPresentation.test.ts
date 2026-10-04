@@ -196,7 +196,7 @@ describe('sessionEventLabel as text', () => {
           event: event({ kind: 'project_detached', payload: { projectName: 'api', kept: true } }),
         }),
       }),
-    ).toBe('Detached api');
+    ).toBe('Removed api');
     expect(
       sessionEventSecondary({
         event: event({ kind: 'project_detached', payload: { projectName: 'api', kept: true } }),
@@ -384,7 +384,7 @@ describe('sessionEventProjectRunLabel', () => {
           detached: ['api', 'storefront-web', 'infra'],
         }),
       }),
-    ).toBe('Detached api, storefront-web and infra');
+    ).toBe('Removed api, storefront-web and infra');
   });
 
   it('says both verbs in one sentence, mounted first', () => {
@@ -395,7 +395,7 @@ describe('sessionEventProjectRunLabel', () => {
           detached: ['storefront-web', 'infra'],
         }),
       }),
-    ).toBe('Added api, detached storefront-web and infra');
+    ).toBe('Added api, removed storefront-web and infra');
   });
 
   it('keeps each list readable when both verbs name more than one project', () => {
@@ -406,7 +406,7 @@ describe('sessionEventProjectRunLabel', () => {
           detached: ['infra'],
         }),
       }),
-    ).toBe('Added api and storefront-web, detached infra');
+    ).toBe('Added api and storefront-web, removed infra');
   });
 
   it('keeps every project name a chip, never prose', () => {
@@ -414,7 +414,7 @@ describe('sessionEventProjectRunLabel', () => {
       [
         { kind: 'text', text: 'Added ' },
         { kind: 'value', text: 'api', variant: 'project' },
-        { kind: 'text', text: ', detached ' },
+        { kind: 'text', text: ', removed ' },
         { kind: 'value', text: 'storefront-web', variant: 'project' },
       ],
     );
@@ -428,7 +428,7 @@ describe('sessionEventProjectRunLabel', () => {
           detached: ['api', 'storefront-web', 'infra', 'db', 'edge', 'docs', 'cli'],
         }),
       }),
-    ).toBe('Detached api, storefront-web, infra and 4 more');
+    ).toBe('Removed api, storefront-web, infra and 4 more');
   });
 
   it('names the last project rather than counting one hidden name', () => {
@@ -439,7 +439,7 @@ describe('sessionEventProjectRunLabel', () => {
           detached: ['api', 'storefront-web', 'infra', 'db'],
         }),
       }),
-    ).toBe('Detached api, storefront-web, infra and db');
+    ).toBe('Removed api, storefront-web, infra and db');
   });
 
   it('truncates each verb on its own so neither disappears', () => {
@@ -450,7 +450,7 @@ describe('sessionEventProjectRunLabel', () => {
           detached: ['docs', 'cli', 'agents', 'ui', 'core'],
         }),
       }),
-    ).toBe('Added api, storefront-web, infra and 2 more, detached docs, cli, agents and 2 more');
+    ).toBe('Added api, storefront-web, infra and 2 more, removed docs, cli, agents and 2 more');
   });
 
   it('names every project when the caller lifts the limit, as a tooltip does', () => {
@@ -464,7 +464,7 @@ describe('sessionEventProjectRunLabel', () => {
           limit: names.length,
         }),
       }),
-    ).toBe('Detached api, storefront-web, infra, db and edge');
+    ).toBe('Removed api, storefront-web, infra, db and edge');
   });
 });
 

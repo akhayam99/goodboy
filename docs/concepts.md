@@ -142,7 +142,7 @@ Impact, the Spend tab and the spend chip in the top bar all count it.
 | You delete it in Goodboy              | transcript, file versions, slots, decisions and images are freed; the row stays with `deleted_at` | sessions, spend, pull requests, reviews and durations |
 | Its worktree disappears from disk     | rows stay, the mount is marked `missing`                                                          | everything                                            |
 | You archive it                        | rows stay with `archived_at`                                                                      | everything                                            |
-| You detach or forget its project      | the mount row and its pull request links go                                                       | merged pull requests, through their `pr_merged` event |
+| You remove or forget its project      | the mount row and its pull request links go                                                       | merged pull requests, through their `pr_merged` event |
 | You remove its workspace              | rows stay, the workspace is disconnected                                                          | everything, under that workspace                      |
 | A draft that never started is deleted | the row goes                                                                                      | nothing to keep                                       |
 

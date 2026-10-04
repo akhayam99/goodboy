@@ -26,7 +26,7 @@ export const DetachConfirm = ({
   onRecheck,
   onCancel,
 }: Props) => {
-  const title = `Detach ${projectName}?`;
+  const title = `Remove ${projectName} from the session?`;
 
   if (plan.kind === 'checking') {
     return (
@@ -34,7 +34,7 @@ export const DetachConfirm = ({
         role="primary"
         icon={<WorktreeIcon size={ICON_SIZE.row} />}
         title={title}
-        confirmLabel="Detach"
+        confirmLabel="Remove"
         surface="plain"
         isConfirmDisabled
         onConfirm={() => undefined}
@@ -56,7 +56,7 @@ export const DetachConfirm = ({
         role="alert"
         icon={<AlertIcon size={ICON_SIZE.row} />}
         title={title}
-        confirmLabel="Detach"
+        confirmLabel="Remove"
         surface="plain"
         isConfirmDisabled
         onConfirm={() => undefined}

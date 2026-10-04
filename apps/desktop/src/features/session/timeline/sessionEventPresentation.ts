@@ -405,9 +405,9 @@ export const sessionEventLabel = ({ event }: TitleParams): ReadonlyArray<Timelin
           ];
     case 'project_detached':
       return payload?.projectName == null
-        ? [{ kind: 'text', text: 'Detached a project' }]
+        ? [{ kind: 'text', text: 'Removed a project' }]
         : [
-            { kind: 'text', text: 'Detached ' },
+            { kind: 'text', text: 'Removed ' },
             { kind: 'value', text: payload.projectName, variant: 'project' },
           ];
     case 'external_task_created':
@@ -521,7 +521,7 @@ export const sessionEventProjectRunLabel = ({
     detached.length === 0
       ? []
       : [
-          { kind: 'text', text: mounted.length === 0 ? 'Detached ' : ', detached ' },
+          { kind: 'text', text: mounted.length === 0 ? 'Removed ' : ', removed ' },
           ...projectListSegments({ names: detached, limit }),
         ];
   return [...mountedSegments, ...detachedSegments];

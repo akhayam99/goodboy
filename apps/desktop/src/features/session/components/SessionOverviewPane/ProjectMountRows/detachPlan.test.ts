@@ -73,7 +73,7 @@ describe('buildDetachPlan', () => {
     expect(plan({ assessments: null, isRepoProject: false })).toEqual({
       kind: 'keep',
       reason: 'folder',
-      lines: ['Detach api from this session; its folder at /worktrees/api will stay on disk.'],
+      lines: ['Remove api from this session; its folder at /worktrees/api will stay on disk.'],
       details: { totals: [], worktrees: [] },
     });
   });
@@ -331,7 +331,7 @@ describe('buildDetachPlan', () => {
       kind: 'keep',
       reason: 'unavailable',
       lines: [
-        'The safety of 1 of 2 worktrees in api could not be verified; detach will keep every directory.',
+        'The safety of 1 of 2 worktrees in api could not be verified; removing it will keep every directory.',
       ],
       details: { totals: [], worktrees: ['ak/b at /b: not verified'] },
     });
@@ -352,7 +352,7 @@ describe('buildDetachPlan', () => {
       kind: 'keep',
       reason: 'unavailable',
       lines: [
-        'The safety of ak/feat at /worktrees/api could not be verified; detach will keep the directory.',
+        'The safety of ak/feat at /worktrees/api could not be verified; removing it will keep the directory.',
       ],
       details: { totals: [], worktrees: [] },
     });
@@ -411,7 +411,7 @@ describe('buildDetachPlan', () => {
       kind: 'keep',
       reason: 'unverified',
       lines: [
-        'Whether ak/feat is merged into its base branch is unknown; detach will keep its files at /worktrees/api.',
+        'Whether ak/feat is merged into its base branch is unknown; removing it will keep its files at /worktrees/api.',
         'Check again, or set the base branch for this project in Settings.',
       ],
       details: { totals: [], worktrees: [] },
@@ -460,7 +460,7 @@ describe('buildDetachPlan', () => {
       kind: 'keep',
       reason: 'unverified',
       lines: [
-        'Whether 1 branch in api reached the base branch is unknown; detach will keep every directory.',
+        'Whether 1 branch in api reached the base branch is unknown; removing it will keep every directory.',
         'Check again, or set the base branch for this project in Settings.',
       ],
       details: { totals: [], worktrees: ['ak/b at /b: merge state unknown'] },
@@ -568,7 +568,7 @@ describe('detach outcomes', () => {
   it('reports the returned disposition rather than the predicted one', () => {
     expect(
       detachOutcomeMessage({ kind: 'kept', projectName: 'api', worktreePath: '/worktrees/api' }),
-    ).toBe('Detached api. Files remain at /worktrees/api.');
+    ).toBe('Removed api from the session. Files remain at /worktrees/api.');
     expect(
       detachOutcomeMessage({ kind: 'failed', projectName: 'api', worktreePath: '/worktrees/api' }),
     ).toBe(
@@ -585,7 +585,7 @@ describe('detach outcomes', () => {
         ],
       }),
     ).toBe(
-      'Detached 1 of 2 worktrees. Could not remove /worktrees/api-b: an agent is running. It stays in the session; check again before retrying.',
+      'Removed 1 of 2 worktrees. Could not remove /worktrees/api-b: an agent is running. It stays in the session; check again before retrying.',
     );
   });
 
