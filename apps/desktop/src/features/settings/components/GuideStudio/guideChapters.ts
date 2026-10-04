@@ -468,7 +468,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Scope',
-        desc: 'Clean up this workspace, other workspaces or removed ones, each with its weight. When 1 GB or more can go, the top bar shows Free N GB and opens Storage.',
+        desc: 'Clean up this workspace, other workspaces or removed ones, each with its weight.',
       },
       {
         term: 'Security findings',
