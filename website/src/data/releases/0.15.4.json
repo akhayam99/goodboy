@@ -1,5 +1,6 @@
 {
   "version": "0.15.4",
+  "date": "2026-10-03",
   "summary": "Impact counts deleted sessions and what they shipped, Auto runs the newest model of each line, and one-click agents show their model before they start.",
   "new": [],
   "groups": [

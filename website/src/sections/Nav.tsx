@@ -21,6 +21,7 @@ type Props = {
 const NAV_LINKS: readonly NavLink[] = [
   { label: 'How it works', href: SITE.howItWorks, section: 'none' },
   { label: 'Features', href: SITE.features, section: 'features' },
+  { label: 'Docs', href: SITE.docs, section: 'docs' },
   { label: 'Changelog', href: SITE.changelog, section: 'changelog' },
 ];
 

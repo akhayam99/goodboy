@@ -1,5 +1,6 @@
 {
   "version": "0.16.0",
+  "date": "2026-10-03",
   "summary": "Workflows follow your rules and can wait after the plan, branches take the name you set, tasks link to a branch or the workspace, and chats take images.",
   "new": [
     {

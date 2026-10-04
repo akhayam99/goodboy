@@ -33,11 +33,11 @@ export const FeaturesPage = () => {
             >
               <div className="ctaRow ftHeadLinks">
                 <StarButton />
-                <a className="refLink" href={SITE.featureGuide}>
-                  Full reference on GitHub
+                <a className="refLink" href={SITE.docs}>
+                  Full reference
                 </a>
                 {LATEST_VERSION === '' ? null : (
-                  <a className="refLink" href={SITE.changelog}>
+                  <a className="refLink" href={SITE.release(LATEST_VERSION)}>
                     New in {LATEST_VERSION}
                   </a>
                 )}

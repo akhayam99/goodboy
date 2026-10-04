@@ -80,6 +80,7 @@ export default defineConfig(async () => ({
       input: {
         main: resolve(ROOT, 'index.html'),
         features: resolve(ROOT, 'features.html'),
+        content: resolve(ROOT, 'content.html'),
       },
     },
   },

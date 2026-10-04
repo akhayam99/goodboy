@@ -191,7 +191,11 @@
       "project": ["src/**/*.{ts,tsx}"]
     },
     "website": {
-      "entry": ["src/pages/features/main.tsx", "src/server/renderSite.tsx"],
+      "entry": [
+        "src/pages/features/main.tsx",
+        "src/pages/content/main.tsx",
+        "src/server/renderSite.tsx"
+      ],
       "project": ["src/**/*.{ts,tsx}"],
       "ignoreDependencies": ["tailwindcss"]
     }

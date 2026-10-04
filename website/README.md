@@ -20,9 +20,10 @@ deployed by Vercel from `website/vercel.json`.
 ## Prerender
 
 Every page ships its full text as HTML, so a crawler or a link preview that
-runs no JavaScript reads the same page a visitor does. `scripts/prerender.mjs`
-runs the client build, then a server build of `src/server/renderSite.tsx`, and
-writes what `renderSite` returns into `dist/`: each template's
+runs no JavaScript reads the same page a visitor does.
+`website/scripts/prerender.mjs` runs the client build, then a server build of
+`website/src/server/renderSite.tsx`, and writes what `renderSite` returns into
+`dist/`: each template's
 `<!--app-html-->` mark gets the page rendered with `react-dom/server`. The
 client entries then `hydrateRoot` that HTML instead of rendering from scratch.
 
@@ -33,9 +34,9 @@ an effect or a handler, never while it renders. The nav takes the current
 section as a prop for the same reason. `?fidelity=<Mock>` skips hydration and
 renders the mock alone.
 
-The templates hold no title or social tags. `pageHead` in `src/server/` writes
-them at each template's `<!--app-head-->` mark from the page's meta (the home
-and features meta live in `src/server/STATIC_PAGES.ts`): title, description,
+The templates hold no title or social tags. `pageHead` in `website/src/server/`
+writes them at each template's `<!--app-head-->` mark from the page's meta (the
+home and features meta live in `website/src/server/STATIC_PAGES.ts`): title, description,
 canonical, Open Graph and X card, all from one title and one description. A
 title names what the page is for in the words people search, such as AI coding
 agent orchestrator, Claude Code, Codex, Cursor or git worktrees, in about 70
@@ -51,6 +52,26 @@ characters; a description stays under 160.
   from `features.data.json` in that folder. Vite builds both pages as inputs,
   `vercel.json` serves them without `.html`, and the dev and preview servers
   rewrite `/features` the same way.
+- `/changelog`, every release newest first, and `/changelog/<version>`, one
+  page per release: its date and summary from the snapshot in
+  `website/src/data/releases/`, and its New, Improved and Fixed notes from the
+  `## Goodboy v<version>` entry in `CHANGELOG.md`. `/changelog.xml` is the
+  Atom feed of the same list.
+- `/docs`, the feature guide, and `/docs/<area>`, one page per
+  `docs/features/<area>.md`, in `FEATURES.md` index order. The doc's title is
+  the h1, its first paragraph the lead, and each `###` an h2 with the same
+  anchor GitHub gives it. A few areas add the words people search to their
+  page title, from a short map in `website/src/server/CONTENT_PAGES.tsx`. Every
+  page carries breadcrumbs, a link to the same file on GitHub and its
+  neighbours.
+
+These pages exist only in the build: `website/content.html` is their one
+template, and its client entry `website/src/pages/content/main.tsx` hydrates
+the nav alone, since the rest is static. The server build reads
+`CHANGELOG.md`, `FEATURES.md` and `docs/features/` from the repo root, so
+the Vercel project must keep files outside `website/` in the build (the
+default). Markdown renders with `marked` at build time and ships no parser to
+the browser; images in a doc load lazily, except the first.
 
 Each cluster shows its main features, not all of them. In `features.data.json`
 every item of the guide stays in the file: 3 to 5 items per cluster carry
@@ -58,8 +79,7 @@ every item of the guide stays in the file: 3 to 5 items per cluster carry
 a phone); every other item carries an `also` noun, and the nouns of the items
 marked `shown: true` render as one plain "Also:" line of two lines at most (the
 rest live in the area files). `guides` lists one `{ area, label }` per area file, shown as
-"In the guide:" links to `docs/features/<area>.md` through
-`SITE.featureDoc(area)`. A main item must also be a main item of that area in
+"In the guide:" links to its `/docs/<area>` page through `SITE.doc(area)`. A main item must also be a main item of that area in
 the `FEATURES.md` index, and an item title is the heading (or small features
 table row) it has in the area file. Check the page fails when they drift.
 
@@ -145,10 +165,12 @@ All in `website/src/components/`, each with its own CSS file.
   tier 3. Each hex is sourced and recorded in `brandIcons.source.json`.
 
 A "learn more" link carries `data-see-more` and points at a `/features#cluster`
-anchor. A link to a repo doc points at `FEATURES.md` or at
-`docs/features/<area>.md`, and only from a `refLink` or the footer. The nav
-marks the current page with `aria-current="page"`, in the desktop links and in
-the phone sheet alike.
+anchor. A link to a feature doc points at its page on the site,
+`/docs/<area>`, and the GitHub copy (`FEATURES.md` or
+`docs/features/<area>.md`) is the secondary link; either sits only on a
+`refLink` or in the footer. The nav receives the current section as its
+`current` prop and marks that link with `aria-current="page"`, in the desktop
+links and in the phone sheet alike.
 
 ## Phones
 
@@ -214,8 +236,9 @@ Rules that run on every page:
   heading and lead, apart from `goodboy`, `task`, `tasks` and the function
   words `your`, `with`, `that`, `this` and `from`.
 - Links: every `data-see-more` points at a real `/features` anchor. A link to
-  `FEATURES.md` or to a `docs/features/<area>.md` file sits only on a `.refLink`
-  or in the footer, the file exists, and any anchor is a heading in it.
+  `FEATURES.md`, to a `docs/features/<area>.md` file or to its `/docs/<area>`
+  page sits only on a `.refLink` or in the footer, the file exists, and any
+  anchor is a heading in it.
 - Works with: `[data-works-with]` sits in the first screen on `/`.
 - Download: the download buttons show on `/` with a mouse and never on a phone,
   and every `[data-download]` href starts with `/releases/download/`.

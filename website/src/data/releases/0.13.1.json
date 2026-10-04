@@ -1,5 +1,6 @@
 {
   "version": "0.13.1",
+  "date": "2026-09-29",
   "summary": "A new Sonnet joins the picker, Chat shows when it is working or has a new reply, and a resolver that committed no longer ends as a failed draft.",
   "new": [
     {

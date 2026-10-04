@@ -10,6 +10,7 @@ const SSR_ENTRY = resolve(ROOT, 'src/server/renderSite.tsx');
 const TEMPLATES = {
   home: 'index.html',
   features: 'features.html',
+  content: 'content.html',
 };
 
 const readTemplates = () =>
@@ -35,6 +36,7 @@ const main = async () => {
   });
   const { renderSite } = await import(pathToFileURL(resolve(SSR_DIST, 'renderSite.js')).href);
   const files = renderSite({ templates: readTemplates() });
+  rmSync(resolve(DIST, TEMPLATES.content));
   files.forEach(({ path, content }) => {
     const target = resolve(DIST, path);
     mkdirSync(dirname(target), { recursive: true });

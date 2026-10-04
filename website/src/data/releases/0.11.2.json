@@ -1,5 +1,6 @@
 {
   "version": "0.11.2",
+  "date": "2026-09-27",
   "summary": "Rewrite history opens again, reports leave out your personal details, and a report that failed to save no longer looks done.",
   "new": [],
   "groups": [

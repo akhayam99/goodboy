@@ -30,6 +30,12 @@ const REPO_BLOB_PREFIX = 'https://github.com/akhayam99/goodboy/blob/main/';
 const FEATURE_GUIDE_URL = `${REPO_BLOB_PREFIX}FEATURES.md`;
 const FEATURE_DOCS_URL = `${REPO_BLOB_PREFIX}docs/features/`;
 const FEATURE_DOCS_DIRECTORY = 'docs/features';
+const SITE_DOCS_PREFIX = '/docs/';
+
+const siteDocTarget = ({ href }) => {
+  const [area, anchor] = href.slice(SITE_DOCS_PREFIX.length).split('#');
+  return [`${FEATURE_DOCS_DIRECTORY}/${area}.md`, anchor];
+};
 const SOURCE_DIRECTORY = resolve(WEBSITE_DIRECTORY, 'src');
 const STAGE_GRADIENT_TOKEN = '--g-stage-gradient';
 const BOARD_ROW_TOLERANCE_PX = 1;
@@ -518,7 +524,7 @@ const buildRulesProbe = ({ clusterIds }) => `(() => {
     }),
     seeMoreLinks: [...document.querySelectorAll('[data-see-more]')].map((node) => node.getAttribute('href')),
     guideLinks: [...document.querySelectorAll('a[href]')]
-      .filter((node) => node.getAttribute('href').startsWith(${JSON.stringify(FEATURE_GUIDE_URL)}) || node.getAttribute('href').startsWith(${JSON.stringify(FEATURE_DOCS_URL)}))
+      .filter((node) => node.getAttribute('href').startsWith(${JSON.stringify(FEATURE_GUIDE_URL)}) || node.getAttribute('href').startsWith(${JSON.stringify(FEATURE_DOCS_URL)}) || node.getAttribute('href').startsWith(${JSON.stringify(SITE_DOCS_PREFIX)}))
       .map((node) => ({
         href: node.getAttribute('href'),
         isAllowed: node.classList.contains('refLink') || node.closest('footer') !== null,
@@ -667,7 +673,9 @@ const checkRun = ({ page, viewport, theme, probe, rules, touch, groups, clusterI
   }
   probe.downloadHrefs
     .filter((href) => !href.startsWith(DOWNLOAD_PREFIX))
-    .forEach((href) => fail(`a data-download link goes to ${href}, not a /releases/download/ asset`));
+    .forEach((href) =>
+      fail(`a data-download link goes to ${href}, not a /releases/download/ asset`),
+    );
   rules.rasters.forEach((image) => fail(`a raster image in main: ${image}`));
   probe.brokenImages.forEach((source) => fail(`${source} did not load`));
   probe.periods.forEach((text) => fail(`heading ends with a period: "${text}"`));
@@ -749,7 +757,9 @@ const checkRun = ({ page, viewport, theme, probe, rules, touch, groups, clusterI
     if (!link.isAllowed) {
       fail(`doc link ${link.href} sits outside .refLink and the footer`);
     }
-    const [path, anchor = null] = link.href.slice(REPO_BLOB_PREFIX.length).split('#');
+    const [path, anchor = null] = link.href.startsWith(SITE_DOCS_PREFIX)
+      ? siteDocTarget({ href: link.href })
+      : link.href.slice(REPO_BLOB_PREFIX.length).split('#');
     const isGuide = path === 'FEATURES.md' || /^docs\/features\/[a-z-]+\.md$/.test(path);
     if (!isGuide) {
       fail(`doc link ${link.href} is neither FEATURES.md nor a docs/features/<area>.md file`);

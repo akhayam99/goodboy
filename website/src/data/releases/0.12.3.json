@@ -1,5 +1,6 @@
 {
   "version": "0.12.3",
+  "date": "2026-09-28",
   "summary": "Link any tracker item to a session with L, copy a worktree path from Cmd+K, and open or undo a decision right where it sits.",
   "new": [],
   "groups": [

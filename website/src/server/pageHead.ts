@@ -32,6 +32,7 @@ export const pageHead = ({ page }: Params) => {
     page.isIndexed
       ? `<link rel="canonical" href="${escapeHtml(url)}" />`
       : named({ key: 'robots', value: 'noindex' }),
+    `<link rel="alternate" type="application/atom+xml" title="Goodboy changelog" href="${SITE.changelogFeed}" />`,
     property({ key: 'og:type', value: page.ogType }),
     property({ key: 'og:site_name', value: 'Goodboy' }),
     property({ key: 'og:url', value: url }),
