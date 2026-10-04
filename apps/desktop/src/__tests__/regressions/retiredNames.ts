@@ -20,5 +20,6 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
     pattern: /\bLink (?:your first )?integration\b/,
     use: NAMES.connectIntegration,
   },
+  { id: 'autorun', pattern: /\bAutorun\b/, use: NAMES.runOnItsOwn },
   { id: 'defaults-page', pattern: /\b(?:in|then|Open) Defaults\b/, use: NAMES.models },
 ];

@@ -503,7 +503,7 @@ its agents restorable.
 
 ### Hands-free runs
 
-**Autorun** makes a run hands-free. Each next step starts without you
+**Run on its own** makes a run hands-free. Each next step starts without you
 clicking. You can turn it on for one run or for the whole session. A run
 without its own setting follows the session.
 
@@ -687,7 +687,7 @@ above its steps for all of them. A stopped agent is neither settled nor failed: 
 header say it was stopped and offer Continue, which sends "Continue from where
 you stopped." as a normal message. A resumed step completes like any other, so
 autorun moves on from it.
-Autorun never passes a stopped step (`stopped-step`), and a stopped step does
+The run never passes a stopped step (`stopped-step`), and a stopped step does
 not count as needing you. Any later status change clears the stop.
 
 A step has no Close. Closing an agent is for agents outside a workflow (see

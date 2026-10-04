@@ -537,7 +537,7 @@ describe('OrchestratorStrip layout', () => {
     expect(row.contains(screen.getByTestId('orchestrator-routing'))).toBe(true);
     expect(row.contains(screen.getByRole('button', { name: 'Orchestrator actions' }))).toBe(true);
     expect(row.contains(screen.getByTestId('orchestrator-hint-input'))).toBe(false);
-    expect(screen.queryByRole('switch', { name: 'Autorun' })).toBeNull();
+    expect(screen.queryByRole('switch', { name: 'Run on its own' })).toBeNull();
   });
   it('keeps when to ask and the model per step behind the overflow', () => {
     const running = agent(0, 'running', { name: 'Scout the parser' });

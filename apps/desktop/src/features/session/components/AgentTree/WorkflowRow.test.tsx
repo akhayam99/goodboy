@@ -358,7 +358,7 @@ describe('WorkflowRow detail dashboard', () => {
     const remove = screen.getByRole('button', { name: 'Refactor workflow actions' });
 
     expect(choice.compareDocumentPosition(remove)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(screen.queryByRole('switch', { name: 'Autorun' })).toBeNull();
+    expect(screen.queryByRole('switch', { name: 'Run on its own' })).toBeNull();
   });
   it('changes when to ask from the header menu and names the choice in the facts', () => {
     const setAutonomy = vi.fn(async () => undefined);
@@ -391,7 +391,7 @@ describe('WorkflowRow detail dashboard', () => {
     expect(
       navigationSlot.contains(screen.getByRole('button', { name: 'Collapse Refactor workflow' })),
     ).toBe(true);
-    expect(screen.queryByRole('switch', { name: 'Autorun' })).toBeNull();
+    expect(screen.queryByRole('switch', { name: 'Run on its own' })).toBeNull();
     expect(
       lifecycleSlot.contains(screen.getByRole('button', { name: 'Refactor workflow actions' })),
     ).toBe(true);

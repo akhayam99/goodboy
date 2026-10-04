@@ -53,7 +53,7 @@ Reuse steps across workflows. The 8 built-in steps are read-only, and **Save a c
 
 Put a light model on a scout and a strong one on the planner. A step follows its role by default; **Pin a model** picks its own provider, then **Model**, **Version**, **Variant** and **Effort**, and Goodboy records what actually ran.
 
-### Autorun
+### When to ask
 
 Choose when a run asks: **Ask before each step**, **Ask after the plan** to stop once for your **Approve plan** and then run on its own, or **Run on its own** to move to the next step without you, per run or for the whole session. A guard stops an agent after 4 unattended turns in an hour, and anything you write to it resets the count.
 

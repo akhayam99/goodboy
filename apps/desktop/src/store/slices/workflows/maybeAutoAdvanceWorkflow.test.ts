@@ -264,7 +264,7 @@ describe('maybeAutoAdvanceWorkflow', () => {
         kind: 'error',
         severity: 'warning',
         title: 'Workflow blocked',
-        body: 'Autorun stopped at s0 because the step failed.',
+        body: 'The run stopped at s0 because the step failed.',
         sessionId: SESSION_ID,
       }),
     );
