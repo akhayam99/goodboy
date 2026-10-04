@@ -29,7 +29,7 @@ Write the steps yourself with **Add step**, describe them and press **Generate p
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-preset-light.webp" alt="The workflow builder in Preset mode with the Pick a preset list open: Trace and fix, Harden an endpoint and Migrate a contract, each with a description and its step dots">
 </picture>
 
-In **Preset** mode, pick a saved sequence from the list and edit any step before starting.
+In **Pick a workflow** mode, pick a saved sequence from the list and edit any step before starting.
 
 ### Built-in workflows
 
@@ -63,7 +63,7 @@ Choose when a run asks: **Ask before each step**, **Ask after the plan** to stop
 
 ### Workflow rules
 
-The **Rules** tab of Workflows sets what every new run starts with: how it asks, the spend cap, and which providers get the next step. **Use providers with room left** sends steps with no pinned provider to the provider with the most 5h and weekly room, keeps a provider at its limit out of new work, and tells you in one sentence where the next step goes. It starts on in workspaces created from 0.16.0 and off in older ones, and it stays off until a provider that reports limits is on. **Guidance** is text every run starts with: the orchestrator reads it in orchestrated runs, and in custom and preset runs it goes to the roles that write code, Implementer and Docs, unless you pick others under Edit, and **Polish** tidies it into one rule per line. In a custom or preset run, a **Guidance** tag marks each step that received it. The builder opens filled from them and says so in a **From your rules** line; a control you change for one run gets a dot and a **Reset**. A run keeps the rules it started with.
+The **Rules** tab of Workflows sets what every new run starts with: how it asks, the spend cap, and which providers get the next step. **Use providers with room left** sends steps with no pinned provider to the provider with the most 5h and weekly room, keeps a provider at its limit out of new work, and tells you in one sentence where the next step goes. It starts on in workspaces created from 0.16.0 and off in older ones, and it stays off until a provider that reports limits is on. **Guidance** is text every run starts with: the orchestrator reads it in orchestrated runs, and in custom and preset runs it goes to the roles that write code, Implementer and Docs, unless you pick others under Edit, and **Polish** tidies it into one rule per line. In a custom or preset run, a **Guidance** tag marks each step that received it. The builder opens filled from them. When a control differs for one run, a **From your rules** line names what changed and the control gets a dot and a **Reset**; with nothing changed, the line is not there. A run keeps the rules it started with.
 
 ### Spend limit
 

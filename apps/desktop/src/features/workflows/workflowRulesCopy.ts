@@ -1,5 +1,4 @@
-import type { ProviderPolicy, WorkflowRules } from '@goodboy/types';
-import { PROVIDER_LABEL } from '../providers/providerLabel';
+import type { WorkflowRules } from '@goodboy/types';
 import { RUN_AUTONOMY_OPTIONS } from './runAutonomy';
 
 const capAmount = ({ usd }: { readonly usd: number }): string =>
@@ -19,16 +18,6 @@ export const guidanceRuleText = ({ rules }: { readonly rules: WorkflowRules }): 
 
 export const workflowRulesSummary = ({ rules }: { readonly rules: WorkflowRules }): string =>
   [autonomyLabel({ rules }), spendRuleText({ rules }), guidanceRuleText({ rules })].join(' · ');
-
-export const policyProvidersText = ({
-  policy,
-}: {
-  readonly policy: ProviderPolicy | null | undefined;
-}): string =>
-  (policy ?? [])
-    .filter((entry) => entry.state === 'on')
-    .map((entry) => PROVIDER_LABEL[entry.id])
-    .join(', ');
 
 export const canonicalWorkflowRules = ({ rules }: { readonly rules: WorkflowRules }): string =>
   JSON.stringify({

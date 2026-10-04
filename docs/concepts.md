@@ -1241,10 +1241,11 @@ task up again in Goodboy.
   before something starts, so the two never share a screen.
 - **Stop** is the one name for ending a running turn.
 - A word that stays and still needs a sentence (workflow, orchestrated,
-  artifact) gets a short tooltip, six words at most, written once. The
-  `TermHint` and `GLOSSARY`
-  (`apps/desktop/src/features/session/glossary.ts`) stay until the 0.17.0
-  rename round removes them.
+  artifact) gets a short tooltip, six words at most, written once. The mode
+  switch in the workflow builder sets it as the `tooltip` of an option
+  ("Goodboy picks each next agent"). `GlossaryTerm` is gone; `TermHint` and
+  `GLOSSARY` (`apps/desktop/src/features/session/glossary.ts`) stay until the
+  0.17.0 rename round removes them.
 - A round that adds a word removes one, and the PR description lists both.
 - Every screen follows the task order: the task, then integrations, then code,
   then chat. A screen that puts chat before the task has the order wrong.

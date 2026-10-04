@@ -183,11 +183,10 @@ the first line. An orchestrated run tags no step.
 
 **Polish** on guidance uses `polishWorkflowGuidance` in `packages/core`, its own
 prompt next to the goal polish: one rule per line as a list, the language of the
-input, every rule kept and none added. Inside **Edit**, the guidance links to the
-profile field it differs from: "Also sent to every agent but Scout, Debugger,
-Report, Wireframe, Scribe: How agents should work with you", with an **About you**
-button. The names come from `PROFILE_ACCESS`: the roles that never read the
-working rules.
+input, every rule kept and none added. The builder has no "Also sent to" line:
+the guidance box says only where it goes, and the Run defaults tab keeps the
+line about the profile field. The names there come from `PROFILE_ACCESS`: the
+roles that never read the working rules.
 
 ### Spread by what I have left
 

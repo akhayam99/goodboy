@@ -90,14 +90,12 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('WorkflowBuilderView and the workflow rules', () => {
-  it('opens a new builder from the rules and names them in one line', () => {
+  it('opens a new builder from the rules and shows no From your rules row while nothing differs', () => {
     openBuilder();
 
     expect(autonomyChip().getAttribute('aria-label')).toBe('When to ask: Ask after the plan');
     expect(spendChip().getAttribute('aria-label')).toBe('Spend cap: $25.00 · Pause');
-    expect(fromRules()).toBe(
-      'From your rulesAsk after the plan · $25 cap, pause · Claude, Codex · spread on · No guidanceEdit',
-    );
+    expect(screen.queryByTestId('from-your-rules')).toBeNull();
     expect(screen.queryByRole('img', { name: /From: Workflow rules/ })).toBeNull();
   });
 
@@ -110,7 +108,7 @@ describe('WorkflowBuilderView and the workflow rules', () => {
 
     expect(autonomyChip().getAttribute('aria-label')).toBe('When to ask: Run on its own');
     expect(spendChip().getAttribute('aria-label')).toBe('Spend cap: None');
-    expect(fromRules()).toContain('Run on its own · No spend cap');
+    expect(screen.queryByTestId('from-your-rules')).toBeNull();
   });
 
   it('marks a run control that leaves the rules and resets it to them', () => {
@@ -153,7 +151,7 @@ describe('WorkflowBuilderView and the workflow rules', () => {
     seedRules({ ...RULES, standingGuidance: GUIDANCE });
     openBuilder();
 
-    fireEvent.click(screen.getByRole('tab', { name: /custom/i }));
+    fireEvent.click(screen.getByRole('tab', { name: /describe steps/i }));
 
     expect(
       (screen.getByRole('textbox', { name: 'Run guidance' }) as HTMLTextAreaElement).value,
@@ -234,6 +232,11 @@ describe('WorkflowBuilderView and the workflow rules', () => {
     fireEvent.click(screen.getByRole('radio', { name: /Run on its own/ }));
 
     expect(screen.getByTestId('run-changes').textContent).toBe('Changed for this run: when to ask');
-    expect(fromRules()).toContain('Ask after the plan');
+    expect(fromRules()).toBe('From your rulesChanged for this run: when to askEdit');
+
+    fireEvent.click(autonomyChip());
+    fireEvent.click(screen.getByRole('radio', { name: /Ask after the plan/ }));
+
+    expect(screen.queryByTestId('from-your-rules')).toBeNull();
   });
 });

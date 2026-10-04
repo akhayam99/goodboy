@@ -443,7 +443,7 @@ on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
   **How to work on it** (`HowToWorkOnIt`) underneath: the same Run a workflow
   or Ask an agent choice as the other two tabs, precompiled with that goal,
   Run a workflow preselected. Run a workflow is the same embedded
-  `WorkflowBuilderView` as the Workflow tab (Orchestrated, Custom or Preset,
+  `WorkflowBuilderView` as the Workflow tab (Orchestrated, Describe steps or Pick a workflow,
   the plan, guidance, Can use, Starts, when to ask, Spend cap), with the issue as
   its goal and its own draft under `kickoff-task:<workspace>`. When the issue
   maps to a project (`launchMountFor`, the Inbox rule: a GitHub or GitLab repo
@@ -494,8 +494,8 @@ reach NW-230 anymore`. Pick up a task shows only the open starred issues,
   fetching by id.
 - **Run a workflow** is the workflow builder itself (`WorkflowBuilderView`
   with a `kickoff` target), the same one Overview > Workflows > Create opens:
-  title, goal card with Add files and Polish, the Orchestrated / Custom /
-  Preset switch, Can use, the plan preview with the orchestrator row or the
+  title, goal card with Add files and Polish, the Orchestrated / Describe steps /
+  Pick a workflow switch, Can use, the plan preview with the orchestrator row or the
   editable steps, guidance, Starts, when to ask, Spend cap and Start workflow with
   its reason. Its goal field is the kickoff goal (`workflowGoal` in the
   draft), the only one on screen. Its draft lives under `kickoff:<workspace>`
