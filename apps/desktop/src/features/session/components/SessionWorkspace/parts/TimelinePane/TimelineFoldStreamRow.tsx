@@ -56,7 +56,7 @@ export const TimelineFoldStreamRow = ({
       railWidth={railWidth}
       sessionId={sessionId}
       openTarget={{
-        label: isExpanded ? 'Fold' : 'Open',
+        label: isExpanded ? 'Collapse' : 'Expand',
         open: () => set({ isExpanded: !isExpanded }),
       }}
       expansion={{ isExpanded, controlsId: null, onSet: set }}

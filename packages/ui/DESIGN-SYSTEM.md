@@ -608,7 +608,8 @@ the title, never truncated: the title gives way first, down to 96px, then the
 summary keeps only its first clause and the kept `Context +N` part ("8 steps ·
 Context +2"); `Context +N` counts what the run's agents added to the decisions and
 learnings and shows only when N > 0,
-the hint "Open ↵" or "Fold ↵", and the chevron. A run that asks you something,
+and the chevron. Its node is the same `mixed` ball with the step count in its
+center, closed or open, and its hint verb is Expand or Collapse. A run that asks you something,
 failed or is still running is never folded. Every group row fills the routing,
 time and cost columns with the totals of what it holds (`groupTotals`), counted
 once, and its time is fixed: a group row never reads the shared work clock. A

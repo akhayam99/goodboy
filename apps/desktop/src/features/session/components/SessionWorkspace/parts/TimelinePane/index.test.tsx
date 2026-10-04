@@ -1710,6 +1710,27 @@ describe('TimelinePane finished run', () => {
     expect(screen.getByText('Step plan')).toBeDefined();
   });
 
+  it('draws the run as a ball with its step count, closed and open', () => {
+    storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'completed' }) };
+    const { container } = render(<TimelinePane session={SESSION} actions={null} />);
+    const ball = () => {
+      const node = container.querySelector('[data-row-id] [data-node-state="mixed"]');
+      if (node === null) {
+        throw new Error('the run row has no ball');
+      }
+      return node;
+    };
+
+    expect(ball().getAttribute('aria-label')).toBe('3 steps');
+    expect(ball().textContent).toBe('3');
+    expect(within(runRow()).getByText('Expand ↵')).toBeDefined();
+
+    fireEvent.click(runRow());
+
+    expect(ball().textContent).toBe('3');
+    expect(within(runRow()).getByText('Collapse ↵')).toBeDefined();
+  });
+
   it('keeps the whole summary of a folded run beside its title', () => {
     storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'completed' }) };
     questions.answered = [
