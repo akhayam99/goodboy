@@ -5,21 +5,16 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly isOnBoard: boolean;
-  readonly studioTitle: string | null;
+  readonly hasStudio: boolean;
   readonly onBoard: () => void;
 };
 
-export const BoardButton = ({ isOnBoard, studioTitle, onBoard }: Props) => {
-  const isCurrent = isOnBoard && studioTitle === null;
+export const BoardButton = ({ isOnBoard, hasStudio, onBoard }: Props) => {
+  const isCurrent = isOnBoard && !hasStudio;
   const glyph = shortcutGlyphs('session.board');
-  const tooltip = isCurrent
-    ? "You're on the board"
-    : isOnBoard && studioTitle !== null
-      ? `Close ${studioTitle}, show the board  ${glyph}`
-      : `Board  ${glyph}`;
 
   return (
-    <Tooltip content={tooltip} side="bottom">
+    <Tooltip content={`Board  ${glyph}`} side="bottom">
       <button
         type="button"
         aria-current={isCurrent ? 'page' : undefined}
