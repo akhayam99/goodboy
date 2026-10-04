@@ -29,6 +29,7 @@ import {
 } from './buildTimelineStream';
 import { dayLabel } from './dayLabel';
 import { groupSummaryText } from './groupSummary';
+import { CONTEXT_LABEL, decisionCountsText } from './sessionEventPresentation';
 import { layoutTimelineRail } from '../../workTreeModel/railGeometry';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -233,7 +234,7 @@ const learning = ({ id, agentId }: { readonly id: string; readonly agentId: stri
   }) satisfies SessionContextItem;
 
 describe('buildTimelineStream steps group', () => {
-  it('counts the context the run added as Context +N', () => {
+  it('names the context the run changed with the same counts as its rows', () => {
     const { items } = streamOf({
       agents: finishedSteps(),
       events: [
@@ -246,17 +247,108 @@ describe('buildTimelineStream steps group', () => {
     });
     const fold = rowOf({ items, id: RUN_ROW }).fold;
     expect(fold === undefined ? null : groupSummaryText({ summary: fold.summary })).toBe(
-      '3 steps · Context +3',
+      '3 steps · Context · 2 added, 1 replaced, 2 withdrawn',
     );
   });
 
-  it('leaves Context out when the run only took context away', () => {
+  it('shows the closed run phrase as the row title and detail of its context rows', () => {
+    const payload = { added: 2, replaced: 2, agentId: 'plan' };
+    const opened = streamOf({
+      agents: finishedSteps(),
+      events: [contextEvent({ id: 'e1', payload })],
+      expanded: [RUN_ROW],
+    });
+    const closed = streamOf({
+      agents: finishedSteps(),
+      events: [contextEvent({ id: 'e1', payload })],
+    });
+    const row = rowOf({ items: opened.items, id: 'event:e1' });
+    const fold = rowOf({ items: closed.items, id: RUN_ROW }).fold;
+
+    expect(
+      row.entry.kind === 'event' ? decisionCountsText({ payload: row.entry.event.payload }) : null,
+    ).toBe('2 added, 2 replaced');
+    expect(fold === undefined ? null : groupSummaryText({ summary: fold.summary })).toBe(
+      `3 steps · ${CONTEXT_LABEL} · 2 added, 2 replaced`,
+    );
+  });
+
+  it('leaves Context out of the phrase when no context row changed anything', () => {
     const { items } = streamOf({
       agents: finishedSteps(),
-      events: [contextEvent({ id: 'e1', payload: { withdrawn: 1, agentId: 'plan' } })],
+      events: [contextEvent({ id: 'e1', payload: { agentId: 'plan' } })],
     });
     const fold = rowOf({ items, id: RUN_ROW }).fold;
     expect(fold === undefined ? null : groupSummaryText({ summary: fold.summary })).toBe('3 steps');
+  });
+
+  it('puts the context rows of a run agent on the run lane and hides them when closed', () => {
+    const events = [
+      contextEvent({ id: 'e1', payload: { added: 1, agentId: 'plan' } }),
+      contextEvent({ id: 'e2', payload: { added: 3 } }),
+    ];
+    const learnings = [learning({ id: 'l1', agentId: 'build' })];
+    const opened = streamOf({ agents: finishedSteps(), events, learnings, expanded: [RUN_ROW] });
+    const closed = streamOf({ agents: finishedSteps(), events, learnings });
+
+    expect(rowOf({ items: opened.items, id: 'event:e1' }).groupId).toBe(`lane:${RUN_ROW}`);
+    expect(rowOf({ items: opened.items, id: 'event:e1' }).grade).toBe('fact');
+    expect(rowOf({ items: opened.items, id: 'learning:l1' }).groupId).toBe(`lane:${RUN_ROW}`);
+    expect(rowIds(closed)).toEqual(['event:e2', RUN_ROW]);
+  });
+
+  it('grades an answered lane question as a compact fact and an open one as a step', () => {
+    const answered = streamOf({
+      agents: finishedSteps(),
+      questions: [question({ id: 'q1', agentId: 'plan', status: 'answered' })],
+      expanded: [RUN_ROW],
+    });
+    const open = streamOf({
+      agents: finishedSteps(),
+      questions: [question({ id: 'q2', agentId: 'plan', status: 'open' })],
+    });
+
+    expect(rowOf({ items: answered.items, id: 'question:q1' }).grade).toBe('fact');
+    expect(rowOf({ items: open.items, id: 'question:q2' }).grade).toBe('step');
+  });
+
+  it('never lets a row clock rise down the list when a question was answered hours later', () => {
+    const late: OpenQuestion = {
+      ...question({ id: 'q1', agentId: 'plan', status: 'answered' }),
+      answeredAt: at({ hour: 15 }),
+    };
+    const { items } = streamOf({
+      agents: finishedSteps(),
+      questions: [late],
+      events: [contextEvent({ id: 'e1', payload: { added: 1, agentId: 'plan' } })],
+      expanded: [RUN_ROW],
+    });
+    const clocks = items.flatMap((item) =>
+      item.kind === 'row' && item.at != null ? [item.at] : [],
+    );
+
+    expect(clocks.length).toBeGreaterThan(3);
+    expect(clocks).toEqual([...clocks].sort((first, second) => second.localeCompare(first)));
+  });
+
+  it('keeps a context event without an agent on the spine', () => {
+    const { items } = streamOf({
+      agents: finishedSteps(),
+      events: [contextEvent({ id: 'e3', payload: { added: 4 } })],
+      expanded: [RUN_ROW],
+    });
+
+    expect(rowOf({ items, id: 'event:e3' }).groupId).toBeNull();
+  });
+
+  it('keeps a context event of an agent outside any run on the spine', () => {
+    const { items } = streamOf({
+      agents: finishedSteps(),
+      events: [contextEvent({ id: 'e4', payload: { added: 5, agentId: 'elsewhere' } })],
+      expanded: [RUN_ROW],
+    });
+
+    expect(rowOf({ items, id: 'event:e4' }).groupId).toBeNull();
   });
 
   it('shows a finished run as its one row with what was inside', () => {

@@ -37,7 +37,7 @@ import { runIdentity, runIdentitySeed, type RunIdentity } from './runIdentity';
 import { groupResolveBatches } from './resolveBatchGroups';
 import { resolverRowState, type ResolveActivityFacts } from './resolveActivity';
 import { resolveBatchRowState, type ResolveBatchRef } from './resolveBatchSummary';
-import { decisionDiff, isEmptyDecisionDiff } from './sessionEventPresentation';
+import { decisionCountsText, isEmptyDecisionDiff } from './sessionEventPresentation';
 import { stepsGroupSummary, type GroupSummary, type StepsGroupKind } from './groupSummary';
 import {
   SUBAGENT_GROUP_MIN_MEMBERS,
@@ -1326,9 +1326,10 @@ type LaneFacts = {
   readonly rows: number;
   readonly answered: number;
   readonly hasOpen: boolean;
+  readonly contextTotals: DecisionTotals;
 };
 
-const NO_LANE_FACTS: LaneFacts = { rows: 0, answered: 0, hasOpen: false };
+const NO_LANE_FACTS: LaneFacts = { rows: 0, answered: 0, hasOpen: false, contextTotals: {} };
 
 const NO_FOLDS: ReadonlyMap<string, TimelineRowFold> = new Map();
 
@@ -1336,7 +1337,12 @@ const laneRootOf = ({ entry }: { readonly entry: TimelineTopLevelEntry }): strin
   if (entry.kind === 'question') {
     return entry.lane?.rootEntryId ?? null;
   }
-  if (entry.kind === 'plan' || entry.kind === 'artifact') {
+  if (
+    entry.kind === 'plan' ||
+    entry.kind === 'artifact' ||
+    entry.kind === 'event' ||
+    entry.kind === 'learning'
+  ) {
     return entry.lane?.rootEntryId ?? null;
   }
   return null;
@@ -1358,7 +1364,23 @@ const isLaneEntryShown = ({
   if (entry.kind === 'artifact') {
     return isArtifactShown({ entry, context });
   }
-  return false;
+  if (entry.kind === 'event') {
+    return !isEmptyDecisionDiff({ payload: entry.event.payload });
+  }
+  return entry.kind === 'learning';
+};
+
+const contextPayloadOf = ({
+  entry,
+}: {
+  readonly entry: TimelineTopLevelEntry;
+}): SessionEventPayload | null => {
+  if (entry.kind === 'learning') {
+    return { added: 1 };
+  }
+  return entry.kind === 'event' && entry.event.kind === 'decisions_changed'
+    ? entry.event.payload
+    : null;
 };
 
 const laneFactsByRootId = ({
@@ -1381,61 +1403,13 @@ const laneFactsByRootId = ({
       answered:
         current.answered + questions.filter((question) => question.status === 'answered').length,
       hasOpen: current.hasOpen || questions.some((question) => question.status === 'open'),
+      contextTotals: addDecisionTotals({
+        totals: current.contextTotals,
+        payload: contextPayloadOf({ entry }),
+      }),
     });
   }
   return facts;
-};
-
-const treeAgentIds = ({ entry }: { readonly entry: TimelineAgentEntry }): ReadonlyArray<string> => [
-  entry.agent.id,
-  ...entry.children.flatMap((child) => treeAgentIds({ entry: child })),
-];
-
-const contextAgentIdOf = ({
-  entry,
-}: {
-  readonly entry: TimelineTopLevelEntry;
-}): { readonly agentId: string; readonly added: number } | null => {
-  if (entry.kind === 'learning') {
-    const agentId = entry.item.source?.agentId ?? null;
-    return agentId === null ? null : { agentId, added: 1 };
-  }
-  if (entry.kind !== 'event' || entry.event.kind !== 'decisions_changed') {
-    return null;
-  }
-  const agentId = entry.event.payload?.agentId ?? null;
-  if (agentId === null) {
-    return null;
-  }
-  return { agentId, added: decisionDiff({ payload: entry.event.payload }).additions };
-};
-
-const contextAddedByRunId = ({
-  entries,
-}: {
-  readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
-}): ReadonlyMap<string, number> => {
-  const runOfAgent = new Map<string, string>();
-  for (const entry of entries) {
-    if (entry.kind !== 'run') {
-      continue;
-    }
-    for (const child of entry.children) {
-      if (child.kind === 'agent') {
-        treeAgentIds({ entry: child }).forEach((agentId) => runOfAgent.set(agentId, entry.id));
-      }
-    }
-  }
-  const added = new Map<string, number>();
-  for (const entry of entries) {
-    const update = contextAgentIdOf({ entry });
-    const runId = update === null ? undefined : runOfAgent.get(update.agentId);
-    if (update === null || runId === undefined) {
-      continue;
-    }
-    added.set(runId, (added.get(runId) ?? 0) + update.added);
-  }
-  return added;
 };
 
 const isRunChildShown = ({
@@ -1458,14 +1432,12 @@ type FoldParams<Entry> = {
   readonly entry: Entry;
   readonly lane: LaneFacts;
   readonly context: EmitContext;
-  readonly contextAdded?: number;
 };
 
 const runFoldOf = ({
   entry,
   lane,
   context,
-  contextAdded = 0,
 }: FoldParams<TimelineRunEntry>): TimelineRowFold | null => {
   const expanded = context.expandedGroupIds;
   if (expanded === null || lane.hasOpen) {
@@ -1490,7 +1462,7 @@ const runFoldOf = ({
       kind: 'run',
       steps,
       answered: lane.answered,
-      contextAdded,
+      contextText: decisionCountsText({ payload: lane.contextTotals }),
     }),
   };
 };
@@ -1565,13 +1537,12 @@ const foldsOf = ({
   readonly context: EmitContext;
 }): ReadonlyMap<string, TimelineRowFold> => {
   const lanes = laneFactsByRootId({ entries, context });
-  const contextAdded = contextAddedByRunId({ entries });
   const folds = new Map<string, TimelineRowFold>();
   for (const entry of entries) {
     const lane = lanes.get(entry.id) ?? NO_LANE_FACTS;
     const fold =
       entry.kind === 'run'
-        ? runFoldOf({ entry, lane, context, contextAdded: contextAdded.get(entry.id) ?? 0 })
+        ? runFoldOf({ entry, lane, context })
         : entry.kind === 'agent'
           ? chainFoldOf({ entry, lane, context })
           : null;
@@ -1588,7 +1559,7 @@ const questionGradeOf = ({
   readonly entry: TimelineQuestionEntry;
 }): TimelineRowGrade => {
   if (entry.lane != null) {
-    return 'step';
+    return entry.questions.some((question) => question.status === 'open') ? 'step' : 'fact';
   }
   return entry.questions.some((question) => question.status === 'open') ? 'entry' : 'fact';
 };
@@ -1997,6 +1968,25 @@ export const buildTimelineStream = ({
         groupId: laneIdOf({ entryId: entry.lane.rootEntryId }),
         ordinal: null,
         sortOrdinal: 0,
+        rowState: DONE_ROW_STATE,
+        hasUnread: false,
+        isPending: false,
+        ...laneSlot,
+      });
+      continue;
+    }
+    if ((entry.kind === 'event' || entry.kind === 'learning') && entry.lane != null) {
+      rows.push({
+        kind: 'row',
+        id: entry.id,
+        at: entry.at,
+        grade: 'fact',
+        entry,
+        identity: entry.lane.identity,
+        familyId: entry.lane.rootEntryId,
+        groupId: laneIdOf({ entryId: entry.lane.rootEntryId }),
+        ordinal: null,
+        sortOrdinal: entry.kind === 'event' ? eventRank({ kind: entry.event.kind }) : 0,
         rowState: DONE_ROW_STATE,
         hasUnread: false,
         isPending: false,

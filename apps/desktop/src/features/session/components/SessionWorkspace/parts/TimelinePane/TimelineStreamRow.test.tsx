@@ -5,8 +5,10 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import type {
   TimelineAgentEntry,
+  TimelineQuestionEntry,
   TimelineRunEntry,
 } from '../../../../timeline/buildTimelineGroups';
+import { tooltipTextOf } from '../../../../../../__tests__/helpers/tooltip';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 import { DONE_ROW_STATE, type RowState } from '../../../../../workTreeModel/rowState';
 import type { TimelineLaneControl } from './TimelineRail';
@@ -23,6 +25,7 @@ vi.mock('../../../../../../store', () => ({
 
 import { TimelineRowStateLine } from './TimelineRowStateLine';
 import { TimelineStreamRow } from './TimelineStreamRow';
+import { CLOCK_ORDER_TOOLTIP } from './timelineClock';
 
 type TypedStringParams = {
   readonly value: string;
@@ -194,6 +197,34 @@ describe('TimelineStreamRow', () => {
     expect(screen.getByText(/\d{2}:\d{2}/)).toBeDefined();
     expect(screen.getByText('2')).toBeDefined();
     expect(screen.getByText('Implement the parser')).toBeDefined();
+  });
+
+  it('explains the ordering in a tooltip on the clock', () => {
+    renderRow();
+
+    expect(tooltipTextOf({ element: screen.getByText(/\d{2}:\d{2}/) })).toBe(CLOCK_ORDER_TOOLTIP);
+  });
+
+  it('prints no clock on an answered question that sits in a lane', () => {
+    const answered = {
+      kind: 'question',
+      id: 'question:q1',
+      at: '2026-08-17T15:04:00Z',
+      questions: [{ id: 'q1', text: 'Which key?', status: 'answered', userAnswer: 'yes' }],
+      lane: { identity: runIdentity({ laneIndex: 0, seed: 0 }), rootEntryId: 'run:one' },
+    } as unknown as TimelineQuestionEntry;
+    render(
+      <TimelineStreamRow
+        item={{ ...itemOf(), id: 'question:q1', grade: 'fact', entry: answered }}
+        rail={railOf()}
+        railWidth={32}
+        sessionId={SESSION_ID}
+        openTarget={null}
+        action={null}
+      />,
+    );
+
+    expect(screen.queryByText(/\d{2}:\d{2}/)).toBeNull();
   });
 
   it('says the open target and its keys to assistive tech with no hint in the row', () => {

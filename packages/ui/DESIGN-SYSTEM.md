@@ -613,11 +613,17 @@ subagent that asks you a question counts the same way (`groupChild` ask).
 
 A finished workflow run or agent chain with three rows or more is a third group
 kind, `steps`: the run row itself is the group row, with its own node, the
-summary from `groupSummary` ("8 steps · 1 question answered · Context +2") after
-the title, never truncated: the title gives way first, down to 96px, then the
-summary keeps only its first clause and the kept `Context +N` part ("8 steps ·
-Context +2"); `Context +N` counts what the run's agents added to the decisions and
-learnings and shows only when N > 0,
+summary from `groupSummary` ("8 steps · 1 question answered · Context · 2 added,
+2 replaced") after the title, never truncated: the title gives way first, down to
+96px, then the summary keeps only its first clause and the kept Context part ("8
+steps · Context · 2 added, 2 replaced"). The Context part is the same string as
+the Context row inside the lane (`CONTEXT_LABEL` and `decisionCountsText`), summed
+over the rows of the run's agents, and shows only when a row changed something.
+Those Context rows are members of the run lane, graded `fact`, and a closed run
+hides them; a Context event with no agent stays on the spine. An answered or
+dismissed question in a lane is a compact `fact` row with no clock, an open one
+stays a `step`. The gutter clock carries a tooltip that says rows are newest first
+and stamped with their own moment (agent start, answer time or record time),
 and the chevron. Its node is the same `mixed` ball with the step count in its
 center, closed or open, and its hint verb is Expand or Collapse. A run that asks you something,
 failed or is still running is never folded. Every group row fills the routing,

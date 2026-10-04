@@ -1,6 +1,6 @@
 import { useContext, type KeyboardEvent, type ReactNode } from 'react';
 import type { ObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
-import { Button, WORK_META_COLUMN, WORK_ROW, cn, tintClasses } from '@goodboy/ui';
+import { Button, Tooltip, WORK_META_COLUMN, WORK_ROW, cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../../store';
 import { formatClock } from '../../../../../../shared/utils/time/formatClock';
@@ -14,6 +14,7 @@ import { eventMatches } from '../../../../../../shared/keyboard/dispatcher';
 import { SHORTCUTS } from '../../../../../../shared/keyboard/registry';
 import { TIMELINE_GUTTER } from './timelineLayout';
 import { TimelineActionColumn } from './timelineActionColumn';
+import { CLOCK_ORDER_TOOLTIP, isClocklessRow } from './timelineClock';
 import { TimelineRail, type TimelineLaneControl, type TimelineLaneTarget } from './TimelineRail';
 import { TimelineRowLabel } from './TimelineRowLabel';
 import { TimelineRowMarker } from './TimelineRowMarker';
@@ -157,7 +158,11 @@ export const TimelineStreamRow = ({
           className="flex items-center justify-end pr-2 text-meta text-faint-foreground"
           style={{ height: boxHeight }}
         >
-          {item.at == null ? null : formatClock({ at: item.at })}
+          {item.at == null || isClocklessRow({ item }) ? null : (
+            <Tooltip content={CLOCK_ORDER_TOOLTIP}>
+              <span>{formatClock({ at: item.at })}</span>
+            </Tooltip>
+          )}
         </span>
       </span>
       <span className="relative shrink-0" style={{ width: railWidth }}>
