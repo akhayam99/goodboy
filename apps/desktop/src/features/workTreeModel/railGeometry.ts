@@ -6,7 +6,7 @@ export const RAIL_EDGE_BLEED = 1;
 
 type RailDash = 'solid' | 'dashed';
 
-export type RailGroupShape = 'open' | 'merged' | 'closed' | 'rejoining';
+export type RailGroupShape = 'open' | 'merged' | 'closed' | 'rejoining' | 'head';
 
 export type RailGroupInput = {
   readonly id: string;
@@ -38,7 +38,7 @@ export type RailSegment = {
 };
 
 export type RailJoin = {
-  readonly kind: 'branch' | 'rejoin';
+  readonly kind: 'branch' | 'rejoin' | 'stub';
   readonly spineColumn: number;
   readonly laneColumn: number;
   readonly laneId: string | null;
@@ -99,12 +99,17 @@ type LaneParams = {
 
 type JoinPathParams = {
   readonly join: PlannedJoin;
+  readonly rowHeight: number;
 };
 
-const joinPathOf = ({ join }: JoinPathParams): string => {
+const joinPathOf = ({ join, rowHeight }: JoinPathParams): string => {
   const spineX = railColumnX({ column: join.spineColumn });
   const laneX = railColumnX({ column: join.laneColumn });
   const edgeY = join.dash === 'solid' ? -RAIL_EDGE_BLEED : 0;
+  if (join.kind === 'stub') {
+    const handle = Math.min(RAIL_CURVE_HANDLE, rowHeight - join.anchorY);
+    return `M ${laneX} ${join.anchorY} C ${laneX - RAIL_CURVE_HANDLE} ${join.anchorY}, ${spineX} ${rowHeight - handle}, ${spineX} ${rowHeight}`;
+  }
   if (join.kind === 'rejoin') {
     const radiusX = Math.abs(laneX - spineX);
     const radiusY = Math.min(radiusX, join.anchorY);
@@ -301,6 +306,7 @@ export const layoutTimelineRail = ({ rows, groups, hasSpine = true }: Params): R
   const ordered = [...spans].sort(
     (first, second) =>
       depthOf({ group: first.group }) - depthOf({ group: second.group }) ||
+      Number(second.group.shape === 'head') - Number(first.group.shape === 'head') ||
       first.interval.from - second.interval.from ||
       first.topIndex - second.topIndex ||
       first.group.id.localeCompare(second.group.id),
@@ -380,6 +386,18 @@ export const layoutTimelineRail = ({ rows, groups, hasSpine = true }: Params): R
         dash: nearestRow.isPending ? 'dashed' : 'solid',
         fromY: originRow.topY,
         toY: anchorOf({ row: originRow }),
+      });
+    }
+    if (originRow !== undefined && isSelfOrigin && group.shape === 'head') {
+      joinsByIndex[originIndex]?.push({
+        kind: 'stub',
+        spineColumn: parentColumn,
+        laneColumn: column,
+        laneId: null,
+        identityIndex: null,
+        isMuted: false,
+        dash: 'solid',
+        anchorY: anchorOf({ row: originRow }),
       });
     }
     if (originRow !== undefined && nearestRow !== undefined && !isSelfOrigin) {
@@ -478,7 +496,7 @@ export const layoutTimelineRail = ({ rows, groups, hasSpine = true }: Params): R
       }),
       joins: (joinsByIndex[index] ?? []).map((join) => ({
         ...join,
-        path: joinPathOf({ join }),
+        path: joinPathOf({ join, rowHeight: row.height }),
       })),
       markerColumn: row.groupId == null ? 0 : (columnByGroupId.get(row.groupId) ?? 0),
       markerY: row.markerY,

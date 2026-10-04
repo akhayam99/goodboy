@@ -1,5 +1,7 @@
 import type { Tone } from '@goodboy/ui';
 
+import { CONTEXT_LABEL } from './sessionEventPresentation';
+
 export type GroupSummaryPart<State extends string = string> = {
   readonly state: State;
   readonly tone: Tone;
@@ -74,19 +76,19 @@ type StepsSummaryParams = {
   readonly kind: StepsGroupKind;
   readonly steps: number;
   readonly answered: number;
-  readonly contextAdded?: number;
+  readonly contextText?: string | null;
 };
 
 export const stepsGroupSummary = ({
   kind,
   steps,
   answered,
-  contextAdded = 0,
+  contextText = null,
 }: StepsSummaryParams): GroupSummary<StepsState> => {
   const counts = new Map<StepsState, number>([
     ['steps', steps],
     ['answered', answered],
-    ['context', contextAdded],
+    ['context', contextText === null ? 0 : 1],
   ]);
   return {
     total: steps,
@@ -104,7 +106,9 @@ export const stepsGroupSummary = ({
       toneOf: () => 'neutral',
       failure: null,
     }).map((part) =>
-      part.state === 'context' ? { ...part, text: `Context +${part.count}`, isKept: true } : part,
+      part.state === 'context' && contextText !== null
+        ? { ...part, text: `${CONTEXT_LABEL} · ${contextText}`, isKept: true }
+        : part,
     ),
     attentionCount: 0,
     failedCount: 0,

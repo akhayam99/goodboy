@@ -414,7 +414,7 @@ points at the transcript; nothing stops the agent. While the row waits on you
 the arc freezes in amber and the time freezes too, never "left": the pause is
 said once, by the row state and the node. A failed row drops the arc and reads
 "4m", next to its "Failed" state. A finished row shows its active time ("8m
-12s"), plus "Longer than usual" when it ran past the band. Without enough
+12s"), with no "Longer than usual" note: the row says it only while it runs. Without enough
 history a running row shows only its elapsed time, the node keeps the moving
 border, and the tooltip counts what is missing ("No estimate yet: 3 of 5
 finished scout turns on 3.8 Flash"). The run row adds up finished steps and

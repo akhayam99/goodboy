@@ -24,6 +24,7 @@ const PARENT = 'lead';
 const GROUP_ID = 'subagents:agent:lead';
 const PARENT_LANE = 'lane:agent:lead';
 const GROUP_LANE = `lane:${GROUP_ID}`;
+const GROUP_HEAD = `head:${GROUP_ID}`;
 
 const agentAt = ({
   id,
@@ -147,7 +148,8 @@ describe('buildTimelineStream subagent groups', () => {
     expect(ids.slice(-2)).toEqual([GROUP_ID, 'agent:lead']);
     const layout = layoutTimelineRail({ rows: items, groups });
     const header = layout.rows.find((rail) => rail.id === GROUP_ID);
-    expect(header?.markerColumn).toBe(layout.columnByGroupId.get(PARENT_LANE));
+    expect(header?.markerColumn).toBe(layout.columnByGroupId.get(GROUP_HEAD));
+    expect(header?.markerColumn).toBeGreaterThan(0);
   });
 
   it('leaves two subagents as plain rows', () => {
@@ -162,9 +164,12 @@ describe('buildTimelineStream subagent groups', () => {
 
     expect(rows.map((row) => row.id)).toEqual([GROUP_ID, 'agent:lead']);
     const [group] = rows;
-    expect(group?.groupId).toBe(PARENT_LANE);
+    expect(group?.groupId).toBe(GROUP_HEAD);
     expect(group?.entry.kind).toBe('subagentGroup');
-    expect(groups.map((entry) => entry.id)).toEqual([PARENT_LANE]);
+    expect(groups.map((entry) => entry.id)).toEqual([PARENT_LANE, GROUP_HEAD]);
+    expect(groups[1]).toEqual(
+      expect.objectContaining({ parentGroupId: PARENT_LANE, shape: 'head' }),
+    );
   });
 
   it('summarises six subagents by state and sits at the earliest subagent start', () => {
@@ -207,12 +212,19 @@ describe('buildTimelineStream subagent groups', () => {
       'agent:lead',
     ]);
     expect(rows.slice(0, 4).every((row) => row.groupId === GROUP_LANE)).toBe(true);
+    expect(rows[4]?.groupId).toBe(GROUP_HEAD);
     expect(groups).toEqual([
       expect.objectContaining({ id: PARENT_LANE, originRowId: 'agent:lead' }),
       expect.objectContaining({
-        id: GROUP_LANE,
+        id: GROUP_HEAD,
         originRowId: GROUP_ID,
         parentGroupId: PARENT_LANE,
+        shape: 'head',
+      }),
+      expect.objectContaining({
+        id: GROUP_LANE,
+        originRowId: GROUP_ID,
+        parentGroupId: GROUP_HEAD,
         shape: 'merged',
       }),
     ]);
@@ -222,7 +234,13 @@ describe('buildTimelineStream subagent groups', () => {
 
     const layout = layoutTimelineRail({ rows: items, groups });
     const groupRail = layout.rows[items.findIndex((item) => item.id === GROUP_ID)];
-    expect(groupRail?.joins.map((join) => join.kind)).toContain('branch');
+    expect(groupRail?.joins.map((join) => join.kind)).toEqual(['stub', 'branch']);
+    expect(layout.columnByGroupId.get(GROUP_HEAD)).toBe(
+      (layout.columnByGroupId.get(PARENT_LANE) ?? 0) + 1,
+    );
+    expect(layout.columnByGroupId.get(GROUP_LANE)).toBe(
+      (layout.columnByGroupId.get(GROUP_HEAD) ?? 0) + 1,
+    );
   });
 
   it('stays newest first with the group closed and open', () => {

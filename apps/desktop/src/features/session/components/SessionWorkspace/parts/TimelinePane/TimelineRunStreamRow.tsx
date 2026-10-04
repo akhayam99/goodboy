@@ -80,7 +80,12 @@ export const TimelineRunStreamRow = ({
       action={action}
       diffStat={diffStat}
       meta={<TimelineRunMeta progress={runStepProgress({ entry })} time={time} costUsd={costUsd} />}
-      state={<TimelineRowStateLine state={item.rowState} note={time?.note ?? null} />}
+      state={
+        <TimelineRowStateLine
+          state={item.rowState}
+          note={item.rowState.phase === 'running' ? (time?.note ?? null) : null}
+        />
+      }
       progress={time?.progress ?? null}
       isRevealed={isRevealed}
       menu={menu}

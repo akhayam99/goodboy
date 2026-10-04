@@ -11,6 +11,7 @@ import {
 import { IntegrationGlyph } from '../../../../../integrations/components/IntegrationGlyph';
 import { rowStateNode, rowStateTone } from '../../../../../workTreeModel/rowStateCopy';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
+import { groupSummaryText } from '../../../../timeline/groupSummary';
 import { resolveBatchTitle } from '../../../../timeline/resolveBatchSummary';
 import { subagentGroupTitle } from '../../../../timeline/subagentGroups';
 import { sessionEventGlyph } from '../../../../timeline/sessionEventPresentation';
@@ -85,6 +86,19 @@ export const TimelineRowMarker = ({ item, progress = null }: Props) => {
         label={subagentGroupTitle({ total: entry.summary.total })}
         mark={{ kind: 'index', value: String(entry.summary.total) }}
         parts={entry.summary.parts.map((part) => ({ tone: part.tone, count: part.count }))}
+        hasUnread={item.hasUnread}
+      />
+    );
+  }
+
+  if ((entry.kind === 'run' || entry.kind === 'agent') && item.fold !== undefined) {
+    const { summary } = item.fold;
+    return (
+      <WorkNode
+        state="mixed"
+        label={groupSummaryText({ summary })}
+        mark={{ kind: 'index', value: String(summary.total) }}
+        parts={[{ tone: 'neutral', count: summary.total }]}
         hasUnread={item.hasUnread}
       />
     );

@@ -37,7 +37,7 @@ import { runIdentity, runIdentitySeed, type RunIdentity } from './runIdentity';
 import { groupResolveBatches } from './resolveBatchGroups';
 import { resolverRowState, type ResolveActivityFacts } from './resolveActivity';
 import { resolveBatchRowState, type ResolveBatchRef } from './resolveBatchSummary';
-import { decisionDiff, isEmptyDecisionDiff } from './sessionEventPresentation';
+import { decisionCountsText, isEmptyDecisionDiff } from './sessionEventPresentation';
 import { stepsGroupSummary, type GroupSummary, type StepsGroupKind } from './groupSummary';
 import {
   SUBAGENT_GROUP_MIN_MEMBERS,
@@ -206,6 +206,33 @@ const eventRank = ({ kind }: { readonly kind: SessionEventKind }): number => {
 };
 
 const laneIdOf = ({ entryId }: { readonly entryId: string }): string => `lane:${entryId}`;
+
+type PushHeadParams = {
+  readonly context: EmitContext;
+  readonly entryId: string;
+  readonly parentGroupId: string | null;
+  readonly identityIndex: number | null;
+  readonly isMuted: boolean;
+};
+
+const pushHead = ({
+  context,
+  entryId,
+  parentGroupId,
+  identityIndex,
+  isMuted,
+}: PushHeadParams): string => {
+  const id = `head:${entryId}`;
+  context.groups.push({
+    id,
+    parentGroupId,
+    identityIndex,
+    isMuted,
+    originRowId: entryId,
+    shape: 'head',
+  });
+  return id;
+};
 
 const dayKeyOf = ({ at }: { readonly at: string }): string => new Date(at).toDateString();
 
@@ -903,6 +930,13 @@ const subagentGroupRows = ({
     }),
     isExpanded: context.expandedGroupIds?.has(id) === true,
   };
+  const headId = pushHead({
+    context,
+    entryId: id,
+    parentGroupId: parentLaneId,
+    identityIndex: identity?.index ?? null,
+    isMuted,
+  });
   const header: DraftRow = {
     kind: 'row',
     id,
@@ -911,7 +945,7 @@ const subagentGroupRows = ({
     entry: group,
     identity,
     familyId,
-    groupId: parentLaneId,
+    groupId: headId,
     ordinal: null,
     sortOrdinal: headerSortOrdinal({
       parentOrdinal: entry.ordinal,
@@ -931,7 +965,7 @@ const subagentGroupRows = ({
   const laneId = laneIdOf({ entryId: id });
   context.groups.push({
     id: laneId,
-    parentGroupId: parentLaneId,
+    parentGroupId: headId,
     identityIndex: identity?.index ?? null,
     isMuted,
     originRowId: id,
@@ -1043,10 +1077,20 @@ const agentRows = ({
   const isChildParentClosed = rowState.phase === 'closed' || isSkippedUnderClosed;
   const nested: DraftRow[] = [];
   const isFolded = fold !== undefined && !fold.isExpanded;
+  const headId =
+    fold === undefined
+      ? null
+      : pushHead({
+          context,
+          entryId: entry.id,
+          parentGroupId: groupId,
+          identityIndex: identity?.index ?? null,
+          isMuted,
+        });
   if (showSubagents && entry.children.length > 0 && !isFolded) {
     context.groups.push({
       id: childLaneId,
-      parentGroupId: groupId,
+      parentGroupId: headId ?? groupId,
       identityIndex: identity?.index ?? null,
       isMuted,
       originRowId: entry.id,
@@ -1074,7 +1118,7 @@ const agentRows = ({
     entry,
     identity,
     familyId,
-    groupId,
+    groupId: headId ?? groupId,
     ordinal: entry.stepLabel,
     sortOrdinal: entry.ordinal,
     rowState,
@@ -1195,6 +1239,16 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
     runStateOf({ entry, context });
   const fold = context.foldByRootId.get(entry.id);
   const isFolded = fold !== undefined && !fold.isExpanded;
+  const headId =
+    fold === undefined
+      ? null
+      : pushHead({
+          context,
+          entryId: entry.id,
+          parentGroupId: null,
+          identityIndex: entry.identity.index,
+          isMuted,
+        });
   const origin: DraftRow = {
     kind: 'row',
     id: entry.id,
@@ -1203,7 +1257,7 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
     entry,
     identity: entry.identity,
     familyId: entry.id,
-    groupId: null,
+    groupId: headId,
     ordinal: null,
     sortOrdinal: 0,
     rowState,
@@ -1216,7 +1270,7 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
   }
   context.groups.push({
     id: laneId,
-    parentGroupId: null,
+    parentGroupId: headId,
     identityIndex: entry.identity.index,
     isMuted,
     originRowId: entry.id,
@@ -1272,9 +1326,10 @@ type LaneFacts = {
   readonly rows: number;
   readonly answered: number;
   readonly hasOpen: boolean;
+  readonly contextTotals: DecisionTotals;
 };
 
-const NO_LANE_FACTS: LaneFacts = { rows: 0, answered: 0, hasOpen: false };
+const NO_LANE_FACTS: LaneFacts = { rows: 0, answered: 0, hasOpen: false, contextTotals: {} };
 
 const NO_FOLDS: ReadonlyMap<string, TimelineRowFold> = new Map();
 
@@ -1282,7 +1337,12 @@ const laneRootOf = ({ entry }: { readonly entry: TimelineTopLevelEntry }): strin
   if (entry.kind === 'question') {
     return entry.lane?.rootEntryId ?? null;
   }
-  if (entry.kind === 'plan' || entry.kind === 'artifact') {
+  if (
+    entry.kind === 'plan' ||
+    entry.kind === 'artifact' ||
+    entry.kind === 'event' ||
+    entry.kind === 'learning'
+  ) {
     return entry.lane?.rootEntryId ?? null;
   }
   return null;
@@ -1304,7 +1364,23 @@ const isLaneEntryShown = ({
   if (entry.kind === 'artifact') {
     return isArtifactShown({ entry, context });
   }
-  return false;
+  if (entry.kind === 'event') {
+    return !isEmptyDecisionDiff({ payload: entry.event.payload });
+  }
+  return entry.kind === 'learning';
+};
+
+const contextPayloadOf = ({
+  entry,
+}: {
+  readonly entry: TimelineTopLevelEntry;
+}): SessionEventPayload | null => {
+  if (entry.kind === 'learning') {
+    return { added: 1 };
+  }
+  return entry.kind === 'event' && entry.event.kind === 'decisions_changed'
+    ? entry.event.payload
+    : null;
 };
 
 const laneFactsByRootId = ({
@@ -1327,61 +1403,13 @@ const laneFactsByRootId = ({
       answered:
         current.answered + questions.filter((question) => question.status === 'answered').length,
       hasOpen: current.hasOpen || questions.some((question) => question.status === 'open'),
+      contextTotals: addDecisionTotals({
+        totals: current.contextTotals,
+        payload: contextPayloadOf({ entry }),
+      }),
     });
   }
   return facts;
-};
-
-const treeAgentIds = ({ entry }: { readonly entry: TimelineAgentEntry }): ReadonlyArray<string> => [
-  entry.agent.id,
-  ...entry.children.flatMap((child) => treeAgentIds({ entry: child })),
-];
-
-const contextAgentIdOf = ({
-  entry,
-}: {
-  readonly entry: TimelineTopLevelEntry;
-}): { readonly agentId: string; readonly added: number } | null => {
-  if (entry.kind === 'learning') {
-    const agentId = entry.item.source?.agentId ?? null;
-    return agentId === null ? null : { agentId, added: 1 };
-  }
-  if (entry.kind !== 'event' || entry.event.kind !== 'decisions_changed') {
-    return null;
-  }
-  const agentId = entry.event.payload?.agentId ?? null;
-  if (agentId === null) {
-    return null;
-  }
-  return { agentId, added: decisionDiff({ payload: entry.event.payload }).additions };
-};
-
-const contextAddedByRunId = ({
-  entries,
-}: {
-  readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
-}): ReadonlyMap<string, number> => {
-  const runOfAgent = new Map<string, string>();
-  for (const entry of entries) {
-    if (entry.kind !== 'run') {
-      continue;
-    }
-    for (const child of entry.children) {
-      if (child.kind === 'agent') {
-        treeAgentIds({ entry: child }).forEach((agentId) => runOfAgent.set(agentId, entry.id));
-      }
-    }
-  }
-  const added = new Map<string, number>();
-  for (const entry of entries) {
-    const update = contextAgentIdOf({ entry });
-    const runId = update === null ? undefined : runOfAgent.get(update.agentId);
-    if (update === null || runId === undefined) {
-      continue;
-    }
-    added.set(runId, (added.get(runId) ?? 0) + update.added);
-  }
-  return added;
 };
 
 const isRunChildShown = ({
@@ -1404,14 +1432,12 @@ type FoldParams<Entry> = {
   readonly entry: Entry;
   readonly lane: LaneFacts;
   readonly context: EmitContext;
-  readonly contextAdded?: number;
 };
 
 const runFoldOf = ({
   entry,
   lane,
   context,
-  contextAdded = 0,
 }: FoldParams<TimelineRunEntry>): TimelineRowFold | null => {
   const expanded = context.expandedGroupIds;
   if (expanded === null || lane.hasOpen) {
@@ -1436,7 +1462,7 @@ const runFoldOf = ({
       kind: 'run',
       steps,
       answered: lane.answered,
-      contextAdded,
+      contextText: decisionCountsText({ payload: lane.contextTotals }),
     }),
   };
 };
@@ -1511,13 +1537,12 @@ const foldsOf = ({
   readonly context: EmitContext;
 }): ReadonlyMap<string, TimelineRowFold> => {
   const lanes = laneFactsByRootId({ entries, context });
-  const contextAdded = contextAddedByRunId({ entries });
   const folds = new Map<string, TimelineRowFold>();
   for (const entry of entries) {
     const lane = lanes.get(entry.id) ?? NO_LANE_FACTS;
     const fold =
       entry.kind === 'run'
-        ? runFoldOf({ entry, lane, context, contextAdded: contextAdded.get(entry.id) ?? 0 })
+        ? runFoldOf({ entry, lane, context })
         : entry.kind === 'agent'
           ? chainFoldOf({ entry, lane, context })
           : null;
@@ -1534,7 +1559,7 @@ const questionGradeOf = ({
   readonly entry: TimelineQuestionEntry;
 }): TimelineRowGrade => {
   if (entry.lane != null) {
-    return 'step';
+    return entry.questions.some((question) => question.status === 'open') ? 'step' : 'fact';
   }
   return entry.questions.some((question) => question.status === 'open') ? 'entry' : 'fact';
 };
@@ -1788,6 +1813,13 @@ const batchRows = ({
     seed: runIdentitySeed({ sessionId: batch.batchId }),
   });
   const laneId = batchLaneIdOf({ batch });
+  const headId = pushHead({
+    context,
+    entryId: batch.id,
+    parentGroupId: null,
+    identityIndex: identity.index,
+    isMuted: false,
+  });
   const header: DraftRow = {
     kind: 'row',
     id: batch.id,
@@ -1796,7 +1828,7 @@ const batchRows = ({
     entry: batch,
     identity,
     familyId: batch.id,
-    groupId: null,
+    groupId: headId,
     ordinal: null,
     sortOrdinal: Math.min(...batch.children.map((child) => child.ordinal)) - 1,
     rowState: resolveBatchRowState({ summary: batch.summary }),
@@ -1808,7 +1840,7 @@ const batchRows = ({
   }
   context.groups.push({
     id: laneId,
-    parentGroupId: null,
+    parentGroupId: headId,
     identityIndex: identity.index,
     isMuted: false,
     originRowId: batch.id,
@@ -1936,6 +1968,25 @@ export const buildTimelineStream = ({
         groupId: laneIdOf({ entryId: entry.lane.rootEntryId }),
         ordinal: null,
         sortOrdinal: 0,
+        rowState: DONE_ROW_STATE,
+        hasUnread: false,
+        isPending: false,
+        ...laneSlot,
+      });
+      continue;
+    }
+    if ((entry.kind === 'event' || entry.kind === 'learning') && entry.lane != null) {
+      rows.push({
+        kind: 'row',
+        id: entry.id,
+        at: entry.at,
+        grade: 'fact',
+        entry,
+        identity: entry.lane.identity,
+        familyId: entry.lane.rootEntryId,
+        groupId: laneIdOf({ entryId: entry.lane.rootEntryId }),
+        ordinal: null,
+        sortOrdinal: entry.kind === 'event' ? eventRank({ kind: entry.event.kind }) : 0,
         rowState: DONE_ROW_STATE,
         hasUnread: false,
         isPending: false,

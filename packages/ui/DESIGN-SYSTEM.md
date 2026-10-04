@@ -359,15 +359,25 @@ Add a tone instead.
 The activity feed draws its structure instead of indenting it. Four ingredients
 make up the whole grammar. Nothing outside this list may appear on the rail:
 
-| ingredient | value                                                       | meaning                                                   |
-| ---------- | ----------------------------------------------------------- | --------------------------------------------------------- |
-| spine      | 1px, `--color-border`, solid, unbroken on every row         | the session's own thread                                  |
-| lane       | 2px, identity hue, solid                                    | a run whose steps have happened                           |
-| join       | quarter curve between spine and lane at a row's marker line | a run departing at its origin or merging when it finished |
-| stub       | 1px, `--color-border`, offset one column                    | a standalone agent's fan-out, which belongs to no run     |
+| ingredient | value                                                             | meaning                                                   |
+| ---------- | ----------------------------------------------------------------- | --------------------------------------------------------- |
+| spine      | 1px, `--color-border`, solid, unbroken on every row               | the session's own thread                                  |
+| lane       | 2px, identity hue, solid                                          | a run whose steps have happened                           |
+| join       | quarter curve between spine and lane at a row's marker line       | a run departing at its origin or merging when it finished |
+| stub       | 1px, `--color-border`, offset one column                          | a standalone agent's fan-out, which belongs to no run     |
+| head       | ball one column in, 1px `--color-border` curve down-left to spine | the group row: the children hang one column past its ball |
 
 The spine is the backbone of the feed. It is full height, always drawn, never
 tinted and never broken.
+
+Every group row sits on a head, folded or open: a finished run, an agent chain,
+a resolve batch and the subagents of an agent. The ball is the group's marker
+one column in from its parent column, a 1px grey curve (the head's stub) leaves
+it flat and lands vertical on that column, and the open children keep to the
+column past the ball, so the lane reads as hanging off the group instead of off
+the spine. The head belongs to the group's lane for hover and click
+(`head:<id>` names the run in the lane spans), but its stub is neutral ink in
+every case. A live run and the run page have no group row and draw no head.
 
 ### A lane is a control
 
@@ -603,12 +613,19 @@ subagent that asks you a question counts the same way (`groupChild` ask).
 
 A finished workflow run or agent chain with three rows or more is a third group
 kind, `steps`: the run row itself is the group row, with its own node, the
-summary from `groupSummary` ("8 steps · 1 question answered · Context +2") after
-the title, never truncated: the title gives way first, down to 96px, then the
-summary keeps only its first clause and the kept `Context +N` part ("8 steps ·
-Context +2"); `Context +N` counts what the run's agents added to the decisions and
-learnings and shows only when N > 0,
-the hint "Open ↵" or "Fold ↵", and the chevron. A run that asks you something,
+summary from `groupSummary` ("8 steps · 1 question answered · Context · 2 added,
+2 replaced") after the title, never truncated: the title gives way first, down to
+96px, then the summary keeps only its first clause and the kept Context part ("8
+steps · Context · 2 added, 2 replaced"). The Context part is the same string as
+the Context row inside the lane (`CONTEXT_LABEL` and `decisionCountsText`), summed
+over the rows of the run's agents, and shows only when a row changed something.
+Those Context rows are members of the run lane, graded `fact`, and a closed run
+hides them; a Context event with no agent stays on the spine. An answered or
+dismissed question in a lane is a compact `fact` row with no clock, an open one
+stays a `step`. The gutter clock carries a tooltip that says rows are newest first
+and stamped with their own moment (agent start, answer time or record time),
+and the chevron. Its node is the same `mixed` ball with the step count in its
+center, closed or open, and its hint verb is Expand or Collapse. A run that asks you something,
 failed or is still running is never folded. Every group row fills the routing,
 time and cost columns with the totals of what it holds (`groupTotals`), counted
 once, and its time is fixed: a group row never reads the shared work clock. A
@@ -646,6 +663,15 @@ run row has no routing: its step progress sits in the routing column and its
 time in the time column (`WORK_META_COLUMN.progress`, which keeps its words
 when the model column folds to a glyph).
 
+The activity timeline always draws the provider glyph on every agent row,
+even when the session uses one provider. The model name shows only on a row
+whose model differs from its group (the session, a run, or the parent agent;
+`TimelineRouting` context, `useTimelineRoutingFacts`), where the group model
+is the one a majority of its agents share; a tied group and a group of one
+name every model. A hidden name stays in the DOM as `sr-only` and in the row
+tooltip. `RoutingLabel` keeps the name by default (`hideName` opts out), so
+other lists read the same.
+
 The narrow rules are container queries, never window breakpoints, because
 the same feed sits in a wide overview and in a split pane. The activity feed
 puts the container on each row's content box (`WORK_ROW.container`, right of
@@ -667,8 +693,10 @@ keeps its title whole before its summary: the summary takes the room left
 beside the title and truncates its tail first, then the title truncates. A list under 440px also
 drops the time gutter; the day and Now labels move beside the rail. Label segments keep their
 leading words and tokens whole ("Opened #612:") and only the last segment
-truncates. The "Open ↵" hint takes room only while a row of 640px or more is
-hovered or focused. What leaves the row stays in the routing tooltip, which
+truncates. A row carries no hover hint on its right; the open target and the
+keys are read by screen readers (`aria-description`, `aria-keyshortcuts`).
+"Longer than usual" shows only on a running step, never on a finished one.
+What leaves the row stays in the routing tooltip, which
 always reads the whole route ("Claude · Opus 5.5 · High"). The routing column
 is `RoutingLabel isColumn`, with no fill and no chip. Its words come from
 `routingLabelParts`, the same function behind the model picker trigger, so a

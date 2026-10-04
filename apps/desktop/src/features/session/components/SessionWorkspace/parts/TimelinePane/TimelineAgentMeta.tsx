@@ -1,15 +1,19 @@
+import { useContext } from 'react';
 import { WorkMeta, formatUsd } from '@goodboy/ui';
 import { RoutingLabel } from '../../../../../../shared/components/RoutingLabel';
 import { WorkTimeCell } from '../../../../../workTreeModel/components/WorkTimeCell';
 import type { AgentRowWork } from '../../../../hooks/useAgentRowWork';
+import { TimelineRouting, isModelNameShown } from './timelineRouting';
 
 type Props = {
   readonly work: AgentRowWork;
   readonly costUsd: number;
+  readonly agentId?: string;
 };
 
-export const TimelineAgentMeta = ({ work, costUsd }: Props) => {
+export const TimelineAgentMeta = ({ work, costUsd, agentId }: Props) => {
   const { routing, time } = work;
+  const facts = useContext(TimelineRouting);
   const cost = costUsd > 0 ? formatUsd(costUsd) : null;
   return (
     <WorkMeta
@@ -17,6 +21,7 @@ export const TimelineAgentMeta = ({ work, costUsd }: Props) => {
       routing={
         <RoutingLabel
           isColumn
+          hideName={!isModelNameShown({ facts, agentId })}
           provider={routing.provider}
           model={routing.model}
           effort={routing.effort}
