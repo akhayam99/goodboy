@@ -11,13 +11,13 @@ export const ArtifactSavedCopy = ({ savedCopy }: Props) => {
   const { location, error, reveal, openInBrowser } = savedCopy;
   const saved = location !== null && location.exists ? location : null;
   return (
-    <section aria-label="File" className="flex min-w-0 flex-col gap-1.5">
+    <section aria-label="File" className="flex min-w-0 flex-col gap-2">
       <SectionHeader label="File" />
       <div className="flex min-w-0 items-center gap-2">
         <span
           data-testid="artifact-saved-copy-path"
           title={location?.path}
-          className="min-w-0 flex-1 truncate font-mono text-secondary text-muted-foreground"
+          className="min-w-0 flex-1 truncate font-mono text-meta text-muted-foreground"
         >
           {saved !== null ? saved.path : 'Writing the file…'}
         </span>
@@ -45,7 +45,7 @@ export const ArtifactSavedCopy = ({ savedCopy }: Props) => {
         ) : null}
       </div>
       {error === null ? null : (
-        <span role="alert" className="text-secondary text-danger">
+        <span role="alert" className="text-meta text-danger">
           {error}
         </span>
       )}

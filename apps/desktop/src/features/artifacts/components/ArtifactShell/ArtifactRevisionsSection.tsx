@@ -63,11 +63,11 @@ export const ArtifactRevisionsSection = ({ sessionId, artifact, creatorName }: P
   }
 
   return (
-    <section aria-label="Revisions" className="flex min-w-0 flex-col gap-1.5">
+    <section aria-label="Revisions" className="flex min-w-0 flex-col gap-2">
       <SectionHeader label="Revisions" />
       {state.kind === 'loading' ? <SkeletonRow label="Loading revisions" /> : null}
       {state.kind === 'failed' ? (
-        <span role="alert" className="text-secondary text-danger">
+        <span role="alert" className="text-meta text-danger">
           {state.message}
         </span>
       ) : null}
@@ -79,7 +79,7 @@ export const ArtifactRevisionsSection = ({ sessionId, artifact, creatorName }: P
               data-testid="artifact-revision-row"
               className="flex min-w-0 items-center gap-2"
             >
-              <span className="w-7 shrink-0 tabular-nums text-secondary text-muted-foreground">
+              <span className="w-7 shrink-0 tabular-nums text-meta text-muted-foreground">
                 v{revision.revision}
               </span>
               <span className="flex min-w-0 flex-1 flex-col">
@@ -87,12 +87,12 @@ export const ArtifactRevisionsSection = ({ sessionId, artifact, creatorName }: P
                   {revisionAuthorLabel({ revision, creatorName })}
                   {revision.ask === null ? '' : ` · ${revision.ask}`}
                 </span>
-                <span className="truncate text-secondary text-muted-foreground">
+                <span className="truncate text-meta text-muted-foreground">
                   {formatDateTime({ at: revision.createdAt })}
                 </span>
               </span>
               {revision.revision === artifact.revision ? (
-                <span className="shrink-0 text-secondary text-muted-foreground">Current</span>
+                <span className="shrink-0 text-meta text-muted-foreground">Current</span>
               ) : (
                 <Button
                   variant="ghost"
@@ -109,7 +109,7 @@ export const ArtifactRevisionsSection = ({ sessionId, artifact, creatorName }: P
         </ol>
       ) : null}
       {error === null ? null : (
-        <span role="alert" className="text-secondary text-danger">
+        <span role="alert" className="text-meta text-danger">
           {error}
         </span>
       )}

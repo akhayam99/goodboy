@@ -120,7 +120,7 @@ describe('Markdown document rhythm', () => {
     const root = container.firstElementChild;
     expect(root?.className).toContain('gap-5');
     expect(root?.children).toHaveLength(2);
-    expect(root?.children[0]?.className).toContain('gap-2.5');
+    expect(root?.children[0]?.className).toContain('gap-3');
     expect(root?.children[0]?.children).toHaveLength(2);
     expect(root?.children[1]?.children).toHaveLength(2);
   });
@@ -137,9 +137,7 @@ describe('Markdown document rhythm', () => {
   it('sets the four mandated summary headings as eyebrows', () => {
     const { container } = render(<Markdown text="#### Problem" />);
     const heading = container.querySelector('h4');
-    expect(heading?.className).toContain('uppercase');
-    expect(heading?.className).toContain('tracking-eyebrow');
-    expect(heading?.className).toContain('text-xs');
+    expect(heading?.className).toContain('text-eyebrow');
     expect(heading?.className).toContain('text-muted-foreground');
   });
 
@@ -156,7 +154,7 @@ describe('Markdown document rhythm', () => {
     const { container } = render(<Markdown text={['> one', '> two'].join('\n')} />);
     const quote = container.querySelector('blockquote');
     expect(quote?.className).toContain('border-border-soft');
-    expect(quote?.className).toContain('gap-1.5');
+    expect(quote?.className).toContain('gap-2');
     expect(quote?.className).not.toContain('border-border ');
   });
 

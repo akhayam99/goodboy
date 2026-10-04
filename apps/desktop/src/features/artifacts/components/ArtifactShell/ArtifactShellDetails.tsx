@@ -28,7 +28,7 @@ export const ArtifactShellDetails = ({ sessionId, artifact, agents, artifacts }:
 
   return (
     <div data-testid="artifact-details" className="flex min-w-0 flex-col gap-5">
-      <section aria-label="Made by" className="flex min-w-0 flex-col gap-1.5">
+      <section aria-label="Made by" className="flex min-w-0 flex-col gap-2">
         <SectionHeader label="Made by" />
         <MetaRow
           items={[
@@ -69,7 +69,7 @@ export const ArtifactShellDetails = ({ sessionId, artifact, agents, artifacts }:
         />
       ) : null}
       {artifact.kind === 'wireframe' ? <ArtifactWireframeProvenance artifact={artifact} /> : null}
-      <section aria-label="Scouts" className="flex min-w-0 flex-col gap-1.5">
+      <section aria-label="Scouts" className="flex min-w-0 flex-col gap-2">
         <SectionHeader label="Scouts" />
         <ArtifactScouts
           sessionId={sessionId}

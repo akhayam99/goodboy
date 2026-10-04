@@ -52,7 +52,7 @@ const whereLine = ({ row }: Readonly<{ row: ArtifactScoutRow }>): string | null 
 export const ArtifactScoutList = ({ rows, emptyLine }: Props) => {
   if (rows.length === 0) {
     return (
-      <p data-testid="artifact-scouts-empty" className="text-secondary text-muted-foreground">
+      <p data-testid="artifact-scouts-empty" className="text-meta text-muted-foreground">
         {emptyLine}
       </p>
     );
@@ -66,7 +66,7 @@ export const ArtifactScoutList = ({ rows, emptyLine }: Props) => {
           <li
             key={row.key}
             data-testid="artifact-scout-row"
-            className="flex min-w-0 flex-col gap-0.5 text-secondary text-muted-foreground"
+            className="flex min-w-0 flex-col gap-0.5 text-meta text-muted-foreground"
           >
             <span className="flex min-w-0 items-baseline gap-2">
               <span
@@ -87,7 +87,7 @@ export const ArtifactScoutList = ({ rows, emptyLine }: Props) => {
             {row.reason === null ? null : (
               <span
                 data-testid="artifact-scout-reason"
-                className="min-w-0 truncate pl-3.5"
+                className="min-w-0 truncate pl-4"
                 title={row.reason}
               >
                 {row.reason}
