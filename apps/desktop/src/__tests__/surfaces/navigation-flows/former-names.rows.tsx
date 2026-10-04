@@ -25,4 +25,13 @@ export const FORMER_NAME_ROWS: ReadonlyArray<Row> = [
     open: () => openPalette(/^Open Runs/, 'Open Workflows'),
     lands: both(lens('workflows'), () => heading('Runs')),
   },
+  {
+    name: "searching Changelog finds What's new",
+    covers: ['studio:changelog'],
+    open: () => openPalette(/^What's new/, 'Changelog'),
+    lands: both(
+      () => band("What's new"),
+      () => heading(/^Goodboy \d/),
+    ),
+  },
 ];

@@ -114,11 +114,11 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'palette: Changelog',
-    covers: ['openStudio', 'studio:changelog', 'palette:Changelog'],
-    open: () => openPalette(/^Changelog/),
+    name: "palette: What's new",
+    covers: ['openStudio', 'studio:changelog', "palette:What's new"],
+    open: () => openPalette(/^What's new/),
     lands: both(
-      () => band('Changelog'),
+      () => band("What's new"),
       () => heading(/^Goodboy \d/),
     ),
   },

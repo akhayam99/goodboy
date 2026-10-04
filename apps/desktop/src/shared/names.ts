@@ -25,6 +25,7 @@ export const NAMES = {
   plan: 'Plan',
   files: 'Files',
   runDefaults: 'Run defaults',
+  whatsNew: "What's new",
   role: {
     scout: 'Scout',
     planner: 'Planner',
@@ -45,6 +46,7 @@ export const NAMES = {
 const FORMER_NAMES: Readonly<Record<string, ReadonlyArray<string>>> = {
   [NAMES.runDefaults]: ['Rules', 'Workflow rules'],
   [NAMES.runs]: ['Workflows'],
+  [NAMES.whatsNew]: ['Changelog'],
 };
 
 export const formerNamesOf = (name: string): ReadonlyArray<string> => FORMER_NAMES[name] ?? [];

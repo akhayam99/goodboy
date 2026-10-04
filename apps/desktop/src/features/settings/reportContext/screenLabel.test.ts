@@ -17,7 +17,7 @@ describe('screenLabel', () => {
     [`s/${SESSION_ID}/agents/agent/agent-7`, 'Session › Agents'],
     ['board+settings/providers/anthropic', 'Board · Settings › Providers'],
     ['board+inbox/linear/NW-142', 'Board · Inbox › Linear'],
-    [`s/${SESSION_ID}/diff+changelog`, 'Session › Diff · Changelog'],
+    [`s/${SESSION_ID}/diff+changelog`, "Session › Diff · What's new"],
   ])('reads %s as %s', (key, expected) => {
     expect(screenLabel({ locationKey: key })).toBe(expected);
   });

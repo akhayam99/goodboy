@@ -3,6 +3,7 @@ import { Button, ScrollFade } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioRailLayout } from '@goodboy/ui';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+import { NAMES } from '../../../../shared/names';
 import { useAppStore } from '../../../../store';
 import { changelogCatchUp } from '../../changelogCatchUp';
 import { isInstalledRelease } from '../../isInstalledRelease';
@@ -151,9 +152,9 @@ export const ChangelogStudio = ({ onClose, onOpenScreen }: Props) => {
     <StudioShell
       icon={CONCEPT_ICONS.changelog}
       tone={CONCEPT_TONE.changelog}
-      title="Changelog"
+      title={NAMES.whatsNew}
       {...(installedVersion !== null && { subtitle: `Installed ${installedVersion}` })}
-      closeLabel="Close changelog"
+      closeLabel={`Close ${NAMES.whatsNew.toLowerCase()}`}
       onClose={onClose}
     >
       {() => (

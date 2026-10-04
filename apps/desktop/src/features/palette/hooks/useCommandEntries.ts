@@ -283,10 +283,11 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         },
         {
           key: 'goto:changelog',
-          label: 'Changelog',
+          label: NAMES.whatsNew,
           kind: 'goto',
           group: null,
           icon: CONCEPT_ICONS.changelog,
+          secondary: formerNamesOf(NAMES.whatsNew),
           run: openChangelogStudio,
         },
         {

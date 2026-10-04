@@ -43,7 +43,7 @@ const APP_STUDIO_LABELS: Readonly<Record<string, string>> = {
   'add-workspace': 'Add workspace',
   guide: 'Guide',
   companion: 'Companion',
-  changelog: 'Changelog',
+  changelog: "What's new",
   notifications: 'Notifications',
 };
 

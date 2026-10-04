@@ -552,16 +552,16 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
   {
     id: 'updates',
     group: 'task',
-    title: 'Updates and changelog',
+    title: "Updates and what's new",
     concept: 'updates',
-    lead: 'Updates download in the background, and the changelog shows what changed.',
+    lead: "Updates download in the background, and What's new shows what changed.",
     points: [
       {
         term: 'Restart when ready',
         desc: 'With agents running, Restart when they finish waits for them.',
       },
       {
-        term: 'Changelog',
+        term: "What's new",
         desc: 'Searchable release notes inside the app. After an update, one page covers the releases you skipped. Only releases that update your data in one direction carry a mark in the list.',
       },
       {
@@ -574,7 +574,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
     ],
     links: [
-      { label: 'Open the changelog', target: { kind: 'studio', studio: { kind: 'changelog' } } },
+      { label: "Open What's new", target: { kind: 'studio', studio: { kind: 'changelog' } } },
     ],
   },
   {
