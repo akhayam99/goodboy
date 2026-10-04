@@ -8,13 +8,13 @@ import {
 } from '@goodboy/core';
 import type { AgentRole, ProviderId, RoleModelChoice, RoleModelPreference } from '@goodboy/types';
 import { Collapsible, cn } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import { useHiddenModels } from '../../../../hooks/useHiddenModels';
 import { hiddenModelNote } from '../hiddenModelNote';
 import { RoleHowItRuns } from './RoleHowItRuns';
 import { RoleModelSet } from './RoleModelSet';
+import { RoleModelSummary } from './RoleModelSummary';
 import { roleRunFacts } from './roleRunFacts';
-import { roleSetEntries, type RoleSetEntry } from '../../../../roleSetEntries';
+import { roleSetEntries } from '../../../../roleSetEntries';
 import { roleSetNoun } from '../../../../roleSetNoun';
 
 type Props = {
@@ -27,18 +27,6 @@ type Props = {
   readonly connectedProviderIds: ReadonlyArray<ProviderId>;
   readonly disabled: boolean;
   readonly onChange: (preference: RoleModelPreference | null) => void;
-};
-
-type SetSummaryParams = {
-  readonly entries: ReadonlyArray<RoleSetEntry>;
-};
-
-const setSummary = ({ entries }: SetSummaryParams): string => {
-  const shown = entries.find((entry) => !entry.isGone) ?? entries[0];
-  if (shown === undefined) {
-    return '';
-  }
-  return entries.length > 1 ? `${shown.label} +${entries.length - 1}` : shown.label;
 };
 
 export const RoleRow = ({
@@ -88,18 +76,22 @@ export const RoleRow = ({
   };
   const choices = entries.map((entry) => entry.choice);
 
+  const shownEntry = firstLive ?? entries[0] ?? null;
   const trailing =
-    entries.length === 0 ? (
-      <span className="inline-flex min-w-0 items-center gap-1 text-label text-muted-foreground">
-        <CONCEPT_ICONS.autoRouting
-          size={11}
-          aria-hidden
-          className="shrink-0 text-faint-foreground"
-        />
-        <span className="truncate">{facts.auto.label}</span>
-      </span>
+    shownEntry === null ? (
+      <RoleModelSummary
+        provider={facts.auto.provider}
+        model={facts.auto.model}
+        effort={facts.auto.effort}
+        moreCount={0}
+      />
     ) : (
-      <span className="truncate text-label text-muted-foreground">{setSummary({ entries })}</span>
+      <RoleModelSummary
+        provider={shownEntry.choice.providerId}
+        model={shownEntry.choice.model}
+        effort={preference?.effort ?? null}
+        moreCount={entries.length - 1}
+      />
     );
 
   return (

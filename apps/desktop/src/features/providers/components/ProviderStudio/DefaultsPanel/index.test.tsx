@@ -155,6 +155,14 @@ const WORKSPACE_ID = 'ws-1' as WorkspaceId;
 const roleRow = (label: string): HTMLElement =>
   screen.getByRole('button', { name: (name) => name.startsWith(label) });
 
+const roleSummary = (label: string): HTMLElement => {
+  const summary = roleRow(label).querySelector<HTMLElement>('[data-role-summary]');
+  if (summary === null) {
+    throw new Error(`${label} row has no model summary`);
+  }
+  return summary;
+};
+
 const TASK_LABELS = [
   'Step summaries',
   'Plan drafting',
@@ -322,6 +330,38 @@ describe('DefaultsPanel', () => {
     expect(roleRow('Planner').getAttribute('aria-expanded')).toBe('false');
   });
 
+  it('renders an auto role and a pinned set of two in the same shape', () => {
+    state.workspaceOverrides = {
+      'ws-1': {
+        ...EMPTY_OVERRIDES,
+        roleModels: {
+          reviewer: {
+            providerId: 'anthropic',
+            model: 'claude-opus-5-5',
+            effort: 'high',
+            models: [
+              { providerId: 'anthropic', model: 'claude-opus-5-5' },
+              { providerId: 'anthropic', model: 'claude-sonnet-5-5' },
+            ],
+          },
+        },
+      },
+    };
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+
+    const shape = /^[A-Za-z0-9. ]+·(Minimal|Low|Medium|High|Very high|Max)(\+\d)?$/;
+    const auto = roleSummary('Planner');
+    const pinned = roleSummary('Reviewer');
+    expect(auto.textContent).toMatch(shape);
+    expect(pinned.textContent).toMatch(shape);
+    expect(pinned.textContent).toBe('Opus 5.5·High+1');
+    expect(auto.textContent).not.toContain('+');
+    expect(auto.querySelectorAll('svg')).toHaveLength(1);
+    expect(pinned.querySelectorAll('svg')).toHaveLength(1);
+    expect(auto.firstElementChild?.tagName).toBe('svg');
+    expect(pinned.firstElementChild?.tagName).toBe('svg');
+  });
+
   it('opens a role to show how it runs, read only, from the engine', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
@@ -389,7 +429,7 @@ describe('DefaultsPanel', () => {
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    expect(roleRow('Planner').textContent).toContain('Opus 5 +1');
+    expect(roleSummary('Planner').textContent).toBe('Opus 5·High+1');
     fireEvent.click(roleRow('Planner'));
     const chips = within(screen.getByRole('list', { name: 'Planner models' })).getAllByRole(
       'group',

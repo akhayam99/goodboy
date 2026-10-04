@@ -165,8 +165,11 @@ pin it: the picker then shows that model and an **x** that goes back to Auto. Th
 header counts the pinned rows. **Reset all to Auto**, in the menu at the top right,
 clears them after a confirm.
 
-Each role row (`DefaultsPanel/RoleRow`) is a `Collapsible`. Closed, it shows what Auto
-picks, or the first model of its set and how many follow (`Opus 5.5 +2`). Open, it shows
+Each role row (`DefaultsPanel/RoleRow`) is a `Collapsible`. Closed, it shows one
+shape, the same as the chat row: the provider glyph, the model, its effort when the
+model has one, then how many more models follow (`Opus 5.5 · High +2`). The model is
+what Auto picks, or the first model of the role's set (`RoleModelSummary`). The chat row shows the same
+shape for Auto through `RoutingPicker`'s `autoTrigger="resolved"`. Open, it shows
 **How Scout runs**, read only, built from the engine and never from copy: the role's
 `explain` entry in `ROLE_REGISTRY`, the pick from `resolveRoleRouting`, and the split
 limits from `roleSplitLimits` (`FAN_OUT_MAX_CHILDREN`, `SCOUT_DEPTH_CAP`,
