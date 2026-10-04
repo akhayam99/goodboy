@@ -25,7 +25,7 @@ export const AppResetSection = () => {
 
   return (
     <section aria-labelledby="backup-reset" className="flex flex-col gap-3">
-      <h2 id="backup-reset" className="flex items-center gap-1.5">
+      <h2 id="backup-reset" className="flex items-center gap-2">
         <Eyebrow label="Reset" />
       </h2>
       {wipeState === 'confirm' || wipeState === 'wiping' ? (
