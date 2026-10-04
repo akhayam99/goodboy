@@ -8,7 +8,6 @@ import { useAppStore } from '../../../../../store';
 import { useCopyText } from '../../../../../shared/hooks/useCopyText';
 import { PROVIDER_BRAND } from '../../provider-brand';
 import { ProviderConnect } from '../../ProviderConnect';
-import { CliUpdateNotice } from '../CliUpdateNotice';
 import {
   CONCEPT_ICONS,
   CONCEPT_TONE,
@@ -133,9 +132,6 @@ export const ProviderPageBody = ({
       meta={metaLine({ planLabel, isApi })}
       actions={<OverflowMenu items={menuItems} label={`More ${info.label} actions`} />}
     >
-      {!isApi && info.connection !== 'missing' && info.connection !== 'unknown' ? (
-        <CliUpdateNotice providerId={id} autoStart={autoUpdate} />
-      ) : null}
       {hasDetectionError ? (
         <EmptyState
           bordered
@@ -171,6 +167,7 @@ export const ProviderPageBody = ({
             info={info}
             planLabel={planLabel}
             canReauth={canReauth}
+            autoUpdate={autoUpdate}
             confirm={confirm}
             onConfirmChange={setConfirm}
             onReauth={reauth}

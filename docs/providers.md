@@ -226,9 +226,9 @@ summaries`). Its header says how many show (`Showing 6 of 11`) next to **Show al
 
 Each provider page in **Settings > Providers & models** has four groups, in the
 same order for every provider: **Usage**, **Models in the picker**,
-**Permissions** and **Account**. The header carries the plan, the account and the
-CLI version (`Team plan · Signed in as you@acme.test · Claude CLI 2.1.282`), and
-its menu holds **Check again**, **Sign in again**, **Sign out** and **Copy CLI
+**Permissions** and **Account**. The header carries the plan (`Team plan`), the
+Account group the signed-in account and the CLI version (`Claude CLI 2.1.282`), and
+the header menu holds **Check again**, **Sign in again**, **Sign out** and **Copy CLI
 path**. A provider that is not connected shows only its connect card.
 
 - **Usage**: one row per window the provider reported (5 hours, the week, a
@@ -261,9 +261,11 @@ path**. A provider that is not connected shows only its connect card.
   reason, or `Not available` with the mode it runs as instead), whether it
   follows Allow and Deny rules (only Claude does), and that role limits are
   asked, not locked. It reads `modeSupport` in `@goodboy/core`
-- **Account**: who is signed in with the plan, the CLI version, and **Use an API
-  key instead of your plan**, which opens the API keys. Keys you already have
-  show directly, with the workspace credentials under them
+- **Account**: who is signed in with the plan, one CLI row (`Claude CLI 2.1.282`, in
+  the same place on every CLI provider), and **Use an API key instead of your
+  plan**, which opens the API keys. When a model needs a newer CLI, the update
+  notice (`CliUpdateNotice`) sits right under the Account rows, below that CLI row.
+  Keys you already have show directly, with the workspace credentials under them
 - The provider's row in the rail turns warning from 80% of a window and danger
   when the provider is out, with the reason under its name
 
@@ -297,8 +299,8 @@ pays for every turn.
   the account on the card before you continue
 - **A model needs a newer CLI**: some models only run on a recent CLI. When yours is
   too old, the composer and the model picker say so before you send, and the
-  provider shows **Update needed** in Settings. **Update Claude CLI** runs the
-  update in a terminal inside the card. A turn the CLI turned down keeps your
+  provider shows **Update needed** in Settings. **Update Claude CLI**, under the
+  Account rows of the provider page, runs the update in a terminal inside the card. A turn the CLI turned down keeps your
   message: retry it once the update is done, or run it on the newest model your
   CLI supports. Goodboy never guesses: a CLI whose version it can't read is never
   flagged. Update waits while a turn on the same provider is running
