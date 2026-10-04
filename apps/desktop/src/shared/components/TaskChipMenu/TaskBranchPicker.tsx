@@ -3,8 +3,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { Check, GitBranch, Plus } from 'lucide-react';
 import { FOCUS_RING, MenuList, cn, type MenuEntry } from '@goodboy/ui';
 import type { SessionExternalTask, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { EMPTY_ARRAY, useAppStore } from '../../../store';
+import { ICON_SIZE } from '../conceptIcons';
 import { taskBranchPreview } from './taskBranchPreview';
 import { taskPlacementLabel } from './taskPlacement';
 
@@ -94,7 +94,7 @@ export const TaskBranchPicker = ({ sessionId, task, onWorktree, onClose }: Props
 
   return (
     <div className="flex flex-col">
-      <span className="px-3 pt-3 text-label font-medium text-foreground">
+      <span className="px-3 pt-3 text-row text-foreground">
         {`Put ${task.identifier} on a branch`}
       </span>
       <MenuList
@@ -107,7 +107,7 @@ export const TaskBranchPicker = ({ sessionId, task, onWorktree, onClose }: Props
         type="button"
         onClick={onWorktree}
         className={cn(
-          'mx-1 mb-1 flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-label text-foreground hover:bg-hover',
+          'mx-1 mb-1 flex items-center gap-2 rounded-md px-2 py-2 text-left text-label text-foreground hover:bg-hover',
           FOCUS_RING,
         )}
       >

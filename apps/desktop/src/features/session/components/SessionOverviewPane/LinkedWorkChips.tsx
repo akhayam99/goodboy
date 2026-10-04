@@ -5,8 +5,8 @@ import type { LensKind } from '../../../../store';
 import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
 import { externalTaskLinkKey } from '../../../../store/slices/sessions/externalTaskLinkKey';
 import { useSessionSkeleton } from '../../hooks/useSessionSkeleton';
-import { TaskChipMenu } from '../TaskChipMenu';
-import { distinctTasks } from '../TaskChipMenu/distinctTasks';
+import { TaskChipMenu } from '../../../../shared/components/TaskChipMenu';
+import { distinctTasks } from '../../../../shared/components/TaskChipMenu/distinctTasks';
 
 type Props = {
   readonly sessionId: SessionId;

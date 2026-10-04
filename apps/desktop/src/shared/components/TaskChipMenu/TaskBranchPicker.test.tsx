@@ -1,12 +1,12 @@
 // @vitest-environment happy-dom
 
 vi.mock('@tauri-apps/api/core', async () =>
-  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+  (await import('../../../store/storyHarness')).tauriCoreModuleMock(),
 );
 vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+  (await import('../../../store/storyHarness')).tauriEventModuleMock(),
 );
-vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
+vi.mock('@goodboy/db', async () => (await import('../../../store/storyHarness')).dbModuleMock());
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
@@ -24,7 +24,7 @@ import {
   importStore,
   resetStoryStore,
   type StoryStore,
-} from '../../../../store/storyHarness';
+} from '../../../store/storyHarness';
 import { TaskBranchPicker } from './TaskBranchPicker';
 
 const workspace = aWorkspace({ name: 'Harborline', slug: 'harborline' });

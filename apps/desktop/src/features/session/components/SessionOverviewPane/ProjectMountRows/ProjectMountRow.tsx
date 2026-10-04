@@ -12,7 +12,7 @@ import { useObjectMenuTrigger } from '../../../../actions/useObjectMenuTrigger';
 import type { MountActionTarget } from '../../../../actions/types';
 import { useMountRemoteHostKind } from '../../../../worktree/useMountRemoteHostKind';
 import { AlsoInChip } from './AlsoInChip';
-import { AddTaskPopover } from '../../TaskChipMenu/AddTaskPopover';
+import { AddTaskPopover } from '../../../../../shared/components/TaskChipMenu/AddTaskPopover';
 import { BranchTaskChips } from './BranchTaskChips';
 import { MountBranchDecision } from './MountBranchDecision';
 import { MountChangeCell } from './MountChangeCell';

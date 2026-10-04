@@ -3,7 +3,7 @@ import { SkeletonChip } from '@goodboy/ui';
 import type { ProjectId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { externalTaskLinkKey } from '../../../../../store/slices/sessions/externalTaskLinkKey';
-import { TaskChipMenu } from '../../TaskChipMenu';
+import { TaskChipMenu } from '../../../../../shared/components/TaskChipMenu';
 
 type Props = {
   readonly sessionId: SessionId;

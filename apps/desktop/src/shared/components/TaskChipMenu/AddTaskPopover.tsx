@@ -3,9 +3,9 @@ import { useShallow } from 'zustand/react/shallow';
 import { Link2, ListPlus } from 'lucide-react';
 import { AnchoredPopover, MenuList, useDropdown, type MenuEntry } from '@goodboy/ui';
 import type { MountId, ProjectId, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { MOUNT_ADD_TASK_EVENT, mountEventName } from '../../../actions/kinds/mount';
-import { linkIssueEventName } from '../../../actions/kinds/session';
+import { useAppStore } from '../../../store';
+import { MOUNT_ADD_TASK_EVENT, mountEventName } from '../../../features/actions/kinds/mount';
+import { linkIssueEventName } from '../../../features/actions/kinds/session';
 import { distinctTasks } from './distinctTasks';
 import { taskPlacementLabel } from './taskPlacement';
 

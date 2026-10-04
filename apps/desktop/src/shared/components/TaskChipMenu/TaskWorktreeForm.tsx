@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Button, Input } from '@goodboy/ui';
 import type { SessionExternalTask, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useAppStore } from '../../../store';
+import { selectProjectById } from '../../../store/slices/projects/selectProjectById';
 import { taskBranchPreview } from './taskBranchPreview';
 
 type Props = {
@@ -19,9 +20,7 @@ export const TaskWorktreeForm = ({ sessionId, task, onBack, onDone }: Props) => 
     (state) => task.projectId ?? state.sessionProjectMounts[sessionId]?.[0]?.projectId,
   );
   const projectName = useAppStore((state) =>
-    projectId === undefined
-      ? ''
-      : (state.projects.find((project) => project.id === projectId)?.name ?? ''),
+    projectId === undefined ? '' : (selectProjectById(state, projectId)?.name ?? ''),
   );
   const preview = useAppStore((state) => taskBranchPreview({ state, sessionId, projectId, task }));
   const [branch, setBranch] = useState('');
@@ -62,9 +61,7 @@ export const TaskWorktreeForm = ({ sessionId, task, onBack, onDone }: Props) => 
   return (
     <div className="flex flex-col gap-3 p-3">
       <div className="flex flex-col gap-1">
-        <span className="text-label font-medium text-foreground">
-          {`New worktree for ${task.identifier}`}
-        </span>
+        <span className="text-row text-foreground">{`New worktree for ${task.identifier}`}</span>
         <span className="text-secondary text-muted-foreground">
           {projectName === '' ? 'It gets its own branch.' : `${projectName} · from its base branch`}
         </span>

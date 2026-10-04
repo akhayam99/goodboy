@@ -18,7 +18,7 @@ import {
   useSessionStageInfo,
 } from '../../../../store';
 import { describeSessionStage } from '../../../session/session-stage';
-import { distinctTasks } from '../../../session/components/TaskChipMenu/distinctTasks';
+import { distinctTasks } from '../../../../shared/components/TaskChipMenu/distinctTasks';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
