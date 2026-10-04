@@ -65,7 +65,7 @@ export const ReviewCommitsAfter = ({ model }: Props) => {
                 <span className="min-w-0 truncate text-foreground">{entry.subject}</span>
               </span>
               {entry.isChanged && (
-                <span className="col-start-2 truncate font-mono text-secondary text-faint-foreground">
+                <span className="col-start-2 truncate font-mono text-meta text-faint-foreground">
                   {entry.members.length > 1
                     ? entry.members.join(' + ')
                     : `rebased from ${entry.members[0] ?? shortOf(entry.sha)}`}
@@ -85,7 +85,7 @@ export const ReviewCommitsAfter = ({ model }: Props) => {
           body={stop.message}
         />
       )}
-      <p className="text-secondary text-faint-foreground">
+      <p className="text-meta text-faint-foreground">
         {rewriteNote({ hasChange: model.hasChange, replaced: model.replaced })}
       </p>
       {model.isWorking ? (

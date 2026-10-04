@@ -16,7 +16,7 @@ export const LinkedIssuesSection = ({ issues, action, onOpenIssue }: Props) => {
     return null;
   }
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       <div className="flex min-w-0 items-center justify-between gap-2">
         <Eyebrow label="Linked issues" muted className="px-0.5 font-medium" />
         {action}

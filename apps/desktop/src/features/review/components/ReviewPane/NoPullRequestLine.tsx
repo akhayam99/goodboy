@@ -18,7 +18,7 @@ export const NoPullRequestLine = ({
   isDraftAgentRunning,
   onOpenPullRequest,
 }: Props) => (
-  <p className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-secondary text-muted-foreground">
+  <p className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-meta text-muted-foreground">
     {branch !== null && <span className="min-w-0 truncate font-mono">{branch}</span>}
     <span>{NO_PULL_REQUEST}</span>
     {canOpenPullRequest && (

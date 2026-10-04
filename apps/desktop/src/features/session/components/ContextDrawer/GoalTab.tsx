@@ -80,7 +80,7 @@ export const GoalTab = ({
           minRows={3}
           maxRows={16}
         />
-        <div className="flex items-center justify-end gap-1.5">
+        <div className="flex items-center justify-end gap-2">
           <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
             Cancel
           </Button>
@@ -106,9 +106,7 @@ export const GoalTab = ({
           No goal yet. Every agent starts from it.
         </EmptyLine>
         {isLocked ? (
-          <p className="text-secondary text-faint-foreground">
-            Editing opens when the update finishes.
-          </p>
+          <p className="text-meta text-faint-foreground">Editing opens when the update finishes.</p>
         ) : null}
       </div>
     );
@@ -141,9 +139,7 @@ export const GoalTab = ({
       </ContextBlock>
       <GoalAttachmentsStrip owner={{ type: 'session', id: sessionId }} />
       {isLocked ? (
-        <p className="text-secondary text-faint-foreground">
-          Editing opens when the update finishes.
-        </p>
+        <p className="text-meta text-faint-foreground">Editing opens when the update finishes.</p>
       ) : null}
     </div>
   );

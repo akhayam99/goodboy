@@ -76,7 +76,7 @@ export const HandoffSectionBody = ({ section, doneWhen, sessionId }: Props) => {
       );
     case 'files':
       return (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-2">
           {section.refs.flatMap((entry) =>
             entry.kind === 'file'
               ? [<Chip key={entry.path ?? entry.label} tone="neutral" label={entry.label} />]

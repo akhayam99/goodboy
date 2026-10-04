@@ -82,7 +82,7 @@ export const AgentHeaderActions = ({
           confirmLabel={deleteConfirm.confirmLabel}
           note={
             error === null ? null : (
-              <p role="alert" className="text-secondary text-danger">
+              <p role="alert" className="text-meta text-danger">
                 {error}
               </p>
             )

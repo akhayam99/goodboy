@@ -255,7 +255,7 @@ export const WorkflowRow = ({
                       />
                     ) : (
                       <div
-                        className="group/name flex min-w-0 items-start gap-1.5"
+                        className="group/name flex min-w-0 items-start gap-2"
                         onContextMenu={runMenu.onContextMenu}
                       >
                         <h2
@@ -482,7 +482,7 @@ export const WorkflowRow = ({
                     onAnswer={onAnswerQuestion}
                   />
                 ) : (
-                  <p className="pb-1 text-secondary text-faint-foreground">
+                  <p className="pb-1 text-meta text-faint-foreground">
                     No agents yet for this workflow.
                   </p>
                 )}

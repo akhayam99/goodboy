@@ -100,7 +100,7 @@ export const ReviewCommitRow = ({
   return (
     <li
       data-sha={row.sha}
-      className="grid list-none grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-0.5 rounded-md px-2 py-2 hover:bg-hover motion-safe:transition-colors"
+      className="grid list-none grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-0.5 rounded-md px-2 py-2 hover:bg-hover motion-safe:transition-colors"
     >
       <span
         className={cn(
@@ -138,7 +138,7 @@ export const ReviewCommitRow = ({
       ) : (
         <span />
       )}
-      <span className="col-start-2 col-end-4 flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-secondary text-faint-foreground">
+      <span className="col-start-2 col-end-4 flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-meta text-faint-foreground">
         <span className="shrink-0 font-mono text-muted-foreground">{row.shortSha}</span>
         {row.isResolve ? (
           row.threads.map((thread) => (

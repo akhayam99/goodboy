@@ -33,7 +33,7 @@ export const LinkScopePreview = ({
   onLink,
   onCancel,
 }: Props) => (
-  <div aria-label="Link preview" className="flex flex-col gap-2 px-3 py-2.5">
+  <div aria-label="Link preview" className="flex flex-col gap-2 px-3 py-3">
     <div className="flex min-w-0 items-center gap-2">
       <TaskLinkChip
         provider={provider}

@@ -57,7 +57,7 @@ export const SessionDraftHeader = ({ workspaceId, onDiscarded }: Props) => {
           isBusy={isStarting}
           busyLabel="Creating the session"
           onClick={() => void startBlank()}
-          className="gap-1.5"
+          className="gap-2"
         >
           <CONCEPT_ICONS.goal size={ICON_SIZE.row} aria-hidden />
           Start blank

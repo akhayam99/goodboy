@@ -152,7 +152,7 @@ export const ProjectMountRow = ({
             <>
               <MountRequestLink sessionId={sessionId} row={row} label={label} />
               {row.request === null && isRepo && !row.isCompleted && !row.isMainCheckout ? (
-                <span className="px-1.5 text-label text-faint-foreground">No PR yet</span>
+                <span className="px-2 text-label text-faint-foreground">No PR yet</span>
               ) : null}
               <MountResolveLink sessionId={sessionId} row={row} label={label} />
             </>

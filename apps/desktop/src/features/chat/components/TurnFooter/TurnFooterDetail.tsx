@@ -63,7 +63,7 @@ export const TurnFooterDetail = ({
     .join(' · ');
 
   return (
-    <div className="flex w-70 flex-col gap-1.5 p-2 text-label">
+    <div className="flex w-70 flex-col gap-2 p-2 text-label">
       <div className="text-row text-foreground">{heading}</div>
       <div className="flex flex-col gap-0.5">
         {detailRow({ label: 'Input', value: formatInteger(totalInput) })}

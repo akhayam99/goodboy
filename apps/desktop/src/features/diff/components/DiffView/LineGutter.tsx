@@ -27,7 +27,7 @@ export const LineGutter = ({
   onActivate,
 }: Props) => {
   const base =
-    'relative select-none px-1.5 text-right font-mono text-2xs tabular-nums leading-5 text-faint-foreground';
+    'relative select-none px-2 text-right font-mono text-meta tabular-nums leading-5 text-faint-foreground';
   if (lineNumber === null || !canComment) {
     return (
       <div role="gridcell" className={cn(base, className)}>

@@ -103,9 +103,7 @@ export const ProjectMountRows = ({ session }: Props) => {
       />
       {showProjectsHint ? (
         <div className="flex min-w-0 items-center gap-2">
-          <p className="min-w-0 flex-1 text-secondary text-muted-foreground">
-            {PROJECTS_EXPLAINER}
-          </p>
+          <p className="min-w-0 flex-1 text-meta text-muted-foreground">{PROJECTS_EXPLAINER}</p>
           <IconButton
             variant="ghost"
             icon={X}

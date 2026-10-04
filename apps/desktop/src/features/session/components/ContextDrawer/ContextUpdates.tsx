@@ -34,7 +34,7 @@ const BUTTON_LABEL: Readonly<Record<ContextUpdatePhase, string>> = {
   failed: 'Retry',
 };
 
-const TERM = 'text-secondary text-faint-foreground';
+const TERM = 'text-meta text-faint-foreground';
 const VALUE = 'flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-label text-foreground';
 
 export const ContextUpdates = ({ sessionId }: Props) => {
@@ -75,7 +75,7 @@ export const ContextUpdates = ({ sessionId }: Props) => {
       trigger={
         <span className="flex min-w-0 items-center gap-2">
           <span className="flex-1 truncate text-label text-foreground">Context updates</span>
-          <span className="inline-flex items-center gap-1.5 text-secondary text-muted-foreground">
+          <span className="inline-flex items-center gap-1 text-meta text-muted-foreground">
             <ContextUpdateGlyph phase={phase} placement="status" />
             {headline}
           </span>
@@ -107,7 +107,7 @@ export const ContextUpdates = ({ sessionId }: Props) => {
               <button
                 type="button"
                 onClick={() => openSettings({ scope: 'providers', section: 'summarizer' })}
-                className="inline-flex items-center gap-0.5 text-secondary text-muted-foreground hover:text-foreground"
+                className="inline-flex items-center gap-0.5 text-meta text-muted-foreground hover:text-foreground"
               >
                 Change model
                 <ArrowUpRight size={11} aria-hidden />
@@ -155,7 +155,7 @@ export const ContextUpdates = ({ sessionId }: Props) => {
               <ContextUpdateGlyph phase={phase} placement="button" />
               {BUTTON_LABEL[phase]}
             </Button>
-            <span className="text-secondary text-muted-foreground">
+            <span className="text-meta text-muted-foreground">
               {contextUpdateHint({ phase, pendingTurns: pending.turns, hasContext })}
             </span>
           </div>

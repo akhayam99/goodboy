@@ -33,7 +33,7 @@ export const DiffBaseBranchRow = ({ projectId, repoPath, value, onDone }: Props)
 
   return (
     <div className="flex min-w-0 flex-col gap-1">
-      <div className="flex min-w-0 items-center gap-3 text-secondary">
+      <div className="flex min-w-0 items-center gap-3 text-meta">
         <span className="shrink-0 text-foreground">Compare with</span>
         <BaseBranchSelect repoPath={repoPath} value={value} onCommit={commit} />
         <Button size="sm" variant="secondary" onClick={onDone}>
@@ -41,7 +41,7 @@ export const DiffBaseBranchRow = ({ projectId, repoPath, value, onDone }: Props)
         </Button>
       </div>
       {error === null ? null : (
-        <p role="alert" className="text-secondary text-danger">
+        <p role="alert" className="text-meta text-danger">
           {error}
         </p>
       )}

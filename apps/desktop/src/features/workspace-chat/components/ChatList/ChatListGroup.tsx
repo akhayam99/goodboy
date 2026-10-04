@@ -60,7 +60,7 @@ export const ChatListGroup = ({
           <button
             type="button"
             onClick={action.onClick}
-            className="rounded-sm px-1 text-secondary text-faint-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            className="rounded-sm px-1 text-chip text-faint-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
             {action.label}
           </button>

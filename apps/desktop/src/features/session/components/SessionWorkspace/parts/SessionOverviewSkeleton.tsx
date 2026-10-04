@@ -34,7 +34,7 @@ export const SessionOverviewSkeleton = ({ isFreshLayout }: Props) => {
             </div>
           </div>
           <SkeletonText lines={2} />
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             {PROJECT_ROWS.map((row) => (
               <Skeleton key={row} className="h-9 w-full rounded-md" />
             ))}
@@ -57,7 +57,7 @@ export const SessionOverviewSkeleton = ({ isFreshLayout }: Props) => {
             {TIMELINE_ROWS.map((row) => (
               <div key={row} className="flex items-start gap-3">
                 <Skeleton className="mt-1 size-2.5 shrink-0 rounded-full" />
-                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
                   <Skeleton className="h-4 w-2/5" />
                   <Skeleton className="h-3 w-3/4 rounded-sm" />
                 </div>

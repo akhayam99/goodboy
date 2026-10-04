@@ -11,7 +11,7 @@ type Props = {
 };
 
 export const BriefMeta = ({ route, durationMs, costUsd }: Props) => (
-  <span className="flex shrink-0 items-center gap-1.5 text-secondary text-faint-foreground tabular-nums">
+  <span className="flex shrink-0 items-center gap-1 text-meta text-faint-foreground tabular-nums">
     <ProviderIcon provider={route.providerId} variant="glyph" />
     <span>{modelLabel(route.model, route.providerId)}</span>
     <span aria-hidden>·</span>

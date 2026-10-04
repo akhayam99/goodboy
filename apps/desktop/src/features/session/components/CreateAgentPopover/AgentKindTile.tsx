@@ -19,7 +19,7 @@ export const AgentKindTile = ({ kind, isActive, onSelect }: Props) => {
       aria-pressed={isActive}
       aria-label={meta.label}
       className={cn(
-        'flex min-w-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-left transition-colors',
+        'flex min-w-0 items-center gap-2 rounded-md px-2 py-2 text-left transition-colors',
         isActive
           ? 'bg-background text-foreground shadow-sm'
           : 'text-muted-foreground hover:bg-background hover:text-foreground',

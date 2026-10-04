@@ -16,7 +16,7 @@ export const RunsOnField = ({ connectedProviders, defaultRouting, value, onChang
   const patch = (fields: Partial<WorkRouting>): void =>
     onChange((current) => ({ ...(current ?? defaultRouting), ...fields }));
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       <span className="text-label text-muted-foreground">{RUNS_ON_LABEL}</span>
       <RoutingPicker
         ariaLabel={RUNS_ON_LABEL}
@@ -44,7 +44,7 @@ export const RunsOnField = ({ connectedProviders, defaultRouting, value, onChang
         }}
         onModel={(model) => patch({ model })}
       />
-      <p className="text-secondary text-faint-foreground">
+      <p className="text-meta text-faint-foreground">
         Default model and effort of the new session.
       </p>
     </div>

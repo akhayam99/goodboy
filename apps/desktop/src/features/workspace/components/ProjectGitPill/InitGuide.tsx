@@ -47,19 +47,19 @@ export const InitGuide = ({ rootPath, state, onStart }: Props) => {
 
   return (
     <section aria-label="Set up git for this project" className="flex flex-col gap-3 p-3">
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <Eyebrow label="Git setup" muted />
         <h3 className="text-label font-semibold text-foreground">{HEADLINE[state]}</h3>
-        <p className="text-xs leading-relaxed text-muted-foreground">{LEDE[state]}</p>
-        <p className="text-secondary text-faint-foreground">
+        <p className="text-label text-muted-foreground">{LEDE[state]}</p>
+        <p className="text-meta text-faint-foreground">
           Goodboy commits a .gitignore and nothing else. Your files stay as they are.
         </p>
-        <div className="flex flex-col items-start gap-1.5">
+        <div className="flex flex-col items-start gap-2">
           <Button type="button" size="sm" disabled={pending} aria-busy={pending} onClick={start}>
             {ACTION[state]}
           </Button>
           {failure !== null ? (
-            <p role="alert" className="text-secondary text-danger">
+            <p role="alert" className="text-meta text-danger">
               {failure}
             </p>
           ) : null}
@@ -74,13 +74,13 @@ export const InitGuide = ({ rootPath, state, onStart }: Props) => {
             <li key={step.command} className="flex gap-2">
               <span
                 aria-hidden
-                className="w-3 shrink-0 text-2xs font-semibold leading-5 tabular-nums text-faint-foreground"
+                className="w-3 shrink-0 text-meta font-semibold leading-5 tabular-nums text-faint-foreground"
               >
                 {index + 1}
               </span>
-              <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="min-w-0 flex-1 text-xs font-medium leading-5 text-foreground">
+                  <span className="min-w-0 flex-1 text-row leading-5 text-foreground">
                     {step.title}
                   </span>
                   <CopyButton
@@ -89,7 +89,7 @@ export const InitGuide = ({ rootPath, state, onStart }: Props) => {
                     label={`copy command: ${step.title}`}
                   />
                 </div>
-                <p className="text-2xs leading-relaxed text-muted-foreground">{step.detail}</p>
+                <p className="text-meta text-muted-foreground">{step.detail}</p>
                 <CommandPreview command={step.command} />
               </div>
             </li>

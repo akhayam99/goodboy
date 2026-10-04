@@ -50,14 +50,12 @@ export const AgentFollowUpChild = ({ entry, sessionId }: Props) => {
       ) : (
         <AgentStatusIcon status={child.status} />
       )}
-      <span className="max-w-28 shrink-0 truncate text-secondary text-muted-foreground">
-        {label}
-      </span>
+      <span className="max-w-28 shrink-0 truncate text-meta text-muted-foreground">{label}</span>
       <button
         type="button"
         onClick={onOpen}
         className={cn(
-          'shrink-0 rounded-sm px-1.5 py-0.5 text-secondary font-medium text-muted-foreground',
+          'shrink-0 rounded-sm px-2 py-0.5 text-chip text-muted-foreground',
           'hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         )}
       >

@@ -169,7 +169,7 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
           <span className="text-heading text-foreground">New turns start in</span>
 
           {running !== null && diverges ? (
-            <div className="flex flex-col gap-0.5 rounded-md bg-subtle px-2 py-1.5 text-secondary">
+            <div className="flex flex-col gap-0.5 rounded-md bg-subtle px-2 py-1 text-chip">
               <span className="text-muted-foreground">This turn runs in {runningLabel}</span>
               <span className="text-muted-foreground">New turns start in {nextLabel}</span>
             </div>
@@ -200,7 +200,7 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
             />
           </div>
 
-          <span className="text-secondary text-muted-foreground">
+          <span className="text-meta text-muted-foreground">
             Every agent can write in all of them. This picks where a new turn opens its terminal,
             runs git and shows its pull request.
           </span>

@@ -29,7 +29,7 @@ export const ThreadRecheckLine = ({ sessionId, agentId }: Props) => {
         </span>
       </p>
       {agentId === null ? (
-        <p className="min-w-0 truncate pl-7 text-secondary text-muted-foreground">
+        <p className="min-w-0 truncate pl-7 text-meta text-muted-foreground">
           {RECHECK_LABEL.looking}
         </p>
       ) : (

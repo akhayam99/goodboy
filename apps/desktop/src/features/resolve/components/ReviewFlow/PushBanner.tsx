@@ -70,7 +70,7 @@ export const PushBanner = ({ sessionId, push }: Props) => {
     return (
       <p
         role="status"
-        className="flex min-w-0 items-center gap-2 rounded-lg bg-subtle px-4 py-2.5 text-secondary text-muted-foreground"
+        className="flex min-w-0 items-center gap-2 rounded-lg bg-subtle px-4 py-2 text-meta text-muted-foreground"
       >
         <WorkNode state="running" label={SYNC_COPY.working} mark={{ kind: 'dot' }} />
         {SYNC_COPY.working}
@@ -83,7 +83,7 @@ export const PushBanner = ({ sessionId, push }: Props) => {
     return (
       <p
         role={isDone ? 'status' : 'alert'}
-        className="flex min-w-0 items-center gap-2 rounded-lg bg-subtle px-4 py-2.5 text-secondary text-foreground"
+        className="flex min-w-0 items-center gap-2 rounded-lg bg-subtle px-4 py-2 text-meta text-foreground"
       >
         {isDone ? (
           <Check
@@ -127,7 +127,7 @@ export const PushBanner = ({ sessionId, push }: Props) => {
     return (
       <div
         role="alert"
-        className="flex min-w-0 flex-wrap items-center gap-2 rounded-lg bg-subtle px-4 py-2.5 text-secondary"
+        className="flex min-w-0 flex-wrap items-center gap-2 rounded-lg bg-subtle px-4 py-2 text-meta"
       >
         <AlertCircle
           size={ICON_SIZE.control}

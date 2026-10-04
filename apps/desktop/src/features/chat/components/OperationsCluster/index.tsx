@@ -203,7 +203,7 @@ const OperationsClusterView = ({
           badge={
             <span
               className={cn(
-                'shrink-0 rounded-full px-1.5 text-secondary tabular-nums text-muted-foreground',
+                'shrink-0 rounded-full px-2 text-chip tabular-nums text-muted-foreground',
                 operationsTint.bg,
               )}
             >
@@ -212,14 +212,14 @@ const OperationsClusterView = ({
           }
           preview={
             state === 'approval' ? (
-              <span className="flex min-w-0 items-center gap-1.5 text-warning">
+              <span className="flex min-w-0 items-center gap-2 text-warning">
                 <span className="truncate">Waiting for your approval</span>
                 <span className="shrink-0 truncate font-mono text-faint-foreground">
                   {approvalTool!.toolName}
                 </span>
               </span>
             ) : state === 'running' ? (
-              <span className="flex min-w-0 items-center gap-1.5">
+              <span className="flex min-w-0 items-center gap-2">
                 <span className="truncate font-mono">{runningTool!.toolName}</span>
                 {duration != null && (
                   <span className="shrink-0 font-mono tabular-nums text-faint-foreground">
@@ -228,7 +228,7 @@ const OperationsClusterView = ({
                 )}
               </span>
             ) : state === 'stopped' ? (
-              <span className="truncate text-secondary text-faint-foreground">
+              <span className="truncate text-meta text-faint-foreground">
                 Stopped after {stoppedCount} {stoppedCount === 1 ? 'operation' : 'operations'}
               </span>
             ) : state === 'failed' ? (
@@ -244,7 +244,7 @@ const OperationsClusterView = ({
                 ]}
               />
             ) : summaryLine.length > 0 ? (
-              <span className="truncate text-secondary text-faint-foreground">{summaryLine}</span>
+              <span className="truncate text-meta text-faint-foreground">{summaryLine}</span>
             ) : undefined
           }
           meta={

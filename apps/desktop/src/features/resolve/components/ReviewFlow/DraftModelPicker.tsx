@@ -41,7 +41,7 @@ export const DraftModelPicker = ({ sessionId, request, children }: Props) => {
       trigger={children}
     >
       <PopoverBody>
-        <p className="px-2.5 pb-1 pt-2 text-heading text-foreground">{DRAFT_MODEL_LABEL}</p>
+        <p className="px-3 pb-1 pt-2 text-heading text-foreground">{DRAFT_MODEL_LABEL}</p>
         <DraftRoutingBody sessionId={sessionId} onClose={close} />
       </PopoverBody>
     </AnchoredPopover>

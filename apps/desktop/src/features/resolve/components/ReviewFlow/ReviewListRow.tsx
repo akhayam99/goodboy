@@ -37,7 +37,7 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
         aria-current={isSelected ? 'true' : undefined}
         onClick={onSelect}
         className={cn(
-          'flex w-full min-w-0 items-start gap-2.5 rounded-md px-2.5 py-2 text-left',
+          'flex w-full min-w-0 items-start gap-3 rounded-md px-3 py-2 text-left',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
           'motion-safe:transition-colors',
           isSelected ? 'bg-selected' : 'hover:bg-hover',
@@ -59,7 +59,7 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
           />
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="flex min-w-0 items-baseline gap-2 text-secondary">
+          <span className="flex min-w-0 items-baseline gap-2 text-meta">
             {note !== null && <span className="shrink-0 text-muted-foreground">{note.author}</span>}
             {file !== null && (
               <span className="min-w-0 truncate font-mono text-faint-foreground">
@@ -99,7 +99,7 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
           data-fix-row={entry.threadId}
           onClick={onFix}
           className={cn(
-            'absolute right-2 top-1.5 rounded-md bg-elevated px-2.5 py-0.5 text-label text-foreground ring-1 ring-border-soft',
+            'absolute right-2 top-1.5 rounded-md bg-elevated px-3 py-0.5 text-label text-foreground ring-1 ring-border-soft',
             'opacity-0 group-focus-within/review-row:opacity-100 group-hover/review-row:opacity-100',
             'hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-opacity',
           )}

@@ -40,8 +40,8 @@ export const DetachConfirm = ({
         onConfirm={() => undefined}
         onCancel={onCancel}
       >
-        <div role="status" aria-live="polite" className="flex flex-col gap-1.5">
-          <span className="text-secondary text-muted-foreground">{CHECKING_STATUS}</span>
+        <div role="status" aria-live="polite" className="flex flex-col gap-2">
+          <span className="text-meta text-muted-foreground">{CHECKING_STATUS}</span>
           <Skeleton className="h-3 w-full" />
           <Skeleton className="h-3 w-4/5" />
         </div>
@@ -111,7 +111,7 @@ export const DetachConfirm = ({
         />
       )}
       {stage === null ? null : (
-        <p role="status" aria-live="polite" className="text-secondary text-muted-foreground">
+        <p role="status" aria-live="polite" className="text-meta text-muted-foreground">
           {stage}
         </p>
       )}

@@ -28,7 +28,7 @@ export const ReviewCommitsDone = ({ model }: Props) => {
           </Button>
         }
       />
-      <ul aria-label="Rewrite facts" className="flex flex-wrap items-center gap-1.5">
+      <ul aria-label="Rewrite facts" className="flex flex-wrap items-center gap-2">
         <li className="list-none">
           <Chip tone="neutral" size="xs" label={commitCountLabel({ count: model.rows.length })} />
         </li>

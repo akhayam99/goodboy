@@ -7,7 +7,7 @@ type Props = {
 export const HandoffRawText = ({ text }: Props) => (
   <ClampedText
     text={text}
-    className="whitespace-pre-wrap break-words font-mono text-2xs leading-relaxed text-muted-foreground"
+    className="whitespace-pre-wrap break-words font-mono text-meta text-muted-foreground"
   >
     {text}
   </ClampedText>

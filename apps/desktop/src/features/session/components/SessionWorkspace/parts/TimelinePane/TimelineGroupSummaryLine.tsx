@@ -13,7 +13,7 @@ export const TimelineGroupSummaryLine = ({ summary }: Props) => (
   <span
     data-testid="resolve-batch-summary"
     title={groupSummaryText({ summary })}
-    className="min-w-0 truncate text-secondary text-muted-foreground"
+    className="min-w-0 truncate text-meta text-muted-foreground"
   >
     {summary.parts.map((part, index) => (
       <span key={part.state}>

@@ -56,7 +56,7 @@ export const AgentUsageFooter = ({ aggregate, contextUsage, turns }: Props) => {
           type="button"
           onClick={dropdown.toggle}
           aria-label="Usage detail"
-          className="flex w-fit items-center gap-1.5 text-secondary tabular-nums text-muted-foreground transition-opacity hover:opacity-80"
+          className="flex w-fit items-center gap-1 text-meta tabular-nums text-muted-foreground transition-opacity hover:opacity-80"
         >
           <UsageStatsRow
             data={data}

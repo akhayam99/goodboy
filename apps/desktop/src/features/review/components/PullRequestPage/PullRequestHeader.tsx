@@ -22,9 +22,7 @@ export const PullRequestHeader = ({ pr, repo, actions }: Props) => (
         />
         <BranchPair headBranch={pr.headBranch} baseBranch={pr.baseBranch} />
         {repo !== null && (
-          <span className="min-w-0 truncate font-mono text-secondary text-muted-foreground">
-            {repo}
-          </span>
+          <span className="min-w-0 truncate font-mono text-meta text-muted-foreground">{repo}</span>
         )}
       </>
     }

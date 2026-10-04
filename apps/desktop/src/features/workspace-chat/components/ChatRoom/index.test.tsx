@@ -556,7 +556,7 @@ describe('ChatRoom', () => {
 
     const copy = screen.getByRole('button', { name: 'Copy the answer' });
     const startHere = screen.getByRole('button', { name: 'Start work from here' });
-    for (const token of ['text-secondary', 'text-faint-foreground', 'h-6', 'px-1.5']) {
+    for (const token of ['text-meta', 'text-faint-foreground', 'h-6', 'px-2']) {
       expect(copy.classList.contains(token)).toBe(true);
       expect(startHere.classList.contains(token)).toBe(true);
     }

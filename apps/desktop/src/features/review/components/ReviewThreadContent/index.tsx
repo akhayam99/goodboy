@@ -24,8 +24,8 @@ export const ReviewThreadContent = ({ thread, onOpenUrl }: Props) => {
   const path = head.path ?? '';
 
   return (
-    <div className="flex min-w-0 flex-col gap-1.5">
-      <div className="flex min-w-0 items-center gap-1.5 text-label text-muted-foreground">
+    <div className="flex min-w-0 flex-col gap-2">
+      <div className="flex min-w-0 items-center gap-2 text-label text-muted-foreground">
         <Avatar url={head.authorAvatarUrl} alt={head.author} />
         <span className="min-w-0 truncate font-medium text-foreground">{head.author}</span>
         {isBot(head.author) && <Chip tone="info" size="xs" label="Bot" />}

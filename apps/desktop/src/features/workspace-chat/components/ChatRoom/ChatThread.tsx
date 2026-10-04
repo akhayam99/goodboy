@@ -73,7 +73,7 @@ export const ChatThread = ({
   return (
     <ScrollFade className="flex-1" viewportRef={viewportRef} onViewportScroll={onScroll}>
       <PageColumn>
-        <ol aria-label="Messages" className="flex w-full flex-col gap-4 pb-5 pt-1.5 select-text">
+        <ol aria-label="Messages" className="flex w-full flex-col gap-4 pb-5 pt-2 select-text">
           {messages.map((message) => (
             <Fragment key={message.id}>
               <li className="flex flex-col">

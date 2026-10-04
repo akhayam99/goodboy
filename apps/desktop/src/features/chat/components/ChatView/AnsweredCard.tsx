@@ -52,13 +52,13 @@ export const AnsweredCard = ({ question, answeredByName = null }: Props) => {
     >
       <Markdown
         text={question.text}
-        className="min-w-0 gap-2 break-words text-sm font-medium leading-relaxed text-foreground"
+        className="min-w-0 gap-2 break-words text-body font-medium leading-relaxed text-foreground"
       />
       {resolvedByAgent ? (
-        <p className="text-secondary text-muted-foreground">resolved by agent</p>
+        <p className="text-meta text-muted-foreground">resolved by agent</p>
       ) : (
         <div className="flex flex-col gap-2">
-          <span className="text-secondary font-medium text-muted-foreground">
+          <span className="text-chip text-muted-foreground">
             {answeredByAgent ? agentAnsweredLabel({ name: answeredByName }) : 'You answered:'}
           </span>
           <Markdown

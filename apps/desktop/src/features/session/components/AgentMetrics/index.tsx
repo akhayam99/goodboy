@@ -133,7 +133,7 @@ export const AgentMetrics = ({
       {showTokens ? (
         <div
           data-testid="agent-metrics-block"
-          className="flex items-center gap-1.5 whitespace-nowrap text-secondary text-faint-foreground"
+          className="flex items-center gap-1 whitespace-nowrap text-meta text-faint-foreground"
         >
           <span
             className="inline-flex items-baseline gap-0.5 tabular-nums"

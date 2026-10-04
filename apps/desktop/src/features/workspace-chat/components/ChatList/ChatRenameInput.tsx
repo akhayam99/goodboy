@@ -49,7 +49,7 @@ export const ChatRenameInput = ({ title, onCommit, onCancel }: Props) => {
       spellCheck={false}
       onKeyDown={onKeyDown}
       onBlur={() => finish(true)}
-      className="pointer-events-auto -ml-1.5 h-6 min-w-0 flex-1 rounded-sm bg-floating px-1.5 text-label text-foreground outline-none ring-1 ring-focus-ring"
+      className="pointer-events-auto -ml-2 h-6 min-w-0 flex-1 rounded-sm bg-floating px-2 text-label text-foreground outline-none ring-1 ring-focus-ring"
     />
   );
 };

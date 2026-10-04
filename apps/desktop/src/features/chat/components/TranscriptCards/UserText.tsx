@@ -85,10 +85,10 @@ export const UserText = ({
       onContextMenu={menu.onContextMenu}
       tone="neutral"
       variant="plain"
-      className="ml-auto flex w-fit max-w-[85%] flex-col gap-1.5 rounded-lg bg-elevated px-3 py-2 ring-1 ring-border-soft"
+      className="ml-auto flex w-fit max-w-[85%] flex-col gap-2 rounded-lg bg-elevated px-3 py-2 ring-1 ring-border-soft"
     >
       {atts.length > 0 && (
-        <div className="flex flex-wrap justify-end gap-1.5">
+        <div className="flex flex-wrap justify-end gap-2">
           {atts.map((a) => (
             <MessageAttachmentChip key={a.id} attachment={a} workingDir={workingDir} />
           ))}
@@ -99,7 +99,7 @@ export const UserText = ({
           <Markdown text={text} />
         </ClampedText>
       )}
-      <div className="flex items-center justify-end gap-1.5">
+      <div className="flex items-center justify-end gap-2">
         <MetaRow
           items={[
             provider ? <ProviderFootnote key="provider" provider={provider} model={model} /> : null,

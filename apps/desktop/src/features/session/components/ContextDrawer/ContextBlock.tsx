@@ -16,7 +16,7 @@ export const ContextBlock = ({ title, icon: Icon, count, action, className, chil
   <section
     aria-label={title}
     className={cn(
-      'group/context-block flex flex-col gap-2 rounded-lg bg-fill px-3 py-2.5',
+      'group/context-block flex flex-col gap-2 rounded-lg bg-fill px-3 py-3',
       className,
     )}
   >
@@ -27,7 +27,7 @@ export const ContextBlock = ({ title, icon: Icon, count, action, className, chil
           icon={Icon != null ? <Icon size={ICON_SIZE.row} aria-hidden /> : undefined}
         />
         {count === undefined ? null : (
-          <span className="text-secondary tabular-nums text-faint-foreground">{count}</span>
+          <span className="text-meta tabular-nums text-faint-foreground">{count}</span>
         )}
       </h3>
       {action ?? null}

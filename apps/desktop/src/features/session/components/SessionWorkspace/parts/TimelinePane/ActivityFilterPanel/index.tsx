@@ -144,7 +144,7 @@ export const ActivityFilterPanel = ({
           aria-haspopup="dialog"
           aria-expanded={open}
           className={cn(
-            'inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-label motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            'inline-flex h-7 items-center gap-2 rounded-md px-2 text-label motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             detail === null
               ? 'text-muted-foreground hover:text-foreground'
               : cn('text-foreground ring-1 ring-inset', tintClasses('primary').ringStrong),
@@ -194,7 +194,7 @@ export const ActivityFilterPanel = ({
               onPreset({ preset: value });
             }}
           />
-          <span className="text-secondary tabular-nums text-muted-foreground">
+          <span className="text-meta tabular-nums text-muted-foreground">
             {`Showing ${visibleCount} of ${totalCount} rows`}
           </span>
         </div>
@@ -213,7 +213,7 @@ export const ActivityFilterPanel = ({
         <FormActions
           className="min-h-7"
           leading={
-            <span className="min-w-0 truncate text-secondary text-muted-foreground">
+            <span className="min-w-0 truncate text-meta text-muted-foreground">
               {summaryOf({ hidden, preset })}
             </span>
           }

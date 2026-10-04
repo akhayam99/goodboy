@@ -26,7 +26,7 @@ export const HandoffSectionRow = ({ section, doneWhen, sessionId, open, onToggle
       )}
     >
       <TranscriptChevron open={open} />
-      <span className="w-32 shrink-0 text-secondary font-medium text-muted-foreground">
+      <span className="w-32 shrink-0 text-chip text-muted-foreground">
         {HANDOFF_SECTION_LABEL[section.kind]}
       </span>
       <span className="min-w-0 flex-1 truncate text-label text-foreground">{section.summary}</span>

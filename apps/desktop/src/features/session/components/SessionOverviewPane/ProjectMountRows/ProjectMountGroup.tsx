@@ -170,7 +170,7 @@ export const ProjectMountGroup = ({
               {isSkeleton ? (
                 <Skeleton className="h-3.5 w-40" />
               ) : (
-                <span className="flex min-w-0 items-center gap-1.5 text-label text-muted-foreground">
+                <span className="flex min-w-0 items-center gap-2 text-label text-muted-foreground">
                   <span className="text-foreground">{`${openRows.length} worktrees`}</span>
                   <span aria-hidden>·</span>
                   <span>{`${inReview} in review`}</span>
@@ -208,9 +208,7 @@ export const ProjectMountGroup = ({
         <span className="truncate text-row text-foreground">{group.projectName}</span>
         {group.seriesName === null ? null : (
           <Tooltip content="Each part of this split is its own branch and pull request">
-            <span className="truncate text-secondary text-muted-foreground">
-              {group.seriesName}
-            </span>
+            <span className="truncate text-meta text-muted-foreground">{group.seriesName}</span>
           </Tooltip>
         )}
         <div className="ml-auto flex shrink-0 items-center gap-1">

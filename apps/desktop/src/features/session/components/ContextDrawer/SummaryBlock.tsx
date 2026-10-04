@@ -70,7 +70,7 @@ export const SummaryBlock = ({ title, body, icon, isLocked, onCommit }: Props) =
       ) : hasBody ? (
         <KeyLineList items={items} label={title} />
       ) : (
-        <p className="text-secondary text-faint-foreground">Nothing yet.</p>
+        <p className="text-meta text-faint-foreground">Nothing yet.</p>
       )}
     </ContextBlock>
   );

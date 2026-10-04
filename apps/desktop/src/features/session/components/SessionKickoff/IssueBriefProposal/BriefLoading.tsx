@@ -30,7 +30,7 @@ export const BriefLoading = ({ source, onUseIssueText, onDismiss }: Props) => (
     <div
       role="status"
       aria-label={`Writing a brief for ${source.identifier}`}
-      className="flex flex-col gap-1.5"
+      className="flex flex-col gap-2"
     >
       <Skeleton className="h-3.5 w-3/5 rounded-sm" />
       <Skeleton className="h-2.5 w-full rounded-sm" />
@@ -39,9 +39,7 @@ export const BriefLoading = ({ source, onUseIssueText, onDismiss }: Props) => (
     </div>
     <FormActions
       leading={
-        <span className="min-w-0 truncate text-secondary text-shimmer">
-          {readingLabel({ source })}
-        </span>
+        <span className="min-w-0 truncate text-meta text-shimmer">{readingLabel({ source })}</span>
       }
     >
       <Button variant="ghost" size="sm" onClick={onUseIssueText}>

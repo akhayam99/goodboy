@@ -115,16 +115,16 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
           <ConceptTile icon={CONCEPT_ICONS.chat} tone={CONCEPT_TONE.chat} />
         )}
       </div>
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <Eyebrow label={copy.eyebrow} muted />
         <h2 className="text-title text-foreground">{copy.title}</h2>
         <p className="text-prose text-muted-foreground">{copy.body}</p>
       </div>
-      <ul className="flex flex-wrap items-center justify-center gap-1.5 text-secondary text-faint-foreground">
+      <ul className="flex flex-wrap items-center justify-center gap-1 text-meta text-faint-foreground">
         {copy.hints.map((hint, i) => (
           <li
             key={i}
-            className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-background px-2 py-0.5 text-secondary"
+            className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-background px-2 py-0.5 text-chip"
           >
             {hint}
           </li>

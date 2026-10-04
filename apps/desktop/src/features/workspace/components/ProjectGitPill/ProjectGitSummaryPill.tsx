@@ -223,7 +223,7 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
           aria-expanded={dropdown.open}
           onClick={dropdown.toggle}
           className={cn(
-            'relative inline-flex h-7 min-w-0 items-center gap-1.5 rounded-md px-2 text-label font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            'relative inline-flex h-7 min-w-0 items-center gap-2 rounded-md px-2 text-label font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             actionableCount > 0 || hasWarning
               ? 'text-foreground hover:bg-hover'
               : 'text-muted-foreground hover:bg-hover hover:text-foreground',
@@ -241,7 +241,7 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
           ) : uncommittedCount > 0 ? (
             <span
               data-testid="project-git-summary-count"
-              className="shrink-0 text-secondary tabular-nums text-warning"
+              className="shrink-0 text-meta tabular-nums text-warning"
             >
               {uncommittedCount} uncommitted
             </span>
@@ -255,7 +255,7 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
             <div className="min-w-0 flex-1">
               <div className="text-label text-foreground">{entries.length} repos</div>
               {summaryPhrase != null ? (
-                <div className="truncate text-secondary text-muted-foreground">{summaryPhrase}</div>
+                <div className="truncate text-meta text-muted-foreground">{summaryPhrase}</div>
               ) : null}
             </div>
             <IconButton
@@ -298,10 +298,10 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
                   <span className="min-w-0 flex-1 truncate text-label font-medium">
                     {entry.project.name}
                   </span>
-                  <span className="shrink-0 font-mono text-secondary text-muted-foreground">
+                  <span className="shrink-0 font-mono text-meta text-muted-foreground">
                     {entry.branch}
                   </span>
-                  <span className="flex shrink-0 items-center gap-1 justify-end text-secondary">
+                  <span className="flex shrink-0 items-center gap-1 justify-end text-meta">
                     {result?.kind === 'updating' ? (
                       <span className="text-muted-foreground">Updating…</span>
                     ) : result?.kind === 'updated' ? (
@@ -339,7 +339,7 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
           <button
             type="button"
             onClick={() => setSelectedProjectId(null)}
-            className="flex h-9 shrink-0 items-center gap-1.5 border-b border-border-soft px-3 text-label font-medium transition-colors hover:bg-hover"
+            className="flex h-9 shrink-0 items-center gap-2 border-b border-border-soft px-3 text-label font-medium transition-colors hover:bg-hover"
           >
             <ChevronLeft size={ICON_SIZE.row} aria-hidden />
             <span className="truncate">{selectedEntry.project.name}</span>

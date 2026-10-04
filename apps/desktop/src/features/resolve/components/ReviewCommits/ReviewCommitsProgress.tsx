@@ -19,7 +19,7 @@ export const ReviewCommitsProgress = ({ model }: Props) => {
         <li
           key={label}
           className={cn(
-            'inline-flex list-none items-center gap-1.5',
+            'inline-flex list-none items-center gap-2',
             index < model.stage && 'text-muted-foreground',
             index === model.stage && 'text-foreground',
           )}
