@@ -10,7 +10,7 @@ type Props = {
 };
 
 export const RoleModelSummary = ({ provider, model, effort, moreCount }: Props) => (
-  <span data-role-summary className="inline-flex min-w-0 items-center gap-1.5 text-label">
+  <span data-role-summary className="inline-flex min-w-0 items-center gap-2 text-label">
     <TriggerLabel provider={provider} label={routingLabelParts({ provider, model, effort })} />
     {moreCount > 0 ? <span className="shrink-0 text-faint-foreground">+{moreCount}</span> : null}
   </span>

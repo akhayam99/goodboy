@@ -347,7 +347,7 @@ describe('DefaultsPanel', () => {
         },
       },
     };
-    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+    render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
 
     const shape = /^[A-Za-z0-9. ]+·(Minimal|Low|Medium|High|Very high|Max)(\+\d)?$/;
     const auto = roleSummary('Planner');
