@@ -53,6 +53,10 @@ const { state, workspace, storeListeners } = vi.hoisted(() => {
         studioState.appStudio = studio;
         notify();
       },
+      switchStudio: ({ studio }: { readonly studio: { readonly kind: string } }) => {
+        studioState.appStudio = studio;
+        notify();
+      },
       amendStudio: ({ studio }: { readonly studio: { readonly kind: string } }) => {
         studioState.appStudio = studio;
         notify();

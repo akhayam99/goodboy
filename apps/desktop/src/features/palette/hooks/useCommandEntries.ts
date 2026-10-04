@@ -57,8 +57,11 @@ const fire = ({ name, detail }: EventParams): void => {
   );
 };
 
-const openSettings = (detail: SettingsFocus): void =>
-  fire({ name: 'goodboy:open-settings', detail });
+const openNotificationsDoor = (): boolean =>
+  window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT, { detail: { door: true } }));
+
+const openSettings = (focus: SettingsFocus): void =>
+  fire({ name: 'goodboy:open-settings', detail: { ...focus, door: true } });
 
 export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const workspaces = useWorkspaces();
@@ -235,7 +238,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           kind: 'goto',
           group: null,
           icon: CONCEPT_ICONS.inbox,
-          run: () => fire({ name: 'goodboy:open-inbox' }),
+          run: () => fire({ name: 'goodboy:open-inbox', detail: { door: true } }),
         },
         {
           key: 'goto:workflows',
@@ -243,7 +246,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           kind: 'goto',
           group: null,
           icon: CONCEPT_ICONS.workflows,
-          run: () => fire({ name: 'goodboy:open-workflow-studio' }),
+          run: () => fire({ name: 'goodboy:open-workflow-studio', detail: { door: true } }),
         },
         {
           key: 'goto:impact',
@@ -251,7 +254,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           kind: 'goto',
           group: null,
           icon: CONCEPT_ICONS.impact,
-          run: () => openImpactStudio({}),
+          run: () => openImpactStudio({ door: true }),
         },
         {
           key: 'goto:impact-spend',
@@ -259,7 +262,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           kind: 'goto',
           group: null,
           icon: CONCEPT_ICONS.budget,
-          run: () => openImpactStudio({ scope: { kind: 'spend' } }),
+          run: () => openImpactStudio({ scope: { kind: 'spend' }, door: true }),
         },
         {
           key: 'goto:changelog',
@@ -275,7 +278,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           kind: 'goto',
           group: null,
           icon: CONCEPT_ICONS.notifications,
-          run: () => window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT)),
+          run: openNotificationsDoor,
         },
         {
           key: 'goto:workspace-settings',

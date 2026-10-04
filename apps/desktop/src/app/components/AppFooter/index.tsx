@@ -1,6 +1,6 @@
 import { Divider } from '@goodboy/ui';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { FOOTER_INTEGRATIONS } from './categories';
 import { FooterButton } from './FooterButton';
@@ -15,7 +15,7 @@ import {
 import type { ConnectedIntegrations, FooterTarget } from '../../hooks/useAppOverlays/overlayState';
 import type { ShellFooterScope } from '../../shellArrangement';
 
-const SETTINGS_LABEL = `Open settings (${shortcutGlyphs('settings.open')})`;
+const SETTINGS_SHORTCUT = shortcutGlyphs('settings.open');
 
 type Props = {
   readonly scope: ShellFooterScope;
@@ -64,9 +64,8 @@ export const AppFooter = ({
                       key={member.provider}
                       icon={<IntegrationGlyph provider={member.provider} size="xs" useBrandColor />}
                       label={label}
-                      title={label}
                       onClick={() => onOpenIntegration({ provider: member.provider })}
-                      isScoped={target.tool === member.provider}
+                      isCurrent={target.tool === member.provider}
                       showLabel={false}
                     />
                   );
@@ -96,26 +95,20 @@ export const AppFooter = ({
               <FooterButton
                 icon={<CONCEPT_ICONS.inbox size={ICON_SIZE.control} aria-hidden />}
                 label="Inbox"
-                tone={CONCEPT_TONE.inbox}
-                title="Open the inbox for this workspace"
                 onClick={onOpenInbox}
-                active={target.place === 'inbox'}
+                isCurrent={target.place === 'inbox' && target.tool === null}
               />
               <FooterButton
                 icon={<CONCEPT_ICONS.workflows size={ICON_SIZE.control} aria-hidden />}
                 label="Workflows"
-                tone={CONCEPT_TONE.workflows}
-                title="Open the workflow library for this workspace"
                 onClick={onOpenWorkflows}
-                active={target.place === 'workflows'}
+                isCurrent={target.place === 'workflows'}
               />
               <FooterButton
                 icon={<CONCEPT_ICONS.impact size={ICON_SIZE.control} aria-hidden />}
                 label="Impact"
-                tone={CONCEPT_TONE.impact}
-                title="Open Impact for this workspace"
                 onClick={onOpenImpact}
-                active={target.place === 'impact'}
+                isCurrent={target.place === 'impact'}
               />
             </>
           )}
@@ -125,10 +118,9 @@ export const AppFooter = ({
           <FooterButton
             icon={<CONCEPT_ICONS.settings size={ICON_SIZE.control} aria-hidden />}
             label="Settings"
-            tone={CONCEPT_TONE.settings}
-            title={SETTINGS_LABEL}
+            shortcut={SETTINGS_SHORTCUT}
             onClick={onOpenSettings}
-            active={target.place === 'settings'}
+            isCurrent={target.place === 'settings'}
           />
         </div>
       </div>

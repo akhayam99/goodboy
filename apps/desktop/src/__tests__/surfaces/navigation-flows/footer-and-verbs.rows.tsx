@@ -81,25 +81,25 @@ export const FOOTER_AND_VERB_ROWS: ReadonlyArray<Row> = [
   {
     name: 'footer: inbox',
     covers: ['openInbox', 'studio:inbox'],
-    open: () => clickButton(/^Open the inbox/),
+    open: () => clickButton('Inbox'),
     lands: () => heading('All items'),
   },
   {
     name: 'footer: workflow library',
     covers: ['openWorkflows', 'studio:workflow'],
-    open: () => clickButton(/^Open the workflow library/),
+    open: () => clickButton('Workflows'),
     lands: () => visible('button', 'New workflow'),
   },
   {
     name: 'footer: impact',
     covers: ['openImpact', 'studio:impact'],
-    open: () => clickButton(/^Open Impact/),
+    open: () => clickButton('Impact'),
     lands: () => band('Impact'),
   },
   {
     name: 'footer: settings',
     covers: ['openSettings', 'studio:settings', 'scope:home'],
-    open: () => clickButton(/^Open settings/),
+    open: () => clickButton('Settings'),
     lands: () => visible('list', 'App pages'),
   },
   {

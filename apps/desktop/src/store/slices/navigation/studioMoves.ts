@@ -1,8 +1,9 @@
 import { applyLocation } from './applyLocation';
 import { captureLocation } from './captureLocation';
 import { currentStack, stackKey } from './currentStack';
-import { closeStudioTrips, pushEntry, replaceTop } from './history';
-import { EMPTY_FOCUS, type GetFn, type SetFn, type StudioParams } from './types';
+import { goHistory } from './goHistory';
+import { pushEntry, replaceTop } from './history';
+import { EMPTY_FOCUS, type GetFn, type Location, type SetFn, type StudioParams } from './types';
 
 export const openStudio = (set: SetFn, get: GetFn) => {
   return ({ studio }: StudioParams): void => {
@@ -36,6 +37,23 @@ export const amendStudio = (set: SetFn, get: GetFn) => {
   };
 };
 
+export const switchStudio = (set: SetFn, get: GetFn) => {
+  return ({ studio }: StudioParams): void => {
+    const state = get();
+    const live = captureLocation({ state });
+    if (live.studio === null) {
+      get().openStudio({ studio });
+      return;
+    }
+    const stack = currentStack(state);
+    const updated = replaceTop({ stack, next: { ...live, studio, focus: EMPTY_FOCUS } });
+    set((current) => ({
+      navigation: { ...current.navigation, [stackKey(current)]: updated },
+      appStudio: studio,
+    }));
+  };
+};
+
 export const closeStudio = (set: SetFn, get: GetFn) => {
   return (): void => {
     const state = get();
@@ -43,17 +61,12 @@ export const closeStudio = (set: SetFn, get: GetFn) => {
     if (live.studio === null) {
       return;
     }
-    const updated = closeStudioTrips({
-      stack: currentStack(state),
-      base: { ...live, studio: null, focus: EMPTY_FOCUS },
-    });
+    if (goHistory({ set, get, delta: -1 })) {
+      return;
+    }
+    const base: Location = { ...live, studio: null, focus: EMPTY_FOCUS };
+    const updated = replaceTop({ stack: currentStack(state), next: base });
     set((current) => ({ navigation: { ...current.navigation, [stackKey(current)]: updated } }));
-    const landing = updated.entries[updated.index];
-    applyLocation({
-      set,
-      get,
-      location: landing ?? { place: live.place, studio: null, focus: live.focus },
-      isRestore: true,
-    });
+    applyLocation({ set, get, location: base, isRestore: true });
   };
 };

@@ -321,7 +321,7 @@ const seedInbox = async (): Promise<void> => {
   useAppStore.setState({
     starredIssues: { [workspaceId]: [0, 1, 2].map(starredIssue) },
   });
-  await clickButton(/^Open the inbox/);
+  await clickButton('Inbox');
   await visible('region', 'Starred');
 };
 

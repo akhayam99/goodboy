@@ -60,8 +60,10 @@ export const IntegrationAddPopover = ({
               'flex items-center rounded-md py-1 text-secondary font-medium transition-colors',
               isEmpty ? 'gap-1.5 px-2' : FOOTER_LABELED_PAD,
               active
-                ? 'bg-muted text-foreground'
-                : 'text-muted-foreground hover:bg-hover hover:text-foreground',
+                ? 'cursor-default bg-overlay-selected text-foreground'
+                : dropdown.open
+                  ? 'bg-hover text-foreground'
+                  : 'text-muted-foreground hover:bg-hover hover:text-foreground',
             )}
           >
             <Plus size={ICON_SIZE.row} aria-hidden />

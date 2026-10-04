@@ -95,9 +95,8 @@ afterEach(() => {
 });
 
 import { AppFooter } from './index';
-import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 
-const SETTINGS_LABEL = `Open settings (${shortcutGlyphs('settings.open')})`;
+const SETTINGS_LABEL = 'Settings';
 
 const footerRow = () => screen.getByTestId('goodboy-chip').closest('.grid');
 
@@ -175,19 +174,11 @@ describe('AppFooter', () => {
       />,
     );
 
-    expect(rightNames()).toEqual([
-      'Open the inbox for this workspace',
-      'Open the workflow library for this workspace',
-      'Open Impact for this workspace',
-      'Providers',
-      SETTINGS_LABEL,
-    ]);
+    expect(rightNames()).toEqual(['Inbox', 'Workflows', 'Impact', 'Providers', SETTINGS_LABEL]);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open the inbox for this workspace' }));
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Open the workflow library for this workspace' }),
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Open Impact for this workspace' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Inbox' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Workflows' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Impact' }));
     fireEvent.click(screen.getByRole('button', { name: SETTINGS_LABEL }));
 
     expect(onOpenInbox).toHaveBeenCalledOnce();
@@ -209,7 +200,7 @@ describe('AppFooter', () => {
     expect(within(menu).queryByText(/Harborline/)).toBeNull();
     within(menu).getByRole('list', { name: 'Providers, in order, for this workspace' });
     within(menu).getByRole('button', { name: /Connect OpenCode/ });
-    within(menu).getByRole('button', { name: /Open Providers & models/ });
+    within(menu).getByRole('button', { name: /Manage providers/ });
     expect(refreshProviders).not.toHaveBeenCalled();
     expect(storySpies.tauriInvoke).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: /^More pages/ })).toBeNull();
@@ -256,6 +247,44 @@ describe('AppFooter', () => {
     const menu = screen.getByRole('dialog', { name: 'Providers' });
     within(menu).getByText('No provider is connected yet.');
     expect(within(menu).queryByRole('list', { name: /Providers, in order/ })).toBeNull();
+  });
+
+  it('offers a Connect row per provider and no usage figure with none connected', () => {
+    useAppStore.setState({
+      providers: [
+        providerInfo({ id: 'anthropic', connection: 'installed_disconnected' }),
+        providerInfo({ id: 'codex', connection: 'missing' }),
+      ],
+      providerLimits: {},
+    });
+    const { container } = render(<AppFooter {...footerProps()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Providers, none connected' }));
+
+    const menu = screen.getByRole('dialog', { name: 'Providers' });
+    within(menu).getByRole('button', { name: /Connect Claude/ });
+    within(menu).getByRole('button', { name: /Connect Codex/ });
+    within(menu).getByRole('button', { name: /Manage providers/ });
+    expect(container.textContent).not.toMatch(/\d+\s?%/);
+    expect(menu.textContent).not.toMatch(/\d+\s?%/);
+  });
+
+  it('sends Manage providers to the providers home as a door and closes the menu', () => {
+    const listener = vi.fn();
+    window.addEventListener('goodboy:open-settings', listener);
+    render(<AppFooter {...footerProps()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Providers' }));
+    fireEvent.click(
+      within(screen.getByRole('dialog', { name: 'Providers' })).getByRole('button', {
+        name: /Manage providers/,
+      }),
+    );
+    window.removeEventListener('goodboy:open-settings', listener);
+
+    const event = listener.mock.calls[0]?.[0] as CustomEvent;
+    expect(event.detail).toMatchObject({ scope: 'providers', door: true });
+    expect(screen.queryByRole('dialog', { name: 'Providers' })).toBeNull();
   });
 
   it('seats the Goodboy chip in the centre and hands it changelog and shortcuts', () => {
@@ -319,9 +348,7 @@ describe('AppFooter', () => {
     );
 
     const settings = screen.getByRole('button', { name: SETTINGS_LABEL });
-    const workflows = screen.getByRole('button', {
-      name: 'Open the workflow library for this workspace',
-    });
+    const workflows = screen.getByRole('button', { name: 'Workflows' });
 
     expect(settings.getAttribute('aria-current')).toBeNull();
     expect(workflows.getAttribute('aria-current')).toBe('page');
@@ -459,7 +486,7 @@ describe('AppFooter', () => {
     ).toBe('page');
   });
 
-  it('keeps the inbox lit and rings the glyph of the tool whose inbox is open', () => {
+  it('marks only the glyph of the tool whose inbox is open', () => {
     const connected = connectedWith(['sentry', 'github']);
     const overlay: StudioPlace = {
       kind: 'inbox',
@@ -471,11 +498,7 @@ describe('AppFooter', () => {
       />,
     );
 
-    expect(
-      screen
-        .getByRole('button', { name: 'Open the inbox for this workspace' })
-        .getAttribute('aria-current'),
-    ).toBe('page');
+    expect(screen.getByRole('button', { name: 'Inbox' }).getAttribute('aria-current')).toBeNull();
     expect(screen.getByRole('button', { name: 'Sentry' }).getAttribute('aria-current')).toBe(
       'page',
     );
@@ -494,11 +517,7 @@ describe('AppFooter', () => {
       />,
     );
 
-    expect(
-      screen
-        .getByRole('button', { name: 'Open the inbox for this workspace' })
-        .getAttribute('aria-current'),
-    ).toBe('page');
+    expect(screen.getByRole('button', { name: 'Inbox' }).getAttribute('aria-current')).toBe('page');
     expect(screen.getByRole('button', { name: 'Sentry' }).getAttribute('aria-current')).toBeNull();
   });
 
