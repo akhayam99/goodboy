@@ -1,6 +1,7 @@
 import { openToolSettings } from '../../../integrations/openToolSettings';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { inlineMarkdownText, useEscapeLayer, PaneShell } from '@goodboy/ui';
+import { NAMES } from '../../../../shared/names';
 import type { SessionId, StarredIssue, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
@@ -54,7 +55,7 @@ const COLUMN_FOLD_PX = 720;
 const VIEW_TITLE = {
   all: 'All items',
   'in-progress': 'In progress',
-  'with-session': 'With a session',
+  'with-session': NAMES.hasASession,
   closed: 'Closed',
 } satisfies Record<InboxView, string>;
 

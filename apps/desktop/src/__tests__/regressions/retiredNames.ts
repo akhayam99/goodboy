@@ -31,6 +31,7 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
     pattern: /\bResolve the thread after replying\b/,
     use: NAMES.markThreadResolved,
   },
+  { id: 'with-a-session', pattern: /\bWith a session\b/, use: NAMES.hasASession },
   { id: 'your-roles', pattern: /\bYour roles\b/, use: NAMES.yourJob },
   { id: 'defaults-page', pattern: /\b(?:in|then|Open) Defaults\b/, use: NAMES.models },
 ];

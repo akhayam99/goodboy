@@ -1075,7 +1075,7 @@ The inbox is the workspace's queue of incoming work from every connected
 source: issues, pull and merge requests, Slack threads and Sentry errors, one
 record each, one line per record. Records are grouped by day (today,
 yesterday, this week, older) and ordered by time only, newest first. A facet
-rail filters them by view (all, in progress, with a session, closed), by type
+rail filters them by view (all, in progress, has a session, closed), by type
 and by source, one pick per section, with counts; only the types a connected
 tool can produce show. A tool that did not load says so in its source row and
 in one notice above the list. The state column uses the tool's own word, the

@@ -632,12 +632,12 @@ describe('InboxStudio', () => {
     expect(screen.queryByText('ping the team')).toBeNull();
   });
 
-  it('shows the with a session view', () => {
+  it('shows the has a session view', () => {
     h.records = [linkedSentryError, sentryError, linearIssue];
 
     renderStudio();
 
-    fireEvent.click(facet('View', /With a session/));
+    fireEvent.click(facet('View', /Has a session/));
 
     expect(screen.getByText('RangeError boom')).toBeDefined();
     expect(screen.queryByText('TypeError boom')).toBeNull();
