@@ -429,7 +429,7 @@ export type TimelineGap = 'none' | 'sibling' | 'entry';
 export const TIMELINE_GRADE = {
   entry: { lineHeight: 20, height: 40 },
   step: { lineHeight: 16, height: 32 },
-  pending: { lineHeight: 16, height: 26 },
+  pending: { lineHeight: 16, height: 24 },
 } as const satisfies Record<TimelineRowGrade, { lineHeight: number; height: number }>;
 
 export const TIMELINE_GAP = {

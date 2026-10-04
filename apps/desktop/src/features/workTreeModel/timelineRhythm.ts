@@ -10,7 +10,7 @@ type GradeRhythm = {
 const GRADE: Record<TimelineRowGrade, GradeRhythm> = {
   entry: { lineHeight: 20, height: 40 },
   step: { lineHeight: 16, height: 32 },
-  pending: { lineHeight: 16, height: 26 },
+  pending: { lineHeight: 16, height: 24 },
   fact: { lineHeight: 16, height: 28 },
 };
 
