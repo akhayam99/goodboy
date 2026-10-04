@@ -1267,7 +1267,7 @@ workspaceId, nowMs })`, owns every row's subtitle and tone (it replaced three
   workspace). Integrations carries a faint inventory subtitle with no dot,
   "N of M connected" over the whole integration catalog
   (`connectedInventory`). No rail row is red: the destructive actions sit at the
-  bottom of their page, Reset (Wipe local database) at the end of Backup and
+  bottom of their page, Reset (Delete all data) at the end of Backup and
   Disconnect at the end of Projects, and turn red only in their inline
   confirm. Panel sections sit on bands (`Band`, eyebrow outside) with gap between
   them and no `Divider`. The workspace page is the exception: one

@@ -417,29 +417,31 @@ describe('SettingsStudio', () => {
     expect(screen.queryByText('Global fallback token used by every workspace.')).toBeNull();
   });
 
-  it('wipes only after the row confirm and offers a restart', async () => {
+  it('deletes all data only after the row confirm and offers a restart', async () => {
     renderApp({ section: 'backup' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Wipe' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete all data' }));
     expect(state.wipeLocalDatabase).not.toHaveBeenCalled();
 
-    const confirm = screen.getByRole('group', { name: 'Wipe every workspace, session and rule?' });
-    fireEvent.click(within(confirm).getByRole('button', { name: 'Wipe' }));
+    const confirm = screen.getByRole('group', {
+      name: 'Delete every workspace, session and rule?',
+    });
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
     await waitFor(() => expect(state.wipeLocalDatabase).toHaveBeenCalledOnce());
 
-    expect(await screen.findByText('Local data wiped.')).toBeDefined();
+    expect(await screen.findByText('Local data deleted.')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Restart now' }));
     expect(state.relaunchApp).toHaveBeenCalledOnce();
   });
 
-  it('cancels the wipe back to its trigger', () => {
+  it('cancels the delete back to its trigger', () => {
     renderApp({ section: 'backup' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Wipe' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete all data' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(state.wipeLocalDatabase).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Wipe' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Delete all data' })).toBeDefined();
   });
 
   it('has no Help page, and the old Help anchor lands on General', () => {
