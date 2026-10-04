@@ -258,8 +258,8 @@ never exists on one surface only.
   changes; Message this agent, Interrupt while a turn runs, Close or Reopen,
   Change model (one submenu); copy the last reply and the name; Delete agent. A
   workflow run: Open run, View diff; Answer, Start run, Continue step, Restart
-  step, Start the next step, Restore; Copy run summary; Close, Discard and
-  Delete, each confirmed. An artifact: the viewer's verbs by kind and status,
+  step, Start the next step, Restore; Copy run summary; Stop workflow, Archive
+  workflow and Delete, each confirmed. An artifact: the viewer's verbs by kind and status,
   from the list row too, plus Delete on any stored artifact that is not already
   deleted (Undo, no confirm) and Delete permanently on a deleted one (confirmed). A plan part, an inbox record (with the tool verbs of
   an open record), a pull request, a worktree row of the Overview (`mount`), a

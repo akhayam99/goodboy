@@ -482,9 +482,9 @@ manual start, so closing never starts other work. The closure lands in the
 activity feed as its own row ("Closed Add rate limiting by you"). Adding a step
 opens the run again.
 
-Close is offered once the run has started and until it ends. A queued run has
-nothing to close; discard it instead. **Discard** and **Delete** sit in the
-run menu next to it.
+Stop workflow is offered once the run has started and until it ends. A queued
+run has nothing to stop; archive it instead. **Archive workflow** and
+**Delete** sit in the run menu next to it.
 
 **Delete** removes the run and every agent it owns, for preset, custom and
 orchestrated runs alike: its step agents, the agents the orchestrator spawned,
@@ -498,8 +498,8 @@ tombstoned (`agentPurgeStatements`, one transaction for the whole run). The
 agents drop out of the session, the board and the per-agent cost rows at
 once, and there is no undo. What they already spent stays in the session
 total, as it does for a deleted agent. The launch cleanup of agents a run left
-behind purges them the same way. Discard is the verb that keeps the run and
-its agents restorable.
+behind purges them the same way. Archive workflow is the verb that keeps the
+run and its agents restorable.
 
 ### Hands-free runs
 
