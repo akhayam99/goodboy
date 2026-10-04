@@ -33,6 +33,7 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   },
   { id: 'with-a-session', pattern: /\bWith a session\b/, use: NAMES.hasASession },
   { id: 'standing-guidance', pattern: /\bStanding guidance\b/, use: NAMES.guidance },
+  { id: 'close-workflow', pattern: /\bClose (?:this )?workflow\b(?!s)/, use: NAMES.stopWorkflow },
   { id: 'your-roles', pattern: /\bYour roles\b/, use: NAMES.yourJob },
   { id: 'defaults-page', pattern: /\b(?:in|then|Open) Defaults\b/, use: NAMES.models },
 ];

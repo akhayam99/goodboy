@@ -467,7 +467,7 @@ asks before each step, the next step waits for your go.
 
 ### Closing a workflow
 
-**Close workflow** ends a run that nobody else will end: an orchestrated run
+**Stop workflow** ends a run that nobody else will end: an orchestrated run
 between decisions, a run stuck on a failed step, a run you have seen enough
 of. It sits in the header of the workflow detail and in the menu of the run
 row in the activity feed. Goodboy asks you to confirm first. Steps that have
@@ -736,7 +736,7 @@ an `orchestrator_decision` event, and its spend is recorded against the run.
   A failed or unreadable call saves `failure`. **Stop** saves `operator`,
   turns autorun off and skips the running steps, keeping what they wrote.
   **Pause** saves `paused`, which keeps the step in flight and starts nothing.
-  **Close workflow** (`closeWorkflowRun`) saves `closed` next to the `done`
+  **Stop workflow** (`closeWorkflowRun`) saves `closed` next to the `done`
   outcome, on static runs too, so `isWorkflowRunClosedByUser` is the one test
   for a closed run and `isWorkflowRunComplete` reads it as ended. A decision
   in flight is thrown away when it returns, as after an operator stop or a

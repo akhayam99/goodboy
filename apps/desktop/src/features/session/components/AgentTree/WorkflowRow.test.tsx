@@ -714,14 +714,14 @@ describe('WorkflowRow dynamic runs', () => {
     expect((container.firstChild as HTMLElement).className).not.toContain(TERMINAL_DIM);
   });
 
-  it('offers Close workflow on a started run and closes it once confirmed', () => {
+  it('offers Stop workflow on a started run and closes it once confirmed', () => {
     storeMocks.sessionPhaseRuns = { [SESSION_ID]: agents };
     renderDetail();
 
     const lifecycleSlot = screen.getByRole('group', { name: 'Workflow lifecycle actions' });
-    fireEvent.click(within(lifecycleSlot).getByRole('button', { name: 'Close workflow' }));
-    const panel = screen.getByRole('group', { name: 'Close this workflow?' });
-    fireEvent.click(within(panel).getByRole('button', { name: 'Close workflow' }));
+    fireEvent.click(within(lifecycleSlot).getByRole('button', { name: 'Stop workflow' }));
+    const panel = screen.getByRole('group', { name: 'Stop this workflow?' });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Stop workflow' }));
 
     expect(storeMocks.closeWorkflowRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
   });
@@ -742,7 +742,7 @@ describe('WorkflowRow dynamic runs', () => {
     });
 
     expect(screen.getByTitle('Closed by you').textContent).toBe('Closed');
-    expect(screen.queryByRole('button', { name: 'Close workflow' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Stop workflow' })).toBeNull();
     expect(screen.queryByTestId('workflow-autorun-toggle')).toBeNull();
   });
 });

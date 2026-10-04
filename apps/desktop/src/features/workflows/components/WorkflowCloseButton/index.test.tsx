@@ -9,11 +9,11 @@ describe('WorkflowCloseButton', () => {
     const onConfirm = vi.fn();
     render(<WorkflowCloseButton onConfirm={onConfirm} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Stop workflow' }));
     expect(onConfirm).not.toHaveBeenCalled();
 
-    const panel = screen.getByRole('group', { name: 'Close this workflow?' });
-    fireEvent.click(within(panel).getByRole('button', { name: 'Close workflow' }));
+    const panel = screen.getByRole('group', { name: 'Stop this workflow?' });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Stop workflow' }));
     expect(onConfirm).toHaveBeenCalledOnce();
   });
 
@@ -21,10 +21,10 @@ describe('WorkflowCloseButton', () => {
     const onConfirm = vi.fn();
     render(<WorkflowCloseButton onConfirm={onConfirm} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Stop workflow' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(onConfirm).not.toHaveBeenCalled();
-    expect(screen.queryByRole('group', { name: 'Close this workflow?' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Stop this workflow?' })).toBeNull();
   });
 });

@@ -636,7 +636,7 @@ running or done, and so does every surface that reads `formatActiveTime`.
 | cost       | 48px  | what the row has spent, empty before anything is spent                                                        | under 620px it leaves the row             |
 | cost range | 72px  | an estimated cost range before a step starts (`isCostRange`)                                                  | under 620px it leaves the row             |
 | action     | 76px  | the one visible action, reserved for a list that can ask: Activity of an open session, the tree of a live run | never drops                               |
-| menu       | 24px  | the row menu, like Close workflow on a run row                                                                | never drops                               |
+| menu       | 24px  | the row menu, like Stop workflow on a run row                                                                 | never drops                               |
 
 A row inside a `WorkTimeProvider` always renders the time column, empty when
 it has nothing to say, so the columns stay in line. The cost column follows
