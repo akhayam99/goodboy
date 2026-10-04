@@ -67,9 +67,28 @@
   studio. Workspace settings is a scoped pane. Changes save instantly: no
   Save/Cancel footer, and no settings surface stacked on another.
 - **One studio slot.** Workspace and app studios share the shell's single
-  studio slot, one at a time. Opening one replaces the other, never stacks.
-  Scope decides the pattern. Session-scoped editors layer over the session
-  pane. Studios take the slot. Anything that became a lens stays a lens.
+  studio slot, one at a time. Scope decides the pattern. Session-scoped
+  editors layer over the session pane. Studios take the slot. Anything that
+  became a lens stays a lens.
+- **A door replaces, a link stacks.** A door is a control that names a studio:
+  a footer button, the Chat button, a ⌘K Go to row, the limits chip and the
+  spend chip. Pressing a door while a studio is open replaces that studio in
+  the same history entry (`switchStudio`), so five doors in a row leave one
+  entry, not five. A link opened from inside a studio's content (a notification
+  that opens Settings, a card that opens Impact) stacks (`openStudio`), so Back
+  returns to where the link was. Events from the bars carry `door: true`.
+- **One exit.** Close, Esc and Back leave a studio the same way: they land on
+  the entry below it, and Forward brings the studio back. When nothing sits
+  below, Close rewrites the top entry as the page without the studio. Esc is
+  layered: it closes a popover or a confirmation inside the studio before the
+  studio itself.
+- **One selected sign.** The open studio's door, or Board on the board, takes
+  `bg-overlay-selected` with `cursor-default` and `aria-current="page"`, in the
+  top bar and the footer alike. At most one of Board, Chat and the footer doors
+  carries it. A popover trigger (Providers) is never selected: it only reports
+  `aria-expanded`. A button's label, `aria-label` and tooltip name the same word
+  (`Workflows`, `Chat`); the tooltip adds only the shortcut or a count. A narrow
+  window hides the label and keeps the tooltip.
 
 A second entry point reuses the existing mount and never builds a parallel one.
 The palette dispatches an event that the owning component listens for. The
@@ -181,8 +200,8 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   same run, artifact or diff focus. A forward move (crumb, sidebar, palette,
   notification, Board) starts with an empty focus.
 - **Up goes to the parent.** When the previous entry is the parent, Up is Back.
-  Otherwise it pushes the parent. Closing a session studio pops every studio
-  entry stacked on the same base.
+  Otherwise it pushes the parent. Closing an app studio is Back to the entry
+  below it, so Up from a studio and Close land in the same place.
 - **Dead entries fall out.** An archived or deleted session removes its
   entries and collapses the duplicates left behind. An agent that is gone
   falls back to its home lens.
@@ -688,11 +707,12 @@ covered.
   empty, and open the last 12 entries on right click or a 400ms hold. `Board`
   is `SquareKanban` plus the word, 24px high like the search: on the board it
   is pressed (`aria-current="page"`, `You're on the board`) and does nothing;
-  over a studio on the board it closes the studio; in a session it navigates
-  to the board as a history entry. ⌘⇧H does the same. `Chat` sits right of
-  `Board` in the same shape (`MessageCircle` plus the word) and opens the
-  `chat` studio on a new chat; while that studio is open it is pressed and
-  does nothing. It only shows when a workspace is open. The command center opens
+  over a studio on the board it closes the studio and is not pressed; in a
+  session it navigates to the board as a history entry. ⌘⇧H does the same.
+  `Chat` sits right of `Board` in the same shape (`MessageCircle` plus the
+  word) and is a door to the `chat` studio on a new chat; while that studio is
+  open it is pressed and does nothing. Its name is always `Chat`, and the
+  tooltip adds the running count or `New reply`. It only shows when a workspace is open. The command center opens
   the palette and shows ⌘K; it never takes typing itself. In the palette,
   every search with text and no prefix starts with `Ask in Chat`, which opens
   a new chat with the query as its first message; a query that reads like a
@@ -881,12 +901,14 @@ gear on the current-workspace row of the workspace popover. Impact is a
 destination, so it has a launcher; the launcher opens its Overview tab, while
 the spend figure in the top bar and the `Impact: Spend` palette entry open its
 Spend tab. **Providers** is not a door to the Providers & models page: it opens
-a menu that changes things in place (`AppFooter/ProvidersMenu`). On top, every
-connected provider with its 5-hour and weekly limits; under "For <workspace>",
+a menu that changes things in place (`AppFooter/ProvidersMenu`). Settings >
+Providers & models is the one home for providers and usage; the menu holds
+no usage figure and sends there with **Manage providers** (a door). It lists
 the same `ProviderPolicyList` as Defaults > Providers, in order, writing through
-the same `setProviderPolicy`; then Connect for each CLI provider that is not
-connected, and Open Providers & models. It reads the cached providers and never
-refreshes them on open. With no provider connected the button pulses; that pulse
+the same `setProviderPolicy`, then Connect for each CLI provider that is not
+connected, then Manage providers. The top bar's limits chip opens the same
+home on Usage. It reads the cached providers and never refreshes them on
+open. With no provider connected the button pulses; that pulse
 replaced the top bar's old Connect a provider chip, so the limits strip shows
 nothing until a provider is connected. Changelog opens from the Goodboy chip and
 the palette, so it earns no footer entry.
@@ -904,7 +926,8 @@ Goodboy chip never hides. Past that the glyph strip scrolls.
 - The footer target is a pair, the place and the tool (`FooterTarget`). The
   place has the active fill: Inbox while the Inbox studio is open, whatever
   source it filters, or the link action when a disconnected tool form is open.
-  The tool glyph of a connected source gets a quiet ring with no fill. Every
+  The tool glyph of a connected source that is scoped takes the same selected
+  fill, and Inbox then stays unlit so exactly one control is current. Every
   lit control carries `aria-current="page"`, and tests read that instead of
   classes. The source filter can change inside the Inbox and the ring follows.
   Opening any studio closes the others.

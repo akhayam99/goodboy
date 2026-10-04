@@ -15,17 +15,19 @@ import type { StudioPlace } from '../../../store';
 
 type Params = {
   readonly open: (params: { readonly overlay: StudioPlace }) => void;
+  readonly goTo: (params: { readonly overlay: StudioPlace }) => void;
   readonly close: () => void;
   readonly openPalette: () => void;
 };
 
 type Listener = readonly [string, (event: Event) => void];
 
-export const useStudioEvents = ({ open, close, openPalette }: Params) => {
+export const useStudioEvents = ({ open, goTo, close, openPalette }: Params) => {
   useEffect(() => {
+    const via = (event: Event) => (eventValue({ event, key: 'door' }) === true ? goTo : open);
     const openInbox = (event: Event) => {
       const overlay = inboxOverlayFromEvent(event);
-      const openStudio = () => open({ overlay });
+      const openStudio = () => via(event)({ overlay });
       const workspaceId = eventValue({ event, key: 'workspaceId' });
       if (isWorkspaceId(workspaceId) && workspaceId !== useAppStore.getState().currentWorkspaceId) {
         close();
@@ -44,10 +46,13 @@ export const useStudioEvents = ({ open, close, openPalette }: Params) => {
       openStudio();
     };
     const listeners: ReadonlyArray<Listener> = [
-      ['goodboy:open-settings', (event) => open({ overlay: settingsOverlayFromEvent(event) })],
-      ['goodboy:open-guide', () => open({ overlay: { kind: 'guide' } })],
-      [NOTIFICATIONS_STUDIO_EVENT, () => open({ overlay: { kind: 'notifications' } })],
-      [IMPACT_STUDIO_EVENT, (event) => open({ overlay: impactOverlayFromEvent(event) })],
+      [
+        'goodboy:open-settings',
+        (event) => via(event)({ overlay: settingsOverlayFromEvent(event) }),
+      ],
+      ['goodboy:open-guide', (event) => via(event)({ overlay: { kind: 'guide' } })],
+      [NOTIFICATIONS_STUDIO_EVENT, (event) => via(event)({ overlay: { kind: 'notifications' } })],
+      [IMPACT_STUDIO_EVENT, (event) => via(event)({ overlay: impactOverlayFromEvent(event) })],
       ['goodboy:open-inbox', openInbox],
       ['goodboy:add-workspace', () => open({ overlay: { kind: 'addWorkspace' } })],
       [
@@ -55,12 +60,12 @@ export const useStudioEvents = ({ open, close, openPalette }: Params) => {
         () => open({ overlay: { kind: 'addWorkspace', start: 'new-project' } }),
       ],
       ['goodboy:open-pair-device', () => open({ overlay: { kind: 'companion' } })],
-      ['goodboy:open-workflow-studio', () => open({ overlay: { kind: 'workflow' } })],
-      [CHANGELOG_STUDIO_EVENT, () => open({ overlay: { kind: 'changelog' } })],
+      ['goodboy:open-workflow-studio', (event) => via(event)({ overlay: { kind: 'workflow' } })],
+      [CHANGELOG_STUDIO_EVENT, (event) => via(event)({ overlay: { kind: 'changelog' } })],
       [OPEN_COMMAND_PALETTE_EVENT, () => openPalette()],
     ];
     listeners.forEach(([name, listener]) => window.addEventListener(name, listener));
     return () =>
       listeners.forEach(([name, listener]) => window.removeEventListener(name, listener));
-  }, [close, open, openPalette]);
+  }, [close, goTo, open, openPalette]);
 };

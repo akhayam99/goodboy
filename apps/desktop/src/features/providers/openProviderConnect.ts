@@ -12,6 +12,7 @@ export const openProviderConnect = ({ providerId, connection }: Params): void =>
         scope: 'providers',
         provider: providerId,
         action: connection === 'missing' ? 'install' : 'login',
+        door: true,
       },
     }),
   );
