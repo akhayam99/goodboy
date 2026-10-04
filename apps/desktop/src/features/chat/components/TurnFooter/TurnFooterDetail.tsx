@@ -3,6 +3,7 @@ import { formatTokens, formatUsd } from '@goodboy/ui';
 import type { IsoDateTime } from '@goodboy/types';
 import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { formatInteger } from '../../../../shared/utils/formatInteger';
+import { NAMES } from '../../../../shared/names';
 import { modelLabel } from '../../utils/chat-constants';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import type { TurnFooterData } from './useTurnFooter';
@@ -83,7 +84,7 @@ export const TurnFooterDetail = ({
           contextWindow != null &&
           contextWindow > 0 &&
           detailRow({
-            label: 'Context',
+            label: NAMES.contextWindow,
             value: `${formatTokens(data.contextTokens)} of ${formatTokens(contextWindow)}   ${Math.round((data.contextTokens / contextWindow) * 100)}%`,
           })}
         {duration != null &&

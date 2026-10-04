@@ -29,6 +29,7 @@ export const NAMES = {
   spendCap: 'Spend cap',
   spendCaps: 'Spend caps',
   copyContext: 'Copy context',
+  contextWindow: 'Context window',
   role: {
     scout: 'Scout',
     planner: 'Planner',
@@ -53,6 +54,7 @@ const FORMER_NAMES: Readonly<Record<string, ReadonlyArray<string>>> = {
   [NAMES.spendCap]: ['Spend limit', 'Default cap', 'Cap', 'Budget cap'],
   [NAMES.spendCaps]: ['Budget rules'],
   [NAMES.copyContext]: ['Copy as brief'],
+  [NAMES.contextWindow]: ['Context'],
 };
 
 export const formerNamesOf = (name: string): ReadonlyArray<string> => FORMER_NAMES[name] ?? [];
