@@ -1,5 +1,6 @@
 import { Checkbox } from '@goodboy/ui';
 import type { ExportCounts, ExportGroups } from '@goodboy/types';
+import { NAMES } from '../../../../shared/names';
 
 type GroupKey = keyof ExportGroups;
 
@@ -58,7 +59,7 @@ const GROUP_ROWS: ReadonlyArray<GroupRow> = [
   },
   {
     key: 'budgetRules',
-    label: 'Budget rules',
+    label: NAMES.spendCaps,
     help: 'Caps and thresholds per provider',
     count: (counts) => counts.budgetRules,
   },

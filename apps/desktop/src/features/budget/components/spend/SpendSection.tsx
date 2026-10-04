@@ -59,7 +59,7 @@ export const SpendSection = ({
         hint="Caps count the whole month, across workspaces."
         headingLevel={2}
       />
-      <ErrorStrip label="budget rules" error={rulesResult.error} onRetry={onRetryRules} />
+      <ErrorStrip label="spend caps" error={rulesResult.error} onRetry={onRetryRules} />
       <ErrorStrip label="budget alerts" error={alertsResult.error} onRetry={onRetryAlerts} />
       <ErrorStrip
         label="session telemetry"

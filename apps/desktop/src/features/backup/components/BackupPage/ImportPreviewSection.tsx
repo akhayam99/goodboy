@@ -1,5 +1,6 @@
 import { Button } from '@goodboy/ui';
 import type { ImportPreview } from '@goodboy/types';
+import { NAMES } from '../../../../shared/names';
 
 const VERDICT_LABEL: Readonly<Record<string, string>> = {
   same_repository: 'Found',
@@ -14,7 +15,7 @@ const GROUP_LABEL: Readonly<Record<string, string>> = {
   skills: 'Skills',
   phaseTemplates: 'Workflows',
   permissionRules: 'Permission rules',
-  budgetRules: 'Budget rules',
+  budgetRules: NAMES.spendCaps,
   scripts: 'Scripts',
   toolBindings: 'Linked integrations',
 };
