@@ -48,7 +48,7 @@ describe('Chip', () => {
       </>,
     );
 
-    expect(classesOf('tiny')).toContain('text-meta');
+    expect(classesOf('tiny')).toContain('text-chip');
     expect(classesOf('small')).toContain('text-secondary');
   });
 

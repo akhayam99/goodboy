@@ -225,7 +225,7 @@ export const ReviewComment = ({
         {author !== null && (
           <span
             aria-hidden
-            className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-subtle text-meta uppercase text-muted-foreground"
+            className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-subtle text-chip uppercase text-muted-foreground"
           >
             {author.charAt(0)}
           </span>
@@ -482,7 +482,7 @@ export const ReviewComment = ({
                     <KbdPill
                       aria-hidden
                       className={cn(
-                        'ml-1 h-4 min-w-4 text-meta',
+                        'ml-1 h-4 min-w-4 text-chip',
                         action.slot === 'primary' && 'border-on-tone/30 bg-on-tone/15 text-on-tone',
                       )}
                     >

@@ -298,7 +298,7 @@ export const TimelineRowLabel = ({
   return (
     <>
       {item.ordinal != null ? (
-        <span className="w-6 shrink-0 text-right text-meta text-faint-foreground">
+        <span className="w-6 shrink-0 text-right text-chip text-faint-foreground">
           {item.ordinal}
         </span>
       ) : null}

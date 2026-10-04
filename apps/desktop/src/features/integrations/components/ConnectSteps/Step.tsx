@@ -30,7 +30,7 @@ export const ConnectStepsStep = ({ step, ordinal, isLast }: Props) => {
         <span
           aria-hidden
           className={cn(
-            'flex items-center justify-center rounded-full border text-meta',
+            'flex items-center justify-center rounded-full border text-chip',
             step.status === 'done' && cn(successTint.solid, successTint.border),
             step.status === 'current' && cn(primaryTint.solid, primaryTint.border),
             step.status === 'later' && 'border-border-soft text-faint-foreground',

@@ -72,7 +72,7 @@ export const NotificationRow = ({
     notifications.length > 1 ? (
       <span
         aria-label={`${notifications.length} notifications`}
-        className="shrink-0 rounded-full bg-muted px-1.5 text-meta text-muted-foreground"
+        className="shrink-0 rounded-full bg-muted px-1.5 text-chip text-muted-foreground"
       >
         {notifications.length}
       </span>

@@ -29,7 +29,7 @@ export const SessionRowMeta = ({ item }: Props) => {
       <span
         data-testid="session-row-actionable"
         className={cn(
-          'inline-flex shrink-0 items-center gap-1 text-meta font-medium',
+          'inline-flex shrink-0 items-center gap-1 text-chip font-medium',
           tintClasses(isQuestions ? 'warning' : 'draft').icon,
         )}
       >

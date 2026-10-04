@@ -79,7 +79,7 @@ export const ScoutSubtree = ({
             className={cn(
               'inline-flex shrink-0 items-center gap-1 rounded-sm',
               tintClasses('warning').bg,
-              'px-1 py-0.5 text-meta font-medium text-warning',
+              'px-1 py-0.5 text-chip font-medium text-warning',
             )}
             title={`${unreadCount} scout ${unreadCount === 1 ? 'reply' : 'replies'} to review`}
           >

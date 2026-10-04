@@ -137,7 +137,7 @@ export const NotificationCenter = () => {
                 <span
                   className={cn(
                     'absolute -right-1.5 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-warning px-1 font-semibold leading-none text-on-tone tabular-nums',
-                    unread > 9 ? 'text-meta' : 'text-secondary',
+                    unread > 9 ? 'text-chip' : 'text-secondary',
                   )}
                 >
                   {unread > 99 ? '99+' : unread}

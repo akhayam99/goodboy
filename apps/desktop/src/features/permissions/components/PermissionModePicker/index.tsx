@@ -126,7 +126,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
                   {copy.label}
                 </span>
                 {defaultCopy.mode === mode ? (
-                  <span className="rounded-sm bg-muted px-1 text-meta text-muted-foreground">
+                  <span className="rounded-sm bg-muted px-1 text-chip text-muted-foreground">
                     Default
                   </span>
                 ) : null}

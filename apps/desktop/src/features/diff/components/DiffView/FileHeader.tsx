@@ -83,7 +83,7 @@ export const FileHeader = ({
         <span
           aria-label={STATUS_WORD[file.status]}
           className={cn(
-            'flex size-4 shrink-0 items-center justify-center rounded-sm font-mono text-meta font-semibold',
+            'flex size-4 shrink-0 items-center justify-center rounded-sm font-mono text-chip font-semibold',
             tone.text,
             tone.bg,
           )}

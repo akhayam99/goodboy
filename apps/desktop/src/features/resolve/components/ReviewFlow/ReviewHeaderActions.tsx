@@ -76,7 +76,7 @@ export const ReviewHeaderActions = ({
                 <KbdPill
                   aria-hidden
                   className={cn(
-                    'ml-1 h-4 min-w-4 text-meta',
+                    'ml-1 h-4 min-w-4 text-chip',
                     action.slot === 'primary' && 'border-on-tone/30 bg-on-tone/15 text-on-tone',
                   )}
                 >

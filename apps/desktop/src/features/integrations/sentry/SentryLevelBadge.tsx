@@ -12,7 +12,7 @@ export const SentryLevelBadge = ({ level, density = 'default' }: Props) => {
       className={cn(
         'shrink-0 rounded-sm border font-semibold uppercase tracking-eyebrow',
         density === 'compact'
-          ? 'px-1 py-px text-meta leading-none'
+          ? 'px-1 py-px text-chip leading-none'
           : 'px-1.5 py-0.5 text-secondary',
         levelTone({ level }),
       )}

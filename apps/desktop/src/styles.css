@@ -144,14 +144,14 @@
   --text-display--line-height: 32px;
   --text-display--font-weight: 600;
   --text-display--letter-spacing: -0.01em;
-  --text-title: 17px;
+  --text-title: 16px;
   --text-title--line-height: 24px;
   --text-title--font-weight: 600;
   --text-title--letter-spacing: -0.005em;
   --text-heading: 14px;
   --text-heading--line-height: 20px;
   --text-heading--font-weight: 600;
-  --text-row: 14px;
+  --text-row: 13px;
   --text-row--line-height: 20px;
   --text-row--font-weight: 500;
   --text-body: 14px;
@@ -162,8 +162,11 @@
   --text-label--line-height: 16px;
   --text-secondary: 11px;
   --text-secondary--line-height: 16px;
-  --text-meta: 10px;
-  --text-meta--line-height: 14px;
+  --text-meta: 12px;
+  --text-meta--line-height: 16px;
+  --text-chip: 11px;
+  --text-chip--line-height: 16px;
+  --text-chip--font-weight: 500;
 
   --shadow-xl: 0 16px 36px -8px oklch(0 0 0 / 0.22), 0 6px 12px -4px oklch(0 0 0 / 0.16);
 
@@ -675,7 +678,8 @@ body {
 }
 
 @layer utilities {
-  .text-meta {
+  .text-meta,
+  .text-chip {
     font-variant-numeric: tabular-nums;
   }
 }

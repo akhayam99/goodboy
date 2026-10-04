@@ -52,7 +52,7 @@ export const GitlabMrStrip = ({ sessionId, onOpenStudio }: Props) => {
                   className={cn(
                     'rounded-sm',
                     tintClasses('warning').bg,
-                    'px-1 py-px text-meta font-medium uppercase tracking-eyebrow text-warning',
+                    'px-1 py-px text-chip font-medium uppercase tracking-eyebrow text-warning',
                   )}
                 >
                   draft

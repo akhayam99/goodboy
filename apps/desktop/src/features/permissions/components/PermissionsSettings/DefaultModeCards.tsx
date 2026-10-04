@@ -36,7 +36,7 @@ export const DefaultModeCards = ({ value, isBusy, onChange }: Props) => (
               <Icon size={ICON_SIZE.control} aria-hidden className={tintClasses(copy.tone).icon} />
               <span className="text-label text-foreground">{copy.label}</span>
               {mode === DEFAULT_PERMISSION_MODE ? (
-                <span className="rounded-sm bg-muted px-1 text-meta text-muted-foreground">
+                <span className="rounded-sm bg-muted px-1 text-chip text-muted-foreground">
                   Default
                 </span>
               ) : null}

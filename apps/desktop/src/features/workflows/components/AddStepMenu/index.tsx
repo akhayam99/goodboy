@@ -174,7 +174,7 @@ export const AddStepMenu = ({ groups, disabled, onPick }: Props) => {
         {builtin.length > 0 ? (
           <li
             role="presentation"
-            className="px-2 pb-0.5 pt-2 text-meta font-semibold uppercase tracking-eyebrow text-faint-foreground"
+            className="px-2 pb-0.5 pt-2 text-chip font-semibold uppercase tracking-eyebrow text-faint-foreground"
           >
             Built in
           </li>
@@ -183,7 +183,7 @@ export const AddStepMenu = ({ groups, disabled, onPick }: Props) => {
         {workspace.length > 0 ? (
           <li
             role="presentation"
-            className="px-2 pb-0.5 pt-2 text-meta font-semibold uppercase tracking-eyebrow text-faint-foreground"
+            className="px-2 pb-0.5 pt-2 text-chip font-semibold uppercase tracking-eyebrow text-faint-foreground"
           >
             This workspace
           </li>

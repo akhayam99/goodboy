@@ -16,7 +16,7 @@ const DIMENSION_CLASS: Record<AvatarSize, string> = {
 };
 
 const FALLBACK_TEXT_CLASS: Record<AvatarSize, string> = {
-  xs: 'text-meta',
+  xs: 'text-chip',
   sm: 'text-secondary',
 };
 
