@@ -20,7 +20,7 @@ export type LinkWorkRow = LinkWorkItem & {
 
 export type LinkedScopes = ReadonlyMap<string, ReadonlyArray<LinkScope>>;
 
-const ALL_SCOPES: ReadonlyArray<LinkScope> = ['session', 'branch', 'workspace'];
+const ALL_SCOPES: ReadonlyArray<LinkScope> = ['session', 'workspace'];
 
 const NO_SCOPES: ReadonlyArray<LinkScope> = [];
 

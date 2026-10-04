@@ -558,6 +558,17 @@ describe('StageBoardCard footer', () => {
     expect(metaRow?.querySelector('.lucide-chevron-right')).toBeNull();
   });
 
+  it('shows one chip for a task linked to the session and to a branch', () => {
+    state.sessionExternalTasks = {
+      [SESSION_ID]: [
+        { ...externalTask, scope: 'branch', branch: 'hl/compact-cards' } as SessionExternalTask,
+        { ...externalTask, scope: 'session' } as SessionExternalTask,
+      ],
+    };
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(screen.getAllByLabelText('GB-123 from Linear')).toHaveLength(1);
+  });
+
   it('sizes the project chip to its name, caps it, and lets it yield before the icons', () => {
     state.projects = [
       aProject({ workspaceId: WORKSPACE_ID }),

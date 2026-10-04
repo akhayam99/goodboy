@@ -62,9 +62,35 @@ export const resolveRequestedBranchName = ({
 
 type ForkParams = NamingParams & {
   readonly taken: ReadonlyArray<string>;
+  readonly taskIdentifier?: string;
+  readonly taskTitle?: string;
 };
 
-export const resolveForkBranchName = ({ get, session, project, taken }: ForkParams): string => {
+export const resolveForkBranchName = ({
+  get,
+  session,
+  project,
+  taken,
+  taskIdentifier,
+  taskTitle,
+}: ForkParams): string => {
+  if (taskIdentifier !== undefined && taskIdentifier.trim() !== '') {
+    const settings = branchNamingSettings({
+      state: get(),
+      workspaceId: session.workspaceId,
+      project,
+    });
+    return availableBranchName({
+      ...sessionBranchNaming({
+        template: settings.template,
+        prefix: settings.prefix,
+        user: settings.user,
+        goal: taskTitle ?? session.goal,
+        taskIdentifiers: [taskIdentifier],
+      }),
+      taken,
+    });
+  }
   const existing = firstSessionBranch({ get, session });
   if (existing !== null) {
     return nextFreeBranchName({ name: existing, taken });
