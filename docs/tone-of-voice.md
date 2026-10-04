@@ -64,6 +64,12 @@ talking to a market. There are two voices:
   `sentence-case-copy.test.ts` checks the named copy maps.
   `jargon-copy.test.ts` keeps internal words off the screen, against the table
   in [concepts.md](concepts.md) → Vocabulary rules.
+- **Help text stays short.** A `description`, `hint`, `help`, `meta` or `body`
+  holds 13 words or fewer and one fact. It never says where it sits ("shows up
+  here", "above", "below") and never speaks in the first person. A Settings rail
+  row is 24 characters or fewer, without a period. `copy-budget.test.ts` counts
+  what is left and lets the number fall and never grow. A sentence of 14 words
+  that carries a fact is fine: raise the baseline in a change that says why.
 - **No trailing period on titles, eyebrows, button labels, or list items.**
   Body sentences keep theirs. The one exception is a hero line that stands
   alone, because it is read like a spoken beat ("Stop re-explaining yourself.").

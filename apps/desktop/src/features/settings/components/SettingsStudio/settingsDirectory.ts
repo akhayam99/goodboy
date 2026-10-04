@@ -64,11 +64,11 @@ type Params = {
 };
 
 const APP_QUIET: Readonly<Record<AppSection, string>> = {
-  general: 'Updates, theme and editor',
+  general: 'Updates, theme, editor',
   shortcuts: `${SHORTCUT_ROW_COUNT} shortcuts`,
-  backup: 'Export or import your setup',
+  backup: 'Export or import',
   storage: 'Disk space Goodboy uses',
-  branches: 'Merged and stale branches',
+  branches: 'Merged, stale branches',
   'security-findings': 'Secrets in saved scripts',
   help: 'Guide and bug report',
   danger: 'Wipe local data',
@@ -176,7 +176,7 @@ const providerPages = ({ status, workspaceName }: Params): ReadonlyArray<Setting
             label: 'Defaults',
             glyph: { kind: 'defaults' },
             tone: 'primary',
-            quiet: 'The model each job starts with',
+            quiet: 'Model for each job',
             attention: null,
             target: { scope: 'providers' },
             isDanger: false,

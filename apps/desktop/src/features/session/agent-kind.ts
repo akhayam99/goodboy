@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import type { AutoLimitContext } from '../../store/slices/providerLimits/autoLimitContext';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
+import { NAMES } from '../../shared/names';
 import { kindAutoContext } from './kindAutoContext';
 import type {
   Agent,
@@ -443,21 +444,7 @@ export const KIND_TO_ROLE: Record<AgentKind, AgentRole> = {
   generic: 'custom',
 };
 
-export const ROLE_LABEL: Record<AgentRole, string> = {
-  scout: 'Scout',
-  planner: 'Planner',
-  implementer: 'Implementer',
-  reviewer: 'Reviewer',
-  tester: 'Tester',
-  investigator: 'Debugger',
-  docs: 'Docs',
-  report: 'Report',
-  wireframe: 'Wireframe',
-  resolver: 'Resolver',
-  rewriter: 'History rewriter',
-  scribe: 'Scribe',
-  custom: 'Generalist',
-};
+export const ROLE_LABEL: Record<AgentRole, string> = NAMES.role;
 
 export type AgentKindRouting = {
   readonly provider: ProviderId;

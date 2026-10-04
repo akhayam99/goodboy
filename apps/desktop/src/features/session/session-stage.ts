@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { Tone } from '@goodboy/ui';
 import type { SessionAttentionReason, SessionStage, SessionStageInfo } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
+import { NAMES } from '../../shared/names';
 import { PULL_REQUEST_PRESENTATION } from '../../shared/pullRequestPresentation';
 import type { StatePresentation } from '../../shared/utils/statePresentation';
 
@@ -41,23 +42,23 @@ type SessionStageEntry = {
 
 export const SESSION_STAGE_META: Record<SessionStage, SessionStageEntry> = {
   attention: {
-    label: 'needs you',
+    label: NAMES.needsYou.toLowerCase(),
     reason: 'blocked until you act',
   },
   running: {
-    label: 'running',
+    label: NAMES.running.toLowerCase(),
     reason: 'an agent is working right now',
   },
   review: {
-    label: 'in review',
+    label: NAMES.inReview.toLowerCase(),
     reason: 'the work is out for review',
   },
   building: {
-    label: 'building',
+    label: NAMES.building.toLowerCase(),
     reason: 'work in progress, nothing to review yet',
   },
   done: {
-    label: 'done',
+    label: NAMES.done.toLowerCase(),
     reason: 'nothing left to do here',
   },
 };

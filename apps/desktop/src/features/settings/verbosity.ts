@@ -1,4 +1,5 @@
 import type { VerbosityLevel } from '@goodboy/types';
+import { NAMES } from '../../shared/names';
 
 export const VERBOSITY_LEVELS = [
   'brief',
@@ -7,9 +8,9 @@ export const VERBOSITY_LEVELS = [
 ] as const satisfies ReadonlyArray<VerbosityLevel>;
 
 export const VERBOSITY_LABEL: Record<VerbosityLevel, string> = {
-  brief: 'Brief',
-  normal: 'Normal',
-  verbose: 'Verbose',
+  brief: NAMES.short,
+  normal: NAMES.normal,
+  verbose: NAMES.long,
 };
 
 export const VERBOSITY_DOT: Record<VerbosityLevel, string> = {

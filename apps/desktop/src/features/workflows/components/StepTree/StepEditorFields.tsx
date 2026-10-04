@@ -226,9 +226,9 @@ export const StepEditorFields = ({
           />
         )}
         <div className="flex min-w-0 items-center justify-between gap-3 px-2.5">
-          <span className="text-secondary text-muted-foreground">Reply verbosity</span>
+          <span className="text-secondary text-muted-foreground">Reply length</span>
           <SegmentedTabs
-            ariaLabel="Reply verbosity"
+            ariaLabel="Reply length"
             size="xs"
             options={VERBOSITY_OPTIONS}
             value={step.verbosity}
