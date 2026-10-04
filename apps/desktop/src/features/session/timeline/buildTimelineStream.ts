@@ -207,6 +207,33 @@ const eventRank = ({ kind }: { readonly kind: SessionEventKind }): number => {
 
 const laneIdOf = ({ entryId }: { readonly entryId: string }): string => `lane:${entryId}`;
 
+type PushHeadParams = {
+  readonly context: EmitContext;
+  readonly entryId: string;
+  readonly parentGroupId: string | null;
+  readonly identityIndex: number | null;
+  readonly isMuted: boolean;
+};
+
+const pushHead = ({
+  context,
+  entryId,
+  parentGroupId,
+  identityIndex,
+  isMuted,
+}: PushHeadParams): string => {
+  const id = `head:${entryId}`;
+  context.groups.push({
+    id,
+    parentGroupId,
+    identityIndex,
+    isMuted,
+    originRowId: entryId,
+    shape: 'head',
+  });
+  return id;
+};
+
 const dayKeyOf = ({ at }: { readonly at: string }): string => new Date(at).toDateString();
 
 type Sortable = {
@@ -903,6 +930,13 @@ const subagentGroupRows = ({
     }),
     isExpanded: context.expandedGroupIds?.has(id) === true,
   };
+  const headId = pushHead({
+    context,
+    entryId: id,
+    parentGroupId: parentLaneId,
+    identityIndex: identity?.index ?? null,
+    isMuted,
+  });
   const header: DraftRow = {
     kind: 'row',
     id,
@@ -911,7 +945,7 @@ const subagentGroupRows = ({
     entry: group,
     identity,
     familyId,
-    groupId: parentLaneId,
+    groupId: headId,
     ordinal: null,
     sortOrdinal: headerSortOrdinal({
       parentOrdinal: entry.ordinal,
@@ -931,7 +965,7 @@ const subagentGroupRows = ({
   const laneId = laneIdOf({ entryId: id });
   context.groups.push({
     id: laneId,
-    parentGroupId: parentLaneId,
+    parentGroupId: headId,
     identityIndex: identity?.index ?? null,
     isMuted,
     originRowId: id,
@@ -1043,10 +1077,20 @@ const agentRows = ({
   const isChildParentClosed = rowState.phase === 'closed' || isSkippedUnderClosed;
   const nested: DraftRow[] = [];
   const isFolded = fold !== undefined && !fold.isExpanded;
+  const headId =
+    fold === undefined
+      ? null
+      : pushHead({
+          context,
+          entryId: entry.id,
+          parentGroupId: groupId,
+          identityIndex: identity?.index ?? null,
+          isMuted,
+        });
   if (showSubagents && entry.children.length > 0 && !isFolded) {
     context.groups.push({
       id: childLaneId,
-      parentGroupId: groupId,
+      parentGroupId: headId ?? groupId,
       identityIndex: identity?.index ?? null,
       isMuted,
       originRowId: entry.id,
@@ -1074,7 +1118,7 @@ const agentRows = ({
     entry,
     identity,
     familyId,
-    groupId,
+    groupId: headId ?? groupId,
     ordinal: entry.stepLabel,
     sortOrdinal: entry.ordinal,
     rowState,
@@ -1195,6 +1239,16 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
     runStateOf({ entry, context });
   const fold = context.foldByRootId.get(entry.id);
   const isFolded = fold !== undefined && !fold.isExpanded;
+  const headId =
+    fold === undefined
+      ? null
+      : pushHead({
+          context,
+          entryId: entry.id,
+          parentGroupId: null,
+          identityIndex: entry.identity.index,
+          isMuted,
+        });
   const origin: DraftRow = {
     kind: 'row',
     id: entry.id,
@@ -1203,7 +1257,7 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
     entry,
     identity: entry.identity,
     familyId: entry.id,
-    groupId: null,
+    groupId: headId,
     ordinal: null,
     sortOrdinal: 0,
     rowState,
@@ -1216,7 +1270,7 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
   }
   context.groups.push({
     id: laneId,
-    parentGroupId: null,
+    parentGroupId: headId,
     identityIndex: entry.identity.index,
     isMuted,
     originRowId: entry.id,
@@ -1788,6 +1842,13 @@ const batchRows = ({
     seed: runIdentitySeed({ sessionId: batch.batchId }),
   });
   const laneId = batchLaneIdOf({ batch });
+  const headId = pushHead({
+    context,
+    entryId: batch.id,
+    parentGroupId: null,
+    identityIndex: identity.index,
+    isMuted: false,
+  });
   const header: DraftRow = {
     kind: 'row',
     id: batch.id,
@@ -1796,7 +1857,7 @@ const batchRows = ({
     entry: batch,
     identity,
     familyId: batch.id,
-    groupId: null,
+    groupId: headId,
     ordinal: null,
     sortOrdinal: Math.min(...batch.children.map((child) => child.ordinal)) - 1,
     rowState: resolveBatchRowState({ summary: batch.summary }),
@@ -1808,7 +1869,7 @@ const batchRows = ({
   }
   context.groups.push({
     id: laneId,
-    parentGroupId: null,
+    parentGroupId: headId,
     identityIndex: identity.index,
     isMuted: false,
     originRowId: batch.id,

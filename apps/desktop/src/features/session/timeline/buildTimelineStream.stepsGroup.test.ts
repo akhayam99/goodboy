@@ -318,11 +318,99 @@ describe('buildTimelineStream steps group', () => {
 
   it('draws no lane for a folded run but keeps its column', () => {
     const { items, groups } = streamOf({ agents: finishedSteps() });
-    expect(groups.some((group) => group.originRowId === RUN_ROW)).toBe(false);
+    expect(groups.map((group) => group.id)).toEqual([`head:${RUN_ROW}`]);
     const folded = layoutTimelineRail({ rows: items, groups });
     const opened = streamOf({ agents: finishedSteps(), expanded: [RUN_ROW] });
     expect(folded.width).toBe(
       layoutTimelineRail({ rows: opened.items, groups: opened.groups }).width,
+    );
+  });
+
+  it('hangs a folded run on a head with a ball one column in and no lane', () => {
+    const { items, groups } = streamOf({ agents: finishedSteps() });
+
+    expect(groups).toEqual([
+      expect.objectContaining({
+        id: `head:${RUN_ROW}`,
+        originRowId: RUN_ROW,
+        parentGroupId: null,
+        shape: 'head',
+      }),
+    ]);
+    expect(rowOf({ items, id: RUN_ROW }).groupId).toBe(`head:${RUN_ROW}`);
+    const rail = layoutTimelineRail({ rows: items, groups });
+    const runRail = rail.rows[items.findIndex((item) => item.id === RUN_ROW)];
+    expect(runRail?.markerColumn).toBe(1);
+    expect(runRail?.joins.map((join) => join.kind)).toEqual(['stub']);
+  });
+
+  it('hangs an open run on a head and its steps on a lane under it', () => {
+    const { items, groups } = streamOf({ agents: finishedSteps(), expanded: [RUN_ROW] });
+    const head = groups.find((group) => group.id === `head:${RUN_ROW}`);
+    const lane = groups.find((group) => group.id === `lane:${RUN_ROW}`);
+
+    expect(head).toEqual(expect.objectContaining({ shape: 'head', parentGroupId: null }));
+    expect(lane?.parentGroupId).toBe(`head:${RUN_ROW}`);
+    expect(rowOf({ items, id: RUN_ROW }).groupId).toBe(`head:${RUN_ROW}`);
+    expect(rowOf({ items, id: 'agent:scout' }).groupId).toBe(`lane:${RUN_ROW}`);
+    const rail = layoutTimelineRail({ rows: items, groups });
+    expect(rail.columnByGroupId.get(`head:${RUN_ROW}`)).toBe(1);
+    expect(rail.columnByGroupId.get(`lane:${RUN_ROW}`)).toBe(2);
+    const runRail = rail.rows[items.findIndex((item) => item.id === RUN_ROW)];
+    expect(runRail?.joins.map((join) => join.kind)).toEqual(['stub', 'branch']);
+  });
+
+  it('keeps the lane and the head on one identity so hover reaches both', () => {
+    const { groups } = streamOf({ agents: finishedSteps(), expanded: [RUN_ROW] });
+    const head = groups.find((group) => group.id === `head:${RUN_ROW}`);
+    const lane = groups.find((group) => group.id === `lane:${RUN_ROW}`);
+
+    expect(head?.identityIndex).toBe(lane?.identityIndex);
+    expect(head?.isMuted).toBe(lane?.isMuted);
+  });
+
+  it('gives a live run no head since it has no fold', () => {
+    const agents = [
+      step({ id: 'scout', ordinal: 1 }),
+      step({ id: 'plan', ordinal: 2 }),
+      step({ id: 'build', ordinal: 3, status: 'running' }),
+    ];
+    const { groups } = streamOf({ agents });
+
+    expect(groups.some((group) => group.shape === 'head')).toBe(false);
+  });
+
+  it('gives a run page no head', () => {
+    const { entries } = streamOf({ agents: finishedSteps() });
+    const run = entries.find((entry) => entry.kind === 'run');
+    if (run?.kind !== 'run') {
+      throw new Error('run entry is missing');
+    }
+    const tree = buildRunTreeStream({
+      entry: run,
+      unreadAgentIds: new Set(),
+      advance: null,
+      isDeciding: false,
+    });
+
+    expect(tree.groups.some((group) => group.shape === 'head')).toBe(false);
+  });
+
+  it('hangs a folded and an open agent chain on a head', () => {
+    const agents = [
+      chainAgent({ id: 'lead', ordinal: 1 }),
+      chainAgent({ id: 'child-a', ordinal: 2, parentAgentId: 'lead' }),
+      chainAgent({ id: 'child-b', ordinal: 3, parentAgentId: 'lead' }),
+      chainAgent({ id: 'grand', ordinal: 4, parentAgentId: 'child-a' }),
+    ];
+    const folded = streamOf({ agents, hasWorkflow: false });
+    const opened = streamOf({ agents, hasWorkflow: false, expanded: [CHAIN_ROW] });
+
+    expect(folded.groups.map((group) => group.shape)).toEqual(['head']);
+    expect(rowOf({ items: folded.items, id: CHAIN_ROW }).groupId).toBe(`head:${CHAIN_ROW}`);
+    expect(opened.groups.find((group) => group.id === `head:${CHAIN_ROW}`)?.shape).toBe('head');
+    expect(opened.groups.find((group) => group.id === `lane:${CHAIN_ROW}`)?.parentGroupId).toBe(
+      `head:${CHAIN_ROW}`,
     );
   });
 

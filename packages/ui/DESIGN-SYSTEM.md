@@ -359,15 +359,25 @@ Add a tone instead.
 The activity feed draws its structure instead of indenting it. Four ingredients
 make up the whole grammar. Nothing outside this list may appear on the rail:
 
-| ingredient | value                                                       | meaning                                                   |
-| ---------- | ----------------------------------------------------------- | --------------------------------------------------------- |
-| spine      | 1px, `--color-border`, solid, unbroken on every row         | the session's own thread                                  |
-| lane       | 2px, identity hue, solid                                    | a run whose steps have happened                           |
-| join       | quarter curve between spine and lane at a row's marker line | a run departing at its origin or merging when it finished |
-| stub       | 1px, `--color-border`, offset one column                    | a standalone agent's fan-out, which belongs to no run     |
+| ingredient | value                                                             | meaning                                                   |
+| ---------- | ----------------------------------------------------------------- | --------------------------------------------------------- |
+| spine      | 1px, `--color-border`, solid, unbroken on every row               | the session's own thread                                  |
+| lane       | 2px, identity hue, solid                                          | a run whose steps have happened                           |
+| join       | quarter curve between spine and lane at a row's marker line       | a run departing at its origin or merging when it finished |
+| stub       | 1px, `--color-border`, offset one column                          | a standalone agent's fan-out, which belongs to no run     |
+| head       | ball one column in, 1px `--color-border` curve down-left to spine | the group row: the children hang one column past its ball |
 
 The spine is the backbone of the feed. It is full height, always drawn, never
 tinted and never broken.
+
+Every group row sits on a head, folded or open: a finished run, an agent chain,
+a resolve batch and the subagents of an agent. The ball is the group's marker
+one column in from its parent column, a 1px grey curve (the head's stub) leaves
+it flat and lands vertical on that column, and the open children keep to the
+column past the ball, so the lane reads as hanging off the group instead of off
+the spine. The head belongs to the group's lane for hover and click
+(`head:<id>` names the run in the lane spans), but its stub is neutral ink in
+every case. A live run and the run page have no group row and draw no head.
 
 ### A lane is a control
 

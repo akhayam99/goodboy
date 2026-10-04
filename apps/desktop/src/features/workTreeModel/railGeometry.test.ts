@@ -745,7 +745,21 @@ describe('junction integrity', () => {
     ],
   };
 
-  const fixtures: ReadonlyArray<Fixture> = [nested, dangling, concurrent, rejoining];
+  const headed: Fixture = {
+    rows: [
+      nowRow(),
+      row({ id: 'child-2', groupId: 'lane' }),
+      row({ id: 'child-1', groupId: 'lane' }),
+      row({ id: 'origin', groupId: 'head' }),
+      row({ id: 'older' }),
+    ],
+    groups: [
+      group({ id: 'head', originRowId: 'origin', shape: 'head', identityIndex: 3 }),
+      group({ id: 'lane', originRowId: 'origin', parentGroupId: 'head', identityIndex: 3 }),
+    ],
+  };
+
+  const fixtures: ReadonlyArray<Fixture> = [nested, dangling, concurrent, rejoining, headed];
 
   it('keeps every stroke inside the box of its row', () => {
     for (const fixture of fixtures) {
@@ -890,6 +904,157 @@ describe('junction integrity', () => {
         }
       }
     }
+  });
+});
+
+describe('layoutTimelineRail head lane', () => {
+  const headRows = (): ReadonlyArray<RailRowInput> => [
+    row({ id: 'child-2', groupId: 'lane' }),
+    row({ id: 'child-1', groupId: 'lane' }),
+    row({ id: 'origin', groupId: 'head' }),
+  ];
+
+  const headGroups = ({
+    identityIndex = 3,
+  }: { readonly identityIndex?: number | null } = {}): ReadonlyArray<RailGroupInput> => [
+    group({ id: 'head', originRowId: 'origin', shape: 'head', identityIndex }),
+    group({ id: 'lane', originRowId: 'origin', parentGroupId: 'head', identityIndex }),
+  ];
+
+  it('puts the ball one column in and the children one column past it', () => {
+    const layout = layoutTimelineRail({ rows: headRows(), groups: headGroups() });
+
+    expect(layout.columnByGroupId.get('head')).toBe(1);
+    expect(layout.columnByGroupId.get('lane')).toBe(2);
+    expect(railRow(layout, 'origin').markerColumn).toBe(1);
+    expect(railRow(layout, 'child-1').markerColumn).toBe(2);
+    expect(railRow(layout, 'child-2').markerColumn).toBe(2);
+    expect(spanOf(layout, 'child-1')).toEqual(['2:0-36']);
+    expect(spanOf(layout, 'child-2')).toEqual(['2:18-36']);
+  });
+
+  it('runs a grey stub from the ball down and left into the spine, then branches the lane into the ball', () => {
+    const layout = layoutTimelineRail({ rows: headRows(), groups: headGroups() });
+
+    expect(railRow(layout, 'origin').joins).toEqual([
+      {
+        kind: 'stub',
+        spineColumn: 0,
+        laneColumn: 1,
+        laneId: null,
+        identityIndex: null,
+        isMuted: false,
+        dash: 'solid',
+        anchorY: 18,
+        path: 'M 24 18 C 15.16 18, 8 27.16, 8 36',
+      },
+      {
+        kind: 'branch',
+        spineColumn: 1,
+        laneColumn: 2,
+        laneId: 'head',
+        identityIndex: 3,
+        isMuted: false,
+        dash: 'solid',
+        anchorY: 18,
+        path: 'M 40 -1 L 40 0 C 40 8.84, 32.84 18, 24 18',
+      },
+    ]);
+  });
+
+  it('leaves the stub grey whatever identity the run carries', () => {
+    for (const identityIndex of [null, 0, 7]) {
+      const layout = layoutTimelineRail({
+        rows: headRows(),
+        groups: headGroups({ identityIndex }),
+      });
+      const stub = railRow(layout, 'origin').joins.find((join) => join.kind === 'stub');
+
+      expect(stub?.identityIndex).toBeNull();
+      expect(stub?.laneId).toBeNull();
+      expect(stub?.dash).toBe('solid');
+    }
+  });
+
+  it('leaves the stub flat out of the ball and vertical into the spine', () => {
+    const layout = layoutTimelineRail({ rows: headRows(), groups: headGroups() });
+    const stub = railRow(layout, 'origin').joins.find((join) => join.kind === 'stub');
+    if (stub === undefined) {
+      throw new Error('no stub');
+    }
+    const ends = pathEnds({ path: stub.path });
+
+    expect(ends.start).toEqual({ x: railColumnX({ column: 1 }), y: stub.anchorY });
+    expect(ends.startDirection).toEqual({ dx: -1, dy: 0 });
+    expect(ends.end).toEqual({ x: RAIL_SPINE_X, y: railRow(layout, 'origin').height });
+    expect(ends.endDirection).toEqual({ dx: 0, dy: 1 });
+  });
+
+  it('keeps the stub inside the row when the ball sits near the bottom edge', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({ id: 'child', groupId: 'lane' }),
+        row({ id: 'origin', groupId: 'head', markerY: 32, height: 36 }),
+      ],
+      groups: headGroups(),
+    });
+    const stub = railRow(layout, 'origin').joins.find((join) => join.kind === 'stub');
+    const ends = pathEnds({ path: stub?.path ?? '' });
+
+    expect(ends.end.y).toBe(36);
+    expect(ends.endDirection).toEqual({ dx: 0, dy: 1 });
+    expect(stub?.path).toBe('M 24 32 C 15.16 32, 8 32, 8 36');
+  });
+
+  it('reserves width for the head and the lane columns', () => {
+    const layout = layoutTimelineRail({ rows: headRows(), groups: headGroups() });
+
+    expect(layout.width).toBe(RAIL_SPINE_X + 2 * RAIL_LANE_OFFSET + 8);
+  });
+
+  it('names the lane ink and the branch after the head', () => {
+    const layout = layoutTimelineRail({ rows: headRows(), groups: headGroups() });
+
+    expect(railLaneSpans({ rail: railRow(layout, 'child-1') })).toEqual([
+      { laneId: 'head', column: 2, identityIndex: 3, fromY: 0, toY: 36 },
+    ]);
+    expect(railRow(layout, 'origin').joins.map((join) => join.laneId)).toEqual([null, 'head']);
+  });
+
+  it('draws no stub for a head with no children and no lane for it', () => {
+    const layout = layoutTimelineRail({
+      rows: [row({ id: 'origin', groupId: 'head' })],
+      groups: [group({ id: 'head', originRowId: 'origin', shape: 'head', identityIndex: 3 })],
+    });
+
+    expect(railRow(layout, 'origin').markerColumn).toBe(1);
+    expect(railRow(layout, 'origin').joins.map((join) => join.kind)).toEqual(['stub']);
+    expect(lanesOf(layout, 'origin')).toEqual([]);
+  });
+
+  it('gives a second head above the first its own ball column and stub', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({ id: 'b-child', groupId: 'b-lane' }),
+        row({ id: 'b-origin', groupId: 'b-head' }),
+        row({ id: 'a-child', groupId: 'a-lane' }),
+        row({ id: 'a-origin', groupId: 'a-head' }),
+      ],
+      groups: [
+        group({ id: 'b-head', originRowId: 'b-origin', shape: 'head', identityIndex: 1 }),
+        group({ id: 'b-lane', originRowId: 'b-origin', parentGroupId: 'b-head', identityIndex: 1 }),
+        group({ id: 'a-head', originRowId: 'a-origin', shape: 'head', identityIndex: 2 }),
+        group({ id: 'a-lane', originRowId: 'a-origin', parentGroupId: 'a-head', identityIndex: 2 }),
+      ],
+    });
+
+    expect(railRow(layout, 'a-origin').markerColumn).toBe(1);
+    expect(railRow(layout, 'b-origin').markerColumn).toBe(1);
+    for (const id of ['a-origin', 'b-origin']) {
+      expect(railRow(layout, id).joins.map((join) => join.kind)).toEqual(['stub', 'branch']);
+    }
+    expect(railRow(layout, 'a-child').markerColumn).toBe(2);
+    expect(railRow(layout, 'b-child').markerColumn).toBe(2);
   });
 });
 
