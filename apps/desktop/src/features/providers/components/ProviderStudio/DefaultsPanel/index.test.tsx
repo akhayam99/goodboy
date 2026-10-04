@@ -188,7 +188,7 @@ describe('DefaultsPanel', () => {
     const trigger = screen.getByRole('button', { name: /Cursor · Claude as backup/ });
     expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
     expect(
-      screen.getByText('New work starts on Cursor. Backup only runs when no On provider can work.'),
+      screen.getByText('New work starts on Cursor. Backup only if no On provider can work.'),
     ).toBeDefined();
   });
 
@@ -548,7 +548,7 @@ describe('DefaultsPanel', () => {
   it('shows the providers, agents and background tasks on one page', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    expect(screen.getByText('Providers, in order')).toBeDefined();
+    expect(screen.getByText('When a provider is out')).toBeDefined();
     expect(screen.getByText('Step summaries')).toBeDefined();
     expect(screen.getByText('Scout')).toBeDefined();
     expect(screen.queryByRole('tab')).toBeNull();

@@ -145,7 +145,7 @@ Goodboy stores keys in your system keychain, not in its own database.
 Go to **Settings** → **Providers & models** → **Models** to choose what a workspace
 uses when you leave a model on **Auto**. It is one page in three parts.
 
-- **Providers, in order**: the workspace's provider policy, summed up on the row
+- **When a provider is out**: the workspace's provider policy, summed up on the row
   ("Claude, Codex · Cursor as backup"). The row opens the list in place: drag a
   provider by its handle or move it with Alt and an arrow, and set it **On**,
   **Backup only** or **Off**. The first On provider is the default for new work, so
