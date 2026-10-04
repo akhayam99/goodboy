@@ -73,7 +73,7 @@ export const ProvidersMenu = ({ workspaceId }: Props) => {
               'flex items-center rounded-md py-1 text-secondary transition-colors',
               FOOTER_LABELED_PAD,
               dropdown.open
-                ? 'bg-muted text-foreground'
+                ? 'bg-hover text-foreground'
                 : 'text-muted-foreground hover:bg-hover hover:text-foreground',
               hasNoProvider && tintClasses('warning').text,
             )}
@@ -137,7 +137,7 @@ export const ProvidersMenu = ({ workspaceId }: Props) => {
               aria-hidden
               className={tintClasses(CONCEPT_TONE.settings).icon}
             />
-            <span className="flex-1 text-left">Open Providers &amp; models</span>
+            <span className="flex-1 text-left">Manage providers</span>
             <ArrowUpRight size={ICON_SIZE.row} aria-hidden className="text-faint-foreground" />
           </button>
         </li>
