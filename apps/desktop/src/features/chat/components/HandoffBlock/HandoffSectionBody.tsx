@@ -1,6 +1,8 @@
 import { Chip, GhostActionButton, Markdown } from '@goodboy/ui';
 import type { HandoffSection, PlanId, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { ClampedText } from '../../../../shared/components/ClampedText';
+import { codeFenceMarkers } from '../../utils/codeFenceMarkers';
 import { HandoffEarlierStepRow } from './HandoffEarlierStepRow';
 import { HandoffRawText } from './HandoffRawText';
 import { HandoffThreadRow } from './HandoffThreadRow';
@@ -27,9 +29,9 @@ export const HandoffSectionBody = ({ section, doneWhen, sessionId }: Props) => {
     case 'ask':
       return (
         <div className="flex min-w-0 flex-col gap-2">
-          <div className="text-body text-foreground">
-            <Markdown text={section.bodyMd} />
-          </div>
+          <ClampedText text={section.bodyMd} className="text-body text-foreground">
+            <Markdown text={codeFenceMarkers({ text: section.bodyMd })} />
+          </ClampedText>
           {doneWhen === null ? null : (
             <div className="flex min-w-0 gap-2 text-label">
               <span className="w-32 shrink-0 text-muted-foreground">Done when</span>
@@ -40,9 +42,9 @@ export const HandoffSectionBody = ({ section, doneWhen, sessionId }: Props) => {
       );
     case 'goal':
       return (
-        <div className="text-body text-foreground">
+        <ClampedText text={section.bodyMd} className="text-body text-foreground">
           <Markdown text={section.bodyMd} />
-        </div>
+        </ClampedText>
       );
     case 'earlierSteps':
       return (

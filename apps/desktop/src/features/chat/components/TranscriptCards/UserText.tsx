@@ -16,6 +16,7 @@ import { TranscriptShell } from '../TranscriptShell';
 import { CopyButton } from '@goodboy/ui';
 import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
+import { ClampedText } from '../../../../shared/components/ClampedText';
 
 type MessageAttachmentChipProps = {
   readonly attachment: MessageAttachment;
@@ -94,9 +95,9 @@ export const UserText = ({
         </div>
       )}
       {text.length > 0 && (
-        <div className="text-body text-foreground">
+        <ClampedText text={text} className="text-body text-foreground">
           <Markdown text={text} />
-        </div>
+        </ClampedText>
       )}
       <div className="flex items-center justify-end gap-1.5">
         <MetaRow

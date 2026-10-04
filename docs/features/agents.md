@@ -40,7 +40,7 @@ Read who an agent is without giving the transcript away. The title, the **Brief*
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-what-received-light.webp" alt="The top of the Credit once per event id chat: an Also received row with the chips Goal, Plan, 2 files and All, above the message sent by Codex about payments-api and notify-relay, then an Operations row with 1 Grep and 1 Read">
 </picture>
 
-Check exactly what an agent was told. The top of each chat shows the message it got and who sent it, here **Codex**, with an **Also received** row that has a chip for each part of its brief: **Goal**, **Plan**, **2 files**. **All** opens the whole brief, and **View as sent to** the provider shows the exact text, with a copy button.
+Check exactly what an agent was told. The top of each chat starts closed and shows the message and who sent it, here **Codex**. Open it to see a chip for each part of its brief: **Goal**, **Plan**, **2 files**. **All** lists closed summaries, and **View as sent to** the provider shows the exact text, with a copy button. Long text stays at eight lines until you choose **Show all**.
 
 ### Agent transcript
 

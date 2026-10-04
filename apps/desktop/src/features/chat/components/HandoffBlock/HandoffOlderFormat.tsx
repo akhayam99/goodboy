@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Inbox } from 'lucide-react';
-import { Markdown, cn } from '@goodboy/ui';
+import { Markdown } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ClampedText } from '../../../../shared/components/ClampedText';
 import { codeFenceMarkers } from '../../utils/codeFenceMarkers';
 import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
@@ -12,12 +13,8 @@ type Props = {
   readonly at: string;
 };
 
-const CLAMP_LINES = 8;
-
 export const HandoffOlderFormat = ({ text, at }: Props) => {
   const [open, setOpen] = useState(false);
-  const [showAll, setShowAll] = useState(false);
-  const isLong = text.split('\n').length > CLAMP_LINES || text.length > CLAMP_LINES * 100;
 
   return (
     <TranscriptDisclosure
@@ -38,23 +35,9 @@ export const HandoffOlderFormat = ({ text, at }: Props) => {
         />
       }
     >
-      <div
-        className={cn(
-          'overflow-hidden text-label text-foreground',
-          isLong && !showAll && 'line-clamp-8',
-        )}
-      >
+      <ClampedText text={text} className="overflow-hidden text-label text-foreground">
         <Markdown text={codeFenceMarkers({ text })} />
-      </div>
-      {isLong ? (
-        <button
-          type="button"
-          onClick={() => setShowAll((value) => !value)}
-          className="w-fit text-secondary font-medium text-muted-foreground hover:text-foreground"
-        >
-          {showAll ? 'Show less' : 'Show all'}
-        </button>
-      ) : null}
+      </ClampedText>
     </TranscriptDisclosure>
   );
 };
