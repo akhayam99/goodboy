@@ -30,7 +30,7 @@ export const SendControl = ({
         <button
           type="button"
           onClick={onCancel}
-          aria-label="Cancel turn"
+          aria-label="Stop"
           className={cn(
             'inline-flex h-7 w-7 items-center justify-center rounded-md text-danger transition-colors',
             tintClasses('danger').hoverBg,

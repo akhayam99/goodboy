@@ -416,7 +416,7 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     await draftPlan();
     expandStep(0);
 
-    fireEvent.click(withinSteps().getAllByRole('tab', { name: 'Verbose' })[0]!);
+    fireEvent.click(withinSteps().getAllByRole('tab', { name: 'Long' })[0]!);
     fireEvent.click(withinSteps().getAllByRole('combobox', { name: 'Agent role' })[0]!);
     fireEvent.click(
       within(screen.getByRole('listbox', { name: 'Agent role' })).getByRole('option', {

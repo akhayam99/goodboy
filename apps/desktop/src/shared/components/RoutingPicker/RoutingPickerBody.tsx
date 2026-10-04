@@ -441,7 +441,7 @@ export const RoutingPickerBody = ({
         onVerbosity != null && (
           <>
             {separator}
-            <PickerSection label="Replies" hint="How detailed the answers should be">
+            <PickerSection label="Reply length">
               <div className={CHIP_GROUP_CLASS_NAME}>
                 {VERBOSITY_LEVELS.map((level) => (
                   <PickerChip

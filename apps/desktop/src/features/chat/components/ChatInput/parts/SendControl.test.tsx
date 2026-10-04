@@ -27,7 +27,7 @@ describe('SendControl', () => {
   it('shows stop while a turn runs and the field is empty', () => {
     const onCancel = vi.fn();
     render(<SendControl {...base} isRunning isEmpty onCancel={onCancel} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel turn' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
     expect(onCancel).toHaveBeenCalledOnce();
   });
 
@@ -35,7 +35,7 @@ describe('SendControl', () => {
     render(<SendControl {...base} isRunning showsDeliveryChoice />);
     expect(screen.getByRole('button', { name: /^Queue/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: /^Send now/ })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Cancel turn' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
   });
 
   it('sends on click while idle with a draft', () => {

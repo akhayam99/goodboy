@@ -72,8 +72,8 @@ describe('RoutingPicker', () => {
   it('keeps the full routing in the accessible name and the tooltip', () => {
     render(<RoutingPicker {...baseProps} verbosity="brief" onVerbosity={vi.fn()} />);
     const trigger = screen.getByRole('button', { name: /routing/i });
-    expect(trigger.getAttribute('aria-label')).toBe('routing: Claude · Opus 5 · High · Brief');
-    expect(tooltipTextOf({ element: trigger })).toContain('Claude · Opus 5 · High · Brief');
+    expect(trigger.getAttribute('aria-label')).toBe('routing: Claude · Opus 5 · High · Short');
+    expect(tooltipTextOf({ element: trigger })).toContain('Claude · Opus 5 · High · Short');
   });
 
   it('teaches the shortcut that opens it in the trigger tooltip', () => {
@@ -86,7 +86,7 @@ describe('RoutingPicker', () => {
       />,
     );
     expect(tooltipTextOf({ element: screen.getByRole('button', { name: /routing/i }) })).toBe(
-      withShortcutHint({ label: 'Claude · Opus 5 · High · Brief', shortcut: 'session.model' }),
+      withShortcutHint({ label: 'Claude · Opus 5 · High · Short', shortcut: 'session.model' }),
     );
   });
 
@@ -95,7 +95,7 @@ describe('RoutingPicker', () => {
       <RoutingPicker {...baseProps} disabled={true} verbosity="brief" onVerbosity={vi.fn()} />,
     );
     expect(tooltipTextOf({ element: screen.getByRole('button', { name: /routing/i }) })).toBe(
-      'Claude · Opus 5 · High · Brief',
+      'Claude · Opus 5 · High · Short',
     );
   });
 
@@ -834,9 +834,9 @@ describe('RoutingPicker', () => {
   it('offers verbosity only when the caller wires it', () => {
     const view = render(<RoutingPicker {...baseProps} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    expect(screen.getByRole('dialog').textContent).not.toContain('Replies');
+    expect(screen.getByRole('dialog').textContent).not.toContain('Reply length');
     view.rerender(<RoutingPicker {...baseProps} verbosity="brief" onVerbosity={vi.fn()} />);
-    expect(screen.getByRole('dialog').textContent).toContain('Replies');
+    expect(screen.getByRole('dialog').textContent).toContain('Reply length');
   });
 
   it('offers only connected providers', () => {
