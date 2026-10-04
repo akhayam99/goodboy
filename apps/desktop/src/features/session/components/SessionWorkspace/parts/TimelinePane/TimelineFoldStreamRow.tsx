@@ -9,7 +9,7 @@ import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 import type { GroupTotals } from '../../../../timeline/groupTotals';
 import { TimelineGroupChevron } from './TimelineGroupChevron';
 import { TimelineGroupMeta } from './TimelineGroupMeta';
-import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
+import type { TimelineLaneTarget } from './TimelineRail';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
 import { TimelineStreamRow } from './TimelineStreamRow';
 
@@ -21,7 +21,6 @@ type Props = {
   readonly sessionId: SessionId;
   readonly isExpanded: boolean;
   readonly totals: GroupTotals | null;
-  readonly lanes: TimelineLaneControl | null;
   readonly runLane: TimelineLaneTarget | null;
   readonly onSetExpanded: (params: { readonly id: string; readonly isExpanded: boolean }) => void;
   readonly provider?: string | null;
@@ -35,7 +34,6 @@ export const TimelineFoldStreamRow = ({
   sessionId,
   isExpanded,
   totals,
-  lanes,
   runLane,
   onSetExpanded,
   provider = null,
@@ -69,7 +67,6 @@ export const TimelineFoldStreamRow = ({
         </>
       }
       contextMenu={contextMenu}
-      lanes={lanes}
       runLane={runLane}
       provider={provider}
     />

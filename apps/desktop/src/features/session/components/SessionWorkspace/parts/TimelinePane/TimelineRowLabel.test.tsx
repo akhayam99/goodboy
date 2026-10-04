@@ -344,18 +344,6 @@ describe('TimelineRowLabel', () => {
 
     expect(screen.queryByText(expected)).not.toBeNull();
   });
-
-  it('stays quiet about a row nobody just revealed', () => {
-    render(<TimelineRowLabel item={itemOf({ entry: mountEntry() })} />);
-
-    expect(screen.queryByText('Shown because you started it')).toBeNull();
-  });
-
-  it('tags a row that the active filter would otherwise have hidden', () => {
-    render(<TimelineRowLabel item={itemOf({ entry: mountEntry() })} isRevealed />);
-
-    expect(screen.getByText('Shown because you started it')).toBeDefined();
-  });
 });
 
 describe('TimelineRowLabel, a learned row', () => {

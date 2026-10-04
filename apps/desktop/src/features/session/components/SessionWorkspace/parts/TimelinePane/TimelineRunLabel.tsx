@@ -2,23 +2,15 @@ import { WORK_ROW, cn } from '@goodboy/ui';
 import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups';
 import type { GroupSummary } from '../../../../timeline/groupSummary';
 import { runWorkflowKind } from '../../../../timeline/runWorkflowKind';
-import { RevealedRowTag } from './RevealedRowTag';
 import { TimelineFoldTitle } from './TimelineFoldTitle';
 import { TimelineRunChip } from './TimelineRunChip';
 
 type Props = {
   readonly entry: TimelineRunEntry;
   readonly summary?: GroupSummary | null;
-  readonly isLaneLit?: boolean;
-  readonly isRevealed?: boolean;
 };
 
-export const TimelineRunLabel = ({
-  entry,
-  summary = null,
-  isLaneLit = false,
-  isRevealed = false,
-}: Props) => {
+export const TimelineRunLabel = ({ entry, summary = null }: Props) => {
   const isDiscarded = entry.run.discardedAt != null;
   const title = entry.run.title ?? entry.workflow.name;
   return (
@@ -27,7 +19,6 @@ export const TimelineRunLabel = ({
         kind={runWorkflowKind({ workflow: entry.workflow })}
         workflowName={entry.workflow.name}
         muted={isDiscarded}
-        lit={isLaneLit}
       />
       {summary === null ? (
         <span
@@ -53,7 +44,6 @@ export const TimelineRunLabel = ({
           </span>
         </TimelineFoldTitle>
       )}
-      {isRevealed ? <RevealedRowTag /> : null}
     </>
   );
 };

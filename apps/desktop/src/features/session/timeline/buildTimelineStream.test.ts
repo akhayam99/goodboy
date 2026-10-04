@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type {
   Agent,
   AgentId,
+  ArtifactId,
   IsoDateTime,
   OpenQuestion,
   OpenQuestionId,
@@ -33,7 +34,7 @@ import {
   type TimelineRowItem,
 } from './buildTimelineStream';
 import { dayLabel } from './dayLabel';
-import { needsYouRootIds } from './needsYou';
+import { needsYouOwners } from './needsYou';
 import { layoutTimelineRail } from '../../workTreeModel/railGeometry';
 import { rowStateNode, rowStateTone } from '../../workTreeModel/rowStateCopy';
 import { runIdentity, runIdentitySeed } from './runIdentity';
@@ -186,11 +187,6 @@ type StreamParams = {
   readonly plans?: ReadonlyArray<PlanWithCount>;
   readonly artifacts?: ReadonlyArray<SessionArtifact>;
   readonly questions?: ReadonlyArray<OpenQuestion>;
-  readonly showWorkflowSubagents?: boolean;
-  readonly showAgentSubagents?: boolean;
-  readonly showPlans?: boolean;
-  readonly showReports?: boolean;
-  readonly showWireframes?: boolean;
   readonly showQuestions?: boolean;
   readonly expanded?: ReadonlyArray<string>;
 };
@@ -205,11 +201,6 @@ const stream = ({
   plans = [],
   artifacts = [],
   questions = [],
-  showWorkflowSubagents,
-  showAgentSubagents,
-  showPlans,
-  showReports,
-  showWireframes,
   showQuestions,
   expanded = [],
 }: StreamParams) =>
@@ -230,11 +221,6 @@ const stream = ({
     advanceByRunId,
     decidingRunIds,
     dayLabelFor: ({ at }) => dayLabel({ at, now: NOW }),
-    ...(showWorkflowSubagents != null ? { showWorkflowSubagents } : {}),
-    ...(showAgentSubagents != null ? { showAgentSubagents } : {}),
-    ...(showPlans != null ? { showPlans } : {}),
-    ...(showReports != null ? { showReports } : {}),
-    ...(showWireframes != null ? { showWireframes } : {}),
     ...(showQuestions != null ? { showQuestions } : {}),
     expandedGroupIds: new Set(expanded),
   });
@@ -1658,21 +1644,6 @@ describe('buildTimelineStream, subagent collapse', () => {
 
   const FAN_OUT_WORKFLOWS = [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })];
 
-  it('drops workflow descendants but keeps steps when workflow subagents are off', () => {
-    const { items } = stream({
-      workflows: FAN_OUT_WORKFLOWS,
-      agents: FAN_OUT,
-      showWorkflowSubagents: false,
-    });
-
-    expect(items.map(labelOf)).toEqual([
-      'now',
-      'entry:agent:cluster-parent',
-      'entry:run:run-1',
-      'step:agent:implement',
-    ]);
-  });
-
   it('keeps the descendants of a step closed until its row opens them', () => {
     const closed = stream({ workflows: FAN_OUT_WORKFLOWS, agents: FAN_OUT });
     const open = stream({
@@ -1705,27 +1676,10 @@ describe('buildTimelineStream, subagent collapse', () => {
     ]);
   });
 
-  it('drops standalone descendants but keeps the parent when agent subagents are off', () => {
-    const { items } = stream({
-      workflows: FAN_OUT_WORKFLOWS,
-      agents: FAN_OUT,
-      showAgentSubagents: false,
-    });
-
-    expect(items.map(labelOf)).toEqual([
-      'now',
-      'entry:agent:cluster-parent',
-      'entry:run:run-1',
-      'step:agent:implement',
-    ]);
-  });
-
   it('emits no lane for a collapsed brood, so the rail carries no empty group', () => {
     const { items, groups } = stream({
       workflows: FAN_OUT_WORKFLOWS,
       agents: FAN_OUT,
-      showWorkflowSubagents: false,
-      showAgentSubagents: false,
     });
     const layout = layoutTimelineRail({ rows: items, groups });
 
@@ -1748,8 +1702,6 @@ describe('buildTimelineStream, subagent collapse', () => {
       workflows: FAN_OUT_WORKFLOWS,
       agents: FAN_OUT,
       unreadAgentIds: new Set(['sub-a-a', 'cluster-child']),
-      showWorkflowSubagents: false,
-      showAgentSubagents: false,
     });
     const unreadIds = collapsed.items.flatMap((item) =>
       item.kind === 'row' && item.hasUnread ? [item.id] : [],
@@ -1783,17 +1735,6 @@ describe('buildTimelineStream, subagent collapse', () => {
     );
 
     expect(unreadIds).toEqual(['agent:sub-a-a']);
-  });
-
-  it('matches the default stream exactly when both flags are on', () => {
-    const params = {
-      workflows: FAN_OUT_WORKFLOWS,
-      agents: FAN_OUT,
-    };
-
-    expect(stream({ ...params, showWorkflowSubagents: true, showAgentSubagents: true })).toEqual(
-      stream(params),
-    );
   });
 });
 
@@ -1872,15 +1813,52 @@ describe('buildTimelineStream, plan visibility and family anchoring', () => {
     ]);
   });
 
-  it('keeps a plan authored outside a chain on the spine', () => {
-    const { items } = stream({
+  it('folds a plan authored outside a chain into the outputs of its launch', () => {
+    const params = {
       agents: [agent({ id: 'solo', ordinal: 0, startedAt: localIso({ day: 18, hour: 9 }) })],
       plans: [standalonePlan({ id: 'solo-plan', agentId: 'solo' })],
-    });
-    const planRow = items.find((item) => item.kind === 'row' && item.id === 'plan:solo-plan');
+    };
+    const closed = stream(params);
+    const open = stream({ ...params, expanded: ['outputs:agent:solo'] });
+    const launch = closed.items.find((item) => item.kind === 'row' && item.id === 'agent:solo');
+    const planRow = open.items.find((item) => item.kind === 'row' && item.id === 'plan:solo-plan');
 
-    expect(planRow?.groupId).toBeNull();
-    expect(planRow?.kind === 'row' ? planRow.identity : 'missing').toBeNull();
+    expect(closed.items.map(labelOf)).toEqual(['now', 'entry:agent:solo']);
+    expect(launch?.kind === 'row' ? launch.outputs : null).toEqual({
+      id: 'outputs:agent:solo',
+      isExpanded: false,
+      count: 1,
+    });
+    expect(open.items.map(labelOf)).toEqual(['now', 'entry:agent:solo', 'step:plan:solo-plan']);
+    expect(planRow?.groupId).toBe('lane:agent:solo');
+  });
+
+  it('counts every kind of output on the launch and keeps the ones of other launches apart', () => {
+    const { items } = stream({
+      agents: [
+        agent({ id: 'solo', ordinal: 0, startedAt: localIso({ day: 18, hour: 9 }) }),
+        agent({ id: 'other', ordinal: 1, startedAt: localIso({ day: 18, hour: 10 }) }),
+      ],
+      plans: [
+        standalonePlan({ id: 'plan-a', agentId: 'solo' }),
+        standalonePlan({ id: 'plan-b', agentId: 'other' }),
+      ],
+      artifacts: [
+        {
+          ...runReport,
+          id: typedString<ArtifactId>({ value: 'report-solo' }),
+          agentId: typedString<AgentId>({ value: 'solo' }),
+          workflowRunId: null,
+        },
+      ],
+    });
+    const countOf = (id: string) => {
+      const row = items.find((item) => item.kind === 'row' && item.id === id);
+      return row?.kind === 'row' ? row.outputs?.count : undefined;
+    };
+
+    expect(countOf('agent:solo')).toBe(2);
+    expect(countOf('agent:other')).toBe(1);
   });
 
   it('keeps a run plan in the stream by default', () => {
@@ -1891,18 +1869,6 @@ describe('buildTimelineStream, plan visibility and family anchoring', () => {
     });
 
     expect(items.map(labelOf)).toContain('step:plan:plan-1');
-  });
-
-  it('drops a run plan from the stream when plans are hidden', () => {
-    const { items } = stream({
-      workflows: PLAN_RUN_WORKFLOWS,
-      agents: PLAN_RUN_AGENTS,
-      plans: [runPlan],
-      showPlans: false,
-    });
-
-    expect(items.map(labelOf)).not.toContain('step:plan:plan-1');
-    expect(items.map(labelOf)).toContain('step:agent:plan');
   });
 
   const runReport = {
@@ -1974,19 +1940,6 @@ describe('buildTimelineStream, plan visibility and family anchoring', () => {
     expect(items.map(labelOf)).toContain('step:artifact:report-1');
   });
 
-  it('drops a run report from the stream when reports are hidden', () => {
-    const { items } = stream({
-      workflows: PLAN_RUN_WORKFLOWS,
-      agents: PLAN_RUN_AGENTS,
-      plans: [runPlan],
-      artifacts: [runReport],
-      showReports: false,
-    });
-
-    expect(items.map(labelOf)).not.toContain('step:artifact:report-1');
-    expect(items.map(labelOf)).toContain('step:plan:plan-1');
-  });
-
   const answeredQuestion: OpenQuestion = {
     id: typedString<OpenQuestionId>({ value: 'question-1' }),
     sessionId: SESSION_ID,
@@ -2018,12 +1971,8 @@ describe('buildTimelineStream, plan visibility and family anchoring', () => {
   it('weighs a context row, an answered question and a lone plan the same, and a lane plan as a step', () => {
     const { items } = stream({
       workflows: PLAN_RUN_WORKFLOWS,
-      agents: [
-        ...PLAN_RUN_AGENTS,
-        ...ASKER_AGENTS,
-        agent({ id: 'loner', ordinal: 5, startedAt: localIso({ day: 18, hour: 6 }) }),
-      ],
-      plans: [runPlan, standalonePlan({ id: 'lone-plan', agentId: 'loner' })],
+      agents: [...PLAN_RUN_AGENTS, ...ASKER_AGENTS],
+      plans: [runPlan, { ...standalonePlan({ id: 'lone-plan', agentId: 'gone' }) }],
       questions: [answeredQuestion],
       events: [
         sessionEvent({
@@ -2391,43 +2340,6 @@ describe('buildTimelineStream, question artifact rows', () => {
     expect(runRow?.kind === 'row' ? runRow.rowState.ask : undefined).toBeNull();
   });
 
-  it('lifts a question asked by a nested subagent up to the run row', () => {
-    const { items } = stream({
-      workflows: [
-        attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }), stepIds: ['one'] }),
-      ],
-      agents: [
-        agent({
-          id: 'one',
-          ordinal: 1,
-          status: 'running',
-          startedAt: localIso({ day: 18, hour: 9 }),
-          workflowRunId: RUN_ID,
-        }),
-        agent({
-          id: 'child',
-          ordinal: 2,
-          status: 'running',
-          startedAt: localIso({ day: 18, hour: 9, minute: 10 }),
-          workflowRunId: RUN_ID,
-          parentAgentId: 'one',
-        }),
-      ],
-      questions: [
-        openQuestionFor({
-          id: 'nested-question',
-          createdByAgentId: 'child',
-          createdAt: localIso({ day: 18, hour: 9, minute: 20 }),
-        }),
-      ],
-      showWorkflowSubagents: false,
-      showQuestions: false,
-    });
-    const runRow = items.find((item) => item.id === 'run:run-1');
-
-    expect(stateOf(runRow)).toBe('waiting:question');
-  });
-
   it('keeps the run row quiet when a hidden subagent asks but its question row shows', () => {
     const { items } = stream({
       workflows: [
@@ -2457,7 +2369,6 @@ describe('buildTimelineStream, question artifact rows', () => {
           createdAt: localIso({ day: 18, hour: 9, minute: 20 }),
         }),
       ],
-      showWorkflowSubagents: false,
     });
     const runRow = items.find((item) => item.id === 'run:run-1');
 
@@ -2491,7 +2402,6 @@ describe('buildTimelineStream, question artifact rows', () => {
     );
 
     expect(asks).toEqual(['question']);
-    expect(needsYouRootIds({ items }).size).toBe(1);
   });
 
   it('puts the one Restart on the failed step row, never on the run row', () => {
@@ -2518,7 +2428,7 @@ describe('buildTimelineStream, question artifact rows', () => {
 
     expect(asks).toEqual(['agent:restartStep']);
     expect(stateOf(runRow)).toBe('failed:stepFailed');
-    expect(needsYouRootIds({ items }).size).toBe(1);
+    expect(needsYouOwners({ items, entries: [], events: [] })).toHaveLength(1);
   });
 
   it('puts the one Continue on the stopped step row, never on the run row', () => {
@@ -2575,7 +2485,7 @@ describe('buildTimelineStream, question artifact rows', () => {
     );
 
     expect(asks).toEqual(['agent']);
-    expect(needsYouRootIds({ items }).size).toBe(1);
+    expect(needsYouOwners({ items, entries: [], events: [] })).toHaveLength(1);
   });
 
   it('leaves the run row off the question marker once the question is answered', () => {

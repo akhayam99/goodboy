@@ -14,7 +14,7 @@ import { eventMatches } from '../../../../../../shared/keyboard/dispatcher';
 import { SHORTCUTS } from '../../../../../../shared/keyboard/registry';
 import { TIMELINE_GUTTER } from './timelineLayout';
 import { CLOCK_ORDER_TOOLTIP, isClocklessRow } from './timelineClock';
-import { TimelineRail, type TimelineLaneControl, type TimelineLaneTarget } from './TimelineRail';
+import { TimelineRail, type TimelineLaneTarget } from './TimelineRail';
 import { TimelineRowLabel } from './TimelineRowLabel';
 import { TimelineRowMarker } from './TimelineRowMarker';
 
@@ -45,9 +45,8 @@ type Props = {
   readonly progress?: number | null;
   readonly menu?: ReactNode;
   readonly subagents?: ReactNode;
-  readonly lanes?: TimelineLaneControl | null;
+  readonly outputs?: ReactNode;
   readonly runLane?: TimelineLaneTarget | null;
-  readonly isRevealed?: boolean;
   readonly detail?: ReactNode;
   readonly detailHeight?: number;
   readonly expansion?: TimelineRowExpansion | null;
@@ -72,9 +71,8 @@ export const TimelineStreamRow = ({
   progress = null,
   menu = null,
   subagents = null,
-  lanes = null,
+  outputs = null,
   runLane = null,
-  isRevealed = false,
   detail = null,
   detailHeight = 0,
   expansion = null,
@@ -92,7 +90,6 @@ export const TimelineStreamRow = ({
     item.rowState.ask?.kind !== 'reviewComment' &&
     item.rowState.ask?.kind !== 'groupChild' &&
     rowStateTone({ state: item.rowState }) === 'warning';
-  const isLaneLit = runLane !== null && lanes?.hoveredLaneId === runLane.laneId;
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (expansion?.onSet !== undefined) {
       if (event.key === 'ArrowRight' && !expansion.isExpanded) {
@@ -129,9 +126,7 @@ export const TimelineStreamRow = ({
         <TimelineRowLabel
           item={item}
           diffStat={diffStat}
-          isLaneLit={isLaneLit}
           worktrees={worktrees}
-          isRevealed={isRevealed}
           provider={provider}
         />
       </span>
@@ -166,7 +161,7 @@ export const TimelineStreamRow = ({
         </span>
       </span>
       <span className="relative shrink-0" style={{ width: railWidth }}>
-        <TimelineRail rail={rail} width={railWidth} lanes={lanes} />
+        <TimelineRail rail={rail} width={railWidth} />
         {rail.markerY == null ? null : (
           <span
             className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
@@ -211,6 +206,7 @@ export const TimelineStreamRow = ({
             </button>
           )}
           {subagents}
+          {outputs}
           {action == null ? null : (
             <span
               data-testid="timeline-row-action"

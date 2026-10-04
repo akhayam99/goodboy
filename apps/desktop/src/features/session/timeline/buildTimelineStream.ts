@@ -27,12 +27,15 @@ import type {
   TimelinePlanEntry,
   TimelineQuestionEntry,
   TimelineResolveBatchEntry,
+  TimelineResolveFileEntry,
+  TimelineResolveOpenEntry,
   TimelineRunEntry,
   TimelineTopLevelEntry,
 } from './buildTimelineGroups';
 import type { RailGroupInput } from '../../workTreeModel/railGeometry';
 import { runIdentity, runIdentitySeed, type RunIdentity } from './runIdentity';
 import { groupResolveBatches } from './resolveBatchGroups';
+import { resolveBatchFiles, resolveBatchOpen } from './resolveBatchFiles';
 import { resolverRowState, type ResolveActivityFacts } from './resolveActivity';
 import { resolveBatchRowState, type ResolveBatchRef } from './resolveBatchSummary';
 import { decisionCountsText, isEmptyDecisionDiff } from './sessionEventPresentation';
@@ -68,7 +71,9 @@ export type TimelineStreamEntry =
   | TimelineEventEntry
   | TimelineLearningEntry
   | TimelineQuestionEntry
-  | TimelineResolveBatchEntry;
+  | TimelineResolveBatchEntry
+  | TimelineResolveFileEntry
+  | TimelineResolveOpenEntry;
 
 type StreamRail = {
   readonly id: string;
@@ -93,8 +98,19 @@ export type TimelineDayItem = StreamRail & {
 
 type TimelineExplodeSlot = {
   readonly groupId: string;
-  readonly kind: 'batch' | 'subagents' | 'steps';
+  readonly kind: 'batch' | 'subagents' | 'steps' | 'outputs';
 };
+
+type TimelineOutputEntry = TimelinePlanEntry | TimelineArtifactEntry | TimelineLearningEntry;
+
+export type TimelineRowOutputs = {
+  readonly id: string;
+  readonly isExpanded: boolean;
+  readonly count: number;
+};
+
+const outputsExpandId = ({ parentId }: { readonly parentId: string }): string =>
+  `outputs:${parentId}`;
 
 type TimelineRowFold = {
   readonly kind: StepsGroupKind;
@@ -125,6 +141,7 @@ export type TimelineRowItem = StreamRail & {
   readonly explode?: TimelineExplodeSlot;
   readonly fold?: TimelineRowFold;
   readonly subagents?: TimelineRowSubagents;
+  readonly outputs?: TimelineRowOutputs;
 };
 
 export type TimelineMoreItem = StreamRail & {
@@ -150,11 +167,6 @@ type Params = {
   readonly advanceByRunId: ReadonlyMap<string, WorkflowAdvanceState>;
   readonly decidingRunIds: ReadonlySet<string>;
   readonly dayLabelFor: (params: { readonly at: string }) => string | null;
-  readonly showWorkflowSubagents?: boolean;
-  readonly showAgentSubagents?: boolean;
-  readonly showPlans?: boolean;
-  readonly showReports?: boolean;
-  readonly showWireframes?: boolean;
   readonly showQuestions?: boolean;
   readonly resolveBatchByAgentId?: ReadonlyMap<string, ResolveBatchRef>;
   readonly resolveFactsByAgentId?: ReadonlyMap<string, ResolveActivityFacts>;
@@ -180,6 +192,7 @@ type DraftRow = {
   readonly explode?: TimelineExplodeSlot;
   readonly fold?: TimelineRowFold;
   readonly subagents?: TimelineRowSubagents;
+  readonly outputs?: TimelineRowOutputs;
 };
 
 type DraftDay = {
@@ -638,6 +651,30 @@ const NO_RESOLVE_FACTS: ReadonlyMap<string, ResolveActivityFacts> = new Map();
 
 const NO_RESOLVE_BATCHES: ReadonlyMap<string, ResolveBatchRef> = new Map();
 
+const NO_FACTS: ResolveActivityFacts = { state: 'new', word: '' };
+
+const NO_OUTPUTS: ReadonlyArray<TimelineOutputEntry> = [];
+
+const NO_OUTPUTS_BY_AGENT: ReadonlyMap<string, ReadonlyArray<TimelineOutputEntry>> = new Map();
+
+const isOutputEntry = (entry: TimelineTopLevelEntry): entry is TimelineOutputEntry =>
+  entry.kind === 'plan' || entry.kind === 'artifact' || entry.kind === 'learning';
+
+const outputsByAgentEntryIdOf = ({
+  entries,
+}: {
+  readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
+}): ReadonlyMap<string, ReadonlyArray<TimelineOutputEntry>> => {
+  const grouped = new Map<string, Array<TimelineOutputEntry>>();
+  for (const entry of entries) {
+    if (!isOutputEntry(entry) || entry.launchEntryId === undefined) {
+      continue;
+    }
+    grouped.set(entry.launchEntryId, [...(grouped.get(entry.launchEntryId) ?? []), entry]);
+  }
+  return grouped.size === 0 ? NO_OUTPUTS_BY_AGENT : grouped;
+};
+
 const NO_EXPANDED_GROUPS: ReadonlySet<string> = new Set();
 
 const agentRowStateOf = ({
@@ -700,6 +737,7 @@ type EmitContext = {
   readonly showQuestions: boolean;
   readonly questionRowIds: ReadonlySet<string>;
   readonly resolveFactsByAgentId: ReadonlyMap<string, ResolveActivityFacts>;
+  readonly outputsByAgentEntryId: ReadonlyMap<string, ReadonlyArray<TimelineOutputEntry>>;
   readonly expandedGroupIds: ReadonlySet<string> | null;
   readonly fullGroupIds: ReadonlySet<string>;
   readonly mores: Array<{ readonly anchorRowId: string; readonly more: DraftMore }>;
@@ -775,76 +813,6 @@ const entryRowStateOf = ({
     rowState: rowStateOfAgentRow({ resolved, reviewFacts, isSkippedUnderClosed }),
     isSkippedUnderClosed,
   };
-};
-
-type ExplodedRowsParams = {
-  readonly groupId: string;
-  readonly kind: TimelineExplodeSlot['kind'];
-  readonly laneId: string;
-  readonly children: ReadonlyArray<TimelineAgentEntry>;
-  readonly identity: RunIdentity | null;
-  readonly isMuted: boolean;
-  readonly familyId: string | null;
-  readonly showSubagents: boolean;
-  readonly isParentClosed: boolean;
-  readonly context: EmitContext;
-};
-
-const explodedRows = ({
-  groupId,
-  kind,
-  laneId,
-  children,
-  identity,
-  isMuted,
-  familyId,
-  showSubagents,
-  isParentClosed,
-  context,
-}: ExplodedRowsParams): ReadonlyArray<DraftRow> => {
-  const blocks = children
-    .map((child) =>
-      agentRows({
-        entry: child,
-        grade: 'step',
-        identity,
-        isMuted,
-        familyId,
-        groupId: laneId,
-        showSubagents,
-        readyAgentId: null,
-        isParentClosed,
-        context,
-      }),
-    )
-    .flatMap((block) => {
-      const origin = block.at(-1);
-      return origin === undefined ? [] : [{ origin, block }];
-    })
-    .sort((first, second) => compareNewestFirst({ first: first.origin, second: second.origin }));
-  const hiddenCount = context.fullGroupIds.has(groupId)
-    ? 0
-    : Math.max(0, blocks.length - GROUP_VISIBLE_CHILDREN);
-  const shown = blocks.slice(hiddenCount);
-  const rows = shown
-    .flatMap(({ block }) => block)
-    .sort((first, second) => compareNewestFirst({ first, second }));
-  const slot: TimelineExplodeSlot = { groupId, kind };
-  const newest = shown[0]?.origin;
-  if (hiddenCount > 0 && newest !== undefined) {
-    context.mores.push({
-      anchorRowId: newest.id,
-      more: {
-        kind: 'more',
-        id: `more:${groupId}`,
-        familyId,
-        groupId: laneId,
-        hiddenCount,
-        explode: slot,
-      },
-    });
-  }
-  return rows.map((row) => (row.groupId === laneId ? { ...row, explode: slot } : row));
 };
 
 const subagentAttentionKeys = ({
@@ -973,6 +941,43 @@ const agentRows = ({
         }),
       }
     : undefined;
+  const outputEntries = context.outputsByAgentEntryId.get(entry.id) ?? NO_OUTPUTS;
+  const hasOutputs = outputEntries.length > 0 && !isFolded && context.expandedGroupIds !== null;
+  const outputsId = outputsExpandId({ parentId: entry.id });
+  const isOutputsOpen = hasOutputs && context.expandedGroupIds?.has(outputsId) === true;
+  const outputs: TimelineRowOutputs | undefined = hasOutputs
+    ? { id: outputsId, isExpanded: isOutputsOpen, count: outputEntries.length }
+    : undefined;
+  if (isOutputsOpen) {
+    context.groups.push({
+      id: childLaneId,
+      parentGroupId: headId ?? groupId,
+      direction: 'down',
+      identityIndex: identity?.index ?? null,
+      isMuted,
+      originRowId: entry.id,
+      shape: 'merged',
+    });
+    const outputRows = outputEntries.map((output): DraftRow => ({
+      kind: 'row',
+      id: output.id,
+      at: output.at,
+      grade: output.kind === 'learning' ? 'fact' : 'step',
+      entry: output,
+      identity,
+      familyId,
+      groupId: childLaneId,
+      ordinal: null,
+      sortOrdinal: 0,
+      rowState: DONE_ROW_STATE,
+      hasUnread: false,
+      isPending: false,
+    }));
+    nested = [
+      ...nested,
+      ...withSlot({ rows: outputRows, slot: { groupId: outputsId, kind: 'outputs' } }),
+    ];
+  }
   const isPending = entry.agent.status === 'pending' && !isSkippedUnderClosed;
   const origin: DraftRow = {
     kind: 'row',
@@ -993,6 +998,7 @@ const agentRows = ({
     isPending,
     ...(fold === undefined ? {} : { fold }),
     ...(subagents === undefined ? {} : { subagents }),
+    ...(outputs === undefined ? {} : { outputs }),
   };
   return [...withStepsSlot({ rows: nested, fold, groupId: entry.id }), origin];
 };
@@ -1730,11 +1736,13 @@ const streamItemsOf = ({ drafts }: StreamItemsParams): ReadonlyArray<TimelineStr
       opensLane:
         draft.entry.kind === 'resolveBatch' ||
         draft.fold !== undefined ||
-        draft.subagents !== undefined,
+        draft.subagents !== undefined ||
+        draft.outputs !== undefined,
       gap,
       ...(draft.explode === undefined ? {} : { explode: draft.explode }),
       ...(draft.fold === undefined ? {} : { fold: draft.fold }),
       ...(draft.subagents === undefined ? {} : { subagents: draft.subagents }),
+      ...(draft.outputs === undefined ? {} : { outputs: draft.outputs }),
     });
     previous = draft;
   }
@@ -1804,26 +1812,72 @@ const batchRows = ({
   context.groups.push({
     id: laneId,
     parentGroupId: headId,
+    direction: 'down',
     identityIndex: identity.index,
     isMuted: false,
     originRowId: batch.id,
     shape: 'merged',
   });
-  return {
-    header,
-    children: explodedRows({
-      groupId: batch.id,
-      kind: 'batch',
-      laneId,
-      children: batch.children,
-      identity,
-      isMuted: false,
-      familyId: batch.id,
-      showSubagents: context.showAgentSubagents,
-      isParentClosed: false,
-      context,
-    }),
+  const slot: TimelineExplodeSlot = { groupId: batch.id, kind: 'batch' };
+  const files = resolveBatchFiles({
+    batchEntryId: batch.id,
+    prNumber: batch.prNumber,
+    at: batch.at,
+    members: batch.children.map((child, index) => ({
+      entry: child,
+      facts: batch.facts[index] ?? NO_FACTS,
+    })),
+  });
+  const hiddenCount = context.fullGroupIds.has(batch.id)
+    ? 0
+    : Math.max(0, files.length - GROUP_VISIBLE_CHILDREN);
+  const fileRows = files.slice(0, files.length - hiddenCount).map((file, index): DraftRow => ({
+    kind: 'row',
+    id: file.id,
+    at: null,
+    grade: 'step',
+    entry: file,
+    identity,
+    familyId: batch.id,
+    groupId: laneId,
+    ordinal: null,
+    sortOrdinal: index,
+    rowState: resolverRowState({ facts: { state: file.state, word: file.word } }),
+    hasUnread: false,
+    isPending: false,
+    explode: slot,
+  }));
+  const open = resolveBatchOpen({ batchEntryId: batch.id, prNumber: batch.prNumber, at: batch.at });
+  const openRow: DraftRow = {
+    kind: 'row',
+    id: open.id,
+    at: null,
+    grade: 'step',
+    entry: open,
+    identity,
+    familyId: batch.id,
+    groupId: laneId,
+    ordinal: null,
+    sortOrdinal: files.length + 1,
+    rowState: DONE_ROW_STATE,
+    hasUnread: false,
+    isPending: false,
+    explode: slot,
   };
+  if (hiddenCount > 0) {
+    context.mores.push({
+      anchorRowId: open.id,
+      more: {
+        kind: 'more',
+        id: `more:${batch.id}`,
+        familyId: batch.id,
+        groupId: laneId,
+        hiddenCount,
+        explode: slot,
+      },
+    });
+  }
+  return { header, children: [...fileRows, openRow] };
 };
 
 export const buildTimelineStream = ({
@@ -1832,11 +1886,6 @@ export const buildTimelineStream = ({
   advanceByRunId,
   decidingRunIds,
   dayLabelFor,
-  showWorkflowSubagents = true,
-  showAgentSubagents = true,
-  showPlans = true,
-  showReports = true,
-  showWireframes = true,
   showQuestions = true,
   resolveBatchByAgentId = NO_RESOLVE_BATCHES,
   resolveFactsByAgentId = NO_RESOLVE_FACTS,
@@ -1859,14 +1908,15 @@ export const buildTimelineStream = ({
     decidingRunIds,
     chainedRunById,
     groups: [],
-    showWorkflowSubagents,
-    showAgentSubagents,
-    showPlans,
-    showReports,
-    showWireframes,
+    showWorkflowSubagents: true,
+    showAgentSubagents: true,
+    showPlans: true,
+    showReports: true,
+    showWireframes: true,
     showQuestions,
     questionRowIds: showQuestions ? openQuestionRowIds({ entries }) : NO_QUESTION_ROWS,
     resolveFactsByAgentId,
+    outputsByAgentEntryId: outputsByAgentEntryIdOf({ entries }),
     expandedGroupIds,
     fullGroupIds,
     mores: [],
@@ -1908,6 +1958,9 @@ export const buildTimelineStream = ({
           fold: context.foldByRootId.get(entry.id),
         }),
       );
+      continue;
+    }
+    if (isOutputEntry(entry) && entry.launchEntryId !== undefined) {
       continue;
     }
     const laneRoot = laneRootOf({ entry });
@@ -2049,6 +2102,7 @@ export const buildRunTreeStream = ({
     showQuestions: false,
     questionRowIds: NO_QUESTION_ROWS,
     resolveFactsByAgentId: NO_RESOLVE_FACTS,
+    outputsByAgentEntryId: NO_OUTPUTS_BY_AGENT,
     expandedGroupIds: null,
     fullGroupIds: NO_EXPANDED_GROUPS,
     mores: [],
@@ -2097,6 +2151,7 @@ export const buildAgentTreeStream = ({
     showQuestions: false,
     questionRowIds: NO_QUESTION_ROWS,
     resolveFactsByAgentId: NO_RESOLVE_FACTS,
+    outputsByAgentEntryId: NO_OUTPUTS_BY_AGENT,
     expandedGroupIds: null,
     fullGroupIds: NO_EXPANDED_GROUPS,
     mores: [],

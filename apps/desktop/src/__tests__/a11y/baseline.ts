@@ -25,7 +25,6 @@ export const A11Y_BASELINE = {
   'scene artifact-create-report': ['label'],
   'scene artifact-create-wireframe': ['label'],
   'scene activity': [],
-  'scene activity-filter': [],
   'scene activity-run': [],
   'scene workflow-builder': [],
   'scene resolve-queue-shell': [],

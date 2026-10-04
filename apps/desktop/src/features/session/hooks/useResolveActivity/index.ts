@@ -28,6 +28,8 @@ export const useResolveActivity = ({
           threadId: entry.threadId,
           state: entry.state,
           word: entry.word,
+          path: entry.row.reviewerNote?.path ?? null,
+          line: entry.row.reviewerNote?.line ?? null,
         })),
       }),
     }),

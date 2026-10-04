@@ -24,7 +24,6 @@ import {
 import { openResolveDiff, setResolveQueueView } from './resolveSurface';
 import { setResolveItemDraft } from './resolveItemDrafts';
 import { beginSessionCreation, endSessionCreation } from './sessionCreation';
-import { revealActivityRow } from './revealActivityRow';
 import type { SessionViewSlice } from './types';
 import type { SliceDeps } from '../../slice-types';
 
@@ -70,6 +69,5 @@ export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlic
     openExternalTaskLens: openExternalTaskLens(get),
     beginSessionCreation: beginSessionCreation(set),
     endSessionCreation: endSessionCreation(set),
-    revealActivityRow: revealActivityRow(set),
   };
 };

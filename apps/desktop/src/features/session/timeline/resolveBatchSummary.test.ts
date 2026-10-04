@@ -1,13 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { ResolveAttemptLike } from './resolveActivity';
-import {
-  RELATED_WINDOW_MS,
-  resolveBatchByAgentId,
-  resolveBatchTag,
-  resolveBatchTitle,
-} from './resolveBatchSummary';
+import { resolveBatchByAgentId, resolveBatchTag, resolveBatchTitle } from './resolveBatchSummary';
 
 const MINUTE = 60_000;
+const RELATED_WINDOW_MS = 10 * MINUTE;
 
 const attempt = (overrides: Partial<ResolveAttemptLike> & { readonly agentId: string }) => ({
   batchId: null,

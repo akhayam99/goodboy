@@ -5,7 +5,6 @@ import {
   RAIL_SPINE_X,
   layoutTimelineRail,
   railColumnX,
-  railLaneSpans,
   type RailGroupInput,
   type RailGroupShape,
   type RailRowInput,
@@ -846,9 +845,7 @@ describe('layoutTimelineRail head lane', () => {
   it('names the lane ink and the branch after the head', () => {
     const layout = layoutTimelineRail({ rows: headRows(), groups: headGroups() });
 
-    expect(railLaneSpans({ rail: railRow(layout, 'child-1') })).toEqual([
-      { laneId: 'head', column: 2, identityIndex: 3, fromY: 0, toY: 36 },
-    ]);
+    expect(railRow(layout, 'child-1').segments.map((segment) => segment.laneId)).toContain('head');
     expect(railRow(layout, 'origin').joins.map((join) => join.laneId)).toEqual([null, 'head']);
   });
 
@@ -1138,41 +1135,33 @@ describe('layoutTimelineRail down lanes', () => {
   });
 });
 
-describe('railLaneSpans', () => {
-  it('names every nested lane after the run lane it belongs to', () => {
-    const layout = layoutTimelineRail({
-      rows: [
-        row({ id: 'child-1', groupId: 'stub' }),
-        row({ id: 'step-2', groupId: 'lane' }),
-        row({ id: 'between' }),
-        row({ id: 'step-1', groupId: 'lane' }),
-        row({ id: 'origin' }),
-      ],
-      groups: [
-        group({ id: 'lane', originRowId: 'origin' }),
-        group({ id: 'stub', originRowId: 'step-2', parentGroupId: 'lane' }),
-      ],
-    });
+describe('layoutTimelineRail indent only', () => {
+  const rows = [
+    nowRow(),
+    row({ id: 'run' }),
+    row({ id: 'step-1', groupId: 'lane' }),
+    row({ id: 'step-2', groupId: 'lane' }),
+    row({ id: 'later' }),
+  ];
+  const lane: RailGroupInput = { ...group({ id: 'lane', originRowId: 'run' }), direction: 'down' };
 
-    expect(railLaneSpans({ rail: railRow(layout, 'child-1') })).toEqual([
-      { laneId: 'lane', column: 2, identityIndex: 0, fromY: 18, toY: 36 },
-    ]);
-    expect(railRow(layout, 'step-2').joins.map((join) => join.laneId)).toEqual(['lane']);
-    expect(railLaneSpans({ rail: railRow(layout, 'between') })).toEqual([
-      { laneId: 'lane', column: 1, identityIndex: 0, fromY: 0, toY: 36 },
-    ]);
-    expect(railLaneSpans({ rail: railRow(layout, 'step-1') })).toEqual([
-      { laneId: 'lane', column: 1, identityIndex: 0, fromY: 0, toY: 36 },
-    ]);
+  it('keeps the spine and the indent of a lane member and draws nothing else', () => {
+    const layout = layoutTimelineRail({ rows, groups: [lane], isIndentOnly: true });
+
+    for (const rail of layout.rows) {
+      expect(rail.joins).toEqual([]);
+      expect(rail.segments.every((segment) => segment.column === 0)).toBe(true);
+    }
+    expect(railRow(layout, 'run').markerColumn).toBe(0);
+    expect(railRow(layout, 'step-1').markerColumn).toBe(1);
+    expect(railRow(layout, 'step-2').markerColumn).toBe(1);
+    expect(layout.width).toBe(RAIL_SPINE_X + RAIL_LANE_OFFSET + 8);
   });
 
-  it('leaves the spine and neutral stubs out', () => {
-    const layout = layoutTimelineRail({
-      rows: [row({ id: 'child', groupId: 'stub' }), row({ id: 'standalone-agent' })],
-      groups: [group({ id: 'stub', originRowId: 'standalone-agent', identityIndex: null })],
-    });
+  it('still draws the lane and its fork when the indent is not asked alone', () => {
+    const layout = layoutTimelineRail({ rows, groups: [lane] });
 
-    expect(railLaneSpans({ rail: railRow(layout, 'child') })).toEqual([]);
-    expect(railLaneSpans({ rail: railRow(layout, 'standalone-agent') })).toEqual([]);
+    expect(railRow(layout, 'run').joins.map((join) => join.kind)).toEqual(['fork']);
+    expect(lanesOf(layout, 'step-1').length).toBeGreaterThan(0);
   });
 });

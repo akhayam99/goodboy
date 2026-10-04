@@ -106,6 +106,18 @@ export const TimelineRowMarker = ({ item, progress = null }: Props) => {
       />
     );
   }
+  if (entry.kind === 'resolveFile') {
+    const node = rowStateNode({ state: item.rowState });
+    return <WorkNode state={node.state} label={node.label} mark={{ kind: 'dot' }} />;
+  }
+  if (entry.kind === 'resolveOpen') {
+    return conceptNode({
+      icon: CONCEPT_ICONS.review,
+      tone: 'neutral',
+      label: 'Review',
+      isEmphasized: false,
+    });
+  }
   if (entry.kind === 'issue') {
     return (
       <WorkNode

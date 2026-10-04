@@ -6,10 +6,7 @@ import { REVIEW_COMMENT_GROUP_LABEL } from '../../features/resolve/reviewComment
 import { COMPOSE_COPY, REVIEW_FLOW_LABEL } from '../../features/resolve/reviewFlowCopy';
 import { SCRIPT_RUN_PRESENTATION } from '../../features/scripts/scriptRunPresentation';
 import { LENS_LABEL } from '../../features/session/lens-labels';
-import {
-  ACTIVITY_CATEGORY_LABEL,
-  ACTIVITY_PRESET_LABEL,
-} from '../../features/session/timeline/activityFilter';
+import { ACTIVITY_VIEW_LABEL } from '../../features/session/timeline/activityView';
 import { ARCHIVED_SESSION_REASON } from '../../features/session/archivedSession';
 import { AGENT_STATUS_PRESENTATION } from '../../features/session/agent-status';
 import { ROW_NODE_LABEL } from '../../features/workTreeModel/rowStateCopy';
@@ -30,8 +27,7 @@ const NAMED_COPY: Readonly<Record<string, ReadonlyArray<string | null>>> = {
     (presentation) => presentation.statusLabel,
   ),
   LENS_LABEL: Object.values(LENS_LABEL),
-  ACTIVITY_CATEGORY_LABEL: Object.values(ACTIVITY_CATEGORY_LABEL),
-  ACTIVITY_PRESET_LABEL: Object.values(ACTIVITY_PRESET_LABEL),
+  ACTIVITY_VIEW_LABEL: Object.values(ACTIVITY_VIEW_LABEL),
   ARCHIVED_SESSION_REASON: [ARCHIVED_SESSION_REASON],
   ROW_NODE_LABEL: Object.values(ROW_NODE_LABEL),
   AGENT_STATUS_PRESENTATION: Object.values(AGENT_STATUS_PRESENTATION).map(

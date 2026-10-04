@@ -17,7 +17,7 @@ export type ResolveBatchRef = {
   readonly isRetry?: boolean;
 };
 
-export const RELATED_WINDOW_MS = 10 * 60 * 1000;
+const RELATED_WINDOW_MS = 10 * 60 * 1000;
 
 type Bucket = Exclude<ReviewCommentState, 'edited'>;
 

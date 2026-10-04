@@ -13,9 +13,10 @@ import type { TimelineOpenTarget } from '../../../../hooks/useTimelineOpen';
 import type { TimelineAgentEntry } from '../../../../timeline/buildTimelineGroups';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 import { TimelineAgentMeta } from './TimelineAgentMeta';
+import { TimelineOutputsChip } from './TimelineOutputsChip';
 import { TimelineSubagentsChip } from './TimelineSubagentsChip';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
-import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
+import type { TimelineLaneTarget } from './TimelineRail';
 import { TimelineStreamRow, type TimelineRowAction } from './TimelineStreamRow';
 
 type Props = {
@@ -28,7 +29,6 @@ type Props = {
   readonly action: TimelineRowAction | null;
   readonly diffStat: MountDiffStat | null;
   readonly worktrees: ReadonlyArray<string>;
-  readonly lanes: TimelineLaneControl | null;
   readonly runLane: TimelineLaneTarget | null;
   readonly step: Step | null;
   readonly roleModels: RoleModelPreferences | null;
@@ -36,8 +36,8 @@ type Props = {
   readonly sessionEffort: EffortLevel | null;
   readonly costUsd: number;
   readonly isSubagentsExpanded: boolean;
+  readonly isOutputsExpanded: boolean;
   readonly onSetSubagents: (params: { readonly id: string; readonly isExpanded: boolean }) => void;
-  readonly isRevealed?: boolean;
 };
 
 export const TimelineAgentStreamRow = ({
@@ -50,7 +50,6 @@ export const TimelineAgentStreamRow = ({
   action,
   diffStat,
   worktrees,
-  lanes,
   runLane,
   step,
   roleModels,
@@ -58,8 +57,8 @@ export const TimelineAgentStreamRow = ({
   sessionEffort,
   costUsd,
   isSubagentsExpanded,
+  isOutputsExpanded,
   onSetSubagents,
-  isRevealed = false,
 }: Props) => {
   const contextMenu = useObjectMenuTrigger({
     target: { kind: 'agent', sessionId, agentId: entry.agent.id },
@@ -94,7 +93,6 @@ export const TimelineAgentStreamRow = ({
         />
       }
       progress={work.time?.progress ?? null}
-      isRevealed={isRevealed}
       subagents={
         item.subagents === undefined ? null : (
           <TimelineSubagentsChip
@@ -104,7 +102,15 @@ export const TimelineAgentStreamRow = ({
           />
         )
       }
-      lanes={lanes}
+      outputs={
+        item.outputs === undefined ? null : (
+          <TimelineOutputsChip
+            outputs={item.outputs}
+            isExpanded={isOutputsExpanded}
+            onSet={onSetSubagents}
+          />
+        )
+      }
       runLane={runLane}
     />
   );

@@ -2,10 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { LENS_LABEL } from '../../features/session/lens-labels';
 import { AGENT_KIND_META, ROLE_LABEL } from '../../features/session/agent-kind';
-import {
-  ACTIVITY_CATEGORY_LABEL,
-  ACTIVITY_PRESET_LABEL,
-} from '../../features/session/timeline/activityFilter';
+import { ACTIVITY_VIEW_LABEL } from '../../features/session/timeline/activityView';
 import { ROW_NODE_LABEL } from '../../features/workTreeModel/rowStateCopy';
 import baseline from './jargon-copy.baseline.json';
 import { describeCopy, scanCopy } from './scanCopy';
@@ -31,8 +28,7 @@ const NAMED_COPY: Readonly<Record<string, ReadonlyArray<string>>> = {
   LENS_LABEL: Object.values(LENS_LABEL),
   ROLE_LABEL: Object.values(ROLE_LABEL),
   AGENT_KIND_META: Object.values(AGENT_KIND_META).flatMap((meta) => [meta.label, meta.hint]),
-  ACTIVITY_CATEGORY_LABEL: Object.values(ACTIVITY_CATEGORY_LABEL),
-  ACTIVITY_PRESET_LABEL: Object.values(ACTIVITY_PRESET_LABEL),
+  ACTIVITY_VIEW_LABEL: Object.values(ACTIVITY_VIEW_LABEL),
   ROW_NODE_LABEL: Object.values(ROW_NODE_LABEL),
 };
 

@@ -11,7 +11,6 @@ export const STORAGE_KEYS = {
   paletteFrecency: `${PREFIX}palette-frecency:v1`,
   chatUnread: `${PREFIX}chat-unread:v1`,
   zoom: `${PREFIX}zoom`,
-  activityFilter: `${PREFIX}activity-filter`,
   windowReloadIntent: `${PREFIX}window-reload-intent`,
 } as const;
 

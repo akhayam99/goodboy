@@ -73,6 +73,7 @@ type Params = {
   readonly rows: ReadonlyArray<RailRowInput>;
   readonly groups: ReadonlyArray<RailGroupInput>;
   readonly hasSpine?: boolean;
+  readonly isIndentOnly?: boolean;
 };
 
 type Interval = {
@@ -163,41 +164,15 @@ export const mergeRailSegments = ({
   return merged;
 };
 
-export type RailLaneSpan = {
-  readonly laneId: string;
-  readonly column: number;
-  readonly identityIndex: number;
-  readonly fromY: number;
-  readonly toY: number;
-};
-
-export const railLaneSpans = ({
-  rail,
-}: {
-  readonly rail: RailRow;
-}): ReadonlyArray<RailLaneSpan> => {
-  const spans = new Map<string, RailLaneSpan>();
-  for (const segment of rail.segments) {
-    if (segment.laneId === null || segment.identityIndex === null) {
-      continue;
-    }
-    const key = `${segment.laneId}:${segment.column}`;
-    const known = spans.get(key);
-    spans.set(key, {
-      laneId: segment.laneId,
-      column: segment.column,
-      identityIndex: segment.identityIndex,
-      fromY: known === undefined ? segment.fromY : Math.min(known.fromY, segment.fromY),
-      toY: known === undefined ? segment.toY : Math.max(known.toY, segment.toY),
-    });
-  }
-  return [...spans.values()];
-};
-
 const overlaps = ({ first, second }: { readonly first: Interval; readonly second: Interval }) =>
   first.from <= second.to && second.from <= first.to;
 
-export const layoutTimelineRail = ({ rows, groups, hasSpine = true }: Params): RailLayout => {
+export const layoutTimelineRail = ({
+  rows,
+  groups,
+  hasSpine = true,
+  isIndentOnly = false,
+}: Params): RailLayout => {
   const rootParentColumn = hasSpine ? 0 : -1;
   const indexById = new Map<string, number>();
   const membersByGroupId = new Map<string, number[]>();
@@ -292,7 +267,7 @@ export const layoutTimelineRail = ({ rows, groups, hasSpine = true }: Params): R
   const laneSegmentsByIndex: RailSegment[][] = rows.map(() => []);
   const joinsByIndex: PlannedJoin[][] = rows.map(() => []);
 
-  for (const span of spans) {
+  for (const span of isIndentOnly ? [] : spans) {
     const { group, originIndex, memberIndexes, isSelfOrigin } = span;
     const column = columnByGroupId.get(group.id) ?? rootParentColumn + 1;
     const parentId = group.parentGroupId;

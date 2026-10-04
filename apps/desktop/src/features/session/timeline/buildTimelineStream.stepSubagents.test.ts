@@ -16,7 +16,7 @@ import type {
 import { buildTimelineGroups } from './buildTimelineGroups';
 import { buildTimelineStream, type TimelineRowItem } from './buildTimelineStream';
 import { dayLabel } from './dayLabel';
-import { firstNeedsYouRowId, needsYouCount } from './needsYou';
+import { needsYouOwners } from './needsYou';
 import { layoutTimelineRail } from '../../workTreeModel/railGeometry';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -222,9 +222,11 @@ describe('subagents under a workflow step', () => {
     const closed = streamOf({ statuses });
     const open = streamOf({ statuses, expanded: [SUBAGENTS_ID] });
 
-    expect(needsYouCount({ items: closed.items })).toBe(1);
-    expect(needsYouCount({ items: open.items })).toBe(1);
-    expect(firstNeedsYouRowId({ items: closed.items })).toBe('agent:build');
+    const ownersOf = ({ items }: { readonly items: typeof closed.items }) =>
+      needsYouOwners({ items, entries: [], events: [] }).map((owner) => owner.id);
+
+    expect(ownersOf({ items: closed.items })).toEqual(['run:run-1']);
+    expect(ownersOf({ items: open.items })).toEqual(['run:run-1']);
   });
 
   it('counts the children of one step once, whether the step is closed or open', () => {

@@ -205,7 +205,6 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
         return { inserted, resolvedKind, resolvedProvider, resolvedModel, resolvedEffort };
       },
     });
-  get().revealActivityRow(sessionId, `agent:${inserted.id}`);
   const explicitPrompt =
     stepPromptPrefix.length > 0 ? stepPromptPrefix : (args.initialPrompt ?? '');
   const baseKickoff = explicitPrompt.length > 0 ? explicitPrompt : (args.seedPrompt ?? '');

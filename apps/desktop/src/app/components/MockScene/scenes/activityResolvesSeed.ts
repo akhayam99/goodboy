@@ -1,9 +1,11 @@
 import type {
   Agent,
   AgentId,
+  ArtifactId,
   IsoDateTime,
   MountId,
   ProviderRunId,
+  ReportArtifact,
   ResolveAttempt,
   ResolveQueueItem,
   ResolveQueueItemWithThread,
@@ -358,6 +360,25 @@ const CONTEXT_EVENTS: ReadonlyArray<SessionEvent> = [
   },
 ];
 
+const OUTPUT_WITHOUT_LAUNCH: ReportArtifact = {
+  id: 'mock-resolves-report-without-launch' as ArtifactId,
+  sessionId: SESSION.id,
+  agentId: 'mock-resolves-agent-removed' as AgentId,
+  workflowRunId: null,
+  kind: 'report',
+  schemaVersion: 1,
+  title: 'Rounding drift in ledger-core postings',
+  sourceFormat: 'markdown',
+  sourceText: 'Postings round half up in two places and half even in one.',
+  metadata: { reportType: 'session-summary' },
+  status: 'active',
+  revision: 1,
+  sourceTurnId: null,
+  createdAt: isoOf({ minutesAgo: 180 }),
+  updatedAt: isoOf({ minutesAgo: 180 }),
+  openedAt: null,
+};
+
 export const seedActivityResolvesScene = (): void => {
   seedActivityRunScene();
   const state = useAppStore.getState();
@@ -385,6 +406,10 @@ export const seedActivityResolvesScene = (): void => {
     sessionPhaseRuns: {
       ...state.sessionPhaseRuns,
       [SESSION.id]: [...agents, ...(state.sessionPhaseRuns[SESSION.id] ?? [])],
+    },
+    sessionArtifacts: {
+      ...state.sessionArtifacts,
+      [SESSION.id]: [...(state.sessionArtifacts[SESSION.id] ?? []), OUTPUT_WITHOUT_LAUNCH],
     },
     sessionEvents: {
       ...state.sessionEvents,
