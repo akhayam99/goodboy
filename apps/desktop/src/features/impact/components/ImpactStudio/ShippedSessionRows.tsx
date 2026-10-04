@@ -31,7 +31,7 @@ const rowContent = ({ session, rank }: ContentParams): ReactNode => (
   <>
     <span
       aria-hidden
-      className="flex size-5 shrink-0 items-center justify-center rounded-full border border-success text-meta text-success"
+      className="flex size-5 shrink-0 items-center justify-center rounded-full border border-success text-chip text-success"
     >
       {rank}
     </span>

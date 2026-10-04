@@ -75,7 +75,7 @@ export const ConversationComposer = ({ source, model }: Props) => {
         />
         <div className="flex min-w-0 items-center justify-between gap-2 px-2.5 pb-1.5">
           <span className="flex items-center gap-1 text-meta text-faint-foreground">
-            <KbdPill className="h-4 text-meta">{shortcutGlyphs('composer.submit')}</KbdPill>
+            <KbdPill className="h-4 text-chip">{shortcutGlyphs('composer.submit')}</KbdPill>
             to send
           </span>
           <IconButton icon={ArrowUp} label="Send" disabled={isEmpty} onClick={submit} />

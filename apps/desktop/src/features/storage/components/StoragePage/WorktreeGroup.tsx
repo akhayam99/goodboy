@@ -38,7 +38,7 @@ export const WorktreeGroup = ({ group, now, suggestAfterDays, selected, onToggle
           </span>
         )}
         {group.root.isDisconnected ? (
-          <span className="inline-flex h-4.5 items-center gap-1 rounded-sm bg-muted px-1.5 text-meta font-medium text-muted-foreground">
+          <span className="inline-flex h-4.5 items-center gap-1 rounded-sm bg-muted px-1.5 text-chip font-medium text-muted-foreground">
             <Unplug size={11} aria-hidden />
             Disconnected
           </span>

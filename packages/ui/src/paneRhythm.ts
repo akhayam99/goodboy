@@ -15,14 +15,15 @@ export const PANE_RHYTHM = {
     body: 'px-6 py-4',
   },
   rail: {
-    header: 'px-3 py-2.5',
+    header: 'px-3 py-3',
     body: 'px-3 py-3',
-    dock: 'px-3 py-2.5',
+    dock: 'px-3 py-3',
   },
   navRail: {
     inset: 'px-2',
     body: 'px-2 py-3',
-    row: 'px-2 py-1.5',
+    row: 'px-2 min-h-8',
+    rowTwo: 'px-2 py-1 min-h-12',
     nest: 'pl-6',
   },
   board: {
@@ -33,8 +34,8 @@ export const PANE_RHYTHM = {
     dockOpen: 'w-34',
     dockSticky: 'sticky right-0 bg-background',
     maxWidth: 'max-w-[106rem]',
-    cardGap: 'gap-2.5',
-    colStack: 'gap-2.5',
+    cardGap: 'gap-3',
+    colStack: 'gap-3',
     emptyMinHeight: 'min-h-28',
   },
   sessionList: {

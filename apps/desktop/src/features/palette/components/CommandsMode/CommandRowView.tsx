@@ -83,7 +83,7 @@ export const CommandRowView = ({ row, id, isSelected, onHover, onRun }: Props) =
         )}
       </span>
       {item.shortcut !== undefined ? (
-        <kbd className="shrink-0 text-meta text-faint-foreground">
+        <kbd className="shrink-0 text-chip text-faint-foreground">
           {shortcutGlyphs(item.shortcut)}
         </kbd>
       ) : item.tag !== undefined ? (

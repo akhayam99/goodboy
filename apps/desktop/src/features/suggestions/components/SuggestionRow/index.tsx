@@ -30,7 +30,7 @@ export const SuggestionRow = ({
       className={cn(
         'flex w-full items-center gap-3 border border-border-soft bg-elevated',
         size === 'card' && 'rounded-lg px-4 py-3',
-        size === 'compact' && cn('rounded-md', PANE_RHYTHM.navRail.row),
+        size === 'compact' && cn('rounded-md', PANE_RHYTHM.navRail.rowTwo),
       )}
     >
       <Icon

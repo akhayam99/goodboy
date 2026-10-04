@@ -18,7 +18,7 @@ export const ModeSwitch = ({ modes, value, onChange }: Props) => (
       value: mode.id,
       label: mode.label,
       badge: (
-        <span className="text-meta text-faint-foreground">{shortcutGlyphs(mode.shortcut)}</span>
+        <span className="text-chip text-faint-foreground">{shortcutGlyphs(mode.shortcut)}</span>
       ),
     }))}
   />

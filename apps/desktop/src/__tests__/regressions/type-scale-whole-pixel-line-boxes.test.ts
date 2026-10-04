@@ -101,7 +101,18 @@ describe('type scale line boxes', () => {
     expect(lineHeight).toBeGreaterThan(size);
   });
 
-  it('weighs only display, title, heading and row above regular', () => {
+  it('pins the row, title, meta and chip roles to the round 16 sizes', () => {
+    expect(roleBox({ role: 'row' })).toEqual({ size: 13, lineHeight: 20 });
+    expect(roleBox({ role: 'title' })).toEqual({ size: 16, lineHeight: 24 });
+    expect(roleBox({ role: 'meta' })).toEqual({ size: 12, lineHeight: 16 });
+    expect(roleBox({ role: 'chip' })).toEqual({ size: 11, lineHeight: 16 });
+  });
+
+  it('keeps the chip role the only role under meta size', () => {
+    expect(roleBox({ role: 'chip' }).size).toBeLessThan(roleBox({ role: 'meta' }).size);
+  });
+
+  it('weighs only display, title, heading, row and chip above regular', () => {
     const weighted = [...css.matchAll(/--text-([a-z]+)--font-weight:\s*(\d+);/g)].map((match) => [
       String(match[1]),
       Number(match[2]),
@@ -112,6 +123,7 @@ describe('type scale line boxes', () => {
       title: 600,
       heading: 600,
       row: 500,
+      chip: 500,
     });
   });
 

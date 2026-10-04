@@ -166,7 +166,7 @@ export const ReviewLaunchStrip = ({
         <span className="flex-1" />
         <Button size="sm" variant="ghost" onClick={onClose}>
           {REVIEW_LAUNCH_LABEL.cancel}
-          <KbdPill aria-hidden className="ml-1 h-4 min-w-4 text-meta">
+          <KbdPill aria-hidden className="ml-1 h-4 min-w-4 text-chip">
             Esc
           </KbdPill>
         </Button>
@@ -174,7 +174,7 @@ export const ReviewLaunchStrip = ({
           {launchStartLabel({ count })}
           <KbdPill
             aria-hidden
-            className="ml-1 h-4 min-w-4 border-on-tone/30 bg-on-tone/15 text-meta text-on-tone"
+            className="ml-1 h-4 min-w-4 border-on-tone/30 bg-on-tone/15 text-chip text-on-tone"
           >
             {shortcutGlyphs('composer.submit')}
           </KbdPill>

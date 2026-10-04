@@ -24,6 +24,7 @@ import type {
 } from '../../../../timeline/buildTimelineStream';
 import type { TimelineRowGrade } from '../../../../../workTreeModel/timelineRhythm';
 import { RevealedRowTag } from './RevealedRowTag';
+import { TimelineProviderGlyph } from './TimelineProviderGlyph';
 import { TimelineRowWorktrees } from './TimelineRowWorktrees';
 import { resolveBatchTitle } from '../../../../timeline/resolveBatchSummary';
 import { subagentGroupTitle } from '../../../../timeline/subagentGroups';
@@ -38,6 +39,7 @@ type Props = {
   readonly isLaneLit?: boolean;
   readonly worktrees?: ReadonlyArray<string>;
   readonly isRevealed?: boolean;
+  readonly provider?: string | null;
 };
 
 type FactParams = {
@@ -200,6 +202,7 @@ export const TimelineRowLabel = ({
   isLaneLit = false,
   worktrees = NO_WORKTREES,
   isRevealed = false,
+  provider = null,
 }: Props) => {
   const { entry, grade } = item;
   if (entry.kind === 'run') {
@@ -286,11 +289,12 @@ export const TimelineRowLabel = ({
   return (
     <>
       {item.ordinal != null ? (
-        <span className="w-6 shrink-0 text-right text-meta text-faint-foreground">
+        <span className="w-6 shrink-0 text-right text-chip text-faint-foreground">
           {item.ordinal}
         </span>
       ) : null}
       {chipOf({ entry, grade })}
+      {isAgent ? <TimelineProviderGlyph provider={provider} /> : null}
       {item.fold === undefined ? (
         titleNode
       ) : (

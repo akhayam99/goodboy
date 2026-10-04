@@ -82,7 +82,7 @@ type SourceTrailingParams = {
 const sourceTrailing = ({ isLoading, error }: SourceTrailingParams) => {
   if (error != null) {
     return (
-      <span className="flex shrink-0 items-center gap-1 text-meta text-faint-foreground">
+      <span className="flex shrink-0 items-center gap-1 text-chip text-faint-foreground">
         <TriangleAlert size={ICON_SIZE.row} aria-hidden className="text-warning" />
         Didn&apos;t load
       </span>

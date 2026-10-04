@@ -9,7 +9,7 @@ export const DecisionNumber = ({ number, isClosed = false }: Props) => (
   <span
     aria-hidden
     className={cn(
-      'flex size-5 shrink-0 items-center justify-center rounded-full bg-fill text-meta',
+      'flex size-5 shrink-0 items-center justify-center rounded-full bg-fill text-chip',
       isClosed ? 'text-faint-foreground' : 'text-muted-foreground',
     )}
   >
