@@ -205,8 +205,9 @@ describe('AppFooter', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Providers' }));
 
     const menu = screen.getByRole('dialog', { name: 'Providers' });
-    within(menu).getByText('For Harborline');
-    within(menu).getByRole('list', { name: 'Providers, in order, for Harborline' });
+    within(menu).getByText('This workspace');
+    expect(within(menu).queryByText(/Harborline/)).toBeNull();
+    within(menu).getByRole('list', { name: 'Providers, in order, for this workspace' });
     within(menu).getByRole('button', { name: /Connect OpenCode/ });
     within(menu).getByRole('button', { name: /Open Providers & models/ });
     expect(refreshProviders).not.toHaveBeenCalled();

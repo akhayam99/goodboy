@@ -37,10 +37,6 @@ type ConnectionParams = {
 export const ProvidersMenu = ({ workspaceId }: Props) => {
   const providers = useAppStore((state) => state.providers);
   const limits = useAppStore((state) => state.providerLimits);
-  const workspaceName = useAppStore(
-    (state) =>
-      state.workspaces.find((workspace) => workspace.id === workspaceId)?.name ?? 'this workspace',
-  );
   const nowMs = useNow(60_000);
   const dropdown = useDropdown({
     align: 'end',
@@ -117,10 +113,10 @@ export const ProvidersMenu = ({ workspaceId }: Props) => {
       {connected.length > 0 ? (
         <>
           <div className="flex flex-col px-2 pt-1">
-            <Eyebrow label={`For ${workspaceName}`} />
+            <Eyebrow label="This workspace" />
           </div>
           <div className="px-1">
-            <ProviderPolicyList workspaceId={workspaceId} workspaceName={workspaceName} />
+            <ProviderPolicyList workspaceId={workspaceId} />
           </div>
         </>
       ) : null}

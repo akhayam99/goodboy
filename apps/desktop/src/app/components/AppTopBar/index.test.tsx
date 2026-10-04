@@ -103,7 +103,7 @@ const ATTENTION_SESSION = {
   goal: 'Review the failing checks',
 } as unknown as Session;
 
-const SPEND_LABEL = 'Spent today in Harborline, counted by Goodboy. Open spend';
+const SPEND_LABEL = 'Spent today, counted by Goodboy. Open spend';
 
 type BarOverrides = {
   readonly onOpenSpend?: () => void;
