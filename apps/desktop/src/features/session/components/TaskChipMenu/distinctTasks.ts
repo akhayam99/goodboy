@@ -9,8 +9,7 @@ type Params = {
   readonly tasks: ReadonlyArray<SessionExternalTask>;
 };
 
-const identityOf = (task: SessionExternalTask): string =>
-  [task.provider, task.externalId, task.projectId ?? ''].join(':');
+const identityOf = (task: SessionExternalTask): string => `${task.provider}:${task.externalId}`;
 
 export const distinctTasks = ({ tasks }: Params): ReadonlyArray<DistinctTask> => {
   const groups = new Map<string, { task: SessionExternalTask; branches: Array<string> }>();

@@ -18,6 +18,7 @@ import {
   useSessionStageInfo,
 } from '../../../../store';
 import { describeSessionStage } from '../../../session/session-stage';
+import { distinctTasks } from '../../../session/components/TaskChipMenu/distinctTasks';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
@@ -64,8 +65,12 @@ export const useSessionSummary = ({ session }: Params): SessionSummary => {
         (draft) => draft.status === 'draft',
       ).length,
   );
-  const tasks = useAppStore(
+  const linkedTasks = useAppStore(
     (s) => s.sessionExternalTasks[id] ?? (EMPTY_ARRAY as ReadonlyArray<SessionExternalTask>),
+  );
+  const tasks = useMemo(
+    () => distinctTasks({ tasks: linkedTasks }).map((entry) => entry.task),
+    [linkedTasks],
   );
   const agentCount = useNonResolverStandaloneAgents(id).length;
   const cost = useSessionCost(id);
