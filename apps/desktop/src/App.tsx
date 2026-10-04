@@ -1,3 +1,4 @@
+import { UndoToastBridge } from './app/components/UndoToastBridge';
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
 import { AppFooter } from './app/components/AppFooter';
@@ -212,6 +213,7 @@ export const App = () => {
   if (isWorkspaceLauncherBranch) {
     return (
       <ToastProvider>
+        <UndoToastBridge />
         <ObjectMenuProvider>
           <NotificationToastBridge />
           <ReportSheetHost />
@@ -224,6 +226,7 @@ export const App = () => {
 
   return (
     <ToastProvider>
+      <UndoToastBridge />
       <ObjectMenuProvider>
         <NotificationToastBridge />
         <ReportSheetHost />

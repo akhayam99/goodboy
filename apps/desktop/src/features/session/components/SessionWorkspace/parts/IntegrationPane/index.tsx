@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Check, Unlink } from 'lucide-react';
 import type {
   SessionExternalTask,
@@ -6,28 +6,16 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import {
-  cn,
-  CountToggle,
-  formatError,
-  InlineConfirm,
-  PaneShell,
-  PaneActionsContext,
-} from '@goodboy/ui';
+import { cn, CountToggle, formatError, PaneShell, PaneActionsContext } from '@goodboy/ui';
 import { LensEmptyState } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
 import { selectActiveProjectPrs } from '../../../../../../store/slices/github/activeProjectPrs';
 import { ConnectIntegrationEmptyState } from '../../../../../integrations/ConnectIntegrationEmptyState';
 import { resolveIntegrationConnection } from '../../../../../integrations/connection';
 import { useGithubConnection } from '../../../../../integrations/github/useGithubConnection';
-import {
-  CONCEPT_ICONS,
-  CONCEPT_TONE,
-  ICON_SIZE,
-} from '../../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { GhostActionButton } from '@goodboy/ui';
 import { PANE_RHYTHM } from '@goodboy/ui';
-import { NAMES } from '../../../../../../shared/names';
 import { useSessionRepo } from '../../../../../../store/slices/worktrees/useSessionRepo';
 import { branchRequests } from '../../../../branchRequests';
 import { buildWorkItems } from '../../../../workItems';
@@ -110,7 +98,6 @@ const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
 export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => {
   const [unlinkError, setUnlinkError] = useState<string | null>(null);
   const [isUnlinking, setIsUnlinking] = useState(false);
-  const [isUnlinkArmed, setIsUnlinkArmed] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const externalTasks = useAppStore(
     (state) => state.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY,
@@ -169,14 +156,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
     setUnlinkError(null);
     setIsUnlinking(true);
     try {
-      await unlinkSessionExternalTask(
-        sessionId,
-        provider,
-        task.externalId,
-        task.projectId,
-        task.scope === 'branch' ? task.branch : undefined,
-      );
-      setIsUnlinkArmed(false);
+      await unlinkSessionExternalTask(sessionId, provider, task.externalId, task.projectId);
       setFocusedTaskKey(null);
     } catch (error) {
       setUnlinkError(formatError(error));
@@ -189,37 +169,22 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
     return (
       <PaneActionsContext.Provider
         value={
-          isUnlinkArmed ? (
-            <InlineConfirm
-              role="danger"
-              className="max-w-sm"
-              icon={<Unlink size={ICON_SIZE.row} aria-hidden />}
-              title={`${NAMES.removeLink} to ${focusedTask.identifier}?`}
-              description={`Removes the ${meta.label} ${meta.noun} from this session without changing the ${meta.noun}.`}
-              confirmLabel={`${NAMES.removeLink} to ${focusedTask.identifier}`}
-              autoDisarmMs={4000}
-              isBusy={isUnlinking}
-              onConfirm={() => handleUnlink({ task: focusedTask })}
-              onCancel={() => setIsUnlinkArmed(false)}
+          <div className="flex items-center gap-2">
+            <GhostActionButton
+              icon={ArrowLeft}
+              label={`All ${meta.nounPlural}`}
+              onClick={() => setFocusedTaskKey(null)}
             />
-          ) : (
-            <div className="flex items-center gap-2">
-              <GhostActionButton
-                icon={ArrowLeft}
-                label={`All ${meta.nounPlural}`}
-                onClick={() => setFocusedTaskKey(null)}
-              />
-              <GhostActionButton
-                icon={Unlink}
-                tone="danger"
-                label={NAMES.removeLink}
-                ariaLabel={`${NAMES.removeLink} to ${focusedTask.identifier}`}
-                disabled={isUnlinking}
-                onClick={() => setIsUnlinkArmed(true)}
-              />
-              {linkAction}
-            </div>
-          )
+            <GhostActionButton
+              icon={Unlink}
+              tone="danger"
+              label="Unlink"
+              ariaLabel={`Unlink ${focusedTask.identifier}`}
+              disabled={isUnlinking}
+              onClick={() => void handleUnlink({ task: focusedTask })}
+            />
+            {linkAction}
+          </div>
         }
       >
         <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">

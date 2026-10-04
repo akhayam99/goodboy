@@ -1,8 +1,8 @@
 import type { ProjectId, SessionExternalTask, SessionId } from '@goodboy/types';
-import type { AppStore } from '../../../store/store';
-import { resolveForkBranchName } from '../../../store/slices/project-mounts/resolveMountNaming';
-import { selectProjectById } from '../../../store/slices/projects/selectProjectById';
-import { selectSessionById } from '../../../store/slices/sessions/selectSessionById';
+import type { AppStore } from '../../../../store/store';
+import { resolveForkBranchName } from '../../../../store/slices/project-mounts/resolveMountNaming';
+import { selectProjectById } from '../../../../store/slices/projects/selectProjectById';
+import { selectSessionById } from '../../../../store/slices/sessions/selectSessionById';
 
 type Params = {
   readonly state: AppStore;

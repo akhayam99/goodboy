@@ -103,3 +103,5 @@ Let two helpers work on your history and your pull request text without the powe
 ### One language per session
 
 Get agents and summaries in the language of your goal.
+
+Archiving a chat offers the shared Undo toast and Cmd+Z outside text fields. Both undo the latest app operation.

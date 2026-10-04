@@ -617,3 +617,5 @@ export {
   setChatsArchived,
   settleStreamingChatMessages,
 } from './queries/chat';
+
+export { replaceSessionTaskLinks } from './queries/replaceSessionTaskLinks';

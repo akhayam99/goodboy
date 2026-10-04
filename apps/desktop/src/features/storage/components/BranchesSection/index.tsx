@@ -200,10 +200,12 @@ export const BranchesSection = ({ scope }: Props) => {
         showToast({ kind: 'warning', message: outcome.kept.join(' ') });
       }
       if (outcome.deleted.length > 0) {
-        showToast({
-          kind: 'success',
+        useAppStore.getState().undoable({
+          showToast,
           message: deletedNotice(outcome.deleted.length),
-          action: { label: 'Undo', onClick: () => void undo(outcome.deleted) },
+          undo: async () => {
+            await undo(outcome.deleted);
+          },
         });
       }
     } catch (error) {

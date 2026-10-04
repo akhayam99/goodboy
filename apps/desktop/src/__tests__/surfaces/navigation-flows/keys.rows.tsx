@@ -142,6 +142,20 @@ const DIGIT_IDS = [
 ] as const satisfies ReadonlyArray<ShortcutId>;
 
 export const KEY_ROWS: ReadonlyArray<Row> = [
+  keyRow({
+    id: 'app.undo',
+    open: async (ctx) => {
+      await openCrumb(/^Agents/);
+      useAppStore.getState().undoable({
+        message: 'Opened agents',
+        undo: async () => {
+          useAppStore.getState().setActiveLens(ctx.sessionId, null);
+        },
+      });
+      await press('app.undo')();
+    },
+    lands: lens(null),
+  }),
   pressRow({
     id: 'palette.open',
     lands: () => tab(/^Commands/),

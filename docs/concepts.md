@@ -1260,16 +1260,17 @@ task up again in Goodboy.
 - One verb per intention. A button or menu entry takes its verb from this
   table, and the old verb stays a ⌘K alias:
 
-  | Verb           | Means                                             | Retired                                                            |
-  | -------------- | ------------------------------------------------- | ------------------------------------------------------------------ |
-  | **Delete**     | The object is gone (Undo where it can be)         | Wipe (now **Delete all data**)                                     |
-  | **Remove**     | Taken out of a list, it still exists elsewhere    | Detach (now **Remove from session**), Unlink (now **Remove link**) |
-  | **Archive**    | Hidden, restorable                                | Discard on a workflow run (now **Archive workflow**)               |
-  | **Disconnect** | Cuts the tie to an account, a tool or a workspace |                                                                    |
-  | **Stop**       | Ends what is running and keeps what it wrote      | Close workflow (now **Stop workflow**)                             |
-  | **Dismiss**    | Hides a notification or a suggestion              |                                                                    |
-  | **Clear**      | Resets filters or a selection                     |                                                                    |
-  | **Retry**      | Runs a failed action again                        | Try again                                                          |
+  | Verb           | Means                                             | Retired                                              |
+  | -------------- | ------------------------------------------------- | ---------------------------------------------------- |
+  | **Delete**     | The object is gone (Undo where it can be)         | Wipe (now **Delete all data**)                       |
+  | **Remove**     | Taken out of a list, it still exists elsewhere    | Detach (now **Remove from session**)                 |
+  | **Unlink**     | Removes a task link, keeps the task in its tool   | Remove link on a task                                |
+  | **Archive**    | Hidden, restorable                                | Discard on a workflow run (now **Archive workflow**) |
+  | **Disconnect** | Cuts the tie to an account, a tool or a workspace |                                                      |
+  | **Stop**       | Ends what is running and keeps what it wrote      | Close workflow (now **Stop workflow**)               |
+  | **Dismiss**    | Hides a notification or a suggestion              |                                                      |
+  | **Clear**      | Resets filters or a selection                     |                                                      |
+  | **Retry**      | Runs a failed action again                        | Try again                                            |
 
   **Discard** stays for a draft you abandon. **Close** stays for a panel and
   for sending an agent away without deleting it. **Check again** only
@@ -1359,3 +1360,6 @@ An agent materializes a project through the query bridge like this:
   role reads
 - `apps/desktop/src-tauri/src/query_bridge/project.rs`: the `materialize` verb
 - `packages/db/src/queries/resolve-thread.ts`: review conversations
+
+Task-link removal uses **Unlink**, with **Unlinked** in its Undo toast and
+**Re-link** on the Activity event. **Link work** is the single linking entry.

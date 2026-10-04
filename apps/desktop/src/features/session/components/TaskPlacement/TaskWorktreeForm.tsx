@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Button, Input } from '@goodboy/ui';
+import { Button, FormActions, Input } from '@goodboy/ui';
 import type { SessionExternalTask, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../store';
-import { selectProjectById } from '../../../store/slices/projects/selectProjectById';
+import { useAppStore } from '../../../../store';
+import { selectProjectById } from '../../../../store/slices/projects/selectProjectById';
 import { taskBranchPreview } from './taskBranchPreview';
 
 type Props = {
@@ -85,14 +85,14 @@ export const TaskWorktreeForm = ({ sessionId, task, onBack, onDone }: Props) => 
       <span className="text-meta text-muted-foreground">
         {`Leave it empty to use ${preview ?? 'an automatic name'}.`}
       </span>
-      <div className="flex items-center justify-end gap-1">
+      <FormActions>
         <Button size="sm" variant="ghost" disabled={isBusy} onClick={onBack}>
           Back
         </Button>
         <Button size="sm" disabled={isBusy} onClick={() => void create()}>
           {isBusy ? 'Creating…' : 'Create worktree'}
         </Button>
-      </div>
+      </FormActions>
     </div>
   );
 };

@@ -148,13 +148,12 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
       when: ({ facts }) => facts.isClosable,
       run: async ({ facts, env }) => {
         await env.getState().setAgentDone(facts.sessionId, facts.agent.id);
-        env.showToast({
-          kind: 'info',
+        env.getState().undoable({
+          showToast: env.showToast,
           title: `${facts.name} closed`,
           message: 'It stops waiting on you. Reopen it any time.',
-          action: {
-            label: 'Undo',
-            onClick: () => void env.getState().clearAgentDone(facts.sessionId, facts.agent.id),
+          undo: async () => {
+            await env.getState().clearAgentDone(facts.sessionId, facts.agent.id);
           },
         });
       },

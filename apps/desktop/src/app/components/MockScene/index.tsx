@@ -1,3 +1,7 @@
+import { TaskLinksScene } from './scenes/TaskLinksScene';
+import { TaskLinksHoverScene } from './scenes/TaskLinksHoverScene';
+import { TaskLinksUndoScene } from './scenes/TaskLinksUndoScene';
+import { UndoToastBridge } from '../UndoToastBridge';
 import { useEffect } from 'react';
 import { ToastProvider } from '../../../shared/components/Toast';
 import { ObjectMenuProvider } from '../../../features/actions/components/ObjectMenuProvider';
@@ -172,6 +176,9 @@ export const MOCK_SCENES = {
   'overview-projects-many': OverviewManyScene,
   'overview-branch-tasks': OverviewBranchTasksScene,
   'link-scope': LinkScopeScene,
+  'task-links': TaskLinksScene,
+  'task-links-hover': TaskLinksHoverScene,
+  'task-links-undo': TaskLinksUndoScene,
   'overview-refreshing': OverviewRefreshingScene,
   'mount-mismatch': MountMismatchScene,
   resolve: ResolveScene,
@@ -350,6 +357,7 @@ export const MockScene = () => {
 
   return (
     <ToastProvider>
+      <UndoToastBridge />
       <ObjectMenuProvider>
         <Scene />
         <ReportSheetHost />

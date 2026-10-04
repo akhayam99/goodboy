@@ -111,20 +111,18 @@ export const WRITE_REVIEW_KIND: ObjectKindDefinition<WriteReviewActionTarget, Wr
           return;
         }
         await state.discardReviewDraft(draft.id);
-        env.showToast({
-          kind: 'info',
+        env.getState().undoable({
+          showToast: env.showToast,
           message: `Deleted the comment on ${draft.path}:${draft.line}`,
-          action: {
-            label: 'Undo',
-            onClick: () =>
-              void env.getState().addReviewDraft({
-                sessionId: facts.sessionId,
-                path: draft.path,
-                line: draft.line,
-                startLine: draft.startLine,
-                side: draft.side,
-                body: draft.body,
-              }),
+          undo: async () => {
+            await env.getState().addReviewDraft({
+              sessionId: facts.sessionId,
+              path: draft.path,
+              line: draft.line,
+              startLine: draft.startLine,
+              side: draft.side,
+              body: draft.body,
+            });
           },
         });
       },

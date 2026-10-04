@@ -6,6 +6,7 @@ export type ToastAction = {
 };
 
 export type ToastItem = {
+  readonly dedupeKey?: string;
   readonly id: string;
   readonly kind: ToastKind;
   readonly message: string;

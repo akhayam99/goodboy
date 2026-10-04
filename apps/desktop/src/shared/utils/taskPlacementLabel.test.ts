@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { taskPlacementLabel } from './taskPlacement';
+import { taskPlacementLabel } from './taskPlacementLabel';
 
 describe('taskPlacementLabel', () => {
   it('says a task with no branch is not on one yet', () => {
