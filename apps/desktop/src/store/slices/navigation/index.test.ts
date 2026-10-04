@@ -528,15 +528,88 @@ describe('navigation slice', () => {
     expect(store.getState().activeLens[S1]).toBe('review');
   });
 
-  it('closes an app studio by folding every studio voice into the base', () => {
+  it('switches a door over the open studio instead of stacking it', () => {
     const store = makeStore();
     store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
     store.getState().openStudio({ studio: { kind: 'inbox', focus: null } });
+    store.getState().switchStudio({ studio: { kind: 'settings', focus: { scope: 'app' } } });
+    store.getState().switchStudio({ studio: { kind: 'workflow' } });
+
+    expect(store.getState().appStudio).toEqual({ kind: 'workflow' });
+    expect(store.getState().navigation[WS]?.entries.map((entry) => locationKey(entry))).toEqual([
+      'board',
+      `s/${S1}`,
+      `s/${S1}+workflows`,
+    ]);
+  });
+
+  it('opens a door from a page the same way a content link does', () => {
+    const doorStore = makeStore();
+    doorStore.getState().switchStudio({ studio: { kind: 'impact', scope: null } });
+    const contentStore = makeStore();
+    contentStore.getState().openStudio({ studio: { kind: 'impact', scope: null } });
+
+    expect(doorStore.getState().navigation[WS]).toEqual(contentStore.getState().navigation[WS]);
+    expect(doorStore.getState().appStudio).toEqual({ kind: 'impact', scope: null });
+  });
+
+  it('stacks a content link over the open studio so back returns to it', () => {
+    const store = makeStore();
+    store.getState().openStudio({ studio: { kind: 'inbox', focus: null } });
     store.getState().openStudio({ studio: { kind: 'settings', focus: { scope: 'app' } } });
+    store.getState().back();
+
+    expect(store.getState().appStudio).toEqual({ kind: 'inbox', focus: null });
+  });
+
+  it('lands close, back and Esc on the same page with the same forward', () => {
+    const closeOutcome = (leave: (store: ReturnType<typeof makeStore>) => void) => {
+      const store = makeStore();
+      store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
+      store.getState().switchStudio({ studio: { kind: 'inbox', focus: null } });
+      store.getState().switchStudio({ studio: { kind: 'settings', focus: { scope: 'app' } } });
+      leave(store);
+      const stack = store.getState().navigation[WS];
+      return {
+        appStudio: store.getState().appStudio,
+        index: stack?.index,
+        keys: stack?.entries.map((entry) => locationKey(entry)),
+        lens: store.getState().activeLens[S1],
+      };
+    };
+
+    const closed = closeOutcome((store) => store.getState().closeStudio());
+    const backed = closeOutcome((store) => store.getState().back());
+    const upped = closeOutcome((store) => store.getState().up());
+
+    expect(closed.appStudio).toBeNull();
+    expect(closed).toEqual(backed);
+    expect(upped.appStudio).toBeNull();
+    expect(upped.keys?.[upped.index ?? 0]).toBe(closed.keys?.[closed.index ?? 0]);
+  });
+
+  it('brings the closed studio back on forward after close', () => {
+    const store = makeStore();
+    store.getState().openStudio({ studio: { kind: 'impact', scope: null } });
     store.getState().closeStudio();
-    const stack = store.getState().navigation[WS];
     expect(store.getState().appStudio).toBeNull();
-    expect(stack?.entries.map((entry) => locationKey(entry))).toEqual(['board', `s/${S1}`]);
+
+    store.getState().forward();
+    expect(store.getState().appStudio).toEqual({ kind: 'impact', scope: null });
+  });
+
+  it('rewrites the top entry as a page when nothing sits below the studio', () => {
+    const store = makeStore();
+    store.getState().openStudio({ studio: { kind: 'impact', scope: null } });
+    const top = store.getState().navigation[WS]?.entries[1];
+    expect(top).toBeDefined();
+    store.setState({ navigation: { [WS]: { entries: top === undefined ? [] : [top], index: 0 } } });
+    store.getState().closeStudio();
+
+    expect(store.getState().appStudio).toBeNull();
+    expect(store.getState().navigation[WS]?.entries.map((entry) => locationKey(entry))).toEqual([
+      'board',
+    ]);
   });
 
   it('replaces the studio voice when the same studio opens again', () => {

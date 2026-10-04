@@ -13,30 +13,26 @@ const ChatIcon = CONCEPT_ICONS.chat;
 const DOT_CORNER = 'absolute -right-1 -top-0.5';
 
 type TipParams = {
-  readonly isOnChat: boolean;
   readonly runningCount: number;
   readonly hasUnread: boolean;
 };
 
-const tipOf = ({ isOnChat, runningCount, hasUnread }: TipParams): string => {
+const tipOf = ({ runningCount, hasUnread }: TipParams): string => {
   if (runningCount > 0) {
     return runningCount === 1 ? '1 chat running' : `${runningCount} chats running`;
   }
-  if (hasUnread) {
-    return 'New reply';
-  }
-  return isOnChat ? "You're in Chat" : 'Ask about this workspace';
+  return hasUnread ? 'New reply' : 'Chat';
 };
 
 export const ChatButton = ({ isOnChat, runningCount, hasUnread, onChat }: Props) => {
-  const tip = tipOf({ isOnChat, runningCount, hasUnread });
+  const tip = tipOf({ runningCount, hasUnread });
   return (
     <Tooltip content={tip} side="bottom">
       <button
         type="button"
         aria-current={isOnChat ? 'page' : undefined}
         aria-disabled={isOnChat ? true : undefined}
-        aria-label={runningCount > 0 || hasUnread ? `Chat, ${tip}` : undefined}
+        aria-label="Chat"
         data-nav-chat=""
         data-chat-activity={runningCount > 0 ? 'running' : hasUnread ? 'unread' : undefined}
         onClick={() => {

@@ -123,7 +123,7 @@ export const FeaturesImpactOverviewScene = () => {
           tone={CONCEPT_TONE.impact}
           title="Impact"
           subtitle="What Goodboy got done, and what it cost."
-          closeLabel="close impact"
+          closeLabel="Close impact"
           headerAccessory={
             <SegmentedTabs
               ariaLabel="Impact window"

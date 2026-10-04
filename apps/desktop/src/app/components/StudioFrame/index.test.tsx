@@ -21,7 +21,7 @@ type BodyProps = {
 const Body = ({ subtitle, isEscapeEnabled = true }: BodyProps) => (
   <StudioShell
     title="Inbox"
-    closeLabel="close inbox"
+    closeLabel="Close inbox"
     {...(subtitle !== undefined && { subtitle })}
     isEscapeEnabled={isEscapeEnabled}
     headerAccessory={<button type="button">Refresh</button>}
@@ -170,7 +170,7 @@ describe('StudioFrame', () => {
       </StudioFrame>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'close inbox' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close inbox' }));
     act(() => {
       vi.advanceTimersByTime(300);
     });

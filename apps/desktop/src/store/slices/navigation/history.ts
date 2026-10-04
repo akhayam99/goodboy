@@ -84,18 +84,6 @@ const landOn = ({ stack, floor, base }: LandParams): NavigationStack => {
   return { entries, index: entries.length - 1 };
 };
 
-export const closeStudioTrips = ({ stack, base }: StudioParams): NavigationStack => {
-  let floor = stack.index;
-  while (floor >= 0) {
-    const entry = stack.entries[floor];
-    if (entry === undefined || entry.studio === null || !isSamePlace(entry, base)) {
-      break;
-    }
-    floor -= 1;
-  }
-  return landOn({ stack, floor, base });
-};
-
 type DropParams = {
   readonly stack: NavigationStack;
   readonly sessionId: SessionId;

@@ -184,7 +184,7 @@ export const SettingsStudio = ({ currentWorkspace, focus, onScopeChange, onClose
       icon={CONCEPT_ICONS.settings}
       tone={CONCEPT_TONE.settings}
       title="Settings"
-      closeLabel="close settings"
+      closeLabel="Close settings"
       onClose={onClose}
     >
       {(requestClose) => (

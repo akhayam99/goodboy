@@ -21,6 +21,7 @@ vi.mock('../../../store', async () => {
     }) => Promise<{ readonly kind: 'opened' }>;
     readonly workspaces: ReadonlyArray<{ readonly id: string; readonly name: string }>;
     readonly openStudio: (params: { readonly studio: Studio }) => void;
+    readonly switchStudio: (params: { readonly studio: Studio }) => void;
     readonly amendStudio: (params: { readonly studio: Studio }) => void;
     readonly closeStudio: () => void;
   };
@@ -37,6 +38,7 @@ vi.mock('../../../store', async () => {
       return { kind: 'opened' };
     },
     openStudio: ({ studio }) => set({ appStudio: studio }),
+    switchStudio: ({ studio }) => set({ appStudio: studio }),
     amendStudio: ({ studio }) =>
       set((state) => (state.appStudio?.kind === studio.kind ? { appStudio: studio } : state)),
     closeStudio: () => set({ appStudio: null }),

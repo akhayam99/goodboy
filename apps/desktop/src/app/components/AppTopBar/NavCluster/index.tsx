@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../../../store';
 import { useChatActivity } from '../../../../features/workspace-chat/hooks/useChatActivity';
 import { useGoToBoard } from '../../../hooks/useGoToBoard';
-import { STUDIO_META } from '../../StudioFrame/studioMeta';
 import { BoardButton } from './BoardButton';
 import { ChatButton } from './ChatButton';
 import { HistoryArrow } from './HistoryArrow';
@@ -13,11 +13,26 @@ const HISTORY_MENU_LIMIT = 12;
 
 export const NavCluster = () => {
   const stack = useAppStore((s) => s.navigation[s.currentWorkspaceId ?? ''] ?? null);
-  const sessions = useAppStore((s) => s.sessions);
+  const sessions = useAppStore(
+    useShallow((s) => {
+      const stored = s.navigation[s.currentWorkspaceId ?? ''];
+      if (stored === undefined) {
+        return [];
+      }
+      const ids = new Set(
+        stored.entries.flatMap((location) =>
+          location.studio === null && location.place.at === 'session'
+            ? [location.place.sessionId]
+            : [],
+        ),
+      );
+      return s.sessions.filter((session) => ids.has(session.id));
+    }),
+  );
   const isOnBoard = useAppStore((s) => s.currentSessionId === null);
   const studioKind = useAppStore((s) => s.appStudio?.kind ?? null);
   const hasWorkspace = useAppStore((s) => s.currentWorkspaceId !== null);
-  const openStudio = useAppStore((s) => s.openStudio);
+  const switchStudio = useAppStore((s) => s.switchStudio);
   const back = useAppStore((s) => s.back);
   const forward = useAppStore((s) => s.forward);
   const goToHistory = useAppStore((s) => s.goToHistory);
@@ -58,17 +73,13 @@ export const NavCluster = () => {
         onGo={forward}
         onJump={(index) => goToHistory({ index })}
       />
-      <BoardButton
-        isOnBoard={isOnBoard}
-        studioTitle={studioKind === null ? null : STUDIO_META[studioKind].title}
-        onBoard={goToBoard}
-      />
+      <BoardButton isOnBoard={isOnBoard} hasStudio={studioKind !== null} onBoard={goToBoard} />
       {hasWorkspace ? (
         <ChatButton
           isOnChat={studioKind === 'chat'}
           runningCount={chatActivity.runningCount}
           hasUnread={chatActivity.hasUnread}
-          onChat={() => openStudio({ studio: { kind: 'chat', chatId: null } })}
+          onChat={() => switchStudio({ studio: { kind: 'chat', chatId: null } })}
         />
       ) : null}
     </div>

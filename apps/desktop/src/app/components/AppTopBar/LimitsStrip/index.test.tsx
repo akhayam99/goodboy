@@ -259,7 +259,12 @@ describe('LimitsStrip', () => {
     expect(codex?.getAttribute('aria-pressed')).toBe('true');
     fireEvent.click(chipButtons()[0] as HTMLElement);
     const event = listener.mock.calls[0]?.[0] as CustomEvent;
-    expect(event.detail).toEqual({ scope: 'providers', provider: 'anthropic', section: 'usage' });
+    expect(event.detail).toEqual({
+      scope: 'providers',
+      provider: 'anthropic',
+      section: 'usage',
+      door: true,
+    });
     window.removeEventListener('goodboy:open-settings', listener);
   });
 

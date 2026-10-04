@@ -14,7 +14,7 @@ import {
 } from './harness';
 
 const openSettingsHome = async (): Promise<HTMLElement> => {
-  await clickButton(/^Open settings/);
+  await clickButton('Settings');
   return screen.findByRole('list', { name: 'App pages' });
 };
 
