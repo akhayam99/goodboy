@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { AFTER_MERGE_RULES, type AfterMergeRule, type WorkspaceId } from '@goodboy/types';
-import { Band, Collapsible, SegmentedTabs } from '@goodboy/ui';
+import { Collapsible, SegmentedTabs } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { DEFAULT_AFTER_MERGE_RULE } from '../../../../store/slices/branch-cleanup';
 import { repoDeletesMergedBranches } from '../../../../store/slices/branch-cleanup/repoDeletesMergedBranches';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { WorkspaceFieldRow } from './WorkspaceFieldRow';
 import {
   AFTER_MERGE_LABEL,
@@ -98,14 +97,7 @@ export const WorkspaceAfterMergeSection = ({ workspaceId }: Props) => {
   };
 
   return (
-    <Band
-      inset="content"
-      label="After a pull request merges"
-      ariaLabel="After a pull request merges"
-      hint="What happens to the branch, its folder and its worktree once a pull request lands."
-      icon={<CONCEPT_ICONS.merge size={ICON_SIZE.row} aria-hidden />}
-      headingLevel={2}
-    >
+    <section aria-label="When a pull request merges" className="flex flex-col gap-3">
       <WorkspaceFieldRow
         workspaceId={workspaceId}
         field="afterMerge"
@@ -113,7 +105,7 @@ export const WorkspaceAfterMergeSection = ({ workspaceId }: Props) => {
         help={AFTER_MERGE_NEVER}
       >
         <SegmentedTabs
-          ariaLabel="After a pull request merges"
+          ariaLabel="When a pull request merges"
           size="sm"
           value={rule}
           options={options}
@@ -144,6 +136,6 @@ export const WorkspaceAfterMergeSection = ({ workspaceId }: Props) => {
           </ul>
         </Collapsible>
       )}
-    </Band>
+    </section>
   );
 };

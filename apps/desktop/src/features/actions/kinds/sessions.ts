@@ -80,7 +80,7 @@ export const SESSIONS_KIND: ObjectKindDefinition<SessionsActionTarget, SessionsF
       confirm: ({ facts }) => ({
         title: `${countLabel({ verb: 'Delete', count: facts.sessions.length })}?`,
         description:
-          'Removes these sessions and their transcripts from this device. Branches and their commits stay in the repository. This cannot be undone.',
+          'Removes these sessions and their transcripts from this device. This cannot be undone.',
         confirmLabel: countLabel({ verb: 'Delete', count: facts.sessions.length }),
         role: 'danger',
         goes: 'The sessions and their transcripts, from this device.',

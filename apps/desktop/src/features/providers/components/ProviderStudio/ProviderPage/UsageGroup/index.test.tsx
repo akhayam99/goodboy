@@ -88,11 +88,13 @@ describe('UsageGroup', () => {
     screen.getByText('The 5-hour window resets at 14:30.');
     screen.getByText('Updated 3m ago');
     screen.getByText(/never reads your sign-in/);
-    await waitFor(() => screen.getByText('$18.40'));
-    expect(invokeSpy).toHaveBeenCalledWith(
-      'provider_budget_overview',
-      expect.objectContaining({ provider: 'anthropic' }),
+    await waitFor(() =>
+      expect(invokeSpy).toHaveBeenCalledWith(
+        'provider_budget_overview',
+        expect.objectContaining({ provider: 'anthropic' }),
+      ),
     );
+    expect(screen.queryByText('$18.40')).toBeNull();
   });
 
   it('says Codex is out for the week with the day it comes back', () => {
@@ -206,12 +208,12 @@ describe('UsageGroup', () => {
     const { rerender } = render(
       <UsageGroup providerId="anthropic" billing="plan" planLabel={null} />,
     );
-    await waitFor(() => screen.getByText('$18.40'));
+    await waitFor(() => screen.getByText(/^Budget \$80\.00 a month, 76% used/));
 
     state.budgetRules = [{ ...rule }];
     rerender(<UsageGroup providerId="anthropic" billing="plan" planLabel={null} />);
 
-    screen.getByText('$18.40');
+    screen.getByText(/^Budget \$80\.00 a month, 76% used/);
     expect(invokeSpy).toHaveBeenCalledTimes(1);
   });
 

@@ -32,7 +32,6 @@ type RowKeyParams = {
 export const ProviderPolicyList = ({ workspaceId, hasReset = false }: Props) => {
   const policy = useProviderPolicy({ workspaceId });
   const [expanded, setExpanded] = useState<ProviderId | null>(null);
-  const [saved, setSaved] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState('');
   const { rows } = policy;
 
@@ -44,7 +43,6 @@ export const ProviderPolicyList = ({ workspaceId, hasReset = false }: Props) => 
     }
     policy.moveTo({ id, to });
     const note = reorderNote({ rows, from, to, isDone: true });
-    setSaved(note);
     setAnnouncement(
       `${PROVIDER_LABEL[id]} moved to position ${to + 1} of ${rows.length}. ${note}.`,
     );
@@ -118,10 +116,11 @@ export const ProviderPolicyList = ({ workspaceId, hasReset = false }: Props) => 
               onToggleExpand={() => setExpanded((current) => (current === row.id ? null : row.id))}
               onState={(state) => {
                 policy.setState({ id: row.id, state });
-                setSaved(null);
                 setAnnouncement(`${PROVIDER_LABEL[row.id]} is ${POLICY_STATE_LABEL[state]}.`);
               }}
-              onToggleMark={(mark) => policy.toggleMark({ id: row.id, mark })}
+              onToggleKeepAfterLimit={() =>
+                policy.toggleMark({ id: row.id, mark: 'keepAfterLimit' })
+              }
               onGripDown={(event) => startStepDrag(index, PROVIDER_LABEL[row.id], event)}
               onKeyDown={(event) => onRowKey({ event, id: row.id, index })}
             />
@@ -134,7 +133,7 @@ export const ProviderPolicyList = ({ workspaceId, hasReset = false }: Props) => 
         />
       </ul>
       <div className="flex min-h-7 items-center gap-2 px-1">
-        <PolicyHint dragNote={dragNote} saved={saved} />
+        <PolicyHint dragNote={dragNote} />
         {hasReset ? (
           <Button
             size="sm"
@@ -142,7 +141,6 @@ export const ProviderPolicyList = ({ workspaceId, hasReset = false }: Props) => 
             disabled={!policy.isCustom}
             onClick={() => {
               policy.reset();
-              setSaved('Back to every connected provider On');
               setAnnouncement('Providers reset to the connected order, all On.');
             }}
           >

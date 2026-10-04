@@ -63,7 +63,7 @@ Finish a review in one action. **Push 1** in the Review header opens a confirm r
 
 ### Review replies in your voice
 
-Get replies that sound like you, **Terse**, **Friendly**, **Formal** or **Like my replies**. **Like my replies** reads your last 20 review replies and writes a style note you can edit. When you squash or fold a fix, the reply names both commits, and a reply already posted gets an Update line, which you can turn off in Settings.
+Get replies that sound like you, **Terse**, **Friendly**, **Formal** or **Your replies**. **Your replies** reads your last 20 review replies and writes a style note you can edit. When you squash or fold a fix, the reply names both commits, and a reply already posted gets an Update line, which you can turn off in Settings.
 
 ### Fixes on a branch that moved
 
@@ -95,7 +95,7 @@ Know whether a GitHub pull request can merge, in plain words, with details and c
 
 Move between a pull request, its Diff and its Review without losing your place. They open as one path in the trail from the worktree row, such as **Overview**, **Pull request**, **#318** at the top of the page above, and Back walks it. Every link to a pull request lands on its page.
 
-### Write it for me
+### Write it
 
 Get a pull request title, description and changelog entry in your repo's format when you open a pull request. Linked issues become closing references.
 

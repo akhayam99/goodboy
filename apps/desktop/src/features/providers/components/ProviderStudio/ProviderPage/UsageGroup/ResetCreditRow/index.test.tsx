@@ -70,7 +70,7 @@ describe('ResetCreditRow', () => {
     expect(within(confirm).getByText('5h 100% · week 96%')).toBeDefined();
     fireEvent.click(within(confirm).getByRole('button', { name: 'Use reset' }));
 
-    await waitFor(() => expect(screen.getByText('Reset used.')).toBeDefined());
+    await waitFor(() => expect(screen.getByText('Reset used')).toBeDefined());
     expect(state.consumeCodexResetCredit).toHaveBeenCalledTimes(1);
   });
 
@@ -108,7 +108,7 @@ describe('ResetCreditRow', () => {
 
     await waitFor(() => expect(screen.getByText("Couldn't reach Codex.")).toBeDefined());
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
-    await waitFor(() => expect(screen.getByText('Reset used.')).toBeDefined());
+    await waitFor(() => expect(screen.getByText('Reset used')).toBeDefined());
     expect(state.consumeCodexResetCredit).toHaveBeenCalledTimes(2);
   });
 
@@ -123,7 +123,7 @@ describe('ResetCreditRow', () => {
       }),
     );
 
-    await waitFor(() => expect(screen.getByText('Nothing to reset right now.')).toBeDefined());
+    await waitFor(() => expect(screen.getByText('Nothing to reset right now')).toBeDefined());
   });
 
   it('asks codex for the credit details when only the count is known', () => {

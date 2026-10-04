@@ -467,7 +467,7 @@ pick it when you start the agent.
   `<<history-stuck>>`; the engine rebuilds its commits with the plan messages
   and authors, checks the count, and moves the branch itself
 - **Scribe** is hidden too: it writes text about the code and never code.
-  `Write it for me` in the pull request panel asks it for the title and
+  `Write it` in the pull request panel asks it for the title and
   body, which fill the form for you to check before `Create PR`; it can also
   write a commit message for a squash or a reword and a changelog entry. It
   answers only with `<<pr-title>>`, `<<pr-body>>`, `<<commit-message>>` and
@@ -867,7 +867,7 @@ was. ⌘↵ with the list focused pushes too. Behind it runs a
 
 How a reply reads is set in Settings, Workspace, **Review replies**:
 
-- **Voice**: Terse (the default), Friendly, Formal, or Like my replies, which
+- **Voice**: Terse (the default), Friendly, Formal, or Your replies, which
   follows a style note you can edit. **Learn from my replies** reads your last
   20 review replies in the workspace's repositories and writes that note. The
   voice goes into the agent's prompt

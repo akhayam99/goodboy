@@ -187,11 +187,7 @@ describe('ContextDrawer', () => {
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     expect(screen.getByText('Scout').getAttribute('title')).toBe('Does not receive this');
     expect(screen.getByText('Reviewer').getAttribute('title')).toBeNull();
-    expect(
-      screen.getByText(
-        'You always see everything. This only limits what agents receive in their prompt.',
-      ).tagName,
-    ).toBe('P');
+    expect(screen.getByText('Agents only.').tagName).toBe('P');
   });
 
   it('reads the Visible to line from the same map as the prompt, per tab', () => {

@@ -79,7 +79,7 @@ export const slotVisibility = ({ slot }: { readonly slot: SlotKey }): Visibility
     summary: left.length === 0 ? 'All roles' : `All roles except ${left.join(', ')}`,
     hasYou: false,
     chips,
-    note: 'You always see everything. This only limits what agents receive in their prompt.',
+    note: 'Agents only.',
   };
 };
 
@@ -87,5 +87,5 @@ export const youOnlyVisibility = (): Visibility => ({
   summary: 'You only',
   hasYou: true,
   chips: chipsFor({ slot: null }),
-  note: 'Learned items are written for you. Agents never receive them.',
+  note: 'You only.',
 });

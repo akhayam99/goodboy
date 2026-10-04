@@ -293,7 +293,6 @@ describe('StoragePage', () => {
     expect(within(section).getAllByTestId('storage-artifact-row')).toHaveLength(3);
     expect(within(section).getByText(/used recently, not suggested/)).toBeDefined();
     expect(within(section).getByText(/deleted under 30 days ago/)).toBeDefined();
-    expect(screen.getByText('Artifact copies')).toBeDefined();
   });
 
   it('bulk deletes only unused artifacts after a confirm', () => {
@@ -391,7 +390,7 @@ describe('StoragePage', () => {
       expect(state.setStorageScope).toHaveBeenCalledWith({ kind: 'all' });
     });
 
-    it('drops the App data segment from the legend once a scope is active', () => {
+    it('keeps the legend to Can go, Review first and Keep, and leaves app data out once a scope is active', () => {
       Object.assign(state, {
         currentWorkspaceId: 'harborline',
         currentWorkspace: { id: 'harborline', name: 'Harborline' },
@@ -399,6 +398,12 @@ describe('StoragePage', () => {
       render(<StoragePage />);
 
       const summary = screen.getByRole('region', { name: 'Storage summary' });
+      expect(
+        within(summary)
+          .getAllByRole('button')
+          .map((button) => button.textContent)
+          .filter((text) => /^(Can go|Review first|Keep)/.test(text ?? '')),
+      ).toHaveLength(3);
       expect(within(summary).queryByText('App data')).toBeNull();
       expect(screen.getByText(/of app data shared by every workspace/)).toBeDefined();
     });

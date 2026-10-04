@@ -36,7 +36,6 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
-import type { SettingsScopeChange } from '../../settingsFocus';
 import { WORKSPACE_PAGES } from './workspacePages';
 import { WorkspaceScopePanel } from './WorkspaceScopePanel';
 
@@ -84,8 +83,6 @@ const seed = ({
   });
 };
 
-const onSelect = vi.fn<(change: SettingsScopeChange) => void>();
-
 const renderPage = ({
   section,
   initialFlow,
@@ -101,7 +98,6 @@ const renderPage = ({
         workspaceId={HARBORLINE.id}
         section={section}
         initialFlow={initialFlow}
-        onSelect={onSelect}
         requestClose={requestClose}
       />
     </ToastProvider>,
@@ -118,7 +114,6 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
-  onSelect.mockReset();
   seed();
 });
 
@@ -134,17 +129,14 @@ describe('WorkspaceScopePanel pages', () => {
     screen.getByRole('region', { name: 'Disconnect workspace' });
   });
 
-  it.each(WORKSPACE_PAGES.map((page) => page.id).filter((id) => id !== 'projects'))(
-    'puts every part of %s in a titled region with a card',
-    (section) => {
-      renderPage({ section });
+  it.each(WORKSPACE_PAGES.map((page) => ({ id: page.id, label: page.label, hint: page.hint })))(
+    'gives $id one title and one muted sentence',
+    ({ id, label, hint }) => {
+      renderPage({ section: id });
 
-      const regions = screen.getAllByRole('region');
-      expect(regions.length).toBeGreaterThan(0);
-      regions.forEach((region) => {
-        expect(within(region).getAllByRole('heading', { level: 2 }).length).toBeGreaterThan(0);
-        expect(region.querySelector('[data-band]')).not.toBeNull();
-      });
+      expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(label);
+      screen.getByText(hint);
+      expect(hint.split(' ').length).toBeLessThanOrEqual(12);
     },
   );
 
@@ -159,7 +151,7 @@ describe('WorkspaceScopePanel pages', () => {
 
   it('lands old anchors on their page', () => {
     renderPage({ section: 'after-merge' });
-    screen.getByRole('region', { name: 'After a pull request merges' });
+    screen.getByRole('region', { name: 'When a pull request merges' });
     cleanup();
 
     renderPage({ section: 'review-replies' });
@@ -170,12 +162,13 @@ describe('WorkspaceScopePanel pages', () => {
     screen.getByRole('region', { name: 'Recent decisions' });
   });
 
-  it('keeps the attribution line on New sessions and links to it from Review replies', () => {
+  it('keeps the attribution line on New sessions only', () => {
     renderPage({ section: 'review-replies' });
+    expect(screen.queryByText('Attribution line')).toBeNull();
+    cleanup();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit in New sessions' }));
-
-    expect(onSelect).toHaveBeenCalledWith({ scope: 'workspace', section: 'general' });
+    renderPage({ section: 'general' });
+    screen.getByText('Attribution line');
   });
 
   it('persists the attribution switch through the queued writer', async () => {
