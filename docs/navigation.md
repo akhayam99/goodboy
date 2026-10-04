@@ -1429,7 +1429,14 @@ agentId, pane })` asks for either, and the address prints it as a last
   a window restore. Tab clicks inside the pane stay local and do not rewrite
   the address. The Brief of a resolver carries the comment, the fix and the
   reply with the same verbs as Review (both use `useReviewCommentController`),
-  and **Push now** pushes only that fix. A resolver that belongs to a batch has
+  and **Push now** pushes only that fix. The Brief is never blank: it reads
+  every queue row of the session, not only the rows of the selected review
+  source (`useReviewEntries({ isSourceScoped: false })`), so a thread of another
+  pull request still shows its comment (from the source snapshot when the
+  pull request is not loaded), its state in plain words and the resolver
+  commit. A thread that is on another source offers **Open in Review** instead
+  of **Push now**; a thread that is gone says so in one line and offers the
+  same button; while the session loads it says it is loading. A resolver that belongs to a batch has
   no verbs there, only **Open in Review (N)**, which calls `openReview` with
   the destination `{ kind: 'threads', threadIds }`. That destination needs no
   mount and no pull request: Review focuses the first thread of the set it

@@ -103,6 +103,70 @@ describe('CliTooOldNotice', () => {
     expect(screen.getByText('update terminal')).toBeDefined();
   });
 
+  it('keeps the warning with the PATH binary and terminal when the update changed nothing', () => {
+    useAppStore.setState({
+      providerLifecycle: {
+        ...INITIAL_LIFECYCLE_MAP,
+        anthropic: {
+          ...INITIAL_LIFECYCLE_MAP.anthropic,
+          phase: 'installed',
+          action: 'update',
+          runId: 'pty-1',
+          command: 'claude update',
+          update: {
+            outcome: 'unchanged',
+            before: '2.1.259',
+            after: '2.1.259',
+            binaryPath: '/usr/local/bin/claude',
+          },
+        },
+      },
+    });
+    render(<CliTooOldNotice payload={PAYLOAD} runId={RUN} isRetrying={false} />);
+    expect(screen.getByText('Claude CLI is still 2.1.259')).toBeDefined();
+    expect(
+      screen.getByText(/The Claude CLI on your PATH is \/usr\/local\/bin\/claude\./),
+    ).toBeDefined();
+    expect(screen.getByText('update terminal')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
+  });
+
+  it('says updated only when the update changed the version', () => {
+    seedClaude({ version: '2.1.281' });
+    useAppStore.setState({
+      providerLifecycle: {
+        ...INITIAL_LIFECYCLE_MAP,
+        anthropic: {
+          ...INITIAL_LIFECYCLE_MAP.anthropic,
+          phase: 'installed',
+          action: 'update',
+          runId: 'pty-1',
+          update: { outcome: 'updated', before: '2.1.259', after: '2.1.281', binaryPath: null },
+        },
+      },
+    });
+    render(<CliTooOldNotice payload={PAYLOAD} runId={RUN} isRetrying={false} />);
+    expect(screen.getByText('Claude CLI updated to 2.1.281.')).toBeDefined();
+  });
+
+  it('shows the terminal and Retry when the update failed', () => {
+    useAppStore.setState({
+      providerLifecycle: {
+        ...INITIAL_LIFECYCLE_MAP,
+        anthropic: {
+          ...INITIAL_LIFECYCLE_MAP.anthropic,
+          phase: 'error',
+          action: 'update',
+          runId: 'pty-1',
+        },
+      },
+    });
+    render(<CliTooOldNotice payload={PAYLOAD} runId={RUN} isRetrying={false} />);
+    expect(screen.getByText(/The update didn't finish\./)).toBeDefined();
+    expect(screen.getByText('update terminal')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
+  });
+
   it('waits while a Claude turn is running', () => {
     useAppStore.setState({
       agentTurnState: {

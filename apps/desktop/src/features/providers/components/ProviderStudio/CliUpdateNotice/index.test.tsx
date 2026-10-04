@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { AgentId, IsoDateTime, ProviderRunId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { INITIAL_LIFECYCLE_MAP } from '../../../../../store/slices/providers/types';
+import { IDLE_LIFECYCLE, INITIAL_LIFECYCLE_MAP } from '../../../../../store/slices/providers/types';
+import type { CliUpdateResult } from '../../../cliUpdateResult';
 import { buildProviderList } from '../../../providers';
 import { CliUpdateNotice } from './index';
 
@@ -56,6 +57,28 @@ afterEach(() => {
   cleanup();
 });
 
+const seedUpdateRun = ({
+  phase,
+  update,
+}: {
+  readonly phase: 'installed' | 'error';
+  readonly update: CliUpdateResult | null;
+}) => {
+  useAppStore.setState({
+    providerLifecycle: {
+      ...INITIAL_LIFECYCLE_MAP,
+      anthropic: {
+        ...IDLE_LIFECYCLE,
+        action: 'update',
+        phase,
+        runId: RUN,
+        command: 'claude update',
+        update,
+      },
+    },
+  });
+};
+
 describe('CliUpdateNotice', () => {
   it('names every model the installed CLI cannot run', () => {
     render(<CliUpdateNotice providerId="anthropic" autoStart={false} />);
@@ -101,5 +124,45 @@ describe('CliUpdateNotice', () => {
       true,
     );
     expect(screen.getByText(/Wait for running turns to finish\./)).toBeDefined();
+  });
+
+  it('ends on a warning with the PATH binary and keeps the terminal when nothing changed', () => {
+    seedUpdateRun({
+      phase: 'installed',
+      update: {
+        outcome: 'unchanged',
+        before: '2.1.240',
+        after: '2.1.240',
+        binaryPath: '/usr/local/bin/claude',
+      },
+    });
+    render(<CliUpdateNotice providerId="anthropic" autoStart={false} />);
+    expect(screen.getByText('Claude CLI is still 2.1.240')).toBeDefined();
+    expect(
+      screen.getByText(
+        'The update ran, but nothing changed. The Claude CLI on your PATH is /usr/local/bin/claude. Update that install, or run claude update in your own terminal.',
+      ),
+    ).toBeDefined();
+    expect(screen.getByText('update terminal')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
+  });
+
+  it('ends on success only once the detected version changed', () => {
+    seedClaude({ version: '2.1.300' });
+    seedUpdateRun({
+      phase: 'installed',
+      update: { outcome: 'updated', before: '2.1.240', after: '2.1.300', binaryPath: null },
+    });
+    render(<CliUpdateNotice providerId="anthropic" autoStart={false} />);
+    expect(screen.getByText('Claude CLI updated to 2.1.300.')).toBeDefined();
+    expect(screen.queryByText('update terminal')).toBeNull();
+  });
+
+  it('ends on the failed notice with the terminal when the update errors', () => {
+    seedUpdateRun({ phase: 'error', update: null });
+    render(<CliUpdateNotice providerId="anthropic" autoStart={false} />);
+    expect(screen.getByText(/The update didn't finish\./)).toBeDefined();
+    expect(screen.getByText('update terminal')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
   });
 });

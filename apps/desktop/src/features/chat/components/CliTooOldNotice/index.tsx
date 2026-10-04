@@ -9,6 +9,7 @@ import { Button, Notice } from '@goodboy/ui';
 import type { ProviderRunId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { CLI_LABEL } from '../../../providers/cliLabel';
+import { stillOutdatedBody, stillOutdatedTitle } from '../../../providers/cliUpdateCopy';
 import { InlineTerminal } from '../../../providers/components/InlineTerminal';
 import { useCliUpdate } from '../../../providers/hooks/useCliUpdate';
 import type { RetryRunParams } from '../../retryRun';
@@ -95,13 +96,22 @@ export const CliTooOldNotice = ({ payload, runId, onRetryRun, isRetrying }: Prop
   const waitNote =
     update.isBlockedByTurn && !update.isUpdating ? ' Wait for running turns to finish.' : '';
   const failedNote = update.hasFailed ? " The update didn't finish." : '';
+  const unchanged = update.isUnchanged ? update.result : null;
 
   return (
     <Notice
       tone="warning"
       placement="transcript"
-      title={`${modelLabel} needs a newer ${cli}`}
-      body={`You have ${cli} ${current}. ${modelLabel} needs ${requiredVersion} or newer. ${outcome}${failedNote}${waitNote}`}
+      title={
+        unchanged === null
+          ? `${modelLabel} needs a newer ${cli}`
+          : stillOutdatedTitle({ cli, version: current })
+      }
+      body={
+        unchanged === null
+          ? `You have ${cli} ${current}. ${modelLabel} needs ${requiredVersion} or newer. ${outcome}${failedNote}${waitNote}`
+          : `${stillOutdatedBody({ cli, result: unchanged, command: update.command })} ${modelLabel} needs ${requiredVersion} or newer. ${outcome}${waitNote}`
+      }
       detail={update.hasFailed && update.errorTail !== null ? update.errorTail : detail}
       actions={
         <>
@@ -113,7 +123,7 @@ export const CliTooOldNotice = ({ payload, runId, onRetryRun, isRetrying }: Prop
             disabled={update.isBlockedByTurn}
             onClick={update.start}
           >
-            {update.hasFailed ? 'Retry' : `Update ${cli}`}
+            {update.hasFailed || unchanged !== null ? 'Retry' : `Update ${cli}`}
           </Button>
           {sibling !== null && canRetry && !update.isUpdating && (
             <Button
@@ -129,7 +139,7 @@ export const CliTooOldNotice = ({ payload, runId, onRetryRun, isRetrying }: Prop
         </>
       }
     >
-      {update.runId !== null && (update.isUpdating || update.hasFailed) && (
+      {update.runId !== null && (update.isUpdating || update.hasFailed || unchanged !== null) && (
         <InlineTerminal runId={update.runId} isActive heightClass="h-36" />
       )}
     </Notice>

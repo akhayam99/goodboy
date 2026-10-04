@@ -23,6 +23,7 @@ export type ProviderStatus = {
   readonly available: boolean;
   readonly version: string | null;
   readonly error: string | null;
+  readonly path?: string | null;
 };
 
 export type ProviderDisplayInfo = ProviderInfoBase & {

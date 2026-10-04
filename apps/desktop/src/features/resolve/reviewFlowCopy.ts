@@ -135,6 +135,10 @@ export const RESOLVER_BRIEF_COPY = {
   pushNow: 'Push now',
   openInReview: 'Open in Review',
   openTranscript: 'Open transcript',
+  loading: 'Loading the comment',
+  gone: 'This comment is no longer in Review.',
+  commit: 'Commit',
+  rewritten: 'no longer on this branch, it was squashed or rewritten',
 } as const;
 
 export const batchChildNotice = ({ total }: { readonly total: number }): string => {
