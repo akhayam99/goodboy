@@ -42,7 +42,7 @@ const labels = (crumbs: ReturnType<typeof buildSessionBreadcrumb>) => crumbs.map
 const last = (crumbs: ReturnType<typeof buildSessionBreadcrumb>) => crumbs[crumbs.length - 1];
 
 describe('buildSessionBreadcrumb', () => {
-  it('puts the comment between Review and the resolver Agent', () => {
+  it('puts the comment between Review and the resolver type', () => {
     const crumbs = buildSessionBreadcrumb(
       base(
         {
@@ -53,7 +53,7 @@ describe('buildSessionBreadcrumb', () => {
         makeHandlers(),
       ),
     );
-    expect(labels(crumbs)).toEqual(['Overview', 'review', 'retryPolicy.ts:42', 'Agent']);
+    expect(labels(crumbs)).toEqual(['Overview', 'review', 'retryPolicy.ts:42', 'Resolver']);
   });
 
   it('carries the shown branch as the last crumb of the Diff', () => {
@@ -194,7 +194,7 @@ describe('buildSessionBreadcrumb', () => {
     );
 
     expect(labels(adHoc)).toEqual(['Overview', 'agents', 'scout one']);
-    expect(labels(resolver)).toEqual(['Overview', 'review', 'Agent']);
+    expect(labels(resolver)).toEqual(['Overview', 'review', 'Resolver']);
   });
 
   it('parents a step on its run no matter which lens the jump came from', () => {

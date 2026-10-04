@@ -367,7 +367,7 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.getByTestId('session-crumb-bar')).toBeDefined();
 
     const { result } = renderHook(() => useSessionCrumbs({ session }));
-    expect(result.current.map((crumb) => crumb.label)).toEqual(['Overview', 'Review', 'Agent']);
+    expect(result.current.map((crumb) => crumb.label)).toEqual(['Overview', 'Review', 'Resolver']);
   });
 
   it('does not show workflow linkage outside the workflows lens', () => {
