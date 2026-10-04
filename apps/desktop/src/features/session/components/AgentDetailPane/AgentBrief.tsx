@@ -6,7 +6,7 @@ import {
   isAgentStatusSettled,
   stripControlMarkers,
 } from '@goodboy/core';
-import { Markdown, Band, StatusDot, Tooltip } from '@goodboy/ui';
+import { Markdown, Band } from '@goodboy/ui';
 import type { Agent, Session, TurnState } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -136,19 +136,8 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
       <AgentBriefHandoffLine sessionId={session.id} agentId={agent.id} />
       {!isTerminal ? (
         <Band inset="content" label="Now">
-          <div className="flex items-center gap-2 text-label text-foreground">
-            <StatusDot tone={now.tone} size="sm" pulsing={now.isPulsing} />
-            <span className="min-w-0 flex-1 truncate">{now.label}</span>
-            {time === null ? null : (
-              <Tooltip content={time.detail}>
-                <span
-                  data-testid="agent-now-time"
-                  className="shrink-0 text-secondary tabular-nums text-muted-foreground"
-                >
-                  {time.headline}
-                </span>
-              </Tooltip>
-            )}
+          <div className="text-label text-foreground">
+            <span className="block min-w-0 truncate">{now.label}</span>
           </div>
           {time?.isMuchLonger === true ? <AgentMuchLonger /> : null}
         </Band>

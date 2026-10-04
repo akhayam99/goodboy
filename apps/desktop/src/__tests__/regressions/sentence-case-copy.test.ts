@@ -38,7 +38,7 @@ const NAMED_COPY: Readonly<Record<string, ReadonlyArray<string | null>>> = {
     (presentation) => presentation.label,
   ),
   RUN_AUTONOMY_OPTIONS: RUN_AUTONOMY_OPTIONS.flatMap((option) => [option.label, option.hint]),
-  EMPTY_COPY: Object.values(EMPTY_COPY).flatMap((copy) => [copy.title, copy.description]),
+  EMPTY_COPY: Object.values(EMPTY_COPY).map((copy) => copy.title),
 };
 
 const startsLowercase = (text: string): boolean =>

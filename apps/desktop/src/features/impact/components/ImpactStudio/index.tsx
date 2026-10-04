@@ -24,7 +24,6 @@ import { SpendPanel } from './SpendPanel';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
-  readonly workspaceName?: string;
   readonly initialScope?: ImpactScope;
   readonly onScopeChange?: (scope: ImpactScope) => void;
   readonly onClose: () => void;
@@ -32,13 +31,7 @@ type Props = {
 
 const SPEND_SCOPE: ImpactScope = { kind: 'spend' };
 
-export const ImpactStudio = ({
-  workspaceId,
-  workspaceName,
-  initialScope,
-  onScopeChange,
-  onClose,
-}: Props) => {
+export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose }: Props) => {
   const [windowId, setWindowId] = useState<ImpactWindowId>('last30');
   const [scope, setScopeState] = useState<ImpactScope>(initialScope ?? { kind: 'overview' });
   const setScope = useCallback(
@@ -81,8 +74,6 @@ export const ImpactStudio = ({
         return (
           <OverviewPanel
             header={header}
-            windowId={windowId}
-            workspaceName={workspaceName ?? null}
             overview={metrics.overview}
             pullRequests={metrics.pullRequests}
             reviews={metrics.reviews}

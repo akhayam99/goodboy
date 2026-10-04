@@ -12,7 +12,6 @@ import {
   useDropdown,
 } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
-import { useNow } from '../../../../shared/hooks/useNow';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/ProviderGlyph';
 import { ProviderPolicyList } from '../../../../features/providers/components/ProviderPolicyList';
@@ -21,7 +20,6 @@ import { openProviderConnect } from '../../../../features/providers/openProvider
 import { openProviderUsage } from '../../../../features/providers/openProviderUsage';
 import { PROVIDER_LABEL } from '../../../../features/providers/providerLabel';
 import { FOOTER_LABEL, FOOTER_LABELED_PAD } from '../FooterButton';
-import { AppLimitRow } from './AppLimitRow';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -36,12 +34,6 @@ type ConnectionParams = {
 
 export const ProvidersMenu = ({ workspaceId }: Props) => {
   const providers = useAppStore((state) => state.providers);
-  const limits = useAppStore((state) => state.providerLimits);
-  const workspaceName = useAppStore(
-    (state) =>
-      state.workspaces.find((workspace) => workspace.id === workspaceId)?.name ?? 'this workspace',
-  );
-  const nowMs = useNow(60_000);
   const dropdown = useDropdown({
     align: 'end',
     width: 'w-[500px]',
@@ -102,28 +94,18 @@ export const ProvidersMenu = ({ workspaceId }: Props) => {
         </Tooltip>
       }
     >
-      <div className="flex flex-col px-2">
-        <Eyebrow label="Providers" />
-      </div>
       {connected.length > 0 ? (
-        <ul aria-label="Provider limits" className="flex flex-col">
-          {connected.map((id) => (
-            <AppLimitRow key={id} id={id} limits={limits[id]} nowMs={nowMs} />
-          ))}
-        </ul>
+        <>
+          <div className="flex flex-col px-2">
+            <Eyebrow label="This workspace" />
+          </div>
+          <div className="px-1">
+            <ProviderPolicyList workspaceId={workspaceId} />
+          </div>
+        </>
       ) : (
         <EmptyLine className="px-2">No provider is connected yet.</EmptyLine>
       )}
-      {connected.length > 0 ? (
-        <>
-          <div className="flex flex-col px-2 pt-1">
-            <Eyebrow label={`For ${workspaceName}`} />
-          </div>
-          <div className="px-1">
-            <ProviderPolicyList workspaceId={workspaceId} workspaceName={workspaceName} />
-          </div>
-        </>
-      ) : null}
       <ul aria-label="Provider actions" className="flex flex-col px-1 pt-1">
         {missing.map((id) => (
           <li key={id}>

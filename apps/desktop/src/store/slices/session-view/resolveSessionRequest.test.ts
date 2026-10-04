@@ -76,6 +76,7 @@ describe('resolveSessionRequest', () => {
     expect(info).toEqual({
       stage: 'done',
       reason: 'MR !7 merged',
+      addsFact: true,
       attention: null,
       prState: 'merged',
     });
@@ -93,6 +94,7 @@ describe('resolveSessionRequest', () => {
     expect(info).toEqual({
       stage: 'review',
       reason: 'PR #42 awaiting review',
+      addsFact: false,
       attention: null,
       prState: 'open',
     });

@@ -46,6 +46,7 @@ const { state, hooks, useDynamicActionsMock } = vi.hoisted(() => ({
   hooks: {
     stage: 'building' as SessionStage,
     reason: 'no PR yet',
+    addsFact: true,
     agents: [] as ReadonlyArray<unknown>,
     cost: 0,
     prFetchState: 'known' as SessionPrFetchState,
@@ -63,6 +64,7 @@ vi.mock('../../../../../store', async () => ({
   useSessionStageInfo: () => ({
     stage: hooks.stage,
     reason: hooks.reason,
+    addsFact: hooks.addsFact,
     attention: null,
     prState: null,
   }),
@@ -152,6 +154,7 @@ beforeEach(() => {
   useDynamicActionsMock.mockReturnValue([]);
   nav.selectCard.mockClear();
   hooks.reason = 'no PR yet';
+  hooks.addsFact = true;
   hooks.agents = [];
   hooks.cost = 0;
   hooks.prFetchState = 'known';
@@ -188,6 +191,12 @@ describe('StageBoardCard layout', () => {
     expect(screen.queryByTestId('status-dot')).toBeNull();
     expect(screen.getByText('no PR yet').className).toContain('truncate');
     expect(screen.getByText('no PR yet').parentElement?.children.length).toBe(2);
+  });
+
+  it('drops the reason when it only restates the stage', () => {
+    hooks.addsFact = false;
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(screen.queryByText('no PR yet')).toBeNull();
   });
 
   it('trades the reason for the workflow progress the sidebar row shows', () => {
@@ -608,6 +617,14 @@ describe('StageBoardCard footer', () => {
     const cost = document.querySelector('[title="Session spend: $1.25 (excludes summarizer)"]');
     expect(cost?.className).toContain('text-meta');
     expect(screen.getByText('2h ago').className).toContain('text-meta');
+  });
+
+  it('keeps the cost badge in the card, revealed on hover or focus', () => {
+    hooks.cost = 1.25;
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(
+      document.querySelector('[title="Session spend: $1.25 (excludes summarizer)"]'),
+    ).not.toBeNull();
   });
 
   it('singularizes the agent count label at one agent', () => {

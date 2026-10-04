@@ -31,7 +31,9 @@ type Params = {
 const isPrLive = (pr: StagePullRequest | null): pr is StagePullRequest =>
   pr !== null && pr.state !== 'merged' && pr.state !== 'closed';
 
-type StageWithoutRequest = Omit<SessionStageInfo, 'prState'>;
+type StageWithoutRequest = Omit<SessionStageInfo, 'prState' | 'addsFact'> & {
+  readonly isStageDefault?: true;
+};
 
 const deriveStage = ({
   session,
@@ -57,7 +59,7 @@ const deriveStage = ({
     return { stage: 'attention', reason: 'agent errored', attention: 'agent-error' };
   }
   if (hasRunningAgent) {
-    return { stage: 'running', reason: 'agent running', attention: null };
+    return { stage: 'running', reason: 'agent running', attention: null, isStageDefault: true };
   }
   if (isDecidingWorkflow) {
     return { stage: 'running', reason: 'deciding the next step', attention: null };
@@ -122,7 +124,9 @@ const deriveStage = ({
     return { stage: 'building', reason: 'GitHub unreachable', attention: null };
   }
   if (pr === null) {
-    return { stage: 'building', reason: hasRun ? 'no PR yet' : 'not started', attention: null };
+    return hasRun
+      ? { stage: 'building', reason: 'no PR yet', attention: null, isStageDefault: true }
+      : { stage: 'building', reason: 'not started', attention: null };
   }
   if (pr.state === 'merged' || pr.state === 'closed') {
     const settled = pr.state === 'merged' ? 'merged' : 'closed';
@@ -141,10 +145,19 @@ const deriveStage = ({
   if (pr.checks === 'pending') {
     return { stage: 'review', reason: `${label}: CI running`, attention: null };
   }
-  return { stage: 'review', reason: `${label} awaiting review`, attention: null };
+  return {
+    stage: 'review',
+    reason: `${label} awaiting review`,
+    attention: null,
+    isStageDefault: true,
+  };
 };
 
-export const deriveSessionStage = (params: Params): SessionStageInfo => ({
-  ...deriveStage(params),
-  prState: params.pr?.state ?? null,
-});
+export const deriveSessionStage = (params: Params): SessionStageInfo => {
+  const { isStageDefault = false, ...stage } = deriveStage(params);
+  return {
+    ...stage,
+    addsFact: !isStageDefault,
+    prState: params.pr?.state ?? null,
+  };
+};

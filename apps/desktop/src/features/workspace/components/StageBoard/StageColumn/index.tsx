@@ -1,5 +1,5 @@
 import { PanelRightClose } from 'lucide-react';
-import { cn, Eyebrow, IconButton, LensEmptyState, ScrollFade, tintClasses } from '@goodboy/ui';
+import { cn, FilledEmptyState, Eyebrow, IconButton, ScrollFade, tintClasses } from '@goodboy/ui';
 import type { Session, SessionId, SessionStage } from '@goodboy/types';
 import { describeStageBucket } from '../../../../session/session-stage';
 import {
@@ -132,10 +132,9 @@ export const StageColumn = ({
       </div>
 
       {empty && (
-        <LensEmptyState
+        <FilledEmptyState
           icon={view.presentation.icon}
           title={EMPTY_COPY[view.key].title}
-          description={EMPTY_COPY[view.key].description}
           className={PANE_RHYTHM.board.emptyMinHeight}
         />
       )}

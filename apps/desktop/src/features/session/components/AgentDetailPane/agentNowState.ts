@@ -1,12 +1,8 @@
-import type { Tone } from '@goodboy/ui';
 import type { Agent, TurnEvent, TurnState } from '@goodboy/types';
-import { describeAgentStatus } from '../../agent-status';
 import { agentStatusWord } from '../../agentStatusWord';
 
 type AgentNowState = {
-  readonly tone: Tone;
   readonly label: string;
-  readonly isPulsing: boolean;
 };
 
 type RunningLabelParams = {
@@ -45,26 +41,22 @@ export const effectiveAgentStatus = ({ agent, turnState }: StatusParams): Agent[
 
 export const agentNowState = ({ agent, turnState, transcript }: NowStateParams): AgentNowState => {
   if (turnState?.kind === 'running' || (turnState === null && agent.status === 'running')) {
-    return { tone: 'info', label: runningLabel({ transcript }), isPulsing: true };
+    return { label: runningLabel({ transcript }) };
   }
   if (turnState?.kind === 'blocked') {
-    return { tone: 'warning', label: 'Needs approval', isPulsing: false };
+    return { label: 'Needs approval' };
   }
   if (turnState?.kind === 'error') {
-    return { tone: 'danger', label: turnState.message, isPulsing: false };
+    return { label: turnState.message };
   }
   if (agent.status === 'pending') {
-    return { tone: 'neutral', label: 'queued', isPulsing: false };
+    return { label: 'queued' };
   }
   if (turnState?.kind === 'starting') {
-    return { tone: 'neutral', label: 'starting', isPulsing: true };
+    return { label: 'starting' };
   }
   if (agent.status === 'failed' || agent.status === 'stopped') {
-    return {
-      tone: describeAgentStatus({ status: agent.status }).tone,
-      label: agentStatusWord({ status: agent.status }),
-      isPulsing: false,
-    };
+    return { label: agentStatusWord({ status: agent.status }) };
   }
-  return { tone: 'neutral', label: 'ready', isPulsing: false };
+  return { label: 'ready' };
 };

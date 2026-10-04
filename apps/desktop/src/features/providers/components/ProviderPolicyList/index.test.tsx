@@ -90,11 +90,10 @@ const seed = ({ policy, providers = ['anthropic', 'codex', 'cursor'] }: SeedPara
   });
 };
 
-const renderList = () =>
-  render(<ProviderPolicyList workspaceId={WORKSPACE.id} workspaceName="Harborline" hasReset />);
+const renderList = () => render(<ProviderPolicyList workspaceId={WORKSPACE.id} hasReset />);
 
 const rowNames = () =>
-  within(screen.getByRole('list', { name: 'Providers, in order, for Harborline' }))
+  within(screen.getByRole('list', { name: 'Providers, in order, for this workspace' }))
     .getAllByRole('listitem')
     .flatMap((item) => {
       const id = item.getAttribute('data-policy-row');

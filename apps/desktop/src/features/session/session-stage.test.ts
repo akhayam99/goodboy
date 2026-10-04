@@ -9,6 +9,7 @@ const REASONS = Object.keys(ATTENTION_REASON_META) as ReadonlyArray<SessionAtten
 const info = (over: Partial<SessionStageInfo>): SessionStageInfo => ({
   stage: 'building',
   reason: '',
+  addsFact: true,
   attention: null,
   prState: null,
   ...over,

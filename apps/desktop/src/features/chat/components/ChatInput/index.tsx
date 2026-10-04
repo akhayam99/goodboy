@@ -37,14 +37,8 @@ type Props = {
 
 export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   const cancelCurrentTurn = useAppStore((s) => s.cancelCurrentTurn);
-  const {
-    selectedAgentId,
-    selectedAgentName,
-    activeAgentKind,
-    sessionWorktree,
-    isFirstTurnForAgent,
-    isRunning,
-  } = useAgentSelection({ session });
+  const { selectedAgentId, activeAgentKind, sessionWorktree, isFirstTurnForAgent, isRunning } =
+    useAgentSelection({ session });
 
   const { showToast } = useToast();
 
@@ -165,7 +159,6 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     isRunning,
     isFirstTurnForAgent,
     activeAgentKind,
-    selectedAgentName,
     value,
     attachmentCount: attachments.length,
   });

@@ -10,6 +10,7 @@ import type {
 import type { AgentKind } from '../session/agent-kind';
 import type { CommentThread } from '../integrations/github/comment-threads';
 import { prCommentLocation } from '../session/pr-comment-location';
+import { NOTE_AUTHOR_YOU } from '../resolve/notes/noteThread';
 import { RESOLVER_KICKOFF_LABELS } from './utils/resolverKickoffLabels';
 
 const TITLE_MAX = 60;
@@ -82,12 +83,13 @@ function shortPath(path: string): string {
 }
 
 export const buildCommentAgentTitle = (c: PrComment): string => {
+  const isOwn = c.author === NOTE_AUTHOR_YOU;
   const who = c.author.replace(/\[bot\]$/, '');
   if (c.source === 'review' && c.path) {
-    const loc = c.line ? `${shortPath(c.path)}:${c.line}` : shortPath(c.path);
-    return truncate(`resolve: ${who} on ${loc}`, TITLE_MAX);
+    const file = shortPath(c.path);
+    return truncate(isOwn ? `Resolve: ${file} comment` : `Resolve: ${who} on ${file}`, TITLE_MAX);
   }
-  return truncate(`resolve: ${who} comment`, TITLE_MAX);
+  return truncate(isOwn ? 'Resolve: comment' : `Resolve: ${who} comment`, TITLE_MAX);
 };
 
 const quotedBody = ({ body }: { readonly body: string }): ReadonlyArray<string> => {
@@ -409,7 +411,7 @@ export const buildResolverAgentArgs = ({
     name:
       threads.length === 1
         ? buildCommentAgentTitle(first.head)
-        : `resolve: ${threads.length} review threads`,
+        : `Resolve: ${threads.length} review comments`,
     kind: 'resolver',
     initialPrompt: buildResolverKickoff({
       threads,

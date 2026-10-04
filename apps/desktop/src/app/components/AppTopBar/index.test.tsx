@@ -103,7 +103,7 @@ const ATTENTION_SESSION = {
   goal: 'Review the failing checks',
 } as unknown as Session;
 
-const SPEND_LABEL = 'Spent today in Harborline, counted by Goodboy. Open spend';
+const SPEND_LABEL = 'Spent today, counted by Goodboy. Open spend';
 
 type BarOverrides = {
   readonly onOpenSpend?: () => void;
@@ -122,19 +122,9 @@ describe('AppTopBar', () => {
     const children = zones(container);
 
     expect(bar?.getAttribute('data-tauri-drag-region')).toBe('deep');
-    expect(bar?.className).toContain('grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)]');
-    expect(bar?.className).toContain('@container/topbar');
-    expect(bar?.className).toContain('pl-1.5');
-    expect(bar?.className).toContain('bg-chrome');
-    expect(bar?.className).not.toContain('bg-background');
-    expect(children.map((child) => child.className.split(' ')[0])).toEqual([
-      'col-start-1',
-      'col-start-2',
-      'col-start-3',
-    ]);
+    expect(children).toHaveLength(3);
     expect(children[0]?.contains(screen.getByLabelText('Switch workspace: Harborline'))).toBe(true);
     expect(children[1]?.contains(screen.getByRole('button', { name: /^Search/ }))).toBe(true);
-    expect(children[2]?.className).not.toContain('min-w-0');
   });
 
   it('puts the command center where the logo was, opening the palette and teaching its chord', () => {

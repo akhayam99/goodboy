@@ -64,14 +64,14 @@ const renderColumn = (
 afterEach(cleanup);
 
 describe('StageColumn', () => {
-  it('teaches what lands in an empty column, without a count', () => {
+  it('names an empty column in one line, without a sentence or a count', () => {
     const { container } = renderColumn([], makeSelection(), {
       kind: 'stage',
       stage: 'attention',
     });
     expect(screen.getByText('needs you')).toBeDefined();
     expect(screen.getByText('Nothing needs you')).toBeDefined();
-    expect(screen.getByText(/when an agent asks you something/)).toBeDefined();
+    expect(screen.queryByText(/when an agent asks you something/)).toBeNull();
     expect(container.querySelector('.tabular-nums')).toBeNull();
   });
 

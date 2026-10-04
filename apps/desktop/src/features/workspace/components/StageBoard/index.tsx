@@ -311,11 +311,6 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
           <div className="flex shrink-0 items-center justify-between gap-4">
             <span className="flex min-w-0 items-baseline gap-2">
               <h1 className="text-title text-foreground">Board</h1>
-              {activeSessions.length > 0 && (
-                <span className="text-label tabular-nums text-muted-foreground">
-                  {activeSessions.length} {activeSessions.length === 1 ? 'session' : 'sessions'}
-                </span>
-              )}
             </span>
             <span className="flex shrink-0 items-center gap-2">
               <ProjectGitPills entries={projectGitStatuses} />
@@ -354,7 +349,6 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
           <EmptyState
             illustration={<EmptyBoardStages />}
             title="Start your first session"
-            description="Sessions move across the board as agents work. Each one lands in a stage."
             action={
               <Button
                 size="md"
