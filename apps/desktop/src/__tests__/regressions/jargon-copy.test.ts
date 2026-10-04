@@ -56,15 +56,15 @@ describe('on-screen copy says no internal word', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('prints baseline entries that can shrink', () => {
-    const stale = Object.entries(BASELINE).flatMap(([path, entry]) => {
-      const count = found[path]?.length ?? 0;
-      return count < entry.count ? [`${path}: baseline ${entry.count}, found ${count}`] : [];
-    });
+  it.runIf(process.env.RATCHET_CLOSE === '1')(
+    'shrinks the baseline when an exception goes away',
+    () => {
+      const stale = Object.entries(BASELINE).flatMap(([path, entry]) => {
+        const count = found[path]?.length ?? 0;
+        return count < entry.count ? [`${path}: baseline ${entry.count}, found ${count}`] : [];
+      });
 
-    if (stale.length > 0) {
-      console.info(`jargon baseline can shrink:\n${stale.join('\n')}`);
-    }
-    expect(stale.length).toBeGreaterThanOrEqual(0);
-  });
+      expect(stale).toEqual([]);
+    },
+  );
 });

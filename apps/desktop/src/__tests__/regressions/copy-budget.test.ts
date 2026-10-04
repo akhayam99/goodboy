@@ -116,18 +116,18 @@ describe('on-screen copy stays short and plain', () => {
     expect(grown).toEqual([]);
   });
 
-  it('prints the counts that can come down', () => {
-    const baseline = readBaseline();
-    const lower = Object.entries(baseline).flatMap(([id, byPath]) =>
-      Object.entries(byPath).flatMap(([path, allowed]) => {
-        const count = measured[id]?.[path] ?? 0;
-        return count < allowed ? [`  ${id} ${path}: baseline ${allowed}, now ${count}`] : [];
-      }),
-    );
+  it.runIf(process.env.RATCHET_CLOSE === '1')(
+    'has no baseline count above what is measured',
+    () => {
+      const baseline = readBaseline();
+      const stale = Object.entries(baseline).flatMap(([id, byPath]) =>
+        Object.entries(byPath).flatMap(([path, allowed]) => {
+          const count = measured[id]?.[path] ?? 0;
+          return count < allowed ? [`${id} ${path}: baseline ${allowed}, now ${count}`] : [];
+        }),
+      );
 
-    if (lower.length > 0) {
-      console.info(`copy budget can come down:\n${lower.join('\n')}`);
-    }
-    expect(lower.length).toBeGreaterThanOrEqual(0);
-  });
+      expect(stale).toEqual([]);
+    },
+  );
 });
