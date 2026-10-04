@@ -12,6 +12,12 @@ import type { CommentThread } from '../integrations/github/comment-threads';
 import { prCommentLocation } from '../session/pr-comment-location';
 import { NOTE_AUTHOR_YOU } from '../resolve/notes/noteThread';
 import { RESOLVER_KICKOFF_LABELS } from './utils/resolverKickoffLabels';
+import {
+  humanOfKickoff,
+  joinKickoffParts,
+  kickoffTail,
+  type KickoffParts,
+} from './utils/resolverKickoffParts';
 
 const TITLE_MAX = 60;
 
@@ -275,27 +281,27 @@ type KickoffParams = {
   readonly style?: ResolverStyle;
 };
 
-export const buildResolverKickoff = ({
+export const buildResolverKickoffParts = ({
   threads,
   pr,
   hint,
   priorContext,
   style = {},
-}: KickoffParams): string => {
+}: KickoffParams): KickoffParts => {
   const { commitStyle = 'new', fixupTargets = [], voice = 'terse', styleNote = null } = style;
   const noun = threads.length === 1 ? 'thread' : 'threads';
-  const lines: Array<string> = [
+  const head: Array<string> = [
     pr === null
       ? `Resolve ${threads.length} ${noun} left as notes on this branch. There is no pull request: never push, and never open one.`
       : `Resolve ${threads.length} ${noun} on PR #${pr.number}, branch \`${pr.headBranch}\`.`,
   ];
   for (const [index, thread] of threads.entries()) {
-    lines.push('', ...threadBlock({ thread, position: index + 1, total: threads.length }));
+    head.push('', ...threadBlock({ thread, position: index + 1, total: threads.length }));
   }
   if (priorContext !== undefined && priorContext.length > 0) {
-    lines.push('', ...priorContextBlock({ entries: priorContext }));
+    head.push('', ...priorContextBlock({ entries: priorContext }));
   }
-  lines.push('', ...instructionsSection({ count: threads.length }));
+  const rules: Array<string> = [...instructionsSection({ count: threads.length })];
   const threadIds = threads.flatMap((thread) => {
     const threadId = threadIdOf({ comment: thread.head });
     return threadId === '' ? [] : [threadId];
@@ -305,11 +311,11 @@ export const buildResolverKickoff = ({
     fixupTargets: fixupTargets.filter((target) => threadIds.includes(target.threadId)),
   });
   if (styleLines.length > 0) {
-    lines.push('', ...styleLines);
+    rules.push('', ...styleLines);
   }
   if (threadIds.length > 0) {
-    lines.push('', ...reportingSection({ threadIds }));
-    lines.push(
+    rules.push('', ...reportingSection({ threadIds }));
+    rules.push(
       '',
       RESOLVER_KICKOFF_LABELS.replyContract,
       ...REPLY_STRUCTURE,
@@ -317,12 +323,11 @@ export const buildResolverKickoff = ({
       ...replyVoiceRules({ voice, styleNote }),
     );
   }
-  const operatorNotes = hint.trim();
-  if (operatorNotes.length > 0) {
-    lines.push('', RESOLVER_KICKOFF_LABELS.operatorNotes, operatorNotes);
-  }
-  return lines.join('\n');
+  return { head: head.join('\n'), rules: rules.join('\n'), tail: kickoffTail({ hint }) };
 };
+
+export const buildResolverKickoff = (params: KickoffParams): string =>
+  joinKickoffParts(buildResolverKickoffParts(params));
 
 const recheckInstructions = (): ReadonlyArray<string> => [
   RESOLVER_KICKOFF_LABELS.instructions,
@@ -347,13 +352,13 @@ type RecheckKickoffParams = {
   readonly priorContext?: ReadonlyArray<PriorContext>;
 };
 
-export const buildRecheckKickoff = ({
+export const buildRecheckKickoffParts = ({
   thread,
   pr,
   hint,
   priorContext,
-}: RecheckKickoffParams): string => {
-  const lines: Array<string> = [
+}: RecheckKickoffParams): KickoffParts => {
+  const head: Array<string> = [
     pr === null
       ? 'Re-check 1 thread left as a note on this branch. There is no pull request: never push.'
       : `Re-check 1 thread on PR #${pr.number}, branch \`${pr.headBranch}\`.`,
@@ -361,24 +366,24 @@ export const buildRecheckKickoff = ({
     ...threadBlock({ thread, position: 1, total: 1 }),
   ];
   if (priorContext !== undefined && priorContext.length > 0) {
-    lines.push('', ...priorContextBlock({ entries: priorContext }));
+    head.push('', ...priorContextBlock({ entries: priorContext }));
   }
-  lines.push('', ...recheckInstructions());
+  const rules: Array<string> = [...recheckInstructions()];
   const threadId = threadIdOf({ comment: thread.head });
   if (threadId !== '') {
-    lines.push('', ...recheckReporting({ threadId }));
+    rules.push('', ...recheckReporting({ threadId }));
   }
-  const operatorNotes = hint.trim();
-  if (operatorNotes.length > 0) {
-    lines.push('', RESOLVER_KICKOFF_LABELS.operatorNotes, operatorNotes);
-  }
-  return lines.join('\n');
+  return { head: head.join('\n'), rules: rules.join('\n'), tail: kickoffTail({ hint }) };
 };
+
+export const buildRecheckKickoff = (params: RecheckKickoffParams): string =>
+  joinKickoffParts(buildRecheckKickoffParts(params));
 
 export type CommentAgentArgs = {
   readonly name: string;
   readonly kind: AgentKind;
   readonly initialPrompt: string;
+  readonly humanPrompt: string;
   readonly sourceThreadId?: string;
   readonly sourceThreadIds?: ReadonlyArray<string>;
   readonly sourceCommentUrl: string;
@@ -407,19 +412,21 @@ export const buildResolverAgentArgs = ({
   const sourceThreadIds = threads.flatMap((thread) =>
     thread.head.threadId != null ? [thread.head.threadId] : [],
   );
+  const parts = buildResolverKickoffParts({
+    threads,
+    pr,
+    hint,
+    ...(priorContext !== undefined && { priorContext }),
+    ...(style !== undefined && { style }),
+  });
   return {
     name:
       threads.length === 1
         ? buildCommentAgentTitle(first.head)
         : `Resolve: ${threads.length} review comments`,
     kind: 'resolver',
-    initialPrompt: buildResolverKickoff({
-      threads,
-      pr,
-      hint,
-      ...(priorContext !== undefined && { priorContext }),
-      ...(style !== undefined && { style }),
-    }),
+    initialPrompt: joinKickoffParts(parts),
+    humanPrompt: humanOfKickoff(parts),
     sourceThreadIds,
     sourceCommentUrl: first.head.url,
     sourceKind: 'review_comment',
@@ -431,19 +438,23 @@ export const buildRecheckAgentArgs = ({
   pr,
   hint = '',
   priorContext,
-}: Omit<RecheckKickoffParams, 'hint'> & { readonly hint?: string }): CommentAgentArgs => ({
-  name: truncate(`re-check: ${thread.head.author.replace(/\[bot\]$/, '')} comment`, TITLE_MAX),
-  kind: 'scout',
-  initialPrompt: buildRecheckKickoff({
+}: Omit<RecheckKickoffParams, 'hint'> & { readonly hint?: string }): CommentAgentArgs => {
+  const parts = buildRecheckKickoffParts({
     thread,
     pr,
     hint,
     ...(priorContext !== undefined && { priorContext }),
-  }),
-  sourceThreadIds: thread.head.threadId == null ? [] : [thread.head.threadId],
-  sourceCommentUrl: thread.head.url,
-  sourceKind: 'comment_recheck',
-});
+  });
+  return {
+    name: truncate(`re-check: ${thread.head.author.replace(/\[bot\]$/, '')} comment`, TITLE_MAX),
+    kind: 'scout',
+    initialPrompt: joinKickoffParts(parts),
+    humanPrompt: humanOfKickoff(parts),
+    sourceThreadIds: thread.head.threadId == null ? [] : [thread.head.threadId],
+    sourceCommentUrl: thread.head.url,
+    sourceKind: 'comment_recheck',
+  };
+};
 
 export type ResolveModelChoice = {
   readonly provider?: ProviderId;

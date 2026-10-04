@@ -21,8 +21,8 @@ type Row = Omit<ResolveAttempt, 'threadIds' | 'mountTarget' | 'launchChoice'> & 
 };
 
 const COLUMNS = `id, session_id AS sessionId, agent_id AS agentId, pr_number AS prNumber,
-  thread_ids_json AS threadIds, provider, model, effort, instructions, phase,
-  mount_id AS mountId, mount_revision AS mountRevision, worktree_path AS worktreePath,
+  thread_ids_json AS threadIds, provider, model, effort, instructions,
+  human_instructions AS humanInstructions, phase, mount_id AS mountId, mount_revision AS mountRevision, worktree_path AS worktreePath,
   started_at AS startedAt, ended_at AS endedAt, error, created_at AS createdAt,
   batch_id AS batchId, copy_path AS copyPath, launch_choice_json AS launchChoice`;
 
@@ -61,9 +61,10 @@ export const listActiveResolveAttempts = async ({
 export const insertResolveAttempt = async ({ db, attempt }: InsertParams): Promise<void> => {
   const target = fromMountTarget({ target: attempt.mountTarget });
   await db.execute(
-    `INSERT INTO resolve_attempts (id, session_id, agent_id, pr_number, thread_ids_json, provider, model, effort, instructions, phase, mount_id, mount_revision, worktree_path, started_at, ended_at, error, created_at, batch_id, copy_path, launch_choice_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO resolve_attempts (id, session_id, agent_id, pr_number, thread_ids_json, provider, model, effort, instructions, human_instructions, phase, mount_id, mount_revision, worktree_path, started_at, ended_at, error, created_at, batch_id, copy_path, launch_choice_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT (id) DO UPDATE SET provider = excluded.provider, model = excluded.model,
-      effort = excluded.effort, instructions = excluded.instructions, phase = excluded.phase,
+      effort = excluded.effort, instructions = excluded.instructions,
+      human_instructions = excluded.human_instructions, phase = excluded.phase,
       thread_ids_json = excluded.thread_ids_json,
       mount_id = excluded.mount_id, mount_revision = excluded.mount_revision,
       worktree_path = excluded.worktree_path,
@@ -82,6 +83,7 @@ export const insertResolveAttempt = async ({ db, attempt }: InsertParams): Promi
       attempt.model,
       attempt.effort,
       attempt.instructions,
+      attempt.humanInstructions ?? null,
       attempt.phase,
       target.mountId,
       target.mountRevision,

@@ -20,6 +20,7 @@ type SpawnAgentArgs = {
   readonly provider?: ResolveModelChoice['provider'];
   readonly effort?: EffortLevel;
   readonly initialPrompt: string;
+  readonly humanPrompt: string;
   readonly kindOverride: 'resolver' | 'scout';
   readonly sourceThreadIds?: ReadonlyArray<string>;
   readonly sourceCommentUrl: string;
@@ -140,6 +141,7 @@ export const startFixAttempt = async ({
       ...(choice.provider !== undefined && { provider: choice.provider }),
       ...(choice.effort !== undefined && { effort: choice.effort }),
       initialPrompt: args.initialPrompt,
+      humanPrompt: args.humanPrompt,
       kindOverride: mode === 'recheck' ? 'scout' : 'resolver',
       ...(args.sourceThreadIds !== undefined && { sourceThreadIds: args.sourceThreadIds }),
       sourceCommentUrl: args.sourceCommentUrl,

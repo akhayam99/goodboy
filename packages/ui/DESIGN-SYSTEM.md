@@ -1128,8 +1128,8 @@ optional action; hover never opens it and it never opens on its own. Escape,
 an outside click or moving focus away closes it. The anchor is a block `div`,
 so the sentence around a hint is a `div` or a `span`, never a `p`. A hint
 never sits inside another button or tab: put it in the line under the control.
-The desktop app reaches it only through `GlossaryTerm`, which reads the one
-definition table and adds Open the guide.
+The desktop app has no wrapper for it now: a word that stays gets a
+`tooltip` on its `SegmentedTabs` option, six words at most.
 
 ## Card action grammar and creation grammar
 

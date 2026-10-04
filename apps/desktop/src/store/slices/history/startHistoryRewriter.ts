@@ -186,7 +186,7 @@ export const startHistoryRewriter = (set: SetFn, get: GetFn) => {
         sessionId,
         agentId,
         content: kickoff,
-        handoff: { instruction: kickoff, plan: null },
+        handoff: { sender: { kind: 'historyRewrite' }, instruction: kickoff, plan: null },
       })
       .catch(async (error: unknown) => {
         set((state) => {

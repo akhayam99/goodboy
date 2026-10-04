@@ -60,6 +60,7 @@ export type ResolveAttempt = Readonly<{
   model: string;
   effort: string | null;
   instructions: string | null;
+  humanInstructions?: string | null;
   phase: ResolveAttemptPhase;
   mountTarget: MountTargetSnapshot | null;
   startedAt: number | null;

@@ -14,10 +14,14 @@ export type HandoffSender =
   | Readonly<{ kind: 'resolve'; threadIds: ReadonlyArray<string>; prNumber: number | null }>
   | Readonly<{ kind: 'parent'; parentAgentId: AgentId; label: string }>
   | Readonly<{ kind: 'question'; questionId: OpenQuestionId }>
-  | Readonly<{ kind: 'followUp'; sourceAgentId: AgentId }>;
+  | Readonly<{ kind: 'followUp'; sourceAgentId: AgentId }>
+  | Readonly<{ kind: 'recheck'; threadIds: ReadonlyArray<string>; prNumber: number | null }>
+  | Readonly<{ kind: 'scribe' }>
+  | Readonly<{ kind: 'historyRewrite' }>;
 
 export const HANDOFF_SECTION_KINDS = [
   'ask',
+  'instructions',
   'goal',
   'earlierSteps',
   'plan',
@@ -60,6 +64,7 @@ export type HandoffSection = Readonly<{
 export type HandoffDraft = Readonly<{
   sender?: HandoffSender;
   instruction?: string;
+  machineInstructions?: string | null;
   goal?: string | null;
   plan?: Readonly<{ id: PlanId; title: string }> | null;
   why?: string | null;

@@ -27,12 +27,11 @@ type Props = {
 };
 
 const restoreDescription = (restorable: ReadonlyArray<RestorableBuiltin>): string => {
-  const verb =
-    restorable.length === 1 ? 'goes back to its original steps' : 'go back to their original steps';
+  const verb = restorable.length === 1 ? 'goes back to its' : 'go back to their';
   const names = new Intl.ListFormat('en', { type: 'conjunction' }).format(
     restorable.map(({ entry }) => entry.name),
   );
-  return `${names} ${verb}. Your own workflows and other workspaces are not touched.`;
+  return `${names} ${verb} original steps.`;
 };
 
 export const WorkflowList = ({
