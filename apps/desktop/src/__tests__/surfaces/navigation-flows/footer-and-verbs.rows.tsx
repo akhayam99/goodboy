@@ -105,7 +105,7 @@ export const FOOTER_AND_VERB_ROWS: ReadonlyArray<Row> = [
   {
     name: 'footer: integrations',
     covers: ['openIntegration', 'integrations'],
-    open: () => clickButton(/^Link your first integration/),
+    open: () => clickButton(/^Connect your first integration/),
     lands: () => visible('dialog', 'Integrations'),
   },
   {

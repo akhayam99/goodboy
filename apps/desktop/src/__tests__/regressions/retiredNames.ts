@@ -15,5 +15,10 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   { id: 'budget-cap', pattern: /\b[Bb]udget cap\b/, use: NAMES.spendCap },
   { id: 'link-plain-folder', pattern: /\bLink a plain folder\b/, use: NAMES.addPlainFolder },
   { id: 'link-existing', pattern: /\bLink existing\b/, use: NAMES.addExisting },
+  {
+    id: 'link-integration',
+    pattern: /\bLink (?:your first )?integration\b/,
+    use: NAMES.connectIntegration,
+  },
   { id: 'defaults-page', pattern: /\b(?:in|then|Open) Defaults\b/, use: NAMES.models },
 ];

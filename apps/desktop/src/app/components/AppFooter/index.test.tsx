@@ -374,7 +374,7 @@ describe('AppFooter', () => {
     render(<AppFooter {...footerProps()} />);
 
     expect(screen.getByRole('group', { name: 'Connected integrations' }).children.length).toBe(0);
-    expect(screen.getByRole('button', { name: 'Link your first integration' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Connect your first integration' })).toBeDefined();
   });
 
   it('renders a few connected integrations as named glyphs that open their studios', () => {
@@ -408,7 +408,7 @@ describe('AppFooter', () => {
 
     expect(screen.queryByRole('button', { name: 'Connect GitLab' })).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Link integration' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Connect an integration' }));
 
     const panel = screen.getByRole('dialog', { name: 'Integrations' });
     expect(within(panel).getByRole('button', { name: 'Open GitHub' })).toBeDefined();
@@ -423,7 +423,7 @@ describe('AppFooter', () => {
   it('names the connection state of every member in the popover', () => {
     render(<AppFooter {...footerProps({ overrides: { connected: connectedWith(['linear']) } })} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Link integration' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Connect an integration' }));
 
     const panel = screen.getByRole('dialog', { name: 'Integrations' });
     expect(within(panel).getAllByRole('listitem').length).toBe(7);
@@ -434,7 +434,7 @@ describe('AppFooter', () => {
   it('closes the popover on escape', () => {
     render(<AppFooter {...footerProps()} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Link your first integration' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Connect your first integration' }));
     expect(screen.getByRole('dialog', { name: 'Integrations' })).toBeDefined();
 
     fireEvent.keyDown(window, { key: 'Escape' });
@@ -464,7 +464,7 @@ describe('AppFooter', () => {
     FOOTER_INTEGRATIONS.forEach((member) => {
       const onOpenIntegration = vi.fn();
       render(<AppFooter {...footerProps({ overrides: { onOpenIntegration } })} />);
-      fireEvent.click(screen.getByRole('button', { name: 'Link your first integration' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Connect your first integration' }));
       fireEvent.click(
         within(screen.getByRole('dialog', { name: 'Integrations' })).getByRole('button', {
           name: member.connectLabel,
@@ -481,7 +481,7 @@ describe('AppFooter', () => {
 
     expect(
       screen
-        .getByRole('button', { name: 'Link your first integration' })
+        .getByRole('button', { name: 'Connect your first integration' })
         .getAttribute('aria-current'),
     ).toBe('page');
   });
@@ -504,7 +504,7 @@ describe('AppFooter', () => {
     );
     expect(screen.getByRole('button', { name: 'GitHub' }).getAttribute('aria-current')).toBeNull();
     expect(
-      screen.getByRole('button', { name: 'Link integration' }).getAttribute('aria-current'),
+      screen.getByRole('button', { name: 'Connect an integration' }).getAttribute('aria-current'),
     ).toBeNull();
   });
 
@@ -528,7 +528,7 @@ describe('AppFooter', () => {
       within(screen.getByRole('group', { name: 'Connected integrations' })).getAllByRole('button')
         .length,
     ).toBe(7);
-    fireEvent.click(screen.getByRole('button', { name: 'Link integration' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Connect an integration' }));
     expect(screen.getByRole('dialog', { name: 'Integrations' })).toBeDefined();
   });
 
@@ -538,12 +538,12 @@ describe('AppFooter', () => {
     );
 
     expect(container.querySelector('.\\@container\\/footer')).not.toBeNull();
-    ['Inbox', 'Workflows', 'Settings', 'Link integration'].forEach((word) => {
+    ['Inbox', 'Workflows', 'Settings', 'Connect an integration'].forEach((word) => {
       expect(screen.getByText(word).className).toContain('@min-chrome-labels/footer:inline');
     });
     unmount();
 
     render(<AppFooter {...footerProps()} />);
-    expect(screen.getByText('Link integration').className).not.toContain('hidden');
+    expect(screen.getByText('Connect an integration').className).not.toContain('hidden');
   });
 });

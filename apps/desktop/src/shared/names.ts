@@ -33,6 +33,7 @@ export const NAMES = {
   models: 'Models',
   addPlainFolder: 'Add a plain folder',
   addExisting: 'Add existing',
+  connectIntegration: 'Connect an integration',
   role: {
     scout: 'Scout',
     planner: 'Planner',
@@ -61,6 +62,7 @@ const FORMER_NAMES: Readonly<Record<string, ReadonlyArray<string>>> = {
   [NAMES.models]: ['Defaults', 'Provider defaults'],
   [NAMES.addPlainFolder]: ['Link a plain folder'],
   [NAMES.addExisting]: ['Link existing'],
+  [NAMES.connectIntegration]: ['Link integration', 'Link your first integration'],
 };
 
 export const formerNamesOf = (name: string): ReadonlyArray<string> => FORMER_NAMES[name] ?? [];

@@ -911,7 +911,7 @@ nothing until a provider is connected. Changelog opens from the Goodboy chip and
 the palette, so it earns no footer entry.
 
 The footer is an `@container/footer` on the same `chrome-labels` step as the
-top bar. Below it, every launcher label and the **Link integration** label
+top bar. Below it, every launcher label and the **Connect an integration** label
 drop together and the glyphs stay, with the name in the tooltip. The first
 link action keeps its label, since it is the only thing on the left. The
 Goodboy chip never hides. Past that the glyph strip scrolls.

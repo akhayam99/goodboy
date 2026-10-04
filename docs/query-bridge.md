@@ -42,7 +42,7 @@ They can also act on them, the same way you can from Goodboy:
 
 ## What you control
 
-- **Which tools.** An agent is told only about the integrations this workspace has connected through **Link integration**. With nothing connected, the agent hears nothing about the bridge.
+- **Which tools.** An agent is told only about the integrations this workspace has connected through **Connect an integration**. With nothing connected, the agent hears nothing about the bridge.
 - **Which account.** Each connection belongs to the workspace, and a project can override it with its own account. GitHub also works with your `gh` CLI login when the workspace has no GitHub token.
 - **The connection itself.** Only you can connect, disconnect or check a connection. No agent can.
 - **Draft first.** Pull requests and merge requests an agent opens start as drafts unless it asks for ready. Slack works the same way: in Settings > Integrations > Slack, set replies and reactions to Allowed, Ask first or Never. Ask first queues the message instead of posting it.
