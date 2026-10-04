@@ -69,7 +69,6 @@ const itemOf = (): TimelineRowItem => ({
   identity: null,
   familyId: 'run:one',
   ordinal: '2',
-  nodeIndex: '2',
   rowState: DONE_ROW_STATE,
   hasUnread: false,
   height: TIMELINE_RHYTHM.grade.step.height + TIMELINE_RHYTHM.gap.sibling,
@@ -99,7 +98,6 @@ const runItemOf = ({ rowState }: { readonly rowState: RowState }): TimelineRowIt
   entry: runEntryOf(),
   identity: runIdentity({ laneIndex: 0, seed: 0 }),
   ordinal: null,
-  nodeIndex: null,
   rowState,
   groupId: null,
 });

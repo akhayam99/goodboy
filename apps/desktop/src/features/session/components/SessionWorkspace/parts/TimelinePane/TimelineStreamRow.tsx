@@ -44,6 +44,7 @@ type Props = {
   readonly state?: ReactNode;
   readonly progress?: number | null;
   readonly menu?: ReactNode;
+  readonly subagents?: ReactNode;
   readonly lanes?: TimelineLaneControl | null;
   readonly runLane?: TimelineLaneTarget | null;
   readonly isRevealed?: boolean;
@@ -70,6 +71,7 @@ export const TimelineStreamRow = ({
   state = null,
   progress = null,
   menu = null,
+  subagents = null,
   lanes = null,
   runLane = null,
   isRevealed = false,
@@ -208,6 +210,7 @@ export const TimelineStreamRow = ({
               {content}
             </button>
           )}
+          {subagents}
           {action == null ? null : (
             <span
               data-testid="timeline-row-action"

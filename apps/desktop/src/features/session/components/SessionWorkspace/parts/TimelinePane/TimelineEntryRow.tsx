@@ -102,7 +102,7 @@ export const TimelineEntryRow = ({
   sessionEffort,
 }: TimelineEntryRowProps) => {
   const { entry } = item;
-  if (entry.kind === 'resolveBatch' || entry.kind === 'subagentGroup') {
+  if (entry.kind === 'resolveBatch') {
     return (
       <TimelineGroupStreamRow
         item={item}
@@ -180,6 +180,8 @@ export const TimelineEntryRow = ({
         sessionProvider={sessionProvider}
         sessionEffort={sessionEffort}
         costUsd={costUsd}
+        isSubagentsExpanded={isExpanded}
+        onSetSubagents={handlers.setGroupExpanded}
       />
     );
   }

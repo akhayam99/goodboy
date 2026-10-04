@@ -6,7 +6,6 @@ import { agentDisplayName } from '../../../../../../shared/utils/agentDisplayNam
 import type {
   TimelineResolveBatchEntry,
   TimelineRunEntry,
-  TimelineSubagentGroupEntry,
 } from '../../../../timeline/buildTimelineGroups';
 import { ARTIFACT_KIND_MARKER_LABEL } from '../../../../../artifacts/artifactPresentation';
 import {
@@ -27,7 +26,6 @@ import { RevealedRowTag } from './RevealedRowTag';
 import { TimelineProviderGlyph } from './TimelineProviderGlyph';
 import { TimelineRowWorktrees } from './TimelineRowWorktrees';
 import { resolveBatchTitle } from '../../../../timeline/resolveBatchSummary';
-import { subagentGroupTitle } from '../../../../timeline/subagentGroups';
 import { TimelineGroupLabel } from './TimelineGroupLabel';
 import { TimelineFoldTitle } from './TimelineFoldTitle';
 import { TimelineRunLabel } from './TimelineRunLabel';
@@ -85,10 +83,7 @@ const detailOf = ({ entry, grade }: FactParams): string | null => {
 
 const NO_WORKTREES: ReadonlyArray<string> = [];
 
-type LabelEntry = Exclude<
-  TimelineStreamEntry,
-  TimelineRunEntry | TimelineResolveBatchEntry | TimelineSubagentGroupEntry
->;
+type LabelEntry = Exclude<TimelineStreamEntry, TimelineRunEntry | TimelineResolveBatchEntry>;
 
 type EntryParams = {
   readonly entry: LabelEntry;
@@ -221,14 +216,6 @@ export const TimelineRowLabel = ({
     return (
       <TimelineGroupLabel
         title={resolveBatchTitle({ total: entry.summary.total, prNumber: entry.prNumber })}
-        summary={entry.summary}
-      />
-    );
-  }
-  if (entry.kind === 'subagentGroup') {
-    return (
-      <TimelineGroupLabel
-        title={subagentGroupTitle({ total: entry.summary.total })}
         summary={entry.summary}
       />
     );

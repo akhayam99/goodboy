@@ -14,17 +14,17 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { buildTimelineGroups } from './buildTimelineGroups';
-import { buildTimelineStream } from './buildTimelineStream';
+import { buildTimelineStream, type TimelineRowItem } from './buildTimelineStream';
 import { dayLabel } from './dayLabel';
+import { firstNeedsYouRowId, needsYouCount } from './needsYou';
 import { layoutTimelineRail } from '../../workTreeModel/railGeometry';
 
 const SESSION_ID = 'session-1' as SessionId;
 const RUN_ID = 'run-1' as WorkflowRunId;
 const NOW = new Date(2026, 7, 18, 12, 0);
 const RUN_LANE = 'lane:run:run-1';
-const STEP_GROUP = 'subagents:agent:build';
-const STEP_GROUP_HEAD = `head:${STEP_GROUP}`;
-const STEP_GROUP_LANE = `lane:${STEP_GROUP}`;
+const STEP_LANE = 'lane:agent:build';
+const SUBAGENTS_ID = 'subagents:agent:build';
 const STEP_IDS = ['scout', 'plan', 'build'] as const;
 
 const at = ({ hour, minute = 0 }: { readonly hour: number; readonly minute?: number }) =>
@@ -45,16 +45,18 @@ const stepAgent = ({ id, ordinal }: { readonly id: string; readonly ordinal: num
 const subagentsOf = ({
   parent,
   count,
+  statuses = [],
 }: {
   readonly parent: string;
   readonly count: number;
+  readonly statuses?: ReadonlyArray<Agent['status']>;
 }): ReadonlyArray<Agent> =>
   Array.from({ length: count }, (_, index) => ({
     id: `${parent}-sub${index}` as AgentId,
     sessionId: SESSION_ID,
     ordinal: 10 + index,
     name: `${parent}-sub${index}`,
-    status: 'completed',
+    status: statuses[index] ?? 'completed',
     parentAgentId: parent as AgentId,
     startedAt: at({ hour: 9, minute: 31 + index }),
     completedAt: at({ hour: 9, minute: 32 + index }),
@@ -92,10 +94,18 @@ const workflow = (): { readonly run: WorkflowRun; readonly workflow: Workflow } 
   };
 };
 
-const streamOf = ({ expanded = [] }: { readonly expanded?: ReadonlyArray<string> }) => {
+const streamOf = ({
+  expanded = [],
+  count = 4,
+  statuses = [],
+}: {
+  readonly expanded?: ReadonlyArray<string>;
+  readonly count?: number;
+  readonly statuses?: ReadonlyArray<Agent['status']>;
+}) => {
   const agents: ReadonlyArray<Agent> = [
     ...STEP_IDS.map((id, index) => stepAgent({ id, ordinal: index + 1 })),
-    ...subagentsOf({ parent: 'build', count: 4 }),
+    ...subagentsOf({ parent: 'build', count, statuses }),
   ];
   const entries = buildTimelineGroups({
     sessionId: SESSION_ID,
@@ -121,29 +131,107 @@ const streamOf = ({ expanded = [] }: { readonly expanded?: ReadonlyArray<string>
   return { ...stream, layout: layoutTimelineRail({ rows: stream.items, groups: stream.groups }) };
 };
 
-describe('subagent group under a workflow step', () => {
-  for (const expanded of [[], [STEP_GROUP]]) {
-    it(`hangs the head from the step ball one column in, ${expanded.length === 0 ? 'closed' : 'open'}`, () => {
-      const { items, groups, layout } = streamOf({ expanded });
+const rowsOf = (items: ReadonlyArray<{ readonly kind: string }>) =>
+  items.filter((item): item is TimelineRowItem => item.kind === 'row');
 
-      const head = groups.find((group) => group.id === STEP_GROUP_HEAD);
-      expect(head?.parentGroupId).toBe(RUN_LANE);
+describe('subagents under a workflow step', () => {
+  it('draws no group row: the step carries its subagents in its own row, closed', () => {
+    const { items, groups } = streamOf({});
+    const ids = rowsOf(items).map((row) => row.id);
+    const build = rowsOf(items).find((row) => row.id === 'agent:build');
+
+    expect(ids).toEqual(['run:run-1', 'agent:scout', 'agent:plan', 'agent:build']);
+    expect(build?.subagents?.summary.total).toBe(4);
+    expect(build?.subagents?.id).toBe(SUBAGENTS_ID);
+    expect(build?.subagents?.isExpanded).toBe(false);
+    expect(build?.opensLane).toBe(true);
+    expect(groups.map((group) => group.id)).toEqual([RUN_LANE]);
+  });
+
+  it('opens the children right under the step, numbered 3.1 onward', () => {
+    const { items } = streamOf({ expanded: [SUBAGENTS_ID] });
+    const rows = rowsOf(items);
+
+    expect(rows.map((row) => row.id)).toEqual([
+      'run:run-1',
+      'agent:scout',
+      'agent:plan',
+      'agent:build',
+      'agent:build-sub0',
+      'agent:build-sub1',
+      'agent:build-sub2',
+      'agent:build-sub3',
+    ]);
+    expect(rows.slice(3).map((row) => row.ordinal)).toEqual(['3', '3.1', '3.2', '3.3', '3.4']);
+    expect(rows.slice(4).every((row) => row.groupId === STEP_LANE)).toBe(true);
+    expect(rows.slice(4).map((row) => row.explode)).toEqual(
+      Array.from({ length: 4 }, () => ({ groupId: SUBAGENTS_ID, kind: 'subagents' })),
+    );
+  });
+
+  for (const expanded of [[], [SUBAGENTS_ID]]) {
+    it(`reserves the child column on the step ball, ${expanded.length === 0 ? 'closed' : 'open'}`, () => {
+      const { items, layout } = streamOf({ expanded });
+      const stepIndex = items.findIndex((item) => item.id === 'agent:build');
+
       const runColumn = layout.columnByGroupId.get(RUN_LANE);
-      expect(runColumn).toBeDefined();
-      expect(layout.columnByGroupId.get(STEP_GROUP_HEAD)).toBe((runColumn ?? 0) + 1);
-
-      const headRail = layout.rows[items.findIndex((item) => item.id === STEP_GROUP)];
-      expect(headRail?.markerColumn).toBe((runColumn ?? 0) + 1);
-      const stub = headRail?.joins.find((join) => join.kind === 'stub');
-      expect(stub?.spineColumn).toBe(runColumn);
-      expect(stub?.laneColumn).toBe((runColumn ?? 0) + 1);
+      expect(runColumn).toBe(1);
+      expect(layout.rows[stepIndex]?.markerColumn).toBe(runColumn);
+      expect(layout.width).toBeGreaterThanOrEqual(8 + ((runColumn ?? 0) + 1) * 16);
     });
   }
 
-  it('nests the opened lane one column right of the head and clear of the run lane', () => {
-    const { layout } = streamOf({ expanded: [STEP_GROUP] });
+  it('forks the child lane off the step ball and ends it on the last child', () => {
+    const { items, groups, layout } = streamOf({ expanded: [SUBAGENTS_ID] });
+    const stepRail = layout.rows[items.findIndex((item) => item.id === 'agent:build')];
+    const lastRail = layout.rows[items.findIndex((item) => item.id === 'agent:build-sub3')];
+    const lane = groups.find((group) => group.id === STEP_LANE);
 
-    const runColumn = layout.columnByGroupId.get(RUN_LANE) ?? 0;
-    expect(layout.columnByGroupId.get(STEP_GROUP_LANE)).toBe(runColumn + 2);
+    expect(lane).toEqual(
+      expect.objectContaining({
+        parentGroupId: RUN_LANE,
+        originRowId: 'agent:build',
+        direction: 'down',
+      }),
+    );
+    expect(layout.columnByGroupId.get(STEP_LANE)).toBe(2);
+    expect(
+      stepRail?.joins.map((join) => `${join.kind}:${join.spineColumn}->${join.laneColumn}`),
+    ).toEqual(['fork:1->2']);
+    expect(lastRail?.markerColumn).toBe(2);
+    const laneSegment = lastRail?.segments.find((segment) => segment.column === 2);
+    expect(laneSegment?.fromY).toBe(0);
+    expect(laneSegment?.toY).toBe(lastRail?.markerY);
+  });
+
+  it('shows a failed child on the closed step row without opening it', () => {
+    const { items } = streamOf({ statuses: ['completed', 'failed', 'completed', 'completed'] });
+    const build = rowsOf(items).find((row) => row.id === 'agent:build');
+
+    expect(build?.subagents?.summary.failedCount).toBe(1);
+    expect(build?.subagents?.attentionKeys).toEqual(['agent:build-sub1']);
+  });
+
+  it('counts a failed child once for the need-you chip, closed or open', () => {
+    const statuses: ReadonlyArray<Agent['status']> = [
+      'failed',
+      'completed',
+      'completed',
+      'completed',
+    ];
+    const closed = streamOf({ statuses });
+    const open = streamOf({ statuses, expanded: [SUBAGENTS_ID] });
+
+    expect(needsYouCount({ items: closed.items })).toBe(1);
+    expect(needsYouCount({ items: open.items })).toBe(1);
+    expect(firstNeedsYouRowId({ items: closed.items })).toBe('agent:build');
+  });
+
+  it('counts the children of one step once, whether the step is closed or open', () => {
+    const { items: closed } = streamOf({});
+    const { items: open } = streamOf({ expanded: [SUBAGENTS_ID] });
+
+    expect(rowsOf(closed).filter((row) => row.id.startsWith('agent:build-sub'))).toHaveLength(0);
+    expect(rowsOf(open).filter((row) => row.id.startsWith('agent:build-sub'))).toHaveLength(4);
   });
 });

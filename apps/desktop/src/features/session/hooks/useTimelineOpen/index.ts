@@ -181,7 +181,7 @@ export const useTimelineOpen = ({
           open: () => store.openContextDrawer({ sessionId, tab: 'learned' }),
         };
       }
-      if (entry.kind === 'resolveBatch' || entry.kind === 'subagentGroup') {
+      if (entry.kind === 'resolveBatch') {
         return null;
       }
       return {

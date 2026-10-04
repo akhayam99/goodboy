@@ -52,7 +52,6 @@ const itemOf = ({ entry, grade = 'entry' }: ItemParams): TimelineRowItem => ({
   identity: null,
   familyId: null,
   ordinal: null,
-  nodeIndex: null,
   rowState: DONE_ROW_STATE,
   hasUnread: false,
   height: 52,

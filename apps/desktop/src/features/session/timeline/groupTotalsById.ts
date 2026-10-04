@@ -52,7 +52,7 @@ const totalsOf = ({
       source,
     });
   }
-  if (entry.kind !== 'subagentGroup' && entry.kind !== 'resolveBatch') {
+  if (entry.kind !== 'resolveBatch') {
     return null;
   }
   const roots: ReadonlyArray<AgentId> = entry.children.map((child) => child.agent.id);

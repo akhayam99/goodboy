@@ -354,12 +354,11 @@ shows.
 
 The workflow detail draws the run as a run tree (`RunTree`), the same stream
 the activity feed builds, limited to one run (`buildRunTreeStream`). Time runs
-the same way: the first step sits at the bottom, queued steps sit above the
-running one, and NOW closes the tree at the top of a live run. A finished run
-has no NOW: its story ends on the last step, as the agent tree does. The run
-lane starts on the first step, so the tree has no session spine and no time
-column. Sub-agents
-sit one column right, on the run's colour. The view scrolls to the row that is
+the same way: the first step sits on top, steps follow in the order they ran,
+and queued steps come last, dashed. There is no NOW: the story ends on the last
+step, as the agent tree does. The run lane starts on the first step, so the
+tree has no session spine and no time column. Sub-agents sit one column right,
+under their step, on the run's colour. The view scrolls to the row that is
 running or waiting on you when it opens. The run header and the Next action
 strip stay pinned while the tree scrolls. A long run name wraps to a second
 line in the header before it truncates, and so does a long agent name in the
@@ -378,19 +377,22 @@ kind chip narrows and the effort column hides, so the title keeps its room.
 Clicking a row opens that agent.
 
 An agent's Brief draws its sub-agents with the same tree, under **Subagents**
-(`SubagentTree`, from `buildAgentTreeStream`). The agent sits at the bottom
-with its ordinal in the run, for example `3`, and its sub-agents stack above it
-one column right, `3.1`, `3.2`, `3.3`, each with its own model, effort and
+(`SubagentTree`, from `buildAgentTreeStream`). The agent sits on top
+with its ordinal in the run, for example `3`, and its sub-agents follow under
+it one column right, `3.1`, `3.2`, `3.3`, each with its own model, effort and
 spend. Sub-agents of an agent outside a workflow are numbered from `1`. The
 header counts them in words ("2 of 3 done"). An implementer split into parts
 shows no Outcome, because the tree already says what each part did. A planner
 shows no sub-agents, and delegates and follow-ups keep their own sections.
 
-In the activity feed, every agent and step row ends with the same meta: the
-provider glyph, the model, the effort and what the row has spent. Before a
-step starts, the meta shows the routing it is planned to run on, in faint.
-Once it runs, the meta shows what actually ran, and a dotted model name means
-routing picked something other than the plan (the tooltip names both). The
+In the activity feed, an agent or step row carries the provider glyph at the
+left of its title and ends with its time and what it has spent: there is no
+model column, so the model and the effort live in the row's tooltip and in the
+Brief. A step that has not started shows its meta in faint. In the run tree and
+a Brief's Subagents, every row keeps the model: before a step starts, the meta
+shows the routing it is planned to run on, in faint. Once it runs, the meta
+shows what actually ran, and a dotted model name means routing picked something
+other than the plan (the tooltip names both). The
 effort works the same way: once a run has started, the column shows the effort
 the CLI was started with, in the row tone, and a dotted effort means it left
 the plan ("Planned High, ran Medium" in the tooltip). A run with no recorded

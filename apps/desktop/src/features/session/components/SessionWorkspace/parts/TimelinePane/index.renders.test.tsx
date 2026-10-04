@@ -62,7 +62,6 @@ vi.mock('../../../../../../store', async () => {
     useIsSessionCollectionLoaded: () => true,
     useExecutedAgentRouting: ({ agent }: { readonly agent: { readonly id: string } }) =>
       storeState.executed.get(agent.id) ?? null,
-    useExecutedAgentRoutings: () => storeState.executed,
   };
 });
 vi.mock('../../../../../../shared/hooks/useSessionRoleModels', () => ({
@@ -204,12 +203,12 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('TimelinePane, row renders', () => {
-  it('draws a run lane over four rows and leaves four rows outside it', () => {
+  it('draws a run lane under the run row over three steps and leaves four rows outside it', () => {
     const view = render(pane({ actions: null }));
 
     expect(view.container.querySelectorAll('[data-row-id]').length).toBe(8);
     expect(renders.entry).toBe(8);
-    expect(screen.getAllByTestId('timeline-lane-hit')).toHaveLength(4);
+    expect(screen.getAllByTestId('timeline-lane-hit')).toHaveLength(3);
   });
 
   it('re-renders no row when the parent re-renders with the same data', () => {
@@ -223,7 +222,7 @@ describe('TimelinePane, row renders', () => {
     expect(totalRenders()).toBe(0);
   });
 
-  it('re-renders the four rows and the rule on the lane when the pointer enters it', () => {
+  it('re-renders the rows on the lane when the pointer enters it', () => {
     const view = render(pane({ actions: null }));
     renders.entry = 0;
     renders.now = 0;
@@ -231,9 +230,9 @@ describe('TimelinePane, row renders', () => {
 
     fireEvent.mouseEnter(screen.getAllByTestId('timeline-lane-hit')[0] as HTMLElement);
 
-    expect(view.container.querySelectorAll('[data-testid="timeline-lane-wash"]')).toHaveLength(4);
+    expect(view.container.querySelectorAll('[data-testid="timeline-lane-wash"]')).toHaveLength(3);
     expect(renders.entry).toBe(4);
-    expect(renders.now).toBe(1);
+    expect(renders.now).toBe(0);
     expect(renders.day).toBe(0);
   });
 
@@ -269,14 +268,14 @@ describe('TimelinePane, row renders', () => {
     attachedRuns.list = [];
     storeState.sessionPhaseRuns = { 'session-1': [lead, ...children, ...many] };
     const view = render(pane({ actions: null }));
-    expect(view.container.querySelectorAll('[data-row-id]').length).toBe(202);
+    expect(view.container.querySelectorAll('[data-row-id]').length).toBe(201);
     renders.entry = 0;
     renders.now = 0;
     renders.day = 0;
 
     fireEvent.click(screen.getByRole('button', { name: /3 subagents/ }));
 
-    expect(view.container.querySelectorAll('[data-row-id]').length).toBe(205);
+    expect(view.container.querySelectorAll('[data-row-id]').length).toBe(204);
     expect(renders.entry).toBeLessThanOrEqual(6);
     expect(renders.day).toBe(0);
   });

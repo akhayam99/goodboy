@@ -99,7 +99,6 @@ vi.mock('../../../../../../store', async () => {
     useIsSessionCollectionLoaded: () => agentsLoaded.current,
     useExecutedAgentRouting: ({ agent }: { readonly agent: { readonly id: string } }) =>
       storeState.executed.get(agent.id) ?? null,
-    useExecutedAgentRoutings: () => storeState.executed,
   };
 });
 vi.mock('../../../../../../shared/hooks/useSessionRoleModels', () => ({
@@ -1404,7 +1403,7 @@ describe('TimelinePane resolve batch', () => {
     expect(screen.queryByText('tvarga on file0.ts:1')).toBeNull();
   });
 
-  it('draws a mixed node with one arc per state and the count in the middle', () => {
+  it('draws a mixed node with one arc per state and no count in the middle', () => {
     seedBatch();
     render(<TimelinePane session={SESSION} actions={null} />);
 
@@ -1412,7 +1411,7 @@ describe('TimelinePane resolve batch', () => {
     const row = toggle().closest('[data-row-id]');
     const mixed = row?.querySelector('[data-node-state="mixed"]');
     expect(node).toBeNull();
-    expect(mixed?.textContent).toBe('4');
+    expect(mixed?.textContent).toBe('');
     expect(mixed?.querySelectorAll('[data-arc-tone]')).toHaveLength(4);
   });
 
@@ -1512,10 +1511,13 @@ describe('TimelinePane resolve batch', () => {
   });
 });
 
-describe('TimelinePane subagent group', () => {
+describe('TimelinePane subagents on a step', () => {
   const NAMES = ['Scout thresholds', 'Scout retry paths', 'Implement the hook', 'Test the banner'];
 
-  const seedSubagents = ({ count = NAMES.length }: { readonly count?: number } = {}) => {
+  const seedSubagents = ({
+    count = NAMES.length,
+    failedIndex = -1,
+  }: { readonly count?: number; readonly failedIndex?: number } = {}) => {
     const lead = {
       id: 'lead',
       sessionId: 'session-1',
@@ -1530,7 +1532,7 @@ describe('TimelinePane subagent group', () => {
       ordinal: index + 2,
       name,
       parentAgentId: 'lead',
-      status: index === count - 1 ? 'running' : 'completed',
+      status: index === failedIndex ? 'failed' : index === count - 1 ? 'running' : 'completed',
       startedAt: `2026-08-20T10:0${index + 1}:00.000Z`,
       ...(index === count - 1 ? {} : { completedAt: `2026-08-20T10:0${index + 1}:30.000Z` }),
     }));
@@ -1538,53 +1540,56 @@ describe('TimelinePane subagent group', () => {
     resolveActivity.current = { batchByAgentId: new Map(), factsByAgentId: new Map() };
   };
 
-  const toggle = () => screen.getByRole('button', { name: /4 subagents/ });
+  const chip = (name: RegExp = /subagents/) => screen.getByRole('button', { name });
 
   const rowIds = () =>
     Array.from(document.querySelectorAll('[data-row-id]')).map((element) =>
       element.getAttribute('data-row-id'),
     );
 
-  it('draws one closed row with the state summary above the parent and no child rows', () => {
+  it('keeps the subagents inside the step row: one chip, no group row, no child rows', () => {
     seedSubagents();
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    expect(toggle().getAttribute('aria-expanded')).toBe('false');
-    expect(screen.getByTestId('resolve-batch-summary').textContent).toBe('3 done · 1 running');
+    expect(chip().getAttribute('aria-expanded')).toBe('false');
+    expect(chip().textContent).toBe('4 subagents');
     expect(screen.queryByText('Scout thresholds')).toBeNull();
-    const ids = rowIds();
-    expect(ids.indexOf('subagents:agent:lead')).toBeLessThan(ids.indexOf('agent:lead'));
-    const mixed = toggle().closest('[data-row-id]')?.querySelector('[data-node-state="mixed"]');
-    expect(mixed?.textContent).toBe('4');
+    expect(rowIds().filter((id) => id?.startsWith('subagents:') === true)).toEqual([]);
+    expect(chip().closest('[data-row-id]')?.getAttribute('data-row-id')).toBe('agent:lead');
+    expect(document.querySelectorAll('[data-node-state="mixed"]')).toHaveLength(0);
   });
 
-  it('leaves two subagents as plain rows', () => {
-    seedSubagents({ count: 2 });
+  it('gives a single subagent the same chip', () => {
+    seedSubagents({ count: 1 });
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    expect(screen.queryByRole('button', { name: /subagents/ })).toBeNull();
-    screen.getByText('Scout thresholds');
+    expect(chip(/1 subagent/).textContent).toBe('1 subagent');
+    expect(screen.queryByText('Scout thresholds')).toBeNull();
   });
 
-  it('explodes upward on click and folds back on the second click', () => {
+  it('shows a failed child on the closed chip', () => {
+    seedSubagents({ failedIndex: 1 });
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    expect(chip().textContent).toContain('1 failed');
+  });
+
+  it('opens the children below the step on click and folds back on the second click', () => {
     vi.useFakeTimers();
     const transitions = withRevealTransitions();
     seedSubagents();
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    fireEvent.click(toggle());
+    fireEvent.click(chip());
 
-    expect(toggle().getAttribute('aria-expanded')).toBe('true');
+    expect(chip().getAttribute('aria-expanded')).toBe('true');
     screen.getByText('Scout thresholds');
-    const ids = rowIds().filter(
-      (id) => id?.startsWith('agent:sub') || id?.startsWith('subagents:'),
-    );
-    expect(ids.at(-1)).toBe('subagents:agent:lead');
-    expect(ids).toHaveLength(5);
+    const ids = rowIds().filter((id) => id?.startsWith('agent:') === true);
+    expect(ids).toEqual(['agent:lead', 'agent:sub-0', 'agent:sub-1', 'agent:sub-2', 'agent:sub-3']);
     expect(revealFrames()).toHaveLength(4);
 
-    fireEvent.click(toggle());
-    expect(toggle().getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(chip());
+    expect(chip().getAttribute('aria-expanded')).toBe('false');
     expect(document.querySelectorAll('[data-leaving="true"]')).toHaveLength(4);
     act(() => {
       vi.advanceTimersByTime(400);
@@ -1592,14 +1597,6 @@ describe('TimelinePane subagent group', () => {
     expect(screen.queryByText('Scout thresholds')).toBeNull();
     transitions.mockRestore();
     vi.useRealTimers();
-  });
-
-  it('opens and closes with the arrow keys', () => {
-    seedSubagents();
-    render(<TimelinePane session={SESSION} actions={null} />);
-
-    fireEvent.keyDown(toggle(), { key: 'ArrowRight' });
-    expect(toggle().getAttribute('aria-expanded')).toBe('true');
   });
 });
 
@@ -1721,7 +1718,7 @@ describe('TimelinePane finished run', () => {
     expect(screen.getByText('Step plan')).toBeDefined();
   });
 
-  it('draws the run as a ball with its step count, closed and open', () => {
+  it('draws the run as a ball that shows state, never its step count, closed and open', () => {
     storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'completed' }) };
     const { container } = render(<TimelinePane session={SESSION} actions={null} />);
     const ball = () => {
@@ -1733,12 +1730,12 @@ describe('TimelinePane finished run', () => {
     };
 
     expect(ball().getAttribute('aria-label')).toBe('3 steps');
-    expect(ball().textContent).toBe('3');
+    expect(ball().textContent).toBe('');
     expect(runRow().getAttribute('aria-description')).toBe('Expand, Enter');
 
     fireEvent.click(runRow());
 
-    expect(ball().textContent).toBe('3');
+    expect(ball().textContent).toBe('');
     expect(runRow().getAttribute('aria-description')).toBe('Collapse, Enter');
   });
 

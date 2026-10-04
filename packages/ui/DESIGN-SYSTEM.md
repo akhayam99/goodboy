@@ -362,15 +362,16 @@ make up the whole grammar. Nothing outside this list may appear on the rail:
 | ---------- | ----------------------------------------------------------------- | --------------------------------------------------------- |
 | spine      | 1px, `--color-border`, solid, unbroken on every row               | the session's own thread                                  |
 | lane       | 2px, identity hue, solid                                          | a run whose steps have happened                           |
-| join       | quarter curve between spine and lane at a row's marker line       | a run departing at its origin or merging when it finished |
+| fork       | curve from a row's marker down into the lane, at the row's bottom | a run or a step opening the rows that follow it           |
+| join       | quarter curve between spine and lane at a row's marker line       | a resolve batch departing at its head                     |
 | stub       | 1px, `--color-border`, offset one column                          | a standalone agent's fan-out, which belongs to no run     |
 | head       | ball one column in, 1px `--color-border` curve down-left to spine | the group row: the children hang one column past its ball |
 
 The spine is the backbone of the feed. It is full height, always drawn, never
 tinted and never broken.
 
-Every group row sits on a head, folded or open: a finished run, an agent chain,
-a resolve batch and the subagents of an agent. The ball is the group's marker
+Every group row sits on a head, folded or open: a finished run, an agent chain
+and a resolve batch. The ball is the group's marker
 one column in from its parent column, a 1px grey curve (the head's stub) leaves
 it flat and lands vertical on that column, and the open children keep to the
 column past the ball, so the lane reads as hanging off the group instead of off
@@ -424,35 +425,27 @@ colours), an answered question, a plan or an artifact created outside a run
 an 8px gap instead of 12px and a 12px muted label, so a log row weighs the same
 as a step and never as an agent.
 
-Two rules follow from the direction of time. Newer sits above older at every
-level. So a run's origin row is the bottom of its group and its steps stack
-upward. And a dash always points toward NOW, because dashed means future.
+Two rules follow from the direction of time. The feed is newest first between
+launches: a run, a chain or a batch sits where its origin started. Inside one
+run the order is execution order, 1 to N: the run row is first, its lane forks
+off it and its steps hang below it in the order they ran, so a step number only
+ever grows down the list. A step's subagents follow the same rule one column
+further in, numbered 8.1, 8.2 under step 8. A lane is a down lane
+(`direction: 'down'` in `RailGroupInput`): rows after its origin are its
+members, a fork leaves the origin marker and lands on the lane at the row's
+bottom, and the lane ends on its last member. Lanes of different launches never
+overlap in rows, so two runs one under the other share a column. A dash points
+away from NOW now: it covers the stretch that leads into a step still waiting to
+run, so the switch from solid to dashed sits at the running step and queued steps
+come after it, in their run, with no clock of their own. Day rules sit between
+launches, never inside a run that crossed midnight. A batch of resolves keeps the
+up lane: its children come out above its head.
 
-Queued steps follow the same direction. They sort by step path, not by the
-order the agents were created in, so a run's 7, 6 and 5 sit above step 4's
-queued 4.3 and 4.2. A queued step is future, so it sits above every dated row:
-an agent you start after step 1 stays between step 1 and the queued step 2.
-One dash per run reaches NOW. A child lane that still has
-work queued ends at its newest row and rejoins its parent lane there with a
-dashed join (the `rejoining` group shape), under the parent's next step. The
-join is a quarter circle into the parent column and a straight run up to the
-row top, so it meets the lane above vertically. A
-child lane with no ancestor lane continuing above it stays open to NOW instead.
-A child lane closes on its newest row once its parent and every child have
-settled, and at once when you close the parent. An agent you closed counts as
-settled, so a lane waiting on it stops reaching NOW.
-
-**A dashed stretch exists only while work is scheduled above it.** Scheduled
-means a row that is running, waiting on you (a question, a ready step, a spend
-limit) or queued to start by itself. When the newest work failed, was stopped
-or was closed by you and nothing else is scheduled, the lane ends on that node
-with the `closed` group shape: no dash toward NOW and no rejoin elbow, because
-the work stopped rather than came back. `merged` stays for groups that finished
-well. A run halted on a failed step closes its lane until a step runs again.
-Queued children of a failed parent cannot start, so they do not hold the lane
-open. Queued children of an agent you closed draw as skipped. Both shapes come
-from each row's `RowState` in `buildTimelineStream`, not from a second status
-check.
+**A queued step is future, not hidden.** It is a row of its own with its own
+dashed node, after the steps that ran. A failed step or a parent you closed
+ends the lane on that node; queued children of a failed parent cannot start and
+draw as skipped when you closed the parent. The row states come from each row's
+`RowState` in `buildTimelineStream`, not from a second status check.
 
 Suggestions are not scheduled work, so they never draw a dash and never sit in
 the activity feed. They live in the Next steps slot (`NextStepSlot`) above
@@ -461,9 +454,9 @@ Activity, outside its filter, as `docs/concepts.md` (Next steps) describes.
 The workflow detail uses the same vocabulary for one run. Its run tree has no
 session spine: `layoutTimelineRail` runs with `hasSpine: false`, the run lane
 takes column 0 and starts on the run's first step (a lane whose origin row is
-one of its own members draws a straight line there, not a branch join), and
-children take column 1. There is no run row and no time column; everything
-else, dashes, rejoins and nodes, is the feed's.
+one of its own members draws a straight line there, not a fork), steps follow in
+execution order and children take column 1. There is no run row, no NOW and no
+time column.
 
 A third rule covers what the feed shows: **everything, always**. Nothing in the
 feed collapses, summarises or hides behind a count. No row or divider has a
@@ -521,28 +514,28 @@ It knows nothing about agents: the caller hands it a state, a mark, a label
 and a `size` (`md`, 20px, the default; `sm`, 14px, for a transcript row's
 icon column), and sits on the canvas so the lane never shows through it.
 
-| node       | ring                                    | centre                   |
-| ---------- | --------------------------------------- | ------------------------ |
-| `queued`   | 1.5px dashed, `faint-foreground`        | local index, faint       |
-| `ready`    | 1.5px dashed, `warning`                 | play triangle, warning   |
-| `running`  | 2px `border-soft` track + `spin-border` | local index, or info dot |
-| `question` | 1.5px `warning`                         | `?`, warning             |
-| `budget`   | 1.5px `warning`                         | `$`, warning             |
-| `approval` | 1.5px `warning`                         | shield, warning          |
-| `failed`   | 1.5px `danger`                          | `!`, danger              |
-| `done`     | 1px `success` over a `success/18` fill  | check, success           |
-| `closed`   | 1px `border`                            | check, muted             |
-| `stopped`  | 1px `border`                            | small square, muted      |
-| `skipped`  | 1px `border-soft`                       | dash, faint              |
-| `marker`   | `ring-1` in the concept tone            | the concept glyph        |
-| `mixed`    | arcs per state, 2px, 1.5px gap          | how many children        |
+| node       | ring                                    | centre                    |
+| ---------- | --------------------------------------- | ------------------------- |
+| `queued`   | 1.5px dashed, `faint-foreground`        | local index, faint        |
+| `ready`    | 1.5px dashed, `warning`                 | play triangle, warning    |
+| `running`  | 2px `border-soft` track + `spin-border` | local index, or info dot  |
+| `question` | 1.5px `warning`                         | `?`, warning              |
+| `budget`   | 1.5px `warning`                         | `$`, warning              |
+| `approval` | 1.5px `warning`                         | shield, warning           |
+| `failed`   | 1.5px `danger`                          | `!`, danger               |
+| `done`     | 1px `success` over a `success/18` fill  | check, success            |
+| `closed`   | 1px `border`                            | check, muted              |
+| `stopped`  | 1px `border`                            | small square, muted       |
+| `skipped`  | 1px `border-soft`                       | dash, faint               |
+| `marker`   | `ring-1` in the concept tone            | the concept glyph         |
+| `mixed`    | arcs per state, 2px, 1.5px gap          | the state of the children |
 
-`mixed` is the node of a group row (a batch of resolves, or the subagents of an agent): the caller passes
+`mixed` is the node of a group row (a batch of resolves, a folded run or chain): the caller passes
 `parts` (a tone and a count each) and the ring is split into arcs whose length
 is proportional to the count, one tone per state, in the order given, with a
-1.5px gap between arcs (none for a single part). The centre carries the total
-as an index mark, so the node never speaks by colour alone. It keeps the same
-20px box as every other state.
+1.5px gap between arcs (none for a single part). The centre is a dot: a ball
+shows a state and never a count, because a number in a ball reads as a step
+number. It keeps the same 20px box as every other state.
 
 `approval` is a pending permission request without a decision yet: a tool
 call waiting on you, distinct from `question` (an open question waiting on
@@ -559,12 +552,11 @@ A `failed` node never draws the arc. The arc steps with the panel's 5 second
 clock and never animates between values: a ring that glides for nine minutes
 decorates, it does not confirm. Without progress the node is the table above.
 
-The number inside is the local index (`2` for step 4.2). The full path stays
-in the ordinal column of the row, because it survives when the number turns
-into a check. A row outside a sequence (a standalone agent, a run origin)
-carries a dot instead of a number, and a fact row (plan, artifact, event,
-issue, question) carries its concept glyph. A state that asks something or
-broke replaces the number with its glyph, so colour never speaks alone.
+A node never carries a number. The step's full path (`4.2`) is the ordinal
+column of the row, always visible, so the node only says the state: a row in a
+sequence carries a dot until it has something to say, a fact row (plan,
+artifact, event, issue, question) carries its concept glyph, and a state that
+asks something or broke has its glyph, so colour never speaks alone.
 
 A comparison of two versions (the wireframe Compare) marks each change with a
 glyph and a word, never a colour: `+ Added`, `~ Changed`, `− Removed`,
@@ -592,7 +584,7 @@ working: they read as running, never as "Needs you". A run you stopped reads
 as `stopped`, an agent you closed as `closed`: finished is not the same as
 succeeded.
 
-A group row (a batch of resolves, or three or more subagents of one agent) is closed by default and draws the `mixed`
+A group row (a batch of resolves) is closed by default and draws the `mixed`
 node. Activity is newest first, so its children come out above it, on the
 group's own lane with the existing upward elbows, and fold back down into it.
 Each child grows from zero height with `Reveal` (200ms, all at once, no
@@ -605,12 +597,21 @@ the right arrow and closes with a second click or the left arrow. Reduced
 motion skips the transition and swaps the rows at once. The rail reserves the
 lane a closed group would open, so opening it never moves the list sideways.
 A failed child never opens the group: its arc is `danger`, the summary says
-"1 failed" in `danger` text and the need-you count includes it. A subagent group
-hangs from its parent agent's ball, one column right of the lane that parent
-sits on (a workflow step hangs it off the run lane, never off the root spine),
-above the parent, at the start of its earliest subagent; its children explode
-upward on a lane nested in that one. A
-subagent that asks you a question counts the same way (`groupChild` ask).
+"1 failed" in `danger` text and the need-you count includes it.
+
+Subagents have no group row. A step or an agent that has subagents carries a
+"N subagents" chip in its own row, closed by default, with a chevron; a failed
+or asking child shows on the chip ("2 subagents · 1 failed", in `danger` or
+`warning` text), the row's unread dot covers the hidden children and the
+need-you count includes them once. The chip opens the children below the step,
+one column in, on a down lane forked off the step's own ball, numbered 8.1, 8.2
+under step 8, each with its own time and cost; the step's time and cost already
+include them, counted once, and the children show their own. A step with one
+subagent has the same chip. Children grow with `Reveal` like a group's, closing
+runs it backwards, and the rail reserves the child column on the step ball
+whether it is open or not (`opensLane`), so opening never moves the list
+sideways. A folded chain or run shows its descendants when it opens; the
+trees (the run page and a Brief) always show them.
 
 A finished workflow run or agent chain with three rows or more is a third group
 kind, `steps`: the run row itself is the group row, with its own node, the
@@ -623,10 +624,10 @@ over the rows of the run's agents, and shows only when a row changed something.
 Those Context rows are members of the run lane, graded `fact`, and a closed run
 hides them; a Context event with no agent stays on the spine. An answered or
 dismissed question in a lane is a compact `fact` row with no clock, an open one
-stays a `step`. The gutter clock carries a tooltip that says rows are newest first
-and stamped with their own moment (agent start, answer time or record time),
-and the chevron. Its node is the same `mixed` ball with the step count in its
-center, closed or open, and its hint verb is Expand or Collapse. A run that asks you something,
+stays a `step`. The gutter clock carries a tooltip that says launches are newest
+first and a row is stamped with its own moment (agent start, answer time or
+record time), and the chevron. Its node is the same `mixed` ball with a dot in
+its center, closed or open, and its hint verb is Expand or Collapse. A run that asks you something,
 failed or is still running is never folded. Every group row fills the routing,
 time and cost columns with the totals of what it holds (`groupTotals`), counted
 once, and its time is fixed: a group row never reads the shared work clock. A

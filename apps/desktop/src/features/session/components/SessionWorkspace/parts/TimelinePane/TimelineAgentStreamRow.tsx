@@ -13,6 +13,7 @@ import type { TimelineOpenTarget } from '../../../../hooks/useTimelineOpen';
 import type { TimelineAgentEntry } from '../../../../timeline/buildTimelineGroups';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 import { TimelineAgentMeta } from './TimelineAgentMeta';
+import { TimelineSubagentsChip } from './TimelineSubagentsChip';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
 import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
 import { TimelineStreamRow, type TimelineRowAction } from './TimelineStreamRow';
@@ -34,6 +35,8 @@ type Props = {
   readonly sessionProvider: ProviderId | null;
   readonly sessionEffort: EffortLevel | null;
   readonly costUsd: number;
+  readonly isSubagentsExpanded: boolean;
+  readonly onSetSubagents: (params: { readonly id: string; readonly isExpanded: boolean }) => void;
   readonly isRevealed?: boolean;
 };
 
@@ -54,6 +57,8 @@ export const TimelineAgentStreamRow = ({
   sessionProvider,
   sessionEffort,
   costUsd,
+  isSubagentsExpanded,
+  onSetSubagents,
   isRevealed = false,
 }: Props) => {
   const contextMenu = useObjectMenuTrigger({
@@ -90,6 +95,15 @@ export const TimelineAgentStreamRow = ({
       }
       progress={work.time?.progress ?? null}
       isRevealed={isRevealed}
+      subagents={
+        item.subagents === undefined ? null : (
+          <TimelineSubagentsChip
+            subagents={item.subagents}
+            isExpanded={isSubagentsExpanded}
+            onSet={onSetSubagents}
+          />
+        )
+      }
       lanes={lanes}
       runLane={runLane}
     />

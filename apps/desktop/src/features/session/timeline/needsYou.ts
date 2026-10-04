@@ -18,14 +18,16 @@ const attentionChildIdsOf = ({
     return facts !== undefined && isResolveAttention({ state: facts.state }) ? [child.id] : [];
   });
 
+const hasHiddenAttention = ({ item }: { readonly item: TimelineRowItem }): boolean =>
+  item.subagents !== undefined && item.subagents.attentionKeys.length > 0;
+
+const isItemNeedingYou = ({ item }: { readonly item: TimelineRowItem }): boolean =>
+  isRowNeedingYou({ state: item.rowState }) || hasHiddenAttention({ item });
+
 export const needsYouRootIds = ({ items }: RootsParams): ReadonlySet<string> => {
   const roots = new Set<string>();
   for (const item of items) {
-    if (item.kind !== 'row' || !isRowNeedingYou({ state: item.rowState })) {
-      continue;
-    }
-    if (item.entry.kind === 'subagentGroup') {
-      roots.add(item.familyId ?? item.id);
+    if (item.kind !== 'row' || !isItemNeedingYou({ item })) {
       continue;
     }
     if (item.entry.kind === 'resolveBatch') {
@@ -44,17 +46,18 @@ const needKeysOf = ({ item }: { readonly item: TimelineRowItem }): ReadonlyArray
   if (entry.kind === 'resolveBatch') {
     return attentionChildIdsOf({ entry });
   }
-  if (entry.kind === 'subagentGroup') {
-    return entry.attentionKeys;
-  }
+  const hidden = hasHiddenAttention({ item }) ? (item.subagents?.attentionKeys ?? []) : [];
   if (entry.kind === 'question') {
     return entry.questions.map((question) => question.id);
   }
+  if (!isRowNeedingYou({ state: rowState })) {
+    return hidden;
+  }
   if (rowState.ask?.kind !== 'answer' || rowState.ask.question == null) {
-    return [item.id];
+    return [item.id, ...hidden];
   }
   if (entry.kind === 'agent') {
-    return entry.openQuestions.map((question) => question.id);
+    return [...entry.openQuestions.map((question) => question.id), ...hidden];
   }
   return [rowState.ask.question.id];
 };
@@ -62,7 +65,7 @@ const needKeysOf = ({ item }: { readonly item: TimelineRowItem }): ReadonlyArray
 export const needsYouCount = ({ items }: RootsParams): number => {
   const keys = new Set<string>();
   for (const item of items) {
-    if (item.kind === 'row' && isRowNeedingYou({ state: item.rowState })) {
+    if (item.kind === 'row' && isItemNeedingYou({ item })) {
       for (const key of needKeysOf({ item })) {
         keys.add(key);
       }
@@ -75,7 +78,7 @@ export const hasWaitingRow = ({ items }: RootsParams): boolean =>
   items.some(
     (item) =>
       item.kind === 'row' &&
-      (isRowNeedingYou({ state: item.rowState }) ||
+      (isItemNeedingYou({ item }) ||
         (item.rowState.phase === 'waiting' &&
           rowStateTone({ state: item.rowState }) === 'warning')),
   );
@@ -83,8 +86,7 @@ export const hasWaitingRow = ({ items }: RootsParams): boolean =>
 type FirstRowParams = RootsParams;
 
 export const firstNeedsYouRowId = ({ items }: FirstRowParams): string | null =>
-  items.find((item) => item.kind === 'row' && isRowNeedingYou({ state: item.rowState }))?.id ??
-  null;
+  items.find((item) => item.kind === 'row' && isItemNeedingYou({ item }))?.id ?? null;
 
 type EntriesParams = {
   readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
