@@ -42,7 +42,7 @@ export const WorkspaceIdentityRow = () => {
             data-tauri-drag-region="false"
             aria-label={`Switch workspace: ${currentWorkspace.name}`}
             aria-expanded={dropdown.open}
-            className="group flex w-full min-w-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-hover"
+            className="group flex w-full min-w-0 items-center gap-2 rounded-md px-1 py-1 text-left transition-colors hover:bg-hover"
             title={`${currentWorkspace.name}, ${subtitle} (${shortcutGlyphs('workspace.switcher')})`}
           >
             <span
@@ -52,9 +52,7 @@ export const WorkspaceIdentityRow = () => {
             >
               {initialOf(currentWorkspace.name)}
             </span>
-            <span className="truncate text-xs font-semibold leading-tight text-foreground">
-              {currentWorkspace.name}
-            </span>
+            <span className="truncate text-row text-foreground">{currentWorkspace.name}</span>
             {hasUnreadElsewhere ? (
               <StatusDot tone="warning" size="sm" title="Activity in another workspace" />
             ) : null}
