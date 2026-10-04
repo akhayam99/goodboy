@@ -251,7 +251,7 @@ describe('WorkspaceProjectsSection', () => {
     expect(within(popover).getByLabelText('Project path')).toBeDefined();
     expect(within(popover).getByRole('button', { name: 'Browse' })).toBeDefined();
     expect(within(popover).getByRole('button', { name: 'Start a new project' })).toBeDefined();
-    expect(within(popover).getByRole('button', { name: 'Link a plain folder' })).toBeDefined();
+    expect(within(popover).getByRole('button', { name: 'Add a plain folder' })).toBeDefined();
   });
 
   it('shows the base branch picker in the editor, repo rows only', () => {

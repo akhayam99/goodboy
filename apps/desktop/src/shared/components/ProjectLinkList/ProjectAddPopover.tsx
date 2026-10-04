@@ -1,5 +1,6 @@
 import { FolderPlus, Plus } from 'lucide-react';
 import { AnchoredPopover, Button, Input, useDropdown } from '@goodboy/ui';
+import { NAMES } from '../../names';
 import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
@@ -85,7 +86,7 @@ export const ProjectAddPopover = ({
           onClick={() => runAndClose(onLinkPlainFolder)}
           disabled={busy}
         >
-          Link a plain folder
+          {NAMES.addPlainFolder}
         </Button>
         <span className="flex-1" />
         <Button

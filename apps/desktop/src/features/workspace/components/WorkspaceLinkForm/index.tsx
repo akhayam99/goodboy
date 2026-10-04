@@ -14,6 +14,7 @@ import {
 import type { Workspace } from '@goodboy/types';
 import { AlertTriangle, Folder, FolderGit2, FolderPlus, Layers, Plus, X } from 'lucide-react';
 import { useAppStore } from '../../../../store';
+import { NAMES } from '../../../../shared/names';
 import { initRepo, validateGitRepo } from '../../../../shared/lib/repo';
 import { useChildRepoDetection } from '../../../../shared/hooks/useChildRepoDetection';
 import { usePickFolder } from '../../../../shared/hooks/usePickFolder';
@@ -147,7 +148,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
         return;
       }
       throw new Error(
-        `No git repository at ${picked}. Pick a folder with a .git directory, use Start a new project to begin one, or use Link a plain folder.`,
+        `No git repository at ${picked}. Pick a folder with a .git directory, use Start a new project to begin one, or use ${NAMES.addPlainFolder}.`,
       );
     });
 
@@ -450,7 +451,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
                 disabled={busy}
                 className="self-start text-label font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
               >
-                Link a plain folder (no git)
+                {NAMES.addPlainFolder} (no git)
               </button>
             </div>
           ) : null}
@@ -583,7 +584,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
             disabled={busy}
             className="self-start text-label font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
           >
-            Link a plain folder (no git)
+            {NAMES.addPlainFolder} (no git)
           </button>
         </section>
       )}

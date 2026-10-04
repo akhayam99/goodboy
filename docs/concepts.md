@@ -1249,6 +1249,9 @@ task up again in Goodboy.
   group that holds them, **Copy context** the drawer button, **Context window**
   the share of a model window a turn filled, and **What's new** the release
   notes page. The old words are ⌘K aliases or retired names.
+- **Add a plain folder** and **Add existing** put a folder or a repository
+  under a project. **Link** stays for tying a ticket to a session or a pull
+  request.
 - A word that stays and still needs a sentence (workflow, orchestrated,
   artifact) gets a short tooltip, six words at most, written once. The
   `TermHint` and `GLOSSARY`

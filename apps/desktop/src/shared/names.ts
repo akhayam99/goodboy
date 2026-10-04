@@ -31,6 +31,8 @@ export const NAMES = {
   copyContext: 'Copy context',
   contextWindow: 'Context window',
   models: 'Models',
+  addPlainFolder: 'Add a plain folder',
+  addExisting: 'Add existing',
   role: {
     scout: 'Scout',
     planner: 'Planner',
@@ -57,6 +59,8 @@ const FORMER_NAMES: Readonly<Record<string, ReadonlyArray<string>>> = {
   [NAMES.copyContext]: ['Copy as brief'],
   [NAMES.contextWindow]: ['Context'],
   [NAMES.models]: ['Defaults', 'Provider defaults'],
+  [NAMES.addPlainFolder]: ['Link a plain folder'],
+  [NAMES.addExisting]: ['Link existing'],
 };
 
 export const formerNamesOf = (name: string): ReadonlyArray<string> => FORMER_NAMES[name] ?? [];
