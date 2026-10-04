@@ -32,7 +32,7 @@ export const NewSessionButton = ({ workspaceId }: Props) => {
       }
       aria-pressed={isDraftShown}
       className={cn(
-        'group relative min-w-0 flex-1 justify-center gap-1.5 px-2 text-label',
+        'group relative min-w-0 flex-1 justify-center gap-2 px-2 text-label',
         isDraftShown && 'bg-selected',
       )}
     >
