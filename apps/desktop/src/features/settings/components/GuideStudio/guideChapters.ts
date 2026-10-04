@@ -507,12 +507,12 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     lead: 'App settings apply everywhere, workspace settings to one workspace. Your whole setup can move to another machine.',
     points: [
       {
-        term: 'Settings home',
-        desc: 'Settings opens on a home with App, Workspace, Providers & models and Integrations as cards, each page with its status. Pick a page and the cards become the rail, and the Settings crumb brings you back. Drag the edge of a rail to resize it.',
+        term: 'Settings rail',
+        desc: 'Settings opens on the page you opened last, or General the first time. The rail lists App, Workspace, Providers & models and Integrations, and a row speaks only when it needs you. Every page is also in the palette. Drag the edge of a rail to resize it.',
       },
       {
         term: 'App and workspace',
-        desc: 'Theme, updates and shortcuts are app-wide. Projects, About you, New sessions, Workflow rules, After merge, Review replies, Permissions and Skills are pages of a workspace.',
+        desc: 'Theme, updates and shortcuts are app-wide. Projects, About you, New sessions, After merge, Review replies, Permissions and Skills are pages of a workspace.',
       },
       {
         term: 'Copy and restore',

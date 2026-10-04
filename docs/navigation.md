@@ -726,13 +726,11 @@ covered.
   top-level agent (`landOnSession.ts`) so the brief waits in that agent's
   composer draft (`agentDraft`); a session without an agent opens on its
   overview with nothing drafted.
-- Right: the storage chip, the Now chip (needs you, running, scripts, each
-  only when above zero), today's spend and the bell. The storage chip
-  (`StorageChip`) reads `Free 7 GB` in muted text only while at least 1 GB of
-  worktree folders can go on every workspace, the same "can go" the Storage
-  summary counts (`useStorageSummary`); it never turns warning, and it hides
-  when there is nothing to free. A click opens App > Storage scoped to all
-  workspaces on To review, scrolled to the worktree folders. Now opens one popover grouped by those
+- Right: the Now chip (needs you, running, scripts, each
+  only when above zero), today's spend and the bell. There is no storage chip:
+  a control that appears when a threshold is crossed breaks the rule above,
+  and "Free 7 GB" read as free disk, not what can go. The "N GB can go" line
+  lives on the Storage row of the Settings rail. Now opens one popover grouped by those
   three, and a group with no rows is not drawn. A script row moves to its
   session and opens that run's output in the right drawer. Spend opens Impact
   on its Spend tab; it is never merged with a count. Then `Limits`: one chip per connected plan provider (Claude, Codex,
@@ -825,8 +823,7 @@ and shows in mock scenes too. The update pill is soft, enters once and holds
 still. Its popover leads with Report a bug (with ⌘I, and Draft saved
 when a draft waits), then the version and release notes, the update, the setup
 checklist, What's new, keyboard shortcuts, Sponsor and Follow on X. The
-addresses live in `shared/lib/productLinks.ts`; **Settings > Help** has the
-same X link under Follow Goodboy. Report a bug closes the
+addresses live in `shared/lib/productLinks.ts`. Report a bug closes the
 popover and opens the report sheet. The popover opens by itself once, when the
 first agent finishes a turn, and never while the setup wizard is open; the
 checklist has no floating card.
@@ -837,8 +834,8 @@ One sheet files every report. `ReportSheetHost`
 (`features/bug-report/components/ReportSheetHost`) floats it above the footer
 chip, centred, with no overlay: the page under it stays live. Every door lands
 there: ⌘I from anywhere, Report a bug in the Goodboy chip, Report a bug in the
-palette (it also answers bug, issue, feedback, crash and broken), **Settings >
-App > Help**, **Help > Report a bug** in the macOS menu bar (`help_menu.rs`
+palette (it also answers bug, issue, feedback, crash and broken),
+**Help > Report a bug** in the macOS menu bar (`help_menu.rs`
 emits `goodboy://report-open` to the focused window), and Report this on a
 warning or error notification, which attaches that notification. Opening the sheet reads the screen you are on
 before anything moves, so Settings stays open under it.
@@ -895,7 +892,7 @@ skipped code host or task manager reopens its own step, and the first session
 ticks when an agent finishes a turn, not when a session row exists.
 
 Right: Inbox, Workflows, Impact, Providers and Settings. Settings (and ⌘,)
-always opens the Settings home, with or without a workspace; Workspace settings
+always opens the last settings page (General at first), with or without a workspace; Workspace settings
 opens only from the
 gear on the current-workspace row of the workspace popover. Impact is a
 destination, so it has a launcher; the launcher opens its Overview tab, while
@@ -1037,8 +1034,7 @@ one is open at a time.
   `StudioShell`; inside the frame it only hands its chrome to the band. Until a
   body's chunk arrives, the frame shows one of three opaque skeletons: `list`
   (Inbox, Notifications, Add workspace, Impact), `rail`
-  (a Settings page) or `grid` (Workflows, Changelog, the guide, pairing, the
-  Settings home). With no studio
+  (Settings) or `grid` (Workflows, Changelog, the guide, pairing). With no studio
   open, no frame node exists, so nothing covers the page.
 - **One Esc stack.** The frame, a body that holds Esc (the Inbox with a record
   open), the agent overlay and the delete confirm all register with
@@ -1100,32 +1096,34 @@ one is open at a time.
   moves the width lives in a CSS variable (the drawer writes its own style),
   so nothing renders and nothing is saved until the drag ends. Precedent: VS
   Code, Zed and Linear sidebars.
-- **Settings opens on a home that mirrors its rail.** The footer, ⌘, and the
-  palette's Open settings land on it; a link that names a page (a scope, a
-  section, a provider or a tool) skips it. It shows the rail's four groups
-  (App, Workspace, Providers & models, Integrations), each titled with where
-  it applies, and every page of a group as a card: the concept icon on its
-  tone, the name and the same status line the rail shows (a quiet hint when
-  nothing needs doing). Cards and rail rows come from one list,
-  `settingsDirectory`, so no card exists without a rail row. The page opened
-  last carries `Last opened` and takes the focus, so Enter goes back to it.
-  The status lines are read once per studio (`useSettingsStatus`, on the
-  minute clock of `useNow`) and feed the home and the rail; the home starts no
-  loading of its own (no storage scan, no branch scan, no provider refresh).
-  Without a workspace the Workspace and Integrations groups are left out.
-  Opening a card morphs the home into the rail: every card shrinks and slides
-  into its rail row in 230ms (a page nested under Providers & models or
-  Integrations lands on its group row and fades), the rail shows once they
-  land and the page enters with `nav-step-in`. `useHomeToRailMorph` flies
-  copies of the cards on a layer above the studio, so no rendered row moves.
-  Reduced motion, or an engine without `Element.animate`, switches at once.
-  Precedent: the Google Account home and the iOS settings list.
+- **Settings opens on a page, never on a grid.** The footer, ⌘, and the
+  palette's Open settings land on the page opened last, held in memory only
+  (`lastSettingsFocus`, slice `settings-last-page`): the first open after the
+  app starts lands on General, and a remembered page that no longer exists
+  (a workspace page with no workspace, a provider that was removed) falls
+  back to General (`resolveSettingsFocus`). A link that names a page (a scope,
+  a section, a provider or a tool) opens that page. `scope: 'home'` stays as
+  the alias for "the last page" and `SettingsStudio` resolves it once, then
+  amends the history entry to the concrete page. The rail is the only index:
+  its four groups (App, Workspace, Providers & models, Integrations) come
+  from `settingsDirectory`, with the status line of a row shown only when
+  something needs doing (no quiet hints). A provider row says only what is
+  wrong (Update needed, Not signed in, Error) or Not connected, never an
+  identity or usage; the closed Providers & models group says how many
+  providers it holds ("2 providers") unless one of them needs attention. Every page is also a palette entry
+  (`settingsPaletteEntries`, `Settings: Storage`, `Providers: Claude`), built from
+  the same list, so ⌘K and the rail cannot disagree. The status lines are read
+  once per studio (`useSettingsStatus`, on the minute clock of `useNow`);
+  opening Settings starts no loading of its own (no storage scan, no branch
+  scan, no provider refresh). Without a workspace the Workspace and
+  Integrations groups are left out. Precedent: the VS Code settings editor and
+  Linear's settings sidebar.
 - **Settings nests items in its rail.** The App items (General, Shortcuts,
-  Backup, Storage, Security findings, Help, Danger zone) always sit under the
+  Backup, Storage, Security findings) always sit under the
   App row as indented
   rows, whichever scope is active, so switching scope never moves a row above
   the pointer. The Workspace pages (Projects, About you, New sessions, After
-  merge, Review replies, Permissions, Disconnect) sit the same way under the
+  merge, Review replies, Permissions) sit the same way under the
   Workspace row (`workspacePages.ts`, `SettingsRailPageGroup`). The panel
   shows one item at a time. Providers & models nests
   Defaults and one row per provider, and Integrations nests one row per tool. Those
@@ -1153,9 +1151,9 @@ one is open at a time.
   Linear's settings pages.
 - **Restore defaults and copy from another workspace share one inline
   flow.** The page menu (⋯ in the title row) of every page that owns settings
-  offers `Restore defaults` and `Copy from…`; the Workspace group of the
-  Settings home offers `Copy settings from…` and `Restore defaults` for every
-  page at once. The flow opens under the title as a band, never as a
+  offers `Restore defaults` and `Copy from…`; under a separator, the menu of
+  every workspace page (Projects included) offers `Copy all pages from…` and
+  `Restore all workspace defaults` for every page at once. The flow opens under the title as a band, never as a
   popover: pick the workspace, then a preview grouped by page with a
   checkbox per page and the from and to values, then the action row (`Copy N
 settings`, `Back`, `Cancel`). It ends on a status line with `Undo`. The
@@ -1184,7 +1182,7 @@ another repository` at its foot), Artifacts of deleted sessions, and
   (`StorageScopePicker`, `Listbox`) sits in the page header row next to
   `Suggest cleanup after` and `Check again` (`StorageHeaderActions`); the
   Branches header has the same picker without `Removed workspaces`
-  (`BranchesHeaderActions`). `openStorage`, the free space chip and the
+  (`BranchesHeaderActions`). `openStorage` and the
   cleanup notifications always land on Storage. The picker lists the current
   window's workspace, every other workspace with its own weight, `Removed
 workspaces` (folders whose owning workspace is gone or was never linked),
@@ -1268,9 +1266,11 @@ workspaceId, nowMs })`, owns every row's subtitle and tone (it replaced three
   `missing` in `projectGitStatus` (otherwise the row just names the
   workspace). Integrations carries a faint inventory subtitle with no dot,
   "N of M connected" over the whole integration catalog
-  (`connectedInventory`). Danger zone reads in `text-danger`. Panel sections sit on
-  bands (`Band`, eyebrow outside) with gap between them and no `Divider`; a danger zone
-  is an inline danger `Notice`. The workspace page is the exception: one
+  (`connectedInventory`). No rail row is red: the destructive actions sit at the
+  bottom of their page, Reset (Wipe local database) at the end of Backup and
+  Disconnect at the end of Projects, and turn red only in their inline
+  confirm. Panel sections sit on bands (`Band`, eyebrow outside) with gap between
+  them and no `Divider`. The workspace page is the exception: one
   column of eyebrow sections 24px apart. Its title is the workspace name,
   renamed in place. Projects group Starred ahead of All (never in both), each
   a 32px grid row (star, kind, name, description, a base-branch chip only

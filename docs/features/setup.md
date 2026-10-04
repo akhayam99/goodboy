@@ -65,9 +65,9 @@ Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from one page.
 
 Tell agents once who you are and how you like to work, in four short parts: **Your roles**, **About your work**, **How agents should work with you** and **Explain more when it touches**. **See who reads what** shows which role reads each part. Under **Explain more when it touches**, **Learned · 12 · Open** opens what agents explained about your topics in this workspace, grouped by topic, with the project and age of each one. A learning from a deleted session stays and says **Deleted session**.
 
-### Settings home
+### Settings
 
-Find any setting from one page. Settings, its footer button, **⌘,** and the palette open on a home with **App**, **Workspace**, **Providers & models** and **Integrations** as cards, each page with its status line. Pick a page and the cards move into the rail, and the **Settings** crumb brings you back; a link that names a page skips the home. **Open with**, in General, picks the editor worktrees open in and the browser for links and artifacts. Drag the edge of a rail, or use the keys or a double click, to resize it, and each one remembers its width.
+Find any setting from the rail. Settings, its footer button and **⌘,** open on the page you used last, or on General the first time after the app starts. The rail lists **App**, **Workspace**, **Providers & models** and **Integrations**, and a row says something only when it needs you. Every page is also in the palette, like **Settings: Storage**; a link that names a page opens that page. **Open with**, in General, picks the editor worktrees open in and the browser for links and artifacts. Drag the edge of a rail, or use the keys or a double click, to resize it, and each one remembers its width.
 
 **Also in this area**
 

@@ -167,7 +167,7 @@ A layout change is also captured at `--window-size=1100,800`, close to the
 window's minimum width, where a second rail or a fixed-width control is the
 first thing to clip. Capture both themes at both widths: `&theme=light` after
 the scene key renders the light theme. `&storage=reclaimable` on `board-shell`
-seeds the Settings storage folders, so the top bar shows its storage chip.
+seeds the Settings storage folders, so Settings > Storage shows what can go.
 
 ## Data hygiene
 
@@ -206,7 +206,7 @@ every other scene. A scene opens a studio through the same entrance the app
 uses (a store opener or a click on the real control), never by mounting the
 studio itself.
 
-The dense capture fixtures are `settings-home-full`, `rules-teleport`,
+The dense capture fixtures are `rules-teleport`,
 `rules-no-limits`, `rail-ticket-ids`, and `activity-groups`. The resolver
 fixture uses `agent-brief-resolver&live=1&pane=transcript`; add
 `&flow=recheck` or `&flow=follow-up` for its other starts. It builds the

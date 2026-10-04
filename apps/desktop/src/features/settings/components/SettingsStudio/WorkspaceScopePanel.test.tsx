@@ -39,24 +39,11 @@ import { ToastProvider } from '../../../../shared/components/Toast';
 import type { SettingsScopeChange } from '../../settingsFocus';
 import { WORKSPACE_PAGES } from './workspacePages';
 import { WorkspaceScopePanel } from './WorkspaceScopePanel';
-import { SettingsHome } from './SettingsHome';
-import type { SettingsGroup } from './settingsDirectory';
 
 let useAppStore: StoryStore;
 
 const HARBORLINE: Workspace = aWorkspace({ name: 'Harborline', slug: 'harborline' });
 const NORTHWIND: Workspace = aWorkspace({ name: 'Northwind', slug: 'northwind' });
-
-const WORKSPACE_GROUP: SettingsGroup = {
-  scope: 'workspace',
-  label: 'Workspace',
-  concept: 'workspace',
-  place: 'Harborline',
-  subtitle: undefined,
-  tone: undefined,
-  needsWorkspace: true,
-  pages: [],
-};
 
 const overrides = (patch: Partial<OverrideSettings>): OverrideSettings => ({
   ...EMPTY_OVERRIDES,
@@ -101,9 +88,11 @@ const onSelect = vi.fn<(change: SettingsScopeChange) => void>();
 
 const renderPage = ({
   section,
+  initialFlow,
   requestClose = vi.fn(),
 }: {
   readonly section?: string;
+  readonly initialFlow?: 'copy' | 'restore';
   readonly requestClose?: () => void;
 } = {}) =>
   render(
@@ -111,6 +100,7 @@ const renderPage = ({
       <WorkspaceScopePanel
         workspaceId={HARBORLINE.id}
         section={section}
+        initialFlow={initialFlow}
         onSelect={onSelect}
         requestClose={requestClose}
       />
@@ -141,7 +131,7 @@ describe('WorkspaceScopePanel pages', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Projects');
     expect(screen.getByLabelText<HTMLInputElement>('Workspace name').value).toBe('Harborline');
     expect(screen.queryByRole('region', { name: 'Branches and comments' })).toBeNull();
-    expect(screen.queryByRole('region', { name: 'Disconnect workspace' })).toBeNull();
+    screen.getByRole('region', { name: 'Disconnect workspace' });
   });
 
   it.each(WORKSPACE_PAGES.map((page) => page.id).filter((id) => id !== 'projects'))(
@@ -157,6 +147,15 @@ describe('WorkspaceScopePanel pages', () => {
       });
     },
   );
+
+  it.each([
+    ['copy', 'Copy settings from another workspace'],
+    ['restore', 'Restore defaults'],
+  ] as const)('opens the all-pages %s flow when asked to', (initialFlow, name) => {
+    renderPage({ initialFlow });
+
+    screen.getByRole('region', { name });
+  });
 
   it('lands old anchors on their page', () => {
     renderPage({ section: 'after-merge' });
@@ -208,12 +207,12 @@ describe('workspace name', () => {
   });
 });
 
-describe('disconnect page', () => {
+describe('disconnect at the end of Projects', () => {
   it('disconnects only after the inline confirm, then closes settings', async () => {
     const disconnectWorkspace = vi.fn(async () => undefined);
     useAppStore.setState({ disconnectWorkspace });
     const requestClose = vi.fn();
-    renderPage({ section: 'danger', requestClose });
+    renderPage({ section: 'projects', requestClose });
 
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect' }));
     expect(disconnectWorkspace).not.toHaveBeenCalled();
@@ -237,7 +236,7 @@ describe('disconnect page', () => {
         }),
       ],
     });
-    renderPage({ section: 'danger' });
+    renderPage({ section: 'projects' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect' }));
 
@@ -340,17 +339,15 @@ describe('copy from another workspace', () => {
     expect(useAppStore.getState().projects).toHaveLength(1);
   });
 
-  it('copies the whole workspace from the home with a preview per page', async () => {
+  it('copies the whole workspace from any page menu with a preview per page', async () => {
     seed({
       northwind: overrides({ defaultBranchPrefix: 'nw', afterMerge: 'ask', replyVoice: 'formal' }),
     });
-    render(
-      <ToastProvider>
-        <SettingsHome groups={[WORKSPACE_GROUP]} workspaceId={HARBORLINE.id} onOpen={vi.fn()} />
-      </ToastProvider>,
-    );
+    renderPage({ section: 'projects' });
 
-    fireEvent.click(screen.getByRole('button', { name: /Copy settings from/ }));
+    fireEvent.click(
+      within(pageMenu('Projects')).getByRole('menuitem', { name: /Copy all pages from/ }),
+    );
     const flow = screen.getByRole('region', { name: 'Copy settings from another workspace' });
     fireEvent.click(await within(flow).findByRole('radio', { name: /Northwind/ }));
     fireEvent.click(within(flow).getByRole('button', { name: 'Preview changes' }));
