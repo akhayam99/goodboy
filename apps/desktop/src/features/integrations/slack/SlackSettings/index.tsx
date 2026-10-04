@@ -17,7 +17,7 @@ const BINARY_OPTIONS = [
 
 const ACTION_OPTIONS = [
   { value: 'allow', label: 'Allowed' },
-  { value: 'ask', label: 'Ask me first' },
+  { value: 'ask', label: 'Ask first' },
   { value: 'never', label: 'Never' },
 ] as const;
 

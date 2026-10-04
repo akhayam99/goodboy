@@ -168,7 +168,7 @@ describe('SessionCostChip', () => {
     fireEvent.click(spendChip());
     fireEvent.click(screen.getByRole('button', { name: 'Set limit' }));
     fireEvent.change(screen.getByLabelText('Spend limit in dollars'), { target: { value: '10' } });
-    fireEvent.click(screen.getByRole('tab', { name: /Only warn me/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /Warn only/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => expect(store.setSessionBudget).toHaveBeenCalledWith(SID, 10, 'warn'));

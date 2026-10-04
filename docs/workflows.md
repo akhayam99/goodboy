@@ -300,14 +300,14 @@ Asking for a certain provider or model on a step is a hint too.
 
 Each run can have a spending limit in dollars. You set it on the run, in the
 orchestrator strip or in the creation form. You also choose what happens when
-the run reaches it: **Pause workflows** or **Only warn me**, the same editor
+the run reaches it: **Pause workflows** or **Warn only**, the same editor
 and words as the session's spend limit. The limit starts at unlimited. The
 orchestrator decides how many steps to plan based on the goal.
 
 A session has its own spend limit, set from the spend chip in its header. With
 **Pause workflows** (the default) every workflow of the session stops at the
 limit and its strip says `Paused at the $10.00 spend limit for this session.`
-with **Raise limit**, which opens the chip on the editor. With **Only warn me**
+with **Raise limit**, which opens the chip on the editor. With **Warn only**
 nothing stops: one notification says the session passed its limit. Single
 agents are never stopped by it.
 

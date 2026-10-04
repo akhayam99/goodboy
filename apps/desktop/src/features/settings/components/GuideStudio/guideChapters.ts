@@ -299,7 +299,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Slack',
-        desc: 'Pick the channels and what agents may do there. Replies default to Ask me first and wait for your Send.',
+        desc: 'Pick the channels and what agents may do there. Replies default to Ask first and wait for your Send.',
       },
       {
         term: 'Permissions',
@@ -369,7 +369,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'A pull request an agent or your terminal opened shows up when the turn ends or when you come back to the window. Refresh in the session header, or ⌘⇧R, reads it right away.',
       },
       {
-        term: 'Write it for me',
+        term: 'Write it',
         desc: 'A pull request title, description and changelog entry in the format your repo uses.',
       },
     ],
@@ -404,7 +404,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'After a merge',
-        desc: 'Choose Ask me, Delete on this Mac or Also on origin for merged branches. A branch with later commits or uncommitted changes is left alone.',
+        desc: 'Choose Ask first, Delete on this Mac or Also on origin for merged branches. A branch with later commits or uncommitted changes is left alone.',
       },
     ],
     links: [

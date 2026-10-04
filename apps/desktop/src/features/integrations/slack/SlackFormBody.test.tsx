@@ -203,7 +203,7 @@ describe('SlackFormBody', () => {
           hasSelectedChannels: true,
         }),
       });
-      expect(screen.getAllByRole('tab', { name: 'Ask me first' })).toHaveLength(2);
+      expect(screen.getAllByRole('tab', { name: 'Ask first' })).toHaveLength(2);
       screen.getByDisplayValue('Written with Goodboy');
     });
 

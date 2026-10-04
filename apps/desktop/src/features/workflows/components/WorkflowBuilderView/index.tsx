@@ -712,7 +712,7 @@ export const WorkflowBuilderView = (props: Props) => {
       if (!polished) {
         showToast({
           kind: 'warning',
-          message: 'Kept your wording. The goal could not be polished.',
+          message: "Kept your wording. Couldn't polish the goal.",
         });
       }
     } catch (err) {
