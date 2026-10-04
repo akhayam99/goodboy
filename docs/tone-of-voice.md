@@ -79,6 +79,11 @@ talking to a market. There are two voices:
   not "the agent is waiting for you", even when it sits under a label.
 - **Options never say "I", "me" or "my".** An option says what the app does:
   "Write it", "Your replies", "Run in terminal", "Warn only".
+- **One verb per intention.** Delete, Remove, Archive, Disconnect, Stop,
+  Dismiss, Clear and Retry each mean one thing, and the table is in
+  [concepts.md](concepts.md) → Vocabulary rules. A failed action offers
+  "Retry", never "Try again". Advice inside a sentence may still say "try
+  again".
 - **One scale for "stop and ask".** "Ask first" is the only label for it, in
   Settings, Slack, after-merge cleanup and spend caps.
 - **Code identifiers in backticks**: `pnpm tauri:dev`, not "the pnpm tauri:dev

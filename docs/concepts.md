@@ -1260,6 +1260,24 @@ task up again in Goodboy.
   retired.
 - **Your job** is the About you field that lists what you do (it was Your
   roles). **Role** stays the name for what an agent plays.
+- One verb per intention. A button or menu entry takes its verb from this
+  table, and the old verb stays a ⌘K alias:
+
+  | Verb           | Means                                             | Retired                                                            |
+  | -------------- | ------------------------------------------------- | ------------------------------------------------------------------ |
+  | **Delete**     | The object is gone (Undo where it can be)         | Wipe (now **Delete all data**)                                     |
+  | **Remove**     | Taken out of a list, it still exists elsewhere    | Detach (now **Remove from session**), Unlink (now **Remove link**) |
+  | **Archive**    | Hidden, restorable                                | Discard on a workflow run (now **Archive workflow**)               |
+  | **Disconnect** | Cuts the tie to an account, a tool or a workspace |                                                                    |
+  | **Stop**       | Ends what is running and keeps what it wrote      | Close workflow (now **Stop workflow**)                             |
+  | **Dismiss**    | Hides a notification or a suggestion              |                                                                    |
+  | **Clear**      | Resets filters or a selection                     |                                                                    |
+  | **Retry**      | Runs a failed action again                        | Try again                                                          |
+
+  **Discard** stays for a draft you abandon. **Close** stays for a panel and
+  for sending an agent away without deleting it. **Check again** only
+  re-reads a state, and **Run again** starts a run that succeeded once more.
+
 - A word that stays and still needs a sentence (workflow, orchestrated,
   artifact) gets a short tooltip, six words at most, written once. The
   `TermHint` and `GLOSSARY`
