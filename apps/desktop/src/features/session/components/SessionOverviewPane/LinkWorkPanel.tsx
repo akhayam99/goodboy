@@ -3,7 +3,6 @@ import { formatError } from '@goodboy/ui';
 import type { IsoDateTime, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { LaunchExternalTask } from '../../../inbox/launchSpecFor';
-import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import type { LinkChoice } from './linkScope';
 import { LinkWorkPicker } from './LinkWorkPicker';
 import { useLinkWorkItems } from './useLinkWorkItems';
@@ -20,7 +19,6 @@ export const LinkWorkPanel = ({ session, onLinked, onClose }: Props) => {
   const [isLinking, setIsLinking] = useState(false);
   const linkSessionExternalTask = useAppStore((state) => state.linkSessionExternalTask);
   const linkWorkspaceExternalTask = useAppStore((state) => state.linkWorkspaceExternalTask);
-  const branch = useSessionRepo({ sessionId: session.id })?.branch ?? null;
   const work = useLinkWorkItems({
     sessionId: session.id,
     workspaceId: session.workspaceId,
@@ -40,9 +38,6 @@ export const LinkWorkPanel = ({ session, onLinked, onClose }: Props) => {
             ...task,
             createdAt,
             relation: choice.relation,
-            ...(choice.scope === 'branch' && branch !== null
-              ? { scope: 'branch' as const, branch }
-              : {}),
           }));
       onLinked();
     } catch (linkError: unknown) {
@@ -63,7 +58,6 @@ export const LinkWorkPanel = ({ session, onLinked, onClose }: Props) => {
       isLoading={work.isLoading}
       isLinking={isLinking}
       error={error}
-      branch={branch === '' ? null : branch}
       onLink={(task, choice) => void link(task, choice)}
       onClose={onClose}
     />

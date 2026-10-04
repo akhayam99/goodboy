@@ -5,6 +5,7 @@ import {
   GitBranch,
   GitPullRequestCreate,
   History,
+  ListPlus,
   Play,
   RotateCcw,
   Undo2,
@@ -42,6 +43,8 @@ import { selectProjectById } from '../../../store/slices/projects/selectProjectB
 type FactsOnly = { readonly facts: MountFacts };
 
 export const MOUNT_SWITCH_BRANCH_EVENT = 'goodboy:mount-switch-branch';
+
+export const MOUNT_ADD_TASK_EVENT = 'goodboy:mount-add-task';
 
 export const mountEventName = ({
   name,
@@ -321,6 +324,18 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
     run: ({ facts }) => {
       dispatchAfterNavigation({
         name: mountEventName({ name: MOUNT_SWITCH_BRANCH_EVENT, mountId: facts.mountId }),
+      });
+    },
+  },
+  {
+    id: 'mount.addTask',
+    label: 'Add a task',
+    icon: ListPlus,
+    group: 'act',
+    when: ({ facts }) => facts.branch !== '' && !facts.isClosed,
+    run: ({ facts }) => {
+      dispatchAfterNavigation({
+        name: mountEventName({ name: MOUNT_ADD_TASK_EVENT, mountId: facts.mountId }),
       });
     },
   },

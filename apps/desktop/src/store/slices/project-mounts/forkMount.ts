@@ -109,7 +109,16 @@ export const forkMount = (set: SetFn, get: GetFn) => {
             const taken = [...remoteBranches, ...views.map((candidate) => candidate.branch)];
             const branchName =
               requested === ''
-                ? resolveForkBranchName({ get, session, project, taken })
+                ? resolveForkBranchName({
+                    get,
+                    session,
+                    project,
+                    taken,
+                    ...(input.taskIdentifier !== undefined
+                      ? { taskIdentifier: input.taskIdentifier }
+                      : {}),
+                    ...(input.taskTitle !== undefined ? { taskTitle: input.taskTitle } : {}),
+                  })
                 : resolveRequestedBranchName({ get, session, project, requested });
             if (!adopt && requested !== '' && taken.includes(branchName)) {
               await failMountOperation({ operation, errorCode: 'branch-taken' });

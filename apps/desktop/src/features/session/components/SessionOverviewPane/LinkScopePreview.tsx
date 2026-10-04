@@ -1,41 +1,31 @@
 import { Button } from '@goodboy/ui';
 import type { SessionExternalTaskProvider } from '@goodboy/types';
 import { TaskLinkChip } from '../../../../shared/components/TaskLinkChip';
-import { SCOPE_TAB_LABEL, linkedLabel, type LinkScope } from './linkScope';
+import { linkedLabel, type LinkScope } from './linkScope';
 
 type Props = {
   readonly provider: SessionExternalTaskProvider;
   readonly identifier: string;
   readonly title: string;
   readonly scope: LinkScope;
-  readonly branch: string | null;
   readonly isClosing: boolean;
   readonly isLinking: boolean;
   readonly duplicate?: {
     readonly scopes: ReadonlyArray<LinkScope>;
-    readonly next: LinkScope | null;
   };
   readonly onToggleClosing: () => void;
   readonly onLink: () => void;
   readonly onCancel: () => void;
 };
 
-const placeOf = ({ scope, branch }: Pick<Props, 'scope' | 'branch'>): string => {
-  if (scope === 'workspace') {
-    return 'on the Board';
-  }
-  if (scope === 'branch') {
-    return `on ${branch ?? 'this branch'}`;
-  }
-  return 'on this session';
-};
+const placeOf = ({ scope }: Pick<Props, 'scope'>): string =>
+  scope === 'workspace' ? 'on the Board' : 'not on a branch yet';
 
 export const LinkScopePreview = ({
   provider,
   identifier,
   title,
   scope,
-  branch,
   isClosing,
   isLinking,
   duplicate,
@@ -48,16 +38,13 @@ export const LinkScopePreview = ({
       <TaskLinkChip
         provider={provider}
         identifier={identifier}
-        isOnBranch={scope === 'branch'}
         {...(scope === 'workspace' ? { title } : {})}
       />
-      <span className="truncate text-label text-muted-foreground">
-        {placeOf({ scope, branch })}
-      </span>
+      <span className="truncate text-label text-muted-foreground">{placeOf({ scope })}</span>
     </div>
     <p className="text-label text-foreground">
       {duplicate !== undefined ? (
-        `${linkedLabel({ scopes: duplicate.scopes })} already.${duplicate.next === null ? '' : ` Pick ${SCOPE_TAB_LABEL[duplicate.next]} to add it there too.`}`
+        `${linkedLabel({ scopes: duplicate.scopes })} already.`
       ) : scope === 'workspace' ? (
         'Stays open. Shows under Ongoing on the Board, not on this session.'
       ) : isClosing ? (
