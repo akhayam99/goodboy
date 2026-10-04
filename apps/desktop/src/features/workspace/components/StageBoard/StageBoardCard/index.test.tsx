@@ -619,6 +619,14 @@ describe('StageBoardCard footer', () => {
     expect(screen.getByText('2h ago').className).toContain('text-meta');
   });
 
+  it('keeps the cost badge in the card, revealed on hover or focus', () => {
+    hooks.cost = 1.25;
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(
+      document.querySelector('[title="Session spend: $1.25 (excludes summarizer)"]'),
+    ).not.toBeNull();
+  });
+
   it('singularizes the agent count label at one agent', () => {
     hooks.agents = [{}];
     render(<StageBoardCard session={session} nav={nav} />);

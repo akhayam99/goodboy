@@ -341,7 +341,7 @@ export const StageBoardCard = memo(function StageBoardCard({
             <CostBadge
               value={sessionCost}
               title={`Session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
-              className="shrink-0 text-meta text-faint-foreground"
+              className="hidden shrink-0 text-meta text-faint-foreground group-hover/session-card:inline group-focus-within/session-card:inline"
             />
           )}
           {age && <span className="shrink-0 text-meta text-faint-foreground">{age}</span>}

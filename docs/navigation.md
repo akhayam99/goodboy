@@ -11,19 +11,20 @@
   (needs you / running / in review / building / done). You reach chat, diff,
   terminal and open-in-IDE from the cards. You never land on them. Every
   capability stays one step away.
-- **The board frame.** The header has the pane title grade (`Board` plus a
-  session count), with its actions on the right. Header and columns sit in one
+- **The board frame.** The header has the pane title grade (`Board` alone, no
+  total: each column carries its own count), with its actions on the right.
+  The Ongoing row shows only while the workspace tracks a task. Header and columns sit in one
   centred frame with a maximum width, so a wide or zoomed-out window never
   stretches the board. Every column has one fixed width, and the board scrolls
-  sideways when they do not fit. Empty columns show their header and a short
-  hint. Done and Archived fold into a dock at the end of the board: one icon
+  sideways when they do not fit. Empty columns show their header and one line naming
+  what is missing. Done and Archived fold into a dock at the end of the board: one icon
   per column with its count, widening to name them on hover or focus. A click
   opens the column just before the dock, and its header button folds it back.
   The dock stays pinned to the right edge while the board scrolls, and the
   folded state is remembered per workspace, both folded by default. Folding
   Archived clears its selection; folding Done keeps it. Cards have one fixed height: a goal of up
   to two lines (the full goal in the tooltip) is the card's one button, and the
-  lifecycle menu shows next to the quick actions on hover or focus. Restoring
+  lifecycle menu and the cost show next to the quick actions on hover or focus. Restoring
   an archived card uses the `restore` glyph.
 - **An archived session is read-only until Restore.** Its overview shows an
   Archived chip with an inline Restore. The composer, new agents, workflows and
