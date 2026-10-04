@@ -9,6 +9,7 @@ import { SETTINGS_WORKSPACE, seedSettingsBase } from './settingsSeed';
 import { SettingsToastProbe } from './SettingsToastProbe';
 import { StudioFrame } from '../../../StudioFrame';
 import { StudioFrame as SceneStudioFrame } from '../StudioFrame';
+import { installSettingsInvokeMocks } from './installSettingsInvokeMocks';
 
 const noop = () => undefined;
 
@@ -23,6 +24,7 @@ export const SettingsFrame = ({ focus, hasWorkspace = true, seed = noop }: Props
   const [current, setCurrent] = useState<SettingsFocus>(focus);
   const changeScope = (change: SettingsScopeChange) => setCurrent(change);
   useEffect(() => {
+    installSettingsInvokeMocks();
     seedSettingsBase();
     seed();
     setIsReady(true);

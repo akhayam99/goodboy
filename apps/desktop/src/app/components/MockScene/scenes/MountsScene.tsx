@@ -34,6 +34,7 @@ import { useHoveredMountRow, useShowCompletedMounts } from './sceneReveal';
 import { ShellFrame, seedShellChrome } from './shellChrome';
 import { sceneClock } from '../sceneClock';
 import { overviewFullSeed } from './overviewFullSeed';
+import { sceneParam } from './audit/sceneParams';
 
 const clock = sceneClock({ anchor: '2026-09-07T13:15:00.000Z' });
 
@@ -195,7 +196,7 @@ const EXTRA_SEEDS: ReadonlyArray<MountSeed> = [
   },
 ];
 
-type MountsVariant = 'mounts' | 'many' | 'refreshing' | 'full' | 'branch-tasks';
+type MountsVariant = 'mounts' | 'many' | 'refreshing' | 'full' | 'branch-tasks' | 'task-split';
 
 type Props = {
   readonly variant?: MountsVariant;
@@ -612,9 +613,50 @@ const BRANCH_TASKS: ReadonlyArray<SessionExternalTask> = [
   },
 ];
 
-export const MountsScene = ({ variant = 'mounts' }: Props) => {
+const TASK_SPLIT_TASKS: ReadonlyArray<SessionExternalTask> = [
+  {
+    sessionId: SESSION_ID,
+    provider: 'linear',
+    externalId: 'mock-mounts-split-hbl-412',
+    identifier: 'HBL-412',
+    url: 'https://example.invalid/linear/HBL-412',
+    title: 'Post each ledger entry once',
+    createdAt: NOW,
+  },
+  {
+    sessionId: SESSION_ID,
+    provider: 'linear',
+    externalId: 'mock-mounts-split-hbl-418',
+    identifier: 'HBL-418',
+    url: 'https://example.invalid/linear/HBL-418',
+    title: 'Replay postings after a timeout',
+    createdAt: NOW,
+  },
+  {
+    sessionId: SESSION_ID,
+    provider: 'linear',
+    externalId: 'mock-mounts-split-hbl-421',
+    identifier: 'HBL-421',
+    url: 'https://example.invalid/linear/HBL-421',
+    title: 'Backfill settlement boundaries',
+    createdAt: NOW,
+  },
+];
+
+const DEFAULT_VARIANT: MountsVariant =
+  sceneParam({ key: 'scene' }) === 'rail-ticket-ids' ||
+  sceneParam({ key: 'variant' }) === 'task-split'
+    ? 'task-split'
+    : 'mounts';
+
+export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
   const [isReady, setIsReady] = useState(false);
-  const seeds = variant === 'many' ? [...MOUNT_SEEDS, ...EXTRA_SEEDS] : MOUNT_SEEDS;
+  const seeds =
+    variant === 'many'
+      ? [...MOUNT_SEEDS, ...EXTRA_SEEDS]
+      : variant === 'task-split'
+        ? [MOUNT_SEEDS[2]].filter((seed) => seed !== undefined)
+        : MOUNT_SEEDS;
   const views = viewsOf(seeds);
 
   useEffect(() => {
@@ -629,7 +671,9 @@ export const MountsScene = ({ variant = 'mounts' }: Props) => {
       sessionSyncing: variant === 'refreshing' ? { [SESSION_ID]: true } : {},
       ...(variant === 'full' &&
         overviewFullSeed({ workspaceId: WORKSPACE_ID, sessionId: SESSION_ID, now: NOW })),
-      sessionActiveMount: { [SESSION_ID]: POSTINGS_MOUNT },
+      sessionActiveMount: {
+        [SESSION_ID]: variant === 'task-split' ? BACKFILL_MOUNT : POSTINGS_MOUNT,
+      },
       sessionActiveProject: { [SESSION_ID]: LEDGER_ID },
       mountBranchObservations: { [SESSION_ID]: [] },
       mountCleanupProposals: { [SESSION_ID]: [] },
@@ -706,27 +750,30 @@ export const MountsScene = ({ variant = 'mounts' }: Props) => {
       sessionEvents: { [SESSION_ID]: SESSION_EVENTS },
       loadSessionEvents: async () => undefined,
       sessionExternalTasks: {
-        [SESSION_ID]: [
-          {
-            sessionId: SESSION_ID,
-            provider: 'linear',
-            externalId: 'mock-mounts-hrb-2481',
-            identifier: 'HBL-391',
-            url: 'https://example.invalid/linear/HBL-391',
-            title: 'Ledger reconciliation rewrite',
-            createdAt: NOW,
-          },
-          {
-            sessionId: SESSION_ID,
-            provider: 'jira',
-            externalId: 'mock-mounts-ops-77',
-            identifier: 'LEDG-77',
-            url: 'https://example.invalid/jira/LEDG-77',
-            title: 'Notify relay floods the webhook provider',
-            createdAt: NOW,
-          },
-          ...(variant === 'branch-tasks' ? BRANCH_TASKS : []),
-        ],
+        [SESSION_ID]:
+          variant === 'task-split'
+            ? TASK_SPLIT_TASKS
+            : [
+                {
+                  sessionId: SESSION_ID,
+                  provider: 'linear',
+                  externalId: 'mock-mounts-hrb-2481',
+                  identifier: 'HBL-391',
+                  url: 'https://example.invalid/linear/HBL-391',
+                  title: 'Ledger reconciliation rewrite',
+                  createdAt: NOW,
+                },
+                {
+                  sessionId: SESSION_ID,
+                  provider: 'jira',
+                  externalId: 'mock-mounts-ops-77',
+                  identifier: 'LEDG-77',
+                  url: 'https://example.invalid/jira/LEDG-77',
+                  title: 'Notify relay floods the webhook provider',
+                  createdAt: NOW,
+                },
+                ...(variant === 'branch-tasks' ? BRANCH_TASKS : []),
+              ],
       },
       sessionGithub: { [SESSION_ID]: { ...EMPTY_GITHUB, pr: POSTINGS_PR } },
       sessionProjectPrs: {
