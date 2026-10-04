@@ -362,20 +362,7 @@ export const WizardFrame = ({
                 </p>
               ) : null}
             </div>
-            <FormActions
-              reason={actions.hint}
-              leading={
-                step === 'welcome' ? (
-                  <button
-                    type="button"
-                    onClick={() => close()}
-                    className="rounded-md px-1 py-1 text-label text-faint-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                  >
-                    I&apos;ve used Goodboy before: skip setup
-                  </button>
-                ) : null
-              }
-            >
+            <FormActions reason={actions.hint}>
               {isFirstStep ? null : (
                 <Button
                   variant="ghost"

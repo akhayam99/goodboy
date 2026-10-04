@@ -28,7 +28,7 @@ const hostLine = ({
   if (host === 'github') {
     return isConnected && githubIdentity !== null
       ? `Signed in as ${githubIdentity}.`
-      : "With GitHub's own tool, or a personal API key.";
+      : 'The GitHub CLI or an API key.';
   }
   if (host === 'gitlab') {
     return 'gitlab.com or your own server, with a token.';
@@ -72,7 +72,7 @@ export const CodeHostStep = ({
     <div className="flex flex-col gap-5">
       <StepHeading
         title="Where does your code live?"
-        line="Goodboy pushes branches and opens pull requests there. Skip it if you only want to try things."
+        line="Goodboy pushes branches and opens pull requests there."
       />
       {originHost !== null && connected[originHost] && (
         <Notice
