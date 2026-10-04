@@ -26,7 +26,7 @@ import type { TimelineLaneControl } from './TimelineRail';
 import { TimelineRunStreamRow } from './TimelineRunStreamRow';
 import { TimelineStreamRow, type TimelineRowAction } from './TimelineStreamRow';
 
-const BATCH_CHILD_OPEN_LABEL = 'Open brief';
+const BATCH_CHILD_OPEN_LABEL = 'Open fix run';
 
 export type TimelineEntryRowHandlers = {
   readonly openTargetFor: (params: {

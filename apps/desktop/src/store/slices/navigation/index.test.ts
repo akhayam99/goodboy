@@ -375,7 +375,7 @@ describe('navigation slice', () => {
     expect(store.getState().selectedAgentId[S1]).toBe(RESOLVER);
   });
 
-  it('opens a resolver as its transcript layer over the comment in Review', () => {
+  it('opens a resolver as a Fix run under its Branch', () => {
     const store = makeStore();
     store.setState({
       sessionResolveAttempts: {
@@ -387,7 +387,7 @@ describe('navigation slice', () => {
     expect(keyOf(store)).toBe(`s/${S1}/review/t/gh:PRRT_42/agent`);
     expect(store.getState().selectedAgentId[S1]).toBe(RESOLVER);
     store.getState().up();
-    expect(keyOf(store)).toBe(`s/${S1}/branch/comments/t/gh:PRRT_42`);
+    expect(keyOf(store)).toBe(`s/${S1}/branch/comments`);
     expect(store.getState().drawer).toBeNull();
   });
 
@@ -447,7 +447,7 @@ describe('navigation slice', () => {
     expect(keyOf(store)).toBe(`s/${S1}/review/t/gh:PRRT_42/agent/brief`);
   });
 
-  it('addresses the resolver page under its comment and goes back to the open comment', () => {
+  it('addresses the Fix run under its Branch and goes up to its Comments', () => {
     const store = makeStore();
     const conversation = {
       kind: 'conversation' as const,
@@ -471,11 +471,11 @@ describe('navigation slice', () => {
     expect(store.getState().drawer).toBeNull();
 
     store.getState().up();
-    expect(keyOf(store)).toBe(`s/${S1}/branch/comments/t/gh:PRRT_42`);
+    expect(keyOf(store)).toBe(`s/${S1}/branch/comments`);
     expect(store.getState().selectedAgentId[S1]).toBeNull();
   });
 
-  it('goes up from a resolver page reached from elsewhere to the queue with its comment', () => {
+  it('goes up from a Fix run reached from elsewhere to the Comments of its Branch', () => {
     const store = makeStore();
     store.setState({
       sessionResolveAttempts: {
@@ -487,7 +487,7 @@ describe('navigation slice', () => {
     });
     store.getState().up();
 
-    expect(keyOf(store)).toBe(`s/${S1}/branch/comments/t/gh:PRRT_42`);
+    expect(keyOf(store)).toBe(`s/${S1}/branch/comments`);
     expect(store.getState().drawer).toBeNull();
   });
 
@@ -869,7 +869,7 @@ describe('Branch page', () => {
     expect(keyOf(store)).toBe(`s/${S1}/branch/commits:${MOUNT}`);
   });
 
-  it('sends Up from a Fix run to its comment on the Branch', () => {
+  it('sends Up from a Fix run to the Comments of its Branch', () => {
     const store = makeStore();
     store.setState({
       sessionResolveAttempts: {
@@ -878,7 +878,7 @@ describe('Branch page', () => {
     });
     store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: RESOLVER }) });
     store.getState().up();
-    expect(branchOf(store)).toMatchObject({ tab: 'comments', threadId: 'thread-9' });
+    expect(branchOf(store)).toMatchObject({ tab: 'comments', threadId: null });
   });
 
   it('restores a saved place that still names a former lens at the Branch address', () => {

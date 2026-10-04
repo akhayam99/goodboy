@@ -250,16 +250,11 @@ describe('useSessionCrumbs', () => {
     expect(labelsOf(null, ADHOC_AGENT_ID)).toEqual(['Overview', 'Agents', 'scout one']);
   });
 
-  it('gives a resolver opened from the feed the review home as parent, named Resolver', () => {
-    expect(labelsOf(null, RESOLVER_AGENT_ID)).toEqual(['Overview', 'Branch', 'Resolver']);
+  it('gives a resolver opened from the feed the Branch as parent, named Fix run', () => {
+    expect(labelsOf(null, RESOLVER_AGENT_ID)).toEqual(['Overview', 'Branch', 'Fix run']);
   });
 
-  it('asks for the resolve rows only when a resolver thread is selected', () => {
-    labelsOf(null, STEP_AGENT_ID);
-    expect(queueCalls.length).toBeGreaterThan(0);
-    expect(queueCalls.every((call) => call.isEnabled === false)).toBe(true);
-
-    queueCalls.length = 0;
+  it('asks for the resolve rows only when a comment is open on the Branch', () => {
     store.state = {
       ...store.state,
       sessionResolveAttempts: {
@@ -267,6 +262,19 @@ describe('useSessionCrumbs', () => {
       },
     };
     labelsOf(null, RESOLVER_AGENT_ID);
+    expect(queueCalls.length).toBeGreaterThan(0);
+    expect(queueCalls.every((call) => call.isEnabled === false)).toBe(true);
+
+    queueCalls.length = 0;
+    store.state = { ...store.state, selectedAgentId: {} };
+    store.state = {
+      ...store.state,
+      activeLens: { [SESSION_ID]: 'branch' },
+      branchTab: { [SESSION_ID]: 'comments' },
+      branchThreadId: { [SESSION_ID]: 'thread-1' },
+      diffFocus: {},
+    };
+    renderHook(() => useSessionCrumbs({ session }));
     expect(queueCalls.every((call) => call.isEnabled === true)).toBe(true);
   });
 

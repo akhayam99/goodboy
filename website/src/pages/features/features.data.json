@@ -648,10 +648,10 @@
           "also": "failed drafts"
         },
         {
-          "title": "Manage a resolve from its Brief",
-          "text": "Click a resolve in Activity to see the comment, the fix and the reply. Accept, edit, reply or skip, then push exactly that fix.",
+          "title": "See what a resolve did",
+          "text": "Click a resolve in Activity to see what it did, its commits and the comments it touched. Accept, reply and push stay in Comments.",
           "group": "Review, resolve and pull requests",
-          "also": "resolve brief"
+          "also": "fix run"
         },
         {
           "title": "Fixes already on the branch",

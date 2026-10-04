@@ -643,10 +643,8 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   (a squash merge), in the menu and in the Diff header alike
   (`isMountRequestMerged`). It never
   turns into an icon. A Diff opened without a branch lands on the active mount.
-- **The resolver's page reads Review, the comment, Resolver.** The comment segment
-  (`retryPolicy.ts:42`) lists the open conversations by file, resolved ones
-  apart, with `Open on GitHub` and `Copy link`; `Resolver` lists the attempts on
-  that comment.
+- **A resolver run reads Session, Branch, Fix run.** The `Branch ▾` segment
+  leads back to the Comments tab; `Fix run` is the open page and has no menu.
 - **Settings claims its studio band** with Settings, the scope and the App
   section. The scope segment lists App, the workspace, Providers & models and
   Tools; the section segment lists the App sections. Neither carries an
@@ -1377,30 +1375,30 @@ pull request`) and Comments lists the session's notes. Every door to a pull
   home is that comment, never the Agents lens. The comment shows its agent in
   one line from the first paint (model, age, the state word, and while it
   drafts the last thing it said). `…` → Agent transcript opens the resolver as
-  a child page of its thread on the Branch (`s/{session}/review/t/{thread}/agent`), and so do a
-  notification, the agent-started toast and the palette (`canonicalLocation`
-  maps the resolver to the first thread of its attempt). A resolver opens on its
-  Brief, with Transcript one tab away; a click on a resolver row in Activity
-  says **Open brief**. The agent pane tab is part of the address: the thread
-  target carries `pane: 'brief' | 'transcript'`, `agentPlace({ sessionId,
-agentId, pane })` asks for either, and the address prints it as a last
-  segment (`.../agent/brief`). Without a `pane` the pane picks its own tab
-  (`agentOpenTab`: an open question or a resolver opens on Brief, any other
-  agent on Transcript). The key `agentPane` is written only by the navigation
-  slice, follows the page like the other targets, and comes back with Back and
-  a window restore. Tab clicks inside the pane stay local and do not rewrite
-  the address. The Brief of a resolver carries the comment, the fix and the
-  reply with the same verbs as Review (both use `useReviewCommentController`),
-  and **Push now** pushes only that fix. The Brief is never blank: it reads
-  every queue row of the session, not only the rows of the selected review
-  source (`useReviewEntries({ isSourceScoped: false })`), so a thread of another
-  pull request still shows its comment (from the source snapshot when the
-  pull request is not loaded), its state in plain words and the resolver
-  commit. A thread that is on another source offers **Open in Review** instead
-  of **Push now**; a thread that is gone says so in one line and offers the
-  same button; while the session loads it says it is loading. A resolver that belongs to a batch has
-  no verbs there, only **Open in Review (N)**, which calls `openReview` with
-  the destination `{ kind: 'threads', threadIds }`. That destination needs no
+  a Fix run, a child page of its Branch (the address keeps the thread of its
+  attempt, `s/{session}/review/t/{thread}/agent`), and so do a notification, the
+  agent-started toast and the palette (`canonicalLocation` maps the resolver to
+  the first thread of its attempt). The trail reads `Session › Branch ▾ › Fix
+run` and Up goes to the Comments tab. The page is read only (`FixRun`) and has
+  three parts in one 960 column: what the run did (its outcome, from the last
+  reply when it left no summary), its commits (`ResolverCommitLine`, with a note
+  when a later rewrite folded the commit into another or dropped it from the
+  branch), and the comments it touched, each a link to that comment on the
+  Comments tab. A run that belongs to a batch also says how many comments were
+  fixed together and opens them filtered in Comments. `Open transcript` and the
+  Transcript tab show the conversation. Accepting, replying, editing and Push
+  live in Comments, never here. In Activity a resolver row says **Open fix
+  run**, and a burst row of several resolvers has an **Open comments** button
+  that calls `openReview` with the destination `{ kind: 'threads', threadIds }`.
+  The agent pane tab is part of the address: the thread
+  target carries `pane: 'brief' | 'transcript'` (`brief` is the Fix run tab),
+  `agentPlace({ sessionId, agentId, pane })` asks for either, and the address
+  prints it as a last segment (`.../agent/brief`). Without a `pane` the pane
+  picks its own tab (`agentOpenTab`: an open question or a resolver opens on
+  Brief, any other agent on Transcript). The key `agentPane` is written only by
+  the navigation slice, follows the page like the other targets, and comes back
+  with Back and a window restore. Tab clicks inside the pane stay local and do
+  not rewrite the address. The `threads` destination needs no
   mount and no pull request: Review focuses the first thread of the set it
   has, and the set stays in `reviewSelections[sessionId]`. The destination
   `{ kind: 'notes', threadIds }` does the same for diff notes and first sets
@@ -1614,7 +1612,7 @@ opens in the browser). It shows unified and wrapped, and a worktree peek offers
 `diff-notes` is the notes summary of the Diff lens: the notes grouped by state
 (Not started, Working, Needs you, Ready to accept, Failed, and Done folded),
 each with file and line, a one-line excerpt, the model, effort and commit style
-of its fixer, and Fix or Open brief. `Open in Review` sits in its header. The
+of its fixer, and Fix or Open fix run. `Open in Review` sits in its header. The
 count in the diff toolbar opens it, and Start in the fix strip opens it too. It
 reads the notes, their queue items and their attempts only (`useNoteFixes`),
 never the rows of the pull request.

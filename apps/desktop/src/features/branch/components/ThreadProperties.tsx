@@ -3,7 +3,7 @@ import { Copy, ExternalLink } from 'lucide-react';
 import { IconButton, cn } from '@goodboy/ui';
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type { ResolveAttempt, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../store';
+import { agentPlace, useAppStore } from '../../../store';
 import { formatDuration } from '../../../shared/utils/time/formatDuration';
 import { useActionEnv } from '../../actions/useActionEnv';
 import { useObjectActions } from '../../actions/useObjectActions';
@@ -61,6 +61,8 @@ export const ThreadProperties = ({ sessionId, entry, layout }: Props) => {
         .sort((left, right) => left.createdAt - right.createdAt),
     [attempts, threadId],
   );
+  const navigate = useAppStore((s) => s.navigate);
+  const latestAttempt = threadAttempts.at(-1) ?? null;
   const sha = conversationSha({ row });
   const has = (id: string): boolean => actions.some((action) => action.id === id);
   const origin = originLabelOf({ entry });
@@ -136,6 +138,17 @@ export const ThreadProperties = ({ sessionId, entry, layout }: Props) => {
         <ThreadPropertyRow label="Author" layout={layout}>
           {row.reviewerNote.author}
         </ThreadPropertyRow>
+      )}
+      {latestAttempt !== null && (
+        <button
+          type="button"
+          onClick={() =>
+            navigate({ to: agentPlace({ sessionId, agentId: latestAttempt.agentId }) })
+          }
+          className={QUIET_LINK}
+        >
+          Open fix run
+        </button>
       )}
       {resolveWithoutReply !== undefined && (
         <button

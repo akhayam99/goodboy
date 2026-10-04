@@ -98,7 +98,6 @@ describe('hand-made notices and bare empty lines only ever shrink', () => {
           path.endsWith('/MoveReport/index.tsx') ||
           path.endsWith('/ThreadVerdictCard.tsx') ||
           path.endsWith('/SourceChangeCard.tsx') ||
-          path.endsWith('/AgentBriefResolver.tsx') ||
           path.endsWith('/NotesPanel.tsx') ||
           path.endsWith('/GoalTab.tsx') ||
           path.endsWith('/DescriptionSection/index.tsx') ||

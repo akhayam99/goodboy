@@ -4,7 +4,6 @@ export const REVIEW_FLOW_LABEL = {
   list: 'Comments',
   comment: 'Comment',
   proposedChange: 'Proposed change',
-  fix: 'Fix',
   agentAsks: 'The agent asks',
   resolver: 'Resolver',
   edited: 'Edited',
@@ -114,20 +113,23 @@ export const sharedFixLine = ({ count }: { readonly count: number }): string =>
     ? 'The same fix answers one more comment, accepted with this one:'
     : `The same fix answers ${count} more comments, accepted with this one:`;
 
-export const RESOLVER_BRIEF_COPY = {
-  pushNow: 'Push now',
-  openInReview: 'Open in Review',
+export const FIX_RUN_COPY = {
+  didHeading: 'What it did',
+  fromReply: 'from the last reply',
+  commitsHeading: 'Commits',
+  threadsHeading: 'Comments it touched',
   openTranscript: 'Open transcript',
-  loading: 'Loading the comment',
-  gone: 'This comment is no longer in Review.',
+  openBatch: 'Open them in Comments',
+  loading: 'Loading the commits',
+  noCommit: 'This run left no commit.',
+  gone: 'This comment is no longer on the branch.',
+  comment: 'Comment',
   commit: 'Commit',
   rewritten: 'no longer on this branch, it was squashed or rewritten',
+  foldedInto: ({ sha }: { readonly sha: string }): string => `Folded into ${sha.slice(0, 7)}`,
+  batch: ({ others }: { readonly others: number }): string =>
+    `Fixed together with ${others} more ${others === 1 ? 'comment' : 'comments'}.`,
 } as const;
-
-export const batchChildNotice = ({ total }: { readonly total: number }): string => {
-  const others = total - 1;
-  return `This comment was fixed with ${others} ${others === 1 ? 'other' : 'others'}. Accept and push them together in Review.`;
-};
 
 export const RECHECK_LABEL = {
   running: 'Re-checking',

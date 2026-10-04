@@ -12,6 +12,7 @@ const state = vi.hoisted(() => ({
   agentTurnState: {} as Record<string, { kind: string }>,
   agentPane: {} as Record<string, 'brief' | 'transcript' | null>,
   sessionOpenQuestions: {} as Record<string, ReadonlyArray<{ createdByAgentId?: string }>>,
+  sessionResolveAttempts: {} as Record<string, ReadonlyArray<unknown>>,
 }));
 
 const executedRouting = vi.hoisted(() => ({
@@ -21,6 +22,7 @@ const executedRouting = vi.hoisted(() => ({
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (value: typeof state) => T) => selector(state),
   useExecutedAgentRouting: () => executedRouting.value,
+  EMPTY_ARRAY: [],
 }));
 
 const detailTime = vi.hoisted(() => ({
@@ -44,6 +46,8 @@ vi.mock('../../../chat/components/ChatView', () => ({
   ChatView: () => <div>Transcript body</div>,
 }));
 vi.mock('./AgentBrief', () => ({ AgentBrief: () => <div>Brief body</div> }));
+vi.mock('./FixRun', () => ({ FixRun: () => <div>Fix run body</div> }));
+vi.mock('./AgentBriefHandoffLine', () => ({ AgentBriefHandoffLine: () => null }));
 vi.mock('./AgentHeaderStatus', () => ({
   AgentHeaderStatus: ({ status }: { readonly status: string }) => (
     <span>{status === 'running' ? 'Running' : status}</span>
@@ -83,6 +87,7 @@ beforeEach(() => {
     agentTurnState: {},
     agentPane: {},
     sessionOpenQuestions: {},
+    sessionResolveAttempts: {},
   });
   executedRouting.value = null;
   detailTime.value = undefined;
@@ -243,6 +248,24 @@ describe('AgentDetailPane', () => {
     );
 
     expect(screen.getByText('Brief body')).toBeDefined();
+    fireEvent.click(screen.getByRole('tab', { name: 'Transcript' }));
+    expect(screen.getByText('Transcript body')).toBeDefined();
+  });
+
+  it('shows a resolver that has an attempt as a Fix run with the transcript one tab away', () => {
+    const resolver = { ...agent, id: 'resolver-1' as AgentId, kind: 'resolver' } satisfies Agent;
+    state.sessionResolveAttempts = {
+      [session.id]: [{ agentId: resolver.id, threadIds: ['thread-1'], batchId: null }],
+    };
+
+    render(
+      <AgentDetailPane session={session} agent={resolver} isChatActive onBack={() => undefined} />,
+    );
+
+    expect(screen.getByText('Fix run body')).toBeDefined();
+    expect(screen.queryByText('Brief body')).toBeNull();
+    expect(screen.getByRole('tab', { name: 'Fix run' })).toBeDefined();
+    expect(screen.queryByRole('tab', { name: 'Brief' })).toBeNull();
     fireEvent.click(screen.getByRole('tab', { name: 'Transcript' }));
     expect(screen.getByText('Transcript body')).toBeDefined();
   });

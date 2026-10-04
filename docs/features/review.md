@@ -40,9 +40,9 @@ Know what each comment needs next. Each one shows a state like **Not started**, 
 
 Know why a draft failed and what to do next. The comment says why in plain words, shows the last command the agent ran and how it ended, and links to the transcript. Pick **Retry**, **Try another model** or **Add a hint**, and earlier attempts fold into one line above. When a push fails because the branch on origin moved, **Sync and try again** asks first, brings the new commits under yours, and stops without touching anything if they conflict.
 
-### Manage a resolve from its Brief
+### See what a resolve did
 
-Click a resolve in Activity and its Brief holds the comment, the fix and the reply, with **Accept**, **Edit**, **Reply** and **Skip**. The header chip reads the comment state, as Activity does, such as **Ready for you** or **Accepted**, not **Done**. After you accept, **Push now** pushes exactly that fix, after a confirm right under the header. If earlier local commits would go with it, the confirm lists them first. A resolve that fixed several comments together shows **Open in Review (N)** instead, and Review opens on the first of them.
+Click a resolve in Activity and its **Fix run** shows what the resolver did, the commits it made and the comments it touched, each a link to that comment. The header chip reads the comment state, as Activity does, such as **Ready for you** or **Accepted**, not **Done**. **Open transcript** shows the whole conversation. Accept, reply and push stay in the comment on the **Comments** tab, where **Push** names the commits that would go with a fix. A resolve that fixed several comments together says so, and **Open them in Comments** shows just those. A row in Activity that groups several resolves has **Open comments** for the same list.
 
 ### Fixes already on the branch
 

@@ -16,7 +16,6 @@ export type SessionBreadcrumbHandlers = {
   toRootAgent: () => void;
   toBranch?: () => void;
   toPullRequestHome: () => void;
-  toThread?: () => void;
 };
 
 export type BranchCrumbs = {
@@ -42,7 +41,6 @@ export type SessionBreadcrumbInput = {
   pullRequestModeLabel: string | null;
   pullRequestNumber?: number | null;
   branch?: BranchCrumbs | null;
-  selectedThreadLabel?: string | null;
   lensLabel: (lens: LensKind) => string;
   handlers: SessionBreadcrumbHandlers;
 };
@@ -91,7 +89,6 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     pullRequestModeLabel,
     pullRequestNumber = null,
     branch = null,
-    selectedThreadLabel = null,
     lensLabel,
     handlers,
   } = input;
@@ -166,7 +163,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
       selectedQuestionLabel == null
         ? {
             id: 'selected-child',
-            label: selectedChildHome === 'review' ? 'Resolver' : selectedChildLabel,
+            label: selectedChildHome === 'review' ? 'Fix run' : selectedChildLabel,
             ...agentIcon(selectedChildTone),
           }
         : { id: 'delegated-answers', label: 'Answers', icon: CONCEPT_ICONS.agents };
@@ -189,17 +186,6 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     }
 
     if (selectedChildHome !== 'workflows') {
-      const thread: BreadcrumbCrumb[] =
-        selectedChildHome === 'review' && selectedThreadLabel != null
-          ? [
-              {
-                id: 'review-thread',
-                label: selectedThreadLabel,
-                icon: CONCEPT_ICONS.comments,
-                ...(handlers.toThread !== undefined && { onClick: handlers.toThread }),
-              },
-            ]
-          : [];
       return sealLast([
         overview,
         selectedChildHome === 'review' && branch !== null
@@ -210,7 +196,6 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
               ...lensIcon({ lens: selectedChildHome }),
               onClick: () => handlers.toLens(selectedChildHome),
             },
-        ...thread,
         ...ancestors,
         selectedChild,
         ...question,

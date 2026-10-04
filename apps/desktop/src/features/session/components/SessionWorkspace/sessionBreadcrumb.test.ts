@@ -43,18 +43,17 @@ const labels = (crumbs: ReturnType<typeof buildSessionBreadcrumb>) => crumbs.map
 const last = (crumbs: ReturnType<typeof buildSessionBreadcrumb>) => crumbs[crumbs.length - 1];
 
 describe('buildSessionBreadcrumb', () => {
-  it('puts the comment between Review and the resolver type', () => {
+  it('names a resolver run Fix run under its lens', () => {
     const crumbs = buildSessionBreadcrumb(
       base(
         {
           selectedChildHome: 'review',
           selectedChildLabel: 'resolve: ana on retryPolicy.ts:42',
-          selectedThreadLabel: 'retryPolicy.ts:42',
         },
         makeHandlers(),
       ),
     );
-    expect(labels(crumbs)).toEqual(['Overview', 'review', 'retryPolicy.ts:42', 'Resolver']);
+    expect(labels(crumbs)).toEqual(['Overview', 'review', 'Fix run']);
   });
 
   it('ends the trail on the Branch when no thread, file or page is open', () => {
@@ -81,24 +80,19 @@ describe('buildSessionBreadcrumb', () => {
     expect(last(crumbs)?.onClick).toBeUndefined();
   });
 
-  it('reads the same Branch crumb on the Fix run trail, with the thread between', () => {
+  it('hangs the Fix run directly under the Branch', () => {
     const crumbs = buildSessionBreadcrumb(
       base(
         {
           selectedChildHome: 'review',
           selectedChildLabel: 'resolve: ana on page.tsx:21',
-          selectedThreadLabel: 'page.tsx:21',
           branch: { label: '#318 Ledger export', leaf: null },
         },
         makeHandlers(),
       ),
     );
-    expect(crumbs.map((crumb) => crumb.id)).toEqual([
-      'overview',
-      'branch',
-      'review-thread',
-      'selected-child',
-    ]);
+    expect(crumbs.map((crumb) => crumb.id)).toEqual(['overview', 'branch', 'selected-child']);
+    expect(last(crumbs)?.label).toBe('Fix run');
   });
 
   it('gives every crumb of a deep trail an icon, and agents their kind colour', () => {
@@ -205,7 +199,7 @@ describe('buildSessionBreadcrumb', () => {
     );
 
     expect(labels(adHoc)).toEqual(['Overview', 'agents', 'scout one']);
-    expect(labels(resolver)).toEqual(['Overview', 'review', 'Resolver']);
+    expect(labels(resolver)).toEqual(['Overview', 'review', 'Fix run']);
   });
 
   it('parents a step on its run no matter which lens the jump came from', () => {

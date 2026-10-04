@@ -10,7 +10,6 @@ import {
   agentPlace,
   sessionPlace,
 } from '../../../../store';
-import { resolverThread } from '../../../../store/slices/navigation/resolverThread';
 import { useResolveQueueRows } from '../../../resolve/hooks/useResolveQueueRows';
 import { threadLocationOf } from '../../../resolve/threadLocationOf';
 import { clipQuestionText, isQuestionDelegate } from '../../../context/questionDelegate';
@@ -65,26 +64,20 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
     (s) =>
       s.sessionSelectedPrNumber?.[sessionId] ?? s.sessionGithub?.[sessionId]?.pr?.number ?? null,
   );
-  const resolverThreadId = useAppStore((s) =>
-    selectedAgentId == null || selectedChildHome !== 'review'
-      ? null
-      : resolverThread({ state: s, sessionId, agentId: selectedAgentId as AgentId }),
-  );
   const branchThreadId = useAppStore((s) =>
     s.activeLens?.[sessionId] === 'branch' ? (s.branchThreadId?.[sessionId] ?? null) : null,
   );
-  const crumbThreadId = resolverThreadId ?? branchThreadId;
   const queueRows = useResolveQueueRows({
     sessionId,
-    isEnabled: crumbThreadId !== null,
+    isEnabled: branchThreadId !== null,
   });
   const selectedThreadLabel = useMemo(() => {
-    if (crumbThreadId === null) {
+    if (branchThreadId === null) {
       return null;
     }
-    const row = queueRows.find((candidate) => candidate.thread.threadId === crumbThreadId);
+    const row = queueRows.find((candidate) => candidate.thread.threadId === branchThreadId);
     return row === undefined ? 'Comment' : (threadLocationOf({ row })?.shortLabel ?? 'Comment');
-  }, [queueRows, crumbThreadId]);
+  }, [queueRows, branchThreadId]);
   const branchIdentity = useBranchIdentity({ sessionId });
   const branchTab = useAppStore((s) => s.branchTab?.[sessionId] ?? 'comments');
   const branchFilePath = useAppStore((s) => s.diffFocus?.[sessionId]?.path ?? null);
@@ -215,7 +208,6 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
             : null,
         pullRequestNumber: pullRequestMode === 'create_pr' ? null : pullRequestNumber,
         branch,
-        selectedThreadLabel,
         lensLabel: (kind: LensKind) => lensLabelFor({ lens: kind, isBranchless }),
         handlers: {
           toOverview: () => openLens({ sessionId, lens: null }),
@@ -258,18 +250,6 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
             });
           },
           toPullRequestHome: () => setPullRequestMode({ sessionId, mode: 'overview' }),
-          toThread: () => {
-            if (resolverThreadId === null) {
-              return;
-            }
-            navigate({
-              to: branchPlace({
-                sessionId,
-                mountPath: branchIdentity.mountPath,
-                threadId: resolverThreadId,
-              }),
-            });
-          },
         },
       }),
     [
@@ -294,8 +274,6 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       branch,
       branchIdentity.mountPath,
       branchTab,
-      selectedThreadLabel,
-      resolverThreadId,
       parentAgentId,
       rootAgentId,
       isBranchless,
