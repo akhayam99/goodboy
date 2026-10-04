@@ -11,6 +11,7 @@ import {
 import type { AgentId, OpenQuestionId, SessionId, WorkflowRun } from '@goodboy/types';
 import { isAgentStatusHalted } from '@goodboy/core';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { NAMES } from '../../../shared/names';
 import { sessionPlace } from '../../../store/slices/navigation/place';
 import { notifyWorkflowGateBlock } from '../../../store/slices/workflows/notifyWorkflowGateBlock';
 import { resolveWorkflowAdvance } from '../../workflows/advanceGate';
@@ -275,15 +276,15 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
     },
     {
       id: 'workflowRun.discard',
-      label: 'Discard workflow',
+      label: NAMES.archiveWorkflow,
       icon: Ban,
       group: 'danger',
       when: ({ facts }) => facts.state !== 'discarded',
       confirm: () => ({
-        title: 'Discard workflow?',
+        title: 'Archive this workflow?',
         description:
-          'Moves the run to Discarded, where you can restore it. Agents already started stay in the session.',
-        confirmLabel: 'Discard',
+          'Hides the run, and you can restore it. Agents already started stay in the session.',
+        confirmLabel: 'Archive',
         role: 'alert',
       }),
       run: ({ facts, env }) => env.getState().discardWorkflow(facts.sessionId, facts.run.id),

@@ -204,17 +204,17 @@ describe('resolveOrchestratorState', () => {
     );
   });
 
-  it('reads a spend limit stop in its own words', () => {
+  it('reads a spend cap stop in its own words', () => {
     const state = resolve({
       run: makeRun({
         orchestrationStop: {
           kind: 'budget',
-          message: 'Paused at the $10.00 spend limit for this session.',
+          message: 'Paused at the $10.00 spend cap for this session.',
         },
       }),
     });
 
-    expect(state.sentence).toBe('Paused at the $10.00 spend limit for this session.');
+    expect(state.sentence).toBe('Paused at the $10.00 spend cap for this session.');
     expect(state.detail).toBeNull();
   });
 

@@ -48,10 +48,10 @@ describe('workflowStartGate', () => {
     });
   });
 
-  it('keeps an invalid spend limit from starting a run in silence', () => {
+  it('keeps an invalid spend cap from starting a run in silence', () => {
     expect(workflowStartGate({ ...ready, mode: 'dynamic', isSpendLimitValid: false })).toEqual({
       isDisabled: true,
-      reason: 'Enter a valid spend limit to start',
+      reason: 'Enter a valid spend cap to start',
     });
   });
 

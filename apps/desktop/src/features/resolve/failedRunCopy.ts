@@ -1,7 +1,8 @@
+import { NAMES } from '../../shared/names';
 import type { ResolveFailedStep, ResolveRowAction } from './resolveRowState';
 
 export const FAILED_RUN_COPY = {
-  tryAgain: 'Try again',
+  retry: NAMES.retry,
   anotherModel: 'Try another model',
   addHint: 'Add a hint',
   hintLabel: 'What should the agent do differently?',
@@ -23,16 +24,16 @@ export const tryAgainLabel = ({
   readonly hasHint: boolean;
 }): string => {
   if (hasHint) {
-    return 'Try again with the hint';
+    return `${NAMES.retry} with the hint`;
   }
-  return modelName === null ? FAILED_RUN_COPY.tryAgain : `Try again on ${modelName}`;
+  return modelName === null ? FAILED_RUN_COPY.retry : `${NAMES.retry} on ${modelName}`;
 };
 
 const ROW_ACTION_VERB: Record<ResolveRowAction, string> = {
   resolve: 'Draft a fix',
   answer: 'Answer',
   review: 'Review',
-  retry: 'Try again',
+  retry: NAMES.retry,
   retry_reply: 'Post the reply again',
   open_github: 'Open on GitHub',
   resume: 'Resume',

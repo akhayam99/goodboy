@@ -117,7 +117,7 @@ describe('TimelineRowMarker', () => {
       />,
     );
 
-    expect(nodeOf({ label: 'Waiting on your answer' }).textContent).toBe('?');
+    expect(nodeOf({ label: 'Needs you' }).textContent).toBe('?');
   });
 
   it('spins a deciding run in its own identity colour', () => {

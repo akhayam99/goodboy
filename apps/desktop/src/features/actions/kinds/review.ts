@@ -1,6 +1,7 @@
 import { ArrowUp, Cpu, MessageSquarePlus, RotateCw } from 'lucide-react';
 import type { DiffComment, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { NAMES } from '../../../shared/names';
 import { sessionPlace } from '../../../store/slices/navigation/place';
 import { isOpenNote, noteThreadId } from '../../resolve/notes/noteThread';
 import {
@@ -165,7 +166,7 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
     },
     {
       id: 'review.retryLoad',
-      label: 'Try again',
+      label: NAMES.retry,
       icon: RotateCw,
       group: 'act',
       when: ({ facts }) => facts.isError,

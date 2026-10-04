@@ -359,9 +359,7 @@ describe('RunTree', () => {
     const asked = question('oq-1', implement.id);
     renderTree({ questions: [asked], onAnswer });
 
-    expect(
-      within(rowOf('agent-2')).getByRole('img', { name: 'Waiting on your answer' }),
-    ).toBeDefined();
+    expect(within(rowOf('agent-2')).getByRole('img', { name: 'Needs you' })).toBeDefined();
     expect(within(rowOf('agent-2')).getByTestId('timeline-row-state').getAttribute('title')).toBe(
       'Needs your answer',
     );
@@ -379,9 +377,7 @@ describe('RunTree', () => {
       questions: [question('oq-1', 'child-1' as AgentId)],
     });
 
-    expect(
-      within(rowOf('child-1')).getByRole('img', { name: 'Waiting on your answer' }),
-    ).toBeDefined();
+    expect(within(rowOf('child-1')).getByRole('img', { name: 'Needs you' })).toBeDefined();
     expect(within(rowOf('agent-2')).getByRole('img', { name: 'Running' })).toBeDefined();
   });
 
@@ -397,7 +393,7 @@ describe('RunTree', () => {
     });
 
     expect(within(rowOf('child-1')).getByText('answering for Implement')).toBeDefined();
-    expect(screen.queryByRole('img', { name: 'Waiting on your answer' })).toBeNull();
+    expect(screen.queryByRole('img', { name: 'Needs you' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Answer' })).toBeNull();
   });
 

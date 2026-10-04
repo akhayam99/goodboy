@@ -275,7 +275,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     },
     lands: lens(null),
   }),
-  pressRow({ id: 'lens.workflows', lands: both(lens('workflows'), () => heading('Workflows')) }),
+  pressRow({ id: 'lens.workflows', lands: both(lens('workflows'), () => heading('Runs')) }),
   pressRow({ id: 'lens.agents', lands: both(lens('agents'), () => heading('Agents')) }),
   pressRow({ id: 'lens.review', lands: both(lens('review'), () => heading('Review')) }),
   pressRow({ id: 'lens.questions', lands: both(lens('questions'), () => heading('Questions')) }),

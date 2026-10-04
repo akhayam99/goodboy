@@ -20,13 +20,13 @@ describe('failedRunCopy', () => {
 
   it('names the push when the failed step is the push', () => {
     expect(failedVerbOf({ step: 'push', action: 'retry' })).toBe('Push again');
-    expect(failedVerbOf({ step: 'run', action: 'retry' })).toBe('Try again');
+    expect(failedVerbOf({ step: 'run', action: 'retry' })).toBe('Retry');
     expect(failedVerbOf({ step: 'uncertain', action: 'open_github' })).toBe('Open on GitHub');
   });
 
   it('follows the picked model and the hint in the primary label', () => {
-    expect(tryAgainLabel({ modelName: null, hasHint: false })).toBe('Try again');
-    expect(tryAgainLabel({ modelName: 'Opus 5', hasHint: false })).toBe('Try again on Opus 5');
-    expect(tryAgainLabel({ modelName: 'Opus 5', hasHint: true })).toBe('Try again with the hint');
+    expect(tryAgainLabel({ modelName: null, hasHint: false })).toBe('Retry');
+    expect(tryAgainLabel({ modelName: 'Opus 5', hasHint: false })).toBe('Retry on Opus 5');
+    expect(tryAgainLabel({ modelName: 'Opus 5', hasHint: true })).toBe('Retry with the hint');
   });
 });

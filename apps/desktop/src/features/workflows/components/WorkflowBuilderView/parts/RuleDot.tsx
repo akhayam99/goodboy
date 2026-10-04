@@ -1,11 +1,12 @@
 import { Tooltip } from '@goodboy/ui';
+import { NAMES } from '../../../../../shared/names';
 
 type Props = {
   readonly ruleValue: string;
 };
 
 export const RuleDot = ({ ruleValue }: Props) => {
-  const text = `Rules: ${ruleValue} · From: Workflow rules`;
+  const text = `${NAMES.runDefaults}: ${ruleValue}`;
   return (
     <Tooltip content={text}>
       <span

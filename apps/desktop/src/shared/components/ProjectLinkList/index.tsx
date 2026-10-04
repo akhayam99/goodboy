@@ -3,6 +3,7 @@ import { NewProjectForm } from '../NewProjectForm';
 import type { Project, WorkspaceId } from '@goodboy/types';
 import type { ProjectAttachConflict } from '../../../store/slices/projects/addProject';
 import { useProjectLinking } from '../../hooks/useProjectLinking';
+import { NAMES } from '../../names';
 import { DetectedRepoList } from '../DetectedRepoList';
 import { ProjectAdoptionNotice } from '../ProjectAdoptionNotice';
 import { ProjectAddPopover } from './ProjectAddPopover';
@@ -150,7 +151,7 @@ export const ProjectLinkList = ({
           disabled={linking.busy}
           className="self-start text-label font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
         >
-          Link a plain folder (no git)
+          {NAMES.addPlainFolder} (no git)
         </button>
       )}
 

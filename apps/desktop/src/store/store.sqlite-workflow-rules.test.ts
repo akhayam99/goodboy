@@ -614,7 +614,7 @@ describe('store on sqlite: standing guidance', () => {
     turns[1]?.finish();
     await test.finished;
 
-    expect(promptOf('Implement')).toContain(`**Standing guidance**\n${GUIDANCE}`);
+    expect(promptOf('Implement')).toContain(`**Guidance**\n${GUIDANCE}`);
     expect(promptOf('Test')).toContain('Test the retry changes in payments-api');
     expect(promptOf('Test')).not.toContain('Never run the integration tests');
   });
@@ -626,7 +626,7 @@ describe('store on sqlite: standing guidance', () => {
     turns[0]?.finish();
     await test.finished;
 
-    expect(promptOf('Test')).toContain('**Standing guidance**');
+    expect(promptOf('Test')).toContain('**Guidance**');
   });
 
   it('adds nothing when the guidance is empty', async () => {
@@ -637,6 +637,6 @@ describe('store on sqlite: standing guidance', () => {
     await implement.finished;
 
     expect(promptOf('Implement')).toContain('Implement the retry changes in payments-api');
-    expect(promptOf('Implement')).not.toContain('Standing guidance');
+    expect(promptOf('Implement')).not.toContain('**Guidance**');
   });
 });

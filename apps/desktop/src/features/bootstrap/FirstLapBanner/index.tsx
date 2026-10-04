@@ -117,7 +117,7 @@ export const FirstLapBanner = ({ sessionId }: Props) => {
           body="You can keep working here. Publishing needs the remote to answer."
           actions={
             <Button variant="secondary" size="sm" onClick={retry}>
-              Try again
+              Retry
             </Button>
           }
         />

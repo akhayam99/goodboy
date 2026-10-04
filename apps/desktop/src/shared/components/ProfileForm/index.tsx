@@ -3,6 +3,7 @@ import { Eye } from 'lucide-react';
 import { matchRoleLibrary } from '@goodboy/core';
 import type { WorkspaceProfile } from '@goodboy/types';
 import { Textarea } from '@goodboy/ui';
+import { NAMES } from '../../names';
 import { ICON_SIZE } from '../conceptIcons';
 import { ChipsInput } from './ChipsInput';
 import { ProfileAccessPopover } from './ProfileAccessPopover';
@@ -54,9 +55,9 @@ export const ProfileForm = ({ value, disabled = false, onChange, onCommit, learn
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
-        <span className="text-label font-medium text-muted-foreground">Your roles</span>
+        <span className="text-label font-medium text-muted-foreground">{NAMES.yourJob}</span>
         <ChipsInput
-          label="Your roles"
+          label={NAMES.yourJob}
           values={value.roles}
           placeholder="Type a role, like Tech Lead"
           disabled={disabled}

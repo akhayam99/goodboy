@@ -233,7 +233,7 @@ describe('UsageGroup', () => {
     render(<UsageGroup providerId="anthropic" billing="plan" planLabel={null} />);
 
     screen.getByText("Couldn't check Claude usage.");
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(state.refreshClaudeUsage).toHaveBeenCalled();
     state.providerLimitsProbe = {};
   });

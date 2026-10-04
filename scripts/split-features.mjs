@@ -29,7 +29,7 @@ const AREAS = [
     ['Resolve', 'Review sources', 'Close on GitHub', 'Diff'],
   ],
   ['board', 'The board', ['Stage board', 'Session card']],
-  ['workflows', 'Workflows', ['Workflow builder', 'Orchestrated', 'Workflow run', 'Spend limit']],
+  ['workflows', 'Workflows', ['Workflow builder', 'Orchestrated', 'Workflow run', 'Spend cap']],
   [
     'inbox',
     'Inbox and your tools',

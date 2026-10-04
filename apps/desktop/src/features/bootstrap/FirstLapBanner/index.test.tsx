@@ -124,7 +124,7 @@ describe('FirstLapBanner', () => {
 
     screen.getByText("Couldn't check the remote");
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     });
 
     await waitFor(() => screen.getByRole('button', { name: 'Move my work' }));

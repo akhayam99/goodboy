@@ -3,6 +3,7 @@ import { Folder, FolderGit2, Unplug, X } from 'lucide-react';
 import type { Project } from '@goodboy/types';
 import { Chip, InlineConfirm, Tooltip } from '@goodboy/ui';
 import { ICON_SIZE } from '../conceptIcons';
+import { NAMES } from '../../names';
 
 type Props = {
   readonly project: Project;
@@ -33,10 +34,10 @@ export const ProjectLinkRow = ({ project, busy, onUnlink }: Props) => {
           </span>
           <span className="block truncate text-code text-muted-foreground">{project.rootPath}</span>
         </span>
-        <Tooltip content={`Unlink ${project.name}`} anchorClassName="shrink-0">
+        <Tooltip content={`${NAMES.removeLink} to ${project.name}`} anchorClassName="shrink-0">
           <button
             type="button"
-            aria-label={`Unlink ${project.name}`}
+            aria-label={`${NAMES.removeLink} to ${project.name}`}
             disabled={busy}
             onClick={() => setConfirming(true)}
             className="rounded-md p-1 text-faint-foreground hover:bg-hover hover:text-foreground"
@@ -49,9 +50,9 @@ export const ProjectLinkRow = ({ project, busy, onUnlink }: Props) => {
         <InlineConfirm
           role="danger"
           icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
-          title={`Unlink ${project.name}?`}
+          title={`${NAMES.removeLink} to ${project.name}?`}
           description="The folder stays on disk. Link it again any time."
-          confirmLabel="Unlink"
+          confirmLabel={NAMES.removeLink}
           isBusy={busy}
           onConfirm={async () => {
             await onUnlink({ project });

@@ -231,11 +231,11 @@ describe('resolveRunRowState', () => {
       },
     ],
     [
-      'R8 the spend limit paused it',
+      'R8 the spend cap paused it',
       { runOverrides: { orchestrationStop: { kind: 'budget', message: 'cap' }, spendLimitUsd: 5 } },
       {
         node: 'budget',
-        sentence: 'Paused at the $5.00 spend limit',
+        sentence: 'Paused at the $5.00 spend cap',
         tone: 'warning',
         ask: null,
       },
@@ -308,7 +308,7 @@ describe('resolveRunRowState', () => {
     ).toBe('waiting');
   });
 
-  it('prefers the answer over the next click and the spend limit', () => {
+  it('prefers the answer over the next click and the spend cap', () => {
     const state = runState({
       question: { question: QUESTION, stepLabel: '1' },
       advance: { kind: 'ready', step: STEP },
@@ -388,7 +388,7 @@ describe('rowStateShortSentence', () => {
   it.each<[RowStateReason, string]>([
     [{ kind: 'question', stepLabel: '2' }, 'Needs you'],
     [{ kind: 'ready', stepLabel: '3' }, 'Step 3 ready'],
-    [{ kind: 'budget', limitUsd: 12 }, 'At spend limit'],
+    [{ kind: 'budget', limitUsd: 12 }, 'At spend cap'],
     [{ kind: 'stepFailed', stepLabel: '4' }, 'Step 4 failed'],
     [{ kind: 'chained', afterTitle: 'Backfill the settled batches behind a flag' }, 'Chained'],
     [{ kind: 'deciding' }, 'Choosing next'],

@@ -46,17 +46,17 @@ const copyFor = ({ scenario, agentCount }: CopyParams): EmptyCopy => {
       return {
         eyebrow: 'workflow ready',
         title: 'Start the first step',
-        body: 'Type the goal below to shape the shared brief before the first agent runs.',
+        body: 'Type the goal below before the first agent runs.',
         hints: [
           <span key="goal">goal in 1-2 lines</span>,
-          <span key="brief">lands in the shared brief</span>,
+          <span key="brief">every new agent reads it</span>,
         ],
       };
     case 'fresh':
       return {
         eyebrow: 'fresh session',
         title: 'Populate the context',
-        body: 'What you type becomes the shared brief every new agent starts from.',
+        body: 'What you type becomes the goal every new agent starts from.',
         hints: [
           <span key="what">what to build</span>,
           <span key="limits">constraints and non-goals</span>,

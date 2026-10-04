@@ -22,6 +22,7 @@ import {
 import { useShallow } from 'zustand/react/shallow';
 import { ROLE_LABEL } from '../../../../session/agent-kind';
 import { useAppStore } from '../../../../../store';
+import { NAMES } from '../../../../../shared/names';
 import { useChatDefaultModel } from '../../../../../shared/hooks/useChatDefaultModel';
 import { ChatModelRow } from './ChatModelRow';
 import { RoleRow } from './RoleRow';
@@ -119,11 +120,11 @@ export const DefaultsPanel = ({ workspaceId, focusSection }: Props) => {
     <PaneShell
       scroll="body"
       animationClassName={SETTINGS_PANE_ENTRY}
-      title="Defaults"
+      title={NAMES.models}
       {...(pinnedCount > 0 && { meta: `${pinnedCount} pinned` })}
       actions={
         <OverflowMenu
-          label="Defaults actions"
+          label="Models actions"
           disabled={busy}
           items={[
             {

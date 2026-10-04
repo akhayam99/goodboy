@@ -3,6 +3,7 @@ import { AlertTriangle, Folder, FolderGit2 } from 'lucide-react';
 import type { Project, WorkspaceGitStatus } from '@goodboy/types';
 import { InlineConfirm, Tooltip } from '@goodboy/ui';
 import { ICON_SIZE } from '../conceptIcons';
+import { NAMES } from '../../names';
 import { ProjectRowActions } from './ProjectRowActions';
 import { ProjectRowEditor } from './ProjectRowEditor';
 import { ProjectStarToggle } from './ProjectStarToggle';
@@ -104,9 +105,9 @@ export const ProjectLinkCompactRow = ({
         <InlineConfirm
           role="danger"
           icon={<AlertTriangle size={ICON_SIZE.row} aria-hidden />}
-          title={`Unlink ${project.name}?`}
+          title={`${NAMES.removeLink} to ${project.name}?`}
           description="The folder stays on disk. Its sessions keep their history. Link it again any time."
-          confirmLabel="Unlink"
+          confirmLabel={NAMES.removeLink}
           isBusy={busy}
           onConfirm={async () => {
             await onUnlink({ project });

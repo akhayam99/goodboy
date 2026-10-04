@@ -66,7 +66,7 @@ describe('ReleaseNoticeBridge', () => {
     const onOpenChangelog = vi.fn();
     seed({ seen: 'v0.3.13' });
     mount({ onOpenChangelog });
-    fireEvent.click(screen.getByRole('button', { name: 'Read the changelog' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Read what changed' }));
     expect(focusChangelogRelease).toHaveBeenCalledWith({ version: '0.3.14' });
     expect(onOpenChangelog).toHaveBeenCalledTimes(1);
   });

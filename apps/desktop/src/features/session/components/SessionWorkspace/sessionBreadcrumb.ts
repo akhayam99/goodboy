@@ -1,6 +1,7 @@
 import type { BreadcrumbCrumb } from '../../breadcrumbCrumb';
 import { tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/names';
 import type { LensKind, SessionStudio } from '../../../../store';
 import type { AgentHomeLens } from '../../agent-kind';
 import { LENS_ICON, lensIconClass } from '../../lens-labels';
@@ -91,7 +92,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
   };
   const workflowsList: BreadcrumbCrumb = {
     id: 'workflows',
-    label: 'Workflows',
+    label: NAMES.runs,
     ...lensIcon({ lens: 'workflows' }),
     onClick: handlers.toWorkflowsList,
   };

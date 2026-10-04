@@ -70,7 +70,7 @@ describe('ProjectsStep', () => {
     fireEvent.change(screen.getByLabelText('Project path'), {
       target: { value: '/repos/storefront-web' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /add/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^add$/i }));
 
     await waitFor(() => screen.getByText('already in storefront-web with 4 sessions'));
 

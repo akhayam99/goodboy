@@ -7,7 +7,7 @@ const UNKNOWN_SCREEN = 'Unknown';
 const LENS_LABELS: Readonly<Record<string, string>> = {
   questions: 'Questions',
   agents: 'Agents',
-  workflows: 'Workflows',
+  workflows: 'Runs',
   review: 'Review',
   artifacts: 'Artifacts',
   scripts: 'Scripts',
@@ -43,7 +43,7 @@ const APP_STUDIO_LABELS: Readonly<Record<string, string>> = {
   'add-workspace': 'Add workspace',
   guide: 'Guide',
   companion: 'Companion',
-  changelog: 'Changelog',
+  changelog: "What's new",
   notifications: 'Notifications',
 };
 

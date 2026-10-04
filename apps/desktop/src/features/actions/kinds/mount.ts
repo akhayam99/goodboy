@@ -15,6 +15,7 @@ import type { AppStore } from '../../../store/store';
 import type { RemoteHostKind } from '../../../shared/lib/remoteHost';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
+import { NAMES } from '../../../shared/names';
 import { sessionPlace } from '../../../store/slices/navigation/place';
 import { mountCleanupBlockers } from '../../../store/slices/mount-cleanup/cleanupPolicy';
 import {
@@ -407,7 +408,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   },
   {
     id: 'mount.forget',
-    label: 'Remove from session',
+    label: NAMES.removeFromSession,
     icon: CONCEPT_ICONS.delete,
     group: 'danger',
     when: ({ facts }) => facts.isClosed,

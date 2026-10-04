@@ -1,5 +1,6 @@
 import { Button, cn, formatUsd, tintClasses } from '@goodboy/ui';
 import type { SessionBudget, SessionId } from '@goodboy/types';
+import { NAMES } from '../../../../shared/names';
 import { SPEND_LIMIT_BEHAVIOR_LABEL } from '../../spendLimitBehavior';
 import { sessionSpendPresentation } from '../../sessionSpendPresentation';
 import { SpendLimitEditor } from './SpendLimitEditor';
@@ -23,9 +24,9 @@ export const SpendLimitRow = ({
   const fill = Math.min(presentation.ratio ?? 0, 1) * 100;
 
   return (
-    <section aria-label="Spend limit" className="flex flex-col gap-2">
+    <section aria-label={NAMES.spendCap} className="flex flex-col gap-2">
       <div className="flex min-h-7 items-center justify-between gap-2">
-        <span className="text-row text-foreground">Spend limit</span>
+        <span className="text-row text-foreground">{NAMES.spendCap}</span>
         {isEditing ? null : (
           <Button variant="ghost" size="sm" onClick={() => onEditingChange(true)}>
             {limit === null ? 'Set limit' : 'Edit'}

@@ -210,7 +210,7 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
         kind: 'error',
         severity: 'warning',
         title: 'Workflow blocked',
-        body: `Autorun stopped at ${chain.failedStep.name} because the step failed.`,
+        body: `The run stopped at ${chain.failedStep.name} because the step failed.`,
         sessionId,
       });
     }

@@ -121,7 +121,7 @@ export const RemoteImage = ({ url, alt, load, className }: Props) => {
         </Button>
       ) : loader != null ? (
         <Button size="sm" variant="secondary" className="shrink-0" onClick={requestImage}>
-          {isFailed ? 'Try again' : 'Load'}
+          {isFailed ? 'Retry' : 'Load'}
         </Button>
       ) : null}
     </span>

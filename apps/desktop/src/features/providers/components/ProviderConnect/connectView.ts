@@ -30,7 +30,7 @@ type Params = {
 const PRIMARY_LABEL: Readonly<Record<ConnectPrimary, string>> = {
   connect: 'Connect',
   cancel: 'Cancel',
-  retry: 'Try again',
+  retry: 'Retry',
   done: 'Done',
 };
 

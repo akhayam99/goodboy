@@ -1202,7 +1202,7 @@ describe('worktree row actions in every state, on the real store', () => {
 });
 
 describe('project actions, on the real store', () => {
-  it('offers Detach project while the project has a mount', () => {
+  it('offers Remove from session while the project has a mount', () => {
     seedMount({ pr: null });
     expect(
       slottedOf({ kind: 'project', sessionId: SESSION, projectId: LEDGER_MOUNT.projectId }),

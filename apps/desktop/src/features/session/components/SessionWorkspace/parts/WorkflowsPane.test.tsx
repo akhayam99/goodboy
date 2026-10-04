@@ -196,7 +196,7 @@ describe('WorkflowsPane', () => {
     expect(screen.getAllByText('Next: First')).toHaveLength(2);
     expect(screen.getAllByRole('button', { name: 'Attach another workflow' })).toHaveLength(1);
     expect(screen.queryByTestId('workflow-detail')).toBeNull();
-    expect(screen.getByRole('heading', { name: 'Workflows' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Runs' })).toBeDefined();
   });
 
   it('lists the newest run first and stamps a run that carries an attach time', () => {

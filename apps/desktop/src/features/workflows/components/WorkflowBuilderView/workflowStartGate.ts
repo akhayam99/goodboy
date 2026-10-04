@@ -40,7 +40,7 @@ export const workflowStartGate = ({
     return { isDisabled: true, reason: STEPS_REASON[mode] };
   }
   if (!isSpendLimitValid) {
-    return { isDisabled: true, reason: 'Enter a valid spend limit to start' };
+    return { isDisabled: true, reason: 'Enter a valid spend cap to start' };
   }
   return { isDisabled: false, reason: null };
 };

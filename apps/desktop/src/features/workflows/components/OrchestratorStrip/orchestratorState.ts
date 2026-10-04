@@ -50,7 +50,7 @@ const STOP_PRESENTATION: Record<WorkflowOrchestrationStopKind, StopPresentation>
   budget: {
     phase: 'paused-budget',
     tone: 'warning',
-    sentence: 'Paused at the spend limit',
+    sentence: 'Paused at the spend cap',
     showsMessage: false,
   },
   failure: {

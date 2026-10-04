@@ -697,7 +697,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
 
     expect(result.current.map((crumb) => crumb.label)).toEqual([
       'Overview',
-      'Workflows',
+      'Runs',
       'Release flow',
       'Selected agent',
     ]);
@@ -723,7 +723,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
 
     expect(result.current.map((crumb) => crumb.label)).toEqual([
       'Overview',
-      'Workflows',
+      'Runs',
       'Selected agent',
     ]);
   });
@@ -760,7 +760,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
     const { result } = renderHook(() => useSessionCrumbs({ session: workflowSession }));
     expect(result.current.map((crumb) => crumb.label)).toEqual([
       'Overview',
-      'Workflows',
+      'Runs',
       'Release flow',
       'Selected agent',
     ]);
@@ -791,7 +791,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
 
     const { result } = renderHook(() => useSessionCrumbs({ session: workflowSession }));
 
-    expect(result.current.map((crumb) => crumb.label)).toEqual(['Overview', 'Workflows']);
+    expect(result.current.map((crumb) => crumb.label)).toEqual(['Overview', 'Runs']);
   });
 });
 
