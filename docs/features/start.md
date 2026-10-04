@@ -40,3 +40,14 @@ Start from the goal instead. **Start blank** sits in the header of every tab and
 ### Named by Goodboy
 
 Get a short title without writing one. A new session is named for you and marked **Named by Goodboy** until you rename it.
+
+Linked task chips open the task directly. Their unlink control appears on hover
+or keyboard focus. **Put on a branch** is visible on the branch row, and
+**Link work** is the single verb for adding a link. Unlink acts immediately
+with a 10-second Undo toast; **Cmd+Z** also undoes the latest app operation
+outside text fields. Session unlink removes every branch placement as one
+operation, and Undo restores the entire snapshot atomically. A later re-link
+makes Undo do nothing and say why. The unlink event keeps **Re-link**.
+
+Activity shows each linked task once, even across several branches. Tasks
+with the same issue number in different projects keep separate rows.

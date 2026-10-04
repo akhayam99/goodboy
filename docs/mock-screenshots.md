@@ -319,3 +319,8 @@ saves `docs/changelog/next/<name>-<before|after>-{dark,light}.webp`.
   Capture `-after-` from a checkout of that release's tag and `-before-`
   from the previous release's tag. The app loads pictures from `main` first
   and falls back to the tag, so files committed after the tag still show.
+
+Task-link controls have three scenes: `task-links` for idle chips and visible
+branch placement, `task-links-hover` for keyboard focus revealing unlink, and
+`task-links-undo` for compound unlink with the Undo toast and Activity Re-link.
+They use the real overview, chip and placement components in both themes.
