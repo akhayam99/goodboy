@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { PROVIDER_CONNECT_CAPABILITIES, isApiProvider } from '@goodboy/core';
+import type { WorkspaceId } from '@goodboy/types';
 import { Button, EmptyState, OverflowMenu, type OverflowMenuItem, PaneShell } from '@goodboy/ui';
 import type { LucideIcon } from 'lucide-react';
 import type { ProviderDisplayInfo } from '../../../providers';
@@ -7,7 +8,6 @@ import { useAppStore } from '../../../../../store';
 import { useCopyText } from '../../../../../shared/hooks/useCopyText';
 import { PROVIDER_BRAND } from '../../provider-brand';
 import { ProviderConnect } from '../../ProviderConnect';
-import { CliUpdateNotice } from '../CliUpdateNotice';
 import {
   CONCEPT_ICONS,
   CONCEPT_TONE,
@@ -15,6 +15,7 @@ import {
 } from '../../../../../shared/components/conceptIcons';
 import { SETTINGS_PANE_ENTRY } from '../../../../settings/components/SettingsStudio/settingsPaneEntry';
 import { AccountGroup, type AccountConfirm } from './AccountGroup';
+import { CliGroup } from './AccountGroup/CliGroup';
 import { ModelsGroup } from './ModelsGroup';
 import { PermissionsGroup } from './PermissionsGroup';
 import { UsageGroup } from './UsageGroup';
@@ -25,6 +26,7 @@ type Props = {
   readonly autoConnect: boolean;
   readonly autoUpdate: boolean;
   readonly focusModels: boolean;
+  readonly workspaceId: WorkspaceId | null;
 };
 
 type MetaParams = {
@@ -42,7 +44,13 @@ const metaLine = ({ planLabel, isApi }: MetaParams): string | undefined => {
   return `${planLabel} plan`;
 };
 
-export const ProviderPageBody = ({ info, autoConnect, autoUpdate, focusModels }: Props) => {
+export const ProviderPageBody = ({
+  info,
+  autoConnect,
+  autoUpdate,
+  focusModels,
+  workspaceId,
+}: Props) => {
   const id = info.id;
   const Icon: LucideIcon = PROVIDER_BRAND[id]?.icon ?? CONCEPT_ICONS.providers;
   const connectPhase = useAppStore((s) => s.providerConnect[id]?.phase ?? 'idle');
@@ -70,6 +78,11 @@ export const ProviderPageBody = ({ info, autoConnect, autoUpdate, focusModels }:
     ? info.connection !== 'missing' && info.connection !== 'error' && info.connection !== 'unknown'
     : info.connection === 'connected' && settled;
   const hasDetectionError = !isApi && info.connection === 'error' && settled;
+  const hasDetectedCli =
+    !isApi &&
+    (info.connection === 'connected' ||
+      info.connection === 'installed_disconnected' ||
+      (info.connection === 'error' && info.version !== null));
   const canReauth = !isApi && PROVIDER_CONNECT_CAPABILITIES[id].tier !== 'manual';
   const reauth = () => {
     if (PROVIDER_CONNECT_CAPABILITIES[id].reauthSignsOut) {
@@ -125,9 +138,6 @@ export const ProviderPageBody = ({ info, autoConnect, autoUpdate, focusModels }:
       meta={metaLine({ planLabel, isApi })}
       actions={<OverflowMenu items={menuItems} label={`More ${info.label} actions`} />}
     >
-      {!isApi && info.connection !== 'missing' && info.connection !== 'unknown' ? (
-        <CliUpdateNotice providerId={id} autoStart={autoUpdate} />
-      ) : null}
       {hasDetectionError ? (
         <EmptyState
           bordered
@@ -150,17 +160,21 @@ export const ProviderPageBody = ({ info, autoConnect, autoUpdate, focusModels }:
           onDone={() => void onRefresh()}
         />
       ) : null}
+      {hasDetectedCli && !isReady ? <CliGroup info={info} autoUpdate={autoUpdate} /> : null}
       {isReady || isApi ? (
         <>
           {isReady ? (
             <UsageGroup providerId={id} billing={isApi ? 'token' : 'plan'} planLabel={planLabel} />
           ) : null}
-          {isReady ? <ModelsGroup providerId={id} isFocused={focusModels} /> : null}
+          {isReady ? (
+            <ModelsGroup providerId={id} workspaceId={workspaceId} isFocused={focusModels} />
+          ) : null}
           {isReady ? <PermissionsGroup providerId={id} /> : null}
           <AccountGroup
             info={info}
             planLabel={planLabel}
             canReauth={canReauth}
+            autoUpdate={autoUpdate}
             confirm={confirm}
             onConfirmChange={setConfirm}
             onReauth={reauth}

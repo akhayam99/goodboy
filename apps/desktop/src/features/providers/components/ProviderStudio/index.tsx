@@ -91,6 +91,7 @@ export const ProviderSettingsScope = ({
           info={selected}
           autoConnect={autoConnect && selected?.id === initialFocus}
           autoUpdate={autoUpdate && selected?.id === initialFocus}
+          workspaceId={workspaceId}
           focusModels={initialSection === MODELS_SECTION && selected?.id === initialFocus}
           isUsageFocused={initialSection === USAGE_SECTION && selected?.id === initialFocus}
         />

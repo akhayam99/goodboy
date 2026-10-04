@@ -145,7 +145,7 @@ Goodboy stores keys in your system keychain, not in its own database.
 Go to **Settings** → **Providers & models** → **Models** to choose what a workspace
 uses when you leave a model on **Auto**. It is one page in three parts.
 
-- **Providers, in order**: the workspace's provider policy, summed up on the row
+- **When a provider is out**: the workspace's provider policy, summed up on the row
   ("Claude, Codex · Cursor as backup"). The row opens the list in place: drag a
   provider by its handle or move it with Alt and an arrow, and set it **On**,
   **Backup only** or **Off**. The first On provider is the default for new work, so
@@ -161,12 +161,17 @@ uses when you leave a model on **Auto**. It is one page in three parts.
 
 Each task row says what the job does and ends in a model picker. A row you have not
 pinned reads **Auto**. Open the picker to see what Auto picks right now. Pick a model to
-pin it: the picker then shows that model and an **x** that goes back to Auto. The page
-header counts the pinned rows. **Reset all to Auto**, in the menu at the top right,
-clears them after a confirm.
+pin it: the picker then shows that model and an **x** that goes back to Auto. **Reset
+all to Auto**, in the menu at the top right, clears every pin after a confirm that says
+how many. The page header carries no count. Each provider page counts its own pins in
+the Models group header (`ProviderPage/ModelsGroup/PinnedCount`, `3 pinned`): the chat
+model, the roles and the tasks of this workspace that use that provider.
 
-Each role row (`DefaultsPanel/RoleRow`) is a `Collapsible`. Closed, it shows what Auto
-picks, or the first model of its set and how many follow (`Opus 5.5 +2`). Open, it shows
+Each role row (`DefaultsPanel/RoleRow`) is a `Collapsible`. Closed, it shows one
+shape, the same as the chat row: the provider glyph, the model, its effort when the
+model has one, then how many more models follow (`Opus 5.5 · High +2`). The model is
+what Auto picks, or the first model of the role's set (`RoleModelSummary`). The chat row shows the same
+shape for Auto through `RoutingPicker`'s `autoTrigger="resolved"`. Open, it shows
 **How Scout runs**, read only, built from the engine and never from copy: the role's
 `explain` entry in `ROLE_REGISTRY`, the pick from `resolveRoleRouting`, and the split
 limits from `roleSplitLimits` (`FAN_OUT_MAX_CHILDREN`, `SCOUT_DEPTH_CAP`,
@@ -221,9 +226,9 @@ summaries`). Its header says how many show (`Showing 6 of 11`) next to **Show al
 
 Each provider page in **Settings > Providers & models** has four groups, in the
 same order for every provider: **Usage**, **Models in the picker**,
-**Permissions** and **Account**. The header carries the plan, the account and the
-CLI version (`Team plan · Signed in as you@acme.test · Claude CLI 2.1.282`), and
-its menu holds **Check again**, **Sign in again**, **Sign out** and **Copy CLI
+**Permissions** and **Account**. The header carries the plan (`Team plan`), the
+Account group the signed-in account and the CLI version (`Claude CLI 2.1.282`), and
+the header menu holds **Check again**, **Sign in again**, **Sign out** and **Copy CLI
 path**. A provider that is not connected shows only its connect card.
 
 - **Usage**: one row per window the provider reported (5 hours, the week, a
@@ -256,9 +261,14 @@ path**. A provider that is not connected shows only its connect card.
   reason, or `Not available` with the mode it runs as instead), whether it
   follows Allow and Deny rules (only Claude does), and that role limits are
   asked, not locked. It reads `modeSupport` in `@goodboy/core`
-- **Account**: who is signed in with the plan, the CLI version, and **Use an API
-  key instead of your plan**, which opens the API keys. Keys you already have
-  show directly, with the workspace credentials under them
+- **Account**: who is signed in with the plan, one CLI row (`Claude CLI 2.1.282`, in
+  the same place on every CLI provider), and **Use an API key instead of your
+  plan**, which opens the API keys. When a model needs a newer CLI, the update
+  notice (`CliUpdateNotice`) sits right under the Account rows, below that CLI row.
+  A provider that is not signed in but has its CLI installed shows the same CLI row
+  and notice under its connect card (`AccountGroup/CliGroup`), and an `update`
+  deep link starts the update there too
+  Keys you already have show directly, with the workspace credentials under them
 - The provider's row in the rail turns warning from 80% of a window and danger
   when the provider is out, with the reason under its name
 
@@ -292,8 +302,8 @@ pays for every turn.
   the account on the card before you continue
 - **A model needs a newer CLI**: some models only run on a recent CLI. When yours is
   too old, the composer and the model picker say so before you send, and the
-  provider shows **Update needed** in Settings. **Update Claude CLI** runs the
-  update in a terminal inside the card. A turn the CLI turned down keeps your
+  provider shows **Update needed** in Settings. **Update Claude CLI**, under the
+  Account rows of the provider page, runs the update in a terminal inside the card. A turn the CLI turned down keeps your
   message: retry it once the update is done, or run it on the newest model your
   CLI supports. Goodboy never guesses: a CLI whose version it can't read is never
   flagged. Update waits while a turn on the same provider is running

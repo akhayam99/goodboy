@@ -7,7 +7,7 @@ import type { ProviderId, VerbosityLevel } from '@goodboy/types';
 import { TriggerLabel } from './TriggerLabel';
 import { AUTO_LABEL, AutoTriggerLabel } from './AutoTriggerLabel';
 import type { RecommendationKind } from './RecommendationRow';
-import { recommendationSummary } from './recommendationSummary';
+import { recommendationSummary, recommendedRoutingOf } from './recommendationSummary';
 import { ROUTING_PICKER_CONSTANTS } from './constants';
 import { routingSummary, routingTriggerLabel } from './routingSummary';
 import { resolveRouting, type Recommendation } from './resolveRouting';
@@ -42,6 +42,7 @@ export type Props = {
   readonly isEffortHidden?: boolean;
   readonly providerLayout?: 'glyphs' | 'named';
   readonly budget?: ReactNode;
+  readonly autoTrigger?: 'word' | 'resolved';
 };
 
 export const RoutingPicker = ({
@@ -73,6 +74,7 @@ export const RoutingPicker = ({
   isEffortHidden = false,
   providerLayout = 'glyphs',
   budget,
+  autoTrigger = 'word',
 }: Props) => {
   const isInline = presentation === 'inline';
   const [isProviderConnectionInFlight, setIsProviderConnectionInFlight] = useState(false);
@@ -119,6 +121,14 @@ export const RoutingPicker = ({
           model: recommendation.model,
           effort: recommendation.effort,
         });
+  const resolvedAuto =
+    isAuto && autoTrigger === 'resolved' && recommendation?.provider != null
+      ? recommendedRoutingOf({
+          provider: recommendation.provider,
+          model: recommendation.model,
+          effort: recommendation.effort,
+        })
+      : null;
   const summary =
     isAuto && autoSummary != null
       ? `${AUTO_LABEL}, now ${autoSummary}`
@@ -226,7 +236,9 @@ export const RoutingPicker = ({
               )}
             >
               <span className="flex min-w-0 flex-1 items-center gap-2">
-                {isAuto ? (
+                {resolvedAuto?.label != null ? (
+                  <TriggerLabel provider={resolvedAuto.provider} label={resolvedAuto.label} />
+                ) : isAuto ? (
                   <AutoTriggerLabel />
                 ) : (
                   <TriggerLabel provider={routing.provider} label={triggerLabel} />

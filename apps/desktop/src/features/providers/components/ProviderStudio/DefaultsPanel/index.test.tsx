@@ -155,6 +155,14 @@ const WORKSPACE_ID = 'ws-1' as WorkspaceId;
 const roleRow = (label: string): HTMLElement =>
   screen.getByRole('button', { name: (name) => name.startsWith(label) });
 
+const roleSummary = (label: string): HTMLElement => {
+  const summary = roleRow(label).querySelector<HTMLElement>('[data-role-summary]');
+  if (summary === null) {
+    throw new Error(`${label} row has no model summary`);
+  }
+  return summary;
+};
+
 const TASK_LABELS = [
   'Step summaries',
   'Plan drafting',
@@ -188,7 +196,7 @@ describe('DefaultsPanel', () => {
     const trigger = screen.getByRole('button', { name: /Cursor · Claude as backup/ });
     expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
     expect(
-      screen.getByText('New work starts on Cursor. Backup only runs when no On provider can work.'),
+      screen.getByText('New work starts on Cursor. Backup only if no On provider can work.'),
     ).toBeDefined();
   });
 
@@ -234,7 +242,7 @@ describe('DefaultsPanel', () => {
     );
 
     rerender(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    expect(screen.getByText('1 pinned')).toBeDefined();
+    expect(screen.queryByText(/\d pinned$/)).toBeNull();
     const reset = screen.getByRole('button', { name: 'Step summaries routing reset' });
     await waitFor(() => expect(reset.hasAttribute('disabled')).toBe(false));
     fireEvent.click(reset);
@@ -322,6 +330,38 @@ describe('DefaultsPanel', () => {
     expect(roleRow('Planner').getAttribute('aria-expanded')).toBe('false');
   });
 
+  it('renders an auto role and a pinned set of two in the same shape', () => {
+    state.workspaceOverrides = {
+      'ws-1': {
+        ...EMPTY_OVERRIDES,
+        roleModels: {
+          reviewer: {
+            providerId: 'anthropic',
+            model: 'claude-opus-5-5',
+            effort: 'high',
+            models: [
+              { providerId: 'anthropic', model: 'claude-opus-5-5' },
+              { providerId: 'anthropic', model: 'claude-sonnet-5-5' },
+            ],
+          },
+        },
+      },
+    };
+    render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
+
+    const shape = /^[A-Za-z0-9. ]+·(Minimal|Low|Medium|High|Very high|Max)(\+\d)?$/;
+    const auto = roleSummary('Planner');
+    const pinned = roleSummary('Reviewer');
+    expect(auto.textContent).toMatch(shape);
+    expect(pinned.textContent).toMatch(shape);
+    expect(pinned.textContent).toBe('Opus 5.5·High+1');
+    expect(auto.textContent).not.toContain('+');
+    expect(auto.querySelectorAll('svg')).toHaveLength(1);
+    expect(pinned.querySelectorAll('svg')).toHaveLength(1);
+    expect(auto.firstElementChild?.tagName).toBe('svg');
+    expect(pinned.firstElementChild?.tagName).toBe('svg');
+  });
+
   it('opens a role to show how it runs, read only, from the engine', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
@@ -389,7 +429,7 @@ describe('DefaultsPanel', () => {
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    expect(roleRow('Planner').textContent).toContain('Opus 5 +1');
+    expect(roleSummary('Planner').textContent).toBe('Opus 5·High+1');
     fireEvent.click(roleRow('Planner'));
     const chips = within(screen.getByRole('list', { name: 'Planner models' })).getAllByRole(
       'group',
@@ -548,7 +588,7 @@ describe('DefaultsPanel', () => {
   it('shows the providers, agents and background tasks on one page', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    expect(screen.getByText('Providers, in order')).toBeDefined();
+    expect(screen.getByText('When a provider is out')).toBeDefined();
     expect(screen.getByText('Step summaries')).toBeDefined();
     expect(screen.getByText('Scout')).toBeDefined();
     expect(screen.queryByRole('tab')).toBeNull();
@@ -601,8 +641,11 @@ describe('DefaultsPanel', () => {
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    expect(screen.getByText('1 pinned')).toBeDefined();
     expect(screen.queryByText('Branch naming')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Models actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Reset all to Auto/ }));
+    expect(screen.getByText('Reset 1 pinned model to Auto?')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Step summaries routing auto' }));
 
@@ -627,9 +670,10 @@ describe('DefaultsPanel', () => {
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    expect(screen.getByText('3 pinned')).toBeDefined();
+    expect(screen.queryByText(/\d pinned$/)).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Models actions' }));
     fireEvent.click(screen.getByRole('menuitem', { name: /Reset all to Auto/ }));
+    expect(screen.getByText('Reset 3 pinned models to Auto?')).toBeDefined();
     expect(state.setWorkspaceOverrides).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Reset all' }));
 
@@ -650,9 +694,9 @@ describe('DefaultsPanel', () => {
     };
     render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
 
-    expect(screen.getByText('1 pinned')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Models actions' }));
     fireEvent.click(screen.getByRole('menuitem', { name: /Reset all to Auto/ }));
+    expect(screen.getByText('Reset 1 pinned model to Auto?')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Reset all' }));
 
     await waitFor(() =>

@@ -105,8 +105,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Auto runs each role on the newest model of its line, Sonnet 5.5 on Claude today, and Models shows what it picks now. Open a role to see how it runs, and give it up to three models for Auto to pick from. A model you turn off in Models in the picker is left out of Auto and the workflow orchestrator.',
       },
       {
-        term: 'Providers, in order',
-        desc: 'Models lists the providers of the workspace in order, each On, Backup only or Off. New work starts on the first On provider, Backup only runs when no On provider can, and Off is never offered. Drag a row, or press Alt and an arrow, to move it. The footer Providers button opens your limits and the same list.',
+        term: 'When a provider is out',
+        desc: 'Models has a row for what happens when a provider is out. It lists the providers of the workspace in order, each On, Backup only or Off. New work starts on the first On provider, Backup only runs only if no On provider can, and Off is never offered. Drag a row, or press Alt and an arrow, to move it. The footer Providers button opens your limits and the same list.',
       },
       {
         term: 'Usage limits',
