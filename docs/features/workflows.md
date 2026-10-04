@@ -61,7 +61,7 @@ Choose when a run asks: **Ask before each step**, **Ask after the plan** to stop
 
 **Pause** lets the step in flight finish and starts nothing new, even after a restart; **Resume** picks up where the run was. **Skip** passes any step that has not finished, live or stuck, after one inline confirmation, and keeps what it already wrote. When a running step says nothing for 15 minutes, the run says so and offers **Ask it to continue** or **Skip**.
 
-### Workflow rules
+### Run defaults
 
 The **Run defaults** tab of Workflows sets what every new run starts with: how it asks, the spend cap, and which providers get the next step. **Use providers with room left** sends steps with no pinned provider to the provider with the most 5h and weekly room, keeps a provider at its limit out of new work, and tells you in one sentence where the next step goes. It starts on in workspaces created from 0.16.0 and off in older ones, and it stays off until a provider that reports limits is on. **Guidance** is text every run starts with: the orchestrator reads it in orchestrated runs, and in custom and preset runs it goes to the roles that write code, Implementer and Docs, unless you pick others under Edit, and **Polish** tidies it into one rule per line. In a custom or preset run, a **Guidance** tag marks each step that received it. The builder opens filled from them. When a control differs for one run, a **From your rules** line names what changed and the control gets a dot and a **Reset**; with nothing changed, the line is not there. A run keeps the rules it started with.
 

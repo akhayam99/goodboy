@@ -174,8 +174,8 @@ const ROW_NODE_LABEL: Record<RowNodeState, string> = {
   queued: 'Not started',
   ready: 'Ready to run',
   running: 'Running',
-  question: 'Waiting on your answer',
-  budget: 'Paused at the spend limit',
+  question: 'Needs you',
+  budget: 'Paused at the spend cap',
   approval: 'Waiting for your approval',
   failed: 'Failed',
   done: 'Done',
@@ -268,8 +268,8 @@ export const reasonSentence = (reason: RowSentenceReason): string => {
         : `Needs your answer in step ${reason.stepLabel}`;
     case 'budget':
       return reason.limit === undefined
-        ? 'Paused at the spend limit'
-        : `Paused at the ${reason.limit} spend limit`;
+        ? 'Paused at the spend cap'
+        : `Paused at the ${reason.limit} spend cap`;
     case 'failed':
       return 'Failed';
     case 'blocked':
@@ -314,7 +314,7 @@ export const reasonShortSentence = (reason: RowSentenceReason): string => {
     case 'question':
       return 'Needs you';
     case 'budget':
-      return 'At spend limit';
+      return 'At spend cap';
     case 'orchestratorFailed':
       return 'Orchestrator failed';
     case 'stopped':

@@ -218,6 +218,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Enter queues your message for its next turn, and ⌘Enter interrupts and sends it now. Stop keeps what it wrote and offers Continue. After a restart or an update, agents that were working stay Stopped. Use Resume on one agent, Resume all in overview Next steps, or Resume all above a workflow run.',
       },
       {
+        term: 'Activity',
+        desc: 'Every group hangs on an indented numbered ball with its own lane. A run keeps its context and questions inside it, and the provider icon is on every agent. A model name shows only when it differs. The Runs tab lists the workflow runs of a session.',
+      },
+      {
         term: 'Agent suggests',
         desc: 'When an agent recommends another role, its transcript shows Agent suggests with the reason. Pick the provider, model and effort, then press Start. The new agent begins with that reason and what the previous agent wrote.',
       },
