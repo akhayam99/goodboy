@@ -16,7 +16,7 @@ export const PromptKeysHint = ({ hints }: Props) => {
   return (
     <span
       data-testid="prompt-keys"
-      className="hidden min-w-0 items-center gap-2.5 truncate text-secondary text-faint-foreground @lg/prompt:flex"
+      className="hidden min-w-0 items-center gap-3 truncate text-meta text-faint-foreground @lg/prompt:flex"
     >
       {hints.map((hint) => (
         <span key={hint.id} className="flex items-center gap-1 whitespace-nowrap">

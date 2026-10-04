@@ -77,7 +77,7 @@ export const RetryWithPicker = ({ action, onDone }: RetryWithPickerProps) => {
     onDone();
   };
   return (
-    <div className="flex items-center gap-1.5 pt-1.5">
+    <div className="flex items-center gap-2 pt-2">
       <div className="min-w-0 flex-1">
         <RoutingPicker
           ariaLabel="Retry routing"
@@ -99,7 +99,7 @@ export const RetryWithPicker = ({ action, onDone }: RetryWithPickerProps) => {
       </div>
       <button
         type="button"
-        className="rounded-sm px-1.5 py-0.5 text-secondary font-medium text-foreground ring-1 ring-inset ring-foreground/20 hover:bg-hover hover:text-foreground"
+        className="rounded-sm px-2 py-0.5 text-chip text-foreground ring-1 ring-inset ring-foreground/20 hover:bg-hover hover:text-foreground"
         onClick={dispatch}
         aria-label="Confirm retry with selected model"
       >

@@ -206,12 +206,8 @@ export const BranchTemplateField = ({ workspaceId }: Props) => {
             aria-invalid={problem !== null}
             className="font-mono text-code"
           />
-          <div
-            role="group"
-            aria-label="Placeholders"
-            className="flex flex-wrap items-center gap-1.5"
-          >
-            <span className="text-secondary text-muted-foreground">Add</span>
+          <div role="group" aria-label="Placeholders" className="flex flex-wrap items-center gap-2">
+            <span className="text-meta text-muted-foreground">Add</span>
             {BRANCH_PLACEHOLDERS.map((placeholder) => (
               <Chip
                 key={placeholder}
@@ -226,7 +222,7 @@ export const BranchTemplateField = ({ workspaceId }: Props) => {
             ))}
           </div>
           {problem === null ? null : (
-            <p role="alert" className="text-secondary text-danger">
+            <p role="alert" className="text-meta text-danger">
               {branchTemplateProblemCopy({ problem, template: shown })}
             </p>
           )}

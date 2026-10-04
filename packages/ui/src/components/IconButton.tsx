@@ -45,7 +45,7 @@ export const IconButton = ({
         aria-busy={busy ? true : undefined}
         disabled={disabled || busy}
         className={cn(
-          'inline-flex items-center justify-center rounded-md p-1.5',
+          'inline-flex items-center justify-center rounded-md p-2',
           'text-muted-foreground motion-safe:transition-colors',
           variant === 'outline'
             ? 'border border-border-soft hover:border-border hover:bg-hover'

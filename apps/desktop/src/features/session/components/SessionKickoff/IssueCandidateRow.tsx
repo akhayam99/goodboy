@@ -16,12 +16,12 @@ export const IssueCandidateRow = ({ candidate, isSelected, onSelect, onPickUp }:
     onClick={onSelect}
     onDoubleClick={onPickUp}
     className={cn(
-      'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left motion-safe:transition-colors',
+      'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left motion-safe:transition-colors',
       isSelected ? 'bg-selected' : 'hover:bg-hover',
     )}
   >
     <IntegrationGlyph provider={candidate.provider} size="xs" />
-    <span className="shrink-0 font-mono text-secondary text-muted-foreground">
+    <span className="shrink-0 font-mono text-meta text-muted-foreground">
       {candidate.identifier}
     </span>
     <span className="min-w-0 flex-1 truncate text-body text-foreground">{candidate.title}</span>

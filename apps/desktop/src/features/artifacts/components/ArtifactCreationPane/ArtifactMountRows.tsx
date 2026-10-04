@@ -71,10 +71,10 @@ export const ArtifactMountRows = ({ options, value, onChange }: Props) => {
             tabIndex={index === current ? 0 : -1}
             title={isCapped ? `a run reads at most ${ARTIFACT_MOUNT_CAP} repositories` : undefined}
             onClick={() => onChange(option.mountId)}
-            className="w-auto items-baseline gap-1.5 border border-border-soft bg-elevated px-2.5 py-1.5 data-[selected=true]:border-transparent"
+            className="w-auto items-baseline gap-2 border border-border-soft bg-elevated px-3 py-2 data-[selected=true]:border-transparent"
           >
             <span className="truncate text-label font-medium">{option.mountName}</span>
-            <span className="truncate text-secondary font-normal text-muted-foreground">
+            <span className="truncate text-meta font-normal text-muted-foreground">
               {option.branch}
             </span>
           </SelectableRow>

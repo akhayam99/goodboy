@@ -44,7 +44,7 @@ export const HistoryBackups = ({
   }, [branch, revision, worktreePath]);
 
   return (
-    <section className="flex flex-col gap-1.5" aria-label="Backups">
+    <section className="flex flex-col gap-2" aria-label="Backups">
       <div className="flex items-center justify-between gap-2">
         <Eyebrow label={`Backups · ${backups?.length ?? 0}`} muted />
         <Button size="sm" variant="ghost" onClick={onClose}>
@@ -52,15 +52,15 @@ export const HistoryBackups = ({
         </Button>
       </div>
       {backups !== null && backups.length === 0 ? (
-        <p className="px-2 text-secondary text-muted-foreground">
+        <p className="px-2 text-meta text-muted-foreground">
           No backups yet. Every rewrite saves one here for 30 days.
         </p>
       ) : null}
       <ul className="flex flex-col">
         {(backups ?? []).map((backup) => (
-          <li key={backup.refName} className="flex min-w-0 flex-col gap-1 rounded-md px-2 py-1.5">
+          <li key={backup.refName} className="flex min-w-0 flex-col gap-1 rounded-md px-2 py-2">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="shrink-0 font-mono text-secondary tabular-nums text-muted-foreground">
+              <span className="shrink-0 font-mono text-meta tabular-nums text-muted-foreground">
                 {backup.sha.slice(0, 7)}
               </span>
               <span className="min-w-0 flex-1 truncate text-row text-foreground">

@@ -26,7 +26,7 @@ export const ThreadGitMiniDiff = ({ sessionId, entry }: Props) => {
     return null;
   }
   return (
-    <div className="min-w-0 overflow-hidden rounded-md bg-background py-1.5 font-mono text-code">
+    <div className="min-w-0 overflow-hidden rounded-md bg-background py-2 font-mono text-code">
       {lines.map((line, index) => (
         <p key={index} className={cn('flex min-w-0 gap-3 px-3', LINE_FILL[line.kind])}>
           <span aria-hidden className={cn('w-2 shrink-0', SIGN_TEXT[line.kind])}>

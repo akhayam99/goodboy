@@ -57,7 +57,7 @@ export const LocateMovedProjectRow = ({ candidate, isBusy, onSelectedChange, onC
         {candidate.toRoot !== null && (
           <span className="truncate text-code text-muted-foreground">{candidate.toRoot}</span>
         )}
-        <span className="text-secondary text-muted-foreground">{verdictLabel({ candidate })}</span>
+        <span className="text-meta text-muted-foreground">{verdictLabel({ candidate })}</span>
       </span>
       {candidate.toRoot === null && !isBusy && (
         <Button variant="secondary" size="sm" onClick={onChoose}>

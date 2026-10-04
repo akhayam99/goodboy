@@ -90,10 +90,7 @@ export const BranchRow = ({
           </span>
         </Tooltip>
       </span>
-      <span
-        data-cell="age"
-        className="text-right text-secondary tabular-nums text-muted-foreground"
-      >
+      <span data-cell="age" className="text-right text-meta tabular-nums text-muted-foreground">
         {age}
       </span>
       <span data-cell="action" className="flex justify-end">

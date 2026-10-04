@@ -152,7 +152,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
             <div
               title={`${sizeLabel} · ${ageLabel}`}
               className={cn(
-                'group/explore-row flex items-center gap-1.5 rounded-md py-1 pl-1 pr-2 transition-colors',
+                'group/explore-row flex items-center gap-2 rounded-md py-1 pl-1 pr-2 transition-colors',
                 isSelectedFile ? 'bg-muted text-foreground' : 'hover:bg-hover',
               )}
             >
@@ -162,7 +162,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
                   onClick={() => void toggleDirectory({ entry })}
                   aria-label={isExpanded ? `Collapse ${entry.name}` : `Expand ${entry.name}`}
                   aria-expanded={isExpanded}
-                  className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md text-left text-muted-foreground transition-colors hover:text-foreground"
+                  className="flex min-w-0 flex-1 items-center gap-2 rounded-md text-left text-muted-foreground transition-colors hover:text-foreground"
                 >
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center">
                     {isExpanded ? (
@@ -182,7 +182,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
                   onClick={() => selectFile({ entry })}
                   aria-label={`Preview ${entry.name}`}
                   aria-pressed={isSelectedFile}
-                  className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md text-left underline-offset-2 hover:underline"
+                  className="flex min-w-0 flex-1 items-center gap-2 rounded-md text-left underline-offset-2 hover:underline"
                 >
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground">
                     <File size={ICON_SIZE.control} aria-hidden />
@@ -199,7 +199,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
                     type="button"
                     onClick={() => void runOpenAction({ entry, reveal: false })}
                     aria-label={`Open ${entry.name} outside the app`}
-                    className="rounded-md p-1.5 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
+                    className="rounded-md p-2 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
                   >
                     <ExternalLink size={ICON_SIZE.control} aria-hidden />
                   </button>
@@ -209,7 +209,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
                     type="button"
                     onClick={() => void runOpenAction({ entry, reveal: true })}
                     aria-label={`Reveal ${entry.name} in file manager`}
-                    className="rounded-md p-1.5 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
+                    className="rounded-md p-2 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
                   >
                     <FolderSearch size={ICON_SIZE.control} aria-hidden />
                   </button>

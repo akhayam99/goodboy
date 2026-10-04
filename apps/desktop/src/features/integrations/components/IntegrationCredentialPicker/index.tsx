@@ -52,7 +52,7 @@ export const IntegrationCredentialPicker = ({
   return (
     <div className="flex flex-col gap-2">
       <span className="text-label font-semibold text-foreground">Saved personal API keys</span>
-      <p className="text-2xs leading-relaxed text-muted-foreground">
+      <p className="text-meta text-muted-foreground">
         A key you entered once is offered to every workspace. Pick one to link this workspace
         without typing it again.
       </p>
@@ -77,7 +77,7 @@ export const IntegrationCredentialPicker = ({
         <KeyRound size={ICON_SIZE.row} aria-hidden />
         Use a new personal API key
       </button>
-      {error !== null ? <p className="text-2xs leading-relaxed text-danger">{error}</p> : null}
+      {error !== null ? <p className="text-meta text-danger">{error}</p> : null}
     </div>
   );
 };

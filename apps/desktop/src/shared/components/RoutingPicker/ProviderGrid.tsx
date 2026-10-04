@@ -28,7 +28,7 @@ export const ProviderGrid = ({
   onNavigateProviders,
 }: Props) =>
   isNamed ? (
-    <div className="grid grid-cols-2 gap-1.5 px-2.5">
+    <div className="grid grid-cols-2 gap-2 px-3">
       {ROUTING_PICKER_CONSTANTS.providers
         .filter((id) => connectedProviders.includes(id) || id === activeProvider)
         .map((id) => (

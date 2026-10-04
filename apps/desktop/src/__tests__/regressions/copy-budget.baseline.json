@@ -5,7 +5,6 @@
     "features/actions/kinds/pullRequest.ts": 1,
     "features/actions/kinds/workflowRun.ts": 1,
     "features/bootstrap/MoveReport/index.tsx": 1,
-    "features/chat/components/ChatView/ChatEmptyState.tsx": 1,
     "features/chat/components/PhaseTransitionCard/index.tsx": 1,
     "features/history/components/RewriteHistoryPage/HistoryPlannedChanges.tsx": 4,
     "features/integrations/bitbucket/BitbucketFormBody.tsx": 2,

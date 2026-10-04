@@ -78,14 +78,14 @@ export const EscapeHatch = ({ command, providerId }: Props) => {
   };
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Tooltip content="Copy command" side="top">
           <CopyButton
             presentation="icon"
             value={command}
             label="copy command"
-            className="h-7 gap-1.5 border border-border bg-muted px-2.5 text-label font-medium text-foreground hover:bg-hover hover:text-foreground"
+            className="h-7 gap-2 border border-border bg-muted px-3 text-label font-medium text-foreground hover:bg-hover hover:text-foreground"
           >
             <span>Copy command</span>
           </CopyButton>
@@ -103,7 +103,7 @@ export const EscapeHatch = ({ command, providerId }: Props) => {
         </Tooltip>
       </div>
       {launchError ? (
-        <span className="text-secondary text-danger">
+        <span className="text-meta text-danger">
           Could not open your system terminal: {launchError}
         </span>
       ) : null}

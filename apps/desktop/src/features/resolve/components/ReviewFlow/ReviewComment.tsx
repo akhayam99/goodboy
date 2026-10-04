@@ -221,7 +221,7 @@ export const ReviewComment = ({
       data-review-comment={threadId}
       className="flex min-w-0 max-w-[76ch] flex-col gap-5"
     >
-      <header className="flex min-w-0 items-center gap-2 text-secondary">
+      <header className="flex min-w-0 items-center gap-2 text-meta">
         {author !== null && (
           <span
             aria-hidden
@@ -271,7 +271,7 @@ export const ReviewComment = ({
       )}
 
       {remote === 'missing' && !entry.isChecking && entry.checkError !== null && (
-        <p role="status" className="text-secondary text-warning">
+        <p role="status" className="text-meta text-warning">
           {entry.checkError}
         </p>
       )}
@@ -304,7 +304,7 @@ export const ReviewComment = ({
         members.length > 0 &&
         remote === null &&
         (state === 'ready' || state === 'edited') && (
-          <div className="flex min-w-0 flex-col gap-1 text-secondary text-muted-foreground">
+          <div className="flex min-w-0 flex-col gap-1 text-meta text-muted-foreground">
             <p>{sharedFixLine({ count: members.length })}</p>
             <ul className="flex min-w-0 flex-col">
               {members.map((member) => (
@@ -322,7 +322,7 @@ export const ReviewComment = ({
           </div>
         )}
       {blocker !== null && (
-        <p className="text-secondary text-warning">
+        <p className="text-meta text-warning">
           {blocker === 'deferred' ? PARTIAL_ACCEPTANCE : PARTIAL_REFUSAL}
         </p>
       )}
@@ -357,7 +357,7 @@ export const ReviewComment = ({
                 onKeyDown={onCancelKey({ onCancel: onReplyDone })}
               />
               <div className="flex items-center justify-end gap-2">
-                <span className="mr-auto text-secondary text-faint-foreground">
+                <span className="mr-auto text-meta text-faint-foreground">
                   {REVIEW_FLOW_LABEL.keysHint}
                 </span>
                 <Button size="sm" variant="ghost" onClick={onReplyDone}>
@@ -390,7 +390,7 @@ export const ReviewComment = ({
       )}
 
       {DECIDED_NOTE_STATES.has(state) && remote === null && (
-        <p className="flex min-w-0 items-center gap-2 rounded-lg bg-subtle px-4 py-2.5 text-secondary text-muted-foreground">
+        <p className="flex min-w-0 items-center gap-2 rounded-lg bg-subtle px-4 py-2 text-meta text-muted-foreground">
           <Check size={ICON_SIZE.control} aria-hidden className="shrink-0 text-success" />
           {decidedNote({
             state: state as 'accepted' | 'replied' | 'skipped' | 'pushed' | 'resolved',
@@ -438,7 +438,7 @@ export const ReviewComment = ({
             onKeyDown={onCancelKey({ onCancel: onComposeCancel })}
           />
           <div className="flex items-center justify-end gap-2">
-            <span className="mr-auto text-secondary text-faint-foreground">
+            <span className="mr-auto text-meta text-faint-foreground">
               {REVIEW_FLOW_LABEL.keysHint}
             </span>
             <Button size="sm" variant="ghost" disabled={isSubmitting} onClick={onComposeCancel}>
@@ -504,15 +504,13 @@ export const ReviewComment = ({
               );
             })}
             {remote === 'on_origin' && (
-              <span className="text-secondary text-faint-foreground">
-                {REMOTE_LABEL.nothingToPush}
-              </span>
+              <span className="text-meta text-faint-foreground">{REMOTE_LABEL.nothingToPush}</span>
             )}
           </div>
         )
       )}
       {error !== null && (
-        <p role="alert" className="text-secondary text-danger">
+        <p role="alert" className="text-meta text-danger">
           {error}
         </p>
       )}

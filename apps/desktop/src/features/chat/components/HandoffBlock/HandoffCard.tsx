@@ -49,7 +49,7 @@ export const HandoffCard = ({ handoff, sessionId, at }: Props) => {
                 : 'Expand what the agent received'
             }
           />
-          <div className="flex min-w-0 flex-col gap-1.5 pb-2 pl-7 pr-2">
+          <div className="flex min-w-0 flex-col gap-2 pb-2 pl-7 pr-2">
             <span className="truncate text-row text-foreground">{handoff.ask}</span>
             {handoff.why === null ? null : (
               <span className="truncate text-label text-muted-foreground">Why: {handoff.why}</span>

@@ -156,7 +156,7 @@ export const RunTreeRow = ({
             isSelected={isSelected}
             onOpen={onSelect}
             frameClassName={cn('min-w-0 flex-1', isHighlighted && 'bg-hover text-foreground')}
-            className="flex h-full min-w-0 items-center gap-2 pl-2 pr-1.5"
+            className="flex h-full min-w-0 items-center gap-2 px-2"
           >
             <span className="w-6 shrink-0 text-right text-chip text-faint-foreground">
               {entry.stepLabel}

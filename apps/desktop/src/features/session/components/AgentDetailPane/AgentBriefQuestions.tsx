@@ -34,7 +34,7 @@ export const AgentBriefQuestions = ({ session, agent }: Props) => {
       inset="content"
       label={NAMES.needsYou}
       headingLevel={2}
-      action={<span className="text-secondary text-faint-foreground">{unanswered.length}</span>}
+      action={<span className="text-meta text-faint-foreground">{unanswered.length}</span>}
     >
       <OpenQuestionCluster questions={unanswered} sessionId={session.id} />
     </Band>

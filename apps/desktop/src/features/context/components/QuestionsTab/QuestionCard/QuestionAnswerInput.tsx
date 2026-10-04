@@ -82,7 +82,7 @@ export const QuestionAnswerInput = ({
     <div
       role={mode === 'many' ? 'group' : 'radiogroup'}
       aria-label={mode === 'many' ? 'Pick one or more answers' : 'Pick one answer'}
-      className={cn('flex flex-col', isCompact ? 'gap-1.5' : 'gap-2')}
+      className={cn('flex flex-col', isCompact ? 'gap-2' : 'gap-2')}
     >
       {suggestions.map((suggestion, index) => {
         const isSelected = !isHandedOff && selectedSuggestions.includes(suggestion);

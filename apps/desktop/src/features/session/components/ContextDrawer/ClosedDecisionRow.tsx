@@ -31,7 +31,7 @@ export const ClosedDecisionRow = ({
     ref={rowRef}
     data-decision={number}
     className={cn(
-      'flex items-start gap-2.5 rounded-lg px-2 py-2 motion-safe:transition-colors',
+      'flex items-start gap-3 rounded-lg px-2 py-2 motion-safe:transition-colors',
       isHighlighted && 'bg-selected',
     )}
   >
@@ -40,7 +40,7 @@ export const ClosedDecisionRow = ({
       <div className="line-clamp-2 text-faint-foreground line-through [overflow-wrap:anywhere]">
         <Markdown text={text} className="text-label" />
       </div>
-      <p className="flex flex-wrap items-center gap-1.5 text-secondary text-faint-foreground">
+      <p className="flex flex-wrap items-center gap-1 text-meta text-faint-foreground">
         <span>{`${byline.author} · ${byline.verb}`}</span>
         {byline.target === null ? null : (
           <button
@@ -55,9 +55,7 @@ export const ClosedDecisionRow = ({
         )}
         {byline.closer === null ? null : <span>{`· ${byline.closer}`}</span>}
       </p>
-      {reason === null ? null : (
-        <p className="text-secondary text-faint-foreground">{`"${reason}"`}</p>
-      )}
+      {reason === null ? null : <p className="text-meta text-faint-foreground">{`"${reason}"`}</p>}
     </div>
     {onRestore === null || isLocked ? null : (
       <Button variant="ghost" size="sm" onClick={onRestore}>

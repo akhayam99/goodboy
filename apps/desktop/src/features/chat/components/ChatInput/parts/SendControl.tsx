@@ -47,13 +47,13 @@ export const SendControl = ({
       <>
         <Button variant="ghost" size="sm" onClick={onSend}>
           Queue{' '}
-          <KbdPill aria-hidden className="h-4 min-w-4 text-secondary">
+          <KbdPill aria-hidden className="h-4 min-w-4 text-meta">
             {formatCombo('Enter')}
           </KbdPill>
         </Button>
         <Button variant="primary" size="sm" onClick={onSendNow}>
           Send now{' '}
-          <KbdPill aria-hidden className="h-4 min-w-4 text-secondary">
+          <KbdPill aria-hidden className="h-4 min-w-4 text-meta">
             {shortcutGlyphs('composer.submit')}
           </KbdPill>
         </Button>

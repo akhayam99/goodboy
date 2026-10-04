@@ -37,7 +37,7 @@ export const ArtifactAttachmentsField = ({
       data-drop-composer
       data-testid="artifact-attachments"
       className={cn(
-        'flex min-w-0 flex-wrap items-center gap-2 rounded-lg border px-2.5 py-1.5 transition-colors',
+        'flex min-w-0 flex-wrap items-center gap-2 rounded-lg border px-3 py-2 transition-colors',
         isDragging
           ? cn('border-dashed border-primary', tintClasses('primary').bgSoft)
           : 'border-border-soft',
@@ -57,7 +57,7 @@ export const ArtifactAttachmentsField = ({
         disabled={worktree === null}
         onClick={() => fileInputRef.current?.click()}
         className={cn(
-          'inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2 py-0.5 text-secondary transition-colors',
+          'inline-flex shrink-0 items-center gap-1 rounded-md border border-border px-2 py-0.5 text-chip transition-colors',
           worktree === null
             ? 'cursor-not-allowed text-muted-foreground'
             : 'text-muted-foreground hover:bg-hover hover:text-foreground',
@@ -76,13 +76,13 @@ export const ArtifactAttachmentsField = ({
           />
         ))
       ) : (
-        <span className="text-secondary text-faint-foreground">
+        <span className="text-meta text-faint-foreground">
           {worktree === null ? NO_WORKTREE_HINT : EMPTY_HINT}
         </span>
       )}
     </div>
     {note === null ? null : (
-      <span role="status" className="text-secondary text-muted-foreground">
+      <span role="status" className="text-meta text-muted-foreground">
         {note}
       </span>
     )}

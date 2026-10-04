@@ -18,7 +18,7 @@ const MODE_HINT: Record<Mode, string> = {
 };
 
 export const ModeSwitch = ({ mode, disabled, control = null, onChange }: Props) => (
-  <div className="flex flex-col gap-1.5">
+  <div className="flex flex-col gap-2">
     <div className="flex flex-wrap items-center justify-between gap-3">
       <SegmentedTabs
         ariaLabel="How the steps are set"
@@ -39,6 +39,6 @@ export const ModeSwitch = ({ mode, disabled, control = null, onChange }: Props) 
       />
       {control}
     </div>
-    <div className="text-secondary text-faint-foreground">{MODE_HINT[mode]}</div>
+    <div className="text-meta text-faint-foreground">{MODE_HINT[mode]}</div>
   </div>
 );

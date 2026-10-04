@@ -11,7 +11,7 @@ const WELCOME_LINES = [
 export const WelcomeStep = () => (
   <div className="flex flex-col gap-6">
     <ConceptTile icon={CONCEPT_ICONS.agents} tone={CONCEPT_TONE.agents} />
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       <h2 tabIndex={-1} data-step-title className="text-display text-foreground outline-none">
         Welcome to Goodboy
       </h2>
@@ -23,7 +23,7 @@ export const WelcomeStep = () => (
       {WELCOME_LINES.map((line) => (
         <li
           key={line.label}
-          className="flex items-center justify-between gap-3 rounded-md bg-subtle px-3.5 py-2.5"
+          className="flex items-center justify-between gap-3 rounded-md bg-subtle px-4 py-2"
         >
           <span className="text-body text-foreground">{line.label}</span>
           <span className="shrink-0 text-label tabular-nums text-faint-foreground">

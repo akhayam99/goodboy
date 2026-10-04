@@ -99,7 +99,7 @@ export const WriteReviewForm = ({ sessionId }: Props) => {
           meta={<span className="tabular-nums text-muted-foreground">{open.length}</span>}
         />
         {open.length === 0 ? (
-          <p className="text-secondary text-muted-foreground">{NO_LINE_COMMENTS}</p>
+          <p className="text-meta text-muted-foreground">{NO_LINE_COMMENTS}</p>
         ) : (
           <ul className="flex min-w-0 flex-col gap-2">
             {open.map((draft) => (
@@ -138,7 +138,7 @@ export const WriteReviewForm = ({ sessionId }: Props) => {
         />
       </div>
       <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
-        <span className="mr-auto text-secondary text-muted-foreground">{ONE_REVIEW_HINT}</span>
+        <span className="mr-auto text-meta text-muted-foreground">{ONE_REVIEW_HINT}</span>
         {button !== null && submit?.blockedReason != null && !submission.isSubmitting ? (
           <Tooltip content={submit.blockedReason} anchorClassName="inline-flex">
             {button}
@@ -148,7 +148,7 @@ export const WriteReviewForm = ({ sessionId }: Props) => {
         )}
       </div>
       {error !== null && (
-        <p role="alert" className="text-right text-secondary text-danger">
+        <p role="alert" className="text-right text-meta text-danger">
           {error}
         </p>
       )}

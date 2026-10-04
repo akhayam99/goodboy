@@ -64,7 +64,7 @@ export const useDiffReviewThreads = ({ sessionId, mountId }: Params): ReadonlyAr
                   destination: { kind: 'thread', mountId, prNumber, threadId },
                 })
               }
-              className="inline-flex w-fit items-center gap-0.5 rounded-sm text-secondary text-muted-foreground hover:text-foreground"
+              className="inline-flex w-fit items-center gap-0.5 rounded-sm text-meta text-muted-foreground hover:text-foreground"
             >
               Open in Review
               <ArrowUpRight size={10} aria-hidden />

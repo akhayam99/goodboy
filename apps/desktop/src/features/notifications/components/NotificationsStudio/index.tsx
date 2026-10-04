@@ -224,9 +224,9 @@ export const NotificationsStudio = ({ onClose }: Props) => {
                       aria-label={entry.label}
                       className="flex flex-col gap-0.5"
                     >
-                      <div className="flex items-baseline gap-1.5 px-2.5 pb-1">
+                      <div className="flex items-baseline gap-2 px-3 pb-1">
                         <Eyebrow label={entry.label} />
-                        <span className="text-secondary tabular-nums text-faint-foreground">
+                        <span className="text-meta tabular-nums text-faint-foreground">
                           {entry.items.length}
                         </span>
                       </div>
@@ -258,7 +258,7 @@ export const NotificationsStudio = ({ onClose }: Props) => {
                 </div>
               )}
               {hasOlder && notifications.length > 0 && (
-                <div className="flex items-center justify-between gap-3 px-2.5 text-secondary text-muted-foreground">
+                <div className="flex items-center justify-between gap-3 px-3 text-meta text-muted-foreground">
                   <span className="tabular-nums">
                     Showing {loadedMatching} of {counts.matching}
                   </span>

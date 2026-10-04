@@ -113,7 +113,7 @@ export const WorkspaceAfterMergeSection = ({ workspaceId }: Props) => {
         />
       </WorkspaceFieldRow>
       {autoDeleting.length === 1 && (
-        <p className="text-secondary text-muted-foreground">
+        <p className="text-meta text-muted-foreground">
           {githubAutoDeleteNote({ projectName: autoDeleting[0]! })}
         </p>
       )}
@@ -122,14 +122,14 @@ export const WorkspaceAfterMergeSection = ({ workspaceId }: Props) => {
           open={isReposOpen}
           onOpenChange={setIsReposOpen}
           trigger={
-            <span className="text-secondary text-muted-foreground">
+            <span className="text-meta text-muted-foreground">
               {githubAutoDeleteSummary({ count: autoDeleting.length })}
             </span>
           }
         >
           <ul className="flex flex-col gap-0.5">
             {autoDeleting.map((projectName) => (
-              <li key={projectName} className="text-secondary text-muted-foreground">
+              <li key={projectName} className="text-meta text-muted-foreground">
                 {projectName}
               </li>
             ))}

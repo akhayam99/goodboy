@@ -22,7 +22,7 @@ export const TimelineFoldSummary = ({ summary }: Props) => {
     <span
       data-testid="fold-summary"
       title={groupSummaryText({ summary })}
-      className="flex flex-1 basis-0 whitespace-pre text-secondary text-muted-foreground"
+      className="flex flex-1 basis-0 whitespace-pre text-meta text-muted-foreground"
     >
       <span className="shrink-0">{groupSummaryPartText({ part: first })}</span>
       {middle.length === 0 ? null : (

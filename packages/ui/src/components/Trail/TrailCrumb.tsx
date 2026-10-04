@@ -34,7 +34,7 @@ export const TrailCrumb = ({ segment, isCurrent, isIconOnly, delayStyle }: Props
         {...(delayStyle !== undefined && { delayStyle })}
       />
       {isIconOnly || segment.accessory == null ? null : (
-        <span className="flex shrink-0 items-center pl-1.5">{segment.accessory}</span>
+        <span className="flex shrink-0 items-center pl-2">{segment.accessory}</span>
       )}
     </>
   );

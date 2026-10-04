@@ -64,7 +64,7 @@ export const ProjectScriptsFold = ({ project }: Props) => {
         aria-controls={bodyId}
         aria-label={`Scripts of ${project.name}`}
         onClick={() => setIsOpen(!isOpen)}
-        className="flex h-7 items-center gap-2 rounded-sm px-2 text-left text-secondary text-muted-foreground hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+        className="flex h-7 items-center gap-2 rounded-sm px-2 text-left text-chip text-muted-foreground hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
       >
         <ChevronRight
           size={ICON_SIZE.control}
@@ -80,17 +80,15 @@ export const ProjectScriptsFold = ({ project }: Props) => {
       {isOpen ? (
         <div id={bodyId} className="flex flex-col gap-1 pb-1 pl-7 pr-2">
           {scan === undefined || scan.status === 'loading' ? (
-            <p className="text-secondary text-faint-foreground">Reading scripts on {base}…</p>
+            <p className="text-meta text-faint-foreground">Reading scripts on {base}…</p>
           ) : null}
-          {scan?.status === 'error' ? (
-            <p className="text-secondary text-danger">{scan.error}</p>
-          ) : null}
+          {scan?.status === 'error' ? <p className="text-meta text-danger">{scan.error}</p> : null}
           {scan?.status === 'ready' && count === 0 ? (
             <EmptyLine>No package.json or composer.json in {project.name}.</EmptyLine>
           ) : null}
           {count > 0 ? (
             <>
-              <p className="text-secondary text-faint-foreground">
+              <p className="text-meta text-faint-foreground">
                 Scripts on {base}. Pin the ones you use; they show up in the Scripts page and in the
                 palette.
               </p>

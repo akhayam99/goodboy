@@ -35,7 +35,7 @@ export const ReviewSourcePicker = ({ entries, selected, onSelect }: Props) => {
           aria-expanded={dropdown.open}
           aria-label={`${REVIEW_FLOW_LABEL.sourcePicker}: ${selected.label}`}
           className={cn(
-            'flex h-6 items-center gap-1.5 rounded-md px-1.5 text-secondary text-foreground motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            'flex h-6 items-center gap-1 rounded-md px-2 text-chip text-foreground motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             dropdown.open && 'bg-hover',
           )}
         >
@@ -58,12 +58,12 @@ export const ReviewSourcePicker = ({ entries, selected, onSelect }: Props) => {
               dropdown.close();
               onSelect(entry.key);
             }}
-            className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-foreground motion-safe:transition-colors hover:bg-hover focus-visible:bg-hover focus-visible:outline-none"
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-foreground motion-safe:transition-colors hover:bg-hover focus-visible:bg-hover focus-visible:outline-none"
           >
             <ReviewSourceGlyph kind={entry.kind} />
             <span className="min-w-0 flex-1 truncate">{sourceOptionLabel({ entry })}</span>
             {open !== null && (
-              <span className="text-secondary tabular-nums text-muted-foreground">{open}</span>
+              <span className="text-meta tabular-nums text-muted-foreground">{open}</span>
             )}
             <span className="flex w-3.5 shrink-0 justify-end">
               {isSelected && (

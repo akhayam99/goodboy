@@ -9,13 +9,13 @@ type Props = {
 export const StartFooter = ({ note, error = null, children }: Props) => (
   <div className="flex flex-col gap-1 pt-1">
     {error == null ? null : (
-      <p role="alert" className="text-secondary text-danger">
+      <p role="alert" className="text-meta text-danger">
         {error}
       </p>
     )}
     <div className="flex items-center justify-end gap-2">
       {note == null ? null : (
-        <span className="min-w-0 flex-1 text-secondary text-faint-foreground">{note}</span>
+        <span className="min-w-0 flex-1 text-meta text-faint-foreground">{note}</span>
       )}
       {children}
     </div>

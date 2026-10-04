@@ -60,7 +60,7 @@ export const ProvidersInOrder = ({ workspaceId }: Props) => {
       >
         <div className="flex flex-col px-1 pt-1">
           <Eyebrow label="Providers, in order" />
-          <span className="text-secondary text-faint-foreground">This workspace</span>
+          <span className="text-meta text-faint-foreground">This workspace</span>
         </div>
         <ProviderPolicyList workspaceId={workspaceId} hasReset />
       </AnchoredPopover>

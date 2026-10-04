@@ -10,8 +10,8 @@ import { WorkflowRow } from './WorkflowRow';
 import { useAgentsSection } from './useAgentsSection';
 import { pluralize } from '../../../../shared/utils/pluralize';
 
-const FIRST_HEADER_CLASS = 'pb-1.5';
-const SUBSEQUENT_HEADER_CLASS = 'mt-6 pb-1.5';
+const FIRST_HEADER_CLASS = 'pb-2';
+const SUBSEQUENT_HEADER_CLASS = 'mt-6 pb-2';
 
 type Props = {
   task: Session;
@@ -56,7 +56,7 @@ export const AgentsSection = ({ task, only, workflowRunId, showWorkflowAttach = 
       )}
       {isWorkflowExpanded && !section.hasAnyWorkflow && <WorkflowStartButton sessionId={task.id} />}
       {isWorkflowExpanded && section.hasAnyWorkflow && (
-        <div className={cn('flex flex-col gap-1.5', forceExpanded && 'min-h-0 flex-1')}>
+        <div className={cn('flex flex-col gap-2', forceExpanded && 'min-h-0 flex-1')}>
           <div className={cn('flex flex-col', forceExpanded ? 'min-h-0 flex-1 gap-3' : 'gap-0.5')}>
             {section.visibleWorkflowRuns.map(({ run, workflow }) => (
               <WorkflowRow
@@ -127,7 +127,7 @@ export const AgentsSection = ({ task, only, workflowRunId, showWorkflowAttach = 
             />
           )}
           {section.spawnError != null && (
-            <p className="px-2 text-secondary text-danger">{section.spawnError}</p>
+            <p className="px-2 text-meta text-danger">{section.spawnError}</p>
           )}
         </>
       )}

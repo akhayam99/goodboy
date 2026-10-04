@@ -6,7 +6,7 @@ const TRUST_COPY =
 
 export const TrustNote = () => {
   return (
-    <p className="flex items-start gap-2 text-2xs leading-relaxed text-muted-foreground">
+    <p className="flex items-start gap-2 text-meta text-muted-foreground">
       <ShieldCheck size={ICON_SIZE.row} aria-hidden className="mt-0.5 shrink-0" />
       <span>{TRUST_COPY}</span>
     </p>

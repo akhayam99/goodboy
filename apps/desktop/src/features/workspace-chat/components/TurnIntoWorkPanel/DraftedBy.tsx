@@ -12,8 +12,8 @@ type Props = {
 const DRAFTED_BY_LABEL = 'Drafted by';
 
 export const DraftedBy = ({ choice, connectedProviders, onChange }: Props) => (
-  <div className="flex min-w-0 items-center gap-1.5">
-    <span className="text-secondary text-muted-foreground">{DRAFTED_BY_LABEL}</span>
+  <div className="flex min-w-0 items-center gap-2">
+    <span className="text-meta text-muted-foreground">{DRAFTED_BY_LABEL}</span>
     <RoutingPicker
       ariaLabel={DRAFTED_BY_LABEL}
       variant="pill"

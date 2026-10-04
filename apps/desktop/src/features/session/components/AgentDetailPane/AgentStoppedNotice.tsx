@@ -44,7 +44,7 @@ export const AgentStoppedNotice = ({
     <div
       role="status"
       data-agent-stopped
-      className="relative flex w-full min-w-0 items-start gap-2.5 overflow-hidden rounded-lg border border-border-soft bg-subtle py-2.5 pl-3.5 pr-3"
+      className="relative flex w-full min-w-0 items-start gap-3 overflow-hidden rounded-lg border border-border-soft bg-subtle py-3 pl-4 pr-3"
     >
       <span aria-hidden className={cn('absolute inset-y-0 left-0 w-0.5', tint.dot)} />
       <Icon size={ICON_SIZE.control} aria-hidden className={cn('mt-px shrink-0', tint.icon)} />

@@ -47,15 +47,15 @@ export const FallbackRow = ({
       : recommendationSummary({ provider: fallback.provider, model: fallback.model });
   return (
     <section aria-label="If unavailable" className="flex flex-col">
-      <div className="flex items-center gap-2 px-2.5 py-1.5">
-        <span className="flex-1 text-secondary text-faint-foreground">If unavailable</span>
+      <div className="flex items-center gap-2 px-3 py-2">
+        <span className="flex-1 text-meta text-faint-foreground">If unavailable</span>
         <button
           type="button"
           disabled={disabled}
           aria-expanded={isOpen}
           aria-label={`${label} if unavailable: ${shown}`}
           onClick={() => setIsOpen((current) => !current)}
-          className="inline-flex min-w-0 items-center gap-1 rounded-sm px-1 text-secondary text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex min-w-0 items-center gap-1 rounded-sm px-1 text-meta text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
         >
           {fallback == null ? (
             <CONCEPT_ICONS.autoRouting size={11} aria-hidden className="shrink-0" />

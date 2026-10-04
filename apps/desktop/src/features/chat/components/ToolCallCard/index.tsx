@@ -75,14 +75,11 @@ export const ToolCallCard = ({ item, activeRunId, permission }: Props) => {
           open={open}
           onToggle={() => setOpen((value) => !value)}
           preview={
-            <span className="flex min-w-0 items-center gap-1.5">
+            <span className="flex min-w-0 items-center gap-2">
               <span className="truncate font-mono text-muted-foreground">{item.toolName}</span>
               {status === 'failed' && (
                 <span
-                  className={cn(
-                    'shrink-0 text-secondary uppercase tracking-eyebrow',
-                    dangerTint.text,
-                  )}
+                  className={cn('shrink-0 text-meta uppercase tracking-eyebrow', dangerTint.text)}
                 >
                   error
                 </span>
@@ -98,7 +95,7 @@ export const ToolCallCard = ({ item, activeRunId, permission }: Props) => {
           type="button"
           onClick={() => setRawMode((value) => !value)}
           data-testid="raw-toggle"
-          className="rounded-md px-1.5 py-0.5 text-secondary text-faint-foreground hover:bg-hover hover:text-foreground"
+          className="rounded-md px-2 py-0.5 text-chip text-faint-foreground hover:bg-hover hover:text-foreground"
         >
           {rawMode ? 'structured' : 'raw json'}
         </button>

@@ -22,7 +22,7 @@ export const HandoffChips = ({ sections, active, onToggleSection, onShowAll }: P
     <div
       role="toolbar"
       aria-label="Sections received"
-      className="flex min-w-0 flex-wrap gap-1.5"
+      className="flex min-w-0 flex-wrap gap-2"
       data-testid="handoff-chips"
     >
       {sections.map((section) => {

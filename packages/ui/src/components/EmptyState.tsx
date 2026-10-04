@@ -30,20 +30,20 @@ const DEFAULT_PRESENTATION = {
 
 const SIZE_CLASSES = {
   inline: {
-    root: 'flex items-start gap-2.5 px-3 py-2.5 text-left',
+    root: 'flex items-start gap-3 px-3 py-3 text-left',
     content: 'flex min-w-0 flex-1 flex-col gap-1',
     title: 'text-label font-medium text-foreground',
-    description: 'text-xs leading-relaxed text-muted-foreground',
+    description: 'text-label text-muted-foreground',
   },
   sm: {
     root: 'flex flex-col items-center gap-3 px-6 py-10 text-center',
     content: 'flex flex-col gap-1',
     title: 'text-row text-foreground',
-    description: 'max-w-xs text-xs leading-relaxed text-muted-foreground',
+    description: 'max-w-xs text-label text-muted-foreground',
   },
   lg: {
     root: 'flex flex-col items-center gap-6 px-8 py-10 text-center',
-    content: 'flex flex-col gap-2.5',
+    content: 'flex flex-col gap-3',
     title: 'text-title text-foreground',
     description: 'max-w-sm text-prose text-muted-foreground',
   },

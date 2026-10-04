@@ -25,7 +25,7 @@ export const AgentAnsweringFor = ({ sessionId, question, asker }: Props) => {
             type="button"
             onClick={() => navigate({ to: agentPlace({ sessionId, agentId: asker.id }) })}
             className={cn(
-              'self-start rounded-sm px-1.5 py-0.5 text-secondary font-medium text-muted-foreground',
+              'self-start rounded-sm px-2 py-0.5 text-chip text-muted-foreground',
               'transition-colors duration-150 hover:text-foreground',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             )}

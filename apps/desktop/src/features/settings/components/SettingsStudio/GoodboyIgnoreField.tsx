@@ -67,7 +67,7 @@ export const GoodboyIgnoreField = ({ project }: Props) => {
 
   if (!isChanging) {
     return (
-      <span className="flex shrink-0 items-center gap-1.5 text-secondary text-faint-foreground">
+      <span className="flex shrink-0 items-center gap-1 text-meta text-faint-foreground">
         {label !== null && <span>{label}</span>}
         <button
           type="button"
@@ -81,10 +81,10 @@ export const GoodboyIgnoreField = ({ project }: Props) => {
   }
 
   return (
-    <span className="flex flex-col items-end gap-1.5">
+    <span className="flex flex-col items-end gap-2">
       <div className="flex flex-col gap-1">
         {GOODBOY_IGNORE_CHOICES.map((choice) => (
-          <label key={choice.mode} className="flex items-center gap-1.5 text-secondary">
+          <label key={choice.mode} className="flex items-center gap-1 text-meta">
             <input
               type="radio"
               name={`goodboy-ignore-mode-${project.id}`}
@@ -95,7 +95,7 @@ export const GoodboyIgnoreField = ({ project }: Props) => {
           </label>
         ))}
       </div>
-      <span className="flex items-center gap-1.5">
+      <span className="flex items-center gap-2">
         <Button variant="ghost" size="sm" onClick={() => setIsChanging(false)} disabled={isSaving}>
           Cancel
         </Button>
@@ -104,7 +104,7 @@ export const GoodboyIgnoreField = ({ project }: Props) => {
         </Button>
       </span>
       {error !== null && (
-        <span role="alert" className="text-secondary text-danger">
+        <span role="alert" className="text-meta text-danger">
           {error}
         </span>
       )}

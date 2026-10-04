@@ -60,7 +60,7 @@ export const ShortcutGroupSurface = ({ group }: Props) => {
             <span className="flex min-w-0 flex-col">
               <span className="truncate text-muted-foreground">{row.label}</span>
               {sharedWhere === null && row.where !== null ? (
-                <span className="truncate text-secondary text-faint-foreground">{row.where}</span>
+                <span className="truncate text-meta text-faint-foreground">{row.where}</span>
               ) : null}
             </span>
             <KbdPill className="shrink-0">

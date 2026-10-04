@@ -13,7 +13,7 @@ export const PrefixRow = ({ title, prefixes }: PrefixRowProps) => (
       {prefixes.map((prefix) => (
         <li
           key={prefix.symbol}
-          className="flex items-center gap-1.5 rounded-md border border-border-soft px-2 py-1 text-label text-foreground"
+          className="flex items-center gap-2 rounded-md border border-border-soft px-2 py-1 text-label text-foreground"
         >
           <KbdPill>{prefix.symbol}</KbdPill>
           <span className="capitalize">{prefix.noun}</span>

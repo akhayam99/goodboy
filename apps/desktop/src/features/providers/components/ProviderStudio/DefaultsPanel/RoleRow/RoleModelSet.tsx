@@ -43,18 +43,14 @@ export const RoleModelSet = ({
   const hasSet = entries.length > 0;
   return (
     <section aria-label={title} className="flex flex-col gap-2">
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
         <span className="text-row text-foreground">{title}</span>
         {hasSet ? (
           <StatusDot tone="info" size="sm" ariaLabel="Different from the default, Auto decides" />
         ) : null}
       </div>
-      <p className="text-secondary text-muted-foreground">{hasSet ? HINT_SET : HINT_EMPTY}</p>
-      <div
-        role="list"
-        aria-label={`${label} models`}
-        className="flex flex-wrap items-center gap-1.5"
-      >
+      <p className="text-meta text-muted-foreground">{hasSet ? HINT_SET : HINT_EMPTY}</p>
+      <div role="list" aria-label={`${label} models`} className="flex flex-wrap items-center gap-2">
         {entries.map((entry, index) => (
           <span role="listitem" key={`${entry.choice.providerId}:${entry.choice.model}`}>
             <RoleModelChip

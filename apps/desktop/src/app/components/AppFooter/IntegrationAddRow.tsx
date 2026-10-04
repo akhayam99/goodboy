@@ -20,12 +20,12 @@ export const IntegrationAddRow = ({ member, connected, onSelect }: Props) => {
         type="button"
         onClick={onSelect}
         aria-label={connected ? `Open ${label}` : member.connectLabel}
-        className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-hover"
+        className="flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-hover"
       >
         <IntegrationGlyph provider={member.provider} size="xs" useBrandColor={connected} />
         <span className="flex-1 truncate text-label text-foreground">{label}</span>
         <StatusDot tone={connected ? 'success' : 'neutral'} size="sm" />
-        <span className="shrink-0 text-secondary text-muted-foreground">
+        <span className="shrink-0 text-meta text-muted-foreground">
           {connected ? 'Connected' : 'Not connected'}
         </span>
       </button>

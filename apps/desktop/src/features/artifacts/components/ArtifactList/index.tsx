@@ -78,7 +78,7 @@ export const ArtifactList = ({
           <div className="flex min-w-0 items-baseline gap-2">
             <h1 className="min-w-0 truncate text-title text-foreground">Artifacts</h1>
             {counts.all > 0 ? (
-              <span className="shrink-0 text-secondary tabular-nums text-muted-foreground">
+              <span className="shrink-0 text-meta tabular-nums text-muted-foreground">
                 {counts.all}
               </span>
             ) : null}
@@ -108,7 +108,7 @@ export const ArtifactList = ({
           />
         )}
         {importer.pending === null && importer.error !== null ? (
-          <span role="alert" className="text-secondary text-danger">
+          <span role="alert" className="text-meta text-danger">
             {importer.error}
           </span>
         ) : null}

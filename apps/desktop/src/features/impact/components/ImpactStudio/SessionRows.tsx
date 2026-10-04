@@ -12,7 +12,7 @@ type Props = {
   readonly onOpenSession: (sessionId: SessionId) => void;
 };
 
-const ROW = 'flex items-center gap-3 rounded-sm px-2 py-1.5 text-left text-label';
+const ROW = 'flex items-center gap-3 rounded-sm px-2 py-2 text-left text-label';
 
 export const SessionRows = ({ sessions, valueLabel, formatValue, onOpenSession }: Props) => {
   if (sessions.length === 0) {

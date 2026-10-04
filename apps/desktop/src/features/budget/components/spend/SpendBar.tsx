@@ -16,12 +16,12 @@ export const SpendBar = ({ label, valueLabel, pct, metaLabel, icon, onClick }: P
   const body = (
     <>
       <div className="flex items-center gap-2">
-        <span className="flex min-w-0 items-center gap-1.5 truncate text-body capitalize text-foreground">
+        <span className="flex min-w-0 items-center gap-2 truncate text-body capitalize text-foreground">
           {icon}
           {label}
         </span>
         {metaLabel !== undefined ? (
-          <span className="ml-auto shrink-0 text-secondary text-faint-foreground">{metaLabel}</span>
+          <span className="ml-auto shrink-0 text-meta text-faint-foreground">{metaLabel}</span>
         ) : null}
         <span
           className={cn(
@@ -42,7 +42,7 @@ export const SpendBar = ({ label, valueLabel, pct, metaLabel, icon, onClick }: P
   );
 
   if (onClick === undefined) {
-    return <div className="flex flex-col gap-1.5">{body}</div>;
+    return <div className="flex flex-col gap-2">{body}</div>;
   }
 
   return (
@@ -50,7 +50,7 @@ export const SpendBar = ({ label, valueLabel, pct, metaLabel, icon, onClick }: P
       type="button"
       onClick={onClick}
       className={cn(
-        'flex flex-col gap-1.5 rounded-md px-2 py-1.5 text-left transition-colors',
+        'flex flex-col gap-2 rounded-md px-2 py-2 text-left transition-colors',
         'hover:bg-hover',
       )}
     >

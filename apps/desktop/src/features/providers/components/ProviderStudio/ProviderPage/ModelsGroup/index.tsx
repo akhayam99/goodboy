@@ -85,7 +85,7 @@ export const ModelsGroup = ({ providerId, isFocused }: Props) => {
         hint="A model you turn off is hidden from pickers and Auto. A model you pinned keeps running."
         action={
           <div className="flex items-center gap-2">
-            <span className="text-secondary text-faint-foreground">
+            <span className="text-meta text-faint-foreground">
               Showing {shown} of {total}
             </span>
             <Button

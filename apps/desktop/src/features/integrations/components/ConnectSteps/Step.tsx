@@ -61,7 +61,7 @@ export const ConnectStepsStep = ({ step, ordinal, isLast }: Props) => {
         {step.help != null && (
           <span
             className={cn(
-              'text-secondary',
+              'text-meta',
               step.status === 'later' ? 'text-faint-foreground' : 'text-muted-foreground',
             )}
           >

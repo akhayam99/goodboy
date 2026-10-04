@@ -10,10 +10,10 @@ export const WireframeFlowLegend = () => (
   <ul
     aria-label="Flow legend"
     data-testid="wireframe-flow-legend"
-    className="flex min-w-0 flex-wrap items-center gap-x-3.5 gap-y-1 text-secondary text-muted-foreground"
+    className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-meta text-muted-foreground"
   >
     {ENTRIES.map((entry) => (
-      <li key={entry.key} className="inline-flex items-center gap-1.5">
+      <li key={entry.key} className="inline-flex items-center gap-2">
         <span aria-hidden className="text-foreground">
           {entry.glyph}
         </span>

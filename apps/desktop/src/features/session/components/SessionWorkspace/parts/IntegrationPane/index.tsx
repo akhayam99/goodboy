@@ -203,7 +203,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
               onCancel={() => setIsUnlinkArmed(false)}
             />
           ) : (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <GhostActionButton
                 icon={ArrowLeft}
                 label={`All ${meta.nounPlural}`}

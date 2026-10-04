@@ -217,13 +217,13 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
         <SectionHeader label="Preview" headingLevel={2} />
         <BandStack>
           <Band inset="content">
-            <p className="text-secondary text-muted-foreground">When fixed</p>
+            <p className="text-meta text-muted-foreground">When fixed</p>
             {preview !== null && (
               <Markdown text={preview} variant="preview" className="text-label text-foreground" />
             )}
           </Band>
           <Band inset="content">
-            <p className="text-secondary text-muted-foreground">When not changing</p>
+            <p className="text-meta text-muted-foreground">When not changing</p>
             {noChangePreview !== null && (
               <Markdown
                 text={noChangePreview}

@@ -31,7 +31,7 @@ type FilterParams = {
 const UNASSIGN_ROW_ID = 'unassign';
 
 const MENU_ROW =
-  'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-label text-foreground transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50';
+  'flex w-full items-center justify-between gap-2 rounded-md px-2 py-2 text-left text-label text-foreground transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50';
 
 const filterAssignees = ({ users, query }: FilterParams): ReadonlyArray<JiraUser> => {
   const needle = query.trim().toLowerCase();
@@ -83,7 +83,7 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
           title="Change who owns this issue in Jira"
           disabled={busyId != null}
           onClick={toggle}
-          className="inline-flex items-center gap-1.5 rounded-sm text-secondary text-muted-foreground hover:text-foreground disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-1 rounded-sm text-meta text-muted-foreground hover:text-foreground disabled:cursor-not-allowed"
         >
           <UserRound size={ICON_SIZE.row} aria-hidden />
           <span className={cn(busyId != null && 'text-shimmer')}>
@@ -133,21 +133,19 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
           </button>
         ))}
         {isLoading && (
-          <p role="status" className="px-2 py-1.5 text-secondary text-muted-foreground">
+          <p role="status" className="px-2 py-1 text-meta text-muted-foreground">
             Reading who can take this issue
           </p>
         )}
         {!isLoading && error == null && filtered.length === 0 && (
-          <p className="px-2 py-1.5 text-secondary text-muted-foreground">
-            No one matches that name
-          </p>
+          <p className="px-2 py-1 text-meta text-muted-foreground">No one matches that name</p>
         )}
       </ScrollFade>
       {error != null && (
         <>
           <Divider />
           <div className="flex items-center justify-between gap-2 p-1">
-            <p role="alert" className="min-w-0 text-secondary text-danger">
+            <p role="alert" className="min-w-0 text-meta text-danger">
               {error}
             </p>
             <Button size="sm" variant="ghost" onClick={reload}>
@@ -159,7 +157,7 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
       {assignError != null && (
         <>
           <Divider />
-          <p role="alert" className="px-2 py-1.5 text-secondary text-danger">
+          <p role="alert" className="px-2 py-1 text-meta text-danger">
             {assignError}
           </p>
         </>

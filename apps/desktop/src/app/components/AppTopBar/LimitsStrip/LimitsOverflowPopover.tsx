@@ -66,7 +66,7 @@ export const LimitsOverflowPopover = ({ hidden, nowMs, className, onOpen }: Prop
           aria-expanded={isOpen}
           onClick={toggle}
           className={cn(
-            'flex h-6 shrink-0 items-center gap-0.5 rounded-md px-1.5 text-secondary font-medium tabular-nums text-muted-foreground motion-safe:transition-colors',
+            'flex h-6 shrink-0 items-center gap-0.5 rounded-md px-2 text-chip tabular-nums text-muted-foreground motion-safe:transition-colors',
             isOpen ? 'bg-muted' : 'hover:bg-hover',
           )}
         >
@@ -81,7 +81,7 @@ export const LimitsOverflowPopover = ({ hidden, nowMs, className, onOpen }: Prop
         </button>
       }
     >
-      <ul aria-label="More provider limits" className="flex flex-col p-1.5">
+      <ul aria-label="More provider limits" className="flex flex-col p-2">
         {hidden.map((chip) => {
           const Glyph = PROVIDER_BRAND[chip.providerId].icon;
           return (
@@ -109,7 +109,7 @@ export const LimitsOverflowPopover = ({ hidden, nowMs, className, onOpen }: Prop
                   isStale={chip.isStale}
                   className="w-15"
                 />
-                <span className="flex-1 truncate text-right text-secondary text-faint-foreground">
+                <span className="flex-1 truncate text-right text-meta text-faint-foreground">
                   {rowValue({ chip, nowMs })}
                 </span>
               </button>

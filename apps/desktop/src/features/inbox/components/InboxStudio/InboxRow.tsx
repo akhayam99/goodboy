@@ -78,7 +78,7 @@ const InboxRowView = ({
       onContextMenu={menu.onContextMenu}
       onKeyDown={menu.onKeyDown}
       className={cn(
-        'group relative grid h-8 grid-cols-[6px_14px_76px_minmax(0,1fr)_48px] items-center gap-2.5 rounded-md px-2.5 text-muted-foreground motion-safe:transition-colors @2xl:grid-cols-[6px_14px_76px_minmax(0,1fr)_120px_88px_48px]',
+        'group relative grid h-8 grid-cols-[6px_14px_76px_minmax(0,1fr)_48px] items-center gap-3 rounded-md px-3 text-muted-foreground motion-safe:transition-colors @2xl:grid-cols-[6px_14px_76px_minmax(0,1fr)_120px_88px_48px]',
         selected ? 'bg-selected text-foreground' : 'hover:bg-hover hover:text-foreground',
       )}
     >
@@ -100,7 +100,7 @@ const InboxRowView = ({
       <span aria-hidden className="pointer-events-none relative flex">
         <IntegrationGlyph provider={record.provider} size="xs" useBrandColor />
       </span>
-      <span className="pointer-events-none relative truncate font-mono text-secondary tabular-nums text-faint-foreground">
+      <span className="pointer-events-none relative truncate font-mono text-meta tabular-nums text-faint-foreground">
         {record.identifier}
       </span>
       <span
@@ -111,13 +111,13 @@ const InboxRowView = ({
       >
         {record.title}
       </span>
-      <span className="pointer-events-none relative hidden truncate text-2xs text-faint-foreground @2xl:block">
+      <span className="pointer-events-none relative hidden truncate text-meta text-faint-foreground @2xl:block">
         {record.context}
       </span>
       <InboxStateLabel
         state={record.state}
         label={record.stateLabel}
-        className="pointer-events-none relative hidden text-2xs text-muted-foreground @2xl:flex"
+        className="pointer-events-none relative hidden text-meta text-muted-foreground @2xl:flex"
       />
       <span className="relative flex h-5 items-center justify-end">
         {star === undefined ? null : (

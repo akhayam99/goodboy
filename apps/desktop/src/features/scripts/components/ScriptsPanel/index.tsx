@@ -334,18 +334,18 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
     }
     if (!group.isReady) {
       return (
-        <p className="px-2 py-1.5 text-label text-faint-foreground">
+        <p className="px-2 py-2 text-label text-faint-foreground">
           {group.projectName} is still preparing.
         </p>
       );
     }
     const scan = scans?.[group.worktreePath];
     if (scan?.status === 'error') {
-      return <p className="px-2 py-1.5 text-label text-faint-foreground">{scan.error}</p>;
+      return <p className="px-2 py-2 text-label text-faint-foreground">{scan.error}</p>;
     }
     if (discovered?.[group.worktreePath] === undefined) {
       return (
-        <p className="px-2 py-1.5 text-label text-faint-foreground">
+        <p className="px-2 py-2 text-label text-faint-foreground">
           Reading scripts in {group.projectName}…
         </p>
       );

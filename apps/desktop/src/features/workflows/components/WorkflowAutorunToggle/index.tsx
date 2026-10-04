@@ -12,7 +12,7 @@ export const WorkflowAutorunToggle = ({ isOn, onToggle }: Props) => (
       label={NAMES.runOnItsOwn}
       checked={isOn}
       onChange={() => onToggle()}
-      className="min-h-7 text-secondary font-medium"
+      className="min-h-7 text-chip"
     />
   </span>
 );

@@ -23,7 +23,7 @@ export const ScreenGrid = ({ stageId, screens, currentScreenId, onOpenScreen }: 
       <h3>
         <Eyebrow label="Screens" />
       </h3>
-      <span className="tabular-nums text-secondary text-muted-foreground">{screens.length}</span>
+      <span className="tabular-nums text-meta text-muted-foreground">{screens.length}</span>
     </div>
     <ol className="flex flex-wrap items-start gap-6">
       {screens.map((screen, index) => {

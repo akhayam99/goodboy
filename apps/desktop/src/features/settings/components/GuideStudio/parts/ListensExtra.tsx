@@ -62,7 +62,7 @@ export const ListensExtra = () => (
           <dd className="text-foreground">List</dd>
         </div>
       </dl>
-      <p className="text-secondary text-faint-foreground">
+      <p className="text-meta text-faint-foreground">
         {`Never a segmented control with a ${CHOICE_OVERFLOW_LABEL} option.`}
       </p>
     </Band>
@@ -74,7 +74,7 @@ export const ListensExtra = () => (
             <dt className="text-row text-foreground">{kind.name}</dt>
             <dd className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
               {kind.keys.map((key) => (
-                <span key={key.does} className="flex items-center gap-1.5">
+                <span key={key.does} className="flex items-center gap-2">
                   <KbdPill>{key.glyph}</KbdPill>
                   {key.does}
                 </span>
@@ -83,7 +83,7 @@ export const ListensExtra = () => (
           </div>
         ))}
       </dl>
-      <p className="text-secondary text-faint-foreground">
+      <p className="text-meta text-faint-foreground">
         A key shown in the app does what it says. Keys that only work in one place say where.
       </p>
     </Band>

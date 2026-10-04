@@ -42,7 +42,7 @@ export const ClampedText = ({ text, children, className }: Props) => {
         <button
           type="button"
           onClick={() => setIsExpanded((value) => !value)}
-          className="w-fit text-secondary text-muted-foreground hover:text-foreground"
+          className="w-fit text-meta text-muted-foreground hover:text-foreground"
         >
           {isExpanded ? 'Show less' : 'Show all'}
         </button>

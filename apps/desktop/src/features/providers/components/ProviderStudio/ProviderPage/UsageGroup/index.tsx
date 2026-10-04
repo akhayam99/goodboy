@@ -60,7 +60,7 @@ export const UsageGroup = ({ providerId, billing, planLabel }: Props) => {
           billing === 'token' || !reports ? undefined : (
             <div className="flex items-center gap-1">
               {status === null ? null : (
-                <span className="text-secondary text-faint-foreground">{status}</span>
+                <span className="text-meta text-faint-foreground">{status}</span>
               )}
               {refresh === null ? null : (
                 <RefreshIconButton
@@ -117,7 +117,7 @@ export const UsageGroup = ({ providerId, billing, planLabel }: Props) => {
         <SpendInGoodboy providerId={providerId} />
       </Band>
       {billing === 'plan' && reports ? (
-        <p className="px-2 text-secondary text-faint-foreground">
+        <p className="px-2 text-meta text-faint-foreground">
           {`Your ${planLabel ?? label} plan covers this. The figure is what the same tokens would cost on the API. Goodboy asks the ${label} CLI for these numbers and never reads your sign-in.`}
         </p>
       ) : null}

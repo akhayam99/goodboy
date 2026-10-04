@@ -1158,7 +1158,7 @@ export const WorkflowBuilderView = (props: Props) => {
           guidanceFooter={
             <>
               {guidanceTools}
-              <span className="text-secondary text-muted-foreground">
+              <span className="text-meta text-muted-foreground">
                 Sent to <span className="text-foreground">the orchestrator</span>
               </span>
             </>
@@ -1269,7 +1269,7 @@ export const WorkflowBuilderView = (props: Props) => {
           }}
           origin={
             isPresetEdited && basePreset !== null ? (
-              <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-secondary text-muted-foreground">
+              <span className="shrink-0 rounded-sm bg-muted px-2 py-0.5 text-chip text-muted-foreground">
                 {`Edited from ${basePreset.name}`}
               </span>
             ) : null
@@ -1327,7 +1327,7 @@ export const WorkflowBuilderView = (props: Props) => {
             tools={guidanceTools}
             recipients={
               guidance.trim() === '' ? (
-                <span className="text-secondary text-faint-foreground">Nothing to send.</span>
+                <span className="text-meta text-faint-foreground">Nothing to send.</span>
               ) : (
                 <>
                   <GuidanceRecipients

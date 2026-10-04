@@ -53,9 +53,7 @@ export const StudioBand = ({
                 ...(subtitle != null &&
                   subtitle !== '' && {
                     accessory: (
-                      <span className="truncate text-secondary text-muted-foreground">
-                        {subtitle}
-                      </span>
+                      <span className="truncate text-meta text-muted-foreground">{subtitle}</span>
                     ),
                   }),
               },

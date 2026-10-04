@@ -13,11 +13,11 @@ export const PaneTitleRow = ({ title, icon, meta, actions }: Props) => (
       {icon}
       <h1 className="min-w-0 truncate text-title text-foreground">{title}</h1>
       {meta != null && meta !== '' ? (
-        <span className="shrink-0 text-secondary tabular-nums text-muted-foreground">{meta}</span>
+        <span className="shrink-0 text-meta tabular-nums text-muted-foreground">{meta}</span>
       ) : null}
     </div>
     {actions != null ? (
-      <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5">{actions}</div>
+      <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">{actions}</div>
     ) : null}
   </div>
 );

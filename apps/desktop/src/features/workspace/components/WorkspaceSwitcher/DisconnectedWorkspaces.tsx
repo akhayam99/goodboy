@@ -25,7 +25,7 @@ export const DisconnectedWorkspaces = ({ workspaces, onReconnect }: Props) => {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="flex w-full items-center gap-1.5 rounded-md px-3 py-1.5 text-label text-muted-foreground hover:bg-hover hover:text-foreground"
+        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-label text-muted-foreground hover:bg-hover hover:text-foreground"
       >
         {open ? (
           <ChevronDown size={ICON_SIZE.control} aria-hidden />

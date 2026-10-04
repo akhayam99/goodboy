@@ -28,7 +28,7 @@ export const AttachmentChip = ({ attachment, onToggle }: Props) => {
         onClick={() => onToggle(attachment.id)}
         aria-label={`Attach ${attachment.label}`}
         className={cn(
-          'inline-flex h-6 items-center gap-1 rounded-full border border-dashed border-border px-2 text-secondary text-faint-foreground hover:bg-hover hover:text-muted-foreground',
+          'inline-flex h-6 items-center gap-1 rounded-full border border-dashed border-border px-2 text-chip text-faint-foreground hover:bg-hover hover:text-muted-foreground',
           FOCUS_RING,
         )}
       >
@@ -41,7 +41,7 @@ export const AttachmentChip = ({ attachment, onToggle }: Props) => {
   return (
     <span
       className={cn(
-        'inline-flex h-6 items-center gap-1 rounded-full bg-fill pl-2 pr-0.5 text-secondary text-muted-foreground',
+        'inline-flex h-6 items-center gap-1 rounded-full bg-fill pl-2 pr-0.5 text-chip text-muted-foreground',
         isError ? cn('ring-1', dangerTint.ring) : '',
       )}
     >

@@ -31,7 +31,7 @@ export const CollapsibleString = ({ value, label }: Props) => {
             )}
           >
             <TranscriptChevron open={open} />
-            <span className="text-secondary">
+            <span className="text-meta">
               {label ?? 'string'} ({value.length} chars)
             </span>
           </button>

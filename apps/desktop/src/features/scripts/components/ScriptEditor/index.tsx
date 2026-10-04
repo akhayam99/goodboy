@@ -90,7 +90,7 @@ export const ScriptEditor = ({
       <FormActions
         leading={
           error === null ? (
-            <p className="min-w-0 text-secondary text-faint-foreground">
+            <p className="min-w-0 text-meta text-faint-foreground">
               Saved scripts run in any branch of {projectName}, in every session of this workspace.
             </p>
           ) : (

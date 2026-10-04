@@ -40,8 +40,8 @@ export const PlannerDraftRow = ({
   onEffort,
   onPlan,
 }: Props) => (
-  <div className="flex flex-col gap-1.5 rounded-lg bg-subtle p-2.5 ring-1 ring-border-soft focus-within:ring-foreground/15">
-    <label htmlFor={PROCESS_ID} className="text-secondary text-muted-foreground">
+  <div className="flex flex-col gap-2 rounded-lg bg-subtle p-3 ring-1 ring-border-soft focus-within:ring-foreground/15">
+    <label htmlFor={PROCESS_ID} className="text-meta text-muted-foreground">
       Describe the steps
     </label>
     <PromptField

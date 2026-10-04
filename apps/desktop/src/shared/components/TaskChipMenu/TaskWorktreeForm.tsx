@@ -62,7 +62,7 @@ export const TaskWorktreeForm = ({ sessionId, task, onBack, onDone }: Props) => 
     <div className="flex flex-col gap-3 p-3">
       <div className="flex flex-col gap-1">
         <span className="text-row text-foreground">{`New worktree for ${task.identifier}`}</span>
-        <span className="text-secondary text-muted-foreground">
+        <span className="text-meta text-muted-foreground">
           {projectName === '' ? 'It gets its own branch.' : `${projectName} · from its base branch`}
         </span>
       </div>
@@ -82,7 +82,7 @@ export const TaskWorktreeForm = ({ sessionId, task, onBack, onDone }: Props) => 
         }}
         className="h-8 w-full text-label"
       />
-      <span className="text-secondary text-muted-foreground">
+      <span className="text-meta text-muted-foreground">
         {`Leave it empty to use ${preview ?? 'an automatic name'}.`}
       </span>
       <div className="flex items-center justify-end gap-1">

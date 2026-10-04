@@ -193,10 +193,7 @@ export const LaunchSessionPanel = ({
       />
 
       {error != null ? (
-        <span
-          role="alert"
-          className="flex items-start gap-1.5 px-2 text-2xs leading-relaxed text-danger"
-        >
+        <span role="alert" className="flex items-start gap-1 px-2 text-meta text-danger">
           <AlertTriangle size={ICON_SIZE.row} aria-hidden className="mt-0.5 shrink-0" />
           {error}
         </span>
@@ -206,7 +203,7 @@ export const LaunchSessionPanel = ({
         className="px-1"
         leading={
           brief?.status === 'loading' || readyBrief !== null ? (
-            <p className="min-w-0 truncate px-1 text-secondary text-faint-foreground">
+            <p className="min-w-0 truncate px-1 text-meta text-faint-foreground">
               Edited text is never replaced by the brief.
             </p>
           ) : null

@@ -22,12 +22,12 @@ type RowProps = {
 
 const PreflightRow = ({ label, value, isPending }: RowProps) => (
   <div className="flex min-w-0 items-baseline gap-2">
-    <dt className="w-12 shrink-0 text-secondary uppercase tracking-eyebrow text-faint-foreground">
+    <dt className="w-12 shrink-0 text-meta uppercase tracking-eyebrow text-faint-foreground">
       {label}
     </dt>
     <dd
       className={cn(
-        'min-w-0 flex-1 truncate font-mono text-secondary text-foreground',
+        'min-w-0 flex-1 truncate font-mono text-meta text-foreground',
         isPending && 'text-muted-foreground',
       )}
       title={value}
@@ -90,31 +90,31 @@ export const MountPreflightCard = ({
         </dl>
       )}
       {preflight?.renamedFrom == null ? null : (
-        <p role="status" className="text-secondary text-warning">
+        <p role="status" className="text-meta text-warning">
           {preflight.renamedFrom} already exists in this repository, using {preflight.branch}{' '}
           instead.
         </p>
       )}
       {state.branchScanError === null ? null : (
-        <p className="text-secondary text-muted-foreground">
+        <p className="text-meta text-muted-foreground">
           Could not read the existing branches, so a name clash was not ruled out:{' '}
           {state.branchScanError}
         </p>
       )}
       {activity === null ? null : (
-        <p role="status" className="text-secondary text-muted-foreground">
+        <p role="status" className="text-meta text-muted-foreground">
           {activity}
         </p>
       )}
       {failure === null ? null : (
         <div role="alert" className="flex flex-col gap-1">
-          <p className="flex items-start gap-1 text-secondary text-danger">
+          <p className="flex items-start gap-1 text-meta text-danger">
             <AlertTriangle size={ICON_SIZE.row} aria-hidden className="mt-px shrink-0" />
             <span className="min-w-0 flex-1">{failure.cause}</span>
           </p>
-          <details className="text-secondary text-muted-foreground">
+          <details className="text-meta text-muted-foreground">
             <summary className="cursor-pointer select-none">Technical detail</summary>
-            <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded-md bg-subtle p-1.5 font-mono text-secondary">
+            <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded-md bg-subtle p-2 font-mono text-chip">
               {failure.detail}
             </pre>
           </details>

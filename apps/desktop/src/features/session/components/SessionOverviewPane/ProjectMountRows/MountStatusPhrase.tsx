@@ -94,7 +94,7 @@ export const MountStatusPhrase = ({
     <span
       title={operation?.title}
       className={cn(
-        'shrink-0 whitespace-nowrap text-secondary',
+        'shrink-0 whitespace-nowrap text-meta',
         isWarning ? 'text-warning' : 'text-muted-foreground',
       )}
     >

@@ -9,7 +9,7 @@ const sentenceCase = ({ text }: { readonly text: string }): string =>
   `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
 
 export const EmptyBoardStages = () => (
-  <ul aria-label="Board stages" className="flex max-w-sm flex-wrap justify-center gap-1.5">
+  <ul aria-label="Board stages" className="flex max-w-sm flex-wrap justify-center gap-2">
     {STAGES.map((stage) => {
       const Icon = SESSION_STAGE_ICON[stage];
       return (

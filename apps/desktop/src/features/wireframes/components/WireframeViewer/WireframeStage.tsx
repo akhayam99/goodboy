@@ -73,7 +73,7 @@ export const WireframeStage = ({
       className="flex min-w-0 flex-col gap-2"
     >
       {label === undefined ? null : (
-        <span className="font-mono text-secondary text-muted-foreground">{label}</span>
+        <span className="font-mono text-meta text-muted-foreground">{label}</span>
       )}
       <ScrollFade orientation="horizontal" fadeSize="w-8" viewportRef={boxRef}>
         <div className="flex min-w-full justify-center">

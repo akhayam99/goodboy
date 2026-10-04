@@ -46,9 +46,7 @@ export const InboxProjectFacets = ({ projects, filters, counts, note, onFiltersC
           {isShowingEmpty ? 'Hide empty' : `Show ${hiddenCount} empty`}
         </button>
       ) : null}
-      {note === null ? null : (
-        <p className="px-2 py-1 text-secondary text-faint-foreground">{note}</p>
-      )}
+      {note === null ? null : <p className="px-2 py-1 text-meta text-faint-foreground">{note}</p>}
     </FacetSection>
   );
 };

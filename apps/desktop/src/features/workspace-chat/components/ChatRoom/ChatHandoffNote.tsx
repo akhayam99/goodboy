@@ -18,7 +18,7 @@ const LABEL: Record<ChatSessionEntry['link']['kind'], string> = {
 export const ChatHandoffNote = ({ entry, onOpen }: Props) => (
   <div
     role="status"
-    className="flex min-w-0 items-center gap-2 rounded-lg bg-subtle px-2.5 py-1.5 text-label text-muted-foreground"
+    className="flex min-w-0 items-center gap-2 rounded-lg bg-subtle px-3 py-2 text-label text-muted-foreground"
   >
     <Check size={ICON_SIZE.row} aria-hidden className="shrink-0 text-success" />
     <span className="shrink-0">{LABEL[entry.link.kind]} ·</span>
@@ -29,7 +29,7 @@ export const ChatHandoffNote = ({ entry, onOpen }: Props) => (
     <button
       type="button"
       onClick={() => onOpen(entry.session.id)}
-      className="shrink-0 rounded-sm px-1.5 py-0.5 text-foreground motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+      className="shrink-0 rounded-sm px-2 py-0.5 text-foreground motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
     >
       Open session
     </button>

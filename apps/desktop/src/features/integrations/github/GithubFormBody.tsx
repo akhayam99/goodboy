@@ -41,7 +41,7 @@ export const GithubFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
       tokenLink={{ label: 'Get a personal access token from GitHub', href: TOKEN_CREATE_URL }}
       guide={
         status?.user != null ? (
-          <p className="text-2xs leading-relaxed text-muted-foreground">
+          <p className="text-meta text-muted-foreground">
             Already covered by the all-workspaces connection as {status.user}. A key pasted here
             overrides it for this workspace only.
           </p>

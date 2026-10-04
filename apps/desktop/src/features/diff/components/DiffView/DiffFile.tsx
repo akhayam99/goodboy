@@ -190,7 +190,7 @@ const DiffFileView = ({
       return null;
     }
     return (
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         {renderThreads(list)}
         {isComposerHere && comments !== null && composer?.kind === 'line' ? (
           <CommentComposer
@@ -259,7 +259,7 @@ const DiffFileView = ({
       />
       {collapsed ? (
         isHeavy && viewedState !== 'viewed' ? (
-          <div className="flex items-center gap-2 px-3 py-2 text-secondary text-muted-foreground">
+          <div className="flex items-center gap-2 px-3 py-2 text-meta text-muted-foreground">
             <span>{file.binary ? 'Binary file' : 'Generated file, hidden by default'}</span>
             {file.binary ? null : (
               <Button variant="ghost" size="sm" onClick={() => setCollapsed(false)}>
@@ -271,10 +271,10 @@ const DiffFileView = ({
       ) : (
         <div
           data-slot="diff-file-body"
-          className="flex min-w-0 flex-col gap-1.5 pb-4 pt-1 [contain-intrinsic-size:auto_480px] [content-visibility:auto]"
+          className="flex min-w-0 flex-col gap-2 pb-4 pt-1 [contain-intrinsic-size:auto_480px] [content-visibility:auto]"
         >
           {fileThreads.length > 0 || composer?.kind === 'file' ? (
-            <div className="flex flex-col gap-1.5 py-1">
+            <div className="flex flex-col gap-2 py-1">
               {renderThreads(fileThreads)}
               {composer?.kind === 'file' && comments !== null ? (
                 <CommentComposer
@@ -321,7 +321,7 @@ const DiffFileView = ({
             </div>
           )}
           {remaining > 0 ? (
-            <div className="flex items-center justify-center gap-2 py-1 text-secondary text-muted-foreground">
+            <div className="flex items-center justify-center gap-2 py-1 text-meta text-muted-foreground">
               <span className="tabular-nums">
                 {Math.min(visibleLines, totalLines)} of {totalLines} lines
               </span>

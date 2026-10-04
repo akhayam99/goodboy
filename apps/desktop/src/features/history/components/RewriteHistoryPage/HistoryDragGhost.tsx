@@ -35,7 +35,7 @@ export const HistoryDragGhost = ({ drag, title, titleOf }: Props) => {
         top: drag.y - drag.offsetY,
         width: Math.min(drag.width, GHOST_MAX_WIDTH),
       }}
-      className="pointer-events-none fixed z-drag flex items-center gap-2.5 rounded-lg border border-border bg-floating px-2.5 py-2 shadow-md"
+      className="pointer-events-none fixed z-drag flex items-center gap-3 rounded-lg border border-border bg-floating px-3 py-2 shadow-md"
     >
       <GripVertical
         size={ICON_SIZE.control}
@@ -45,7 +45,7 @@ export const HistoryDragGhost = ({ drag, title, titleOf }: Props) => {
       <span className="min-w-0 flex-1 truncate text-row text-foreground">{title}</span>
       <span
         className={cn(
-          'shrink-0 rounded-sm px-1.5 text-secondary',
+          'shrink-0 rounded-sm px-2 text-meta',
           action === null
             ? 'bg-fill text-muted-foreground'
             : cn(HISTORY_ACTION_CLASSES[action].solid, 'text-on-tone'),

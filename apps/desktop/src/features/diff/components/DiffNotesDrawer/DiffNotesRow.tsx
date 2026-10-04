@@ -29,7 +29,7 @@ export const DiffNotesRow = ({ sessionId, fix }: Props) => {
   return (
     <li
       data-note-id={fix.note.id}
-      className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 hover:bg-hover"
+      className="flex min-w-0 items-center gap-2 rounded-md px-2 py-2 hover:bg-hover"
     >
       <div className="flex min-w-0 flex-1 flex-col">
         <button
@@ -42,7 +42,7 @@ export const DiffNotesRow = ({ sessionId, fix }: Props) => {
         </button>
         <span className="truncate text-label text-foreground">{firstLine(fix.note.body)}</span>
         {meta !== null ? (
-          <span className="truncate text-secondary text-faint-foreground">{meta}</span>
+          <span className="truncate text-meta text-faint-foreground">{meta}</span>
         ) : null}
       </div>
       {fix.canFix ? (

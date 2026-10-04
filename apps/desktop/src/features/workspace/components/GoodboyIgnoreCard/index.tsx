@@ -71,7 +71,7 @@ export const GoodboyIgnoreCard = ({ workspaceId }: Props) => {
         </div>
       }
     >
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         {GOODBOY_IGNORE_CHOICES.map((choice) => (
           <label key={choice.mode} className="flex items-start gap-2 text-label">
             <input
@@ -88,7 +88,7 @@ export const GoodboyIgnoreCard = ({ workspaceId }: Props) => {
           </label>
         ))}
         {error !== null && (
-          <p role="alert" className="text-secondary text-danger">
+          <p role="alert" className="text-meta text-danger">
             {error}
           </p>
         )}

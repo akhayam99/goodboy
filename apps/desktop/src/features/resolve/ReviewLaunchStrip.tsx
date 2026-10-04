@@ -117,7 +117,7 @@ export const ReviewLaunchStrip = ({
     <section
       aria-label={REVIEW_LAUNCH_LABEL.strip}
       onKeyDown={onKeyDown}
-      className="flex min-w-0 flex-col gap-3 rounded-lg bg-subtle px-4 py-3.5 motion-safe:animate-studio-in"
+      className="flex min-w-0 flex-col gap-3 rounded-lg bg-subtle px-4 py-4 motion-safe:animate-studio-in"
     >
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-heading text-foreground">{launchTitle({ count, noun })}</h2>
@@ -153,16 +153,14 @@ export const ReviewLaunchStrip = ({
         disabled={isStarting}
         className="bg-background"
       />
-      <p className="text-secondary text-faint-foreground">{launchFactLine({ count, limit })}</p>
+      <p className="text-meta text-faint-foreground">{launchFactLine({ count, limit })}</p>
       {error !== null && (
-        <p role="alert" className="text-secondary text-danger">
+        <p role="alert" className="text-meta text-danger">
           {error}
         </p>
       )}
       <div className="flex items-center gap-2">
-        <span className="text-secondary text-faint-foreground">
-          {REVIEW_LAUNCH_LABEL.remembered}
-        </span>
+        <span className="text-meta text-faint-foreground">{REVIEW_LAUNCH_LABEL.remembered}</span>
         <span className="flex-1" />
         <Button size="sm" variant="ghost" onClick={onClose}>
           {REVIEW_LAUNCH_LABEL.cancel}

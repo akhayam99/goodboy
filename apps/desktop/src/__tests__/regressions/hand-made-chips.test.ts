@@ -64,8 +64,8 @@ const readBaseline = (): Counts => {
 describe('hand-made status pills only ever shrink', () => {
   it('counts a hand-rolled pill and leaves a plain rounded box alone', () => {
     expect(countPills({ text: "'inline-flex rounded-full border px-2 text-meta'" })).toBe(1);
-    expect(countPills({ text: "'rounded-md px-1.5 py-0.5 text-2xs ring-1'" })).toBe(1);
-    expect(countPills({ text: "'rounded-sm px-1.5 text-secondary font-medium'" })).toBe(1);
+    expect(countPills({ text: "'rounded-md px-1.5 py-0.5 text-chip ring-1'" })).toBe(1);
+    expect(countPills({ text: "'rounded-sm px-1.5 text-chip bg-muted'" })).toBe(1);
     expect(countPills({ text: "'rounded-md bg-subtle px-3 py-2'" })).toBe(0);
     expect(countPills({ text: "'size-2 rounded-full bg-border'" })).toBe(0);
   });

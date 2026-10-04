@@ -17,7 +17,7 @@ export const SourceChangeCard = ({ change }: Props) => {
     <section aria-label={REVIEW_FLOW_LABEL.commentEdited} className="flex min-w-0 flex-col">
       <Notice tone="info" placement="inline" title={REVIEW_FLOW_LABEL.commentEdited}>
         <div className="flex min-w-0 flex-col gap-2">
-          <p className="flex min-w-0 items-center gap-2 text-secondary text-muted-foreground">
+          <p className="flex min-w-0 items-center gap-2 text-meta text-muted-foreground">
             <Pencil size={ICON_SIZE.control} aria-hidden className="shrink-0" />
             <span className="min-w-0">
               {sourceChangeLine({

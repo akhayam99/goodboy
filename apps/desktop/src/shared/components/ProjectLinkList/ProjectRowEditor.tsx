@@ -80,9 +80,7 @@ export const ProjectRowEditor = ({ project, busy, onArmUnlink, ignoreField }: Pr
       <div className="flex flex-col gap-1">
         <span className="text-label text-muted-foreground">Folder</span>
         <div className="flex items-center gap-2">
-          <span className="min-w-0 flex-1 truncate text-code text-secondary">
-            {project.rootPath}
-          </span>
+          <span className="min-w-0 flex-1 truncate text-code text-meta">{project.rootPath}</span>
           <Button variant="ghost" size="sm" onClick={() => void reveal()} disabled={busy}>
             <FolderOpen size={ICON_SIZE.row} aria-hidden />
             Show in Finder

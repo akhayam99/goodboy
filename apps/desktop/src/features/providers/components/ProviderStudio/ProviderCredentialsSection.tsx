@@ -133,7 +133,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
                 </span>
                 <div className="flex min-w-0 flex-col">
                   <span className="truncate text-row text-foreground">{c.label}</span>
-                  <span className="font-mono text-secondary text-faint-foreground">{c.hint}</span>
+                  <span className="font-mono text-meta text-faint-foreground">{c.hint}</span>
                 </div>
                 <div className="flex-1" />
                 <Tooltip content={`Remove ${c.label}`}>

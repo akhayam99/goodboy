@@ -22,7 +22,7 @@ export const ActionNudgeList = ({ controls, details }: Props) => {
             <button
               type="button"
               onClick={() => controls.trigger({ actionId: action.id })}
-              className="group flex w-full min-w-0 items-center gap-3 rounded-lg bg-fill px-3 py-2.5 text-left text-body hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors"
+              className="group flex w-full min-w-0 items-center gap-3 rounded-lg bg-fill px-3 py-3 text-left text-body hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors"
             >
               <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
               <span className="flex min-w-0 flex-1 items-center gap-2">
@@ -31,7 +31,7 @@ export const ActionNudgeList = ({ controls, details }: Props) => {
                 </span>
                 {details?.[action.id] ?? null}
               </span>
-              <span className="flex shrink-0 items-center gap-1 text-secondary text-muted-foreground group-hover:text-foreground">
+              <span className="flex shrink-0 items-center gap-1 text-meta text-muted-foreground group-hover:text-foreground">
                 {action.label}
                 <ChevronRight size={ICON_SIZE.row} aria-hidden />
               </span>

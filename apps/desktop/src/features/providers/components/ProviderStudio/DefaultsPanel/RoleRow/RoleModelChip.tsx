@@ -42,7 +42,7 @@ export const RoleModelChip = ({ entry, position, disabled, onRemove, onMove }: P
       aria-label={`${entry.label}, position ${position}${entry.isGone ? ', no longer in the catalog' : ''}`}
       onKeyDown={onKeyDown}
       className={cn(
-        'inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-background pl-2 pr-1 text-label',
+        'inline-flex h-7 items-center gap-2 rounded-md border border-border bg-background pl-2 pr-1 text-label',
         FOCUS_RING,
       )}
     >

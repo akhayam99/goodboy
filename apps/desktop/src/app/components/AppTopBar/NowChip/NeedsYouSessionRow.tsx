@@ -26,7 +26,7 @@ export const NeedsYouSessionRow = ({ session, onSelect, fallbackTone = 'neutral'
         type="button"
         onClick={() => onSelect({ sessionId: session.id as SessionId, reason: attention })}
         title={`${inlineMarkdownText({ text: session.goal })} · ${reason}`}
-        className="flex w-full items-start gap-2 px-3 py-2.5 text-left transition-colors hover:bg-hover"
+        className="flex w-full items-start gap-2 px-3 py-3 text-left transition-colors hover:bg-hover"
       >
         <Icon
           size={ICON_SIZE.control}
@@ -38,7 +38,7 @@ export const NeedsYouSessionRow = ({ session, onSelect, fallbackTone = 'neutral'
             text={session.goal}
             className="truncate text-label font-medium text-foreground"
           />
-          <span className="truncate text-secondary text-muted-foreground">{reason}</span>
+          <span className="truncate text-meta text-muted-foreground">{reason}</span>
         </span>
       </button>
     </li>

@@ -153,7 +153,7 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
             <Markdown text={shownSummary} />
           </div>
           {!hasOutputSummary ? (
-            <span className="text-secondary text-muted-foreground">from the last reply</span>
+            <span className="text-meta text-muted-foreground">from the last reply</span>
           ) : null}
         </Band>
       ) : null}

@@ -12,8 +12,7 @@ type Props = {
   readonly hasGutter?: boolean;
 };
 
-const LABEL_CLASS =
-  'absolute -translate-y-1/2 text-chip font-medium uppercase tracking-eyebrow text-muted-foreground';
+const LABEL_CLASS = 'absolute -translate-y-1/2 text-eyebrow text-muted-foreground';
 
 export const TimelineNowRule = ({
   item,

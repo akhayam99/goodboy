@@ -155,7 +155,7 @@ export const NextStepRow = ({
             dropdown.close();
             onNotNow();
           }}
-          className="flex w-full items-center rounded-md px-2 py-1.5 text-left text-body text-foreground transition-colors hover:bg-hover"
+          className="flex w-full items-center rounded-md px-2 py-2 text-left text-body text-foreground transition-colors hover:bg-hover"
         >
           Not now
         </button>

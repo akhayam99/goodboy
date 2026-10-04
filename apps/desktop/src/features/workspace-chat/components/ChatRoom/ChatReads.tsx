@@ -19,7 +19,7 @@ export const ChatReads = ({ reads }: Props) => {
         type="button"
         aria-expanded={isOpen}
         onClick={() => setIsOpen((current) => !current)}
-        className="-ml-1 flex items-center gap-1 rounded-sm px-1 text-secondary text-faint-foreground motion-safe:transition-colors hover:bg-hover hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+        className="-ml-1 flex items-center gap-1 rounded-sm px-1 text-chip text-faint-foreground motion-safe:transition-colors hover:bg-hover hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
       >
         <BookOpen size={ICON_SIZE.row} aria-hidden />
         {`Read ${pluralize(reads.length, 'file')}`}
@@ -32,7 +32,7 @@ export const ChatReads = ({ reads }: Props) => {
       {isOpen ? (
         <ul
           aria-label="Files read"
-          className="flex w-full flex-col rounded-lg bg-subtle px-2.5 py-1.5 text-code text-faint-foreground"
+          className="flex w-full flex-col rounded-lg bg-subtle px-3 py-2 text-code text-faint-foreground"
         >
           {reads.map((path) => (
             <li key={path} className="truncate">

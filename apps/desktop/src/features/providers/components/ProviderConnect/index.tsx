@@ -119,17 +119,13 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
             {chrome === 'inline' ? `Connect ${label}` : label}
           </span>
           {view.status !== null && (
-            <span className="max-w-prose text-xs leading-relaxed text-muted-foreground">
-              {view.status}
-            </span>
+            <span className="max-w-prose text-label text-muted-foreground">{view.status}</span>
           )}
           {view.note !== null && (
-            <span className="max-w-prose text-2xs leading-relaxed text-muted-foreground">
-              {view.note}
-            </span>
+            <span className="max-w-prose text-meta text-muted-foreground">{view.note}</span>
           )}
           {view.showErrorTail && (
-            <span className="max-w-prose break-words text-2xs leading-relaxed text-danger">
+            <span className="max-w-prose break-words text-meta text-danger">
               {connect.errorTail ?? 'It stopped without printing anything we could capture.'}
             </span>
           )}
@@ -153,7 +149,7 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
       </div>
 
       {view.showTerminalHint && connect.command !== null && (
-        <p className="max-w-prose text-2xs leading-relaxed text-muted-foreground">
+        <p className="max-w-prose text-meta text-muted-foreground">
           If this keeps failing, run{' '}
           <span className="font-mono text-foreground">{connect.command}</span> in your terminal,
           then come back.

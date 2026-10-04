@@ -43,7 +43,7 @@ export const HandoffThreadRow = ({ entry, sessionId }: Props) => {
             type="button"
             onClick={() => setOpen((value) => !value)}
             aria-expanded={open}
-            className="inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-secondary font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
+            className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-0.5 text-chip text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
           >
             {open ? 'Hide thread' : 'View thread'}
             <TranscriptChevron open={open} />
@@ -57,7 +57,7 @@ export const HandoffThreadRow = ({ entry, sessionId }: Props) => {
         ) : null}
       </div>
       {entry.author === null ? null : (
-        <span className="text-secondary text-muted-foreground">{entry.author}</span>
+        <span className="text-meta text-muted-foreground">{entry.author}</span>
       )}
       {open && docked !== null ? (
         <ConversationThread thread={docked} onOpenUrl={(url) => void openUrl(url)} />

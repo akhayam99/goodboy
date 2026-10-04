@@ -69,9 +69,7 @@ export const ProjectLinkList = ({
           />
         </div>
       )}
-      {isCompact && hint !== undefined && (
-        <p className="text-secondary text-faint-foreground">{hint}</p>
-      )}
+      {isCompact && hint !== undefined && <p className="text-meta text-faint-foreground">{hint}</p>}
       {linking.linked.length === 0 && emptyHint !== undefined && (
         <p className="text-body text-muted-foreground">{emptyHint}</p>
       )}

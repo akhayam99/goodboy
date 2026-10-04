@@ -93,7 +93,7 @@ export const GoodboyChip = ({ onOpenChangelog, onOpenShortcuts }: Props) => {
             aria-expanded={isOpen}
             data-testid="goodboy-chip"
             className={cn(
-              'flex h-6 items-center gap-1.5 rounded-md px-2 text-secondary motion-safe:transition-colors',
+              'flex h-6 items-center gap-1 rounded-md px-2 text-meta motion-safe:transition-colors',
               isBrandChip && 'goodboy-brand-chip',
               isOpen ? 'bg-muted' : isBrandChip ? 'bg-background hover:bg-hover' : 'hover:bg-hover',
             )}

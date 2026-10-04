@@ -135,7 +135,7 @@ export const AddStepMenu = ({ groups, disabled, onPick }: Props) => {
         </button>
       }
     >
-      <label className="relative flex shrink-0 items-center p-1.5">
+      <label className="relative flex shrink-0 items-center p-2">
         <span className="sr-only">Search steps</span>
         <Search
           size={ICON_SIZE.row}
@@ -159,7 +159,7 @@ export const AddStepMenu = ({ groups, disabled, onPick }: Props) => {
         id={listId}
         role="listbox"
         aria-label="Steps"
-        className="flex min-h-0 flex-1 flex-col overflow-y-auto px-1.5 pb-1.5"
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 pb-2"
       >
         <AddStepMenuOption
           id={blankId}
@@ -172,25 +172,19 @@ export const AddStepMenu = ({ groups, disabled, onPick }: Props) => {
           onPick={() => pick(null)}
         />
         {builtin.length > 0 ? (
-          <li
-            role="presentation"
-            className="px-2 pb-0.5 pt-2 text-chip font-semibold uppercase tracking-eyebrow text-faint-foreground"
-          >
+          <li role="presentation" className="px-2 pb-0.5 pt-2 text-eyebrow text-faint-foreground">
             Built in
           </li>
         ) : null}
         {builtin.map((step, index) => renderStep(step, index + 1))}
         {workspace.length > 0 ? (
-          <li
-            role="presentation"
-            className="px-2 pb-0.5 pt-2 text-chip font-semibold uppercase tracking-eyebrow text-faint-foreground"
-          >
+          <li role="presentation" className="px-2 pb-0.5 pt-2 text-eyebrow text-faint-foreground">
             This workspace
           </li>
         ) : null}
         {workspace.map((step, index) => renderStep(step, index + 1 + builtin.length))}
         {needle !== '' && builtin.length === 0 && workspace.length === 0 ? (
-          <li role="presentation" className="px-2 py-1.5 text-secondary text-muted-foreground">
+          <li role="presentation" className="px-2 py-1 text-meta text-muted-foreground">
             No saved steps match that search
           </li>
         ) : null}

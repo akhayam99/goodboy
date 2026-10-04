@@ -14,14 +14,14 @@ export const BootSlowNotice = ({ elapsedMs, onRetry }: Props) => {
   }, [onRetry]);
 
   return (
-    <div className="flex flex-col items-center gap-1.5 text-secondary text-muted-foreground">
+    <div className="flex flex-col items-center gap-1 text-meta text-muted-foreground">
       <span>this is taking longer than usual</span>
       <span>{`${Math.floor(elapsedMs / 1_000)}s in this step`}</span>
       {onRetry !== undefined && !hasRequestedRestart ? (
         <button
           type="button"
           onClick={requestRestart}
-          className="rounded-sm border border-border-soft bg-background px-3 py-1.5 text-foreground motion-safe:transition-colors hover:bg-subtle"
+          className="rounded-sm border border-border-soft bg-background px-3 py-2 text-foreground motion-safe:transition-colors hover:bg-subtle"
         >
           restart
         </button>

@@ -68,12 +68,12 @@ export const StorageHistory = () => {
         <BandRow>
           <span className="flex min-w-0 flex-1 flex-col">
             <span className="text-row text-foreground">Archived transcripts</span>
-            <span className="text-secondary text-faint-foreground">
+            <span className="text-meta text-faint-foreground">
               Streamed events of {pluralize(stats.archivedSessionCount, 'archived session')}. Final
               messages stay.
             </span>
           </span>
-          <span className="text-secondary tabular-nums text-muted-foreground">
+          <span className="text-meta tabular-nums text-muted-foreground">
             {formatBytes({ bytes: stats.archivedTranscriptBytes })}
           </span>
           <Button
@@ -101,14 +101,14 @@ export const StorageHistory = () => {
         <BandRow>
           <span className="flex min-w-0 flex-1 flex-col">
             <span className="text-row text-foreground">App data</span>
-            <span className="text-secondary text-faint-foreground">
+            <span className="text-meta text-faint-foreground">
               Database {formatBytes({ bytes: stats.databaseBytes })}
               {copies === 0
                 ? '.'
                 : `, ${copies === 1 ? '1 safety copy' : `${copies} safety copies`} from updates ${formatBytes({ bytes: stats.snapshotBytes })}.`}
             </span>
           </span>
-          <span className="text-secondary tabular-nums text-muted-foreground">
+          <span className="text-meta tabular-nums text-muted-foreground">
             {formatBytes({ bytes: stats.databaseBytes + stats.snapshotBytes })}
           </span>
           {folder === null ? null : (

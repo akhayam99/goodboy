@@ -33,7 +33,7 @@ export const MountRowAction = ({ sessionId, row, label, controls }: Props) => {
       aria-busy={isPending ? true : undefined}
       onClick={() => controls.trigger({ actionId: action.id })}
       className={cn(
-        'flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-label text-muted-foreground hover:bg-hover hover:text-foreground',
+        'flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-label text-muted-foreground hover:bg-hover hover:text-foreground',
         'disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent',
       )}
     >
@@ -51,7 +51,7 @@ export const MountRowAction = ({ sessionId, row, label, controls }: Props) => {
         button
       )}
       {failure === null ? null : (
-        <span role="status" title={failure} className="min-w-0 truncate text-secondary text-danger">
+        <span role="status" title={failure} className="min-w-0 truncate text-meta text-danger">
           {failure}
         </span>
       )}

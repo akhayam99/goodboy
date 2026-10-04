@@ -60,11 +60,11 @@ export const SearchResultRow = memo(
             </span>
           ) : null}
           {crumb.length > 0 ? (
-            <span className="truncate text-secondary text-faint-foreground">{crumb}</span>
+            <span className="truncate text-meta text-faint-foreground">{crumb}</span>
           ) : null}
         </div>
         <div className="flex shrink-0 flex-col items-end">
-          <span className="text-secondary text-faint-foreground">{meta.label}</span>
+          <span className="text-meta text-faint-foreground">{meta.label}</span>
           <span className="text-meta text-faint-foreground">
             {formatAge({ from: hit.occurredAt, now })}
           </span>

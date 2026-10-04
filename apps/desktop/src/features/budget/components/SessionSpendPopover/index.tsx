@@ -22,7 +22,7 @@ export const SessionSpendPopover = ({
   onOpenImpact,
 }: Props) => (
   <>
-    <div className="flex items-end justify-between gap-2 px-4 pb-1 pt-3.5">
+    <div className="flex items-end justify-between gap-2 px-4 pb-1 pt-4">
       <div className="flex flex-col gap-1">
         <Eyebrow label="Spend" />
         <span
@@ -32,7 +32,7 @@ export const SessionSpendPopover = ({
           {formatUsd(spend.totalUsd)}
         </span>
       </div>
-      <span className="text-secondary text-muted-foreground">this session</span>
+      <span className="text-meta text-muted-foreground">this session</span>
     </div>
     <ScrollFade className="min-h-0 flex-1" viewportClassName="flex flex-col gap-4 px-4 py-3">
       <SpendLimitRow
@@ -44,7 +44,7 @@ export const SessionSpendPopover = ({
       />
       <AgentSpendList agents={spend.agents} />
       {spend.contextUsd > 0 ? (
-        <p className="text-secondary text-faint-foreground">
+        <p className="text-meta text-faint-foreground">
           {`Keeping context up to date: ${formatUsd(spend.contextUsd)}`}
         </p>
       ) : null}

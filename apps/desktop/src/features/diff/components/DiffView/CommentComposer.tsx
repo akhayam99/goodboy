@@ -31,11 +31,11 @@ export const CommentComposer = ({
     <div
       data-slot="diff-composer"
       className={cn(
-        'flex flex-col gap-2 rounded-md border-l-2 bg-elevated px-3 py-2.5 font-sans',
+        'flex flex-col gap-2 rounded-md border-l-2 bg-elevated px-3 py-3 font-sans',
         tintClasses('primary').rail,
       )}
     >
-      <span className="text-secondary font-medium text-muted-foreground">{label}</span>
+      <span className="text-chip text-muted-foreground">{label}</span>
       <PromptField
         kind="document"
         autoFocus
@@ -55,8 +55,8 @@ export const CommentComposer = ({
           }
         }}
       />
-      <div className="flex items-center gap-1.5">
-        <span className="mr-auto flex items-center gap-1 text-secondary text-faint-foreground">
+      <div className="flex items-center gap-2">
+        <span className="mr-auto flex items-center gap-1 text-meta text-faint-foreground">
           <KbdPill>⌘</KbdPill>
           <KbdPill>↵</KbdPill>
           <span>{submitLabel.toLowerCase()}</span>

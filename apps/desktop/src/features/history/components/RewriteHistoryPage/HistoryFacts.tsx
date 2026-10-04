@@ -21,7 +21,7 @@ export const HistoryFacts = ({
   prNumber,
   baseBranch,
 }: Props) => (
-  <div className="flex flex-wrap items-center gap-1.5">
+  <div className="flex flex-wrap items-center gap-2">
     <Chip
       tone="neutral"
       size="sm"

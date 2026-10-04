@@ -22,9 +22,7 @@ export const ArtifactRowParts = ({ parts }: Props) => (
         <span className="min-w-0 flex-1 truncate text-muted-foreground" title={part.title}>
           {part.title}
         </span>
-        <span
-          className={cn(ARTIFACT_ROW_GRID.state, 'px-1.5 text-secondary text-faint-foreground')}
-        >
+        <span className={cn(ARTIFACT_ROW_GRID.state, 'px-2 text-meta text-faint-foreground')}>
           {part.nodeLabel}
         </span>
         <span aria-hidden className={cn(ARTIFACT_ROW_GRID.date, 'invisible')} />

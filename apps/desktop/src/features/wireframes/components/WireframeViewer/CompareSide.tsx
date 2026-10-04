@@ -39,7 +39,7 @@ export const CompareSide = ({
       data-testid={`wireframe-compare-${side.toLowerCase()}`}
       className="flex min-w-0 flex-col gap-2"
     >
-      <span className="font-mono text-secondary text-muted-foreground">
+      <span className="font-mono text-meta text-muted-foreground">
         {side} · v{revision} · {screen === null ? 'not in this version' : path}
       </span>
       {screen === null || stage.status !== 'ready' ? (

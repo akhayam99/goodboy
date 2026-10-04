@@ -49,7 +49,7 @@ export const SessionNavSidebar = ({
   return (
     <div className="flex h-full min-h-0 flex-col">
       {onToggleSidebar !== undefined ? (
-        <div className="flex shrink-0 items-center gap-2 pb-1.5 pl-1.5 pr-2 pt-2">
+        <div className="flex shrink-0 items-center gap-2 pb-2 pl-2 pr-2 pt-2">
           <SidebarToggleButton isCollapsed={isCollapsed} onToggle={onToggleSidebar} />
         </div>
       ) : null}

@@ -57,7 +57,7 @@ export const ReviewHeaderActions = ({
     <div className="flex flex-col items-end gap-1">
       <div className="flex items-center gap-2">
         {replyOnlyLine !== null && (
-          <span className="mr-1 text-secondary text-faint-foreground">{replyOnlyLine}</span>
+          <span className="mr-1 text-meta text-faint-foreground">{replyOnlyLine}</span>
         )}
         {buttons.map((action) => {
           const button = (
@@ -98,7 +98,7 @@ export const ReviewHeaderActions = ({
         </DraftModelPicker>
       </div>
       {error !== null && (
-        <p role="alert" className="max-w-[40ch] text-right text-secondary text-danger">
+        <p role="alert" className="max-w-[40ch] text-right text-meta text-danger">
           {error}
         </p>
       )}

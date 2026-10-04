@@ -41,7 +41,7 @@ type Props = {
 
 export const ActivityFilterGroup = ({ label, categories, filter, counts, onToggle }: Props) => (
   <div role="group" aria-label={label} className="flex min-w-0 flex-col gap-1">
-    <Eyebrow label={label} muted className="px-1.5" />
+    <Eyebrow label={label} muted className="px-2" />
     <div className="flex flex-col">
       {categories.map((category) => {
         const concept = ACTIVITY_CATEGORY_CONCEPT[category];

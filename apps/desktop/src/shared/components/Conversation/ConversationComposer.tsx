@@ -51,9 +51,9 @@ export const ConversationComposer = ({ source, model }: Props) => {
   };
 
   return (
-    <div data-slot="conversation-composer" className="flex min-w-0 flex-col gap-1.5">
+    <div data-slot="conversation-composer" className="flex min-w-0 flex-col gap-2">
       {source.composerNote == null ? null : (
-        <p className="text-secondary text-muted-foreground">{source.composerNote}</p>
+        <p className="text-meta text-muted-foreground">{source.composerNote}</p>
       )}
       <div
         ref={boxRef}
@@ -73,7 +73,7 @@ export const ConversationComposer = ({ source, model }: Props) => {
           onKeyDown={onKeyDown}
           className="border-0 bg-transparent text-prose shadow-none focus-visible:shadow-none focus-visible:ring-0"
         />
-        <div className="flex min-w-0 items-center justify-between gap-2 px-2.5 pb-1.5">
+        <div className="flex min-w-0 items-center justify-between gap-2 px-3 pb-2">
           <span className="flex items-center gap-1 text-meta text-faint-foreground">
             <KbdPill className="h-4 text-chip">{shortcutGlyphs('composer.submit')}</KbdPill>
             to send

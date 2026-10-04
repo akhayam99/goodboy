@@ -79,7 +79,7 @@ export const StorageSummary = ({ scope, onScopeToAll }: Props) => {
         {free === null ? null : (
           <span
             className={cn(
-              'ml-auto flex items-center gap-1.5 text-label',
+              'ml-auto flex items-center gap-2 text-label',
               isLowDisk ? tintClasses('warning').text : 'text-muted-foreground',
             )}
           >
@@ -121,13 +121,13 @@ export const StorageSummary = ({ scope, onScopeToAll }: Props) => {
           ),
         )}
       </div>
-      <div className="grid grid-cols-1 gap-x-7 gap-y-1.5 @min-[560px]:grid-cols-3">
+      <div className="grid grid-cols-1 gap-x-7 gap-y-2 @min-[560px]:grid-cols-3">
         {segments.map((segment) => (
           <StorageLegendItem key={segment.key} segment={segment} />
         ))}
       </div>
       {isScoped ? (
-        <p className="text-secondary text-faint-foreground">
+        <p className="text-meta text-faint-foreground">
           Plus {formatBytes({ bytes: appDataBytes })} of app data shared by every workspace.
         </p>
       ) : null}

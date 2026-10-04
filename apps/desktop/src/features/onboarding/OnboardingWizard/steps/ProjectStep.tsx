@@ -115,7 +115,7 @@ export const ProjectStep = ({
       ) : null}
       {hasProjects && (
         <>
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <label htmlFor="onboarding-workspace-name" className="text-label text-foreground">
               Workspace name
             </label>
@@ -126,7 +126,7 @@ export const ProjectStep = ({
               placeholder="Your company or team name"
               onChange={(event) => onNameChange(event.target.value)}
             />
-            <p className="text-secondary text-muted-foreground">
+            <p className="text-meta text-muted-foreground">
               Groups projects that ship together. Named after the parent folder.
             </p>
           </div>

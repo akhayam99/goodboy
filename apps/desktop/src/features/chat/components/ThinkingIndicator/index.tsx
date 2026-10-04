@@ -46,7 +46,7 @@ export const ThinkingIndicator = ({ context }: Props) => {
     <div
       role="status"
       aria-label="Agent working"
-      className="relative flex w-fit items-center gap-1.5 rounded-md px-2 py-1 text-secondary"
+      className="relative flex w-fit items-center gap-1 rounded-md px-2 py-1 text-meta"
     >
       <WorkNode size="sm" state="running" mark={{ kind: 'dot' }} label="Thinking" />
       <span aria-hidden className="text-shimmer">

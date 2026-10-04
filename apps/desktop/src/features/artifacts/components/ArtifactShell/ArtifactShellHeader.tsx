@@ -52,13 +52,13 @@ export const ArtifactShellHeader = ({ kind, title, chip, actions, toggles, meta 
             {title}
           </h1>
           {chip}
-          <span className="flex min-w-0 shrink-0 items-center gap-1.5">
+          <span className="flex min-w-0 shrink-0 items-center gap-2">
             {actions}
             {toggles}
           </span>
         </div>
         {meta === null ? null : (
-          <div data-testid="artifact-shell-meta" className="flex min-w-0 pl-5.5">
+          <div data-testid="artifact-shell-meta" className="flex min-w-0 pl-6">
             {meta}
           </div>
         )}

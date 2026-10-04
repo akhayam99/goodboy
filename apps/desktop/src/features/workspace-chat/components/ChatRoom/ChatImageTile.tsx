@@ -23,7 +23,7 @@ export const ChatImageTile = ({ attachment }: Props) => {
           <ImageIcon size={ICON_SIZE.control} aria-hidden />
         )}
       </div>
-      <figcaption className="truncate px-1.5 py-0.5 text-secondary text-muted-foreground">
+      <figcaption className="truncate px-2 py-0.5 text-meta text-muted-foreground">
         {attachment.fileName}
       </figcaption>
     </figure>

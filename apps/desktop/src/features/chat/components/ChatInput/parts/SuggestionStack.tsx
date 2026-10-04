@@ -23,7 +23,7 @@ export const SuggestionStack = ({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="self-start rounded-md px-1.5 py-0.5 text-secondary font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
+          className="self-start rounded-md px-2 py-0.5 text-chip text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
         >
           {expanded
             ? 'show fewer suggestions'

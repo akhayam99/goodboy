@@ -78,7 +78,7 @@ export const WireframeCompare = ({
   if (before === null || after === null || diff === null || marks === null || screenId === null) {
     return (
       <div data-testid="wireframe-compare" className="flex min-w-0 flex-col gap-2">
-        <p className="text-secondary text-muted-foreground">
+        <p className="text-meta text-muted-foreground">
           One of these versions does not pass the checks, so there is nothing to lay side by side.
         </p>
         <Button variant="ghost" size="sm" onClick={onExit} className="self-start">
@@ -96,7 +96,7 @@ export const WireframeCompare = ({
       <span
         data-testid="wireframe-compare-badge"
         data-change={screen.change}
-        className="shrink-0 text-secondary text-muted-foreground"
+        className="shrink-0 text-meta text-muted-foreground"
       >
         <span aria-hidden className="font-mono">
           {CHANGE_GLYPH[screen.change]}
@@ -148,7 +148,7 @@ export const WireframeCompare = ({
           value={after.version.revision}
           onChange={(revision) => onChange({ before: before.version.revision, after: revision })}
         />
-        <span className="min-w-0 flex-1 truncate text-secondary text-muted-foreground">
+        <span className="min-w-0 flex-1 truncate text-meta text-muted-foreground">
           {wireframeVersionLabel({ version: after.version })}
         </span>
         <Button variant="ghost" size="sm" onClick={onExit} data-testid="wireframe-compare-exit">

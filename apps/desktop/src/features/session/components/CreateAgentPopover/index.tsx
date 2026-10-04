@@ -187,18 +187,18 @@ export const CreateAgentPopover = ({
               label: AGENT_KIND_META[selectedKind].label,
               hint: AGENT_KIND_META[selectedKind].hint,
             }}
-            className="px-2.5 py-1.5"
+            className="px-3 py-2"
           />
         )}
         <PickerSection label={AGENT_FORM_GRAMMAR.routing.label}>
-          <div className="px-2.5">
+          <div className="px-3">
             <button
               type="button"
               onClick={() => setIsRoutingOpen((current) => !current)}
               aria-expanded={isRoutingOpen}
               aria-controls={ROUTING_PANEL_ID}
               aria-label={`${AGENT_FORM_GRAMMAR.routing.ariaLabel}: ${routingSummary}`}
-              className="flex w-full items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1.5 text-left text-label text-foreground motion-safe:transition-colors hover:border-border hover:bg-hover"
+              className="flex w-full items-center gap-2 rounded-md border border-border-soft bg-subtle px-2 py-2 text-left text-label text-foreground motion-safe:transition-colors hover:border-border hover:bg-hover"
             >
               <span className="flex min-w-0 flex-1">
                 {effective.model == null ? (
@@ -223,7 +223,7 @@ export const CreateAgentPopover = ({
           </div>
         </PickerSection>
         {isRoutingOpen && (
-          <div id={ROUTING_PANEL_ID} className="flex flex-col pt-1.5">
+          <div id={ROUTING_PANEL_ID} className="flex flex-col pt-2">
             <RoutingPickerBody
               connectedProviders={connectedProviders}
               provider={effective.provider}
@@ -270,11 +270,11 @@ export const CreateAgentPopover = ({
           </div>
         )}
         <FormActions
-          className="px-2.5 pb-2 pt-3"
+          className="px-3 pb-2 pt-3"
           leading={
             spawnError === null ? (
               <span className="flex min-w-0 flex-col gap-0.5">
-                <span className="text-secondary text-faint-foreground">{actionNote}</span>
+                <span className="text-meta text-faint-foreground">{actionNote}</span>
                 <LaunchEstimateNote
                   workspaceId={session?.workspaceId ?? null}
                   kind={selectedKind}
@@ -283,7 +283,7 @@ export const CreateAgentPopover = ({
                 />
               </span>
             ) : (
-              <span role="alert" className="min-w-0 text-secondary text-danger">
+              <span role="alert" className="min-w-0 text-meta text-danger">
                 {spawnError}
               </span>
             )

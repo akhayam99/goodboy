@@ -116,7 +116,7 @@ export const TimelineStreamRow = ({
     runLane.open();
   };
   const contentClassName = cn(
-    'flex min-w-0 flex-1 items-center gap-2 rounded-md pl-2 pr-1.5 text-left',
+    'flex min-w-0 flex-1 items-center gap-2 rounded-md pl-2 pr-2 text-left',
     openTarget == null
       ? null
       : 'motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',

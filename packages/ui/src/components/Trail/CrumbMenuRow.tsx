@@ -42,18 +42,18 @@ export const CrumbMenuRow = ({ row, metaWidthClass, showMeta, showState, onActiv
       )}
     >
       <CrumbMenuLead lead={row.lead} />
-      <span className="flex min-w-0 flex-1 items-baseline gap-1.5">
+      <span className="flex min-w-0 flex-1 items-baseline gap-2">
         <span
           className={cn(
             'shrink truncate text-label',
             row.isDisabled ? 'text-disabled-foreground' : 'text-foreground',
-            row.isMiddleTruncated === true && 'font-mono text-secondary',
+            row.isMiddleTruncated === true && 'font-mono text-meta',
           )}
         >
           {row.isMiddleTruncated === true ? middleTruncate(row.label) : row.label}
         </span>
         {row.secondary != null ? (
-          <span className="min-w-0 shrink-[2] truncate text-secondary text-faint-foreground">
+          <span className="min-w-0 shrink-[2] truncate text-meta text-faint-foreground">
             {row.secondary}
           </span>
         ) : null}
@@ -61,7 +61,7 @@ export const CrumbMenuRow = ({ row, metaWidthClass, showMeta, showState, onActiv
       {showMeta ? (
         <span
           className={cn(
-            'shrink-0 truncate text-right text-secondary tabular-nums text-muted-foreground',
+            'shrink-0 truncate text-right text-meta tabular-nums text-muted-foreground',
             metaWidthClass,
           )}
         >
@@ -69,7 +69,7 @@ export const CrumbMenuRow = ({ row, metaWidthClass, showMeta, showState, onActiv
         </span>
       ) : null}
       {showState ? (
-        <span className="flex w-24 shrink-0 items-center justify-end gap-1.5 text-secondary">
+        <span className="flex w-24 shrink-0 items-center justify-end gap-1 text-meta">
           {row.state == null ? null : (
             <>
               {StateGlyph != null ? (

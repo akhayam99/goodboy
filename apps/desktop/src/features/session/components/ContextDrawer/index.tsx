@@ -306,7 +306,7 @@ export const ContextDrawer = ({
         <div className="flex flex-col gap-4">
           {body}
           {isEditableTab ? (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="sm"

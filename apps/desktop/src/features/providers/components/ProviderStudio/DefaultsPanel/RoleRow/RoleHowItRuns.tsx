@@ -7,9 +7,9 @@ type Props = {
   readonly facts: RoleRunFacts;
 };
 
-const TERM = 'text-secondary text-faint-foreground';
+const TERM = 'text-meta text-faint-foreground';
 const VALUE = 'flex min-w-0 flex-col gap-0.5 text-label text-foreground';
-const NOTE = 'text-secondary text-muted-foreground';
+const NOTE = 'text-meta text-muted-foreground';
 
 export const RoleHowItRuns = ({ label, facts }: Props) => (
   <section
@@ -25,7 +25,7 @@ export const RoleHowItRuns = ({ label, facts }: Props) => (
       <dd className={VALUE}>{facts.does}</dd>
       <dt className={TERM}>Auto picks</dt>
       <dd className={VALUE}>
-        <span className="w-fit rounded-sm bg-subtle px-1.5">{facts.auto.label}</span>
+        <span className="w-fit rounded-sm bg-subtle px-2">{facts.auto.label}</span>
         <span className={NOTE}>{facts.autoReason}</span>
       </dd>
       <dt className={TERM}>Splits</dt>

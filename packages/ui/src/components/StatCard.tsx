@@ -18,8 +18,8 @@ export type StatCardProps = {
 };
 
 const valueSizeClasses: Record<'lg' | 'xl', string> = {
-  lg: 'text-lg',
-  xl: 'text-xl',
+  lg: 'text-title',
+  xl: 'text-display',
 };
 
 const warningTint = tintClasses('warning');
@@ -60,7 +60,7 @@ export const StatCard = ({
         <span className={cn('font-mono tabular-nums text-foreground', valueSizeClasses[valueSize])}>
           {value}
         </span>
-        {hint ? <span className="text-secondary text-faint-foreground">{hint}</span> : null}
+        {hint ? <span className="text-meta text-faint-foreground">{hint}</span> : null}
       </div>
       {onClick ? <ArrowRight size={14} aria-hidden className="text-muted-foreground" /> : null}
     </>

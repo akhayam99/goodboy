@@ -32,7 +32,7 @@ export const AnswerOptionRow = ({
     <div
       data-selected={selected ? '' : undefined}
       className={cn(
-        'relative grid grid-cols-[20px_minmax(0,1fr)_16px] items-start gap-3 rounded-md border px-2.5 py-2',
+        'relative grid grid-cols-[20px_minmax(0,1fr)_16px] items-start gap-3 rounded-md border px-3 py-2',
         'motion-safe:transition-[background-color,border-color,opacity] motion-safe:duration-150',
         selected ? 'border-border bg-fill bg-selected' : 'border-border-soft bg-fill',
         !selected && !disabled && 'hover:border-border',
@@ -48,7 +48,7 @@ export const AnswerOptionRow = ({
       >
         {keyHint}
       </span>
-      <span className="flex min-w-0 flex-col gap-1.5">
+      <span className="flex min-w-0 flex-col gap-2">
         <button
           type="button"
           role={mode === 'many' ? 'checkbox' : 'radio'}

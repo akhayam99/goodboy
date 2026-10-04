@@ -12,7 +12,7 @@ export const NowGroup = ({ label, count, tone, children }: Props) => (
   <section aria-label={label} className="flex flex-col">
     <header
       className={cn(
-        'flex items-center gap-1.5 px-3 pb-1 pt-2.5 text-eyebrow',
+        'flex items-center gap-2 px-3 pb-1 pt-3 text-eyebrow',
         tone === 'neutral' ? 'text-muted-foreground' : tintClasses(tone).text,
       )}
     >

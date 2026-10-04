@@ -72,7 +72,7 @@ export const NotificationRow = ({
     notifications.length > 1 ? (
       <span
         aria-label={`${notifications.length} notifications`}
-        className="shrink-0 rounded-full bg-muted px-1.5 text-chip text-muted-foreground"
+        className="shrink-0 rounded-full bg-muted px-2 text-chip text-muted-foreground"
       >
         {notifications.length}
       </span>
@@ -108,7 +108,7 @@ export const NotificationRow = ({
     const ActionIcon =
       latest.action != null ? notificationActionIcon({ kind: latest.action.kind }) : null;
     return (
-      <li className="group relative grid grid-cols-[0.375rem_0.875rem_minmax(0,1fr)_auto_3rem] items-center gap-2 rounded-md px-3 py-1.5 motion-safe:transition-colors hover:bg-hover">
+      <li className="group relative grid grid-cols-[0.375rem_0.875rem_minmax(0,1fr)_auto_3rem] items-center gap-2 rounded-md px-3 py-2 motion-safe:transition-colors hover:bg-hover">
         {overlay}
         {unreadSlot}
         <SeverityIcon
@@ -116,7 +116,7 @@ export const NotificationRow = ({
           className={cn('pointer-events-none relative shrink-0', tintClasses(severity.tone).icon)}
           aria-label={severity.label}
         />
-        <span className="pointer-events-none relative flex min-w-0 items-center gap-1.5">
+        <span className="pointer-events-none relative flex min-w-0 items-center gap-2">
           <span
             className={cn(
               'truncate text-label',
@@ -158,7 +158,7 @@ export const NotificationRow = ({
         isSelected ? 'bg-subtle ring-1 ring-inset ring-border-soft' : 'hover:bg-hover',
       )}
     >
-      <div className="relative grid grid-cols-[0.375rem_1rem_minmax(0,1fr)_auto_4rem] items-start gap-x-2.5 px-2.5 py-2">
+      <div className="relative grid grid-cols-[0.375rem_1rem_minmax(0,1fr)_auto_4rem] items-start gap-x-3 px-3 py-2">
         {overlay}
         {unreadSlot}
         <SeverityIcon
@@ -200,7 +200,7 @@ export const NotificationRow = ({
             <button
               type="button"
               onClick={runAction}
-              className="inline-flex h-5.5 items-center whitespace-nowrap rounded-sm px-2 text-secondary text-foreground ring-1 ring-inset ring-border-soft motion-safe:transition-colors hover:bg-hover"
+              className="inline-flex h-5.5 items-center whitespace-nowrap rounded-sm px-2 text-chip text-foreground ring-1 ring-inset ring-border-soft motion-safe:transition-colors hover:bg-hover"
             >
               {action.label}
             </button>

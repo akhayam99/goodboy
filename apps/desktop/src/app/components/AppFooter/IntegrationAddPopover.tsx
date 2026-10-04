@@ -58,8 +58,8 @@ export const IntegrationAddPopover = ({
             aria-expanded={dropdown.open}
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'flex items-center rounded-md py-1 text-secondary font-medium transition-colors',
-              isEmpty ? 'gap-1.5 px-2' : FOOTER_LABELED_PAD,
+              'flex items-center rounded-md py-1 text-chip transition-colors',
+              isEmpty ? 'gap-2 px-2' : FOOTER_LABELED_PAD,
               active
                 ? 'cursor-default bg-overlay-selected text-foreground'
                 : dropdown.open

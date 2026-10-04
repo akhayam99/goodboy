@@ -130,7 +130,7 @@ export const StepEditor = ({
         />
         <p
           data-testid="plan-step-estimate"
-          className="min-w-0 flex-1 truncate text-secondary tabular-nums text-faint-foreground"
+          className="min-w-0 flex-1 truncate text-meta tabular-nums text-faint-foreground"
         >
           {isSavingAsStep ? 'Saving as a step' : (estimateNote ?? '')}
         </p>

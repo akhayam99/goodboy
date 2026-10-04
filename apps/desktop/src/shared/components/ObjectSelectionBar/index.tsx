@@ -106,7 +106,7 @@ export const ObjectSelectionBar = ({
     failure === null || count === 0 ? null : (
       <div
         role="alert"
-        className="flex max-w-sm items-center gap-2 rounded-lg border border-danger bg-floating px-3 py-2 text-secondary text-danger shadow-lg"
+        className="flex max-w-sm items-center gap-2 rounded-lg border border-danger bg-floating px-3 py-2 text-meta text-danger shadow-lg"
       >
         <span className="min-w-0 flex-1">{failure.message}</span>
         <Button variant="ghost" size="sm" onClick={controls.retry}>

@@ -39,7 +39,7 @@ export const GoodboyMenu = ({
 
   return (
     <>
-      <header className="flex items-center gap-1.5 px-3 py-2">
+      <header className="flex items-center gap-2 px-3 py-2">
         <DogMascot size={MARK_SIZE} className="shrink-0 text-foreground" />
         <span className="truncate text-label font-semibold text-foreground">
           {version === null ? 'Goodboy' : `Goodboy ${version}`}
@@ -53,7 +53,7 @@ export const GoodboyMenu = ({
             icon={<CONCEPT_ICONS.reportIssue size={ICON_SIZE.row} aria-hidden />}
             label="Report a bug"
             trailing={
-              <span className="flex items-center gap-2 text-secondary text-faint-foreground">
+              <span className="flex items-center gap-2 text-meta text-faint-foreground">
                 {hasDraft ? 'Draft saved' : null}
                 <kbd className="font-sans">{shortcutGlyphs('report.open')}</kbd>
               </span>
@@ -72,10 +72,10 @@ export const GoodboyMenu = ({
           </div>
         ) : null}
         {showsSetup && !progress.isDone ? (
-          <section aria-label="Setup" className="flex flex-col gap-1.5 px-1.5">
+          <section aria-label="Setup" className="flex flex-col gap-2 px-2">
             <Eyebrow
               label={`Setup · ${progress.completedCount} of ${progress.totalCount}`}
-              className="px-1.5"
+              className="px-2"
             />
             <ChecklistBody progress={progress} />
             <Button variant="ghost" size="sm" onClick={() => finish()} className="self-end">
@@ -93,7 +93,7 @@ export const GoodboyMenu = ({
             icon={<CONCEPT_ICONS.shortcuts size={ICON_SIZE.row} aria-hidden />}
             label="Keyboard shortcuts"
             trailing={
-              <kbd className="font-sans text-secondary text-faint-foreground">
+              <kbd className="font-sans text-meta text-faint-foreground">
                 {shortcutGlyphs('settings.shortcuts')}
               </kbd>
             }
@@ -118,7 +118,7 @@ export const GoodboyMenu = ({
         </ul>
       </div>
       <Divider />
-      <p className="px-3 py-2 text-2xs leading-relaxed text-faint-foreground">
+      <p className="px-3 py-2 text-meta leading-relaxed text-faint-foreground">
         Releases land often, so expect rough edges. The app is free and source-available, and a
         sponsorship pays for the time that goes into it.
       </p>

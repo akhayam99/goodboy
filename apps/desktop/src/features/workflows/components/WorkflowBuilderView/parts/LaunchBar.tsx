@@ -32,7 +32,7 @@ export const LaunchBar = ({
         onClick={onDiscard}
         disabled={isStarting}
         aria-label="Discard workflow draft"
-        className="gap-1.5 text-muted-foreground"
+        className="gap-2 text-muted-foreground"
       >
         <RotateCcw size={ICON_SIZE.control} aria-hidden />
         Discard

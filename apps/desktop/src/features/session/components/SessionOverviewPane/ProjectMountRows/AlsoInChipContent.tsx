@@ -23,9 +23,9 @@ export const AlsoInChipContent = ({ session }: Props) => {
         shape="badge"
         size="control"
         onClick={() => navigate({ to: sessionPlace({ sessionId: session.id }) })}
-        className="min-w-0 shrink gap-1.5 hover:bg-hover hover:text-foreground"
+        className="min-w-0 shrink gap-2 hover:bg-hover hover:text-foreground"
         label={
-          <span className="flex min-w-0 items-center gap-1.5">
+          <span className="flex min-w-0 items-center gap-2">
             <span className="shrink-0 text-faint-foreground">Also in</span>
             <StatusDot tone={presentation.tone} size="sm" />
             <span className="min-w-0 truncate">{title}</span>

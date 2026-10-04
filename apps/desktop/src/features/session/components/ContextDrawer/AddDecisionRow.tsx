@@ -41,9 +41,7 @@ export const AddDecisionRow = ({ isLocked, onAdd }: Props) => {
         />
       </label>
       {isLocked ? (
-        <p className="text-secondary text-faint-foreground">
-          Editing opens when the update finishes.
-        </p>
+        <p className="text-meta text-faint-foreground">Editing opens when the update finishes.</p>
       ) : null}
     </div>
   );

@@ -31,7 +31,7 @@ export const NewProjectForm = ({ onCreated, onCancel, autoFocus = true }: Props)
       onSubmit={onSubmit}
       className="flex w-full flex-col gap-5 text-left"
     >
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <label htmlFor={nameId} className="text-label text-foreground">
           Project name
         </label>
@@ -46,17 +46,17 @@ export const NewProjectForm = ({ onCreated, onCancel, autoFocus = true }: Props)
           onChange={(event) => model.setName(event.target.value)}
         />
         {model.nameProblem !== null ? (
-          <p id={problemId} className="text-secondary text-danger">
+          <p id={problemId} className="text-meta text-danger">
             {model.nameProblem}
           </p>
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <span className="text-label text-foreground">Location</span>
         <div className="flex items-center gap-2">
           <span
-            className="min-w-0 flex-1 truncate font-mono text-secondary text-muted-foreground"
+            className="min-w-0 flex-1 truncate font-mono text-meta text-muted-foreground"
             title={model.folderPreview ?? undefined}
           >
             {model.folderPreview ?? 'Choose where the folder goes'}
@@ -73,9 +73,9 @@ export const NewProjectForm = ({ onCreated, onCancel, autoFocus = true }: Props)
         </div>
       </div>
 
-      <section aria-label="What happens" className="flex flex-col gap-1.5">
+      <section aria-label="What happens" className="flex flex-col gap-2">
         <Eyebrow label="What happens" muted />
-        <ul className="flex flex-col gap-1 text-secondary text-muted-foreground">
+        <ul className="flex flex-col gap-1 text-meta text-muted-foreground">
           {STEPS.map((step) => (
             <li key={step}>{step}</li>
           ))}

@@ -52,9 +52,9 @@ export const ReleaseRow = ({ release, isActive, installedVersion, onSelect }: Pr
       selected={isActive}
       ariaCurrent={isActive}
       onClick={() => onSelect(release.version)}
-      className="flex-col items-stretch gap-0.5 px-2.5 py-2"
+      className="flex-col items-stretch gap-0.5 px-3 py-2"
     >
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
         <span className="min-w-0 flex-1 truncate text-body">{release.version}</span>
         {oneWayMark !== null ? (
           <Chip
@@ -68,7 +68,7 @@ export const ReleaseRow = ({ release, isActive, installedVersion, onSelect }: Pr
         {isInstalled ? <Chip tone="neutral" width="sm" label="installed" /> : null}
         {isAvailable ? <Chip tone="primary" width="sm" label="in the update" /> : null}
       </div>
-      <span className="truncate text-secondary text-muted-foreground">
+      <span className="truncate text-meta text-muted-foreground">
         {releaseSummary({ release })}
       </span>
     </SelectableRow>

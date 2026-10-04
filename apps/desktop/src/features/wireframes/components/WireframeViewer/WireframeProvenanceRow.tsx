@@ -12,7 +12,7 @@ type Props = {
 const COLLAPSED_LIMIT = 4;
 
 const chipClass =
-  'inline-flex min-w-0 max-w-[13rem] items-center rounded-full border border-border-soft px-2 py-0.5 text-secondary text-muted-foreground';
+  'inline-flex min-w-0 max-w-[13rem] items-center rounded-full border border-border-soft px-2 py-0.5 text-chip text-muted-foreground';
 
 const refLeaf = ({ ref }: { readonly ref: string }): string =>
   ref
@@ -48,9 +48,9 @@ export const WireframeProvenanceRow = ({ fidelity, theme, designProfile }: Props
   return (
     <div
       data-testid="wireframe-provenance"
-      className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-secondary text-muted-foreground"
+      className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-meta text-muted-foreground"
     >
-      <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 uppercase tracking-eyebrow">
+      <span className="shrink-0 rounded-sm bg-muted px-2 py-0.5 uppercase tracking-eyebrow">
         {fidelity} fidelity
       </span>
       <span className="shrink-0">theme {theme.name}</span>

@@ -87,7 +87,7 @@ export const ResetCreditRow = ({ nowMs }: Props) => {
           <Gift size={ICON_SIZE.control} aria-hidden className="shrink-0 text-primary" />
           <div className="flex min-w-0 flex-1 flex-col">
             <span className="text-foreground">{countLabel({ count })}</span>
-            <span className="truncate text-secondary text-muted-foreground">
+            <span className="truncate text-meta text-muted-foreground">
               {expiryLine({ expiresAt: credits?.expiresAt ?? null })}
             </span>
           </div>

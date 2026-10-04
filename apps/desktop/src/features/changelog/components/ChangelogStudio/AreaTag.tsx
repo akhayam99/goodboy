@@ -9,7 +9,7 @@ type Props = {
 export const AreaTag = ({ area }: Props) => {
   const Icon = changelogAreaIcon({ area });
   return (
-    <span className="flex shrink-0 items-center gap-1 text-secondary text-muted-foreground">
+    <span className="flex shrink-0 items-center gap-1 text-meta text-muted-foreground">
       <Icon size={ICON_SIZE.row} aria-hidden />
       {changelogAreaLabel({ area })}
     </span>
