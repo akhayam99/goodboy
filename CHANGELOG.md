@@ -12,6 +12,48 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.16.1
+
+Settings open on the page you used last, every studio closes the same way, and type, spacing and copy share one scale.
+
+### New
+
+#### Put a linked task on a branch
+<!-- gb area=inbox -->
+
+After you link a task, one step puts it on a branch or a worktree, so the work starts where the task lives.
+
+### Improved
+
+#### Settings without a home
+<!-- gb area=settings -->
+
+Settings opens on the last page you used, and on General after a relaunch. The settings home, the Help page and the Storage chip are gone, and the danger actions sit at the bottom of their page.
+
+#### Run defaults
+<!-- gb area=workflows -->
+
+The Rules tab in Workflows is three controls: when to ask, the spend cap and providers with guidance. The Pay-as-you-go note is gone.
+
+#### One exit and one look
+<!-- gb area=app -->
+
+Close, Esc and Back leave every studio for the same place, and each door has one selected look. Providers have one home, with Connect when none is set up. The breadcrumb shows plain ancestors, and the Now chip goes to the place it names.
+
+#### Reply length
+<!-- gb area=sessions -->
+
+The choice reads Short, Normal or Long. A long transcript message clamps, and the handoff stays closed until you open it. One id, name and limit show on each surface, and the Board at rest and the Impact tiles are quieter.
+
+#### Shorter copy and one scale
+<!-- gb area=app -->
+
+Copy and empty states say less. Rows are 13, titles 16 and meta 12 on a 4px grid, and Activity agent rows show the provider icon.
+
+### Fixed
+
+- The Rules tab in Workflows scrolls when its content is taller than the window. <!-- gb area=workflows -->
+
 ## Goodboy v0.16.0
 
 Workflows follow your rules and can wait after the plan, branches take the name you set, tasks link to a branch or the workspace, and chats take images.

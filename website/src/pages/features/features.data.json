@@ -111,7 +111,7 @@
           "title": "Settings",
           "text": "Settings opens on the page you used last, with the rail beside it. Every page is also in the palette.",
           "group": "Set up",
-          "also": "settings home",
+          "also": "settings pages",
           "shown": true
         }
       ]
