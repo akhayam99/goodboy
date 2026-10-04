@@ -15,11 +15,18 @@ import { workspacePageEntry, workspacePageOf, type WorkspacePage } from './works
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly section?: string;
+  readonly initialFlow?: FlowMode;
   readonly onSelect: (change: SettingsScopeChange) => void;
   readonly requestClose: () => void;
 };
 
-export const WorkspaceScopePanel = ({ workspaceId, section, onSelect, requestClose }: Props) => {
+export const WorkspaceScopePanel = ({
+  workspaceId,
+  section,
+  initialFlow,
+  onSelect,
+  requestClose,
+}: Props) => {
   const workspaceName = useAppStore(
     (s) => s.workspaces.find((w) => w.id === workspaceId)?.name ?? null,
   );
@@ -32,7 +39,7 @@ export const WorkspaceScopePanel = ({ workspaceId, section, onSelect, requestClo
     readonly page: WorkspacePage;
     readonly scope: WorkspacePage | 'all';
     readonly mode: FlowMode;
-  } | null>(null);
+  } | null>(initialFlow === undefined ? null : { page, scope: 'all', mode: initialFlow });
   const openFlow = flow !== null && flow.page === page ? flow : null;
 
   const pageItems: ReadonlyArray<OverflowMenuItem> = ownsSettings

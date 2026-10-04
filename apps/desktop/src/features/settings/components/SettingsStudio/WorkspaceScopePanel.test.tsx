@@ -88,9 +88,11 @@ const onSelect = vi.fn<(change: SettingsScopeChange) => void>();
 
 const renderPage = ({
   section,
+  initialFlow,
   requestClose = vi.fn(),
 }: {
   readonly section?: string;
+  readonly initialFlow?: 'copy' | 'restore';
   readonly requestClose?: () => void;
 } = {}) =>
   render(
@@ -98,6 +100,7 @@ const renderPage = ({
       <WorkspaceScopePanel
         workspaceId={HARBORLINE.id}
         section={section}
+        initialFlow={initialFlow}
         onSelect={onSelect}
         requestClose={requestClose}
       />
@@ -128,7 +131,7 @@ describe('WorkspaceScopePanel pages', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Projects');
     expect(screen.getByLabelText<HTMLInputElement>('Workspace name').value).toBe('Harborline');
     expect(screen.queryByRole('region', { name: 'Branches and comments' })).toBeNull();
-    expect(screen.queryByRole('region', { name: 'Disconnect workspace' })).toBeNull();
+    screen.getByRole('region', { name: 'Disconnect workspace' });
   });
 
   it.each(WORKSPACE_PAGES.map((page) => page.id).filter((id) => id !== 'projects'))(
@@ -144,6 +147,15 @@ describe('WorkspaceScopePanel pages', () => {
       });
     },
   );
+
+  it.each([
+    ['copy', 'Copy settings from another workspace'],
+    ['restore', 'Restore defaults'],
+  ] as const)('opens the all-pages %s flow when asked to', (initialFlow, name) => {
+    renderPage({ initialFlow });
+
+    screen.getByRole('region', { name });
+  });
 
   it('lands old anchors on their page', () => {
     renderPage({ section: 'after-merge' });
@@ -195,12 +207,12 @@ describe('workspace name', () => {
   });
 });
 
-describe('disconnect page', () => {
+describe('disconnect at the end of Projects', () => {
   it('disconnects only after the inline confirm, then closes settings', async () => {
     const disconnectWorkspace = vi.fn(async () => undefined);
     useAppStore.setState({ disconnectWorkspace });
     const requestClose = vi.fn();
-    renderPage({ section: 'danger', requestClose });
+    renderPage({ section: 'projects', requestClose });
 
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect' }));
     expect(disconnectWorkspace).not.toHaveBeenCalled();
@@ -224,7 +236,7 @@ describe('disconnect page', () => {
         }),
       ],
     });
-    renderPage({ section: 'danger' });
+    renderPage({ section: 'projects' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect' }));
 

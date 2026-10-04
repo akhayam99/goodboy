@@ -6,6 +6,9 @@ import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { selectLiveWork } from '../../../../store/slices/live-work/selectLiveWork';
 
+const DISCONNECT_NOTE =
+  'Files stay on disk. Open the folder again to restore it with its sessions.';
+
 type DisconnectTitleParams = {
   readonly name: string;
   readonly runningCount: number;
@@ -47,20 +50,13 @@ export const WorkspaceDisconnectBand = ({ workspaceId, requestClose }: Props) =>
   };
 
   return (
-    <Band
-      inset="content"
-      label="Disconnect workspace"
-      ariaLabel="Disconnect workspace"
-      hint="Nothing on disk is deleted."
-      icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
-      headingLevel={2}
-    >
+    <Band inset="content" label="Disconnect" ariaLabel="Disconnect workspace" headingLevel={2}>
       {isConfirming ? (
         <InlineConfirm
           role="danger"
           icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
           title={disconnectTitle({ name: workspaceName ?? 'this workspace', runningCount })}
-          description="Projects, branches and worktrees stay on disk. Choose Open a folder with the same folder to bring it back with its sessions."
+          description={DISCONNECT_NOTE}
           confirmLabel="Disconnect"
           isBusy={isDisconnecting}
           onConfirm={onDisconnect}
@@ -68,10 +64,7 @@ export const WorkspaceDisconnectBand = ({ workspaceId, requestClose }: Props) =>
           className="self-stretch text-left"
         />
       ) : (
-        <FieldRow
-          label={`Disconnect ${workspaceName ?? 'this workspace'}`}
-          help="Folders and repositories stay as they are."
-        >
+        <FieldRow label={workspaceName ?? 'This workspace'} help={DISCONNECT_NOTE}>
           <Button variant="danger" size="sm" onClick={() => setIsConfirming(true)}>
             Disconnect
           </Button>

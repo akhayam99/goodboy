@@ -42,9 +42,8 @@ describe('pageKeys', () => {
     });
   });
 
-  it('owns nothing on Projects and Disconnect, so they are never copied', () => {
+  it('owns nothing on Projects, so it is never copied', () => {
     expect(pageKeys({ page: 'projects' })).toEqual([]);
-    expect(pageKeys({ page: 'danger' })).toEqual([]);
   });
 
   it('writes each workspace override key from exactly one field', () => {

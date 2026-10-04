@@ -98,9 +98,13 @@ describe('command palette settings entries', () => {
     });
     const pages = WITH_WORKSPACE.flatMap((group) => group.pages);
 
-    expect(entries.map((entry) => entry.key)).toEqual(pages.map((page) => `setting:${page.key}`));
+    const pageEntries = entries.filter((entry) => !entry.key.startsWith('setting:workspace:flow:'));
 
-    entries.forEach((entry) => entry.run());
+    expect(pageEntries.map((entry) => entry.key)).toEqual(
+      pages.map((page) => `setting:${page.key}`),
+    );
+
+    pageEntries.forEach((entry) => entry.run());
 
     expect(
       opened.map((focus) =>
@@ -112,6 +116,27 @@ describe('command palette settings entries', () => {
         }),
       ),
     ).toEqual(pages.map((page) => page.key));
+  });
+
+  it('opens the all-pages copy and restore flows from two workspace entries', () => {
+    const opened: SettingsFocus[] = [];
+    const entries = settingsPaletteEntries({
+      groups: WITH_WORKSPACE,
+      open: (focus) => opened.push(focus),
+    });
+    const flows = entries.filter((entry) => entry.key.startsWith('setting:workspace:flow:'));
+
+    expect(flows.map((entry) => entry.label)).toEqual([
+      'Copy settings from another workspace',
+      'Restore workspace defaults',
+    ]);
+
+    flows.forEach((entry) => entry.run());
+
+    expect(opened).toEqual([
+      { scope: 'workspace', flow: 'copy' },
+      { scope: 'workspace', flow: 'restore' },
+    ]);
   });
 
   it('drops the workspace entries when there is no workspace', () => {

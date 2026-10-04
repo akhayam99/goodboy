@@ -10,8 +10,7 @@ export type WorkspacePage =
   | 'after-merge'
   | typeof REVIEW_REPLIES_SECTION_ID
   | typeof PERMISSIONS_SECTION_ID
-  | 'skills'
-  | 'danger';
+  | 'skills';
 
 export const DEV_PROJECT_SECTION_ID = 'dev-project';
 
@@ -64,12 +63,6 @@ const ALL_WORKSPACE_PAGES = [
     label: 'Skills',
     concept: 'skills',
     hint: 'Instructions for agents',
-  },
-  {
-    id: 'danger',
-    label: 'Disconnect',
-    concept: 'disconnect',
-    hint: 'Remove from this Mac',
   },
 ] as const satisfies ReadonlyArray<WorkspacePageEntry>;
 

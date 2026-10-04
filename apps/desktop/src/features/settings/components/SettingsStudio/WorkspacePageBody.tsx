@@ -41,6 +41,7 @@ export const WorkspacePageBody = ({
             isInitiallyOpen={section === DEV_PROJECT_SECTION_ID}
           />
           <WorkspaceStorageNotice workspaceId={workspaceId} />
+          <WorkspaceDisconnectBand workspaceId={workspaceId} requestClose={requestClose} />
         </>
       );
     case 'profile':
@@ -69,8 +70,6 @@ export const WorkspacePageBody = ({
       );
     case 'skills':
       return <SkillsPanel workspaceId={workspaceId} />;
-    case 'danger':
-      return <WorkspaceDisconnectBand workspaceId={workspaceId} requestClose={requestClose} />;
     default: {
       const exhaustive: never = page;
       return exhaustive;

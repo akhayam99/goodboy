@@ -11,8 +11,6 @@ type Props = {
   readonly onSelect: (params: SettingsScopeChange) => void;
 };
 
-const DANGER_ROW = 'text-danger hover:text-danger data-[selected=true]:text-danger';
-
 export const SettingsRailPageGroup = ({ group, isCurrentGroup, pageKey, onSelect }: Props) => {
   const Icon = CONCEPT_ICONS[group.concept];
   return (
@@ -39,7 +37,6 @@ export const SettingsRailPageGroup = ({ group, isCurrentGroup, pageKey, onSelect
               statusLabel={page.key === 'app:general' ? page.attention?.text : undefined}
               selected={isCurrentGroup && page.key === pageKey}
               onClick={() => onSelect(page.target)}
-              className={cn(page.isDanger && DANGER_ROW)}
             />
           </li>
         ))}

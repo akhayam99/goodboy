@@ -251,7 +251,6 @@ describe('SettingsStudio', () => {
       'branches',
       'security-findings',
       'help',
-      'danger',
     ]);
     expect(
       within(items).getByRole('button', { name: 'General' }).getAttribute('aria-current'),
@@ -403,7 +402,7 @@ describe('SettingsStudio', () => {
   });
 
   it('wipes only after the row confirm and offers a restart', async () => {
-    renderApp({ section: 'danger' });
+    renderApp({ section: 'backup' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Wipe' }));
     expect(state.wipeLocalDatabase).not.toHaveBeenCalled();
@@ -418,7 +417,7 @@ describe('SettingsStudio', () => {
   });
 
   it('cancels the wipe back to its trigger', () => {
-    renderApp({ section: 'danger' });
+    renderApp({ section: 'backup' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Wipe' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));

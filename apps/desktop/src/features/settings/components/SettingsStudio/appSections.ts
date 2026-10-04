@@ -1,14 +1,7 @@
 import type { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 export type AppSection =
-  | 'general'
-  | 'shortcuts'
-  | 'backup'
-  | 'storage'
-  | 'branches'
-  | 'security-findings'
-  | 'help'
-  | 'danger';
+  'general' | 'shortcuts' | 'backup' | 'storage' | 'branches' | 'security-findings' | 'help';
 
 export const APP_SECTIONS = [
   { id: 'general', label: 'General', concept: 'appearance' },
@@ -18,7 +11,6 @@ export const APP_SECTIONS = [
   { id: 'branches', label: 'Branches', concept: 'branch' },
   { id: 'security-findings', label: 'Security findings', concept: 'security' },
   { id: 'help', label: 'Help', concept: 'help' },
-  { id: 'danger', label: 'Danger zone', concept: 'danger' },
 ] as const satisfies ReadonlyArray<{
   readonly id: AppSection;
   readonly label: string;

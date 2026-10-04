@@ -3,7 +3,7 @@ import { PaneShell } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { APP_SECTIONS, type AppSection } from './appSections';
 import { BackupPage } from '../../../backup/components/BackupPage';
-import { AppDangerSection } from './AppDangerSection';
+import { AppResetSection } from './AppResetSection';
 import { AppGeneralSection } from './AppGeneralSection';
 import { AppHelpSection } from './AppHelpSection';
 import { SecurityFindingsSection } from './SecurityFindingsSection';
@@ -37,7 +37,12 @@ const SectionBody = ({ section, workspaceId, requestClose }: Props) => {
     case 'shortcuts':
       return <ShortcutsSection />;
     case 'backup':
-      return <BackupPage />;
+      return (
+        <div className="flex flex-col gap-6">
+          <BackupPage />
+          <AppResetSection />
+        </div>
+      );
     case 'storage':
       return STORAGE_APP_PAGES.storage.body;
     case 'branches':
@@ -46,8 +51,6 @@ const SectionBody = ({ section, workspaceId, requestClose }: Props) => {
       return <SecurityFindingsSection workspaceId={workspaceId} />;
     case 'help':
       return <AppHelpSection requestClose={requestClose} />;
-    case 'danger':
-      return <AppDangerSection />;
     default: {
       const exhaustive: never = section;
       return exhaustive;

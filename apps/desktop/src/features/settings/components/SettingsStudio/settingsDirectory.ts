@@ -28,7 +28,6 @@ export type SettingsPage = {
   readonly tone: Tone;
   readonly attention: SettingsAttention | null;
   readonly target: SettingsScopeChange;
-  readonly isDanger: boolean;
 };
 
 export type SettingsGroup = {
@@ -124,7 +123,6 @@ const appGroup = ({ status }: Pick<Params, 'status'>): SettingsGroup => ({
     tone: CONCEPT_TONE[section.concept],
     attention: appAttention({ section: section.id, subtitles: status.subtitles }),
     target: { scope: 'app', section: section.id },
-    isDanger: section.id === 'danger',
   })),
 });
 
@@ -146,7 +144,6 @@ const workspaceGroup = ({ status, workspaceName }: Params): SettingsGroup => ({
           })
         : null,
     target: { scope: 'workspace', section: page.id },
-    isDanger: page.id === 'danger',
   })),
 });
 
@@ -162,7 +159,6 @@ const providerPages = ({ status, workspaceName }: Params): ReadonlyArray<Setting
             tone: 'primary',
             attention: null,
             target: { scope: 'providers' },
-            isDanger: false,
           },
         ];
   const accounts = status.providers.map((provider): SettingsPage => ({
@@ -172,7 +168,6 @@ const providerPages = ({ status, workspaceName }: Params): ReadonlyArray<Setting
     tone: 'neutral',
     attention: attentionOf({ text: provider.status.subtitle, tone: provider.status.tone }),
     target: { scope: 'providers', provider: provider.id },
-    isDanger: false,
   }));
   if (defaults.length + accounts.length > 0) {
     return [...defaults, ...accounts];
@@ -188,7 +183,6 @@ const providerPages = ({ status, workspaceName }: Params): ReadonlyArray<Setting
         tone: status.subtitles.providersTone,
       }),
       target: { scope: 'providers' },
-      isDanger: false,
     },
   ];
 };
@@ -213,7 +207,6 @@ const toolsGroup = ({ status, workspaceName }: Params): SettingsGroup => ({
     tone: CONCEPT_TONE[entry.tool],
     attention: null,
     target: { scope: 'tools', tool: entry.tool },
-    isDanger: false,
   })),
 });
 

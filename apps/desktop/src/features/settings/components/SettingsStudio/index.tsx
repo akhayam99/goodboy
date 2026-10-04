@@ -168,8 +168,10 @@ export const SettingsStudio = ({
     if (availableScope === 'workspace' && currentWorkspace !== null) {
       return (
         <WorkspaceScopePanel
+          key={`workspace:${focus.flow ?? ''}`}
           workspaceId={currentWorkspace.id}
           section={focus.section}
+          initialFlow={focus.flow}
           onSelect={onScopeChange}
           requestClose={requestClose}
         />

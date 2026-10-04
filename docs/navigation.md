@@ -1085,11 +1085,11 @@ one is open at a time.
   Integrations groups are left out. Precedent: the VS Code settings editor and
   Linear's settings sidebar.
 - **Settings nests items in its rail.** The App items (General, Shortcuts,
-  Backup, Storage, Security findings, Help, Danger zone) always sit under the
+  Backup, Storage, Security findings, Help) always sit under the
   App row as indented
   rows, whichever scope is active, so switching scope never moves a row above
   the pointer. The Workspace pages (Projects, About you, New sessions, After
-  merge, Review replies, Permissions, Disconnect) sit the same way under the
+  merge, Review replies, Permissions) sit the same way under the
   Workspace row (`workspacePages.ts`, `SettingsRailPageGroup`). The panel
   shows one item at a time. Providers & models nests
   Defaults and one row per provider, and Integrations nests one row per tool. Those
@@ -1232,9 +1232,11 @@ workspaceId, nowMs })`, owns every row's subtitle and tone (it replaced three
   `missing` in `projectGitStatus` (otherwise the row just names the
   workspace). Integrations carries a faint inventory subtitle with no dot,
   "N of M connected" over the whole integration catalog
-  (`connectedInventory`). Danger zone reads in `text-danger`. Panel sections sit on
-  bands (`Band`, eyebrow outside) with gap between them and no `Divider`; a danger zone
-  is an inline danger `Notice`. The workspace page is the exception: one
+  (`connectedInventory`). No rail row is red: the destructive actions sit at the
+  bottom of their page, Reset (Wipe local database) at the end of Backup and
+  Disconnect at the end of Projects, and turn red only in their inline
+  confirm. Panel sections sit on bands (`Band`, eyebrow outside) with gap between
+  them and no `Divider`. The workspace page is the exception: one
   column of eyebrow sections 24px apart. Its title is the workspace name,
   renamed in place. Projects group Starred ahead of All (never in both), each
   a 32px grid row (star, kind, name, description, a base-branch chip only
