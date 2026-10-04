@@ -56,6 +56,35 @@ export const useExecutedAgentRouting = ({
   );
 };
 
+type ExecutedRoutingsParams = {
+  readonly sessionId: SessionId;
+  readonly agents: ReadonlyArray<Pick<Agent, 'id' | 'runId'>>;
+};
+
+export const useExecutedAgentRoutings = ({
+  sessionId,
+  agents,
+}: ExecutedRoutingsParams): ReadonlyMap<string, ExecutedAgentRouting | null> => {
+  const records = useAppStore((state) => state.sessionTelemetry[sessionId] ?? EMPTY_TELEMETRY);
+  const runHistory = useAppStore((state) => state.agentRunHistory);
+  const liveRouting = useAppStore((state) => state.runRouting);
+  return useMemo(
+    () =>
+      new Map(
+        agents.map((agent) => [
+          agent.id,
+          executedAgentRouting({
+            agentRunId: agent.runId ?? null,
+            runHistory: runHistory[agent.id] ?? EMPTY_RUN_IDS,
+            records,
+            liveRouting: liveRouting[agent.id] ?? EMPTY_RUN_ROUTING,
+          }),
+        ]),
+      ),
+    [agents, runHistory, liveRouting, records],
+  );
+};
+
 type SessionsParams = {
   readonly sessions: ReadonlyArray<Session>;
 };

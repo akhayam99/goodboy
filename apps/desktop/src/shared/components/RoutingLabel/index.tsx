@@ -12,6 +12,8 @@ type Props = {
   readonly planned?: PlannedRouting | null;
   readonly isEffortObserved?: boolean;
   readonly isColumn?: boolean;
+  readonly hideGlyph?: boolean;
+  readonly hideName?: boolean;
   readonly glyphPlacement?: 'leading' | 'trailing';
   readonly muted?: boolean;
   readonly className?: string;
@@ -28,6 +30,8 @@ export const RoutingLabel = ({
   planned = null,
   isEffortObserved = false,
   isColumn = false,
+  hideGlyph = false,
+  hideName = false,
   glyphPlacement = 'leading',
   muted = false,
   className,
@@ -35,7 +39,7 @@ export const RoutingLabel = ({
   const shown = routingLabelModel({ provider, model, effort, planned, isEffortObserved });
   const Glyph = shown.provider != null ? PROVIDER_BRAND[shown.provider].icon : null;
   const glyph =
-    Glyph != null && shown.provider != null ? (
+    !hideGlyph && Glyph != null && shown.provider != null ? (
       <Glyph
         size={isColumn ? 12 : 11}
         className="shrink-0"
@@ -60,7 +64,7 @@ export const RoutingLabel = ({
           <span
             data-routing-part="name"
             data-model-id={model ?? undefined}
-            className={WORK_META_COLUMN.routingName}
+            className={cn(WORK_META_COLUMN.routingName, hideName && 'sr-only')}
           >
             {routingNameText(shown.label)}
           </span>

@@ -33,6 +33,7 @@ export {
 export {
   useCurrentSession,
   useExecutedAgentRouting,
+  useExecutedAgentRoutings,
   useIsSessionCollectionLoaded,
   useRunSpendUsd,
   useSessionById,

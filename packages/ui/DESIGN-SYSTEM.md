@@ -663,6 +663,16 @@ run row has no routing: its step progress sits in the routing column and its
 time in the time column (`WORK_META_COLUMN.progress`, which keeps its words
 when the model column folds to a glyph).
 
+The activity timeline fills the routing column only with what tells rows
+apart (`TimelineRouting` context, `useTimelineRoutingFacts`). The provider
+glyph shows only when the session's agents use two or more providers. The
+model name shows only on a row whose model differs from its group (the
+session, a run, or the parent agent), where the group model is the one a
+majority of its agents share; a tied group and a group of one name every
+model. A hidden name stays in the DOM as `sr-only` and in the row tooltip.
+`RoutingLabel` keeps glyph and name by default (`hideGlyph`, `hideName` opt
+out), so other lists read the same.
+
 The narrow rules are container queries, never window breakpoints, because
 the same feed sits in a wide overview and in a split pane. The activity feed
 puts the container on each row's content box (`WORK_ROW.container`, right of

@@ -99,6 +99,7 @@ vi.mock('../../../../../../store', async () => {
     useIsSessionCollectionLoaded: () => agentsLoaded.current,
     useExecutedAgentRouting: ({ agent }: { readonly agent: { readonly id: string } }) =>
       storeState.executed.get(agent.id) ?? null,
+    useExecutedAgentRoutings: () => storeState.executed,
   };
 });
 vi.mock('../../../../../../shared/hooks/useSessionRoleModels', () => ({
@@ -1116,7 +1117,7 @@ describe('TimelinePane row meta', () => {
       expect(time.textContent).toBe('6m 40s');
     });
 
-    it('lets the model fold to its glyph, then the cost, then the time go before the title', () => {
+    it('lets the model fold away with no glyph, then the cost, then the time go before the title', () => {
       storeState.sessionTurnSpans = { 'session-1': [span('agent-plan', 0, 6 * MINUTE + 40_000)] };
       storeState.workspaceDurationHistory = {
         'ws-1': {
@@ -1147,7 +1148,7 @@ describe('TimelinePane row meta', () => {
 
       const glyph = seen(700);
       expect(glyph.text).not.toContain('Opus 4.5');
-      expect(glyph.glyphs).toBe(1);
+      expect(glyph.glyphs).toBe(0);
       expect(routing.textContent).toContain('Opus 4.5');
       expect(glyph.text).toContain('$0.62');
       expect(glyph.text).toContain('6m 40s');
@@ -1155,7 +1156,7 @@ describe('TimelinePane row meta', () => {
       const noCost = seen(560);
       expect(noCost.text).not.toContain('$0.62');
       expect(noCost.text).toContain('6m 40s');
-      expect(noCost.glyphs).toBe(1);
+      expect(noCost.glyphs).toBe(0);
 
       const narrow = seen(460);
       expect(narrow.text).not.toContain('6m 40s');
