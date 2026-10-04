@@ -43,7 +43,7 @@ export const ResetOutcomeNotice = ({ outcome, usedAtMs, onRetry }: Props) => {
       body="Your reset wasn't used."
       actions={
         <Button size="sm" variant="secondary" onClick={onRetry}>
-          Try again
+          Retry
         </Button>
       }
     />

@@ -239,7 +239,7 @@ path**. A provider that is not connected shows only its connect card.
   off until you tick that you understand. Goodboy sends
   `account/rateLimitResetCredit/consume` to `codex app-server`
   (`codex_consume_reset_credit`) with one attempt key, kept in
-  `codexPendingReset` until Codex answers, so **Try again** after a network
+  `codexPendingReset` until Codex answers, so **Retry** after a network
   error can never spend two resets. After a reset Goodboy reads the limits again.
   Claude's free resets only work on claude.ai or in Claude Desktop, so a full
   Claude window shows **Open Claude usage** instead. Goodboy never buys a reset

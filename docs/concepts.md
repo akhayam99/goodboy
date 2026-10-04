@@ -823,15 +823,15 @@ once · each works on its own copy of the branch`, no price: nothing
   estimates the cost of a run), and `Start` on Cmd+Enter (Esc closes). The
   choice is saved on the batch and on every attempt (`launch_choice_json`). Each start carries the thread ids and the
   marker contract
-- A retry reads the same choices again. Redraft, Answer and Try again use the
+- A retry reads the same choices again. Redraft, Answer and Retry use the
   launch choice of the comment's last batch attempt (model, effort, commit
   style, hint), then the model picked for the session (`Model for drafts…`) and
   the commit style set in Review replies, so with fixup set the second round is
   a fixup too. The
   hint you type before a retry lands in the prompt's operator notes
-- A failed run offers **Try again** (`Try again on Opus 5` once you picked a
-  model, `Try again with the hint` with a hint), **Try another model** (the
-  picker opens inline under the buttons) and **Add a hint** (F is Try again).
+- A failed run offers **Retry** (`Retry on Opus 5` once you picked a
+  model, `Retry with the hint` with a hint), **Try another model** (the
+  picker opens inline under the buttons) and **Add a hint** (F is Retry).
   `…` holds Reply yourself, Skip and Open transcript. The earlier attempts of
   the comment fold into one line above (`Attempt 1 · Sonnet 5.5 · Medium ·
 failed`) that opens to their reasons. A failed step after the run shows its

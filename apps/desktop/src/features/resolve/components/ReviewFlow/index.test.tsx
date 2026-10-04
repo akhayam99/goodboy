@@ -615,7 +615,7 @@ describe('Review of a failed run', () => {
     const failed = within(comment());
     expect(failed.getByText('The run ended before the resolver reported a result')).toBeDefined();
     expect(failed.getByText(/pnpm test src\/webhooks · 2 failing/)).toBeDefined();
-    expect(failed.getByRole('button', { name: /^Try again/ })).toBeDefined();
+    expect(failed.getByRole('button', { name: /^Retry/ })).toBeDefined();
     expect(failed.getByRole('button', { name: 'Try another model' })).toBeDefined();
     expect(failed.getByRole('button', { name: 'Add a hint' })).toBeDefined();
     expect(failed.queryByRole('button', { name: /Redraft/ })).toBeNull();
@@ -640,9 +640,9 @@ describe('Review of a failed run', () => {
     });
 
     const failed = within(comment());
-    expect(failed.getByRole('button', { name: /^Try again on Opus 5/ })).toBeDefined();
+    expect(failed.getByRole('button', { name: /^Retry on Opus 5/ })).toBeDefined();
     expect(failed.getByRole('button', { name: /Attempt 1 · Sonnet 5/ })).toBeDefined();
-    fireEvent.click(failed.getByRole('button', { name: /^Try again on Opus 5/ }));
+    fireEvent.click(failed.getByRole('button', { name: /^Retry on Opus 5/ }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
     const args = spawnAgent.mock.calls[0]?.[1];
@@ -663,7 +663,7 @@ describe('Review of a failed run', () => {
       name: 'What should the agent do differently?',
     });
     fireEvent.change(field, { target: { value: 'Use ON CONFLICT' } });
-    fireEvent.click(within(comment()).getByRole('button', { name: 'Try again with the hint' }));
+    fireEvent.click(within(comment()).getByRole('button', { name: 'Retry with the hint' }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
     const args = spawnAgent.mock.calls[0]?.[1];

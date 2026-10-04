@@ -473,7 +473,7 @@ on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
   found or not visible, key rejected with `Sign in again`, missing
   permission, tracker not connected, no repo for `#N`), and a rate limit
   shows a live countdown and retries once on its own when it ends, alongside
-  the manual `Try again`. The mobile companion resolves Linear, Sentry and
+  the manual `Retry`. The mobile companion resolves Linear, Sentry and
   GitLab issues through the same direct lookups instead of searching only
   the issues assigned to you. Issues can be starred (`StarToggle`, the same
   star as projects) from an Inbox row, a lookup hit or `s` on the selected

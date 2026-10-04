@@ -50,6 +50,7 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
     use: NAMES.deleteAllData,
   },
   { id: 'unlink', pattern: /\bUnlink(?:s|ed)?\b/, use: NAMES.removeLink },
+  { id: 'try-again', pattern: /^Try again(?: on [\w .-]+| with the hint)?$/, use: NAMES.retry },
   { id: 'your-roles', pattern: /\bYour roles\b/, use: NAMES.yourJob },
   { id: 'defaults-page', pattern: /\b(?:in|then|Open) Defaults\b/, use: NAMES.models },
 ];

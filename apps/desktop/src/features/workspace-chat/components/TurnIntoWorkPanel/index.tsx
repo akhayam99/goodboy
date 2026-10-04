@@ -427,7 +427,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
                     size="sm"
                     onClick={() => void linkThenFinish(unlinked)}
                   >
-                    Try again
+                    Retry
                   </Button>
                   <Button variant="ghost" size="sm" onClick={() => finish(unlinked)}>
                     Open the session

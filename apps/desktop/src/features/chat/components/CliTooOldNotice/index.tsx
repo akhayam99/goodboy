@@ -113,7 +113,7 @@ export const CliTooOldNotice = ({ payload, runId, onRetryRun, isRetrying }: Prop
             disabled={update.isBlockedByTurn}
             onClick={update.start}
           >
-            {update.hasFailed ? 'Try again' : `Update ${cli}`}
+            {update.hasFailed ? 'Retry' : `Update ${cli}`}
           </Button>
           {sibling !== null && canRetry && !update.isUpdating && (
             <Button

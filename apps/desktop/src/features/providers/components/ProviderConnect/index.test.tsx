@@ -218,7 +218,7 @@ describe('ProviderConnect', () => {
     expect(screen.getByText('live terminal')).toBeDefined();
     expect(screen.getByText(/If this keeps failing/)).toBeDefined();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(state.connectProvider).toHaveBeenCalledWith('anthropic');
   });
 
@@ -236,7 +236,7 @@ describe('ProviderConnect', () => {
     expect(screen.getByText(/Another window is already signing in to Claude/)).toBeDefined();
     expect(screen.queryByText("Sign-in didn't finish.")).toBeNull();
     expect(screen.queryByText(/If this keeps failing/)).toBeNull();
-    expect(screen.getByRole('button', { name: 'Try again' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
   });
 
   it('prints the command to read inside the details, never at rest', () => {

@@ -71,7 +71,7 @@ describe('InboxLookupGroup', () => {
     expect(screen.getByText('Looking up CAS-231 in Linear and Jira')).toBeDefined();
   });
 
-  it('counts down a rate-limited tracker and still lets Try again fire early', () => {
+  it('counts down a rate-limited tracker and still lets Retry fire early', () => {
     vi.useFakeTimers();
     const retry = vi.fn();
     const retryAt = Date.now() + 20_000;
@@ -118,7 +118,7 @@ describe('InboxLookupGroup', () => {
       screen.getByText('Linear asked Goodboy to slow down. Trying again in 15s.'),
     ).toBeDefined();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(retry).toHaveBeenCalled();
     vi.useRealTimers();
   });
@@ -177,7 +177,7 @@ describe('InboxLookupGroup', () => {
     expect(screen.getByText('Assigned to Priya Moss')).toBeDefined();
   });
 
-  it('offers Sign in again for a rejected key and Try again for a network failure', () => {
+  it('offers Sign in again for a rejected key and Retry for a network failure', () => {
     const retry = vi.fn();
     render(
       <InboxLookupGroup
@@ -217,7 +217,7 @@ describe('InboxLookupGroup', () => {
     expect(screen.getByText('Linear stopped accepting your key.')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Sign in again' }));
     expect(openToolSettings).toHaveBeenCalledWith({ tool: 'linear' });
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(retry).toHaveBeenCalled();
   });
 

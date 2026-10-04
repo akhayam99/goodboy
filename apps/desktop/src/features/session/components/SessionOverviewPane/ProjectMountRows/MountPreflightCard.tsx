@@ -136,7 +136,7 @@ export const MountPreflightCard = ({
           disabled={isBusy || preflight === null}
           isBusy={isBusy}
         >
-          {failure === null ? 'Add project' : 'Try again'}
+          {failure === null ? 'Add project' : 'Retry'}
         </Button>
       </FormActions>
     </section>

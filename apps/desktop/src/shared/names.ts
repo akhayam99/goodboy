@@ -43,6 +43,7 @@ export const NAMES = {
   archiveWorkflow: 'Archive workflow',
   removeFromSession: 'Remove from session',
   deleteAllData: 'Delete all data',
+  retry: 'Retry',
   removeLink: 'Remove link',
   removeLinkFromSession: 'Remove link from this session',
   role: {
@@ -85,6 +86,7 @@ const FORMER_NAMES: Readonly<Record<string, ReadonlyArray<string>>> = {
   [NAMES.archiveWorkflow]: ['Discard workflow'],
   [NAMES.removeFromSession]: ['Detach project', 'Detach'],
   [NAMES.deleteAllData]: ['Wipe local database', 'Wipe'],
+  [NAMES.retry]: ['Try again'],
   [NAMES.removeLink]: ['Unlink'],
   [NAMES.removeLinkFromSession]: ['Unlink from this session'],
 };

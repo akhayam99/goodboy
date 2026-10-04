@@ -151,7 +151,7 @@ describe('MountProjectList', () => {
     screen.getByText('Technical detail');
     expect(alert.parentElement?.textContent).toContain('path: /repos/goodboy');
 
-    const retry = screen.getByRole('button', { name: 'Try again' });
+    const retry = screen.getByRole('button', { name: 'Retry' });
     fireEvent.click(retry);
     await waitFor(() => expect(h.ensureProjectMounted).toHaveBeenCalledTimes(2));
   });

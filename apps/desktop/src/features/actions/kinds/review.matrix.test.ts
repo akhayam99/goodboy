@@ -108,7 +108,7 @@ const MATRIX: ReadonlyArray<Row> = [
   {
     name: 'GitHub unreachable',
     facts: { isError: true },
-    expected: ['review.openPullRequest link Open PR #318', 'review.retryLoad empty Try again'],
+    expected: ['review.openPullRequest link Open PR #318', 'review.retryLoad empty Retry'],
   },
   {
     name: 'one drafting, 2 not started',
