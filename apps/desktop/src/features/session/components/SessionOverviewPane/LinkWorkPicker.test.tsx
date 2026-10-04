@@ -35,7 +35,7 @@ const ITEMS: ReadonlyArray<LinkWorkItem> = [
 
 type Linked = { readonly task: LaunchExternalTask; readonly choice: LinkChoice };
 
-const renderPicker = ({ branch = 'hl/fix-duplicate-credit' }: { branch?: string | null } = {}) => {
+const renderPicker = () => {
   const linked: Array<Linked> = [];
   render(
     <LinkWorkPicker
@@ -48,7 +48,6 @@ const renderPicker = ({ branch = 'hl/fix-duplicate-credit' }: { branch?: string 
       isLoading={false}
       isLinking={false}
       error={null}
-      branch={branch}
       onLink={(task, choice) => linked.push({ task, choice })}
       onClose={vi.fn()}
     />,
@@ -71,7 +70,8 @@ describe('LinkWorkPicker scope', () => {
         .getByRole('tab', { name: /This session/ })
         .getAttribute('aria-selected'),
     ).toBe('true');
-    expect(preview().getByText('on this session').tagName).toBe('SPAN');
+    expect(preview().getByText('not on a branch yet').tagName).toBe('SPAN');
+    expect(scope().queryByRole('tab', { name: /This branch/ })).toBeNull();
     expect(preview().getByText(/Will close HAR-212 when merged/).tagName).toBe('P');
 
     fireEvent.click(preview().getByRole('button', { name: 'Link HAR-212' }));
@@ -81,21 +81,16 @@ describe('LinkWorkPicker scope', () => {
     ]);
   });
 
-  it('links to the branch, named in the segment, and keeps it open on Don’t close', () => {
+  it('keeps the session task open on Don’t close', () => {
     const linked = renderPicker();
-
-    fireEvent.click(scope().getByRole('tab', { name: /This branch/ }));
-    expect(scope().getByRole('tab', { name: /This branch/ }).textContent).toContain(
-      'fix-duplicate-credit',
-    );
-    expect(preview().getByText('on hl/fix-duplicate-credit').tagName).toBe('SPAN');
-    expect(preview().getByLabelText('Branch task').tagName.toLowerCase()).toBe('svg');
 
     fireEvent.click(preview().getByRole('button', { name: 'Don’t close' }));
     expect(preview().getByText(/Part of HAR-212\. It stays open when merged\./).tagName).toBe('P');
     fireEvent.click(preview().getByRole('button', { name: 'Link HAR-212' }));
 
-    expect(linked.map((entry) => entry.choice)).toEqual([{ scope: 'branch', relation: 'part-of' }]);
+    expect(linked.map((entry) => entry.choice)).toEqual([
+      { scope: 'session', relation: 'part-of' },
+    ]);
   });
 
   it('puts a task on the whole workspace without ever closing it', () => {
@@ -121,14 +116,9 @@ describe('LinkWorkPicker scope', () => {
     renderPicker();
     fireEvent.click(preview().getByRole('button', { name: 'Don’t close' }));
 
-    fireEvent.click(scope().getByRole('tab', { name: /This branch/ }));
+    fireEvent.click(scope().getByRole('tab', { name: /Whole workspace/ }));
+    fireEvent.click(scope().getByRole('tab', { name: /This session/ }));
 
     expect(preview().getByText(/Will close HAR-212 when merged/).tagName).toBe('P');
-  });
-
-  it('cannot link to a branch while the session has none', () => {
-    renderPicker({ branch: null });
-
-    expect(scope().getByRole('tab', { name: /This branch/ })).toHaveProperty('disabled', true);
   });
 });

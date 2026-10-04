@@ -48,9 +48,7 @@ describe('linkWorkView', () => {
 });
 
 describe('linkWorkView with linked scopes', () => {
-  const rowsOf = (
-    linkedScopes: ReadonlyMap<string, ReadonlyArray<'session' | 'branch' | 'workspace'>>,
-  ) => {
+  const rowsOf = (linkedScopes: ReadonlyMap<string, ReadonlyArray<'session' | 'workspace'>>) => {
     const view = linkWorkView({
       query: '',
       source: 'all',
@@ -70,6 +68,6 @@ describe('linkWorkView with linked scopes', () => {
   });
 
   it('drops a task once every scope has it', () => {
-    expect(rowsOf(new Map([['revamp', ['session', 'branch', 'workspace']]]))).toEqual([]);
+    expect(rowsOf(new Map([['revamp', ['session', 'workspace']]]))).toEqual([]);
   });
 });

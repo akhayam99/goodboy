@@ -32,13 +32,7 @@ vi.mock('../../../integrations/hooks/useWorkspaceIssueLookup', () => ({
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type {
-  IsoDateTime,
-  MountId,
-  ProjectId,
-  SessionId,
-  SessionProjectMount,
-} from '@goodboy/types';
+import type { IsoDateTime, ProjectId, SessionId } from '@goodboy/types';
 import { aProject, aSession, aWorkspace } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -48,7 +42,6 @@ import {
 } from '../../../../store/storyHarness';
 import { LinkWorkPanel } from './LinkWorkPanel';
 
-const BRANCH = 'hl/payments-revamp';
 const workspace = aWorkspace({ name: 'Harborline', slug: 'harborline' });
 const project = aProject({
   id: 'p-payments' as ProjectId,
@@ -61,22 +54,6 @@ const session = aSession({
   workspaceId: workspace.id,
   goal: 'Split the payout service',
 });
-
-const MOUNT: SessionProjectMount = {
-  mountId: 'm-payments' as MountId,
-  sessionId: session.id,
-  projectId: project.id,
-  mountName: 'payments-api',
-  worktreePath: '/tmp/payments-api',
-  lastWorktreePath: null,
-  repoRoot: '/repo/payments-api',
-  branch: BRANCH,
-  baseBranch: 'main',
-  parallelIndex: 0,
-  isAttached: true,
-  diskState: 'present',
-  revision: 1,
-};
 
 const TASK = {
   provider: 'linear' as const,
@@ -100,9 +77,8 @@ beforeEach(async () => {
     projects: [project],
     sessions: [session],
     sessionExternalTasks: {},
-    sessionProjectMounts: { [session.id]: [MOUNT] },
   });
-  await useAppStore.getState().linkSessionExternalTask(session.id, { ...TASK, branch: BRANCH });
+  await useAppStore.getState().linkSessionExternalTask(session.id, TASK);
 });
 
 afterEach(cleanup);
@@ -135,9 +111,7 @@ describe('LinkWorkPanel on a task already linked to the session', () => {
   it('never offers a second session link of the same task', async () => {
     const { onLinked } = mountPanel();
 
-    expect(preview().getByText(/Linked to this session already/).textContent).toContain(
-      'Pick This branch to add it there too.',
-    );
+    expect(preview().getByText(/Linked to this session already/).textContent).not.toContain('Pick');
     const button = preview().getByRole('button', { name: 'Link HBL-400' });
     expect(button.hasAttribute('disabled')).toBe(true);
     await act(async () => {
@@ -149,17 +123,9 @@ describe('LinkWorkPanel on a task already linked to the session', () => {
     expect(onLinked).not.toHaveBeenCalled();
   });
 
-  it('adds the branch link next to the session link', async () => {
-    const { onLinked } = mountPanel();
+  it('offers no branch tab', () => {
+    mountPanel();
 
-    fireEvent.click(screen.getByRole('tab', { name: /This branch/ }));
-    const button = preview().getByRole('button', { name: 'Link HBL-400' });
-    expect(button.hasAttribute('disabled')).toBe(false);
-    await act(async () => {
-      fireEvent.click(button);
-    });
-
-    expect(linksOf()).toEqual(['HBL-400:session', 'HBL-400:branch']);
-    expect(onLinked).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('tab', { name: /This branch/ })).toBeNull();
   });
 });
