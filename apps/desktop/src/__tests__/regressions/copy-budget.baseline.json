@@ -74,8 +74,7 @@
     "features/workflows/components/RunSpendLimitPopover/index.tsx": 1,
     "features/workflows/components/WorkflowBuilderView/index.tsx": 1,
     "features/workflows/components/WorkflowBuilderView/parts/SpendCapChip.tsx": 1,
-    "features/workflows/composeChildRoutingPrompt.ts": 1,
-    "features/workspace/components/StageBoard/StageColumn/emptyCopy.ts": 1
+    "features/workflows/composeChildRoutingPrompt.ts": 1
   },
   "first-person": {
     "features/integrations/slack/SlackSettings/index.tsx": 1,
