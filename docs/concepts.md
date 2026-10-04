@@ -959,7 +959,7 @@ Each workspace can have one profile, edited under "About you" on the workspace
 page. Onboarding does not ask for it: "Tell agents about you" in the setup
 checklist opens it. It has four fields:
 
-- **Your roles**: chips from a library of about 30 roles, or your own
+- **Your job**: chips from a library of about 30 roles, or your own
 - **About your work**: what you do and for whom
 - **How agents should work with you**: your working rules
 - **Explain more when it touches**: topics where you want longer explanations
@@ -1258,6 +1258,8 @@ task up again in Goodboy.
   group, the board column, the questions list and an agent in a mount row.
   The reason follows it ("Needs your answer in step 2"). "Waiting on you" is
   retired.
+- **Your job** is the About you field that lists what you do (it was Your
+  roles). **Role** stays the name for what an agent plays.
 - A word that stays and still needs a sentence (workflow, orchestrated,
   artifact) gets a short tooltip, six words at most, written once. The
   `TermHint` and `GLOSSARY`

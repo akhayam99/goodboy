@@ -236,7 +236,7 @@ const WORKSPACE_FIELDS: ReadonlyArray<WorkspaceFieldDef> = [
   }),
   erase({
     id: 'roles',
-    label: 'Your roles',
+    label: NAMES.yourJob,
     fallback: [],
     parse: asList,
     stored: ({ profile }) => listOrNull(profile.roles),
