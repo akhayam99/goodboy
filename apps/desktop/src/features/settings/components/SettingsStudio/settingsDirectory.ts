@@ -22,7 +22,7 @@ type SettingsAttention = {
   readonly tone: Tone;
 };
 
-export type SettingsPage = {
+type SettingsPage = {
   readonly key: string;
   readonly label: string;
   readonly glyph: SettingsPageGlyph;

@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { LimitsChip } from '@goodboy/core';
 import type { IsoDateTime } from '@goodboy/types';
-import { formatLimitReset, formatLimitResetShort, formatTimeUntil } from './formatLimitReset';
+import { formatLimitReset, formatTimeUntil } from './formatLimitReset';
 import { limitsChipHeadline } from './limitsChipHeadline';
 
 const NOW_MS = new Date(2026, 8, 25, 12, 0).getTime();
@@ -27,7 +27,6 @@ describe('formatLimitReset', () => {
   it('writes a reset later today as a clock time and a later one with its weekday', () => {
     expect(formatLimitReset({ iso: localIso(14, 30), nowMs: NOW_MS })).toBe('14:30');
     expect(formatLimitReset({ iso: localIso(9, 0, 3), nowMs: NOW_MS })).toMatch(/^\S+ 09:00$/);
-    expect(formatLimitResetShort({ iso: localIso(9, 0, 3), nowMs: NOW_MS })).not.toContain(':');
   });
 
   it('counts down to the reset', () => {

@@ -87,7 +87,7 @@ export const workspacePageOf = ({ section }: { readonly section?: string }): Wor
 export const workspacePageEntry = ({ page }: { readonly page: WorkspacePage }) =>
   WORKSPACE_PAGES.find((entry) => entry.id === page) ?? ALL_WORKSPACE_PAGES[0];
 
-export const WORKFLOW_RULES_PLAN_PAGE = 'workflow-rules';
+const WORKFLOW_RULES_PLAN_PAGE = 'workflow-rules';
 
 export type PlanPage = WorkspacePage | typeof WORKFLOW_RULES_PLAN_PAGE;
 

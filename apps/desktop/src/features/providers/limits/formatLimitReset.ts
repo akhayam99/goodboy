@@ -19,15 +19,6 @@ export const formatLimitReset = ({ iso, nowMs }: Params): string => {
   return `${formatWeekday({ at: iso, isShort: true })} ${formatClock({ at: iso })}`;
 };
 
-export const formatLimitResetShort = ({ iso, nowMs }: Params): string => {
-  if (Number.isNaN(Date.parse(iso))) {
-    return '';
-  }
-  return isSameDay({ iso, nowMs })
-    ? formatClock({ at: iso })
-    : formatWeekday({ at: iso, isShort: true });
-};
-
 const MS_PER_MINUTE = 60_000;
 const MS_PER_HOUR = 60 * MS_PER_MINUTE;
 const MS_PER_DAY = 24 * MS_PER_HOUR;
