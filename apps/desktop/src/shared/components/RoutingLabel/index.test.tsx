@@ -235,15 +235,6 @@ describe('RoutingLabel', () => {
       ).toBe(false);
     });
 
-    it('drops the glyph on request and keeps the name', () => {
-      const { container } = render(
-        <RoutingLabel isColumn hideGlyph provider="anthropic" model="claude-sonnet-5" />,
-      );
-
-      expect(container.querySelector('svg')).toBeNull();
-      expect(partOf(container, 'name')).toBe('Sonnet 5');
-    });
-
     it('hides the name visually but keeps it for screen readers and the tooltip', () => {
       const { container } = render(
         <RoutingLabel

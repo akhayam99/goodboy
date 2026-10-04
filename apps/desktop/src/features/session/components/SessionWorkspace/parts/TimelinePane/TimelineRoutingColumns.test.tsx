@@ -9,15 +9,17 @@ import { TimelineProviderGlyph } from './TimelineProviderGlyph';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
 import { TimelineRouting, type TimelineRoutingFacts } from './timelineRouting';
 
-vi.mock('../../../../../../shared/components/RoutingLabel', () => ({
-  RoutingLabel: ({ hideGlyph, hideName }: { hideGlyph?: boolean; hideName?: boolean }) => (
-    <span
-      data-testid="routing"
-      data-hide-glyph={String(hideGlyph)}
-      data-hide-name={String(hideName)}
-    />
-  ),
-}));
+vi.mock('../../../../../../shared/components/RoutingLabel', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('../../../../../../shared/components/RoutingLabel')>();
+  return {
+    RoutingLabel: (props: Parameters<typeof actual.RoutingLabel>[0]) => (
+      <span data-testid="routing" data-hide-name={String(props.hideName)}>
+        {actual.RoutingLabel(props)}
+      </span>
+    ),
+  };
+});
 
 afterEach(cleanup);
 
@@ -33,40 +35,22 @@ const work: AgentRowWork = {
   time: undefined,
 };
 
-const single: TimelineRoutingFacts = { isMultiProvider: false, modelShownAgentIds: new Set() };
-const mixed: TimelineRoutingFacts = {
-  isMultiProvider: true,
-  modelShownAgentIds: new Set(['odd']),
-};
+const matching: TimelineRoutingFacts = { modelShownAgentIds: new Set() };
+const odd: TimelineRoutingFacts = { modelShownAgentIds: new Set(['odd']) };
 
-const flagsOf = (container: HTMLElement) => {
-  const node = container.querySelector('[data-testid="routing"]');
-  return {
-    glyph: node?.getAttribute('data-hide-glyph'),
-    name: node?.getAttribute('data-hide-name'),
-  };
-};
+const nameHiddenOf = (container: HTMLElement) =>
+  container.querySelector('[data-testid="routing"]')?.getAttribute('data-hide-name');
 
 describe('TimelineProviderGlyph', () => {
-  it('shows the glyph with no facts, like every list outside the activity', () => {
+  it('shows the glyph with no facts', () => {
     const { container } = render(<TimelineProviderGlyph provider="anthropic" />);
 
     expect(container.querySelector('[data-provider="anthropic"]')).not.toBeNull();
   });
 
-  it('hides the glyph while the session uses one provider', () => {
+  it('shows the glyph while the session uses one provider', () => {
     const { container } = render(
-      <TimelineRouting.Provider value={single}>
-        <TimelineProviderGlyph provider="anthropic" />
-      </TimelineRouting.Provider>,
-    );
-
-    expect(container.querySelector('[data-provider]')).toBeNull();
-  });
-
-  it('shows the glyph once the session uses two providers', () => {
-    const { container } = render(
-      <TimelineRouting.Provider value={mixed}>
+      <TimelineRouting.Provider value={matching}>
         <TimelineProviderGlyph provider="anthropic" />
       </TimelineRouting.Provider>,
     );
@@ -79,37 +63,30 @@ describe('TimelineAgentMeta routing column', () => {
   it('shows glyph and name with no facts', () => {
     const { container } = render(<TimelineAgentMeta work={work} costUsd={0} agentId="same" />);
 
-    expect(flagsOf(container)).toEqual({ glyph: 'false', name: 'false' });
+    expect(container.querySelector('svg')).not.toBeNull();
+    expect(nameHiddenOf(container)).toBe('false');
   });
 
-  it('drops the glyph and the name of a row that matches its group', () => {
+  it('keeps the glyph and drops the name of a row that matches its group', () => {
     const { container } = render(
-      <TimelineRouting.Provider value={single}>
+      <TimelineRouting.Provider value={matching}>
         <TimelineAgentMeta work={work} costUsd={0} agentId="same" />
       </TimelineRouting.Provider>,
     );
 
-    expect(flagsOf(container)).toEqual({ glyph: 'true', name: 'true' });
+    expect(container.querySelector('svg')).not.toBeNull();
+    expect(nameHiddenOf(container)).toBe('true');
   });
 
-  it('keeps the name of the row that differs from its group', () => {
+  it('keeps glyph and name on the row that differs from its group', () => {
     const { container } = render(
-      <TimelineRouting.Provider value={mixed}>
+      <TimelineRouting.Provider value={odd}>
         <TimelineAgentMeta work={work} costUsd={0} agentId="odd" />
       </TimelineRouting.Provider>,
     );
 
-    expect(flagsOf(container)).toEqual({ glyph: 'false', name: 'false' });
-  });
-
-  it('keeps the glyph but drops the name of a matching row in a mixed session', () => {
-    const { container } = render(
-      <TimelineRouting.Provider value={mixed}>
-        <TimelineAgentMeta work={work} costUsd={0} agentId="same" />
-      </TimelineRouting.Provider>,
-    );
-
-    expect(flagsOf(container)).toEqual({ glyph: 'false', name: 'true' });
+    expect(container.querySelector('svg')).not.toBeNull();
+    expect(nameHiddenOf(container)).toBe('false');
   });
 });
 

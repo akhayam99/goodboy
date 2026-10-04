@@ -7,12 +7,10 @@ import type {
 export type TimelineRoute = {
   readonly agentId: string;
   readonly groupId: string;
-  readonly provider: string | null;
   readonly model: string | null;
 };
 
 export type TimelineRoutingFacts = {
-  readonly isMultiProvider: boolean;
   readonly modelShownAgentIds: ReadonlySet<string>;
 };
 
@@ -62,12 +60,8 @@ export const routingFactsOf = ({
 }: {
   readonly routes: ReadonlyArray<TimelineRoute>;
 }): TimelineRoutingFacts => {
-  const providers = new Set<string>();
   const modelCounts = new Map<string, Map<string, number>>();
   for (const route of routes) {
-    if (route.provider != null) {
-      providers.add(route.provider);
-    }
     if (route.model == null) {
       continue;
     }
@@ -90,7 +84,7 @@ export const routingFactsOf = ({
       modelShownAgentIds.add(route.agentId);
     }
   }
-  return { isMultiProvider: providers.size >= 2, modelShownAgentIds };
+  return { modelShownAgentIds };
 };
 
 export const sameRoutingFacts = ({
@@ -100,15 +94,8 @@ export const sameRoutingFacts = ({
   readonly first: TimelineRoutingFacts;
   readonly second: TimelineRoutingFacts;
 }): boolean =>
-  first.isMultiProvider === second.isMultiProvider &&
   first.modelShownAgentIds.size === second.modelShownAgentIds.size &&
   [...first.modelShownAgentIds].every((id) => second.modelShownAgentIds.has(id));
-
-export const isProviderGlyphShown = ({
-  facts,
-}: {
-  readonly facts: TimelineRoutingFacts | null;
-}): boolean => facts === null || facts.isMultiProvider;
 
 export const isModelNameShown = ({
   facts,

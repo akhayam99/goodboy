@@ -3,7 +3,7 @@ import { WorkMeta, formatUsd } from '@goodboy/ui';
 import { RoutingLabel } from '../../../../../../shared/components/RoutingLabel';
 import { WorkTimeCell } from '../../../../../workTreeModel/components/WorkTimeCell';
 import type { AgentRowWork } from '../../../../hooks/useAgentRowWork';
-import { TimelineRouting, isModelNameShown, isProviderGlyphShown } from './timelineRouting';
+import { TimelineRouting, isModelNameShown } from './timelineRouting';
 
 type Props = {
   readonly work: AgentRowWork;
@@ -21,7 +21,6 @@ export const TimelineAgentMeta = ({ work, costUsd, agentId }: Props) => {
       routing={
         <RoutingLabel
           isColumn
-          hideGlyph={!isProviderGlyphShown({ facts })}
           hideName={!isModelNameShown({ facts, agentId })}
           provider={routing.provider}
           model={routing.model}

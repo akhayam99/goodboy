@@ -48,7 +48,7 @@ export const useTimelineRoutingFacts = ({ session, rows }: Params): TimelineRout
         sessionEffort,
         scope,
       });
-      return { agentId: agent.id, groupId, provider: routing.provider, model: routing.model };
+      return { agentId: agent.id, groupId, model: routing.model };
     });
     const facts = routingFactsOf({ routes });
     const kept =

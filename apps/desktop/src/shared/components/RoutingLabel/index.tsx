@@ -12,7 +12,6 @@ type Props = {
   readonly planned?: PlannedRouting | null;
   readonly isEffortObserved?: boolean;
   readonly isColumn?: boolean;
-  readonly hideGlyph?: boolean;
   readonly hideName?: boolean;
   readonly glyphPlacement?: 'leading' | 'trailing';
   readonly muted?: boolean;
@@ -30,7 +29,6 @@ export const RoutingLabel = ({
   planned = null,
   isEffortObserved = false,
   isColumn = false,
-  hideGlyph = false,
   hideName = false,
   glyphPlacement = 'leading',
   muted = false,
@@ -39,7 +37,7 @@ export const RoutingLabel = ({
   const shown = routingLabelModel({ provider, model, effort, planned, isEffortObserved });
   const Glyph = shown.provider != null ? PROVIDER_BRAND[shown.provider].icon : null;
   const glyph =
-    !hideGlyph && Glyph != null && shown.provider != null ? (
+    Glyph != null && shown.provider != null ? (
       <Glyph
         size={isColumn ? 12 : 11}
         className="shrink-0"
