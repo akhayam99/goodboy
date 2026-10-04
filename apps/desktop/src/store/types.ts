@@ -1,3 +1,4 @@
+import type { UndoState } from './slices/undo/state';
 import type { ArtifactsState } from './slices/artifacts/state';
 import type { ResolveState } from './slices/resolve/state';
 import type { ReviewNavigationState } from './slices/review-navigation/state';
@@ -188,12 +189,13 @@ type AppSliceState = ArtifactsState &
   TerminalState &
   SessionViewState;
 
-export type AppState = AppSliceState & {
-  readonly reviewDrafts: Readonly<Record<SessionId, ReadonlyArray<PrReviewDraft>>>;
-  readonly reviewSubmission: Readonly<Record<SessionId, ReviewSubmission>>;
-  readonly resolveQueueView: Readonly<Record<SessionId, ResolveQueueView>>;
-  readonly resolveItemDrafts: Readonly<
-    Record<SessionId, Readonly<Record<string, ResolveItemDraft>>>
-  >;
-  readonly revealedActivityRows: Readonly<Record<SessionId, ReadonlySet<string>>>;
-};
+export type AppState = UndoState &
+  AppSliceState & {
+    readonly reviewDrafts: Readonly<Record<SessionId, ReadonlyArray<PrReviewDraft>>>;
+    readonly reviewSubmission: Readonly<Record<SessionId, ReviewSubmission>>;
+    readonly resolveQueueView: Readonly<Record<SessionId, ResolveQueueView>>;
+    readonly resolveItemDrafts: Readonly<
+      Record<SessionId, Readonly<Record<string, ResolveItemDraft>>>
+    >;
+    readonly revealedActivityRows: Readonly<Record<SessionId, ReadonlySet<string>>>;
+  };

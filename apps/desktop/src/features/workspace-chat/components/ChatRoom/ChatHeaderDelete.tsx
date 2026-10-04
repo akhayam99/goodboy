@@ -24,15 +24,14 @@ export const ChatHeaderDelete = ({ chat, onRemoved }: Props) => {
     onRemoved();
   };
 
-  const archive = (): void => {
-    void archiveChats({ workspaceId, chatIds: [chatId] });
-    showToast({
-      kind: 'info',
+  const archive = async (): Promise<void> => {
+    await archiveChats({ workspaceId, chatIds: [chatId] });
+    useAppStore.getState().undoable({
+      showToast,
       title: 'Chat archived',
       message: title,
-      action: {
-        label: 'Undo',
-        onClick: () => void restoreChats({ workspaceId, chatIds: [chatId] }),
+      undo: async () => {
+        await restoreChats({ workspaceId, chatIds: [chatId] });
       },
     });
     onRemoved();

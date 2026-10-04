@@ -1,6 +1,7 @@
 import type { SessionExternalTask, SessionId } from '@goodboy/types';
-import { removeSessionExternalTask } from './removeSessionExternalTask';
-import { writeSessionExternalTask } from './writeSessionExternalTask';
+import { taskIdentityKey } from '../../../shared/utils/taskIdentityKey';
+import { replaceTaskLinks } from './replaceTaskLinks';
+import { externalTaskLinkKey } from './externalTaskLinkKey';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -14,29 +15,50 @@ type TakeOffParams = {
 };
 
 export const takeOffSessionExternalTask = ({ set, get }: Params) => {
-  const write = writeSessionExternalTask({ set, get });
-  const remove = removeSessionExternalTask({ set, get });
   return async ({ sessionId, task }: TakeOffParams): Promise<void> => {
     if (task.scope !== 'branch') {
       return;
     }
-    const remaining = (get().sessionExternalTasks[sessionId] ?? []).filter(
-      (candidate) =>
-        candidate.provider === task.provider &&
-        candidate.externalId === task.externalId &&
-        candidate.projectId === task.projectId &&
-        candidate.scope === 'branch' &&
-        candidate.branch !== task.branch,
+    const key = taskIdentityKey({ task });
+    const before = (get().sessionExternalTasks[sessionId] ?? []).filter(
+      (row) => taskIdentityKey({ task: row }) === key,
     );
-    if (remaining.length === 0) {
-      await write({ sessionId, task: { ...task, scope: 'session' } });
+    const after = before.filter(
+      (row) => externalTaskLinkKey({ task: row }) !== externalTaskLinkKey({ task }),
+    );
+    if (before.length === after.length) {
+      return;
     }
-    await remove({
+    if (
+      !after.some((row) => row.scope === 'branch') &&
+      !after.some((row) => row.scope !== 'branch')
+    ) {
+      after.push({ ...task, scope: 'session' });
+    }
+    const isCommitted = await replaceTaskLinks({
+      set,
+      get,
       sessionId,
-      provider: task.provider,
-      externalId: task.externalId,
-      projectId: task.projectId,
-      branchLink: task.branch,
+      task,
+      expected: before,
+      next: after,
+    });
+    if (!isCommitted) {
+      throw new Error('This task changed. Try taking it off again.');
+    }
+    get().undoable({
+      message: `Unlinked ${task.identifier}`,
+      conflictMessage: `${task.identifier} changed or was re-linked. Nothing changed.`,
+      undo: () =>
+        replaceTaskLinks({
+          set,
+          get,
+          sessionId,
+          task,
+          expected: after,
+          next: before,
+          shouldCheckReferences: true,
+        }),
     });
   };
 };

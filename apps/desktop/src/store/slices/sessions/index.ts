@@ -1,3 +1,4 @@
+import { relinkSessionTaskOperation } from './relinkSessionTaskOperation';
 import type { WorkspaceId } from '@goodboy/types';
 import { archiveTask } from './archiveTask';
 import { bulkArchiveTask } from './bulkArchiveTask';
@@ -22,6 +23,7 @@ import type { SliceDeps } from '../../slice-types';
 
 export const createSessionsSlice = ({ set, get }: SliceDeps) => {
   return {
+    relinkSessionTaskOperation: relinkSessionTaskOperation({ set, get }),
     evictSession: evictSession({ set, get }),
     renameTask: renameTask(set, get),
     setSessionAutoRun: setSessionAutoRun(set),

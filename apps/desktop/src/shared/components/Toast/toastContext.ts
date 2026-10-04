@@ -4,6 +4,7 @@ import type { ToastAction, ToastKind } from './types';
 type ShowToastKind = Exclude<ToastKind, 'error'>;
 
 export type ShowToastParams = {
+  readonly dedupeKey?: string;
   readonly kind: ShowToastKind;
   readonly message: string;
   readonly title?: string;

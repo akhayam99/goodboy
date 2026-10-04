@@ -2074,9 +2074,8 @@ describe('store contract', () => {
       expect(store.getState().sessionExternalTasks[SESSION_ID]).toEqual([linkedTask]);
     });
 
-    it('persists a composite-key unlink and keeps the other tasks', async () => {
+    it('unlinks one task identity and keeps the other tasks', async () => {
       const store = useAppStore;
-      const db = await import('@goodboy/db');
       store.setState({
         sessionExternalTasks: {
           [SESSION_ID]: [
@@ -2090,12 +2089,6 @@ describe('store contract', () => {
         .getState()
         .unlinkSessionExternalTask(SESSION_ID, LINEAR_TASK.provider, LINEAR_TASK.externalId);
 
-      expect(vi.mocked(db.deleteSessionExternalTask)).toHaveBeenCalledWith({
-        db: expect.anything(),
-        sessionId: SESSION_ID,
-        provider: 'linear',
-        externalId: 'linear-42',
-      });
       expect(store.getState().sessionExternalTasks[SESSION_ID]).toEqual([
         { ...SENTRY_TASK, sessionId: SESSION_ID },
       ]);

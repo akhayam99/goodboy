@@ -3,6 +3,7 @@ import type { Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { useToast } from '../../../../../shared/components/Toast';
+import { undoable } from '../../../../../shared/utils/undoable';
 import { editedStepKeys } from '../../WorkflowBuilderView/presetEdits';
 import type { WorkflowDraft } from '../../../engine';
 import { draftFromWorkflow, upsertArgsFromDraft, validateDraft } from '../../../engine';
@@ -112,12 +113,11 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
     if (snapshot === null) {
       return;
     }
-    showToast({
-      kind: 'success',
+    undoable({
+      showToast,
       message: 'Redrafted the steps.',
-      action: {
-        label: 'Undo',
-        onClick: () => setForm(draftFromWorkflow({ workflow: snapshot })),
+      undo: async () => {
+        setForm(draftFromWorkflow({ workflow: snapshot }));
       },
     });
   }, [consumeWorkflowGeneration, generation, load, setForm, showToast, templates, workspaceId]);

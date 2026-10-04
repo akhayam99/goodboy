@@ -30,23 +30,25 @@ export const WorkflowFollowToastBridge = () => {
       if (visibleWorkspaceId === generation.workspaceId) {
         continue;
       }
+      if (generation.undoSnapshot !== null) {
+        useAppStore.getState().undoable({
+          showToast,
+          message: 'Your workflow is ready.',
+          undo: async () => {
+            await useAppStore
+              .getState()
+              .undoWorkflowGeneration({ workspaceId: generation.workspaceId });
+          },
+        });
+        continue;
+      }
       showToast({
         kind: 'success',
         message: 'Your workflow is ready.',
-        action:
-          generation.undoSnapshot === null
-            ? {
-                label: 'Open',
-                onClick: () =>
-                  window.dispatchEvent(new CustomEvent('goodboy:open-workflow-studio')),
-              }
-            : {
-                label: 'Undo',
-                onClick: () =>
-                  void useAppStore
-                    .getState()
-                    .undoWorkflowGeneration({ workspaceId: generation.workspaceId }),
-              },
+        action: {
+          label: 'Open',
+          onClick: () => window.dispatchEvent(new CustomEvent('goodboy:open-workflow-studio')),
+        },
       });
     }
   }, [generations, showToast, visibleWorkspaceId]);
