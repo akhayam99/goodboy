@@ -26,7 +26,6 @@ export type SessionViewState = {
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
   readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
   readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
-  readonly diffPage: Readonly<Record<SessionId, 'history' | null>>;
   readonly branchTab: Readonly<Record<SessionId, BranchTab>>;
   readonly branchThreadId: Readonly<Record<SessionId, string | null>>;
   readonly terminalMountPath: Readonly<Record<SessionId, string | null>>;

@@ -22,7 +22,6 @@ export const HistorySceneShell = ({ draft, run, github, isLedger }: Props) => {
     useAppStore.setState({
       ...(isLedger ? { sessionProjectMounts: { [CTX_SESSION_ID]: [...LEDGER_MOUNTS] } } : {}),
       diffFocus: {},
-      diffPage: { [CTX_SESSION_ID]: 'history' },
       branchTab: { [CTX_SESSION_ID]: 'commits' },
       branchThreadId: {},
       historyDrafts: { [CTX_PAYMENTS_MOUNT_ID]: draft },

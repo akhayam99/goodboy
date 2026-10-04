@@ -93,9 +93,8 @@ const formerBranchPlace = ({
     return branchPlace({
       sessionId,
       mountPath,
-      tab: 'files',
+      tab: target?.page === 'history' ? 'commits' : 'files',
       focus: target?.focus ?? null,
-      page: target?.page ?? null,
     });
   }
   if (view.lens === 'review') {

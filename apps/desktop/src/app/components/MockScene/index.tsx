@@ -23,8 +23,6 @@ import { BranchCommentsScene } from './scenes/BranchCommentsScene';
 import { BranchNarrowScene } from './scenes/BranchNarrowScene';
 import { BranchPushScene } from './scenes/BranchPushScene';
 import { ResolveDriftScene } from './scenes/ResolveDriftScene';
-import { ResolveCommitStoryScene } from './scenes/ResolveCommitStoryScene';
-import { ResolveCommitsScene } from './scenes/ResolveCommitsScene';
 import { ResolveGitlabScene } from './scenes/ResolveGitlabScene';
 import { ResolveBitbucketScene } from './scenes/ResolveBitbucketScene';
 import { ResolveItemScene } from './scenes/ResolveItemScene';
@@ -183,8 +181,6 @@ export const MOCK_SCENES = {
   'resolve-failed': ResolveFailedRunScene,
   'resolve-failed-history': ResolveFailedHistoryScene,
   'resolve-drift': ResolveDriftScene,
-  'resolve-commit-story': ResolveCommitStoryScene,
-  'resolve-commits': ResolveCommitsScene,
   'resolve-gitlab': ResolveGitlabScene,
   'resolve-bitbucket': ResolveBitbucketScene,
   board: BoardScene,

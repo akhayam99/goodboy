@@ -68,7 +68,7 @@ vi.mock('./historyRowLine', async () => {
   return { ...actual, historyRowLine: vi.fn(actual.historyRowLine) };
 });
 
-import { RewriteHistoryPage } from './index';
+import { CommitsHistory } from './index';
 import { historyRowLine } from './historyRowLine';
 
 const clean = (items: ReadonlyArray<HistoryStep>): HistoryPlanPrediction => ({
@@ -144,7 +144,7 @@ const seed = ({
 
 const setup = (params: Setup = {}) => {
   const actions = seed(params);
-  render(<RewriteHistoryPage sessionId={SESSION_ID} worktreePath="/w/payments" />);
+  render(<CommitsHistory sessionId={SESSION_ID} worktreePath="/w/payments" />);
   return actions;
 };
 
@@ -174,7 +174,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('RewriteHistoryPage', () => {
+describe('CommitsHistory', () => {
   it('draws one list of every commit newest first between main and the fork', () => {
     setup();
     const list = screen.getByRole('list', { name: 'Commits' });
@@ -589,7 +589,7 @@ describe('RewriteHistoryPage', () => {
   });
 });
 
-describe('RewriteHistoryPage drag and drop', () => {
+describe('CommitsHistory drag and drop', () => {
   const ROW_HEIGHT = 60;
   const topOf = (sha: string): number =>
     100 + LEDGER_COMMITS.findIndex((entry) => entry.sha === sha) * ROW_HEIGHT;
@@ -651,7 +651,7 @@ describe('RewriteHistoryPage drag and drop', () => {
   });
 });
 
-describe('RewriteHistoryPage after a squash', () => {
+describe('CommitsHistory after a squash', () => {
   const SQUASHED = {
     sha: '5a5a5a5aa0000000000000000000000000000000',
     shortSha: '5a5a5a5',
@@ -780,7 +780,7 @@ describe('RewriteHistoryPage after a squash', () => {
       );
 
     seed();
-    const view = render(<RewriteHistoryPage sessionId={SESSION_ID} worktreePath="/w/payments" />);
+    const view = render(<CommitsHistory sessionId={SESSION_ID} worktreePath="/w/payments" />);
     const before = lane();
     expect(before).toBe(56 * (LEDGER_COMMITS.length + 2));
 
@@ -789,7 +789,7 @@ describe('RewriteHistoryPage after a squash', () => {
       items: initialPlanItems({ commits: [SQUASHED] }),
       run: appliedRun,
     });
-    view.rerender(<RewriteHistoryPage sessionId={SESSION_ID} worktreePath="/w/payments" />);
+    view.rerender(<CommitsHistory sessionId={SESSION_ID} worktreePath="/w/payments" />);
     act(() => observers.resizeAll());
 
     expect(observers.observedCount()).toBeGreaterThan(0);
@@ -798,7 +798,7 @@ describe('RewriteHistoryPage after a squash', () => {
   });
 });
 
-describe('RewriteHistoryPage on a long branch', () => {
+describe('CommitsHistory on a long branch', () => {
   const COUNT = 200;
   const shaAt = ({ index }: { readonly index: number }) =>
     `${index.toString(16).padStart(4, '0')}`.padEnd(40, 'a');
@@ -816,7 +816,7 @@ describe('RewriteHistoryPage on a long branch', () => {
 
   it('redraws only the row that changed', () => {
     seed({ commits: LONG, items: LONG_ITEMS });
-    const view = render(<RewriteHistoryPage sessionId={SESSION_ID} worktreePath="/w/payments" />);
+    const view = render(<CommitsHistory sessionId={SESSION_ID} worktreePath="/w/payments" />);
     expect(renders.mock.calls.length).toBeGreaterThanOrEqual(COUNT);
 
     renders.mockClear();
@@ -834,7 +834,7 @@ describe('RewriteHistoryPage on a long branch', () => {
         original: `refactor: step 120 of the ledger batching`,
       }),
     });
-    view.rerender(<RewriteHistoryPage sessionId={SESSION_ID} worktreePath="/w/payments" />);
+    view.rerender(<CommitsHistory sessionId={SESSION_ID} worktreePath="/w/payments" />);
     expect(renders.mock.calls.length).toBeGreaterThan(0);
     expect(renders.mock.calls.length).toBeLessThanOrEqual(2);
   });

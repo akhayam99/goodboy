@@ -22,7 +22,6 @@ const layoutInputs = (state: AppStore): ReadonlyArray<unknown> => [
   state.focusedExternalTask,
   state.diffFocus,
   state.diffMountPath,
-  state.diffPage,
   state.branchTab,
   state.branchThreadId,
   state.terminalMountPath,

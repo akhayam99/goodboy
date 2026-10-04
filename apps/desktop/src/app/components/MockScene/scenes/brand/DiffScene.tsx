@@ -52,7 +52,6 @@ export const BrandDiffScene = ({ manyFiles = false }: Props) => {
     useAppStore.setState({
       diffComments: { [CTX_SESSION_ID]: NOTES },
       diffFocus: {},
-      diffPage: {},
       branchTab: { [CTX_SESSION_ID]: 'files' },
       branchThreadId: {},
       loadDiffComments: async () => undefined,

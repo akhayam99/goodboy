@@ -55,7 +55,7 @@ const NOT_AGENT: Readonly<Record<string, string>> = {
   'features/integrations/gitlab/MergeRequest/MrDetailPanel/CreateMrForm.tsx':
     'the merge request body, read by people',
   'features/chat/components/ChatView/SlackDraftCard.tsx': 'a Slack reply, read by people',
-  'features/history/components/RewriteHistoryPage/RewordEditor.tsx': 'a commit message',
+  'features/history/components/CommitsHistory/RewordEditor.tsx': 'a commit message',
   'features/scripts/components/ScriptEditor/index.tsx': 'a shell script',
   'features/skills/components/SkillsPanel/index.tsx': 'a saved skill file',
   'features/settings/components/SettingsStudio/ReplyStyleNoteField.tsx': 'a setting',

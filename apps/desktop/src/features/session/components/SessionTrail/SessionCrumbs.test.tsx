@@ -181,7 +181,6 @@ const resetState = () => {
     sessionWorkflows: { [SESSION_ID]: [] },
     focusedWorkflowRunId: {},
     diffMountPath: {},
-    diffPage: {},
     sessions: [],
     workspaces: [],
     focusedArtifactId: {},

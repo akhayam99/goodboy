@@ -36,7 +36,6 @@ import type { DecisionsSliceState } from './slices/decisions/state';
 import type { DrawerSliceState } from './slices/drawer/state';
 import type { NavigationSliceState } from './slices/navigation/types';
 import type { ChangelogState } from './slices/changelog/state';
-import type { ReviewCommitsState } from './slices/reviewCommits/state';
 import type { ResolveItemDraft } from '../features/resolve/resolveItemDraft';
 import type { ReviewSubmission } from './slices/review-drafts/reviewSubmission';
 import type { ResolveQueueView } from './slices/session-view';
@@ -129,7 +128,6 @@ type AppSliceState = ArtifactsState &
   SentryLinksState &
   UpdaterState &
   ChangelogState &
-  ReviewCommitsState &
   SlackThreadsSliceState &
   BugReportDraftState &
   SessionDraftState &

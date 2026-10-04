@@ -71,12 +71,7 @@ Accept a fix even after the branch got new commits: it lands on top of the lates
 
 ### Squash and fold the resolve commits
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-commits-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-commits-light.webp" alt="The Commits view of Review for PR #318: the branch hl/fix-duplicate-credit with 5 commits oldest first, the presets Keep as they are, Fold each into its original and One commit for the review, each commit with its sha and whether it is on origin, and on the right the After list of 5 commits with Reset and Rewrite">
-</picture>
-
-Choose how the fixes land before anyone sees them. Review has two views, **Comments** and **Commits** (press **V** to switch). **Commits** lists the branch commits since the base, yours and the resolve commits linked to their comment, with three presets: **Keep as they are**, **Fold each into its original** (into the commit the fix was a fixup of) and **One commit for the review**, plus a menu per commit to keep it, fold it into an earlier commit, squash it with the one above or reword it. The preview shows the resulting commits and the predicted outcome before anything runs, and a **Replies** list with the text each comment's reply will carry once the shas move (a reply already posted gets its Update line, with the **Edit the posted reply** switch beside it). A plan you left in Rewrite history is never overwritten: Commits says so and waits for **Open it** or **Replace it**. **Rewrite** goes through Rewrite history: tried in a copy, a backup kept, and when commits are already on origin it says first that this is a force push with lease that reviewers will see as force-pushed. **Undo** restores the backup and puts every comment back on its commit. The preset you pick is remembered per project and sets whether later resolves commit as fixups or new commits.
+Tidy the fixes before anyone sees them, on the **Commits** tab of the branch. It lists the commits since the base, yours and the resolve commits, and opens the history rewriter on them: fold a fix into the commit it belonged to, squash it with the one above, reword it or drop it. **Backups** restores the branch to how it was before a rewrite. A rewrite is tried in a copy first and a backup is kept. When commits are already on origin it says first that this is a force push with lease that reviewers will see as force-pushed. **Undo rewrite** restores the backup and puts every comment back on its commit.
 
 ### Notes before a pull request
 

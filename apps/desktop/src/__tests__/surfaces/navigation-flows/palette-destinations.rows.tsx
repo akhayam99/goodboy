@@ -5,9 +5,11 @@ import {
   type Row,
   WAIT,
   band,
+  branchTab,
   both,
   click,
   clickButton,
+  clickFirstButton,
   heading,
   lens,
   openCrumb,
@@ -17,20 +19,19 @@ import {
 } from './harness';
 
 const openDiffHistory = async (): Promise<void> => {
-  await openCrumb(/^Diff/);
-  await click(await screen.findByRole('tab', { name: /^Commits/ }));
-  await clickButton(/^Rewrite history/);
+  await clickFirstButton(/ on .+ actions$/);
+  await click(await screen.findByRole('menuitem', { name: /^Rewrite history/ }));
 };
 
 export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'rewrite history from the diff',
+    name: 'rewrite history opens the Commits tab',
     covers: ['openRewriteHistory'],
     open: openDiffHistory,
-    lands: () => heading('Rewrite history'),
+    lands: branchTab('commits'),
   },
   {
-    name: 'rewrite history draws the branch and its planned changes',
+    name: 'the Commits tab draws the branch and its planned changes',
     covers: ['openRewriteHistory'],
     open: openDiffHistory,
     lands: both(
@@ -39,12 +40,11 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'branch history backups inside rewrite history',
+    name: 'branch history backups inside the Commits tab',
     covers: ['openRewriteHistory'],
     open: async () => {
       await openDiffHistory();
-      await clickButton('More history actions');
-      await click(await screen.findByRole('menuitem', { name: /Backups/ }));
+      await clickButton(/^Backups/);
     },
     lands: () => visible('region', 'Backups'),
   },

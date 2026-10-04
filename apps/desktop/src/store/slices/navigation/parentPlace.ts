@@ -18,9 +18,6 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
   }
   if (view.target?.kind === 'branch') {
     const { target } = view;
-    if (target.page === 'history') {
-      return { ...place, view: { ...view, target: { ...target, page: null } } };
-    }
     if (target.threadId !== null) {
       return { ...place, view: { ...view, target: { ...target, threadId: null } } };
     }

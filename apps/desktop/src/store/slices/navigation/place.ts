@@ -38,7 +38,6 @@ type BranchPlaceParams = {
   readonly tab?: BranchTab;
   readonly threadId?: string | null;
   readonly focus?: DiffFocus | null;
-  readonly page?: 'history' | null;
 };
 
 export const branchPlace = ({
@@ -47,19 +46,11 @@ export const branchPlace = ({
   tab = 'comments',
   threadId = null,
   focus = null,
-  page = null,
 }: BranchPlaceParams): Place =>
   sessionPlace({
     sessionId,
     lens: 'branch',
-    target: {
-      kind: 'branch',
-      mountPath,
-      tab: page === 'history' ? 'commits' : tab,
-      threadId,
-      focus,
-      ...(page === 'history' && { page }),
-    },
+    target: { kind: 'branch', mountPath, tab, threadId, focus },
   });
 
 export const agentPlace = ({ sessionId, agentId, pane = null }: AgentPlaceParams): PlaceRequest =>

@@ -112,7 +112,6 @@ const makeStore = () =>
     focusedWorkflowRunId: {},
     diffFocus: {},
     diffMountPath: {},
-    diffPage: {},
     branchTab: {},
     branchThreadId: {},
     terminalMountPath: {},
@@ -853,16 +852,21 @@ describe('Branch page', () => {
     expect(store.getState().activeLens[S1]).toBeNull();
   });
 
-  it('puts Rewrite history under the Commits tab and lets Up come back to it', () => {
+  it('opens history recovery on the Commits tab and redirects the old Rewrite history address', () => {
     const store = makeStore();
+    store
+      .getState()
+      .navigate({ to: branchPlace({ sessionId: S1, mountPath: MOUNT, tab: 'commits' }) });
+    expect(branchOf(store)).toMatchObject({ tab: 'commits', mountPath: MOUNT });
     store.getState().navigate({
-      to: branchPlace({ sessionId: S1, mountPath: MOUNT, page: 'history' }),
+      to: sessionPlace({
+        sessionId: S1,
+        lens: 'files',
+        target: { kind: 'diff', mountPath: MOUNT, focus: null, page: 'history' },
+      }),
     });
-    expect(branchOf(store)).toMatchObject({ tab: 'commits', page: 'history' });
-    expect(store.getState().diffPage[S1]).toBe('history');
-    store.getState().up();
-    expect(branchOf(store)?.page ?? null).toBeNull();
-    expect(branchOf(store)?.tab).toBe('commits');
+    expect(branchOf(store)).toMatchObject({ tab: 'commits', mountPath: MOUNT });
+    expect(keyOf(store)).toBe(`s/${S1}/branch/commits:${MOUNT}`);
   });
 
   it('sends Up from a Fix run to its comment on the Branch', () => {

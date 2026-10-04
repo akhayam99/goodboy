@@ -105,7 +105,7 @@ moves to the next mode with the same text, and `openPalette({ mode, query })`
 opens it on a mode. Commands is the first mode.
 
 - **Scope first.** It opens on a scope chip that names what you are on: the
-  focused commit row on Rewrite history, else the agent in view, else the
+  focused commit row on the Commits tab, else the agent in view, else the
   session, else the workspace on the board (`resolvePaletteScope`). A row
   offers itself with `useHeldPaletteScope`, and the palette reads it only while
   focus is inside that row (`heldPaletteScope.ts`), so its verbs come first in
@@ -313,7 +313,7 @@ never exists on one surface only.
   Delete script, Close worktree, Remove from session, Abort rebase). Remove
   from session and a storage worktree's Remove keep their detailed confirm (the
   removal plan, the forced remove) in their own menu. A reversible verb runs at once with an Undo toast (Archive, Delete on an artifact,
-  Close agent). A draft verb on the rewrite page (Drop) needs neither.
+  Close agent). A draft verb on the Commits tab (Drop) needs neither.
 - **Blocked verbs stay.** A verb that cannot run now stays in the menu, dimmed,
   with its reason under the label, and does nothing when chosen. A verb that
   does not apply to the state is not shown.
@@ -599,7 +599,7 @@ checks`, one primary by state, `⋯` for the rare pull request lifecycle) over
   the tabs `Comments · Files · Commits · Checks`
   (`s/{session}/branch/{tab}[:{mount}][/t/{thread}]`). A tab switch and a
   thread selection replace the entry, so Back never walks them. The trail is
-  `Overview > Branch ▾ > {thread, file or Rewrite history}`, the same from
+  `Overview > Branch ▾ > {thread or file}`, the same from
   every door; Up is the crumb to the left of the open one. `Branch ▾` lists the
   session branches and makes the picked one the active mount. `layers.ts` is
   gone. The requests `pr`, `review` and `files` (a mount present) are
@@ -1655,10 +1655,12 @@ lines and files, `Post open notes to the PR` and `Write review` (which swaps
 the tab body for the review form with line drafts). It carries no Fix, Push,
 Rewrite or `PR #N` control.
 
-**Commits.** The branch commits with the resolve commits arrangement; until
-the rewrite moves in, `Rewrite history` and `Restore a backup…` are quiet
-buttons at its top and Rewrite history is a child page (`/history`) of the tab.
-**Checks.** The checks of the pull request.
+**Commits.** The home of history: the branch commits and the rewriter are one
+surface (`CommitsHistory`), with `Refresh` and `Backups` at its top. Backups
+(`Restore previous history`, `Restore branch`) and the result of a run (`Undo
+rewrite`) live here. There is no Rewrite history page: the old `files/…/history`
+address, the palette verb, a mount row's `Rewrite history` and the recovery
+verbs of an Activity row all land on `branch/commits`. **Checks.** The checks of the pull request.
 
 The Branch page shows one branch. The trail carries the choice (see Segment
 menus); there are no worktree tabs. Every rewrite takes the shown
@@ -1670,10 +1672,7 @@ the hidden History rewriter merges the edits in a throwaway copy. The branch
 moves only after the engine checks the result, with a backup ref and a push
 with lease.
 
-`Rewrite history` is a child page of the branch: the trail reads
-`Overview › Branch ▾ › Rewrite history`, the branch segment leads back
-to the Commits tab, and picking another branch from its popover keeps you on Rewrite
-history. The page draws the branch as a graph (`history_graph`): a grey main
+The Commits tab draws the branch as a graph (`history_graph`): a grey main
 trunk with its head node (`main is here now`, how many commits it gained,
 `Start from today's main`), your branch leaving it at the real fork point, one
 row per commit newest first, and `Your branch starts here` at the fork. Fact

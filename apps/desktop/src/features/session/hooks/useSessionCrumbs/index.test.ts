@@ -169,7 +169,6 @@ describe('useSessionCrumbs Branch trail', () => {
       activeLens: { [SESSION_ID]: 'branch' },
       branchTab: { [SESSION_ID]: tab },
       branchThreadId: { [SESSION_ID]: threadId },
-      diffPage: {},
       diffFocus: {},
       sessionGithub: {
         [SESSION_ID]: { pr: { number: 318, title: 'Ledger export' } },

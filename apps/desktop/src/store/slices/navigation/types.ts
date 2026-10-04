@@ -31,7 +31,6 @@ export type SessionTarget =
       readonly tab: BranchTab;
       readonly threadId: string | null;
       readonly focus: DiffFocus | null;
-      readonly page?: 'history' | null;
     }
   | { readonly kind: 'terminal'; readonly mountPath: string }
   | { readonly kind: 'thread'; readonly threadId: string; readonly pane?: AgentPane };
