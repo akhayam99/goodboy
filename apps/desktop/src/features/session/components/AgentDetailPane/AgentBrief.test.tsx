@@ -363,7 +363,7 @@ describe('AgentBrief type scale', () => {
     expect(screen.getByText('thinking')).toBeDefined();
   });
 
-  it('puts the time on the Now line and points at the transcript at twice the usual time', () => {
+  it('leaves the time to the header and points at the transcript at twice the usual time', () => {
     const reveal = vi.fn();
     window.addEventListener('goodboy:reveal-chat', reveal);
     render(
@@ -381,7 +381,7 @@ describe('AgentBrief type scale', () => {
       />,
     );
 
-    expect(screen.getByTestId('agent-now-time').textContent).toBe('19m · longer than usual');
+    expect(screen.queryByText(/19m/)).toBeNull();
     fireEvent.click(
       screen.getByRole('button', { name: 'Check what it is doing in the transcript' }),
     );

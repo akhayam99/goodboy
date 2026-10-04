@@ -597,6 +597,9 @@ describe('name inference through classifyAgent', () => {
     ['Test', 'tester'],
     ['Write docs', 'docs'],
     ['resolve: alice on foo.ts:42', 'resolver'],
+    ['Resolve: alice on foo.ts', 'resolver'],
+    ['Resolve: foo.ts comment', 'resolver'],
+    ['Resolve: 3 review comments', 'resolver'],
     ['Resolver', 'resolver'],
     ['agent 1', 'generic'],
   ] as [string, AgentKind][])('name %s → %s', (name, expected) => {

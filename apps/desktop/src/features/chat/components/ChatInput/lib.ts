@@ -20,21 +20,16 @@ export const CHAT_PREFIX_RE = new RegExp(
 type ComposerPlaceholderParams = {
   readonly isRunning: boolean;
   readonly firstMessagePrompt: string | null;
-  readonly roleLabel: string | null;
 };
 
 export const composerPlaceholder = ({
   isRunning,
   firstMessagePrompt,
-  roleLabel,
 }: ComposerPlaceholderParams): string => {
   if (firstMessagePrompt !== null) {
     return firstMessagePrompt;
   }
-  if (isRunning) {
-    return roleLabel !== null ? `Queue a message for ${roleLabel}` : 'Queue a message';
-  }
-  return roleLabel !== null ? `Reply to ${roleLabel}` : 'Reply';
+  return isRunning ? 'Queue a message' : 'Message the agent';
 };
 
 export const VALID_PROVIDERS = [

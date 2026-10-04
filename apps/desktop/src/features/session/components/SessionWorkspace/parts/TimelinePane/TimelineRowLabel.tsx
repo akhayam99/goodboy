@@ -2,6 +2,7 @@ import { ValueToken, WORK_ROW, cn } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import type { MountDiffStat } from '../../../../../../store';
 import { AgentKindChip } from '../../../../../../shared/components/AgentKindChip';
+import { agentDisplayName } from '../../../../../../shared/utils/agentDisplayName';
 import type {
   TimelineResolveBatchEntry,
   TimelineRunEntry,
@@ -89,22 +90,11 @@ type LabelEntry = Exclude<
 
 type EntryParams = {
   readonly entry: LabelEntry;
-  readonly isBatchChild?: boolean;
 };
 
-const RESOLVE_NAME_PREFIX = 'resolve: ';
-
-const segmentsOf = ({
-  entry,
-  isBatchChild = false,
-}: EntryParams): ReadonlyArray<TimelineLabelSegment> => {
+const segmentsOf = ({ entry }: EntryParams): ReadonlyArray<TimelineLabelSegment> => {
   if (entry.kind === 'agent') {
-    const { name } = entry.agent;
-    const text =
-      isBatchChild && name.startsWith(RESOLVE_NAME_PREFIX)
-        ? name.slice(RESOLVE_NAME_PREFIX.length)
-        : name;
-    return [{ kind: 'text', text }];
+    return [{ kind: 'text', text: agentDisplayName({ name: entry.agent.name }) }];
   }
   if (entry.kind === 'plan') {
     return [{ kind: 'text', text: entry.plan.title }];
@@ -245,9 +235,7 @@ export const TimelineRowLabel = ({
   const head = factHeadOf({ entry, grade });
   const detail = detailOf({ entry, grade });
   const segments: ReadonlyArray<TimelineLabelSegment> =
-    head === null
-      ? segmentsOf({ entry, isBatchChild: item.explode?.kind === 'batch' })
-      : [{ kind: 'text', text: head }];
+    head === null ? segmentsOf({ entry }) : [{ kind: 'text', text: head }];
   const title = titleOf({ entry, segments });
   const isAgent = entry.kind === 'agent';
   const titleNode = (

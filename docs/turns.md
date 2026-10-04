@@ -602,9 +602,9 @@ avoided on `SendControl`'s own buttons.
   and pending nudges survive a re-render.
 - `composerPlaceholder` (`ChatInput/lib.ts`) replaces the old placeholder that
   advertised every prefix inline: a role's first turn gets its
-  `firstMessagePrompt`, otherwise `Reply to {role}` idle or `Queue a message
-for {role}` while a turn runs, `{role}` being the agent's own name over its
-  kind label. No prefix syntax appears in it.
+  `firstMessagePrompt`, otherwise `Message the agent` idle or `Queue a message`
+  while a turn runs. The agent's name is not repeated, the header already says
+  it. No prefix syntax appears in it.
 - Queued messages and the agent's own suggestion sit in a tray attached above
   the shell (`bg-muted`, rounded top corners) when either has something to
   show; a routing fallback or all-budgets-exceeded notice (`RoutingIndicator`)

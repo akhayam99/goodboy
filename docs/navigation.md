@@ -549,6 +549,16 @@ activity yet show the plain overview with its actions.
   a crumb on something the user is already looking at.
 - The last crumb is the current location and is never clickable. A list view
   never fills in a crumb for an item the user has not opened yet.
+- **A crumb carries no status dot.** The trail is structure, movement rather than
+  state. An agent's state is drawn once in the row node and once in the chip of
+  the agent header, and the chip's tooltip (`stateDescription`) is the one place
+  that explains the state words. Elapsed time shows only in the header. The Brief's
+  Now band keeps the label and the "much longer" note.
+- **A resolver title names the flow verb, not the kind.** `Resolve: index.ts
+comment` for the maintainer's own comment, `Resolve: Mara Quint on index.ts`
+  for another reviewer, `Resolve: 3 review comments` for a group. Rows saved with
+  the lowercase `resolve: ` prefix are shown without it (`agentDisplayName` in
+  `shared/utils`), so old and new rows read the same.
 - **An integration trail hangs off its own tool.** It uses the name the sidebar
   uses (GitHub, GitLab, Jira, Linear, Slack), at the same depth as any other
   lens. A studio belongs under its own tool, never under another tool's lens.

@@ -245,56 +245,13 @@ describe('SessionCrumbs', () => {
     expect(screen.queryByRole('separator', { hidden: true })).toBeNull();
   });
 
-  it('carries the stage label and reason as a tooltip on the crumb dot', () => {
-    h.stage = { ...h.stage, reason: 'PR needs review' };
+  it('draws no status mark, the row node and the header chip own the state', () => {
+    h.state.agentTurnState = { [scout.id]: { kind: 'running' } };
     renderCrumbs();
 
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
-    const anchor = nav.querySelector('[data-tooltip="running, PR needs review"]');
-    expect(anchor).not.toBeNull();
-    expect(anchor?.querySelector('.rounded-full')).not.toBeNull();
-  });
-
-  it('marks a session whose pull request was closed as abandoned, not integrated', () => {
-    h.stage = {
-      stage: 'done',
-      reason: 'PR #12 closed',
-      addsFact: true,
-      attention: null,
-      prState: 'closed',
-    };
-    renderCrumbs();
-
-    const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
-    const dot = within(nav).getByRole('img', { name: 'done, PR #12 closed' });
-    expect(dot.className).not.toContain('bg-merged');
-    expect(dot.className).toContain('bg-muted-foreground');
-  });
-
-  it('still marks a merged session as integrated', () => {
-    h.stage = {
-      stage: 'done',
-      reason: 'PR #12 merged',
-      addsFact: true,
-      attention: null,
-      prState: 'merged',
-    };
-    renderCrumbs();
-
-    const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
-    expect(within(nav).getByRole('img', { name: 'done, PR #12 merged' }).className).toContain(
-      'bg-merged',
-    );
-  });
-
-  it('falls back to the stage explanation when the caller has no reason', () => {
-    h.stage = { ...h.stage, reason: '' };
-    renderCrumbs();
-
-    const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
-    expect(
-      nav.querySelector('[data-tooltip="running, an agent is working right now"]'),
-    ).not.toBeNull();
+    expect(within(nav).queryAllByRole('img')).toHaveLength(0);
+    expect(nav.querySelector('[data-tooltip]')).toBeNull();
   });
 
   it('lists the crumbs from useSessionCrumbs in order', () => {
@@ -302,15 +259,6 @@ describe('SessionCrumbs', () => {
     expect(screen.getByRole('button', { name: 'Overview' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Agents' })).toBeDefined();
     expect(screen.getByRole('button', { name: /scout one/ })).toBeDefined();
-  });
-
-  it('shows the selected agent live status after its label', () => {
-    renderCrumbs();
-
-    const selectedCrumb = screen.getByRole('button', { name: /scout one/ });
-    expect(
-      within(selectedCrumb).getByLabelText('Done, it ran and finished its work'),
-    ).toBeDefined();
   });
 
   it('gives the review crumb one number, the one the destination lists', () => {

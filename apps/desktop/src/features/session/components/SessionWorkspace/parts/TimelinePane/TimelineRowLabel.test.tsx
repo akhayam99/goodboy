@@ -123,10 +123,17 @@ const branchEntry = (): TimelineStreamEntry =>
 
 describe('TimelineRowLabel', () => {
   it('leads a resolver row with its role chip, like every other kind of agent', () => {
-    renderKind({ agentKind: 'resolver', name: 'resolve: 2 review threads' });
+    renderKind({ agentKind: 'resolver', name: 'Resolve: 2 review comments' });
 
     expect(screen.getByText(AGENT_KIND_META.resolver.noun)).toBeDefined();
-    expect(screen.getByText('resolve: 2 review threads')).toBeDefined();
+    expect(screen.getByText('Resolve: 2 review comments')).toBeDefined();
+  });
+
+  it('reads an older resolver row without the lowercase prefix it was saved with', () => {
+    renderKind({ agentKind: 'resolver', name: 'resolve: tvarga on retry.ts:12' });
+
+    expect(screen.getByText('tvarga on retry.ts:12')).toBeDefined();
+    expect(screen.queryByText('resolve: tvarga on retry.ts:12')).toBeNull();
   });
 
   it('spells the role out in full rather than abbreviating it', () => {

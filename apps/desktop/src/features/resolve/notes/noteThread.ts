@@ -4,7 +4,7 @@ import type { CommentThread } from '../../integrations/github/comment-threads';
 const NOTE_PREFIX = 'note:';
 const GENERATION_SUFFIX = /:g(\d+)$/;
 
-const NOTE_AUTHOR_YOU = 'You';
+export const NOTE_AUTHOR_YOU = 'You';
 const NOTE_AUTHOR_AGENT = 'Reviewer agent';
 
 export const noteThreadId = ({
