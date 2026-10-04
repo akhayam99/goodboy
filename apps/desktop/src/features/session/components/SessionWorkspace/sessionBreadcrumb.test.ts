@@ -222,7 +222,7 @@ describe('buildSessionBreadcrumb', () => {
       ),
     );
 
-    expect(labels(fromFeed)).toEqual(['Overview', 'Workflows', 'refactor', 'Implement']);
+    expect(labels(fromFeed)).toEqual(['Overview', 'Runs', 'refactor', 'Implement']);
     expect(labels(fromAnotherLens)).toEqual(labels(fromFeed));
   });
 
@@ -231,7 +231,7 @@ describe('buildSessionBreadcrumb', () => {
     const crumbs = buildSessionBreadcrumb(
       base({ lens: 'workflows', focusedWorkflowName: 'refactor' }, h),
     );
-    expect(labels(crumbs)).toEqual(['Overview', 'Workflows', 'refactor']);
+    expect(labels(crumbs)).toEqual(['Overview', 'Runs', 'refactor']);
     crumbs[1]!.onClick!();
     expect(h.toWorkflowsList).toHaveBeenCalledOnce();
     expect(last(crumbs)?.onClick).toBeUndefined();
@@ -251,7 +251,7 @@ describe('buildSessionBreadcrumb', () => {
       ),
     );
 
-    expect(labels(crumbs)).toEqual(['Overview', 'Workflows', 'refactor', 'Implement']);
+    expect(labels(crumbs)).toEqual(['Overview', 'Runs', 'refactor', 'Implement']);
     expect(last(crumbs)?.id).toBe('selected-child');
     expect(last(crumbs)?.onClick).toBeUndefined();
   });
@@ -271,13 +271,7 @@ describe('buildSessionBreadcrumb', () => {
       ),
     );
 
-    expect(labels(crumbs)).toEqual([
-      'Overview',
-      'Workflows',
-      'refactor',
-      'Implement',
-      'area alpha',
-    ]);
+    expect(labels(crumbs)).toEqual(['Overview', 'Runs', 'refactor', 'Implement', 'area alpha']);
     expect(crumbs[3]?.id).toBe('selected-parent');
     crumbs[3]!.onClick!();
     expect(h.toParentAgent).toHaveBeenCalledOnce();
@@ -320,14 +314,7 @@ describe('buildSessionBreadcrumb', () => {
       ),
     );
 
-    expect(labels(crumbs)).toEqual([
-      'Overview',
-      'Workflows',
-      'refactor',
-      'Implement',
-      'mid',
-      'leaf',
-    ]);
+    expect(labels(crumbs)).toEqual(['Overview', 'Runs', 'refactor', 'Implement', 'mid', 'leaf']);
     expect(crumbs[3]?.id).toBe('selected-root');
     crumbs[3]!.onClick!();
     expect(h.toRootAgent).toHaveBeenCalledOnce();
@@ -368,7 +355,7 @@ describe('buildSessionBreadcrumb', () => {
       ),
     );
 
-    expect(labels(crumbs)).toEqual(['Overview', 'Workflows', 'refactor', 'Implement']);
+    expect(labels(crumbs)).toEqual(['Overview', 'Runs', 'refactor', 'Implement']);
   });
 
   it('keeps a workflow agent with no resolvable run under the workflows list', () => {
@@ -380,7 +367,7 @@ describe('buildSessionBreadcrumb', () => {
       ),
     );
 
-    expect(labels(crumbs)).toEqual(['Overview', 'Workflows', 'Implement']);
+    expect(labels(crumbs)).toEqual(['Overview', 'Runs', 'Implement']);
     crumbs[1]!.onClick!();
     expect(h.toWorkflowsList).toHaveBeenCalledOnce();
   });
@@ -405,7 +392,7 @@ describe('buildSessionBreadcrumb', () => {
   it('renders Overview > Workflows > Create for the workflow builder studio', () => {
     const h = makeHandlers();
     const crumbs = buildSessionBreadcrumb(base({ studio: { kind: 'workflow' } }, h));
-    expect(labels(crumbs)).toEqual(['Overview', 'Workflows', 'Create']);
+    expect(labels(crumbs)).toEqual(['Overview', 'Runs', 'Create']);
     crumbs[1]!.onClick!();
     expect(h.toWorkflowsList).toHaveBeenCalledOnce();
     expect(last(crumbs)?.onClick).toBeUndefined();
@@ -474,7 +461,7 @@ describe('buildSessionBreadcrumb', () => {
         h,
       ),
     );
-    expect(labels(crumbs)).toEqual(['Overview', 'Workflows', 'Create']);
+    expect(labels(crumbs)).toEqual(['Overview', 'Runs', 'Create']);
   });
 
   it('names the delegate step Answers instead of repeating the question', () => {
@@ -495,7 +482,7 @@ describe('buildSessionBreadcrumb', () => {
 
     expect(labels(crumbs)).toEqual([
       'Overview',
-      'Workflows',
+      'Runs',
       'refactor',
       'Implement',
       'Answers',

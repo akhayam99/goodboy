@@ -14,7 +14,7 @@ export const NAMES = {
   stop: 'Stop',
   questions: 'Questions',
   agents: 'Agents',
-  workflows: 'Workflows',
+  runs: 'Runs',
   review: 'Review',
   artifacts: 'Artifacts',
   scripts: 'Scripts',
@@ -44,6 +44,7 @@ export const NAMES = {
 
 const FORMER_NAMES: Readonly<Record<string, ReadonlyArray<string>>> = {
   [NAMES.runDefaults]: ['Rules', 'Workflow rules'],
+  [NAMES.runs]: ['Workflows'],
 };
 
 export const formerNamesOf = (name: string): ReadonlyArray<string> => FORMER_NAMES[name] ?? [];

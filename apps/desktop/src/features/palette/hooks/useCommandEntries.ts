@@ -185,6 +185,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           group: 'action',
           icon: destination.lens === null ? CONCEPT_ICONS.sessions : LENS_ICON[destination.lens],
           shortcut: destination.shortcut,
+          secondary: formerNamesOf(SHORTCUTS[destination.shortcut].label),
           run: () => openLens({ sessionId, lens: destination.lens }),
         });
       }

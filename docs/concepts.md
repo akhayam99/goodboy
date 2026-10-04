@@ -1240,6 +1240,10 @@ task up again in Goodboy.
   change. **Brief** stays the name of the agent tab and of a text you edit
   before something starts, so the two never share a screen.
 - **Stop** is the one name for ending a running turn.
+- **Runs** is the tab of a session that lists its workflow runs. **Workflows**
+  is the library page. **Run defaults** is the tab of Workflows that sets what
+  a new run starts with. A renamed label keeps its old name as a ⌘K alias:
+  searching the old word finds the new one (`formerNamesOf` in `names.ts`).
 - A word that stays and still needs a sentence (workflow, orchestrated,
   artifact) gets a short tooltip, six words at most, written once. The
   `TermHint` and `GLOSSARY`

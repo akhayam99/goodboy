@@ -1,4 +1,4 @@
-import { band, both, heading, openPalette, type Row } from './harness';
+import { band, both, heading, lens, openPalette, type Row } from './harness';
 
 export const FORMER_NAME_ROWS: ReadonlyArray<Row> = [
   {
@@ -18,5 +18,11 @@ export const FORMER_NAME_ROWS: ReadonlyArray<Row> = [
       () => band('Workflows'),
       () => heading('Run defaults'),
     ),
+  },
+  {
+    name: 'searching Open Workflows finds Open Runs in a session',
+    covers: ['palette:Open Runs'],
+    open: () => openPalette(/^Open Runs/, 'Open Workflows'),
+    lands: both(lens('workflows'), () => heading('Runs')),
   },
 ];

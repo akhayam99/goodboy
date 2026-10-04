@@ -331,7 +331,7 @@ export const LENS_ROWS: ReadonlyArray<{
     lens: null,
     lands: async () => expect(await screen.findByTestId('context-chip')).toBeDefined(),
   },
-  { label: 'Workflows', lens: 'workflows', lands: () => heading('Workflows') },
+  { label: 'Runs', lens: 'workflows', lands: () => heading('Runs') },
   { label: 'Agents', lens: 'agents', lands: () => heading('Agents') },
   { label: 'Questions', lens: 'questions', lands: () => heading('Questions') },
   { label: 'Artifacts', lens: 'plans', lands: () => heading('Artifacts') },

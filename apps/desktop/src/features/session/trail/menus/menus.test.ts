@@ -113,7 +113,7 @@ describe('pageMenu icon tones', () => {
     const menu = build({});
 
     expect(classOf(menu, 'Overview')).toBeUndefined();
-    expect(classOf(menu, 'Workflows')).toBe('text-primary');
+    expect(classOf(menu, 'Runs')).toBe('text-primary');
     expect(classOf(menu, 'Diff')).toBe('text-info');
     expect(classOf(menu, 'Linear')).toBe('text-provider-linear');
     rowsOf(menu)

@@ -12,7 +12,7 @@ describe('screenLabel', () => {
     [`s/${SESSION_ID}/review`, 'Session › Review'],
     [`s/${SESSION_ID}/review/t/thread-9`, 'Session › Review'],
     [`s/${SESSION_ID}/context/goal`, 'Session › Context › Goal'],
-    [`s/${SESSION_ID}/workflows/run-42/edit`, 'Session › Workflows › Workflow editor'],
+    [`s/${SESSION_ID}/workflows/run-42/edit`, 'Session › Runs › Workflow editor'],
     [`s/${SESSION_ID}/pr/mr`, 'Session › Pull request › Merge request'],
     [`s/${SESSION_ID}/agents/agent/agent-7`, 'Session › Agents'],
     ['board+settings/providers/anthropic', 'Board · Settings › Providers'],
