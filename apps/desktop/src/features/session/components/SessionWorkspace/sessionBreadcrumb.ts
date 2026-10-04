@@ -149,7 +149,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
       selectedQuestionLabel == null
         ? {
             id: 'selected-child',
-            label: selectedChildHome === 'review' ? 'Agent' : selectedChildLabel,
+            label: selectedChildHome === 'review' ? 'Resolver' : selectedChildLabel,
             ...agentIcon(selectedChildTone),
           }
         : { id: 'delegated-answers', label: 'Answers', icon: CONCEPT_ICONS.agents };

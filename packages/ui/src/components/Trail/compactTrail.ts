@@ -10,7 +10,7 @@ type Params = {
   readonly available: number | null;
 };
 
-const DEPTH_FOR_ANCHOR_ICON = 4;
+const DEPTH_FOR_ANCHOR_ICON = 6;
 const DEPTH_FOR_ANCESTOR_ICONS = 5;
 
 export const compactTrail = ({
@@ -32,7 +32,7 @@ export const compactTrail = ({
   }
   if (count >= DEPTH_FOR_ANCESTOR_ICONS) {
     for (let index = 0; index <= lastAncestor; index += 1) {
-      if (canShrink(index)) {
+      if (canShrink(index) && (index > 0 || count >= DEPTH_FOR_ANCHOR_ICON)) {
         states[index] = 'icon';
       }
     }

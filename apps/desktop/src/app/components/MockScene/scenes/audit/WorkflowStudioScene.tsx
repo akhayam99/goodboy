@@ -14,7 +14,9 @@ const noop = () => undefined;
 const IS_EMPTY = sceneParam({ key: 'v' }) === 'empty';
 const OPEN_LABELS = sceneParamList({ key: 'open', separator: ',' });
 const IS_CONFIRM_ERROR = sceneParam({ key: 'state' }) === 'confirm-error';
-const IS_RULES = sceneParam({ key: 'view' }) === 'rules';
+const SCENE = sceneParam({ key: 'scene' });
+const IS_RULES = sceneParam({ key: 'view' }) === 'rules' || SCENE === 'rules-no-limits';
+const HAS_LIMITS = SCENE !== 'rules-no-limits';
 
 const editedBuiltin = (): Workflow | null => {
   const entry = WORKFLOW_LIBRARY[0];
@@ -48,7 +50,7 @@ const seedRules = (): void => {
     workflowStudioView: 'rules',
     providers: RULES_PROVIDERS,
     refreshProviders: async () => undefined,
-    providerLimits: rulesProviderLimits(),
+    providerLimits: HAS_LIMITS ? rulesProviderLimits() : {},
     workspaceOverrides: {
       [WORKSPACE_ID]: {
         ...OVERRIDES,

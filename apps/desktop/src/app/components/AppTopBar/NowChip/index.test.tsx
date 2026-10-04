@@ -23,15 +23,20 @@ const { hooks, store } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../../../store', async () => ({
-  ...(await import('../../../../store/slices/navigation/place')),
-  EMPTY_ARRAY: [],
-  useCurrentWorkspace: () => hooks.workspace,
-  useSessions: () => store.sessions,
-  useStageGroupedSessions: () => hooks.groups,
-  useSessionStageInfo: () => ({ stage: 'attention', reason: 'Needs attention', attention: null }),
-  useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
-}));
+vi.mock('../../../../store', async () => {
+  const useAppStore = Object.assign(<T,>(selector: (state: typeof store) => T) => selector(store), {
+    getState: () => store,
+  });
+  return {
+    ...(await import('../../../../store/slices/navigation/place')),
+    EMPTY_ARRAY: [],
+    useCurrentWorkspace: () => hooks.workspace,
+    useSessions: () => store.sessions,
+    useStageGroupedSessions: () => hooks.groups,
+    useSessionStageInfo: () => ({ stage: 'attention', reason: 'Needs attention', attention: null }),
+    useAppStore,
+  };
+});
 
 import { NowChip } from './index';
 

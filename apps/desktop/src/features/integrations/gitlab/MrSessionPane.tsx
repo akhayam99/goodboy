@@ -17,7 +17,7 @@ export const MrSessionPane = ({ sessionId, onClose }: Props) => (
     variant="slot"
   >
     {(requestClose) => (
-      <div className="min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1 flex-col">
         <MrDetailPanel sessionId={sessionId} onClose={requestClose} />
       </div>
     )}

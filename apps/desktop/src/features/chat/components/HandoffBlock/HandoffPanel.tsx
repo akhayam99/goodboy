@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { IconButton, ScrollFade } from '@goodboy/ui';
+import { IconButton } from '@goodboy/ui';
 import type { HandoffSection, HandoffSectionKind, SessionId } from '@goodboy/types';
 import { HANDOFF_SECTION_LABEL } from '../../utils/handoffLabels';
 import { HandoffSectionBody } from './HandoffSectionBody';
@@ -13,6 +13,7 @@ type Props = {
   readonly sessionId: SessionId | null;
   readonly onStep: (delta: number) => void;
   readonly onClose: () => void;
+  readonly isSummaryVisible?: boolean;
 };
 
 const focusChip = (kind: HandoffSectionKind, fromElement: HTMLElement): void => {
@@ -29,6 +30,7 @@ export const HandoffPanel = ({
   sessionId,
   onStep,
   onClose,
+  isSummaryVisible = true,
 }: Props) => (
   <div
     role="region"
@@ -48,9 +50,13 @@ export const HandoffPanel = ({
       <span className="shrink-0 text-label text-foreground">
         {HANDOFF_SECTION_LABEL[section.kind]}
       </span>
-      <span className="min-w-0 flex-1 truncate text-secondary text-faint-foreground">
-        {section.summary}
-      </span>
+      {isSummaryVisible ? (
+        <span className="min-w-0 flex-1 truncate text-secondary text-faint-foreground">
+          {section.summary}
+        </span>
+      ) : (
+        <span className="min-w-0 flex-1" />
+      )}
       {total > 1 ? (
         <div className="flex shrink-0 items-center gap-1">
           <span className="text-secondary text-muted-foreground">
@@ -73,8 +79,6 @@ export const HandoffPanel = ({
         </div>
       ) : null}
     </div>
-    <ScrollFade className="max-h-80">
-      <HandoffSectionBody section={section} doneWhen={doneWhen} sessionId={sessionId} />
-    </ScrollFade>
+    <HandoffSectionBody section={section} doneWhen={doneWhen} sessionId={sessionId} />
   </div>
 );

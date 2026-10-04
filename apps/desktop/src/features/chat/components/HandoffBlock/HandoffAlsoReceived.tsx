@@ -14,7 +14,7 @@ type Props = {
 };
 
 export const HandoffAlsoReceived = ({ handoff, sessionId }: Props) => {
-  const disclosure = useHandoffDisclosure({ agentId: handoff.agentId, initiallyOpen: false });
+  const disclosure = useHandoffDisclosure({ agentId: handoff.agentId });
   const received = handoff.sections.filter((section) => section.kind !== 'ask');
   const activeIndex =
     disclosure.active === 'all' || disclosure.active === null

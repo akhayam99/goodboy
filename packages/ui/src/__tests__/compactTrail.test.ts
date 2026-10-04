@@ -22,8 +22,8 @@ describe('compactTrail', () => {
   it.each([
     [2, ['full', 'full']],
     [3, ['full', 'full', 'full']],
-    [4, ['icon', 'full', 'full', 'full']],
-    [5, ['icon', 'icon', 'icon', 'full', 'full']],
+    [4, ['full', 'full', 'full', 'full']],
+    [5, ['full', 'icon', 'icon', 'full', 'full']],
     [6, ['icon', 'icon', 'icon', 'icon', 'full', 'full']],
     [7, ['icon', 'icon', 'icon', 'icon', 'icon', 'full', 'full']],
   ])('compacts ancestors by depth alone at depth %i', (depth, expected) => {
@@ -61,7 +61,7 @@ describe('compactTrail', () => {
     expect(run(4, 100, [false, true, false, false])[1]).toBe('full');
   });
 
-  it('keeps every segment full at 960 up to depth 3', () => {
-    expect(run(3, 960)).toEqual(['full', 'full', 'full']);
+  it('keeps every segment full at 960 up to depth 4', () => {
+    expect(run(4, 960)).toEqual(['full', 'full', 'full', 'full']);
   });
 });

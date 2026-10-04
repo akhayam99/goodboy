@@ -10,7 +10,9 @@ type Props = {
 };
 
 export const HandoffSections = ({ handoff, sections, sessionId }: Props) => {
-  const [collapsed, setCollapsed] = useState<ReadonlySet<HandoffSectionKind>>(() => new Set());
+  const [collapsed, setCollapsed] = useState<ReadonlySet<HandoffSectionKind>>(
+    () => new Set(sections.map((section) => section.kind)),
+  );
 
   return (
     <div className="flex min-w-0 flex-col gap-2">

@@ -536,8 +536,9 @@ activity yet show the plain overview with its actions.
 - **Every crumb has an icon, and depth compacts the trail.** Agents carry the
   agent glyph in their kind's colour, runs the run glyph, artifacts, questions
   and pull request modes their own. The last crumb and its parent always stay
-  full. From four crumbs `Overview` turns into its icon; from five every
-  ancestor but the parent does. When the band still has no room, ancestors turn
+  full. `Overview` keeps its name through five crumbs. From five every other
+  ancestor but the parent becomes an icon, and from six `Overview` does too.
+  When the band still has no room, ancestors turn
   to icons from the left, then the icons after `Overview` fold into a `…` menu
   right after it; `Overview` is the anchor and never folds. An icon crumb keeps
   its name as tooltip and accessible name. `compactTrail` in `@goodboy/ui` is
@@ -619,17 +620,17 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   (a squash merge), in the menu and in the Diff header alike
   (`isMountRequestMerged`). It never
   turns into an icon. A Diff opened without a branch lands on the active mount.
-- **The resolver's page reads Review, the comment, Agent.** The comment segment
+- **The resolver's page reads Review, the comment, Resolver.** The comment segment
   (`retryPolicy.ts:42`) lists the open conversations by file, resolved ones
-  apart, with `Open on GitHub` and `Copy link`; `Agent` lists the attempts on
+  apart, with `Open on GitHub` and `Copy link`; `Resolver` lists the attempts on
   that comment.
 - **Settings claims its studio band** with Settings, the scope and the App
   section. The scope segment lists App, the workspace, Providers & models and
   Tools; the section segment lists the App sections. Neither carries an
   action: Settings has no project scope, so there is no `Use workspace values`
-  to offer. The first segment of a studio has no menu (studios change from the
-  footer) and is always a button back to that studio's start: Settings goes to
-  its home, Workflows to its list. On the Settings home it is the only segment.
+  to offer. A segment without an action is plain text and has no hover state.
+  The first segment of a studio has no menu because studios change from the
+  footer. It is a button only when that studio has a start to return to.
 - **Every menu row has five slots**: lead, label with a faint second part,
   meta, a state that is always a word (from `agentStateWord`, the same reading
   `isAgentFinished` makes), and a check on the current row, which is there even

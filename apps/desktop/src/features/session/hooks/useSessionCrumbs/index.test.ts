@@ -241,8 +241,8 @@ describe('useSessionCrumbs', () => {
     expect(labelsOf(null, ADHOC_AGENT_ID)).toEqual(['Overview', 'Agents', 'scout one']);
   });
 
-  it('gives a resolver opened from the feed the review home as parent, named Agent', () => {
-    expect(labelsOf(null, RESOLVER_AGENT_ID)).toEqual(['Overview', 'Review', 'Agent']);
+  it('gives a resolver opened from the feed the review home as parent, named Resolver', () => {
+    expect(labelsOf(null, RESOLVER_AGENT_ID)).toEqual(['Overview', 'Review', 'Resolver']);
   });
 
   it('asks for the resolve rows only when a resolver thread is selected', () => {
