@@ -8,6 +8,7 @@ type Props = {
   readonly value: string;
   readonly delta: ImpactDelta | null;
   readonly title?: string;
+  readonly hint?: string;
   readonly onSelect: () => void;
 };
 
@@ -17,7 +18,7 @@ const DELTA_ICON = {
   flat: Minus,
 } as const;
 
-export const KpiTile = ({ label, value, delta, title, onSelect }: Props) => {
+export const KpiTile = ({ label, value, delta, title, hint, onSelect }: Props) => {
   const Icon = delta === null ? null : DELTA_ICON[delta.direction];
   const status =
     delta === null || Icon === null ? undefined : (
@@ -37,6 +38,7 @@ export const KpiTile = ({ label, value, delta, title, onSelect }: Props) => {
         label={label}
         value={value}
         {...(status !== undefined && { status })}
+        {...(hint !== undefined && { hint })}
         onClick={onSelect}
         className="w-full"
       />

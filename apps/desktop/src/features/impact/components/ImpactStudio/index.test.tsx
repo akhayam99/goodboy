@@ -222,26 +222,23 @@ afterEach(() => {
 });
 
 const renderStudio = (onClose = vi.fn()) =>
-  render(<ImpactStudio workspaceId={WORKSPACE_ID} workspaceName="Harborline" onClose={onClose} />);
+  render(<ImpactStudio workspaceId={WORKSPACE_ID} onClose={onClose} />);
 
-const summary = async (): Promise<string> => {
-  const paragraph = await screen.findByText(
-    (_, node) => node?.tagName === 'P' && (node.textContent ?? '').includes('Goodboy ran'),
-  );
-  return paragraph.textContent ?? '';
+const tile = async (label: string): Promise<string> => {
+  const eyebrow = await screen.findByText(label);
+  return eyebrow.closest('button')?.textContent ?? '';
 };
 
 describe('ImpactStudio on the real database', () => {
-  it('counts deleted sessions, their spend and their merged pull request over all time', async () => {
+  it('counts deleted sessions and their merged pull request over all time, under the Sessions tile', async () => {
     renderStudio();
 
     fireEvent.click(screen.getByRole('tab', { name: 'All time' }));
 
-    await waitFor(async () =>
-      expect(await summary()).toBe(
-        'So far Goodboy ran 4 sessions (2 deleted) in Harborline, merged 1 pull request and spent $9.50. Workflows ran 0% of sessions.',
-      ),
-    );
+    await waitFor(async () => expect(await tile('Sessions')).toContain('2 deleted'));
+    expect(await tile('Sessions')).toContain('4');
+    expect(await tile('Pull requests merged')).toContain('1');
+    expect(screen.queryByText(/Goodboy ran/)).toBeNull();
   });
 
   it('keeps a session deleted today out of an older window and a long one out of this week', async () => {
@@ -249,11 +246,9 @@ describe('ImpactStudio on the real database', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: '7 days' }));
 
-    await waitFor(async () =>
-      expect(await summary()).toBe(
-        'In the last 7 days Goodboy ran 3 sessions (1 deleted) in Harborline, merged 0 pull requests and spent $5.50. Workflows ran 0% of sessions.',
-      ),
-    );
+    await waitFor(async () => expect(await tile('Sessions')).toContain('1 deleted'));
+    expect(await tile('Sessions')).toContain('3');
+    expect(await tile('Pull requests merged')).toContain('0');
   });
 
   it('shows a deleted session as a row that does not open', async () => {
@@ -268,20 +263,22 @@ describe('ImpactStudio on the real database', () => {
     expect(within(list as HTMLElement).queryByRole('button')).toBeNull();
   });
 
-  it('says the same spend in Impact, the Spend tab and the top bar chip', async () => {
+  it('says the same spend in the Spend tab and the top bar chip', async () => {
     render(
       <>
         <SpendButton onOpenSpend={vi.fn()} />
-        <ImpactStudio workspaceId={WORKSPACE_ID} workspaceName="Harborline" onClose={vi.fn()} />
+        <ImpactStudio workspaceId={WORKSPACE_ID} onClose={vi.fn()} />
       </>,
     );
     fireEvent.click(screen.getByRole('tab', { name: '7 days' }));
-    await waitFor(async () => expect(await summary()).toContain('spent $5.50'));
+    await waitFor(async () => expect(await tile('Sessions')).toContain('1 deleted'));
 
     fireEvent.click(screen.getByRole('tab', { name: 'Spend' }));
 
     await waitFor(() => expect(screen.getAllByText('$5.50').length).toBeGreaterThanOrEqual(3));
-    within(screen.getByRole('button', { name: /Spent today in Harborline/ })).getByText('$5.50');
+    within(screen.getByRole('button', { name: /Spent today, counted by Goodboy/ })).getByText(
+      '$5.50',
+    );
   });
 
   it('opens a live session from its row and closes the studio', async () => {
@@ -332,7 +329,7 @@ describe('ImpactStudio on the real database', () => {
     expect(alert.textContent).toContain('database is locked');
     fireEvent.click(within(alert).getByRole('button', { name: 'Retry' }));
 
-    await waitFor(async () => expect(await summary()).toContain('Goodboy ran'));
+    await waitFor(async () => expect(await tile('Sessions')).toContain('Sessions'));
   });
 });
 
@@ -370,7 +367,7 @@ describe('ImpactStudio refreshes pull requests of sessions no longer on the boar
     renderStudio();
     fireEvent.click(screen.getByRole('tab', { name: '7 days' }));
 
-    await waitFor(async () => expect(await summary()).toContain('merged 1 pull request'));
+    await waitFor(async () => expect(await tile('Pull requests merged')).toContain('1'));
     const events = await rowsOf<{ kind: string }>({
       sql: "SELECT kind FROM session_events WHERE session_id = ? AND kind = 'pr_merged'",
       params: [GONE],

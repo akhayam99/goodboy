@@ -147,7 +147,6 @@ const renderStudio = ({
       return currentWorkspace === null ? null : (
         <ImpactStudio
           workspaceId={currentWorkspace.id}
-          workspaceName={currentWorkspace.name}
           initialScope={overlay.scope ?? undefined}
           onScopeChange={onImpactScopeChange}
           onClose={close}
