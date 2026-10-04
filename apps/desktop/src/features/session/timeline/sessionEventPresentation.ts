@@ -206,6 +206,7 @@ const decisionsChangedLabel = ({ payload }: PayloadParams): string =>
 
 type TitleParams = {
   readonly event: SessionEvent;
+  readonly repeatCount?: number;
 };
 
 type HistoryEventKind = Extract<SessionEventKind, `history_${string}`>;
@@ -229,9 +230,11 @@ const stopDetail = ({ payload }: PayloadParams): string => {
 const historyEventLabel = ({
   kind,
   payload,
+  repeatCount = 1,
 }: {
   readonly kind: HistoryEventKind;
   readonly payload: SessionEventPayload | null;
+  readonly repeatCount?: number;
 }): ReadonlyArray<TimelineLabelSegment> => {
   const isRebase = payload?.origin === 'rebase';
   if (kind === 'history_rewritten') {
@@ -267,13 +270,19 @@ const historyEventLabel = ({
     return [
       { kind: 'text', text: isRebase ? 'Rebase of ' : 'Rewrite of ' },
       branchSegment({ payload }),
-      { kind: 'text', text: ` stopped${stopDetail({ payload })}` },
+      {
+        kind: 'text',
+        text: ` stopped${repeatCount > 1 ? ` ×${repeatCount}` : ''}${stopDetail({ payload })}`,
+      },
     ];
   }
   return [{ kind: 'text', text: 'Restored the previous history of ' }, branchSegment({ payload })];
 };
 
-export const sessionEventLabel = ({ event }: TitleParams): ReadonlyArray<TimelineLabelSegment> => {
+export const sessionEventLabel = ({
+  event,
+  repeatCount,
+}: TitleParams): ReadonlyArray<TimelineLabelSegment> => {
   const { payload } = event;
   switch (event.kind) {
     case 'worktree_created':
@@ -469,7 +478,11 @@ export const sessionEventLabel = ({ event }: TitleParams): ReadonlyArray<Timelin
     case 'history_pushed':
     case 'history_stopped':
     case 'history_restored':
-      return historyEventLabel({ kind: event.kind, payload });
+      return historyEventLabel({
+        kind: event.kind,
+        payload,
+        ...(repeatCount === undefined ? {} : { repeatCount }),
+      });
     default: {
       const exhaustive: never = event.kind;
       return exhaustive;

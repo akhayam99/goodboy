@@ -100,6 +100,7 @@ export type TimelineEventEntry = {
   readonly at: string;
   readonly event: SessionEvent;
   readonly projectRun?: TimelineProjectRun;
+  readonly repeatCount?: number;
   readonly lane?: TimelineArtifactLane;
 };
 

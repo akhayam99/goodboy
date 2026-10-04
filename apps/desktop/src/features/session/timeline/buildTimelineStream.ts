@@ -469,6 +469,77 @@ const mergeConsecutiveProjectRows = ({
   return merged;
 };
 
+type StoppedKey = {
+  readonly branch: string | null;
+  readonly origin: string | null;
+};
+
+const stoppedKeyOf = ({ draft }: { readonly draft: DraftRow }): StoppedKey | null => {
+  if (draft.groupId != null || draft.entry.kind !== 'event') {
+    return null;
+  }
+  const { event } = draft.entry;
+  if (event.kind !== 'history_stopped') {
+    return null;
+  }
+  return { branch: event.payload?.branch ?? null, origin: event.payload?.origin ?? null };
+};
+
+const isSameStoppedKey = ({
+  first,
+  second,
+}: {
+  readonly first: StoppedKey;
+  readonly second: StoppedKey;
+}): boolean => first.branch === second.branch && first.origin === second.origin;
+
+const mergeConsecutiveStoppedRows = ({
+  drafts,
+}: {
+  readonly drafts: ReadonlyArray<DraftRow>;
+}): ReadonlyArray<DraftRow> => {
+  const merged: DraftRow[] = [];
+  let index = 0;
+
+  while (index < drafts.length) {
+    const newest = drafts[index];
+    if (newest === undefined) {
+      break;
+    }
+    const key = stoppedKeyOf({ draft: newest });
+    if (key === null || newest.entry.kind !== 'event') {
+      merged.push(newest);
+      index += 1;
+      continue;
+    }
+    const newestDayKey = newest.at === null ? null : dayKeyOf({ at: newest.at });
+    let runIndex = index + 1;
+    while (runIndex < drafts.length) {
+      const draft = drafts[runIndex];
+      const other = draft === undefined ? null : stoppedKeyOf({ draft });
+      if (
+        draft === undefined ||
+        other === null ||
+        !isSameStoppedKey({ first: key, second: other })
+      ) {
+        break;
+      }
+      const draftDayKey = draft.at === null ? null : dayKeyOf({ at: draft.at });
+      if (draftDayKey !== newestDayKey) {
+        break;
+      }
+      runIndex += 1;
+    }
+    const count = runIndex - index;
+    merged.push(
+      count === 1 ? newest : { ...newest, entry: { ...newest.entry, repeatCount: count } },
+    );
+    index = runIndex;
+  }
+
+  return merged;
+};
+
 const questionBucketOf = ({
   entry,
 }: {
@@ -1928,10 +1999,12 @@ export const buildTimelineStream = ({
 
   const sorted = [...rows].sort((first, second) => compareNewestFirst({ first, second }));
   const merged = mergeConsecutiveQuestionRows({
-    drafts: mergeConsecutiveProjectRows({
-      drafts: mergeConsecutiveDecisionRows({ drafts: sorted }).filter(
-        (draft) => !isEmptyDecisionRow({ draft }),
-      ),
+    drafts: mergeConsecutiveStoppedRows({
+      drafts: mergeConsecutiveProjectRows({
+        drafts: mergeConsecutiveDecisionRows({ drafts: sorted }).filter(
+          (draft) => !isEmptyDecisionRow({ draft }),
+        ),
+      }),
     }),
   });
   const withDays = withDayBreaks({

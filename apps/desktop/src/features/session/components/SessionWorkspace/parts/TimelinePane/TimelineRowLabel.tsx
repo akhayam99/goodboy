@@ -131,7 +131,10 @@ const segmentsOf = ({ entry }: EntryParams): ReadonlyArray<TimelineLabelSegment>
         detached: projectRun.detached,
       });
     }
-    return sessionEventLabel({ event: entry.event });
+    return sessionEventLabel({
+      event: entry.event,
+      ...(entry.repeatCount === undefined ? {} : { repeatCount: entry.repeatCount }),
+    });
   }
   if (entry.kind === 'learning') {
     return [{ kind: 'text', text: 'Learned' }];

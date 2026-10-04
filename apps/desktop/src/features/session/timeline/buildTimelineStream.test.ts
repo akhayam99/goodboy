@@ -1088,6 +1088,91 @@ const sessionEvent = ({ id, kind, at, payload }: SessionEventParams): SessionEve
 });
 
 describe('buildTimelineStream, session events', () => {
+  describe('stopped rebases', () => {
+    const stopped = ({
+      id,
+      minute,
+      branch = 'feat/export',
+      day = 18,
+    }: {
+      readonly id: string;
+      readonly minute: number;
+      readonly branch?: string;
+      readonly day?: number;
+    }) =>
+      sessionEvent({
+        id,
+        kind: 'history_stopped',
+        at: localIso({ day, hour: 9, minute }),
+        payload: { branch, origin: 'rebase' },
+      });
+    const eventRows = (items: ReadonlyArray<TimelineStreamItem>) =>
+      items.flatMap((item) =>
+        item.kind === 'row' && item.entry.kind === 'event' ? [item.entry] : [],
+      );
+
+    it('merges consecutive stops of the same rebase into one row with its count', () => {
+      const { items } = stream({
+        agents: [],
+        events: [
+          stopped({ id: 'stop-1', minute: 1 }),
+          stopped({ id: 'stop-2', minute: 2 }),
+          stopped({ id: 'stop-3', minute: 3 }),
+        ],
+      });
+      const [only, ...rest] = eventRows(items);
+
+      expect(rest).toEqual([]);
+      expect(only?.repeatCount).toBe(3);
+      expect(only?.event.id).toBe('stop-3');
+    });
+
+    it('keeps a single stop as it is', () => {
+      const { items } = stream({ agents: [], events: [stopped({ id: 'stop-1', minute: 1 })] });
+
+      expect(eventRows(items).map((entry) => entry.repeatCount)).toEqual([undefined]);
+    });
+
+    it('keeps stops of two branches on separate rows', () => {
+      const { items } = stream({
+        agents: [],
+        events: [
+          stopped({ id: 'stop-1', minute: 1 }),
+          stopped({ id: 'stop-2', minute: 2, branch: 'fix/webhook' }),
+        ],
+      });
+
+      expect(eventRows(items)).toHaveLength(2);
+    });
+
+    it('breaks the run when another row lands between two stops or a day passes', () => {
+      const between = stream({
+        agents: [],
+        events: [
+          stopped({ id: 'stop-1', minute: 1 }),
+          sessionEvent({
+            id: 'branch',
+            kind: 'branch_created',
+            at: localIso({ day: 18, hour: 9, minute: 2 }),
+            payload: { branch: 'fix/webhook' },
+          }),
+          stopped({ id: 'stop-2', minute: 3 }),
+        ],
+      });
+      const acrossDays = stream({
+        agents: [],
+        events: [stopped({ id: 'old', minute: 1, day: 17 }), stopped({ id: 'new', minute: 2 })],
+      });
+
+      expect(eventRows(between.items).map((entry) => entry.repeatCount)).toEqual([
+        undefined,
+        undefined,
+        undefined,
+      ]);
+      expect(eventRows(acrossDays.items)).toHaveLength(2);
+    });
+  });
+
   it('leaves out a decision change that added and removed nothing', () => {
     const result = stream({
       agents: [],
