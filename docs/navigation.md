@@ -695,13 +695,11 @@ covered.
   top-level agent (`landOnSession.ts`) so the brief waits in that agent's
   composer draft (`agentDraft`); a session without an agent opens on its
   overview with nothing drafted.
-- Right: the storage chip, the Now chip (needs you, running, scripts, each
-  only when above zero), today's spend and the bell. The storage chip
-  (`StorageChip`) reads `Free 7 GB` in muted text only while at least 1 GB of
-  worktree folders can go on every workspace, the same "can go" the Storage
-  summary counts (`useStorageSummary`); it never turns warning, and it hides
-  when there is nothing to free. A click opens App > Storage scoped to all
-  workspaces on To review, scrolled to the worktree folders. Now opens one popover grouped by those
+- Right: the Now chip (needs you, running, scripts, each
+  only when above zero), today's spend and the bell. There is no storage chip:
+  a control that appears when a threshold is crossed breaks the rule above,
+  and "Free 7 GB" read as free disk, not what can go. The "N GB can go" line
+  lives on the Storage row of the Settings rail. Now opens one popover grouped by those
   three, and a group with no rows is not drawn. A script row moves to its
   session and opens that run's output in the right drawer. Spend opens Impact
   on its Spend tab; it is never merged with a count. Then `Limits`: one chip per connected plan provider (Claude, Codex,
@@ -1079,7 +1077,7 @@ one is open at a time.
   wrong (Update needed, Not signed in, Error) or Not connected, never an
   identity or usage; the closed Providers & models group says how many
   providers it holds ("2 providers") unless one of them needs attention. Every page is also a palette entry
-  (`settingsEntries`, `Settings: Storage`, `Providers: Claude`), built from
+  (`settingsPaletteEntries`, `Settings: Storage`, `Providers: Claude`), built from
   the same list, so ⌘K and the rail cannot disagree. The status lines are read
   once per studio (`useSettingsStatus`, on the minute clock of `useNow`);
   opening Settings starts no loading of its own (no storage scan, no branch
@@ -1150,7 +1148,7 @@ another repository` at its foot), Artifacts of deleted sessions, and
   (`StorageScopePicker`, `Listbox`) sits in the page header row next to
   `Suggest cleanup after` and `Check again` (`StorageHeaderActions`); the
   Branches header has the same picker without `Removed workspaces`
-  (`BranchesHeaderActions`). `openStorage`, the free space chip and the
+  (`BranchesHeaderActions`). `openStorage` and the
   cleanup notifications always land on Storage. The picker lists the current
   window's workspace, every other workspace with its own weight, `Removed
 workspaces` (folders whose owning workspace is gone or was never linked),

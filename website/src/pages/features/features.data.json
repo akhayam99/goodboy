@@ -1211,13 +1211,6 @@
           "shown": true
         },
         {
-          "title": "Free space chip",
-          "text": "Once at least 1 GB of worktree folders can go, the top bar shows how much. Click it to open Storage.",
-          "group": "Storage",
-          "also": "free space chip",
-          "shown": true
-        },
-        {
           "title": "Artifacts from deleted sessions",
           "text": "Decide what to keep from sessions you deleted: their plans, reports and wireframes.",
           "group": "Storage",
