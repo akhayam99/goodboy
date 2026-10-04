@@ -83,6 +83,7 @@ export const ChatModelRow = ({ workspaceId, connectedProviderIds, disabled }: Pr
           effort: shownChatEffort(automatic),
         }}
         recommendationKind="auto"
+        autoTrigger="resolved"
         overridden={saved !== null}
         onReset={clear}
         resetLabel="Back to Auto"

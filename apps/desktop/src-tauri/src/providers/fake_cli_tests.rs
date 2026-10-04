@@ -22,10 +22,11 @@ fn detection_reads_the_version_each_fake_cli_prints() {
             status,
             ProviderStatus {
                 id: id.to_string(),
-                binary: path,
+                binary: path.clone(),
                 available: true,
                 version: Some(version.to_string()),
                 error: None,
+                path: Some(path),
             }
         );
     }

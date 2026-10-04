@@ -167,9 +167,7 @@ describe('buildTimelineStream subagent groups', () => {
     expect(group?.groupId).toBe(GROUP_HEAD);
     expect(group?.entry.kind).toBe('subagentGroup');
     expect(groups.map((entry) => entry.id)).toEqual([PARENT_LANE, GROUP_HEAD]);
-    expect(groups[1]).toEqual(
-      expect.objectContaining({ parentGroupId: PARENT_LANE, shape: 'head' }),
-    );
+    expect(groups[1]).toEqual(expect.objectContaining({ parentGroupId: null, shape: 'head' }));
   });
 
   it('summarises six subagents by state and sits at the earliest subagent start', () => {
@@ -218,7 +216,7 @@ describe('buildTimelineStream subagent groups', () => {
       expect.objectContaining({
         id: GROUP_HEAD,
         originRowId: GROUP_ID,
-        parentGroupId: PARENT_LANE,
+        parentGroupId: null,
         shape: 'head',
       }),
       expect.objectContaining({
@@ -235,9 +233,7 @@ describe('buildTimelineStream subagent groups', () => {
     const layout = layoutTimelineRail({ rows: items, groups });
     const groupRail = layout.rows[items.findIndex((item) => item.id === GROUP_ID)];
     expect(groupRail?.joins.map((join) => join.kind)).toEqual(['stub', 'branch']);
-    expect(layout.columnByGroupId.get(GROUP_HEAD)).toBe(
-      (layout.columnByGroupId.get(PARENT_LANE) ?? 0) + 1,
-    );
+    expect(layout.columnByGroupId.get(GROUP_HEAD)).toBe(1);
     expect(layout.columnByGroupId.get(GROUP_LANE)).toBe(
       (layout.columnByGroupId.get(GROUP_HEAD) ?? 0) + 1,
     );

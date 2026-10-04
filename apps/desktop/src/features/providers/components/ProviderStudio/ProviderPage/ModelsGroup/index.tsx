@@ -6,15 +6,17 @@ import {
   withModelsVisible,
   type HiddenModels,
 } from '@goodboy/core';
-import type { CatalogModel, ProviderId } from '@goodboy/types';
+import type { CatalogModel, ProviderId, WorkspaceId } from '@goodboy/types';
 import { BAND_ROW_CLASS, Band, Button, Switch, Tooltip, cn } from '@goodboy/ui';
 import { PickerChip } from '../../../../../../shared/components/RoutingPicker/PickerChip';
 import { useHiddenModels, useSaveHiddenModels } from '../../../../hooks/useHiddenModels';
+import { PinnedCount } from './PinnedCount';
 
 const LAST_VISIBLE_COPY = 'At least one model stays visible';
 
 type Props = {
   readonly providerId: ProviderId;
+  readonly workspaceId: WorkspaceId | null;
   readonly isFocused: boolean;
 };
 
@@ -52,7 +54,7 @@ const versionLabel = (model: CatalogModel): string =>
     ? model.presentation.version
     : `${model.presentation.version} ${model.presentation.checkpoint}`;
 
-export const ModelsGroup = ({ providerId, isFocused }: Props) => {
+export const ModelsGroup = ({ providerId, workspaceId, isFocused }: Props) => {
   const hidden = useHiddenModels();
   const saveHidden = useSaveHiddenModels();
   const sectionRef = useRef<HTMLDivElement | null>(null);
@@ -85,6 +87,9 @@ export const ModelsGroup = ({ providerId, isFocused }: Props) => {
         hint="A model you turn off is hidden from pickers and Auto. A model you pinned keeps running."
         action={
           <div className="flex items-center gap-2">
+            {workspaceId === null ? null : (
+              <PinnedCount providerId={providerId} workspaceId={workspaceId} />
+            )}
             <span className="text-meta text-faint-foreground">
               Showing {shown} of {total}
             </span>

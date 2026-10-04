@@ -407,7 +407,7 @@
     "apps/desktop/src/store/slices/providers/learnCliRequirement.test.ts": 4,
     "apps/desktop/src/store/slices/providers/refreshProviders.test.ts": 10,
     "apps/desktop/src/store/slices/providers/runLifecycle.test.ts": 6,
-    "apps/desktop/src/store/slices/providers/updateProviderCli.test.ts": 4,
+    "apps/desktop/src/store/slices/providers/updateProviderCli.test.ts": 2,
     "apps/desktop/src/store/slices/resolve/candidateIntegration.test.ts": 2,
     "apps/desktop/src/store/slices/resolve/drainResolveQueue.test.ts": 2,
     "apps/desktop/src/store/slices/resolve/index.test.ts": 11,

@@ -4,6 +4,7 @@ import { Button, Notice } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { CLI_LABEL } from '../../../cliLabel';
+import { stillOutdatedBody, stillOutdatedTitle } from '../../../cliUpdateCopy';
 import { useCliUpdate } from '../../../hooks/useCliUpdate';
 import { useOutdatedCliModels } from '../../../hooks/useOutdatedCliModels';
 import { InlineTerminal } from '../../InlineTerminal';
@@ -63,13 +64,24 @@ export const CliUpdateNotice = ({ providerId, autoStart }: Props) => {
   const installed = gates[0]?.installedVersion ?? '';
   const waitNote = isBlockedByTurn && !isUpdating ? ' Wait for running turns to finish.' : '';
   const failedNote = update.hasFailed ? " The update didn't finish." : '';
+  const unchanged = update.isUnchanged ? update.result : null;
+  const showTerminal =
+    update.runId !== null && (isUpdating || update.hasFailed || unchanged !== null);
 
   return (
     <Notice
       tone="warning"
       placement="banner"
-      title={`${joinLabels({ labels: gates.map((gate) => gate.model.label) })} ${gates.length === 1 ? 'needs' : 'need'} a newer ${cli}`}
-      body={`You have ${cli} ${installed}. Update to ${required ?? ''} or newer.${failedNote}${waitNote}`}
+      title={
+        unchanged === null
+          ? `${joinLabels({ labels: gates.map((gate) => gate.model.label) })} ${gates.length === 1 ? 'needs' : 'need'} a newer ${cli}`
+          : stillOutdatedTitle({ cli, version: unchanged.after ?? installed })
+      }
+      body={
+        unchanged === null
+          ? `You have ${cli} ${installed}. Update to ${required ?? ''} or newer.${failedNote}${waitNote}`
+          : `${stillOutdatedBody({ cli, result: unchanged, command: update.command })}${waitNote}`
+      }
       detail={update.hasFailed ? update.errorTail : null}
       actions={
         <Button
@@ -80,11 +92,11 @@ export const CliUpdateNotice = ({ providerId, autoStart }: Props) => {
           disabled={isBlockedByTurn}
           onClick={start}
         >
-          {update.hasFailed ? 'Retry' : `Update ${cli}`}
+          {update.hasFailed || unchanged !== null ? 'Retry' : `Update ${cli}`}
         </Button>
       }
     >
-      {update.runId !== null && (isUpdating || update.hasFailed) && (
+      {showTerminal && update.runId !== null && (
         <InlineTerminal runId={update.runId} isActive heightClass="h-44" />
       )}
     </Notice>

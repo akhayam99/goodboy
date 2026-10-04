@@ -890,7 +890,7 @@ type SubagentGroupRowsParams = {
   readonly identity: RunIdentity | null;
   readonly isMuted: boolean;
   readonly familyId: string | null;
-  readonly parentLaneId: string;
+  readonly parentLaneId: string | null;
   readonly isChildParentClosed: boolean;
   readonly context: EmitContext;
 };
@@ -994,6 +994,7 @@ type SubagentRowsParams = {
   readonly isMuted: boolean;
   readonly familyId: string | null;
   readonly laneId: string;
+  readonly parentLaneId: string | null;
   readonly showSubagents: boolean;
   readonly isChildParentClosed: boolean;
   readonly context: EmitContext;
@@ -1005,6 +1006,7 @@ const subagentRows = ({
   isMuted,
   familyId,
   laneId,
+  parentLaneId,
   showSubagents,
   isChildParentClosed,
   context,
@@ -1015,7 +1017,7 @@ const subagentRows = ({
       identity,
       isMuted,
       familyId,
-      parentLaneId: laneId,
+      parentLaneId,
       isChildParentClosed,
       context,
     });
@@ -1103,6 +1105,7 @@ const agentRows = ({
         isMuted,
         familyId,
         laneId: childLaneId,
+        parentLaneId: headId ?? groupId,
         showSubagents,
         isChildParentClosed,
         context,

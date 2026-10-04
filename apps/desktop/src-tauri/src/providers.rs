@@ -36,6 +36,7 @@ pub struct ProviderStatus {
     pub available: bool,
     pub version: Option<String>,
     pub error: Option<String>,
+    pub path: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -78,6 +79,13 @@ fn detect_binary(id: &str, binary: &str) -> ProviderStatus {
 }
 
 fn detect_binary_within(id: &str, binary: &str, timeout: Duration) -> ProviderStatus {
+    ProviderStatus {
+        path: path_env::which(binary),
+        ..probe_binary(id, binary, timeout)
+    }
+}
+
+fn probe_binary(id: &str, binary: &str, timeout: Duration) -> ProviderStatus {
     let mut child = match path_env::command(binary)
         .arg("--version")
         .stdout(Stdio::piped())
@@ -92,6 +100,7 @@ fn detect_binary_within(id: &str, binary: &str, timeout: Duration) -> ProviderSt
                 available: false,
                 version: None,
                 error: Some(err.to_string()),
+                path: None,
             };
         }
     };
@@ -114,6 +123,7 @@ fn detect_binary_within(id: &str, binary: &str, timeout: Duration) -> ProviderSt
                         available: true,
                         version: Some(stdout),
                         error: None,
+                        path: None,
                     };
                 } else {
                     return ProviderStatus {
@@ -122,6 +132,7 @@ fn detect_binary_within(id: &str, binary: &str, timeout: Duration) -> ProviderSt
                         available: false,
                         version: None,
                         error: Some(format!("exited with code {}", status.code().unwrap_or(-1))),
+                        path: None,
                     };
                 }
             }
@@ -134,6 +145,7 @@ fn detect_binary_within(id: &str, binary: &str, timeout: Duration) -> ProviderSt
                         available: false,
                         version: None,
                         error: Some("detection timed out".to_string()),
+                        path: None,
                     };
                 }
                 std::thread::sleep(POLL_INTERVAL);
@@ -145,6 +157,7 @@ fn detect_binary_within(id: &str, binary: &str, timeout: Duration) -> ProviderSt
                     available: false,
                     version: None,
                     error: Some(err.to_string()),
+                    path: None,
                 };
             }
         }

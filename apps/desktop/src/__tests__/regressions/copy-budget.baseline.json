@@ -96,5 +96,25 @@
     "shared/components/conceptIcons.ts": 1
   },
   "retired-cancel-turn": {},
-  "retired-verbose": {}
+  "retired-verbose": {},
+  "retired-spend-limit": {},
+  "retired-budget-rules": {},
+  "retired-copy-as-brief": {},
+  "retired-budget-cap": {},
+  "retired-link-plain-folder": {},
+  "retired-link-existing": {},
+  "retired-link-integration": {},
+  "retired-autorun": {},
+  "retired-waiting-on-you": {},
+  "retired-resolve-after-replying": {},
+  "retired-with-a-session": {},
+  "retired-standing-guidance": {},
+  "retired-close-workflow": {},
+  "retired-discard-workflow": {},
+  "retired-detach-project": {},
+  "retired-wipe-local-database": {},
+  "retired-unlink": {},
+  "retired-try-again": {},
+  "retired-your-roles": {},
+  "retired-defaults-page": {}
 }

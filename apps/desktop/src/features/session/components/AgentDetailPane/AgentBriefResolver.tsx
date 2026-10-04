@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { ArrowUp } from 'lucide-react';
-import { Button, Notice } from '@goodboy/ui';
-import type { Agent, Session, SessionId } from '@goodboy/types';
+import { Button, Chip, Notice } from '@goodboy/ui';
+import type { Agent, ResolveThread, Session, SessionId } from '@goodboy/types';
 import { useAppStore, agentPlace } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { PushBanner } from '../../../resolve/components/ReviewFlow/PushBanner';
@@ -10,6 +10,12 @@ import { useReviewEntries } from '../../../resolve/components/ReviewFlow/useRevi
 import { useReviewPush } from '../../../resolve/components/ReviewFlow/useReviewPush';
 import { useReviewCommentController } from '../../../resolve/hooks/useReviewCommentController';
 import type { ResolverBrief } from '../../../resolve/hooks/useResolverBrief';
+import { ResolverBriefGone } from '../../../resolve/ResolverBriefGone';
+import { ResolverCommitLine } from '../../../resolve/ResolverCommitLine';
+import { REVIEW_COMMENT_TONE, resolverBriefWord } from '../../../resolve/reviewCommentState';
+import { withSnapshotComment } from '../../../resolve/snapshotCommentThread';
+import { threadFixSha } from '../../../resolve/threadFixSha';
+import { useIsOnSelectedSource } from '../../../resolve/useIsOnSelectedSource';
 import { openReview } from '../../../review/openReview';
 import { batchChildNotice, RESOLVER_BRIEF_COPY } from '../../../resolve/reviewFlowCopy';
 
@@ -20,14 +26,27 @@ type Props = {
 };
 
 const NO_THREADS: ReadonlyArray<string> = [];
+const NO_THREAD_ROWS: ReadonlyArray<ResolveThread> = [];
 const PUSHABLE = new Set(['accepted', 'replied']);
+const FINISHED = new Set(['pushed', 'resolved', 'skipped']);
 
 export const AgentBriefResolver = ({ session, agent, brief }: Props) => {
   const sessionId = session.id as SessionId;
   const navigate = useAppStore((state) => state.navigate);
   const loadResolveSession = useAppStore((state) => state.loadResolveSession);
-  const { entries } = useReviewEntries({ sessionId });
-  const entry = entries.find((candidate) => candidate.threadId === brief.threadId) ?? null;
+  const isLoaded = useAppStore((state) => state.sessionResolveQueueItems[sessionId] !== undefined);
+  const snapshot = useAppStore(
+    (state) => state.sessionResolveSourceSnapshots[sessionId]?.[brief.threadId],
+  );
+  const threads = useAppStore((state) => state.sessionResolveThreads[sessionId] ?? NO_THREAD_ROWS);
+  const { entries } = useReviewEntries({ sessionId, isSourceScoped: false });
+  const found = entries.find((candidate) => candidate.threadId === brief.threadId) ?? null;
+  const isOnSelected = useIsOnSelectedSource({ sessionId, thread: found?.row.thread ?? null });
+  const entry = useMemo(
+    () =>
+      found === null ? null : { ...found, row: withSnapshotComment({ row: found.row, snapshot }) },
+    [found, snapshot],
+  );
   const controller = useReviewCommentController({
     sessionId,
     entries,
@@ -36,20 +55,43 @@ export const AgentBriefResolver = ({ session, agent, brief }: Props) => {
   const pushIds = useMemo(() => [brief.threadId], [brief.threadId]);
   const push = useReviewPush({ sessionId, threadIds: pushIds });
   const isPushBusy = push.phase.kind === 'preparing' || push.phase.kind === 'pushing';
+  const mountId = brief.attempt.mountTarget?.mountId ?? null;
 
   useEffect(() => {
     void loadResolveSession({ sessionId });
   }, [loadResolveSession, sessionId]);
-
-  if (entry === null) {
-    return null;
-  }
 
   const total = brief.batchThreadIds.length;
   const ordered = [
     brief.threadId,
     ...brief.batchThreadIds.filter((threadId) => threadId !== brief.threadId),
   ];
+  const open = (threadIds: ReadonlyArray<string>): void =>
+    void openReview({ sessionId, destination: { kind: 'threads', mountId, threadIds } });
+
+  if (entry === null) {
+    const thread = threads.find((candidate) => candidate.threadId === brief.threadId) ?? null;
+    if (!isLoaded) {
+      return (
+        <p role="status" className="text-body text-muted-foreground">
+          {RESOLVER_BRIEF_COPY.loading}
+        </p>
+      );
+    }
+    return (
+      <ResolverBriefGone
+        sessionId={sessionId}
+        mountId={mountId}
+        threadId={brief.threadId}
+        snapshot={snapshot}
+        sha={threadFixSha({ commitShas: thread?.commitShas })}
+      >
+        <Button size="sm" variant="primary" onClick={() => open([brief.threadId])}>
+          {RESOLVER_BRIEF_COPY.openInReview}
+        </Button>
+      </ResolverBriefGone>
+    );
+  }
 
   const batchActions = (
     <Notice
@@ -58,20 +100,7 @@ export const AgentBriefResolver = ({ session, agent, brief }: Props) => {
       title={batchChildNotice({ total })}
       actions={
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            size="sm"
-            variant="primary"
-            onClick={() =>
-              void openReview({
-                sessionId,
-                destination: {
-                  kind: 'threads',
-                  mountId: brief.attempt.mountTarget?.mountId ?? null,
-                  threadIds: ordered,
-                },
-              })
-            }
-          >
+          <Button size="sm" variant="primary" onClick={() => open(ordered)}>
             {`${RESOLVER_BRIEF_COPY.openInReview} (${total})`}
           </Button>
           <Button
@@ -88,22 +117,49 @@ export const AgentBriefResolver = ({ session, agent, brief }: Props) => {
     />
   );
 
-  const pushNow = PUSHABLE.has(entry.state) ? (
-    <Button
-      size="sm"
-      variant="primary"
-      isBusy={isPushBusy}
-      disabled={isPushBusy || push.phase.kind === 'confirm'}
-      onClick={() => void push.arm({ isRetry: false })}
-    >
-      <ArrowUp size={ICON_SIZE.control} aria-hidden />
-      {RESOLVER_BRIEF_COPY.pushNow}
-    </Button>
-  ) : null;
+  const isPushable = PUSHABLE.has(entry.state);
+  const prefix =
+    isPushable && isOnSelected ? (
+      <Button
+        size="sm"
+        variant="primary"
+        isBusy={isPushBusy}
+        disabled={isPushBusy || push.phase.kind === 'confirm'}
+        onClick={() => void push.arm({ isRetry: false })}
+      >
+        <ArrowUp size={ICON_SIZE.control} aria-hidden />
+        {RESOLVER_BRIEF_COPY.pushNow}
+      </Button>
+    ) : isPushable || FINISHED.has(entry.state) ? (
+      <Button
+        size="sm"
+        variant={isPushable ? 'primary' : 'ghost'}
+        onClick={() => open([brief.threadId])}
+      >
+        {RESOLVER_BRIEF_COPY.openInReview}
+      </Button>
+    ) : null;
+
+  const word =
+    entry.view === null ? resolverBriefWord({ state: entry.state, row: entry.row }) : entry.word;
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
       {brief.isBatch ? null : <PushBanner sessionId={sessionId} push={push} />}
+      <div className="flex min-w-0 flex-col gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <Chip tone={REVIEW_COMMENT_TONE[entry.state]} size="3xs" label={word} />
+        </div>
+        <ResolverCommitLine
+          sessionId={sessionId}
+          mountId={mountId}
+          sha={threadFixSha({
+            commitShas: entry.row.thread.commitShas,
+            integratedSha: entry.row.item.integratedSha,
+          })}
+          isFolded={entry.facts?.folded != null}
+        />
+      </div>
       <ReviewComment
         sessionId={sessionId}
         entry={entry}
@@ -114,7 +170,7 @@ export const AgentBriefResolver = ({ session, agent, brief }: Props) => {
         onRetryDelivery={() => void push.arm({ isRetry: true })}
         onSync={push.askSync}
         variant="brief"
-        {...(brief.isBatch ? { actionsReplacement: batchActions } : { actionsPrefix: pushNow })}
+        {...(brief.isBatch ? { actionsReplacement: batchActions } : { actionsPrefix: prefix })}
       />
     </div>
   );

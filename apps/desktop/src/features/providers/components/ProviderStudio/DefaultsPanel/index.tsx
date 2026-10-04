@@ -121,7 +121,6 @@ export const DefaultsPanel = ({ workspaceId, focusSection }: Props) => {
       scroll="body"
       animationClassName={SETTINGS_PANE_ENTRY}
       title={NAMES.models}
-      {...(pinnedCount > 0 && { meta: `${pinnedCount} pinned` })}
       actions={
         <OverflowMenu
           label="Models actions"
@@ -156,7 +155,7 @@ export const DefaultsPanel = ({ workspaceId, focusSection }: Props) => {
       <section aria-label="Providers" className="flex flex-col gap-1">
         <Eyebrow label="Providers" />
         {connectedProviderIds.length === 0 ? (
-          <FieldRow label="Providers, in order">
+          <FieldRow label="When a provider is out">
             <FilledEmptyState
               icon={CONCEPT_ICONS.providers}
               tone={CONCEPT_TONE.providers}
