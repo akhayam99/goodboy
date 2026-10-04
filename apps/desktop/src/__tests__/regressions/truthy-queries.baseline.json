@@ -1,7 +1,7 @@
 {
   "apps/desktop/src/__tests__/regressions/class-assertions.test.ts": 1,
   "apps/desktop/src/__tests__/regressions/truthy-queries.test.ts": 6,
-  "apps/desktop/src/app/components/AppTopBar/LimitsStrip/index.test.tsx": 2,
+  "apps/desktop/src/app/components/AppTopBar/LimitsStrip/index.test.tsx": 1,
   "apps/desktop/src/features/chat/components/ChatInput/index.test.tsx": 4,
   "apps/desktop/src/features/chat/components/ChatInput/parts/QueuedMessages.test.tsx": 1,
   "apps/desktop/src/features/chat/components/ChatInput/parts/SendControl.test.tsx": 2,
