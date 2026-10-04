@@ -14,7 +14,6 @@ import { WorkspaceDisconnectBand } from './WorkspaceDisconnectBand';
 import { WorkspaceDevProjectBand } from './WorkspaceDevProjectBand';
 import { WorkspaceFieldRow } from './WorkspaceFieldRow';
 import { DEV_PROJECT_SECTION_ID, type WorkspacePage } from './workspacePages';
-import { WorkflowRulesPage } from './WorkflowRulesPage';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -48,8 +47,6 @@ export const WorkspacePageBody = ({
       return <WorkspaceProfileSection workspaceId={workspaceId} />;
     case 'general':
       return <WorkspaceDefaultsGrid workspaceId={workspaceId} />;
-    case 'workflow-rules':
-      return <WorkflowRulesPage workspaceId={workspaceId} requestClose={requestClose} />;
     case 'after-merge':
       return <WorkspaceAfterMergeSection workspaceId={workspaceId} />;
     case 'review-replies':

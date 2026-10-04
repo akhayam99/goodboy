@@ -512,7 +512,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'App and workspace',
-        desc: 'Theme, updates and shortcuts are app-wide. Projects, About you, New sessions, Workflow rules, After merge, Review replies, Permissions and Skills are pages of a workspace.',
+        desc: 'Theme, updates and shortcuts are app-wide. Projects, About you, New sessions, After merge, Review replies, Permissions and Skills are pages of a workspace.',
       },
       {
         term: 'Copy and restore',

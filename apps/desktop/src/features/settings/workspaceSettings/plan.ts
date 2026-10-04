@@ -3,7 +3,11 @@ import type { AppStore } from '../../../store/store';
 import { normalizeWorkspaceProfile } from '../../../shared/utils/normalizeWorkspaceProfile';
 import { editPostedReplyKey } from '../../resolve/editPostedReplySetting';
 import { isWorkspaceOwnedOverride, pageKeys, type WorkspaceSettingField } from '../pageKeys';
-import { WORKSPACE_PAGES, type WorkspacePage } from '../components/SettingsStudio/workspacePages';
+import {
+  PLAN_PAGES,
+  type PlanPage,
+  type WorkspacePage,
+} from '../components/SettingsStudio/workspacePages';
 import { effectiveValue, fieldDef, isChanged, sameValue } from './fields';
 import {
   mergeWrites,
@@ -23,14 +27,12 @@ export type PlanItem = {
 };
 
 export type PagePlan = {
-  readonly page: WorkspacePage;
+  readonly page: PlanPage;
   readonly items: ReadonlyArray<PlanItem>;
 };
 
-const scopePages = ({ scope }: { readonly scope: PlanScope }): ReadonlyArray<WorkspacePage> =>
-  (scope === 'all' ? WORKSPACE_PAGES.map((entry) => entry.id) : [scope]).filter(
-    (page) => pageKeys({ page }).length > 0,
-  );
+const scopePages = ({ scope }: { readonly scope: PlanScope }): ReadonlyArray<PlanPage> =>
+  (scope === 'all' ? PLAN_PAGES : [scope]).filter((page) => pageKeys({ page }).length > 0);
 
 const byPage = ({
   scope,

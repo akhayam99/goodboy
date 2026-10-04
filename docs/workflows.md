@@ -144,10 +144,10 @@ the rules, and can change later from the run's ⋯ menu.
 
 ## Workflow rules
 
-Rules are the workspace defaults every new run starts from. They live in the
-**Rules** tab of the Workflows studio and on the **Workflow rules** page of the
-workspace settings, with the same Restore defaults and Copy from as the other
-pages.
+Rules are the workspace defaults every new run starts from. They live only in the
+**Rules** tab of the Workflows studio; the workspace settings have no page for
+them. The all-pages Restore defaults and Copy from in the workspace settings menu
+still carry them and list them as Workflow rules in the preview.
 
 - **Providers**: a summary of the provider policy in Defaults. Rules do not own it
 - **Autonomy**: Ask before each step, Ask after the plan or Run on its own

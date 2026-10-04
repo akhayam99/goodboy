@@ -3,7 +3,7 @@ import { Checkbox, Chip, EmptyLine, IconButton } from '@goodboy/ui';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import type { PagePlan, PlanItem } from '../../workspaceSettings/plan';
 import type { FlowMode } from './WorkspaceSettingsFlow';
-import { workspacePageEntry } from './workspacePages';
+import { planPageLabel } from './workspacePages';
 
 const STAYS = 'Stays: projects, folders, accounts, permission history.';
 
@@ -53,7 +53,7 @@ export const FlowPlanPreview = ({
       </p>
       <ul className="flex flex-col gap-1">
         {plan.map((page) => {
-          const label = workspacePageEntry({ page: page.page }).label;
+          const label = planPageLabel({ page: page.page });
           const isOpen = expanded.has(page.page);
           const Chevron = isOpen ? ChevronDown : ChevronRight;
           return (
