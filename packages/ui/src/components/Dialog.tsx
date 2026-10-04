@@ -183,7 +183,7 @@ export const Dialog = ({
                   </h2>
                 ) : null}
                 {description ? (
-                  <p id={descId} className="text-xs leading-relaxed text-muted-foreground">
+                  <p id={descId} className="text-label text-muted-foreground">
                     {description}
                   </p>
                 ) : null}

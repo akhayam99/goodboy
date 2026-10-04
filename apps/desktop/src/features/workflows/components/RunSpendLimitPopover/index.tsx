@@ -100,9 +100,7 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
       }
     >
       <PopoverBody>
-        <header className="px-3 pb-1 pt-3 text-label font-semibold text-foreground">
-          Spend cap for this run
-        </header>
+        <header className="px-3 pb-1 pt-3 text-row text-foreground">Spend cap for this run</header>
         <div className="flex flex-col gap-2 px-3 py-2">
           <SpendLimitFields
             amount={amount}

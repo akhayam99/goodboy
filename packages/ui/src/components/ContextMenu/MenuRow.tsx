@@ -36,7 +36,7 @@ export const MenuRow = ({ entry, isExpanded, rowRef, onActivate, onHover, onKeyD
       onKeyDown={onKeyDown}
       className={cn(
         'flex w-full gap-2 rounded-sm px-2 text-left focus-visible:outline-none motion-safe:transition-colors',
-        detail === null ? 'items-center py-1.5' : 'items-start py-1.5',
+        detail === null ? 'items-center py-2' : 'items-start py-2',
         isBlocked
           ? 'cursor-not-allowed text-disabled-foreground focus:bg-hover'
           : entry.isDestructive === true
@@ -62,12 +62,10 @@ export const MenuRow = ({ entry, isExpanded, rowRef, onActivate, onHover, onKeyD
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate">{entry.label}</span>
-        {detail === null ? null : (
-          <span className="text-secondary text-faint-foreground">{detail}</span>
-        )}
+        {detail === null ? null : <span className="text-meta text-faint-foreground">{detail}</span>}
       </span>
       {entry.hint == null ? null : (
-        <kbd className="shrink-0 font-mono text-secondary text-faint-foreground">{entry.hint}</kbd>
+        <kbd className="shrink-0 font-mono text-meta text-faint-foreground">{entry.hint}</kbd>
       )}
       {hasChoices ? (
         <ChevronRight size={12} aria-hidden className="shrink-0 text-faint-foreground" />

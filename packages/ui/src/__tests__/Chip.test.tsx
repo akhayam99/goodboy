@@ -49,7 +49,7 @@ describe('Chip', () => {
     );
 
     expect(classesOf('tiny')).toContain('text-chip');
-    expect(classesOf('small')).toContain('text-secondary');
+    expect(classesOf('small')).toContain('text-meta');
   });
 
   it('never shouts its label', () => {

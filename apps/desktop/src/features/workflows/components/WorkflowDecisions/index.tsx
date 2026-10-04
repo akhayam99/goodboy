@@ -56,7 +56,7 @@ export const WorkflowDecisions = ({ run, steps, tree, highlightedStepId, onHighl
             <ClampedProse
               text={`**${closing.label}** ${closing.reason}`}
               lines={3}
-              className="text-label leading-relaxed text-muted-foreground [&_strong]:font-medium [&_strong]:text-foreground"
+              className="text-label text-muted-foreground [&_strong]:text-foreground"
             />
           </li>
         )}
@@ -78,7 +78,7 @@ export const WorkflowDecisions = ({ run, steps, tree, highlightedStepId, onHighl
               <ClampedProse
                 text={`**${escapeMarkdown({ text: decision.title })}** ${decision.reason}`}
                 lines={3}
-                className="text-label leading-relaxed text-muted-foreground [&_strong]:font-medium [&_strong]:text-foreground"
+                className="text-label text-muted-foreground [&_strong]:text-foreground"
               />
             </li>
           );

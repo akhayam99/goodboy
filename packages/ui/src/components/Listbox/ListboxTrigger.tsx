@@ -26,11 +26,11 @@ export type ListboxTriggerProps = {
 
 const FIELD_SIZE: Record<ListboxSize, string> = {
   sm: 'h-7 px-2 text-label',
-  md: 'h-8 px-2.5 text-body',
+  md: 'h-8 px-3 text-body',
 };
 
 const QUIET_SIZE: Record<ListboxSize, string> = {
-  sm: 'h-6 px-1.5 text-label',
+  sm: 'h-6 px-2 text-label',
   md: 'h-7 px-2 text-body',
 };
 
@@ -57,7 +57,7 @@ const variantClasses = ({
     );
   }
   return cn(
-    'gap-1.5 rounded-md border bg-transparent',
+    'gap-2 rounded-md border bg-transparent',
     FIELD_SIZE[size],
     disabled
       ? 'border-border-soft text-disabled-foreground'
@@ -107,7 +107,7 @@ export const ListboxTrigger = ({
       className,
     )}
   >
-    <span className="flex min-w-0 flex-1 items-center gap-1.5 truncate">{children}</span>
+    <span className="flex min-w-0 flex-1 items-center gap-2 truncate">{children}</span>
     <ChevronDown
       size={12}
       aria-hidden

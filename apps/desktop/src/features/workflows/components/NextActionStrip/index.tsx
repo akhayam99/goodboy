@@ -77,7 +77,7 @@ export const NextActionStrip = ({ sessionId, run, workflow, subjectAgentId, clas
         <ClampedProse
           text={action.sentence}
           lines={2}
-          className="min-w-0 break-words text-label font-medium leading-relaxed text-foreground"
+          className="min-w-0 break-words text-row text-foreground"
         />
         <p className="min-w-0 text-meta leading-relaxed text-muted-foreground">{action.cause}</p>
         {action.kind === 'recover' && <NextActionDetails agentId={action.subjectAgentId} />}

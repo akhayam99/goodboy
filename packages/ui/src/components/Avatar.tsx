@@ -17,7 +17,7 @@ const DIMENSION_CLASS: Record<AvatarSize, string> = {
 
 const FALLBACK_TEXT_CLASS: Record<AvatarSize, string> = {
   xs: 'text-chip',
-  sm: 'text-secondary',
+  sm: 'text-meta',
 };
 
 export const Avatar = ({ url, alt, size = 'sm', initialsSource = alt }: Props) => {

@@ -109,7 +109,7 @@ export const CrumbMenuTrigger = ({ segment, menu, isCurrent, isIconOnly }: Props
         {iconNode}
         <TrailLabel label={segment.label} isCurrent isIconOnly={false} />
         {segment.accessory != null ? (
-          <span className="flex shrink-0 items-center pl-1.5">{segment.accessory}</span>
+          <span className="flex shrink-0 items-center pl-2">{segment.accessory}</span>
         ) : null}
         <span className="flex shrink-0 text-faint-foreground">{chevron}</span>
       </button>
