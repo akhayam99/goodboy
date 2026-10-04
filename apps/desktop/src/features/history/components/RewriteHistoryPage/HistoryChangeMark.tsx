@@ -13,7 +13,7 @@ type Props = {
 };
 
 const MARK =
-  'inline-flex h-5 min-w-7 shrink-0 items-center justify-center gap-px rounded-md border px-1.5 text-secondary tabular-nums whitespace-nowrap';
+  'inline-flex h-5 min-w-7 shrink-0 items-center justify-center gap-px rounded-md border px-2 text-chip tabular-nums whitespace-nowrap';
 
 export const HistoryChangeMark = ({
   action,

@@ -90,7 +90,7 @@ export const ChangelogRail = ({
 
   return (
     <nav className="flex flex-col gap-2 p-3" aria-label="Releases">
-      <div className="flex h-7 items-center gap-1.5 rounded-md border border-border-soft bg-background px-2 focus-within:border-primary">
+      <div className="flex h-7 items-center gap-2 rounded-md border border-border-soft bg-background px-2 focus-within:border-primary">
         <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
         <input
           type="text"
@@ -107,7 +107,7 @@ export const ChangelogRail = ({
           selected={isCatchUpSelected}
           ariaCurrent={isCatchUpSelected}
           onClick={onSelectCatchUp}
-          className="items-center gap-1.5 px-2.5 py-2"
+          className="items-center gap-2 px-3 py-2"
         >
           <History size={ICON_SIZE.row} aria-hidden className="shrink-0 text-primary" />
           <span className="min-w-0 flex-1 truncate text-body text-foreground">
@@ -116,9 +116,7 @@ export const ChangelogRail = ({
         </SelectableRow>
       ) : null}
       {releases.length === 0 ? (
-        <p className="px-1.5 py-2 text-label text-faint-foreground">
-          No release mentions "{query}".
-        </p>
+        <p className="px-2 py-2 text-label text-faint-foreground">No release mentions "{query}".</p>
       ) : null}
       {groups.map((group) => {
         if (group.isOlder && !isSearching) {
@@ -128,7 +126,7 @@ export const ChangelogRail = ({
                 type="button"
                 onClick={() => setIsOlderOpen((open) => !open)}
                 aria-expanded={isOlderOpen}
-                className="flex items-center gap-1 px-1.5 py-1 text-eyebrow text-faint-foreground hover:text-muted-foreground"
+                className="flex items-center gap-1 px-2 py-1 text-eyebrow text-faint-foreground hover:text-muted-foreground"
               >
                 <ChevronRight
                   size={ICON_SIZE.row}
@@ -153,7 +151,7 @@ export const ChangelogRail = ({
         }
         return (
           <div key={group.label} className="flex flex-col gap-0.5">
-            <Eyebrow label={group.label} className="px-1.5 py-1" />
+            <Eyebrow label={group.label} className="px-2 py-1" />
             {group.releases.map((release) => (
               <ReleaseRow
                 key={release.version}

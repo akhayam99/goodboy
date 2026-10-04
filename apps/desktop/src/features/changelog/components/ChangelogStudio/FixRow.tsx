@@ -11,7 +11,7 @@ type Props = {
 
 export const FixRow = ({ fix, showPrRef }: Props) => (
   <div className="flex items-start justify-between gap-2 py-1">
-    <div className="flex min-w-0 items-start gap-1.5">
+    <div className="flex min-w-0 items-start gap-2">
       <Wrench size={ICON_SIZE.row} aria-hidden className="mt-0.5 shrink-0 text-muted-foreground" />
       <span className="text-label text-muted-foreground">{fix.text}</span>
     </div>

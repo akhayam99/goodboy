@@ -9,7 +9,7 @@ export const SupportCellView = ({ cell }: Props) => (
   <span className="flex min-w-0 flex-col">
     <span
       className={cn(
-        'inline-flex items-center gap-1 text-secondary',
+        'inline-flex items-center gap-1 text-meta',
         cell.tone === 'neutral' ? 'text-muted-foreground' : tintClasses(cell.tone).text,
       )}
     >

@@ -18,18 +18,18 @@ export const AgentSpendList = ({ agents }: Props) => {
     <section aria-label="By agent" className="flex flex-col gap-2">
       <span className="text-row text-foreground">By agent</span>
       {agents.length === 0 ? (
-        <p className="text-secondary text-muted-foreground">No agent has spent anything yet.</p>
+        <p className="text-meta text-muted-foreground">No agent has spent anything yet.</p>
       ) : (
-        <ul className="flex flex-col gap-1.5">
+        <ul className="flex flex-col gap-2">
           {visible.map((agent) => (
             <li key={agent.key} className="flex flex-col gap-1">
               <div className="flex min-w-0 items-center gap-2">
                 <AgentKindChip kind={agent.kind} />
                 <span className="min-w-0 truncate text-body text-foreground">{agent.name}</span>
-                <span className="min-w-0 flex-1 truncate text-secondary text-faint-foreground">
+                <span className="min-w-0 flex-1 truncate text-meta text-faint-foreground">
                   {agent.model}
                 </span>
-                <span className="shrink-0 font-mono text-secondary tabular-nums text-foreground">
+                <span className="shrink-0 font-mono text-meta tabular-nums text-foreground">
                   {formatUsd(agent.costUsd)}
                 </span>
               </div>

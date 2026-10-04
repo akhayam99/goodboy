@@ -21,7 +21,7 @@ export const TerminalTabStrip = ({ tabs, activeId, onSelect, onClose, onSpawn }:
   return (
     <ScrollFade
       orientation="horizontal"
-      viewportClassName="flex items-center gap-1 px-2 py-1.5"
+      viewportClassName="flex items-center gap-1 px-2 py-2"
       fadeSize={16}
     >
       {tabs.map((t) => {
@@ -40,7 +40,7 @@ export const TerminalTabStrip = ({ tabs, activeId, onSelect, onClose, onSpawn }:
               }
             }}
             className={cn(
-              'group flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-label motion-safe:transition-colors',
+              'group flex shrink-0 cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-label motion-safe:transition-colors',
               active
                 ? cn(
                     tintClasses('primary').bg,

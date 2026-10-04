@@ -262,7 +262,7 @@ export const WireframeViewerBody = ({
       </div>
       {banner ?? null}
       {stage.status === 'failed' ? (
-        <span role="alert" className="text-secondary text-danger">
+        <span role="alert" className="text-meta text-danger">
           The pages could not be shown: {stage.message}
         </span>
       ) : null}

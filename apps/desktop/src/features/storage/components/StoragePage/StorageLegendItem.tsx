@@ -29,7 +29,7 @@ export const StorageLegendItem = ({ segment }: Props) => (
     <span className="ml-auto tabular-nums text-muted-foreground">
       {formatBytes({ bytes: segment.bytes })}
     </span>
-    <span className="w-20 shrink-0 truncate text-right text-secondary tabular-nums text-faint-foreground">
+    <span className="w-20 shrink-0 truncate text-right text-meta tabular-nums text-faint-foreground">
       {segment.detail}
     </span>
   </button>

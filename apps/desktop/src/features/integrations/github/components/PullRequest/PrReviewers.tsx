@@ -65,10 +65,7 @@ export const PrReviewers = ({
       ) : (
         <ul className="flex basis-full flex-col gap-1">
           {reviewed.map((review) => (
-            <li
-              key={review.author}
-              className="flex items-center gap-1.5 text-label text-foreground"
-            >
+            <li key={review.author} className="flex items-center gap-2 text-label text-foreground">
               <ReviewStateIcon state={review.state} size={ICON_SIZE.row} />
               <Avatar url={review.authorAvatarUrl} alt={review.author} size="xs" />
               <span className="min-w-0 flex-1 truncate">{review.author}</span>
@@ -77,7 +74,7 @@ export const PrReviewers = ({
           {requests.map((request) => (
             <li
               key={`${request.kind}-${request.login}`}
-              className="flex items-center gap-1.5 text-label text-muted-foreground"
+              className="flex items-center gap-2 text-label text-muted-foreground"
             >
               <CircleDashed size={ICON_SIZE.row} aria-hidden className="shrink-0 text-info" />
               <Avatar url={request.avatarUrl} alt={request.login} size="xs" />

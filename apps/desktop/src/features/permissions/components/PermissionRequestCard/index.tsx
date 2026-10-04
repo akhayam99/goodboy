@@ -198,9 +198,9 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
           {item.toolName === 'Bash' ? 'a command' : `${item.toolName}`}
         </span>
         {resolved ? (
-          <span className={`ml-auto text-secondary ${resolvedTint.text}`}>resolved</span>
+          <span className={`ml-auto text-meta ${resolvedTint.text}`}>resolved</span>
         ) : (
-          <span className="ml-auto text-secondary text-muted-foreground">{timestamp}</span>
+          <span className="ml-auto text-meta text-muted-foreground">{timestamp}</span>
         )}
       </div>
       {commandText !== null ? (
@@ -220,7 +220,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
         </span>
       )}
       {canAct && (
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-2">
           <Button size="sm" disabled={busy} onClick={handleAllowAndContinue}>
             Allow and continue
           </Button>
@@ -266,7 +266,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
                   role="menuitem"
                   disabled={busy}
                   onClick={handleAllowSession}
-                  className="flex w-full items-center px-2.5 py-1.5 text-left text-label text-foreground motion-safe:transition-colors hover:bg-hover"
+                  className="flex w-full items-center px-3 py-2 text-left text-label text-foreground motion-safe:transition-colors hover:bg-hover"
                 >
                   Allow all commands in this session
                 </button>
@@ -275,7 +275,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
                   role="menuitem"
                   disabled={busy}
                   onClick={() => setOverflowView('confirmGlobal')}
-                  className="flex w-full items-center px-2.5 py-1.5 text-left text-label text-foreground motion-safe:transition-colors hover:bg-hover"
+                  className="flex w-full items-center px-3 py-2 text-left text-label text-foreground motion-safe:transition-colors hover:bg-hover"
                 >
                   {rule.label} everywhere
                 </button>
@@ -284,7 +284,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
                   role="menuitem"
                   disabled={busy}
                   onClick={() => setOverflowView('denyReason')}
-                  className="flex w-full items-center px-2.5 py-1.5 text-left text-label text-foreground motion-safe:transition-colors hover:bg-hover"
+                  className="flex w-full items-center px-3 py-2 text-left text-label text-foreground motion-safe:transition-colors hover:bg-hover"
                 >
                   Deny and tell {providerLabel ?? 'the agent'} why…
                 </button>
@@ -304,7 +304,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
               />
             )}
             {overflowView === 'denyReason' && (
-              <div className="flex flex-col gap-2 p-2.5">
+              <div className="flex flex-col gap-2 p-3">
                 <PromptField
                   kind="document"
                   label="Why you deny it"

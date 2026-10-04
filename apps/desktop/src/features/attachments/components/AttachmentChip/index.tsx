@@ -145,7 +145,7 @@ export const AttachmentChip = ({
 
   return (
     <div
-      className="group relative flex h-16 max-w-[12rem] items-center gap-2 rounded-md bg-background py-2 pl-2.5 pr-6 ring-1 ring-border-soft"
+      className="group relative flex h-16 max-w-[12rem] items-center gap-2 rounded-md bg-background py-2 pl-3 pr-6 ring-1 ring-border-soft"
       title={title}
     >
       {!canPreview ? (

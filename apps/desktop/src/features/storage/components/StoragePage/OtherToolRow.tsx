@@ -46,7 +46,7 @@ export const OtherToolRow = ({ tool, onReveal }: Props) => {
           {tool.displayPath}
         </span>
       </span>
-      <span className="text-secondary tabular-nums text-muted-foreground">
+      <span className="text-meta tabular-nums text-muted-foreground">
         {formatInteger(tool.sessions)} {tool.sessions === 1 ? meta.noun : `${meta.noun}s`}
       </span>
       <span className="flex min-w-0 flex-col gap-1">
@@ -61,7 +61,7 @@ export const OtherToolRow = ({ tool, onReveal }: Props) => {
           <span className="text-label tabular-nums text-foreground">
             {formatBytes({ bytes: tool.bytes })}
           </span>
-          <span className="truncate text-secondary text-faint-foreground">
+          <span className="truncate text-meta text-faint-foreground">
             {formatBytes({ bytes: tool.goodboyBytes })} from Goodboy sessions
           </span>
         </span>

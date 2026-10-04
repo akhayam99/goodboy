@@ -12,7 +12,7 @@ export const MissingGithubRemoteEmptyState = ({ compact = false, wrapped = true 
       description="This project isn't on GitHub yet. Publish it from the project's git pill to review pull requests and issues here."
       headingLevel={compact ? undefined : 2}
     >
-      <p className="text-secondary text-muted-foreground">
+      <p className="text-meta text-muted-foreground">
         Publishing creates the repository and pushes main. Nothing else is sent.
       </p>
     </IntegrationConnectPanel>

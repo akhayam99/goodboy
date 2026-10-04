@@ -53,7 +53,7 @@ export const MoveReport = ({ sessionId }: Props) => {
         }
       >
         {notes.length > 0 ? (
-          <ul className="flex flex-col gap-1 text-secondary text-muted-foreground">
+          <ul className="flex flex-col gap-1 text-meta text-muted-foreground">
             {notes.map((note) => (
               <li key={note}>{note}</li>
             ))}

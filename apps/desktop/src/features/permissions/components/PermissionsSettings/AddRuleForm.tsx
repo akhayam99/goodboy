@@ -103,7 +103,7 @@ export const AddRuleForm = ({ onAdd }: Props) => {
         />
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-secondary text-muted-foreground">Try</span>
+        <span className="text-meta text-muted-foreground">Try</span>
         {SUGGESTIONS.map((suggestion) => (
           <button
             key={suggestion.command}
@@ -112,7 +112,7 @@ export const AddRuleForm = ({ onAdd }: Props) => {
               setCommand(suggestion.command);
               setDecision(suggestion.decision);
             }}
-            className="rounded-md px-1.5 py-0.5 font-mono text-secondary text-muted-foreground hover:bg-hover hover:text-foreground"
+            className="rounded-md px-2 py-0.5 font-mono text-chip text-muted-foreground hover:bg-hover hover:text-foreground"
           >
             {suggestion.command}
           </button>

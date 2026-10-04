@@ -42,11 +42,11 @@ export const InboxLookupGroup = ({
   }
   return (
     <section aria-label="Not in your inbox" className="flex flex-col gap-0.5 pb-2">
-      <div className="px-2.5 py-1">
+      <div className="px-3 py-1">
         <Eyebrow label="Not in your inbox" />
       </div>
       {state.status === 'loading' ? (
-        <div className="flex h-8 items-center gap-2.5 px-2.5 text-label text-muted-foreground">
+        <div className="flex h-8 items-center gap-3 px-3 text-label text-muted-foreground">
           <WorkNode size="sm" state="running" mark={{ kind: 'dot' }} label="Looking up" />
           {lookingUpText({ code, providers: lookup.loadingProviders })}
         </div>
@@ -64,7 +64,7 @@ export const InboxLookupGroup = ({
               onToggleStar={onToggleStar}
             />
             {secondLine === '' ? null : (
-              <span className="h-4 truncate pl-[122px] text-secondary text-faint-foreground">
+              <span className="h-4 truncate pl-[122px] text-meta text-faint-foreground">
                 {secondLine}
               </span>
             )}

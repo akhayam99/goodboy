@@ -28,7 +28,7 @@ export const ScriptsFilterInput = ({ value, onChange }: Props) => {
   }, []);
 
   return (
-    <div className="flex h-7 w-52 items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 focus-within:ring-2 focus-within:ring-focus-ring">
+    <div className="flex h-7 w-52 items-center gap-2 rounded-md border border-border-soft bg-subtle px-2 focus-within:ring-2 focus-within:ring-focus-ring">
       <Search size={ICON_SIZE.row} className="shrink-0 text-muted-foreground" aria-hidden />
       <input
         ref={inputRef}

@@ -103,9 +103,7 @@ export const ProviderPanel = ({
               />
             </div>
           </div>
-          <p className="text-secondary text-muted-foreground">
-            {budgetScopeNote({ status: budget })}
-          </p>
+          <p className="text-meta text-muted-foreground">{budgetScopeNote({ status: budget })}</p>
         </section>
       ) : (
         <section className="grid grid-cols-3 gap-3">

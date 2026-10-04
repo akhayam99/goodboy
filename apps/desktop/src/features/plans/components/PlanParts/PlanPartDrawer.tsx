@@ -43,7 +43,7 @@ export const PlanPartDrawer = ({ sessionId, planId, index, onClose }: Props) => 
           {carrier === null ? (
             <p className="text-label text-muted-foreground">{row.node.label}</p>
           ) : (
-            <p className="flex min-w-0 items-center gap-1.5 text-label text-muted-foreground">
+            <p className="flex min-w-0 items-center gap-2 text-label text-muted-foreground">
               <span className="min-w-0 truncate">{`${row.node.label} as ${carrier.name}`}</span>
               <button
                 type="button"
@@ -55,12 +55,12 @@ export const PlanPartDrawer = ({ sessionId, planId, index, onClose }: Props) => 
             </p>
           )}
         </div>
-        <section aria-label="Instructions" className="flex min-w-0 flex-col gap-1.5">
+        <section aria-label="Instructions" className="flex min-w-0 flex-col gap-2">
           <SectionHeader label="Instructions" />
           <Markdown text={row.instructions} className="text-body" />
         </section>
         {row.doneWhen.length === 0 ? null : (
-          <section aria-label="Done when" className="flex min-w-0 flex-col gap-1.5">
+          <section aria-label="Done when" className="flex min-w-0 flex-col gap-2">
             <SectionHeader label="Done when" />
             <ul className="flex min-w-0 list-disc flex-col gap-1 pl-5 text-body text-foreground">
               {row.doneWhen.map((check) => (
@@ -70,7 +70,7 @@ export const PlanPartDrawer = ({ sessionId, planId, index, onClose }: Props) => 
           </section>
         )}
         {row.touches.length === 0 ? null : (
-          <section aria-label="Touches" className="flex min-w-0 flex-col gap-1.5">
+          <section aria-label="Touches" className="flex min-w-0 flex-col gap-2">
             <SectionHeader label="Touches" />
             <ul className="flex min-w-0 flex-col gap-0.5 text-code text-muted-foreground">
               {row.touches.map((path) => (
@@ -81,7 +81,7 @@ export const PlanPartDrawer = ({ sessionId, planId, index, onClose }: Props) => 
             </ul>
           </section>
         )}
-        <section aria-label="Routing" className="flex min-w-0 flex-col gap-1.5">
+        <section aria-label="Routing" className="flex min-w-0 flex-col gap-2">
           <SectionHeader label="Routing" />
           <p className="text-body text-foreground">{partRoutingLabel({ row })}</p>
           {proposal === null ? (

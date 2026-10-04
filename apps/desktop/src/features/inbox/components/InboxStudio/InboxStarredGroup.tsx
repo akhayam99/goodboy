@@ -32,13 +32,13 @@ export const InboxStarredGroup = ({
   const hasClosed = rows.some((row) => row.issue.state === 'done');
   return (
     <section aria-label="Starred" className="flex flex-col gap-0.5 pb-2">
-      <div className="flex items-center gap-1.5 px-2.5 pb-1">
+      <div className="flex items-center gap-2 px-3 pb-1">
         <Eyebrow label="Starred" />
-        <span className="text-secondary tabular-nums text-faint-foreground">{rows.length}</span>
+        <span className="text-meta tabular-nums text-faint-foreground">{rows.length}</span>
         <span className="flex-1" />
         {unstarredCount > 0 ? (
           <>
-            <span className="text-secondary text-muted-foreground">
+            <span className="text-meta text-muted-foreground">
               {unstarredCount === 1
                 ? 'Unstarred 1 closed issue'
                 : `Unstarred ${unstarredCount} closed issues`}

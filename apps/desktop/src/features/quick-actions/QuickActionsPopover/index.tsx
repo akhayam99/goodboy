@@ -74,7 +74,7 @@ export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: P
                     {item.label}
                   </span>
                   {item.sublabel ? (
-                    <span className="truncate text-secondary text-muted-foreground">
+                    <span className="truncate text-meta text-muted-foreground">
                       {item.sublabel}
                     </span>
                   ) : null}
@@ -83,7 +83,7 @@ export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: P
                   <AgentKindChip kind={item.trailing.kind} label={item.trailing.label} />
                 ) : null}
                 {item.trailing !== undefined && item.trailing.kind === undefined ? (
-                  <span className="shrink-0 text-secondary uppercase tracking-eyebrow text-muted-foreground">
+                  <span className="shrink-0 text-meta uppercase tracking-eyebrow text-muted-foreground">
                     {item.trailing.label}
                   </span>
                 ) : null}

@@ -33,7 +33,7 @@ export const ScreenRail = ({ entries, current, onOpen }: Props) => (
               selected={isScreen && current?.state === null}
               ariaCurrent={isScreen ? 'page' : undefined}
               onClick={() => onOpen({ screenId: entry.id, state: null })}
-              className="items-center gap-2 px-1.5 py-1 text-body"
+              className="items-center gap-2 px-2 py-1 text-body"
             >
               <WorkNode
                 state={isScreen ? 'ready' : 'queued'}
@@ -58,7 +58,7 @@ export const ScreenRail = ({ entries, current, onOpen }: Props) => (
                           state: state.id === 'default' ? null : state.id,
                         })
                       }
-                      className="px-1.5 py-0.5 text-secondary"
+                      className="px-2 py-0.5 text-meta"
                     >
                       <span className="min-w-0 truncate">{state.label}</span>
                     </SelectableRow>

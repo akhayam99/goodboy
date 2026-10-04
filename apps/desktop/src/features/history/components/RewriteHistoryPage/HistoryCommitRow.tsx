@@ -132,7 +132,7 @@ const HistoryCommitRowView = ({
       className="group relative grid min-h-14 grid-cols-[100px_48px_minmax(0,1fr)] items-start outline-none"
     >
       <span aria-hidden />
-      <span className="flex h-14 flex-col items-end justify-center gap-1 pr-2.5">
+      <span className="flex h-14 flex-col items-end justify-center gap-1 pr-3">
         {mark === null ? null : (
           <HistoryRowMarkList
             mark={mark}
@@ -145,7 +145,7 @@ const HistoryCommitRowView = ({
       </span>
       <span
         className={cn(
-          'relative flex min-h-14 min-w-0 items-start gap-2.5 rounded-lg py-2 pl-2 pr-2.5 transition-colors select-none',
+          'relative flex min-h-14 min-w-0 items-start gap-3 rounded-lg py-2 pl-2 pr-3 transition-colors select-none',
           isDraggable && 'cursor-grab',
           'group-hover:bg-hover group-focus-visible:ring-2 group-focus-visible:ring-inset group-focus-visible:ring-focus-ring',
           isHighlighted && 'bg-selected',
@@ -212,7 +212,7 @@ const HistoryCommitRowView = ({
               </span>
               <span
                 className={cn(
-                  'flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-secondary text-faint-foreground',
+                  'flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-meta text-faint-foreground',
                   isRemoved && 'opacity-70',
                 )}
               >
@@ -236,7 +236,7 @@ const HistoryCommitRowView = ({
               <HistoryRowPlanLine parts={parts} conflictFiles={conflictFiles} />
               {absorbed.length === 0 ? null : <HistoryAbsorbedList absorbed={absorbed} />}
               {showExpanded ? (
-                <span className="mt-1.5 flex flex-col gap-0.5 border-l border-border-soft pl-2.5">
+                <span className="mt-2 flex flex-col gap-0.5 border-l border-border-soft pl-3">
                   {takenIn.map((taken) => (
                     <span
                       key={taken.commit.sha}

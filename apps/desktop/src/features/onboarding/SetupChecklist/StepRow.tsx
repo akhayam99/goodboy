@@ -34,7 +34,7 @@ export const StepRow = ({ id, title, why, done }: Props) => {
       {done || action === undefined ? (
         <span
           className={cn(
-            'flex items-center gap-2 px-1.5 py-1 text-secondary',
+            'flex items-center gap-2 px-2 py-1 text-meta',
             done ? 'text-faint-foreground' : 'text-foreground',
           )}
         >
@@ -57,7 +57,7 @@ export const StepRow = ({ id, title, why, done }: Props) => {
           onClick={activate}
           title={why}
           aria-label={`Set up ${title}`}
-          className="flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left text-secondary text-foreground motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-chip text-foreground motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <span
             aria-hidden

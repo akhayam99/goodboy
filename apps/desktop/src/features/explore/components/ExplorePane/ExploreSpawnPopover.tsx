@@ -112,7 +112,7 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
           type="button"
           onClick={toggle}
           aria-label={`Ask an agent to work on ${entry.name}`}
-          className="rounded-md p-1.5 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
+          className="rounded-md p-2 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
         >
           <CONCEPT_ICONS.agents size={ICON_SIZE.control} aria-hidden />
         </button>
@@ -120,7 +120,7 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
     >
       <div className="flex flex-col gap-1">
         <p className="text-row text-foreground">Ask an agent about this file</p>
-        <p className="truncate font-mono text-secondary text-muted-foreground">{entry.relPath}</p>
+        <p className="truncate font-mono text-meta text-muted-foreground">{entry.relPath}</p>
       </div>
       <div className="flex flex-col gap-2">
         <PromptField
@@ -137,7 +137,7 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
           value={config}
           onChange={setConfig}
           disabled={isSpawning}
-          className="gap-1.5"
+          className="gap-2"
           role={{ label: AGENT_KIND_META.generic.label, hint: 'Fixed by the explore panel' }}
         />
       </div>

@@ -14,7 +14,7 @@ type Props = {
 };
 
 const GHOST =
-  'inline-flex h-5.5 items-center gap-1 rounded-sm px-1.5 text-secondary text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground';
+  'inline-flex h-5.5 items-center gap-1 rounded-sm px-2 text-chip text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground';
 
 export const NotificationRowDetail = ({ notifications }: Props) => {
   const now = useNow(30_000);
@@ -32,9 +32,9 @@ export const NotificationRowDetail = ({ notifications }: Props) => {
   const hasActions = retryAction != null || canReport;
 
   return (
-    <div className="flex flex-col gap-2 pb-2.5 pl-13 pr-2.5">
+    <div className="flex flex-col gap-2 pb-3 pl-13 pr-3">
       {hasBody && (
-        <p className="whitespace-pre-wrap break-words text-xs leading-relaxed text-muted-foreground">
+        <p className="whitespace-pre-wrap break-words text-label text-muted-foreground">
           {latest.body}
         </p>
       )}
@@ -44,7 +44,7 @@ export const NotificationRowDetail = ({ notifications }: Props) => {
             <li
               key={entry.id}
               className={cn(
-                'relative flex h-5.5 items-center justify-between gap-3 pl-4 text-secondary text-muted-foreground',
+                'relative flex h-5.5 items-center justify-between gap-3 pl-4 text-meta text-muted-foreground',
                 'before:absolute before:left-0 before:top-0 before:h-1/2 before:w-2.5 before:rounded-bl-md before:border-b before:border-l before:border-border',
                 index < older.length - 1 &&
                   'after:absolute after:left-0 after:top-0 after:h-full after:border-l after:border-border',
@@ -63,7 +63,7 @@ export const NotificationRowDetail = ({ notifications }: Props) => {
         </ul>
       )}
       {hasActions && (
-        <div className="-ml-1.5 flex items-center gap-1">
+        <div className="-ml-2 flex items-center gap-1">
           {retryAction != null && (
             <button
               type="button"

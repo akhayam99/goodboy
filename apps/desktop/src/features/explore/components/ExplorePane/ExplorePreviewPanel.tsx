@@ -172,7 +172,7 @@ export const ExplorePreviewPanel = ({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-1 text-label text-muted-foreground">
-        <p className="truncate font-mono text-secondary">{entry.relPath}</p>
+        <p className="truncate font-mono text-meta">{entry.relPath}</p>
         <div className="flex flex-wrap items-center gap-2">
           <span>{sizeLabel}</span>
           <span>{modifiedLabel}</span>

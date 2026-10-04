@@ -1168,7 +1168,7 @@ export const WireframeFlowOverview = ({
               x={box.x + box.width / 2}
               y={box.y + box.height / 2 + 4}
               textAnchor="middle"
-              className="fill-foreground text-secondary"
+              className="fill-foreground text-meta"
             >
               {box.text}
               {box.text === box.title ? null : <title>{box.title}</title>}

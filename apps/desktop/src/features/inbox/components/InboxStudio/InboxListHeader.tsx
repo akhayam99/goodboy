@@ -47,7 +47,7 @@ export const InboxListHeader = ({
           onClick={onClearSession}
         />
       ) : null}
-      <div className="flex h-7 w-[200px] min-w-0 items-center gap-1.5 rounded-md border border-border-soft bg-background px-2 focus-within:border-primary">
+      <div className="flex h-7 w-[200px] min-w-0 items-center gap-2 rounded-md border border-border-soft bg-background px-2 focus-within:border-primary">
         <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
         <input
           ref={searchRef}
@@ -84,7 +84,7 @@ export const InboxListHeader = ({
               onClick={filters.toggle}
               aria-expanded={filters.open}
               className={cn(
-                'flex h-7 items-center gap-1.5 rounded-md border border-border-soft px-2 text-label text-muted-foreground hover:bg-hover hover:text-foreground',
+                'flex h-7 items-center gap-2 rounded-md border border-border-soft px-2 text-label text-muted-foreground hover:bg-hover hover:text-foreground',
                 filters.open && 'bg-selected text-foreground',
               )}
             >

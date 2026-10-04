@@ -16,7 +16,7 @@ export const StorageCheckAgain = () => {
       reportError({ title: "Couldn't read storage usage", error }),
     );
   return (
-    <span className="flex items-center gap-2 text-secondary text-faint-foreground">
+    <span className="flex items-center gap-2 text-meta text-faint-foreground">
       {checkedAt === null ? null : <span>Checked {formatAge({ from: checkedAt, now })}</span>}
       <Button variant="ghost" size="sm" onClick={onCheck} isBusy={isLoading} busyLabel="Checking">
         <RefreshCw size={ICON_SIZE.row} aria-hidden />

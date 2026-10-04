@@ -125,7 +125,7 @@ export const WireframeWorkspace = ({
           role="status"
           title={`You are viewing v${viewed.revision} of ${artifact.revision}.`}
           actions={
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center gap-2">
               <Button variant="ghost" size="sm" onClick={() => setViewing(null)}>
                 Back to v{artifact.revision}
               </Button>
@@ -158,12 +158,12 @@ export const WireframeWorkspace = ({
         />
       )}
       {replacer.pending === null && replacer.error !== null ? (
-        <span role="alert" className="text-secondary text-danger">
+        <span role="alert" className="text-meta text-danger">
           {replacer.error}
         </span>
       ) : null}
       {iteration.restoreError === null ? null : (
-        <span role="alert" className="text-secondary text-danger">
+        <span role="alert" className="text-meta text-danger">
           {iteration.restoreError}
         </span>
       )}

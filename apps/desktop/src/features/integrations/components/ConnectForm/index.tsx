@@ -62,7 +62,7 @@ const ConfigFieldInput = ({
   readonly field: ConnectConfigField;
   readonly isDisabled: boolean;
 }) => (
-  <div className="flex min-w-0 flex-col gap-1.5">
+  <div className="flex min-w-0 flex-col gap-2">
     <label htmlFor={field.id} className="text-label font-medium text-foreground">
       {field.label}
     </label>
@@ -77,9 +77,7 @@ const ConfigFieldInput = ({
       autoCorrect="off"
       spellCheck={false}
     />
-    {field.hint != null ? (
-      <p className="text-2xs leading-relaxed text-muted-foreground">{field.hint}</p>
-    ) : null}
+    {field.hint != null ? <p className="text-meta text-muted-foreground">{field.hint}</p> : null}
   </div>
 );
 
@@ -153,7 +151,7 @@ export const ConnectForm = ({
       ) : null}
       {credentialId === null ? guide : null}
       {credentialId === null ? (
-        <div className="flex min-w-0 flex-col gap-1.5">
+        <div className="flex min-w-0 flex-col gap-2">
           <label htmlFor={tokenId} className="text-label font-medium text-foreground">
             {tokenLabel}
           </label>
@@ -174,7 +172,7 @@ export const ConnectForm = ({
               href={tokenLink.href}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex w-fit items-center gap-1 text-secondary text-muted-foreground hover:text-foreground"
+              className="inline-flex w-fit items-center gap-1 text-meta text-muted-foreground hover:text-foreground"
             >
               {tokenLink.label} <ExternalLink size={10} aria-hidden />
             </a>
@@ -187,7 +185,7 @@ export const ConnectForm = ({
           open={isConfigOpen}
           onOpenChange={setIsConfigOpen}
           trigger={
-            <span className="text-secondary font-normal text-muted-foreground">
+            <span className="text-meta font-normal text-muted-foreground">
               {config.disclosureLabel ?? 'Advanced'}
             </span>
           }
@@ -196,7 +194,7 @@ export const ConnectForm = ({
         </Collapsible>
       ) : null}
       {error != null ? (
-        <p role="alert" className="text-2xs leading-relaxed text-danger">
+        <p role="alert" className="text-meta text-danger">
           {error}
         </p>
       ) : null}
@@ -205,10 +203,10 @@ export const ConnectForm = ({
           open={isNoteOpen}
           onOpenChange={setIsNoteOpen}
           trigger={
-            <span className="text-secondary font-normal text-muted-foreground">{note.label}</span>
+            <span className="text-meta font-normal text-muted-foreground">{note.label}</span>
           }
         >
-          <div className="text-2xs leading-relaxed text-muted-foreground">{note.body}</div>
+          <div className="text-meta text-muted-foreground">{note.body}</div>
         </Collapsible>
       ) : null}
       <div className="flex justify-end">

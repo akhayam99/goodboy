@@ -46,13 +46,13 @@ export const GitlabMrStrip = ({ sessionId, onOpenStudio }: Props) => {
               <span className="inline-flex items-center gap-1 font-medium">
                 <GitMerge size={11} aria-hidden />!{mr.iid}
               </span>
-              <span className="text-secondary text-muted-foreground">{mr.state}</span>
+              <span className="text-meta text-muted-foreground">{mr.state}</span>
               {mr.draft ? (
                 <span
                   className={cn(
                     'rounded-sm',
                     tintClasses('warning').bg,
-                    'px-1 py-px text-chip font-medium uppercase tracking-eyebrow text-warning',
+                    'px-1 py-px text-eyebrow text-warning',
                   )}
                 >
                   draft
@@ -60,7 +60,7 @@ export const GitlabMrStrip = ({ sessionId, onOpenStudio }: Props) => {
               ) : null}
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-2">
               <GitMerge size={ICON_SIZE.row} aria-hidden />
               <span>No MR yet</span>
             </span>
@@ -77,7 +77,7 @@ export const GitlabMrStrip = ({ sessionId, onOpenStudio }: Props) => {
         />
       </div>
       {error ? (
-        <span className="px-1 text-secondary text-danger" title={error}>
+        <span className="px-1 text-meta text-danger" title={error}>
           {error}
         </span>
       ) : null}

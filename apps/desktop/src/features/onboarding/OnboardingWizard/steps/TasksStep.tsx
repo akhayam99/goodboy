@@ -63,7 +63,7 @@ export const TasksStep = ({
           </IntegrationChoiceRow>
         ))}
       </ul>
-      <p className="text-secondary text-faint-foreground">More in Settings › Integrations.</p>
+      <p className="text-meta text-faint-foreground">More in Settings › Integrations.</p>
     </div>
   );
 };

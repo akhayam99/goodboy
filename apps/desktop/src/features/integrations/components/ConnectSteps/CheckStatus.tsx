@@ -12,10 +12,7 @@ type Props = {
 export const CheckStatus = ({ status, checkingLabel, okLabel, error }: Props) => {
   if (status === 'checking') {
     return (
-      <span
-        role="status"
-        className="flex items-center gap-1.5 text-secondary text-muted-foreground"
-      >
+      <span role="status" className="flex items-center gap-1 text-meta text-muted-foreground">
         <StatusDot tone="info" size="sm" pulsing />
         {checkingLabel}
       </span>
@@ -23,7 +20,7 @@ export const CheckStatus = ({ status, checkingLabel, okLabel, error }: Props) =>
   }
   if (status === 'ok' && okLabel !== null) {
     return (
-      <span role="status" className="flex items-center gap-1.5 text-secondary text-success">
+      <span role="status" className="flex items-center gap-1 text-meta text-success">
         <Check size={ICON_SIZE.row} aria-hidden />
         {okLabel}
       </span>
@@ -31,7 +28,7 @@ export const CheckStatus = ({ status, checkingLabel, okLabel, error }: Props) =>
   }
   if (status === 'error' && error !== null) {
     return (
-      <span role="alert" className="flex items-start gap-1.5 text-secondary text-danger">
+      <span role="alert" className="flex items-start gap-1 text-meta text-danger">
         <ShieldAlert size={ICON_SIZE.row} aria-hidden className="mt-0.5 shrink-0" />
         {error}
       </span>

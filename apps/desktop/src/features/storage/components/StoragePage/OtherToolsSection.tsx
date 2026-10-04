@@ -40,13 +40,13 @@ export const OtherToolsSection = () => {
         label="Other tools"
         icon={<Wrench size={ICON_SIZE.row} aria-hidden />}
         meta={
-          <span className="flex items-center gap-1 text-secondary text-faint-foreground">
+          <span className="flex items-center gap-1 text-meta text-faint-foreground">
             <Lock size={ICON_SIZE.control} aria-hidden />
             Read only
           </span>
         }
         action={
-          <span className="text-secondary text-faint-foreground">
+          <span className="text-meta text-faint-foreground">
             {isMeasuring && shown.length === 0
               ? 'Measuring…'
               : `${formatBytes({ bytes: total })} · not counted in what can go`}
@@ -63,7 +63,7 @@ export const OtherToolsSection = () => {
         )}
         <BandRow>
           <Info size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
-          <span className="text-secondary text-faint-foreground">
+          <span className="text-meta text-faint-foreground">
             Goodboy reads sizes and folder names, never the files inside. These tools keep their own
             history, so nothing here is offered for cleanup. Tools under 100 MB are left out.
           </span>

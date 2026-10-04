@@ -128,7 +128,7 @@ export const FirstSessionStep = ({
               tabIndex={isSelected ? 0 : -1}
               onClick={() => setChoice(id)}
               className={cn(
-                'flex min-w-0 flex-col items-start gap-1 rounded-lg border px-3 py-2.5 text-left motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+                'flex min-w-0 flex-col items-start gap-1 rounded-lg border px-3 py-3 text-left motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
                 isSelected
                   ? 'border-border-strong bg-selected'
                   : 'border-border-soft hover:bg-hover',
@@ -140,7 +140,7 @@ export const FirstSessionStep = ({
                 className={isSelected ? 'text-primary' : 'text-muted-foreground'}
               />
               <span className="text-row text-foreground">{meta.title}</span>
-              <span className="text-secondary text-muted-foreground">{meta.line}</span>
+              <span className="text-meta text-muted-foreground">{meta.line}</span>
             </button>
           );
         })}
@@ -181,13 +181,13 @@ export const FirstSessionStep = ({
                 <span className="text-label text-muted-foreground">Scout · Auto</span>
                 <Button size="sm" disabled={!canStart} isBusy={busy} onClick={start}>
                   Start Scout
-                  <KbdPill aria-hidden className="h-4 min-w-4 text-secondary">
+                  <KbdPill aria-hidden className="h-4 min-w-4 text-meta">
                     {shortcutGlyphs('composer.submit')}
                   </KbdPill>
                 </Button>
               </div>
             </div>
-            <p className="text-secondary text-faint-foreground">
+            <p className="text-meta text-faint-foreground">
               Scout reads your project and changes nothing.
             </p>
           </div>

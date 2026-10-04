@@ -28,7 +28,7 @@ export const DraftBanner = ({
         role="status"
         title={`v${draft.toRevision} is ready.`}
         actions={
-          <span className="flex items-center gap-1.5">
+          <span className="flex items-center gap-2">
             <Button
               variant="secondary"
               size="sm"
@@ -55,7 +55,7 @@ export const DraftBanner = ({
       title={`v${draft.fromRevision + 1} was not kept. ${draft.reason} You are still on v${currentRevision}.`}
       {...(isOpen && draft.detail !== null ? { body: draft.detail } : {})}
       actions={
-        <span className="flex items-center gap-1.5">
+        <span className="flex items-center gap-2">
           <Button variant="secondary" size="sm" onClick={onAskAgain}>
             Ask again
           </Button>

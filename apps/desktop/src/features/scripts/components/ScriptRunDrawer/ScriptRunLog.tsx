@@ -53,11 +53,11 @@ export const ScriptRunLog = ({ stdout, stderr, placeholder }: Props) => {
         onViewportScroll={onViewportScroll}
       >
         {lines.length === 0 && placeholder !== null ? (
-          <p className="text-secondary text-muted-foreground">{placeholder}</p>
+          <p className="text-meta text-muted-foreground">{placeholder}</p>
         ) : (
           <pre
             aria-label="Script output"
-            className="flex flex-col whitespace-pre-wrap break-all font-mono text-2xs leading-relaxed text-foreground"
+            className="flex flex-col whitespace-pre-wrap break-all font-mono text-meta text-foreground"
           >
             {lines.map((line, index) =>
               line.stream === 'stderr' ? (

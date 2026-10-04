@@ -23,12 +23,12 @@ export const PairingCode = ({ info, loading, error, remaining, total, onMint }: 
   if (loading && info === null) {
     return (
       <div
-        className="flex flex-col items-center gap-3.5"
+        className="flex flex-col items-center gap-3"
         role="status"
         aria-label="Generating pairing code"
       >
         <Skeleton className="size-[244px] rounded-lg" />
-        <div className="flex w-[244px] flex-col items-center gap-1.5">
+        <div className="flex w-[244px] flex-col items-center gap-2">
           <Skeleton className="h-1.5 w-full rounded-full" />
           <Skeleton className="h-3 w-24 rounded-sm" />
         </div>
@@ -50,12 +50,12 @@ export const PairingCode = ({ info, loading, error, remaining, total, onMint }: 
   }
   return (
     <>
-      <div className="flex flex-col items-center gap-3.5">
+      <div className="flex flex-col items-center gap-3">
         <div
-          className="size-[244px] rounded-lg border border-border-soft bg-white p-3.5 shadow-lg [&>svg]:h-full [&>svg]:w-full"
+          className="size-[244px] rounded-lg border border-border-soft bg-white p-4 shadow-lg [&>svg]:h-full [&>svg]:w-full"
           dangerouslySetInnerHTML={{ __html: info.svg }}
         />
-        <div className="flex w-[244px] flex-col items-center gap-1.5">
+        <div className="flex w-[244px] flex-col items-center gap-2">
           <div
             className="h-1.5 w-full overflow-hidden rounded-full bg-border-soft"
             role="progressbar"
@@ -71,17 +71,17 @@ export const PairingCode = ({ info, loading, error, remaining, total, onMint }: 
               style={{ width: `${(Math.min(remaining, total) / total) * 100}%` }}
             />
           </div>
-          <span className="text-secondary font-semibold tabular-nums text-muted-foreground">
+          <span className="text-meta font-semibold tabular-nums text-muted-foreground">
             Expires in {remaining}s
           </span>
         </div>
       </div>
 
-      <div className="flex flex-col items-center gap-2.5">
+      <div className="flex flex-col items-center gap-3">
         <Button variant="secondary" size="sm" onClick={onMint}>
           <RefreshCw size={ICON_SIZE.row} aria-hidden /> New code
         </Button>
-        <p className="max-w-[18rem] text-center text-secondary text-muted-foreground">
+        <p className="max-w-[18rem] text-center text-meta text-muted-foreground">
           A new code is minted automatically when this one expires.
         </p>
       </div>

@@ -25,7 +25,7 @@ export const StarredSnapshotRow = ({ issue, recordKey, selected, onSelect, onUns
       data-inbox-key={recordKey}
       data-selected={selected}
       className={cn(
-        'group relative grid h-8 grid-cols-[6px_14px_76px_minmax(0,1fr)_auto_48px] items-center gap-2.5 rounded-md px-2.5 text-muted-foreground motion-safe:transition-colors',
+        'group relative grid h-8 grid-cols-[6px_14px_76px_minmax(0,1fr)_auto_48px] items-center gap-3 rounded-md px-3 text-muted-foreground motion-safe:transition-colors',
         selected ? 'bg-selected text-foreground' : 'hover:bg-hover hover:text-foreground',
       )}
     >
@@ -42,7 +42,7 @@ export const StarredSnapshotRow = ({ issue, recordKey, selected, onSelect, onUns
       <span aria-hidden className="pointer-events-none relative flex">
         <IntegrationGlyph provider={issue.provider} size="xs" useBrandColor />
       </span>
-      <span className="pointer-events-none relative truncate font-mono text-secondary tabular-nums text-faint-foreground">
+      <span className="pointer-events-none relative truncate font-mono text-meta tabular-nums text-faint-foreground">
         {issue.identifier}
       </span>
       <span
@@ -53,7 +53,7 @@ export const StarredSnapshotRow = ({ issue, recordKey, selected, onSelect, onUns
       >
         {issue.title}
       </span>
-      <span className="pointer-events-none relative flex items-center gap-1 text-secondary">
+      <span className="pointer-events-none relative flex items-center gap-1 text-meta">
         {isMissing ? (
           <>
             <AlertTriangle size={ICON_SIZE.control} aria-hidden className="text-warning" />

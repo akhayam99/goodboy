@@ -159,7 +159,7 @@ export const CapEditor = ({
           </Button>
         ) : null}
         {currentCapUsd !== null ? (
-          <span className="ml-auto text-secondary text-muted-foreground tabular-nums">
+          <span className="ml-auto text-meta text-muted-foreground tabular-nums">
             current {formatUsd(currentCapUsd)}
           </span>
         ) : null}
@@ -195,7 +195,7 @@ export const CapEditor = ({
                 Update threshold
               </Button>
             </div>
-            <p className="text-secondary text-muted-foreground">
+            <p className="text-meta text-muted-foreground">
               At this share of the cap Goodboy warns you and routes the next turn to another
               provider. If none has room, work continues here.
             </p>

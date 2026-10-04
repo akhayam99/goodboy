@@ -63,21 +63,21 @@ export const ReviewerPicker = ({
   return (
     <AnchoredPopover
       dropdown={dropdown}
-      className="flex flex-col gap-1 p-1.5"
+      className="flex flex-col gap-1 p-2"
       trigger={
         <button
           type="button"
           onClick={toggle}
           title="Request review"
           aria-label="Request review"
-          className="inline-flex items-center gap-0.5 rounded-md border border-border-soft px-1.5 py-0.5 text-chip font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+          className="inline-flex items-center gap-0.5 rounded-md border border-border-soft px-2 py-0.5 text-chip font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
         >
           <Plus size={11} aria-hidden />
           Add
         </button>
       }
     >
-      <div className="flex items-center gap-1.5 px-1.5 py-1">
+      <div className="flex items-center gap-2 px-2 py-1">
         <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
         <input
           autoFocus
@@ -88,9 +88,9 @@ export const ReviewerPicker = ({
         />
       </div>
       {isLoading ? (
-        <div className="flex flex-col gap-1 px-1.5 py-1" role="status" aria-label="Loading">
+        <div className="flex flex-col gap-1 px-2 py-1" role="status" aria-label="Loading">
           {[0, 1, 2].map((index) => (
-            <div key={index} className="flex items-center gap-1.5">
+            <div key={index} className="flex items-center gap-2">
               <Skeleton className="size-4 shrink-0 rounded-full" />
               <Skeleton className="h-3 w-24" />
             </div>
@@ -114,7 +114,7 @@ export const ReviewerPicker = ({
                     close();
                     setQuery('');
                   }}
-                  className="flex w-full items-center gap-1.5 rounded-md px-1.5 py-1 text-left text-label text-foreground hover:bg-hover"
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-label text-foreground hover:bg-hover"
                 >
                   <Avatar url={null} alt={login} size="xs" />
                   <span className="min-w-0 flex-1 truncate">{login}</span>

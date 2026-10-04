@@ -21,7 +21,7 @@ export const LaunchMountRow = ({ mount, selectedId, disabled, onChange }: Props)
   const ProjectIcon = CONCEPT_ICONS.projectRepo;
 
   return (
-    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 px-2 text-secondary text-muted-foreground">
+    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 px-2 text-meta text-muted-foreground">
       <Listbox
         trigger="chip"
         size="sm"

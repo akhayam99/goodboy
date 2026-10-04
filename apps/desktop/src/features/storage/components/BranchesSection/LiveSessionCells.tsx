@@ -19,7 +19,7 @@ export const LiveSessionCells = ({ session }: Props) => {
           type="button"
           title={title}
           onClick={() => navigate({ to: sessionPlace({ sessionId: session.id as SessionId }) })}
-          className="flex min-w-0 items-center gap-1.5 rounded-sm text-left text-label text-foreground hover:underline"
+          className="flex min-w-0 items-center gap-2 rounded-sm text-left text-label text-foreground hover:underline"
         >
           <span
             aria-hidden

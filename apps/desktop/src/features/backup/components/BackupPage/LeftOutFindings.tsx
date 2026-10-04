@@ -18,7 +18,7 @@ export const LeftOutFindings = ({ findings, leaveOut, onChange }: Props) => {
       placement="inline"
       title={`${findings.length} security ${findings.length === 1 ? 'finding is' : 'findings are'} left out of the export.`}
       body={
-        <ul className="flex flex-col gap-1.5">
+        <ul className="flex flex-col gap-2">
           {findings.map((finding) => {
             const isLeftOut = leaveOut.includes(finding.fingerprint);
             return (
@@ -28,7 +28,7 @@ export const LeftOutFindings = ({ findings, leaveOut, onChange }: Props) => {
               >
                 <span className="flex min-w-0 flex-col gap-0.5">
                   <span className="font-mono text-foreground">{finding.subjectId}</span>
-                  <span className="text-secondary text-muted-foreground">
+                  <span className="text-meta text-muted-foreground">
                     {SECRET_KIND_LABEL[finding.secretKind as keyof typeof SECRET_KIND_LABEL] ??
                       'Token'}{' '}
                     ending ••••{finding.last4}

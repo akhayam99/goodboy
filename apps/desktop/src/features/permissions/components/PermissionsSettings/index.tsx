@@ -108,7 +108,7 @@ export const PermissionsSettings = ({ workspaceId, renderDefaultRow = asIs }: Pr
           <PanelLoading label="Loading rules" />
         ) : null}
         {!rules.isLoading && rules.error === null && rules.rules.length === 0 ? (
-          <p className="text-secondary text-muted-foreground">No rules yet</p>
+          <p className="text-meta text-muted-foreground">No rules yet</p>
         ) : null}
         {rules.rules.length > 0 ? (
           <div className={cn('flex flex-col rounded-lg bg-subtle p-1', STRIPED_LIST)}>
@@ -131,7 +131,7 @@ export const PermissionsSettings = ({ workspaceId, renderDefaultRow = asIs }: Pr
         open={isSupportOpen}
         onOpenChange={setIsSupportOpen}
         trigger={
-          <span className="text-secondary text-muted-foreground">
+          <span className="text-meta text-muted-foreground">
             Some providers can't ask first or ignore rules. See each provider.
           </span>
         }

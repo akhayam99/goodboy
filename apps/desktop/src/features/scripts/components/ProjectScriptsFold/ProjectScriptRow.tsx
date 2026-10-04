@@ -12,7 +12,7 @@ type Props = {
 export const ProjectScriptRow = ({ name, command, isPinned, onTogglePin }: Props) => (
   <div className="grid h-7 grid-cols-[minmax(0,160px)_minmax(0,1fr)_auto] items-center gap-3">
     <span className="truncate font-mono text-code text-foreground">{name}</span>
-    <span className="truncate font-mono text-secondary text-faint-foreground">{command}</span>
+    <span className="truncate font-mono text-meta text-faint-foreground">{command}</span>
     <IconButton
       variant="ghost"
       icon={Pin}

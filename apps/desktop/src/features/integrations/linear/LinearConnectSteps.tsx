@@ -95,7 +95,7 @@ export const LinearConnectSteps = ({
       title: 'Paste your API key',
       status: step1Done ? 'current' : 'later',
       content: (
-        <div className="flex min-w-0 flex-col gap-1.5">
+        <div className="flex min-w-0 flex-col gap-2">
           <label htmlFor="linear-api-key" className="sr-only">
             API key
           </label>
@@ -111,18 +111,18 @@ export const LinearConnectSteps = ({
             spellCheck={false}
           />
           {status === 'checking' && (
-            <span className="flex items-center gap-1.5 text-secondary text-muted-foreground">
+            <span className="flex items-center gap-1 text-meta text-muted-foreground">
               <StatusDot tone="info" size="sm" pulsing />
               Checking with Linear
             </span>
           )}
           {status === 'error' && error != null && (
-            <span role="alert" className="flex items-start gap-1.5 text-secondary text-danger">
+            <span role="alert" className="flex items-start gap-1 text-meta text-danger">
               <ShieldAlert size={ICON_SIZE.row} aria-hidden className="mt-0.5 shrink-0" />
               {error}
             </span>
           )}
-          <span className="text-secondary text-muted-foreground">
+          <span className="text-meta text-muted-foreground">
             If you can&apos;t create keys, a Linear admin has turned them off for members.
           </span>
         </div>

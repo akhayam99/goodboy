@@ -24,7 +24,7 @@ export const SentryBreadcrumbs = ({ breadcrumbs, isLoading, error }: Props) => {
             key={`${breadcrumb.timestamp ?? 'breadcrumb'}-${index}`}
             className="flex flex-col gap-1 rounded-md bg-subtle p-2"
           >
-            <div className="flex items-center gap-2 text-secondary text-muted-foreground">
+            <div className="flex items-center gap-2 text-meta text-muted-foreground">
               <span className="font-medium text-foreground">{breadcrumb.category ?? 'event'}</span>
               {breadcrumb.level != null ? <span>{breadcrumb.level}</span> : null}
               {relativeDate !== '' ? <span>{relativeDate} ago</span> : null}

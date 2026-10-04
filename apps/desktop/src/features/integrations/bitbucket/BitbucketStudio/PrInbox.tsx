@@ -49,7 +49,7 @@ export const PrInbox = ({ groups, focusedPrId, onSelect, loading, error, onRefre
   return (
     <div className="flex h-full flex-col">
       <div className="shrink-0 p-3 pb-2">
-        <div className="flex h-9 items-center gap-2 rounded-md border border-border bg-background px-2.5 focus-within:border-primary">
+        <div className="flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 focus-within:border-primary">
           <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
           <input
             type="text"
@@ -69,7 +69,7 @@ export const PrInbox = ({ groups, focusedPrId, onSelect, loading, error, onRefre
           aria-label="Loading pull requests"
         >
           {Array.from({ length: 7 }).map((_, index) => (
-            <div key={index} className="flex flex-col gap-1.5 px-2.5 py-2">
+            <div key={index} className="flex flex-col gap-2 px-3 py-2">
               <div className="flex items-center gap-2">
                 <Skeleton className="h-3 w-3 shrink-0 rounded-sm" />
                 <Skeleton className="h-3 flex-1 rounded-sm" />
@@ -109,7 +109,7 @@ export const PrInbox = ({ groups, focusedPrId, onSelect, loading, error, onRefre
                   className="px-1"
                   label={group.label}
                   action={
-                    <span className="text-secondary tabular-nums text-faint-foreground">
+                    <span className="text-meta tabular-nums text-faint-foreground">
                       {group.rows.length}
                     </span>
                   }
@@ -124,7 +124,7 @@ export const PrInbox = ({ groups, focusedPrId, onSelect, loading, error, onRefre
                           onClick={() => onSelect(pullRequest)}
                           title={pullRequest.title}
                           ariaCurrent={isActive}
-                          className="flex-col items-stretch gap-1 px-2.5 py-2"
+                          className="flex-col items-stretch gap-1 px-3 py-2"
                         >
                           <span className="flex items-center gap-2">
                             <GitPullRequest
@@ -136,7 +136,7 @@ export const PrInbox = ({ groups, focusedPrId, onSelect, loading, error, onRefre
                               {pullRequest.title}
                             </span>
                           </span>
-                          <span className="flex items-center gap-1.5 text-secondary text-faint-foreground">
+                          <span className="flex items-center gap-1 text-meta text-faint-foreground">
                             <span className="shrink-0 font-mono tabular-nums">
                               #{pullRequest.id}
                             </span>

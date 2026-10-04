@@ -16,7 +16,7 @@ export const DelegateWaitingRow = ({ onOpen, onTakeBack }: Props) => (
       disabled={onOpen === null}
       onClick={onOpen ?? undefined}
       className={cn(
-        'group flex min-w-0 flex-1 items-center gap-2 rounded-md border border-border-soft px-2 py-1.5',
+        'group flex min-w-0 flex-1 items-center gap-2 rounded-md border border-border-soft px-2 py-2',
         'text-left text-row text-muted-foreground',
         'transition-[color,background-color,border-color] duration-150',
         'enabled:hover:border-border enabled:hover:bg-hover enabled:hover:text-foreground',
@@ -41,7 +41,7 @@ export const DelegateWaitingRow = ({ onOpen, onTakeBack }: Props) => (
         data-testid="delegate-take-back"
         onClick={onTakeBack}
         className={cn(
-          'shrink-0 rounded-md px-2 py-1 text-secondary font-medium text-muted-foreground',
+          'shrink-0 rounded-md px-2 py-1 text-chip text-muted-foreground',
           'transition-[color,background-color] duration-150',
           'hover:bg-hover hover:text-foreground',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',

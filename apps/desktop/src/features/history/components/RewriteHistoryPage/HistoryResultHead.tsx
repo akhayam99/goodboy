@@ -21,7 +21,7 @@ export const HistoryResultHead = ({ applied }: Props) => {
         <span className="text-label text-faint-foreground">History rewritten</span>
       </div>
       {chips.length === 0 ? null : (
-        <div className="flex flex-wrap items-center gap-1.5" aria-label="What changed">
+        <div className="flex flex-wrap items-center gap-2" aria-label="What changed">
           {chips.map((chip) => (
             <Chip
               key={chip.kind}

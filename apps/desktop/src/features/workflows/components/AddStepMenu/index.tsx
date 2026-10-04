@@ -172,19 +172,13 @@ export const AddStepMenu = ({ groups, disabled, onPick }: Props) => {
           onPick={() => pick(null)}
         />
         {builtin.length > 0 ? (
-          <li
-            role="presentation"
-            className="px-2 pb-0.5 pt-2 text-chip font-semibold uppercase tracking-eyebrow text-faint-foreground"
-          >
+          <li role="presentation" className="px-2 pb-0.5 pt-2 text-eyebrow text-faint-foreground">
             Built in
           </li>
         ) : null}
         {builtin.map((step, index) => renderStep(step, index + 1))}
         {workspace.length > 0 ? (
-          <li
-            role="presentation"
-            className="px-2 pb-0.5 pt-2 text-chip font-semibold uppercase tracking-eyebrow text-faint-foreground"
-          >
+          <li role="presentation" className="px-2 pb-0.5 pt-2 text-eyebrow text-faint-foreground">
             This workspace
           </li>
         ) : null}

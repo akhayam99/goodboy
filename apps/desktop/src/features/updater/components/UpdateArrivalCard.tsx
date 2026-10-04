@@ -63,10 +63,10 @@ export const UpdateArrivalCard = ({ onOpenChangelog }: Props) => {
           {bullets.length > 0 ? (
             <ul className="flex flex-col gap-0.5 text-label text-muted-foreground">
               {bullets.map((bullet) => (
-                <li key={bullet.title} className="flex items-start gap-1.5">
+                <li key={bullet.title} className="flex items-start gap-2">
                   <span
                     aria-hidden
-                    className="mt-1.5 size-1 shrink-0 rounded-full bg-faint-foreground"
+                    className="mt-2 size-1 shrink-0 rounded-full bg-faint-foreground"
                   />
                   {bullet.title}
                 </li>

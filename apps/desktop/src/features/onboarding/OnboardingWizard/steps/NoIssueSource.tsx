@@ -9,7 +9,7 @@ export const NoIssueSource = ({ onBackToCodeHost, onConnectTaskManager }: Props)
   <div className="flex flex-col gap-3 rounded-lg border border-border-soft bg-subtle p-4">
     <div className="flex flex-col gap-1">
       <span className="text-row text-foreground">Connect a code host to see your tasks</span>
-      <span className="text-secondary text-muted-foreground">
+      <span className="text-meta text-muted-foreground">
         Issues come from a code host or a task manager. You skipped both.
       </span>
     </div>
@@ -25,8 +25,6 @@ export const NoIssueSource = ({ onBackToCodeHost, onConnectTaskManager }: Props)
         </Button>
       )}
     </div>
-    <span className="text-secondary text-faint-foreground">
-      Or run a workflow, or ask an agent.
-    </span>
+    <span className="text-meta text-faint-foreground">Or run a workflow, or ask an agent.</span>
   </div>
 );

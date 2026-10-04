@@ -31,7 +31,7 @@ export const WireframeViewer = ({ sessionId, artifact, onScreenChange }: Props) 
           onRepair={() => respawn({ fidelity })}
         />
         {error === null ? null : (
-          <span role="alert" className="text-secondary text-danger">
+          <span role="alert" className="text-meta text-danger">
             {error}
           </span>
         )}

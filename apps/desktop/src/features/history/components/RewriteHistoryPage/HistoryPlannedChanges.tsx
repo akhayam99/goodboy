@@ -110,7 +110,7 @@ export const HistoryPlannedChanges = ({
           ))}
         </ul>
       ) : (
-        <p className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-label text-muted-foreground">
+        <p className="flex flex-wrap items-center gap-x-4 gap-y-2 text-label text-muted-foreground">
           <span>
             Drag a commit between two others to move it. Drop it onto a commit to fold it in.
           </span>

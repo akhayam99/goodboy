@@ -207,7 +207,7 @@ export const QuestionCard = ({
         onDismiss={isOpen && !question.isBlocking && !isWaiting ? onDismiss : null}
       />
       <div className="flex min-w-0 flex-col gap-3">
-        <div className={cn('flex min-w-0 flex-col', isCompact ? 'gap-1' : 'gap-1.5')}>
+        <div className={cn('flex min-w-0 flex-col', isCompact ? 'gap-1' : 'gap-2')}>
           <Title
             className={cn(
               'min-w-0 break-words text-foreground select-text',
@@ -227,11 +227,11 @@ export const QuestionCard = ({
           )}
         </div>
         {!isCompact && parts.files.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-2">
             {parts.files.map((file) => (
               <span
                 key={file}
-                className="inline-flex items-center gap-1 rounded-sm border border-border-soft bg-fill px-1.5 text-code text-muted-foreground"
+                className="inline-flex items-center gap-1 rounded-sm border border-border-soft bg-fill px-2 text-code text-muted-foreground"
               >
                 <FileText
                   size={ICON_SIZE.row}

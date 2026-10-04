@@ -53,10 +53,10 @@ export const RecentDecisions = ({ workspaceId }: Props) => {
   const titleOf = (id: SessionId): string => titles[sessionIds.indexOf(id)] ?? 'a closed session';
 
   if (error !== null) {
-    return <p className="text-secondary text-danger">{`Couldn't read the decisions: ${error}`}</p>;
+    return <p className="text-meta text-danger">{`Couldn't read the decisions: ${error}`}</p>;
   }
   if (!isLoading && decisions.length === 0) {
-    return <p className="text-secondary text-muted-foreground">No decisions yet</p>;
+    return <p className="text-meta text-muted-foreground">No decisions yet</p>;
   }
   return (
     <ul
@@ -64,7 +64,7 @@ export const RecentDecisions = ({ workspaceId }: Props) => {
       className={cn('flex flex-col rounded-lg bg-subtle p-1', STRIPED_LIST)}
     >
       {decisions.map((decision) => (
-        <li key={decision.id} className="flex min-w-0 items-center gap-2 px-3 py-1.5 text-label">
+        <li key={decision.id} className="flex min-w-0 items-center gap-2 px-3 py-2 text-label">
           <span
             className={cn(
               'shrink-0',
