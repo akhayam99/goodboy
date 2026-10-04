@@ -97,7 +97,7 @@ export const StageColumn = ({
         className={cn(!empty && tintClasses(view.presentation.tone).text)}
       />
       {!empty && (
-        <span className="text-secondary tabular-nums text-faint-foreground">{sessions.length}</span>
+        <span className="text-meta tabular-nums text-faint-foreground">{sessions.length}</span>
       )}
     </span>
   );

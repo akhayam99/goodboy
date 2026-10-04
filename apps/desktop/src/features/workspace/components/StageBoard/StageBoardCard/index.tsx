@@ -180,7 +180,7 @@ export const StageBoardCard = memo(function StageBoardCard({
       }}
       className={cn(
         'group/session-card group/select-row grid h-28 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] gap-x-2 gap-y-1 p-3 text-left',
-        onToggleSelect === undefined ? 'pl-4.5' : 'pl-7',
+        onToggleSelect === undefined ? 'pl-5' : 'pl-7',
         sessionCardShell({ selected }),
       )}
     >
@@ -247,7 +247,7 @@ export const StageBoardCard = memo(function StageBoardCard({
         {progress !== null ? (
           <SessionProgress progress={progress} tone={summary.tone} />
         ) : reason !== '' && summary.addsFact ? (
-          <span className="truncate text-secondary text-muted-foreground">{reason}</span>
+          <span className="truncate text-meta text-muted-foreground">{reason}</span>
         ) : null}
       </span>
 
