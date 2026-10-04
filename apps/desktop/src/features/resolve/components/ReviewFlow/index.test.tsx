@@ -20,7 +20,7 @@ import {
   seedResolveScene,
 } from '../../../../app/components/MockScene/scenes/resolveSeed';
 import type { AgentId, ResolveBatch } from '@goodboy/types';
-import { ReviewFlow } from './index';
+import { BranchPage } from '../../../branch/components/BranchPage';
 
 type StoreState = ReturnType<StoryStore['getState']>;
 
@@ -80,7 +80,7 @@ const mount = async ({
   seedResolveScene({ expandedThreadId: threadId, selectable });
   render(
     <ToastProvider>
-      <ReviewFlow session={SESSION} />
+      <BranchPage session={SESSION} workingDir={null} />
     </ToastProvider>,
   );
   await settle();
@@ -99,7 +99,7 @@ const mountFailed = async ({
   seedResolveScene({ expandedThreadId: threadId, failure });
   render(
     <ToastProvider>
-      <ReviewFlow session={SESSION} />
+      <BranchPage session={SESSION} workingDir={null} />
     </ToastProvider>,
   );
   await settle();
@@ -136,26 +136,13 @@ describe('Review as one flow', () => {
     expect(within(comment()).getByRole('button', { name: /^Accept/ })).toBeDefined();
   });
 
-  it('shows one summary line instead of a chip per state', async () => {
+  it('counts each state group in its own title and has no summary line or filter menu', async () => {
     await mount({ threadId: null });
 
-    const summary = screen.getByLabelText('Comment summary');
-    expect(summary.textContent).toMatch(/\d+ open/);
-    expect(summary.textContent).toMatch(/ready to push/);
-    expect(screen.queryByRole('list', { name: 'Comment states' })).toBeNull();
-  });
-
-  it('filters the list by state from the list menu', async () => {
-    await mount({ threadId: null });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Filter comments' }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Needs you' }));
-
-    const words = within(list())
-      .getAllByRole('button')
-      .map((button) => button.textContent ?? '');
-    expect(words.length).toBeGreaterThan(0);
-    expect(words.every((text) => text.includes('Needs you'))).toBe(true);
+    expect(within(list()).getByRole('region', { name: 'Open' }).textContent).toMatch(/Open \d+/);
+    expect(within(list()).getByRole('region', { name: 'Done' }).textContent).toMatch(/Done \d+/);
+    expect(screen.queryByLabelText('Comment summary')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Filter comments' })).toBeNull();
   });
 
   it('names every state with its own word and never says Resolve on a control', async () => {
@@ -171,7 +158,10 @@ describe('Review as one flow', () => {
     expect(words.some((text) => text.includes('Skipped'))).toBe(true);
     expect(words.some((text) => text.includes('Pushed'))).toBe(true);
     const labels = screen.getAllByRole('button').map((button) => button.textContent ?? '');
-    expect(labels.filter((label) => /^Resolve\b/.test(label))).toEqual([]);
+    expect(
+      labels.filter((label) => /^Resolve\b/.test(label) && label !== 'Resolve without a reply'),
+    ).toEqual([]);
+    expect(within(comment()).queryByRole('button', { name: 'Resolve without a reply' })).toBeNull();
   });
 
   it('never starts an agent by opening Review, and Fix opens the strip before anything runs', async () => {
@@ -337,7 +327,7 @@ describe('Review as one flow', () => {
     });
     render(
       <ToastProvider>
-        <ReviewFlow session={SESSION} />
+        <BranchPage session={SESSION} workingDir={null} />
       </ToastProvider>,
     );
     await settle();
@@ -474,7 +464,7 @@ describe('Review as one flow', () => {
     expect(within(comment()).queryByRole('textbox', { name: 'Your answer' })).toBeNull();
   });
 
-  it('keeps Stop drafting and Agent transcript in the menu of a drafting comment', async () => {
+  it('keeps Stop and the transcript on the properties of a drafting comment, not in a menu', async () => {
     await mount({ threadId: null });
     fireEvent.click(row(/Drafting/));
     await settle();
@@ -482,9 +472,9 @@ describe('Review as one flow', () => {
     expect(within(comment()).queryAllByRole('button', { name: /^Accept|^Edit|^Reply/ })).toEqual(
       [],
     );
-    fireEvent.click(within(comment()).getByRole('button', { name: 'Comment actions' }));
-    expect(await screen.findByRole('menuitem', { name: /Stop drafting/ })).toBeDefined();
-    expect(screen.getByRole('menuitem', { name: /Agent transcript/ })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Comment actions' })).toBeNull();
+    const properties = screen.getAllByLabelText('Comment properties')[0] as HTMLElement;
+    expect(within(properties).getByRole('button', { name: 'Stop' })).toBeDefined();
   });
 
   it('opens the not started comment with Fix as its one primary', async () => {

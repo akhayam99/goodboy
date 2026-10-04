@@ -54,7 +54,6 @@ const STATES: ReadonlyArray<{
     facts: facts({ phase: 'draft' }),
     expected: [
       'pullRequest.openOnGithub secondary',
-      'pullRequest.openDiff nudge',
       'pullRequest.checkLog hover',
       'pullRequest.markReady primary',
       ...OWN_LIVE_TAIL,
@@ -67,7 +66,6 @@ const STATES: ReadonlyArray<{
     facts: facts({ checks: 'pending', runningChecks: 2, review: 'review_required' }),
     expected: [
       'pullRequest.openOnGithub secondary',
-      'pullRequest.openDiff nudge',
       'pullRequest.checkLog hover',
       'pullRequest.merge secondary (2 checks still running.)',
       ...OWN_LIVE_TAIL,
@@ -87,8 +85,6 @@ const STATES: ReadonlyArray<{
     }),
     expected: [
       'pullRequest.openOnGithub secondary',
-      'pullRequest.openReview nudge',
-      'pullRequest.openDiff nudge',
       'pullRequest.checkLog hover',
       'pullRequest.merge secondary (1 check failing: unit tests.)',
       ...OWN_LIVE_TAIL,
@@ -102,8 +98,6 @@ const STATES: ReadonlyArray<{
     facts: facts({ review: 'changes_requested', changesRequestedBy: ['kenji-w'], openComments: 3 }),
     expected: [
       'pullRequest.openOnGithub secondary',
-      'pullRequest.openReview nudge',
-      'pullRequest.openDiff nudge',
       'pullRequest.checkLog hover',
       'pullRequest.merge secondary (kenji-w asked for changes.)',
       ...OWN_LIVE_TAIL,
@@ -117,7 +111,6 @@ const STATES: ReadonlyArray<{
     facts: facts({ review: 'approved' }),
     expected: [
       'pullRequest.openOnGithub secondary',
-      'pullRequest.openDiff nudge',
       'pullRequest.checkLog hover',
       'pullRequest.merge primary',
       ...OWN_LIVE_TAIL,
@@ -131,7 +124,6 @@ const STATES: ReadonlyArray<{
     facts: facts({ review: 'approved', hasConflicts: true }),
     expected: [
       'pullRequest.openOnGithub secondary',
-      'pullRequest.openDiff nudge',
       'pullRequest.checkLog hover',
       'pullRequest.merge secondary (Conflicts with main. Rebase in the Diff.)',
       ...OWN_LIVE_TAIL,
@@ -143,24 +135,18 @@ const STATES: ReadonlyArray<{
   {
     name: 'Merged',
     facts: facts({ phase: 'merged', review: 'approved' }),
-    expected: ['pullRequest.openOnGithub secondary', 'pullRequest.openDiff nudge', ...COPIES],
+    expected: ['pullRequest.openOnGithub secondary', ...COPIES],
   },
   {
     name: 'Closed',
     facts: facts({ phase: 'closed' }),
-    expected: [
-      'pullRequest.openOnGithub secondary',
-      'pullRequest.openDiff nudge',
-      'pullRequest.reopen secondary',
-      ...COPIES,
-    ],
+    expected: ['pullRequest.openOnGithub secondary', 'pullRequest.reopen secondary', ...COPIES],
   },
   {
     name: "Someone else's PR",
     facts: facts({ review: 'review_required', isOwn: false }),
     expected: [
       'pullRequest.openOnGithub secondary',
-      'pullRequest.openDiff nudge',
       'pullRequest.checkLog hover',
       'pullRequest.merge secondary (Needs an approving review.)',
       'pullRequest.writeReview secondary',

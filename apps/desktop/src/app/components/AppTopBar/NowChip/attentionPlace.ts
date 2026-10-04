@@ -1,5 +1,5 @@
 import type { Agent, SessionAttentionReason, SessionId, TurnState } from '@goodboy/types';
-import { agentPlace, sessionPlace } from '../../../../store';
+import { agentPlace, branchPlace, sessionPlace } from '../../../../store';
 import type { PlaceRequest } from '../../../../store/slices/navigation/types';
 import { agentHasUnread } from '../../../../store/slices/agents/agentHasUnread';
 
@@ -24,11 +24,11 @@ export const attentionPlace = ({ state, sessionId, reason }: Params): PlaceReque
   if (reason === 'open-question') {
     return sessionPlace({ sessionId, lens: 'questions' });
   }
-  if (reason === 'ci-failed' || reason === 'pr-approved') {
-    return sessionPlace({ sessionId, lens: 'pr' });
+  if (reason === 'ci-failed') {
+    return branchPlace({ sessionId, tab: 'checks' });
   }
-  if (reason === 'changes-requested') {
-    return sessionPlace({ sessionId, lens: 'review' });
+  if (reason === 'pr-approved' || reason === 'changes-requested') {
+    return branchPlace({ sessionId, tab: 'comments' });
   }
   if (reason === null) {
     return sessionPlace({ sessionId });

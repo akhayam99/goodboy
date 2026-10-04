@@ -57,7 +57,6 @@ const STATES: ReadonlyArray<{
     name: 'On origin, PR open',
     facts: facts({}),
     expected: [
-      'diff.openPullRequest secondary',
       ...TOOLS,
       'diff.rewriteHistory secondary',
       'diff.changeBase menu',
@@ -81,7 +80,6 @@ const STATES: ReadonlyArray<{
     name: '2 not pushed, PR open',
     facts: facts({ ahead: 6, unpushed: 2 }),
     expected: [
-      'diff.openPullRequest secondary',
       ...TOOLS,
       'diff.push primary',
       'diff.rewriteHistory secondary',
@@ -94,7 +92,6 @@ const STATES: ReadonlyArray<{
     name: 'Behind main by 4',
     facts: facts({ behind: 4 }),
     expected: [
-      'diff.openPullRequest secondary',
       ...TOOLS,
       'diff.rebase primary',
       'diff.rewriteHistory secondary',
@@ -107,7 +104,6 @@ const STATES: ReadonlyArray<{
     name: '2 uncommitted',
     facts: facts({ behind: 4, dirty: 2 }),
     expected: [
-      'diff.openPullRequest secondary',
       ...TOOLS,
       `diff.rebase primary (${DIRTY_2})`,
       `diff.rewriteHistory secondary (${DIRTY_2})`,
@@ -120,7 +116,6 @@ const STATES: ReadonlyArray<{
     name: 'Diverged',
     facts: facts({ unpushed: 1, isDiverged: true }),
     expected: [
-      'diff.openPullRequest secondary',
       ...TOOLS,
       'diff.push menu (Origin has a commit this branch lacks. Rebase on it first; Rewrite history owns force pushes.)',
       'diff.rewriteHistory secondary',
@@ -133,7 +128,6 @@ const STATES: ReadonlyArray<{
     name: 'Rebase stopped',
     facts: facts({ dirty: 3, isRebasing: true }),
     expected: [
-      'diff.openPullRequest secondary',
       'diff.continueRebase primary',
       'diff.openInEditor menu',
       'diff.abortRebase secondary',

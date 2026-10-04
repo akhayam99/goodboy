@@ -46,16 +46,6 @@ export const up = (set: SetFn, get: GetFn) => {
       goHistory({ set, get, delta: -1 });
       return;
     }
-    const target = live.place.at === 'session' ? live.place.view.target : null;
-    const sessionId = live.place.at === 'session' ? live.place.sessionId : null;
-    const drawer =
-      target?.kind === 'thread' && sessionId !== null
-        ? {
-            kind: 'conversation' as const,
-            sessionId,
-            payload: { threadId: target.threadId },
-          }
-        : null;
-    get().navigate({ to: parent, drawer });
+    get().navigate({ to: parent });
   };
 };

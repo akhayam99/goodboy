@@ -151,33 +151,6 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
     },
   },
   {
-    id: 'pullRequest.openReview',
-    label: 'Open Review',
-    shortLabel: ({ facts }) =>
-      `${plural({ count: facts.openComments, one: 'comment', many: 'comments' })} to resolve`,
-    icon: CONCEPT_ICONS.review,
-    group: 'open',
-    shortcut: 'lens.review',
-    when: ({ facts }) => facts.openComments > 0 && isLive({ facts }),
-    slot: () => 'nudge',
-    run: ({ facts, env }) => {
-      void env.getState().openReviewTarget({ sessionId: facts.sessionId });
-    },
-  },
-  {
-    id: 'pullRequest.openDiff',
-    label: 'Open diff',
-    shortLabel: ({ facts }) =>
-      facts.hasConflicts ? `Conflicts with ${baseOf({ facts })}` : 'Changes on this branch',
-    icon: CONCEPT_ICONS.diff,
-    group: 'open',
-    shortcut: 'lens.files',
-    when: hasPr,
-    slot: () => 'nudge',
-    run: ({ facts, env }) =>
-      env.getState().navigate({ to: sessionPlace({ sessionId: facts.sessionId, lens: 'files' }) }),
-  },
-  {
     id: 'pullRequest.checkLog',
     label: ({ facts }) =>
       facts.checks === 'failing' ? 'Open the failing check log' : 'Open check logs',

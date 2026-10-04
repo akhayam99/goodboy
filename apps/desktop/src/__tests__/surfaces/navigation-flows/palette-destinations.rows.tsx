@@ -18,7 +18,8 @@ import {
 
 const openDiffHistory = async (): Promise<void> => {
   await openCrumb(/^Diff/);
-  await clickButton(/Rewrite history/);
+  await click(await screen.findByRole('tab', { name: /^Commits/ }));
+  await clickButton(/^Rewrite history/);
 };
 
 export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [

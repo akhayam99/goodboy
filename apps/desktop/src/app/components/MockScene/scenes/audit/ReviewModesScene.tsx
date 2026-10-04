@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { MountId, PrCheckRun, Project, ProjectId, SessionProjectMount } from '@goodboy/types';
-import { ReviewPane } from '../../../../../features/review/components/ReviewPane';
+import { BranchPage } from '../../../../../features/branch/components/BranchPage';
 import { useAppStore } from '../../../../../store';
 import { ShellFrame, seedShellChrome } from '../shellChrome';
 import { SESSION, SESSION_ID, seedResolveScene } from '../resolveSeed';
@@ -125,5 +125,5 @@ export const ReviewModesScene = () => {
     return null;
   }
 
-  return <ShellFrame session={SESSION} main={<ReviewPane session={SESSION} />} />;
+  return <ShellFrame session={SESSION} main={<BranchPage session={SESSION} workingDir={null} />} />;
 };

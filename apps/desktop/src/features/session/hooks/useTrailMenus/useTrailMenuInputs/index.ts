@@ -67,7 +67,6 @@ export const useTrailMenuInputs = ({ session }: Params): TrailMenuInputs => {
       ),
     ),
   );
-  const openMountDiff = useAppStore((s) => s.openMountDiff);
   const diffStats = useMountDiffStats(sessionId);
   const projects = useAppStore((s) => s.projects);
   const branchTargets = useMemo(
@@ -89,7 +88,9 @@ export const useTrailMenuInputs = ({ session }: Params): TrailMenuInputs => {
   const setPullRequestMode = useAppStore((s) => s.setPullRequestMode);
   const threadId = useAppStore((s) =>
     selectedAgentId === null
-      ? null
+      ? s.activeLens?.[sessionId] === 'branch'
+        ? (s.branchThreadId?.[sessionId] ?? null)
+        : null
       : resolverThread({ state: s, sessionId, agentId: selectedAgentId }),
   );
   const { copy } = useCopyLink();
@@ -122,7 +123,6 @@ export const useTrailMenuInputs = ({ session }: Params): TrailMenuInputs => {
       diffStats,
       branchStatuses,
       mergedMountIds,
-      openMountDiff,
       queueRows,
       resolveAgain,
       prNumber,
@@ -160,7 +160,6 @@ export const useTrailMenuInputs = ({ session }: Params): TrailMenuInputs => {
       diffStats,
       branchStatuses,
       mergedMountIds,
-      openMountDiff,
       queueRows,
       resolveAgain,
       prNumber,

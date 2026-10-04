@@ -25,7 +25,7 @@ import {
   SESSION as RESOLVE_SESSION,
   seedResolveScene,
 } from '../../app/components/MockScene/scenes/resolveSeed';
-import { ReviewPane } from '../../features/review/components/ReviewPane';
+import { BranchPage } from '../../features/branch/components/BranchPage';
 import { seedSessionWithMounts } from '../helpers/seedSessionWithMounts';
 import { WORKSPACE_ID, seedBoardScene } from '../../app/components/MockScene/scenes/BoardScene';
 import {
@@ -225,7 +225,7 @@ describe('main flows on the real store', () => {
       publishConversations: publishConversations as unknown as StoreState['publishConversations'],
     });
 
-    await mountFlow(<ReviewPane session={RESOLVE_SESSION} />);
+    await mountFlow(<BranchPage session={RESOLVE_SESSION} workingDir={null} />);
     const comment = screen.getByRole('article', { name: 'Comment' });
     fireEvent.click(within(comment).getByRole('button', { name: /^Accept/ }));
 
@@ -241,13 +241,14 @@ describe('main flows on the real store', () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
 
     await mountFlow(<KeepAliveWorkSurface sessionId={sessionId} isActive />);
-    expect(screen.queryByRole('heading', { name: 'Diff' })).toBeNull();
+    expect(screen.queryByRole('tab', { name: /^Files/ })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /Overview/ }));
     fireEvent.click(await screen.findByRole('menuitemradio', { name: /^Diff/ }));
     await settle();
 
-    expect(useAppStore.getState().activeLens[sessionId]).toBe('files');
-    expect(screen.getByRole('heading', { name: 'Diff' })).toBeDefined();
+    expect(useAppStore.getState().activeLens[sessionId]).toBe('branch');
+    expect(useAppStore.getState().branchTab[sessionId]).toBe('files');
+    expect(screen.getByRole('tab', { name: /^Files/ }).getAttribute('aria-selected')).toBe('true');
     expectNoRenderLoop();
   });
 

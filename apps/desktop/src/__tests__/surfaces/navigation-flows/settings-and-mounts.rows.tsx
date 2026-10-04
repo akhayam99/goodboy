@@ -4,6 +4,7 @@ import { APP_SECTIONS } from '../../../features/settings/components/SettingsStud
 import {
   type Row,
   both,
+  branchTab,
   click,
   clickButton,
   clickFirstButton,
@@ -122,6 +123,6 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
       await clickButton(/^Back/);
       await clickButton(/^Forward/);
     },
-    lands: both(lens('files'), () => heading('Diff')),
+    lands: branchTab('files'),
   },
 ];

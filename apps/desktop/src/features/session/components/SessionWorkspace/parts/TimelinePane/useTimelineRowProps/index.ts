@@ -1,7 +1,12 @@
 import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { useCopyLink } from '@goodboy/ui';
 import type { OpenQuestion, Session, SessionId } from '@goodboy/types';
-import { useAppStore, useMountDiffStats, sessionPlace } from '../../../../../../../store';
+import {
+  useAppStore,
+  useMountDiffStats,
+  sessionPlace,
+  branchPlace,
+} from '../../../../../../../store';
 import { useSessionRoleModels } from '../../../../../../../shared/hooks/useSessionRoleModels';
 import { usePendingAction } from '../../../../../../../shared/hooks/usePendingAction';
 import { useAdvanceWorkflowAgent } from '../../../../../../workflows/useAdvanceWorkflowAgent';
@@ -275,7 +280,7 @@ export const useTimelineRowProps = ({ session, explode, rows }: Params): RowProp
   const openNeedsYou = useCallback(
     ({ owner }: { readonly owner: NeedsYouOwner }) => {
       if (owner.kind === 'batch') {
-        navigate({ to: sessionPlace({ sessionId, lens: 'review' }) });
+        navigate({ to: branchPlace({ sessionId, tab: 'comments' }) });
         return;
       }
       if (owner.kind === 'question') {

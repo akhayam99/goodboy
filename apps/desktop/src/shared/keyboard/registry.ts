@@ -471,13 +471,6 @@ export const SHORTCUTS = {
     group: 'review',
     scope: 'review',
   },
-  'review.view': {
-    combo: 'KeyV',
-    label: 'Comments or commits',
-    plane: 'app',
-    group: 'review',
-    scope: 'review',
-  },
 
   'diff.jump': {
     combo: 'KeyT',

@@ -1,6 +1,6 @@
 import type { AgentId, SessionId } from '@goodboy/types';
-import type { LensKind, SessionStudio } from '../session-view/types';
-import type { AgentPane, Place, PlaceRequest, SessionTarget } from './types';
+import type { DiffFocus, LensKind, SessionStudio } from '../session-view/types';
+import type { AgentPane, BranchTab, Place, PlaceRequest, SessionTarget } from './types';
 
 type SessionPlaceParams = {
   readonly sessionId: SessionId;
@@ -31,6 +31,36 @@ export const sessionPlace = ({
   sessionId,
   view: { lens, agentId, studio, target },
 });
+
+type BranchPlaceParams = {
+  readonly sessionId: SessionId;
+  readonly mountPath?: string | null;
+  readonly tab?: BranchTab;
+  readonly threadId?: string | null;
+  readonly focus?: DiffFocus | null;
+  readonly page?: 'history' | null;
+};
+
+export const branchPlace = ({
+  sessionId,
+  mountPath = null,
+  tab = 'comments',
+  threadId = null,
+  focus = null,
+  page = null,
+}: BranchPlaceParams): Place =>
+  sessionPlace({
+    sessionId,
+    lens: 'branch',
+    target: {
+      kind: 'branch',
+      mountPath,
+      tab: page === 'history' ? 'commits' : tab,
+      threadId,
+      focus,
+      ...(page === 'history' && { page }),
+    },
+  });
 
 export const agentPlace = ({ sessionId, agentId, pane = null }: AgentPlaceParams): PlaceRequest =>
   pane === null ? { at: 'agent', sessionId, agentId } : { at: 'agent', sessionId, agentId, pane };

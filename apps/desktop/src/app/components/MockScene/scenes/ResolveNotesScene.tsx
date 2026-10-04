@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ReviewPane } from '../../../../features/review/components/ReviewPane';
+import { BranchPage } from '../../../../features/branch/components/BranchPage';
 import { useAppStore } from '../../../../store';
 import { LOCAL_SOURCE_KEY } from '../../../../store/slices/review-source/types';
 import { SESSION, SESSION_ID } from './resolveSeed';
@@ -20,7 +20,7 @@ export const ResolveNotesScene = () => {
 
   return (
     <main className="h-screen overflow-hidden bg-background text-foreground">
-      <ReviewPane session={SESSION} />
+      <BranchPage session={SESSION} workingDir={null} />
     </main>
   );
 };

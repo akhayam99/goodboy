@@ -1,6 +1,6 @@
 import { Copy, SquareArrowOutUpRight } from 'lucide-react';
 import type { CrumbMenuModel } from '@goodboy/ui';
-import { resolverPagePlace, sessionPlace } from '../../../../store/slices/navigation/place';
+import { branchPlace, resolverPagePlace } from '../../../../store/slices/navigation/place';
 import { openUrl } from '../../../../shared/lib/editor';
 import { conversationMenu } from '../../trail/menus/conversationMenu';
 import type { TrailMenuScope } from './trailMenuScope';
@@ -41,12 +41,8 @@ export const reviewThreadCrumbMenu = (scope: TrailMenuScope): CrumbMenuModel => 
         return;
       }
       navigate({
-        to: sessionPlace({ sessionId, lens: 'review' }),
-        drawer: {
-          kind: 'conversation',
-          sessionId,
-          payload: { threadId: row.thread.threadId },
-        },
+        to: branchPlace({ sessionId, threadId: row.thread.threadId }),
+        mode: 'replace',
       });
     },
   });

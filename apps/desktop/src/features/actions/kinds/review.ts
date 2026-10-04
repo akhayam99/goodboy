@@ -1,8 +1,5 @@
-import { ArrowUp, Cpu, MessageSquarePlus, RotateCw } from 'lucide-react';
+import { ArrowUp, MessageSquarePlus } from 'lucide-react';
 import type { DiffComment, SessionId } from '@goodboy/types';
-import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { NAMES } from '../../../shared/names';
-import { sessionPlace } from '../../../store/slices/navigation/place';
 import { isOpenNote, noteThreadId } from '../../resolve/notes/noteThread';
 import {
   POST_NOTES_LABEL,
@@ -93,23 +90,6 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
   },
   actions: [
     {
-      id: 'review.openPullRequest',
-      label: ({ facts }) =>
-        facts.sourceKind === 'gitlab'
-          ? `Open MR !${facts.prNumber ?? ''}`
-          : `Open PR #${facts.prNumber ?? ''}`,
-      icon: CONCEPT_ICONS.pr,
-      group: 'open',
-      shortcut: 'lens.pr',
-      when: ({ facts }) => facts.prNumber !== null,
-      slot: () => 'link',
-      run: ({ facts, env }) => {
-        const state = env.getState();
-        state.setPullRequestMode({ sessionId: facts.sessionId, mode: 'overview' });
-        state.navigate({ to: sessionPlace({ sessionId: facts.sessionId, lens: 'pr' }) });
-      },
-    },
-    {
       id: 'review.push',
       label: ({ facts }) => pushLabel(facts),
       icon: ArrowUp,
@@ -124,20 +104,6 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
           getState: env.getState,
           sessionId: facts.sessionId,
           request: { kind: 'push' },
-        }),
-    },
-    {
-      id: 'review.draftModel',
-      label: 'Model for drafts…',
-      icon: Cpu,
-      group: 'act',
-      when: ({ facts }) => !facts.isLoading && !facts.isError,
-      slot: () => 'menu',
-      run: ({ facts, env }) =>
-        requestReview({
-          getState: env.getState,
-          sessionId: facts.sessionId,
-          request: { kind: 'draft_model' },
         }),
     },
     {
@@ -163,16 +129,6 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
         });
         env.showToast({ kind: 'success', message: postNotesResultMessage(result) });
       },
-    },
-    {
-      id: 'review.retryLoad',
-      label: NAMES.retry,
-      icon: RotateCw,
-      group: 'act',
-      when: ({ facts }) => facts.isError,
-      slot: () => 'empty',
-      run: ({ facts, env }) =>
-        env.getState().refreshReviewSource({ sessionId: facts.sessionId, force: true }),
     },
   ],
 };

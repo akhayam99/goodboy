@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore, agentPlace } from '../../../../store';
-import { openReview } from '../../../review/openReview';
+import { requestReview } from '../../../review/reviewRequest';
 import { useAskAgent } from '../useAskAgent';
 import { useNoteFixes } from '../useNoteFixes';
 import { NOTE_LOCK_REASON, type NoteFix } from '../../lib/noteFixes';
@@ -20,7 +20,6 @@ export type DiffNotes = {
 type ActionHandlers = {
   readonly onFix: (fix: NoteFix) => void;
   readonly onOpenBrief: (agentId: AgentId) => void;
-  readonly onOpenInReview: (fix: NoteFix) => void;
 };
 
 const actionsOf = ({
@@ -37,14 +36,6 @@ const actionsOf = ({
       label: NOTE_ACTION_LABEL.fix,
       isPrimary: true,
       onClick: () => handlers.onFix(fix),
-    });
-  }
-  if (fix.group === 'ready') {
-    actions.push({
-      id: 'review',
-      label: NOTE_ACTION_LABEL.openInReview,
-      isPrimary: false,
-      onClick: () => handlers.onOpenInReview(fix),
     });
   }
   const { agentId } = fix;
@@ -96,16 +87,18 @@ export const useDiffNotes = ({ sessionId }: Params): DiffNotes => {
   const closeResolvedNote = useAppStore((s) => s.closeResolvedNote);
   const reopenDiffComment = useAppStore((s) => s.reopenDiffComment);
   const deleteDiffComment = useAppStore((s) => s.deleteDiffComment);
-  const showDiffNoteLaunch = useAppStore((s) => s.showDiffNoteLaunch);
   const navigate = useAppStore((s) => s.navigate);
   const askAgent = useAskAgent({ sessionId });
 
   const comments = useMemo<DiffComments>(() => {
     const handlers: ActionHandlers = {
-      onFix: (fix) => showDiffNoteLaunch({ sessionId, threadIds: [fix.threadId] }),
+      onFix: (fix) =>
+        requestReview({
+          getState: useAppStore.getState,
+          sessionId,
+          request: { kind: 'fix', threadIds: [fix.threadId] },
+        }),
       onOpenBrief: (agentId) => navigate({ to: agentPlace({ sessionId, agentId }) }),
-      onOpenInReview: (fix) =>
-        void openReview({ sessionId, destination: { kind: 'notes', threadIds: [fix.threadId] } }),
     };
     const threadIdOf = new Map(fixes.map((fix) => [fix.note.id, fix.threadId] as const));
     return {
@@ -134,7 +127,6 @@ export const useDiffNotes = ({ sessionId }: Params): DiffNotes => {
     deleteDiffComment,
     fixes,
     navigate,
-    showDiffNoteLaunch,
     reopenDiffComment,
     sessionId,
   ]);

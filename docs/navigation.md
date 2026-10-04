@@ -173,9 +173,9 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   (artifact, run, issue, diff focus, terminal mount). Its `studio` is the app
   studio open over that place, if any. Its `focus` is the page state: the open
   drawer, selection, scroll and revealed rows. `locationKey` prints the text
-  form used by tests and logs: `board`, `s/{session}`, `s/{session}/review`,
+  form used by tests and logs: `board`, `s/{session}`, `s/{session}/branch/comments`,
   `s/{session}/workflows/{run}`, `s/{session}/agents/agent/{agent}`,
-  `s/{session}/review/t/{thread}/agent/brief`.
+  `s/{session}/review/t/{thread}/agent/brief` (the Fix run, a child of its thread on the Branch).
 - **One door.** Every move goes through `navigate({ to, mode })`, `back()`,
   `forward()`, `up()` or `amendFocus({ patch })`. `sessionPlace`,
   `agentPlace` and `BOARD_PLACE` build the `to`. The per-session keys the
@@ -597,32 +597,25 @@ comment` for the maintainer's own comment, `Resolve: Mara Quint on index.ts`
   was, so that lens only ever records where the user came from. The activity
   feed, the palette, a notification, a linked-work chip and a restored session
   are shortcuts into a place that already has a parent. None of them may
-  rewrite it. History is what Back is for. The code host layers are the one
-  exception, below.
-- **The code host layers are a path, not a structure.** The pull request,
-  Review, the Diff and Rewrite history are layers of one page. Each entry of
-  the stack carries `layers`, the kinds to its left (`layers.ts`). Opening a
-  layer from the Overview puts it under the Overview alone; opening one from
-  inside another layer stacks it to the right
-  (`Overview > Diff > Pull request > #318`, `Overview > PR #318 > Review`). A
-  kind already in the trail pops back to its entry instead of stacking a copy,
-  so the stack never loops and is at most four deep; a crumb pops to itself the
-  same way, and Back removes one layer. A request that carries a focus (a diff
-  on one file) pushes instead. A jump from outside the page (board card,
-  palette from another place, notification, sidebar) gets the canonical path of
-  its target: Review sits under its pull request when the session has one,
-  everything else under the Overview. Rewrite history stays a child of its Diff
-  (the branch crumb between them). Opening a page that is not a layer drops the
-  path, and Back finds it again. A reload carries the path in the reload intent
-  and replays it from the Overview, so the trail comes back as it was. A layer
-  never renders another layer's controls; it links to it in one quiet line. The
-  `code-layers` mock scene (`?scene=code-layers&layer=pr&pr=failing&wt=behind`)
-  shows every layer in any pull request and worktree state, and the navigation
-  flows walk every arrow between the layers with a guard that fails when a
-  layer header carries another layer's controls.
+  rewrite it. History is what Back is for.
+- **The Branch is one page with its tabs in the address.** A branch is shaped
+  like a pull request: a header (title, `Draft · project · head → base ·
+checks`, one primary by state, `⋯` for the rare pull request lifecycle) over
+  the tabs `Comments · Files · Commits · Checks`
+  (`s/{session}/branch/{tab}[:{mount}][/t/{thread}]`). A tab switch and a
+  thread selection replace the entry, so Back never walks them. The trail is
+  `Overview > Branch ▾ > {thread, file or Rewrite history}`, the same from
+  every door; Up is the crumb to the left of the open one. `Branch ▾` lists the
+  session branches and makes the picked one the active mount. `layers.ts` is
+  gone. The requests `pr`, `review` and `files` (a mount present) are
+  rewritten to the Branch address by `canonicalLocation`, so the palette, the
+  shortcuts, a notification, a chip, a search hit and an Activity row all land
+  on the same address; a saved place is rewritten the same way when it is
+  restored. A GitLab or Bitbucket merge request keeps the `pr` page, a session
+  without a branch keeps File versions.
 - **A child hangs off the overview section that owns it**: a step under its
   run under Workflows, an ad-hoc agent under Agents, a resolver under its
-  comment in Review (`s/{session}/review/t/{thread}/agent`). Back returns where
+  comment on the Branch (`s/{session}/review/t/{thread}/agent`). Back returns where
   you were, while the trail says where you are.
 - **Segment menus.** Every segment that has siblings carries one `CrumbMenu`
   (the `Trail` primitive in `@goodboy/ui`), and the rule is one: its menu lists
@@ -1364,63 +1357,32 @@ workspaceId, nowMs })`, owns every row's subtitle and tone (it replaced three
   Creating or configuring stays in a popover, navigating stays in the sidebar,
   and an object you work on is a child page in the trail. See
   [The right drawer](#the-right-drawer).
-- **Review is where the session's code is discussed; the pull request page is
-  where it ships.** Review is one flow: the list of comments on the left in
-  three groups (Open, Ready to push, Done) and the focused comment on
-  the right, in the layer itself, never in a drawer. A segmented control under
-  the header switches between two views, `Comments` and `Commits`, and `V`
-  toggles them from anywhere in the page outside a text field. `Commits` lists
-  the branch commits with their fold preview; a resolve commit's `for
-<reviewer> on <file:line>` line opens its comment back in `Comments`. The
-  header carries the title, one quiet link to the pull request (`PR #528 ›`),
-  one summary line (`9 open · 3 drafting · 2 ready to push · 4 done`, only the
-  non-zero parts), and `…`; nothing else of the pull request. A comment nobody
-  started shows `Fix` on hover (and `F`), which opens the launch strip under
-  the header; a checkbox on hover picks comments (`X` on the focused row, Cmd+A
-  for every comment nobody started, Esc clears) and the bar `N selected · Fix N
-separately` opens the same strip. Cmd+A is not in the shortcut table: the
-  system reserves it.
-  "Resolve" names the area, never a button. Review exists with or without a
-  pull request: without one it lists the session's notes under a
-  `No pull request yet` line with `Open a pull request` (see Pull request
-  review in `docs/concepts.md`). It has no dock: `Push N` sits in the header,
-  a secondary while comments are still open and the primary once none is, and
-  it confirms inline under the header.
-  The `pr` lens is the pull request page on GitHub too (`Merge request` on
-  GitLab, still their own studios there). Every door to a pull request lands
-  here: the worktree row chip, the board card badge, the context strip, the
-  Review header link and its Checks chip. `Resolve N comments` on the board
-  card and `N to resolve` on the worktree row open Review. The Overview
-  attention callout routes by cause: requested changes open Review, failed
-  checks and an approval open the pull request. Its trail is
-  `Overview › Pull request › #528`, and `#528` opens a menu of the session's
-  pull requests by branch, with `New pull request`. The page shows the pull
-  request only. Its controls come from the `pullRequest` kind of the action
-  registry (`features/actions/kinds/pullRequest.ts`), whose `slot` says which
-  available actions also get a visible control (`⋯`, the right click and ⌘K
-  ignore it and list every one): at most one primary that
-  names the next step (`Mark ready for review` on a draft, `Squash and merge`
-  once approved and green), up to three secondaries (`GitHub`, a blocked
-  `Squash and merge` with its reason on the line under the header, `Reopen`,
-  `Write review` on someone else's pull request), and `⋯` with every available
-  action. Merge and Close confirm inline under the header. Two quiet lines
-  point elsewhere: `N comments to resolve` opens Review and `Open diff` the
-  Diff. Then Details and Checks; general comments live in Review, and the page
-  has no Activity or Fix. `Write review` is a child
-  page (`Overview › Pull request › #528 › Write review`) and a form with no
-  dock: the diff to comment on, then Line comments, Verdict and Summary in one
-  column, and the action row at the end;
-  without a pull request the page is the creation form
-  (`Overview › Pull request › New`). The child page lives in the store per
-  session and drops back to the page when the lens closes. Everything Review
-  shows comes from one durable conversation model and everything it sends goes
-  out through one publisher, so a restart finds the same rows in the same
-  states, and no second path pushes a reply or closes a thread.
-- **The resolver stays in Review.** A resolver exists for one comment, so its
+- **The Branch page is where the session's code is discussed and ships.** The
+  contract of its header and tabs is in [The Branch page](#the-branch-page).
+  Comments is one flow: the list in three groups (Open, Ready to push, Done)
+  and the focused comment beside it in the page itself, never in a drawer; a
+  thread in the address is `s/{session}/branch/comments/t/{thread}`. A comment
+  nobody started shows `Fix` on hover (and `F`), which opens the launch strip
+  under the list; a checkbox on hover picks comments (`X` on the focused row,
+  Cmd+A for every comment nobody started, Esc clears) and the bar `N selected ·
+Fix N separately` opens the same strip. Cmd+A is not in the shortcut table:
+  the system reserves it. "Resolve" names the area, never a button. The page
+  exists with or without a pull request: without one the primary is `Create PR`
+  (the creation form replaces the tab body, trail `Overview › Branch ▾ › New
+pull request`) and Comments lists the session's notes. Every door to a pull
+  request lands here: the worktree row chip, the board card badge, the context
+  strip and the Checks chip. Everything Comments shows comes from one durable
+  conversation model and everything it sends goes out through one publisher, so
+  a restart finds the same rows in the same states, and no second path pushes a
+  reply or closes a thread. `Write review` is a child state of Files (the diff
+  to comment on, then Line comments, Verdict and Summary in one column, and the
+  action row at the end); the mode lives in the store per session and drops
+  back when the page closes.
+- **The resolver stays on its comment.** A resolver exists for one comment, so its
   home is that comment, never the Agents lens. The comment shows its agent in
   one line from the first paint (model, age, the state word, and while it
   drafts the last thing it said). `…` → Agent transcript opens the resolver as
-  a child page of Review (`s/{session}/review/t/{thread}/agent`), and so do a
+  a child page of its thread on the Branch (`s/{session}/review/t/{thread}/agent`), and so do a
   notification, the agent-started toast and the palette (`canonicalLocation`
   maps the resolver to the first thread of its attempt). A resolver opens on its
   Brief, with Transcript one tab away; a click on a resolver row in Activity
@@ -1662,31 +1624,49 @@ count in the diff toolbar opens it, and Start in the fix strip opens it too. It
 reads the notes, their queue items and their attempts only (`useNoteFixes`),
 never the rows of the pull request.
 
-## The Diff lens
+## The Branch page
 
-Every diff in the app is one `DiffView` (`features/diff`): the Diff lens, Write
-review, the Bitbucket pull request changes and the `file-diff` drawer. Only the
-comment behavior changes: a note for the agents in the Diff lens, a review
-draft in Write review, none in Bitbucket and the drawer. There is no file
-sidebar.
+One page per branch (`features/branch`) replaces the PR, Review and Diff
+pages. Every diff in the app is still one `DiffView` (`features/diff`): the
+Files tab, Write review, the Bitbucket pull request changes and the
+`file-diff` drawer.
 
-The Diff lens shows one branch. The trail carries the choice (see Segment
-menus); there are no worktree tabs. The header speaks only for that branch:
-meta `repo · N commits · state word`, and the controls of the `diff` kind of
-the action registry (`features/actions/kinds/diff.ts`): one primary chosen
-from the branch state (`Rebase on main` when it is behind main, `Push N
-commits` when commits wait on a branch with a pull request, `Create PR` when
-the branch has commits and no pull request, `Open terminal` while a rebase is
-stopped), up to three secondaries (`PR #528`, which opens the pull request
-with the trail `Overview › Diff › Pull request › #528`, `Rewrite history`, `Abort
-rebase`) and `⋯` with every available action (Open in editor, Open terminal,
-Change base branch…, Restore a backup…, Copy branch name, Copy patch). A
-blocked control stays visible and disabled, with its reason on the line under
-the header; Abort rebase confirms there inline. Change base branch opens the
-base picker in place, and Restore a backup opens Rewrite history on its
-Backups. The Diff has no Review door of its own: a line that carries an open
-review comment of that pull request shows it read only, marked `To resolve`,
-with `Open in Review` on that comment. Every rewrite takes the shown
+**Header.** Title (`#318 Ledger export`, or the branch name without a pull
+request), the line `Draft · project · head → base · ✓ N checks`, one primary
+and `⋯`. The primary is the first that applies: `Rebase on main`
+(`Open terminal` while a rebase is stopped, with `Abort rebase` beside it),
+`Push N` (accepted threads, then unpushed commits), `Publish N replies` (the
+fix is already on origin), `Retry N`, `Create PR`, `Ready for review`, `Merge`
+(`branchPrimaryOf`). Push, Publish and Retry go through the existing publish
+machinery: a frozen preview in line under the header (`PushBanner`), drift and
+the result per thread. A blocked primary stays visible, disabled, with its
+reason. `⋯` holds the rare lifecycle (Edit title and description, Request
+review, Convert to draft, Close or Reopen, Open on GitHub, Copy link) and the
+branch actions (Change base branch…, Open terminal, Open in editor, Copy
+branch name, Copy patch).
+
+**Comments.** A closed Description, then the list (`Needs you`, `Ready`,
+`Done`, local notes included with a `Local` label) and the open thread with the
+code around the commented line above it (`hunkAround`, linking to Files). The
+properties (State, Origin with the code host link and Copy link, Attempts with
+the transcript, Fix commit, Author) sit in a rail only when the pane is wide
+(`@6xl`); below it they read as one line under the thread. Under `@4xl` the
+list and the thread take turns: the thread in the address shows `‹ Comments`
+(Up). Fix, Resolve without a reply and Stop live on the thread and its
+properties; Fix launches from the list or the thread, never from Files.
+
+**Files.** The branch against its base with the file jump, `Viewed`, notes on
+lines and files, `Post open notes to the PR` and `Write review` (which swaps
+the tab body for the review form with line drafts). It carries no Fix, Push,
+Rewrite or `PR #N` control.
+
+**Commits.** The branch commits with the resolve commits arrangement; until
+the rewrite moves in, `Rewrite history` and `Restore a backup…` are quiet
+buttons at its top and Rewrite history is a child page (`/history`) of the tab.
+**Checks.** The checks of the pull request.
+
+The Branch page shows one branch. The trail carries the choice (see Segment
+menus); there are no worktree tabs. Every rewrite takes the shown
 mount's `mountId`, never the active mount. `Rebase on main` replays the
 branch on origin with the history engine and runs no agent. The engine first
 predicts the replay in memory; when it conflicts, the button reads
@@ -1696,8 +1676,8 @@ moves only after the engine checks the result, with a backup ref and a push
 with lease.
 
 `Rewrite history` is a child page of the branch: the trail reads
-`Overview › Diff › <branch> › Rewrite history`, the branch segment leads back
-to the Diff, and picking another branch from its popover keeps you on Rewrite
+`Overview › Branch ▾ › Rewrite history`, the branch segment leads back
+to the Commits tab, and picking another branch from its popover keeps you on Rewrite
 history. The page draws the branch as a graph (`history_graph`): a grey main
 trunk with its head node (`main is here now`, how many commits it gained,
 `Start from today's main`), your branch leaving it at the real fork point, one
