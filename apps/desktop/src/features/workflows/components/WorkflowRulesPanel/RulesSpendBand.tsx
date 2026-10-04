@@ -25,18 +25,11 @@ export const RulesSpendBand = ({ rules, onChange }: Props) => {
   }, [rules.spendLimitUsd]);
 
   return (
-    <Band label="Spend" ariaLabel="Spend" headingLevel={2}>
+    <Band label="Spend cap" ariaLabel="Spend cap" headingLevel={3}>
       <BandRow>
-        <span className="flex min-w-0 flex-1 flex-col">
-          <span id="rules-spend-cap" className="text-label text-foreground">
-            Default cap
-          </span>
-          <span className="text-secondary text-muted-foreground">
-            Applies to new runs. Each run can change it.
-          </span>
-        </span>
+        <span className="min-w-0 flex-1 text-row text-foreground">Cap what a run can spend</span>
         <Switch
-          label={<span className="sr-only">Default cap</span>}
+          label={<span className="sr-only">Spend cap</span>}
           checked={isOn}
           onChange={(next) => onChange({ spendLimitUsd: next ? DEFAULT_CAP_USD : null })}
         />
@@ -44,14 +37,13 @@ export const RulesSpendBand = ({ rules, onChange }: Props) => {
       {isOn ? (
         <>
           <BandRow>
-            <label htmlFor="rules-spend-amount" className="flex min-w-0 flex-1 flex-col">
-              <span className="text-label text-foreground">Amount</span>
-              <span className="text-secondary text-muted-foreground">Per run, in US dollars.</span>
+            <label htmlFor="rules-spend-amount" className="min-w-0 flex-1 text-row text-foreground">
+              Amount per run
             </label>
             <span className="relative w-28">
               <span
                 aria-hidden
-                className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-label text-muted-foreground"
+                className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-label text-muted-foreground"
               >
                 $
               </span>
@@ -72,12 +64,7 @@ export const RulesSpendBand = ({ rules, onChange }: Props) => {
             </span>
           </BandRow>
           <BandRow>
-            <span className="flex min-w-0 flex-1 flex-col">
-              <span className="text-label text-foreground">At the limit</span>
-              <span className="text-secondary text-muted-foreground">
-                {rules.spendLimitMode === 'pause' ? 'Pauses workflows' : 'Only warns'}
-              </span>
-            </span>
+            <span className="min-w-0 flex-1 text-row text-foreground">At the limit</span>
             <SegmentedTabs
               size="sm"
               ariaLabel="At the limit"
