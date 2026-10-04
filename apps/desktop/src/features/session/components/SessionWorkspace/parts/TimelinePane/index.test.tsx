@@ -868,7 +868,7 @@ describe('TimelinePane log rows and the state slot', () => {
     id: 'resolver-1',
     sessionId: 'session-1',
     ordinal: 1,
-    name: 'resolve: tvarga on retry.ts:12',
+    name: 'Resolve: tvarga on retry.ts',
     kind: 'resolver',
     status: 'completed',
     startedAt: '2026-08-20T10:00:00.000Z',
@@ -925,7 +925,7 @@ describe('TimelinePane log rows and the state slot', () => {
     seed();
     render(<TimelinePane session={SESSION} actions={null} />);
     const row = rowById('agent:resolver-1');
-    const title = within(row ?? document.body).getByText('resolve: tvarga on retry.ts:12');
+    const title = within(row ?? document.body).getByText('Resolve: tvarga on retry.ts');
     const state = within(row ?? document.body).getByTestId('timeline-row-state');
     const meta = row?.querySelector('[data-testid="work-meta"]');
 

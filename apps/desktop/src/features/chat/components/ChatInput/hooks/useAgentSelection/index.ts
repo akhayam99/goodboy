@@ -44,7 +44,6 @@ export const useAgentSelection = ({ session }: Params) => {
 
   return {
     selectedAgentId,
-    selectedAgentName,
     activeAgentKind,
     sessionWorktree,
     isFirstTurnForAgent,

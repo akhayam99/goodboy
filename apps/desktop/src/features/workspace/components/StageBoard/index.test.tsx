@@ -248,6 +248,12 @@ describe('StageBoard loading gate', () => {
     expect(screen.getAllByRole('button', { name: 'New session' })).toHaveLength(1);
   });
 
+  it('leaves the total out of the title and the empty Ongoing row off the board', () => {
+    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
+    expect(screen.queryByText(/^\d+ sessions?$/)).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Ongoing' })).toBeNull();
+  });
+
   it('renders the board with the archived column instead of the hero when only archived sessions exist', () => {
     const shelved = aSession({ id: 's-9' as SessionId });
     state.archivedSessions = { [wsId]: [shelved] };

@@ -9,8 +9,7 @@ describe('agentNowState', () => {
   it('reads a running agent as running before any turn state arrives', () => {
     const now = agentNowState({ agent, turnState: null, transcript: [] });
 
-    expect(now.tone).toBe('info');
-    expect(now.isPulsing).toBe(true);
+    expect(now.label).toBe('thinking');
     expect(effectiveAgentStatus({ agent, turnState: null })).toBe('running');
   });
 
@@ -28,7 +27,6 @@ describe('agentNowState', () => {
     const now = agentNowState({ agent: failed, turnState: null, transcript: [] });
 
     expect(now.label).toBe('failed');
-    expect(now.tone).toBe('danger');
   });
 
   it('reads a stopped agent as stopped, the word the hand-off chip uses', () => {

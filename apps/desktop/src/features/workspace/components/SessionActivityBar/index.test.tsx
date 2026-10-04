@@ -203,7 +203,13 @@ beforeEach(() => {
   state.sessionProjectMounts = {};
   state.sessionOpenQuestions = {};
   cost.current = 0;
-  stageInfo.current = { stage: 'done', reason: 'idle', attention: null, prState: null };
+  stageInfo.current = {
+    stage: 'done',
+    reason: 'idle',
+    addsFact: true,
+    attention: null,
+    prState: null,
+  };
   state.projects = [];
   viewPrefs.current = { group: 'none', sort: 'recent' };
   state.openSessionDraftWorkspaceId = null;
@@ -485,6 +491,7 @@ describe('SessionActivityBar, row node', () => {
     stageInfo.current = {
       stage: 'done',
       reason: 'MR !7 closed',
+      addsFact: true,
       attention: null,
       prState: 'closed',
     };
@@ -502,6 +509,7 @@ describe('SessionActivityBar, row node', () => {
     stageInfo.current = {
       stage: 'done',
       reason: 'MR !7 merged',
+      addsFact: true,
       attention: null,
       prState: 'merged',
     };
@@ -513,17 +521,46 @@ describe('SessionActivityBar, row node', () => {
   });
 
   it('falls back to the stage icon when the session has no request', () => {
-    stageInfo.current = { stage: 'building', reason: 'no PR yet', attention: null, prState: null };
+    stageInfo.current = {
+      stage: 'building',
+      reason: 'no PR yet',
+      addsFact: false,
+      attention: null,
+      prState: null,
+    };
     renderBar([], [makeSession('a-1', 'fresh one')]);
 
     expect(nodeOf(rowAt(0)).dataset.node).toBe('stage');
-    expect(within(rowAt(0)).getByText('no PR yet')).toBeDefined();
+  });
+
+  it('shows the second line only when it adds a fact the column and icon do not say', () => {
+    stageInfo.current = {
+      stage: 'building',
+      reason: 'no PR yet',
+      addsFact: false,
+      attention: null,
+      prState: null,
+    };
+    renderBar([], [makeSession('a-1', 'fresh one')]);
+    expect(within(rowAt(0)).queryByText('no PR yet')).toBeNull();
+    cleanup();
+
+    stageInfo.current = {
+      stage: 'review',
+      reason: 'PR #7: CI running',
+      addsFact: true,
+      attention: null,
+      prState: 'open',
+    };
+    renderBar([], [makeSession('a-1', 'fresh one')]);
+    expect(within(rowAt(0)).getByText('PR #7: CI running')).toBeDefined();
   });
 
   it('rings a running session and gives its row the running rail', () => {
     stageInfo.current = {
       stage: 'running',
       reason: 'agent working',
+      addsFact: true,
       attention: null,
       prState: null,
     };
@@ -542,6 +579,7 @@ describe('SessionActivityBar, row node', () => {
     stageInfo.current = {
       stage: 'attention',
       reason: '1 open question',
+      addsFact: true,
       attention: 'open-question',
       prState: null,
     };
@@ -559,6 +597,7 @@ describe('SessionActivityBar, row node', () => {
     stageInfo.current = {
       stage: 'attention',
       reason: 'agent errored on step 2',
+      addsFact: true,
       attention: 'agent-error',
       prState: null,
     };

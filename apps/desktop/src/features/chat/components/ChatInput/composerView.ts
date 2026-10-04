@@ -9,7 +9,6 @@ type Params = {
   readonly isRunning: boolean;
   readonly isFirstTurnForAgent: boolean;
   readonly activeAgentKind: AgentKind | null;
-  readonly selectedAgentName: string | null;
   readonly value: string;
   readonly attachmentCount: number;
 };
@@ -20,7 +19,6 @@ export const composerView = ({
   isRunning,
   isFirstTurnForAgent,
   activeAgentKind,
-  selectedAgentName,
   value,
   attachmentCount,
 }: Params) => {
@@ -38,13 +36,11 @@ export const composerView = ({
     isFirstTurnForAgent && activeAgentKind != null
       ? AGENT_KIND_META[activeAgentKind].firstMessagePrompt
       : null;
-  const roleLabel =
-    selectedAgentName ?? (activeAgentKind != null ? AGENT_KIND_META[activeAgentKind].label : null);
   const placeholder = isArchived
     ? ARCHIVED_SESSION_REASON
     : providerDisconnected
       ? 'Sign in to send a message'
-      : composerPlaceholder({ isRunning, firstMessagePrompt, roleLabel });
+      : composerPlaceholder({ isRunning, firstMessagePrompt });
   const shouldFocusFirstMessage = isFirstTurnForAgent && !isBlocked;
 
   return {

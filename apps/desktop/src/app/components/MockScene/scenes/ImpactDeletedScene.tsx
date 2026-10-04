@@ -96,13 +96,7 @@ export const ImpactDeletedScene = () => {
   return (
     <StudioFrame
       target={{ place: 'impact', tool: null }}
-      main={
-        <ImpactStudio
-          workspaceId={IMPACT_DELETED_WORKSPACE_ID}
-          workspaceName={WORKSPACE_NAME}
-          onClose={() => undefined}
-        />
-      }
+      main={<ImpactStudio workspaceId={IMPACT_DELETED_WORKSPACE_ID} onClose={() => undefined} />}
     />
   );
 };

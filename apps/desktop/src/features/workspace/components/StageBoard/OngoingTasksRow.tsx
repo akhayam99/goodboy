@@ -37,6 +37,10 @@ export const OngoingTasksRow = ({ workspaceId, filter, onFilter }: Props) => {
     }
   };
 
+  if (tasks.length === 0) {
+    return null;
+  }
+
   return (
     <div
       role="group"
@@ -44,35 +48,29 @@ export const OngoingTasksRow = ({ workspaceId, filter, onFilter }: Props) => {
       className="flex min-h-7 shrink-0 flex-wrap items-center gap-2"
     >
       <Eyebrow label="Ongoing" />
-      {tasks.length === 0 ? (
-        <span className="text-label text-faint-foreground">
-          Nothing ongoing. Link a task to the whole workspace.
-        </span>
-      ) : (
-        tasks.map((task) => {
-          const key = ongoingKey({ task });
-          const isActive = filter === key;
-          return (
-            <span key={key} className="flex items-center">
-              <TaskLinkChip
-                provider={task.provider}
-                identifier={task.identifier}
-                title={task.title}
-                isActive={isActive}
-                tooltip={isActive ? 'Show every session' : `Show only ${task.identifier}`}
-                onClick={() => onFilter(isActive ? null : key)}
-              />
-              <IconButton
-                icon={X}
-                variant="ghost"
-                label={`Stop tracking ${task.identifier}`}
-                tooltip={`Stop tracking ${task.identifier}`}
-                onClick={() => void unlink(task)}
-              />
-            </span>
-          );
-        })
-      )}
+      {tasks.map((task) => {
+        const key = ongoingKey({ task });
+        const isActive = filter === key;
+        return (
+          <span key={key} className="flex items-center">
+            <TaskLinkChip
+              provider={task.provider}
+              identifier={task.identifier}
+              title={task.title}
+              isActive={isActive}
+              tooltip={isActive ? 'Show every session' : `Show only ${task.identifier}`}
+              onClick={() => onFilter(isActive ? null : key)}
+            />
+            <IconButton
+              icon={X}
+              variant="ghost"
+              label={`Stop tracking ${task.identifier}`}
+              tooltip={`Stop tracking ${task.identifier}`}
+              onClick={() => void unlink(task)}
+            />
+          </span>
+        );
+      })}
       {filter === null ? null : (
         <Button size="sm" variant="ghost" onClick={() => onFilter(null)}>
           Clear

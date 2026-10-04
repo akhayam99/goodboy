@@ -15,7 +15,6 @@ import { ProviderPolicyRow } from './ProviderPolicyRow';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
-  readonly workspaceName: string;
   readonly hasReset?: boolean;
 };
 
@@ -30,7 +29,7 @@ type RowKeyParams = {
   readonly index: number;
 };
 
-export const ProviderPolicyList = ({ workspaceId, workspaceName, hasReset = false }: Props) => {
+export const ProviderPolicyList = ({ workspaceId, hasReset = false }: Props) => {
   const policy = useProviderPolicy({ workspaceId });
   const [expanded, setExpanded] = useState<ProviderId | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
@@ -100,7 +99,7 @@ export const ProviderPolicyList = ({ workspaceId, workspaceName, hasReset = fals
 
   return (
     <div className="flex min-w-0 flex-col gap-1">
-      <ul aria-label={`Providers, in order, for ${workspaceName}`} className="flex flex-col">
+      <ul aria-label="Providers, in order, for this workspace" className="flex flex-col">
         {rows.map((row, index) => (
           <Fragment key={row.id}>
             <PolicyDropZone

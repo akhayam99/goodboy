@@ -50,6 +50,7 @@ describe('deriveSessionStage pull request freshness', () => {
     expect(info).toEqual({
       stage: 'building',
       reason: 'no PR yet',
+      addsFact: false,
       attention: null,
       prState: null,
     });
@@ -65,6 +66,7 @@ describe('deriveSessionStage pull request freshness', () => {
     expect(info).toEqual({
       stage: 'attention',
       reason: '1 open question',
+      addsFact: true,
       attention: 'open-question',
       prState: null,
     });
@@ -130,6 +132,7 @@ describe('deriveSessionStage orchestrator decision', () => {
     expect(info).toEqual({
       stage: 'running',
       reason: 'deciding the next step',
+      addsFact: true,
       attention: null,
       prState: null,
     });
@@ -147,9 +150,23 @@ describe('deriveSessionStage orchestrator decision', () => {
     expect(info).toEqual({
       stage: 'running',
       reason: 'deciding the next step',
+      addsFact: true,
       attention: null,
       prState: null,
     });
+  });
+
+  it('marks the stage defaults as adding no fact and real signals as adding one', () => {
+    const idle = deriveSessionStage({ session, pr: null, ...signals });
+    const deciding = deriveSessionStage({
+      session,
+      pr: null,
+      ...signals,
+      isDecidingWorkflow: true,
+    });
+
+    expect(idle.addsFact).toBe(false);
+    expect(deciding.addsFact).toBe(true);
   });
 
   it('reads the same session as idle work once the decision has landed', () => {
@@ -262,6 +279,7 @@ describe('deriveSessionStage error against running', () => {
       expect(info).toEqual({
         stage: 'attention',
         reason: 'agent errored',
+        addsFact: true,
         attention: 'agent-error',
         prState: null,
       });
