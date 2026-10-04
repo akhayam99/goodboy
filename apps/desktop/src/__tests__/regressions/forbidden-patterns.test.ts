@@ -130,6 +130,10 @@ const RAW_TRACKING = /(?<![\w-])(?:[\w-]+:)*tracking-(?:\[|[a-z])/;
 const RAW_SCROLLER = /(?<![\w-])(?:[\w-]+:)*overflow-(?:x-|y-)?(?:auto|scroll)(?![\w-])/;
 const TONE_BORDER_RAIL = /(?<![\w-])(?:[\w-]+:)*border-l-(?:2|4)(?![\w-])/;
 const ROUNDED = /(?<![\w-])(?:[\w-]+:)*rounded(?:-|\b)/;
+const HALF_STEP_SPACING =
+  /(?<![\w-])(?:[\w-]+:)*-?(?:p|px|py|pt|pb|pl|pr|ps|pe|gap|gap-x|gap-y|m|mx|my|mt|mb|ml|mr|space-x|space-y)-[1-5]\.5(?![\w-])/;
+const ROLE_CLASS = /(?<![\w-])(?:[\w-]+:)*text-(?:row|label|heading|title)(?![\w-])/;
+const WEIGHT_CLASS = /(?<![\w-])(?:[\w-]+:)*font-(?:medium|semibold|bold)(?![\w-])/;
 const FORMAT_ERROR_OWNER = 'packages/ui/src/formatError.ts';
 const INVOKE_OWNER = 'apps/desktop/src/shared/lib/invokeCommand.ts';
 const CAUGHT_SOURCE = /^(?:apps\/desktop\/src|packages\/ui\/src|packages\/core\/src)\//;
@@ -297,7 +301,7 @@ const RULES: ReadonlyArray<Rule> = [
     id: 'raw-type-size',
     kinds: ['ts'],
     count: (file) => countClassLines({ file, pattern: RAW_TYPE_SIZE }),
-    hint: 'use a type role: text-row, not text-sm font-medium; text-label, not text-xs; text-secondary, not text-2xs; text-meta, not text-3xs',
+    hint: 'use a type role: text-row, not text-sm font-medium; text-label, not text-xs; text-secondary, not text-2xs; text-chip, not text-3xs',
   },
   {
     id: 'raw-font-weight',
@@ -339,6 +343,22 @@ const RULES: ReadonlyArray<Rule> = [
     kinds: ['ts'],
     count: (file) => countLines({ file, matches: (line) => FOOTER_CTA_BAR.test(line) }),
     hint: 'a form or creation ends with FormActions inline after its content, never a footer bar with a divider (DESIGN-SYSTEM.md, Form actions)',
+  },
+  {
+    id: 'half-step-spacing',
+    kinds: ['ts'],
+    count: (file) => countClassLines({ file, pattern: HALF_STEP_SPACING }),
+    hint: 'spacing sits on the 4px grid: use 1, 2 or 3 (4, 8, 12px), never 1.5, 2.5 or 3.5',
+  },
+  {
+    id: 'role-weight-override',
+    kinds: ['ts'],
+    count: (file) =>
+      countLines({
+        file,
+        matches: (line) => ROLE_CLASS.test(line) && WEIGHT_CLASS.test(line),
+      }),
+    hint: 'a type role carries its own weight: drop font-medium, font-semibold or font-bold next to text-row, text-label, text-heading and text-title',
   },
 ];
 

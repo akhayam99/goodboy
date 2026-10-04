@@ -1,4 +1,4 @@
-import { Eyebrow, cn } from '@goodboy/ui';
+import { Chip, Eyebrow, PANE_RHYTHM, cn } from '@goodboy/ui';
 
 const ROLE_SAMPLES = [
   { role: 'text-display', className: 'text-display', sample: 'Connect your first provider' },
@@ -19,7 +19,17 @@ const ROLE_SAMPLES = [
   { role: 'text-secondary', className: 'text-secondary', sample: 'PR #231 awaiting review' },
   { role: 'text-eyebrow', className: 'text-eyebrow', sample: 'In review' },
   { role: 'text-meta', className: 'text-meta', sample: '19:34 · $2.15 · 25m' },
+  { role: 'text-chip', className: 'text-chip', sample: 'Needs you' },
   { role: 'text-code', className: 'text-code', sample: 'nw/fix-posting-rounding' },
+] as const;
+
+const SPACING_STEPS = [
+  { name: '1 · 4', className: 'w-1' },
+  { name: '2 · 8', className: 'w-2' },
+  { name: '3 · 12', className: 'w-3' },
+  { name: '4 · 16', className: 'w-4' },
+  { name: '6 · 24', className: 'w-6' },
+  { name: '8 · 32', className: 'w-8' },
 ] as const;
 
 const RADII = [
@@ -31,18 +41,18 @@ const RADII = [
 ] as const;
 
 const LEVELS = [
-  { name: '2 band', className: 'rounded-lg bg-fill px-2 py-1.5' },
+  { name: '2 band', className: 'rounded-lg bg-fill px-2 py-2' },
   {
     name: '3 card',
-    className: 'rounded-lg border border-border-soft bg-elevated px-2 py-1.5 shadow-sm',
+    className: 'rounded-lg border border-border-soft bg-elevated px-2 py-2 shadow-sm',
   },
   {
     name: '4 floating',
-    className: 'rounded-lg border border-border bg-floating px-2 py-1.5 shadow-lg',
+    className: 'rounded-lg border border-border bg-floating px-2 py-2 shadow-lg',
   },
   {
     name: '5 tooltip',
-    className: 'rounded-md bg-foreground px-2 py-1.5 text-background shadow-md',
+    className: 'rounded-md bg-foreground px-2 py-2 text-background shadow-md',
   },
 ] as const;
 
@@ -59,6 +69,40 @@ export const DesignScaleScene = () => (
         ))}
       </dl>
     </section>
+    <section aria-label="Rows" className="flex flex-col gap-2">
+      <Eyebrow label="Rows" />
+      <div className="flex max-w-xl flex-col gap-1">
+        <div
+          className={cn('flex items-center gap-2 rounded-md bg-selected', PANE_RHYTHM.navRail.row)}
+        >
+          <span className="min-w-0 flex-1 truncate text-row text-foreground">Sidebar row</span>
+          <span className="text-meta text-faint-foreground">2h</span>
+        </div>
+        <div className={cn('flex flex-col rounded-md bg-fill', PANE_RHYTHM.navRail.rowTwo)}>
+          <span className="truncate text-row text-foreground">Sidebar row, two lines</span>
+          <span className="truncate text-meta text-muted-foreground">PR #231 awaiting review</span>
+        </div>
+        <div className="flex h-8 items-center gap-2 rounded-md bg-fill px-2">
+          <span className="min-w-0 flex-1 truncate text-row text-foreground">Activity row</span>
+          <span className="text-meta text-faint-foreground">19:34</span>
+        </div>
+        <div className="flex flex-col gap-2 rounded-lg border border-border-soft bg-elevated p-3">
+          <span className="text-title text-foreground">Board card title</span>
+          <Chip tone="neutral" label="Needs you" size="3xs" />
+        </div>
+      </div>
+    </section>
+    <section aria-label="Spacing" className="flex flex-col gap-2">
+      <Eyebrow label="Spacing" />
+      <ul className="flex items-end gap-6">
+        {SPACING_STEPS.map(({ name, className }) => (
+          <li key={name} className="flex flex-col items-start gap-2">
+            <span className={cn('h-4 bg-muted-foreground', className)} />
+            <span className="text-chip text-muted-foreground">{name}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
     <section aria-label="Radius" className="flex flex-col gap-2">
       <Eyebrow label="Radius" />
       <ul className="flex items-end gap-6">
@@ -72,7 +116,7 @@ export const DesignScaleScene = () => (
     </section>
     <section aria-label="Elevation" className="flex flex-col gap-2">
       <Eyebrow label="Elevation" />
-      <div className="flex max-w-xl flex-col gap-2.5 rounded-l-frame border border-r-0 border-frame-edge bg-background p-3">
+      <div className="flex max-w-xl flex-col gap-3 rounded-l-frame border border-r-0 border-frame-edge bg-background p-3">
         {LEVELS.map(({ name, className }) => (
           <div key={name} className={cn('text-secondary', className)}>
             {name}
