@@ -123,7 +123,7 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
       <AgentBriefQuestions session={session} agent={agent} />
       {shownSummary !== '' && !isSplitIntoSubagents ? (
         <Band inset="content" label={hasOutputSummary ? 'Outcome' : 'Latest'} headingLevel={2}>
-          <div className="text-body text-foreground">
+          <div className="max-w-[72ch] text-body text-foreground">
             <Markdown text={shownSummary} />
           </div>
           {!hasOutputSummary ? (

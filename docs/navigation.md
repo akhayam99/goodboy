@@ -493,7 +493,7 @@ reach NW-230 anymore`. Pick up a task shows only the open starred issues,
   and one per issue for GitHub and Sentry, which have no batch endpoint for
   fetching by id.
 - **Run a workflow** is the workflow builder itself (`WorkflowBuilderView`
-  with a `kickoff` target), the same one Overview > Workflows > Create opens:
+  with a `kickoff` target), the same one Session > Workflows > Create opens:
   title, goal card with Add files and Polish, the Orchestrated / Describe steps /
   Pick a workflow switch, Can use, the plan preview with the orchestrator row or the
   editable steps, guidance, Starts, when to ask, Spend cap and Start workflow with
@@ -556,16 +556,16 @@ activity yet show the plain overview with its actions.
 - **Every crumb has an icon, and depth compacts the trail.** Agents carry the
   agent glyph in their kind's colour, runs the run glyph, artifacts, questions
   and pull request modes their own. The last crumb and its parent always stay
-  full. `Overview` keeps its name through five crumbs. From five every other
-  ancestor but the parent becomes an icon, and from six `Overview` does too.
+  full. `Session` keeps its name through five crumbs. From five every other
+  ancestor but the parent becomes an icon, and from six `Session` does too.
   When the band still has no room, ancestors turn
-  to icons from the left, then the icons after `Overview` fold into a `…` menu
-  right after it; `Overview` is the anchor and never folds. An icon crumb keeps
+  to icons from the left, then the icons after `Session` fold into a `…` menu
+  right after it; `Session` is the anchor and never folds. An icon crumb keeps
   its name as tooltip and accessible name. `compactTrail` in `@goodboy/ui` is
   the pure rule; the label closes with a 220ms width transition (120ms fade),
   and a new crumb enters from the right 60ms later. Under reduced motion only
   the opacity changes.
-- **The trail starts at `Overview`, and the session name is not a crumb.** The
+- **The trail starts at `Session`, and the session name is not a crumb.** The
   sidebar already shows the session identity. Repeating it in the trail spends
   a crumb on something the user is already looking at.
 - The last crumb is the current location and is never clickable. A list view
@@ -584,7 +584,7 @@ comment` for the maintainer's own comment, `Resolve: Mara Quint on index.ts`
   uses (GitHub, GitLab, Jira, Linear, Slack), at the same depth as any other
   lens. A studio belongs under its own tool, never under another tool's lens.
 - **Opening a child extends the trail and keeps every ancestor**:
-  `Overview > {HomeLens} > {Agent}`. Selecting a sibling changes only the last
+  `Session > {HomeLens} > {Agent}`. Selecting a sibling changes only the last
   crumb and the child region.
 - **The trail shows the structure of the app, not the history of the
   session.** A parent comes from the object that is open, never from the
@@ -599,7 +599,7 @@ checks`, one primary by state, `⋯` for the rare pull request lifecycle) over
   the tabs `Comments · Files · Commits · Checks`
   (`s/{session}/branch/{tab}[:{mount}][/t/{thread}]`). A tab switch and a
   thread selection replace the entry, so Back never walks them. The trail is
-  `Overview > Branch ▾ > {thread or file}`, the same from
+  `Session > Branch ▾ > {thread or file}`, the same from
   every door; Up is the crumb to the left of the open one. `Branch ▾` lists the
   session branches and makes the picked one the active mount. `layers.ts` is
   gone. The requests `pr`, `review` and `files` (a mount present) are
@@ -615,9 +615,9 @@ checks`, one primary by state, `⋯` for the rare pull request lifecycle) over
 - **Segment menus.** Every segment that has siblings carries one `CrumbMenu`
   (the `Trail` primitive in `@goodboy/ui`), and the rule is one: its menu lists
   the siblings of what that segment names, plus at most two actions that belong
-  to that thing. The page segment (depth one, or `Overview` when it is alone)
+  to that thing. The page segment (depth one, or `Session` when it is alone)
   lists the session's pages with a count that names what it counts
-  (`3 need you`, `2 running`), grouped as pages, Tools and Linked; `Overview`
+  (`3 need you`, `2 running`), grouped as pages, Tools and Linked; `Session`
   has no menu once it has children. A run lists the session's runs (Running,
   Finished, a chained run indented under its own with `after ...`); a step
   lists every step of its run in order, the ones not started switched off; an
@@ -668,7 +668,7 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   Escape cancels the confirm first, then closes. Shortcuts live in the segment
   tooltip and the palette, never in the rows.
 - **The workflow case extends the same control**:
-  `Overview > Workflows > {Run} > {Step}`. A delegated child names its root and
+  `Session > Workflows > {Run} > {Step}`. A delegated child names its root and
   parent agents between the run and itself, and an open question it answers
   adds one last crumb. There is no separate step strip and no "Part of
   {Workflow}" line.
@@ -1361,7 +1361,7 @@ workspaceId, nowMs })`, owns every row's subtitle and tone (it replaced three
 Fix N separately` opens the same strip. Cmd+A is not in the shortcut table:
   the system reserves it. "Resolve" names the area, never a button. The page
   exists with or without a pull request: without one the primary is `Create PR`
-  (the creation form replaces the tab body, trail `Overview › Branch ▾ › New
+  (the creation form replaces the tab body, trail `Session › Branch ▾ › New
 pull request`) and Comments lists the session's notes. Every door to a pull
   request lands here: the worktree row chip, the board card badge, the context
   strip and the Checks chip. Everything Comments shows comes from one durable
@@ -1648,7 +1648,9 @@ list and the thread take turns: the thread in the address shows `‹ Comments`
 (Up). Fix, Resolve without a reply and Stop live on the thread and its
 properties; Fix launches from the list or the thread, never from Files.
 
-**Files.** The branch against its base with the file jump, `Viewed`, notes on
+**Files.** The branch against its base with a file tree on the left (changed
+files by folder, `+N −N`, a check on viewed ones, `N of M viewed` above it;
+`@4xl` and up, under it the file jump stays), `Viewed`, notes on
 lines and files, `Post open notes to the PR` and `Write review` (which swaps
 the tab body for the review form with line drafts). It carries no Fix, Push,
 Rewrite or `PR #N` control.

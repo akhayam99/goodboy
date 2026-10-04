@@ -359,7 +359,7 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.getByTestId('session-crumb-bar')).toBeDefined();
 
     const { result } = renderHook(() => useSessionCrumbs({ session }));
-    expect(result.current.map((crumb) => crumb.label)).toEqual(['Overview', 'Branch', 'Fix run']);
+    expect(result.current.map((crumb) => crumb.label)).toEqual(['Session', 'Branch', 'Fix run']);
   });
 
   it('does not show workflow linkage outside the workflows lens', () => {
@@ -398,7 +398,7 @@ describe('SessionWorkspace agent overlay', () => {
 
     const { result } = renderHook(() => useSessionCrumbs({ session: workflowSession }));
     expect(result.current.map((crumb) => crumb.label)).toEqual([
-      'Overview',
+      'Session',
       'Agents',
       'Selected agent',
     ]);
@@ -663,7 +663,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
     const { result } = renderHook(() => useSessionCrumbs({ session: workflowSession }));
 
     expect(result.current.map((crumb) => crumb.label)).toEqual([
-      'Overview',
+      'Session',
       'Runs',
       'Release flow',
       'Selected agent',
@@ -689,7 +689,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
     const { result } = renderHook(() => useSessionCrumbs({ session }));
 
     expect(result.current.map((crumb) => crumb.label)).toEqual([
-      'Overview',
+      'Session',
       'Runs',
       'Selected agent',
     ]);
@@ -726,7 +726,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
 
     const { result } = renderHook(() => useSessionCrumbs({ session: workflowSession }));
     expect(result.current.map((crumb) => crumb.label)).toEqual([
-      'Overview',
+      'Session',
       'Runs',
       'Release flow',
       'Selected agent',
@@ -758,7 +758,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
 
     const { result } = renderHook(() => useSessionCrumbs({ session: workflowSession }));
 
-    expect(result.current.map((crumb) => crumb.label)).toEqual(['Overview', 'Runs']);
+    expect(result.current.map((crumb) => crumb.label)).toEqual(['Session', 'Runs']);
   });
 });
 

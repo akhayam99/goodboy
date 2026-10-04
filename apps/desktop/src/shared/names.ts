@@ -89,6 +89,7 @@ const FORMER_NAMES: Readonly<Record<string, ReadonlyArray<string>>> = {
   [NAMES.retry]: ['Try again'],
   [NAMES.removeLink]: ['Unlink'],
   [NAMES.removeLinkFromSession]: ['Unlink from this session'],
+  Session: ['Overview'],
 };
 
 export const formerNamesOf = (name: string): ReadonlyArray<string> => FORMER_NAMES[name] ?? [];

@@ -32,7 +32,7 @@ const stackDepth = (): number => {
   return state.navigation[state.currentWorkspaceId ?? '']?.entries.length ?? 0;
 };
 
-const BRANCH_TRAIL = ['Overview', '#', 'Stop retried webhooks'];
+const BRANCH_TRAIL = ['Session', '#', 'Stop retried webhooks'];
 
 const seedReviewComment = ({ sessionId }: Ctx): void => {
   const state = useAppStore.getState();
@@ -88,13 +88,13 @@ export const BRANCH_PAGE_ROWS: ReadonlyArray<Row> = [
     lands: both(branchTab('comments'), trailReads(...BRANCH_TRAIL)),
   },
   {
-    name: 'trail: the Diff door reads Overview then the Branch',
+    name: 'trail: the Diff door reads Session then the Branch',
     covers: ['navigate', 'trail:diff-door'],
     open: () => openCrumb(/^Diff/),
     lands: both(branchTab('files'), trailReads(...BRANCH_TRAIL)),
   },
   {
-    name: 'trail: the Review door reads the same Overview then the Branch',
+    name: 'trail: the Review door reads the same Session then the Branch',
     covers: ['navigate', 'trail:review-door'],
     open: () => openPalette(/^Open Review/),
     lands: both(branchTab('comments'), trailReads(...BRANCH_TRAIL)),

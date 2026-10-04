@@ -174,6 +174,7 @@ export const MOCK_SCENES = {
   resolve: ResolveScene,
   'resolve-select': ResolveSelectScene,
   'branch-comments': BranchCommentsScene,
+  'branch-commits': BrandHistoryScene,
   'branch-files': BrandDiffScene,
   'branch-narrow': BranchNarrowScene,
   'branch-push': BranchPushScene,

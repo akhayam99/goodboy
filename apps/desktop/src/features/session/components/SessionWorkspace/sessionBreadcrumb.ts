@@ -99,7 +99,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
 
   const overview: BreadcrumbCrumb = {
     id: 'overview',
-    label: 'Overview',
+    label: 'Session',
     icon: CONCEPT_ICONS.timeline,
     onClick: handlers.toOverview,
   };

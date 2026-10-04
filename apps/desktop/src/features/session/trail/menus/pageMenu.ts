@@ -55,7 +55,7 @@ export const pageMenu = ({
               isQuiet: lens === 'questions' && summaries.questions === undefined,
             }),
           },
-    label: lens === null ? 'Overview' : lensLabelFor({ lens, isBranchless }),
+    label: lens === null ? 'Session' : lensLabelFor({ lens, isBranchless }),
     secondary: null,
     metaA: lens === null ? null : (summaries[lens] ?? null),
     state: null,

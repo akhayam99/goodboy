@@ -53,7 +53,7 @@ describe('buildSessionBreadcrumb', () => {
         makeHandlers(),
       ),
     );
-    expect(labels(crumbs)).toEqual(['Overview', 'review', 'Fix run']);
+    expect(labels(crumbs)).toEqual(['Session', 'review', 'Fix run']);
   });
 
   it('ends the trail on the Branch when no thread, file or page is open', () => {
@@ -131,7 +131,7 @@ describe('buildSessionBreadcrumb', () => {
   it('renders a single non-clickable Overview crumb on bare overview', () => {
     const h = makeHandlers();
     const crumbs = buildSessionBreadcrumb(base({}, h));
-    expect(labels(crumbs)).toEqual(['Overview']);
+    expect(labels(crumbs)).toEqual(['Session']);
     expect(crumbs).toHaveLength(1);
     expect(last(crumbs)?.onClick).toBeUndefined();
   });
@@ -139,7 +139,7 @@ describe('buildSessionBreadcrumb', () => {
   it('renders Overview > lens for a leaf lens, Overview clickable', () => {
     const h = makeHandlers();
     const crumbs = buildSessionBreadcrumb(base({ lens: 'questions' }, h));
-    expect(labels(crumbs)).toEqual(['Overview', 'questions']);
+    expect(labels(crumbs)).toEqual(['Session', 'questions']);
     crumbs[0]!.onClick!();
     expect(h.toOverview).toHaveBeenCalledOnce();
     expect(last(crumbs)?.onClick).toBeUndefined();
@@ -150,7 +150,7 @@ describe('buildSessionBreadcrumb', () => {
     const crumbs = buildSessionBreadcrumb(
       base({ lens: 'pr', pullRequestNumber: 528, pullRequestModeLabel: 'Write review' }, h),
     );
-    expect(labels(crumbs)).toEqual(['Overview', 'pr', '#528', 'Write review']);
+    expect(labels(crumbs)).toEqual(['Session', 'pr', '#528', 'Write review']);
     crumbs[2]!.onClick!();
     expect(h.toPullRequestHome).toHaveBeenCalledOnce();
     expect(last(crumbs)?.onClick).toBeUndefined();
@@ -159,19 +159,19 @@ describe('buildSessionBreadcrumb', () => {
   it('names the new pull request form under a pull request with no number', () => {
     const h = makeHandlers();
     const crumbs = buildSessionBreadcrumb(base({ lens: 'pr', pullRequestModeLabel: 'New' }, h));
-    expect(labels(crumbs)).toEqual(['Overview', 'pr', 'New']);
+    expect(labels(crumbs)).toEqual(['Session', 'pr', 'New']);
   });
 
   it('keeps the pull request a leaf on its own page', () => {
     const h = makeHandlers();
     const crumbs = buildSessionBreadcrumb(base({ lens: 'pr', pullRequestNumber: 528 }, h));
-    expect(labels(crumbs)).toEqual(['Overview', 'pr', '#528']);
+    expect(labels(crumbs)).toEqual(['Session', 'pr', '#528']);
   });
 
   it('keeps Review a leaf when the queue is showing', () => {
     const h = makeHandlers();
     const crumbs = buildSessionBreadcrumb(base({ lens: 'review' }, h));
-    expect(labels(crumbs)).toEqual(['Overview', 'review']);
+    expect(labels(crumbs)).toEqual(['Session', 'review']);
   });
 
   it('extends the trail without dropping an ancestor when a child opens', () => {
@@ -183,7 +183,7 @@ describe('buildSessionBreadcrumb', () => {
       ),
     );
 
-    expect(labels(crumbs)).toEqual(['Overview', 'agents', 'Selected agent']);
+    expect(labels(crumbs)).toEqual(['Session', 'agents', 'Selected agent']);
     crumbs[1]!.onClick!();
     expect(h.toLens).toHaveBeenCalledWith('agents');
     expect(last(crumbs)?.onClick).toBeUndefined();
@@ -198,8 +198,8 @@ describe('buildSessionBreadcrumb', () => {
       base({ lens: null, selectedChildHome: 'review', selectedChildLabel: 'review one' }, h),
     );
 
-    expect(labels(adHoc)).toEqual(['Overview', 'agents', 'scout one']);
-    expect(labels(resolver)).toEqual(['Overview', 'review', 'Fix run']);
+    expect(labels(adHoc)).toEqual(['Session', 'agents', 'scout one']);
+    expect(labels(resolver)).toEqual(['Session', 'review', 'Fix run']);
   });
 
   it('parents a step on its run no matter which lens the jump came from', () => {
@@ -227,7 +227,7 @@ describe('buildSessionBreadcrumb', () => {
       ),
     );
 
-    expect(labels(fromFeed)).toEqual(['Overview', 'Runs', 'refactor', 'Implement']);
+    expect(labels(fromFeed)).toEqual(['Session', 'Runs', 'refactor', 'Implement']);
     expect(labels(fromAnotherLens)).toEqual(labels(fromFeed));
   });
 
@@ -236,7 +236,7 @@ describe('buildSessionBreadcrumb', () => {
     const crumbs = buildSessionBreadcrumb(
       base({ lens: 'workflows', focusedWorkflowName: 'refactor' }, h),
     );
-    expect(labels(crumbs)).toEqual(['Overview', 'Runs', 'refactor']);
+    expect(labels(crumbs)).toEqual(['Session', 'Runs', 'refactor']);
     crumbs[1]!.onClick!();
     expect(h.toWorkflowsList).toHaveBeenCalledOnce();
     expect(last(crumbs)?.onClick).toBeUndefined();
@@ -256,7 +256,7 @@ describe('buildSessionBreadcrumb', () => {
       ),
     );
 
-    expect(labels(crumbs)).toEqual(['Overview', 'Runs', 'refactor', 'Implement']);
+    expect(labels(crumbs)).toEqual(['Session', 'Runs', 'refactor', 'Implement']);
     expect(last(crumbs)?.id).toBe('selected-child');
     expect(last(crumbs)?.onClick).toBeUndefined();
   });
@@ -276,7 +276,7 @@ describe('buildSessionBreadcrumb', () => {
       ),
     );
 
-    expect(labels(crumbs)).toEqual(['Overview', 'Runs', 'refactor', 'Implement', 'area alpha']);
+    expect(labels(crumbs)).toEqual(['Session', 'Runs', 'refactor', 'Implement', 'area alpha']);
     expect(crumbs[3]?.id).toBe('selected-parent');
     crumbs[3]!.onClick!();
     expect(h.toParentAgent).toHaveBeenCalledOnce();
@@ -298,7 +298,7 @@ describe('buildSessionBreadcrumb', () => {
       ),
     );
 
-    expect(labels(crumbs)).toEqual(['Overview', 'agents', 'scout one', 'scout area']);
+    expect(labels(crumbs)).toEqual(['Session', 'agents', 'scout one', 'scout area']);
     crumbs[2]!.onClick!();
     expect(h.toParentAgent).toHaveBeenCalledOnce();
   });
@@ -319,7 +319,7 @@ describe('buildSessionBreadcrumb', () => {
       ),
     );
 
-    expect(labels(crumbs)).toEqual(['Overview', 'Runs', 'refactor', 'Implement', 'mid', 'leaf']);
+    expect(labels(crumbs)).toEqual(['Session', 'Runs', 'refactor', 'Implement', 'mid', 'leaf']);
     expect(crumbs[3]?.id).toBe('selected-root');
     crumbs[3]!.onClick!();
     expect(h.toRootAgent).toHaveBeenCalledOnce();
@@ -360,7 +360,7 @@ describe('buildSessionBreadcrumb', () => {
       ),
     );
 
-    expect(labels(crumbs)).toEqual(['Overview', 'Runs', 'refactor', 'Implement']);
+    expect(labels(crumbs)).toEqual(['Session', 'Runs', 'refactor', 'Implement']);
   });
 
   it('keeps a workflow agent with no resolvable run under the workflows list', () => {
@@ -372,7 +372,7 @@ describe('buildSessionBreadcrumb', () => {
       ),
     );
 
-    expect(labels(crumbs)).toEqual(['Overview', 'Runs', 'Implement']);
+    expect(labels(crumbs)).toEqual(['Session', 'Runs', 'Implement']);
     crumbs[1]!.onClick!();
     expect(h.toWorkflowsList).toHaveBeenCalledOnce();
   });
@@ -391,13 +391,13 @@ describe('buildSessionBreadcrumb', () => {
       ),
     );
 
-    expect(labels(crumbs)).toEqual(['Overview', 'agents', 'scout one']);
+    expect(labels(crumbs)).toEqual(['Session', 'agents', 'scout one']);
   });
 
   it('renders Overview > Workflows > Create for the workflow builder studio', () => {
     const h = makeHandlers();
     const crumbs = buildSessionBreadcrumb(base({ studio: { kind: 'workflow' } }, h));
-    expect(labels(crumbs)).toEqual(['Overview', 'Runs', 'Create']);
+    expect(labels(crumbs)).toEqual(['Session', 'Runs', 'Create']);
     crumbs[1]!.onClick!();
     expect(h.toWorkflowsList).toHaveBeenCalledOnce();
     expect(last(crumbs)?.onClick).toBeUndefined();
@@ -408,7 +408,7 @@ describe('buildSessionBreadcrumb', () => {
     const crumbs = buildSessionBreadcrumb(
       base({ lens: 'workflows', focusedWorkflowName: null }, h),
     );
-    expect(labels(crumbs)).toEqual(['Overview', 'workflows']);
+    expect(labels(crumbs)).toEqual(['Session', 'workflows']);
     expect(crumbs).toHaveLength(2);
     expect(last(crumbs)?.onClick).toBeUndefined();
   });
@@ -416,7 +416,7 @@ describe('buildSessionBreadcrumb', () => {
   it('roots the merge request studio in the GitLab lens, not the GitHub one', () => {
     const h = makeHandlers();
     const crumbs = buildSessionBreadcrumb(base({ studio: { kind: 'mr' } }, h));
-    expect(labels(crumbs)).toEqual(['Overview', 'gitlab_issues', 'Merge request']);
+    expect(labels(crumbs)).toEqual(['Session', 'gitlab_issues', 'Merge request']);
     crumbs[1]!.onClick!();
     expect(h.toLens).toHaveBeenCalledWith('gitlab_issues');
   });
@@ -433,7 +433,7 @@ describe('buildSessionBreadcrumb', () => {
 
     for (const lens of lenses) {
       const crumbs = buildSessionBreadcrumb(base({ lens }, h));
-      expect(labels(crumbs)).toEqual(['Overview', lens]);
+      expect(labels(crumbs)).toEqual(['Session', lens]);
       expect(last(crumbs)?.onClick).toBeUndefined();
     }
   });
@@ -441,7 +441,7 @@ describe('buildSessionBreadcrumb', () => {
   it('opens on Overview so the session name never repeats the sidebar', () => {
     const h = makeHandlers();
     const crumbs = buildSessionBreadcrumb(base({ lens: 'agents' }, h));
-    expect(crumbs[0]?.label).toBe('Overview');
+    expect(crumbs[0]?.label).toBe('Session');
   });
 
   it('renders Overview > Artifacts > {title} for a focused plan', () => {
@@ -449,7 +449,7 @@ describe('buildSessionBreadcrumb', () => {
     const crumbs = buildSessionBreadcrumb(
       base({ lens: 'plans', focusedArtifactTitle: 'migration plan' }, h),
     );
-    expect(labels(crumbs)).toEqual(['Overview', 'Artifacts', 'migration plan']);
+    expect(labels(crumbs)).toEqual(['Session', 'Artifacts', 'migration plan']);
     crumbs[1]!.onClick!();
     expect(h.toArtifactsList).toHaveBeenCalledOnce();
   });
@@ -466,7 +466,7 @@ describe('buildSessionBreadcrumb', () => {
         h,
       ),
     );
-    expect(labels(crumbs)).toEqual(['Overview', 'Runs', 'Create']);
+    expect(labels(crumbs)).toEqual(['Session', 'Runs', 'Create']);
   });
 
   it('names the delegate step Answers instead of repeating the question', () => {
@@ -486,7 +486,7 @@ describe('buildSessionBreadcrumb', () => {
     );
 
     expect(labels(crumbs)).toEqual([
-      'Overview',
+      'Session',
       'Runs',
       'refactor',
       'Implement',
@@ -512,7 +512,7 @@ describe('buildSessionBreadcrumb', () => {
       ),
     );
 
-    expect(labels(crumbs)).toEqual(['Overview', 'agents', 'Answers', 'pick a database']);
+    expect(labels(crumbs)).toEqual(['Session', 'agents', 'Answers', 'pick a database']);
     expect(last(crumbs)?.id).toBe('selected-question');
   });
 
@@ -544,7 +544,7 @@ describe('buildSessionBreadcrumb', () => {
         handlers,
       ),
     );
-    expect(labels(crumbs)).toEqual(['Overview', 'Artifacts', 'Create report']);
+    expect(labels(crumbs)).toEqual(['Session', 'Artifacts', 'Create report']);
     expect(last(crumbs)?.onClick).toBeUndefined();
   });
 });
