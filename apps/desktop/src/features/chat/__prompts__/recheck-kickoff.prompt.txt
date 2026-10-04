@@ -1,0 +1,36 @@
+Re-check 1 thread on PR #9108, branch `kay/foo`.
+
+Thread 1 of 1
+- thread id: PRRT_1
+- author: alice
+- location: src/foo.ts:41
+- link: https://github.com/o/r/pull/9108#discussion_r1
+- comment:
+> this should use a helper
+> and keep the guard
+- reply from bob:
+> agreed, same here
+
+What already happened
+
+- thread id: PRRT_1
+- the reply drafted last time:
+> Moved the guard.
+- commits recorded last time: abc1234
+- The reviewer asked for another pass on this thread. Read it again and decide from scratch.
+- You already committed abc1234 for this thread. If that exact commit is still HEAD and `git branch -r --contains abc1234` prints nothing, apply the new changes and run `git commit --amend --no-edit` to keep one commit for this thread. If HEAD moved past it or a remote contains it, make a normal new commit instead. Never rebase or force-push.
+
+What to do
+This is a read-only check, not a fix. Never edit a file, never stage, never commit, and never run a command that changes the working tree, the index or a ref.
+Read with `git log`, `git show`, `git cherry`, `git reflog` and by opening files. Decide whether the change the thread asks for is on the branch now, was removed on purpose, or still has to be made.
+
+How to report each thread
+Report exactly one verdict marker for the thread id above, on its own line, at the end of the same turn:
+<<comment-verdict threadId="the id above" verdict="fixed-here" sha="the commit on the branch that carries the change" evidence="one plain-text line">> when the change is on the branch, possibly under another commit.
+<<comment-verdict threadId="the id above" verdict="not-relevant" sha="the commit that removed it, or leave sha out" evidence="one plain-text line with the reason">> when the code it points at is gone or the goal no longer applies.
+<<comment-verdict threadId="the id above" verdict="still-needed" evidence="one plain-text line">> when the branch still needs the change.
+The evidence names the file, the line and the commit you looked at, and never holds a double quote.
+A complete report reads exactly like this: <<comment-verdict threadId="PRRT_1" verdict="fixed-here" sha="a1b2c3d" evidence="the guard now returns early at src/retry.ts:3">>
+
+Operator notes
+Look at the last two commits first.

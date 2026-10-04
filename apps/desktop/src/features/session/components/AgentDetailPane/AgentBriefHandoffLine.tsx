@@ -34,10 +34,7 @@ export const AgentBriefHandoffLine = ({ sessionId, agentId }: Props) => {
       <span className="shrink-0 text-foreground">
         {isYou ? 'you' : handoffSenderLabel({ sender: handoff.sender, names })}
       </span>
-      <span aria-hidden className="shrink-0 text-faint-foreground">
-        ·
-      </span>
-      <span className="min-w-0 flex-1 truncate text-muted-foreground">{handoff.ask}</span>
+      <span className="min-w-0 flex-1" />
       <span className="inline-flex shrink-0 items-center gap-0.5 font-medium text-muted-foreground">
         Open in transcript
         <ChevronRight size={ICON_SIZE.row} aria-hidden />

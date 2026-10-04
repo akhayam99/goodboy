@@ -16,6 +16,7 @@ import type {
   WorktreeStatus,
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { rulesOfKickoff } from '../../../features/chat/utils/resolverKickoffParts';
 import { invokeAgentList } from '../../../features/workflows/workflows';
 import {
   acquireWorktreeWriter,
@@ -277,6 +278,8 @@ const startResolverTurn = async ({
 }: StartParams): Promise<void> => {
   const worktreePath = mountTarget.worktreePath;
   const runsBefore = (get().agentRunHistory[attempt.agentId] ?? []).length;
+  const human = attempt.humanInstructions ?? null;
+  const rules = human === null ? null : rulesOfKickoff({ message: instructions, human });
   let isWriterLeaseDenied = false;
   try {
     const result = await get().sendTurn({
@@ -285,6 +288,10 @@ const startResolverTurn = async ({
       mountTarget,
       ...(copyPath !== null && { resolveCopyPath: copyPath }),
       content: instructions,
+      ...(human !== null &&
+        rules !== null && {
+          handoff: { instruction: human, machineInstructions: rules, plan: null },
+        }),
     });
     isWriterLeaseDenied = result?.isWriterLeaseDenied === true;
     const current = (await listResolveAttempts({ db: tauriDatabase, sessionId })).find(

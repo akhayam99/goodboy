@@ -11,9 +11,14 @@ import type {
   TurnState,
 } from '@goodboy/types';
 import {
-  buildRecheckKickoff,
-  buildResolverKickoff,
+  buildRecheckKickoffParts,
+  buildResolverKickoffParts,
 } from '../../../../features/chat/spawn-from-comment';
+import {
+  humanOfKickoff,
+  joinKickoffParts,
+  type KickoffParts,
+} from '../../../../features/chat/utils/resolverKickoffParts';
 import { RESOLVE_SCENE_PR } from './resolveSeed';
 
 const MINUTE = 60_000;
@@ -39,23 +44,31 @@ const comment = (): PrComment => ({
   threadId: LIVE_THREAD,
 });
 
-const kickoffOf = ({ flow }: { readonly flow: ResolverFlow }): string => {
+const FOLLOW_UP_TEXT =
+  'Follow up on the retry review. Explain which delay wins when Retry-After exceeds the configured cap, and keep the answer tied to the existing resolver work.';
+
+const partsOf = ({ flow }: { readonly flow: ResolverFlow }): KickoffParts | null => {
   const thread = { head: comment(), replies: [] };
   if (flow === 'recheck') {
-    return buildRecheckKickoff({
+    return buildRecheckKickoffParts({
       thread,
       pr: RESOLVE_SCENE_PR,
       hint: 'Confirm whether the retry cap is still on this branch.',
     });
   }
   if (flow === 'follow-up') {
-    return 'Follow up on the retry review. Explain which delay wins when Retry-After exceeds the configured cap, and keep the answer tied to the existing resolver work.';
+    return null;
   }
-  return buildResolverKickoff({
+  return buildResolverKickoffParts({
     threads: [thread],
     pr: RESOLVE_SCENE_PR,
     hint: 'Keep the existing retry metrics and add coverage for the capped delay.',
   });
+};
+
+const kickoffOf = ({ flow }: { readonly flow: ResolverFlow }): string => {
+  const parts = partsOf({ flow });
+  return parts === null ? FOLLOW_UP_TEXT : joinKickoffParts(parts);
 };
 
 const senderOf = ({
@@ -67,6 +80,9 @@ const senderOf = ({
 }): HandoffSender => {
   if (flow === 'follow-up') {
     return { kind: 'followUp', sourceAgentId: agentId };
+  }
+  if (flow === 'recheck') {
+    return { kind: 'recheck', threadIds: [LIVE_THREAD], prNumber: RESOLVE_SCENE_PR.number };
   }
   return { kind: 'resolve', threadIds: [LIVE_THREAD], prNumber: RESOLVE_SCENE_PR.number };
 };
@@ -104,16 +120,18 @@ export const liveHandoff = ({
   readonly flow: ResolverFlow;
 }): AgentHandoff => {
   const kickoff = kickoffOf({ flow });
+  const parts = partsOf({ flow });
   const liveComment = comment();
   return buildHandoff({
     agentId,
     provider: 'anthropic',
     createdAt: isoAgo({ minutes: 0.6 }),
     sender: senderOf({ flow, agentId }),
-    instruction: kickoff,
+    instruction: parts === null ? kickoff : humanOfKickoff(parts),
+    machineInstructions: parts === null ? null : parts.rules,
     why: null,
     doneWhen: null,
-    goal: 'Resolve reviewer feedback on the webhook retry backoff PR',
+    goal: parts === null ? 'Resolve reviewer feedback on the webhook retry backoff PR' : null,
     earlierSteps: [],
     plan: null,
     files: [],

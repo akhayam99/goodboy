@@ -18,6 +18,7 @@ const base = (): BuildHandoffParams => ({
   sender: { kind: 'orchestrator', workflowRunId: RUN, stepOrdinal: 4 },
   instruction:
     'Replay every batch settled since Jul 1 through settle_batch. Keep the old path behind a flag.',
+  machineInstructions: null,
   why: 'Rounding now lands once per batch.',
   doneWhen: 'A dry run report lists every batch.',
   goal: 'Settlement totals are off by a few cents per batch.',
@@ -97,6 +98,9 @@ describe('buildHandoff', () => {
     { kind: 'you' },
     { kind: 'workflowStep', workflowRunId: RUN, stepOrdinal: 3, stepCount: 5 },
     { kind: 'resolve', threadIds: ['t1'], prNumber: 412 },
+    { kind: 'recheck', threadIds: ['t1'], prNumber: 412 },
+    { kind: 'scribe' },
+    { kind: 'historyRewrite' },
     { kind: 'parent', parentAgentId: 'agent-2' as AgentId, label: 'cluster 2 of 3' },
     { kind: 'question', questionId: 'q1' as OpenQuestionId },
     { kind: 'followUp', sourceAgentId: 'agent-2' as AgentId },
@@ -131,6 +135,34 @@ describe('buildHandoff', () => {
         link: 'https://example.test/pr/412#t1',
       },
     ]);
+  });
+
+  it('puts the machine rules in their own Instructions section after the ask', () => {
+    const handoff = buildHandoff({
+      ...base(),
+      sender: { kind: 'resolve', threadIds: ['t1'], prNumber: 412 },
+      instruction: 'Fix the retry cap.',
+      machineInstructions: 'Reply contract: end with <<comment-resolved>>.',
+      sent: {
+        system: null,
+        message: 'Fix the retry cap.\n\nReply contract: end with <<comment-resolved>>.',
+      },
+    });
+
+    const kinds = handoff.sections.map((section) => section.kind);
+    const instructions = handoff.sections.find((section) => section.kind === 'instructions');
+
+    expect(kinds.indexOf('instructions')).toBe(kinds.indexOf('ask') + 1);
+    expect(instructions?.summary).toBe('Added by Goodboy');
+    expect(instructions?.bodyMd).toBe('Reply contract: end with <<comment-resolved>>.');
+    expect(handoff.ask).toBe('Fix the retry cap.');
+    expect(handoff.sentMessage).toContain('Reply contract');
+  });
+
+  it('has no Instructions section without machine rules', () => {
+    const kinds = buildHandoff(base()).sections.map((section) => section.kind);
+
+    expect(kinds).not.toContain('instructions');
   });
 
   it('drops empty sections and a blank why', () => {

@@ -588,6 +588,35 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
     expect(drainResolveQueue).toHaveBeenCalledWith({ sessionId: SESSION_ID });
   });
 
+  it('records only what the human wrote next to the full resolver text', async () => {
+    const { recordResolveAttempt, spawn } = buildHarness([]);
+    const args = buildResolverAgentArgs({
+      threads: [{ head: COMMENT, replies: [] }],
+      pr: PR,
+      hint: 'Avoid schema changes.',
+    });
+
+    await spawn(SESSION_ID, {
+      kindOverride: 'resolver',
+      initialPrompt: args.initialPrompt,
+      humanPrompt: args.humanPrompt,
+    });
+
+    const request = recordResolveAttempt.mock.calls[0]?.[0];
+    expect(request?.instructions).toBe(args.initialPrompt);
+    expect(request?.humanInstructions).toBe(args.humanPrompt);
+    expect(request?.humanInstructions).toContain('Avoid schema changes.');
+    expect(request?.humanInstructions).not.toContain('Judge the thread above on the merits');
+  });
+
+  it('keeps the whole text as the human part when no split was given', async () => {
+    const { recordResolveAttempt, spawn } = buildHarness([]);
+
+    await spawn(SESSION_ID, { kindOverride: 'resolver', initialPrompt: 'fix the rounding' });
+
+    expect(recordResolveAttempt.mock.calls[0]?.[0]?.humanInstructions).toBeNull();
+  });
+
   it('records the batch and its launch choice on the queued attempt', async () => {
     const { recordResolveAttempt, spawn } = buildHarness([]);
     const batch = {

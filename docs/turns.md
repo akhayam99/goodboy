@@ -162,8 +162,8 @@ record a live turn already wrote wins.
   as a fan-out child and is still treated as one.
 - An agent's first turn stores one `agent_handoffs` row (m185), written once
   and never updated: who sent it (`HandoffSender`), the ask in one line, the
-  why, `doneWhen`, one-line sections (ask, goal, earlier steps, plan, files,
-  threads, scope and rules, about you, role instructions) and the exact text
+  why, `doneWhen`, one-line sections (ask, instructions, goal, earlier steps,
+  plan, files, threads, scope and rules, about you, role instructions) and the exact text
   sent (`sent_system` only for Claude, `sent_message` for every provider). It
   lives only in the local database and includes the workspace profile.
 - A first turn is one with no run yet in `agentRunHistory`, an agent that never
@@ -176,9 +176,20 @@ record a live turn already wrote wins.
   resolver is sent by Resolve, a question delegate by its question, a child of
   another agent by that agent or as its follow-up, a workflow step by the
   orchestrator on a dynamic run and by the workflow otherwise, and anything
-  else by you. The stored `user_text` keeps the full composed text for provider
+  else by you. The re-check, the scribe and the history rewrite pass their own
+  sender (`recheck`, `scribe`, `historyRewrite`) and never carry the session
+  goal. The stored `user_text` keeps the full composed text for provider
   replay. The visible message uses the human ask, while attached plans stay in
   their own section.
+- A resolver or re-check message has two parts: what the human wrote (the
+  comment, the operator note) and the rules Goodboy adds (reply contract,
+  markers). The human part is the Ask and the rules are the **Instructions**
+  section, labelled "Added by Goodboy". `resolve_attempts.human_instructions`
+  (m221, nullable, no backfill) stores the human part beside `instructions`,
+  which keeps the full text; `rulesOfKickoff` recovers the rules from the two
+  and falls back to the whole message as the Ask when they do not line up.
+  `spawn-from-comment.golden.test.ts` pins the string sent to the provider for
+  the resolver, the re-check, the scribe and the follow-up byte for byte.
 - The transcript draws that first message as one handoff block
   (`features/chat/components/HandoffBlock`), the same for every provider: who
   sent it, the ask in one line and the why. Closed, that is all it shows.
@@ -200,8 +211,8 @@ record a live turn already wrote wins.
   `TranscriptRows` counts it as the first user turn.
 - The transcript is the record and the Brief is the dashboard. What the agent
   received lives only in the handoff block; the Brief shows one line, "Sent by
-  Orchestrator · step 4 · the ask", that switches to the Transcript tab with
-  the Ask section open (`requestHandoffOpen`). The Brief no longer carries Why this
+  Orchestrator · step 4", that switches to the Transcript tab with
+  the Ask section open (`requestHandoffOpen`). The Brief no longer carries the ask, Why this
   step or Expected output, and the old kickoff cards and their text parsers
   are gone.
 
