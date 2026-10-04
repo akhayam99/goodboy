@@ -68,7 +68,6 @@ export const fixtureSource = ({ threads, ...rest }: SourceParams): ConversationS
   onPost: null,
   onResolve: null,
   resolveError: null,
-  emptyDescription: 'Comments show up here.',
   footnote: null,
   composerNote: null,
   renderMessageFooter: null,

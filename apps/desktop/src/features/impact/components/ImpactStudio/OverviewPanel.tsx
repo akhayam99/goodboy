@@ -89,7 +89,7 @@ export const OverviewPanel = ({
         <EmptyState
           icon={CONCEPT_ICONS.impact}
           tone={CONCEPT_TONE.impact}
-          title="Impact fills in as sessions finish."
+          title="Impact fills in as sessions finish"
           action={
             <Button variant="secondary" size="sm" onClick={onStartSession}>
               Start a session

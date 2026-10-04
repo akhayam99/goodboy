@@ -103,7 +103,7 @@ describe('NotificationCenter', () => {
     await openCenter();
 
     expect(screen.getByText('No notifications')).toBeDefined();
-    expect(screen.getByText('Run activity and alerts land here.')).toBeDefined();
+    expect(screen.getByText('No notifications')).toBeDefined();
     expect(state.markNotificationsRead).toHaveBeenCalledTimes(1);
   });
 

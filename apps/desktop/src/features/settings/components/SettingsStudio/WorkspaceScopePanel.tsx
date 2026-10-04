@@ -4,7 +4,6 @@ import { OverflowMenu, PaneShell, type OverflowMenuItem } from '@goodboy/ui';
 import { Copy, RotateCcw } from 'lucide-react';
 import { useAppStore } from '../../../../store';
 import { pluralize } from '../../../../shared/utils/pluralize';
-import type { SettingsScopeChange } from '../../settingsFocus';
 import { pageKeys } from '../../pageKeys';
 import { usePageChangedCount } from '../../hooks/usePageChangedCount';
 import { SETTINGS_PANE_ENTRY } from './settingsPaneEntry';
@@ -16,20 +15,10 @@ type Props = {
   readonly workspaceId: WorkspaceId;
   readonly section?: string;
   readonly initialFlow?: FlowMode;
-  readonly onSelect: (change: SettingsScopeChange) => void;
   readonly requestClose: () => void;
 };
 
-export const WorkspaceScopePanel = ({
-  workspaceId,
-  section,
-  initialFlow,
-  onSelect,
-  requestClose,
-}: Props) => {
-  const workspaceName = useAppStore(
-    (s) => s.workspaces.find((w) => w.id === workspaceId)?.name ?? null,
-  );
+export const WorkspaceScopePanel = ({ workspaceId, section, initialFlow, requestClose }: Props) => {
   const hasOtherWorkspace = useAppStore((s) => s.workspaces.some((w) => w.id !== workspaceId));
   const page = workspacePageOf({ section });
   const entry = workspacePageEntry({ page });
@@ -96,7 +85,6 @@ export const WorkspaceScopePanel = ({
       key={page}
       animationClassName={SETTINGS_PANE_ENTRY}
       title={entry.label}
-      meta={workspaceName ?? undefined}
       actions={menu}
       subheader={
         <div className="flex flex-col gap-3">
@@ -117,7 +105,6 @@ export const WorkspaceScopePanel = ({
         workspaceId={workspaceId}
         page={page}
         section={section}
-        onSelect={onSelect}
         requestClose={requestClose}
       />
     </PaneShell>

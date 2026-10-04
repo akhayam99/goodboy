@@ -96,7 +96,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
         const verb = reveal ? 'reveal' : 'open';
         setActionErrorByPath((previous) => ({
           ...previous,
-          [entry.relPath]: `Could not ${verb} "${entry.name}". ${toErrorMessage({ error })}`,
+          [entry.relPath]: `Couldn't ${verb} "${entry.name}". ${toErrorMessage({ error })}`,
         }));
       }
     },
@@ -230,7 +230,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
                   <FilledEmptyState
                     icon={CONCEPT_ICONS.errors}
                     tone={CONCEPT_TONE.errors}
-                    title="Could not read this folder"
+                    title="Couldn't read this folder"
                     description={childError}
                   />
                 ) : children.length === 0 ? (
@@ -298,7 +298,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
           <LensEmptyState
             tone={CONCEPT_TONE.explore}
             icon={CONCEPT_ICONS.explore}
-            title="Could not read this session folder"
+            title="Couldn't read this session folder"
             description={rootError}
             action={
               <Button
@@ -314,8 +314,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
           <LensEmptyState
             tone={CONCEPT_TONE.explore}
             icon={CONCEPT_ICONS.explore}
-            title="This session folder is empty"
-            description="Files created while you work on this session appear here."
+            title="No new files"
           />
         ) : (
           <div className="flex flex-col gap-0.5">{renderEntries({ entries: rootEntries })}</div>

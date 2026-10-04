@@ -10,8 +10,7 @@ export const NoIssueSource = ({ onBackToCodeHost, onConnectTaskManager }: Props)
     <div className="flex flex-col gap-1">
       <span className="text-row text-foreground">Connect a code host to see your tasks</span>
       <span className="text-secondary text-muted-foreground">
-        Your issues come from GitHub, GitLab, or a task manager like Linear or Jira. You skipped
-        both.
+        Issues come from a code host or a task manager. You skipped both.
       </span>
     </div>
     <div className="flex flex-wrap items-center gap-2">
@@ -27,7 +26,7 @@ export const NoIssueSource = ({ onBackToCodeHost, onConnectTaskManager }: Props)
       )}
     </div>
     <span className="text-secondary text-faint-foreground">
-      Or start without an issue: Run a workflow, or Ask an agent.
+      Or run a workflow, or ask an agent.
     </span>
   </div>
 );

@@ -63,7 +63,6 @@ export const GithubPrDetail = ({
       onPost: post == null ? null : ({ body }) => post(body),
       onResolve: null,
       resolveError: null,
-      emptyDescription: 'This pull request has no comments yet.',
       footnote: null,
       composerNote: null,
       renderMessageFooter: null,

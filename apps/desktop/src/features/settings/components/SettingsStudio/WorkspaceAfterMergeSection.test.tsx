@@ -60,7 +60,7 @@ describe('WorkspaceAfterMergeSection', () => {
         .getByRole('tab', { name: 'Delete folder and branch on this Mac' })
         .getAttribute('aria-selected'),
     ).toBe('true');
-    expect(screen.getByText(/Never deletes a branch with commits after the merge/)).toBeDefined();
+    expect(screen.getByText(/Skips branches Goodboy didn't create/)).toBeDefined();
   });
 
   it('saves the rule the user picks', async () => {

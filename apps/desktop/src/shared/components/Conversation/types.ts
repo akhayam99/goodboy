@@ -58,7 +58,6 @@ export type ConversationSource = {
   readonly onPost: ((params: ConversationPostParams) => Promise<void>) | null;
   readonly onResolve: ((params: ConversationResolveParams) => Promise<void>) | null;
   readonly resolveError: ConversationResolveError | null;
-  readonly emptyDescription: string;
   readonly footnote: string | null;
   readonly composerNote: string | null;
   readonly renderMessageFooter: ((message: ConversationMessage) => ReactNode) | null;

@@ -151,8 +151,7 @@ uses when you leave a model on **Auto**. It is one page in three parts.
   **Backup only** or **Off**. The first On provider is the default for new work, so
   moving another On provider to the top changes the default in the same write.
   Backup only runs only when no On provider can work; Off never runs, not even for a
-  role or task pinned to it. **Pay-as-you-go** is a mark that suggests Backup only;
-  **Keep using after the limit** keeps the provider in the order at its limit. A
+  role or task pinned to it. **Keep using after the limit** keeps the provider in the order at its limit. A
   provider connected later shows last as **New** and is unused until turned on.
   **Reset** goes back to every connected provider On
 - **Agents**: one row per role, grouped as Explore and plan, Build, Review and write,
@@ -278,7 +277,7 @@ pays for every turn.
   CLI is (`which claude`, `npm root -g`), add that folder to your shell profile, open
   a new shell and restart Goodboy
 - **Browser sign-in stuck**: after 4 seconds the card offers **Open the sign-in page again**.
-  After two minutes, **Run in my terminal** runs the same command in your own
+  After two minutes, **Run in terminal** runs the same command in your own
   terminal. Goodboy notices when it finishes
 - **How close am I to a limit?** Each Limits chip in the top bar stacks two bars:
   the 5-hour window above, the week below. A bar turns amber from 80%, red and
@@ -326,7 +325,7 @@ The timers live in `apps/desktop/src/store/slices/providers/connectProvider.ts`:
 - `STALL_MS` (15s): if the login goes quiet for this long, it is probably waiting for
   input. The hidden terminal appears
 - `HANDOFF_LONG_MS` (30s): the card says it is still waiting for the browser
-- `HANDOFF_FALLBACK_MS` (120s): the card offers **Run in my terminal**
+- `HANDOFF_FALLBACK_MS` (120s): the card offers **Run in terminal**
 - `POST_EXIT_PROBE_MS` (60s): after the CLI exits, Goodboy keeps checking the sign-in
   for this long
 

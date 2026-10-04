@@ -163,7 +163,7 @@ const draftingAgent = (): Agent => ({
 });
 
 const switchToAgentMode = () => {
-  fireEvent.click(screen.getByRole('tab', { name: 'Write it for me' }));
+  fireEvent.click(screen.getByRole('tab', { name: 'Write it' }));
 };
 
 beforeEach(() => {
@@ -278,7 +278,7 @@ describe('CreatePrPanel', () => {
     renderPanel();
     switchToAgentMode();
     fireEvent.click(screen.getByRole('button', { name: 'Choose agent config' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Write it for me' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Write it' }));
 
     await waitFor(() => expect(h.store.requestScribe).toHaveBeenCalledOnce());
     expect(h.store.requestScribe.mock.calls[0]![0]).toMatchObject({
@@ -333,7 +333,7 @@ describe('CreatePrPanel', () => {
       screen.getByText('An agent is already opening a pull request for this session.'),
     ).toBeDefined();
     switchToAgentMode();
-    fireEvent.click(screen.getByRole('button', { name: 'Write it for me' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Write it' }));
 
     expect(h.store.requestScribe).not.toHaveBeenCalled();
   });
@@ -399,7 +399,7 @@ describe('CreatePrPanel', () => {
     h.store.sessionExternalTasks = { 'session-2': [linkedIssue({})] };
     renderPanel();
     switchToAgentMode();
-    fireEvent.click(screen.getByRole('button', { name: 'Write it for me' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Write it' }));
 
     await waitFor(() => expect(h.store.requestScribe).toHaveBeenCalledOnce());
     expect(h.store.requestScribe.mock.calls[0]![0]).toMatchObject({

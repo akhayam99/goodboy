@@ -98,7 +98,7 @@ export const EscapeHatch = ({ command, providerId }: Props) => {
             onClick={() => void onLaunch()}
           >
             <CONCEPT_ICONS.terminal size={11} aria-hidden />
-            <span>Run in my terminal</span>
+            <span>Run in terminal</span>
           </Button>
         </Tooltip>
       </div>

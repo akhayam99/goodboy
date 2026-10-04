@@ -231,9 +231,7 @@ export const ConvertWorkspaceFlow = ({ workspaceId, project, onClose }: Props) =
               {project.name} is backed by git
             </span>
             <p className="text-secondary text-muted-foreground">
-              New sessions get their own branch and worktree. The sessions you already have keep
-              working as plain folders, and nothing of yours was committed: add what you want
-              tracked when you are ready.
+              New sessions get their own branch. Nothing of yours is committed.
             </p>
           </div>
           <FormActions>

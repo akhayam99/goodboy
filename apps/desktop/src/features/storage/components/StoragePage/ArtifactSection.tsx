@@ -140,7 +140,7 @@ export const ArtifactSection = ({ scope }: Props) => {
       <SectionHeader
         label={`Artifacts of deleted sessions · ${artifacts.length} · ${formatBytes({ bytes: totalBytes })}`}
         icon={<ReportIcon size={ICON_SIZE.row} aria-hidden />}
-        hint="Copies kept after their session was deleted. They are small: clean them to tidy up, not for space. Opening one in the reader counts as use."
+        hint="Copies of artifacts from deleted sessions."
         action={
           <SegmentedTabs
             ariaLabel="Artifacts from deleted sessions"

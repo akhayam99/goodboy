@@ -143,7 +143,7 @@ export const BackupPage = () => {
           <Notice
             tone="success"
             placement="inline"
-            title="Imported."
+            title="Imported"
             body={
               importResult.stats.unresolvedProjects > 0
                 ? `${importResult.stats.unresolvedProjects} projects stay unresolved: choose their folder and import again.`

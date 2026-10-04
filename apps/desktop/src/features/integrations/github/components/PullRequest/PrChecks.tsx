@@ -33,7 +33,6 @@ export const PrChecks = ({ checks, fallbackUrl, hostLabel, onOpenUrl }: Props) =
         icon={CONCEPT_ICONS.checks}
         tone={CONCEPT_TONE.checks}
         title="No CI runs yet"
-        description="Checks for this pull request will appear here once they start."
         action={
           <Button variant="ghost" size="sm" onClick={() => onOpenUrl(fallbackUrl)}>
             View checks on {hostLabel}

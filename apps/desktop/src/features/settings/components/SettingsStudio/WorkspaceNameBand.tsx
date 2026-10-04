@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { Band, FieldRow, Input, useEscapeLayer } from '@goodboy/ui';
+import { FieldRow, Input, useEscapeLayer } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -55,37 +54,28 @@ export const WorkspaceNameBand = ({ workspaceId }: Props) => {
   };
 
   return (
-    <Band
-      inset="content"
-      label="Workspace"
-      ariaLabel="Workspace"
-      hint="What this workspace works on, who you are, and how new sessions start."
-      icon={<CONCEPT_ICONS.workspace size={ICON_SIZE.row} aria-hidden />}
-      headingLevel={2}
-    >
-      <FieldRow label="Name" help="Shown in the switcher.">
-        <Input
-          type="text"
-          value={draft}
-          aria-label="Workspace name"
-          placeholder={workspace.slug}
-          maxLength={60}
-          disabled={isRenaming}
-          ref={inputRef}
-          onChange={(e) => setDraft(e.target.value)}
-          onFocus={() => setIsEditing(true)}
-          onBlur={() => {
-            setIsEditing(false);
-            void commit();
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.currentTarget.blur();
-            }
-          }}
-          className="w-56"
-        />
-      </FieldRow>
-    </Band>
+    <FieldRow label="Name">
+      <Input
+        type="text"
+        value={draft}
+        aria-label="Workspace name"
+        placeholder={workspace.slug}
+        maxLength={60}
+        disabled={isRenaming}
+        ref={inputRef}
+        onChange={(e) => setDraft(e.target.value)}
+        onFocus={() => setIsEditing(true)}
+        onBlur={() => {
+          setIsEditing(false);
+          void commit();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.currentTarget.blur();
+          }
+        }}
+        className="w-56"
+      />
+    </FieldRow>
   );
 };

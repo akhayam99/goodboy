@@ -32,10 +32,7 @@ export const ProvidersStep = () => {
 
   return (
     <div className="flex flex-col gap-5">
-      <StepHeading
-        title="Which AI do you want to use?"
-        line="Pick the one you already pay for. You can add more later."
-      />
+      <StepHeading title="Which AI do you want to use?" line="Pick the one you already pay for." />
       {ready !== null && (
         <Notice
           tone="success"

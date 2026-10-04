@@ -73,6 +73,14 @@ talking to a market. There are two voices:
 - **No trailing period on titles, eyebrows, button labels, or list items.**
   Body sentences keep theirs. The one exception is a hero line that stands
   alone, because it is read like a spoken beat ("Stop re-explaining yourself.").
+- **Contractions everywhere.** "Couldn't", "haven't", "can't", never "could
+  not" or "cannot" in a string the reader sees.
+- **A state or reason starts with a capital.** "The agent is waiting for you",
+  not "the agent is waiting for you", even when it sits under a label.
+- **Options never say "I", "me" or "my".** An option says what the app does:
+  "Write it", "Your replies", "Run in terminal", "Warn only".
+- **One scale for "stop and ask".** "Ask first" is the only label for it, in
+  Settings, Slack, after-merge cleanup and spend limits.
 - **Code identifiers in backticks**: `pnpm tauri:dev`, not "the pnpm tauri:dev
   command".
 

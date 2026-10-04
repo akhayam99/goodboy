@@ -131,7 +131,6 @@ export const MR_SOURCE: ConversationSource = {
   toolLabel: 'GitLab',
   threads: MR_THREADS,
   capabilities: { reply: 'thread', startThread: true, resolve: true, react: false },
-  emptyDescription: 'Notes and review threads on this merge request show up here.',
   footnote: '2 system events hidden',
 };
 
@@ -141,7 +140,6 @@ export const FLAT_SOURCE: ConversationSource = {
   threads: FLAT_THREADS,
   capabilities: { reply: 'quote', startThread: true, resolve: false, react: false },
   onResolve: null,
-  emptyDescription: 'This issue has no comments yet.',
 };
 
 export const READ_ONLY_SOURCE: ConversationSource = {

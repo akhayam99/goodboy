@@ -19,7 +19,7 @@ export const IgnoredDenyNotice = ({ workspaceName, activeProviders }: Props) => 
     <Notice
       tone="warning"
       placement="inline"
-      title="Deny rules only stop Claude."
+      title="Deny rules only stop Claude"
       body={`In ${workspaceName}, ${joined} also ${names.length === 1 ? 'runs' : 'run'} agents. For work that must never happen, pick Claude for that session, or set the default to Read only.`}
     />
   );

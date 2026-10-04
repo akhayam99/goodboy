@@ -142,7 +142,6 @@ describe('InboxList', () => {
     const onOpenSettings = vi.fn();
     renderList({ records: [], totalCount: 0, connectedCount: 0, onOpenSettings });
 
-    expect(screen.getByText('Connect a tool to fill the inbox')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Connect a tool' }));
     expect(onOpenSettings).toHaveBeenCalledOnce();
   });

@@ -56,7 +56,6 @@ export const JiraIssueDetail = ({
       onPost: post == null ? null : ({ body }) => post(body),
       onResolve: null,
       resolveError: null,
-      emptyDescription: 'Comments on this issue show up here.',
       footnote: flat.footnote,
       composerNote: 'Plain text, one paragraph per line',
       renderMessageFooter: null,

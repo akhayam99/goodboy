@@ -8,7 +8,6 @@ import { useCopyText } from '../../../../../shared/hooks/useCopyText';
 import { PROVIDER_BRAND } from '../../provider-brand';
 import { ProviderConnect } from '../../ProviderConnect';
 import { CliUpdateNotice } from '../CliUpdateNotice';
-import { CLI_LABEL } from '../../../cliLabel';
 import {
   CONCEPT_ICONS,
   CONCEPT_TONE,
@@ -29,23 +28,18 @@ type Props = {
 };
 
 type MetaParams = {
-  readonly info: ProviderDisplayInfo;
   readonly planLabel: string | null;
   readonly isApi: boolean;
 };
 
-const metaLine = ({ info, planLabel, isApi }: MetaParams): string => {
+const metaLine = ({ planLabel, isApi }: MetaParams): string | undefined => {
   if (isApi) {
     return 'Runs through the OpenCode runtime';
   }
-  const cli = info.version === null ? info.binary : `${CLI_LABEL[info.id]} ${info.version}`;
-  return [
-    planLabel === null ? null : `${planLabel} plan`,
-    info.identity === null ? null : `Signed in as ${info.identity}`,
-    cli,
-  ]
-    .filter((part): part is string => part !== null)
-    .join(' · ');
+  if (planLabel === null) {
+    return undefined;
+  }
+  return `${planLabel} plan`;
 };
 
 export const ProviderPageBody = ({ info, autoConnect, autoUpdate, focusModels }: Props) => {
@@ -128,7 +122,7 @@ export const ProviderPageBody = ({ info, autoConnect, autoUpdate, focusModels }:
         />
       }
       title={info.label}
-      meta={metaLine({ info, planLabel, isApi })}
+      meta={metaLine({ planLabel, isApi })}
       actions={<OverflowMenu items={menuItems} label={`More ${info.label} actions`} />}
     >
       {!isApi && info.connection !== 'missing' && info.connection !== 'unknown' ? (

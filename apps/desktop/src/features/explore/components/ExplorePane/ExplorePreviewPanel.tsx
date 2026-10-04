@@ -104,7 +104,7 @@ export const ExplorePreviewPanel = ({
         <FilledEmptyState
           icon={CONCEPT_ICONS.errors}
           tone={CONCEPT_TONE.errors}
-          title="Could not read this file"
+          title="Couldn't read this file"
           description={previewState.message}
         />
       );

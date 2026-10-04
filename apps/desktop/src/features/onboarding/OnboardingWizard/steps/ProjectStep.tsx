@@ -127,7 +127,7 @@ export const ProjectStep = ({
               onChange={(event) => onNameChange(event.target.value)}
             />
             <p className="text-secondary text-muted-foreground">
-              A workspace groups projects that ship together. We named it after the parent folder.
+              Groups projects that ship together. Named after the parent folder.
             </p>
           </div>
           <div>

@@ -46,7 +46,7 @@ describe('describeSessionStage', () => {
 
   it('falls back to the stage reason when the caller has none', () => {
     expect(describeSessionStage(info({ stage: 'building' })).reason).toBe(
-      'work in progress, nothing to review yet',
+      'Work in progress, nothing to review yet',
     );
   });
 
@@ -65,7 +65,7 @@ describe('describeStageBucket', () => {
     const done = describeStageBucket({ stage: 'done' });
 
     expect(done.label).toBe('done');
-    expect(done.reason).toBe('nothing left to do here');
+    expect(done.reason).toBe('Nothing left to do here');
     expect(done.tone).toBe('merged');
   });
 

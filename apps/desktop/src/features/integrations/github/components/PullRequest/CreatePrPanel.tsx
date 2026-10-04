@@ -237,7 +237,7 @@ export const CreatePrPanel = ({
                   size="sm"
                   options={[
                     { value: 'manual', label: 'Manual', icon: PenLine },
-                    { value: 'agent', label: 'Write it for me', icon: CONCEPT_ICONS.agents },
+                    { value: 'agent', label: 'Write it', icon: CONCEPT_ICONS.agents },
                   ]}
                   value={mode}
                   onChange={setMode}
@@ -427,7 +427,7 @@ export const CreatePrPanel = ({
               ) : (
                 <>
                   <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden />
-                  Write it for me
+                  Write it
                 </>
               )}
             </Button>

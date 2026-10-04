@@ -30,7 +30,7 @@ export const ExploreFileDrawer = ({ sessionDir, entry, onClose }: Props) => {
       .then(() => setOpenError(null))
       .catch((error: unknown) => {
         const reason = error instanceof Error ? error.message : 'Unknown error';
-        setOpenError(`Could not open "${entry.name}". ${reason}`);
+        setOpenError(`Couldn't open "${entry.name}". ${reason}`);
       });
   };
 

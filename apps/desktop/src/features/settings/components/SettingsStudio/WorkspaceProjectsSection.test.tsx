@@ -239,8 +239,7 @@ describe('WorkspaceProjectsSection', () => {
     ];
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
-    const heading = screen.getByRole('heading', { level: 2, name: 'Projects' });
-    expect(heading.parentElement?.textContent).toBe('Projects1');
+    expect(screen.queryByRole('heading', { name: 'Projects' })).toBeNull();
     expect(screen.queryByText('/repos/ledger-core')).toBeNull();
     expect(screen.getByText('All projects')).toBeDefined();
     expect(screen.getByRole('img', { name: 'Repository' })).toBeDefined();
@@ -298,7 +297,7 @@ describe('WorkspaceProjectsSection', () => {
 
     openEditor('ledger-core');
     const field = screen.getByRole('combobox', { name: 'After merge in ledger-core' });
-    expect(field.textContent).toContain('Same as workspace · Ask me');
+    expect(field.textContent).toContain('Same as workspace · Ask first');
     fireEvent.click(field);
     fireEvent.click(screen.getByRole('option', { name: 'Delete folder and branch on this Mac' }));
 
