@@ -46,7 +46,7 @@ export const QueuedMessages = ({ items, canEdit, onEdit, onRemove, onSendNow }: 
             data-testid="queued-message-row"
             data-status={item.status}
             className={cn(
-              'flex items-center gap-2 rounded-md border bg-background px-2 py-1 text-secondary',
+              'flex items-center gap-2 rounded-md border bg-background px-2 py-1 text-chip',
               ROW_CLASSES[item.status],
             )}
           >
@@ -62,7 +62,7 @@ export const QueuedMessages = ({ items, canEdit, onEdit, onRemove, onSendNow }: 
                     ? 'Edit, moves it back to the composer'
                     : 'Clear the composer to edit'
               }
-              className="min-w-0 flex-1 truncate text-left text-xs leading-relaxed text-foreground disabled:cursor-default"
+              className="min-w-0 flex-1 truncate text-left text-label leading-relaxed text-foreground disabled:cursor-default"
             >
               {previewOf({ item })}
             </button>
