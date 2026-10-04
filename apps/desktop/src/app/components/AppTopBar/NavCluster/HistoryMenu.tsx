@@ -31,7 +31,7 @@ export const HistoryMenu = ({ items, onJump }: Props) => (
       >
         <span className="min-w-0 truncate">{item.label}</span>
         {item.context !== null ? (
-          <span className="min-w-0 flex-1 truncate text-secondary text-faint-foreground">
+          <span className="min-w-0 flex-1 truncate text-meta text-faint-foreground">
             {item.context}
           </span>
         ) : (

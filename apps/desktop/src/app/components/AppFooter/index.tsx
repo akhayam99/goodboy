@@ -48,7 +48,7 @@ export const AppFooter = ({
 
   return (
     <div className="flex shrink-0 flex-col">
-      <div className="@container/footer grid h-9 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 bg-chrome px-2 [&>*:last-child]:justify-self-end">
+      <div className="@container/footer grid h-9 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 bg-chrome px-3 [&>*:last-child]:justify-self-end">
         <div className="flex min-w-0 items-center gap-2 overflow-hidden">
           {isWorkspace && (
             <>
