@@ -1243,9 +1243,9 @@ task up again in Goodboy.
 - A word that stays and still needs a sentence (workflow, orchestrated,
   artifact) gets a short tooltip, six words at most, written once. The mode
   switch in the workflow builder sets it as the `tooltip` of an option
-  ("Goodboy picks each next agent"). `GlossaryTerm` is gone; `TermHint` and
-  `GLOSSARY` (`apps/desktop/src/features/session/glossary.ts`) stay until the
-  0.17.0 rename round removes them.
+  ("Goodboy picks each next agent"). The glossary wrapper component is gone;
+  `TermHint` and `GLOSSARY` (`apps/desktop/src/features/session/glossary.ts`)
+  stay until the 0.17.0 rename round removes them.
 - A round that adds a word removes one, and the PR description lists both.
 - Every screen follows the task order: the task, then integrations, then code,
   then chat. A screen that puts chat before the task has the order wrong.
