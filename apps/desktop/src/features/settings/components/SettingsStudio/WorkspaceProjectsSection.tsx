@@ -77,7 +77,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
         rowFooter={({ project }) => <ProjectScriptsFold project={project} />}
       />
       {hasProjects && (
-        <p className="flex items-center gap-1.5 px-2 text-label text-faint-foreground">
+        <p className="flex items-center gap-2 px-2 text-label text-faint-foreground">
           <Star size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           Starred projects come first for agents and in pickers.
         </p>

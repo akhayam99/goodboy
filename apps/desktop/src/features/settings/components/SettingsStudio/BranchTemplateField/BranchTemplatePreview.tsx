@@ -11,10 +11,10 @@ export const BranchTemplatePreview = ({ fromTask, withoutTask, isValid, note }: 
   <div
     aria-live="polite"
     aria-label="Branch name preview"
-    className="flex flex-col gap-2 rounded-md border border-border px-3 py-2.5"
+    className="flex flex-col gap-2 rounded-md border border-border px-3 py-3"
   >
     <dl className="grid grid-cols-[max-content_minmax(0,1fr)] items-baseline gap-x-6 gap-y-1">
-      <dt className="text-secondary text-muted-foreground">From a task</dt>
+      <dt className="text-meta text-muted-foreground">From a task</dt>
       <dd
         className={
           isValid ? 'truncate font-mono text-code text-foreground' : 'text-label text-danger'
@@ -22,7 +22,7 @@ export const BranchTemplatePreview = ({ fromTask, withoutTask, isValid, note }: 
       >
         {isValid ? fromTask : NOT_VALID}
       </dd>
-      <dt className="text-secondary text-muted-foreground">Without a task</dt>
+      <dt className="text-meta text-muted-foreground">Without a task</dt>
       <dd
         className={
           isValid ? 'truncate font-mono text-code text-foreground' : 'text-label text-danger'
@@ -31,6 +31,6 @@ export const BranchTemplatePreview = ({ fromTask, withoutTask, isValid, note }: 
         {isValid ? withoutTask : NOT_VALID}
       </dd>
     </dl>
-    <p className="text-secondary text-muted-foreground">{note}</p>
+    <p className="text-meta text-muted-foreground">{note}</p>
   </div>
 );

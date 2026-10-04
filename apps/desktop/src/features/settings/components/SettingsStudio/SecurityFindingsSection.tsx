@@ -62,7 +62,7 @@ export const SecurityFindingsSection = ({ workspaceId }: Props) => {
       )}
       {status === 'loading' && <p className="text-body text-muted-foreground">Checking…</p>}
       {status === 'ready' && open.length === 0 && (
-        <p className="flex items-center gap-1.5 text-body text-muted-foreground">
+        <p className="flex items-center gap-2 text-body text-muted-foreground">
           <ShieldCheck size={ICON_SIZE.row} aria-hidden />
           No findings in your saved scripts.
         </p>

@@ -32,7 +32,7 @@ export const BranchTemplateOption = ({
     onClick={onPick}
     onKeyDown={onKeyDown}
     className={cn(
-      'flex min-w-0 items-center gap-3 rounded-md px-2.5 py-2 text-left motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:opacity-50',
+      'flex min-w-0 items-center gap-3 rounded-md px-3 py-2 text-left motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:opacity-50',
       isChecked && 'bg-selected',
     )}
   >
@@ -53,6 +53,6 @@ export const BranchTemplateOption = ({
     >
       {label}
     </span>
-    <span className="shrink-0 truncate text-secondary text-muted-foreground">{hint}</span>
+    <span className="shrink-0 truncate text-meta text-muted-foreground">{hint}</span>
   </button>
 );

@@ -72,7 +72,7 @@ describe('SectionHeader, eyebrow size', () => {
 
     expect(screen.getByText('Decisions').className).toContain('text-eyebrow');
     expect(screen.getByText('One row per choice already settled.').className).toContain(
-      'text-secondary',
+      'text-meta',
     );
   });
 

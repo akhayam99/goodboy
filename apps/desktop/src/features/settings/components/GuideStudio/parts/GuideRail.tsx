@@ -19,7 +19,7 @@ type Props = {
 
 export const GuideRail = ({ chapters, activeId, query, onQueryChange, onSelect }: Props) => (
   <nav className="flex flex-col gap-2 p-3" aria-label="Guide chapters">
-    <div className="flex h-7 items-center gap-1.5 rounded-md border border-border-soft bg-background px-2 focus-within:border-primary">
+    <div className="flex h-7 items-center gap-2 rounded-md border border-border-soft bg-background px-2 focus-within:border-primary">
       <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
       <input
         type="text"
@@ -32,7 +32,7 @@ export const GuideRail = ({ chapters, activeId, query, onQueryChange, onSelect }
       />
     </div>
     {chapters.length === 0 ? (
-      <p className="px-1.5 py-2 text-label text-faint-foreground">
+      <p className="px-2 py-2 text-label text-faint-foreground">
         No chapter mentions "{query.trim()}".
       </p>
     ) : null}
@@ -43,7 +43,7 @@ export const GuideRail = ({ chapters, activeId, query, onQueryChange, onSelect }
       }
       return (
         <div key={group} className="flex flex-col gap-0.5">
-          <Eyebrow label={GUIDE_GROUP_LABEL[group]} className="px-1.5 py-1" />
+          <Eyebrow label={GUIDE_GROUP_LABEL[group]} className="px-2 py-1" />
           {inGroup.map((chapter) => {
             const Icon = CONCEPT_ICONS[chapter.concept];
             const isActive = chapter.id === activeId;
@@ -53,7 +53,7 @@ export const GuideRail = ({ chapters, activeId, query, onQueryChange, onSelect }
                 selected={isActive}
                 ariaCurrent={isActive ? 'true' : undefined}
                 onClick={() => onSelect(chapter.id)}
-                className="items-center gap-2 px-2.5 py-1.5 text-body"
+                className="items-center gap-2 px-3 py-2 text-body"
               >
                 <Icon
                   size={ICON_SIZE.row}

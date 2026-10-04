@@ -64,7 +64,7 @@ export const ReplyStyleNoteField = ({ workspaceId, value, isDisabled, onSave }: 
   };
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       <label htmlFor={id} className="text-label font-medium text-foreground">
         Style note
       </label>
@@ -78,7 +78,7 @@ export const ReplyStyleNoteField = ({ workspaceId, value, isDisabled, onSave }: 
           <LearnIcon size={ICON_SIZE.row} aria-hidden />
           {isLearning ? 'Reading your replies' : 'Learn from my replies'}
         </Button>
-        <span className="text-secondary text-faint-foreground">
+        <span className="text-meta text-faint-foreground">
           {`Reads your last ${REVIEW_REPLY_SAMPLE_SIZE} review replies in this workspace.`}
         </span>
       </div>
@@ -96,8 +96,8 @@ export const ReplyStyleNoteField = ({ workspaceId, value, isDisabled, onSave }: 
           }
         }}
       />
-      {error !== null && <p className="text-secondary text-danger">{error}</p>}
-      <p className="text-secondary text-muted-foreground">
+      {error !== null && <p className="text-meta text-danger">{error}</p>}
+      <p className="text-meta text-muted-foreground">
         You can edit this note. Agents follow it instead of a preset, and replies stay terse until
         it has text.
       </p>
