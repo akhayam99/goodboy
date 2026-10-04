@@ -7,7 +7,7 @@ import { NAMES } from '../../shared/names';
 export const LENS_LABEL: Record<LensKind, string> = {
   questions: NAMES.questions,
   agents: NAMES.agents,
-  workflows: NAMES.workflows,
+  workflows: NAMES.runs,
   review: NAMES.review,
   plans: NAMES.artifacts,
   scripts: NAMES.scripts,

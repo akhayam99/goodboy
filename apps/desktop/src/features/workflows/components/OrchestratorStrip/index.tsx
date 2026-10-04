@@ -136,11 +136,11 @@ export const OrchestratorStrip = ({
         return sessionBudgetBlocked ? (
           <OrchestratorAction
             icon={Wallet}
-            label="Raise limit"
+            label="Raise spend cap"
             variant="primary"
             tone="warning"
             testId="orchestrator-raise-session-limit"
-            title="The spend limit of this session is what paused this run"
+            title="The spend cap of this session is what paused this run"
             onClick={() => requestSessionSpendLimitEdit({ sessionId })}
           />
         ) : (

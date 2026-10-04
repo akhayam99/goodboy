@@ -6,6 +6,7 @@ import { ChecklistBody } from '../../../../features/onboarding/SetupChecklist/Ch
 import { CompletedBody } from '../../../../features/onboarding/SetupChecklist/CompletedBody';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { NAMES } from '../../../../shared/names';
 import { MenuRow } from './MenuRow';
 import { UpdateNotice } from './UpdateNotice';
 
@@ -85,7 +86,7 @@ export const GoodboyMenu = ({
         <ul className="flex flex-col">
           <MenuRow
             icon={<CONCEPT_ICONS.changelog size={ICON_SIZE.row} aria-hidden />}
-            label="What's new"
+            label={NAMES.whatsNew}
             onClick={onOpenChangelog}
           />
           <MenuRow

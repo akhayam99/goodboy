@@ -25,6 +25,7 @@ import type {
 import { planAsArtifact } from '../../plans/planAsArtifact';
 import { planConsumerLabel, resolvePlanConsumer } from '../../../shared/utils/planConsumer';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { NAMES } from '../../../shared/names';
 import { agentPlace, sessionPlace } from '../../../store/slices/navigation/place';
 import type { ArtifactGeneration } from '../../artifacts/artifactCollection';
 import {
@@ -343,7 +344,7 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
   },
   {
     id: 'artifact.retry',
-    label: 'Try again',
+    label: NAMES.retry,
     icon: RotateCcw,
     group: 'act',
     slot: () => 'secondary',

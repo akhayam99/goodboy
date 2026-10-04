@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import type { Project } from '@goodboy/types';
 import { StatusDot, FacetRail, FacetKeyHints, FacetRow, FacetSection } from '@goodboy/ui';
+import { NAMES } from '../../../../shared/names';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { keyHintsOf } from '../../../../shared/keyboard/keyHints';
 import type { ShortcutId } from '../../../../shared/keyboard/registry';
@@ -51,7 +52,7 @@ type Presentation = {
 const VIEW_PRESENTATION = {
   all: { label: 'All', icon: Inbox },
   'in-progress': { label: 'In progress', icon: Contrast },
-  'with-session': { label: 'With a session', icon: CONCEPT_ICONS.sessions },
+  'with-session': { label: NAMES.hasASession, icon: CONCEPT_ICONS.sessions },
   closed: { label: 'Closed', icon: CircleCheck },
 } satisfies Record<InboxView, Presentation>;
 

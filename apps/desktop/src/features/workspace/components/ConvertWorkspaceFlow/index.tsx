@@ -20,6 +20,7 @@ import {
 } from '@goodboy/core';
 import { Check, GitBranch } from 'lucide-react';
 import { useAppStore } from '../../../../store';
+import { NAMES } from '../../../../shared/names';
 import { tauriGhRunner } from '../../../integrations/github/github';
 import { lastPathSegment } from '../WorkspaceLinkForm/lastPathSegment';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -43,7 +44,7 @@ const HOST_NAME: Record<Host, string> = {
 
 const ACTION_OPTIONS = [
   { value: 'create', label: 'Create new' },
-  { value: 'link', label: 'Link existing' },
+  { value: 'link', label: NAMES.addExisting },
 ] as const;
 
 const VISIBILITY_OPTIONS = [
@@ -247,7 +248,7 @@ export const ConvertWorkspaceFlow = ({ workspaceId, project, onClose }: Props) =
               <p role="status" className="text-secondary text-warning">
                 {orphan.nameWithOwner} was created on GitHub before this failed. It exists on GitHub
                 at {orphan.url} and was not removed. Delete it yourself if you do not want it, or
-                pick it from Link existing.
+                pick it from {NAMES.addExisting}.
               </p>
             )}
 
@@ -261,8 +262,8 @@ export const ConvertWorkspaceFlow = ({ workspaceId, project, onClose }: Props) =
 
             {isCreating ? (
               <p className="text-secondary text-muted-foreground">
-                Goodboy creates the repository on GitHub. A GitLab project is linked from Link
-                existing instead.
+                Goodboy creates the repository on GitHub. A GitLab project is added from{' '}
+                {NAMES.addExisting} instead.
               </p>
             ) : (
               <SegmentedTabs

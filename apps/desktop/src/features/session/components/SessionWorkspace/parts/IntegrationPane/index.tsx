@@ -27,6 +27,7 @@ import {
 } from '../../../../../../shared/components/conceptIcons';
 import { GhostActionButton } from '@goodboy/ui';
 import { PANE_RHYTHM } from '@goodboy/ui';
+import { NAMES } from '../../../../../../shared/names';
 import { useSessionRepo } from '../../../../../../store/slices/worktrees/useSessionRepo';
 import { branchRequests } from '../../../../branchRequests';
 import { buildWorkItems } from '../../../../workItems';
@@ -193,9 +194,9 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
               role="danger"
               className="max-w-sm"
               icon={<Unlink size={ICON_SIZE.row} aria-hidden />}
-              title={`Unlink ${focusedTask.identifier}?`}
+              title={`${NAMES.removeLink} to ${focusedTask.identifier}?`}
               description={`Removes the ${meta.label} ${meta.noun} from this session without changing the ${meta.noun}.`}
-              confirmLabel={`Unlink ${focusedTask.identifier}`}
+              confirmLabel={`${NAMES.removeLink} to ${focusedTask.identifier}`}
               autoDisarmMs={4000}
               isBusy={isUnlinking}
               onConfirm={() => handleUnlink({ task: focusedTask })}
@@ -211,8 +212,8 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
               <GhostActionButton
                 icon={Unlink}
                 tone="danger"
-                label="Unlink"
-                ariaLabel={`Unlink ${focusedTask.identifier}`}
+                label={NAMES.removeLink}
+                ariaLabel={`${NAMES.removeLink} to ${focusedTask.identifier}`}
                 disabled={isUnlinking}
                 onClick={() => setIsUnlinkArmed(true)}
               />

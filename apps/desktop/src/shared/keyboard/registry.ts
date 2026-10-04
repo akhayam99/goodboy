@@ -1,4 +1,5 @@
 import { currentPlatform } from '../platform';
+import { NAMES } from '../names';
 
 type ShortcutPlane = 'app' | 'session' | 'lens' | 'pane';
 
@@ -287,7 +288,7 @@ export const SHORTCUTS = {
     plane: 'lens',
     group: 'views',
   },
-  'lens.workflows': { combo: 'cmd+alt+KeyW', label: 'Workflows', plane: 'lens', group: 'views' },
+  'lens.workflows': { combo: 'cmd+alt+KeyW', label: NAMES.runs, plane: 'lens', group: 'views' },
   'lens.agents': { combo: 'cmd+alt+KeyA', label: 'Agents', plane: 'lens', group: 'views' },
   'lens.review': { combo: 'cmd+alt+KeyR', label: 'Review', plane: 'lens', group: 'views' },
   'lens.questions': { combo: 'cmd+alt+KeyQ', label: 'Questions', plane: 'lens', group: 'views' },

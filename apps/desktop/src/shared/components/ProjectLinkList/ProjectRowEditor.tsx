@@ -8,6 +8,7 @@ import { resolveEditorBinary } from '../../lib/editorSettings';
 import { revealInFileManager } from '../../lib/reveal';
 import { formatSpan } from '../../utils/time/formatSpan';
 import { ICON_SIZE } from '../conceptIcons';
+import { NAMES } from '../../names';
 import { BaseBranchSelect } from '../../../features/worktree/BaseBranchSelect';
 import { commitBaseBranch } from '../../../features/worktree/commitBaseBranch';
 import { ProjectAfterMergeField } from './ProjectAfterMergeField';
@@ -101,7 +102,7 @@ export const ProjectRowEditor = ({ project, busy, onArmUnlink, ignoreField }: Pr
         </Button>
         <Button variant="ghost" size="sm" onClick={onArmUnlink} disabled={busy}>
           <Unplug size={ICON_SIZE.row} aria-hidden />
-          Unlink
+          {NAMES.removeLink}
         </Button>
       </div>
     </div>

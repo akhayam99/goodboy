@@ -272,7 +272,7 @@ describe('ChatRoom', () => {
     expect(store.navigate).not.toHaveBeenCalled();
   });
 
-  it('says when the chat could not be linked and links it on Try again', async () => {
+  it('says when the chat could not be linked and links it on Retry', async () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     store.recordChatLink.mockRejectedValueOnce(new Error('disk full'));
     renderRoom({ chat: CHAT });
@@ -286,7 +286,7 @@ describe('ChatRoom', () => {
     screen.getByText("Couldn't link the chat to the session");
     expect(store.navigate).not.toHaveBeenCalled();
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     });
 
     expect(screen.queryByText("Couldn't link the chat to the session")).toBeNull();

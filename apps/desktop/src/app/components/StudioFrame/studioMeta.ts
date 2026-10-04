@@ -1,6 +1,7 @@
 import type { Tone } from '@goodboy/ui';
 import { Smartphone, type LucideIcon } from 'lucide-react';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
+import { NAMES } from '../../../shared/names';
 import type { StudioKind } from '../../../store';
 
 export type StudioSkeletonLayout = 'list' | 'rail' | 'grid';
@@ -68,8 +69,8 @@ export const STUDIO_META = {
   changelog: {
     icon: CONCEPT_ICONS.changelog,
     tone: CONCEPT_TONE.changelog,
-    title: 'Changelog',
-    closeLabel: 'Close changelog',
+    title: NAMES.whatsNew,
+    closeLabel: `Close ${NAMES.whatsNew.toLowerCase()}`,
     skeleton: 'grid',
   },
   notifications: {

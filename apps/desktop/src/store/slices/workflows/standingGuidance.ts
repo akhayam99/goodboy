@@ -1,4 +1,5 @@
 import type { AgentRole, WorkflowRun } from '@goodboy/types';
+import { NAMES } from '../../../shared/names';
 
 type SectionParams = {
   readonly run: Pick<WorkflowRun, 'executionMode' | 'rulesSnapshot'> | null | undefined;
@@ -16,7 +17,7 @@ export const guidanceSentTo = ({ run, role }: SectionParams): string | null => {
 
 export const standingGuidanceSection = ({ run, role }: SectionParams): string => {
   const text = guidanceSentTo({ run, role });
-  return text === null ? '' : `**Standing guidance**\n${text}`;
+  return text === null ? '' : `**${NAMES.guidance}**\n${text}`;
 };
 
 export const guidanceTagTip = ({ text }: { readonly text: string }): string => {

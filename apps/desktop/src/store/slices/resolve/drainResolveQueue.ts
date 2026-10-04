@@ -301,7 +301,7 @@ const startResolverTurn = async ({
         error: hasStarted
           ? 'interrupted'
           : result?.blockedOverBudget === true
-            ? 'every provider is over its budget cap'
+            ? 'every provider is over its spend cap'
             : 'the turn ended before the fix attempt started',
       });
     }

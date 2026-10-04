@@ -55,7 +55,7 @@ export const ACTIVITY_CATEGORY_LABEL: Record<ActivityCategory, string> = {
   worktree: 'Branches and worktrees',
   issues: 'Issues',
   pullRequests: 'Pull requests',
-  workflows: 'Workflows',
+  workflows: 'Runs',
   artifacts: 'Artifacts',
   agents: 'Agents',
   questions: 'Questions',

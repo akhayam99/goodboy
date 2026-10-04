@@ -280,11 +280,11 @@ describe('Impact studio spend scopes', () => {
     expect(state.deleteBudgetRule).toHaveBeenCalledWith('rule-1');
   });
 
-  it('sets a session spend limit via setSessionBudget', async () => {
+  it('sets a session spend cap via setSessionBudget', async () => {
     renderStudio({ initialScope: { kind: 'session', sessionId: 'session-1' as SessionId } });
 
     fireEvent.click(screen.getByRole('button', { name: 'Set limit' }));
-    fireEvent.change(screen.getByLabelText('Spend limit in dollars'), {
+    fireEvent.change(screen.getByLabelText('Spend cap in dollars'), {
       target: { value: '12.5' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));

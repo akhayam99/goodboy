@@ -16,6 +16,7 @@ import {
   REPLY_TEMPLATE_NO_CHANGE_DEFAULT,
 } from '../../resolve/replySettings';
 import { COMMIT_STYLE_LABEL, VOICE_LABEL } from '../../resolve/replySettingsCopy';
+import { NAMES } from '../../../shared/names';
 import { AFTER_MERGE_SHORT_LABEL } from '../components/SettingsStudio/afterMergeCopy';
 import { canonicalWorkflowRules, workflowRulesSummary } from '../../workflows/workflowRulesCopy';
 import { FIELD_PAGE, type WorkspaceSettingField } from '../pageKeys';
@@ -197,7 +198,7 @@ const WORKSPACE_FIELDS: ReadonlyArray<WorkspaceFieldDef> = [
   }),
   erase({
     id: 'resolveOnGithub',
-    label: 'Resolve the thread after replying',
+    label: NAMES.markThreadResolved,
     fallback: REPLY_SETTINGS_DEFAULT.resolveOnGithub,
     parse: asFlag,
     stored: ({ overrides }) => overrides?.resolveOnGithub ?? null,
@@ -235,7 +236,7 @@ const WORKSPACE_FIELDS: ReadonlyArray<WorkspaceFieldDef> = [
   }),
   erase({
     id: 'roles',
-    label: 'Your roles',
+    label: NAMES.yourJob,
     fallback: [],
     parse: asList,
     stored: ({ profile }) => listOrNull(profile.roles),
@@ -271,7 +272,7 @@ const WORKSPACE_FIELDS: ReadonlyArray<WorkspaceFieldDef> = [
   }),
   erase({
     id: 'workflowRules',
-    label: 'Workflow rules',
+    label: NAMES.runDefaults,
     fallback: canonicalWorkflowRules({ rules: DEFAULT_WORKFLOW_RULES }),
     parse: (value) =>
       typeof value === 'string' && parseWorkflowRulesText({ text: value }) !== null ? value : null,

@@ -258,8 +258,8 @@ never exists on one surface only.
   changes; Message this agent, Interrupt while a turn runs, Close or Reopen,
   Change model (one submenu); copy the last reply and the name; Delete agent. A
   workflow run: Open run, View diff; Answer, Start run, Continue step, Restart
-  step, Start the next step, Restore; Copy run summary; Close, Discard and
-  Delete, each confirmed. An artifact: the viewer's verbs by kind and status,
+  step, Start the next step, Restore; Copy run summary; Stop workflow, Archive
+  workflow and Delete, each confirmed. An artifact: the viewer's verbs by kind and status,
   from the list row too, plus Delete on any stored artifact that is not already
   deleted (Undo, no confirm) and Delete permanently on a deleted one (confirmed). A plan part, an inbox record (with the tool verbs of
   an open record), a pull request, a worktree row of the Overview (`mount`), a
@@ -310,9 +310,9 @@ never exists on one surface only.
   covers the last row.
 - **Confirm and undo.** A verb that loses work confirms inside the menu with
   `InlineConfirm` (Delete, Delete permanently, Discard, Close run, Merge, Close pull request,
-  Delete script, Close worktree, Remove from session, Abort rebase). Detach
-  project and a storage worktree's Remove keep their detailed confirm (the
-  detach plan, the forced remove) in their own menu. A reversible verb runs at once with an Undo toast (Archive, Delete on an artifact,
+  Delete script, Close worktree, Remove from session, Abort rebase). Remove
+  from session and a storage worktree's Remove keep their detailed confirm (the
+  removal plan, the forced remove) in their own menu. A reversible verb runs at once with an Undo toast (Archive, Delete on an artifact,
   Close agent). A draft verb on the rewrite page (Drop) needs neither.
 - **Blocked verbs stay.** A verb that cannot run now stays in the menu, dimmed,
   with its reason under the label, and does nothing when chosen. A verb that
@@ -473,7 +473,7 @@ on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
   found or not visible, key rejected with `Sign in again`, missing
   permission, tracker not connected, no repo for `#N`), and a rate limit
   shows a live countdown and retries once on its own when it ends, alongside
-  the manual `Try again`. The mobile companion resolves Linear, Sentry and
+  the manual `Retry`. The mobile companion resolves Linear, Sentry and
   GitLab issues through the same direct lookups instead of searching only
   the issues assigned to you. Issues can be starred (`StarToggle`, the same
   star as projects) from an Inbox row, a lookup hit or `s` on the selected
@@ -901,7 +901,7 @@ Spend tab. **Providers** is not a door to the Providers & models page: it opens
 a menu that changes things in place (`AppFooter/ProvidersMenu`). Settings >
 Providers & models is the one home for providers and usage; the menu holds
 no usage figure and sends there with **Manage providers** (a door). It lists
-the same `ProviderPolicyList` as Defaults > Providers, in order, writing through
+the same `ProviderPolicyList` as Models > Providers, in order, writing through
 the same `setProviderPolicy`, then Connect for each CLI provider that is not
 connected, then Manage providers. The top bar's limits chip opens the same
 home on Usage. It reads the cached providers and never refreshes them on
@@ -911,7 +911,7 @@ nothing until a provider is connected. Changelog opens from the Goodboy chip and
 the palette, so it earns no footer entry.
 
 The footer is an `@container/footer` on the same `chrome-labels` step as the
-top bar. Below it, every launcher label and the **Link integration** label
+top bar. Below it, every launcher label and the **Connect an integration** label
 drop together and the glyphs stay, with the name in the tooltip. The first
 link action keeps its label, since it is the only thing on the left. The
 Goodboy chip never hides. Past that the glyph strip scrolls.
@@ -1126,7 +1126,7 @@ one is open at a time.
   merge, Review replies, Permissions) sit the same way under the
   Workspace row (`workspacePages.ts`, `SettingsRailPageGroup`). The panel
   shows one item at a time. Providers & models nests
-  Defaults and one row per provider, and Integrations nests one row per tool. Those
+  Models and one row per provider, and Integrations nests one row per tool. Those
   two lists open and close with `Reveal`, and the rail stays one mounted
   element across scopes: `SettingsStudio` portals each scope's nested list and
   detail into slots it owns, and keeps a closing scope mounted until its list
@@ -1267,7 +1267,7 @@ workspaceId, nowMs })`, owns every row's subtitle and tone (it replaced three
   workspace). Integrations carries a faint inventory subtitle with no dot,
   "N of M connected" over the whole integration catalog
   (`connectedInventory`). No rail row is red: the destructive actions sit at the
-  bottom of their page, Reset (Wipe local database) at the end of Backup and
+  bottom of their page, Reset (Delete all data) at the end of Backup and
   Disconnect at the end of Projects, and turn red only in their inline
   confirm. Panel sections sit on bands (`Band`, eyebrow outside) with gap between
   them and no `Divider`. The workspace page is the exception: one
@@ -1275,7 +1275,7 @@ workspaceId, nowMs })`, owns every row's subtitle and tone (it replaced three
   renamed in place. Projects group Starred ahead of All (never in both), each
   a 32px grid row (star, kind, name, description, a base-branch chip only
   when set by hand, a Folder-not-found flag) with Open in editor, Copy path
-  and Unlink in a reserved column, dim at rest; clicking the name opens an
+  and Remove link in a reserved column, dim at rest; clicking the name opens an
   inline editor below the row for the rest (description, base branch, After
   merge for repos, folder, facts, footer actions). New session defaults sit in a
   two-column grid with each help behind an info mark, followed by the
@@ -1310,7 +1310,7 @@ workspaceId, nowMs })`, owns every row's subtitle and tone (it replaced three
   linked, the inbox adds Link to a session beside Launch session: a searchable
   list of the workspace's sessions, inline, that links the record to the one
   you pick. Everything else lives in
-  `⋯` in a fixed order: rare tool verbs, Refresh, Copy link, Unlink session,
+  `⋯` in a fixed order: rare tool verbs, Refresh, Copy link, Remove link to session,
   then destructive verbs after a separator. Editable properties change from the
   control that shows them (the Jira state opens its transitions). Launch
   session opens a popover with the goal and the brief; Enter from the inbox list
@@ -1545,7 +1545,7 @@ a pulsing dot while the summarizer writes and a danger glyph when it failed,
 with Retry in the drawer's **Context updates** row. The old addresses `s/{session}/context`
 and `context/goal`, `context/decisions`, `context/summary` resolve in
 `canonicalLocation` to the overview with this drawer open on the matching tab.
-The drawer header has one action, **Copy as brief**, which copies Goal,
+The drawer header has one action, **Copy context**, which copies Goal,
 Decisions, Summary and Open questions in that order (`shareableContext`).
 
 The drawer sits on the `subtle` panel surface, like every `DrawerFrame`.
@@ -1553,7 +1553,7 @@ The drawer sits on the `subtle` panel surface, like every `DrawerFrame`.
 closed, it says `Updated 2 min ago`, `Queued`, `Updating…` or `Couldn't update`;
 open, it lists the last round (`summarizerRounds`: when, how many turns or a
 full pass, model and effort, tokens and cost, what changed as a comma list of
-links to the tabs, every value on the same column), **Change model** (Settings, Providers & models, Defaults, scrolled to
+links to the tabs, every value on the same column), **Change model** (Settings, Providers & models, Models, scrolled to
 Step summaries) and **Update now**. Update now queues a consolidation pass
 through `requestContextUpdate`, behind any pass in flight and never beside it;
 `summarizerPending` holds the turns waiting and whether a requested update is

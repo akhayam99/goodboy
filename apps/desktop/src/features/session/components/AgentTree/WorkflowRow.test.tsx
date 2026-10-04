@@ -358,7 +358,7 @@ describe('WorkflowRow detail dashboard', () => {
     const remove = screen.getByRole('button', { name: 'Refactor workflow actions' });
 
     expect(choice.compareDocumentPosition(remove)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(screen.queryByRole('switch', { name: 'Autorun' })).toBeNull();
+    expect(screen.queryByRole('switch', { name: 'Run on its own' })).toBeNull();
   });
   it('changes when to ask from the header menu and names the choice in the facts', () => {
     const setAutonomy = vi.fn(async () => undefined);
@@ -391,7 +391,7 @@ describe('WorkflowRow detail dashboard', () => {
     expect(
       navigationSlot.contains(screen.getByRole('button', { name: 'Collapse Refactor workflow' })),
     ).toBe(true);
-    expect(screen.queryByRole('switch', { name: 'Autorun' })).toBeNull();
+    expect(screen.queryByRole('switch', { name: 'Run on its own' })).toBeNull();
     expect(
       lifecycleSlot.contains(screen.getByRole('button', { name: 'Refactor workflow actions' })),
     ).toBe(true);
@@ -661,7 +661,7 @@ describe('WorkflowRow dynamic runs', () => {
     expect(screen.getByTitle('$3.5000 for this run')).toBeDefined();
   });
 
-  it('offers the spend limit next to what the dynamic run has cost', () => {
+  it('offers the spend cap next to what the dynamic run has cost', () => {
     renderDetail({
       runOverride: { ...dynamicRun, spendLimitUsd: 20 },
       agentsOverride: doneAgents,
@@ -669,7 +669,7 @@ describe('WorkflowRow dynamic runs', () => {
     });
 
     const [trigger] = screen.getAllByTestId('run-spend-limit-trigger');
-    expect(trigger?.textContent).toContain('Spend limit $20.00');
+    expect(trigger?.textContent).toContain('Spend cap $20.00');
   });
 
   it('marks the dynamic run completed only on a persisted done outcome', () => {
@@ -714,14 +714,14 @@ describe('WorkflowRow dynamic runs', () => {
     expect((container.firstChild as HTMLElement).className).not.toContain(TERMINAL_DIM);
   });
 
-  it('offers Close workflow on a started run and closes it once confirmed', () => {
+  it('offers Stop workflow on a started run and closes it once confirmed', () => {
     storeMocks.sessionPhaseRuns = { [SESSION_ID]: agents };
     renderDetail();
 
     const lifecycleSlot = screen.getByRole('group', { name: 'Workflow lifecycle actions' });
-    fireEvent.click(within(lifecycleSlot).getByRole('button', { name: 'Close workflow' }));
-    const panel = screen.getByRole('group', { name: 'Close this workflow?' });
-    fireEvent.click(within(panel).getByRole('button', { name: 'Close workflow' }));
+    fireEvent.click(within(lifecycleSlot).getByRole('button', { name: 'Stop workflow' }));
+    const panel = screen.getByRole('group', { name: 'Stop this workflow?' });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Stop workflow' }));
 
     expect(storeMocks.closeWorkflowRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
   });
@@ -742,7 +742,7 @@ describe('WorkflowRow dynamic runs', () => {
     });
 
     expect(screen.getByTitle('Closed by you').textContent).toBe('Closed');
-    expect(screen.queryByRole('button', { name: 'Close workflow' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Stop workflow' })).toBeNull();
     expect(screen.queryByTestId('workflow-autorun-toggle')).toBeNull();
   });
 });

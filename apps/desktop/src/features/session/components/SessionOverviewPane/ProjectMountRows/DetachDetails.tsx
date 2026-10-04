@@ -18,7 +18,7 @@ export const DetachDetails = ({ projectName, details, isBusy, onKeepFiles }: Pro
     <div className="flex min-w-0 flex-col gap-1.5">
       <button
         type="button"
-        aria-label={`Detach details for ${projectName}`}
+        aria-label={`Removal details for ${projectName}`}
         aria-expanded={isOpen}
         onClick={() => setIsOpen(!isOpen)}
         className="flex w-fit items-center gap-1 rounded-md px-1 py-0.5 text-secondary font-medium text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
@@ -53,7 +53,7 @@ export const DetachDetails = ({ projectName, details, isBusy, onKeepFiles }: Pro
               className="w-fit"
               onClick={onKeepFiles}
             >
-              Detach and keep files
+              Remove and keep files
             </Button>
           )}
         </div>

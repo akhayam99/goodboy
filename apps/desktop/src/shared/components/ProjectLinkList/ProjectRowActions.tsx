@@ -5,6 +5,7 @@ import { openInEditor } from '../../lib/editor';
 import { resolveEditorBinary } from '../../lib/editorSettings';
 import { useAppStore } from '../../../store';
 import { ICON_SIZE } from '../conceptIcons';
+import { NAMES } from '../../names';
 
 type Props = {
   readonly project: Project;
@@ -51,10 +52,10 @@ export const ProjectRowActions = ({ project, busy, onArmUnlink }: Props) => {
         className="text-faint-foreground hover:text-foreground"
       />
       <span className="w-2" aria-hidden />
-      <Tooltip content={`Unlink ${project.name}`}>
+      <Tooltip content={`${NAMES.removeLink} to ${project.name}`}>
         <button
           type="button"
-          aria-label={`Unlink ${project.name}`}
+          aria-label={`${NAMES.removeLink} to ${project.name}`}
           disabled={busy}
           onClick={(event) => {
             event.stopPropagation();

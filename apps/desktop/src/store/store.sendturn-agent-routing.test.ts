@@ -2796,7 +2796,7 @@ describe('sendTurn, budget routing notice', () => {
       .filter((event) => event.kind === 'error')
       .map((event) => ('message' in event ? event.message : ''));
     expect(messages).toContain(
-      'All providers have exceeded their budget cap. Adjust budget rules or wait for the next billing period.',
+      'All providers have exceeded their spend cap. Adjust the spend caps or wait for the next billing period.',
     );
   });
 

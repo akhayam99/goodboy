@@ -2,6 +2,7 @@ import { RotateCcw } from 'lucide-react';
 import { AnchoredPopover, Switch, cn, formatUsd, useDropdown } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import type { WorkflowSpendLimitMode } from '@goodboy/types';
+import { NAMES } from '../../../../../shared/names';
 import { SpendLimitFields } from '../../../../budget/components/SpendLimitFields';
 import { parseSpendLimit } from '../../../../budget/parseSpendLimit';
 import {
@@ -70,11 +71,11 @@ export const SpendCapChip = ({
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel="Spend cap"
+      ariaLabel={NAMES.spendCap}
       className="flex flex-col gap-2 p-3"
       trigger={
         <ControlChip
-          label="Spend cap"
+          label={NAMES.spendCap}
           value={chipValueOf({ isEnabled, amount, mode })}
           marker={differs ? <RuleDot ruleValue={ruleValue} /> : null}
           isOpen={open}
@@ -89,7 +90,7 @@ export const SpendCapChip = ({
         <Switch
           label={
             <>
-              <span className="sr-only">Spend limit </span>
+              <span className="sr-only">{NAMES.spendCap} </span>
               {isEnabled ? 'On' : 'Off'}
             </>
           }

@@ -26,6 +26,7 @@ import {
 } from '../../../../../shared/components/conceptIcons';
 import { sessionCardShell, sessionTone } from '../../../../session/components/sessionCardShell';
 import { useOpenSession } from '../../../../../shared/hooks/useOpenSession';
+import { NAMES } from '../../../../../shared/names';
 import { sessionDisplayTitle } from '../../../../session/sessionTitle';
 import { ChatOriginGlyph } from '../../../../../shared/components/ChatOriginGlyph';
 import type { BoardNavigation } from '../useBoardNavigation';
@@ -315,13 +316,13 @@ export const StageBoardCard = memo(function StageBoardCard({
             />
           )}
           {isAutoMode && (
-            <Tooltip content="Autorun" side="top">
+            <Tooltip content={NAMES.runOnItsOwn} side="top">
               <span className="inline-flex shrink-0">
                 <Chip
                   tone={CONCEPT_TONE.autorun}
                   size="xs"
                   bordered={false}
-                  ariaLabel="Autorun"
+                  ariaLabel={NAMES.runOnItsOwn}
                   icon={<CONCEPT_ICONS.autorun size={ICON_SIZE.row} aria-hidden />}
                 />
               </span>

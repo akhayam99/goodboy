@@ -3,6 +3,7 @@ import { RotateCcw, Trash2 } from 'lucide-react';
 import { Button, Eyebrow, FieldRow, InlineConfirm, cn, tintClasses } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/names';
 
 type WipeState = 'idle' | 'confirm' | 'wiping' | 'done';
 
@@ -19,7 +20,7 @@ export const AppResetSection = () => {
       setWipeState('done');
     } catch (err) {
       setWipeState('confirm');
-      void reportError({ title: "Couldn't wipe the local database", error: err });
+      void reportError({ title: "Couldn't delete the local data", error: err });
     }
   };
 
@@ -32,9 +33,9 @@ export const AppResetSection = () => {
         <InlineConfirm
           role="danger"
           icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-          title="Wipe every workspace, session and rule?"
+          title="Delete every workspace, session and rule?"
           description="This cannot be undone. Keychain keys stay. The app starts on a fresh schema after a restart."
-          confirmLabel="Wipe"
+          confirmLabel="Delete"
           isBusy={wipeState === 'wiping'}
           onConfirm={onWipe}
           onCancel={() => setWipeState('idle')}
@@ -42,12 +43,12 @@ export const AppResetSection = () => {
         />
       ) : (
         <FieldRow
-          label="Wipe local database"
+          label={NAMES.deleteAllData}
           help="Every workspace, session, transcript and rule. Keychain keys are untouched."
         >
           {wipeState === 'done' ? (
             <span className="flex items-center gap-3">
-              <span className="text-label text-muted-foreground">Local data wiped.</span>
+              <span className="text-label text-muted-foreground">Local data deleted.</span>
               <Button variant="secondary" size="sm" onClick={() => void relaunchApp()}>
                 <RotateCcw size={ICON_SIZE.row} aria-hidden />
                 Restart now
@@ -60,7 +61,7 @@ export const AppResetSection = () => {
               onClick={() => setWipeState('confirm')}
               className={cn('text-danger', tintClasses('danger').hoverBg, 'hover:text-danger')}
             >
-              Wipe
+              {NAMES.deleteAllData}
             </Button>
           )}
         </FieldRow>

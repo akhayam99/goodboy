@@ -63,7 +63,7 @@ describe('ErrorBoundary', () => {
 
     expect(screen.getByRole('heading', { name: 'Something went wrong' })).toBeDefined();
     const labels = screen.getAllByRole('button').map((button) => button.textContent);
-    expect(labels).toEqual(['Try again', 'Reload']);
+    expect(labels).toEqual(['Retry', 'Reload']);
     consoleError.mockRestore();
   });
 

@@ -188,7 +188,7 @@ describe('WorkspaceLinkStudio', () => {
     );
 
     fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
-    fireEvent.click(screen.getByRole('button', { name: /link a plain folder/i }));
+    fireEvent.click(screen.getByRole('button', { name: /add a plain folder/i }));
     await waitFor(() => expect(state.addWorkspace).toHaveBeenCalled());
     await waitFor(() => expect(onOfferRepo).toHaveBeenCalledOnce());
   });

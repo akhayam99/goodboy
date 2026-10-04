@@ -142,7 +142,7 @@ Impact, the Spend tab and the spend chip in the top bar all count it.
 | You delete it in Goodboy              | transcript, file versions, slots, decisions and images are freed; the row stays with `deleted_at` | sessions, spend, pull requests, reviews and durations |
 | Its worktree disappears from disk     | rows stay, the mount is marked `missing`                                                          | everything                                            |
 | You archive it                        | rows stay with `archived_at`                                                                      | everything                                            |
-| You detach or forget its project      | the mount row and its pull request links go                                                       | merged pull requests, through their `pr_merged` event |
+| You remove or forget its project      | the mount row and its pull request links go                                                       | merged pull requests, through their `pr_merged` event |
 | You remove its workspace              | rows stay, the workspace is disconnected                                                          | everything, under that workspace                      |
 | A draft that never started is deleted | the row goes                                                                                      | nothing to keep                                       |
 
@@ -823,15 +823,15 @@ once · each works on its own copy of the branch`, no price: nothing
   estimates the cost of a run), and `Start` on Cmd+Enter (Esc closes). The
   choice is saved on the batch and on every attempt (`launch_choice_json`). Each start carries the thread ids and the
   marker contract
-- A retry reads the same choices again. Redraft, Answer and Try again use the
+- A retry reads the same choices again. Redraft, Answer and Retry use the
   launch choice of the comment's last batch attempt (model, effort, commit
   style, hint), then the model picked for the session (`Model for drafts…`) and
   the commit style set in Review replies, so with fixup set the second round is
   a fixup too. The
   hint you type before a retry lands in the prompt's operator notes
-- A failed run offers **Try again** (`Try again on Opus 5` once you picked a
-  model, `Try again with the hint` with a hint), **Try another model** (the
-  picker opens inline under the buttons) and **Add a hint** (F is Try again).
+- A failed run offers **Retry** (`Retry on Opus 5` once you picked a
+  model, `Retry with the hint` with a hint), **Try another model** (the
+  picker opens inline under the buttons) and **Add a hint** (F is Retry).
   `…` holds Reply yourself, Skip and Open transcript. The earlier attempts of
   the comment fold into one line above (`Attempt 1 · Sonnet 5.5 · Medium ·
 failed`) that opens to their reasons. A failed step after the run shows its
@@ -880,7 +880,7 @@ e31b9f4` when a history rewrite folded the fix. Reply and page always read
   reason, then `Fixed in {commit_story}.` or `Leaving this as is.`
 - **Sign replies** is the attribution line switch, so one value signs
   everything Goodboy posts
-- **Resolve the thread after replying** (on by default) and **Commits** (new
+- **Mark thread as resolved** (on by default, it resolves the thread after the reply) and **Commits** (new
   commit, or fixup of the commit that added the line)
 - **Edit the posted reply** (on by default, stored per workspace in the
   `settings` table under `review.edit_posted_reply.<workspaceId>`, `0` = off).
@@ -959,7 +959,7 @@ Each workspace can have one profile, edited under "About you" on the workspace
 page. Onboarding does not ask for it: "Tell agents about you" in the setup
 checklist opens it. It has four fields:
 
-- **Your roles**: chips from a library of about 30 roles, or your own
+- **Your job**: chips from a library of about 30 roles, or your own
 - **About your work**: what you do and for whom
 - **How agents should work with you**: your working rules
 - **Explain more when it touches**: topics where you want longer explanations
@@ -1075,7 +1075,7 @@ The inbox is the workspace's queue of incoming work from every connected
 source: issues, pull and merge requests, Slack threads and Sentry errors, one
 record each, one line per record. Records are grouped by day (today,
 yesterday, this week, older) and ordered by time only, newest first. A facet
-rail filters them by view (all, in progress, with a session, closed), by type
+rail filters them by view (all, in progress, has a session, closed), by type
 and by source, one pick per section, with counts; only the types a connected
 tool can produce show. A tool that did not load says so in its source row and
 in one notice above the list. The state column uses the tool's own word, the
@@ -1167,7 +1167,7 @@ Goodboy measures every turn on your machine and sends nothing anywhere.
 - **Session events**: when a session starts, resets, hits a limit, changes
   provider or ends
 - **Budgets**: a monthly budget per provider, counted across all workspaces on a
-  UTC calendar month, and a spend limit per session that pauses workflows or
+  UTC calendar month, and a spend cap per session that pauses workflows or
   only warns, with an alert before you reach them
 
 Caps steer where work goes. They never lock you out. When every provider is
@@ -1240,6 +1240,44 @@ task up again in Goodboy.
   change. **Brief** stays the name of the agent tab and of a text you edit
   before something starts, so the two never share a screen.
 - **Stop** is the one name for ending a running turn.
+- **Runs** is the tab of a session that lists its workflow runs. **Workflows**
+  is the library page. **Run defaults** is the tab of Workflows that sets what
+  a new run starts with. A renamed label keeps its old name as a ⌘K alias:
+  searching the old word finds the new one (`formerNamesOf` in `names.ts`).
+- **Models** is the Providers page that sets what each role runs on (it was
+  Defaults). **Spend cap** is the limit on a run, **Spend caps** the backup
+  group that holds them, **Copy context** the drawer button, **Context window**
+  the share of a model window a turn filled, and **What's new** the release
+  notes page. The old words are ⌘K aliases or retired names.
+- **Add a plain folder** and **Add existing** put a folder or a repository
+  under a project. **Link** stays for tying a ticket to a session or a pull
+  request. **Connect an integration** is the footer button that adds a tool.
+- **When to ask** is the setting that decides how often a run stops for you.
+  Its top choice is **Run on its own** (it was Autorun and Autonomy).
+- **Needs you** is the one name for anything that waits on you: the top bar
+  group, the board column, the questions list and an agent in a mount row.
+  The reason follows it ("Needs your answer in step 2"). "Waiting on you" is
+  retired.
+- **Your job** is the About you field that lists what you do (it was Your
+  roles). **Role** stays the name for what an agent plays.
+- One verb per intention. A button or menu entry takes its verb from this
+  table, and the old verb stays a ⌘K alias:
+
+  | Verb           | Means                                             | Retired                                                            |
+  | -------------- | ------------------------------------------------- | ------------------------------------------------------------------ |
+  | **Delete**     | The object is gone (Undo where it can be)         | Wipe (now **Delete all data**)                                     |
+  | **Remove**     | Taken out of a list, it still exists elsewhere    | Detach (now **Remove from session**), Unlink (now **Remove link**) |
+  | **Archive**    | Hidden, restorable                                | Discard on a workflow run (now **Archive workflow**)               |
+  | **Disconnect** | Cuts the tie to an account, a tool or a workspace |                                                                    |
+  | **Stop**       | Ends what is running and keeps what it wrote      | Close workflow (now **Stop workflow**)                             |
+  | **Dismiss**    | Hides a notification or a suggestion              |                                                                    |
+  | **Clear**      | Resets filters or a selection                     |                                                                    |
+  | **Retry**      | Runs a failed action again                        | Try again                                                          |
+
+  **Discard** stays for a draft you abandon. **Close** stays for a panel and
+  for sending an agent away without deleting it. **Check again** only
+  re-reads a state, and **Run again** starts a run that succeeded once more.
+
 - A word that stays and still needs a sentence (workflow, orchestrated,
   artifact) gets a short tooltip, six words at most, written once. The
   `TermHint` and `GLOSSARY`

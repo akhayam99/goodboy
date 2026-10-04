@@ -76,7 +76,7 @@ export const ProviderPanel = ({
         meta={`${formatUsd(spent)} total spend`}
         onBack={onBack}
       />
-      <ErrorStrip label="budget rules" error={rulesResult.error} onRetry={onRetryRules} />
+      <ErrorStrip label="spend caps" error={rulesResult.error} onRetry={onRetryRules} />
       <ErrorStrip
         label="session telemetry"
         error={telemetryResult.error}

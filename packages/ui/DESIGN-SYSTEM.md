@@ -636,7 +636,7 @@ running or done, and so does every surface that reads `formatActiveTime`.
 | cost       | 48px  | what the row has spent, empty before anything is spent                                                        | under 620px it leaves the row             |
 | cost range | 72px  | an estimated cost range before a step starts (`isCostRange`)                                                  | under 620px it leaves the row             |
 | action     | 76px  | the one visible action, reserved for a list that can ask: Activity of an open session, the tree of a live run | never drops                               |
-| menu       | 24px  | the row menu, like Close workflow on a run row                                                                | never drops                               |
+| menu       | 24px  | the row menu, like Stop workflow on a run row                                                                 | never drops                               |
 
 A row inside a `WorkTimeProvider` always renders the time column, empty when
 it has nothing to say, so the columns stay in line. The cost column follows
@@ -980,16 +980,16 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 - The new session draft follows the same rule, with one exception: an empty session asks one question with three choices on one row, as tabs (`SegmentedTabs` `card` variant, glyph, title, one line, a check on the selected one) instead of a stacked list, because there are exactly three doors and they read better side by side. Only the selected tab's panel, and only its primary, shows. An item that cannot work yet is left out, never shown disabled. A grid of tiles is otherwise not an action zone.
 - The session overview's actions carry a second exception: a frequent alternative to the primary sits as one secondary button beside it, not folded into the menu. `OverviewActions` shows a secondary Run workflow (Open run once one is active) next to the primary Start agent, with `OverflowMenu` labeled Create holding only the rarer starts (Report, Wireframe). Still one primary; the secondary is the one alternative common enough to earn its own button.
 - An overflow menu that has to confirm one of its items in place renders `MenuItems` inside its own `AnchoredPopover` and swaps to a plain `InlineConfirm`, as the orchestrator strip does for **Stop now**.
-- An on or off setting is a `Switch`: the label names the setting and the knob says its state, so the label never reads "on" or "off". Autorun uses it everywhere (`WorkflowAutorunToggle`).
+- An on or off setting is a `Switch`: the label names the setting and the knob says its state, so the label never reads "on" or "off". Run on its own uses it everywhere (`WorkflowAutorunToggle`).
 
 **Record actions.** A record from a connected tool (issue, merge or pull request, thread, error) has four fixed places, whatever the tool:
 
-| Place     | What goes there                                                                               | Shape                                              |
-| --------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Primary   | Launch session, or Open session once one is linked                                            | one filled button, first in the action row         |
-| Secondary | at most two tool verbs that move the record forward, picked by state                          | neutral `secondary` buttons, tone only in the icon |
-| Overflow  | rare tool verbs, Refresh, Copy link, Unlink session, then destructive verbs after a separator | the `⋯` menu on the identity line                  |
-| Utilities | Open in the tool, `⋯`, close                                                                  | icon buttons at the end of the identity line       |
+| Place     | What goes there                                                                                       | Shape                                              |
+| --------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Primary   | Launch session, or Open session once one is linked                                                    | one filled button, first in the action row         |
+| Secondary | at most two tool verbs that move the record forward, picked by state                                  | neutral `secondary` buttons, tone only in the icon |
+| Overflow  | rare tool verbs, Refresh, Copy link, Remove link to session, then destructive verbs after a separator | the `⋯` menu on the identity line                  |
+| Utilities | Open in the tool, `⋯`, close                                                                          | icon buttons at the end of the identity line       |
 
 A verb blocked for a moment stays visible with its reason in the tooltip; a verb the tool refuses is not shown. Merge confirms under the action row, and a destructive verb confirms in its menu with a plain menu swap. Properties that can change (state, assignee) change from the control that shows them, never from a button. `RecordHeader` and the `RecordVerbs` type own the contract.
 
@@ -1180,7 +1180,7 @@ it:
   holding `PANE_RHYTHM.column` and `PANE_RHYTHM.body` with `gap-8` between the
   blocks. Put it inside the shell (`StudioShell`, `PaneShell scroll="self"`).
 - **`FormActions`** is the action row. `leading` holds the quiet options or the
-  status line on the left (Starts, Autorun, Spend cap, routing, "Scribe is
+  status line on the left (Starts, Run on its own, Spend cap, routing, "Scribe is
   writing", an error with `role="alert"`). The children sit right-aligned in
   order: secondary first (Discard, Cancel, Back as `ghost` with
   `text-muted-foreground`), alternates as `secondary`, and the one primary

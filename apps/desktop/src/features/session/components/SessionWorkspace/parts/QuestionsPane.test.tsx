@@ -163,7 +163,7 @@ describe('QuestionsPane', () => {
     expect(screen.getByTestId('pane-shell').getAttribute('data-meta')).toBe(
       '3 waiting · 1 blocking',
     );
-    screen.getByText('Waiting on you');
+    screen.getByText('Needs you');
     row('Which events should be retried?');
     expect(detailHeading().textContent).toBe('Which queue should retries run on?');
   });

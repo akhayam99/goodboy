@@ -30,7 +30,7 @@ describe('resolveErrorTurnMessage', () => {
 
   it('leaves our own static app copy (budget exceeded) verbatim', () => {
     const message =
-      'All providers have exceeded their budget cap. Adjust budget rules or wait for the next billing period.';
+      'All providers have exceeded their spend cap. Adjust the spend caps or wait for the next billing period.';
 
     const resolved = resolveErrorTurnMessage({ message, providerId: ANTHROPIC, identity: null });
 

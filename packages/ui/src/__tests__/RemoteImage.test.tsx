@@ -54,7 +54,7 @@ describe('RemoteImage', () => {
 
     expect(container.querySelector('img')).toBeNull();
     expect(container.textContent).toContain('user-images.githubusercontent.com');
-    const retry = screen.getByRole('button', { name: 'Try again' });
+    const retry = screen.getByRole('button', { name: 'Retry' });
 
     fireEvent.click(retry);
     expect(load).toHaveBeenCalledTimes(2);
@@ -68,7 +68,7 @@ describe('RemoteImage', () => {
     await flush();
 
     expect(container.querySelector('img')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
   });
 
   it('offers no action when no loader is wired', () => {
@@ -92,7 +92,7 @@ describe('RemoteImage', () => {
     await flush();
 
     expect(container.querySelector('img')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Open in Linear' }));
 
     expect(open).toHaveBeenCalledWith(REMOTE_URL);

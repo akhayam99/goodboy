@@ -90,6 +90,15 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
+    name: 'palette: Run defaults',
+    covers: ['studio:workflow', 'palette:Run defaults'],
+    open: () => openPalette(/^Run defaults/),
+    lands: both(
+      () => band('Workflows'),
+      () => heading('Run defaults'),
+    ),
+  },
+  {
     name: 'palette: Impact',
     covers: ['openStudio', 'studio:impact', 'palette:Impact'],
     open: () => openPalette(/^Impact$/),
@@ -105,11 +114,11 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'palette: Changelog',
-    covers: ['openStudio', 'studio:changelog', 'palette:Changelog'],
-    open: () => openPalette(/^Changelog/),
+    name: "palette: What's new",
+    covers: ['openStudio', 'studio:changelog', "palette:What's new"],
+    open: () => openPalette(/^What's new/),
     lands: both(
-      () => band('Changelog'),
+      () => band("What's new"),
       () => heading(/^Goodboy \d/),
     ),
   },

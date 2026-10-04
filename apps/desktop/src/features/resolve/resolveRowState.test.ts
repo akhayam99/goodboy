@@ -91,9 +91,9 @@ describe('resolveRowState', () => {
         ...base,
         stage: 'failed',
         failedStep: 'run',
-        runFailure: 'The run failed: every provider is over its budget cap',
+        runFailure: 'The run failed: every provider is over its spend cap',
       }).sentence,
-    ).toBe('The run failed: every provider is over its budget cap');
+    ).toBe('The run failed: every provider is over its spend cap');
   });
 
   it('tells a thread left for the reviewer from one resolved on GitHub', () => {

@@ -131,9 +131,9 @@ describe('AgentsPane', () => {
 
     render(<AgentsPane session={SESSION} meta={undefined} />);
 
-    expect(screen.getByRole('switch', { name: 'Autorun' }).getAttribute('aria-checked')).toBe(
-      'true',
-    );
+    expect(
+      screen.getByRole('switch', { name: 'Run on its own' }).getAttribute('aria-checked'),
+    ).toBe('true');
   });
 
   it('turns the session autorun flag on from the pane header', () => {
@@ -141,10 +141,10 @@ describe('AgentsPane', () => {
 
     render(<AgentsPane session={SESSION} meta={undefined} />);
 
-    expect(screen.getByRole('switch', { name: 'Autorun' }).getAttribute('aria-checked')).toBe(
-      'false',
-    );
-    fireEvent.click(screen.getByRole('switch', { name: 'Autorun' }));
+    expect(
+      screen.getByRole('switch', { name: 'Run on its own' }).getAttribute('aria-checked'),
+    ).toBe('false');
+    fireEvent.click(screen.getByRole('switch', { name: 'Run on its own' }));
 
     expect(h.state.setSessionAutoRun).toHaveBeenCalledWith(SESSION_ID, true);
   });
@@ -154,7 +154,7 @@ describe('AgentsPane', () => {
 
     render(<AgentsPane session={SESSION} meta={undefined} />);
 
-    fireEvent.click(screen.getByRole('switch', { name: 'Autorun' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Run on its own' }));
 
     expect(h.state.setSessionAutoRun).toHaveBeenCalledWith(SESSION_ID, false);
   });

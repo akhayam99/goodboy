@@ -152,7 +152,7 @@ describe('ToolCallCard', () => {
     );
     fireEvent.click(screen.getByRole('button', { expanded: false }));
     fireEvent.click(screen.getByRole('button', { name: 'Load image' }));
-    await screen.findByRole('button', { name: 'Try again' });
+    await screen.findByRole('button', { name: 'Retry' });
     screen.getByText('/outside/chart.png');
     expect(document.querySelector('img')).toBeNull();
   });

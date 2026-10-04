@@ -167,7 +167,7 @@ describe('SessionCostChip', () => {
     render(<SessionCostChip sessionId={SID} />);
     fireEvent.click(spendChip());
     fireEvent.click(screen.getByRole('button', { name: 'Set limit' }));
-    fireEvent.change(screen.getByLabelText('Spend limit in dollars'), { target: { value: '10' } });
+    fireEvent.change(screen.getByLabelText('Spend cap in dollars'), { target: { value: '10' } });
     fireEvent.click(screen.getByRole('tab', { name: /Warn only/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
@@ -191,8 +191,8 @@ describe('SessionCostChip', () => {
 
     requestSessionSpendLimitEdit({ sessionId: SID });
 
-    await waitFor(() => expect(screen.getByLabelText('Spend limit in dollars')).toBeDefined());
-    expect(screen.getByLabelText('Spend limit in dollars')).toHaveProperty('value', '10');
+    await waitFor(() => expect(screen.getByLabelText('Spend cap in dollars')).toBeDefined());
+    expect(screen.getByLabelText('Spend cap in dollars')).toHaveProperty('value', '10');
   });
 
   it('ignores a raise request for another session', () => {

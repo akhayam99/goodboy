@@ -15,6 +15,7 @@ import {
 } from '../../../store';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { SHORTCUTS } from '../../../shared/keyboard/registry';
+import { NAMES, formerNamesOf } from '../../../shared/names';
 import { getAppliedTheme, useThemeStore } from '../../../shared/lib/theme';
 import { classifyAgent } from '../../session/agent-kind';
 import { useLensDestinations } from '../../session/hooks/useLensDestinations';
@@ -25,6 +26,7 @@ import { requestNewSession } from '../../session/requestNewSession';
 import { openReportSheet } from '../../bug-report/openReportSheet';
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../notifications/studioEvent';
 import { openImpactStudio } from '../../impact/openImpactStudio';
+import { openWorkflowRules } from '../../workflows/openWorkflowRules';
 import { openChangelogStudio } from '../../changelog/changelogStudioEvent';
 import { linkedProjectsLabel } from '../../workspace/linkedProjectsLabel';
 import { useSettingsDirectory } from '../../settings/hooks/useSettingsDirectory';
@@ -183,6 +185,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           group: 'action',
           icon: destination.lens === null ? CONCEPT_ICONS.sessions : LENS_ICON[destination.lens],
           shortcut: destination.shortcut,
+          secondary: formerNamesOf(SHORTCUTS[destination.shortcut].label),
           run: () => openLens({ sessionId, lens: destination.lens }),
         });
       }
@@ -254,6 +257,15 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           run: () => fire({ name: 'goodboy:open-workflow-studio', detail: { door: true } }),
         },
         {
+          key: 'goto:run-defaults',
+          label: NAMES.runDefaults,
+          kind: 'goto',
+          group: null,
+          icon: CONCEPT_ICONS.workflows,
+          secondary: formerNamesOf(NAMES.runDefaults),
+          run: openWorkflowRules,
+        },
+        {
           key: 'goto:impact',
           label: 'Impact',
           kind: 'goto',
@@ -271,10 +283,11 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         },
         {
           key: 'goto:changelog',
-          label: 'Changelog',
+          label: NAMES.whatsNew,
           kind: 'goto',
           group: null,
           icon: CONCEPT_ICONS.changelog,
+          secondary: formerNamesOf(NAMES.whatsNew),
           run: openChangelogStudio,
         },
         {

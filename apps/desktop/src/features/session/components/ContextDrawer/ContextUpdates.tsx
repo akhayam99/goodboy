@@ -103,7 +103,7 @@ export const ContextUpdates = ({ sessionId }: Props) => {
             </dd>
             <dt className={TERM}>Model</dt>
             <dd aria-label="Model" className={VALUE}>
-              <span>{round === null ? 'Step summaries in Defaults' : roundModel({ round })}</span>
+              <span>{round === null ? 'Step summaries in Models' : roundModel({ round })}</span>
               <button
                 type="button"
                 onClick={() => openSettings({ scope: 'providers', section: 'summarizer' })}

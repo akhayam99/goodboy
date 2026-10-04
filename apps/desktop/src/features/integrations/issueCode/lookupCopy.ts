@@ -87,14 +87,14 @@ const failureStatus = ({
         key,
         tone: 'warning',
         text: `${name} asked Goodboy to slow down.`,
-        action: { kind: 'retry', label: 'Try again' },
+        action: { kind: 'retry', label: 'Retry' },
       };
     case 'unreachable':
       return {
         key,
         tone: 'warning',
         text: `Couldn't reach ${name}.`,
-        action: { kind: 'retry', label: 'Try again' },
+        action: { kind: 'retry', label: 'Retry' },
       };
   }
 };

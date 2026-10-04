@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { WorkflowRules } from '@goodboy/types';
 import { Band, BandRow, Input, SegmentedTabs, Switch, cn } from '@goodboy/ui';
+import { NAMES } from '../../../../shared/names';
 import { parseSpendLimit } from '../../../budget/parseSpendLimit';
 
 type Props = {
@@ -25,11 +26,11 @@ export const RulesSpendBand = ({ rules, onChange }: Props) => {
   }, [rules.spendLimitUsd]);
 
   return (
-    <Band label="Spend cap" ariaLabel="Spend cap" headingLevel={3}>
+    <Band label={NAMES.spendCap} ariaLabel={NAMES.spendCap} headingLevel={3}>
       <BandRow>
         <span className="min-w-0 flex-1 text-row text-foreground">Cap what a run can spend</span>
         <Switch
-          label={<span className="sr-only">Spend cap</span>}
+          label={<span className="sr-only">{NAMES.spendCap}</span>}
           checked={isOn}
           onChange={(next) => onChange({ spendLimitUsd: next ? DEFAULT_CAP_USD : null })}
         />

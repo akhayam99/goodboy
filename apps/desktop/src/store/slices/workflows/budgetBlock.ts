@@ -16,7 +16,7 @@ type MessageParams = {
 };
 
 export const budgetBlockMessage = ({ limitUsd }: MessageParams): string =>
-  `Paused at the ${formatUsd(limitUsd)} spend limit for this session.`;
+  `Paused at the ${formatUsd(limitUsd)} spend cap for this session.`;
 
 const sessionBudgetBlock = ({ alerts, budgets, sessionId }: Params): BudgetAlert | null => {
   if (budgets[sessionId]?.onExceed === 'warn') {
@@ -68,8 +68,8 @@ export type SpendLimitStop = {
 
 const spendLimitMessage = (limitUsd: number, kind: 'notify' | 'pause'): string =>
   kind === 'pause'
-    ? `Paused at the ${formatUsd(limitUsd)} spend limit for this run.`
-    : `this run passed its spend limit of ${formatUsd(limitUsd)} and keeps going`;
+    ? `Paused at the ${formatUsd(limitUsd)} spend cap for this run.`
+    : `this run passed its spend cap of ${formatUsd(limitUsd)} and keeps going`;
 
 type SpendLimitParams = {
   readonly get: GetFn;

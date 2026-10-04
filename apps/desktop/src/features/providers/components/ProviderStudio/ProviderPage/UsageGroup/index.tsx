@@ -101,7 +101,7 @@ export const UsageGroup = ({ providerId, billing, planLabel }: Props) => {
             {...(refresh !== null && {
               actions: (
                 <Button size="sm" variant="secondary" onClick={refresh}>
-                  Try again
+                  Retry
                 </Button>
               ),
             })}

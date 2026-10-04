@@ -53,7 +53,7 @@ Reuse steps across workflows. The 8 built-in steps are read-only, and **Save a c
 
 Put a light model on a scout and a strong one on the planner. A step follows its role by default; **Pin a model** picks its own provider, then **Model**, **Version**, **Variant** and **Effort**, and Goodboy records what actually ran.
 
-### Autorun
+### When to ask
 
 Choose when a run asks: **Ask before each step**, **Ask after the plan** to stop once for your **Approve plan** and then run on its own, or **Run on its own** to move to the next step without you, per run or for the whole session. A guard stops an agent after 4 unattended turns in an hour, and anything you write to it resets the count.
 
@@ -63,9 +63,9 @@ Choose when a run asks: **Ask before each step**, **Ask after the plan** to stop
 
 ### Workflow rules
 
-The **Rules** tab of Workflows sets what every new run starts with: how it asks, the spend cap, and which providers get the next step. **Use providers with room left** sends steps with no pinned provider to the provider with the most 5h and weekly room, keeps a provider at its limit out of new work, and tells you in one sentence where the next step goes. It starts on in workspaces created from 0.16.0 and off in older ones, and it stays off until a provider that reports limits is on. **Guidance** is text every run starts with: the orchestrator reads it in orchestrated runs, and in custom and preset runs it goes to the roles that write code, Implementer and Docs, unless you pick others under Edit, and **Polish** tidies it into one rule per line. In a custom or preset run, a **Guidance** tag marks each step that received it. The builder opens filled from them and says so in a **From your rules** line; a control you change for one run gets a dot and a **Reset**. A run keeps the rules it started with.
+The **Run defaults** tab of Workflows sets what every new run starts with: how it asks, the spend cap, and which providers get the next step. **Use providers with room left** sends steps with no pinned provider to the provider with the most 5h and weekly room, keeps a provider at its limit out of new work, and tells you in one sentence where the next step goes. It starts on in workspaces created from 0.16.0 and off in older ones, and it stays off until a provider that reports limits is on. **Guidance** is text every run starts with: the orchestrator reads it in orchestrated runs, and in custom and preset runs it goes to the roles that write code, Implementer and Docs, unless you pick others under Edit, and **Polish** tidies it into one rule per line. In a custom or preset run, a **Guidance** tag marks each step that received it. The builder opens filled from them and says so in a **From your rules** line; a control you change for one run gets a dot and a **Reset**. A run keeps the rules it started with.
 
-### Spend limit
+### Spend cap
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-spend-dark.webp">
