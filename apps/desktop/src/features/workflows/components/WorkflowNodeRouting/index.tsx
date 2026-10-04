@@ -57,7 +57,7 @@ export const WorkflowNodeRouting = ({ sessionId, workflowRunId, steps, onClose }
         />
       }
     >
-      <ul data-testid="workflow-node-routing" className="flex min-w-0 flex-col gap-1.5">
+      <ul data-testid="workflow-node-routing" className="flex min-w-0 flex-col gap-2">
         {nodes.map((agent) => (
           <WorkflowNodeRoutingRow
             key={agent.id}

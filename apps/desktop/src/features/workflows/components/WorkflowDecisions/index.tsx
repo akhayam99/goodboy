@@ -42,7 +42,7 @@ export const WorkflowDecisions = ({ run, steps, tree, highlightedStepId, onHighl
         label="Why each step"
         action={
           count === null ? undefined : (
-            <span className="text-secondary tabular-nums text-faint-foreground">{count}</span>
+            <span className="text-meta tabular-nums text-faint-foreground">{count}</span>
           )
         }
       />
@@ -50,13 +50,13 @@ export const WorkflowDecisions = ({ run, steps, tree, highlightedStepId, onHighl
         {closing === null ? null : (
           <li
             data-testid="workflow-decision-closing"
-            className="grid min-w-0 grid-cols-[20px_minmax(0,1fr)] items-start gap-2 rounded-md px-2 py-1.5"
+            className="grid min-w-0 grid-cols-[20px_minmax(0,1fr)] items-start gap-2 rounded-md px-2 py-2"
           >
             <WorkflowDecisionNode item={null} outcome={closing.outcome} />
             <ClampedProse
               text={`**${closing.label}** ${closing.reason}`}
               lines={3}
-              className="text-xs leading-relaxed text-muted-foreground [&_strong]:font-medium [&_strong]:text-foreground"
+              className="text-label leading-relaxed text-muted-foreground [&_strong]:font-medium [&_strong]:text-foreground"
             />
           </li>
         )}
@@ -70,7 +70,7 @@ export const WorkflowDecisions = ({ run, steps, tree, highlightedStepId, onHighl
               onMouseEnter={() => onHighlight(decision.stepId)}
               onMouseLeave={() => onHighlight(null)}
               className={cn(
-                'grid min-w-0 grid-cols-[20px_minmax(0,1fr)] items-start gap-2 rounded-md px-2 py-1.5 motion-safe:transition-colors',
+                'grid min-w-0 grid-cols-[20px_minmax(0,1fr)] items-start gap-2 rounded-md px-2 py-2 motion-safe:transition-colors',
                 isHighlighted && 'bg-hover',
               )}
             >
@@ -78,7 +78,7 @@ export const WorkflowDecisions = ({ run, steps, tree, highlightedStepId, onHighl
               <ClampedProse
                 text={`**${escapeMarkdown({ text: decision.title })}** ${decision.reason}`}
                 lines={3}
-                className="text-xs leading-relaxed text-muted-foreground [&_strong]:font-medium [&_strong]:text-foreground"
+                className="text-label leading-relaxed text-muted-foreground [&_strong]:font-medium [&_strong]:text-foreground"
               />
             </li>
           );

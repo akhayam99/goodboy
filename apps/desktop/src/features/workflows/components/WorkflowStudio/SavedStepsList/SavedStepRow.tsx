@@ -28,7 +28,7 @@ export const SavedStepRow = ({ step, note, isExpanded, editor, onToggle }: Props
         aria-expanded={isExpanded}
         aria-label={`${isExpanded ? 'Close' : 'Open'} ${step.name}`}
         className={cn(
-          'flex h-9 w-full min-w-0 items-center gap-2.5 rounded-md px-2 text-left transition-colors',
+          'flex h-9 w-full min-w-0 items-center gap-3 rounded-md px-2 text-left transition-colors',
           !isExpanded && 'hover:bg-hover',
         )}
       >
@@ -43,8 +43,8 @@ export const SavedStepRow = ({ step, note, isExpanded, editor, onToggle }: Props
         >
           {step.name}
         </span>
-        <span className="min-w-0 flex-1 truncate text-secondary text-faint-foreground">{note}</span>
-        <span className="flex w-36 shrink-0 justify-end text-secondary text-faint-foreground">
+        <span className="min-w-0 flex-1 truncate text-meta text-faint-foreground">{note}</span>
+        <span className="flex w-36 shrink-0 justify-end text-meta text-faint-foreground">
           {hasRouting ? (
             <RoutingLabel
               provider={step.providerDefault}

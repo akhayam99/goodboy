@@ -70,10 +70,7 @@ export const StepRow = ({
   };
 
   return (
-    <li
-      className={cn('flex min-w-0 gap-1.5', isDragging && 'opacity-40')}
-      data-plan-step={step.key}
-    >
+    <li className={cn('flex min-w-0 gap-2', isDragging && 'opacity-40')} data-plan-step={step.key}>
       <StepTreeGutter
         span={span}
         identityIndex={identityIndex}
@@ -102,7 +99,7 @@ export const StepRow = ({
             onClick={onToggle}
             aria-expanded={isExpanded}
             aria-label={`Step ${ordinal}: ${displayName}`}
-            className="flex h-full min-w-0 flex-1 items-center gap-2.5 rounded-md pl-2 text-left"
+            className="flex h-full min-w-0 flex-1 items-center gap-3 rounded-md pl-2 text-left"
           >
             <AgentKindChip kind={kind} label={ROLE_LABEL[step.role]} />
             <span

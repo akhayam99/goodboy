@@ -145,7 +145,7 @@ export const RunStepDraft = ({
         onEscape={onClose}
       />
       {error === null ? null : (
-        <p role="alert" className="px-3 pb-3 text-secondary text-danger">
+        <p role="alert" className="px-3 pb-3 text-meta text-danger">
           {error}
         </p>
       )}

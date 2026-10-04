@@ -210,11 +210,11 @@ export const OrchestratorStrip = ({
       <div
         data-testid="orchestrator-strip-row"
         className={cn(
-          'flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1.5 rounded-lg border border-l-2 border-border-soft bg-background py-1.5 pl-3 pr-1.5',
+          'flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-l-2 border-border-soft bg-background py-2 pl-3 pr-2',
           tintClasses(state.tone).rail,
         )}
       >
-        <div className="flex min-w-0 max-w-full flex-auto items-center gap-2.5">
+        <div className="flex min-w-0 max-w-full flex-auto items-center gap-3">
           <span className="flex h-4 shrink-0 items-center" aria-hidden={!isPulsing}>
             {isPulsing ? (
               <StatusDot tone={pulseTone} size="sm" pulsing ariaLabel={state.sentence} />
@@ -239,7 +239,7 @@ export const OrchestratorStrip = ({
             {elapsed == null ? null : (
               <span
                 data-testid="orchestrator-elapsed"
-                className="shrink-0 text-secondary tabular-nums text-muted-foreground"
+                className="shrink-0 text-meta tabular-nums text-muted-foreground"
               >
                 {elapsed}
               </span>
@@ -248,7 +248,7 @@ export const OrchestratorStrip = ({
         </div>
         <div
           data-testid="orchestrator-controls"
-          className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1.5"
+          className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-2"
         >
           {primaryAction}
           <RunControls
@@ -281,7 +281,7 @@ export const OrchestratorStrip = ({
             <ClampedProse
               text={state.detail}
               lines={2}
-              className="text-2xs leading-relaxed text-muted-foreground"
+              className="text-meta leading-relaxed text-muted-foreground"
             />
           </div>
         ) : null}

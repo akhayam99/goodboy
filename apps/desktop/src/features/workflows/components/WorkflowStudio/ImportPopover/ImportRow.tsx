@@ -17,7 +17,7 @@ export const ImportRow = ({ workflow, isSelected, isNameTaken, disabled, onToggl
   const steps = [...workflow.steps].sort((left, right) => left.ordinal - right.ordinal);
   const count = steps.length;
   return (
-    <li className="flex min-w-0 flex-col gap-0.5 rounded-md px-1.5 py-1 transition-colors hover:bg-hover">
+    <li className="flex min-w-0 flex-col gap-0.5 rounded-md px-2 py-1 transition-colors hover:bg-hover">
       <div className="flex min-w-0 items-center gap-2">
         <Checkbox
           checked={isSelected}
@@ -27,10 +27,10 @@ export const ImportRow = ({ workflow, isSelected, isNameTaken, disabled, onToggl
           label={<span className="truncate text-label text-foreground">{workflow.name}</span>}
         />
         {isNameTaken ? (
-          <span className="shrink-0 text-secondary text-faint-foreground">Same name here</span>
+          <span className="shrink-0 text-meta text-faint-foreground">Same name here</span>
         ) : null}
       </div>
-      <div className="flex min-w-0 items-center gap-2 pl-5.5" aria-hidden>
+      <div className="flex min-w-0 items-center gap-2 pl-6" aria-hidden>
         <span className="flex items-center gap-1">
           {steps.slice(0, MAX_ROLE_CHIPS).map((step) => (
             <AgentKindChip
@@ -41,7 +41,7 @@ export const ImportRow = ({ workflow, isSelected, isNameTaken, disabled, onToggl
             />
           ))}
         </span>
-        <span className="text-secondary tabular-nums text-faint-foreground">
+        <span className="text-meta tabular-nums text-faint-foreground">
           {`${count} ${count === 1 ? 'step' : 'steps'}`}
         </span>
       </div>

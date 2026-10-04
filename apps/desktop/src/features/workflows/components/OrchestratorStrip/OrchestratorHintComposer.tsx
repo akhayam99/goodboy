@@ -79,7 +79,7 @@ export const OrchestratorHintComposer = ({
   return (
     <form
       aria-label="Tell the orchestrator"
-      className="flex flex-col gap-1.5"
+      className="flex flex-col gap-2"
       onSubmit={(event) => {
         event.preventDefault();
         void send({ delivery: 'queue' });
@@ -125,7 +125,7 @@ export const OrchestratorHintComposer = ({
           </>
         }
       />
-      <span data-testid="orchestrator-hint-timing" className="text-secondary text-muted-foreground">
+      <span data-testid="orchestrator-hint-timing" className="text-meta text-muted-foreground">
         Queue waits for the next decision. {readNowCopy({ isDeciding, isStepRunning, isPaused })}
       </span>
     </form>

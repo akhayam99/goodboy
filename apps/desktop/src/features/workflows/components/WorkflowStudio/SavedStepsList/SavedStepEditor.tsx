@@ -90,7 +90,7 @@ export const SavedStepEditor = ({
         <FormActions
           leading={
             error === null ? null : (
-              <p role="alert" className="min-w-0 truncate text-secondary text-danger">
+              <p role="alert" className="min-w-0 truncate text-meta text-danger">
                 {error}
               </p>
             )
