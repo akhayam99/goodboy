@@ -23,7 +23,7 @@ export const LinearFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
         credentialId={linear?.credentialId ?? null}
         primary={`Connected as ${linearConfig?.viewerName}`}
         secondary={`linear.app/${linearConfig?.workspaceUrlKey}`}
-        disconnectDescription="Unlinks this workspace from the Linear personal API key. The key stays saved for your other workspaces."
+        disconnectDescription="Disconnects this workspace from the Linear personal API key. The key stays saved for your other workspaces."
         onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'linear' })}
       />
     );

@@ -984,12 +984,12 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 
 **Record actions.** A record from a connected tool (issue, merge or pull request, thread, error) has four fixed places, whatever the tool:
 
-| Place     | What goes there                                                                               | Shape                                              |
-| --------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Primary   | Launch session, or Open session once one is linked                                            | one filled button, first in the action row         |
-| Secondary | at most two tool verbs that move the record forward, picked by state                          | neutral `secondary` buttons, tone only in the icon |
-| Overflow  | rare tool verbs, Refresh, Copy link, Unlink session, then destructive verbs after a separator | the `⋯` menu on the identity line                  |
-| Utilities | Open in the tool, `⋯`, close                                                                  | icon buttons at the end of the identity line       |
+| Place     | What goes there                                                                                       | Shape                                              |
+| --------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Primary   | Launch session, or Open session once one is linked                                                    | one filled button, first in the action row         |
+| Secondary | at most two tool verbs that move the record forward, picked by state                                  | neutral `secondary` buttons, tone only in the icon |
+| Overflow  | rare tool verbs, Refresh, Copy link, Remove link to session, then destructive verbs after a separator | the `⋯` menu on the identity line                  |
+| Utilities | Open in the tool, `⋯`, close                                                                          | icon buttons at the end of the identity line       |
 
 A verb blocked for a moment stays visible with its reason in the tooltip; a verb the tool refuses is not shown. Merge confirms under the action row, and a destructive verb confirms in its menu with a plain menu swap. Properties that can change (state, assignee) change from the control that shows them, never from a button. `RecordHeader` and the `RecordVerbs` type own the contract.
 

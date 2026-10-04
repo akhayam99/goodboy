@@ -1275,7 +1275,7 @@ workspaceId, nowMs })`, owns every row's subtitle and tone (it replaced three
   renamed in place. Projects group Starred ahead of All (never in both), each
   a 32px grid row (star, kind, name, description, a base-branch chip only
   when set by hand, a Folder-not-found flag) with Open in editor, Copy path
-  and Unlink in a reserved column, dim at rest; clicking the name opens an
+  and Remove link in a reserved column, dim at rest; clicking the name opens an
   inline editor below the row for the rest (description, base branch, After
   merge for repos, folder, facts, footer actions). New session defaults sit in a
   two-column grid with each help behind an info mark, followed by the
@@ -1310,7 +1310,7 @@ workspaceId, nowMs })`, owns every row's subtitle and tone (it replaced three
   linked, the inbox adds Link to a session beside Launch session: a searchable
   list of the workspace's sessions, inline, that links the record to the one
   you pick. Everything else lives in
-  `⋯` in a fixed order: rare tool verbs, Refresh, Copy link, Unlink session,
+  `⋯` in a fixed order: rare tool verbs, Refresh, Copy link, Remove link to session,
   then destructive verbs after a separator. Editable properties change from the
   control that shows them (the Jira state opens its transitions). Launch
   session opens a popover with the goal and the brief; Enter from the inbox list

@@ -1,5 +1,6 @@
 import { GitBranch, Minus, SquareArrowOutUpRight, Unlink } from 'lucide-react';
 import type { SessionExternalTask, SessionExternalTaskProvider, SessionId } from '@goodboy/types';
+import { NAMES } from '../../../shared/names';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import type { ActionConfirm, ObjectKindDefinition, TaskActionTarget } from '../types';
 
@@ -35,12 +36,12 @@ const branchesOf = ({ facts }: { readonly facts: TaskFacts }): string =>
   facts.branchCount === 1 ? 'its branch' : `${facts.branchCount} branches`;
 
 const unlinkConfirm = ({ facts }: { readonly facts: TaskFacts }): ActionConfirm => ({
-  title: `Unlink ${facts.identifier} from this session?`,
+  title: `${NAMES.removeLink} to ${facts.identifier} from this session?`,
   description:
     facts.branchCount > 0
       ? `It also leaves ${branchesOf({ facts })}.`
       : 'It is not on a branch yet.',
-  confirmLabel: 'Unlink',
+  confirmLabel: NAMES.removeLink,
   role: 'danger',
 });
 
@@ -113,7 +114,7 @@ export const TASK_KIND: ObjectKindDefinition<TaskActionTarget, TaskFacts> = {
     },
     {
       id: 'task.unlink',
-      label: 'Unlink from this session',
+      label: NAMES.removeLinkFromSession,
       icon: Unlink,
       group: 'danger',
       when: () => true,

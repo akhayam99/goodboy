@@ -268,11 +268,11 @@ describe('useRecordFrame', () => {
     await waitFor(() => expect(onLaunched).toHaveBeenCalledOnce());
   });
 
-  it('keeps Unlink session in the overflow menu of a linked sentry issue', async () => {
+  it('keeps Remove link to session in the overflow menu of a linked sentry issue', async () => {
     render(<Harness record={LINKED_SENTRY_RECORD} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'More actions for GBY-5' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Unlink session' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Remove link to session' }));
 
     await waitFor(() =>
       expect(h.unlinkSessionExternalTask).toHaveBeenCalledWith(

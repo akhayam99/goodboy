@@ -49,6 +49,7 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
     pattern: /\bWipe (?:local database|every workspace)\b|\bLocal data wiped\b/,
     use: NAMES.deleteAllData,
   },
+  { id: 'unlink', pattern: /\bUnlink(?:s|ed)?\b/, use: NAMES.removeLink },
   { id: 'your-roles', pattern: /\bYour roles\b/, use: NAMES.yourJob },
   { id: 'defaults-page', pattern: /\b(?:in|then|Open) Defaults\b/, use: NAMES.models },
 ];

@@ -58,7 +58,7 @@ export const SlackSettings = ({ workspaceId, slack }: Props) => {
         credentialId={slack.credentialId}
         primary={`Connected as ${config.userName ?? config.userId}`}
         secondary={config.teamName}
-        disconnectDescription="Unlinks this workspace from Slack. The saved credential remains available to other workspaces."
+        disconnectDescription="Disconnects this workspace from Slack. The saved credential remains available to other workspaces."
         onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'slack' })}
       />
 

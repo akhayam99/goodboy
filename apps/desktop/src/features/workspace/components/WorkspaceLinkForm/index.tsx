@@ -512,10 +512,13 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
                       {project.rootPath}
                     </span>
                   </span>
-                  <Tooltip content={`Unlink ${project.name}`} anchorClassName="shrink-0">
+                  <Tooltip
+                    content={`${NAMES.removeLink} to ${project.name}`}
+                    anchorClassName="shrink-0"
+                  >
                     <button
                       type="button"
-                      aria-label={`Unlink ${project.name}`}
+                      aria-label={`${NAMES.removeLink} to ${project.name}`}
                       disabled={busy}
                       onClick={() => void removeProject({ projectId: project.id })}
                       className="rounded-md p-1 text-faint-foreground hover:bg-hover hover:text-foreground"
