@@ -7,7 +7,6 @@ import type {
   Step,
 } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../../store';
-import { ObjectOverflowMenu } from '../../../../../actions/components/ObjectOverflowMenu';
 import type { HistoryRowActions } from '../../../../../history/useHistoryRowActions';
 import type { RailRow } from '../../../../../workTreeModel/railGeometry';
 import type { TimelineOpenTarget } from '../../../../hooks/useTimelineOpen';
@@ -21,12 +20,12 @@ import type { GroupTotals } from '../../../../timeline/groupTotals';
 import { TimelineAgentStreamRow } from './TimelineAgentStreamRow';
 import { TimelineFoldAgentStreamRow } from './TimelineFoldAgentStreamRow';
 import { TimelineFoldStreamRow } from './TimelineFoldStreamRow';
+import { TimelineGroupMeta } from './TimelineGroupMeta';
 import { TimelineGroupStreamRow } from './TimelineGroupStreamRow';
-import type { TimelineLaneControl } from './TimelineRail';
+import type { TimelineLaneTarget } from './TimelineRail';
+import { TimelineRowStateLine } from './TimelineRowStateLine';
 import { TimelineRunStreamRow } from './TimelineRunStreamRow';
 import { TimelineStreamRow, type TimelineRowAction } from './TimelineStreamRow';
-
-const BATCH_CHILD_OPEN_LABEL = 'Open brief';
 
 export type TimelineEntryRowHandlers = {
   readonly openTargetFor: (params: {
@@ -46,9 +45,8 @@ export type TimelineEntryRowProps = {
   readonly rail: RailRow;
   readonly railWidth: number;
   readonly sessionId: SessionId;
-  readonly lanes: TimelineLaneControl;
+  readonly runLane: TimelineLaneTarget | null;
   readonly handlers: TimelineEntryRowHandlers;
-  readonly runLaneId: string | null;
   readonly actionLabel: string | null;
   readonly actionVariant: TimelineRowAction['variant'] | null;
   readonly actionBusy: boolean;
@@ -58,33 +56,21 @@ export type TimelineEntryRowProps = {
   readonly step: Step | null;
   readonly costUsd: number;
   readonly groupTotals: GroupTotals | null;
-  readonly isRevealed: boolean;
   readonly isExpanded: boolean;
+  readonly isOutputsExpanded: boolean;
   readonly decisionDetail: DecisionChangeDetail | null;
   readonly roleModels: RoleModelPreferences | null;
   readonly sessionProvider: ProviderId | null;
   readonly sessionEffort: EffortLevel | null;
 };
 
-const openTargetOfBatchChild = ({
-  item,
-  target,
-}: {
-  readonly item: TimelineRowItem;
-  readonly target: TimelineOpenTarget | null;
-}): TimelineOpenTarget | null =>
-  item.explode?.kind !== 'batch' || target === null
-    ? target
-    : { ...target, label: BATCH_CHILD_OPEN_LABEL };
-
 export const TimelineEntryRow = ({
   item,
   rail,
   railWidth,
   sessionId,
-  lanes,
   handlers,
-  runLaneId,
+  runLane,
   actionLabel,
   actionVariant,
   actionBusy,
@@ -94,15 +80,15 @@ export const TimelineEntryRow = ({
   step,
   costUsd,
   groupTotals,
-  isRevealed,
   isExpanded,
+  isOutputsExpanded,
   decisionDetail,
   roleModels,
   sessionProvider,
   sessionEffort,
 }: TimelineEntryRowProps) => {
   const { entry } = item;
-  if (entry.kind === 'resolveBatch' || entry.kind === 'subagentGroup') {
+  if (entry.kind === 'resolveBatch') {
     return (
       <TimelineGroupStreamRow
         item={item}
@@ -112,12 +98,10 @@ export const TimelineEntryRow = ({
         sessionId={sessionId}
         isExpanded={isExpanded}
         totals={groupTotals}
-        lanes={lanes}
         onSetExpanded={handlers.setGroupExpanded}
       />
     );
   }
-  const runLane = runLaneId === null ? null : lanes.targetFor({ laneId: runLaneId });
   if (item.fold !== undefined && entry.kind === 'agent') {
     return (
       <TimelineFoldAgentStreamRow
@@ -128,7 +112,6 @@ export const TimelineEntryRow = ({
         sessionId={sessionId}
         isExpanded={isExpanded}
         totals={groupTotals}
-        lanes={lanes}
         runLane={runLane}
         onSetExpanded={handlers.setGroupExpanded}
       />
@@ -144,7 +127,6 @@ export const TimelineEntryRow = ({
         sessionId={sessionId}
         isExpanded={isExpanded}
         totals={groupTotals}
-        lanes={lanes}
         runLane={runLane}
         onSetExpanded={handlers.setGroupExpanded}
       />
@@ -168,23 +150,23 @@ export const TimelineEntryRow = ({
         rail={rail}
         railWidth={railWidth}
         sessionId={sessionId}
-        openTarget={openTargetOfBatchChild({ item, target })}
+        openTarget={target}
         action={action}
         diffStat={diffStat}
         worktrees={worktrees}
-        isRevealed={isRevealed}
-        lanes={lanes}
         runLane={runLane}
         step={step}
         roleModels={roleModels}
         sessionProvider={sessionProvider}
         sessionEffort={sessionEffort}
         costUsd={costUsd}
+        isSubagentsExpanded={isExpanded}
+        isOutputsExpanded={isOutputsExpanded}
+        onSetSubagents={handlers.setGroupExpanded}
       />
     );
   }
   if (entry.kind === 'run') {
-    const { run, workflow } = entry;
     return (
       <TimelineRunStreamRow
         item={item}
@@ -195,21 +177,11 @@ export const TimelineEntryRow = ({
         openTarget={target}
         action={action}
         diffStat={diffStat}
-        isRevealed={isRevealed}
-        lanes={lanes}
         runLane={runLane}
         roleModels={roleModels}
         sessionProvider={sessionProvider}
         sessionEffort={sessionEffort}
         costUsd={costUsd}
-        menu={
-          <ObjectOverflowMenu
-            target={{ kind: 'workflowRun', sessionId, runId: run.id }}
-            label={`${run.title ?? workflow.name} workflow actions`}
-            anchorKey={`activity:${item.id}`}
-            triggerClassName="size-6 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 aria-expanded:opacity-100 motion-safe:transition-opacity"
-          />
-        }
       />
     );
   }
@@ -251,10 +223,14 @@ export const TimelineEntryRow = ({
       }
       action={action}
       diffStat={diffStat}
-      isRevealed={isRevealed}
-      lanes={lanes}
       runLane={runLane}
       menu={menu}
+      {...(entry.kind === 'resolveFile'
+        ? {
+            state: <TimelineRowStateLine state={item.rowState} />,
+            meta: <TimelineGroupMeta totals={{ costUsd, time: null }} />,
+          }
+        : {})}
     />
   );
 };

@@ -253,11 +253,11 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('RunTree', () => {
-  it('reads the run bottom up like the overview: first step last, queued work under NOW', () => {
+  it('reads the run in execution order: first step first, queued work last', () => {
     renderTree({ agents: [scout, implement, review, child(1)] });
 
-    expect(rowIds()).toEqual(['agent-3', 'child-1', 'agent-2', 'agent-1']);
-    expect(screen.getByText('Now')).toBeDefined();
+    expect(rowIds()).toEqual(['agent-1', 'agent-2', 'child-1', 'agent-3']);
+    expect(screen.queryByText('Now')).toBeNull();
     expect(within(rowOf('child-1')).getByText('2.1')).toBeDefined();
   });
 
@@ -269,7 +269,7 @@ describe('RunTree', () => {
       'spin-border',
     );
     const queued = within(rowOf('agent-3')).getByRole('img', { name: 'Not started' });
-    expect(queued.textContent).toBe('3');
+    expect(queued.textContent).toBe('');
   });
 
   it('puts children one column right of the run lane and dashes into queued work', () => {

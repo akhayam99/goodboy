@@ -30,6 +30,7 @@ type Params = {
   readonly threads: ReadonlyArray<CommentThread>;
   readonly pr: PullRequestState | null;
   readonly batch?: ResolveAttemptBatch | null;
+  readonly retryOfLaunchId?: string | null;
   readonly routing?: AgentKindRouting;
   readonly note?: string;
   readonly mode?: FixMode;
@@ -55,6 +56,7 @@ export const startResolve = async ({
   threads,
   pr,
   batch = null,
+  retryOfLaunchId = null,
   routing,
   note = '',
   mode = 'separate',
@@ -87,6 +89,7 @@ export const startResolve = async ({
     contextWindow: contextWindowOf({ batch, routing }),
     batch:
       batch === null ? null : { ...batch, launchChoice: { ...batch.launchChoice, commitStyle } },
+    retryOfLaunchId,
     spawnAgent,
     setAgentConfig,
   });

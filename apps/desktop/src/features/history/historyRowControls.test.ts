@@ -10,11 +10,7 @@ import type {
 } from '@goodboy/types';
 import { historyRowControls } from './historyRowControls';
 import { sessionEventLabel } from '../session/timeline/sessionEventPresentation';
-import {
-  DEFAULT_ACTIVITY_FILTER,
-  activityCategoryOf,
-  filterTimelineEntries,
-} from '../session/timeline/activityFilter';
+import { entriesOfView } from '../session/timeline/activityView';
 
 const event = ({
   id,
@@ -107,12 +103,18 @@ describe('history activity rows', () => {
     expect(text({ value: rewritten })).toBe('Rebased fix/ledger-postings on main');
   });
 
-  it('keeps a stopped rewrite visible under any filter', () => {
+  it('sends a stopped rewrite to Needs you while it is open and to the Log once superseded', () => {
     const stopped = event({
       id: 'ev-1',
       kind: 'history_stopped',
       at: '2026-09-26T10:00:00.000Z',
       payload: { origin: 'plan', reason: 'conflict' },
+    });
+    const rewritten = event({
+      id: 'ev-2',
+      kind: 'history_rewritten',
+      at: '2026-09-26T10:05:00.000Z',
+      payload: { origin: 'plan', backupRef: 'refs/goodboy/backup' },
     });
     const entry = {
       kind: 'event' as const,
@@ -120,12 +122,13 @@ describe('history activity rows', () => {
       at: stopped.createdAt,
       event: stopped,
     };
-    expect(activityCategoryOf({ entry })).toBe('worktree');
 
-    const shown = filterTimelineEntries({
-      entries: [entry],
-      filter: { ...DEFAULT_ACTIVITY_FILTER, worktree: false },
-    });
-    expect(shown).toHaveLength(1);
+    const homes = ({ events }: { readonly events: ReadonlyArray<SessionEvent> }) =>
+      (['activity', 'log'] as const).filter(
+        (view) => entriesOfView({ entries: [entry], events, view }).length === 1,
+      );
+
+    expect(homes({ events: [stopped] })).toEqual([]);
+    expect(homes({ events: [stopped, rewritten] })).toEqual(['log']);
   });
 });

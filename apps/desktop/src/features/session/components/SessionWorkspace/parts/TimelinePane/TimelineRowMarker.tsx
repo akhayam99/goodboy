@@ -13,7 +13,6 @@ import { rowStateNode, rowStateTone } from '../../../../../workTreeModel/rowStat
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 import { groupSummaryText } from '../../../../timeline/groupSummary';
 import { resolveBatchTitle } from '../../../../timeline/resolveBatchSummary';
-import { subagentGroupTitle } from '../../../../timeline/subagentGroups';
 import { sessionEventGlyph } from '../../../../timeline/sessionEventPresentation';
 
 type Props = {
@@ -72,19 +71,7 @@ export const TimelineRowMarker = ({ item, progress = null }: Props) => {
       <WorkNode
         state="mixed"
         label={resolveBatchTitle({ total: entry.summary.total, prNumber: entry.prNumber })}
-        mark={{ kind: 'index', value: String(entry.summary.total) }}
-        parts={entry.summary.parts.map((part) => ({ tone: part.tone, count: part.count }))}
-        hasUnread={item.hasUnread}
-      />
-    );
-  }
-
-  if (entry.kind === 'subagentGroup') {
-    return (
-      <WorkNode
-        state="mixed"
-        label={subagentGroupTitle({ total: entry.summary.total })}
-        mark={{ kind: 'index', value: String(entry.summary.total) }}
+        mark={{ kind: 'dot' }}
         parts={entry.summary.parts.map((part) => ({ tone: part.tone, count: part.count }))}
         hasUnread={item.hasUnread}
       />
@@ -97,7 +84,7 @@ export const TimelineRowMarker = ({ item, progress = null }: Props) => {
       <WorkNode
         state="mixed"
         label={groupSummaryText({ summary })}
-        mark={{ kind: 'index', value: String(summary.total) }}
+        mark={{ kind: 'dot' }}
         parts={[{ tone: 'neutral', count: summary.total }]}
         hasUnread={item.hasUnread}
       />
@@ -110,7 +97,7 @@ export const TimelineRowMarker = ({ item, progress = null }: Props) => {
       <WorkNode
         state={node.state}
         label={node.label}
-        mark={item.nodeIndex == null ? { kind: 'dot' } : { kind: 'index', value: item.nodeIndex }}
+        mark={{ kind: 'dot' }}
         spinClassName={
           item.rowState.reason?.kind === 'deciding' ? (item.identity?.spin ?? undefined) : undefined
         }
@@ -118,6 +105,18 @@ export const TimelineRowMarker = ({ item, progress = null }: Props) => {
         progress={progress}
       />
     );
+  }
+  if (entry.kind === 'resolveFile') {
+    const node = rowStateNode({ state: item.rowState });
+    return <WorkNode state={node.state} label={node.label} mark={{ kind: 'dot' }} />;
+  }
+  if (entry.kind === 'resolveOpen') {
+    return conceptNode({
+      icon: CONCEPT_ICONS.review,
+      tone: 'neutral',
+      label: 'Review',
+      isEmphasized: false,
+    });
   }
   if (entry.kind === 'issue') {
     return (

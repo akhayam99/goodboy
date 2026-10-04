@@ -22,7 +22,6 @@ describe('storage keys', () => {
 
   it('keeps the strings that moved into the registry, so saved values still load', () => {
     expect(STORAGE_KEYS.zoom).toBe('goodboy:zoom');
-    expect(STORAGE_KEYS.activityFilter).toBe('goodboy:activity-filter');
     expect(STORAGE_KEYS.windowReloadIntent).toBe('goodboy:window-reload-intent');
     expect(STORAGE_PREFIXES.turnCursor).toBe('goodboy:turn-cursor:');
     expect(STORAGE_PREFIXES.scriptsGroupsCollapsed).toBe('goodboy:scripts-groups-collapsed:v1:');

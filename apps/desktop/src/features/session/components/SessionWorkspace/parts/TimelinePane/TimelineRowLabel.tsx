@@ -1,13 +1,19 @@
-import { ValueToken, WORK_ROW, cn } from '@goodboy/ui';
+import { ValueToken, WORK_ROW, cn, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import type { MountDiffStat } from '../../../../../../store';
 import { AgentKindChip } from '../../../../../../shared/components/AgentKindChip';
 import { agentDisplayName } from '../../../../../../shared/utils/agentDisplayName';
 import type {
   TimelineResolveBatchEntry,
+  TimelineResolveFileEntry,
+  TimelineResolveOpenEntry,
   TimelineRunEntry,
-  TimelineSubagentGroupEntry,
 } from '../../../../timeline/buildTimelineGroups';
+import {
+  resolveFileLinesText,
+  resolveFileName,
+  resolveOpenLabel,
+} from '../../../../timeline/resolveBatchFiles';
 import { ARTIFACT_KIND_MARKER_LABEL } from '../../../../../artifacts/artifactPresentation';
 import {
   decisionCountsText,
@@ -23,11 +29,9 @@ import type {
   TimelineStreamEntry,
 } from '../../../../timeline/buildTimelineStream';
 import type { TimelineRowGrade } from '../../../../../workTreeModel/timelineRhythm';
-import { RevealedRowTag } from './RevealedRowTag';
 import { TimelineProviderGlyph } from './TimelineProviderGlyph';
 import { TimelineRowWorktrees } from './TimelineRowWorktrees';
-import { resolveBatchTitle } from '../../../../timeline/resolveBatchSummary';
-import { subagentGroupTitle } from '../../../../timeline/subagentGroups';
+import { resolveBatchTag, resolveBatchTitle } from '../../../../timeline/resolveBatchSummary';
 import { TimelineGroupLabel } from './TimelineGroupLabel';
 import { TimelineFoldTitle } from './TimelineFoldTitle';
 import { TimelineRunLabel } from './TimelineRunLabel';
@@ -36,9 +40,7 @@ import { DiffStat } from '../../../DiffStat';
 type Props = {
   readonly item: TimelineRowItem;
   readonly diffStat?: MountDiffStat | null;
-  readonly isLaneLit?: boolean;
   readonly worktrees?: ReadonlyArray<string>;
-  readonly isRevealed?: boolean;
   readonly provider?: string | null;
 };
 
@@ -87,7 +89,7 @@ const NO_WORKTREES: ReadonlyArray<string> = [];
 
 type LabelEntry = Exclude<
   TimelineStreamEntry,
-  TimelineRunEntry | TimelineResolveBatchEntry | TimelineSubagentGroupEntry
+  TimelineRunEntry | TimelineResolveBatchEntry | TimelineResolveFileEntry | TimelineResolveOpenEntry
 >;
 
 type EntryParams = {
@@ -136,7 +138,10 @@ const segmentsOf = ({ entry }: EntryParams): ReadonlyArray<TimelineLabelSegment>
         detached: projectRun.detached,
       });
     }
-    return sessionEventLabel({ event: entry.event });
+    return sessionEventLabel({
+      event: entry.event,
+      ...(entry.repeatCount === undefined ? {} : { repeatCount: entry.repeatCount }),
+    });
   }
   if (entry.kind === 'learning') {
     return [{ kind: 'text', text: 'Learned' }];
@@ -201,36 +206,44 @@ const chipOf = ({ entry, grade }: ChipParams) => {
 export const TimelineRowLabel = ({
   item,
   diffStat = null,
-  isLaneLit = false,
   worktrees = NO_WORKTREES,
-  isRevealed = false,
   provider = null,
 }: Props) => {
   const { entry, grade } = item;
   if (entry.kind === 'run') {
-    return (
-      <TimelineRunLabel
-        entry={entry}
-        summary={item.fold?.summary ?? null}
-        isLaneLit={isLaneLit}
-        isRevealed={isRevealed}
-      />
-    );
+    return <TimelineRunLabel entry={entry} summary={item.fold?.summary ?? null} />;
   }
   if (entry.kind === 'resolveBatch') {
     return (
       <TimelineGroupLabel
         title={resolveBatchTitle({ total: entry.summary.total, prNumber: entry.prNumber })}
         summary={entry.summary}
+        tag={resolveBatchTag({ origin: entry.origin, retryCount: entry.retryCount })}
       />
     );
   }
-  if (entry.kind === 'subagentGroup') {
+  if (entry.kind === 'resolveFile') {
     return (
-      <TimelineGroupLabel
-        title={subagentGroupTitle({ total: entry.summary.total })}
-        summary={entry.summary}
-      />
+      <span
+        title={entry.path ?? 'Comments without a file'}
+        className={cn('flex min-w-0 flex-1 items-center gap-2 overflow-hidden', WORK_ROW.title)}
+      >
+        <span className="min-w-0 truncate font-mono text-meta text-foreground">
+          {resolveFileName({ path: entry.path })}
+        </span>
+        <span className="shrink-0 text-meta text-faint-foreground">
+          {resolveFileLinesText({ lines: entry.lines })}
+        </span>
+      </span>
+    );
+  }
+  if (entry.kind === 'resolveOpen') {
+    return (
+      <span className={cn('flex min-w-0 flex-1 items-center overflow-hidden', WORK_ROW.title)}>
+        <span className={cn('truncate text-label', tintClasses('info').text)}>
+          {resolveOpenLabel({ prNumber: entry.prNumber })}
+        </span>
+      </span>
     );
   }
   const isStep = grade !== 'entry';
@@ -308,7 +321,6 @@ export const TimelineRowLabel = ({
         </span>
       )}
       {isAgent && <TimelineRowWorktrees names={worktrees} />}
-      {isRevealed ? <RevealedRowTag /> : null}
     </>
   );
 };

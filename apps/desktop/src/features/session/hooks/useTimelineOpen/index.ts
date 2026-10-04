@@ -181,8 +181,14 @@ export const useTimelineOpen = ({
           open: () => store.openContextDrawer({ sessionId, tab: 'learned' }),
         };
       }
-      if (entry.kind === 'resolveBatch' || entry.kind === 'subagentGroup') {
+      if (entry.kind === 'resolveBatch') {
         return null;
+      }
+      if (entry.kind === 'resolveFile' || entry.kind === 'resolveOpen') {
+        return {
+          label: entry.kind === 'resolveOpen' ? 'Open the review' : 'Open the comments',
+          open: () => store.navigate({ to: sessionPlace({ sessionId, lens: 'review' }) }),
+        };
       }
       return {
         label: 'Open questions',

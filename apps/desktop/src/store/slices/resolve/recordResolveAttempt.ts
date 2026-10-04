@@ -27,6 +27,7 @@ export const recordResolveAttempt = async ({
   mountTarget,
   candidateMode = 'propose',
   batch,
+  launch,
 }: Params): Promise<string> => {
   const db = tauriDatabase;
   const attempts = await listResolveAttempts({ db, sessionId });
@@ -58,6 +59,8 @@ export const recordResolveAttempt = async ({
     error: null,
     createdAt: queued?.createdAt ?? now,
     batchId: batch?.batchId ?? queued?.batchId ?? null,
+    launchId: launch?.launchId ?? queued?.launchId ?? null,
+    retryOfLaunchId: launch?.retryOfLaunchId ?? queued?.retryOfLaunchId ?? null,
     copyPath: queued?.copyPath ?? null,
     launchChoice: batch?.launchChoice ?? queued?.launchChoice ?? null,
   };

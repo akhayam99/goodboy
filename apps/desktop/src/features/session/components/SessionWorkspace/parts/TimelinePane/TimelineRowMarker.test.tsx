@@ -38,7 +38,6 @@ const itemOf = ({ entry }: { readonly entry: TimelineStreamEntry }): TimelineRow
   identity: null,
   familyId: null,
   ordinal: null,
-  nodeIndex: null,
   rowState: DONE_ROW_STATE,
   hasUnread: false,
   height: 52,
@@ -86,28 +85,26 @@ describe('TimelineRowMarker', () => {
     expect(nodeOf({ label: 'Branch' }).getAttribute('data-node-state')).toBe('marker');
   });
 
-  it('prints the local index inside a queued step, not its full path', () => {
+  it('draws a queued step as a state, never as its index', () => {
     render(
       <TimelineRowMarker
         item={{
           ...itemOf({ entry: agentEntry({ stepLabel: '4.2' }) }),
-          nodeIndex: '2',
           rowState: { phase: 'queued', reason: null, ask: null },
         }}
       />,
     );
 
     const node = nodeOf({ label: 'Not started' });
-    expect(node.textContent).toBe('2');
+    expect(node.textContent).toBe('');
     expect(node.getAttribute('data-node-state')).toBe('queued');
   });
 
-  it('swaps the index for a glyph when the step waits on you', () => {
+  it('draws a glyph when the step waits on you', () => {
     render(
       <TimelineRowMarker
         item={{
           ...itemOf({ entry: agentEntry({ stepLabel: '3' }) }),
-          nodeIndex: '3',
           rowState: {
             phase: 'waiting',
             reason: { kind: 'question', stepLabel: null },

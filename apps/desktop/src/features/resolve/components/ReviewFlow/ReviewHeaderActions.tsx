@@ -98,7 +98,7 @@ export const ReviewHeaderActions = ({
         </DraftModelPicker>
       </div>
       {error !== null && (
-        <p role="alert" className="max-w-[40ch] text-right text-meta text-danger">
+        <p role="alert" className="max-w-xs text-right text-meta text-danger">
           {error}
         </p>
       )}

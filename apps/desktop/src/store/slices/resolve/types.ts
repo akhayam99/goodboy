@@ -47,6 +47,11 @@ export type AttemptParams = SessionParams & {
   readonly threadIds?: ReadonlyArray<string>;
   readonly candidateMode?: ResolveCandidateMode;
   readonly batch?: ResolveAttemptBatch;
+  readonly launch?: ResolveAttemptLaunch;
+};
+export type ResolveAttemptLaunch = {
+  readonly launchId: string;
+  readonly retryOfLaunchId: string | null;
 };
 export type ResolveAttemptBatch = {
   readonly batchId: string;

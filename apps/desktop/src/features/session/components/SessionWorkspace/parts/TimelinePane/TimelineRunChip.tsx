@@ -7,7 +7,6 @@ type Props = {
   readonly kind: RunWorkflowKind;
   readonly workflowName: string;
   readonly muted?: boolean;
-  readonly lit?: boolean;
 };
 
 type KindGlyph = {
@@ -31,10 +30,9 @@ const GLYPH_SIZE = 10;
 const CHIP_TONE = {
   rest: '',
   muted: 'bg-transparent text-faint-foreground',
-  lit: 'bg-hover text-foreground ring-border',
 } as const;
 
-export const TimelineRunChip = ({ kind, workflowName, muted = false, lit = false }: Props) => {
+export const TimelineRunChip = ({ kind, workflowName, muted = false }: Props) => {
   const { icon: Icon, label, isNamedInTooltip } = KIND[kind];
   const name = workflowName.trim();
   const tooltip = isNamedInTooltip && name.length > 0 ? `${name} ${label.toLowerCase()}` : label;
@@ -47,7 +45,7 @@ export const TimelineRunChip = ({ kind, workflowName, muted = false, lit = false
       label={<span className={WORK_ROW.chipLabel}>Workflow</span>}
       className={cn(
         'shrink-0 justify-center motion-safe:transition-colors',
-        lit ? CHIP_TONE.lit : muted ? CHIP_TONE.muted : CHIP_TONE.rest,
+        muted ? CHIP_TONE.muted : CHIP_TONE.rest,
       )}
     />
   );

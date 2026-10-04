@@ -1,4 +1,4 @@
-import { useContext, type KeyboardEvent, type ReactNode } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
 import type { ObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
 import { Button, Tooltip, WORK_META_COLUMN, WORK_ROW, cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
@@ -13,9 +13,8 @@ import { rowStateTone } from '../../../../../workTreeModel/rowStateCopy';
 import { eventMatches } from '../../../../../../shared/keyboard/dispatcher';
 import { SHORTCUTS } from '../../../../../../shared/keyboard/registry';
 import { TIMELINE_GUTTER } from './timelineLayout';
-import { TimelineActionColumn } from './timelineActionColumn';
 import { CLOCK_ORDER_TOOLTIP, isClocklessRow } from './timelineClock';
-import { TimelineRail, type TimelineLaneControl, type TimelineLaneTarget } from './TimelineRail';
+import { TimelineRail, type TimelineLaneTarget } from './TimelineRail';
 import { TimelineRowLabel } from './TimelineRowLabel';
 import { TimelineRowMarker } from './TimelineRowMarker';
 
@@ -45,9 +44,9 @@ type Props = {
   readonly state?: ReactNode;
   readonly progress?: number | null;
   readonly menu?: ReactNode;
-  readonly lanes?: TimelineLaneControl | null;
+  readonly subagents?: ReactNode;
+  readonly outputs?: ReactNode;
   readonly runLane?: TimelineLaneTarget | null;
-  readonly isRevealed?: boolean;
   readonly detail?: ReactNode;
   readonly detailHeight?: number;
   readonly expansion?: TimelineRowExpansion | null;
@@ -71,9 +70,9 @@ export const TimelineStreamRow = ({
   state = null,
   progress = null,
   menu = null,
-  lanes = null,
+  subagents = null,
+  outputs = null,
   runLane = null,
-  isRevealed = false,
   detail = null,
   detailHeight = 0,
   expansion = null,
@@ -86,13 +85,11 @@ export const TimelineStreamRow = ({
     hasUnread: item.hasUnread,
   });
   const boxHeight = TIMELINE_RHYTHM.grade[item.grade].height;
-  const hasActionColumn = useContext(TimelineActionColumn);
   const isWaiting =
     item.rowState.phase === 'waiting' &&
     item.rowState.ask?.kind !== 'reviewComment' &&
     item.rowState.ask?.kind !== 'groupChild' &&
     rowStateTone({ state: item.rowState }) === 'warning';
-  const isLaneLit = runLane !== null && lanes?.hoveredLaneId === runLane.laneId;
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (expansion?.onSet !== undefined) {
       if (event.key === 'ArrowRight' && !expansion.isExpanded) {
@@ -129,9 +126,7 @@ export const TimelineStreamRow = ({
         <TimelineRowLabel
           item={item}
           diffStat={diffStat}
-          isLaneLit={isLaneLit}
           worktrees={worktrees}
-          isRevealed={isRevealed}
           provider={provider}
         />
       </span>
@@ -166,7 +161,7 @@ export const TimelineStreamRow = ({
         </span>
       </span>
       <span className="relative shrink-0" style={{ width: railWidth }}>
-        <TimelineRail rail={rail} width={railWidth} lanes={lanes} />
+        <TimelineRail rail={rail} width={railWidth} />
         {rail.markerY == null ? null : (
           <span
             className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
@@ -210,30 +205,32 @@ export const TimelineStreamRow = ({
               {content}
             </button>
           )}
-          {action == null && !hasActionColumn ? null : (
+          {subagents}
+          {outputs}
+          {action == null ? null : (
             <span
-              data-testid={action == null ? undefined : 'timeline-row-action'}
+              data-testid="timeline-row-action"
               data-action-slot
-              className={hasActionColumn ? WORK_META_COLUMN.action : 'flex shrink-0 items-center'}
+              className="flex shrink-0 items-center"
               style={{ height: boxHeight }}
             >
-              {action == null ? null : (
-                <Button
-                  variant={action.variant ?? 'ghost'}
-                  emphasis={action.variant === 'warning' ? 'outline' : 'solid'}
-                  size="sm"
-                  className="h-6"
-                  isBusy={action.isBusy === true}
-                  onClick={action.onAct}
-                >
-                  {action.label}
-                </Button>
-              )}
+              <Button
+                variant={action.variant ?? 'ghost'}
+                emphasis={action.variant === 'warning' ? 'outline' : 'solid'}
+                size="sm"
+                className="h-6"
+                isBusy={action.isBusy === true}
+                onClick={action.onAct}
+              >
+                {action.label}
+              </Button>
             </span>
           )}
-          <span className={WORK_META_COLUMN.menu} style={{ height: boxHeight }}>
-            {menu}
-          </span>
+          {menu == null ? null : (
+            <span className={WORK_META_COLUMN.menu} style={{ height: boxHeight }}>
+              {menu}
+            </span>
+          )}
         </div>
         {detail}
       </div>

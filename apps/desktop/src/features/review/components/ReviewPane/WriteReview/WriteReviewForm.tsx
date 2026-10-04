@@ -90,7 +90,7 @@ export const WriteReviewForm = ({ sessionId }: Props) => {
   return (
     <section
       aria-label={WRITE_REVIEW_FORM_LABEL}
-      className="flex min-w-0 max-w-[76ch] flex-col gap-8 pb-8 pt-10"
+      className="flex min-w-0 flex-col gap-8 pb-8 pt-10"
     >
       <div className="flex min-w-0 flex-col gap-2">
         <SectionHeader

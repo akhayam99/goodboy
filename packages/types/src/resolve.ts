@@ -68,6 +68,8 @@ export type ResolveAttempt = Readonly<{
   error: string | null;
   createdAt: number;
   batchId: string | null;
+  launchId?: string | null;
+  retryOfLaunchId?: string | null;
   copyPath: string | null;
   launchChoice: ResolveLaunchChoice | null;
 }>;

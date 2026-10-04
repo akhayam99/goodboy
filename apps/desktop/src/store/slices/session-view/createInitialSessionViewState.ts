@@ -22,6 +22,5 @@ export const createInitialSessionViewState = ({}: Params) => ({
   resolveQueueView: {},
   resolveItemDrafts: {},
   sessionCreations: {},
-  revealedActivityRows: {},
   sessionGroupExpanded: {},
 });

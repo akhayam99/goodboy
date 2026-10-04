@@ -313,7 +313,6 @@ describe('startWorkflowRun', () => {
       setFocusedWorkflowRun: vi.fn(),
       setActiveLens: vi.fn(),
       emitNotification: vi.fn(async () => undefined),
-      revealActivityRow: vi.fn(),
     };
   }
 

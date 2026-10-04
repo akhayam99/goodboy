@@ -102,7 +102,6 @@
     "apps/desktop/src/features/session/hooks/useWorktreeStatuses/targets.test.ts": 1,
     "apps/desktop/src/features/session/mountQueryBridge/index.test.ts": 4,
     "apps/desktop/src/features/session/resolve/worktreeWriterBridge.test.ts": 2,
-    "apps/desktop/src/features/session/timeline/activityFilter.test.ts": 6,
     "apps/desktop/src/features/session/timeline/buildTimelineGroups.test.ts": 2,
     "apps/desktop/src/features/session/timeline/buildTimelineStream.test.ts": 1,
     "apps/desktop/src/features/session/timeline/needsYou.test.ts": 5,

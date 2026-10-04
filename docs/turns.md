@@ -190,6 +190,14 @@ record a live turn already wrote wins.
   and falls back to the whole message as the Ask when they do not line up.
   `spawn-from-comment.golden.test.ts` pins the string sent to the provider for
   the resolver, the re-check, the scribe and the follow-up byte for byte.
+- One user action that starts resolvers writes one `resolve_attempts.launch_id`
+  (m222, nullable, no backfill) on every attempt it spawns, whatever the batch:
+  `startFixAttempt` mints it once per call. A retry gets its own launch id and
+  `retry_of_launch_id` pointing at the root of its origin (the origin's launch
+  id, else its batch id). Rows older than m222 stay NULL, and the Activity
+  groups them at read time only when session, repo, provider and PR match and
+  each started within 10 minutes of the first member (`related`); notes without
+  a PR stay single. A re-check scout writes no attempt, so it has no launch id.
 - The transcript draws that first message as one handoff block
   (`features/chat/components/HandoffBlock`), the same for every provider: who
   sent it, the ask in one line and the why. Closed, that is all it shows.

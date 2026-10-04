@@ -70,6 +70,66 @@ describe('startFixAttempt', () => {
     expect(setAgentConfig).toHaveBeenCalledTimes(2);
   });
 
+  it('writes one launch id on every agent of one user action and a new one on the next', async () => {
+    const { spawnAgent, setAgentConfig } = harness();
+    const threads = [threadOn({ id: 't1', path: 'a.ts' }), threadOn({ id: 't2', path: 'b.ts' })];
+
+    await startFixAttempt({
+      sessionId: SESSION_ID,
+      threads,
+      pr,
+      mode: 'separate',
+      spawnAgent,
+      setAgentConfig,
+    });
+    await startFixAttempt({
+      sessionId: SESSION_ID,
+      threads: [threads[0] ?? threadOn({ id: 't1', path: 'a.ts' })],
+      pr,
+      mode: 'separate',
+      spawnAgent,
+      setAgentConfig,
+    });
+
+    const launches = spawnAgent.mock.calls.map((call) => call[1].resolveLaunch);
+    expect(launches[0]?.launchId).toBe(launches[1]?.launchId);
+    expect(launches[2]?.launchId).not.toBe(launches[0]?.launchId);
+    expect(launches.every((launch) => launch?.retryOfLaunchId === null)).toBe(true);
+  });
+
+  it('records the launch a retry descends from', async () => {
+    const { spawnAgent, setAgentConfig } = harness();
+
+    await startFixAttempt({
+      sessionId: SESSION_ID,
+      threads: [threadOn({ id: 't1', path: 'a.ts' })],
+      pr,
+      mode: 'retry',
+      retryOfLaunchId: 'launch-origin',
+      spawnAgent,
+      setAgentConfig,
+    });
+
+    const launch = spawnAgent.mock.calls[0]?.[1].resolveLaunch;
+    expect(launch?.retryOfLaunchId).toBe('launch-origin');
+    expect(launch?.launchId).not.toBe('launch-origin');
+  });
+
+  it('leaves a recheck scout without a launch id', async () => {
+    const { spawnAgent, setAgentConfig } = harness();
+
+    await startFixAttempt({
+      sessionId: SESSION_ID,
+      threads: [threadOn({ id: 't1', path: 'a.ts' })],
+      pr,
+      mode: 'recheck',
+      spawnAgent,
+      setAgentConfig,
+    });
+
+    expect(spawnAgent.mock.calls[0]?.[1].resolveLaunch).toBeUndefined();
+  });
+
   it('gives every conversation its own agent in separate mode', async () => {
     const { spawnAgent, setAgentConfig } = harness();
 
