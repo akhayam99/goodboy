@@ -39,7 +39,7 @@ export const ChatModelGlyphs = ({ models, provider, model, effort, messageCount 
       <span
         role="img"
         aria-label={description}
-        className="pointer-events-auto flex shrink-0 items-center gap-1.5 text-secondary text-muted-foreground"
+        className="pointer-events-auto flex shrink-0 items-center gap-1 text-meta text-muted-foreground"
       >
         <span className="flex items-center gap-0.5 text-faint-foreground">
           {glyphProviders({ models, provider }).map((id) => (

@@ -35,17 +35,17 @@ export const ScriptPackageSection = ({
         )}
       />
       <Package size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
-      <span className="truncate text-secondary text-muted-foreground">{section.packageName}</span>
+      <span className="truncate text-meta text-muted-foreground">{section.packageName}</span>
       {section.relDir === '' ? null : (
         <span className="min-w-0 truncate font-mono text-meta text-faint-foreground">
           {section.relDir}
         </span>
       )}
-      <span className="shrink-0 text-secondary tabular-nums text-faint-foreground">
+      <span className="shrink-0 text-meta tabular-nums text-faint-foreground">
         {section.scripts.length}
       </span>
       {runningCount === 0 ? null : (
-        <span className="flex shrink-0 items-center gap-1 text-secondary text-info">
+        <span className="flex shrink-0 items-center gap-1 text-meta text-info">
           <StatusDot tone="info" size="sm" pulsing />
           {runningCount} running
         </span>

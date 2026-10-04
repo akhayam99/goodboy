@@ -35,13 +35,13 @@ export const CommentThread = ({ thread, comments }: Props) => {
       <div
         data-slot="diff-thread"
         data-thread-state="resolved"
-        className="flex min-w-0 items-center gap-1.5 rounded-md bg-subtle px-3 py-1.5 font-sans text-secondary text-muted-foreground"
+        className="flex min-w-0 items-center gap-1 rounded-md bg-subtle px-3 py-1 font-sans text-chip text-muted-foreground"
       >
         <span className="shrink-0 font-medium">{thread.statusLabel}</span>
         <span aria-hidden>·</span>
         <span className="min-w-0 truncate">&ldquo;{excerpt(thread.body)}&rdquo;</span>
         {(thread.actions ?? []).map((action) => (
-          <span key={action.id} className="flex shrink-0 items-center gap-1.5">
+          <span key={action.id} className="flex shrink-0 items-center gap-2">
             <span aria-hidden>·</span>
             <ThreadActionButton action={action} />
           </span>
@@ -82,11 +82,11 @@ export const CommentThread = ({ thread, comments }: Props) => {
       data-slot="diff-thread"
       data-thread-state="open"
       className={cn(
-        'flex min-w-0 flex-col gap-1.5 rounded-md border-l-2 bg-elevated px-3 py-2 font-sans',
+        'flex min-w-0 flex-col gap-2 rounded-md border-l-2 bg-elevated px-3 py-2 font-sans',
         tint.rail,
       )}
     >
-      <div className="flex min-w-0 items-center gap-2 text-secondary text-muted-foreground">
+      <div className="flex min-w-0 items-center gap-2 text-meta text-muted-foreground">
         {thread.isAgent ? (
           <span
             aria-hidden
@@ -146,7 +146,7 @@ export const CommentThread = ({ thread, comments }: Props) => {
         <Markdown text={thread.body} variant="preview" />
       </div>
       {isLocked || (thread.meta ?? null) !== null ? (
-        <div className="flex min-w-0 items-center gap-1.5 text-secondary text-faint-foreground">
+        <div className="flex min-w-0 items-center gap-1 text-meta text-faint-foreground">
           {isLocked ? (
             <>
               <Lock size={ICON_SIZE.row} aria-hidden className="shrink-0" />

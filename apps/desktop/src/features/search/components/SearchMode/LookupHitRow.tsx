@@ -35,10 +35,10 @@ export const LookupHitRow = ({ record, optionId, isSelected, onHover, onOpen }: 
       <span className="truncate text-row text-foreground">
         <span className="text-code">{record.identifier}</span> {record.title}
       </span>
-      <span className="truncate text-secondary text-faint-foreground">
+      <span className="truncate text-meta text-faint-foreground">
         {record.stateLabel} · not in your index, opens in {record.provider}
       </span>
     </div>
-    <span className="shrink-0 text-secondary text-faint-foreground">Look up</span>
+    <span className="shrink-0 text-meta text-faint-foreground">Look up</span>
   </li>
 );

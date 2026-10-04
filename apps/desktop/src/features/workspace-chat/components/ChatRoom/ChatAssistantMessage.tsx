@@ -53,10 +53,10 @@ const ChatAssistantMessageView = ({ message, workspaceName, onStartWork }: Props
       {isStreaming && !hasText ? <ChatTyping workspaceName={workspaceName} /> : null}
       <ChatReads reads={message.reads} />
       {message.status === 'stopped' ? (
-        <p className="text-secondary text-faint-foreground">Stopped</p>
+        <p className="text-meta text-faint-foreground">Stopped</p>
       ) : null}
       {isStreaming || !hasText ? null : (
-        <div className="-ml-1.5 flex h-7 items-center gap-1">
+        <div className="-ml-2 flex h-7 items-center gap-1">
           <div className="flex items-center gap-1 opacity-0 motion-safe:transition-opacity group-focus-within/answer:opacity-100 group-hover/answer:opacity-100">
             <CopyButton
               value={message.content}
@@ -64,7 +64,7 @@ const ChatAssistantMessageView = ({ message, workspaceName, onStartWork }: Props
               presentation="icon"
               tone="faint"
               size={ICON_SIZE.row}
-              className="h-6 gap-1 px-1.5 text-secondary"
+              className="h-6 gap-1 px-2 text-meta"
             >
               Copy
             </CopyButton>
@@ -72,7 +72,7 @@ const ChatAssistantMessageView = ({ message, workspaceName, onStartWork }: Props
               <button
                 type="button"
                 onClick={() => onStartWork(message.id)}
-                className="flex h-6 items-center gap-1 rounded-md px-1.5 text-secondary text-faint-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                className="flex h-6 items-center gap-1 rounded-md px-2 text-meta text-faint-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 <Play size={ICON_SIZE.row} aria-hidden />
                 Start work from here
@@ -81,7 +81,7 @@ const ChatAssistantMessageView = ({ message, workspaceName, onStartWork }: Props
           </div>
           <span className="flex-1" />
           {meta === null ? null : (
-            <span className="truncate pl-1.5 text-secondary text-faint-foreground">{meta}</span>
+            <span className="truncate pl-2 text-meta text-faint-foreground">{meta}</span>
           )}
         </div>
       )}

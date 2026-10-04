@@ -9,12 +9,12 @@ type Props = {
 export const ManualNote = ({ reason, docsUrl, docsLabel }: Props) => {
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-border-soft bg-subtle p-4">
-      <p className="max-w-prose text-xs leading-relaxed text-muted-foreground">{reason}</p>
+      <p className="max-w-prose text-label text-muted-foreground">{reason}</p>
       <a
         href={docsUrl}
         target="_blank"
         rel="noreferrer"
-        className="inline-flex items-center gap-1.5 text-secondary text-muted-foreground transition-colors hover:text-foreground"
+        className="inline-flex items-center gap-1 text-meta text-muted-foreground transition-colors hover:text-foreground"
       >
         <span>{docsLabel}</span>
         <ExternalLink size={10} aria-hidden />

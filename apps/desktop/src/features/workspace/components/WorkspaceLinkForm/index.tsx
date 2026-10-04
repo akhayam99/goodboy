@@ -14,6 +14,7 @@ import {
 import type { Workspace } from '@goodboy/types';
 import { AlertTriangle, Folder, FolderGit2, FolderPlus, Layers, Plus, X } from 'lucide-react';
 import { useAppStore } from '../../../../store';
+import { NAMES } from '../../../../shared/names';
 import { initRepo, validateGitRepo } from '../../../../shared/lib/repo';
 import { useChildRepoDetection } from '../../../../shared/hooks/useChildRepoDetection';
 import { usePickFolder } from '../../../../shared/hooks/usePickFolder';
@@ -147,7 +148,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
         return;
       }
       throw new Error(
-        `No git repository at ${picked}. Pick a folder with a .git directory, use Start a new project to begin one, or use Link a plain folder.`,
+        `No git repository at ${picked}. Pick a folder with a .git directory, use Start a new project to begin one, or use ${NAMES.addPlainFolder}.`,
       );
     });
 
@@ -400,9 +401,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-row text-foreground">{option.label}</span>
-                  <span className="block text-xs leading-relaxed text-muted-foreground">
-                    {option.hint}
-                  </span>
+                  <span className="block text-label text-muted-foreground">{option.hint}</span>
                 </span>
               </button>
             ))}
@@ -410,7 +409,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
 
           {choice === 'project' ? (
             <div className="flex flex-col gap-2">
-              <p className="text-xs leading-relaxed text-muted-foreground">
+              <p className="text-label text-muted-foreground">
                 Open a folder with a git repository, or start a new project in an empty one.
               </p>
               {reconnectCandidate !== null ? (
@@ -450,13 +449,13 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
                 disabled={busy}
                 className="self-start text-label font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
               >
-                Link a plain folder (no git)
+                {NAMES.addPlainFolder} (no git)
               </button>
             </div>
           ) : null}
 
           {choice === 'workspace' ? (
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-2">
               <label
                 htmlFor={`${formId}-workspace-name`}
                 className="text-label font-medium text-foreground"
@@ -511,10 +510,13 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
                       {project.rootPath}
                     </span>
                   </span>
-                  <Tooltip content={`Unlink ${project.name}`} anchorClassName="shrink-0">
+                  <Tooltip
+                    content={`${NAMES.removeLink} to ${project.name}`}
+                    anchorClassName="shrink-0"
+                  >
                     <button
                       type="button"
-                      aria-label={`Unlink ${project.name}`}
+                      aria-label={`${NAMES.removeLink} to ${project.name}`}
                       disabled={busy}
                       onClick={() => void removeProject({ projectId: project.id })}
                       className="rounded-md p-1 text-faint-foreground hover:bg-hover hover:text-foreground"
@@ -583,7 +585,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
             disabled={busy}
             className="self-start text-label font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
           >
-            Link a plain folder (no git)
+            {NAMES.addPlainFolder} (no git)
           </button>
         </section>
       )}

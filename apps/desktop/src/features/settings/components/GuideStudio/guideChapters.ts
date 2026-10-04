@@ -102,11 +102,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Auto',
-        desc: 'Auto runs each role on the newest model of its line, Sonnet 5.5 on Claude today, and Defaults shows what it picks now. Open a role to see how it runs, and give it up to three models for Auto to pick from. A model you turn off in Models in the picker is left out of Auto and the workflow orchestrator.',
+        desc: 'Auto runs each role on the newest model of its line, Sonnet 5.5 on Claude today, and Models shows what it picks now. Open a role to see how it runs, and give it up to three models for Auto to pick from. A model you turn off in Models in the picker is left out of Auto and the workflow orchestrator.',
       },
       {
         term: 'Providers, in order',
-        desc: 'Defaults lists the providers of the workspace in order, each On, Backup only or Off. New work starts on the first On provider, Backup only runs when no On provider can, and Off is never offered. Drag a row, or press Alt and an arrow, to move it. The footer Providers button opens your limits and the same list.',
+        desc: 'Models lists the providers of the workspace in order, each On, Backup only or Off. New work starts on the first On provider, Backup only runs when no On provider can, and Off is never offered. Drag a row, or press Alt and an arrow, to move it. The footer Providers button opens your limits and the same list.',
       },
       {
         term: 'Usage limits',
@@ -218,6 +218,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Enter queues your message for its next turn, and ⌘Enter interrupts and sends it now. Stop keeps what it wrote and offers Continue. After a restart or an update, agents that were working stay Stopped. Use Resume on one agent, Resume all in overview Next steps, or Resume all above a workflow run.',
       },
       {
+        term: 'Activity',
+        desc: 'Every group hangs on an indented numbered ball with its own lane. A run keeps its context and questions inside it, and the provider icon is on every agent. A model name shows only when it differs. The Runs tab lists the workflow runs of a session.',
+      },
+      {
         term: 'Agent suggests',
         desc: 'When an agent recommends another role, its transcript shows Agent suggests with the reason. Pick the provider, model and effort, then press Start. The new agent begins with that reason and what the previous agent wrote.',
       },
@@ -226,8 +230,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Start from Refactor, Plan and ship or Fix a bug, or build your own. Each step follows its role or pins a model, and its menu holds Duplicate, Save as step, Move and Delete, with Undo. Restore built-in workflows, in the menu next to New workflow, brings back a built-in you deleted or changed. Deleting a run deletes its agents and their open questions.',
       },
       {
-        term: 'Rules',
-        desc: 'The Rules tab in Workflows sets what new runs start with: when to ask, a spend cap, which providers get the next step and guidance. Use providers with room left sends steps to the provider with room. A run keeps the copy of the rules it started with.',
+        term: 'Run defaults',
+        desc: 'The Run defaults tab in Workflows sets what new runs start with: when to ask, a spend cap, which providers get the next step and guidance. Use providers with room left sends steps to the provider with room. A run keeps the copy of the rules it started with.',
       },
       {
         term: 'Orchestrated',
@@ -265,7 +269,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Context drawer',
-        desc: 'Open the goal, decisions and summary from any session page, and Copy as brief. A dot on Context means something changed since you last looked, and those changes come first. Context updates, at the top, shows the last update with its model and cost, and Update now queues one. Learned lists what agents explained about your topics, for you only, with Dismiss and Undo.',
+        desc: 'Open the goal, decisions and summary from any session page, and Copy context. A dot on Context means something changed since you last looked, and those changes come first. Context updates, at the top, shows the last update with its model and cost, and Update now queues one. Learned lists what agents explained about your topics, for you only, with Dismiss and Undo.',
       },
       {
         term: 'Visible to',
@@ -552,16 +556,16 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
   {
     id: 'updates',
     group: 'task',
-    title: 'Updates and changelog',
+    title: "Updates and what's new",
     concept: 'updates',
-    lead: 'Updates download in the background, and the changelog shows what changed.',
+    lead: "Updates download in the background, and What's new shows what changed.",
     points: [
       {
         term: 'Restart when ready',
         desc: 'With agents running, Restart when they finish waits for them.',
       },
       {
-        term: 'Changelog',
+        term: "What's new",
         desc: 'Searchable release notes inside the app. After an update, one page covers the releases you skipped. Only releases that update your data in one direction carry a mark in the list.',
       },
       {
@@ -574,7 +578,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
     ],
     links: [
-      { label: 'Open the changelog', target: { kind: 'studio', studio: { kind: 'changelog' } } },
+      { label: "Open What's new", target: { kind: 'studio', studio: { kind: 'changelog' } } },
     ],
   },
   {

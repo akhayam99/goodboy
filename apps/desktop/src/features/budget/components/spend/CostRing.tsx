@@ -42,7 +42,7 @@ export const CostRing = ({ pct, centerLabel, subLabel, size = 132, warnAt }: Pro
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
-        <span className="font-mono text-lg tabular-nums text-foreground">{centerLabel}</span>
+        <span className="font-mono text-title tabular-nums text-foreground">{centerLabel}</span>
         {subLabel !== undefined ? <Eyebrow label={subLabel} /> : null}
       </div>
     </div>

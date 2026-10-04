@@ -23,6 +23,7 @@ import {
 } from '../../../../features/scripts/hooks/useRunningScripts';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useNow } from '../../../../shared/hooks/useNow';
+import { NAMES } from '../../../../shared/names';
 import { NeedsYouSessionRow } from './NeedsYouSessionRow';
 import { NowGroup } from './NowGroup';
 import { attentionPlace } from './attentionPlace';
@@ -127,7 +128,7 @@ export const NowChip = ({ onOpenScript }: Props) => {
           title={label}
           aria-expanded={isOpen}
           className={cn(
-            'flex shrink-0 items-center gap-2.5 rounded-sm px-1.5 py-1 text-secondary motion-safe:transition-colors',
+            'flex shrink-0 items-center gap-3 rounded-sm px-2 py-1 text-meta motion-safe:transition-colors',
             isOpen ? 'bg-muted' : 'hover:bg-hover',
           )}
         >
@@ -135,7 +136,7 @@ export const NowChip = ({ onOpenScript }: Props) => {
             <span className={SEGMENT}>
               <StatusDot tone="warning" size="sm" pulsing />
               <span className="font-medium tabular-nums text-foreground">{needsYou.length}</span>
-              <span className={SEGMENT_WORD}>need you</span>
+              <span className={SEGMENT_WORD}>{NAMES.needsYou.toLowerCase()}</span>
             </span>
           ) : null}
           {running.length > 0 ? (
@@ -168,7 +169,7 @@ export const NowChip = ({ onOpenScript }: Props) => {
         fadeFrom="elevated"
       >
         {needsYou.length > 0 ? (
-          <NowGroup label="Needs you" count={needsYou.length} tone="warning">
+          <NowGroup label={NAMES.needsYou} count={needsYou.length} tone="warning">
             {needsYou.map((session) => (
               <NeedsYouSessionRow key={session.id} session={session} onSelect={selectSession} />
             ))}

@@ -51,7 +51,7 @@ export const HandoffPanel = ({
         {HANDOFF_SECTION_LABEL[section.kind]}
       </span>
       {isSummaryVisible ? (
-        <span className="min-w-0 flex-1 truncate text-secondary text-faint-foreground">
+        <span className="min-w-0 flex-1 truncate text-meta text-faint-foreground">
           {section.summary}
         </span>
       ) : (
@@ -59,7 +59,7 @@ export const HandoffPanel = ({
       )}
       {total > 1 ? (
         <div className="flex shrink-0 items-center gap-1">
-          <span className="text-secondary text-muted-foreground">
+          <span className="text-meta text-muted-foreground">
             {index + 1} of {total}
           </span>
           <IconButton

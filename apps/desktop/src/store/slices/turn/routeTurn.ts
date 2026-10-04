@@ -90,7 +90,7 @@ export const routeTurn = async ({ get, ctx }: Params) => {
       kind: 'error',
       runId,
       message:
-        'All providers have exceeded their budget cap. Adjust budget rules or wait for the next billing period.',
+        'All providers have exceeded their spend cap. Adjust the spend caps or wait for the next billing period.',
       at: now(),
     });
     return turnDone({ result: { blockedOverBudget: true } });

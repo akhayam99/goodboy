@@ -305,7 +305,7 @@ export const ChatList = ({
           ref={listRef}
           aria-label="Chats"
           data-selecting={selectedIds.length > 0}
-          className="group/select-list flex flex-col gap-3 pb-3 pr-3.5"
+          className="group/select-list flex flex-col gap-3 pb-3 pr-4"
         >
           {archived !== null && !archived.isIdle ? undoRow : null}
           <ChatListGroup

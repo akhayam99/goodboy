@@ -13,7 +13,7 @@ export const PropertyRow = ({ fact }: Props) => {
   const dropdown = useDropdown({ width: 'w-60', expectedHeight: 240, expectedWidth: 240 });
   const Icon = fact.icon;
   const value = (
-    <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 text-label text-foreground">
+    <span className="flex min-w-0 flex-1 flex-wrap items-center gap-2 text-label text-foreground">
       {Icon == null ? null : (
         <Icon size={ICON_SIZE.control} aria-hidden className="shrink-0 text-faint-foreground" />
       )}

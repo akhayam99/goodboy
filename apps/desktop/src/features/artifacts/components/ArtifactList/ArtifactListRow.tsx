@@ -266,7 +266,7 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
         />
       )}
       {controls.failure === null ? null : (
-        <p role="alert" className="px-8 pb-1 text-secondary text-danger">
+        <p role="alert" className="px-8 pb-1 text-meta text-danger">
           {controls.failure.message}
         </p>
       )}

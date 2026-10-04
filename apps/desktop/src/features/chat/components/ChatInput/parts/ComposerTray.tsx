@@ -20,7 +20,7 @@ export const ComposerTray = ({
   onRemove,
   onSendNow,
 }: Props) => (
-  <div className="flex flex-col gap-1.5 rounded-t-lg bg-muted px-2 pb-1.5 pt-2">
+  <div className="flex flex-col gap-2 rounded-t-lg bg-muted px-2 pb-2 pt-2">
     <QueuedMessages
       items={queue}
       canEdit={canEdit}

@@ -45,7 +45,7 @@ const VERBS: RecordVerbs = {
 
 const frame = (overrides: Partial<RecordFrame> = {}): RecordFrame => ({
   primary: <button type="button">Launch session</button>,
-  sessionVerbs: [verb({ key: 'unlink', label: 'Unlink session', icon: Unlink })],
+  sessionVerbs: [verb({ key: 'unlink', label: 'Remove link to session', icon: Unlink })],
   onRefresh: vi.fn(),
   onClose: vi.fn(),
   ...overrides,
@@ -102,7 +102,7 @@ describe('RecordHeader', () => {
       screen.getAllByRole('menuitem').map((item) => item.getAttribute('data-menu-label')),
     ).toEqual([
       'Convert to draft',
-      'Unlink session',
+      'Remove link to session',
       'Refresh',
       'Copy link',
       'Copy !87',

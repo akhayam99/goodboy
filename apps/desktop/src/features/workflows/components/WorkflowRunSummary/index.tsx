@@ -17,12 +17,12 @@ const RecapGroup = ({ label, entries, tone }: GroupProps) => (
     <Eyebrow label={label} />
     <ul className="flex min-w-0 flex-col gap-1">
       {entries.map((entry) => (
-        <li key={entry} className="flex min-w-0 items-start gap-1.5 text-xs leading-relaxed">
+        <li key={entry} className="flex min-w-0 items-start gap-2 text-label leading-relaxed">
           {tone === 'done' ? (
             <Check className="mt-1 size-3 shrink-0 text-success" aria-hidden />
           ) : (
             <Circle
-              className="mt-1.5 size-1.5 shrink-0 fill-current text-muted-foreground"
+              className="mt-2 size-1.5 shrink-0 fill-current text-muted-foreground"
               aria-hidden
             />
           )}
@@ -51,7 +51,7 @@ export const WorkflowRunSummary = ({ summary }: Props) => {
     >
       <SectionHeader label="Recap" />
       {structured === null ? (
-        <Markdown text={text} className="text-xs leading-relaxed" />
+        <Markdown text={text} className="text-label leading-relaxed" />
       ) : (
         <div
           data-testid="workflow-run-summary-groups"

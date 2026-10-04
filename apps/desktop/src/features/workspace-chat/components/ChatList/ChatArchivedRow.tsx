@@ -55,7 +55,7 @@ const ChatArchivedRowView = ({
         isSelected={isSelected}
         onOpen={() => onSelect(chatId)}
         frameClassName="group"
-        className="flex min-w-0 flex-col gap-0.5 py-1.5 pl-4 pr-2"
+        className="flex min-w-0 flex-col gap-0.5 py-2 pl-4 pr-2"
       >
         <span className="flex min-w-0 items-center gap-2">
           <span
@@ -70,7 +70,7 @@ const ChatArchivedRowView = ({
             {age}
           </span>
         </span>
-        <span className="truncate text-secondary text-faint-foreground">{snippet}</span>
+        <span className="truncate text-meta text-faint-foreground">{snippet}</span>
         <span className="absolute right-0 top-0 flex items-center opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           <IconButton
             icon={ArchiveRestore}

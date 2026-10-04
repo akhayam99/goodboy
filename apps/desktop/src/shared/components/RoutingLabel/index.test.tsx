@@ -223,5 +223,33 @@ describe('RoutingLabel', () => {
       expect(container.textContent).toBe('');
       expect(container.children).toHaveLength(1);
     });
+
+    it('keeps the glyph and the name by default, so other lists read the same', () => {
+      const { container } = render(
+        <RoutingLabel isColumn provider="anthropic" model="claude-sonnet-5" effort="high" />,
+      );
+
+      expect(container.querySelector('svg')).not.toBeNull();
+      expect(
+        container.querySelector('[data-routing-part="name"]')?.classList.contains('sr-only'),
+      ).toBe(false);
+    });
+
+    it('hides the name visually but keeps it for screen readers and the tooltip', () => {
+      const { container } = render(
+        <RoutingLabel
+          isColumn
+          hideName
+          provider="anthropic"
+          model="claude-sonnet-5"
+          effort="high"
+        />,
+      );
+
+      const name = container.querySelector('[data-routing-part="name"]');
+      expect(name?.classList.contains('sr-only')).toBe(true);
+      expect(name?.textContent).toBe('Sonnet 5');
+      expect(partOf(container, 'detail')).toBe('High');
+    });
   });
 });

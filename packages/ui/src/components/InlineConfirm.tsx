@@ -97,12 +97,12 @@ export const InlineConfirm = ({
       aria-label={title}
       data-surface={surface}
       className={cn(
-        'flex min-w-0 flex-col gap-2 text-secondary',
-        surface === 'card' ? cn('rounded-lg border p-2.5', tint.border, tint.bg) : 'p-3',
+        'flex min-w-0 flex-col gap-2 text-meta',
+        surface === 'card' ? cn('rounded-lg border p-3', tint.border, tint.bg) : 'p-3',
         className,
       )}
     >
-      <div className="flex min-w-0 items-start gap-1.5">
+      <div className="flex min-w-0 items-start gap-2">
         <span className={cn('flex h-4 shrink-0 items-center', tint.icon)} aria-hidden>
           {icon}
         </span>

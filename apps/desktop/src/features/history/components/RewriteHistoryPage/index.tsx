@@ -188,7 +188,7 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
     callbacksFor,
   });
   const meta = (
-    <span className="flex flex-wrap items-center gap-1.5">
+    <span className="flex flex-wrap items-center gap-2">
       <span>{mount.mountName}</span>
       <span aria-hidden>·</span>
       <span>{mount.branch}</span>
@@ -249,7 +249,7 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
           <div
             ref={stage.ref}
             className={cn(
-              'grid items-start gap-3.5',
+              'grid items-start gap-3',
               !isNarrow && !isDone ? 'grid-cols-[minmax(0,1fr)_300px]' : 'grid-cols-1',
             )}
           >

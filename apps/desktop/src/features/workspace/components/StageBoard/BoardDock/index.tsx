@@ -102,7 +102,7 @@ export const BoardDock = ({ entries, isLassoActive, onOpen }: Props) => {
             <span
               aria-hidden
               className={cn(
-                'text-secondary tabular-nums',
+                'text-meta tabular-nums',
                 isEmpty ? 'text-faint-foreground' : 'text-muted-foreground',
               )}
             >

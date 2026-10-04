@@ -11,11 +11,11 @@ type Props = {
 };
 
 export const DecisionChangesDetail = ({ id, detail, onOpenInContext }: Props) => (
-  <div id={id} className="flex min-w-0 flex-col py-1 pl-2 pr-1.5" style={{ height: detail.height }}>
+  <div id={id} className="flex min-w-0 flex-col py-1 pl-2 pr-2" style={{ height: detail.height }}>
     {detail.lines.map((line) => (
       <p
         key={line.key}
-        className="flex min-w-0 items-center gap-1.5 text-label text-muted-foreground"
+        className="flex min-w-0 items-center gap-2 text-label text-muted-foreground"
         style={{ height: DECISION_DETAIL_LINE_HEIGHT }}
       >
         <span aria-hidden className="w-2 shrink-0 text-center text-faint-foreground">
@@ -30,7 +30,7 @@ export const DecisionChangesDetail = ({ id, detail, onOpenInContext }: Props) =>
     ))}
     {detail.hiddenCount > 0 ? (
       <p
-        className="flex items-center pl-3.5 text-label text-faint-foreground"
+        className="flex items-center pl-4 text-label text-faint-foreground"
         style={{ height: DECISION_DETAIL_LINE_HEIGHT }}
       >
         {`and ${detail.hiddenCount} more`}

@@ -24,13 +24,13 @@ export const IntegrationConnectPanel = ({
   const Heading = headingLevel == null ? 'p' : HEADING_TAG[headingLevel];
   return (
     <section className="m-auto flex w-full min-w-0 max-w-md flex-col gap-3 rounded-lg border border-border-soft bg-elevated p-5">
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-3">
         <IntegrationGlyph provider={provider} size={ICON_SIZE.hero} />
         <Heading className="text-heading text-foreground">
           Connect {integrationLabel({ provider })}
         </Heading>
       </div>
-      <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
+      <p className="text-label text-muted-foreground">{description}</p>
       {children}
     </section>
   );

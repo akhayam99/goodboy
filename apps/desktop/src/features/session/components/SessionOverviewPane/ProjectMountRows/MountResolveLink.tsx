@@ -58,13 +58,13 @@ export const MountResolveLink = ({ sessionId, row, label }: Props) => {
             }
           });
         }}
-        className="flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-label text-foreground tabular-nums hover:bg-hover"
+        className="flex shrink-0 items-center gap-2 rounded-md px-2 py-1 text-label text-foreground tabular-nums hover:bg-hover"
       >
         <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
         {`${count} to resolve`}
       </button>
       {error !== null && (
-        <span role="status" className="min-w-0 truncate text-secondary text-danger">
+        <span role="status" className="min-w-0 truncate text-meta text-danger">
           {error}
         </span>
       )}

@@ -24,11 +24,10 @@ type State =
   | { readonly kind: 'loaded'; readonly dataUri: string }
   | { readonly kind: 'failed' };
 
-const IMAGE_CLASS =
-  'my-1.5 max-h-96 max-w-full rounded-md border border-border-soft object-contain';
+const IMAGE_CLASS = 'my-2 max-h-96 max-w-full rounded-md border border-border-soft object-contain';
 
 const BLOCK_CLASS =
-  'my-1.5 flex items-start gap-2.5 rounded-lg border border-dashed border-border-soft bg-elevated px-3 py-2.5 text-left';
+  'my-2 flex items-start gap-3 rounded-lg border border-dashed border-border-soft bg-elevated px-3 py-3 text-left';
 
 const HOST_CLASS = 'rounded-sm bg-muted px-1 font-mono text-[0.9em] text-foreground';
 
@@ -80,7 +79,7 @@ export const RemoteImage = ({ url, alt, load, className }: Props) => {
   if (state.kind === 'loading') {
     return (
       <span
-        className={cn('my-1.5 block', className)}
+        className={cn('my-2 block', className)}
         role="status"
         aria-label={`Loading an image from ${host}`}
       >
@@ -103,7 +102,7 @@ export const RemoteImage = ({ url, alt, load, className }: Props) => {
       <ImageOff size={14} aria-hidden className="mt-0.5 shrink-0 text-muted-foreground" />
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         {alt !== '' && <span className="text-label font-medium text-foreground">{alt}</span>}
-        <span className="text-xs leading-relaxed text-muted-foreground">
+        <span className="text-label text-muted-foreground">
           {isFailed ? "Couldn't load this image from " : 'Image from '}
           <Tooltip content={url}>
             <code className={HOST_CLASS}>{host}</code>
@@ -121,7 +120,7 @@ export const RemoteImage = ({ url, alt, load, className }: Props) => {
         </Button>
       ) : loader != null ? (
         <Button size="sm" variant="secondary" className="shrink-0" onClick={requestImage}>
-          {isFailed ? 'Try again' : 'Load'}
+          {isFailed ? 'Retry' : 'Load'}
         </Button>
       ) : null}
     </span>

@@ -34,7 +34,7 @@ export const GoalAttachmentsStrip = ({ owner }: { readonly owner: GoalAttachment
         muted
         icon={<Paperclip size={11} aria-hidden />}
         label="Attachments"
-        className="gap-1.5 font-medium"
+        className="gap-2 font-medium"
       />
       <div className="flex flex-wrap gap-2">
         {attachments.map((att) => (

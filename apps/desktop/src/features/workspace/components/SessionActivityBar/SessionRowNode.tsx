@@ -69,7 +69,7 @@ export const SessionRowNode = ({
             />
           ) : null}
           {mark !== null ? (
-            <span className={cn('text-2xs font-semibold leading-none', tintClasses(tone).icon)}>
+            <span className={cn('text-meta font-semibold leading-none', tintClasses(tone).icon)}>
               {mark}
             </span>
           ) : pr !== null ? (

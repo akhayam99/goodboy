@@ -362,7 +362,7 @@ describe('IntegrationPane', () => {
     const actions = screen.getByTestId('task-detail-actions');
 
     expect(screen.queryByText('Linear')).toBeNull();
-    expect(within(actions).getByRole('button', { name: 'Unlink GB-42' })).toBeDefined();
+    expect(within(actions).getByRole('button', { name: 'Remove link to GB-42' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Link issue' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'All issues' })).toBeDefined();
   });
@@ -415,9 +415,9 @@ describe('IntegrationPane', () => {
     fireEvent.click(screen.getByRole('button', { name: 'View GB-42' }));
 
     expect(screen.getByText('Linear detail GB-42')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Unlink GB-42' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove link to GB-42' }));
     expect(h.store.unlinkSessionExternalTask).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Unlink GB-42' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove link to GB-42' }));
     await waitFor(() =>
       expect(h.store.unlinkSessionExternalTask).toHaveBeenCalledWith(
         SESSION_ID,

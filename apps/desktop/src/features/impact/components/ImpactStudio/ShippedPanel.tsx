@@ -119,19 +119,19 @@ export const ShippedPanel = ({
               },
             ]}
           />
-          <div className="grid grid-cols-3 gap-2 text-center text-secondary text-muted-foreground">
+          <div className="grid grid-cols-3 gap-2 text-center text-meta text-muted-foreground">
             <span>&lt;1h {fastReviews}</span>
             <span>1h to 1d {sameDayReviews}</span>
             <span>&gt;1d {slowReviews}</span>
           </div>
           <div className="grid grid-cols-3 gap-2">
-            <span className="rounded-md bg-muted px-2 py-1.5 text-label">
+            <span className="rounded-md bg-muted px-2 py-2 text-label">
               Published drafts: {reviewData?.publishedDrafts ?? 0}
             </span>
-            <span className="rounded-md bg-muted px-2 py-1.5 text-label">
+            <span className="rounded-md bg-muted px-2 py-2 text-label">
               Pushed resolutions: {reviewData?.pushedResolutions ?? 0}
             </span>
-            <span className="rounded-md bg-muted px-2 py-1.5 text-label">
+            <span className="rounded-md bg-muted px-2 py-2 text-label">
               Sent to agent: {reviewData?.sentToAgent ?? 0}
             </span>
           </div>

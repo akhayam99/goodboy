@@ -41,14 +41,14 @@ export const ProviderSupportTable = () => (
         <caption className="sr-only">What each provider does with these settings</caption>
         <thead>
           <tr>
-            <th scope="col" className="px-2 py-1.5">
+            <th scope="col" className="px-2 py-2">
               <span className="sr-only">Setting</span>
             </th>
             {SUPPORT_COLUMNS.map((provider) => (
               <th
                 key={provider}
                 scope="col"
-                className="px-2 py-1.5 text-left text-label font-normal text-muted-foreground"
+                className="px-2 py-2 text-left text-label font-normal text-muted-foreground"
               >
                 {COLUMN_LABEL[provider]}
               </th>
@@ -60,12 +60,12 @@ export const ProviderSupportTable = () => (
             <tr key={row.key} className={cn('align-top', STRIPED_ROW)}>
               <th
                 scope="row"
-                className="px-2 py-1.5 text-left text-label font-normal text-foreground"
+                className="px-2 py-2 text-left text-label font-normal text-foreground"
               >
                 {row.label}
               </th>
               {SUPPORT_COLUMNS.map((provider) => (
-                <td key={provider} className="px-2 py-1.5">
+                <td key={provider} className="px-2 py-2">
                   <SupportCellView cell={row.cellFor(provider)} />
                 </td>
               ))}
@@ -74,7 +74,7 @@ export const ProviderSupportTable = () => (
         </tbody>
       </table>
     </div>
-    <p className="text-secondary text-muted-foreground">
+    <p className="text-meta text-muted-foreground">
       A mode a provider can&apos;t honor is never made looser: the agent runs in the next stricter
       mode that provider has. Role limits are instructions to the agent, checked after each turn, on
       every provider.

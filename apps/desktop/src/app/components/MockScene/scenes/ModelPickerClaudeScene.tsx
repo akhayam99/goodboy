@@ -28,7 +28,7 @@ export const ModelPickerClaudeScene = () => {
       <section className="flex w-96 shrink-0 flex-col gap-3">
         <header className="flex flex-col gap-0.5">
           <h2 className="text-heading text-foreground">Claude, family then version</h2>
-          <p className="text-secondary text-muted-foreground">
+          <p className="text-meta text-muted-foreground">
             Sonnet opens on 5.5, the newest version, next to 4.6 and 5
           </p>
         </header>

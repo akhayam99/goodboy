@@ -14,6 +14,7 @@ import { WorkflowRunDetail } from './WorkflowRunDetail';
 import { useAgentMetrics } from '../../../hooks/useAgentMetrics';
 import { GhostActionButton } from '@goodboy/ui';
 import { FinishedRegister } from '../../../../../shared/components/FinishedRegister';
+import { NAMES } from '../../../../../shared/names';
 
 const VISIBLE_FINISHED_COUNT = 30;
 
@@ -108,7 +109,7 @@ export const WorkflowsPane = ({ session }: Props) => {
 
   return (
     <PaneShell
-      title="Workflows"
+      title={NAMES.runs}
       meta={hasRuns ? attachedRuns.length : undefined}
       actions={
         shouldShowHeaderAttach ? (

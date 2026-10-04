@@ -89,7 +89,7 @@ export const DecisionRowItem = ({
       <div
         ref={rowRef}
         data-decision={number}
-        className="flex items-start gap-2.5 rounded-lg px-2 py-2"
+        className="flex items-start gap-3 rounded-lg px-2 py-2"
       >
         <span className="opacity-60">
           <DecisionNumber number={number} />
@@ -99,7 +99,7 @@ export const DecisionRowItem = ({
             <Markdown text={text} className="text-label" />
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-2">
           <Chip tone="neutral" size="3xs" label="Removed" />
           {isLocked ? null : (
             <Button
@@ -122,7 +122,7 @@ export const DecisionRowItem = ({
       ref={rowRef}
       data-decision={number}
       className={cn(
-        'group/decision-row flex items-start gap-2.5 rounded-lg px-2 py-2 motion-safe:transition-colors',
+        'group/decision-row flex items-start gap-3 rounded-lg px-2 py-2 motion-safe:transition-colors',
         isOpen ? 'bg-fill' : isHighlighted ? 'bg-selected' : 'hover:bg-hover',
       )}
     >
@@ -151,18 +151,18 @@ export const DecisionRowItem = ({
             <Markdown text={text} className="text-label" />
           </div>
           {isLong ? (
-            <span className="text-secondary text-muted-foreground">
+            <span className="text-meta text-muted-foreground">
               {isOpen ? 'Show less' : 'Show more'}
             </span>
           ) : null}
         </button>
         {why === null ? null : (
           <div data-decision-why={number} className="[overflow-wrap:anywhere]">
-            <ClampedProse text={why} lines={2} className="text-secondary text-muted-foreground" />
+            <ClampedProse text={why} lines={2} className="text-meta text-muted-foreground" />
           </div>
         )}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <p className="flex flex-wrap items-center gap-1.5 text-secondary text-faint-foreground">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="flex flex-wrap items-center gap-1 text-meta text-faint-foreground">
             {isNew ? <Chip tone="primary" size="3xs" label="New" /> : null}
             {byline}
           </p>
@@ -193,7 +193,7 @@ export const DecisionRowItem = ({
           ) : null}
         </div>
         {reworded === null ? null : (
-          <p className="flex flex-wrap items-center gap-1.5 text-secondary text-faint-foreground">
+          <p className="flex flex-wrap items-center gap-1 text-meta text-faint-foreground">
             <RewordIcon size={10} aria-hidden className="shrink-0" />
             {`Reworded by Goodboy · ${reworded.age}`}
             <button
@@ -207,9 +207,7 @@ export const DecisionRowItem = ({
           </p>
         )}
         {reworded !== null && isPreviousShown ? (
-          <p className="text-secondary text-faint-foreground line-through">
-            {reworded.previousText}
-          </p>
+          <p className="text-meta text-faint-foreground line-through">{reworded.previousText}</p>
         ) : null}
       </div>
     </div>

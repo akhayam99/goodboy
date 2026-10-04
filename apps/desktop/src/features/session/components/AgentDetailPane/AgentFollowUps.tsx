@@ -75,7 +75,7 @@ export const AgentFollowUps = ({
           : "Follow-ups already picked up this agent's output."
       }
     >
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         {followUps.map((entry) => (
           <AgentFollowUpChild key={entry.child.agent.id} entry={entry} sessionId={sessionId} />
         ))}

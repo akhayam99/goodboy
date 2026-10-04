@@ -40,7 +40,7 @@ export const AlertBanner = ({ alerts, onDismiss }: Props) => {
   }
 
   return (
-    <ul className="flex flex-col gap-1.5">
+    <ul className="flex flex-col gap-2">
       {active.map((alert) => (
         <li key={alert.id}>
           <Notice

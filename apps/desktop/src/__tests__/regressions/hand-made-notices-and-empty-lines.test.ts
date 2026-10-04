@@ -84,7 +84,7 @@ describe('hand-made notices and bare empty lines only ever shrink', () => {
     expect(countNotices({ text: "'flex flex-col gap-2 bg-subtle px-4 py-3'" })).toBe(1);
     expect(countNotices({ text: "'rounded-lg bg-subtle px-4 py-3.5'" })).toBe(0);
     expect(
-      countEmptyLines({ text: '<p className="text-secondary text-muted-foreground">No notes.' }),
+      countEmptyLines({ text: '<p className="text-meta text-muted-foreground">No notes.' }),
     ).toBe(1);
     expect(countEmptyLines({ text: '<EmptyLine>No notes on this screen.</EmptyLine>' })).toBe(0);
   });

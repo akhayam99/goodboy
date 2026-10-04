@@ -86,7 +86,7 @@ export const ProfileAccessPopover = () => {
           ))}
         </tbody>
       </table>
-      <span className="text-secondary text-muted-foreground">
+      <span className="text-meta text-muted-foreground">
         Never included in anything Goodboy posts to GitHub, Linear or Slack.
       </span>
     </AnchoredPopover>

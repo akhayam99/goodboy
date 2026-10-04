@@ -61,7 +61,7 @@ describe('Markdown images', () => {
       </LocalImageLoaderProvider>,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Load image' }));
-    await screen.findByRole('button', { name: 'Try again' });
+    await screen.findByRole('button', { name: 'Retry' });
     expect(screen.getByText('missing chart')).toBeTruthy();
     expect(screen.queryByRole('img')).toBeNull();
   });

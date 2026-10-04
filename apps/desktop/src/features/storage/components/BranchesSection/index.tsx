@@ -313,13 +313,13 @@ export const BranchesSection = ({ scope }: Props) => {
                   <span />
                   <span className="flex min-w-0 items-baseline gap-2">
                     <span className="truncate text-row text-foreground">{group.project.name}</span>
-                    <span className="shrink-0 text-secondary text-muted-foreground">
+                    <span className="shrink-0 text-meta text-muted-foreground">
                       base {group.project.baseBranch ?? 'main'} ·{' '}
                       {branchCount(group.entries.length)}
                     </span>
                   </span>
                   {index === 0 ? (
-                    <span className="text-secondary text-faint-foreground">
+                    <span className="text-meta text-faint-foreground">
                       Select with {shortcutGlyphs('selection.toggle')} or{' '}
                       {shortcutGlyphs('selection.all')}
                     </span>

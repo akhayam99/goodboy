@@ -14,7 +14,7 @@ type MetaParams = {
   readonly session: ShippedSession;
 };
 
-const ROW = 'flex w-full items-center gap-3 rounded-sm px-2 py-1.5 text-left text-label';
+const ROW = 'flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left text-label';
 
 const metaParts = ({ session }: MetaParams): ReadonlyArray<string> => [
   `${session.merged} ${session.merged === 1 ? 'PR' : 'PRs'} merged`,

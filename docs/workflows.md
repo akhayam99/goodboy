@@ -145,7 +145,7 @@ the rules, and can change later from the run's ⋯ menu.
 ## Workflow rules
 
 Rules are the workspace defaults every new run starts from. They live only in the
-**Rules** tab of the Workflows studio; the workspace settings have no page for
+**Run defaults** tab of the Workflows studio; the workspace settings have no page for
 them. The all-pages Restore defaults and Copy from in the workspace settings menu
 still carry them and list them as Workflow rules in the preview.
 
@@ -183,11 +183,10 @@ the first line. An orchestrated run tags no step.
 
 **Polish** on guidance uses `polishWorkflowGuidance` in `packages/core`, its own
 prompt next to the goal polish: one rule per line as a list, the language of the
-input, every rule kept and none added. Inside **Edit**, the guidance links to the
-profile field it differs from: "Also sent to every agent but Scout, Debugger,
-Report, Wireframe, Scribe: How agents should work with you", with an **About you**
-button. The names come from `PROFILE_ACCESS`: the roles that never read the
-working rules.
+input, every rule kept and none added. The builder has no "Also sent to" line:
+the guidance box says only where it goes, and the Run defaults tab keeps the
+line about the profile field. The names there come from `PROFILE_ACCESS`: the
+roles that never read the working rules.
 
 ### Spread by what I have left
 
@@ -209,7 +208,7 @@ With the rule on (the run's copy, `spreadByHeadroom`):
 - if dropping the _out_ providers empties the menu, the menu of today comes back
 
 With the rule off nothing changes. Workspaces that existed before 0.16.0 start
-with it off (m217); new workspaces start with it on. The Rules tab shows the
+with it off (m217); new workspaces start with it on. The Run defaults tab shows the
 switch and one sentence: with it off, "New steps follow the order set in
 Models."; with it on, where the next step goes and, when a provider is passed,
 how full it is (`nextStepPick`, `spreadSentence`).
@@ -266,7 +265,7 @@ or a decision is in flight, **Resume** while the run is paused, and **Stop**
 (with an inline confirmation) in both. Besides them it shows at most one
 action: **Decide next step** only when the run asks before each step,
 **Continue the run** after you stopped it or once it is complete, **Retry**
-after a failed decision, or the spend limit on a budget pause. A failed step and an open
+after a failed decision, or the spend cap on a budget pause. A failed step and an open
 question are left to the Next action strip, so the row only says the run is
 paused, on a neutral rail: the strip above carries the tone. When the pane is
 too narrow for the sentence and the controls on one line, the controls wrap to
@@ -307,19 +306,19 @@ with the step where the orchestrator first read it.
 
 Asking for a certain provider or model on a step is a hint too.
 
-### Spend limit
+### Spend cap
 
-Each run can have a spending limit in dollars. You set it on the run, in the
+Each run can have a spend cap in dollars. You set it on the run, in the
 orchestrator strip or in the creation form. You also choose what happens when
 the run reaches it: **Pause workflows** or **Warn only**, the same editor
-and words as the session's spend limit. The limit starts at unlimited. The
+and words as the session's spend cap. The cap starts at unlimited. The
 orchestrator decides how many steps to plan based on the goal.
 
-A session has its own spend limit, set from the spend chip in its header. With
+A session has its own spend cap, set from the spend chip in its header. With
 **Pause workflows** (the default) every workflow of the session stops at the
-limit and its strip says `Paused at the $10.00 spend limit for this session.`
-with **Raise limit**, which opens the chip on the editor. With **Warn only**
-nothing stops: one notification says the session passed its limit. Single
+cap and its strip says `Paused at the $10.00 spend cap for this session.`
+with **Raise spend cap**, which opens the chip on the editor. With **Warn only**
+nothing stops: one notification says the session passed its cap. Single
 agents are never stopped by it.
 
 ## How a run advances
@@ -337,7 +336,7 @@ A run waits when:
 
 When a run waits for more than one reason, its row in the activity feed says
 one thing only. A failed or blocked step comes first, then an open question, then a step
-waiting for your click, then the spend limit. A summarizer writing the handoff
+waiting for your click, then the spend cap. A summarizer writing the handoff
 and an agent still running are Goodboy at work, so the row shows them as
 running, never as waiting on you. The rule lives in `resolveRunRowState`.
 
@@ -414,7 +413,7 @@ points at the transcript; nothing stops the agent. While the row waits on you
 the arc freezes in amber and the time freezes too, never "left": the pause is
 said once, by the row state and the node. A failed row drops the arc and reads
 "4m", next to its "Failed" state. A finished row shows its active time ("8m
-12s"), plus "Longer than usual" when it ran past the band. Without enough
+12s"), with no "Longer than usual" note: the row says it only while it runs. Without enough
 history a running row shows only its elapsed time, the node keeps the moving
 border, and the tooltip counts what is missing ("No estimate yet: 3 of 5
 finished scout turns on 3.8 Flash"). The run row adds up finished steps and
@@ -467,7 +466,7 @@ asks before each step, the next step waits for your go.
 
 ### Closing a workflow
 
-**Close workflow** ends a run that nobody else will end: an orchestrated run
+**Stop workflow** ends a run that nobody else will end: an orchestrated run
 between decisions, a run stuck on a failed step, a run you have seen enough
 of. It sits in the header of the workflow detail and in the menu of the run
 row in the activity feed. Goodboy asks you to confirm first. Steps that have
@@ -482,9 +481,9 @@ manual start, so closing never starts other work. The closure lands in the
 activity feed as its own row ("Closed Add rate limiting by you"). Adding a step
 opens the run again.
 
-Close is offered once the run has started and until it ends. A queued run has
-nothing to close; discard it instead. **Discard** and **Delete** sit in the
-run menu next to it.
+Stop workflow is offered once the run has started and until it ends. A queued
+run has nothing to stop; archive it instead. **Archive workflow** and
+**Delete** sit in the run menu next to it.
 
 **Delete** removes the run and every agent it owns, for preset, custom and
 orchestrated runs alike: its step agents, the agents the orchestrator spawned,
@@ -498,12 +497,12 @@ tombstoned (`agentPurgeStatements`, one transaction for the whole run). The
 agents drop out of the session, the board and the per-agent cost rows at
 once, and there is no undo. What they already spent stays in the session
 total, as it does for a deleted agent. The launch cleanup of agents a run left
-behind purges them the same way. Discard is the verb that keeps the run and
-its agents restorable.
+behind purges them the same way. Archive workflow is the verb that keeps the
+run and its agents restorable.
 
 ### Hands-free runs
 
-**Autorun** makes a run hands-free. Each next step starts without you
+**Run on its own** makes a run hands-free. Each next step starts without you
 clicking. You can turn it on for one run or for the whole session. A run
 without its own setting follows the session.
 
@@ -687,7 +686,7 @@ above its steps for all of them. A stopped agent is neither settled nor failed: 
 header say it was stopped and offer Continue, which sends "Continue from where
 you stopped." as a normal message. A resumed step completes like any other, so
 autorun moves on from it.
-Autorun never passes a stopped step (`stopped-step`), and a stopped step does
+The run never passes a stopped step (`stopped-step`), and a stopped step does
 not count as needing you. Any later status change clears the stop.
 
 A step has no Close. Closing an agent is for agents outside a workflow (see
@@ -729,14 +728,14 @@ an `orchestrator_decision` event, and its spend is recorded against the run.
 - **One decision at a time.** A request that comes in while the run is
   deciding waits in a queue and runs once the current decision settles.
 - **Stops are saved, with a kind.** Before the call, the orchestrator checks
-  for a session paused by its spend limit (`sessionBudgetBlockAfterLoad`,
-  which reads `session_budgets.on_exceed` first), the run's spend limit in
+  for a session paused by its spend cap (`sessionBudgetBlockAfterLoad`,
+  which reads `session_budgets.on_exceed` first), the run's spend cap in
   pause mode, and open
   questions that block the run. Each one saves a `budget` or `questions` stop.
   A failed or unreadable call saves `failure`. **Stop** saves `operator`,
   turns autorun off and skips the running steps, keeping what they wrote.
   **Pause** saves `paused`, which keeps the step in flight and starts nothing.
-  **Close workflow** (`closeWorkflowRun`) saves `closed` next to the `done`
+  **Stop workflow** (`closeWorkflowRun`) saves `closed` next to the `done`
   outcome, on static runs too, so `isWorkflowRunClosedByUser` is the one test
   for a closed run and `isWorkflowRunComplete` reads it as ended. A decision
   in flight is thrown away when it returns, as after an operator stop or a

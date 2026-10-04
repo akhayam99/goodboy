@@ -38,12 +38,12 @@ export const WorktreeGroup = ({ group, now, suggestAfterDays, selected, onToggle
           </span>
         )}
         {group.root.isDisconnected ? (
-          <span className="inline-flex h-4.5 items-center gap-1 rounded-sm bg-muted px-1.5 text-chip font-medium text-muted-foreground">
+          <span className="inline-flex h-4.5 items-center gap-1 rounded-sm bg-muted px-2 text-chip font-medium text-muted-foreground">
             <Unplug size={11} aria-hidden />
             Disconnected
           </span>
         ) : null}
-        <span className="ml-auto shrink-0 text-secondary font-normal tabular-nums text-muted-foreground">
+        <span className="ml-auto shrink-0 text-meta font-normal tabular-nums text-muted-foreground">
           {pluralize(group.folders.length, 'folder')} · {formatBytes({ bytes: group.bytes })}
         </span>
       </div>

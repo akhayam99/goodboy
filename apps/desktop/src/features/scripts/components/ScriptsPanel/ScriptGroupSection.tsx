@@ -57,14 +57,12 @@ export const ScriptGroupSection = ({
           />
           <span className="truncate text-row text-foreground">{group.projectName}</span>
           {group.branch === '' ? null : (
-            <span className="flex min-w-0 items-center gap-1 text-secondary text-faint-foreground">
+            <span className="flex min-w-0 items-center gap-1 text-meta text-faint-foreground">
               <BranchIcon size={ICON_SIZE.row} aria-hidden className="shrink-0" />
               <span className="truncate">{group.branch}</span>
             </span>
           )}
-          <span className="shrink-0 text-secondary tabular-nums text-muted-foreground">
-            {count}
-          </span>
+          <span className="shrink-0 text-meta tabular-nums text-muted-foreground">{count}</span>
         </button>
         {group.isReady ? (
           <RefreshIconButton

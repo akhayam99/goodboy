@@ -68,12 +68,12 @@ export const WorkflowNodeRoutingRow = ({ sessionId, agent, step, connectedProvid
   };
 
   return (
-    <li className="flex min-w-0 flex-col gap-1.5 rounded-md border border-border-soft bg-background px-2 py-1.5">
+    <li className="flex min-w-0 flex-col gap-2 rounded-md border border-border-soft bg-background px-2 py-2">
       <div className="flex min-w-0 items-center gap-2">
         <button
           type="button"
           onClick={() => navigate({ to: agentPlace({ sessionId, agentId: agent.id }) })}
-          className="min-w-0 flex-1 truncate text-left text-secondary font-medium text-foreground transition-colors hover:text-primary"
+          className="min-w-0 flex-1 truncate text-left text-chip text-foreground transition-colors hover:text-primary"
         >
           {agent.name}
         </button>
@@ -133,19 +133,19 @@ export const WorkflowNodeRoutingRow = ({ sessionId, agent, step, connectedProvid
             model={shown?.model ?? null}
             effort={shown?.effort ?? null}
           />
-          <span className="min-w-0 flex-1 truncate text-secondary text-muted-foreground">
+          <span className="min-w-0 flex-1 truncate text-meta text-muted-foreground">
             {WORKFLOW_ROUTING_COPY.immutableNote}
           </span>
         </div>
       )}
       {view.difficultyLabel != null || view.reason !== '' ? (
-        <p className="text-2xs leading-relaxed text-muted-foreground">
+        <p className="text-meta leading-relaxed text-muted-foreground">
           {view.difficultyLabel != null ? `${view.difficultyLabel}. ` : ''}
           {view.reason}
         </p>
       ) : null}
       {view.error != null ? (
-        <p role="alert" className="text-2xs leading-relaxed text-danger">
+        <p role="alert" className="text-meta leading-relaxed text-danger">
           {view.error}
         </p>
       ) : null}

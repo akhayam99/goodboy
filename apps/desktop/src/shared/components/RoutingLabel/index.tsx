@@ -12,6 +12,7 @@ type Props = {
   readonly planned?: PlannedRouting | null;
   readonly isEffortObserved?: boolean;
   readonly isColumn?: boolean;
+  readonly hideName?: boolean;
   readonly glyphPlacement?: 'leading' | 'trailing';
   readonly muted?: boolean;
   readonly className?: string;
@@ -28,6 +29,7 @@ export const RoutingLabel = ({
   planned = null,
   isEffortObserved = false,
   isColumn = false,
+  hideName = false,
   glyphPlacement = 'leading',
   muted = false,
   className,
@@ -60,7 +62,7 @@ export const RoutingLabel = ({
           <span
             data-routing-part="name"
             data-model-id={model ?? undefined}
-            className={WORK_META_COLUMN.routingName}
+            className={cn(WORK_META_COLUMN.routingName, hideName && 'sr-only')}
           >
             {routingNameText(shown.label)}
           </span>
@@ -82,7 +84,7 @@ export const RoutingLabel = ({
 
   if (shown.label == null) {
     return (
-      <span className={cn('inline-flex min-w-0 items-center gap-1 text-secondary', className)}>
+      <span className={cn('inline-flex min-w-0 items-center gap-1 text-meta', className)}>
         <span className="text-faint-foreground">{MISSING_LABEL}</span>
       </span>
     );
@@ -92,7 +94,7 @@ export const RoutingLabel = ({
       <span
         data-testid={shown.isDiverged ? 'routing-divergence' : undefined}
         className={cn(
-          'inline-flex min-w-0 items-center gap-1 text-secondary',
+          'inline-flex min-w-0 items-center gap-1 text-meta',
           muted && 'opacity-60',
           shown.isDiverged && DIVERGED_CLASS,
           className,

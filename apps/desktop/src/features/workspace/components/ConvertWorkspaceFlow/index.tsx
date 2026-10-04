@@ -20,6 +20,7 @@ import {
 } from '@goodboy/core';
 import { Check, GitBranch } from 'lucide-react';
 import { useAppStore } from '../../../../store';
+import { NAMES } from '../../../../shared/names';
 import { tauriGhRunner } from '../../../integrations/github/github';
 import { lastPathSegment } from '../WorkspaceLinkForm/lastPathSegment';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -43,7 +44,7 @@ const HOST_NAME: Record<Host, string> = {
 
 const ACTION_OPTIONS = [
   { value: 'create', label: 'Create new' },
-  { value: 'link', label: 'Link existing' },
+  { value: 'link', label: NAMES.addExisting },
 ] as const;
 
 const VISIBILITY_OPTIONS = [
@@ -226,11 +227,11 @@ export const ConvertWorkspaceFlow = ({ workspaceId, project, onClose }: Props) =
       {isConverted ? (
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-3">
-            <span className="flex items-center gap-1.5 text-label text-success">
+            <span className="flex items-center gap-2 text-label text-success">
               <Check size={ICON_SIZE.row} aria-hidden />
               {project.name} is backed by git
             </span>
-            <p className="text-secondary text-muted-foreground">
+            <p className="text-meta text-muted-foreground">
               New sessions get their own branch. Nothing of yours is committed.
             </p>
           </div>
@@ -244,10 +245,10 @@ export const ConvertWorkspaceFlow = ({ workspaceId, project, onClose }: Props) =
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-4">
             {orphan != null && (
-              <p role="status" className="text-secondary text-warning">
+              <p role="status" className="text-meta text-warning">
                 {orphan.nameWithOwner} was created on GitHub before this failed. It exists on GitHub
                 at {orphan.url} and was not removed. Delete it yourself if you do not want it, or
-                pick it from Link existing.
+                pick it from {NAMES.addExisting}.
               </p>
             )}
 
@@ -260,9 +261,9 @@ export const ConvertWorkspaceFlow = ({ workspaceId, project, onClose }: Props) =
             />
 
             {isCreating ? (
-              <p className="text-secondary text-muted-foreground">
-                Goodboy creates the repository on GitHub. A GitLab project is linked from Link
-                existing instead.
+              <p className="text-meta text-muted-foreground">
+                Goodboy creates the repository on GitHub. A GitLab project is added from{' '}
+                {NAMES.addExisting} instead.
               </p>
             ) : (
               <SegmentedTabs
@@ -278,13 +279,13 @@ export const ConvertWorkspaceFlow = ({ workspaceId, project, onClose }: Props) =
             )}
 
             {isConnected ? (
-              <span className="flex items-center gap-1.5 text-label text-success">
+              <span className="flex items-center gap-2 text-label text-success">
                 <Check size={11} aria-hidden />
                 {HOST_NAME[host]} is connected
               </span>
             ) : (
               <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-subtle px-3 py-2">
-                <span className="flex items-center gap-1.5 text-label text-muted-foreground">
+                <span className="flex items-center gap-2 text-label text-muted-foreground">
                   <StatusDot tone="warning" size="sm" />
                   {reposState.kind === 'unauthenticated'
                     ? 'the GitHub CLI is installed but not signed in'
@@ -298,7 +299,7 @@ export const ConvertWorkspaceFlow = ({ workspaceId, project, onClose }: Props) =
 
             {isCreating && isConnected && (
               <>
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-2">
                   <span className="text-row text-foreground">Repository name</span>
                   <Input
                     value={repoName}
@@ -315,7 +316,7 @@ export const ConvertWorkspaceFlow = ({ workspaceId, project, onClose }: Props) =
                   )}
                 </div>
 
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-2">
                   <span className="text-row text-foreground">Visibility</span>
                   <div role="radiogroup" aria-label="Visibility" className="flex gap-2">
                     {VISIBILITY_OPTIONS.map((option) => (
@@ -339,7 +340,7 @@ export const ConvertWorkspaceFlow = ({ workspaceId, project, onClose }: Props) =
                 </div>
 
                 {nameCheck.kind === 'ok' && visibility !== null && (
-                  <p className="text-secondary text-foreground">
+                  <p className="text-meta text-foreground">
                     Create {repoDestination({ owner: githubOwner, name: nameCheck.name })} as a{' '}
                     {visibility} repository and set it as this folder&apos;s origin remote.
                   </p>
@@ -348,7 +349,7 @@ export const ConvertWorkspaceFlow = ({ workspaceId, project, onClose }: Props) =
             )}
 
             {!isCreating && host === 'github' && isConnected && (
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-2">
                 <span className="text-row text-foreground">Repository</span>
                 <Listbox
                   isBlock
@@ -383,7 +384,7 @@ export const ConvertWorkspaceFlow = ({ workspaceId, project, onClose }: Props) =
             )}
 
             {!isCreating && (host === 'gitlab' || selectedRepo === MANUAL_REPO) && (
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-2">
                 <span className="text-row text-foreground">Remote URL</span>
                 <Input
                   value={manualUrl}
@@ -391,16 +392,16 @@ export const ConvertWorkspaceFlow = ({ workspaceId, project, onClose }: Props) =
                   onChange={(event) => setManualUrl(event.target.value)}
                   disabled={isBusy || !isConnected}
                 />
-                <p className="text-secondary text-muted-foreground">
+                <p className="text-meta text-muted-foreground">
                   Create the repository on {HOST_NAME[host]} first, then paste its clone url here.
                 </p>
               </div>
             )}
 
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-2">
               <span className="text-row text-foreground">What happens</span>
-              <ul className="flex flex-col gap-1 text-secondary text-muted-foreground">
-                <li className="flex items-center gap-1.5">
+              <ul className="flex flex-col gap-1 text-meta text-muted-foreground">
+                <li className="flex items-center gap-2">
                   <GitBranch size={11} aria-hidden className="shrink-0" />
                   Git starts tracking {project.rootPath}
                 </li>

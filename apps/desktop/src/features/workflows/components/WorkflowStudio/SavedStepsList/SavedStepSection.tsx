@@ -7,9 +7,7 @@ type Props = {
 
 export const SavedStepSection = ({ label, children }: Props) => (
   <section aria-label={label} className="flex min-w-0 flex-col gap-1">
-    <h3 className="px-2 text-chip font-semibold uppercase tracking-eyebrow text-faint-foreground">
-      {label}
-    </h3>
+    <h3 className="px-2 text-eyebrow text-faint-foreground">{label}</h3>
     <ul className="flex flex-col">{children}</ul>
   </section>
 );

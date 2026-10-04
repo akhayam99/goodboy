@@ -67,7 +67,7 @@ export const ListboxOptionRow = ({
       }}
       className={cn(
         'flex min-h-8 w-full min-w-0 shrink-0 gap-2 rounded-sm px-2 text-left',
-        hasSecondLine ? 'items-start py-1.5' : 'items-center',
+        hasSecondLine ? 'items-start py-2' : 'items-center',
         isDisabled
           ? 'cursor-not-allowed text-disabled-foreground'
           : 'cursor-pointer text-foreground',
@@ -110,7 +110,7 @@ export const ListboxOptionRow = ({
         {hasSecondLine ? (
           <span
             className={cn(
-              'min-w-0 truncate text-secondary',
+              'min-w-0 truncate text-meta',
               isDisabled ? 'text-disabled-foreground' : 'text-faint-foreground',
             )}
           >
@@ -121,7 +121,7 @@ export const ListboxOptionRow = ({
       {meta !== undefined ? (
         <span
           className={cn(
-            'shrink-0 text-secondary tabular-nums text-faint-foreground',
+            'shrink-0 text-meta tabular-nums text-faint-foreground',
             hasSecondLine && 'mt-0.5',
           )}
         >

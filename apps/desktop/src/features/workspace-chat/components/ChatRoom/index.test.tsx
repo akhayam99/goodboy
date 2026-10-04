@@ -272,7 +272,7 @@ describe('ChatRoom', () => {
     expect(store.navigate).not.toHaveBeenCalled();
   });
 
-  it('says when the chat could not be linked and links it on Try again', async () => {
+  it('says when the chat could not be linked and links it on Retry', async () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     store.recordChatLink.mockRejectedValueOnce(new Error('disk full'));
     renderRoom({ chat: CHAT });
@@ -286,7 +286,7 @@ describe('ChatRoom', () => {
     screen.getByText("Couldn't link the chat to the session");
     expect(store.navigate).not.toHaveBeenCalled();
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     });
 
     expect(screen.queryByText("Couldn't link the chat to the session")).toBeNull();
@@ -556,7 +556,7 @@ describe('ChatRoom', () => {
 
     const copy = screen.getByRole('button', { name: 'Copy the answer' });
     const startHere = screen.getByRole('button', { name: 'Start work from here' });
-    for (const token of ['text-secondary', 'text-faint-foreground', 'h-6', 'px-1.5']) {
+    for (const token of ['text-meta', 'text-faint-foreground', 'h-6', 'px-2']) {
       expect(copy.classList.contains(token)).toBe(true);
       expect(startHere.classList.contains(token)).toBe(true);
     }

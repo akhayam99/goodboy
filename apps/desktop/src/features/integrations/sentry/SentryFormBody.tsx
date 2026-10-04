@@ -25,7 +25,7 @@ export const SentryFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
           credentialId={sentry?.credentialId ?? null}
           primary={`Connected to ${sentryConfig.projectName ?? sentryConfig.project}`}
           secondary={`${sentryConfig.org}/${sentryConfig.project}`}
-          disconnectDescription="Unlinks this workspace from the Sentry personal API key. The key stays saved for your other workspaces."
+          disconnectDescription="Disconnects this workspace from the Sentry personal API key. The key stays saved for your other workspaces."
           onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'sentry' })}
         />
         {sentry.credentialId == null ? null : (

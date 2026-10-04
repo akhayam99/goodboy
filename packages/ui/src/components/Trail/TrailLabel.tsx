@@ -25,7 +25,7 @@ export const TrailLabel = ({ label, isCurrent, isIconOnly, delayStyle }: Props) 
       className={cn(
         'min-w-0 truncate',
         'motion-safe:transition-[opacity,padding] motion-safe:duration-120 motion-safe:ease-out motion-reduce:transition-opacity motion-reduce:duration-100',
-        isIconOnly ? 'pl-0 opacity-0' : 'pl-1.5 opacity-100',
+        isIconOnly ? 'pl-0 opacity-0' : 'pl-2 opacity-100',
       )}
     >
       {label}

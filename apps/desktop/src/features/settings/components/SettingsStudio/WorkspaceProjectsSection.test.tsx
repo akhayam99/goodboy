@@ -251,7 +251,7 @@ describe('WorkspaceProjectsSection', () => {
     expect(within(popover).getByLabelText('Project path')).toBeDefined();
     expect(within(popover).getByRole('button', { name: 'Browse' })).toBeDefined();
     expect(within(popover).getByRole('button', { name: 'Start a new project' })).toBeDefined();
-    expect(within(popover).getByRole('button', { name: 'Link a plain folder' })).toBeDefined();
+    expect(within(popover).getByRole('button', { name: 'Add a plain folder' })).toBeDefined();
   });
 
   it('shows the base branch picker in the editor, repo rows only', () => {
@@ -321,11 +321,11 @@ describe('WorkspaceProjectsSection', () => {
     ];
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Unlink notify-relay' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove link to notify-relay' }));
     expect(state.removeProject).not.toHaveBeenCalled();
 
-    const confirm = screen.getByRole('group', { name: 'Unlink notify-relay?' });
-    fireEvent.click(within(confirm).getByRole('button', { name: 'Unlink' }));
+    const confirm = screen.getByRole('group', { name: 'Remove link to notify-relay?' });
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Remove link' }));
 
     await waitFor(() =>
       expect(state.removeProject).toHaveBeenCalledWith({ projectId: 'proj-docs' }),
@@ -344,11 +344,11 @@ describe('WorkspaceProjectsSection', () => {
     ];
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Unlink notify-relay' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove link to notify-relay' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     await waitFor(() =>
-      expect(screen.queryByRole('group', { name: 'Unlink notify-relay?' })).toBeNull(),
+      expect(screen.queryByRole('group', { name: 'Remove link to notify-relay?' })).toBeNull(),
     );
     expect(state.removeProject).not.toHaveBeenCalled();
   });

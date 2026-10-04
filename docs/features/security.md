@@ -22,7 +22,7 @@ Move your setup to a new machine without carrying a flagged token: an export lea
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-export-import-light.webp" alt="Settings, App, Backup, Export: checkboxes for Workspaces, Projects, Folder paths (off), Your profile, Workflows you made, Workflows the orchestrator wrote (off), Saved scripts, Permission rules, Budget rules, Linked integrations and App preferences, and a Never included box listing API keys and tokens, sign-ins, sessions, artifacts, worktree folders, usage history and notifications">
 </picture>
 
-Move your setup to another Mac, or keep a copy. **Backup** exports in groups: workspaces, projects, your profile, workflows you made, saved scripts, permission rules, budget rules, linked integrations and app preferences. **Folder paths** start off because they contain your username, and **Never included** lists what always stays behind, keys and sign-ins first. **Import** shows what it adds before writing, adds and updates but never deletes, and imported integrations ask you to sign in again.
+Move your setup to another Mac, or keep a copy. **Backup** exports in groups: workspaces, projects, your profile, workflows you made, saved scripts, permission rules, spend caps, linked integrations and app preferences. **Folder paths** start off because they contain your username, and **Never included** lists what always stays behind, keys and sign-ins first. **Import** shows what it adds before writing, adds and updates but never deletes, and imported integrations ask you to sign in again.
 
 ### Backup before a data update
 

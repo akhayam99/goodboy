@@ -17,7 +17,7 @@ export const ChangeList = ({ changes, onReveal }: Props) => (
       <Eyebrow label={`Changes on this screen · ${changes.length}`} />
     </h3>
     {changes.length === 0 ? (
-      <p className="text-secondary text-muted-foreground">Nothing changed on this screen.</p>
+      <p className="text-meta text-muted-foreground">Nothing changed on this screen.</p>
     ) : (
       <ul className="flex min-w-0 flex-col gap-0.5">
         {changes.map(({ change, text }) => (
@@ -25,12 +25,12 @@ export const ChangeList = ({ changes, onReveal }: Props) => (
             <SelectableRow
               selected={false}
               onClick={() => onReveal(change)}
-              className="items-center gap-2 px-1.5 py-1 text-body"
+              className="items-center gap-2 px-2 py-1 text-body"
             >
               <span aria-hidden className="w-4 shrink-0 text-center font-mono">
                 {CHANGE_GLYPH[change.change]}
               </span>
-              <span className="w-16 shrink-0 text-secondary text-muted-foreground">
+              <span className="w-16 shrink-0 text-meta text-muted-foreground">
                 {CHANGE_WORD[change.change]}
               </span>
               <span className="min-w-0 flex-1 truncate">{text}</span>

@@ -82,7 +82,7 @@ const RULES = [
     when: (tokens) => leadingIsAbsentOr(tokens, ['leading-4']),
   },
   {
-    role: 'text-secondary',
+    role: 'text-meta',
     needs: ['text-2xs'],
     drops: [],
     when: (tokens) => leadingIsAbsentOr(tokens, ['leading-4']),
@@ -103,7 +103,7 @@ const LEADING_BY_ROLE = {
   'text-prose': ['leading-relaxed'],
   'text-body': ['leading-5'],
   'text-label': ['leading-4'],
-  'text-secondary': ['leading-4'],
+  'text-meta': ['leading-4'],
 };
 
 const rewriteTokens = (tokens) => {

@@ -264,7 +264,7 @@ describe('maybeAutoAdvanceWorkflow', () => {
         kind: 'error',
         severity: 'warning',
         title: 'Workflow blocked',
-        body: 'Autorun stopped at s0 because the step failed.',
+        body: 'The run stopped at s0 because the step failed.',
         sessionId: SESSION_ID,
       }),
     );
@@ -513,7 +513,7 @@ describe('maybeAutoAdvanceWorkflow', () => {
     expect(state['orchestrateNextStep']).not.toHaveBeenCalled();
   });
 
-  it('pauses the run past its spend limit without holding back its sibling', async () => {
+  it('pauses the run past its spend cap without holding back its sibling', async () => {
     const SECOND_ID = 'run-2' as WorkflowRunId;
     const cappedAgent: Agent = {
       ...makeAgent('s0', 'pending', 0),
@@ -550,7 +550,7 @@ describe('maybeAutoAdvanceWorkflow', () => {
 
     expect(updateOrchestrationStopSpy).toHaveBeenCalledWith({}, RUN_ID, {
       kind: 'budget',
-      message: expect.stringContaining('spend limit'),
+      message: expect.stringContaining('spend cap'),
     });
     expect(state['activateWorkflowAgent']).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
@@ -572,7 +572,7 @@ describe('maybeAutoAdvanceWorkflow', () => {
     const run = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
     expect(run.orchestrationStop).toEqual({
       kind: 'budget',
-      message: 'Paused at the $10.00 spend limit for this session.',
+      message: 'Paused at the $10.00 spend cap for this session.',
     });
   });
 
@@ -605,7 +605,7 @@ describe('maybeAutoAdvanceWorkflow', () => {
     await advance(SESSION_ID);
     expect(updateOrchestrationStopSpy).toHaveBeenCalledWith({}, RUN_ID, {
       kind: 'budget',
-      message: 'Paused at the $10.00 spend limit for this session.',
+      message: 'Paused at the $10.00 spend cap for this session.',
     });
     state['budgetAlerts'] = [];
     listOpenQuestionsSpy.mockResolvedValue([

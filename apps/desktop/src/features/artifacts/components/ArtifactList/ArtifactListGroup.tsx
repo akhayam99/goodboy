@@ -36,7 +36,7 @@ export const ArtifactListGroup = ({
         aria-expanded={isOpen}
         aria-controls={panelId}
         onClick={() => onToggleGroup(group)}
-        className="flex h-7 w-fit items-center gap-1.5 rounded-md pr-1.5 pl-0.5 text-label text-muted-foreground hover:text-foreground"
+        className="flex h-7 w-fit items-center gap-2 rounded-md pr-2 pl-0.5 text-label text-muted-foreground hover:text-foreground"
       >
         <ChevronDown
           size={ICON_SIZE.control}

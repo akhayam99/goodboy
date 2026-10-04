@@ -8,6 +8,7 @@ import { resolveEditorBinary } from '../../lib/editorSettings';
 import { revealInFileManager } from '../../lib/reveal';
 import { formatSpan } from '../../utils/time/formatSpan';
 import { ICON_SIZE } from '../conceptIcons';
+import { NAMES } from '../../names';
 import { BaseBranchSelect } from '../../../features/worktree/BaseBranchSelect';
 import { commitBaseBranch } from '../../../features/worktree/commitBaseBranch';
 import { ProjectAfterMergeField } from './ProjectAfterMergeField';
@@ -79,9 +80,7 @@ export const ProjectRowEditor = ({ project, busy, onArmUnlink, ignoreField }: Pr
       <div className="flex flex-col gap-1">
         <span className="text-label text-muted-foreground">Folder</span>
         <div className="flex items-center gap-2">
-          <span className="min-w-0 flex-1 truncate text-code text-secondary">
-            {project.rootPath}
-          </span>
+          <span className="min-w-0 flex-1 truncate text-code text-meta">{project.rootPath}</span>
           <Button variant="ghost" size="sm" onClick={() => void reveal()} disabled={busy}>
             <FolderOpen size={ICON_SIZE.row} aria-hidden />
             Show in Finder
@@ -101,7 +100,7 @@ export const ProjectRowEditor = ({ project, busy, onArmUnlink, ignoreField }: Pr
         </Button>
         <Button variant="ghost" size="sm" onClick={onArmUnlink} disabled={busy}>
           <Unplug size={ICON_SIZE.row} aria-hidden />
-          Unlink
+          {NAMES.removeLink}
         </Button>
       </div>
     </div>

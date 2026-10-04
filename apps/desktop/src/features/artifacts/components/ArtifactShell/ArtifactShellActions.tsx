@@ -33,7 +33,7 @@ export const ArtifactShellActions = ({ target, onArm }: Props) => {
     .sort((left, right) => (BUTTON_ORDER[left.slot] ?? 0) - (BUTTON_ORDER[right.slot] ?? 0));
 
   return (
-    <span data-testid="artifact-actions" className="flex min-w-0 shrink-0 items-center gap-1.5">
+    <span data-testid="artifact-actions" className="flex min-w-0 shrink-0 items-center gap-2">
       {buttons.map((action) => (
         <Button
           key={action.id}
@@ -59,7 +59,7 @@ export const ArtifactShellActions = ({ target, onArm }: Props) => {
         <ArtifactOverflowMenu
           target={target}
           label="More"
-          triggerClassName="p-1.5"
+          triggerClassName="p-2"
           viewing={viewing}
         />
       ) : null}

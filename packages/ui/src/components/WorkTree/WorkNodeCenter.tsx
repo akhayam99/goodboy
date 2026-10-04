@@ -9,7 +9,7 @@ type Props = {
   readonly glyphSize?: number;
 };
 
-const SIGN_CLASS = 'text-2xs font-semibold leading-none tabular-nums';
+const SIGN_CLASS = 'text-meta font-semibold leading-none tabular-nums';
 
 type SignParams = {
   readonly sign: string;
@@ -35,7 +35,7 @@ const markOf = ({ mark, tone }: MarkParams) => {
     return (
       <span
         className={cn(
-          'text-3xs font-semibold leading-none tabular-nums',
+          'text-chip font-semibold leading-none tabular-nums',
           tone === 'faint' ? 'text-faint-foreground' : 'text-foreground',
         )}
       >

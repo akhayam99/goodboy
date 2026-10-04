@@ -120,7 +120,7 @@ export const WorkspaceLauncher = () => {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search workspaces or paths…"
-            className="w-full rounded-lg border border-border bg-background py-2.5 pl-9 pr-4 text-body focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            className="w-full rounded-lg border border-border bg-background py-3 pl-9 pr-4 text-body focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           />
         </div>
 
@@ -162,7 +162,7 @@ export const WorkspaceLauncher = () => {
                         data-tauri-drag-region="false"
                         aria-label={`Disconnect ${w.name}`}
                         onClick={() => setDisconnectTarget(w)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md border border-border-soft bg-background p-1.5 text-muted-foreground opacity-0 transition-opacity hover:text-danger focus-visible:opacity-100 group-hover/launcher:opacity-100"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md border border-border-soft bg-background p-2 text-muted-foreground opacity-0 transition-opacity hover:text-danger focus-visible:opacity-100 group-hover/launcher:opacity-100"
                       >
                         <Unplug size={ICON_SIZE.row} aria-hidden />
                       </button>

@@ -103,7 +103,7 @@ export const MenuChoicePanel = ({ label, choices, anchor, onChoose, onBack, onCl
             data-menu-label={choice.label}
             onClick={() => onChoose(choice.id)}
             className={cn(
-              'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-foreground hover:bg-hover focus:bg-hover focus-visible:outline-none',
+              'flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left text-foreground hover:bg-hover focus:bg-hover focus-visible:outline-none',
               choice.isCurrent && 'text-row',
             )}
           >

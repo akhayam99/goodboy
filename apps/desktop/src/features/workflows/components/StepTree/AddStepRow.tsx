@@ -14,7 +14,7 @@ type Props = {
 };
 
 export const AddStepRow = ({ span, identityIndex, disabled, savedSteps, onAdd }: Props) => (
-  <li className="flex min-w-0 gap-1.5">
+  <li className="flex min-w-0 gap-2">
     <StepTreeGutter
       span={span}
       identityIndex={identityIndex}

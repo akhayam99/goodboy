@@ -17,7 +17,7 @@ describe('cn', () => {
   });
 
   it('lets a later role or size replace an earlier one', () => {
-    expect(cn('text-secondary', 'text-label')).toBe('text-label');
+    expect(cn('text-meta', 'text-label')).toBe('text-label');
     expect(cn('text-body', 'text-xs')).toBe('text-xs');
   });
 });

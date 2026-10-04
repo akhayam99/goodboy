@@ -5,6 +5,7 @@ import type { ProviderDisplayInfo } from '../../../../features/providers/provide
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
 import { SlidersHorizontal } from 'lucide-react';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/names';
 import { useAppStore } from '../../../../store';
 import { providerRailStatus } from '../../providerRailStatus';
 
@@ -28,14 +29,14 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
             selected={focusedId === 'defaults'}
             onClick={onSelectDefaults}
             ariaCurrent={focusedId === 'defaults'}
-            className="items-center gap-2.5 px-2.5 py-2"
+            className="items-center gap-3 px-3 py-2"
           >
             <SlidersHorizontal
               size={ICON_SIZE.control}
               aria-hidden
               className="shrink-0 text-primary"
             />
-            <span className="text-row text-foreground">Defaults</span>
+            <span className="text-row text-foreground">{NAMES.models}</span>
           </SelectableRow>
         </li>
       )}

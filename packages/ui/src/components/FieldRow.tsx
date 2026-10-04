@@ -66,12 +66,12 @@ export const FieldRow = ({
       {marker == null ? (
         labelText
       ) : (
-        <span className="flex min-w-0 items-center gap-1.5">
+        <span className="flex min-w-0 items-center gap-2">
           {labelText}
           {marker}
         </span>
       )}
-      {help ? <p className="text-2xs leading-relaxed text-muted-foreground">{help}</p> : null}
+      {help ? <p className="text-meta leading-relaxed text-muted-foreground">{help}</p> : null}
     </div>
   );
 

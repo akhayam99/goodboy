@@ -87,7 +87,7 @@ export const OrchestratorHintLog = ({ hints, readingHintIds, runAttachments, onR
           {stepsLabel != null && (
             <span
               data-testid="orchestrator-hint-read-steps"
-              className="min-w-0 truncate text-secondary tabular-nums text-muted-foreground"
+              className="min-w-0 truncate text-meta tabular-nums text-muted-foreground"
             >
               {stepsLabel}
             </span>

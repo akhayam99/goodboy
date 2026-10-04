@@ -36,7 +36,7 @@ export const SelectionConfirm = ({
   return (
     <InlineConfirm {...rest} className={cn('w-full max-w-sm bg-floating shadow-lg', className)}>
       {goes === undefined && stays === undefined ? null : (
-        <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2.5 gap-y-0.5 text-muted-foreground">
+        <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-muted-foreground">
           {goes === undefined ? null : (
             <>
               <dt className="text-eyebrow text-faint-foreground">Goes</dt>

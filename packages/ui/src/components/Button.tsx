@@ -44,7 +44,7 @@ const outlineClasses = (variant: ButtonVariant): string => {
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: 'h-7 px-2.5 text-label',
+  sm: 'h-7 px-3 text-label',
   md: 'h-8 px-3 text-body',
 };
 
@@ -66,7 +66,7 @@ export const Button = ({
       disabled={disabled || isBusy}
       aria-busy={isBusy ? true : undefined}
       className={cn(
-        'inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50',
+        'inline-flex items-center justify-center whitespace-nowrap gap-2 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50',
         FOCUS_RING,
         emphasis === 'outline' ? outlineClasses(variant) : variantClasses[variant],
         sizeClasses[size],

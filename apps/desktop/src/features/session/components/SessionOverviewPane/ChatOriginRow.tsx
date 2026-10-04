@@ -52,7 +52,7 @@ export const ChatOriginRow = ({ session }: Props) => {
           type="button"
           onClick={() => openStudio({ studio: { kind: 'chat', chatId: origin.chatId } })}
           title={`Open the chat ${origin.title}`}
-          className="flex min-w-0 items-center gap-1.5 self-start rounded-sm text-left text-label text-muted-foreground motion-safe:transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          className="flex min-w-0 items-center gap-2 self-start rounded-sm text-left text-label text-muted-foreground motion-safe:transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
           <CONCEPT_ICONS.chat size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           <span className="shrink-0">{`${KIND_LABEL[origin.kind]} ·`}</span>

@@ -25,6 +25,7 @@ import {
   hasDecisionChanges,
 } from '../../../../store/slices/contextDrawer/decisionChangesSince';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/names';
 import { shareableContext } from '../../context/shareableContext';
 import {
   CONTEXT_TABS,
@@ -278,7 +279,7 @@ export const ContextDrawer = ({
           <CopyButton
             presentation="icon"
             value={brief}
-            label="Copy as brief"
+            label={NAMES.copyContext}
             size={ICON_SIZE.row}
           />
         )
@@ -305,7 +306,7 @@ export const ContextDrawer = ({
         <div className="flex flex-col gap-4">
           {body}
           {isEditableTab ? (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="sm"

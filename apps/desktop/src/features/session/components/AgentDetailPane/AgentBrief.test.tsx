@@ -534,7 +534,7 @@ describe('AgentBrief handoff line', () => {
     createdAt: '2026-09-25T12:04:00.000Z' as IsoDateTime,
   };
 
-  it('leads with one line naming who sent the agent and what for', () => {
+  it('leads with one line naming who sent the agent, without the ask', () => {
     state.agentHandoffs = { [agentId]: handoff };
     state.agentTurnState = { [agentId]: { kind: 'running', runId: 'r', startedAt: '' } };
 
@@ -543,7 +543,7 @@ describe('AgentBrief handoff line', () => {
     const line = screen.getByTestId('agent-brief-handoff-line');
     expect(line.textContent).toContain('Sent by');
     expect(line.textContent).toContain('Orchestrator · step 4');
-    expect(line.textContent).toContain('Backfill the settled batches behind a flag.');
+    expect(line.textContent).not.toContain('Backfill the settled batches behind a flag.');
     expect(
       line.compareDocumentPosition(screen.getByText('Now')) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);

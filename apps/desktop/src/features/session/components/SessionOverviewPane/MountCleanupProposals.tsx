@@ -46,21 +46,21 @@ export const MountCleanupProposals = ({ sessionId }: Props) => {
   };
 
   return (
-    <div className="flex flex-col gap-1.5 rounded-lg border border-border-soft bg-elevated px-3 py-2">
+    <div className="flex flex-col gap-2 rounded-lg border border-border-soft bg-elevated px-3 py-2">
       {proposals.map((proposal) => (
         <div key={proposal.requestId} className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 flex-col">
             <span className="truncate text-label text-foreground">
               {proposal.branch} ({reasonLabel(proposal)})
             </span>
-            <span className="truncate text-secondary text-muted-foreground">
+            <span className="truncate text-meta text-muted-foreground">
               {proposal.worktreePath}
               {proposal.sizeBytes === null
                 ? ''
                 : ` (${formatBytes({ bytes: proposal.sizeBytes })})`}
             </span>
             {proposal.keptBecause !== undefined && (
-              <span className="truncate text-secondary text-muted-foreground">
+              <span className="truncate text-meta text-muted-foreground">
                 {proposal.keptBecause}
               </span>
             )}

@@ -3,7 +3,7 @@ import type { AgentCardDensity } from './agentCardDensity';
 
 const SIZE: Record<AgentCardDensity, string> = {
   lane: 'text-body',
-  sidebar: 'text-secondary',
+  sidebar: 'text-meta',
 };
 
 const RESTING_COLOR: Record<AgentCardDensity, string> = {

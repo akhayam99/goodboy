@@ -41,7 +41,7 @@ export const ReviewHeaderMeta = ({ sessionId, entries, noPullRequestLine }: Prop
               aria-label={link.label
                 .replace(/^Open PR/, 'Open pull request')
                 .replace(/^Open MR/, 'Open merge request')}
-              className="inline-flex w-fit items-center gap-1 rounded-sm text-secondary text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors"
+              className="inline-flex w-fit items-center gap-1 rounded-sm text-meta text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors"
             >
               {selected.kind === 'gitlab' ? 'Merge request' : 'Pull request'}
               <ChevronRight size={ICON_SIZE.row} aria-hidden />
@@ -52,10 +52,7 @@ export const ReviewHeaderMeta = ({ sessionId, entries, noPullRequestLine }: Prop
         noPullRequestLine
       )}
       {summary.length > 0 && (
-        <p
-          aria-label="Comment summary"
-          className="text-secondary tabular-nums text-muted-foreground"
-        >
+        <p aria-label="Comment summary" className="text-meta tabular-nums text-muted-foreground">
           {summary.map(({ count, noun }, index) => (
             <span key={noun}>
               {index > 0 && <span aria-hidden> · </span>}

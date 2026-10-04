@@ -58,7 +58,7 @@ export const CrumbMenuActions = ({ actions, confirmingId, onConfirmingChange, on
             </span>
             <span className="min-w-0 truncate">{action.label}</span>
             {action.hint != null ? (
-              <span className="min-w-0 truncate text-secondary text-faint-foreground">
+              <span className="min-w-0 truncate text-meta text-faint-foreground">
                 {action.hint}
               </span>
             ) : null}

@@ -127,7 +127,7 @@ export const requestScribe = (set: SetFn, get: GetFn) => {
         agentId,
         mountId,
         content: kickoff,
-        handoff: { instruction: kickoff, plan: null },
+        handoff: { sender: { kind: 'scribe' }, instruction: kickoff, plan: null },
       })
       .catch((error: unknown) => {
         patchScribeWork({ set, key, patch: { status: 'failed', error: formatError(error) } });

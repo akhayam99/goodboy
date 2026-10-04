@@ -225,10 +225,7 @@ export const SessionActivityBar = ({
                       tone={groupPresentation?.tone ?? 'neutral'}
                     />
                     {group.sessions.length > 0 ? (
-                      <span
-                        aria-hidden
-                        className="text-secondary tabular-nums text-faint-foreground"
-                      >
+                      <span aria-hidden className="text-meta tabular-nums text-faint-foreground">
                         {group.sessions.length}
                       </span>
                     ) : null}

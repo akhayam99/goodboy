@@ -104,7 +104,7 @@ export const PrOverview = ({ pr, sessionId, canEdit, editEventName, onMutated }:
                 onClick={() => setEditing('title')}
                 title="Edit title"
                 aria-label="Edit title"
-                className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-chip font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
+                className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-chip font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
               >
                 <Pencil size={11} aria-hidden />
                 Edit
@@ -126,7 +126,7 @@ export const PrOverview = ({ pr, sessionId, canEdit, editEventName, onMutated }:
                 }
               }}
               autoFocus
-              className="w-full rounded-md border border-border-soft bg-background px-2.5 py-1.5 text-body text-foreground outline-none focus:border-primary"
+              className="w-full rounded-md border border-border-soft bg-background px-3 py-2 text-body text-foreground outline-none focus:border-primary"
             />
             <SaveCancel
               isBusy={busy === 'title'}
@@ -160,7 +160,7 @@ export const PrOverview = ({ pr, sessionId, canEdit, editEventName, onMutated }:
               <button
                 type="button"
                 onClick={() => setEditing('body')}
-                className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-chip font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
+                className="inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-chip font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
               >
                 <Pencil size={11} aria-hidden />
                 Edit

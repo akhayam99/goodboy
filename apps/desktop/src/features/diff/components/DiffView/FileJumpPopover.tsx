@@ -48,7 +48,7 @@ export const FileJumpPopover = ({ files, activePath, commentCountOf, isViewed, o
           aria-activedescendant={jump.results.length > 0 ? activeId : undefined}
           className="min-w-0 flex-1 bg-transparent text-body text-foreground outline-none placeholder:text-faint-foreground"
         />
-        <span className="shrink-0 text-secondary tabular-nums text-faint-foreground">
+        <span className="shrink-0 text-meta tabular-nums text-faint-foreground">
           {jump.results.length}
         </span>
       </label>
@@ -121,7 +121,7 @@ export const FileJumpPopover = ({ files, activePath, commentCountOf, isViewed, o
           )}
         </div>
       </ScrollFade>
-      <div className="flex items-center gap-3 px-3 py-1.5 text-secondary text-faint-foreground">
+      <div className="flex items-center gap-3 px-3 py-1 text-meta text-faint-foreground">
         <span className="flex items-center gap-1">
           <KbdPill>↑</KbdPill>
           <KbdPill>↓</KbdPill>

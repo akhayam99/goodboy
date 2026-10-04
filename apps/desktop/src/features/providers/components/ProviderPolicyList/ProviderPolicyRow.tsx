@@ -54,7 +54,7 @@ export const ProviderPolicyRow = ({
         isDragging && 'opacity-50',
       )}
     >
-      <div className="flex min-w-0 items-center gap-2 px-1 py-1.5">
+      <div className="flex min-w-0 items-center gap-2 px-1 py-2">
         <Tooltip content={`Drag to reorder ${name}`}>
           <button
             type="button"
@@ -74,7 +74,7 @@ export const ProviderPolicyRow = ({
           onClick={onToggleExpand}
           className="flex min-w-0 flex-1 flex-col items-start text-left"
         >
-          <span className="flex items-center gap-1.5 text-row text-foreground">
+          <span className="flex items-center gap-2 text-row text-foreground">
             {name}
             {row.isNew ? (
               <span

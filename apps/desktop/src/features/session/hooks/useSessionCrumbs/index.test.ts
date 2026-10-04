@@ -211,18 +211,13 @@ describe('useSessionCrumbs', () => {
   });
 
   it('parents a step opened from the activity feed on its run, not on overview', () => {
-    expect(labelsOf(null, STEP_AGENT_ID)).toEqual([
-      'Overview',
-      'Workflows',
-      'Refactor',
-      'Implement',
-    ]);
+    expect(labelsOf(null, STEP_AGENT_ID)).toEqual(['Overview', 'Runs', 'Refactor', 'Implement']);
   });
 
   it('reads the same trail when the step is opened from the workflows lens', () => {
     expect(labelsOf('workflows', STEP_AGENT_ID)).toEqual([
       'Overview',
-      'Workflows',
+      'Runs',
       'Refactor',
       'Implement',
     ]);
@@ -231,7 +226,7 @@ describe('useSessionCrumbs', () => {
   it('keeps a step parented on its run while the app sits in another lens', () => {
     expect(labelsOf('agents', STEP_AGENT_ID)).toEqual([
       'Overview',
-      'Workflows',
+      'Runs',
       'Refactor',
       'Implement',
     ]);
@@ -264,7 +259,7 @@ describe('useSessionCrumbs', () => {
   it('parents a cluster child on its father, under the run', () => {
     expect(labelsOf(null, CLUSTER_CHILD_ID)).toEqual([
       'Overview',
-      'Workflows',
+      'Runs',
       'Refactor',
       'Implement',
       'area alpha',
@@ -295,7 +290,7 @@ describe('useSessionCrumbs', () => {
 
     expect(labelsOf(null, DELEGATE_ID)).toEqual([
       'Overview',
-      'Workflows',
+      'Runs',
       'Refactor',
       'Implement',
       'Answers',
@@ -312,7 +307,7 @@ describe('useSessionCrumbs', () => {
   it('leaves the delegate trail short when the question is gone', () => {
     expect(labelsOf(null, DELEGATE_ID)).toEqual([
       'Overview',
-      'Workflows',
+      'Runs',
       'Refactor',
       'Implement',
       'answer: pick a database',

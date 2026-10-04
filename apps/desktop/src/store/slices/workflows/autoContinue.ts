@@ -1,5 +1,6 @@
 import type { Agent, AgentId, IsoDateTime, SessionId, WorkflowRunId } from '@goodboy/types';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
+import { NAMES } from '../../../shared/names';
 import { isHandsFree } from './handsFree';
 import type { GetFn, SetFn } from './types';
 
@@ -20,15 +21,13 @@ const BLOCKED_COPY = {
     title: 'Step blocked',
     handsFree:
       'The agent stopped twice without finishing this step and without asking you anything. Tell it what to do next in the agent chat, or skip the step.',
-    manual:
-      'Autorun is off, so this step waits for you. Tell the agent what to do next in the agent chat, or turn on autorun.',
+    manual: `${NAMES.whenToAsk} is set to ask before each step, so this step waits for you. Tell the agent what to do next in the agent chat, or change ${NAMES.whenToAsk}.`,
   },
   cluster: {
     title: 'Subagent blocked',
     handsFree:
       "The implementer stopped twice without finishing this subagent's part and without asking you anything. Tell it what to do next in the agent chat.",
-    manual:
-      'Autorun is off, so this subagent waits for you. Tell it what to do next in the agent chat, or turn on autorun.',
+    manual: `${NAMES.whenToAsk} is set to ask before each step, so this subagent waits for you. Tell it what to do next in the agent chat, or change ${NAMES.whenToAsk}.`,
   },
 } as const satisfies Record<ContinueUnit, HaltCopy>;
 

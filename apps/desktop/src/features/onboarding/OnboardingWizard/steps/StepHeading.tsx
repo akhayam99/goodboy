@@ -4,7 +4,7 @@ type Props = {
 };
 
 export const StepHeading = ({ title, line }: Props) => (
-  <div className="flex flex-col gap-1.5">
+  <div className="flex flex-col gap-2">
     <h2 tabIndex={-1} data-step-title className="text-title text-foreground outline-none">
       {title}
     </h2>

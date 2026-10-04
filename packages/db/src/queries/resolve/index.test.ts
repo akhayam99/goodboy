@@ -617,6 +617,26 @@ describe('resolve mount target', () => {
     expect((await listActiveResolveAttempts({ db }))[0]?.mountTarget).toEqual(target);
   });
 
+  it('stores the human instructions next to the full text, and reads old rows as null', async () => {
+    const db = await seed();
+    await migrate(db);
+    await db.execute(
+      "INSERT INTO resolve_attempts (id, session_id, agent_id, pr_number, thread_ids_json, provider, model, phase, created_at) VALUES ('old', 'session', 'agent-old', 12, '[]', 'anthropic', 'recorded-model', 'finished', 1)",
+    );
+    await insertResolveAttempt({
+      db,
+      attempt: { ...attempt, humanInstructions: 'Fix the retry cap.' },
+    });
+    const byId = Object.fromEntries(
+      (await listResolveAttempts({ db, sessionId: SESSION })).map((item) => [
+        item.id,
+        item.humanInstructions,
+      ]),
+    );
+    expect(byId.old).toBeNull();
+    expect(byId[attempt.id]).toBe('Fix the retry cap.');
+  });
+
   it('rewrites the target when an unfinished attempt is resubmitted', async () => {
     const db = await seed();
     await migrate(db);

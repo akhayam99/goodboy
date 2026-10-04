@@ -628,7 +628,7 @@ describe('DefaultsPanel', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
     expect(screen.getByText('3 pinned')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Defaults actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Models actions' }));
     fireEvent.click(screen.getByRole('menuitem', { name: /Reset all to Auto/ }));
     expect(state.setWorkspaceOverrides).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Reset all' }));
@@ -651,7 +651,7 @@ describe('DefaultsPanel', () => {
     render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
 
     expect(screen.getByText('1 pinned')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Defaults actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Models actions' }));
     fireEvent.click(screen.getByRole('menuitem', { name: /Reset all to Auto/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Reset all' }));
 

@@ -29,7 +29,7 @@ Write the steps yourself with **Add step**, describe them and press **Generate p
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-preset-light.webp" alt="The workflow builder in Preset mode with the Pick a preset list open: Trace and fix, Harden an endpoint and Migrate a contract, each with a description and its step dots">
 </picture>
 
-In **Preset** mode, pick a saved sequence from the list and edit any step before starting.
+In **Pick a workflow** mode, pick a saved sequence from the list and edit any step before starting.
 
 ### Built-in workflows
 
@@ -53,7 +53,7 @@ Reuse steps across workflows. The 8 built-in steps are read-only, and **Save a c
 
 Put a light model on a scout and a strong one on the planner. A step follows its role by default; **Pin a model** picks its own provider, then **Model**, **Version**, **Variant** and **Effort**, and Goodboy records what actually ran.
 
-### Autorun
+### When to ask
 
 Choose when a run asks: **Ask before each step**, **Ask after the plan** to stop once for your **Approve plan** and then run on its own, or **Run on its own** to move to the next step without you, per run or for the whole session. A guard stops an agent after 4 unattended turns in an hour, and anything you write to it resets the count.
 
@@ -61,11 +61,11 @@ Choose when a run asks: **Ask before each step**, **Ask after the plan** to stop
 
 **Pause** lets the step in flight finish and starts nothing new, even after a restart; **Resume** picks up where the run was. **Skip** passes any step that has not finished, live or stuck, after one inline confirmation, and keeps what it already wrote. When a running step says nothing for 15 minutes, the run says so and offers **Ask it to continue** or **Skip**.
 
-### Workflow rules
+### Run defaults
 
-The **Rules** tab of Workflows sets what every new run starts with: how it asks, the spend cap, and which providers get the next step. **Use providers with room left** sends steps with no pinned provider to the provider with the most 5h and weekly room, keeps a provider at its limit out of new work, and tells you in one sentence where the next step goes. It starts on in workspaces created from 0.16.0 and off in older ones, and it stays off until a provider that reports limits is on. **Guidance** is text every run starts with: the orchestrator reads it in orchestrated runs, and in custom and preset runs it goes to the roles that write code, Implementer and Docs, unless you pick others under Edit, and **Polish** tidies it into one rule per line. In a custom or preset run, a **Guidance** tag marks each step that received it. The builder opens filled from them and says so in a **From your rules** line; a control you change for one run gets a dot and a **Reset**. A run keeps the rules it started with.
+The **Run defaults** tab of Workflows sets what every new run starts with: how it asks, the spend cap, and which providers get the next step. **Use providers with room left** sends steps with no pinned provider to the provider with the most 5h and weekly room, keeps a provider at its limit out of new work, and tells you in one sentence where the next step goes. It starts on in workspaces created from 0.16.0 and off in older ones, and it stays off until a provider that reports limits is on. **Guidance** is text every run starts with: the orchestrator reads it in orchestrated runs, and in custom and preset runs it goes to the roles that write code, Implementer and Docs, unless you pick others under Edit, and **Polish** tidies it into one rule per line. In a custom or preset run, a **Guidance** tag marks each step that received it. The builder opens filled from them. When a control differs for one run, a **From your rules** line names what changed and the control gets a dot and a **Reset**; with nothing changed, the line is not there. A run keeps the rules it started with.
 
-### Spend limit
+### Spend cap
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-spend-dark.webp">

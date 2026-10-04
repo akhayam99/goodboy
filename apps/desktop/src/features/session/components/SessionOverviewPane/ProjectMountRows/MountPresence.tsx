@@ -2,6 +2,7 @@ import { Tooltip, WorkNode } from '@goodboy/ui';
 import type { WorkNodeState } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore, agentPlace } from '../../../../../store';
+import { NAMES } from '../../../../../shared/names';
 import type {
   MountPresenceAgent,
   MountPresenceState,
@@ -18,14 +19,14 @@ const VISIBLE_NODES = 3;
 const NODE: Record<MountPresenceState, { readonly state: WorkNodeState; readonly label: string }> =
   {
     running: { state: 'running', label: 'Running' },
-    needsUser: { state: 'question', label: 'Needs you' },
-    question: { state: 'question', label: 'Waiting on your answer' },
+    needsUser: { state: 'question', label: NAMES.needsYou },
+    question: { state: 'question', label: NAMES.needsYou },
   };
 
 const STATE_PHRASE: Record<MountPresenceState, string> = {
   running: 'is working',
   needsUser: 'needs you',
-  question: 'is waiting on your answer',
+  question: 'needs your answer',
 };
 
 type CountLabelParams = {

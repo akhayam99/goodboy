@@ -1945,7 +1945,7 @@ describe('orchestrateNextStep', () => {
     expect(decideSpy).not.toHaveBeenCalled();
     expect(updateStopSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, {
       kind: 'budget',
-      message: expect.stringContaining('spend limit'),
+      message: expect.stringContaining('spend cap'),
     });
   });
 
@@ -1965,8 +1965,8 @@ describe('orchestrateNextStep', () => {
       expect.objectContaining({
         kind: 'budget-cap',
         severity: 'warning',
-        title: expect.stringContaining('spend limit'),
-        body: expect.stringContaining('spend limit'),
+        title: expect.stringContaining('spend cap'),
+        body: expect.stringContaining('spend cap'),
         sessionId: SESSION_ID,
       }),
     );
@@ -2004,7 +2004,7 @@ describe('orchestrateNextStep', () => {
     expect(budgetCalls()).toBe(2);
   });
 
-  it('refuses to start a step while the budget cap is reached', async () => {
+  it('refuses to start a step while the spend cap is reached', async () => {
     const state = baseState();
     state['budgetAlerts'] = [{ kind: 'session-exceeded', sessionId: SESSION_ID, capUsd: 10 }];
     const { set, get } = harness(state);
@@ -2014,7 +2014,7 @@ describe('orchestrateNextStep', () => {
     expect(decideSpy).not.toHaveBeenCalled();
     expect(updateStopSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, {
       kind: 'budget',
-      message: 'Paused at the $10.00 spend limit for this session.',
+      message: 'Paused at the $10.00 spend cap for this session.',
     });
     const paused = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
     expect(paused.orchestrationStop?.kind).toBe('budget');

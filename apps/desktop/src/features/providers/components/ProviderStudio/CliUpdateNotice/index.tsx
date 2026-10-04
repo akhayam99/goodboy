@@ -80,7 +80,7 @@ export const CliUpdateNotice = ({ providerId, autoStart }: Props) => {
           disabled={isBlockedByTurn}
           onClick={start}
         >
-          {update.hasFailed ? 'Try again' : `Update ${cli}`}
+          {update.hasFailed ? 'Retry' : `Update ${cli}`}
         </Button>
       }
     >

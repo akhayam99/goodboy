@@ -5,7 +5,7 @@ import { agentCardTitleClass } from './agentCardTitleClass';
 
 const INPUT_SIZE: Record<AgentCardDensity, string> = {
   lane: 'text-body',
-  sidebar: 'text-secondary',
+  sidebar: 'text-meta',
 };
 
 type Props = {
@@ -53,7 +53,7 @@ export const AgentCardTitle = ({
       title={rename.error ?? undefined}
       aria-invalid={rename.error !== null}
       className={cn(
-        'min-w-0 flex-1 rounded-md bg-background px-1.5 py-0.5 font-medium text-foreground outline-none ring-1',
+        'min-w-0 flex-1 rounded-md bg-background px-2 py-0.5 font-medium text-foreground outline-none ring-1',
         INPUT_SIZE[density],
         rename.error !== null ? 'ring-danger' : 'ring-primary',
       )}

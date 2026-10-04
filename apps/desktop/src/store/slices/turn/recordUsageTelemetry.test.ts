@@ -114,7 +114,7 @@ describe('recordUsageTelemetry', () => {
     ).toEqual([
       {
         severity: 'error',
-        title: 'Finish the budget path paused its workflows at the $10.00 spend limit.',
+        title: 'Finish the budget path paused its workflows at the $10.00 spend cap.',
         body: '$12.30 spent so far.',
         sessionId: SESSION_ID,
       },

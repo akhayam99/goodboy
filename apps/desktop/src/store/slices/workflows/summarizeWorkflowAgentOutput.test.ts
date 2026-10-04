@@ -289,7 +289,7 @@ describe('summarizeWorkflowAgentOutput', () => {
       { title: string; body?: string; coalesceKey?: string } | undefined;
     expect(String(params?.title)).toContain('codex/');
     expect(String(params?.body)).toContain('anthropic/');
-    expect(String(params?.body)).toContain('Providers then Defaults');
+    expect(String(params?.body)).toContain('Providers then Models');
     expect(params).toMatchObject({
       coalesceKey: 'summarizer-model-unavailable:codex:gpt-5.6-luna',
     });

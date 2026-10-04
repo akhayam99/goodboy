@@ -1,5 +1,6 @@
 import { Checkbox } from '@goodboy/ui';
 import type { ExportCounts, ExportGroups } from '@goodboy/types';
+import { NAMES } from '../../../../shared/names';
 
 type GroupKey = keyof ExportGroups;
 
@@ -58,7 +59,7 @@ const GROUP_ROWS: ReadonlyArray<GroupRow> = [
   },
   {
     key: 'budgetRules',
-    label: 'Budget rules',
+    label: NAMES.spendCaps,
     help: 'Caps and thresholds per provider',
     count: (counts) => counts.budgetRules,
   },
@@ -83,14 +84,14 @@ type Props = {
 };
 
 export const ExportGroupsSection = ({ groups, counts, disabled, onChange }: Props) => (
-  <ul className="flex flex-col gap-1.5">
+  <ul className="flex flex-col gap-2">
     {GROUP_ROWS.map((row) => (
-      <li key={row.key} className="flex items-start justify-between gap-3 rounded-md p-1.5">
+      <li key={row.key} className="flex items-start justify-between gap-3 rounded-md p-2">
         <Checkbox
           label={
             <span className="flex flex-col gap-0.5">
               <span className="text-label text-foreground">{row.label}</span>
-              <span className="text-secondary text-muted-foreground">{row.help}</span>
+              <span className="text-meta text-muted-foreground">{row.help}</span>
             </span>
           }
           checked={groups[row.key]}

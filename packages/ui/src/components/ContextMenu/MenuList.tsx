@@ -207,7 +207,7 @@ export const MenuList = ({ label, entries, onClose, isAutoFocus = true }: Props)
             <div
               key={entry.key}
               role="presentation"
-              className="truncate px-2 pt-1.5 pb-0.5 text-eyebrow text-faint-foreground"
+              className="truncate px-2 pt-2 pb-0.5 text-eyebrow text-faint-foreground"
             >
               {entry.label}
             </div>

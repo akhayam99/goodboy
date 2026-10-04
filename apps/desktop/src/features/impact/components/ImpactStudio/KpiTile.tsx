@@ -24,7 +24,7 @@ export const KpiTile = ({ label, value, delta, title, hint, onSelect }: Props) =
     delta === null || Icon === null ? undefined : (
       <span
         className={cn(
-          'flex shrink-0 items-center gap-1 text-secondary',
+          'flex shrink-0 items-center gap-1 text-meta',
           delta.isBetter ? tintClasses('success').text : 'text-muted-foreground',
         )}
       >

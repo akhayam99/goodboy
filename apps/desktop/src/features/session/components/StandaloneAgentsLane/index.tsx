@@ -95,11 +95,11 @@ export const StandaloneAgentsLane = ({
 
   const list = renderList(agents, false);
 
-  const error = lane.error != null && <p className="text-secondary text-danger">{lane.error}</p>;
+  const error = lane.error != null && <p className="text-meta text-danger">{lane.error}</p>;
 
   if (!isLens) {
     return (
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         {isLoadingEmpty && <AgentListSkeleton />}
         {!isLoadingEmpty && hasNoAgents && <AgentLaneNote text="No agents yet. Start one below." />}
         {!isLoadingEmpty && !hasNoAgents && list}

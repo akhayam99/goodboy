@@ -46,17 +46,17 @@ const copyFor = ({ scenario, agentCount }: CopyParams): EmptyCopy => {
       return {
         eyebrow: 'workflow ready',
         title: 'Start the first step',
-        body: 'Type the goal below to shape the shared brief before the first agent runs.',
+        body: 'Type the goal below before the first agent runs.',
         hints: [
           <span key="goal">goal in 1-2 lines</span>,
-          <span key="brief">lands in the shared brief</span>,
+          <span key="brief">every new agent reads it</span>,
         ],
       };
     case 'fresh':
       return {
         eyebrow: 'fresh session',
         title: 'Populate the context',
-        body: 'What you type becomes the shared brief every new agent starts from.',
+        body: 'What you type becomes the goal every new agent starts from.',
         hints: [
           <span key="what">what to build</span>,
           <span key="limits">constraints and non-goals</span>,
@@ -115,16 +115,16 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
           <ConceptTile icon={CONCEPT_ICONS.chat} tone={CONCEPT_TONE.chat} />
         )}
       </div>
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <Eyebrow label={copy.eyebrow} muted />
         <h2 className="text-title text-foreground">{copy.title}</h2>
         <p className="text-prose text-muted-foreground">{copy.body}</p>
       </div>
-      <ul className="flex flex-wrap items-center justify-center gap-1.5 text-secondary text-faint-foreground">
+      <ul className="flex flex-wrap items-center justify-center gap-1 text-meta text-faint-foreground">
         {copy.hints.map((hint, i) => (
           <li
             key={i}
-            className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-background px-2 py-0.5 text-secondary"
+            className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-background px-2 py-0.5 text-chip"
           >
             {hint}
           </li>

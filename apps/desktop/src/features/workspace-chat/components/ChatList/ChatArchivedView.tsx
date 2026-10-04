@@ -43,7 +43,7 @@ export const ChatArchivedView = ({
         <button
           type="button"
           onClick={onBack}
-          className="flex h-7 items-center gap-1.5 rounded-md pl-1.5 pr-2 text-label text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          className="flex h-7 items-center gap-2 rounded-md pl-2 pr-2 text-label text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
           <ArrowLeft size={ICON_SIZE.control} aria-hidden />
           Chats
@@ -62,7 +62,7 @@ export const ChatArchivedView = ({
         />
       </label>
       <ScrollFade className="flex-1">
-        <nav aria-label="Archived chats" className="flex flex-col gap-0.5 pb-3 pr-3.5">
+        <nav aria-label="Archived chats" className="flex flex-col gap-0.5 pb-3 pr-4">
           {shown.length === 0 ? (
             <p className="px-2 py-4 text-label text-faint-foreground">
               {chats.length === 0 ? 'No archived chats' : 'No archived chats match'}

@@ -178,7 +178,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
       <PaneShell title="Questions">
         <div className="flex flex-col gap-2" role="status" aria-label="Loading questions">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="flex flex-col gap-1.5 rounded-md border border-border-soft p-3">
+            <div key={i} className="flex flex-col gap-2 rounded-md border border-border-soft p-3">
               <Skeleton className="h-3 w-40 rounded-sm" />
               <Skeleton className="h-3 w-3/4 rounded-sm" />
               <Skeleton className="h-3 w-1/2 rounded-sm" />
@@ -241,7 +241,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
         </div>
         <ScrollFade className="min-h-0" fadeSize={24}>
           {question === null || selectedRow === null ? (
-            <div className="flex h-full flex-col items-center justify-center gap-1.5 p-6 text-center">
+            <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
               <CircleCheck size={ICON_SIZE.control} aria-hidden className="text-success" />
               <span className="text-heading text-foreground">No questions</span>
             </div>

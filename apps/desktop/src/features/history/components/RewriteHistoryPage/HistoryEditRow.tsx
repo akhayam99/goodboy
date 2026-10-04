@@ -82,7 +82,7 @@ export const HistoryEditRow = ({
     onPointerEnter={() => onHover(true)}
     onPointerLeave={() => onHover(false)}
     className={cn(
-      'flex min-h-9 min-w-0 items-center gap-2.5 rounded-md px-1.5 py-1 transition-colors',
+      'flex min-h-9 min-w-0 items-center gap-3 rounded-md px-2 py-1 transition-colors',
       isHighlighted && 'bg-selected',
     )}
   >
@@ -104,7 +104,7 @@ export const HistoryEditRow = ({
     {edit.kind === 'fixup' || edit.kind === 'squash' ? (
       <HistoryModeSwitch mode={edit.kind} isDisabled={!isInteractive} onChange={onModeChange} />
     ) : null}
-    <span className="w-14 shrink-0 text-right font-mono text-secondary text-faint-foreground">
+    <span className="w-14 shrink-0 text-right font-mono text-meta text-faint-foreground">
       {HISTORY_ACTION_TERM[edit.kind]}
     </span>
     {isInteractive ? (

@@ -14,7 +14,7 @@ describe('suggestedRouting', () => {
     expect(reason).toBe('Resolver default on Codex, the default provider in Harborline.');
   });
 
-  it('says a pinned role was pinned in Defaults', () => {
+  it('says a pinned role was pinned in Models', () => {
     const { routing, reason } = suggestedRouting({
       role: 'resolver',
       roleModels: { resolver: { providerId: 'anthropic', model: 'haiku-4.5', effort: 'low' } },
@@ -22,7 +22,7 @@ describe('suggestedRouting', () => {
       workspaceName: 'Harborline',
     });
     expect(routing.model).toBe('haiku-4.5');
-    expect(reason).toBe('You pinned this for Resolver in Defaults.');
+    expect(reason).toBe('You pinned this for Resolver in Models.');
   });
 
   it('says a pinned model is not available and names the Auto pick', () => {

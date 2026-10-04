@@ -27,7 +27,7 @@ export const BoardButton = ({ isOnBoard, hasStudio, onBoard }: Props) => {
           onBoard();
         }}
         className={cn(
-          'flex h-6 shrink-0 items-center gap-1.5 rounded-md px-2 text-label motion-safe:transition-colors',
+          'flex h-6 shrink-0 items-center gap-2 rounded-md px-2 text-label motion-safe:transition-colors',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
           isCurrent
             ? 'cursor-default bg-overlay-selected text-foreground'

@@ -78,7 +78,7 @@ export const ProjectGroups = ({
     >
       {groups.starred.length > 0 ? (
         <div className="flex flex-col">
-          <div className="flex items-center gap-1.5 px-2 py-1">
+          <div className="flex items-center gap-2 px-2 py-1">
             <Eyebrow label="Starred" />
             <span className="tabular-nums text-eyebrow text-foreground">
               {groups.starred.length}
@@ -89,7 +89,7 @@ export const ProjectGroups = ({
       ) : null}
       {groups.all.length > 0 ? (
         <div className="flex flex-col">
-          <div className="flex items-center gap-1.5 px-2 py-1">
+          <div className="flex items-center gap-2 px-2 py-1">
             <Eyebrow label="All projects" />
             <span className="tabular-nums text-eyebrow text-foreground">{groups.all.length}</span>
           </div>
@@ -98,7 +98,7 @@ export const ProjectGroups = ({
             <button
               type="button"
               onClick={() => setIsAllExpanded(true)}
-              className="self-start px-2 py-1.5 text-label text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+              className="self-start px-2 py-2 text-label text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
             >
               Show {hiddenCount} more
             </button>

@@ -11,9 +11,9 @@ type Props = {
 
 export const AgentInstructionsField = ({ value, onChange, disabled, className }: Props) => (
   <div className={cn('flex flex-col gap-1', className)}>
-    <span className="flex items-baseline gap-1.5">
+    <span className="flex items-baseline gap-2">
       <Eyebrow label={AGENT_FORM_GRAMMAR.instructions.label} />
-      <span className="text-secondary lowercase tracking-normal text-faint-foreground">
+      <span className="text-meta lowercase tracking-normal text-faint-foreground">
         {AGENT_FORM_GRAMMAR.instructions.optional}
       </span>
     </span>

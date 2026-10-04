@@ -23,7 +23,7 @@ export const SlackTaskDetail = ({ workspaceId, task }: Props) => {
           icon={CONCEPT_ICONS.slack}
           tone={CONCEPT_TONE.slack}
           title="This link no longer points at a thread"
-          description="Unlink it and paste the Slack permalink again."
+          description="Remove the link and paste the Slack permalink again."
         />
       </PaneShell>
     );

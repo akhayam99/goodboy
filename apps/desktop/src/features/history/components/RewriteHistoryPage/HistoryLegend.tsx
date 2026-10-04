@@ -28,7 +28,7 @@ const legendLine = ({
   readonly isDashed: boolean;
   readonly stroke: string;
 }) => (
-  <span className="inline-flex items-center gap-1.5">
+  <span className="inline-flex items-center gap-2">
     <svg aria-hidden width={24} height={10}>
       <line
         x1={0}
@@ -61,7 +61,7 @@ export const HistoryLegend = ({ isDone }: Props) => (
         {legendLine({ label: 'after Apply', isDashed: true, stroke: 'stroke-muted-foreground' })}
         <span aria-hidden className="h-3.5 w-px bg-border-soft" />
         {ACTIONS.map((action) => (
-          <span key={action} className="inline-flex items-center gap-1.5">
+          <span key={action} className="inline-flex items-center gap-2">
             <svg aria-hidden width={16} height={16}>
               <circle
                 cx={8}
@@ -76,7 +76,7 @@ export const HistoryLegend = ({ isDone }: Props) => (
               )}
             </svg>
             {HISTORY_ACTION_LABEL[action]}
-            <span className="font-mono text-secondary text-faint-foreground">
+            <span className="font-mono text-meta text-faint-foreground">
               {HISTORY_ACTION_TERM[action]}
             </span>
           </span>

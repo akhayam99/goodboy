@@ -7,7 +7,6 @@ import {
   ACTIVITY_PRESET_LABEL,
 } from '../../features/session/timeline/activityFilter';
 import { ROW_NODE_LABEL } from '../../features/workTreeModel/rowStateCopy';
-import { GLOSSARY } from '../../features/session/glossary';
 import baseline from './jargon-copy.baseline.json';
 import { describeCopy, scanCopy } from './scanCopy';
 
@@ -35,7 +34,6 @@ const NAMED_COPY: Readonly<Record<string, ReadonlyArray<string>>> = {
   ACTIVITY_CATEGORY_LABEL: Object.values(ACTIVITY_CATEGORY_LABEL),
   ACTIVITY_PRESET_LABEL: Object.values(ACTIVITY_PRESET_LABEL),
   ROW_NODE_LABEL: Object.values(ROW_NODE_LABEL),
-  GLOSSARY: Object.values(GLOSSARY).flatMap((entry) => [entry.term, entry.definition]),
 };
 
 describe('on-screen copy says no internal word', () => {

@@ -47,7 +47,7 @@ export const ChangeComposer = ({
       className="flex min-w-0 flex-col gap-2 rounded-lg border border-border-soft bg-subtle p-3"
     >
       {picked.length === 0 ? null : (
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           {picked.map((node) => (
             <Chip
               key={node.nodeId}
@@ -100,7 +100,7 @@ export const ChangeComposer = ({
         />
         <span className="ml-auto flex min-w-0 items-center gap-2">
           {modelLabel === null ? null : (
-            <span className="truncate text-secondary text-muted-foreground">{modelLabel}</span>
+            <span className="truncate text-meta text-muted-foreground">{modelLabel}</span>
           )}
           <Button
             variant="primary"

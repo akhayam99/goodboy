@@ -593,7 +593,7 @@ describe('ContextDrawer', () => {
     expect(contextUpdatesRow().textContent).toContain('Queued');
   });
 
-  it('sends Change model to the step summaries row in Defaults', () => {
+  it('sends Change model to the step summaries row in Models', () => {
     store.summarizer = { status: 'idle', lastUpdate: AT, lastAttempt: null };
     const opened = vi.fn();
     window.addEventListener('goodboy:open-settings', opened);
@@ -640,6 +640,6 @@ describe('ContextDrawer', () => {
   it('copies the brief in the same order as the tabs', () => {
     renderDrawer('goal');
 
-    expect(screen.getByRole('button', { name: /Copy as brief/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Copy context/i })).toBeDefined();
   });
 });

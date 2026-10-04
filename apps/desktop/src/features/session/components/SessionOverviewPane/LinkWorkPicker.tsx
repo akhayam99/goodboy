@@ -164,7 +164,7 @@ export const LinkWorkPicker = ({
 
   return (
     <div className="flex flex-col">
-      <div className="flex items-center gap-2 px-3 py-2.5">
+      <div className="flex items-center gap-2 px-3 py-3">
         <Search size={ICON_SIZE.control} aria-hidden className="shrink-0 text-faint-foreground" />
         <input
           ref={inputRef}
@@ -212,13 +212,13 @@ export const LinkWorkPicker = ({
       <Divider />
       <ScrollFade className="max-h-80" viewportClassName="p-1" fadeFrom="floating">
         {view.kind === 'unknownLink' ? (
-          <p className="px-2.5 py-3 text-label text-muted-foreground">
+          <p className="px-3 py-3 text-label text-muted-foreground">
             {`Goodboy links ${Object.values(LINK_WORK_PROVIDER_LABEL).join(', ')} URLs.`}
           </p>
         ) : rows.length === 0 && isLoading ? (
           <SkeletonRow label="Loading your inbox" />
         ) : rows.length === 0 ? (
-          <p className="flex flex-col items-center gap-0.5 px-2.5 py-5 text-center text-label text-muted-foreground">
+          <p className="flex flex-col items-center gap-0.5 px-3 py-5 text-center text-label text-muted-foreground">
             <span>{`Nothing in ${sourceName} matches.`}</span>
             <span className="text-faint-foreground">Paste a link to attach anything else.</span>
           </p>
@@ -230,7 +230,7 @@ export const LinkWorkPicker = ({
                     <li
                       key={`section:${row.section}`}
                       role="presentation"
-                      className="flex h-7 items-end px-2.5"
+                      className="flex h-7 items-end px-3"
                     >
                       <Eyebrow label={SECTION_TITLE[row.section]} />
                     </li>,
@@ -247,7 +247,7 @@ export const LinkWorkPicker = ({
                     : `${row.task.title} (${row.task.identifier})`
                 }
                 className={cn(
-                  'flex h-9 cursor-pointer items-center gap-2.5 rounded-sm px-2.5 text-body',
+                  'flex h-9 cursor-pointer items-center gap-3 rounded-sm px-3 text-body',
                   row.key === active?.key ? 'bg-selected' : 'hover:bg-hover',
                 )}
                 onMouseMove={() => setActiveIndex(index)}
@@ -292,15 +292,15 @@ export const LinkWorkPicker = ({
       ) : null}
       <Divider />
       <div className="flex items-center gap-4 bg-muted px-3 py-2 text-label text-faint-foreground">
-        <span className="flex items-center gap-1.5">
+        <span className="flex items-center gap-2">
           <KbdPill>↑↓</KbdPill>
           move
         </span>
-        <span className="flex items-center gap-1.5">
+        <span className="flex items-center gap-2">
           <KbdPill>Enter</KbdPill>
           link
         </span>
-        <span className="flex items-center gap-1.5">
+        <span className="flex items-center gap-2">
           <KbdPill>Esc</KbdPill>
           close
         </span>

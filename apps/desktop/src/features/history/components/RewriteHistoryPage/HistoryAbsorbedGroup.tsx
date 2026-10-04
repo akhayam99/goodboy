@@ -15,9 +15,7 @@ export const HistoryAbsorbedGroup = ({ group }: Props) => {
       trigger={
         <span className="flex items-baseline gap-2 text-label">
           <span className="text-foreground">{group.type}</span>
-          <span className="text-secondary text-muted-foreground tabular-nums">
-            {group.items.length}
-          </span>
+          <span className="text-meta text-muted-foreground tabular-nums">{group.items.length}</span>
         </span>
       }
     >
@@ -31,7 +29,7 @@ export const HistoryAbsorbedGroup = ({ group }: Props) => {
             <span className="min-w-0 flex-1 truncate">
               {subjectWithoutType({ title: item.title })}
             </span>
-            <span className="shrink-0 font-mono text-secondary text-faint-foreground tabular-nums">
+            <span className="shrink-0 font-mono text-meta text-faint-foreground tabular-nums">
               {item.sha.slice(0, 7)}
             </span>
           </li>

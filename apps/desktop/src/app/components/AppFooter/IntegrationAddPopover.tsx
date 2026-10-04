@@ -5,6 +5,7 @@ import type { FooterIntegrationEntry } from './categories';
 import { FOOTER_LABEL, FOOTER_LABELED_PAD } from './FooterButton';
 import { IntegrationAddRow } from './IntegrationAddRow';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { NAMES } from '../../../shared/names';
 
 type Props = {
   readonly members: ReadonlyArray<FooterIntegrationEntry>;
@@ -38,7 +39,7 @@ export const IntegrationAddPopover = ({
     onOpenIntegration({ provider });
   };
 
-  const actionLabel = isEmpty ? 'Link your first integration' : 'Link integration';
+  const actionLabel = isEmpty ? 'Connect your first integration' : NAMES.connectIntegration;
 
   return (
     <AnchoredPopover
@@ -57,8 +58,8 @@ export const IntegrationAddPopover = ({
             aria-expanded={dropdown.open}
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'flex items-center rounded-md py-1 text-secondary font-medium transition-colors',
-              isEmpty ? 'gap-1.5 px-2' : FOOTER_LABELED_PAD,
+              'flex items-center rounded-md py-1 text-chip transition-colors',
+              isEmpty ? 'gap-2 px-2' : FOOTER_LABELED_PAD,
               active
                 ? 'cursor-default bg-overlay-selected text-foreground'
                 : dropdown.open
@@ -67,7 +68,7 @@ export const IntegrationAddPopover = ({
             )}
           >
             <Plus size={ICON_SIZE.row} aria-hidden />
-            <span className={cn(!isEmpty && FOOTER_LABEL)}>Link integration</span>
+            <span className={cn(!isEmpty && FOOTER_LABEL)}>{NAMES.connectIntegration}</span>
           </button>
         </Tooltip>
       }

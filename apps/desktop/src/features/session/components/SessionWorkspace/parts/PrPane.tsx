@@ -59,7 +59,7 @@ const hostTitle = ({ remoteKind, providerCount, activeProvider }: HostTitleParam
 
 const SessionBranchTag = ({ branch }: { readonly branch: string | null }) =>
   branch == null ? null : (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-subtle px-2.5 py-1 font-mono text-secondary text-muted-foreground ring-1 ring-border-soft">
+    <span className="inline-flex items-center gap-1 rounded-full bg-subtle px-3 py-1 font-mono text-chip text-muted-foreground ring-1 ring-border-soft">
       <GitBranch size={11} aria-hidden className="shrink-0" />
       <span className="truncate text-foreground">{branch}</span>
     </span>
@@ -144,12 +144,12 @@ export const PrPane = ({ session }: Props) => {
             title={bitbucketPr?.title ?? hostTitle({ remoteKind, providerCount, activeProvider })}
             meta={
               <>
-                <span className="text-secondary font-medium text-muted-foreground">
+                <span className="text-chip text-muted-foreground">
                   {hostTitle({ remoteKind, providerCount, activeProvider })}
                 </span>
                 <SessionBranchTag branch={sessionBranch} />
                 {bitbucketPr != null ? (
-                  <span className="font-mono text-secondary tabular-nums text-muted-foreground">
+                  <span className="font-mono text-meta tabular-nums text-muted-foreground">
                     #{bitbucketPr.id}
                   </span>
                 ) : null}
@@ -179,12 +179,12 @@ export const PrPane = ({ session }: Props) => {
             title={mergeRequest?.title ?? hostTitle({ remoteKind, providerCount, activeProvider })}
             meta={
               <>
-                <span className="text-secondary font-medium text-muted-foreground">
+                <span className="text-chip text-muted-foreground">
                   {hostTitle({ remoteKind, providerCount, activeProvider })}
                 </span>
                 <SessionBranchTag branch={sessionBranch} />
                 {mergeRequest != null ? (
-                  <span className="font-mono text-secondary tabular-nums text-muted-foreground">
+                  <span className="font-mono text-meta tabular-nums text-muted-foreground">
                     !{mergeRequest.iid}
                   </span>
                 ) : null}
@@ -214,13 +214,13 @@ export const PrPane = ({ session }: Props) => {
           meta={
             <>
               {pullRequest != null ? (
-                <span className="text-secondary font-medium text-muted-foreground">
+                <span className="text-chip text-muted-foreground">
                   {hostTitle({ remoteKind, providerCount, activeProvider })}
                 </span>
               ) : null}
               <SessionBranchTag branch={sessionBranch} />
               {pullRequest != null ? (
-                <span className="font-mono text-secondary tabular-nums text-muted-foreground">
+                <span className="font-mono text-meta tabular-nums text-muted-foreground">
                   #{pullRequest.number}
                 </span>
               ) : null}

@@ -62,7 +62,7 @@ const reasonFor = ({ role, auto, workspaceName, resolved }: ReasonParams): strin
     return `Pinned ${modelName(resolved.pinnedUnavailable)} is not available. Auto picked ${picked} instead.`;
   }
   if (resolved.isOverride) {
-    return `You pinned this for ${roleLabel} in Defaults.`;
+    return `You pinned this for ${roleLabel} in Models.`;
   }
   switch (resolved.autoStep) {
     case 'next-in-column': {

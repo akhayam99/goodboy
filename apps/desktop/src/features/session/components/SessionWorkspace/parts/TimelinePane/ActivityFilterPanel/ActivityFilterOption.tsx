@@ -35,23 +35,21 @@ export const ActivityFilterOption = ({
       ariaLabel={ariaLabel}
       onChange={onChange}
       className={cn(
-        'flex h-7 w-full min-w-0 rounded-md px-1.5 motion-safe:transition-colors',
+        'flex h-7 w-full min-w-0 rounded-md px-2 motion-safe:transition-colors',
         isDisabled ? null : 'hover:bg-hover',
       )}
       label={
         <>
           <span
             className={cn(
-              'flex min-w-0 flex-1 items-center gap-1.5',
+              'flex min-w-0 flex-1 items-center gap-2',
               isChecked ? 'text-foreground' : 'text-muted-foreground',
             )}
           >
             {icon}
             <span className="truncate">{label}</span>
           </span>
-          <span className="shrink-0 text-secondary tabular-nums text-faint-foreground">
-            {count}
-          </span>
+          <span className="shrink-0 text-meta tabular-nums text-faint-foreground">{count}</span>
         </>
       }
     />

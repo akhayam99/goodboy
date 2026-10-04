@@ -6,6 +6,7 @@ import type {
   RecordVerb,
 } from '../../../../shared/components/StudioDetail/RecordActions/types';
 import { useOpenSession } from '../../../../shared/hooks/useOpenSession';
+import { NAMES } from '../../../../shared/names';
 import { useAppStore } from '../../../../store';
 import { LaunchSessionPopover } from '../../components/LaunchSessionPopover';
 import { LinkedSessionButtons } from '../../components/LinkedSessionButtons';
@@ -76,7 +77,7 @@ export const useRecordFrame = ({
     sentryIssueId != null && linkedSessionId != null
       ? {
           key: 'unlink-session',
-          label: 'Unlink session',
+          label: `${NAMES.removeLink} to session`,
           icon: Unlink,
           isBusy: isUnlinking,
           blockedReason: null,
@@ -86,7 +87,7 @@ export const useRecordFrame = ({
             try {
               await unlinkSessionExternalTask(linkedSessionId, 'sentry', sentryIssueId);
             } catch (error: unknown) {
-              void reportError({ title: "Couldn't unlink the session", error });
+              void reportError({ title: "Couldn't remove the session link", error });
             } finally {
               setIsUnlinking(false);
             }

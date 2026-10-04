@@ -271,7 +271,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           </div>
         </div>
         {showsDeliveryChoice ? (
-          <p className="px-1 text-secondary text-faint-foreground">
+          <p className="px-1 text-meta text-faint-foreground">
             Queue waits for this turn to end. Send now stops the turn, keeps what it wrote, and
             continues with your message.
           </p>

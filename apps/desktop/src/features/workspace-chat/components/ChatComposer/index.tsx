@@ -104,7 +104,7 @@ export const ChatComposer = ({
       }
       actions={
         <>
-          <span className="hidden text-secondary text-faint-foreground @2xl/chat:inline">
+          <span className="hidden text-meta text-faint-foreground @2xl/chat:inline">
             {`Read-only · ${pluralize(projectCount, 'project')}`}
           </span>
           {isStreaming ? (

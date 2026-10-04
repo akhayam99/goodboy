@@ -173,7 +173,7 @@ export const WorkspaceSettingsFlow = ({ workspaceId, scope, mode, onClose }: Pro
     >
       <div className="flex min-w-0 items-center gap-2">
         <h2 className="min-w-0 truncate text-row text-foreground">{title}</h2>
-        <span className="truncate text-secondary text-faint-foreground">
+        <span className="truncate text-meta text-faint-foreground">
           {step === 'pick' ? `${scopeLabel({ scope })} · values only` : scopeLabel({ scope })}
         </span>
         <span className="flex-1" />
@@ -211,7 +211,7 @@ export const WorkspaceSettingsFlow = ({ workspaceId, scope, mode, onClose }: Pro
             <Button variant="ghost" size="sm" onClick={onClose}>
               Cancel
             </Button>
-            <span className="text-secondary text-faint-foreground">
+            <span className="text-meta text-faint-foreground">
               Nothing changes until you confirm.
             </span>
           </>
@@ -234,7 +234,7 @@ export const WorkspaceSettingsFlow = ({ workspaceId, scope, mode, onClose }: Pro
             <Button variant="ghost" size="sm" onClick={onClose}>
               Cancel
             </Button>
-            <span className="text-secondary text-faint-foreground">
+            <span className="text-meta text-faint-foreground">
               One change, and you can undo it.
             </span>
           </>

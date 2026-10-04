@@ -9,7 +9,7 @@ export const SourceChangeLine = ({
   readonly kind: 'add' | 'del';
   readonly segments: ReadonlyArray<WordSegment>;
 }) => (
-  <p className={cn('flex min-w-0 gap-3 px-3 py-1.5 text-body', LINE_FILL[kind])}>
+  <p className={cn('flex min-w-0 gap-3 px-3 py-2 text-body', LINE_FILL[kind])}>
     <span aria-hidden className={cn('w-2 shrink-0', SIGN_TEXT[kind])}>
       {kind === 'add' ? '+' : '-'}
     </span>

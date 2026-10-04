@@ -140,7 +140,7 @@ export const ReviewCommits = ({ sessionId, entries, onOpenThread }: Props) => {
                   }}
                 />
                 {model.preset === null && (
-                  <span className="text-secondary text-faint-foreground">
+                  <span className="text-meta text-faint-foreground">
                     {REVIEW_COMMITS_LABEL.custom}
                   </span>
                 )}

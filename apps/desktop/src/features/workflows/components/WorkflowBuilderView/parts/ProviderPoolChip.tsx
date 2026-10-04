@@ -45,7 +45,7 @@ export const ProviderPoolChip = ({ providers, pool, disabled, onChange }: Props)
         />
       }
     >
-      <p className="text-2xs leading-relaxed text-muted-foreground">
+      <p className="text-meta text-muted-foreground">
         Every agent the orchestrator starts, and every agent those start, runs on one of these.
       </p>
       <div role="group" aria-label="Providers" className="flex flex-wrap gap-1">

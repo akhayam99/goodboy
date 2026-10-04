@@ -221,7 +221,7 @@ export const MountActionsMenu = ({
       const summarized = outcomes.find((outcome) => outcome.kind === summary);
       if (summary === 'failed') {
         fail({
-          title: `Couldn't detach ${projectName}`,
+          title: `Couldn't remove ${projectName} from the session`,
           error: detachFailureMessage({ outcomes }),
         });
         assess();
@@ -238,7 +238,7 @@ export const MountActionsMenu = ({
       dropdown.close();
       setIsConfirming(false);
     } catch (error) {
-      fail({ title: "Couldn't detach the project", error });
+      fail({ title: "Couldn't remove the project from the session", error });
     } finally {
       setIsBusy(false);
       setStage(null);

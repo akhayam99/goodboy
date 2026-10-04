@@ -29,9 +29,9 @@ const TONE_ICON = {
 } as const satisfies Record<NoticeTone, unknown>;
 
 const PLACEMENT_SURFACE = {
-  transcript: 'bg-transparent py-1.5 pl-3.5 pr-3',
-  inline: 'rounded-lg border border-border-soft bg-subtle py-2.5 pl-3.5 pr-3',
-  banner: 'rounded-lg border border-border-soft bg-subtle py-2.5 pl-3.5 pr-3',
+  transcript: 'bg-transparent py-2 pl-4 pr-3',
+  inline: 'rounded-lg border border-border-soft bg-subtle py-3 pl-4 pr-3',
+  banner: 'rounded-lg border border-border-soft bg-subtle py-3 pl-4 pr-3',
   floating: 'rounded-lg border border-border-soft bg-floating py-3 pl-4 pr-3 shadow-lg',
 } as const satisfies Record<NoticePlacement, string>;
 
@@ -101,7 +101,7 @@ export const Notice = ({
       <div
         data-notice-layout
         className={cn(
-          'grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2.5 gap-y-2 @md/notice:grid-cols-[auto_minmax(0,1fr)_auto]',
+          'grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2 @md/notice:grid-cols-[auto_minmax(0,1fr)_auto]',
           isTitleOnly && '@md/notice:items-center',
         )}
       >
@@ -130,7 +130,7 @@ export const Notice = ({
               aria-controls={isDetailOpen ? detailId : undefined}
               onClick={() => setIsDetailOpen((open) => !open)}
               className={cn(
-                'inline-flex items-center gap-1 rounded-sm text-secondary text-faint-foreground hover:text-muted-foreground',
+                'inline-flex items-center gap-1 rounded-sm text-meta text-faint-foreground hover:text-muted-foreground',
                 FOCUS_RING,
               )}
             >
@@ -145,7 +145,7 @@ export const Notice = ({
           {hasDetail && isDetailOpen && (
             <pre
               id={detailId}
-              className="max-h-48 w-full overflow-auto whitespace-pre-wrap break-words rounded-md border border-border-soft bg-background px-2.5 py-2 font-mono text-secondary text-muted-foreground"
+              className="max-h-48 w-full overflow-auto whitespace-pre-wrap break-words rounded-md border border-border-soft bg-background px-3 py-2 text-code text-muted-foreground"
             >
               {detail}
             </pre>

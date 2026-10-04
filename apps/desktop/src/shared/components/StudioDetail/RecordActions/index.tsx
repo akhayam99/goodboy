@@ -19,7 +19,7 @@ export const RecordActions = ({ primary, secondary, armed, onArm, onDisarm }: Pr
   return (
     <>
       {hasRow ? (
-        <div data-slot="record-actions" className="flex flex-wrap items-center gap-1.5">
+        <div data-slot="record-actions" className="flex flex-wrap items-center gap-2">
           {primary}
           {secondary.map((verb) => {
             const Icon = verb.icon;

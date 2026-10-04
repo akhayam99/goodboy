@@ -26,7 +26,7 @@ export const ActionStatusLine = ({ controls }: Props) => {
     return null;
   }
   return (
-    <div className="flex min-w-0 flex-col items-end gap-1 text-secondary">
+    <div className="flex min-w-0 flex-col items-end gap-1 text-meta">
       {reasons.map(({ reason, actions }) => (
         <p key={reason} className="min-w-0 text-right">
           <span className="text-foreground">

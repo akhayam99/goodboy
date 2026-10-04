@@ -20,7 +20,7 @@ export const ChatSessionRow = ({ entry, onOpen }: Props) => {
   const now = useNow(30_000);
   const age = formatAge({ from: entry.link.createdAt, now });
   return (
-    <div className="flex items-center gap-2.5 rounded-md p-2 hover:bg-hover">
+    <div className="flex items-center gap-3 rounded-md p-2 hover:bg-hover">
       <StatusDot
         tone={STAGE_TONE[entry.stage]}
         pulsing={entry.stage === 'running'}
@@ -28,7 +28,7 @@ export const ChatSessionRow = ({ entry, onOpen }: Props) => {
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-label text-foreground">{title}</span>
-        <span className="truncate text-secondary text-faint-foreground">
+        <span className="truncate text-meta text-faint-foreground">
           {[SESSION_STAGE_META[entry.stage].label, `${ORIGIN[entry.link.kind]} ${age}`.trim()].join(
             ' · ',
           )}

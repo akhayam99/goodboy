@@ -12,6 +12,41 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.17.0
+
+Every Activity group hangs on a numbered ball, a review comment is the message the agent gets, and each thing has one name.
+
+This version updates your data in one direction. To go back to 0.16, restore the backup Goodboy made before updating.
+
+### New
+
+#### One numbered ball for every group
+<!-- gb area=sessions -->
+
+Every group in Activity opens from an indented, numbered ball with its own lane. Run context and questions live inside the run they belong to. The right side of a row is quieter, and a model name shows only when it differs from the agent's default. The provider icon is always there.
+
+#### Your review comment is the message
+<!-- gb area=review -->
+
+When you resolve a review comment, the agent gets your words as written. The rules Goodboy adds sit behind Instructions, so you see what you wrote and what was added.
+
+### Improved
+
+#### One name per thing
+<!-- gb area=app -->
+
+Rules is now Run defaults, the Workflows lens in a session is Runs, and Spend limit is Spend cap. Delete, Remove, Archive, Stop and Retry each mean one thing. The old names still find the new ones in `⌘K`.
+
+#### Rules stated once in the builder
+<!-- gb area=workflows -->
+
+The workflow builder shows From your rules only when a control differs from your run defaults. The list wording is shorter.
+
+#### The type and spacing scale, finished
+<!-- gb area=app -->
+
+Every surface uses the same type sizes and the same 4px spacing steps, in session, chat, review and app chrome.
+
 ## Goodboy v0.16.1
 
 Settings open on the page you used last, every studio closes the same way, and type, spacing and copy share one scale.

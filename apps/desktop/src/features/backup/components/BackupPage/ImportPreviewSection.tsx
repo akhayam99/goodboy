@@ -1,5 +1,6 @@
 import { Button } from '@goodboy/ui';
 import type { ImportPreview } from '@goodboy/types';
+import { NAMES } from '../../../../shared/names';
 
 const VERDICT_LABEL: Readonly<Record<string, string>> = {
   same_repository: 'Found',
@@ -14,7 +15,7 @@ const GROUP_LABEL: Readonly<Record<string, string>> = {
   skills: 'Skills',
   phaseTemplates: 'Workflows',
   permissionRules: 'Permission rules',
-  budgetRules: 'Budget rules',
+  budgetRules: NAMES.spendCaps,
   scripts: 'Scripts',
   toolBindings: 'Linked integrations',
 };
@@ -56,7 +57,7 @@ export const ImportPreviewSection = ({
           ))}
         </ul>
       )}
-      <ul className="flex flex-col gap-1.5">
+      <ul className="flex flex-col gap-2">
         {preview.workspaceMatches.map((match) => {
           const chosenTarget = workspaceTargets[match.bundleId] ?? match.existingId ?? null;
           return (
@@ -65,7 +66,7 @@ export const ImportPreviewSection = ({
               className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-muted p-2"
             >
               <span className="text-label text-foreground">{match.name}</span>
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-2">
                 {match.existingId !== null && (
                   <Button
                     variant={chosenTarget === match.existingId ? 'primary' : 'secondary'}
@@ -97,7 +98,7 @@ export const ImportPreviewSection = ({
         })}
       </ul>
       {preview.projectMatches.filter((project) => !project.hasPath).length > 0 && (
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-2">
           <p className="text-label text-muted-foreground">
             This file has no folder paths. Choose where your projects are on this Mac.
           </p>
@@ -120,7 +121,7 @@ export const ImportPreviewSection = ({
             Choose folder
           </Button>
           {hasUnresolvedProjects && (
-            <p className="text-secondary text-faint-foreground">
+            <p className="text-meta text-faint-foreground">
               Projects left unresolved are skipped, nothing is deleted.
             </p>
           )}

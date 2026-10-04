@@ -15,7 +15,7 @@ type ContentParams = {
 
 const VISIBLE_ROWS = 5;
 
-const ROW = 'flex w-full items-center gap-3 rounded-sm px-2 py-1.5 text-left text-label';
+const ROW = 'flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left text-label';
 
 const rowContent = ({ session }: ContentParams): ReactNode => (
   <>

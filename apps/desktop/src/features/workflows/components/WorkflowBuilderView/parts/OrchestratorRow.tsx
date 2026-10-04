@@ -58,7 +58,7 @@ export const OrchestratorRow = ({
         />
       }
     >
-      <li className="flex min-w-0 gap-1.5">
+      <li className="flex min-w-0 gap-2">
         <StepTreeGutter
           span="origin"
           identityIndex={identityIndex}
@@ -74,7 +74,7 @@ export const OrchestratorRow = ({
             />
           }
         />
-        <div className="flex h-8 min-w-0 flex-1 items-center gap-2.5 pl-2">
+        <div className="flex h-8 min-w-0 flex-1 items-center gap-3 pl-2">
           <Chip tone="primary" size="3xs" width="md" shape="badge" label="Orchestrator" />
           <span className="min-w-0 flex-1 truncate text-body text-foreground">
             Picks each next agent

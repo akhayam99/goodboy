@@ -115,13 +115,11 @@ export const TaskBranchPicker = ({ sessionId, task, onWorktree, onClose }: Props
         <span className="flex min-w-0 flex-col">
           <span>{`New worktree for ${task.identifier}`}</span>
           {preview === null ? null : (
-            <span className="truncate font-mono text-secondary text-muted-foreground">
-              {preview}
-            </span>
+            <span className="truncate font-mono text-meta text-muted-foreground">{preview}</span>
           )}
         </span>
       </button>
-      <span className="px-3 pb-3 text-secondary text-muted-foreground">
+      <span className="px-3 pb-3 text-meta text-muted-foreground">
         {`${task.identifier} stays where it is. A task can sit on several branches.`}
       </span>
     </div>

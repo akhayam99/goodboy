@@ -35,7 +35,7 @@ export const IntegrationChoiceRow = ({
       data-provider={provider}
       className="flex flex-col rounded-lg border border-border-soft bg-subtle"
     >
-      <div className="flex items-center gap-3 px-3.5 py-3">
+      <div className="flex items-center gap-3 px-4 py-3">
         <span className={cn('shrink-0', isBlocked && 'opacity-50')}>
           <IntegrationGlyph provider={provider} size={ICON_SIZE.hero} />
         </span>
@@ -43,10 +43,10 @@ export const IntegrationChoiceRow = ({
           <span className={cn('text-row', isBlocked ? 'text-muted-foreground' : 'text-foreground')}>
             {name}
           </span>
-          <span className="text-secondary text-muted-foreground">{line}</span>
+          <span className="text-meta text-muted-foreground">{line}</span>
         </div>
         {isReady && (
-          <span className="flex shrink-0 items-center gap-1.5 text-label text-foreground">
+          <span className="flex shrink-0 items-center gap-2 text-label text-foreground">
             <StatusDot tone="success" size="sm" />
             Ready
           </span>
@@ -65,7 +65,7 @@ export const IntegrationChoiceRow = ({
         )}
       </div>
       {isExpanded && !isReady && children !== undefined && (
-        <div className="px-3.5 pb-3">{children}</div>
+        <div className="px-4 pb-3">{children}</div>
       )}
     </li>
   );

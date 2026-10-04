@@ -24,13 +24,13 @@ describe('runFailureReason', () => {
     expect(
       runFailureReason({
         thread: thread(null),
-        attempt: attempt('every provider is over its budget cap'),
+        attempt: attempt('every provider is over its spend cap'),
       }),
-    ).toBe('The run failed: every provider is over its budget cap');
+    ).toBe('The run failed: every provider is over its spend cap');
   });
 
   it.each([
-    ['failed:interrupted', 'every provider is over its budget cap'],
+    ['failed:interrupted', 'every provider is over its spend cap'],
     ['failed:interrupted', 'provider exited with code 1'],
     ['interrupted', 'rate limited'],
   ])('lets the real attempt error win over the %s thread code', (reason, error) => {

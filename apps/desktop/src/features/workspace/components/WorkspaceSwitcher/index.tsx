@@ -141,7 +141,7 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
 
   return (
     <>
-      <div className="flex items-center gap-2 px-3 py-2.5">
+      <div className="flex items-center gap-2 px-3 py-3">
         <Search size={ICON_SIZE.control} aria-hidden className="text-faint-foreground" />
         <input
           ref={inputRef}

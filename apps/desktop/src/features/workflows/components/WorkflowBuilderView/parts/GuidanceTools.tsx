@@ -16,7 +16,7 @@ type Props = {
 };
 
 const TOOL_CLASS =
-  'inline-flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-secondary text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-chip text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50';
 
 export const GuidanceTools = ({
   differs,
@@ -33,7 +33,7 @@ export const GuidanceTools = ({
   <div data-testid="guidance-tools" className="flex min-w-0 flex-wrap items-center gap-1">
     {differs ? (
       <>
-        <span className="text-secondary text-faint-foreground">Edited for this run</span>
+        <span className="text-meta text-faint-foreground">Edited for this run</span>
         <button type="button" className={TOOL_CLASS} disabled={disabled} onClick={onReset}>
           <RotateCcw size={ICON_SIZE.row} aria-hidden /> Reset
         </button>
@@ -42,7 +42,7 @@ export const GuidanceTools = ({
         </button>
       </>
     ) : (
-      <span className="inline-flex items-center gap-1 text-secondary text-faint-foreground">
+      <span className="inline-flex items-center gap-1 text-meta text-faint-foreground">
         <SlidersHorizontal size={ICON_SIZE.row} aria-hidden />
         {isRuleEmpty ? 'Nothing in your rules yet' : 'From your rules'}
       </span>

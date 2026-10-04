@@ -39,7 +39,7 @@ export const BriefReady = ({
         }
       />
       <div className="flex items-start gap-2">
-        <h4 className="min-w-0 flex-1 text-sm font-semibold leading-snug text-foreground">
+        <h4 className="min-w-0 flex-1 text-body font-semibold leading-snug text-foreground">
           {entry.brief.title}
         </h4>
         {isTitleLocked && (
@@ -51,22 +51,22 @@ export const BriefReady = ({
       <ClampedProse
         text={entry.brief.goal}
         lines={4}
-        className="text-xs leading-relaxed text-muted-foreground"
+        className="text-label text-muted-foreground"
       />
       {entry.brief.acceptance.length > 0 && (
         <div className="flex flex-col gap-1">
-          <span id={doneWhenId} className="text-secondary font-medium text-foreground">
+          <span id={doneWhenId} className="text-chip text-foreground">
             Done when
           </span>
           <ul aria-labelledby={doneWhenId} className="flex flex-col gap-1">
             {entry.brief.acceptance.map((criterion) => (
               <li
                 key={criterion}
-                className="flex items-start gap-1.5 text-secondary text-muted-foreground"
+                className="flex items-start gap-1 text-meta text-muted-foreground"
               >
                 <span
                   aria-hidden
-                  className="mt-1.5 size-1 shrink-0 rounded-full bg-faint-foreground"
+                  className="mt-2 size-1 shrink-0 rounded-full bg-faint-foreground"
                 />
                 <span className="min-w-0 flex-1">{criterion}</span>
               </li>
@@ -74,7 +74,7 @@ export const BriefReady = ({
           </ul>
         </div>
       )}
-      <p className="text-secondary text-faint-foreground">
+      <p className="text-meta text-faint-foreground">
         The full {source.noun} stays linked to this session.
       </p>
       <FormActions

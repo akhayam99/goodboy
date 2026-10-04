@@ -46,14 +46,14 @@ export const MessageRow = ({
       aria-label={`Message from ${message.author.name}`}
       onKeyDown={onKeyDown}
       className={cn(
-        'group group/message relative grid min-w-0 grid-cols-[24px_minmax(0,1fr)] gap-x-2.5 rounded-md px-1.5 py-1 hover:bg-hover',
+        'group group/message relative grid min-w-0 grid-cols-[24px_minmax(0,1fr)] gap-x-3 rounded-md px-2 py-1 hover:bg-hover',
         FOCUS_RING,
       )}
     >
       {isContinuation ? <span aria-hidden /> : <ConversationAvatar author={message.author} />}
       <div className="flex min-w-0 flex-col gap-0.5">
         {isContinuation ? null : (
-          <div className="flex min-w-0 items-baseline gap-1.5">
+          <div className="flex min-w-0 items-baseline gap-2">
             <span className="truncate text-label font-semibold text-foreground">
               {message.author.name}
             </span>
@@ -61,7 +61,7 @@ export const MessageRow = ({
           </div>
         )}
         {anchor == null ? null : (
-          <span className="inline-flex h-4.5 w-fit max-w-full items-center truncate rounded-sm bg-muted px-1.5 font-mono text-chip text-muted-foreground">
+          <span className="inline-flex h-4.5 w-fit max-w-full items-center truncate rounded-sm bg-muted px-2 font-mono text-chip text-muted-foreground">
             {anchor}
           </span>
         )}

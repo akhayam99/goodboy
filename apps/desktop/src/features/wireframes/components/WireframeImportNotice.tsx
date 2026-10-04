@@ -80,7 +80,7 @@ export const WireframeImportNotice = ({
         </span>
       }
       actions={
-        <span className="flex items-center gap-1.5">
+        <span className="flex items-center gap-2">
           <Button
             variant="primary"
             size="sm"

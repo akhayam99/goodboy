@@ -30,7 +30,7 @@ export const AgentTitle = ({ agent, sessionId }: Props) => {
         title={rename.error ?? undefined}
         aria-invalid={rename.error !== null}
         className={cn(
-          'w-full min-w-0 rounded-md bg-background px-1.5 py-0.5 text-lg font-semibold leading-snug text-foreground outline-none ring-1',
+          'w-full min-w-0 rounded-md bg-background px-2 py-0.5 text-title text-foreground outline-none ring-1',
           rename.error !== null ? 'ring-danger' : 'ring-primary',
         )}
       />
@@ -43,7 +43,7 @@ export const AgentTitle = ({ agent, sessionId }: Props) => {
   });
 
   return (
-    <span className="group/title flex min-w-0 items-center gap-1.5">
+    <span className="group/title flex min-w-0 items-center gap-2">
       <span className="min-w-0 truncate" onDoubleClick={rename.start} title={displayName}>
         {displayName}
       </span>

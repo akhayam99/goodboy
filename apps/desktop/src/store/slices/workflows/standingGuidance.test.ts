@@ -39,6 +39,6 @@ describe('standingGuidanceSection', () => {
         run: { executionMode: 'static', rulesSnapshot: rules },
         role: 'implementer',
       }),
-    ).toBe(`**Standing guidance**\n${GUIDANCE}`);
+    ).toBe(`**Guidance**\n${GUIDANCE}`);
   });
 });

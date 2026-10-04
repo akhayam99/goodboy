@@ -76,7 +76,7 @@ export const LocalImage = ({ url, alt, imageClassName, onOpen }: Props) => {
         <code className="break-words">{url}</code>
       </span>
       <Button size="sm" variant="secondary" className="shrink-0" onClick={requestImage}>
-        {state.kind === 'failed' ? 'Try again' : 'Load image'}
+        {state.kind === 'failed' ? 'Retry' : 'Load image'}
       </Button>
     </span>
   );

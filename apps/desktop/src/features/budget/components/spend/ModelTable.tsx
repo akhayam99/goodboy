@@ -49,7 +49,7 @@ export const ModelTable = ({ entries, formatSpent = formatUsd }: Props) => {
             className={cn('hover:[&>*]:bg-hover', isStriped && STRIPED_ROW)}
           >
             <td className="px-3 py-2">
-              <span className="flex min-w-0 items-center gap-1.5">
+              <span className="flex min-w-0 items-center gap-2">
                 <RoutingLabel provider={entry.provider} model={entry.model} />
                 <CoverageChip coverage={entry.coverage} />
               </span>

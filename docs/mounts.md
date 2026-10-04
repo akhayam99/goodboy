@@ -132,10 +132,10 @@ before projecting it as writable. Disk states:
 - **Unmount** removes the worktree and keeps the row with no current path.
 - **Remove** removes the worktree of a mount whose work is complete, from its
   row or, for archived sessions, from storage settings, and keeps the row.
-- **Detach** takes a project out of the session: every mount of that project
+- **Remove from session** takes a project out of the session: every mount of that project
   is cleaned up per the chosen disposition and its row deleted. Each mount is
   its own removal; one that fails is reported with its reason, the rest still
-  detach, and the write destination is always handed over afterwards.
+  go, and the write destination is always handed over afterwards.
 - **Forget** deletes the row of a mount that is already off disk or kept on
   purpose; it never touches the directory.
 
@@ -403,8 +403,8 @@ Start new turns here (only with two or more mounts), the copies, then Close
 worktree, or Remove from session on a closed row. There are no hover-only icons
 on the row. When a rebase stops, the notice under the row brings the terminal
 and Abort rebase forward. Below a 28rem container New worktree shows its icon
-only. The project menu (`MountActionsMenu`, the `project` kind) holds Detach project
-and renders nothing when the project has no mount to detach.
+only. The project menu (`MountActionsMenu`, the `project` kind) holds Remove from session
+and renders nothing when the project has no mount to remove.
 
 With two or more mounts, a row shows its presence (`MountPresence`): the
 state node of each agent whose turn runs, waits on an answer or needs you in

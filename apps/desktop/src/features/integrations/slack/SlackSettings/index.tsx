@@ -58,7 +58,7 @@ export const SlackSettings = ({ workspaceId, slack }: Props) => {
         credentialId={slack.credentialId}
         primary={`Connected as ${config.userName ?? config.userId}`}
         secondary={config.teamName}
-        disconnectDescription="Unlinks this workspace from Slack. The saved credential remains available to other workspaces."
+        disconnectDescription="Disconnects this workspace from Slack. The saved credential remains available to other workspaces."
         onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'slack' })}
       />
 
@@ -73,7 +73,7 @@ export const SlackSettings = ({ workspaceId, slack }: Props) => {
                 <span className="flex min-w-0 items-baseline gap-2">
                   <span>#{channel.name}</span>
                   {channel.memberCount === null ? null : (
-                    <span className="text-secondary text-faint-foreground">
+                    <span className="text-meta text-faint-foreground">
                       {channel.memberCount} members
                     </span>
                   )}
@@ -88,7 +88,7 @@ export const SlackSettings = ({ workspaceId, slack }: Props) => {
             />
           ))}
           {channels.length === 0 ? (
-            <span className="text-secondary text-muted-foreground">Loading your channels…</span>
+            <span className="text-meta text-muted-foreground">Loading your channels…</span>
           ) : null}
         </div>
         <Switch
@@ -132,7 +132,7 @@ export const SlackSettings = ({ workspaceId, slack }: Props) => {
             persist({ ...config, agentPolicy: { ...config.agentPolicy, react } })
           }
         />
-        <span className="text-secondary text-faint-foreground">
+        <span className="text-meta text-faint-foreground">
           Agents never start new conversations or send direct messages.
         </span>
       </section>
@@ -163,7 +163,7 @@ export const SlackSettings = ({ workspaceId, slack }: Props) => {
         <div className="flex min-w-0 flex-col gap-1 rounded-lg border border-border-soft bg-elevated p-3 shadow-sm">
           <span className="text-body text-foreground">I checked the refund split.</span>
           {config.signature.agents && config.signature.text.trim() !== '' ? (
-            <span className="text-secondary text-faint-foreground">{config.signature.text}</span>
+            <span className="text-meta text-faint-foreground">{config.signature.text}</span>
           ) : null}
         </div>
       </section>

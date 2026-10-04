@@ -45,15 +45,15 @@ export const VersionHistoryList = ({
         return (
           <li
             key={version.id}
-            className="flex flex-col gap-1.5 rounded-lg border border-border-soft bg-subtle p-3"
+            className="flex flex-col gap-2 rounded-lg border border-border-soft bg-subtle p-3"
           >
             <div className="flex items-center gap-2">
               <AuthorshipChip byUser={version.snapshotSource === 'restore'} />
-              <span className="text-secondary text-muted-foreground">{version.changeKind}</span>
-              <span className="text-secondary text-muted-foreground">
+              <span className="text-meta text-muted-foreground">{version.changeKind}</span>
+              <span className="text-meta text-muted-foreground">
                 {formatAge({ from: version.capturedAt, now })}
               </span>
-              <span className="ml-auto text-secondary text-muted-foreground">
+              <span className="ml-auto text-meta text-muted-foreground">
                 {formatDateTime({ at: version.capturedAt, hasYear: true })}
               </span>
             </div>

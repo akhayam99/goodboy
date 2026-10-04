@@ -95,10 +95,10 @@ export const RoutingIndicator = ({
     <TranscriptShell
       tone="warning"
       variant="boxed"
-      className={`flex w-fit items-center gap-1.5 text-label ${warningAccent.text}`}
+      className={`flex w-fit items-center gap-2 text-label ${warningAccent.text}`}
     >
       <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-      <span className="flex items-center gap-1.5">
+      <span className="flex items-center gap-2">
         Fallback to
         <RoutingLabel provider={decision.selectedProvider} model={decision.selectedModel} />
         <span>({cause})</span>

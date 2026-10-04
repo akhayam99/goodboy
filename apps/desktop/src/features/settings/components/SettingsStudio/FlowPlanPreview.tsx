@@ -66,7 +66,7 @@ export const FlowPlanPreview = ({
                 />
                 <span className="shrink-0 text-row text-foreground">{label}</span>
                 <Chip tone="neutral" size="sm" label={String(page.items.length)} />
-                <span className="min-w-0 flex-1 truncate text-secondary text-muted-foreground">
+                <span className="min-w-0 flex-1 truncate text-meta text-muted-foreground">
                   {summaryOf({ items: page.items })}
                 </span>
                 <IconButton
@@ -80,12 +80,10 @@ export const FlowPlanPreview = ({
                 <dl className="grid grid-cols-[minmax(0,12rem)_minmax(0,1fr)] gap-x-4 gap-y-1 pl-7">
                   {page.items.map((item) => (
                     <div key={item.field} className="contents">
-                      <dt className="truncate text-secondary text-muted-foreground">
-                        {item.label}
-                      </dt>
-                      <dd className="min-w-0 truncate text-secondary">
+                      <dt className="truncate text-meta text-muted-foreground">{item.label}</dt>
+                      <dd className="min-w-0 truncate text-meta">
                         <span className="text-faint-foreground">{item.from}</span>
-                        <span aria-hidden className="px-1.5 text-faint-foreground">
+                        <span aria-hidden className="px-2 text-faint-foreground">
                           →
                         </span>
                         <span className="sr-only">to</span>

@@ -25,11 +25,11 @@ describe('ProfileForm', () => {
   it('suggests library roles grouped as you type and adds the highlighted one on Enter', () => {
     const onCommit = vi.fn();
     render(<Harness onCommit={onCommit} />);
-    const input = screen.getByRole('combobox', { name: 'Your roles' });
+    const input = screen.getByRole('combobox', { name: 'Your job' });
 
     fireEvent.focus(input);
     fireEvent.change(input, { target: { value: 'sre' } });
-    const list = screen.getByRole('listbox', { name: 'Your roles suggestions' });
+    const list = screen.getByRole('listbox', { name: 'Your job suggestions' });
     expect(within(list).getByText('Engineering')).toBeDefined();
     expect(within(list).getByRole('option', { name: 'Site Reliability Engineer' })).toBeDefined();
     expect(within(list).getByRole('option', { name: 'Add "sre" as your own role' })).toBeDefined();
@@ -45,7 +45,7 @@ describe('ProfileForm', () => {
   it('adds a custom role that is not in the library', () => {
     const onCommit = vi.fn();
     render(<Harness onCommit={onCommit} />);
-    const input = screen.getByRole('combobox', { name: 'Your roles' });
+    const input = screen.getByRole('combobox', { name: 'Your job' });
 
     fireEvent.focus(input);
     fireEvent.change(input, { target: { value: 'Payments steward' } });

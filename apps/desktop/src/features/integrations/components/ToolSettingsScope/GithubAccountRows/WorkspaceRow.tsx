@@ -30,7 +30,7 @@ export const WorkspaceRow = ({ workspaceId, connection, isGlobalConnected }: Pro
       <button
         type="button"
         onClick={() => setIsExpanded(true)}
-        className="shrink-0 rounded-md px-1.5 py-0.5 text-secondary text-muted-foreground hover:bg-hover hover:text-foreground"
+        className="shrink-0 rounded-md px-2 py-0.5 text-chip text-muted-foreground hover:bg-hover hover:text-foreground"
       >
         Use a different key
       </button>

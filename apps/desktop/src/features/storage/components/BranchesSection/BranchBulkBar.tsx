@@ -90,7 +90,7 @@ export const BranchBulkBar = ({
       ]}
       note={
         isConfirming || originEligible === 0 || count === 0 ? null : (
-          <div className="rounded-lg border border-border bg-floating px-3 py-1.5 shadow-lg">
+          <div className="rounded-lg border border-border bg-floating px-3 py-2 shadow-lg">
             <Checkbox
               checked={alsoOrigin}
               onChange={setAlsoOrigin}

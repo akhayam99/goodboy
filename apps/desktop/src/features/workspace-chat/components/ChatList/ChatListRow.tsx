@@ -161,7 +161,7 @@ const ChatListRowView = ({
         isSelected={isSelected}
         onOpen={() => onSelect(chatId)}
         frameClassName={cn('group group/select-row', isChecked && 'bg-selected')}
-        className="flex min-w-0 flex-col gap-0.5 py-1.5 pl-7 pr-1"
+        className="flex min-w-0 flex-col gap-0.5 py-2 pl-7 pr-1"
         dataAttributes={{ 'data-select-id': chatId }}
         menu={menu}
       >
@@ -244,7 +244,7 @@ const ChatListRowView = ({
         </span>
         <span
           className={cn(
-            'flex min-w-0 items-center gap-1.5 text-secondary',
+            'flex min-w-0 items-center gap-1 text-meta',
             isIdle ? 'text-disabled-foreground' : 'text-faint-foreground',
           )}
         >

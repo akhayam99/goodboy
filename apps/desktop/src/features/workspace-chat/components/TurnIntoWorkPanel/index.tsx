@@ -321,7 +321,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <h3 className="text-heading text-foreground">{TURN_INTO_WORK_LABEL}</h3>
           {drafter === null ? (
-            <p className="text-secondary text-faint-foreground">Drafting from this chat</p>
+            <p className="text-meta text-faint-foreground">Drafting from this chat</p>
           ) : (
             <DraftedBy
               choice={drafter}
@@ -333,8 +333,8 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
         <IconButton icon={X} label="Close" variant="ghost" onClick={onClose} />
       </div>
       <ScrollFade className="flex-1">
-        <div className="flex flex-col gap-4 px-4 pb-4 pt-2.5">
-          <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-4 px-4 pb-4 pt-3">
+          <div className="flex flex-col gap-2">
             <span className="text-label text-muted-foreground">Start as</span>
             <SegmentedTabs
               ariaLabel="Start as"
@@ -344,7 +344,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
               size="sm"
               fill
             />
-            <p className="text-secondary text-faint-foreground">{MODE_COPY[mode].hint}</p>
+            <p className="text-meta text-faint-foreground">{MODE_COPY[mode].hint}</p>
             {mode === 'add' ? (
               <SessionField
                 sessions={sessions}
@@ -363,14 +363,14 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
             </div>
           ) : (
             <>
-              <label className="flex flex-col gap-1.5">
+              <label className="flex flex-col gap-2">
                 <span className="text-label text-muted-foreground">Title</span>
                 <Input
                   value={brief.title}
                   onChange={(event) => patch({ title: event.target.value })}
                 />
               </label>
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-2">
                 <span className="text-label text-muted-foreground">Goal</span>
                 <PromptField
                   kind="document"
@@ -399,7 +399,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
               />
               {mode === 'new' ? (
                 <>
-                  <div className="flex flex-col gap-1.5">
+                  <div className="flex flex-col gap-2">
                     <span className="text-label text-muted-foreground">Project</span>
                     <ProjectField projects={projects} value={projectIds} onChange={setProjectIds} />
                   </div>
@@ -427,7 +427,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
                     size="sm"
                     onClick={() => void linkThenFinish(unlinked)}
                   >
-                    Try again
+                    Retry
                   </Button>
                   <Button variant="ghost" size="sm" onClick={() => finish(unlinked)}>
                     Open the session

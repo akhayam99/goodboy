@@ -81,7 +81,7 @@ export const FailedRun = ({
 
   return (
     <div className="flex min-w-0 flex-col gap-3">
-      <div className="flex min-w-0 flex-col gap-2 rounded-lg bg-subtle px-4 py-2.5 text-secondary text-foreground">
+      <div className="flex min-w-0 flex-col gap-2 rounded-lg bg-subtle px-4 py-2 text-meta text-foreground">
         <p className="flex min-w-0 items-start gap-2">
           <AlertCircle
             size={ICON_SIZE.control}
@@ -170,7 +170,7 @@ export const FailedRun = ({
           aria-label={FAILED_RUN_COPY.modelList}
           className="flex min-w-0 flex-col gap-1 rounded-lg bg-subtle py-2"
         >
-          <p className="px-2.5 text-secondary text-muted-foreground">
+          <p className="px-3 text-meta text-muted-foreground">
             {failedOn === null
               ? FAILED_RUN_COPY.modelList
               : `${failedOn} ${FAILED_RUN_COPY.usedAndFailed}`}

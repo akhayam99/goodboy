@@ -141,9 +141,9 @@ export const SelectionBar = ({
         <div
           role="toolbar"
           aria-label={ariaLabel ?? `${count} selected`}
-          className="flex max-w-full flex-wrap items-center gap-1.5 rounded-lg border border-border bg-floating py-1 pl-1 pr-1.5 shadow-lg motion-safe:animate-studio-in"
+          className="flex max-w-full flex-wrap items-center gap-2 rounded-lg border border-border bg-floating py-1 pl-1 pr-2 shadow-lg motion-safe:animate-studio-in"
         >
-          <span className="flex items-center gap-1.5">
+          <span className="flex items-center gap-2">
             <IconButton
               icon={X}
               iconSize={13}
@@ -183,7 +183,7 @@ export const SelectionBar = ({
                   disabled={verb.isDisabled}
                   onClick={verb.onRun}
                   className={cn(
-                    'gap-1.5 whitespace-nowrap',
+                    'gap-2 whitespace-nowrap',
                     verb.tone === 'danger' &&
                       cn(tintClasses('danger').text, tintClasses('danger').hoverBg),
                   )}

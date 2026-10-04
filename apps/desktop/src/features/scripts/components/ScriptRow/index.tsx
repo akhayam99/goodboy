@@ -74,12 +74,12 @@ export const ScriptRow = ({
         <Tooltip content={runsInLabel({ script })}>
           <span className="shrink-0 truncate text-row text-foreground">{script.name}</span>
         </Tooltip>
-        <span className="min-w-0 truncate font-mono text-secondary text-faint-foreground">
+        <span className="min-w-0 truncate font-mono text-meta text-faint-foreground">
           {script.body}
         </span>
       </span>
       {showSource ? (
-        <span className="w-24 shrink-0 truncate text-secondary text-muted-foreground">
+        <span className="w-24 shrink-0 truncate text-meta text-muted-foreground">
           {sourceLabel}
         </span>
       ) : null}

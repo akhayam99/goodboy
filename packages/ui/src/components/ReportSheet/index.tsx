@@ -149,7 +149,7 @@ export const ReportSheet = ({
         className,
       )}
     >
-      <header className="flex items-center gap-2 px-3 pb-1 pt-2.5">
+      <header className="flex items-center gap-2 px-3 pb-1 pt-3">
         {icon != null ? (
           <span className="inline-flex shrink-0 text-muted-foreground" aria-hidden>
             {icon}
@@ -194,7 +194,7 @@ export const ReportSheet = ({
           />
         ) : null}
         {duplicate != null ? (
-          <div className="flex items-center gap-2 rounded-md bg-fill px-2 py-1.5 text-secondary">
+          <div className="flex items-center gap-2 rounded-md bg-fill px-2 py-1 text-chip">
             <Search size={12} aria-hidden className="shrink-0 text-info" />
             <span className="min-w-0 flex-1 truncate text-muted-foreground">
               Looks like{' '}
@@ -217,7 +217,7 @@ export const ReportSheet = ({
           </div>
         ) : null}
         {attachments.length > 0 ? (
-          <ul aria-label="Attached" className="flex flex-wrap gap-1.5">
+          <ul aria-label="Attached" className="flex flex-wrap gap-2">
             {attachments.map((attachment) => (
               <li key={attachment.id}>
                 <AttachmentChip attachment={attachment} onToggle={onToggleAttachment} />
@@ -233,7 +233,7 @@ export const ReportSheet = ({
               aria-controls={previewId}
               onClick={() => setIsPreviewOpen((open) => !open)}
               className={cn(
-                'inline-flex min-w-0 items-center gap-1.5 rounded-sm py-0.5 text-secondary text-muted-foreground hover:text-foreground',
+                'inline-flex min-w-0 items-center gap-1 rounded-sm py-0.5 text-meta text-muted-foreground hover:text-foreground',
                 FOCUS_RING,
               )}
             >
@@ -255,10 +255,10 @@ export const ReportSheet = ({
             ) : null}
           </div>
           {isPreviewOpen ? (
-            <div id={previewId} className="mt-1.5 flex flex-col gap-1.5">
+            <div id={previewId} className="mt-2 flex flex-col gap-2">
               <ScrollFade
                 className="max-h-60 rounded-md bg-muted"
-                viewportClassName="px-2.5 py-2"
+                viewportClassName="px-3 py-2"
                 fadeFrom="muted"
               >
                 <pre
@@ -268,7 +268,7 @@ export const ReportSheet = ({
                   {preview}
                 </pre>
               </ScrollFade>
-              <p className="text-secondary text-faint-foreground">{neverSent}</p>
+              <p className="text-meta text-faint-foreground">{neverSent}</p>
             </div>
           ) : null}
         </div>
@@ -276,7 +276,7 @@ export const ReportSheet = ({
       <FormActions
         className="px-3 pb-3"
         leading={
-          <div className="min-w-0 text-secondary text-muted-foreground">
+          <div className="min-w-0 text-meta text-muted-foreground">
             {error != null ? (
               <span role="alert" className="text-danger">
                 {error}
@@ -290,7 +290,7 @@ export const ReportSheet = ({
         {isDetailOpen ? null : (
           <Button variant="ghost" size="sm" onClick={openDetail}>
             Add detail
-            <KbdPill className="ml-1.5">⇥</KbdPill>
+            <KbdPill className="ml-2">⇥</KbdPill>
           </Button>
         )}
         <Button
@@ -302,7 +302,7 @@ export const ReportSheet = ({
         >
           {submitLabel}
           {submitIcon}
-          <KbdPill className="ml-1.5 border-transparent bg-on-tone/15 text-on-tone">
+          <KbdPill className="ml-2 border-transparent bg-on-tone/15 text-on-tone">
             {submitHint}
           </KbdPill>
         </Button>

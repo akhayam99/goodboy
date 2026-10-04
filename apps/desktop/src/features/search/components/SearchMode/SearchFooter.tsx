@@ -22,17 +22,14 @@ export const SearchFooter = ({ progress }: Props) => (
   <div className="flex items-center gap-4 bg-fill px-4 py-2">
     <ul className="flex flex-1 flex-wrap items-center gap-4" aria-label="Keys">
       {HINTS.map((hint) => (
-        <li
-          key={hint.label}
-          className="flex items-center gap-1 text-secondary text-faint-foreground"
-        >
+        <li key={hint.label} className="flex items-center gap-1 text-meta text-faint-foreground">
           <KbdPill>{hint.keys}</KbdPill>
           {hint.label}
         </li>
       ))}
     </ul>
     {progress === null ? null : (
-      <span role="status" className="text-secondary text-faint-foreground">
+      <span role="status" className="text-meta text-faint-foreground">
         {progress}
       </span>
     )}

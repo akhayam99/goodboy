@@ -9,7 +9,7 @@ export type HistoryRowPillState = {
 };
 
 const PILL =
-  'inline-flex h-5 shrink-0 items-center gap-1 rounded-sm border px-1.5 text-secondary whitespace-nowrap';
+  'inline-flex h-5 shrink-0 items-center gap-1 rounded-sm border px-2 text-chip whitespace-nowrap';
 const WARN = tintClasses('warning');
 
 export const HistoryRowPills = ({ isHead, remote, prNumber }: HistoryRowPillState) => {

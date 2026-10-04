@@ -22,14 +22,12 @@ export const AgentLastUpdate = ({
         activeDelegatedChildCount > 0
           ? `${activeDelegatedChildCount}/${delegatedChildCount} running`
           : 'done';
-      return (
-        <span className="text-secondary text-faint-foreground">delegated · {delegatedState}</span>
-      );
+      return <span className="text-meta text-faint-foreground">delegated · {delegatedState}</span>;
     }
-    return <span className="text-secondary text-faint-foreground">not started</span>;
+    return <span className="text-meta text-faint-foreground">not started</span>;
   }
   return (
-    <span className="text-secondary tabular-nums text-faint-foreground">
+    <span className="text-meta tabular-nums text-faint-foreground">
       {`updated ${formatAge({ from: lastUpdate, now: nowMs })}`}
     </span>
   );

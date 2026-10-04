@@ -297,7 +297,7 @@ describe('ArtifactStudio list', () => {
     state.sessionPhaseRuns = { 'sess-1': [reportAgent] };
     renderStudio();
     expect(screen.getByText('Stopped')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     await waitFor(() => {
       expect(state.openArtifactCreation).toHaveBeenCalledWith({
         sessionId: 'sess-1',

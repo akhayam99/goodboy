@@ -50,7 +50,7 @@ export const ProviderBindingsSection = ({ providerId, cliIdentity }: Props) => {
               </span>
               <div className="flex min-w-0 flex-col">
                 <span className="truncate text-row text-foreground">{ws.name}</span>
-                <span className="text-secondary text-faint-foreground">
+                <span className="text-meta text-faint-foreground">
                   {usingKey ? 'billed to API key' : 'billed to CLI login'}
                 </span>
               </div>

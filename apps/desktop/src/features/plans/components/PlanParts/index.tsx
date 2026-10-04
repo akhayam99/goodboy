@@ -29,7 +29,7 @@ export const PlanParts = ({
         <h2>
           <Eyebrow label="Parts" />
         </h2>
-        <span className="text-secondary tabular-nums text-faint-foreground">{rows.length}</span>
+        <span className="text-meta tabular-nums text-faint-foreground">{rows.length}</span>
       </div>
       {hasRun ? null : <p className="text-label text-muted-foreground">{splitSentence}</p>}
       <ol className="flex min-w-0 flex-col">

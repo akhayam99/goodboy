@@ -27,7 +27,7 @@ type Props = {
   readonly onDismiss: () => void;
 };
 
-const SURFACE = 'flex flex-col gap-2 rounded-md border border-border-soft bg-subtle p-2.5';
+const SURFACE = 'flex flex-col gap-2 rounded-md border border-border-soft bg-subtle p-3';
 
 export const IssueBriefProposal = ({
   source,

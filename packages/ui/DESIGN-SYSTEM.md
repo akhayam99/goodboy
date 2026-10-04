@@ -117,21 +117,20 @@ only, so emphasis gets a synthetic slant. The boot shell in
 `apps/desktop/index.html` stays on `system-ui`, because it paints before the
 stylesheet loads, and the exported report embeds the same file as a data URI.
 
-| role             | measure                       | used for                                                                               |
-| ---------------- | ----------------------------- | -------------------------------------------------------------------------------------- |
-| `text-display`   | 24/32, 600, -0.01em           | onboarding titles, the `EmptyState` hero, the Impact title                             |
-| `text-title`     | 16/24, 600, -0.005em          | the one pane title (h1) of a surface                                                   |
-| `text-heading`   | 14/20, 600                    | a page-grade section, a popover title, a kickoff question                              |
-| `text-row`       | 13/20, 500                    | a top-level row label, a card title                                                    |
-| `text-body`      | 14/20                         | running text; text with no class inherits it from the body                             |
-| `text-prose`     | 14/22                         | messages, markdown, artifacts                                                          |
-| `text-label`     | 12/16                         | controls, a nested row, a status label                                                 |
-| `text-secondary` | 11/16                         | a secondary line, a chip, an option description                                        |
-| `text-eyebrow`   | 11/16, 600, 0.08em, uppercase | a section label, only through `Eyebrow`                                                |
-| `text-meta`      | 12/16, tabular                | time, ordinal, cost, count, a row's second line                                        |
-| `text-chip`      | 11/16, 500, tabular           | the label inside a chip, a badge, a key cap, a count pill                              |
-| `text-code`      | mono 12/18                    | branch, path, command, inline code                                                     |
-| `document`       | 15/25                         | the report document body (screen and file); a reading exception, not a `--text-*` role |
+| role           | measure                       | used for                                                                               |
+| -------------- | ----------------------------- | -------------------------------------------------------------------------------------- |
+| `text-display` | 24/32, 600, -0.01em           | onboarding titles, the `EmptyState` hero, the Impact title                             |
+| `text-title`   | 16/24, 600, -0.005em          | the one pane title (h1) of a surface                                                   |
+| `text-heading` | 14/20, 600                    | a page-grade section, a popover title, a kickoff question                              |
+| `text-row`     | 13/20, 500                    | a top-level row label, a card title                                                    |
+| `text-body`    | 14/20                         | running text; text with no class inherits it from the body                             |
+| `text-prose`   | 14/22                         | messages, markdown, artifacts                                                          |
+| `text-label`   | 12/16                         | controls, a nested row, a status label                                                 |
+| `text-eyebrow` | 11/16, 600, 0.08em, uppercase | a section label, only through `Eyebrow`                                                |
+| `text-meta`    | 12/16, tabular                | time, ordinal, cost, count, a row's second line                                        |
+| `text-chip`    | 11/16, 500, tabular           | the label inside a chip, a badge, a key cap, a count pill                              |
+| `text-code`    | mono 12/18                    | branch, path, command, inline code                                                     |
+| `document`     | 15/25                         | the report document body (screen and file); a reading exception, not a `--text-*` role |
 
 `document` is the one exception to "a role, never a size": it lives in
 `artifactDocument.css`'s own `--print-*` tokens, not `typeRoles.ts`, because
@@ -140,28 +139,28 @@ medium shrinks every one of its tokens under `@media print`. It never appears
 outside `ArtifactDocument`.
 
 A role with no weight inherits one: `text-label font-medium` is a control label
-at 500, `text-secondary font-medium` a chip. Weights are 400, 500 and 600, and
+at 500, `text-chip` a chip. Weights are 400, 500 and 600, and
 600 belongs to display, title, heading and eyebrow. `text-row` and `text-chip`
 carry 500 themselves, so a weight utility next to a role is redundant, and
 `forbidden-patterns.test.ts` counts it (`role-weight-override`). Tracking lives only inside
 the roles. A leading utility still composes with a role
-(`text-secondary leading-none` for a one-line badge), because the role reads
+(`text-chip leading-none` for a one-line badge), because the role reads
 the leading before its own line box.
 
-The raw grades stay defined, each on a whole-pixel line box: `3xs` 10/14, `2xs`
-11/16, `xs` 12/16, `sm` 14/20, `base` 15/24, `lg` 17/24, `xl` 20/28, `2xl`
-24/32. New code does not reach for them. `forbidden-patterns.test.ts` counts
-raw sizes, weights, leadings and tracking per file, and the count only goes
-down. `scripts/codemods/type-roles.mjs` (`pnpm codemod:type-roles`) rewrites
-the combinations that map one to one (`text-sm font-medium` to `text-row`,
-`text-3xs` to `text-chip`, `text-sm leading-relaxed` to `text-prose`); the rest
-moves by hand, area by area. Arbitrary sizes are covered by
+The raw grades (`3xs` to `2xl`) stay defined as theme tokens, each on a
+whole-pixel line box, but no class reaches for them: `no-token-bypass.test.ts`
+fails on any `text-xs`, `text-sm`, `text-lg` and the rest, and
+`forbidden-patterns.test.ts` counts raw weights, leadings and tracking per file,
+where the count only goes down. `scripts/codemods/type-roles.mjs`
+(`pnpm codemod:type-roles`) rewrites the combinations that map one to one
+(`text-sm font-medium` to `text-row`, `text-3xs` to `text-chip`,
+`text-sm leading-relaxed` to `text-prose`). Arbitrary sizes are covered by
 [docs/styling.md](../../docs/styling.md).
 
 Spacing sits on a 4px grid: `1`, `2`, `3`, `4`, `6`, `8` (4, 8, 12, 16, 24, 32px).
 A half step (`py-1.5`, `gap-2.5`, `px-3.5`) is out, and `0.5` stays only for a
-hairline. `forbidden-patterns.test.ts` counts half steps per file
-(`half-step-spacing`) and the count only goes down. `spacing-grid.test.ts`
+hairline. `half-step-spacing` in `forbidden-patterns.test.ts` allows none, and
+no baseline lists it. `spacing-grid.test.ts`
 reads `paneRhythm.ts`, `timelineRhythm.ts` and `workMetaSpec.ts` and fails on a
 half step, or on a row height outside 24, 28, 32, 36, 40 and 48. A one-line rail
 row is `navRail.row` (32px), a two-line one `navRail.rowTwo` (48px).
@@ -359,15 +358,25 @@ Add a tone instead.
 The activity feed draws its structure instead of indenting it. Four ingredients
 make up the whole grammar. Nothing outside this list may appear on the rail:
 
-| ingredient | value                                                       | meaning                                                   |
-| ---------- | ----------------------------------------------------------- | --------------------------------------------------------- |
-| spine      | 1px, `--color-border`, solid, unbroken on every row         | the session's own thread                                  |
-| lane       | 2px, identity hue, solid                                    | a run whose steps have happened                           |
-| join       | quarter curve between spine and lane at a row's marker line | a run departing at its origin or merging when it finished |
-| stub       | 1px, `--color-border`, offset one column                    | a standalone agent's fan-out, which belongs to no run     |
+| ingredient | value                                                             | meaning                                                   |
+| ---------- | ----------------------------------------------------------------- | --------------------------------------------------------- |
+| spine      | 1px, `--color-border`, solid, unbroken on every row               | the session's own thread                                  |
+| lane       | 2px, identity hue, solid                                          | a run whose steps have happened                           |
+| join       | quarter curve between spine and lane at a row's marker line       | a run departing at its origin or merging when it finished |
+| stub       | 1px, `--color-border`, offset one column                          | a standalone agent's fan-out, which belongs to no run     |
+| head       | ball one column in, 1px `--color-border` curve down-left to spine | the group row: the children hang one column past its ball |
 
 The spine is the backbone of the feed. It is full height, always drawn, never
 tinted and never broken.
+
+Every group row sits on a head, folded or open: a finished run, an agent chain,
+a resolve batch and the subagents of an agent. The ball is the group's marker
+one column in from its parent column, a 1px grey curve (the head's stub) leaves
+it flat and lands vertical on that column, and the open children keep to the
+column past the ball, so the lane reads as hanging off the group instead of off
+the spine. The head belongs to the group's lane for hover and click
+(`head:<id>` names the run in the lane spans), but its stub is neutral ink in
+every case. A live run and the run page have no group row and draw no head.
 
 ### A lane is a control
 
@@ -603,12 +612,19 @@ subagent that asks you a question counts the same way (`groupChild` ask).
 
 A finished workflow run or agent chain with three rows or more is a third group
 kind, `steps`: the run row itself is the group row, with its own node, the
-summary from `groupSummary` ("8 steps · 1 question answered · Context +2") after
-the title, never truncated: the title gives way first, down to 96px, then the
-summary keeps only its first clause and the kept `Context +N` part ("8 steps ·
-Context +2"); `Context +N` counts what the run's agents added to the decisions and
-learnings and shows only when N > 0,
-the hint "Open ↵" or "Fold ↵", and the chevron. A run that asks you something,
+summary from `groupSummary` ("8 steps · 1 question answered · Context · 2 added,
+2 replaced") after the title, never truncated: the title gives way first, down to
+96px, then the summary keeps only its first clause and the kept Context part ("8
+steps · Context · 2 added, 2 replaced"). The Context part is the same string as
+the Context row inside the lane (`CONTEXT_LABEL` and `decisionCountsText`), summed
+over the rows of the run's agents, and shows only when a row changed something.
+Those Context rows are members of the run lane, graded `fact`, and a closed run
+hides them; a Context event with no agent stays on the spine. An answered or
+dismissed question in a lane is a compact `fact` row with no clock, an open one
+stays a `step`. The gutter clock carries a tooltip that says rows are newest first
+and stamped with their own moment (agent start, answer time or record time),
+and the chevron. Its node is the same `mixed` ball with the step count in its
+center, closed or open, and its hint verb is Expand or Collapse. A run that asks you something,
 failed or is still running is never folded. Every group row fills the routing,
 time and cost columns with the totals of what it holds (`groupTotals`), counted
 once, and its time is fixed: a group row never reads the shared work clock. A
@@ -636,7 +652,7 @@ running or done, and so does every surface that reads `formatActiveTime`.
 | cost       | 48px  | what the row has spent, empty before anything is spent                                                        | under 620px it leaves the row             |
 | cost range | 72px  | an estimated cost range before a step starts (`isCostRange`)                                                  | under 620px it leaves the row             |
 | action     | 76px  | the one visible action, reserved for a list that can ask: Activity of an open session, the tree of a live run | never drops                               |
-| menu       | 24px  | the row menu, like Close workflow on a run row                                                                | never drops                               |
+| menu       | 24px  | the row menu, like Stop workflow on a run row                                                                 | never drops                               |
 
 A row inside a `WorkTimeProvider` always renders the time column, empty when
 it has nothing to say, so the columns stay in line. The cost column follows
@@ -645,6 +661,15 @@ drops it, as the builder does for a plan with no measured estimate yet. A
 run row has no routing: its step progress sits in the routing column and its
 time in the time column (`WORK_META_COLUMN.progress`, which keeps its words
 when the model column folds to a glyph).
+
+The activity timeline always draws the provider glyph on every agent row,
+even when the session uses one provider. The model name shows only on a row
+whose model differs from its group (the session, a run, or the parent agent;
+`TimelineRouting` context, `useTimelineRoutingFacts`), where the group model
+is the one a majority of its agents share; a tied group and a group of one
+name every model. A hidden name stays in the DOM as `sr-only` and in the row
+tooltip. `RoutingLabel` keeps the name by default (`hideName` opts out), so
+other lists read the same.
 
 The narrow rules are container queries, never window breakpoints, because
 the same feed sits in a wide overview and in a split pane. The activity feed
@@ -667,8 +692,10 @@ keeps its title whole before its summary: the summary takes the room left
 beside the title and truncates its tail first, then the title truncates. A list under 440px also
 drops the time gutter; the day and Now labels move beside the rail. Label segments keep their
 leading words and tokens whole ("Opened #612:") and only the last segment
-truncates. The "Open ↵" hint takes room only while a row of 640px or more is
-hovered or focused. What leaves the row stays in the routing tooltip, which
+truncates. A row carries no hover hint on its right; the open target and the
+keys are read by screen readers (`aria-description`, `aria-keyshortcuts`).
+"Longer than usual" shows only on a running step, never on a finished one.
+What leaves the row stays in the routing tooltip, which
 always reads the whole route ("Claude · Opus 5.5 · High"). The routing column
 is `RoutingLabel isColumn`, with no fill and no chip. Its words come from
 `routingLabelParts`, the same function behind the model picker trigger, so a
@@ -819,7 +846,7 @@ never differ ([docs/navigation.md](../../docs/navigation.md#context-menus)).
   at the pointer and flips left or up to stay 8px inside the window
   (`placeContextMenu`).
 - **Row**: a 16px leading slot for the icon, the label, the shortcut glyphs on
-  the right in `text-secondary text-faint-foreground`, and a chevron when the
+  the right in `text-meta text-faint-foreground`, and a chevron when the
   row opens a submenu. Groups are split by a hairline, never by headers. A
   blocked row stays in `disabled-foreground` with its reason on a second faint
   line, is `aria-disabled`, and keeps focus so the reason can be read. Only a
@@ -891,7 +918,7 @@ app below it has crashed.
   `Textarea` under it. ⌘↵ anywhere in the sheet submits.
 - **Match**: an open issue that matches the line sits in a `fill` row with
   Add mine there.
-- **Attachments**: one `rounded-full` `fill` chip per part, `text-secondary`,
+- **Attachments**: one `rounded-full` `fill` chip per part, `text-chip`,
   a 12px glyph and a × with a tooltip. A removed part stays as a dashed chip,
   struck through, that puts it back. The error chip carries the danger ring.
 - **What gets sent**: a disclosure row (chevron, shield in success, the
@@ -899,7 +926,7 @@ app below it has crashed.
   `ScrollFade` of `text-code`, a copy button, and the line that says what never
   leaves.
 - **Action row**: `FormActions`, with the destination or the error in
-  `text-secondary` on the left, Add detail while the detail is closed, and the
+  `text-meta` on the left, Add detail while the detail is closed, and the
   primary button whose label names the destination, with its shortcut in an
   on-tone pill.
 
@@ -980,16 +1007,16 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 - The new session draft follows the same rule, with one exception: an empty session asks one question with three choices on one row, as tabs (`SegmentedTabs` `card` variant, glyph, title, one line, a check on the selected one) instead of a stacked list, because there are exactly three doors and they read better side by side. Only the selected tab's panel, and only its primary, shows. An item that cannot work yet is left out, never shown disabled. A grid of tiles is otherwise not an action zone.
 - The session overview's actions carry a second exception: a frequent alternative to the primary sits as one secondary button beside it, not folded into the menu. `OverviewActions` shows a secondary Run workflow (Open run once one is active) next to the primary Start agent, with `OverflowMenu` labeled Create holding only the rarer starts (Report, Wireframe). Still one primary; the secondary is the one alternative common enough to earn its own button.
 - An overflow menu that has to confirm one of its items in place renders `MenuItems` inside its own `AnchoredPopover` and swaps to a plain `InlineConfirm`, as the orchestrator strip does for **Stop now**.
-- An on or off setting is a `Switch`: the label names the setting and the knob says its state, so the label never reads "on" or "off". Autorun uses it everywhere (`WorkflowAutorunToggle`).
+- An on or off setting is a `Switch`: the label names the setting and the knob says its state, so the label never reads "on" or "off". Run on its own uses it everywhere (`WorkflowAutorunToggle`).
 
 **Record actions.** A record from a connected tool (issue, merge or pull request, thread, error) has four fixed places, whatever the tool:
 
-| Place     | What goes there                                                                               | Shape                                              |
-| --------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Primary   | Launch session, or Open session once one is linked                                            | one filled button, first in the action row         |
-| Secondary | at most two tool verbs that move the record forward, picked by state                          | neutral `secondary` buttons, tone only in the icon |
-| Overflow  | rare tool verbs, Refresh, Copy link, Unlink session, then destructive verbs after a separator | the `⋯` menu on the identity line                  |
-| Utilities | Open in the tool, `⋯`, close                                                                  | icon buttons at the end of the identity line       |
+| Place     | What goes there                                                                                       | Shape                                              |
+| --------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Primary   | Launch session, or Open session once one is linked                                                    | one filled button, first in the action row         |
+| Secondary | at most two tool verbs that move the record forward, picked by state                                  | neutral `secondary` buttons, tone only in the icon |
+| Overflow  | rare tool verbs, Refresh, Copy link, Remove link to session, then destructive verbs after a separator | the `⋯` menu on the identity line                  |
+| Utilities | Open in the tool, `⋯`, close                                                                          | icon buttons at the end of the identity line       |
 
 A verb blocked for a moment stays visible with its reason in the tooltip; a verb the tool refuses is not shown. Merge confirms under the action row, and a destructive verb confirms in its menu with a plain menu swap. Properties that can change (state, assignee) change from the control that shows them, never from a button. `RecordHeader` and the `RecordVerbs` type own the contract.
 
@@ -1100,8 +1127,8 @@ optional action; hover never opens it and it never opens on its own. Escape,
 an outside click or moving focus away closes it. The anchor is a block `div`,
 so the sentence around a hint is a `div` or a `span`, never a `p`. A hint
 never sits inside another button or tab: put it in the line under the control.
-The desktop app reaches it only through `GlossaryTerm`, which reads the one
-definition table and adds Open the guide.
+The desktop app has no wrapper for it now: a word that stays gets a
+`tooltip` on its `SegmentedTabs` option, six words at most.
 
 ## Card action grammar and creation grammar
 
@@ -1180,7 +1207,7 @@ it:
   holding `PANE_RHYTHM.column` and `PANE_RHYTHM.body` with `gap-8` between the
   blocks. Put it inside the shell (`StudioShell`, `PaneShell scroll="self"`).
 - **`FormActions`** is the action row. `leading` holds the quiet options or the
-  status line on the left (Starts, Autorun, Spend cap, routing, "Scribe is
+  status line on the left (Starts, Run on its own, Spend cap, routing, "Scribe is
   writing", an error with `role="alert"`). The children sit right-aligned in
   order: secondary first (Discard, Cancel, Back as `ghost` with
   `text-muted-foreground`), alternates as `secondary`, and the one primary
@@ -1298,7 +1325,7 @@ conversation is the wrapped sheet, and "Turn into work" is the
 `DrawerColumn` drawer beside it, never a dialog.
 
 - **List rows** are `InteractiveRow`s: title `text-label`, the last answer
-  as a `text-secondary` snippet, time as `text-meta` on the right. Pin and
+  as a `text-meta` snippet, time as `text-meta` on the right. Pin and
   Archive are ghost `IconButton`s that replace the time on hover. Groups are
   `Eyebrow` headings (Pinned, Today, This week, Idle). An idle row keeps its
   shape and only drops a text step (`faint` title, `disabled` snippet); a
@@ -1313,10 +1340,10 @@ conversation is the wrapped sheet, and "Turn into work" is the
   (a quiet
   disclosure listing paths in `text-code`), then one `h-7` row. Copy
   (`CopyButton` with `tone="faint"`) and "Start work from here" sit on the
-  left, quiet `text-secondary` actions that show on hover or keyboard focus of
+  left, quiet `text-meta` actions that show on hover or keyboard focus of
   the answer (`group/answer`, `opacity-0` at rest so the row never shifts);
   the model and effort that wrote the answer sit on the right as faint
-  `text-secondary` text, always visible. A saved session link is a
+  `text-meta` text, always visible. A saved session link is a
   `bg-subtle` note in the thread under the answer it came from. A streaming
   answer with no text yet shows a pulsing `StatusDot` and "Reading {workspace}",
   never a spinner.

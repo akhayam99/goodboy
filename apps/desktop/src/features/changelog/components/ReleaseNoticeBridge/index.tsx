@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useToast } from '../../../../shared/components/Toast';
+import { NAMES } from '../../../../shared/names';
 import { useAppStore } from '../../../../store';
 import { changelogCatchUp } from '../../changelogCatchUp';
 import { isInstalledRelease } from '../../isInstalledRelease';
@@ -44,7 +45,7 @@ export const ReleaseNoticeBridge = ({ onOpenChangelog }: Props) => {
     const message =
       installedRelease === undefined ? '' : releaseSummary({ release: installedRelease });
     const actionLabel =
-      catchUp === null ? 'Read the changelog' : `What's new since ${catchUp.fromVersion}`;
+      catchUp === null ? 'Read what changed' : `${NAMES.whatsNew} since ${catchUp.fromVersion}`;
     previewNotification({
       severity: 'info',
       persist: true,

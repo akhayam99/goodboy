@@ -77,7 +77,7 @@ describe('task actions', () => {
     const confirm = unlink?.confirm?.({
       facts: facts({ task: row({}), branch: null, branchCount: 2 }),
     });
-    expect(confirm?.title).toBe('Unlink HBL-412 from this session?');
+    expect(confirm?.title).toBe('Remove link to HBL-412 from this session?');
     expect(confirm?.description).toBe('It also leaves 2 branches.');
   });
 });

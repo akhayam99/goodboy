@@ -41,7 +41,7 @@ export const AxesSection = ({
   const selectionAxes = [axes.model, axes.version, axes.checkpoint].filter((axis) => axis != null);
   const variantAxis = axes.variant;
   return (
-    <section aria-label="Model options" className="flex flex-col gap-2.5 p-3">
+    <section aria-label="Model options" className="flex flex-col gap-3 p-3">
       {selectionAxes.map((axis) => (
         <AxisRow key={axis.label} label={axis.label}>
           <div
@@ -116,18 +116,18 @@ export const AxesSection = ({
       )}
       {cliGate !== null && <CliGateLine gate={cliGate} />}
       {axes.requiresMaxMode && (
-        <p role="status" aria-label="Max Mode" className="text-secondary text-warning">
+        <p role="status" aria-label="Max Mode" className="text-meta text-warning">
           Runs in Max Mode. Cursor bills Max Mode requests at a higher rate.
         </p>
       )}
       {hasMaxModeAdvisory && axes.requiresMaxMode === false && (
-        <p role="status" aria-label="Max Mode rejected" className="text-secondary text-warning">
+        <p role="status" aria-label="Max Mode rejected" className="text-meta text-warning">
           Cursor rejected Max Mode for this model. Check that Max Mode is available on your account,
           then retry.
         </p>
       )}
       {notice != null && (
-        <p role="status" className="text-secondary text-warning">
+        <p role="status" className="text-meta text-warning">
           Effort adjusted from {EFFORT_LABEL[notice.requested]} to {EFFORT_LABEL[notice.applied]}.
         </p>
       )}

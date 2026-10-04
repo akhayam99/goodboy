@@ -108,10 +108,10 @@ export const MountSuggestionCard = ({
         />
       </div>
       {isOpen ? (
-        <div className="flex min-w-0 flex-col gap-1.5 pl-6">
+        <div className="flex min-w-0 flex-col gap-2 pl-6">
           <Eyebrow label="Reason" />
           <span className="min-w-0 text-label text-foreground">{reason}</span>
-          <span className="text-secondary text-muted-foreground">
+          <span className="text-meta text-muted-foreground">
             Requested by {agentName} for {projectName}.
           </span>
           <span>

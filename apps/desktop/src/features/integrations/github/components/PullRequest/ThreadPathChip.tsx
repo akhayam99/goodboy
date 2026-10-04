@@ -11,7 +11,7 @@ export const ThreadPathChip = ({ path, line, onOpen }: Props) => {
       type="button"
       onClick={onOpen}
       title={`${path}${suffix}`}
-      className="block w-fit max-w-full truncate rounded-sm bg-background px-1.5 py-0.5 text-left font-mono text-secondary text-muted-foreground hover:text-foreground"
+      className="block w-fit max-w-full truncate rounded-sm bg-background px-2 py-0.5 text-left font-mono text-chip text-muted-foreground hover:text-foreground"
     >
       {path}
       {suffix}

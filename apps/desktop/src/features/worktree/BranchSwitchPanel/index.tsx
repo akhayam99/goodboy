@@ -129,13 +129,13 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
     <div className="flex w-96 flex-col gap-3 p-4">
       <div className="flex flex-col gap-0.5">
         <span className="text-heading text-foreground">Switch branch</span>
-        <span className="text-secondary text-muted-foreground">
+        <span className="text-meta text-muted-foreground">
           Move this worktree to another branch
         </span>
       </div>
 
       {branch === null ? null : (
-        <div className="flex min-w-0 items-center gap-1.5 rounded-md bg-muted px-2 py-1 text-label text-muted-foreground">
+        <div className="flex min-w-0 items-center gap-2 rounded-md bg-muted px-2 py-1 text-label text-muted-foreground">
           <GitBranch size={11} aria-hidden className="shrink-0" />
           <span title={branch} className="min-w-0 flex-1 truncate font-mono text-foreground">
             {branch}

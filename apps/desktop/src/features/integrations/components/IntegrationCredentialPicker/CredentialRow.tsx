@@ -45,14 +45,12 @@ export const CredentialRow = ({
           <span className="truncate text-label font-semibold text-foreground">
             {credential.label}
           </span>
-          <span className="truncate font-mono text-secondary text-muted-foreground">
+          <span className="truncate font-mono text-meta text-muted-foreground">
             {credential.account === '' ? usageLabel({ usedBy }) : credential.account}
           </span>
         </span>
       </button>
-      <span className="shrink-0 text-secondary text-muted-foreground">
-        {usageLabel({ usedBy })}
-      </span>
+      <span className="shrink-0 text-meta text-muted-foreground">{usageLabel({ usedBy })}</span>
       <IconButton
         icon={Trash2}
         label={`Forget ${credential.label}`}

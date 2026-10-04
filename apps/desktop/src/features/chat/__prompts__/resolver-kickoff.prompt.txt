@@ -1,0 +1,56 @@
+Resolve 2 threads on PR #9108, branch `kay/foo`.
+
+Thread 1 of 2
+- thread id: PRRT_1
+- author: alice
+- location: src/foo.ts:41
+- link: https://github.com/o/r/pull/9108#discussion_r1
+- comment:
+> this should use a helper
+> and keep the guard
+- reply from bob:
+> agreed, same here
+
+Thread 2 of 2
+- thread id: PRRT_2
+- author: bob
+- location: src/foo.ts:42
+- link: https://github.com/o/r/pull/9108#discussion_r2
+- comment:
+> rename this to settleBatch
+
+What to do
+Judge all 2 threads above on the merits in one pass. When a thread asks for the right change, implement it and commit locally as you go. When the change it asks for is wrong or not worth making, leave the code unchanged and give the reason in its outcome marker. Never default to either outcome: read the code first, then decide per thread.
+
+How to report each thread
+Report every thread at the end of the same turn: exactly one outcome marker and exactly one reply block for each of the 2 thread ids listed above, each on its own line.
+Never emit two outcome markers for one thread id, never leave a thread id without one, and never reuse a reply on another thread id.
+Pick one outcome marker per thread:
+<<comment-resolved threadId="the id above" commitSha="the sha you committed">> after a commit.
+<<comment-wontfix threadId="the id above" reason="one plain-text line">> without a change.
+The reply block carries the answer the reviewer reads, and it posts only on the thread whose id it names:
+<<comment-reply id="the id above">>the answer for that thread<</comment-reply>>
+A complete report for the 2 threads of this run reads exactly like this:
+<<comment-resolved threadId="PRRT_1" commitSha="a1b2c3d">>
+<<comment-reply id="PRRT_1">>The lookup ran before the guard, so an empty batch reached `resolveOne` and threw. The guard now returns early.<</comment-reply>>
+<<comment-wontfix threadId="PRRT_2" reason="the naming follows the convention of every sibling route">>
+<<comment-reply id="PRRT_2">>`apps/web/src/routes/` uses camelCase folders that mirror the URL slug, so renaming this one alone would break about 50 siblings.<</comment-reply>>
+
+Reply contract
+Every <<comment-reply>> block follows this contract.
+Goodboy places your block into the workspace's reply template when it posts, and the template adds the commit or the closing line. Write only the reason.
+So never state the outcome and never name the commit sha: no "Fixed in `abc1234`.", no "Not applying this one.", no "Resolved in", no closing sentence. Both would read twice.
+Write the reason, in GitHub-flavored markdown addressed to the reviewer: what was actually wrong, or why the change is not the right one.
+Put identifiers, paths, symbols and commit shas in backticks. No headings, no bold runs, no block quotes, no nested lists, no tables.
+Never go past 120 words, and only get near it when the reasoning genuinely matters.
+Summarize a long enumeration with a count instead of listing it, as in "about 50 other routes follow the same convention".
+Leave out the investigation narrative and the list of everything you checked.
+
+Voice: terse.
+Two to four sentences, or two to four `-` bullets when there is more than one independent point, one claim per bullet. One sentence is enough when the cause is obvious.
+Stay under 40 words on a straightforward thread.
+Past tense for what you did, present tense for what is true of the code. No praise openers, no apologies, no hedging, no restating the reviewer's own words.
+A good reply reads like this:
+
+- `apps/web/src/routes/` uses camelCase folders that mirror the URL slug.
+- Renaming this one alone would break the convention in about 50 sibling routes.

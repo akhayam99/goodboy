@@ -16,12 +16,12 @@ const ROW_TONE: Record<ArtifactContextRowState, Tone> = {
 
 export const ArtifactContextRow = ({ row }: Props) => (
   <li data-testid="artifact-context-row" className="flex min-w-0 items-start gap-2">
-    <StatusDot tone={ROW_TONE[row.state]} size="sm" className="mt-1.5" />
+    <StatusDot tone={ROW_TONE[row.state]} size="sm" className="mt-2" />
     <span className="flex min-w-0 flex-col gap-0.5">
       <span className="text-label text-foreground">{row.label}</span>
-      <span className="text-2xs leading-relaxed text-muted-foreground">{row.summary}</span>
+      <span className="text-meta leading-relaxed text-muted-foreground">{row.summary}</span>
       {row.detail.map((line) => (
-        <span key={line} className="text-2xs leading-relaxed text-faint-foreground">
+        <span key={line} className="text-meta leading-relaxed text-faint-foreground">
           {line}
         </span>
       ))}

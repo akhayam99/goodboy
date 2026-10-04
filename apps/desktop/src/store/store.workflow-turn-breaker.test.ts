@@ -185,7 +185,7 @@ describe('sendTurn workflow turn breaker', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: expect.stringContaining('Autorun halted'),
+        title: expect.stringContaining('Run halted'),
         sessionId: SESSION_ID,
       }),
     );
@@ -202,7 +202,7 @@ describe('sendTurn workflow turn breaker', () => {
 
     expect(storySpies.runTurn).toHaveBeenCalledTimes(1);
     expect(emitNotification).not.toHaveBeenCalledWith(
-      expect.objectContaining({ title: expect.stringContaining('Autorun halted') }),
+      expect.objectContaining({ title: expect.stringContaining('Run halted') }),
     );
   });
 

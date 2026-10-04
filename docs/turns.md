@@ -93,7 +93,7 @@ database.
 The route is resolved once per turn, in this precedence: a fallback retry, a
 model the user explicitly picked for this turn, the workflow node's routing,
 the turn override, then the agent's own pin. `resolveProviderForTurn` then
-applies budget caps and cooldowns. When every provider is over its cap the turn
+applies spend caps and cooldowns. When every provider is over its cap the turn
 does not start and says so; when budget moved it to another provider, the
 transcript carries a notice. A turn that ran on anything other than the model
 the user picked raises a warning notification naming both. A disconnected
@@ -162,8 +162,8 @@ record a live turn already wrote wins.
   as a fan-out child and is still treated as one.
 - An agent's first turn stores one `agent_handoffs` row (m185), written once
   and never updated: who sent it (`HandoffSender`), the ask in one line, the
-  why, `doneWhen`, one-line sections (ask, goal, earlier steps, plan, files,
-  threads, scope and rules, about you, role instructions) and the exact text
+  why, `doneWhen`, one-line sections (ask, instructions, goal, earlier steps,
+  plan, files, threads, scope and rules, about you, role instructions) and the exact text
   sent (`sent_system` only for Claude, `sent_message` for every provider). It
   lives only in the local database and includes the workspace profile.
 - A first turn is one with no run yet in `agentRunHistory`, an agent that never
@@ -176,9 +176,20 @@ record a live turn already wrote wins.
   resolver is sent by Resolve, a question delegate by its question, a child of
   another agent by that agent or as its follow-up, a workflow step by the
   orchestrator on a dynamic run and by the workflow otherwise, and anything
-  else by you. The stored `user_text` keeps the full composed text for provider
+  else by you. The re-check, the scribe and the history rewrite pass their own
+  sender (`recheck`, `scribe`, `historyRewrite`) and never carry the session
+  goal. The stored `user_text` keeps the full composed text for provider
   replay. The visible message uses the human ask, while attached plans stay in
   their own section.
+- A resolver or re-check message has two parts: what the human wrote (the
+  comment, the operator note) and the rules Goodboy adds (reply contract,
+  markers). The human part is the Ask and the rules are the **Instructions**
+  section, labelled "Added by Goodboy". `resolve_attempts.human_instructions`
+  (m221, nullable, no backfill) stores the human part beside `instructions`,
+  which keeps the full text; `rulesOfKickoff` recovers the rules from the two
+  and falls back to the whole message as the Ask when they do not line up.
+  `spawn-from-comment.golden.test.ts` pins the string sent to the provider for
+  the resolver, the re-check, the scribe and the follow-up byte for byte.
 - The transcript draws that first message as one handoff block
   (`features/chat/components/HandoffBlock`), the same for every provider: who
   sent it, the ask in one line and the why. Closed, that is all it shows.
@@ -200,8 +211,8 @@ record a live turn already wrote wins.
   `TranscriptRows` counts it as the first user turn.
 - The transcript is the record and the Brief is the dashboard. What the agent
   received lives only in the handoff block; the Brief shows one line, "Sent by
-  Orchestrator · step 4 · the ask", that switches to the Transcript tab with
-  the Ask section open (`requestHandoffOpen`). The Brief no longer carries Why this
+  Orchestrator · step 4", that switches to the Transcript tab with
+  the Ask section open (`requestHandoffOpen`). The Brief no longer carries the ask, Why this
   step or Expected output, and the old kickoff cards and their text parsers
   are gone.
 
@@ -442,7 +453,7 @@ the agent in `error` with a retryable error event.
 - An agent's active time is the union of its own spans, its subagents' spans and the turn running now (`agentTurnState` `running` since `startedAt`). Parallel subagents count once. A run's active time is the union over all its agents. `familyActiveTime` in `features/workTreeModel/workTimeSource.ts` computes it.
 - `buildDurationHistory` (`@goodboy/core`) turns spans into two units of sample. `steps`: one per root agent whose status is `completed`, keyed by the role, provider, model and effort of its last turn. `turns`: one per `succeeded` span of any agent, chat agents included, since a chat agent never completes but closes turns. It adds one sample per finished orchestrated run.
 - `estimateDuration` takes a `unit`: a workflow step row asks for `step`, any other agent row for `turn`, and a running turn row measures only the turn running now. It picks the first tier with enough samples: role, provider, model and effort (5), then without effort (5), then the same model and effort in every workspace (`modelAnyWorkspace`, 5, and the tooltip says `across your workspaces`), then role and provider (8), then role alone (8). These minimums are the only gate. It keeps the newest 50, caps them at the 95th percentile, and returns a band of time and cost (`lowMs`, `midMs`, `highMs`). An unsized step gets the 25th, 50th and 75th percentiles. A running row measures against the top of the band, so a typical run fills its arc without overflowing it; a queued row shows the band.
-- `workTime` (`features/workTreeModel/workTime.ts`) picks the label per phase: a queued row shows the band with `~`, a running row the time left against the band (`timeLeftLabel`), its elapsed time past the band with the note `Longer than usual`, and `isMuchLonger` at twice the top of the band. A waiting row freezes its elapsed time; a done row shows its active time and the same note when it ran past the band. `headline` joins elapsed time and time left for the agent header and the Brief's Now.
+- `workTime` (`features/workTreeModel/workTime.ts`) picks the label per phase: a queued row shows the band with `~`, a running row the time left against the band (`timeLeftLabel`), its elapsed time past the band with the note `Longer than usual`, and `isMuchLonger` at twice the top of the band. A waiting row freezes its elapsed time; a done row shows its active time and the same note when it ran past the band, though the timeline row prints the note only while it runs. `headline` joins elapsed time and time left for the agent header and the Brief's Now.
 - When no tier reaches its minimum, `estimateProgress` (`@goodboy/core`) returns the tier closest to it (`have` of `need`) and the tooltip says so ("No estimate yet: 3 of 5 finished ..."). The row never shows a number it cannot back.
 - `runTimeLeft` (`features/session/timeline/runTimeLeft.ts`) gives the workflow detail header the time a run has left: the running step's time left plus the usual time of each queued step, or the orchestrated-run band minus what the run has done. It returns nothing when any step left has no estimate or the running one is past its band. The Start agent footer (`useLaunchEstimate`) shows the usual first turn only when the agent starts on its own, with instructions.
 - `WorkTimeProvider` gives each panel (the activity feed, the workflow detail, the agent detail, a Brief's Subagents) one source and one 5 second clock (`useNow`), which ticks only while something runs. Rows read it with `useAgentWorkTime`; outside a provider a row shows no time column.
@@ -490,7 +501,7 @@ After a successful turn whose role received the "Explain more when the work
 touches" line, and only when that field has topics, the turn joins a learnings
 queue per agent (`learningQueue.ts`). One pass runs at a time per agent; turns
 that finish meanwhile are read together and the learning cites the merged turn
-range. It runs on the `learnings` task model (Defaults, Writing for you), off
+range. It runs on the `learnings` task model (Models, Writing for you), off
 the summarizer queue, so no workflow step waits for it. A pass records its cost
 like the summarizer and writes `session_context_items` rows of kind `learning`
 only for concrete explanations of a listed topic. `context.learnings` set to
@@ -758,10 +769,10 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   never starts above the mid cost tier. When the workspace default provider can run
   a chat (Claude or Codex) and is connected, the chat starts on its line instead; a
   Cursor or OpenCode default never reaches a chat. Picking Claude in Providers,
-  Defaults, Chat proposes the same model. **Start work** drafts its brief with the
+  Models, Chat proposes the same model. **Start work** drafts its brief with the
   model and effort in **Drafted by**, remembered per workspace. The user can save a provider, model and effort
   per workspace in the `settings` table under `chat.default_model.<workspaceId>`
-  (JSON, an empty string means cleared), from Providers, Defaults, Chat, or with
+  (JSON, an empty string means cleared), from Providers, Models, Chat, or with
   Make default in the chat model picker. `defaultChatRouting` applies it to the
   draft in `ChatRoom` and `askInChat` applies it to Ask in Chat. A value that
   fails `parseChatDefaultModel`, or whose provider is not connected, falls back
@@ -769,7 +780,7 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   stored on its row. The first send of a new chat awaits the saved default
   (`useChatDefaultModel` `read`), so a cold cache never starts it on the
   automatic model, and a failed read is reported and falls back to automatic.
-  Reset all in Defaults clears it with the role and task pins.
+  Reset all in Models clears it with the role and task pins.
 - **Activity in the top bar.** `chatStreams` says which chats are answering.
   `useChatActivity` turns it into a running count and an unread flag for the
   Chat button in the top bar: a pulsing info dot (the tone of the running

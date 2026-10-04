@@ -12,12 +12,12 @@ const AGENT_CARD_TONE: Record<Exclude<AgentCardTone, 'default'>, Tone> = {
 };
 
 const DENSITY_PADDING: Record<AgentCardDensity, string> = {
-  lane: 'px-3 py-2.5',
-  sidebar: 'px-2 py-1.5',
+  lane: 'px-3 py-3',
+  sidebar: 'px-2 py-2',
 };
 
 const DENSITY_BODY_GAP: Record<AgentCardDensity, string> = {
-  lane: 'gap-1.5',
+  lane: 'gap-2',
   sidebar: 'gap-1',
 };
 
@@ -144,7 +144,7 @@ export const AgentCard = ({
               lifecycleActions == null ? 'col-span-2' : 'col-start-1',
             )}
           >
-            {status != null && <div className="flex flex-wrap items-center gap-1.5">{status}</div>}
+            {status != null && <div className="flex flex-wrap items-center gap-2">{status}</div>}
             {meta}
             {children}
             {footer}

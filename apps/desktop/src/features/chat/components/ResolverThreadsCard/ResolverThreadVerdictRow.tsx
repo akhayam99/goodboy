@@ -42,7 +42,7 @@ export const ResolverThreadVerdictRow = ({
         <span aria-hidden className="w-3 shrink-0" />
       )}
       <ResolverOutcomeChip kind={verdict.kind} isClosed={verdict.isClosed} />
-      <span className="shrink-0 text-secondary text-faint-foreground">thread {position}</span>
+      <span className="shrink-0 text-meta text-faint-foreground">thread {position}</span>
       <span
         className={cn(
           'min-w-0 flex-1 text-label text-foreground',
@@ -101,7 +101,7 @@ export const ResolverThreadVerdictRow = ({
             <button
               type="button"
               onClick={onOpen}
-              className="self-start text-secondary text-muted-foreground motion-safe:transition-colors hover:text-primary"
+              className="self-start text-meta text-muted-foreground motion-safe:transition-colors hover:text-primary"
             >
               Open in Review
             </button>

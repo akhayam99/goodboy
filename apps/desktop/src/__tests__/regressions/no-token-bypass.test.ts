@@ -115,9 +115,10 @@ const RULES = [
     why: 'weights stop at 600: text-heading, text-title or font-semibold',
   },
   {
-    pattern: /(?<![\w-])(?:[\w-]+:)*text-(?:\[[\d.]+(?:px|rem)\]|[3-9]xl)(?![\w-])/,
+    pattern:
+      /(?<![\w-])(?:[\w-]+:)*text-(?:\[[\d.]+(?:px|rem)\]|3xs|2xs|xs|sm|base|lg|xl|[2-9]xl)(?![\w-])/,
     allow: NO_ALLOW,
-    why: 'type takes a role; only em sizes relative to prose stay arbitrary',
+    why: 'type takes a role: text-row, text-label, text-meta, text-chip, text-body, text-title; only em sizes relative to prose stay arbitrary',
   },
   {
     pattern: /(?<![\w-])(?:[\w-]+:)*shadow-\[/,

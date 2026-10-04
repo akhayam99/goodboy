@@ -107,7 +107,7 @@ describe('ResetCreditRow', () => {
     );
 
     await waitFor(() => expect(screen.getByText("Couldn't reach Codex.")).toBeDefined());
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     await waitFor(() => expect(screen.getByText('Reset used')).toBeDefined());
     expect(state.consumeCodexResetCredit).toHaveBeenCalledTimes(2);
   });

@@ -19,10 +19,10 @@ describe('SectionHeader, page size', () => {
     expect(cluster?.className).toContain('items-center');
   });
 
-  it('declares the heading line height so the pair lands on whole pixels', () => {
+  it('takes the heading line height from the title role, so the pair lands on whole pixels', () => {
     render(<SectionHeader size="page" label="Session summary" icon={glyph} />);
 
-    expect(screen.getByRole('heading', { level: 2 }).className).toContain('leading-6');
+    expect(screen.getByRole('heading', { level: 2 }).className).toContain('text-title');
   });
 
   it('keeps a taller action out of the pair, so it cannot lift the glyph off the text', () => {
@@ -72,7 +72,7 @@ describe('SectionHeader, eyebrow size', () => {
 
     expect(screen.getByText('Decisions').className).toContain('text-eyebrow');
     expect(screen.getByText('One row per choice already settled.').className).toContain(
-      'text-secondary',
+      'text-meta',
     );
   });
 

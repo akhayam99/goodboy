@@ -378,13 +378,13 @@ describe('WorkflowsPanel editor', () => {
     renderPanel();
     openWorkflow('Plan and build');
     fireEvent.click(screen.getByRole('button', { name: 'Workflow actions' }));
-    expect(screen.queryByRole('menuitem', { name: 'Undo changes since opened' })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: 'Undo changes' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Workflow actions' }));
 
     fireEvent.change(screen.getByRole('textbox', { name: 'Workflow name' }), {
       target: { value: 'Plan, build, review' },
     });
-    openMenuItem('Undo changes since opened');
+    openMenuItem('Undo changes');
 
     const name = screen.getByRole('textbox', { name: 'Workflow name' }) as HTMLTextAreaElement;
     expect(name.value).toBe('Plan and build');

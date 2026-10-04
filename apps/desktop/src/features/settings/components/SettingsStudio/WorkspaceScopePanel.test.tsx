@@ -310,9 +310,7 @@ describe('copy from another workspace', () => {
     fireEvent.click(within(flow).getByRole('button', { name: 'Preview changes' }));
 
     expect(flow.textContent).toContain('Will change 3 settings on 1 page.');
-    within(flow).getByText(
-      'Voice: Friendly → Formal, Resolve the thread after replying: On → Off, 1 more',
-    );
+    within(flow).getByText('Voice: Friendly → Formal, Mark thread as resolved: On → Off, 1 more');
     expect(flow.textContent).toContain('Stays: projects, folders, accounts, permission history.');
     fireEvent.click(within(flow).getByRole('button', { name: 'Copy 3 settings' }));
 

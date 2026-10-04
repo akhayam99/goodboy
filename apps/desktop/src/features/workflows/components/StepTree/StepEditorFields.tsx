@@ -95,9 +95,9 @@ export const StepEditorFields = ({
   return (
     <div className="grid grid-cols-1 gap-5 @min-[560px]:grid-cols-2">
       <div className="flex min-w-0 flex-col gap-3">
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-2 gap-3">
           <div className="flex min-w-0 flex-col gap-1">
-            <label htmlFor={idOf('title')} className="text-secondary text-muted-foreground">
+            <label htmlFor={idOf('title')} className="text-meta text-muted-foreground">
               Title
             </label>
             <Input
@@ -117,7 +117,7 @@ export const StepEditorFields = ({
             />
           </div>
           <div className="flex min-w-0 flex-col gap-1">
-            <span className="text-secondary text-muted-foreground">Role</span>
+            <span className="text-meta text-muted-foreground">Role</span>
             <RoleSelect value={step.role} onChange={onRole} disabled={disabled} />
           </div>
         </div>
@@ -142,7 +142,7 @@ export const StepEditorFields = ({
             minRows={3}
             maxRows={7}
             disabled={disabled}
-            textClassName="text-xs leading-relaxed"
+            textClassName="text-label leading-relaxed"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -165,15 +165,15 @@ export const StepEditorFields = ({
             minRows={1}
             maxRows={4}
             disabled={disabled}
-            textClassName="text-xs leading-relaxed"
+            textClassName="text-label leading-relaxed"
           />
         </div>
       </div>
-      <div className="flex min-w-0 flex-col gap-2.5">
-        <div className="px-2.5">
+      <div className="flex min-w-0 flex-col gap-3">
+        <div className="px-3">
           <Eyebrow label="Model" muted />
         </div>
-        <div className="px-2.5">
+        <div className="px-3">
           <SegmentedTabs
             ariaLabel="Model source"
             size="sm"
@@ -193,18 +193,12 @@ export const StepEditorFields = ({
           />
         </div>
         {source === 'follow' && roleSetLine !== null ? (
-          <p
-            data-testid="step-follows-role"
-            className="px-2.5 text-secondary text-muted-foreground"
-          >
+          <p data-testid="step-follows-role" className="px-3 text-meta text-muted-foreground">
             {`Follows the role: ${roleSetLine}`}
           </p>
         ) : null}
         {source === 'follow' && roleSetLine === null ? (
-          <p
-            data-testid="step-follows-role"
-            className="px-2.5 text-secondary text-muted-foreground"
-          >
+          <p data-testid="step-follows-role" className="px-3 text-meta text-muted-foreground">
             {`Follows the ${ROLE_LABEL[step.role]} role. Auto picks `}
             <span className="text-foreground">{followPick}</span>
             {' from the providers you can use now.'}
@@ -225,8 +219,8 @@ export const StepEditorFields = ({
             onModel={onModel}
           />
         )}
-        <div className="flex min-w-0 items-center justify-between gap-3 px-2.5">
-          <span className="text-secondary text-muted-foreground">Reply length</span>
+        <div className="flex min-w-0 items-center justify-between gap-3 px-3">
+          <span className="text-meta text-muted-foreground">Reply length</span>
           <SegmentedTabs
             ariaLabel="Reply length"
             size="xs"

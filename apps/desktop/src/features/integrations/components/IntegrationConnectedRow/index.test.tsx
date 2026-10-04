@@ -32,7 +32,7 @@ const renderRow = ({
       secondary="linear.app/acme"
       {...(badge != null ? { badge } : {})}
       {...(credentialId != null ? { credentialId } : {})}
-      disconnectDescription="Unlinks this project."
+      disconnectDescription="Disconnects this project."
       onDisconnect={onDisconnect}
     />,
   );

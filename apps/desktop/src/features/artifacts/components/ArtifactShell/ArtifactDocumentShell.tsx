@@ -210,7 +210,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
 
   const actions =
     draft !== null ? (
-      <span className="flex shrink-0 items-center gap-1.5">
+      <span className="flex shrink-0 items-center gap-2">
         <Button variant="ghost" size="sm" onClick={() => setDraft(null)} disabled={isSaving}>
           Cancel
         </Button>
@@ -299,7 +299,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
         className="flex min-w-0 flex-col gap-4"
       >
         {alert === null ? null : (
-          <span role="alert" className="text-secondary text-danger">
+          <span role="alert" className="text-meta text-danger">
             {alert}
           </span>
         )}

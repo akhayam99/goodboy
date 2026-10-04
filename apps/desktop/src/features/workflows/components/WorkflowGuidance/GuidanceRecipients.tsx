@@ -27,7 +27,7 @@ export const GuidanceRecipients = ({
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-2 text-secondary text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-2 text-meta text-muted-foreground">
         <span>
           {lead} <span className="text-foreground">{guidanceRoleNames({ roles })}</span>
           {where === undefined ? null : ` ${where}`}
@@ -71,9 +71,7 @@ export const GuidanceRecipients = ({
               );
             })}
           </div>
-          <span className="text-secondary text-faint-foreground">
-            {guidanceLeftOutText({ roles })}
-          </span>
+          <span className="text-meta text-faint-foreground">{guidanceLeftOutText({ roles })}</span>
           {footer}
         </div>
       ) : null}

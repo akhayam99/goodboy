@@ -32,7 +32,7 @@ export const LimitsChip = ({ chip, nowMs, isPressed, className, onOpen }: Props)
         aria-label={`${PROVIDER_LABEL[chip.providerId]} limits. ${headline}`}
         onClick={() => onOpen(chip)}
         className={cn(
-          'flex h-6 shrink-0 items-center gap-1.5 rounded-md px-1.5 motion-safe:transition-colors',
+          'flex h-6 shrink-0 items-center gap-2 rounded-md px-2 motion-safe:transition-colors',
           isPressed ? 'bg-muted' : 'hover:bg-hover',
           className,
         )}

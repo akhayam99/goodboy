@@ -17,7 +17,7 @@ export const DefinitionList = ({ rows }: Props) => (
     {rows.map((row) => (
       <li
         key={row.term}
-        className="flex items-start gap-3 rounded-md border border-border-soft bg-subtle px-3 py-2.5"
+        className="flex items-start gap-3 rounded-md border border-border-soft bg-subtle px-3 py-3"
       >
         {row.icon ? (
           <span
@@ -31,7 +31,7 @@ export const DefinitionList = ({ rows }: Props) => (
         ) : (
           <span
             className={cn(
-              'mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full',
+              'mt-2 h-1.5 w-1.5 shrink-0 rounded-full',
               tintClasses(row.tone ?? 'neutral').dot,
             )}
           />

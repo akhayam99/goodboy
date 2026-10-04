@@ -26,6 +26,7 @@ import {
 } from '../../../../../shared/components/conceptIcons';
 import { sessionCardShell, sessionTone } from '../../../../session/components/sessionCardShell';
 import { useOpenSession } from '../../../../../shared/hooks/useOpenSession';
+import { NAMES } from '../../../../../shared/names';
 import { sessionDisplayTitle } from '../../../../session/sessionTitle';
 import { ChatOriginGlyph } from '../../../../../shared/components/ChatOriginGlyph';
 import type { BoardNavigation } from '../useBoardNavigation';
@@ -179,7 +180,7 @@ export const StageBoardCard = memo(function StageBoardCard({
       }}
       className={cn(
         'group/session-card group/select-row grid h-28 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] gap-x-2 gap-y-1 p-3 text-left',
-        onToggleSelect === undefined ? 'pl-4.5' : 'pl-7',
+        onToggleSelect === undefined ? 'pl-5' : 'pl-7',
         sessionCardShell({ selected }),
       )}
     >
@@ -246,7 +247,7 @@ export const StageBoardCard = memo(function StageBoardCard({
         {progress !== null ? (
           <SessionProgress progress={progress} tone={summary.tone} />
         ) : reason !== '' && summary.addsFact ? (
-          <span className="truncate text-secondary text-muted-foreground">{reason}</span>
+          <span className="truncate text-meta text-muted-foreground">{reason}</span>
         ) : null}
       </span>
 
@@ -315,13 +316,13 @@ export const StageBoardCard = memo(function StageBoardCard({
             />
           )}
           {isAutoMode && (
-            <Tooltip content="Autorun" side="top">
+            <Tooltip content={NAMES.runOnItsOwn} side="top">
               <span className="inline-flex shrink-0">
                 <Chip
                   tone={CONCEPT_TONE.autorun}
                   size="xs"
                   bordered={false}
-                  ariaLabel="Autorun"
+                  ariaLabel={NAMES.runOnItsOwn}
                   icon={<CONCEPT_ICONS.autorun size={ICON_SIZE.row} aria-hidden />}
                 />
               </span>

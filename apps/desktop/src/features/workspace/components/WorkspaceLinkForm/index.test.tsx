@@ -294,7 +294,7 @@ describe('WorkspaceLinkForm', () => {
     dialogMock.open.mockResolvedValue('/notes');
     renderForm({ onComplete });
     fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
-    fireEvent.click(screen.getByRole('button', { name: /link a plain folder/i }));
+    fireEvent.click(screen.getByRole('button', { name: /add a plain folder/i }));
 
     await waitFor(() => expect(state.addWorkspace).toHaveBeenCalledWith({ rootPath: '/notes' }));
     expect(onComplete).toHaveBeenCalledWith({
@@ -323,7 +323,7 @@ describe('WorkspaceLinkForm', () => {
     fireEvent.change(screen.getByLabelText('Project path'), {
       target: { value: '/repos/alpha' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /add/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^add$/i }));
     await waitFor(() =>
       expect(state.addProject).toHaveBeenCalledWith({
         workspaceId: 'ws-created',
@@ -368,7 +368,7 @@ describe('WorkspaceLinkForm', () => {
     fireEvent.change(await screen.findByLabelText('Project path'), {
       target: { value: '/repos/api' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /add/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^add$/i }));
 
     await waitFor(() => screen.getByText('already in Legacy with 5 sessions'));
 
@@ -400,7 +400,7 @@ describe('WorkspaceLinkForm', () => {
     fireEvent.change(await screen.findByLabelText('Project path'), {
       target: { value: '/repos/api' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /add/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^add$/i }));
     await waitFor(() => screen.getByText('already in Legacy with 5 sessions'));
 
     fireEvent.click(screen.getByRole('button', { name: 'Keep there' }));

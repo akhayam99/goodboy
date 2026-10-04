@@ -10,7 +10,7 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const infoTint = tintClasses('info');
 
-const LABEL_CLASS = 'text-secondary font-medium uppercase tracking-eyebrow text-muted-foreground';
+const LABEL_CLASS = 'text-eyebrow text-muted-foreground';
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'orchestrator_decision' }>;
@@ -37,7 +37,7 @@ export const OrchestratorDecisionCard = ({ item }: Props) => {
               <span
                 data-testid="orchestrator-decision-note-badge"
                 className={cn(
-                  'shrink-0 rounded-md px-1 py-px text-secondary font-medium',
+                  'shrink-0 rounded-md px-1 py-px text-chip',
                   infoTint.bg,
                   infoTint.text,
                 )}

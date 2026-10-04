@@ -93,7 +93,7 @@ vi.mock('../../../features/workspace/components/WorkspaceLinkStudio', () => ({
           onClose();
         }}
       >
-        Link a plain folder
+        Add a plain folder
       </button>
     </div>
   ),
@@ -281,7 +281,7 @@ describe('app overlay hook', () => {
     fire({ name: 'goodboy:add-workspace' });
     expect(await openStudios()).toEqual(['addWorkspace']);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Link a plain folder' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a plain folder' }));
 
     expect(await openStudios()).toEqual(['settings']);
     expect(screen.getByTestId('studio').getAttribute('data-section')).toBe('dev-project');

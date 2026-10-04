@@ -221,7 +221,7 @@ export const CreatePrPanel = ({
           <SectionHeader
             label="Open a pull request"
             action={
-              <span className="inline-flex items-center gap-1 font-mono text-secondary text-muted-foreground">
+              <span className="inline-flex items-center gap-1 font-mono text-meta text-muted-foreground">
                 <GitBranch size={11} aria-hidden />
                 {branch ?? 'no branch'}
               </span>
@@ -309,19 +309,19 @@ export const CreatePrPanel = ({
                   label="Issue links"
                   help="Added to the description so GitHub closes these issues when this merges."
                 >
-                  <ul className="flex flex-col gap-1.5">
+                  <ul className="flex flex-col gap-2">
                     {references.map((reference) => (
                       <li key={reference.number} className="flex items-center gap-2">
                         <code
                           data-testid="pr-issue-reference"
-                          className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-secondary text-foreground"
+                          className="rounded-md bg-muted px-2 py-0.5 font-mono text-chip text-foreground"
                         >
                           {reference.line}
                         </code>
                         <button
                           type="button"
                           onClick={() => void openUrl(reference.url)}
-                          className="truncate text-secondary text-muted-foreground transition-colors hover:text-foreground"
+                          className="truncate text-meta text-muted-foreground transition-colors hover:text-foreground"
                         >
                           {reference.identifier}
                         </button>
@@ -337,7 +337,7 @@ export const CreatePrPanel = ({
                   label="Changelog entry"
                   help="Scribe wrote it in the format of the repository changelog. Copy it where it belongs."
                 >
-                  <pre className="w-full whitespace-pre-wrap rounded-md bg-muted px-2 py-1.5 font-mono text-secondary text-foreground sm:w-96">
+                  <pre className="w-full whitespace-pre-wrap rounded-md bg-muted px-2 py-1 font-mono text-chip text-foreground sm:w-96">
                     {changelogEntry}
                   </pre>
                 </FieldRow>
@@ -355,7 +355,7 @@ export const CreatePrPanel = ({
           leading={
             <>
               {error == null && isScribeWriting && (
-                <span className="inline-flex min-w-0 items-center gap-1.5 truncate text-label text-muted-foreground">
+                <span className="inline-flex min-w-0 items-center gap-2 truncate text-label text-muted-foreground">
                   <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden className="shrink-0" />
                   Scribe is writing the title and description.
                 </span>
@@ -370,7 +370,7 @@ export const CreatePrPanel = ({
                 </span>
               )}
               {error == null && isDraftAgentRunning && (
-                <span className="inline-flex min-w-0 items-center gap-1.5 truncate text-label text-muted-foreground">
+                <span className="inline-flex min-w-0 items-center gap-2 truncate text-label text-muted-foreground">
                   <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden className="shrink-0" />
                   An agent is already opening a pull request for this session.
                 </span>

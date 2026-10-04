@@ -29,7 +29,7 @@ export const ReplyTemplateField = ({ label, value, isDisabled, onSave }: Props) 
   };
 
   return (
-    <div className="flex min-w-0 flex-col gap-1.5">
+    <div className="flex min-w-0 flex-col gap-2">
       <label htmlFor={id} className="text-label font-medium text-foreground">
         {label}
       </label>
@@ -54,14 +54,14 @@ export const ReplyTemplateField = ({ label, value, isDisabled, onSave }: Props) 
               setDraft(next);
               save(next);
             }}
-            className="rounded-sm bg-subtle px-1.5 font-mono text-2xs leading-5 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:opacity-50"
+            className="rounded-sm bg-subtle px-2 font-mono text-chip leading-5 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:opacity-50"
           >
             {`{${name}}`}
           </button>
         ))}
       </div>
       {problems.map((problem) => (
-        <p key={problem} className="text-secondary text-danger">
+        <p key={problem} className="text-meta text-danger">
           {problem}
         </p>
       ))}

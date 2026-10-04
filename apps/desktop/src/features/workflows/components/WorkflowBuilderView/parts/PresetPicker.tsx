@@ -175,7 +175,7 @@ export const PresetPicker = ({ presets, selectedId, disabled, onSelect, onDelete
                 />
               ))}
               {shown.length === 0 ? (
-                <p className="px-2 py-1.5 text-label text-faint-foreground">
+                <p className="px-2 py-2 text-label text-faint-foreground">
                   {`No preset matches "${query.trim()}"`}
                 </p>
               ) : null}

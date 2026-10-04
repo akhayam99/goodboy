@@ -60,7 +60,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
       dropdown={dropdown}
       role="dialog"
       ariaLabel="Permission mode"
-      className="rounded-lg border-0 bg-subtle py-1.5 ring-1 ring-border-soft"
+      className="rounded-lg border-0 bg-subtle py-2 ring-1 ring-border-soft"
       trigger={
         <Chip
           tone="neutral"
@@ -74,7 +74,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
           })}
           hasPopup="dialog"
           expanded={open}
-          className="gap-1.5 bg-subtle px-2.5 py-0.5 hover:bg-hover hover:opacity-100"
+          className="gap-2 bg-subtle px-3 py-0.5 hover:bg-hover hover:opacity-100"
           icon={
             <CurrentIcon
               size={ICON_SIZE.row}
@@ -87,7 +87,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
         />
       }
     >
-      <div className="flex items-center px-2.5 pb-1 pt-1">
+      <div className="flex items-center px-3 pb-1 pt-1">
         <span className="text-label text-muted-foreground">What can agents do?</span>
       </div>
       {PICKER_MODES.map((mode) => {
@@ -103,7 +103,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
             disabled={isUnavailable}
             onClick={() => onPick(mode)}
             className={cn(
-              'flex w-full items-start gap-2 px-2.5 py-1.5 text-left motion-safe:transition-colors',
+              'flex w-full items-start gap-2 px-3 py-2 text-left motion-safe:transition-colors',
               isUnavailable ? 'cursor-not-allowed' : 'hover:bg-hover',
             )}
           >
@@ -116,7 +116,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
               )}
             />
             <span className="flex min-w-0 flex-1 flex-col">
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-2">
                 <span
                   className={cn(
                     'text-label',
@@ -133,14 +133,14 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
               </span>
               <span
                 className={cn(
-                  'text-secondary',
+                  'text-meta',
                   isUnavailable ? 'text-disabled-foreground' : 'text-muted-foreground',
                 )}
               >
                 {copy.promise}
               </span>
               {isUnavailable ? (
-                <span className="flex items-center gap-1 text-secondary text-muted-foreground">
+                <span className="flex items-center gap-1 text-meta text-muted-foreground">
                   <X size={10} aria-hidden />
                   {reason}
                 </span>
@@ -156,8 +156,8 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
           </button>
         );
       })}
-      <div className="flex items-center gap-2 px-2.5 pt-1.5">
-        <span className="min-w-0 flex-1 truncate text-secondary text-faint-foreground">
+      <div className="flex items-center gap-2 px-3 pt-2">
+        <span className="min-w-0 flex-1 truncate text-meta text-faint-foreground">
           Workspace default: {defaultCopy.label}
         </span>
         <Button

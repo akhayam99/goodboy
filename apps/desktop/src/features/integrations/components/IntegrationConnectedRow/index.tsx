@@ -50,14 +50,12 @@ export const IntegrationConnectedRow = ({
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-2">
-      <div className="flex min-w-0 items-center gap-2.5 rounded-lg border border-border-soft bg-subtle px-3 py-2.5">
+      <div className="flex min-w-0 items-center gap-3 rounded-lg border border-border-soft bg-subtle px-3 py-3">
         <IntegrationGlyph provider={provider} size={ICON_SIZE.control} />
         <div className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-label font-medium text-foreground">{primary}</span>
           {secondary != null ? (
-            <span className="truncate font-mono text-secondary text-muted-foreground">
-              {secondary}
-            </span>
+            <span className="truncate font-mono text-meta text-muted-foreground">{secondary}</span>
           ) : null}
         </div>
         {badge != null ? <Chip tone="neutral" size="xs" bordered label={badge} /> : null}
@@ -84,7 +82,7 @@ export const IntegrationConnectedRow = ({
         />
       ) : null}
       {secret === 'missing' ? (
-        <p className="flex items-start gap-1.5 text-2xs leading-relaxed text-warning">
+        <p className="flex items-start gap-1 text-meta text-warning">
           <TriangleAlert size={ICON_SIZE.row} aria-hidden className="mt-0.5 shrink-0" />
           <span>
             The key is missing from this Mac's keychain, so every request with it fails. Disconnect
@@ -92,7 +90,7 @@ export const IntegrationConnectedRow = ({
           </span>
         </p>
       ) : null}
-      {error != null ? <p className="text-2xs leading-relaxed text-danger">{error}</p> : null}
+      {error != null ? <p className="text-meta text-danger">{error}</p> : null}
     </div>
   );
 };

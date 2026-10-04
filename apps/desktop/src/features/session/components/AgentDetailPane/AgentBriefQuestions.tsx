@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { Band } from '@goodboy/ui';
 import type { Agent, Session } from '@goodboy/types';
 import { useAppStore, useSessionOpenQuestions } from '../../../../store';
+import { NAMES } from '../../../../shared/names';
 import { OpenQuestionCluster } from '../../../chat/components/ChatView/OpenQuestionCluster';
 import { attachedQuestionsFor } from '../../timeline/attachedQuestions';
 
@@ -31,9 +32,9 @@ export const AgentBriefQuestions = ({ session, agent }: Props) => {
   return (
     <Band
       inset="content"
-      label="Waiting on you"
+      label={NAMES.needsYou}
       headingLevel={2}
-      action={<span className="text-secondary text-faint-foreground">{unanswered.length}</span>}
+      action={<span className="text-meta text-faint-foreground">{unanswered.length}</span>}
     >
       <OpenQuestionCluster questions={unanswered} sessionId={session.id} />
     </Band>

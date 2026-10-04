@@ -35,7 +35,7 @@ export const SectionHeader = ({
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             {icon != null ? <span className="flex shrink-0 items-center">{icon}</span> : null}
-            <h2 className="min-w-0 text-base font-semibold leading-6 text-foreground">{title}</h2>
+            <h2 className="min-w-0 text-title text-foreground">{title}</h2>
             {meta ?? null}
           </div>
           {action ?? null}
@@ -45,7 +45,7 @@ export const SectionHeader = ({
     );
   }
 
-  const eyebrow = <Eyebrow icon={icon} label={title} className="flex items-center gap-1.5" />;
+  const eyebrow = <Eyebrow icon={icon} label={title} className="flex items-center gap-2" />;
   const Heading = headingLevel == null ? null : HEADING_TAG[headingLevel];
   const heading = Heading == null ? eyebrow : <Heading className="min-w-0">{eyebrow}</Heading>;
 
@@ -62,7 +62,7 @@ export const SectionHeader = ({
         )}
         {action ?? null}
       </div>
-      {hint != null ? <p className="text-secondary text-faint-foreground">{hint}</p> : null}
+      {hint != null ? <p className="text-meta text-faint-foreground">{hint}</p> : null}
     </div>
   );
 };

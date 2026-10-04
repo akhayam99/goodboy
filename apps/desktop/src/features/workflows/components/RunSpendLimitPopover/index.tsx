@@ -57,7 +57,7 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
     }
   };
 
-  const metaLabel = limitUsd == null ? 'Set a spend limit' : `Spend limit ${formatUsd(limitUsd)}`;
+  const metaLabel = limitUsd == null ? 'Set a spend cap' : `Spend cap ${formatUsd(limitUsd)}`;
   const isBlank = amount.trim() === '';
   const isInvalid = !isBlank && parseSpendLimit(amount) == null;
 
@@ -65,7 +65,7 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel="Spend limit for this run"
+      ariaLabel="Spend cap for this run"
       className="flex flex-col bg-subtle"
       anchorClassName="inline-flex"
       trigger={
@@ -76,7 +76,7 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
             aria-expanded={open}
             data-testid="run-spend-limit-trigger"
             className={cn(
-              'inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-secondary motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+              'inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-meta motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
               limitUsd == null
                 ? 'text-faint-foreground hover:bg-hover hover:text-foreground'
                 : 'text-muted-foreground hover:bg-hover hover:text-foreground',
@@ -88,7 +88,7 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
         ) : (
           <OrchestratorAction
             icon={CircleDollarSign}
-            label="Raise the spend limit"
+            label="Raise the spend cap"
             variant="primary"
             tone="warning"
             testId="run-spend-limit-trigger"
@@ -100,9 +100,7 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
       }
     >
       <PopoverBody>
-        <header className="px-3 pb-1 pt-3 text-label font-semibold text-foreground">
-          Spend limit for this run
-        </header>
+        <header className="px-3 pb-1 pt-3 text-row text-foreground">Spend cap for this run</header>
         <div className="flex flex-col gap-2 px-3 py-2">
           <SpendLimitFields
             amount={amount}
@@ -112,7 +110,7 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
             onAmount={setAmount}
             onBehavior={(behavior) => setMode(runModeOfBehavior({ behavior }))}
           />
-          <p className="text-2xs leading-relaxed text-muted-foreground">
+          <p className="text-meta leading-relaxed text-muted-foreground">
             {isInvalid
               ? 'Enter an amount above zero, or clear the field for no limit.'
               : `${formatUsd(spentUsd)} spent so far. Leave it empty for no limit.`}

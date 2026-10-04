@@ -38,7 +38,7 @@ export const NotesPanel = ({
               selected={false}
               onClick={() => onReveal(note.nodeId)}
               title={`Show ${note.label} on the page`}
-              className="items-start gap-2 px-1.5 py-1"
+              className="items-start gap-2 px-2 py-1"
             >
               <WorkNode
                 state="marker"
@@ -46,7 +46,7 @@ export const NotesPanel = ({
                 label={`Note ${note.number}`}
               />
               <span className="flex min-w-0 flex-col">
-                <span className="truncate text-secondary text-muted-foreground">{note.label}</span>
+                <span className="truncate text-meta text-muted-foreground">{note.label}</span>
                 <span className="text-body text-foreground">{note.note}</span>
               </span>
             </SelectableRow>
@@ -65,7 +65,7 @@ export const NotesPanel = ({
               <SelectableRow
                 selected={false}
                 onClick={() => onOpenScreen(link.toScreenId)}
-                className="items-center gap-2 px-1.5 py-1"
+                className="items-center gap-2 px-2 py-1"
               >
                 <WorkNode
                   state="queued"
@@ -73,7 +73,7 @@ export const NotesPanel = ({
                   label={`Screen ${link.toNumber}`}
                 />
                 <span className="min-w-0 flex-1 truncate text-body">{link.toTitle}</span>
-                <span className="shrink-0 truncate text-secondary text-muted-foreground">
+                <span className="shrink-0 truncate text-meta text-muted-foreground">
                   {link.label}
                 </span>
               </SelectableRow>

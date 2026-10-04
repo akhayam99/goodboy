@@ -260,7 +260,7 @@ export const ArtifactCreationPane = ({
           <div data-testid="artifact-creation-pane" className={cn(PANE_RHYTHM.stack, 'min-w-0')}>
             {note === null ? null : (
               <span
-                className="text-secondary text-muted-foreground"
+                className="text-meta text-muted-foreground"
                 data-testid="artifact-creation-note"
               >
                 {note}

@@ -16,7 +16,7 @@ export const HistoryRowPlanLine = ({ parts, conflictFiles }: Props) => {
     return null;
   }
   return (
-    <span className="flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-label text-muted-foreground">
+    <span className="flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-label text-muted-foreground">
       {parts.map((part, index) => (
         <Fragment key={part.key}>
           {index > 0 ? (
@@ -24,7 +24,7 @@ export const HistoryRowPlanLine = ({ parts, conflictFiles }: Props) => {
               ·
             </span>
           ) : null}
-          <span className="inline-flex min-w-0 shrink items-center gap-1.5">
+          <span className="inline-flex min-w-0 shrink items-center gap-2">
             {part.action === null ? null : (
               <span
                 aria-hidden

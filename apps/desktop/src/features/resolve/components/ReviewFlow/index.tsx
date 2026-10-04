@@ -458,7 +458,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
       return (
         <div className="flex max-w-[300px] flex-col gap-3">
           {SKELETON_ROWS.map((key) => (
-            <div key={key} className="flex flex-col gap-1.5 px-2.5 py-2">
+            <div key={key} className="flex flex-col gap-2 px-3 py-2">
               <Skeleton className="h-3.5 w-40" />
               <Skeleton className="h-4 w-full" />
             </div>
@@ -500,7 +500,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
                 onToggle={(threadId) => toggleReviewSelection({ sessionId, threadId })}
               />
               {shownGroups.length === 0 && (
-                <p className="px-2.5 py-2 text-secondary text-muted-foreground">
+                <p className="px-3 py-2 text-meta text-muted-foreground">
                   {REVIEW_FLOW_LABEL.noMatch}
                 </p>
               )}
@@ -517,7 +517,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
         </div>
         <ScrollFade className="min-h-0 min-w-0 flex-1" viewportClassName="pb-8 pr-4" fadeSize="h-6">
           <div className="mb-4 flex items-center gap-1 @4xl:hidden">
-            <span className="text-secondary tabular-nums text-muted-foreground">
+            <span className="text-meta tabular-nums text-muted-foreground">
               {counterLabel({ index: index + 1, total: entries.length })}
             </span>
             <IconButton
@@ -609,7 +609,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
             />
           )}
           {started !== null && launch === null && (
-            <p role="status" className="text-secondary text-muted-foreground">
+            <p role="status" className="text-meta text-muted-foreground">
               {startedLine({ count: started.count, modelName: started.model })}
             </p>
           )}
@@ -621,7 +621,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
             />
           )}
           {reviewTarget?.status === 'pending' && (
-            <p role="status" className="text-secondary text-muted-foreground">
+            <p role="status" className="text-meta text-muted-foreground">
               {reviewTargetPending({ hasThread: targetThreadId !== null })}
             </p>
           )}

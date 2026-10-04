@@ -2,6 +2,7 @@ import { RotateCcw } from 'lucide-react';
 import { AnchoredPopover, Switch, cn, formatUsd, useDropdown } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import type { WorkflowSpendLimitMode } from '@goodboy/types';
+import { NAMES } from '../../../../../shared/names';
 import { SpendLimitFields } from '../../../../budget/components/SpendLimitFields';
 import { parseSpendLimit } from '../../../../budget/parseSpendLimit';
 import {
@@ -70,11 +71,11 @@ export const SpendCapChip = ({
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel="Spend cap"
+      ariaLabel={NAMES.spendCap}
       className="flex flex-col gap-2 p-3"
       trigger={
         <ControlChip
-          label="Spend cap"
+          label={NAMES.spendCap}
           value={chipValueOf({ isEnabled, amount, mode })}
           marker={differs ? <RuleDot ruleValue={ruleValue} /> : null}
           isOpen={open}
@@ -85,11 +86,11 @@ export const SpendCapChip = ({
       }
     >
       <div className="flex items-center justify-between gap-3">
-        <span className="text-secondary text-muted-foreground">Cap this run before it starts.</span>
+        <span className="text-meta text-muted-foreground">Cap this run before it starts.</span>
         <Switch
           label={
             <>
-              <span className="sr-only">Spend limit </span>
+              <span className="sr-only">{NAMES.spendCap} </span>
               {isEnabled ? 'On' : 'Off'}
             </>
           }
@@ -109,12 +110,7 @@ export const SpendCapChip = ({
             onAmount={onAmount}
             onBehavior={(behavior) => onMode(runModeOfBehavior({ behavior }))}
           />
-          <p
-            className={cn(
-              'text-2xs leading-relaxed',
-              isInvalid ? 'text-danger' : 'text-muted-foreground',
-            )}
-          >
+          <p className={cn('text-meta', isInvalid ? 'text-danger' : 'text-muted-foreground')}>
             {isInvalid
               ? 'Enter an amount above zero.'
               : hasAmount
@@ -131,7 +127,7 @@ export const SpendCapChip = ({
         >
           <RotateCcw size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
           <span className="min-w-0 flex-1">Reset</span>
-          <span className="truncate text-secondary text-faint-foreground">{ruleValue}</span>
+          <span className="truncate text-meta text-faint-foreground">{ruleValue}</span>
         </button>
       ) : null}
     </AnchoredPopover>

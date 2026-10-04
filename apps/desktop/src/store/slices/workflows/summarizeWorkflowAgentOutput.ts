@@ -59,7 +59,7 @@ const notifyModelUnavailable = ({
     kind: 'summarizer-degraded',
     severity: 'warning',
     title: `Summarizer model ${label} is unavailable`,
-    body: `${label} is not available to this account and ${outcome}. change the summarizer model in Providers then Defaults.`,
+    body: `${label} is not available to this account and ${outcome}. change the summarizer model in Providers then Models.`,
     sessionId,
     action: { kind: 'retry-step-summary', sessionId, agentId: agent.id as AgentId },
     coalesceKey: `summarizer-model-unavailable:${unavailable.providerId}:${unavailable.model}`,

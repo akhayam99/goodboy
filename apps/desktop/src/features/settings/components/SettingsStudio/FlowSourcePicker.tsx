@@ -32,7 +32,7 @@ export const FlowSourcePicker = ({ sources, sourceId, onPick }: Props) => {
             aria-checked={isPicked}
             onClick={() => onPick(candidate.id)}
             className={cn(
-              'flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left text-label motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+              'flex min-w-0 items-center gap-2 rounded-md px-2 py-2 text-left text-label motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
               isPicked && 'bg-selected',
             )}
           >
@@ -42,7 +42,7 @@ export const FlowSourcePicker = ({ sources, sourceId, onPick }: Props) => {
               className={cn('shrink-0 text-primary', !isPicked && 'invisible')}
             />
             <span className="truncate text-foreground">{candidate.name}</span>
-            <span className="truncate text-secondary text-faint-foreground">
+            <span className="truncate text-meta text-faint-foreground">
               {pluralize(candidate.projectCount, 'project')} ·{' '}
               {differs === 0 ? 'nothing different' : `${pluralize(differs, 'setting')} different`}
             </span>

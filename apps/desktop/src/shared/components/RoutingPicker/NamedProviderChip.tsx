@@ -22,19 +22,19 @@ export const NamedProviderChip = ({ id, isActive, isConnected, onSelect }: Props
       aria-label={`${PROVIDER_LABEL[id]}, ${note}`}
       onClick={onSelect}
       className={cn(
-        'flex min-w-0 flex-col items-start gap-0.5 rounded-md border px-2.5 py-1.5 text-left transition-colors',
+        'flex min-w-0 flex-col items-start gap-0.5 rounded-md border px-3 py-2 text-left transition-colors',
         isActive
           ? cn('border-primary bg-background', tintClasses('primary').bgSoft)
           : 'border-border-soft bg-background hover:border-border hover:bg-hover',
       )}
     >
-      <span className="flex min-w-0 items-center gap-1.5 text-row text-foreground">
+      <span className="flex min-w-0 items-center gap-2 text-row text-foreground">
         <ProviderGlyph id={id} size={12} />
         <span className="truncate">{PROVIDER_LABEL[id]}</span>
       </span>
       <span
         className={cn(
-          'truncate text-secondary',
+          'truncate text-meta',
           isAtLimit ? tintClasses('warning').text : 'text-muted-foreground',
         )}
       >

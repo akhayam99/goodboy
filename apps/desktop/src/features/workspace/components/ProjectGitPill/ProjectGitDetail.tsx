@@ -166,19 +166,18 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
       {status == null ? (
         <SkeletonRow label="Reading git status" className="m-2" />
       ) : status.state === 'missing' ? (
-        <div className="flex items-start gap-2 p-3 text-xs leading-relaxed text-danger">
+        <div className="flex items-start gap-2 p-3 text-label text-danger">
           <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           <span>
-            Goodboy cannot reach{' '}
-            <span className="font-mono text-secondary">{project.rootPath}</span>. Reconnect the
-            workspace once the folder is back.
+            Goodboy cannot reach <span className="font-mono text-meta">{project.rootPath}</span>.
+            Reconnect the workspace once the folder is back.
           </span>
         </div>
       ) : status.state === 'absent' || status.state === 'unborn' ? (
         <InitGuide rootPath={project.rootPath} state={status.state} onStart={onStartRepository} />
       ) : (
         <div className="flex flex-col gap-2 p-3">
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             {details.length === 0 && notes.length === 0 ? (
               <span className="flex items-center gap-1 text-label text-muted-foreground">
                 <Check size={11} aria-hidden />
@@ -201,13 +200,13 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
               </span>
             ) : null}
             {notes.map((note) => (
-              <span key={note} className="text-secondary text-muted-foreground">
+              <span key={note} className="text-meta text-muted-foreground">
                 {note}
               </span>
             ))}
           </div>
           <div className="flex flex-col gap-1 border-t border-border-soft pt-2">
-            <span className="flex items-center gap-2 text-secondary text-muted-foreground">
+            <span className="flex items-center gap-2 text-meta text-muted-foreground">
               <span className="shrink-0">Base branch</span>
               <BaseBranchSelect
                 repoPath={project.rootPath}
@@ -216,7 +215,7 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
               />
             </span>
             {baseBranchError != null ? (
-              <span role="alert" className="text-secondary text-danger">
+              <span role="alert" className="text-meta text-danger">
                 {baseBranchError}
               </span>
             ) : null}
@@ -226,12 +225,12 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
             </Button>
             {blockedReason != null ? (
               blockedReason === 'already up to date' ? (
-                <span className="flex items-center gap-1 px-1 text-2xs leading-relaxed text-muted-foreground">
+                <span className="flex items-center gap-1 px-1 text-meta text-muted-foreground">
                   <Check size={11} aria-hidden />
                   {`${capitalize({ value: blockedReason })}.`}
                 </span>
               ) : (
-                <span className="px-1 text-2xs leading-relaxed text-muted-foreground">
+                <span className="px-1 text-meta text-muted-foreground">
                   {`${capitalize({ value: blockedReason })}.`}
                 </span>
               )
@@ -255,18 +254,18 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
             />
           ) : null}
           {pullError != null ? (
-            <span role="alert" className="text-secondary text-danger">
+            <span role="alert" className="text-meta text-danger">
               {pullError}
             </span>
           ) : null}
           {openError != null ? (
-            <span role="alert" className="text-secondary text-danger">
+            <span role="alert" className="text-meta text-danger">
               {openError}
             </span>
           ) : null}
         </div>
       )}
-      <span className="border-t border-border-soft px-3 py-2 text-secondary text-faint-foreground">
+      <span className="border-t border-border-soft px-3 py-2 text-meta text-faint-foreground">
         {isFirstLap
           ? 'This project works in its own folder until it is published.'
           : 'Sessions keep working in their own worktree, never on this checkout.'}

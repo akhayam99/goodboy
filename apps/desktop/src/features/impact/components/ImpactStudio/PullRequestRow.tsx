@@ -10,7 +10,7 @@ type Props = {
   readonly onOpenSession: (sessionId: SessionId) => void;
 };
 
-const ROW = 'flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-label';
+const ROW = 'flex items-center gap-2 rounded-md px-2 py-2 text-left text-label';
 
 export const PullRequestRow = ({ entry, onOpenSession }: Props) => {
   const content = (

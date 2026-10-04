@@ -127,7 +127,7 @@ describe('ConvertWorkspaceFlow', () => {
   it('converts with the repository the user picked', async () => {
     renderFlow();
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Link existing' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Add existing' }));
     await waitFor(() =>
       expect(screen.getByLabelText<HTMLButtonElement>('Repository').disabled).toBe(false),
     );
@@ -160,7 +160,7 @@ describe('ConvertWorkspaceFlow', () => {
     setGithub({ isAvailable: false });
     renderFlow();
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Link existing' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Add existing' }));
     expect(screen.getByText('GitHub is not connected yet')).toBeDefined();
     expect(
       screen.getByRole('button', { name: 'Convert to dev project' }).hasAttribute('disabled'),
@@ -171,7 +171,7 @@ describe('ConvertWorkspaceFlow', () => {
     connectGitlab();
     renderFlow();
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Link existing' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Add existing' }));
     fireEvent.click(screen.getByRole('tab', { name: 'GitLab' }));
     fireEvent.change(screen.getByPlaceholderText('https://gitlab.com/owner/repo.git'), {
       target: { value: 'git@gitlab.com:acme/widgets.git' },
@@ -190,7 +190,7 @@ describe('ConvertWorkspaceFlow', () => {
     connectGitlab();
     renderFlow();
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Link existing' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Add existing' }));
     await waitFor(() =>
       expect(screen.getByLabelText<HTMLButtonElement>('Repository').disabled).toBe(false),
     );
@@ -218,7 +218,7 @@ describe('ConvertWorkspaceFlow', () => {
     listOwnedRepos.mockResolvedValue({ kind: 'unauthenticated' });
     renderFlow();
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Link existing' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Add existing' }));
     await waitFor(() => screen.getByText('the GitHub CLI is installed but not signed in'));
     expect(
       screen.getByRole('button', { name: 'Convert to dev project' }).hasAttribute('disabled'),
@@ -229,7 +229,7 @@ describe('ConvertWorkspaceFlow', () => {
     listOwnedRepos.mockResolvedValue({ kind: 'ok', repos: [] });
     renderFlow();
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Link existing' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Add existing' }));
     await waitFor(() => screen.getByText('this account owns no repositories yet'));
   });
 
@@ -240,7 +240,7 @@ describe('ConvertWorkspaceFlow', () => {
     setGithub({ isAvailable: false });
     renderFlow({ onClose });
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Link existing' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Add existing' }));
     fireEvent.change(screen.getByPlaceholderText('https://github.com/owner/repo.git'), {
       target: { value: 'https://github.com/acme/widgets.git' },
     });

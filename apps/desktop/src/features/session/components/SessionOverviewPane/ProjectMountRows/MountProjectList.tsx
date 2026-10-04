@@ -113,7 +113,7 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
                       setSelectedProjectId(project.id);
                     }}
                     className={cn(
-                      'flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-body text-foreground motion-safe:transition-colors hover:bg-hover',
+                      'flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-body text-foreground motion-safe:transition-colors hover:bg-hover',
                     )}
                   >
                     <GlyphIcon

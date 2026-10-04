@@ -38,7 +38,7 @@ export const SentryStackTrace = ({ frames, isLoading, error }: Props) => {
   }
 
   return (
-    <pre className="overflow-x-auto rounded-lg border border-border-soft bg-subtle p-3 font-mono text-2xs leading-relaxed text-muted-foreground">
+    <pre className="overflow-x-auto rounded-lg border border-border-soft bg-subtle p-3 font-mono text-meta text-muted-foreground">
       {frames
         .map(
           (frame) =>

@@ -134,7 +134,7 @@ export const NotificationFacetRail = ({
         ))}
       </FacetSection>
       {workspaceName != null && (
-        <section aria-label="Workspace" className="flex flex-col gap-1.5 px-2">
+        <section aria-label="Workspace" className="flex flex-col gap-2 px-2">
           <Eyebrow label="Workspace" muted />
           <SegmentedTabs
             ariaLabel="Notifications from"

@@ -9,7 +9,7 @@ type Props = {
 };
 
 export const SearchChipPill = ({ eyebrow, label, removeLabel, onRemove }: Props) => (
-  <span className="inline-flex h-6 shrink-0 items-center gap-1 rounded-sm bg-fill pl-2 text-secondary text-foreground">
+  <span className="inline-flex h-6 shrink-0 items-center gap-1 rounded-sm bg-fill pl-2 text-chip text-foreground">
     <span className="text-faint-foreground">{eyebrow}</span>
     <span className="max-w-40 truncate text-foreground">{label}</span>
     <Tooltip content={removeLabel}>

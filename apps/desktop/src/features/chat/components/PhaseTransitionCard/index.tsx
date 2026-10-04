@@ -54,14 +54,14 @@ export const PhaseTransitionCard = ({ item }: Props) => {
           badge={
             item.degraded === true && (
               <span
-                className={`shrink-0 rounded-md px-1 py-px text-secondary font-medium ${warningTint.bg} ${warningTint.text}`}
+                className={`shrink-0 rounded-md px-1 py-px text-chip ${warningTint.bg} ${warningTint.text}`}
               >
                 partial brief
               </span>
             )
           }
           preview={
-            <span className="flex min-w-0 items-center gap-1.5">
+            <span className="flex min-w-0 items-center gap-2">
               <span className="truncate">
                 {item.fromStep.ordinal + 1}. {item.fromStep.name}
               </span>
@@ -72,7 +72,7 @@ export const PhaseTransitionCard = ({ item }: Props) => {
             </span>
           }
           meta={
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center gap-2">
               {item.durationMs != null && (
                 <span>{formatDuration({ durationMs: item.durationMs })}</span>
               )}

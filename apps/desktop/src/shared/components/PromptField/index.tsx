@@ -235,7 +235,7 @@ export const PromptField = ({
   );
 
   const tabs = hasPreview ? (
-    <div className="flex min-w-0 items-center gap-2 px-2 pt-1.5">
+    <div className="flex min-w-0 items-center gap-2 px-2 pt-2">
       <SegmentedTabs
         size="xs"
         ariaLabel="Write or preview"
@@ -245,7 +245,7 @@ export const PromptField = ({
       />
       <span className="flex-1" />
       {files?.note !== undefined ? (
-        <span className="flex min-w-0 items-center gap-1 truncate text-secondary text-faint-foreground">
+        <span className="flex min-w-0 items-center gap-1 truncate text-meta text-faint-foreground">
           <ImageIcon size={ICON_SIZE.row} aria-hidden />
           {files.note}
         </span>
@@ -293,7 +293,7 @@ export const PromptField = ({
       {tabs}
       {body}
       {attachments.length > 0 ? (
-        <div className="flex flex-wrap gap-1.5 px-2.5 pb-1.5 pt-0.5">
+        <div className="flex flex-wrap gap-2 px-3 pb-2 pt-0.5">
           {attachments.map((attachment) => (
             <PromptAttachmentChip
               key={attachment.id}
@@ -304,12 +304,12 @@ export const PromptField = ({
         </div>
       ) : null}
       {notice !== null && notice !== '' ? (
-        <p role="alert" className="px-3 pb-1.5 text-secondary text-warning">
+        <p role="alert" className="px-3 pb-1 text-meta text-warning">
           {notice}
         </p>
       ) : null}
       {hasFooter ? (
-        <div className="flex min-h-8 min-w-0 items-center gap-2 px-1.5 pb-1.5">
+        <div className="flex min-h-8 min-w-0 items-center gap-2 px-2 pb-2">
           {files !== undefined ? (
             <>
               <IconButton
@@ -336,7 +336,7 @@ export const PromptField = ({
           <PromptKeysHint hints={hints} />
           <span className="flex-1" />
           {attachments.length > 0 ? (
-            <span className="shrink-0 text-secondary tabular-nums text-faint-foreground">
+            <span className="shrink-0 text-meta tabular-nums text-faint-foreground">
               {`${attachments.length} of ${ATTACHMENT_LIMIT} ${noun}`}
             </span>
           ) : null}

@@ -1,3 +1,4 @@
+import { formerNamesOf } from '../../../shared/names';
 import type { ObjectTarget, ResolvedAction } from '../../actions/types';
 import type { PaletteEntry } from '../types';
 
@@ -30,7 +31,7 @@ export const verbEntries = ({
   actions.map((action) => ({
     key: verbKey(action.id),
     label: verbLabel({ action }),
-    secondary: [noun],
+    secondary: [noun, ...formerNamesOf(action.label)],
     kind: 'verb',
     group: 'action',
     icon: action.icon,

@@ -27,7 +27,7 @@ export const LinkedSessionButtons = ({ sessionIds, onOpened }: Props) => {
     return <OpenSessionButton sessionId={first} onOpened={onOpened} />;
   }
   return (
-    <div role="group" aria-label="Sessions on this task" className="flex flex-wrap gap-1.5">
+    <div role="group" aria-label="Sessions on this task" className="flex flex-wrap gap-2">
       {sessionIds.map((sessionId, index) => (
         <OpenSessionButton
           key={sessionId}

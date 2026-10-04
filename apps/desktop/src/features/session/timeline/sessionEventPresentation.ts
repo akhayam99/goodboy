@@ -197,10 +197,12 @@ export const isEmptyDecisionDiff = ({ payload }: PayloadParams): boolean => {
   return additions === 0 && deletions === 0;
 };
 
+export const CONTEXT_LABEL = 'Context';
+
 const decisionsChangedLabel = ({ payload }: PayloadParams): string =>
   payload?.consolidatedAfter === undefined
-    ? 'Context'
-    : `Context consolidated after ${payload.consolidatedAfter}`;
+    ? CONTEXT_LABEL
+    : `${CONTEXT_LABEL} consolidated after ${payload.consolidatedAfter}`;
 
 type TitleParams = {
   readonly event: SessionEvent;
@@ -319,7 +321,7 @@ export const sessionEventLabel = ({ event }: TitleParams): ReadonlyArray<Timelin
     case 'issue_linked':
       return [{ kind: 'text', text: 'Linked ' }, ...issueSegments({ payload })];
     case 'issue_unlinked':
-      return [{ kind: 'text', text: 'Unlinked ' }, ...issueSegments({ payload })];
+      return [{ kind: 'text', text: 'Removed link to ' }, ...issueSegments({ payload })];
     case 'pr_created':
       return payload?.title == null
         ? [{ kind: 'text', text: 'Opened ' }, prSegment({ payload })]
@@ -405,9 +407,9 @@ export const sessionEventLabel = ({ event }: TitleParams): ReadonlyArray<Timelin
           ];
     case 'project_detached':
       return payload?.projectName == null
-        ? [{ kind: 'text', text: 'Detached a project' }]
+        ? [{ kind: 'text', text: 'Removed a project' }]
         : [
-            { kind: 'text', text: 'Detached ' },
+            { kind: 'text', text: 'Removed ' },
             { kind: 'value', text: payload.projectName, variant: 'project' },
           ];
     case 'external_task_created':
@@ -521,7 +523,7 @@ export const sessionEventProjectRunLabel = ({
     detached.length === 0
       ? []
       : [
-          { kind: 'text', text: mounted.length === 0 ? 'Detached ' : ', detached ' },
+          { kind: 'text', text: mounted.length === 0 ? 'Removed ' : ', removed ' },
           ...projectListSegments({ names: detached, limit }),
         ];
   return [...mountedSegments, ...detachedSegments];

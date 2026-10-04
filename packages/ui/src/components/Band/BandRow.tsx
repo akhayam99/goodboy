@@ -7,7 +7,7 @@ type Props = {
   readonly className?: string;
 };
 
-export const BAND_ROW_CLASS = 'flex min-h-9 items-center gap-2 rounded-sm px-2 py-1.5';
+export const BAND_ROW_CLASS = 'flex min-h-9 items-center gap-2 rounded-sm px-2 py-2';
 
 export const BandRow = ({ children, isInteractive = false, className }: Props) => (
   <div

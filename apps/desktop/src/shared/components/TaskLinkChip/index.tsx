@@ -56,7 +56,7 @@ export const TaskLinkChip = ({
           ) : null}
         </span>
       ) : (
-        <span className="flex min-w-0 items-center gap-1.5">
+        <span className="flex min-w-0 items-center gap-2">
           <span className="font-mono">{identifier}</span>
           <span className="max-w-48 truncate text-muted-foreground">{title}</span>
         </span>

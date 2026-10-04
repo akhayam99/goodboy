@@ -33,10 +33,8 @@ export const ResolvedThread = ({ thread, onOpenUrl }: Props) => {
           icon={<CheckCheck size={ICON_SIZE.row} aria-hidden />}
           eyebrow="resolved"
           badge={
-            <span className="flex shrink-0 items-center gap-1.5">
-              <span className="text-secondary font-medium text-muted-foreground">
-                {head.author}
-              </span>
+            <span className="flex shrink-0 items-center gap-2">
+              <span className="text-chip text-muted-foreground">{head.author}</span>
               {head.outdated === true ? (
                 <Chip
                   tone="neutral"

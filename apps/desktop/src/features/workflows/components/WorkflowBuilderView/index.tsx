@@ -87,10 +87,8 @@ import { GuidanceTools } from './parts/GuidanceTools';
 import { RuleDot } from './parts/RuleDot';
 import { RunGuidanceField } from './parts/RunGuidanceField';
 import { GuidanceRecipients } from '../WorkflowGuidance/GuidanceRecipients';
-import { AlsoSentLine } from '../WorkflowGuidance/AlsoSentLine';
 import { usePolishGuidance } from '../../hooks/usePolishGuidance';
 import { guidanceRoleNames, sameRoles } from '../../guidanceRoles';
-import { policyProvidersText } from '../../workflowRulesCopy';
 import { useWorkflowRules } from '../../hooks/useWorkflowRules';
 import { StartsChip, type ChainRun, type StartChoice } from './parts/StartsChip';
 import { StepTree } from '../StepTree';
@@ -1160,10 +1158,9 @@ export const WorkflowBuilderView = (props: Props) => {
           guidanceFooter={
             <>
               {guidanceTools}
-              <span className="text-secondary text-muted-foreground">
+              <span className="text-meta text-muted-foreground">
                 Sent to <span className="text-foreground">the orchestrator</span>
               </span>
-              <AlsoSentLine />
             </>
           }
           providerOverride={orchestratorProviderOverride}
@@ -1272,7 +1269,7 @@ export const WorkflowBuilderView = (props: Props) => {
           }}
           origin={
             isPresetEdited && basePreset !== null ? (
-              <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-secondary text-muted-foreground">
+              <span className="shrink-0 rounded-sm bg-muted px-2 py-0.5 text-chip text-muted-foreground">
                 {`Edited from ${basePreset.name}`}
               </span>
             ) : null
@@ -1330,7 +1327,7 @@ export const WorkflowBuilderView = (props: Props) => {
             tools={guidanceTools}
             recipients={
               guidance.trim() === '' ? (
-                <span className="text-secondary text-faint-foreground">Nothing to send.</span>
+                <span className="text-meta text-faint-foreground">Nothing to send.</span>
               ) : (
                 <>
                   <GuidanceRecipients
@@ -1348,7 +1345,6 @@ export const WorkflowBuilderView = (props: Props) => {
                     }
                     onRoles={setGuidanceRoles}
                   />
-                  <AlsoSentLine />
                 </>
               )
             }
@@ -1367,8 +1363,6 @@ export const WorkflowBuilderView = (props: Props) => {
           />
         )}
         <FromRulesRow
-          rules={workflowRules}
-          providers={policyProvidersText({ policy: workspaceOverrides?.providerPool })}
           changed={[
             ...(autonomyOverride === null ? [] : ['when to ask']),
             ...(spendDiffers ? ['spend cap'] : []),
