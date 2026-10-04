@@ -736,7 +736,7 @@ export const WORLD_ROWS: ReadonlyArray<WorldRow> = [
       await settle(4);
       const lane = Array.from(
         document.querySelectorAll<HTMLElement>('button[aria-keyshortcuts="Shift+Enter"]'),
-      ).find((button) => /Open run/.test(button.textContent ?? ''));
+      ).find((button) => /Open run/.test(button.getAttribute('aria-description') ?? ''));
       if (lane === undefined) {
         throw new Error('the activity feed has no run row');
       }

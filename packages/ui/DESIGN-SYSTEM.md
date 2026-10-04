@@ -678,8 +678,10 @@ keeps its title whole before its summary: the summary takes the room left
 beside the title and truncates its tail first, then the title truncates. A list under 440px also
 drops the time gutter; the day and Now labels move beside the rail. Label segments keep their
 leading words and tokens whole ("Opened #612:") and only the last segment
-truncates. The "Open ↵" hint takes room only while a row of 640px or more is
-hovered or focused. What leaves the row stays in the routing tooltip, which
+truncates. A row carries no hover hint on its right; the open target and the
+keys are read by screen readers (`aria-description`, `aria-keyshortcuts`).
+"Longer than usual" shows only on a running step, never on a finished one.
+What leaves the row stays in the routing tooltip, which
 always reads the whole route ("Claude · Opus 5.5 · High"). The routing column
 is `RoutingLabel isColumn`, with no fill and no chip. Its words come from
 `routingLabelParts`, the same function behind the model picker trigger, so a

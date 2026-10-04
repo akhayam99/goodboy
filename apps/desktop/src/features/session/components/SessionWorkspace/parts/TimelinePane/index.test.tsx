@@ -1228,6 +1228,32 @@ describe('TimelinePane row meta', () => {
       expect(within(row).getByTestId('work-time').textContent).toBe('11m');
       expect(within(row).getByTestId('timeline-row-state').textContent).toBe('Longer than usual');
     });
+
+    it('keeps the longer than usual note off a finished step that ran past its range', () => {
+      const now = Date.now();
+      storeState.sessionTurnSpans = { 'session-1': [span('agent-plan', 0, 6 * MINUTE + 40_000)] };
+      storeState.workspaceDurationHistory = {
+        'ws-1': {
+          steps: [1, 2, 2, 3, 3].map((minutes) => ({
+            role: 'planner',
+            provider: 'anthropic',
+            model: 'claude-opus-4-5',
+            effort: 'high',
+            activeMs: minutes * MINUTE,
+            costUsd: 0.3,
+            endedAtMs: now - MINUTE,
+          })),
+          turns: [],
+          everyWorkspace: { steps: [], turns: [] },
+          orchestratedRuns: [],
+        },
+      };
+      render(<TimelinePane session={SESSION} actions={null} />);
+
+      const row = rowOf('Plan the fix');
+      expect(within(row).getByTestId('work-time').textContent).toBe('6m 40s');
+      expect(within(row).queryByText('Longer than usual')).toBeNull();
+    });
   });
 
   describe('worktrees a step changed', () => {
@@ -1723,12 +1749,12 @@ describe('TimelinePane finished run', () => {
 
     expect(ball().getAttribute('aria-label')).toBe('3 steps');
     expect(ball().textContent).toBe('3');
-    expect(within(runRow()).getByText('Expand ↵')).toBeDefined();
+    expect(runRow().getAttribute('aria-description')).toBe('Expand, Enter');
 
     fireEvent.click(runRow());
 
     expect(ball().textContent).toBe('3');
-    expect(within(runRow()).getByText('Collapse ↵')).toBeDefined();
+    expect(runRow().getAttribute('aria-description')).toBe('Collapse, Enter');
   });
 
   it('keeps the whole summary of a folded run beside its title', () => {

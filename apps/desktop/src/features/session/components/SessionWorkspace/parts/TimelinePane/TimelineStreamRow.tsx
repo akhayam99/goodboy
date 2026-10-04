@@ -134,11 +134,6 @@ export const TimelineStreamRow = ({
           provider={provider}
         />
       </span>
-      {openTarget == null ? null : (
-        <span className={cn('shrink-0 text-meta text-muted-foreground', WORK_ROW.hint)}>
-          {`${openTarget.label} ↵`}
-        </span>
-      )}
       {state}
       {meta}
     </>
@@ -196,6 +191,7 @@ export const TimelineStreamRow = ({
               type="button"
               onClick={openTarget.open}
               onKeyDown={onKeyDown}
+              aria-description={`${openTarget.label}, Enter`}
               aria-keyshortcuts={runLane === null ? undefined : 'Shift+Enter'}
               aria-expanded={expansion === null ? undefined : expansion.isExpanded}
               aria-controls={

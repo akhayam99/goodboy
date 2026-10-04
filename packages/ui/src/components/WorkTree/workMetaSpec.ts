@@ -7,7 +7,6 @@ export const WORK_ROW = {
   state: '@max-[320px]:hidden',
   stateSlot:
     'flex w-28 shrink-0 items-center justify-end whitespace-nowrap @max-[790px]:w-24 @max-[320px]:hidden',
-  hint: 'hidden @min-[640px]:group-hover:inline @min-[640px]:group-focus-within:inline',
 } as const satisfies Record<string, string>;
 
 export const WORK_META_COLUMN = {

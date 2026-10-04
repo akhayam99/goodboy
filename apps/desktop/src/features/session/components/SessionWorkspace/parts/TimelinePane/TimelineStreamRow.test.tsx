@@ -196,10 +196,12 @@ describe('TimelineStreamRow', () => {
     expect(screen.getByText('Implement the parser')).toBeDefined();
   });
 
-  it('keeps the open hint out of the row until it is hovered or focused in a wide row', () => {
+  it('says the open target and its keys to assistive tech with no hint in the row', () => {
     renderRow();
+    const row = screen.getByRole('button', { name: /Implement the parser/ });
 
-    expect(screen.getByText('Open chat ↵').className.split(' ')).toContain('hidden');
+    expect(screen.queryByText('Open chat ↵')).toBeNull();
+    expect(row.getAttribute('aria-description')).toBe('Open chat, Enter');
   });
 
   it('renders a plain row when it has no open target', () => {
