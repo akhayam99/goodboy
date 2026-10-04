@@ -39,7 +39,8 @@ const facts = (overrides: Partial<MountFacts>): MountFacts => ({
 
 const TOOLS = ['mount.openTerminal menu', 'mount.openInEditor menu', 'mount.scripts menu'];
 const COPIES = ['mount.copyBranch menu', 'mount.copyPath menu'];
-const HISTORY = ['mount.rewriteHistory menu', 'mount.switchBranch chip'];
+const ADD_TASK = 'mount.addTask menu';
+const HISTORY = ['mount.rewriteHistory menu', 'mount.switchBranch chip', ADD_TASK];
 const WITH_PR = ['mount.openPullRequest inline', 'mount.openDiff inline'];
 const DIRTY_2 = 'Commit or discard the 2 uncommitted changes first.';
 
@@ -135,6 +136,7 @@ const STATES: ReadonlyArray<{
       `mount.rebase inline (${DIRTY_2})`,
       `mount.rewriteHistory menu (${DIRTY_2})`,
       'mount.switchBranch chip (The 2 uncommitted changes would follow you. Commit or discard them first.)',
+      ADD_TASK,
       ...COPIES,
       'mount.close menu',
     ],
@@ -161,6 +163,7 @@ const STATES: ReadonlyArray<{
       'mount.scripts menu',
       'mount.abortRebase notice',
       'mount.rewriteHistory menu (Finish or abort the rebase first.)',
+      ADD_TASK,
       ...COPIES,
     ],
   },
@@ -171,6 +174,7 @@ const STATES: ReadonlyArray<{
       'mount.openPullRequest inline',
       ...TOOLS,
       'mount.switchBranch chip',
+      ADD_TASK,
       ...COPIES,
       'mount.close inline',
     ],
@@ -193,6 +197,7 @@ const STATES: ReadonlyArray<{
     expected: [
       ...TOOLS,
       'mount.switchBranch chip',
+      ADD_TASK,
       'mount.startTurnsHere menu',
       ...COPIES,
       'mount.close menu',
