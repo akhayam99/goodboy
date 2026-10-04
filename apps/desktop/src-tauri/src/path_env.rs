@@ -31,8 +31,6 @@ pub fn command(binary: &str) -> Command {
     cmd
 }
 
-/// Path of the first executable named `binary` on the resolved PATH, the one
-/// `command(binary)` would run. A name with a separator is returned as given.
 pub fn which(binary: &str) -> Option<String> {
     if binary.contains('/') {
         return Some(binary.to_string());

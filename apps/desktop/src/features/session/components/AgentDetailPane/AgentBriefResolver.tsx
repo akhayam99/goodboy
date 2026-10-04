@@ -6,19 +6,18 @@ import { useAppStore, agentPlace } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { PushBanner } from '../../../resolve/components/ReviewFlow/PushBanner';
 import { ReviewComment } from '../../../resolve/components/ReviewFlow/ReviewComment';
-import { ReviewerCommentBlock } from '../../../resolve/components/ReviewFlow/ReviewerCommentBlock';
 import { useReviewEntries } from '../../../resolve/components/ReviewFlow/useReviewEntries';
 import { useReviewPush } from '../../../resolve/components/ReviewFlow/useReviewPush';
-import { useActiveReviewSource } from '../../../resolve/hooks/useActiveReviewSource';
 import { useReviewCommentController } from '../../../resolve/hooks/useReviewCommentController';
 import type { ResolverBrief } from '../../../resolve/hooks/useResolverBrief';
+import { ResolverBriefGone } from '../../../resolve/ResolverBriefGone';
+import { ResolverCommitLine } from '../../../resolve/ResolverCommitLine';
 import { REVIEW_COMMENT_TONE, resolverBriefWord } from '../../../resolve/reviewCommentState';
-import { snapshotCommentThread, withSnapshotComment } from '../../../resolve/snapshotCommentThread';
+import { withSnapshotComment } from '../../../resolve/snapshotCommentThread';
 import { threadFixSha } from '../../../resolve/threadFixSha';
+import { useIsOnSelectedSource } from '../../../resolve/useIsOnSelectedSource';
 import { openReview } from '../../../review/openReview';
-import { rowBelongsToSource } from '../../../../store/slices/review-source/rowBelongsToSource';
 import { batchChildNotice, RESOLVER_BRIEF_COPY } from '../../../resolve/reviewFlowCopy';
-import { ResolverCommitLine } from './ResolverCommitLine';
 
 type Props = {
   readonly session: Session;
@@ -41,8 +40,8 @@ export const AgentBriefResolver = ({ session, agent, brief }: Props) => {
   );
   const threads = useAppStore((state) => state.sessionResolveThreads[sessionId] ?? NO_THREAD_ROWS);
   const { entries } = useReviewEntries({ sessionId, isSourceScoped: false });
-  const { selected } = useActiveReviewSource({ sessionId });
   const found = entries.find((candidate) => candidate.threadId === brief.threadId) ?? null;
+  const isOnSelected = useIsOnSelectedSource({ sessionId, thread: found?.row.thread ?? null });
   const entry = useMemo(
     () =>
       found === null ? null : { ...found, row: withSnapshotComment({ row: found.row, snapshot }) },
@@ -72,7 +71,6 @@ export const AgentBriefResolver = ({ session, agent, brief }: Props) => {
 
   if (entry === null) {
     const thread = threads.find((candidate) => candidate.threadId === brief.threadId) ?? null;
-    const goneComment = snapshotCommentThread({ threadId: brief.threadId, snapshot });
     if (!isLoaded) {
       return (
         <p role="status" className="text-body text-muted-foreground">
@@ -81,32 +79,19 @@ export const AgentBriefResolver = ({ session, agent, brief }: Props) => {
       );
     }
     return (
-      <div className="flex min-w-0 flex-col gap-4">
-        <p className="text-body text-foreground">{RESOLVER_BRIEF_COPY.gone}</p>
-        {goneComment !== null && (
-          <div className="min-w-0 rounded-lg bg-subtle px-4 py-3">
-            <ReviewerCommentBlock commentThread={goneComment} />
-          </div>
-        )}
-        <ResolverCommitLine
-          sessionId={sessionId}
-          mountId={mountId}
-          sha={threadFixSha({ commitShas: thread?.commitShas })}
-          isFolded={false}
-        />
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <Button size="sm" variant="primary" onClick={() => open([brief.threadId])}>
-            {RESOLVER_BRIEF_COPY.openInReview}
-          </Button>
-        </div>
-      </div>
+      <ResolverBriefGone
+        sessionId={sessionId}
+        mountId={mountId}
+        threadId={brief.threadId}
+        snapshot={snapshot}
+        sha={threadFixSha({ commitShas: thread?.commitShas })}
+      >
+        <Button size="sm" variant="primary" onClick={() => open([brief.threadId])}>
+          {RESOLVER_BRIEF_COPY.openInReview}
+        </Button>
+      </ResolverBriefGone>
     );
   }
-
-  const isOnSelected = rowBelongsToSource({
-    row: entry.row.thread,
-    entry: { kind: selected.kind, projectId: selected.projectId, number: selected.number },
-  });
 
   const batchActions = (
     <Notice

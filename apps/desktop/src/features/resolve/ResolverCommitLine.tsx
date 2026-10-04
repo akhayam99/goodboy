@@ -1,7 +1,7 @@
 import type { MountId, SessionId } from '@goodboy/types';
-import { useResolverCommit } from '../../../resolve/hooks/useResolverCommit';
-import { ThreadGitSha } from '../../../resolve/components/ReviewFlow/ThreadGitSha';
-import { RESOLVER_BRIEF_COPY } from '../../../resolve/reviewFlowCopy';
+import { ThreadGitSha } from './components/ReviewFlow/ThreadGitSha';
+import { useResolverCommit } from './hooks/useResolverCommit';
+import { RESOLVER_BRIEF_COPY } from './reviewFlowCopy';
 
 type Props = {
   readonly sessionId: SessionId;
