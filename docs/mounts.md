@@ -416,3 +416,13 @@ opens the branch switcher, whose header copies the branch name. Where the
 branch cannot switch (unmounted rows, folder projects, a rebase in progress)
 the chip only shows the name, and with uncommitted changes it says why in its
 tooltip. Copy branch name lives in the row menu.
+
+A branch row shows the tasks linked to that branch as chips (`TaskChipMenu`, the
+`task` kind). `Add a task` in the row menu opens one inline popover to link a task
+straight to the branch. A task already on the session moves with
+`assignSessionExternalTask`: it links the branch row, then drops the session row.
+`takeOffSessionExternalTask` reverses it, and taking a task off its last branch
+restores the session row. `forkMount` takes `taskIdentifier` and `taskTitle` so a
+worktree made for a task is named `{prefix}/{task-id}-{slug}`. The session header,
+Board card and sidebar dedupe by provider and external id (`distinctTasks`); the
+branch is visible only under its row in the Projects card.
