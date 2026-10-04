@@ -173,7 +173,11 @@ function buildHarness(
   const drainResolveQueue = vi.fn(async () => undefined);
   const reportError = vi.fn(async (_params: unknown) => undefined);
   const recordResolveAttempt = vi.fn(
-    async (_params: { phase: string; instructions: string | null }) => 'attempt-id',
+    async (_params: {
+      phase: string;
+      instructions: string | null;
+      humanInstructions?: string | null;
+    }) => 'attempt-id',
   );
   const state = {
     recordResolveAttempt,
