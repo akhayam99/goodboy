@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { buildSessionBreadcrumb } from './sessionBreadcrumb';
 import type { SessionBreadcrumbHandlers, SessionBreadcrumbInput } from './sessionBreadcrumb';
 import type { LensKind } from '../../../../store';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 const makeHandlers = (): SessionBreadcrumbHandlers => ({
   toOverview: vi.fn(),
@@ -56,38 +57,48 @@ describe('buildSessionBreadcrumb', () => {
     expect(labels(crumbs)).toEqual(['Overview', 'review', 'retryPolicy.ts:42', 'Resolver']);
   });
 
-  it('carries the shown branch as the last crumb of the Diff', () => {
+  it('ends the trail on the Branch when no thread, file or page is open', () => {
     const crumbs = buildSessionBreadcrumb(
-      base(
-        { lens: 'files', diffBranchLabel: 'ledger-core fix/ledger-reconcile-postings' },
-        makeHandlers(),
-      ),
+      base({ lens: 'branch', branch: { label: '#318 Ledger export', leaf: null } }, makeHandlers()),
     );
-    expect(crumbs.map((crumb) => crumb.id)).toEqual(['overview', 'lens-files', 'diff-branch']);
-    expect(last(crumbs)?.label).toBe('ledger-core fix/ledger-reconcile-postings');
+    expect(crumbs.map((crumb) => crumb.id)).toEqual(['overview', 'branch']);
+    expect(last(crumbs)?.label).toBe('#318 Ledger export');
+    expect(last(crumbs)?.onClick).toBeUndefined();
   });
 
-  it('puts Rewrite history under the branch, and the branch leads back to the Diff', () => {
-    const toDiffBranch = vi.fn();
+  it('puts the open thread under the Branch and leads back to it from the Branch crumb', () => {
+    const toBranch = vi.fn();
+    const leaf = { id: 'review-thread', label: 'page.tsx:21', icon: CONCEPT_ICONS.comments };
+    const crumbs = buildSessionBreadcrumb(
+      base(
+        { lens: 'branch', branch: { label: '#318 Ledger export', leaf } },
+        { ...makeHandlers(), toBranch },
+      ),
+    );
+    expect(crumbs.map((crumb) => crumb.id)).toEqual(['overview', 'branch', 'review-thread']);
+    crumbs[1]?.onClick?.();
+    expect(toBranch).toHaveBeenCalledOnce();
+    expect(last(crumbs)?.onClick).toBeUndefined();
+  });
+
+  it('reads the same Branch crumb on the Fix run trail, with the thread between', () => {
     const crumbs = buildSessionBreadcrumb(
       base(
         {
-          lens: 'files',
-          diffBranchLabel: 'ledger-core fix/ledger-reconcile-postings',
-          diffPageLabel: 'Rewrite history',
+          selectedChildHome: 'review',
+          selectedChildLabel: 'resolve: ana on page.tsx:21',
+          selectedThreadLabel: 'page.tsx:21',
+          branch: { label: '#318 Ledger export', leaf: null },
         },
-        { ...makeHandlers(), toDiffBranch },
+        makeHandlers(),
       ),
     );
     expect(crumbs.map((crumb) => crumb.id)).toEqual([
       'overview',
-      'lens-files',
-      'diff-branch',
-      'rewrite-history',
+      'branch',
+      'review-thread',
+      'selected-child',
     ]);
-    expect(last(crumbs)?.label).toBe('Rewrite history');
-    crumbs[2]?.onClick?.();
-    expect(toDiffBranch).toHaveBeenCalledOnce();
   });
 
   it('gives every crumb of a deep trail an icon, and agents their kind colour', () => {

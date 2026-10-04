@@ -113,7 +113,6 @@ const { store, hooks } = vi.hoisted(() => ({
     answeredQuestions: [] as ReadonlyArray<{ readonly createdByAgentId?: string }>,
     agentsLaneMounts: 0,
     agentsLaneUnmounts: 0,
-    remoteKind: null as 'github' | 'gitlab' | 'other' | null,
   },
 }));
 
@@ -187,9 +186,6 @@ vi.mock('../../../terminal/components/TerminalDock', () => ({ TerminalDock: () =
 vi.mock('../../../artifacts/components/ArtifactStudio', () => ({ ArtifactStudio: () => null }));
 vi.mock('../../../scripts', () => ({ ScriptsPanel: () => null }));
 vi.mock('../../../worktree/worktree', () => ({ worktreeStatus: vi.fn() }));
-vi.mock('../../../worktree/useRemoteHostKind', () => ({
-  useRemoteHostKind: () => hooks.remoteKind,
-}));
 vi.mock('../AgentTree/AgentsSection', () => ({
   AgentsSection: ({ only }: { only?: string }) => (
     <div data-testid="agents-section" data-home={only} />
@@ -233,11 +229,8 @@ vi.mock('../CreateAgentPopover', () => ({
 vi.mock('../SessionOverviewPane', () => ({
   SessionOverviewPane: () => <div role="region" aria-label="Session overview" />,
 }));
-vi.mock('../../../review/components/PullRequestPage', () => ({
-  PullRequestPage: () => <div data-testid="pull-request-page" />,
-}));
-vi.mock('../../../review/components/ReviewPane', () => ({
-  ReviewPane: () => <div data-testid="review-board" />,
+vi.mock('../../../branch/components/BranchPage', () => ({
+  BranchPage: () => <div data-testid="branch-page" />,
 }));
 vi.mock('../SessionTrail/SessionCrumbs', () => ({
   SessionCrumbs: () => <div data-testid="session-crumb-bar" />,
@@ -313,7 +306,6 @@ beforeEach(() => {
   hooks.answeredQuestions = [];
   hooks.agentsLaneMounts = 0;
   hooks.agentsLaneUnmounts = 0;
-  hooks.remoteKind = null;
 });
 
 afterEach(cleanup);
@@ -347,7 +339,7 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.queryByRole('separator', { name: 'Resize agent inspector' })).toBeNull();
   });
 
-  it('keeps a standalone resolver on the review trail, with no run level', () => {
+  it('keeps a standalone resolver on the Branch trail, with no run level', () => {
     const standaloneResolver = anAgent({
       ...selectedAgent,
       id: 'resolver-1' as AgentId,
@@ -367,7 +359,7 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.getByTestId('session-crumb-bar')).toBeDefined();
 
     const { result } = renderHook(() => useSessionCrumbs({ session }));
-    expect(result.current.map((crumb) => crumb.label)).toEqual(['Overview', 'Review', 'Resolver']);
+    expect(result.current.map((crumb) => crumb.label)).toEqual(['Overview', 'Branch', 'Resolver']);
   });
 
   it('does not show workflow linkage outside the workflows lens', () => {
@@ -451,43 +443,19 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.queryByRole('separator', { name: 'Resize inspector panel' })).toBeNull();
   });
 
-  it('mounts the review board for the review lens', () => {
-    store.activeLens = { [SESSION_ID]: 'review' };
+  it('mounts the Branch page for the branch lens', () => {
+    store.activeLens = { [SESSION_ID]: 'branch' };
     store.selectedAgentId = {};
 
     render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.getByTestId('review-board')).toBeDefined();
+    expect(screen.getByTestId('branch-page')).toBeDefined();
+    expect(screen.queryByTestId('code-host-pane')).toBeNull();
   });
 });
 
 describe('SessionWorkspace code host routing', () => {
-  it('keeps the pull request page for a saved pr lens on a GitHub remote', () => {
-    hooks.remoteKind = 'github';
-    store.activeLens = { [SESSION_ID]: 'pr' };
-    store.selectedAgentId = {};
-
-    render(<SessionWorkspace session={session} isActive />);
-
-    expect(screen.getByTestId('pull-request-page')).toBeDefined();
-    expect(screen.queryByTestId('review-board')).toBeNull();
-    expect(screen.queryByTestId('code-host-pane')).toBeNull();
-  });
-
-  it('opens the pull request page when a GitHub pull request is loaded on an unnamed remote', () => {
-    hooks.remoteKind = null;
-    store.sessionGithub = { [SESSION_ID]: { pr: { number: 248 } } };
-    store.activeLens = { [SESSION_ID]: 'pr' };
-    store.selectedAgentId = {};
-
-    render(<SessionWorkspace session={session} isActive />);
-
-    expect(screen.getByTestId('pull-request-page')).toBeDefined();
-    expect(screen.queryByTestId('code-host-pane')).toBeNull();
-  });
-
   it('keeps the code host lens for a GitLab session', () => {
-    hooks.remoteKind = 'gitlab';
     store.sessionGitlabMr = { [SESSION_ID]: { mr: { iid: 7 } } };
     store.activeLens = { [SESSION_ID]: 'pr' };
     store.selectedAgentId = {};
@@ -495,11 +463,10 @@ describe('SessionWorkspace code host routing', () => {
     render(<SessionWorkspace session={session} isActive />);
 
     expect(screen.getByTestId('code-host-pane')).toBeDefined();
-    expect(screen.queryByTestId('review-board')).toBeNull();
+    expect(screen.queryByTestId('branch-page')).toBeNull();
   });
 
   it('keeps the code host lens for a Bitbucket session', () => {
-    hooks.remoteKind = 'other';
     store.sessionBitbucketPr = { [SESSION_ID]: { pr: { id: 42 } } };
     store.activeLens = { [SESSION_ID]: 'pr' };
     store.selectedAgentId = {};
@@ -507,7 +474,7 @@ describe('SessionWorkspace code host routing', () => {
     render(<SessionWorkspace session={session} isActive />);
 
     expect(screen.getByTestId('code-host-pane')).toBeDefined();
-    expect(screen.queryByTestId('review-board')).toBeNull();
+    expect(screen.queryByTestId('branch-page')).toBeNull();
   });
 });
 

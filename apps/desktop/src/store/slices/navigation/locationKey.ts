@@ -15,6 +15,7 @@ const LENS_ADDRESS: Record<LensKind, string> = {
   decisions: 'context/decisions',
   last_output_summary: 'context/summary',
   pr: 'pr',
+  branch: 'branch',
   files: 'diff',
   explore: 'explore',
   linear: 'linear',
@@ -44,6 +45,15 @@ const targetAddress = ({ target }: TargetParams): string => {
       const sha = target.focus?.kind === 'commit' ? `:${target.focus.sha}` : '';
       const path = target.focus?.path == null ? '' : `#${target.focus.path}`;
       return `${mount}${focus}${sha}${path}`;
+    }
+    case 'branch': {
+      const mount = target.mountPath === null ? '' : `:${target.mountPath}`;
+      const thread = target.threadId === null ? '' : `/t/${target.threadId}`;
+      const page = target.page === 'history' ? '/history' : '';
+      const focus = target.focus === null ? '' : `@${target.focus.kind}`;
+      const sha = target.focus?.kind === 'commit' ? `:${target.focus.sha}` : '';
+      const path = target.focus?.path == null ? '' : `#${target.focus.path}`;
+      return `${target.tab}${mount}${thread}${page}${focus}${sha}${path}`;
     }
     case 'terminal':
       return target.mountPath;

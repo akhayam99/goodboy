@@ -1,6 +1,6 @@
 import type { CrumbMenuModel } from '@goodboy/ui';
 import type { LensKind } from '../../../../store';
-import { LAYER_CRUMB_PREFIX, type BreadcrumbCrumb } from '../../breadcrumbCrumb';
+import type { BreadcrumbCrumb } from '../../breadcrumbCrumb';
 import { agentCrumbMenu } from './agentCrumbMenu';
 import { artifactCrumbMenu } from './artifactCrumbMenu';
 import { diffBranchCrumbMenu } from './diffBranchCrumbMenu';
@@ -32,7 +32,7 @@ const menuForCrumb = ({ scope, crumbId }: CrumbParams): CrumbMenuModel | null =>
       return pullRequestCrumbMenu(scope);
     case 'review-thread':
       return reviewThreadCrumbMenu(scope);
-    case 'diff-branch':
+    case 'branch':
       return diffBranchCrumbMenu(scope);
     case 'artifact':
       return artifactCrumbMenu(scope);
@@ -58,14 +58,12 @@ export const buildTrailMenus = ({
 }: Params): ReadonlyMap<string, CrumbMenuModel> => {
   const menus = new Map<string, CrumbMenuModel>();
   const scope = createTrailMenuScope(inputs);
-  const pageIndex = crumbs.findIndex(
-    (crumb, index) => index > 0 && !crumb.id.startsWith(LAYER_CRUMB_PREFIX),
-  );
   crumbs.forEach((crumb, index) => {
-    const isDepthOne = crumbs.length === 1 ? index === 0 : index === pageIndex;
-    const menu = isDepthOne
-      ? pageCrumbMenu({ scope, activeLens, isBranchless })
-      : menuForCrumb({ scope, crumbId: crumb.id });
+    const isDepthOne = crumbs.length === 1 ? index === 0 : index === 1;
+    const menu =
+      isDepthOne && crumb.id !== 'branch'
+        ? pageCrumbMenu({ scope, activeLens, isBranchless })
+        : menuForCrumb({ scope, crumbId: crumb.id });
     if (menu !== null) {
       menus.set(crumb.id, menu);
     }

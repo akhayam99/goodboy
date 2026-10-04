@@ -292,6 +292,25 @@ export const lens = (lensName: string | null) => async (ctx: Ctx) => {
   );
 };
 
+type BranchTabName = 'comments' | 'files' | 'commits' | 'checks';
+
+const BRANCH_TAB_LABEL: Readonly<Record<BranchTabName, RegExp>> = {
+  comments: /^Comments/,
+  files: /^Files/,
+  commits: /^Commits/,
+  checks: /^Checks/,
+};
+
+export const branchTab = (tab: BranchTabName) => async (ctx: Ctx) => {
+  await lens('branch')(ctx);
+  await waitFor(() => {
+    expect(useAppStore.getState().branchTab[ctx.sessionId]).toBe(tab);
+    expect(
+      screen.getByRole('tab', { name: BRANCH_TAB_LABEL[tab] }).getAttribute('aria-selected'),
+    ).toBe('true');
+  }, WAIT);
+};
+
 export const both =
   (...checks: ReadonlyArray<(ctx: Ctx) => Promise<void>>) =>
   async (ctx: Ctx) => {
@@ -300,23 +319,27 @@ export const both =
     }
   };
 
-const FOREIGN_CONTROLS: Readonly<Record<string, ReadonlyArray<RegExp>>> = {
-  pr: [/^Conversations/, /^Draft fixes/, /^Rebase on /, /^Rewrite history/, /^Fix$/, /^Push \d+$/],
-  files: [/^Squash and merge/, /^Mark ready/, /^Conversations/, /^Draft fixes/, /^Write review/],
-  review: [/^Squash and merge/, /^Mark ready/, /^Rebase on /, /^Rewrite history/],
-};
+const FOREIGN_CONTROLS: ReadonlyArray<RegExp> = [
+  /^Rewrite history/,
+  /^PR #\d+/,
+  /^Open in Review/,
+  /^Fix \d+ notes?$/,
+  /^Rewrite and push/,
+];
 
 const expectOwnControlsOnly = ({ sessionId }: Ctx): void => {
   const layer = useAppStore.getState().activeLens[sessionId] ?? null;
-  const foreign = layer === null ? [] : (FOREIGN_CONTROLS[layer] ?? []);
   const header = document.querySelector('[data-slot="pane-header"]');
-  if (header === null || foreign.length === 0) {
+  if (layer !== 'branch' || header === null) {
     return;
   }
-  const names = within(header as HTMLElement)
+  expect(document.querySelectorAll('[data-branch-primary]').length).toBeLessThanOrEqual(1);
+  const names = within(document.body)
     .queryAllByRole('button')
     .map((button) => button.getAttribute('aria-label') ?? button.textContent ?? '');
-  expect(names.filter((name) => foreign.some((pattern) => pattern.test(name)))).toEqual([]);
+  expect(names.filter((name) => FOREIGN_CONTROLS.some((pattern) => pattern.test(name)))).toEqual(
+    [],
+  );
 };
 
 export const LENS_ROWS: ReadonlyArray<{
@@ -335,19 +358,19 @@ export const LENS_ROWS: ReadonlyArray<{
   { label: 'Agents', lens: 'agents', lands: () => heading('Agents') },
   { label: 'Questions', lens: 'questions', lands: () => heading('Questions') },
   { label: 'Artifacts', lens: 'plans', lands: () => heading('Artifacts') },
-  { label: 'Review', lens: 'review', lands: () => heading('Review') },
-  { label: 'Diff', lens: 'files', lands: () => heading('Diff') },
+  { label: 'Review', lens: 'branch', lands: branchTab('comments') },
+  { label: 'Diff', lens: 'branch', lands: branchTab('files') },
   {
     label: 'Pull request',
-    lens: 'pr',
-    lands: () => heading(/Stop retried webhooks/),
+    lens: 'branch',
+    lands: both(branchTab('comments'), () => heading(/Stop retried webhooks/)),
   },
   {
     label: 'Pull request',
     note: 'no pull request yet',
-    lens: 'pr',
+    lens: 'branch',
     seed: 'issue',
-    lands: () => heading(/^(Code host work|GitHub|GitLab|Bitbucket)$/),
+    lands: branchTab('comments'),
   },
   { label: 'Explore', lens: 'explore', lands: () => heading('Explore') },
   { label: 'Scripts', lens: 'scripts', lands: () => heading('Scripts') },

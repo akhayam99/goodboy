@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { sessionPlace } from '../../../../store/slices/navigation/place';
+import { branchPlace, sessionPlace } from '../../../../store/slices/navigation/place';
 import type {
   Agent,
   AgentId,
@@ -156,49 +156,64 @@ beforeEach(() => {
   queueCalls.length = 0;
 });
 
-describe('useSessionCrumbs code host layers', () => {
-  const standOn = (lens: LensKind, layers: ReadonlyArray<string>) => {
+describe('useSessionCrumbs Branch trail', () => {
+  const standOnBranch = ({
+    tab = 'comments',
+    threadId = null,
+  }: {
+    readonly tab?: 'comments' | 'files' | 'commits';
+    readonly threadId?: string | null;
+  } = {}) => {
     store.state = {
       ...store.state,
-      activeLens: { [SESSION_ID]: lens },
-      sessionSelectedPrNumber: { [SESSION_ID]: 318 },
-      currentWorkspaceId: 'workspace-1',
-      navigation: {
-        'workspace-1': {
-          entries: [{ place: sessionPlace({ sessionId: SESSION_ID, lens }), layers }],
-          index: 0,
-        },
+      activeLens: { [SESSION_ID]: 'branch' },
+      branchTab: { [SESSION_ID]: tab },
+      branchThreadId: { [SESSION_ID]: threadId },
+      diffPage: {},
+      diffFocus: {},
+      sessionGithub: {
+        [SESSION_ID]: { pr: { number: 318, title: 'Ledger export' } },
       },
     };
   };
 
-  it('shows the path taken between the Overview and the layer on top', () => {
-    standOn('review', ['pr']);
-    const { result } = renderHook(() => useSessionCrumbs({ session }));
+  it('reads Overview then the Branch named by its pull request, whatever tab is open', () => {
+    for (const tab of ['comments', 'files', 'commits'] as const) {
+      standOnBranch({ tab });
+      const { result } = renderHook(() => useSessionCrumbs({ session }));
 
-    expect(result.current.map((crumb) => crumb.label)).toEqual(['Overview', 'PR #318', 'Review']);
+      expect(result.current.map((crumb) => crumb.label)).toEqual([
+        'Overview',
+        '#318 Ledger export',
+      ]);
+      expect(result.current.map((crumb) => crumb.id)).toEqual(['overview', 'branch']);
+    }
   });
 
-  it('reads Overview, Diff, then the pull request when the diff opened it', () => {
-    standOn('pr', ['diff']);
+  it('adds the open thread as the last crumb and leads back to the Branch from the one before', () => {
+    standOnBranch({ threadId: 'thread-1' });
     const { result } = renderHook(() => useSessionCrumbs({ session }));
 
-    expect(result.current.map((crumb) => crumb.label).slice(0, 3)).toEqual([
-      'Overview',
-      'Diff',
-      'Pull request',
+    expect(result.current.map((crumb) => crumb.id)).toEqual([
+      'overview',
+      'branch',
+      'review-thread',
     ]);
-  });
-
-  it('pops to a layer from its crumb through the one door', () => {
-    standOn('review', ['pr']);
-    const { result } = renderHook(() => useSessionCrumbs({ session }));
-
     result.current[1]?.onClick?.();
 
     expect(actions.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: SESSION_ID, lens: 'pr' }),
+      to: branchPlace({ sessionId: SESSION_ID, mountPath: null, tab: 'comments' }),
     });
+  });
+
+  it('keeps the same two first crumbs from the Fix run of a thread', () => {
+    store.state = {
+      ...store.state,
+      sessionGithub: { [SESSION_ID]: { pr: { number: 318, title: 'Ledger export' } } },
+    };
+    const labels = labelsOf(null, RESOLVER_AGENT_ID);
+
+    expect(labels.slice(0, 2)).toEqual(['Overview', '#318 Ledger export']);
   });
 });
 
@@ -237,7 +252,7 @@ describe('useSessionCrumbs', () => {
   });
 
   it('gives a resolver opened from the feed the review home as parent, named Resolver', () => {
-    expect(labelsOf(null, RESOLVER_AGENT_ID)).toEqual(['Overview', 'Review', 'Resolver']);
+    expect(labelsOf(null, RESOLVER_AGENT_ID)).toEqual(['Overview', 'Branch', 'Resolver']);
   });
 
   it('asks for the resolve rows only when a resolver thread is selected', () => {

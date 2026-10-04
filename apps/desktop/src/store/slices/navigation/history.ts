@@ -1,5 +1,4 @@
 import type { SessionId } from '@goodboy/types';
-import { carryLayers } from './layers';
 import { locationKey } from './locationKey';
 import { EMPTY_FOCUS, HISTORY_LIMIT, type Location, type NavigationStack } from './types';
 
@@ -19,10 +18,9 @@ export const syncTop = ({ stack, live }: SyncParams): NavigationStack => {
   if (stack === undefined || top === undefined) {
     return { entries: [live], index: 0 };
   }
-  const carried = carryLayers({ top, live });
   const synced: Location = isSameEntry(top, live)
-    ? { ...carried, focus: { ...top.focus, drawer: live.focus.drawer } }
-    : carried;
+    ? { ...live, focus: { ...top.focus, drawer: live.focus.drawer } }
+    : live;
   return {
     entries: stack.entries.map((entry, index) => (index === stack.index ? synced : entry)),
     index: stack.index,

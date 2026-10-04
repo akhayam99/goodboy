@@ -21,6 +21,7 @@ import {
   bridge,
   WAIT,
   both,
+  branchTab,
   clickButton,
   heading,
   lens,
@@ -277,15 +278,15 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   }),
   pressRow({ id: 'lens.workflows', lands: both(lens('workflows'), () => heading('Runs')) }),
   pressRow({ id: 'lens.agents', lands: both(lens('agents'), () => heading('Agents')) }),
-  pressRow({ id: 'lens.review', lands: both(lens('review'), () => heading('Review')) }),
+  pressRow({ id: 'lens.review', lands: branchTab('comments') }),
   pressRow({ id: 'lens.questions', lands: both(lens('questions'), () => heading('Questions')) }),
-  pressRow({ id: 'lens.files', lands: both(lens('files'), () => heading('Diff')) }),
+  pressRow({ id: 'lens.files', lands: branchTab('files') }),
   pressRow({ id: 'lens.plans', lands: both(lens('plans'), () => heading('Artifacts')) }),
   pressRow({ id: 'lens.scripts', lands: both(lens('scripts'), () => heading('Scripts')) }),
   pressRow({ id: 'lens.terminal', lands: both(lens('terminal'), () => heading('Terminal')) }),
   pressRow({
     id: 'lens.pr',
-    lands: both(lens('pr'), () => heading(/Stop retried webhooks/)),
+    lands: both(branchTab('comments'), () => heading(/Stop retried webhooks/)),
   }),
   pressRow({ id: 'lens.context', lands: drawerIs(null) }),
   pressRow({ id: 'lens.goal', lands: drawerIs('goal') }),
@@ -671,15 +672,6 @@ export const WORLD_ROWS: ReadonlyArray<WorldRow> = [
     world: 'resolve',
     open: reviewKey('review.previous', THREADS.metrics),
     lands: async () => waitFor(() => expect(currentThread()).not.toBe(THREADS.metrics), WAIT),
-  }),
-  worldRow({
-    id: 'review.view',
-    world: 'resolve',
-    open: async () => {
-      await openReview();
-      await pressed('review.view', await focusThread(THREADS.metrics));
-    },
-    lands: () => tab(/^Commits/),
   }),
   worldRow({
     id: 'review.select',
