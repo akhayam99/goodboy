@@ -95,7 +95,6 @@
     "features/session/components/SessionWorkspace/parts/WorkflowsPane.tsx": 1,
     "features/session/components/StandaloneAgentsLane/index.tsx": 1,
     "features/settings/components/GuideStudio/guideChapters.ts": 1,
-    "features/settings/components/SettingsStudio/SettingsHome.tsx": 1,
     "features/wireframes/buildWireframeContext.ts": 1,
     "features/wireframes/wireframeScoutReports.ts": 1,
     "features/workflows/components/RunSpendLimitPopover/index.tsx": 1,

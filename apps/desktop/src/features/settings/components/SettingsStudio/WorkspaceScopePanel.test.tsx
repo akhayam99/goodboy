@@ -39,24 +39,11 @@ import { ToastProvider } from '../../../../shared/components/Toast';
 import type { SettingsScopeChange } from '../../settingsFocus';
 import { WORKSPACE_PAGES } from './workspacePages';
 import { WorkspaceScopePanel } from './WorkspaceScopePanel';
-import { SettingsHome } from './SettingsHome';
-import type { SettingsGroup } from './settingsDirectory';
 
 let useAppStore: StoryStore;
 
 const HARBORLINE: Workspace = aWorkspace({ name: 'Harborline', slug: 'harborline' });
 const NORTHWIND: Workspace = aWorkspace({ name: 'Northwind', slug: 'northwind' });
-
-const WORKSPACE_GROUP: SettingsGroup = {
-  scope: 'workspace',
-  label: 'Workspace',
-  concept: 'workspace',
-  place: 'Harborline',
-  subtitle: undefined,
-  tone: undefined,
-  needsWorkspace: true,
-  pages: [],
-};
 
 const overrides = (patch: Partial<OverrideSettings>): OverrideSettings => ({
   ...EMPTY_OVERRIDES,
@@ -340,17 +327,15 @@ describe('copy from another workspace', () => {
     expect(useAppStore.getState().projects).toHaveLength(1);
   });
 
-  it('copies the whole workspace from the home with a preview per page', async () => {
+  it('copies the whole workspace from any page menu with a preview per page', async () => {
     seed({
       northwind: overrides({ defaultBranchPrefix: 'nw', afterMerge: 'ask', replyVoice: 'formal' }),
     });
-    render(
-      <ToastProvider>
-        <SettingsHome groups={[WORKSPACE_GROUP]} workspaceId={HARBORLINE.id} onOpen={vi.fn()} />
-      </ToastProvider>,
-    );
+    renderPage({ section: 'projects' });
 
-    fireEvent.click(screen.getByRole('button', { name: /Copy settings from/ }));
+    fireEvent.click(
+      within(pageMenu('Projects')).getByRole('menuitem', { name: /Copy all pages from/ }),
+    );
     const flow = screen.getByRole('region', { name: 'Copy settings from another workspace' });
     fireEvent.click(await within(flow).findByRole('radio', { name: /Northwind/ }));
     fireEvent.click(within(flow).getByRole('button', { name: 'Preview changes' }));

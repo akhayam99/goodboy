@@ -100,7 +100,7 @@ export const FOOTER_AND_VERB_ROWS: ReadonlyArray<Row> = [
     name: 'footer: settings',
     covers: ['openSettings', 'studio:settings', 'scope:home'],
     open: () => clickButton(/^Open settings/),
-    lands: () => visible('list', 'App pages'),
+    lands: () => visible('navigation', 'Settings scopes'),
   },
   {
     name: 'footer: integrations',

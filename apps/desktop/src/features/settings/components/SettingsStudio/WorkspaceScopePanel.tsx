@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { OverflowMenu, PaneShell } from '@goodboy/ui';
+import { OverflowMenu, PaneShell, type OverflowMenuItem } from '@goodboy/ui';
 import { Copy, RotateCcw } from 'lucide-react';
 import { useAppStore } from '../../../../store';
 import { pluralize } from '../../../../shared/utils/pluralize';
@@ -30,14 +30,13 @@ export const WorkspaceScopePanel = ({ workspaceId, section, onSelect, requestClo
   const changedCount = usePageChangedCount({ workspaceId, page });
   const [flow, setFlow] = useState<{
     readonly page: WorkspacePage;
+    readonly scope: WorkspacePage | 'all';
     readonly mode: FlowMode;
   } | null>(null);
   const openFlow = flow !== null && flow.page === page ? flow : null;
 
-  const menu = ownsSettings ? (
-    <OverflowMenu
-      label={`${entry.label} actions`}
-      items={[
+  const pageItems: ReadonlyArray<OverflowMenuItem> = ownsSettings
+    ? [
         {
           kind: 'item',
           key: 'restore',
@@ -45,7 +44,7 @@ export const WorkspaceScopePanel = ({ workspaceId, section, onSelect, requestClo
           icon: RotateCcw,
           hint: changedCount === 0 ? 'Already default' : `${pluralize(changedCount, 'change')}`,
           disabled: changedCount === 0,
-          onClick: () => setFlow({ page, mode: 'restore' }),
+          onClick: () => setFlow({ page, scope: page, mode: 'restore' }),
         },
         {
           kind: 'item',
@@ -54,11 +53,36 @@ export const WorkspaceScopePanel = ({ workspaceId, section, onSelect, requestClo
           icon: Copy,
           hint: hasOtherWorkspace ? undefined : 'No other workspace',
           disabled: !hasOtherWorkspace,
-          onClick: () => setFlow({ page, mode: 'copy' }),
+          onClick: () => setFlow({ page, scope: page, mode: 'copy' }),
+        },
+        { kind: 'separator', key: 'all-pages' },
+      ]
+    : [];
+
+  const menu = (
+    <OverflowMenu
+      label={`${entry.label} actions`}
+      items={[
+        ...pageItems,
+        {
+          kind: 'item',
+          key: 'restore-all',
+          label: 'Restore all workspace defaults',
+          icon: RotateCcw,
+          onClick: () => setFlow({ page, scope: 'all', mode: 'restore' }),
+        },
+        {
+          kind: 'item',
+          key: 'copy-all',
+          label: 'Copy all pages from…',
+          icon: Copy,
+          hint: hasOtherWorkspace ? undefined : 'No other workspace',
+          disabled: !hasOtherWorkspace,
+          onClick: () => setFlow({ page, scope: 'all', mode: 'copy' }),
         },
       ]}
     />
-  ) : undefined;
+  );
 
   return (
     <PaneShell
@@ -72,9 +96,9 @@ export const WorkspaceScopePanel = ({ workspaceId, section, onSelect, requestClo
           <p className="text-label text-muted-foreground">{entry.hint}</p>
           {openFlow === null ? null : (
             <WorkspaceSettingsFlow
-              key={`${openFlow.page}:${openFlow.mode}`}
+              key={`${openFlow.scope}:${openFlow.mode}`}
               workspaceId={workspaceId}
-              scope={openFlow.page}
+              scope={openFlow.scope}
               mode={openFlow.mode}
               onClose={() => setFlow(null)}
             />

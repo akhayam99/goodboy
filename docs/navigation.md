@@ -864,7 +864,7 @@ skipped code host or task manager reopens its own step, and the first session
 ticks when an agent finishes a turn, not when a session row exists.
 
 Right: Inbox, Workflows, Impact, Providers and Settings. Settings (and ⌘,)
-always opens the Settings home, with or without a workspace; Workspace settings
+always opens the last settings page (General at first), with or without a workspace; Workspace settings
 opens only from the
 gear on the current-workspace row of the workspace popover. Impact is a
 destination, so it has a launcher; the launcher opens its Overview tab, while
@@ -1003,8 +1003,7 @@ one is open at a time.
   `StudioShell`; inside the frame it only hands its chrome to the band. Until a
   body's chunk arrives, the frame shows one of three opaque skeletons: `list`
   (Inbox, Notifications, Add workspace, Impact), `rail`
-  (a Settings page) or `grid` (Workflows, Changelog, the guide, pairing, the
-  Settings home). With no studio
+  (Settings) or `grid` (Workflows, Changelog, the guide, pairing). With no studio
   open, no frame node exists, so nothing covers the page.
 - **One Esc stack.** The frame, a body that holds Esc (the Inbox with a record
   open), the agent overlay and the delete confirm all register with
@@ -1066,26 +1065,25 @@ one is open at a time.
   moves the width lives in a CSS variable (the drawer writes its own style),
   so nothing renders and nothing is saved until the drag ends. Precedent: VS
   Code, Zed and Linear sidebars.
-- **Settings opens on a home that mirrors its rail.** The footer, ⌘, and the
-  palette's Open settings land on it; a link that names a page (a scope, a
-  section, a provider or a tool) skips it. It shows the rail's four groups
-  (App, Workspace, Providers & models, Integrations), each titled with where
-  it applies, and every page of a group as a card: the concept icon on its
-  tone, the name and the same status line the rail shows (a quiet hint when
-  nothing needs doing). Cards and rail rows come from one list,
-  `settingsDirectory`, so no card exists without a rail row. The page opened
-  last carries `Last opened` and takes the focus, so Enter goes back to it.
-  The status lines are read once per studio (`useSettingsStatus`, on the
-  minute clock of `useNow`) and feed the home and the rail; the home starts no
-  loading of its own (no storage scan, no branch scan, no provider refresh).
-  Without a workspace the Workspace and Integrations groups are left out.
-  Opening a card morphs the home into the rail: every card shrinks and slides
-  into its rail row in 230ms (a page nested under Providers & models or
-  Integrations lands on its group row and fades), the rail shows once they
-  land and the page enters with `nav-step-in`. `useHomeToRailMorph` flies
-  copies of the cards on a layer above the studio, so no rendered row moves.
-  Reduced motion, or an engine without `Element.animate`, switches at once.
-  Precedent: the Google Account home and the iOS settings list.
+- **Settings opens on a page, never on a grid.** The footer, ⌘, and the
+  palette's Open settings land on the page opened last, held in memory only
+  (`lastSettingsFocus`, slice `settings-last-page`): the first open after the
+  app starts lands on General, and a remembered page that no longer exists
+  (a workspace page with no workspace, a provider that was removed) falls
+  back to General (`resolveSettingsFocus`). A link that names a page (a scope,
+  a section, a provider or a tool) opens that page. `scope: 'home'` stays as
+  the alias for "the last page" and `SettingsStudio` resolves it once, then
+  amends the history entry to the concrete page. The rail is the only index:
+  its four groups (App, Workspace, Providers & models, Integrations) come
+  from `settingsDirectory`, with the status line of a row shown only when
+  something needs doing (no quiet hints). Every page is also a palette entry
+  (`settingsEntries`, `Settings: Storage`, `Providers: Claude`), built from
+  the same list, so ⌘K and the rail cannot disagree. The status lines are read
+  once per studio (`useSettingsStatus`, on the minute clock of `useNow`);
+  opening Settings starts no loading of its own (no storage scan, no branch
+  scan, no provider refresh). Without a workspace the Workspace and
+  Integrations groups are left out. Precedent: the VS Code settings editor and
+  Linear's settings sidebar.
 - **Settings nests items in its rail.** The App items (General, Shortcuts,
   Backup, Storage, Security findings, Help, Danger zone) always sit under the
   App row as indented
@@ -1119,9 +1117,9 @@ one is open at a time.
   Linear's settings pages.
 - **Restore defaults and copy from another workspace share one inline
   flow.** The page menu (⋯ in the title row) of every page that owns settings
-  offers `Restore defaults` and `Copy from…`; the Workspace group of the
-  Settings home offers `Copy settings from…` and `Restore defaults` for every
-  page at once. The flow opens under the title as a band, never as a
+  offers `Restore defaults` and `Copy from…`; under a separator, the menu of
+  every workspace page (Projects included) offers `Copy all pages from…` and
+  `Restore all workspace defaults` for every page at once. The flow opens under the title as a band, never as a
   popover: pick the workspace, then a preview grouped by page with a
   checkbox per page and the from and to values, then the action row (`Copy N
 settings`, `Back`, `Cancel`). It ends on a status line with `Undo`. The

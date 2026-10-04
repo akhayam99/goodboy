@@ -102,6 +102,8 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
     projectGitStatus: {} as Record<string, unknown>,
     workspaces: [] as ReadonlyArray<unknown>,
     workspaceOverrides: {} as Record<string, unknown>,
+    lastSettingsFocus: null as unknown,
+    rememberSettingsFocus: vi.fn(),
   },
   toastMock: vi.fn(),
 }));
@@ -434,6 +436,65 @@ describe('SettingsStudio', () => {
 
     expect(listener).toHaveBeenCalledOnce();
     window.removeEventListener(OPEN_REPORT_SHEET_EVENT, listener);
+  });
+
+  const renderHome = (onScopeChange = vi.fn()) =>
+    render(
+      <SettingsStudio
+        currentWorkspace={null}
+        onScopeChange={onScopeChange}
+        focus={{ scope: 'home' }}
+        onClose={vi.fn()}
+      />,
+    );
+
+  it('opens on General the first time and keeps the rail in view', () => {
+    const onScopeChange = vi.fn();
+    renderHome(onScopeChange);
+
+    expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
+    expect(screen.getByRole('navigation', { name: 'Settings scopes' })).toBeDefined();
+    expect(onScopeChange).toHaveBeenCalledWith({ scope: 'app', section: 'general' });
+  });
+
+  it('opens on the last visited page', () => {
+    state.lastSettingsFocus = { scope: 'app', section: 'backup' };
+    try {
+      const onScopeChange = vi.fn();
+      renderHome(onScopeChange);
+
+      expect(screen.getByRole('heading', { name: 'Backup' })).toBeDefined();
+      expect(onScopeChange).toHaveBeenCalledWith({ scope: 'app', section: 'backup' });
+    } finally {
+      state.lastSettingsFocus = null;
+    }
+  });
+
+  it('opens on General when the last page needs a workspace and there is none', () => {
+    state.lastSettingsFocus = { scope: 'workspace', section: 'projects' };
+    try {
+      renderHome();
+
+      expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
+    } finally {
+      state.lastSettingsFocus = null;
+    }
+  });
+
+  it('remembers the page it shows', () => {
+    state.rememberSettingsFocus.mockClear();
+    renderApp({ section: 'storage' });
+
+    expect(state.rememberSettingsFocus).toHaveBeenCalledWith({ scope: 'app', section: 'storage' });
+  });
+
+  it('loads nothing heavy when it opens on General', () => {
+    state.loadStorage.mockClear();
+    state.scanStorageRepository.mockClear();
+    renderHome();
+
+    expect(state.loadStorage).not.toHaveBeenCalled();
+    expect(state.scanStorageRepository).not.toHaveBeenCalled();
   });
 
   it('offers export and import under Backup', () => {

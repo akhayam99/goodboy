@@ -108,8 +108,8 @@
           "shown": true
         },
         {
-          "title": "Settings home",
-          "text": "Settings opens on a home with every area as a card and its status. Pick a page and the cards become the rail.",
+          "title": "Settings",
+          "text": "Settings opens on the page you used last, with the rail beside it. Every page is also in the palette.",
           "group": "Set up",
           "also": "settings home",
           "shown": true

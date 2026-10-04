@@ -63,7 +63,7 @@ export const WorkspaceNameBand = ({ workspaceId }: Props) => {
       icon={<CONCEPT_ICONS.workspace size={ICON_SIZE.row} aria-hidden />}
       headingLevel={2}
     >
-      <FieldRow label="Name" help="Shown in the switcher and on the settings home.">
+      <FieldRow label="Name" help="Shown in the switcher.">
         <Input
           type="text"
           value={draft}

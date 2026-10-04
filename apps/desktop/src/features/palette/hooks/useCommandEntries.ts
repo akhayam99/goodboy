@@ -27,7 +27,8 @@ import { NOTIFICATIONS_STUDIO_EVENT } from '../../notifications/studioEvent';
 import { openImpactStudio } from '../../impact/openImpactStudio';
 import { openChangelogStudio } from '../../changelog/changelogStudioEvent';
 import { linkedProjectsLabel } from '../../workspace/linkedProjectsLabel';
-import { APP_SECTIONS } from '../../settings/components/SettingsStudio/appSections';
+import { useSettingsDirectory } from '../../settings/hooks/useSettingsDirectory';
+import { settingsPaletteEntries } from '../../settings/settingsPaletteEntries';
 import type { SettingsFocus } from '../../settings/settingsFocus';
 import { useToast } from '../../../shared/components/Toast';
 import { agentEntries } from '../sources/agentEntries';
@@ -67,6 +68,10 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const everywhere = useSessionsEverywhere();
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
+  const settingsGroups = useSettingsDirectory({
+    workspaceId: currentWorkspace?.id ?? null,
+    workspaceName: currentWorkspace?.name ?? null,
+  });
   const sessionId = currentSession === null ? null : (currentSession.id as SessionId);
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const navigate = useAppStore((s) => s.navigate);
@@ -278,14 +283,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           run: () => window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT)),
         },
         {
-          key: 'goto:workspace-settings',
-          label: 'Workspace settings',
-          kind: 'goto',
-          group: null,
-          icon: CONCEPT_ICONS.settings,
-          run: () => openSettings({ scope: 'workspace' }),
-        },
-        {
           key: 'action:new-session',
           label: 'New session',
           kind: 'action',
@@ -398,16 +395,8 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         shortcut: 'settings.open',
         run: () => openSettings({ scope: 'home' }),
       },
-      ...APP_SECTIONS.filter((section) => section.id !== 'shortcuts').map(
-        (section): PaletteEntry => ({
-          key: `setting:${section.id}`,
-          label: `Settings: ${section.label}`,
-          kind: 'setting',
-          group: 'action',
-          icon: CONCEPT_ICONS[section.concept],
-          tag: 'Settings',
-          run: () => openSettings({ scope: 'app', section: section.id }),
-        }),
+      ...settingsPaletteEntries({ groups: settingsGroups, open: openSettings }).filter(
+        (entry) => entry.key !== 'setting:app:shortcuts',
       ),
       {
         key: 'action:toggle-theme',
@@ -491,5 +480,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     showToast,
     theme,
     toggleTheme,
+    settingsGroups,
   ]);
 };
