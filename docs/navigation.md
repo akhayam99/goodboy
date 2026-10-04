@@ -1545,7 +1545,7 @@ a pulsing dot while the summarizer writes and a danger glyph when it failed,
 with Retry in the drawer's **Context updates** row. The old addresses `s/{session}/context`
 and `context/goal`, `context/decisions`, `context/summary` resolve in
 `canonicalLocation` to the overview with this drawer open on the matching tab.
-The drawer header has one action, **Copy as brief**, which copies Goal,
+The drawer header has one action, **Copy context**, which copies Goal,
 Decisions, Summary and Open questions in that order (`shareableContext`).
 
 The drawer sits on the `subtle` panel surface, like every `DrawerFrame`.

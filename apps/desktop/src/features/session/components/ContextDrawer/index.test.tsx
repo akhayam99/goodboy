@@ -640,6 +640,6 @@ describe('ContextDrawer', () => {
   it('copies the brief in the same order as the tabs', () => {
     renderDrawer('goal');
 
-    expect(screen.getByRole('button', { name: /Copy as brief/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Copy context/i })).toBeDefined();
   });
 });
