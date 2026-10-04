@@ -42,6 +42,26 @@ title names what the page is for in the words people search, such as AI coding
 agent orchestrator, Claude Code, Codex, Cursor or git worktrees, in about 70
 characters; a description stays under 160.
 
+## Search and sharing
+
+- Every page ends its head with one JSON-LD `@graph`, built by
+  `website/src/server/jsonLd.ts`: the schema.org Organization and WebSite with
+  the GitHub and X profiles, the SoftwareApplication with the newest
+  snapshot's version, date and release notes link and the four download URLs,
+  then the page itself and its BreadcrumbList when it sits below the home page.
+  Mark up only what the page shows: no rating and no FAQ that isn't on the
+  page.
+- `dist/sitemap.xml` and the `/changelog.xml` feed are written by the build,
+  so a new release or doc shows up on its own. A release page's `lastmod` is
+  its snapshot date; every other page takes the newest release date. No
+  sitemap lives in `website/public/`, so there is none to edit by hand.
+- `/404` is the branded not-found page, built from the content template and
+  marked `noindex`. Vercel serves `404.html` for any path it doesn't know.
+- `vercel.json` sets `trailingSlash: false`, so `/features/` redirects to
+  `/features`, and caches `/assets/` and `/fonts/` for a year as immutable. A
+  hashed asset changes name when it changes; the font carries its version in
+  its name, so a new font file needs a new name.
+
 ## Pages
 
 - `/`, the landing page, from `website/index.html` and `website/src/App.tsx`.

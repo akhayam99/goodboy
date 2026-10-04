@@ -3,6 +3,7 @@ import type { Crumb } from '../pages/content/Breadcrumbs';
 import { ChangelogIndex } from '../pages/content/ChangelogIndex';
 import { DocArticle } from '../pages/content/DocArticle';
 import { DocsIndex } from '../pages/content/DocsIndex';
+import { NotFound } from '../pages/content/NotFound';
 import { ReleaseNotes } from '../pages/content/ReleaseNotes';
 import featuresData from '../pages/features/features.data.json';
 import type { NavSection } from '../sections/Nav';
@@ -12,15 +13,16 @@ import { FEATURE_DOCS, type FeatureDoc } from './FEATURE_DOCS';
 import type { PageMeta } from './PageMeta';
 import { RELEASES } from './RELEASES';
 import { renderMarkdown } from './renderMarkdown';
+import { STATIC_PAGES } from './STATIC_PAGES';
 
 export type ContentPageEntry = {
   readonly file: string;
   readonly meta: PageMeta;
-  readonly crumbs: readonly Crumb[];
   readonly nav: NavSection;
   readonly element: ReactElement;
 };
 
+const LATEST_DATE = RELEASES[0]?.date ?? '';
 const HOME: Crumb = { name: 'Home', path: '/' };
 const CHANGELOG: Crumb = { name: 'Changelog', path: SITE.changelog };
 const DOCS: Crumb = { name: 'Docs', path: SITE.docs };
@@ -62,9 +64,11 @@ const changelogIndex = (): ContentPageEntry => {
       description:
         'Every Goodboy release, newest first: what it adds, improves and fixes when you run Claude Code, Codex and Cursor agents on your tasks.',
       ogType: 'website',
+      pageType: 'CollectionPage',
+      crumbs,
+      lastmod: LATEST_DATE,
       isIndexed: true,
     },
-    crumbs,
     nav: 'changelog',
     element: <ChangelogIndex crumbs={crumbs} releases={RELEASES} />,
   };
@@ -81,9 +85,11 @@ const releasePages = (): readonly ContentPageEntry[] =>
         title: `Goodboy ${release.version} release notes`,
         description: clipText(release.summary),
         ogType: 'article',
+        pageType: 'WebPage',
+        crumbs,
+        lastmod: release.date,
         isIndexed: true,
       },
-      crumbs,
       nav: 'changelog',
       element: (
         <ReleaseNotes
@@ -107,9 +113,11 @@ const docsIndex = (): ContentPageEntry => {
       description:
         'How each part of Goodboy works: setup, providers, workflows, git worktrees, review, the board, storage and security, one area per page.',
       ogType: 'website',
+      pageType: 'CollectionPage',
+      crumbs,
+      lastmod: LATEST_DATE,
       isIndexed: true,
     },
-    crumbs,
     nav: 'docs',
     element: <DocsIndex crumbs={crumbs} docs={FEATURE_DOCS} />,
   };
@@ -126,9 +134,11 @@ const docPages = (): readonly ContentPageEntry[] =>
         title: docTitle(doc),
         description: docDescription(doc),
         ogType: 'article',
+        pageType: 'WebPage',
+        crumbs,
+        lastmod: LATEST_DATE,
         isIndexed: true,
       },
-      crumbs,
       nav: 'docs',
       element: (
         <DocArticle
@@ -143,9 +153,17 @@ const docPages = (): readonly ContentPageEntry[] =>
     };
   });
 
+const notFound = (): ContentPageEntry => ({
+  file: '404.html',
+  meta: STATIC_PAGES.notFound,
+  nav: 'none',
+  element: <NotFound />,
+});
+
 export const CONTENT_PAGES: readonly ContentPageEntry[] = [
   changelogIndex(),
   ...releasePages(),
   docsIndex(),
   ...docPages(),
+  notFound(),
 ];

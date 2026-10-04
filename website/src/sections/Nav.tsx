@@ -30,7 +30,7 @@ export const Nav = ({ current }: Props) => {
   const menuLinks: readonly NavMenuLink[] = NAV_LINKS.map((link) => ({
     label: link.label,
     href: link.href,
-    isCurrent: link.section === current,
+    isCurrent: link.section !== 'none' && link.section === current,
   }));
 
   return (

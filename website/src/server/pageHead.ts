@@ -1,5 +1,6 @@
 import { SITE } from '../site';
 import { escapeHtml } from './escapeHtml';
+import { jsonLd } from './jsonLd';
 import type { PageMeta } from './PageMeta';
 
 const OG_IMAGE = `${SITE.origin}/og-image.png?v=4`;
@@ -50,5 +51,6 @@ export const pageHead = ({ page }: Params) => {
     named({ key: 'twitter:description', value: page.description }),
     named({ key: 'twitter:image', value: OG_IMAGE }),
     named({ key: 'twitter:image:alt', value: OG_IMAGE_ALT }),
+    jsonLd({ page }),
   ].join('\n    ');
 };
