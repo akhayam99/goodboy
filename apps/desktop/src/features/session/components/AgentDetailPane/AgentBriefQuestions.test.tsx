@@ -59,7 +59,7 @@ describe('AgentBriefQuestions', () => {
 
     render(<AgentBriefQuestions session={session} agent={agent} />);
 
-    screen.getByText('Waiting on you');
+    screen.getByText('Needs you');
     screen.getByRole('heading', { name: 'Il refactor del core è già su main?' });
     screen.getByRole('radio', { name: 'no, è su un altro branch' });
   });
@@ -136,8 +136,8 @@ describe('AgentBriefQuestions', () => {
 
     render(<AgentBriefQuestions session={session} agent={agent} />);
 
-    const heading = screen.getByRole('heading', { level: 2, name: 'Waiting on you' });
-    expect(heading.parentElement?.parentElement?.textContent).toBe('Waiting on you2');
+    const heading = screen.getByRole('heading', { level: 2, name: 'Needs you' });
+    expect(heading.parentElement?.parentElement?.textContent).toBe('Needs you2');
     screen.getByText('1 of 2');
   });
 });

@@ -2,6 +2,7 @@ import { ChevronRight } from 'lucide-react';
 import type { Agent, AgentId, OpenQuestionId } from '@goodboy/types';
 import { cn, Eyebrow, ScrollFade } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../../shared/names';
 import { formatAge } from '../../../../../shared/utils/time/formatAge';
 import { classifyAgent, type AgentKind } from '../../../agent-kind';
 import { QuestionQueueRow } from './QuestionQueueRow';
@@ -58,7 +59,7 @@ export const QuestionsQueue = ({
         {model.waiting.length > 0 && (
           <div className="flex flex-col gap-0.5">
             <span className="flex items-center gap-1.5 px-2.5 pb-1 pt-2">
-              <Eyebrow label="Waiting on you" />
+              <Eyebrow label={NAMES.needsYou} />
               <span className="text-chip text-faint-foreground">{model.waiting.length}</span>
             </span>
             {model.waiting.map(renderRow)}

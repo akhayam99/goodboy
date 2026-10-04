@@ -66,6 +66,7 @@ const FORMER_NAMES: Readonly<Record<string, ReadonlyArray<string>>> = {
   [NAMES.connectIntegration]: ['Link integration', 'Link your first integration'],
   [NAMES.runOnItsOwn]: ['Autorun'],
   [NAMES.whenToAsk]: ['Autonomy'],
+  [NAMES.needsYou]: ['Waiting on you', 'Waiting on your answer'],
 };
 
 export const formerNamesOf = (name: string): ReadonlyArray<string> => FORMER_NAMES[name] ?? [];

@@ -21,5 +21,10 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
     use: NAMES.connectIntegration,
   },
   { id: 'autorun', pattern: /\bAutorun\b/, use: NAMES.runOnItsOwn },
+  {
+    id: 'waiting-on-you',
+    pattern: /\bWaiting on (?:you\b(?! is not counted)|your answer)/,
+    use: NAMES.needsYou,
+  },
   { id: 'defaults-page', pattern: /\b(?:in|then|Open) Defaults\b/, use: NAMES.models },
 ];

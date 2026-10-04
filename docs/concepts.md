@@ -1252,6 +1252,12 @@ task up again in Goodboy.
 - **Add a plain folder** and **Add existing** put a folder or a repository
   under a project. **Link** stays for tying a ticket to a session or a pull
   request. **Connect an integration** is the footer button that adds a tool.
+- **When to ask** is the setting that decides how often a run stops for you.
+  Its top choice is **Run on its own** (it was Autorun and Autonomy).
+- **Needs you** is the one name for anything that waits on you: the top bar
+  group, the board column, the questions list and an agent in a mount row.
+  The reason follows it ("Needs your answer in step 2"). "Waiting on you" is
+  retired.
 - A word that stays and still needs a sentence (workflow, orchestrated,
   artifact) gets a short tooltip, six words at most, written once. The
   `TermHint` and `GLOSSARY`
