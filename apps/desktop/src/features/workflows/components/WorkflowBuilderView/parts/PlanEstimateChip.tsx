@@ -9,7 +9,7 @@ export const PlanEstimateChip = ({ total }: Props) => (
   <Tooltip content={total.detail}>
     <span
       data-testid="plan-estimate"
-      className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-secondary tabular-nums text-muted-foreground"
+      className="shrink-0 rounded-sm bg-muted px-2 py-0.5 text-chip tabular-nums text-muted-foreground"
     >
       {total.label}
     </span>

@@ -18,8 +18,8 @@ export type StatCardProps = {
 };
 
 const valueSizeClasses: Record<'lg' | 'xl', string> = {
-  lg: 'text-lg',
-  xl: 'text-xl',
+  lg: 'text-title',
+  xl: 'text-display',
 };
 
 const warningTint = tintClasses('warning');

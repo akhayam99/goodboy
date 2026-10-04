@@ -251,7 +251,7 @@ export const WorkflowRow = ({
                         onBlur={() => void rename.commit()}
                         onKeyDown={rename.onKeyDown}
                         aria-label="Workflow name"
-                        className="text-xl font-semibold"
+                        className="text-title"
                       />
                     ) : (
                       <div

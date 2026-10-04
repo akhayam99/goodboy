@@ -74,7 +74,7 @@ export const BuilderTitleField = ({
           onKeyDown={onKeyDown}
           disabled={disabled}
           aria-describedby={isSuggesting ? TITLE_HINT_ID : undefined}
-          className="min-w-0 flex-1 rounded-sm border-0 bg-transparent px-0 py-1 text-xl leading-7 font-semibold shadow-none placeholder:text-faint-foreground focus-visible:shadow-none"
+          className="min-w-0 flex-1 rounded-sm border-0 bg-transparent px-0 py-1 text-display shadow-none placeholder:text-faint-foreground focus-visible:shadow-none"
         />
         {hasAside ? (
           <div className="flex h-9 shrink-0 items-center gap-2">
@@ -85,7 +85,7 @@ export const BuilderTitleField = ({
         ) : null}
       </div>
       {isSuggesting ? (
-        <p id={TITLE_HINT_ID} className="text-secondary text-faint-foreground">
+        <p id={TITLE_HINT_ID} className="text-meta text-faint-foreground">
           Suggested from the goal. Press Tab to keep it, or type to name it yourself.
         </p>
       ) : null}

@@ -22,7 +22,7 @@ const OPTIONS: ReadonlyArray<{
   { mode: 'squash', label: 'Keep both', hint: 'Combine (squash): keeps both commit messages.' },
 ];
 
-const OPTION_CLASS = 'rounded-sm border px-2 text-secondary whitespace-nowrap';
+const OPTION_CLASS = 'rounded-sm border px-2 text-chip whitespace-nowrap';
 const IDLE_CLASS = 'border-transparent text-muted-foreground hover:text-foreground';
 
 export const HistoryModeSwitch = ({ mode, onChange, onSeparate, isDisabled = false }: Props) => (

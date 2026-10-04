@@ -111,10 +111,7 @@ export const RecordHeader = ({
           />
         ) : null}
       </div>
-      <h1
-        onContextMenu={menu.onContextMenu}
-        className="line-clamp-3 text-base font-semibold leading-snug text-foreground"
-      >
+      <h1 onContextMenu={menu.onContextMenu} className="line-clamp-3 text-title text-foreground">
         {title}
       </h1>
       {byline == null ? null : (

@@ -195,7 +195,7 @@ export const Dialog = ({
                   aria-label="Close"
                   className="-mr-1 -mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
                 >
-                  <span aria-hidden className="text-base leading-none">
+                  <span aria-hidden className="text-title leading-none">
                     ×
                   </span>
                 </button>

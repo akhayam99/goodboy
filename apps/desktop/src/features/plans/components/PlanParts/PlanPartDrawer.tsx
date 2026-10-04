@@ -39,7 +39,7 @@ export const PlanPartDrawer = ({ sessionId, planId, index, onClose }: Props) => 
     >
       <div data-testid="plan-part-drawer" className="flex min-w-0 flex-col gap-5">
         <div className="flex min-w-0 flex-col gap-1">
-          <h3 className="text-base font-semibold leading-6 text-foreground">{row.title}</h3>
+          <h3 className="text-title text-foreground">{row.title}</h3>
           {carrier === null ? (
             <p className="text-label text-muted-foreground">{row.node.label}</p>
           ) : (

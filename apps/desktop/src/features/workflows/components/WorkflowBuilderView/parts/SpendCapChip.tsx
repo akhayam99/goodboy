@@ -86,7 +86,7 @@ export const SpendCapChip = ({
       }
     >
       <div className="flex items-center justify-between gap-3">
-        <span className="text-secondary text-muted-foreground">Cap this run before it starts.</span>
+        <span className="text-meta text-muted-foreground">Cap this run before it starts.</span>
         <Switch
           label={
             <>
@@ -110,12 +110,7 @@ export const SpendCapChip = ({
             onAmount={onAmount}
             onBehavior={(behavior) => onMode(runModeOfBehavior({ behavior }))}
           />
-          <p
-            className={cn(
-              'text-2xs leading-relaxed',
-              isInvalid ? 'text-danger' : 'text-muted-foreground',
-            )}
-          >
+          <p className={cn('text-meta', isInvalid ? 'text-danger' : 'text-muted-foreground')}>
             {isInvalid
               ? 'Enter an amount above zero.'
               : hasAmount
@@ -132,7 +127,7 @@ export const SpendCapChip = ({
         >
           <RotateCcw size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
           <span className="min-w-0 flex-1">Reset</span>
-          <span className="truncate text-secondary text-faint-foreground">{ruleValue}</span>
+          <span className="truncate text-meta text-faint-foreground">{ruleValue}</span>
         </button>
       ) : null}
     </AnchoredPopover>

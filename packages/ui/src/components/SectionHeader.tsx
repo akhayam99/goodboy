@@ -35,7 +35,7 @@ export const SectionHeader = ({
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             {icon != null ? <span className="flex shrink-0 items-center">{icon}</span> : null}
-            <h2 className="min-w-0 text-base font-semibold leading-6 text-foreground">{title}</h2>
+            <h2 className="min-w-0 text-title text-foreground">{title}</h2>
             {meta ?? null}
           </div>
           {action ?? null}

@@ -21,7 +21,7 @@ type Props = {
 };
 
 const TOOL_CLASS =
-  'inline-flex h-6 shrink-0 items-center gap-1 rounded-md px-1.5 text-secondary text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-chip text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50';
 
 const SESSION_PLACEHOLDER =
   'what should this workflow accomplish? same as the session, or a specific sub-objective (e.g. just the auth module)…';

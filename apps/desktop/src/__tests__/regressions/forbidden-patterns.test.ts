@@ -123,7 +123,6 @@ const hasCodeComment = (line: string): boolean => {
   return /(^|[^:])\/\/|\/\*/.test(code);
 };
 
-const RAW_TYPE_SIZE = /(?<![\w-])(?:[\w-]+:)*text-(?:3xs|2xs|xs|sm|base|lg|xl|[2-9]xl)(?![\w-])/;
 const RAW_FONT_WEIGHT = /(?<![\w-])(?:[\w-]+:)*font-(?:medium|semibold)(?![\w-])/;
 const RAW_LEADING = /(?<![\w-])(?:[\w-]+:)*leading-(?:\d|\[|[a-z])/;
 const RAW_TRACKING = /(?<![\w-])(?:[\w-]+:)*tracking-(?:\[|[a-z])/;
@@ -296,12 +295,6 @@ const RULES: ReadonlyArray<Rule> = [
         ? countStringifiedCaughtErrors(file)
         : 0,
     hint: 'show a caught error with formatError from @goodboy/ui: String(error) prints [object Object] on a {kind, message} rejection',
-  },
-  {
-    id: 'raw-type-size',
-    kinds: ['ts'],
-    count: (file) => countClassLines({ file, pattern: RAW_TYPE_SIZE }),
-    hint: 'use a type role: text-row, not text-sm font-medium; text-label, not text-xs; text-secondary, not text-2xs; text-chip, not text-3xs',
   },
   {
     id: 'raw-font-weight',

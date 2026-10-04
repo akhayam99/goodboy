@@ -65,7 +65,7 @@ export class ErrorBoundary extends Component<Props, ErrorBoundaryState> {
             dangerTint.border,
           )}
         >
-          <h1 className="text-base font-semibold tracking-tight">Something went wrong</h1>
+          <h1 className="text-title">Something went wrong</h1>
           <p className="text-body text-muted-foreground">
             Goodboy hit a runtime error and stopped rendering. Your data is safe: sessions, agents,
             and providers are all persisted to disk. Retry first, and reload only if the screen
