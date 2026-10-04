@@ -14,8 +14,6 @@ export type AgentPane = 'brief' | 'transcript';
 
 export type BranchTab = 'comments' | 'files' | 'commits' | 'checks';
 
-export const BRANCH_TABS: ReadonlyArray<BranchTab> = ['comments', 'files', 'commits', 'checks'];
-
 export type SessionTarget =
   | { readonly kind: 'artifact'; readonly artifactId: ArtifactId }
   | { readonly kind: 'run'; readonly runId: string }

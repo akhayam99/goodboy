@@ -469,7 +469,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
                 <ThreadProperties sessionId={sessionId} entry={focused} layout="inline" />
               </div>
             </div>
-            <aside className="hidden w-[200px] shrink-0 @6xl:block">
+            <aside aria-label="Thread details" className="hidden w-[200px] shrink-0 @6xl:block">
               <ThreadProperties sessionId={sessionId} entry={focused} layout="rail" />
             </aside>
           </div>

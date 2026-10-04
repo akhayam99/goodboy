@@ -11,13 +11,3 @@ export const NOTE_ACTION_LABEL = {
   fix: 'Fix',
   openBrief: 'Open brief',
 } as const;
-
-export const notesCountLabel = ({ count }: { readonly count: number }): string =>
-  `${count} ${count === 1 ? 'note' : 'notes'}`;
-
-export const fixNotesLabel = ({ count }: { readonly count: number }): string => {
-  if (count === 1) {
-    return 'Fix note';
-  }
-  return count > 1 ? `Fix ${count} notes` : 'Fix notes';
-};

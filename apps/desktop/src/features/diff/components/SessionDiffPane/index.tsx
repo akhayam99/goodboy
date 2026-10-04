@@ -16,8 +16,6 @@ import { useDiffReviewThreads } from '../../hooks/useDiffReviewThreads';
 import type { SessionDiff } from '../../hooks/useSessionDiff';
 import { DiffView } from '../DiffView';
 
-export const DIFF_PANE_TITLE = 'Diff';
-
 type Props = {
   readonly sessionId: SessionId;
   readonly workingDir: string | null;

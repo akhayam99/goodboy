@@ -63,7 +63,7 @@ type BranchStateParams = {
   readonly isRequestMerged: boolean;
 };
 
-export const branchStateOf = ({
+const branchStateOf = ({
   status,
   mount,
   isRequestMerged,

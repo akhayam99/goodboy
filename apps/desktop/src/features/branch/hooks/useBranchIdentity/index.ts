@@ -14,7 +14,7 @@ export type BranchIdentity = {
   readonly label: string;
 };
 
-export const branchLabelOf = ({
+const branchLabelOf = ({
   pr,
   mount,
 }: {

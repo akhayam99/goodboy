@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import { ArrowUp, GitBranch, GitMerge, GitPullRequestCreate, RotateCw, Send } from 'lucide-react';
 import type { ResolvedAction } from '../actions/types';
 
-export type BranchPrimarySource = 'diff' | 'pullRequest' | 'review';
+type BranchPrimarySource = 'diff' | 'pullRequest' | 'review';
 
 export type BranchPrimary = {
   readonly source: BranchPrimarySource;
