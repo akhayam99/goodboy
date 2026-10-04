@@ -49,6 +49,7 @@ import { ActivityRunFinishedScene } from './scenes/ActivityRunFinishedScene';
 import { ActivityResolvesScene } from './scenes/ActivityResolvesScene';
 import { ActivityQuestionScene } from './scenes/ActivityQuestionScene';
 import { ActivityOneSignalScene } from './scenes/ActivityOneSignalScene';
+import { ActivityGroupsScene } from './scenes/ActivityGroupsScene';
 import { ContextDrawerScene } from './scenes/ContextDrawerScene';
 import { WorkflowBuilderScene } from './scenes/flow-audit/WorkflowBuilderScene';
 import { WorkflowRunScene } from './scenes/flow-audit/WorkflowRunScene';
@@ -93,6 +94,7 @@ import { SessionStartScene } from './scenes/audit/SessionStartScene';
 import { WorkspaceStatesScene } from './scenes/audit/WorkspaceStatesScene';
 import { SettingsAppScene } from './scenes/audit/SettingsAppScene';
 import { SettingsHomeScene } from './scenes/audit/SettingsHomeScene';
+import { SettingsHomeFullScene } from './scenes/audit/SettingsHomeFullScene';
 import { SettingsNoWorkspaceScene } from './scenes/audit/SettingsNoWorkspaceScene';
 import { SettingsProvidersScene } from './scenes/audit/SettingsProvidersScene';
 import { SettingsToolsScene } from './scenes/audit/SettingsToolsScene';
@@ -110,6 +112,7 @@ import { CompanionScene } from './scenes/audit/CompanionScene';
 import { ReviewModesScene } from './scenes/audit/ReviewModesScene';
 import { CodeLayersScene } from './scenes/CodeLayersScene';
 import { WorkflowStudioScene } from './scenes/audit/WorkflowStudioScene';
+import { RulesTeleportScene } from './scenes/audit/RulesTeleportScene';
 import { WorkflowBuilderModesScene } from './scenes/audit/WorkflowBuilderModesScene';
 import { FormsAuditScene } from './scenes/audit/FormsAuditScene';
 import { ImpactScopesScene } from './scenes/audit/ImpactScopesScene';
@@ -200,6 +203,7 @@ export const MOCK_SCENES = {
   'activity-resolves': ActivityResolvesScene,
   'activity-question': ActivityQuestionScene,
   'activity-one-signal': ActivityOneSignalScene,
+  'activity-groups': ActivityGroupsScene,
   'context-drawer': ContextDrawerScene,
   'workflow-builder': WorkflowBuilderScene,
   'workflow-run': WorkflowRunScene,
@@ -236,6 +240,7 @@ export const MOCK_SCENES = {
   'workspace-states': WorkspaceStatesScene,
   'settings-app': SettingsAppScene,
   'settings-home': SettingsHomeScene,
+  'settings-home-full': SettingsHomeFullScene,
   'settings-no-workspace': SettingsNoWorkspaceScene,
   'settings-providers': SettingsProvidersScene,
   'settings-tools': SettingsToolsScene,
@@ -253,6 +258,9 @@ export const MOCK_SCENES = {
   'review-modes': ReviewModesScene,
   'code-layers': CodeLayersScene,
   'workflow-studio': WorkflowStudioScene,
+  'rules-no-limits': WorkflowStudioScene,
+  'rules-teleport': RulesTeleportScene,
+  'rail-ticket-ids': MountsScene,
   'workflow-builder-modes': WorkflowBuilderModesScene,
   forms: FormsAuditScene,
   'impact-scopes': ImpactScopesScene,

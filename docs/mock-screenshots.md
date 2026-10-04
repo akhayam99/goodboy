@@ -27,9 +27,9 @@ see things the Tauri webview hides.
 
 ## Turn on mock mode
 
-- `apps/desktop/.env.local` (gitignored) must contain `VITE_GOODBOY_MOCK=1`.
-  An env var exported in the shell before `pnpm dev` is **not** picked up the
-  same way. It has to be this file.
+- Set `VITE_GOODBOY_MOCK=1` in the shell that starts `pnpm dev`, or put it in
+  the gitignored `apps/desktop/.env.local`. Vite reads either form before the
+  app starts.
 - `apps/desktop/src/store/mock-data.ts` exports `MOCK_ENABLED =
 import.meta.env.VITE_GOODBOY_MOCK === '1' && import.meta.env.MODE !== 'test'`.
   The test-mode half is not optional. Vitest reads the same `.env.local`.
@@ -205,6 +205,15 @@ settings and workspace seeds there. They are registered in `MOCK_SCENES` like
 every other scene. A scene opens a studio through the same entrance the app
 uses (a store opener or a click on the real control), never by mounting the
 studio itself.
+
+The dense capture fixtures are `settings-home-full`, `rules-teleport`,
+`rules-no-limits`, `rail-ticket-ids`, and `activity-groups`. The resolver
+fixture uses `agent-brief-resolver&live=1&pane=transcript`; add
+`&flow=recheck` or `&flow=follow-up` for its other starts. It builds the
+provider message with the production kickoff and handoff builders and leaves
+the resolver waiting for its first reply. Settings scenes install browser
+responses for Backup previews and permission lists, so those pages do not
+need a Tauri runtime.
 
 Scenes that share one seed live in a folder, with one file per scene, a
 `fixtures.ts` for the data and a `seeds.ts` that writes it into the store.

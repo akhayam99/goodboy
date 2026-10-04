@@ -15,11 +15,10 @@ type Props = {
   readonly handoff: AgentHandoff;
   readonly sessionId: SessionId | null;
   readonly at: string;
-  readonly initiallyOpen: boolean;
 };
 
-export const HandoffCard = ({ handoff, sessionId, at, initiallyOpen }: Props) => {
-  const disclosure = useHandoffDisclosure({ agentId: handoff.agentId, initiallyOpen });
+export const HandoffCard = ({ handoff, sessionId, at }: Props) => {
+  const disclosure = useHandoffDisclosure({ agentId: handoff.agentId });
   const names = useHandoffNames({ sessionId, sender: handoff.sender });
   const Icon = HANDOFF_SENDER_ICON[handoff.sender.kind];
   const activeIndex =
@@ -84,6 +83,7 @@ export const HandoffCard = ({ handoff, sessionId, at, initiallyOpen }: Props) =>
             }
           }}
           onClose={disclosure.close}
+          isSummaryVisible={activeSection.kind !== 'ask'}
         />
       )}
       {disclosure.active === 'all' ? (

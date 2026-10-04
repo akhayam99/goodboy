@@ -4,7 +4,6 @@ import { HANDOFF_OPEN_EVENT, takeHandoffOpenRequest } from '../handoffOpenReques
 
 type Params = {
   readonly agentId: AgentId;
-  readonly initiallyOpen: boolean;
 };
 
 export type HandoffActive = HandoffSectionKind | 'all' | null;
@@ -36,13 +35,13 @@ type InitialState = {
   readonly active: HandoffActive;
 };
 
-const initialState = ({ agentId, initiallyOpen }: Params): InitialState => {
-  const open = takeHandoffOpenRequest({ agentId }) || initiallyOpen;
-  return { open, active: open ? 'all' : null };
+const initialState = ({ agentId }: Params): InitialState => {
+  const requested = takeHandoffOpenRequest({ agentId });
+  return { open: requested !== null, active: requested };
 };
 
-export const useHandoffDisclosure = ({ agentId, initiallyOpen }: Params): HandoffDisclosure => {
-  const [initial] = useState(() => initialState({ agentId, initiallyOpen }));
+export const useHandoffDisclosure = ({ agentId }: Params): HandoffDisclosure => {
+  const [initial] = useState(() => initialState({ agentId }));
   const [open, setOpen] = useState(initial.open);
   const [active, setActive] = useState<HandoffActive>(initial.active);
 
@@ -51,9 +50,9 @@ export const useHandoffDisclosure = ({ agentId, initiallyOpen }: Params): Handof
       if (!isOpenRequestFor({ event, agentId })) {
         return;
       }
-      takeHandoffOpenRequest({ agentId });
+      const requested = takeHandoffOpenRequest({ agentId });
       setOpen(true);
-      setActive('all');
+      setActive(requested);
     };
     window.addEventListener(HANDOFF_OPEN_EVENT, reveal);
     return () => window.removeEventListener(HANDOFF_OPEN_EVENT, reveal);
@@ -61,7 +60,6 @@ export const useHandoffDisclosure = ({ agentId, initiallyOpen }: Params): Handof
 
   const toggle = useCallback(() => {
     setOpen((value) => !value);
-    setActive((current) => current ?? 'all');
   }, []);
 
   const toggleChip = useCallback(

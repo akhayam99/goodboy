@@ -12,7 +12,13 @@ import { agentPlace, useAppStore } from '../../../../store';
 import { SESSION, SESSION_ID, seedResolveScene } from './resolveSeed';
 import { WorkspaceFrame } from './audit/WorkspaceFrame';
 import { sceneParam } from './audit/sceneParams';
-import { liveAgent, liveHandoff, liveTranscript, liveTurnState } from './agentBriefResolverLive';
+import {
+  liveAgent,
+  liveHandoff,
+  liveTranscript,
+  liveTurnState,
+  type ResolverFlow,
+} from './agentBriefResolverLive';
 
 const SINGLE_ID = 'mock-brief-resolver-single' as AgentId;
 const BATCH_A_ID = 'mock-brief-resolver-batch-a' as AgentId;
@@ -225,8 +231,11 @@ export const AgentBriefResolverScene = () => {
     const { navigate } = useAppStore.getState();
     seedResolveScene({ expandedThreadId: null });
     const isLive = sceneParam({ key: 'live' }) === '1';
+    const flowParam = sceneParam({ key: 'flow' });
+    const flow: ResolverFlow =
+      flowParam === 'recheck' || flowParam === 'follow-up' ? flowParam : 'resolve';
     const agents = isLive
-      ? AGENTS.map((agent) => (agent.id === SINGLE_ID ? liveAgent({ agent }) : agent))
+      ? AGENTS.map((agent) => (agent.id === SINGLE_ID ? liveAgent({ agent, flow }) : agent))
       : AGENTS;
     const state = useAppStore.getState();
     const candidates = (state.sessionResolveCandidates[SESSION_ID] ?? []).map((entry) => ({
@@ -253,6 +262,8 @@ export const AgentBriefResolverScene = () => {
           };
     useAppStore.setState({
       navigate,
+      detectedEditors: [],
+      loadDetectedEditors: async () => undefined,
       sessionGithub,
       selectedAgentId: {},
       currentSessionId: SESSION_ID,
@@ -296,7 +307,7 @@ export const AgentBriefResolverScene = () => {
         AGENTS.map((agent) => [
           agent.id,
           isLive && agent.id === SINGLE_ID
-            ? liveTranscript({ agentId: agent.id, runId: runIdOf(agent.id) })
+            ? liveTranscript({ agentId: agent.id, runId: runIdOf(agent.id), flow })
             : transcriptOf(agent.id),
         ]),
       ),
@@ -304,7 +315,7 @@ export const AgentBriefResolverScene = () => {
     });
     if (isLive) {
       useAppStore.setState({
-        agentHandoffs: { [SINGLE_ID]: liveHandoff({ agentId: SINGLE_ID }) },
+        agentHandoffs: { [SINGLE_ID]: liveHandoff({ agentId: SINGLE_ID, flow }) },
         loadAgentHandoff: async () => undefined,
       });
     }
@@ -312,7 +323,7 @@ export const AgentBriefResolverScene = () => {
       stagePush();
     }
     const open = sceneParam({ key: 'open' });
-    const target = open === 'batch' ? BATCH_A_ID : open === 'single' ? SINGLE_ID : null;
+    const target = open === 'batch' ? BATCH_A_ID : open === 'single' || isLive ? SINGLE_ID : null;
     const pane = sceneParam({ key: 'pane' }) === 'transcript' ? 'transcript' : 'brief';
     if (target !== null) {
       navigate({ to: agentPlace({ sessionId: SESSION_ID, agentId: target, pane }) });

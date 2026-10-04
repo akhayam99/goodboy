@@ -176,21 +176,23 @@ record a live turn already wrote wins.
   resolver is sent by Resolve, a question delegate by its question, a child of
   another agent by that agent or as its follow-up, a workflow step by the
   orchestrator on a dynamic run and by the workflow otherwise, and anything
-  else by you. The visible `user_text` keeps the full composed text, because
-  the prior turns block replays it for Codex, Cursor and Antigravity.
+  else by you. The stored `user_text` keeps the full composed text for provider
+  replay. The visible message uses the human ask, while attached plans stay in
+  their own section.
 - The transcript draws that first message as one handoff block
   (`features/chat/components/HandoffBlock`), the same for every provider: who
   sent it, the ask in one line and the why. Closed, that is all it shows.
   Opening it (the header) shows a chip per section and **All**. A chip opens
   its section in a single panel below; the same chip closes it, and a second
   chip replaces the first rather than stacking. Closing the block hides the
-  chips again. **All** shows every section together, including
-  **View as sent**. It opens by itself only while the agent has not answered
-  yet. Earlier steps open their agent, the plan is a title and Open plan
+  chips again. **All** shows every section as a closed summary, including
+  **View as sent**. Every handoff starts closed. Earlier steps open their agent,
+  the plan is a title and Open plan
   (never its body), and **View as sent** shows the exact text in mono, in two
   parts for Claude and one for the others with a line that says why. When you
   wrote the first message yourself, your bubble stays and a one-line **Also
-  received** strip sits above it.
+  received** strip sits above it. Long text uses one eight-line clamp with
+  **Show all**.
 - On screen the block never says "handoff" (an internal word,
   `jargon-copy.test.ts`): its eyebrow is "sent by". An agent from before m185
   has no handoff row: its first message shows closed as "first message · older
@@ -199,7 +201,7 @@ record a live turn already wrote wins.
 - The transcript is the record and the Brief is the dashboard. What the agent
   received lives only in the handoff block; the Brief shows one line, "Sent by
   Orchestrator · step 4 · the ask", that switches to the Transcript tab with
-  the block open (`requestHandoffOpen`). The Brief no longer carries Why this
+  the Ask section open (`requestHandoffOpen`). The Brief no longer carries Why this
   step or Expected output, and the old kickoff cards and their text parsers
   are gone.
 

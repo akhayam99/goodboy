@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ProviderRunId } from '@goodboy/types';
+import type { IsoDateTime, ProviderRunId } from '@goodboy/types';
 import { TranscriptCard } from './index';
 
 afterEach(cleanup);
@@ -91,5 +91,24 @@ describe('TranscriptCard', () => {
     );
     const button = screen.getByRole('button', { name: 'Retrying' });
     expect(button.hasAttribute('disabled')).toBe(true);
+  });
+
+  it('clamps a long user message until Show all is pressed', async () => {
+    const user = userEvent.setup();
+    const text = Array.from({ length: 9 }, (_, index) => `Review note ${index + 1}`).join('\n');
+    const { container } = render(
+      <TranscriptCard
+        item={{
+          kind: 'user_text',
+          key: 'user-long',
+          text,
+          at: '2026-09-25T12:04:00.000Z' as IsoDateTime,
+        }}
+      />,
+    );
+
+    expect(container.querySelector('[data-clamped="true"]')).not.toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Show all' }));
+    expect(container.querySelector('[data-clamped="true"]')).toBeNull();
   });
 });
