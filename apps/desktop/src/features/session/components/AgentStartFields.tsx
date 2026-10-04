@@ -33,7 +33,7 @@ type Props = {
 };
 
 const chipClassName =
-  'flex items-center gap-1.5 rounded-full border border-border-soft bg-background px-2 py-1 text-label text-foreground motion-safe:transition-colors hover:border-border hover:bg-hover';
+  'flex items-center gap-1 rounded-full border border-border-soft bg-background px-2 py-1 text-label text-foreground motion-safe:transition-colors hover:border-border hover:bg-hover';
 
 export const AgentStartFields = ({
   kinds,
@@ -55,7 +55,7 @@ export const AgentStartFields = ({
   const selectedProject = projectById(projects, projectId) ?? null;
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-2">
       <AnchoredPopover
         dropdown={roleDropdown}
         role="dialog"
@@ -166,7 +166,7 @@ export const AgentStartFields = ({
           }
         >
           <PopoverBody>
-            <div role="listbox" aria-label="Project" className="flex flex-col gap-0.5 px-1.5 py-1">
+            <div role="listbox" aria-label="Project" className="flex flex-col gap-0.5 px-2 py-1">
               {projects.map((project) => (
                 <SelectableRow
                   key={project.id}
@@ -177,7 +177,7 @@ export const AgentStartFields = ({
                     onProjectChange(project.id);
                     projectDropdown.close();
                   }}
-                  className="px-2 py-1.5 text-label"
+                  className="px-2 py-2 text-label"
                 >
                   {project.name}
                 </SelectableRow>

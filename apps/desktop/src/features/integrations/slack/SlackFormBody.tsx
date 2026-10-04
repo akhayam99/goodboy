@@ -46,11 +46,11 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
               touches Goodboy&apos;s own servers.
             </p>
             <p>It asks Slack for these five scopes, granted as User Token Scopes:</p>
-            <ul className="flex min-w-0 flex-wrap gap-1.5">
+            <ul className="flex min-w-0 flex-wrap gap-2">
               {SLACK_USER_SCOPES.map((scope) => (
                 <li
                   key={scope}
-                  className="rounded-full border border-border-soft px-2 py-0.5 font-mono text-secondary text-foreground"
+                  className="rounded-full border border-border-soft px-2 py-0.5 font-mono text-chip text-foreground"
                 >
                   {scope}
                 </li>

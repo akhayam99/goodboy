@@ -12,7 +12,7 @@ const spanOf = ({ index }: { readonly index: number }): StepLaneSpan =>
   index === 0 ? 'none' : 'through';
 
 export const StepDropZone = ({ index, isActive, identityIndex }: Props) => (
-  <li aria-hidden data-dropindex={index} className="flex h-3 min-w-0 gap-1.5">
+  <li aria-hidden data-dropindex={index} className="flex h-3 min-w-0 gap-2">
     <StepTreeGutter span={spanOf({ index })} identityIndex={identityIndex} />
     <span className="flex min-w-0 flex-1 items-center pl-2">
       <span

@@ -64,7 +64,7 @@ export const ArtifactCaptureNoticeCard = ({ item, sessionId = null, agentId = nu
           Retry capture
         </Button>
         {repaired ? (
-          <span className="text-secondary text-muted-foreground">repair requested</span>
+          <span className="text-meta text-muted-foreground">repair requested</span>
         ) : null}
       </div>
     </TranscriptDisclosure>

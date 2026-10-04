@@ -25,11 +25,11 @@ export const GuidanceDisclosure = ({
   const [shouldFocus, setShouldFocus] = useState(false);
 
   return (
-    <div className="flex min-w-0 gap-1.5">
+    <div className="flex min-w-0 gap-2">
       <StepTreeGutter span="through" identityIndex={identityIndex} />
       {isOpen ? (
         <div className="flex min-w-0 flex-1 flex-col gap-1 pl-2">
-          <label htmlFor={GUIDANCE_ID} className="text-secondary text-muted-foreground">
+          <label htmlFor={GUIDANCE_ID} className="text-meta text-muted-foreground">
             Guidance (optional)
           </label>
           <PromptField

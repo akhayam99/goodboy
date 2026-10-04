@@ -24,7 +24,7 @@ export const ArtifactBasedOnField = ({ runs, value, scopeLine, repoLine, onChang
   return (
     <section className="flex min-w-0 flex-col gap-2">
       <SectionHeader label="Based on" htmlFor={fieldId} />
-      <div className="flex min-w-0 flex-col gap-1.5">
+      <div className="flex min-w-0 flex-col gap-2">
         <Listbox
           id={fieldId}
           size="sm"
@@ -44,8 +44,8 @@ export const ArtifactBasedOnField = ({ runs, value, scopeLine, repoLine, onChang
             );
           }}
         />
-        <span className="text-2xs leading-relaxed text-muted-foreground">{scopeLine}</span>
-        <span className="text-2xs leading-relaxed text-muted-foreground">{repoLine}</span>
+        <span className="text-meta leading-relaxed text-muted-foreground">{scopeLine}</span>
+        <span className="text-meta leading-relaxed text-muted-foreground">{repoLine}</span>
       </div>
     </section>
   );

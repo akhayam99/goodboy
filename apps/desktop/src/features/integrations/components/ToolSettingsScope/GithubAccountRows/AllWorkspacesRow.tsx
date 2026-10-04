@@ -36,13 +36,13 @@ export const AllWorkspacesRow = ({ status }: Props) => {
 
   if (status.mode === 'gh-cli') {
     return (
-      <div className="flex min-w-0 items-center gap-2.5 rounded-lg border border-border-soft bg-subtle px-3 py-2.5">
+      <div className="flex min-w-0 items-center gap-3 rounded-lg border border-border-soft bg-subtle px-3 py-3">
         <IntegrationGlyph provider="github" size={ICON_SIZE.control} />
         <div className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-label font-medium text-foreground">
             {`Connected as ${status.user ?? 'an unknown user'} through the gh CLI`}
           </span>
-          <span className="truncate text-secondary text-muted-foreground">
+          <span className="truncate text-meta text-muted-foreground">
             Run gh auth logout to sign out
           </span>
         </div>

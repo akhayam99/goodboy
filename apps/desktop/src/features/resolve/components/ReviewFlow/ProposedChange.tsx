@@ -25,17 +25,17 @@ export const ProposedChange = ({
     <section aria-label={heading} className="flex min-w-0 flex-col gap-2">
       <SectionHeader label={heading} headingLevel={2} />
       {isLoading && <Skeleton className="h-16 w-full rounded-md" />}
-      {error !== null && <p className="text-secondary text-warning">{error}</p>}
+      {error !== null && <p className="text-meta text-warning">{error}</p>}
       {!isLoading && error === null && files.length === 0 && (
-        <p className="text-secondary text-muted-foreground">{REVIEW_FLOW_LABEL.noChangeCaptured}</p>
+        <p className="text-meta text-muted-foreground">{REVIEW_FLOW_LABEL.noChangeCaptured}</p>
       )}
       {plan.files.map((file) => (
         <div key={file.path} className="min-w-0 overflow-hidden rounded-lg bg-subtle">
-          <p className="truncate px-3 pt-2 font-mono text-secondary text-muted-foreground">
+          <p className="truncate px-3 pt-2 font-mono text-meta text-muted-foreground">
             {file.path}
           </p>
           {file.hunks.map((hunk) => (
-            <div key={hunk.header} className="min-w-0 py-1.5 font-mono text-code">
+            <div key={hunk.header} className="min-w-0 py-2 font-mono text-code">
               <p className="px-3 text-faint-foreground">{hunk.header}</p>
               {hunk.lines.map((line, index) => (
                 <p
@@ -55,7 +55,7 @@ export const ProposedChange = ({
         </div>
       ))}
       {plan.kind !== 'whole' && files.length > 0 && (
-        <p className="text-secondary text-muted-foreground">
+        <p className="text-meta text-muted-foreground">
           {plan.kind === 'too_large' ? `${REVIEW_FLOW_LABEL.tooLarge} ` : ''}
           {changeSummaryLine({ fileCount: files.length, changedLines: plan.changedLines })}
         </p>

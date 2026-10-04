@@ -945,7 +945,7 @@ describe('RoutingPicker', () => {
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const providerButton = screen.getByRole('button', { name: 'Cursor' });
     const providerRow = providerButton.closest('div');
-    expect(providerRow?.className).toContain('gap-1.5');
+    expect(providerRow?.className).toContain('gap-2');
     expect(providerRow?.className).toContain('[&>*]:flex-1');
     expect(providerButton.className).toContain('min-w-0');
   });

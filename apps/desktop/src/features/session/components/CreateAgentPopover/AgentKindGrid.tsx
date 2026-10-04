@@ -8,7 +8,7 @@ type Props = {
 };
 
 export const AgentKindGrid = ({ kinds, value, onChange }: Props) => (
-  <div className="flex flex-col gap-2 px-2.5">
+  <div className="flex flex-col gap-2 px-3">
     <div className="grid grid-cols-3 gap-1">
       {kinds.map((kind) => (
         <AgentKindTile
@@ -19,7 +19,7 @@ export const AgentKindGrid = ({ kinds, value, onChange }: Props) => (
         />
       ))}
     </div>
-    <p className="truncate text-secondary text-muted-foreground" aria-live="polite">
+    <p className="truncate text-meta text-muted-foreground" aria-live="polite">
       {AGENT_KIND_META[value].hint}
     </p>
   </div>

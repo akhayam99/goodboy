@@ -50,7 +50,7 @@ describe('workspace tile and collapsed rail axis', () => {
     const tile = classNameContaining({ source: IDENTITY_ROW, marker: 'flex size-5' });
 
     const tileCenter =
-      spacingOf({ className: bar, prefix: 'pl' }) +
+      spacingOf({ className: bar, prefix: 'px' }) +
       Number.parseFloat(PLAIN_INSET) +
       spacingOf({ className: trigger, prefix: 'px' }) +
       spacingOf({ className: tile, prefix: 'size' }) / 2;

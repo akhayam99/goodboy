@@ -21,8 +21,6 @@ export const CompletedBody = () => (
         </button>
       </Tooltip>
     </div>
-    <p className="text-2xs leading-snug text-muted-foreground">
-      That was the last step. Setup is complete.
-    </p>
+    <p className="text-meta text-muted-foreground">That was the last step. Setup is complete.</p>
   </>
 );

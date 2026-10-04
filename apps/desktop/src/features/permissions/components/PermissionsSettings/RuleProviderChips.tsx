@@ -31,7 +31,7 @@ export const RuleProviderChips = ({ rule, activeProviders }: Props) => {
       : ignorers.map((provider) => PROVIDER_LABEL[provider]).join(', ');
   const isDeny = rule.decision === 'deny';
   return (
-    <span className="flex min-w-0 flex-wrap items-center gap-1.5 text-secondary">
+    <span className="flex min-w-0 flex-wrap items-center gap-1 text-meta">
       <span className={cn('inline-flex items-center gap-1', tintClasses('success').text)}>
         <span aria-hidden>✓</span>
         {RULE_PROVIDERS.map((provider) => PROVIDER_LABEL[provider]).join(', ')}

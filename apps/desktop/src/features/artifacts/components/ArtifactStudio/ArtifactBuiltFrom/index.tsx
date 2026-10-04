@@ -142,7 +142,7 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
             <button
               type="button"
               data-testid="built-from-evidence-more"
-              className="self-start text-secondary text-muted-foreground hover:text-foreground"
+              className="self-start text-meta text-muted-foreground hover:text-foreground"
               onClick={() => setIsEvidenceOpen(true)}
             >
               show all {provenance.evidence.length}
@@ -162,7 +162,7 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
           >
             <pre
               data-testid="built-from-design-profile"
-              className="min-w-0 whitespace-pre-wrap break-words text-secondary text-muted-foreground"
+              className="min-w-0 whitespace-pre-wrap break-words text-meta text-muted-foreground"
             >
               {provenance.designProfileSummary}
             </pre>

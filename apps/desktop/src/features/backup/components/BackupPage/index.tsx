@@ -53,7 +53,7 @@ export const BackupPage = () => {
   return (
     <div className="flex flex-col gap-6">
       <section aria-labelledby="backup-export" className="flex flex-col gap-3">
-        <h2 id="backup-export" className="flex items-center gap-1.5">
+        <h2 id="backup-export" className="flex items-center gap-2">
           <Eyebrow label="Export" />
         </h2>
         <p className="text-label text-muted-foreground">
@@ -95,7 +95,7 @@ export const BackupPage = () => {
       </section>
 
       <section aria-labelledby="backup-import" className="flex flex-col gap-3">
-        <h2 id="backup-import" className="flex items-center gap-1.5">
+        <h2 id="backup-import" className="flex items-center gap-2">
           <Eyebrow label="Import" />
         </h2>
         <p className="text-label text-muted-foreground">

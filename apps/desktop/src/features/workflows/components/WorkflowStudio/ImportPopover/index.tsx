@@ -103,12 +103,12 @@ export const ImportPopover = ({ workspaceId, takenNames }: Props) => {
           />
         </label>
         {total > 0 ? (
-          <span className="shrink-0 text-secondary tabular-nums text-muted-foreground">
+          <span className="shrink-0 text-meta tabular-nums text-muted-foreground">
             {catalogCount({ workflows: total, workspaces: readyWithWorkflows.length })}
           </span>
         ) : null}
       </div>
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-1.5 pb-2">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-2 pb-2">
         {emptyText === null ? (
           <div className="grid grid-cols-1 gap-x-3 gap-y-3 sm:grid-cols-2">
             {visible.map(({ group, workflows }) => (
@@ -124,17 +124,17 @@ export const ImportPopover = ({ workspaceId, takenNames }: Props) => {
             ))}
           </div>
         ) : (
-          <p className="px-1.5 py-2 text-label text-muted-foreground">{emptyText}</p>
+          <p className="px-2 py-2 text-label text-muted-foreground">{emptyText}</p>
         )}
         <FormActions
-          className="px-1.5"
+          className="px-2"
           leading={
             <span
               role={importer.importError === null ? undefined : 'alert'}
               className={
                 importer.importError === null
-                  ? 'min-w-0 truncate text-secondary text-muted-foreground'
-                  : 'min-w-0 truncate text-secondary text-danger'
+                  ? 'min-w-0 truncate text-meta text-muted-foreground'
+                  : 'min-w-0 truncate text-meta text-danger'
               }
             >
               {importer.importError === null

@@ -28,11 +28,11 @@ export const DefaultModeCards = ({ value, isBusy, onChange }: Props) => (
             disabled={isBusy}
             onClick={() => onChange(mode)}
             className={cn(
-              'flex min-w-0 flex-col items-start gap-1 rounded-lg border bg-subtle px-3 py-2.5 text-left motion-safe:transition-colors hover:bg-hover',
+              'flex min-w-0 flex-col items-start gap-1 rounded-lg border bg-subtle px-3 py-3 text-left motion-safe:transition-colors hover:bg-hover',
               isSelected ? 'border-primary' : 'border-border-soft',
             )}
           >
-            <span className="flex w-full items-center gap-1.5">
+            <span className="flex w-full items-center gap-2">
               <Icon size={ICON_SIZE.control} aria-hidden className={tintClasses(copy.tone).icon} />
               <span className="text-label text-foreground">{copy.label}</span>
               {mode === DEFAULT_PERMISSION_MODE ? (
@@ -41,12 +41,12 @@ export const DefaultModeCards = ({ value, isBusy, onChange }: Props) => (
                 </span>
               ) : null}
             </span>
-            <span className="text-secondary text-muted-foreground">{copy.short}</span>
+            <span className="text-meta text-muted-foreground">{copy.short}</span>
           </button>
         );
       })}
     </div>
-    <p className="text-secondary text-muted-foreground">
+    <p className="text-meta text-muted-foreground">
       Changing this affects new sessions only. A running session keeps its mode; change it from the
       composer.
     </p>

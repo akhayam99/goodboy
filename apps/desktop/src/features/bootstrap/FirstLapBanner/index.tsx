@@ -72,7 +72,7 @@ export const FirstLapBanner = ({ sessionId }: Props) => {
     return (
       <div className="flex flex-col gap-2 bg-subtle px-4 py-3">
         <span className="text-label text-foreground">Moving your work into bootstrap</span>
-        <span className="text-secondary text-muted-foreground">
+        <span className="text-meta text-muted-foreground">
           The project folder stays as it is until the copy is checked.
         </span>
         {notice !== null ? (
@@ -96,7 +96,7 @@ export const FirstLapBanner = ({ sessionId }: Props) => {
             ? `${project.name} · main is on the remote now.`
             : `${project.name} · This session works in your project folder`}
         </span>
-        <span className="text-secondary text-muted-foreground">
+        <span className="text-meta text-muted-foreground">
           {isOnRemote
             ? 'Move your work into bootstrap when you are ready.'
             : 'Nothing is published yet.'}
@@ -105,7 +105,7 @@ export const FirstLapBanner = ({ sessionId }: Props) => {
       {isChecking && !isOnRemote ? (
         <div role="status" aria-label="Checking the remote" className="flex items-center gap-2">
           <Skeleton className="h-3.5 w-48" />
-          <span className="text-secondary text-faint-foreground">Checking the remote</span>
+          <span className="text-meta text-faint-foreground">Checking the remote</span>
         </div>
       ) : null}
       {!isChecking && probe?.kind === 'unreachable' && hasRemote ? (

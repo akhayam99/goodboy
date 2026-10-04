@@ -33,7 +33,7 @@ export const ReviewList = ({
         className="flex min-w-0 flex-col gap-1"
       >
         <Eyebrow
-          className="px-2.5"
+          className="px-3"
           label={`${REVIEW_COMMENT_GROUP_LABEL[group.group]} ${group.entries.length}`}
         />
         <ul className="flex min-w-0 flex-col gap-0.5">

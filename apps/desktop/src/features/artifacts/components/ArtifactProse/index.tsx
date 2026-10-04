@@ -13,6 +13,6 @@ export const ArtifactProse = ({ text, hasLead = true }: Props) => (
     data-lead={hasLead ? 'true' : 'false'}
     className="artifact-prose min-w-0"
   >
-    <Markdown text={text} className="text-base leading-6" />
+    <Markdown text={text} className="text-prose" />
   </div>
 );

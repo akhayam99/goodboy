@@ -45,7 +45,7 @@ export const ReviewCommitsReplies = ({ model }: Props) => {
         {model.replies.map((reply) => (
           <li
             key={reply.threadId}
-            className="flex min-w-0 list-none flex-col gap-1 rounded-lg bg-subtle px-3 py-2 text-secondary"
+            className="flex min-w-0 list-none flex-col gap-1 rounded-lg bg-subtle px-3 py-2 text-meta"
           >
             <span className="flex min-w-0 items-baseline gap-2 text-label text-muted-foreground">
               <span className="min-w-0 truncate">
@@ -58,7 +58,7 @@ export const ReviewCommitsReplies = ({ model }: Props) => {
             {reply.text !== '' && !reply.isPosted && (
               <span className="min-w-0 text-foreground">{reply.text}</span>
             )}
-            <span className="min-w-0 text-secondary text-foreground">
+            <span className="min-w-0 text-meta text-foreground">
               {lineOf({ reply, isEditing: model.isEditingPosted })}
             </span>
           </li>

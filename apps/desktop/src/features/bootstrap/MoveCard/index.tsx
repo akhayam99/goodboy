@@ -47,7 +47,7 @@ export const MoveCard = ({ project, changedCount, isTurnRunning }: Props) => {
         <h3 className="text-label text-foreground">
           Move your work into a session called bootstrap
         </h3>
-        <p className="text-secondary text-muted-foreground">
+        <p className="text-meta text-muted-foreground">
           {hasWork
             ? `${changedCount} changed ${plural(changedCount)} in the project folder move into a worktree session. The folder ends clean on main.`
             : 'The project folder has no changed files. Finish to start worktree sessions.'}
@@ -66,7 +66,7 @@ export const MoveCard = ({ project, changedCount, isTurnRunning }: Props) => {
           {isMoving ? 'Moving' : actionLabel}
         </Button>
         {isTurnRunning ? (
-          <span className="text-secondary text-muted-foreground">
+          <span className="text-meta text-muted-foreground">
             Wait for the running turn to finish
           </span>
         ) : null}

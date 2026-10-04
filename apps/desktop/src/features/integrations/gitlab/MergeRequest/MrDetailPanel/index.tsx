@@ -380,7 +380,7 @@ export const MrDetailPanel = ({
       scroll="self"
       title="New merge request"
       meta={
-        <span className="inline-flex items-center gap-1.5 font-mono">
+        <span className="inline-flex items-center gap-2 font-mono">
           <GitBranch size={11} aria-hidden />
           {branch ?? 'no branch'}
         </span>

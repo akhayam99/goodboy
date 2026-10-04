@@ -258,13 +258,13 @@ export const DecisionsSection = ({
       ) : (
         <ContextBlock title="Active" icon={CONCEPT_ICONS.decisions} count={active.length}>
           {pendingRemovals.size === 0 ? null : (
-            <div className="flex items-center gap-1.5 px-2 text-secondary text-muted-foreground">
+            <div className="flex items-center gap-1 px-2 text-meta text-muted-foreground">
               <span>{`${pendingRemovals.size} change${pendingRemovals.size > 1 ? 's' : ''} on this visit`}</span>
               <span aria-hidden>·</span>
               <button
                 type="button"
                 onClick={undoAllRemovals}
-                className="inline-flex items-center gap-1.5 rounded-sm px-1 py-0.5 text-foreground hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                className="inline-flex items-center gap-2 rounded-sm px-1 py-0.5 text-foreground hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 <Undo2 size={ICON_SIZE.row} aria-hidden />
                 Undo all
@@ -320,7 +320,7 @@ export const DecisionsSection = ({
             type="button"
             aria-expanded={isClosedOpen}
             onClick={() => setIsClosedOpen(!isClosedOpen)}
-            className="flex items-center gap-1.5 self-start rounded-md px-2 py-1 text-label text-muted-foreground hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            className="flex items-center gap-2 self-start rounded-md px-2 py-1 text-label text-muted-foreground hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
             {isClosedOpen ? (
               <ChevronDown size={ICON_SIZE.row} aria-hidden />
@@ -351,7 +351,7 @@ export const DecisionsSection = ({
               </div>
               <div className="flex flex-col gap-0.5">
                 {filteredClosedRows.length === 0 ? (
-                  <p className="px-2 text-secondary text-faint-foreground">
+                  <p className="px-2 text-meta text-faint-foreground">
                     {`Nothing matches "${closedQuery}"`}
                   </p>
                 ) : (

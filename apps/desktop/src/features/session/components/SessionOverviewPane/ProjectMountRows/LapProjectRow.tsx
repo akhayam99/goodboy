@@ -64,7 +64,7 @@ export const LapProjectRow = ({ sessionId, project, stage }: Props) => {
           icon={<CONCEPT_ICONS.branch size={11} aria-hidden />}
           label={<span className="font-mono">{branch}</span>}
         />
-        <span className="shrink-0 text-secondary text-muted-foreground">
+        <span className="shrink-0 text-meta text-muted-foreground">
           {isPublished ? 'on the remote' : 'not published'}
         </span>
         <div className="ml-auto flex shrink-0 items-center gap-1">

@@ -58,7 +58,7 @@ export const NextActionStrip = ({ sessionId, run, workflow, subjectAgentId, clas
       data-kind={action.kind}
       data-blocked={isBlocked || undefined}
       className={cn(
-        'flex min-w-0 flex-wrap items-start gap-x-2.5 gap-y-2 rounded-lg border border-l-2 border-border-soft bg-background px-3 py-2.5',
+        'flex min-w-0 flex-wrap items-start gap-x-3 gap-y-2 rounded-lg border border-l-2 border-border-soft bg-background px-3 py-3',
         tint.rail,
         className,
       )}
@@ -77,12 +77,12 @@ export const NextActionStrip = ({ sessionId, run, workflow, subjectAgentId, clas
         <ClampedProse
           text={action.sentence}
           lines={2}
-          className="min-w-0 break-words text-xs font-medium leading-relaxed text-foreground"
+          className="min-w-0 break-words text-row text-foreground"
         />
-        <p className="min-w-0 text-2xs leading-relaxed text-muted-foreground">{action.cause}</p>
+        <p className="min-w-0 text-meta leading-relaxed text-muted-foreground">{action.cause}</p>
         {action.kind === 'recover' && <NextActionDetails agentId={action.subjectAgentId} />}
       </div>
-      <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
         <NextActionButtons sessionId={sessionId} workflowRunId={run.id} action={action} />
       </div>
     </section>

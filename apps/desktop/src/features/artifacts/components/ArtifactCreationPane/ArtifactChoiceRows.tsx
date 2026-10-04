@@ -72,7 +72,7 @@ export const ArtifactChoiceRows = ({ ariaLabel, options, value, onChange }: Prop
             ariaSelected={option.value === value}
             tabIndex={index === current ? 0 : -1}
             onClick={() => onChange(option.value)}
-            className="w-auto border border-border-soft bg-elevated px-2.5 py-1.5 data-[selected=true]:border-transparent"
+            className="w-auto border border-border-soft bg-elevated px-3 py-2 data-[selected=true]:border-transparent"
           >
             <span className="truncate text-label font-medium">{option.label}</span>
           </SelectableRow>
@@ -81,7 +81,7 @@ export const ArtifactChoiceRows = ({ ariaLabel, options, value, onChange }: Prop
       {hint === null ? null : (
         <span
           data-testid="artifact-choice-hint"
-          className="text-2xs leading-relaxed text-muted-foreground"
+          className="text-meta leading-relaxed text-muted-foreground"
         >
           {hint}
         </span>

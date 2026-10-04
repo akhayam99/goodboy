@@ -14,7 +14,7 @@ type Props = {
 };
 
 const OPTION_ROW =
-  'flex min-w-0 items-start gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-hover';
+  'flex min-w-0 items-start gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-hover';
 
 export const AutonomyChip = ({ autonomy, ruleAutonomy, disabled, onChange }: Props) => {
   const dropdown = useDropdown({ disabled, width: 'w-72' });
@@ -58,7 +58,7 @@ export const AutonomyChip = ({ autonomy, ruleAutonomy, disabled, onChange }: Pro
             >
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate text-label text-foreground">{option.label}</span>
-                <span className="text-secondary text-faint-foreground">{option.hint}</span>
+                <span className="text-meta text-faint-foreground">{option.hint}</span>
               </span>
               {isActive ? (
                 <Check size={ICON_SIZE.row} aria-hidden className="mt-0.5 shrink-0 text-primary" />
@@ -78,7 +78,7 @@ export const AutonomyChip = ({ autonomy, ruleAutonomy, disabled, onChange }: Pro
         >
           <RotateCcw size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
           <span className="min-w-0 flex-1 truncate text-label text-foreground">Reset</span>
-          <span className="truncate text-secondary text-faint-foreground">{rule.label}</span>
+          <span className="truncate text-meta text-faint-foreground">{rule.label}</span>
         </button>
       ) : null}
     </AnchoredPopover>

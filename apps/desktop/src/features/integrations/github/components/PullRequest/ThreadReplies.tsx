@@ -34,7 +34,7 @@ export const ThreadReplies = ({ replies }: Props) => {
             type="button"
             aria-expanded={expanded}
             onClick={() => setExpanded((v) => !v)}
-            className="inline-flex w-fit items-center gap-1 rounded-sm text-secondary font-medium text-muted-foreground transition-colors hover:text-foreground"
+            className="inline-flex w-fit items-center gap-1 rounded-sm text-chip text-muted-foreground transition-colors hover:text-foreground"
           >
             <ChevronRight
               size={11}
@@ -48,7 +48,7 @@ export const ThreadReplies = ({ replies }: Props) => {
           <ul className="flex flex-col gap-2">
             {replies.map((r) => (
               <li key={r.id} className="flex min-w-0 flex-col gap-1">
-                <div className="flex items-center gap-1.5 text-label text-muted-foreground">
+                <div className="flex items-center gap-2 text-label text-muted-foreground">
                   <Avatar url={r.authorAvatarUrl} alt={r.author} />
                   <span className="font-medium text-foreground">{r.author}</span>
                   <span className="opacity-50">·</span>

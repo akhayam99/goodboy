@@ -25,11 +25,9 @@ export const ReviewListMenu = ({ filter, onFilter }: Props) => {
     })),
   ];
   return (
-    <div className="flex items-center justify-end gap-1.5 px-1 pb-1">
+    <div className="flex items-center justify-end gap-2 px-1 pb-1">
       {filter !== 'all' && (
-        <span className="text-secondary text-muted-foreground">
-          {REVIEW_STATE_FILTER_LABEL[filter]}
-        </span>
+        <span className="text-meta text-muted-foreground">{REVIEW_STATE_FILTER_LABEL[filter]}</span>
       )}
       <OverflowMenu
         items={items}

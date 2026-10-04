@@ -401,9 +401,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-row text-foreground">{option.label}</span>
-                  <span className="block text-xs leading-relaxed text-muted-foreground">
-                    {option.hint}
-                  </span>
+                  <span className="block text-label text-muted-foreground">{option.hint}</span>
                 </span>
               </button>
             ))}
@@ -411,7 +409,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
 
           {choice === 'project' ? (
             <div className="flex flex-col gap-2">
-              <p className="text-xs leading-relaxed text-muted-foreground">
+              <p className="text-label text-muted-foreground">
                 Open a folder with a git repository, or start a new project in an empty one.
               </p>
               {reconnectCandidate !== null ? (
@@ -457,7 +455,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
           ) : null}
 
           {choice === 'workspace' ? (
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-2">
               <label
                 htmlFor={`${formId}-workspace-name`}
                 className="text-label font-medium text-foreground"

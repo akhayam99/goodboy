@@ -25,10 +25,10 @@ export const RunGuidanceField = ({
   onGuidance,
 }: Props) => (
   <section aria-label="Guidance" className="flex min-w-0 flex-col gap-2">
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-2">
       <Eyebrow label="Guidance" muted />
       {differs ? <RuleDot ruleValue={ruleSummary} /> : null}
-      <span className="text-secondary text-faint-foreground">optional</span>
+      <span className="text-meta text-faint-foreground">optional</span>
     </div>
     <PromptField
       kind="document"

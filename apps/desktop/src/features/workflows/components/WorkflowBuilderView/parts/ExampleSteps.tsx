@@ -47,9 +47,9 @@ export const ExampleSteps = ({ identityIndex, guidance, children }: Props) => (
   <div className="flex min-w-0 flex-col">
     <ol className="flex flex-col">{children}</ol>
     {guidance}
-    <div className={cn('flex min-w-0 gap-1.5', ENTRY_CLASS)} style={entryDelay({ order: 0 })}>
+    <div className={cn('flex min-w-0 gap-2', ENTRY_CLASS)} style={entryDelay({ order: 0 })}>
       <StepTreeGutter span="through" identityIndex={identityIndex} />
-      <p className="pb-1 pl-2 text-secondary text-faint-foreground">
+      <p className="pb-1 pl-2 text-meta text-faint-foreground">
         Example. Real steps are picked one at a time as the run goes.
       </p>
     </div>
@@ -59,7 +59,7 @@ export const ExampleSteps = ({ identityIndex, guidance, children }: Props) => (
           key={step.role}
           aria-hidden
           data-example-step={step.role}
-          className={cn('flex min-w-0 gap-1.5 opacity-70', ENTRY_CLASS)}
+          className={cn('flex min-w-0 gap-2 opacity-70', ENTRY_CLASS)}
           style={entryDelay({ order: index + 1 })}
         >
           <StepTreeGutter
@@ -73,7 +73,7 @@ export const ExampleSteps = ({ identityIndex, guidance, children }: Props) => (
               />
             }
           />
-          <span className="flex h-8 min-w-0 flex-1 items-center gap-2.5 pl-2">
+          <span className="flex h-8 min-w-0 flex-1 items-center gap-3 pl-2">
             <AgentKindChip kind={step.kind} label={ROLE_LABEL[step.role]} muted />
             <span className={cn('h-2 rounded-sm bg-muted', step.titleWidth)} />
           </span>

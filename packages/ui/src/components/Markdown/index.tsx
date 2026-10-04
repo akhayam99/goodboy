@@ -24,7 +24,7 @@ type MarkdownProps = {
 };
 
 const CHIP_CLASS =
-  'mx-0.5 inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 align-baseline text-[0.7em] font-semibold uppercase tracking-eyebrow';
+  'mx-0.5 inline-flex items-center gap-1 rounded-sm px-2 py-0.5 align-baseline text-[0.7em] font-semibold uppercase tracking-eyebrow';
 
 const INLINE_CODE_CLASS: Record<MarkdownVariant, string> = {
   document: 'rounded-md bg-muted px-1 py-0 font-mono text-[0.875em] text-foreground wrap-anywhere',
@@ -48,7 +48,7 @@ const renderImage = ({ alt, url, key, variant }: ImageParams): ReactNode => {
         key={key}
         src={url}
         alt={alt}
-        className="my-1.5 max-h-96 max-w-full rounded-md border border-border-soft object-contain"
+        className="my-2 max-h-96 max-w-full rounded-md border border-border-soft object-contain"
       />
     );
   }
@@ -166,12 +166,12 @@ const renderInlineLines = ({ input, keyPrefix, variant }: InlineLinesParams): Re
   ));
 
 const HEADING_CLASS: Record<1 | 2 | 3 | 4 | 5 | 6, string> = {
-  1: 'text-lg font-semibold leading-snug text-foreground',
-  2: 'text-base font-semibold leading-snug text-foreground',
-  3: 'text-sm font-semibold leading-snug text-foreground',
-  4: 'text-xs font-semibold uppercase leading-snug tracking-eyebrow text-muted-foreground',
-  5: 'text-2xs font-semibold uppercase leading-snug tracking-eyebrow text-muted-foreground',
-  6: 'text-2xs font-semibold uppercase leading-snug tracking-eyebrow text-muted-foreground',
+  1: 'text-title text-foreground',
+  2: 'text-title text-foreground',
+  3: 'text-heading text-foreground',
+  4: 'text-eyebrow text-muted-foreground',
+  5: 'text-eyebrow text-muted-foreground',
+  6: 'text-eyebrow text-muted-foreground',
 };
 
 const TASK_ICON: Record<TaskState, LucideIcon> = {
@@ -278,7 +278,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
       return (
         <pre
           key={key}
-          className="overflow-x-auto rounded-md bg-muted px-3 py-2 font-mono text-xs leading-relaxed text-foreground"
+          className="overflow-x-auto rounded-md bg-muted px-3 py-2 text-code text-foreground"
         >
           <code>
             <CodeBlockContent content={block.content} lang={block.lang} />
@@ -316,10 +316,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
             <li
               key={`${key}-${j}`}
               data-task={item.task ?? undefined}
-              className={cn(
-                'leading-relaxed wrap-anywhere',
-                item.task !== null && 'relative list-none',
-              )}
+              className={cn('text-prose wrap-anywhere', item.task !== null && 'relative list-none')}
             >
               {item.task !== null && renderTaskMark({ task: item.task })}
               {item.children.length === 0 ? (
@@ -348,7 +345,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
       return (
         <blockquote
           key={key}
-          className="flex flex-col gap-1.5 border-l-2 border-border-soft pl-3 leading-relaxed text-muted-foreground wrap-anywhere"
+          className="flex flex-col gap-2 border-l-2 border-border-soft pl-3 text-prose text-muted-foreground wrap-anywhere"
         >
           {block.lines.map((ln, j) => (
             <p key={`${key}-${j}`}>{renderInline(ln, `${key}-${j}`, variant)}</p>
@@ -372,7 +369,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
                   <th
                     key={`${key}-h-${j}`}
                     className={cn(
-                      'px-3 py-1.5 text-eyebrow text-muted-foreground break-words',
+                      'px-3 py-2 text-eyebrow text-muted-foreground break-words',
                       alignClass(block.align[j]),
                     )}
                   >
@@ -387,10 +384,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
                   {row.map((cell, ci) => (
                     <td
                       key={`${key}-r-${ri}-c-${ci}`}
-                      className={cn(
-                        'px-3 py-1.5 align-top break-words',
-                        alignClass(block.align[ci]),
-                      )}
+                      className={cn('px-3 py-2 align-top break-words', alignClass(block.align[ci]))}
                     >
                       {renderInline(cell, `${key}-r-${ri}-c-${ci}`, variant)}
                     </td>
@@ -408,7 +402,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
       const label = ctxTagLabel({ tag: block.tag });
       if (variant === 'preview') {
         return (
-          <div key={key} className="flex min-w-0 items-center gap-1.5 text-body">
+          <div key={key} className="flex min-w-0 items-center gap-2 text-body">
             <span
               data-block="chip"
               data-tone={label}
@@ -430,7 +424,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
           data-block="callout"
           data-tone={label}
           data-color={style.tone}
-          className="relative flex flex-col gap-1.5 overflow-hidden rounded-md bg-subtle py-2.5 pl-3.5 pr-3"
+          className="relative flex flex-col gap-2 overflow-hidden rounded-md bg-subtle py-3 pl-4 pr-3"
         >
           <span
             aria-hidden
@@ -439,14 +433,14 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
           />
           <div
             data-block="callout-label"
-            className="inline-flex items-center gap-1.5 text-eyebrow text-muted-foreground"
+            className="inline-flex items-center gap-2 text-eyebrow text-muted-foreground"
           >
             <Icon size={11} aria-hidden className={style.iconClass} />
             {label}
           </div>
           <div
             data-block="callout-body"
-            className="flex flex-col gap-2 leading-relaxed text-foreground wrap-anywhere"
+            className="flex flex-col gap-2 text-prose text-foreground wrap-anywhere"
           >
             {block.blocks.map((child, ci) =>
               renderBlock({ block: child, id: `${key}-c${ci}`, variant, depth }),
@@ -463,14 +457,14 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
         <dl
           key={key}
           data-block="facts"
-          className="grid grid-cols-[minmax(6rem,max-content)_1fr] gap-x-5 gap-y-1.5"
+          className="grid grid-cols-[minmax(6rem,max-content)_1fr] gap-x-5 gap-y-2"
         >
           {block.entries.map((entry, ei) => (
             <Fragment key={`${key}-f${ei}`}>
               <dt className="pt-px leading-5">
                 <Eyebrow label={renderInline(entry.label, `${key}-f${ei}-l`, variant)} />
               </dt>
-              <dd className="min-w-0 leading-relaxed text-foreground wrap-anywhere">
+              <dd className="min-w-0 text-prose text-foreground wrap-anywhere">
                 {renderInline(entry.value, `${key}-f${ei}-v`, variant)}
                 {entry.hint !== null && (
                   <span className="text-muted-foreground">
@@ -498,17 +492,17 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
             <div
               key={`${key}-m${ei}`}
               data-block="metric"
-              className="flex min-w-0 flex-col gap-0.5 rounded-md border border-border-soft px-3 py-2.5"
+              className="flex min-w-0 flex-col gap-0.5 rounded-md border border-border-soft px-3 py-3"
             >
               <Eyebrow label={renderInline(entry.label, `${key}-m${ei}-l`, variant)} />
               <span
                 data-block="metric-value"
-                className="text-xl font-semibold leading-tight tracking-tight text-foreground tabular-nums wrap-anywhere"
+                className="text-display text-foreground tabular-nums wrap-anywhere"
               >
                 {renderInline(entry.value, `${key}-m${ei}-v`, variant)}
               </span>
               {entry.hint !== null && (
-                <span className="text-xs leading-snug text-muted-foreground">
+                <span className="text-label text-muted-foreground">
                   {renderInline(entry.hint, `${key}-m${ei}-h`, variant)}
                 </span>
               )}
@@ -527,17 +521,17 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
             <li
               key={`${key}-t${ei}`}
               data-block="timeline-entry"
-              className="relative grid grid-cols-[minmax(4.5rem,max-content)_1fr] gap-x-4 pb-1.5 pl-4 last:pb-0"
+              className="relative grid grid-cols-[minmax(4.5rem,max-content)_1fr] gap-x-4 pb-2 pl-4 last:pb-0"
             >
               <span
                 aria-hidden
                 data-block="timeline-dot"
                 className="absolute left-0 top-[0.55em] size-1.5 rounded-full bg-primary"
               />
-              <span className="font-mono text-[0.9em] leading-relaxed text-muted-foreground tabular-nums">
+              <span className="font-mono text-[0.9em] text-muted-foreground tabular-nums">
                 {renderInline(entry.label, `${key}-t${ei}-l`, variant)}
               </span>
-              <span className="min-w-0 leading-relaxed text-foreground wrap-anywhere">
+              <span className="min-w-0 text-prose text-foreground wrap-anywhere">
                 {renderInline(entry.value, `${key}-t${ei}-v`, variant)}
                 {entry.hint !== null && (
                   <span className="text-muted-foreground">
@@ -561,11 +555,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
       }
       return (
         <div key={key} data-block="compare" className="grid grid-cols-2 gap-4">
-          <div
-            data-block="compare-col"
-            data-side="before"
-            className="flex min-w-0 flex-col gap-1.5"
-          >
+          <div data-block="compare-col" data-side="before" className="flex min-w-0 flex-col gap-2">
             <Eyebrow label="Before" />
             <div className="flex flex-col gap-2">
               {block.before.map((child, ci) =>
@@ -573,7 +563,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
               )}
             </div>
           </div>
-          <div data-block="compare-col" data-side="after" className="flex min-w-0 flex-col gap-1.5">
+          <div data-block="compare-col" data-side="after" className="flex min-w-0 flex-col gap-2">
             <Eyebrow label="After" />
             <div className="flex flex-col gap-2">
               {block.after.map((child, ci) =>
@@ -590,7 +580,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
       }
       const max = Math.max(1, ...block.entries.map((entry) => barMagnitude(entry.value)));
       return (
-        <div key={key} data-block="bars" className="flex flex-col gap-2.5">
+        <div key={key} data-block="bars" className="flex flex-col gap-3">
           {block.entries.map((entry, ei) => {
             const width = Math.max(4, Math.round((barMagnitude(entry.value) / max) * 300));
             return (
@@ -609,7 +599,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
                   <rect data-block="bar-track" width="300" height="10" rx="3" />
                   <rect data-block="bar-fill" width={width} height="10" rx="3" />
                 </svg>
-                <span className="text-secondary text-muted-foreground">
+                <span className="text-meta text-muted-foreground">
                   {renderInline(entry.value, `${key}-ba${ei}-v`, variant)}
                   {entry.hint !== null && (
                     <>
@@ -642,7 +632,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
           key={key}
           data-block={block.isTree ? 'tree' : undefined}
           className={cn(
-            'leading-relaxed',
+            'text-prose',
             block.isTree && 'overflow-x-auto whitespace-pre-wrap font-mono',
             !block.isTree && 'wrap-anywhere',
           )}
@@ -672,7 +662,7 @@ const MarkdownImpl = ({ text, className, variant = 'document' }: MarkdownProps) 
   return (
     <div className={cn('flex flex-col gap-5 text-body text-foreground', className)}>
       {document.sections.map((section, si) => (
-        <div key={`s-${si}`} className="flex flex-col gap-2.5">
+        <div key={`s-${si}`} className="flex flex-col gap-3">
           {section.map((block, bi) =>
             renderBlock({ block, id: `b-${si}-${bi}`, variant, depth: 0 }),
           )}

@@ -18,16 +18,16 @@ export const BriefItems = ({
   removeLabel,
   onRemove,
 }: Props) => (
-  <div className="flex flex-col gap-1.5">
+  <div className="flex flex-col gap-2">
     <span className="text-label text-muted-foreground">{label}</span>
     {items.length === 0 ? (
-      <p className="text-secondary text-faint-foreground">{emptyLabel}</p>
+      <p className="text-meta text-faint-foreground">{emptyLabel}</p>
     ) : (
       <ul aria-label={label} className="flex flex-col gap-0.5">
         {items.map((item) => (
           <li
             key={item}
-            className="group flex min-w-0 items-start gap-1.5 rounded-md py-0.5 pl-2 pr-0.5 hover:bg-hover"
+            className="group flex min-w-0 items-start gap-2 rounded-md py-0.5 pl-2 pr-0.5 hover:bg-hover"
           >
             <span
               className={cn(

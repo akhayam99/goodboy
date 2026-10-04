@@ -85,7 +85,7 @@ export const FlowPanel = ({
             {agents?.byKind.map((entry) => (
               <div
                 key={entry.kind}
-                className="grid grid-cols-[1fr_auto_auto] items-center gap-4 rounded-md px-2 py-1.5 text-label"
+                className="grid grid-cols-[1fr_auto_auto] items-center gap-4 rounded-md px-2 py-2 text-label"
               >
                 <span className="capitalize text-foreground">{entry.kind}</span>
                 <span className="font-mono tabular-nums text-muted-foreground">

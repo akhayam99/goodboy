@@ -75,7 +75,7 @@ export const WorktreeRow = ({
         data-select-id={isSelectable ? folder.path : undefined}
         onContextMenu={menu.onContextMenu}
         className={cn(
-          'group group/select-row relative flex h-10 items-center gap-2.5 rounded-sm px-2 text-body hover:bg-hover',
+          'group group/select-row relative flex h-10 items-center gap-3 rounded-sm px-2 text-body hover:bg-hover',
           isRemoving && 'opacity-60',
         )}
       >
@@ -100,13 +100,13 @@ export const WorktreeRow = ({
           <Tooltip content={folder.path}>
             <span className="truncate text-code text-foreground">{title}</span>
           </Tooltip>
-          <span className="truncate text-secondary text-faint-foreground">
+          <span className="truncate text-meta text-faint-foreground">
             {folderWhyLine({ folder })}
             {note === null ? null : <span className="text-info"> · {note}</span>}
             {isRecent ? <span> · idle under {suggestAfterDays} days</span> : null}
           </span>
         </div>
-        <span className={cn(STORAGE_COLUMN.size, 'text-secondary text-foreground')}>
+        <span className={cn(STORAGE_COLUMN.size, 'text-meta text-foreground')}>
           {folder.sizeBytes === null ? (
             isMeasuring ? (
               <Skeleton className="ml-auto h-3 w-10" />
@@ -117,10 +117,10 @@ export const WorktreeRow = ({
             formatBytes({ bytes: folder.sizeBytes })
           )}
         </span>
-        <span className={cn(STORAGE_COLUMN.age, 'text-secondary text-muted-foreground')}>
+        <span className={cn(STORAGE_COLUMN.age, 'text-meta text-muted-foreground')}>
           {formatSpan({ from: lastChange, to: now })}
         </span>
-        <span className={cn(STORAGE_COLUMN.status, 'text-secondary', STATUS_TONE[status])}>
+        <span className={cn(STORAGE_COLUMN.status, 'text-meta', STATUS_TONE[status])}>
           {statusLabel}
         </span>
         <WorktreeRowActions

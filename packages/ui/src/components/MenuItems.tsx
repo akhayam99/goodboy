@@ -40,14 +40,14 @@ export const MenuItems = ({ items, onClose }: Props) => (
       }
       if (item.kind === 'header') {
         return (
-          <div key={item.key} className="px-2.5 pt-1.5 pb-0.5 text-eyebrow text-faint-foreground">
+          <div key={item.key} className="px-3 pt-2 pb-0.5 text-eyebrow text-faint-foreground">
             {item.label}
           </div>
         );
       }
       if (item.kind === 'empty') {
         return (
-          <div key={item.key} className="px-2.5 py-1.5 text-faint-foreground italic">
+          <div key={item.key} className="px-3 py-2 text-faint-foreground italic">
             {item.label}
           </div>
         );
@@ -68,8 +68,8 @@ export const MenuItems = ({ items, onClose }: Props) => (
             onClose();
           }}
           className={cn(
-            'flex w-full gap-2 px-2.5 text-left transition-colors focus-visible:outline-none focus-visible:bg-hover',
-            hasDescription ? 'items-start py-2' : 'items-center py-1.5',
+            'flex w-full gap-2 px-3 text-left transition-colors focus-visible:outline-none focus-visible:bg-hover',
+            hasDescription ? 'items-start py-2' : 'items-center py-2',
             item.disabled === true
               ? 'cursor-not-allowed text-muted-foreground'
               : item.destructive === true
@@ -91,13 +91,13 @@ export const MenuItems = ({ items, onClose }: Props) => (
           {hasDescription ? (
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="truncate font-medium">{item.label}</span>
-              <span className="text-secondary text-muted-foreground">{item.description}</span>
+              <span className="text-meta text-muted-foreground">{item.description}</span>
             </span>
           ) : (
             <span className="flex-1 truncate">{item.label}</span>
           )}
           {item.hint != null ? (
-            <kbd className="font-mono text-secondary text-faint-foreground">{item.hint}</kbd>
+            <kbd className="font-mono text-meta text-faint-foreground">{item.hint}</kbd>
           ) : null}
         </button>
       );

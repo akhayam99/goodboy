@@ -15,7 +15,7 @@ type Props = {
 };
 
 export const ChecklistBody = ({ progress }: Props) => (
-  <div className="flex flex-col gap-2.5">
+  <div className="flex flex-col gap-3">
     {GROUP_ORDER.map((group) => {
       const steps = ONBOARDING_STEPS.filter((step) => step.group === group);
       if (steps.length === 0) {
@@ -23,7 +23,7 @@ export const ChecklistBody = ({ progress }: Props) => (
       }
       return (
         <div key={group} className="flex flex-col gap-1">
-          <Eyebrow label={GROUP_LABEL[group]} muted className="px-1.5" />
+          <Eyebrow label={GROUP_LABEL[group]} muted className="px-2" />
           <ul className="flex flex-col gap-1">
             {steps.map((step) => (
               <StepRow

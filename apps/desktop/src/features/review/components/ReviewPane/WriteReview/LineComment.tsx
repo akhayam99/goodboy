@@ -75,7 +75,7 @@ export const LineComment = ({ sessionId, draft }: Props) => {
   return (
     <li className="group/line-comment flex min-w-0 list-none flex-col gap-2 rounded-lg bg-subtle px-4 py-3">
       <div className="flex min-w-0 items-center gap-2">
-        <span className="min-w-0 truncate font-mono text-secondary text-muted-foreground">
+        <span className="min-w-0 truncate font-mono text-meta text-muted-foreground">
           {draft.path}:{draft.line}
         </span>
         {draft.stale && <Chip tone="warning" size="3xs" label="Stale" title={STALE_HINT} />}
@@ -118,7 +118,7 @@ export const LineComment = ({ sessionId, draft }: Props) => {
       ) : (
         <Markdown text={draft.body} variant="preview" className="text-body text-foreground" />
       )}
-      {error !== null && <p className="text-secondary text-danger">{error}</p>}
+      {error !== null && <p className="text-meta text-danger">{error}</p>}
     </li>
   );
 };

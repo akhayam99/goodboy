@@ -6,7 +6,6 @@ export const TYPE_ROLES = [
   'body',
   'prose',
   'label',
-  'secondary',
   'chip',
   'eyebrow',
   'meta',

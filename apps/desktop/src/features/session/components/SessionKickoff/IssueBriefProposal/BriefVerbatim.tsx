@@ -20,12 +20,8 @@ export const BriefVerbatim = ({ source, verbatimGoal, onUseIssueText, onDismiss 
         </Button>
       }
     />
-    <ClampedProse
-      text={verbatimGoal}
-      lines={4}
-      className="text-xs leading-relaxed text-muted-foreground"
-    />
-    <p className="text-secondary text-faint-foreground">
+    <ClampedProse text={verbatimGoal} lines={4} className="text-label text-muted-foreground" />
+    <p className="text-meta text-faint-foreground">
       No model is free to write a brief, so this is the {source.noun} text as it is.
     </p>
     <FormActions>

@@ -73,7 +73,7 @@ export const HistoryNowList = ({
           className="grid min-h-12 grid-cols-[100px_48px_minmax(0,1fr)] items-center"
         >
           <span aria-hidden />
-          <span className="flex justify-end pr-2.5">
+          <span className="flex justify-end pr-3">
             {view === 'now' && onto !== null ? (
               <HistoryChangeMark
                 action="rebase"
@@ -84,7 +84,7 @@ export const HistoryNowList = ({
               </HistoryChangeMark>
             ) : null}
           </span>
-          <span className="flex min-w-0 items-center gap-2.5 px-2.5 text-label text-muted-foreground">
+          <span className="flex min-w-0 items-center gap-3 px-3 text-label text-muted-foreground">
             <span className="shrink-0">
               <span className="text-foreground">main</span> is here now
             </span>
@@ -112,7 +112,7 @@ export const HistoryNowList = ({
       >
         <span aria-hidden />
         <span aria-hidden />
-        <span className="flex min-w-0 items-center gap-2.5 px-2.5 text-label text-muted-foreground">
+        <span className="flex min-w-0 items-center gap-3 px-3 text-label text-muted-foreground">
           {isPlannedOnMain ? (
             <>
               <span className="shrink-0 text-foreground">Starts from today&apos;s main</span>
@@ -144,7 +144,7 @@ export const HistoryNowList = ({
             >
               <span aria-hidden />
               <span aria-hidden />
-              <span className="flex min-w-0 items-center gap-2.5 px-2.5 text-label text-faint-foreground">
+              <span className="flex min-w-0 items-center gap-3 px-3 text-label text-faint-foreground">
                 <span className="shrink-0 font-mono tabular-nums">{commit.sha.slice(0, 7)}</span>
                 <span className="min-w-0 truncate">{commit.subject}</span>
               </span>

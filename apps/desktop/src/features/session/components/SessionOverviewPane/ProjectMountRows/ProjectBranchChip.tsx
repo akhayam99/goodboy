@@ -15,10 +15,7 @@ type Props = {
 };
 
 const CHIP_CLASS = 'min-w-0 shrink gap-0 px-0';
-const FACE_CLASS = cn(
-  'inline-flex h-full min-w-0 items-center gap-1.5 rounded-md px-2',
-  FOCUS_RING,
-);
+const FACE_CLASS = cn('inline-flex h-full min-w-0 items-center gap-2 rounded-md px-2', FOCUS_RING);
 
 type NameParams = {
   readonly branch: string;

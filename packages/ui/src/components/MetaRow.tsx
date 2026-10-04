@@ -14,10 +14,7 @@ export const MetaRow = ({ items, className }: MetaRowProps) => {
 
   return (
     <span
-      className={cn(
-        'flex flex-wrap items-center gap-1.5 text-secondary text-muted-foreground',
-        className,
-      )}
+      className={cn('flex flex-wrap items-center gap-1 text-meta text-muted-foreground', className)}
     >
       {kept.map((item, index) => (
         <Fragment key={index}>

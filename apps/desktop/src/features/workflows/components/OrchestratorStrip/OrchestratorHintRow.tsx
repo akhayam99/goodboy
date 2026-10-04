@@ -47,7 +47,7 @@ export const OrchestratorHintRow = ({ hint, status, attachments, onRemove }: Pro
       data-testid="orchestrator-hint-row"
       data-status={status}
       className={cn(
-        'flex flex-wrap items-start gap-x-2 gap-y-1 rounded-md border bg-background px-2 py-1 text-secondary',
+        'flex flex-wrap items-start gap-x-2 gap-y-1 rounded-md border bg-background px-2 py-1 text-chip',
         ROW_CLASSES[status],
       )}
     >
@@ -63,11 +63,11 @@ export const OrchestratorHintRow = ({ hint, status, attachments, onRemove }: Pro
           <Markdown text={hint.text} className="text-body" />
         </div>
         {attachments.length > 0 || missing > 0 ? (
-          <ul aria-label="Hint files" className="flex flex-wrap gap-1.5">
+          <ul aria-label="Hint files" className="flex flex-wrap gap-2">
             {attachments.map((attachment) => (
               <li
                 key={attachment.id}
-                className="flex max-w-48 items-center gap-1 rounded-sm bg-subtle px-1.5 text-muted-foreground"
+                className="flex max-w-48 items-center gap-1 rounded-sm bg-subtle px-2 text-muted-foreground"
               >
                 <ImageIcon size={ICON_SIZE.row} aria-hidden />
                 <span className="truncate">{attachment.fileName}</span>
@@ -94,7 +94,7 @@ export const OrchestratorHintRow = ({ hint, status, attachments, onRemove }: Pro
       <span
         data-testid="orchestrator-hint-status"
         className={cn(
-          'flex shrink-0 items-center gap-1.5 tabular-nums leading-relaxed',
+          'flex shrink-0 items-center gap-2 tabular-nums leading-relaxed',
           STATUS_TEXT_CLASSES[status],
         )}
       >

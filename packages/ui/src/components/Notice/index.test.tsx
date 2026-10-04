@@ -62,7 +62,7 @@ describe('Notice', () => {
     expect(disclosure.getAttribute('aria-expanded')).toBe('true');
     const detail = screen.getByText('summarizer cli exited with code 143');
     expect(detail.tagName).toBe('PRE');
-    expect(detail.className).toContain('font-mono');
+    expect(detail.className).toContain('text-code');
   });
 
   it('renders no disclosure without detail', () => {

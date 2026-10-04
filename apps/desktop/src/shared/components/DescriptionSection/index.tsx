@@ -48,7 +48,7 @@ export const DescriptionSection = ({ text, onSave }: Props) => {
             aria-label="Edit description"
             onChange={(event) => edit.setDraft(event.target.value)}
             onKeyDown={edit.onKeyDown}
-            className="font-mono text-xs leading-relaxed"
+            className="font-mono text-label"
           />
           <div className="flex items-center justify-between gap-3">
             {edit.error != null ? (
@@ -56,7 +56,7 @@ export const DescriptionSection = ({ text, onSave }: Props) => {
                 {edit.error}
               </p>
             ) : (
-              <p className="text-secondary text-muted-foreground">Escape to cancel</p>
+              <p className="text-meta text-muted-foreground">Escape to cancel</p>
             )}
             <div className="flex shrink-0 items-center gap-2">
               <Button size="sm" variant="ghost" onClick={edit.cancel}>
@@ -85,9 +85,7 @@ export const DescriptionSection = ({ text, onSave }: Props) => {
       action={
         edit.canEdit ? (
           <div className="flex items-center gap-2">
-            {edit.isDirty ? (
-              <span className="text-secondary text-warning">Unsaved edits</span>
-            ) : null}
+            {edit.isDirty ? <span className="text-meta text-warning">Unsaved edits</span> : null}
             <Button size="sm" variant="ghost" onClick={edit.start}>
               <Pencil size={12} aria-hidden />
               Edit
@@ -113,7 +111,7 @@ export const DescriptionSection = ({ text, onSave }: Props) => {
         <button
           type="button"
           onClick={() => setIsExpanded((expanded) => !expanded)}
-          className="self-start text-secondary text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          className="self-start text-meta text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
         >
           {isExpanded ? 'Show less' : 'Show more'}
         </button>

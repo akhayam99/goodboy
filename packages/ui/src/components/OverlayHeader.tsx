@@ -42,7 +42,7 @@ export const OverlayHeader = ({
         <div className="flex min-w-0 flex-col">
           <span className="text-heading text-foreground">{title}</span>
           {subtitle != null ? (
-            <span className="truncate text-secondary text-muted-foreground">{subtitle}</span>
+            <span className="truncate text-meta text-muted-foreground">{subtitle}</span>
           ) : null}
         </div>
         <div className="flex-1" />
@@ -63,15 +63,15 @@ export const OverlayHeader = ({
   return (
     <header
       aria-label={title}
-      className={cn('flex shrink-0 items-center gap-1.5 px-3', heightClassName)}
+      className={cn('flex shrink-0 items-center gap-2 px-3', heightClassName)}
     >
       {glyph ??
         (Icon != null ? (
           <Icon size={12} className={cn('shrink-0', tintClasses(tone).icon)} aria-hidden />
         ) : null)}
-      <span className="shrink-0 text-secondary font-semibold text-foreground">{title}</span>
+      <span className="shrink-0 text-meta font-semibold text-foreground">{title}</span>
       {subtitle != null && subtitle !== '' ? (
-        <span className="truncate text-secondary text-muted-foreground">{subtitle}</span>
+        <span className="truncate text-meta text-muted-foreground">{subtitle}</span>
       ) : null}
       <div className="flex-1" />
       {children}

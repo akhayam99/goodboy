@@ -163,7 +163,7 @@ export const JiraConnectSteps = ({ workspaceId, shouldAutoFocus = false, onConne
       help: 'Goodboy lists its issues as tasks.',
       status: lookup === null ? 'later' : 'current',
       content: (
-        <div className="flex min-w-0 flex-col gap-1.5">
+        <div className="flex min-w-0 flex-col gap-2">
           <Listbox
             ariaLabel="Jira project"
             placeholder={

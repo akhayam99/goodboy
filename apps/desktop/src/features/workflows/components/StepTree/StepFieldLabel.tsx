@@ -13,11 +13,11 @@ type Props = {
 };
 
 const LINK_CLASS =
-  'inline-flex items-center gap-1 rounded-sm px-1 text-secondary text-faint-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex items-center gap-1 rounded-sm px-1 text-meta text-faint-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50';
 
 export const StepFieldLabel = ({ htmlFor, label, hint, polish, isPolishable, disabled }: Props) => (
   <div className="flex min-h-5 items-center justify-between gap-2">
-    <label htmlFor={htmlFor} className="min-w-0 truncate text-secondary text-muted-foreground">
+    <label htmlFor={htmlFor} className="min-w-0 truncate text-meta text-muted-foreground">
       {label}
       {hint === undefined ? null : <span className="text-faint-foreground">{` · ${hint}`}</span>}
     </label>

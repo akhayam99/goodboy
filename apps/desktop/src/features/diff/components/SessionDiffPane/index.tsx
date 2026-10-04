@@ -183,7 +183,7 @@ export const SessionDiffPane = ({
     isRequestMerged,
   });
   const meta = (
-    <span className="flex flex-wrap items-center gap-1.5">
+    <span className="flex flex-wrap items-center gap-2">
       {mountName !== null ? <span>{mountName}</span> : null}
       {ahead !== null ? (
         <>
@@ -252,7 +252,7 @@ export const SessionDiffPane = ({
         loading={diff.loading}
       />
       {diff.loading || diff.error !== null ? null : (
-        <span className="flex items-center gap-1.5 text-secondary tabular-nums text-muted-foreground">
+        <span className="flex items-center gap-1 text-meta tabular-nums text-muted-foreground">
           <span>
             {diff.files.length} {diff.files.length === 1 ? 'file' : 'files'}
           </span>
@@ -287,12 +287,12 @@ export const SessionDiffPane = ({
         />
       ) : null}
       {rebase.error !== null ? (
-        <p role="alert" className="text-secondary text-danger" title={rebase.error}>
+        <p role="alert" className="text-meta text-danger" title={rebase.error}>
           {rebase.error}
         </p>
       ) : null}
       {diff.metaError !== null ? (
-        <p role="status" className="text-secondary text-muted-foreground" title={diff.metaError}>
+        <p role="status" className="text-meta text-muted-foreground" title={diff.metaError}>
           Couldn't read this branch's commits.
         </p>
       ) : null}
@@ -302,7 +302,7 @@ export const SessionDiffPane = ({
   const body = diff.loading ? (
     <PageColumn className="flex flex-col gap-3">
       {[0, 1].map((index) => (
-        <div key={index} className="flex flex-col gap-1.5">
+        <div key={index} className="flex flex-col gap-2">
           <Skeleton className="h-9 w-full rounded-md" />
           <Skeleton className="h-3 w-3/4 rounded-sm" />
           <Skeleton className="h-3 w-1/2 rounded-sm" />

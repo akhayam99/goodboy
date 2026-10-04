@@ -18,7 +18,7 @@ const spanOf = ({ index }: { readonly index: number }): StepLaneSpan => {
 export const StepTreeSkeleton = ({ identityIndex }: Props) => (
   <ol role="status" aria-label="Drafting plan" className="flex flex-col">
     {Array.from({ length: SKELETON_ROWS }).map((_, index) => (
-      <li key={index} className="flex min-w-0 gap-1.5">
+      <li key={index} className="flex min-w-0 gap-2">
         <StepTreeGutter
           span={spanOf({ index })}
           identityIndex={identityIndex}
@@ -30,7 +30,7 @@ export const StepTreeSkeleton = ({ identityIndex }: Props) => (
             />
           }
         />
-        <span className="flex h-8 min-w-0 flex-1 items-center gap-2.5 pl-2">
+        <span className="flex h-8 min-w-0 flex-1 items-center gap-3 pl-2">
           <Skeleton className="h-4 w-24 rounded-sm" />
           <Skeleton className="h-3 flex-1 rounded-sm" />
         </span>

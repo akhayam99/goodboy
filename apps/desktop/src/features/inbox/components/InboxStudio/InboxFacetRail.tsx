@@ -197,7 +197,7 @@ export const InboxFacetRail = ({
         <button
           type="button"
           onClick={onClearFilters}
-          className="self-start rounded-md px-2 py-1 text-secondary text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          className="self-start rounded-md px-2 py-1 text-chip text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
           Clear filters
         </button>

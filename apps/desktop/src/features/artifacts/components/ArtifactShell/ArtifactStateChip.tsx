@@ -27,7 +27,7 @@ export const ArtifactStateChip = ({ state }: Props) => {
       {state.detail === null ? null : (
         <span
           data-testid="artifact-state-detail"
-          className="shrink-0 text-secondary text-faint-foreground"
+          className="shrink-0 text-meta text-faint-foreground"
         >
           {state.detail}
         </span>

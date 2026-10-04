@@ -65,7 +65,7 @@ export class ErrorBoundary extends Component<Props, ErrorBoundaryState> {
             dangerTint.border,
           )}
         >
-          <h1 className="text-base font-semibold tracking-tight">Something went wrong</h1>
+          <h1 className="text-title">Something went wrong</h1>
           <p className="text-body text-muted-foreground">
             Goodboy hit a runtime error and stopped rendering. Your data is safe: sessions, agents,
             and providers are all persisted to disk. Retry first, and reload only if the screen
@@ -80,14 +80,14 @@ export class ErrorBoundary extends Component<Props, ErrorBoundaryState> {
             <button
               type="button"
               onClick={this.reset}
-              className="rounded-sm bg-primary px-3 py-1.5 text-label font-semibold text-on-tone hover:opacity-90"
+              className="rounded-sm bg-primary px-3 py-2 text-label font-semibold text-on-tone hover:opacity-90"
             >
               Retry
             </button>
             <button
               type="button"
               onClick={this.reload}
-              className="rounded-sm border border-border px-3 py-1.5 text-label font-semibold text-foreground hover:bg-hover"
+              className="rounded-sm border border-border px-3 py-2 text-label font-semibold text-foreground hover:bg-hover"
             >
               Reload
             </button>

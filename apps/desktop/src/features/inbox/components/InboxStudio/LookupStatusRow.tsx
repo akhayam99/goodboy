@@ -23,7 +23,7 @@ export const LookupStatusRow = ({ status, retryAt, onAction }: Props) => {
   const text =
     secondsLeft === null ? status.text : `${status.text} Trying again in ${secondsLeft}s.`;
   return (
-    <div className="flex min-h-8 items-center gap-2.5 px-2.5 text-label">
+    <div className="flex min-h-8 items-center gap-3 px-3 text-label">
       <Icon
         size={ICON_SIZE.row}
         aria-hidden

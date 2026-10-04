@@ -25,10 +25,10 @@ const HistoryEntry = ({
 }: HistoryEntryProps) => {
   const now = useNow(30_000);
   return (
-    <li className="flex flex-col gap-1.5 rounded-md border border-border-soft bg-elevated p-3">
+    <li className="flex flex-col gap-2 rounded-md border border-border-soft bg-elevated p-3">
       <div className="flex items-center gap-2">
         <AuthorshipChip byUser={entry.author === 'user'} />
-        <span className="text-secondary text-muted-foreground">
+        <span className="text-meta text-muted-foreground">
           {formatAge({ from: entry.createdAt, now })}
         </span>
         <div className="ml-auto flex items-center gap-1">
@@ -43,7 +43,7 @@ const HistoryEntry = ({
             onClick={() => onRestore(entry)}
             title="Restore this version"
             aria-label="Restore this version"
-            className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-secondary text-muted-foreground hover:bg-hover hover:text-foreground"
+            className="flex items-center gap-1 rounded-sm px-2 py-0.5 text-chip text-muted-foreground hover:bg-hover hover:text-foreground"
           >
             <RotateCcw size={10} aria-hidden />
             restore
@@ -58,7 +58,7 @@ const HistoryEntry = ({
         aria-label={expanded ? 'Collapse entry' : 'Expand entry'}
       >
         {expanded ? (
-          <div className="rounded-sm text-xs leading-relaxed text-foreground">
+          <div className="rounded-sm text-label text-foreground">
             {renderAsMarkdown ? (
               <Markdown text={entry.value} className="text-label" />
             ) : (
@@ -66,11 +66,11 @@ const HistoryEntry = ({
             )}
           </div>
         ) : renderAsMarkdown ? (
-          <div className="text-xs leading-relaxed text-foreground line-clamp-3">
+          <div className="text-label text-foreground line-clamp-3">
             <Markdown text={entry.value} className="text-label" />
           </div>
         ) : (
-          <p className="whitespace-pre-wrap text-xs leading-relaxed text-foreground line-clamp-3">
+          <p className="whitespace-pre-wrap text-label text-foreground line-clamp-3">
             {entry.value}
           </p>
         )}

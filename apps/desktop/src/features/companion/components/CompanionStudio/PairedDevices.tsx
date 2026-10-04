@@ -17,15 +17,15 @@ export const PairedDevices = ({ enrolled, revoking, onRevoke, onPairAnother }: P
     <div className="flex w-full flex-col items-center gap-3">
       <span
         className={cn(
-          'inline-flex items-center gap-1.5 rounded-full',
+          'inline-flex items-center gap-1 rounded-full',
           tintClasses('success').bg,
-          'px-2.5 py-0.5 text-secondary font-semibold text-success',
+          'px-3 py-0.5 text-meta font-semibold text-success',
         )}
       >
         <span aria-hidden className="size-1.5 rounded-full bg-success" />
         {enrolled} paired {enrolled === 1 ? 'device' : 'devices'}
       </span>
-      <p className="max-w-[18rem] text-center text-secondary text-muted-foreground">
+      <p className="max-w-[18rem] text-center text-meta text-muted-foreground">
         A paired phone can send messages, start agents and workflows, and merge pull requests.
       </p>
       {isConfirming ? (

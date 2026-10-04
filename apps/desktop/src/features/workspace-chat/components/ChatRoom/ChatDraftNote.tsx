@@ -11,7 +11,7 @@ type Props = {
 export const ChatDraftNote = ({ draft, onOpen }: Props) => (
   <div
     role="status"
-    className="flex min-w-0 flex-col gap-1.5 rounded-lg bg-subtle px-2.5 py-1.5 text-label text-muted-foreground"
+    className="flex min-w-0 flex-col gap-2 rounded-lg bg-subtle px-3 py-2 text-label text-muted-foreground"
   >
     <span className="flex min-w-0 items-center gap-2">
       <CONCEPT_ICONS.chat size={ICON_SIZE.row} aria-hidden className="shrink-0" />

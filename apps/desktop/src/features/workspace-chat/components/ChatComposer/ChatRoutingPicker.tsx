@@ -66,7 +66,7 @@ export const ChatRoutingPicker = ({ workspaceId, routing, onChange }: Props) => 
       }}
       onModel={draft.setModelId}
       footer={
-        <div className="flex flex-col gap-1 px-3 py-2 text-secondary text-muted-foreground">
+        <div className="flex flex-col gap-1 px-3 py-2 text-meta text-muted-foreground">
           {refused.length === 0 ? null : (
             <p>
               {refusedLabels} can&apos;t chat. {CHAT_PROVIDER_REFUSAL}.

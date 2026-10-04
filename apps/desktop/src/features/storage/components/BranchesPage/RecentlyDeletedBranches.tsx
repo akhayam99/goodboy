@@ -79,17 +79,15 @@ export const RecentlyDeletedBranches = ({ scope }: Props) => {
             )}
           />
           <span className="text-row text-foreground">Recently deleted</span>
-          <span className="text-secondary tabular-nums text-muted-foreground">
-            {entries.length}
-          </span>
-          <span className="text-secondary text-faint-foreground">
+          <span className="text-meta tabular-nums text-muted-foreground">{entries.length}</span>
+          <span className="text-meta text-faint-foreground">
             Restorable for {DELETED_BRANCH_KEEP_DAYS} days
           </span>
         </button>
         {isOpen ? (
           <div id={bodyId} className="flex flex-col gap-1 pb-1">
             {entries.length === 0 ? (
-              <p className="px-2 py-1.5 text-label text-muted-foreground">
+              <p className="px-2 py-2 text-label text-muted-foreground">
                 Nothing deleted in the last {DELETED_BRANCH_KEEP_DAYS} days.
               </p>
             ) : (
@@ -110,7 +108,7 @@ export const RecentlyDeletedBranches = ({ scope }: Props) => {
                 ))}
               </ul>
             )}
-            <p className="px-2 text-secondary text-faint-foreground">
+            <p className="px-2 text-meta text-faint-foreground">
               Expired ones are released when you open this page.
             </p>
           </div>

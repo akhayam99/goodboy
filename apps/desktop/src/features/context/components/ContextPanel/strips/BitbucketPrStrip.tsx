@@ -42,12 +42,12 @@ export const BitbucketPrStrip = ({ sessionId, onOpenStudio }: Props) => {
               <span className="inline-flex items-center gap-1 font-medium">
                 <GitPullRequest size={11} aria-hidden />#{pullRequest.id}
               </span>
-              <span className="text-secondary text-muted-foreground">
+              <span className="text-meta text-muted-foreground">
                 {pullRequest.state.toLowerCase()}
               </span>
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-2">
               <GitPullRequest size={ICON_SIZE.row} aria-hidden />
               <span>No pull request yet</span>
             </span>
@@ -64,7 +64,7 @@ export const BitbucketPrStrip = ({ sessionId, onOpenStudio }: Props) => {
         />
       </div>
       {error != null && (
-        <span className="px-1 text-secondary text-danger" title={error}>
+        <span className="px-1 text-meta text-danger" title={error}>
           {error}
         </span>
       )}

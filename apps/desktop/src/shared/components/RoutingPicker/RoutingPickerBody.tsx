@@ -37,7 +37,7 @@ import { resolveRouting, type Recommendation } from './resolveRouting';
 import { selectionForModel } from './selectionForModel';
 import { useCursorMaxModeModels } from './useCursorMaxModeModels';
 
-const CHIP_GROUP_CLASS_NAME = 'flex flex-wrap gap-1 bg-subtle px-2.5';
+const CHIP_GROUP_CLASS_NAME = 'flex flex-wrap gap-1 bg-subtle px-3';
 
 type PickProviderParams = {
   readonly next: ProviderId | '';
@@ -257,7 +257,7 @@ export const RoutingPickerBody = ({
   return (
     <>
       {defaultSummary != null && (
-        <div className="flex items-start gap-1.5 px-2.5 py-2 text-2xs leading-relaxed">
+        <div className="flex items-start gap-1 px-3 py-2 text-meta">
           <span className={cn('flex-1', isOverridden ? 'text-warning' : 'text-muted-foreground')}>
             {isOverridden ? 'Overriding default' : 'Using default'} ·{' '}
             {isOverridden ? (summary ?? defaultSummary) : defaultSummary}
@@ -359,7 +359,7 @@ export const RoutingPickerBody = ({
         <p
           role="note"
           className={cn(
-            'px-2.5 pb-1.5 text-secondary',
+            'px-3 pb-1 text-meta',
             standingNote.standing === 'at-limit'
               ? tintClasses('warning').text
               : 'text-muted-foreground',

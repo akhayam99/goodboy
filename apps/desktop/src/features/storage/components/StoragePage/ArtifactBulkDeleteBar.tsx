@@ -52,19 +52,17 @@ export const ArtifactBulkDeleteBar = ({
   if (selected.size === 0) {
     if (suggested.length === 0) {
       return (
-        <p className="px-2 text-secondary text-faint-foreground">
-          Nothing unused to delete. {rule}
-        </p>
+        <p className="px-2 text-meta text-faint-foreground">Nothing unused to delete. {rule}</p>
       );
     }
     return (
-      <div className="flex flex-wrap items-center gap-3 px-2 py-1.5">
+      <div className="flex flex-wrap items-center gap-3 px-2 py-2">
         <Button variant="secondary" size="sm" onClick={onStart}>
           <Trash2 size={ICON_SIZE.row} aria-hidden />
           Delete {suggested.length} unused {storageScopeLabel({ workspaceName: null })} ·{' '}
           {formatBytes({ bytes: bytesOf({ artifacts: suggested }) })}
         </Button>
-        <span className="text-secondary text-faint-foreground">
+        <span className="text-meta text-faint-foreground">
           {rule} Deleting removes the copy on disk and the record in Goodboy.
         </span>
       </div>

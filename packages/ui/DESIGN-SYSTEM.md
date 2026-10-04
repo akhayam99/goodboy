@@ -117,21 +117,20 @@ only, so emphasis gets a synthetic slant. The boot shell in
 `apps/desktop/index.html` stays on `system-ui`, because it paints before the
 stylesheet loads, and the exported report embeds the same file as a data URI.
 
-| role             | measure                       | used for                                                                               |
-| ---------------- | ----------------------------- | -------------------------------------------------------------------------------------- |
-| `text-display`   | 24/32, 600, -0.01em           | onboarding titles, the `EmptyState` hero, the Impact title                             |
-| `text-title`     | 16/24, 600, -0.005em          | the one pane title (h1) of a surface                                                   |
-| `text-heading`   | 14/20, 600                    | a page-grade section, a popover title, a kickoff question                              |
-| `text-row`       | 13/20, 500                    | a top-level row label, a card title                                                    |
-| `text-body`      | 14/20                         | running text; text with no class inherits it from the body                             |
-| `text-prose`     | 14/22                         | messages, markdown, artifacts                                                          |
-| `text-label`     | 12/16                         | controls, a nested row, a status label                                                 |
-| `text-secondary` | 11/16                         | a secondary line, a chip, an option description                                        |
-| `text-eyebrow`   | 11/16, 600, 0.08em, uppercase | a section label, only through `Eyebrow`                                                |
-| `text-meta`      | 12/16, tabular                | time, ordinal, cost, count, a row's second line                                        |
-| `text-chip`      | 11/16, 500, tabular           | the label inside a chip, a badge, a key cap, a count pill                              |
-| `text-code`      | mono 12/18                    | branch, path, command, inline code                                                     |
-| `document`       | 15/25                         | the report document body (screen and file); a reading exception, not a `--text-*` role |
+| role           | measure                       | used for                                                                               |
+| -------------- | ----------------------------- | -------------------------------------------------------------------------------------- |
+| `text-display` | 24/32, 600, -0.01em           | onboarding titles, the `EmptyState` hero, the Impact title                             |
+| `text-title`   | 16/24, 600, -0.005em          | the one pane title (h1) of a surface                                                   |
+| `text-heading` | 14/20, 600                    | a page-grade section, a popover title, a kickoff question                              |
+| `text-row`     | 13/20, 500                    | a top-level row label, a card title                                                    |
+| `text-body`    | 14/20                         | running text; text with no class inherits it from the body                             |
+| `text-prose`   | 14/22                         | messages, markdown, artifacts                                                          |
+| `text-label`   | 12/16                         | controls, a nested row, a status label                                                 |
+| `text-eyebrow` | 11/16, 600, 0.08em, uppercase | a section label, only through `Eyebrow`                                                |
+| `text-meta`    | 12/16, tabular                | time, ordinal, cost, count, a row's second line                                        |
+| `text-chip`    | 11/16, 500, tabular           | the label inside a chip, a badge, a key cap, a count pill                              |
+| `text-code`    | mono 12/18                    | branch, path, command, inline code                                                     |
+| `document`     | 15/25                         | the report document body (screen and file); a reading exception, not a `--text-*` role |
 
 `document` is the one exception to "a role, never a size": it lives in
 `artifactDocument.css`'s own `--print-*` tokens, not `typeRoles.ts`, because
@@ -140,28 +139,28 @@ medium shrinks every one of its tokens under `@media print`. It never appears
 outside `ArtifactDocument`.
 
 A role with no weight inherits one: `text-label font-medium` is a control label
-at 500, `text-secondary font-medium` a chip. Weights are 400, 500 and 600, and
+at 500, `text-chip` a chip. Weights are 400, 500 and 600, and
 600 belongs to display, title, heading and eyebrow. `text-row` and `text-chip`
 carry 500 themselves, so a weight utility next to a role is redundant, and
 `forbidden-patterns.test.ts` counts it (`role-weight-override`). Tracking lives only inside
 the roles. A leading utility still composes with a role
-(`text-secondary leading-none` for a one-line badge), because the role reads
+(`text-chip leading-none` for a one-line badge), because the role reads
 the leading before its own line box.
 
-The raw grades stay defined, each on a whole-pixel line box: `3xs` 10/14, `2xs`
-11/16, `xs` 12/16, `sm` 14/20, `base` 15/24, `lg` 17/24, `xl` 20/28, `2xl`
-24/32. New code does not reach for them. `forbidden-patterns.test.ts` counts
-raw sizes, weights, leadings and tracking per file, and the count only goes
-down. `scripts/codemods/type-roles.mjs` (`pnpm codemod:type-roles`) rewrites
-the combinations that map one to one (`text-sm font-medium` to `text-row`,
-`text-3xs` to `text-chip`, `text-sm leading-relaxed` to `text-prose`); the rest
-moves by hand, area by area. Arbitrary sizes are covered by
+The raw grades (`3xs` to `2xl`) stay defined as theme tokens, each on a
+whole-pixel line box, but no class reaches for them: `no-token-bypass.test.ts`
+fails on any `text-xs`, `text-sm`, `text-lg` and the rest, and
+`forbidden-patterns.test.ts` counts raw weights, leadings and tracking per file,
+where the count only goes down. `scripts/codemods/type-roles.mjs`
+(`pnpm codemod:type-roles`) rewrites the combinations that map one to one
+(`text-sm font-medium` to `text-row`, `text-3xs` to `text-chip`,
+`text-sm leading-relaxed` to `text-prose`). Arbitrary sizes are covered by
 [docs/styling.md](../../docs/styling.md).
 
 Spacing sits on a 4px grid: `1`, `2`, `3`, `4`, `6`, `8` (4, 8, 12, 16, 24, 32px).
 A half step (`py-1.5`, `gap-2.5`, `px-3.5`) is out, and `0.5` stays only for a
-hairline. `forbidden-patterns.test.ts` counts half steps per file
-(`half-step-spacing`) and the count only goes down. `spacing-grid.test.ts`
+hairline. `half-step-spacing` in `forbidden-patterns.test.ts` allows none, and
+no baseline lists it. `spacing-grid.test.ts`
 reads `paneRhythm.ts`, `timelineRhythm.ts` and `workMetaSpec.ts` and fails on a
 half step, or on a row height outside 24, 28, 32, 36, 40 and 48. A one-line rail
 row is `navRail.row` (32px), a two-line one `navRail.rowTwo` (48px).
@@ -847,7 +846,7 @@ never differ ([docs/navigation.md](../../docs/navigation.md#context-menus)).
   at the pointer and flips left or up to stay 8px inside the window
   (`placeContextMenu`).
 - **Row**: a 16px leading slot for the icon, the label, the shortcut glyphs on
-  the right in `text-secondary text-faint-foreground`, and a chevron when the
+  the right in `text-meta text-faint-foreground`, and a chevron when the
   row opens a submenu. Groups are split by a hairline, never by headers. A
   blocked row stays in `disabled-foreground` with its reason on a second faint
   line, is `aria-disabled`, and keeps focus so the reason can be read. Only a
@@ -919,7 +918,7 @@ app below it has crashed.
   `Textarea` under it. ⌘↵ anywhere in the sheet submits.
 - **Match**: an open issue that matches the line sits in a `fill` row with
   Add mine there.
-- **Attachments**: one `rounded-full` `fill` chip per part, `text-secondary`,
+- **Attachments**: one `rounded-full` `fill` chip per part, `text-chip`,
   a 12px glyph and a × with a tooltip. A removed part stays as a dashed chip,
   struck through, that puts it back. The error chip carries the danger ring.
 - **What gets sent**: a disclosure row (chevron, shield in success, the
@@ -927,7 +926,7 @@ app below it has crashed.
   `ScrollFade` of `text-code`, a copy button, and the line that says what never
   leaves.
 - **Action row**: `FormActions`, with the destination or the error in
-  `text-secondary` on the left, Add detail while the detail is closed, and the
+  `text-meta` on the left, Add detail while the detail is closed, and the
   primary button whose label names the destination, with its shortcut in an
   on-tone pill.
 
@@ -1326,7 +1325,7 @@ conversation is the wrapped sheet, and "Turn into work" is the
 `DrawerColumn` drawer beside it, never a dialog.
 
 - **List rows** are `InteractiveRow`s: title `text-label`, the last answer
-  as a `text-secondary` snippet, time as `text-meta` on the right. Pin and
+  as a `text-meta` snippet, time as `text-meta` on the right. Pin and
   Archive are ghost `IconButton`s that replace the time on hover. Groups are
   `Eyebrow` headings (Pinned, Today, This week, Idle). An idle row keeps its
   shape and only drops a text step (`faint` title, `disabled` snippet); a
@@ -1341,10 +1340,10 @@ conversation is the wrapped sheet, and "Turn into work" is the
   (a quiet
   disclosure listing paths in `text-code`), then one `h-7` row. Copy
   (`CopyButton` with `tone="faint"`) and "Start work from here" sit on the
-  left, quiet `text-secondary` actions that show on hover or keyboard focus of
+  left, quiet `text-meta` actions that show on hover or keyboard focus of
   the answer (`group/answer`, `opacity-0` at rest so the row never shifts);
   the model and effort that wrote the answer sit on the right as faint
-  `text-secondary` text, always visible. A saved session link is a
+  `text-meta` text, always visible. A saved session link is a
   `bg-subtle` note in the thread under the answer it came from. A streaming
   answer with no text yet shows a pulsing `StatusDot` and "Reading {workspace}",
   never a spinner.

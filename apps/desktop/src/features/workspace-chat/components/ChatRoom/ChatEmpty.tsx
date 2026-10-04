@@ -35,13 +35,13 @@ export const ChatEmpty = ({ workspaceName, projectNames, suggestions, onAsk }: P
       </p>
     </div>
     {projectNames.length === 0 ? null : (
-      <ul aria-label="Suggested questions" className="flex w-full flex-col gap-1.5">
+      <ul aria-label="Suggested questions" className="flex w-full flex-col gap-2">
         {suggestions.map((suggestion) => (
           <li key={suggestion}>
             <button
               type="button"
               onClick={() => onAsk(suggestion)}
-              className="group flex w-full items-center gap-2 rounded-lg border border-border-soft bg-subtle px-2.5 py-2 text-left text-label text-foreground motion-safe:transition-colors hover:border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              className="group flex w-full items-center gap-2 rounded-lg border border-border-soft bg-subtle px-3 py-2 text-left text-label text-foreground motion-safe:transition-colors hover:border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             >
               <ChatIcon
                 size={ICON_SIZE.row}

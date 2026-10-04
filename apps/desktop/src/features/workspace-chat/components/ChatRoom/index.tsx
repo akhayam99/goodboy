@@ -207,8 +207,8 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
           drafts={drafts}
         />
       )}
-      <div className="shrink-0 pb-3.5 pt-1.5">
-        <PageColumn className="flex flex-col gap-1.5">
+      <div className="shrink-0 pb-4 pt-2">
+        <PageColumn className="flex flex-col gap-2">
           {chat === null || chat.archivedAt === null ? null : (
             <ChatArchivedBanner
               onRestore={() => void restoreChats({ workspaceId, chatIds: [chat.id] })}

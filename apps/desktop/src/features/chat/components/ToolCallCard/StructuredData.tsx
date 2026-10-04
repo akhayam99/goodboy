@@ -48,10 +48,7 @@ export const StructuredData = ({ data, depth = 0, label, hasImages = false }: Pr
       return (
         <span className="flex flex-wrap gap-1">
           {data.map((v, i) => (
-            <span
-              key={i}
-              className="inline-block rounded-md bg-muted px-1.5 py-0.5 text-foreground"
-            >
+            <span key={i} className="inline-block rounded-md bg-muted px-2 py-0.5 text-foreground">
               <StructuredData data={v} depth={depth + 1} hasImages={hasImages} />
             </span>
           ))}

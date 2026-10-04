@@ -42,7 +42,7 @@ export const TranscriptShell = ({
     variant === 'leftBorder' &&
       (hasRail ? 'rounded-r-md border-l-2 py-1 pl-2 pr-2' : 'py-1 pl-2 pr-2'),
     variant === 'leftBorder' && hasRail && accent.border,
-    variant === 'pill' && 'rounded-full border px-2.5 py-1',
+    variant === 'pill' && 'rounded-full border px-3 py-1',
     variant === 'pill' && accent.border,
     variant === 'pill' && accent.bg,
     className,

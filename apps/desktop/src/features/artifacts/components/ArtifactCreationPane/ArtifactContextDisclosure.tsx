@@ -38,10 +38,7 @@ export const ArtifactContextDisclosure = ({
     trigger={
       <span className="flex min-w-0 items-baseline gap-2">
         <Eyebrow label="Included context" />
-        <span
-          className="text-secondary text-faint-foreground"
-          data-testid="artifact-context-summary"
-        >
+        <span className="text-meta text-faint-foreground" data-testid="artifact-context-summary">
           {triggerSummary({ rows, isCollecting })}
         </span>
       </span>
@@ -57,13 +54,13 @@ export const ArtifactContextDisclosure = ({
         <div className="flex min-w-0 flex-col gap-0.5">
           <Eyebrow label="Cut short" />
           {truncations.map((note) => (
-            <span key={note} className="text-2xs leading-relaxed text-faint-foreground">
+            <span key={note} className="text-meta leading-relaxed text-faint-foreground">
               {note}
             </span>
           ))}
         </div>
       )}
-      <span className="text-secondary text-faint-foreground">
+      <span className="text-meta text-faint-foreground">
         collected when this pane opened. Generate collects again.
       </span>
     </div>

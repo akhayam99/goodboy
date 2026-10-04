@@ -97,7 +97,7 @@ export const InboxList = ({
       {isShowingSkeleton ? (
         <div className="flex flex-col gap-0.5" role="status" aria-label="Loading the inbox">
           {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="flex h-8 items-center gap-2.5 px-2.5">
+            <div key={index} className="flex h-8 items-center gap-3 px-3">
               <Skeleton className="size-3.5 shrink-0 rounded-full" />
               <Skeleton className="h-3 w-16 shrink-0 rounded-sm" />
               <Skeleton className="h-3 flex-1 rounded-sm" />
@@ -154,9 +154,9 @@ export const InboxList = ({
         >
           {days.map((day) => (
             <li key={day.day} role="presentation" className="flex flex-col gap-0.5">
-              <div role="presentation" className="flex items-baseline gap-1.5 px-2.5 pb-1">
+              <div role="presentation" className="flex items-baseline gap-2 px-3 pb-1">
                 <Eyebrow label={day.label} />
-                <span className="text-secondary tabular-nums text-faint-foreground">
+                <span className="text-meta tabular-nums text-faint-foreground">
                   {day.items.length}
                 </span>
               </div>

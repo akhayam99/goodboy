@@ -70,7 +70,7 @@ export const TermHint = ({ children, term, definition, action, className }: Term
       }
     >
       <span className="text-label font-medium text-foreground">{term}</span>
-      <span className="text-xs leading-relaxed text-muted-foreground">{definition}</span>
+      <span className="text-label text-muted-foreground">{definition}</span>
       {action === undefined ? null : (
         <button
           type="button"

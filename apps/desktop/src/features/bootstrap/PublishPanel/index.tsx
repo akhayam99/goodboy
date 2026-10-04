@@ -135,7 +135,7 @@ export const PublishPanel = ({
               <p className="text-label text-muted-foreground">
                 Connected as {owner ?? 'your GitHub account'}
               </p>
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-2">
                 <label htmlFor={nameId} className="text-label text-foreground">
                   Repository name
                 </label>
@@ -147,12 +147,12 @@ export const PublishPanel = ({
                   onChange={(event) => setRepoName(event.target.value)}
                 />
                 {nameCheck.kind === 'invalid' && repoName.trim() !== '' ? (
-                  <span role="alert" className="text-secondary text-danger">
+                  <span role="alert" className="text-meta text-danger">
                     {nameCheck.reason}
                   </span>
                 ) : null}
               </div>
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-2">
                 <span className="text-label text-foreground">Visibility</span>
                 <div role="radiogroup" aria-label="Visibility" className="flex gap-2">
                   {VISIBILITY_OPTIONS.map((option) => (
@@ -170,7 +170,7 @@ export const PublishPanel = ({
                   ))}
                 </div>
                 {visibility === null ? (
-                  <span className="text-secondary text-muted-foreground">
+                  <span className="text-meta text-muted-foreground">
                     Pick who can see the repository. Goodboy does not choose for you.
                   </span>
                 ) : null}
@@ -179,7 +179,7 @@ export const PublishPanel = ({
           ) : null}
         </div>
       ) : (
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-2">
           <label htmlFor={addressId} className="text-label text-foreground">
             Repository address
           </label>
@@ -190,7 +190,7 @@ export const PublishPanel = ({
             placeholder="https://github.com/you/cascadia.git"
             onChange={(event) => setAddress(event.target.value)}
           />
-          <span className="text-secondary text-muted-foreground">
+          <span className="text-meta text-muted-foreground">
             Any HTTPS or SSH address works. The repository should be empty.
           </span>
         </div>

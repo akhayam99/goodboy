@@ -36,7 +36,7 @@ export const AddStepMenuOption = ({
   >
     <span className="flex shrink-0 items-center">{lead}</span>
     <span className="shrink-0 truncate text-foreground">{name}</span>
-    <span className="min-w-0 flex-1 truncate text-secondary text-faint-foreground">{note}</span>
+    <span className="min-w-0 flex-1 truncate text-meta text-faint-foreground">{note}</span>
     {trail}
   </li>
 );

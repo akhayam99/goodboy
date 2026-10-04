@@ -23,7 +23,7 @@ export const NextActionDetails = ({ agentId }: Props) => {
         aria-expanded={isOpen}
         onClick={() => setIsOpen((open) => !open)}
         className={cn(
-          'w-fit rounded-sm text-secondary font-medium text-muted-foreground underline decoration-border-soft underline-offset-2',
+          'w-fit rounded-sm text-chip text-muted-foreground underline decoration-border-soft underline-offset-2',
           'transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         )}
       >
@@ -32,7 +32,7 @@ export const NextActionDetails = ({ agentId }: Props) => {
       {isOpen && (
         <p
           data-testid="next-action-details"
-          className="min-w-0 whitespace-pre-wrap break-words font-mono text-2xs leading-relaxed text-muted-foreground"
+          className="min-w-0 whitespace-pre-wrap break-words font-mono text-meta leading-relaxed text-muted-foreground"
         >
           {message.trim()}
         </p>

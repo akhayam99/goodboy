@@ -59,19 +59,19 @@ export const VersionMenu = ({
         </Button>
       }
     >
-      <h3 className="px-1.5">
+      <h3 className="px-2">
         <Eyebrow label={`Versions · ${versions.length}`} />
       </h3>
       <ol className="flex min-w-0 flex-col gap-0.5">
         {drafting === null ? null : (
           <li
             data-testid="wireframe-version-drafting"
-            className="flex min-w-0 flex-col px-1.5 py-1 text-body"
+            className="flex min-w-0 flex-col px-2 py-1 text-body"
           >
             <span className="truncate">
               v{drafting.revision} {drafting.ask}
             </span>
-            <span className="text-secondary text-muted-foreground">Drafting</span>
+            <span className="text-meta text-muted-foreground">Drafting</span>
           </li>
         )}
         {versions.map((version) => (

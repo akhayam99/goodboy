@@ -25,7 +25,7 @@ export const ArtifactPlanRuns = ({ sessionId, planId, agents }: Props) => {
   const open = (agentId: AgentId) => navigate({ to: agentPlace({ sessionId, agentId }) });
 
   return (
-    <section aria-label="Runs" className="flex min-w-0 flex-col gap-1.5">
+    <section aria-label="Runs" className="flex min-w-0 flex-col gap-2">
       <SectionHeader label="Runs" />
       {consumptions.length === 0 ? (
         <p className="text-label text-muted-foreground">Nobody ran this plan yet.</p>
@@ -40,7 +40,7 @@ export const ArtifactPlanRuns = ({ sessionId, planId, agents }: Props) => {
             return (
               <li
                 key={consumption.id}
-                className="flex min-w-0 items-center gap-1.5 text-label text-muted-foreground"
+                className="flex min-w-0 items-center gap-2 text-label text-muted-foreground"
               >
                 <span className="shrink-0">Run by</span>
                 <button

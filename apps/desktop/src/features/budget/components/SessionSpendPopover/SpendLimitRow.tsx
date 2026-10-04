@@ -40,9 +40,9 @@ export const SpendLimitRow = ({
           onDone={() => onEditingChange(false)}
         />
       ) : limit === null ? (
-        <p className="text-secondary text-muted-foreground">No limit</p>
+        <p className="text-meta text-muted-foreground">No limit</p>
       ) : (
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-2">
           <div
             role="meter"
             aria-label="Spent of the limit"
@@ -61,7 +61,7 @@ export const SpendLimitRow = ({
               style={{ width: `${fill}%` }}
             />
           </div>
-          <p className="font-mono text-secondary tabular-nums text-muted-foreground">
+          <p className="font-mono text-meta tabular-nums text-muted-foreground">
             {`${formatUsd(totalUsd)} of ${formatUsd(limit.softCapUsd)} · ${SPEND_LIMIT_BEHAVIOR_LABEL[limit.onExceed]}`}
           </p>
         </div>

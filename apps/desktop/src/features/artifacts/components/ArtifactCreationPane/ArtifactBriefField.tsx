@@ -108,12 +108,12 @@ export const ArtifactBriefField = ({
         }}
       />
       {clipNote === null ? null : (
-        <span role="status" className="text-secondary text-muted-foreground">
+        <span role="status" className="text-meta text-muted-foreground">
           {clipNote}
         </span>
       )}
       {value.trim().length === 0 ? (
-        <span className="text-2xs leading-relaxed text-muted-foreground">
+        <span className="text-meta leading-relaxed text-muted-foreground">
           with no brief the agent is asked to: {defaultRequest}
         </span>
       ) : null}
@@ -121,7 +121,7 @@ export const ArtifactBriefField = ({
         <span
           data-testid="artifact-brief-counter"
           className={cn(
-            'self-end text-secondary tabular-nums text-muted-foreground',
+            'self-end text-meta tabular-nums text-muted-foreground',
             isAtLimit && 'text-warning',
           )}
         >

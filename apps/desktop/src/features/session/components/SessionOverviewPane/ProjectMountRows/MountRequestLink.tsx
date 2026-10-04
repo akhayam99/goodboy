@@ -48,7 +48,7 @@ export const MountRequestLink = ({ sessionId, row, label }: Props) => {
             }
           });
         }}
-        className="flex min-w-0 shrink-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-label hover:bg-hover"
+        className="flex min-w-0 shrink-0 items-center gap-2 rounded-md px-2 py-1 text-label hover:bg-hover"
       >
         <PullRequestChip state={state} iconSize={ICON_SIZE.row} />
         <span className="shrink-0 text-foreground tabular-nums">{request.label}</span>
@@ -57,7 +57,7 @@ export const MountRequestLink = ({ sessionId, row, label }: Props) => {
         </span>
       </button>
       {error !== null && (
-        <span role="status" className="min-w-0 truncate text-secondary text-danger">
+        <span role="status" className="min-w-0 truncate text-meta text-danger">
           {error}
         </span>
       )}

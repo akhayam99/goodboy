@@ -58,7 +58,7 @@ export const QuestionsQueue = ({
       <section aria-label="Questions" className="flex flex-col gap-1 px-2 pb-3">
         {model.waiting.length > 0 && (
           <div className="flex flex-col gap-0.5">
-            <span className="flex items-center gap-1.5 px-2.5 pb-1 pt-2">
+            <span className="flex items-center gap-2 px-3 pb-1 pt-2">
               <Eyebrow label={NAMES.needsYou} />
               <span className="text-chip text-faint-foreground">{model.waiting.length}</span>
             </span>
@@ -67,7 +67,7 @@ export const QuestionsQueue = ({
         )}
         {model.delegated.length > 0 && (
           <div className="flex flex-col gap-0.5">
-            <span className="flex items-center gap-1.5 px-2.5 pb-1 pt-2">
+            <span className="flex items-center gap-2 px-3 pb-1 pt-2">
               <Eyebrow label="With an agent" />
               <span className="text-chip text-faint-foreground">{model.delegated.length}</span>
             </span>
@@ -80,7 +80,7 @@ export const QuestionsQueue = ({
               type="button"
               aria-expanded={isAnsweredOpen}
               onClick={onToggleAnswered}
-              className="flex items-center gap-1.5 rounded-md px-2.5 pb-1 pt-2 text-faint-foreground hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              className="flex items-center gap-2 rounded-md px-3 pb-1 pt-2 text-faint-foreground hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             >
               <ChevronRight
                 size={ICON_SIZE.row}

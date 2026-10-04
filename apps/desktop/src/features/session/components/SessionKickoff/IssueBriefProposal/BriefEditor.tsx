@@ -41,7 +41,7 @@ export const BriefEditor = ({ source, initialTitle, initialGoal, onSave, onCance
         minRows={3}
         maxRows={12}
         label="Brief goal"
-        textClassName="text-xs leading-relaxed"
+        textClassName="text-label"
       />
       <FormActions>
         <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={onCancel}>

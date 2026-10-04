@@ -70,7 +70,7 @@ export const ProvidersMenu = ({ workspaceId }: Props) => {
             aria-haspopup="dialog"
             aria-expanded={dropdown.open}
             className={cn(
-              'flex items-center rounded-md py-1 text-secondary transition-colors',
+              'flex items-center rounded-md py-1 text-meta transition-colors',
               FOOTER_LABELED_PAD,
               dropdown.open
                 ? 'bg-hover text-foreground'
@@ -119,7 +119,7 @@ export const ProvidersMenu = ({ workspaceId }: Props) => {
             >
               <ProviderGlyph id={id} size={ICON_SIZE.control} />
               <span className="flex-1 text-left">Connect {PROVIDER_LABEL[id]}</span>
-              <span className="text-secondary text-faint-foreground">Not connected</span>
+              <span className="text-meta text-faint-foreground">Not connected</span>
             </button>
           </li>
         ))}

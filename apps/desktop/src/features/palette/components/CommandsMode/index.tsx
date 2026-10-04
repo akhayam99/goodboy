@@ -452,7 +452,7 @@ export const CommandsMode = ({
               id={listboxId}
               role="listbox"
               aria-label="Commands"
-              className="flex flex-col gap-0.5 p-1.5"
+              className="flex flex-col gap-0.5 p-2"
             >
               {rows.length === 0 ? (
                 <li role="presentation">

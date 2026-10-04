@@ -9,7 +9,7 @@ type Props = {
 export const ChatArchivedBanner = ({ onRestore }: Props) => (
   <div
     role="status"
-    className="flex min-w-0 items-center gap-2 rounded-lg bg-subtle px-2.5 py-1.5 text-label text-muted-foreground"
+    className="flex min-w-0 items-center gap-2 rounded-lg bg-subtle px-3 py-2 text-label text-muted-foreground"
   >
     <CONCEPT_ICONS.archive size={ICON_SIZE.row} aria-hidden className="shrink-0" />
     <span className="shrink-0 text-foreground">Archived</span>

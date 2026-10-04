@@ -63,7 +63,7 @@ export const RuleRow = ({ rule, activeProviders, onRemove }: Props) => {
         <span className="truncate text-label text-foreground">{what}</span>
         <RuleProviderChips rule={rule} activeProviders={activeProviders} />
       </span>
-      <span className="shrink-0 text-secondary text-muted-foreground">{where}</span>
+      <span className="shrink-0 text-meta text-muted-foreground">{where}</span>
       <Button
         variant="ghost"
         size="sm"

@@ -13,7 +13,7 @@ type Props = {
 export const PrChanges = ({ files, isLoading, error, onRetry }: Props) => {
   if (isLoading) {
     return (
-      <div role="status" aria-label="Loading the diff" className="flex flex-col gap-1.5">
+      <div role="status" aria-label="Loading the diff" className="flex flex-col gap-2">
         {[0, 1, 2].map((row) => (
           <Skeleton key={row} className="h-4 w-full rounded-sm" />
         ))}

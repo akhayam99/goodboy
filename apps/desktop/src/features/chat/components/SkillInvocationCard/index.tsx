@@ -24,7 +24,7 @@ export const SkillInvocationCard = ({ item }: Props) => {
               {item.args.map((arg, index) => (
                 <span
                   key={index}
-                  className="rounded-md bg-fill px-1.5 py-0.5 text-code text-muted-foreground"
+                  className="rounded-md bg-fill px-2 py-0.5 text-code text-muted-foreground"
                 >
                   {arg}
                 </span>

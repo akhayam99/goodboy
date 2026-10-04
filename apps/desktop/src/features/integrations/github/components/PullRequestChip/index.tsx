@@ -49,11 +49,7 @@ export const PullRequestChip = ({
     return (
       <span
         title={meta.label}
-        className={cn(
-          'inline-flex items-center gap-1 text-secondary font-medium',
-          meta.textClass,
-          className,
-        )}
+        className={cn('inline-flex items-center gap-1 text-chip', meta.textClass, className)}
       >
         <Icon size={iconSize ?? 12} aria-hidden />
         {number !== undefined && <span>#{number}</span>}

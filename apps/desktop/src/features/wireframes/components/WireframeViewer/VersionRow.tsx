@@ -35,16 +35,16 @@ export const VersionRow = ({
       data-testid="wireframe-version-row"
       data-revision={version.revision}
       className={cn(
-        'group flex min-w-0 items-start gap-2 rounded-md px-1.5 py-1',
+        'group flex min-w-0 items-start gap-2 rounded-md px-2 py-1',
         isViewing && 'bg-selected',
       )}
     >
-      <span className="w-6 shrink-0 tabular-nums text-secondary text-muted-foreground">
+      <span className="w-6 shrink-0 tabular-nums text-meta text-muted-foreground">
         v{version.revision}
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-body text-foreground">{label}</span>
-        <span className="truncate text-secondary text-muted-foreground">
+        <span className="truncate text-meta text-muted-foreground">
           {isCurrent ? `Current · ${meta}` : meta}
         </span>
       </span>

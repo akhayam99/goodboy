@@ -21,7 +21,7 @@ export const AnswerSubmitButton = ({
 }: Props) => (
   <FormActions
     leading={
-      <span className="flex min-w-0 items-center gap-1.5 whitespace-nowrap text-label text-faint-foreground @max-[34rem]:hidden">
+      <span className="flex min-w-0 items-center gap-2 whitespace-nowrap text-label text-faint-foreground @max-[34rem]:hidden">
         <KeyHint inputMode={inputMode} optionCount={optionCount} />
       </span>
     }

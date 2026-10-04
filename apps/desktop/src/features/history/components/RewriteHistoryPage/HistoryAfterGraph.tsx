@@ -75,7 +75,7 @@ export const HistoryAfterGraph = ({
               onPointerEnter={() => onHover(node.key)}
               onPointerLeave={() => onHover(null)}
               className={cn(
-                'absolute left-14 right-1 flex -translate-y-1/2 items-center gap-1.5 rounded-md px-1.5 py-0.5 text-label whitespace-nowrap text-foreground transition-[top] duration-380 ease-out motion-reduce:transition-none',
+                'absolute left-14 right-1 flex -translate-y-1/2 items-center gap-2 rounded-md px-2 py-0.5 text-label whitespace-nowrap text-foreground transition-[top] duration-380 ease-out motion-reduce:transition-none',
                 node.isHighlighted && 'bg-selected',
               )}
             >
@@ -83,7 +83,7 @@ export const HistoryAfterGraph = ({
               {count > 0 && mark?.takesInMode != null ? (
                 <span
                   className={cn(
-                    'shrink-0 text-secondary tabular-nums',
+                    'shrink-0 text-meta tabular-nums',
                     HISTORY_ACTION_CLASSES[mark.takesInMode].text,
                   )}
                 >
@@ -96,7 +96,7 @@ export const HistoryAfterGraph = ({
         {isOnMain ? (
           <li
             style={{ top: forkY }}
-            className="absolute left-14 right-1 -translate-y-1/2 px-1.5 text-label text-faint-foreground"
+            className="absolute left-14 right-1 -translate-y-1/2 px-2 text-label text-faint-foreground"
           >
             today&apos;s main
           </li>

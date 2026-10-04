@@ -73,7 +73,7 @@ export const AgentLine = ({ attempt, state, word, attemptNumber = null }: Props)
       {live !== '' && (
         <p
           aria-live="polite"
-          className="min-w-0 truncate pl-7 text-secondary text-muted-foreground motion-safe:animate-studio-in"
+          className="min-w-0 truncate pl-7 text-meta text-muted-foreground motion-safe:animate-studio-in"
         >
           {live}
         </p>

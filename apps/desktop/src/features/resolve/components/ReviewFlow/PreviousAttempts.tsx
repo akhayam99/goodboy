@@ -33,11 +33,11 @@ export const PreviousAttempts = ({ attempts }: Props) => {
     <Collapsible
       open={isOpen}
       onOpenChange={setIsOpen}
-      trigger={<span className="text-secondary text-muted-foreground">{summary}</span>}
+      trigger={<span className="text-meta text-muted-foreground">{summary}</span>}
     >
       <ul aria-label={FAILED_RUN_COPY.attemptsRegion} className="flex min-w-0 flex-col gap-2">
         {attempts.map((attempt) => (
-          <li key={attempt.id} className="flex min-w-0 list-none flex-col gap-0.5 text-secondary">
+          <li key={attempt.id} className="flex min-w-0 list-none flex-col gap-0.5 text-meta">
             {attempts.length > 1 && (
               <span className="text-foreground">{attemptLine({ attempt })}</span>
             )}

@@ -44,7 +44,7 @@ export const QuestionQueueRow = ({
       isSelected={isSelected}
       onOpen={onSelect}
       dataAttributes={{ 'data-question-row': row.question.id }}
-      className="flex min-w-0 items-start gap-2.5 px-2.5 py-2"
+      className="flex min-w-0 items-start gap-3 px-3 py-2"
     >
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span
@@ -55,7 +55,7 @@ export const QuestionQueueRow = ({
         >
           {title}
         </span>
-        <span className="flex min-w-0 items-center gap-1.5 text-secondary text-faint-foreground">
+        <span className="flex min-w-0 items-center gap-1 text-meta text-faint-foreground">
           {isSettled ? (
             <Check size={ICON_SIZE.row} aria-hidden className={cn('shrink-0', doneTint.text)} />
           ) : (

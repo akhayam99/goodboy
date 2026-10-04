@@ -41,7 +41,7 @@ export const ProviderCard = ({ info, isExpanded, onExpandedChange }: Props) => {
 
   return (
     <li className="flex flex-col rounded-lg border border-border-soft bg-subtle">
-      <div className="flex items-start gap-3 px-3.5 py-3">
+      <div className="flex items-start gap-3 px-4 py-3">
         <span
           className="flex size-8 shrink-0 items-center justify-center rounded-md bg-subtle"
           style={{ color: brandColor(info.id) }}
@@ -50,8 +50,8 @@ export const ProviderCard = ({ info, isExpanded, onExpandedChange }: Props) => {
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="text-row text-foreground">{label}</span>
-          <span className="text-secondary text-muted-foreground">{pitch.forWho}</span>
-          <span className="text-secondary text-faint-foreground">{pitch.needs}</span>
+          <span className="text-meta text-muted-foreground">{pitch.forWho}</span>
+          <span className="text-meta text-faint-foreground">{pitch.needs}</span>
           <StatusPill connection={info.connection} />
         </div>
         {isExpanded && !isApi && (

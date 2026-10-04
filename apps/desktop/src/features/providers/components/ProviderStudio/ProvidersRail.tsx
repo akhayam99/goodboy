@@ -29,7 +29,7 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
             selected={focusedId === 'defaults'}
             onClick={onSelectDefaults}
             ariaCurrent={focusedId === 'defaults'}
-            className="items-center gap-2.5 px-2.5 py-2"
+            className="items-center gap-3 px-3 py-2"
           >
             <SlidersHorizontal
               size={ICON_SIZE.control}

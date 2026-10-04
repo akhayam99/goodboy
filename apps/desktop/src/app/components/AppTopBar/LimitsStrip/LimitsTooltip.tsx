@@ -26,8 +26,8 @@ export const LimitsTooltip = ({ chip, nowMs }: Props) => {
       ? 'Click for details'
       : `Updated ${formatAge({ from: chip.observedAt, now: nowMs })} · Click for details`;
   return (
-    <span className="flex flex-col gap-1.5">
-      <span className="flex items-baseline gap-1.5">
+    <span className="flex flex-col gap-2">
+      <span className="flex items-baseline gap-2">
         <span className="font-semibold">{PROVIDER_LABEL[chip.providerId]}</span>
         {chip.plan === null ? null : <span className="text-faint-foreground">{chip.plan}</span>}
       </span>

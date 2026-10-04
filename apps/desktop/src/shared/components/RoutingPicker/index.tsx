@@ -205,10 +205,10 @@ export const RoutingPicker = ({
               aria-expanded={open}
               aria-label={ariaLabel != null ? `${ariaLabel}: ${summary}` : summary}
               className={cn(
-                'items-center gap-1.5 text-label transition-colors',
+                'items-center gap-2 text-label transition-colors',
                 variant === 'pill'
-                  ? 'inline-flex rounded-full px-2.5 py-0.5'
-                  : 'flex w-full rounded-md border px-2 py-1.5 text-left',
+                  ? 'inline-flex rounded-full px-3 py-0.5'
+                  : 'flex w-full rounded-md border px-2 py-2 text-left',
                 variant === 'field' &&
                   (open
                     ? cn('border-primary', tintClasses('primary').bgSoft)
@@ -225,7 +225,7 @@ export const RoutingPicker = ({
                 disabled && 'cursor-not-allowed opacity-60',
               )}
             >
-              <span className="flex min-w-0 flex-1 items-center gap-1.5">
+              <span className="flex min-w-0 flex-1 items-center gap-2">
                 {isAuto ? (
                   <AutoTriggerLabel />
                 ) : (

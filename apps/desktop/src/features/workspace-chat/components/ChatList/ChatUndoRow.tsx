@@ -4,10 +4,7 @@ type Props = {
 };
 
 export const ChatUndoRow = ({ label, onUndo }: Props) => (
-  <div
-    role="status"
-    className="flex items-center gap-2 px-2 py-1 text-secondary text-faint-foreground"
-  >
+  <div role="status" className="flex items-center gap-2 px-2 py-1 text-meta text-faint-foreground">
     <span className="min-w-0 truncate">{label}</span>
     <button
       type="button"

@@ -33,16 +33,14 @@ export const ThreadVerdictCard = ({ sessionId, verdict, isPushed }: Props) => {
             <WorkNode state={view.node} label={view.word} mark={{ kind: 'dot' }} />
             <span className={cn('shrink-0', REMOTE_TONE_CLASS[view.tone])}>{view.word}</span>
           </p>
-          <p className="min-w-0 text-secondary text-foreground">{verdict.evidence}</p>
+          <p className="min-w-0 text-meta text-foreground">{verdict.evidence}</p>
           {isPushed && verdict.kind !== 'refix' && (
-            <p className="text-secondary text-muted-foreground">{RECHECK_LABEL.alreadyPosted}</p>
+            <p className="text-meta text-muted-foreground">{RECHECK_LABEL.alreadyPosted}</p>
           )}
           {verdict.kind === 'refix' && (
-            <p className="text-secondary text-muted-foreground">
-              {RECHECK_LABEL.runsOn({ model })}
-            </p>
+            <p className="text-meta text-muted-foreground">{RECHECK_LABEL.runsOn({ model })}</p>
           )}
-          <p className="text-secondary text-faint-foreground">
+          <p className="text-meta text-faint-foreground">
             {RECHECK_LABEL.checked} <RelativeTime iso={new Date(verdict.checkedAt).toISOString()} />
           </p>
         </div>

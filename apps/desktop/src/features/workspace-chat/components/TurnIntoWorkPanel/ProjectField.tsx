@@ -25,7 +25,7 @@ export const ProjectField = ({ projects, value, onChange }: Props) => {
   );
   const picked = projects.filter((project) => value.includes(project.id));
   return (
-    <div className="flex min-w-0 flex-col gap-1.5">
+    <div className="flex min-w-0 flex-col gap-2">
       <Listbox
         multiple
         ariaLabel="Project"
@@ -47,7 +47,7 @@ export const ProjectField = ({ projects, value, onChange }: Props) => {
         }
       />
       {picked.length > 0 ? (
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           {picked.map((project) => (
             <Chip
               key={project.id}

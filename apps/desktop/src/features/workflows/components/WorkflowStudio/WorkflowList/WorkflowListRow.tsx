@@ -41,7 +41,7 @@ export const WorkflowListRow = ({ workflow, builtin, onOpen }: Props) => {
         type="button"
         onClick={onOpen}
         aria-label={`Open ${workflow.name}`}
-        className="group flex h-9 w-full min-w-0 items-center gap-2.5 rounded-md px-2 text-left transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+        className="group flex h-9 w-full min-w-0 items-center gap-3 rounded-md px-2 text-left transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
       >
         <CONCEPT_ICONS.workflows
           size={ICON_SIZE.control}
@@ -51,18 +51,16 @@ export const WorkflowListRow = ({ workflow, builtin, onOpen }: Props) => {
         <span className="flex min-w-0 flex-1 items-center gap-2">
           <span className="truncate text-body text-foreground">{workflow.name}</span>
           {builtin === 'custom' ? null : (
-            <span className="shrink-0 text-chip font-semibold uppercase tracking-eyebrow text-faint-foreground">
-              Built in
-            </span>
+            <span className="shrink-0 text-eyebrow text-faint-foreground">Built in</span>
           )}
           {builtin === 'edited' ? (
-            <span className="inline-flex shrink-0 items-center gap-1 text-secondary text-warning">
+            <span className="inline-flex shrink-0 items-center gap-1 text-meta text-warning">
               <span aria-hidden className="size-1.5 rounded-full bg-warning" />
               Edited
             </span>
           ) : null}
         </span>
-        <span className="flex shrink-0 items-center gap-1.5" aria-hidden>
+        <span className="flex shrink-0 items-center gap-2" aria-hidden>
           {shown.map((step) => (
             <AgentKindChip
               key={step.id}
@@ -72,10 +70,10 @@ export const WorkflowListRow = ({ workflow, builtin, onOpen }: Props) => {
             />
           ))}
           {hidden > 0 ? (
-            <span className="text-secondary tabular-nums text-faint-foreground">{`+${hidden}`}</span>
+            <span className="text-meta tabular-nums text-faint-foreground">{`+${hidden}`}</span>
           ) : null}
         </span>
-        <span className="w-36 shrink-0 truncate text-right text-secondary tabular-nums text-faint-foreground">
+        <span className="w-36 shrink-0 truncate text-right text-meta tabular-nums text-faint-foreground">
           {metaOf({ workflow, builtin, now })}
         </span>
       </button>

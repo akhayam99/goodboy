@@ -18,13 +18,13 @@ type Props = {
 export const PinnedScriptsStrip = ({ entries }: Props) => (
   <section aria-label="Pinned scripts">
     <Band inset="content">
-      <span className="flex items-center gap-1.5 text-eyebrow text-muted-foreground">
+      <span className="flex items-center gap-2 text-eyebrow text-muted-foreground">
         <Pin size={ICON_SIZE.control} aria-hidden className="text-primary" />
         Pinned
         <span className="tabular-nums text-faint-foreground">{entries.length}</span>
       </span>
       {entries.length === 0 ? (
-        <p className="text-secondary text-faint-foreground">
+        <p className="text-meta text-faint-foreground">
           Pin a script with the pin icon. Pinned scripts show here and in the palette under $.
         </p>
       ) : (

@@ -43,7 +43,7 @@ export const QuietStepStrip = ({ sessionId, run, agents, quiet }: Props) => {
         title={`No output for ${minutes} min`}
         body={`${lastEvent}${quiet.agent.name} may be stuck or waiting on a long call.`}
         actions={
-          <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
             <Button
               size="sm"
               variant="secondary"

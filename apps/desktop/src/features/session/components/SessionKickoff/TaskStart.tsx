@@ -115,7 +115,7 @@ export const TaskStart = ({ workspaceId, issues }: Props) => {
 
   if (!issues.hasSources) {
     return (
-      <div className="flex flex-wrap items-center gap-2 px-2.5 py-1.5">
+      <div className="flex flex-wrap items-center gap-2 px-3 py-2">
         <p className="min-w-0 flex-1 text-label text-muted-foreground">No tracker connected yet</p>
         <div className="shrink-0">
           <TrackerStudioLinks links={TRACKER_STUDIO_LINKS} connected={issues.connected} />
@@ -128,7 +128,7 @@ export const TaskStart = ({ workspaceId, issues }: Props) => {
     return (
       <div role="status" aria-label="Loading issues" className="flex flex-col gap-1 py-0.5">
         {Array.from({ length: 3 }).map((_, index) => (
-          <div key={index} className="flex items-center gap-2 px-2.5 py-1.5">
+          <div key={index} className="flex items-center gap-2 px-3 py-2">
             <Skeleton className="size-4 shrink-0 rounded-sm" />
             <Skeleton className="h-3 w-14 shrink-0 rounded-sm" />
             <Skeleton className="h-3 min-w-0 flex-1 rounded-sm" />
@@ -200,7 +200,7 @@ export const TaskStart = ({ workspaceId, issues }: Props) => {
           );
         })}
         {visibleRows.length === 0 ? (
-          <li className="px-2 py-1.5 text-label text-muted-foreground">
+          <li className="px-2 py-2 text-label text-muted-foreground">
             {issues.rows.length === 0 ? 'No open issues detected' : 'No issue matches'}
           </li>
         ) : null}

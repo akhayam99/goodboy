@@ -13,7 +13,7 @@ type Props = {
 export const LegendaGrid = ({ rows }: Props) => (
   <ul className="flex flex-col gap-1">
     {rows.map((row) => (
-      <li key={row.label} className="flex items-center gap-2.5">
+      <li key={row.label} className="flex items-center gap-3">
         <span
           aria-hidden
           className={cn('inline-block h-2.5 w-2.5 shrink-0 rounded-full', row.dot)}

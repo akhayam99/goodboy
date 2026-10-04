@@ -51,7 +51,7 @@ const SPLIT_COLUMNS = 'grid-cols-[44px_minmax(0,1fr)_44px_minmax(0,1fr)]';
 
 const codeClass = (wrap: boolean): string =>
   cn(
-    'min-w-0 pr-3 font-mono text-xs leading-5 text-foreground [tab-size:4]',
+    'min-w-0 pr-3 font-mono text-label leading-5 text-foreground [tab-size:4]',
     wrap ? 'whitespace-pre-wrap [overflow-wrap:anywhere]' : 'whitespace-pre',
   );
 
@@ -154,7 +154,7 @@ export const DiffRows = ({
         key={key}
         role="row"
         aria-rowindex={nextIndex()}
-        className={cn('grid py-1.5', isSplit ? SPLIT_COLUMNS : UNIFIED_COLUMNS)}
+        className={cn('grid py-2', isSplit ? SPLIT_COLUMNS : UNIFIED_COLUMNS)}
       >
         <div
           role="gridcell"
@@ -209,7 +209,7 @@ export const DiffRows = ({
                   role="gridcell"
                   aria-hidden
                   className={cn(
-                    'select-none text-center font-mono text-xs leading-5',
+                    'select-none text-center font-mono text-label leading-5',
                     SIGN_TEXT[line.kind],
                   )}
                 >

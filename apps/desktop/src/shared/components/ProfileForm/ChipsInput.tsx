@@ -118,7 +118,7 @@ export const ChipsInput = ({
       trigger={
         <div
           className={cn(
-            'flex min-h-9 w-full flex-wrap items-center gap-1 rounded-md border border-border bg-background px-1.5 py-1 motion-safe:transition-colors focus-within:border-primary',
+            'flex min-h-9 w-full flex-wrap items-center gap-1 rounded-md border border-border bg-background px-2 py-1 motion-safe:transition-colors focus-within:border-primary',
             disabled && 'cursor-not-allowed opacity-50',
           )}
           onClick={() => inputRef.current?.focus()}

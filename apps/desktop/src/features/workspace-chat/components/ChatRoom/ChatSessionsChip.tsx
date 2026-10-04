@@ -29,7 +29,7 @@ export const ChatSessionsChip = ({ entries, stage, onOpen }: Props) => {
       dropdown={dropdown}
       role="dialog"
       ariaLabel={CHAT_SESSIONS_LABEL}
-      className="gap-0.5 p-1.5"
+      className="gap-0.5 p-2"
       trigger={
         <button
           type="button"
@@ -38,7 +38,7 @@ export const ChatSessionsChip = ({ entries, stage, onOpen }: Props) => {
           aria-expanded={dropdown.open}
           aria-label={`${label}: ${CHAT_SESSIONS_LABEL}`}
           className={cn(
-            'flex h-6 shrink-0 items-center gap-1 rounded-md border border-border-soft bg-subtle px-2 text-secondary text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            'flex h-6 shrink-0 items-center gap-1 rounded-md border border-border-soft bg-subtle px-2 text-chip text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             dropdown.open && 'bg-hover text-foreground',
           )}
         >
@@ -48,7 +48,7 @@ export const ChatSessionsChip = ({ entries, stage, onOpen }: Props) => {
         </button>
       }
     >
-      <Eyebrow label={CHAT_SESSIONS_LABEL} className="px-2 pb-1 pt-1.5" />
+      <Eyebrow label={CHAT_SESSIONS_LABEL} className="px-2 pb-1 pt-2" />
       {entries.map((entry) => (
         <ChatSessionRow
           key={entry.link.id}

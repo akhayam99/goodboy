@@ -28,7 +28,7 @@ export const ScanRepositoryRow = () => {
 
   return (
     <BandRow>
-      <span className="min-w-0 flex-1 text-secondary text-faint-foreground">
+      <span className="min-w-0 flex-1 text-meta text-faint-foreground">
         A repository from a workspace you removed?
       </span>
       <Button

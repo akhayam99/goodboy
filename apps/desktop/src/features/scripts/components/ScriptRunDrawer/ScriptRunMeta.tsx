@@ -20,7 +20,7 @@ export const ScriptRunMeta = ({ status, elapsedMs, projectName, branch }: Props)
   ].filter((part): part is string => part !== null);
 
   return (
-    <p className="flex shrink-0 items-center gap-1.5 text-secondary text-muted-foreground">
+    <p className="flex shrink-0 items-center gap-1 text-meta text-muted-foreground">
       {isRunning ? <StatusDot tone="info" size="sm" pulsing /> : null}
       <span className={cn(isRunning && presentation.textClass)}>{presentation.statusLabel}</span>
       {parts.map((part) => (

@@ -57,7 +57,7 @@ export const RewordEditor = ({
   };
 
   return (
-    <div className="flex min-w-0 flex-col gap-1.5" onKeyDown={onKeyDown}>
+    <div className="flex min-w-0 flex-col gap-2" onKeyDown={onKeyDown}>
       <div className="flex min-w-0 items-center gap-2">
         <Input
           value={subject}

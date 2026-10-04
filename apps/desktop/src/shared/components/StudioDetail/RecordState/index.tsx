@@ -24,7 +24,7 @@ type Props = {
 export const RecordState = ({ category, label, className }: Props) => {
   const { icon: Icon, tone } = INBOX_STATE_PRESENTATION[category];
   return (
-    <span className={cn('flex min-w-0 items-center gap-1.5', className)}>
+    <span className={cn('flex min-w-0 items-center gap-2', className)}>
       <Icon size={ICON_SIZE.row} aria-hidden className={cn('shrink-0', tintClasses(tone).icon)} />
       <span className="min-w-0 truncate">{label}</span>
     </span>

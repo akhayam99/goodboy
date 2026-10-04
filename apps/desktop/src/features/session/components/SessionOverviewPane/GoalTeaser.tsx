@@ -38,7 +38,7 @@ export const GoalTeaser = ({ session }: Props) => {
     return (
       <button type="button" onClick={open} className={`${ROW} self-start px-1 py-0.5`}>
         <CONCEPT_ICONS.goal size={ICON_SIZE.row} aria-hidden className="text-muted-foreground" />
-        <span className="text-secondary text-muted-foreground">Add a goal</span>
+        <span className="text-meta text-muted-foreground">Add a goal</span>
       </button>
     );
   }
@@ -53,7 +53,7 @@ export const GoalTeaser = ({ session }: Props) => {
       title={text}
       className={`${ROW} w-full px-1 py-0.5`}
     >
-      <span className="shrink-0 text-secondary text-faint-foreground">Goal</span>
+      <span className="shrink-0 text-meta text-faint-foreground">Goal</span>
       <span className="min-w-0 flex-1 truncate text-label text-muted-foreground">{text}</span>
     </button>
   );
