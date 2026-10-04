@@ -606,8 +606,10 @@ motion skips the transition and swaps the rows at once. The rail reserves the
 lane a closed group would open, so opening it never moves the list sideways.
 A failed child never opens the group: its arc is `danger`, the summary says
 "1 failed" in `danger` text and the need-you count includes it. A subagent group
-sits on the lane of its parent agent, above the parent, at the start of its
-earliest subagent; its children explode upward on a lane nested in that one. A
+hangs from its parent agent's ball, one column right of the lane that parent
+sits on (a workflow step hangs it off the run lane, never off the root spine),
+above the parent, at the start of its earliest subagent; its children explode
+upward on a lane nested in that one. A
 subagent that asks you a question counts the same way (`groupChild` ask).
 
 A finished workflow run or agent chain with three rows or more is a third group
