@@ -270,6 +270,24 @@ describe('RoutingPicker', () => {
     expect(row.textContent).toBe('AutoNow: Claude · Sonnet 4.6 · Medium');
   });
 
+  it('shows the resolved model on the closed trigger when asked to', () => {
+    render(
+      <RoutingPicker
+        {...baseProps}
+        ariaLabel="New chats routing"
+        provider="anthropic"
+        model=""
+        overridden={false}
+        recommendationKind="auto"
+        autoTrigger="resolved"
+        recommendation={{ provider: 'anthropic', model: 'claude-sonnet-4-6', effort: 'medium' }}
+      />,
+    );
+    const trigger = screen.getByRole('button', { name: /^New chats routing:/ });
+    expect(trigger.textContent).toBe('Sonnet 4.6·Medium');
+    expect(trigger.getAttribute('aria-label')).toContain('Auto, now Claude · Sonnet 4.6 · Medium');
+  });
+
   it('lists only the models chosen for the picker and never changes the routing', () => {
     useAppStore.setState({
       settings: { [SETTING_HIDDEN_MODELS]: JSON.stringify({ anthropic: ['opus-4.8', 'opus-5'] }) },

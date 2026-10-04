@@ -6,6 +6,7 @@ import { useAppStore } from '../../../../../../store';
 import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 import { ProviderCredentialsSection } from '../../ProviderCredentialsSection';
 import { ProviderBindingsSection } from '../../ProviderBindingsSection';
+import { CliUpdateNotice } from '../../CliUpdateNotice';
 import { CliRow } from './CliRow';
 import { RuntimeRow } from './RuntimeRow';
 import { SignedInRow } from './SignedInRow';
@@ -45,6 +46,7 @@ export const AccountGroup = (props: AccountGroupProps) => {
           </button>
         ) : null}
       </Band>
+      {isApi ? null : <CliUpdateNotice providerId={info.id} autoStart={props.autoUpdate} />}
       {showsKeys ? <ProviderCredentialsSection providerId={info.id} /> : null}
       <ProviderBindingsSection providerId={info.id} cliIdentity={isApi ? null : info.identity} />
     </div>

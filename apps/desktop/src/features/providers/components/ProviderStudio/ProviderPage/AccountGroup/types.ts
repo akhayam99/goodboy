@@ -6,6 +6,7 @@ export type AccountGroupProps = {
   readonly info: ProviderDisplayInfo;
   readonly planLabel: string | null;
   readonly canReauth: boolean;
+  readonly autoUpdate: boolean;
   readonly confirm: AccountConfirm;
   readonly onConfirmChange: (next: AccountConfirm) => void;
   readonly onReauth: () => void;

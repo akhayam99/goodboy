@@ -25,15 +25,15 @@ export const ProvidersInOrder = ({ workspaceId }: Props) => {
   const firstOn = summary.on[0] ?? null;
   const help =
     firstOn === null
-      ? 'No provider is on. Backup only runs when no On provider can work.'
-      : `New work starts on ${PROVIDER_LABEL[firstOn]}. Backup only runs when no On provider can work.`;
+      ? 'No provider is on. Turn one on to start new work.'
+      : `New work starts on ${PROVIDER_LABEL[firstOn]}. Backup only if no On provider can work.`;
 
   return (
-    <FieldRow label="Providers, in order" help={help}>
+    <FieldRow label="When a provider is out" help={help}>
       <AnchoredPopover
         dropdown={dropdown}
         role="dialog"
-        ariaLabel="Providers, in order"
+        ariaLabel="When a provider is out"
         className="flex flex-col gap-1 p-2"
         anchorClassName="min-w-0"
         trigger={
@@ -59,7 +59,7 @@ export const ProvidersInOrder = ({ workspaceId }: Props) => {
         }
       >
         <div className="flex flex-col px-1 pt-1">
-          <Eyebrow label="Providers, in order" />
+          <Eyebrow label="When a provider is out" />
           <span className="text-meta text-faint-foreground">This workspace</span>
         </div>
         <ProviderPolicyList workspaceId={workspaceId} hasReset />

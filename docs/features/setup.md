@@ -36,7 +36,7 @@ Find everything about a provider on its own page in **Providers & models**: **Us
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-cli-update-light.webp" alt="The top of the Claude page with a banner reading Opus 5.5 needs a newer Claude CLI, You have Claude CLI 2.1.260, Update to 2.1.280 or newer, and an Update Claude CLI button">
 </picture>
 
-See when a model needs a newer CLI, right at the top of the provider page, and press **Update Claude CLI** to install it. The update waits for running turns to finish. A turn the CLI refuses retries on the closest model in the same family.
+See when a model needs a newer CLI, right under the Account rows of the provider page, and press **Update Claude CLI** to install it. The update waits for running turns to finish. A turn the CLI refuses retries on the closest model in the same family.
 
 ### Permissions for each provider
 

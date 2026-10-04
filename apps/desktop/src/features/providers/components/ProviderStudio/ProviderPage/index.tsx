@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import type { WorkspaceId } from '@goodboy/types';
 import { EmptyState } from '@goodboy/ui';
 import type { ProviderDisplayInfo } from '../../../providers';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
@@ -11,6 +12,7 @@ type Props = {
   readonly autoUpdate: boolean;
   readonly focusModels?: boolean;
   readonly isUsageFocused?: boolean;
+  readonly workspaceId?: WorkspaceId | null;
 };
 
 export const ProviderPage = ({
@@ -19,6 +21,7 @@ export const ProviderPage = ({
   autoUpdate,
   focusModels = false,
   isUsageFocused = false,
+  workspaceId = null,
 }: Props) => {
   useEffect(() => {
     if (!isUsageFocused || info === null) {
@@ -46,6 +49,7 @@ export const ProviderPage = ({
       autoConnect={autoConnect}
       autoUpdate={autoUpdate}
       focusModels={focusModels}
+      workspaceId={workspaceId}
     />
   );
 };

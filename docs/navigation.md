@@ -901,7 +901,7 @@ Spend tab. **Providers** is not a door to the Providers & models page: it opens
 a menu that changes things in place (`AppFooter/ProvidersMenu`). Settings >
 Providers & models is the one home for providers and usage; the menu holds
 no usage figure and sends there with **Manage providers** (a door). It lists
-the same `ProviderPolicyList` as Models > Providers, in order, writing through
+the same `ProviderPolicyList` as the Models row When a provider is out, writing through
 the same `setProviderPolicy`, then Connect for each CLI provider that is not
 connected, then Manage providers. The top bar's limits chip opens the same
 home on Usage. It reads the cached providers and never refreshes them on
