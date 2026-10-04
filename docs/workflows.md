@@ -145,7 +145,7 @@ the rules, and can change later from the run's ⋯ menu.
 ## Workflow rules
 
 Rules are the workspace defaults every new run starts from. They live only in the
-**Rules** tab of the Workflows studio; the workspace settings have no page for
+**Run defaults** tab of the Workflows studio; the workspace settings have no page for
 them. The all-pages Restore defaults and Copy from in the workspace settings menu
 still carry them and list them as Workflow rules in the preview.
 
@@ -209,7 +209,7 @@ With the rule on (the run's copy, `spreadByHeadroom`):
 - if dropping the _out_ providers empties the menu, the menu of today comes back
 
 With the rule off nothing changes. Workspaces that existed before 0.16.0 start
-with it off (m217); new workspaces start with it on. The Rules tab shows the
+with it off (m217); new workspaces start with it on. The Run defaults tab shows the
 switch and one sentence: with it off, "New steps follow the order set in
 Models."; with it on, where the next step goes and, when a provider is passed,
 how full it is (`nextStepPick`, `spreadSentence`).

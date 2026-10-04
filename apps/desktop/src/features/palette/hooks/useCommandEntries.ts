@@ -15,6 +15,7 @@ import {
 } from '../../../store';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { SHORTCUTS } from '../../../shared/keyboard/registry';
+import { NAMES, formerNamesOf } from '../../../shared/names';
 import { getAppliedTheme, useThemeStore } from '../../../shared/lib/theme';
 import { classifyAgent } from '../../session/agent-kind';
 import { useLensDestinations } from '../../session/hooks/useLensDestinations';
@@ -25,6 +26,7 @@ import { requestNewSession } from '../../session/requestNewSession';
 import { openReportSheet } from '../../bug-report/openReportSheet';
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../notifications/studioEvent';
 import { openImpactStudio } from '../../impact/openImpactStudio';
+import { openWorkflowRules } from '../../workflows/openWorkflowRules';
 import { openChangelogStudio } from '../../changelog/changelogStudioEvent';
 import { linkedProjectsLabel } from '../../workspace/linkedProjectsLabel';
 import { useSettingsDirectory } from '../../settings/hooks/useSettingsDirectory';
@@ -252,6 +254,15 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           group: null,
           icon: CONCEPT_ICONS.workflows,
           run: () => fire({ name: 'goodboy:open-workflow-studio', detail: { door: true } }),
+        },
+        {
+          key: 'goto:run-defaults',
+          label: NAMES.runDefaults,
+          kind: 'goto',
+          group: null,
+          icon: CONCEPT_ICONS.workflows,
+          secondary: formerNamesOf(NAMES.runDefaults),
+          run: openWorkflowRules,
         },
         {
           key: 'goto:impact',

@@ -98,7 +98,7 @@ describe('WorkflowBuilderView and the workflow rules', () => {
     expect(fromRules()).toBe(
       'From your rulesAsk after the plan · $25 cap, pause · Claude, Codex · spread on · No guidanceEdit',
     );
-    expect(screen.queryByRole('img', { name: /From: Workflow rules/ })).toBeNull();
+    expect(screen.queryByRole('img', { name: /Run defaults/ })).toBeNull();
   });
 
   it('shows a changed rule in the next builder it opens', () => {
@@ -119,14 +119,12 @@ describe('WorkflowBuilderView and the workflow rules', () => {
     fireEvent.click(autonomyChip());
     fireEvent.click(screen.getByRole('radio', { name: /Ask before each step/ }));
 
-    expect(
-      screen.getByRole('img', { name: 'Rules: Ask after the plan · From: Workflow rules' }),
-    ).toBeDefined();
+    expect(screen.getByRole('img', { name: 'Run defaults: Ask after the plan' })).toBeDefined();
     fireEvent.click(autonomyChip());
     fireEvent.click(screen.getByRole('button', { name: /Reset/ }));
 
     expect(autonomyChip().getAttribute('aria-label')).toBe('When to ask: Ask after the plan');
-    expect(screen.queryByRole('img', { name: /From: Workflow rules/ })).toBeNull();
+    expect(screen.queryByRole('img', { name: /Run defaults/ })).toBeNull();
   });
 
   it('opens the guidance from the rules, sends it to the orchestrator, and resets an edit', () => {

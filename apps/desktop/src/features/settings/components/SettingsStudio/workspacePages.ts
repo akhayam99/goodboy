@@ -1,5 +1,6 @@
 import type { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
+import { NAMES } from '../../../../shared/names';
 import { PERMISSIONS_SECTION_ID } from '../../../permissions/openPermissionSettings';
 import { REVIEW_REPLIES_SECTION_ID } from '../../../resolve/replySettingsCopy';
 
@@ -97,4 +98,4 @@ export const PLAN_PAGES: ReadonlyArray<PlanPage> = [
 ];
 
 export const planPageLabel = ({ page }: { readonly page: PlanPage }): string =>
-  page === WORKFLOW_RULES_PLAN_PAGE ? 'Workflow rules' : workspacePageEntry({ page }).label;
+  page === WORKFLOW_RULES_PLAN_PAGE ? NAMES.runDefaults : workspacePageEntry({ page }).label;

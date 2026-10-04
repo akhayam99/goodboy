@@ -24,6 +24,7 @@ export const NAMES = {
   decisions: 'Decisions',
   plan: 'Plan',
   files: 'Files',
+  runDefaults: 'Run defaults',
   role: {
     scout: 'Scout',
     planner: 'Planner',
@@ -40,3 +41,9 @@ export const NAMES = {
     custom: 'Generalist',
   } satisfies Record<AgentRole, string>,
 } as const;
+
+const FORMER_NAMES: Readonly<Record<string, ReadonlyArray<string>>> = {
+  [NAMES.runDefaults]: ['Rules', 'Workflow rules'],
+};
+
+export const formerNamesOf = (name: string): ReadonlyArray<string> => FORMER_NAMES[name] ?? [];
