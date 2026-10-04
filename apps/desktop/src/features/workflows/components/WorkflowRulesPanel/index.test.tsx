@@ -27,6 +27,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { buildProviderList, type ProviderStatus } from '../../../providers/providers';
+import { RUN_AUTONOMY_OPTIONS } from '../../runAutonomy';
 import { WorkflowRulesPanel } from './index';
 
 let useAppStore: StoryStore;
@@ -107,19 +108,57 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
+const withPool = (providerPool: NonNullable<OverrideSettings['providerPool']>) =>
+  useAppStore.setState((state) => ({
+    workspaceOverrides: {
+      [HARBORLINE.id]: {
+        ...(state.workspaceOverrides[HARBORLINE.id] ?? EMPTY_OVERRIDES),
+        providerPool,
+      },
+    },
+  }));
+
+const withRules = (rules: Partial<WorkflowRules>) =>
+  useAppStore.setState((state) => ({
+    workspaceOverrides: {
+      [HARBORLINE.id]: {
+        ...EMPTY_OVERRIDES,
+        providerPool: state.workspaceOverrides[HARBORLINE.id]?.providerPool ?? null,
+        workflowRules: { ...DEFAULT_WORKFLOW_RULES, ...rules },
+      },
+    },
+  }));
+
 describe('WorkflowRulesPanel', () => {
-  it('starts on the defaults and summarises the provider policy it does not own', () => {
+  it('starts on the defaults with three controls and a text field', () => {
     panel();
 
-    expect(screen.getByTestId('rules-provider-summary').textContent).toBe(
-      'Claude, Codex · Cursor as backup',
-    );
+    expect(screen.getByRole('heading', { level: 2, name: 'Run defaults' })).toBeDefined();
+    expect(screen.getByText('Each run keeps its own copy.')).toBeDefined();
     expect(screen.getAllByRole('radio').map((radio) => radio.getAttribute('aria-checked'))).toEqual(
       ['true', 'false', 'false'],
     );
-    expect(screen.getByRole('switch', { name: 'Default cap' }).getAttribute('aria-checked')).toBe(
+    expect(screen.getByRole('switch', { name: 'Spend cap' }).getAttribute('aria-checked')).toBe(
       'false',
     );
+    expect(screen.getByRole('switch', { name: 'Use providers with room left' })).toBeDefined();
+    expect(screen.getByRole('textbox', { name: 'Guidance' })).toBeDefined();
+  });
+
+  it('orders the bands when to ask, spend cap, providers, guidance', () => {
+    panel();
+
+    expect(
+      screen.getAllByRole('region').map((region) => region.getAttribute('aria-label')),
+    ).toEqual(['When to ask', 'Spend cap', 'Providers', 'Guidance']);
+  });
+
+  it('shows the same autonomy hints the builder shows', () => {
+    panel();
+
+    for (const option of RUN_AUTONOMY_OPTIONS) {
+      expect(screen.getByText(option.hint)).toBeDefined();
+    }
   });
 
   it('saves the autonomy for new runs as soon as you pick it', async () => {
@@ -136,11 +175,11 @@ describe('WorkflowRulesPanel', () => {
     ).toBe('true');
   });
 
-  it('turns the default cap on, keeps a typed amount and the behaviour at the limit', async () => {
+  it('turns the spend cap on, keeps a typed amount and the behaviour at the limit', async () => {
     panel();
 
-    fireEvent.click(screen.getByRole('switch', { name: 'Default cap' }));
-    const amount = await screen.findByRole('textbox', { name: /Amount/ });
+    fireEvent.click(screen.getByRole('switch', { name: 'Spend cap' }));
+    const amount = await screen.findByRole('textbox', { name: 'Amount per run' });
     fireEvent.change(amount, { target: { value: '40' } });
     fireEvent.blur(amount);
     fireEvent.click(screen.getByRole('tab', { name: 'Warn only' }));
@@ -151,35 +190,61 @@ describe('WorkflowRulesPanel', () => {
     expect(savedRules()[0]).toMatchObject({ spendLimitUsd: 25, spendLimitMode: 'pause' });
   });
 
-  it('names a tight provider, where the next step goes, and spreads when you turn it on', async () => {
-    useAppStore.setState((state) => ({
-      providerLimits: { anthropic: claudeAt({ used: 0.85 }) },
-      workspaceOverrides: {
-        [HARBORLINE.id]: {
-          ...EMPTY_OVERRIDES,
-          providerPool: state.workspaceOverrides[HARBORLINE.id]?.providerPool ?? null,
-          workflowRules: { ...DEFAULT_WORKFLOW_RULES, spreadByHeadroom: false },
-        },
-      },
-    }));
+  it('writes spreadByHeadroom when you flip the switch and says where the next step goes', async () => {
+    useAppStore.setState({ providerLimits: { anthropic: claudeAt({ used: 0.85 }) } });
+    withRules({ spreadByHeadroom: false });
     panel();
 
-    expect(screen.getByText('Claude 85% used')).toBeDefined();
-    expect(screen.getByTestId('rules-next-pick').textContent).toBe(
-      'A step with no pinned provider goes to ClaudeFirst in your order.',
+    expect(screen.getByTestId('rules-spread-sentence').textContent).toBe(
+      'New steps follow the order set in Models.',
     );
-    expect(screen.getByText(/Spreading would send new steps to Codex first/)).toBeDefined();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Turn on' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Use providers with room left' }));
 
     await waitFor(() => expect(savedRules().at(-1)?.spreadByHeadroom).toBe(true));
-    expect(screen.getByTestId('rules-next-pick').textContent).toBe(
-      'A step with no pinned provider goes to CodexClaude is at 85%, so it goes last.',
+    expect(screen.getByTestId('rules-spread-sentence').textContent).toBe(
+      'Claude is at 85%, so new steps go to Codex first.',
     );
-    expect(screen.queryByRole('button', { name: 'Turn on' })).toBeNull();
+    expect(
+      screen
+        .getByRole('switch', { name: 'Use providers with room left' })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
   });
 
-  it('saves standing guidance, polishes it into one rule per line and undoes the polish', async () => {
+  it('disables the switch and says why when no provider reports limits', () => {
+    withPool([{ id: 'cursor', state: 'on' }]);
+    withRules({ spreadByHeadroom: true });
+    panel();
+
+    const toggle = screen.getByRole('switch', { name: 'Use providers with room left' });
+    expect(toggle.hasAttribute('disabled')).toBe(true);
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    expect(screen.getByTestId('rules-spread-sentence').textContent).toBe(
+      'Needs a provider that reports limits',
+    );
+  });
+
+  it('opens the providers page in Models from the providers band', () => {
+    const received: Array<unknown> = [];
+    const listener = (event: Event) => received.push((event as CustomEvent).detail);
+    window.addEventListener('goodboy:open-settings', listener);
+    panel();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Models' }));
+    window.removeEventListener('goodboy:open-settings', listener);
+
+    expect(received).toEqual([{ scope: 'providers', section: undefined }]);
+  });
+
+  it('lists no provider in the providers band, only the switch and its sentence', () => {
+    panel();
+    const band = screen.getByRole('region', { name: 'Providers' });
+
+    expect(within(band).getAllByRole('switch')).toHaveLength(1);
+    expect(band.textContent).not.toMatch(/Cursor|Codex|backup/);
+  });
+
+  it('saves guidance, polishes it into one rule per line and undoes the polish', async () => {
     const polished = '- Group the commits by concern at the end.\n- Open the PR as a draft.';
     stubStoryInvoke({
       set_workspace_overrides: null,
@@ -190,7 +255,7 @@ describe('WorkflowRulesPanel', () => {
       },
     });
     panel();
-    const field = screen.getByRole('textbox', { name: 'Standing guidance' });
+    const field = screen.getByRole('textbox', { name: 'Guidance' });
 
     fireEvent.change(field, { target: { value: 'cluster commits at the end. open PR as draft' } });
     fireEvent.blur(field);
@@ -203,7 +268,7 @@ describe('WorkflowRulesPanel', () => {
 
     await waitFor(() => expect(savedRules().at(-1)?.standingGuidance).toBe(polished));
     expect(screen.getByText('Implementer, Docs').parentElement?.textContent).toBe(
-      'Sent to Implementer, Docs in Custom and Preset runs',
+      'Goes to the planning agent and to Implementer, Docs',
     );
     fireEvent.click(screen.getByRole('button', { name: 'Undo guidance change' }));
     await waitFor(() =>
@@ -213,23 +278,21 @@ describe('WorkflowRulesPanel', () => {
     );
   });
 
-  it('adds the tester to the roles only when you pick it', async () => {
-    useAppStore.setState((state) => ({
-      workspaceOverrides: {
-        [HARBORLINE.id]: {
-          ...EMPTY_OVERRIDES,
-          providerPool: state.workspaceOverrides[HARBORLINE.id]?.providerPool ?? null,
-          workflowRules: {
-            ...DEFAULT_WORKFLOW_RULES,
-            standingGuidance: '- Open the PR as a draft.',
-          },
-        },
-      },
-    }));
+  it('shows no routing line while guidance is empty', () => {
     panel();
 
-    const guidance = screen.getByRole('region', { name: 'Standing guidance' });
+    expect(screen.queryByText(/Goes to the planning agent/)).toBeNull();
+    expect(screen.queryByText(/Nothing to send yet/)).toBeNull();
+  });
+
+  it('adds the tester to the roles only when you pick it', async () => {
+    withRules({ standingGuidance: '- Open the PR as a draft.' });
+    panel();
+
+    const guidance = screen.getByRole('region', { name: 'Guidance' });
+    expect(within(guidance).queryByRole('button', { name: 'About you' })).toBeNull();
     fireEvent.click(within(guidance).getByRole('button', { name: 'Edit', expanded: false }));
+    expect(within(guidance).getByRole('button', { name: 'About you' })).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Tester' }));
 
     await waitFor(() =>

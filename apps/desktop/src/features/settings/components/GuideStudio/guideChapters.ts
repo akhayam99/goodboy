@@ -227,7 +227,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Rules',
-        desc: 'The Rules tab in Workflows sets what new runs start with: when to ask, a spend cap and standing guidance. Spread by what I have left sends steps to the provider with room. A run keeps the copy of the rules it started with.',
+        desc: 'The Rules tab in Workflows sets what new runs start with: when to ask, a spend cap, which providers get the next step and guidance. Use providers with room left sends steps to the provider with room. A run keeps the copy of the rules it started with.',
       },
       {
         term: 'Orchestrated',

@@ -13,21 +13,21 @@ export const RUN_AUTONOMY_HEADER = NAMES.whenToAsk;
 const ASK_BEFORE_EACH_STEP: RunAutonomyOption = {
   key: 'step',
   label: 'Ask before each step',
-  hint: 'Waits for your go after each step so you can review it.',
+  hint: 'Pauses after every step.',
   autoRun: false,
 };
 
 const ASK_AFTER_THE_PLAN: RunAutonomyOption = {
   key: 'plan',
   label: 'Ask after the plan',
-  hint: 'Waits once after the plan, then runs on its own.',
+  hint: 'Pauses once, after the plan.',
   autoRun: true,
 };
 
 const RUN_ON_ITS_OWN: RunAutonomyOption = {
   key: 'run',
   label: 'Run on its own',
-  hint: 'Each next step starts on its own.',
+  hint: 'Never pauses.',
   autoRun: true,
 };
 

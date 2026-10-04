@@ -15,7 +15,7 @@ type Props = {
 };
 
 const TOOL_CLASS =
-  'inline-flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-secondary text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-meta text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50';
 
 export const RulesGuidanceBand = ({ workspaceId, rules, onChange }: Props) => {
   const [draft, setDraft] = useState(rules.standingGuidance);
@@ -44,22 +44,16 @@ export const RulesGuidanceBand = ({ workspaceId, rules, onChange }: Props) => {
 
   const isEmpty = rules.standingGuidance.trim() === '';
   return (
-    <Band
-      label="Standing guidance"
-      ariaLabel="Standing guidance"
-      headingLevel={2}
-      hint="Every run starts with it"
-      inset="content"
-    >
+    <Band label="Guidance" ariaLabel="Guidance" headingLevel={3} inset="content">
       <PromptField
         kind="document"
-        label="Standing guidance"
+        label="Guidance"
         value={draft}
         onChange={setDraft}
         onBlur={() => save(draft)}
         onSubmit={() => save(draft)}
         keyLabels={{ send: 'saves' }}
-        placeholder="Rules every run should respect, one per line."
+        placeholder="One rule per line"
         disabled={isPolishing}
         hasPreview
         minRows={3}
@@ -93,23 +87,14 @@ export const RulesGuidanceBand = ({ workspaceId, rules, onChange }: Props) => {
           </div>
         }
       />
-      {isEmpty ? (
-        <p className="text-secondary text-faint-foreground">
-          Nothing to send yet. Add a rule above and it goes to every new run.
-        </p>
-      ) : (
-        <>
-          <GuidanceRecipients
-            roles={rules.guidanceRoles}
-            where="in Custom and Preset runs"
-            onRoles={(guidanceRoles) => onChange({ guidanceRoles })}
-          />
-          <p className="text-secondary text-faint-foreground">
-            Orchestrated runs send it to the orchestrator.
-          </p>
-        </>
+      {isEmpty ? null : (
+        <GuidanceRecipients
+          roles={rules.guidanceRoles}
+          lead="Goes to the planning agent and to"
+          footer={<AlsoSentLine />}
+          onRoles={(guidanceRoles) => onChange({ guidanceRoles })}
+        />
       )}
-      <AlsoSentLine />
     </Band>
   );
 };
