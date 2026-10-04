@@ -13,4 +13,5 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   { id: 'budget-rules', pattern: /\b[Bb]udget rules\b/, use: NAMES.spendCaps },
   { id: 'copy-as-brief', pattern: /\bCopy as brief\b/, use: NAMES.copyContext },
   { id: 'budget-cap', pattern: /\b[Bb]udget cap\b/, use: NAMES.spendCap },
+  { id: 'defaults-page', pattern: /\b(?:in|then|Open) Defaults\b/, use: NAMES.models },
 ];

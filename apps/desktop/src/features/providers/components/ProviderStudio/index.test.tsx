@@ -21,7 +21,7 @@ vi.mock('../../../../store', () => ({
 }));
 
 vi.mock('./DefaultsPanel', () => ({
-  DefaultsPanel: () => <h1>Defaults</h1>,
+  DefaultsPanel: () => <h1>Models</h1>,
 }));
 
 vi.mock('./ProviderPage', () => ({
@@ -43,23 +43,23 @@ const plainFrame = ({ nested, detail }: ScopeFrameParts) => (
 afterEach(cleanup);
 
 describe('ProviderSettingsScope', () => {
-  it('hands its provider list to the settings rail and lands on Defaults', () => {
+  it('hands its provider list to the settings rail and lands on Models', () => {
     render(<ProviderSettingsScope workspaceId={'workspace-1' as WorkspaceId} frame={plainFrame} />);
 
     const rail = screen.getByRole('navigation', { name: 'Settings scopes' });
     const list = within(rail).getByRole('list', { name: 'Providers & models settings' });
 
-    expect(within(list).getByRole('button', { name: 'Defaults' })).toBeDefined();
-    expect(screen.getByRole('heading', { name: 'Defaults' })).toBeDefined();
+    expect(within(list).getByRole('button', { name: 'Models' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Models' })).toBeDefined();
     expect(screen.queryByRole('complementary')).toBeNull();
   });
 
-  it('hides Defaults without a workspace and opens the first provider instead', () => {
+  it('hides Models without a workspace and opens the first provider instead', () => {
     state.providers = [{ id: 'anthropic', connection: 'connected' }];
     render(<ProviderSettingsScope workspaceId={null} frame={plainFrame} />);
 
-    expect(screen.queryByRole('button', { name: 'Defaults' })).toBeNull();
-    expect(screen.queryByRole('heading', { name: 'Defaults' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Models' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Models' })).toBeNull();
     expect(screen.getByRole('heading', { name: 'detail anthropic' })).toBeDefined();
   });
 });

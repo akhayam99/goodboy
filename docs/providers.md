@@ -142,7 +142,7 @@ Goodboy stores keys in your system keychain, not in its own database.
 
 ## Defaults and task models
 
-Go to **Settings** → **Providers & models** → **Defaults** to choose what a workspace
+Go to **Settings** → **Providers & models** → **Models** to choose what a workspace
 uses when you leave a model on **Auto**. It is one page in three parts.
 
 - **Providers, in order**: the workspace's provider policy, summed up on the row
@@ -202,7 +202,7 @@ arrow.
 Each provider page has a **Models in the picker** group under Usage. A model you
 turn off is never offered for a new choice, for every workspace in the app: the
 pickers drop it, Auto skips it for roles and the workflow orchestrator never sees
-it in its model menu. A model you already pinned keeps running and its Defaults row
+it in its model menu. A model you already pinned keeps running and its Models row
 says so (`Opus 5.5 · hidden, still runs because you pinned it`). A background task
 never climbs a cost tier because its model is hidden: Auto takes a visible model of
 the same tier or cheaper from the task's list, and when there is none it keeps the
@@ -669,7 +669,7 @@ When a provider ships or retires a model, update these together:
   and every task. The desktop resolves a task model only through
   `resolveLimitedTaskModel` (a test fails on a direct `resolveTaskModel` call),
   and a lookup for a provider the user picked passes `limitContext: null`. The
-  Auto row of the Defaults
+  Auto row of the Models
   task pickers and the orchestrator picker then says which provider it left and
   why, and a provider's Usage notice says where Auto sends new agents. No
   Cursor default needs Max Mode, and `defaults.test.ts` validates every cell against
@@ -718,7 +718,7 @@ When a provider ships or retires a model, update these together:
   under the button (`shared/components/RunsOn`). Change opens the routing picker
   body for that one launch; nothing is saved. Cheaper follow-ups name the model in
   the toast after the launch
-- **Re-checks** are the `recheck` task in Defaults, Review group. A re-check no
+- **Re-checks** are the `recheck` task in Models, Review group. A re-check no
   longer pins the cheapest model of the draft's provider by hand
 - **Task models** are saved in `workspaces.task_models` and read through
   `resolveTaskModel` in `@goodboy/core`. A pin may carry an effort and a `fallback`.
@@ -821,7 +821,7 @@ project,local --no-session-persistence` in an empty scratch directory,
 - `packages/types/src/provider-registry.ts`: provider ids
 - `packages/core/src/providers/provider-api-key-env.ts`: `PROVIDER_API_KEY_ENV`
 - `apps/desktop/src/store/slices/providers/connectProvider.ts`: the steps and timers behind **Connect**
-- `apps/desktop/src/features/providers/components/ProviderStudio/`: the rail, **Defaults** and `ProviderPage/` (`UsageGroup`, `ModelsGroup`, `PermissionsGroup`, `AccountGroup`)
+- `apps/desktop/src/features/providers/components/ProviderStudio/`: the rail, **Models** and `ProviderPage/` (`UsageGroup`, `ModelsGroup`, `PermissionsGroup`, `AccountGroup`)
 - `apps/desktop/src/features/providers/components/ProviderConnect/guides.ts`: the guide text shown in the app
 - `apps/desktop/src-tauri/src/providers.rs`: finding CLIs and checking sign-in
 - `apps/desktop/src-tauri/src/provider_credentials.rs`: API key checks

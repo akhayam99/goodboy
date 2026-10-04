@@ -901,7 +901,7 @@ Spend tab. **Providers** is not a door to the Providers & models page: it opens
 a menu that changes things in place (`AppFooter/ProvidersMenu`). Settings >
 Providers & models is the one home for providers and usage; the menu holds
 no usage figure and sends there with **Manage providers** (a door). It lists
-the same `ProviderPolicyList` as Defaults > Providers, in order, writing through
+the same `ProviderPolicyList` as Models > Providers, in order, writing through
 the same `setProviderPolicy`, then Connect for each CLI provider that is not
 connected, then Manage providers. The top bar's limits chip opens the same
 home on Usage. It reads the cached providers and never refreshes them on
@@ -1126,7 +1126,7 @@ one is open at a time.
   merge, Review replies, Permissions) sit the same way under the
   Workspace row (`workspacePages.ts`, `SettingsRailPageGroup`). The panel
   shows one item at a time. Providers & models nests
-  Defaults and one row per provider, and Integrations nests one row per tool. Those
+  Models and one row per provider, and Integrations nests one row per tool. Those
   two lists open and close with `Reveal`, and the rail stays one mounted
   element across scopes: `SettingsStudio` portals each scope's nested list and
   detail into slots it owns, and keeps a closing scope mounted until its list
@@ -1553,7 +1553,7 @@ The drawer sits on the `subtle` panel surface, like every `DrawerFrame`.
 closed, it says `Updated 2 min ago`, `Queued`, `Updating…` or `Couldn't update`;
 open, it lists the last round (`summarizerRounds`: when, how many turns or a
 full pass, model and effort, tokens and cost, what changed as a comma list of
-links to the tabs, every value on the same column), **Change model** (Settings, Providers & models, Defaults, scrolled to
+links to the tabs, every value on the same column), **Change model** (Settings, Providers & models, Models, scrolled to
 Step summaries) and **Update now**. Update now queues a consolidation pass
 through `requestContextUpdate`, behind any pass in flight and never beside it;
 `summarizerPending` holds the turns waiting and whether a requested update is

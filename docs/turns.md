@@ -490,7 +490,7 @@ After a successful turn whose role received the "Explain more when the work
 touches" line, and only when that field has topics, the turn joins a learnings
 queue per agent (`learningQueue.ts`). One pass runs at a time per agent; turns
 that finish meanwhile are read together and the learning cites the merged turn
-range. It runs on the `learnings` task model (Defaults, Writing for you), off
+range. It runs on the `learnings` task model (Models, Writing for you), off
 the summarizer queue, so no workflow step waits for it. A pass records its cost
 like the summarizer and writes `session_context_items` rows of kind `learning`
 only for concrete explanations of a listed topic. `context.learnings` set to
@@ -758,10 +758,10 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   never starts above the mid cost tier. When the workspace default provider can run
   a chat (Claude or Codex) and is connected, the chat starts on its line instead; a
   Cursor or OpenCode default never reaches a chat. Picking Claude in Providers,
-  Defaults, Chat proposes the same model. **Start work** drafts its brief with the
+  Models, Chat proposes the same model. **Start work** drafts its brief with the
   model and effort in **Drafted by**, remembered per workspace. The user can save a provider, model and effort
   per workspace in the `settings` table under `chat.default_model.<workspaceId>`
-  (JSON, an empty string means cleared), from Providers, Defaults, Chat, or with
+  (JSON, an empty string means cleared), from Providers, Models, Chat, or with
   Make default in the chat model picker. `defaultChatRouting` applies it to the
   draft in `ChatRoom` and `askInChat` applies it to Ask in Chat. A value that
   fails `parseChatDefaultModel`, or whose provider is not connected, falls back
@@ -769,7 +769,7 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   stored on its row. The first send of a new chat awaits the saved default
   (`useChatDefaultModel` `read`), so a cold cache never starts it on the
   automatic model, and a failed read is reported and falls back to automatic.
-  Reset all in Defaults clears it with the role and task pins.
+  Reset all in Models clears it with the role and task pins.
 - **Activity in the top bar.** `chatStreams` says which chats are answering.
   `useChatActivity` turns it into a running count and an unread flag for the
   Chat button in the top bar: a pulsing info dot (the tone of the running

@@ -1,6 +1,7 @@
 import type { ProviderId } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import { CONCEPT_TONE, type CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/names';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import type { ToolRailEntry } from '../../../integrations/toolRailEntries';
 import type { ProviderRailStatus } from '../../../providers/providerRailStatus';
@@ -155,7 +156,7 @@ const providerPages = ({ status, workspaceName }: Params): ReadonlyArray<Setting
       : [
           {
             key: 'providers:defaults',
-            label: 'Defaults',
+            label: NAMES.models,
             glyph: { kind: 'defaults' },
             tone: 'primary',
             attention: null,

@@ -1244,6 +1244,11 @@ task up again in Goodboy.
   is the library page. **Run defaults** is the tab of Workflows that sets what
   a new run starts with. A renamed label keeps its old name as a ⌘K alias:
   searching the old word finds the new one (`formerNamesOf` in `names.ts`).
+- **Models** is the Providers page that sets what each role runs on (it was
+  Defaults). **Spend cap** is the limit on a run, **Spend caps** the backup
+  group that holds them, **Copy context** the drawer button, **Context window**
+  the share of a model window a turn filled, and **What's new** the release
+  notes page. The old words are ⌘K aliases or retired names.
 - A word that stays and still needs a sentence (workflow, orchestrated,
   artifact) gets a short tooltip, six words at most, written once. The
   `TermHint` and `GLOSSARY`

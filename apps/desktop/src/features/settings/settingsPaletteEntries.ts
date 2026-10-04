@@ -1,4 +1,5 @@
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
+import { formerNamesOf } from '../../shared/names';
 import type { PaletteEntry } from '../palette/types';
 import type { SettingsGroup } from './components/SettingsStudio/settingsDirectory';
 import type { SettingsFlow, SettingsFocus } from './settingsFocus';
@@ -44,6 +45,7 @@ export const settingsPaletteEntries = ({ groups, open }: Params): ReadonlyArray<
       group: 'action',
       icon: CONCEPT_ICONS[group.concept],
       tag: 'Settings',
+      secondary: formerNamesOf(page.label),
       run: () => open({ ...page.target }),
     })),
   );
