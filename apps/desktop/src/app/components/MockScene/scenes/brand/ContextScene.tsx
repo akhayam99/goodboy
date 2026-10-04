@@ -285,9 +285,9 @@ const TRANSCRIPT: ReadonlyArray<TurnEvent> = [
 const CLICKS: ReadonlyArray<string> = [
   'Replaced and withdrawn',
   'sent by',
+  'All',
   'View as sent to Codex',
 ];
-const COLLAPSED_SECTIONS: ReadonlyArray<string> = ['Earlier steps', 'Plan', 'Role instructions'];
 
 export const BrandContextScene = () => {
   const [isReady, setIsReady] = useState(false);
@@ -359,14 +359,6 @@ export const BrandContextScene = () => {
     selector: 'button',
     match: 'prefix',
     intervalMs: 300,
-  });
-
-  useSceneClicks({
-    isReady,
-    labels: COLLAPSED_SECTIONS,
-    selector: '[data-testid^="handoff-section-"] > button',
-    match: 'prefix',
-    intervalMs: 200,
   });
 
   if (!isReady) {

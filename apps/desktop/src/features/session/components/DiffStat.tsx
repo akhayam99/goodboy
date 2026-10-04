@@ -8,7 +8,7 @@ type Props = {
 
 const SIZE_CLASS: Record<'inherit' | 'sm' | 'md', string> = {
   inherit: '',
-  sm: 'text-meta',
+  sm: 'text-chip',
   md: 'text-label',
 };
 

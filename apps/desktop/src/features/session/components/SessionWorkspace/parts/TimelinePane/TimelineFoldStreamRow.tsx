@@ -24,6 +24,7 @@ type Props = {
   readonly lanes: TimelineLaneControl | null;
   readonly runLane: TimelineLaneTarget | null;
   readonly onSetExpanded: (params: { readonly id: string; readonly isExpanded: boolean }) => void;
+  readonly provider?: string | null;
 };
 
 export const TimelineFoldStreamRow = ({
@@ -37,6 +38,7 @@ export const TimelineFoldStreamRow = ({
   lanes,
   runLane,
   onSetExpanded,
+  provider = null,
 }: Props) => {
   const contextMenu = useObjectMenuTrigger({
     target:
@@ -69,6 +71,7 @@ export const TimelineFoldStreamRow = ({
       contextMenu={contextMenu}
       lanes={lanes}
       runLane={runLane}
+      provider={provider}
     />
   );
 };

@@ -8,7 +8,9 @@ import { GUIDANCE_ROLE_CHOICES, guidanceLeftOutText, guidanceRoleNames } from '.
 type Props = {
   readonly roles: ReadonlyArray<AgentRole>;
   readonly where?: string;
+  readonly lead?: string;
   readonly marker?: ReactNode;
+  readonly footer?: ReactNode;
   readonly disabled?: boolean;
   readonly onRoles: (roles: ReadonlyArray<AgentRole>) => void;
 };
@@ -16,16 +18,18 @@ type Props = {
 export const GuidanceRecipients = ({
   roles,
   where,
+  lead = 'Sent to',
   marker = null,
+  footer = null,
   disabled = false,
   onRoles,
 }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-1.5 text-secondary text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-2 text-secondary text-muted-foreground">
         <span>
-          Sent to <span className="text-foreground">{guidanceRoleNames({ roles })}</span>
+          {lead} <span className="text-foreground">{guidanceRoleNames({ roles })}</span>
           {where === undefined ? null : ` ${where}`}
         </span>
         {marker}
@@ -41,12 +45,8 @@ export const GuidanceRecipients = ({
         )}
       </div>
       {isOpen && !disabled ? (
-        <div
-          className="flex flex-col gap-1.5"
-          role="group"
-          aria-label="Roles that get the guidance"
-        >
-          <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-col gap-2" role="group" aria-label="Roles that get the guidance">
+          <div className="flex flex-wrap gap-2">
             {GUIDANCE_ROLE_CHOICES.map((choice) => {
               const isOn = roles.includes(choice.role);
               return (
@@ -74,6 +74,7 @@ export const GuidanceRecipients = ({
           <span className="text-secondary text-faint-foreground">
             {guidanceLeftOutText({ roles })}
           </span>
+          {footer}
         </div>
       ) : null}
     </div>

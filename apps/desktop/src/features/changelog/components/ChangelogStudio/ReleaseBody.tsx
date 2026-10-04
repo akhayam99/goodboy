@@ -81,7 +81,7 @@ export const ReleaseBody = ({
         <Notice
           tone="warning"
           placement="inline"
-          title="This version updates your data in one direction."
+          title="This version updates your data in one direction"
           body={`To go back to ${release.oneWayFrom}, restore the backup Goodboy made before updating.`}
         />
       ) : null}

@@ -51,6 +51,7 @@ type Props = {
   readonly detailHeight?: number;
   readonly expansion?: TimelineRowExpansion | null;
   readonly contextMenu?: ObjectMenuTrigger;
+  readonly provider?: string | null;
 };
 
 const agentIdOf = ({ item }: { readonly item: TimelineRowItem }): AgentId | null =>
@@ -76,6 +77,7 @@ export const TimelineStreamRow = ({
   detailHeight = 0,
   expansion = null,
   contextMenu,
+  provider = null,
 }: Props) => {
   const hover = useHoverMarkViewed({
     sessionId,
@@ -129,6 +131,7 @@ export const TimelineStreamRow = ({
           isLaneLit={isLaneLit}
           worktrees={worktrees}
           isRevealed={isRevealed}
+          provider={provider}
         />
       </span>
       {openTarget == null ? null : (

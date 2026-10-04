@@ -272,14 +272,14 @@ describe('ChatInput, first message', () => {
     expect(document.activeElement).toBe(textarea);
   });
 
-  it('asks to reply to the agent by name once its first turn has run', () => {
+  it('invites a message without repeating the agent name once its first turn has run', () => {
     mockStore.setState({
       sessionPhaseRuns: { 'session-1': [{ id: 'agent-1', name: 'Scout', kind: 'scout' }] },
       agentRunHistory: { 'agent-1': [{}] } as unknown as Record<string, never>,
     });
     render(<ChatInput session={makeSession()} />);
 
-    expect(screen.getByRole('textbox').getAttribute('placeholder')).toBe('Reply to Scout');
+    expect(screen.getByRole('textbox').getAttribute('placeholder')).toBe('Message the agent');
     mockStore.setState({ agentRunHistory: {} });
   });
 });
@@ -1282,7 +1282,7 @@ describe('ChatInput, composer flows', () => {
     const user = userEvent.setup();
     render(<ChatInput session={runningSession()} />);
 
-    await user.click(screen.getByRole('button', { name: 'Cancel turn' }));
+    await user.click(screen.getByRole('button', { name: 'Stop' }));
 
     expect(cancelCurrentTurnMock).toHaveBeenCalledWith('session-1', 'agent-1', 'user');
   });

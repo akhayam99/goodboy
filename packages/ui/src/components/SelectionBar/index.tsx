@@ -193,7 +193,7 @@ export const SelectionBar = ({
                   {verb.hint === undefined ? null : (
                     <KbdPill
                       aria-hidden
-                      className="h-4 min-w-4 border-on-tone/30 bg-on-tone/15 text-meta text-on-tone"
+                      className="h-4 min-w-4 border-on-tone/30 bg-on-tone/15 text-chip text-on-tone"
                     >
                       {verb.hint}
                     </KbdPill>

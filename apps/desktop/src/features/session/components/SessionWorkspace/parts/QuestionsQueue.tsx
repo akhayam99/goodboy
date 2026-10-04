@@ -59,7 +59,7 @@ export const QuestionsQueue = ({
           <div className="flex flex-col gap-0.5">
             <span className="flex items-center gap-1.5 px-2.5 pb-1 pt-2">
               <Eyebrow label="Waiting on you" />
-              <span className="text-meta text-faint-foreground">{model.waiting.length}</span>
+              <span className="text-chip text-faint-foreground">{model.waiting.length}</span>
             </span>
             {model.waiting.map(renderRow)}
           </div>
@@ -68,7 +68,7 @@ export const QuestionsQueue = ({
           <div className="flex flex-col gap-0.5">
             <span className="flex items-center gap-1.5 px-2.5 pb-1 pt-2">
               <Eyebrow label="With an agent" />
-              <span className="text-meta text-faint-foreground">{model.delegated.length}</span>
+              <span className="text-chip text-faint-foreground">{model.delegated.length}</span>
             </span>
             {model.delegated.map(renderRow)}
           </div>
@@ -87,7 +87,7 @@ export const QuestionsQueue = ({
                 className={cn('motion-safe:transition-transform', isAnsweredOpen && 'rotate-90')}
               />
               <Eyebrow label="Answered" />
-              <span className="text-meta">{answeredCount}</span>
+              <span className="text-chip">{answeredCount}</span>
             </button>
             {model.recent.map(renderRow)}
             {isAnsweredOpen && model.answered.map(renderRow)}

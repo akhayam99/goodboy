@@ -21,7 +21,7 @@ type BodyProps = {
 const Body = ({ subtitle, isEscapeEnabled = true }: BodyProps) => (
   <StudioShell
     title="Inbox"
-    closeLabel="close inbox"
+    closeLabel="Close inbox"
     {...(subtitle !== undefined && { subtitle })}
     isEscapeEnabled={isEscapeEnabled}
     headerAccessory={<button type="button">Refresh</button>}
@@ -49,17 +49,17 @@ describe('StudioFrame', () => {
     expect(screen.getByRole('banner', { name: 'Workflows' })).toBeDefined();
   });
 
-  it('loads the settings home behind cards instead of a rail', () => {
+  it('loads settings behind a rail', () => {
     const Pending = lazy(() => new Promise<never>(() => undefined));
     const { container } = render(
-      <StudioFrame kind="settings" skeleton="grid" onClose={() => undefined}>
+      <StudioFrame kind="settings" onClose={() => undefined}>
         <Pending />
       </StudioFrame>,
     );
 
     expect(screen.getByRole('status', { name: 'Loading Settings' })).toBeDefined();
-    expect(container.querySelector('[data-studio-skeleton="grid"]')).not.toBeNull();
-    expect(container.querySelector('[data-studio-skeleton="rail"]')).toBeNull();
+    expect(container.querySelector('[data-studio-skeleton="rail"]')).not.toBeNull();
+    expect(container.querySelector('[data-studio-skeleton="grid"]')).toBeNull();
   });
 
   it('names the studio with the trail primitive in its band', () => {
@@ -170,7 +170,7 @@ describe('StudioFrame', () => {
       </StudioFrame>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'close inbox' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close inbox' }));
     act(() => {
       vi.advanceTimersByTime(300);
     });

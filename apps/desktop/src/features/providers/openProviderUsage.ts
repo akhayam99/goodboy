@@ -9,8 +9,8 @@ export const openProviderUsage = ({ providerId }: Params): void => {
     new CustomEvent('goodboy:open-settings', {
       detail:
         providerId === null
-          ? { scope: 'providers' }
-          : { scope: 'providers', provider: providerId, section: 'usage' },
+          ? { scope: 'providers', door: true }
+          : { scope: 'providers', provider: providerId, section: 'usage', door: true },
     }),
   );
 };

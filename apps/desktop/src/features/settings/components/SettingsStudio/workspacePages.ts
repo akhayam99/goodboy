@@ -8,11 +8,9 @@ export type WorkspacePage =
   | 'profile'
   | 'general'
   | 'after-merge'
-  | 'workflow-rules'
   | typeof REVIEW_REPLIES_SECTION_ID
   | typeof PERMISSIONS_SECTION_ID
-  | 'skills'
-  | 'danger';
+  | 'skills';
 
 export const DEV_PROJECT_SECTION_ID = 'dev-project';
 
@@ -34,19 +32,13 @@ const ALL_WORKSPACE_PAGES = [
     id: 'profile',
     label: 'About you',
     concept: 'profile',
-    hint: 'What agents should know about you in this workspace.',
+    hint: 'What agents should know about you.',
   },
   {
     id: 'general',
     label: 'New sessions',
     concept: 'terminal',
-    hint: 'What every new session in this workspace starts with.',
-  },
-  {
-    id: 'workflow-rules',
-    label: 'Workflow rules',
-    concept: 'workflows',
-    hint: 'Defaults every new workflow run starts with.',
+    hint: 'Defaults for every new session.',
   },
   {
     id: 'after-merge',
@@ -58,25 +50,19 @@ const ALL_WORKSPACE_PAGES = [
     id: REVIEW_REPLIES_SECTION_ID,
     label: 'Review replies',
     concept: 'resolve',
-    hint: 'How Goodboy answers review comments for you.',
+    hint: 'How replies to review comments are drafted.',
   },
   {
     id: PERMISSIONS_SECTION_ID,
     label: 'Permissions',
     concept: 'approval',
-    hint: 'What agents may do without asking you.',
+    hint: 'How much agents may do without asking.',
   },
   {
     id: 'skills',
     label: 'Skills',
     concept: 'skills',
-    hint: 'Instructions agents load when a task needs them.',
-  },
-  {
-    id: 'danger',
-    label: 'Disconnect',
-    concept: 'disconnect',
-    hint: 'Take this workspace off this Mac.',
+    hint: 'Instructions agents can load on demand.',
   },
 ] as const satisfies ReadonlyArray<WorkspacePageEntry>;
 
@@ -100,3 +86,15 @@ export const workspacePageOf = ({ section }: { readonly section?: string }): Wor
 
 export const workspacePageEntry = ({ page }: { readonly page: WorkspacePage }) =>
   WORKSPACE_PAGES.find((entry) => entry.id === page) ?? ALL_WORKSPACE_PAGES[0];
+
+const WORKFLOW_RULES_PLAN_PAGE = 'workflow-rules';
+
+export type PlanPage = WorkspacePage | typeof WORKFLOW_RULES_PLAN_PAGE;
+
+export const PLAN_PAGES: ReadonlyArray<PlanPage> = [
+  ...WORKSPACE_PAGES.map((entry) => entry.id),
+  WORKFLOW_RULES_PLAN_PAGE,
+];
+
+export const planPageLabel = ({ page }: { readonly page: PlanPage }): string =>
+  page === WORKFLOW_RULES_PLAN_PAGE ? 'Workflow rules' : workspacePageEntry({ page }).label;

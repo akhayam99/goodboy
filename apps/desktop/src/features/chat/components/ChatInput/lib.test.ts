@@ -89,37 +89,26 @@ describe('composerPlaceholder', () => {
       composerPlaceholder({
         isRunning: true,
         firstMessagePrompt: 'What should Scout look into?',
-        roleLabel: 'Scout',
       }),
     ).toBe('What should Scout look into?');
   });
 
-  it('asks to reply to the role once a first message exists', () => {
-    expect(
-      composerPlaceholder({ isRunning: false, firstMessagePrompt: null, roleLabel: 'Implementer' }),
-    ).toBe('Reply to Implementer');
+  it('says the same thing for every agent once a first message exists', () => {
+    expect(composerPlaceholder({ isRunning: false, firstMessagePrompt: null })).toBe(
+      'Message the agent',
+    );
   });
 
   it('asks to queue a message while the turn runs', () => {
-    expect(
-      composerPlaceholder({ isRunning: true, firstMessagePrompt: null, roleLabel: 'Implementer' }),
-    ).toBe('Queue a message for Implementer');
+    expect(composerPlaceholder({ isRunning: true, firstMessagePrompt: null })).toBe(
+      'Queue a message',
+    );
   });
 
   it('never carries prefix syntax, learned from the + menu instead', () => {
-    const placeholder = composerPlaceholder({
-      isRunning: false,
-      firstMessagePrompt: null,
-      roleLabel: 'Implementer',
-    });
+    const placeholder = composerPlaceholder({ isRunning: false, firstMessagePrompt: null });
     for (const prefix of CHAT_PREFIXES) {
       expect(placeholder).not.toContain(prefix.symbol);
     }
-  });
-
-  it('drops the role when none is known', () => {
-    expect(
-      composerPlaceholder({ isRunning: false, firstMessagePrompt: null, roleLabel: null }),
-    ).toBe('Reply');
   });
 });

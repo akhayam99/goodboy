@@ -20,7 +20,7 @@ const { store } = vi.hoisted(() => ({
     goToHistory: vi.fn(),
     navigate: vi.fn(),
     closeStudio: vi.fn(),
-    openStudio: vi.fn(),
+    switchStudio: vi.fn(),
   },
 }));
 
@@ -82,7 +82,7 @@ describe('NavCluster', () => {
     const buttons = screen.getAllByRole('button').map((button) => button.textContent);
     expect(buttons.indexOf('Chat')).toBe(buttons.indexOf('Board') + 1);
     fireEvent.click(screen.getByRole('button', { name: 'Chat' }));
-    expect(store.openStudio).toHaveBeenCalledWith({ studio: { kind: 'chat', chatId: null } });
+    expect(store.switchStudio).toHaveBeenCalledWith({ studio: { kind: 'chat', chatId: null } });
   });
 
   it('shows a pulsing dot and counts running chats on the Chat button', () => {
@@ -90,7 +90,7 @@ describe('NavCluster', () => {
     store.unreadChatIds = ['chat-3'];
     render(<NavCluster />);
 
-    const chat = screen.getByRole('button', { name: 'Chat, 2 chats running' });
+    const chat = screen.getByRole('button', { name: 'Chat' });
     expect(chat.getAttribute('data-chat-activity')).toBe('running');
     expect(chat.parentElement?.getAttribute('data-tooltip')).toBe('2 chats running');
     const dot = chat.querySelector('[class*="animate-soft-pulse"]');
@@ -103,7 +103,7 @@ describe('NavCluster', () => {
     store.chatStreams = { 'chat-1': {} };
     render(<NavCluster />);
 
-    const chat = screen.getByRole('button', { name: 'Chat, 1 chat running' });
+    const chat = screen.getByRole('button', { name: 'Chat' });
     expect(chat.parentElement?.getAttribute('data-tooltip')).toBe('1 chat running');
   });
 
@@ -111,7 +111,7 @@ describe('NavCluster', () => {
     store.unreadChatIds = ['chat-3'];
     render(<NavCluster />);
 
-    const chat = screen.getByRole('button', { name: 'Chat, New reply' });
+    const chat = screen.getByRole('button', { name: 'Chat' });
     expect(chat.getAttribute('data-chat-activity')).toBe('unread');
     expect(chat.parentElement?.getAttribute('data-tooltip')).toBe('New reply');
     expect(chat.querySelector('[class*="animate-soft-pulse"]')).toBeNull();
@@ -136,7 +136,7 @@ describe('NavCluster', () => {
     const chat = screen.getByRole('button', { name: 'Chat' });
     expect(chat.getAttribute('aria-current')).toBe('page');
     fireEvent.click(chat);
-    expect(store.openStudio).not.toHaveBeenCalled();
+    expect(store.switchStudio).not.toHaveBeenCalled();
   });
 
   it('shows Board with its word, current and inert on the board', () => {
@@ -145,19 +145,19 @@ describe('NavCluster', () => {
     const board = screen.getByRole('button', { name: 'Board' });
     expect(board.textContent).toContain('Board');
     expect(board.getAttribute('aria-current')).toBe('page');
-    expect(board.parentElement?.getAttribute('data-tooltip')).toBe("You're on the board");
+    expect(board.parentElement?.getAttribute('data-tooltip')).toMatch(/^Board {2}\S+/);
     fireEvent.click(board);
     expect(store.navigate).not.toHaveBeenCalled();
     expect(store.closeStudio).not.toHaveBeenCalled();
   });
 
-  it('closes a studio over the board and names it in the tooltip', () => {
+  it('closes a studio over the board and keeps the same word in the tooltip', () => {
     store.appStudio = { kind: 'settings' };
     render(<NavCluster />);
 
     const board = screen.getByRole('button', { name: 'Board' });
     expect(board.getAttribute('aria-current')).toBeNull();
-    expect(board.parentElement?.getAttribute('data-tooltip')).toContain('Close Settings');
+    expect(board.parentElement?.getAttribute('data-tooltip')).toMatch(/^Board {2}\S+/);
     fireEvent.click(board);
     expect(store.closeStudio).toHaveBeenCalledOnce();
   });

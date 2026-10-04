@@ -1,4 +1,5 @@
 import type { HandoffSection, HandoffSectionKind, HandoffSender } from '@goodboy/types';
+import { NAMES } from '../../../shared/names';
 import { pluralize } from '../../../shared/utils/pluralize';
 
 export type HandoffNames = Readonly<{
@@ -51,10 +52,10 @@ export const handoffSenderLabel = ({ sender, names }: SenderLabelParams): string
 
 export const HANDOFF_SECTION_LABEL: Readonly<Record<HandoffSectionKind, string>> = {
   ask: 'Ask',
-  goal: 'Goal',
+  goal: NAMES.goal,
   earlierSteps: 'Earlier steps',
-  plan: 'Plan',
-  files: 'Files',
+  plan: NAMES.plan,
+  files: NAMES.files,
   threads: 'Threads',
   scope: 'Scope and rules',
   profile: 'About you',

@@ -63,7 +63,7 @@ export const TrailCrumb = ({ segment, isCurrent, isIconOnly, delayStyle }: Props
     <span
       data-trail-piece=""
       aria-label={isIconOnly ? segment.label : undefined}
-      className={cn(TRAIL_CRUMB_CLASS, isCurrent ? TRAIL_CURRENT_CLASS : TRAIL_LINK_CLASS)}
+      className={cn(TRAIL_CRUMB_CLASS, isCurrent ? TRAIL_CURRENT_CLASS : 'text-faint-foreground')}
     >
       {content}
     </span>

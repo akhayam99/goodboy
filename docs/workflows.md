@@ -144,18 +144,25 @@ the rules, and can change later from the run's ⋯ menu.
 
 ## Workflow rules
 
-Rules are the workspace defaults every new run starts from. They live in the
-**Rules** tab of the Workflows studio and on the **Workflow rules** page of the
-workspace settings, with the same Restore defaults and Copy from as the other
-pages.
+Rules are the workspace defaults every new run starts from. They live only in the
+**Rules** tab of the Workflows studio; the workspace settings have no page for
+them. The all-pages Restore defaults and Copy from in the workspace settings menu
+still carry them and list them as Workflow rules in the preview.
 
-- **Providers**: a summary of the provider policy in Defaults. Rules do not own it
-- **Autonomy**: Ask before each step, Ask after the plan or Run on its own
-- **Spend**: a default cap per run and what happens at it, pause or warn
-- **Spread by what I have left**: automatic picks look at each provider's 5h and weekly room
-- **Standing guidance**: text every run starts with, with its own **Polish**
+The tab is titled **Run defaults**: three controls and one text field, in this
+order, each with one line of copy at most.
 
-### Standing guidance
+- **When to ask**: Ask before each step, Ask after the plan or Run on its own. The
+  hints are the ones the builder shows (`RUN_AUTONOMY_OPTIONS`)
+- **Spend cap**: a switch, the amount per run and what happens at the limit, pause
+  or warn
+- **Providers**: one switch, **Use providers with room left**, and one sentence
+  that says where the next step goes. It lists no provider; the policy is in
+  Models, one **Open Models** button away. With no provider that reports its
+  limits (Claude or Codex) turned on, the switch is off and says why
+- **Guidance**: text every run starts with, with its own **Polish**
+
+### Guidance
 
 The rules carry a markdown text every new run starts with. The builder's
 guidance field opens filled with it in all three modes, with **From your
@@ -166,7 +173,8 @@ default**. Where it goes:
   workflow's own process text (`orchestratorProcessText`)
 - a custom or preset run adds it to the brief of the roles in the run's copy of
   the rules, Implementer and Docs by default (`standingGuidanceSection`); the
-  tester or the reviewer get it only when you pick them under **Sent to**
+  tester or the reviewer get it only when you pick them under **Goes to the
+  planning agent and to**, behind **Edit**
 - an empty text adds nothing
 
 On the run page, each step whose role got the guidance (`guidanceSentTo`, the
@@ -175,10 +183,11 @@ the first line. An orchestrated run tags no step.
 
 **Polish** on guidance uses `polishWorkflowGuidance` in `packages/core`, its own
 prompt next to the goal polish: one rule per line as a list, the language of the
-input, every rule kept and none added. The guidance links to the profile field
-it differs from: "Also sent to every agent but Scout, Debugger, Report, Wireframe, Scribe:
-How agents should work with you". The names come from `PROFILE_ACCESS`: the
-roles that never read the working rules.
+input, every rule kept and none added. Inside **Edit**, the guidance links to the
+profile field it differs from: "Also sent to every agent but Scout, Debugger,
+Report, Wireframe, Scribe: How agents should work with you", with an **About you**
+button. The names come from `PROFILE_ACCESS`: the roles that never read the
+working rules.
 
 ### Spread by what I have left
 
@@ -200,8 +209,10 @@ With the rule on (the run's copy, `spreadByHeadroom`):
 - if dropping the _out_ providers empties the menu, the menu of today comes back
 
 With the rule off nothing changes. Workspaces that existed before 0.16.0 start
-with it off (m217) and the Rules tab suggests it when an On provider is above
-80% used; new workspaces start with it on.
+with it off (m217); new workspaces start with it on. The Rules tab shows the
+switch and one sentence: with it off, "New steps follow the order set in
+Models."; with it on, where the next step goes and, when a provider is passed,
+how full it is (`nextStepPick`, `spreadSentence`).
 
 The builder opens filled from the rules and shows them in one **From your
 rules** line with **Edit**. A launch control that leaves the rules shows a dot
@@ -300,14 +311,14 @@ Asking for a certain provider or model on a step is a hint too.
 
 Each run can have a spending limit in dollars. You set it on the run, in the
 orchestrator strip or in the creation form. You also choose what happens when
-the run reaches it: **Pause workflows** or **Only warn me**, the same editor
+the run reaches it: **Pause workflows** or **Warn only**, the same editor
 and words as the session's spend limit. The limit starts at unlimited. The
 orchestrator decides how many steps to plan based on the goal.
 
 A session has its own spend limit, set from the spend chip in its header. With
 **Pause workflows** (the default) every workflow of the session stops at the
 limit and its strip says `Paused at the $10.00 spend limit for this session.`
-with **Raise limit**, which opens the chip on the editor. With **Only warn me**
+with **Raise limit**, which opens the chip on the editor. With **Warn only**
 nothing stops: one notification says the session passed its limit. Single
 agents are never stopped by it.
 

@@ -69,7 +69,7 @@ export const RewordEditor = ({
         />
         <span
           className={cn(
-            'shrink-0 text-meta tabular-nums',
+            'shrink-0 text-chip tabular-nums',
             subject.length > SUBJECT_LIMIT ? 'text-warning' : 'text-faint-foreground',
           )}
         >

@@ -49,9 +49,9 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
               onBlur={() => void rename.commit()}
               onKeyDown={rename.onKeyDown}
               aria-label="Session title"
-              className="text-xl font-semibold"
+              className="text-title"
             />
-            <div className="flex items-center justify-between gap-2 text-secondary">
+            <div className="flex items-center justify-between gap-2 text-meta">
               <span className="min-w-0 truncate text-danger">{rename.error ?? ''}</span>
               <span className="shrink-0 font-mono tabular-nums text-muted-foreground">
                 {rename.draft.length}/{rename.maxLength}
@@ -75,7 +75,7 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
           </h1>
         )}
         {isNamedByGoodboy && !rename.editing ? (
-          <span className="shrink-0 text-secondary text-faint-foreground">Named by Goodboy</span>
+          <span className="shrink-0 text-meta text-faint-foreground">Named by Goodboy</span>
         ) : null}
         <div className="flex shrink-0 items-center gap-1">
           {isArchived ? null : <SessionRefreshAction sessionId={sessionId} />}

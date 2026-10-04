@@ -53,7 +53,7 @@ export const WorkspaceLinkStudio = ({
           ? 'A new folder with git on main, and a first session that works in it.'
           : 'Open a folder as a workspace, or group several projects in one.'
       }
-      closeLabel={isNewProject ? 'close start a new project' : 'close add workspace'}
+      closeLabel={isNewProject ? 'Close start a new project' : 'Close add workspace'}
       variant={variant}
       onClose={onClose}
     >

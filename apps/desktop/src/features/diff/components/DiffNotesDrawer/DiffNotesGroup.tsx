@@ -29,7 +29,7 @@ export const DiffNotesGroup = ({ sessionId, group, fixes, isOpen, onToggle }: Pr
     <>
       <StatusDot tone={NOTE_FIX_GROUP_TONE[group]} size="sm" />
       <span>{label}</span>
-      <span className="text-meta text-faint-foreground">{fixes.length}</span>
+      <span className="text-chip text-faint-foreground">{fixes.length}</span>
     </>
   );
 

@@ -80,7 +80,7 @@ export const WriteReviewForm = ({ sessionId }: Props) => {
         {submit.label}
         <KbdPill
           aria-hidden
-          className="ml-1 h-4 min-w-4 border-on-tone/30 bg-on-tone/15 text-meta text-on-tone"
+          className="ml-1 h-4 min-w-4 border-on-tone/30 bg-on-tone/15 text-chip text-on-tone"
         >
           {shortcutGlyphs('composer.submit')}
         </KbdPill>

@@ -13,51 +13,23 @@ import {
   visible,
 } from './harness';
 
-const openSettingsHome = async (): Promise<HTMLElement> => {
-  await clickButton(/^Open settings/);
-  return screen.findByRole('list', { name: 'App pages' });
-};
-
 const openSettingsRail = async (label: RegExp): Promise<void> => {
-  const appPages = await openSettingsHome();
-  await click(within(appPages).getByRole('button', { name: /^General/ }));
+  await clickButton('Settings');
   const rail = await screen.findByRole('navigation', { name: 'Settings scopes' });
   await click(within(rail).getAllByRole('button', { name: label })[0] ?? rail);
 };
 
 export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'settings home',
+    name: 'settings opens on a page with the rail beside it',
     covers: ['openSettings', 'scope:home'],
     open: async () => {
-      await openSettingsHome();
+      await clickButton('Settings');
     },
     lands: both(
-      () => heading('Settings'),
-      () => visible('list', 'Integrations pages'),
+      () => visible('navigation', 'Settings scopes'),
+      () => heading('Appearance'),
     ),
-  },
-  {
-    name: 'settings home card: storage',
-    covers: ['openSettings', 'scope:home', 'settings:storage'],
-    open: async () => {
-      const appPages = await openSettingsHome();
-      await click(within(appPages).getByRole('button', { name: /^Storage/ }));
-    },
-    lands: () => visible('region', 'Worktrees'),
-  },
-  {
-    name: 'settings crumb back to the home',
-    covers: ['openSettings', 'scope:home'],
-    open: async () => {
-      await openSettingsRail(/^Shortcuts/);
-      const trails = await screen.findAllByRole('navigation', { name: 'Breadcrumb' });
-      const settings = trails.flatMap((trail) =>
-        within(trail).queryAllByRole('button', { name: 'Settings' }),
-      );
-      await click(settings[0] ?? trails[0]!);
-    },
-    lands: () => visible('list', 'App pages'),
   },
   ...APP_SECTIONS.map((section): Row => ({
     name: `settings rail: ${section.label}`,

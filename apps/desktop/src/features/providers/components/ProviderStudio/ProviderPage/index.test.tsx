@@ -85,12 +85,11 @@ describe('ProviderPage', () => {
     ]);
   });
 
-  it('carries the plan, the account and the cli in the header meta', () => {
+  it('carries only the plan in the header meta and the account in the account group', () => {
     render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
 
-    expect(
-      screen.getByText('Team plan · Signed in as dev@acme.test · Claude CLI 2.1.0'),
-    ).toBeDefined();
+    expect(screen.getByText('Team plan')).toBeDefined();
+    expect(screen.queryByText(/Signed in as/)).toBeNull();
     expect(screen.getByText('dev@acme.test · Team plan')).toBeDefined();
   });
 

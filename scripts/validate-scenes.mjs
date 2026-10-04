@@ -3,7 +3,8 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const CHROME =
+  process.env.VALIDATE_CHROME ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const ZOOMS = [1, 1.1];
 const WIDTHS = [1440, 1200, 1024, 880, 760];
 const HEIGHT = 1000;
@@ -95,7 +96,7 @@ const run = async (send, fn, argument) => {
   return result.result?.result?.value;
 };
 
-const open = async ({ send, scene, width, zoom }) => {
+const open = async ({ send, scene, width, zoom, readySelector = '[data-row-id]' }) => {
   await send('Emulation.setDeviceMetricsOverride', {
     width: Math.round(width / zoom),
     height: Math.round(HEIGHT / zoom),
@@ -107,14 +108,90 @@ const open = async ({ send, scene, width, zoom }) => {
   await pause(wait);
   await run(
     send,
-    async () => {
+    async (selector) => {
       for (let attempt = 0; attempt < 100; attempt += 1) {
-        if (document.querySelectorAll('[data-row-id]').length > 0) return true;
+        if (document.querySelector(selector) !== null) return true;
         await new Promise((resolvePromise) => setTimeout(resolvePromise, 100));
       }
       return false;
     },
-    null,
+    readySelector,
+  );
+};
+
+const clickButton = ({ label }) => {
+  const button = [...document.querySelectorAll('button')].find(
+    (candidate) => candidate.textContent?.trim() === label,
+  );
+  if (!(button instanceof HTMLElement)) return false;
+  button.click();
+  return true;
+};
+
+const workflowScrollProbe = () => {
+  const content = document.querySelector('[data-testid="workflow-rules"]');
+  if (!(content instanceof HTMLElement)) return null;
+  let scroller = content.parentElement;
+  while (scroller !== null && scroller.scrollHeight <= scroller.clientHeight + 1) {
+    scroller = scroller.parentElement;
+  }
+  if (scroller === null) return null;
+  const box = scroller.getBoundingClientRect();
+  return {
+    x: box.left + box.width / 2,
+    y: box.top + box.height / 2,
+    before: scroller.scrollTop,
+  };
+};
+
+const workflowScrollResult = () => {
+  const content = document.querySelector('[data-testid="workflow-rules"]');
+  if (!(content instanceof HTMLElement)) return null;
+  let scroller = content.parentElement;
+  while (scroller !== null && scroller.scrollHeight <= scroller.clientHeight + 1) {
+    scroller = scroller.parentElement;
+  }
+  if (scroller === null) return null;
+  const maximum = scroller.scrollHeight - scroller.clientHeight;
+  return {
+    top: scroller.scrollTop,
+    maximum,
+    reached: maximum > 0 && scroller.scrollTop >= maximum - 2,
+  };
+};
+
+const validateWorkflowScroll = async ({ send, scene, click }) => {
+  await open({
+    send,
+    scene,
+    width: 880,
+    zoom: 1,
+    readySelector: '[data-studio-overlay]',
+  });
+  if (click !== null) {
+    const clicked = await run(send, clickButton, { label: click });
+    if (!clicked) return { reached: false, reason: `missing ${click} button` };
+    await pause(SETTLE_MS);
+  }
+  const show = await run(send, clickButton, { label: 'Show' });
+  if (show) await pause(SETTLE_MS);
+  const probe = await run(send, workflowScrollProbe, null);
+  if (probe === null) return { reached: false, reason: 'missing workflow scroller' };
+  for (let index = 0; index < 12; index += 1) {
+    await send('Input.dispatchMouseEvent', {
+      type: 'mouseWheel',
+      x: probe.x,
+      y: probe.y,
+      deltaX: 0,
+      deltaY: 700,
+    });
+    await pause(40);
+  }
+  return (
+    (await run(send, workflowScrollResult, null)) ?? {
+      reached: false,
+      reason: 'workflow scroller disappeared',
+    }
   );
 };
 
@@ -274,6 +351,16 @@ const main = async () => {
           failures.push({ scene, width, check: 'time wider than its column', clipped });
         }
       }
+    }
+    for (const target of [
+      { scene: 'workflow-studio&view=rules', click: null },
+      { scene: 'frame&view=workflows', click: 'Rules' },
+    ]) {
+      const result = await validateWorkflowScroll({ send: session.send, ...target });
+      if (!result.reached) {
+        failures.push({ scene: target.scene, check: 'workflow bottom unreachable', result });
+      }
+      console.log(`${target.scene}: workflow bottom ${result.reached ? 'reached' : 'not reached'}`);
     }
   } finally {
     session.close();

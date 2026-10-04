@@ -3,7 +3,7 @@ import { SkeletonChip } from '@goodboy/ui';
 import type { ProjectId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { externalTaskLinkKey } from '../../../../../store/slices/sessions/externalTaskLinkKey';
-import { TaskLinkChip } from '../../../../../shared/components/TaskLinkChip';
+import { TaskChipMenu } from '../../../../../shared/components/TaskChipMenu';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -23,7 +23,6 @@ export const BranchTaskChips = ({ sessionId, projectId, branch, isSkeleton }: Pr
       ),
     ),
   );
-  const openExternalTaskLens = useAppStore((state) => state.openExternalTaskLens);
   if (tasks.length === 0) {
     return null;
   }
@@ -33,14 +32,13 @@ export const BranchTaskChips = ({ sessionId, projectId, branch, isSkeleton }: Pr
         isSkeleton ? (
           <SkeletonChip key={externalTaskLinkKey({ task })} />
         ) : (
-          <TaskLinkChip
+          <TaskChipMenu
             key={externalTaskLinkKey({ task })}
-            provider={task.provider}
-            identifier={task.identifier}
+            sessionId={sessionId}
+            task={task}
+            branch={branch}
+            branches={[branch]}
             size="xs"
-            tooltip={`${task.identifier} on ${branch}: ${task.title}`}
-            ariaLabel={`Open ${task.identifier} on ${branch}`}
-            onClick={() => openExternalTaskLens(sessionId, task)}
           />
         ),
       )}

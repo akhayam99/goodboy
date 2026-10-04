@@ -1,5 +1,5 @@
 import { cn, tintClasses, InlineMarkdown, inlineMarkdownText, type Tone } from '@goodboy/ui';
-import type { Session, SessionId } from '@goodboy/types';
+import type { Session, SessionAttentionReason, SessionId } from '@goodboy/types';
 import { useSessionStageInfo } from '../../../../store';
 import { ATTENTION_REASON_META } from '../../../../features/session/session-stage';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -12,6 +12,7 @@ type Props = {
 
 type SelectParams = {
   readonly sessionId: SessionId;
+  readonly reason: SessionAttentionReason | null;
 };
 
 export const NeedsYouSessionRow = ({ session, onSelect, fallbackTone = 'neutral' }: Props) => {
@@ -23,7 +24,7 @@ export const NeedsYouSessionRow = ({ session, onSelect, fallbackTone = 'neutral'
     <li>
       <button
         type="button"
-        onClick={() => onSelect({ sessionId: session.id as SessionId })}
+        onClick={() => onSelect({ sessionId: session.id as SessionId, reason: attention })}
         title={`${inlineMarkdownText({ text: session.goal })} · ${reason}`}
         className="flex w-full items-start gap-2 px-3 py-2.5 text-left transition-colors hover:bg-hover"
       >

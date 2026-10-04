@@ -21,7 +21,7 @@ type Props = {
   readonly dropIndex: number | undefined;
   readonly onToggleExpand: () => void;
   readonly onState: (state: ProviderPolicyState) => void;
-  readonly onToggleMark: (mark: 'payAsYouGo' | 'keepAfterLimit') => void;
+  readonly onToggleKeepAfterLimit: () => void;
   readonly onGripDown: (event: PointerEvent) => void;
   readonly onKeyDown: (event: KeyboardEvent<HTMLLIElement>) => void;
 };
@@ -36,7 +36,7 @@ export const ProviderPolicyRow = ({
   dropIndex,
   onToggleExpand,
   onState,
-  onToggleMark,
+  onToggleKeepAfterLimit,
   onGripDown,
   onKeyDown,
 }: Props) => {
@@ -66,7 +66,7 @@ export const ProviderPolicyRow = ({
             <GripVertical size={ICON_SIZE.control} aria-hidden />
           </button>
         </Tooltip>
-        <span className="w-3 shrink-0 text-meta text-faint-foreground">{rank}</span>
+        <span className="w-3 shrink-0 text-chip text-faint-foreground">{rank}</span>
         <ProviderGlyph id={row.id} size={ICON_SIZE.control} />
         <button
           type="button"
@@ -79,7 +79,7 @@ export const ProviderPolicyRow = ({
             {row.isNew ? (
               <span
                 className={cn(
-                  'rounded-sm px-1 text-meta',
+                  'rounded-sm px-1 text-chip',
                   tintClasses('primary').bgSoft,
                   tintClasses('primary').text,
                 )}
@@ -103,7 +103,9 @@ export const ProviderPolicyRow = ({
           <PolicyStateSegment label={`${name} policy`} value={row.state} onChange={onState} />
         )}
       </div>
-      {isExpanded ? <PolicyMarks row={row} onToggleMark={onToggleMark} onState={onState} /> : null}
+      {isExpanded ? (
+        <PolicyMarks row={row} onToggleKeepAfterLimit={onToggleKeepAfterLimit} />
+      ) : null}
     </li>
   );
 };

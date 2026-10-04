@@ -78,22 +78,33 @@ const kickoff = ({
 }): string => buildResolverKickoff({ threads: [{ head, replies }], pr: PR, hint });
 
 describe('spawn-from-comment', () => {
-  it('titles review comments with short file + line', () => {
-    expect(buildCommentAgentTitle(makeComment())).toBe('resolve: alice on foo.ts:42');
+  it('titles another reviewer by name and short file', () => {
+    expect(buildCommentAgentTitle(makeComment())).toBe('Resolve: alice on foo.ts');
+  });
+
+  it('titles the maintainer own comment by file, without naming them', () => {
+    expect(buildCommentAgentTitle(makeComment({ author: 'You' }))).toBe('Resolve: foo.ts comment');
   });
 
   it('strips [bot] suffix from authors in titles', () => {
     expect(buildCommentAgentTitle(makeComment({ author: 'cursor[bot]' }))).toBe(
-      'resolve: cursor on foo.ts:42',
+      'Resolve: cursor on foo.ts',
     );
   });
 
   it('falls back to generic title for issue comments', () => {
-    expect(
-      buildCommentAgentTitle(
-        makeComment({ source: 'issue', path: undefined, line: undefined, id: 'issue-1' }),
-      ),
-    ).toBe('resolve: alice comment');
+    const issue = { source: 'issue', path: undefined, line: undefined, id: 'issue-1' } as const;
+
+    expect(buildCommentAgentTitle(makeComment(issue))).toBe('Resolve: alice comment');
+    expect(buildCommentAgentTitle(makeComment({ ...issue, author: 'You' }))).toBe(
+      'Resolve: comment',
+    );
+  });
+
+  it('names a group of threads by how many comments it holds', () => {
+    expect(buildResolverAgentArgs({ threads: threadsOf(3), pr: PR }).name).toBe(
+      'Resolve: 3 review comments',
+    );
   });
 
   it('carries the comment context into a single kickoff', () => {

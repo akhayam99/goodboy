@@ -416,7 +416,7 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     await draftPlan();
     expandStep(0);
 
-    fireEvent.click(withinSteps().getAllByRole('tab', { name: 'Verbose' })[0]!);
+    fireEvent.click(withinSteps().getAllByRole('tab', { name: 'Long' })[0]!);
     fireEvent.click(withinSteps().getAllByRole('combobox', { name: 'Agent role' })[0]!);
     fireEvent.click(
       within(screen.getByRole('listbox', { name: 'Agent role' })).getByRole('option', {
@@ -907,12 +907,12 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
     openSpendCap();
     expect(screen.queryByLabelText('Spend limit in dollars')).toBeNull();
-    expect(screen.queryByRole('tab', { name: /Only warn me/ })).toBeNull();
+    expect(screen.queryByRole('tab', { name: /Warn only/ })).toBeNull();
     expect(screen.queryByRole('tab', { name: /Pause workflows/ })).toBeNull();
 
     fireEvent.click(screen.getByRole('switch', { name: /spend limit/i }));
     expect(screen.getByLabelText('Spend limit in dollars')).toBeDefined();
-    expect(screen.queryByRole('tab', { name: /Only warn me/ })).toBeNull();
+    expect(screen.queryByRole('tab', { name: /Warn only/ })).toBeNull();
     expect(screen.queryByRole('tab', { name: /Pause workflows/ })).toBeNull();
 
     fireEvent.change(guidanceField(), {
@@ -921,9 +921,9 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     fireEvent.change(screen.getByLabelText('Spend limit in dollars'), {
       target: { value: '15' },
     });
-    expect(screen.getByRole('tab', { name: /Only warn me/ })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /Warn only/ })).toBeDefined();
     expect(screen.getByRole('tab', { name: /Pause workflows/ })).toBeDefined();
-    fireEvent.click(screen.getByRole('tab', { name: /Only warn me/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /Warn only/ }));
     fireEvent.click(startBtn());
 
     await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
@@ -1515,7 +1515,7 @@ describe('WorkflowBuilderView (goal affordances)', () => {
     await waitFor(() =>
       expect(toastMock).toHaveBeenCalledWith({
         kind: 'warning',
-        message: 'Kept your wording. The goal could not be polished.',
+        message: "Kept your wording. Couldn't polish the goal.",
       }),
     );
     expect(goalField().value).toBe('rough goal');

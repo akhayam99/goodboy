@@ -4,7 +4,7 @@ The full feature guide, in the same order as [goodboy-ai.dev](https://goodboy-ai
 
 Most pictures follow one team and one task. Harborline keeps three repos, payments-api, ledger-core and notify-relay, and issue HBL-412 says retried webhooks post a second credit. The pictures show that fix from the first brief to pull request #318.
 
-<a id="welcome-to-goodboy"></a><a id="provider-connection"></a><a id="one-page-per-provider"></a><a id="update-the-provider-cli"></a><a id="permissions-for-each-provider"></a><a id="integrations"></a><a id="about-you"></a><a id="settings-home"></a>
+<a id="welcome-to-goodboy"></a><a id="provider-connection"></a><a id="one-page-per-provider"></a><a id="update-the-provider-cli"></a><a id="permissions-for-each-provider"></a><a id="integrations"></a><a id="about-you"></a><a id="settings-home"></a><a id="settings"></a>
 
 ## Set up
 
@@ -88,7 +88,7 @@ Reshape a branch before it goes to review: fold, move, rename and remove commits
 
 [More on branch history](docs/features/branch-history.md)
 
-<a id="resolve"></a><a id="review-sources"></a><a id="comment-states"></a><a id="failed-drafts"></a><a id="manage-a-resolve-from-its-brief"></a><a id="fixes-already-on-the-branch"></a><a id="a-fix-that-went-missing"></a><a id="close-on-github"></a><a id="review-replies-in-your-voice"></a><a id="fixes-on-a-branch-that-moved"></a><a id="squash-and-fold-the-resolve-commits"></a><a id="notes-before-a-pull-request"></a><a id="github-pull-request-page"></a><a id="pull-request-diff-and-review-as-layers"></a><a id="write-it-for-me"></a><a id="pr-description-follows-the-push"></a><a id="diff"></a><a id="write-review"></a>
+<a id="resolve"></a><a id="review-sources"></a><a id="comment-states"></a><a id="failed-drafts"></a><a id="manage-a-resolve-from-its-brief"></a><a id="fixes-already-on-the-branch"></a><a id="a-fix-that-went-missing"></a><a id="close-on-github"></a><a id="review-replies-in-your-voice"></a><a id="fixes-on-a-branch-that-moved"></a><a id="squash-and-fold-the-resolve-commits"></a><a id="notes-before-a-pull-request"></a><a id="github-pull-request-page"></a><a id="pull-request-diff-and-review-as-layers"></a><a id="write-it-for-me"></a><a id="write-it"></a><a id="pr-description-follows-the-push"></a><a id="diff"></a><a id="write-review"></a>
 
 ## Review, resolve and pull requests
 
@@ -179,7 +179,7 @@ Watch how much of each plan is left, keep work moving when a provider runs out, 
 
 [More on providers, limits and cost](docs/features/providers.md)
 
-<a id="worktree-folders"></a><a id="branches"></a><a id="storage-scope"></a><a id="free-space-chip"></a><a id="artifacts-from-deleted-sessions"></a><a id="goodboy-can-free-n-gb"></a><a id="other-tools"></a>
+<a id="worktree-folders"></a><a id="branches"></a><a id="storage-scope"></a><a id="artifacts-from-deleted-sessions"></a><a id="goodboy-can-free-n-gb"></a><a id="other-tools"></a>
 
 ## Storage
 

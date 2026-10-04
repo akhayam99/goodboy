@@ -26,7 +26,7 @@ import {
 } from '../../../../../shared/components/conceptIcons';
 import { sessionCardShell, sessionTone } from '../../../../session/components/sessionCardShell';
 import { useOpenSession } from '../../../../../shared/hooks/useOpenSession';
-import { sessionTitle } from '../../../../session/sessionTitle';
+import { sessionDisplayTitle } from '../../../../session/sessionTitle';
 import { ChatOriginGlyph } from '../../../../../shared/components/ChatOriginGlyph';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { getLinkedRequest } from './getLinkedRequest';
@@ -88,6 +88,7 @@ export const StageBoardCard = memo(function StageBoardCard({
   const externalTasks = summary.tasks;
   const sessionCost = summary.cost;
   const isAutoMode = summary.isAutorun;
+  const title = sessionDisplayTitle({ session, tasks: externalTasks });
 
   const pullRequest = useAppStore((s) => s.sessionGithub[id]?.pr ?? null);
   const prFetchState = useSessionPrFetchState(id);
@@ -191,7 +192,7 @@ export const StageBoardCard = memo(function StageBoardCard({
       {onToggleSelect !== undefined && (
         <SelectionCheckbox
           checked={selected === true}
-          label={`Select ${inlineMarkdownText({ text: sessionTitle({ session }) })}`}
+          label={`Select ${inlineMarkdownText({ text: title })}`}
           onToggle={(event) => onToggleSelect(id, event)}
           className="absolute top-2.5 left-1"
         />
@@ -219,7 +220,7 @@ export const StageBoardCard = memo(function StageBoardCard({
           ) : (
             <button
               type="button"
-              title={inlineMarkdownText({ text: sessionTitle({ session }) })}
+              title={inlineMarkdownText({ text: title })}
               aria-pressed={selected === true}
               aria-keyshortcuts="Alt+Enter Shift+F10"
               onKeyDown={(event) => {
@@ -236,10 +237,7 @@ export const StageBoardCard = memo(function StageBoardCard({
               }}
               className="min-w-0 flex-1 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             >
-              <InlineMarkdown
-                text={sessionTitle({ session })}
-                className="line-clamp-2 min-h-10 text-row"
-              />
+              <InlineMarkdown text={title} className="line-clamp-2 min-h-10 text-row" />
             </button>
           )}
           <ChatOriginGlyph sessionId={session.id} />
@@ -247,7 +245,7 @@ export const StageBoardCard = memo(function StageBoardCard({
 
         {progress !== null ? (
           <SessionProgress progress={progress} tone={summary.tone} />
-        ) : reason !== '' ? (
+        ) : reason !== '' && summary.addsFact ? (
           <span className="truncate text-secondary text-muted-foreground">{reason}</span>
         ) : null}
       </span>
@@ -343,7 +341,7 @@ export const StageBoardCard = memo(function StageBoardCard({
             <CostBadge
               value={sessionCost}
               title={`Session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
-              className="shrink-0 text-meta text-faint-foreground"
+              className="hidden shrink-0 text-meta text-faint-foreground group-hover/session-card:inline group-focus-within/session-card:inline"
             />
           )}
           {age && <span className="shrink-0 text-meta text-faint-foreground">{age}</span>}

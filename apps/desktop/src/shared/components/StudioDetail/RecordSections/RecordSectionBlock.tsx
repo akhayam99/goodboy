@@ -13,7 +13,7 @@ export const RecordSectionBlock = ({ section }: Props) => {
   const panelId = useId();
   const count =
     section.count == null ? null : (
-      <span className="text-meta text-faint-foreground">{section.count}</span>
+      <span className="text-chip text-faint-foreground">{section.count}</span>
     );
 
   if (!section.isCollapsible) {

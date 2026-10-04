@@ -13,7 +13,6 @@ import {
   type RailSubtitleState,
 } from '../../components/SettingsStudio/railSubtitles';
 import type { SettingsStatus } from '../../components/SettingsStudio/settingsDirectory';
-import { workspacePageStatus } from '../../components/SettingsStudio/workspacePageStatus';
 
 type Params = {
   readonly workspaceId: WorkspaceId | null;
@@ -37,13 +36,6 @@ export const useSettingsStatus = ({ workspaceId }: Params): SettingsStatus => {
       projectGitStatus: store.projectGitStatus,
     })),
   );
-  const workspaceState = useAppStore(
-    useShallow((store) => ({
-      workspace: store.workspaces.find((candidate) => candidate.id === workspaceId) ?? null,
-      overrides: workspaceId === null ? null : (store.workspaceOverrides[workspaceId] ?? null),
-      projectCount: store.projects.filter((project) => project.workspaceId === workspaceId).length,
-    })),
-  );
   const { integrations, connected, githubIdentity } = useToolConnections({ workspaceId });
   const connectedKey = TOOL_ORDER.map((tool) => connected[tool]).join();
 
@@ -56,9 +48,9 @@ export const useSettingsStatus = ({ workspaceId }: Params): SettingsStatus => {
       orderProviders({ providers: state.providers }).map((provider) => ({
         id: provider.id as ProviderId,
         label: provider.label,
-        status: providerRailStatus({ provider, state, nowMs }),
+        status: providerRailStatus({ provider, state }),
       })),
-    [state, nowMs],
+    [state],
   );
   const tools = useMemo(
     () => toolRailEntries({ integrations, connected, githubIdentity }),
@@ -66,10 +58,8 @@ export const useSettingsStatus = ({ workspaceId }: Params): SettingsStatus => {
   );
   const toolsInventory = useMemo(() => connectedInventory({ connected }), [connectedKey]);
 
-  const workspacePages = useMemo(() => workspacePageStatus(workspaceState), [workspaceState]);
-
   return useMemo(
-    () => ({ subtitles, providers, tools, toolsInventory, workspacePages }),
-    [subtitles, providers, tools, toolsInventory, workspacePages],
+    () => ({ subtitles, providers, tools, toolsInventory }),
+    [subtitles, providers, tools, toolsInventory],
   );
 };

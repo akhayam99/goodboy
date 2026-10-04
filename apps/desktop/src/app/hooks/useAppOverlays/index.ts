@@ -51,6 +51,7 @@ export const useAppOverlays = ({
   const overlay = useAppStore((state) => state.appStudio);
   const openStudio = useAppStore((state) => state.openStudio);
   const amendStudio = useAppStore((state) => state.amendStudio);
+  const switchStudio = useAppStore((state) => state.switchStudio);
   const closeStudio = useAppStore((state) => state.closeStudio);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteSessionId, setDeleteSessionId] = useState<SessionId | null>(null);
@@ -63,13 +64,17 @@ export const useAppOverlays = ({
     ({ overlay: next }: OpenParams) => openStudio({ studio: next }),
     [openStudio],
   );
+  const goTo = useCallback(
+    ({ overlay: next }: OpenParams) => switchStudio({ studio: next }),
+    [switchStudio],
+  );
   const close = useCallback(() => closeStudio(), [closeStudio]);
 
   const openPalette = useCallback(({ mode = 'commands', query = '' }: OpenPaletteParams = {}) => {
     setPalette((current) => (current === null ? { mode, query } : { ...current, mode }));
   }, []);
 
-  useStudioEvents({ open, close, openPalette });
+  useStudioEvents({ open, goTo, close, openPalette });
   useSessionSurfaceEvents({
     close,
     currentSession,
@@ -85,19 +90,19 @@ export const useAppOverlays = ({
 
   const openSettings = useCallback(() => {
     clearCurrentSessionStudio();
-    open({
+    goTo({
       overlay: { kind: 'settings', focus: { scope: 'home' } },
     });
-  }, [open]);
+  }, [goTo]);
 
   const openSpend = useCallback(
-    () => open({ overlay: { kind: 'impact', scope: { kind: 'spend' } } }),
-    [open],
+    () => goTo({ overlay: { kind: 'impact', scope: { kind: 'spend' } } }),
+    [goTo],
   );
 
-  const openImpact = useCallback(() => open({ overlay: { kind: 'impact', scope: null } }), [open]);
+  const openImpact = useCallback(() => goTo({ overlay: { kind: 'impact', scope: null } }), [goTo]);
 
-  const openChangelog = useCallback(() => open({ overlay: { kind: 'changelog' } }), [open]);
+  const openChangelog = useCallback(() => goTo({ overlay: { kind: 'changelog' } }), [goTo]);
 
   const onOpenChangelogScreen = useCallback(
     ({ screen }: { readonly screen: ChangelogScreen }) =>
@@ -105,34 +110,34 @@ export const useAppOverlays = ({
     [open],
   );
 
-  const openWorkflows = useCallback(() => open({ overlay: { kind: 'workflow' } }), [open]);
+  const openWorkflows = useCallback(() => goTo({ overlay: { kind: 'workflow' } }), [goTo]);
 
   const openProviders = useCallback(
-    () => open({ overlay: { kind: 'settings', focus: { scope: 'providers' } } }),
-    [open],
+    () => goTo({ overlay: { kind: 'settings', focus: { scope: 'providers' } } }),
+    [goTo],
   );
 
-  const openInbox = useCallback(() => open({ overlay: { kind: 'inbox', focus: null } }), [open]);
+  const openInbox = useCallback(() => goTo({ overlay: { kind: 'inbox', focus: null } }), [goTo]);
 
   const openShortcutHelp = useCallback(
-    () => open({ overlay: { kind: 'settings', focus: { scope: 'app', section: 'shortcuts' } } }),
-    [open],
+    () => goTo({ overlay: { kind: 'settings', focus: { scope: 'app', section: 'shortcuts' } } }),
+    [goTo],
   );
 
   const openIntegration = useCallback(
     ({ provider }: OpenIntegrationParams) => {
       if (!connected[provider]) {
-        open({ overlay: { kind: 'settings', focus: { scope: 'tools', tool: provider } } });
+        goTo({ overlay: { kind: 'settings', focus: { scope: 'tools', tool: provider } } });
         return;
       }
-      open({
+      goTo({
         overlay: {
           kind: 'inbox',
           focus: { provider, kind: null, recordKey: null, sessionId: null },
         },
       });
     },
-    [connected, open],
+    [connected, goTo],
   );
 
   const changeSettingsScope = useCallback(

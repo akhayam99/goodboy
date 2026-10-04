@@ -5,14 +5,14 @@ import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { policyRows } from '../../../providers/policy/policyRows';
-import { policySummary } from '../../../providers/policy/policySummary';
 import { rulesProviderRooms } from '../../rulesHeadroom';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
+  readonly isSpreadOn: boolean;
 };
 
-export const useRulesProviders = ({ workspaceId }: Params) => {
+export const useRulesProviders = ({ workspaceId, isSpreadOn }: Params) => {
   const policy = useAppStore(
     (state) => state.workspaceOverrides[workspaceId]?.providerPool ?? null,
   );
@@ -27,14 +27,13 @@ export const useRulesProviders = ({ workspaceId }: Params) => {
     ),
   );
   const limits = useAppStore((state) => state.providerLimits);
-  const nowMs = useNow(60_000);
+  const nowMs = useNow(60_000, isSpreadOn);
   const defaultProvider = savedDefault ?? DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider;
   const rows = useMemo(
     () => policyRows({ policy, defaultProvider, connected, limits, nowMs }),
     [connected, defaultProvider, limits, nowMs, policy],
   );
-  const summary = useMemo(() => policySummary({ rows }), [rows]);
-  const rooms = useMemo(
+  return useMemo(
     () =>
       rulesProviderRooms({
         rows,
@@ -43,5 +42,4 @@ export const useRulesProviders = ({ workspaceId }: Params) => {
       }),
     [limits, nowMs, policy, rows],
   );
-  return { summary, rooms };
 };

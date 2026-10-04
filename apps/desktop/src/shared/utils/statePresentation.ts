@@ -13,10 +13,23 @@ type DescriptionParams = {
   readonly subject?: string | null;
 };
 
+type JoinableParams = {
+  readonly reason: string;
+};
+
+const joinable = ({ reason }: JoinableParams): string => {
+  const first = reason.charAt(0);
+  const second = reason.charAt(1);
+  const isWord = first !== first.toLowerCase() && second === second.toLowerCase();
+  return isWord ? `${first.toLowerCase()}${reason.slice(1)}` : reason;
+};
+
 export const stateDescription = ({ presentation, subject = null }: DescriptionParams): string => {
   const head =
     subject === null || subject === ''
       ? presentation.label
       : `${subject} ${presentation.label.toLowerCase()}`;
-  return presentation.reason === '' ? head : `${head}, ${presentation.reason}`;
+  return presentation.reason === ''
+    ? head
+    : `${head}, ${joinable({ reason: presentation.reason })}`;
 };

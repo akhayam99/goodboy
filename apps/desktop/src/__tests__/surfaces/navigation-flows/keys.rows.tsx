@@ -152,7 +152,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   }),
   pressRow({
     id: 'settings.open',
-    lands: () => heading('Settings'),
+    lands: () => visible('navigation', 'Settings scopes'),
   }),
   pressRow({
     id: 'settings.shortcuts',
@@ -321,7 +321,7 @@ const seedInbox = async (): Promise<void> => {
   useAppStore.setState({
     starredIssues: { [workspaceId]: [0, 1, 2].map(starredIssue) },
   });
-  await clickButton(/^Open the inbox/);
+  await clickButton('Inbox');
   await visible('region', 'Starred');
 };
 

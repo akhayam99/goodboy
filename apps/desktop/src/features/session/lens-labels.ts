@@ -2,18 +2,19 @@ import type { LucideIcon } from 'lucide-react';
 import { tintClasses, type Tone } from '@goodboy/ui';
 import type { LensKind } from '../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../shared/components/conceptIcons';
+import { NAMES } from '../../shared/names';
 
 export const LENS_LABEL: Record<LensKind, string> = {
-  questions: 'Questions',
-  agents: 'Agents',
-  workflows: 'Workflows',
-  review: 'Review',
-  plans: 'Artifacts',
-  scripts: 'Scripts',
-  terminal: 'Terminal',
-  context: 'Context',
-  goal: 'Goal',
-  decisions: 'Decisions',
+  questions: NAMES.questions,
+  agents: NAMES.agents,
+  workflows: NAMES.workflows,
+  review: NAMES.review,
+  plans: NAMES.artifacts,
+  scripts: NAMES.scripts,
+  terminal: NAMES.terminal,
+  context: NAMES.context,
+  goal: NAMES.goal,
+  decisions: NAMES.decisions,
   last_output_summary: 'Session summary',
   pr: 'Pull request',
   files: 'Diff',

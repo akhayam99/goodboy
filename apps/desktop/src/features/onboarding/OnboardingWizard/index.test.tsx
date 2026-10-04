@@ -298,7 +298,7 @@ describe('OnboardingWizard', () => {
   it('lets a returning user skip setup before a workspace exists', async () => {
     vi.useFakeTimers();
     render(<OnboardingWizard />);
-    click(/i've used goodboy before/i);
+    click(/skip setup/i);
     vi.advanceTimersByTime(250);
     expect(finishWizard).toHaveBeenCalledOnce();
   });

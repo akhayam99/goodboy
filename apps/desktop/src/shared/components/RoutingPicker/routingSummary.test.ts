@@ -76,7 +76,7 @@ describe('routingSummary', () => {
       verbosity: 'brief',
     });
     expect(routingSummary({ provider: 'cursor', label })).toBe(
-      'Cursor · Sonnet 4.6 · Thinking · Medium · Brief',
+      'Cursor · Sonnet 4.6 · Thinking · Medium · Short',
     );
   });
 });

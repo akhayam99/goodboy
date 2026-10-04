@@ -119,7 +119,7 @@ describe('Review commits view', () => {
     await settle();
 
     fireEvent.click(screen.getByRole('button', { name: /Rewrite and push/ }));
-    await waitFor(() => expect(screen.getByText('Branch rewritten.')).toBeDefined(), {
+    await waitFor(() => expect(screen.getByText('Branch rewritten')).toBeDefined(), {
       timeout: 8000,
     });
     expect(apply).toHaveBeenCalledWith(expect.objectContaining({ shouldPush: true }));

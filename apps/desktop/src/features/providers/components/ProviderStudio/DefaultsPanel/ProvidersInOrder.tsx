@@ -1,7 +1,6 @@
 import { ChevronDown } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import { AnchoredPopover, Eyebrow, FieldRow, cn, useDropdown } from '@goodboy/ui';
-import { useAppStore } from '../../../../../store';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { ProviderGlyph } from '../../../../../shared/components/RoutingPicker/ProviderGlyph';
 import { useProviderPolicy } from '../../../hooks/useProviderPolicy';
@@ -17,10 +16,6 @@ const PANEL_HEIGHT = 360;
 
 export const ProvidersInOrder = ({ workspaceId }: Props) => {
   const { summary } = useProviderPolicy({ workspaceId });
-  const workspaceName = useAppStore(
-    (state) =>
-      state.workspaces.find((workspace) => workspace.id === workspaceId)?.name ?? 'this workspace',
-  );
   const dropdown = useDropdown({
     align: 'end',
     width: 'w-[500px]',
@@ -65,11 +60,9 @@ export const ProvidersInOrder = ({ workspaceId }: Props) => {
       >
         <div className="flex flex-col px-1 pt-1">
           <Eyebrow label="Providers, in order" />
-          <span className="text-secondary text-faint-foreground">
-            For {workspaceName} · saved as you change it
-          </span>
+          <span className="text-secondary text-faint-foreground">This workspace</span>
         </div>
-        <ProviderPolicyList workspaceId={workspaceId} workspaceName={workspaceName} hasReset />
+        <ProviderPolicyList workspaceId={workspaceId} hasReset />
       </AnchoredPopover>
     </FieldRow>
   );

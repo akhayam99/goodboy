@@ -227,7 +227,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Rules',
-        desc: 'The Rules tab in Workflows sets what new runs start with: when to ask, a spend cap and standing guidance. Spread by what I have left sends steps to the provider with room. A run keeps the copy of the rules it started with.',
+        desc: 'The Rules tab in Workflows sets what new runs start with: when to ask, a spend cap, which providers get the next step and guidance. Use providers with room left sends steps to the provider with room. A run keeps the copy of the rules it started with.',
       },
       {
         term: 'Orchestrated',
@@ -299,7 +299,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Slack',
-        desc: 'Pick the channels and what agents may do there. Replies default to Ask me first and wait for your Send.',
+        desc: 'Pick the channels and what agents may do there. Replies default to Ask first and wait for your Send.',
       },
       {
         term: 'Permissions',
@@ -369,7 +369,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'A pull request an agent or your terminal opened shows up when the turn ends or when you come back to the window. Refresh in the session header, or ⌘⇧R, reads it right away.',
       },
       {
-        term: 'Write it for me',
+        term: 'Write it',
         desc: 'A pull request title, description and changelog entry in the format your repo uses.',
       },
     ],
@@ -404,7 +404,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'After a merge',
-        desc: 'Choose Ask me, Delete on this Mac or Also on origin for merged branches. A branch with later commits or uncommitted changes is left alone.',
+        desc: 'Choose Ask first, Delete on this Mac or Also on origin for merged branches. A branch with later commits or uncommitted changes is left alone.',
       },
     ],
     links: [
@@ -468,7 +468,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Scope',
-        desc: 'Clean up this workspace, other workspaces or removed ones, each with its weight. When 1 GB or more can go, the top bar shows Free N GB and opens Storage.',
+        desc: 'Clean up this workspace, other workspaces or removed ones, each with its weight.',
       },
       {
         term: 'Security findings',
@@ -507,12 +507,12 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     lead: 'App settings apply everywhere, workspace settings to one workspace. Your whole setup can move to another machine.',
     points: [
       {
-        term: 'Settings home',
-        desc: 'Settings opens on a home with App, Workspace, Providers & models and Integrations as cards, each page with its status. Pick a page and the cards become the rail, and the Settings crumb brings you back. Drag the edge of a rail to resize it.',
+        term: 'Settings rail',
+        desc: 'Settings opens on the page you opened last, or General the first time. The rail lists App, Workspace, Providers & models and Integrations, and a row speaks only when it needs you. Every page is also in the palette. Drag the edge of a rail to resize it.',
       },
       {
         term: 'App and workspace',
-        desc: 'Theme, updates and shortcuts are app-wide. Projects, About you, New sessions, Workflow rules, After merge, Review replies, Permissions and Skills are pages of a workspace.',
+        desc: 'Theme, updates and shortcuts are app-wide. Projects, About you, New sessions, After merge, Review replies, Permissions and Skills are pages of a workspace.',
       },
       {
         term: 'Copy and restore',

@@ -157,7 +157,6 @@ export const MrDetailPanel = ({
         resolveError == null
           ? null
           : { threadId: resolveError.discussionId, message: resolveError.message },
-      emptyDescription: 'Notes and review threads on this merge request show up here.',
       footnote: systemNoteFootnote({ count: conversation.systemNoteCount }),
       composerNote: null,
       renderMessageFooter: null,

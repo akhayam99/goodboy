@@ -1,5 +1,4 @@
 import type { AgentId, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { UserText } from '../TranscriptCards/UserText';
 import { HandoffAlsoReceived } from './HandoffAlsoReceived';
@@ -16,12 +15,6 @@ type Props = {
 
 export const HandoffBlock = ({ item, sessionId, agentId, workingDir }: Props) => {
   const state = useAgentHandoff({ agentId: item.handoffId });
-  const replyAgentId = item.handoffId ?? agentId;
-  const hasReply = useAppStore((store) =>
-    replyAgentId === null
-      ? false
-      : (store.transcripts[replyAgentId] ?? []).some((event) => event.kind === 'assistant_text'),
-  );
 
   if (state.status === 'loading') {
     return null;
@@ -30,11 +23,12 @@ export const HandoffBlock = ({ item, sessionId, agentId, workingDir }: Props) =>
     return <HandoffOlderFormat text={item.text} at={item.at} />;
   }
   if (state.handoff.sender.kind === 'you') {
+    const askBody = state.handoff.sections.find((section) => section.kind === 'ask')?.bodyMd;
     return (
       <div className="flex min-w-0 flex-col gap-2">
         <HandoffAlsoReceived handoff={state.handoff} sessionId={sessionId} />
         <UserText
-          text={item.text}
+          text={askBody ?? item.text}
           at={item.at}
           attachments={item.attachments}
           provider={item.provider}
@@ -44,12 +38,5 @@ export const HandoffBlock = ({ item, sessionId, agentId, workingDir }: Props) =>
       </div>
     );
   }
-  return (
-    <HandoffCard
-      handoff={state.handoff}
-      sessionId={sessionId}
-      at={item.at}
-      initiallyOpen={!hasReply}
-    />
-  );
+  return <HandoffCard handoff={state.handoff} sessionId={sessionId} at={item.at} />;
 };

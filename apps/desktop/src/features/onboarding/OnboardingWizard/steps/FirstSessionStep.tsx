@@ -106,7 +106,7 @@ export const FirstSessionStep = ({
     <div className="flex flex-col gap-5">
       <StepHeading
         title="Give your first agent something to do"
-        line="The same three ways you'll start every session."
+        line="Three ways to start any session."
       />
       <div
         role="tablist"
@@ -188,15 +188,14 @@ export const FirstSessionStep = ({
               </div>
             </div>
             <p className="text-secondary text-faint-foreground">
-              Scout reads your project and changes nothing. It runs with Full access, like every
-              session.
+              Scout reads your project and changes nothing.
             </p>
           </div>
         )}
         {choice === 'task' &&
           (hasIssueSource ? (
             <HandOff
-              line="Your issues open in a new session. Pick one there and choose how to work on it."
+              line="Your issues open in a new session. Pick one there."
               busy={busy}
               onOpen={() => onHandOff('task')}
             />
@@ -208,7 +207,7 @@ export const FirstSessionStep = ({
           ))}
         {choice === 'workflow' && (
           <HandOff
-            line="Describe the goal in a new session, then pick a preset or let Goodboy orchestrate."
+            line="Describe the goal in a new session, then pick how to run it."
             busy={busy}
             onOpen={() => onHandOff('workflow')}
           />

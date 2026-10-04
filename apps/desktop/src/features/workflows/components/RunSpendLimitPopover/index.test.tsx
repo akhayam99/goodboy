@@ -76,7 +76,7 @@ describe('RunSpendLimitPopover', () => {
 
     openPopover();
     fireEvent.change(screen.getByTestId('spend-limit-amount'), { target: { value: '25' } });
-    fireEvent.click(screen.getByRole('tab', { name: /Only warn me/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /Warn only/ }));
     fireEvent.click(screen.getByTestId('run-spend-limit-save'));
 
     expect(storeState['setWorkflowRunSpendLimit']).toHaveBeenCalledWith(
@@ -98,7 +98,7 @@ describe('RunSpendLimitPopover', () => {
     openPopover();
 
     expect((screen.getByTestId('spend-limit-amount') as HTMLInputElement).value).toBe('12.5');
-    expect(screen.getByRole('tab', { name: /Only warn me/ }).getAttribute('aria-selected')).toBe(
+    expect(screen.getByRole('tab', { name: /Warn only/ }).getAttribute('aria-selected')).toBe(
       'true',
     );
   });

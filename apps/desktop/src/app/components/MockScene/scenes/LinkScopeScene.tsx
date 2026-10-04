@@ -62,7 +62,6 @@ export const LinkScopeScene = () => {
           isLoading={false}
           isLinking={false}
           error={null}
-          branch="hl/fix-duplicate-credit"
           onLink={() => undefined}
           onClose={() => undefined}
         />

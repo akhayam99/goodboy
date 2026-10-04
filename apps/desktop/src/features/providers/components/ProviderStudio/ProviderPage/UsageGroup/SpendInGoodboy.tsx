@@ -11,14 +11,10 @@ import {
   budgetScopeNote,
 } from '../../../../../budget/providerBudgetView';
 import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
-import { SpendStat } from './SpendStat';
 
 type Props = {
   readonly providerId: ProviderId;
 };
-
-const PERIODS_NOTE =
-  'Today and 7 days start at midnight in your time. This month is a UTC calendar month.';
 
 type BudgetParams = {
   readonly status: ProviderBudgetStatus;
@@ -33,7 +29,6 @@ const budgetText = ({ status }: BudgetParams): string | null => {
 
 export const SpendInGoodboy = ({ providerId }: Props) => {
   const overview = useProviderBudgetOverview({ providerId });
-  const periods = overview?.periods ?? null;
   const status = overview?.status ?? null;
   const loadBudgetRules = useAppStore((state) => state.loadBudgetRules);
   const text = status === null ? null : budgetText({ status });
@@ -48,12 +43,6 @@ export const SpendInGoodboy = ({ providerId }: Props) => {
       aria-label="Spend in Goodboy"
       className={cn(BAND_ROW_CLASS, 'flex-wrap gap-x-4 bg-muted text-label')}
     >
-      <span className="text-muted-foreground" title={PERIODS_NOTE}>
-        Spent in Goodboy, all workspaces
-      </span>
-      <SpendStat label="Today" value={formatUsd(periods?.todayUsd ?? 0)} />
-      <SpendStat label="7 days" value={formatUsd(periods?.last7DaysUsd ?? 0)} />
-      <SpendStat label="This month" value={formatUsd(periods?.thisMonthUsd ?? 0)} />
       {status === null || text === null ? null : (
         <span className="tabular-nums text-muted-foreground" title={budgetScopeNote({ status })}>
           {text}

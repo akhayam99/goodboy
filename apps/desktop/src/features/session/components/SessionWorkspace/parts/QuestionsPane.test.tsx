@@ -155,7 +155,7 @@ describe('QuestionsPane', () => {
 
   it('shows the empty state when nothing was ever asked', () => {
     setup({ open: [] });
-    screen.getByText('No open questions');
+    screen.getByText('No questions');
   });
 
   it('lists what waits on you and opens the first question', () => {

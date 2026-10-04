@@ -7,24 +7,19 @@ import {
   ErrorStrip,
   PanelLoading,
   SectionHeader,
-  formatUsd,
   PaneShell,
 } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import type { QueryResult } from '../../../../shared/types/queryResult';
-import type { ImpactTab, ImpactWindowId } from '../../lib';
+import type { ImpactTab } from '../../lib';
 import { formatHours } from '../../utils/formatHours';
 import { impactDelta } from '../../utils/impactDelta';
-import { impactSummary } from '../../utils/impactSummary';
 import { shippedSessions } from '../../utils/shippedSessions';
-import { ImpactSummary } from './ImpactSummary';
 import { KpiTile } from './KpiTile';
 import { ShippedSessionRows } from './ShippedSessionRows';
 
 type Props = {
   readonly header: ReactElement;
-  readonly windowId: ImpactWindowId;
-  readonly workspaceName: string | null;
   readonly overview: QueryResult<ImpactOverview>;
   readonly pullRequests: QueryResult<PullRequestOutcomes>;
   readonly reviews: QueryResult<ReviewOutcomes>;
@@ -51,8 +46,6 @@ const shareOf = ({ sessions, orchestrated }: ShareParams): number | null =>
 
 export const OverviewPanel = ({
   header,
-  windowId,
-  workspaceName,
   overview,
   pullRequests,
   reviews,
@@ -77,18 +70,6 @@ export const OverviewPanel = ({
           sessions: data.previousSessionCount,
           orchestrated: data.previousOrchestratedSessions,
         });
-  const summary =
-    data === null
-      ? null
-      : impactSummary({
-          windowId,
-          workspaceName,
-          sessionCount: data.sessionCount,
-          deletedSessionCount: data.deletedSessionCount,
-          mergedPullRequests: prs?.merged ?? null,
-          spendText: data.spendUsd === null ? null : formatUsd(data.spendUsd),
-          workflowShare: share,
-        });
   const shipped =
     prs === null || data === null
       ? []
@@ -108,7 +89,7 @@ export const OverviewPanel = ({
         <EmptyState
           icon={CONCEPT_ICONS.impact}
           tone={CONCEPT_TONE.impact}
-          title="Impact fills in as sessions finish."
+          title="Impact fills in as sessions finish"
           action={
             <Button variant="secondary" size="sm" onClick={onStartSession}>
               Start a session
@@ -119,10 +100,18 @@ export const OverviewPanel = ({
           headingLevel={2}
         />
       ) : null}
-      {summary !== null && data !== null ? (
+      {data !== null && data.sessionCount > 0 ? (
         <>
-          <ImpactSummary parts={summary} />
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+            <KpiTile
+              label="Sessions"
+              value={String(data.sessionCount)}
+              hint={
+                data.deletedSessionCount > 0 ? `${data.deletedSessionCount} deleted` : undefined
+              }
+              delta={null}
+              onSelect={() => onSelectTab('flow')}
+            />
             <KpiTile
               label="Pull requests merged"
               value={String(prs?.merged ?? 0)}

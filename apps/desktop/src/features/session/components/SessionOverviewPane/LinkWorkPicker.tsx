@@ -7,11 +7,9 @@ import type { LaunchExternalTask } from '../../../inbox/launchSpecFor';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { formatSpan } from '../../../../shared/utils/time/formatSpan';
-import { branchLeaf } from '../../../../store/slices/sessions/branchLeaf';
 import { LinkScopePreview } from './LinkScopePreview';
 import {
   SCOPE_TAB_LABEL,
-  freeScope,
   linkedLabel,
   relationFor,
   type LinkChoice,
@@ -36,7 +34,6 @@ type Props = {
   readonly isLoading: boolean;
   readonly isLinking: boolean;
   readonly error: string | null;
-  readonly branch: string | null;
   readonly onLink: (task: LaunchExternalTask, choice: LinkChoice) => void;
   readonly onClose: () => void;
 };
@@ -83,7 +80,6 @@ export const LinkWorkPicker = ({
   isLoading,
   isLinking,
   error,
-  branch,
   onLink,
   onClose,
 }: Props) => {
@@ -127,20 +123,6 @@ export const LinkWorkPicker = ({
 
   const scopeOptions = [
     { value: 'session' as const, label: SCOPE_TAB_LABEL.session },
-    {
-      value: 'branch' as const,
-      label: SCOPE_TAB_LABEL.branch,
-      disabled: branch === null,
-      ...(branch === null
-        ? { hint: 'Open a branch first' }
-        : {
-            badge: (
-              <span className="max-w-36 truncate whitespace-nowrap font-mono text-faint-foreground">
-                {branchLeaf({ branch })}
-              </span>
-            ),
-          }),
-    },
     { value: 'workspace' as const, label: SCOPE_TAB_LABEL.workspace },
   ];
 
@@ -289,28 +271,18 @@ export const LinkWorkPicker = ({
         )}
       </ScrollFade>
       {active === null ? null : (
-        <>
-          <LinkScopePreview
-            provider={active.task.provider}
-            identifier={active.task.identifier}
-            title={active.task.title}
-            scope={scope}
-            branch={branch}
-            isClosing={isClosing}
-            isLinking={isLinking}
-            {...(isDuplicate(active)
-              ? {
-                  duplicate: {
-                    scopes: active.linkedScopes,
-                    next: freeScope({ scopes: active.linkedScopes, hasBranch: branch !== null }),
-                  },
-                }
-              : {})}
-            onToggleClosing={() => setIsClosing((current) => !current)}
-            onLink={() => link(active)}
-            onCancel={onClose}
-          />
-        </>
+        <LinkScopePreview
+          provider={active.task.provider}
+          identifier={active.task.identifier}
+          title={active.task.title}
+          scope={scope}
+          isClosing={isClosing}
+          isLinking={isLinking}
+          {...(isDuplicate(active) ? { duplicate: { scopes: active.linkedScopes } } : {})}
+          onToggleClosing={() => setIsClosing((current) => !current)}
+          onLink={() => link(active)}
+          onCancel={onClose}
+        />
       )}
       {error !== null ? (
         <p role="alert" className="flex items-center gap-1 px-3 py-2 text-label text-danger">

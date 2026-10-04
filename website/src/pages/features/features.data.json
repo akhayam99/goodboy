@@ -108,10 +108,10 @@
           "shown": true
         },
         {
-          "title": "Settings home",
-          "text": "Settings opens on a home with every area as a card and its status. Pick a page and the cards become the rail.",
+          "title": "Settings",
+          "text": "Settings opens on the page you used last, with the rail beside it. Every page is also in the palette.",
           "group": "Set up",
-          "also": "settings home",
+          "also": "settings pages",
           "shown": true
         }
       ]
@@ -709,7 +709,7 @@
           "also": "review layers"
         },
         {
-          "title": "Write it for me",
+          "title": "Write it",
           "text": "Get a pull request title, description and changelog entry in your repo's format. Linked issues become closing references.",
           "group": "Review, resolve and pull requests",
           "also": "PR text",
@@ -1208,13 +1208,6 @@
           "text": "Clean up this workspace, other workspaces, removed ones or all of them. Bulk actions name the scope they act on.",
           "group": "Storage",
           "also": "storage scope",
-          "shown": true
-        },
-        {
-          "title": "Free space chip",
-          "text": "Once at least 1 GB of worktree folders can go, the top bar shows how much. Click it to open Storage.",
-          "group": "Storage",
-          "also": "free space chip",
           "shown": true
         },
         {

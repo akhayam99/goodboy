@@ -15,7 +15,7 @@ import {
 import { sessionTone } from '../../../session/components/sessionCardShell';
 import { useSessionSummary } from '../../hooks/useSessionSummary';
 import { SessionProgress } from '../SessionProgress';
-import { sessionTitle } from '../../../session/sessionTitle';
+import { sessionDisplayTitle } from '../../../session/sessionTitle';
 import { ChatOriginGlyph } from '../../../../shared/components/ChatOriginGlyph';
 import { SessionRowMeta } from './SessionRowMeta';
 import { SessionRowNode } from './SessionRowNode';
@@ -58,8 +58,10 @@ const SessionActivityItemView = ({
   const summary = useSessionSummary({ session });
   const tone = sessionTone({ stage: summary.stage, attention: summary.attention });
   const hasCost = summary.cost > 0;
+  const title = sessionDisplayTitle({ session, tasks: summary.tasks });
   const isReasonInMeta =
     summary.attention === 'open-question' && summary.actionable?.kind === 'questions';
+  const shownReason = isReasonInMeta || !summary.addsFact ? '' : summary.reason;
   const sessionId = session.id as SessionId;
   const anchorKey = `sidebar:${sessionId}`;
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
@@ -82,7 +84,7 @@ const SessionActivityItemView = ({
   if (rename.editing) {
     return (
       <div
-        className={cn('flex w-full flex-col gap-1 rounded-md', PANE_RHYTHM.navRail.row, 'pl-3.5')}
+        className={cn('flex w-full flex-col gap-1 rounded-md', PANE_RHYTHM.navRail.rowTwo, 'pl-3')}
       >
         <Input
           autoFocus
@@ -94,7 +96,7 @@ const SessionActivityItemView = ({
           aria-label="Session title"
         />
         {rename.error === null ? null : (
-          <span className="truncate text-secondary text-danger">{rename.error}</span>
+          <span className="truncate text-meta text-danger">{rename.error}</span>
         )}
       </div>
     );
@@ -104,9 +106,9 @@ const SessionActivityItemView = ({
     <div className="group/select-row relative">
       <SelectionCheckbox
         checked={isSelected}
-        label={`Select ${inlineMarkdownText({ text: sessionTitle({ session }) })}`}
+        label={`Select ${inlineMarkdownText({ text: title })}`}
         onToggle={(event) => onToggleSelect(sessionId, event)}
-        className="absolute left-3.5 top-1.5"
+        className="absolute left-3 top-1"
       />
       <button
         type="button"
@@ -131,8 +133,8 @@ const SessionActivityItemView = ({
         }}
         className={cn(
           '@container group/session-row relative flex w-full cursor-pointer items-start gap-2 rounded-md text-left motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-          PANE_RHYTHM.navRail.row,
-          'pl-3.5',
+          PANE_RHYTHM.navRail.rowTwo,
+          'pl-3',
           (isActive || isSelected) && 'bg-selected font-medium text-foreground',
           isDimmed && TERMINAL_DIM,
         )}
@@ -149,7 +151,7 @@ const SessionActivityItemView = ({
         <span className="flex min-w-0 flex-1 flex-col gap-1">
           <span className="flex w-full min-w-0 items-baseline gap-2">
             <InlineMarkdown
-              text={sessionTitle({ session })}
+              text={title}
               className="min-w-0 flex-1 truncate text-row text-foreground"
             />
             <ChatOriginGlyph sessionId={session.id} />
@@ -171,8 +173,8 @@ const SessionActivityItemView = ({
             {summary.progress !== null ? (
               <SessionProgress progress={summary.progress} tone={summary.tone} className="flex-1" />
             ) : (
-              <span className="min-w-0 flex-1 truncate text-secondary text-muted-foreground">
-                {isReasonInMeta ? null : summary.reason}
+              <span className="min-w-0 flex-1 truncate text-meta text-muted-foreground">
+                {shownReason}
               </span>
             )}
             {summary.meta.map((item) => (

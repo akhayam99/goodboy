@@ -6,6 +6,7 @@ import { bulkUnarchiveTask } from './bulkUnarchiveTask';
 import { createSession } from './createSession';
 import { deleteTask } from './deleteTask';
 import { evictSession } from './evictSession';
+import { assignSessionExternalTask } from './assignSessionExternalTask';
 import { linkSessionExternalTask } from './linkSessionExternalTask';
 import { renameTask } from './renameTask';
 import { setAgentConfig } from './setAgentConfig';
@@ -15,6 +16,7 @@ import { setSessionAutoRun } from './setSessionAutoRun';
 import { setSessionConfig } from './setSessionConfig';
 import { setSessionPermissionMode } from './setSessionPermissionMode';
 import { unarchiveTask } from './unarchiveTask';
+import { takeOffSessionExternalTask } from './takeOffSessionExternalTask';
 import { unlinkSessionExternalTask } from './unlinkSessionExternalTask';
 import type { SliceDeps } from '../../slice-types';
 
@@ -36,6 +38,8 @@ export const createSessionsSlice = ({ set, get }: SliceDeps) => {
     createSession: createSession(set, get),
     linkSessionExternalTask: linkSessionExternalTask({ set, get }),
     unlinkSessionExternalTask: unlinkSessionExternalTask({ set, get }),
+    assignSessionExternalTask: assignSessionExternalTask({ set, get }),
+    takeOffSessionExternalTask: takeOffSessionExternalTask({ set, get }),
     setCurrentSession: setCurrentSession(set, get),
   };
 };

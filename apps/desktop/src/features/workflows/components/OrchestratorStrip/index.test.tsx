@@ -825,7 +825,7 @@ describe('OrchestratorStrip hints and money', () => {
 
     fireEvent.click(screen.getByTestId('run-spend-limit-trigger'));
     fireEvent.change(screen.getByTestId('spend-limit-amount'), { target: { value: '8' } });
-    fireEvent.click(screen.getByRole('tab', { name: /Only warn me/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /Warn only/ }));
     fireEvent.click(screen.getByTestId('run-spend-limit-save'));
 
     expect(storeState['setWorkflowRunSpendLimit']).toHaveBeenCalledWith(

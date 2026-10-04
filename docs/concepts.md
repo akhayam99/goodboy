@@ -467,7 +467,7 @@ pick it when you start the agent.
   `<<history-stuck>>`; the engine rebuilds its commits with the plan messages
   and authors, checks the count, and moves the branch itself
 - **Scribe** is hidden too: it writes text about the code and never code.
-  `Write it for me` in the pull request panel asks it for the title and
+  `Write it` in the pull request panel asks it for the title and
   body, which fill the form for you to check before `Create PR`; it can also
   write a commit message for a squash or a reword and a changelog entry. It
   answers only with `<<pr-title>>`, `<<pr-body>>`, `<<commit-message>>` and
@@ -867,7 +867,7 @@ was. ⌘↵ with the list focused pushes too. Behind it runs a
 
 How a reply reads is set in Settings, Workspace, **Review replies**:
 
-- **Voice**: Terse (the default), Friendly, Formal, or Like my replies, which
+- **Voice**: Terse (the default), Friendly, Formal, or Your replies, which
   follows a style note you can edit. **Learn from my replies** reads your last
   20 review replies in the workspace's repositories and writes that note. The
   voice goes into the agent's prompt
@@ -1225,15 +1225,27 @@ task up again in Goodboy.
   | materialize         | add to this session                               |
 
   `jargon-copy.test.ts` fails when rendered copy under `features/`,
-  `app/components/` or `shared/components/` uses one of the internal words.
-  Its baseline lists only text that agents read (prompts, bridge errors) and
-  can only shrink.
+  `app/components/` or `shared/components/` uses one of the internal words,
+  in the copy props that include `help` and `meta`. Its baseline lists only
+  text that agents read (prompts, bridge errors) and can only shrink.
 
+- One word per thing, written once. The names of lenses, roles, handoff
+  sections, session stages, the autonomy header and the reply length live in
+  `apps/desktop/src/shared/names.ts` (`NAMES`), and the maps that show them read
+  from there. `names.test.ts` pins that. A word that goes away goes into
+  `RETIRED_NAMES` (`__tests__/regressions/retiredNames.ts`) with the word to use
+  instead, and `copy-budget.test.ts` fails on it.
+- **Reply length** is **Short**, **Normal** or **Long**. The stored keys
+  (`brief`, `normal`, `verbose`) and the directive sent to the provider do not
+  change. **Brief** stays the name of the agent tab and of a text you edit
+  before something starts, so the two never share a screen.
+- **Stop** is the one name for ending a running turn.
 - A word that stays and still needs a sentence (workflow, orchestrated,
-  artifact) gets a `TermHint`: the word is underlined with dots and opens a
-  one-line definition on click or keyboard focus, never on hover and never on
-  its own. The definitions live once, in `GLOSSARY`
-  (`apps/desktop/src/features/session/glossary.ts`).
+  artifact) gets a short tooltip, six words at most, written once. The
+  `TermHint` and `GLOSSARY`
+  (`apps/desktop/src/features/session/glossary.ts`) stay until the 0.17.0
+  rename round removes them.
+- A round that adds a word removes one, and the PR description lists both.
 - Every screen follows the task order: the task, then integrations, then code,
   then chat. A screen that puts chat before the task has the order wrong.
 - Integrations share the layout, never the logic. A Sentry issue and a GitHub

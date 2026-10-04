@@ -26,7 +26,7 @@ vi.mock('../../hooks/useSessionSummary', async (importOriginal) => {
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { aProject, aSession, aWorkspace } from '@goodboy/types/testing';
-import type { Session, SessionId } from '@goodboy/types';
+import type { AgentId, OpenQuestion, OpenQuestionId, Session, SessionId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -105,7 +105,28 @@ describe('StageBoard selection bar', () => {
   });
 
   it('lines each title up with its meta line at rest and lays the checkbox over the rail', () => {
-    mountBoard(sessionsOf(GOALS));
+    const sessions = sessionsOf(GOALS);
+    useAppStore.setState({
+      sessionOpenQuestions: Object.fromEntries(
+        sessions.map((session) => [
+          session.id,
+          [
+            {
+              id: `question-${session.id}` as OpenQuestionId,
+              sessionId: session.id,
+              createdByAgentId: 'agent-1' as AgentId,
+              text: 'Which implementation should I use?',
+              suggestedAnswers: [],
+              isBlocking: false,
+              userAnswer: null,
+              status: 'open',
+              createdAt: session.createdAt,
+            } satisfies OpenQuestion,
+          ],
+        ]),
+      ),
+    });
+    mountBoard(sessions);
 
     for (const goal of GOALS) {
       const box = checkboxOf(goal);

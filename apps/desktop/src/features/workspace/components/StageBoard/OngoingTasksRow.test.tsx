@@ -61,16 +61,15 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('OngoingTasksRow', () => {
-  it('says how to fill it while the workspace tracks nothing', async () => {
+  it('renders nothing while the workspace tracks nothing', async () => {
     h.listWorkspaceExternalTasks.mockResolvedValue([]);
-    render(<OngoingTasksRow workspaceId={WORKSPACE} filter={null} onFilter={vi.fn()} />);
+    const { container } = render(
+      <OngoingTasksRow workspaceId={WORKSPACE} filter={null} onFilter={vi.fn()} />,
+    );
 
     await waitFor(() => expect(h.listWorkspaceExternalTasks).toHaveBeenCalled());
-    expect(
-      within(screen.getByRole('group', { name: 'Ongoing' })).getByText(
-        'Nothing ongoing. Link a task to the whole workspace.',
-      ).tagName,
-    ).toBe('SPAN');
+    expect(screen.queryByRole('group', { name: 'Ongoing' })).toBeNull();
+    expect(container.textContent).toBe('');
   });
 
   it('filters the board on a chip, and clears it on a second click', async () => {

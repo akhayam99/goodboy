@@ -137,7 +137,7 @@ export const NotificationCenter = () => {
                 <span
                   className={cn(
                     'absolute -right-1.5 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-warning px-1 font-semibold leading-none text-on-tone tabular-nums',
-                    unread > 9 ? 'text-meta' : 'text-secondary',
+                    unread > 9 ? 'text-chip' : 'text-secondary',
                   )}
                 >
                   {unread > 99 ? '99+' : unread}
@@ -175,10 +175,10 @@ export const NotificationCenter = () => {
           <FilledEmptyState
             icon={Bell}
             tone={CONCEPT_TONE.notifications}
-            title={notifications.length === 0 ? 'No notifications' : 'You are caught up'}
+            title={notifications.length === 0 ? 'No notifications' : "You're caught up"}
             description={
               notifications.length === 0
-                ? 'Run activity and alerts land here.'
+                ? undefined
                 : 'Everything new has been seen. All shows the history.'
             }
           />

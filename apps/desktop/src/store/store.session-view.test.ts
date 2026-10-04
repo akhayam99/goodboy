@@ -262,6 +262,7 @@ describe('deriveSessionStage', () => {
       stage: 'attention',
       reason: 'PR #1: CI failed',
       attention: 'ci-failed',
+      addsFact: true,
       prState: 'open',
     });
   });
@@ -273,6 +274,7 @@ describe('deriveSessionStage', () => {
       stage: 'attention',
       reason: 'PR #1: changes requested',
       attention: 'changes-requested',
+      addsFact: true,
       prState: 'open',
     });
   });
@@ -288,6 +290,7 @@ describe('deriveSessionStage', () => {
       stage: 'attention',
       reason: '3 open questions',
       attention: 'open-question',
+      addsFact: true,
       prState: null,
     });
   });
@@ -299,6 +302,7 @@ describe('deriveSessionStage', () => {
       stage: 'attention',
       reason: 'PR #1 approved, ready to merge',
       attention: 'pr-approved',
+      addsFact: true,
       prState: 'approved',
     });
   });
@@ -314,6 +318,7 @@ describe('deriveSessionStage', () => {
       stage: 'attention',
       reason: 'unread agent reply',
       attention: 'unread-reply',
+      addsFact: true,
       prState: null,
     });
   });
@@ -324,6 +329,7 @@ describe('deriveSessionStage', () => {
       stage: 'building',
       reason: 'no PR yet',
       attention: null,
+      addsFact: false,
       prState: null,
     });
   });
@@ -334,6 +340,7 @@ describe('deriveSessionStage', () => {
       stage: 'review',
       reason: 'PR #1 awaiting review',
       attention: null,
+      addsFact: false,
       prState: 'open',
     });
   });
@@ -345,6 +352,7 @@ describe('deriveSessionStage', () => {
       stage: 'review',
       reason: 'draft PR #1',
       attention: null,
+      addsFact: true,
       prState: 'open',
     });
   });
@@ -362,6 +370,7 @@ describe('deriveSessionStage', () => {
       stage: 'done',
       reason: 'PR #1 merged',
       attention: null,
+      addsFact: true,
       prState: 'merged',
     });
   });
@@ -403,6 +412,7 @@ describe('deriveSessionStage', () => {
       stage: 'running',
       reason: 'agent running',
       attention: null,
+      addsFact: false,
       prState: null,
     });
   });
@@ -441,6 +451,7 @@ describe('deriveSessionStage', () => {
       stage: 'running',
       reason: 'agent running',
       attention: null,
+      addsFact: false,
       prState: null,
     });
   });
@@ -464,12 +475,14 @@ describe('deriveSessionStage', () => {
       stage: 'attention',
       reason: '2 open questions',
       attention: 'open-question',
+      addsFact: true,
       prState: null,
     });
     expect(unread).toEqual({
       stage: 'attention',
       reason: 'unread agent reply',
       attention: 'unread-reply',
+      addsFact: true,
       prState: null,
     });
   });
@@ -485,6 +498,7 @@ describe('deriveSessionStage', () => {
       stage: 'building',
       reason: 'ready for work',
       attention: null,
+      addsFact: true,
       prState: 'merged',
     });
   });

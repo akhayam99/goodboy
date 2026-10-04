@@ -38,7 +38,7 @@ export const TasksStep = ({
     <div className="flex flex-col gap-5">
       <StepHeading
         title="Where do you track work?"
-        line="Pick an issue and an agent starts from it. Skip it if you don't use a tracker."
+        line="Pick an issue and an agent starts from it."
       />
       <ul className="flex flex-col gap-2">
         <IssueHostRow
@@ -63,9 +63,7 @@ export const TasksStep = ({
           </IntegrationChoiceRow>
         ))}
       </ul>
-      <p className="text-secondary text-faint-foreground">
-        Sentry, Slack and the rest live in Settings › Integrations, and in the setup checklist.
-      </p>
+      <p className="text-secondary text-faint-foreground">More in Settings › Integrations.</p>
     </div>
   );
 };

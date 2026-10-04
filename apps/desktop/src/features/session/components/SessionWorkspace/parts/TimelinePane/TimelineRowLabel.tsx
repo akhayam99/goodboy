@@ -2,6 +2,7 @@ import { ValueToken, WORK_ROW, cn } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import type { MountDiffStat } from '../../../../../../store';
 import { AgentKindChip } from '../../../../../../shared/components/AgentKindChip';
+import { agentDisplayName } from '../../../../../../shared/utils/agentDisplayName';
 import type {
   TimelineResolveBatchEntry,
   TimelineRunEntry,
@@ -23,6 +24,7 @@ import type {
 } from '../../../../timeline/buildTimelineStream';
 import type { TimelineRowGrade } from '../../../../../workTreeModel/timelineRhythm';
 import { RevealedRowTag } from './RevealedRowTag';
+import { TimelineProviderGlyph } from './TimelineProviderGlyph';
 import { TimelineRowWorktrees } from './TimelineRowWorktrees';
 import { resolveBatchTitle } from '../../../../timeline/resolveBatchSummary';
 import { subagentGroupTitle } from '../../../../timeline/subagentGroups';
@@ -37,6 +39,7 @@ type Props = {
   readonly isLaneLit?: boolean;
   readonly worktrees?: ReadonlyArray<string>;
   readonly isRevealed?: boolean;
+  readonly provider?: string | null;
 };
 
 type FactParams = {
@@ -89,22 +92,13 @@ type LabelEntry = Exclude<
 
 type EntryParams = {
   readonly entry: LabelEntry;
-  readonly isBatchChild?: boolean;
 };
 
-const RESOLVE_NAME_PREFIX = 'resolve: ';
-
-const segmentsOf = ({
-  entry,
-  isBatchChild = false,
-}: EntryParams): ReadonlyArray<TimelineLabelSegment> => {
+const segmentsOf = ({ entry }: EntryParams): ReadonlyArray<TimelineLabelSegment> => {
   if (entry.kind === 'agent') {
-    const { name } = entry.agent;
-    const text =
-      isBatchChild && name.startsWith(RESOLVE_NAME_PREFIX)
-        ? name.slice(RESOLVE_NAME_PREFIX.length)
-        : name;
-    return [{ kind: 'text', text }];
+    return [
+      { kind: 'text', text: agentDisplayName({ name: entry.agent.name, kind: entry.agentKind }) },
+    ];
   }
   if (entry.kind === 'plan') {
     return [{ kind: 'text', text: entry.plan.title }];
@@ -210,6 +204,7 @@ export const TimelineRowLabel = ({
   isLaneLit = false,
   worktrees = NO_WORKTREES,
   isRevealed = false,
+  provider = null,
 }: Props) => {
   const { entry, grade } = item;
   if (entry.kind === 'run') {
@@ -245,9 +240,7 @@ export const TimelineRowLabel = ({
   const head = factHeadOf({ entry, grade });
   const detail = detailOf({ entry, grade });
   const segments: ReadonlyArray<TimelineLabelSegment> =
-    head === null
-      ? segmentsOf({ entry, isBatchChild: item.explode?.kind === 'batch' })
-      : [{ kind: 'text', text: head }];
+    head === null ? segmentsOf({ entry }) : [{ kind: 'text', text: head }];
   const title = titleOf({ entry, segments });
   const isAgent = entry.kind === 'agent';
   const titleNode = (
@@ -298,11 +291,12 @@ export const TimelineRowLabel = ({
   return (
     <>
       {item.ordinal != null ? (
-        <span className="w-6 shrink-0 text-right text-meta text-faint-foreground">
+        <span className="w-6 shrink-0 text-right text-chip text-faint-foreground">
           {item.ordinal}
         </span>
       ) : null}
       {chipOf({ entry, grade })}
+      {isAgent ? <TimelineProviderGlyph provider={provider} /> : null}
       {item.fold === undefined ? (
         titleNode
       ) : (

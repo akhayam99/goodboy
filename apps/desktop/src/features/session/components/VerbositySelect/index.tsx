@@ -22,7 +22,7 @@ const DISABLED_OPTIONS: ReadonlyArray<SegmentedTabOption<VerbosityLevel>> = VERB
 
 export const VerbositySelect = ({ value, onChange, disabled }: Props) => (
   <SegmentedTabs
-    ariaLabel="Reply verbosity"
+    ariaLabel="Reply length"
     size="sm"
     value={value}
     options={disabled ? DISABLED_OPTIONS : VERBOSITY_OPTIONS}

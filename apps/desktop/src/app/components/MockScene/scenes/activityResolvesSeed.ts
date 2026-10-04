@@ -89,7 +89,7 @@ const buildAgent = ({
     id: agentIdOf({ index }),
     sessionId: SESSION.id,
     ordinal: 100 - index,
-    name: `resolve: ${seed.author} on ${seed.file}`,
+    name: `Resolve: ${seed.author} on ${seed.file}`,
     kind: 'resolver',
     status: AGENT_STATUS[seed.kind],
     runId: `mock-resolves-run-${index}` as ProviderRunId,

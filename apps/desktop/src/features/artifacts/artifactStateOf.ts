@@ -42,7 +42,7 @@ const ARTIFACT_STATE_PRESENTATION = {
   needs: {
     key: 'needs',
     label: 'Needs you',
-    reason: 'an agent asked a question, or the plan waits for your answer',
+    reason: 'An agent asked a question, or the plan waits for your answer',
     tone: 'warning',
     icon: CircleAlert,
     group: 'needs',
@@ -50,7 +50,7 @@ const ARTIFACT_STATE_PRESENTATION = {
   ready: {
     key: 'ready',
     label: 'Ready to run',
-    reason: 'approved, waiting for Run plan',
+    reason: 'Approved, waiting for Run plan',
     tone: 'info',
     icon: CirclePlay,
     group: 'ready',
@@ -58,7 +58,7 @@ const ARTIFACT_STATE_PRESENTATION = {
   running: {
     key: 'running',
     label: 'Running',
-    reason: 'an agent is on it',
+    reason: 'An agent is on it',
     tone: 'info',
     icon: CircleDot,
     group: 'running',
@@ -66,7 +66,7 @@ const ARTIFACT_STATE_PRESENTATION = {
   ran: {
     key: 'ran',
     label: 'Ran',
-    reason: 'every part is done',
+    reason: 'Every part is done',
     tone: 'success',
     icon: CONCEPT_ICONS.runDone,
     group: 'ran',
@@ -74,7 +74,7 @@ const ARTIFACT_STATE_PRESENTATION = {
   partly: {
     key: 'partly',
     label: 'Partly ran',
-    reason: 'the run stopped before every part started',
+    reason: 'The run stopped before every part started',
     tone: 'warning',
     icon: CircleDotDashed,
     group: 'needs',
@@ -82,7 +82,7 @@ const ARTIFACT_STATE_PRESENTATION = {
   stopped: {
     key: 'stopped',
     label: 'Stopped',
-    reason: 'the turn ended without producing it',
+    reason: 'The turn ended without producing it',
     tone: 'warning',
     icon: Square,
     group: 'needs',
@@ -90,7 +90,7 @@ const ARTIFACT_STATE_PRESENTATION = {
   available: {
     key: 'available',
     label: 'Ready',
-    reason: 'nothing waits on you, open it to read it',
+    reason: 'Nothing waits on you, open it to read it',
     tone: 'neutral',
     icon: Circle,
     group: 'ready',
@@ -98,7 +98,7 @@ const ARTIFACT_STATE_PRESENTATION = {
   replaced: {
     key: 'replaced',
     label: 'Replaced',
-    reason: 'a newer revision exists',
+    reason: 'A newer revision exists',
     tone: 'neutral',
     icon: CircleMinus,
     group: 'ran',
@@ -106,7 +106,7 @@ const ARTIFACT_STATE_PRESENTATION = {
   deleted: {
     key: 'deleted',
     label: 'Deleted',
-    reason: 'in Recently deleted, restore any time',
+    reason: 'In Recently deleted, restore any time',
     tone: 'neutral',
     icon: Trash2,
     group: 'deleted',
@@ -114,7 +114,7 @@ const ARTIFACT_STATE_PRESENTATION = {
   new: {
     key: 'new',
     label: 'New',
-    reason: 'you have not opened it yet',
+    reason: "You haven't opened it yet",
     tone: 'primary',
     icon: Dot,
     group: 'ready',

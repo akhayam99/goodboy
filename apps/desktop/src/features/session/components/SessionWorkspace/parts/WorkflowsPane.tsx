@@ -122,7 +122,6 @@ export const WorkflowsPane = ({ session }: Props) => {
           tone={CONCEPT_TONE.workflows}
           icon={CONCEPT_ICONS.workflows}
           title="Nothing running"
-          description="Every attached workflow is done. Finished workflows remain below for reference."
           action={<WorkflowAttachButton sessionId={sessionId} placement="header" />}
         />
       ) : null}

@@ -46,7 +46,7 @@ export const RoleModelChip = ({ entry, position, disabled, onRemove, onMove }: P
         FOCUS_RING,
       )}
     >
-      <span className="w-2.5 text-meta text-faint-foreground">{position}</span>
+      <span className="w-2.5 text-chip text-faint-foreground">{position}</span>
       <span className={cn(entry.isGone && 'text-faint-foreground line-through')}>
         {entry.label}
       </span>

@@ -47,7 +47,6 @@ export const GithubIssueDetail = ({ issue, frame = null, editContext }: Props) =
       onPost: post == null ? null : ({ body }) => post(body),
       onResolve: null,
       resolveError: null,
-      emptyDescription: 'This issue has no comments yet.',
       footnote: null,
       composerNote: null,
       renderMessageFooter: null,

@@ -3,7 +3,7 @@ import { openSettings } from '../../../settings/openSettings';
 import { workingRulesSkippedText } from '../../guidanceRoles';
 
 export const AlsoSentLine = () => (
-  <div className="flex flex-wrap items-center gap-1.5 text-secondary text-muted-foreground">
+  <div className="flex flex-wrap items-center gap-2 text-secondary text-muted-foreground">
     <span>
       Also sent to {workingRulesSkippedText()}:{' '}
       <span className="text-foreground">How agents should work with you</span>
@@ -13,7 +13,7 @@ export const AlsoSentLine = () => (
       size="sm"
       onClick={() => openSettings({ scope: 'workspace', section: 'profile' })}
     >
-      Edit
+      About you
     </Button>
   </div>
 );

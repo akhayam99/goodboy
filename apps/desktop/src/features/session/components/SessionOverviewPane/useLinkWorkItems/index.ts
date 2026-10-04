@@ -78,7 +78,7 @@ export const useLinkWorkItems = ({ sessionId, workspaceId, query }: Params): Res
         scopes.set(key, [...current, scope]);
       }
     };
-    linked.forEach((task) => add(taskKey({ task }), task.scope ?? 'session'));
+    linked.forEach((task) => add(taskKey({ task }), 'session'));
     onBoard.forEach((task) => add(taskKey({ task }), 'workspace'));
     return scopes;
   }, [linked, onBoard]);

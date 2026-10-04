@@ -108,8 +108,8 @@ stack, for code only: a model name is a name, so the routing picker trigger
 same as the Runs on row and the Defaults rows. The body turns on `calt` and sets `font-optical-sizing: auto`, so the
 drawing tightens along the file's optical axis (14 to 32) as the size grows.
 Tabular figures are not global: Inter's `tnum` also widens the hyphen, which
-set `storefront-web` apart as `storefront - web`. `text-meta` carries
-`tabular-nums` itself, and any other number that lines up in a column adds
+set `storefront-web` apart as `storefront - web`. `text-meta` and `text-chip`
+carry `tabular-nums` themselves, and any other number that lines up in a column adds
 `tabular-nums`. The file has no character variants and no stylistic sets, so
 `cv11` or `ss01` would change nothing. `app-font-is-inter.test.ts` reads the
 file's feature list and fails on a feature the file lacks. The face is upright
@@ -120,15 +120,16 @@ stylesheet loads, and the exported report embeds the same file as a data URI.
 | role             | measure                       | used for                                                                               |
 | ---------------- | ----------------------------- | -------------------------------------------------------------------------------------- |
 | `text-display`   | 24/32, 600, -0.01em           | onboarding titles, the `EmptyState` hero, the Impact title                             |
-| `text-title`     | 17/24, 600, -0.005em          | the one pane title (h1) of a surface                                                   |
+| `text-title`     | 16/24, 600, -0.005em          | the one pane title (h1) of a surface                                                   |
 | `text-heading`   | 14/20, 600                    | a page-grade section, a popover title, a kickoff question                              |
-| `text-row`       | 14/20, 500                    | a top-level row label, a card title                                                    |
+| `text-row`       | 13/20, 500                    | a top-level row label, a card title                                                    |
 | `text-body`      | 14/20                         | running text; text with no class inherits it from the body                             |
 | `text-prose`     | 14/22                         | messages, markdown, artifacts                                                          |
 | `text-label`     | 12/16                         | controls, a nested row, a status label                                                 |
 | `text-secondary` | 11/16                         | a secondary line, a chip, an option description                                        |
 | `text-eyebrow`   | 11/16, 600, 0.08em, uppercase | a section label, only through `Eyebrow`                                                |
-| `text-meta`      | 10/14, tabular                | time, ordinal, cost, count                                                             |
+| `text-meta`      | 12/16, tabular                | time, ordinal, cost, count, a row's second line                                        |
+| `text-chip`      | 11/16, 500, tabular           | the label inside a chip, a badge, a key cap, a count pill                              |
 | `text-code`      | mono 12/18                    | branch, path, command, inline code                                                     |
 | `document`       | 15/25                         | the report document body (screen and file); a reading exception, not a `--text-*` role |
 
@@ -140,7 +141,9 @@ outside `ArtifactDocument`.
 
 A role with no weight inherits one: `text-label font-medium` is a control label
 at 500, `text-secondary font-medium` a chip. Weights are 400, 500 and 600, and
-600 belongs to display, title, heading and eyebrow. Tracking lives only inside
+600 belongs to display, title, heading and eyebrow. `text-row` and `text-chip`
+carry 500 themselves, so a weight utility next to a role is redundant, and
+`forbidden-patterns.test.ts` counts it (`role-weight-override`). Tracking lives only inside
 the roles. A leading utility still composes with a role
 (`text-secondary leading-none` for a one-line badge), because the role reads
 the leading before its own line box.
@@ -151,9 +154,17 @@ The raw grades stay defined, each on a whole-pixel line box: `3xs` 10/14, `2xs`
 raw sizes, weights, leadings and tracking per file, and the count only goes
 down. `scripts/codemods/type-roles.mjs` (`pnpm codemod:type-roles`) rewrites
 the combinations that map one to one (`text-sm font-medium` to `text-row`,
-`text-3xs` to `text-meta`, `text-sm leading-relaxed` to `text-prose`); the rest
+`text-3xs` to `text-chip`, `text-sm leading-relaxed` to `text-prose`); the rest
 moves by hand, area by area. Arbitrary sizes are covered by
 [docs/styling.md](../../docs/styling.md).
+
+Spacing sits on a 4px grid: `1`, `2`, `3`, `4`, `6`, `8` (4, 8, 12, 16, 24, 32px).
+A half step (`py-1.5`, `gap-2.5`, `px-3.5`) is out, and `0.5` stays only for a
+hairline. `forbidden-patterns.test.ts` counts half steps per file
+(`half-step-spacing`) and the count only goes down. `spacing-grid.test.ts`
+reads `paneRhythm.ts`, `timelineRhythm.ts` and `workMetaSpec.ts` and fails on a
+half step, or on a row height outside 24, 28, 32, 36, 40 and 48. A one-line rail
+row is `navRail.row` (32px), a two-line one `navRail.rowTwo` (48px).
 
 The `html` root stays 15px while any `rem` remains. `body` and `#root` are
 14/20, so text with no class lands on the body role instead of 15/23.25.

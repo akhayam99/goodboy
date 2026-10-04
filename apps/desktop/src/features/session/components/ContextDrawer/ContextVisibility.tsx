@@ -8,7 +8,7 @@ type Props = {
 };
 
 const CHIP =
-  'inline-flex items-center gap-1 rounded-sm border border-border-soft px-1.5 py-0.5 text-meta';
+  'inline-flex items-center gap-1 rounded-sm border border-border-soft px-1.5 py-0.5 text-chip';
 
 export const ContextVisibility = ({ visibility }: Props) => {
   const [isOpen, setIsOpen] = useState(false);

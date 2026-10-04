@@ -36,6 +36,8 @@ export type ForkMountInput = {
   readonly baseBranch?: string;
   readonly mountName?: string;
   readonly adoptExistingBranch?: boolean;
+  readonly taskIdentifier?: string;
+  readonly taskTitle?: string;
 };
 
 export type SwitchMountInput = {

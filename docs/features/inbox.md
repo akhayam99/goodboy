@@ -46,7 +46,7 @@ Press **Launch session** on an issue, a Slack thread or an error to start a sess
 
 ### Link an item to a session
 
-Attach an inbox item to work that already exists. **Link to a session** sits next to **Launch session** and links the task to the session you pick. From a session it works the other way round: **Link work** in the Overview header, or **L**, opens one search across every connected tracker, with your recent inbox items on top. Filter by source, type an issue code, or paste a link. Under the search, pick where the link lives: **This session** (the default), **This branch** (named after the branch the session is on), or **Whole workspace**. A session or branch link closes the task when its pull request merges; the line under the preview says so ("Will close ENG-412 when merged") and **Don’t close** turns it into "Part of ENG-412" in the pull request body instead. A whole-workspace task never closes from a pull request: it shows under **Ongoing** on the Board, not on any session until you link it there. A task you already linked stays in the list with where it lives, such as "Linked to this session", so you can add it to the branch or the workspace too; the scope it already has never links twice. A task linked from several sessions lists every one of them on its inbox record.
+Attach an inbox item to work that already exists. **Link to a session** sits next to **Launch session** and links the task to the session you pick. From a session it works the other way round: **Link work** in the Overview header, or **L**, opens one search across every connected tracker, with your recent inbox items on top. Filter by source, type an issue code, or paste a link. Under the search, pick where the link lives: **This session** (the default) or **Whole workspace**. A session link closes the task when its pull request merges; the line under the preview says so ("Will close ENG-412 when merged") and **Don’t close** turns it into "Part of ENG-412" in the pull request body instead. A whole-workspace task never closes from a pull request: it shows under **Ongoing** on the Board, not on any session until you link it there. A task you already linked stays in the list with where it lives, such as "Linked to this session", so you can add it to the workspace too; the scope it already has never links twice. A linked task shows once on the session header, the Board card and the sidebar row, with a **+N** for more tasks. To put it on a branch afterwards, open the task chip menu and pick **Put on a branch...**: choose a branch the session already has, or **New worktree for** the task, which creates the worktree with a branch named after the task. A task can sit on several branches; **Take off this branch** on a branch row moves it back, and **Add a task** on a worktree row links one straight to that branch. **Unlink from this session** asks inline and removes the task from every branch. A task linked from several sessions lists every one of them on its inbox record.
 
 ### Trackers
 
@@ -68,7 +68,7 @@ Work on GitHub pull requests and issues, GitLab merge requests, and Bitbucket co
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-slack-permissions-light.webp" alt="Settings, Integrations, Slack for Harborline: the channels #payments-oncall and #ledger-dev picked, and under What agents can do, Read threads in followed channels Allowed, Read other channels you are in Off, Reply in threads Ask me first, Add reactions Allowed">
 </picture>
 
-Decide how far agents go in Slack. Tick the channels they follow, then set each action: **Read threads in followed channels** and **Read other channels you're in** are **Allowed** or **Off**, **Reply in threads** and **Add reactions** are **Allowed**, **Ask me first** or **Never**. Replies default to **Ask me first**, and agents never start new conversations or send direct messages.
+Decide how far agents go in Slack. Tick the channels they follow, then set each action: **Read threads in followed channels** and **Read other channels you're in** are **Allowed** or **Off**, **Reply in threads** and **Add reactions** are **Allowed**, **Ask first** or **Never**. Replies default to **Ask first**, and agents never start new conversations or send direct messages.
 
 ### Reply ready for #channel
 
@@ -77,7 +77,7 @@ Decide how far agents go in Slack. Tick the channels they follow, then set each 
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-slack-reply-light.webp" alt="A session transcript with a card titled Reply ready for #payments-oncall, waiting for you, quoting Omar T. and holding a drafted answer about payments-api #318 and notify-relay #57, with the buttons Send, Edit and Discard">
 </picture>
 
-Approve what goes out in Slack from where you already are. Under **Ask me first**, the agent's reply waits in the session as a card with the message it answers and the draft, and you choose **Send**, **Edit** or **Discard**.
+Approve what goes out in Slack from where you already are. Under **Ask first**, the agent's reply waits in the session as a card with the message it answers and the draft, and you choose **Send**, **Edit** or **Discard**.
 
 ### Slack signature
 

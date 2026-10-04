@@ -29,7 +29,7 @@ export type ChipProps = {
 };
 
 const sizeClasses: Record<ChipSize, string> = {
-  '3xs': 'px-1.5 py-0.5 text-meta',
+  '3xs': 'px-1.5 py-0.5 text-chip',
   xs: 'px-1.5 py-0.5 text-secondary',
   sm: 'text-secondary px-2 py-0.5',
   md: 'text-label px-2 py-1',

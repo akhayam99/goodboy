@@ -46,10 +46,23 @@ const blockPaddingPx = ({ classes }: { classes: string }): number => {
   return total;
 };
 
+const minHeightPx = ({ classes }: { classes: string }): number => {
+  for (const utility of utilitiesOf({ classes })) {
+    const match = /^min-h-(\d+(?:\.\d+)?)$/.exec(utility);
+    if (match !== null) {
+      return step({ multiplier: Number(match[1]) });
+    }
+  }
+  return 0;
+};
+
+const rowBoxPx = ({ classes, content }: { classes: string; content: number }): number =>
+  Math.max(minHeightPx({ classes }), blockPaddingPx({ classes }) + content);
+
 const COUNT_CHIP_PX = LEADING_2XS_PX + step({ multiplier: COUNT_CHIP_PADDING_STEP }) * 2;
 const KBD_PILL_PX = step({ multiplier: KBD_PILL_HEIGHT_STEP });
 const ROW_CONTENT_PX = Math.max(RAIL_GLYPH_PX, LEADING_SM_PX, COUNT_CHIP_PX, KBD_PILL_PX);
-const ROW_PX = blockPaddingPx({ classes: PANE_RHYTHM.navRail.row }) + ROW_CONTENT_PX;
+const ROW_PX = rowBoxPx({ classes: PANE_RHYTHM.navRail.row, content: ROW_CONTENT_PX });
 const GROUP_LABEL_PX = LEADING_3XS_PX + step({ multiplier: GROUP_LABEL_PADDING_STEP });
 
 const isWhole = (value: number): boolean => Number.isInteger(value);
@@ -101,6 +114,7 @@ describe('lens rail whole-pixel geometry', () => {
       PANE_RHYTHM.navRail.inset,
       PANE_RHYTHM.navRail.body,
       PANE_RHYTHM.navRail.row,
+      PANE_RHYTHM.navRail.rowTwo,
     ].flatMap((classes) => utilitiesOf({ classes }).filter((utility) => !SCALE_STEP.test(utility)));
     expect(offScale).toEqual([]);
   });

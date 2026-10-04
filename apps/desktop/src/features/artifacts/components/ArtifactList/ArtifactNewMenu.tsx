@@ -79,7 +79,7 @@ export const ArtifactNewMenu = ({ sessionId, onImportWireframe }: Props) => {
             kind: 'item',
             key: 'import-wireframe',
             label: 'Import wireframe JSON…',
-            description: 'Brings back a spec made or edited outside, or drop a .json on this page',
+            description: 'Import a .json spec',
             icon: FileJson,
             onClick: onImportWireframe,
           },

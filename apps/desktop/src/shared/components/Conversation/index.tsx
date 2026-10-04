@@ -43,7 +43,6 @@ export const Conversation = ({ source, model }: Props) => {
           icon={CONCEPT_ICONS.comments}
           tone={CONCEPT_TONE.comments}
           title="No comments yet"
-          description={source.emptyDescription}
         />
       ) : (
         <ul className="flex min-w-0 flex-col gap-2">

@@ -114,7 +114,7 @@ describe('Trail', () => {
     }
   });
 
-  it('turns the anchor into an icon from depth four and keeps the last two full', () => {
+  it('keeps the anchor named at depth four', () => {
     const { container } = render(
       <Trail
         segments={['Overview', 'Workflows', 'Ship a fix', 'Wire checkout'].map((label) => ({
@@ -129,8 +129,25 @@ describe('Trail', () => {
     const states = Array.from(container.querySelectorAll('[data-trail-segment]')).map((node) =>
       node.getAttribute('data-trail-state'),
     );
-    expect(states).toEqual(['icon', 'full', 'full', 'full']);
-    expect(screen.getByRole('button', { name: 'Overview' })).toBeDefined();
+    expect(states).toEqual(['full', 'full', 'full', 'full']);
+    screen.getByRole('button', { name: 'Overview' });
+  });
+
+  it('draws an ancestor without an action as plain text', () => {
+    render(
+      <Trail
+        segments={[
+          { id: 'settings', label: 'Settings', icon: Circle },
+          { id: 'general', label: 'General', icon: Circle },
+        ]}
+      />,
+    );
+
+    screen.getByText('Settings');
+    expect(screen.queryByRole('button', { name: 'Settings' })).toBeNull();
+    expect(screen.getByText('Settings').closest('[data-trail-piece]')?.className).not.toContain(
+      'hover:bg-hover',
+    );
   });
 
   it('folds middle ancestors behind an ellipsis after the anchor when the band is narrow', () => {

@@ -13,7 +13,7 @@ export const SpendButton = ({ onOpenSpend }: Props) => {
   if (workspace == null) {
     return null;
   }
-  const label = `Spent today in ${workspace.name}, counted by Goodboy. Open spend`;
+  const label = 'Spent today, counted by Goodboy. Open spend';
 
   return (
     <Tooltip content={label} side="bottom">

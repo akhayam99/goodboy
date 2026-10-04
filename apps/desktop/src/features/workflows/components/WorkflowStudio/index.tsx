@@ -23,11 +23,11 @@ export const WorkflowStudio = ({ workspaceId, onClose }: Props) => {
       icon={CONCEPT_ICONS.workflows}
       tone={CONCEPT_TONE.workflows}
       title="Workflows"
-      closeLabel="close workflows"
+      closeLabel="Close workflows"
       onClose={onClose}
     >
       {() => (
-        <div className="min-h-0 min-w-0 flex-1">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <WorkflowsPanel key={workspaceId} workspaceId={workspaceId} />
         </div>
       )}

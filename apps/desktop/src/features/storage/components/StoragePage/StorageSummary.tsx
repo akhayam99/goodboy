@@ -31,14 +31,6 @@ export const StorageSummary = ({ scope, onScopeToAll }: Props) => {
   const artifactBytes = artifacts.reduce((sum, artifact) => sum + (artifact.sizeBytes ?? 0), 0);
   const segments: ReadonlyArray<StorageSegment> = [
     {
-      key: 'in-use',
-      label: 'In use',
-      bytes: summary.inUse.bytes,
-      detail: pluralize(summary.inUse.count, 'folder'),
-      swatch: 'bg-idle',
-      target: 'storage-worktrees',
-    },
-    {
       key: 'can-go',
       label: 'Can go',
       bytes: summary.canGo.bytes,
@@ -54,36 +46,23 @@ export const StorageSummary = ({ scope, onScopeToAll }: Props) => {
       swatch: 'bg-warning',
       target: 'storage-worktrees',
     },
-    ...(isScoped
-      ? []
-      : [
-          {
-            key: 'app-data' as const,
-            label: 'App data',
-            bytes: appDataBytes,
-            detail: 'database',
-            swatch: 'bg-faint-foreground',
-            target: 'storage-history' as const,
-          },
-        ]),
     {
-      key: 'transcripts',
-      label: 'Transcripts',
-      bytes: stats.archivedTranscriptBytes,
-      detail: `${stats.archivedSessionCount} archived`,
-      swatch: 'bg-muted-foreground',
-      target: 'storage-history',
-    },
-    {
-      key: 'artifacts',
-      label: 'Artifact copies',
-      bytes: artifactBytes,
-      detail: artifacts.length === 1 ? '1 copy' : `${artifacts.length} copies`,
-      swatch: 'bg-info',
-      target: 'storage-artifacts',
+      key: 'kept',
+      label: 'Keep',
+      bytes: summary.kept.bytes,
+      detail: pluralize(summary.kept.count, 'folder'),
+      swatch: 'bg-idle',
+      target: 'storage-worktrees',
     },
   ];
-  const total = segments.reduce((sum, segment) => sum + segment.bytes, 0);
+  const total =
+    summary.inUse.bytes +
+    summary.canGo.bytes +
+    summary.reviewFirst.bytes +
+    summary.kept.bytes +
+    (isScoped ? 0 : appDataBytes) +
+    stats.archivedTranscriptBytes +
+    artifactBytes;
   const free = stats.diskFreeBytes;
   const isLowDisk = free !== null && free < LOW_DISK_BYTES;
 

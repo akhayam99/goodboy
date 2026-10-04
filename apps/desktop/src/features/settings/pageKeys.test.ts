@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_WORKFLOW_RULES, type OverrideSettings } from '@goodboy/types';
 import { EMPTY_OVERRIDES } from '@goodboy/types/testing';
 import { FIELD_PAGE, isWorkspaceOwnedOverride, pageKeys } from './pageKeys';
-import { WORKSPACE_PAGES } from './components/SettingsStudio/workspacePages';
+import { PLAN_PAGES, WORKSPACE_PAGES } from './components/SettingsStudio/workspacePages';
 import { fieldDef } from './workspaceSettings/fields';
 import { copyPlan, restorePlan } from './workspaceSettings/plan';
 import type { WorkspaceSettingsSnapshot } from './workspaceSettings/snapshot';
@@ -31,7 +31,7 @@ describe('pageKeys', () => {
   });
 
   it('puts every field on exactly one workspace page', () => {
-    const owned = WORKSPACE_PAGES.flatMap((page) => pageKeys({ page: page.id }));
+    const owned = PLAN_PAGES.flatMap((page) => pageKeys({ page }));
 
     expect([...owned].sort()).toEqual(Object.keys(FIELD_PAGE).sort());
     expect(new Set(owned).size).toBe(owned.length);
@@ -42,9 +42,8 @@ describe('pageKeys', () => {
     });
   });
 
-  it('owns nothing on Projects and Disconnect, so they are never copied', () => {
+  it('owns nothing on Projects, so it is never copied', () => {
     expect(pageKeys({ page: 'projects' })).toEqual([]);
-    expect(pageKeys({ page: 'danger' })).toEqual([]);
   });
 
   it('writes each workspace override key from exactly one field', () => {
@@ -86,22 +85,23 @@ describe('workspace settings plans', () => {
     expect(plan[0]?.items.map((item) => item.field)).toEqual(['verbosity']);
   });
 
-  it('copies the workflow rules as one value and restores them to the defaults', () => {
+  it('carries the workflow rules in all pages as one value and restores them to the defaults', () => {
     const rules = { ...DEFAULT_WORKFLOW_RULES, autonomy: 'plan' as const, spendLimitUsd: 25 };
     const copy = copyPlan({
-      scope: 'workflow-rules',
+      scope: 'all',
       current: snapshot({}),
       source: snapshot({ workflowRules: rules }),
     });
     const restore = restorePlan({
-      scope: 'workflow-rules',
+      scope: 'all',
       current: snapshot({ workflowRules: rules }),
     });
     const untouched = restorePlan({
-      scope: 'workflow-rules',
+      scope: 'all',
       current: snapshot({ workflowRules: DEFAULT_WORKFLOW_RULES }),
     });
 
+    expect(copy.map((page) => page.page)).toEqual(['workflow-rules']);
     expect(copy[0]?.items.map((item) => [item.from, item.to, item.write])).toEqual([
       [
         'Ask before each step · No spend cap · No guidance',

@@ -351,7 +351,7 @@ or it can quit. Restoring moves the current file aside as
 `data.db.newer-build-<ms>.bak`, so nothing is lost, puts the copy in its place,
 and starts the boot again.
 
-Settings > Danger zone > Wipe local database stops every running turn,
+Settings > Backup > Reset > Wipe local database stops every running turn,
 summary, planner, script and terminal first. Then `db_wipe` empties the file
 in one atomic step with SQLite's own reset (`SQLITE_DBCONFIG_RESET_DATABASE`
 plus `VACUUM`), and the chain replays from m001 on the empty file. It never

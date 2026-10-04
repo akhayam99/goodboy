@@ -1,41 +1,36 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: vi.fn(async () => new Promise<never>(() => undefined)),
+}));
+vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type {
-  Agent,
   AgentHandoff,
   AgentId,
   IsoDateTime,
   PlanId,
   SessionId,
-  TurnEvent,
   WorkflowRunId,
 } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
-
-const state = vi.hoisted(() => ({
-  agentHandoffs: {} as Record<string, AgentHandoff | null>,
-  transcripts: {} as Record<string, ReadonlyArray<TurnEvent>>,
-  sessionPhaseRuns: {} as Record<string, ReadonlyArray<Agent>>,
-  sessionOpenQuestions: {} as Record<string, ReadonlyArray<unknown>>,
-  sessionAnsweredQuestions: {} as Record<string, ReadonlyArray<unknown>>,
-  loadAgentHandoff: vi.fn(async () => undefined),
-  navigate: vi.fn(),
-  loadAgentTranscript: vi.fn(async () => undefined),
-}));
-
-vi.mock('../../../../store', async () => ({
-  ...(await import('../../../../store/slices/navigation/place')),
-  EMPTY_ARRAY: [],
-  useAppStore: <T,>(selector: (value: typeof state) => T) => selector(state),
-}));
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+} from '../../../../store/storyHarness';
+import { useAppStore } from '../../../../store';
 
 import { HandoffBlock } from '.';
+import { requestHandoffOpen } from './handoffOpenRequest';
 
 const SESSION = 'session-1' as SessionId;
 const AGENT = 'agent-4' as AgentId;
 const AT = '2026-09-25T12:04:00.000Z' as IsoDateTime;
+const loadAgentHandoff = vi.fn(async () => undefined);
+const navigate = vi.fn();
 
 const handoff = (overrides: Partial<AgentHandoff> = {}): AgentHandoff => ({
   agentId: AGENT,
@@ -101,13 +96,22 @@ const renderBlock = (overrides: Partial<Extract<TranscriptItem, { kind: 'handoff
   );
 
 describe('HandoffBlock', () => {
-  beforeEach(() => {
-    state.agentHandoffs = { [AGENT]: handoff() };
-    state.transcripts = {
-      [AGENT]: [{ kind: 'assistant_text', runId: 'r' as never, delta: 'On it.', at: AT }],
-    };
-    state.loadAgentHandoff.mockClear();
-    state.navigate.mockClear();
+  beforeAll(async () => {
+    await importStore();
+  }, STORE_IMPORT_TIMEOUT_MS);
+
+  beforeEach(async () => {
+    await resetStoryStore();
+    loadAgentHandoff.mockClear();
+    navigate.mockClear();
+    useAppStore.setState({
+      agentHandoffs: { [AGENT]: handoff() },
+      transcripts: {
+        [AGENT]: [{ kind: 'assistant_text', runId: 'r' as never, delta: 'On it.', at: AT }],
+      },
+      loadAgentHandoff,
+      navigate,
+    });
   });
 
   afterEach(() => {
@@ -170,6 +174,15 @@ describe('HandoffBlock', () => {
     screen.getByTestId('handoff-section-role');
   });
 
+  it('opens the Ask section when the Brief requests the handoff', () => {
+    requestHandoffOpen({ agentId: AGENT });
+    renderBlock();
+
+    screen.getByTestId('handoff-section-ask');
+    expect(screen.getByRole('button', { name: 'Ask' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.queryByTestId('handoff-section-plan')).toBeNull();
+  });
+
   it('Escape closes the open section and returns focus to its chip', () => {
     renderBlock();
     fireEvent.click(screen.getByRole('button', { name: 'Expand what the agent received' }));
@@ -184,7 +197,9 @@ describe('HandoffBlock', () => {
 
   it('Escape in one card returns focus to its own chip, not another cards chip of the same kind', () => {
     const otherAgent = 'agent-5' as AgentId;
-    state.agentHandoffs = { [AGENT]: handoff(), [otherAgent]: handoff() };
+    useAppStore.setState({
+      agentHandoffs: { [AGENT]: handoff(), [otherAgent]: handoff() },
+    });
     render(
       <>
         <HandoffBlock item={item()} sessionId={SESSION} agentId={AGENT} workingDir={null} />
@@ -202,7 +217,7 @@ describe('HandoffBlock', () => {
     const planChips = screen.getAllByRole('button', { name: 'Plan' });
     fireEvent.click(planChips[1]!);
 
-    fireEvent.keyDown(screen.getAllByTestId('handoff-section-plan')[1]!, { key: 'Escape' });
+    fireEvent.keyDown(screen.getByTestId('handoff-section-plan'), { key: 'Escape' });
 
     expect(document.activeElement).toBe(planChips[1]);
     expect(document.activeElement).not.toBe(planChips[0]);
@@ -219,14 +234,34 @@ describe('HandoffBlock', () => {
     screen.getByTestId('handoff-section-ask');
     screen.getByTestId('handoff-section-plan');
     screen.getByTestId('handoff-section-role');
+    expect(
+      screen
+        .getAllByTestId(/^handoff-section-/)
+        .every((row) => row.querySelector('button')?.getAttribute('aria-expanded') === 'false'),
+    ).toBe(true);
   });
 
-  it('opens by itself while the agent has not answered yet', () => {
-    state.transcripts = { [AGENT]: [] };
+  it('stays closed before the agent answers and keeps machine markers out of the DOM', () => {
+    useAppStore.setState({
+      transcripts: { [AGENT]: [] },
+      agentHandoffs: {
+        [AGENT]: handoff({
+          sections: [
+            {
+              kind: 'ask',
+              summary: 'Backfill the settled batches behind a flag.',
+              bodyMd: 'Reply contract\n<<comment-resolved threadId="thread-1">>',
+              refs: [],
+            },
+          ],
+        }),
+      },
+    });
     renderBlock();
 
-    screen.getByTestId('handoff-section-ask');
-    screen.getByTestId('handoff-chips');
+    expect(screen.queryByTestId('handoff-section-ask')).toBeNull();
+    expect(screen.queryByTestId('handoff-chips')).toBeNull();
+    expect(screen.queryByText(/comment-resolved/)).toBeNull();
   });
 
   it('opens the block on the section a chip names, and an earlier step opens that agent', () => {
@@ -236,7 +271,7 @@ describe('HandoffBlock', () => {
     fireEvent.click(screen.getByRole('button', { name: '1 earlier step' }));
     fireEvent.click(screen.getByRole('button', { name: /Trace the rounding/ }));
 
-    expect(state.navigate).toHaveBeenCalledWith({
+    expect(navigate).toHaveBeenCalledWith({
       to: { at: 'agent', sessionId: SESSION, agentId: 'agent-2' },
     });
   });
@@ -255,9 +290,11 @@ describe('HandoffBlock', () => {
   });
 
   it('shows the text as sent, in two parts for Claude', () => {
-    state.transcripts = { [AGENT]: [] };
+    useAppStore.setState({ transcripts: { [AGENT]: [] } });
     renderBlock();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Expand what the agent received' }));
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
     fireEvent.click(screen.getByRole('button', { name: 'View as sent to Claude' }));
 
     screen.getByText(/System prompt/);
@@ -266,10 +303,14 @@ describe('HandoffBlock', () => {
   });
 
   it('says why other providers get one part', () => {
-    state.transcripts = { [AGENT]: [] };
-    state.agentHandoffs = { [AGENT]: handoff({ provider: 'codex', sentSystem: null }) };
+    useAppStore.setState({
+      transcripts: { [AGENT]: [] },
+      agentHandoffs: { [AGENT]: handoff({ provider: 'codex', sentSystem: null }) },
+    });
     renderBlock();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Expand what the agent received' }));
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
     fireEvent.click(screen.getByRole('button', { name: 'View as sent to Codex' }));
 
     screen.getByText(
@@ -279,27 +320,76 @@ describe('HandoffBlock', () => {
   });
 
   it('keeps your own first message as your bubble, with what else the agent received', () => {
-    state.agentHandoffs = { [AGENT]: handoff({ sender: { kind: 'you' } }) };
+    useAppStore.setState({
+      agentHandoffs: {
+        [AGENT]: handoff({
+          sender: { kind: 'you' },
+          ask: 'Which services read the per-line totals?',
+          sections: [
+            {
+              kind: 'ask',
+              summary: 'Which services read the per-line totals?',
+              bodyMd: 'Which services read the per-line totals?\n\nCheck payments-api too.',
+              refs: [],
+            },
+            ...handoff().sections.slice(1),
+          ],
+        }),
+      },
+    });
     renderBlock({ text: 'Which services read the per-line totals?' });
 
     screen.getByText('Which services read the per-line totals?');
+    screen.getByText('Check payments-api too.');
     expect(screen.getByTestId('handoff-also-received').textContent).toContain('Also received');
     expect(screen.getByTestId('handoff-chips').textContent).toBe(
       '1 earlier stepPlanImplementer instructionsAll',
     );
   });
 
+  it('keeps an attached plan out of your visible message', () => {
+    useAppStore.setState({
+      agentHandoffs: {
+        [AGENT]: handoff({
+          sender: { kind: 'you' },
+          ask: 'Implement the approved retry change.',
+          sections: [
+            {
+              kind: 'ask',
+              summary: 'Implement the approved retry change.',
+              bodyMd: 'Implement the approved retry change.',
+              refs: [],
+            },
+            {
+              kind: 'plan',
+              summary: 'Bound retry attempts',
+              bodyMd: '',
+              refs: [{ kind: 'plan', planId: 'plan-1' as PlanId, label: 'Bound retry attempts' }],
+            },
+          ],
+        }),
+      },
+    });
+    renderBlock({
+      text: '**Plan**\n1. Add the cap.\n2. Add jitter.\n\nImplement the approved retry change.',
+    });
+
+    screen.getByText('Implement the approved retry change.');
+    expect(screen.queryByText('1. Add the cap.')).toBeNull();
+    screen.getByRole('button', { name: 'Plan' });
+  });
+
   it('shows an agent spawned before handoffs were stored in the older format', () => {
     renderBlock({ handoffId: null });
 
     expect(screen.getByTestId('handoff-older-format').textContent).toContain('older format');
-    expect(state.loadAgentHandoff).not.toHaveBeenCalled();
+    expect(loadAgentHandoff).not.toHaveBeenCalled();
   });
 
   it('loads a handoff it has not read yet', () => {
-    state.agentHandoffs = {};
+    useAppStore.setState({ agentHandoffs: {} });
     renderBlock();
 
-    expect(state.loadAgentHandoff).toHaveBeenCalledWith({ agentId: AGENT });
+    expect(loadAgentHandoff).toHaveBeenCalledWith({ agentId: AGENT });
   });
 });

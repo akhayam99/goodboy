@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { OverflowMenu, PaneShell } from '@goodboy/ui';
+import { OverflowMenu, PaneShell, type OverflowMenuItem } from '@goodboy/ui';
 import { Copy, RotateCcw } from 'lucide-react';
 import { useAppStore } from '../../../../store';
 import { pluralize } from '../../../../shared/utils/pluralize';
-import type { SettingsScopeChange } from '../../settingsFocus';
 import { pageKeys } from '../../pageKeys';
 import { usePageChangedCount } from '../../hooks/usePageChangedCount';
 import { SETTINGS_PANE_ENTRY } from './settingsPaneEntry';
@@ -15,14 +14,11 @@ import { workspacePageEntry, workspacePageOf, type WorkspacePage } from './works
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly section?: string;
-  readonly onSelect: (change: SettingsScopeChange) => void;
+  readonly initialFlow?: FlowMode;
   readonly requestClose: () => void;
 };
 
-export const WorkspaceScopePanel = ({ workspaceId, section, onSelect, requestClose }: Props) => {
-  const workspaceName = useAppStore(
-    (s) => s.workspaces.find((w) => w.id === workspaceId)?.name ?? null,
-  );
+export const WorkspaceScopePanel = ({ workspaceId, section, initialFlow, requestClose }: Props) => {
   const hasOtherWorkspace = useAppStore((s) => s.workspaces.some((w) => w.id !== workspaceId));
   const page = workspacePageOf({ section });
   const entry = workspacePageEntry({ page });
@@ -30,14 +26,13 @@ export const WorkspaceScopePanel = ({ workspaceId, section, onSelect, requestClo
   const changedCount = usePageChangedCount({ workspaceId, page });
   const [flow, setFlow] = useState<{
     readonly page: WorkspacePage;
+    readonly scope: WorkspacePage | 'all';
     readonly mode: FlowMode;
-  } | null>(null);
+  } | null>(initialFlow === undefined ? null : { page, scope: 'all', mode: initialFlow });
   const openFlow = flow !== null && flow.page === page ? flow : null;
 
-  const menu = ownsSettings ? (
-    <OverflowMenu
-      label={`${entry.label} actions`}
-      items={[
+  const pageItems: ReadonlyArray<OverflowMenuItem> = ownsSettings
+    ? [
         {
           kind: 'item',
           key: 'restore',
@@ -45,7 +40,7 @@ export const WorkspaceScopePanel = ({ workspaceId, section, onSelect, requestClo
           icon: RotateCcw,
           hint: changedCount === 0 ? 'Already default' : `${pluralize(changedCount, 'change')}`,
           disabled: changedCount === 0,
-          onClick: () => setFlow({ page, mode: 'restore' }),
+          onClick: () => setFlow({ page, scope: page, mode: 'restore' }),
         },
         {
           kind: 'item',
@@ -54,27 +49,51 @@ export const WorkspaceScopePanel = ({ workspaceId, section, onSelect, requestClo
           icon: Copy,
           hint: hasOtherWorkspace ? undefined : 'No other workspace',
           disabled: !hasOtherWorkspace,
-          onClick: () => setFlow({ page, mode: 'copy' }),
+          onClick: () => setFlow({ page, scope: page, mode: 'copy' }),
+        },
+        { kind: 'separator', key: 'all-pages' },
+      ]
+    : [];
+
+  const menu = (
+    <OverflowMenu
+      label={`${entry.label} actions`}
+      items={[
+        ...pageItems,
+        {
+          kind: 'item',
+          key: 'restore-all',
+          label: 'Restore all workspace defaults',
+          icon: RotateCcw,
+          onClick: () => setFlow({ page, scope: 'all', mode: 'restore' }),
+        },
+        {
+          kind: 'item',
+          key: 'copy-all',
+          label: 'Copy all pages from…',
+          icon: Copy,
+          hint: hasOtherWorkspace ? undefined : 'No other workspace',
+          disabled: !hasOtherWorkspace,
+          onClick: () => setFlow({ page, scope: 'all', mode: 'copy' }),
         },
       ]}
     />
-  ) : undefined;
+  );
 
   return (
     <PaneShell
       key={page}
       animationClassName={SETTINGS_PANE_ENTRY}
       title={entry.label}
-      meta={workspaceName ?? undefined}
       actions={menu}
       subheader={
         <div className="flex flex-col gap-3">
           <p className="text-label text-muted-foreground">{entry.hint}</p>
           {openFlow === null ? null : (
             <WorkspaceSettingsFlow
-              key={`${openFlow.page}:${openFlow.mode}`}
+              key={`${openFlow.scope}:${openFlow.mode}`}
               workspaceId={workspaceId}
-              scope={openFlow.page}
+              scope={openFlow.scope}
               mode={openFlow.mode}
               onClose={() => setFlow(null)}
             />
@@ -86,7 +105,6 @@ export const WorkspaceScopePanel = ({ workspaceId, section, onSelect, requestClo
         workspaceId={workspaceId}
         page={page}
         section={section}
-        onSelect={onSelect}
         requestClose={requestClose}
       />
     </PaneShell>

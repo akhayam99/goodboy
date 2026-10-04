@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { Tone } from '@goodboy/ui';
 import type { SessionAttentionReason, SessionStage, SessionStageInfo } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
+import { NAMES } from '../../shared/names';
 import { PULL_REQUEST_PRESENTATION } from '../../shared/pullRequestPresentation';
 import type { StatePresentation } from '../../shared/utils/statePresentation';
 
@@ -13,24 +14,24 @@ type AttentionEntry = {
 };
 
 export const ATTENTION_REASON_META: Record<SessionAttentionReason, AttentionEntry> = {
-  'agent-error': { icon: 'errors', tone: 'danger', reason: 'the agent stopped with an error' },
-  'open-question': { icon: 'questions', tone: 'warning', reason: 'the agent asked you something' },
+  'agent-error': { icon: 'errors', tone: 'danger', reason: 'The agent stopped with an error' },
+  'open-question': { icon: 'questions', tone: 'warning', reason: 'The agent asked you something' },
   'unread-reply': {
     icon: 'agents',
     tone: 'primary',
-    reason: 'the agent replied and you have not read it',
+    reason: "The agent replied and you haven't read it",
   },
-  'ci-failed': { icon: 'checks', tone: 'danger', reason: 'a check failed on the pull request' },
-  'changes-requested': { icon: 'review', tone: 'danger', reason: 'a reviewer asked for changes' },
+  'ci-failed': { icon: 'checks', tone: 'danger', reason: 'A check failed on the pull request' },
+  'changes-requested': { icon: 'review', tone: 'danger', reason: 'A reviewer asked for changes' },
   'pr-approved': {
     icon: 'pr',
     tone: 'success',
-    reason: 'the pull request is approved and ready to merge',
+    reason: 'The pull request is approved and ready to merge',
   },
   'needs-approval': {
     icon: 'approval',
     tone: 'warning',
-    reason: 'the agent is waiting for you to approve a tool call',
+    reason: 'The agent is waiting for you to approve a tool call',
   },
 };
 
@@ -41,24 +42,24 @@ type SessionStageEntry = {
 
 export const SESSION_STAGE_META: Record<SessionStage, SessionStageEntry> = {
   attention: {
-    label: 'needs you',
-    reason: 'blocked until you act',
+    label: NAMES.needsYou.toLowerCase(),
+    reason: 'Blocked until you act',
   },
   running: {
-    label: 'running',
-    reason: 'an agent is working right now',
+    label: NAMES.running.toLowerCase(),
+    reason: 'An agent is working right now',
   },
   review: {
-    label: 'in review',
-    reason: 'the work is out for review',
+    label: NAMES.inReview.toLowerCase(),
+    reason: 'The work is out for review',
   },
   building: {
-    label: 'building',
-    reason: 'work in progress, nothing to review yet',
+    label: NAMES.building.toLowerCase(),
+    reason: 'Work in progress, nothing to review yet',
   },
   done: {
-    label: 'done',
-    reason: 'nothing left to do here',
+    label: NAMES.done.toLowerCase(),
+    reason: 'Nothing left to do here',
   },
 };
 

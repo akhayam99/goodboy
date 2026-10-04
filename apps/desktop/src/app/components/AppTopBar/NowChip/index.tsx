@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import type { Session, SessionId } from '@goodboy/types';
+import type { Session, SessionAttentionReason, SessionId } from '@goodboy/types';
 import {
   AnchoredPopover,
   Divider,
@@ -15,7 +15,6 @@ import {
   useCurrentWorkspace,
   useSessions,
   useStageGroupedSessions,
-  sessionPlace,
 } from '../../../../store';
 import { RunningScriptRow } from '../../../../features/scripts/components/RunningScriptRow';
 import {
@@ -26,6 +25,7 @@ import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptI
 import { useNow } from '../../../../shared/hooks/useNow';
 import { NeedsYouSessionRow } from './NeedsYouSessionRow';
 import { NowGroup } from './NowGroup';
+import { attentionPlace } from './attentionPlace';
 
 type Props = {
   readonly onOpenScript: (run: RunningScript) => void;
@@ -33,6 +33,7 @@ type Props = {
 
 type SelectParams = {
   readonly sessionId: SessionId;
+  readonly reason: SessionAttentionReason | null;
 };
 
 type CountLabelParams = {
@@ -91,9 +92,9 @@ export const NowChip = ({ onOpenScript }: Props) => {
     return null;
   }
 
-  const selectSession = ({ sessionId }: SelectParams) => {
+  const selectSession = ({ sessionId, reason }: SelectParams) => {
     close();
-    navigate({ to: sessionPlace({ sessionId }) });
+    navigate({ to: attentionPlace({ state: useAppStore.getState(), sessionId, reason }) });
   };
 
   const openScript = (run: RunningScript) => {
