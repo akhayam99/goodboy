@@ -1282,7 +1282,7 @@ describe('ChatInput, composer flows', () => {
     const user = userEvent.setup();
     render(<ChatInput session={runningSession()} />);
 
-    await user.click(screen.getByRole('button', { name: 'Cancel turn' }));
+    await user.click(screen.getByRole('button', { name: 'Stop' }));
 
     expect(cancelCurrentTurnMock).toHaveBeenCalledWith('session-1', 'agent-1', 'user');
   });

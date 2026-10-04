@@ -72,14 +72,14 @@ export const ListboxScene = () => {
         <div className="flex items-center gap-6">
           <Listbox ariaLabel="Theme" value={theme} options={THEMES} onChange={setTheme} />
           <Listbox
-            ariaLabel="Verbosity"
+            ariaLabel="Reply length"
             trigger="quiet"
             size="sm"
             value={verbosity}
             options={[
-              { value: 'brief', label: 'Brief' },
+              { value: 'brief', label: 'Short' },
               { value: 'normal', label: 'Normal' },
-              { value: 'verbose', label: 'Verbose' },
+              { value: 'verbose', label: 'Long' },
             ]}
             onChange={setVerbosity}
           />

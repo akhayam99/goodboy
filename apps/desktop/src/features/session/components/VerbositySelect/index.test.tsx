@@ -9,11 +9,11 @@ afterEach(cleanup);
 describe('VerbositySelect', () => {
   it('shows every level in the row and marks the current one', () => {
     render(<VerbositySelect value="normal" onChange={vi.fn()} disabled={false} />);
-    const group = screen.getByRole('tablist', { name: 'Reply verbosity' });
+    const group = screen.getByRole('tablist', { name: 'Reply length' });
     const tabs = screen.getAllByRole('tab');
 
     expect(group).toBeDefined();
-    expect(tabs.map((tab) => tab.textContent)).toEqual(['Brief', 'Normal', 'Verbose']);
+    expect(tabs.map((tab) => tab.textContent)).toEqual(['Short', 'Normal', 'Long']);
     expect(tabs.map((tab) => tab.getAttribute('aria-selected'))).toEqual([
       'false',
       'true',
@@ -25,7 +25,7 @@ describe('VerbositySelect', () => {
     const onChange = vi.fn();
     render(<VerbositySelect value="normal" onChange={onChange} disabled={false} />);
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Verbose' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Long' }));
 
     expect(onChange).toHaveBeenCalledWith('verbose');
   });

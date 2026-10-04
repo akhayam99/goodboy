@@ -215,13 +215,13 @@ describe('StepEditor', () => {
     screen.getByRole('button', { name: 'Polish instruction' });
   });
 
-  it('calls it Reply verbosity and saves the level you pick', () => {
+  it('calls it Reply length and saves the level you pick', () => {
     renderHost(callbacks());
 
-    const group = screen.getByRole('tablist', { name: 'Reply verbosity' });
-    fireEvent.click(within(group).getByRole('tab', { name: 'Brief' }));
+    const group = screen.getByRole('tablist', { name: 'Reply length' });
+    fireEvent.click(within(group).getByRole('tab', { name: 'Short' }));
 
-    expect(within(group).getByRole('tab', { name: 'Brief' }).getAttribute('aria-selected')).toBe(
+    expect(within(group).getByRole('tab', { name: 'Short' }).getAttribute('aria-selected')).toBe(
       'true',
     );
   });

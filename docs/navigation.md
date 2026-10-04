@@ -47,7 +47,8 @@
 - **Pin the structure, flex the density.** A control keeps a fixed position so
   people can learn it. No control appears or disappears when a count crosses a
   threshold. The counts themselves may: a chip that reads zero is noise, not
-  structure. There are two exceptions. Integration groups sit in a row, so
+  structure. Information may be conditional, a control may not: a control that
+  does not apply stays visible and disabled, with the reason beside it. There are two exceptions. Integration groups sit in a row, so
   connecting one shifts the controls to its right. Their order is fixed, not
   their exact position. The update control comes and goes with a pending update,
   because an update is an event, not a count.

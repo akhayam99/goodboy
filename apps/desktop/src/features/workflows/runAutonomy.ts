@@ -1,4 +1,5 @@
 import type { WorkflowAutonomy } from '@goodboy/types';
+import { NAMES } from '../../shared/names';
 
 export type RunAutonomyOption = {
   readonly key: WorkflowAutonomy;
@@ -7,7 +8,7 @@ export type RunAutonomyOption = {
   readonly autoRun: boolean;
 };
 
-export const RUN_AUTONOMY_HEADER = 'When to ask';
+export const RUN_AUTONOMY_HEADER = NAMES.whenToAsk;
 
 const ASK_BEFORE_EACH_STEP: RunAutonomyOption = {
   key: 'step',
