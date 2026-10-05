@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import type { FileDiff, MountId, SessionId } from '@goodboy/types';
 import type { SessionDiff } from '../../hooks/useSessionDiff';
@@ -133,9 +133,18 @@ describe('SessionDiffPane files', () => {
   it('counts the files and their lines above the code, with the view selector', () => {
     renderPane({ diff: diffOf([FILE]) });
 
-    expect(screen.getByText('1 file')).toBeDefined();
-    expect(screen.getByText('+3')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Branch vs main' })).toBeDefined();
+    const selector = screen.getByRole('button', { name: 'Branch vs main' }).parentElement;
+    expect(selector).not.toBeNull();
+    expect(within(selector as HTMLElement).getByText('1 file')).toBeDefined();
+    expect(within(selector as HTMLElement).getByText('+3')).toBeDefined();
+  });
+
+  it('lists the changed files in a tree beside the code', () => {
+    renderPane({ diff: diffOf([FILE]) });
+
+    const tree = screen.getByRole('navigation', { name: 'Changed files' });
+    expect(within(tree).getByText('0 of 1 viewed')).toBeDefined();
+    expect(within(tree).getByRole('button', { name: /postings\.ts/ })).toBeDefined();
   });
 
   it('puts Write review in the file toolbar when a pull request can take one', () => {

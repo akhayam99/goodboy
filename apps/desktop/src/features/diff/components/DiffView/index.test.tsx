@@ -130,7 +130,7 @@ describe('DiffView rendering', () => {
     expect(screen.getByRole('button', { name: /Wrap/ }).hasAttribute('disabled')).toBe(true);
   });
 
-  it('counts viewed files and collapses a file once viewed', () => {
+  it('collapses a file once viewed', () => {
     const viewed = new Set<string>();
     const onToggle = vi.fn((file: FileDiff, next: boolean) => {
       if (next) {
@@ -143,7 +143,6 @@ describe('DiffView rendering', () => {
         viewed={{ stateOf: (file) => (viewed.has(file.path) ? 'viewed' : 'none'), onToggle }}
       />,
     );
-    screen.getByText('0 of 2 viewed');
     const header = screen.getByRole('region', { name: RELAY.path });
     fireEvent.click(within(header).getByRole('checkbox', { name: /Viewed/ }));
     expect(onToggle).toHaveBeenCalledWith(RELAY, true);
@@ -153,7 +152,6 @@ describe('DiffView rendering', () => {
         viewed={{ stateOf: (file) => (viewed.has(file.path) ? 'viewed' : 'none'), onToggle }}
       />,
     );
-    screen.getByText('1 of 2 viewed');
     expect(within(header).queryByRole('grid')).toBeNull();
   });
 
@@ -289,17 +287,20 @@ describe('DiffView comments', () => {
 });
 
 describe('DiffView navigation', () => {
-  it('opens the file jump with T and filters files', () => {
-    render(<DiffView files={[LEDGER, RELAY]} />);
-    fireEvent.keyDown(window, { code: 'KeyT', key: 't' });
-    const filter = screen.getByRole('combobox', { name: 'Filter files' });
-    fireEvent.change(filter, { target: { value: 'skip' } });
-    const options = screen.getAllByRole('option');
-    expect(options).toHaveLength(1);
-    expect(options[0]?.textContent).toContain('skipSettled.ts');
-    fireEvent.keyDown(filter, { key: 'Enter' });
-    expect(screen.queryByRole('combobox')).toBeNull();
-    expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+  it('reports the file it lands on', () => {
+    const onActivePathChange = vi.fn();
+    const { rerender } = render(
+      <DiffView files={[LEDGER, RELAY]} onActivePathChange={onActivePathChange} />,
+    );
+    rerender(
+      <DiffView
+        files={[LEDGER, RELAY]}
+        onActivePathChange={onActivePathChange}
+        focusPath={RELAY.path}
+      />,
+    );
+    fireEvent.keyDown(window, { code: 'BracketRight', key: ']' });
+    expect(onActivePathChange).toHaveBeenCalledWith(RELAY.path);
   });
 
   it('moves between files with [ and ]', () => {
@@ -377,29 +378,26 @@ describe('DiffView navigation', () => {
       vi.restoreAllMocks();
     });
 
-    const pick = (query: string) => {
-      fireEvent.keyDown(window, { code: 'KeyT', key: 't' });
-      const filter = screen.getByRole('combobox', { name: 'Filter files' });
-      fireEvent.change(filter, { target: { value: query } });
-      fireEvent.keyDown(filter, { key: 'Enter' });
+    const pickIn = (view: ReturnType<typeof render>, index: number) => {
+      view.rerender(<DiffView files={MANY} focusPath={MANY[index]?.path ?? null} />);
       act(() => {
         vi.advanceTimersByTime(1000);
       });
     };
 
     it('puts the picked file header at the top once the heights settle', () => {
-      render(<DiffView files={MANY} />);
-      pick('f17');
+      const view = render(<DiffView files={MANY} />);
+      pickIn(view, 17);
       expect(headerTop(MANY[17]?.path ?? '')).toBe(0);
-      pick('f25');
+      pickIn(view, 25);
       expect(headerTop(MANY[25]?.path ?? '')).toBe(0);
-      pick('f03');
+      pickIn(view, 3);
       expect(headerTop(MANY[3]?.path ?? '')).toBe(0);
     });
 
     it('steps with ] from the picked file', () => {
-      render(<DiffView files={MANY} />);
-      pick('f17');
+      const view = render(<DiffView files={MANY} />);
+      pickIn(view, 17);
       fireEvent.keyDown(window, { code: 'BracketRight', key: ']' });
       act(() => {
         vi.advanceTimersByTime(1000);
@@ -409,46 +407,32 @@ describe('DiffView navigation', () => {
   });
 
   it('ignores shortcuts while typing', () => {
-    render(<DiffView files={[LEDGER]} comments={commentsWith([])} />);
+    render(<DiffView files={[LEDGER, RELAY]} comments={commentsWith([])} />);
     fireEvent.keyDown(screen.getByRole('button', { name: 'Comment on new line 39' }), {
       key: 'Enter',
     });
-    fireEvent.keyDown(screen.getByRole('textbox'), { code: 'KeyT', key: 't' });
-    expect(screen.queryByRole('combobox')).toBeNull();
-  });
-
-  it('leaves T to a modal dialog that opened over the diff', () => {
-    render(
-      <div>
-        <div role="dialog" aria-modal="true" aria-label="Preview" />
-        <DiffView files={[LEDGER]} />
-      </div>,
-    );
-    fireEvent.keyDown(window, { code: 'KeyT', key: 't' });
-    expect(screen.queryByRole('combobox')).toBeNull();
-  });
-
-  it('leaves T alone while shift is held', () => {
-    render(<DiffView files={[LEDGER]} />);
-    fireEvent.keyDown(window, { code: 'KeyT', key: 'T', shiftKey: true });
-    expect(screen.queryByRole('combobox')).toBeNull();
+    const scroll = Element.prototype.scrollIntoView as ReturnType<typeof vi.fn>;
+    scroll.mockClear();
+    fireEvent.keyDown(screen.getByRole('textbox'), { code: 'BracketRight', key: ']' });
+    expect(scroll).not.toHaveBeenCalled();
   });
 
   it('keeps the peek free of the toolbar and shortcuts', () => {
-    render(<DiffView files={[LEDGER]} presentation="peek" />);
-    expect(screen.queryByRole('button', { name: /files/ })).toBeNull();
-    fireEvent.keyDown(window, { code: 'KeyT', key: 't' });
-    expect(screen.queryByRole('combobox')).toBeNull();
+    render(<DiffView files={[LEDGER, RELAY]} presentation="peek" />);
+    const scroll = Element.prototype.scrollIntoView as ReturnType<typeof vi.fn>;
+    scroll.mockClear();
+    expect(screen.queryByRole('button', { name: /Wrap/ })).toBeNull();
+    fireEvent.keyDown(window, { code: 'BracketRight', key: ']' });
+    expect(scroll).not.toHaveBeenCalled();
   });
 });
 
 describe('DiffView file renders', () => {
-  it('leaves the file bodies alone when only the toolbar state changes', () => {
+  it('leaves the file bodies alone when only the active file changes', () => {
     render(<DiffView files={[LEDGER, RELAY]} />);
     fileRenders.current = 0;
 
-    fireEvent.keyDown(window, { code: 'KeyT', key: 't' });
-    screen.getByRole('combobox', { name: 'Filter files' });
+    fireEvent.keyDown(window, { code: 'BracketRight', key: ']' });
 
     expect(fileRenders.current).toBe(0);
   });

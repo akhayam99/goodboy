@@ -3,17 +3,14 @@ import { PencilLine } from 'lucide-react';
 import { Button, ErrorStrip, LensEmptyState, PageColumn, Skeleton, formatError } from '@goodboy/ui';
 import type { DiffView as DiffViewKind, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import {
-  selectMountBaseBranch,
-  selectMountForPath,
-} from '../../../../store/slices/project-mounts/selectors';
+import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { openFileInWorkspace } from '../../../../shared/lib/editor';
 import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
 import { DiffViewSelector } from '../../../permissions/components/DiffViewSelector';
-import { useDiffNotes } from '../../hooks/useDiffNotes';
-import { useDiffReviewThreads } from '../../hooks/useDiffReviewThreads';
+import { useReviewState } from '../../hooks/useReviewState';
 import type { SessionDiff } from '../../hooks/useSessionDiff';
+import { ChangeTree } from '../ChangeTree';
 import { DiffView } from '../DiffView';
 
 type Props = {
@@ -67,18 +64,7 @@ export const SessionDiffPane = ({
   onWriteReview,
   toolbarExtra = null,
 }: Props) => {
-  const { comments: noteComments } = useDiffNotes({ sessionId });
-  const mountId = useAppStore(
-    (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.mountId ?? null,
-  );
-  const reviewThreads = useDiffReviewThreads({ sessionId, mountId });
-  const comments = useMemo(
-    () =>
-      reviewThreads.length === 0
-        ? noteComments
-        : { ...noteComments, threads: [...noteComments.threads, ...reviewThreads] },
-    [noteComments, reviewThreads],
-  );
+  const review = useReviewState({ sessionId, worktreePath, diff });
   const editorBinary = useAppStore((s) => resolveEditorBinary({ settings: s.settings }));
   const emitNotification = useAppStore((s) => s.emitNotification);
   const baseBranch = useAppStore((s) =>
@@ -86,6 +72,7 @@ export const SessionDiffPane = ({
   );
 
   const isEmpty = !diff.loading && diff.error === null && diff.files.length === 0;
+  const hasTree = !diff.loading && diff.error === null && diff.files.length > 0;
 
   const openInEditor = useCallback(
     async (filePath: string) => {
@@ -179,11 +166,12 @@ export const SessionDiffPane = ({
   ) : (
     <DiffView
       files={diff.files}
-      comments={comments}
-      viewed={diff.viewed}
+      comments={review.comments}
+      viewed={review.viewed}
       fileActions={fileActions}
       focusPath={diff.focusPath}
       onFocusHandled={diff.clearFocus}
+      onActivePathChange={review.setActivePath}
       toolbarEnd={
         onWriteReview === null && toolbarExtra === null ? undefined : (
           <>
@@ -201,10 +189,25 @@ export const SessionDiffPane = ({
   );
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-      {selector}
-      {metaNotice}
-      {body}
+    <div className="flex min-h-0 min-w-0 flex-1">
+      {hasTree && (
+        <aside aria-label="Files" className="hidden min-h-0 w-[280px] shrink-0 pl-3 @4xl:flex">
+          <ChangeTree
+            tree={review.tree}
+            activePath={review.activePath}
+            collapsed={review.collapsed}
+            onToggleFolder={review.toggleFolder}
+            onPick={review.jumpTo}
+            stateOf={review.viewed.stateOf}
+            noteCountOf={review.noteCountOf}
+          />
+        </aside>
+      )}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        {selector}
+        {metaNotice}
+        {body}
+      </div>
     </div>
   );
 };

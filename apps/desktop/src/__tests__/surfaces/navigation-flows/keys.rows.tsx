@@ -913,11 +913,14 @@ const openDiff = async (): Promise<void> => {
   ).toBeDefined();
 };
 
-const activeJumpFile = async (): Promise<string> => {
-  await pressed('diff.jump', document.body);
-  await visible('dialog', 'Jump to file');
-  return document.querySelector('[data-active]')?.textContent ?? '';
-};
+const activeTreeFile = async (): Promise<string> =>
+  (
+    await waitFor(() => {
+      const row = document.querySelector('nav[aria-label="Changed files"] [aria-current="true"]');
+      expect(row).not.toBeNull();
+      return row;
+    }, WAIT)
+  )?.textContent ?? '';
 
 let terminalTabCount = 0;
 
@@ -993,20 +996,12 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       waitFor(() => expect(screen.getAllByRole('tab').length).toBe(terminalTabCount + 1), WAIT),
   }),
   keyRow({
-    id: 'diff.jump',
-    open: async () => {
-      await openDiff();
-      await pressed('diff.jump', document.body);
-    },
-    lands: () => visible('dialog', 'Jump to file'),
-  }),
-  keyRow({
     id: 'diff.nextFile',
     open: async () => {
       await openDiff();
       await pressed('diff.nextFile', document.body);
     },
-    lands: async () => expect(await activeJumpFile()).toContain('notify.ts'),
+    lands: async () => expect(await activeTreeFile()).toContain('notify.ts'),
   }),
   keyRow({
     id: 'diff.previousFile',
@@ -1016,7 +1011,7 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       await pressed('diff.nextFile', document.body);
       await pressed('diff.previousFile', document.body);
     },
-    lands: async () => expect(await activeJumpFile()).toContain('notify.ts'),
+    lands: async () => expect(await activeTreeFile()).toContain('notify.ts'),
   }),
   keyRow({
     id: 'session.model',

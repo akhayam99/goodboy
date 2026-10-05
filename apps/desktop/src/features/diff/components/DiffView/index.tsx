@@ -8,7 +8,7 @@ import {
   type ReactNode,
   type RefCallback,
 } from 'react';
-import { PageColumn, ScrollFade, Skeleton, useDropdown, type DiffLayoutMode } from '@goodboy/ui';
+import { PageColumn, ScrollFade, Skeleton, type DiffLayoutMode } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { useDiffLayoutMode } from '../../../../shared/hooks/useDiffLayoutMode';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
@@ -31,6 +31,7 @@ type Props = {
   readonly fileActions?: DiffFileActions | null;
   readonly focusPath?: string | null;
   readonly onFocusHandled?: () => void;
+  readonly onActivePathChange?: (path: string) => void;
   readonly presentation?: 'pane' | 'peek' | 'inline';
   readonly footer?: ReactNode;
   readonly toolbarEnd?: ReactNode;
@@ -55,6 +56,7 @@ export const DiffView = ({
   fileActions = null,
   focusPath = null,
   onFocusHandled,
+  onActivePathChange,
   presentation = 'pane',
   footer,
   toolbarEnd,
@@ -76,12 +78,8 @@ export const DiffView = ({
   const intersecting = useRef(new Set<string>());
   const lockedPath = useRef<string | null>(null);
   const settleFrame = useRef<number | null>(null);
-  const jump = useDropdown({
-    align: 'start',
-    width: 'w-[420px] max-w-[calc(100vw-2rem)]',
-    expectedHeight: 380,
-    expectedWidth: 420,
-  });
+  const onActivePathChangeRef = useRef(onActivePathChange);
+  onActivePathChangeRef.current = onActivePathChange;
 
   const threadsByFile = useMemo(() => {
     const map = new Map<string, DiffThread[]>();
@@ -93,12 +91,11 @@ export const DiffView = ({
     return map;
   }, [comments?.threads]);
 
-  const commentCountOf = useCallback(
-    (path: string) => (threadsByFile.get(path) ?? []).filter((thread) => !thread.isResolved).length,
-    [threadsByFile],
-  );
-  const isViewed = useCallback((file: FileDiff) => viewed?.stateOf(file) === 'viewed', [viewed]);
-  const viewedCount = viewed === null ? null : files.filter(isViewed).length;
+  useEffect(() => {
+    if (activePath !== null) {
+      onActivePathChangeRef.current?.(activePath);
+    }
+  }, [activePath]);
 
   const cancelSettle = useCallback(() => {
     if (settleFrame.current !== null) {
@@ -345,10 +342,7 @@ export const DiffView = ({
     [activePath, files, scrollToFile],
   );
 
-  const toggleJump = jump.toggle;
-
   const hasPaneKeys = presentation === 'pane';
-  useShortcut('diff.jump', toggleJump, hasPaneKeys);
   useShortcut('diff.previousFile', () => step(-1), hasPaneKeys);
   useShortcut('diff.nextFile', () => step(1), hasPaneKeys);
 
@@ -390,13 +384,6 @@ export const DiffView = ({
 
   const toolbar = (
     <DiffToolbar
-      files={files}
-      activePath={activePath}
-      jump={jump}
-      onJump={scrollToFile}
-      commentCountOf={commentCountOf}
-      isViewed={isViewed}
-      viewedCount={viewedCount}
       layout={layout}
       onLayout={setLayout}
       wrap={wrap}

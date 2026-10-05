@@ -11,6 +11,7 @@ import {
   worktreeDiffWorking,
   worktreeStatus,
 } from '../../../worktree/worktree';
+import { buildChangeTree } from '../../lib/changeTree';
 import {
   fileSignature,
   readReviewedMap,
@@ -159,7 +160,7 @@ export const useSessionDiff = ({
           return;
         }
         setPatch(raw);
-        setFiles(parseUnifiedDiff(raw));
+        setFiles(buildChangeTree({ files: parseUnifiedDiff(raw) }).files);
         setLoading(false);
       })
       .catch((err: unknown) => {

@@ -472,13 +472,6 @@ export const SHORTCUTS = {
     scope: 'review',
   },
 
-  'diff.jump': {
-    combo: 'KeyT',
-    label: 'Jump to a file',
-    plane: 'pane',
-    group: 'diff',
-    scope: 'diff',
-  },
   'diff.previousFile': {
     combo: 'BracketLeft',
     label: 'Previous file',

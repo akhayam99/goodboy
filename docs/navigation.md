@@ -935,8 +935,8 @@ Goodboy chip never hides. Past that the glyph strip scrolls.
 
 There is one registry with three modifier planes: bare ⌘ for the app, ⌘⇧ for
 the session, ⌘⌥ for the lens surfaces. A fourth, `pane`, holds plain keys a
-surface answers while it is on screen: the diff's T (jump to a file), [ and ]
-(previous and next file). Nobody writes a combo string by hand
+surface answers while it is on screen: the diff's [ and ] (previous and next
+file). Nobody writes a combo string by hand
 outside the registry. So no two surfaces can claim the same chord, and no
 shortcut can exist without being documented. That holds for per-OS combos
 too. An entry carries its own combo for other systems where the plain mapping
@@ -1661,9 +1661,17 @@ selected row stays selected on the way back. `branchLayout.test.ts` pins the
 widths a 1024px window gets with a wide sidebar and an open drawer. Fix, Resolve without a reply and Stop live on the thread and its
 properties; Fix launches from the list or the thread, never from Files.
 
-**Files.** The branch against its base with a file tree on the left (changed
-files by folder, `+N −N`, a check on viewed ones, `N of M viewed` above it;
-`@4xl` and up, under it the file jump stays), `Viewed`, notes on
+**Files.** The branch against its base with the change tree on the left
+(`ChangeTree`, 280px, `@4xl` and up): folders first, then files, alphabetical,
+and the diff follows the same order. A chain of folders with one child is one
+row (`src/ledger/export`). A folder row holds the folder icon, the path, its
+file count and its `+N −N`; a file row holds the name (a rename shows `from
+<old path>` under it, a deleted file is struck through), its open notes, `+N
+−N` and the status letter. `N of M viewed` heads the tree. Click a file and the
+diff scrolls to it; scroll the diff and the tree highlights the file in view and
+opens its folders. The tree and the diff share one `useReviewState` (active
+file, open folders, notes, `Viewed`), and a model in `features/diff/lib/changeTree.ts`
+builds the rows. `Viewed`, notes on
 lines and files, `Post open notes to the PR` and `Write review` (which swaps
 the tab body for the review form with line drafts). It carries no Fix, Push,
 Rewrite or `PR #N` control.
@@ -1779,14 +1787,13 @@ roots and the cleanup use it only while it is `<common>/worktrees/<name>` and
 its `gitdir` names exactly that reserved copy, never the copy's own `.git`.
 Codex rewriter turns also lose write access to the temp folders. `Branch vs main` sits in the file
 toolbar under the title, with `N files +N -M`, because it decides which files
-you see, not what you do to the branch. The file toolbar row holds `N files` (the file jump, also `T`: filter,
-arrows, Enter), `N of M viewed`, `Unified | Split` and `Wrap` (on by default,
+you see, not what you do to the branch. The file toolbar row holds `Unified | Split` and `Wrap` (on by default,
 saved as `goodboy:diff-wrap`; split always wraps). `[` and `]` go to the
 previous and next file. A jump is instant, not smooth: file bodies keep
 `content-visibility` with estimated heights, so for a few frames the view
 measures the picked header and snaps it back to the top until the heights
 settle. The picked file stays the active one until you scroll, so `[` and `]`
-start from it, and the jump cursor starts on it inside the filtered list. Each file has a sticky header (status letter, path,
+start from it. Each file has a sticky header (status letter, path, `from <old path>` on a rename,
 changes, comment count, `Viewed`, `⋯` with Open in editor, Copy path, Comment
 on file); a viewed file collapses, and generated or binary files start
 collapsed. Rows are a CSS grid with `role="grid"`, never a table. Click a line

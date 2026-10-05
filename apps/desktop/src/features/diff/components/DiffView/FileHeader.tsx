@@ -19,26 +19,6 @@ type Props = {
   readonly onCommentOnFile: (() => void) | null;
 };
 
-const BLOCKS = 5;
-
-const changeBlocks = (
-  additions: number,
-  deletions: number,
-): ReadonlyArray<'add' | 'del' | 'none'> => {
-  const total = additions + deletions;
-  const filled = Math.min(BLOCKS, total);
-  const adds = total === 0 ? 0 : Math.round((filled * additions) / total);
-  return Array.from({ length: BLOCKS }, (_, index) =>
-    index < adds ? 'add' : index < filled ? 'del' : 'none',
-  );
-};
-
-const BLOCK_CLASS = {
-  add: 'bg-success',
-  del: 'bg-danger',
-  none: 'bg-border-soft',
-} as const;
-
 export const FileHeader = ({
   file,
   collapsed,
@@ -93,16 +73,14 @@ export const FileHeader = ({
         <span className="min-w-0 truncate text-code" title={file.path}>
           <span className="text-faint-foreground">{dir}</span>
           <span className="text-foreground">{name}</span>
+          {file.status === 'renamed' && file.oldPath !== undefined ? (
+            <span className="ml-2 text-meta text-faint-foreground">from {file.oldPath}</span>
+          ) : null}
         </span>
         <span className="shrink-0 text-meta tabular-nums">
           {file.additions > 0 ? <span className="text-success">+{file.additions}</span> : null}
           {file.additions > 0 && file.deletions > 0 ? ' ' : null}
           {file.deletions > 0 ? <span className="text-danger">−{file.deletions}</span> : null}
-        </span>
-        <span aria-hidden className="flex shrink-0 gap-px">
-          {changeBlocks(file.additions, file.deletions).map((kind, index) => (
-            <i key={index} className={cn('block size-1.5 rounded-sm', BLOCK_CLASS[kind])} />
-          ))}
         </span>
       </button>
       {commentCount > 0 ? (
