@@ -47,6 +47,20 @@ export const proseOrderOf = ({
   readonly anchor: ArtifactCommentAnchor;
 }): number | null => (anchor.kind === 'part' ? null : anchor.order);
 
+export const isInSection = ({
+  anchor,
+  section,
+}: {
+  readonly anchor: ArtifactCommentAnchor;
+  readonly section: ProseSection;
+}): boolean => {
+  const order = proseOrderOf({ anchor });
+  if (order === null) {
+    return false;
+  }
+  return section === 'rest' ? order >= REST_ORDER_BASE : order < PARTS_ORDER_BASE;
+};
+
 export const normalizeText = ({ text }: { readonly text: string }): string =>
   text.replace(/\s+/g, ' ').trim();
 

@@ -6,8 +6,11 @@ import type {
   ArtifactCommentAnchor,
   ArtifactId,
   ImplementationCluster,
+  IsoDateTime,
   PlanId,
+  ProviderRunId,
   SessionId,
+  StepId,
   WorkflowId,
   WorkflowRun,
   WorkflowRunId,
@@ -26,6 +29,7 @@ import {
   stubStoryInvoke,
   type StoryStore,
 } from './storyHarness';
+import type { SendTurnInput, SendTurnResult } from './slices/turn/types';
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
 vi.mock('@tauri-apps/api/event', async () =>
@@ -61,6 +65,8 @@ const SESSION_ID = 'session-payments' as SessionId;
 const PLANNER_ID = 'agent-planner' as AgentId;
 const PLAN_ID = 'plan-export' as PlanId;
 const RUN_ID = 'run-export' as WorkflowRunId;
+const PLAN_STEP_ID = 'step-plan' as StepId;
+const IMPLEMENT_STEP_ID = 'step-implement' as StepId;
 const TITLE = 'Dedupe on the event id';
 const BODY = [
   '## Goal',
@@ -194,15 +200,15 @@ const stubSendTurn = ({
 }: {
   readonly onSend?: (content: string) => Promise<void>;
 } = {}) => {
-  const sendTurn = vi.fn(async (input: { readonly content: string }) => {
+  const sendTurn = vi.fn(async (input: SendTurnInput): Promise<SendTurnResult> => {
     useAppStore.setState({
       transcripts: {
         [PLANNER_ID]: [
           {
             kind: 'user_text',
-            runId: 'run-v2' as never,
+            runId: 'run-v2' as ProviderRunId,
             text: input.content,
-            at: new Date().toISOString() as never,
+            at: new Date().toISOString() as IsoDateTime,
           },
         ],
       },
@@ -210,7 +216,7 @@ const stubSendTurn = ({
     await onSend?.(input.content);
     return { blockedOverBudget: false };
   });
-  useAppStore.setState({ sendTurn: sendTurn as never });
+  useAppStore.setState({ sendTurn });
   return sendTurn;
 };
 
@@ -281,10 +287,10 @@ describe('store on sqlite: plan comments', () => {
 
     expect(result).toEqual({ kind: 'unchanged' });
     expect(sendTurn).toHaveBeenCalledTimes(1);
-    const input = sendTurn.mock.calls[0]?.[0] as unknown as Record<string, unknown>;
+    const input = sendTurn.mock.calls[0]?.[0];
     expect(input).toMatchObject({ sessionId: SESSION_ID, agentId: PLANNER_ID });
-    expect(input['origin']).toBeUndefined();
-    const content = String(input['content']);
+    expect(input?.origin).toBeUndefined();
+    const content = input?.content ?? '';
     expect(content.startsWith('Please revise the plan:')).toBe(true);
     const heads = [
       'On the goal:',
@@ -371,9 +377,9 @@ describe('store on sqlite: plan comments', () => {
   it('returns the comments to drafts when the turn does not start', async () => {
     await add({ anchor: part({ index: 1 }), body: 'Why after BEGIN?' });
     useAppStore.setState({
-      sendTurn: vi.fn(async () => {
+      sendTurn: vi.fn(async (): Promise<SendTurnResult> => {
         throw new Error('provider offline');
-      }) as never,
+      }),
     });
     const result = await useAppStore
       .getState()
@@ -386,7 +392,7 @@ describe('store on sqlite: plan comments', () => {
   it('returns the comments to drafts when the session budget blocks the turn', async () => {
     await add({ anchor: part({ index: 1 }), body: 'Why after BEGIN?' });
     useAppStore.setState({
-      sendTurn: vi.fn(async () => ({ blockedOverBudget: true })) as never,
+      sendTurn: vi.fn(async (): Promise<SendTurnResult> => ({ blockedOverBudget: true })),
     });
     const result = await useAppStore
       .getState()
@@ -470,14 +476,14 @@ describe('store on sqlite: plan comments', () => {
         ],
         sessionPhaseRuns: {
           [SESSION_ID]: [
-            planner({ stepId: 'step-plan' as never, workflowRunId: RUN_ID }),
+            planner({ stepId: PLAN_STEP_ID, workflowRunId: RUN_ID }),
             buildStoryAgent({
               id: 'agent-implementer' as AgentId,
               sessionId: SESSION_ID,
               name: 'Implementer',
               ordinal: 1,
               status: 'running',
-              stepId: 'step-implement' as never,
+              stepId: IMPLEMENT_STEP_ID,
               workflowRunId: RUN_ID,
             }),
           ],
@@ -496,14 +502,14 @@ describe('store on sqlite: plan comments', () => {
         ],
         sessionPhaseRuns: {
           [SESSION_ID]: [
-            planner({ stepId: 'step-plan' as never, workflowRunId: RUN_ID }),
+            planner({ stepId: PLAN_STEP_ID, workflowRunId: RUN_ID }),
             buildStoryAgent({
               id: 'agent-implementer' as AgentId,
               sessionId: SESSION_ID,
               name: 'Implementer',
               ordinal: 1,
               status: 'pending',
-              stepId: 'step-implement' as never,
+              stepId: IMPLEMENT_STEP_ID,
               workflowRunId: RUN_ID,
             }),
           ],
@@ -528,14 +534,14 @@ describe('store on sqlite: plan comments', () => {
         ],
         sessionPhaseRuns: {
           [SESSION_ID]: [
-            planner({ stepId: 'step-plan' as never, workflowRunId: RUN_ID }),
+            planner({ stepId: PLAN_STEP_ID, workflowRunId: RUN_ID }),
             buildStoryAgent({
               id: 'agent-implementer' as AgentId,
               sessionId: SESSION_ID,
               name: 'Implementer',
               ordinal: 1,
               status: 'running',
-              stepId: 'step-implement' as never,
+              stepId: IMPLEMENT_STEP_ID,
               workflowRunId: RUN_ID,
             }),
           ],
