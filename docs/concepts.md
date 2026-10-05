@@ -801,9 +801,9 @@ Each comment has four verbs, with single keys while the list has focus:
 comment` when the reviewer changed it, `Add a hint` when the run failed), `Reply` (R, a reply
 without a change) and `Skip` (S), plus `Undo` (U, `Resume` on a skipped
 comment) until the push and `Fix` (F) on a comment nobody started, which opens
-the launch strip. J and K move. A checkbox appears on hover on comments nobody
+the launch panel. J and K move. A checkbox appears on hover on comments nobody
 started (X toggles the focused row, Cmd+A picks every one of them, Esc clears):
-the bar `3 selected · Fix 3 separately` opens the strip for the pick, and a
+the bar `3 selected · Fix 3` opens the panel for the pick, and a
 batch is born only from a selection or one `Fix`. Edit, Answer and Reply share one text box, a document: ⌘Enter sends, Enter
 adds a line, Esc cancels, and Preview shows the markdown. Clicking the reply edits it in place.
 `…` also offers Stop drafting, Resolve without a reply, Open in diff, Agent
@@ -851,14 +851,21 @@ with a local commit and never pushes.
   comment nobody started (hover) or in its detail, `F` on the focused row, or
   the Activity suggestion. The header has no "Draft fixes" button: a batch is
   born from the comments you pick. Opening Review never starts an agent.
-  `Fix` opens the **launch strip**, inline under the header (never a dialog):
-  the model and effort pill (the shared picker with every connected provider
-  and a **Suggested** row), the commit style (`New commit` or `Fixup of the
-original`, prefilled from the settings or the last batch), an optional hint
-  that lands in Operator notes, a plain count line (`3 agents · up to 4 run at
-once · each works on its own copy of the branch`, no price: nothing
-  estimates the cost of a run), and `Start` on Cmd+Enter (Esc closes). The
-  choice is saved on the batch and on every attempt (`launch_choice_json`). Each start carries the thread ids and the
+  `Fix` opens the **launch panel** in the right column of the Comments tab, in
+  place of the thread (never above the columns, never a dialog): the page does
+  not move and the comment you had open stays selected. It is bound to the
+  selection: the included comments are checked rows (uncheck one to drop it,
+  check another in the list to add it), `Runs on <model> · <effort> · Change`
+  (the shared picker with every connected provider and a **Suggested** row), an
+  optional note that lands in Operator notes (no autofocus), and `Start fixing
+N` on Cmd+Enter (Esc closes, Cancel too). The commit style has no control in
+  the panel: it comes from the settings or the last batch. Clicking another
+  comment closes the panel. The palette and the object menu do not raise a
+  window event: `requestReview` with a `fix` request writes a pending launch
+  request into the `review-launch` slice (`reviewLaunchRequests`) and the
+  Comments tab consumes it when it mounts, so a request raised from another
+  page lands. The choice is saved on the batch and on every attempt
+  (`launch_choice_json`). Each start carries the thread ids and the
   marker contract
 - A retry reads the same choices again. Redraft, Answer and Retry use the
   launch choice of the comment's last batch attempt (model, effort, commit

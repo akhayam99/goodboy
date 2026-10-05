@@ -31,7 +31,36 @@ type Params = ReviewRequestDetail & {
   readonly getState: () => AppStore;
 };
 
+type FixParams = {
+  readonly getState: () => AppStore;
+  readonly sessionId: SessionId;
+  readonly threadIds: ReadonlyArray<string>;
+};
+
+const requestFix = ({ getState, sessionId, threadIds }: FixParams): void => {
+  const state = getState();
+  state.requestReviewLaunch({ sessionId, threadIds });
+  const isOnComments =
+    state.currentSessionId === sessionId &&
+    (state.activeLens[sessionId] ?? null) === 'branch' &&
+    (state.branchTab[sessionId] ?? 'comments') === 'comments';
+  if (isOnComments) {
+    return;
+  }
+  state.navigate({
+    to: branchPlace({
+      sessionId,
+      tab: 'comments',
+      threadId: state.branchThreadId[sessionId] ?? null,
+    }),
+  });
+};
+
 export const requestReview = ({ getState, sessionId, request }: Params): void => {
+  if (request.kind === 'fix') {
+    requestFix({ getState, sessionId, threadIds: request.threadIds });
+    return;
+  }
   if (dispatch({ sessionId, request })) {
     return;
   }

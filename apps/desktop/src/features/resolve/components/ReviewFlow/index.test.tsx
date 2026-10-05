@@ -22,6 +22,7 @@ import {
 } from '../../../../app/components/MockScene/scenes/resolveSeed';
 import type { AgentId, ResolveBatch } from '@goodboy/types';
 import { BranchPage } from '../../../branch/components/BranchPage';
+import { requestReview } from '../../../review/reviewRequest';
 
 type StoreState = ReturnType<StoryStore['getState']>;
 
@@ -165,73 +166,6 @@ describe('Review as one flow', () => {
     expect(within(comment()).queryByRole('button', { name: 'Resolve without a reply' })).toBeNull();
   });
 
-  it('never starts an agent by opening Review, and Fix opens the strip before anything runs', async () => {
-    const spawnAgent = vi.fn<StoreState['spawnAgent']>(async () => 'agent-1' as AgentId);
-    const createResolveBatch = vi.fn<StoreState['createResolveBatch']>(async () => BATCH);
-    stub({
-      spawnAgent: spawnAgent,
-      createResolveBatch: createResolveBatch,
-    });
-    await mount({ threadId: NOT_STARTED_THREAD_ID });
-
-    expect(spawnAgent).not.toHaveBeenCalled();
-    expect(screen.queryByRole('region', { name: 'Fix launch' })).toBeNull();
-    fireEvent.click(within(comment()).getByRole('button', { name: /^Fix/ }));
-
-    const strip = await screen.findByRole('region', { name: 'Fix launch' });
-    expect(within(strip).getByText('Fix this comment')).toBeDefined();
-    expect(spawnAgent).not.toHaveBeenCalled();
-    fireEvent.click(within(strip).getByRole('button', { name: /^Start/ }));
-    await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
-    expect(createResolveBatch).toHaveBeenCalledOnce();
-    await waitFor(() => expect(screen.queryByRole('region', { name: 'Fix launch' })).toBeNull());
-    expect(screen.getByRole('status').textContent).toMatch(/1 agent started on/);
-  });
-
-  it('opens the strip with F on the focused row, prefilled from settings, and Esc closes it', async () => {
-    await mount({ threadId: NOT_STARTED_THREAD_ID });
-
-    row(/config\.ts/).focus();
-    press('f', 'KeyF');
-
-    const strip = await screen.findByRole('region', { name: 'Fix launch' });
-    expect(
-      within(strip).getByRole('tab', { name: 'New commit' }).getAttribute('aria-selected'),
-    ).toBe('true');
-    expect(within(strip).getByRole('tab', { name: 'Fixup of the original' })).toBeDefined();
-    fireEvent.keyDown(within(strip).getByLabelText('Notes for the agents'), {
-      key: 'Escape',
-      code: 'Escape',
-    });
-    expect(screen.queryByRole('region', { name: 'Fix launch' })).toBeNull();
-  });
-
-  it('starts with the submit chord and sends the hint, model and commit style on the batch', async () => {
-    const spawnAgent = vi.fn<StoreState['spawnAgent']>(async () => 'agent-1' as AgentId);
-    const createResolveBatch = vi.fn<StoreState['createResolveBatch']>(async () => BATCH);
-    stub({
-      spawnAgent: spawnAgent,
-      createResolveBatch: createResolveBatch,
-    });
-    await mount({ threadId: NOT_STARTED_THREAD_ID });
-
-    fireEvent.click(within(comment()).getByRole('button', { name: /^Fix/ }));
-    const strip = await screen.findByRole('region', { name: 'Fix launch' });
-    fireEvent.click(within(strip).getByRole('tab', { name: 'Fixup of the original' }));
-    const hint = within(strip).getByLabelText('Notes for the agents');
-    fireEvent.change(hint, { target: { value: 'Keep the public API unchanged' } });
-    fireEvent.keyDown(hint, { key: 'Enter', code: 'Enter', ctrlKey: true });
-
-    await waitFor(() => expect(createResolveBatch).toHaveBeenCalledOnce());
-    const [call] = createResolveBatch.mock.calls[0] ?? [];
-    expect(call?.threadIds).toEqual([NOT_STARTED_THREAD_ID]);
-    expect(call?.launchChoice).toMatchObject({
-      commitStyle: 'fixup',
-      hint: 'Keep the public API unchanged',
-    });
-    await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
-  });
-
   it('puts Fix on the row of a comment nobody started, and nowhere else', async () => {
     await mount({ threadId: null });
 
@@ -281,35 +215,184 @@ describe('Review as one flow', () => {
     ).toBeDefined();
   });
 
-  it('starts one agent per selected comment in one batch from the strip', async () => {
-    const spawnAgent = vi.fn<StoreState['spawnAgent']>(async () => 'agent-1' as AgentId);
-    const createResolveBatch = vi.fn<StoreState['createResolveBatch']>(async () => BATCH);
-    stub({
-      spawnAgent: spawnAgent,
-      createResolveBatch: createResolveBatch,
+  describe('launch panel', () => {
+    const stubBatch = () => {
+      const spawnAgent = vi.fn<StoreState['spawnAgent']>(async () => 'agent-1' as AgentId);
+      const createResolveBatch = vi.fn<StoreState['createResolveBatch']>(async () => BATCH);
+      stub({ spawnAgent, createResolveBatch });
+      return { spawnAgent, createResolveBatch };
+    };
+
+    const panel = (): HTMLElement => screen.getByRole('region', { name: 'Fix launch' });
+
+    const queryPanel = (): HTMLElement | null =>
+      screen.queryByRole('region', { name: 'Fix launch' });
+
+    const currentRow = (): string | null =>
+      list().querySelector('[aria-current="true"]')?.getAttribute('data-thread-id') ?? null;
+
+    it('opens in the right column in place of the thread and never starts anything by itself', async () => {
+      const { spawnAgent, createResolveBatch } = stubBatch();
+      await mount({ threadId: NOT_STARTED_THREAD_ID });
+
+      expect(queryPanel()).toBeNull();
+      fireEvent.click(within(comment()).getByRole('button', { name: /^Fix/ }));
+
+      const opened = await screen.findByRole('region', { name: 'Fix launch' });
+      expect(within(opened).getByText('Fix 1 comment')).toBeDefined();
+      expect(list().contains(opened)).toBe(false);
+      expect(opened.contains(list())).toBe(false);
+      expect(screen.queryByRole('article', { name: 'Comment' })).toBeNull();
+      expect(opened.closest('nav')).toBeNull();
+      expect(spawnAgent).not.toHaveBeenCalled();
+      expect(createResolveBatch).not.toHaveBeenCalled();
     });
-    await mount({ threadId: null, selectable: true });
 
-    row(/config\.ts/).focus();
-    press('a', 'KeyA', { ctrlKey: true });
-    const selected = [...(useAppStore.getState().reviewSelection[SESSION.id] ?? [])];
-    const bar = screen.getByRole('toolbar', { name: 'Selected comments' });
-    fireEvent.click(within(bar).getByRole('button', { name: /^Fix \d+ separately/ }));
+    it('keeps the list and its selected comment where they are when it opens', async () => {
+      await mount({ threadId: EXPANDED_THREAD_ID });
 
-    const strip = await screen.findByRole('region', { name: 'Fix launch' });
-    expect(
-      within(strip).getByText(`Fix ${selected.length} comments, one agent each`),
-    ).toBeDefined();
-    expect(within(strip).getByText(/up to 4 run at once/)).toBeDefined();
-    fireEvent.click(within(strip).getByRole('button', { name: /^Start \d+ agents/ }));
+      const before = currentRow();
+      expect(before).toBe(EXPANDED_THREAD_ID);
+      const fixRow = list().querySelector<HTMLElement>(`[data-fix-row="${NOT_STARTED_THREAD_ID}"]`);
+      fireEvent.click(fixRow as HTMLElement);
 
-    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(selected.length));
-    expect(createResolveBatch).toHaveBeenCalledOnce();
-    const [call] = createResolveBatch.mock.calls[0] ?? [];
-    expect([...(call?.threadIds ?? [])].sort()).toEqual([...selected].sort());
-    await waitFor(() =>
-      expect(useAppStore.getState().reviewSelection[SESSION.id] ?? []).toEqual([]),
-    );
+      await screen.findByRole('region', { name: 'Fix launch' });
+      expect(currentRow()).toBe(before);
+      expect(within(panel()).getByText('Fix 1 comment')).toBeDefined();
+      expect(within(panel()).getAllByRole('checkbox')).toHaveLength(1);
+    });
+
+    it('opens with F on the selection without taking focus, and Esc closes it', async () => {
+      await mount({ threadId: NOT_STARTED_THREAD_ID, selectable: true });
+
+      row(/config\.ts/).focus();
+      press('x', 'KeyX');
+      press('f', 'KeyF');
+
+      const opened = await screen.findByRole('region', { name: 'Fix launch' });
+      expect(opened.contains(document.activeElement)).toBe(false);
+      expect(within(opened).getByText(/^Runs on/)).toBeDefined();
+      expect(within(opened).getByLabelText('Note for the fix run')).toBeDefined();
+      expect(within(opened).queryByRole('tab', { name: 'New commit' })).toBeNull();
+      fireEvent.keyDown(document.body, { key: 'Escape', code: 'Escape' });
+      expect(queryPanel()).toBeNull();
+      expect(useAppStore.getState().reviewSelection[SESSION.id]).toEqual([NOT_STARTED_THREAD_ID]);
+      expect(currentRow()).toBe(NOT_STARTED_THREAD_ID);
+    });
+
+    it('sends the note, the routing and the stored commit style with the submit chord', async () => {
+      const { createResolveBatch, spawnAgent } = stubBatch();
+      await mount({ threadId: NOT_STARTED_THREAD_ID });
+
+      fireEvent.click(within(comment()).getByRole('button', { name: /^Fix/ }));
+      const opened = await screen.findByRole('region', { name: 'Fix launch' });
+      const hint = within(opened).getByLabelText('Note for the fix run');
+      fireEvent.change(hint, { target: { value: 'Keep the public API unchanged' } });
+      fireEvent.keyDown(hint, { key: 'Enter', code: 'Enter', ctrlKey: true });
+
+      await waitFor(() => expect(createResolveBatch).toHaveBeenCalledOnce());
+      const [call] = createResolveBatch.mock.calls[0] ?? [];
+      expect(call?.threadIds).toEqual([NOT_STARTED_THREAD_ID]);
+      expect(call?.launchChoice).toMatchObject({
+        commitStyle: 'new',
+        hint: 'Keep the public API unchanged',
+      });
+      await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
+      await waitFor(() => expect(queryPanel()).toBeNull());
+      expect(screen.queryByRole('status')).toBeNull();
+    });
+
+    it('is bound to the selection: unchecking drops a comment and checking in the list adds one', async () => {
+      const { createResolveBatch } = stubBatch();
+      await mount({ threadId: null, selectable: true });
+
+      row(/config\.ts/).focus();
+      press('a', 'KeyA', { ctrlKey: true });
+      const selected = [...(useAppStore.getState().reviewSelection[SESSION.id] ?? [])];
+      expect(selected.length).toBeGreaterThan(2);
+      const bar = screen.getByRole('toolbar', { name: 'Selected comments' });
+      expect(within(bar).getByText(`${selected.length} selected`)).toBeDefined();
+      fireEvent.click(within(bar).getByRole('button', { name: `Fix ${selected.length}` }));
+
+      const opened = await screen.findByRole('region', { name: 'Fix launch' });
+      expect(within(opened).getByText(`Fix ${selected.length} comments`)).toBeDefined();
+      expect(within(opened).getAllByRole('checkbox')).toHaveLength(selected.length);
+
+      const [dropped] = within(opened).getAllByRole('checkbox');
+      fireEvent.click(dropped as HTMLElement);
+      expect(within(panel()).getByText(`Fix ${selected.length - 1} comments`)).toBeDefined();
+      expect(useAppStore.getState().reviewSelection[SESSION.id]).toHaveLength(selected.length - 1);
+      expect(within(panel()).getAllByRole('checkbox')).toHaveLength(selected.length);
+
+      fireEvent.click(within(panel()).getByRole('button', { name: /^Start fixing/ }));
+      await waitFor(() => expect(createResolveBatch).toHaveBeenCalledOnce());
+      const [call] = createResolveBatch.mock.calls[0] ?? [];
+      const sent = [...(call?.threadIds ?? [])];
+      expect(sent).toHaveLength(selected.length - 1);
+      expect(sent.every((id) => selected.includes(id))).toBe(true);
+      await waitFor(() =>
+        expect(useAppStore.getState().reviewSelection[SESSION.id] ?? []).toEqual([]),
+      );
+    });
+
+    it('follows a row checked in the list while it is open and closes when another comment is opened', async () => {
+      await mount({ threadId: null, selectable: true });
+
+      const first = list().querySelector<HTMLElement>(`[data-fix-row="${NOT_STARTED_THREAD_ID}"]`);
+      fireEvent.click(first as HTMLElement);
+      await screen.findByRole('region', { name: 'Fix launch' });
+      expect(within(panel()).getByText('Fix 1 comment')).toBeDefined();
+
+      const boxes = within(list()).getAllByRole('checkbox');
+      const unchecked = boxes.find((box) => box.getAttribute('aria-checked') !== 'true');
+      fireEvent.click(unchecked as HTMLElement);
+      expect(within(panel()).getByText('Fix 2 comments')).toBeDefined();
+
+      fireEvent.click(row(/idempotency\.ts/));
+      expect(queryPanel()).toBeNull();
+      expect(focusedThread()).toBe(FAILED_THREAD_ID);
+    });
+
+    it('opens from a request raised before the Comments tab mounted', async () => {
+      seedResolveScene({ expandedThreadId: null, selectable: true });
+      requestReview({
+        getState: useAppStore.getState,
+        sessionId: SESSION.id,
+        request: { kind: 'fix', threadIds: [NOT_STARTED_THREAD_ID] },
+      });
+      expect(useAppStore.getState().reviewLaunchRequests[SESSION.id]?.threadIds).toEqual([
+        NOT_STARTED_THREAD_ID,
+      ]);
+
+      render(
+        <ToastProvider>
+          <BranchPage session={SESSION} workingDir={null} />
+        </ToastProvider>,
+      );
+
+      const opened = await screen.findByRole('region', { name: 'Fix launch' });
+      expect(within(opened).getByText('Fix 1 comment')).toBeDefined();
+      expect(useAppStore.getState().reviewLaunchRequests[SESSION.id]).toBeNull();
+    });
+
+    it('drops a request for a comment that is no longer on the page', async () => {
+      seedResolveScene({ expandedThreadId: null });
+      requestReview({
+        getState: useAppStore.getState,
+        sessionId: SESSION.id,
+        request: { kind: 'fix', threadIds: ['PRRT_gone'] },
+      });
+
+      render(
+        <ToastProvider>
+          <BranchPage session={SESSION} workingDir={null} />
+        </ToastProvider>,
+      );
+      await settle();
+
+      expect(queryPanel()).toBeNull();
+      expect(useAppStore.getState().reviewLaunchRequests[SESSION.id]).toBeNull();
+    });
   });
 
   it('says a queued batch comment is waiting for a free slot', async () => {

@@ -24,6 +24,7 @@ export const SESSION_EVICTION = [
   { key: 'reviewSourceThreads', keyedBy: 'session', evictOn: 'archive' },
   { key: 'pullRequestModes', keyedBy: 'session', evictOn: 'archive' },
   { key: 'reviewSelection', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'reviewLaunchRequests', keyedBy: 'session', evictOn: 'archive' },
   { key: 'resolveQueueView', keyedBy: 'session', evictOn: 'archive' },
   { key: 'resolveItemDrafts', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionResolveUncapturedWork', keyedBy: 'session', evictOn: 'archive' },
