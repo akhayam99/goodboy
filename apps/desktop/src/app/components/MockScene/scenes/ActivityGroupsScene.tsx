@@ -4,7 +4,7 @@ import { ACTIVITY_RESOLVES_SESSION, seedActivityResolvesScene } from './activity
 import { useSceneClicks } from './audit/useSceneClicks';
 import { ShellFrame } from './shellChrome';
 
-const OPEN_GROUPS: ReadonlyArray<string> = ['Harden the webhook', 'subagents'];
+const OPEN_GROUPS: ReadonlyArray<string> = ['6 steps', 'subagents'];
 
 export const ActivityGroupsScene = () => {
   const [isReady, setIsReady] = useState(false);

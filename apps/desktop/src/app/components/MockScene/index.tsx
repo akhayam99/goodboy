@@ -45,6 +45,7 @@ import {
   ArtifactWireframeHighScene,
   ArtifactWireframeLowScene,
 } from './scenes/ArtifactScenes';
+import { ArtifactPlanCommentsScene } from './scenes/ArtifactPlanCommentsScene';
 import {
   ArtifactCreateReportScene,
   ArtifactCreateWireframeScene,
@@ -62,6 +63,7 @@ import { ContextDrawerScene } from './scenes/ContextDrawerScene';
 import { WorkflowBuilderScene } from './scenes/flow-audit/WorkflowBuilderScene';
 import { WorkflowRunScene } from './scenes/flow-audit/WorkflowRunScene';
 import { OpenQuestionsScene } from './scenes/flow-audit/OpenQuestionsScene';
+import { OpenQuestionProseScene } from './scenes/flow-audit/OpenQuestionProseScene';
 import { TranscriptScene } from './scenes/flow-audit/TranscriptScene';
 import { CommandPaletteScene } from './scenes/flow-audit/CommandPaletteScene';
 import { SearchScene } from './scenes/search/SearchScene';
@@ -159,6 +161,14 @@ import { useBrandChrome } from './scenes/brand/brandChrome';
 import { applyDocumentTheme } from '../../../shared/lib/theme';
 import { AgentBriefScene } from './scenes/AgentBriefScene';
 import { AgentBriefQuestionScene } from './scenes/AgentBriefQuestionScene';
+import { PlannerTranscriptScene } from './scenes/PlannerTranscriptScene';
+import { PlannerTranscriptDrawerScene } from './scenes/PlannerTranscriptDrawerScene';
+import { PlannerTranscriptExpandedScene } from './scenes/PlannerTranscriptExpandedScene';
+import { PlannerTranscriptReplacedScene } from './scenes/PlannerTranscriptReplacedScene';
+import { PlannerTranscriptRevisingScene } from './scenes/PlannerTranscriptRevisingScene';
+import { ScribeProposalCreatingScene } from './scenes/ScribeProposalCreatingScene';
+import { ScribeProposalFailedScene } from './scenes/ScribeProposalFailedScene';
+import { ScribeProposalTranscriptScene } from './scenes/ScribeProposalTranscriptScene';
 import { FixRunScene } from './scenes/FixRunScene';
 import { ReportSheetHost } from '../../../features/bug-report/components/ReportSheetHost';
 import { CrashReportScene, useReportSheetParam } from './scenes/audit/ReportScenes';
@@ -203,6 +213,7 @@ export const MOCK_SCENES = {
   'transcript-mount': TranscriptMountScene,
   'board-shell': BoardShellScene,
   'artifact-report': ArtifactReportScene,
+  'artifact-plan-comments': ArtifactPlanCommentsScene,
   'artifact-wireframe-low': ArtifactWireframeLowScene,
   'artifact-wireframe-high': ArtifactWireframeHighScene,
   'artifact-generating': ArtifactGeneratingScene,
@@ -221,6 +232,7 @@ export const MOCK_SCENES = {
   'workflow-builder': WorkflowBuilderScene,
   'workflow-run': WorkflowRunScene,
   'open-questions': OpenQuestionsScene,
+  'open-question-prose': OpenQuestionProseScene,
   transcript: TranscriptScene,
   'command-palette': CommandPaletteScene,
   search: SearchScene,
@@ -314,6 +326,14 @@ export const MOCK_SCENES = {
   'brand-tools': BrandToolsScene,
   'agent-brief': AgentBriefScene,
   'agent-brief-question': AgentBriefQuestionScene,
+  'planner-transcript': PlannerTranscriptScene,
+  'planner-transcript-revising': PlannerTranscriptRevisingScene,
+  'planner-transcript-replaced': PlannerTranscriptReplacedScene,
+  'planner-transcript-drawer': PlannerTranscriptDrawerScene,
+  'planner-transcript-expanded': PlannerTranscriptExpandedScene,
+  'scribe-proposal-creating': ScribeProposalCreatingScene,
+  'scribe-proposal-failed': ScribeProposalFailedScene,
+  'scribe-proposal-transcript': ScribeProposalTranscriptScene,
   'fix-run': FixRunScene,
   'crash-report': CrashReportScene,
 };

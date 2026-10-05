@@ -14,7 +14,7 @@ import {
   worktreeDiffWorking,
   worktreeStatus,
 } from '../../../worktree/worktree';
-import { buildChangeTree } from '../../lib/changeTree';
+import { orderLikeTree } from '../../lib/changeTree';
 import {
   fileSignature,
   readReviewedMap,
@@ -64,7 +64,6 @@ export type SessionDiff = {
   readonly viewed: DiffViewed;
   readonly focusPath: string | null;
   readonly clearFocus: () => void;
-  readonly focusFile: (path: string) => void;
 };
 
 export const useSessionDiff = ({
@@ -102,7 +101,6 @@ export const useSessionDiff = ({
 
   const refresh = useCallback(() => setRefreshTick((tick) => tick + 1), []);
   const clearFocus = useCallback(() => setFocusPath(null), []);
-  const focusFile = useCallback((path: string) => setFocusPath(path), []);
 
   useEffect(() => {
     if (isGitAware && previousSummarizer.current === 'running' && summarizer.status !== 'running') {
@@ -168,7 +166,7 @@ export const useSessionDiff = ({
           return;
         }
         setPatch(raw);
-        setFiles(buildChangeTree({ files: parseUnifiedDiff(raw) }).files);
+        setFiles(orderLikeTree({ files: parseUnifiedDiff(raw) }));
         setLoading(false);
       })
       .catch((err: unknown) => {
@@ -227,6 +225,5 @@ export const useSessionDiff = ({
     viewed,
     focusPath,
     clearFocus,
-    focusFile,
   };
 };

@@ -49,7 +49,8 @@ export const requestScribe = (set: SetFn, get: GetFn) => {
     routing,
   }: RequestScribeInput): Promise<string> => {
     const key = scribeKeyOf({ mountId, kind: task.kind });
-    if (get().scribeWork[key]?.status === 'writing') {
+    const running = get().scribeWork[key]?.status;
+    if (running === 'writing' || running === 'creating') {
       return key;
     }
     const state = get();
@@ -79,7 +80,11 @@ export const requestScribe = (set: SetFn, get: GetFn) => {
     const kickoff = scribeKickoff({
       task,
       branch: mount.branch,
-      baseBranch: mount.baseBranch ?? project?.baseBranch ?? 'main',
+      baseBranch:
+        (task.kind === 'pr' ? task.base : null) ??
+        mount.baseBranch ??
+        project?.baseBranch ??
+        'main',
       goal: session?.goal ?? '',
       decisions: slotValue({ slots, key: 'decisions' }),
       summary: slotValue({ slots, key: 'last_output_summary' }),
@@ -89,6 +94,9 @@ export const requestScribe = (set: SetFn, get: GetFn) => {
       ...(hint !== undefined && { hint }),
     });
     set((current) => ({
+      scribeAgents: Object.fromEntries(
+        Object.entries(current.scribeAgents).filter(([, agentKey]) => agentKey !== key),
+      ),
       scribeWork: {
         ...current.scribeWork,
         [key]: {
@@ -100,6 +108,7 @@ export const requestScribe = (set: SetFn, get: GetFn) => {
           status: 'writing',
           output: null,
           error: null,
+          pullRequest: null,
           updatedAt: Date.now(),
         },
       },

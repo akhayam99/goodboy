@@ -1,7 +1,7 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { cn } from '../cn';
 import { SHEET_CLASSES, type ResizeActivity } from '../sheet';
-import { DrawerColumn } from './DrawerColumn';
+import { DrawerColumn, type DrawerSizing } from './DrawerColumn';
 import { ResizeHandle } from './ResizeHandle';
 import { useResizableWidth } from '../useResizableWidth';
 
@@ -14,6 +14,7 @@ export type AppShellProps = {
   readonly leftOverlay?: ReactNode;
   readonly main: ReactNode;
   readonly drawer?: ReactNode;
+  readonly drawerSizing?: DrawerSizing;
   readonly studio?: ReactNode;
   readonly className?: string;
 };
@@ -87,6 +88,7 @@ export const AppShell = ({
   leftOverlay,
   main,
   drawer,
+  drawerSizing,
   studio,
   className,
 }: AppShellProps) => {
@@ -165,6 +167,7 @@ export const AppShell = ({
           <DrawerColumn
             main={main}
             drawer={drawer ?? null}
+            sizing={drawerSizing}
             ariaLabel="Side panel"
             resizeLabel="Resize side panel"
           />

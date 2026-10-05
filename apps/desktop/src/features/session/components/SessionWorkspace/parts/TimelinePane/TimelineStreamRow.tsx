@@ -1,6 +1,6 @@
-import type { KeyboardEvent, ReactNode } from 'react';
+import { useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { ObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
-import { Button, Tooltip, WORK_ROW, cn, tintClasses } from '@goodboy/ui';
+import { Button, Tooltip, WORK_ROW, cn, tintClasses, useEscapeLayer } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../../store';
 import { formatClock } from '../../../../../../shared/utils/time/formatClock';
@@ -13,16 +13,18 @@ import { rowStateTone } from '../../../../../workTreeModel/rowStateCopy';
 import { eventMatches } from '../../../../../../shared/keyboard/dispatcher';
 import { SHORTCUTS } from '../../../../../../shared/keyboard/registry';
 import { TIMELINE_GUTTER } from './timelineLayout';
-import { CLOCK_ORDER_TOOLTIP, isClocklessRow } from './timelineClock';
-import { TimelineRail, type TimelineLaneTarget } from './TimelineRail';
+import { clockTooltipOf, isClocklessRow } from './timelineClock';
+import type { TimelineRowIdentity } from './timelineRowIdentity';
+import { TimelineRail, type TimelineLaneControl, type TimelineLaneTarget } from './TimelineRail';
 import { TimelineRowLabel } from './TimelineRowLabel';
 import { TimelineRowMarker } from './TimelineRowMarker';
 
 type TimelineRowExpansion = {
   readonly isExpanded: boolean;
   readonly controlsId: string | null;
-  readonly onSet?: (params: { readonly isExpanded: boolean }) => void;
 };
+
+export type TimelineBranchKey = (params: { readonly direction: 'expand' | 'collapse' }) => boolean;
 
 export type TimelineRowAction = {
   readonly label: string;
@@ -43,14 +45,14 @@ type Props = {
   readonly meta?: ReactNode;
   readonly state?: ReactNode;
   readonly progress?: number | null;
-  readonly subagents?: ReactNode;
-  readonly outputs?: ReactNode;
   readonly runLane?: TimelineLaneTarget | null;
+  readonly lanes?: TimelineLaneControl | null;
+  readonly onBranchKey?: TimelineBranchKey | null;
   readonly detail?: ReactNode;
   readonly detailHeight?: number;
   readonly expansion?: TimelineRowExpansion | null;
   readonly contextMenu?: ObjectMenuTrigger;
-  readonly provider?: string | null;
+  readonly identity?: TimelineRowIdentity | null;
 };
 
 const agentIdOf = ({ item }: { readonly item: TimelineRowItem }): AgentId | null =>
@@ -68,15 +70,17 @@ export const TimelineStreamRow = ({
   meta = null,
   state = null,
   progress = null,
-  subagents = null,
-  outputs = null,
   runLane = null,
+  lanes = null,
+  onBranchKey = null,
   detail = null,
   detailHeight = 0,
   expansion = null,
   contextMenu,
-  provider = null,
+  identity = null,
 }: Props) => {
+  const [isCardOpen, setIsCardOpen] = useState(false);
+  useEscapeLayer(() => setIsCardOpen(false), isCardOpen);
   const hover = useHoverMarkViewed({
     sessionId,
     agentId: agentIdOf({ item }),
@@ -89,15 +93,18 @@ export const TimelineStreamRow = ({
     item.rowState.ask?.kind !== 'groupChild' &&
     rowStateTone({ state: item.rowState }) === 'warning';
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
-    if (expansion?.onSet !== undefined) {
-      if (event.key === 'ArrowRight' && !expansion.isExpanded) {
+    const isPlainKey = !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey;
+    if (identity !== null && isPlainKey && event.key === 'i') {
+      event.preventDefault();
+      setIsCardOpen((isOpen) => !isOpen);
+      return;
+    }
+    if (onBranchKey !== null && (event.key === 'ArrowRight' || event.key === 'ArrowLeft')) {
+      const isHandled = onBranchKey({
+        direction: event.key === 'ArrowRight' ? 'expand' : 'collapse',
+      });
+      if (isHandled) {
         event.preventDefault();
-        expansion.onSet({ isExpanded: true });
-        return;
-      }
-      if (event.key === 'ArrowLeft' && expansion.isExpanded) {
-        event.preventDefault();
-        expansion.onSet({ isExpanded: false });
         return;
       }
     }
@@ -125,7 +132,8 @@ export const TimelineStreamRow = ({
           item={item}
           diffStat={diffStat}
           worktrees={worktrees}
-          provider={provider}
+          identity={identity}
+          isCardOpen={isCardOpen}
         />
       </span>
       {state}
@@ -152,14 +160,14 @@ export const TimelineStreamRow = ({
           style={{ height: boxHeight }}
         >
           {item.at == null || isClocklessRow({ item }) ? null : (
-            <Tooltip content={CLOCK_ORDER_TOOLTIP}>
+            <Tooltip content={clockTooltipOf({ item })}>
               <span>{formatClock({ at: item.at })}</span>
             </Tooltip>
           )}
         </span>
       </span>
       <span className="relative shrink-0" style={{ width: railWidth }}>
-        <TimelineRail rail={rail} width={railWidth} />
+        <TimelineRail rail={rail} width={railWidth} lanes={lanes} />
         {rail.markerY == null ? null : (
           <span
             className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
@@ -189,6 +197,7 @@ export const TimelineStreamRow = ({
               type="button"
               onClick={openTarget.open}
               onKeyDown={onKeyDown}
+              onBlur={() => setIsCardOpen(false)}
               aria-description={`${openTarget.label}, Enter`}
               aria-keyshortcuts={runLane === null ? undefined : 'Shift+Enter'}
               aria-expanded={expansion === null ? undefined : expansion.isExpanded}
@@ -203,8 +212,6 @@ export const TimelineStreamRow = ({
               {content}
             </button>
           )}
-          {subagents}
-          {outputs}
           {action == null ? null : (
             <span
               data-testid="timeline-row-action"

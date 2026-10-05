@@ -166,7 +166,7 @@
         },
         {
           "title": "Activity",
-          "text": "One row per launch, a resolver run, a workflow run or an agent, with cost and duration. A Needs you block sits on top and the Log view holds the facts.",
+          "text": "One row per launch, newest first, with its role, the model that ran, duration and cost. A Needs you block sits on top and the Log view holds the facts.",
           "group": "Overview and activity",
           "main": true
         },
@@ -698,7 +698,7 @@
         },
         {
           "title": "Notes before a pull request",
-          "text": "Read your own code first in the Files tab. Leave notes on lines, give each one its own agent with Fix, and post the open ones to the pull request. Notes belong to a branch, and notes with no branch are listed as Unassigned notes.",
+          "text": "Read your own code first in the Files tab. Leave notes on lines, give each one its own agent with Fix, and post the open ones to the pull request. Notes belong to a branch, and notes with no branch are listed as Unassigned notes, each with Move to and Discard.",
           "group": "Review and resolve on the Branch page",
           "also": "notes before a PR"
         },
@@ -716,7 +716,7 @@
         },
         {
           "title": "Write it",
-          "text": "Get a pull request title, description and changelog entry in your repo's format. Linked issues become closing references.",
+          "text": "Get a pull request title, description and changelog entry in your repo's format. Goodboy pushes the branch and opens the pull request, or shows why it could not and lets you retry. Linked issues become closing references.",
           "group": "Review and resolve on the Branch page",
           "also": "PR text",
           "shown": true
@@ -884,6 +884,18 @@
           "text": "Give each part of a plan done-when checks and the files it expects to touch. Run plan turns each part into a sub-agent.",
           "group": "Plans, reports and wireframes",
           "also": "plan parts"
+        },
+        {
+          "title": "Plan beside the planner",
+          "text": "Read a plan in a drawer next to the planner, without leaving the chat. While the planner reworks it, the plan says so and Run plan waits.",
+          "group": "Plans, reports and wireframes",
+          "also": "plan drawer"
+        },
+        {
+          "title": "Comment on a plan",
+          "text": "Point at a part, a paragraph or a few words of a plan and leave a comment. Send to planner posts them all and asks for the updated plan.",
+          "group": "Plans, reports and wireframes",
+          "also": "plan comments"
         },
         {
           "title": "Report as a document",

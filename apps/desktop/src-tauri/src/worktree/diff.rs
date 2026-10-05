@@ -3,6 +3,13 @@ use super::error::WorktreeError;
 use super::git::{git, resolve_commit};
 use std::path::Path;
 
+const PLAIN_PATHS: [&str; 2] = ["-c", "core.quotepath=false"];
+
+fn git_plain_paths(p: &Path, args: &[&str]) -> Result<String, WorktreeError> {
+    let argv: Vec<&str> = PLAIN_PATHS.iter().chain(args.iter()).copied().collect();
+    git(p, &argv)
+}
+
 #[tauri::command]
 pub async fn worktree_diff(
     worktree_path: String,
@@ -27,7 +34,7 @@ pub(super) fn worktree_diff_blocking(
         .ok_or_else(|| WorktreeError::Git {
             message: "cannot resolve base branch merge-base".to_string(),
         })?;
-    let tracked = git(p, &["diff", &resolved])?;
+    let tracked = git_plain_paths(p, &["diff", &resolved])?;
     Ok(format!("{tracked}{}", untracked_new_file_diffs(p)))
 }
 
@@ -67,7 +74,7 @@ fn worktree_diff_file_blocking(
         })?;
     // `-- <path>` scopes the diff to the one file. Pathspec is anchored at the
     // worktree root (already confined above), so no traversal is possible.
-    let tracked = git(p, &["diff", &resolved, "--", &rel])?;
+    let tracked = git_plain_paths(p, &["diff", &resolved, "--", &rel])?;
     if !tracked.is_empty() {
         return Ok(tracked);
     }
@@ -150,7 +157,7 @@ fn worktree_diff_commit_blocking(
             message: "commit sha is empty".to_string(),
         });
     }
-    git(p, &["show", "--format=", trimmed])
+    git_plain_paths(p, &["show", "--format=", trimmed])
 }
 
 #[tauri::command]
@@ -177,7 +184,7 @@ fn worktree_diff_range_blocking(
     }
     let from = resolve_commit(p, base.trim())?;
     let to = resolve_commit(p, head.trim())?;
-    git(p, &["diff", &from, &to])
+    git_plain_paths(p, &["diff", &from, &to])
 }
 
 #[tauri::command]
@@ -201,10 +208,10 @@ fn worktree_diff_working_blocking(
         return Err(WorktreeError::RepoNotFound(worktree_path));
     }
     match scope.as_str() {
-        "unstaged" => git(p, &["diff"]),
-        "staged" => git(p, &["diff", "--cached"]),
+        "unstaged" => git_plain_paths(p, &["diff"]),
+        "staged" => git_plain_paths(p, &["diff", "--cached"]),
         "all" => {
-            let tracked = git(p, &["diff", "HEAD"])?;
+            let tracked = git_plain_paths(p, &["diff", "HEAD"])?;
             Ok(format!("{tracked}{}", untracked_new_file_diffs(p)))
         }
         other => Err(WorktreeError::Git {
@@ -214,7 +221,8 @@ fn worktree_diff_working_blocking(
 }
 
 fn untracked_new_file_diffs(p: &Path) -> String {
-    let untracked = git(p, &["ls-files", "--others", "--exclude-standard"]).unwrap_or_default();
+    let untracked =
+        git_plain_paths(p, &["ls-files", "--others", "--exclude-standard"]).unwrap_or_default();
     let mut out = String::new();
     for line in untracked.lines() {
         let rel = line.trim();
@@ -232,7 +240,7 @@ fn untracked_new_file_diffs(p: &Path) -> String {
 fn untracked_new_file_diff_for(p: &Path, rel: &str) -> String {
     // Only emit if git agrees this path is untracked — keeps the single-file
     // diff honest (a tracked-but-unchanged file produces nothing).
-    let listed = git(
+    let listed = git_plain_paths(
         p,
         &["ls-files", "--others", "--exclude-standard", "--", rel],
     )
@@ -283,3 +291,6 @@ fn untracked_new_file_diff_for(p: &Path, rel: &str) -> String {
     }
     out
 }
+
+#[cfg(test)]
+mod tests;

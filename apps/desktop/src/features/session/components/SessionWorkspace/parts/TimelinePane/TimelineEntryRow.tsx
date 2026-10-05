@@ -16,14 +16,13 @@ import type {
 import { DecisionChangesDetail } from './DecisionChangesDetail';
 import type { GroupTotals } from '../../../../timeline/groupTotals';
 import { TimelineAgentStreamRow } from './TimelineAgentStreamRow';
-import { TimelineFoldAgentStreamRow } from './TimelineFoldAgentStreamRow';
-import { TimelineFoldStreamRow } from './TimelineFoldStreamRow';
 import { TimelineGroupMeta } from './TimelineGroupMeta';
 import { TimelineGroupStreamRow } from './TimelineGroupStreamRow';
-import type { TimelineLaneTarget } from './TimelineRail';
+import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
 import { TimelineRunStreamRow } from './TimelineRunStreamRow';
 import { TimelineStreamRow, type TimelineRowAction } from './TimelineStreamRow';
+import { timelineBranchKey } from './timelineBranchKey';
 
 export type TimelineEntryRowHandlers = {
   readonly openTargetFor: (params: {
@@ -44,6 +43,7 @@ export type TimelineEntryRowProps = {
   readonly railWidth: number;
   readonly sessionId: SessionId;
   readonly runLane: TimelineLaneTarget | null;
+  readonly lanes: TimelineLaneControl | null;
   readonly handlers: TimelineEntryRowHandlers;
   readonly actionLabel: string | null;
   readonly actionVariant: TimelineRowAction['variant'] | null;
@@ -54,7 +54,7 @@ export type TimelineEntryRowProps = {
   readonly costUsd: number;
   readonly groupTotals: GroupTotals | null;
   readonly isExpanded: boolean;
-  readonly isOutputsExpanded: boolean;
+  readonly isBranchExpanded: boolean;
   readonly decisionDetail: DecisionChangeDetail | null;
   readonly roleModels: RoleModelPreferences | null;
   readonly sessionProvider: ProviderId | null;
@@ -68,6 +68,7 @@ export const TimelineEntryRow = ({
   sessionId,
   handlers,
   runLane,
+  lanes,
   actionLabel,
   actionVariant,
   actionBusy,
@@ -77,13 +78,18 @@ export const TimelineEntryRow = ({
   costUsd,
   groupTotals,
   isExpanded,
-  isOutputsExpanded,
+  isBranchExpanded,
   decisionDetail,
   roleModels,
   sessionProvider,
   sessionEffort,
 }: TimelineEntryRowProps) => {
   const { entry } = item;
+  const branchKey = timelineBranchKey({
+    item,
+    isBranchExpanded,
+    onSet: handlers.setGroupExpanded,
+  });
   if (entry.kind === 'resolveBatch') {
     return (
       <TimelineGroupStreamRow
@@ -92,39 +98,9 @@ export const TimelineEntryRow = ({
         rail={rail}
         railWidth={railWidth}
         sessionId={sessionId}
-        isExpanded={isExpanded}
         totals={groupTotals}
-        onSetExpanded={handlers.setGroupExpanded}
-      />
-    );
-  }
-  if (item.fold !== undefined && entry.kind === 'agent') {
-    return (
-      <TimelineFoldAgentStreamRow
-        item={item}
-        entry={entry}
-        rail={rail}
-        railWidth={railWidth}
-        sessionId={sessionId}
-        isExpanded={isExpanded}
-        totals={groupTotals}
-        runLane={runLane}
-        onSetExpanded={handlers.setGroupExpanded}
-      />
-    );
-  }
-  if (item.fold !== undefined && entry.kind === 'run') {
-    return (
-      <TimelineFoldStreamRow
-        item={item}
-        entry={entry}
-        rail={rail}
-        railWidth={railWidth}
-        sessionId={sessionId}
-        isExpanded={isExpanded}
-        totals={groupTotals}
-        runLane={runLane}
-        onSetExpanded={handlers.setGroupExpanded}
+        lanes={lanes}
+        onBranchKey={branchKey}
       />
     );
   }
@@ -156,9 +132,8 @@ export const TimelineEntryRow = ({
         sessionProvider={sessionProvider}
         sessionEffort={sessionEffort}
         costUsd={costUsd}
-        isSubagentsExpanded={isExpanded}
-        isOutputsExpanded={isOutputsExpanded}
-        onSetSubagents={handlers.setGroupExpanded}
+        lanes={lanes}
+        onBranchKey={branchKey}
       />
     );
   }
@@ -178,6 +153,8 @@ export const TimelineEntryRow = ({
         sessionProvider={sessionProvider}
         sessionEffort={sessionEffort}
         costUsd={costUsd}
+        lanes={lanes}
+        onBranchKey={branchKey}
       />
     );
   }
@@ -212,6 +189,8 @@ export const TimelineEntryRow = ({
       action={action}
       diffStat={diffStat}
       runLane={runLane}
+      lanes={lanes}
+      onBranchKey={branchKey}
       {...(entry.kind === 'resolveFile'
         ? {
             state: <TimelineRowStateLine state={item.rowState} />,

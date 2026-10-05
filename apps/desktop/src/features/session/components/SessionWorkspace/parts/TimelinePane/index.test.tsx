@@ -73,6 +73,7 @@ const { storeState, diffStats, unread, questions, agentsLoaded, attachedRuns, re
       loadSessionEvents: vi.fn(async () => undefined),
       loadSessionArtifacts: vi.fn(async () => undefined),
       sessionContextItems: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionResolveAttempts: {} as Record<string, ReadonlyArray<unknown>>,
       loadSessionContextItems: vi.fn(async () => undefined),
       loadSessionAnsweredQuestions: vi.fn(async () => undefined),
       loadSessionDismissedQuestions: vi.fn(async () => undefined),
@@ -125,6 +126,8 @@ vi.mock('../../../../../workflows/useWorkflowAdvanceStates', () => ({
 vi.mock('../../../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
+vi.mock('../../../../../review/openReview', () => ({ openReview: vi.fn(async () => undefined) }));
+import { openReview } from '../../../../../review/openReview';
 import { TimelinePane } from './index';
 import { visibleTextAt } from '../../../../../../test/containerView';
 import { useOpenQuestions } from '../../../../../context/components/QuestionsTab/useOpenQuestions';
@@ -1149,38 +1152,206 @@ describe('TimelinePane row meta', () => {
     attachedRuns.list = [RUN];
     storeState.sessionPhaseRuns = { 'session-1': [PLANNER, BUILDER] };
     storeState.sessionTelemetry = { 'session-1': [TURN] };
+    storeState.sessionTurnSpans = {};
     storeState.executed = new Map([
       ['agent-plan', { provider: 'anthropic', model: 'claude-opus-4-5' }],
     ]);
   });
 
-  it('shows the cost of a finished step and no model column', () => {
+  it('shows the model that ran on the right of a finished step, with its cost under the time', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
     const row = rowOf('Plan the fix');
     const meta = within(row).getByTestId('work-meta');
+    const model = meta.querySelector('[data-meta-column="model"]');
 
-    expect(within(meta).getByText('$0.62')).toBeDefined();
+    expect(model?.querySelector('[data-routing-part="name"]')?.textContent).toBe('Opus 4.5');
+    expect(model?.querySelector('[data-provider="anthropic"]')).not.toBeNull();
+    expect(
+      meta.querySelector('[data-meta-column="stack"] [data-meta-column="cost"]')?.textContent,
+    ).toBe('$0.62');
     expect(meta.querySelector('[data-meta-column="routing"]')).toBeNull();
-    expect(row.textContent).not.toContain('Opus 4.5');
-    expect(row.querySelector('[data-provider="anthropic"]')).not.toBeNull();
-    expect(meta.className).toContain('text-muted-foreground');
   });
 
-  it('shows a queued step in faint, with no cost and no model', () => {
+  it('keeps the provider glyph out of the label, ahead of the title', () => {
+    render(<TimelinePane session={SESSION} actions={null} />);
+    const label = within(rowOf('Plan the fix')).getByTitle('Plan the fix').parentElement;
+
+    expect(label?.querySelector('[data-provider]')).toBeNull();
+  });
+
+  it('shows a queued step with its planned model in faint, and no cost', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
     const meta = within(rowOf('Build the fix')).getByTestId('work-meta');
+    const model = meta.querySelector('[data-meta-column="model"]');
 
-    expect(meta.textContent).not.toContain('Sonnet 4.5');
-    expect(meta.className).toContain('text-faint-foreground');
-    expect(meta.querySelector('[data-meta-column="cost"]')?.textContent).toBe('');
+    expect(model?.querySelector('[data-routing-part="name"]')?.textContent).toBe('Sonnet 4.5');
+    expect(model?.className).toContain('text-faint-foreground');
+    expect(meta.querySelector('[data-meta-column="cost"]')).toBeNull();
   });
 
-  it('gives the run row the step it is on and the total spend', () => {
+  it('opens the identity card of a step on the role glyph after the pointer rests', () => {
+    vi.useFakeTimers();
+    try {
+      render(<TimelinePane session={SESSION} actions={null} />);
+      const glyph = within(rowOf('Plan the fix')).getByTestId('role-glyph');
+
+      fireEvent.mouseEnter(glyph);
+      act(() => {
+        vi.advanceTimersByTime(800);
+      });
+      const card = screen.getByRole('tooltip');
+
+      expect(card.textContent).toContain('Planner');
+      expect(card.textContent).toContain('Step 1 of 2');
+      expect(card.textContent).toContain('Opus 4.5 · High');
+      expect(card.textContent).toContain('$0.62');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('opens the models card of a step on the model cell, in run order', () => {
+    storeState.sessionTurnSpans = {
+      'session-1': [
+        {
+          agentId: 'agent-plan',
+          parentAgentId: null,
+          agentStatus: 'completed',
+          workflowRunId: 'run-meta',
+          isOrchestratedRunDone: false,
+          stepRole: 'planner',
+          provider: 'moonshot',
+          model: 'kimi-k3',
+          effort: 'high',
+          startedAtMs: 1_000,
+          endedAtMs: 2_000,
+          endReason: 'failed',
+          costUsd: 0.1,
+        },
+        {
+          agentId: 'agent-plan',
+          parentAgentId: null,
+          agentStatus: 'completed',
+          workflowRunId: 'run-meta',
+          isOrchestratedRunDone: false,
+          stepRole: 'planner',
+          provider: 'anthropic',
+          model: 'claude-opus-4-5',
+          effort: 'high',
+          startedAtMs: 3_000,
+          endedAtMs: 4_000,
+          endReason: 'succeeded',
+          costUsd: 0.5,
+        },
+      ],
+    };
+    vi.useFakeTimers();
+    try {
+      render(<TimelinePane session={SESSION} actions={null} />);
+      const cell = within(rowOf('Plan the fix'))
+        .getByTestId('work-meta')
+        .querySelector('[data-meta-column="model"]');
+      if (cell === null) {
+        throw new Error('no model cell');
+      }
+
+      fireEvent.mouseEnter(cell);
+      act(() => {
+        vi.advanceTimersByTime(800);
+      });
+      const items = within(screen.getByRole('tooltip')).getAllByRole('listitem');
+
+      expect(items.map((item) => item.textContent)).toEqual([
+        expect.stringContaining('Kimi K3 · High'),
+        expect.stringContaining('Opus 4.5 · High'),
+      ]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('names the run, its role and its model on the row for assistive tech', () => {
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    expect(screen.getByRole('button', { name: /Planner, Opus 4\.5, High/ })).toBeDefined();
+  });
+
+  it('puts the run row on the same columns, with the total spend and no step counter', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
     const meta = within(rowOf('Ship the checkout fix')).getByTestId('work-meta');
 
-    expect(within(meta).getByText('Step 1 of 2')).toBeDefined();
+    expect(meta.querySelector('[data-meta-column="model"]')).not.toBeNull();
     expect(within(meta).getByText('$0.62')).toBeDefined();
+    expect(meta.textContent).not.toContain('Step 1 of 2');
+  });
+
+  it('sums up the models a run used as the first one plus the rest', () => {
+    storeState.sessionTurnSpans = {
+      'session-1': [
+        {
+          agentId: 'agent-plan',
+          parentAgentId: null,
+          agentStatus: 'completed',
+          workflowRunId: 'run-meta',
+          isOrchestratedRunDone: false,
+          stepRole: 'planner',
+          provider: 'anthropic',
+          model: 'claude-opus-4-5',
+          effort: 'high',
+          startedAtMs: 1_000,
+          endedAtMs: 2_000,
+          endReason: 'succeeded',
+          costUsd: 0.4,
+        },
+        {
+          agentId: 'agent-build',
+          parentAgentId: null,
+          agentStatus: 'completed',
+          workflowRunId: 'run-meta',
+          isOrchestratedRunDone: false,
+          stepRole: 'implementer',
+          provider: 'anthropic',
+          model: 'claude-sonnet-4-5',
+          effort: 'medium',
+          startedAtMs: 3_000,
+          endedAtMs: 4_000,
+          endReason: 'succeeded',
+          costUsd: 0.2,
+        },
+      ],
+    };
+    render(<TimelinePane session={SESSION} actions={null} />);
+    const meta = within(rowOf('Ship the checkout fix')).getByTestId('work-meta');
+
+    expect(meta.querySelector('[data-routing-part="name"]')?.textContent).toBe('Opus 4.5 + 1');
+  });
+
+  it('lists a fallback in the order the models ran on the step row', () => {
+    const turn = (model: string, startedAtMs: number, endReason: string) => ({
+      agentId: 'agent-plan',
+      parentAgentId: null,
+      agentStatus: 'completed',
+      workflowRunId: 'run-meta',
+      isOrchestratedRunDone: false,
+      stepRole: 'planner',
+      provider: model.startsWith('kimi') ? 'moonshot' : 'anthropic',
+      model,
+      effort: 'high',
+      startedAtMs,
+      endedAtMs: startedAtMs + 1_000,
+      endReason,
+      costUsd: 0.1,
+    });
+    storeState.sessionTurnSpans = {
+      'session-1': [turn('claude-opus-4-5', 9_000, 'succeeded'), turn('kimi-k3', 1_000, 'failed')],
+    };
+    render(<TimelinePane session={SESSION} actions={null} />);
+    const meta = within(rowOf('Plan the fix')).getByTestId('work-meta');
+
+    expect(meta.querySelector('[data-routing-part="name"]')?.textContent).toBe(
+      'Kimi K3 → Opus 4.5',
+    );
+    expect(meta.querySelectorAll('[data-provider]')).toHaveLength(2);
   });
 
   describe('measured time', () => {
@@ -1239,9 +1410,14 @@ describe('TimelinePane row meta', () => {
 
       const wide = seen(900);
       expect(wide).toContain('Plan the fix');
-      expect(wide).not.toContain('Opus 4.5');
+      expect(wide).toContain('Opus 4.5');
       expect(wide).toContain('6m 40s');
       expect(wide).toContain('$0.62');
+
+      const glyphsOnly = seen(630);
+      expect(glyphsOnly).not.toContain('Opus 4.5');
+      expect(glyphsOnly).toContain('6m 40s');
+      expect(glyphsOnly).toContain('$0.62');
 
       const noCost = seen(560);
       expect(noCost).not.toContain('$0.62');
@@ -1466,7 +1642,15 @@ describe('TimelinePane resolve batch', () => {
     };
   };
 
-  const toggle = () => screen.getByRole('button', { name: /Resolve #318 · 4 agents/ });
+  const toggle = () => screen.getByRole('button', { name: /4 files/ });
+
+  const header = (): HTMLElement => {
+    const row = document.querySelector<HTMLElement>('[data-row-id="batch:batch-1"]');
+    if (row === null) {
+      throw new Error('batch header row missing');
+    }
+    return row;
+  };
 
   const seedWideBatch = ({ count }: { readonly count: number }) => {
     const agents = Array.from({ length: count }, (_, index) => ({
@@ -1504,7 +1688,7 @@ describe('TimelinePane resolve batch', () => {
     seedWideBatch({ count: 20 });
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /Resolve #318 · 20 agents/ }));
+    fireEvent.click(screen.getByRole('button', { name: /20 files/ }));
 
     expect(revealFrames()).toHaveLength(10);
     screen.getByRole('button', { name: 'Show 12 more' });
@@ -1533,11 +1717,12 @@ describe('TimelinePane resolve batch', () => {
     });
   });
 
-  it('draws one closed row with the state summary and no child rows', () => {
+  it('draws one folded group with the state summary, a count row and no file rows', () => {
     seedBatch();
     render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(toggle().getAttribute('aria-expanded')).toBe('false');
+    expect(within(toggle()).getByTestId('fold-summary').textContent).toBe('4 files');
     expect(screen.getByTestId('resolve-batch-summary').textContent).toBe(
       '1 ready for you · 1 drafting · 1 pushed · 1 failed',
     );
@@ -1548,12 +1733,30 @@ describe('TimelinePane resolve batch', () => {
     seedBatch();
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    const node = within(toggle()).queryByRole('img');
-    const row = toggle().closest('[data-row-id]');
-    const mixed = row?.querySelector('[data-node-state="mixed"]');
-    expect(node).toBeNull();
+    const mixed = header().querySelector('[data-node-state="mixed"]');
     expect(mixed?.textContent).toBe('');
     expect(mixed?.querySelectorAll('[data-arc-tone]')).toHaveLength(4);
+  });
+
+  it('opens the comments from a click on the header row, which no longer folds anything', () => {
+    seedBatch();
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    const headerButton = header().querySelector('button');
+    if (headerButton === null) {
+      throw new Error('batch header has no button');
+    }
+
+    expect(headerButton.getAttribute('aria-expanded')).toBeNull();
+    expect(headerButton.getAttribute('aria-description')).toBe('Open comments, Enter');
+    fireEvent.click(headerButton);
+    expect(openReview).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: 'session-1',
+        destination: expect.objectContaining({ kind: 'threads' }),
+      }),
+    );
+    expect(toggle().getAttribute('aria-expanded')).toBe('false');
   });
 
   it('explodes on click and folds back once the children have closed', () => {
@@ -1571,8 +1774,10 @@ describe('TimelinePane resolve batch', () => {
       element.getAttribute('data-row-id'),
     );
     const batchRows = rowIds.filter((id) => id?.startsWith('batch:batch-1') === true);
-    expect(batchRows[0]).toBe('batch:batch-1');
-    expect(batchRows.at(-1)).toBe('batch:batch-1:open');
+    expect(rowIds.indexOf('count:batch:batch-1')).toBeLessThan(rowIds.indexOf(batchRows[0] ?? ''));
+    expect(batchRows[0]).toContain('batch:batch-1:file:');
+    expect(batchRows.at(-2)).toBe('batch:batch-1:open');
+    expect(batchRows.at(-1)).toBe('batch:batch-1');
     expect(batchRows).toHaveLength(6);
     expect(revealFrames().map((frame) => frame.dataset.state)).toEqual([
       'open',
@@ -1635,11 +1840,20 @@ describe('TimelinePane resolve batch', () => {
     window.matchMedia = original;
   });
 
-  it('opens and closes with the arrow keys', () => {
+  it('opens and closes with the arrow keys, on the count row and on the header row', () => {
     seedBatch();
     render(<TimelinePane session={SESSION} actions={null} />);
 
     fireEvent.keyDown(toggle(), { key: 'ArrowRight' });
+    expect(toggle().getAttribute('aria-expanded')).toBe('true');
+    fireEvent.keyDown(toggle(), { key: 'ArrowLeft' });
+    expect(toggle().getAttribute('aria-expanded')).toBe('false');
+
+    const headerButton = header().querySelector('button');
+    if (headerButton === null) {
+      throw new Error('batch header has no button');
+    }
+    fireEvent.keyDown(headerButton, { key: 'ArrowRight' });
     expect(toggle().getAttribute('aria-expanded')).toBe('true');
   });
 
@@ -1658,79 +1872,102 @@ describe('TimelinePane subagents on a step', () => {
   const seedSubagents = ({
     count = NAMES.length,
     failedIndex = -1,
-  }: { readonly count?: number; readonly failedIndex?: number } = {}) => {
+    isFinished = true,
+  }: {
+    readonly count?: number;
+    readonly failedIndex?: number;
+    readonly isFinished?: boolean;
+  } = {}) => {
     const lead = {
       id: 'lead',
       sessionId: 'session-1',
       ordinal: 1,
       name: 'Implement the banner',
-      status: 'running',
+      status: isFinished ? 'completed' : 'running',
       startedAt: '2026-08-20T10:00:00.000Z',
+      ...(isFinished ? { completedAt: '2026-08-20T10:09:00.000Z' } : {}),
     };
-    const children = NAMES.slice(0, count).map((name, index) => ({
-      id: `sub-${index}`,
-      sessionId: 'session-1',
-      ordinal: index + 2,
-      name,
-      parentAgentId: 'lead',
-      status: index === failedIndex ? 'failed' : index === count - 1 ? 'running' : 'completed',
-      startedAt: `2026-08-20T10:0${index + 1}:00.000Z`,
-      ...(index === count - 1 ? {} : { completedAt: `2026-08-20T10:0${index + 1}:30.000Z` }),
-    }));
+    const children = NAMES.slice(0, count).map((name, index) => {
+      const isLast = index === count - 1;
+      return {
+        id: `sub-${index}`,
+        sessionId: 'session-1',
+        ordinal: index + 2,
+        name,
+        parentAgentId: 'lead',
+        status: index === failedIndex ? 'failed' : isLast && !isFinished ? 'running' : 'completed',
+        startedAt: `2026-08-20T10:0${index + 1}:00.000Z`,
+        ...(isLast && !isFinished ? {} : { completedAt: `2026-08-20T10:0${index + 1}:30.000Z` }),
+      };
+    });
     storeState.sessionPhaseRuns = { 'session-1': [lead, ...children] };
     resolveActivity.current = { batchByAgentId: new Map(), factsByAgentId: new Map() };
   };
 
-  const chip = (name: RegExp = /subagents/) => screen.getByRole('button', { name });
+  const countRow = (name: RegExp = /subagents/) => screen.getByRole('button', { name });
 
   const rowIds = () =>
     Array.from(document.querySelectorAll('[data-row-id]')).map((element) =>
       element.getAttribute('data-row-id'),
     );
 
-  it('keeps the subagents inside the step row: one chip, no group row, no child rows', () => {
+  it('folds a finished step into one count row above it: no chip, no group row, no child rows', () => {
     seedSubagents();
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    expect(chip().getAttribute('aria-expanded')).toBe('false');
-    expect(chip().textContent).toBe('4 subagents');
+    expect(countRow().getAttribute('aria-expanded')).toBe('false');
+    expect(within(countRow()).getByTestId('fold-summary').textContent).toBe('4 subagents');
     expect(screen.queryByText('Scout thresholds')).toBeNull();
-    expect(rowIds().filter((id) => id?.startsWith('subagents:') === true)).toEqual([]);
-    expect(chip().closest('[data-row-id]')?.getAttribute('data-row-id')).toBe('agent:lead');
+    expect(screen.queryByTestId('timeline-subagents-chip')).toBeNull();
+    expect(rowIds()).toEqual(['count:subagents:agent:lead', 'agent:lead']);
     expect(document.querySelectorAll('[data-node-state="mixed"]')).toHaveLength(0);
   });
 
-  it('gives a single subagent the same chip', () => {
+  it('gives a single subagent the same count row', () => {
     seedSubagents({ count: 1 });
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    expect(chip(/1 subagent/).textContent).toBe('1 subagent');
+    expect(within(countRow(/1 subagent/)).getByTestId('fold-summary').textContent).toBe(
+      '1 subagent',
+    );
     expect(screen.queryByText('Scout thresholds')).toBeNull();
   });
 
-  it('shows a failed child on the closed chip', () => {
+  it('shows the subagents of a step that is still working, with no way to fold them', () => {
+    seedSubagents({ isFinished: false });
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    screen.getByText('Scout thresholds');
+    screen.getByText('Test the banner');
+    expect(screen.queryByRole('button', { name: /subagents/ })).toBeNull();
+    expect(screen.queryByTestId('timeline-count-row')).toBeNull();
+  });
+
+  it('keeps a branch with a failed subagent open', () => {
     seedSubagents({ failedIndex: 1 });
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    expect(chip().textContent).toContain('1 failed');
+    screen.getByText('Scout retry paths');
+    expect(screen.queryByTestId('timeline-count-row')).toBeNull();
   });
 
-  it('opens the children below the step on click and folds back on the second click', () => {
+  it('opens the children above the step on click and folds back on the second click', () => {
     vi.useFakeTimers();
     const transitions = withRevealTransitions();
     seedSubagents();
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    fireEvent.click(chip());
+    fireEvent.click(countRow());
 
-    expect(chip().getAttribute('aria-expanded')).toBe('true');
+    expect(countRow().getAttribute('aria-expanded')).toBe('true');
     screen.getByText('Scout thresholds');
     const ids = rowIds().filter((id) => id?.startsWith('agent:') === true);
-    expect(ids).toEqual(['agent:lead', 'agent:sub-0', 'agent:sub-1', 'agent:sub-2', 'agent:sub-3']);
+    expect(ids).toEqual(['agent:sub-3', 'agent:sub-2', 'agent:sub-1', 'agent:sub-0', 'agent:lead']);
+    expect(rowIds()[0]).toBe('count:subagents:agent:lead');
     expect(revealFrames()).toHaveLength(4);
 
-    fireEvent.click(chip());
-    expect(chip().getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(countRow());
+    expect(countRow().getAttribute('aria-expanded')).toBe('false');
     expect(document.querySelectorAll('[data-leaving="true"]')).toHaveLength(4);
     act(() => {
       vi.advanceTimersByTime(400);
@@ -1738,6 +1975,31 @@ describe('TimelinePane subagents on a step', () => {
     expect(screen.queryByText('Scout thresholds')).toBeNull();
     transitions.mockRestore();
     vi.useRealTimers();
+  });
+
+  it('opens with Right on the step row and folds from a child with Left, back onto the count row', () => {
+    seedSubagents();
+    render(<TimelinePane session={SESSION} actions={null} />);
+    const stepRow = () => {
+      const row = document.querySelector<HTMLElement>('[data-row-id="agent:lead"] button');
+      if (row === null) {
+        throw new Error('step row missing');
+      }
+      return row;
+    };
+
+    fireEvent.keyDown(stepRow(), { key: 'ArrowRight' });
+    expect(countRow().getAttribute('aria-expanded')).toBe('true');
+
+    const child = document.querySelector<HTMLElement>('[data-row-id="agent:sub-1"] button');
+    if (child === null) {
+      throw new Error('child row missing');
+    }
+    child.focus();
+    fireEvent.keyDown(child, { key: 'ArrowLeft' });
+
+    expect(countRow().getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(countRow());
   });
 });
 
@@ -1811,14 +2073,13 @@ describe('TimelinePane finished run', () => {
     touchedMountIds: null,
   });
   const runRow = (): HTMLElement => {
-    const row = screen
-      .getAllByRole('button', { name: /Refund keys/ })
-      .find((button) => button.hasAttribute('aria-expanded'));
-    if (row === undefined) {
+    const row = document.querySelector<HTMLElement>('[data-row-id="run:run-fold"]');
+    if (row === null) {
       throw new Error('run row missing');
     }
     return row;
   };
+  const countRow = () => screen.getByRole('button', { name: /3 steps/ });
 
   beforeEach(() => {
     attachedRuns.list = [RUN];
@@ -1841,46 +2102,54 @@ describe('TimelinePane finished run', () => {
     storeState.sessionTurnSpans = {};
   });
 
-  it('shows a finished run as one row with its totals, and opens it on click', () => {
+  it('shows a finished run as its own row with its totals and a count row above it', () => {
     storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'completed' }) };
     render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(screen.queryByText('Step plan')).toBeNull();
-    expect(runRow().getAttribute('aria-expanded')).toBe('false');
-    expect(within(runRow()).getByText('3 steps')).toBeDefined();
+    expect(countRow().getAttribute('aria-expanded')).toBe('false');
     const meta = within(runRow()).getByTestId('work-meta');
     expect(meta.textContent).not.toContain('models');
     expect(within(meta).getByText('$1.50')).toBeDefined();
     expect(within(meta).getByText('2m')).toBeDefined();
 
-    fireEvent.click(runRow());
+    fireEvent.click(countRow());
 
-    expect(runRow().getAttribute('aria-expanded')).toBe('true');
+    expect(countRow().getAttribute('aria-expanded')).toBe('true');
     expect(screen.getByText('Step plan')).toBeDefined();
   });
 
-  it('draws the run as a ball that shows state, never its step count, closed and open', () => {
+  it('opens the run page from the run row and leaves its steps folded', () => {
     storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'completed' }) };
-    const { container } = render(<TimelinePane session={SESSION} actions={null} />);
-    const ball = () => {
-      const node = container.querySelector('[data-row-id] [data-node-state="mixed"]');
-      if (node === null) {
-        throw new Error('the run row has no ball');
-      }
-      return node;
-    };
+    render(<TimelinePane session={SESSION} actions={null} />);
 
-    expect(ball().getAttribute('aria-label')).toBe('3 steps');
-    expect(ball().textContent).toBe('');
-    expect(runRow().getAttribute('aria-description')).toBe('Expand, Enter');
+    const row = runRow().querySelector('button');
+    if (row === null) {
+      throw new Error('run row has no button');
+    }
+    fireEvent.click(row);
 
-    fireEvent.click(runRow());
-
-    expect(ball().textContent).toBe('');
-    expect(runRow().getAttribute('aria-description')).toBe('Collapse, Enter');
+    expect(storeState.navigate).toHaveBeenCalledTimes(1);
+    expect(countRow().getAttribute('aria-expanded')).toBe('false');
   });
 
-  it('keeps the whole summary of a folded run beside its title', () => {
+  it('draws the run as a state node and its count row as a hollow lane node', () => {
+    storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'completed' }) };
+    const { container } = render(<TimelinePane session={SESSION} actions={null} />);
+
+    expect(
+      container.querySelector('[data-row-id="run:run-fold"] [data-node-state="done"]'),
+    ).not.toBeNull();
+    expect(
+      container.querySelector('[data-row-id="run:run-fold"] [data-node-state="mixed"]'),
+    ).toBeNull();
+    expect(runRow().querySelector('button')?.getAttribute('aria-description')).toBe(
+      'Open run, Enter',
+    );
+    expect(screen.getAllByTestId('timeline-count-node')).toHaveLength(1);
+  });
+
+  it('keeps the whole summary of a folded run on its count row', () => {
     storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'completed' }) };
     questions.answered = [
       aQuestion({
@@ -1895,7 +2164,7 @@ describe('TimelinePane finished run', () => {
     ];
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    const summary = within(runRow()).getByTestId('fold-summary');
+    const summary = within(countRow()).getByTestId('fold-summary');
     expect(summary.textContent).toBe('3 steps · 1 question answered');
     expect(summary.getAttribute('title')).toBe('3 steps · 1 question answered');
     expect(within(runRow()).getByTitle('Refund keys').textContent).toBe('Refund keys');
@@ -1912,18 +2181,32 @@ describe('TimelinePane finished run', () => {
     const narrow = visibleTextAt({ root: row, width: 460 });
     expect(narrow).not.toContain('2m');
     expect(narrow).toContain('Refund keys');
-    expect(narrow).toContain('3 steps');
   });
 
   it('keeps a run open when it finishes while on screen', () => {
     storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'running' }) };
     const view = render(<TimelinePane session={SESSION} actions={null} />);
     expect(screen.getByText('Step build')).toBeDefined();
+    expect(screen.queryByTestId('timeline-count-row')).toBeNull();
 
     storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'completed' }) };
     view.rerender(<TimelinePane session={SESSION} actions={null} />);
 
     expect(screen.getByText('Step build')).toBeDefined();
-    expect(runRow().getAttribute('aria-expanded')).toBe('true');
+    expect(countRow().getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('folds the run on the Right and Left keys of its own row', () => {
+    storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'completed' }) };
+    render(<TimelinePane session={SESSION} actions={null} />);
+    const button = runRow().querySelector('button');
+    if (button === null) {
+      throw new Error('run row has no button');
+    }
+
+    fireEvent.keyDown(button, { key: 'ArrowRight' });
+    expect(countRow().getAttribute('aria-expanded')).toBe('true');
+    fireEvent.keyDown(button, { key: 'ArrowLeft' });
+    expect(countRow().getAttribute('aria-expanded')).toBe('false');
   });
 });

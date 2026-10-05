@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 
+import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { FileDiff, IsoDateTime } from '@goodboy/types';
@@ -275,6 +276,25 @@ describe('DiffView comments', () => {
     });
   });
 
+  it('hands the agent the note typed in the composer along with the lines', () => {
+    const comments = commentsWith([]);
+    render(<DiffView files={[LEDGER]} comments={comments} />);
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Comment on new line 40' }), {
+      key: 'Enter',
+    });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Note on line 40' }), {
+      target: { value: '  Rebuild this from the intro question.  ' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask agent' }));
+    expect(comments.onAskAgent).toHaveBeenCalledWith({
+      filePath: LEDGER.path,
+      anchor: { side: 'new', lineNumber: 40 },
+      text: '  const residual = total - sum(rounded);',
+      note: 'Rebuild this from the intro question.',
+    });
+    expect(comments.onSubmit).not.toHaveBeenCalled();
+  });
+
   it('shows a note under its line with Fix and Close note, and no control says Resolve', () => {
     const onFix = vi.fn();
     const comments = commentsWith([
@@ -540,5 +560,96 @@ describe('DiffView file renders', () => {
 
     screen.getByText('Footer');
     expect(fileRenders.current).toBe(0);
+  });
+});
+
+describe('DiffView window', () => {
+  const FILE_COUNT = 100;
+  const sectionOf = (path: string) => document.querySelector(`[data-file-path="${path}"]`);
+  const sections = () => Array.from(document.querySelectorAll('[data-file-path]'));
+  const many = (count: number, folder = 'f'): ReadonlyArray<FileDiff> =>
+    Array.from({ length: count }, (_, index) => ({
+      ...RELAY,
+      path: `ledger-core/src/${folder}${String(index).padStart(3, '0')}.ts`,
+    }));
+  const mountAll = async (files: ReadonlyArray<FileDiff>) => {
+    const view = render(<DiffView files={files} />);
+    await waitFor(() => expect(sections()).toHaveLength(files.length), { timeout: 5000 });
+    return view;
+  };
+  const recordScrolls = () => {
+    const calls: Array<string | null> = [];
+    Object.defineProperty(Element.prototype, 'scrollIntoView', {
+      configurable: true,
+      writable: true,
+      value: function (this: Element) {
+        calls.push(this.getAttribute('data-file-path'));
+      },
+    });
+    return calls;
+  };
+
+  it('keeps every mounted file when the list is replaced by one with the same paths', async () => {
+    const files = many(FILE_COUNT);
+    const { rerender } = await mountAll(files);
+    const before = sections();
+
+    rerender(<DiffView files={files.map((file) => ({ ...file }))} />);
+
+    expect(sections()).toHaveLength(FILE_COUNT);
+    expect(sections().every((node, index) => node === before[index])).toBe(true);
+  });
+
+  it('starts over at the first batch when the list of paths changes', async () => {
+    const { rerender } = await mountAll(many(FILE_COUNT));
+
+    rerender(<DiffView files={many(FILE_COUNT, 'g')} />);
+
+    expect(sections()).toHaveLength(20);
+    expect(screen.getByText('20 of 100 files')).toBeDefined();
+  });
+
+  it('scrolls to a file through the registered scroller, mounting its batch first', async () => {
+    const files = many(FILE_COUNT);
+    const target = files[70]?.path ?? '';
+    const calls = recordScrolls();
+    let scroll: ((path: string) => void) | null = null;
+    render(
+      <DiffView
+        files={files}
+        registerScroller={(next) => {
+          scroll = next;
+        }}
+      />,
+    );
+    expect(scroll).not.toBeNull();
+
+    act(() => scroll?.(target));
+
+    await waitFor(() => expect(calls).toContain(target));
+    expect(sectionOf(target)).not.toBeNull();
+  });
+
+  it('forgets the scroller when it unmounts', () => {
+    const register = vi.fn();
+    const { unmount } = render(<DiffView files={many(3)} registerScroller={register} />);
+
+    unmount();
+
+    expect(register).toHaveBeenLastCalledWith(null);
+  });
+
+  it('still scrolls to the focus path when the parent clears it at once', async () => {
+    const files = many(40);
+    const target = files[30]?.path ?? '';
+    const calls = recordScrolls();
+    const Host = () => {
+      const [focus, setFocus] = useState<string | null>(target);
+      return <DiffView files={files} focusPath={focus} onFocusHandled={() => setFocus(null)} />;
+    };
+
+    render(<Host />);
+
+    await waitFor(() => expect(calls).toContain(target));
   });
 });

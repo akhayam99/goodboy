@@ -43,10 +43,10 @@ type RowParams = {
   readonly rowState: RowState;
   readonly entry: unknown;
   readonly at?: string | null;
-  readonly subagents?: unknown;
+  readonly hasSubagentAttention?: true;
 };
 
-const row = ({ id, familyId, rowState, entry, at = null, subagents }: RowParams) =>
+const row = ({ id, familyId, rowState, entry, at = null, hasSubagentAttention }: RowParams) =>
   ({
     kind: 'row',
     id,
@@ -54,7 +54,7 @@ const row = ({ id, familyId, rowState, entry, at = null, subagents }: RowParams)
     rowState,
     entry,
     at,
-    ...(subagents === undefined ? {} : { subagents }),
+    ...(hasSubagentAttention === undefined ? {} : { hasSubagentAttention }),
   }) as unknown as TimelineStreamItem;
 
 const NOW = { kind: 'now', id: 'now' } as unknown as TimelineStreamItem;
@@ -125,7 +125,7 @@ describe('needsYouOwners', () => {
     ]);
   });
 
-  it('counts a subagent that asks behind its closed step row once, on the step', () => {
+  it('counts a subagent that asks or has failed once, on its step', () => {
     const step = agentEntry({ id: 'build' });
     const owners = needsYouOwners({
       items: [
@@ -134,7 +134,7 @@ describe('needsYouOwners', () => {
           familyId: 'agent:build',
           rowState: DONE_ROW_STATE,
           entry: step,
-          subagents: { attentionKeys: ['agent:build-sub1'] },
+          hasSubagentAttention: true,
         }),
       ],
       entries: [],

@@ -278,11 +278,12 @@ refuses it instead of saving a blank entry.
 
 The feed has two views under one segmented header, **Activity | Log**, and
 every kind of row has exactly one home. Activity holds what you launched: an
-agent, a workflow run, a burst of resolvers, each as one row with its state
-or action, time and cost. What happens inside a launch folds into its row:
-the steps and subagents of a run, the questions it answered, and the plans,
-reports, wireframes and learnings it produced, listed behind "N outputs" on
-the launch. The Log holds the facts: plans, reports, wireframes and learnings
+agent, a workflow run, a burst of resolvers, each as one row with its role,
+state or action, the model that ran, time and cost. It reads newest first like
+a git graph, with the lanes of a run drawn beside it. What happens inside a
+finished launch folds into a count row on its lane: the steps and subagents of
+a run, the questions it answered, and the plans, reports, wireframes and
+learnings it produced, listed behind "N outputs" above the launch. The Log holds the facts: plans, reports, wireframes and learnings
 made without a launch, Context, branch and worktree events, link events (an
 unlink carries **Re-link**), pull request events and session archive and
 restore. It is flat, newest first, one muted row per fact, with a search box on
@@ -463,12 +464,23 @@ pick it when you start the agent.
   `<<history-stuck>>`; the engine rebuilds its commits with the plan messages
   and authors, checks the count, and moves the branch itself
 - **Scribe** is hidden too: it writes text about the code and never code.
-  `Write it` in the pull request panel asks it for the title and
-  body, which fill the form for you to check before `Create PR`; it can also
+  `Write it` in the pull request panel asks it for the title and body; when
+  its first turn ends, `settleScribe` hands them to `openScribePullRequest`,
+  which calls `createPrForSession` (that pushes the branch with
+  `--set-upstream` first, for every writer: the panel, the suggestion and an
+  agent through the bridge). The work moves `writing`, `creating`, then
+  `created` with the request number, or `failed` with the reason and the text
+  kept, and `Retry` runs the same step again. It can also
   write a commit message for a squash or a reword and a changelog entry. It
   answers only with `<<pr-title>>`, `<<pr-body>>`, `<<commit-message>>` and
   `<<changelog-entry>>` blocks, runs with push blocked like History rewriter,
-  and Goodboy opens or edits the pull request itself. A body Scribe wrote
+  and Goodboy opens or edits the pull request itself. Its agent stays a
+  scribe turn after the first one: a follow-up that brings new blocks merges
+  into the proposal (a block it leaves out stays) and reaches the request
+  while the body still carries the signature. The proposal is read back from
+  the persisted transcript (`scribeProposal`), so the `Pull request text` card
+  and the Brief section survive a reload without a table of their own; only
+  the live state (`creating`, `failed`) is in memory. A body Scribe wrote
   ends with an invisible `goodboy-scribe` signature; after Goodboy pushes new
   history to the branch it rewrites the body only while that signature still
   matches, so a body you edited stays yours
@@ -513,8 +525,13 @@ question, suggested answers, an optional recommended answer, and whether one
 or several answers apply.
 
 - **Blocking or not.** A blocking question stops the work that asked it. It
-  holds its workflow run (see [workflows.md](workflows.md)) and can only be
-  answered, never dismissed. A non-blocking question can be dismissed. One
+  holds its workflow run (see [workflows.md](workflows.md)) and cannot be
+  dismissed. It is answered, or closed with **Send as message** when what you
+  have to say is not an answer: the text goes to the asking agent as a normal
+  message, not wrapped as an answer, and the question closes once the
+  message went through (`sendQuestionAsMessage`). If the turn is refused
+  (budget reached, folder held by another agent) or fails, the question stays
+  open, the text stays in the field and the reason is shown. A non-blocking question can be dismissed. One
   asked while an agent drafts an artifact is saved in the artifact's history
   as an assumption, with the recommended answer.
 - **Delegated.** You can hand a question to an agent that answers for you,
@@ -577,6 +594,30 @@ when and Out of scope. The planner writes each part with its own checks
 (`doneWhen`, at most 4) and the files it touches (`touches`, at most 12), and
 the subagent that carries a part receives both in its kickoff, so it knows
 when the part is done.
+
+You change a plan with **comments**, from the plan document itself (the
+Artifacts page, and any surface that shows the same plan document). A comment
+points at a part (`kind: part`, its index and title), at a heading, list item or
+paragraph of the goal or of the text after the parts (`block`), or at a selected
+phrase (`quote`, with the text of its block). Anchors are matched by their text,
+so a plan that moved a block still finds it, and a comment whose text is gone
+sits in a group under the text, never lost. Comments live in `artifact_comments`
+(m224): `draft` until sent, `sent` with the id of the turn, then `addressed` when
+the text or part it pointed at changed in the new version, or `open` when it did
+not. **Send to planner** is one operator turn on the agent that wrote the plan
+(`plan.agentId`, through `sendTurn`, never the resolve queue). It says "Please
+revise the plan:", lists each comment in plan order as `On part 3 "title":` or
+`On the goal:` with the quoted text and the comment, and ends by asking for the
+whole updated plan. When the turn settles with a new revision, that revision is
+annotated with the ask and the pinned anchors and each comment is settled; a turn
+with no new revision puts the comments back to `open` ("No new version in this
+turn"). A `sent` comment found after a restart is settled the same way against
+the stored revisions once the planner is idle. Send is refused, with its reason,
+when the planner is gone or still working, when the plan was consumed or
+replaced, or when a later step of the plan's workflow run has already left
+`pending`; a run held for plan approval is the exception, because a held run
+does not advance (`workflowPlanApproval.ts`), and the bar offers **Approve plan**
+beside Send. The comments are removed with their artifact.
 
 A wireframe opens on its **Flow**: the graph of its screens, a one line legend
 (`next`, `back`, `same screen`, told apart by line style and glyph, never by

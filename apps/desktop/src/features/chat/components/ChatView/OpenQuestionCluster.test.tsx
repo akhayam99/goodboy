@@ -8,6 +8,7 @@ const { state } = vi.hoisted(() => ({
   state: {
     answerOpenQuestions: vi.fn(async () => undefined),
     dismissOpenQuestion: vi.fn(async () => undefined),
+    sendQuestionAsMessage: vi.fn(async (): Promise<boolean> => true),
     navigate: vi.fn(),
     loadAgentTranscript: vi.fn(async () => undefined),
     spawnQuestionDelegates: vi.fn(
@@ -90,6 +91,7 @@ beforeEach(() => {
   state.sessionPhaseRuns['sess-1'] = BASE_RUNS;
   state.answerOpenQuestions.mockClear();
   state.dismissOpenQuestion.mockClear();
+  state.sendQuestionAsMessage.mockClear();
   state.navigate.mockClear();
   state.spawnQuestionDelegates.mockClear();
   useOpenQuestions.setState({ drafts: {}, staged: [], pendingUndo: null });
@@ -203,6 +205,85 @@ describe('OpenQuestionCluster', () => {
     renderCluster([dbQuestion]);
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss question' }));
     expect(state.dismissOpenQuestion).toHaveBeenCalledWith('sess-1', dbQuestion);
+  });
+});
+
+describe('OpenQuestionCluster, a blocking question the agent asked in prose', () => {
+  const proseQuestion = makeQuestion({
+    id: 'oq-prose',
+    text: 'Confermi il push? Dopo apro la PR.',
+    isBlocking: true,
+  });
+  const yesNoQuestion = makeQuestion({
+    id: 'oq-yes-no',
+    text: 'Shall I push the branch now?',
+    isBlocking: true,
+  });
+  const typeReply = (value: string) =>
+    fireEvent.change(screen.getByRole('textbox', { name: 'Your answer' }), { target: { value } });
+
+  it('cannot be discarded, but its reply can go as a plain message that closes it', async () => {
+    renderCluster([proseQuestion]);
+    expect(screen.queryByRole('button', { name: 'Dismiss question' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Send as message' }).hasAttribute('disabled')).toBe(
+      true,
+    );
+    typeReply('Not that one, I left a note on a line of the diff.');
+    fireEvent.click(screen.getByRole('button', { name: 'Send as message' }));
+    await waitFor(() =>
+      expect(state.sendQuestionAsMessage).toHaveBeenCalledWith({
+        sessionId: 'sess-1',
+        question: proseQuestion,
+        text: 'Not that one, I left a note on a line of the diff.',
+      }),
+    );
+    expect(state.answerOpenQuestions).not.toHaveBeenCalled();
+    expect(useOpenQuestions.getState().drafts['oq-prose']).toBeUndefined();
+  });
+
+  it('keeps what was written when the message did not go through', async () => {
+    state.sendQuestionAsMessage.mockResolvedValueOnce(false);
+    renderCluster([proseQuestion]);
+    typeReply('Not that one, I left a note on a line of the diff.');
+    fireEvent.click(screen.getByRole('button', { name: 'Send as message' }));
+    await waitFor(() => expect(state.sendQuestionAsMessage).toHaveBeenCalledTimes(1));
+    await Promise.resolve();
+    expect(useOpenQuestions.getState().drafts['oq-prose']?.customAnswer).toBe(
+      'Not that one, I left a note on a line of the diff.',
+    );
+  });
+
+  it('still answers as an answer from the same field', async () => {
+    renderCluster([proseQuestion]);
+    typeReply('Yes, push it.');
+    fireEvent.click(answerButton());
+    await waitFor(() =>
+      expect(state.answerOpenQuestions).toHaveBeenCalledWith(
+        'sess-1',
+        [{ id: 'oq-prose', text: proseQuestion.text, answer: 'Yes, push it.' }],
+        'agent-1',
+      ),
+    );
+    expect(state.sendQuestionAsMessage).not.toHaveBeenCalled();
+  });
+
+  it('sends what is written under Something else as a plain message too', async () => {
+    renderCluster([yesNoQuestion]);
+    fireEvent.click(screen.getByRole('radio', { name: 'Something else' }));
+    typeReply('Wait for the review first.');
+    fireEvent.click(screen.getByRole('button', { name: 'Send as message' }));
+    await waitFor(() =>
+      expect(state.sendQuestionAsMessage).toHaveBeenCalledWith({
+        sessionId: 'sess-1',
+        question: yesNoQuestion,
+        text: 'Wait for the review first.',
+      }),
+    );
+  });
+
+  it('offers no plain message on a question that does not block', () => {
+    renderCluster([dbQuestion]);
+    expect(screen.queryByRole('button', { name: 'Send as message' })).toBeNull();
   });
 });
 

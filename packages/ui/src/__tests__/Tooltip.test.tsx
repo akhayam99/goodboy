@@ -223,3 +223,114 @@ describe('Tooltip', () => {
     vi.useRealTimers();
   });
 });
+
+describe('Tooltip, rest delay', () => {
+  const advance = (ms: number) =>
+    act(() => {
+      vi.advanceTimersByTime(ms);
+    });
+
+  const renderRest = (props: { readonly isOpen?: boolean } = {}) =>
+    render(
+      <Tooltip content="card" restDelayMs={800} {...props}>
+        <button type="button">btn</button>
+      </Tooltip>,
+    );
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('waits for the rest delay instead of the default 400ms', () => {
+    vi.useFakeTimers();
+    renderRest();
+
+    fireEvent.mouseEnter(screen.getByRole('button'));
+    advance(400);
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    advance(399);
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    advance(1);
+    expect(screen.getByRole('tooltip').textContent).toBe('card');
+  });
+
+  it('restarts the wait on every pointer move until the pointer rests', () => {
+    vi.useFakeTimers();
+    renderRest();
+    const trigger = screen.getByRole('button');
+
+    fireEvent.mouseEnter(trigger);
+    advance(700);
+    fireEvent.mouseMove(trigger);
+    advance(700);
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    advance(100);
+    expect(screen.getByRole('tooltip')).toBeDefined();
+  });
+
+  it('keeps the card open while the pointer moves on the trigger', () => {
+    vi.useFakeTimers();
+    renderRest();
+    const trigger = screen.getByRole('button');
+
+    fireEvent.mouseEnter(trigger);
+    advance(800);
+    fireEvent.mouseMove(trigger);
+    advance(5);
+
+    expect(screen.getByRole('tooltip')).toBeDefined();
+  });
+
+  it('drops the pending open when the pointer leaves first', () => {
+    vi.useFakeTimers();
+    renderRest();
+    const trigger = screen.getByRole('button');
+
+    fireEvent.mouseEnter(trigger);
+    advance(500);
+    fireEvent.mouseLeave(trigger);
+    advance(1_000);
+
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('leaves the ordinary tooltip move-proof, at its own delay', () => {
+    vi.useFakeTimers();
+    render(
+      <Tooltip content="plain">
+        <button type="button">btn</button>
+      </Tooltip>,
+    );
+    const trigger = screen.getByRole('button');
+
+    fireEvent.mouseEnter(trigger);
+    advance(300);
+    fireEvent.mouseMove(trigger);
+    advance(100);
+
+    expect(screen.getByRole('tooltip').textContent).toBe('plain');
+  });
+
+  it('does not open on focus, since a rest needs a pointer', () => {
+    vi.useFakeTimers();
+    renderRest();
+
+    fireEvent.focus(screen.getByRole('button'));
+    advance(2_000);
+
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  it('shows at once when it is told to be open, and closes when told to close', () => {
+    const { rerender } = renderRest({ isOpen: true });
+    expect(screen.getByRole('tooltip').textContent).toBe('card');
+
+    rerender(
+      <Tooltip content="card" restDelayMs={800} isOpen={false}>
+        <button type="button">btn</button>
+      </Tooltip>,
+    );
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+});

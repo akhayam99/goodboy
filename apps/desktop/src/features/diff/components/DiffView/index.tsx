@@ -30,6 +30,7 @@ type Props = {
   readonly fileActions?: DiffFileActions | null;
   readonly focusPath?: string | null;
   readonly onFocusHandled?: () => void;
+  readonly registerScroller?: (scroll: ((path: string) => void) | null) => void;
   readonly onActivePathChange?: (path: string) => void;
   readonly presentation?: 'pane' | 'peek' | 'inline';
   readonly footer?: ReactNode;
@@ -61,6 +62,7 @@ export const DiffView = ({
   fileActions = null,
   focusPath = null,
   onFocusHandled,
+  registerScroller,
   onActivePathChange,
   presentation = 'pane',
   footer,
@@ -87,8 +89,12 @@ export const DiffView = ({
   const intersecting = useRef(new Set<string>());
   const lockedPath = useRef<string | null>(null);
   const settleFrame = useRef<number | null>(null);
+  const focusFrame = useRef<number | null>(null);
   const onActivePathChangeRef = useRef(onActivePathChange);
   onActivePathChangeRef.current = onActivePathChange;
+  const filesRef = useRef(files);
+  filesRef.current = files;
+  const pathsKey = useMemo(() => files.map((file) => file.path).join('\n'), [files]);
 
   const threadsByFile = useMemo(() => {
     const map = new Map<string, DiffThread[]>();
@@ -115,7 +121,7 @@ export const DiffView = ({
 
   const topFilePath = useCallback((): string | null => {
     const rootTop = viewportRef.current?.getBoundingClientRect().top ?? 0;
-    for (const file of files) {
+    for (const file of filesRef.current) {
       if (!intersecting.current.has(file.path)) {
         continue;
       }
@@ -125,7 +131,7 @@ export const DiffView = ({
       }
     }
     return null;
-  }, [files]);
+  }, []);
 
   const syncActivePath = useCallback(() => {
     if (lockedPath.current !== null) {
@@ -138,11 +144,20 @@ export const DiffView = ({
   }, [topFilePath]);
 
   useLayoutEffect(() => {
-    pendingScroll.current = null;
     lockedPath.current = null;
     intersecting.current = new Set();
-    setMountedCount(BATCH_SIZE);
-  }, [files]);
+    const pending = pendingScroll.current;
+    const index =
+      pending === null ? -1 : filesRef.current.findIndex((file) => file.path === pending);
+    if (index < 0) {
+      pendingScroll.current = null;
+      setMountedCount(BATCH_SIZE);
+      return;
+    }
+    setMountedCount(
+      Math.min(Math.ceil((index + 1) / BATCH_SIZE) * BATCH_SIZE, filesRef.current.length),
+    );
+  }, [pathsKey]);
 
   useEffect(() => cancelSettle, [cancelSettle]);
 
@@ -194,7 +209,7 @@ export const DiffView = ({
 
   useEffect(() => {
     if (typeof IntersectionObserver === 'undefined') {
-      setSeen(new Set(files.map((file) => file.path)));
+      setSeen(new Set(filesRef.current.map((file) => file.path)));
       return;
     }
     const observer = new IntersectionObserver(
@@ -234,7 +249,7 @@ export const DiffView = ({
         observerRef.current = null;
       }
     };
-  }, [files, syncActivePath]);
+  }, [pathsKey, syncActivePath]);
 
   const registerRef = useCallback((path: string): RefCallback<HTMLElement> => {
     const existing = refCallbacks.current.get(path);
@@ -299,16 +314,24 @@ export const DiffView = ({
         anchorTo(path, element);
         return;
       }
-      const index = files.findIndex((file) => file.path === path);
+      const index = filesRef.current.findIndex((file) => file.path === path);
       if (index < 0) {
         return;
       }
       pendingScroll.current = path;
-      const needed = Math.min(Math.ceil((index + 1) / BATCH_SIZE) * BATCH_SIZE, files.length);
+      const needed = Math.min(
+        Math.ceil((index + 1) / BATCH_SIZE) * BATCH_SIZE,
+        filesRef.current.length,
+      );
       setMountedCount((count) => Math.max(count, needed));
     },
-    [anchorTo, files],
+    [anchorTo],
   );
+
+  useEffect(() => {
+    registerScroller?.(scrollToFile);
+    return () => registerScroller?.(null);
+  }, [registerScroller, scrollToFile]);
 
   useEffect(() => {
     const path = pendingScroll.current;
@@ -321,20 +344,34 @@ export const DiffView = ({
     }
     pendingScroll.current = null;
     anchorTo(path, element);
-  }, [anchorTo, mountedCount]);
+  }, [anchorTo, mountedCount, pathsKey]);
+
+  useEffect(
+    () => () => {
+      if (focusFrame.current !== null) {
+        cancelAnimationFrame(focusFrame.current);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
-    if (focusPath === null || files.length === 0) {
+    if (focusPath === null || pathsKey === '') {
       return;
     }
-    const target = matchPath(files, focusPath);
+    const target = matchPath(filesRef.current, focusPath);
     onFocusHandled?.();
     if (target === null) {
       return;
     }
-    const frame = requestAnimationFrame(() => scrollToFile(target));
-    return () => cancelAnimationFrame(frame);
-  }, [files, focusPath, onFocusHandled, scrollToFile]);
+    if (focusFrame.current !== null) {
+      cancelAnimationFrame(focusFrame.current);
+    }
+    focusFrame.current = requestAnimationFrame(() => {
+      focusFrame.current = null;
+      scrollToFile(target);
+    });
+  }, [focusPath, onFocusHandled, pathsKey, scrollToFile]);
 
   const body = (
     <div className="flex flex-col gap-3 pb-6">

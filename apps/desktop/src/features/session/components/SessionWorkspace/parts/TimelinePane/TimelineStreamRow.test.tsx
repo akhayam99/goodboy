@@ -1,11 +1,10 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import type {
   TimelineAgentEntry,
-  TimelineQuestionEntry,
   TimelineRunEntry,
 } from '../../../../timeline/buildTimelineGroups';
 import { tooltipTextOf } from '../../../../../../__tests__/helpers/tooltip';
@@ -22,9 +21,11 @@ vi.mock('../../../../../../store', () => ({
   useAppStore: { getState: () => ({ markAgentSeen: vi.fn() }) },
 }));
 
+import { formatClock } from '../../../../../../shared/utils/time/formatClock';
+import { TimelineModelCell } from './TimelineModelCell';
+import { TimelineRowMeta } from './TimelineRowMeta';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
 import { TimelineStreamRow } from './TimelineStreamRow';
-import { CLOCK_ORDER_TOOLTIP } from './timelineClock';
 
 type TypedStringParams = {
   readonly value: string;
@@ -196,25 +197,18 @@ describe('TimelineStreamRow', () => {
     expect(screen.getByText('Implement the parser')).toBeDefined();
   });
 
-  it('explains the ordering in a tooltip on the clock', () => {
+  it('says when this row started and finished in a tooltip on the clock', () => {
     renderRow();
 
-    expect(tooltipTextOf({ element: screen.getByText(/\d{2}:\d{2}/) })).toBe(CLOCK_ORDER_TOOLTIP);
+    expect(tooltipTextOf({ element: screen.getByText(/\d{2}:\d{2}/) })).toBe(
+      `Started ${formatClock({ at: '2026-08-17T09:00:00Z' })} · finished ${formatClock({ at: '2026-08-17T09:04:00Z' })}`,
+    );
   });
 
-  it('prints no clock on an answered question that sits in a lane', () => {
-    const answered: TimelineQuestionEntry = JSON.parse(
-      JSON.stringify({
-        kind: 'question',
-        id: 'question:q1',
-        at: '2026-08-17T15:04:00Z',
-        questions: [{ id: 'q1', text: 'Which key?', status: 'answered', userAnswer: 'yes' }],
-        lane: { identity: runIdentity({ laneIndex: 0, seed: 0 }), rootEntryId: 'run:one' },
-      }),
-    );
+  it('says a running row is still running instead of inventing a finish', () => {
     render(
       <TimelineStreamRow
-        item={{ ...itemOf(), id: 'question:q1', grade: 'fact', entry: answered }}
+        item={{ ...itemOf(), rowState: { phase: 'running', reason: null, ask: null } }}
         rail={railOf()}
         railWidth={32}
         sessionId={SESSION_ID}
@@ -223,7 +217,9 @@ describe('TimelineStreamRow', () => {
       />,
     );
 
-    expect(screen.queryByText(/\d{2}:\d{2}/)).toBeNull();
+    expect(tooltipTextOf({ element: screen.getByText(/\d{2}:\d{2}/) })).toBe(
+      `Started ${formatClock({ at: '2026-08-17T09:00:00Z' })} · running`,
+    );
   });
 
   it('says the open target and its keys to assistive tech with no hint in the row', () => {
@@ -352,5 +348,190 @@ describe('TimelineStreamRow', () => {
     fireEvent.keyDown(row, { code: 'Enter', key: 'Enter' });
     expect(openRun).toHaveBeenCalledTimes(1);
     expect(onOpen).not.toHaveBeenCalled();
+  });
+});
+
+describe('TimelineStreamRow, hover cards', () => {
+  const IDENTITY = {
+    hasGlyph: true,
+    summary: 'Implementer, Sonnet 5.5, High',
+    card: <span>Identity card body</span>,
+  };
+
+  const renderCardRow = ({ withIdentity = true } = {}) =>
+    render(
+      <TimelineStreamRow
+        item={itemOf()}
+        rail={railOf()}
+        railWidth={32}
+        sessionId={SESSION_ID}
+        openTarget={{ label: 'Open chat', open: vi.fn() }}
+        action={null}
+        identity={withIdentity ? IDENTITY : null}
+        meta={
+          <TimelineRowMeta
+            model={
+              <TimelineModelCell
+                summary={{ text: 'Sonnet 5.5', providers: ['anthropic'] }}
+                card={<span>Models card body</span>}
+              />
+            }
+            time={{
+              label: '4m 00s',
+              detail: 'Active 4m 00s',
+              progress: null,
+              headline: '4m 00s',
+              note: null,
+              isMuchLonger: false,
+            }}
+            cost="$0.62"
+          />
+        }
+      />,
+    );
+
+  const advance = ({ ms }: { readonly ms: number }) =>
+    act(() => {
+      vi.advanceTimersByTime(ms);
+    });
+
+  const startFake = () => {
+    vi.useFakeTimers();
+  };
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('names the role, the model and the effort in the accessible name of the row', () => {
+    renderCardRow();
+
+    expect(screen.getByRole('button', { name: /Implementer, Sonnet 5\.5, High/ })).toBeDefined();
+  });
+
+  it('opens the identity card only after the pointer rests 800ms on the role glyph', () => {
+    renderCardRow();
+    startFake();
+    const glyph = screen.getByTestId('role-glyph');
+
+    fireEvent.mouseEnter(glyph);
+    advance({ ms: 799 });
+    expect(screen.queryByRole('tooltip')).toBeNull();
+
+    advance({ ms: 1 });
+    expect(screen.getByRole('tooltip').textContent).toBe('Identity card body');
+  });
+
+  it('opens nothing when the pointer only passes over the glyph', () => {
+    renderCardRow();
+    startFake();
+    const glyph = screen.getByTestId('role-glyph');
+
+    fireEvent.mouseEnter(glyph);
+    advance({ ms: 300 });
+    fireEvent.mouseLeave(glyph);
+    advance({ ms: 2_000 });
+
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  it('starts the wait again when the pointer keeps moving on the glyph', () => {
+    renderCardRow();
+    startFake();
+    const glyph = screen.getByTestId('role-glyph');
+
+    fireEvent.mouseEnter(glyph);
+    advance({ ms: 600 });
+    fireEvent.mouseMove(glyph);
+    advance({ ms: 600 });
+    expect(screen.queryByRole('tooltip')).toBeNull();
+
+    advance({ ms: 200 });
+    expect(screen.getByRole('tooltip')).toBeDefined();
+  });
+
+  it('closes the card as soon as the pointer leaves', () => {
+    renderCardRow();
+    startFake();
+    const glyph = screen.getByTestId('role-glyph');
+
+    fireEvent.mouseEnter(glyph);
+    advance({ ms: 800 });
+    fireEvent.mouseLeave(glyph);
+
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  it('does not open the next card at once after one was open, whatever was hovered before', () => {
+    renderCardRow();
+    startFake();
+    const glyph = screen.getByTestId('role-glyph');
+    const model = screen.getByText('Sonnet 5.5').closest('[data-meta-column="model"]');
+    if (model === null) {
+      throw new Error('no model cell');
+    }
+
+    fireEvent.mouseEnter(glyph);
+    advance({ ms: 800 });
+    fireEvent.mouseLeave(glyph);
+    fireEvent.mouseEnter(model);
+    advance({ ms: 200 });
+    expect(screen.queryByRole('tooltip')).toBeNull();
+
+    advance({ ms: 600 });
+    expect(screen.getByRole('tooltip').textContent).toBe('Models card body');
+  });
+
+  it('opens nothing on the time, the cost or the rest of the row', () => {
+    renderCardRow();
+    startFake();
+
+    fireEvent.mouseEnter(screen.getByText('$0.62'));
+    fireEvent.mouseEnter(screen.getByText('Implement the parser'));
+    advance({ ms: 3_000 });
+
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  it('opens the identity card from the keyboard with i on the focused row', () => {
+    renderCardRow();
+    const row = screen.getByRole('button', { name: /Implement the parser/ });
+
+    fireEvent.keyDown(row, { key: 'i' });
+    expect(screen.getByRole('tooltip').textContent).toBe('Identity card body');
+
+    fireEvent.keyDown(row, { key: 'i' });
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  it('closes the keyboard card on Escape and when the row loses focus', () => {
+    renderCardRow();
+    const row = screen.getByRole('button', { name: /Implement the parser/ });
+
+    fireEvent.keyDown(row, { key: 'i' });
+    fireEvent.keyDown(row, { key: 'Escape' });
+    expect(screen.queryByRole('tooltip')).toBeNull();
+
+    fireEvent.keyDown(row, { key: 'i' });
+    fireEvent.blur(row);
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  it('leaves i alone on a row that has no identity card', () => {
+    renderCardRow({ withIdentity: false });
+    const row = screen.getByRole('button', { name: /Implement the parser/ });
+
+    fireEvent.keyDown(row, { key: 'i' });
+
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  it('leaves i alone when a modifier is held', () => {
+    renderCardRow();
+    const row = screen.getByRole('button', { name: /Implement the parser/ });
+
+    fireEvent.keyDown(row, { key: 'i', metaKey: true });
+
+    expect(screen.queryByRole('tooltip')).toBeNull();
   });
 });

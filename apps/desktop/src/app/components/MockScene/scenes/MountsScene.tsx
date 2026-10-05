@@ -712,6 +712,7 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
         diffComments: { [SESSION_ID]: UNASSIGNED_NOTES },
         loadDiffComments: async () => undefined,
         assignDiffComment: async () => undefined,
+        discardDiffComments: async () => undefined,
       }),
       sessionActiveMount: {
         [SESSION_ID]: variant === 'task-split' ? BACKFILL_MOUNT : POSTINGS_MOUNT,

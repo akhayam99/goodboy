@@ -50,13 +50,30 @@ export const groupSummaryParts = <State extends string>({
     ];
   });
 
+export const countGroupSummary = ({
+  count,
+  one,
+  many,
+}: {
+  readonly count: number;
+  readonly one: string;
+  readonly many: string;
+}): GroupSummary<'count'> => ({
+  total: count,
+  parts: [
+    { state: 'count', tone: 'neutral', count, noun: count === 1 ? one : many, isFailure: false },
+  ],
+  attentionCount: 0,
+  failedCount: 0,
+});
+
 export const groupSummaryPartText = ({ part }: { readonly part: GroupSummaryPart }): string =>
   part.text ?? `${part.count} ${part.noun}`;
 
 export const groupSummaryText = ({ summary }: { readonly summary: GroupSummary }): string =>
   summary.parts.map((part) => groupSummaryPartText({ part })).join(' · ');
 
-export type StepsGroupKind = 'run' | 'chain';
+type StepsGroupKind = 'run' | 'chain';
 
 type StepsState = 'steps' | 'answered' | 'context';
 

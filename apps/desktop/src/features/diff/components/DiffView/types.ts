@@ -35,6 +35,7 @@ export type DiffLineTarget = {
   readonly filePath: string;
   readonly anchor: DiffCommentAnchor;
   readonly text: string;
+  readonly note?: string;
 };
 
 export type DiffComments = {

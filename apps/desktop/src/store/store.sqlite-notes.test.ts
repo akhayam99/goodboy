@@ -190,3 +190,134 @@ describe('store on sqlite: Close note', () => {
     ]);
   });
 });
+
+type StoredNote = {
+  readonly id: string;
+  readonly body: string;
+  readonly status: string;
+  readonly created_at: number;
+  readonly line_number: number | null;
+  readonly line_side: string | null;
+};
+
+const storedNotes = (): Promise<ReadonlyArray<StoredNote>> =>
+  rowsOf<StoredNote>({
+    sql: 'SELECT id, body, status, created_at, line_number, line_side FROM diff_comments ORDER BY created_at, id',
+  });
+
+const addSecondNote = async (): Promise<string> => {
+  await useAppStore
+    .getState()
+    .addDiffComment(SESSION_ID, 'src/ledger/export.ts', 'Rename PAGE_SIZE');
+  const added = (useAppStore.getState().diffComments[SESSION_ID] ?? []).find(
+    (note) => note.body === 'Rename PAGE_SIZE',
+  );
+  if (added === undefined) {
+    throw new Error('the second note was not written');
+  }
+  return added.id;
+};
+
+describe('store on sqlite: Discard note', () => {
+  it('removes the note and brings back the same row on Undo', async () => {
+    const noteId = await addNote();
+    const before = await storedNotes();
+
+    await useAppStore.getState().discardDiffComments({ sessionId: SESSION_ID, ids: [noteId] });
+
+    expect(await storedNotes()).toEqual([]);
+    expect(useAppStore.getState().diffComments[SESSION_ID]).toEqual([]);
+    expect(useAppStore.getState().undoStack).toHaveLength(1);
+
+    expect(await useAppStore.getState().undoLastOperation({})).toBe(true);
+
+    expect(await storedNotes()).toEqual(before);
+    expect(useAppStore.getState().diffComments[SESSION_ID]?.[0]).toMatchObject({
+      id: noteId,
+      body: 'Round half to even',
+      anchor: { side: 'new', lineNumber: 42 },
+    });
+  });
+
+  it('keeps a closed note closed when it is brought back', async () => {
+    const noteId = await addNote();
+    await useAppStore
+      .getState()
+      .closeResolvedNote({ sessionId: SESSION_ID, threadId: noteThreadId({ noteId }) });
+
+    await useAppStore.getState().discardDiffComments({ sessionId: SESSION_ID, ids: [noteId] });
+    await useAppStore.getState().undoLastOperation({});
+
+    expect(await noteStatus()).toEqual(['resolved']);
+  });
+
+  it('discards several notes as one operation and Undo restores them all', async () => {
+    const first = await addNote();
+    const second = await addSecondNote();
+
+    await useAppStore
+      .getState()
+      .discardDiffComments({ sessionId: SESSION_ID, ids: [first, second] });
+
+    expect(await storedNotes()).toEqual([]);
+    expect(useAppStore.getState().undoStack).toHaveLength(1);
+    expect(useAppStore.getState().undoNotices.at(-1)?.toast.message).toBe('2 notes discarded');
+
+    await useAppStore.getState().undoLastOperation({});
+
+    expect((await storedNotes()).map((row) => row.id).sort()).toEqual([first, second].sort());
+  });
+
+  it('announces one note with a toast that offers Undo', async () => {
+    const noteId = await addNote();
+
+    await useAppStore.getState().discardDiffComments({ sessionId: SESSION_ID, ids: [noteId] });
+
+    const toast = useAppStore.getState().undoNotices.at(-1)?.toast;
+    expect(toast?.message).toBe('Note discarded');
+    expect(toast?.action?.label).toBe('Undo');
+  });
+
+  it('does nothing for an id that is not a note of the session', async () => {
+    await addNote();
+
+    await useAppStore.getState().discardDiffComments({ sessionId: SESSION_ID, ids: ['ghost'] });
+
+    expect(await storedNotes()).toHaveLength(1);
+    expect(useAppStore.getState().undoStack).toHaveLength(0);
+  });
+
+  it('moves a note to the branch of the mount that was picked', async () => {
+    const noteId = await addNote();
+    const mountOf = (id: string, projectId: string, branch: string, parallelIndex: number) => ({
+      mountId: id as MountId,
+      sessionId: SESSION_ID,
+      projectId: projectId as ProjectId,
+      mountName: projectId,
+      worktreePath: `/wt/${id}`,
+      lastWorktreePath: null,
+      repoRoot: `/repo/${projectId}`,
+      branch,
+      baseBranch: 'main',
+      parallelIndex,
+      isAttached: true,
+      diskState: 'present' as const,
+      revision: 1,
+    });
+    useAppStore.setState({
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          mountOf('mount-ledger', 'project-ledger-core', 'feat/rounding', 0),
+          mountOf('mount-relay', 'project-notify-relay', 'feat/retry', 1),
+        ],
+      },
+    });
+
+    await useAppStore.getState().assignDiffComment(SESSION_ID, noteId, 'mount-relay' as MountId);
+
+    expect(useAppStore.getState().diffComments[SESSION_ID]?.[0]).toMatchObject({
+      projectId: 'project-notify-relay',
+      branch: 'feat/retry',
+    });
+  });
+});

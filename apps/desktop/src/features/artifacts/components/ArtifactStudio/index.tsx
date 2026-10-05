@@ -15,6 +15,7 @@ import { ArtifactShell } from '../ArtifactShell';
 import type { ArtifactShellSubject } from '../ArtifactShell/artifactShellSubject';
 import { resolveArtifactGenerations } from '../../artifactCollection';
 import { askingAgentIdsOf } from '../../../plans/askingAgentIdsOf';
+import { useRevisingPlans } from '../../../plans/useRevisingPlans';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { keepEqualById } from '../../../../shared/utils/keepEqualById';
 import {
@@ -166,6 +167,7 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
     [openQuestions],
   );
   const now = useNow(60_000);
+  const revising = useRevisingPlans(sessionId);
   const rowCache = useRef<ReadonlyMap<string, ArtifactListRow>>(new Map());
   const rows = useMemo(() => {
     const kept = keepEqualById({
@@ -177,12 +179,13 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
         agents,
         openQuestionCount: openQuestions.length,
         askingAgentIds,
+        revising,
         now,
       }),
     });
     rowCache.current = new Map(kept.map((row) => [row.id, row]));
     return kept;
-  }, [plans, artifacts, generations, agents, openQuestions.length, askingAgentIds, now]);
+  }, [plans, artifacts, generations, agents, openQuestions.length, askingAgentIds, revising, now]);
   const counts = useMemo(() => countArtifactRows({ rows }), [rows]);
   const visibleRows = useMemo(() => filterArtifactRows({ rows, filter }), [rows, filter]);
 

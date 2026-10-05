@@ -6,6 +6,7 @@ import { sessionResolveStyle } from '../../../store/sessionReplySettings';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
 import { useAgentStartedToast } from '../../../shared/hooks/useAgentStartedToast';
+import { usePlanRunToast } from '../../plans/usePlanRun';
 import { launchChoiceOf } from '../../resolve/launchChoice';
 import { startResolve } from '../../resolve/startResolve';
 import { startedLine } from '../../resolve/reviewLaunchCopy';
@@ -119,6 +120,7 @@ export const useSuggestionActions = ({
   const resolveMountCleanup = useAppStore((state) => state.resolveMountCleanup);
   const attachWorkflowToSession = useAppStore((state) => state.attachWorkflowToSession);
   const announceAgentStarted = useAgentStartedToast();
+  const announcePlanRun = usePlanRunToast();
 
   const rebaseMounts = useMemo(
     () => mounts.filter((mount) => !completedMountIds.includes(mount.mountId)),
@@ -276,12 +278,9 @@ export const useSuggestionActions = ({
           isDisabled: false,
           failureTitle: "Couldn't start the implementer",
           run: async () => {
-            const agentId = await runPlan(sessionId, suggestion.payload.planId);
-            announceAgentStarted({
+            announcePlanRun({
+              result: await runPlan(sessionId, suggestion.payload.planId),
               sessionId,
-              agentId,
-              title: 'Implementer started',
-              message: 'An agent is running this plan. You can keep working.',
             });
           },
         },
@@ -477,7 +476,9 @@ export const useSuggestionActions = ({
           label: 'Open PR',
           isDisabled: false,
           failureTitle: "Couldn't create the pull request",
-          run: () => createPrForSession({ sessionId, mountId: suggestion.payload.mountId }),
+          run: async () => {
+            await createPrForSession({ sessionId, mountId: suggestion.payload.mountId });
+          },
         },
         onDismiss: null,
       };

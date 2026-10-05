@@ -15,6 +15,7 @@ import type {
   WorkflowId,
   WorkflowRunId,
 } from '@goodboy/types';
+import type { RunPlanResult } from '../../../store/slices/plans/types';
 import { SUGGESTION_KINDS, type SessionSuggestion, type SuggestionKind } from '../types';
 
 const { storeState, spies } = vi.hoisted(() => {
@@ -41,7 +42,12 @@ const { storeState, spies } = vi.hoisted(() => {
   const navigate = vi.fn();
   const createResolveBatch = vi.fn(async () => ({ id: 'batch-1' }));
   const rebaseRun = vi.fn(async () => undefined);
-  const runPlan = vi.fn(async () => 'agent-implementer');
+  const runPlan = vi.fn(async (): Promise<RunPlanResult> => ({
+    kind: 'started',
+    agentId: 'agent-implementer' as AgentId,
+    scope: 'workflow',
+  }));
+  const showToast = vi.fn();
   const pushSessionBranch = vi.fn(async () => ({ ok: true as const }));
   const openRewriteHistory = vi.fn();
   const createPrForSession = vi.fn(async () => undefined);
@@ -74,6 +80,7 @@ const { storeState, spies } = vi.hoisted(() => {
       attachWorkflowToSession,
       resumeStoppedAgents,
       announceAgentStarted,
+      showToast,
       worktreeStatuses: vi.fn(() => new Map<string, unknown>()),
       useRebaseBranch: vi.fn((_params: unknown) => ({
         canRebase: false,
@@ -123,6 +130,9 @@ vi.mock('../../../store', async () => {
 });
 vi.mock('../../../shared/hooks/useKindRouting', () => ({
   useKindRouting: () => ({ provider: 'anthropic', model: 'claude', effort: 'medium' }),
+}));
+vi.mock('../../../shared/components/Toast/useShowToast', () => ({
+  useShowToast: () => spies.showToast,
 }));
 vi.mock('../../../shared/hooks/useAgentStartedToast', () => ({
   useAgentStartedToast: () => spies.announceAgentStarted,
@@ -478,13 +488,60 @@ describe('useSuggestionActions', () => {
     actions.primary?.run();
 
     expect(spies.runPlan).toHaveBeenCalledWith(SESSION_ID, 'plan-1');
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(spies.announceAgentStarted).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      agentId: 'agent-implementer',
-      title: 'Implementer started',
-      message: 'An agent is running this plan. You can keep working.',
+    await vi.waitFor(() => expect(spies.showToast).toHaveBeenCalledOnce());
+    expect(spies.showToast).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Implementer started',
+        message: 'An agent is running this plan. You can keep working.',
+      }),
+    );
+  });
+
+  it('says why when the plan cannot run, with a link to the run, instead of announcing a start', async () => {
+    spies.runPlan.mockResolvedValueOnce({
+      kind: 'refused',
+      reason: 'The next step (Review) does not run plans',
+      workflowRunId: 'run-1' as WorkflowRunId,
     });
+    const actions = actionsFor({
+      suggestion: {
+        ...suggestionBase,
+        id: 'plan-ready:plan-1',
+        kind: 'plan-ready',
+        payload: { planId: 'plan-1' as PlanId },
+      },
+    });
+
+    actions.primary?.run();
+
+    await vi.waitFor(() => expect(spies.showToast).toHaveBeenCalledOnce());
+    const [toast] = spies.showToast.mock.calls[0] ?? [];
+    expect(toast).toMatchObject({
+      title: 'Plan not started',
+      message: 'The next step (Review) does not run plans',
+      action: { label: 'Open the run' },
+    });
+    expect(spies.showToast).not.toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Implementer started' }),
+    );
+  });
+
+  it('stays quiet when a gate already told the owner why the plan did not start', async () => {
+    spies.runPlan.mockResolvedValueOnce({ kind: 'refused', reason: null, workflowRunId: null });
+    const actions = actionsFor({
+      suggestion: {
+        ...suggestionBase,
+        id: 'plan-ready:plan-1',
+        kind: 'plan-ready',
+        payload: { planId: 'plan-1' as PlanId },
+      },
+    });
+
+    actions.primary?.run();
+
+    await vi.waitFor(() => expect(spies.runPlan).toHaveBeenCalled());
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(spies.showToast).not.toHaveBeenCalled();
   });
 
   it('hands the questions lens the answer action', () => {

@@ -385,10 +385,15 @@ header counts them in words ("2 of 3 done"). An implementer split into parts
 shows no Outcome, because the tree already says what each part did. A planner
 shows no sub-agents, and delegates and follow-ups keep their own sections.
 
-In the activity feed, an agent or step row carries the provider glyph at the
-left of its title and ends with its time and what it has spent: there is no
-model column, so the model and the effort live in the row's tooltip and in the
-Brief. A step that has not started shows its meta in faint. In the run tree and
+In the activity feed, an agent or step row leads with its role as a glyph and
+ends with the model that ran, then its duration with what it has spent under
+it. The model is on the row, in a model cell of about 150px: the provider glyph
+and the model, and when a step moved to another model (a fallback, a retry, a
+routing change) every model in the order it ran ("Kimi K3 → Sonnet 5.5", "3
+models" past two). The effort, why a model took over, planned against picked,
+tokens and the start and finish times are in the card that opens when the
+pointer rests on the role glyph or on the model cell, and in the Brief. A step
+that has not started shows its planned model and its meta in faint. In the run tree and
 a Brief's Subagents, every row keeps the model: before a step starts, the meta
 shows the routing it is planned to run on, in faint. Once it runs, the meta
 shows what actually ran, and a dotted model name means routing picked something
@@ -399,8 +404,10 @@ the plan ("Planned High, ran Medium" in the tooltip). A run with no recorded
 effort, like one from before turn spans existed or a CLI with no effort flag,
 keeps the planned effort in faint and never shows a made-up value. The agent
 header reads the same way. The
-run row shows which step it has reached ("Step 4 of 7", or "Step 4" for an
-orchestrated run, which has no total) and what the whole run has spent.
+run row in the feed shows the models of its steps ("Sonnet 5.5 + 1" on two, "4 models" on more) and what
+the whole run has spent; the step it has reached ("Step 4 of 7", or "Step 4"
+for an orchestrated run, which has no total) is in the card of its glyph, with
+the status tally and one line per model with its steps and cost.
 
 The time column is measured machine time, never the wall clock between start
 and end. A `~` always marks an estimate; how sure it is lives in the tooltip
@@ -823,10 +830,15 @@ When a step or a sub-agent ends a turn without its `step-done` or
   is spent.
 - It ends by asking you something in prose (a question, "confirm the
   force-push", "I need your approval"): `extractProseQuestion` in
-  `@goodboy/core` takes the asking paragraph from the last two paragraphs of
+  `@goodboy/core` takes the asking paragraph from the closing paragraph of
   the turn, and Goodboy saves it as a blocking open question owned by that
   agent. It shows with the other open questions, and your answer goes back to
-  the same agent. No re-kick is spent.
+  the same agent. No re-kick is spent. Only a question or a request addressed
+  to you counts: a reply that reports, explains or says what was waiting on a
+  confirmation earlier ("the earlier steps were waiting for your approval")
+  asks nothing, and an ask followed by a closing paragraph of report is not
+  the end of the turn. A question the heuristic gets wrong still closes: write
+  what you mean and choose **Send as message** on the card.
 
 Otherwise `continueOrPause` decides. A hands-free step or sub-agent is
 re-kicked once. After that, or at once when autorun is off, the agent stops in

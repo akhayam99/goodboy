@@ -1,4 +1,4 @@
-import { Button, FormActions } from '@goodboy/ui';
+import { Button, FormActions, Tooltip } from '@goodboy/ui';
 import type { AnswerInputMode } from './answerInputMode';
 import { KeyHint } from './KeyHint';
 
@@ -9,7 +9,11 @@ type Props = {
   readonly isHandOff: boolean;
   readonly onAnswer: () => void;
   readonly onSkip: (() => void) | null;
+  readonly onSendAsMessage?: (() => void) | null;
 };
+
+const SEND_AS_MESSAGE_HINT =
+  'Not an answer? Sends your text to the agent as a normal message and closes this question.';
 
 export const AnswerSubmitButton = ({
   inputMode,
@@ -18,6 +22,7 @@ export const AnswerSubmitButton = ({
   isHandOff,
   onAnswer,
   onSkip,
+  onSendAsMessage = null,
 }: Props) => (
   <FormActions
     leading={
@@ -30,6 +35,19 @@ export const AnswerSubmitButton = ({
       <Button variant="ghost" size="sm" onClick={onSkip} className="text-muted-foreground">
         Skip
       </Button>
+    )}
+    {onSendAsMessage !== null && !isHandOff && (
+      <Tooltip content={SEND_AS_MESSAGE_HINT}>
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={!canAnswer}
+          onClick={onSendAsMessage}
+          className="text-muted-foreground"
+        >
+          Send as message
+        </Button>
+      </Tooltip>
     )}
     <Button
       variant="primary"

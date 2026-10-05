@@ -100,18 +100,19 @@ const chipOf = () => {
 };
 
 describe('TimelineRunLabel', () => {
-  it('says the generic word Workflow instead of the run name in the chip', () => {
-    render(<Label entry={entryOf()} />);
+  it('spends no word on the run kind, the glyph says it', () => {
+    const { container } = render(<Label entry={entryOf()} />);
 
-    expect(chipOf().textContent).toContain('Workflow');
-    expect(chipOf().textContent).not.toContain('Refactor (example)');
+    expect(chipOf().textContent).toBe('');
+    expect(screen.queryByText('Workflow')).toBeNull();
+    expect(container.textContent).toBe('Refactor (example)');
   });
 
-  it('keeps the chip neutral, never tinted by a tone or by the lane identity', () => {
+  it('keeps the glyph neutral, never tinted by a tone or by the lane identity', () => {
     render(<Label entry={entryOf()} />);
     const { className } = chipOf();
 
-    expect(className).toContain('bg-fill');
+    expect(className).toContain('text-muted-foreground');
     expect(className).not.toContain('identity-');
     for (const tone of ['primary', 'success', 'danger', 'warning', 'info']) {
       expect(className).not.toContain(`bg-${tone}`);
@@ -128,7 +129,7 @@ describe('TimelineRunLabel', () => {
     ] satisfies ReadonlyArray<RunWorkflowKind>) {
       const { container } = render(<Label entry={entryOf({ kind })} />);
       const icon = container.querySelector('svg');
-      expect(screen.getByLabelText(LABEL_OF[kind])).toBeDefined();
+      expect(screen.getByRole('img', { name: new RegExp(LABEL_OF[kind], 'i') })).toBeDefined();
       drawn.set(kind, icon?.innerHTML ?? '');
       cleanup();
     }
@@ -214,11 +215,11 @@ describe('TimelineRunLabel', () => {
     expect(screen.queryByText(/Needs your answer/)).toBeNull();
   });
 
-  it('keeps a live run at full-strength label ink and a filled chip', () => {
+  it('keeps a live run at full-strength label ink and a tinted glyph', () => {
     render(<Label entry={entryOf()} />);
 
     expect(screen.getByText('Refactor (example)').className).toContain('text-foreground');
-    expect(chipOf().className).toContain('bg-fill');
+    expect(chipOf().className).toContain('bg-current/12');
   });
 
   it('keeps the chip neutral while one of its steps waits on an answer', () => {
@@ -243,11 +244,11 @@ describe('TimelineRunLabel', () => {
     expect(name.className).not.toContain('text-foreground');
   });
 
-  it('hollows the chip of a discarded run without spending a word on it', () => {
+  it('fades the glyph of a discarded run without spending a word on it', () => {
     render(<Label entry={entryOf({ discardedAt: '2026-08-18T10:00:00Z' })} />);
 
-    expect(chipOf().className).toContain('bg-transparent');
-    expect(chipOf().className).not.toContain('bg-fill');
+    expect(chipOf().className).toContain('text-faint-foreground');
+    expect(chipOf().className).not.toContain('text-muted-foreground');
     expect(screen.queryByText('Discarded')).toBeNull();
   });
 

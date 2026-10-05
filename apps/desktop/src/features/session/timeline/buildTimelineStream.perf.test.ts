@@ -72,6 +72,7 @@ const streamOf = ({ expanded }: { readonly expanded: ReadonlyArray<string> }) =>
     decidingRunIds: new Set(),
     dayLabelFor: ({ at: when }) => dayLabel({ at: when, now: NOW }),
     expandedGroupIds: new Set(expanded),
+    foldsFinished: true,
   });
 
 const byId = <T extends { readonly id: string }>(values: ReadonlyArray<T>) =>
@@ -148,45 +149,27 @@ const bestOf = ({ runs, task }: { readonly runs: number; readonly task: () => vo
   );
 };
 
-describe('layoutTimelineRail with a head lane per group', () => {
-  const expanded = Array.from({ length: CHAINS }, (_, chain) => `agent:chain-${chain}`);
-  const headed = chainStreamOf({ expanded });
-  const headIds = new Set(
-    headed.groups.filter((group) => group.shape === 'head').map((group) => group.id),
-  );
+describe('layoutTimelineRail with a lane and a count row per chain', () => {
+  const expanded = Array.from({ length: CHAINS }, (_, chain) => `subagents:agent:chain-${chain}`);
+  const laned = chainStreamOf({ expanded });
+  const bare = {
+    rows: laned.items.map((item) => (item.groupId === null ? item : { ...item, groupId: null })),
+    groups: [],
+  };
 
-  it('adds one head per opened chain and no more', () => {
-    expect(headIds.size).toBe(CHAINS);
-    expect(headed.groups.length).toBe(CHAINS * 2);
+  it('adds one lane per chain and one per child that has children, and no more', () => {
+    expect(laned.groups.length).toBe(CHAINS * 2);
+    expect(laned.items.filter((item) => item.kind === 'count').length).toBe(CHAINS * 2);
   });
 
-  it('lays out within twice the time the same rows take without heads', () => {
-    const headless = {
-      rows: headed.items.map((item) =>
-        item.kind === 'row' && item.groupId !== null && headIds.has(item.groupId)
-          ? { ...item, groupId: null }
-          : item,
-      ),
-      groups: headed.groups
-        .filter((group) => group.shape !== 'head')
-        .map((group) => ({
-          ...group,
-          parentGroupId:
-            group.parentGroupId !== null && headIds.has(group.parentGroupId)
-              ? null
-              : group.parentGroupId,
-        })),
-    };
-    const withHeads = bestOf({
+  it('lays out within four times the time the same rows take without any lane', () => {
+    const withLanes = bestOf({
       runs: 15,
-      task: () => layoutTimelineRail({ rows: headed.items, groups: headed.groups }),
+      task: () => layoutTimelineRail({ rows: laned.items, groups: laned.groups }),
     });
-    const withoutHeads = bestOf({
-      runs: 15,
-      task: () => layoutTimelineRail(headless),
-    });
+    const withoutLanes = bestOf({ runs: 15, task: () => layoutTimelineRail(bare) });
 
-    expect(withHeads).toBeLessThanOrEqual(Math.max(withoutHeads * 2, 1));
+    expect(withLanes).toBeLessThanOrEqual(Math.max(withoutLanes * 4, 2));
   });
 });
 

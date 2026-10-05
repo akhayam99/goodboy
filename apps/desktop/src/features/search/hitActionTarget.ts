@@ -20,6 +20,7 @@ export const hitPlanRunning = ({ hit, state }: Params): boolean => {
     agents: state.sessionPhaseRuns[hit.sessionId] ?? [],
     openQuestionCount: (state.sessionOpenQuestions[hit.sessionId] ?? []).length,
     now: Date.now(),
+    revising: new Map(),
     askingAgentIds: askingAgentIdsOf({
       questions: state.sessionOpenQuestions[hit.sessionId] ?? [],
     }),

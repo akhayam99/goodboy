@@ -11,6 +11,7 @@ import type {
   WireframeArtifact,
 } from '@goodboy/types';
 import { matrixOf } from '../../../__tests__/helpers/actionMatrix';
+import { NOT_REVISING } from '../../plans/planRevising';
 import type { ArtifactGeneration } from '../../artifacts/artifactCollection';
 import { resolveActions } from '../resolveActions';
 import { ARTIFACT_KIND, type ArtifactFacts } from './artifact';
@@ -73,6 +74,7 @@ const base: Omit<ArtifactFacts, 'kind' | 'title' | 'plan' | 'stored' | 'planStat
   sessionId: SESSION,
   workspaceSlug: 'harborline',
   isPlanRunning: false,
+  planRevising: NOT_REVISING,
   generation: null,
   kickoff: 'a kickoff',
   ports: {},
@@ -314,6 +316,18 @@ describe('artifact verbs by kind and state', () => {
       facts: reportFacts({ status: 'discarded' }),
     }).find((action) => action.id === 'artifact.deletePermanently');
     expect(gone?.confirm?.role).toBe('danger');
+  });
+
+  it('blocks Run plan with a reason while the planner revises the plan, and only then', () => {
+    const runPlanOf = (planRevising: ArtifactFacts['planRevising']) =>
+      resolveActions({
+        definitions: ARTIFACT_KIND.actions,
+        facts: { ...planFacts({ status: 'active' }), planRevising },
+      }).find((action) => action.id === 'artifact.runPlan');
+    expect(runPlanOf({ kind: 'revising', nextRevision: 2 })?.blockedReason).toBe(
+      'Planner is revising this plan',
+    );
+    expect(runPlanOf(NOT_REVISING)?.blockedReason).toBeNull();
   });
 
   it('says deleting for good also loses the run history', () => {

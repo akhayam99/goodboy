@@ -309,8 +309,8 @@ else does:
   the set with stride 3 across workflow runs and agent chains, ordered by
   creation time and id. 3 and 8 share no factor, so every slot is used before
   one repeats. It gives two versions of one slot: `stroke` for an SVG lane and
-  `spin` for the running border. The run's "Workflow" chip stays neutral, so
-  a lane colour never lands on a pill. `runIdentityStroke`, next to it, turns the
+  `spin` for the running border. The run's glyph stays neutral, so
+  a lane colour never lands on a chip. `runIdentityStroke`, next to it, turns the
   index the rail geometry carries back into a stroke.
 - `workspaceAccent` in `apps/desktop/src/features/workspace/color.ts` hashes a
   workspace id onto the same eight slots for its sidebar dot.
@@ -324,14 +324,15 @@ Three limits keep identity small:
 - Identity colours the lane, the running border and the workspace dot, nothing
   else. Stage stays in the marker on top of the lane, which still goes through
   `tintClasses(tone)` like everything else.
-- `TimelineRunChip` is neutral at rest, fainter on a discarded run and a step
-  stronger while its lane is hovered, whatever the run state. The palette
-  never enters `packages/ui`.
+- `TimelineRunChip` is an 18px glyph circle with the icon of the run's origin
+  and no word. It is neutral at rest and fainter on a discarded run, whatever
+  the run state. The palette never enters `packages/ui`.
 
-A run row carries the chip, one title and at most one short status line.
+A run row carries the glyph, one title and at most one short status line.
 `TimelineRunLabel` prints the run title (`run.title`, falling back to the
 workflow name) with a single `truncate`, and never the run goal: a goal is a
-document and lives in the workflow detail. A preset or custom workflow names itself in the chip tooltip.
+document and lives in the workflow detail. A preset or custom workflow names itself in the glyph's hover card and
+accessible name.
 When any step of the run, at any depth, waits on an open question,
 `runOpenQuestion` picks the oldest one. The run row then takes the question
 node, says "Needs your answer in step 4.2" in the warning tone, and shows a
@@ -400,40 +401,92 @@ minutes of the first one) and the row carries a `related` chip.
 
 ### Rail vocabulary
 
-The feed draws its structure with two ingredients and nothing else.
+A feed reads up, a recipe reads down. Activity is a feed: newest first at every
+level, like a git graph, so a child sits above its parent and the clock never
+rises going down. The workflow run page is a recipe: steps in the order they
+run, top down. Both draw their structure with the same four ingredients.
 
-| ingredient | value                                                       | meaning                          |
-| ---------- | ----------------------------------------------------------- | -------------------------------- |
-| spine      | 1px, `--color-border`, solid, unbroken on every row         | the session's own thread         |
-| indent     | one 16px column per level, the row's node moves right by it | a launch's members hang below it |
+| ingredient | value                                                                              | meaning                                     |
+| ---------- | ---------------------------------------------------------------------------------- | ------------------------------------------- |
+| spine      | 1px, `--color-border`, solid, unbroken on every row, column 0                      | the session's own thread                    |
+| lane       | 2px in the run's identity hue, one 16px column per run, a child lane one column in | a launch's members, each at its own time    |
+| pattern    | solid or dashed                                                                    | solid happened, dashed has not happened yet |
+| count row  | hollow 10px node on the lane, muted text on the label column, 24px high            | a finished branch, folded                   |
 
-The spine is the backbone of the feed. It is full height, always drawn, never
-tinted and never broken. Children of a launch (the steps of a run, the
-subagents of a step, the outputs of an agent, the files of a burst) sit one
-column deeper than their launch and follow it in execution order, so a step
-number only ever grows down the list: 8.1, 8.2 under step 8. The feed has no
-coloured lane, no fork, no join, no stub and no head. `layoutTimelineRail`
-runs with `isIndentOnly` and still assigns the columns, so the node of a
-member lands one indent in, and it returns no segment but the spine.
+Content hugs its marker. The label of a row (ordinal, role glyph and title, a
+fact row's words, a count row's summary) starts a fixed 10px after the right
+edge of that row's own marker: label x is the marker column's x plus the marker
+radius (10px, 5px for the count node) plus 10px. The rail space of a row ends
+where its label starts, so depth 0, 1 and 2 indent by exactly one 16px column
+each and no row has a wide empty gap between ball and text. The right-hand
+columns (state, model cell, duration over cost) hang on the row's right edge and
+stay aligned across rows; the time gutter is unchanged. A lane of another group
+beside the marker that runs through a row and would touch the label (the next
+column over for the 5px count node, two columns or more for a full node) pushes
+that row's label to 10px past the lane, for every row kind.
+`railInsetOf` in `railGeometry.ts` computes the space; the run page keeps its
+one global rail width. The step ordinal is left-aligned in a 16px slot.
 
-Nothing about a run is coloured for the feed, so a row has no hover that lights
-a lane and no hit area that opens the workflow from a lane. The row itself is
-the control: a click opens its own leaf, and Shift+Enter on a focused row
-opens the run it belongs to (`activity.openRun` in the shortcut registry).
+A lane starts at its origin marker with a quarter curve out of the column of
+the row above it in the hierarchy and climbs through its members. The origin
+row (the Workflow row) sits at the run's start time, at the bottom of its
+members; the steps stand above it, newest on top. The subagents of a step open
+upward from the step's own marker: the child lane branches from that marker,
+never from the lane beside it. The lane takes the run's identity hue (one of
+six calm hues, never red or amber: status colour stays on the markers), a child
+lane the same hue. A discarded run dims its lane.
 
-The workflow run tree is the one surface that still draws a lane, because its
-steps and their children are the whole page: `layoutTimelineRail` runs there
-without `isIndentOnly`, with `hasSpine: false`, the run lane takes column 0 and
-starts on the run's first step, steps follow in execution order and children
-take column 1. Its solid and dashed pattern still reads as time: solid means
-the line's own work has happened, dashed means it has not, and the switch sits
-at the running step. There is no run row, no NOW and no time column.
+Time rules. Rows are in one time order whatever their level: a launch that
+started while a run was working sits at its own time between the steps and the
+lane passes beside it. Day rules sit between any two rows of different days,
+inside a run that crossed midnight too, and the lane runs through them. The
+newest group gets its day label unless it is from today. A queued step has no
+clock; it sits on the dashed stretch above the newest dated row, under NOW.
+While a run is live its lane continues dashed from its newest dated member up
+through the NOW row, so the line itself says the work is live; a finished lane
+ends on its newest member.
+
+Folding. A branch folds only when it is finished. A live branch (a run that is
+not finished or asks you something, a step with a running, queued or failed
+subagent, a launch still working, a burst with a resolver still working) shows
+all its members and has no control to fold it. A finished branch folds by
+default, whatever its size, into one count row that sits on its lane exactly
+where its children would be, above the parent: `6 steps · 1 question answered`
+over a run, `3 subagents` over a step, `2 outputs` over a launch, `7 files` over
+a burst. A tally follows the total only when not everything is done (`3
+subagents · 1 closed`). A click on the count row, or Right on it, opens the
+branch; the count row stays as the top cap of the lane and a second click, or
+Left, folds it again. There is no chevron and no chip at the right of a row.
+Right and Left work on every expandable row too: Right opens the branch the row
+carries, Left folds it, and Left on a child folds the branch it hangs in and
+moves the focus to its count row. A run that finishes while you watch it stays
+open until you fold it.
+
+The lane is a control: a click on it opens the run page, with the tooltip `Open
+workflow: <title>` and its shortcut, Shift+Enter on a focused row does the same
+(`activity.openRun` in the shortcut registry), and the lane gets no hover tint.
+A row click opens its own leaf: a step its chat, a run its page, a burst its
+comments. A count row never navigates; it only folds and opens.
+
+The recipe is the run page: `layoutTimelineRail` runs there with `hasSpine:
+false`, the run lane takes column 0 and starts on the run's first step, steps
+follow in execution order and children take column 1. Its lanes are `down`
+groups, the feed's are `up` groups; `buildTimelineStream` takes the direction
+from its caller, so the run tree and the agent tree keep their order. There is
+no run row, no NOW, no time column and no count row on the run page.
+
+Never delete a rail element without the defect it fixes. 0.17 had a head node
+with a grey stub for a folded group; the stub landed on the lane and not on the
+step's marker, and the count row replaces it. The 0.17 elbow that rejoined a
+queued child lane into its parent lane is not back: the dash up to NOW says
+what it said. The lane hover wash and the thicker hover stroke are gone: they
+lit a whole run for a pointer that was only passing.
 
 Geometry is computed in
 `apps/desktop/src/features/workTreeModel/railGeometry.ts`. Rows are laid out
 against `apps/desktop/src/features/workTreeModel/timelineRhythm.ts`. Its grades
-fix line height and box height (entry 40px, step 32px, queued 26px, fact 28px),
-so a node centres on its label's line and not on its row box. Every grade
+fix line height and box height (entry 40px, step 32px, queued 24px, fact 28px,
+count 24px), so a node centres on its label's line and not on its row box. Every grade
 carries the same 20px node. `fact` is the grade of every row of the Log: the
 Context row ("Context · 1 added, 2 replaced", words and no diff colours), an
 answered question, a plan or an artifact created without a launch ("Plan
@@ -441,27 +494,28 @@ created · Refund idempotency plan"), and every session event. It takes an 8px
 gap instead of 12px and a 12px muted label, so a log row weighs the same as a
 step and never as an agent.
 
-Two rules follow from the direction of time. The feed is newest first between
-launches: a run, an agent or a burst sits where its origin started. Inside one
-run the order is execution order, 1 to N: the run row is first and its steps
-hang below it in the order they ran. Day rules sit between launches, never
-inside a run that crossed midnight.
+The direction of time is one rule: the feed is newest first at every level. A
+run, an agent or a burst sits where its origin started and its members stand
+above it, each at its own time, so a step number only ever falls down the list
+(8, 7, 6 above the run row; 8.4, 8.3 above step 8). Day rules sit between any
+two rows of different days.
 
 **A queued step is future, not hidden.** It is a row of its own with its own
-dashed node, after the steps that ran. A failed step or a parent you closed
-ends there; queued children of a failed parent cannot start and draw as
-skipped when you closed the parent. The row states come from each row's
-`RowState` in `buildTimelineStream`, not from a second status check.
+dashed node, on the dashed stretch above the newest dated row. A failed step or
+a parent you closed ends there; queued children of a failed parent cannot start
+and draw as skipped when you closed the parent. The row states come from each
+row's `RowState` in `buildTimelineStream`, not from a second status check.
 
 Suggestions are not scheduled work, so they never draw a dash and never sit in
 the activity feed. They live in the Next steps slot (`NextStepSlot`) above
 Activity, outside both views, as `docs/concepts.md` (Next steps) describes.
 
-A third rule covers what Activity shows: **one row per launch, opened one
-level**. Nothing inside a launch is a row until you open the launch, and a
-state that needs you can never hide inside a closed row: it shows in the tally
-and in the Needs you block. Density comes from the grades in
-`timelineRhythm.ts`.
+A second rule covers what Activity shows: **a finished launch is one row and
+one count row, opened one level**. Nothing inside a finished launch is a row
+until you open its count row, and a state that needs you can never hide inside
+a folded branch: a branch with something that needs you, or something still
+working or failed, is not finished and stays open, and Needs you carries it.
+Density comes from the grades in `timelineRhythm.ts`.
 
 ### History graph
 
@@ -582,56 +636,60 @@ working: they read as running, never as "Needs you". A run you stopped reads
 as `stopped`, an agent you closed as `closed`: finished is not the same as
 succeeded.
 
-A group row (a burst of resolves) is closed by default and draws the `mixed`
-node. Open, it shows its files below it, one column in: one row per file, then
-a last row `Open #318`. Each row grows from zero height with `Reveal` (200ms,
-all at once, no stagger), and while they grow the scroller moves by the same
-amount every frame, so the group row you clicked stays under the pointer;
-folding runs the same transition backwards and removes the rows when it
-settles. A burst of more than eight files opens on the first eight, under a
-compact "Show 12 more" row above the Open row that brings the rest. The group
-opens with a click, Enter, Space or the right arrow and closes with a second
-click or the left arrow. Reduced motion skips the transition and swaps the rows
-at once. The rail reserves the column a closed group would open, so opening it
-never moves the list sideways. A failed comment never opens the group: its arc
-is `danger`, the summary says "1 failed" in `danger` text and the Needs you
-block carries the burst.
+A group row (a burst of resolves) draws the `mixed` node. Its click opens the
+comments, like the Open comments action it replaces, and it folds nothing: its
+files hang above it on the burst's lane behind a count row, `7 files`. A burst
+with a resolver still working is open and has no count row; a settled one is
+folded. Open, the files stand above the group row, one column in: one row per
+file, then a last row `Open #318` right above the group row, and the count row
+tops the lane. Each row grows from zero height with `Reveal` (200ms, all at
+once, no stagger), and while they grow the scroller moves by the same amount
+every frame, so the count row you clicked stays under the pointer; folding runs
+the same transition backwards and removes the rows when it settles. A burst of
+more than eight files opens on the first eight, under a compact "Show 12 more"
+row above the Open row that brings the rest. The count row opens with a click,
+Enter, Space or the right arrow and closes with a second click or the left
+arrow; the group row answers the right and left arrows the same way. Reduced
+motion skips the transition and swaps the rows at once. The rail already
+reserves the lane's column through the count row, so opening never moves the
+list sideways. A failed comment never opens the group: its arc is `danger`, the
+summary says "1 failed" in `danger` text and the Needs you block carries the
+burst.
 
-Subagents have no group row. A step or an agent that has subagents carries a
-"N subagents" chip in its own row, closed by default, with a chevron; a failed
-or asking child shows on the chip ("2 subagents · 1 failed", in `danger` or
-`warning` text), the row's unread dot covers the hidden children and Needs you
-carries the run once. The chip opens the children below the step, one column
-in, numbered 8.1, 8.2 under step 8, each with its own time and cost; the step's
-time and cost already include them, counted once, and the children show their
-own. A step with one subagent has the same chip. The outputs of an agent work
-the same way: the chip "3 outputs" opens a plan, a report, a wireframe or a
-learning as rows below it. Children grow with `Reveal` like a group's, closing
-runs it backwards, and the rail reserves the child column whether it is open or
-not (`opensLane`), so opening never moves the list sideways. A folded chain or
-run shows its descendants when it opens; the trees (the run page and a Brief)
-always show them.
+Subagents have no group row and no chip. A finished step or agent that has
+subagents has a count row above it on its own lane: `3 subagents`, with a tally
+only when not all of them are done (`3 subagents · 1 closed`), muted, on the
+label column right where the first child would be. A step with one subagent has
+the same row. The count row opens the children above the step, one column in,
+numbered 8.4, 8.3 down to 8.1 over step 8, each with its own time and cost; the
+step's time and cost already include them, counted once, and the children show
+their own. The row's unread dot covers the hidden children and Needs you
+carries the run once, also for a subagent that asks or has failed. A subagent
+that is working, queued, failed or waiting on you keeps its branch open: a
+branch folds only when everything in it is finished. The outputs of an agent
+work the same way: the count row `3 outputs` opens a plan, a report, a
+wireframe or a learning as rows above it, on a lane of their own. Children grow
+with `Reveal` like a group's, closing runs it backwards, and the lane keeps its
+column whether it is open or not. A folded chain or run shows its descendants
+when it opens; the trees (the run page and a Brief) always show them.
 
-A finished workflow run or agent chain with three rows or more is a third group
-kind, `steps`: the run row itself is the group row, with its own node, the
-summary from `groupSummary` ("8 steps · 1 question answered · Context · 2 added,
-2 replaced") after the title, never truncated: the title gives way first, down to
-96px, then the summary keeps only its first clause and the kept Context part ("8
-steps · Context · 2 added, 2 replaced"). The Context part is the same string as
-the Context row inside the run (`CONTEXT_LABEL` and `decisionCountsText`), summed
-over the rows of the run's agents, and shows only when a row changed something.
-Those Context rows are members of the run, graded `fact`, and a closed run
-hides them; a Context event with no agent is a row of the Log. An answered or
-dismissed question inside a run is counted in its summary and drawn as no row,
-and an open one is carried by Needs you. The gutter clock carries a tooltip that says launches are newest
-first and a row is stamped with its own moment (agent start, answer time or
-record time), and the chevron. Its node is the same `mixed` ball with a dot in
-its center, closed or open, and its hint verb is Expand or Collapse. A run that asks you something,
-failed or is still running is never folded. Every group row fills the routing,
-time and cost columns with the totals of what it holds (`groupTotals`), counted
-once, and its time is fixed: a group row never reads the shared work clock. A
-row already on screen never grows again: when a run finishes under the pointer
-its rows join the group already open.
+A finished workflow run or agent chain, whatever its size, is a third group
+kind, `steps`: the run row keeps its own node (the state of the run, never a
+count), and its count row sits above it with the summary from `groupSummary`
+(`8 steps · 1 question answered · Context · 2 added, 2 replaced`), never
+truncated: the Context part is the same string as the Context row inside the run
+(`CONTEXT_LABEL` and `decisionCountsText`), summed over the rows of the run's
+agents, and shows only when a row changed something. Those Context rows are
+members of the run, graded `fact`, and a folded run hides them; a Context event
+with no agent is a row of the Log. An answered or dismissed question inside a
+run is counted in the summary and drawn as no row, and an open one keeps the run
+open and is carried by Needs you. The run row's click opens the run page, not
+the fold. A run that asks you something, failed or is still running is never
+folded. The gutter clock carries a tooltip with the row's own times ("Started
+16:41 · finished 16:57", "Started 10:09 · running"). The count row's label
+aligns with the step titles, a step's ordinal and role glyph included. A row
+already on screen never grows again: when a run finishes under the pointer its
+rows join the group already open.
 
 A resolver takes its row state from the comment it fixes, not from the agent:
 the `review` reason carries the Review state and its word (Ready for you,
@@ -647,36 +705,51 @@ The right end of a work row is `WorkMeta` in
 `$12.40` never pushes the model of the row above out of line. A row says a duration one way, minutes and seconds ("4m 40s"),
 running or done, and so does every surface that reads `formatActiveTime`.
 
-| column     | width | holds                                                                                                     | in a narrow row                           |
-| ---------- | ----- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| routing    | 136px | provider glyph, model, then one detail (`Sonnet 5 · High`), right aligned; lists other than Activity only | glyph only under 840px, gone under 360px  |
-| time       | 80px  | measured time or estimate ("~3-7m left", "~6-9m", "4m 40s")                                               | "left" goes under 640px, gone under 500px |
-| cost       | 48px  | what the row has spent, empty before anything is spent                                                    | under 620px it leaves the row             |
-| cost range | 72px  | an estimated cost range before a step starts (`isCostRange`)                                              | under 620px it leaves the row             |
-| action     | 76px  | the one visible action, reserved for the tree of a live run                                               | never drops                               |
-| menu       | 24px  | the row menu, like Stop workflow on a run row                                                             | never drops                               |
+| column     | width | holds                                                                                                     | in a narrow row                                |
+| ---------- | ----- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| routing    | 136px | provider glyph, model, then one detail (`Sonnet 5 · High`), right aligned; lists other than Activity only | glyph only under 840px, gone under 360px       |
+| time       | 80px  | measured time or estimate ("~3-7m left", "~6-9m", "4m 40s")                                               | "left" goes under 640px, gone under 500px      |
+| cost       | 48px  | what the row has spent, empty before anything is spent                                                    | under 620px it leaves the row                  |
+| cost range | 72px  | an estimated cost range before a step starts (`isCostRange`)                                              | under 620px it leaves the row                  |
+| model      | 152px | Activity only: the provider glyphs and the models that ran, in run order                                  | glyphs only under 640px                        |
+| stack      | 72px  | Activity only: duration on top (meta size, muted), cost under it (chip size, faint)                       | cost leaves under 620px, all of it under 500px |
+| action     | 76px  | the one visible action, reserved for the tree of a live run                                               | never drops                                    |
+| menu       | 24px  | the row menu, like Stop workflow on a run row                                                             | never drops                                    |
 
 A row inside a `WorkTimeProvider` always renders the time column, empty when
 it has nothing to say, so the columns stay in line. The cost column follows
 the same rule: `cost={null}` keeps an empty column, and leaving `cost` out
 drops it, as the builder does for a plan with no measured estimate yet. A
-run row has no routing: its step progress sits in the routing column and its
-time in the time column (`WORK_META_COLUMN.progress`, which keeps its words
-when the model column folds to a glyph).
+run row has no routing column: it takes the time column and the cost column
+like any other row.
 
-The activity timeline has no routing column. Its agent rows draw the provider
-glyph at the left of the title, and the model and effort stay in the row
-tooltip and in the Brief. A row reserves an action slot only when it has one: a
-row that cannot ask ends at its cost, so the right edge carries no empty band.
-It has no menu slot. Cost and duration stay on the row.
+The activity timeline uses two other columns, in this order after the state
+word: the model cell (`TimelineModelCell`) and the stacked time and cost column
+(`TimelineRowMeta`). The model cell holds the provider glyph and the model that
+actually ran, read from the turn spans of the agent in run order. When several
+ran (a fallback, a retry, a routing change) it holds one glyph per provider and
+the names joined by an arrow ("Kimi K3 → Sonnet 5.5"), or "3 models" past two. A
+live agent ends on its current routing; an agent that has not started shows its
+planned model in faint. A run row shows the distinct models of its steps ("Sonnet
+5.5 + 2", glyphs side by side). Every row holds both columns, empty when it has
+nothing to say, so duration and cost line up down the feed. A row reserves an
+action slot only when it has one. It has no menu slot.
+
+The role glyph before the title and the model cell are the only two hover
+targets that open a card (`RowIdentityCard`, `RowModelsCard`, `RunIdentityCard`),
+on the `Tooltip` `card` variant with `restDelayMs` set to 800: the pointer has to
+rest, every move restarts the wait, the card closes as it leaves and a card
+never opens because another one just closed. `i` on a focused row opens the
+identity card. Nothing is only in a card: the Brief has the same facts and the
+accessible name of the row reads "Implementer, Sonnet 5.5, High".
 
 The narrow rules are container queries, never window breakpoints, because
 the same feed sits in a wide overview and in a split pane. The activity feed
 puts the container on each row's content box (`WORK_ROW.container`, right of
 the time gutter and the rail), so the widths above are the room the label and
 the meta share, not the width of the panel. The label always gets what the
-meta leaves: below 520px a role chip hugs its word and a run chip keeps only
-its glyph, and the state slot always reads the short form ("Needs you",
+meta leaves: the role and run glyphs are the same 18px circle at every width,
+the model cell keeps only its glyphs under 640px, and the state slot always reads the short form ("Needs you",
 "Step 3 ready"), with the full sentence in its tooltip. A row with no state
 word and no note draws no slot, so a finished row gives that room to its
 title. The slot never shrinks. The title keeps about 45% of the row: the
@@ -1172,6 +1245,11 @@ checks. Keyboard focus still cannot reach the control while it is `disabled`.
 A tooltip that has to show a small table (the top bar Limits chips) passes
 `variant="card"`: a 260px elevated card that wraps, instead of the one-line
 label.
+A card that must not open while the pointer only passes over a dense list
+passes `restDelayMs` (the Activity feed uses 800): the pointer has to rest, each
+move restarts the wait, focus does not open it, and every other tooltip keeps
+its 400ms. `isOpen` forces a tooltip open from the outside, as `i` does on an
+Activity row.
 That comes from the attribute itself. `icon-only-controls-carry-a-tooltip`
 enforces the rule.
 

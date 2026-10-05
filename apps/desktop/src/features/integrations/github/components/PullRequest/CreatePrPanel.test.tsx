@@ -38,10 +38,13 @@ type Store = {
   readonly workspaces: ReadonlyArray<{ id: string; rootPath: string; kind: 'repo' }>;
   workspaceOverrides: Record<string, { readonly taskModels: TaskModelPreferences | null }>;
   readonly requestScribe: ReturnType<typeof vi.fn<RequestScribe>>;
+  readonly openScribePullRequest: ReturnType<typeof vi.fn<OpenScribePullRequest>>;
   scribeWork: Record<string, unknown>;
 };
 
 type RequestScribe = (input: Readonly<Record<string, unknown>>) => Promise<string>;
+
+type OpenScribePullRequest = (input: { readonly key: string }) => Promise<void>;
 
 type ConfigProps = {
   readonly value: AgentSpawnConfigValue;
@@ -85,6 +88,7 @@ const h = vi.hoisted(() => ({
     workspaces: [{ id: 'workspace-1', rootPath: '/repo', kind: 'repo' }],
     workspaceOverrides: {},
     requestScribe: vi.fn<RequestScribe>(async () => 'pr:mount-1'),
+    openScribePullRequest: vi.fn<OpenScribePullRequest>(async () => undefined),
     scribeWork: {} as Record<string, unknown>,
   } satisfies Store,
 }));
@@ -173,6 +177,7 @@ beforeEach(() => {
   h.store.navigate.mockClear();
   h.store.sessionPhaseRuns = {};
   h.store.requestScribe.mockClear();
+  h.store.openScribePullRequest.mockClear();
   h.store.scribeWork = {};
   h.showToast.mockClear();
   h.store.workspaceOverrides = {};
@@ -276,34 +281,37 @@ describe('CreatePrPanel', () => {
 
   it('asks Scribe for the text with the chosen config and notes, and never spawns a generalist', async () => {
     renderPanel();
+    await screen.findByRole('combobox', { name: 'Branch' });
     switchToAgentMode();
     fireEvent.click(screen.getByRole('button', { name: 'Choose agent config' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Write it' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Write and open' }));
 
     await waitFor(() => expect(h.store.requestScribe).toHaveBeenCalledOnce());
     expect(h.store.requestScribe.mock.calls[0]![0]).toMatchObject({
       sessionId: SESSION_ID,
       mountId: 'mount-1',
-      task: { kind: 'pr', closedPrNumber: null, isDraft: true },
+      task: { kind: 'pr', closedPrNumber: null, isDraft: true, base: 'main' },
       hint: 'Keep the public API stable.',
       routing: { provider: 'codex', model: 'gpt-5.6-luna', effort: 'medium' },
     });
     expect(h.store.spawnAgent).not.toHaveBeenCalled();
   });
 
-  it('fills the form with the text Scribe wrote and signs the body it did not change', async () => {
-    h.store.scribeWork = {
-      'pr:mount-1': {
-        status: 'ready',
-        output: {
-          prTitle: 'Make ledger postings idempotent',
-          prBody: 'Retried batches no longer post twice.',
-          commitMessages: [],
-          changelogEntry: '- Retried batches no longer double post',
-        },
-        error: null,
+  const failedScribe = (error: string) => ({
+    'pr:mount-1': {
+      status: 'failed',
+      output: {
+        prTitle: 'Make ledger postings idempotent',
+        prBody: 'Retried batches no longer post twice.',
+        commitMessages: [],
+        changelogEntry: '- Retried batches no longer double post',
       },
-    };
+      error,
+    },
+  });
+
+  it('keeps the text Scribe wrote in the form when opening failed, and signs the body it did not change', async () => {
+    h.store.scribeWork = failedScribe('remote: Permission denied');
     renderPanel();
     await screen.findByRole('combobox', { name: 'Branch' });
 
@@ -323,6 +331,87 @@ describe('CreatePrPanel', () => {
     );
   });
 
+  it('shows why opening failed where the person clicked, with a Retry that reuses the text', async () => {
+    h.store.scribeWork = failedScribe("Couldn't push ak/card-config: remote: Permission denied");
+    renderPanel();
+    await screen.findByRole('combobox', { name: 'Branch' });
+
+    expect(screen.getByRole('alert').textContent).toContain(
+      "Couldn't push ak/card-config: remote: Permission denied",
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+
+    expect(h.store.openScribePullRequest).toHaveBeenCalledExactlyOnceWith({ key: 'pr:mount-1' });
+    expect(h.store.requestScribe).not.toHaveBeenCalled();
+  });
+
+  it('offers no Retry when Scribe wrote nothing to retry with', async () => {
+    h.store.scribeWork = {
+      'pr:mount-1': { status: 'failed', output: null, error: 'Scribe wrote no text.' },
+    };
+    renderPanel();
+    await screen.findByRole('combobox', { name: 'Branch' });
+
+    expect(screen.getByRole('alert').textContent).toContain('Scribe wrote no text.');
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+  });
+
+  it('says it is pushing and opening while the engine works, and blocks a second click', async () => {
+    h.store.scribeWork = {
+      'pr:mount-1': { status: 'creating', output: null, error: null },
+    };
+    renderPanel();
+    await screen.findByRole('combobox', { name: 'Branch' });
+
+    expect(screen.getByText('Pushing the branch and opening the pull request.')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Create PR' }).hasAttribute('disabled')).toBe(true);
+  });
+
+  it('hands over to the branch page once the pull request it asked for exists', async () => {
+    const onCreated = vi.fn();
+    const view = render(
+      <CreatePrPanel
+        sessionId={SESSION_ID}
+        defaultTitle="Refactor PR cards"
+        onCreated={onCreated}
+      />,
+    );
+    switchToAgentMode();
+    fireEvent.click(screen.getByRole('button', { name: 'Write and open' }));
+    await waitFor(() => expect(h.store.requestScribe).toHaveBeenCalledOnce());
+    expect(onCreated).not.toHaveBeenCalled();
+
+    h.store.scribeWork = {
+      'pr:mount-1': { status: 'created', output: null, error: null },
+    };
+    view.rerender(
+      <CreatePrPanel
+        sessionId={SESSION_ID}
+        defaultTitle="Refactor PR cards"
+        onCreated={onCreated}
+      />,
+    );
+
+    await waitFor(() => expect(onCreated).toHaveBeenCalledOnce());
+  });
+
+  it('does not close on a pull request opened by an earlier request', async () => {
+    const onCreated = vi.fn();
+    h.store.scribeWork = {
+      'pr:mount-1': { status: 'created', output: null, error: null },
+    };
+    render(
+      <CreatePrPanel
+        sessionId={SESSION_ID}
+        defaultTitle="Refactor PR cards"
+        onCreated={onCreated}
+      />,
+    );
+    await screen.findByRole('combobox', { name: 'Branch' });
+
+    expect(onCreated).not.toHaveBeenCalled();
+  });
+
   it('blocks both create actions while a drafting agent or Scribe works', async () => {
     h.store.sessionPhaseRuns = { 'session-2': [draftingAgent()] };
     renderPanel();
@@ -333,7 +422,7 @@ describe('CreatePrPanel', () => {
       screen.getByText('An agent is already opening a pull request for this session.'),
     ).toBeDefined();
     switchToAgentMode();
-    fireEvent.click(screen.getByRole('button', { name: 'Write it' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Write and open' }));
 
     expect(h.store.requestScribe).not.toHaveBeenCalled();
   });
@@ -399,7 +488,7 @@ describe('CreatePrPanel', () => {
     h.store.sessionExternalTasks = { 'session-2': [linkedIssue({})] };
     renderPanel();
     switchToAgentMode();
-    fireEvent.click(screen.getByRole('button', { name: 'Write it' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Write and open' }));
 
     await waitFor(() => expect(h.store.requestScribe).toHaveBeenCalledOnce());
     expect(h.store.requestScribe.mock.calls[0]![0]).toMatchObject({

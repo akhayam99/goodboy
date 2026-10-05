@@ -27,6 +27,7 @@ export type RoutingLabelModel = {
   readonly provider: ProviderId | null;
   readonly label: RoutingTriggerLabel | null;
   readonly tooltip: string;
+  readonly divergence: string | null;
   readonly isDiverged: boolean;
 };
 
@@ -118,7 +119,7 @@ export const routingLabelModel = ({
 }: Params): RoutingLabelModel => {
   const resolved = knownProvider({ provider, model });
   if (model == null) {
-    return { provider: resolved, label: null, tooltip: '', isDiverged: false };
+    return { provider: resolved, label: null, tooltip: '', divergence: null, isDiverged: false };
   }
   const label = labelOf({ provider: resolved, model, effort: effortLevel(effort) });
   const ranProvider = provider ?? resolved;
@@ -158,6 +159,7 @@ export const routingLabelModel = ({
     provider: resolved,
     label,
     tooltip: divergence == null ? route : `${route}. ${divergence}`,
+    divergence,
     isDiverged: divergence != null,
   };
 };

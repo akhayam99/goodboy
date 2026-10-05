@@ -151,11 +151,8 @@ const askText = ({
   return title;
 };
 
-const hasHiddenAttention = ({ item }: { readonly item: TimelineRowItem }): boolean =>
-  item.subagents !== undefined && item.subagents.attentionKeys.length > 0;
-
 const isAskingRow = ({ item }: { readonly item: TimelineRowItem }): boolean =>
-  isRowNeedingYou({ state: item.rowState }) || hasHiddenAttention({ item });
+  isRowNeedingYou({ state: item.rowState }) || item.hasSubagentAttention === true;
 
 const runOwnerOf = ({
   runItem,

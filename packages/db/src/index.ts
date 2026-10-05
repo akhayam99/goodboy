@@ -383,6 +383,7 @@ export {
   resolveDiffComment,
   reopenDiffComment,
   deleteDiffComment,
+  restoreDiffComment,
   assignDiffCommentTarget,
   type DiffCommentAuthor,
   type DiffCommentTarget,
@@ -464,6 +465,13 @@ export {
   type InsertArtifactInput,
   type UpdateArtifactSourceInput,
 } from './queries/artifact';
+export {
+  deleteArtifactComment,
+  insertArtifactComment,
+  listArtifactComments,
+  setArtifactCommentsStatus,
+  updateArtifactCommentBody,
+} from './queries/artifactComment';
 export {
   annotateArtifactRevision,
   listArtifactRevisions,

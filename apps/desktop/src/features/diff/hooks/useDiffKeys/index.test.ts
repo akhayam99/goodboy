@@ -72,7 +72,7 @@ describe('useDiffKeys', () => {
   });
 
   it('skips the files of a closed folder', () => {
-    const { jumpTo } = mount({ activePath: 'api/b.ts', collapsed: ['web'] });
+    const { jumpTo } = mount({ activePath: 'api/b.ts', collapsed: ['dir:web'] });
     pressShortcut({ id: 'diff.fileDown' });
     expect(jumpTo).toHaveBeenCalledWith('root.ts');
   });
@@ -114,13 +114,13 @@ describe('useDiffKeys', () => {
   it('closes the folder of the file in view', () => {
     const { toggleFolder } = mount({ activePath: 'web/c.ts' });
     pressShortcut({ id: 'diff.closeFolder' });
-    expect(toggleFolder).toHaveBeenCalledWith('web');
+    expect(toggleFolder).toHaveBeenCalledWith('dir:web');
   });
 
   it('opens the folder of the file in view', () => {
-    const { toggleFolder } = mount({ activePath: 'web/c.ts', collapsed: ['web'] });
+    const { toggleFolder } = mount({ activePath: 'web/c.ts', collapsed: ['dir:web'] });
     pressShortcut({ id: 'diff.openFolder' });
-    expect(toggleFolder).toHaveBeenCalledWith('web');
+    expect(toggleFolder).toHaveBeenCalledWith('dir:web');
   });
 
   it('leaves a root file without a folder to close', () => {

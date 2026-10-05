@@ -1,7 +1,6 @@
 import { ValueToken, WORK_ROW, cn, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import type { MountDiffStat } from '../../../../../../store';
-import { AgentKindChip } from '../../../../../../shared/components/AgentKindChip';
 import { agentDisplayName } from '../../../../../../shared/utils/agentDisplayName';
 import type {
   TimelineResolveBatchEntry,
@@ -29,11 +28,11 @@ import type {
   TimelineStreamEntry,
 } from '../../../../timeline/buildTimelineStream';
 import type { TimelineRowGrade } from '../../../../../workTreeModel/timelineRhythm';
-import { TimelineProviderGlyph } from './TimelineProviderGlyph';
+import { TimelineRoleGlyph } from './TimelineRoleGlyph';
+import type { TimelineRowIdentity } from './timelineRowIdentity';
 import { TimelineRowWorktrees } from './TimelineRowWorktrees';
 import { resolveBatchTag, resolveBatchTitle } from '../../../../timeline/resolveBatchSummary';
 import { TimelineGroupLabel } from './TimelineGroupLabel';
-import { TimelineFoldTitle } from './TimelineFoldTitle';
 import { TimelineRunLabel } from './TimelineRunLabel';
 import { DiffStat } from '../../../DiffStat';
 
@@ -41,7 +40,8 @@ type Props = {
   readonly item: TimelineRowItem;
   readonly diffStat?: MountDiffStat | null;
   readonly worktrees?: ReadonlyArray<string>;
-  readonly provider?: string | null;
+  readonly identity?: TimelineRowIdentity | null;
+  readonly isCardOpen?: boolean;
 };
 
 type FactParams = {
@@ -181,24 +181,27 @@ const titleOf = ({ entry, segments }: TitleParams): string => {
 };
 
 type ChipParams = EntryParams & {
-  readonly grade: TimelineRowGrade;
+  readonly identity: TimelineRowIdentity | null;
+  readonly isCardOpen: boolean;
 };
 
-const chipOf = ({ entry, grade }: ChipParams) => {
+const chipOf = ({ entry, identity, isCardOpen }: ChipParams) => {
   if (entry.kind !== 'agent') {
     return null;
   }
-  const isChained = entry.chain != null;
-  if (grade !== 'entry' && !isChained) {
+  if (identity !== null && !identity.hasGlyph) {
     return null;
   }
-  if (!isChained) {
-    return <AgentKindChip kind={entry.agentKind} className={WORK_ROW.kindChip} />;
+  const glyph = (
+    <TimelineRoleGlyph kind={entry.agentKind} identity={identity} isCardOpen={isCardOpen} />
+  );
+  if (entry.chain == null) {
+    return glyph;
   }
   return (
     <span className="inline-flex shrink-0 items-center gap-1 self-center">
       <CONCEPT_ICONS.chain size={10} aria-hidden className="text-faint-foreground" />
-      <AgentKindChip kind={entry.agentKind} className={WORK_ROW.kindChip} />
+      {glyph}
     </span>
   );
 };
@@ -207,11 +210,12 @@ export const TimelineRowLabel = ({
   item,
   diffStat = null,
   worktrees = NO_WORKTREES,
-  provider = null,
+  identity = null,
+  isCardOpen = false,
 }: Props) => {
   const { entry, grade } = item;
   if (entry.kind === 'run') {
-    return <TimelineRunLabel entry={entry} summary={item.fold?.summary ?? null} />;
+    return <TimelineRunLabel entry={entry} identity={identity} isCardOpen={isCardOpen} />;
   }
   if (entry.kind === 'resolveBatch') {
     return (
@@ -261,7 +265,7 @@ export const TimelineRowLabel = ({
       title={detail === null ? title : `${title} · ${detail}`}
       className={cn(
         'flex items-center overflow-hidden',
-        isAgent ? (item.fold === undefined ? cn(WORK_ROW.title, 'flex-1') : 'min-w-24') : 'min-w-0',
+        isAgent ? cn(WORK_ROW.title, 'flex-1') : 'min-w-0',
         isStep ? 'text-label' : 'text-body',
         emphasis === 'muted' || isQueued || grade === 'fact'
           ? 'text-muted-foreground'
@@ -304,17 +308,12 @@ export const TimelineRowLabel = ({
   return (
     <>
       {item.ordinal != null ? (
-        <span className="w-6 shrink-0 text-right text-chip text-faint-foreground">
+        <span className="w-4 shrink-0 text-left text-chip text-faint-foreground">
           {item.ordinal}
         </span>
       ) : null}
-      {chipOf({ entry, grade })}
-      {isAgent ? <TimelineProviderGlyph provider={provider} /> : null}
-      {item.fold === undefined ? (
-        titleNode
-      ) : (
-        <TimelineFoldTitle summary={item.fold.summary}>{titleNode}</TimelineFoldTitle>
-      )}
+      {chipOf({ entry, identity, isCardOpen })}
+      {titleNode}
       {diffStat == null ? null : (
         <span className="self-center">
           <DiffStat additions={diffStat.additions} deletions={diffStat.deletions} />

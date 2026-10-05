@@ -17,9 +17,7 @@ const targetOf = ({
   const toggles = Array.from(
     window.document.querySelectorAll<HTMLElement>('button[aria-expanded="false"]'),
   );
-  return (
-    toggles.find((toggle) => /Resolve #318 · \d+ agents/.test(toggle.textContent ?? '')) ?? null
-  );
+  return toggles.find((toggle) => /^\d+ files/.test(toggle.textContent ?? '')) ?? null;
 };
 
 export const ActivityResolvesStage = ({ step }: { readonly step: ActivityResolvesStep }) => {

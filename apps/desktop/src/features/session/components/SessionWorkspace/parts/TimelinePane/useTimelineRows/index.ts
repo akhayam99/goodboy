@@ -298,12 +298,11 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
       agents,
       spans: spans ?? [],
       spendByAgentId,
-      spendByRunId,
       previous: totalsCache.current,
     });
     totalsCache.current = next;
     return next;
-  }, [agents, spans, spendByAgentId, spendByRunId, stream.items]);
+  }, [agents, spans, spendByAgentId, stream.items]);
 
   const shownQuestions = useMemo(() => {
     const shown = new Set(shownQuestionIds({ items: stream.items }));
@@ -357,11 +356,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
 
   const railCache = useRef<ReadonlyMap<string, RailRow>>(new Map());
   const rail = useMemo(() => {
-    const layout = layoutTimelineRail({
-      rows: laidOutItems,
-      groups: stream.groups,
-      isIndentOnly: true,
-    });
+    const layout = layoutTimelineRail({ rows: laidOutItems, groups: stream.groups });
     const rows = keepEqualById({ previous: railCache.current, next: layout.rows });
     railCache.current = new Map(rows.map((row) => [row.id, row]));
     return { ...layout, rows };

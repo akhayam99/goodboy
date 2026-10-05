@@ -12,6 +12,77 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.19.0
+
+Activity reads newest first and says who did the work, plans open beside the planner and take comments, and the Files tab keeps its place.
+
+This version updates your data in one direction. To go back to 0.18, restore the backup Goodboy made before updating.
+
+### New
+
+#### Activity reads newest first
+<!-- gb area=sessions -->
+
+The feed reads up like a git graph: the newest row on top, the steps of a run above the run row, and the clock never rising as you go down. Each run gets a lane in its own colour, dashed up to Now while the run is live, and a click on the lane opens the run page.
+
+A finished run or step folds into one indented count row on its lane, such as 3 subagents or 6 steps and 1 question answered. Click it or press Right to open it and Left to fold it. A branch that is still working stays open.
+
+#### Who did the work on every row
+<!-- gb area=sessions -->
+
+Each agent row starts with its role as a small icon, and a workflow row with an icon of its own. On the right, the provider and the model that ran come before the duration, with the cost under it. When a step moved to another model, every model shows in the order it ran, as Kimi K3 → Sonnet 5.5.
+
+A run shows Sonnet 5.5 + 1 on two models and 4 models on more. Rest the pointer on a role icon or a model to open its card: the model and effort, start and finish, tokens, cost and why a model took over. `I` on a focused row opens it.
+
+#### Plans open beside the planner
+<!-- gb area=artifacts -->
+
+In the planner's chat and in its Brief, a plan is one row as wide as the page, with its version, its state and Run plan. Press it to read the plan in a drawer at half the window, with the agent still where you were. Expand gives it the whole pane, and Open in Artifacts is the only button that leaves.
+
+While the planner reworks a plan, the row and the drawer say Revising to v2, the plan is dimmed and Run plan is off with the reason. When the new version lands, the earlier row turns into a slim line, Plan v1 replaced by v2, that opens v1.
+
+#### Comments on a plan
+<!-- gb area=artifacts -->
+
+Point at a part, a heading, a paragraph or a few selected words of a plan and leave a comment, on the Artifacts page or in the drawer. A comment stays a draft, kept across a restart, until you press Send to planner. It posts them in the order of the plan, each with the text it points at, and asks for the full updated plan.
+
+When the new version lands, each comment reads Addressed or Not changed in v2. A run held for your approval takes comments too, with Approve plan next to Send to planner.
+
+### Improved
+
+#### Run plan says what it did
+<!-- gb area=artifacts -->
+
+A plan that came from a workflow continues that workflow. When the workflow cannot take it, nothing starts and the toast says why, with Open the run. Only a plan whose run was discarded starts an implementer outside the workflow, and the toast says so.
+
+#### Discard unassigned notes
+<!-- gb area=review -->
+
+Each note under Unassigned notes has Discard next to Move to, and Discard all appears from two notes. Discard acts at once and offers Undo, and Cmd+Z brings the same note back. Move to opens a chooser when the session has several branches.
+
+#### Create PR keeps the text the Scribe wrote
+<!-- gb area=review -->
+
+Create PR now pushes the branch and opens the draft pull request as soon as the Scribe finishes, even if you left the page. The text shows in the Scribe's transcript and in its Brief as Pull request text.
+
+When a step fails, the reason and the text stay, and Retry runs the step again. A later question to the Scribe only replaces the parts it answers.
+
+#### Send a question as a message
+<!-- gb area=workflows -->
+
+A blocking question has Send as message. Write what you mean, press it, and the agent gets your words as a normal message while the question closes.
+
+### Fixed
+
+- A step's first message shows its text again and no longer reads older format. <!-- gb area=workflows -->
+- A reply that says earlier steps are waiting on a confirmation is no longer taken for a blocking question. <!-- gb area=workflows -->
+- Ask agent in the note box of a line keeps what you wrote under the quoted lines. <!-- gb area=review -->
+- A repeated step transition or credential notice shows once in the transcript. <!-- gb area=sessions -->
+- Each Activity label sits right beside its own marker, and children step in by one lane. <!-- gb area=sessions -->
+- Icon buttons keep their full icon in the smallest size. <!-- gb area=app -->
+- The Files tab shows the diff in the order of the tree, and moving between files keeps your place. <!-- gb area=review -->
+- File names with accents or spaces show as they are written in the Files tab. <!-- gb area=review -->
+
 ## Goodboy v0.18.1
 
 The Files tab gets a changed-files tree with reading progress, filters and keys, and you can comment on a whole file.
