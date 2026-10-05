@@ -147,3 +147,64 @@ describe('useReviewState', () => {
     ]);
   });
 });
+
+describe('useReviewState on a big change', () => {
+  const bigFiles = [
+    ...Array.from({ length: 320 }, (_, index) => fileAt(`apps/web/c${index}.ts`)),
+    ...Array.from({ length: 20 }, (_, index) => fileAt(`apps/api/r${index}.ts`)),
+  ];
+
+  const runBig = (files: ReadonlyArray<FileDiff>) =>
+    renderHook(
+      ({ current }) =>
+        useReviewState({
+          sessionId: 'session-1' as SessionId,
+          worktreePath: '/w/ledger',
+          diff: current,
+        }),
+      { initialProps: { current: { ...diffOf(vi.fn()), files } } },
+    );
+
+  const reload = (files: ReadonlyArray<FileDiff>) => ({
+    current: { ...diffOf(vi.fn()), files },
+  });
+
+  it('starts with the folders over 50 files closed', () => {
+    const { result } = runBig(bigFiles);
+
+    expect([...result.current.collapsed]).toEqual(['apps/web']);
+  });
+
+  it('opens a closed folder when the diff jumps into it', () => {
+    const { result } = runBig(bigFiles);
+
+    act(() => result.current.jumpTo('apps/web/c10.ts'));
+
+    expect(result.current.collapsed.has('apps/web')).toBe(false);
+  });
+
+  it('closes the big folders again when a different set of files arrives', () => {
+    const { result, rerender } = runBig(bigFiles);
+    act(() => result.current.toggleFolder('apps/web'));
+    expect(result.current.collapsed.size).toBe(0);
+
+    rerender(reload([...bigFiles, fileAt('apps/web/new.ts')]));
+
+    expect([...result.current.collapsed]).toEqual(['apps/web']);
+  });
+
+  it('keeps what the reader opened when the same files reload', () => {
+    const { result, rerender } = runBig(bigFiles);
+    act(() => result.current.toggleFolder('apps/web'));
+
+    rerender(reload([...bigFiles]));
+
+    expect(result.current.collapsed.size).toBe(0);
+  });
+
+  it('leaves a small change fully open', () => {
+    const { result } = runBig(bigFiles.slice(0, 80));
+
+    expect(result.current.collapsed.size).toBe(0);
+  });
+});

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, useRef, type ReactNode } from 'react';
 import { PencilLine } from 'lucide-react';
 import { Button, ErrorStrip, LensEmptyState, PageColumn, Skeleton, formatError } from '@goodboy/ui';
 import type { DiffView as DiffViewKind, SessionId } from '@goodboy/types';
@@ -9,9 +9,14 @@ import { openFileInWorkspace } from '../../../../shared/lib/editor';
 import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
 import { DiffViewSelector } from '../../../permissions/components/DiffViewSelector';
 import { useDiffKeys } from '../../hooks/useDiffKeys';
+import { useNarrowPane } from '../../hooks/useNarrowPane';
 import { useReviewState } from '../../hooks/useReviewState';
 import type { SessionDiff } from '../../hooks/useSessionDiff';
+import { useTreePanel } from '../../hooks/useTreePanel';
 import { ChangeTree } from '../ChangeTree';
+import { TreeStrip } from '../ChangeTree/TreeStrip';
+import { TreeEmpty } from '../ChangeTree/TreeEmpty';
+import { TreeLoading } from '../ChangeTree/TreeLoading';
 import { DiffView } from '../DiffView';
 
 type Props = {
@@ -72,38 +77,33 @@ export const SessionDiffPane = ({
     selectMountBaseBranch({ state: s, sessionId, path: worktreePath }),
   );
 
-  const [treeOpen, setTreeOpen] = useState(true);
-  const asideRef = useRef<HTMLElement | null>(null);
-  const focusPending = useRef(false);
-
-  const focusTreeRow = useCallback(() => {
-    const rows = asideRef.current?.querySelectorAll<HTMLElement>('button') ?? [];
-    const current = asideRef.current?.querySelector<HTMLElement>('[aria-current="true"]');
-    (current ?? rows[0])?.focus();
-  }, []);
-
-  const toggleTree = useCallback(() => setTreeOpen((open) => !open), []);
-
-  const focusTree = useCallback(() => {
-    if (treeOpen) {
-      focusTreeRow();
-      return;
-    }
-    focusPending.current = true;
-    setTreeOpen(true);
-  }, [focusTreeRow, treeOpen]);
-
-  useEffect(() => {
-    if (treeOpen && focusPending.current) {
-      focusPending.current = false;
-      focusTreeRow();
-    }
-  }, [focusTreeRow, treeOpen]);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const isNarrow = useNarrowPane(rootRef);
+  const panel = useTreePanel({ isNarrow });
 
   const isEmpty = !diff.loading && diff.error === null && diff.files.length === 0;
   const hasTree = !diff.loading && diff.error === null && diff.files.length > 0;
 
-  useDiffKeys({ enabled: hasTree, review, onToggleTree: toggleTree, onFocusTree: focusTree });
+  useDiffKeys({
+    enabled: hasTree,
+    review,
+    onToggleTree: panel.toggle,
+    onFocusTree: panel.focus,
+    onFocusFilter: panel.focusFilter,
+  });
+
+  const viewedCount = useMemo(
+    () => review.tree.files.filter((file) => review.viewed.stateOf(file) === 'viewed').length,
+    [review.tree.files, review.viewed],
+  );
+
+  const pickFile = useCallback(
+    (path: string) => {
+      review.jumpTo(path);
+      panel.dismiss();
+    },
+    [panel, review],
+  );
 
   const openInEditor = useCallback(
     async (filePath: string) => {
@@ -186,14 +186,16 @@ export const SessionDiffPane = ({
       <ErrorStrip label="the diff" error={new Error(diff.error)} onRetry={diff.refresh} />
     </PageColumn>
   ) : isEmpty ? (
-    <PageColumn>
-      <LensEmptyState
-        tone={CONCEPT_TONE.diff}
-        icon={CONCEPT_ICONS.diff}
-        title={emptyTitle(diff.view, baseBranch)}
-        description={emptyBlurb(diff.view, baseBranch)}
-      />
-    </PageColumn>
+    isNarrow ? (
+      <PageColumn>
+        <LensEmptyState
+          tone={CONCEPT_TONE.diff}
+          icon={CONCEPT_ICONS.diff}
+          title={emptyTitle(diff.view, baseBranch)}
+          description={emptyBlurb(diff.view, baseBranch)}
+        />
+      </PageColumn>
+    ) : null
   ) : (
     <DiffView
       files={diff.files}
@@ -219,25 +221,60 @@ export const SessionDiffPane = ({
     />
   );
 
-  const showTree = hasTree && treeOpen;
+  const tree = (
+    <ChangeTree
+      tree={review.tree}
+      activePath={review.activePath}
+      collapsed={review.collapsed}
+      onToggleFolder={review.toggleFolder}
+      onPick={pickFile}
+      stateOf={review.viewed.stateOf}
+      noteCountOf={review.noteCountOf}
+    />
+  );
+
+  const treeColumn = diff.loading ? (
+    <TreeLoading />
+  ) : isEmpty ? (
+    <TreeEmpty
+      title={emptyTitle(diff.view, baseBranch)}
+      description={emptyBlurb(diff.view, baseBranch)}
+    />
+  ) : hasTree ? (
+    tree
+  ) : null;
+
+  const docked = !isNarrow && treeColumn !== null && (panel.isOpen || !hasTree);
+  const strip = hasTree && (isNarrow || !panel.isOpen);
+  const overlay = isNarrow && hasTree && panel.isOpen;
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1">
-      {showTree && (
+    <div ref={rootRef} className="relative flex min-h-0 min-w-0 flex-1">
+      {docked && (
         <aside
-          ref={asideRef}
+          ref={panel.asideRef}
           aria-label="Files"
-          className="hidden min-h-0 w-[280px] shrink-0 pl-3 @4xl:flex"
+          className="flex min-h-0 w-[280px] shrink-0 pl-3"
         >
-          <ChangeTree
-            tree={review.tree}
-            activePath={review.activePath}
-            collapsed={review.collapsed}
-            onToggleFolder={review.toggleFolder}
-            onPick={review.jumpTo}
-            stateOf={review.viewed.stateOf}
-            noteCountOf={review.noteCountOf}
-          />
+          {treeColumn}
+        </aside>
+      )}
+      {strip && (
+        <TreeStrip
+          ref={panel.stripRef}
+          viewed={viewedCount}
+          total={review.tree.files.length}
+          isOpen={panel.isOpen}
+          onToggle={panel.toggle}
+        />
+      )}
+      {overlay && (
+        <aside
+          ref={panel.asideRef}
+          aria-label="Files"
+          className="absolute inset-y-0 left-11 z-10 flex w-[280px] border-r border-border-soft bg-background py-2 pl-3 shadow-lg"
+        >
+          {tree}
         </aside>
       )}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">

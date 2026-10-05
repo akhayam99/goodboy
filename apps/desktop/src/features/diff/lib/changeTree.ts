@@ -190,3 +190,15 @@ export const ancestorIds = ({
   }
   return out;
 };
+
+const BIG_CHANGE_FILES = 300;
+const BIG_FOLDER_FILES = 50;
+
+export const defaultCollapsed = ({ tree }: { readonly tree: ChangeTree }): ReadonlySet<string> => {
+  if (tree.files.length <= BIG_CHANGE_FILES) {
+    return new Set();
+  }
+  const big = tree.rows.filter((row) => row.kind === 'folder' && row.fileCount > BIG_FOLDER_FILES);
+  const parentsOfBig = new Set(big.map((row) => row.parentId));
+  return new Set(big.filter((row) => !parentsOfBig.has(row.id)).map((row) => row.id));
+};

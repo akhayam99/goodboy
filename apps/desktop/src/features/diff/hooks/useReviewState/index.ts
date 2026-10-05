@@ -3,7 +3,12 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectMountForPath } from '../../../../store/slices/project-mounts/selectors';
 import type { DiffComments, DiffViewed } from '../../components/DiffView/types';
-import { ancestorIds, buildChangeTree, type ChangeTree } from '../../lib/changeTree';
+import {
+  ancestorIds,
+  buildChangeTree,
+  defaultCollapsed,
+  type ChangeTree,
+} from '../../lib/changeTree';
 import type { SessionDiff } from '../useSessionDiff';
 import { useDiffNotes } from '../useDiffNotes';
 import { useDiffReviewThreads } from '../useDiffReviewThreads';
@@ -26,8 +31,6 @@ export type ReviewState = {
   readonly jumpTo: (path: string) => void;
 };
 
-const NO_FOLDERS_COLLAPSED: ReadonlySet<string> = new Set();
-
 export const useReviewState = ({ sessionId, worktreePath, diff }: Params): ReviewState => {
   const { comments: noteComments } = useDiffNotes({ sessionId });
   const mountId = useAppStore(
@@ -43,7 +46,17 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
   );
   const tree = useMemo(() => buildChangeTree({ files: diff.files }), [diff.files]);
   const [activePath, setActivePath] = useState<string | null>(null);
-  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(NO_FOLDERS_COLLAPSED);
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => defaultCollapsed({ tree }));
+  const pathsKey = useMemo(() => tree.files.map((file) => file.path).join('\n'), [tree.files]);
+  const seenPaths = useRef(pathsKey);
+
+  useEffect(() => {
+    if (seenPaths.current === pathsKey) {
+      return;
+    }
+    seenPaths.current = pathsKey;
+    setCollapsed(defaultCollapsed({ tree }));
+  }, [pathsKey, tree]);
   const rowsRef = useRef(tree.rows);
   rowsRef.current = tree.rows;
   const { focusFile } = diff;

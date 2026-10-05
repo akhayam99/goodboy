@@ -7,7 +7,6 @@ import { vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { StarredIssue, Workspace, WorkspaceId } from '@goodboy/types';
 import { shortcutGlyphs, type ShortcutId } from '../../../shared/keyboard/registry';
-import { onFilterFocusRequest } from '../../../features/diff/lib/filterFocus';
 import { agentPlace } from '../../../store';
 import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
 import { App } from '../../../App';
@@ -923,8 +922,6 @@ const activeTreeFile = async (): Promise<string> =>
     }, WAIT)
   )?.textContent ?? '';
 
-const filterFocusRequests: string[] = [];
-
 let terminalTabCount = 0;
 
 const openBoardCard = async (): Promise<HTMLElement> => {
@@ -1106,14 +1103,19 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
   }),
   keyRow({
     id: 'diff.focusFilter',
+    note: 'the filter field marks itself with data-diff-filter',
     open: async () => {
       await openDiff();
-      filterFocusRequests.length = 0;
-      const stop = onFilterFocusRequest(() => filterFocusRequests.push('asked'));
+      const field = document.createElement('input');
+      field.setAttribute('data-diff-filter', '');
+      screen.getByRole('complementary', { name: 'Files' }).appendChild(field);
       await pressed('diff.focusFilter', document.body);
-      stop();
     },
-    lands: async () => expect(filterFocusRequests).toHaveLength(1),
+    lands: async () =>
+      waitFor(
+        () => expect(document.activeElement?.hasAttribute('data-diff-filter')).toBe(true),
+        WAIT,
+      ),
   }),
   keyRow({
     id: 'session.model',

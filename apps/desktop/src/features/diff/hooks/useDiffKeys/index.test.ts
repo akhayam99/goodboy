@@ -5,9 +5,7 @@ import { cleanup, renderHook } from '@testing-library/react';
 import type { FileDiff } from '@goodboy/types';
 import { pressShortcut } from '../../../../__tests__/helpers/pressKey';
 import { buildChangeTree } from '../../lib/changeTree';
-import { onFilterFocusRequest } from '../../lib/filterFocus';
 import type { ViewedState } from '../../lib/reviewedFiles';
-import type { ReviewState } from '../useReviewState';
 import { useDiffKeys } from '.';
 
 const fileAt = (path: string): FileDiff => ({
@@ -33,6 +31,7 @@ const mount = ({ activePath, collapsed = [], viewedPaths = [] }: Setup) => {
   const onToggle = vi.fn();
   const onToggleTree = vi.fn();
   const onFocusTree = vi.fn();
+  const onFocusFilter = vi.fn();
   const tree = buildChangeTree({ files: PATHS.map(fileAt) });
   const review = {
     tree,
@@ -45,9 +44,11 @@ const mount = ({ activePath, collapsed = [], viewedPaths = [] }: Setup) => {
         viewedPaths.includes(file.path) ? 'viewed' : 'none',
       onToggle,
     },
-  } as unknown as ReviewState;
-  renderHook(() => useDiffKeys({ enabled: true, review, onToggleTree, onFocusTree }));
-  return { jumpTo, toggleFolder, onToggle, onToggleTree, onFocusTree };
+  } satisfies Parameters<typeof useDiffKeys>[0]['review'];
+  renderHook(() =>
+    useDiffKeys({ enabled: true, review, onToggleTree, onFocusTree, onFocusFilter }),
+  );
+  return { jumpTo, toggleFolder, onToggle, onToggleTree, onFocusTree, onFocusFilter };
 };
 
 afterEach(() => {
@@ -129,15 +130,12 @@ describe('useDiffKeys', () => {
   });
 
   it('asks for the tree focus, the filter focus and the tree toggle', () => {
-    const { onFocusTree, onToggleTree } = mount({ activePath: null });
-    const onFilter = vi.fn();
-    const stop = onFilterFocusRequest(onFilter);
+    const { onFocusTree, onFocusFilter, onToggleTree } = mount({ activePath: null });
     pressShortcut({ id: 'diff.focusTree' });
     pressShortcut({ id: 'diff.focusFilter' });
     pressShortcut({ id: 'diff.toggleTree' });
-    stop();
     expect(onFocusTree).toHaveBeenCalledTimes(1);
-    expect(onFilter).toHaveBeenCalledTimes(1);
+    expect(onFocusFilter).toHaveBeenCalledTimes(1);
     expect(onToggleTree).toHaveBeenCalledTimes(1);
   });
 

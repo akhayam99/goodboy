@@ -2,17 +2,28 @@ import { useCallback, useMemo } from 'react';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { ancestorIds, visibleRows } from '../../lib/changeTree';
 import { nextUnviewedPath, stepPath } from '../../lib/fileOrder';
-import { requestFilterFocus } from '../../lib/filterFocus';
 import type { ReviewState } from '../useReviewState';
+
+type DiffKeysReview = Pick<
+  ReviewState,
+  'tree' | 'activePath' | 'collapsed' | 'toggleFolder' | 'jumpTo' | 'viewed'
+>;
 
 type Params = {
   readonly enabled: boolean;
-  readonly review: ReviewState;
+  readonly review: DiffKeysReview;
   readonly onToggleTree: () => void;
   readonly onFocusTree: () => void;
+  readonly onFocusFilter: () => void;
 };
 
-export const useDiffKeys = ({ enabled, review, onToggleTree, onFocusTree }: Params): void => {
+export const useDiffKeys = ({
+  enabled,
+  review,
+  onToggleTree,
+  onFocusTree,
+  onFocusFilter,
+}: Params): void => {
   const { tree, activePath, collapsed, toggleFolder, jumpTo, viewed } = review;
   const order = useMemo(() => tree.files.map((file) => file.path), [tree.files]);
   const shown = useMemo(
@@ -93,6 +104,6 @@ export const useDiffKeys = ({ enabled, review, onToggleTree, onFocusTree }: Para
   useShortcut('diff.markViewed', markViewed, enabled);
   useShortcut('diff.nextUnviewed', goToUnviewed, enabled);
   useShortcut('diff.focusTree', onFocusTree, enabled);
-  useShortcut('diff.focusFilter', requestFilterFocus, enabled);
+  useShortcut('diff.focusFilter', onFocusFilter, enabled);
   useShortcut('diff.toggleTree', onToggleTree, enabled);
 };

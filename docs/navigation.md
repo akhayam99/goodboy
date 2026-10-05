@@ -1662,7 +1662,7 @@ widths a 1024px window gets with a wide sidebar and an open drawer. Fix, Resolve
 properties; Fix launches from the list or the thread, never from Files.
 
 **Files.** The branch against its base with the change tree on the left
-(`ChangeTree`, 280px, `@4xl` and up): folders first, then files, alphabetical,
+(`ChangeTree`, 280px, from 900px of pane up): folders first, then files, alphabetical,
 and the diff follows the same order. A chain of folders with one child is one
 row (`src/ledger/export`). A folder row holds a progress ring (empty, partial,
 or filled with a check once every file in it is viewed, tooltip `3 of 5
@@ -1800,10 +1800,29 @@ first) and never while typing in a field: `J` and `K` go to the next and
 previous file and skip the files of a closed folder, `[` and `]` are aliases;
 `H` closes and `L` opens the folder of the file in view; `V` marks that file
 viewed and goes to the next unviewed one; `N` goes to the next unviewed file,
-wrapping to the first; `F` puts focus on the tree; `/` asks for the filter field
-through `requestFilterFocus` (`lib/filterFocus.ts`, a window event the filter
-listens to); `⌘⇧B` shows or hides the tree (`⌘B` stays the session sidebar). A
-line under the tree lists `J K move · V viewed · N next unviewed`. A jump is instant, not smooth: file bodies keep
+wrapping to the first; `F` puts focus on the tree; `/` focuses the
+filter field, the one input in the tree column that carries `data-diff-filter`
+(it opens the tree first when it is folded); `⌘⇧B` shows or hides the tree (`⌘B` stays the session sidebar). A
+line under the tree lists `J K move · V viewed · N next unviewed`.
+
+Big and narrow cases (`useNarrowPane`, `useTreePanel`, `lib/windowRows.ts`).
+Past 120 visible rows the tree draws only the rows in view plus a margin (fixed
+28px rows, 44px for a rename), so 512 files scroll as light as 20. A change
+over 300 files starts with its deepest folders over 50 files closed (a parent of
+a big folder stays open), and starts that way again when a different set of
+files arrives, not on a reload of the same files. The diff keeps its own
+progressive mounting; the patch parse stays on the main thread because a
+512-file patch parses and becomes a tree in about 2ms (`largeChange.test.ts`
+fails over 100ms, the point where a worker earns its cost). Under 900px of pane
+(a 1024px window with the session sidebar open) the tree is a 44px strip with
+the progress ring and `12/46`; click it, or `F`, and the tree opens over the
+diff with no scrim; picking a file or `Esc` closes it. `⌘⇧B` on a wide pane
+folds the tree to the same strip. While the diff loads the tree column shows
+skeleton rows and `Loading files…`; an empty diff puts its message in the tree
+column (the pane itself when it is narrow). The `brand-diff-large` scene is the
+512-file case, `brand-diff-many` the 40-file one.
+
+A jump is instant, not smooth: file bodies keep
 `content-visibility` with estimated heights, so for a few frames the view
 measures the picked header and snaps it back to the top until the heights
 settle. The picked file stays the active one until you scroll, so `J` and `K`

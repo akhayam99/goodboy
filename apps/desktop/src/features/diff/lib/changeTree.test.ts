@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { FileDiff } from '@goodboy/types';
-import { ancestorIds, buildChangeTree, visibleRows } from './changeTree';
+import { ancestorIds, buildChangeTree, defaultCollapsed, visibleRows } from './changeTree';
 import { fileKindOf } from './fileStatus';
 
 const fileAt = (path: string, extra: Partial<FileDiff> = {}): FileDiff => ({
@@ -138,6 +138,37 @@ describe('ancestorIds', () => {
       'src',
     ]);
     expect(ancestorIds({ rows, path: 'package.json' })).toEqual([]);
+  });
+});
+
+describe('defaultCollapsed', () => {
+  const many = (folder: string, count: number) =>
+    Array.from({ length: count }, (_, index) => fileAt(`${folder}/f${index}.ts`));
+
+  it('keeps everything open up to 300 files', () => {
+    const tree = buildChangeTree({ files: [...many('big', 120), ...many('also', 120)] });
+
+    expect(defaultCollapsed({ tree }).size).toBe(0);
+  });
+
+  it('closes the folders over 50 files once the change passes 300', () => {
+    const tree = buildChangeTree({
+      files: [...many('big', 260), ...many('mid', 51), ...many('small', 49)],
+    });
+
+    expect([...defaultCollapsed({ tree })].sort()).toEqual(['big', 'mid']);
+  });
+
+  it('keeps a parent open when a folder inside it is the big one', () => {
+    const tree = buildChangeTree({
+      files: [
+        ...many('apps/web/components', 260),
+        ...many('apps/web/routes', 30),
+        ...many('docs', 20),
+      ],
+    });
+
+    expect([...defaultCollapsed({ tree })]).toEqual(['apps/web/components']);
   });
 });
 
