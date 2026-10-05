@@ -10,7 +10,7 @@ type Params = { readonly get: GetFn } & AnswerQuestionsParams;
 
 const NOT_IN_RUN = 'That comment is not part of this fix run';
 
-const openQuestionOf = ({
+export const openQuestionOf = ({
   questions,
   attempts,
   threadId,

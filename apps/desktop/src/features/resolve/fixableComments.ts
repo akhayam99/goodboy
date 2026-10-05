@@ -7,10 +7,3 @@ export const isRunFailedThread = ({ thread }: ThreadParams): boolean =>
 
 export const isFixableThread = ({ thread }: ThreadParams): boolean =>
   thread.stage === 'new' || (thread.stage === 'failed' && isRunFailedThread({ thread }));
-
-export const fixableThreadIds = ({
-  threads,
-}: {
-  readonly threads: ReadonlyArray<ResolveThread>;
-}): ReadonlyArray<string> =>
-  threads.filter((thread) => isFixableThread({ thread })).map((thread) => thread.threadId);

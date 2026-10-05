@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 
-export type ReviewBulkAccept = {
+type ReviewBulkAccept = {
   readonly operationId: string;
   readonly itemIds: ReadonlyArray<string>;
 };

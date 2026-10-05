@@ -395,10 +395,11 @@ pushed yet` when origin has no copy, and `Branch diverged from origin`
   started", with an "Open the agent" action) - the toast the standalone
   PlanReadySuggestion component used to show before the unified resolver
   replaced it in E7-5, restored here.
-- The resolve-threads card ("Draft fixes for N") starts its fixers with the
-  Runs on row and stays where you are. The same toast says how many agents
-  started and on which model, and its action is "Open summary", which opens
-  Review on those comments instead of the agent.
+- The resolve-threads card ("Draft fixes for N") never starts an agent: it
+  sends a `fix` request (`requestReview`) with the fixable comments and opens
+  the launch panel on the Comments tab, pre-filled. The board card "Resolve N
+  comments" does the same. N and the comments come from `eligibleReviewThreads`,
+  which reads the one fixable predicate (`isFixableThread`).
 
 ## Agents
 
@@ -817,10 +818,11 @@ Each comment has four verbs, with single keys while the list has focus:
 comment` when the reviewer changed it, `Add a hint` when the run failed), `Reply` (R, a reply
 without a change) and `Skip` (S), plus `Undo` (U, `Resume` on a skipped
 comment) until the push and `Fix` (F) on a comment nobody started, which opens
-the launch panel. J and K move. A checkbox appears on hover on comments nobody
-started (X toggles the focused row, Cmd+A picks every one of them, Esc clears):
-the bar `3 selected · Fix 3` opens the panel for the pick, and a
-batch is born only from a selection or one `Fix`. Edit, Answer and Reply share one text box, a document: ⌘Enter sends, Enter
+the launch panel. J and K move. A checkbox appears on hover on the comments you
+can fix (open, or couldn't fix) and on ready comments (X toggles the focused
+row, Cmd+A picks every fixable one, Esc clears): the bar `3 selected · Fix 3`
+opens the panel for the fixable pick and `Accept 3` accepts the ready pick, and
+a batch is born only from a selection or one `Fix`. Edit, Answer and Reply share one text box, a document: ⌘Enter sends, Enter
 adds a line, Esc cancels, and Preview shows the markdown. Clicking the reply edits it in place.
 `…` also offers Stop drafting, Resolve without a reply, Open in diff, Agent
 transcript, Open on GitHub and Copy link. Accept and Skip move focus to the
@@ -864,8 +866,12 @@ with a local commit and never pushes.
   before it checks the branch
 
 - Every start goes through one path (`startBatch`): `Fix` on the row of a
-  comment nobody started (hover) or in its detail, `F` on the focused row, or
-  the Activity suggestion. The header has no "Draft fixes" button: a batch is
+  comment nobody started (hover) or in its detail, `F` on the focused row, the
+  `Fix N open comments` line (no run going), the Overview card or the board
+  card. Every door shares one set, the fixable comments: open plus couldn't fix
+  (`isFixableThread`, `features/resolve/fixableComments.ts`); a comment that
+  needs you is answered, never relaunched, and a failed push is retried from
+  the push. The header has no "Draft fixes" button: a batch is
   born from the comments you pick. Opening Review never starts an agent.
   `Fix` opens the **launch panel** in the right column of the Comments tab, in
   place of the thread (never above the columns, never a dialog): the page does
@@ -883,6 +889,24 @@ N` on Cmd+Enter (Esc closes, Cancel too). The commit style has no control in
   page lands. The choice is saved on the batch and on every attempt
   (`launch_choice_json`). Each start carries the thread ids and the
   marker contract
+- Bulk actions on the Comments tab, each one a single store action. With no run
+  (`activeFixRunOf` finds no launch with a live comment) the line under the
+  tabs is `N open comments · Fix N open comments ⌘A`, which opens the panel on
+  the fixable set. With a run, `RunStatusBulkActions` sits on the run line:
+  `Use the recommended answers (N)` (two or more open questions that carry a
+  recommended answer) opens the `Answer N questions` panel in the right column,
+  where each question has its recommended option chosen, `Drop` leaves one in
+  Needs you, and `Continue with N answers` calls `answerQuestions` once for the
+  launch (the same agent, no new one); `Retry N that couldn't fix` calls
+  `retryCouldntFix` with every could-not-fix comment of the launch. `Accept N`
+  on the group header of the ready comments and in the selection bar calls
+  `acceptReviewComments` (`review-bulk` slice): it walks the comments in order
+  through the same accept as the single `Accept` (`acceptReviewItem`), skips
+  one that is no longer ready, keeps going when one throws and names the ones
+  it could not accept. It registers one operation on the app undo stack, so
+  the bar `N accepted · Undo` and Cmd+Z (`app.undo`) revert the whole batch
+  while the comments are still approved and not pushed. Push stays the only
+  push
 - A fix run starts on the resolver role default (Sonnet 5.5 · Medium out of
   the box), never on the model of the last launch. A model picked in the launch
   panel is kept for that session only and the panel says so (`Your pick, kept

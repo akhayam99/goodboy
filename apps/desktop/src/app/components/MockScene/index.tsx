@@ -25,6 +25,13 @@ import { MountMismatchScene } from './scenes/MountMismatchScene';
 import { ResolveScene } from './scenes/ResolveScene';
 import { ResolveLaunchScene } from './scenes/ResolveLaunchScene';
 import { ResolveSelectScene } from './scenes/ResolveSelectScene';
+import {
+  ResolveBulkAcceptedScene,
+  ResolveBulkAnswersScene,
+  ResolveBulkLaunchScene,
+  ResolveBulkRetryScene,
+  ResolveBulkReviewScene,
+} from './scenes/ResolveBulkScene';
 import { BranchCommentsScene } from './scenes/BranchCommentsScene';
 import { BranchNarrowScene } from './scenes/BranchNarrowScene';
 import { BranchPushScene } from './scenes/BranchPushScene';
@@ -197,6 +204,11 @@ export const MOCK_SCENES = {
   resolve: ResolveScene,
   'resolve-select': ResolveSelectScene,
   'resolve-launch': ResolveLaunchScene,
+  'resolve-bulk-launch': ResolveBulkLaunchScene,
+  'resolve-bulk-answers': ResolveBulkAnswersScene,
+  'resolve-bulk-review': ResolveBulkReviewScene,
+  'resolve-bulk-accepted': ResolveBulkAcceptedScene,
+  'resolve-bulk-retry': ResolveBulkRetryScene,
   'branch-comments': BranchCommentsScene,
   'branch-commits': BrandHistoryScene,
   'branch-files': BrandDiffScene,

@@ -31,6 +31,8 @@ import {
 } from '../../../reviewCommentState';
 import type { ResolveWord } from '../../../commentProjection';
 import { checksFailedItemIds } from '../../../checksFailedItemIds';
+import { isBulkAcceptable } from '../../../bulkAccept';
+import { isFixableThread } from '../../../fixableComments';
 import type { ResolveCandidateWithItems } from '../../../../../store/slices/resolve/state';
 
 export type ReviewEntry = {
@@ -49,6 +51,8 @@ export type ReviewEntry = {
   readonly isChecking: boolean;
   readonly checkError: string | null;
   readonly checkAgentId: AgentId | null;
+  readonly isFixable: boolean;
+  readonly isAcceptable: boolean;
 };
 
 export type ReviewGroup = {
@@ -134,6 +138,8 @@ export const useReviewEntries = ({
         isChecking,
         checkError: recheck?.error ?? null,
         checkAgentId: recheck?.agentId ?? null,
+        isFixable: isFixableThread({ thread: row.thread }),
+        isAcceptable: isBulkAcceptable({ state, remote }),
       };
     });
     const groups = REVIEW_COMMENT_GROUPS.map((group) => ({

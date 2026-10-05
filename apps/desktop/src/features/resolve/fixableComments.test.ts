@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { ResolveStage, ResolveThread, ResolveThreadState } from '@goodboy/types';
-import { fixableThreadIds, isFixableThread, isRunFailedThread } from './fixableComments';
+import { isFixableThread, isRunFailedThread } from './fixableComments';
 
 const thread = ({
   threadId = 't',
@@ -50,15 +50,14 @@ describe('fixable comments', () => {
     expect(isFixableThread({ thread: push })).toBe(false);
   });
 
-  it('lists the ids in order', () => {
+  it('keeps open and could-not-fix comments out of a mixed list, in order', () => {
+    const threads = [
+      thread({ threadId: 'a', stage: 'new', state: 'open' }),
+      thread({ threadId: 'b', stage: 'asking', state: 'needs_answer' }),
+      thread({ threadId: 'c', stage: 'failed', state: 'failed' }),
+    ];
     expect(
-      fixableThreadIds({
-        threads: [
-          thread({ threadId: 'a', stage: 'new', state: 'open' }),
-          thread({ threadId: 'b', stage: 'asking', state: 'needs_answer' }),
-          thread({ threadId: 'c', stage: 'failed', state: 'failed' }),
-        ],
-      }),
+      threads.filter((item) => isFixableThread({ thread: item })).map((item) => item.threadId),
     ).toEqual(['a', 'c']);
   });
 });

@@ -90,6 +90,7 @@ const mount = async ({
 
 const FAILED_THREAD_ID = 'PRRT_thread_idempotency';
 const NOT_STARTED_THREAD_ID = 'PRRT_thread_retry_constant';
+const READY_SELECTABLE_COUNT = 2;
 
 const mountFailed = async ({
   failure,
@@ -184,7 +185,7 @@ describe('Review as one flow', () => {
     expect(screen.queryByRole('toolbar', { name: 'Selected comments' })).toBeNull();
     const boxes = within(list()).getAllByRole('checkbox');
     const fixable = Array.from(list().querySelectorAll('[data-fix-row]')).length;
-    expect(boxes.length).toBe(fixable);
+    expect(boxes.length).toBe(fixable + READY_SELECTABLE_COUNT);
     fireEvent.click(boxes[0] as HTMLElement);
 
     const bar = screen.getByRole('toolbar', { name: 'Selected comments' });
