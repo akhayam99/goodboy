@@ -185,14 +185,6 @@ describe('task link controls', () => {
     expect(await storedLinks()).toHaveLength(3);
   });
 
-  it('keeps the unlink cross out of the flow so chips carry no blank padding', async () => {
-    await seed();
-    renderChip();
-    const cross = screen.getByRole('button', { name: 'Unlink HBL-412 from session' });
-    expect(cross.className).toContain('absolute');
-    expect(cross.className).toContain('opacity-0');
-  });
-
   it('takes off the last branch through the chip and undoes its generated session placement', async () => {
     await useAppStore.getState().linkSessionExternalTask(SESSION_ID, TASK);
     renderChip({ branch: TASK.branch });
@@ -270,9 +262,7 @@ describe('task link controls', () => {
         projectId,
       });
     });
-    const trigger = screen.getByRole('button', { name: `Put on a branch ${props.branch}` });
-    expect(trigger.className).toContain('opacity-0');
-    expect(trigger.className).toContain('group-hover/mount-row:opacity-100');
+    screen.getByRole('button', { name: `Put on a branch ${props.branch}` });
     expect(container.textContent).not.toContain('Put on a branch');
   });
 

@@ -563,13 +563,15 @@ describe('SessionWorkspace breadcrumb visibility', () => {
     store.selectedAgentId = {};
     store.activeLens = { [SESSION_ID]: null };
     const view = render(<SessionWorkspace session={session} isActive />);
-    const column = () =>
-      view.container.querySelector('[data-slot="trail-bar"] [data-page-column]')?.className ?? '';
-    expect(column()).toContain('mx-auto');
+    const width = () =>
+      view.container
+        .querySelector('[data-slot="trail-bar"] [data-page-column]')
+        ?.getAttribute('data-width');
+    expect(width()).toBe('column');
 
     store.activeLens = { [SESSION_ID]: 'branch' };
     view.rerender(<SessionWorkspace session={session} isActive />);
-    expect(column()).not.toContain('mx-auto');
+    expect(width()).toBe('full');
   });
 
   it('keeps one trail band mounted across lens, agent and studio changes', () => {
