@@ -20,15 +20,17 @@ const NO_ROWS: ReadonlyArray<ResolveQueueRow> = [];
 type Params = {
   readonly sessionId: SessionId;
   readonly isEnabled?: boolean;
+  readonly scope?: 'active' | 'displayed';
 };
 
 export const useResolveQueueRows = ({
   sessionId,
   isEnabled = true,
+  scope = 'active',
 }: Params): ReadonlyArray<ResolveQueueRow> => {
   const { source } = useActiveReviewSource({ sessionId });
   const comments = source?.comments ?? (EMPTY_ARRAY as ReadonlyArray<PrComment>);
-  const { all: notes, onBranch } = useBranchNotes({ sessionId });
+  const { all: notes, onBranch } = useBranchNotes({ sessionId, scope });
   const hiddenNoteIds = useMemo(() => {
     const visible = new Set(onBranch.map((note) => note.id));
     return new Set(notes.filter((note) => !visible.has(note.id)).map((note) => note.id));

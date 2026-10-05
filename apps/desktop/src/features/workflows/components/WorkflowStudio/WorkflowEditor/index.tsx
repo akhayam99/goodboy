@@ -84,6 +84,7 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
   const deleteStep = useStepDeleteUndo({
     steps,
     setSteps,
+    contextKey: editor.contextKey,
     onDeleted: (key) => setExpandedKey(expandedKey === key ? null : expandedKey),
   });
   const setGoal = (goal: string) => setForm((current) => ({ ...current, goal }));

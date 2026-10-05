@@ -42,6 +42,7 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
   const storedDraft = useAppStore((state) => state.workflowStudioDrafts[workspaceId]);
   const generation = useAppStore((state) => state.workflowGenerations[workspaceId]);
   const savePhaseTemplate = useAppStore((state) => state.savePhaseTemplate);
+  const restoreWorkflowSnapshot = useAppStore((state) => state.restoreWorkflowSnapshot);
   const deleteWorkflow = useAppStore((state) => state.deleteWorkflow);
   const setWorkflowStudioDraft = useAppStore((state) => state.setWorkflowStudioDraft);
   const clearWorkflowStudioDraft = useAppStore((state) => state.clearWorkflowStudioDraft);
@@ -71,6 +72,10 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
   const [isConfirmingRedraft, setIsConfirmingRedraft] = useState(false);
   const editingIdRef = useRef<WorkflowId | null>(restoredWorkflow?.id ?? null);
   const handledGenerationRef = useRef<string | null>(null);
+  const handledRestoreRef = useRef<string | null>(storedDraft?.restoreNonce ?? null);
+  const contextKeyRef = useRef(0);
+  const templatesRef = useRef(templates);
+  templatesRef.current = templates;
   const formRef = useRef(form);
   const savedFormRef = useRef<string | null>(
     restoredWorkflow === null
@@ -85,6 +90,7 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
       setEditing(workflow);
       setBaseline(workflow);
       editingIdRef.current = workflow.id;
+      contextKeyRef.current += 1;
       setForm(nextForm);
       setOpenedForm(nextForm);
       savedFormRef.current = JSON.stringify(nextForm);
@@ -116,11 +122,33 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
     undoable({
       showToast,
       message: 'Redrafted the steps.',
-      undo: async () => {
-        setForm(draftFromWorkflow({ workflow: snapshot }));
-      },
+      isCurrent: () => (templatesRef.current ?? []).some((template) => template.id === snapshot.id),
+      undo: () => restoreWorkflowSnapshot({ workspaceId, snapshot }),
     });
-  }, [consumeWorkflowGeneration, generation, load, setForm, showToast, templates, workspaceId]);
+  }, [
+    consumeWorkflowGeneration,
+    generation,
+    load,
+    restoreWorkflowSnapshot,
+    showToast,
+    templates,
+    workspaceId,
+  ]);
+
+  useEffect(() => {
+    const nonce = storedDraft?.restoreNonce;
+    if (storedDraft === undefined || nonce === undefined || handledRestoreRef.current === nonce) {
+      return;
+    }
+    handledRestoreRef.current = nonce;
+    if (storedDraft.workflowId === null || storedDraft.workflowId !== editingIdRef.current) {
+      return;
+    }
+    savedFormRef.current = JSON.stringify(storedDraft.form);
+    setForm(storedDraft.form);
+    setOpenedForm(storedDraft.form);
+    setExpandedKey(null);
+  }, [setForm, storedDraft]);
 
   useEffect(() => {
     if (editing === null) {
@@ -176,6 +204,7 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
   });
 
   const close = () => {
+    contextKeyRef.current += 1;
     setEditing(null);
     setBaseline(null);
     editingIdRef.current = null;
@@ -273,6 +302,7 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
     saveStatus,
     editedKeys,
     isDirty,
+    contextKey: contextKeyRef.current,
     isSavedWorkflow: editingIdRef.current !== null,
     isGenerating: generation?.status === 'running',
     generationError: generation?.status === 'failed' ? generation.error : null,

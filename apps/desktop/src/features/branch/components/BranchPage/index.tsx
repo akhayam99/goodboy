@@ -186,7 +186,7 @@ export const BranchPage = ({ session, workingDir }: Props) => {
     );
 
   const body = () => {
-    if (pr === null && mode === 'create_pr') {
+    if (tab === 'comments' && pr === null && mode === 'create_pr') {
       return isDraftAgentRunning ? (
         <p role="status" className="px-6 text-body text-muted-foreground">
           An agent is drafting the pull request.

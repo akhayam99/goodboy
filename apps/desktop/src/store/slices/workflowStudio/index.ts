@@ -3,6 +3,7 @@ import { consumeWorkflowGeneration } from './consumeWorkflowGeneration';
 import { setWorkflowStudioDraft } from './setWorkflowStudioDraft';
 import { setWorkflowStudioVisible } from './setWorkflowStudioVisible';
 import { setWorkflowStudioFocus, setWorkflowStudioView } from './setWorkflowStudioFocus';
+import { restoreWorkflowSnapshot } from './restoreWorkflowSnapshot';
 import { startWorkflowGeneration } from './startWorkflowGeneration';
 import { undoWorkflowGeneration } from './undoWorkflowGeneration';
 import type { SliceDeps } from '../../slice-types';
@@ -15,5 +16,6 @@ export const createWorkflowStudioSlice = ({ set, get }: SliceDeps) => ({
   setWorkflowStudioView: setWorkflowStudioView(set),
   startWorkflowGeneration: startWorkflowGeneration(set, get),
   consumeWorkflowGeneration: consumeWorkflowGeneration(set),
-  undoWorkflowGeneration: undoWorkflowGeneration(set, get),
+  undoWorkflowGeneration: undoWorkflowGeneration(get),
+  restoreWorkflowSnapshot: restoreWorkflowSnapshot(set, get),
 });

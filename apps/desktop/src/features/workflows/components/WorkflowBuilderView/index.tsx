@@ -661,6 +661,7 @@ export const WorkflowBuilderView = (props: Props) => {
   const deleteStep = useStepDeleteUndo({
     steps,
     setSteps,
+    contextKey: selectedPresetId,
     onDeleted: (key) => setExpandedKey((cur) => (cur === key ? null : cur)),
   });
 

@@ -1,6 +1,6 @@
 import { formatError } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
-import { selectActiveMountId } from '../project-mounts/selectors';
+import { selectActiveMountId, selectMountById } from '../project-mounts/selectors';
 import { branchPlace } from '../navigation/place';
 import { LOCAL_SOURCE_KEY } from '../review-source/types';
 import { setPullRequestMode } from './setPullRequestMode';
@@ -64,6 +64,12 @@ export const openReviewTarget = async ({
     return unavailable('no_session');
   }
   const requestId = crypto.randomUUID();
+  const requestedMountId = reviewMountId({ destination });
+  const mountPath =
+    requestedMountId === null
+      ? null
+      : (selectMountById({ state: get(), sessionId, mountId: requestedMountId })?.worktreePath ??
+        null);
   if (destination.kind === 'threads') {
     get().setReviewSelection({ sessionId, threadIds: reviewThreadIds({ destination }) });
   }
@@ -96,7 +102,7 @@ export const openReviewTarget = async ({
       writeTarget({ set, sessionId, target: null });
       if (outcome.kind === 'opened') {
         setPullRequestMode({ set, sessionId, mode: 'overview' });
-        get().navigate({ to: branchPlace({ sessionId, tab: 'comments' }) });
+        get().navigate({ to: branchPlace({ sessionId, mountPath, tab: 'comments' }) });
       }
       return outcome;
     }
@@ -110,6 +116,7 @@ export const openReviewTarget = async ({
     get().navigate({
       to: branchPlace({
         sessionId,
+        mountPath,
         tab: 'comments',
         threadId: outcome.kind === 'opened' ? reviewThreadId({ destination }) : null,
       }),
@@ -117,7 +124,6 @@ export const openReviewTarget = async ({
     return outcome;
   };
 
-  const requestedMountId = reviewMountId({ destination });
   if (requestedMountId !== null) {
     try {
       await get().setSessionActiveMount({ sessionId, mountId: requestedMountId });

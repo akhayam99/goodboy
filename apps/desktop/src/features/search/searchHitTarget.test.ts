@@ -158,6 +158,7 @@ describe('search hit target', () => {
     expect(searchHitTarget({ hit: hit({ kind: 'comment', refId: 'c-1' }) })).toMatchObject({
       kind: 'comment',
       sessionId: SESSION,
+      commentId: 'c-1',
       label: 'Open comments',
     });
   });

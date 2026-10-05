@@ -78,6 +78,7 @@ export type SearchHitTarget =
       readonly kind: 'comment';
       readonly workspaceId: WorkspaceId | null;
       readonly sessionId: SessionId;
+      readonly commentId: string;
       readonly label: string;
     }
   | {
@@ -198,7 +199,7 @@ const sessionBound = ({ hit }: Params): SearchHitTarget | null => {
           }
         : { kind: 'diff', ...base, mountId: hit.mountId, label: 'Open files' };
     case 'comment':
-      return { kind: 'comment', ...base, label: 'Open comments' };
+      return { kind: 'comment', ...base, commentId: hit.refId, label: 'Open comments' };
     case 'workflow':
       return null;
     default: {

@@ -8,6 +8,7 @@ type UndoableParams = {
   readonly title?: string;
   readonly undo: UndoOperation['undo'];
   readonly conflictMessage?: string;
+  readonly isCurrent?: () => boolean;
   readonly showToast?: ShowToast;
 };
 
@@ -37,6 +38,7 @@ export const createUndoSlice = ({ set, get }: SliceDeps) => {
       title,
       undo,
       conflictMessage,
+      isCurrent,
       showToast,
     }: UndoableParams): string => {
       set((state) => ({
@@ -47,6 +49,7 @@ export const createUndoSlice = ({ set, get }: SliceDeps) => {
             undo,
             conflictMessage:
               conflictMessage ?? 'Nothing changed. This operation can no longer be undone.',
+            ...(isCurrent === undefined ? {} : { isCurrent }),
           },
         ].slice(-50),
       }));
@@ -65,10 +68,18 @@ export const createUndoSlice = ({ set, get }: SliceDeps) => {
       return id;
     },
     undoLastOperation: async ({ id, shouldAnnounce = true }: UndoParams = {}): Promise<boolean> => {
-      const state = get();
-      if (state.pendingUndoId !== null) {
+      if (get().pendingUndoId !== null) {
         return false;
       }
+      const stale = get().undoStack.filter(
+        (candidate) => candidate.isCurrent !== undefined && !candidate.isCurrent(),
+      );
+      if (stale.length > 0) {
+        set((current) => ({
+          undoStack: current.undoStack.filter((candidate) => !stale.includes(candidate)),
+        }));
+      }
+      const state = get();
       const operation =
         id === undefined
           ? state.undoStack.at(-1)

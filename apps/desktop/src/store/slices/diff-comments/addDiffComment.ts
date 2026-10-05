@@ -1,7 +1,7 @@
 import { insertDiffComment, type DiffCommentAuthor, type DiffCommentTarget } from '@goodboy/db';
 import type { DiffCommentAnchor, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { selectActiveMount } from '../project-mounts/selectors';
+import { selectDisplayedMount } from '../project-mounts/selectors';
 import { refreshNotes } from './refreshNotes';
 import type { GetFn, SetFn } from './types';
 
@@ -14,7 +14,7 @@ export const addDiffComment = (set: SetFn, get: GetFn) => {
     author?: DiffCommentAuthor,
   ) => {
     const id = crypto.randomUUID();
-    const mount = selectActiveMount({ state: get(), sessionId });
+    const mount = selectDisplayedMount({ state: get(), sessionId });
     const target: DiffCommentTarget | undefined =
       mount === null ? undefined : { projectId: mount.projectId, branch: mount.branch };
     await insertDiffComment(tauriDatabase, id, sessionId, filePath, body, anchor, author, target);

@@ -7,6 +7,7 @@ export type { GetFn, SetFn } from '../../slice-types';
 export type WorkflowStudioDraft = {
   readonly workflowId: WorkflowId | null;
   readonly form: WorkflowDraft;
+  readonly restoreNonce?: string;
 };
 
 type WorkflowGeneration =

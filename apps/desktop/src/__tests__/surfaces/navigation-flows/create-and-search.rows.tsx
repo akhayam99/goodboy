@@ -108,7 +108,27 @@ const SEARCH_JUMPS: ReadonlyArray<{
   { kind: 'pr', overrides: () => ({ kind: 'pr' }), lands: branchTab('comments') },
   {
     kind: 'comment',
-    overrides: () => ({ kind: 'comment', refId: 'c-1' }),
+    overrides: (ctx) => {
+      const mount = useAppStore.getState().sessionMounts[ctx.sessionId]?.[0];
+      useAppStore.setState((state) => ({
+        diffComments: {
+          ...state.diffComments,
+          [ctx.sessionId]: [
+            {
+              id: 'c-1',
+              sessionId: ctx.sessionId,
+              filePath: 'src/ledger.ts',
+              body: 'Guard the batch',
+              status: 'open',
+              authorKind: 'user',
+              createdAt: STORY_NOW as IsoDateTime,
+              ...(mount === undefined ? {} : { projectId: mount.projectId, branch: mount.branch }),
+            },
+          ],
+        },
+      }));
+      return { kind: 'comment', refId: 'c-1' };
+    },
     lands: async (ctx) => {
       await branchTab('comments')(ctx);
       expect(useAppStore.getState().drawer).toBeNull();

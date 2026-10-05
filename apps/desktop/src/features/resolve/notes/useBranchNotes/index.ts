@@ -1,7 +1,10 @@
 import { useMemo } from 'react';
 import type { DiffComment, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { selectActiveMount } from '../../../../store/slices/project-mounts/selectors';
+import {
+  selectActiveMount,
+  selectDisplayedMount,
+} from '../../../../store/slices/project-mounts/selectors';
 import { isNoteOnBranch, isUnassignedNote } from '../noteThread';
 
 type Result = {
@@ -10,14 +13,18 @@ type Result = {
   readonly unassigned: ReadonlyArray<DiffComment>;
 };
 
-export const useBranchNotes = ({ sessionId }: { readonly sessionId: SessionId }): Result => {
+type Params = {
+  readonly sessionId: SessionId;
+  readonly scope?: 'active' | 'displayed';
+};
+
+export const useBranchNotes = ({ sessionId, scope = 'active' }: Params): Result => {
   const all = useAppStore(
     (s) => s.diffComments[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<DiffComment>),
   );
-  const projectId = useAppStore(
-    (s) => selectActiveMount({ state: s, sessionId })?.projectId ?? null,
-  );
-  const branch = useAppStore((s) => selectActiveMount({ state: s, sessionId })?.branch ?? null);
+  const select = scope === 'displayed' ? selectDisplayedMount : selectActiveMount;
+  const projectId = useAppStore((s) => select({ state: s, sessionId })?.projectId ?? null);
+  const branch = useAppStore((s) => select({ state: s, sessionId })?.branch ?? null);
   return useMemo(
     () => ({
       all,

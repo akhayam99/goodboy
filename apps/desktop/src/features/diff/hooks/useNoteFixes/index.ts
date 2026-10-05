@@ -9,7 +9,7 @@ type Params = {
 };
 
 export const useNoteFixes = ({ sessionId }: Params): ReadonlyArray<NoteFix> => {
-  const { onBranch: notes } = useBranchNotes({ sessionId });
+  const { onBranch: notes } = useBranchNotes({ sessionId, scope: 'displayed' });
   const entries = useAppStore((s) => s.sessionResolveQueueItems[sessionId] ?? EMPTY_ARRAY);
   const attempts = useAppStore((s) => s.sessionResolveAttempts[sessionId] ?? EMPTY_ARRAY);
   return useMemo(() => noteFixesOf({ notes, entries, attempts }), [attempts, entries, notes]);

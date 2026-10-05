@@ -60,7 +60,7 @@ export const useReviewEntries = ({
   readonly entries: ReadonlyArray<ReviewEntry>;
   readonly groups: ReadonlyArray<ReviewGroup>;
 } => {
-  const rows = useResolveQueueRows({ sessionId });
+  const rows = useResolveQueueRows({ sessionId, scope: 'displayed' });
   const changes = useAppStore((s) => s.sessionResolveSourceSnapshots[sessionId] ?? EMPTY_CHANGES);
   const { selected } = useActiveReviewSource({ sessionId });
   const { kind, projectId, number } = selected;

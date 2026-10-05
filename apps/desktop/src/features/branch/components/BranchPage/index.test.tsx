@@ -247,6 +247,28 @@ describe('Branch page Checks and Files', () => {
     expect(screen.getByRole('region', { name: 'Checks' })).toBeDefined();
   });
 
+  it('keeps the new pull request form on Comments and lets the other tabs render', async () => {
+    await mount();
+    act(() => {
+      useAppStore.setState((state) => ({
+        sessionGithub: {
+          ...state.sessionGithub,
+          [SESSION.id]: { ...state.sessionGithub[SESSION.id]!, pr: null },
+        },
+        sessionSelectedPrNumber: { ...state.sessionSelectedPrNumber, [SESSION.id]: null },
+        pullRequestModes: { ...state.pullRequestModes, [SESSION.id]: 'create_pr' },
+      }));
+    });
+    await settle();
+    expect(screen.getByRole('region', { name: 'New pull request' })).toBeDefined();
+
+    fireEvent.click(screen.getByRole('tab', { name: /^Checks/ }));
+    await settle();
+
+    expect(screen.queryByRole('region', { name: 'New pull request' })).toBeNull();
+    expect(screen.getByRole('tab', { name: /^Checks/ }).getAttribute('aria-selected')).toBe('true');
+  });
+
   it('explains there is no diff when the session has no worktree', async () => {
     await mount();
 

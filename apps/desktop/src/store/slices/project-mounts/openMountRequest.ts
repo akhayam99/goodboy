@@ -3,6 +3,7 @@ import { formatError } from '@goodboy/ui';
 import type { ReviewTargetOutcome } from '../review-navigation';
 import type { SessionStudio } from '../session-view/types';
 import { branchPlace, sessionPlace } from '../navigation/place';
+import { selectMountById } from './selectors';
 import type { GetFn, SetFn } from './types';
 
 export type OpenMountRequestInput = {
@@ -45,7 +46,8 @@ export const openMountRequest = (_set: SetFn, get: GetFn) => {
         return { kind: 'failed', error: formatError(error) };
       }
       get().setPullRequestMode({ sessionId, mode: 'create_pr' });
-      get().navigate({ to: branchPlace({ sessionId, tab: 'comments' }) });
+      const mountPath = selectMountById({ state: get(), sessionId, mountId })?.worktreePath ?? null;
+      get().navigate({ to: branchPlace({ sessionId, mountPath, tab: 'comments' }) });
       return { kind: 'opened' };
     }
     return get().openReviewTarget({
