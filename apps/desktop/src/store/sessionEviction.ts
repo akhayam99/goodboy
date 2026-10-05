@@ -109,7 +109,6 @@ export const SESSION_EVICTION = [
   { key: 'focusedExternalTask', keyedBy: 'session', evictOn: 'archive' },
   { key: 'agentPane', keyedBy: 'session', evictOn: 'archive' },
   { key: 'diffComments', keyedBy: 'session', evictOn: 'archive' },
-  { key: 'diffNoteLaunch', keyedBy: 'session', evictOn: 'archive' },
   { key: 'transcripts', keyedBy: 'agent', evictOn: 'archive' },
   { key: 'messages', keyedBy: 'agent', evictOn: 'archive' },
   { key: 'agentDraft', keyedBy: 'agent', evictOn: 'archive' },

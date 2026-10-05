@@ -333,8 +333,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Split or unified, with word-level highlights and a Viewed tick per file. Quote a line into a note or a question for an agent. The header offers the next step for the branch.',
       },
       {
-        term: 'Fix notes',
-        desc: 'Fix on a note, or Fix N notes in the diff toolbar, opens the fix strip with the model the fixers run on, and Start launches one agent per note. The notes drawer groups your notes by state, and a note an agent works on cannot be closed or deleted.',
+        term: 'Notes',
+        desc: 'Add note on a line saves it with the project and branch you are on. It reads Local in the Comments tab, where Fix starts an agent on it, and Post notes moves the open ones into a review draft. A note an agent works on cannot be closed or deleted. Notes without a branch wait in Unassigned notes on the Session overview.',
       },
       {
         term: 'Review',

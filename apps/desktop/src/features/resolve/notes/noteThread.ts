@@ -27,6 +27,19 @@ export const noteIdOfThread = ({ threadId }: { readonly threadId: string }): str
 export const isOpenNote = ({ note }: { readonly note: DiffComment }): boolean =>
   note.status === 'open' || note.status === 'consumed';
 
+export const isUnassignedNote = ({ note }: { readonly note: DiffComment }): boolean =>
+  note.projectId === undefined || note.branch === undefined;
+
+export const isNoteOnBranch = ({
+  note,
+  projectId,
+  branch,
+}: {
+  readonly note: DiffComment;
+  readonly projectId: string | null;
+  readonly branch: string | null;
+}): boolean => projectId !== null && note.projectId === projectId && note.branch === branch;
+
 export const noteCommentThread = ({ note }: { readonly note: DiffComment }): CommentThread => ({
   head: {
     id: note.id,

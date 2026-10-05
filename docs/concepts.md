@@ -264,12 +264,12 @@ It includes:
 - History outcomes of Rewrite history and Rebase on main: `history_rewritten`,
   `history_pushed`, `history_stopped` and `history_restored`
 
-History rows are the only event rows with verbs, one primary and the rest in
-the row menu, and only while no later outcome of the same branch settled
-them: a rewrite offers `Undo rewrite`, a stopped one `Retry` (or `Retry with
-a note` when History rewriter needs you) with `Rewrite with an agent`,
-`Change the plan` and `Discard plan` behind it, a push `Restore previous
-history`. A stopped rewrite waits in Needs you until a later outcome settles it. Every notification
+History rows carry no verb and no `⋯`. They stay in Activity only while no
+later outcome of the same branch settled them, and the row opens the Commits
+tab of the Branch page, where the recovery lives: `Undo rewrite` for a
+rewrite, `Retry` (or `Retry with a note` when History rewriter needs you), `Rewrite with an agent`,
+`Change the plan` and `Discard plan` for a stopped one, `Restore previous
+history` for a push. A stopped rewrite waits in Needs you until a later outcome settles it. Every notification
 of the engine points at the row with `Open in Activity`, so closing it loses
 nothing.
 
@@ -286,9 +286,8 @@ the launch. The Log holds the facts: plans, reports, wireframes and learnings
 made without a launch, Context, branch and worktree events, link events (an
 unlink carries **Re-link**), pull request events and session archive and
 restore. It is flat, newest first, one muted row per fact, with a search box on
-top and no categories. A row that carries a recovery (`Undo rewrite`, `Restore
-previous history`, `Restore branch`, `Retry with a note`) stays in Activity
-until the Branch page takes that recovery.
+top and no categories. A history row that has a recovery stays in Activity and
+opens the Commits tab, which owns it; no Activity row has a `⋯`.
 
 A **Needs you** block sits on top of Activity, and only while something waits
 on you: one row per owner, never per child. A burst reads "Resolve #318 · 2
@@ -742,8 +741,8 @@ too). **Fix went missing** (a fix sha that is neither on the branch nor on
 origin, or a pushed sha origin lost) gets its own detail and the
 `missing_commit` push blocker points to it. `computeThreadGitFacts` first asks
 `worktree_locate_fix`: the same patch on HEAD under another sha makes the thread
-`folded` (**Folded in**: it stays in the push with the remapped sha, the action
-reads `Push to reply`, and the reply "Fixed in <old>, squashed into <new>" is posted
+`folded` (**Folded in**: it stays in the push with the remapped sha, it goes
+out with the header `Push`, and the reply "Fixed in <old>, squashed into <new>" is posted
 by the normal push flow after the push lands; only `on_origin` skips the push). If git cannot answer, **Re-check** (`recheckThread`) spawns a
 read-only scout (`sourceKind` `comment_recheck`, FixMode `recheck`) on the
 cheapest model of the provider. It ends with `<<comment-verdict threadId verdict
@@ -831,9 +830,10 @@ once · each works on its own copy of the branch`, no price: nothing
   picker opens inline under the buttons) and **Add a hint** (F is Retry).
   `…` holds Reply yourself, Skip and Open transcript. The earlier attempts of
   the comment fold into one line above (`Attempt 1 · Sonnet 5.5 · Medium ·
-failed`) that opens to their reasons. A failed step after the run shows its
-  own verb: `Push again`, `Post the reply again` or `Open on GitHub` when
-  Goodboy could not confirm the reply landed
+failed`) that opens to their reasons. A failed delivery after the run has no
+  button on the comment: the Branch header reads `Retry N`, and the push
+  result there offers `Sync and try again`. The comment keeps `Open on GitHub`
+  when Goodboy could not confirm the reply landed
 - A batch fix runs in its own copy of the branch, up to four at a time (the
   session limit), so two fixes never fight over the same branch. The rest wait
   with `Waiting for a free slot`

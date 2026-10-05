@@ -29,4 +29,19 @@ describe('PageColumn', () => {
     );
     expect(column.hasAttribute('data-page-column')).toBe(true);
   });
+
+  it('keeps the gutter but drops the cap and the centring when it is full width', () => {
+    render(
+      <PageColumn width="full">
+        <p>Wide copy</p>
+      </PageColumn>,
+    );
+    const classes = (screen.getByText('Wide copy').parentElement as HTMLElement).className.split(
+      ' ',
+    );
+
+    expect(classes).toEqual(expect.arrayContaining(['w-full', 'px-6', '@max-[720px]:px-4']));
+    expect(classes).not.toContain('mx-auto');
+    expect(classes).not.toContain('max-w-[var(--column-frame)]');
+  });
 });

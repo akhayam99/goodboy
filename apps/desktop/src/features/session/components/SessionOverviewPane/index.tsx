@@ -7,6 +7,7 @@ import { ArchivedGate } from './ArchivedGate';
 import { TimelinePane } from '../SessionWorkspace/parts/TimelinePane';
 import { OverviewActions } from './OverviewActions';
 import { ProjectMountRows } from './ProjectMountRows';
+import { UnassignedNotes } from './UnassignedNotes';
 import { NextStepSlot } from '../../../suggestions/components/NextStepSlot';
 
 type Props = {
@@ -34,6 +35,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
       animationClassName="animate-fade-in"
     >
       <ProjectMountRows session={session} />
+      <UnassignedNotes sessionId={sessionId} />
       <NextStepSlot
         session={session}
         onSelectLens={onSelectLens}

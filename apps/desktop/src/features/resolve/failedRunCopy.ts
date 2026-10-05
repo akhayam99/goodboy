@@ -1,5 +1,5 @@
 import { NAMES } from '../../shared/names';
-import type { ResolveFailedStep, ResolveRowAction } from './resolveRowState';
+import type { ResolveRowAction } from './resolveRowState';
 
 export const FAILED_RUN_COPY = {
   retry: NAMES.retry,
@@ -39,18 +39,8 @@ const ROW_ACTION_VERB: Record<ResolveRowAction, string> = {
   resume: 'Resume',
 };
 
-export const failedVerbOf = ({
-  step,
-  action,
-}: {
-  readonly step: ResolveFailedStep;
-  readonly action: ResolveRowAction;
-}): string => {
-  if (step === 'push' && action === 'retry') {
-    return 'Push again';
-  }
-  return ROW_ACTION_VERB[action];
-};
+export const failedVerbOf = ({ action }: { readonly action: ResolveRowAction }): string =>
+  ROW_ACTION_VERB[action];
 
 export const SYNC_COPY = {
   action: 'Sync and try again',

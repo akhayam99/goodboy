@@ -56,8 +56,6 @@ type Props = ReviewCommentBinding & {
   readonly entries: ReadonlyArray<ReviewEntry>;
   readonly onSelect: (threadId: string) => void;
   readonly onTryAgain: () => void;
-  readonly onRetryDelivery: () => void;
-  readonly onSync: () => void;
   readonly hunk?: ReactNode;
 };
 
@@ -100,8 +98,6 @@ export const ReviewComment = ({
   onReplyDone,
   onSelect,
   onTryAgain,
-  onRetryDelivery,
-  onSync,
   hunk = null,
 }: Props) => {
   const { row, state, word, threadId } = entry;
@@ -397,8 +393,6 @@ export const ReviewComment = ({
           isBusy={isSubmitting || pendingActionId !== null}
           onTryAgain={onTryAgain}
           onAddHint={() => onRun('reviewComment.edit')}
-          onRetryDelivery={onRetryDelivery}
-          onSync={onSync}
           onRun={onRun}
         />
       )}

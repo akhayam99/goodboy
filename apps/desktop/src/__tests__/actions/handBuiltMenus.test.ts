@@ -42,10 +42,6 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'workflow library list menu (restore built-ins); the workflow kind is a follow-up',
   'features/history/components/CommitsHistory/HistoryActions.tsx':
     'commits tab menu (terminal), tab chrome',
-  'features/history/useHistoryRowActions/index.ts':
-    'rewrite event rows in Activity: event verbs, not an object in the map',
-  'features/session/components/SessionWorkspace/parts/TimelinePane/TimelineEntryRow.tsx':
-    'hosts the rewrite event menu of useHistoryRowActions',
   'features/search/components/SearchMode/SearchHitActions.tsx':
     'search preview: lists the registry verbs of the hit through toMenuEntries',
   'features/storage/components/StoragePage/ArtifactRowActions.tsx':

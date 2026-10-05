@@ -9,7 +9,7 @@ type Props = {
 };
 
 export const BranchChecks = ({ pr, checks }: Props) => (
-  <PageColumn>
+  <PageColumn width="full">
     {pr === null ? (
       <EmptyLine>No pull request yet, so no checks.</EmptyLine>
     ) : (

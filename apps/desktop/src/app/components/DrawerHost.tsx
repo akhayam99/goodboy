@@ -5,7 +5,6 @@ import { ExploreFileDrawer } from '../../features/explore/components/ExploreFile
 import { ArtifactShellDrawer } from '../../features/artifacts/components/ArtifactShell/ArtifactShellDrawer';
 import { PlanPartDrawer } from '../../features/plans/components/PlanParts/PlanPartDrawer';
 import { ScriptRunDrawer } from '../../features/scripts/components/ScriptRunDrawer';
-import { DiffNotesDrawer } from '../../features/diff/components/DiffNotesDrawer';
 import { FileDiffDrawer } from '../../features/diff/components/FileDiffDrawer';
 import { drawerKey } from '../../store/slices/drawer/drawerKey';
 
@@ -66,8 +65,6 @@ export const DrawerHost = () => {
           onClose={closeDrawer}
         />
       );
-    case 'diff-notes':
-      return <DiffNotesDrawer sessionId={drawer.sessionId} onClose={closeDrawer} />;
     case 'file-diff':
       return (
         <FileDiffDrawer

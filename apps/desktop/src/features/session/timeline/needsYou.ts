@@ -1,6 +1,6 @@
 import type { OpenQuestion, SessionEvent } from '@goodboy/types';
 import { agentDisplayName } from '../../../shared/utils/agentDisplayName';
-import { historyRowControls } from '../../history/historyRowControls';
+import { hasHistoryRecovery } from '../../history/historyRecovery';
 import { isRowNeedingYou } from '../../workTreeModel/rowState';
 import type {
   TimelineAgentEntry,
@@ -173,7 +173,7 @@ const ownerOfRow = ({
     if (entry.event.kind !== 'history_stopped') {
       return null;
     }
-    if (historyRowControls({ event: entry.event, events }) === null) {
+    if (!hasHistoryRecovery({ event: entry.event, events })) {
       return null;
     }
     return {

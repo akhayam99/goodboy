@@ -11,7 +11,7 @@ type Props = {
 export const BranchCommits = ({ sessionId, worktreePath }: Props) => {
   if (worktreePath === null) {
     return (
-      <PageColumn>
+      <PageColumn width="full">
         <LensEmptyState
           tone={CONCEPT_TONE.diff}
           icon={CONCEPT_ICONS.diff}

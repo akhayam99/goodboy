@@ -33,10 +33,6 @@ export type DrawerContent =
       readonly payload: { readonly scriptKey: string; readonly mountId: MountId | null };
     }
   | {
-      readonly kind: 'diff-notes';
-      readonly payload: Readonly<Record<string, never>>;
-    }
-  | {
       readonly kind: 'conversation';
       readonly payload: { readonly threadId: string };
     }

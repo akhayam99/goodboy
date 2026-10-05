@@ -171,6 +171,7 @@ export const storySpies = {
   resolveDiffComment: vi.fn(async () => undefined),
   reopenDiffComment: vi.fn(async () => undefined),
   deleteDiffComment: vi.fn(async () => undefined),
+  assignDiffCommentTarget: vi.fn(async () => undefined),
   upsertIntegrationBinding: vi.fn(async () => undefined),
   listIntegrationBindingsForWorkspace: vi.fn(async () => [] as ReadonlyArray<IntegrationBinding>),
   listProjectSentryLinks: vi.fn(
@@ -614,6 +615,7 @@ export const storyDbStubs = () => ({
   resolveDiffComment: storySpies.resolveDiffComment,
   reopenDiffComment: storySpies.reopenDiffComment,
   deleteDiffComment: storySpies.deleteDiffComment,
+  assignDiffCommentTarget: storySpies.assignDiffCommentTarget,
   listProjectScripts: storySpies.listProjectScripts,
   upsertProjectScript: storySpies.upsertProjectScript,
   deleteProjectScript: storySpies.deleteProjectScript,

@@ -19,6 +19,7 @@ import { useActiveReviewSource } from '../../hooks/useActiveReviewSource';
 import {
   earlierCommitsLine,
   pushConfirmBody,
+  PUSH_TIP_LABEL,
   pushConfirmTitle,
   pushStyleNote,
 } from '../../reviewPushCopy';
@@ -119,6 +120,7 @@ export const PushBanner = ({ sessionId, push }: Props) => {
   const drift = driftSentence({ drift: preview.drift });
   const excluded = excludedLine({ preview });
   const earlier = preview.earlierCommits ?? [];
+  const tip = preview.commits.find((commit) => commit.sha === preview.localHead) ?? null;
 
   if (blocker !== null || preview.publicationId === null) {
     const recovery =
@@ -168,6 +170,13 @@ export const PushBanner = ({ sessionId, push }: Props) => {
       onCancel={push.cancel}
       note={
         <div className="flex min-w-0 flex-col gap-2">
+          {tip !== null && (
+            <p className="flex min-w-0 gap-2 text-muted-foreground">
+              <span className="shrink-0 text-foreground">{PUSH_TIP_LABEL}</span>
+              <span className="shrink-0 font-mono">{tip.shortSha}</span>
+              <span className="min-w-0 truncate">{tip.subject}</span>
+            </p>
+          )}
           {earlier.length > 0 && (
             <div className="flex min-w-0 flex-col gap-1">
               <p className="text-foreground">{earlierCommitsLine({ count: earlier.length })}</p>

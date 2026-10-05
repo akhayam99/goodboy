@@ -54,7 +54,6 @@
   "apps/desktop/src/features/explore/components/ExplorePane/index.test.tsx": 1,
   "apps/desktop/src/features/history/components/CommitsHistory/index.test.tsx": 2,
   "apps/desktop/src/features/history/components/CommitsHistory/useHistoryRunFlow/index.test.ts": 1,
-  "apps/desktop/src/features/history/useHistoryRowActions/index.test.ts": 1,
   "apps/desktop/src/features/impact/components/ImpactStudio/spend.test.tsx": 1,
   "apps/desktop/src/features/inbox/components/InboxStudio/index.test.tsx": 1,
   "apps/desktop/src/features/inbox/hooks/useRecordFrame/index.test.tsx": 1,

@@ -40,7 +40,6 @@
     "apps/desktop/src/features/diff/hooks/useFileJump/index.test.ts": 1,
     "apps/desktop/src/features/explore/components/ExplorePane/index.test.tsx": 2,
     "apps/desktop/src/features/history/useHistoryDrag/index.test.ts": 1,
-    "apps/desktop/src/features/history/useHistoryRowActions/index.test.ts": 1,
     "apps/desktop/src/features/inbox/attachInboxProjects.test.ts": 3,
     "apps/desktop/src/features/inbox/components/InboxStudio/InboxFacetRail.test.tsx": 5,
     "apps/desktop/src/features/inbox/components/InboxStudio/InboxLookupGroup.test.tsx": 2,

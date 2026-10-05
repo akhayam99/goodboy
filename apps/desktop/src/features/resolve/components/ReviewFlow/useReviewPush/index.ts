@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type {
@@ -31,9 +31,14 @@ type ReviewPushPhase =
   | { readonly kind: 'syncing' }
   | { readonly kind: 'result'; readonly result: PushResult };
 
+type ArmParams = {
+  readonly isRetry: boolean;
+  readonly threadIds?: ReadonlyArray<string> | undefined;
+};
+
 export type ReviewPush = {
   readonly phase: ReviewPushPhase;
-  readonly arm: (params: { readonly isRetry: boolean }) => Promise<void>;
+  readonly arm: (params: ArmParams) => Promise<void>;
   readonly confirm: () => Promise<void>;
   readonly cancel: () => void;
   readonly askSync: () => void;
@@ -65,10 +70,9 @@ const syncMountIdOf = ({ sessionId }: { readonly sessionId: SessionId }): MountI
 
 type PushParams = {
   readonly sessionId: SessionId;
-  readonly threadIds?: ReadonlyArray<string>;
 };
 
-export const useReviewPush = ({ sessionId, threadIds }: PushParams): ReviewPush => {
+export const useReviewPush = ({ sessionId }: PushParams): ReviewPush => {
   const preparePublication = useAppStore((s) => s.preparePublication);
   const retryPublication = useAppStore((s) => s.retryPublication);
   const publishConversations = useAppStore((s) => s.publishConversations);
@@ -77,11 +81,13 @@ export const useReviewPush = ({ sessionId, threadIds }: PushParams): ReviewPush 
   const openDiffLens = useAppStore((s) => s.openDiffLens);
   const navigate = useAppStore((s) => s.navigate);
   const [phase, setPhase] = useState<ReviewPushPhase>(IDLE);
+  const armedThreadIds = useRef<ReadonlyArray<string> | undefined>(undefined);
   const { source } = useActiveReviewSource({ sessionId });
   const provider = REVIEW_SOURCE_LABEL[source?.kind ?? 'github'];
 
   const arm = useCallback(
-    async ({ isRetry }: { readonly isRetry: boolean }): Promise<void> => {
+    async ({ isRetry, threadIds }: ArmParams): Promise<void> => {
+      armedThreadIds.current = threadIds;
       setPhase({ kind: 'preparing' });
       try {
         const preview =
@@ -104,7 +110,7 @@ export const useReviewPush = ({ sessionId, threadIds }: PushParams): ReviewPush 
         setPhase(isReportedError(error) ? IDLE : failed(formatError(error)));
       }
     },
-    [preparePublication, retryPublication, sessionId, threadIds],
+    [preparePublication, retryPublication, sessionId],
   );
 
   const confirm = useCallback(async (): Promise<void> => {
@@ -172,7 +178,7 @@ export const useReviewPush = ({ sessionId, threadIds }: PushParams): ReviewPush 
       switch (outcome.kind) {
         case 'synced':
         case 'nothing':
-          await arm({ isRetry: true });
+          await arm({ isRetry: true, threadIds: armedThreadIds.current });
           return;
         case 'conflict':
           setPhase(failed(SYNC_COPY.conflict));

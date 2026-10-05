@@ -750,9 +750,9 @@ describe('navigation slice', () => {
 });
 
 const DRAFTS: DrawerRequest = {
-  kind: 'diff-notes',
+  kind: 'conversation',
   sessionId: S1,
-  payload: {},
+  payload: { threadId: 'note:ledger-cast' },
 };
 
 const EMPTY = { drawer: null, selection: {}, scroll: {}, revealed: [] };
