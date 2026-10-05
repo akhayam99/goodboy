@@ -1878,7 +1878,15 @@ this note". Close note goes through `closeResolvedNote`, the same path the
 Comments tab uses. The Files tab shows only the notes of its own branch; a note
 written before m223 is assigned to a branch only when a resolver run on a known
 mount used it, and the rest wait in `Unassigned notes` on the Session overview,
-each with `Move to <branch>`. `Post notes` in the toolbar moves the open notes
+each with `Move to` and `Discard`. `Move to` names the branch when the session
+has one, and opens an inline row of branches (the active one first, one per
+project and branch, no dialog) when it has several; the move goes through
+`assignDiffComment(sessionId, noteId, mountId)`. `Discard` goes through
+`discardDiffComments`: it deletes the rows at once and registers one
+`undoable` ("Note discarded" or "N notes discarded"), whose Undo and ⌘Z
+re-insert the same rows with the same ids (`restoreDiffComment`); a status
+`discarded` would need a migration because `diff_comments.status` is a CHECK
+list. With two or more notes the section header has `Discard all`. `Post notes` in the toolbar moves the open notes
 of the branch into a review draft. Write review puts
 its form under the last file: the line comments with Edit and Delete on hover (Delete offers Undo), the verdict,
 the summary, and one primary that says the verdict (`Approve`,

@@ -1,6 +1,7 @@
 import { addDiffComment } from './addDiffComment';
 import { assignDiffComment } from './assignDiffComment';
 import { deleteDiffComment } from './deleteDiffComment';
+import { discardDiffComments } from './discardDiffComments';
 import { loadDiffComments } from './loadDiffComments';
 import { reopenDiffComment } from './reopenDiffComment';
 import type { SliceDeps } from '../../slice-types';
@@ -12,5 +13,6 @@ export const createDiffCommentsSlice = ({ set, get }: SliceDeps) => {
     assignDiffComment: assignDiffComment(set, get),
     reopenDiffComment: reopenDiffComment(set, get),
     deleteDiffComment: deleteDiffComment(set, get),
+    discardDiffComments: discardDiffComments(set, get),
   };
 };
