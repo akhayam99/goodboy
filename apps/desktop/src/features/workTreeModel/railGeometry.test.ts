@@ -1,10 +1,15 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import {
+  RAIL_CONTENT_PAD,
+  RAIL_COUNT_RADIUS,
+  RAIL_LABEL_GAP,
   RAIL_LANE_OFFSET,
+  RAIL_MARKER_RADIUS,
   RAIL_SPINE_X,
   layoutTimelineRail,
   railColumnX,
+  railInsetOf,
   railLaneSpans,
   type RailGroupInput,
   type RailGroupShape,
@@ -542,6 +547,88 @@ describe('layoutTimelineRail', () => {
   it('places columns one lane offset apart from the spine', () => {
     expect(railColumnX({ column: 0 })).toBe(RAIL_SPINE_X);
     expect(railColumnX({ column: 2 })).toBe(RAIL_SPINE_X + 2 * RAIL_LANE_OFFSET);
+  });
+});
+
+describe('railInsetOf', () => {
+  const labelXOf = (layout: ReturnType<typeof layoutTimelineRail>, id: string, radius?: number) =>
+    railInsetOf({ rail: railRow(layout, id), markerRadius: radius }) + RAIL_CONTENT_PAD;
+
+  const nested = () =>
+    layoutTimelineRail({
+      rows: [
+        row({ id: 'grandchild', groupId: 'stub-2' }),
+        row({ id: 'child', groupId: 'stub-1' }),
+        row({ id: 'step', groupId: 'lane' }),
+        row({ id: 'origin' }),
+      ],
+      groups: [
+        group({ id: 'lane', originRowId: 'origin' }),
+        group({ id: 'stub-1', originRowId: 'step', parentGroupId: 'lane' }),
+        group({ id: 'stub-2', originRowId: 'child', parentGroupId: 'stub-1' }),
+      ],
+    });
+
+  it('starts a label a fixed gap after the right edge of its own marker', () => {
+    const layout = nested();
+
+    for (const id of ['origin', 'step', 'child', 'grandchild']) {
+      const rail = railRow(layout, id);
+      const markerEdge = railColumnX({ column: rail.markerColumn }) + RAIL_MARKER_RADIUS;
+      expect(labelXOf(layout, id)).toBe(markerEdge + RAIL_LABEL_GAP);
+    }
+  });
+
+  it('indents each depth by exactly one lane column', () => {
+    const layout = nested();
+
+    expect(labelXOf(layout, 'step') - labelXOf(layout, 'origin')).toBe(RAIL_LANE_OFFSET);
+    expect(labelXOf(layout, 'child') - labelXOf(layout, 'step')).toBe(RAIL_LANE_OFFSET);
+    expect(labelXOf(layout, 'grandchild') - labelXOf(layout, 'child')).toBe(RAIL_LANE_OFFSET);
+  });
+
+  it('hugs the smaller count node by its own radius', () => {
+    const layout = nested();
+
+    expect(labelXOf(layout, 'step') - labelXOf(layout, 'step', RAIL_COUNT_RADIUS)).toBe(
+      RAIL_MARKER_RADIUS - RAIL_COUNT_RADIUS,
+    );
+  });
+
+  it('keeps a row on the spine at one column when a child lane passes beside it', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({ id: 'step-2', groupId: 'lane' }),
+        row({ id: 'standalone' }),
+        row({ id: 'step-1', groupId: 'lane' }),
+        row({ id: 'origin' }),
+      ],
+      groups: [group({ id: 'lane', originRowId: 'origin' })],
+    });
+
+    expect(labelXOf(layout, 'standalone')).toBe(labelXOf(layout, 'origin'));
+  });
+
+  it('clears a lane two columns over that runs through the row', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({ id: 'grandchild', groupId: 'stub-2' }),
+        row({ id: 'standalone' }),
+        row({ id: 'child', groupId: 'stub-2' }),
+        row({ id: 'step', groupId: 'lane' }),
+        row({ id: 'origin' }),
+      ],
+      groups: [
+        group({ id: 'lane', originRowId: 'origin' }),
+        group({ id: 'stub-2', originRowId: 'step', parentGroupId: 'lane' }),
+      ],
+    });
+    const lanes = lanesOf(layout, 'standalone');
+
+    expect(Math.max(...lanes.map((segment) => segment.column))).toBeGreaterThanOrEqual(1);
+    expect(labelXOf(layout, 'standalone')).toBeGreaterThanOrEqual(
+      railColumnX({ column: Math.max(...lanes.map((segment) => segment.column)) }) + 1,
+    );
   });
 });
 

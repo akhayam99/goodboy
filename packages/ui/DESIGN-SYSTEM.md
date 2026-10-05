@@ -413,6 +413,18 @@ run, top down. Both draw their structure with the same four ingredients.
 | pattern    | solid or dashed                                                                    | solid happened, dashed has not happened yet |
 | count row  | hollow 10px node on the lane, muted text on the label column, 24px high            | a finished branch, folded                   |
 
+Content hugs its marker. The label of a row (ordinal, role glyph and title, a
+fact row's words, a count row's summary) starts a fixed 10px after the right
+edge of that row's own marker: label x is the marker column's x plus the marker
+radius (10px, 5px for the count node) plus 10px. The rail space of a row ends
+where its label starts, so depth 0, 1 and 2 indent by exactly one 16px column
+each and no row has a wide empty gap between ball and text. The right-hand
+columns (state, model cell, duration over cost) hang on the row's right edge and
+stay aligned across rows; the time gutter is unchanged. A lane two columns or
+more beyond the marker that runs through a row pushes that row's label past it.
+`railInsetOf` in `railGeometry.ts` computes the space; the run page keeps its
+one global rail width. The step ordinal is left-aligned in a 16px slot.
+
 A lane starts at its origin marker with a quarter curve out of the column of
 the row above it in the hierarchy and climbs through its members. The origin
 row (the Workflow row) sits at the run's start time, at the bottom of its

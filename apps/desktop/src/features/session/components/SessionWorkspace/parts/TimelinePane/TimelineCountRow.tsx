@@ -18,8 +18,6 @@ type Props = {
   readonly onSet: (params: { readonly id: string; readonly isExpanded: boolean }) => void;
 };
 
-const STEP_ALIGNED: ReadonlyArray<TimelineCountItem['branchKind']> = ['steps', 'subagents'];
-
 export const TimelineCountRow = ({ item, rail, railWidth, lanes, isExpanded, onSet }: Props) => {
   const label = groupSummaryText({ summary: item.summary });
   const set = ({ isExpanded: next }: { readonly isExpanded: boolean }) =>
@@ -71,12 +69,6 @@ export const TimelineCountRow = ({ item, rail, railWidth, lanes, isExpanded, onS
           )}
           style={{ height: TIMELINE_RHYTHM.grade.count.height }}
         >
-          {STEP_ALIGNED.includes(item.branchKind) ? (
-            <>
-              <span aria-hidden className="w-6 shrink-0" />
-              <span aria-hidden className="w-[18px] shrink-0" />
-            </>
-          ) : null}
           <TimelineFoldSummary summary={item.summary} />
         </button>
       </div>

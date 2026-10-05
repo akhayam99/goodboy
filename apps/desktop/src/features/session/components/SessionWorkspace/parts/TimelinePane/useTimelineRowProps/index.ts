@@ -19,6 +19,7 @@ import type {
 import type { ExplodeGroups } from '../../../../../hooks/useExplodeGroups';
 import { useAgentTouchedWorktrees } from '../../../../../hooks/useAgentTouchedWorktrees';
 import { useTimelineOpen } from '../../../../../hooks/useTimelineOpen';
+import { RAIL_COUNT_RADIUS, railInsetOf } from '../../../../../../workTreeModel/railGeometry';
 import type { TimelineEntryRowHandlers } from '../TimelineEntryRow';
 import type { TimelineLaneControl, TimelineLaneTarget } from '../TimelineRail';
 import type { TimelineRowProps } from '../TimelineRow';
@@ -296,7 +297,10 @@ export const useTimelineRowProps = ({ session, explode, rows }: Params): RowProp
     if (rail === undefined) {
       return null;
     }
-    const railWidth = rows.rail.width;
+    const railWidth = railInsetOf({
+      rail,
+      markerRadius: item.kind === 'count' ? RAIL_COUNT_RADIUS : undefined,
+    });
     const rowLaneId = item.kind === 'row' ? (laneRuns.laneIdByRowId.get(item.id) ?? null) : null;
     if (item.kind === 'now') {
       return { kind: 'now', item, rail, railWidth, sessionId, lanes };
