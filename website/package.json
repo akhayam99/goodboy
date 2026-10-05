@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --port 1499 --host",
     "build": "tsc -b && node scripts/prerender.mjs",
+    "test": "node --test scripts/*.test.mjs",
     "build:brand": "node scripts/build-brand-assets.mjs",
     "sync:tokens": "node scripts/sync-app-tokens.mjs",
     "check:page": "node scripts/sync-app-tokens.mjs --check && node scripts/sync-icons.mjs --check && node scripts/check-page.mjs",

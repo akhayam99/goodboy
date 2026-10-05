@@ -25,7 +25,9 @@ runs no JavaScript reads the same page a visitor does.
 `website/src/server/renderSite.tsx`, and writes what `renderSite` returns into
 `dist/`: each template's
 `<!--app-html-->` mark gets the page rendered with `react-dom/server`. The
-client entries then `hydrateRoot` that HTML instead of rendering from scratch.
+client entries mount through `website/src/mountRoot.tsx`: it hydrates
+prerendered HTML and renders from scratch in `pnpm dev` or when the root holds
+no element, as the unbuilt templates do.
 
 Both builds share one star count (`GOODBOY_STARS`), so the server and the
 client render the same button. Server and client must render the same first
@@ -91,7 +93,11 @@ the nav alone, since the rest is static. The server build reads
 `CHANGELOG.md`, `FEATURES.md` and `docs/features/` from the repo root, so
 the Vercel project must keep files outside `website/` in the build (the
 default). Markdown renders with `marked` at build time and ships no parser to
-the browser; images in a doc load lazily, except the first.
+the browser. HTML comments come out with a character scanner
+(`website/src/server/stripComments.ts`), not a regex. A doc's
+`<picture>` with a `prefers-color-scheme: dark` source becomes two lazy
+images, one per site theme, so the header toggle picks the screenshot, not the
+system (`website/src/server/themePictures.ts`). `pnpm test` runs their tests.
 
 Each cluster shows its main features, not all of them. In `features.data.json`
 every item of the guide stays in the file: 3 to 5 items per cluster carry
@@ -117,7 +123,9 @@ ships no raster file.
   `usePlayOnce`. It rests on its final state under `prefers-reduced-motion`.
 - The hero mock is the one `MockStage` with `isHero`, which sets
   `data-hero-mock`. At least 380 px of it must show in the first 900 px at 1440.
-- The only images are brand assets, see [docs/brand.md](../docs/brand.md).
+- On `/` and `/features` the only images are brand assets, see
+  [docs/brand.md](../docs/brand.md). The `/docs` pages show the guide's own
+  screenshots.
 
 ## Theme
 
@@ -226,18 +234,26 @@ the tap holds casks and has no Linux formula. A phone has no download buttons.
 
 `pnpm check:page [url...]` drives headless Chrome over a running page (default
 `http://localhost:1499/`) at 1440, 1024, 768, 660 and 390 pixels wide, in
-both themes, at twice the pixel density. The `/` and `/features` pages both
-pass it. Tag Manager is blocked during the run.
+both themes, at twice the pixel density. With no url it checks `/`,
+`/features` and one page of each content kind; every route passes it. Tag
+Manager is blocked during the run.
+
+`/` and `/features` are the marketing pages. On the changelog, docs and 404
+pages, which hold repo docs and their screenshots, the check skips the rules
+marked "marketing pages" below and lets any link reach a `/docs/<area>` page.
 
 Rules that run on every page:
 
-- No horizontal overflow, no em dash or middot triplet in visible text, no
-  heading that ends with a period, and Inter loaded.
+- No horizontal overflow, no em dash in visible text, no heading that ends
+  with a period, and Inter loaded. Marketing pages also have no middot
+  triplet; the docs quote app labels that use one.
 - A section never runs into the next one, and its content never spills below
   it. The consent card never covers the h1.
-- No raster image in `main`: no `img` and no `picture`.
-- No shadow on a mock window or a stage, outside `data-shadow-exception`. A page
-  with no `.mockStage` fails, so the rule cannot pass by finding nothing.
+- Marketing pages: no raster image in `main`, no `img` and no `picture`.
+- No shadow on a mock window or a stage, outside `data-shadow-exception`. A
+  marketing page with no `.mockStage` fails, so the rule cannot pass by finding
+  nothing.
+- Every image that renders has loaded; an image hidden by the theme is skipped.
 - Chapters alternate tones, and no two neighbours share one. Each chapter has
   at most one eyebrow; the tour has none, its tabs do that job. An eyebrow is a `FEATURES.md` group name verbatim, or one of the
   page eyebrows listed in the script (the hero's "Free desktop ADE, built in public", "Install" and "All features").
@@ -252,13 +268,13 @@ Rules that run on every page:
   painted gradient. Add no new gradient; use a flat colour.
 - Board mock: the cards of a row, across the stage columns, differ in height by
   at most 1 px.
-- Copy: a sentence has at most 20 words, and no word repeats across an eyebrow,
+- Copy, on marketing pages: a sentence has at most 20 words, and no word repeats across an eyebrow,
   heading and lead, apart from `goodboy`, `task`, `tasks` and the function
   words `your`, `with`, `that`, `this` and `from`.
 - Links: every `data-see-more` points at a real `/features` anchor. A link to
   `FEATURES.md`, to a `docs/features/<area>.md` file or to its `/docs/<area>`
-  page sits only on a `.refLink` or in the footer, the file exists, and any
-  anchor is a heading in it.
+  page sits only on a `.refLink` or in the footer (or anywhere on a content
+  page, for `/docs/<area>`), the file exists, and any anchor is a heading in it.
 - Works with: `[data-works-with]` sits in the first screen on `/`.
 - Download: the download buttons show on `/` with a mouse and never on a phone,
   and every `[data-download]` href starts with `/releases/download/`.
@@ -278,7 +294,8 @@ Phone run, which emulates touch:
   type to 13 px under `(hover: none) and (pointer: coarse)` in its own css or in
   `kit/kit.css`, and keeps its desktop size otherwise.
 - Every button, `.btn`, nav link and menu link is 44 px tall or more.
-- There is a visible menu button, and a visible `[data-star]` element.
+- There is a visible menu button, and on marketing pages a visible
+  `[data-star]` element.
 
 Coverage, once per run: every group in `FEATURES.md` is in a cluster of
 `features.data.json`, and every cluster has an element with its id on

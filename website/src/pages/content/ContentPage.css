@@ -155,6 +155,15 @@
   border-radius: var(--r-view);
 }
 
+.prose .themeImage.dark,
+:root[data-theme='dark'] .prose .themeImage.light {
+  display: none;
+}
+
+:root[data-theme='dark'] .prose .themeImage.dark {
+  display: block;
+}
+
 .prose table {
   display: block;
   max-width: 100%;

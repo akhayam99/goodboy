@@ -1,12 +1,6 @@
-import { StrictMode } from 'react';
-import { hydrateRoot } from 'react-dom/client';
+import { mountRoot } from '../../mountRoot';
 import { FeaturesPage } from './FeaturesPage';
 import '../../styles.css';
 import '../../styles/consent.css';
 
-hydrateRoot(
-  document.getElementById('root')!,
-  <StrictMode>
-    <FeaturesPage />
-  </StrictMode>,
-);
+mountRoot({ container: document.getElementById('root')!, children: <FeaturesPage /> });

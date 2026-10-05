@@ -1,18 +1,14 @@
 import { Marked, type Tokens } from 'marked';
 import { SITE } from '../site';
+import { escapeHtml } from './escapeHtml';
+import { stripComments } from './stripComments';
+import { themePictures } from './themePictures';
 
 type Params = {
   readonly source: string;
   readonly directory: string;
 };
 
-const COMMENT = /<!--[\s\S]*?-->/g;
-const COMMENT_FRAGMENT = /<!--|-->/g;
-
-const stripComments = (source: string): string => {
-  const next = source.replace(COMMENT, '').replace(COMMENT_FRAGMENT, '');
-  return next === source ? next : stripComments(next);
-};
 const FEATURE_DOC = /^\/docs\/features\/([a-z-]+)\.md$/;
 const EXTERNAL = /^(?:[a-z]+:|#)/i;
 
@@ -40,30 +36,13 @@ const siteHref = ({ href, directory }: HrefParams) => {
   return `${SITE.repo}/blob/main${url.pathname}${url.hash}`;
 };
 
-type ImageParams = {
-  readonly html: string;
-  readonly isFirst: boolean;
-};
-
-const lazyImages = ({ html, isFirst }: ImageParams) =>
-  html.replace(/<img(?![^>]*\sloading=)/g, () =>
-    isFirst ? '<img decoding="async"' : '<img loading="lazy" decoding="async"',
-  );
-
 export const renderMarkdown = ({ source, directory }: Params) => {
   const slugs = new Map<string, number>();
-  let imageCount = 0;
   const uniqueSlug = (text: string) => {
     const base = githubSlug(text);
     const seen = slugs.get(base) ?? 0;
     slugs.set(base, seen + 1);
     return seen === 0 ? base : `${base}-${seen}`;
-  };
-  const withImages = (html: string) => {
-    const count = (html.match(/<img/g) ?? []).length;
-    const result = lazyImages({ html, isFirst: imageCount === 0 });
-    imageCount += count;
-    return result;
   };
   const marked = new Marked({
     gfm: true,
@@ -79,13 +58,14 @@ export const renderMarkdown = ({ source, directory }: Params) => {
         return `<h${level} id="${uniqueSlug(text)}">${this.parser.parseInline(tokens)}</h${level}>\n`;
       },
       html({ text }) {
-        return withImages(text);
+        return themePictures({ html: text });
       },
       image({ href, title, text }) {
-        const titleAttribute = title === null || title === undefined ? '' : ` title="${title}"`;
-        return withImages(`<img src="${href}" alt="${text}"${titleAttribute}>`);
+        const titleAttribute =
+          title === null || title === undefined ? '' : ` title="${escapeHtml(title)}"`;
+        return `<img src="${escapeHtml(href)}" alt="${escapeHtml(text)}"${titleAttribute} loading="lazy" decoding="async">`;
       },
     },
   });
-  return marked.parse(stripComments(source), { async: false });
+  return marked.parse(stripComments({ source }), { async: false });
 };

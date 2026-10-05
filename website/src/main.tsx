@@ -1,7 +1,6 @@
-import { StrictMode } from 'react';
-import { createRoot, hydrateRoot } from 'react-dom/client';
 import { App } from './App';
 import { FidelityView } from './components/FidelityView';
+import { mountRoot } from './mountRoot';
 import './styles.css';
 import './styles/consent.css';
 
@@ -11,24 +10,14 @@ if (theme === 'dark' || theme === 'light') {
   document.documentElement.dataset.theme = theme;
 }
 
-const mountPage = () => {
-  const root = document.getElementById('root')!;
-  const mock = params.get('fidelity');
-  if (mock !== null) {
-    root.replaceChildren();
-    createRoot(root).render(
-      <StrictMode>
-        <FidelityView mock={mock} />
-      </StrictMode>,
-    );
-    return;
-  }
-  hydrateRoot(
-    root,
-    <StrictMode>
-      <App />
-    </StrictMode>,
-  );
-};
+const container = document.getElementById('root')!;
+const mock = params.get('fidelity');
 
-mountPage();
+if (mock !== null) {
+  container.replaceChildren();
+}
+
+mountRoot({
+  container,
+  children: mock === null ? <App /> : <FidelityView mock={mock} />,
+});
