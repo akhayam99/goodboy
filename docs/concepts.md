@@ -1372,7 +1372,12 @@ task up again in Goodboy.
 ### Identifiers
 
 Session stages, in `SessionStage`: `attention` (**needs you**), `running`,
-`review` (**in review**), `building`, `done`.
+`review` (**in review**), `building`, `done`. A fix run raises `attention` too:
+a comment that **Needs you** gives the reason `fix-needs-you` (before open
+questions, it opens the Comments tab) and a comment that **Couldn't fix** (not
+one you stopped, not a failed push) gives `fix-couldnt-fix`. Both also send one
+notification when the count rises (`projectResolveRows`), with an action that
+opens Activity, where the Needs you row waits.
 
 Agent kinds, in `AGENT_KIND_ORDER`:
 

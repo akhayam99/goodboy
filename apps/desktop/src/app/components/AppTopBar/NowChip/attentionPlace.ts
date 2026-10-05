@@ -27,7 +27,12 @@ export const attentionPlace = ({ state, sessionId, reason }: Params): PlaceReque
   if (reason === 'ci-failed') {
     return branchPlace({ sessionId, tab: 'checks' });
   }
-  if (reason === 'pr-approved' || reason === 'changes-requested') {
+  if (
+    reason === 'pr-approved' ||
+    reason === 'changes-requested' ||
+    reason === 'fix-needs-you' ||
+    reason === 'fix-couldnt-fix'
+  ) {
     return branchPlace({ sessionId, tab: 'comments' });
   }
   if (reason === null) {

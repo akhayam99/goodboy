@@ -4,6 +4,11 @@ import type {
   ResolveThread,
   SessionId,
 } from '@goodboy/types';
+import {
+  resolveAttentionOf,
+  resolveAttentionRaised,
+  type ResolveAttention,
+} from './resolveAttention';
 import type { SliceParams } from './types';
 
 type Params = SliceParams & {
@@ -31,7 +36,50 @@ const withFreshThreads = ({
   });
 };
 
-export const projectResolveRows = ({ set, sessionId, rows, attempts }: Params): void => {
+const notifyRaised = ({
+  get,
+  sessionId,
+  after,
+  raised,
+}: {
+  readonly get: SliceParams['get'];
+  readonly sessionId: SessionId;
+  readonly after: ResolveAttention;
+  readonly raised: ReturnType<typeof resolveAttentionRaised>;
+}): void => {
+  if (raised.needsYou) {
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: 'A fix run needs you',
+      body: `${after.needsYou === 1 ? '1 comment waits' : `${after.needsYou} comments wait`} for your answer.`,
+      sessionId,
+      action: { kind: 'open-activity', sessionId },
+      coalesceKey: `fix-run-needs-you:${sessionId}`,
+    });
+  }
+  if (raised.couldntFix) {
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: `A fix run couldn't fix ${after.couldntFix === 1 ? 'a comment' : `${after.couldntFix} comments`}`,
+      body: 'Retry it in the run or start over from the Comments tab.',
+      sessionId,
+      action: { kind: 'open-activity', sessionId },
+      coalesceKey: `fix-run-couldnt-fix:${sessionId}`,
+    });
+  }
+};
+
+export const projectResolveRows = ({ set, get, sessionId, rows, attempts }: Params): void => {
+  const known = get().sessionResolveThreads[sessionId];
+  const before =
+    known === undefined
+      ? null
+      : resolveAttentionOf({
+          threads: known,
+          attempts: get().sessionResolveAttempts[sessionId] ?? [],
+        });
   set((state) => {
     const queueItems = withFreshThreads({
       entries: state.sessionResolveQueueItems[sessionId],
@@ -45,4 +93,9 @@ export const projectResolveRows = ({ set, sessionId, rows, attempts }: Params): 
       }),
     };
   });
+  if (before === null) {
+    return;
+  }
+  const after = resolveAttentionOf({ threads: rows, attempts });
+  notifyRaised({ get, sessionId, after, raised: resolveAttentionRaised({ before, after }) });
 };
