@@ -1481,7 +1481,7 @@ const compareExecutionPathDescending = ({ first, second }: CompareExecutionPathP
   return secondPath.length - firstPath.length;
 };
 
-type HeadParams = {
+type DraftGroupsParams = {
   readonly drafts: ReadonlyArray<DraftRow>;
   readonly groups: ReadonlyArray<RailGroupInput>;
 };
@@ -1511,7 +1511,10 @@ const downGroupsOf = ({
   readonly groups: ReadonlyArray<RailGroupInput>;
 }): ReadonlyArray<RailGroupInput> => groups.filter((group) => group.direction === 'down');
 
-const withExecutionOrder = ({ drafts: input, groups }: HeadParams): ReadonlyArray<DraftRow> => {
+const withExecutionOrder = ({
+  drafts: input,
+  groups,
+}: DraftGroupsParams): ReadonlyArray<DraftRow> => {
   const down = downGroupsOf({ groups });
   if (down.length === 0) {
     return input;
@@ -1577,7 +1580,10 @@ const withExecutionOrder = ({ drafts: input, groups }: HeadParams): ReadonlyArra
   return ordered;
 };
 
-const withPendingAtFamilyHead = ({ drafts, groups }: HeadParams): ReadonlyArray<DraftRow> => {
+const withPendingAtFamilyHead = ({
+  drafts,
+  groups,
+}: DraftGroupsParams): ReadonlyArray<DraftRow> => {
   const downIds = new Set(downGroupsOf({ groups }).map((group) => group.id));
   const pendingByFamilyId = new Map<string, DraftRow[]>();
   const unanchored: DraftRow[] = [];
@@ -1638,7 +1644,10 @@ const groupDepthOf = ({
   return depth;
 };
 
-const withMembersAboveOrigin = ({ drafts: input, groups }: HeadParams): ReadonlyArray<DraftRow> => {
+const withMembersAboveOrigin = ({
+  drafts: input,
+  groups,
+}: DraftGroupsParams): ReadonlyArray<DraftRow> => {
   const upGroups = groups.filter((group) => group.direction === 'up');
   if (upGroups.length === 0) {
     return input;

@@ -1201,6 +1201,32 @@ describe('buildTimelineStream', () => {
       expect(layout.rows[countIndex]?.markerY).toBe(count?.markerY);
     });
 
+    it('puts a day rule above a count row, never between the count row and its run row', () => {
+      const { items } = stream({
+        ...finishedRun,
+        workflows: [
+          attachedWorkflow({ createdAt: localIso({ day: 16, hour: 8 }), stepIds: ['one', 'two'] }),
+        ],
+        agents: [
+          ...finishedRun.agents.map((entry) => ({
+            ...entry,
+            startedAt: typedString<IsoDateTime>({ value: localIso({ day: 16, hour: 9 }) }),
+            completedAt: typedString<IsoDateTime>({ value: localIso({ day: 16, hour: 10 }) }),
+          })),
+          agent({ id: 'today', ordinal: 3, startedAt: localIso({ day: 18, hour: 9 }) }),
+        ],
+        folds: true,
+      });
+
+      expect(labelsOf(items)).toEqual([
+        'now',
+        'entry:agent:today',
+        'day:Aug 16',
+        'count:run:run-1',
+        'entry:run:run-1',
+      ]);
+    });
+
     it('keeps the count row as the top cap of the lane once the run is open', () => {
       const { items } = stream({
         ...finishedRun,
