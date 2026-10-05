@@ -264,7 +264,7 @@ describe('useSuggestionActions', () => {
     expect(toast).toMatchObject({
       sessionId: SESSION_ID,
       actionLabel: 'Open summary',
-      message: '1 agent started on Claude',
+      message: 'Fixing 1 comment on Claude',
     });
     expect(spies.navigate).not.toHaveBeenCalled();
     toast.open();
@@ -273,7 +273,7 @@ describe('useSuggestionActions', () => {
     });
   });
 
-  it('gives every eligible conversation its own agent inside one batch', async () => {
+  it('gives every eligible conversation to one agent inside one batch', async () => {
     storeState.sessionGithub = {
       [SESSION_ID]: {
         pr: { number: 12, headBranch: 'feature/retry', title: 't', url: 'u' },
@@ -327,11 +327,11 @@ describe('useSuggestionActions', () => {
     });
     actions.primary?.run();
 
-    await vi.waitFor(() => expect(spies.spawnAgent).toHaveBeenCalledTimes(3));
-    expect(spies.spawnAgent.mock.calls.map((call) => call[1].sourceThreadIds)).toEqual([
-      ['thread-1'],
-      ['thread-2'],
-      ['thread-3'],
+    await vi.waitFor(() => expect(spies.spawnAgent).toHaveBeenCalledOnce());
+    expect(spies.spawnAgent.mock.calls[0]?.[1].sourceThreadIds).toEqual([
+      'thread-1',
+      'thread-2',
+      'thread-3',
     ]);
     expect(spies.createResolveBatch).toHaveBeenCalledOnce();
   });

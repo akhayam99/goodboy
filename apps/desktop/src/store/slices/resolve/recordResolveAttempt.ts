@@ -4,6 +4,7 @@ import { formatError } from '@goodboy/ui';
 import type { ResolveAttempt } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { agentThreadIds } from '../../../features/session/agentThreadIds';
+import { worktreeStatus } from '../../../features/worktree/worktree';
 import { beginResolveCandidate } from './beginResolveCandidate';
 import { createResolveThread } from './createResolveThread';
 import { ResolveFailure } from './resolveFailure';
@@ -31,13 +32,15 @@ export const recordResolveAttempt = async ({
   candidateMode = 'propose',
   batch,
   launch,
+  copyPath,
 }: Params): Promise<string> => {
   const db = tauriDatabase;
   const attempts = await listResolveAttempts({ db, sessionId });
-  const queued = attempts.find(
-    (attempt) =>
-      attempt.agentId === agent.id && (attempt.phase === 'queued' || attempt.phase === 'running'),
+  const ofAgent = attempts.filter((attempt) => attempt.agentId === agent.id);
+  const queued = ofAgent.find(
+    (attempt) => attempt.phase === 'queued' || attempt.phase === 'running',
   );
+  const previous = ofAgent.at(-1);
   const now = Date.now();
   const attempt: ResolveAttempt = {
     id: queued?.id ?? crypto.randomUUID(),
@@ -49,7 +52,7 @@ export const recordResolveAttempt = async ({
       agent,
       prNumber: activeReviewSourceOf({ state: get(), sessionId })?.prNumber,
     }).prNumber,
-    threadIds: agentThreadIds(agent),
+    threadIds: threadIds ?? agentThreadIds(agent),
     provider,
     model,
     effort,
@@ -61,29 +64,34 @@ export const recordResolveAttempt = async ({
     endedAt: null,
     error: null,
     createdAt: queued?.createdAt ?? now,
-    batchId: batch?.batchId ?? queued?.batchId ?? null,
-    launchId: launch?.launchId ?? queued?.launchId ?? null,
-    retryOfLaunchId: launch?.retryOfLaunchId ?? queued?.retryOfLaunchId ?? null,
-    copyPath: queued?.copyPath ?? null,
-    launchChoice: batch?.launchChoice ?? queued?.launchChoice ?? null,
+    batchId: batch?.batchId ?? queued?.batchId ?? previous?.batchId ?? null,
+    launchId: launch?.launchId ?? queued?.launchId ?? previous?.launchId ?? null,
+    retryOfLaunchId: queued?.retryOfLaunchId ?? previous?.retryOfLaunchId ?? null,
+    copyPath: copyPath ?? queued?.copyPath ?? null,
+    launchChoice: batch?.launchChoice ?? queued?.launchChoice ?? previous?.launchChoice ?? null,
   };
   await insertResolveAttempt({ db, attempt });
   if (phase === 'running' && candidateMode === 'propose') {
     try {
+      const baseSha =
+        attempt.copyPath === null
+          ? undefined
+          : ((await worktreeStatus({ worktreePath: attempt.copyPath }).catch(() => null))?.head ??
+            undefined);
       await beginResolveCandidate({
         set,
         get,
         sessionId,
         attemptId: attempt.id,
         mountTarget,
+        ...(baseSha !== undefined && { baseSha }),
       });
     } catch (error) {
       throw new ResolveFailure({ failureCause: 'capture_failed', message: formatError(error) });
     }
   }
   const rows = await listResolveThreads({ db, sessionId });
-  const claimed = threadIds ?? attempt.threadIds;
-  for (const threadId of claimed) {
+  for (const threadId of attempt.threadIds) {
     const previous = rows.find((row) => row.threadId === threadId);
     if (previous?.state === 'closed') {
       continue;

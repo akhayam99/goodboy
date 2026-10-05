@@ -14,6 +14,7 @@ import { buildAttachmentPromptBlock } from './turnHelpers';
 import { selectActiveMount, selectMountById } from '../project-mounts/selectors';
 import { selectAutomaticTurnMount } from '../project-mounts/selectAutomaticTurnMount';
 import { rewriterCopyFor } from '../history/rewriterCopyFor';
+import { resolverLaunchCopy } from '../resolve/resolverLaunchCopy';
 import { resolveWriteDestination } from '../project-mounts/writeDestination';
 import { resolveSkillPrompt } from './resolveSkillPrompt';
 import { persistAttachments } from './persistAttachments';
@@ -59,7 +60,12 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
   const workspaceProjects = before.projects.filter(
     (project) => project.workspaceId === session.workspaceId,
   );
-  const aimedMountId = mountTarget?.mountId ?? mountId;
+  const launchAgentId = agentId ?? before.selectedAgentId[sessionId] ?? null;
+  const launchCopy =
+    resolveCopyPath !== undefined || launchAgentId === null || origin === 'mount-continuation'
+      ? null
+      : await resolverLaunchCopy({ get, sessionId, agentId: launchAgentId });
+  const aimedMountId = mountTarget?.mountId ?? launchCopy?.mountTarget?.mountId ?? mountId;
   const aimedMount =
     aimedMountId === undefined
       ? null
@@ -96,7 +102,7 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
         };
   const turnMountId = turnTarget?.mountId ?? null;
   const turnMountRevision = turnTarget?.mountRevision ?? null;
-  const copyPath = rewriterCopy === null ? (resolveCopyPath ?? null) : null;
+  const copyPath = rewriterCopy === null ? (resolveCopyPath ?? launchCopy?.copyPath ?? null) : null;
   const firstLapProject =
     rewriterCopy === null && copyPath === null && activeMount === undefined
       ? selectFirstLapProject({ state: before, sessionId })

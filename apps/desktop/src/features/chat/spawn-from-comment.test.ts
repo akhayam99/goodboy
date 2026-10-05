@@ -9,6 +9,7 @@ import {
 import type { PrComment, PullRequestState } from '@goodboy/types';
 import {
   buildCommentAgentTitle,
+  buildRecheckAgentArgs,
   buildResolverAgentArgs,
   buildResolverKickoff,
   type ResolverStyle,
@@ -257,6 +258,47 @@ describe('spawn-from-comment', () => {
     expect(prompt).toContain('never ask for permission to edit, to commit or to carry on');
     expect(prompt).toContain('<<needs-input id="the thread id"');
     expect(prompt).not.toContain('Can I commit');
+  });
+});
+
+describe('the re-check agent', () => {
+  it('is a read-only scout that answers with a verdict marker', () => {
+    const [first] = threadsOf(1);
+    const args = buildRecheckAgentArgs({
+      thread: first ?? { head: makeComment(), replies: [] },
+      pr: PR,
+      priorContext: [{ threadId: 'PRRT_1', commitShas: ['a1b2c3d'], intent: 'recheck' }],
+    });
+
+    expect(args.kind).toBe('scout');
+    expect(args.sourceKind).toBe('comment_recheck');
+    expect(args.initialPrompt).toContain('no longer reachable');
+    expect(args.initialPrompt).toContain('read-only check');
+    expect(args.initialPrompt).toContain('<<comment-verdict');
+    expect(args.initialPrompt).not.toContain('git commit --amend');
+    expect(args.initialPrompt).not.toContain('<<comment-resolved');
+  });
+});
+
+describe('the answer a resolver gets back', () => {
+  it('quotes the question it asked and the answer, scoped to the thread', () => {
+    const prompt = buildResolverAgentArgs({
+      threads: threadsOf(2),
+      pr: PR,
+      priorContext: [
+        {
+          threadId: 'PRRT_2',
+          question: 'Alias the export or rename it?',
+          answer: 'Alias it',
+          intent: 'answer',
+        },
+      ],
+    }).initialPrompt;
+
+    expect(prompt).toContain('What already happened');
+    expect(prompt).toContain('- the question you asked:\n> Alias the export or rename it?');
+    expect(prompt).toContain('- the answer:\n> Alias it');
+    expect(prompt).toContain('Finish it the way the answer says.');
   });
 });
 

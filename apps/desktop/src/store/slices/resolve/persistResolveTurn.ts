@@ -117,6 +117,7 @@ export const persistResolveTurn = async ({
         ?.text ?? null);
   const lastMessage = agentLastMessage({ assistantText });
   let hasSilentThread = false;
+  const processed: Array<string> = [];
   for (const threadId of owned) {
     const previous = rows.find((row) => row.threadId === threadId);
     if (
@@ -127,6 +128,7 @@ export const persistResolveTurn = async ({
     }
     const outcome = parsed.turnOutcomes[threadId];
     const asked = parsed.questions[threadId];
+    processed.push(threadId);
     if (isCandidate && outcome === undefined) {
       continue;
     }
@@ -182,7 +184,7 @@ export const persistResolveTurn = async ({
   }
   if (!isCandidate && attempt !== undefined) {
     const waiting = (await listResolveThreads({ db, sessionId })).some(
-      (row) => owned.includes(row.threadId) && row.state === 'needs_answer',
+      (row) => processed.includes(row.threadId) && row.state === 'needs_answer',
     );
     await setResolveAttemptPhase(
       hasSilentThread
@@ -200,7 +202,7 @@ export const persistResolveTurn = async ({
     const updatedRows = await listResolveThreads({ db, sessionId });
     const queueItems = await listResolveQueueItems({ db, sessionId });
     for (const row of updatedRows) {
-      if (!owned.includes(row.threadId) || row.disposition === null) {
+      if (!processed.includes(row.threadId) || row.disposition === null) {
         continue;
       }
       const queued = queueItems.find(({ thread }) => thread.threadId === row.threadId);
@@ -244,7 +246,7 @@ export const persistResolveTurn = async ({
           get,
           sessionId,
           attemptId: attempt.id,
-          threadIds: owned,
+          threadIds: processed,
         });
       } catch (error) {
         await failUncaptured({ sessionId, attemptId: attempt.id, error });

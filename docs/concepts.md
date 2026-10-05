@@ -819,7 +819,7 @@ without a change) and `Skip` (S), plus `Undo` (U, `Resume` on a skipped
 comment) until the push and `Fix` (F) on a comment nobody started, which opens
 the launch strip. J and K move. A checkbox appears on hover on comments nobody
 started (X toggles the focused row, Cmd+A picks every one of them, Esc clears):
-the bar `3 selected · Fix 3 separately` opens the strip for the pick, and a
+the bar `3 selected · Fix 3` opens the strip for the pick, and a
 batch is born only from a selection or one `Fix`. Edit, Answer and Reply share one text box, a document: ⌘Enter sends, Enter
 adds a line, Esc cancels, and Preview shows the markdown. Clicking the reply edits it in place.
 `…` also offers Stop drafting, Resolve without a reply, Open in diff, Agent
@@ -891,9 +891,12 @@ failed`) that opens to their reasons. A failed delivery after the run has no
   button on the comment: the Branch header reads `Retry N`, and the push
   result there offers `Sync and try again`. The comment keeps `Open on GitHub`
   when Goodboy could not confirm the reply landed
-- A batch fix runs in its own copy of the branch, up to four at a time (the
-  session limit), so two fixes never fight over the same branch. The rest wait
-  with `Waiting for a free slot`
+- A fix run is one agent in its own copy of the branch, so it never fights the
+  branch you are on. Separate runs go up to four at a time (the session limit)
+  and the rest wait with `Waiting for a free slot`. Answering a question,
+  retrying a comment that could not be fixed and typing in the transcript all
+  continue the same agent in the same copy; Start over is the one way to a new
+  agent
 - After a restart, Goodboy rebuilds everything from its database, not from a
   chat log
 

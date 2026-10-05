@@ -25,7 +25,7 @@ What already happened
 - the reply drafted last time:
 > Moved the guard.
 - commits recorded last time: abc1234
-- The reviewer asked for another pass on this thread. Read it again and decide from scratch.
+- An earlier try on this thread did not finish. Read it again and decide from scratch.
 - You already committed abc1234 for this thread. If that exact commit is still HEAD and `git branch -r --contains abc1234` prints nothing, apply the new changes and run `git commit --amend --no-edit` to keep one commit for this thread. If HEAD moved past it or a remote contains it, make a normal new commit instead. Never rebase or force-push.
 
 What to do

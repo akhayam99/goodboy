@@ -9,6 +9,7 @@ import { REVIEW_REQUEST_EVENT, isReviewRequest } from '../../../review/reviewReq
 import type { ReviewComposeMode } from '../../../review/reviewRequest';
 import type { ReviewEntry } from '../../components/ReviewFlow/useReviewEntries';
 import { RESOLVE_ITEM_LABEL } from '../../resolveItemCopy';
+import { launchKeyOf } from '../../../../store/slices/resolve/resolveLaunch';
 import { useResolveAgain } from '../useResolveAgain';
 
 export type ReviewCompose = {
@@ -89,6 +90,7 @@ export const useReviewCommentController = ({
   const env = useActionEnv({ origin: 'button' });
   const refuseResolveQueueItem = useAppStore((s) => s.refuseResolveQueueItem);
   const settleResolveSourceChange = useAppStore((s) => s.settleResolveSourceChange);
+  const answerQuestions = useAppStore((s) => s.answerQuestions);
   const requestAttempt = useResolveAgain({
     sessionId,
     rows: entries.map((entry) => entry.row),
@@ -205,6 +207,16 @@ export const useReviewCommentController = ({
         advance(next);
         return;
       }
+      const attempt = entry.row.attempt;
+      if (compose.mode === 'answer' && attempt !== null && text !== '') {
+        await answerQuestions({
+          sessionId,
+          launchId: launchKeyOf({ attempt }),
+          answers: [{ threadId: entry.threadId, answer: text }],
+        });
+        setCompose(null);
+        return;
+      }
       const outcome = await requestAttempt({
         threadId: entry.threadId,
         instruction: text === '' ? RESOLVE_ITEM_LABEL.rereadInstruction : text,
@@ -229,6 +241,7 @@ export const useReviewCommentController = ({
     }
   }, [
     advance,
+    answerQuestions,
     compose,
     entries,
     isSubmitting,

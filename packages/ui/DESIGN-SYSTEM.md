@@ -394,10 +394,10 @@ span and the summed cost. Open, it shows one row per file (the file name in
 the code face, its lines as `:12 ×4 · :22`, its state and its cost) and a last
 row `Open #318`; a burst of more than eight files opens on the first eight
 under **Show N more**. Its agents come from the launch id every resolver
-writes, a retry stays inside the burst of its origin and the row says "1
-retry". Resolves from before launch ids are grouped at read time only on a full
-key (same session, repo, provider and pull request, each started within ten
-minutes of the first one) and the row carries a `related` chip.
+writes. A fix run is one agent, and a follow-up or a retry is another turn of
+that agent, so a run never grows a retry count; only resolves from before 0.20,
+which started one agent per comment, still form a burst, grouped by launch or
+batch id. The title and the tally count comments.
 
 ### Rail vocabulary
 

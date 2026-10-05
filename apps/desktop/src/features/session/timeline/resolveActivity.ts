@@ -154,9 +154,18 @@ export const resolveFactsByAgentId = ({
   readonly reviews: ReadonlyArray<ResolveReviewState>;
 }): ReadonlyMap<string, ResolveActivityFacts> => {
   const reviewByThreadId = new Map(reviews.map((review) => [review.threadId, review]));
+  const threadIdsByAgentId = new Map<string, Set<string>>();
+  for (const attempt of attempts) {
+    const known = threadIdsByAgentId.get(attempt.agentId) ?? new Set<string>();
+    for (const threadId of attempt.threadIds) {
+      known.add(threadId);
+    }
+    threadIdsByAgentId.set(attempt.agentId, known);
+  }
   const facts = new Map<string, ResolveActivityFacts>();
   for (const [agentId, attempt] of latestAttemptByAgentId({ attempts })) {
-    facts.set(agentId, factsOfAttempt({ attempt, reviewByThreadId }));
+    const threadIds = [...(threadIdsByAgentId.get(agentId) ?? attempt.threadIds)];
+    facts.set(agentId, factsOfAttempt({ attempt: { ...attempt, threadIds }, reviewByThreadId }));
   }
   return facts;
 };

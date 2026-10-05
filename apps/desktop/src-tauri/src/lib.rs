@@ -350,6 +350,7 @@ pub fn run() {
             worktree::worktree_branch_holder,
             worktree::worktree_integrate_candidate,
             worktree::worktree_quarantine_candidate,
+            worktree::worktree_split_candidates,
             providers::refresh_provider_status,
             providers::refresh_cursor_status,
             providers::refresh_codex_status,

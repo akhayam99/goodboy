@@ -185,7 +185,7 @@ describe('Review as one flow', () => {
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
     expect(createResolveBatch).toHaveBeenCalledOnce();
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Fix launch' })).toBeNull());
-    expect(screen.getByRole('status').textContent).toMatch(/1 agent started on/);
+    expect(screen.getByRole('status').textContent).toMatch(/Fixing 1 comment on/);
   });
 
   it('opens the strip with F on the focused row, prefilled from settings, and Esc closes it', async () => {
@@ -294,19 +294,20 @@ describe('Review as one flow', () => {
     press('a', 'KeyA', { ctrlKey: true });
     const selected = [...(useAppStore.getState().reviewSelection[SESSION.id] ?? [])];
     const bar = screen.getByRole('toolbar', { name: 'Selected comments' });
-    fireEvent.click(within(bar).getByRole('button', { name: /^Fix \d+ separately/ }));
+    fireEvent.click(within(bar).getByRole('button', { name: /^Fix \d+$/ }));
 
     const strip = await screen.findByRole('region', { name: 'Fix launch' });
+    expect(within(strip).getByText(`Fix ${selected.length} comments`)).toBeDefined();
     expect(
-      within(strip).getByText(`Fix ${selected.length} comments, one agent each`),
+      within(strip).getByText(/One agent works through the \d+ comments in order/),
     ).toBeDefined();
-    expect(within(strip).getByText(/up to 4 run at once/)).toBeDefined();
-    fireEvent.click(within(strip).getByRole('button', { name: /^Start \d+ agents/ }));
+    fireEvent.click(within(strip).getByRole('button', { name: /^Start fixing \d+/ }));
 
-    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(selected.length));
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
     expect(createResolveBatch).toHaveBeenCalledOnce();
     const [call] = createResolveBatch.mock.calls[0] ?? [];
     expect([...(call?.threadIds ?? [])].sort()).toEqual([...selected].sort());
+    expect(spawnAgent.mock.calls[0]?.[1].sourceThreadIds?.length).toBe(selected.length);
     await waitFor(() =>
       expect(useAppStore.getState().reviewSelection[SESSION.id] ?? []).toEqual([]),
     );
@@ -656,9 +657,11 @@ describe('Review of a failed run', () => {
   it('retries on the model the reviewer picked and keeps the earlier attempt in one line', async () => {
     const spawnAgent = vi.fn<StoreState['spawnAgent']>(async () => 'agent-retry' as AgentId);
     const setAgentConfig = vi.fn<StoreState['setAgentConfig']>(async () => undefined);
+    const createResolveBatch = vi.fn<StoreState['createResolveBatch']>(async () => BATCH);
     stub({
       spawnAgent: spawnAgent,
       setAgentConfig: setAgentConfig,
+      createResolveBatch: createResolveBatch,
     });
     await mountFailed({ failure: 'history' });
     act(() => {
@@ -681,10 +684,14 @@ describe('Review of a failed run', () => {
     expect(args?.effort).toBe('high');
   });
 
-  it('opens the hint field and sends it with the retry', async () => {
+  it('opens the hint field and sends it with the retry to the same run', async () => {
     const spawnAgent = vi.fn<StoreState['spawnAgent']>(async () => 'agent-retry' as AgentId);
+    const continueResolveThreads = vi.fn<StoreState['continueResolveThreads']>(
+      async () => undefined,
+    );
     stub({
       spawnAgent: spawnAgent,
+      continueResolveThreads: continueResolveThreads,
       setAgentConfig: vi.fn<StoreState['setAgentConfig']>(async () => undefined),
     });
     await mountFailed({ failure: 'run' });
@@ -696,9 +703,30 @@ describe('Review of a failed run', () => {
     fireEvent.change(field, { target: { value: 'Use ON CONFLICT' } });
     fireEvent.click(within(comment()).getByRole('button', { name: 'Retry with the hint' }));
 
-    await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
-    const args = spawnAgent.mock.calls[0]?.[1];
-    expect(args?.initialPrompt).toContain('Use ON CONFLICT');
+    await waitFor(() => expect(continueResolveThreads).toHaveBeenCalledOnce());
+    expect(continueResolveThreads.mock.calls[0]?.[0]).toMatchObject({
+      threadIds: [FAILED_THREAD_ID],
+      hint: 'Use ON CONFLICT',
+    });
+    expect(spawnAgent).not.toHaveBeenCalled();
+  });
+
+  it('retries a failed comment in the same run when no other model was picked', async () => {
+    const spawnAgent = vi.fn<StoreState['spawnAgent']>(async () => 'agent-retry' as AgentId);
+    const continueResolveThreads = vi.fn<StoreState['continueResolveThreads']>(
+      async () => undefined,
+    );
+    stub({
+      spawnAgent: spawnAgent,
+      continueResolveThreads: continueResolveThreads,
+      setAgentConfig: vi.fn<StoreState['setAgentConfig']>(async () => undefined),
+    });
+    await mountFailed({ failure: 'run' });
+
+    fireEvent.click(within(comment()).getByRole('button', { name: /^Retry/ }));
+
+    await waitFor(() => expect(continueResolveThreads).toHaveBeenCalledOnce());
+    expect(spawnAgent).not.toHaveBeenCalled();
   });
 
   it('puts Reply yourself, Skip and Open transcript in the menu', async () => {

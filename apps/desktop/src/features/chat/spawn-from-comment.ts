@@ -199,24 +199,23 @@ const instructionsSection = ({ count }: { readonly count: number }): ReadonlyArr
   ];
 };
 
-const PROCEED_RESOLVER_PROMPT =
-  'Proceed with the fix you proposed in your analysis. When done, commit and emit the <<comment-resolved>> marker as instructed.';
-
-type PriorContextIntent = 'retry' | 'recheck' | 'proceed';
+type PriorContextIntent = 'retry' | 'recheck' | 'answer';
 
 export type PriorContext = {
   readonly threadId: string;
   readonly reply?: string | null;
   readonly commitShas?: ReadonlyArray<string>;
+  readonly question?: string | null;
+  readonly answer?: string | null;
   readonly intent: PriorContextIntent;
 };
 
 const INTENT_SENTENCE: Record<PriorContextIntent, string> = {
-  retry:
-    'The reviewer asked for another pass on this thread. Read it again and decide from scratch.',
+  retry: 'An earlier try on this thread did not finish. Read it again and decide from scratch.',
   recheck:
     'The commit recorded for this thread is no longer reachable on the branch. Find out whether the change it made is on the branch under another commit, was removed on purpose, or still has to be made.',
-  proceed: PROCEED_RESOLVER_PROMPT,
+  answer:
+    'The owner answered the question you asked on this thread. Finish it the way the answer says.',
 };
 
 const amendInstruction = ({ sha }: { readonly sha: string }): string =>
@@ -233,6 +232,14 @@ const priorContextBlock = ({
     const reply = entry.reply?.trim() ?? '';
     if (reply !== '') {
       lines.push('- the reply drafted last time:', ...quotedBody({ body: reply }));
+    }
+    const question = entry.question?.trim() ?? '';
+    if (question !== '') {
+      lines.push('- the question you asked:', ...quotedBody({ body: question }));
+    }
+    const answer = entry.answer?.trim() ?? '';
+    if (answer !== '') {
+      lines.push('- the answer:', ...quotedBody({ body: answer }));
     }
     const shas = entry.commitShas ?? [];
     if (shas.length > 0) {

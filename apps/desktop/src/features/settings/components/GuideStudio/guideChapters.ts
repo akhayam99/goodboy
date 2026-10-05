@@ -338,7 +338,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Comments',
-        desc: 'The review threads of the branch, grouped as Open, Ready to push and Done, and the open thread beside them. Fix writes each fix as a local commit and drafts the reply, and you accept, edit or skip it. Select several comments and Fix N separately starts one agent for each, up to four at a time.',
+        desc: 'The review threads of the branch, grouped as Open, Ready to push and Done, and the open thread beside them. Fix writes each fix as a local commit and drafts the reply, and you accept, edit or skip it. Select several comments and Fix N sends them to one agent, which works through them in its own copy of the branch.',
       },
       {
         term: 'Fix run',

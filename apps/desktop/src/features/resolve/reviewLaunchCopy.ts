@@ -25,24 +25,18 @@ export const launchTitle = ({
   readonly noun?: LaunchNoun;
 }): string => {
   if (noun === 'note') {
-    return count === 1 ? 'Fix 1 note' : `Fix ${count} notes, one agent each`;
+    return count === 1 ? 'Fix 1 note' : `Fix ${count} notes`;
   }
-  return count === 1 ? 'Fix this comment' : `Fix ${count} comments, one agent each`;
+  return count === 1 ? 'Fix this comment' : `Fix ${count} comments`;
 };
 
 export const launchStartLabel = ({ count }: { readonly count: number }): string =>
-  count === 1 ? 'Start' : `Start ${count} agents`;
+  count === 1 ? 'Start' : `Start fixing ${count}`;
 
-export const launchFactLine = ({
-  count,
-  limit,
-}: {
-  readonly count: number;
-  readonly limit: number;
-}): string =>
+export const launchFactLine = ({ count }: { readonly count: number }): string =>
   count === 1
     ? 'One agent, working on its own copy of the branch'
-    : `${count} agents · up to ${limit} run at once · each works on its own copy of the branch`;
+    : `One agent works through the ${count} comments in order, on its own copy of the branch`;
 
 export const startedLine = ({
   count,
@@ -50,7 +44,7 @@ export const startedLine = ({
 }: {
   readonly count: number;
   readonly modelName: string;
-}): string => `${count} ${count === 1 ? 'agent' : 'agents'} started on ${modelName}`;
+}): string => `Fixing ${count} ${count === 1 ? 'comment' : 'comments'} on ${modelName}`;
 
 export const fixSelectedLabel = ({ count }: { readonly count: number }): string =>
-  count === 1 ? 'Fix' : `Fix ${count} separately`;
+  count === 1 ? 'Fix' : `Fix ${count}`;

@@ -1150,6 +1150,136 @@ describe('durable resolve store', () => {
     expect(attempt).toMatchObject({ phase: 'failed', failureCause: 'provider_error' });
   });
 
+  it('keeps the launch, the batch, the copy and the choice on a follow-up turn of the same agent', async () => {
+    const live = createHarness();
+    await live.actions.loadResolveSession({ sessionId: SESSION_ID });
+    const launchChoice = {
+      provider: 'anthropic',
+      model: 'claude-sonnet-5-5',
+      effort: 'medium',
+      commitStyle: 'new' as const,
+      hint: null,
+    };
+    const batch = await live.actions.createResolveBatch({
+      sessionId: SESSION_ID,
+      threadIds: ['PRRT_1', 'PRRT_2'],
+      launchChoice,
+    });
+    const first = await live.actions.recordResolveAttempt({
+      sessionId: SESSION_ID,
+      agent,
+      provider: 'anthropic',
+      model: 'claude-sonnet-5-5',
+      effort: 'medium',
+      instructions: 'kick',
+      phase: 'queued',
+      mountTarget: MOUNT_TARGET,
+      batch: { batchId: batch.id, launchChoice },
+      launch: { launchId: 'launch-1' },
+    });
+    await db.execute('UPDATE resolve_attempts SET copy_path = ? WHERE id = ?', [
+      '/copies/one',
+      first,
+    ]);
+    await live.actions.recordResolvePhase({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      attemptId: first,
+      phase: 'finished',
+    });
+
+    const second = await live.actions.recordResolveAttempt({
+      sessionId: SESSION_ID,
+      agent,
+      provider: 'anthropic',
+      model: 'claude-sonnet-5-5',
+      effort: 'medium',
+      instructions: 'the answer',
+      phase: 'running',
+      mountTarget: MOUNT_TARGET,
+      threadIds: ['PRRT_2'],
+      copyPath: '/copies/one',
+    });
+
+    expect(second).not.toBe(first);
+    const attempts = await listResolveAttempts({ db, sessionId: SESSION_ID });
+    expect(attempts).toHaveLength(2);
+    expect(attempts.find((attempt) => attempt.id === second)).toMatchObject({
+      launchId: 'launch-1',
+      batchId: batch.id,
+      copyPath: '/copies/one',
+      launchChoice,
+      threadIds: ['PRRT_2'],
+      phase: 'running',
+    });
+    const rows = await listResolveThreads({ db, sessionId: SESSION_ID });
+    expect(rows.find((row) => row.threadId === 'PRRT_2')?.activeAttemptId).toBe(second);
+    expect(rows.find((row) => row.threadId === 'PRRT_1')?.activeAttemptId).toBe(first);
+  });
+
+  it('lets an answer turn touch only the comment it answers', async () => {
+    const live = createHarness();
+    await live.actions.loadResolveSession({ sessionId: SESSION_ID });
+    const first = await live.actions.recordResolveAttempt({
+      sessionId: SESSION_ID,
+      agent,
+      provider: 'anthropic',
+      model: 'model',
+      effort: null,
+      instructions: null,
+      phase: 'running',
+      mountTarget: MOUNT_TARGET,
+    });
+    await live.actions.persistResolveTurn({
+      sessionId: SESSION_ID,
+      agent,
+      attemptId: first,
+      assistantText: [
+        '<<comment-resolved threadId="PRRT_1" commitSha="1111111111">>',
+        '<<needs-input id="PRRT_2" options="Alias it|Rename it">>Alias or rename?<</needs-input>>',
+      ].join('\n'),
+    });
+
+    const second = await live.actions.recordResolveAttempt({
+      sessionId: SESSION_ID,
+      agent,
+      provider: 'anthropic',
+      model: 'model',
+      effort: null,
+      instructions: 'the answer',
+      phase: 'running',
+      mountTarget: MOUNT_TARGET,
+      threadIds: ['PRRT_2'],
+    });
+    await live.actions.persistResolveTurn({
+      sessionId: SESSION_ID,
+      agent,
+      attemptId: second,
+      assistantText: [
+        '<<comment-resolved threadId="PRRT_2" commitSha="2222222222">>',
+        '<<comment-wontfix threadId="PRRT_1" reason="redone by mistake">>',
+      ].join('\n'),
+    });
+
+    const rows = await listResolveThreads({ db, sessionId: SESSION_ID });
+    expect(rows.find((row) => row.threadId === 'PRRT_1')).toMatchObject({
+      state: 'fixed',
+      commitShas: ['1111111111'],
+      activeAttemptId: first,
+    });
+    expect(rows.find((row) => row.threadId === 'PRRT_2')).toMatchObject({
+      state: 'fixed',
+      commitShas: ['2222222222'],
+      question: null,
+      activeAttemptId: second,
+    });
+    const attempts = await listResolveAttempts({ db, sessionId: SESSION_ID });
+    expect(attempts.map((attempt) => [attempt.id, attempt.phase])).toEqual([
+      [first, 'waiting'],
+      [second, 'finished'],
+    ]);
+  });
+
   it('lands a needs-input outcome as the question of that thread only', async () => {
     const live = createHarness();
     await live.actions.loadResolveSession({ sessionId: SESSION_ID });

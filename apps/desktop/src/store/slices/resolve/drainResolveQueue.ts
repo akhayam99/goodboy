@@ -336,7 +336,10 @@ const startResolverTurn = async ({
       await releaseWorktreeWriter({ path: worktreePath, holder: attempt.agentId });
     }
     if (copyPath !== null) {
-      await releaseResolveCopy({ attempt: { ...attempt, copyPath } });
+      await releaseEndedResolveCopies({
+        attempts: await listResolveAttempts({ db: tauriDatabase, sessionId }),
+        rows: await listResolveThreads({ db: tauriDatabase, sessionId }),
+      });
     }
     if (!isWriterLeaseDenied) {
       await get().drainResolveQueue({ sessionId, endedAttemptId: attempt.id });
@@ -463,7 +466,7 @@ export const drainResolveQueue = async ({
     pathOf,
     ...(endedAttemptId !== undefined && { endedAttemptId }),
   });
-  const hasReleased = await releaseEndedResolveCopies({ attempts });
+  const hasReleased = await releaseEndedResolveCopies({ attempts, rows });
   if (dirty.hasWritten || hasReleased) {
     attempts = await listResolveAttempts({ db, sessionId });
     rows = await listResolveThreads({ db, sessionId });

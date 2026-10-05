@@ -1,13 +1,20 @@
 import {
   getResolveCandidate,
+  insertResolveCandidate,
   insertResolveCandidateItem,
   listResolveAttempts,
+  listResolveCandidates,
   listResolveQueueItems,
   markOverlappingResolveCandidatesStale,
   markResolveCandidateReady,
   setResolveCandidateState,
+  setResolveThreadCommitShas,
 } from '@goodboy/db';
-import { quarantineWorktreeCandidate } from '../../../features/worktree/worktree';
+import type { ResolveCandidate, ResolveQueueItemWithThread, SessionId } from '@goodboy/types';
+import {
+  quarantineWorktreeCandidate,
+  splitWorktreeCandidates,
+} from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { withCandidateLock } from './candidateLock';
 import { loadResolveCandidatesInto } from './loadResolveCandidatesInto';
@@ -17,6 +24,89 @@ import type { CandidateCaptureParams, SliceParams } from './types';
 
 type Params = SliceParams & CandidateCaptureParams;
 
+type Split = {
+  readonly id: string;
+  readonly sha: string;
+  readonly entry: ResolveQueueItemWithThread;
+};
+
+const fixShaOf = ({ entry }: { readonly entry: ResolveQueueItemWithThread }): string | null =>
+  entry.thread.disposition === 'fix' ? (entry.thread.commitShas?.at(-1) ?? null) : null;
+
+const splitOneCandidatePerFix = async ({
+  candidate,
+  fixes,
+  capturePath,
+}: {
+  readonly candidate: ResolveCandidate;
+  readonly fixes: ReadonlyArray<ResolveQueueItemWithThread>;
+  readonly capturePath: string;
+}): Promise<ReadonlyArray<Split>> => {
+  const picks = fixes.flatMap((entry, index) => {
+    const commitSha = fixShaOf({ entry });
+    return commitSha === null
+      ? []
+      : [{ entry, candidateId: `${candidate.id}-${index + 1}`, commitSha }];
+  });
+  const done = await splitWorktreeCandidates({
+    worktreePath: capturePath,
+    baseSha: candidate.baseSha,
+    picks: picks.map(({ candidateId, commitSha }) => ({ candidateId, commitSha })),
+  });
+  return done.flatMap(({ candidateId, sha }): ReadonlyArray<Split> => {
+    const pick = picks.find((item) => item.candidateId === candidateId);
+    return pick === undefined || sha === null ? [] : [{ id: candidateId, sha, entry: pick.entry }];
+  });
+};
+
+const registerSplit = async ({
+  sessionId,
+  candidate,
+  split,
+}: {
+  readonly sessionId: SessionId;
+  readonly candidate: ResolveCandidate;
+  readonly split: Split;
+}): Promise<void> => {
+  const db = tauriDatabase;
+  const now = Date.now();
+  await insertResolveCandidate({
+    db,
+    candidate: {
+      ...candidate,
+      id: split.id,
+      revision: (await listResolveCandidates({ db, sessionId })).length + 1,
+      candidateSha: split.sha,
+      state: 'ready',
+      integratedSha: null,
+      createdAt: now,
+      updatedAt: now,
+    },
+  });
+  await insertResolveCandidateItem({
+    db,
+    item: {
+      candidateId: split.id,
+      queueItemId: split.entry.item.id,
+      itemRevision: split.entry.item.candidateRevision,
+    },
+  });
+  await setResolveThreadCommitShas({
+    db,
+    sessionId,
+    threadId: split.entry.thread.threadId,
+    commitShas: [split.sha],
+  });
+  await recordCommitLinks({
+    sessionId,
+    worktreePath: candidate.worktreePath,
+    baseSha: candidate.baseSha,
+    candidateSha: split.sha,
+    threads: [{ ...split.entry.thread, commitShas: [split.sha] }],
+  }).catch(() => undefined);
+  await markOverlappingResolveCandidatesStale({ db, candidateId: split.id });
+};
+
 export const captureResolveCandidate = async ({
   set,
   sessionId,
@@ -24,11 +114,11 @@ export const captureResolveCandidate = async ({
   threadIds,
 }: Params): Promise<string | null> => {
   const db = tauriDatabase;
+  const attempt = (await listResolveAttempts({ db, sessionId })).find(
+    (item) => item.id === attemptId,
+  );
   const candidate = await getResolveCandidate({ db, candidateId: attemptId });
   if (candidate === null) {
-    const attempt = (await listResolveAttempts({ db, sessionId })).find(
-      (item) => item.id === attemptId,
-    );
     if (attempt?.copyPath != null) {
       throw new ResolveFailure({
         failureCause: 'capture_failed',
@@ -54,24 +144,43 @@ export const captureResolveCandidate = async ({
   if (covered.length === 0) {
     return discard();
   }
-  const copyPath =
-    (await listResolveAttempts({ db, sessionId })).find((attempt) => attempt.id === attemptId)
-      ?.copyPath ?? null;
+  const copyPath = attempt?.copyPath ?? null;
   const capturePath = copyPath ?? candidate.worktreePath;
-  const quarantined = await withCandidateLock({
+  const fixes = covered.filter((entry) => fixShaOf({ entry }) !== null);
+  const captured = await withCandidateLock({
     worktreePath: capturePath,
     holder: `candidate:${candidate.id}`,
-    run: () =>
-      quarantineWorktreeCandidate({
+    run: async () => {
+      const quarantined = await quarantineWorktreeCandidate({
         worktreePath: capturePath,
         candidateId: candidate.id,
         baseSha: candidate.baseSha,
-      }),
+      });
+      const splits =
+        quarantined.sha === null || copyPath === null || fixes.length < 2
+          ? []
+          : await splitOneCandidatePerFix({ candidate, fixes, capturePath }).catch(
+              (): ReadonlyArray<Split> => [],
+            );
+      return { sha: quarantined.sha, splits };
+    },
   });
-  if (quarantined.sha === null) {
+  if (captured.sha === null) {
     return discard();
   }
-  for (const { item } of covered) {
+  for (const split of captured.splits) {
+    await registerSplit({ sessionId, candidate, split });
+  }
+  const splitItemIds = new Set(captured.splits.map(({ entry }) => entry.item.id));
+  const rest = (fixes.length === 0 ? covered : fixes).filter(
+    (entry) => !splitItemIds.has(entry.item.id),
+  );
+  if (rest.length === 0) {
+    await setResolveCandidateState({ db, candidateId: candidate.id, state: 'discarded' });
+    await loadResolveCandidatesInto({ set, sessionId });
+    return captured.splits[0]?.sha ?? null;
+  }
+  for (const { item } of rest) {
     await insertResolveCandidateItem({
       db,
       item: {
@@ -85,15 +194,15 @@ export const captureResolveCandidate = async ({
     sessionId,
     worktreePath: candidate.worktreePath,
     baseSha: candidate.baseSha,
-    candidateSha: quarantined.sha,
-    threads: covered.map(({ thread }) => thread),
+    candidateSha: captured.sha,
+    threads: rest.map(({ thread }) => thread),
   }).catch(() => undefined);
   await markOverlappingResolveCandidatesStale({ db, candidateId: candidate.id });
   const ready = await markResolveCandidateReady({
     db,
     candidateId: candidate.id,
-    candidateSha: quarantined.sha,
+    candidateSha: captured.sha,
   });
   await loadResolveCandidatesInto({ set, sessionId });
-  return ready ? quarantined.sha : null;
+  return ready ? captured.sha : null;
 };

@@ -19,7 +19,6 @@ import { hashResolveReply } from './hashResolveReply';
 import { loadResolveCandidatesInto } from './loadResolveCandidatesInto';
 import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';
 import { projectResolveRows } from './projectResolveRows';
-import { releaseResolveCopy } from './releaseResolveCopy';
 import { remapIntegratedCommits } from './remapIntegratedCommits';
 import { saveResolveThread } from './saveResolveThread';
 import { withSavedReplyDraft } from './saveResolveReplyDraft';
@@ -212,12 +211,6 @@ const acceptDecidedItem = async ({
     throw new Error(ACCEPT_CONFLICT);
   }
   const integratedSha = integrated;
-  const attempt = (await listResolveAttempts({ db, sessionId })).find(
-    (item) => item.id === candidate.id,
-  );
-  if (attempt !== undefined) {
-    await releaseResolveCopy({ attempt });
-  }
   await finalizeResolveCandidateIntegration({
     db,
     candidateId: candidate.id,

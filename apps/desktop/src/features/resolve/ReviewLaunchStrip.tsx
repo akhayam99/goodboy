@@ -8,11 +8,7 @@ import {
   formatError,
   type SegmentedTabOption,
 } from '@goodboy/ui';
-import {
-  RESOLVE_PARALLEL_LIMIT_DEFAULT,
-  type ResolveCommitStyle,
-  type SessionId,
-} from '@goodboy/types';
+import type { ResolveCommitStyle, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
 import { PromptField } from '../../shared/components/PromptField';
 import { RunsOn } from '../../shared/components/RunsOn';
@@ -62,9 +58,6 @@ export const ReviewLaunchStrip = ({
   noun = 'comment',
 }: Props) => {
   const draft = useDraftRouting({ sessionId });
-  const limit = useAppStore(
-    (s) => s.sessionResolveParallelLimit[sessionId] ?? RESOLVE_PARALLEL_LIMIT_DEFAULT,
-  );
   const [commitStyle, setCommitStyle] = useState<ResolveCommitStyle>(() =>
     initialCommitStyle({ sessionId }),
   );
@@ -80,7 +73,7 @@ export const ReviewLaunchStrip = ({
     setIsStarting(true);
     setError(null);
     try {
-      const { agentIds } = await startBatch({
+      await startBatch({
         getState: useAppStore.getState,
         sessionId,
         threadIds,
@@ -88,7 +81,7 @@ export const ReviewLaunchStrip = ({
         noun,
       });
       draft.save(draft.routing);
-      onStarted({ count: agentIds.length, model: draft.routing.model });
+      onStarted({ count, model: draft.routing.model });
     } catch (caught) {
       if (!isReportedError(caught)) {
         setError(formatError(caught));
@@ -153,7 +146,7 @@ export const ReviewLaunchStrip = ({
         disabled={isStarting}
         className="bg-background"
       />
-      <p className="text-meta text-faint-foreground">{launchFactLine({ count, limit })}</p>
+      <p className="text-meta text-faint-foreground">{launchFactLine({ count })}</p>
       {error !== null && (
         <p role="alert" className="text-meta text-danger">
           {error}

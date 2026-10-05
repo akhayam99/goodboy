@@ -89,10 +89,6 @@ export const groupResolveBatches = ({
       id,
       at: earliestAt({ members: ordered }),
       batchId,
-      origin: ref.origin ?? 'launch',
-      retryCount: ordered.filter(
-        (member) => batchByAgentId.get(member.entry.agent.id)?.isRetry === true,
-      ).length,
       prNumber: ref.prNumber,
       children: ordered.map((member) => member.entry),
       facts,

@@ -344,7 +344,7 @@ describe('buildTimelineStream resolve batches', () => {
       ],
     });
 
-    expect(refs.get('a1')).toEqual({ batchId: 'b', prNumber: 318, origin: 'launch' });
+    expect(refs.get('a1')).toEqual({ batchId: 'b', prNumber: 318 });
     expect(refs.has('a3')).toBe(false);
   });
 });
