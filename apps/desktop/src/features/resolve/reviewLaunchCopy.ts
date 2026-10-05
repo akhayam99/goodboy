@@ -10,7 +10,8 @@ export const REVIEW_LAUNCH_LABEL = {
   fixup: 'Fixup of the original',
   hintPlaceholder: 'Anything the agents should know? Optional',
   hintLabel: 'Notes for the agents',
-  remembered: 'Remembered for this session',
+  remembered: 'Your pick, kept for this session',
+  roleDefault: 'Resolver default',
   cancel: 'Cancel',
   close: 'Close',
 } as const;

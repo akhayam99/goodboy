@@ -87,7 +87,6 @@ export const ReviewLaunchStrip = ({
         launchChoice: launchChoiceOf({ routing: draft.routing, commitStyle, hint }),
         noun,
       });
-      draft.save(draft.routing);
       onStarted({ count: agentIds.length, model: draft.routing.model });
     } catch (caught) {
       if (!isReportedError(caught)) {
@@ -160,7 +159,11 @@ export const ReviewLaunchStrip = ({
         </p>
       )}
       <div className="flex items-center gap-2">
-        <span className="text-meta text-faint-foreground">{REVIEW_LAUNCH_LABEL.remembered}</span>
+        <span className="text-meta text-faint-foreground">
+          {draft.source === 'session-pick'
+            ? REVIEW_LAUNCH_LABEL.remembered
+            : REVIEW_LAUNCH_LABEL.roleDefault}
+        </span>
         <span className="flex-1" />
         <Button size="sm" variant="ghost" onClick={onClose}>
           {REVIEW_LAUNCH_LABEL.cancel}

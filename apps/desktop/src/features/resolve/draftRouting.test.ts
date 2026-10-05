@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { AgentId, ResolveAttempt, SessionId } from '@goodboy/types';
 import { useAppStore, type AppStore } from '../../store/store';
+import { selectKindRouting } from '../../store/slices/agents/selectKindRouting';
 import type { AgentKindRouting } from '../session/agent-kind';
-import { draftRoutingOf } from './draftRouting';
+import { draftRoutingOf, pickedRoutingOf } from './draftRouting';
 
 const SESSION_ID = 'session-1' as SessionId;
+const OTHER_SESSION_ID = 'session-2' as SessionId;
 
 const PICKED: AgentKindRouting = { provider: 'anthropic', model: 'claude-opus-5', effort: 'high' };
 
@@ -36,44 +38,59 @@ const attemptOf = (): ResolveAttempt => ({
 });
 
 const stateOf = ({
-  lastRouting,
+  lastRouting = null,
+  pickedIn = SESSION_ID,
   attempts = [],
 }: {
-  readonly lastRouting: AgentKindRouting;
+  readonly lastRouting?: AgentKindRouting | null;
+  readonly pickedIn?: SessionId;
   readonly attempts?: ReadonlyArray<ResolveAttempt>;
-}): AppStore => {
-  const base = useAppStore.getState();
-  return {
-    ...base,
-    resolveQueueView: {
-      [SESSION_ID]: {
-        order: [],
-        scrollTop: 0,
-        detailScrollTop: 0,
-        isDeferredShown: false,
-        isCompletedShown: false,
-        lastRouting,
-      },
-    },
-    sessionResolveAttempts: { [SESSION_ID]: attempts },
-  };
-};
+}): AppStore => ({
+  ...useAppStore.getState(),
+  resolveQueueView:
+    lastRouting === null
+      ? {}
+      : {
+          [pickedIn]: {
+            order: [],
+            scrollTop: 0,
+            detailScrollTop: 0,
+            isDeferredShown: false,
+            isCompletedShown: false,
+            lastRouting,
+          },
+        },
+  sessionResolveAttempts: { [SESSION_ID]: attempts },
+});
 
 describe('draftRoutingOf', () => {
-  it('reads the model picked for the session before the role default', () => {
-    expect(draftRoutingOf({ state: stateOf({ lastRouting: PICKED }), sessionId: SESSION_ID })).toBe(
-      PICKED,
+  it('starts on the resolver role default when nothing was picked', () => {
+    const state = stateOf({});
+    expect(pickedRoutingOf({ state, sessionId: SESSION_ID })).toBeNull();
+    expect(draftRoutingOf({ state, sessionId: SESSION_ID })).toEqual(
+      selectKindRouting({ state, sessionId: SESSION_ID, kind: 'resolver' }),
     );
   });
 
-  it('prefers the launch choice of the comment latest attempt over the session pick', () => {
-    const attempts = [attemptOf()];
-    const state = stateOf({ lastRouting: PICKED, attempts });
-    expect(draftRoutingOf({ state, sessionId: SESSION_ID, threadId: 'PRRT_1' })).toEqual({
-      provider: 'codex',
-      model: 'gpt-5.5',
-      effort: 'medium',
-    });
-    expect(draftRoutingOf({ state, sessionId: SESSION_ID, threadId: 'PRRT_2' })).toBe(PICKED);
+  it('holds the model picked for the session before the role default', () => {
+    const state = stateOf({ lastRouting: PICKED });
+    expect(pickedRoutingOf({ state, sessionId: SESSION_ID })).toBe(PICKED);
+    expect(draftRoutingOf({ state, sessionId: SESSION_ID })).toBe(PICKED);
+  });
+
+  it('never carries the model of a previous launch into the next one', () => {
+    const state = stateOf({ attempts: [attemptOf()] });
+    expect(draftRoutingOf({ state, sessionId: SESSION_ID })).toEqual(
+      selectKindRouting({ state, sessionId: SESSION_ID, kind: 'resolver' }),
+    );
+    expect(draftRoutingOf({ state, sessionId: SESSION_ID }).model).not.toBe('gpt-5.5');
+  });
+
+  it('keeps a pick inside the session it was made in', () => {
+    const state = stateOf({ lastRouting: PICKED, pickedIn: OTHER_SESSION_ID });
+    expect(draftRoutingOf({ state, sessionId: SESSION_ID })).toEqual(
+      selectKindRouting({ state, sessionId: SESSION_ID, kind: 'resolver' }),
+    );
+    expect(draftRoutingOf({ state, sessionId: OTHER_SESSION_ID })).toBe(PICKED);
   });
 });

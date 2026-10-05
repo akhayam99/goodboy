@@ -45,19 +45,6 @@ export const modelChoiceOfLaunch = ({
   };
 };
 
-export const routingOfLaunch = ({
-  launchChoice,
-}: {
-  readonly launchChoice: ResolveLaunchChoice;
-}): AgentKindRouting | null => {
-  const provider = PROVIDER_IDS.find((id) => id === launchChoice.provider);
-  const effort = EFFORT_LEVELS.find((level) => level === launchChoice.effort);
-  if (provider === undefined || launchChoice.model === null || effort === undefined) {
-    return null;
-  }
-  return { provider, model: launchChoice.model, effort };
-};
-
 export const retryOriginOf = ({
   attempts,
   threadId,
@@ -82,3 +69,21 @@ export const retryBatchOf = ({
   }
   return { batchId: latest.batchId, launchChoice: latest.launchChoice };
 };
+
+export const batchOnRouting = ({
+  batch,
+  routing,
+}: {
+  readonly batch: ResolveAttemptBatch | null;
+  readonly routing: AgentKindRouting;
+}): ResolveAttemptBatch | null =>
+  batch === null
+    ? null
+    : {
+        ...batch,
+        launchChoice: launchChoiceOf({
+          routing,
+          commitStyle: batch.launchChoice.commitStyle,
+          hint: batch.launchChoice.hint,
+        }),
+      };
