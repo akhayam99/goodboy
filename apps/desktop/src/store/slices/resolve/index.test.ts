@@ -1020,6 +1020,44 @@ describe('durable resolve store', () => {
     }
   });
 
+  it('lands a needs-input outcome as the question of that thread only', async () => {
+    const live = createHarness();
+    await live.actions.loadResolveSession({ sessionId: SESSION_ID });
+    const attemptId = await live.actions.recordResolveAttempt({
+      sessionId: SESSION_ID,
+      agent,
+      provider: 'anthropic',
+      model: 'model',
+      effort: null,
+      instructions: null,
+      phase: 'running',
+      mountTarget: MOUNT_TARGET,
+    });
+
+    await live.actions.persistResolveTurn({
+      sessionId: SESSION_ID,
+      agent,
+      attemptId,
+      assistantText: [
+        '<<comment-resolved threadId="PRRT_1" commitSha="abcdef1234567890">>',
+        '<<needs-input id="PRRT_2" options="Alias it|Rename it" recommended="Alias it">>Alias the export or rename it?<</needs-input>>',
+      ].join('\n'),
+    });
+
+    const rows = await listResolveThreads({ db, sessionId: SESSION_ID });
+    expect(rows.find((row) => row.threadId === 'PRRT_1')).toMatchObject({
+      state: 'fixed',
+      commitShas: ['abcdef1234567890'],
+    });
+    expect(rows.find((row) => row.threadId === 'PRRT_2')).toMatchObject({
+      state: 'needs_answer',
+      stateReason: 'question',
+      question: 'Alias the export or rename it?',
+    });
+    const attempts = await listResolveAttempts({ db, sessionId: SESSION_ID });
+    expect(attempts.find((attempt) => attempt.id === attemptId)?.phase).toBe('waiting');
+  });
+
   it('leaves a sibling that already reported a fix alone when the same agent asks a question', async () => {
     const live = createHarness();
     await live.actions.loadResolveSession({ sessionId: SESSION_ID });

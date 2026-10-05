@@ -46,7 +46,10 @@ export const persistResolveTurn = async ({
   if (owned.length === 0) {
     return;
   }
-  const hasOwnedMarkers = owned.some((threadId) => parsed.turnOutcomes[threadId] !== undefined);
+  const hasOwnedMarkers = owned.some(
+    (threadId) =>
+      parsed.turnOutcomes[threadId] !== undefined || parsed.questions[threadId] !== undefined,
+  );
   if (isCandidate && !hasOwnedMarkers) {
     return;
   }
@@ -82,6 +85,7 @@ export const persistResolveTurn = async ({
       continue;
     }
     const outcome = parsed.turnOutcomes[threadId];
+    const asked = parsed.questions[threadId];
     if (isCandidate && outcome === undefined) {
       continue;
     }
@@ -99,18 +103,20 @@ export const persistResolveTurn = async ({
       parsed.analysisVerdicts[threadId] ??
       (row.disposition === 'no_change' ? 'wontfix' : undefined);
     const patch: Partial<ResolveThread> =
-      outcome === undefined
-        ? retained !== null && (hasOwnedMarkers || question !== null)
-          ? outcomePatch({ outcome: retained, verdict, previous })
-          : {
-              state: question === null ? 'failed' : 'needs_answer',
-              stateReason:
-                question === null
-                  ? `missing_result${retained !== null && row.stateReason !== null ? `:${row.stateReason}` : ''}`
-                  : 'question',
-              question,
-            }
-        : outcomePatch({ outcome, verdict, previous });
+      asked !== undefined
+        ? { state: 'needs_answer', stateReason: 'question', question: asked.question }
+        : outcome === undefined
+          ? retained !== null && (hasOwnedMarkers || question !== null)
+            ? outcomePatch({ outcome: retained, verdict, previous })
+            : {
+                state: question === null ? 'failed' : 'needs_answer',
+                stateReason:
+                  question === null
+                    ? `missing_result${retained !== null && row.stateReason !== null ? `:${row.stateReason}` : ''}`
+                    : 'question',
+                question,
+              }
+          : outcomePatch({ outcome, verdict, previous });
     const next = {
       ...row,
       ...patch,

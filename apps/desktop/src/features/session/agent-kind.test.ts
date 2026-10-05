@@ -353,6 +353,25 @@ describe('AGENT_KIND_DEFAULTS', () => {
     expect(AGENT_KIND_DEFAULTS.resolver.visible).toBe(false);
   });
 
+  it('has a resolver prompt that works unattended and never asks to commit', () => {
+    const prompt = AGENT_KIND_DEFAULTS.resolver.systemPrompt;
+
+    expect(prompt).toContain('never ask for permission to edit, to commit or to carry on');
+    expect(prompt).toContain('commit it locally, whatever its size');
+    expect(prompt).not.toContain('Can I commit');
+    expect(prompt).not.toContain('NON-TRIVIAL');
+    expect(prompt).not.toContain('EASY');
+    expect(prompt).not.toContain('wait for explicit confirmation');
+  });
+
+  it('lets the resolver stop only through a needs-input outcome', () => {
+    const prompt = AGENT_KIND_DEFAULTS.resolver.systemPrompt;
+
+    expect(prompt).toContain('<<needs-input id="<thread id>"');
+    expect(prompt).toContain('reads two ways that lead to different code');
+    expect(prompt).toContain('comment-resolved, comment-wontfix or needs-input');
+  });
+
   it('pr-reviewer is hidden from the manual spawn menu, only the PR review flow seeds it', () => {
     expect(AGENT_KIND_DEFAULTS['pr-reviewer'].visible).toBe(false);
   });

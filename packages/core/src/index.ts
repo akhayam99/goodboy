@@ -41,6 +41,7 @@ export {
   assessPlanReadiness,
   autoPopulateContext,
   extractAllCommentAnalysis,
+  extractAllCommentNeedsInput,
   extractAllCommentReplies,
   extractAllCommentResolved,
   extractAllCommentWontfix,

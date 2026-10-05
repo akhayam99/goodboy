@@ -196,6 +196,17 @@ record a live turn already wrote wins.
   and falls back to the whole message as the Ask when they do not line up.
   `spawn-from-comment.golden.test.ts` pins the string sent to the provider for
   the resolver, the re-check, the scribe and the follow-up byte for byte.
+- A resolver works unattended in its own copy of the branch and never asks to
+  commit: the owner reviews, accepts and pushes. Each thread ends with one of
+  three markers, `comment-resolved`, `comment-wontfix` or
+  `<<needs-input id="..." options="a|b" recommended="a">>question<</needs-input>>`.
+  `needs-input` is allowed only when a comment reads two ways that lead to
+  different code. It carries two or three options and the recommended one, lands
+  on its thread as `needs_answer` with the question, and rides the open question
+  rows (blocking, one choice), so Needs you and the answer composer handle it
+  like any other question. The workspace working rules never reach a resolver
+  turn (`PROFILE_ACCESS.resolver` reads roles and topics only), because they are
+  written for chat.
 - One user action that starts resolvers writes one `resolve_attempts.launch_id`
   (m222, nullable, no backfill) on every attempt it spawns, whatever the batch:
   `startFixAttempt` mints it once per call. A retry gets its own launch id and

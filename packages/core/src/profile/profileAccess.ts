@@ -8,6 +8,7 @@ const PLANNING = ['roles', 'aboutWork', 'workingRules'] satisfies ReadonlyArray<
 const SEARCHING = ['roles', 'aboutWork', 'explainMore'] satisfies ReadonlyArray<ProfileField>;
 const BUILDING = ['roles', 'workingRules'] satisfies ReadonlyArray<ProfileField>;
 const EXPLAINING = ['roles', 'workingRules', 'explainMore'] satisfies ReadonlyArray<ProfileField>;
+const FIXING = ['roles', 'explainMore'] satisfies ReadonlyArray<ProfileField>;
 const WRITING = ['roles', 'aboutWork', 'explainMore'] satisfies ReadonlyArray<ProfileField>;
 const EVERYTHING = [
   'roles',
@@ -25,7 +26,7 @@ export const PROFILE_ACCESS: Readonly<Record<ProfileAudience, ReadonlyArray<Prof
   tester: BUILDING,
   docs: BUILDING,
   reviewer: EXPLAINING,
-  resolver: EXPLAINING,
+  resolver: FIXING,
   rewriter: BUILDING,
   scribe: WRITING,
   report: WRITING,

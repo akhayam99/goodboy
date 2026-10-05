@@ -194,7 +194,9 @@ describe('spawn-from-comment', () => {
         '> this should use a helper',
         '',
         'What to do',
-        'Judge the thread above on the merits in one pass. When a thread asks for the right change, implement it and commit locally as you go. When the change it asks for is wrong or not worth making, leave the code unchanged and give the reason in its outcome marker. Never default to either outcome: read the code first, then decide per thread.',
+        'Judge the thread above on the merits. When a thread asks for the right change, implement it and commit locally as you go. When the change it asks for is wrong or not worth making, leave the code unchanged and give the reason in its outcome marker. Never default to either outcome: read the code first, then decide per thread.',
+        'You work alone in your own copy of the branch and nobody answers while you work, so never ask for permission to edit, to commit or to carry on. The owner reviews, accepts and pushes later.',
+        'When a comment is unclear, take the most reasonable reading, act on it and name the assumption in the reply. Stop on a thread only when it reads two ways that lead to different code and the code cannot settle which one the reviewer means: report that thread with the needs-input marker and go on.',
       ].join('\n'),
     );
   });
@@ -243,9 +245,18 @@ describe('spawn-from-comment', () => {
     const threads = threadsOf(2);
     const prompt = buildResolverAgentArgs({ threads: threads, pr: PR, hint: '  ' }).initialPrompt;
     expect(prompt).toContain(
-      'Judge all 2 threads above on the merits in one pass. When a thread asks for the right change, implement it and commit locally as you go. When the change it asks for is wrong or not worth making, leave the code unchanged and give the reason in its outcome marker. Never default to either outcome: read the code first, then decide per thread.',
+      'Judge all 2 threads above on the merits, one thread at a time, in the order given. When a thread asks for the right change, implement it and commit locally as you go. When the change it asks for is wrong or not worth making, leave the code unchanged and give the reason in its outcome marker. Never default to either outcome: read the code first, then decide per thread.',
     );
+    expect(prompt).toContain('Finish a thread before you start the next');
     expect(prompt).not.toContain('Operator notes');
+  });
+
+  it('tells the resolver to work unattended and to ask only through needs-input', () => {
+    const prompt = buildResolverAgentArgs({ threads: threadsOf(2), pr: PR }).initialPrompt;
+
+    expect(prompt).toContain('never ask for permission to edit, to commit or to carry on');
+    expect(prompt).toContain('<<needs-input id="the thread id"');
+    expect(prompt).not.toContain('Can I commit');
   });
 });
 

@@ -266,6 +266,15 @@ function extractQuestions(text: string): ReadonlyArray<ExtractedQuestion> {
       isBlocking: attrs.blocking === 'true',
     });
   }
+  for (const needsInput of extractAllCommentNeedsInput(text)) {
+    out.push({
+      text: needsInput.question,
+      suggestedAnswers: needsInput.options,
+      recommendedAnswer: needsInput.recommended,
+      selectMode: 'one',
+      isBlocking: true,
+    });
+  }
   return out;
 }
 
@@ -726,6 +735,65 @@ export const extractAllCommentWontfix = (
   return markers;
 };
 
+const NEEDS_INPUT_OPEN_RE = /<<needs-input((?:\s+[\w-]+="[^"]*")*)\s*>>/g;
+const NEEDS_INPUT_CLOSE = '<</needs-input>>';
+const NEEDS_INPUT_MAX_OPTIONS = 3;
+
+export type ExtractedCommentNeedsInput = {
+  readonly threadId: string;
+  readonly question: string;
+  readonly options: ReadonlyArray<string>;
+  readonly recommended: string | null;
+};
+
+const recommendedOf = ({
+  raw,
+  options,
+}: {
+  readonly raw: string;
+  readonly options: ReadonlyArray<string>;
+}): string | null => {
+  const wanted = raw.trim().toLowerCase();
+  if (wanted === '') {
+    return null;
+  }
+  return options.find((option) => option.toLowerCase() === wanted) ?? null;
+};
+
+export const extractAllCommentNeedsInput = (
+  assistantText: string,
+): ReadonlyArray<ExtractedCommentNeedsInput> => {
+  const byThreadId = new Map<string, ExtractedCommentNeedsInput>();
+  NEEDS_INPUT_OPEN_RE.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = NEEDS_INPUT_OPEN_RE.exec(assistantText)) !== null) {
+    const bodyStart = NEEDS_INPUT_OPEN_RE.lastIndex;
+    const closeIndex = assistantText.indexOf(NEEDS_INPUT_CLOSE, bodyStart);
+    if (closeIndex === -1) {
+      continue;
+    }
+    NEEDS_INPUT_OPEN_RE.lastIndex = closeIndex + NEEDS_INPUT_CLOSE.length;
+    const attrs = parseQuestionAttrs(match[1] ?? '');
+    const threadId = (attrs.id ?? attrs.threadId ?? attrs.threadid ?? '').trim();
+    const question = assistantText.slice(bodyStart, closeIndex).trim();
+    if (threadId.length === 0 || question.length === 0) {
+      continue;
+    }
+    const options = (attrs.options ?? '')
+      .split('|')
+      .map((option) => option.trim())
+      .filter((option) => option.length > 0)
+      .slice(0, NEEDS_INPUT_MAX_OPTIONS);
+    byThreadId.set(threadId, {
+      threadId,
+      question,
+      options,
+      recommended: recommendedOf({ raw: attrs.recommended ?? '', options }),
+    });
+  }
+  return [...byThreadId.values()];
+};
+
 export type CommentVerdictKind = 'fixed-here' | 'not-relevant' | 'still-needed';
 
 export type ExtractedCommentVerdict = {
@@ -1162,7 +1230,7 @@ export const assessPlanReadiness = (input: PlanReadinessInput): PlanReadinessRes
 };
 
 const BLOCK_MARKER_ALT =
-  'plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question|comment-reply|oq-answer|pr-title|pr-body|commit-message|changelog-entry';
+  'plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question|comment-reply|needs-input|oq-answer|pr-title|pr-body|commit-message|changelog-entry';
 const SELF_MARKER_ALT =
   'handoff|comment-analysis|comment-resolved|comment-wontfix|comment-verdict|review-comment|cluster-done|step-done|scout-domains|history-step|history-done|history-stuck|materialize:';
 

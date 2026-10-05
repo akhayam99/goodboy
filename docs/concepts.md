@@ -1009,7 +1009,9 @@ shows it under "See who reads what".
 - Planner, orchestrator and the question delegate read roles, work and rules
 - Scout, investigator, report and wireframe read roles, work and topics
 - Implementer, tester and docs read roles and rules
-- Reviewer and resolver read roles, rules and topics
+- Reviewer reads roles, rules and topics
+- Resolver reads roles and topics, never the rules: it works unattended in its
+  own copy, so a rule written for chat ("ask before changing") would stop it
 - A custom role reads every field
 - Task models read nothing, except **Learnings**, which reads the topics, and the
   profile never goes into text Goodboy posts
