@@ -908,9 +908,7 @@ const rememberSearch = (text: string): void => {
 
 const openDiff = async (): Promise<void> => {
   await press('lens.files')();
-  expect(
-    await screen.findByRole('button', { name: /branch vs main · 3 files/ }, WAIT),
-  ).toBeDefined();
+  expect(await screen.findByRole('button', { name: /Comparing .* ← .*/ }, WAIT)).toBeDefined();
 };
 
 const activeTreeFile = async (): Promise<string> =>

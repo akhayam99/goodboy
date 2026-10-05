@@ -131,36 +131,18 @@ export const SessionDiffPane = ({
     [openInEditor, workingDir],
   );
 
-  const totals = useMemo(
-    () =>
-      diff.files.reduce(
-        (sum, file) => ({ adds: sum.adds + file.additions, dels: sum.dels + file.deletions }),
-        { adds: 0, dels: 0 },
-      ),
-    [diff.files],
-  );
-
   const selector = (
-    <PageColumn className="flex min-w-0 items-center gap-2 pb-3">
-      <DiffViewSelector
-        view={diff.view}
-        onChange={diff.setView}
-        commits={diff.commits}
-        status={diff.status}
-        filesCount={diff.loading || diff.error !== null ? null : diff.files.length}
-        loading={diff.loading}
-      />
-      {diff.loading || diff.error !== null ? null : (
-        <span className="flex items-center gap-1 text-meta tabular-nums text-muted-foreground">
-          <span>
-            {diff.files.length} {diff.files.length === 1 ? 'file' : 'files'}
-          </span>
-          <span className="text-success">+{totals.adds}</span>
-          <span className="text-danger">−{totals.dels}</span>
-        </span>
-      )}
-    </PageColumn>
+    <DiffViewSelector
+      view={diff.view}
+      onChange={diff.setView}
+      commits={diff.commits}
+      status={diff.status}
+      baseBranch={baseBranch}
+      branch={diff.status?.branch ?? null}
+      loading={diff.loading}
+    />
   );
+  const showsDiff = !diff.loading && diff.error === null && !isEmpty && !isFilteredOut;
 
   const metaNotice =
     diff.metaError === null ? null : (
@@ -217,6 +199,7 @@ export const SessionDiffPane = ({
       focusPath={diff.focusPath}
       onFocusHandled={diff.clearFocus}
       onActivePathChange={review.setActivePath}
+      toolbarStart={selector}
       toolbarEnd={
         onWriteReview === null && toolbarExtra === null ? undefined : (
           <>
@@ -252,7 +235,7 @@ export const SessionDiffPane = ({
         </aside>
       )}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        {selector}
+        {showsDiff ? null : <PageColumn className="flex min-w-0 pb-3">{selector}</PageColumn>}
         {metaNotice}
         {body}
       </div>

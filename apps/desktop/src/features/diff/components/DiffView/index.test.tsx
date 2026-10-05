@@ -116,7 +116,10 @@ describe('DiffView rendering', () => {
   it('wraps by default and remembers turning it off', () => {
     render(<DiffView files={[LEDGER]} />);
     expect(codeCells()[0]?.className).toContain('whitespace-pre-wrap');
-    fireEvent.click(screen.getByRole('button', { name: /Wrap/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Display/ }));
+    expect(screen.getByRole('switch', { name: /Wrap/ }).getAttribute('aria-checked')).toBe('true');
+    fireEvent.click(screen.getByRole('switch', { name: /Wrap/ }));
+    expect(screen.getByRole('switch', { name: /Wrap/ }).getAttribute('aria-checked')).toBe('false');
     expect(codeCells()[0]?.className).toContain('whitespace-pre');
     expect(codeCells()[0]?.className).not.toContain('whitespace-pre-wrap');
     expect(localStorage.getItem('goodboy:diff-wrap')).toBe('0');
@@ -124,10 +127,28 @@ describe('DiffView rendering', () => {
 
   it('pairs old and new lines side by side in split view', () => {
     render(<DiffView files={[LEDGER]} />);
+    fireEvent.click(screen.getByRole('button', { name: /Display/ }));
     fireEvent.click(screen.getByRole('tab', { name: 'Split' }));
     const grid = screen.getByRole('grid');
     expect(grid.innerHTML).toContain('grid-cols-[44px_minmax(0,1fr)_44px_minmax(0,1fr)]');
-    expect(screen.getByRole('button', { name: /Wrap/ }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('switch', { name: /Wrap/ }).hasAttribute('disabled')).toBe(true);
+  });
+
+  it('keeps layout and wrap in one Display menu and the toolbar on one line', () => {
+    render(
+      <DiffView
+        files={[LEDGER]}
+        toolbarStart={<span>Comparing main ← feat/ledger-export</span>}
+        toolbarEnd={<button type="button">Write review</button>}
+      />,
+    );
+
+    expect(screen.queryByRole('tab', { name: 'Split' })).toBeNull();
+    expect(screen.queryByRole('switch')).toBeNull();
+    const toolbar = document.querySelector('[data-slot="diff-toolbar"]') as HTMLElement;
+    expect(within(toolbar).getByText('Comparing main ← feat/ledger-export')).toBeDefined();
+    expect(within(toolbar).getByRole('button', { name: /Display/ })).toBeDefined();
+    expect(within(toolbar).getByRole('button', { name: 'Write review' })).toBeDefined();
   });
 
   it('collapses a file once viewed', () => {
@@ -436,7 +457,7 @@ describe('DiffView navigation', () => {
     render(<DiffView files={[LEDGER, RELAY]} presentation="peek" />);
     const scroll = Element.prototype.scrollIntoView as ReturnType<typeof vi.fn>;
     scroll.mockClear();
-    expect(screen.queryByRole('button', { name: /Wrap/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Display/ })).toBeNull();
     fireEvent.keyDown(window, { code: 'BracketRight', key: ']' });
     expect(scroll).not.toHaveBeenCalled();
   });

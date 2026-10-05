@@ -51,19 +51,34 @@ vi.mock('../../hooks/useDiffNotes', () => ({
 }));
 
 vi.mock('../../../permissions/components/DiffViewSelector', () => ({
-  DiffViewSelector: () => <button type="button">Branch vs main</button>,
+  DiffViewSelector: ({
+    baseBranch,
+    branch,
+  }: {
+    readonly baseBranch: string | null;
+    readonly branch: string | null;
+  }) => (
+    <button type="button">
+      Comparing {baseBranch ?? 'none'} ← {branch ?? 'none'}
+    </button>
+  ),
 }));
 
 vi.mock('../DiffView', () => ({
   DiffView: ({
     files,
+    toolbarStart,
     toolbarEnd,
   }: {
     readonly files: ReadonlyArray<FileDiff>;
+    readonly toolbarStart?: ReactNode;
     readonly toolbarEnd?: ReactNode;
   }) => (
     <div data-testid="diff-view" data-files={files.map((file) => file.path).join(',')}>
-      {toolbarEnd}
+      <div data-testid="diff-toolbar">
+        {toolbarStart}
+        {toolbarEnd}
+      </div>
     </div>
   ),
 }));
@@ -138,13 +153,27 @@ describe('SessionDiffPane empty state', () => {
 });
 
 describe('SessionDiffPane files', () => {
-  it('counts the files and their lines above the code, with the view selector', () => {
-    renderPane({ diff: diffOf([FILE]) });
+  it('puts the comparison on the one line above the code, with the real base and no counts', () => {
+    h.store = { ...baseStore(), baseBranch: 'develop' };
+    const diff = {
+      ...diffOf([FILE]),
+      status: { branch: 'feat/ledger-export' } as SessionDiff['status'],
+    };
+    renderPane({ diff });
 
-    const selector = screen.getByRole('button', { name: 'Branch vs main' }).parentElement;
-    expect(selector).not.toBeNull();
-    expect(within(selector as HTMLElement).getByText('1 file')).toBeDefined();
-    expect(within(selector as HTMLElement).getByText('+3')).toBeDefined();
+    const toolbar = screen.getByTestId('diff-toolbar');
+    expect(
+      within(toolbar).getByRole('button', { name: 'Comparing develop ← feat/ledger-export' }),
+    ).toBeDefined();
+    expect(screen.queryByText('1 file')).toBeNull();
+    expect(within(toolbar).queryByText('+3')).toBeNull();
+  });
+
+  it('keeps the comparison line when there is nothing to draw under it', () => {
+    renderPane({});
+
+    expect(screen.getByRole('button', { name: /Comparing/ })).toBeDefined();
+    expect(screen.queryByTestId('diff-view')).toBeNull();
   });
 
   it('lists the changed files in a tree beside the code', () => {

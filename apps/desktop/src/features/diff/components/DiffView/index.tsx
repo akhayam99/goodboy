@@ -14,7 +14,7 @@ import { useDiffLayoutMode } from '../../../../shared/hooks/useDiffLayoutMode';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { useDiffWrap } from '../../hooks/useDiffWrap';
 import { DiffFile } from './DiffFile';
-import { DiffToolbar } from './DiffToolbar';
+import { DisplayMenu } from './DisplayMenu';
 import type { DiffComments, DiffFileActions, DiffThread, DiffViewed } from './types';
 
 export type { DiffComments, DiffThread } from './types';
@@ -34,6 +34,7 @@ type Props = {
   readonly onActivePathChange?: (path: string) => void;
   readonly presentation?: 'pane' | 'peek' | 'inline';
   readonly footer?: ReactNode;
+  readonly toolbarStart?: ReactNode;
   readonly toolbarEnd?: ReactNode;
   readonly belowToolbar?: ReactNode;
 };
@@ -59,6 +60,7 @@ export const DiffView = ({
   onActivePathChange,
   presentation = 'pane',
   footer,
+  toolbarStart,
   toolbarEnd,
   belowToolbar = null,
 }: Props) => {
@@ -383,13 +385,13 @@ export const DiffView = ({
   }
 
   const toolbar = (
-    <DiffToolbar
-      layout={layout}
-      onLayout={setLayout}
-      wrap={wrap}
-      onWrap={setWrap}
-      end={toolbarEnd}
-    />
+    <div data-slot="diff-toolbar" className="flex min-w-0 items-center gap-2">
+      {toolbarStart}
+      <div className="ml-auto flex shrink-0 items-center gap-2">
+        <DisplayMenu layout={layout} onLayout={setLayout} wrap={wrap} onWrap={setWrap} />
+        {toolbarEnd}
+      </div>
+    </div>
   );
 
   if (presentation === 'inline') {

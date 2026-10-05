@@ -1799,10 +1799,15 @@ copy without both, so a second window never removes a copy in use. The owner
 file records the copy's git admin folder when the copy is made; the rewriter's
 roots and the cleanup use it only while it is `<common>/worktrees/<name>` and
 its `gitdir` names exactly that reserved copy, never the copy's own `.git`.
-Codex rewriter turns also lose write access to the temp folders. `Branch vs main` sits in the file
-toolbar under the title, with `N files +N -M`, because it decides which files
-you see, not what you do to the branch. The file toolbar row holds `Unified | Split` and `Wrap` (on by default,
-saved as `goodboy:diff-wrap`; split always wraps). `[` and `]` go to the
+Codex rewriter turns also lose write access to the temp folders. One line sits
+above the code and replaces the old toolbar and its counts: `Comparing <base> ←
+<branch> · All N commits ▾` on the left (the base is the mount's own base branch,
+never a fixed `main`; a commit view reads `Commit abc1234`, the working tree
+`Working tree`, `Staged only` or `Unstaged only`), and `Display ▾`, `Post notes`
+and `Write review` on the right, because the view decides which files you see,
+not what you do to the branch. `Display` holds `Unified | Split` and `Wrap long
+lines` (on by default, saved as `goodboy:diff-wrap`; split always wraps). The
+file count and the `+N -M` sums live in the change tree only. `[` and `]` go to the
 previous and next file. A jump is instant, not smooth: file bodies keep
 `content-visibility` with estimated heights, so for a few frames the view
 measures the picked header and snaps it back to the top until the heights

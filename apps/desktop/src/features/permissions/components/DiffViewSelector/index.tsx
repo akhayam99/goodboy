@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, GitCommit, Search } from 'lucide-react';
+import { ChevronDown, Search } from 'lucide-react';
 import { AnchoredPopover, Chip, cn, ScrollFade, useDropdown, tintClasses } from '@goodboy/ui';
 import type { BranchCommit, DiffView, WorktreeStatus } from '@goodboy/types';
 import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
@@ -12,7 +12,8 @@ type Props = {
   readonly onChange: (next: DiffView) => void;
   readonly commits: ReadonlyArray<BranchCommit>;
   readonly status: WorktreeStatus | null;
-  readonly filesCount: number | null;
+  readonly baseBranch?: string | null;
+  readonly branch?: string | null;
   readonly loading?: boolean;
 };
 
@@ -39,6 +40,8 @@ type Section = {
 type ViewLabelParams = {
   readonly view: DiffView;
   readonly commits: ReadonlyArray<BranchCommit>;
+  readonly baseBranch: string | null;
+  readonly branch: string | null;
 };
 
 type ViewEqualsParams = {
@@ -57,31 +60,40 @@ type SelectViewParams = {
 };
 
 const SCOPE_LABEL: Record<'working' | 'unstaged' | 'staged' | 'all', string> = {
-  working: 'working tree',
-  unstaged: 'unstaged only',
-  staged: 'staged only',
-  all: 'working tree',
+  working: 'Working tree',
+  unstaged: 'Unstaged only',
+  staged: 'Staged only',
+  all: 'Working tree',
 };
 
-const viewLabel = ({ view, commits }: ViewLabelParams): string => {
-  if (view.kind === 'working') {
-    if (view.scope === 'all') {
-      return 'working tree';
-    }
+const baseWord = (baseBranch: string | null): string => baseBranch ?? 'its base branch';
 
+const viewLabel = ({ view, commits, baseBranch, branch }: ViewLabelParams): string => {
+  if (view.kind === 'working') {
     return SCOPE_LABEL[view.scope];
   }
 
   if (view.kind === 'commit') {
     const commit = commits.find((candidate) => candidate.sha === view.sha);
     if (commit != null) {
-      return `commit ${commit.shortSha}`;
+      return `Commit ${commit.shortSha}`;
     }
 
-    return `commit ${view.sha.slice(0, 7)}`;
+    return `Commit ${view.sha.slice(0, 7)}`;
   }
 
-  return 'branch vs main';
+  return `Comparing ${baseWord(baseBranch)} ← ${branch ?? 'this branch'}`;
+};
+
+const commitsLabel = ({
+  view,
+  commits,
+}: Pick<ViewLabelParams, 'view' | 'commits'>): string | null => {
+  if (view.kind !== 'branch' || commits.length === 0) {
+    return null;
+  }
+
+  return `All ${commits.length} ${commits.length === 1 ? 'commit' : 'commits'}`;
 };
 
 const viewEquals = ({ left, right }: ViewEqualsParams): boolean => {
@@ -118,7 +130,8 @@ export const DiffViewSelector = ({
   onChange,
   commits,
   status,
-  filesCount,
+  baseBranch = null,
+  branch = null,
   loading,
 }: Props) => {
   const now = useNow(30_000);
@@ -208,8 +221,14 @@ export const DiffViewSelector = ({
     return [
       {
         label: 'branch',
-        hint: 'everything this branch changes vs main, uncommitted edits included',
-        rows: [{ kind: 'option', view: { kind: 'branch' }, label: 'branch vs main' }],
+        hint: `everything this branch changes vs ${baseWord(baseBranch)}, uncommitted edits included`,
+        rows: [
+          {
+            kind: 'option',
+            view: { kind: 'branch' },
+            label: `branch vs ${baseWord(baseBranch)}`,
+          },
+        ],
       },
       {
         label: 'currently editing',
@@ -233,7 +252,7 @@ export const DiffViewSelector = ({
       },
       ...commitSections,
     ];
-  }, [filterMatch, hasQuery, localCommits, pushedCommits, status?.upstream]);
+  }, [baseBranch, filterMatch, hasQuery, localCommits, pushedCommits, status?.upstream]);
 
   const hasCommitMatch = useMemo(
     () =>
@@ -299,9 +318,8 @@ export const DiffViewSelector = ({
     }
   };
 
-  const label = viewLabel({ view, commits });
-  const countLabel =
-    filesCount === null ? '' : ` · ${filesCount} file${filesCount === 1 ? '' : 's'}`;
+  const label = viewLabel({ view, commits, baseBranch, branch });
+  const countLabel = commitsLabel({ view, commits });
   let optionIndex = -1;
 
   return (
@@ -315,20 +333,19 @@ export const DiffViewSelector = ({
           type="button"
           onClick={toggle}
           className={cn(
-            'inline-flex items-center gap-2 rounded-md border border-border bg-background px-2 py-1 text-label',
-            'hover:border-border-strong hover:bg-hover',
+            'inline-flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-label text-muted-foreground',
+            'hover:bg-hover hover:text-foreground',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
           )}
           title="Change diff view"
         >
-          <GitCommit size={11} aria-hidden className="text-muted-foreground" />
-          <span className="font-medium">{label}</span>
+          <span className="truncate">{label}</span>
           {loading ? (
             <span className="text-faint-foreground">…</span>
-          ) : (
-            <span className="text-faint-foreground tabular-nums">{countLabel}</span>
+          ) : countLabel === null ? null : (
+            <span className="shrink-0 text-faint-foreground tabular-nums">· {countLabel}</span>
           )}
-          <ChevronDown size={11} aria-hidden className="text-faint-foreground" />
+          <ChevronDown size={11} aria-hidden className="shrink-0 text-faint-foreground" />
         </button>
       }
     >
