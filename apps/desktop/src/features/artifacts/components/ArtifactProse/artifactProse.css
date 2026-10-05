@@ -4,6 +4,9 @@
   line-height: var(--text-prose--line-height);
   color: var(--color-foreground);
 }
+.artifact-prose[data-measure='full'] {
+  --artifact-measure: none;
+}
 .artifact-prose > div > div > :where(p, ul, ol, blockquote, dl, h1, h2, h3, h4, h5, h6) {
   max-width: var(--artifact-measure);
 }

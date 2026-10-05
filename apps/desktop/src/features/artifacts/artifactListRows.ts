@@ -18,6 +18,7 @@ import { planConsumerLabel, resolvePlanConsumer } from '../../shared/utils/planC
 import type { WorkNodeState } from '@goodboy/ui';
 import { planPartRows } from '../plans/components/PlanParts/planPartRows';
 import { NO_PLAN_STATE_INPUTS, planStateInputsOf } from '../plans/planStateInputs';
+import { NOT_REVISING, type PlanRevising } from '../plans/planRevising';
 
 type ArtifactRowTarget =
   | Readonly<{ kind: 'artifact'; artifactId: ArtifactId }>
@@ -55,6 +56,7 @@ type Params = Readonly<{
   agents: ReadonlyArray<Agent>;
   openQuestionCount: number;
   askingAgentIds: ReadonlySet<AgentId>;
+  revising: ReadonlyMap<ArtifactId, PlanRevising>;
   now: number;
 }>;
 
@@ -104,14 +106,16 @@ const planRow = ({
   agents,
   openQuestionCount,
   askingAgentIds,
+  revising,
 }: {
   readonly plan: PlanWithCount;
   readonly agents: ReadonlyArray<Agent>;
   readonly openQuestionCount: number;
   readonly askingAgentIds: ReadonlySet<AgentId>;
+  readonly revising: PlanRevising;
 }): ArtifactListRow => {
   const partRows = planPartRows({ plan, agents, askingAgentIds });
-  const inputs = planStateInputsOf({ plan, rows: partRows });
+  const inputs = planStateInputsOf({ plan, rows: partRows, revising });
   const state = artifactStateOf({
     kind: 'plan',
     status: plan.status,
@@ -194,11 +198,20 @@ export const buildArtifactListRows = ({
   agents,
   openQuestionCount,
   askingAgentIds,
+  revising,
   now,
 }: Params): ReadonlyArray<ArtifactListRow> =>
   [
     ...generations.map((generation) => generationRow({ generation })),
-    ...plans.map((plan) => planRow({ plan, agents, openQuestionCount, askingAgentIds })),
+    ...plans.map((plan) =>
+      planRow({
+        plan,
+        agents,
+        openQuestionCount,
+        askingAgentIds,
+        revising: revising.get(plan.id) ?? NOT_REVISING,
+      }),
+    ),
     ...artifacts
       .filter((artifact) => artifact.kind !== 'plan')
       .map((artifact) => documentRow({ artifact, now })),

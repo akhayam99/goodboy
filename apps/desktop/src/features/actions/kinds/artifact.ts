@@ -23,6 +23,13 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import { planAsArtifact } from '../../plans/planAsArtifact';
+import { planRunToast } from '../../plans/planRunToast';
+import {
+  NOT_REVISING,
+  PLAN_REVISING_REASON,
+  planRevisingOf,
+  type PlanRevising,
+} from '../../plans/planRevising';
 import { planConsumerLabel, resolvePlanConsumer } from '../../../shared/utils/planConsumer';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { NAMES } from '../../../shared/names';
@@ -66,6 +73,7 @@ export type ArtifactFacts = {
   readonly planStatus: ArtifactStatus | null;
   readonly status: ArtifactStatus | null;
   readonly isPlanRunning: boolean;
+  readonly planRevising: PlanRevising;
   readonly generation: ArtifactGeneration | null;
   readonly kickoff: string | null;
   readonly ports: ArtifactPorts;
@@ -180,12 +188,16 @@ const runPlan = async ({ facts, env }: FactsOnly & { readonly env: ActionEnv }):
   if (planId === null) {
     return;
   }
-  await env.getState().runPlan(facts.sessionId, planId);
-  env.showToast({
-    kind: 'info',
-    title: 'Implementer started',
-    message: 'An agent is running this plan. You can keep working.',
+  const state = env.getState();
+  const result = await state.runPlan(facts.sessionId, planId);
+  const toast = planRunToast({
+    result,
+    sessionId: facts.sessionId,
+    navigate: state.navigate,
   });
+  if (toast !== null) {
+    env.showToast(toast);
+  }
 };
 
 const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
@@ -219,7 +231,9 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
     group: 'act',
     slot: () => 'primary',
     when: ({ facts }) => planIn({ facts, statuses: ['active'] }),
-    blockedReason: ({ facts }) => portBlocked({ facts, id: 'runPlan' }),
+    blockedReason: ({ facts }) =>
+      portBlocked({ facts, id: 'runPlan' }) ??
+      (facts.planRevising.kind === 'revising' ? PLAN_REVISING_REASON : null),
     isBusy: ({ facts }) => portBusy({ facts, id: 'runPlan' }),
     run: ported({ id: 'runPlan', fallback: runPlan }),
   },
@@ -538,6 +552,7 @@ export const ARTIFACT_KIND: ObjectKindDefinition<ArtifactActionTarget, ArtifactF
         planStatus: null,
         status: null,
         isPlanRunning: false,
+        planRevising: NOT_REVISING,
         generation,
         kickoff: null,
         ports,
@@ -566,6 +581,10 @@ export const ARTIFACT_KIND: ObjectKindDefinition<ArtifactActionTarget, ArtifactF
       planStatus: plan?.status ?? (stored?.kind === 'plan' ? stored.status : null),
       status: plan?.status ?? stored?.status ?? null,
       isPlanRunning,
+      planRevising:
+        stored === null || stored.kind !== 'plan'
+          ? NOT_REVISING
+          : planRevisingOf({ artifact: stored, turn: state.agentTurnState[stored.agentId] }),
       generation: null,
       kickoff:
         stored?.kind === 'report'

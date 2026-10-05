@@ -32,7 +32,7 @@ export {
   RIGHT_DRAWER_STORAGE_KEY,
   canDrawerPush,
 } from './components/DrawerColumn';
-export type { DrawerColumnProps } from './components/DrawerColumn';
+export type { DrawerColumnProps, DrawerSizing } from './components/DrawerColumn';
 export { DrawerFrame } from './components/DrawerFrame';
 export { Trail } from './components/Trail';
 export type { TrailSegmentModel } from './components/Trail/types';

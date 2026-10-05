@@ -3,7 +3,8 @@ import { Button, InlineConfirm, Textarea, formatError, PaneShell } from '@goodbo
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore, useSessionOpenQuestions, agentPlace } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
+import { usePlanRevising } from '../../../plans/useRevisingPlans';
+import { usePlanRun } from '../../../plans/usePlanRun';
 import { artifactStateOf } from '../../artifactStateOf';
 import { NO_PLAN_STATE_INPUTS, planStateInputsOf } from '../../../plans/planStateInputs';
 import { parsePlanSource, planToSource } from '../../../plans/planSource';
@@ -50,7 +51,6 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
   const { artifact } = subject;
   const plan = subject.kind === 'plan' ? subject.plan : null;
   const openQuestionCount = useSessionOpenQuestions(sessionId).length;
-  const runPlan = useAppStore((s) => s.runPlan);
   const updatePlanBody = useAppStore((s) => s.updatePlanBody);
   const updateArtifactSource = useAppStore((s) => s.updateArtifactSource);
   const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
@@ -60,10 +60,10 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
   const savedCopy = useArtifactSavedCopy({ sessionId, artifact });
   useRecordArtifactOpened({ sessionId, artifactId: artifact.id });
   const regenerate = useReportRegenerate({ sessionId, artifact });
-  const announceAgentStarted = useAgentStartedToast();
+  const planRun = usePlanRun({ sessionId, planId: artifact.id });
+  const revising = usePlanRevising({ sessionId, planId: plan === null ? null : plan.id });
   const [draft, setDraft] = useState<string | null>(null);
   const [armed, setArmed] = useState<Armed>(null);
-  const [isSpawning, setIsSpawning] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [wireframeScreenId, setWireframeScreenId] = useState<string | null>(null);
@@ -75,24 +75,11 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
   const copyLabel = artifact.sourceFormat === 'json' ? 'Copy JSON' : 'Copy markdown';
 
   const run = async () => {
-    if (plan === null || isSpawning) {
+    if (plan === null) {
       return;
     }
-    setIsSpawning(true);
     setError(null);
-    try {
-      const agentId = await runPlan(sessionId, plan.id);
-      announceAgentStarted({
-        sessionId,
-        agentId,
-        title: 'Implementer started',
-        message: 'An agent is running this plan. You can keep working.',
-      });
-    } catch (cause) {
-      setError(formatError(cause));
-    } finally {
-      setIsSpawning(false);
-    }
+    await planRun.run();
   };
 
   const startEditing = () => {
@@ -142,8 +129,8 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
   const isCopyMissing = savedCopy.location === null || !savedCopy.location.exists;
   const regenerateBlocked = `${regenerate.hint.charAt(0).toUpperCase()}${regenerate.hint.slice(1)}`;
   const ports: ArtifactPorts = {
-    runPlan: { run, isBusy: isSpawning },
-    runAgain: { run, isBusy: isSpawning },
+    runPlan: { run, isBusy: planRun.isSpawning },
+    runAgain: { run, isBusy: planRun.isSpawning },
     edit: { run: startEditing },
     openInBrowser: {
       run: savedCopy.openInBrowser,
@@ -198,7 +185,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
         description={armedConfirm.description}
         confirmLabel={armedConfirm.confirmLabel}
         autoDisarmMs={4000}
-        isBusy={isSpawning}
+        isBusy={planRun.isSpawning}
         onConfirm={async () => {
           await armed.run();
           setArmed(null);
@@ -250,7 +237,9 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
     status: artifact.status,
     isNew: false,
     openQuestionCount,
-    ...(plan === null ? NO_PLAN_STATE_INPUTS : planStateInputsOf({ plan, rows: partRows })),
+    ...(plan === null
+      ? NO_PLAN_STATE_INPUTS
+      : planStateInputsOf({ plan, rows: partRows, revising })),
   });
   const chip =
     subject.kind === 'wireframe' ? (
@@ -262,7 +251,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
       <ArtifactStateChip state={state} />
     );
 
-  const alert = error ?? regenerate.error;
+  const alert = error ?? planRun.error ?? regenerate.error;
 
   return (
     <PaneShell
@@ -309,7 +298,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
             aria-label={`Edit ${artifact.title}`}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
-            className="artifact-prose-measure w-full font-mono text-body"
+            className={`${plan === null ? 'artifact-prose-measure ' : ''}w-full font-mono text-body`}
             autoGrow
             minRows={12}
             maxRows={80}

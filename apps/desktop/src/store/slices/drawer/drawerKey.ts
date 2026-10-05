@@ -8,6 +8,8 @@ export const drawerKey = (content: DrawerContent): string => {
       return `explore-file:${content.payload.entry.relPath}`;
     case 'artifact':
       return `artifact:${content.payload.artifactId}:${content.payload.tab}`;
+    case 'artifact-document':
+      return `artifact-document:${content.payload.artifactId}:${content.payload.revision ?? 'current'}`;
     case 'plan-part':
       return `plan-part:${content.payload.planId}:${content.payload.index}`;
     case 'scriptRun':

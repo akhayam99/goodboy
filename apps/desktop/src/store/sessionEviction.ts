@@ -70,6 +70,7 @@ export const SESSION_EVICTION = [
   { key: 'sessionDecisions', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionDecisionsBaseline', keyedBy: 'session', evictOn: 'archive' },
   { key: 'contextDrawerTab', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'documentDrawerExpanded', keyedBy: 'session', evictOn: 'archive' },
   { key: 'mountGitlabMr', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'sessionGitlabMr', keyedBy: 'session', evictOn: 'archive' },
   { key: 'mountBitbucketPr', keyedBy: 'mount', evictOn: 'archive' },

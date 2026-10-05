@@ -70,6 +70,10 @@ vi.mock('../../hooks/useAgentMetrics', () => ({
   }),
 }));
 
+vi.mock('../../../plans/planSurfaces', () => ({
+  PlanRow: () => <span>plan row</span>,
+}));
+
 vi.mock('./AgentFollowUps', () => ({
   AgentFollowUps: () => null,
 }));

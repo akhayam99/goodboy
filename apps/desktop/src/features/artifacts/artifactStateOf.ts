@@ -15,12 +15,14 @@ import type { StatePresentation } from '../../shared/utils/statePresentation';
 import { ARTIFACT_GENERATION_PRESENTATION, type ArtifactGeneration } from './artifactCollection';
 import { ARTIFACT_KIND_MARKER_LABEL } from './artifactPresentation';
 import type { PlanStateInputs } from '../plans/planStateInputs';
+import { planRevisingLabel } from '../plans/planRevising';
 
 type ArtifactStateKey =
   | 'needs'
   | 'ready'
   | 'available'
   | 'running'
+  | 'revising'
   | 'ran'
   | 'partly'
   | 'stopped'
@@ -59,6 +61,14 @@ const ARTIFACT_STATE_PRESENTATION = {
     key: 'running',
     label: 'Running',
     reason: 'An agent is on it',
+    tone: 'info',
+    icon: CircleDot,
+    group: 'running',
+  },
+  revising: {
+    key: 'revising',
+    label: 'Revising',
+    reason: 'The planner is writing a new version of this plan',
     tone: 'info',
     icon: CircleDot,
     group: 'running',
@@ -179,6 +189,13 @@ const ranState = ({
 const planState = (params: StoredParams): ArtifactState => {
   if (params.status === 'consumed') {
     return ranState(params);
+  }
+  if (params.revising.kind === 'revising') {
+    return {
+      ...ARTIFACT_STATE_PRESENTATION.revising,
+      label: planRevisingLabel({ revising: params.revising }),
+      detail: null,
+    };
   }
   if (params.openQuestionCount > 0) {
     return withDetail({

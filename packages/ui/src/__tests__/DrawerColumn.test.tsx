@@ -70,6 +70,56 @@ describe('DrawerColumn', () => {
     expect(panel().querySelector('[data-drawer-card]')?.className).toContain('shadow-lg');
   });
 
+  it('opens at half the column and pushes when the main area keeps its 560px', () => {
+    stubColumnWidth(2000);
+    render(
+      <DrawerColumn
+        main={<div>main</div>}
+        drawer={<div>plan</div>}
+        sizing="half"
+        ariaLabel="Side panel"
+        resizeLabel="Resize side panel"
+      />,
+    );
+
+    expect(panel().getAttribute('data-drawer-sizing')).toBe('half');
+    expect(panel().getAttribute('data-drawer-mode')).toBe('push');
+    expect(panel().style.width).toBe('1000px');
+    expect(screen.queryByRole('separator', { name: 'Resize side panel' })).toBeNull();
+  });
+
+  it('lies over the page at half width when the window is too narrow to push', () => {
+    stubColumnWidth(1100);
+    render(
+      <DrawerColumn
+        main={<div>main</div>}
+        drawer={<div>plan</div>}
+        sizing="half"
+        ariaLabel="Side panel"
+        resizeLabel="Resize side panel"
+      />,
+    );
+
+    expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
+    expect(panel().style.width).toBe('550px');
+  });
+
+  it('fills the whole column when expanded, over the page', () => {
+    stubColumnWidth(2000);
+    render(
+      <DrawerColumn
+        main={<div>main</div>}
+        drawer={<div>plan</div>}
+        sizing="full"
+        ariaLabel="Side panel"
+        resizeLabel="Resize side panel"
+      />,
+    );
+
+    expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
+    expect(panel().style.width).toBe('2000px');
+  });
+
   it('keeps a closed column empty, zero wide and inert', () => {
     stubColumnWidth(1094);
     renderColumn(null);

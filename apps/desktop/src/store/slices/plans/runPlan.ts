@@ -1,52 +1,76 @@
-import type { AgentId, PlanId, SessionId } from '@goodboy/types';
+import type { PlanId, SessionId, WorkflowRunId } from '@goodboy/types';
 import { isAgentStatusHalted, runsForWorkflowRun } from '@goodboy/core';
 import { classifyStep, kindConsumesPlan } from '../../../features/session/agent-kind';
 import { resolveWorkflowAdvance } from '../../../features/workflows/advanceGate';
 import { viewWorkflowAdvance } from '../../../features/workflows/workflowAdvanceView';
+import { PLAN_REVISING_REASON, planRevisingOf } from '../../../features/plans/planRevising';
 import { activateWorkflowAgentOrNotify } from '../workflows/activateWorkflowAgentOrNotify';
-import type { GetFn } from './types';
+import type { GetFn, RunPlanResult } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 
+const refused = ({
+  reason,
+  workflowRunId = null,
+}: {
+  readonly reason: string | null;
+  readonly workflowRunId?: WorkflowRunId | null;
+}): RunPlanResult => ({ kind: 'refused', reason, workflowRunId });
+
 export const runPlan = (get: GetFn) => {
-  return async (sessionId: SessionId, planId: PlanId): Promise<AgentId | null> => {
+  return async (sessionId: SessionId, planId: PlanId): Promise<RunPlanResult> => {
     const state = get();
 
-    const session = sessionById(state.sessions, sessionId);
-    if (!session || session.workflowRuns.length === 0) {
-      return await get().spawnAgent(sessionId, {
+    const spawnImplementer = () =>
+      get().spawnAgent(sessionId, {
         triggeredPlanId: planId,
         kindOverride: 'implementer',
         focus: 'none',
       });
+    const startOutside = async (note: string): Promise<RunPlanResult> => ({
+      kind: 'startedOutside',
+      agentId: await spawnImplementer(),
+      note,
+    });
+
+    const stored = state.sessionArtifacts[sessionId]?.find((artifact) => artifact.id === planId);
+    if (
+      stored !== undefined &&
+      planRevisingOf({ artifact: stored, turn: state.agentTurnState[stored.agentId] }).kind ===
+        'revising'
+    ) {
+      return refused({ reason: PLAN_REVISING_REASON });
+    }
+
+    const session = sessionById(state.sessions, sessionId);
+    if (!session || session.workflowRuns.length === 0) {
+      return { kind: 'started', agentId: await spawnImplementer(), scope: 'session' };
     }
 
     const plan = state.sessionPlans[sessionId]?.find((p) => p.id === planId);
     const runs = state.sessionPhaseRuns[sessionId] ?? [];
     const creatorAgent = plan ? runs.find((r) => r.id === plan.agentId) : undefined;
     if (!creatorAgent?.stepId || !creatorAgent.workflowRunId) {
-      return await get().spawnAgent(sessionId, {
-        triggeredPlanId: planId,
-        kindOverride: 'implementer',
-        focus: 'none',
-      });
+      return { kind: 'started', agentId: await spawnImplementer(), scope: 'session' };
     }
 
+    const workflowRunId = creatorAgent.workflowRunId;
     if (isAgentStatusHalted({ status: creatorAgent.status })) {
-      return null;
+      return refused({
+        reason: 'The planner stopped before finishing, so this plan cannot run yet',
+        workflowRunId,
+      });
     }
 
     const templates = state.phaseTemplates[session.workspaceId] ?? [];
-    const creatorRun = session.workflowRuns.find((r) => r.id === creatorAgent.workflowRunId);
-    const template =
-      creatorRun && !creatorRun.discardedAt
-        ? (templates.find((t) => t.id === creatorRun.workflowId) ?? null)
-        : null;
-    if (!creatorRun || !template) {
-      return await get().spawnAgent(sessionId, {
-        triggeredPlanId: planId,
-        kindOverride: 'implementer',
-        focus: 'none',
-      });
+    const creatorRun = session.workflowRuns.find((r) => r.id === workflowRunId);
+    if (!creatorRun || creatorRun.discardedAt) {
+      return await startOutside('Started outside the workflow, its run was discarded');
+    }
+    const template = templates.find((t) => t.id === creatorRun.workflowId);
+    if (!template) {
+      return await startOutside(
+        'Started outside the workflow, its workflow is no longer available',
+      );
     }
 
     const runAgents = runsForWorkflowRun(runs, creatorRun.id);
@@ -60,28 +84,25 @@ export const runPlan = (get: GetFn) => {
       }),
     });
     if (!nextStep) {
-      return await get().spawnAgent(sessionId, {
-        triggeredPlanId: planId,
-        kindOverride: 'implementer',
-        focus: 'none',
+      return refused({
+        reason: 'The workflow has no step left for this plan',
+        workflowRunId: creatorRun.id,
       });
     }
 
     const nextKind = classifyStep({ step: nextStep });
     if (!kindConsumesPlan({ kind: nextKind })) {
-      return await get().spawnAgent(sessionId, {
-        triggeredPlanId: planId,
-        kindOverride: 'implementer',
-        focus: 'none',
+      return refused({
+        reason: `The next step (${nextStep.name}) does not run plans`,
+        workflowRunId: creatorRun.id,
       });
     }
 
     const stepAgent = runAgents.find((r) => r.stepId === nextStep.id && r.status === 'pending');
     if (!stepAgent) {
-      return await get().spawnAgent(sessionId, {
-        triggeredPlanId: planId,
-        kindOverride: 'implementer',
-        focus: 'none',
+      return refused({
+        reason: `Step ${nextStep.ordinal + 1} already started`,
+        workflowRunId: creatorRun.id,
       });
     }
     const activated = await activateWorkflowAgentOrNotify({
@@ -91,6 +112,8 @@ export const runPlan = (get: GetFn) => {
       explicitPlanId: planId,
       focus: 'none',
     });
-    return activated ? stepAgent.id : null;
+    return activated
+      ? { kind: 'started', agentId: stepAgent.id, scope: 'workflow' }
+      : refused({ reason: null, workflowRunId: creatorRun.id });
   };
 };

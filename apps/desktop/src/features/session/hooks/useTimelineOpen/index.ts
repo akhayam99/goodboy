@@ -108,12 +108,10 @@ export const useTimelineOpen = ({
         return {
           label: 'Open plan',
           open: () => {
-            store.navigate({
-              to: sessionPlace({
-                sessionId,
-                lens: 'plans',
-                target: { kind: 'artifact', artifactId: entry.plan.id },
-              }),
+            store.openDrawer({
+              kind: 'artifact-document',
+              sessionId,
+              payload: { artifactId: entry.plan.id, revision: null },
             });
           },
         };
