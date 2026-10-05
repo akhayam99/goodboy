@@ -139,7 +139,7 @@ Connect your trackers, code hosts and Slack once. Their work lands in one Inbox,
 
 [More on inbox and your tools](docs/features/inbox.md)
 
-<a id="artifacts"></a><a id="plan-parts-and-run-plan"></a><a id="report-as-a-document"></a><a id="files-on-disk"></a><a id="create-a-wireframe"></a><a id="wireframes-scouted-first"></a><a id="wireframe-versions"></a><a id="compare"></a><a id="ask-for-a-change"></a><a id="import-wireframe-json"></a><a id="revisions-and-restore"></a><a id="save-a-copy-and-new-variant"></a>
+<a id="artifacts"></a><a id="plan-parts-and-run-plan"></a><a id="comment-on-a-plan"></a><a id="report-as-a-document"></a><a id="files-on-disk"></a><a id="create-a-wireframe"></a><a id="wireframes-scouted-first"></a><a id="wireframe-versions"></a><a id="compare"></a><a id="ask-for-a-change"></a><a id="import-wireframe-json"></a><a id="revisions-and-restore"></a><a id="save-a-copy-and-new-variant"></a>
 
 ## Plans, reports and wireframes
 

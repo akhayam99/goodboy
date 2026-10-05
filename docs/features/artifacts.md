@@ -17,6 +17,10 @@ Each row has its action in place: **Run plan** or **Answer**, **Stop** while it 
 
 Check a plan before it runs. A plan can give each part done-when checks and the files it expects to touch, and **Run plan** turns each part into a sub-agent.
 
+### Comment on a plan
+
+Point at a part, a heading, a paragraph or a few selected words of a plan and leave a comment. Each one sits under what it points at and stays a draft, kept across a restart, until you send it. **Send to planner** posts one message to the planner that wrote the plan: your comments in the order of the plan, each with the text it points at, and a request for the full updated plan. When the new version lands, a comment reads **Addressed** if the text it pointed at changed, or **Not changed in v2** if it did not. Send is off, with the reason beside it, when the planner is gone, when the plan already ran or when the next step of the workflow has already started. A run that waits for your approval of the plan still takes comments, and **Approve plan** sits next to **Send to planner**.
+
 ### Report as a document
 
 <picture>
