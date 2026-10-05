@@ -43,9 +43,11 @@ import {
   ArtifactCreateReportScene,
   ArtifactCreateWireframeScene,
 } from './scenes/ArtifactCreationScenes';
-import { ActivityFilterScene, ActivityTimelineScene } from './scenes/ActivityScenes';
+import { ActivityTimelineScene } from './scenes/ActivityScenes';
 import { ActivityRunScene } from './scenes/ActivityRunScene';
 import { ActivityRunFinishedScene } from './scenes/ActivityRunFinishedScene';
+import { ActivityBurstOpenScene } from './scenes/ActivityBurstOpenScene';
+import { ActivityLogScene } from './scenes/ActivityLogScene';
 import { ActivityResolvesScene } from './scenes/ActivityResolvesScene';
 import { ActivityQuestionScene } from './scenes/ActivityQuestionScene';
 import { ActivityOneSignalScene } from './scenes/ActivityOneSignalScene';
@@ -195,7 +197,8 @@ export const MOCK_SCENES = {
   'artifact-create-report': ArtifactCreateReportScene,
   'artifact-create-wireframe': ArtifactCreateWireframeScene,
   activity: ActivityTimelineScene,
-  'activity-filter': ActivityFilterScene,
+  'activity-burst-open': ActivityBurstOpenScene,
+  'activity-log': ActivityLogScene,
   'activity-run': ActivityRunScene,
   'activity-run-finished': ActivityRunFinishedScene,
   'activity-resolves': ActivityResolvesScene,

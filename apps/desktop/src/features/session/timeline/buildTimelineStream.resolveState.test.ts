@@ -3,7 +3,7 @@ import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import { buildTimelineGroups } from './buildTimelineGroups';
 import { buildTimelineStream, type TimelineRowItem } from './buildTimelineStream';
 import { dayLabel } from './dayLabel';
-import { needsYouCount } from './needsYou';
+import { needsYouOwners } from './needsYou';
 import { resolveFactsByAgentId, type ResolveActivityFacts } from './resolveActivity';
 import { rowStateNode, rowStateSentence, rowStateTone } from '../../workTreeModel/rowStateCopy';
 
@@ -96,7 +96,11 @@ describe('resolver rows read the state of the comment', () => {
   it('counts a ready fix and a failed draft as needing you', () => {
     const { items } = rowsFor({ agents, facts });
 
-    expect(needsYouCount({ items })).toBe(2);
+    expect(
+      needsYouOwners({ items, entries: [], events: [] })
+        .map((owner) => owner.id)
+        .sort(),
+    ).toEqual(['agent:resolver-failed', 'agent:resolver-ready']);
   });
 
   it('keeps the agent state for a resolver Review knows nothing about', () => {
@@ -133,8 +137,8 @@ describe('resolveFactsByAgentId', () => {
       ],
     });
 
-    expect(facts.get('a1')).toEqual({ state: 'ready', word: 'Ready for you' });
-    expect(facts.get('a3')).toEqual({ state: 'pushed', word: 'Pushed' });
+    expect(facts.get('a1')).toMatchObject({ state: 'ready', word: 'Ready for you' });
+    expect(facts.get('a3')).toMatchObject({ state: 'pushed', word: 'Pushed' });
   });
 
   it('falls back to the attempt phase when Review has no row for the thread', () => {
@@ -158,6 +162,6 @@ describe('resolveFactsByAgentId', () => {
       ],
     });
 
-    expect(facts.get('a1')).toEqual({ state: 'needs', word: 'Needs you' });
+    expect(facts.get('a1')).toMatchObject({ state: 'needs', word: 'Needs you' });
   });
 });

@@ -18,9 +18,9 @@ import { isAgentMissingArtifact } from '../../artifacts/turnArtifactOutcome';
 import { attachedQuestionsFor } from './attachedQuestions';
 import { earliestEvidence, resolveAgentCreation, type AgentCreation } from './agentCreation';
 import { runIdentity, runIdentitySeed, type RunIdentity } from './runIdentity';
+import type { ReviewCommentState } from '../../resolve/reviewCommentState';
 import type { ResolveActivityFacts } from './resolveActivity';
-import type { ResolveBatchSummary } from './resolveBatchSummary';
-import type { SubagentGroupSummary } from './subagentGroups';
+import type { ResolveBatchOrigin, ResolveBatchSummary } from './resolveBatchSummary';
 
 type TimelineChain = {
   readonly identity: RunIdentity;
@@ -48,6 +48,8 @@ export type TimelineResolveBatchEntry = {
   readonly id: string;
   readonly at: string | null;
   readonly batchId: string;
+  readonly origin: ResolveBatchOrigin;
+  readonly retryCount: number;
   readonly prNumber: number | null;
   readonly children: ReadonlyArray<TimelineAgentEntry>;
   readonly facts: ReadonlyArray<ResolveActivityFacts>;
@@ -55,15 +57,26 @@ export type TimelineResolveBatchEntry = {
   readonly isExpanded: boolean;
 };
 
-export type TimelineSubagentGroupEntry = {
-  readonly kind: 'subagentGroup';
+export type TimelineResolveFileEntry = {
+  readonly kind: 'resolveFile';
   readonly id: string;
   readonly at: string | null;
-  readonly parentId: string;
-  readonly children: ReadonlyArray<TimelineAgentEntry>;
-  readonly summary: SubagentGroupSummary;
-  readonly attentionKeys: ReadonlyArray<string>;
-  readonly isExpanded: boolean;
+  readonly batchEntryId: string;
+  readonly prNumber: number | null;
+  readonly path: string | null;
+  readonly lines: ReadonlyArray<{ readonly line: number; readonly count: number }>;
+  readonly threadCount: number;
+  readonly state: ReviewCommentState;
+  readonly word: string;
+  readonly agentIds: ReadonlyArray<string>;
+};
+
+export type TimelineResolveOpenEntry = {
+  readonly kind: 'resolveOpen';
+  readonly id: string;
+  readonly at: string | null;
+  readonly batchEntryId: string;
+  readonly prNumber: number | null;
 };
 
 export type TimelinePlanEntry = {
@@ -72,6 +85,7 @@ export type TimelinePlanEntry = {
   readonly at: string;
   readonly plan: PlanWithCount;
   readonly lane?: TimelineArtifactLane;
+  readonly launchEntryId?: string;
 };
 
 type TimelineArtifactLane = {
@@ -85,6 +99,7 @@ export type TimelineArtifactEntry = {
   readonly at: string;
   readonly artifact: ReportArtifact | WireframeArtifact;
   readonly lane?: TimelineArtifactLane;
+  readonly launchEntryId?: string;
 };
 
 export type TimelineIssueEntry = {
@@ -112,6 +127,7 @@ export type TimelineEventEntry = {
   readonly at: string;
   readonly event: SessionEvent;
   readonly projectRun?: TimelineProjectRun;
+  readonly repeatCount?: number;
   readonly lane?: TimelineArtifactLane;
 };
 
@@ -121,6 +137,7 @@ export type TimelineLearningEntry = {
   readonly at: string;
   readonly item: SessionContextItem;
   readonly lane?: TimelineArtifactLane;
+  readonly launchEntryId?: string;
 };
 
 type TimelineAnswerEntry = {
@@ -396,7 +413,7 @@ export const buildTimelineGroups = ({
       .map((child, index) =>
         buildAgentEntry({
           agent: child,
-          stepLabel: stepLabel == null ? null : `${stepLabel}.${index + 1}`,
+          stepLabel: stepLabel == null ? `${index + 1}` : `${stepLabel}.${index + 1}`,
           chain,
         }),
       )
@@ -518,6 +535,31 @@ export const buildTimelineGroups = ({
     };
   };
 
+  const launchForAuthor = ({
+    agentId,
+  }: {
+    readonly agentId: Agent['id'] | null | undefined;
+  }): { readonly launchEntryId: string } | Record<string, never> => {
+    const author = agentId == null ? undefined : liveAgentById.get(agentId);
+    if (author === undefined || author.parentAgentId != null || chainRootIds.has(author.id)) {
+      return {};
+    }
+    const isRunStep =
+      author.workflowRunId != null && author.stepId != null && runIds.has(author.workflowRunId);
+    return isRunStep ? {} : { launchEntryId: `agent:${author.id}` };
+  };
+  const outputPlacementFor = ({
+    agentId,
+  }: {
+    readonly agentId: Agent['id'] | null | undefined;
+  }):
+    | { readonly lane: TimelineArtifactLane }
+    | { readonly launchEntryId: string }
+    | Record<string, never> => {
+    const laned = agentId == null ? {} : laneForAuthor({ agentId });
+    return 'lane' in laned ? laned : launchForAuthor({ agentId });
+  };
+
   const standalonePlans: ReadonlyArray<TimelinePlanEntry> = plans
     .filter((plan) => !groupedPlanIds.has(plan.id))
     .map((plan) => ({
@@ -525,7 +567,7 @@ export const buildTimelineGroups = ({
       id: `plan:${plan.id}`,
       at: plan.createdAt,
       plan,
-      ...laneForAuthor({ agentId: plan.agentId }),
+      ...outputPlacementFor({ agentId: plan.agentId }),
     }));
   const standaloneArtifacts: ReadonlyArray<TimelineArtifactEntry> = readableArtifacts
     .filter((artifact) => !groupedArtifactIds.has(artifact.id))
@@ -534,7 +576,7 @@ export const buildTimelineGroups = ({
       id: `artifact:${artifact.id}`,
       at: artifact.createdAt,
       artifact,
-      ...laneForAuthor({ agentId: artifact.agentId }),
+      ...outputPlacementFor({ agentId: artifact.agentId }),
     }));
 
   const authorAgentIdByQuestionId = new Map<string, Agent['id']>();
@@ -638,6 +680,19 @@ export const buildTimelineGroups = ({
     ];
   });
 
+  const learningPlacement = ({
+    agentId,
+  }: {
+    readonly agentId: string | null | undefined;
+  }):
+    | { readonly lane: TimelineArtifactLane }
+    | { readonly launchEntryId: string }
+    | Record<string, never> => {
+    const laned = contextLaneFor({ agentId });
+    return 'lane' in laned
+      ? laned
+      : launchForAuthor({ agentId: agentId as Agent['id'] | null | undefined });
+  };
   const learningEntries: ReadonlyArray<TimelineLearningEntry> = learnings
     .filter((item) => item.kind === 'learning' && item.status === 'active')
     .map((item) => ({
@@ -645,7 +700,7 @@ export const buildTimelineGroups = ({
       id: `learning:${item.id}`,
       at: item.createdAt,
       item,
-      ...contextLaneFor({ agentId: item.source?.agentId }),
+      ...learningPlacement({ agentId: item.source?.agentId }),
     }));
 
   const entries = [

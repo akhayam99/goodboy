@@ -195,5 +195,4 @@ export type AppState = AppSliceState & {
   readonly resolveItemDrafts: Readonly<
     Record<SessionId, Readonly<Record<string, ResolveItemDraft>>>
   >;
-  readonly revealedActivityRows: Readonly<Record<SessionId, ReadonlySet<string>>>;
 };

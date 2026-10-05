@@ -17,7 +17,6 @@ const BORDER_DIVIDER = /\bborder-[tb](?!-0)\b/g;
 
 const BORDER_FALSE_POSITIVE_FILES = new Set([
   'apps/desktop/src/features/notifications/components/NotificationRow/NotificationRowDetail.tsx',
-  'apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/ActivityFilterPanel/ActivityFilterOption.tsx',
   'apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/MountProjectList.tsx',
 ]);
 

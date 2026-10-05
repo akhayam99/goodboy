@@ -180,8 +180,11 @@ under the header (properties, a banner, an approval rail, the agent's next
 action) is the first block of the body. A body that owns its scroll, such as a
 transcript or a diff, asks for `scroll="self"`.
 
-Long markdown documents (report, plan, brief) keep a 72ch prose measure,
-aligned left inside the column. Tables and code take the whole column.
+A Session or Agent page reads as one column: every child, banner, card and
+footer sits on the same edges. Only prose keeps a 72ch measure (long markdown
+and the text of a review comment), aligned left inside the column. Tables, code
+and cards take the whole column. `columnContract.test.ts` fails on any
+`max-w-[Nch]` other than `72ch`.
 
 ## Layout: fixed-height shell, scroll on content
 

@@ -269,48 +269,45 @@ the row menu, and only while no later outcome of the same branch settled
 them: a rewrite offers `Undo rewrite`, a stopped one `Retry` (or `Retry with
 a note` when History rewriter needs you) with `Rewrite with an agent`,
 `Change the plan` and `Discard plan` behind it, a push `Restore previous
-history`. A stopped rewrite never hides behind the filter. Every notification
+history`. A stopped rewrite waits in Needs you until a later outcome settles it. Every notification
 of the engine points at the row with `Open in Activity`, so closing it loses
 nothing.
 
 Every event has a reason. If an action cannot say why it happened, Goodboy
 refuses it instead of saving a blank entry.
 
-The header shows a neutral needs-you chip ("2 need you") only when no row
-that waits on you is on screen, because the filter hides it. It counts each open question once, the same number the Questions
-chip shows, and one per other ask, and a click switches to Needs you. **Filter** opens one panel with every kind of row at once, in three
-groups: Work (agents, workflows, questions, resolvers), Outputs (artifacts
-with plans, reports and wireframes, pull requests, issues) and Session log
-(branches and worktrees, decisions, session events). Each row shows how many
-of its kind the session holds, and how many of those rows the filter is
-hiding when the toggle is off. Presets set the whole
-filter in one click: **Everything**, **Work**, and **Needs you**, which shows
-only what waits on you whatever the filter hides and lasts until you leave
-it. A saved filter that matches the old Work preset migrates onto the new
-one, resolvers included. The trigger counts hidden rows, not hidden kinds
-("Work · 12 hidden"), and flashes briefly when a new row lands out of sight.
-A row your own action just caused (starting an agent, a resolve, a workflow,
-or acting on a suggestion) never hides behind the active filter: it stays
-visible, tagged "Shown because you started it", until you leave the session;
-the next visit it follows the filter like every other row. The filter shows
-once the feed holds more than one kind of row. **Start agent** is the one
-primary, and its menu starts a workflow, a report or a wireframe. When the
-activity column is narrower than 28rem, the needs-you chip keeps its count
-and Filter keeps its icon. Suggestions live in **Next steps**, above Activity
-and outside its filter, not as a row inside the feed.
+The feed has two views under one segmented header, **Activity | Log**, and
+every kind of row has exactly one home. Activity holds what you launched: an
+agent, a workflow run, a burst of resolvers, each as one row with its state
+or action, time and cost. What happens inside a launch folds into its row:
+the steps and subagents of a run, the questions it answered, and the plans,
+reports, wireframes and learnings it produced, listed behind "N outputs" on
+the launch. The Log holds the facts: plans, reports, wireframes and learnings
+made without a launch, Context, branch and worktree events, link events (an
+unlink carries **Re-link**), pull request events and session archive and
+restore. It is flat, newest first, one muted row per fact, with a search box on
+top and no categories. A row that carries a recovery (`Undo rewrite`, `Restore
+previous history`, `Restore branch`, `Retry with a note`) stays in Activity
+until the Branch page takes that recovery.
 
-An open question shows once on screen, on the agent that asked it. Its
-question row, on that agent's lane, carries the text and the one **Answer**,
-all neutral: the waiting agent row is the one amber mark in the activity. The
-agent row keeps its "Needs you" state without a second button, and takes
-the Answer back when the filter hides question rows. The workflow row says
-nothing about a question its step or the question row already shows: no
-sentence, no Answer, only a neutral "Waiting on a step" node. It names the
-question only when neither is in view (a sub-agent and question rows both
-filtered out), and then its Answer opens the asking agent at the question.
-The activity reports which open questions its rows show (`shownQuestionIds`),
-so Next steps do not repeat them. The
-needs-you count counts each family once, so one question never counts twice.
+A **Needs you** block sits on top of Activity, and only while something waits
+on you: one row per owner, never per child. A burst reads "Resolve #318 · 2
+replies ready · 1 failed", a run "Retry policy · 1 question", a stopped rebase
+"Rebase of feat/export stopped ×2". Each row has **Open**, which goes to
+whoever owns the action (the review, the exact question, the branch). Push is
+never offered there. The block disappears when nothing waits, and there is no
+filter to switch on first. **Start agent** is the one primary, and its menu
+starts a workflow, a report or a wireframe. Suggestions live in **Next steps**,
+above Activity, not as a row inside the feed.
+
+An open question is asked once on screen. A question inside a launch belongs
+to that launch: its agent or run row keeps its "Needs you" state and its
+**Answer**, and Needs you carries one row for the run, "1 question", whose
+**Open** goes to the asking agent at the question. A question without a launch
+has no row in Activity: it sits in Needs you while it is open and becomes one
+muted row of the Log once answered. The activity reports which open questions
+its rows show (`shownQuestionIds`), so Next steps do not repeat them. Each
+family counts once, so one question never counts twice.
 
 ## Next steps
 
@@ -321,7 +318,7 @@ suggestion, and every surface that shows one calls the same
 whether you clicked it on the board or in the session overview.
 
 - **`NextStepSlot`** (`features/suggestions/components/NextStepSlot/`) sits
-  in the session overview, above Activity, outside its filter and its
+  in the session overview, above Activity, outside its views and its
   grouping: a suggestion is not activity, it is a pointer to what activity
   should happen next. A new session shows the kickoff instead; the two never
   compete for the same moment.

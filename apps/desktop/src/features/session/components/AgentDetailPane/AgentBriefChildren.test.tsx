@@ -162,7 +162,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('AgentBriefChildren', () => {
-  it('draws the parts as a tree rooted on the step, first part just above the step', () => {
+  it('draws the parts as a tree rooted on the step, first part just under the step', () => {
     renderBrief({
       agents: [
         scout,
@@ -174,7 +174,7 @@ describe('AgentBriefChildren', () => {
       root: implement,
     });
 
-    expect(rowIds()).toEqual(['part-3', 'part-2', 'part-1', 'agent-2']);
+    expect(rowIds()).toEqual(['agent-2', 'part-1', 'part-2', 'part-3']);
     expect(
       within(rowOf('agent-2')).getByRole('button', { name: 'Step 2, Implement validators' }),
     ).toBeDefined();

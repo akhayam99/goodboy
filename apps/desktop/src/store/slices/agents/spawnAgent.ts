@@ -1,4 +1,4 @@
-import type { ResolveAttemptBatch } from '../resolve/types';
+import type { ResolveAttemptBatch, ResolveAttemptLaunch } from '../resolve/types';
 import type {
   AgentId,
   AgentSourceKind,
@@ -67,6 +67,7 @@ type SpawnArgs = {
   focus?: SpawnFocus;
   parentAgentId?: AgentId;
   resolveBatch?: ResolveAttemptBatch;
+  resolveLaunch?: ResolveAttemptLaunch;
 };
 
 type Params = {
@@ -204,7 +205,6 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
         return { inserted, resolvedKind, resolvedProvider, resolvedModel, resolvedEffort };
       },
     });
-  get().revealActivityRow(sessionId, `agent:${inserted.id}`);
   const explicitPrompt =
     stepPromptPrefix.length > 0 ? stepPromptPrefix : (args.initialPrompt ?? '');
   const baseKickoff = explicitPrompt.length > 0 ? explicitPrompt : (args.seedPrompt ?? '');
@@ -278,6 +278,7 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
       phase: 'queued',
       mountTarget: requireMountTarget({ get, sessionId }),
       ...(args.resolveBatch !== undefined && { batch: args.resolveBatch }),
+      ...(args.resolveLaunch !== undefined && { launch: args.resolveLaunch }),
     });
     if (kickoff.length > 0) {
       void get().drainResolveQueue({ sessionId });

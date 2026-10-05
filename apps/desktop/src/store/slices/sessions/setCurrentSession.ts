@@ -29,7 +29,6 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
     }
     const tSwitch = performance.now();
     const stateNow = get();
-    const previousSessionId = stateNow.currentSessionId;
     const cached = id
       ? {
           telemetry: stateNow.sessionTelemetry[id] !== undefined,
@@ -49,10 +48,6 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
         }
       : EMPTY_LOADING;
     set((state) => {
-      const revealedActivityRows = { ...state.revealedActivityRows };
-      if (previousSessionId) {
-        delete revealedActivityRows[previousSessionId];
-      }
       return {
         currentSessionId: id,
         sessionSummary: null,
@@ -61,7 +56,6 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
           : state.sessionLoading,
         activeLens: id ? { ...state.activeLens, [id]: null } : state.activeLens,
         selectedAgentId: id ? { ...state.selectedAgentId, [id]: null } : state.selectedAgentId,
-        revealedActivityRows,
         openSessionDraftWorkspaceId: id === null ? state.openSessionDraftWorkspaceId : null,
         goodboyNamedSessionId:
           id === state.goodboyNamedSessionId ? state.goodboyNamedSessionId : null,

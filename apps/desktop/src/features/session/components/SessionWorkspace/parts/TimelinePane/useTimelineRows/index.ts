@@ -22,10 +22,8 @@ import {
 import { runSpendUsd } from '../../../../../../../store/slices/workflows/runSpendUsd';
 import { useAttachedWorkflowRuns } from '../../../../../../workflows/useAttachedWorkflowRuns';
 import { useWorkflowAdvanceStates } from '../../../../../../workflows/useWorkflowAdvanceStates';
-import {
-  filterTimelineEntries,
-  isActivityChildShown,
-} from '../../../../../timeline/activityFilter';
+import { entriesOfView, type ActivityView } from '../../../../../timeline/activityView';
+import { logEntriesMatching } from '../../../../../timeline/logSearch';
 import { agentSpendById } from '../../../../../timeline/agentSpendById';
 import {
   buildTimelineGroups,
@@ -44,7 +42,7 @@ import {
   decisionChangeDetail,
   type DecisionChangeDetail,
 } from '../../../../../timeline/decisionChangeLines';
-import { needsYouCount, needsYouEntries, needsYouRootIds } from '../../../../../timeline/needsYou';
+import { needsYouOwners, type NeedsYouOwner } from '../../../../../timeline/needsYou';
 import { shownQuestionIds } from '../../../../../timeline/shownQuestionIds';
 import { timelineLaneRuns, type TimelineLaneRuns } from '../../../../../timeline/timelineLaneRuns';
 import {
@@ -53,35 +51,31 @@ import {
   type RailRow,
 } from '../../../../../../workTreeModel/railGeometry';
 import { keepEqualById } from '../../../../../../../shared/utils/keepEqualById';
-import type { ActivityFilterControl } from '../../../../../hooks/useActivityFilter';
 import type { ExplodeGroups } from '../../../../../hooks/useExplodeGroups';
 import { useResolveActivity } from '../../../../../hooks/useResolveActivity';
 
 const NO_EXPANDED_ROWS: ReadonlySet<string> = new Set();
 
-const EMPTY_REVEALED_ROWS: ReadonlySet<string> = new Set();
-
 type Params = {
   readonly session: Session;
-  readonly activity: ActivityFilterControl;
+  readonly view: ActivityView;
+  readonly query: string;
   readonly explode: ExplodeGroups;
 };
 
 export type TimelineRows = {
   readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
-  readonly visibleEntries: ReadonlyArray<TimelineTopLevelEntry>;
+  readonly viewEntries: ReadonlyArray<TimelineTopLevelEntry>;
   readonly events: ReadonlyArray<SessionEvent>;
   readonly worktrees: ReadonlyArray<SessionWorktree>;
   readonly isLoaded: boolean;
   readonly stream: TimelineStream;
-  readonly hiddenChildRows: number;
   readonly laidOutItems: ReadonlyArray<TimelineStreamItem>;
   readonly rail: RailLayout;
   readonly laneRuns: TimelineLaneRuns;
-  readonly needsYouTotal: number;
+  readonly owners: ReadonlyArray<NeedsYouOwner>;
   readonly unreadAgentIds: ReadonlySet<string>;
   readonly shownQuestions: ReadonlySet<string>;
-  readonly revealedRows: ReadonlySet<string>;
   readonly stepById: ReadonlyMap<string, Step>;
   readonly spendByAgentId: ReadonlyMap<string, number>;
   readonly spendByRunId: ReadonlyMap<string, number>;
@@ -91,7 +85,7 @@ export type TimelineRows = {
   readonly toggleExpanded: (rowId: string) => void;
 };
 
-export const useTimelineRows = ({ session, activity, explode }: Params): TimelineRows => {
+export const useTimelineRows = ({ session, view, query, explode }: Params): TimelineRows => {
   const sessionId: SessionId = session.id;
   const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const plans = useAppStore((s) => s.sessionPlans?.[sessionId] ?? EMPTY_ARRAY);
@@ -114,7 +108,6 @@ export const useTimelineRows = ({ session, activity, explode }: Params): Timelin
   const loadSessionDismissedQuestions = useAppStore((s) => s.loadSessionDismissedQuestions);
   const workflows = useAttachedWorkflowRuns({ session });
   const resolveActivity = useResolveActivity({ sessionId });
-  const revealedRows = useAppStore((s) => s.revealedActivityRows[sessionId] ?? EMPTY_REVEALED_ROWS);
   const spans = useAppStore((s) => s.sessionTurnSpans?.[sessionId]);
   const telemetry = useAppStore(
     (s) => s.sessionTelemetry[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
@@ -233,65 +226,39 @@ export const useTimelineRows = ({ session, activity, explode }: Params): Timelin
     return deciding;
   }, [orchestratingWorkflowRuns, workflows]);
 
-  const fullStreamItems = useMemo(
+  const owners = useMemo(
     () =>
-      buildTimelineStream({
+      needsYouOwners({
+        items: buildTimelineStream({
+          entries: model.entries,
+          unreadAgentIds,
+          advanceByRunId,
+          decidingRunIds,
+          dayLabelFor: dayLabel,
+          showQuestions: false,
+          resolveBatchByAgentId: resolveActivity.batchByAgentId,
+          resolveFactsByAgentId: resolveActivity.factsByAgentId,
+        }).items,
         entries: model.entries,
-        unreadAgentIds,
-        advanceByRunId,
-        decidingRunIds,
-        dayLabelFor: dayLabel,
-        resolveBatchByAgentId: resolveActivity.batchByAgentId,
-        resolveFactsByAgentId: resolveActivity.factsByAgentId,
-      }).items,
-    [advanceByRunId, decidingRunIds, model.entries, resolveActivity, unreadAgentIds],
+        events,
+      }),
+    [advanceByRunId, decidingRunIds, events, model.entries, resolveActivity, unreadAgentIds],
   );
 
-  const attentionRootIds = useMemo(
-    () => needsYouRootIds({ items: fullStreamItems }),
-    [fullStreamItems],
-  );
-
-  const needsYouTotal = useMemo(() => needsYouCount({ items: fullStreamItems }), [fullStreamItems]);
-
-  const { isNeedsYou } = activity;
-
-  const visibleEntries = useMemo(
-    () =>
-      isNeedsYou
-        ? needsYouEntries({ entries: model.entries, rootIds: attentionRootIds })
-        : filterTimelineEntries({
-            entries: model.entries,
-            filter: activity.filter,
-            revealed: revealedRows,
-          }),
-    [activity.filter, attentionRootIds, isNeedsYou, model.entries, revealedRows],
-  );
-
-  const shows = useMemo(
-    () => ({
-      showWorkflowSubagents: isNeedsYou || activity.filter.workflowSubagents,
-      showAgentSubagents: isNeedsYou || activity.filter.agentSubagents,
-      showPlans: isNeedsYou || isActivityChildShown({ filter: activity.filter, toggle: 'plans' }),
-      showReports:
-        isNeedsYou || isActivityChildShown({ filter: activity.filter, toggle: 'reports' }),
-      showWireframes:
-        isNeedsYou || isActivityChildShown({ filter: activity.filter, toggle: 'wireframes' }),
-      showQuestions: isNeedsYou || activity.filter.questions,
-    }),
-    [activity.filter, isNeedsYou],
-  );
-  const isShowingEverything = Object.values(shows).every((isShown) => isShown);
+  const viewEntries = useMemo(() => {
+    const inView = entriesOfView({ entries: model.entries, events, view });
+    return view === 'log' ? logEntriesMatching({ entries: inView, query }) : inView;
+  }, [events, model.entries, query, view]);
 
   const stream = useMemo(
     () =>
       buildTimelineStream({
-        entries: visibleEntries,
+        entries: viewEntries,
         unreadAgentIds,
         advanceByRunId,
         decidingRunIds,
         dayLabelFor: dayLabel,
-        ...shows,
+        showQuestions: view === 'log',
         resolveBatchByAgentId: resolveActivity.batchByAgentId,
         resolveFactsByAgentId: resolveActivity.factsByAgentId,
         expandedGroupIds: explode.expandedIds,
@@ -304,38 +271,9 @@ export const useTimelineRows = ({ session, activity, explode }: Params): Timelin
       explode.expandedIds,
       explode.fullIds,
       resolveActivity,
-      shows,
       unreadAgentIds,
-      visibleEntries,
-    ],
-  );
-
-  const unfilteredStream = useMemo(
-    () =>
-      isShowingEverything
-        ? stream
-        : buildTimelineStream({
-            entries: visibleEntries,
-            unreadAgentIds,
-            advanceByRunId,
-            decidingRunIds,
-            dayLabelFor: dayLabel,
-            resolveBatchByAgentId: resolveActivity.batchByAgentId,
-            resolveFactsByAgentId: resolveActivity.factsByAgentId,
-            expandedGroupIds: explode.expandedIds,
-            fullGroupIds: explode.fullIds,
-            foldsFinished: true,
-          }),
-    [
-      advanceByRunId,
-      decidingRunIds,
-      explode.expandedIds,
-      explode.fullIds,
-      isShowingEverything,
-      resolveActivity,
-      stream,
-      unreadAgentIds,
-      visibleEntries,
+      view,
+      viewEntries,
     ],
   );
 
@@ -367,9 +305,15 @@ export const useTimelineRows = ({ session, activity, explode }: Params): Timelin
     return next;
   }, [agents, spans, spendByAgentId, spendByRunId, stream.items]);
 
-  const hiddenChildRows = Math.max(0, unfilteredStream.items.length - stream.items.length);
-
-  const shownQuestions = useMemo(() => shownQuestionIds({ items: stream.items }), [stream.items]);
+  const shownQuestions = useMemo(() => {
+    const shown = new Set(shownQuestionIds({ items: stream.items }));
+    if (view === 'activity') {
+      for (const owner of owners) {
+        owner.questionIds.forEach((id) => shown.add(id));
+      }
+    }
+    return shown;
+  }, [owners, stream.items, view]);
 
   const decisionDetails = useMemo(() => {
     const details = new Map<string, DecisionChangeDetail>();
@@ -413,7 +357,11 @@ export const useTimelineRows = ({ session, activity, explode }: Params): Timelin
 
   const railCache = useRef<ReadonlyMap<string, RailRow>>(new Map());
   const rail = useMemo(() => {
-    const layout = layoutTimelineRail({ rows: laidOutItems, groups: stream.groups });
+    const layout = layoutTimelineRail({
+      rows: laidOutItems,
+      groups: stream.groups,
+      isIndentOnly: true,
+    });
     const rows = keepEqualById({ previous: railCache.current, next: layout.rows });
     railCache.current = new Map(rows.map((row) => [row.id, row]));
     return { ...layout, rows };
@@ -426,19 +374,17 @@ export const useTimelineRows = ({ session, activity, explode }: Params): Timelin
 
   return {
     entries: model.entries,
-    visibleEntries,
+    viewEntries,
     events,
     worktrees,
     isLoaded,
     stream,
-    hiddenChildRows,
     laidOutItems,
     rail,
     laneRuns,
-    needsYouTotal,
+    owners,
     unreadAgentIds,
     shownQuestions,
-    revealedRows,
     stepById,
     spendByAgentId,
     spendByRunId,

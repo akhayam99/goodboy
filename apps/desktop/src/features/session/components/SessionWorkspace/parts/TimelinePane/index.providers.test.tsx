@@ -80,9 +80,6 @@ vi.mock('../../../../../workflows/useWorkflowAdvanceStates', () => {
 vi.mock('../../../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
-vi.mock('./ActivityFilterPanel', () => ({
-  ActivityFilterPanel: () => <button type="button">Filter</button>,
-}));
 
 import { TimelinePane } from './index';
 

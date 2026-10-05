@@ -219,7 +219,7 @@ export const ReviewComment = ({
     <article
       aria-label={REVIEW_FLOW_LABEL.comment}
       data-review-comment={threadId}
-      className="flex min-w-0 max-w-[76ch] flex-col gap-5"
+      className="flex min-w-0 flex-col gap-5"
     >
       <header className="flex min-w-0 items-center gap-2 text-meta">
         {author !== null && (

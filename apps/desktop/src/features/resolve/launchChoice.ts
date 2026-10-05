@@ -58,6 +58,17 @@ export const routingOfLaunch = ({
   return { provider, model: launchChoice.model, effort };
 };
 
+export const retryOriginOf = ({
+  attempts,
+  threadId,
+}: {
+  readonly attempts: ReadonlyArray<ResolveAttempt>;
+  readonly threadId: string;
+}): string | null => {
+  const latest = [...attempts].reverse().find((attempt) => attempt.threadIds.includes(threadId));
+  return latest?.retryOfLaunchId ?? latest?.launchId ?? latest?.batchId ?? null;
+};
+
 export const retryBatchOf = ({
   attempts,
   threadId,

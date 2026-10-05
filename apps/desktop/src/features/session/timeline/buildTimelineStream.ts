@@ -13,7 +13,6 @@ import {
   DONE_ROW_STATE,
   resolveAgentRowState,
   resolveRunRowState,
-  type RowPhase,
   type RowReadyStep,
   type RowState,
   type RowStoppedStep,
@@ -28,25 +27,26 @@ import type {
   TimelinePlanEntry,
   TimelineQuestionEntry,
   TimelineResolveBatchEntry,
+  TimelineResolveFileEntry,
+  TimelineResolveOpenEntry,
   TimelineRunEntry,
-  TimelineSubagentGroupEntry,
   TimelineTopLevelEntry,
 } from './buildTimelineGroups';
-import type { RailGroupInput, RailGroupShape } from '../../workTreeModel/railGeometry';
+import type { RailGroupInput } from '../../workTreeModel/railGeometry';
 import { runIdentity, runIdentitySeed, type RunIdentity } from './runIdentity';
 import { groupResolveBatches } from './resolveBatchGroups';
+import { resolveBatchFiles, resolveBatchOpen } from './resolveBatchFiles';
 import { resolverRowState, type ResolveActivityFacts } from './resolveActivity';
 import { resolveBatchRowState, type ResolveBatchRef } from './resolveBatchSummary';
 import { decisionCountsText, isEmptyDecisionDiff } from './sessionEventPresentation';
 import { stepsGroupSummary, type GroupSummary, type StepsGroupKind } from './groupSummary';
 import {
-  SUBAGENT_GROUP_MIN_MEMBERS,
   isSubagentAttention,
-  subagentGroupEntryId,
-  subagentGroupRowState,
-  subagentGroupSummary,
+  subagentSummary,
+  subagentsExpandId,
   type SubagentFact,
-} from './subagentGroups';
+  type SubagentSummary,
+} from './subagentSummary';
 import {
   hasShownRunQuestion,
   oldestAgentOpenQuestion,
@@ -72,7 +72,8 @@ export type TimelineStreamEntry =
   | TimelineLearningEntry
   | TimelineQuestionEntry
   | TimelineResolveBatchEntry
-  | TimelineSubagentGroupEntry;
+  | TimelineResolveFileEntry
+  | TimelineResolveOpenEntry;
 
 type StreamRail = {
   readonly id: string;
@@ -97,8 +98,19 @@ export type TimelineDayItem = StreamRail & {
 
 type TimelineExplodeSlot = {
   readonly groupId: string;
-  readonly kind: 'batch' | 'subagents' | 'steps';
+  readonly kind: 'batch' | 'subagents' | 'steps' | 'outputs';
 };
+
+type TimelineOutputEntry = TimelinePlanEntry | TimelineArtifactEntry | TimelineLearningEntry;
+
+export type TimelineRowOutputs = {
+  readonly id: string;
+  readonly isExpanded: boolean;
+  readonly count: number;
+};
+
+const outputsExpandId = ({ parentId }: { readonly parentId: string }): string =>
+  `outputs:${parentId}`;
 
 type TimelineRowFold = {
   readonly kind: StepsGroupKind;
@@ -108,6 +120,13 @@ type TimelineRowFold = {
 
 const STEPS_GROUP_MIN_ROWS = 3;
 
+export type TimelineRowSubagents = {
+  readonly id: string;
+  readonly isExpanded: boolean;
+  readonly summary: SubagentSummary;
+  readonly attentionKeys: ReadonlyArray<string>;
+};
+
 export type TimelineRowItem = StreamRail & {
   readonly kind: 'row';
   readonly at: string | null;
@@ -116,12 +135,13 @@ export type TimelineRowItem = StreamRail & {
   readonly identity: RunIdentity | null;
   readonly familyId: string | null;
   readonly ordinal: string | null;
-  readonly nodeIndex: string | null;
   readonly rowState: RowState;
   readonly hasUnread: boolean;
   readonly opensLane?: boolean;
   readonly explode?: TimelineExplodeSlot;
   readonly fold?: TimelineRowFold;
+  readonly subagents?: TimelineRowSubagents;
+  readonly outputs?: TimelineRowOutputs;
 };
 
 export type TimelineMoreItem = StreamRail & {
@@ -147,11 +167,6 @@ type Params = {
   readonly advanceByRunId: ReadonlyMap<string, WorkflowAdvanceState>;
   readonly decidingRunIds: ReadonlySet<string>;
   readonly dayLabelFor: (params: { readonly at: string }) => string | null;
-  readonly showWorkflowSubagents?: boolean;
-  readonly showAgentSubagents?: boolean;
-  readonly showPlans?: boolean;
-  readonly showReports?: boolean;
-  readonly showWireframes?: boolean;
   readonly showQuestions?: boolean;
   readonly resolveBatchByAgentId?: ReadonlyMap<string, ResolveBatchRef>;
   readonly resolveFactsByAgentId?: ReadonlyMap<string, ResolveActivityFacts>;
@@ -176,6 +191,8 @@ type DraftRow = {
   readonly isPending: boolean;
   readonly explode?: TimelineExplodeSlot;
   readonly fold?: TimelineRowFold;
+  readonly subagents?: TimelineRowSubagents;
+  readonly outputs?: TimelineRowOutputs;
 };
 
 type DraftDay = {
@@ -465,6 +482,77 @@ const mergeConsecutiveProjectRows = ({
   return merged;
 };
 
+type StoppedKey = {
+  readonly branch: string | null;
+  readonly origin: string | null;
+};
+
+const stoppedKeyOf = ({ draft }: { readonly draft: DraftRow }): StoppedKey | null => {
+  if (draft.groupId != null || draft.entry.kind !== 'event') {
+    return null;
+  }
+  const { event } = draft.entry;
+  if (event.kind !== 'history_stopped') {
+    return null;
+  }
+  return { branch: event.payload?.branch ?? null, origin: event.payload?.origin ?? null };
+};
+
+const isSameStoppedKey = ({
+  first,
+  second,
+}: {
+  readonly first: StoppedKey;
+  readonly second: StoppedKey;
+}): boolean => first.branch === second.branch && first.origin === second.origin;
+
+const mergeConsecutiveStoppedRows = ({
+  drafts,
+}: {
+  readonly drafts: ReadonlyArray<DraftRow>;
+}): ReadonlyArray<DraftRow> => {
+  const merged: DraftRow[] = [];
+  let index = 0;
+
+  while (index < drafts.length) {
+    const newest = drafts[index];
+    if (newest === undefined) {
+      break;
+    }
+    const key = stoppedKeyOf({ draft: newest });
+    if (key === null || newest.entry.kind !== 'event') {
+      merged.push(newest);
+      index += 1;
+      continue;
+    }
+    const newestDayKey = newest.at === null ? null : dayKeyOf({ at: newest.at });
+    let runIndex = index + 1;
+    while (runIndex < drafts.length) {
+      const draft = drafts[runIndex];
+      const other = draft === undefined ? null : stoppedKeyOf({ draft });
+      if (
+        draft === undefined ||
+        other === null ||
+        !isSameStoppedKey({ first: key, second: other })
+      ) {
+        break;
+      }
+      const draftDayKey = draft.at === null ? null : dayKeyOf({ at: draft.at });
+      if (draftDayKey !== newestDayKey) {
+        break;
+      }
+      runIndex += 1;
+    }
+    const count = runIndex - index;
+    merged.push(
+      count === 1 ? newest : { ...newest, entry: { ...newest.entry, repeatCount: count } },
+    );
+    index = runIndex;
+  }
+
+  return merged;
+};
+
 const questionBucketOf = ({
   entry,
 }: {
@@ -555,13 +643,6 @@ const isArtifactShown = ({
 const stepAgentsOf = ({ entry }: { readonly entry: TimelineRunEntry }): ReadonlyArray<Agent> =>
   entry.children.flatMap((child) => (child.kind === 'agent' ? [child.agent] : []));
 
-const isLaneSettled = ({ entry }: { readonly entry: TimelineAgentEntry }): boolean =>
-  entry.agent.doneAt != null ||
-  (isAgentSettled({ agent: entry.agent }) &&
-    entry.children.every((child) => isAgentSettled({ agent: child.agent })));
-
-const SCHEDULED_PHASES: ReadonlySet<RowPhase> = new Set<RowPhase>(['running', 'waiting', 'queued']);
-
 const SKIPPED_UNDER_CLOSED: RowState = { phase: 'skipped', reason: { kind: 'skipped' }, ask: null };
 
 const NO_QUESTION_ROWS: ReadonlySet<string> = new Set();
@@ -569,6 +650,30 @@ const NO_QUESTION_ROWS: ReadonlySet<string> = new Set();
 const NO_RESOLVE_FACTS: ReadonlyMap<string, ResolveActivityFacts> = new Map();
 
 const NO_RESOLVE_BATCHES: ReadonlyMap<string, ResolveBatchRef> = new Map();
+
+const NO_FACTS: ResolveActivityFacts = { state: 'new', word: '' };
+
+const NO_OUTPUTS: ReadonlyArray<TimelineOutputEntry> = [];
+
+const NO_OUTPUTS_BY_AGENT: ReadonlyMap<string, ReadonlyArray<TimelineOutputEntry>> = new Map();
+
+const isOutputEntry = (entry: TimelineTopLevelEntry): entry is TimelineOutputEntry =>
+  entry.kind === 'plan' || entry.kind === 'artifact' || entry.kind === 'learning';
+
+const outputsByAgentEntryIdOf = ({
+  entries,
+}: {
+  readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
+}): ReadonlyMap<string, ReadonlyArray<TimelineOutputEntry>> => {
+  const grouped = new Map<string, Array<TimelineOutputEntry>>();
+  for (const entry of entries) {
+    if (!isOutputEntry(entry) || entry.launchEntryId === undefined) {
+      continue;
+    }
+    grouped.set(entry.launchEntryId, [...(grouped.get(entry.launchEntryId) ?? []), entry]);
+  }
+  return grouped.size === 0 ? NO_OUTPUTS_BY_AGENT : grouped;
+};
 
 const NO_EXPANDED_GROUPS: ReadonlySet<string> = new Set();
 
@@ -602,65 +707,6 @@ const agentRowStateOf = ({
   return state;
 };
 
-const hasScheduledChildWork = ({
-  entry,
-  parentState,
-}: {
-  readonly entry: TimelineAgentEntry;
-  readonly parentState: RowState;
-}): boolean => {
-  if (SCHEDULED_PHASES.has(parentState.phase)) {
-    return true;
-  }
-  return entry.children.some((child) => {
-    const { phase } = agentRowStateOf({ entry: child, readyAgentId: null });
-    if (phase === 'queued') {
-      return parentState.phase !== 'failed';
-    }
-    return phase === 'running' || phase === 'waiting';
-  });
-};
-
-const childLaneShape = ({
-  entry,
-  parentState,
-  groupId,
-}: {
-  readonly entry: TimelineAgentEntry;
-  readonly parentState: RowState;
-  readonly groupId: string | null;
-}): RailGroupShape => {
-  if (parentState.phase === 'closed') {
-    return 'closed';
-  }
-  if (isLaneSettled({ entry })) {
-    return 'merged';
-  }
-  if (!hasScheduledChildWork({ entry, parentState })) {
-    return 'closed';
-  }
-  return groupId == null ? 'open' : 'rejoining';
-};
-
-const runLaneShape = ({
-  isFinished,
-  rowState,
-  hasLiveWork,
-}: {
-  readonly isFinished: boolean;
-  readonly rowState: RowState;
-  readonly hasLiveWork: boolean;
-}): RailGroupShape => {
-  if (rowState.reason?.kind === 'closed') {
-    return 'closed';
-  }
-  if (isFinished) {
-    return 'merged';
-  }
-  const isHalted = rowState.phase === 'failed' || rowState.phase === 'closed';
-  return isHalted && !hasLiveWork ? 'closed' : 'open';
-};
-
 const isRunFinished = ({ entry }: { readonly entry: TimelineRunEntry }): boolean => {
   if (entry.run.discardedAt != null) {
     return true;
@@ -691,6 +737,7 @@ type EmitContext = {
   readonly showQuestions: boolean;
   readonly questionRowIds: ReadonlySet<string>;
   readonly resolveFactsByAgentId: ReadonlyMap<string, ResolveActivityFacts>;
+  readonly outputsByAgentEntryId: ReadonlyMap<string, ReadonlyArray<TimelineOutputEntry>>;
   readonly expandedGroupIds: ReadonlySet<string> | null;
   readonly fullGroupIds: ReadonlySet<string>;
   readonly mores: Array<{ readonly anchorRowId: string; readonly more: DraftMore }>;
@@ -723,9 +770,6 @@ type EmitAgentParams = {
   readonly context: EmitContext;
   readonly fold?: TimelineRowFold;
 };
-
-const nodeIndexOf = ({ stepLabel }: { readonly stepLabel: string | null }): string | null =>
-  stepLabel == null ? null : (stepLabel.split('.').at(-1) ?? null);
 
 const rowStateOfAgentRow = ({
   resolved,
@@ -771,100 +815,6 @@ const entryRowStateOf = ({
   };
 };
 
-const earliestChildAt = ({
-  children,
-}: {
-  readonly children: ReadonlyArray<TimelineAgentEntry>;
-}): string | null => {
-  const times = children.flatMap((child) => (child.at === null ? [] : [child.at]));
-  return times.length === 0
-    ? null
-    : times.reduce((first, second) => (first <= second ? first : second));
-};
-
-type ExplodedRowsParams = {
-  readonly groupId: string;
-  readonly kind: TimelineExplodeSlot['kind'];
-  readonly laneId: string;
-  readonly children: ReadonlyArray<TimelineAgentEntry>;
-  readonly identity: RunIdentity | null;
-  readonly isMuted: boolean;
-  readonly familyId: string | null;
-  readonly showSubagents: boolean;
-  readonly isParentClosed: boolean;
-  readonly context: EmitContext;
-};
-
-const explodedRows = ({
-  groupId,
-  kind,
-  laneId,
-  children,
-  identity,
-  isMuted,
-  familyId,
-  showSubagents,
-  isParentClosed,
-  context,
-}: ExplodedRowsParams): ReadonlyArray<DraftRow> => {
-  const blocks = children
-    .map((child) =>
-      agentRows({
-        entry: child,
-        grade: 'step',
-        identity,
-        isMuted,
-        familyId,
-        groupId: laneId,
-        showSubagents,
-        readyAgentId: null,
-        isParentClosed,
-        context,
-      }),
-    )
-    .flatMap((block) => {
-      const origin = block.at(-1);
-      return origin === undefined ? [] : [{ origin, block }];
-    })
-    .sort((first, second) => compareNewestFirst({ first: first.origin, second: second.origin }));
-  const hiddenCount = context.fullGroupIds.has(groupId)
-    ? 0
-    : Math.max(0, blocks.length - GROUP_VISIBLE_CHILDREN);
-  const shown = blocks.slice(hiddenCount);
-  const rows = shown
-    .flatMap(({ block }) => block)
-    .sort((first, second) => compareNewestFirst({ first, second }));
-  const slot: TimelineExplodeSlot = { groupId, kind };
-  const newest = shown[0]?.origin;
-  if (hiddenCount > 0 && newest !== undefined) {
-    context.mores.push({
-      anchorRowId: newest.id,
-      more: {
-        kind: 'more',
-        id: `more:${groupId}`,
-        familyId,
-        groupId: laneId,
-        hiddenCount,
-        explode: slot,
-      },
-    });
-  }
-  return rows.map((row) => (row.groupId === laneId ? { ...row, explode: slot } : row));
-};
-
-const hasSubagentGroup = ({
-  entry,
-  showSubagents,
-  context,
-}: {
-  readonly entry: TimelineAgentEntry;
-  readonly showSubagents: boolean;
-  readonly context: EmitContext;
-}): boolean =>
-  showSubagents &&
-  context.expandedGroupIds !== null &&
-  entry.children.length >= SUBAGENT_GROUP_MIN_MEMBERS;
-
 const subagentAttentionKeys = ({
   child,
 }: {
@@ -874,169 +824,14 @@ const subagentAttentionKeys = ({
     ? child.openQuestions.map((question) => question.id)
     : [child.id];
 
-const headerSortOrdinal = ({
-  parentOrdinal,
-  lowestChildOrdinal,
+const withSlot = ({
+  rows,
+  slot,
 }: {
-  readonly parentOrdinal: number;
-  readonly lowestChildOrdinal: number;
-}): number =>
-  lowestChildOrdinal > parentOrdinal
-    ? (parentOrdinal + lowestChildOrdinal) / 2
-    : lowestChildOrdinal - 0.5;
-
-type SubagentGroupRowsParams = {
-  readonly entry: TimelineAgentEntry;
-  readonly identity: RunIdentity | null;
-  readonly isMuted: boolean;
-  readonly familyId: string | null;
-  readonly parentLaneId: string | null;
-  readonly isChildParentClosed: boolean;
-  readonly context: EmitContext;
-};
-
-const subagentGroupRows = ({
-  entry,
-  identity,
-  isMuted,
-  familyId,
-  parentLaneId,
-  isChildParentClosed,
-  context,
-}: SubagentGroupRowsParams): ReadonlyArray<DraftRow> => {
-  const facts: ReadonlyArray<SubagentFact> = entry.children.map((child) => ({
-    state: entryRowStateOf({
-      entry: child,
-      readyAgentId: null,
-      isParentClosed: isChildParentClosed,
-      context,
-    }).rowState,
-    isAsking: child.openQuestions.length > 0 && !isQuestionDelegate({ agent: child.agent }),
-  }));
-  const summary = subagentGroupSummary({ facts });
-  const id = subagentGroupEntryId({ parentId: entry.id });
-  const group: TimelineSubagentGroupEntry = {
-    kind: 'subagentGroup',
-    id,
-    at: earliestChildAt({ children: entry.children }) ?? entry.at,
-    parentId: entry.id,
-    children: entry.children,
-    summary,
-    attentionKeys: entry.children.flatMap((child, index) => {
-      const fact = facts[index];
-      return fact !== undefined && isSubagentAttention({ fact })
-        ? subagentAttentionKeys({ child })
-        : [];
-    }),
-    isExpanded: context.expandedGroupIds?.has(id) === true,
-  };
-  const headId = pushHead({
-    context,
-    entryId: id,
-    parentGroupId: parentLaneId,
-    identityIndex: identity?.index ?? null,
-    isMuted,
-  });
-  const header: DraftRow = {
-    kind: 'row',
-    id,
-    at: group.at,
-    grade: 'step',
-    entry: group,
-    identity,
-    familyId,
-    groupId: headId,
-    ordinal: null,
-    sortOrdinal: headerSortOrdinal({
-      parentOrdinal: entry.ordinal,
-      lowestChildOrdinal: Math.min(...entry.children.map((child) => child.ordinal)),
-    }),
-    rowState: subagentGroupRowState({ summary }),
-    hasUnread: entry.children.some(
-      (child) =>
-        context.unreadAgentIds.has(child.agent.id) ||
-        hasUnreadDescendant({ entry: child, unreadAgentIds: context.unreadAgentIds }),
-    ),
-    isPending: false,
-  };
-  if (!group.isExpanded) {
-    return [header];
-  }
-  const laneId = laneIdOf({ entryId: id });
-  context.groups.push({
-    id: laneId,
-    parentGroupId: headId,
-    identityIndex: identity?.index ?? null,
-    isMuted,
-    originRowId: id,
-    shape: 'merged',
-  });
-  return [
-    ...explodedRows({
-      groupId: id,
-      kind: 'subagents',
-      laneId,
-      children: entry.children,
-      identity,
-      isMuted,
-      familyId,
-      showSubagents: true,
-      isParentClosed: isChildParentClosed,
-      context,
-    }),
-    header,
-  ];
-};
-
-type SubagentRowsParams = {
-  readonly entry: TimelineAgentEntry;
-  readonly identity: RunIdentity | null;
-  readonly isMuted: boolean;
-  readonly familyId: string | null;
-  readonly laneId: string;
-  readonly parentLaneId: string | null;
-  readonly showSubagents: boolean;
-  readonly isChildParentClosed: boolean;
-  readonly context: EmitContext;
-};
-
-const subagentRows = ({
-  entry,
-  identity,
-  isMuted,
-  familyId,
-  laneId,
-  parentLaneId,
-  showSubagents,
-  isChildParentClosed,
-  context,
-}: SubagentRowsParams): ReadonlyArray<DraftRow> => {
-  if (hasSubagentGroup({ entry, showSubagents, context })) {
-    return subagentGroupRows({
-      entry,
-      identity,
-      isMuted,
-      familyId,
-      parentLaneId,
-      isChildParentClosed,
-      context,
-    });
-  }
-  return entry.children.flatMap((child) =>
-    agentRows({
-      entry: child,
-      grade: 'step',
-      identity,
-      isMuted,
-      familyId,
-      groupId: laneId,
-      showSubagents,
-      readyAgentId: null,
-      isParentClosed: isChildParentClosed,
-      context,
-    }),
-  );
-};
+  readonly rows: ReadonlyArray<DraftRow>;
+  readonly slot: TimelineExplodeSlot;
+}): ReadonlyArray<DraftRow> =>
+  rows.map((row) => (row.explode === undefined ? { ...row, explode: slot } : row));
 
 const withStepsSlot = ({
   rows,
@@ -1077,7 +872,7 @@ const agentRows = ({
   });
   const childLaneId = laneIdOf({ entryId: entry.id });
   const isChildParentClosed = rowState.phase === 'closed' || isSkippedUnderClosed;
-  const nested: DraftRow[] = [];
+  let nested: ReadonlyArray<DraftRow> = [];
   const isFolded = fold !== undefined && !fold.isExpanded;
   const headId =
     fold === undefined
@@ -1089,28 +884,99 @@ const agentRows = ({
           identityIndex: identity?.index ?? null,
           isMuted,
         });
-  if (showSubagents && entry.children.length > 0 && !isFolded) {
+  const hasSubagents = showSubagents && entry.children.length > 0 && !isFolded;
+  const isCollapsible = hasSubagents && context.expandedGroupIds !== null && fold === undefined;
+  const subagentsId = subagentsExpandId({ parentId: entry.id });
+  const isSubagentsOpen =
+    hasSubagents && (!isCollapsible || context.expandedGroupIds?.has(subagentsId) === true);
+  if (isSubagentsOpen) {
     context.groups.push({
       id: childLaneId,
       parentGroupId: headId ?? groupId,
+      direction: 'down',
       identityIndex: identity?.index ?? null,
       isMuted,
       originRowId: entry.id,
-      shape: childLaneShape({ entry, parentState: rowState, groupId }),
+      shape: 'merged',
     });
-    nested.push(
-      ...subagentRows({
-        entry,
+    const childRows = entry.children.flatMap((child) =>
+      agentRows({
+        entry: child,
+        grade: 'step',
         identity,
         isMuted,
         familyId,
-        laneId: childLaneId,
-        parentLaneId: headId ?? groupId,
+        groupId: childLaneId,
         showSubagents,
-        isChildParentClosed,
+        readyAgentId: null,
+        isParentClosed: isChildParentClosed,
         context,
       }),
     );
+    nested = isCollapsible
+      ? withSlot({ rows: childRows, slot: { groupId: subagentsId, kind: 'subagents' } })
+      : childRows;
+  }
+  const facts: ReadonlyArray<SubagentFact> = isCollapsible
+    ? entry.children.map((child) => ({
+        state: entryRowStateOf({
+          entry: child,
+          readyAgentId: null,
+          isParentClosed: isChildParentClosed,
+          context,
+        }).rowState,
+        isAsking: child.openQuestions.length > 0 && !isQuestionDelegate({ agent: child.agent }),
+      }))
+    : [];
+  const subagents: TimelineRowSubagents | undefined = isCollapsible
+    ? {
+        id: subagentsId,
+        isExpanded: isSubagentsOpen,
+        summary: subagentSummary({ facts }),
+        attentionKeys: entry.children.flatMap((child, index) => {
+          const fact = facts[index];
+          return fact !== undefined && isSubagentAttention({ fact })
+            ? subagentAttentionKeys({ child })
+            : [];
+        }),
+      }
+    : undefined;
+  const outputEntries = context.outputsByAgentEntryId.get(entry.id) ?? NO_OUTPUTS;
+  const hasOutputs = outputEntries.length > 0 && !isFolded && context.expandedGroupIds !== null;
+  const outputsId = outputsExpandId({ parentId: entry.id });
+  const isOutputsOpen = hasOutputs && context.expandedGroupIds?.has(outputsId) === true;
+  const outputs: TimelineRowOutputs | undefined = hasOutputs
+    ? { id: outputsId, isExpanded: isOutputsOpen, count: outputEntries.length }
+    : undefined;
+  if (isOutputsOpen) {
+    context.groups.push({
+      id: childLaneId,
+      parentGroupId: headId ?? groupId,
+      direction: 'down',
+      identityIndex: identity?.index ?? null,
+      isMuted,
+      originRowId: entry.id,
+      shape: 'merged',
+    });
+    const outputRows = outputEntries.map((output): DraftRow => ({
+      kind: 'row',
+      id: output.id,
+      at: output.at,
+      grade: output.kind === 'learning' ? 'fact' : 'step',
+      entry: output,
+      identity,
+      familyId,
+      groupId: childLaneId,
+      ordinal: null,
+      sortOrdinal: 0,
+      rowState: DONE_ROW_STATE,
+      hasUnread: false,
+      isPending: false,
+    }));
+    nested = [
+      ...nested,
+      ...withSlot({ rows: outputRows, slot: { groupId: outputsId, kind: 'outputs' } }),
+    ];
   }
   const isPending = entry.agent.status === 'pending' && !isSkippedUnderClosed;
   const origin: DraftRow = {
@@ -1127,10 +993,12 @@ const agentRows = ({
     rowState,
     hasUnread:
       context.unreadAgentIds.has(entry.agent.id) ||
-      ((!showSubagents || isFolded) &&
+      ((!showSubagents || isFolded || (isCollapsible && !isSubagentsOpen)) &&
         hasUnreadDescendant({ entry, unreadAgentIds: context.unreadAgentIds })),
     isPending,
     ...(fold === undefined ? {} : { fold }),
+    ...(subagents === undefined ? {} : { subagents }),
+    ...(outputs === undefined ? {} : { outputs }),
   };
   return [...withStepsSlot({ rows: nested, fold, groupId: entry.id }), origin];
 };
@@ -1238,8 +1106,7 @@ const runStateOf = ({ entry, context }: EmitRunParams) => {
 const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => {
   const laneId = laneIdOf({ entryId: entry.id });
   const isMuted = entry.run.discardedAt != null;
-  const { isFinished, readyStep, steps, hasRunningStep, isDeciding, failedStep, rowState } =
-    runStateOf({ entry, context });
+  const { readyStep, steps, failedStep, rowState } = runStateOf({ entry, context });
   const fold = context.foldByRootId.get(entry.id);
   const isFolded = fold !== undefined && !fold.isExpanded;
   const headId =
@@ -1274,10 +1141,11 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
   context.groups.push({
     id: laneId,
     parentGroupId: headId,
+    direction: 'down',
     identityIndex: entry.identity.index,
     isMuted,
     originRowId: entry.id,
-    shape: runLaneShape({ isFinished, rowState, hasLiveWork: hasRunningStep || isDeciding }),
+    shape: 'merged',
   });
   const nested: DraftRow[] = [];
   for (const child of entry.children) {
@@ -1478,9 +1346,7 @@ const descendantCount = ({ entry }: { readonly entry: TimelineAgentEntry }): num
   entry.children.reduce((total, child) => total + 1 + descendantCount({ entry: child }), 0);
 
 const descendantRows = ({ entry }: { readonly entry: TimelineAgentEntry }): number =>
-  entry.children.length >= SUBAGENT_GROUP_MIN_MEMBERS
-    ? 1
-    : entry.children.reduce((total, child) => total + 1 + descendantRows({ entry: child }), 0);
+  entry.children.reduce((total, child) => total + 1 + descendantRows({ entry: child }), 0);
 
 const chainFoldOf = ({
   entry,
@@ -1602,13 +1468,112 @@ const compareExecutionPathDescending = ({ first, second }: CompareExecutionPathP
 
 type HeadParams = {
   readonly drafts: ReadonlyArray<DraftRow>;
+  readonly groups: ReadonlyArray<RailGroupInput>;
 };
 
-const withPendingAtFamilyHead = ({ drafts }: HeadParams): ReadonlyArray<DraftRow> => {
+const compareOldestFirst = ({
+  first,
+  second,
+}: {
+  readonly first: Sortable;
+  readonly second: Sortable;
+}): number => {
+  if (first.at != null && second.at != null && first.at !== second.at) {
+    return first.at.localeCompare(second.at);
+  }
+  if (first.at == null && second.at != null) {
+    return 1;
+  }
+  if (first.at != null && second.at == null) {
+    return -1;
+  }
+  return first.sortOrdinal - second.sortOrdinal || first.id.localeCompare(second.id);
+};
+
+const downGroupsOf = ({
+  groups,
+}: {
+  readonly groups: ReadonlyArray<RailGroupInput>;
+}): ReadonlyArray<RailGroupInput> =>
+  groups.filter((group) => group.direction === 'down' && group.shape !== 'head');
+
+const withExecutionOrder = ({ drafts: input, groups }: HeadParams): ReadonlyArray<DraftRow> => {
+  const down = downGroupsOf({ groups });
+  if (down.length === 0) {
+    return input;
+  }
+  const downIds = new Set(down.map((group) => group.id));
+  const drafts = input.map((draft) =>
+    draft.groupId != null && downIds.has(draft.groupId) && isPendingStep({ draft })
+      ? { ...draft, at: null }
+      : draft,
+  );
+  const draftById = new Map(drafts.map((draft) => [draft.id, draft]));
+  const membersByGroupId = new Map<string, DraftRow[]>();
+  for (const draft of drafts) {
+    if (draft.groupId == null || !downIds.has(draft.groupId)) {
+      continue;
+    }
+    membersByGroupId.set(draft.groupId, [...(membersByGroupId.get(draft.groupId) ?? []), draft]);
+  }
+  const groupsByOriginId = new Map<string, RailGroupInput[]>();
+  for (const group of down) {
+    groupsByOriginId.set(group.originRowId, [
+      ...(groupsByOriginId.get(group.originRowId) ?? []),
+      group,
+    ]);
+  }
+  const placed = new Set<string>();
+  const expand = ({ row }: { readonly row: DraftRow }): ReadonlyArray<DraftRow> => {
+    placed.add(row.id);
+    const rows: DraftRow[] = [row];
+    for (const group of groupsByOriginId.get(row.id) ?? []) {
+      const members = (membersByGroupId.get(group.id) ?? [])
+        .filter((member) => !placed.has(member.id))
+        .sort((first, second) => compareOldestFirst({ first, second }));
+      for (const member of members) {
+        rows.push(...expand({ row: member }));
+      }
+    }
+    return rows;
+  };
+  const blockOf = new Map<string, ReadonlyArray<DraftRow>>();
+  for (const group of down) {
+    const origin = draftById.get(group.originRowId);
+    if (origin === undefined || blockOf.has(origin.id)) {
+      continue;
+    }
+    const isRoot =
+      origin.groupId == null || !downIds.has(origin.groupId) || origin.groupId === group.id;
+    if (isRoot) {
+      blockOf.set(origin.id, expand({ row: origin }));
+    }
+  }
+  const ordered: DraftRow[] = [];
+  for (const draft of drafts) {
+    const block = blockOf.get(draft.id);
+    if (block !== undefined) {
+      ordered.push(...block);
+      continue;
+    }
+    if (!placed.has(draft.id)) {
+      ordered.push(draft);
+    }
+  }
+  return ordered;
+};
+
+const withPendingAtFamilyHead = ({ drafts, groups }: HeadParams): ReadonlyArray<DraftRow> => {
+  const downIds = new Set(downGroupsOf({ groups }).map((group) => group.id));
   const pendingByFamilyId = new Map<string, DraftRow[]>();
   const unanchored: DraftRow[] = [];
   for (const draft of drafts) {
-    if (!isPendingStep({ draft }) || draft.familyId == null || draft.familyId === draft.id) {
+    if (
+      !isPendingStep({ draft }) ||
+      draft.familyId == null ||
+      draft.familyId === draft.id ||
+      (draft.groupId != null && downIds.has(draft.groupId))
+    ) {
       unanchored.push(draft);
       continue;
     }
@@ -1645,16 +1610,18 @@ const withPendingAtFamilyHead = ({ drafts }: HeadParams): ReadonlyArray<DraftRow
 
 type DayBreakParams = {
   readonly drafts: ReadonlyArray<DraftRow>;
+  readonly groups: ReadonlyArray<RailGroupInput>;
   readonly dayLabelFor: (params: { readonly at: string }) => string | null;
 };
 
-const withDayBreaks = ({ drafts, dayLabelFor }: DayBreakParams): ReadonlyArray<Draft> => {
+const withDayBreaks = ({ drafts, groups, dayLabelFor }: DayBreakParams): ReadonlyArray<Draft> => {
   const dated: Draft[] = [];
+  const downIds = new Set(downGroupsOf({ groups }).map((group) => group.id));
   let previousDayKey: string | null = null;
 
   for (const draft of drafts) {
     const { at } = draft;
-    if (at == null) {
+    if (at == null || (draft.groupId != null && downIds.has(draft.groupId))) {
       dated.push(draft);
       continue;
     }
@@ -1759,8 +1726,6 @@ const streamItemsOf = ({ drafts }: StreamItemsParams): ReadonlyArray<TimelineStr
       identity: draft.identity,
       familyId: draft.familyId,
       ordinal: draft.ordinal,
-      nodeIndex:
-        draft.entry.kind === 'agent' ? nodeIndexOf({ stepLabel: draft.entry.stepLabel }) : null,
       rowState: draft.rowState,
       hasUnread: draft.hasUnread,
       height: rowBoxHeight({ grade: draft.grade, gap }),
@@ -1770,11 +1735,14 @@ const streamItemsOf = ({ drafts }: StreamItemsParams): ReadonlyArray<TimelineStr
       isPending: draft.isPending,
       opensLane:
         draft.entry.kind === 'resolveBatch' ||
-        draft.entry.kind === 'subagentGroup' ||
-        draft.fold !== undefined,
+        draft.fold !== undefined ||
+        draft.subagents !== undefined ||
+        draft.outputs !== undefined,
       gap,
       ...(draft.explode === undefined ? {} : { explode: draft.explode }),
       ...(draft.fold === undefined ? {} : { fold: draft.fold }),
+      ...(draft.subagents === undefined ? {} : { subagents: draft.subagents }),
+      ...(draft.outputs === undefined ? {} : { outputs: draft.outputs }),
     });
     previous = draft;
   }
@@ -1844,26 +1812,72 @@ const batchRows = ({
   context.groups.push({
     id: laneId,
     parentGroupId: headId,
+    direction: 'down',
     identityIndex: identity.index,
     isMuted: false,
     originRowId: batch.id,
     shape: 'merged',
   });
-  return {
-    header,
-    children: explodedRows({
-      groupId: batch.id,
-      kind: 'batch',
-      laneId,
-      children: batch.children,
-      identity,
-      isMuted: false,
-      familyId: batch.id,
-      showSubagents: context.showAgentSubagents,
-      isParentClosed: false,
-      context,
-    }),
+  const slot: TimelineExplodeSlot = { groupId: batch.id, kind: 'batch' };
+  const files = resolveBatchFiles({
+    batchEntryId: batch.id,
+    prNumber: batch.prNumber,
+    at: batch.at,
+    members: batch.children.map((child, index) => ({
+      entry: child,
+      facts: batch.facts[index] ?? NO_FACTS,
+    })),
+  });
+  const hiddenCount = context.fullGroupIds.has(batch.id)
+    ? 0
+    : Math.max(0, files.length - GROUP_VISIBLE_CHILDREN);
+  const fileRows = files.slice(0, files.length - hiddenCount).map((file, index): DraftRow => ({
+    kind: 'row',
+    id: file.id,
+    at: null,
+    grade: 'step',
+    entry: file,
+    identity,
+    familyId: batch.id,
+    groupId: laneId,
+    ordinal: null,
+    sortOrdinal: index,
+    rowState: resolverRowState({ facts: { state: file.state, word: file.word } }),
+    hasUnread: false,
+    isPending: false,
+    explode: slot,
+  }));
+  const open = resolveBatchOpen({ batchEntryId: batch.id, prNumber: batch.prNumber, at: batch.at });
+  const openRow: DraftRow = {
+    kind: 'row',
+    id: open.id,
+    at: null,
+    grade: 'step',
+    entry: open,
+    identity,
+    familyId: batch.id,
+    groupId: laneId,
+    ordinal: null,
+    sortOrdinal: files.length + 1,
+    rowState: DONE_ROW_STATE,
+    hasUnread: false,
+    isPending: false,
+    explode: slot,
   };
+  if (hiddenCount > 0) {
+    context.mores.push({
+      anchorRowId: open.id,
+      more: {
+        kind: 'more',
+        id: `more:${batch.id}`,
+        familyId: batch.id,
+        groupId: laneId,
+        hiddenCount,
+        explode: slot,
+      },
+    });
+  }
+  return { header, children: [...fileRows, openRow] };
 };
 
 export const buildTimelineStream = ({
@@ -1872,11 +1886,6 @@ export const buildTimelineStream = ({
   advanceByRunId,
   decidingRunIds,
   dayLabelFor,
-  showWorkflowSubagents = true,
-  showAgentSubagents = true,
-  showPlans = true,
-  showReports = true,
-  showWireframes = true,
   showQuestions = true,
   resolveBatchByAgentId = NO_RESOLVE_BATCHES,
   resolveFactsByAgentId = NO_RESOLVE_FACTS,
@@ -1899,14 +1908,15 @@ export const buildTimelineStream = ({
     decidingRunIds,
     chainedRunById,
     groups: [],
-    showWorkflowSubagents,
-    showAgentSubagents,
-    showPlans,
-    showReports,
-    showWireframes,
+    showWorkflowSubagents: true,
+    showAgentSubagents: true,
+    showPlans: true,
+    showReports: true,
+    showWireframes: true,
     showQuestions,
     questionRowIds: showQuestions ? openQuestionRowIds({ entries }) : NO_QUESTION_ROWS,
     resolveFactsByAgentId,
+    outputsByAgentEntryId: outputsByAgentEntryIdOf({ entries }),
     expandedGroupIds,
     fullGroupIds,
     mores: [],
@@ -1948,6 +1958,9 @@ export const buildTimelineStream = ({
           fold: context.foldByRootId.get(entry.id),
         }),
       );
+      continue;
+    }
+    if (isOutputEntry(entry) && entry.launchEntryId !== undefined) {
       continue;
     }
     const laneRoot = laneRootOf({ entry });
@@ -2039,14 +2052,20 @@ export const buildTimelineStream = ({
 
   const sorted = [...rows].sort((first, second) => compareNewestFirst({ first, second }));
   const merged = mergeConsecutiveQuestionRows({
-    drafts: mergeConsecutiveProjectRows({
-      drafts: mergeConsecutiveDecisionRows({ drafts: sorted }).filter(
-        (draft) => !isEmptyDecisionRow({ draft }),
-      ),
+    drafts: mergeConsecutiveStoppedRows({
+      drafts: mergeConsecutiveProjectRows({
+        drafts: mergeConsecutiveDecisionRows({ drafts: sorted }).filter(
+          (draft) => !isEmptyDecisionRow({ draft }),
+        ),
+      }),
     }),
   });
   const withDays = withDayBreaks({
-    drafts: withPendingAtFamilyHead({ drafts: merged }),
+    drafts: withPendingAtFamilyHead({
+      drafts: withExecutionOrder({ drafts: merged, groups: context.groups }),
+      groups: context.groups,
+    }),
+    groups: context.groups,
     dayLabelFor,
   });
 
@@ -2083,6 +2102,7 @@ export const buildRunTreeStream = ({
     showQuestions: false,
     questionRowIds: NO_QUESTION_ROWS,
     resolveFactsByAgentId: NO_RESOLVE_FACTS,
+    outputsByAgentEntryId: NO_OUTPUTS_BY_AGENT,
     expandedGroupIds: null,
     fullGroupIds: NO_EXPANDED_GROUPS,
     mores: [],
@@ -2091,17 +2111,17 @@ export const buildRunTreeStream = ({
   const sorted = [...runRows({ entry, context })].sort((first, second) =>
     compareNewestFirst({ first, second }),
   );
-  const steps = withPendingAtFamilyHead({ drafts: sorted }).filter(
-    (draft) => draft.id !== entry.id,
-  );
+  const steps = withPendingAtFamilyHead({
+    drafts: withExecutionOrder({ drafts: sorted, groups: context.groups }),
+    groups: context.groups,
+  }).filter((draft) => draft.id !== entry.id);
   const laneId = laneIdOf({ entryId: entry.id });
-  const root = [...steps].reverse().find((draft) => draft.groupId === laneId) ?? null;
+  const root = steps.find((draft) => draft.groupId === laneId) ?? null;
   const groups = context.groups.map((group) =>
     group.id === laneId && root !== null ? { ...group, originRowId: root.id } : group,
   );
-  const isFinished = isRunFinished({ entry });
   return {
-    items: streamItemsOf({ drafts: steps }).filter((item) => !isFinished || item.kind !== 'now'),
+    items: streamItemsOf({ drafts: steps }).filter((item) => item.kind !== 'now'),
     groups,
   };
 };
@@ -2131,6 +2151,7 @@ export const buildAgentTreeStream = ({
     showQuestions: false,
     questionRowIds: NO_QUESTION_ROWS,
     resolveFactsByAgentId: NO_RESOLVE_FACTS,
+    outputsByAgentEntryId: NO_OUTPUTS_BY_AGENT,
     expandedGroupIds: null,
     fullGroupIds: NO_EXPANDED_GROUPS,
     mores: [],
@@ -2159,9 +2180,12 @@ export const buildAgentTreeStream = ({
   });
   const sorted = [...rows].sort((first, second) => compareNewestFirst({ first, second }));
   return {
-    items: streamItemsOf({ drafts: withPendingAtFamilyHead({ drafts: sorted }) }).filter(
-      (item) => item.kind !== 'now',
-    ),
+    items: streamItemsOf({
+      drafts: withPendingAtFamilyHead({
+        drafts: withExecutionOrder({ drafts: sorted, groups: context.groups }),
+        groups: context.groups,
+      }),
+    }).filter((item) => item.kind !== 'now'),
     groups: context.groups,
   };
 };

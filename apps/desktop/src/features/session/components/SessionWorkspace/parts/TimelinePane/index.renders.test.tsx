@@ -18,7 +18,6 @@ const { storeState, renders, attachedRuns, stable } = vi.hoisted(() => ({
     sessionWorktreeRecords: {} as Record<string, ReadonlyArray<unknown>>,
     sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
     selectedAgentId: {},
-    revealedActivityRows: {},
     transcripts: {},
     projects: [],
     sessionProjectMounts: {},
@@ -62,7 +61,6 @@ vi.mock('../../../../../../store', async () => {
     useIsSessionCollectionLoaded: () => true,
     useExecutedAgentRouting: ({ agent }: { readonly agent: { readonly id: string } }) =>
       storeState.executed.get(agent.id) ?? null,
-    useExecutedAgentRoutings: () => storeState.executed,
   };
 });
 vi.mock('../../../../../../shared/hooks/useSessionRoleModels', () => ({
@@ -87,9 +85,6 @@ vi.mock('../../../../../workflows/useWorkflowAdvanceStates', () => {
 });
 vi.mock('../../../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
-}));
-vi.mock('./ActivityFilterPanel', () => ({
-  ActivityFilterPanel: () => <button type="button">Filter</button>,
 }));
 vi.mock('./TimelineEntryRow', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./TimelineEntryRow')>();
@@ -204,12 +199,20 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('TimelinePane, row renders', () => {
-  it('draws a run lane over four rows and leaves four rows outside it', () => {
+  it('draws the run and its steps on the spine alone, with no lane stroke and no lane to hit', () => {
     const view = render(pane({ actions: null }));
+    const strokes = Array.from(
+      view.container.querySelectorAll('[data-testid="timeline-rail-segment"]'),
+    );
 
     expect(view.container.querySelectorAll('[data-row-id]').length).toBe(8);
     expect(renders.entry).toBe(8);
-    expect(screen.getAllByTestId('timeline-lane-hit')).toHaveLength(4);
+    expect(screen.queryByTestId('timeline-lane-hit')).toBeNull();
+    expect(strokes.length).toBeGreaterThan(0);
+    expect(strokes.every((line) => line.getAttribute('stroke') === 'var(--color-border)')).toBe(
+      true,
+    );
+    expect(view.container.querySelectorAll('svg.overflow-visible path')).toHaveLength(0);
   });
 
   it('re-renders no row when the parent re-renders with the same data', () => {
@@ -221,20 +224,6 @@ describe('TimelinePane, row renders', () => {
     view.rerender(pane({ actions: <span>Create</span> }));
 
     expect(totalRenders()).toBe(0);
-  });
-
-  it('re-renders the four rows and the rule on the lane when the pointer enters it', () => {
-    const view = render(pane({ actions: null }));
-    renders.entry = 0;
-    renders.now = 0;
-    renders.day = 0;
-
-    fireEvent.mouseEnter(screen.getAllByTestId('timeline-lane-hit')[0] as HTMLElement);
-
-    expect(view.container.querySelectorAll('[data-testid="timeline-lane-wash"]')).toHaveLength(4);
-    expect(renders.entry).toBe(4);
-    expect(renders.now).toBe(1);
-    expect(renders.day).toBe(0);
   });
 
   it('re-renders only the rows a group changes when it opens among two hundred rows', () => {
@@ -269,26 +258,27 @@ describe('TimelinePane, row renders', () => {
     attachedRuns.list = [];
     storeState.sessionPhaseRuns = { 'session-1': [lead, ...children, ...many] };
     const view = render(pane({ actions: null }));
-    expect(view.container.querySelectorAll('[data-row-id]').length).toBe(202);
+    expect(view.container.querySelectorAll('[data-row-id]').length).toBe(201);
     renders.entry = 0;
     renders.now = 0;
     renders.day = 0;
 
     fireEvent.click(screen.getByRole('button', { name: /3 subagents/ }));
 
-    expect(view.container.querySelectorAll('[data-row-id]').length).toBe(205);
+    expect(view.container.querySelectorAll('[data-row-id]').length).toBe(204);
     expect(renders.entry).toBeLessThanOrEqual(6);
     expect(renders.day).toBe(0);
   });
 
-  it('re-renders the four rows on the lane again when the pointer leaves it', () => {
-    render(pane({ actions: null }));
-    const [first] = screen.getAllByTestId('timeline-lane-hit');
-    fireEvent.mouseEnter(first as HTMLElement);
+  it('re-renders no row when the pointer crosses the rows', () => {
+    const view = render(pane({ actions: null }));
     renders.entry = 0;
 
-    fireEvent.mouseLeave(first as HTMLElement);
+    for (const row of Array.from(view.container.querySelectorAll('[data-row-id]'))) {
+      fireEvent.mouseEnter(row);
+      fireEvent.mouseLeave(row);
+    }
 
-    expect(renders.entry).toBe(4);
+    expect(renders.entry).toBe(0);
   });
 });

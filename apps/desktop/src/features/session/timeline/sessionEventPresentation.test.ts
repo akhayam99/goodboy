@@ -32,6 +32,20 @@ const event = ({ kind, payload }: MakeParams): SessionEvent =>
   }) as unknown as SessionEvent;
 
 describe('sessionEventLabel as text', () => {
+  it('puts the repeat count of a stopped rebase after the verb, before the detail', () => {
+    const stopped = event({
+      kind: 'history_stopped',
+      payload: { branch: 'feat/export', origin: 'rebase', files: ['ledger.ts'] },
+    });
+
+    expect(segmentsToText({ segments: sessionEventLabel({ event: stopped }) })).toBe(
+      'Rebase of feat/export stopped · conflict in ledger.ts',
+    );
+    expect(
+      segmentsToText({ segments: sessionEventLabel({ event: stopped, repeatCount: 2 }) }),
+    ).toBe('Rebase of feat/export stopped ×2 · conflict in ledger.ts');
+  });
+
   it('reads the container event as the session folder, path included', () => {
     expect(
       segmentsToText({
