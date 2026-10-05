@@ -404,7 +404,7 @@ the plan ("Planned High, ran Medium" in the tooltip). A run with no recorded
 effort, like one from before turn spans existed or a CLI with no effort flag,
 keeps the planned effort in faint and never shows a made-up value. The agent
 header reads the same way. The
-run row in the feed shows the models of its steps ("Sonnet 5.5 + 2") and what
+run row in the feed shows the models of its steps ("Sonnet 5.5 + 1" on two, "4 models" on more) and what
 the whole run has spent; the step it has reached ("Step 4 of 7", or "Step 4"
 for an orchestrated run, which has no total) is in the card of its glyph, with
 the status tally and one line per model with its steps and cost.

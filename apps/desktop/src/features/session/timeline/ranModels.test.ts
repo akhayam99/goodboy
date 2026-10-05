@@ -305,18 +305,32 @@ describe('modelsSummary', () => {
     expect(summary?.text).toBe('Sonnet 5.5 → Kimi K3');
   });
 
-  it('sums a run up as its first model plus the others, with one glyph per provider', () => {
+  it('sums a run on two models up as the first model plus one', () => {
     const summary = modelsSummary({
       isRun: true,
       models: [
+        route({ name: 'Sonnet 5.5', provider: 'anthropic' }),
+        route({ name: 'GPT-6.1', provider: 'codex' }),
+      ],
+    });
+
+    expect(summary?.text).toBe('Sonnet 5.5 + 1');
+    expect(summary?.providers).toEqual(['anthropic', 'codex']);
+  });
+
+  it('counts the models of a run once there are more than two, never a clipped name', () => {
+    const summary = modelsSummary({
+      isRun: true,
+      models: [
+        route({ name: 'Composer 2', provider: 'cursor' }),
         route({ name: 'Sonnet 5.5', provider: 'anthropic' }),
         route({ name: 'GPT-6.1', provider: 'codex' }),
         route({ name: 'Haiku 4.5', provider: 'anthropic' }),
       ],
     });
 
-    expect(summary?.text).toBe('Sonnet 5.5 + 2');
-    expect(summary?.providers).toEqual(['anthropic', 'codex']);
+    expect(summary?.text).toBe('4 models');
+    expect(summary?.providers).toEqual(['cursor', 'anthropic', 'codex']);
   });
 
   it('prints a run on one model by that name alone', () => {

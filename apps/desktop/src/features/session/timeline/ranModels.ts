@@ -185,11 +185,8 @@ export const modelsSummary = ({ models, isRun = false }: SummaryParams): ModelsS
       providers.push(model.provider);
     }
   }
-  if (isRun) {
-    return {
-      text: list.length === 1 ? first.name : `${first.name} + ${list.length - 1}`,
-      providers,
-    };
+  if (isRun && list.length === 2) {
+    return { text: `${first.name} + 1`, providers };
   }
   if (list.length === 1) {
     return { text: first.name, providers };

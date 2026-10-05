@@ -96,6 +96,7 @@ export const railColumnX = ({ column }: { readonly column: number }): number =>
 export const RAIL_MARKER_RADIUS = 10;
 export const RAIL_COUNT_RADIUS = 5;
 export const RAIL_LABEL_GAP = 10;
+const RAIL_LANE_CLEARANCE = 4;
 export const RAIL_CONTENT_PAD = 8;
 
 type InsetParams = {
@@ -107,12 +108,13 @@ export const railInsetOf = ({ rail, markerRadius = RAIL_MARKER_RADIUS }: InsetPa
   const anchorY = rail.markerY ?? rail.height / 2;
   const labelX = railColumnX({ column: rail.markerColumn }) + markerRadius + RAIL_LABEL_GAP;
   const clearX = rail.segments.reduce((widest, segment) => {
-    const isBeside = segment.column > rail.markerColumn + 1;
+    const isBeside = segment.column > rail.markerColumn;
     const isThrough = segment.fromY <= anchorY && segment.toY >= anchorY;
-    if (!isBeside || !isThrough) {
+    const laneX = railColumnX({ column: segment.column });
+    if (!isBeside || !isThrough || laneX + RAIL_LANE_CLEARANCE <= labelX) {
       return widest;
     }
-    return Math.max(widest, railColumnX({ column: segment.column }) + 1 + RAIL_LABEL_GAP);
+    return Math.max(widest, laneX + 1 + RAIL_LABEL_GAP);
   }, labelX);
   return clearX - RAIL_CONTENT_PAD;
 };
