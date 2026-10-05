@@ -155,7 +155,7 @@ describe('buildTimelineStream resolve batches', () => {
     expect(rowsOf(items).map((row) => row.id)).toEqual(['agent:solo']);
   });
 
-  it('opens into one row per file and an Open row, below the group row on one down lane', () => {
+  it('opens into one row per file and an Open row, above the group row on one up lane', () => {
     const { items, groups } = streamOf({
       setup: tenResolvers(),
       expanded: [GROUP_ID],
@@ -163,28 +163,50 @@ describe('buildTimelineStream resolve batches', () => {
     });
     const rows = rowsOf(items);
 
+    expect(items.map((item) => item.id).slice(0, 2)).toEqual(['now', `count:${GROUP_ID}`]);
     expect(rows.map((row) => row.id)).toEqual([
-      GROUP_ID,
       ...Array.from({ length: 10 }, (_, index) => `${GROUP_ID}:file:src/file${index}.ts`),
       `${GROUP_ID}:open`,
+      GROUP_ID,
     ]);
-    expect(rows.slice(1).every((row) => row.groupId === `lane:${GROUP_ID}`)).toBe(true);
-    expect(rows[0]?.groupId).toBe(`head:${GROUP_ID}`);
+    expect(rows.slice(0, -1).every((row) => row.groupId === `lane:${GROUP_ID}`)).toBe(true);
+    expect(rows.at(-1)?.groupId).toBeNull();
     expect(groups).toEqual([
-      expect.objectContaining({
-        id: `head:${GROUP_ID}`,
-        originRowId: GROUP_ID,
-        parentGroupId: null,
-        shape: 'head',
-      }),
       expect.objectContaining({
         id: `lane:${GROUP_ID}`,
         originRowId: GROUP_ID,
-        parentGroupId: `head:${GROUP_ID}`,
-        direction: 'down',
+        parentGroupId: null,
+        direction: 'up',
         shape: 'merged',
       }),
     ]);
+  });
+
+  it('folds a settled burst to a count row of its files, with the header keys to open it', () => {
+    const { items } = streamOf({ setup: tenResolvers() });
+    const count = items.find((item) => item.kind === 'count');
+    const header = rowsOf(items).find((row) => row.id === GROUP_ID);
+
+    expect(items.map((item) => item.id)).toEqual(['now', `count:${GROUP_ID}`, GROUP_ID]);
+    expect(count?.kind === 'count' ? count.summary.parts[0] : null).toEqual(
+      expect.objectContaining({ count: 10, noun: 'files' }),
+    );
+    expect(header?.branches).toEqual([{ expandId: GROUP_ID, isExpanded: false }]);
+  });
+
+  it('keeps a burst with an agent still working open, with no count row', () => {
+    const setup = tenResolvers();
+    const working = setup.agents.map((agent) =>
+      agent.id === 'r3' ? { ...agent, status: 'running' as const } : agent,
+    );
+    const { items, groups } = streamOf({ setup: { ...setup, agents: working } });
+
+    expect(items.some((item) => item.kind === 'count')).toBe(false);
+    expect(rowsOf(items).filter((row) => row.entry.kind === 'resolveFile').length).toBeGreaterThan(
+      0,
+    );
+    expect(groups[0]?.shape).toBe('open');
+    expect(rowsOf(items).at(-1)?.branches).toBeUndefined();
   });
 
   it('reads each file with its lines, its state and the comments it took', () => {
@@ -214,17 +236,18 @@ describe('buildTimelineStream resolve batches', () => {
     const opened = items.filter((item) => item.kind !== 'now');
 
     expect(opened.map((item) => item.id)).toEqual([
-      GROUP_ID,
+      `count:${GROUP_ID}`,
       ...Array.from({ length: 8 }, (_, index) => `${GROUP_ID}:file:src/file${index}.ts`),
       `more:${GROUP_ID}`,
       `${GROUP_ID}:open`,
+      GROUP_ID,
     ]);
     const more = items.find((item) => item.kind === 'more');
     expect(more?.kind === 'more' ? more.hiddenCount : null).toBe(2);
     expect(more?.groupId).toBe(`lane:${GROUP_ID}`);
     expect(
       rowsOf(opened)
-        .slice(1)
+        .slice(0, -1)
         .every((row) => row.explode?.groupId === GROUP_ID && row.explode.kind === 'batch'),
     ).toBe(true);
   });

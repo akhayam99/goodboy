@@ -1,4 +1,4 @@
-export type TimelineRowGrade = 'entry' | 'step' | 'pending' | 'fact';
+export type TimelineRowGrade = 'entry' | 'step' | 'pending' | 'fact' | 'count';
 
 export type TimelineGap = 'none' | 'sibling' | 'entry' | 'fact';
 
@@ -12,6 +12,7 @@ const GRADE: Record<TimelineRowGrade, GradeRhythm> = {
   step: { lineHeight: 16, height: 32 },
   pending: { lineHeight: 16, height: 24 },
   fact: { lineHeight: 16, height: 28 },
+  count: { lineHeight: 16, height: 24 },
 };
 
 const GAP: Record<TimelineGap, number> = {

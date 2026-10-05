@@ -1,12 +1,9 @@
 import type { Tone } from '@goodboy/ui';
 import type { RowPhase, RowState } from '../../workTreeModel/rowState';
-import { groupSummaryParts, type GroupSummary } from './groupSummary';
+import { groupSummaryParts, type GroupSummary, type GroupSummaryPart } from './groupSummary';
 
 export const subagentsExpandId = ({ parentId }: { readonly parentId: string }): string =>
   `subagents:${parentId}`;
-
-export const subagentsLabel = ({ total }: { readonly total: number }): string =>
-  total === 1 ? '1 subagent' : `${total} subagents`;
 
 type SubagentBucket =
   'asking' | 'waiting' | 'done' | 'running' | 'queued' | 'skipped' | 'closed' | 'failed';
@@ -59,7 +56,9 @@ export type SubagentFact = {
   readonly isAsking: boolean;
 };
 
-export type SubagentSummary = GroupSummary<SubagentBucket>;
+type SummaryState = SubagentBucket | 'total' | 'answered';
+
+export type SubagentSummary = GroupSummary<SummaryState>;
 
 const bucketOf = ({ fact }: { readonly fact: SubagentFact }): SubagentBucket => {
   if (fact.state.phase === 'failed') {
@@ -76,27 +75,52 @@ export const isSubagentAttention = ({ fact }: { readonly fact: SubagentFact }): 
   return bucket === 'asking' || bucket === 'failed';
 };
 
-export const subagentSummary = ({
+export const subagentsCountSummary = ({
   facts,
+  answered,
 }: {
   readonly facts: ReadonlyArray<SubagentFact>;
+  readonly answered: number;
 }): SubagentSummary => {
   const counts = new Map<SubagentBucket, number>();
   for (const fact of facts) {
     const bucket = bucketOf({ fact });
     counts.set(bucket, (counts.get(bucket) ?? 0) + 1);
   }
-  const parts = groupSummaryParts({
+  counts.delete('done');
+  const tally = groupSummaryParts({
     counts,
     order: BUCKET_ORDER,
     nounOf: ({ state }) => BUCKET_NOUN[state],
     toneOf: ({ state }) => BUCKET_TONE[state],
     failure: 'failed',
   });
+  const answeredParts: ReadonlyArray<GroupSummaryPart<SummaryState>> =
+    answered === 0
+      ? []
+      : [
+          {
+            state: 'answered',
+            tone: 'neutral',
+            count: answered,
+            noun: answered === 1 ? 'question answered' : 'questions answered',
+            isFailure: false,
+          },
+        ];
   return {
     total: facts.length,
-    parts,
-    attentionCount: (counts.get('asking') ?? 0) + (counts.get('failed') ?? 0),
+    parts: [
+      {
+        state: 'total',
+        tone: 'neutral',
+        count: facts.length,
+        noun: facts.length === 1 ? 'subagent' : 'subagents',
+        isFailure: false,
+      },
+      ...tally,
+      ...answeredParts,
+    ],
+    attentionCount: 0,
     failedCount: counts.get('failed') ?? 0,
   };
 };

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { TERMINAL_DIM } from '@goodboy/ui';
 import type { RailJoin, RailRow, RailSegment } from '../../../../../workTreeModel/railGeometry';
 import { TimelineRail } from './TimelineRail';
@@ -84,6 +84,55 @@ describe('TimelineRail', () => {
     expect(line?.getAttribute('class')).toContain(TERMINAL_DIM);
     expect(join?.getAttribute('stroke')).toBe('var(--color-identity-1)');
     expect(join?.getAttribute('class')).toContain(TERMINAL_DIM);
+  });
+});
+
+describe('TimelineRail lane hit area', () => {
+  const laneSegment: RailSegment = {
+    column: 1,
+    laneId: 'lane:run:one',
+    identityIndex: 2,
+    isMuted: false,
+    dash: 'solid',
+    fromY: 4,
+    toY: 28,
+  };
+
+  it('opens the run from a click on its lane, over the lane column only', () => {
+    const open = vi.fn();
+    render(
+      <TimelineRail
+        width={48}
+        rail={railOf({ segment: laneSegment })}
+        lanes={{
+          targetFor: ({ laneId }) =>
+            laneId === 'lane:run:one' ? { laneId, title: 'Harden the webhook', open } : null,
+        }}
+      />,
+    );
+    const hit = screen.getByTestId('timeline-lane-hit');
+
+    expect(hit.getAttribute('aria-label')).toBe('Open workflow: Harden the webhook');
+    expect(hit.style.left).toBe('18px');
+    expect(hit.style.top).toBe('4px');
+    expect(hit.style.height).toBe('24px');
+    fireEvent.click(hit);
+    expect(open).toHaveBeenCalledTimes(1);
+  });
+
+  it('draws no hit area for a lane that opens nothing, nor for the spine', () => {
+    render(
+      <TimelineRail
+        width={48}
+        rail={{
+          ...railOf({ segment: laneSegment }),
+          segments: [laneSegment, { ...laneSegment, column: 0, laneId: null, identityIndex: null }],
+        }}
+        lanes={{ targetFor: () => null }}
+      />,
+    );
+
+    expect(screen.queryByTestId('timeline-lane-hit')).toBeNull();
   });
 });
 

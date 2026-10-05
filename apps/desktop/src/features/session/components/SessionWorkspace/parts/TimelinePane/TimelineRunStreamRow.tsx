@@ -13,10 +13,14 @@ import { runWorkTime } from '../../../../timeline/runWorkTime';
 import type { RailRow } from '../../../../../workTreeModel/railGeometry';
 import { RunIdentityCard } from './RunIdentityCard';
 import { TimelineModelCell } from './TimelineModelCell';
-import type { TimelineLaneTarget } from './TimelineRail';
+import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
 import { TimelineRowMeta } from './TimelineRowMeta';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
-import { TimelineStreamRow, type TimelineRowAction } from './TimelineStreamRow';
+import {
+  TimelineStreamRow,
+  type TimelineBranchKey,
+  type TimelineRowAction,
+} from './TimelineStreamRow';
 
 type Props = {
   readonly item: TimelineRowItem;
@@ -32,6 +36,8 @@ type Props = {
   readonly sessionProvider: ProviderId | null;
   readonly sessionEffort: EffortLevel | null;
   readonly costUsd: number;
+  readonly lanes: TimelineLaneControl | null;
+  readonly onBranchKey: TimelineBranchKey | null;
 };
 
 export const TimelineRunStreamRow = ({
@@ -48,6 +54,8 @@ export const TimelineRunStreamRow = ({
   sessionProvider,
   sessionEffort,
   costUsd,
+  lanes,
+  onBranchKey,
 }: Props) => {
   const source = useContext(WorkTimeContext);
   const scope = useRoutingScope({ sessionId });
@@ -108,6 +116,8 @@ export const TimelineRunStreamRow = ({
       progress={time?.progress ?? null}
       contextMenu={contextMenu}
       runLane={runLane}
+      lanes={lanes}
+      onBranchKey={onBranchKey}
     />
   );
 };

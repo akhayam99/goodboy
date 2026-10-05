@@ -6,7 +6,7 @@ export const RAIL_EDGE_BLEED = 1;
 
 type RailDash = 'solid' | 'dashed';
 
-export type RailGroupShape = 'merged' | 'head';
+export type RailGroupShape = 'open' | 'merged';
 
 export type RailGroupDirection = 'up' | 'down';
 
@@ -27,7 +27,6 @@ export type RailRowInput = {
   readonly markerY: number | null;
   readonly groupId: string | null;
   readonly isPending: boolean;
-  readonly opensLane?: boolean;
 };
 
 export type RailSegment = {
@@ -41,7 +40,7 @@ export type RailSegment = {
 };
 
 export type RailJoin = {
-  readonly kind: 'branch' | 'stub' | 'fork';
+  readonly kind: 'branch' | 'fork';
   readonly spineColumn: number;
   readonly laneColumn: number;
   readonly laneId: string | null;
@@ -73,7 +72,6 @@ type Params = {
   readonly rows: ReadonlyArray<RailRowInput>;
   readonly groups: ReadonlyArray<RailGroupInput>;
   readonly hasSpine?: boolean;
-  readonly isIndentOnly?: boolean;
 };
 
 type Interval = {
@@ -88,6 +86,7 @@ type GroupSpan = {
   readonly memberIndexes: ReadonlyArray<number>;
   readonly isSelfOrigin: boolean;
   readonly isDown: boolean;
+  readonly isOpen: boolean;
   readonly interval: Interval;
 };
 
@@ -106,10 +105,6 @@ const joinPathOf = ({ join, rowHeight }: JoinPathParams): string => {
   const spineX = railColumnX({ column: join.spineColumn });
   const laneX = railColumnX({ column: join.laneColumn });
   const edgeY = join.dash === 'solid' ? -RAIL_EDGE_BLEED : 0;
-  if (join.kind === 'stub') {
-    const handle = Math.min(RAIL_CURVE_HANDLE, rowHeight - join.anchorY);
-    return `M ${laneX} ${join.anchorY} C ${laneX - RAIL_CURVE_HANDLE} ${join.anchorY}, ${spineX} ${rowHeight - handle}, ${spineX} ${rowHeight}`;
-  }
   if (join.kind === 'fork') {
     const handle = Math.min(RAIL_CURVE_HANDLE, rowHeight - join.anchorY);
     return `M ${spineX} ${join.anchorY} C ${spineX + RAIL_CURVE_HANDLE} ${join.anchorY}, ${laneX} ${rowHeight - handle}, ${laneX} ${rowHeight}`;
@@ -164,15 +159,41 @@ export const mergeRailSegments = ({
   return merged;
 };
 
+export type RailLaneSpan = {
+  readonly laneId: string;
+  readonly column: number;
+  readonly identityIndex: number;
+  readonly fromY: number;
+  readonly toY: number;
+};
+
+export const railLaneSpans = ({
+  rail,
+}: {
+  readonly rail: RailRow;
+}): ReadonlyArray<RailLaneSpan> => {
+  const spans = new Map<string, RailLaneSpan>();
+  for (const segment of rail.segments) {
+    if (segment.laneId === null || segment.identityIndex === null) {
+      continue;
+    }
+    const key = `${segment.laneId}:${segment.column}`;
+    const known = spans.get(key);
+    spans.set(key, {
+      laneId: segment.laneId,
+      column: segment.column,
+      identityIndex: segment.identityIndex,
+      fromY: known === undefined ? segment.fromY : Math.min(known.fromY, segment.fromY),
+      toY: known === undefined ? segment.toY : Math.max(known.toY, segment.toY),
+    });
+  }
+  return [...spans.values()];
+};
+
 const overlaps = ({ first, second }: { readonly first: Interval; readonly second: Interval }) =>
   first.from <= second.to && second.from <= first.to;
 
-export const layoutTimelineRail = ({
-  rows,
-  groups,
-  hasSpine = true,
-  isIndentOnly = false,
-}: Params): RailLayout => {
+export const layoutTimelineRail = ({ rows, groups, hasSpine = true }: Params): RailLayout => {
   const rootParentColumn = hasSpine ? 0 : -1;
   const indexById = new Map<string, number>();
   const membersByGroupId = new Map<string, number[]>();
@@ -216,7 +237,8 @@ export const layoutTimelineRail = ({
   const drafts: ReadonlyArray<Omit<GroupSpan, 'interval'>> = groups.flatMap((group) => {
     const originIndex = indexById.get(group.originRowId) ?? lastIndex;
     const isSelfOrigin = rows[originIndex]?.groupId === group.id;
-    const isDown = group.direction === 'down' && group.shape !== 'head';
+    const isDown = group.direction === 'down';
+    const isOpen = group.shape === 'open' && !isDown;
     const memberIndexes = (membersByGroupId.get(group.id) ?? []).filter((index) =>
       isDown ? index > originIndex : index < originIndex,
     );
@@ -228,13 +250,13 @@ export const layoutTimelineRail = ({
     if (topIndex === undefined) {
       return [];
     }
-    return [{ group, originIndex, topIndex, memberIndexes, isSelfOrigin, isDown }];
+    return [{ group, originIndex, topIndex, memberIndexes, isSelfOrigin, isDown, isOpen }];
   });
   const spans: ReadonlyArray<GroupSpan> = drafts.map((draft) => ({
     ...draft,
     interval: draft.isDown
       ? { from: draft.originIndex, to: draft.memberIndexes.at(-1) ?? draft.originIndex }
-      : { from: draft.topIndex, to: draft.originIndex },
+      : { from: draft.isOpen ? 0 : draft.topIndex, to: draft.originIndex },
   }));
 
   const columnByGroupId = new Map<string, number>();
@@ -242,7 +264,6 @@ export const layoutTimelineRail = ({
   const ordered = [...spans].sort(
     (first, second) =>
       depthOf({ group: first.group }) - depthOf({ group: second.group }) ||
-      Number(second.group.shape === 'head') - Number(first.group.shape === 'head') ||
       first.interval.from - second.interval.from ||
       first.topIndex - second.topIndex ||
       first.group.id.localeCompare(second.group.id),
@@ -267,7 +288,7 @@ export const layoutTimelineRail = ({
   const laneSegmentsByIndex: RailSegment[][] = rows.map(() => []);
   const joinsByIndex: PlannedJoin[][] = rows.map(() => []);
 
-  for (const span of isIndentOnly ? [] : spans) {
+  for (const span of spans) {
     const { group, originIndex, memberIndexes, isSelfOrigin } = span;
     const column = columnByGroupId.get(group.id) ?? rootParentColumn + 1;
     const parentId = group.parentGroupId;
@@ -372,18 +393,6 @@ export const layoutTimelineRail = ({
         toY: anchorOf({ row: originRow }),
       });
     }
-    if (originRow !== undefined && isSelfOrigin && group.shape === 'head') {
-      joinsByIndex[originIndex]?.push({
-        kind: 'stub',
-        spineColumn: parentColumn,
-        laneColumn: column,
-        laneId: null,
-        identityIndex: null,
-        isMuted: false,
-        dash: 'solid',
-        anchorY: anchorOf({ row: originRow }),
-      });
-    }
     if (originRow !== undefined && nearestRow !== undefined && !isSelfOrigin) {
       joinsByIndex[originIndex]?.push({
         kind: 'branch',
@@ -396,6 +405,29 @@ export const layoutTimelineRail = ({
         anchorY: anchorOf({ row: originRow }),
       });
     }
+    const { topIndex } = span;
+    const topRow = rows[topIndex];
+    if (!span.isOpen || topRow === undefined) {
+      continue;
+    }
+    laneSegmentsByIndex[topIndex]?.push({
+      ...ink,
+      dash: 'dashed',
+      fromY: topRow.topY,
+      toY: anchorOf({ row: topRow }),
+    });
+    for (let index = 0; index < topIndex; index += 1) {
+      const row = rows[index];
+      if (row === undefined) {
+        continue;
+      }
+      laneSegmentsByIndex[index]?.push({
+        ...ink,
+        dash: 'dashed',
+        fromY: row.topY,
+        toY: row.height,
+      });
+    }
   }
 
   const maxColumn = [...columnByGroupId.values()].reduce(
@@ -403,19 +435,8 @@ export const layoutTimelineRail = ({
     0,
   );
 
-  const reservedColumns = rows.reduce((widest, row) => {
-    if (row.opensLane !== true) {
-      return widest;
-    }
-    const column =
-      row.groupId == null
-        ? rootParentColumn
-        : (columnByGroupId.get(row.groupId) ?? rootParentColumn);
-    return column + 1 > widest ? column + 1 : widest;
-  }, maxColumn);
-
   return {
-    width: RAIL_SPINE_X + reservedColumns * RAIL_LANE_OFFSET + RAIL_EDGE_PAD,
+    width: RAIL_SPINE_X + maxColumn * RAIL_LANE_OFFSET + RAIL_EDGE_PAD,
     columnByGroupId,
     rows: rows.map((row, index) => ({
       id: row.id,

@@ -20,7 +20,7 @@ import type { ExplodeGroups } from '../../../../../hooks/useExplodeGroups';
 import { useAgentTouchedWorktrees } from '../../../../../hooks/useAgentTouchedWorktrees';
 import { useTimelineOpen } from '../../../../../hooks/useTimelineOpen';
 import type { TimelineEntryRowHandlers } from '../TimelineEntryRow';
-import type { TimelineLaneTarget } from '../TimelineRail';
+import type { TimelineLaneControl, TimelineLaneTarget } from '../TimelineRail';
 import type { TimelineRowProps } from '../TimelineRow';
 import type { TimelineRowAction } from '../TimelineStreamRow';
 import type { NeedsYouOwner } from '../../../../../timeline/needsYou';
@@ -90,6 +90,16 @@ export const useTimelineRowProps = ({ session, explode, rows }: Params): RowProp
     runLaneCache.current.set(laneId, target);
     return target;
   };
+
+  const latestRunLaneFor = useRef(runLaneFor);
+  latestRunLaneFor.current = runLaneFor;
+
+  const lanes = useMemo(
+    (): TimelineLaneControl => ({
+      targetFor: ({ laneId }) => latestRunLaneFor.current({ laneId }),
+    }),
+    [],
+  );
 
   const mountPathByProjectId = useMemo(() => {
     const paths = new Map<string, string>();
@@ -278,6 +288,9 @@ export const useTimelineRowProps = ({ session, explode, rows }: Params): RowProp
     [focusQuestion, navigate, openAgentQuestion, openTargetFor, sessionId],
   );
 
+  const isGroupExpanded = ({ id }: { readonly id: string }): boolean =>
+    explode.expandedIds.has(id) && !explode.leavingIds.has(id);
+
   const rowPropsFor = ({ item, index }: RowParams): TimelineRowProps | null => {
     const rail = rows.rail.rows[index];
     if (rail === undefined) {
@@ -286,17 +299,36 @@ export const useTimelineRowProps = ({ session, explode, rows }: Params): RowProp
     const railWidth = rows.rail.width;
     const rowLaneId = item.kind === 'row' ? (laneRuns.laneIdByRowId.get(item.id) ?? null) : null;
     if (item.kind === 'now') {
-      return { kind: 'now', item, rail, railWidth, sessionId };
+      return { kind: 'now', item, rail, railWidth, sessionId, lanes };
     }
     if (item.kind === 'day') {
-      return { kind: 'day', item, rail, railWidth, sessionId };
+      return { kind: 'day', item, rail, railWidth, sessionId, lanes };
     }
     if (item.kind === 'more') {
-      return { kind: 'more', item, rail, railWidth, sessionId, onShowAll: explode.showAll };
+      return {
+        kind: 'more',
+        item,
+        rail,
+        railWidth,
+        sessionId,
+        lanes,
+        onShowAll: explode.showAll,
+      };
+    }
+    if (item.kind === 'count') {
+      return {
+        kind: 'count',
+        item,
+        rail,
+        railWidth,
+        sessionId,
+        lanes,
+        isExpanded: isGroupExpanded({ id: item.expandId }),
+        onSet: explode.set,
+      };
     }
     const { entry } = item;
-    const isGroup = entry.kind === 'resolveBatch' || item.fold !== undefined;
-    const action = isGroup ? null : actionFor({ item });
+    const action = entry.kind === 'resolveBatch' ? null : actionFor({ item });
     const agentId = entry.kind === 'agent' ? entry.agent.id : null;
     const stepId = entry.kind === 'agent' ? entry.agent.stepId : null;
     return {
@@ -307,6 +339,7 @@ export const useTimelineRowProps = ({ session, explode, rows }: Params): RowProp
       sessionId,
       handlers,
       runLane: rowLaneId === null ? null : runLaneFor({ laneId: rowLaneId }),
+      lanes,
       actionLabel: action === null ? null : action.label,
       actionVariant: action?.variant ?? null,
       actionBusy: action?.isBusy === true,
@@ -322,15 +355,9 @@ export const useTimelineRowProps = ({ session, explode, rows }: Params): RowProp
               ? entry.agentIds.reduce((total, id) => total + (rows.spendByAgentId.get(id) ?? 0), 0)
               : 0,
       groupTotals: rows.groupTotals.get(item.id) ?? null,
-      isExpanded:
-        isGroup || item.subagents !== undefined
-          ? explode.expandedIds.has(item.subagents?.id ?? entry.id) &&
-            !explode.leavingIds.has(item.subagents?.id ?? entry.id)
-          : rows.expandedRows.has(item.id),
-      isOutputsExpanded:
-        item.outputs !== undefined &&
-        explode.expandedIds.has(item.outputs.id) &&
-        !explode.leavingIds.has(item.outputs.id),
+      isExpanded: rows.expandedRows.has(item.id),
+      isBranchExpanded:
+        item.branches?.some((branch) => isGroupExpanded({ id: branch.expandId })) === true,
       decisionDetail: rows.decisionDetails.get(item.id) ?? null,
       roleModels,
       sessionProvider,
