@@ -93,6 +93,30 @@ type GroupSpan = {
 export const railColumnX = ({ column }: { readonly column: number }): number =>
   RAIL_SPINE_X + column * RAIL_LANE_OFFSET;
 
+export const RAIL_MARKER_RADIUS = 10;
+export const RAIL_COUNT_RADIUS = 5;
+export const RAIL_LABEL_GAP = 10;
+export const RAIL_CONTENT_PAD = 8;
+
+type InsetParams = {
+  readonly rail: RailRow;
+  readonly markerRadius?: number;
+};
+
+export const railInsetOf = ({ rail, markerRadius = RAIL_MARKER_RADIUS }: InsetParams): number => {
+  const anchorY = rail.markerY ?? rail.height / 2;
+  const labelX = railColumnX({ column: rail.markerColumn }) + markerRadius + RAIL_LABEL_GAP;
+  const clearX = rail.segments.reduce((widest, segment) => {
+    const isBeside = segment.column > rail.markerColumn + 1;
+    const isThrough = segment.fromY <= anchorY && segment.toY >= anchorY;
+    if (!isBeside || !isThrough) {
+      return widest;
+    }
+    return Math.max(widest, railColumnX({ column: segment.column }) + 1 + RAIL_LABEL_GAP);
+  }, labelX);
+  return clearX - RAIL_CONTENT_PAD;
+};
+
 const anchorOf = ({ row }: { readonly row: RailRowInput }): number =>
   row.markerY ?? (row.topY + row.height) / 2;
 

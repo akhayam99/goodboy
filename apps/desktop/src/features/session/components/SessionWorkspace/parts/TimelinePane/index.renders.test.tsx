@@ -117,6 +117,13 @@ vi.mock('./TimelineDayRule', async (importOriginal) => {
   };
 });
 
+import {
+  RAIL_CONTENT_PAD,
+  RAIL_LABEL_GAP,
+  RAIL_LANE_OFFSET,
+  RAIL_MARKER_RADIUS,
+  RAIL_SPINE_X,
+} from '../../../../../workTreeModel/railGeometry';
 import { TimelinePane } from './index';
 
 const SESSION: Session = aSession({
@@ -217,6 +224,22 @@ describe('TimelinePane, row renders', () => {
     expect(laneStrokes.some((line) => line.getAttribute('stroke-dasharray') !== null)).toBe(true);
     expect(view.container.querySelectorAll('svg.overflow-visible path').length).toBeGreaterThan(0);
     expect(screen.getAllByTestId('timeline-lane-hit').length).toBeGreaterThan(0);
+  });
+
+  it('indents a step by exactly one lane column and keeps its label next to its marker', () => {
+    const view = render(pane({ actions: null }));
+    const railWidthOf = (label: string): number => {
+      const row = Array.from(view.container.querySelectorAll('[data-row-id]')).find((candidate) =>
+        candidate.textContent?.includes(label),
+      );
+      const rail = row?.children[1];
+      return rail instanceof HTMLElement ? Number.parseFloat(rail.style.width) : Number.NaN;
+    };
+    const solo = railWidthOf('Solo 0');
+    const step = railWidthOf('Step 1');
+
+    expect(solo).toBe(RAIL_SPINE_X + RAIL_MARKER_RADIUS + RAIL_LABEL_GAP - RAIL_CONTENT_PAD);
+    expect(step - solo).toBe(RAIL_LANE_OFFSET);
   });
 
   it('opens the run page from its lane', () => {
