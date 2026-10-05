@@ -99,7 +99,7 @@ const TRANSCRIPT: ReadonlyArray<TurnEvent> = [
   { kind: 'assistant_text', runId: RUN_ID, delta: PROPOSAL, at: NOW },
 ];
 
-export type ScribeProposalSceneState = 'creating' | 'failed';
+type ScribeProposalSceneState = 'creating' | 'failed';
 
 const WORK: Readonly<Record<ScribeProposalSceneState, ScribeWork>> = {
   creating: {

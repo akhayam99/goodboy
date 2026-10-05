@@ -20,7 +20,7 @@ export type ScribeTask =
 
 type ScribeStatus = 'writing' | 'ready' | 'creating' | 'created' | 'failed';
 
-export type ScribeRequest = {
+type ScribeRequest = {
   readonly number: number;
   readonly url: string;
 };
