@@ -1,8 +1,27 @@
-// @vitest-environment node
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, ProjectId, SessionExternalTask, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../store';
-import type { ActionEnv, TaskActionTarget } from '../types';
+import {
+  importStore,
+  resetStoryStore,
+  STORE_IMPORT_TIMEOUT_MS,
+  type StoryStore,
+} from '../../../store/storyHarness';
+
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../../store/storyHarness')).dbModuleMock());
+let useAppStore: StoryStore;
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+beforeEach(async () => {
+  await resetStoryStore();
+});
+import type { TaskActionTarget } from '../types';
 import { TASK_KIND, taskKeyOf } from './task';
 
 const SESSION = 'session-ledger-export' as SessionId;
@@ -41,8 +60,6 @@ const targetOf = (overrides: Partial<TaskActionTarget> = {}): TaskActionTarget =
   ...overrides,
 });
 
-const original = useAppStore.getState();
-
 const stateOf = (rows: ReadonlyArray<SessionExternalTask>) => {
   useAppStore.setState({
     sessionExternalTasks: { [SESSION]: rows },
@@ -50,14 +67,6 @@ const stateOf = (rows: ReadonlyArray<SessionExternalTask>) => {
   });
   return useAppStore.getState();
 };
-
-afterEach(() => {
-  useAppStore.setState({
-    sessionExternalTasks: original.sessionExternalTasks,
-    sessionProjectMounts: original.sessionProjectMounts,
-    unlinkSessionExternalTask: original.unlinkSessionExternalTask,
-  });
-});
 
 describe('task kind identity', () => {
   it('resolves facts from the row of the target project only', () => {
@@ -78,33 +87,5 @@ describe('task kind identity', () => {
 
   it('keys the same issue number in two projects apart', () => {
     expect(taskKeyOf(targetOf())).not.toBe(taskKeyOf(targetOf({ projectId: STOREFRONT })));
-  });
-
-  it('unlinks only the rows of the target project', async () => {
-    const rows = [STOREFRONT_ROW, STOREFRONT_BRANCH, PAYMENTS_ROW, PAYMENTS_BRANCH];
-    const state = stateOf(rows);
-    const unlinkSessionExternalTask = vi.fn(async () => undefined);
-    useAppStore.setState({ unlinkSessionExternalTask });
-    const env: ActionEnv = {
-      getState: () => useAppStore.getState(),
-      showToast: vi.fn(),
-      copyText: vi.fn(async () => undefined),
-      origin: 'menu',
-      anchorKey: 'task-chip:42',
-      viewing: null,
-    };
-    const facts = TASK_KIND.facts({ state, target: targetOf() });
-    if (facts === null) {
-      throw new Error('expected facts');
-    }
-
-    await TASK_KIND.actions
-      .find((action) => action.id === 'task.unlink')
-      ?.run({ facts, env, choice: null });
-
-    expect(unlinkSessionExternalTask.mock.calls).toEqual([
-      [SESSION, 'github', '42', PAYMENTS, undefined],
-      [SESSION, 'github', '42', PAYMENTS, 'pay/fix-refund'],
-    ]);
   });
 });

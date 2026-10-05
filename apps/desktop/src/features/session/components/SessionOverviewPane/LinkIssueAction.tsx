@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { AnchoredPopover, Chip, KbdPill, Tooltip, useDropdown } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export const LinkIssueAction = ({ session }: Props) => {
+  const [initialQuery, setInitialQuery] = useState('');
   const dropdown = useDropdown({
     align: 'end',
     expectedHeight: 440,
@@ -20,6 +22,24 @@ export const LinkIssueAction = ({ session }: Props) => {
     openEvent: linkIssueEventName({ sessionId: session.id }),
   });
   const { open: isOpen, toggle } = dropdown;
+  useEffect(() => {
+    const name = linkIssueEventName({ sessionId: session.id });
+    const prefill = (event: Event) => {
+      const detail: unknown = event instanceof CustomEvent ? event.detail : null;
+      if (
+        typeof detail === 'object' &&
+        detail !== null &&
+        'query' in detail &&
+        typeof detail.query === 'string'
+      ) {
+        setInitialQuery(detail.query);
+        return;
+      }
+      setInitialQuery('');
+    };
+    window.addEventListener(name, prefill);
+    return () => window.removeEventListener(name, prefill);
+  }, [session.id]);
 
   useShortcut(
     'session.linkWork',
@@ -48,7 +68,10 @@ export const LinkIssueAction = ({ session }: Props) => {
             ariaLabel="Link work"
             hasPopup="dialog"
             expanded={isOpen}
-            onClick={toggle}
+            onClick={() => {
+              setInitialQuery('');
+              toggle();
+            }}
             icon={<Plus size={ICON_SIZE.row} aria-hidden />}
             label="Link work"
             trailing={<KbdPill aria-hidden>{shortcutGlyphs('session.linkWork')}</KbdPill>}
@@ -57,7 +80,13 @@ export const LinkIssueAction = ({ session }: Props) => {
       }
     >
       {isOpen ? (
-        <LinkWorkPanel session={session} onLinked={dropdown.close} onClose={dropdown.close} />
+        <LinkWorkPanel
+          key={initialQuery}
+          initialQuery={initialQuery}
+          session={session}
+          onLinked={dropdown.close}
+          onClose={dropdown.close}
+        />
       ) : null}
     </AnchoredPopover>
   );

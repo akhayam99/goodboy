@@ -2,8 +2,6 @@ import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { useCopyLink } from '@goodboy/ui';
 import type { OpenQuestion, Session, SessionId } from '@goodboy/types';
 import { useAppStore, useMountDiffStats, sessionPlace } from '../../../../../../../store';
-import { dispatchAfterNavigation } from '../../../../../../actions/dispatchAfterNavigation';
-import { linkIssueEventName } from '../../../../../../actions/kinds/session';
 import { useSessionRoleModels } from '../../../../../../../shared/hooks/useSessionRoleModels';
 import { usePendingAction } from '../../../../../../../shared/hooks/usePendingAction';
 import { useAdvanceWorkflowAgent } from '../../../../../../workflows/useAdvanceWorkflowAgent';
@@ -172,13 +170,11 @@ export const useTimelineRowProps = ({ session, explode, rows }: Params): RowProp
         return history.action;
       }
       if (entry.event.kind === 'issue_unlinked') {
-        return {
-          label: 'Re-link',
-          onAct: () => {
-            navigate({ to: sessionPlace({ sessionId, lens: null }) });
-            dispatchAfterNavigation({ name: linkIssueEventName({ sessionId }) });
-          },
-        };
+        const target = openTargetFor({ entry });
+        if (target == null) {
+          return null;
+        }
+        return { label: target.label, onAct: target.open };
       }
     }
     const mountPath = mountPathFor({ item });

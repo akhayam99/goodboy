@@ -234,18 +234,21 @@ from the store, and `useActionEnv` runs them. The overflow menu
 `ObjectMenuProvider` in `App`) and the palette read the same list, so a verb
 never exists on one surface only.
 
-- **One order.** Open, then Act, then Copy, then the lifecycle and destructive
-  verbs last, with a rule between groups. A surface that shows some verbs as
-  buttons still lists every verb in its `⋯`, the buttoned ones included, in
-  the registry order, and that list equals its right click: the artifact
-  viewer (right click anywhere on its header), the agent header, the run
-  page, the pull request page, the Diff header and the worktree row.
+- **Visible actions.** The primary action is a visible, labeled button.
+  Frequent alternatives stay visible beside it or on the row they affect.
+  `⋯` holds copy and rare actions. A task chip opens the task; its unlink
+  control appears on pointer hover and keyboard focus, with no kebab.
+  Put on a branch lives on the branch row. Link work is the single entry
+  for linking work to a session or workspace.
+- **One order.** The registry and right click list Open, Act, Copy, then
+  lifecycle and destructive verbs, with a rule between groups. Menus and
+  visible controls use the same definitions and availability rules.
 - **No verb that does nothing.** A surface tells the registry what it shows
   through `env.viewing` (`useActionEnv`, `ObjectOverflowMenu` and
   `useObjectMenuTrigger` take `viewing`): the artifact viewer its artifact,
   the agent header its agent, the run page its run. Open, Open agent and Open
   run are not offered for the object already on screen, on any of its menus.
-  `__tests__/actions/menuParity.test.tsx` checks both rules on these
+  `__tests__/actions/menuParity.test.tsx` checks registry parity on existing
   surfaces, `stateMatrix.test.ts` pins the Open rows, and
   `__tests__/actions/handBuiltMenus.test.ts` fails on a menu built by hand
   outside the registry, against a shrinking list of menus that are not objects
@@ -313,7 +316,9 @@ never exists on one surface only.
   Delete script, Close worktree, Remove from session, Abort rebase). Remove
   from session and a storage worktree's Remove keep their detailed confirm (the
   removal plan, the forced remove) in their own menu. A reversible verb runs at once with an Undo toast (Archive, Delete on an artifact,
-  Close agent). A draft verb on the rewrite page (Drop) needs neither.
+  Close agent, Unlink, Stop tracking, Take off this branch). The toast lasts
+  about 10 seconds and Cmd+Z undoes the latest operation outside a text field.
+  Reversible removals never ask for confirmation. A draft verb on the rewrite page (Drop) needs neither.
 - **Blocked verbs stay.** A verb that cannot run now stays in the menu, dimmed,
   with its reason under the label, and does nothing when chosen. A verb that
   does not apply to the state is not shown.
@@ -1878,3 +1883,18 @@ their project name too). On the workspace Projects page every row has a
 project folder only when it opens (`loadProjectRootScripts`, kept in memory
 by root path) and says `Scripts on <base>`, with the same pin; a project with
 no package.json or composer.json says so.
+
+## Undo operations
+
+Reversible task removals act immediately. The app-wide Undo stack keeps up to
+50 operations for the current app window, newest first. Each removal offers
+an Undo toast for 10 seconds. Cmd+Z (Ctrl+Z off macOS) undoes the last app
+operation when focus is outside a text field or terminal. Dismissing the
+toast does not discard the operation. An Undo that fails stays retryable.
+
+Session unlink snapshots all placements of one task, including every branch.
+Take off snapshots the session placement it may create too. Undo compares the
+current placements with the operation's expected result and restores the
+snapshot in one guarded database transaction. A later re-link or changed row
+makes Undo do nothing and say why. Other tasks and projects stay untouched.
+Stop tracking restores only the workspace task; it changes no session link.

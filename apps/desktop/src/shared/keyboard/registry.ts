@@ -60,6 +60,13 @@ export type ShortcutEntry = {
 };
 
 export const SHORTCUTS = {
+  'app.undo': {
+    combo: 'cmd+KeyZ',
+    label: 'Undo last operation',
+    plane: 'app',
+    group: 'general',
+    yieldsToText: true,
+  },
   'palette.open': { combo: 'cmd+KeyK', label: 'Command palette', plane: 'app', group: 'general' },
   'search.open': { combo: 'cmd+KeyF', label: 'Search', plane: 'app', group: 'general' },
   'settings.open': { combo: 'cmd+Comma', label: 'Settings', plane: 'app', group: 'general' },

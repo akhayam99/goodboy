@@ -1,3 +1,5 @@
+import { createUndoSlice } from './slices/undo';
+import { undoInitialState } from './slices/undo/state';
 import { createBootstrapSlice } from './slices/bootstrap';
 import { bootstrapInitialState } from './slices/bootstrap/state';
 import { createResolveSlice } from './slices/resolve';
@@ -181,6 +183,7 @@ type AppActions = {
 };
 
 export type AppStore = AppState &
+  ReturnType<typeof createUndoSlice> &
   AppActions &
   ReturnType<typeof createArtifactsSlice> &
   ReturnType<typeof createBootstrapSlice> &
@@ -266,6 +269,7 @@ export type AppStore = AppState &
   ReturnType<typeof createScribeSlice>;
 
 export const initialState: AppState = {
+  ...undoInitialState,
   ...initialUpdaterState,
   ...initialChangelogState,
   ...initialReviewCommitsState,
@@ -348,6 +352,7 @@ export const initialState: AppState = {
 
 export const useAppStore = create<AppStore>((set, get) => ({
   ...initialState,
+  ...createUndoSlice({ set, get }),
   ...createNotificationsSlice({ set, get }),
   ...createNudgesSlice({ set, get }),
   ...createArtifactsSlice({ set, get }),

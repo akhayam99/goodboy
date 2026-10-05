@@ -1,5 +1,5 @@
 import type { SessionExternalTask } from '@goodboy/types';
-import { taskIdentityKey } from '../../utils/taskIdentityKey';
+import { taskIdentityKey } from './taskIdentityKey';
 
 export type DistinctTask = {
   readonly task: SessionExternalTask;

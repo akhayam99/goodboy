@@ -1,3 +1,4 @@
+import { useAppStore } from '../../../../store/store';
 import { useToast } from '../../../../shared/components/Toast';
 import { ROLE_LABEL } from '../../../session/agent-kind';
 import type { StepDraft } from '../../engine';
@@ -23,17 +24,15 @@ export const useStepDeleteUndo = ({ steps, setSteps, onDeleted }: Params) => {
     }
     setSteps((current) => current.filter((candidate) => candidate.key !== key));
     onDeleted?.(key);
-    showToast({
-      kind: 'success',
+    useAppStore.getState().undoable({
+      showToast,
       message: `Deleted step ${nameOf({ step })}`,
-      action: {
-        label: 'Undo',
-        onClick: () =>
-          setSteps((current) =>
-            current.some((candidate) => candidate.key === key)
-              ? current
-              : [...current.slice(0, index), step, ...current.slice(index)],
-          ),
+      undo: async () => {
+        setSteps((current) =>
+          current.some((candidate) => candidate.key === key)
+            ? current
+            : [...current.slice(0, index), step, ...current.slice(index)],
+        );
       },
     });
   };

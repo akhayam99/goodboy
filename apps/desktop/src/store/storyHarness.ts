@@ -562,6 +562,7 @@ export const storyDbStubs = () => ({
   registerWorktreeRoot: vi.fn(async () => undefined),
   markWorktreeRootScanned: vi.fn(async () => undefined),
   upsertSessionExternalTask: storySpies.upsertSessionExternalTask,
+  replaceSessionTaskLinks: vi.fn(async () => true),
   deleteSessionExternalTask: vi.fn(async () => undefined),
   listExternalTasksForWorkspace: vi.fn(async () => []),
   listIntegrationBindingsForWorkspace: storySpies.listIntegrationBindingsForWorkspace,

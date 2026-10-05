@@ -992,6 +992,7 @@ two 28px rows. Widths are 300, 380 and 460. It opens in 120ms (opacity and a
 
 Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action-zones). The slots that carry it:
 
+- Primary actions are visible, labeled buttons. Overflow holds copy and rare actions. Reversible removals act immediately, offer an Undo toast for about 10 seconds, and join app Undo outside text fields. Only an action that loses work asks for inline confirmation. Linked task chips open their task and reveal a separate unlink control on hover or focus; they have no overflow trigger.
 - The fixed chrome row has one flexible context region, followed by one action region that never shrinks away. It is pushed to the far end and stays outside the content scroller. `StudioShell` exposes it as `headerAccessory`, `HeaderBand` as `actions`, and `DrawerFrame` as its one `action`. The focused object's primary action uses it too.
 - A creation or edit flow's action row is the one the creation grammar below describes. It is never stretched across a shell or container that also holds unrelated content.
 - A blocked object's way out is one next action strip in the `banner` slot of the detail layout: under the header, above the tabs, outside every scroll region, so every tab sees the same copy. Its tone sits on the left rail only (danger for a failed step, warning for a question, info for a wait), with a sentence that names the object, a muted cause, the technical detail behind a disclosure, one primary action and at most two secondary ones. It never repeats at the bottom of a transcript.
@@ -1006,12 +1007,12 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 
 **Record actions.** A record from a connected tool (issue, merge or pull request, thread, error) has four fixed places, whatever the tool:
 
-| Place     | What goes there                                                                                       | Shape                                              |
-| --------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Primary   | Launch session, or Open session once one is linked                                                    | one filled button, first in the action row         |
-| Secondary | at most two tool verbs that move the record forward, picked by state                                  | neutral `secondary` buttons, tone only in the icon |
-| Overflow  | rare tool verbs, Refresh, Copy link, Remove link to session, then destructive verbs after a separator | the `⋯` menu on the identity line                  |
-| Utilities | Open in the tool, `⋯`, close                                                                          | icon buttons at the end of the identity line       |
+| Place     | What goes there                                                      | Shape                                              |
+| --------- | -------------------------------------------------------------------- | -------------------------------------------------- |
+| Primary   | Launch session, or Open session once one is linked                   | one filled button, first in the action row         |
+| Secondary | at most two tool verbs that move the record forward, picked by state | neutral `secondary` buttons, tone only in the icon |
+| Overflow  | rare tool verbs, Refresh and Copy link                               | the `⋯` menu on the identity line                  |
+| Utilities | Open in the tool, `⋯`, close                                         | icon buttons at the end of the identity line       |
 
 A verb blocked for a moment stays visible with its reason in the tooltip; a verb the tool refuses is not shown. Merge confirms under the action row, and a destructive verb confirms in its menu with a plain menu swap. Properties that can change (state, assignee) change from the control that shows them, never from a button. `RecordHeader` and the `RecordVerbs` type own the contract.
 

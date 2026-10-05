@@ -135,3 +135,5 @@ Hand a question to another agent with a hint and a model from **Let an agent dec
 ### Import workflows
 
 Bring custom workflows over from your other workspaces with **Import** in the Workflows studio.
+
+Reversible workflow edits use the shared app Undo stack. The Undo toast lasts about 10 seconds, and Cmd+Z outside text fields also undoes the latest operation.

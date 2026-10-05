@@ -37,3 +37,5 @@ Hear about reclaimable space once, when idle safe folders pass 10 GB or the disk
 ### Other tools
 
 See how much space the other coding tools keep, without risking their history. At the foot of **Storage**, **Other tools** lists Claude Code, Codex and Cursor with their folder, how many sessions or chats they hold, their size and how much of it comes from Goodboy sessions, each with **Show in Finder**. It is read only and never counted in what can go. Goodboy measures sizes and names only, never the files inside, in the background while the page is open, and stops when you leave. It follows the folder each tool is set to use: CODEX_HOME, CLAUDE_CONFIG_DIR and the Cursor config folder. Goodboy sessions are recognised by name alone: a Claude Code project folder whose encoded path is a Goodboy worktree or the Goodboy data folder, and a Codex rollout or Cursor chat whose id a Goodboy agent used. Tools under 100 MB are left out.
+
+Branch deletion Undo joins the shared app operation stack. The toast lasts about 10 seconds; Cmd+Z outside text fields also restores the latest reversible operation.

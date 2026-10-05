@@ -1,12 +1,12 @@
-import { Chip, SkeletonChip } from '@goodboy/ui';
-import type { LinkedIssue, SessionExternalTaskProvider, SessionId } from '@goodboy/types';
+import { SkeletonChip } from '@goodboy/ui';
+import type { SessionExternalTaskProvider, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
-import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
+import { IssueChip } from './IssueChip';
 import { externalTaskLinkKey } from '../../../../store/slices/sessions/externalTaskLinkKey';
 import { useSessionSkeleton } from '../../hooks/useSessionSkeleton';
-import { TaskChipMenu } from '../../../../shared/components/TaskChipMenu';
-import { distinctTasks } from '../../../../shared/components/TaskChipMenu/distinctTasks';
+import { LinkedTaskChip } from '../../../../shared/components/LinkedTaskChip';
+import { distinctTasks } from '../../../../shared/utils/distinctTasks';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -22,25 +22,6 @@ const PROVIDER_ORDER: Record<SessionExternalTaskProvider, number> = {
   bitbucket: 5,
   slack: 6,
 };
-
-type IssueChipProps = {
-  readonly issue: LinkedIssue;
-  readonly onOpen: () => void;
-};
-
-const IssueChip = ({ issue, onOpen }: IssueChipProps) => (
-  <Chip
-    as="button"
-    tone="neutral"
-    shape="badge"
-    size="control"
-    onClick={onOpen}
-    title={issue.title ?? `Open issue #${issue.number}`}
-    ariaLabel={`Open issue #${issue.number}`}
-    icon={<IntegrationGlyph provider="github" size="xs" />}
-    label={<span className="font-mono">#{issue.number}</span>}
-  />
-);
 
 export const LinkedWorkChips = ({ sessionId, onSelectLens }: Props) => {
   const github = useAppStore((s) => s.sessionGithub[sessionId]);
@@ -83,7 +64,7 @@ export const LinkedWorkChips = ({ sessionId, onSelectLens }: Props) => {
         />
       ))}
       {orderedTasks.map(({ task, branches }) => (
-        <TaskChipMenu
+        <LinkedTaskChip
           key={externalTaskLinkKey({ task: { ...task, scope: 'session' } })}
           sessionId={sessionId}
           task={task}
