@@ -76,6 +76,7 @@ const diffOf = (files: ReadonlyArray<FileDiff> = []): SessionDiff => ({
   viewed: { stateOf: () => 'none', onToggle: vi.fn() },
   focusPath: null,
   clearFocus: vi.fn(),
+  focusFile: vi.fn(),
 });
 
 const FILE: FileDiff = {

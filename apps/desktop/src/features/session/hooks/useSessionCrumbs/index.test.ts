@@ -169,7 +169,6 @@ describe('useSessionCrumbs Branch trail', () => {
       activeLens: { [SESSION_ID]: 'branch' },
       branchTab: { [SESSION_ID]: tab },
       branchThreadId: { [SESSION_ID]: threadId },
-      diffPage: {},
       diffFocus: {},
       sessionGithub: {
         [SESSION_ID]: { pr: { number: 318, title: 'Ledger export' } },
@@ -182,10 +181,7 @@ describe('useSessionCrumbs Branch trail', () => {
       standOnBranch({ tab });
       const { result } = renderHook(() => useSessionCrumbs({ session }));
 
-      expect(result.current.map((crumb) => crumb.label)).toEqual([
-        'Overview',
-        '#318 Ledger export',
-      ]);
+      expect(result.current.map((crumb) => crumb.label)).toEqual(['Session', '#318 Ledger export']);
       expect(result.current.map((crumb) => crumb.id)).toEqual(['overview', 'branch']);
     }
   });
@@ -213,7 +209,7 @@ describe('useSessionCrumbs Branch trail', () => {
     };
     const labels = labelsOf(null, RESOLVER_AGENT_ID);
 
-    expect(labels.slice(0, 2)).toEqual(['Overview', '#318 Ledger export']);
+    expect(labels.slice(0, 2)).toEqual(['Session', '#318 Ledger export']);
   });
 });
 
@@ -226,12 +222,12 @@ describe('useSessionCrumbs', () => {
   });
 
   it('parents a step opened from the activity feed on its run, not on overview', () => {
-    expect(labelsOf(null, STEP_AGENT_ID)).toEqual(['Overview', 'Runs', 'Refactor', 'Implement']);
+    expect(labelsOf(null, STEP_AGENT_ID)).toEqual(['Session', 'Runs', 'Refactor', 'Implement']);
   });
 
   it('reads the same trail when the step is opened from the workflows lens', () => {
     expect(labelsOf('workflows', STEP_AGENT_ID)).toEqual([
-      'Overview',
+      'Session',
       'Runs',
       'Refactor',
       'Implement',
@@ -239,28 +235,18 @@ describe('useSessionCrumbs', () => {
   });
 
   it('keeps a step parented on its run while the app sits in another lens', () => {
-    expect(labelsOf('agents', STEP_AGENT_ID)).toEqual([
-      'Overview',
-      'Runs',
-      'Refactor',
-      'Implement',
-    ]);
+    expect(labelsOf('agents', STEP_AGENT_ID)).toEqual(['Session', 'Runs', 'Refactor', 'Implement']);
   });
 
   it('gives an ad-hoc agent opened from the feed the agents home as parent', () => {
-    expect(labelsOf(null, ADHOC_AGENT_ID)).toEqual(['Overview', 'Agents', 'scout one']);
+    expect(labelsOf(null, ADHOC_AGENT_ID)).toEqual(['Session', 'Agents', 'scout one']);
   });
 
-  it('gives a resolver opened from the feed the review home as parent, named Resolver', () => {
-    expect(labelsOf(null, RESOLVER_AGENT_ID)).toEqual(['Overview', 'Branch', 'Resolver']);
+  it('gives a resolver opened from the feed the Branch as parent, named Fix run', () => {
+    expect(labelsOf(null, RESOLVER_AGENT_ID)).toEqual(['Session', 'Branch', 'Fix run']);
   });
 
-  it('asks for the resolve rows only when a resolver thread is selected', () => {
-    labelsOf(null, STEP_AGENT_ID);
-    expect(queueCalls.length).toBeGreaterThan(0);
-    expect(queueCalls.every((call) => call.isEnabled === false)).toBe(true);
-
-    queueCalls.length = 0;
+  it('asks for the resolve rows only when a comment is open on the Branch', () => {
     store.state = {
       ...store.state,
       sessionResolveAttempts: {
@@ -268,12 +254,25 @@ describe('useSessionCrumbs', () => {
       },
     };
     labelsOf(null, RESOLVER_AGENT_ID);
+    expect(queueCalls.length).toBeGreaterThan(0);
+    expect(queueCalls.every((call) => call.isEnabled === false)).toBe(true);
+
+    queueCalls.length = 0;
+    store.state = { ...store.state, selectedAgentId: {} };
+    store.state = {
+      ...store.state,
+      activeLens: { [SESSION_ID]: 'branch' },
+      branchTab: { [SESSION_ID]: 'comments' },
+      branchThreadId: { [SESSION_ID]: 'thread-1' },
+      diffFocus: {},
+    };
+    renderHook(() => useSessionCrumbs({ session }));
     expect(queueCalls.every((call) => call.isEnabled === true)).toBe(true);
   });
 
   it('parents a cluster child on its father, under the run', () => {
     expect(labelsOf(null, CLUSTER_CHILD_ID)).toEqual([
-      'Overview',
+      'Session',
       'Runs',
       'Refactor',
       'Implement',
@@ -304,7 +303,7 @@ describe('useSessionCrumbs', () => {
     store.openQuestions = [{ id: 'oq-1', text: 'pick a database' }];
 
     expect(labelsOf(null, DELEGATE_ID)).toEqual([
-      'Overview',
+      'Session',
       'Runs',
       'Refactor',
       'Implement',
@@ -321,7 +320,7 @@ describe('useSessionCrumbs', () => {
 
   it('leaves the delegate trail short when the question is gone', () => {
     expect(labelsOf(null, DELEGATE_ID)).toEqual([
-      'Overview',
+      'Session',
       'Runs',
       'Refactor',
       'Implement',

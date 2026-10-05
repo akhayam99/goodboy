@@ -186,6 +186,13 @@ and the text of a review comment), aligned left inside the column. Tables, code
 and cards take the whole column. `columnContract.test.ts` fails on any
 `max-w-[Nch]` other than `72ch`.
 
+There are two layouts, one rule each. **Reading** pages (the Session, an Agent,
+a Fix run) are one 960 column from `PaneShell`; every child starts at the same
+left edge, and only prose (an outcome, a summary) takes `max-w-[72ch]`. **Work**
+pages (the tabs of the Branch) take the whole width of the pane: Files puts its
+file tree on the left from `@4xl` up and the diff beside it, Comments puts the
+list and the thread side by side, and under `@4xl` they take turns.
+
 ## Layout: fixed-height shell, scroll on content
 
 Each pane is a fixed-height column that hides its own overflow. Only an inner

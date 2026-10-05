@@ -253,7 +253,7 @@ export const clickFirstButton = async (name: RegExp): Promise<void> => {
 };
 
 export const openCrumb = async (label: RegExp): Promise<void> => {
-  await clickButton(/^Overview/);
+  await clickButton(/^Session/);
   await click(await screen.findByRole('menuitemradio', { name: label }));
 };
 
@@ -350,7 +350,7 @@ export const LENS_ROWS: ReadonlyArray<{
   readonly lands: (ctx: Ctx) => Promise<void>;
 }> = [
   {
-    label: 'Overview',
+    label: 'Session',
     lens: null,
     lands: async () => expect(await screen.findByTestId('context-chip')).toBeDefined(),
   },

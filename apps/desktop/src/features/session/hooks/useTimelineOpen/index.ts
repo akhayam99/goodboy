@@ -5,6 +5,7 @@ import { useCallback } from 'react';
 import type { SessionId } from '@goodboy/types';
 import type { SessionEventKind } from '@goodboy/types';
 import { agentPlace, branchPlace, sessionPlace, useAppStore } from '../../../../store';
+import { lensPlace } from '../../../../store/slices/navigation/canonicalLocation';
 import type { LensKind } from '../../../../store/slices/session-view/types';
 import type { TimelineStreamEntry } from '../../timeline/buildTimelineStream';
 
@@ -45,10 +46,10 @@ const EVENT_TARGET: Record<SessionEventKind, EventTarget | null> = {
   write_destination_changed: { lens: 'files', label: 'Open files' },
   question_dismissed: { lens: 'questions', label: 'Open questions' },
   question_restored: { lens: 'questions', label: 'Open questions' },
-  history_rewritten: { lens: 'files', label: 'Open' },
-  history_pushed: { lens: 'files', label: 'Open' },
-  history_stopped: { lens: 'files', label: 'Open' },
-  history_restored: { lens: 'files', label: 'Open' },
+  history_rewritten: { lens: 'branch', label: 'Open commits' },
+  history_pushed: { lens: 'branch', label: 'Open commits' },
+  history_stopped: { lens: 'branch', label: 'Open commits' },
+  history_restored: { lens: 'branch', label: 'Open commits' },
 };
 
 const eventOpenTarget = ({ kind }: { readonly kind: SessionEventKind }): EventTarget | null =>
@@ -91,7 +92,7 @@ export const useTimelineOpen = ({
       if (entry.kind === 'agent') {
         const isResolver = entry.agentKind === 'resolver';
         return {
-          label: isResolver ? 'Open brief' : 'Open chat',
+          label: isResolver ? 'Open fix run' : 'Open chat',
           open: () => {
             store.navigate({
               to: agentPlace({
@@ -141,7 +142,7 @@ export const useTimelineOpen = ({
       if (entry.kind === 'branch') {
         return {
           label: 'Open files',
-          open: () => store.navigate({ to: sessionPlace({ sessionId, lens: 'files' }) }),
+          open: () => store.navigate({ to: lensPlace({ state: store, sessionId, lens: 'files' }) }),
         };
       }
       if (entry.kind === 'event' && entry.event.kind === 'branch_deleted') {
@@ -195,24 +196,17 @@ export const useTimelineOpen = ({
         if (target == null) {
           return null;
         }
-        const historyPath = entry.event.kind.startsWith('history_')
-          ? (entry.event.payload?.worktreePath ?? null)
-          : null;
-        if (historyPath !== null) {
+        if (entry.event.kind.startsWith('history_')) {
+          const historyPath = entry.event.payload?.worktreePath ?? null;
           return {
-            label: target.label,
+            label: 'Open commits',
             open: () => store.openRewriteHistory(sessionId, historyPath),
-          };
-        }
-        if (target.lens === 'pr') {
-          return {
-            label: target.label,
-            open: () => store.navigate({ to: branchPlace({ sessionId, tab: 'comments' }) }),
           };
         }
         return {
           label: target.label,
-          open: () => store.navigate({ to: sessionPlace({ sessionId, lens: target.lens }) }),
+          open: () =>
+            store.navigate({ to: lensPlace({ state: store, sessionId, lens: target.lens }) }),
         };
       }
       if (entry.kind === 'learning') {

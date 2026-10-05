@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
 import { agentPlace, sessionPlace, useAppStore, type LensKind } from '../../../../../store';
+import { lensPlace } from '../../../../../store/slices/navigation/canonicalLocation';
 import { openInConfiguredEditor } from '../../../../../shared/lib/editorSettings';
 import { openReview } from '../../../../review/openReview';
 import { openAgentRevealEvent } from '../../../../session/components/AgentDetailPane/agentOpenTab';
@@ -26,7 +27,13 @@ export const useBoardNavigation = (): BoardNavigation => {
 
   return useMemo<BoardNavigation>(() => {
     const openLens = ({ session, lens }: OpenLensParams): void => {
-      navigate({ to: sessionPlace({ sessionId: session.id as SessionId, lens }) });
+      navigate({
+        to: lensPlace({
+          state: useAppStore.getState(),
+          sessionId: session.id as SessionId,
+          lens,
+        }),
+      });
     };
 
     const selectCard = (session: Session): void => {

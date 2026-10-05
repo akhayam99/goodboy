@@ -83,7 +83,7 @@ describe('pageMenu', () => {
     expect(agents?.metaA).toBe('2 running');
     expect(rowsOf(menu).filter((row) => row.isCurrent)).toHaveLength(1);
     rowsOf(menu)
-      .find((row) => row.label === 'Overview')
+      .find((row) => row.label === 'Session')
       ?.onSelect();
     expect(onSelect).toHaveBeenCalledWith(null);
   });
@@ -112,12 +112,12 @@ describe('pageMenu icon tones', () => {
   it('colors every page but Overview with its concept and Linear with its brand', () => {
     const menu = build({});
 
-    expect(classOf(menu, 'Overview')).toBeUndefined();
+    expect(classOf(menu, 'Session')).toBeUndefined();
     expect(classOf(menu, 'Runs')).toBe('text-primary');
     expect(classOf(menu, 'Diff')).toBe('text-info');
     expect(classOf(menu, 'Linear')).toBe('text-provider-linear');
     rowsOf(menu)
-      .filter((row) => row.label !== 'Overview')
+      .filter((row) => row.label !== 'Session')
       .forEach((row) => {
         expect(row.lead.kind === 'icon' && row.lead.className !== undefined).toBe(true);
       });

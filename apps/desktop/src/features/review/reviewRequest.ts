@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
-import { sessionPlace } from '../../store/slices/navigation/place';
+import { branchPlace } from '../../store/slices/navigation/place';
 import { dispatchAfterNavigation } from '../actions/dispatchAfterNavigation';
 
 export const REVIEW_REQUEST_EVENT = 'goodboy:review-request';
@@ -37,7 +37,7 @@ export const requestReview = ({ getState, sessionId, request }: Params): void =>
   }
   const threadId = 'threadId' in request ? request.threadId : null;
   getState().navigate({
-    to: sessionPlace({ sessionId, lens: 'review' }),
+    to: branchPlace({ sessionId, tab: 'comments', threadId }),
     drawer: threadId === null ? null : { kind: 'conversation', sessionId, payload: { threadId } },
   });
   dispatchAfterNavigation({ name: REVIEW_REQUEST_EVENT, detail: { sessionId, request } });

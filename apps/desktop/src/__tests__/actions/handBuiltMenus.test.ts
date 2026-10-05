@@ -40,8 +40,8 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'workflow editor band actions, studio chrome',
   'features/workflows/components/WorkflowStudio/WorkflowList/index.tsx':
     'workflow library list menu (restore built-ins); the workflow kind is a follow-up',
-  'features/history/components/RewriteHistoryPage/HistoryPageActions.tsx':
-    'rewrite page menu (backups, terminal), page chrome',
+  'features/history/components/CommitsHistory/HistoryActions.tsx':
+    'commits tab menu (terminal), tab chrome',
   'features/history/useHistoryRowActions/index.ts':
     'rewrite event rows in Activity: event verbs, not an object in the map',
   'features/session/components/SessionWorkspace/parts/TimelinePane/TimelineEntryRow.tsx':

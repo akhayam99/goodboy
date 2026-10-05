@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionId } from '@goodboy/types';
-import { sessionPlace } from '../../store/slices/navigation/place';
+import { branchPlace, sessionPlace } from '../../store/slices/navigation/place';
 
 const { state } = vi.hoisted(() => ({
   state: {
@@ -31,7 +31,9 @@ beforeEach(() => {
 describe('openLens', () => {
   it('navigates to the lens as a history voice', () => {
     openLens({ sessionId: SESSION_ID, lens: 'review' });
-    expect(state.navigate).toHaveBeenCalledWith(toLens('review'));
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: branchPlace({ sessionId: SESSION_ID, tab: 'comments' }),
+    });
   });
 
   it('clears the one-shot scripts scope on the way into scripts', () => {

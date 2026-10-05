@@ -2,7 +2,8 @@ import { CircleCheck, CircleDot, Copy, MessageSquare, OctagonX, Cpu, Tag } from 
 import { parseHiddenModels, visibleCatalog } from '@goodboy/core';
 import type { Agent, AgentStatus, ProviderId, SessionId, TurnEvent } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { agentPlace, sessionPlace } from '../../../store/slices/navigation/place';
+import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
+import { agentPlace } from '../../../store/slices/navigation/place';
 import type { AgentPane } from '../../../store/slices/navigation/types';
 import { SETTING_HIDDEN_MODELS } from '../../settings/settings';
 import {
@@ -112,9 +113,9 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
       when: () => true,
       blockedReason: ({ facts }) => (facts.hasMount ? null : NO_MOUNT_REASON),
       run: ({ facts, env }) =>
-        env
-          .getState()
-          .navigate({ to: sessionPlace({ sessionId: facts.sessionId, lens: 'files' }) }),
+        env.getState().navigate({
+          to: lensPlace({ state: env.getState(), sessionId: facts.sessionId, lens: 'files' }),
+        }),
     },
     {
       id: 'agent.message',

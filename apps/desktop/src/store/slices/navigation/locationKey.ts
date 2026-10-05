@@ -49,11 +49,10 @@ const targetAddress = ({ target }: TargetParams): string => {
     case 'branch': {
       const mount = target.mountPath === null ? '' : `:${target.mountPath}`;
       const thread = target.threadId === null ? '' : `/t/${target.threadId}`;
-      const page = target.page === 'history' ? '/history' : '';
       const focus = target.focus === null ? '' : `@${target.focus.kind}`;
       const sha = target.focus?.kind === 'commit' ? `:${target.focus.sha}` : '';
       const path = target.focus?.path == null ? '' : `#${target.focus.path}`;
-      return `${target.tab}${mount}${thread}${page}${focus}${sha}${path}`;
+      return `${target.tab}${mount}${thread}${focus}${sha}${path}`;
     }
     case 'terminal':
       return target.mountPath;

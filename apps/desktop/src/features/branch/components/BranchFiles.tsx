@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { Button, LensEmptyState, PageColumn } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
@@ -9,6 +9,7 @@ import { useObjectActions } from '../../actions/useObjectActions';
 import { SessionDiffPane } from '../../diff/components/SessionDiffPane';
 import type { SessionDiff } from '../../diff/hooks/useSessionDiff';
 import { WriteReview } from '../../review/components/ReviewPane/WriteReview';
+import { BranchFileTree } from './BranchFileTree';
 
 type Props = {
   readonly session: Session;
@@ -20,6 +21,7 @@ type Props = {
 
 export const BranchFiles = ({ session, workingDir, worktreePath, diff, hasPullRequest }: Props) => {
   const sessionId = session.id as SessionId;
+  const [activePath, setActivePath] = useState<string | null>(null);
   const mode = useAppStore((s) => s.pullRequestModes[sessionId] ?? 'overview');
   const setPullRequestMode = useAppStore((s) => s.setPullRequestMode);
   const env = useActionEnv({ origin: 'button' });
@@ -55,26 +57,45 @@ export const BranchFiles = ({ session, workingDir, worktreePath, diff, hasPullRe
       </div>
     );
   }
+  const hasTree = !diff.loading && diff.error === null && diff.files.length > 0;
+  const pick = (path: string): void => {
+    setActivePath(path);
+    diff.focusFile(path);
+  };
   return (
-    <SessionDiffPane
-      sessionId={sessionId}
-      workingDir={workingDir}
-      worktreePath={worktreePath}
-      diff={diff}
-      onWriteReview={
-        hasPullRequest ? () => setPullRequestMode({ sessionId, mode: 'write_review' }) : null
-      }
-      toolbarExtra={
-        postNotes === null ? null : (
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => void run({ actionId: postNotes.id })}
-          >
-            {postNotes.label}
-          </Button>
-        )
-      }
-    />
+    <div className="flex min-h-0 min-w-0 flex-1">
+      {hasTree && (
+        <aside aria-label="Files" className="hidden min-h-0 w-[240px] shrink-0 pl-3 @4xl:flex">
+          <BranchFileTree
+            files={diff.files}
+            isViewed={(file) => diff.viewed.stateOf(file) === 'viewed'}
+            activePath={activePath}
+            onPick={pick}
+          />
+        </aside>
+      )}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <SessionDiffPane
+          sessionId={sessionId}
+          workingDir={workingDir}
+          worktreePath={worktreePath}
+          diff={diff}
+          onWriteReview={
+            hasPullRequest ? () => setPullRequestMode({ sessionId, mode: 'write_review' }) : null
+          }
+          toolbarExtra={
+            postNotes === null ? null : (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => void run({ actionId: postNotes.id })}
+              >
+                {postNotes.label}
+              </Button>
+            )
+          }
+        />
+      </div>
+    </div>
   );
 };

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { sessionPlace } from '../../../../store/slices/navigation/place';
+import { branchPlace } from '../../../../store/slices/navigation/place';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { PullRequestState, SessionId } from '@goodboy/types';
 
@@ -86,7 +86,7 @@ describe('LinkedPrChip', () => {
 
     expect(h.store.selectSessionPr).toHaveBeenCalledWith('session-1', 42);
     expect(h.store.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'pr' }),
+      to: branchPlace({ sessionId: 'session-1' as SessionId, tab: 'comments' }),
     });
     expect(h.openUrl).not.toHaveBeenCalled();
   });
@@ -103,7 +103,7 @@ describe('LinkedPrChip', () => {
 
     expect(h.store.selectSessionPr).toHaveBeenCalledWith('session-2', 42);
     expect(h.store.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: 'session-2' as SessionId, lens: 'pr' }),
+      to: branchPlace({ sessionId: 'session-2' as SessionId, tab: 'comments' }),
     });
     expect(h.openUrl).not.toHaveBeenCalled();
   });

@@ -27,8 +27,6 @@ import { BranchCommentsScene } from './scenes/BranchCommentsScene';
 import { BranchNarrowScene } from './scenes/BranchNarrowScene';
 import { BranchPushScene } from './scenes/BranchPushScene';
 import { ResolveDriftScene } from './scenes/ResolveDriftScene';
-import { ResolveCommitStoryScene } from './scenes/ResolveCommitStoryScene';
-import { ResolveCommitsScene } from './scenes/ResolveCommitsScene';
 import { ResolveGitlabScene } from './scenes/ResolveGitlabScene';
 import { ResolveBitbucketScene } from './scenes/ResolveBitbucketScene';
 import { ResolveItemScene } from './scenes/ResolveItemScene';
@@ -159,7 +157,7 @@ import { useBrandChrome } from './scenes/brand/brandChrome';
 import { applyDocumentTheme } from '../../../shared/lib/theme';
 import { AgentBriefScene } from './scenes/AgentBriefScene';
 import { AgentBriefQuestionScene } from './scenes/AgentBriefQuestionScene';
-import { AgentBriefResolverScene } from './scenes/AgentBriefResolverScene';
+import { FixRunScene } from './scenes/FixRunScene';
 import { ReportSheetHost } from '../../../features/bug-report/components/ReportSheetHost';
 import { CrashReportScene, useReportSheetParam } from './scenes/audit/ReportScenes';
 
@@ -185,6 +183,7 @@ export const MOCK_SCENES = {
   resolve: ResolveScene,
   'resolve-select': ResolveSelectScene,
   'branch-comments': BranchCommentsScene,
+  'branch-commits': BrandHistoryScene,
   'branch-files': BrandDiffScene,
   'branch-narrow': BranchNarrowScene,
   'branch-push': BranchPushScene,
@@ -192,8 +191,6 @@ export const MOCK_SCENES = {
   'resolve-failed': ResolveFailedRunScene,
   'resolve-failed-history': ResolveFailedHistoryScene,
   'resolve-drift': ResolveDriftScene,
-  'resolve-commit-story': ResolveCommitStoryScene,
-  'resolve-commits': ResolveCommitsScene,
   'resolve-gitlab': ResolveGitlabScene,
   'resolve-bitbucket': ResolveBitbucketScene,
   board: BoardScene,
@@ -313,7 +310,7 @@ export const MOCK_SCENES = {
   'brand-tools': BrandToolsScene,
   'agent-brief': AgentBriefScene,
   'agent-brief-question': AgentBriefQuestionScene,
-  'agent-brief-resolver': AgentBriefResolverScene,
+  'fix-run': FixRunScene,
   'crash-report': CrashReportScene,
 };
 

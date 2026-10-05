@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Session, SessionId } from '@goodboy/types';
-import { sessionPlace } from '../../../../../store/slices/navigation/place';
+import { branchPlace, sessionPlace } from '../../../../../store/slices/navigation/place';
 
 type StoreState = {
   navigate: ReturnType<typeof vi.fn>;
@@ -143,7 +143,7 @@ describe('useBoardNavigation', () => {
     result.current.openPullRequest(session);
     expect(navigateMock).toHaveBeenCalledTimes(1);
     expect(navigateMock).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: SESSION_ID, lens: 'pr' }),
+      to: branchPlace({ sessionId: SESSION_ID, tab: 'comments' }),
     });
     expect(openReviewTargetMock).not.toHaveBeenCalled();
   });

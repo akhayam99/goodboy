@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react';
-import { ErrorStrip, Eyebrow, LensEmptyState, PaneShell, Skeleton, cn } from '@goodboy/ui';
+import { ErrorStrip, LensEmptyState, PageColumn, ScrollFade, Skeleton, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { keptOrder } from '../../historyPlan';
-import { REWRITE_HISTORY_TITLE } from '../../rewriteHistoryTitle';
+import { HistoryActions } from './HistoryActions';
 import { HistoryAfterColumn } from './HistoryAfterColumn';
 import { HistoryAppliedResult } from './HistoryAppliedResult';
 import { HistoryBackups } from './HistoryBackups';
@@ -12,7 +12,6 @@ import { HistoryDragGhost } from './HistoryDragGhost';
 import { HistoryFacts } from './HistoryFacts';
 import { HistoryLegend } from './HistoryLegend';
 import { HistoryNowColumn } from './HistoryNowColumn';
-import { HistoryPageActions } from './HistoryPageActions';
 import { HistoryPlannedSection } from './HistoryPlannedSection';
 import { HistoryResultHead } from './HistoryResultHead';
 import { HistoryStatusSlot } from './HistoryStatusSlot';
@@ -39,7 +38,7 @@ type Props = {
 
 const NARROW_WIDTH = 760;
 
-export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
+export const CommitsHistory = ({ sessionId, worktreePath }: Props) => {
   const plan = useHistoryPlan({ sessionId, worktreePath });
   const {
     mount,
@@ -139,14 +138,14 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
 
   if (mountId === null || mount === null || flow === null) {
     return (
-      <PaneShell title={REWRITE_HISTORY_TITLE} icon={CONCEPT_ICONS.history}>
+      <PageColumn>
         <LensEmptyState
           tone={CONCEPT_TONE.history}
           icon={CONCEPT_ICONS.history}
           title="This branch is not in the session"
-          description="Pick a branch from the trail to rewrite its history."
+          description="Pick a branch from the trail to see its commits."
         />
-      </PaneShell>
+      </PageColumn>
     );
   }
 
@@ -187,15 +186,8 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
     setEditingSha,
     callbacksFor,
   });
-  const meta = (
-    <span className="flex flex-wrap items-center gap-2">
-      <span>{mount.mountName}</span>
-      <span aria-hidden>·</span>
-      <span>{mount.branch}</span>
-    </span>
-  );
   const actions = (
-    <HistoryPageActions
+    <HistoryActions
       isBusy={isBusy}
       onRefresh={flow.refresh}
       onShowBackups={backups.showBackups}
@@ -350,15 +342,11 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
     );
 
   return (
-    <PaneShell
-      title={REWRITE_HISTORY_TITLE}
-      icon={CONCEPT_ICONS.history}
-      tone={CONCEPT_TONE.history}
-      meta={meta}
-      actions={actions}
-      scroll="pane"
-    >
-      {body}
-    </PaneShell>
+    <ScrollFade className="min-h-0 flex-1" fadeSize="h-6">
+      <div className="flex min-w-0 flex-col gap-4 px-6 pb-6">
+        <div className="flex min-w-0 items-center justify-end gap-2">{actions}</div>
+        {body}
+      </div>
+    </ScrollFade>
   );
 };

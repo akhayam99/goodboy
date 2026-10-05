@@ -242,7 +242,7 @@ describe('main flows on the real store', () => {
 
     await mountFlow(<KeepAliveWorkSurface sessionId={sessionId} isActive />);
     expect(screen.queryByRole('tab', { name: /^Files/ })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /Overview/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Session/ }));
     fireEvent.click(await screen.findByRole('menuitemradio', { name: /^Diff/ }));
     await settle();
 

@@ -1,5 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
+import type { LensKind } from '../session-view/types';
 import { agentHomeFor } from './agentHomeFor';
 import { branchPlace, resolverPagePlace, sessionPlace } from './place';
 import { resolverThread } from './resolverThread';
@@ -93,9 +94,8 @@ const formerBranchPlace = ({
     return branchPlace({
       sessionId,
       mountPath,
-      tab: 'files',
+      tab: target?.page === 'history' ? 'commits' : 'files',
       focus: target?.focus ?? null,
-      page: target?.page ?? null,
     });
   }
   if (view.lens === 'review') {
@@ -177,4 +177,20 @@ export const canonicalLocation = ({ state, request }: Params): CanonicalPlace =>
       drawer: null,
     }
   );
+};
+
+export const lensPlace = ({
+  state,
+  sessionId,
+  lens,
+}: {
+  readonly state: AppState;
+  readonly sessionId: SessionId;
+  readonly lens: LensKind | null;
+}): Place => {
+  const plain = sessionPlace({ sessionId, lens });
+  if (plain.at !== 'session') {
+    return plain;
+  }
+  return formerBranchPlace({ state, request: plain }) ?? plain;
 };

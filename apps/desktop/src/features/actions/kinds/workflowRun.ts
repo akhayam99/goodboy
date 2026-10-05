@@ -12,6 +12,7 @@ import type { AgentId, OpenQuestionId, SessionId, WorkflowRun } from '@goodboy/t
 import { isAgentStatusHalted } from '@goodboy/core';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { NAMES } from '../../../shared/names';
+import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
 import { sessionPlace } from '../../../store/slices/navigation/place';
 import { notifyWorkflowGateBlock } from '../../../store/slices/workflows/notifyWorkflowGateBlock';
 import { resolveWorkflowAdvance } from '../../workflows/advanceGate';
@@ -165,9 +166,9 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
       group: 'open',
       when: ({ facts }) => facts.hasChanges,
       run: ({ facts, env }) =>
-        env
-          .getState()
-          .navigate({ to: sessionPlace({ sessionId: facts.sessionId, lens: 'files' }) }),
+        env.getState().navigate({
+          to: lensPlace({ state: env.getState(), sessionId: facts.sessionId, lens: 'files' }),
+        }),
     },
     {
       id: 'workflowRun.answer',

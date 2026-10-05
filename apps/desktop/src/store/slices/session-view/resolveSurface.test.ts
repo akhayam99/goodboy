@@ -29,7 +29,6 @@ const buildSlice = (): { readonly actions: SliceState; readonly getState: () => 
     selectedAgentId: {},
     sessionPhaseRuns: {},
     diffMountPath: {},
-    diffPage: {},
     navigate,
     closeDrawer,
   } as unknown as SliceState;

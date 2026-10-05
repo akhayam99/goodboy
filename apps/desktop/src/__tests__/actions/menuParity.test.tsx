@@ -32,7 +32,7 @@ import { bindTarget } from '../../features/actions/registry';
 import { WorkflowRunDetail } from '../../features/session/components/SessionWorkspace/parts/WorkflowRunDetail';
 import { AgentHeaderActions } from '../../features/session/components/AgentHeaderActions';
 import type { ArtifactActionTarget, CommitActionTarget } from '../../features/actions/types';
-import { HistoryCommitRow } from '../../features/history/components/RewriteHistoryPage/HistoryCommitRow';
+import { HistoryCommitRow } from '../../features/history/components/CommitsHistory/HistoryCommitRow';
 import { PaletteOverlay } from '../../features/palette/components/PaletteOverlay';
 import { ToastProvider } from '../../shared/components/Toast';
 import type { RunnableScript } from '../../features/scripts/buildSessionScripts';

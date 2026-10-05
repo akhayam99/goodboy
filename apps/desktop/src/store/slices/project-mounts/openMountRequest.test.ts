@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { MountId, SessionId } from '@goodboy/types';
 import { openMountRequest } from './openMountRequest';
-import { sessionPlace } from '../navigation/place';
+import { branchPlace, sessionPlace } from '../navigation/place';
 import type { GetFn, SetFn } from './types';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -52,7 +52,7 @@ describe('openMountRequest', () => {
       mode: 'create_pr',
     });
     expect(state.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: SESSION_ID, lens: 'pr' }),
+      to: branchPlace({ sessionId: SESSION_ID, tab: 'comments' }),
     });
     expect(state.openReviewTarget).not.toHaveBeenCalled();
   });

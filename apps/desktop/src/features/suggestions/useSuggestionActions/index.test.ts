@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { agentPlace, sessionPlace } from '../../../store/slices/navigation/place';
+import { agentPlace, branchPlace } from '../../../store/slices/navigation/place';
 import { renderHook } from '@testing-library/react';
 import type {
   Agent,
@@ -259,7 +259,7 @@ describe('useSuggestionActions', () => {
     expect(spies.navigate).not.toHaveBeenCalled();
     toast.open();
     expect(spies.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: SESSION_ID, lens: 'review' }),
+      to: branchPlace({ sessionId: SESSION_ID, tab: 'comments' }),
     });
   });
 

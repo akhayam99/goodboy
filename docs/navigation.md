@@ -105,7 +105,7 @@ moves to the next mode with the same text, and `openPalette({ mode, query })`
 opens it on a mode. Commands is the first mode.
 
 - **Scope first.** It opens on a scope chip that names what you are on: the
-  focused commit row on Rewrite history, else the agent in view, else the
+  focused commit row on the Commits tab, else the agent in view, else the
   session, else the workspace on the board (`resolvePaletteScope`). A row
   offers itself with `useHeldPaletteScope`, and the palette reads it only while
   focus is inside that row (`heldPaletteScope.ts`), so its verbs come first in
@@ -318,7 +318,7 @@ never exists on one surface only.
   removal plan, the forced remove) in their own menu. A reversible verb runs at once with an Undo toast (Archive, Delete on an artifact,
   Close agent, Unlink, Stop tracking, Take off this branch). The toast lasts
   about 10 seconds and Cmd+Z undoes the latest operation outside a text field.
-  Reversible removals never ask for confirmation. A draft verb on the rewrite page (Drop) needs neither.
+  Reversible removals never ask for confirmation. A draft verb on the Commits tab (Drop) needs neither.
 - **Blocked verbs stay.** A verb that cannot run now stays in the menu, dimmed,
   with its reason under the label, and does nothing when chosen. A verb that
   does not apply to the state is not shown.
@@ -498,7 +498,7 @@ reach NW-230 anymore`. Pick up a task shows only the open starred issues,
   and one per issue for GitHub and Sentry, which have no batch endpoint for
   fetching by id.
 - **Run a workflow** is the workflow builder itself (`WorkflowBuilderView`
-  with a `kickoff` target), the same one Overview > Workflows > Create opens:
+  with a `kickoff` target), the same one Session > Workflows > Create opens:
   title, goal card with Add files and Polish, the Orchestrated / Describe steps /
   Pick a workflow switch, Can use, the plan preview with the orchestrator row or the
   editable steps, guidance, Starts, when to ask, Spend cap and Start workflow with
@@ -561,16 +561,16 @@ activity yet show the plain overview with its actions.
 - **Every crumb has an icon, and depth compacts the trail.** Agents carry the
   agent glyph in their kind's colour, runs the run glyph, artifacts, questions
   and pull request modes their own. The last crumb and its parent always stay
-  full. `Overview` keeps its name through five crumbs. From five every other
-  ancestor but the parent becomes an icon, and from six `Overview` does too.
+  full. `Session` keeps its name through five crumbs. From five every other
+  ancestor but the parent becomes an icon, and from six `Session` does too.
   When the band still has no room, ancestors turn
-  to icons from the left, then the icons after `Overview` fold into a `…` menu
-  right after it; `Overview` is the anchor and never folds. An icon crumb keeps
+  to icons from the left, then the icons after `Session` fold into a `…` menu
+  right after it; `Session` is the anchor and never folds. An icon crumb keeps
   its name as tooltip and accessible name. `compactTrail` in `@goodboy/ui` is
   the pure rule; the label closes with a 220ms width transition (120ms fade),
   and a new crumb enters from the right 60ms later. Under reduced motion only
   the opacity changes.
-- **The trail starts at `Overview`, and the session name is not a crumb.** The
+- **The trail starts at `Session`, and the session name is not a crumb.** The
   sidebar already shows the session identity. Repeating it in the trail spends
   a crumb on something the user is already looking at.
 - The last crumb is the current location and is never clickable. A list view
@@ -589,7 +589,7 @@ comment` for the maintainer's own comment, `Resolve: Mara Quint on index.ts`
   uses (GitHub, GitLab, Jira, Linear, Slack), at the same depth as any other
   lens. A studio belongs under its own tool, never under another tool's lens.
 - **Opening a child extends the trail and keeps every ancestor**:
-  `Overview > {HomeLens} > {Agent}`. Selecting a sibling changes only the last
+  `Session > {HomeLens} > {Agent}`. Selecting a sibling changes only the last
   crumb and the child region.
 - **The trail shows the structure of the app, not the history of the
   session.** A parent comes from the object that is open, never from the
@@ -604,7 +604,7 @@ checks`, one primary by state, `⋯` for the rare pull request lifecycle) over
   the tabs `Comments · Files · Commits · Checks`
   (`s/{session}/branch/{tab}[:{mount}][/t/{thread}]`). A tab switch and a
   thread selection replace the entry, so Back never walks them. The trail is
-  `Overview > Branch ▾ > {thread, file or Rewrite history}`, the same from
+  `Session > Branch ▾ > {thread or file}`, the same from
   every door; Up is the crumb to the left of the open one. `Branch ▾` lists the
   session branches and makes the picked one the active mount. `layers.ts` is
   gone. The requests `pr`, `review` and `files` (a mount present) are
@@ -620,9 +620,9 @@ checks`, one primary by state, `⋯` for the rare pull request lifecycle) over
 - **Segment menus.** Every segment that has siblings carries one `CrumbMenu`
   (the `Trail` primitive in `@goodboy/ui`), and the rule is one: its menu lists
   the siblings of what that segment names, plus at most two actions that belong
-  to that thing. The page segment (depth one, or `Overview` when it is alone)
+  to that thing. The page segment (depth one, or `Session` when it is alone)
   lists the session's pages with a count that names what it counts
-  (`3 need you`, `2 running`), grouped as pages, Tools and Linked; `Overview`
+  (`3 need you`, `2 running`), grouped as pages, Tools and Linked; `Session`
   has no menu once it has children. A run lists the session's runs (Running,
   Finished, a chained run indented under its own with `after ...`); a step
   lists every step of its run in order, the ones not started switched off; an
@@ -648,10 +648,8 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   (a squash merge), in the menu and in the Diff header alike
   (`isMountRequestMerged`). It never
   turns into an icon. A Diff opened without a branch lands on the active mount.
-- **The resolver's page reads Review, the comment, Resolver.** The comment segment
-  (`retryPolicy.ts:42`) lists the open conversations by file, resolved ones
-  apart, with `Open on GitHub` and `Copy link`; `Resolver` lists the attempts on
-  that comment.
+- **A resolver run reads Session, Branch, Fix run.** The `Branch ▾` segment
+  leads back to the Comments tab; `Fix run` is the open page and has no menu.
 - **Settings claims its studio band** with Settings, the scope and the App
   section. The scope segment lists App, the workspace, Providers & models and
   Tools; the section segment lists the App sections. Neither carries an
@@ -675,7 +673,7 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   Escape cancels the confirm first, then closes. Shortcuts live in the segment
   tooltip and the palette, never in the rows.
 - **The workflow case extends the same control**:
-  `Overview > Workflows > {Run} > {Step}`. A delegated child names its root and
+  `Session > Workflows > {Run} > {Step}`. A delegated child names its root and
   parent agents between the run and itself, and an open question it answers
   adds one last crumb. There is no separate step strip and no "Part of
   {Workflow}" line.
@@ -1368,7 +1366,7 @@ workspaceId, nowMs })`, owns every row's subtitle and tone (it replaced three
 Fix N separately` opens the same strip. Cmd+A is not in the shortcut table:
   the system reserves it. "Resolve" names the area, never a button. The page
   exists with or without a pull request: without one the primary is `Create PR`
-  (the creation form replaces the tab body, trail `Overview › Branch ▾ › New
+  (the creation form replaces the tab body, trail `Session › Branch ▾ › New
 pull request`) and Comments lists the session's notes. Every door to a pull
   request lands here: the worktree row chip, the board card badge, the context
   strip and the Checks chip. Everything Comments shows comes from one durable
@@ -1382,30 +1380,30 @@ pull request`) and Comments lists the session's notes. Every door to a pull
   home is that comment, never the Agents lens. The comment shows its agent in
   one line from the first paint (model, age, the state word, and while it
   drafts the last thing it said). `…` → Agent transcript opens the resolver as
-  a child page of its thread on the Branch (`s/{session}/review/t/{thread}/agent`), and so do a
-  notification, the agent-started toast and the palette (`canonicalLocation`
-  maps the resolver to the first thread of its attempt). A resolver opens on its
-  Brief, with Transcript one tab away; a click on a resolver row in Activity
-  says **Open brief**. The agent pane tab is part of the address: the thread
-  target carries `pane: 'brief' | 'transcript'`, `agentPlace({ sessionId,
-agentId, pane })` asks for either, and the address prints it as a last
-  segment (`.../agent/brief`). Without a `pane` the pane picks its own tab
-  (`agentOpenTab`: an open question or a resolver opens on Brief, any other
-  agent on Transcript). The key `agentPane` is written only by the navigation
-  slice, follows the page like the other targets, and comes back with Back and
-  a window restore. Tab clicks inside the pane stay local and do not rewrite
-  the address. The Brief of a resolver carries the comment, the fix and the
-  reply with the same verbs as Review (both use `useReviewCommentController`),
-  and **Push now** pushes only that fix. The Brief is never blank: it reads
-  every queue row of the session, not only the rows of the selected review
-  source (`useReviewEntries({ isSourceScoped: false })`), so a thread of another
-  pull request still shows its comment (from the source snapshot when the
-  pull request is not loaded), its state in plain words and the resolver
-  commit. A thread that is on another source offers **Open in Review** instead
-  of **Push now**; a thread that is gone says so in one line and offers the
-  same button; while the session loads it says it is loading. A resolver that belongs to a batch has
-  no verbs there, only **Open in Review (N)**, which calls `openReview` with
-  the destination `{ kind: 'threads', threadIds }`. That destination needs no
+  a Fix run, a child page of its Branch (the address keeps the thread of its
+  attempt, `s/{session}/review/t/{thread}/agent`), and so do a notification, the
+  agent-started toast and the palette (`canonicalLocation` maps the resolver to
+  the first thread of its attempt). The trail reads `Session › Branch ▾ › Fix
+run` and Up goes to the Comments tab. The page is read only (`FixRun`) and has
+  three parts in one 960 column: what the run did (its outcome, from the last
+  reply when it left no summary), its commits (`ResolverCommitLine`, with a note
+  when a later rewrite folded the commit into another or dropped it from the
+  branch), and the comments it touched, each a link to that comment on the
+  Comments tab. A run that belongs to a batch also says how many comments were
+  fixed together and opens them filtered in Comments. `Open transcript` and the
+  Transcript tab show the conversation. Accepting, replying, editing and Push
+  live in Comments, never here. In Activity a resolver row says **Open fix
+  run**, and a burst row of several resolvers has an **Open comments** button
+  that calls `openReview` with the destination `{ kind: 'threads', threadIds }`.
+  The agent pane tab is part of the address: the thread
+  target carries `pane: 'brief' | 'transcript'` (`brief` is the Fix run tab),
+  `agentPlace({ sessionId, agentId, pane })` asks for either, and the address
+  prints it as a last segment (`.../agent/brief`). Without a `pane` the pane
+  picks its own tab (`agentOpenTab`: an open question or a resolver opens on
+  Brief, any other agent on Transcript). The key `agentPane` is written only by
+  the navigation slice, follows the page like the other targets, and comes back
+  with Back and a window restore. Tab clicks inside the pane stay local and do
+  not rewrite the address. The `threads` destination needs no
   mount and no pull request: Review focuses the first thread of the set it
   has, and the set stays in `reviewSelections[sessionId]`. The destination
   `{ kind: 'notes', threadIds }` does the same for diff notes and first sets
@@ -1619,7 +1617,7 @@ opens in the browser). It shows unified and wrapped, and a worktree peek offers
 `diff-notes` is the notes summary of the Diff lens: the notes grouped by state
 (Not started, Working, Needs you, Ready to accept, Failed, and Done folded),
 each with file and line, a one-line excerpt, the model, effort and commit style
-of its fixer, and Fix or Open brief. `Open in Review` sits in its header. The
+of its fixer, and Fix or Open fix run. `Open in Review` sits in its header. The
 count in the diff toolbar opens it, and Start in the fix strip opens it too. It
 reads the notes, their queue items and their attempts only (`useNoteFixes`),
 never the rows of the pull request.
@@ -1655,15 +1653,19 @@ list and the thread take turns: the thread in the address shows `‹ Comments`
 (Up). Fix, Resolve without a reply and Stop live on the thread and its
 properties; Fix launches from the list or the thread, never from Files.
 
-**Files.** The branch against its base with the file jump, `Viewed`, notes on
+**Files.** The branch against its base with a file tree on the left (changed
+files by folder, `+N −N`, a check on viewed ones, `N of M viewed` above it;
+`@4xl` and up, under it the file jump stays), `Viewed`, notes on
 lines and files, `Post open notes to the PR` and `Write review` (which swaps
 the tab body for the review form with line drafts). It carries no Fix, Push,
 Rewrite or `PR #N` control.
 
-**Commits.** The branch commits with the resolve commits arrangement; until
-the rewrite moves in, `Rewrite history` and `Restore a backup…` are quiet
-buttons at its top and Rewrite history is a child page (`/history`) of the tab.
-**Checks.** The checks of the pull request.
+**Commits.** The home of history: the branch commits and the rewriter are one
+surface (`CommitsHistory`), with `Refresh` and `Backups` at its top. Backups
+(`Restore previous history`, `Restore branch`) and the result of a run (`Undo
+rewrite`) live here. There is no Rewrite history page: the old `files/…/history`
+address, the palette verb, a mount row's `Rewrite history` and the recovery
+verbs of an Activity row all land on `branch/commits`. **Checks.** The checks of the pull request.
 
 The Branch page shows one branch. The trail carries the choice (see Segment
 menus); there are no worktree tabs. Every rewrite takes the shown
@@ -1675,10 +1677,7 @@ the hidden History rewriter merges the edits in a throwaway copy. The branch
 moves only after the engine checks the result, with a backup ref and a push
 with lease.
 
-`Rewrite history` is a child page of the branch: the trail reads
-`Overview › Branch ▾ › Rewrite history`, the branch segment leads back
-to the Commits tab, and picking another branch from its popover keeps you on Rewrite
-history. The page draws the branch as a graph (`history_graph`): a grey main
+The Commits tab draws the branch as a graph (`history_graph`): a grey main
 trunk with its head node (`main is here now`, how many commits it gained,
 `Start from today's main`), your branch leaving it at the real fork point, one
 row per commit newest first, and `Your branch starts here` at the fork. Fact

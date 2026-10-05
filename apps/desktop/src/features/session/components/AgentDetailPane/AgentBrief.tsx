@@ -1,11 +1,6 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import {
-  fallbackStepOutputSummary,
-  isAgentStatusHalted,
-  isAgentStatusSettled,
-  stripControlMarkers,
-} from '@goodboy/core';
+import { isAgentStatusHalted, isAgentStatusSettled } from '@goodboy/core';
 import { Markdown, Band } from '@goodboy/ui';
 import type { Agent, Session, TurnState } from '@goodboy/types';
 import {
@@ -16,10 +11,9 @@ import {
 } from '../../../../store';
 import { useTranscript } from '../../../../store/slices/transcripts/selectors';
 import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren';
-import { reduceTranscript } from '../../../chat/utils/transcript-items';
 import { isQuestionDelegate } from '../../../context/questionDelegate';
-import { useResolverBrief } from '../../../resolve/hooks/useResolverBrief';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';
+import { useAgentOutcome } from '../../hooks/useAgentOutcome';
 import { classifyAgent } from '../../agent-kind';
 import { AgentUsageFooter } from './AgentUsageFooter';
 import { AgentAnsweringFor } from './AgentAnsweringFor';
@@ -28,7 +22,6 @@ import { AgentBriefChildren } from './AgentBriefChildren';
 import { AgentBriefPlans } from './AgentBriefPlans';
 import { AgentBriefQuestions } from './AgentBriefQuestions';
 import { AgentBriefHandoffLine } from './AgentBriefHandoffLine';
-import { AgentBriefResolver } from './AgentBriefResolver';
 import { AgentFollowUps } from './AgentFollowUps';
 import { agentFollowUpMoves } from '../../followUpMoves';
 import { selectFollowUpChildren } from './followUpChildren';
@@ -71,8 +64,6 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
     [agent.id, runs, turnStates],
   );
   const kind = classifyAgent({ agent, override: kindOverride });
-  const resolverBrief = useResolverBrief({ sessionId: session.id, agentId: agent.id });
-  const isResolverBrief = kind === 'resolver' && resolverBrief !== null;
   const followUps = useMemo(
     () =>
       selectFollowUpChildren({
@@ -108,24 +99,10 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
     }
     return runs.find((run) => run.id === parentId) ?? null;
   }, [agent.parentAgentId, runs]);
-  const lastAssistantText = useMemo(() => {
-    const items = reduceTranscript(transcript);
-    for (let index = items.length - 1; index >= 0; index -= 1) {
-      const item = items[index];
-      if (item?.kind === 'assistant_text') {
-        return item.text.trim();
-      }
-    }
-    return '';
-  }, [transcript]);
-  const trimmedOutputSummary = agent.outputSummary?.trim() ?? '';
-  const hasOutputSummary = trimmedOutputSummary !== '';
-  const summary = hasOutputSummary
-    ? trimmedOutputSummary
-    : lastAssistantText === ''
-      ? ''
-      : fallbackStepOutputSummary({ output: lastAssistantText });
-  const shownSummary = stripControlMarkers(summary);
+  const outcome = useAgentOutcome({ agent });
+  const summary = outcome.raw;
+  const shownSummary = outcome.text;
+  const hasOutputSummary = !outcome.isFromReply;
   const isTerminal =
     isAgentStatusSettled({ status: agent.status }) || isAgentStatusHalted({ status: agent.status });
   const now = agentNowState({ agent, turnState, transcript });
@@ -142,14 +119,11 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
           {time?.isMuchLonger === true ? <AgentMuchLonger /> : null}
         </Band>
       ) : null}
-      {isResolverBrief ? (
-        <AgentBriefResolver session={session} agent={agent} brief={resolverBrief} />
-      ) : null}
       <AgentAnsweringFor sessionId={session.id} question={answeredQuestion} asker={asker} />
       <AgentBriefQuestions session={session} agent={agent} />
-      {shownSummary !== '' && !isSplitIntoSubagents && !isResolverBrief ? (
+      {shownSummary !== '' && !isSplitIntoSubagents ? (
         <Band inset="content" label={hasOutputSummary ? 'Outcome' : 'Latest'} headingLevel={2}>
-          <div className="text-body text-foreground">
+          <div className="max-w-[72ch] text-body text-foreground">
             <Markdown text={shownSummary} />
           </div>
           {!hasOutputSummary ? (

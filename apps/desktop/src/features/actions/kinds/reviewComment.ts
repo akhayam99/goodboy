@@ -17,7 +17,11 @@ import type { AgentId, ResolveVerdict, SessionId } from '@goodboy/types';
 import { REVIEW_SOURCE_CAPABILITIES, REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openUrl } from '../../../shared/lib/editor';
-import { resolverPagePlace, sessionPlace } from '../../../store/slices/navigation/place';
+import {
+  branchPlace,
+  resolverPagePlace,
+  sessionPlace,
+} from '../../../store/slices/navigation/place';
 import { activeReviewSourceOf } from '../../../store/slices/review-source/activeReviewSource';
 import { verdictReply } from '../../resolve/commentVerdict';
 import { replyOf, reviewRowsOf, rowStateOf } from '../../resolve/reviewRows';
@@ -202,14 +206,10 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       slot: () => 'menu',
       run: ({ facts, env }) =>
         env.getState().navigate({
-          to: sessionPlace({
+          to: branchPlace({
             sessionId: facts.sessionId,
-            lens: 'files',
-            target: {
-              kind: 'diff',
-              mountPath: null,
-              focus: { kind: 'branch', path: facts.path ?? '' },
-            },
+            tab: 'files',
+            focus: { kind: 'branch', path: facts.path ?? '' },
           }),
         }),
     },

@@ -16,7 +16,7 @@ import type { RemoteHostKind } from '../../../shared/lib/remoteHost';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
 import { NAMES } from '../../../shared/names';
-import { sessionPlace } from '../../../store/slices/navigation/place';
+import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
 import { mountCleanupBlockers } from '../../../store/slices/mount-cleanup/cleanupPolicy';
 import {
   mountRequestOf,
@@ -73,7 +73,8 @@ const openLens = ({
   readonly env: Parameters<ActionDefinition<MountFacts>['run']>[0]['env'];
   readonly lens: 'review' | 'scripts';
 }): void => {
-  env.getState().navigate({ to: sessionPlace({ sessionId: facts.sessionId, lens }) });
+  const state = env.getState();
+  state.navigate({ to: lensPlace({ state, sessionId: facts.sessionId, lens }) });
 };
 
 const closeConfirm = ({ facts }: FactsOnly): ActionConfirm => {

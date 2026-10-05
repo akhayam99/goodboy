@@ -224,7 +224,7 @@ const stagePush = (): void => {
   });
 };
 
-export const AgentBriefResolverScene = () => {
+export const FixRunScene = () => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
