@@ -630,6 +630,34 @@ describe('railInsetOf', () => {
       railColumnX({ column: Math.max(...lanes.map((segment) => segment.column)) }) + 1,
     );
   });
+
+  it('clears the lane of another group that runs beside a count row', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({ id: 'grandchild', groupId: 'stub-2' }),
+        row({ id: 'count', groupId: 'lane' }),
+        row({ id: 'child', groupId: 'stub-2' }),
+        row({ id: 'step', groupId: 'lane' }),
+        row({ id: 'origin' }),
+      ],
+      groups: [
+        group({ id: 'lane', originRowId: 'origin' }),
+        group({ id: 'stub-2', originRowId: 'step', parentGroupId: 'lane' }),
+      ],
+    });
+    const rail = railRow(layout, 'count');
+    const crossing = lanesOf(layout, 'count').filter(
+      (segment) => segment.column > rail.markerColumn,
+    );
+
+    expect(crossing.map((segment) => segment.column)).toEqual([rail.markerColumn + 1]);
+    expect(labelXOf(layout, 'count', RAIL_COUNT_RADIUS)).toBe(
+      railColumnX({ column: rail.markerColumn + 1 }) + 1 + RAIL_LABEL_GAP,
+    );
+    expect(labelXOf(layout, 'count')).toBe(
+      railColumnX({ column: rail.markerColumn }) + RAIL_MARKER_RADIUS + RAIL_LABEL_GAP,
+    );
+  });
 });
 
 describe('junction integrity', () => {

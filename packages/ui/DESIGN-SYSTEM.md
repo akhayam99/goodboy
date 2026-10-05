@@ -420,8 +420,10 @@ radius (10px, 5px for the count node) plus 10px. The rail space of a row ends
 where its label starts, so depth 0, 1 and 2 indent by exactly one 16px column
 each and no row has a wide empty gap between ball and text. The right-hand
 columns (state, model cell, duration over cost) hang on the row's right edge and
-stay aligned across rows; the time gutter is unchanged. A lane two columns or
-more beyond the marker that runs through a row pushes that row's label past it.
+stay aligned across rows; the time gutter is unchanged. A lane of another group
+beside the marker that runs through a row and would touch the label (the next
+column over for the 5px count node, two columns or more for a full node) pushes
+that row's label to 10px past the lane, for every row kind.
 `railInsetOf` in `railGeometry.ts` computes the space; the run page keeps its
 one global rail width. The step ordinal is left-aligned in a 16px slot.
 
