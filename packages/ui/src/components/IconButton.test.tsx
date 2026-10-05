@@ -34,4 +34,15 @@ describe('IconButton', () => {
     expect(button.getAttribute('aria-busy')).toBe('true');
     expect(button.hasAttribute('disabled')).toBe(true);
   });
+
+  it('keeps the icon at its size and out of flex shrink inside a fixed small button', () => {
+    const { getByRole } = render(
+      <IconButton icon={Trash2} label="Delete session" iconSize={14} className="size-6 shrink-0" />,
+    );
+
+    const svg = getByRole('button', { name: 'Delete session' }).querySelector('svg');
+    expect(svg?.getAttribute('width')).toBe('14');
+    expect(svg?.getAttribute('height')).toBe('14');
+    expect(svg?.getAttribute('class')).toMatch(/\bshrink-0\b/);
+  });
 });

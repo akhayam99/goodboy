@@ -60,7 +60,7 @@ export const IconButton = ({
         <Icon
           size={iconSize}
           aria-hidden
-          className={cn(busy && 'motion-safe:animate-soft-pulse')}
+          className={cn('shrink-0', busy && 'motion-safe:animate-soft-pulse')}
         />
       </button>
     </Tooltip>
