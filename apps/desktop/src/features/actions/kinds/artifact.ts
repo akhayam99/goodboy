@@ -23,6 +23,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import { planAsArtifact } from '../../plans/planAsArtifact';
+import { planRunToast } from '../../plans/planRunToast';
 import {
   NOT_REVISING,
   PLAN_REVISING_REASON,
@@ -187,12 +188,16 @@ const runPlan = async ({ facts, env }: FactsOnly & { readonly env: ActionEnv }):
   if (planId === null) {
     return;
   }
-  await env.getState().runPlan(facts.sessionId, planId);
-  env.showToast({
-    kind: 'info',
-    title: 'Implementer started',
-    message: 'An agent is running this plan. You can keep working.',
+  const state = env.getState();
+  const result = await state.runPlan(facts.sessionId, planId);
+  const toast = planRunToast({
+    result,
+    sessionId: facts.sessionId,
+    navigate: state.navigate,
   });
+  if (toast !== null) {
+    env.showToast(toast);
+  }
 };
 
 const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [

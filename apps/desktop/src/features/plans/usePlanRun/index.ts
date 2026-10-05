@@ -2,7 +2,9 @@ import { useCallback, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import { useAgentStartedToast } from '../../../shared/hooks/useAgentStartedToast';
+import { useShowToast } from '../../../shared/components/Toast/useShowToast';
+import type { RunPlanResult } from '../../../store/slices/plans/types';
+import { planRunToast } from '../planRunToast';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -15,9 +17,28 @@ export type PlanRun = {
   readonly error: string | null;
 };
 
+type AnnounceParams = {
+  readonly result: RunPlanResult;
+  readonly sessionId: SessionId;
+};
+
+export const usePlanRunToast = (): ((params: AnnounceParams) => void) => {
+  const navigate = useAppStore((s) => s.navigate);
+  const showToast = useShowToast();
+  return useCallback(
+    ({ result, sessionId }) => {
+      const toast = planRunToast({ result, sessionId, navigate });
+      if (toast !== null) {
+        showToast(toast);
+      }
+    },
+    [navigate, showToast],
+  );
+};
+
 export const usePlanRun = ({ sessionId, planId }: Params): PlanRun => {
   const runPlan = useAppStore((s) => s.runPlan);
-  const announceAgentStarted = useAgentStartedToast();
+  const announce = usePlanRunToast();
   const [isSpawning, setIsSpawning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,19 +49,13 @@ export const usePlanRun = ({ sessionId, planId }: Params): PlanRun => {
     setIsSpawning(true);
     setError(null);
     try {
-      const agentId = await runPlan(sessionId, planId);
-      announceAgentStarted({
-        sessionId,
-        agentId,
-        title: 'Implementer started',
-        message: 'An agent is running this plan. You can keep working.',
-      });
+      announce({ result: await runPlan(sessionId, planId), sessionId });
     } catch (cause) {
       setError(formatError(cause));
     } finally {
       setIsSpawning(false);
     }
-  }, [announceAgentStarted, isSpawning, planId, runPlan, sessionId]);
+  }, [announce, isSpawning, planId, runPlan, sessionId]);
 
   return { run, isSpawning, error };
 };
