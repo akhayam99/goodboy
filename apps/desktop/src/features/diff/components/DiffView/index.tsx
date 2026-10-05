@@ -11,7 +11,6 @@ import {
 import { PageColumn, ScrollFade, Skeleton, type DiffLayoutMode } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { useDiffLayoutMode } from '../../../../shared/hooks/useDiffLayoutMode';
-import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { useDiffWrap } from '../../hooks/useDiffWrap';
 import { DiffFile } from './DiffFile';
 import { DisplayMenu } from './DisplayMenu';
@@ -334,25 +333,6 @@ export const DiffView = ({
     const frame = requestAnimationFrame(() => scrollToFile(target));
     return () => cancelAnimationFrame(frame);
   }, [files, focusPath, onFocusHandled, scrollToFile]);
-
-  const step = useCallback(
-    (delta: number) => {
-      if (files.length === 0) {
-        return;
-      }
-      const index = files.findIndex((file) => file.path === activePath);
-      const next = Math.min(files.length - 1, Math.max(0, (index < 0 ? 0 : index) + delta));
-      const target = files[next];
-      if (target) {
-        scrollToFile(target.path);
-      }
-    },
-    [activePath, files, scrollToFile],
-  );
-
-  const hasPaneKeys = presentation === 'pane';
-  useShortcut('diff.previousFile', () => step(-1), hasPaneKeys);
-  useShortcut('diff.nextFile', () => step(1), hasPaneKeys);
 
   const body = (
     <div className="flex flex-col gap-3 pb-6">

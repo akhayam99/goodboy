@@ -6,6 +6,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import type { FileDiff } from '@goodboy/types';
 import { buildChangeTree } from '../../lib/changeTree';
 import { ChangeTree } from '.';
+import { KEY_HELP } from './keyHelp';
 
 const fileAt = (path: string, extra: Partial<FileDiff> = {}): FileDiff => ({
   path,
@@ -57,7 +58,55 @@ const renderTree = (overrides: Partial<Parameters<typeof ChangeTree>[0]> = {}) =
 
 afterEach(cleanup);
 
+describe('ChangeTree on a big change', () => {
+  const BIG = Array.from({ length: 600 }, (_, index) =>
+    fileAt(`src/f${String(index).padStart(3, '0')}.ts`),
+  );
+  const renderBig = () =>
+    renderTree({ tree: buildChangeTree({ files: BIG }), allFiles: BIG, collapsed: new Set() });
+
+  it('draws a screenful of rows, not all 600', () => {
+    renderBig();
+
+    const drawn = screen.getAllByRole('button', { name: /f\d{3}\.ts/ });
+    expect(drawn.length).toBeGreaterThan(10);
+    expect(drawn.length).toBeLessThan(80);
+    expect(screen.getByText('0 of 600 viewed')).toBeDefined();
+  });
+
+  it('swaps the drawn rows as the list scrolls and keeps the scroll height', () => {
+    renderBig();
+    const list = screen.getByRole('list');
+    const viewport = list.parentElement as HTMLElement;
+    const heightBefore =
+      list.style.paddingTop === '' ? 0 : Number.parseInt(list.style.paddingTop, 10);
+
+    Object.defineProperty(viewport, 'scrollTop', { value: 5000, configurable: true });
+    fireEvent.scroll(viewport);
+
+    expect(screen.queryByRole('button', { name: /f000\.ts/ })).toBeNull();
+    expect(screen.getByRole('button', { name: /f180\.ts/ })).toBeDefined();
+    expect(Number.parseInt(list.style.paddingTop, 10)).toBeGreaterThan(heightBefore);
+  });
+
+  it('draws every row of a small change without windowing', () => {
+    renderTree();
+
+    expect(screen.getAllByRole('button').length).toBeGreaterThanOrEqual(6);
+    expect(screen.getByRole('list').style.paddingTop).toBe('');
+  });
+});
+
 describe('ChangeTree', () => {
+  it('ends with a single line that teaches the keys', () => {
+    renderTree();
+
+    expect(screen.getByText(KEY_HELP)).toBeDefined();
+    expect(KEY_HELP).toContain('J K move');
+    expect(KEY_HELP).toContain('/ T filter');
+    expect(KEY_HELP.match(/ T /g)).toHaveLength(1);
+  });
+
   it('shows folders with their file counts and sums, files with their status letter', () => {
     renderTree();
 

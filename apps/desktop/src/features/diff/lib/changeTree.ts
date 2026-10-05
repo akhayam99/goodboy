@@ -29,7 +29,7 @@ export type TreeRow = TreeFolderRow | TreeFileRow;
 
 export type TreeGroup = 'folders' | 'kind';
 
-export const GENERATED_GROUP_ID = 'group:generated';
+const GENERATED_GROUP_ID = 'group:generated';
 
 const KIND_GROUPS: ReadonlyArray<{ readonly kind: FileKind; readonly label: string }> = [
   { kind: 'source', label: 'Source' },
@@ -298,4 +298,25 @@ export const ancestorIds = ({
     next = parents.get(next) ?? null;
   }
   return out;
+};
+
+const BIG_CHANGE_FILES = 300;
+const BIG_FOLDER_FILES = 50;
+
+export const defaultCollapsed = ({ tree }: { readonly tree: ChangeTree }): ReadonlySet<string> => {
+  const closed = new Set<string>();
+  if (tree.rows.some((row) => row.id === GENERATED_GROUP_ID)) {
+    closed.add(GENERATED_GROUP_ID);
+  }
+  if (tree.files.length <= BIG_CHANGE_FILES) {
+    return closed;
+  }
+  const big = tree.rows.filter((row) => row.kind === 'folder' && row.fileCount > BIG_FOLDER_FILES);
+  const parentsOfBig = new Set(big.map((row) => row.parentId));
+  for (const row of big) {
+    if (!parentsOfBig.has(row.id)) {
+      closed.add(row.id);
+    }
+  }
+  return closed;
 };

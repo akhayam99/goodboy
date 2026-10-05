@@ -190,7 +190,8 @@ There are two layouts, one rule each. **Reading** pages (the Session, an Agent,
 a Fix run) are one 960 column from `PaneShell`; every child starts at the same
 left edge, and only prose (an outcome, a summary) takes `max-w-[72ch]`. **Work**
 pages (the tabs of the Branch) take the whole width of the pane: Files puts its
-file tree on the left from `@4xl` up and the diff beside it, Comments puts the
+file tree on the left from 900px of pane up and the diff beside it (under 900px
+the tree is a 44px strip that opens over the diff), Comments puts the
 list and the thread side by side, and under `@4xl` they take turns.
 
 ## Layout: fixed-height shell, scroll on content

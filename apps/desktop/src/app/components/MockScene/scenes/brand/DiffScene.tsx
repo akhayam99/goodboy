@@ -14,9 +14,11 @@ import {
   RENAMED_PATH,
 } from './contextDiffPatch';
 import { DiffStage, handlersFor } from './DiffStage';
+import { LARGE_PATCH } from './largeDiffPatch';
 import { MANY_FILES_PATCH } from './manyFilesDiffPatch';
 
 const MANY_FILES_HANDLERS = handlersFor(MANY_FILES_PATCH);
+const LARGE_HANDLERS = handlersFor(LARGE_PATCH);
 
 const NOTES: ReadonlyArray<DiffComment> = [
   {
@@ -50,9 +52,10 @@ const markViewed = (): void => {
 
 type Props = {
   readonly manyFiles?: boolean;
+  readonly largeChange?: boolean;
 };
 
-export const BrandDiffScene = ({ manyFiles = false }: Props) => {
+export const BrandDiffScene = ({ manyFiles = false, largeChange = false }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const [isStaged, setIsStaged] = useState(false);
 
@@ -80,7 +83,9 @@ export const BrandDiffScene = ({ manyFiles = false }: Props) => {
     return null;
   }
 
-  const stage = manyFiles ? (
+  const stage = largeChange ? (
+    <DiffStage handlers={LARGE_HANDLERS} centerNote={false} />
+  ) : manyFiles ? (
     <DiffStage handlers={MANY_FILES_HANDLERS} centerNote={false} />
   ) : (
     <DiffStage />

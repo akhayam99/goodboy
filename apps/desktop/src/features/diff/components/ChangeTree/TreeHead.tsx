@@ -1,5 +1,5 @@
 import { useState, type RefObject } from 'react';
-import { KbdPill, useEscapeLayer } from '@goodboy/ui';
+import { useEscapeLayer } from '@goodboy/ui';
 import type { TreeGroup } from '../../lib/changeTree';
 import { FilterChip } from './FilterChip';
 import { GroupMenu } from './GroupMenu';
@@ -75,9 +75,9 @@ export const TreeHead = ({
           onBlur={() => setIsTyping(false)}
           placeholder="Filter files..."
           aria-label="Filter files"
+          data-diff-filter=""
           className="min-w-0 flex-1 bg-transparent text-label outline-none placeholder:text-faint-foreground"
         />
-        <KbdPill>T</KbdPill>
       </div>
       <div className="flex items-center gap-1">
         <FilterChip label="Unviewed" isOn={unviewedOnly} onChange={onUnviewedOnly} />
