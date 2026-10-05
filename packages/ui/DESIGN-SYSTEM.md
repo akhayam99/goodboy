@@ -972,6 +972,18 @@ width: the column changes only when the window changes or the right drawer
 opens. `PANE_RHYTHM.hero` (640px) is only for the content of an empty state.
 [docs/styling.md](../../docs/styling.md) owns the column rules.
 
+**Work panes use the full width.** A pane whose body is a working surface (a
+list beside a thread, a file tree beside a diff) passes `width="full"` to
+`PaneShell`, and to the `PageColumn` of its tabs. It keeps the 24px gutter
+(16px under 720px) and drops the 960px cap and the centring, so the header and
+the body share one left edge on any pane. The Branch page is the one user.
+Its Comments tab reads the width of its own pane, not the window's
+(`branchLayoutOf`): under 900px one column, the list, then the thread with a
+`‹ Comments` back that keeps the selected row; from 900px a 300px list and the
+thread, with the properties inside the thread; from 1040px a 232px properties
+rail on the right. A drawer or a wide sidebar narrows the pane, so the layout
+follows them.
+
 **Trail separator.** Each segment except the last ends with one 24px chevron
 slot in `faint-foreground`: a button that opens the segment's menu, or a static
 separator when there is none. Segments sit 4px apart, the name and the chevron

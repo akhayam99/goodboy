@@ -12,6 +12,8 @@ import { Button, EmptyState, ErrorStrip, PageColumn, ScrollFade, Skeleton, cn } 
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
+import { branchLayoutOf } from '../../../branch/branchLayout';
 import { branchPlace } from '../../../../store/slices/navigation/place';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { eventMatches } from '../../../../shared/keyboard/dispatcher';
@@ -122,6 +124,9 @@ export const ReviewFlow = ({ session, push }: Props) => {
   const { compose, editingReplyId, runVerb } = controller;
   const [launch, setLaunch] = useState<ReviewLaunch | null>(null);
   const [started, setStarted] = useState<StartedNote | null>(null);
+  const [lastThreadId, setLastThreadId] = useState<string | null>(null);
+  const stage = useElementWidth();
+  const layout = branchLayoutOf({ widthPx: stage.width });
   const listRef = useRef<HTMLDivElement | null>(null);
   const provider = source === null ? null : REVIEW_SOURCE_LABEL[source.kind];
 
@@ -149,6 +154,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
     addressThreadId !== null && entries.some((entry) => entry.threadId === addressThreadId);
   const focused =
     entries.find((entry) => entry.threadId === addressThreadId) ??
+    entries.find((entry) => entry.threadId === lastThreadId) ??
     entries.find((entry) => entry.group === 'open') ??
     entries[0] ??
     null;
@@ -159,6 +165,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
       if (reviewTarget !== null) {
         consumeReviewTarget({ sessionId, requestId: reviewTarget.requestId });
       }
+      setLastThreadId(threadId);
       navigate({ to: branchPlace({ sessionId, threadId }), mode: 'replace' });
       controller.resetFor(threadId);
     },
@@ -385,90 +392,99 @@ export const ReviewFlow = ({ session, push }: Props) => {
     if (focused === null) {
       return <ReviewEmptyState provider={provider} />;
     }
+    const isSingle = layout === 'single';
     return (
       <div className="flex min-h-0 min-w-0 flex-1 gap-6">
-        <div
-          className={cn(
-            'relative min-h-0 w-full shrink-0 flex-col @4xl:flex @4xl:w-[280px]',
-            hasAddressThread ? 'hidden' : 'flex',
-          )}
-        >
+        {(!isSingle || !hasAddressThread) && (
+          <div
+            className={cn(
+              'relative flex min-h-0 shrink-0 flex-col',
+              isSingle ? 'w-full' : 'w-[300px]',
+            )}
+          >
+            <ScrollFade
+              className="min-h-0 flex-1"
+              viewportClassName={cn('pr-2', selectedIds.length > 0 ? 'pb-24' : 'pb-5')}
+              fadeSize="h-6"
+            >
+              <div ref={listRef}>
+                <ReviewList
+                  groups={groups}
+                  focusedThreadId={focusedThreadId}
+                  onSelect={select}
+                  onFix={(threadId) => openLaunch([threadId])}
+                  checked={checked}
+                  onToggle={(threadId) => toggleReviewSelection({ sessionId, threadId })}
+                />
+              </div>
+            </ScrollFade>
+            <ReviewSelectionBar
+              count={selectedIds.length}
+              total={shownFixableIds.length}
+              fixCount={fixSelectedIds.length}
+              onClear={() => clearReviewSelection({ sessionId })}
+              onSelectAll={selectAllFixable}
+              onFix={() => openLaunch(fixSelectedIds)}
+            />
+          </div>
+        )}
+        {(!isSingle || hasAddressThread) && (
           <ScrollFade
-            className="min-h-0 flex-1"
-            viewportClassName={cn('pr-2', selectedIds.length > 0 ? 'pb-24' : 'pb-5')}
+            className="min-h-0 min-w-0 flex-1"
+            viewportClassName="pb-8 pr-4"
             fadeSize="h-6"
           >
-            <div ref={listRef}>
-              <ReviewList
-                groups={groups}
-                focusedThreadId={focusedThreadId}
-                onSelect={select}
-                onFix={(threadId) => openLaunch([threadId])}
-                checked={checked}
-                onToggle={(threadId) => toggleReviewSelection({ sessionId, threadId })}
-              />
+            {isSingle && (
+              <button
+                type="button"
+                onClick={() => up()}
+                className="mb-4 inline-flex items-center gap-1 rounded-sm text-meta text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              >
+                <ChevronLeft size={ICON_SIZE.row} aria-hidden />
+                {REVIEW_FLOW_LABEL.list}
+              </button>
+            )}
+            <div className="flex min-w-0 gap-6">
+              <div className="flex min-w-0 flex-1 flex-col gap-4">
+                <ReviewComment
+                  key={focused.threadId}
+                  sessionId={sessionId}
+                  entry={focused}
+                  entries={entries}
+                  hunk={
+                    <ThreadHunk
+                      entry={focused}
+                      onOpenInDiff={() =>
+                        void runVerb({
+                          threadId: focused.threadId,
+                          actionId: 'reviewComment.openInDiff',
+                        })
+                      }
+                    />
+                  }
+                  {...controller.bind(focused.threadId)}
+                  onSelect={select}
+                  onTryAgain={() => void controller.retryRun(focused.threadId)}
+                />
+                {layout !== 'three' && (
+                  <ThreadProperties sessionId={sessionId} entry={focused} layout="inline" />
+                )}
+              </div>
+              {layout === 'three' && (
+                <aside aria-label="Thread details" className="w-[232px] shrink-0">
+                  <ThreadProperties sessionId={sessionId} entry={focused} layout="rail" />
+                </aside>
+              )}
             </div>
           </ScrollFade>
-          <ReviewSelectionBar
-            count={selectedIds.length}
-            total={shownFixableIds.length}
-            fixCount={fixSelectedIds.length}
-            onClear={() => clearReviewSelection({ sessionId })}
-            onSelectAll={selectAllFixable}
-            onFix={() => openLaunch(fixSelectedIds)}
-          />
-        </div>
-        <ScrollFade
-          className={cn('min-h-0 min-w-0 flex-1 @4xl:block', hasAddressThread ? 'block' : 'hidden')}
-          viewportClassName="pb-8 pr-4"
-          fadeSize="h-6"
-        >
-          <button
-            type="button"
-            onClick={() => up()}
-            className="mb-4 inline-flex items-center gap-1 rounded-sm text-meta text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring @4xl:hidden"
-          >
-            <ChevronLeft size={ICON_SIZE.row} aria-hidden />
-            {REVIEW_FLOW_LABEL.list}
-          </button>
-          <div className="flex min-w-0 gap-6">
-            <div className="flex min-w-0 flex-1 flex-col gap-4">
-              <ReviewComment
-                key={focused.threadId}
-                sessionId={sessionId}
-                entry={focused}
-                entries={entries}
-                hunk={
-                  <ThreadHunk
-                    entry={focused}
-                    onOpenInDiff={() =>
-                      void runVerb({
-                        threadId: focused.threadId,
-                        actionId: 'reviewComment.openInDiff',
-                      })
-                    }
-                  />
-                }
-                {...controller.bind(focused.threadId)}
-                onSelect={select}
-                onTryAgain={() => void controller.retryRun(focused.threadId)}
-              />
-              <div className="@6xl:hidden">
-                <ThreadProperties sessionId={sessionId} entry={focused} layout="inline" />
-              </div>
-            </div>
-            <aside aria-label="Thread details" className="hidden w-[200px] shrink-0 @6xl:block">
-              <ThreadProperties sessionId={sessionId} entry={focused} layout="rail" />
-            </aside>
-          </div>
-        </ScrollFade>
+        )}
       </div>
     );
   };
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col" onKeyDown={onKeyDown}>
-      <PageColumn className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
+    <div ref={stage.ref} className="flex min-h-0 min-w-0 flex-1 flex-col" onKeyDown={onKeyDown}>
+      <PageColumn width="full" className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
         {launch !== null && (
           <ReviewLaunchStrip
             key={launch.threadIds.join(',')}

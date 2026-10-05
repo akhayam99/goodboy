@@ -265,6 +265,7 @@ export const BranchPage = ({ session, workingDir }: Props) => {
   return (
     <BranchDiffContext.Provider value={identity.mountPath === null ? null : diff}>
       <PaneShell
+        width="full"
         scroll="self"
         header={
           <div className="flex min-w-0 flex-col gap-3">

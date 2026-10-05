@@ -1596,7 +1596,9 @@ resolver's page finds the same comment focused, but it never opens the shell
 drawer: `selectDrawerPanel` leaves it out, `DrawerHost` has no case for it, and
 Review renders the comment in its own right column beside the list, with the
 trail visible. The column reads its own width (`@container`): below 56rem the
-list folds into an `N of M` counter with previous and next.
+list folds into an `N of M` counter with previous and next. This is the old
+Review layout; the Branch page's Comments tab has its own, described under
+Comments below.
 
 `scriptRun` (payload `{ scriptKey, mountId }`) shows one script run's output.
 `ScriptRunDrawer` reads the run from `scriptRuns`, where the one
@@ -1649,10 +1651,14 @@ branch name, Copy patch).
 `Done`, local notes included with a `Local` label) and the open thread with the
 code around the commented line above it (`hunkAround`, linking to Files). The
 properties (State, Origin with the code host link and Copy link, Attempts with
-the transcript, Fix commit, Author) sit in a rail only when the pane is wide
-(`@6xl`); below it they read as one line under the thread. Under `@4xl` the
-list and the thread take turns: the thread in the address shows `‹ Comments`
-(Up). Fix, Resolve without a reply and Stop live on the thread and its
+the transcript, Fix commit, Author) sit in a rail only when the pane is wide.
+Every Branch tab uses the full pane width (`PaneShell width="full"`), and the
+Comments tab reads the width of its own pane (`branchLayoutOf`, so a wide
+sidebar or an open drawer narrows it): from 1040px a 300px list, the thread and
+a 232px rail; from 900px the list and the thread, with the properties inside
+the thread; under 900px the list, then the thread with `‹ Comments` (Up). The
+selected row stays selected on the way back. `branchLayout.test.ts` pins the
+widths a 1024px window gets with a wide sidebar and an open drawer. Fix, Resolve without a reply and Stop live on the thread and its
 properties; Fix launches from the list or the thread, never from Files.
 
 **Files.** The branch against its base with a file tree on the left (changed
