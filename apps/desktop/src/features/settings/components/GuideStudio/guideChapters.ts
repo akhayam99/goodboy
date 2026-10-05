@@ -219,7 +219,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Activity',
-        desc: 'Activity has two views, Activity and Log. Activity shows one row per launch: a workflow run, an agent, or a resolver launch with its comments. Needs you sits on top with what waits for you, and cost and duration stay on each row. Log holds the facts, such as links, branches and decisions. A run reads in execution order, and each step owns its subagents, shown as 4 subagents on the step row. The Runs tab lists the workflow runs of a session.',
+        desc: 'Activity has two views, Activity and Log. Activity shows one row per launch: a workflow run, an agent, or a resolver launch with its comments. It reads newest first, and a run has a lane in its own colour. Each row starts with its role as an icon and ends with the model that ran, the duration and the cost. Rest the pointer on an icon or a model to see its card, or press I on a row. A finished run or step folds into a count row such as 4 subagents; click it or press Right to open it. Needs you sits on top with what waits for you. Log holds the facts, such as links, branches and decisions. The Runs tab lists the workflow runs of a session, and a run page reads in execution order.',
       },
       {
         term: 'Agent suggests',
@@ -346,11 +346,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Files',
-        desc: 'The changed files as a tree beside the code, with a ring on each folder that fills as you mark files Viewed, a filter, Unviewed and With notes. Display holds Unified, Split and Wrap long lines. Comment on a line or on a whole file with Comment on file, or quote a line into a note or a question for an agent. J and K move between files, V marks one viewed, / filters, and ⌘⇧B hides the tree. Write review is a form with line comments, the verdict and a summary, sent with Approve, Request changes or Submit comments.',
+        desc: 'The changed files as a tree beside the code, which reads as one diff in the order of the tree, with a ring on each folder that fills as you mark files Viewed, a filter, Unviewed and With notes. Display holds Unified, Split and Wrap long lines. Comment on a line or on a whole file with Comment on file, or quote a line into a note or a question for an agent. J and K move between files, V marks one viewed, / filters, and ⌘⇧B hides the tree. Write review is a form with line comments, the verdict and a summary, sent with Approve, Request changes or Submit comments.',
       },
       {
         term: 'Notes',
-        desc: 'Add note on a line saves it with the project and branch you are on. It reads Local in the Comments tab, where Fix starts an agent on it, and Post notes moves the open ones into a review draft. A note an agent works on cannot be closed or deleted. Notes without a branch wait in Unassigned notes on the Session overview.',
+        desc: 'Add note on a line saves it with the project and branch you are on. It reads Local in the Comments tab, where Fix starts an agent on it, and Post notes moves the open ones into a review draft. A note an agent works on cannot be closed or deleted. Notes without a branch wait in Unassigned notes on the Session overview, where each has Move to and Discard, and Discard all clears the list with Undo.',
       },
       {
         term: 'Review sources',
@@ -431,6 +431,14 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       {
         term: 'Plans',
         desc: 'A plan can give each part done-when checks and the files it expects to touch, and Run plan turns each part into a sub-agent.',
+      },
+      {
+        term: 'Plan beside the planner',
+        desc: 'In the planner chat and its Brief a plan is one row. Press it to read the plan in a drawer, Expand it to the whole pane, or Open in Artifacts. While the planner reworks it, the drawer says Revising to v2 and Run plan is off.',
+      },
+      {
+        term: 'Comments on a plan',
+        desc: 'Point at a part or a few words of a plan and leave a comment. Comments stay drafts until Send to planner posts them, and each reads Addressed or Not changed in v2 when the new version lands.',
       },
       {
         term: 'Reports',

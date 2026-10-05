@@ -278,11 +278,12 @@ refuses it instead of saving a blank entry.
 
 The feed has two views under one segmented header, **Activity | Log**, and
 every kind of row has exactly one home. Activity holds what you launched: an
-agent, a workflow run, a burst of resolvers, each as one row with its state
-or action, time and cost. What happens inside a launch folds into its row:
-the steps and subagents of a run, the questions it answered, and the plans,
-reports, wireframes and learnings it produced, listed behind "N outputs" on
-the launch. The Log holds the facts: plans, reports, wireframes and learnings
+agent, a workflow run, a burst of resolvers, each as one row with its role,
+state or action, the model that ran, time and cost. It reads newest first like
+a git graph, with the lanes of a run drawn beside it. What happens inside a
+finished launch folds into a count row on its lane: the steps and subagents of
+a run, the questions it answered, and the plans, reports, wireframes and
+learnings it produced, listed behind "N outputs" above the launch. The Log holds the facts: plans, reports, wireframes and learnings
 made without a launch, Context, branch and worktree events, link events (an
 unlink carries **Re-link**), pull request events and session archive and
 restore. It is flat, newest first, one muted row per fact, with a search box on
