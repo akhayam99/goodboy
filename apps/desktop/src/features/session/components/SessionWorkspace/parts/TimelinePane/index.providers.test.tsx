@@ -230,6 +230,7 @@ afterEach(cleanup);
 describe('TimelinePane, provider icon on agent rows', () => {
   it('shows a faint glyph and names the provider on a planned workflow step agent', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
+    fireEvent.click(screen.getByRole('button', { name: /2 steps/ }));
 
     const row = rowOf({ name: 'Step 1' });
 

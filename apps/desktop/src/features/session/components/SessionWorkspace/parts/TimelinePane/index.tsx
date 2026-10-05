@@ -9,6 +9,7 @@ import {
   entriesOfView,
   type ActivityView,
 } from '../../../../timeline/activityView';
+import { countRowIdOf } from '../../../../timeline/buildTimelineStream';
 import { useExplodeGroups, type ExplodeGroups } from '../../../../hooks/useExplodeGroups';
 import { useScrollAnchor } from '../../../../hooks/useScrollAnchor';
 import { WorkTimeProvider } from '../../../../../workTreeModel/components/WorkTimeProvider';
@@ -46,7 +47,7 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
   const { set: setGroup, showAll: showAllGroup } = groups;
   const setAnchored = useCallback<ExplodeGroups['set']>(
     ({ id, isExpanded }) => {
-      anchor({ rowId: id });
+      anchor({ rowId: countRowIdOf({ expandId: id }) });
       setGroup({ id, isExpanded });
     },
     [anchor, setGroup],

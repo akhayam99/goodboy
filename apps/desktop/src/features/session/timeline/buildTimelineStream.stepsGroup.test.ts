@@ -24,6 +24,7 @@ import { buildTimelineGroups } from './buildTimelineGroups';
 import {
   buildRunTreeStream,
   buildTimelineStream,
+  type TimelineCountItem,
   type TimelineRowItem,
   type TimelineStreamItem,
 } from './buildTimelineStream';
@@ -233,6 +234,30 @@ const learning = ({ id, agentId }: { readonly id: string; readonly agentId: stri
     updatedAt: at({ hour: 9, minute: 14 }),
   }) satisfies SessionContextItem;
 
+const countOf = ({
+  items,
+  expandId,
+}: {
+  readonly items: ReadonlyArray<TimelineStreamItem>;
+  readonly expandId: string;
+}): TimelineCountItem | null => {
+  const found = items.find(
+    (item): item is TimelineCountItem => item.kind === 'count' && item.expandId === expandId,
+  );
+  return found ?? null;
+};
+
+const phraseOf = ({
+  items,
+  expandId,
+}: {
+  readonly items: ReadonlyArray<TimelineStreamItem>;
+  readonly expandId: string;
+}): string | null => {
+  const count = countOf({ items, expandId });
+  return count === null ? null : groupSummaryText({ summary: count.summary });
+};
+
 describe('buildTimelineStream steps group', () => {
   it('names the context the run changed with the same counts as its rows', () => {
     const { items } = streamOf({
@@ -245,13 +270,13 @@ describe('buildTimelineStream steps group', () => {
       ],
       learnings: [learning({ id: 'l1', agentId: 'build' })],
     });
-    const fold = rowOf({ items, id: RUN_ROW }).fold;
-    expect(fold === undefined ? null : groupSummaryText({ summary: fold.summary })).toBe(
+
+    expect(phraseOf({ items, expandId: RUN_ROW })).toBe(
       '3 steps · Context · 2 added, 1 replaced, 2 withdrawn',
     );
   });
 
-  it('shows the closed run phrase as the row title and detail of its context rows', () => {
+  it('shows the count row phrase with the context counts of its rows', () => {
     const payload = { added: 2, replaced: 2, agentId: 'plan' };
     const opened = streamOf({
       agents: finishedSteps(),
@@ -263,12 +288,11 @@ describe('buildTimelineStream steps group', () => {
       events: [contextEvent({ id: 'e1', payload })],
     });
     const row = rowOf({ items: opened.items, id: 'event:e1' });
-    const fold = rowOf({ items: closed.items, id: RUN_ROW }).fold;
 
     expect(
       row.entry.kind === 'event' ? decisionCountsText({ payload: row.entry.event.payload }) : null,
     ).toBe('2 added, 2 replaced');
-    expect(fold === undefined ? null : groupSummaryText({ summary: fold.summary })).toBe(
+    expect(phraseOf({ items: closed.items, expandId: RUN_ROW })).toBe(
       `3 steps · ${CONTEXT_LABEL} · 2 added, 2 replaced`,
     );
   });
@@ -278,11 +302,11 @@ describe('buildTimelineStream steps group', () => {
       agents: finishedSteps(),
       events: [contextEvent({ id: 'e1', payload: { agentId: 'plan' } })],
     });
-    const fold = rowOf({ items, id: RUN_ROW }).fold;
-    expect(fold === undefined ? null : groupSummaryText({ summary: fold.summary })).toBe('3 steps');
+
+    expect(phraseOf({ items, expandId: RUN_ROW })).toBe('3 steps');
   });
 
-  it('puts the context rows of a run agent on the run lane and hides them when closed', () => {
+  it('puts the context rows of a run agent on the run lane and hides them when folded', () => {
     const events = [
       contextEvent({ id: 'e1', payload: { added: 1, agentId: 'plan' } }),
       contextEvent({ id: 'e2', payload: { added: 3 } }),
@@ -312,7 +336,7 @@ describe('buildTimelineStream steps group', () => {
     expect(rowOf({ items: open.items, id: 'question:q2' }).grade).toBe('step');
   });
 
-  it('never lets a row clock fall down a run when a question was answered hours later', () => {
+  it('never lets a row clock rise down a run when a question was answered hours later', () => {
     const late: OpenQuestion = {
       ...question({ id: 'q1', agentId: 'plan', status: 'answered' }),
       answeredAt: at({ hour: 15 }),
@@ -328,7 +352,7 @@ describe('buildTimelineStream steps group', () => {
     );
 
     expect(clocks.length).toBeGreaterThan(3);
-    expect(clocks).toEqual([...clocks].sort((first, second) => first.localeCompare(second)));
+    expect(clocks).toEqual([...clocks].sort((first, second) => second.localeCompare(first)));
   });
 
   it('keeps a context event without an agent on the spine', () => {
@@ -351,31 +375,35 @@ describe('buildTimelineStream steps group', () => {
     expect(rowOf({ items, id: 'event:e4' }).groupId).toBeNull();
   });
 
-  it('shows a finished run as its one row with what was inside', () => {
+  it('shows a finished run as its one row with a count row above it', () => {
     const { items } = streamOf({
       agents: finishedSteps(),
       questions: [question({ id: 'q1', agentId: 'plan', status: 'answered' })],
     });
+    const count = countOf({ items, expandId: RUN_ROW });
+
     expect(rowIds({ items })).toEqual([RUN_ROW]);
-    const fold = rowOf({ items, id: RUN_ROW }).fold;
-    expect(fold?.isExpanded).toBe(false);
-    expect(fold === undefined ? null : groupSummaryText({ summary: fold.summary })).toBe(
-      '3 steps · 1 question answered',
-    );
+    expect(count?.isExpanded).toBe(false);
+    expect(phraseOf({ items, expandId: RUN_ROW })).toBe('3 steps · 1 question answered');
+    expect(rowOf({ items, id: RUN_ROW }).branches).toEqual([
+      { expandId: RUN_ROW, isExpanded: false },
+    ]);
   });
 
-  it('opens the run back to the same rows in the same order', () => {
+  it('opens the run back to the same rows, newest first, under its count row', () => {
     const agents = finishedSteps();
     const questions = [question({ id: 'q1', agentId: 'plan', status: 'answered' })];
     const flat = streamOf({ agents, questions, foldsFinished: false });
     const opened = streamOf({ agents, questions, expanded: [RUN_ROW] });
+
     expect(rowIds(opened)).toEqual(rowIds(flat));
     expect(rowIds(opened)).toContain('question:q1');
+    expect(opened.items.map((item) => item.id).slice(0, 2)).toEqual(['now', `count:${RUN_ROW}`]);
     expect(rowOf({ items: opened.items, id: 'agent:scout' }).explode).toEqual({
       groupId: RUN_ROW,
       kind: 'steps',
     });
-    expect(rowOf({ items: opened.items, id: RUN_ROW }).fold?.isExpanded).toBe(true);
+    expect(countOf({ items: opened.items, expandId: RUN_ROW })?.isExpanded).toBe(true);
   });
 
   it('keeps a run open while a question in it needs you', () => {
@@ -383,19 +411,23 @@ describe('buildTimelineStream steps group', () => {
       agents: finishedSteps(),
       questions: [question({ id: 'q1', agentId: 'build', status: 'open' })],
     });
+
     expect(rowIds({ items })).toContain('agent:build');
-    expect(rowOf({ items, id: RUN_ROW }).fold).toBeUndefined();
+    expect(countOf({ items, expandId: RUN_ROW })).toBeNull();
+    expect(rowOf({ items, id: RUN_ROW }).branches).toBeUndefined();
   });
 
-  it('keeps a live run open', () => {
+  it('keeps a live run open, with every step above its row and no count row', () => {
     const agents = [
       step({ id: 'scout', ordinal: 1 }),
       step({ id: 'plan', ordinal: 2 }),
       step({ id: 'build', ordinal: 3, status: 'running' }),
     ];
     const { items } = streamOf({ agents });
-    expect(rowIds({ items })).toEqual([RUN_ROW, 'agent:scout', 'agent:plan', 'agent:build']);
-    expect(rowOf({ items, id: RUN_ROW }).fold).toBeUndefined();
+
+    expect(rowIds({ items })).toEqual(['agent:build', 'agent:plan', 'agent:scout', RUN_ROW]);
+    expect(items.some((item) => item.kind === 'count')).toBe(false);
+    expect(rowOf({ items, id: RUN_ROW }).branches).toBeUndefined();
   });
 
   it('keeps a failed run open', () => {
@@ -405,63 +437,59 @@ describe('buildTimelineStream steps group', () => {
       step({ id: 'build', ordinal: 3, status: 'failed' }),
     ];
     const { items } = streamOf({ agents });
+
     expect(rowIds({ items })).toContain('agent:build');
+    expect(items.some((item) => item.kind === 'count')).toBe(false);
   });
 
-  it('draws no lane for a folded run but keeps its column', () => {
+  it('keeps the lane of a folded run up to its count row and the same width once open', () => {
     const { items, groups } = streamOf({ agents: finishedSteps() });
-    expect(groups.map((group) => group.id)).toEqual([`head:${RUN_ROW}`]);
     const folded = layoutTimelineRail({ rows: items, groups });
     const opened = streamOf({ agents: finishedSteps(), expanded: [RUN_ROW] });
+
+    expect(groups.map((group) => group.id)).toEqual([`lane:${RUN_ROW}`]);
     expect(folded.width).toBe(
       layoutTimelineRail({ rows: opened.items, groups: opened.groups }).width,
     );
   });
 
-  it('hangs a folded run on a head with a ball one column in and no lane', () => {
+  it('hangs a folded run on its lane: the run row on the spine, the count row on the lane', () => {
     const { items, groups } = streamOf({ agents: finishedSteps() });
 
     expect(groups).toEqual([
       expect.objectContaining({
-        id: `head:${RUN_ROW}`,
+        id: `lane:${RUN_ROW}`,
         originRowId: RUN_ROW,
         parentGroupId: null,
-        shape: 'head',
+        direction: 'up',
+        shape: 'merged',
       }),
     ]);
-    expect(rowOf({ items, id: RUN_ROW }).groupId).toBe(`head:${RUN_ROW}`);
+    expect(rowOf({ items, id: RUN_ROW }).groupId).toBeNull();
     const rail = layoutTimelineRail({ rows: items, groups });
     const runRail = rail.rows[items.findIndex((item) => item.id === RUN_ROW)];
-    expect(runRail?.markerColumn).toBe(1);
-    expect(runRail?.joins.map((join) => join.kind)).toEqual(['stub']);
+    const countRail = rail.rows[items.findIndex((item) => item.id === `count:${RUN_ROW}`)];
+
+    expect(runRail?.markerColumn).toBe(0);
+    expect(runRail?.joins.map((join) => join.kind)).toEqual(['branch']);
+    expect(countRail?.markerColumn).toBe(1);
   });
 
-  it('hangs an open run on a head and its steps on a lane under it', () => {
+  it('hangs the steps of an open run on one lane that branches off the run marker', () => {
     const { items, groups } = streamOf({ agents: finishedSteps(), expanded: [RUN_ROW] });
-    const head = groups.find((group) => group.id === `head:${RUN_ROW}`);
     const lane = groups.find((group) => group.id === `lane:${RUN_ROW}`);
 
-    expect(head).toEqual(expect.objectContaining({ shape: 'head', parentGroupId: null }));
-    expect(lane?.parentGroupId).toBe(`head:${RUN_ROW}`);
-    expect(rowOf({ items, id: RUN_ROW }).groupId).toBe(`head:${RUN_ROW}`);
+    expect(groups).toHaveLength(1);
+    expect(lane?.parentGroupId).toBeNull();
+    expect(rowOf({ items, id: RUN_ROW }).groupId).toBeNull();
     expect(rowOf({ items, id: 'agent:scout' }).groupId).toBe(`lane:${RUN_ROW}`);
     const rail = layoutTimelineRail({ rows: items, groups });
-    expect(rail.columnByGroupId.get(`head:${RUN_ROW}`)).toBe(1);
-    expect(rail.columnByGroupId.get(`lane:${RUN_ROW}`)).toBe(2);
+    expect(rail.columnByGroupId.get(`lane:${RUN_ROW}`)).toBe(1);
     const runRail = rail.rows[items.findIndex((item) => item.id === RUN_ROW)];
-    expect(runRail?.joins.map((join) => join.kind)).toEqual(['stub', 'fork']);
+    expect(runRail?.joins.map((join) => join.kind)).toEqual(['branch']);
   });
 
-  it('keeps the lane and the head on one identity so hover reaches both', () => {
-    const { groups } = streamOf({ agents: finishedSteps(), expanded: [RUN_ROW] });
-    const head = groups.find((group) => group.id === `head:${RUN_ROW}`);
-    const lane = groups.find((group) => group.id === `lane:${RUN_ROW}`);
-
-    expect(head?.identityIndex).toBe(lane?.identityIndex);
-    expect(head?.isMuted).toBe(lane?.isMuted);
-  });
-
-  it('gives a live run no head since it has no fold', () => {
+  it('draws the lane of a live run open, dashed up to NOW', () => {
     const agents = [
       step({ id: 'scout', ordinal: 1 }),
       step({ id: 'plan', ordinal: 2 }),
@@ -469,10 +497,10 @@ describe('buildTimelineStream steps group', () => {
     ];
     const { groups } = streamOf({ agents });
 
-    expect(groups.some((group) => group.shape === 'head')).toBe(false);
+    expect(groups.find((group) => group.id === `lane:${RUN_ROW}`)?.shape).toBe('open');
   });
 
-  it('gives a run page no head', () => {
+  it('keeps the run page flat, in execution order, with no count row', () => {
     const { entries } = streamOf({ agents: finishedSteps() });
     const run = entries.find((entry) => entry.kind === 'run');
     if (run?.kind !== 'run') {
@@ -485,64 +513,46 @@ describe('buildTimelineStream steps group', () => {
       isDeciding: false,
     });
 
-    expect(tree.groups.some((group) => group.shape === 'head')).toBe(false);
-  });
-
-  it('hangs a folded and an open agent chain on a head', () => {
-    const agents = [
-      chainAgent({ id: 'lead', ordinal: 1 }),
-      chainAgent({ id: 'child-a', ordinal: 2, parentAgentId: 'lead' }),
-      chainAgent({ id: 'child-b', ordinal: 3, parentAgentId: 'lead' }),
-      chainAgent({ id: 'grand', ordinal: 4, parentAgentId: 'child-a' }),
-    ];
-    const folded = streamOf({ agents, hasWorkflow: false });
-    const opened = streamOf({ agents, hasWorkflow: false, expanded: [CHAIN_ROW] });
-
-    expect(folded.groups.map((group) => group.shape)).toEqual(['head']);
-    expect(rowOf({ items: folded.items, id: CHAIN_ROW }).groupId).toBe(`head:${CHAIN_ROW}`);
-    expect(opened.groups.find((group) => group.id === `head:${CHAIN_ROW}`)?.shape).toBe('head');
-    expect(opened.groups.find((group) => group.id === `lane:${CHAIN_ROW}`)?.parentGroupId).toBe(
-      `head:${CHAIN_ROW}`,
-    );
-  });
-
-  it('keeps the run page flat', () => {
-    const { entries } = streamOf({ agents: finishedSteps() });
-    const run = entries.find((entry) => entry.kind === 'run');
-    if (run?.kind !== 'run') {
-      throw new Error('run entry is missing');
-    }
-    const tree = buildRunTreeStream({
-      entry: run,
-      unreadAgentIds: new Set(),
-      advance: null,
-      isDeciding: false,
-    });
     expect(rowIds(tree)).toEqual(['agent:scout', 'agent:plan', 'agent:build']);
+    expect(tree.items.some((item) => item.kind === 'count')).toBe(false);
+    expect(tree.groups.every((group) => group.direction === 'down')).toBe(true);
   });
 
-  it('folds a finished agent chain into its lead row', () => {
+  const CHAIN: ReadonlyArray<Agent> = [
+    chainAgent({ id: 'lead', ordinal: 1 }),
+    chainAgent({ id: 'child-a', ordinal: 2, parentAgentId: 'lead' }),
+    chainAgent({ id: 'child-b', ordinal: 3, parentAgentId: 'lead' }),
+    chainAgent({ id: 'grand', ordinal: 4, parentAgentId: 'child-a' }),
+  ];
+
+  it('folds a finished agent chain behind a count row of its direct subagents', () => {
+    const { items } = streamOf({ agents: CHAIN, hasWorkflow: false });
+
+    expect(rowIds({ items })).toEqual([CHAIN_ROW]);
+    expect(phraseOf({ items, expandId: `subagents:${CHAIN_ROW}` })).toBe('2 subagents');
+  });
+
+  it('opens a chain onto a lane under no head, each child with its own count row', () => {
+    const { items, groups } = streamOf({
+      agents: CHAIN,
+      hasWorkflow: false,
+      expanded: [`subagents:${CHAIN_ROW}`],
+    });
+
+    expect(groups.some((group) => group.id === `lane:${CHAIN_ROW}`)).toBe(true);
+    expect(groups.find((group) => group.id === `lane:${CHAIN_ROW}`)?.parentGroupId).toBeNull();
+    expect(rowIds({ items })).toEqual(['agent:child-b', 'agent:child-a', CHAIN_ROW]);
+    expect(phraseOf({ items, expandId: 'subagents:agent:child-a' })).toBe('1 subagent');
+  });
+
+  it('folds a short chain too, since every finished branch folds', () => {
     const agents = [
       chainAgent({ id: 'lead', ordinal: 1 }),
       chainAgent({ id: 'child-a', ordinal: 2, parentAgentId: 'lead' }),
-      chainAgent({ id: 'child-b', ordinal: 3, parentAgentId: 'lead' }),
-      chainAgent({ id: 'grand', ordinal: 4, parentAgentId: 'child-a' }),
     ];
     const { items } = streamOf({ agents, hasWorkflow: false });
-    expect(rowIds({ items })).toEqual([CHAIN_ROW]);
-    const fold = rowOf({ items, id: CHAIN_ROW }).fold;
-    expect(fold === undefined ? null : groupSummaryText({ summary: fold.summary })).toBe(
-      '3 subagents',
-    );
-  });
 
-  it('leaves a short chain as it is', () => {
-    const agents = [
-      chainAgent({ id: 'lead', ordinal: 1 }),
-      chainAgent({ id: 'child-a', ordinal: 2, parentAgentId: 'lead' }),
-    ];
-    const { items } = streamOf({ agents, hasWorkflow: false });
     expect(rowIds({ items })).toEqual([CHAIN_ROW]);
-    expect(rowOf({ items, id: CHAIN_ROW }).subagents?.summary.total).toBe(1);
+    expect(phraseOf({ items, expandId: `subagents:${CHAIN_ROW}` })).toBe('1 subagent');
   });
 });

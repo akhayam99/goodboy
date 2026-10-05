@@ -8,7 +8,6 @@ type Params = {
   readonly agents: ReadonlyArray<Agent>;
   readonly spans: ReadonlyArray<MeasuredTurnSpan>;
   readonly spendByAgentId: ReadonlyMap<string, number>;
-  readonly spendByRunId: ReadonlyMap<string, number>;
   readonly previous: ReadonlyMap<string, GroupTotals>;
 };
 
@@ -35,23 +34,7 @@ const totalsOf = ({
   readonly context: Context;
 }): GroupTotals | null => {
   const { entry } = item;
-  const { source, spendByAgentId, spendByRunId } = context;
-  if (entry.kind === 'run' && item.fold !== undefined) {
-    return groupTotals({
-      roots: entry.children.flatMap((child) => (child.kind === 'agent' ? [child.agent.id] : [])),
-      costUsd: spendByRunId.get(entry.run.id) ?? 0,
-      isSettled: true,
-      source,
-    });
-  }
-  if (entry.kind === 'agent' && item.fold !== undefined) {
-    return groupTotals({
-      roots: [entry.agent.id],
-      costUsd: spendByAgentId.get(entry.agent.id) ?? 0,
-      isSettled: true,
-      source,
-    });
-  }
+  const { source, spendByAgentId } = context;
   if (entry.kind !== 'resolveBatch') {
     return null;
   }
@@ -69,12 +52,10 @@ export const groupTotalsById = ({
   agents,
   spans,
   spendByAgentId,
-  spendByRunId,
   previous,
 }: Params): ReadonlyMap<string, GroupTotals> => {
   const context: Context = {
     spendByAgentId,
-    spendByRunId,
     source: settledTimeSource({ spans, agents }),
   };
   const totals = new Map<string, GroupTotals>();

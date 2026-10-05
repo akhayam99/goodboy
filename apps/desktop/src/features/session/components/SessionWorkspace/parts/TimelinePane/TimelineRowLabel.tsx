@@ -33,7 +33,6 @@ import type { TimelineRowIdentity } from './timelineRowIdentity';
 import { TimelineRowWorktrees } from './TimelineRowWorktrees';
 import { resolveBatchTag, resolveBatchTitle } from '../../../../timeline/resolveBatchSummary';
 import { TimelineGroupLabel } from './TimelineGroupLabel';
-import { TimelineFoldTitle } from './TimelineFoldTitle';
 import { TimelineRunLabel } from './TimelineRunLabel';
 import { DiffStat } from '../../../DiffStat';
 
@@ -216,14 +215,7 @@ export const TimelineRowLabel = ({
 }: Props) => {
   const { entry, grade } = item;
   if (entry.kind === 'run') {
-    return (
-      <TimelineRunLabel
-        entry={entry}
-        summary={item.fold?.summary ?? null}
-        identity={identity}
-        isCardOpen={isCardOpen}
-      />
-    );
+    return <TimelineRunLabel entry={entry} identity={identity} isCardOpen={isCardOpen} />;
   }
   if (entry.kind === 'resolveBatch') {
     return (
@@ -273,7 +265,7 @@ export const TimelineRowLabel = ({
       title={detail === null ? title : `${title} · ${detail}`}
       className={cn(
         'flex items-center overflow-hidden',
-        isAgent ? (item.fold === undefined ? cn(WORK_ROW.title, 'flex-1') : 'min-w-24') : 'min-w-0',
+        isAgent ? cn(WORK_ROW.title, 'flex-1') : 'min-w-0',
         isStep ? 'text-label' : 'text-body',
         emphasis === 'muted' || isQueued || grade === 'fact'
           ? 'text-muted-foreground'
@@ -321,11 +313,7 @@ export const TimelineRowLabel = ({
         </span>
       ) : null}
       {chipOf({ entry, identity, isCardOpen })}
-      {item.fold === undefined ? (
-        titleNode
-      ) : (
-        <TimelineFoldTitle summary={item.fold.summary}>{titleNode}</TimelineFoldTitle>
-      )}
+      {titleNode}
       {diffStat == null ? null : (
         <span className="self-center">
           <DiffStat additions={diffStat.additions} deletions={diffStat.deletions} />
