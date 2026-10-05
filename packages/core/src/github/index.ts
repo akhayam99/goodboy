@@ -58,6 +58,7 @@ export {
   fetchPrNodeId,
   type PostedPullRequestReview,
   type ReviewEvent,
+  type ReviewFileThreadDraft,
   type ReviewThreadDraft,
 } from './reviews';
 

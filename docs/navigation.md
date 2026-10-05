@@ -935,8 +935,8 @@ Goodboy chip never hides. Past that the glyph strip scrolls.
 
 There is one registry with three modifier planes: bare ⌘ for the app, ⌘⇧ for
 the session, ⌘⌥ for the lens surfaces. A fourth, `pane`, holds plain keys a
-surface answers while it is on screen: the diff's T (jump to a file), [ and ]
-(previous and next file). Nobody writes a combo string by hand
+surface answers while it is on screen: the diff's [ and ] (previous and next
+file) and T (focus the file filter). Nobody writes a combo string by hand
 outside the registry. So no two surfaces can claim the same chord, and no
 shortcut can exist without being documented. That holds for per-OS combos
 too. An entry carries its own combo for other systems where the plain mapping
@@ -1661,9 +1661,31 @@ selected row stays selected on the way back. `branchLayout.test.ts` pins the
 widths a 1024px window gets with a wide sidebar and an open drawer. Fix, Resolve without a reply and Stop live on the thread and its
 properties; Fix launches from the list or the thread, never from Files.
 
-**Files.** The branch against its base with a file tree on the left (changed
-files by folder, `+N −N`, a check on viewed ones, `N of M viewed` above it;
-`@4xl` and up, under it the file jump stays), `Viewed`, notes on
+**Files.** The branch against its base with the change tree on the left
+(`ChangeTree`, 280px, `@4xl` and up): folders first, then files, alphabetical,
+and the diff follows the same order. A chain of folders with one child is one
+row (`src/ledger/export`). A folder row holds a progress ring (empty, partial,
+or filled with a check once every file in it is viewed, tooltip `3 of 5
+viewed`), the path, its file count and its `+N −N`; a file row holds a small
+check when viewed (its name goes grey) or an amber dot when it changed after
+it was viewed, the name (a rename shows `from <old path>` under it, a deleted
+file is struck through), its open notes, `+N −N` and the status letter.
+`N of M viewed` and a 2px bar head the tree, and no longer sit in the toolbar.
+Under the head a filter field (`T` focuses it, `Esc` clears it) matches a
+subsequence of the path, `Unviewed` and `With notes` chips narrow it further,
+and `Group: Folders | Kind` regroups the tree under Source, Tests, Config and
+Docs (each file then shows its folder beside the name). The filter narrows the
+diff as well as the tree, `Showing n of N` with `Clear` says so, and a filter
+that hides everything leaves `No files match` with `Clear` in both panes
+(`filterFiles` in `changeTree.ts`). Generated files (lockfiles, `dist`, `build`,
+`vendor`, minified and map files) sit in a closed `Generated` row at the bottom
+in both groupings and at the end of the diff. Viewed marks are stored per session, mount and view, so two repos in one session
+keep their own; marks saved before that are read until the mount saves its own.
+Click a file and the
+diff scrolls to it; scroll the diff and the tree highlights the file in view and
+opens its folders. The tree and the diff share one `useReviewState` (active
+file, open folders, notes, `Viewed`), and a model in `features/diff/lib/changeTree.ts`
+builds the rows. `Viewed`, notes on
 lines and files, `Post open notes to the PR` and `Write review` (which swaps
 the tab body for the review form with line drafts). It carries no Fix, Push,
 Rewrite or `PR #N` control.
@@ -1777,19 +1799,35 @@ copy without both, so a second window never removes a copy in use. The owner
 file records the copy's git admin folder when the copy is made; the rewriter's
 roots and the cleanup use it only while it is `<common>/worktrees/<name>` and
 its `gitdir` names exactly that reserved copy, never the copy's own `.git`.
-Codex rewriter turns also lose write access to the temp folders. `Branch vs main` sits in the file
-toolbar under the title, with `N files +N -M`, because it decides which files
-you see, not what you do to the branch. The file toolbar row holds `N files` (the file jump, also `T`: filter,
-arrows, Enter), `N of M viewed`, `Unified | Split` and `Wrap` (on by default,
-saved as `goodboy:diff-wrap`; split always wraps). `[` and `]` go to the
+Codex rewriter turns also lose write access to the temp folders. One line sits
+above the code and replaces the old toolbar and its counts: `Comparing <base> ←
+<branch> · All N commits ▾` on the left (the base is the mount's own base branch,
+never a fixed `main`; a commit view reads `Commit abc1234`, the working tree
+`Working tree`, `Staged only` or `Unstaged only`), and `Display ▾`, `Post notes`
+and `Write review` on the right, because the view decides which files you see,
+not what you do to the branch. `Display` holds `Unified | Split` and `Wrap long
+lines` (on by default, saved as `goodboy:diff-wrap`; split always wraps). The
+file count and the `+N -M` sums live in the change tree only. `[` and `]` go to the
 previous and next file. A jump is instant, not smooth: file bodies keep
 `content-visibility` with estimated heights, so for a few frames the view
 measures the picked header and snaps it back to the top until the heights
 settle. The picked file stays the active one until you scroll, so `[` and `]`
-start from it, and the jump cursor starts on it inside the filtered list. Each file has a sticky header (status letter, path,
-changes, comment count, `Viewed`, `⋯` with Open in editor, Copy path, Comment
-on file); a viewed file collapses, and generated or binary files start
-collapsed. Rows are a CSS grid with `role="grid"`, never a table. Click a line
+start from it. Each file has a sticky header (status letter, path, `from <old path>` on a rename,
+changes, comment count, a visible `Comment on file` button, `Viewed`, `⋯` with
+Open in editor, Copy path, Comment on file); a viewed file collapses and opens again when you unmark it, from the
+header or from anywhere else, and generated or binary files start collapsed.
+`Comment on file` (the header button, the `⋯` entry, and a button on the file's
+tree row on hover or keyboard focus) opens a composer under the header and
+scrolls to it: on a branch with a GitHub or GitLab pull request it saves a
+review draft on the whole file (a `pr_review_drafts` row with `line` 0, no
+migration), sent with the next review as a GitHub `FILE` thread (pending
+review, `addPullRequestReviewThread` with `subjectType: FILE`, then submit) or a
+GitLab discussion with `position_type: file`; without a pull request it saves a
+local note on the file (the same note a line gets, without an anchor). Either
+one sits under the file header, counts in the header and the tree row, and the
+note shows in Comments like a line note, with the file path and no line.
+A file draft is stale, and skipped on submit, only when its file leaves the
+pull request. Rows are a CSS grid with `role="grid"`, never a table. Click a line
 number to comment, drag or shift-click to cover a range; the composer and the
 threads sit under the last line of the range. ⌘Enter saves, Escape cancels.
 `+ Add note` on a line saves the note with the project and branch of the active

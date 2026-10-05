@@ -1,4 +1,4 @@
-import type { DiffView, FileDiff, SessionId } from '@goodboy/types';
+import type { DiffView, FileDiff, MountId, SessionId } from '@goodboy/types';
 import { STORAGE_PREFIXES, persistedPref } from '../../../shared/lib/storage-keys';
 
 export type ViewedState = 'none' | 'viewed' | 'stale';
@@ -20,8 +20,17 @@ export const fileSignature = (file: FileDiff): string =>
     .map((hunk) => hunk.header)
     .join('§')}`;
 
-const storageKey = (sessionId: SessionId | null, view: DiffView): string | null =>
+const legacyKey = (sessionId: SessionId | null, view: DiffView): string | null =>
   sessionId ? `${STORAGE_PREFIXES.diffReviewed}${sessionId}:${viewKeyOf(view)}` : null;
+
+const storageKey = (
+  sessionId: SessionId | null,
+  view: DiffView,
+  mountId: MountId | null,
+): string | null =>
+  sessionId && mountId
+    ? `${STORAGE_PREFIXES.diffReviewed}${sessionId}:${mountId}:${viewKeyOf(view)}`
+    : legacyKey(sessionId, view);
 
 const NOTHING_REVIEWED: ReviewedMap = {};
 
@@ -35,17 +44,29 @@ const reviewedPref = ({ key }: { readonly key: string }) =>
     },
   });
 
-export const readReviewedMap = (sessionId: SessionId | null, view: DiffView): ReviewedMap => {
-  const key = storageKey(sessionId, view);
-  return key === null ? NOTHING_REVIEWED : reviewedPref({ key }).read();
+export const readReviewedMap = (
+  sessionId: SessionId | null,
+  view: DiffView,
+  mountId: MountId | null = null,
+): ReviewedMap => {
+  const key = storageKey(sessionId, view, mountId);
+  if (key === null) {
+    return NOTHING_REVIEWED;
+  }
+  const saved = reviewedPref({ key }).read();
+  const legacy = legacyKey(sessionId, view);
+  return saved === NOTHING_REVIEWED && legacy !== null && legacy !== key
+    ? reviewedPref({ key: legacy }).read()
+    : saved;
 };
 
 export const writeReviewedMap = (
   sessionId: SessionId | null,
   view: DiffView,
   map: ReviewedMap,
+  mountId: MountId | null = null,
 ): void => {
-  const key = storageKey(sessionId, view);
+  const key = storageKey(sessionId, view, mountId);
   if (key === null) {
     return;
   }

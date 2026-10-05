@@ -116,7 +116,10 @@ describe('DiffView rendering', () => {
   it('wraps by default and remembers turning it off', () => {
     render(<DiffView files={[LEDGER]} />);
     expect(codeCells()[0]?.className).toContain('whitespace-pre-wrap');
-    fireEvent.click(screen.getByRole('button', { name: /Wrap/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Display/ }));
+    expect(screen.getByRole('switch', { name: /Wrap/ }).getAttribute('aria-checked')).toBe('true');
+    fireEvent.click(screen.getByRole('switch', { name: /Wrap/ }));
+    expect(screen.getByRole('switch', { name: /Wrap/ }).getAttribute('aria-checked')).toBe('false');
     expect(codeCells()[0]?.className).toContain('whitespace-pre');
     expect(codeCells()[0]?.className).not.toContain('whitespace-pre-wrap');
     expect(localStorage.getItem('goodboy:diff-wrap')).toBe('0');
@@ -124,13 +127,31 @@ describe('DiffView rendering', () => {
 
   it('pairs old and new lines side by side in split view', () => {
     render(<DiffView files={[LEDGER]} />);
+    fireEvent.click(screen.getByRole('button', { name: /Display/ }));
     fireEvent.click(screen.getByRole('tab', { name: 'Split' }));
     const grid = screen.getByRole('grid');
     expect(grid.innerHTML).toContain('grid-cols-[44px_minmax(0,1fr)_44px_minmax(0,1fr)]');
-    expect(screen.getByRole('button', { name: /Wrap/ }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('switch', { name: /Wrap/ }).hasAttribute('disabled')).toBe(true);
   });
 
-  it('counts viewed files and collapses a file once viewed', () => {
+  it('keeps layout and wrap in one Display menu and the toolbar on one line', () => {
+    render(
+      <DiffView
+        files={[LEDGER]}
+        toolbarStart={<span>Comparing main ← feat/ledger-export</span>}
+        toolbarEnd={<button type="button">Write review</button>}
+      />,
+    );
+
+    expect(screen.queryByRole('tab', { name: 'Split' })).toBeNull();
+    expect(screen.queryByRole('switch')).toBeNull();
+    const toolbar = document.querySelector('[data-slot="diff-toolbar"]') as HTMLElement;
+    expect(within(toolbar).getByText('Comparing main ← feat/ledger-export')).toBeDefined();
+    expect(within(toolbar).getByRole('button', { name: /Display/ })).toBeDefined();
+    expect(within(toolbar).getByRole('button', { name: 'Write review' })).toBeDefined();
+  });
+
+  it('collapses a file once viewed', () => {
     const viewed = new Set<string>();
     const onToggle = vi.fn((file: FileDiff, next: boolean) => {
       if (next) {
@@ -143,7 +164,6 @@ describe('DiffView rendering', () => {
         viewed={{ stateOf: (file) => (viewed.has(file.path) ? 'viewed' : 'none'), onToggle }}
       />,
     );
-    screen.getByText('0 of 2 viewed');
     const header = screen.getByRole('region', { name: RELAY.path });
     fireEvent.click(within(header).getByRole('checkbox', { name: /Viewed/ }));
     expect(onToggle).toHaveBeenCalledWith(RELAY, true);
@@ -153,8 +173,22 @@ describe('DiffView rendering', () => {
         viewed={{ stateOf: (file) => (viewed.has(file.path) ? 'viewed' : 'none'), onToggle }}
       />,
     );
-    screen.getByText('1 of 2 viewed');
     expect(within(header).queryByRole('grid')).toBeNull();
+  });
+
+  it('follows a Viewed set from outside: closes the file, and opens it again when unset', () => {
+    const stateOf = (path: string | null) => (file: FileDiff) =>
+      file.path === path ? ('viewed' as const) : ('none' as const);
+    const viewedFor = (path: string | null) => ({ stateOf: stateOf(path), onToggle: vi.fn() });
+    const { rerender } = render(<DiffView files={[LEDGER, RELAY]} viewed={viewedFor(null)} />);
+    const header = screen.getByRole('region', { name: RELAY.path });
+    expect(within(header).queryByRole('grid')).not.toBeNull();
+
+    rerender(<DiffView files={[LEDGER, RELAY]} viewed={viewedFor(RELAY.path)} />);
+    expect(within(header).queryByRole('grid')).toBeNull();
+
+    rerender(<DiffView files={[LEDGER, RELAY]} viewed={viewedFor(null)} />);
+    expect(within(header).queryByRole('grid')).not.toBeNull();
   });
 
   it('keeps generated files collapsed until asked', () => {
@@ -289,17 +323,20 @@ describe('DiffView comments', () => {
 });
 
 describe('DiffView navigation', () => {
-  it('opens the file jump with T and filters files', () => {
-    render(<DiffView files={[LEDGER, RELAY]} />);
-    fireEvent.keyDown(window, { code: 'KeyT', key: 't' });
-    const filter = screen.getByRole('combobox', { name: 'Filter files' });
-    fireEvent.change(filter, { target: { value: 'skip' } });
-    const options = screen.getAllByRole('option');
-    expect(options).toHaveLength(1);
-    expect(options[0]?.textContent).toContain('skipSettled.ts');
-    fireEvent.keyDown(filter, { key: 'Enter' });
-    expect(screen.queryByRole('combobox')).toBeNull();
-    expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+  it('reports the file it lands on', () => {
+    const onActivePathChange = vi.fn();
+    const { rerender } = render(
+      <DiffView files={[LEDGER, RELAY]} onActivePathChange={onActivePathChange} />,
+    );
+    rerender(
+      <DiffView
+        files={[LEDGER, RELAY]}
+        onActivePathChange={onActivePathChange}
+        focusPath={RELAY.path}
+      />,
+    );
+    fireEvent.keyDown(window, { code: 'BracketRight', key: ']' });
+    expect(onActivePathChange).toHaveBeenCalledWith(RELAY.path);
   });
 
   it('moves between files with [ and ]', () => {
@@ -377,29 +414,26 @@ describe('DiffView navigation', () => {
       vi.restoreAllMocks();
     });
 
-    const pick = (query: string) => {
-      fireEvent.keyDown(window, { code: 'KeyT', key: 't' });
-      const filter = screen.getByRole('combobox', { name: 'Filter files' });
-      fireEvent.change(filter, { target: { value: query } });
-      fireEvent.keyDown(filter, { key: 'Enter' });
+    const pickIn = (view: ReturnType<typeof render>, index: number) => {
+      view.rerender(<DiffView files={MANY} focusPath={MANY[index]?.path ?? null} />);
       act(() => {
         vi.advanceTimersByTime(1000);
       });
     };
 
     it('puts the picked file header at the top once the heights settle', () => {
-      render(<DiffView files={MANY} />);
-      pick('f17');
+      const view = render(<DiffView files={MANY} />);
+      pickIn(view, 17);
       expect(headerTop(MANY[17]?.path ?? '')).toBe(0);
-      pick('f25');
+      pickIn(view, 25);
       expect(headerTop(MANY[25]?.path ?? '')).toBe(0);
-      pick('f03');
+      pickIn(view, 3);
       expect(headerTop(MANY[3]?.path ?? '')).toBe(0);
     });
 
     it('steps with ] from the picked file', () => {
-      render(<DiffView files={MANY} />);
-      pick('f17');
+      const view = render(<DiffView files={MANY} />);
+      pickIn(view, 17);
       fireEvent.keyDown(window, { code: 'BracketRight', key: ']' });
       act(() => {
         vi.advanceTimersByTime(1000);
@@ -409,46 +443,121 @@ describe('DiffView navigation', () => {
   });
 
   it('ignores shortcuts while typing', () => {
-    render(<DiffView files={[LEDGER]} comments={commentsWith([])} />);
+    render(<DiffView files={[LEDGER, RELAY]} comments={commentsWith([])} />);
     fireEvent.keyDown(screen.getByRole('button', { name: 'Comment on new line 39' }), {
       key: 'Enter',
     });
-    fireEvent.keyDown(screen.getByRole('textbox'), { code: 'KeyT', key: 't' });
-    expect(screen.queryByRole('combobox')).toBeNull();
-  });
-
-  it('leaves T to a modal dialog that opened over the diff', () => {
-    render(
-      <div>
-        <div role="dialog" aria-modal="true" aria-label="Preview" />
-        <DiffView files={[LEDGER]} />
-      </div>,
-    );
-    fireEvent.keyDown(window, { code: 'KeyT', key: 't' });
-    expect(screen.queryByRole('combobox')).toBeNull();
-  });
-
-  it('leaves T alone while shift is held', () => {
-    render(<DiffView files={[LEDGER]} />);
-    fireEvent.keyDown(window, { code: 'KeyT', key: 'T', shiftKey: true });
-    expect(screen.queryByRole('combobox')).toBeNull();
+    const scroll = Element.prototype.scrollIntoView as ReturnType<typeof vi.fn>;
+    scroll.mockClear();
+    fireEvent.keyDown(screen.getByRole('textbox'), { code: 'BracketRight', key: ']' });
+    expect(scroll).not.toHaveBeenCalled();
   });
 
   it('keeps the peek free of the toolbar and shortcuts', () => {
-    render(<DiffView files={[LEDGER]} presentation="peek" />);
-    expect(screen.queryByRole('button', { name: /files/ })).toBeNull();
-    fireEvent.keyDown(window, { code: 'KeyT', key: 't' });
-    expect(screen.queryByRole('combobox')).toBeNull();
+    render(<DiffView files={[LEDGER, RELAY]} presentation="peek" />);
+    const scroll = Element.prototype.scrollIntoView as ReturnType<typeof vi.fn>;
+    scroll.mockClear();
+    expect(screen.queryByRole('button', { name: /Display/ })).toBeNull();
+    fireEvent.keyDown(window, { code: 'BracketRight', key: ']' });
+    expect(scroll).not.toHaveBeenCalled();
+  });
+});
+
+describe('DiffView file-level comments', () => {
+  const fileThread = (): DiffThread =>
+    thread({ id: 'file-note', anchor: null, body: 'Split this file before it grows' });
+
+  it('shows a visible Comment on file action on every file header', () => {
+    render(<DiffView files={[LEDGER, RELAY]} comments={commentsWith([])} />);
+
+    expect(screen.getAllByRole('button', { name: 'Comment on file' })).toHaveLength(2);
+  });
+
+  it('opens a composer under the header and saves the text against the file with no anchor', () => {
+    const comments = commentsWith([]);
+    render(<DiffView files={[LEDGER]} comments={comments} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Comment on file' }));
+    expect(screen.getByText('Note on this file')).toBeDefined();
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Split this file' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add note' }));
+
+    expect(comments.onSubmit).toHaveBeenCalledWith(LEDGER.path, null, 'Split this file');
+  });
+
+  it('uses the file composer wording when the comments carry one, such as a review draft', () => {
+    render(
+      <DiffView
+        files={[LEDGER]}
+        comments={{
+          ...commentsWith([]),
+          fileComposer: { label: 'Draft on this file', submitLabel: 'Add draft' },
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Comment on file' }));
+
+    expect(screen.getByText('Draft on this file')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Add draft' })).toBeDefined();
+  });
+
+  it('opens the composer for a file the tree asked for, once, and says it was opened', () => {
+    const onOpened = vi.fn();
+    render(
+      <DiffView
+        files={[LEDGER, RELAY]}
+        comments={commentsWith([])}
+        fileCommentPath={RELAY.path}
+        onFileCommentOpened={onOpened}
+      />,
+    );
+
+    expect(onOpened).toHaveBeenCalledTimes(1);
+    expect(screen.getAllByText('Note on this file')).toHaveLength(1);
+    const section = screen.getByRole('region', { name: RELAY.path });
+    expect(within(section).getByText('Note on this file')).toBeDefined();
+  });
+
+  it('opens the composer on a collapsed file when the tree asks', () => {
+    const viewed = {
+      stateOf: (file: FileDiff) =>
+        file.path === LEDGER.path ? ('viewed' as const) : ('none' as const),
+      onToggle: vi.fn(),
+    };
+    render(
+      <DiffView
+        files={[LEDGER]}
+        viewed={viewed}
+        comments={commentsWith([])}
+        fileCommentPath={LEDGER.path}
+      />,
+    );
+
+    expect(screen.getByText('Note on this file')).toBeDefined();
+  });
+
+  it('shows a file-level note under the header and counts it in the header', () => {
+    render(<DiffView files={[LEDGER]} comments={commentsWith([fileThread()])} />);
+
+    const section = screen.getByRole('region', { name: LEDGER.path });
+    expect(within(section).getByText('Split this file before it grows')).toBeDefined();
+    expect(within(section).getByLabelText('1 comment')).toBeDefined();
+  });
+
+  it('has no Comment on file action when the comments do not allow file level', () => {
+    render(<DiffView files={[LEDGER]} comments={{ ...commentsWith([]), allowFileLevel: false }} />);
+
+    expect(screen.queryByRole('button', { name: 'Comment on file' })).toBeNull();
   });
 });
 
 describe('DiffView file renders', () => {
-  it('leaves the file bodies alone when only the toolbar state changes', () => {
+  it('leaves the file bodies alone when only the active file changes', () => {
     render(<DiffView files={[LEDGER, RELAY]} />);
     fileRenders.current = 0;
 
-    fireEvent.keyDown(window, { code: 'KeyT', key: 't' });
-    screen.getByRole('combobox', { name: 'Filter files' });
+    fireEvent.keyDown(window, { code: 'BracketRight', key: ']' });
 
     expect(fileRenders.current).toBe(0);
   });

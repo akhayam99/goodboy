@@ -31,6 +31,8 @@ type Props = {
   readonly fileActions: DiffFileActions | null;
   readonly registerRef: RefCallback<HTMLElement>;
   readonly isVisible: boolean;
+  readonly wantsFileComment: boolean;
+  readonly onFileCommentOpened: () => void;
 };
 
 type Drag = {
@@ -76,12 +78,30 @@ const DiffFileView = ({
   fileActions,
   registerRef,
   isVisible,
+  wantsFileComment,
+  onFileCommentOpened,
 }: Props) => {
   const viewedState = viewed?.stateOf(file) ?? null;
   const isHeavy = file.binary || isGeneratedPath(file.path);
   const [collapsed, setCollapsed] = useState(viewedState === 'viewed' || isHeavy);
+  const wasViewed = useRef(viewedState === 'viewed');
+  useEffect(() => {
+    const isViewed = viewedState === 'viewed';
+    if (isViewed !== wasViewed.current) {
+      wasViewed.current = isViewed;
+      setCollapsed(isViewed);
+    }
+  }, [viewedState]);
   const [drag, setDrag] = useState<Drag | null>(null);
   const [composer, setComposer] = useState<Composer | null>(null);
+  useEffect(() => {
+    if (!wantsFileComment) {
+      return;
+    }
+    setCollapsed(false);
+    setComposer({ kind: 'file' });
+    onFileCommentOpened();
+  }, [onFileCommentOpened, wantsFileComment]);
   const [visibleLines, setVisibleLines] = useState(INITIAL_VISIBLE_LINES);
   const dragRef = useRef<Drag | null>(null);
   dragRef.current = drag;
@@ -223,13 +243,7 @@ const DiffFileView = ({
   const remaining = Math.max(0, totalLines - visibleLines);
 
   const toggleViewed =
-    viewed === null
-      ? null
-      : () => {
-          const next = viewedState !== 'viewed';
-          viewed.onToggle(file, next);
-          setCollapsed(next);
-        };
+    viewed === null ? null : () => viewed.onToggle(file, viewedState !== 'viewed');
 
   return (
     <section
@@ -278,8 +292,8 @@ const DiffFileView = ({
               {renderThreads(fileThreads)}
               {composer?.kind === 'file' && comments !== null ? (
                 <CommentComposer
-                  label={`${comments.composerLabel} on this file`}
-                  submitLabel={comments.submitLabel}
+                  label={comments.fileComposer?.label ?? `${comments.composerLabel} on this file`}
+                  submitLabel={comments.fileComposer?.submitLabel ?? comments.submitLabel}
                   onSubmit={(body) => {
                     comments.onSubmit(file.path, null, body);
                     setComposer(null);

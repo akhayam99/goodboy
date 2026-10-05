@@ -31,43 +31,69 @@ const commits: ReadonlyArray<BranchCommit> = [
 
 describe('DiffViewSelector', () => {
   it('renders the current label in the trigger', () => {
+    render(<DiffViewSelector view={workingView} onChange={vi.fn()} commits={[]} status={null} />);
+    expect(screen.getByText('Working tree')).toBeDefined();
+  });
+
+  it('reads the real base and the branch above a branch diff, with its commit count', () => {
     render(
       <DiffViewSelector
-        view={workingView}
+        view={{ kind: 'branch' }}
+        onChange={vi.fn()}
+        commits={commits}
+        status={null}
+        baseBranch="develop"
+        branch="feat/ledger-export"
+      />,
+    );
+
+    expect(screen.getByText('Comparing develop ← feat/ledger-export')).toBeDefined();
+    expect(screen.getByText('· All 2 commits')).toBeDefined();
+    expect(screen.queryByText(/\bmain\b/)).toBeNull();
+  });
+
+  it('names the base branch in the branch option of the picker, never main by default', () => {
+    render(
+      <DiffViewSelector
+        view={{ kind: 'branch' }}
         onChange={vi.fn()}
         commits={[]}
         status={null}
-        filesCount={3}
+        baseBranch="release/2026.10"
+        branch="feat/a"
       />,
     );
-    expect(screen.getByText('working tree')).toBeDefined();
+    fireEvent.click(screen.getByTitle(/change diff view/i));
+
+    expect(screen.getByText('branch vs release/2026.10')).toBeDefined();
+    expect(screen.getByText(/everything this branch changes vs release\/2026.10/)).toBeDefined();
+  });
+
+  it('shows the commit, not a comparison, for a single commit view', () => {
+    render(
+      <DiffViewSelector
+        view={{ kind: 'commit', sha: 'abc123456789' }}
+        onChange={vi.fn()}
+        commits={commits}
+        status={null}
+        baseBranch="main"
+        branch="feat/a"
+      />,
+    );
+
+    expect(screen.getByText('Commit abc1234')).toBeDefined();
+    expect(screen.queryByText(/Comparing/)).toBeNull();
   });
 
   it('opens the menu and shows the staged-only option', () => {
-    render(
-      <DiffViewSelector
-        view={workingView}
-        onChange={vi.fn()}
-        commits={[]}
-        status={null}
-        filesCount={null}
-      />,
-    );
+    render(<DiffViewSelector view={workingView} onChange={vi.fn()} commits={[]} status={null} />);
     fireEvent.click(screen.getByTitle(/change diff view/i));
     expect(screen.getByText('staged only')).toBeDefined();
   });
 
   it('fires onChange with a new view when an option is picked', () => {
     const onChange = vi.fn();
-    render(
-      <DiffViewSelector
-        view={workingView}
-        onChange={onChange}
-        commits={[]}
-        status={null}
-        filesCount={null}
-      />,
-    );
+    render(<DiffViewSelector view={workingView} onChange={onChange} commits={[]} status={null} />);
     fireEvent.click(screen.getByTitle(/change diff view/i));
     fireEvent.click(screen.getByText('staged only'));
     expect(onChange).toHaveBeenCalledWith({ kind: 'working', scope: 'staged' });
@@ -75,13 +101,7 @@ describe('DiffViewSelector', () => {
 
   it('keeps commit details and section semantics in the portaled picker', () => {
     render(
-      <DiffViewSelector
-        view={workingView}
-        onChange={vi.fn()}
-        commits={commits}
-        status={null}
-        filesCount={2}
-      />,
+      <DiffViewSelector view={workingView} onChange={vi.fn()} commits={commits} status={null} />,
     );
     fireEvent.click(screen.getByTitle(/change diff view/i));
 
@@ -99,7 +119,6 @@ describe('DiffViewSelector', () => {
         onChange={onChange}
         commits={[]}
         status={null}
-        filesCount={null}
       />,
     );
     fireEvent.click(screen.getByTitle(/change diff view/i));
@@ -112,13 +131,7 @@ describe('DiffViewSelector', () => {
 
   it('reads top-down as branch, currently editing, ready to push, on origin', () => {
     render(
-      <DiffViewSelector
-        view={workingView}
-        onChange={vi.fn()}
-        commits={commits}
-        status={null}
-        filesCount={null}
-      />,
+      <DiffViewSelector view={workingView} onChange={vi.fn()} commits={commits} status={null} />,
     );
     fireEvent.click(screen.getByTitle(/change diff view/i));
 
@@ -132,18 +145,12 @@ describe('DiffViewSelector', () => {
     const firstOption = screen
       .getAllByRole('button')
       .find((button) => button.getAttribute('aria-pressed') != null);
-    expect(firstOption?.textContent).toContain('branch vs main');
+    expect(firstOption?.textContent).toContain('branch vs its base branch');
   });
 
   it('shows one quiet empty line when the filter matches no commits', () => {
     render(
-      <DiffViewSelector
-        view={workingView}
-        onChange={vi.fn()}
-        commits={commits}
-        status={null}
-        filesCount={null}
-      />,
+      <DiffViewSelector view={workingView} onChange={vi.fn()} commits={commits} status={null} />,
     );
     fireEvent.click(screen.getByTitle(/change diff view/i));
     const filter = screen.getByRole('textbox', { name: 'Filter commits' });
@@ -152,19 +159,13 @@ describe('DiffViewSelector', () => {
     expect(screen.getByText('no commits match')).toBeDefined();
     expect(screen.queryByText('ready to push')).toBeNull();
     expect(screen.queryByText('on origin')).toBeNull();
-    expect(screen.getByText('branch vs main')).toBeDefined();
+    expect(screen.getByText('branch vs its base branch')).toBeDefined();
     expect(screen.getByText('staged only')).toBeDefined();
   });
 
   it('keeps the filter scoped to commits and drops only the unmatched commit section', () => {
     render(
-      <DiffViewSelector
-        view={workingView}
-        onChange={vi.fn()}
-        commits={commits}
-        status={null}
-        filesCount={null}
-      />,
+      <DiffViewSelector view={workingView} onChange={vi.fn()} commits={commits} status={null} />,
     );
     fireEvent.click(screen.getByTitle(/change diff view/i));
     const filter = screen.getByRole('textbox', { name: 'Filter commits' });

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { parseUnifiedDiff } from '@goodboy/core';
 import type { IsoDateTime, PrReviewDraft, SessionId } from '@goodboy/types';
 import { computeStaleDrafts } from './computeStaleDrafts';
+import { FILE_LEVEL_LINE } from './fileLevel';
 
 const DIFF = [
   'diff --git a/src/a.ts b/src/a.ts',
@@ -41,6 +42,18 @@ const makeDraft = ({ overrides = {} }: MakeDraftParams): PrReviewDraft => ({
 
 describe('computeStaleDrafts', () => {
   const files = parseUnifiedDiff(DIFF);
+
+  it('keeps a file-level draft fresh while its file is in the diff and stale once it is not', () => {
+    const present = makeDraft({ overrides: { id: 'file-a', line: FILE_LEVEL_LINE } });
+    const gone = makeDraft({
+      overrides: { id: 'file-b', line: FILE_LEVEL_LINE, path: 'src/removed.ts' },
+    });
+
+    const { fresh, stale } = computeStaleDrafts({ drafts: [present, gone], files });
+
+    expect(fresh.map((draft) => draft.id)).toEqual(['file-a']);
+    expect(stale.map((draft) => [draft.id, draft.stale])).toEqual([['file-b', true]]);
+  });
 
   it('keeps drafts anchored on add or context lines fresh', () => {
     const drafts = [makeDraft({}), makeDraft({ overrides: { id: 'draft-2', line: 3 } })];

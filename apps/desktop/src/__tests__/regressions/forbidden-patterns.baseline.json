@@ -327,7 +327,6 @@
     "apps/desktop/src/features/context/components/ContextPanel/strips/GoalAttachmentsStrip.tsx": 1,
     "apps/desktop/src/features/diff/components/DiffView/CommentThread.tsx": 2,
     "apps/desktop/src/features/diff/components/DiffView/FileHeader.tsx": 1,
-    "apps/desktop/src/features/diff/components/DiffView/FileJumpPopover.tsx": 1,
     "apps/desktop/src/features/integrations/components/ConnectForm/index.tsx": 2,
     "apps/desktop/src/features/integrations/components/IntegrationConnectedRow/index.tsx": 1,
     "apps/desktop/src/features/integrations/components/IntegrationCredentialPicker/CredentialRow.tsx": 1,

@@ -311,9 +311,9 @@ describe('shortcut dispatcher with a bare key', () => {
 
   it('fires a bare key and hands the event to the handler', () => {
     const onJump = vi.fn();
-    bind('diff.jump', onJump);
+    bind('diff.nextFile', onJump);
 
-    const event = press({ key: 't', code: 'KeyT' });
+    const event = press({ key: ']', code: 'BracketRight' });
 
     expect(onJump).toHaveBeenCalledWith(event);
     expect(event.defaultPrevented).toBe(true);
@@ -321,20 +321,20 @@ describe('shortcut dispatcher with a bare key', () => {
 
   it('never fires a bare key with a modifier held', () => {
     const onJump = vi.fn();
-    bind('diff.jump', onJump);
+    bind('diff.nextFile', onJump);
 
-    press({ key: 't', code: 'KeyT', shiftKey: true });
-    press({ key: 't', code: 'KeyT', metaKey: true });
+    press({ key: ']', code: 'BracketRight', shiftKey: true });
+    press({ key: ']', code: 'BracketRight', metaKey: true });
 
     expect(onJump).not.toHaveBeenCalled();
   });
 
   it.each(['input', 'textarea', 'select'])('leaves a bare key to a focused %s', (tag) => {
     const onJump = vi.fn();
-    bind('diff.jump', onJump);
+    bind('diff.nextFile', onJump);
     const field = focusInto(tag);
 
-    const event = typeInto({ target: field, init: { key: 't', code: 'KeyT' } });
+    const event = typeInto({ target: field, init: { key: ']', code: 'BracketRight' } });
 
     expect(onJump).not.toHaveBeenCalled();
     expect(event.defaultPrevented).toBe(false);
@@ -342,7 +342,7 @@ describe('shortcut dispatcher with a bare key', () => {
 
   it('leaves a bare key to the terminal', () => {
     const onJump = vi.fn();
-    bind('diff.jump', onJump);
+    bind('diff.nextFile', onJump);
     const terminal = document.createElement('div');
     terminal.className = 'xterm';
     const surface = document.createElement('textarea');
@@ -350,7 +350,7 @@ describe('shortcut dispatcher with a bare key', () => {
     document.body.appendChild(terminal);
     surface.focus();
 
-    const event = press({ key: 't', code: 'KeyT' });
+    const event = press({ key: ']', code: 'BracketRight' });
 
     expect(onJump).not.toHaveBeenCalled();
     expect(event.defaultPrevented).toBe(false);
@@ -358,24 +358,24 @@ describe('shortcut dispatcher with a bare key', () => {
 
   it('leaves a bare key alone while a modal dialog is open', () => {
     const onJump = vi.fn();
-    bind('diff.jump', onJump);
+    bind('diff.nextFile', onJump);
     const dialog = document.createElement('div');
     dialog.setAttribute('role', 'dialog');
     dialog.setAttribute('aria-modal', 'true');
     document.body.appendChild(dialog);
 
-    press({ key: 't', code: 'KeyT' });
+    press({ key: ']', code: 'BracketRight' });
 
     expect(onJump).not.toHaveBeenCalled();
   });
 
   it('leaves a bare key that a handler below already claimed', () => {
     const onJump = vi.fn();
-    bind('diff.jump', onJump);
+    bind('diff.nextFile', onJump);
     const button = focusInto('button');
     button.addEventListener('keydown', (event) => event.preventDefault());
 
-    typeInto({ target: button, init: { key: 't', code: 'KeyT' } });
+    typeInto({ target: button, init: { key: ']', code: 'BracketRight' } });
 
     expect(onJump).not.toHaveBeenCalled();
   });

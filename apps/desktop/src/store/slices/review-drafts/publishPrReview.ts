@@ -17,6 +17,7 @@ import {
 import { tauriDatabase } from '../../../shared/lib/db';
 import { appendAttribution, isAttributionEnabled } from '../../../shared/utils/attribution';
 import { computeStaleDrafts } from './computeStaleDrafts';
+import { isFileLevelDraft } from './fileLevel';
 import { resolveReviewTarget, type ReviewTarget } from './resolveReviewTarget';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { SessionRepo } from '../worktrees/resolveSessionRepo';
@@ -113,14 +114,19 @@ const publishGithub = async ({
         pullRequestId,
         event: VERDICT_EVENT[verdict],
         body,
-        threads: fresh.map((draft) => ({
-          path: draft.path,
-          line: draft.line,
-          side: draft.side === 'old' ? ('LEFT' as const) : ('RIGHT' as const),
-          startLine: draft.startLine,
-          startSide: draft.startLine != null ? (draft.side === 'old' ? 'LEFT' : 'RIGHT') : null,
-          body: draft.body,
-        })),
+        fileThreads: fresh
+          .filter((draft) => isFileLevelDraft({ draft }))
+          .map((draft) => ({ path: draft.path, body: draft.body })),
+        threads: fresh
+          .filter((draft) => !isFileLevelDraft({ draft }))
+          .map((draft) => ({
+            path: draft.path,
+            line: draft.line,
+            side: draft.side === 'old' ? ('LEFT' as const) : ('RIGHT' as const),
+            startLine: draft.startLine,
+            startSide: draft.startLine != null ? (draft.side === 'old' ? 'LEFT' : 'RIGHT') : null,
+            body: draft.body,
+          })),
       },
       ghOpts,
     );
@@ -163,8 +169,9 @@ const publishGitlab = async ({
   if (refs != null) {
     const shas = { baseSha: refs.baseSha, headSha: refs.headSha, startSha: refs.startSha };
     for (const draft of fresh) {
-      const position =
-        draft.side === 'old'
+      const position = isFileLevelDraft({ draft })
+        ? { ...shas, newPath: draft.path, oldPath: draft.path }
+        : draft.side === 'old'
           ? { ...shas, newPath: draft.path, oldPath: draft.path, oldLine: draft.line }
           : { ...shas, newPath: draft.path, newLine: draft.line };
       try {

@@ -31,19 +31,14 @@ export const useDiffReviewThreads = ({ sessionId, mountId }: Params): ReadonlyAr
     return eligibleReviewThreads({ github, rows }).flatMap((thread): ReadonlyArray<DiffThread> => {
       const { head } = thread;
       const threadId = head.threadId;
-      if (
-        threadId == null ||
-        head.outdated === true ||
-        head.path === undefined ||
-        head.line === undefined
-      ) {
+      if (threadId == null || head.outdated === true || head.path === undefined) {
         return [];
       }
       return [
         {
           id: `review:${threadId}`,
           filePath: head.path,
-          anchor: { side: 'new', lineNumber: head.line },
+          anchor: head.line === undefined ? null : { side: 'new', lineNumber: head.line },
           body: head.body,
           tone: 'warning',
           author: head.author,
