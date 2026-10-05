@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { FileDiff } from '@goodboy/types';
-import { ancestorIds, buildChangeTree, filterFiles, visibleRows } from './changeTree';
+import {
+  ancestorIds,
+  buildChangeTree,
+  defaultCollapsed,
+  filterFiles,
+  visibleRows,
+} from './changeTree';
 import { fileKindOf } from './fileStatus';
 
 const fileAt = (path: string, extra: Partial<FileDiff> = {}): FileDiff => ({
@@ -216,6 +222,43 @@ describe('filterFiles', () => {
   it('is case insensitive and finds nothing for an unrelated query', () => {
     expect(filterFiles({ files: SAMPLE, query: 'BUILDCSV' })).toHaveLength(1);
     expect(filterFiles({ files: SAMPLE, query: 'zzz' })).toEqual([]);
+  });
+});
+
+describe('defaultCollapsed', () => {
+  const many = (folder: string, count: number) =>
+    Array.from({ length: count }, (_, index) => fileAt(`${folder}/f${index}.ts`));
+
+  it('keeps everything open up to 300 files', () => {
+    const tree = buildChangeTree({ files: [...many('big', 120), ...many('also', 120)] });
+
+    expect(defaultCollapsed({ tree }).size).toBe(0);
+  });
+
+  it('closes the folders over 50 files once the change passes 300', () => {
+    const tree = buildChangeTree({
+      files: [...many('big', 260), ...many('mid', 51), ...many('small', 49)],
+    });
+
+    expect([...defaultCollapsed({ tree })].sort()).toEqual(['big', 'mid']);
+  });
+
+  it('keeps a parent open when a folder inside it is the big one', () => {
+    const tree = buildChangeTree({
+      files: [
+        ...many('apps/web/components', 260),
+        ...many('apps/web/routes', 30),
+        ...many('docs', 20),
+      ],
+    });
+
+    expect([...defaultCollapsed({ tree })]).toEqual(['apps/web/components']);
+  });
+
+  it('starts with the Generated row closed, whatever the size of the change', () => {
+    const tree = buildChangeTree({ files: [fileAt('src/a.ts'), fileAt('pnpm-lock.yaml')] });
+
+    expect([...defaultCollapsed({ tree })]).toEqual(['group:generated']);
   });
 });
 

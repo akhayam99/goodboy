@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, type RefObject } from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { Check, ChevronRight, MessageSquare, MessageSquarePlus } from 'lucide-react';
 import { Button, ScrollFade, Tooltip, cn, tintClasses } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
@@ -10,7 +10,15 @@ import {
 } from '../../lib/changeTree';
 import { STATUS_LETTER, STATUS_TONE, STATUS_WORD } from '../../lib/fileStatus';
 import type { ViewedState } from '../../lib/reviewedFiles';
+import {
+  WINDOW_MIN_ROWS,
+  layoutRows,
+  rowHeightOf,
+  scrollTopToReveal,
+  windowOf,
+} from '../../lib/windowRows';
 import { Delta } from './Delta';
+import { KEY_HELP } from './keyHelp';
 import { ProgressRing } from './ProgressRing';
 import { TreeHead } from './TreeHead';
 
@@ -67,10 +75,69 @@ export const ChangeTree = ({
     [states],
   );
   const activeRef = useRef<HTMLButtonElement | null>(null);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const revealed = useRef(false);
+  const [scrollTop, setScrollTop] = useState(0);
+  const [viewport, setViewport] = useState(0);
+  const layout = useMemo(() => layoutRows(rows), [rows]);
+  const isWindowed = rows.length > WINDOW_MIN_ROWS;
+  const { start, end } = isWindowed
+    ? windowOf({ layout, count: rows.length, scrollTop, viewport })
+    : { start: 0, end: rows.length };
+  const shownRows = isWindowed ? rows.slice(start, end) : rows;
+  const padTop = isWindowed ? (layout.offsets[start] ?? 0) : 0;
+  const padBottom = isWindowed ? layout.total - (layout.offsets[end] ?? layout.total) : 0;
 
   useEffect(() => {
-    activeRef.current?.scrollIntoView?.({ block: 'nearest' });
+    const element = viewportRef.current;
+    if (element === null || !isWindowed) {
+      return;
+    }
+    const measure = () => {
+      setScrollTop(element.scrollTop);
+      setViewport(element.clientHeight);
+    };
+    measure();
+    element.addEventListener('scroll', measure, { passive: true });
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+    observer?.observe(element);
+    return () => {
+      element.removeEventListener('scroll', measure);
+      observer?.disconnect();
+    };
+  }, [isWindowed]);
+
+  useEffect(() => {
+    revealed.current = false;
   }, [activePath]);
+
+  useEffect(() => {
+    const element = viewportRef.current;
+    if (revealed.current || activePath === null) {
+      return;
+    }
+    if (!isWindowed || element === null) {
+      activeRef.current?.scrollIntoView?.({ block: 'nearest' });
+      revealed.current = activeRef.current !== null;
+      return;
+    }
+    const index = rows.findIndex((row) => row.id === activePath);
+    const row = rows[index];
+    if (row === undefined) {
+      return;
+    }
+    revealed.current = true;
+    const next = scrollTopToReveal({
+      layout,
+      index,
+      rowPx: rowHeightOf(row),
+      scrollTop: element.scrollTop,
+      viewport: element.clientHeight,
+    });
+    if (next !== element.scrollTop) {
+      element.scrollTop = next;
+    }
+  }, [activePath, isWindowed, layout, rows]);
 
   return (
     <nav aria-label="Changed files" className="flex min-h-0 w-full min-w-0 flex-col">
@@ -90,7 +157,7 @@ export const ChangeTree = ({
         isFiltering={filter.isFiltering}
         onClear={filter.onClear}
       />
-      <ScrollFade className="min-h-0 flex-1" fadeSize="h-6">
+      <ScrollFade className="min-h-0 flex-1" fadeSize="h-6" viewportRef={viewportRef}>
         {rows.length === 0 && filter.isFiltering ? (
           <div className="flex flex-col items-start gap-2 px-3 py-2 text-meta text-muted-foreground">
             <p>No files match.</p>
@@ -99,8 +166,11 @@ export const ChangeTree = ({
             </Button>
           </div>
         ) : null}
-        <ul className="flex min-w-0 flex-col px-1 pb-4">
-          {rows.map((row) => {
+        <ul
+          className="flex min-w-0 flex-col px-1 pb-4"
+          style={isWindowed ? { paddingTop: padTop, paddingBottom: padBottom + 16 } : undefined}
+        >
+          {shownRows.map((row) => {
             const indent = BASE_PX + row.depth * INDENT_PX;
             if (row.kind === 'folder') {
               const isOpen = !collapsed.has(row.id);
@@ -148,9 +218,9 @@ export const ChangeTree = ({
                   aria-current={isActive ? 'true' : undefined}
                   title={row.id}
                   onClick={() => onPick(row.id)}
-                  style={{ paddingLeft: indent + ICON_SIZE.row + 8 }}
+                  style={{ paddingLeft: indent + ICON_SIZE.row + 8, height: rowHeightOf(row) }}
                   className={cn(
-                    'flex w-full min-w-0 items-center gap-2 rounded-sm py-1 pr-2 text-left text-body hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+                    'flex w-full min-w-0 items-center gap-2 rounded-sm pr-2 text-left text-body hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
                     isActive && 'bg-overlay-selected',
                     viewed ? 'text-muted-foreground' : 'text-foreground',
                   )}
@@ -229,6 +299,7 @@ export const ChangeTree = ({
           })}
         </ul>
       </ScrollFade>
+      <p className="shrink-0 px-3 py-2 text-meta text-faint-foreground">{KEY_HELP}</p>
     </nav>
   );
 };

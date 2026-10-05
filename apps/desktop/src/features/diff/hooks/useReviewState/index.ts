@@ -10,9 +10,9 @@ import { resolveReviewTarget } from '../../../../store/slices/review-drafts/reso
 import { FILE_DRAFT_COMPOSER, draftThread } from '../../lib/draftThreads';
 import type { DiffComments, DiffThread, DiffViewed } from '../../components/DiffView/types';
 import {
-  GENERATED_GROUP_ID,
   ancestorIds,
   buildChangeTree,
+  defaultCollapsed,
   filterFiles,
   type ChangeTree,
   type TreeGroup,
@@ -52,8 +52,6 @@ export type ReviewState = {
   readonly commentOnFile: (path: string) => void;
   readonly clearFileComment: () => void;
 };
-
-const INITIALLY_COLLAPSED: ReadonlySet<string> = new Set([GENERATED_GROUP_ID]);
 
 const NO_THREADS: ReadonlyArray<DiffThread> = [];
 
@@ -140,7 +138,20 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
   const { stateOf } = diff.viewed;
   const isFiltering = query.trim() !== '' || unviewedOnly || notesOnly;
   const [activePath, setActivePath] = useState<string | null>(null);
-  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(INITIALLY_COLLAPSED);
+  const fullTree = useMemo(() => buildChangeTree({ files: diff.files }), [diff.files]);
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() =>
+    defaultCollapsed({ tree: fullTree }),
+  );
+  const pathsKey = useMemo(() => diff.files.map((file) => file.path).join('\n'), [diff.files]);
+  const seenPaths = useRef(pathsKey);
+
+  useEffect(() => {
+    if (seenPaths.current === pathsKey) {
+      return;
+    }
+    seenPaths.current = pathsKey;
+    setCollapsed(defaultCollapsed({ tree: fullTree }));
+  }, [pathsKey, fullTree]);
   const { focusFile } = diff;
 
   const noteCounts = useMemo(() => {

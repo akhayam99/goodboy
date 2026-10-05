@@ -7,11 +7,16 @@ import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/s
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { openFileInWorkspace } from '../../../../shared/lib/editor';
 import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
-import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { DiffViewSelector } from '../../../permissions/components/DiffViewSelector';
+import { useDiffKeys } from '../../hooks/useDiffKeys';
+import { useNarrowPane } from '../../hooks/useNarrowPane';
 import { useReviewState } from '../../hooks/useReviewState';
 import type { SessionDiff } from '../../hooks/useSessionDiff';
+import { useTreePanel } from '../../hooks/useTreePanel';
 import { ChangeTree } from '../ChangeTree';
+import { TreeStrip } from '../ChangeTree/TreeStrip';
+import { TreeEmpty } from '../ChangeTree/TreeEmpty';
+import { TreeLoading } from '../ChangeTree/TreeLoading';
 import { DiffView } from '../DiffView';
 
 type Props = {
@@ -73,7 +78,9 @@ export const SessionDiffPane = ({
   );
 
   const filterRef = useRef<HTMLInputElement | null>(null);
-  useShortcut('diff.focusFilter', () => filterRef.current?.focus());
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const isNarrow = useNarrowPane(rootRef);
+  const panel = useTreePanel({ isNarrow });
 
   const isEmpty = !diff.loading && diff.error === null && diff.files.length === 0;
   const hasTree = !diff.loading && diff.error === null && diff.files.length > 0;
@@ -103,6 +110,27 @@ export const SessionDiffPane = ({
       review.setUnviewedOnly,
       review.unviewedOnly,
     ],
+  );
+
+  useDiffKeys({
+    enabled: hasTree,
+    review,
+    onToggleTree: panel.toggle,
+    onFocusTree: panel.focus,
+    onFocusFilter: panel.focusFilter,
+  });
+
+  const viewedCount = useMemo(
+    () => review.tree.files.filter((file) => review.viewed.stateOf(file) === 'viewed').length,
+    [review.tree.files, review.viewed],
+  );
+
+  const pickFile = useCallback(
+    (path: string) => {
+      review.jumpTo(path);
+      panel.dismiss();
+    },
+    [panel, review],
   );
 
   const openInEditor = useCallback(
@@ -168,14 +196,16 @@ export const SessionDiffPane = ({
       <ErrorStrip label="the diff" error={new Error(diff.error)} onRetry={diff.refresh} />
     </PageColumn>
   ) : isEmpty ? (
-    <PageColumn>
-      <LensEmptyState
-        tone={CONCEPT_TONE.diff}
-        icon={CONCEPT_ICONS.diff}
-        title={emptyTitle(diff.view, baseBranch)}
-        description={emptyBlurb(diff.view, baseBranch)}
-      />
-    </PageColumn>
+    isNarrow ? (
+      <PageColumn>
+        <LensEmptyState
+          tone={CONCEPT_TONE.diff}
+          icon={CONCEPT_ICONS.diff}
+          title={emptyTitle(diff.view, baseBranch)}
+          description={emptyBlurb(diff.view, baseBranch)}
+        />
+      </PageColumn>
+    ) : null
   ) : isFilteredOut ? (
     <PageColumn>
       <LensEmptyState
@@ -218,23 +248,64 @@ export const SessionDiffPane = ({
     />
   );
 
+  const tree = (
+    <ChangeTree
+      tree={review.tree}
+      allFiles={review.allFiles}
+      filter={filter}
+      filterRef={filterRef}
+      activePath={review.activePath}
+      collapsed={review.collapsed}
+      onToggleFolder={review.toggleFolder}
+      onPick={pickFile}
+      onCommentOnFile={review.comments.allowFileLevel ? review.commentOnFile : null}
+      stateOf={review.viewed.stateOf}
+      noteCountOf={review.noteCountOf}
+    />
+  );
+
+  const treeColumn = diff.loading ? (
+    <TreeLoading />
+  ) : isEmpty ? (
+    <TreeEmpty
+      title={emptyTitle(diff.view, baseBranch)}
+      description={emptyBlurb(diff.view, baseBranch)}
+    />
+  ) : hasTree ? (
+    tree
+  ) : null;
+
+  const docked = !isNarrow && treeColumn !== null && (panel.isOpen || !hasTree);
+  const strip = hasTree && (isNarrow || !panel.isOpen);
+  const overlay = isNarrow && hasTree && panel.isOpen;
+
   return (
-    <div className="flex min-h-0 min-w-0 flex-1">
-      {hasTree && (
-        <aside aria-label="Files" className="hidden min-h-0 w-[280px] shrink-0 pl-3 @4xl:flex">
-          <ChangeTree
-            tree={review.tree}
-            allFiles={review.allFiles}
-            filter={filter}
-            filterRef={filterRef}
-            activePath={review.activePath}
-            collapsed={review.collapsed}
-            onToggleFolder={review.toggleFolder}
-            onPick={review.jumpTo}
-            onCommentOnFile={review.comments.allowFileLevel ? review.commentOnFile : null}
-            stateOf={review.viewed.stateOf}
-            noteCountOf={review.noteCountOf}
-          />
+    <div ref={rootRef} className="relative flex min-h-0 min-w-0 flex-1">
+      {docked && (
+        <aside
+          ref={panel.asideRef}
+          aria-label="Files"
+          className="flex min-h-0 w-[280px] shrink-0 pl-3"
+        >
+          {treeColumn}
+        </aside>
+      )}
+      {strip && (
+        <TreeStrip
+          ref={panel.stripRef}
+          viewed={viewedCount}
+          total={review.tree.files.length}
+          isOpen={panel.isOpen}
+          onToggle={panel.toggle}
+        />
+      )}
+      {overlay && (
+        <aside
+          ref={panel.asideRef}
+          aria-label="Files"
+          className="absolute inset-y-0 left-11 z-10 flex w-[280px] border-r border-border-soft bg-background py-2 pl-3 shadow-lg"
+        >
+          {tree}
         </aside>
       )}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
