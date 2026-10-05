@@ -3,7 +3,7 @@ import type { Session, SessionId, SessionProjectMount } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
-import { sessionPlace } from '../../../store/slices/navigation/place';
+import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
 import { sessionTitle } from '../../session/sessionTitle';
 import { archiveSessions, restoreSessions } from '../../session/sessionArchive';
 import { createAgentEventName } from '../../session/createAgentEventName';
@@ -68,7 +68,8 @@ type OpenLensParams = {
 };
 
 const openLens = ({ env, sessionId, lens }: OpenLensParams): void => {
-  env.getState().navigate({ to: sessionPlace({ sessionId, lens }) });
+  const state = env.getState();
+  state.navigate({ to: lensPlace({ state, sessionId, lens }) });
 };
 
 type LifecycleParams = {

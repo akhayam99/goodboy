@@ -139,24 +139,6 @@ export const reviewCommentWord = ({
   }
 };
 
-export const resolverBriefWord = ({
-  state,
-  row,
-}: {
-  readonly state: ReviewCommentState;
-  readonly row: ResolveQueueRow;
-}): string => {
-  switch (state) {
-    case 'needs':
-      return 'Needs your reply';
-    case 'accepted':
-    case 'replied':
-      return 'Ready to push';
-    default:
-      return reviewCommentWord({ state, row });
-  }
-};
-
 export const REVIEW_COMMENT_NODE: Record<
   ReviewCommentState,
   Exclude<WorkNodeState, 'marker' | 'mixed'>

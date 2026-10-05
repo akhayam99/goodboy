@@ -40,9 +40,9 @@ Know what each comment needs next. Each one shows a state like **Not started**, 
 
 Know why a draft failed and what to do next. The comment says why in plain words, shows the last command the agent ran and how it ended, and links to the transcript. Pick **Retry**, **Try another model** or **Add a hint**, and earlier attempts fold into one line above. When a push fails because the branch on origin moved, **Sync and try again** asks first, brings the new commits under yours, and stops without touching anything if they conflict.
 
-### Manage a resolve from its Brief
+### See what a resolve did
 
-Click a resolve in Activity and its Brief holds the comment, the fix and the reply, with **Accept**, **Edit**, **Reply** and **Skip**. The header chip reads the comment state, as Activity does, such as **Ready for you** or **Accepted**, not **Done**. After you accept, **Push now** pushes exactly that fix, after a confirm right under the header. If earlier local commits would go with it, the confirm lists them first. A resolve that fixed several comments together shows **Open in Review (N)** instead, and Review opens on the first of them.
+Click a resolve in Activity and its **Fix run** shows what the resolver did, the commits it made and the comments it touched, each a link to that comment. The header chip reads the comment state, as Activity does, such as **Ready for you** or **Accepted**, not **Done**. **Open transcript** shows the whole conversation. Accept, reply and push stay in the comment on the **Comments** tab, where **Push** names the commits that would go with a fix. A resolve that fixed several comments together says so, and **Open them in Comments** shows just those. A row in Activity that groups several resolves has **Open comments** for the same list.
 
 ### Fixes already on the branch
 
@@ -71,12 +71,7 @@ Accept a fix even after the branch got new commits: it lands on top of the lates
 
 ### Squash and fold the resolve commits
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-commits-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-commits-light.webp" alt="The Commits view of Review for PR #318: the branch hl/fix-duplicate-credit with 5 commits oldest first, the presets Keep as they are, Fold each into its original and One commit for the review, each commit with its sha and whether it is on origin, and on the right the After list of 5 commits with Reset and Rewrite">
-</picture>
-
-Choose how the fixes land before anyone sees them. Review has two views, **Comments** and **Commits** (press **V** to switch). **Commits** lists the branch commits since the base, yours and the resolve commits linked to their comment, with three presets: **Keep as they are**, **Fold each into its original** (into the commit the fix was a fixup of) and **One commit for the review**, plus a menu per commit to keep it, fold it into an earlier commit, squash it with the one above or reword it. The preview shows the resulting commits and the predicted outcome before anything runs, and a **Replies** list with the text each comment's reply will carry once the shas move (a reply already posted gets its Update line, with the **Edit the posted reply** switch beside it). A plan you left in Rewrite history is never overwritten: Commits says so and waits for **Open it** or **Replace it**. **Rewrite** goes through Rewrite history: tried in a copy, a backup kept, and when commits are already on origin it says first that this is a force push with lease that reviewers will see as force-pushed. **Undo** restores the backup and puts every comment back on its commit. The preset you pick is remembered per project and sets whether later resolves commit as fixups or new commits.
+Tidy the fixes before anyone sees them, on the **Commits** tab of the branch. It lists the commits since the base, yours and the resolve commits, and opens the history rewriter on them: fold a fix into the commit it belonged to, squash it with the one above, reword it or drop it. **Backups** restores the branch to how it was before a rewrite. A rewrite is tried in a copy first and a backup is kept. When commits are already on origin it says first that this is a force push with lease that reviewers will see as force-pushed. **Undo rewrite** restores the backup and puts every comment back on its commit.
 
 ### Notes before a pull request
 
@@ -110,7 +105,7 @@ Keep a pull request description in step with its branch. After a history push, a
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-diff-light.webp" alt="The Diff of payments-api on hl/fix-duplicate-credit, branch vs main with 3 files +47 -12, 1 of 3 viewed, Unified and Split, an open note under line 26 of applyWebhook.ts, 1 note, and Resolve in Review and Rewrite history buttons">
 </picture>
 
-Read changes with syntax colors, word-level highlights, a **Unified** or **Split** view and a **Viewed** tick per file (**1 of 3 viewed** here), and quote a line into a note or a question for an agent. A note shows under its line with **Fix**, **Close note** and **Delete**. **Fix 2 notes** in the toolbar opens a strip with the model, the commit style and a hint, and **Start** gives each note its own agent and opens a summary of your notes grouped by state. **Open in Review** carries the notes into Review, even when a pull request is open. The header offers the next step for the branch, such as **Rebase on main**, **Push N commits** or **Create PR**, next to **Rewrite history**.
+Read changes with syntax colors, word-level highlights, a **Unified** or **Split** view and a **Viewed** tick per file (**1 of 3 viewed** here), and quote a line into a note or a question for an agent. A note shows under its line with **Fix**, **Close note** and **Delete**. **Fix 2 notes** in the toolbar opens a strip with the model, the commit style and a hint, and **Start** gives each note its own agent and opens a summary of your notes grouped by state. **Open in Review** carries the notes into Review, even when a pull request is open. The header offers the next step for the branch, such as **Rebase on main**, **Push N commits** or **Create PR**. A file tree on the left lists the changed files by folder with their counts and a check on the ones you viewed, and a click jumps to the file.
 
 ### Write review
 

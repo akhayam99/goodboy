@@ -1,13 +1,16 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionId } from '@goodboy/types';
-import { sessionPlace } from '../../../store/slices/navigation/place';
+import { branchPlace, sessionPlace } from '../../../store/slices/navigation/place';
 import { useOpenSession } from './index';
 
 const navigate = vi.fn();
 
 vi.mock('../../../store', async () => ({
-  useAppStore: (selector: (s: { navigate: typeof navigate }) => unknown) => selector({ navigate }),
+  useAppStore: Object.assign(
+    (selector: (s: { navigate: typeof navigate }) => unknown) => selector({ navigate }),
+    { getState: () => ({}) },
+  ),
   sessionPlace: (await import('../../../store/slices/navigation/place')).sessionPlace,
 }));
 
@@ -25,7 +28,7 @@ describe('useOpenSession', () => {
 
     expect(navigate).toHaveBeenCalledTimes(1);
     expect(navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: 's1' as SessionId, lens: 'review' }),
+      to: branchPlace({ sessionId: 's1' as SessionId, tab: 'comments' }),
     });
   });
 

@@ -128,7 +128,7 @@ describe('navigation flow table ratchet', () => {
   it('has a row for every crumb menu entry and palette destination', async () => {
     const declared = await declaredTokens();
     await boot({ seed: 'pr' });
-    await clickButton(/^Overview/);
+    await clickButton(/^Session/);
     const crumbs = screen.getAllByRole('menuitemradio').map((item) => {
       const text = (item.textContent ?? '').trim();
       const known = LENS_ROWS.find((row) => text.startsWith(row.label));

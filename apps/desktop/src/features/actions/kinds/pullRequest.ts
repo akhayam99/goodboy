@@ -15,7 +15,7 @@ import type { PullRequestState, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openUrl } from '../../../shared/lib/editor';
 import { selectActiveProjectPrs } from '../../../store/slices/github/activeProjectPrs';
-import { sessionPlace } from '../../../store/slices/navigation/place';
+import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
 import { selectPrWrite } from '../../../store/slices/pr-writes/selectPrWrite';
 import { sessionMountViews } from '../../../store/slices/project-mounts/mountRowModel';
 import { resolveSessionRepo } from '../../../store/slices/worktrees/resolveSessionRepo';
@@ -132,7 +132,9 @@ const openPrLens = ({
 }): void => {
   const state = env.getState();
   state.setPullRequestMode({ sessionId: facts.sessionId, mode });
-  state.navigate({ to: sessionPlace({ sessionId: facts.sessionId, lens: 'pr' }) });
+  state.navigate({
+    to: lensPlace({ state: env.getState(), sessionId: facts.sessionId, lens: 'pr' }),
+  });
 };
 
 const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = [

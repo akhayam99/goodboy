@@ -17,7 +17,7 @@ export const diffBranchCrumbMenu = (scope: TrailMenuScope): CrumbMenuModel => {
     actions: [
       {
         id: 'all-branches',
-        label: 'All branches in Overview',
+        label: 'All branches in Session',
         icon: LayoutDashboard,
         confirm: null,
         onRun: () => openLens({ sessionId, lens: null }),

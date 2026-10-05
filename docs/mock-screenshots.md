@@ -208,7 +208,7 @@ studio itself.
 
 The dense capture fixtures are `rules-teleport`,
 `rules-no-limits`, `rail-ticket-ids`, and `activity-groups`. The resolver
-fixture uses `agent-brief-resolver&live=1&pane=transcript`; add
+fixture uses `fix-run&live=1&pane=transcript`; add
 `&flow=recheck` or `&flow=follow-up` for its other starts. It builds the
 provider message with the production kickoff and handoff builders and leaves
 the resolver waiting for its first reply. Settings scenes install browser

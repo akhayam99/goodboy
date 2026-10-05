@@ -18,9 +18,6 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
   }
   if (view.target?.kind === 'branch') {
     const { target } = view;
-    if (target.page === 'history') {
-      return { ...place, view: { ...view, target: { ...target, page: null } } };
-    }
     if (target.threadId !== null) {
       return { ...place, view: { ...view, target: { ...target, threadId: null } } };
     }
@@ -33,11 +30,7 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
     return sessionPlace({ sessionId });
   }
   if (view.agentId !== null && view.target?.kind === 'thread' && view.lens === 'review') {
-    return sessionPlace({
-      sessionId,
-      lens: 'review',
-      target: { kind: 'thread', threadId: view.target.threadId },
-    });
+    return sessionPlace({ sessionId, lens: 'review' });
   }
   if (view.agentId !== null) {
     const home = agentHomeFor({ state, sessionId, agentId: view.agentId }) ?? view.lens;

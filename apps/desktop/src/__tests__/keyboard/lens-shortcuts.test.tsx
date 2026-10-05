@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { sessionPlace } from '../../store/slices/navigation/place';
+import { branchPlace, sessionPlace } from '../../store/slices/navigation/place';
 import type { SessionId } from '@goodboy/types';
 import { act, cleanup, render } from '@testing-library/react';
 
@@ -425,7 +425,7 @@ describe('App lens shortcuts on darwin', () => {
     press({ code: 'KeyR', key: 'r', metaKey: true, altKey: true });
 
     expect(state.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'review' }),
+      to: branchPlace({ sessionId: 'session-1' as SessionId, tab: 'comments' }),
     });
     expect(reload).not.toHaveBeenCalled();
   });

@@ -19,7 +19,7 @@
     "notices": 0,
     "emptyLines": 1
   },
-  "apps/desktop/src/features/history/components/RewriteHistoryPage/HistoryBackups.tsx": {
+  "apps/desktop/src/features/history/components/CommitsHistory/HistoryBackups.tsx": {
     "notices": 0,
     "emptyLines": 1
   },

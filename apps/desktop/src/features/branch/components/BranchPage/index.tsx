@@ -200,13 +200,7 @@ export const BranchPage = ({ session, workingDir }: Props) => {
       );
     }
     if (tab === 'commits') {
-      return (
-        <BranchCommits
-          sessionId={sessionId}
-          worktreePath={identity.mountPath}
-          diffControls={controls.diffControls}
-        />
-      );
+      return <BranchCommits sessionId={sessionId} worktreePath={identity.mountPath} />;
     }
     if (tab === 'checks') {
       return <BranchChecks pr={pr} checks={checks} />;

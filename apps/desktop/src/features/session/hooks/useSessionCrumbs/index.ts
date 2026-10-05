@@ -10,7 +10,6 @@ import {
   agentPlace,
   sessionPlace,
 } from '../../../../store';
-import { resolverThread } from '../../../../store/slices/navigation/resolverThread';
 import { useResolveQueueRows } from '../../../resolve/hooks/useResolveQueueRows';
 import { threadLocationOf } from '../../../resolve/threadLocationOf';
 import { clipQuestionText, isQuestionDelegate } from '../../../context/questionDelegate';
@@ -30,7 +29,6 @@ import { PULL_REQUEST_MODE_LABEL } from '../../../review/pullRequestModeLabel';
 import { focusedArtifactTitleOf } from '../../../artifacts/focusedArtifactTitleOf';
 import { resolveDiffMount } from '../../components/SessionWorkspace/parts/resolveDiffMount';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
-import { REWRITE_HISTORY_TITLE } from '../../../history/rewriteHistoryTitle';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useBranchIdentity } from '../../../branch/hooks/useBranchIdentity';
 import { branchPlace } from '../../../../store/slices/navigation/place';
@@ -66,29 +64,22 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
     (s) =>
       s.sessionSelectedPrNumber?.[sessionId] ?? s.sessionGithub?.[sessionId]?.pr?.number ?? null,
   );
-  const resolverThreadId = useAppStore((s) =>
-    selectedAgentId == null || selectedChildHome !== 'review'
-      ? null
-      : resolverThread({ state: s, sessionId, agentId: selectedAgentId as AgentId }),
-  );
   const branchThreadId = useAppStore((s) =>
     s.activeLens?.[sessionId] === 'branch' ? (s.branchThreadId?.[sessionId] ?? null) : null,
   );
-  const crumbThreadId = resolverThreadId ?? branchThreadId;
   const queueRows = useResolveQueueRows({
     sessionId,
-    isEnabled: crumbThreadId !== null,
+    isEnabled: branchThreadId !== null,
   });
   const selectedThreadLabel = useMemo(() => {
-    if (crumbThreadId === null) {
+    if (branchThreadId === null) {
       return null;
     }
-    const row = queueRows.find((candidate) => candidate.thread.threadId === crumbThreadId);
+    const row = queueRows.find((candidate) => candidate.thread.threadId === branchThreadId);
     return row === undefined ? 'Comment' : (threadLocationOf({ row })?.shortLabel ?? 'Comment');
-  }, [queueRows, crumbThreadId]);
+  }, [queueRows, branchThreadId]);
   const branchIdentity = useBranchIdentity({ sessionId });
   const branchTab = useAppStore((s) => s.branchTab?.[sessionId] ?? 'comments');
-  const branchPage = useAppStore((s) => s.diffPage?.[sessionId] ?? null);
   const branchFilePath = useAppStore((s) => s.diffFocus?.[sessionId]?.path ?? null);
   const branchLeaf = useMemo((): BreadcrumbCrumb | null => {
     if (lens !== 'branch') {
@@ -104,9 +95,6 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
         icon: CONCEPT_ICONS.comments,
       };
     }
-    if (branchTab === 'commits' && branchPage === 'history') {
-      return { id: 'rewrite-history', label: REWRITE_HISTORY_TITLE, icon: CONCEPT_ICONS.history };
-    }
     if (branchTab === 'files' && branchFilePath !== null) {
       return {
         id: 'branch-file',
@@ -115,15 +103,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       };
     }
     return null;
-  }, [
-    branchFilePath,
-    branchPage,
-    branchTab,
-    branchThreadId,
-    lens,
-    pullRequestMode,
-    selectedThreadLabel,
-  ]);
+  }, [branchFilePath, branchTab, branchThreadId, lens, pullRequestMode, selectedThreadLabel]);
   const branch = useMemo(
     () => ({ label: branchIdentity.label, leaf: branchLeaf }),
     [branchIdentity.label, branchLeaf],
@@ -228,7 +208,6 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
             : null,
         pullRequestNumber: pullRequestMode === 'create_pr' ? null : pullRequestNumber,
         branch,
-        selectedThreadLabel,
         lensLabel: (kind: LensKind) => lensLabelFor({ lens: kind, isBranchless }),
         handlers: {
           toOverview: () => openLens({ sessionId, lens: null }),
@@ -271,18 +250,6 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
             });
           },
           toPullRequestHome: () => setPullRequestMode({ sessionId, mode: 'overview' }),
-          toThread: () => {
-            if (resolverThreadId === null) {
-              return;
-            }
-            navigate({
-              to: branchPlace({
-                sessionId,
-                mountPath: branchIdentity.mountPath,
-                threadId: resolverThreadId,
-              }),
-            });
-          },
         },
       }),
     [
@@ -307,8 +274,6 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       branch,
       branchIdentity.mountPath,
       branchTab,
-      selectedThreadLabel,
-      resolverThreadId,
       parentAgentId,
       rootAgentId,
       isBranchless,

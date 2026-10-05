@@ -29,7 +29,7 @@ export const historyLabel = ({ location, sessions }: Params): HistoryLabel => {
   const session = sessionById(sessions, place.sessionId) ?? null;
   const lens = place.view.lens;
   return {
-    label: lens === null ? 'Overview' : LENS_LABEL[lens],
+    label: lens === null ? 'Session' : LENS_LABEL[lens],
     context: session === null ? null : sessionTitle({ session }),
   };
 };

@@ -1,7 +1,7 @@
 import type { MountId, SessionId } from '@goodboy/types';
 import { ThreadGitSha } from './components/ReviewFlow/ThreadGitSha';
 import { useResolverCommit } from './hooks/useResolverCommit';
-import { RESOLVER_BRIEF_COPY } from './reviewFlowCopy';
+import { FIX_RUN_COPY } from './reviewFlowCopy';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -17,13 +17,13 @@ export const ResolverCommitLine = ({ sessionId, mountId, sha, isFolded }: Props)
   }
   return (
     <p className="flex min-w-0 items-center gap-2 text-meta text-muted-foreground">
-      <span className="shrink-0">{RESOLVER_BRIEF_COPY.commit}</span>
+      <span className="shrink-0">{FIX_RUN_COPY.commit}</span>
       <ThreadGitSha sha={commit.sha} />
       {commit.subject !== null && (
         <span className="min-w-0 truncate text-foreground">{commit.subject}</span>
       )}
       {commit.isOnBranch === false && !isFolded && (
-        <span className="shrink-0">{RESOLVER_BRIEF_COPY.rewritten}</span>
+        <span className="shrink-0">{FIX_RUN_COPY.rewritten}</span>
       )}
     </p>
   );

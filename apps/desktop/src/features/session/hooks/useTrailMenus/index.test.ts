@@ -733,9 +733,9 @@ describe('useTrailMenus diff branch crumb', () => {
     expect(rowById(menu, '/work/ledger-core').state).toBeNull();
   });
 
-  it('offers all branches in Overview and opens the diff of a picked mount', () => {
+  it('offers all branches in Session and opens the diff of a picked mount', () => {
     const menu = menuOf(branchPage, 'branch');
-    expect(labelsOf(menu)).toEqual([['all-branches', 'All branches in Overview']]);
+    expect(labelsOf(menu)).toEqual([['all-branches', 'All branches in Session']]);
     actionOf(menu, 'all-branches').onRun();
     expect(h.openLens).toHaveBeenCalledWith({ sessionId: SESSION_ID, lens: null });
     rowById(menu, '/work/notify-relay').onSelect();

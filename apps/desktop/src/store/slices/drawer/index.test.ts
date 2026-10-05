@@ -51,7 +51,6 @@ const harness = (): Harness => {
     focusedWorkflowRunId: {},
     diffFocus: {},
     diffMountPath: {},
-    diffPage: {},
     terminalMountPath: {},
     focusedArtifactId: {},
     focusedGithubIssueNumber: {},

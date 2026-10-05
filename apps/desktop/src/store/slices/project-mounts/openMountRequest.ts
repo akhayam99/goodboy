@@ -2,7 +2,7 @@ import type { MountId, MountPullRequestProvider, SessionId } from '@goodboy/type
 import { formatError } from '@goodboy/ui';
 import type { ReviewTargetOutcome } from '../review-navigation';
 import type { SessionStudio } from '../session-view/types';
-import { sessionPlace } from '../navigation/place';
+import { branchPlace, sessionPlace } from '../navigation/place';
 import type { GetFn, SetFn } from './types';
 
 export type OpenMountRequestInput = {
@@ -45,7 +45,7 @@ export const openMountRequest = (_set: SetFn, get: GetFn) => {
         return { kind: 'failed', error: formatError(error) };
       }
       get().setPullRequestMode({ sessionId, mode: 'create_pr' });
-      get().navigate({ to: sessionPlace({ sessionId, lens: 'pr' }) });
+      get().navigate({ to: branchPlace({ sessionId, tab: 'comments' }) });
       return { kind: 'opened' };
     }
     return get().openReviewTarget({

@@ -31,7 +31,6 @@ export const DiffNotesScene = () => {
       sessionResolveQueueItems: { [CTX_SESSION_ID]: entries },
       sessionResolveAttempts: { [CTX_SESSION_ID]: attempts },
       diffFocus: {},
-      diffPage: {},
       branchTab: { [CTX_SESSION_ID]: 'files' },
       branchThreadId: {},
       loadDiffComments: async () => undefined,

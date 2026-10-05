@@ -9,15 +9,9 @@ type Props = {
   readonly onOpenTerminal: () => void;
 };
 
-export const HistoryPageActions = ({ isBusy, onRefresh, onShowBackups, onOpenTerminal }: Props) => {
+export const HistoryActions = ({ isBusy, onRefresh, onShowBackups, onOpenTerminal }: Props) => {
+  const BackupIcon = CONCEPT_ICONS.backup;
   const overflow: OverflowMenuItem[] = [
-    {
-      kind: 'item',
-      key: 'backups',
-      label: 'Backups',
-      icon: CONCEPT_ICONS.backup,
-      onClick: onShowBackups,
-    },
     {
       kind: 'item',
       key: 'terminal',
@@ -31,6 +25,10 @@ export const HistoryPageActions = ({ isBusy, onRefresh, onShowBackups, onOpenTer
       <Button size="sm" variant="ghost" disabled={isBusy} onClick={onRefresh}>
         <RefreshCw size={ICON_SIZE.row} aria-hidden />
         Refresh
+      </Button>
+      <Button size="sm" variant="secondary" onClick={onShowBackups}>
+        <BackupIcon size={ICON_SIZE.row} aria-hidden />
+        Backups
       </Button>
       <OverflowMenu items={overflow} label="More history actions" align="right" />
     </>

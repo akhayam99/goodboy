@@ -50,14 +50,6 @@ const surfaceChanges = ({
         target?.kind === 'diff' || target?.kind === 'branch' ? target.mountPath : null,
       ),
     },
-    diffPage: {
-      ...state.diffPage,
-      [sessionId]: keep(
-        lens === 'files',
-        state.diffPage[sessionId] ?? null,
-        target?.kind === 'diff' || target?.kind === 'branch' ? (target.page ?? null) : null,
-      ),
-    },
     branchTab: {
       ...state.branchTab,
       [sessionId]: target?.kind === 'branch' ? target.tab : 'comments',
