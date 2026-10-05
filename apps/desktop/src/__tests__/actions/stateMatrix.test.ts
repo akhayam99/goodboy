@@ -1659,13 +1659,7 @@ const REVIEW_COMMENT_STATES: ReadonlyArray<readonly [string, string, ReadonlyArr
   [
     'needs you',
     'PRRT_thread_error_shape',
-    [
-      'reviewComment.openInDiff',
-      'reviewComment.openOnGithub',
-      'reviewComment.answer',
-      ...COMMENT_DECIDE,
-      'reviewComment.copyLink',
-    ],
+    [...COMMENT_OPEN, 'reviewComment.answer', ...COMMENT_DECIDE, 'reviewComment.copyLink'],
   ],
   [
     'ready',

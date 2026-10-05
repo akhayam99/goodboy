@@ -4,7 +4,6 @@ export const REVIEW_FLOW_LABEL = {
   list: 'Comments',
   comment: 'Comment',
   proposedChange: 'Proposed change',
-  agentAsks: 'The agent asks',
   resolver: 'Resolver',
   edited: 'Edited',
   commentEdited: 'Comment edited',
@@ -15,7 +14,6 @@ export const REVIEW_FLOW_LABEL = {
   cancel: 'Cancel',
   keysHint: 'Esc cancels',
   noChangeCaptured: 'The agent changed no code for this comment.',
-  waitingForSlot: 'Waiting for a free slot',
   tooLarge: 'The change is too large to show here.',
 } as const;
 
@@ -112,6 +110,25 @@ export const sharedFixLine = ({ count }: { readonly count: number }): string =>
   count === 1
     ? 'The same fix answers one more comment, accepted with this one:'
     : `The same fix answers ${count} more comments, accepted with this one:`;
+
+export const FIX_RUN_QUESTION_COPY = {
+  title: 'Question from the fix run',
+  options: 'Answer',
+  other: 'Or tell it something else',
+  continue: 'Continue the fix run',
+  hint: 'Continues the same run, in the same copy of the branch.',
+  answered: 'You answered:',
+} as const;
+
+export const FIX_RUN_THREAD_COPY = {
+  working: 'Working on it',
+  sameRun: 'Same fix run',
+  queued: 'Next in line. Starts when the current comment is done.',
+  retry: 'Retry in this run',
+  startOver: 'Start over with a new agent',
+  retryHint:
+    'Retry keeps the same run and the same copy of the branch. Start over begins a new agent.',
+} as const;
 
 export const FIX_RUN_COPY = {
   didHeading: 'What it did',

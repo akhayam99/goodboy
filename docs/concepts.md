@@ -773,9 +773,12 @@ is a count of comments, never of agents:
 A comment nobody started reads Open. What git says (Already on origin, Looks
 fixed, Still needed, Fix went missing), Comment changed (the reviewer edited the
 original comment since the draft) and Checks failed (the change stays Ready) are
-chips next to the word, never in place of it. The groups are Open, Ready to push
-and Done, and the header shows one summary line instead of a chip per state. The
-`…` above the list filters the list by state.
+chips next to the word, never in place of it. The list groups by the word:
+Needs you, Working, Ready, Couldn't fix, Open, then Done (closed until you open
+it). While a fix run exists one status line under the tabs shows `Fixing N
+comments`, the tally of those words (each count filters the list), the model and
+Open transcript and Stop; a component with an `actions` slot, so bulk buttons
+sit on the same line.
 
 The state word carries the tone: Needs you is the only warning, Ready is neutral
 (the Accept button is the signal), Couldn't fix is the danger tone, except a stop
@@ -893,9 +896,12 @@ for this session`, else `Resolver default`); launching does not turn the
   a fixup too). Only a model picked for the session that differs from the one
   the run used starts the comment over as a new fix run on that model. The hint
   you type before a retry lands in the prompt's operator notes
-- A failed run offers **Retry** (`Retry on Opus 5` once you picked a
-  model, `Retry with the hint` with a hint), **Try another model** (the
-  picker opens inline under the buttons) and **Add a hint** (F is Retry).
+- A failed run offers **Retry in this run** (`retryCouldntFix` for that one
+  comment, in the same run and copy; `Retry with the hint` with a hint),
+  **Start over with a new agent** (a new launch for that comment on the
+  session pick or the role default), **Try another model** (the picker opens
+  inline under the buttons, it sets the model of a new agent) and **Add a hint**
+  (F is Retry in this run).
   `…` holds Reply yourself, Skip and Open transcript. The earlier attempts of
   the comment fold into one line above (`Attempt 1 · Sonnet 5.5 · Medium ·
 failed`) that opens to their reasons. A failed delivery after the run has no

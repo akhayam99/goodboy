@@ -107,8 +107,7 @@ export const BranchPage = ({ session, workingDir }: Props) => {
   const review = useMemo<BranchReviewCounts>(
     () => ({
       accepted: selectedPushIds?.length ?? pushableIds.length,
-      replies: entries.filter((entry) => entry.remote === 'on_origin' && entry.group === 'open')
-        .length,
+      replies: entries.filter((entry) => entry.remote === 'on_origin').length,
       failed: entries.filter(
         (entry) => entry.state === 'failed' && isPushFailure({ row: entry.row }),
       ).length,

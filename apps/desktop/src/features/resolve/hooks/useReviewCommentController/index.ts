@@ -10,6 +10,9 @@ import type { ReviewComposeMode } from '../../../review/reviewRequest';
 import type { ReviewEntry } from '../../components/ReviewFlow/useReviewEntries';
 import { RESOLVE_ITEM_LABEL } from '../../resolveItemCopy';
 import { launchKeyOf } from '../../../../store/slices/resolve/resolveLaunch';
+import { draftRoutingOf } from '../../draftRouting';
+import { launchChoiceOf } from '../../launchChoice';
+import { startBatch } from '../../startBatch';
 import { useResolveAgain } from '../useResolveAgain';
 
 export type ReviewCompose = {
@@ -41,6 +44,7 @@ export type ReviewCommentController = {
     readonly actionId: string;
   }) => Promise<void>;
   readonly retryRun: (threadId: string) => Promise<void>;
+  readonly startOver: (threadId: string) => Promise<void>;
   readonly resetFor: (threadId: string) => void;
   readonly setError: (threadId: string, message: string | null) => void;
 };
@@ -72,7 +76,7 @@ const nextOpenAfter = ({
   readonly entries: ReadonlyArray<ReviewEntry>;
   readonly threadId: string;
 }): string | null => {
-  const open = entries.filter((entry) => entry.group === 'open');
+  const open = entries.filter((entry) => entry.resolveWord !== 'done');
   const index = open.findIndex((entry) => entry.threadId === threadId);
   if (index === -1) {
     return open[0]?.threadId ?? null;
@@ -91,6 +95,7 @@ export const useReviewCommentController = ({
   const refuseResolveQueueItem = useAppStore((s) => s.refuseResolveQueueItem);
   const settleResolveSourceChange = useAppStore((s) => s.settleResolveSourceChange);
   const answerQuestions = useAppStore((s) => s.answerQuestions);
+  const retryCouldntFix = useAppStore((s) => s.retryCouldntFix);
   const requestAttempt = useResolveAgain({
     sessionId,
     rows: entries.map((entry) => entry.row),
@@ -158,16 +163,18 @@ export const useReviewCommentController = ({
       if (isSubmitting) {
         return;
       }
+      const attempt = entries.find((entry) => entry.threadId === threadId)?.row.attempt ?? null;
       setIsSubmitting(true);
       setError(threadId, null);
       try {
-        const outcome = await requestAttempt({
-          threadId,
-          instruction: RESOLVE_ITEM_LABEL.rereadInstruction,
-        });
-        if (outcome === 'missing') {
+        if (attempt === null) {
           throw new Error(COULD_NOT_SEND);
         }
+        await retryCouldntFix({
+          sessionId,
+          launchId: launchKeyOf({ attempt }),
+          threadIds: [threadId],
+        });
       } catch (caught) {
         if (!isReportedError(caught)) {
           setError(threadId, formatError(caught));
@@ -176,7 +183,36 @@ export const useReviewCommentController = ({
         setIsSubmitting(false);
       }
     },
-    [isSubmitting, requestAttempt, setError],
+    [entries, isSubmitting, retryCouldntFix, sessionId, setError],
+  );
+
+  const startOver = useCallback(
+    async (threadId: string): Promise<void> => {
+      if (isSubmitting) {
+        return;
+      }
+      setIsSubmitting(true);
+      setError(threadId, null);
+      try {
+        await startBatch({
+          getState: useAppStore.getState,
+          sessionId,
+          threadIds: [threadId],
+          launchChoice: launchChoiceOf({
+            routing: draftRoutingOf({ state: useAppStore.getState(), sessionId }),
+            commitStyle: null,
+            hint: null,
+          }),
+        });
+      } catch (caught) {
+        if (!isReportedError(caught)) {
+          setError(threadId, formatError(caught));
+        }
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [isSubmitting, sessionId, setError],
   );
 
   const submitCompose = useCallback(async (): Promise<void> => {
@@ -295,5 +331,5 @@ export const useReviewCommentController = ({
     onReplyDone: () => setEditingReplyId(null),
   });
 
-  return { compose, editingReplyId, bind, runVerb, retryRun, resetFor, setError };
+  return { compose, editingReplyId, bind, runVerb, retryRun, startOver, resetFor, setError };
 };

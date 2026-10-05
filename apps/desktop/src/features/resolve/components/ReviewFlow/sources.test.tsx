@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -48,6 +48,10 @@ const mount = async ({ selected }: { readonly selected: Source }): Promise<void>
     </ToastProvider>,
   );
   await settle();
+  const done = screen.queryByRole('button', { name: /^Done \d+/ });
+  if (done !== null && done.getAttribute('aria-expanded') === 'false') {
+    fireEvent.click(done);
+  }
 };
 
 const list = (): HTMLElement => screen.getByRole('navigation', { name: 'Comments' });

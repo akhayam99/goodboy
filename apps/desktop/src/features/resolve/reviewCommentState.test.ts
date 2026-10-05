@@ -3,9 +3,6 @@ import type { ResolveStage, SessionId } from '@goodboy/types';
 import type { ResolveQueueRow } from './buildResolveQueueRows';
 import type { ResolveProposalKind } from '../../store/slices/resolve/resolveProposalKind';
 import {
-  REVIEW_COMMENT_GROUPS,
-  REVIEW_COMMENT_GROUP_LABEL,
-  reviewCommentGroup,
   reviewCommentStateOf,
   reviewCommentWord,
   type ReviewCommentState,
@@ -81,42 +78,6 @@ const rowAt = ({
   proposalKind,
   coveredThreadIds: [],
   delivery: null,
-});
-
-describe('review comment groups', () => {
-  it('names the three groups Open, Ready to push and Done', () => {
-    expect(REVIEW_COMMENT_GROUPS.map((group) => REVIEW_COMMENT_GROUP_LABEL[group])).toEqual([
-      'Open',
-      'Ready to push',
-      'Done',
-    ]);
-  });
-
-  it('keeps every state that still needs a decision or work in Open', () => {
-    const open: ReadonlyArray<ReviewCommentState> = [
-      'new',
-      'drafting',
-      'needs',
-      'ready',
-      'edited',
-      'outdated',
-      'failed',
-    ];
-    for (const state of open) {
-      expect(reviewCommentGroup({ state })).toBe('open');
-    }
-  });
-
-  it('puts accepted and reply only in Ready to push', () => {
-    expect(reviewCommentGroup({ state: 'accepted' })).toBe('push');
-    expect(reviewCommentGroup({ state: 'replied' })).toBe('push');
-  });
-
-  it('moves Skipped to Done because it never blocks the push', () => {
-    expect(reviewCommentGroup({ state: 'skipped' })).toBe('done');
-    expect(reviewCommentGroup({ state: 'pushed' })).toBe('done');
-    expect(reviewCommentGroup({ state: 'resolved' })).toBe('done');
-  });
 });
 
 describe('review comment words', () => {

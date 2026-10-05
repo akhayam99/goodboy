@@ -14,7 +14,7 @@ import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { branchLayoutOf } from '../../../branch/branchLayout';
-import { branchPlace } from '../../../../store/slices/navigation/place';
+import { branchPlace, resolverPagePlace } from '../../../../store/slices/navigation/place';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { eventMatches } from '../../../../shared/keyboard/dispatcher';
 import { isTypingTarget } from '../../../../shared/keyboard/isTypingTarget';
@@ -30,12 +30,14 @@ import {
   reviewTargetErrorLabel,
   reviewTargetPending,
 } from '../../../review/reviewTargetCopy';
+import { fixRunOf, type FixRunWord } from '../../fixRun';
 import { useActiveReviewSource } from '../../hooks/useActiveReviewSource';
 import { useReviewCommentController } from '../../hooks/useReviewCommentController';
 import { resolveQueueRefreshLabel } from '../../resolveQueueCopy';
 import { REVIEW_FLOW_LABEL } from '../../reviewFlowCopy';
 import { isPushFailure } from '../../reviewCommentState';
 import { ReviewEmptyState } from './ReviewEmptyState';
+import { ResolveRunStatus } from './ResolveRunStatus';
 import { ReviewComment } from './ReviewComment';
 import { LaunchPanel } from './LaunchPanel';
 import { ReviewList } from './ReviewList';
@@ -80,8 +82,32 @@ const SKELETON_ROWS = [0, 1, 2];
 export const ReviewFlow = ({ session, push }: Props) => {
   const sessionId = session.id as SessionId;
   const env = useActionEnv({ origin: 'button' });
-  const { entries, groups } = useReviewEntries({ sessionId });
-  const shownEntries = entries;
+  const { entries, groups: allGroups } = useReviewEntries({ sessionId });
+  const forceCloseResolver = useAppStore((s) => s.forceCloseResolver);
+  const [filter, setFilter] = useState<FixRunWord | null>(null);
+  const [isDoneOpen, setIsDoneOpen] = useState(false);
+  const run = useMemo(
+    () =>
+      fixRunOf({
+        sources: entries.map((entry) => ({
+          threadId: entry.threadId,
+          state: entry.state,
+          attempt: entry.row.attempt,
+        })),
+      }),
+    [entries],
+  );
+  const activeFilter = run !== null && filter !== null && run.tally[filter] > 0 ? filter : null;
+  const groups = useMemo(
+    () =>
+      activeFilter === null ? allGroups : allGroups.filter((group) => group.word === activeFilter),
+    [activeFilter, allGroups],
+  );
+  const isDoneShown = isDoneOpen || allGroups.length === 1;
+  const shownEntries = useMemo(
+    () => groups.flatMap((group) => (group.word === 'done' && !isDoneShown ? [] : group.entries)),
+    [groups, isDoneShown],
+  );
   const storedSelection = useAppStore((s) => s.reviewSelection[sessionId]);
   const setReviewSelection = useAppStore((s) => s.setReviewSelection);
   const toggleReviewSelection = useAppStore((s) => s.toggleReviewSelection);
@@ -161,10 +187,17 @@ export const ReviewFlow = ({ session, push }: Props) => {
   const focused =
     entries.find((entry) => entry.threadId === addressThreadId) ??
     entries.find((entry) => entry.threadId === lastThreadId) ??
-    entries.find((entry) => entry.group === 'open') ??
+    shownEntries[0] ??
     entries[0] ??
     null;
   const focusedThreadId = focused?.threadId ?? null;
+  const isFocusedDone = focused?.resolveWord === 'done';
+
+  useEffect(() => {
+    if (isFocusedDone) {
+      setIsDoneOpen(true);
+    }
+  }, [focusedThreadId, isFocusedDone]);
 
   const releaseLaunch = useCallback((): void => {
     const current = launchRef.current;
@@ -447,6 +480,8 @@ export const ReviewFlow = ({ session, push }: Props) => {
                 <ReviewList
                   groups={groups}
                   focusedThreadId={focusedThreadId}
+                  isDoneOpen={isDoneShown}
+                  onToggleDone={() => setIsDoneOpen((current) => !current)}
                   onSelect={select}
                   onFix={(threadId) => openLaunch({ threadIds: [threadId], isDirect: true })}
                   checked={checked}
@@ -510,6 +545,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
                     {...controller.bind(focused.threadId)}
                     onSelect={select}
                     onTryAgain={() => void controller.retryRun(focused.threadId)}
+                    onStartOver={() => void controller.startOver(focused.threadId)}
                   />
                   {layout !== 'three' && (
                     <ThreadProperties sessionId={sessionId} entry={focused} layout="inline" />
@@ -548,6 +584,24 @@ export const ReviewFlow = ({ session, push }: Props) => {
             label={reviewTargetErrorLabel({ hasThread: targetThreadId !== null })}
             error={new Error(targetError)}
             onRetry={() => void openReview({ sessionId, destination: reviewTarget.destination })}
+          />
+        )}
+        {run !== null && (
+          <ResolveRunStatus
+            run={run}
+            filter={activeFilter}
+            onFilter={setFilter}
+            onOpenTranscript={() =>
+              navigate({
+                to: resolverPagePlace({
+                  sessionId,
+                  agentId: run.agentId,
+                  threadId: run.threadIds[0] ?? focusedThreadId ?? '',
+                  pane: 'transcript',
+                }),
+              })
+            }
+            onStop={() => void forceCloseResolver(sessionId, run.agentId)}
           />
         )}
         {body()}

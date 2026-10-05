@@ -1358,8 +1358,9 @@ workspaceId, nowMs })`, owns every row's subtitle and tone (it replaced three
   [The right drawer](#the-right-drawer).
 - **The Branch page is where the session's code is discussed and ships.** The
   contract of its header and tabs is in [The Branch page](#the-branch-page).
-  Comments is one flow: the list in three groups (Open, Ready to push, Done)
-  and the focused comment beside it in the page itself, never in a drawer; a
+  Comments is one flow: the list grouped by the five words (Needs you,
+  Working, Ready, Couldn't fix, Open, and Done closed) under the run status
+  line, and the focused comment beside it in the page itself, never in a drawer; a
   thread in the address is `s/{session}/branch/comments/t/{thread}`. A comment
   nobody started shows `Fix` on hover (and `F`), which opens the launch panel
   in the right column in place of the thread; a checkbox on hover picks comments (`X` on the focused row,

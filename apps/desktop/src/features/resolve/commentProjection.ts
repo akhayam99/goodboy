@@ -25,6 +25,15 @@ export const RESOLVE_WORD_LABEL: Readonly<Record<ResolveWord, string>> = {
   done: 'Done',
 };
 
+export const RESOLVE_LIST_WORDS: ReadonlyArray<ResolveWord> = [
+  'needs_you',
+  'working',
+  'ready',
+  'couldnt_fix',
+  'open',
+  'done',
+];
+
 const SUB_LABEL: Readonly<Record<Exclude<ResolveSub, 'resolved_remote'>, string>> = {
   waiting: 'Waiting',
   pushing: 'Pushing',
