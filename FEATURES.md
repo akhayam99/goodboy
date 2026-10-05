@@ -88,7 +88,7 @@ The Commits tab of the Branch page shapes a branch before it goes to review: fol
 
 [More on commits and history](docs/features/branch-history.md)
 
-<a id="resolve"></a><a id="review-sources"></a><a id="comment-states"></a><a id="failed-drafts"></a><a id="see-what-a-resolve-did"></a><a id="fixes-already-on-the-branch"></a><a id="a-fix-that-went-missing"></a><a id="close-on-github"></a><a id="review-replies-in-your-voice"></a><a id="fixes-on-a-branch-that-moved"></a><a id="squash-and-fold-the-resolve-commits"></a><a id="notes-before-a-pull-request"></a><a id="github-pull-request-page"></a><a id="pull-request-diff-and-review-as-layers"></a><a id="write-it-for-me"></a><a id="write-it"></a><a id="pr-description-follows-the-push"></a><a id="diff"></a><a id="write-review"></a><a id="read-the-code"></a><a id="pull-request-on-the-branch-page"></a><a id="one-trail-to-the-branch-page"></a>
+<a id="resolve"></a><a id="bulk-actions"></a><a id="review-sources"></a><a id="comment-states"></a><a id="failed-drafts"></a><a id="see-what-a-resolve-did"></a><a id="fixes-already-on-the-branch"></a><a id="a-fix-that-went-missing"></a><a id="close-on-github"></a><a id="review-replies-in-your-voice"></a><a id="fixes-on-a-branch-that-moved"></a><a id="squash-and-fold-the-resolve-commits"></a><a id="notes-before-a-pull-request"></a><a id="github-pull-request-page"></a><a id="pull-request-diff-and-review-as-layers"></a><a id="write-it-for-me"></a><a id="write-it"></a><a id="pr-description-follows-the-push"></a><a id="diff"></a><a id="write-review"></a><a id="read-the-code"></a><a id="pull-request-on-the-branch-page"></a><a id="one-trail-to-the-branch-page"></a>
 
 ## Review and resolve on the Branch page
 

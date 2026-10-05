@@ -90,6 +90,7 @@ const mount = async ({
 
 const FAILED_THREAD_ID = 'PRRT_thread_idempotency';
 const NOT_STARTED_THREAD_ID = 'PRRT_thread_retry_constant';
+const READY_SELECTABLE_COUNT = 2;
 
 const mountFailed = async ({
   failure,
@@ -211,7 +212,7 @@ describe('Review as one flow', () => {
     expect(screen.queryByRole('toolbar', { name: 'Selected comments' })).toBeNull();
     const boxes = within(list()).getAllByRole('checkbox');
     const fixable = Array.from(list().querySelectorAll('[data-fix-row]')).length;
-    expect(boxes.length).toBe(fixable);
+    expect(boxes.length).toBe(fixable + READY_SELECTABLE_COUNT);
     fireEvent.click(boxes[0] as HTMLElement);
 
     const bar = screen.getByRole('toolbar', { name: 'Selected comments' });
@@ -368,13 +369,18 @@ describe('Review as one flow', () => {
     it('follows a row checked in the list while it is open and closes when another comment is opened', async () => {
       await mount({ threadId: null, selectable: true });
 
+      const fixIds = Array.from(list().querySelectorAll('[data-fix-row]')).map((node) =>
+        node.getAttribute('data-fix-row'),
+      );
+      const otherId = fixIds.find((id) => id !== NOT_STARTED_THREAD_ID);
       const first = list().querySelector<HTMLElement>(`[data-fix-row="${NOT_STARTED_THREAD_ID}"]`);
       fireEvent.click(first as HTMLElement);
       await screen.findByRole('region', { name: 'Fix launch' });
       expect(within(panel()).getByText('Fix 1 comment')).toBeDefined();
 
-      const boxes = within(list()).getAllByRole('checkbox');
-      const unchecked = boxes.find((box) => box.getAttribute('aria-checked') !== 'true');
+      const unchecked = list()
+        .querySelector(`[data-thread-id="${otherId}"]`)
+        ?.parentElement?.querySelector('[role="checkbox"]');
       fireEvent.click(unchecked as HTMLElement);
       expect(within(panel()).getByText('Fix 2 comments')).toBeDefined();
 

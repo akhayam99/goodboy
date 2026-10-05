@@ -1,24 +1,18 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, ResolveThread, Session, SessionProjectMount } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, agentPlace, branchPlace, sessionPlace } from '../../../store';
-import { sessionResolveStyle } from '../../../store/sessionReplySettings';
+import { EMPTY_ARRAY, useAppStore, agentPlace, sessionPlace } from '../../../store';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
-import { useAgentStartedToast } from '../../../shared/hooks/useAgentStartedToast';
 import { usePlanRunToast } from '../../plans/usePlanRun';
-import { launchChoiceOf } from '../../resolve/launchChoice';
-import { startResolve } from '../../resolve/startResolve';
-import { startedLine } from '../../resolve/reviewLaunchCopy';
-import { modelLabel } from '../../chat/utils/chat-constants';
 import type { AgentKind, AgentKindRouting } from '../../session/agent-kind';
 import { showsRunsOn } from '../../session/showsRunsOn';
-import { useKindRouting } from '../../../shared/hooks/useKindRouting';
 import { REBASE_FAILURE_TITLE, useRebaseBranch } from '../../session/hooks/useRebaseBranch';
 import { useWorktreeStatuses } from '../../session/hooks/useWorktreeStatuses';
 import { useAdvanceWorkflowAgent } from '../../workflows/useAdvanceWorkflowAgent';
 import { draftFixesLabel } from '../../actions/kinds/review';
 import { prLifecycleFailureTitle } from '../../review/prLifecycle';
+import { requestReview } from '../../review/reviewRequest';
 import { eligibleReviewThreads } from '../eligibleThreads';
 import { useMountProposalActions } from '../useMountProposalActions';
 import { useOpenAgentQuestion } from '../../context/hooks/useOpenAgentQuestion';
@@ -31,9 +25,6 @@ const openProviderSignIn = ({ providerId }: { readonly providerId: string }) =>
       detail: { scope: 'providers', provider: providerId, action: 'login' },
     }),
   );
-
-const FIXERS_STARTED_TITLE = 'Fix run started';
-const OPEN_SUMMARY_LABEL = 'Open summary';
 
 type Params = {
   readonly session: Session;
@@ -102,11 +93,6 @@ export const useSuggestionActions = ({
   );
   const spawnAgent = useAppStore((state) => state.spawnAgent);
   const resumeStoppedAgents = useAppStore((state) => state.resumeStoppedAgents);
-  const setAgentConfig = useAppStore((state) => state.setAgentConfig);
-  const createResolveBatch = useAppStore((state) => state.createResolveBatch);
-  const resolveStyle = useAppStore(
-    useShallow((state) => sessionResolveStyle({ state, sessionId })),
-  );
   const rows = useAppStore((state) => state.sessionResolveThreads[sessionId] ?? EMPTY_ROWS);
   const navigate = useAppStore((state) => state.navigate);
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
@@ -119,7 +105,6 @@ export const useSuggestionActions = ({
   const mergePr = useAppStore((state) => state.mergePr);
   const resolveMountCleanup = useAppStore((state) => state.resolveMountCleanup);
   const attachWorkflowToSession = useAppStore((state) => state.attachWorkflowToSession);
-  const announceAgentStarted = useAgentStartedToast();
   const announcePlanRun = usePlanRunToast();
 
   const rebaseMounts = useMemo(
@@ -152,46 +137,19 @@ export const useSuggestionActions = ({
     status: behind?.status ?? null,
   });
 
-  const resolverRouting = useKindRouting({ sessionId, kind: 'resolver' });
   const unresolvedThreads = useMemo(() => eligibleReviewThreads({ github, rows }), [github, rows]);
 
-  const pullRequest = github?.pr ?? null;
-  const startResolving = async (picked?: AgentKindRouting): Promise<void> => {
-    if (pullRequest == null || unresolvedThreads.length === 0) {
+  const openFixPanel = async (): Promise<void> => {
+    const threadIds = unresolvedThreads.flatMap((thread) =>
+      thread.head.threadId == null ? [] : [thread.head.threadId],
+    );
+    if (threadIds.length === 0) {
       return;
     }
-    const routing = picked ?? resolverRouting;
-    const launchChoice = launchChoiceOf({
-      routing,
-      commitStyle: resolveStyle.commitStyle,
-      hint: null,
-    });
-    const batch = await createResolveBatch({
+    requestReview({
+      getState: useAppStore.getState,
       sessionId,
-      threadIds: unresolvedThreads.flatMap((thread) =>
-        thread.head.threadId == null ? [] : [thread.head.threadId],
-      ),
-      launchChoice,
-    });
-    const { agentId } = await startResolve({
-      sessionId,
-      threads: unresolvedThreads,
-      pr: pullRequest,
-      batch: { batchId: batch.id, launchChoice },
-      style: resolveStyle,
-      spawnAgent,
-      setAgentConfig,
-    });
-    announceAgentStarted({
-      sessionId,
-      agentId,
-      title: FIXERS_STARTED_TITLE,
-      message: startedLine({
-        count: unresolvedThreads.length,
-        modelName: modelLabel(routing.model),
-      }),
-      actionLabel: OPEN_SUMMARY_LABEL,
-      open: () => navigate({ to: branchPlace({ sessionId, tab: 'comments' }) }),
+      request: { kind: 'fix', threadIds },
     });
   };
 
@@ -240,9 +198,8 @@ export const useSuggestionActions = ({
         primary: {
           label: draftFixesLabel({ fresh: unresolvedThreads.length }),
           isDisabled: false,
-          failureTitle: "The fix didn't start",
-          run: () => startResolving(),
-          runsOn: { kind: 'resolver', runWith: startResolving },
+          failureTitle: "The fix panel didn't open",
+          run: openFixPanel,
         },
         onDismiss: null,
       };
