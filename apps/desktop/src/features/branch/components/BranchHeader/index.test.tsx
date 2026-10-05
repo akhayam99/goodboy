@@ -333,6 +333,25 @@ describe('BranchHeader one primary by state', () => {
   });
 });
 
+describe('BranchHeader merge state', () => {
+  it('keeps a blocked merge out of a stray line under the primary', () => {
+    const readyPr: PullRequestState = { ...PR, isDraft: false, checks: 'pending' };
+    useAppStore.setState({
+      sessionGithub: { [SESSION_ID]: { ...MOUNT_GITHUB, pr: readyPr } },
+      mountGithub: { [MOUNT_ID]: { ...MOUNT_GITHUB, pr: readyPr } },
+    });
+    status = statusOf({});
+    renderHeader({
+      pr: readyPr,
+      review: { accepted: 1, replies: 0, failed: 0, isPushing: false },
+    });
+
+    expect(screen.getByRole('button', { name: /^Push 1$/ })).toBeDefined();
+    expect(screen.queryByText(/Checks are still running/)).toBeNull();
+    expect(screen.queryByText('Squash and merge')).toBeNull();
+  });
+});
+
 describe('BranchHeader overflow', () => {
   it('holds the rare lifecycle and branch actions, and no Rewrite or Restore', () => {
     withMountPr();

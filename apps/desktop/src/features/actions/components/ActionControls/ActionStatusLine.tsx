@@ -3,13 +3,13 @@ import type { ActionControls } from '../../useActionControls';
 
 type Props = {
   readonly controls: ActionControls;
+  readonly showReasons?: boolean;
 };
 
-export const ActionStatusLine = ({ controls }: Props) => {
-  const visible = [
-    ...controls.inSlot({ slot: 'primary' }),
-    ...controls.inSlot({ slot: 'secondary' }),
-  ];
+export const ActionStatusLine = ({ controls, showReasons = true }: Props) => {
+  const visible = showReasons
+    ? [...controls.inSlot({ slot: 'primary' }), ...controls.inSlot({ slot: 'secondary' })]
+    : [];
   const reasons = [
     ...new Set(
       visible.flatMap((action) => (action.blockedReason === null ? [] : [action.blockedReason])),

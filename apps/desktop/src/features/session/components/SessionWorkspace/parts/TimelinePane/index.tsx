@@ -6,6 +6,7 @@ import { useAppStore } from '../../../../../../store';
 import {
   ACTIVITY_VIEWS,
   ACTIVITY_VIEW_LABEL,
+  entriesOfView,
   type ActivityView,
 } from '../../../../timeline/activityView';
 import { useExplodeGroups, type ExplodeGroups } from '../../../../hooks/useExplodeGroups';
@@ -79,7 +80,16 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
   const hasUnreadAgents = rows.unreadAgentIds.size > 0;
   const isLoading = !rows.isLoaded && entries.length === 0;
   const isSearching = view === 'log' && query.trim() !== '';
-  const emptyCopy = isSearching ? 'Nothing in the log matches' : EMPTY_COPY[view];
+  const hasLogEntries = useMemo(
+    () => entriesOfView({ entries, events: rows.events, view: 'log' }).length > 0,
+    [entries, rows.events],
+  );
+  const isLaunchesEmptyOnly = view === 'activity' && hasLogEntries;
+  const emptyCopy = isSearching
+    ? 'Nothing in the log matches'
+    : isLaunchesEmptyOnly
+      ? 'Nothing launched yet'
+      : EMPTY_COPY[view];
 
   return (
     <section aria-label="Activity" className="@container/activity flex flex-col gap-2">
@@ -119,7 +129,14 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
       {isLoading ? (
         <TimelineSkeleton />
       ) : viewEntries.length === 0 ? (
-        <p className="px-3 py-2 text-label text-muted-foreground">{emptyCopy}</p>
+        <p className="flex items-center gap-2 px-3 py-2 text-label text-muted-foreground">
+          {emptyCopy}
+          {isLaunchesEmptyOnly ? (
+            <Button variant="ghost" size="sm" className="h-6" onClick={() => setView('log')}>
+              See Log
+            </Button>
+          ) : null}
+        </p>
       ) : (
         <div className="flex flex-col gap-1">
           <WorkTimeProvider sessionId={sessionId} workspaceId={session.workspaceId}>

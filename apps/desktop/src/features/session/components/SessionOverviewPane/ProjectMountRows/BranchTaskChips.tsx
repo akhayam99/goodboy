@@ -27,7 +27,10 @@ export const BranchTaskChips = ({ sessionId, projectId, branch, isSkeleton }: Pr
     return null;
   }
   return (
-    <span aria-label={`Tasks on ${branch}`} className="flex shrink-0 items-center gap-1">
+    <span
+      aria-label={`Tasks on ${branch}`}
+      className="flex min-w-0 max-w-full flex-wrap items-center gap-1"
+    >
       {tasks.map((task) =>
         isSkeleton ? (
           <SkeletonChip key={externalTaskLinkKey({ task })} />

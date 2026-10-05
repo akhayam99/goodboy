@@ -2,7 +2,15 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Link2, ListPlus, Plus } from 'lucide-react';
-import { AnchoredPopover, Button, Chip, MenuList, useDropdown, type MenuEntry } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  Button,
+  Chip,
+  MenuList,
+  cn,
+  useDropdown,
+  type MenuEntry,
+} from '@goodboy/ui';
 import type { MountId, ProjectId, SessionExternalTask, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { MOUNT_PUT_TASK_EVENT, mountEventName } from '../../../actions/kinds/mount';
@@ -43,16 +51,20 @@ export const PutOnBranchPopover = ({ sessionId, mountId, projectId, branch }: Pr
       setWorktreeTask(null);
     }
   }, [isOpen]);
+  const available = useMemo(
+    () =>
+      groups.filter(
+        ({ task }) =>
+          !rows.some(
+            (candidate) =>
+              taskIdentityKey({ task: candidate }) === taskIdentityKey({ task }) &&
+              candidate.scope === 'branch' &&
+              candidate.branch === branch,
+          ),
+      ),
+    [branch, groups, rows],
+  );
   const entries = useMemo<ReadonlyArray<MenuEntry>>(() => {
-    const available = groups.filter(
-      ({ task }) =>
-        !rows.some(
-          (candidate) =>
-            taskIdentityKey({ task: candidate }) === taskIdentityKey({ task }) &&
-            candidate.scope === 'branch' &&
-            candidate.branch === branch,
-        ),
-    );
     return [
       { kind: 'header', key: 'title', label: `Put work on ${branch}` },
       ...(available.length === 0
@@ -95,7 +107,10 @@ export const PutOnBranchPopover = ({ sessionId, mountId, projectId, branch }: Pr
         },
       },
     ];
-  }, [assignSessionExternalTask, branch, groups, projectId, reportError, rows, sessionId]);
+  }, [assignSessionExternalTask, available, branch, groups, projectId, reportError, sessionId]);
+  if (available.length === 0 && !isOpen) {
+    return null;
+  }
   return (
     <AnchoredPopover
       dropdown={dropdown}
@@ -113,8 +128,12 @@ export const PutOnBranchPopover = ({ sessionId, mountId, projectId, branch }: Pr
           expanded={isOpen}
           hasPopup="dialog"
           onClick={dropdown.toggle}
+          title="Put on a branch"
           icon={<Plus size={ICON_SIZE.row} aria-hidden />}
-          label="Put on a branch"
+          className={cn(
+            'w-6 justify-center px-0 opacity-0 focus-visible:opacity-100 group-hover/mount-row:opacity-100 group-focus-within/mount-row:opacity-100',
+            isOpen && 'opacity-100',
+          )}
         />
       }
     >
