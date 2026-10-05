@@ -221,6 +221,21 @@ describe('PlanProse', () => {
     expect(container.querySelectorAll('[data-comment-slot]').length).toBe(1);
   });
 
+  it('does not offer a comment on a comment card', async () => {
+    const value = api({
+      comments: [
+        comment({
+          id: 'c1',
+          anchor: { kind: 'block', order: 0, text: 'Stop the duplicate credit.' },
+          body: 'Say which credit',
+        }),
+      ],
+    });
+    render(withApi({ value, children: <PlanProse text={TEXT} section="lead" /> }));
+    fireEvent.mouseOver(await screen.findByText('Say which credit'));
+    expect(screen.queryByRole('button', { name: 'Comment on this text' })).toBeNull();
+  });
+
   it('keeps a comment whose text the planner rewrote in a group below the text', async () => {
     const value = api({
       revision: 2,

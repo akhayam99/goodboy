@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../shared/components/Toast';
-import { ArtifactPlanCommentsScene } from './ArtifactScenes';
+import { ArtifactPlanCommentsScene } from './ArtifactPlanCommentsScene';
 
 const Scene = () => (
   <ToastProvider>

@@ -1,7 +1,7 @@
 import type { ArtifactComment, ArtifactCommentAnchor } from '@goodboy/types';
 
-export const PARTS_ORDER_BASE = 1000;
-export const REST_ORDER_BASE = 2000;
+const PARTS_ORDER_BASE = 1000;
+const REST_ORDER_BASE = 2000;
 
 export type ProseSection = 'lead' | 'rest';
 
@@ -10,7 +10,7 @@ export const PROSE_ORDER_BASE: Readonly<Record<ProseSection, number>> = {
   rest: REST_ORDER_BASE,
 };
 
-export const anchorOrder = ({ anchor }: { readonly anchor: ArtifactCommentAnchor }): number =>
+const anchorOrder = ({ anchor }: { readonly anchor: ArtifactCommentAnchor }): number =>
   anchor.kind === 'part' ? PARTS_ORDER_BASE + anchor.index : anchor.order;
 
 export const sortByAnchor = ({
@@ -72,12 +72,3 @@ export const commentsForPart = ({
   readonly index: number;
 }): ReadonlyArray<ArtifactComment> =>
   comments.filter((comment) => comment.anchor.kind === 'part' && comment.anchor.index === index);
-
-export const commentsForBlock = ({
-  comments,
-  order,
-}: {
-  readonly comments: ReadonlyArray<ArtifactComment>;
-  readonly order: number;
-}): ReadonlyArray<ArtifactComment> =>
-  comments.filter((comment) => proseOrderOf({ anchor: comment.anchor }) === order);

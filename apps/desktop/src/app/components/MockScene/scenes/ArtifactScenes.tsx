@@ -9,22 +9,19 @@ import {
   WIREFRAME_LOW_ARTIFACT_ID,
   seedArtifactScene,
 } from './artifactSeed';
-import { PLAN_COMMENTS_ARTIFACT_ID, seedPlanCommentsScene } from './artifactCommentsSeed';
 
 type Props = {
   readonly artifactId: ArtifactId | null;
   readonly openRunTitle?: string;
-  readonly seed?: () => void;
 };
 
-const ArtifactScene = ({ artifactId, openRunTitle, seed }: Props) => {
+const ArtifactScene = ({ artifactId, openRunTitle }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    const run = seed ?? (() => seedArtifactScene({ focusedArtifactId: artifactId }));
-    run();
+    seedArtifactScene({ focusedArtifactId: artifactId });
     setIsReady(true);
-  }, [artifactId, seed]);
+  }, [artifactId]);
 
   useEffect(() => {
     if (!isReady || openRunTitle === undefined) {
@@ -64,10 +61,6 @@ export const ArtifactWireframeLowScene = () => (
 
 export const ArtifactWireframeHighScene = () => (
   <ArtifactScene artifactId={WIREFRAME_HIGH_ARTIFACT_ID} />
-);
-
-export const ArtifactPlanCommentsScene = () => (
-  <ArtifactScene artifactId={PLAN_COMMENTS_ARTIFACT_ID} seed={seedPlanCommentsScene} />
 );
 
 export const ArtifactGeneratingScene = () => (

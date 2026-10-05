@@ -6,7 +6,7 @@ import {
   type ProseSection,
 } from './planCommentAnchors';
 
-export const PROSE_BLOCK_SELECTOR = 'p, h1, h2, h3, h4, h5, h6, li, pre';
+const PROSE_BLOCK_SELECTOR = 'p, h1, h2, h3, h4, h5, h6, li, pre';
 
 const SLOT_SELECTOR = '[data-comment-slot]';
 
@@ -51,6 +51,9 @@ export const blockOfNode = ({
   readonly blocks: ReadonlyArray<ProseBlock>;
 }): ProseBlock | null => {
   const start = node instanceof HTMLElement ? node : (node?.parentElement ?? null);
+  if (start?.closest(SLOT_SELECTOR) != null) {
+    return null;
+  }
   const element = start?.closest<HTMLElement>(PROSE_BLOCK_SELECTOR) ?? null;
   return blocks.find((block) => block.element === element) ?? null;
 };

@@ -27,7 +27,6 @@ export type PlanCommentsModel = Readonly<{
   drafts: ReadonlyArray<ArtifactComment>;
   guard: PlanCommentGuard;
   isSending: boolean;
-  planner: Agent | null;
   run: WorkflowRun | null;
   sendError: string | null;
   send: () => Promise<SendArtifactCommentsResult>;
@@ -132,5 +131,5 @@ export const usePlanComments = ({ sessionId, plan }: Params): PlanCommentsModel 
     [add, canComment, cancelComposing, comments, composing, edit, remove, revision, startComposing],
   );
 
-  return { api, drafts, guard, isSending, planner, run, sendError, send };
+  return { api, drafts, guard, isSending, run, sendError, send };
 };

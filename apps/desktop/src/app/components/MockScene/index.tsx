@@ -42,10 +42,10 @@ import { BoardShellScene } from './scenes/BoardShellScene';
 import {
   ArtifactGeneratingScene,
   ArtifactReportScene,
-  ArtifactPlanCommentsScene,
   ArtifactWireframeHighScene,
   ArtifactWireframeLowScene,
 } from './scenes/ArtifactScenes';
+import { ArtifactPlanCommentsScene } from './scenes/ArtifactPlanCommentsScene';
 import {
   ArtifactCreateReportScene,
   ArtifactCreateWireframeScene,
