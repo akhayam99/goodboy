@@ -56,6 +56,46 @@ describe('extractProseQuestion', () => {
     expect(extractProseQuestion({ assistantText: text })).toBeNull();
   });
 
+  it('does not read a status reply that names a past confirmation as a question', () => {
+    const text = [
+      'No, la PR non è stata creata. Il branch `nw/settle-rounding` è solo locale: nessun push e nessuna PR, perché i passaggi precedenti aspettavano la tua conferma.',
+      '',
+      'Io qui sono in modalità review in sola lettura, quindi non posso pushare né aprire la PR. Passo il lavoro a un implementer che la apre come draft.',
+    ].join('\n');
+    expect(extractProseQuestion({ assistantText: text })).toBeNull();
+    expect(
+      extractProseQuestion({
+        assistantText: text.split('\n\n')[0] ?? '',
+      }),
+    ).toBeNull();
+  });
+
+  it('does not read an earlier wait on an approval as a request', () => {
+    const text = 'The earlier steps were waiting for your approval, so nothing was pushed.';
+    expect(extractProseQuestion({ assistantText: text })).toBeNull();
+  });
+
+  it('still finds a present wait on an approval', () => {
+    const text = 'Tests are green.\n\nI am waiting for your approval before I push.';
+    expect(extractProseQuestion({ assistantText: text })).toBe(
+      'I am waiting for your approval before I push.',
+    );
+  });
+
+  it('finds a plain imperative ask', () => {
+    const text = 'Migration is ready.\n\nPlease confirm the target schema.';
+    expect(extractProseQuestion({ assistantText: text })).toBe('Please confirm the target schema.');
+  });
+
+  it('ignores an ask that is followed by a closing report paragraph', () => {
+    const text = [
+      'Do you want me to keep the old alias?',
+      '',
+      'I kept it and ran the suite, 759 tests green.',
+    ].join('\n');
+    expect(extractProseQuestion({ assistantText: text })).toBeNull();
+  });
+
   it('keeps only the asking sentences when the paragraph is long', () => {
     const filler = 'Checked every table and every formatter again. '.repeat(15);
     const text = `${filler}Shall I push now?`;
