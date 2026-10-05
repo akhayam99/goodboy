@@ -239,6 +239,7 @@ export const SessionDiffPane = ({
       fileActions={fileActions}
       focusPath={diff.focusPath}
       onFocusHandled={diff.clearFocus}
+      registerScroller={review.registerScroller}
       onActivePathChange={review.setActivePath}
       fileCommentPath={review.fileCommentPath}
       onFileCommentOpened={review.clearFileComment}

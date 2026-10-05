@@ -1626,7 +1626,10 @@ sits in `Unassigned notes` on the Session overview.
 One page per branch (`features/branch`) replaces the PR, Review and Diff
 pages. Every diff in the app is still one `DiffView` (`features/diff`): the
 Files tab, Write review, the Bitbucket pull request changes and the
-`file-diff` drawer.
+`file-diff` drawer. Each one lists its files through `orderLikeTree`
+(`features/diff/lib/changeTree.ts`), so the order is the tree's everywhere. The
+Rust side runs git with `core.quotepath=false` and `parseUnifiedDiff` reads
+quoted headers, so a name with accents is its own file.
 
 **Header.** Title (`#318 Ledger export`, or the branch name without a pull
 request), the line `Draft · project · head → base · ✓ N checks`, one primary
@@ -1686,7 +1689,13 @@ in both groupings and at the end of the diff. Viewed marks are stored per sessio
 keep their own; marks saved before that are read until the mount saves its own.
 Click a file and the
 diff scrolls to it; scroll the diff and the tree highlights the file in view and
-opens its folders. The tree and the diff share one `useReviewState` (active
+opens its folders. A click, `J`/`K`, next unviewed and `Viewed` call the diff's
+scroller directly (`registerScroller` on `DiffView`); `focusPath` is only for a
+link from another page such as `Open in Files`. The diff resets its mounted
+batch, its observer and its place only when the list of paths changes, never on
+a new array with the same paths, so marking a file viewed or a note changing
+neither shortens the page nor drops an open composer. Folder row ids start with
+`dir:`, so a folder and a file with the same path never share a key. The tree and the diff share one `useReviewState` (active
 file, open folders, notes, `Viewed`), and a model in `features/diff/lib/changeTree.ts`
 builds the rows. `Viewed`, notes on
 lines and files, `Post open notes to the PR` and `Write review` (which swaps

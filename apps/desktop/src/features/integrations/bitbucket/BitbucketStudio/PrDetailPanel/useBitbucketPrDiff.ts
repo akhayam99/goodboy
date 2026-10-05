@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import { parseUnifiedDiff } from '@goodboy/core';
 import type { FileDiff } from '@goodboy/types';
+import { orderLikeTree } from '../../../../diff/lib/changeTree';
 import { bitbucketPullRequestDiff, type BitbucketPullRequestTarget } from '../../client';
 
 type Params = {
@@ -56,7 +57,7 @@ export const useBitbucketPrDiff = ({ target, isEnabled }: Params): Result => {
         if (isCancelled) {
           return;
         }
-        setFiles(parseUnifiedDiff(raw));
+        setFiles(orderLikeTree({ files: parseUnifiedDiff(raw) }));
         setIsLoading(false);
       })
       .catch((fetchError: unknown) => {

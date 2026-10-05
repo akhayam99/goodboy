@@ -23,7 +23,9 @@ const h = vi.hoisted(() => ({
   gitlabMrDiff: vi.fn(async () => ''),
 }));
 
-vi.mock('@goodboy/core', () => ({ parseUnifiedDiff: () => [] }));
+vi.mock('@goodboy/core', async (importOriginal) => ({
+  parseUnifiedDiff: (await importOriginal<typeof import('@goodboy/core')>()).parseUnifiedDiff,
+}));
 vi.mock('../../../../integrations/github/github', () => ({ ghPrDiff: h.ghPrDiff }));
 vi.mock('../../../../integrations/gitlab/client', () => ({ gitlabMrDiff: h.gitlabMrDiff }));
 vi.mock('../../../../../store/slices/worktrees/resolveSessionRepo', () => ({
@@ -149,6 +151,8 @@ const BASE_STATE: MockStore = {
 
 let state: MockStore = BASE_STATE;
 
+import { parseUnifiedDiff } from '@goodboy/core';
+import { orderLikeTree } from '../../../../diff/lib/changeTree';
 import { useReviewDiff } from './useReviewDiff';
 
 afterEach(() => {
@@ -218,6 +222,28 @@ describe('useReviewDiff', () => {
     expect(result.current.files).toEqual([]);
     expect(h.ghPrDiff).not.toHaveBeenCalled();
     expect(h.gitlabMrDiff).not.toHaveBeenCalled();
+  });
+
+  it('lists the files in the order of the Files tab tree, not in git order', async () => {
+    const patch = ['z.ts', 'src/b/deep.ts', 'a.ts', 'src/a.ts', 'src/b.ts']
+      .map((path) => `diff --git a/${path} b/${path}\n@@ -1 +1 @@\n-one\n+two`)
+      .join('\n');
+    h.gitlabMrDiff.mockResolvedValueOnce(patch);
+
+    const { result } = renderHook(() => useReviewDiff({ session }));
+    await waitFor(() => expect(result.current.files.length).toBeGreaterThan(0));
+
+    const filesTab = orderLikeTree({ files: parseUnifiedDiff(patch) });
+    expect(result.current.files.map((file) => file.path)).toEqual(
+      filesTab.map((file) => file.path),
+    );
+    expect(result.current.files.map((file) => file.path)).toEqual([
+      'src/b/deep.ts',
+      'src/a.ts',
+      'src/b.ts',
+      'a.ts',
+      'z.ts',
+    ]);
   });
 
   it('stays loading while the session links are not loaded yet', () => {

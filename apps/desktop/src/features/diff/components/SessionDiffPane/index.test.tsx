@@ -9,6 +9,7 @@ import type { SessionDiff } from '../../hooks/useSessionDiff';
 
 const h = vi.hoisted(() => ({
   store: {} as Record<string, unknown>,
+  scroll: vi.fn(),
 }));
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -79,24 +80,35 @@ vi.mock('../../../permissions/components/DiffViewSelector', () => ({
   ),
 }));
 
-vi.mock('../DiffView', () => ({
-  DiffView: ({
-    files,
-    toolbarStart,
-    toolbarEnd,
-  }: {
-    readonly files: ReadonlyArray<FileDiff>;
-    readonly toolbarStart?: ReactNode;
-    readonly toolbarEnd?: ReactNode;
-  }) => (
-    <div data-testid="diff-view" data-files={files.map((file) => file.path).join(',')}>
-      <div data-testid="diff-toolbar">
-        {toolbarStart}
-        {toolbarEnd}
-      </div>
-    </div>
-  ),
-}));
+vi.mock('../DiffView', async () => {
+  const { useEffect } = await import('react');
+  return {
+    DiffView: ({
+      files,
+      toolbarStart,
+      toolbarEnd,
+      registerScroller,
+    }: {
+      readonly files: ReadonlyArray<FileDiff>;
+      readonly toolbarStart?: ReactNode;
+      readonly toolbarEnd?: ReactNode;
+      readonly registerScroller?: (scroll: ((path: string) => void) | null) => void;
+    }) => {
+      useEffect(() => {
+        registerScroller?.(h.scroll);
+        return () => registerScroller?.(null);
+      }, [registerScroller]);
+      return (
+        <div data-testid="diff-view" data-files={files.map((file) => file.path).join(',')}>
+          <div data-testid="diff-toolbar">
+            {toolbarStart}
+            {toolbarEnd}
+          </div>
+        </div>
+      );
+    },
+  };
+});
 
 import { SessionDiffPane } from './index';
 
@@ -114,7 +126,6 @@ const diffOf = (files: ReadonlyArray<FileDiff> = []): SessionDiff => ({
   viewed: { stateOf: () => 'none', onToggle: vi.fn() },
   focusPath: null,
   clearFocus: vi.fn(),
-  focusFile: vi.fn(),
 });
 
 const FILE: FileDiff = {
@@ -222,7 +233,7 @@ describe('SessionDiffPane at a narrow width', () => {
     const tree = screen.getByRole('navigation', { name: 'Changed files' });
     fireEvent.click(within(tree).getByRole('button', { name: /export\.ts/ }));
 
-    expect(diff.focusFile).toHaveBeenCalledWith('src/ledger/export.ts');
+    expect(h.scroll).toHaveBeenCalledWith('src/ledger/export.ts');
     expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
   });
 
