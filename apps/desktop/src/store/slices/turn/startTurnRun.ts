@@ -18,6 +18,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { applyAgentTurnState } from '../sessions/sessionMutators';
 import { claimTurnStart } from './turnStartWindow';
+import { hasOwnTurnRun } from './hasOwnTurnRun';
 import { resolvePhaseAgent } from './resolvePhaseAgent';
 import type { GetFn, SetFn, WithInput, TurnPhaseValue } from './types';
 import { turnDone, turnReady } from './turnPhase';
@@ -51,8 +52,12 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
     resolvedOverride,
   } = ctx;
   const runId = crypto.randomUUID() as ProviderRunId;
-  const isFirstTurn = (get().agentRunHistory[activeAgentId] ?? []).length === 0;
-  const isHandoffTurn = retry == null && isFirstTurn && activeAgent?.startedAt == null;
+  const runHistory = get().agentRunHistory[activeAgentId] ?? [];
+  const isFirstTurn = runHistory.length === 0;
+  const isHandoffTurn =
+    retry == null &&
+    activeAgent?.startedAt == null &&
+    !hasOwnTurnRun({ history: runHistory, telemetry: get().sessionTelemetry[sessionId] ?? [] });
 
   set((state) => {
     const prev = state.agentRunHistory[activeAgentId] ?? [];
@@ -147,7 +152,7 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
     set((state) => ({
       sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
     }));
-    if (phaseTransitionEvent) {
+    if (phaseTransitionEvent && retry == null) {
       get().appendTurnEvent(activeAgentId, sessionId, { ...phaseTransitionEvent, runId });
     }
   }

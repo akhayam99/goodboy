@@ -513,8 +513,11 @@ question, suggested answers, an optional recommended answer, and whether one
 or several answers apply.
 
 - **Blocking or not.** A blocking question stops the work that asked it. It
-  holds its workflow run (see [workflows.md](workflows.md)) and can only be
-  answered, never dismissed. A non-blocking question can be dismissed. One
+  holds its workflow run (see [workflows.md](workflows.md)) and cannot be
+  dismissed. It is answered, or closed with **Send as message** when what you
+  have to say is not an answer: the text goes to the asking agent as a normal
+  message, not wrapped as an answer, and the question closes
+  (`sendQuestionAsMessage`). A non-blocking question can be dismissed. One
   asked while an agent drafts an artifact is saved in the artifact's history
   as an assumption, with the recommended answer.
 - **Delegated.** You can hand a question to an agent that answers for you,

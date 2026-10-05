@@ -823,10 +823,15 @@ When a step or a sub-agent ends a turn without its `step-done` or
   is spent.
 - It ends by asking you something in prose (a question, "confirm the
   force-push", "I need your approval"): `extractProseQuestion` in
-  `@goodboy/core` takes the asking paragraph from the last two paragraphs of
+  `@goodboy/core` takes the asking paragraph from the closing paragraph of
   the turn, and Goodboy saves it as a blocking open question owned by that
   agent. It shows with the other open questions, and your answer goes back to
-  the same agent. No re-kick is spent.
+  the same agent. No re-kick is spent. Only a question or a request addressed
+  to you counts: a reply that reports, explains or says what was waiting on a
+  confirmation earlier ("the earlier steps were waiting for your approval")
+  asks nothing, and an ask followed by a closing paragraph of report is not
+  the end of the turn. A question the heuristic gets wrong still closes: write
+  what you mean and choose **Send as message** on the card.
 
 Otherwise `continueOrPause` decides. A hands-free step or sub-agent is
 re-kicked once. After that, or at once when autorun is off, the agent stops in

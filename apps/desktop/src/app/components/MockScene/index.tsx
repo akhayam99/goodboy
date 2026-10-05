@@ -62,6 +62,7 @@ import { ContextDrawerScene } from './scenes/ContextDrawerScene';
 import { WorkflowBuilderScene } from './scenes/flow-audit/WorkflowBuilderScene';
 import { WorkflowRunScene } from './scenes/flow-audit/WorkflowRunScene';
 import { OpenQuestionsScene } from './scenes/flow-audit/OpenQuestionsScene';
+import { OpenQuestionProseScene } from './scenes/flow-audit/OpenQuestionProseScene';
 import { TranscriptScene } from './scenes/flow-audit/TranscriptScene';
 import { CommandPaletteScene } from './scenes/flow-audit/CommandPaletteScene';
 import { SearchScene } from './scenes/search/SearchScene';
@@ -221,6 +222,7 @@ export const MOCK_SCENES = {
   'workflow-builder': WorkflowBuilderScene,
   'workflow-run': WorkflowRunScene,
   'open-questions': OpenQuestionsScene,
+  'open-question-prose': OpenQuestionProseScene,
   transcript: TranscriptScene,
   'command-palette': CommandPaletteScene,
   search: SearchScene,
