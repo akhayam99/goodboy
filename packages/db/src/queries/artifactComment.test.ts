@@ -75,7 +75,7 @@ describe('artifact comments', () => {
       body: 'Add a flag',
       createdAt: 30,
     });
-    const comments = await listArtifactComments({ db, artifactId });
+    const comments = await listArtifactComments({ db, sessionId });
     expect(comments.map((comment) => comment.id)).toEqual(['c1', 'c2', 'c3']);
     expect(comments[0]).toMatchObject({
       anchor: { kind: 'part', index: 2, title: 'Backfill the ledger' },
@@ -105,13 +105,13 @@ describe('artifact comments', () => {
     await expect(updateArtifactCommentBody({ db, id: 'c1', body: 'Edited' })).resolves.toBe(true);
     await expect(updateArtifactCommentBody({ db, id: 'missing', body: 'x' })).resolves.toBe(false);
     await setArtifactCommentsStatus({ db, ids: ['c1'], status: 'sent', sentTurnId: 'run-9' });
-    expect((await listArtifactComments({ db, artifactId }))[0]).toMatchObject({
+    expect((await listArtifactComments({ db, sessionId }))[0]).toMatchObject({
       body: 'Edited',
       status: 'sent',
       sentTurnId: 'run-9',
     });
     await setArtifactCommentsStatus({ db, ids: ['c1'], status: 'open' });
-    expect((await listArtifactComments({ db, artifactId }))[0]).toMatchObject({
+    expect((await listArtifactComments({ db, sessionId }))[0]).toMatchObject({
       status: 'open',
       sentTurnId: 'run-9',
     });
@@ -131,9 +131,9 @@ describe('artifact comments', () => {
       });
     }
     await expect(deleteArtifactComment({ db, id: 'c1' })).resolves.toBe(true);
-    expect(await listArtifactComments({ db, artifactId })).toHaveLength(1);
+    expect(await listArtifactComments({ db, sessionId })).toHaveLength(1);
     await removeArtifact({ db, artifactId });
-    expect(await listArtifactComments({ db, artifactId })).toEqual([]);
+    expect(await listArtifactComments({ db, sessionId })).toEqual([]);
   });
 
   it('rejects an unknown status at the table', async () => {

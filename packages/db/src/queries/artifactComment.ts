@@ -133,14 +133,14 @@ export const insertArtifactComment = async ({
 
 export const listArtifactComments = async ({
   db,
-  artifactId,
+  sessionId,
 }: {
   readonly db: Database;
-  readonly artifactId: ArtifactId;
+  readonly sessionId: SessionId;
 }): Promise<ReadonlyArray<ArtifactComment>> => {
   const rows = await db.select<CommentRow>(
-    `${COMMENT_SELECT} WHERE artifact_id = ? ORDER BY created_at ASC, id ASC`,
-    [artifactId],
+    `${COMMENT_SELECT} WHERE session_id = ? ORDER BY created_at ASC, rowid ASC`,
+    [sessionId],
   );
   return rows.flatMap((row) => {
     const comment = toComment({ row });
