@@ -4,7 +4,7 @@ import { cn } from '../../cn';
 import { PANE_RHYTHM } from '../../paneRhythm';
 import { tintClasses, type Tone } from '../../tint';
 import { Divider } from '../Divider';
-import { PageColumn } from '../PageColumn';
+import { PageColumn, type PageColumnWidth } from '../PageColumn';
 import { ScrollFade } from '../ScrollFade';
 import { PaneTitleRow } from './PaneTitleRow';
 import { UnderTrailContext } from './underTrailContext';
@@ -16,6 +16,7 @@ type BaseProps = {
   readonly tabs?: ReactNode;
   readonly dock?: ReactNode;
   readonly headerRhythm?: 'title' | 'section';
+  readonly width?: PageColumnWidth;
   readonly children: ReactNode;
 };
 
@@ -50,6 +51,7 @@ export const PaneShell = (props: Props) => {
     tabs,
     dock,
     headerRhythm = 'title',
+    width = 'column',
     children: content,
   } = props;
   const isUnderTrail = useContext(UnderTrailContext);
@@ -114,7 +116,9 @@ export const PaneShell = (props: Props) => {
       <>
         <Divider />
         <div data-slot="pane-dock" className="shrink-0">
-          <PageColumn className="flex flex-col py-4">{dock}</PageColumn>
+          <PageColumn width={width} className="flex flex-col py-4">
+            {dock}
+          </PageColumn>
         </div>
       </>
     ) : null;
@@ -123,7 +127,7 @@ export const PaneShell = (props: Props) => {
     return (
       <div className="@container flex h-full min-h-0 min-w-0 flex-1 flex-col">
         <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
-          <PageColumn className="flex flex-col pb-5">
+          <PageColumn width={width} className="flex flex-col pb-5">
             {header}
             <div data-slot="pane-body" className={cn(PANE_RHYTHM.stack, animationClassName)}>
               {children}
@@ -138,7 +142,7 @@ export const PaneShell = (props: Props) => {
   return (
     <div className="@container flex h-full min-h-0 min-w-0 flex-1 flex-col">
       <div className="shrink-0 overflow-hidden">
-        <PageColumn>{header}</PageColumn>
+        <PageColumn width={width}>{header}</PageColumn>
       </div>
       {scroll === 'self' ? (
         <div data-slot="pane-body" className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -146,7 +150,7 @@ export const PaneShell = (props: Props) => {
         </div>
       ) : (
         <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
-          <PageColumn className="pb-5">
+          <PageColumn width={width} className="pb-5">
             <div data-slot="pane-body" className={cn(PANE_RHYTHM.stack, animationClassName)}>
               {children}
             </div>

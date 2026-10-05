@@ -12,10 +12,6 @@ import { usePendingAction } from '../../../../../../../shared/hooks/usePendingAc
 import { useAdvanceWorkflowAgent } from '../../../../../../workflows/useAdvanceWorkflowAgent';
 import { useOpenQuestions } from '../../../../../../context/components/QuestionsTab/useOpenQuestions';
 import { useOpenAgentQuestion } from '../../../../../../context/hooks/useOpenAgentQuestion';
-import {
-  useHistoryRowActions,
-  type HistoryRowActions,
-} from '../../../../../../history/useHistoryRowActions';
 import type {
   TimelineRowItem,
   TimelineStreamItem,
@@ -57,7 +53,6 @@ export const useTimelineRowProps = ({ session, explode, rows }: Params): RowProp
   const focusQuestion = useOpenQuestions((s) => s.focusQuestion);
   const openAgentQuestion = useOpenAgentQuestion({ sessionId });
   const openTargetFor = useTimelineOpen({ sessionId });
-  const historyRowFor = useHistoryRowActions({ sessionId });
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
   const pending = usePendingAction({ sessionId });
   const diffStats = useMountDiffStats(sessionId);
@@ -66,21 +61,7 @@ export const useTimelineRowProps = ({ session, explode, rows }: Params): RowProp
   const { copiedKey, failedKey, copy } = useCopyLink();
   const sessionProvider = session.providerPreference?.defaultProvider ?? null;
   const sessionEffort = session.effort ?? null;
-  const { events, worktrees, laneRuns, stream } = rows;
-
-  const historyByRowId = useMemo(() => {
-    const byId = new Map<string, HistoryRowActions>();
-    for (const item of stream.items) {
-      if (item.kind !== 'row' || item.entry.kind !== 'event') {
-        continue;
-      }
-      const history = historyRowFor({ event: item.entry.event, events });
-      if (history !== null) {
-        byId.set(item.id, history);
-      }
-    }
-    return byId;
-  }, [events, historyRowFor, stream.items]);
+  const { worktrees, laneRuns, stream } = rows;
 
   const latestLaneRuns = useRef(laneRuns);
   latestLaneRuns.current = laneRuns;
@@ -170,10 +151,6 @@ export const useTimelineRowProps = ({ session, explode, rows }: Params): RowProp
   const actionFor = ({ item }: { readonly item: TimelineRowItem }): TimelineRowAction | null => {
     const { entry } = item;
     if (entry.kind === 'event') {
-      const history = historyByRowId.get(item.id);
-      if (history !== undefined) {
-        return history.action;
-      }
       if (entry.event.kind === 'issue_unlinked') {
         const target = openTargetFor({ entry });
         if (target == null) {
@@ -333,7 +310,6 @@ export const useTimelineRowProps = ({ session, explode, rows }: Params): RowProp
       actionLabel: action === null ? null : action.label,
       actionVariant: action?.variant ?? null,
       actionBusy: action?.isBusy === true,
-      historyMenu: historyByRowId.get(item.id)?.menu ?? null,
       diffStat: diffStatFor({ item }),
       worktrees: agentId === null ? NO_WORKTREES : (touchedWorktrees.get(agentId) ?? NO_WORKTREES),
       step: stepId == null ? null : (rows.stepById.get(stepId) ?? null),

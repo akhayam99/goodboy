@@ -8,7 +8,7 @@ import type {
   SessionEventPayload,
   SessionId,
 } from '@goodboy/types';
-import { historyRowControls } from './historyRowControls';
+import { hasHistoryRecovery } from './historyRecovery';
 import { sessionEventLabel } from '../session/timeline/sessionEventPresentation';
 import { entriesOfView } from '../session/timeline/activityView';
 
@@ -36,7 +36,7 @@ const text = ({ value }: { readonly value: SessionEvent }): string =>
     .join('');
 
 describe('history activity rows', () => {
-  it('offers Retry first on a stopped rewrite, with the alternatives behind it', () => {
+  it('keeps a stopped rewrite as a recoverable row and says why it stopped', () => {
     const stopped = event({
       id: 'ev-1',
       kind: 'history_stopped',
@@ -44,30 +44,13 @@ describe('history activity rows', () => {
       payload: { origin: 'plan', reason: 'conflict', files: ['src/ledger/postings.ts'] },
     });
 
-    expect(historyRowControls({ event: stopped, events: [stopped] })).toEqual({
-      primary: 'retry',
-      secondary: ['rewrite-with-agent', 'change-plan', 'discard-plan'],
-    });
+    expect(hasHistoryRecovery({ event: stopped, events: [stopped] })).toBe(true);
     expect(text({ value: stopped })).toBe(
       'Rewrite of fix/ledger-postings stopped · conflict in src/ledger/postings.ts',
     );
   });
 
-  it('offers to bring origin into the plan when the lease refused the push', () => {
-    const moved = event({
-      id: 'ev-1',
-      kind: 'history_stopped',
-      at: '2026-09-26T10:00:00.000Z',
-      payload: { origin: 'plan', reason: 'origin-moved' },
-    });
-
-    expect(historyRowControls({ event: moved, events: [moved] })).toEqual({
-      primary: 'bring-origin',
-      secondary: [],
-    });
-  });
-
-  it('asks for a note when the history rewriter could not merge', () => {
+  it('says when the history rewriter could not merge', () => {
     const stuck = event({
       id: 'ev-1',
       kind: 'history_stopped',
@@ -75,13 +58,31 @@ describe('history activity rows', () => {
       payload: { origin: 'plan', reason: 'stuck', files: ['src/ledger/postings.ts'] },
     });
 
-    expect(historyRowControls({ event: stuck, events: [stuck] })?.primary).toBe('retry-with-note');
+    expect(hasHistoryRecovery({ event: stuck, events: [stuck] })).toBe(true);
     expect(text({ value: stuck })).toContain(
       "History rewriter couldn't merge src/ledger/postings.ts",
     );
   });
 
-  it('drops the verbs of a row a later outcome of the same branch settled', () => {
+  it('keeps a rewrite only while it has a backup to go back to', () => {
+    const withBackup = event({
+      id: 'ev-1',
+      kind: 'history_rewritten',
+      at: '2026-09-26T10:00:00.000Z',
+      payload: { origin: 'plan', backupRef: 'refs/goodboy/backup/fix/1' },
+    });
+    const withoutBackup = event({
+      id: 'ev-2',
+      kind: 'history_rewritten',
+      at: '2026-09-26T10:00:00.000Z',
+      payload: { origin: 'plan' },
+    });
+
+    expect(hasHistoryRecovery({ event: withBackup, events: [withBackup] })).toBe(true);
+    expect(hasHistoryRecovery({ event: withoutBackup, events: [withoutBackup] })).toBe(false);
+  });
+
+  it('drops a row a later outcome of the same branch settled', () => {
     const stopped = event({
       id: 'ev-1',
       kind: 'history_stopped',
@@ -95,11 +96,8 @@ describe('history activity rows', () => {
       payload: { origin: 'rebase', backupRef: 'refs/goodboy/backup/fix/1' },
     });
 
-    expect(historyRowControls({ event: stopped, events: [stopped, rewritten] })).toBeNull();
-    expect(historyRowControls({ event: rewritten, events: [stopped, rewritten] })).toEqual({
-      primary: 'undo',
-      secondary: [],
-    });
+    expect(hasHistoryRecovery({ event: stopped, events: [stopped, rewritten] })).toBe(false);
+    expect(hasHistoryRecovery({ event: rewritten, events: [stopped, rewritten] })).toBe(true);
     expect(text({ value: rewritten })).toBe('Rebased fix/ledger-postings on main');
   });
 

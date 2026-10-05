@@ -48,7 +48,7 @@ export const BranchDescription = ({
   }, [sessionId]);
 
   return (
-    <PageColumn className="flex min-w-0 flex-col gap-2 pb-2">
+    <PageColumn width="full" className="flex min-w-0 flex-col gap-2 pb-2">
       <button
         type="button"
         aria-expanded={isOpen}

@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import type {
-  DiffComment,
   PrComment,
   ResolveAttempt,
   ResolvePublication,
@@ -9,6 +8,7 @@ import type {
 } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { buildResolveQueueRows, type ResolveQueueRow } from '../../buildResolveQueueRows';
+import { useBranchNotes } from '../../notes/useBranchNotes';
 import { useActiveReviewSource } from '../useActiveReviewSource';
 import { useResolveDeliveryReceipts } from '../useResolveDeliveryReceipts';
 
@@ -28,9 +28,11 @@ export const useResolveQueueRows = ({
 }: Params): ReadonlyArray<ResolveQueueRow> => {
   const { source } = useActiveReviewSource({ sessionId });
   const comments = source?.comments ?? (EMPTY_ARRAY as ReadonlyArray<PrComment>);
-  const notes = useAppStore(
-    (s) => s.diffComments[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<DiffComment>),
-  );
+  const { all: notes, onBranch } = useBranchNotes({ sessionId });
+  const hiddenNoteIds = useMemo(() => {
+    const visible = new Set(onBranch.map((note) => note.id));
+    return new Set(notes.filter((note) => !visible.has(note.id)).map((note) => note.id));
+  }, [notes, onBranch]);
   const queueItems = useAppStore((s) => s.sessionResolveQueueItems[sessionId] ?? EMPTY_QUEUE_ITEMS);
   const attempts = useAppStore((s) => s.sessionResolveAttempts[sessionId] ?? EMPTY_ATTEMPTS);
   const publications = useAppStore(
@@ -42,13 +44,18 @@ export const useResolveQueueRows = ({
     () =>
       isEnabled
         ? buildResolveQueueRows({
-            entries: queueItems,
+            entries: queueItems.filter(
+              ({ thread }) =>
+                thread.originKind !== 'diff_comment' ||
+                thread.diffCommentId === null ||
+                !hiddenNoteIds.has(thread.diffCommentId),
+            ),
             attempts,
             deliveryReceipts,
             comments,
             notes,
           })
         : NO_ROWS,
-    [attempts, comments, deliveryReceipts, isEnabled, notes, queueItems],
+    [attempts, comments, deliveryReceipts, hiddenNoteIds, isEnabled, notes, queueItems],
   );
 };

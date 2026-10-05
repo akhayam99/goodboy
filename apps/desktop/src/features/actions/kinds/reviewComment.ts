@@ -1,5 +1,4 @@
 import {
-  ArrowUp,
   Check,
   CircleCheck,
   CornerDownRight,
@@ -269,20 +268,6 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
           ...(facts.remote !== 'on_origin' &&
             facts.remote !== 'looks_fixed' &&
             facts.remoteReply !== null && { reply: facts.remoteReply }),
-        }),
-    },
-    {
-      id: 'reviewComment.pushToReply',
-      label: REMOTE_LABEL.pushToReply,
-      icon: ArrowUp,
-      group: 'act',
-      when: ({ facts }) => facts.remote === 'folded',
-      slot: () => 'primary',
-      run: ({ facts, env }) =>
-        requestReview({
-          getState: env.getState,
-          sessionId: facts.sessionId,
-          request: { kind: 'push' },
         }),
     },
     {

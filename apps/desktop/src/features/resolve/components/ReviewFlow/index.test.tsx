@@ -17,6 +17,7 @@ import { ToastProvider } from '../../../../shared/components/Toast';
 import {
   EXPANDED_THREAD_ID,
   SESSION,
+  THREAD_IDS,
   seedResolveScene,
 } from '../../../../app/components/MockScene/scenes/resolveSeed';
 import type { AgentId, ResolveBatch } from '@goodboy/types';
@@ -560,6 +561,46 @@ describe('Review as one flow', () => {
     expect(screen.queryByRole('button', { name: 'Review publication' })).toBeNull();
   });
 
+  it('pushes only the selected thread, and the whole branch when none is selected', async () => {
+    const prepare = vi.fn<StoreState['preparePublication']>(async () => ({
+      publicationId: null,
+      repo: null,
+      prNumber: 318,
+      branch: 'hl/fix-duplicate-credit',
+      localHead: 'a41c9e2aaaa',
+      remoteHead: null,
+      requiresPush: false,
+      frozenAt: 1,
+      commits: [],
+      unapproved: [],
+      replies: [],
+      notes: [],
+      excluded: [],
+      drift: [],
+      blocker: null,
+    }));
+    stub({ preparePublication: prepare });
+    await mount({ threadId: THREAD_IDS.logRedact });
+
+    fireEvent.click(screen.getByRole('button', { name: /^Push 1/ }));
+    await waitFor(() => expect(prepare).toHaveBeenCalledOnce());
+    expect(prepare).toHaveBeenLastCalledWith({
+      sessionId: SESSION.id,
+      threadIds: [THREAD_IDS.logRedact],
+      isolated: true,
+    });
+  });
+
+  it('keeps the thread free of push and sync controls: only the header pushes', async () => {
+    await mountFailed({ failure: 'run', threadId: 'PRRT_thread_log_redact' });
+
+    const pushed = within(comment());
+    expect(pushed.getByText(/^Nothing was pushed\. The branch on origin moved/)).toBeDefined();
+    expect(pushed.queryByRole('button', { name: 'Push again' })).toBeNull();
+    expect(pushed.queryByRole('button', { name: 'Sync and try again' })).toBeNull();
+    expect(pushed.queryByRole('button', { name: /^Push/ })).toBeNull();
+  });
+
   it('focuses the first present thread of a selection target and keeps the set', async () => {
     await mount({ threadId: null });
     const selection = ['PRRT_thread_gone', 'PRRT_thread_error_shape', EXPANDED_THREAD_ID];
@@ -667,27 +708,5 @@ describe('Review of a failed run', () => {
     expect(await screen.findByRole('menuitem', { name: /Reply yourself/ })).toBeDefined();
     expect(screen.getByRole('menuitem', { name: /Skip/ })).toBeDefined();
     expect(screen.getByRole('menuitem', { name: /Open transcript/ })).toBeDefined();
-  });
-
-  it('asks before syncing a push that failed on a moved remote and stops on a conflict', async () => {
-    const syncBranchWithRemote = vi.fn<StoreState['syncBranchWithRemote']>(async () => ({
-      kind: 'conflict',
-    }));
-    stub({
-      syncBranchWithRemote: syncBranchWithRemote,
-    });
-    await mountFailed({ failure: 'run', threadId: 'PRRT_thread_log_redact' });
-
-    const pushed = within(comment());
-    expect(pushed.getByText(/^Nothing was pushed\. The branch on origin moved/)).toBeDefined();
-    expect(pushed.getByRole('button', { name: 'Push again' })).toBeDefined();
-    fireEvent.click(pushed.getByRole('button', { name: 'Sync and try again' }));
-
-    expect(await screen.findByText('Bring the new commits in first?')).toBeDefined();
-    expect(syncBranchWithRemote).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Sync' }));
-
-    await waitFor(() => expect(syncBranchWithRemote).toHaveBeenCalledOnce());
-    expect(await screen.findByText(/conflict with the new ones on origin/)).toBeDefined();
   });
 });

@@ -14,14 +14,13 @@ describe('failedRunCopy', () => {
       'resume',
     ];
     for (const action of actions) {
-      expect(failedVerbOf({ step: 'run', action }).trim()).not.toBe('');
+      expect(failedVerbOf({ action }).trim()).not.toBe('');
     }
   });
 
-  it('names the push when the failed step is the push', () => {
-    expect(failedVerbOf({ step: 'push', action: 'retry' })).toBe('Push again');
-    expect(failedVerbOf({ step: 'run', action: 'retry' })).toBe('Retry');
-    expect(failedVerbOf({ step: 'uncertain', action: 'open_github' })).toBe('Open on GitHub');
+  it('keeps the push out of the thread: a failed push has no verb of its own', () => {
+    expect(failedVerbOf({ action: 'retry' })).toBe('Retry');
+    expect(failedVerbOf({ action: 'open_github' })).toBe('Open on GitHub');
   });
 
   it('follows the picked model and the hint in the primary label', () => {

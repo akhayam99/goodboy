@@ -93,7 +93,6 @@ export const REMOTE_LABEL = {
   resolveOnly: 'Resolve only',
   fixAnyway: 'Fix anyway',
   recheck: 'Re-check',
-  pushToReply: 'Push to reply',
   lookAgain: 'Look again',
   fixAgain: 'Fix again',
   addHint: 'Add a hint',

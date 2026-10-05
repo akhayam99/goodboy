@@ -6,7 +6,6 @@ export {
   useSessionHasUnread,
   useSessionLastTurnFinishedAt,
 } from './slices/agents/selectors';
-export { useDiffComments } from './slices/diff-comments/selectors';
 export { useRunningHere } from './slices/live-work/selectors';
 export {
   useSessionOpenQuestions,

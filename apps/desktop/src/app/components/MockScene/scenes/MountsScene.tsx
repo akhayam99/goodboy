@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type {
   AgentId,
   ContextSlot,
+  DiffComment,
   IsoDateTime,
   PlanId,
   PlanWithCount,
@@ -196,7 +197,43 @@ const EXTRA_SEEDS: ReadonlyArray<MountSeed> = [
   },
 ];
 
-type MountsVariant = 'mounts' | 'many' | 'refreshing' | 'full' | 'branch-tasks' | 'task-split';
+type MountsVariant =
+  'mounts' | 'many' | 'refreshing' | 'full' | 'branch-tasks' | 'task-split' | 'unassigned-notes';
+
+const UNASSIGNED_NOTES: ReadonlyArray<DiffComment> = [
+  {
+    id: 'mock-note-unassigned-cast',
+    sessionId: SESSION_ID,
+    filePath: 'src/ledger/postings.ts',
+    body: 'Cast the ledger id before the lookup, the export sends it as a string.',
+    status: 'open',
+    createdAt: clock.iso({ at: '2026-09-02T10:20:00.000Z' }),
+    anchor: { side: 'new', lineNumber: 42 },
+    authorKind: 'user',
+  },
+  {
+    id: 'mock-note-unassigned-page-size',
+    sessionId: SESSION_ID,
+    filePath: 'src/ledger/export.ts',
+    body: 'PAGE_SIZE reads like a limit. Rename it before the next review.',
+    status: 'open',
+    createdAt: clock.iso({ at: '2026-09-03T15:05:00.000Z' }),
+    anchor: { side: 'new', lineNumber: 9 },
+    authorKind: 'user',
+  },
+  {
+    id: 'mock-note-on-branch',
+    sessionId: SESSION_ID,
+    filePath: 'src/ledger/postings.ts',
+    body: 'Idempotency key lives here, keep it out of the log line.',
+    status: 'open',
+    createdAt: clock.iso({ at: '2026-09-06T08:40:00.000Z' }),
+    anchor: { side: 'new', lineNumber: 77 },
+    authorKind: 'user',
+    projectId: LEDGER_ID,
+    branch: POSTINGS_BRANCH,
+  },
+];
 
 type Props = {
   readonly variant?: MountsVariant;
@@ -671,6 +708,11 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
       sessionSyncing: variant === 'refreshing' ? { [SESSION_ID]: true } : {},
       ...(variant === 'full' &&
         overviewFullSeed({ workspaceId: WORKSPACE_ID, sessionId: SESSION_ID, now: NOW })),
+      ...(variant === 'unassigned-notes' && {
+        diffComments: { [SESSION_ID]: UNASSIGNED_NOTES },
+        loadDiffComments: async () => undefined,
+        assignDiffComment: async () => undefined,
+      }),
       sessionActiveMount: {
         [SESSION_ID]: variant === 'task-split' ? BACKFILL_MOUNT : POSTINGS_MOUNT,
       },

@@ -152,7 +152,6 @@ vi.mock('../../../../store', async () => ({
   useSessionPlans: () => [],
   useSessionOpenQuestions: () => hooks.openQuestions,
   useSessionAnsweredQuestions: () => hooks.answeredQuestions,
-  useDiffComments: () => [],
 }));
 
 vi.mock('@goodboy/ui', async (importOriginal) => {

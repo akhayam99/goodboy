@@ -1,14 +1,6 @@
 import { useMemo, useState } from 'react';
-import {
-  AlertCircle,
-  Cpu,
-  Ellipsis,
-  GitMerge,
-  Lightbulb,
-  RefreshCw,
-  SquareTerminal,
-} from 'lucide-react';
-import { Button, GhostActionButton, KbdPill } from '@goodboy/ui';
+import { AlertCircle, Cpu, Ellipsis, Lightbulb, RefreshCw, SquareTerminal } from 'lucide-react';
+import { Button, KbdPill } from '@goodboy/ui';
 import type { ResolveAttempt, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useTranscript } from '../../../../store/slices/transcripts/selectors';
@@ -18,7 +10,7 @@ import { reduceTranscript } from '../../../chat/utils/transcript-items';
 import { modelLabel } from '../../../chat/utils/chat-constants';
 import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
 import type { ResolvedAction, ReviewCommentActionTarget } from '../../../actions/types';
-import { FAILED_RUN_COPY, SYNC_COPY, failedVerbOf, tryAgainLabel } from '../../failedRunCopy';
+import { FAILED_RUN_COPY, failedVerbOf, tryAgainLabel } from '../../failedRunCopy';
 import { lastRunStep } from '../../lastRunStep';
 import type { ResolveRowState } from '../../resolveRowState';
 import { DraftRoutingBody } from './DraftRoutingBody';
@@ -33,8 +25,6 @@ type Props = {
   readonly isBusy: boolean;
   readonly onTryAgain: () => void;
   readonly onAddHint: () => void;
-  readonly onRetryDelivery: () => void;
-  readonly onSync: () => void;
   readonly onRun: (actionId: string) => void;
 };
 
@@ -54,8 +44,6 @@ export const FailedRun = ({
   isBusy,
   onTryAgain,
   onAddHint,
-  onRetryDelivery,
-  onSync,
   onRun,
 }: Props) => {
   const [isModelOpen, setIsModelOpen] = useState(false);
@@ -142,25 +130,17 @@ export const FailedRun = ({
             </Button>
           </>
         ) : (
-          <>
-            {rowState.action !== null && rowState.failedStep !== null && (
-              <Button
-                size="sm"
-                variant="primary"
-                isBusy={isBusy}
-                onClick={
-                  rowState.action === 'open_github'
-                    ? () => onRun('reviewComment.openOnGithub')
-                    : onRetryDelivery
-                }
-              >
-                {failedVerbOf({ step: rowState.failedStep, action: rowState.action })}
-              </Button>
-            )}
-            {rowState.isRemoteMoved && (
-              <GhostActionButton icon={GitMerge} label={SYNC_COPY.action} onClick={onSync} />
-            )}
-          </>
+          rowState.action === 'open_github' &&
+          rowState.failedStep !== null && (
+            <Button
+              size="sm"
+              variant="primary"
+              isBusy={isBusy}
+              onClick={() => onRun('reviewComment.openOnGithub')}
+            >
+              {failedVerbOf({ action: rowState.action })}
+            </Button>
+          )
         )}
         {menu}
       </div>

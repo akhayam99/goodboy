@@ -30,7 +30,7 @@ export const BranchFiles = ({ session, workingDir, worktreePath, diff, hasPullRe
   const postNotes = actions.find((action) => action.id === 'review.postNotes') ?? null;
   if (worktreePath === null) {
     return (
-      <PageColumn>
+      <PageColumn width="full">
         <LensEmptyState
           tone={CONCEPT_TONE.diff}
           icon={CONCEPT_ICONS.diff}
@@ -43,7 +43,7 @@ export const BranchFiles = ({ session, workingDir, worktreePath, diff, hasPullRe
   if (mode === 'write_review' && hasPullRequest) {
     return (
       <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
-        <PageColumn>
+        <PageColumn width="full">
           <button
             type="button"
             onClick={() => setPullRequestMode({ sessionId, mode: 'overview' })}

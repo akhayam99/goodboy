@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { ResolvePublicationPreview } from '@goodboy/types';
 import { BranchPage } from '../../../../features/branch/components/BranchPage';
 import { useAppStore } from '../../../../store';
-import { EXPANDED_THREAD_ID, SESSION, seedResolveScene } from './resolveSeed';
+import { EXPANDED_THREAD_ID, SESSION, THREAD_IDS, seedResolveScene } from './resolveSeed';
 
 const PUSH_PREVIEW: ResolvePublicationPreview = {
   publicationId: 'mock-branch-publication',
@@ -22,13 +22,24 @@ const PUSH_PREVIEW: ResolvePublicationPreview = {
       timestamp: 1,
       pushed: false,
       parentSha: null,
-      threadIds: [EXPANDED_THREAD_ID],
+      threadIds: [THREAD_IDS.logRedact],
     },
   ],
   unapproved: [],
-  replies: [{ threadId: EXPANDED_THREAD_ID, body: 'Redacted.', revision: 1, closes: true }],
+  earlierCommits: [
+    {
+      sha: '9e4f1c2bbbb',
+      shortSha: '9e4f1c2',
+      subject: 'Batch the ledger lookups',
+      author: 'resolver',
+      timestamp: 0,
+      pushed: false,
+      parentSha: null,
+    },
+  ],
+  replies: [{ threadId: THREAD_IDS.logRedact, body: 'Redacted.', revision: 1, closes: true }],
   notes: [],
-  excluded: [],
+  excluded: [{ threadId: EXPANDED_THREAD_ID, reason: 'needs_you' }],
   drift: [],
   blocker: null,
 };
@@ -36,13 +47,14 @@ const PUSH_PREVIEW: ResolvePublicationPreview = {
 type Props = {
   readonly width: string | null;
   readonly openPush: boolean;
+  readonly threadId?: string;
 };
 
-export const BranchSceneShell = ({ width, openPush }: Props) => {
+export const BranchSceneShell = ({ width, openPush, threadId = EXPANDED_THREAD_ID }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    seedResolveScene({ expandedThreadId: EXPANDED_THREAD_ID });
+    seedResolveScene({ expandedThreadId: threadId });
     useAppStore.setState({
       preparePublication: async () => PUSH_PREVIEW,
     });

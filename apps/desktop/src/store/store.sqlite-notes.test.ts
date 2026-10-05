@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { insertWorkspace } from '@goodboy/db';
-import type { SessionId, WorkspaceId } from '@goodboy/types';
+import type { MountId, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import {
   buildStoryWorkspace,
   importStore,
@@ -110,7 +110,69 @@ describe('store on sqlite: Close note', () => {
       entries: state.sessionResolveQueueItems[SESSION_ID] ?? [],
       attempts: state.sessionResolveAttempts[SESSION_ID] ?? [],
     });
-    expect([fix?.group, fix?.word, fix?.canFix]).toEqual(['done', 'Closed', false]);
+    expect([fix?.group, fix?.word]).toEqual(['done', 'Closed']);
+  });
+
+  it('saves the project and the branch of the active mount with a new note', async () => {
+    useAppStore.setState({
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          {
+            mountId: 'mount-ledger' as MountId,
+            sessionId: SESSION_ID,
+            projectId: 'project-ledger-core' as ProjectId,
+            mountName: 'ledger-core',
+            worktreePath: '/wt/ledger-core',
+            lastWorktreePath: null,
+            repoRoot: '/repo/ledger-core',
+            branch: 'feat/rounding',
+            baseBranch: 'main',
+            parallelIndex: 0,
+            isAttached: true,
+            diskState: 'present',
+            revision: 1,
+          },
+        ],
+      },
+    });
+    await addNote();
+    const rows = await rowsOf<{ readonly project_id: string; readonly branch: string }>({
+      sql: 'SELECT project_id, branch FROM diff_comments',
+    });
+    expect(rows).toEqual([{ project_id: 'project-ledger-core', branch: 'feat/rounding' }]);
+    const [note] = useAppStore.getState().diffComments[SESSION_ID] ?? [];
+    expect(note).toMatchObject({ projectId: 'project-ledger-core', branch: 'feat/rounding' });
+  });
+
+  it('assigns an unassigned note to the active branch', async () => {
+    const noteId = await addNote();
+    expect(useAppStore.getState().diffComments[SESSION_ID]?.[0]?.branch).toBeUndefined();
+    useAppStore.setState({
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          {
+            mountId: 'mount-ledger' as MountId,
+            sessionId: SESSION_ID,
+            projectId: 'project-ledger-core' as ProjectId,
+            mountName: 'ledger-core',
+            worktreePath: '/wt/ledger-core',
+            lastWorktreePath: null,
+            repoRoot: '/repo/ledger-core',
+            branch: 'feat/rounding',
+            baseBranch: 'main',
+            parallelIndex: 0,
+            isAttached: true,
+            diskState: 'present',
+            revision: 1,
+          },
+        ],
+      },
+    });
+    await useAppStore.getState().assignDiffComment(SESSION_ID, noteId);
+    expect(useAppStore.getState().diffComments[SESSION_ID]?.[0]).toMatchObject({
+      projectId: 'project-ledger-core',
+      branch: 'feat/rounding',
+    });
   });
 
   it('closes the live generation of a reopened note when given its first thread id', async () => {

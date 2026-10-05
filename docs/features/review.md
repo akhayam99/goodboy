@@ -13,19 +13,14 @@ Turn review comments into commits without writing the fix yourself. Review lists
 
 ### Review sources
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-sources-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-sources-light.webp" width="520" alt="The Review header of notify-relay !57 with the source picker open: payments-api #318 on GitHub with 9 open, notify-relay !57 on GitLab with 3 open and checked, and Notes on this machine with 2 open">
-</picture>
-
-Read the comments of a branch and your own notes in one list. Each comment carries a label, **Local**, **GitHub**, **GitLab** or **Bitbucket**, and the branch picker in the trail makes another branch the active one. Draft, reply and push work the same everywhere. Where a provider cannot resolve a thread, the comment offers **Reply** and no resolve, and the push confirm says the thread stays open for the reviewer.
+Read the comments of a branch and your own notes in one list, the Comments tab of the Branch page. Each comment carries a label, **Local**, **GitHub**, **GitLab** or **Bitbucket**; there is no source picker. Draft, reply and push work the same everywhere. Where a provider cannot resolve a thread, the comment offers **Reply** and no resolve, and the push confirm says the thread stays open for the reviewer.
 
 | Source                 | Read comments   | Reply | Resolve thread            |
 | ---------------------- | --------------- | ----- | ------------------------- |
 | GitHub pull request    | Yes             | Yes   | Yes                       |
 | GitLab merge request   | Yes             | Yes   | Yes                       |
 | Bitbucket pull request | Inline comments | Yes   | No, the thread stays open |
-| Notes on this machine  | Yes             | No    | Close the note            |
+| Local notes            | Yes             | No    | Close the note            |
 
 ### Comment states
 
@@ -38,7 +33,7 @@ Know what each comment needs next. Each one shows a state like **Not started**, 
 
 ### Failed drafts
 
-Know why a draft failed and what to do next. The comment says why in plain words, shows the last command the agent ran and how it ended, and links to the transcript. Pick **Retry**, **Try another model** or **Add a hint**, and earlier attempts fold into one line above. When a push fails because the branch on origin moved, **Sync and try again** asks first, brings the new commits under yours, and stops without touching anything if they conflict.
+Know why a draft failed and what to do next. The comment says why in plain words, shows the last command the agent ran and how it ended, and links to the transcript. Pick **Retry**, **Try another model** or **Add a hint**, and earlier attempts fold into one line above. When a push fails because the branch on origin moved, the result under the header offers **Sync and try again**, which asks first, brings the new commits under yours, and stops without touching anything if they conflict.
 
 ### See what a resolve did
 
@@ -50,7 +45,7 @@ Review looks at origin before it pushes. A comment whose fix you already pushed 
 
 ### A fix that went missing
 
-When the commit of a fix is no longer on the branch or on origin, the comment reads **Fix went missing** with its own detail, and the push blocker points to it. Goodboy first asks git without an agent: the same patch under another sha turns it into **Folded in**: it stays in the push (**Push to reply**) and its reply, "Fixed in the old sha, squashed into the new one", goes out after the push lands. If that is not enough, **Re-check** starts a read-only agent on the cheapest model of your provider. It answers **Already fixed here** (Reply and resolve with the sha), **No longer relevant** (Close with this reply, editable) or **Still needed** (Fix again, Add a hint). A verdict never closes or fixes anything by itself. A pushed fix that origin lost later, after a force push or a squash done elsewhere, gets the same check.
+When the commit of a fix is no longer on the branch or on origin, the comment reads **Fix went missing** with its own detail, and the push blocker points to it. Goodboy first asks git without an agent: the same patch under another sha turns it into **Folded in**: it stays in the push (the header **Push**) and its reply, "Fixed in the old sha, squashed into the new one", goes out after the push lands. If that is not enough, **Re-check** starts a read-only agent on the cheapest model of your provider. It answers **Already fixed here** (Reply and resolve with the sha), **No longer relevant** (Close with this reply, editable) or **Still needed** (Fix again, Add a hint). A verdict never closes or fixes anything by itself. A pushed fix that origin lost later, after a force push or a squash done elsewhere, gets the same check.
 
 ### Close on GitHub
 
@@ -75,7 +70,7 @@ Tidy the fixes before anyone sees them, on the **Commits** tab of the branch. It
 
 ### Notes before a pull request
 
-Review your own diff before anyone else does. Leave notes on lines, resolve them like review comments, and post the open ones to the pull request later.
+Review your own diff before anyone else does. Leave notes on lines with **+ Add note** in the Files tab, resolve them like review comments in the Comments tab, where they read **Local**, and move the open ones into a review draft with **Post notes**. A note remembers the project and branch it was written on and shows only there. Notes from before that, whose branch Goodboy cannot prove, wait in **Unassigned notes** on the Session overview, in full, each with **Move to** the branch you are on.
 
 ### GitHub pull request page
 
@@ -105,7 +100,7 @@ Keep a pull request description in step with its branch. After a history push, a
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-diff-light.webp" alt="The Diff of payments-api on hl/fix-duplicate-credit, branch vs main with 3 files +47 -12, 1 of 3 viewed, Unified and Split, an open note under line 26 of applyWebhook.ts, 1 note, and Resolve in Review and Rewrite history buttons">
 </picture>
 
-Read changes with syntax colors, word-level highlights, a **Unified** or **Split** view and a **Viewed** tick per file (**1 of 3 viewed** here), and quote a line into a note or a question for an agent. A note shows under its line with **Fix**, **Close note** and **Delete**. **Fix 2 notes** in the toolbar opens a strip with the model, the commit style and a hint, and **Start** gives each note its own agent and opens a summary of your notes grouped by state. **Open in Review** carries the notes into Review, even when a pull request is open. The header offers the next step for the branch, such as **Rebase on main**, **Push N commits** or **Create PR**. A file tree on the left lists the changed files by folder with their counts and a check on the ones you viewed, and a click jumps to the file.
+Read changes with syntax colors, word-level highlights, a **Unified** or **Split** view and a **Viewed** tick per file (**1 of 3 viewed** here), and quote a line into a note or a question for an agent. A note shows under its line with **Close note** and **Delete**; fixing it happens in the Comments tab. The header offers the next step for the branch, such as **Rebase on main**, **Push N commits** or **Create PR**. A file tree on the left lists the changed files by folder with their counts and a check on the ones you viewed, and a click jumps to the file.
 
 ### Write review
 

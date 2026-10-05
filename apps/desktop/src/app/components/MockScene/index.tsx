@@ -18,6 +18,7 @@ import { MountsScene } from './scenes/MountsScene';
 import { OverviewFullScene } from './scenes/OverviewFullScene';
 import { OverviewManyScene } from './scenes/OverviewManyScene';
 import { OverviewBranchTasksScene } from './scenes/OverviewBranchTasksScene';
+import { OverviewUnassignedNotesScene } from './scenes/OverviewUnassignedNotesScene';
 import { LinkScopeScene } from './scenes/LinkScopeScene';
 import { OverviewRefreshingScene } from './scenes/OverviewRefreshingScene';
 import { MountMismatchScene } from './scenes/MountMismatchScene';
@@ -174,6 +175,7 @@ export const MOCK_SCENES = {
   'overview-full': OverviewFullScene,
   'overview-projects-many': OverviewManyScene,
   'overview-branch-tasks': OverviewBranchTasksScene,
+  'overview-unassigned-notes': OverviewUnassignedNotesScene,
   'link-scope': LinkScopeScene,
   'task-links': TaskLinksScene,
   'task-links-hover': TaskLinksHoverScene,
