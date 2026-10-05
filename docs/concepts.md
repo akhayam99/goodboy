@@ -742,8 +742,8 @@ too). **Fix went missing** (a fix sha that is neither on the branch nor on
 origin, or a pushed sha origin lost) gets its own detail and the
 `missing_commit` push blocker points to it. `computeThreadGitFacts` first asks
 `worktree_locate_fix`: the same patch on HEAD under another sha makes the thread
-`folded` (**Folded in**: it stays in the push with the remapped sha, the action
-reads `Push to reply`, and the reply "Fixed in <old>, squashed into <new>" is posted
+`folded` (**Folded in**: it stays in the push with the remapped sha, it goes
+out with the header `Push`, and the reply "Fixed in <old>, squashed into <new>" is posted
 by the normal push flow after the push lands; only `on_origin` skips the push). If git cannot answer, **Re-check** (`recheckThread`) spawns a
 read-only scout (`sourceKind` `comment_recheck`, FixMode `recheck`) on the
 cheapest model of the provider. It ends with `<<comment-verdict threadId verdict
@@ -831,9 +831,10 @@ once · each works on its own copy of the branch`, no price: nothing
   picker opens inline under the buttons) and **Add a hint** (F is Retry).
   `…` holds Reply yourself, Skip and Open transcript. The earlier attempts of
   the comment fold into one line above (`Attempt 1 · Sonnet 5.5 · Medium ·
-failed`) that opens to their reasons. A failed step after the run shows its
-  own verb: `Push again`, `Post the reply again` or `Open on GitHub` when
-  Goodboy could not confirm the reply landed
+failed`) that opens to their reasons. A failed delivery after the run has no
+  button on the comment: the Branch header reads `Retry N`, and the push
+  result there offers `Sync and try again`. The comment keeps `Open on GitHub`
+  when Goodboy could not confirm the reply landed
 - A batch fix runs in its own copy of the branch, up to four at a time (the
   session limit), so two fixes never fight over the same branch. The rest wait
   with `Waiting for a free slot`

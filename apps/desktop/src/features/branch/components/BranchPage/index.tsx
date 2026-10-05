@@ -52,6 +52,7 @@ export const BranchPage = ({ session, workingDir }: Props) => {
   const mode = useAppStore((s) => s.pullRequestModes[sessionId] ?? 'overview');
   const setPullRequestMode = useAppStore((s) => s.setPullRequestMode);
   const navigate = useAppStore((s) => s.navigate);
+  const selectedThreadId = useAppStore((s) => s.branchThreadId[sessionId] ?? null);
   const diffFocus = useAppStore((s) => s.diffFocus[sessionId] ?? null);
   const github = useAppStore((s) => s.sessionGithub[sessionId] ?? null);
   const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
@@ -84,12 +85,28 @@ export const BranchPage = ({ session, workingDir }: Props) => {
     push.phase.kind === 'pushing' ||
     push.phase.kind === 'syncing';
 
+  const pushableIds = useMemo(
+    () =>
+      entries
+        .filter(
+          (entry) =>
+            (entry.state === 'accepted' || entry.state === 'replied') &&
+            entry.remote !== 'on_origin',
+        )
+        .map((entry) => entry.threadId),
+    [entries],
+  );
+  const selectedPushIds = useMemo<ReadonlyArray<string> | undefined>(
+    () =>
+      tab === 'comments' && selectedThreadId !== null && pushableIds.includes(selectedThreadId)
+        ? [selectedThreadId]
+        : undefined,
+    [pushableIds, selectedThreadId, tab],
+  );
+
   const review = useMemo<BranchReviewCounts>(
     () => ({
-      accepted: entries.filter(
-        (entry) =>
-          (entry.state === 'accepted' || entry.state === 'replied') && entry.remote !== 'on_origin',
-      ).length,
+      accepted: selectedPushIds?.length ?? pushableIds.length,
       replies: entries.filter((entry) => entry.remote === 'on_origin' && entry.group === 'open')
         .length,
       failed: entries.filter(
@@ -97,7 +114,7 @@ export const BranchPage = ({ session, workingDir }: Props) => {
       ).length,
       isPushing: entries.some((entry) => entry.row.thread.stage === 'publishing'),
     }),
-    [entries],
+    [entries, pushableIds, selectedPushIds],
   );
 
   const controls = useBranchControls({
@@ -123,12 +140,15 @@ export const BranchPage = ({ session, workingDir }: Props) => {
       }
       event.preventDefault();
       if (!isPushBusy) {
-        void push.arm({ isRetry: hasPushFailure });
+        void push.arm({
+          isRetry: selectedPushIds === undefined && hasPushFailure,
+          threadIds: selectedPushIds,
+        });
       }
     };
     window.addEventListener(REVIEW_REQUEST_EVENT, onRequest);
     return () => window.removeEventListener(REVIEW_REQUEST_EVENT, onRequest);
-  }, [hasPushFailure, isPushBusy, push, sessionId]);
+  }, [hasPushFailure, isPushBusy, push, selectedPushIds, sessionId]);
 
   const onMutated = useCallback(() => {
     void refreshSessionPr(sessionId, { force: true });

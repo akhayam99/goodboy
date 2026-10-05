@@ -33,7 +33,7 @@ Know what each comment needs next. Each one shows a state like **Not started**, 
 
 ### Failed drafts
 
-Know why a draft failed and what to do next. The comment says why in plain words, shows the last command the agent ran and how it ended, and links to the transcript. Pick **Retry**, **Try another model** or **Add a hint**, and earlier attempts fold into one line above. When a push fails because the branch on origin moved, **Sync and try again** asks first, brings the new commits under yours, and stops without touching anything if they conflict.
+Know why a draft failed and what to do next. The comment says why in plain words, shows the last command the agent ran and how it ended, and links to the transcript. Pick **Retry**, **Try another model** or **Add a hint**, and earlier attempts fold into one line above. When a push fails because the branch on origin moved, the result under the header offers **Sync and try again**, which asks first, brings the new commits under yours, and stops without touching anything if they conflict.
 
 ### See what a resolve did
 
@@ -45,7 +45,7 @@ Review looks at origin before it pushes. A comment whose fix you already pushed 
 
 ### A fix that went missing
 
-When the commit of a fix is no longer on the branch or on origin, the comment reads **Fix went missing** with its own detail, and the push blocker points to it. Goodboy first asks git without an agent: the same patch under another sha turns it into **Folded in**: it stays in the push (**Push to reply**) and its reply, "Fixed in the old sha, squashed into the new one", goes out after the push lands. If that is not enough, **Re-check** starts a read-only agent on the cheapest model of your provider. It answers **Already fixed here** (Reply and resolve with the sha), **No longer relevant** (Close with this reply, editable) or **Still needed** (Fix again, Add a hint). A verdict never closes or fixes anything by itself. A pushed fix that origin lost later, after a force push or a squash done elsewhere, gets the same check.
+When the commit of a fix is no longer on the branch or on origin, the comment reads **Fix went missing** with its own detail, and the push blocker points to it. Goodboy first asks git without an agent: the same patch under another sha turns it into **Folded in**: it stays in the push (the header **Push**) and its reply, "Fixed in the old sha, squashed into the new one", goes out after the push lands. If that is not enough, **Re-check** starts a read-only agent on the cheapest model of your provider. It answers **Already fixed here** (Reply and resolve with the sha), **No longer relevant** (Close with this reply, editable) or **Still needed** (Fix again, Add a hint). A verdict never closes or fixes anything by itself. A pushed fix that origin lost later, after a force push or a squash done elsewhere, gets the same check.
 
 ### Close on GitHub
 

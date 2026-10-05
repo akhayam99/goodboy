@@ -1632,8 +1632,14 @@ and `⋯`. The primary is the first that applies: `Rebase on main`
 `Push N` (accepted threads, then unpushed commits), `Publish N replies` (the
 fix is already on origin), `Retry N`, `Create PR`, `Ready for review`, `Merge`
 (`branchPrimaryOf`). Push, Publish and Retry go through the existing publish
-machinery: a frozen preview in line under the header (`PushBanner`), drift and
-the result per thread. A blocked primary stays visible, disabled, with its
+machinery: a frozen preview in line under the header (`PushBanner`, the only
+one), drift and the result per thread. Only the header pushes: a thread has no
+Push, Push again or Sync button. With an accepted thread opened in Comments the
+primary reads `Push 1` (it counts threads) and pushes just that fix
+(`preparePublication` with `isolated`, `isolatedPushOf` unchanged); the preview
+names the tip commit, the earlier commits that go along, and the comments that
+still need you. With none opened it reads `Push N` for every accepted thread.
+`Publish N replies` and `Retry N` stay the header primary of their state. A blocked primary stays visible, disabled, with its
 reason. `⋯` holds the rare lifecycle (Edit title and description, Request
 review, Convert to draft, Close or Reopen, Open on GitHub, Copy link) and the
 branch actions (Change base branch…, Open terminal, Open in editor, Copy

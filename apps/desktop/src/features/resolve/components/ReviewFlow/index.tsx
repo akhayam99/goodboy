@@ -124,10 +124,6 @@ export const ReviewFlow = ({ session, push }: Props) => {
   const [started, setStarted] = useState<StartedNote | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const provider = source === null ? null : REVIEW_SOURCE_LABEL[source.kind];
-  const isPushBusy =
-    push.phase.kind === 'preparing' ||
-    push.phase.kind === 'pushing' ||
-    push.phase.kind === 'syncing';
 
   useEffect(() => {
     void loadResolveSession({ sessionId });
@@ -217,12 +213,6 @@ export const ReviewFlow = ({ session, push }: Props) => {
     },
     [clearReviewSelection, closeLaunch, sessionId],
   );
-
-  const retryDelivery = useCallback((): void => {
-    if (!isPushBusy) {
-      void push.arm({ isRetry: true });
-    }
-  }, [isPushBusy, push]);
 
   useEffect(() => {
     const onRequest = (event: Event): void => {
@@ -462,8 +452,6 @@ export const ReviewFlow = ({ session, push }: Props) => {
                 {...controller.bind(focused.threadId)}
                 onSelect={select}
                 onTryAgain={() => void controller.retryRun(focused.threadId)}
-                onRetryDelivery={retryDelivery}
-                onSync={push.askSync}
               />
               <div className="@6xl:hidden">
                 <ThreadProperties sessionId={sessionId} entry={focused} layout="inline" />
