@@ -477,7 +477,9 @@ export const useSuggestionActions = ({
           label: 'Open PR',
           isDisabled: false,
           failureTitle: "Couldn't create the pull request",
-          run: () => createPrForSession({ sessionId, mountId: suggestion.payload.mountId }),
+          run: async () => {
+            await createPrForSession({ sessionId, mountId: suggestion.payload.mountId });
+          },
         },
         onDismiss: null,
       };

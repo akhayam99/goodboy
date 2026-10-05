@@ -102,6 +102,7 @@ type FakeState = {
   editPr: ReturnType<typeof vi.fn>;
   emitNotification: ReturnType<typeof vi.fn>;
   recordSessionEventOnce: ReturnType<typeof vi.fn>;
+  pushSessionBranch: ReturnType<typeof vi.fn>;
 };
 
 const buildState = (overrides: Partial<FakeState> = {}): FakeState => ({
@@ -144,6 +145,7 @@ const buildState = (overrides: Partial<FakeState> = {}): FakeState => ({
   editPr: vi.fn(async () => undefined),
   emitNotification: vi.fn(async () => undefined),
   recordSessionEventOnce: vi.fn(async () => undefined),
+  pushSessionBranch: vi.fn(async () => ({ ok: true })),
   ...overrides,
 });
 
@@ -366,6 +368,67 @@ describe('createPrForSession, mount targeting', () => {
 
     const args = createArgs();
     expect(args[args.indexOf('--base') + 1]).toBe('main');
+  });
+});
+
+describe('createPrForSession, pushing the branch first', () => {
+  it('pushes the mount branch before gh opens the request', async () => {
+    const state = buildState();
+
+    await buildCreate(state)({ sessionId: SESSION_ID, title: 'Fix cards', body: '' });
+
+    expect(state.pushSessionBranch).toHaveBeenCalledExactlyOnceWith({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+    });
+    expect(state.pushSessionBranch.mock.invocationCallOrder[0]).toBeLessThan(
+      h.run.mock.invocationCallOrder[0] ?? 0,
+    );
+  });
+
+  it('pushes the branch of the mount asked for, not the active one', async () => {
+    const state = buildState();
+
+    await buildCreate(state)({
+      sessionId: SESSION_ID,
+      mountId: OTHER_MOUNT_ID,
+      title: 'Part two',
+      body: '',
+    });
+
+    expect(state.pushSessionBranch).toHaveBeenCalledExactlyOnceWith({
+      sessionId: SESSION_ID,
+      mountId: OTHER_MOUNT_ID,
+    });
+  });
+
+  it('stops with the push reason and tells the user when the push is refused', async () => {
+    const state = buildState({
+      pushSessionBranch: vi.fn(async () => ({
+        ok: false,
+        error: 'remote: Permission to acme/web.git denied',
+      })),
+    });
+
+    await expect(
+      buildCreate(state)({ sessionId: SESSION_ID, title: 'Fix cards', body: '' }),
+    ).rejects.toThrow("Couldn't push ak/cards: remote: Permission to acme/web.git denied");
+
+    expect(h.run).not.toHaveBeenCalled();
+    expect(state.emitNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Couldn't push the branch",
+        body: 'remote: Permission to acme/web.git denied',
+      }),
+    );
+  });
+
+  it('hands back the number and address of the request it opened', async () => {
+    const state = buildState();
+
+    await expect(
+      buildCreate(state)({ sessionId: SESSION_ID, title: 'Fix cards', body: '' }),
+    ).resolves.toEqual({ number: 7, url: CREATED_URL });
   });
 });
 

@@ -1,5 +1,6 @@
 import { extractScribeText, type ExtractedScribeText } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
+import { hasScribeText, mergeScribeOutput } from './mergeScribeOutput';
 import { patchScribeWork } from './requestScribe';
 import { isUntouchedScribeBody, referenceLinesOf, signScribeBody } from './scribeSignature';
 import type { GetFn, ScribeTask, SetFn, SettleScribeInput } from './types';
@@ -32,12 +33,26 @@ export const settleScribe = (set: SetFn, get: GetFn) => {
     if (key === undefined || work === undefined || work.sessionId !== sessionId) {
       return;
     }
-    set((state) => {
-      const next = { ...state.scribeAgents };
-      delete next[agentId];
-      return { scribeAgents: next };
-    });
     const output = extractScribeText(assistantText);
+    if (work.status !== 'writing') {
+      if (work.task.kind !== 'pr' || hasFailed || !hasScribeText({ output })) {
+        return;
+      }
+      patchScribeWork({
+        set,
+        key,
+        patch: { output: mergeScribeOutput({ previous: work.output, next: output }) },
+      });
+      await get().openScribePullRequest({ key });
+      return;
+    }
+    if (work.task.kind !== 'pr') {
+      set((state) => {
+        const next = { ...state.scribeAgents };
+        delete next[agentId];
+        return { scribeAgents: next };
+      });
+    }
     if (hasFailed || !hasWhatTheTaskNeeds({ task: work.task, output })) {
       patchScribeWork({
         set,
@@ -51,6 +66,10 @@ export const settleScribe = (set: SetFn, get: GetFn) => {
       return;
     }
     patchScribeWork({ set, key, patch: { status: 'ready', output, error: null } });
+    if (work.task.kind === 'pr') {
+      await get().openScribePullRequest({ key });
+      return;
+    }
     if (work.task.kind !== 'pr-update' || output.prBody === null) {
       return;
     }

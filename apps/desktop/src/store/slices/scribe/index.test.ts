@@ -21,7 +21,15 @@ const SESSION_ID = 'session-ledger' as SessionId;
 const MOUNT_ID = 'mount-ledger' as MountId;
 const AGENT_ID = 'agent-scribe' as AgentId;
 
-const harness = ({ prBody }: { readonly prBody: string }) => {
+const CREATED_URL = 'https://github.com/harborline/ledger-core/pull/418';
+
+const harness = ({
+  prBody,
+  hasPr = true,
+}: {
+  readonly prBody: string;
+  readonly hasPr?: boolean;
+}) => {
   let state: Record<string, unknown> = {
     ...scribeInitialState,
     sessions: [
@@ -54,8 +62,13 @@ const harness = ({ prBody }: { readonly prBody: string }) => {
     workspaceOverrides: {},
     providerLimits: {},
     mountGithub: {
-      [MOUNT_ID]: { pr: { number: 418, state: 'open', body: prBody } },
+      [MOUNT_ID]: {
+        pr: hasPr
+          ? { number: 418, state: 'open', title: 'Old title', url: CREATED_URL, body: prBody }
+          : null,
+      },
     },
+    createPrForSession: vi.fn(async () => ({ number: 418, url: CREATED_URL })),
     spawnAgent: vi.fn(async () => AGENT_ID),
     sendTurn: vi.fn(async () => ({ blockedOverBudget: false })),
     editPr: vi.fn(async () => undefined),
@@ -71,6 +84,29 @@ const harness = ({ prBody }: { readonly prBody: string }) => {
   const slice = createScribeSlice({ set, get });
   state = { ...state, ...slice };
   return { slice, read: () => state as unknown as ReturnType<GetFn> };
+};
+
+const PR_KEY = 'pr:mount-ledger';
+const PROPOSAL = '<<pr-title>>Guard postings<</pr-title>>\n<<pr-body>>Body<</pr-body>>';
+
+const askedForPr = async ({
+  hasPr,
+  prBody = '',
+  isDraft = true,
+  base = null,
+}: {
+  readonly hasPr: boolean;
+  readonly prBody?: string;
+  readonly isDraft?: boolean;
+  readonly base?: string | null;
+}) => {
+  const built = harness({ prBody, hasPr });
+  await built.slice.requestScribe({
+    sessionId: SESSION_ID,
+    mountId: MOUNT_ID,
+    task: { kind: 'pr', closedPrNumber: null, references: [], isDraft, base },
+  });
+  return built;
 };
 
 describe('scribe signature', () => {
@@ -91,7 +127,7 @@ describe('scribe slice', () => {
     await slice.requestScribe({
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
-      task: { kind: 'pr', closedPrNumber: null, references: [], isDraft: true },
+      task: { kind: 'pr', closedPrNumber: null, references: [], isDraft: true, base: null },
     });
 
     expect(read().spawnAgent).toHaveBeenCalledWith(
@@ -105,26 +141,217 @@ describe('scribe slice', () => {
     );
   });
 
-  it('keeps the text ready for the form once Scribe answers', async () => {
-    const { slice, read } = harness({ prBody: '' });
-    await slice.requestScribe({
+  it('opens the draft with the text Scribe wrote once it answers', async () => {
+    const { slice, read } = await askedForPr({ hasPr: false });
+
+    await slice.settleScribe({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      assistantText: PROPOSAL,
+      hasFailed: false,
+    });
+
+    expect(read().createPrForSession).toHaveBeenCalledExactlyOnceWith({
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
-      task: { kind: 'pr', closedPrNumber: null, references: [], isDraft: true },
+      title: 'Guard postings',
+      body: 'Body',
+      draft: true,
+      isScribeBody: true,
+    });
+    expect(read().scribeWork[PR_KEY]).toMatchObject({
+      status: 'created',
+      error: null,
+      output: { prTitle: 'Guard postings', prBody: 'Body' },
+      pullRequest: { number: 418, url: CREATED_URL },
+    });
+  });
+
+  it('opens it ready for review when the person did not ask for a draft', async () => {
+    const { slice, read } = await askedForPr({ hasPr: false, isDraft: false, base: 'release' });
+
+    await slice.settleScribe({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      assistantText: PROPOSAL,
+      hasFailed: false,
+    });
+
+    expect(read().createPrForSession).toHaveBeenCalledWith(
+      expect.objectContaining({ draft: false, base: 'release' }),
+    );
+  });
+
+  it('keeps the proposal and the reason when opening fails, and opens it on Retry', async () => {
+    const { slice, read } = await askedForPr({ hasPr: false });
+    vi.mocked(read().createPrForSession).mockRejectedValueOnce(
+      new Error("Couldn't push fix/ledger-postings: remote: Permission denied"),
+    );
+
+    await slice.settleScribe({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      assistantText: PROPOSAL,
+      hasFailed: false,
+    });
+
+    expect(read().scribeWork[PR_KEY]).toMatchObject({
+      status: 'failed',
+      error: "Couldn't push fix/ledger-postings: remote: Permission denied",
+      output: { prTitle: 'Guard postings', prBody: 'Body' },
+      pullRequest: null,
+    });
+
+    await slice.openScribePullRequest({ key: PR_KEY });
+
+    expect(read().createPrForSession).toHaveBeenCalledTimes(2);
+    expect(read().scribeWork[PR_KEY]).toMatchObject({ status: 'created', error: null });
+  });
+
+  it('fails with a reason, never silently, when Scribe wrote no text', async () => {
+    const { slice, read } = await askedForPr({ hasPr: false });
+
+    await slice.settleScribe({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      assistantText: 'I looked at the diff.',
+      hasFailed: false,
+    });
+
+    expect(read().createPrForSession).not.toHaveBeenCalled();
+    expect(read().scribeWork[PR_KEY]).toMatchObject({
+      status: 'failed',
+      error: 'Scribe wrote no text.',
+    });
+  });
+
+  it('does not open a second request when the branch already has one', async () => {
+    const { slice, read } = await askedForPr({ hasPr: true, prBody: 'Written by hand' });
+
+    await slice.settleScribe({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      assistantText: PROPOSAL,
+      hasFailed: false,
+    });
+
+    expect(read().createPrForSession).not.toHaveBeenCalled();
+    expect(read().editPr).not.toHaveBeenCalled();
+    expect(read().scribeWork[PR_KEY]).toMatchObject({
+      status: 'created',
+      pullRequest: { number: 418, url: CREATED_URL },
+    });
+  });
+
+  it('keeps answering to the Scribe agent after its first turn so a follow-up is still its turn', async () => {
+    const { slice, read } = await askedForPr({ hasPr: false });
+
+    await slice.settleScribe({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      assistantText: PROPOSAL,
+      hasFailed: false,
+    });
+
+    expect(read().scribeAgents[AGENT_ID]).toBe(PR_KEY);
+  });
+
+  it('leaves the proposal alone when a follow-up turn brings no new text', async () => {
+    const { slice, read } = await askedForPr({ hasPr: false });
+    await slice.settleScribe({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      assistantText: PROPOSAL,
+      hasFailed: false,
     });
 
     await slice.settleScribe({
       sessionId: SESSION_ID,
       agentId: AGENT_ID,
-      assistantText: '<<pr-title>>Guard postings<</pr-title>>\n<<pr-body>>Body<</pr-body>>',
+      assistantText: 'No, I only write the text. The engine opens the draft.',
       hasFailed: false,
     });
 
-    expect(read().scribeWork['pr:mount-ledger']).toMatchObject({
-      status: 'ready',
+    expect(read().scribeWork[PR_KEY]).toMatchObject({
+      status: 'created',
       output: { prTitle: 'Guard postings', prBody: 'Body' },
     });
-    expect(read().scribeAgents[AGENT_ID]).toBeUndefined();
+    expect(read().createPrForSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('updates only what a follow-up changes and opens it after a failed first try', async () => {
+    const { slice, read } = await askedForPr({ hasPr: false });
+    vi.mocked(read().createPrForSession).mockRejectedValueOnce(new Error('gh is not installed'));
+    await slice.settleScribe({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      assistantText: PROPOSAL,
+      hasFailed: false,
+    });
+
+    await slice.settleScribe({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      assistantText: '<<pr-body>>Shorter body<</pr-body>>',
+      hasFailed: false,
+    });
+
+    expect(read().createPrForSession).toHaveBeenLastCalledWith(
+      expect.objectContaining({ title: 'Guard postings', body: 'Shorter body' }),
+    );
+    expect(read().scribeWork[PR_KEY]).toMatchObject({
+      status: 'created',
+      output: { prTitle: 'Guard postings', prBody: 'Shorter body' },
+    });
+  });
+
+  it('puts a changed follow-up on the request while it is still the text Goodboy wrote', async () => {
+    const signed = signScribeBody({ body: 'Body\n\nCloses #41' });
+    const { slice, read } = await askedForPr({ hasPr: true, prBody: signed });
+    await slice.settleScribe({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      assistantText: PROPOSAL,
+      hasFailed: false,
+    });
+
+    await slice.settleScribe({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      assistantText: '<<pr-title>>Guard every posting<</pr-title>>',
+      hasFailed: false,
+    });
+
+    expect(read().editPr).toHaveBeenCalledWith(SESSION_ID, 418, {
+      title: 'Guard every posting',
+      body: signScribeBody({ body: 'Body\n\nCloses #41' }),
+    });
+    expect(read().scribeWork[PR_KEY]).toMatchObject({ status: 'created' });
+  });
+
+  it('shows why a follow-up could not reach the request and keeps the request linked', async () => {
+    const signed = signScribeBody({ body: 'Body' });
+    const { slice, read } = await askedForPr({ hasPr: true, prBody: signed });
+    await slice.settleScribe({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      assistantText: PROPOSAL,
+      hasFailed: false,
+    });
+    vi.mocked(read().editPr).mockRejectedValueOnce(new Error('HTTP 502 from github'));
+
+    await slice.settleScribe({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      assistantText: '<<pr-title>>Guard every posting<</pr-title>>',
+      hasFailed: false,
+    });
+
+    expect(read().scribeWork[PR_KEY]).toMatchObject({
+      status: 'failed',
+      error: 'HTTP 502 from github',
+      pullRequest: { number: 418, url: CREATED_URL },
+    });
   });
 
   it('rewrites the pull request body only while it is still the one Goodboy wrote', async () => {

@@ -87,7 +87,7 @@ Reach a branch from any door and land on the same place. The palette, a notifica
 
 ### Write it
 
-Get a pull request title, description and changelog entry in your repo's format when you open a pull request. Linked issues become closing references.
+Get a pull request title, description and changelog entry in your repo's format when you open a pull request. Goodboy then pushes the branch and opens the pull request with that text. If a step fails, the reason shows where you clicked, next to **Retry**, and the text is kept on the Scribe's page under **Pull request text**. Linked issues become closing references.
 
 ### PR description follows the push
 
