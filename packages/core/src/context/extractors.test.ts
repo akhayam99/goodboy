@@ -490,6 +490,30 @@ describe('extractCommentWontfix', () => {
     });
   });
 
+  it('keeps a reason that holds an arrow', () => {
+    const text = '<<comment-wontfix threadId="PRRT_9" reason="the flow is a -> b, not b -> a">>';
+    expect(extractCommentWontfix(text)).toEqual({
+      threadId: 'PRRT_9',
+      reason: 'the flow is a -> b, not b -> a',
+    });
+  });
+
+  it('keeps a reason that ends with a generic type', () => {
+    const single = '<<comment-wontfix threadId="PRRT_9" reason="returns Array<T>">>';
+    const nested = '<<comment-wontfix threadId="PRRT_9" reason="returns Map<string, Array<T>>">>';
+    expect(extractCommentWontfix(single)?.reason).toBe('returns Array<T>');
+    expect(extractCommentWontfix(nested)?.reason).toBe('returns Map<string, Array<T>>');
+  });
+
+  it('keeps reading the markers that follow a reason with an arrow', () => {
+    const text =
+      '<<comment-wontfix threadId="PRRT_1" reason="a -> b">> <<comment-wontfix threadId="PRRT_2" reason="Array<T>">>';
+    expect(extractAllCommentWontfix(text)).toEqual([
+      { threadId: 'PRRT_1', reason: 'a -> b' },
+      { threadId: 'PRRT_2', reason: 'Array<T>' },
+    ]);
+  });
+
   it('requires both threadId and a non-empty reason', () => {
     expect(extractCommentWontfix('<<comment-wontfix threadId="PRRT_1">>')).toBeNull();
     expect(extractCommentWontfix('<<comment-wontfix reason="nope">>')).toBeNull();
@@ -1090,6 +1114,15 @@ describe('stripControlMarkers', () => {
   it('strips ctx-question with attributes', () => {
     const text = 'ask <<ctx-question suggestions="a|b">>body<</ctx-question>> done';
     expect(stripControlMarkers(text)).toBe('ask  done');
+  });
+
+  it('strips a marker whose text holds an arrow or a generic type', () => {
+    expect(stripControlMarkers('ok <<comment-wontfix threadid=T1 reason="a -> b">> done')).toBe(
+      'ok  done',
+    );
+    expect(
+      stripControlMarkers('ok <<comment-wontfix threadid=T1 reason="Map<string, Array<T>>">> done'),
+    ).toBe('ok  done');
   });
 
   it('collapses excessive newlines to double', () => {
