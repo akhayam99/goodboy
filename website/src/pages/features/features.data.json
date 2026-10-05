@@ -729,7 +729,7 @@
         },
         {
           "title": "Read the code",
-          "text": "The Files tab has a file tree and the changes with syntax colors, word-level highlights, a unified or split view and a viewed tick per file. Quote a line into a note or a question for an agent.",
+          "text": "The Files tab has a file tree with a progress ring per folder, filters, and the changes with syntax colors, word-level highlights and a unified or split view. Comment on a line or on a whole file, and quote a line into a note or a question for an agent.",
           "group": "Review and resolve on the Branch page",
           "also": "diff"
         },
