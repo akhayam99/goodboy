@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { parseUnifiedDiff } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { FileDiff, ResolveCandidate } from '@goodboy/types';
+import { orderLikeTree } from '../../../diff/lib/changeTree';
 import { worktreeDiffRange } from '../../../worktree/worktree';
 import { candidateHeadSha } from '../../selectResolveCandidate';
 
@@ -38,7 +39,7 @@ export const useResolveCandidateDiff = ({ candidate }: Params): Result => {
         if (isCancelled) {
           return;
         }
-        setFiles(parseUnifiedDiff(raw));
+        setFiles(orderLikeTree({ files: parseUnifiedDiff(raw) }));
         setIsLoading(false);
       })
       .catch((caught: unknown) => {

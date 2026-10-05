@@ -383,6 +383,7 @@ export {
   resolveDiffComment,
   reopenDiffComment,
   deleteDiffComment,
+  restoreDiffComment,
   assignDiffCommentTarget,
   type DiffCommentAuthor,
   type DiffCommentTarget,

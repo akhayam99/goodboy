@@ -48,6 +48,7 @@ export type ReviewState = {
   readonly collapsed: ReadonlySet<string>;
   readonly toggleFolder: (id: string) => void;
   readonly jumpTo: (path: string) => void;
+  readonly registerScroller: (scroll: ((path: string) => void) | null) => void;
   readonly fileCommentPath: string | null;
   readonly commentOnFile: (path: string) => void;
   readonly clearFileComment: () => void;
@@ -152,7 +153,10 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
     seenPaths.current = pathsKey;
     setCollapsed(defaultCollapsed({ tree: fullTree }));
   }, [pathsKey, fullTree]);
-  const { focusFile } = diff;
+  const scroller = useRef<((path: string) => void) | null>(null);
+  const registerScroller = useCallback((scroll: ((path: string) => void) | null) => {
+    scroller.current = scroll;
+  }, []);
 
   const noteCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -165,15 +169,16 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
   }, [comments.threads]);
   const noteCountOf = useCallback((path: string) => noteCounts.get(path) ?? 0, [noteCounts]);
 
-  const shownFiles = useMemo(
-    () =>
-      filterFiles({ files: diff.files, query }).filter(
-        (file) =>
-          (!unviewedOnly || stateOf(file) !== 'viewed') &&
-          (!notesOnly || (noteCounts.get(file.path) ?? 0) > 0),
-      ),
-    [diff.files, noteCounts, notesOnly, query, stateOf, unviewedOnly],
-  );
+  const shownFiles = useMemo(() => {
+    if (!isFiltering) {
+      return diff.files;
+    }
+    return filterFiles({ files: diff.files, query }).filter(
+      (file) =>
+        (!unviewedOnly || stateOf(file) !== 'viewed') &&
+        (!notesOnly || (noteCounts.get(file.path) ?? 0) > 0),
+    );
+  }, [diff.files, isFiltering, noteCounts, notesOnly, query, stateOf, unviewedOnly]);
   const tree = useMemo(() => buildChangeTree({ files: shownFiles, group }), [group, shownFiles]);
   const rowsRef = useRef(tree.rows);
   rowsRef.current = tree.rows;
@@ -218,9 +223,9 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
     (path: string) => {
       setActivePath(path);
       reveal(path);
-      focusFile(path);
+      scroller.current?.(path);
     },
-    [focusFile, reveal],
+    [reveal],
   );
 
   const [fileCommentPath, setFileCommentPath] = useState<string | null>(null);
@@ -254,6 +259,7 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
     collapsed,
     toggleFolder,
     jumpTo,
+    registerScroller,
     fileCommentPath,
     commentOnFile,
     clearFileComment,

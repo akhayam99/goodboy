@@ -5,6 +5,7 @@ import {
   buildChangeTree,
   defaultCollapsed,
   filterFiles,
+  orderLikeTree,
   visibleRows,
 } from './changeTree';
 import { fileKindOf } from './fileStatus';
@@ -34,8 +35,14 @@ describe('buildChangeTree', () => {
     const { rows } = buildChangeTree({ files: SAMPLE });
     const folders = rows.filter((row) => row.kind === 'folder').map((row) => row.id);
 
-    expect(folders).toEqual(['docs', 'src', 'src/ledger', 'src/ledger/export', 'src/types']);
-    const types = rows.find((row) => row.id === 'src/types');
+    expect(folders).toEqual([
+      'dir:docs',
+      'dir:src',
+      'dir:src/ledger',
+      'dir:src/ledger/export',
+      'dir:src/types',
+    ]);
+    const types = rows.find((row) => row.id === 'dir:src/types');
     expect(types).toMatchObject({ kind: 'folder', label: 'types', depth: 1 });
   });
 
@@ -46,7 +53,7 @@ describe('buildChangeTree', () => {
 
     expect(rows[0]).toMatchObject({
       kind: 'folder',
-      id: 'apps/desktop/src',
+      id: 'dir:apps/desktop/src',
       label: 'apps/desktop/src',
       depth: 0,
       fileCount: 2,
@@ -57,16 +64,16 @@ describe('buildChangeTree', () => {
     const { rows, files } = buildChangeTree({ files: SAMPLE });
 
     expect(rows.map((row) => row.id)).toEqual([
-      'docs',
+      'dir:docs',
       'docs/export.md',
-      'src',
-      'src/ledger',
-      'src/ledger/export',
+      'dir:src',
+      'dir:src/ledger',
+      'dir:src/ledger/export',
       'src/ledger/export/buildCsv.ts',
       'src/ledger/export/csv.ts',
       'src/ledger/export/page.tsx',
       'src/ledger/ledger.ts',
-      'src/types',
+      'dir:src/types',
       'src/types/ledger.ts',
       'package.json',
     ]);
@@ -77,8 +84,8 @@ describe('buildChangeTree', () => {
 
   it('sums additions, deletions and file counts up the folders', () => {
     const { rows } = buildChangeTree({ files: SAMPLE });
-    const src = rows.find((row) => row.id === 'src');
-    const exportDir = rows.find((row) => row.id === 'src/ledger/export');
+    const src = rows.find((row) => row.id === 'dir:src');
+    const exportDir = rows.find((row) => row.id === 'dir:src/ledger/export');
 
     expect(src).toMatchObject({ kind: 'folder', fileCount: 5, additions: 18, deletions: 4 });
     expect(exportDir).toMatchObject({ kind: 'folder', fileCount: 3, additions: 14, deletions: 2 });
@@ -112,14 +119,14 @@ describe('buildChangeTree', () => {
 describe('visibleRows', () => {
   it('hides everything under a collapsed folder and nothing else', () => {
     const { rows } = buildChangeTree({ files: SAMPLE });
-    const visible = visibleRows({ rows, collapsed: new Set(['src/ledger']) });
+    const visible = visibleRows({ rows, collapsed: new Set(['dir:src/ledger']) });
 
     expect(visible.map((row) => row.id)).toEqual([
-      'docs',
+      'dir:docs',
       'docs/export.md',
-      'src',
-      'src/ledger',
-      'src/types',
+      'dir:src',
+      'dir:src/ledger',
+      'dir:src/types',
       'src/types/ledger.ts',
       'package.json',
     ]);
@@ -137,9 +144,9 @@ describe('ancestorIds', () => {
     const { rows } = buildChangeTree({ files: SAMPLE });
 
     expect(ancestorIds({ rows, path: 'src/ledger/export/page.tsx' })).toEqual([
-      'src/ledger/export',
-      'src/ledger',
-      'src',
+      'dir:src/ledger/export',
+      'dir:src/ledger',
+      'dir:src',
     ]);
     expect(ancestorIds({ rows, path: 'package.json' })).toEqual([]);
   });
@@ -165,7 +172,7 @@ describe('buildChangeTree groups', () => {
       deletions: 81,
       depth: 0,
     });
-    expect(rows.find((row) => row.id === 'dist')).toBeUndefined();
+    expect(rows.find((row) => row.id === 'dir:dist')).toBeUndefined();
     expect(files.slice(-2).map((file) => file.path)).toEqual(['dist/bundle.js', 'pnpm-lock.yaml']);
   });
 
@@ -238,7 +245,7 @@ describe('defaultCollapsed', () => {
       files: [...many('big', 260), ...many('mid', 51), ...many('small', 49)],
     });
 
-    expect([...defaultCollapsed({ tree })].sort()).toEqual(['big', 'mid']);
+    expect([...defaultCollapsed({ tree })].sort()).toEqual(['dir:big', 'dir:mid']);
   });
 
   it('keeps a parent open when a folder inside it is the big one', () => {
@@ -250,13 +257,172 @@ describe('defaultCollapsed', () => {
       ],
     });
 
-    expect([...defaultCollapsed({ tree })]).toEqual(['apps/web/components']);
+    expect([...defaultCollapsed({ tree })]).toEqual(['dir:apps/web/components']);
   });
 
   it('starts with the Generated row closed, whatever the size of the change', () => {
     const tree = buildChangeTree({ files: [fileAt('src/a.ts'), fileAt('pnpm-lock.yaml')] });
 
     expect([...defaultCollapsed({ tree })]).toEqual(['group:generated']);
+  });
+});
+
+describe('folder row ids', () => {
+  it('never share an id with a file that has the same path', () => {
+    const { rows } = buildChangeTree({
+      files: [fileAt('docs', { status: 'deleted' }), fileAt('docs/readme.md', { status: 'added' })],
+    });
+    const ids = rows.map((row) => row.id);
+
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).toEqual(['dir:docs', 'docs/readme.md', 'docs']);
+  });
+
+  it('point the children of a folder at its prefixed id', () => {
+    const { rows } = buildChangeTree({ files: [fileAt('src/a/b.ts'), fileAt('src/a/c/d.ts')] });
+
+    expect(rows.find((row) => row.id === 'src/a/b.ts')?.parentId).toBe('dir:src/a');
+    expect(rows.find((row) => row.id === 'dir:src/a/c')?.parentId).toBe('dir:src/a');
+  });
+});
+
+describe('orderLikeTree', () => {
+  const NAMES = [
+    'a',
+    'A',
+    'b',
+    'B',
+    'a.b',
+    'a-b',
+    'a_b',
+    '_a',
+    '.a',
+    '-a',
+    '1',
+    '10',
+    '2',
+    'é',
+    'Z',
+    'z',
+    'Src',
+    'index.ts',
+    'Index.ts',
+    'README.md',
+    'readme.md',
+    '__tests__',
+    '[id]',
+    '(auth)',
+    '@modal',
+    'x y',
+  ];
+
+  const seeded = (seed: number) => {
+    let state = seed;
+    return () => {
+      state = (state + 0x6d2b79f5) | 0;
+      let value = Math.imul(state ^ (state >>> 15), 1 | state);
+      value = (value + Math.imul(value ^ (value >>> 7), 61 | value)) ^ value;
+      return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+    };
+  };
+
+  const pathSets = (count: number): ReadonlyArray<ReadonlyArray<string>> => {
+    const random = seeded(18);
+    const pick = () => NAMES[Math.floor(random() * NAMES.length)] ?? 'a';
+    return Array.from({ length: count }, () => {
+      const size = 1 + Math.floor(random() * 40);
+      const paths = new Set<string>();
+      for (let index = 0; index < size; index += 1) {
+        const depth = 1 + Math.floor(random() * 4);
+        paths.add(Array.from({ length: depth }, pick).join('/'));
+      }
+      return [...paths];
+    });
+  };
+
+  const oracle = (paths: ReadonlyArray<string>, depth: number): ReadonlyArray<string> => {
+    const dirs = new Map<string, string[]>();
+    const leaves: string[] = [];
+    for (const path of paths) {
+      const parts = path.split('/');
+      if (parts.length - 1 === depth) {
+        leaves.push(path);
+        continue;
+      }
+      const key = parts[depth] ?? '';
+      dirs.set(key, [...(dirs.get(key) ?? []), path]);
+    }
+    const nameOf = (path: string) => path.slice(path.lastIndexOf('/') + 1);
+    return [
+      ...[...dirs.keys()]
+        .sort((left, right) => left.localeCompare(right))
+        .flatMap((key) => oracle(dirs.get(key) ?? [], depth + 1)),
+      ...leaves.sort((left, right) => nameOf(left).localeCompare(nameOf(right))),
+    ];
+  };
+
+  const SETS = pathSets(300);
+
+  it('lists the files in the order of the rows, for every grouping', () => {
+    for (const paths of SETS) {
+      for (const group of ['folders', 'kind'] as const) {
+        const tree = buildChangeTree({ files: paths.map((path) => fileAt(path)), group });
+
+        expect(tree.files.map((file) => file.path)).toEqual(
+          tree.rows.filter((row) => row.kind === 'file').map((row) => row.id),
+        );
+      }
+    }
+  });
+
+  it('matches an independent recursive sort: folders first, then files, by name', () => {
+    for (const paths of SETS) {
+      const ordered = orderLikeTree({ files: paths.map((path) => fileAt(path)) });
+
+      expect(ordered.map((file) => file.path)).toEqual(oracle(paths, 0));
+    }
+  });
+
+  it('is idempotent and does not depend on the order it is given', () => {
+    const random = seeded(7);
+    for (const paths of SETS) {
+      const files = paths.map((path) => fileAt(path));
+      const once = orderLikeTree({ files });
+      const shuffled = [...files].sort(() => random() - 0.5);
+
+      expect(orderLikeTree({ files: once }).map((file) => file.path)).toEqual(
+        once.map((file) => file.path),
+      );
+      expect(orderLikeTree({ files: shuffled }).map((file) => file.path)).toEqual(
+        once.map((file) => file.path),
+      );
+    }
+  });
+
+  it('keeps each file once and has no repeated row id', () => {
+    for (const paths of SETS) {
+      const { rows, files } = buildChangeTree({ files: paths.map((path) => fileAt(path)) });
+      const ids = rows.map((row) => row.id);
+
+      expect(files).toHaveLength(paths.length);
+      expect(new Set(ids).size).toBe(ids.length);
+    }
+  });
+
+  it('sorts a git order with renames the way the tree shows it', () => {
+    const raw = [
+      fileAt('web/z.ts'),
+      fileAt('api/new.ts', { status: 'renamed', oldPath: 'web/old.ts' }),
+      fileAt('README.md'),
+      fileAt('api/a.ts'),
+    ];
+
+    expect(orderLikeTree({ files: raw }).map((file) => file.path)).toEqual([
+      'api/a.ts',
+      'api/new.ts',
+      'web/z.ts',
+      'README.md',
+    ]);
   });
 });
 

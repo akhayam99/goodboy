@@ -133,7 +133,7 @@ describe('ChangeTree', () => {
     const { rerender } = renderTree({ onToggleFolder });
 
     fireEvent.click(screen.getByRole('button', { name: /\bexport\b/ }));
-    expect(onToggleFolder).toHaveBeenCalledWith('src/ledger/export');
+    expect(onToggleFolder).toHaveBeenCalledWith('dir:src/ledger/export');
 
     rerender(
       <ChangeTree
@@ -142,7 +142,7 @@ describe('ChangeTree', () => {
         filter={NO_FILTER}
         filterRef={createRef()}
         activePath={null}
-        collapsed={new Set(['src/ledger/export'])}
+        collapsed={new Set(['dir:src/ledger/export'])}
         onToggleFolder={onToggleFolder}
         onPick={vi.fn()}
         onCommentOnFile={null}

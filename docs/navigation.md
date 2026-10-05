@@ -1626,7 +1626,10 @@ sits in `Unassigned notes` on the Session overview.
 One page per branch (`features/branch`) replaces the PR, Review and Diff
 pages. Every diff in the app is still one `DiffView` (`features/diff`): the
 Files tab, Write review, the Bitbucket pull request changes and the
-`file-diff` drawer.
+`file-diff` drawer. Each one lists its files through `orderLikeTree`
+(`features/diff/lib/changeTree.ts`), so the order is the tree's everywhere. The
+Rust side runs git with `core.quotepath=false` and `parseUnifiedDiff` reads
+quoted headers, so a name with accents is its own file.
 
 **Header.** Title (`#318 Ledger export`, or the branch name without a pull
 request), the line `Draft · project · head → base · ✓ N checks`, one primary
@@ -1686,7 +1689,13 @@ in both groupings and at the end of the diff. Viewed marks are stored per sessio
 keep their own; marks saved before that are read until the mount saves its own.
 Click a file and the
 diff scrolls to it; scroll the diff and the tree highlights the file in view and
-opens its folders. The tree and the diff share one `useReviewState` (active
+opens its folders. A click, `J`/`K`, next unviewed and `Viewed` call the diff's
+scroller directly (`registerScroller` on `DiffView`); `focusPath` is only for a
+link from another page such as `Open in Files`. The diff resets its mounted
+batch, its observer and its place only when the list of paths changes, never on
+a new array with the same paths, so marking a file viewed or a note changing
+neither shortens the page nor drops an open composer. Folder row ids start with
+`dir:`, so a folder and a file with the same path never share a key. The tree and the diff share one `useReviewState` (active
 file, open folders, notes, `Viewed`), and a model in `features/diff/lib/changeTree.ts`
 builds the rows. `Viewed`, notes on
 lines and files, `Post open notes to the PR` and `Write review` (which swaps
@@ -1869,7 +1878,15 @@ this note". Close note goes through `closeResolvedNote`, the same path the
 Comments tab uses. The Files tab shows only the notes of its own branch; a note
 written before m223 is assigned to a branch only when a resolver run on a known
 mount used it, and the rest wait in `Unassigned notes` on the Session overview,
-each with `Move to <branch>`. `Post notes` in the toolbar moves the open notes
+each with `Move to` and `Discard`. `Move to` names the branch when the session
+has one, and opens an inline row of branches (the active one first, one per
+project and branch, no dialog) when it has several; the move goes through
+`assignDiffComment(sessionId, noteId, mountId)`. `Discard` goes through
+`discardDiffComments`: it deletes the rows at once and registers one
+`undoable` ("Note discarded" or "N notes discarded"), whose Undo and ⌘Z
+re-insert the same rows with the same ids (`restoreDiffComment`); a status
+`discarded` would need a migration because `diff_comments.status` is a CHECK
+list. With two or more notes the section header has `Discard all`. `Post notes` in the toolbar moves the open notes
 of the branch into a review draft. Write review puts
 its form under the last file: the line comments with Edit and Delete on hover (Delete offers Undo), the verdict,
 the summary, and one primary that says the verdict (`Approve`,
