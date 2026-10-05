@@ -30,6 +30,7 @@ const AGENT_COMPOSERS: Readonly<Record<string, ReadonlyArray<Kind>>> = {
   'features/workflows/components/WorkflowRulesPanel/RulesGuidanceBand.tsx': ['document'],
   'features/workflows/components/StepTree/StepEditorFields.tsx': ['document', 'document'],
   'features/artifacts/components/ArtifactCreationPane/ArtifactBriefField.tsx': ['document'],
+  'features/artifacts/components/PlanComments/CommentComposer.tsx': ['document'],
   'features/wireframes/components/WireframeViewer/ChangeComposer.tsx': ['document'],
   'features/workspace-chat/components/TurnIntoWorkPanel/index.tsx': ['document'],
   'features/session/components/AgentInstructionsField.tsx': ['document'],

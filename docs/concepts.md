@@ -578,6 +578,30 @@ when and Out of scope. The planner writes each part with its own checks
 the subagent that carries a part receives both in its kickoff, so it knows
 when the part is done.
 
+You change a plan with **comments**, from the plan document itself (the
+Artifacts page, and any surface that shows the same plan document). A comment
+points at a part (`kind: part`, its index and title), at a heading, list item or
+paragraph of the goal or of the text after the parts (`block`), or at a selected
+phrase (`quote`, with the text of its block). Anchors are matched by their text,
+so a plan that moved a block still finds it, and a comment whose text is gone
+sits in a group under the text, never lost. Comments live in `artifact_comments`
+(m224): `draft` until sent, `sent` with the id of the turn, then `addressed` when
+the text or part it pointed at changed in the new version, or `open` when it did
+not. **Send to planner** is one operator turn on the agent that wrote the plan
+(`plan.agentId`, through `sendTurn`, never the resolve queue). It says "Please
+revise the plan:", lists each comment in plan order as `On part 3 "title":` or
+`On the goal:` with the quoted text and the comment, and ends by asking for the
+whole updated plan. When the turn settles with a new revision, that revision is
+annotated with the ask and the pinned anchors and each comment is settled; a turn
+with no new revision puts the comments back to `open` ("No new version in this
+turn"). A `sent` comment found after a restart is settled the same way against
+the stored revisions once the planner is idle. Send is refused, with its reason,
+when the planner is gone or still working, when the plan was consumed or
+replaced, or when a later step of the plan's workflow run has already left
+`pending`; a run held for plan approval is the exception, because a held run
+does not advance (`workflowPlanApproval.ts`), and the bar offers **Approve plan**
+beside Send. The comments are removed with their artifact.
+
 A wireframe opens on its **Flow**: the graph of its screens, a one line legend
 (`next`, `back`, `same screen`, told apart by line style and glyph, never by
 colour) and the screens as a grid of page previews under it. A node or a tile

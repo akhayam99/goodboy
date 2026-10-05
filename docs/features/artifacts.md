@@ -25,6 +25,10 @@ Read the plan without leaving the planner. In the planner's chat and in its Brie
 
 While the planner reworks the plan the row and the drawer say **Revising to v2**, the plan is dimmed and **Run plan** is off with the reason "Planner is revising this plan". A plan that already ran stays **Ran** and says **Writing a new version**. When the new version lands, the earlier row in the chat turns into a slim line, **Plan v1 · replaced by v2**, and pressing it reads v1 in the drawer.
 
+### Comment on a plan
+
+Point at a part, a heading, a paragraph or a few selected words of a plan and leave a comment, on the Artifacts page and in the drawer beside the planner. Each one sits under what it points at and stays a draft, kept across a restart, until you send it. **Send to planner** posts one message to the planner that wrote the plan: your comments in the order of the plan, each with the text it points at, and a request for the full updated plan. When the new version lands, a comment reads **Addressed** if the text it pointed at changed, or **Not changed in v2** if it did not. Send is off, with the reason beside it, when the planner is gone, when it is revising the plan, when the plan already ran or when the next step of the workflow has already started. A run that waits for your approval of the plan still takes comments, and **Approve plan** sits next to **Send to planner**.
+
 ### Report as a document
 
 <picture>

@@ -15,6 +15,10 @@ import type { ExtractedReviewComment } from '@goodboy/core';
 import { createNotificationsSlice } from './slices/notifications';
 import { createNudgesSlice } from './slices/nudges';
 import { createArtifactsSlice, artifactsInitialState } from './slices/artifacts';
+import {
+  createArtifactCommentsSlice,
+  artifactCommentsInitialState,
+} from './slices/artifact-comments';
 import { createPlansSlice } from './slices/plans';
 import { createOpenQuestionsSlice } from './slices/open-questions';
 import { createSlackDraftsSlice } from './slices/slack-drafts';
@@ -185,6 +189,7 @@ export type AppStore = AppState &
   ReturnType<typeof createUndoSlice> &
   AppActions &
   ReturnType<typeof createArtifactsSlice> &
+  ReturnType<typeof createArtifactCommentsSlice> &
   ReturnType<typeof createBootstrapSlice> &
   ReturnType<typeof createResolveSlice> &
   ReturnType<typeof createReviewNavigationSlice> &
@@ -331,6 +336,7 @@ export const initialState: AppState = {
   ...reviewSelectionInitialState,
   ...reviewSourceInitialState,
   ...artifactsInitialState,
+  ...artifactCommentsInitialState,
   ...workflowDraftsInitialState,
   ...artifactDraftsInitialState,
   ...initialWorkflowStudioState,
@@ -353,6 +359,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createNotificationsSlice({ set, get }),
   ...createNudgesSlice({ set, get }),
   ...createArtifactsSlice({ set, get }),
+  ...createArtifactCommentsSlice({ set, get }),
   ...createPlansSlice({ set, get }),
   ...createOpenQuestionsSlice({ set, get }),
   ...createSlackDraftsSlice({ set, get }),

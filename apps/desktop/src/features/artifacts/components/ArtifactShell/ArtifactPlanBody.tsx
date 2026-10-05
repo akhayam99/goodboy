@@ -4,7 +4,9 @@ import { dropLeadingTitleHeading } from '../ArtifactDocument/dropLeadingTitleHea
 import { splitPlanBody } from '../../../plans/splitPlanBody';
 import { PlanParts } from '../../../plans/components/PlanParts';
 import type { PlanPartRow } from '../../../plans/components/PlanParts/planPartRows';
-import { ArtifactProse } from '../ArtifactProse';
+import { PartCommentFrame } from '../PlanComments/PartCommentFrame';
+import { PlanCommentsProvider } from '../PlanComments/PlanCommentsProvider';
+import { PlanProse } from '../PlanComments/PlanProse';
 
 type Props = {
   readonly plan: PlanWithCount;
@@ -25,19 +27,31 @@ export const ArtifactPlanBody = ({ plan, rows, hasRun, splitSentence, onOpenPart
   const hasLead = body.lead.length > 0;
 
   return (
-    <div data-testid="plan-body" className="flex min-w-0 flex-col gap-6">
-      {hasLead ? <ArtifactProse text={body.lead} measure="full" /> : null}
-      <PlanParts
-        sessionId={plan.sessionId}
-        planId={plan.id}
-        rows={rows}
-        hasRun={hasRun}
-        splitSentence={splitSentence}
-        onOpenPart={onOpenPart}
-      />
-      {body.rest.trim().length === 0 ? null : (
-        <ArtifactProse text={body.rest} hasLead={!hasLead && rows.length === 0} measure="full" />
-      )}
-    </div>
+    <PlanCommentsProvider sessionId={plan.sessionId} plan={plan}>
+      <div data-testid="plan-body" className="flex min-w-0 flex-col gap-6">
+        {hasLead ? <PlanProse text={body.lead} section="lead" measure="full" /> : null}
+        <PlanParts
+          sessionId={plan.sessionId}
+          planId={plan.id}
+          rows={rows}
+          hasRun={hasRun}
+          splitSentence={splitSentence}
+          onOpenPart={onOpenPart}
+          frameRow={({ row, children }) => (
+            <PartCommentFrame index={row.index} title={row.title}>
+              {children}
+            </PartCommentFrame>
+          )}
+        />
+        {body.rest.trim().length === 0 ? null : (
+          <PlanProse
+            text={body.rest}
+            section="rest"
+            hasLead={!hasLead && rows.length === 0}
+            measure="full"
+          />
+        )}
+      </div>
+    </PlanCommentsProvider>
   );
 };

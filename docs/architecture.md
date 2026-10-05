@@ -396,6 +396,7 @@ cleanup) and moving those calls behind the commands is not done yet.
 | `agent_queued_messages`       | ts     |                                                                                                                     |
 | `agent_turn_spans`            | ts     |                                                                                                                     |
 | `agents`                      | ts     | Inserts, status, routing, viewed and done through `agent-write.ts`. Rust reads only.                                |
+| `artifact_comments`           | ts     |                                                                                                                     |
 | `artifact_provenance`         | ts     |                                                                                                                     |
 | `artifact_revisions`          | ts     |                                                                                                                     |
 | `budget_alerts`               | rust   | `budget.rs`                                                                                                         |
