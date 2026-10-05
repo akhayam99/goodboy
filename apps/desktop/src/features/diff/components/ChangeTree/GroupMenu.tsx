@@ -27,9 +27,9 @@ export const GroupMenu = ({ group, onGroup }: Props) => {
           aria-haspopup="menu"
           aria-expanded={dropdown.open}
           onClick={dropdown.toggle}
-          className="inline-flex h-6 items-center gap-1 rounded-sm px-1 text-meta text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          className="inline-flex h-6 shrink-0 items-center gap-1 whitespace-nowrap rounded-sm px-1 text-meta text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
-          Group: {GROUP_LABEL[group]}
+          {GROUP_LABEL[group]}
           <ChevronDown size={ICON_SIZE.row} aria-hidden />
         </button>
       }

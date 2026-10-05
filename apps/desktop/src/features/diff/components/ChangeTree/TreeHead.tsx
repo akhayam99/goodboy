@@ -79,10 +79,10 @@ export const TreeHead = ({
           className="min-w-0 flex-1 bg-transparent text-label outline-none placeholder:text-faint-foreground"
         />
       </div>
-      <div className="flex items-center gap-1">
+      <div className="flex min-w-0 items-center gap-1">
         <FilterChip label="Unviewed" isOn={unviewedOnly} onChange={onUnviewedOnly} />
         <FilterChip label="With notes" isOn={notesOnly} onChange={onNotesOnly} />
-        <span className="ml-auto">
+        <span className="ml-auto shrink-0">
           <GroupMenu group={group} onGroup={onGroup} />
         </span>
       </div>

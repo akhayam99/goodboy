@@ -13,6 +13,8 @@ import { useNarrowPane } from '../../hooks/useNarrowPane';
 import { useReviewState } from '../../hooks/useReviewState';
 import type { SessionDiff } from '../../hooks/useSessionDiff';
 import { useTreePanel } from '../../hooks/useTreePanel';
+import { TREE_WIDTH_MIN, TREE_WIDTH_SHARE, useTreeWidth } from '../../hooks/useTreeWidth';
+import { TreeResizer } from '../ChangeTree/TreeResizer';
 import { ChangeTree } from '../ChangeTree';
 import { TreeStrip } from '../ChangeTree/TreeStrip';
 import { TreeEmpty } from '../ChangeTree/TreeEmpty';
@@ -81,6 +83,7 @@ export const SessionDiffPane = ({
   const rootRef = useRef<HTMLDivElement | null>(null);
   const isNarrow = useNarrowPane(rootRef);
   const panel = useTreePanel({ isNarrow });
+  const treeWidth = useTreeWidth(rootRef);
 
   const isEmpty = !diff.loading && diff.error === null && diff.files.length === 0;
   const hasTree = !diff.loading && diff.error === null && diff.files.length > 0;
@@ -231,6 +234,7 @@ export const SessionDiffPane = ({
       onActivePathChange={review.setActivePath}
       fileCommentPath={review.fileCommentPath}
       onFileCommentOpened={review.clearFileComment}
+      columnWidth="full"
       toolbarStart={selector}
       toolbarEnd={
         onWriteReview === null && toolbarExtra === null ? undefined : (
@@ -285,9 +289,20 @@ export const SessionDiffPane = ({
         <aside
           ref={panel.asideRef}
           aria-label="Files"
-          className="flex min-h-0 w-[280px] shrink-0 pl-3"
+          style={{
+            width: `clamp(${TREE_WIDTH_MIN}px, ${treeWidth.width}px, ${TREE_WIDTH_SHARE * 100}%)`,
+          }}
+          className="relative flex min-h-0 shrink-0 pl-3"
         >
           {treeColumn}
+          {hasTree ? (
+            <TreeResizer
+              asideRef={panel.asideRef}
+              width={treeWidth.width}
+              paneWidth={treeWidth.paneWidth}
+              onResize={treeWidth.resizeTo}
+            />
+          ) : null}
         </aside>
       )}
       {strip && (
