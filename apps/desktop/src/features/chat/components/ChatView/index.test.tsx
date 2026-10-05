@@ -21,6 +21,7 @@ const { state, openQuestions, answeredQuestions, transcriptItems } = vi.hoisted(
     advanceClusterImplementation: vi.fn(async () => undefined),
     markAgentViewed: vi.fn(async () => undefined),
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionResolveAttempts: {} as Record<string, ReadonlyArray<unknown>>,
     sessionPlans: {} as Record<string, ReadonlyArray<unknown>>,
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
     sessionBranches: {} as Record<string, string>,
@@ -337,6 +338,56 @@ describe('ChatView', () => {
       agentId: 'agent-2',
       questionId: 'q-other-agent',
     });
+  });
+
+  it('never offers a fix run question as a banner on another agent chat', () => {
+    state.selectedAgentId = { 'sess-1': 'agent-1' };
+    state.sessionPhaseRuns = {
+      'sess-1': [
+        { id: 'agent-1', name: 'planner' },
+        { id: 'agent-2', name: 'Fix run' },
+      ],
+    };
+    state.sessionResolveAttempts = {
+      'sess-1': [{ id: 'attempt-1', agentId: 'agent-2', threadIds: ['t1'] }],
+    };
+    openQuestions.current = [
+      {
+        id: 'q-fix-run',
+        createdByAgentId: 'agent-2',
+        turnOrdinal: 3,
+        createdAt: '2026-06-13T00:00:00.000Z',
+      },
+    ];
+
+    render(<ChatView session={session} />);
+
+    expect(screen.queryByRole('button', { name: /open question/ })).toBeNull();
+  });
+
+  it('shows no banner about other agents on the chat of a fix run', () => {
+    state.selectedAgentId = { 'sess-1': 'agent-2' };
+    state.sessionPhaseRuns = {
+      'sess-1': [
+        { id: 'agent-1', name: 'planner' },
+        { id: 'agent-2', name: 'Fix run' },
+      ],
+    };
+    state.sessionResolveAttempts = {
+      'sess-1': [{ id: 'attempt-1', agentId: 'agent-2', threadIds: ['t1'] }],
+    };
+    openQuestions.current = [
+      {
+        id: 'q-planner',
+        createdByAgentId: 'agent-1',
+        turnOrdinal: 1,
+        createdAt: '2026-06-13T00:00:00.000Z',
+      },
+    ];
+
+    render(<ChatView session={session} />);
+
+    expect(screen.queryByRole('button', { name: /open question/ })).toBeNull();
   });
 
   it('splits questions from different turns into separate clusters', () => {

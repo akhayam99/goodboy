@@ -34,6 +34,10 @@ import { ResolveBitbucketScene } from './scenes/ResolveBitbucketScene';
 import { ResolveItemScene } from './scenes/ResolveItemScene';
 import { ResolveFailedHistoryScene } from './scenes/ResolveFailedHistoryScene';
 import { ResolveFailedRunScene } from './scenes/ResolveFailedRunScene';
+import { ResolveRunAnsweredScene } from './scenes/ResolveRunAnsweredScene';
+import { ResolveRunQuestionScene } from './scenes/ResolveRunQuestionScene';
+import { ResolveRunWorkingScene } from './scenes/ResolveRunWorkingScene';
+import { FixRunQuestionScene } from './scenes/FixRunQuestionScene';
 import { BoardScene } from './scenes/BoardScene';
 import { BoardOngoingScene } from './scenes/BoardOngoingScene';
 import { BoardSelectedScene } from './scenes/BoardSelectedScene';
@@ -203,6 +207,9 @@ export const MOCK_SCENES = {
   'branch-push': BranchPushScene,
   'resolve-item': ResolveItemScene,
   'resolve-failed': ResolveFailedRunScene,
+  'resolve-run-question': ResolveRunQuestionScene,
+  'resolve-run-working': ResolveRunWorkingScene,
+  'resolve-run-answered': ResolveRunAnsweredScene,
   'resolve-failed-history': ResolveFailedHistoryScene,
   'resolve-drift': ResolveDriftScene,
   'resolve-gitlab': ResolveGitlabScene,
@@ -335,6 +342,7 @@ export const MOCK_SCENES = {
   'scribe-proposal-failed': ScribeProposalFailedScene,
   'scribe-proposal-transcript': ScribeProposalTranscriptScene,
   'fix-run': FixRunScene,
+  'fix-run-question': FixRunQuestionScene,
   'crash-report': CrashReportScene,
 };
 

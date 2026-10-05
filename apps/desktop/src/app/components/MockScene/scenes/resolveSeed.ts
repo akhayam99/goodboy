@@ -124,6 +124,8 @@ const T9 = 'PRRT_thread_retry_constant';
 
 export const EXPANDED_THREAD_ID = T1;
 export const THREAD_IDS = {
+  errorShape: T3,
+  idempotency: T4,
   metrics: T2,
   logRedact: T5,
   timeoutConfig: T6,

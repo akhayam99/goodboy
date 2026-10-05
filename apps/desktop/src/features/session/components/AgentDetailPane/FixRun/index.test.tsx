@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { Agent, AgentId, MountId, ResolveAttempt } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -32,6 +32,8 @@ const SINGLE = 'agent-fix-single' as AgentId;
 const CHILD = 'agent-fix-child' as AgentId;
 const SIBLING = 'agent-fix-sibling' as AgentId;
 const GONE = 'agent-fix-gone' as AgentId;
+const ASKING = 'mock-resolve-agent-retry' as AgentId;
+const ERROR_SHAPE = 'PRRT_thread_error_shape';
 const CHILD_MOUNT = 'mount-fix-child' as MountId;
 const TYPO = 'PRRT_thread_typo';
 const CONSTANT = 'PRRT_thread_retry_constant';
@@ -90,6 +92,12 @@ const ATTEMPTS = [
   }),
   attemptOf({ id: 'a-sibling', agentId: SIBLING, threadIds: [CONSTANT], batchId: 'batch-1' }),
   attemptOf({ id: 'a-gone', agentId: GONE, threadIds: ['PRRT_removed'], batchId: null }),
+  attemptOf({
+    id: 'mock-resolve-attempt-retry',
+    agentId: ASKING,
+    threadIds: [ERROR_SHAPE],
+    batchId: null,
+  }),
 ];
 
 beforeAll(async () => {
@@ -164,6 +172,31 @@ describe('the Fix run', () => {
 
     expect(navigate).toHaveBeenCalledWith({
       to: branchPlace({ sessionId: SESSION.id, tab: 'comments', threadId: EXPANDED_THREAD_ID }),
+    });
+  });
+
+  it('shows no question while nothing waits on you', async () => {
+    await mount({ agentId: SINGLE });
+
+    expect(screen.queryByTestId('resolver-question')).toBeNull();
+  });
+
+  it('shows the question the run waits on, with its options and the way to answer', async () => {
+    const answerQuestions = vi.fn<StoreState['answerQuestions']>(async () => undefined);
+    stub({ answerQuestions });
+    await mount({ agentId: ASKING });
+
+    const card = within(screen.getByTestId('resolver-question'));
+    expect(card.getByRole('heading', { name: 'Question from the fix run' })).toBeDefined();
+    expect(card.getAllByRole('radio')).toHaveLength(2);
+    expect(card.getByText('Recommended')).toBeDefined();
+
+    fireEvent.click(card.getByRole('button', { name: 'Continue the fix run' }));
+
+    await waitFor(() => expect(answerQuestions).toHaveBeenCalledOnce());
+    expect(answerQuestions.mock.calls[0]?.[0]).toMatchObject({
+      sessionId: SESSION.id,
+      answers: [{ threadId: ERROR_SHAPE }],
     });
   });
 
