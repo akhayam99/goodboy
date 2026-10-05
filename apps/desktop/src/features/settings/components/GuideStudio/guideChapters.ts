@@ -219,7 +219,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Activity',
-        desc: 'Every group hangs on an indented numbered ball with its own lane. A run keeps its context and questions inside it, and the provider icon is on every agent. A model name shows only when it differs. The Runs tab lists the workflow runs of a session.',
+        desc: 'Activity has two views, Activity and Log. Activity shows one row per launch: a workflow run, an agent, or a resolver launch with its comments. Needs you sits on top with what waits for you, and cost and duration stay on each row. Log holds the facts, such as links, branches and decisions. A run reads in execution order, and each step owns its subagents, shown as 4 subagents on the step row. The Runs tab lists the workflow runs of a session.',
       },
       {
         term: 'Agent suggests',
@@ -247,7 +247,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Open questions',
-        desc: 'Each question is one card: pick an answer with its number and press Enter, or write something else. The Questions view lists what waits on you, and the same card sits in the transcript and on the Brief. A blocking question holds its step until you answer, and Let an agent decide hands it to another agent.',
+        desc: 'Each question is one card: pick an answer with its number and press Enter, or write something else. The Questions view lists what waits on you, and the same card sits in the transcript. A blocking question holds its step until you answer, and Let an agent decide hands it to another agent.',
       },
     ],
     links: [{ label: 'Open Workflows', target: { kind: 'studio', studio: { kind: 'workflow' } } }],
@@ -302,6 +302,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Launch a session from an issue, a Slack thread or an error, with the brief already drafted. Link to a session attaches the item to one you already have, and Link work on a session, or L, searches your trackers from there. Link a task to This session, This branch or Whole workspace, and pick whether merging closes it.',
       },
       {
+        term: 'Task links',
+        desc: 'A task chip opens the task. Unlink, Stop tracking and Take off this branch act at once and show an Undo toast, and ⌘Z undoes the last one when focus is not in a text field. The Log keeps the event with Re-link. Put on a branch sits on the branch row.',
+      },
+      {
         term: 'Slack',
         desc: 'Pick the channels and what agents may do there. Replies default to Ask first and wait for your Send.',
       },
@@ -324,49 +328,45 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
   {
     id: 'review',
     group: 'task',
-    title: 'Review, resolve and the PR page',
+    title: 'Review, resolve and the Branch page',
     concept: 'resolve',
-    lead: 'Read the diff, turn review comments into commits, and merge without leaving the app.',
+    lead: 'Read the code, turn review comments into commits, and merge without leaving the app. It all happens on one Branch page.',
     points: [
       {
-        term: 'Diff',
-        desc: 'Split or unified, with word-level highlights and a Viewed tick per file. Quote a line into a note or a question for an agent. The header offers the next step for the branch.',
+        term: 'Branch page',
+        desc: 'One page per branch, with the tabs Comments, Files, Commits and Checks. It opens the same way from the palette, a notification, a chat card or the board. Up is the crumb on the left, and Back walks your history.',
+      },
+      {
+        term: 'Comments',
+        desc: 'The review threads of the branch, grouped as Open, Ready to push and Done, and the open thread beside them. Fix writes each fix as a local commit and drafts the reply, and you accept, edit or skip it. Select several comments and Fix N separately starts one agent for each, up to four at a time.',
+      },
+      {
+        term: 'Fix run',
+        desc: 'A resolver run opens as a read-only Fix run: its transcript and the commit it made.',
+      },
+      {
+        term: 'Files',
+        desc: 'The file tree and the code, split or unified, with a Viewed tick per file. Quote a line into a note or a question for an agent. Write review is a form with line comments, the verdict and a summary, sent with Approve, Request changes or Submit comments.',
       },
       {
         term: 'Notes',
         desc: 'Add note on a line saves it with the project and branch you are on. It reads Local in the Comments tab, where Fix starts an agent on it, and Post notes moves the open ones into a review draft. A note an agent works on cannot be closed or deleted. Notes without a branch wait in Unassigned notes on the Session overview.',
       },
       {
-        term: 'Review',
-        desc: 'The comments on the left, grouped as Open, Ready to push and Done, and the one you picked on the right. Fix writes each fix as a local commit and drafts the reply, and you accept, edit or skip it. Select several comments and Fix N separately starts one agent for each, up to four at a time.',
-      },
-      {
         term: 'Review sources',
-        desc: 'The picker under the Review title lists each pull request or merge request of the session, on GitHub, GitLab or Bitbucket, and Notes on this machine. Bitbucket cannot resolve a thread, so its comments offer Reply.',
-      },
-      {
-        term: 'Commits view',
-        desc: 'V switches Review between Comments and Commits. Commits folds the resolve commits into their originals or into one commit before you push, with a preview and an Undo.',
+        desc: 'The picker lists each pull request or merge request of the session, on GitHub, GitLab or Bitbucket, and Notes on this machine. Bitbucket cannot resolve a thread, so its comments offer Reply.',
       },
       {
         term: 'What git says',
         desc: 'A comment reads Already on origin or Looks fixed when the branch already holds its fix, and Fix went missing when the commit is gone. Re-check asks a read-only agent whether the fix is still needed.',
       },
       {
+        term: 'Checks',
+        desc: 'The CI runs of a GitHub pull request, with the failing step. Whether it can merge reads in plain words, the next step is the one main action, and Merge and Close confirm under the header.',
+      },
+      {
         term: 'Push',
-        desc: 'Push N in the Review header pushes the fixes, posts the replies and resolves the threads where the provider allows it, after a confirm under the header.',
-      },
-      {
-        term: 'Pull request page',
-        desc: 'Whether a GitHub pull request can merge, in plain words, with details and checks. The next step is the one main action, and Merge and Close confirm under the header.',
-      },
-      {
-        term: 'Layers',
-        desc: 'The pull request, its Diff and its Review open as one path in the trail, and Back walks it.',
-      },
-      {
-        term: 'Write review',
-        desc: 'A form under the diff: line comments, the verdict and a summary, sent with Approve, Request changes or Submit comments.',
+        desc: 'One Push in the Branch header. Select the commits, then Push N shows an inline preview before it pushes the fixes, posts the replies and resolves the threads where the provider allows it.',
       },
       {
         term: 'Refresh',
@@ -395,8 +395,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     lead: 'Tidy a branch before you ship it, and decide what happens to it after it merges.',
     points: [
       {
-        term: 'Rewrite history',
-        desc: 'Drag a commit to move it or onto another to fold it in, or rename, squash or remove it from the row. A folded commit chooses Keep title, Keep both or Separate. Now and After Apply sit side by side. Apply tries the plan on a temporary copy, and your branch moves only when it comes out clean.',
+        term: 'Commits tab',
+        desc: 'The Commits tab of the Branch page shapes the history. Drag a commit to move it or onto another to fold it in, or reword, squash or drop it from the row. A folded commit chooses Keep title, Keep both or Separate. Now and After Apply sit side by side. Apply tries the plan on a temporary copy, and your branch moves only when it comes out clean. It also folds the resolve commits into their originals or into one commit before you push, with a preview and an Undo.',
       },
       {
         term: 'Conflicts ahead of time',

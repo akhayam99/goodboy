@@ -171,7 +171,7 @@ results and its preview.
   menu, a plan, report or wireframe gets the artifact menu (Run plan only
   while the plan is ready to run). An issue or a pull
   request gets Open link and Copy link: their record and pull request
-  menus read facts that only the Inbox and Review pages hold (merge
+  menus read facts that only the Inbox and the Branch page hold (merge
   readiness, the provider's verbs), so search opens those pages instead of
   guessing. Decisions, questions, branches, workflows and comments have no
   registry kind and show only Open. → moves into the actions. `hitActionTarget.ts` owns the
@@ -192,8 +192,8 @@ the one door (`navigate`, or the opener the rest of the app uses).
 | Decision                | The Context drawer on its number, highlighted                               | The decision is gone                       |
 | Question                | The Questions lens with the question focused                                | The session is archived                    |
 | Issue                   | The issue lens of its session, or the Inbox record when it is starred       | Nothing to open                            |
-| Pull request            | Its pull request page, or its page on the code host when no session has it  | No session and no link                     |
-| Branch                  | The Diff of its mount                                                       | The branch left the session                |
+| Pull request            | Its Branch page, or its page on the code host when no session has it        | No session and no link                     |
+| Branch                  | The Branch page of its mount                                                | The branch left the session                |
 | Workflow                | The workflow studio with that workflow open (a step hit opens its workflow) | Its workspace is gone                      |
 | Comment                 | The Comments tab of the Branch page                                         | The session is archived                    |
 

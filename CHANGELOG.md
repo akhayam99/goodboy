@@ -12,6 +12,63 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.18.0
+
+Activity shows one row per launch, one Branch page replaces four, and a task link comes off at once with Undo.
+
+This version updates your data in one direction. To go back to 0.17, restore the backup Goodboy made before updating.
+
+### New
+
+#### One Branch page
+<!-- gb area=review -->
+
+A branch has one page with the tabs Comments, Files, Commits and Checks. It replaces the PR, Review, Diff and Rewrite history pages. The trail above it is the same from every door: the palette, a notification, a chat card or the board.
+
+Comments holds the threads and the one you opened. Files reads the code and writes your review. Commits reshapes the history and recovers a rewrite. Checks shows the CI run and the step that failed.
+
+#### One Push in the header
+<!-- gb area=review -->
+
+Pick the commits in the Branch header and press Push with their count. An inline preview shows what leaves before it does. A thread and the diff no longer carry a Push of their own.
+
+#### Fix run replaces the resolver Brief
+<!-- gb area=review -->
+
+A resolver run opens as a read-only Fix run: the comment it answers, its transcript and the commit it made. Open comments on a launch takes you to the threads on the Branch page.
+
+#### Needs you and the Log
+<!-- gb area=sessions -->
+
+Activity starts with a Needs you block: the questions, failed steps and comments that wait for you, each with its button. The Log tab keeps the facts, such as links, branches and pull request events.
+
+#### Notes belong to a branch
+<!-- gb area=review -->
+
+A note is saved with its project and its branch, and shows on that branch. Notes that have no branch wait under Unassigned notes on the Session overview.
+
+#### Unlink a task with Undo
+<!-- gb area=integrations -->
+
+A task chip opens the task, and its cross unlinks at once. The toast says Unlinked NW-142 and keeps Undo for about 10 seconds. Cmd+Z undoes the last operation when focus is not in a text field, and Re-link on the unlink in the Log restores the placements.
+
+### Improved
+
+#### One row per launch
+<!-- gb area=sessions -->
+
+Activity shows one row per launch: a resolver launch with its comments, a workflow run or an agent. Rows lose the model column and the empty action slots. Cost and duration stay.
+
+#### A step owns its subagents
+<!-- gb area=workflows -->
+
+The subagents of a step hang from the step as a count, and a run reads in the order it ran, from the first step to the last.
+
+#### Prose stops at 72 characters
+<!-- gb area=app -->
+
+Session, Agent and Fix run keep reading text to 72 characters in one column. The Branch tabs use the full width of the pane.
+
 ## Goodboy v0.17.1
 
 The resolver Brief always shows its comment and next action, a step's subagents hang from the step, and every provider page has the same CLI row.

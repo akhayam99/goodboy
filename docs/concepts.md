@@ -885,7 +885,7 @@ e31b9f4` when a history rewrite folded the fix. Reply and page always read
   moved, Goodboy edits that reply in place with `updateReviewComment`: it adds
   `Update: c81e5aa was squashed into e31b9f4.` (or `is now`) above the
   signature, once per sha change, and rewrites the delivery receipt body so the
-  Review page shows the same text as GitHub. Replies from people are never edited. The
+  Branch page shows the same text as GitHub. Replies from people are never edited. The
   per-thread history (first sha, folded or not, posted sha and body, update
   lines) lives in the `settings` table under
   `resolve.commit_story.<sessionId>.<threadId>`, so it needs no migration
@@ -1306,7 +1306,7 @@ Agent kinds, in `AGENT_KIND_ORDER`:
 | `docs`        | Docs             | spawn menu                      |
 | `report`      | Report           | workflow step                   |
 | `wireframe`   | Wireframe        | workflow step                   |
-| `resolver`    | Resolve          | Review lens                     |
+| `resolver`    | Resolve          | Fix run on the Branch page      |
 | `rewriter`    | History rewriter | a history replay that conflicts |
 | `scribe`      | Scribe           | pull request panel              |
 | `generic`     | Generalist       | spawn menu                      |

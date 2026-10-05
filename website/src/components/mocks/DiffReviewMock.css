@@ -228,21 +228,27 @@
   font: 400 14px / 20px var(--sans);
 }
 
-.mockStage .dfrActions {
+.mockStage .dfrTabs {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px 12px;
-  padding: 8px 12px 12px;
+  gap: 16px;
+  margin: 0 12px;
+  border-bottom: 1px solid var(--g-border-soft);
+  color: var(--g-muted-foreground);
+  font: 500 12px / 16px var(--sans);
 }
 
-.mockStage .dfrDrafts,
-.mockStage .dfrBtns {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
+.mockStage .dfrTab {
+  padding: 8px 0;
+  border-bottom: 2px solid transparent;
+}
+
+.mockStage .dfrTab[data-active='true'] {
+  border-bottom-color: var(--t1);
+  color: var(--t1);
+}
+
+.mockStage .dfrThreadRow {
+  padding-bottom: 12px;
 }
 
 @media (hover: none) and (pointer: coarse) {

@@ -436,7 +436,7 @@ the transcript does not repeat it at the bottom. Opening an agent from Activity,
 a toast follows one rule (`agentOpenTab`): an agent with an open question, and a
 resolver, open on Brief, where the question or the summary comes first; any other
 agent opens on Transcript, pinned to the latest line. A resolver that is still
-working shows its live line at the top of its Brief. Orchestrated runs get the same strip, and the
+working shows its live line at the top of its Fix run. Orchestrated runs get the same strip, and the
 orchestrator strip carries no answer or skip button of its own.
 
 - A failed step: "Implement stopped before finishing." with the steps that wait on it. **Ask it to continue** asks the same agent to verify its work and finish, **Skip** skips it after an inline confirmation. The error the turn ended with sits behind **Show details**

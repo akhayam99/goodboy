@@ -6,7 +6,7 @@ Connect your trackers, code hosts and Slack once. Their work lands in one Inbox,
 
 Connect the ones you use in **Settings**, **Integrations**. Each one feeds the Inbox and can start a session with its brief drafted.
 
-- **GitHub**: issues and pull requests, review comments you resolve with an agent, and the pull request page
+- **GitHub**: issues and pull requests, review comments you resolve with an agent, and the Branch page
 - **GitLab**: issues and merge requests, with threaded discussions, replies, approvals and merge
 - **Bitbucket**: pull requests, with comments, approvals and merge
 - **Jira**: issues you comment on, assign, edit and move between statuses

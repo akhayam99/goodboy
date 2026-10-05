@@ -273,7 +273,7 @@ never exists on one surface only.
   `secondary`, `inline`, `nudge`, `notice`, `hover`, `section`, `chip`,
   `empty`, and `menu`, the default, for the menu alone). A surface reads its
   buttons from it (the artifact viewer header its primary and secondaries,
-  the pull request page, the Diff header and the worktree row theirs), at
+  the Branch header and the worktree row theirs), at
   most one primary and three secondaries; the menu, the right click and the
   palette ignore `slot` and list every available action.
   `useActionControls` renders those controls with the pending words on the
@@ -633,7 +633,7 @@ checks`, one primary by state, `⋯` for the rare pull request lifecycle) over
   while a step runs and `Retry step` when it failed or is blocked
   (`recoverStuckStep`), `Show saved copy` and `Copy folder path` on the open
   artifact. An attempt offers `Resolve again` once no attempt on that comment
-  is queued or running: it starts a new attempt with the Review page's default
+  is queued or running: it starts a new attempt with the Branch page's default
   instruction, through the same `useResolveAgain` hook Review uses.
 - **The Diff ends on the branch it shows**, with its `+N -M`, and that segment
   lists the session's branches by repo with one state word each, the first
@@ -645,7 +645,7 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   header reads the same word, so a stopped rebase never reads `On origin`
   next to Open terminal and Abort rebase. A
   branch whose pull request merged reads `Merged` even with no git ancestry
-  (a squash merge), in the menu and in the Diff header alike
+  (a squash merge), in the menu and in the Branch header alike
   (`isMountRequestMerged`). It never
   turns into an icon. A Diff opened without a branch lands on the active mount.
 - **A resolver run reads Session, Branch, Fix run.** The `Branch ▾` segment
@@ -955,8 +955,8 @@ window listener.
 Every entry also names the task `group` it belongs to (General, Workspaces,
 Navigate, Session, Views, Lists, Review, Diff, Window), and Settings > App > Shortcuts lists the
 groups in that order, read top to bottom per column. An entry that works only in
-one place carries a `scope` (the Inbox and Notifications lists, the Review view,
-the Diff view, the terminal, a chat composer, an activity row, a workspace
+one place carries a `scope` (the Inbox and Notifications lists, the Branch page,
+the terminal, a chat composer, an activity row, a workspace
 open, a code or an explore session). The page prints the place under the group
 name when the whole group shares it, or under the row when it does not. A scope
 also lets two surfaces use the same plain key: J, K, R, S and E mean other
@@ -976,9 +976,9 @@ without ⌘). The list keys (`list.next`, `list.previous`, `list.open`,
 the same kind: `useListKeys` matches them against the registry, so the rail
 hints, the Shortcuts page and the guide read the same entries. It keeps its own
 window listener because Enter must yield to a focused button (a row button of
-the list excepted). The Review view's Select every fixable comment (⌘A,
+the list excepted). The Branch page's Select every fixable comment (⌘A,
 `review.selectAll`) sits on the same footing, and the registry test lets it
-use ⌘A because the Review view only answers it outside a text field. The selection keys (`selection.toggle`, `selection.all`, `selection.clear`, `selection.delete`) are the same kind: `useSelectionKeys` matches the first, second and fourth against the registry, and `SelectionBar` answers Esc through the escape stack; the registry test lets `selection.all` use ⌘A because the hook yields to a text field. They sit in the registry so the list and the tooltips name them.
+use ⌘A because the Branch page only answers it outside a text field. The selection keys (`selection.toggle`, `selection.all`, `selection.clear`, `selection.delete`) are the same kind: `useSelectionKeys` matches the first, second and fourth against the registry, and `SelectionBar` answers Esc through the escape stack; the registry test lets `selection.all` use ⌘A because the hook yields to a text field. They sit in the registry so the list and the tooltips name them.
 The control that owns each one handles its own key event and never registers
 it with the dispatcher; the activity row matches through `eventMatches`, and so
 does Shift+F10 (`menu.open`), which opens the context menu of the focused row.
@@ -1400,7 +1400,7 @@ run` and Up goes to the Comments tab. The page is read only (`FixRun`) and has
   `agentPlace({ sessionId, agentId, pane })` asks for either, and the address
   prints it as a last segment (`.../agent/brief`). Without a `pane` the pane
   picks its own tab (`agentOpenTab`: an open question or a resolver opens on
-  Brief, any other agent on Transcript). The key `agentPane` is written only by
+  Brief (a resolver: its Fix run), any other agent on Transcript). The key `agentPane` is written only by
   the navigation slice, follows the page like the other targets, and comes back
   with Back and a window restore. Tab clicks inside the pane stay local and do
   not rewrite the address. The `threads` destination needs no
@@ -1615,7 +1615,7 @@ right branch.
 page. The source is a worktree (a file opened from the chat) or a commit (a
 GitHub commit link clicked anywhere in a session; outside a session the link
 opens in the browser). It shows unified and wrapped, and a worktree peek offers
-`Open in Diff`, which opens the Diff lens on that mount with the file in focus.
+`Open in Files`, which opens the Files tab of the Branch page on that mount with the file in focus.
 There is no notes drawer: your notes are `Local` items in the Comments tab of
 the Branch page, next to the provider comments, and a note without a branch
 sits in `Unassigned notes` on the Session overview.
