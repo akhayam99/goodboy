@@ -829,8 +829,8 @@ const AGENTS: ReadonlyArray<Agent> = [
     lastFinishedAt: at({ day: DAY_TWO, time: '10:04:00' }),
     lastViewedAt: NOW,
     doneAt: at({ day: DAY_TWO, time: '10:04:00' }),
-    providerOverride: 'anthropic',
-    modelOverride: 'claude-sonnet-5',
+    providerOverride: 'codex',
+    modelOverride: 'gpt-6.1-sol',
   },
 ];
 
@@ -1241,6 +1241,20 @@ const EXTERNAL_TASKS: ReadonlyArray<SessionExternalTask> = [
 
 const MINUTE_MS = 60_000;
 
+type FallbackTurn = {
+  readonly provider: MeasuredTurnSpan['provider'];
+  readonly model: string;
+  readonly effort: string | null;
+  readonly endReason: MeasuredTurnSpan['endReason'];
+};
+
+const FALLBACK_TURNS: Readonly<Record<string, ReadonlyArray<FallbackTurn>>> = {
+  [KEY_COLUMN_AGENT_ID]: [
+    { provider: 'moonshot', model: 'kimi-k3', effort: 'high', endReason: 'failed' },
+    { provider: 'anthropic', model: 'claude-sonnet-5-5', effort: 'high', endReason: 'succeeded' },
+  ],
+};
+
 const turnSpansOf = ({
   agents,
 }: {
@@ -1251,24 +1265,31 @@ const turnSpansOf = ({
       return [];
     }
     const startedAtMs = Date.parse(agent.startedAt);
-    return [
+    const turnMs = (2 + (agent.ordinal % 5)) * MINUTE_MS + 40_000;
+    const turns: ReadonlyArray<FallbackTurn> = FALLBACK_TURNS[agent.id] ?? [
       {
-        agentId: agent.id,
-        parentAgentId: agent.parentAgentId ?? null,
-        agentStatus: agent.status,
-        workflowRunId: agent.workflowRunId ?? null,
-        isOrchestratedRunDone: false,
-        stepRole: 'implementer',
         provider: agent.providerOverride ?? 'anthropic',
         model: agent.modelOverride ?? 'claude-sonnet-5',
         effort: null,
-        startedAtMs,
-        endedAtMs: startedAtMs + (2 + (agent.ordinal % 5)) * MINUTE_MS + 40_000,
         endReason: 'succeeded',
-        costUsd: null,
-        touchedMountIds: null,
       },
     ];
+    return turns.map((turn, index): MeasuredTurnSpan => ({
+      agentId: agent.id,
+      parentAgentId: agent.parentAgentId ?? null,
+      agentStatus: agent.status,
+      workflowRunId: agent.workflowRunId ?? null,
+      isOrchestratedRunDone: false,
+      stepRole: 'implementer',
+      provider: turn.provider,
+      model: turn.model,
+      effort: turn.effort,
+      startedAtMs: startedAtMs + index * turnMs,
+      endedAtMs: startedAtMs + (index + 1) * turnMs,
+      endReason: turn.endReason,
+      costUsd: null,
+      touchedMountIds: null,
+    }));
   });
 
 const TURN_SPANS = turnSpansOf({ agents: AGENTS });

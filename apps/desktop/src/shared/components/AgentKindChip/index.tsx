@@ -9,6 +9,7 @@ type Props = {
   readonly label?: string;
   readonly muted?: boolean;
   readonly title?: string;
+  readonly isDecorative?: boolean;
   readonly className?: string;
 };
 
@@ -20,6 +21,7 @@ export const AgentKindChip = ({
   label,
   muted,
   title,
+  isDecorative = false,
   className,
 }: Props) => {
   const palette = agentKindPalette({ kind });
@@ -27,20 +29,27 @@ export const AgentKindChip = ({
   const Icon = palette.icon;
 
   if (density === 'glyph') {
+    const glyph = (
+      <span
+        role={isDecorative ? undefined : 'img'}
+        aria-label={isDecorative ? undefined : (title ?? text)}
+        aria-hidden={isDecorative ? true : undefined}
+        className={cn(
+          'inline-flex size-4.5 shrink-0 items-center justify-center rounded-full',
+          palette.fg,
+          'bg-current/12',
+          className,
+        )}
+      >
+        <Icon size={KIND_ICON_SIZE} aria-hidden />
+      </span>
+    );
+    if (isDecorative) {
+      return glyph;
+    }
     return (
       <Tooltip content={title ?? text} anchorClassName="inline-flex shrink-0">
-        <span
-          role="img"
-          aria-label={title ?? text}
-          className={cn(
-            'inline-flex size-4.5 items-center justify-center rounded-full',
-            palette.fg,
-            'bg-current/12',
-            className,
-          )}
-        >
-          <Icon size={KIND_ICON_SIZE} aria-hidden />
-        </span>
+        {glyph}
       </Tooltip>
     );
   }

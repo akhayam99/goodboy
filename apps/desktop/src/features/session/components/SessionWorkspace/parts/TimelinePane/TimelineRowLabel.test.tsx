@@ -121,10 +121,10 @@ const branchEntry = (): TimelineStreamEntry =>
   }) as unknown as TimelineStreamEntry;
 
 describe('TimelineRowLabel', () => {
-  it('leads a resolver row with its role chip, like every other kind of agent', () => {
+  it('leads a resolver row with its role glyph, like every other kind of agent', () => {
     renderKind({ agentKind: 'resolver', name: 'Resolve: 2 review comments' });
 
-    expect(screen.getByText(AGENT_KIND_META.resolver.noun)).toBeDefined();
+    expect(screen.getByRole('img', { name: AGENT_KIND_META.resolver.noun })).toBeDefined();
     expect(screen.getByText('Resolve: 2 review comments')).toBeDefined();
   });
 
@@ -141,15 +141,15 @@ describe('TimelineRowLabel', () => {
     expect(screen.getByText('resolve: dependencies')).toBeDefined();
   });
 
-  it('spells the role out in full rather than abbreviating it', () => {
-    renderKind({ agentKind: 'generic', name: 'Look into the failing build' });
+  it('names the role in full on the glyph and prints no word beside it', () => {
+    const { container } = renderKind({ agentKind: 'generic', name: 'Look into the failing build' });
 
-    expect(screen.getByText('Generalist')).toBeDefined();
-    expect(screen.queryByText('gen')).toBeNull();
+    expect(screen.getByRole('img', { name: 'Generalist' })).toBeDefined();
+    expect(container.textContent).toBe('Look into the failing build');
   });
 
-  it('holds one fixed chip width down the column, whatever the role is', () => {
-    const widths = new Set<string>();
+  it('holds one fixed glyph size down the column, whatever the role is', () => {
+    const sizes = new Set<string>();
     for (const agentKind of [
       'resolver',
       'generic',
@@ -157,24 +157,24 @@ describe('TimelineRowLabel', () => {
       'pr-reviewer',
     ] satisfies ReadonlyArray<AgentKind>) {
       const { container } = renderKind({ agentKind, name: 'A step' });
-      const chip = container.firstElementChild;
-      const width = (chip?.className ?? '')
+      const glyph = container.querySelector('[role="img"]');
+      const size = (glyph?.className ?? '')
         .split(' ')
-        .filter((token) => token.includes('w-'))
+        .filter((token) => token.startsWith('size-'))
         .join(' ');
 
-      expect(width).not.toBe('');
-      widths.add(width);
+      expect(size).toBe('size-4.5');
+      sizes.add(size);
       cleanup();
     }
 
-    expect(widths.size).toBe(1);
+    expect(sizes.size).toBe(1);
   });
 
   it('keeps a chained agent under its own name and its own role', () => {
     renderKind({ agentKind: 'planner', name: 'Draft the migration', isChained: true });
 
-    expect(screen.getByText(AGENT_KIND_META.planner.noun)).toBeDefined();
+    expect(screen.getByRole('img', { name: AGENT_KIND_META.planner.noun })).toBeDefined();
     expect(screen.getByText('Draft the migration')).toBeDefined();
   });
 
@@ -203,14 +203,14 @@ describe('TimelineRowLabel', () => {
       />,
     );
 
-    expect(screen.getByText(AGENT_KIND_META.implementer.noun)).toBeDefined();
+    expect(screen.getByRole('img', { name: AGENT_KIND_META.implementer.noun })).toBeDefined();
     expect(container.querySelector('svg')).not.toBeNull();
   });
 
-  it('leaves the role chip unmarked when the agent belongs to no chain', () => {
+  it('leaves the role glyph unmarked when the agent belongs to no chain', () => {
     const { container } = renderKind({ agentKind: 'planner', name: 'Draft the migration' });
 
-    screen.getByText(AGENT_KIND_META.planner.noun);
+    screen.getByRole('img', { name: AGENT_KIND_META.planner.noun });
     expect(container.querySelectorAll('svg')).toHaveLength(1);
   });
 
@@ -306,17 +306,70 @@ describe('TimelineRowLabel', () => {
     expect(screen.queryByText('worktree kept on disk')).toBeNull();
   });
 
-  it('keeps the chip off a step row, where the run already names the role', () => {
+  it('puts the role glyph on a step row and on a pending one, not only on launches', () => {
+    for (const grade of ['step', 'pending'] satisfies ReadonlyArray<TimelineRowGrade>) {
+      render(
+        <TimelineRowLabel
+          item={itemOf({
+            entry: agentEntry({ agentKind: 'implementer', name: 'Add the banner' }),
+            grade,
+          })}
+        />,
+      );
+
+      expect(screen.getByRole('img', { name: AGENT_KIND_META.implementer.noun })).toBeDefined();
+      cleanup();
+    }
+  });
+
+  it('puts the role glyph on a subagent row as well', () => {
     render(
       <TimelineRowLabel
         item={itemOf({
-          entry: agentEntry({ agentKind: 'resolver', name: 'resolve: one thread' }),
+          entry: agentEntry({ agentKind: 'scout', name: 'Trace the retry path' }),
           grade: 'step',
         })}
       />,
     );
 
-    expect(screen.queryByText(AGENT_KIND_META.resolver.noun)).toBeNull();
+    expect(screen.getByRole('img', { name: AGENT_KIND_META.scout.noun })).toBeDefined();
+  });
+
+  it('draws no glyph for a step whose role is unknown', () => {
+    const { container } = render(
+      <TimelineRowLabel
+        item={itemOf({
+          entry: agentEntry({ agentKind: 'generic', name: 'Piano: migrazione' }),
+          grade: 'step',
+        })}
+        identity={{ hasGlyph: false, summary: null, card: null }}
+      />,
+    );
+
+    expect(screen.queryByRole('img')).toBeNull();
+    expect(container.textContent).toBe('Piano: migrazione');
+  });
+
+  it('keeps the role, model and effort in the name of the row without printing a word', () => {
+    const { container } = render(
+      <TimelineRowLabel
+        item={itemOf({
+          entry: agentEntry({ agentKind: 'implementer', name: 'Add the banner' }),
+          grade: 'step',
+        })}
+        identity={{ hasGlyph: true, summary: 'Implementer, Sonnet 5.5, High', card: 'card' }}
+      />,
+    );
+
+    expect(screen.getByText('Implementer, Sonnet 5.5, High').className).toContain('sr-only');
+    expect(container.querySelector('[role="img"]')).toBeNull();
+    expect(container.querySelector('[data-testid="role-glyph"]')).not.toBeNull();
+  });
+
+  it('leaves the provider glyph off the label', () => {
+    const { container } = renderKind({ agentKind: 'implementer', name: 'Add the banner' });
+
+    expect(container.querySelector('[data-provider]')).toBeNull();
   });
 
   it.each([
