@@ -160,9 +160,15 @@
         },
         {
           "title": "Activity",
-          "text": "Read the whole session as one timeline of agents, questions, fixes, pull requests and decisions. Related steps fold into a group that hangs on a numbered ball.",
+          "text": "One row per launch: a resolver launch with its comments, a workflow run or an agent, with cost and duration. A Needs you block sits on top, and the Log view holds the facts. A workflow step owns its subagents.",
           "group": "Overview and activity",
           "main": true
+        },
+        {
+          "title": "Undo an unlink",
+          "text": "Link work adds a task. Unlink acts at once and shows an Undo toast for about 10 seconds, and the Log keeps a Re-link. Cmd+Z undoes the last app operation when focus is not in a text field.",
+          "group": "Overview and activity",
+          "also": "undo unlink"
         },
         {
           "title": "Next",
@@ -542,7 +548,7 @@
     {
       "id": "review",
       "title": "Review and branches",
-      "lead": "Reshape history before it ships, turn comments into commits, and read your own diffs first.",
+      "lead": "One Branch page with Comments, Files, Commits and Checks: reshape history, turn comments into commits, and push once.",
       "groups": ["Branch history", "Review, resolve and pull requests"],
       "mocks": ["diff"],
       "guides": [
@@ -557,8 +563,8 @@
       ],
       "items": [
         {
-          "title": "Rewrite history",
-          "text": "Clean up a branch by hand. Drag commits to move them, drop one onto another to fold it, or rename and remove them.",
+          "title": "Shape the history",
+          "text": "Clean up a branch in the Commits tab. Reword, squash, fold, drop or reorder commits by hand, then apply.",
           "group": "Branch history",
           "main": true
         },
@@ -590,7 +596,7 @@
         },
         {
           "title": "Backups",
-          "text": "Open the menu and choose Backups to see older histories of the branch. Restore previous history puts one back.",
+          "text": "Open Backups in the Commits tab to see older histories of the branch. Restore previous history puts one back.",
           "group": "Branch history",
           "also": "backups"
         },
@@ -649,13 +655,13 @@
         },
         {
           "title": "See what a resolve did",
-          "text": "Click a resolve in Activity to see what it did, its commits and the comments it touched. Accept, reply and push stay in Comments.",
+          "text": "Click a resolve in Activity to open its Fix run, a read-only transcript with its commit. Accept and reply stay in Comments.",
           "group": "Review, resolve and pull requests",
           "also": "fix run"
         },
         {
           "title": "Fixes already on the branch",
-          "text": "Review checks origin before it pushes. A fix already pushed, or one that someone else seems to have made, offers Reply and resolve instead.",
+          "text": "Resolve checks origin before it pushes. A fix already pushed, or one that someone else seems to have made, offers Reply and resolve instead.",
           "group": "Review, resolve and pull requests",
           "also": "fixes on the branch"
         },
@@ -667,7 +673,7 @@
         },
         {
           "title": "Close on GitHub",
-          "text": "Finish a review in one action. Push sends the fixes, posts the replies and resolves the threads, after a confirm that counts them.",
+          "text": "One Push in the Branch header. Select commits, press Push N and read the preview inline. Replies post and threads resolve after a confirm that counts them.",
           "group": "Review, resolve and pull requests",
           "main": true
         },
@@ -692,19 +698,19 @@
         },
         {
           "title": "Notes before a pull request",
-          "text": "Review your own diff first. Leave notes on lines, give each one its own agent with Fix, and post the open ones to the pull request later.",
+          "text": "Read your own code first in the Files tab. Leave notes on lines, give each one its own agent with Fix, and post the open ones to the pull request. Notes belong to a branch, and notes with no branch are listed as Unassigned notes.",
           "group": "Review, resolve and pull requests",
           "also": "notes before a PR"
         },
         {
-          "title": "GitHub pull request page",
-          "text": "See in plain words whether a pull request can merge, with its checks. Merge, mark ready, draft or close it from there.",
+          "title": "Pull request on the Branch page",
+          "text": "See in plain words whether a pull request can merge, with its checks. Merge, mark ready, draft or close it from the Branch page.",
           "group": "Review, resolve and pull requests",
           "also": "pull request page"
         },
         {
-          "title": "Pull request, Diff and Review as layers",
-          "text": "Move between a pull request, its diff and its review without losing your place. Back walks the same path.",
+          "title": "One trail to the Branch page",
+          "text": "Open a branch from the palette, a notification, a chat card or the board and the trail reads the same. Up is the crumb on the left, and Back is history.",
           "group": "Review, resolve and pull requests",
           "also": "review layers"
         },
@@ -722,14 +728,14 @@
           "also": "PR description sync"
         },
         {
-          "title": "Diff",
-          "text": "Read changes with syntax colors, word-level highlights, a unified or split view and a viewed tick per file. Quote a line into a note or a question for an agent.",
+          "title": "Read the code",
+          "text": "The Files tab has a file tree and the changes with syntax colors, word-level highlights, a unified or split view and a viewed tick per file. Quote a line into a note or a question for an agent.",
           "group": "Review, resolve and pull requests",
           "also": "diff"
         },
         {
           "title": "Write review",
-          "text": "Review someone else's pull request in a form under the diff. Add line comments, pick comment, approve or request changes, and submit one review.",
+          "text": "Review someone else's pull request in a form in the Files tab. Add line comments, pick comment, approve or request changes, and submit one review.",
           "group": "Review, resolve and pull requests",
           "also": "write review"
         },
@@ -747,7 +753,7 @@
         },
         {
           "title": "Checks",
-          "text": "See a pull request's checks with their durations. A failed check becomes a suggested next step.",
+          "text": "The Checks tab lists CI runs with their durations and the failing step. Fix failing check hands a failed one to an agent.",
           "group": "Review, resolve and pull requests",
           "also": "checks",
           "shown": true

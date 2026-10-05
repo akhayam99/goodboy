@@ -41,6 +41,8 @@ Start from the goal instead. **Start blank** sits in the header of every tab and
 
 Get a short title without writing one. A new session is named for you and marked **Named by Goodboy** until you rename it.
 
+### Undo an unlink
+
 Linked task chips open the task directly. Their unlink control appears on hover
 or keyboard focus. **Put on a branch** is visible on the branch row, and
 **Link work** is the single verb for adding a link. Unlink acts immediately

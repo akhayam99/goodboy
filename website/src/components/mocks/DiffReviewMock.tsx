@@ -1,7 +1,7 @@
 import './DiffReviewMock.css';
 import type { ReactNode } from 'react';
-import { ChevronRight, MessageSquareDiff } from './icons';
-import { AppButton, Chip, StateBadge } from './kit';
+import { ChevronRight } from './icons';
+import { Chip, StateBadge } from './kit';
 import { MockStage } from './MockStage';
 import { MockWindow } from './MockWindow';
 
@@ -82,14 +82,23 @@ const LINES: readonly Line[] = [
 
 const SIGN: Record<LineKind, string> = { context: ' ', del: '-', add: '+' };
 
+const TABS = ['Comments', 'Files', 'Commits', 'Checks'] as const;
+
 const BLOCKS: readonly ('add' | 'del')[] = ['add', 'add', 'add', 'del', 'del'];
 
 export const DiffReviewMock = ({ className }: Props) => (
   <MockStage
-    label="A review comment on payments-api. The diff changes a line to dedupe on the event id. A commit and a reply are drafted, with Skip, Edit and Accept."
+    label="The Branch page for a payments-api branch, with the tabs Comments, Files, Commits and Checks. The Files tab shows a line changed to dedupe on the event id, with an open note under it."
     className={className}
   >
     <MockWindow className="dfrWin">
+      <div className="dfrTabs" role="presentation">
+        {TABS.map((tab) => (
+          <span key={tab} className="dfrTab" data-active={tab === 'Files' ? 'true' : undefined}>
+            {tab}
+          </span>
+        ))}
+      </div>
       <div className="dfrFile">
         <ChevronRight size={14} className="dfrOpen" />
         <StateBadge tone="warning" className="dfrStatus">
@@ -138,31 +147,6 @@ export const DiffReviewMock = ({ className }: Props) => (
             asked for it on #318.
           </p>
         </div>
-      </div>
-      <div className="dfrActions">
-        <span className="dfrDrafts">
-          <Chip
-            tone="draft"
-            size="xs"
-            bordered={false}
-            icon={<MessageSquareDiff size={10} />}
-            label="Commit drafted"
-          />
-          <Chip
-            tone="draft"
-            size="xs"
-            bordered={false}
-            icon={<MessageSquareDiff size={10} />}
-            label="Reply drafted"
-          />
-        </span>
-        <span className="dfrBtns">
-          <AppButton compact>Skip</AppButton>
-          <AppButton compact>Edit</AppButton>
-          <AppButton compact variant="primary">
-            Accept
-          </AppButton>
-        </span>
       </div>
     </MockWindow>
   </MockStage>
