@@ -169,7 +169,7 @@ export const ChangeTree = ({
                     ) : null}
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="flex min-w-0 items-baseline gap-1.5">
+                    <span className="flex min-w-0 items-baseline gap-2">
                       <span
                         className={cn(
                           'truncate',

@@ -1,8 +1,8 @@
-import type { RefObject } from 'react';
-import { ChevronDown } from 'lucide-react';
-import { KbdPill, OverflowMenu, cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { useState, type RefObject } from 'react';
+import { KbdPill, useEscapeLayer } from '@goodboy/ui';
 import type { TreeGroup } from '../../lib/changeTree';
+import { FilterChip } from './FilterChip';
+import { GroupMenu } from './GroupMenu';
 
 type Props = {
   readonly viewed: number;
@@ -21,11 +21,6 @@ type Props = {
   readonly onClear: () => void;
 };
 
-const GROUP_LABEL: Record<TreeGroup, string> = { folders: 'Folders', kind: 'Kind' };
-
-const CHIP_CLASS =
-  'inline-flex h-6 shrink-0 items-center rounded-sm border px-2 text-chip transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
-
 export const TreeHead = ({
   viewed,
   total,
@@ -42,6 +37,14 @@ export const TreeHead = ({
   isFiltering,
   onClear,
 }: Props) => {
+  const [isTyping, setIsTyping] = useState(false);
+  useEscapeLayer(() => {
+    if (query !== '') {
+      onQuery('');
+      return;
+    }
+    filterRef.current?.blur();
+  }, isTyping);
   const share = total === 0 ? 0 : viewed / total;
   return (
     <div className="flex flex-col gap-2 px-3 pb-2">
@@ -68,73 +71,23 @@ export const TreeHead = ({
           type="text"
           value={query}
           onChange={(event) => onQuery(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key !== 'Escape') {
-              return;
-            }
-            event.stopPropagation();
-            if (query !== '') {
-              onQuery('');
-              return;
-            }
-            event.currentTarget.blur();
-          }}
+          onFocus={() => setIsTyping(true)}
+          onBlur={() => setIsTyping(false)}
           placeholder="Filter files..."
           aria-label="Filter files"
           className="min-w-0 flex-1 bg-transparent text-label outline-none placeholder:text-faint-foreground"
         />
         <KbdPill>T</KbdPill>
       </div>
-      <div className="flex items-center gap-1.5">
-        <button
-          type="button"
-          aria-pressed={unviewedOnly}
-          onClick={() => onUnviewedOnly(!unviewedOnly)}
-          className={cn(
-            CHIP_CLASS,
-            unviewedOnly
-              ? 'border-transparent bg-selected text-foreground'
-              : 'border-border text-muted-foreground hover:bg-hover hover:text-foreground',
-          )}
-        >
-          Unviewed
-        </button>
-        <button
-          type="button"
-          aria-pressed={notesOnly}
-          onClick={() => onNotesOnly(!notesOnly)}
-          className={cn(
-            CHIP_CLASS,
-            notesOnly
-              ? 'border-transparent bg-selected text-foreground'
-              : 'border-border text-muted-foreground hover:bg-hover hover:text-foreground',
-          )}
-        >
-          With notes
-        </button>
+      <div className="flex items-center gap-1">
+        <FilterChip label="Unviewed" isOn={unviewedOnly} onChange={onUnviewedOnly} />
+        <FilterChip label="With notes" isOn={notesOnly} onChange={onNotesOnly} />
         <span className="ml-auto">
-          <OverflowMenu
-            label="Group files"
-            align="right"
-            triggerClassName="flex items-center gap-1 text-meta"
-            trigger={
-              <>
-                Group: {GROUP_LABEL[group]}
-                <ChevronDown size={ICON_SIZE.row} aria-hidden />
-              </>
-            }
-            items={(['folders', 'kind'] as const).map((value) => ({
-              kind: 'item' as const,
-              key: value,
-              label: GROUP_LABEL[value],
-              hint: value === group ? 'Current' : undefined,
-              onClick: () => onGroup(value),
-            }))}
-          />
+          <GroupMenu group={group} onGroup={onGroup} />
         </span>
       </div>
       {isFiltering ? (
-        <p className="flex items-center gap-1.5 text-meta tabular-nums text-muted-foreground">
+        <p className="flex items-center gap-2 text-meta tabular-nums text-muted-foreground">
           <span>
             Showing {shown} of {total}
           </span>

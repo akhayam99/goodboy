@@ -214,18 +214,17 @@ export const buildChangeTree = ({
   const ordered: FileDiff[] = [];
   const generated = files.filter((file) => isGeneratedPath(file.path));
   const authored = files.filter((file) => !isGeneratedPath(file.path));
-  if (group === 'kind') {
-    for (const { kind, label } of KIND_GROUPS) {
-      emitFlatGroup({
-        id: `group:${kind}`,
-        label,
-        files: authored.filter((file) => fileKindOf(file.path) === kind),
-        rows,
-        ordered,
-      });
-    }
-  } else {
+  if (group === 'folders') {
     buildFolderRows(authored, rows, ordered);
+  }
+  for (const { kind, label } of group === 'kind' ? KIND_GROUPS : []) {
+    emitFlatGroup({
+      id: `group:${kind}`,
+      label,
+      files: authored.filter((file) => fileKindOf(file.path) === kind),
+      rows,
+      ordered,
+    });
   }
   emitFlatGroup({ id: GENERATED_GROUP_ID, label: 'Generated', files: generated, rows, ordered });
   return { rows, files: ordered };

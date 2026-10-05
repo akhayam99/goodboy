@@ -194,7 +194,7 @@ describe('ChangeTree', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Unviewed' }));
     fireEvent.click(screen.getByRole('button', { name: 'With notes' }));
     fireEvent.click(screen.getByRole('button', { name: 'Group files' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: /Kind/ }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: /Kind/ }));
 
     expect(onUnviewedOnly).toHaveBeenCalledWith(true);
     expect(onNotesOnly).toHaveBeenCalledWith(true);
@@ -207,7 +207,8 @@ describe('ChangeTree', () => {
 
     const input = screen.getByRole('textbox', { name: 'Filter files' });
     fireEvent.change(input, { target: { value: 'csvx' } });
-    fireEvent.keyDown(input, { key: 'Escape' });
+    fireEvent.focus(input);
+    fireEvent.keyDown(input, { key: 'Escape', code: 'Escape' });
 
     expect(onQuery).toHaveBeenCalledWith('csvx');
     expect(onQuery).toHaveBeenCalledWith('');
