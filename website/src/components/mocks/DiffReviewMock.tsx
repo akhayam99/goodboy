@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { ChevronRight } from './icons';
 import { Chip, StateBadge } from './kit';
 import { MockStage } from './MockStage';
+import { DiffReviewTree } from './DiffReviewTree';
 import { MockWindow } from './MockWindow';
 
 type Props = {
@@ -88,7 +89,7 @@ const BLOCKS: readonly ('add' | 'del')[] = ['add', 'add', 'add', 'del', 'del'];
 
 export const DiffReviewMock = ({ className }: Props) => (
   <MockStage
-    label="The Branch page for a payments-api branch, with the tabs Comments, Files, Commits and Checks. The Files tab shows a line changed to dedupe on the event id, with an open note under it."
+    label="The Branch page for a payments-api branch, with the tabs Comments, Files, Commits and Checks. The Files tab shows a tree of the changed files with a reading progress, and a line changed to dedupe on the event id, with an open note under it."
     className={className}
   >
     <MockWindow className="dfrWin">
@@ -99,53 +100,63 @@ export const DiffReviewMock = ({ className }: Props) => (
           </span>
         ))}
       </div>
-      <div className="dfrFile">
-        <ChevronRight size={14} className="dfrOpen" />
-        <StateBadge tone="warning" className="dfrStatus">
-          M
-        </StateBadge>
-        <span className="dfrPath">
-          <span className="dfrDir">src/webhooks/</span>
-          <span className="dfrName">applyWebhook.ts</span>
-        </span>
-        <span className="dfrStat">
-          <span className="dfrAdd">+20</span> <span className="dfrDel">{'−'}10</span>
-        </span>
-        <span aria-hidden className="dfrBlocks">
-          {BLOCKS.map((kind, index) => (
-            <i key={index} data-kind={kind} />
-          ))}
-        </span>
-      </div>
-      <div className="dfrRows">
-        {LINES.map((line) => (
-          <div key={`${line.oldLine}-${line.newLine}`} className="dfrLine" data-kind={line.kind}>
-            <span className="dfrNum">{line.oldLine}</span>
-            <span className="dfrNum">{line.newLine}</span>
-            <span className="dfrSign">{SIGN[line.kind]}</span>
-            <span className="dfrCode">{line.code}</span>
-          </div>
-        ))}
-      </div>
-      <div className="dfrThreadRow">
-        <div className="dfrThread">
-          <div className="dfrThreadHead">
-            <span aria-hidden className="dfrAvatar">
-              Y
+      <div className="dfrBody">
+        <DiffReviewTree />
+        <div className="dfrMain">
+          <div className="dfrFile">
+            <ChevronRight size={14} className="dfrOpen" />
+            <StateBadge tone="warning" className="dfrStatus">
+              M
+            </StateBadge>
+            <span className="dfrPath">
+              <span className="dfrDir">src/webhooks/</span>
+              <span className="dfrName">applyWebhook.ts</span>
             </span>
-            <span className="dfrAuthor">You</span>
-            <span>{'·'} 9m ago</span>
-            <Chip tone="primary" size="3xs" bordered={false} label="Open note" />
-            <span className="dfrThreadActions">
-              <span>Fix</span>
-              <span>Close note</span>
-              <span>Delete</span>
+            <span className="dfrStat">
+              <span className="dfrAdd">+20</span> <span className="dfrDel">{'−'}10</span>
+            </span>
+            <span className="dfrFileAction">Comment on file</span>
+            <span aria-hidden className="dfrBlocks">
+              {BLOCKS.map((kind, index) => (
+                <i key={index} data-kind={kind} />
+              ))}
             </span>
           </div>
-          <p className="dfrThreadText">
-            Log the duplicate at info with the event id, so on-call can count redeliveries. Kenji W.
-            asked for it on #318.
-          </p>
+          <div className="dfrRows">
+            {LINES.map((line) => (
+              <div
+                key={`${line.oldLine}-${line.newLine}`}
+                className="dfrLine"
+                data-kind={line.kind}
+              >
+                <span className="dfrNum">{line.oldLine}</span>
+                <span className="dfrNum">{line.newLine}</span>
+                <span className="dfrSign">{SIGN[line.kind]}</span>
+                <span className="dfrCode">{line.code}</span>
+              </div>
+            ))}
+          </div>
+          <div className="dfrThreadRow">
+            <div className="dfrThread">
+              <div className="dfrThreadHead">
+                <span aria-hidden className="dfrAvatar">
+                  Y
+                </span>
+                <span className="dfrAuthor">You</span>
+                <span>{'·'} 9m ago</span>
+                <Chip tone="primary" size="3xs" bordered={false} label="Open note" />
+                <span className="dfrThreadActions">
+                  <span>Fix</span>
+                  <span>Close note</span>
+                  <span>Delete</span>
+                </span>
+              </div>
+              <p className="dfrThreadText">
+                Log the duplicate at info with the event id, so on-call can count redeliveries.
+                Kenji W. asked for it on #318.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </MockWindow>

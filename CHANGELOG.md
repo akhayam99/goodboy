@@ -12,6 +12,36 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.18.1
+
+The Files tab gets a changed-files tree with reading progress, filters and keys, and you can comment on a whole file.
+
+### New
+
+#### Changed files tree
+<!-- gb area=review -->
+
+The Files tab lists the changed files as a tree beside the code, folders first, with a progress ring on each folder that fills as you mark its files Viewed. A click jumps to the file in one continuous diff, and generated files wait in a closed Generated row.
+
+Type in the filter to narrow the files, turn on Unviewed or With notes, or group the tree by kind. A big change keeps the tree light, and a narrow window folds it to a thin strip.
+
+#### Comment on a whole file
+<!-- gb area=review -->
+
+Every file header, and its row in the tree, has Comment on file. On a branch with a GitHub or GitLab pull request it drafts a review comment on the file. Without a pull request it saves a note on the file. Either one shows under the file header and in Comments, like a line comment.
+
+### Improved
+
+#### Keys for the Files tab
+<!-- gb area=review -->
+
+`J` and `K` (or `[` and `]`) move between files, `H` and `L` close and open a folder, `V` marks a file viewed and goes to the next one, `N` goes to the next unviewed file, `F` focuses the tree, `/` or `T` the filter, and `⌘⇧B` shows or hides the tree.
+
+#### One line above the diff
+<!-- gb area=review -->
+
+A single line above the code says what you compare, and Display holds Unified, Split and Wrap long lines. The file count and the added and removed totals live in the tree, and the N files button is gone.
+
 ## Goodboy v0.18.0
 
 Activity shows one row per launch, one Branch page replaces four, and a task link comes off at once with Undo.
