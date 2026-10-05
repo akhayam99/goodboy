@@ -1,5 +1,6 @@
 import type { UndoState } from './slices/undo/state';
 import type { ArtifactsState } from './slices/artifacts/state';
+import type { ArtifactCommentsState } from './slices/artifact-comments/state';
 import type { ResolveState } from './slices/resolve/state';
 import type { ReviewNavigationState } from './slices/review-navigation/state';
 import type { BootstrapState } from './slices/bootstrap/state';
@@ -113,6 +114,7 @@ export type MountGithubState = SessionGithubState & {
 };
 
 type AppSliceState = ArtifactsState &
+  ArtifactCommentsState &
   BootstrapState &
   BudgetSliceState &
   ResolveState &

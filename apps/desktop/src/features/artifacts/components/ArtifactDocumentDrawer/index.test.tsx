@@ -2,8 +2,16 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { PlanArtifact, PlanWithCount, ProviderRunId, TurnState } from '@goodboy/types';
-import { anAgent } from '@goodboy/types/testing';
+import type {
+  ArtifactComment,
+  PlanArtifact,
+  PlanWithCount,
+  ProviderRunId,
+  StepId,
+  TurnState,
+  WorkflowRunId,
+} from '@goodboy/types';
+import { anAgent, aSession, aWorkflowRun } from '@goodboy/types/testing';
 
 const { listArtifactRevisions } = vi.hoisted(() => ({ listArtifactRevisions: vi.fn() }));
 
@@ -45,6 +53,8 @@ const seed = ({
     agentTurnState: { [PLAN_FIXTURE_PLANNER]: turn },
     documentDrawerExpanded: {},
     drawer: null,
+    artifactComments: {},
+    loadArtifactComments: async () => undefined,
   });
 };
 
@@ -175,6 +185,101 @@ describe('plan document drawer', () => {
       kind: 'artifact-document',
       sessionId: PLAN_FIXTURE_SESSION,
       payload: { artifactId: PLAN_FIXTURE_ID, revision: null },
+    });
+  });
+
+  describe('comments on the plan in the drawer', () => {
+    const RUN_ID = 'run-harborline' as WorkflowRunId;
+    const DRAFT: ArtifactComment = {
+      id: 'comment-1',
+      sessionId: PLAN_FIXTURE_SESSION,
+      artifactId: PLAN_FIXTURE_ID,
+      revision: 2,
+      anchor: {
+        kind: 'block',
+        order: 0,
+        text: 'Retried webhooks must never post a second credit.',
+      },
+      body: 'Say which webhooks retry',
+      status: 'draft',
+      sentTurnId: null,
+      createdAt: PLAN_FIXTURE_AT,
+      updatedAt: PLAN_FIXTURE_AT,
+    };
+
+    const seedWithDraft = ({
+      turn,
+      isHeld = false,
+    }: {
+      readonly turn?: TurnState;
+      readonly isHeld?: boolean;
+    }) => {
+      seed({ turn });
+      useAppStore.setState({
+        artifactComments: { [PLAN_FIXTURE_SESSION]: [DRAFT] },
+        sessions: [
+          aSession({
+            id: PLAN_FIXTURE_SESSION,
+            workflowRuns: [
+              aWorkflowRun({
+                id: RUN_ID,
+                orchestrationStop: isHeld
+                  ? { kind: 'plan-approval', message: 'The plan is ready.' }
+                  : undefined,
+              }),
+            ],
+          }),
+        ],
+        sessionPhaseRuns: {
+          [PLAN_FIXTURE_SESSION]: [
+            anAgent({
+              id: PLAN_FIXTURE_PLANNER,
+              sessionId: PLAN_FIXTURE_SESSION,
+              name: 'Planner',
+              workflowRunId: RUN_ID,
+              stepId: 'plan' as StepId,
+            }),
+          ],
+        },
+      });
+    };
+
+    it('shows the draft under its text and the Send bar', async () => {
+      seedWithDraft({});
+      renderDrawer();
+
+      await waitFor(() =>
+        expect(screen.getByTestId('plan-drawer-body').textContent).toContain(
+          'Say which webhooks retry',
+        ),
+      );
+      expect(screen.getByTestId('plan-comment-bar').textContent).toContain('1 comment');
+      const send = screen.getByRole('button', { name: 'Send to planner' });
+      expect(send.hasAttribute('disabled')).toBe(false);
+      expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
+    });
+
+    it('puts Approve plan next to Send while the run waits for approval', () => {
+      seedWithDraft({ isHeld: true });
+      renderDrawer();
+
+      expect(screen.getByRole('button', { name: 'Approve plan' })).toBeDefined();
+      expect(screen.getByRole('button', { name: 'Send to planner' })).toBeDefined();
+    });
+
+    it('turns Send off with the revising reason while the planner revises', () => {
+      seedWithDraft({
+        turn: { kind: 'running', runId: 'run-2' as ProviderRunId, startedAt: PLAN_FIXTURE_AT },
+        isHeld: true,
+      });
+      renderDrawer();
+
+      const send = screen.getByRole('button', { name: 'Send to planner' });
+      expect(send.hasAttribute('disabled')).toBe(true);
+      expect(screen.getByTestId('plan-comment-note').textContent).toBe(
+        'Planner is revising this plan',
+      );
+      expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
     });
   });
 });

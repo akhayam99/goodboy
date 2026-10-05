@@ -423,6 +423,11 @@ export type {
 } from './permission';
 export { CLAUDE_PERMISSION_MODES, isClaudePermissionMode } from './permission';
 export type {
+  ArtifactComment,
+  ArtifactCommentAnchor,
+  ArtifactCommentStatus,
+} from './artifact-comment';
+export type {
   DiffComment,
   DiffCommentAnchor,
   DiffCommentAuthorKind,

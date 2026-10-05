@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Eyebrow } from '@goodboy/ui';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 import type { PlanPartRow as Row } from './planPartRows';
@@ -10,6 +11,7 @@ type Props = {
   readonly hasRun: boolean;
   readonly splitSentence: string;
   readonly onOpenPart: (row: Row) => void;
+  readonly frameRow?: (params: { readonly row: Row; readonly children: ReactNode }) => ReactNode;
 };
 
 export const PlanParts = ({
@@ -19,6 +21,7 @@ export const PlanParts = ({
   hasRun,
   splitSentence,
   onOpenPart,
+  frameRow,
 }: Props) => {
   if (rows.length === 0) {
     return null;
@@ -33,8 +36,8 @@ export const PlanParts = ({
       </div>
       {hasRun ? null : <p className="text-label text-muted-foreground">{splitSentence}</p>}
       <ol className="flex min-w-0 flex-col">
-        {rows.map((row) => (
-          <li key={row.index} className="min-w-0">
+        {rows.map((row) => {
+          const content = (
             <PlanPartRow
               row={row}
               hasRun={hasRun}
@@ -48,8 +51,13 @@ export const PlanParts = ({
                 agentId: row.agentId,
               }}
             />
-          </li>
-        ))}
+          );
+          return (
+            <li key={row.index} className="min-w-0">
+              {frameRow === undefined ? content : frameRow({ row, children: content })}
+            </li>
+          );
+        })}
       </ol>
     </section>
   );

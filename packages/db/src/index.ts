@@ -466,6 +466,13 @@ export {
   type UpdateArtifactSourceInput,
 } from './queries/artifact';
 export {
+  deleteArtifactComment,
+  insertArtifactComment,
+  listArtifactComments,
+  setArtifactCommentsStatus,
+  updateArtifactCommentBody,
+} from './queries/artifactComment';
+export {
   annotateArtifactRevision,
   listArtifactRevisions,
   loadArtifactRevision,
