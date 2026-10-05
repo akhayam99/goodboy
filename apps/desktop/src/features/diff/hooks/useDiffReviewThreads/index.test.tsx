@@ -22,9 +22,15 @@ type CommentParams = {
   readonly threadId: string;
   readonly resolved?: boolean;
   readonly outdated?: boolean;
+  readonly onFile?: boolean;
 };
 
-const comment = ({ threadId, resolved = false, outdated = false }: CommentParams) => ({
+const comment = ({
+  threadId,
+  resolved = false,
+  outdated = false,
+  onFile = false,
+}: CommentParams) => ({
   id: `c-${threadId}`,
   author: 'kenji-w',
   authorAvatarUrl: null,
@@ -33,7 +39,7 @@ const comment = ({ threadId, resolved = false, outdated = false }: CommentParams
   url: '',
   source: 'review',
   path: 'src/webhooks.ts',
-  line: 42,
+  line: onFile ? undefined : 42,
   resolved,
   outdated,
   threadId,
@@ -76,6 +82,21 @@ describe('useDiffReviewThreads', () => {
       canClose: false,
       canReopen: false,
       canDelete: false,
+    });
+  });
+
+  it('marks a review comment that sits on the whole file under its header, with no line', () => {
+    seed([comment({ threadId: 'PRRT_FILE', onFile: true })]);
+
+    const { result } = renderHook(() =>
+      useDiffReviewThreads({ sessionId: SESSION_ID, mountId: MOUNT_ID }),
+    );
+
+    expect(result.current).toHaveLength(1);
+    expect(result.current[0]).toMatchObject({
+      id: 'review:PRRT_FILE',
+      filePath: 'src/webhooks.ts',
+      anchor: null,
     });
   });
 

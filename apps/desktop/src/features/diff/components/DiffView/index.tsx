@@ -8,13 +8,12 @@ import {
   type ReactNode,
   type RefCallback,
 } from 'react';
-import { PageColumn, ScrollFade, Skeleton, useDropdown, type DiffLayoutMode } from '@goodboy/ui';
+import { PageColumn, ScrollFade, Skeleton, type DiffLayoutMode } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { useDiffLayoutMode } from '../../../../shared/hooks/useDiffLayoutMode';
-import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { useDiffWrap } from '../../hooks/useDiffWrap';
 import { DiffFile } from './DiffFile';
-import { DiffToolbar } from './DiffToolbar';
+import { DisplayMenu } from './DisplayMenu';
 import type { DiffComments, DiffFileActions, DiffThread, DiffViewed } from './types';
 
 export type { DiffComments, DiffThread } from './types';
@@ -31,13 +30,20 @@ type Props = {
   readonly fileActions?: DiffFileActions | null;
   readonly focusPath?: string | null;
   readonly onFocusHandled?: () => void;
+  readonly onActivePathChange?: (path: string) => void;
   readonly presentation?: 'pane' | 'peek' | 'inline';
   readonly footer?: ReactNode;
+  readonly fileCommentPath?: string | null;
+  readonly onFileCommentOpened?: () => void;
+  readonly toolbarStart?: ReactNode;
   readonly toolbarEnd?: ReactNode;
   readonly belowToolbar?: ReactNode;
+  readonly columnWidth?: 'column' | 'full';
 };
 
 const EMPTY_THREADS: ReadonlyArray<DiffThread> = [];
+
+const NOOP = () => undefined;
 
 const matchPath = (files: ReadonlyArray<FileDiff>, path: string): string | null =>
   files.find((file) => file.path === path || path.endsWith(`/${file.path}`))?.path ?? null;
@@ -55,10 +61,15 @@ export const DiffView = ({
   fileActions = null,
   focusPath = null,
   onFocusHandled,
+  onActivePathChange,
   presentation = 'pane',
   footer,
+  fileCommentPath = null,
+  onFileCommentOpened = NOOP,
+  toolbarStart,
   toolbarEnd,
   belowToolbar = null,
+  columnWidth = 'column',
 }: Props) => {
   const isPeek = presentation === 'peek';
   const [savedLayout, setLayout] = useDiffLayoutMode();
@@ -76,12 +87,8 @@ export const DiffView = ({
   const intersecting = useRef(new Set<string>());
   const lockedPath = useRef<string | null>(null);
   const settleFrame = useRef<number | null>(null);
-  const jump = useDropdown({
-    align: 'start',
-    width: 'w-[420px] max-w-[calc(100vw-2rem)]',
-    expectedHeight: 380,
-    expectedWidth: 420,
-  });
+  const onActivePathChangeRef = useRef(onActivePathChange);
+  onActivePathChangeRef.current = onActivePathChange;
 
   const threadsByFile = useMemo(() => {
     const map = new Map<string, DiffThread[]>();
@@ -93,12 +100,11 @@ export const DiffView = ({
     return map;
   }, [comments?.threads]);
 
-  const commentCountOf = useCallback(
-    (path: string) => (threadsByFile.get(path) ?? []).filter((thread) => !thread.isResolved).length,
-    [threadsByFile],
-  );
-  const isViewed = useCallback((file: FileDiff) => viewed?.stateOf(file) === 'viewed', [viewed]);
-  const viewedCount = viewed === null ? null : files.filter(isViewed).length;
+  useEffect(() => {
+    if (activePath !== null) {
+      onActivePathChangeRef.current?.(activePath);
+    }
+  }, [activePath]);
 
   const cancelSettle = useCallback(() => {
     if (settleFrame.current !== null) {
@@ -330,28 +336,6 @@ export const DiffView = ({
     return () => cancelAnimationFrame(frame);
   }, [files, focusPath, onFocusHandled, scrollToFile]);
 
-  const step = useCallback(
-    (delta: number) => {
-      if (files.length === 0) {
-        return;
-      }
-      const index = files.findIndex((file) => file.path === activePath);
-      const next = Math.min(files.length - 1, Math.max(0, (index < 0 ? 0 : index) + delta));
-      const target = files[next];
-      if (target) {
-        scrollToFile(target.path);
-      }
-    },
-    [activePath, files, scrollToFile],
-  );
-
-  const toggleJump = jump.toggle;
-
-  const hasPaneKeys = presentation === 'pane';
-  useShortcut('diff.jump', toggleJump, hasPaneKeys);
-  useShortcut('diff.previousFile', () => step(-1), hasPaneKeys);
-  useShortcut('diff.nextFile', () => step(1), hasPaneKeys);
-
   const body = (
     <div className="flex flex-col gap-3 pb-6">
       {files.slice(0, mountedCount).map((file) => (
@@ -366,6 +350,8 @@ export const DiffView = ({
           fileActions={fileActions}
           registerRef={registerRef(file.path)}
           isVisible={seen.has(file.path)}
+          wantsFileComment={fileCommentPath === file.path}
+          onFileCommentOpened={onFileCommentOpened}
         />
       ))}
       {mountedCount < files.length ? (
@@ -389,20 +375,16 @@ export const DiffView = ({
   }
 
   const toolbar = (
-    <DiffToolbar
-      files={files}
-      activePath={activePath}
-      jump={jump}
-      onJump={scrollToFile}
-      commentCountOf={commentCountOf}
-      isViewed={isViewed}
-      viewedCount={viewedCount}
-      layout={layout}
-      onLayout={setLayout}
-      wrap={wrap}
-      onWrap={setWrap}
-      end={toolbarEnd}
-    />
+    <div
+      data-slot="diff-toolbar"
+      className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2"
+    >
+      <div className="flex min-w-0 items-center gap-2">{toolbarStart}</div>
+      <div className="flex shrink-0 items-center gap-2">
+        <DisplayMenu layout={layout} onLayout={setLayout} wrap={wrap} onWrap={setWrap} />
+        {toolbarEnd}
+      </div>
+    </div>
   );
 
   if (presentation === 'inline') {
@@ -418,13 +400,13 @@ export const DiffView = ({
   return (
     <div data-slot="diff-view" className="flex min-h-0 min-w-0 flex-1 flex-col">
       <div className="shrink-0">
-        <PageColumn className="flex flex-col gap-3 pb-3">
+        <PageColumn width={columnWidth} className="flex flex-col gap-3 pb-3">
           {toolbar}
           {belowToolbar}
         </PageColumn>
       </div>
       <ScrollFade className="min-h-0 flex-1" viewportRef={viewportRef} fadeSize={24}>
-        <PageColumn>{body}</PageColumn>
+        <PageColumn width={columnWidth}>{body}</PageColumn>
       </ScrollFade>
     </div>
   );

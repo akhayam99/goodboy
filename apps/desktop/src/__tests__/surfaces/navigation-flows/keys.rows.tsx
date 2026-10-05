@@ -908,16 +908,17 @@ const rememberSearch = (text: string): void => {
 
 const openDiff = async (): Promise<void> => {
   await press('lens.files')();
-  expect(
-    await screen.findByRole('button', { name: /branch vs main · 3 files/ }, WAIT),
-  ).toBeDefined();
+  expect(await screen.findByRole('button', { name: /Comparing .* ← .*/ }, WAIT)).toBeDefined();
 };
 
-const activeJumpFile = async (): Promise<string> => {
-  await pressed('diff.jump', document.body);
-  await visible('dialog', 'Jump to file');
-  return document.querySelector('[data-active]')?.textContent ?? '';
-};
+const activeTreeFile = async (): Promise<string> =>
+  (
+    await waitFor(() => {
+      const row = document.querySelector('nav[aria-label="Changed files"] [aria-current="true"]');
+      expect(row).not.toBeNull();
+      return row;
+    }, WAIT)
+  )?.textContent ?? '';
 
 let terminalTabCount = 0;
 
@@ -993,30 +994,124 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       waitFor(() => expect(screen.getAllByRole('tab').length).toBe(terminalTabCount + 1), WAIT),
   }),
   keyRow({
-    id: 'diff.jump',
+    id: 'diff.fileDown',
+    also: ['diff.nextFile'],
+    note: 'the bracket key is the same move',
     open: async () => {
       await openDiff();
-      await pressed('diff.jump', document.body);
-    },
-    lands: () => visible('dialog', 'Jump to file'),
-  }),
-  keyRow({
-    id: 'diff.nextFile',
-    open: async () => {
-      await openDiff();
+      await pressed('diff.fileDown', document.body);
       await pressed('diff.nextFile', document.body);
     },
-    lands: async () => expect(await activeJumpFile()).toContain('notify.ts'),
+    lands: async () => expect(await activeTreeFile()).toContain('notify.ts'),
   }),
   keyRow({
-    id: 'diff.previousFile',
+    id: 'diff.fileUp',
+    also: ['diff.previousFile'],
+    note: 'the bracket key is the same move',
     open: async () => {
       await openDiff();
-      await pressed('diff.nextFile', document.body);
-      await pressed('diff.nextFile', document.body);
+      for (const id of [
+        'diff.fileDown',
+        'diff.fileDown',
+        'diff.fileDown',
+        'diff.fileUp',
+      ] as const) {
+        await pressed(id, document.body);
+      }
       await pressed('diff.previousFile', document.body);
+      await pressed('diff.nextFile', document.body);
     },
-    lands: async () => expect(await activeJumpFile()).toContain('notify.ts'),
+    lands: async () => expect(await activeTreeFile()).toContain('notify.ts'),
+  }),
+  keyRow({
+    id: 'diff.nextUnviewed',
+    open: async () => {
+      await openDiff();
+      await pressed('diff.fileDown', document.body);
+      await pressed('diff.nextUnviewed', document.body);
+    },
+    lands: async () => expect(await activeTreeFile()).toContain('notify.ts'),
+  }),
+  keyRow({
+    id: 'diff.markViewed',
+    open: async () => {
+      await openDiff();
+      await pressed('diff.fileDown', document.body);
+      await pressed('diff.markViewed', document.body);
+    },
+    lands: async () => {
+      expect(await activeTreeFile()).toContain('notify.ts');
+      await visible('navigation', 'Changed files');
+      expect(screen.getByText('1 of 3 viewed')).toBeDefined();
+    },
+  }),
+  keyRow({
+    id: 'diff.closeFolder',
+    open: async () => {
+      await openDiff();
+      await pressed('diff.fileDown', document.body);
+      await pressed('diff.closeFolder', document.body);
+    },
+    lands: async () =>
+      waitFor(
+        () =>
+          expect(
+            within(screen.getByRole('navigation', { name: 'Changed files' })).queryByText(
+              'ledger.ts',
+            ),
+          ).toBeNull(),
+        WAIT,
+      ),
+  }),
+  keyRow({
+    id: 'diff.openFolder',
+    open: async () => {
+      await openDiff();
+      await pressed('diff.fileDown', document.body);
+      await pressed('diff.closeFolder', document.body);
+      await pressed('diff.openFolder', document.body);
+    },
+    lands: async () =>
+      expect(
+        within(screen.getByRole('navigation', { name: 'Changed files' })).getByText('ledger.ts'),
+      ).toBeDefined(),
+  }),
+  keyRow({
+    id: 'diff.focusTree',
+    open: async () => {
+      await openDiff();
+      await pressed('diff.focusTree', document.body);
+    },
+    lands: async () =>
+      expect(
+        screen.getByRole('navigation', { name: 'Changed files' }).contains(document.activeElement),
+      ).toBe(true),
+  }),
+  keyRow({
+    id: 'diff.toggleTree',
+    open: async () => {
+      await openDiff();
+      await pressed('diff.toggleTree', document.body);
+    },
+    lands: async () =>
+      waitFor(
+        () => expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull(),
+        WAIT,
+      ),
+  }),
+  keyRow({
+    id: 'diff.focusFilter',
+    also: ['diff.focusFilterAlias'],
+    note: 'T is the same action as the slash',
+    open: async () => {
+      await openDiff();
+      await pressed('diff.focusFilterAlias', document.body);
+    },
+    lands: async () => {
+      const field = await screen.findByRole('textbox', { name: 'Filter files' });
+      expect(document.activeElement).toBe(field);
+      expect(field.hasAttribute('data-diff-filter')).toBe(true);
+    },
   }),
   keyRow({
     id: 'session.model',

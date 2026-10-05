@@ -11,11 +11,14 @@ import {
   APPLY_WEBHOOK_PATH,
   CTX_PATCH,
   POST_CREDIT_PATH,
+  RENAMED_PATH,
 } from './contextDiffPatch';
 import { DiffStage, handlersFor } from './DiffStage';
+import { LARGE_PATCH } from './largeDiffPatch';
 import { MANY_FILES_PATCH } from './manyFilesDiffPatch';
 
 const MANY_FILES_HANDLERS = handlersFor(MANY_FILES_PATCH);
+const LARGE_HANDLERS = handlersFor(LARGE_PATCH);
 
 const NOTES: ReadonlyArray<DiffComment> = [
   {
@@ -26,6 +29,15 @@ const NOTES: ReadonlyArray<DiffComment> = [
     status: 'open',
     createdAt: minutesAgo(9),
     anchor: { side: 'new', lineNumber: APPLY_WEBHOOK_NOTE_LINE },
+    authorKind: 'user',
+  },
+  {
+    id: 'mock-brand-diff-note-rename',
+    sessionId: CTX_SESSION_ID,
+    filePath: RENAMED_PATH,
+    body: 'Keep the retries at three: the processor rate limits above that.',
+    status: 'open',
+    createdAt: minutesAgo(14),
     authorKind: 'user',
   },
 ];
@@ -40,9 +52,10 @@ const markViewed = (): void => {
 
 type Props = {
   readonly manyFiles?: boolean;
+  readonly largeChange?: boolean;
 };
 
-export const BrandDiffScene = ({ manyFiles = false }: Props) => {
+export const BrandDiffScene = ({ manyFiles = false, largeChange = false }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const [isStaged, setIsStaged] = useState(false);
 
@@ -70,7 +83,9 @@ export const BrandDiffScene = ({ manyFiles = false }: Props) => {
     return null;
   }
 
-  const stage = manyFiles ? (
+  const stage = largeChange ? (
+    <DiffStage handlers={LARGE_HANDLERS} centerNote={false} />
+  ) : manyFiles ? (
     <DiffStage handlers={MANY_FILES_HANDLERS} centerNote={false} />
   ) : (
     <DiffStage />

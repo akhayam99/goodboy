@@ -13,6 +13,7 @@ import type {
 import type { AppStore } from '../../store';
 import type { SetFn } from './types';
 import { overridesWithAttribution } from '../../../__tests__/helpers/attributionOverrides';
+import { FILE_LEVEL_LINE } from './fileLevel';
 import { createReviewDraftsSlice } from './index';
 
 const {
@@ -353,6 +354,89 @@ describe('review-drafts slice', () => {
     );
     expect(staleDraft?.status).toBe('draft');
     expect(staleDraft?.stale).toBe(true);
+  });
+
+  it('adds a file-level draft with the file-level line and no range', async () => {
+    const { slice, getState } = buildHarness({});
+
+    const draft = await slice.addReviewDraft({
+      sessionId: SESSION_ID,
+      path: 'src/a.ts',
+      line: FILE_LEVEL_LINE,
+      body: 'split this file',
+    });
+
+    expect(draft).toMatchObject({ line: 0, startLine: null, origin: 'user' });
+    expect(getState().reviewDrafts[SESSION_ID]).toHaveLength(1);
+  });
+
+  it('sends a file-level github draft as a file thread, apart from the line threads', async () => {
+    const drafts = [
+      makeDraft({}),
+      makeDraft({
+        overrides: { id: 'draft-file', line: FILE_LEVEL_LINE, body: 'split this file' },
+      }),
+    ];
+    const { slice, getState } = buildHarness({ reviewDrafts: { [SESSION_ID]: drafts } });
+
+    const result = await slice.publishPrReview(SESSION_ID, { verdict: 'comment', body: '' });
+
+    const [, input] = addPullRequestReviewSpy.mock.calls[0]!;
+    expect(input.threads).toHaveLength(1);
+    expect(input.fileThreads).toEqual([{ path: 'src/a.ts', body: 'split this file' }]);
+    expect(result.published).toBe(2);
+    expect(getState().reviewDrafts[SESSION_ID]?.map((draft) => draft.status)).toEqual([
+      'published',
+      'published',
+    ]);
+  });
+
+  it('flags a file-level draft stale when its file left the pull request', async () => {
+    const drafts = [
+      makeDraft({ overrides: { id: 'draft-file', line: FILE_LEVEL_LINE, path: 'src/gone.ts' } }),
+    ];
+    const { slice } = buildHarness({ reviewDrafts: { [SESSION_ID]: drafts } });
+
+    const result = await slice.publishPrReview(SESSION_ID, { verdict: 'comment', body: '' });
+
+    expect(result.stale.map((draft) => draft.id)).toEqual(['draft-file']);
+    expect(result.published).toBe(0);
+  });
+
+  it('opens a gitlab file discussion without a line for a file-level draft', async () => {
+    const drafts = [
+      makeDraft({
+        overrides: { id: 'draft-file', provider: 'gitlab', prNumber: 10, line: FILE_LEVEL_LINE },
+      }),
+    ];
+    const { slice } = buildHarness({
+      reviewDrafts: { [SESSION_ID]: drafts },
+      sessionExternalTasks: { [SESSION_ID]: [gitlabTask] },
+      workspaceIntegrations: {
+        [WS_ID]: [
+          {
+            id: 'wi-1' as IntegrationBindingId,
+            workspaceId: WS_ID,
+            provider: 'gitlab',
+            credentialId: 'k' as IntegrationCredentialId,
+            config: { userName: 'nbro', userId: '1', host: 'https://gitlab.com' },
+            createdAt: NOW,
+            updatedAt: NOW,
+          },
+        ],
+      },
+    });
+
+    await slice.publishPrReview(SESSION_ID, { verdict: 'comment', body: '' });
+
+    const position = gitlabCreateMrDiscussionSpy.mock.calls[0]?.[5];
+    expect(position).toEqual({
+      baseSha: 'aaa',
+      headSha: 'bbb',
+      startSha: 'ccc',
+      newPath: 'src/a.ts',
+      oldPath: 'src/a.ts',
+    });
   });
 
   it('keeps unpublished drafts on gitlab partial failure and prefixes the summary note', async () => {

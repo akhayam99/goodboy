@@ -1,6 +1,6 @@
-import { CTX_PATCH } from './contextDiffPatch';
+import { BRANCH_FILES_PATCH } from './contextDiffPatch';
 
-const EXTRA_FILES = 37;
+const EXTRA_FILES = 34;
 
 const lengthOf = (index: number): number => 4 + ((index * 29) % 90);
 
@@ -27,4 +27,4 @@ const fileText = (index: number): string => {
   ].join('\n');
 };
 
-export const MANY_FILES_PATCH = `${CTX_PATCH}${Array.from({ length: EXTRA_FILES }, (_, index) => fileText(index)).join('\n')}\n`;
+export const MANY_FILES_PATCH = `${BRANCH_FILES_PATCH}${Array.from({ length: EXTRA_FILES }, (_, index) => fileText(index)).join('\n')}\n`;

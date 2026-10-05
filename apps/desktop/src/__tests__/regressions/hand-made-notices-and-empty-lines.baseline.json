@@ -15,10 +15,6 @@
     "notices": 0,
     "emptyLines": 1
   },
-  "apps/desktop/src/features/diff/components/DiffView/FileJumpPopover.tsx": {
-    "notices": 0,
-    "emptyLines": 1
-  },
   "apps/desktop/src/features/history/components/CommitsHistory/HistoryBackups.tsx": {
     "notices": 0,
     "emptyLines": 1
