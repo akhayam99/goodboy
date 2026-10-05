@@ -76,5 +76,5 @@ export const BrandDiffScene = ({ manyFiles = false }: Props) => {
     <DiffStage />
   );
 
-  return <ShellFrame session={CTX_SESSION} main={isStaged ? stage : null} />;
+  return <ShellFrame session={CTX_SESSION} main={isStaged ? stage : null} trailWidth="full" />;
 };
