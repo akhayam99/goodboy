@@ -26,7 +26,7 @@ export const ArtifactPlanBody = ({ plan, rows, hasRun, splitSentence, onOpenPart
 
   return (
     <div data-testid="plan-body" className="flex min-w-0 flex-col gap-6">
-      {hasLead ? <ArtifactProse text={body.lead} /> : null}
+      {hasLead ? <ArtifactProse text={body.lead} measure="full" /> : null}
       <PlanParts
         sessionId={plan.sessionId}
         planId={plan.id}
@@ -36,7 +36,7 @@ export const ArtifactPlanBody = ({ plan, rows, hasRun, splitSentence, onOpenPart
         onOpenPart={onOpenPart}
       />
       {body.rest.trim().length === 0 ? null : (
-        <ArtifactProse text={body.rest} hasLead={!hasLead && rows.length === 0} />
+        <ArtifactProse text={body.rest} hasLead={!hasLead && rows.length === 0} measure="full" />
       )}
     </div>
   );

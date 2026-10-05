@@ -1500,6 +1500,23 @@ body that scrolls itself, such as a chat, passes `scroll="self"` and fills the
 frame instead. A new kind adds a variant to `DrawerContent` and a case to the
 host.
 
+**An object that belongs to where you are opens in a drawer; the page changes
+only by an explicit command.** A plan read from the planner that wrote it (the
+row in its chat, in its Brief, or a plan row in Activity) stays on the agent
+page: the address does not change, the page keeps its scroll, and the drawer
+sits beside it. The same goes for a report read from the agent that wrote it.
+Going to the Artifacts page is a command of its own, **Open in Artifacts** in
+the drawer header, and it is the only page change. The `artifact-document` kind
+carries `{ artifactId, revision }`; `revision` is `null` for the current
+version and a number for an earlier one read from the revisions. It is the one
+drawer with its own size: it opens at half the window (`sizing="half"` on
+`DrawerColumn`, with no resize handle), **Expand** takes the whole column and
+lies over the page (`sizing="full"`), and Expand toggles back. The choice is
+kept per session in `documentDrawerExpanded` and is forgotten when the session
+is archived. The header holds the title, `vN`, the state chip, **Run plan**,
+Open in Artifacts, Expand and Close; Escape closes it. While the planner
+revises the plan the body is dimmed and Run plan waits.
+
 The `context` kind carries `{ tab, view }`: `tab` is `goal`, `decisions` or
 `summary`, in that order, and `view` is `current` or `versions` (the old
 versions of that slot, inside the same drawer, with Restore; Escape leaves the

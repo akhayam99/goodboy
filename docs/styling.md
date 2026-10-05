@@ -136,7 +136,10 @@ The right drawer is not a grid column: `DrawerColumn` sits inside the `main`
 area beside the page, 0px wide while closed and the saved width plus two 8px
 insets while open. Its width transition moves the page in 220ms, so the content
 column slides and stays centred. When pushing would leave the column under
-560px, the drawer lies over the page instead.
+560px, the drawer lies over the page instead. `sizing` on `DrawerColumn` is
+`default` (the saved width, with the resize handle), `half` (half of the column,
+no handle) or `full` (the whole column, always over the page); only the plan
+document drawer uses the last two.
 [navigation.md](navigation.md#the-right-drawer) owns what goes in it.
 
 The top bar's 6px left padding puts the workspace tile on the collapsed rail's

@@ -39,6 +39,24 @@ const useMeasuredWidth = () => {
   return { ref, width };
 };
 
+export type DrawerSizing = 'default' | 'half' | 'full';
+
+type SizedParams = {
+  readonly sizing: DrawerSizing;
+  readonly columnWidth: number | null;
+  readonly resizableWidth: number;
+};
+
+const sizedWidth = ({ sizing, columnWidth, resizableWidth }: SizedParams): number => {
+  if (sizing === 'default' || columnWidth === null) {
+    return resizableWidth;
+  }
+  if (sizing === 'full') {
+    return Math.max(RIGHT_DRAWER_MIN, columnWidth - DRAWER_INSET * 2);
+  }
+  return Math.max(RIGHT_DRAWER_MIN, Math.round(columnWidth / 2) - DRAWER_INSET * 2);
+};
+
 export type DrawerColumnProps = {
   readonly main: ReactNode;
   readonly drawer?: ReactNode | null;
@@ -46,6 +64,7 @@ export type DrawerColumnProps = {
   readonly ariaLabel: string;
   readonly resizeLabel: string;
   readonly drawerRef?: Ref<HTMLElement>;
+  readonly sizing?: DrawerSizing;
   readonly className?: string;
 };
 
@@ -56,6 +75,7 @@ export const DrawerColumn = ({
   ariaLabel,
   resizeLabel,
   drawerRef,
+  sizing = 'default',
   className,
 }: DrawerColumnProps) => {
   const column = useMeasuredWidth();
@@ -73,7 +93,11 @@ export const DrawerColumn = ({
       trackRef.current?.style.setProperty('min-width', track);
     },
   });
-  const width = resizable.width;
+  const width = sizedWidth({
+    sizing,
+    columnWidth: column.width,
+    resizableWidth: resizable.width,
+  });
   const setAside = useCallback(
     (node: HTMLElement | null) => {
       asideRef.current = node;
@@ -89,7 +113,8 @@ export const DrawerColumn = ({
   );
   const isOpen = drawer != null;
   const isOverlay =
-    column.width !== null && !canDrawerPush({ mainWidthPx: column.width, drawerWidthPx: width });
+    column.width !== null &&
+    (sizing === 'full' || !canDrawerPush({ mainWidthPx: column.width, drawerWidthPx: width }));
   const mode = !isOpen ? 'closed' : isOverlay ? 'overlay' : 'push';
   const trackWidth = width + DRAWER_INSET * 2;
 
@@ -103,6 +128,7 @@ export const DrawerColumn = ({
         ref={setAside}
         aria-label={ariaLabel}
         data-drawer-mode={mode}
+        data-drawer-sizing={sizing}
         inert={!isOpen}
         style={{ width: isOpen ? trackWidth : 0 }}
         className={cn(
@@ -120,7 +146,9 @@ export const DrawerColumn = ({
             style={{ minWidth: trackWidth }}
           >
             <div className="flex w-2 shrink-0 justify-center">
-              <ResizeHandle {...resizable.handleProps} side="right" ariaLabel={resizeLabel} />
+              {sizing === 'default' ? (
+                <ResizeHandle {...resizable.handleProps} side="right" ariaLabel={resizeLabel} />
+              ) : null}
             </div>
             <div
               data-drawer-card=""

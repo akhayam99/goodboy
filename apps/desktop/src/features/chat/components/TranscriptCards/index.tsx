@@ -33,6 +33,7 @@ type TranscriptCardProps = {
   readonly onRetryRun?: (params: RetryRunParams) => void;
   readonly retryingRunId?: ProviderRunId | null;
   readonly activeRunId?: ProviderRunId | null;
+  readonly planVersion?: number | null;
   readonly permission?: PermissionState;
   readonly turnOutcome?: TurnOutcome;
   readonly turnStartedAt?: IsoDateTime | null;
@@ -48,6 +49,7 @@ const TranscriptCardImpl = ({
   onRetryRun,
   retryingRunId = null,
   activeRunId,
+  planVersion = null,
   permission,
   turnOutcome,
   turnStartedAt,
@@ -74,7 +76,14 @@ const TranscriptCardImpl = ({
     case 'assistant_text':
       return <AssistantText text={item.text} sessionId={sessionId} agentId={agentId} />;
     case 'artifact_block':
-      return <ArtifactBlockCard item={item} sessionId={sessionId} agentId={agentId} />;
+      return (
+        <ArtifactBlockCard
+          item={item}
+          sessionId={sessionId}
+          agentId={agentId}
+          planVersion={planVersion}
+        />
+      );
     case 'tool_call':
       return <ToolCallCard item={item} activeRunId={activeRunId} permission={permission} />;
     case 'file_edit':
@@ -164,6 +173,7 @@ export const TranscriptCard = memo(
     prev.onRetryRun === next.onRetryRun &&
     prev.retryingRunId === next.retryingRunId &&
     prev.activeRunId === next.activeRunId &&
+    prev.planVersion === next.planVersion &&
     prev.permission?.requested === next.permission?.requested &&
     prev.permission?.decision === next.permission?.decision &&
     prev.turnOutcome === next.turnOutcome &&

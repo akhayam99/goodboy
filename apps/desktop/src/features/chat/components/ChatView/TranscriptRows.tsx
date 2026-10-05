@@ -17,6 +17,7 @@ import { TranscriptCard } from '../TranscriptCards';
 import { OpenQuestionCluster } from './OpenQuestionCluster';
 import { SlackDraftCard } from './SlackDraftCard';
 import { dayKey, formatDayLabel } from './lib';
+import { planBlockVersions } from './planBlockVersions';
 import { isWorkflowRailRow } from './workflowRailGroup';
 
 type Props = {
@@ -87,6 +88,7 @@ export const TranscriptRows = ({
   const out: ReactNode[] = [];
   const suggestions = mountSuggestionsByRun ?? new Map<ProviderRunId, ReactNode>();
   const anchors = lastRowIndexByRun({ rows });
+  const planVersions = planBlockVersions({ rows });
   const placedRunIds = new Set<ProviderRunId>();
 
   const flushMountSuggestion = ({ index }: { readonly index: number }) => {
@@ -210,6 +212,9 @@ export const TranscriptRows = ({
             onRetryRun={onRetryRun}
             retryingRunId={retryingRunId}
             activeRunId={activeRunId}
+            planVersion={
+              row.item.kind === 'artifact_block' ? (planVersions.get(row.item.key) ?? null) : null
+            }
             turnOutcome={
               row.item.kind === 'usage' ? turnFooters?.get(row.item.runId)?.outcome : undefined
             }

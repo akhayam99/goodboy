@@ -10,6 +10,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
+import type { PlanRevising } from '../plans/planRevising';
 import type { ArtifactGeneration } from './artifactCollection';
 import {
   buildArtifactListRows,
@@ -82,6 +83,7 @@ const build = (params: {
   readonly generations?: ReadonlyArray<ArtifactGeneration>;
   readonly agents?: ReadonlyArray<Agent>;
   readonly openQuestionCount?: number;
+  readonly revising?: ReadonlyMap<ArtifactId, PlanRevising>;
 }) =>
   buildArtifactListRows({
     plans: params.plans ?? [],
@@ -90,6 +92,7 @@ const build = (params: {
     agents: params.agents ?? AGENTS,
     openQuestionCount: params.openQuestionCount ?? 0,
     askingAgentIds: NO_ASKING,
+    revising: params.revising ?? new Map(),
     now: NOW,
   });
 
@@ -126,6 +129,29 @@ describe('buildArtifactListRows', () => {
     const [row] = build({ plans: [plan({})], openQuestionCount: 2 });
     expect(row?.state).toMatchObject({ key: 'needs', detail: '2 questions' });
     expect(row?.isPlanRunning).toBe(true);
+  });
+
+  it('says a plan the planner is reworking is revising, grouped with what runs', () => {
+    const [row] = build({
+      plans: [plan({})],
+      revising: new Map([['plan-1' as ArtifactId, { kind: 'revising', nextRevision: 3 }]]),
+    });
+    expect(row?.state).toMatchObject({
+      key: 'revising',
+      label: 'Revising to v3',
+      tone: 'info',
+      detail: null,
+    });
+    expect(row?.group).toBe('running');
+    expect(row?.isPlanRunning).toBe(false);
+  });
+
+  it('leaves a plan that already ran as it was while the planner writes a new version', () => {
+    const [row] = build({
+      plans: [plan({ status: 'consumed', consumptionCount: 1 })],
+      revising: new Map([['plan-1' as ArtifactId, { kind: 'newVersion' }]]),
+    });
+    expect(row?.state).toMatchObject({ key: 'ran', label: 'Ran' });
   });
 
   it('says how far a plan that ran got, from the subagents that carry its parts', () => {

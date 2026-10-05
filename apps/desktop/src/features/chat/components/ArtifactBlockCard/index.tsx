@@ -5,6 +5,7 @@ import { openLens } from '../../../session/openLens';
 import { resolveArtifactForBlock } from '../../../artifacts/resolveArtifactForBlock';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
+import { PlanBlock } from './PlanBlock';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
 import { TranscriptShell } from '../TranscriptShell';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -37,13 +38,20 @@ type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'artifact_block' }>;
   readonly sessionId: SessionId | null;
   readonly agentId: AgentId | null;
+  readonly planVersion?: number | null;
 };
 
-export const ArtifactBlockCard = ({ item, sessionId, agentId }: Props) => {
+export const ArtifactBlockCard = ({ item, sessionId, agentId, planVersion = null }: Props) => {
   const artifacts = useAppStore((s) =>
     sessionId === null ? EMPTY_ARRAY : (s.sessionArtifacts[sessionId] ?? EMPTY_ARRAY),
   );
   const setFocusedArtifactId = useAppStore((s) => s.setFocusedArtifactId);
+
+  if (item.artifactKind === 'plan' && sessionId !== null) {
+    return (
+      <PlanBlock item={item} sessionId={sessionId} agentId={agentId} planVersion={planVersion} />
+    );
+  }
 
   const resolved = item.complete
     ? resolveArtifactForBlock({
