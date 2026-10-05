@@ -22,39 +22,6 @@ export type ReviewCommentState =
   | 'pushed'
   | 'resolved';
 
-export type ReviewCommentGroup = 'open' | 'push' | 'done';
-
-export const REVIEW_COMMENT_GROUPS: ReadonlyArray<ReviewCommentGroup> = ['open', 'push', 'done'];
-
-export const REVIEW_COMMENT_GROUP_LABEL: Record<ReviewCommentGroup, string> = {
-  open: 'Open',
-  push: 'Ready to push',
-  done: 'Done',
-};
-
-const OPEN_STATES: ReadonlySet<ReviewCommentState> = new Set([
-  'new',
-  'drafting',
-  'needs',
-  'ready',
-  'edited',
-  'outdated',
-  'failed',
-]);
-
-const PUSH_STATES: ReadonlySet<ReviewCommentState> = new Set(['accepted', 'replied']);
-
-export const reviewCommentGroup = ({
-  state,
-}: {
-  readonly state: ReviewCommentState;
-}): ReviewCommentGroup => {
-  if (OPEN_STATES.has(state)) {
-    return 'open';
-  }
-  return PUSH_STATES.has(state) ? 'push' : 'done';
-};
-
 const isReplyOnly = ({ row }: { readonly row: ResolveQueueRow }): boolean =>
   row.item.approvalState === 'wont_fix' || row.proposalKind !== 'fix';
 

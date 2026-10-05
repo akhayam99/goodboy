@@ -34,6 +34,10 @@ import { ResolveBitbucketScene } from './scenes/ResolveBitbucketScene';
 import { ResolveItemScene } from './scenes/ResolveItemScene';
 import { ResolveFailedHistoryScene } from './scenes/ResolveFailedHistoryScene';
 import { ResolveFailedRunScene } from './scenes/ResolveFailedRunScene';
+import { ResolveRunAnsweredScene } from './scenes/ResolveRunAnsweredScene';
+import { ResolveRunQuestionScene } from './scenes/ResolveRunQuestionScene';
+import { ResolveRunWorkingScene } from './scenes/ResolveRunWorkingScene';
+import { FixRunQuestionScene } from './scenes/FixRunQuestionScene';
 import { BoardScene } from './scenes/BoardScene';
 import { BoardOngoingScene } from './scenes/BoardOngoingScene';
 import { BoardSelectedScene } from './scenes/BoardSelectedScene';
@@ -54,7 +58,6 @@ import {
 import { ActivityTimelineScene } from './scenes/ActivityScenes';
 import { ActivityRunScene } from './scenes/ActivityRunScene';
 import { ActivityRunFinishedScene } from './scenes/ActivityRunFinishedScene';
-import { ActivityBurstOpenScene } from './scenes/ActivityBurstOpenScene';
 import { ActivityLogScene } from './scenes/ActivityLogScene';
 import { ActivityResolvesScene } from './scenes/ActivityResolvesScene';
 import { ActivityQuestionScene } from './scenes/ActivityQuestionScene';
@@ -204,6 +207,9 @@ export const MOCK_SCENES = {
   'branch-push': BranchPushScene,
   'resolve-item': ResolveItemScene,
   'resolve-failed': ResolveFailedRunScene,
+  'resolve-run-question': ResolveRunQuestionScene,
+  'resolve-run-working': ResolveRunWorkingScene,
+  'resolve-run-answered': ResolveRunAnsweredScene,
   'resolve-failed-history': ResolveFailedHistoryScene,
   'resolve-drift': ResolveDriftScene,
   'resolve-gitlab': ResolveGitlabScene,
@@ -222,7 +228,6 @@ export const MOCK_SCENES = {
   'artifact-create-report': ArtifactCreateReportScene,
   'artifact-create-wireframe': ArtifactCreateWireframeScene,
   activity: ActivityTimelineScene,
-  'activity-burst-open': ActivityBurstOpenScene,
   'activity-log': ActivityLogScene,
   'activity-run': ActivityRunScene,
   'activity-run-finished': ActivityRunFinishedScene,
@@ -337,6 +342,7 @@ export const MOCK_SCENES = {
   'scribe-proposal-failed': ScribeProposalFailedScene,
   'scribe-proposal-transcript': ScribeProposalTranscriptScene,
   'fix-run': FixRunScene,
+  'fix-run-question': FixRunQuestionScene,
   'crash-report': CrashReportScene,
 };
 

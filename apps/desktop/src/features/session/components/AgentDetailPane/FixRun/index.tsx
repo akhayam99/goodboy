@@ -3,6 +3,7 @@ import { Band, Button, Chip, Markdown } from '@goodboy/ui';
 import type { Agent, Session, SessionId } from '@goodboy/types';
 import { agentPlace, useAppStore } from '../../../../../store';
 import { branchPlace } from '../../../../../store/slices/navigation/place';
+import { ResolverQuestionCard } from '../../../../resolve/ResolverQuestionCard';
 import { STATE_CHIP_TONE } from '../../../../resolve/components/ReviewFlow/stateTone';
 import {
   useReviewEntries,
@@ -64,8 +65,27 @@ export const FixRun = ({ session, agent, brief }: Props) => {
   const openThread = (threadId: string): void =>
     navigate({ to: branchPlace({ sessionId, tab: 'comments', threadId }) });
 
+  const asking = entries.filter(
+    (entry) => entry.state === 'needs' && brief.batchThreadIds.includes(entry.threadId),
+  );
+
   return (
     <div className="flex min-w-0 flex-col gap-4">
+      {asking.map((entry) => (
+        <div key={entry.threadId} className="flex min-w-0 flex-col gap-2">
+          <button type="button" className={ROW_CLASS} onClick={() => openThread(entry.threadId)}>
+            <span className="min-w-0 truncate text-foreground">
+              {threadLocationOf({ row: entry.row })?.label ?? FIX_RUN_COPY.comment}
+            </span>
+            {entry.row.reviewerNote?.author != null && (
+              <span className="shrink-0 text-meta text-muted-foreground">
+                {entry.row.reviewerNote.author}
+              </span>
+            )}
+          </button>
+          <ResolverQuestionCard sessionId={sessionId} row={entry.row} />
+        </div>
+      ))}
       {outcome.text !== '' && (
         <Band inset="content" label={FIX_RUN_COPY.didHeading} headingLevel={2}>
           <div className="max-w-[72ch] text-body text-foreground">

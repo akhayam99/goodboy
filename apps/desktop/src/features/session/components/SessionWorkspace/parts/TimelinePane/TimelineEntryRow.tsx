@@ -14,10 +14,7 @@ import type {
   TimelineStreamEntry,
 } from '../../../../timeline/buildTimelineStream';
 import { DecisionChangesDetail } from './DecisionChangesDetail';
-import type { GroupTotals } from '../../../../timeline/groupTotals';
 import { TimelineAgentStreamRow } from './TimelineAgentStreamRow';
-import { TimelineGroupMeta } from './TimelineGroupMeta';
-import { TimelineGroupStreamRow } from './TimelineGroupStreamRow';
 import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
 import { TimelineRunStreamRow } from './TimelineRunStreamRow';
@@ -52,7 +49,6 @@ export type TimelineEntryRowProps = {
   readonly worktrees: ReadonlyArray<string>;
   readonly step: Step | null;
   readonly costUsd: number;
-  readonly groupTotals: GroupTotals | null;
   readonly isExpanded: boolean;
   readonly isBranchExpanded: boolean;
   readonly decisionDetail: DecisionChangeDetail | null;
@@ -76,7 +72,6 @@ export const TimelineEntryRow = ({
   worktrees,
   step,
   costUsd,
-  groupTotals,
   isExpanded,
   isBranchExpanded,
   decisionDetail,
@@ -90,20 +85,6 @@ export const TimelineEntryRow = ({
     isBranchExpanded,
     onSet: handlers.setGroupExpanded,
   });
-  if (entry.kind === 'resolveBatch') {
-    return (
-      <TimelineGroupStreamRow
-        item={item}
-        entry={entry}
-        rail={rail}
-        railWidth={railWidth}
-        sessionId={sessionId}
-        totals={groupTotals}
-        lanes={lanes}
-        onBranchKey={branchKey}
-      />
-    );
-  }
   const target = handlers.openTargetFor({ entry });
   const action: TimelineRowAction | null =
     actionLabel === null
@@ -191,12 +172,6 @@ export const TimelineEntryRow = ({
       runLane={runLane}
       lanes={lanes}
       onBranchKey={branchKey}
-      {...(entry.kind === 'resolveFile'
-        ? {
-            state: <TimelineRowStateLine state={item.rowState} />,
-            meta: <TimelineGroupMeta totals={{ costUsd, time: null }} />,
-          }
-        : {})}
     />
   );
 };

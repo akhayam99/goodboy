@@ -32,7 +32,12 @@ export type RowStateReason =
   | { readonly kind: 'chained'; readonly afterTitle: string }
   | { readonly kind: 'awaitingFirstMessage' }
   | { readonly kind: 'discarded' }
-  | { readonly kind: 'review'; readonly state: ReviewCommentState; readonly word: string };
+  | {
+      readonly kind: 'review';
+      readonly state: ReviewCommentState;
+      readonly word: string;
+      readonly runTitle?: string;
+    };
 
 export type RowAsk =
   | { readonly kind: 'answer'; readonly question: OpenQuestion | null }

@@ -10,7 +10,7 @@ type Props = {
 };
 
 const OWNER_ICON: Readonly<Record<NeedsYouOwnerKind, LucideIcon>> = {
-  batch: MessageSquare,
+  fixRun: MessageSquare,
   run: Workflow,
   agent: MessageSquare,
   question: MessageSquare,

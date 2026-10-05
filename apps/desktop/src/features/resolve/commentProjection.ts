@@ -25,6 +25,15 @@ export const RESOLVE_WORD_LABEL: Readonly<Record<ResolveWord, string>> = {
   done: 'Done',
 };
 
+export const RESOLVE_LIST_WORDS: ReadonlyArray<ResolveWord> = [
+  'needs_you',
+  'working',
+  'ready',
+  'couldnt_fix',
+  'open',
+  'done',
+];
+
 const SUB_LABEL: Readonly<Record<Exclude<ResolveSub, 'resolved_remote'>, string>> = {
   waiting: 'Waiting',
   pushing: 'Pushing',
@@ -36,7 +45,7 @@ const SUB_LABEL: Readonly<Record<Exclude<ResolveSub, 'resolved_remote'>, string>
   pushed: 'Pushed',
 };
 
-export const RESOLVE_WORD_OF_STATE: Readonly<Record<ReviewCommentState, ResolveWord>> = {
+const RESOLVE_WORD_OF_STATE: Readonly<Record<ReviewCommentState, ResolveWord>> = {
   new: 'open',
   drafting: 'working',
   needs: 'needs_you',

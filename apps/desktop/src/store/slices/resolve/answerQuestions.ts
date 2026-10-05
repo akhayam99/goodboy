@@ -1,37 +1,15 @@
 import { markOpenQuestionAnswersDelivered } from '@goodboy/db';
-import type { OpenQuestion, ResolveAttempt } from '@goodboy/types';
+import type { OpenQuestion } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { persistOpenQuestionAnswers } from '../open-questions/persistOpenQuestionAnswers';
 import { continueResolveLaunch, type ContinueEntry } from './continueResolveLaunch';
 import { attemptsOfLaunch } from './resolveLaunch';
+import { openQuestionOfThread } from './threadQuestions';
 import type { AnswerQuestionsParams, GetFn } from './types';
 
 type Params = { readonly get: GetFn } & AnswerQuestionsParams;
 
 const NOT_IN_RUN = 'That comment is not part of this fix run';
-
-const openQuestionOf = ({
-  questions,
-  attempts,
-  threadId,
-  question,
-}: {
-  readonly questions: ReadonlyArray<OpenQuestion>;
-  readonly attempts: ReadonlyArray<ResolveAttempt>;
-  readonly threadId: string;
-  readonly question: string | null;
-}): OpenQuestion | undefined => {
-  const agentIds = new Set(
-    attempts.filter((attempt) => attempt.threadIds.includes(threadId)).map((a) => a.agentId),
-  );
-  return questions.find(
-    (item) =>
-      item.status === 'open' &&
-      item.text === question &&
-      item.createdByAgentId !== undefined &&
-      agentIds.has(item.createdByAgentId),
-  );
-};
 
 export const answerQuestions = async ({
   get,
@@ -65,7 +43,7 @@ export const answerQuestions = async ({
       throw new Error(NOT_IN_RUN);
     }
     entries.push({ threadId, intent: 'answer', question: thread.question, answer: answer.trim() });
-    const open = openQuestionOf({ questions, attempts, threadId, question: thread.question });
+    const open = openQuestionOfThread({ questions, attempts, threadId, question: thread.question });
     if (open !== undefined) {
       pairs.push({ id: open.id, text: open.text, answer: answer.trim() });
     }

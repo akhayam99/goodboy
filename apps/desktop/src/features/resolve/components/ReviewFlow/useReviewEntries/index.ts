@@ -22,14 +22,11 @@ import type {
 } from '../../../../../store/slices/resolve/threadGitState';
 import { newRepliesOf, sourceChangeOf, type ReviewSourceChange } from '../../../sourceChangeOf';
 import {
-  REVIEW_COMMENT_GROUPS,
   projectReviewComment,
-  reviewCommentGroup,
   reviewCommentStateOf,
-  type ReviewCommentGroup,
   type ReviewCommentState,
 } from '../../../reviewCommentState';
-import type { ResolveWord } from '../../../commentProjection';
+import { RESOLVE_LIST_WORDS, type ResolveWord } from '../../../commentProjection';
 import { checksFailedItemIds } from '../../../checksFailedItemIds';
 import type { ResolveCandidateWithItems } from '../../../../../store/slices/resolve/state';
 
@@ -42,7 +39,6 @@ export type ReviewEntry = {
   readonly chips: ReadonlyArray<string>;
   readonly change: ReviewSourceChange | null;
   readonly newReplies: ReadonlyArray<PrComment>;
-  readonly group: ReviewCommentGroup;
   readonly remote: ThreadRemoteKind | null;
   readonly facts: ThreadGitFacts | null;
   readonly view: RemoteView | null;
@@ -52,7 +48,7 @@ export type ReviewEntry = {
 };
 
 export type ReviewGroup = {
-  readonly group: ReviewCommentGroup;
+  readonly word: ResolveWord;
   readonly entries: ReadonlyArray<ReviewEntry>;
 };
 
@@ -127,7 +123,6 @@ export const useReviewEntries = ({
                 snapshot: changes[row.thread.threadId],
                 replies: row.commentThread?.replies ?? [],
               }),
-        group: view === null ? reviewCommentGroup({ state }) : 'open',
         remote,
         facts,
         view,
@@ -136,9 +131,9 @@ export const useReviewEntries = ({
         checkAgentId: recheck?.agentId ?? null,
       };
     });
-    const groups = REVIEW_COMMENT_GROUPS.map((group) => ({
-      group,
-      entries: entries.filter((entry) => entry.group === group),
+    const groups = RESOLVE_LIST_WORDS.map((word) => ({
+      word,
+      entries: entries.filter((entry) => entry.resolveWord === word),
     })).filter((group) => group.entries.length > 0);
     return { entries: groups.flatMap((group) => group.entries), groups };
   }, [

@@ -111,6 +111,12 @@ export const useSortedGroupedSessions = (
   );
   const currentSessionId = useAppStore((s) => (needsStage ? s.currentSessionId : null));
   const githubStatus = useAppStore((s) => (needsStage ? s.githubStatus : null));
+  const sessionResolveThreads = useAppStore((s) =>
+    needsStage ? s.sessionResolveThreads : (EMPTY_GITHUB_STATE as typeof s.sessionResolveThreads),
+  );
+  const sessionResolveAttempts = useAppStore((s) =>
+    needsStage ? s.sessionResolveAttempts : (EMPTY_GITHUB_STATE as typeof s.sessionResolveAttempts),
+  );
   const workspaces = useAppStore((s) => (needsStage ? s.workspaces : EMPTY_WORKSPACES));
   const projects = useAppStore((s) => (needsStage ? s.projects : EMPTY_PROJECTS));
   const sessionBranches = useAppStore((s) =>
@@ -167,6 +173,8 @@ export const useSortedGroupedSessions = (
       selectedAgentId,
       currentSessionId,
       githubStatus,
+      sessionResolveThreads,
+      sessionResolveAttempts,
     };
     const stages: Record<SessionId, SessionStage> = {};
     if (needsStage) {
@@ -196,6 +204,8 @@ export const useSortedGroupedSessions = (
     selectedAgentId,
     currentSessionId,
     githubStatus,
+    sessionResolveThreads,
+    sessionResolveAttempts,
   ]);
 };
 
@@ -244,6 +254,8 @@ export const useStageGroupedSessions = (
   const selectedAgentId = useAppStore((s) => s.selectedAgentId);
   const currentSessionId = useAppStore((s) => s.currentSessionId);
   const githubStatus = useAppStore((s) => s.githubStatus);
+  const sessionResolveThreads = useAppStore((s) => s.sessionResolveThreads);
+  const sessionResolveAttempts = useAppStore((s) => s.sessionResolveAttempts);
   const workspaces = useAppStore((s) => s.workspaces);
   const projects = useAppStore((s) => s.projects);
   const sessionBranches = useAppStore((s) => s.sessionBranches);
@@ -281,6 +293,8 @@ export const useStageGroupedSessions = (
       selectedAgentId,
       currentSessionId,
       githubStatus,
+      sessionResolveThreads,
+      sessionResolveAttempts,
     };
     const stages: Record<SessionId, SessionStage> = {};
     for (const session of filteredSessions) {
@@ -312,6 +326,8 @@ export const useStageGroupedSessions = (
     selectedAgentId,
     currentSessionId,
     githubStatus,
+    sessionResolveThreads,
+    sessionResolveAttempts,
   ]);
   if (previousRef.current !== null && groupedSessionsEqual(grouped, previousRef.current)) {
     return previousRef.current;

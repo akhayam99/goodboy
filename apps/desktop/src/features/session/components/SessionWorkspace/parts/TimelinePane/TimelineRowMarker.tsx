@@ -11,7 +11,6 @@ import {
 import { IntegrationGlyph } from '../../../../../integrations/components/IntegrationGlyph';
 import { rowStateNode, rowStateTone } from '../../../../../workTreeModel/rowStateCopy';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
-import { resolveBatchTitle } from '../../../../timeline/resolveBatchSummary';
 import { sessionEventGlyph } from '../../../../timeline/sessionEventPresentation';
 
 type Props = {
@@ -65,18 +64,6 @@ const questionResolvedLabel = ({
 export const TimelineRowMarker = ({ item, progress = null }: Props) => {
   const { entry } = item;
 
-  if (entry.kind === 'resolveBatch') {
-    return (
-      <WorkNode
-        state="mixed"
-        label={resolveBatchTitle({ total: entry.summary.total, prNumber: entry.prNumber })}
-        mark={{ kind: 'dot' }}
-        parts={entry.summary.parts.map((part) => ({ tone: part.tone, count: part.count }))}
-        hasUnread={item.hasUnread}
-      />
-    );
-  }
-
   if (entry.kind === 'run' || entry.kind === 'agent') {
     const node = rowStateNode({ state: item.rowState });
     return (
@@ -91,18 +78,6 @@ export const TimelineRowMarker = ({ item, progress = null }: Props) => {
         progress={progress}
       />
     );
-  }
-  if (entry.kind === 'resolveFile') {
-    const node = rowStateNode({ state: item.rowState });
-    return <WorkNode state={node.state} label={node.label} mark={{ kind: 'dot' }} />;
-  }
-  if (entry.kind === 'resolveOpen') {
-    return conceptNode({
-      icon: CONCEPT_ICONS.review,
-      tone: 'neutral',
-      label: 'Review',
-      isEmphasized: false,
-    });
   }
   if (entry.kind === 'issue') {
     return (

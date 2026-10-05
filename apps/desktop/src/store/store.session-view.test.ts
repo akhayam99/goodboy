@@ -255,6 +255,35 @@ describe('deriveSessionStage', () => {
     expect(info.stage).toBe('running');
   });
 
+  it('a fix run comment that needs you → attention, ahead of open questions', () => {
+    const info = deriveSessionStage({
+      session: base(1),
+      pr: makePr(),
+      ...signals,
+      openQuestionCount: 2,
+      fixNeedsYouCount: 1,
+    });
+    expect(info).toMatchObject({
+      stage: 'attention',
+      reason: '1 comment needs you',
+      attention: 'fix-needs-you',
+    });
+  });
+
+  it("a comment the fix run couldn't fix → attention", () => {
+    const info = deriveSessionStage({
+      session: base(1),
+      pr: makePr(),
+      ...signals,
+      fixCouldntFixCount: 2,
+    });
+    expect(info).toMatchObject({
+      stage: 'attention',
+      reason: "2 comments couldn't be fixed",
+      attention: 'fix-couldnt-fix',
+    });
+  });
+
   it('CI failure on live PR → attention', () => {
     const pr = { ...makePr(), checks: 'failure' as const };
     const info = deriveSessionStage({ session: base(1), pr, ...signals });

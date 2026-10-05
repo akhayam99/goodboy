@@ -168,7 +168,22 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
         run: () => recoverUncapturedResolveWork({ set, get, ...params }),
       }),
     retryCouldntFix: (params: RetryCouldntFixParams) => retryCouldntFix({ get, ...params }),
-    answerQuestions: (params: AnswerQuestionsParams) => answerQuestions({ get, ...params }),
+    answerQuestions: async (params: AnswerQuestionsParams) => {
+      await answerQuestions({ get, ...params });
+      set((current) => ({
+        sessionResolveAnswers: {
+          ...current.sessionResolveAnswers,
+          [params.sessionId]: {
+            ...current.sessionResolveAnswers[params.sessionId],
+            ...Object.fromEntries(
+              params.answers
+                .filter((item) => item.answer.trim() !== '')
+                .map((item) => [item.threadId, item.answer.trim()]),
+            ),
+          },
+        },
+      }));
+    },
     continueResolveThreads: (params: ContinueThreadsParams) =>
       continueResolveThreads({ get, ...params }),
     drainResolveQueue: (params: DrainParams) =>

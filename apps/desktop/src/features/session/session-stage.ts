@@ -16,6 +16,16 @@ type AttentionEntry = {
 export const ATTENTION_REASON_META: Record<SessionAttentionReason, AttentionEntry> = {
   'agent-error': { icon: 'errors', tone: 'danger', reason: 'The agent stopped with an error' },
   'open-question': { icon: 'questions', tone: 'warning', reason: 'The agent asked you something' },
+  'fix-needs-you': {
+    icon: 'review',
+    tone: 'warning',
+    reason: 'The fix run asked you something about a comment',
+  },
+  'fix-couldnt-fix': {
+    icon: 'review',
+    tone: 'danger',
+    reason: "The fix run couldn't fix a comment",
+  },
   'unread-reply': {
     icon: 'agents',
     tone: 'primary',

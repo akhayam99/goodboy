@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import { RESOLVE_FAILURE_CAUSES, type ResolveFailureCause } from '@goodboy/types';
 import {
   RESOLVE_WORD_LABEL,
-  RESOLVE_WORD_OF_STATE,
   projectResolveComment,
   resolveLabelOfState,
   resolveTallyOf,
@@ -42,7 +41,7 @@ const facts = (over: Partial<ResolveCommentFacts> & Pick<ResolveCommentFacts, 's
 
 describe('projectResolveComment', () => {
   it('puts every state of a comment under one of the five words, and an open one under Open', () => {
-    expect(ALL_STATES.map((state) => RESOLVE_WORD_OF_STATE[state])).toEqual([
+    expect(ALL_STATES.map((state) => projectResolveComment(facts({ state })).word)).toEqual([
       'open',
       'working',
       'needs_you',
