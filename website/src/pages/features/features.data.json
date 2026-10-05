@@ -716,7 +716,7 @@
         },
         {
           "title": "Write it",
-          "text": "Get a pull request title, description and changelog entry in your repo's format. Linked issues become closing references.",
+          "text": "Get a pull request title, description and changelog entry in your repo's format. Goodboy pushes the branch and opens the pull request, or shows why it could not and lets you retry. Linked issues become closing references.",
           "group": "Review and resolve on the Branch page",
           "also": "PR text",
           "shown": true

@@ -1,9 +1,12 @@
+import { useMemo } from 'react';
 import { CopyButton, Markdown } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { extractAllCommentResolved, isReviewThreadId, stripControlMarkers } from '@goodboy/core';
 import { HandoffChip } from '../HandoffChip';
 import { PlanChip } from '../PlanChip';
 import { ResolverThreadsCard } from '../ResolverThreadsCard';
+import { ScribeTextCard } from '../ScribeTextCard';
+import { carriesPullRequestText } from '../../../../shared/utils/scribeProposal';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 
 type Props = {
@@ -14,6 +17,7 @@ type Props = {
 
 export const AssistantText = ({ text, sessionId, agentId = null }: Props) => {
   const displayText = stripControlMarkers(text);
+  const hasScribeText = useMemo(() => carriesPullRequestText({ text }), [text]);
   const hasCommentResolvedMarker = extractAllCommentResolved(text).some(({ threadId }) =>
     isReviewThreadId(threadId),
   );
@@ -32,6 +36,9 @@ export const AssistantText = ({ text, sessionId, agentId = null }: Props) => {
         </div>
       )}
       {displayText.length > 0 ? <Markdown text={displayText} /> : null}
+      {sessionId && agentId && hasScribeText ? (
+        <ScribeTextCard assistantText={text} sessionId={sessionId} agentId={agentId} />
+      ) : null}
       {sessionId ? (
         <div className="flex flex-col items-start gap-2 empty:hidden">
           <PlanChip assistantText={text} sessionId={sessionId} />

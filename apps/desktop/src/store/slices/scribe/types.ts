@@ -9,6 +9,7 @@ export type ScribeTask =
       readonly closedPrNumber: number | null;
       readonly references: ReadonlyArray<string>;
       readonly isDraft: boolean;
+      readonly base: string | null;
     }
   | { readonly kind: 'pr-update'; readonly prNumber: number }
   | {
@@ -17,7 +18,12 @@ export type ScribeTask =
       readonly commits: ReadonlyArray<{ readonly sha: string; readonly subject: string }>;
     };
 
-type ScribeStatus = 'writing' | 'ready' | 'failed';
+type ScribeStatus = 'writing' | 'ready' | 'creating' | 'created' | 'failed';
+
+type ScribeRequest = {
+  readonly number: number;
+  readonly url: string;
+};
 
 export type ScribeWork = {
   readonly key: string;
@@ -28,7 +34,19 @@ export type ScribeWork = {
   readonly status: ScribeStatus;
   readonly output: ExtractedScribeText | null;
   readonly error: string | null;
+  readonly pullRequest: ScribeRequest | null;
   readonly updatedAt: number;
+};
+
+export type OpenScribePullRequestInput = {
+  readonly key: string;
+};
+
+export type ResumeScribePullRequestInput = {
+  readonly sessionId: SessionId;
+  readonly mountId: MountId;
+  readonly agentId: AgentId;
+  readonly output: ExtractedScribeText;
 };
 
 export type RequestScribeInput = {
