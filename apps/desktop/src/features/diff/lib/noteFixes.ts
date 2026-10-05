@@ -16,7 +16,7 @@ import {
 } from '../../resolve/reviewCommentState';
 import { REVIEW_LAUNCH_LABEL } from '../../resolve/reviewLaunchCopy';
 
-export type NoteFixGroup = 'open' | 'working' | 'needs' | 'ready' | 'failed' | 'done';
+type NoteFixGroup = 'open' | 'working' | 'needs' | 'ready' | 'failed' | 'done';
 
 export const NOTE_LOCK_REASON = 'A fixer is working on this note';
 

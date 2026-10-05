@@ -7,7 +7,7 @@ import {
   RIGHT_DRAWER_DEFAULT,
   canDrawerPush,
 } from '@goodboy/ui';
-import { BRANCH_RAIL_MIN_PX, BRANCH_TWO_COLUMN_MIN_PX, branchLayoutOf } from './branchLayout';
+import { branchLayoutOf } from './branchLayout';
 
 const paneWidthOf = ({
   windowPx,
@@ -27,10 +27,10 @@ const paneWidthOf = ({
 
 describe('branchLayoutOf', () => {
   it('goes from one column to two to three as the pane widens', () => {
-    expect(branchLayoutOf({ widthPx: BRANCH_TWO_COLUMN_MIN_PX - 1 })).toBe('single');
-    expect(branchLayoutOf({ widthPx: BRANCH_TWO_COLUMN_MIN_PX })).toBe('two');
-    expect(branchLayoutOf({ widthPx: BRANCH_RAIL_MIN_PX - 1 })).toBe('two');
-    expect(branchLayoutOf({ widthPx: BRANCH_RAIL_MIN_PX })).toBe('three');
+    expect(branchLayoutOf({ widthPx: 899 })).toBe('single');
+    expect(branchLayoutOf({ widthPx: 900 })).toBe('two');
+    expect(branchLayoutOf({ widthPx: 1039 })).toBe('two');
+    expect(branchLayoutOf({ widthPx: 1040 })).toBe('three');
   });
 
   it('reads two columns before the pane has been measured', () => {
