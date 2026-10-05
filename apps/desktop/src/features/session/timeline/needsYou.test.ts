@@ -220,4 +220,61 @@ describe('needsYouOwners', () => {
 
     expect(owners.map((owner) => owner.id)).toEqual(['agent:late', 'agent:early']);
   });
+
+  it('merges resolve batches of one pull request into one row with summed counts', () => {
+    const part = (state: string, count: number) => ({ state, count });
+    const batch = ({
+      id,
+      prNumber,
+      parts,
+      at,
+    }: {
+      readonly id: string;
+      readonly prNumber: number;
+      readonly parts: ReadonlyArray<{ readonly state: string; readonly count: number }>;
+      readonly at: string;
+    }) =>
+      row({
+        id,
+        familyId: id,
+        rowState: ASKING,
+        at,
+        entry: {
+          kind: 'resolveBatch',
+          id,
+          prNumber,
+          summary: { total: 0, parts, attentionCount: 1, failedCount: 0 },
+        },
+      });
+    const owners = needsYouOwners({
+      items: [
+        batch({
+          id: 'batch:2',
+          prNumber: 318,
+          parts: [part('failed', 1)],
+          at: '2026-10-03T12:00:00.000Z',
+        }),
+        batch({
+          id: 'batch:1',
+          prNumber: 318,
+          parts: [part('ready', 4), part('failed', 1)],
+          at: '2026-10-03T09:00:00.000Z',
+        }),
+        batch({
+          id: 'batch:3',
+          prNumber: 402,
+          parts: [part('failed', 2)],
+          at: '2026-10-03T08:00:00.000Z',
+        }),
+      ],
+      entries: [],
+      events: [],
+    });
+
+    expect(owners.map((owner) => owner.text)).toEqual([
+      'Resolve #318 · 4 replies ready · 2 failed',
+      'Resolve #402 · 2 failed',
+    ]);
+    expect(owners[0]?.id).toBe('batch:2');
+  });
 });

@@ -242,7 +242,10 @@ describe('TimelinePane mount rows', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(screen.queryByRole('button', { name: 'Copy path' })).toBeNull();
-    expect(screen.getByText('Nothing yet')).toBeDefined();
+    expect(screen.queryByText('Nothing yet')).toBeNull();
+    expect(screen.getByText(/Nothing launched yet/)).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'See Log' }));
+    expect(screen.getByRole('button', { name: 'Copy path' })).toBeDefined();
   });
 });
 

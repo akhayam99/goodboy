@@ -45,7 +45,7 @@ export const LinkedTaskChip = ({ sessionId, task, branch, branches, size = 'cont
     <ObjectMenuArea target={target} anchorKey={taskKeyOf(target)}>
       <span
         className={cn(
-          'group/task-link shrink-0',
+          'group/task-link relative shrink-0',
           chipClasses({ tone: 'neutral', shape: 'badge', size }),
         )}
       >
@@ -72,7 +72,7 @@ export const LinkedTaskChip = ({ sessionId, task, branch, branches, size = 'cont
           label={`Unlink ${task.identifier}${branch === null ? ' from session' : ` from ${branch}`}`}
           tooltip="Unlink"
           onClick={() => void unlink()}
-          className="pointer-events-none size-4 shrink-0 p-0 opacity-0 group-hover/task-link:pointer-events-auto group-hover/task-link:opacity-100 group-focus-within/task-link:pointer-events-auto group-focus-within/task-link:opacity-100 hover:text-danger"
+          className="pointer-events-none absolute right-0.5 top-1/2 size-4 -translate-y-1/2 bg-hover p-0 opacity-0 group-hover/task-link:pointer-events-auto group-hover/task-link:opacity-100 group-focus-within/task-link:pointer-events-auto group-focus-within/task-link:opacity-100 hover:text-danger"
         />
       </span>
     </ObjectMenuArea>

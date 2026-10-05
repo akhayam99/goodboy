@@ -84,7 +84,7 @@ describe('activity resolves scene', () => {
       (owner) => owner.kind === 'batch',
     );
 
-    expect(batches).toHaveLength(2);
-    expect(batches.every((owner) => owner.text.startsWith('Resolve #318 · '))).toBe(true);
+    expect(batches).toHaveLength(1);
+    expect(batches[0]?.text).toBe('Resolve #318 · 9 replies ready · 2 failed');
   });
 });

@@ -15,6 +15,7 @@ type Props = {
 export const PageColumn = ({ width = 'column', className, children }: Props) => (
   <div
     data-page-column=""
+    data-width={width}
     className={cn(width === 'full' ? GUTTER_CLASS : COLUMN_CLASS, className)}
   >
     {children}

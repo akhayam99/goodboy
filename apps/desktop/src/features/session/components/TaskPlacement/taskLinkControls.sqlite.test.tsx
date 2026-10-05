@@ -239,6 +239,33 @@ describe('task link controls', () => {
     expect(await storedLinks()).toHaveLength(2);
   });
 
+  it('offers the placement only when a linked task is not already on that branch', async () => {
+    const projectId = 'project-payments-api' as ProjectId;
+    const props = {
+      sessionId: SESSION_ID,
+      projectId,
+      mountId: 'mount-payments' as MountId,
+      branch: TASK.branch ?? '',
+    };
+    const { container } = render(<PutOnBranchPopover {...props} />);
+    expect(screen.queryByRole('button', { name: /^Put on a branch/ })).toBeNull();
+    await act(async () => {
+      await useAppStore.getState().linkSessionExternalTask(SESSION_ID, { ...TASK, projectId });
+    });
+    expect(screen.queryByRole('button', { name: /^Put on a branch/ })).toBeNull();
+    await act(async () => {
+      await useAppStore.getState().linkSessionExternalTask(SESSION_ID, {
+        ...TASK,
+        externalId: 'lin-413',
+        identifier: 'HBL-413',
+        branch: 'hl/notify-retry',
+        projectId,
+      });
+    });
+    screen.getByRole('button', { name: `Put on a branch ${props.branch}` });
+    expect(container.textContent).not.toContain('Put on a branch');
+  });
+
   it('opens the worktree form from the branch row action', async () => {
     const projectId = 'project-payments-api' as ProjectId;
     await useAppStore

@@ -134,9 +134,9 @@ export const BranchHeader = ({
           </>
         }
       />
-      <ActionStatusLine controls={controls.diffControls} />
+      <ActionStatusLine controls={controls.diffControls} showReasons={false} />
       <ActionConfirmPanel controls={controls.diffControls} />
-      <ActionStatusLine controls={controls.pullRequestControls} />
+      <ActionStatusLine controls={controls.pullRequestControls} showReasons={false} />
       <ActionConfirmPanel controls={controls.pullRequestControls} />
     </div>
   );

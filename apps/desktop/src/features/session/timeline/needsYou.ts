@@ -45,17 +45,55 @@ const BATCH_ATTENTION: Readonly<Record<string, (params: { readonly count: number
 
 const batchText = ({
   prNumber,
-  summary,
+  summaries,
 }: {
   readonly prNumber: number | null;
-  readonly summary: ResolveBatchSummary;
+  readonly summaries: ReadonlyArray<ResolveBatchSummary>;
 }): string => {
   const head = prNumber === null ? 'Resolve' : `Resolve #${prNumber}`;
-  const parts = summary.parts.flatMap((part) => {
-    const text = BATCH_ATTENTION[part.state];
-    return text === undefined ? [] : [text({ count: part.count })];
+  const counts = new Map<string, number>();
+  for (const part of summaries.flatMap((summary) => summary.parts)) {
+    counts.set(part.state, (counts.get(part.state) ?? 0) + part.count);
+  }
+  const parts = Object.entries(BATCH_ATTENTION).flatMap(([state, text]) => {
+    const count = counts.get(state) ?? 0;
+    return count === 0 ? [] : [text({ count })];
   });
   return [head, ...parts].join(' · ');
+};
+
+const mergeBatchOwners = ({
+  owners,
+  summaryById,
+}: {
+  readonly owners: ReadonlyArray<NeedsYouOwner>;
+  readonly summaryById: ReadonlyMap<string, ResolveBatchSummary>;
+}): ReadonlyArray<NeedsYouOwner> => {
+  const groups = new Map<number, ReadonlyArray<NeedsYouOwner>>();
+  for (const owner of owners) {
+    if (owner.kind === 'batch' && owner.prNumber !== null) {
+      groups.set(owner.prNumber, [...(groups.get(owner.prNumber) ?? []), owner]);
+    }
+  }
+  const emitted = new Set<number>();
+  return owners.flatMap((owner) => {
+    if (owner.kind !== 'batch' || owner.prNumber === null) {
+      return [owner];
+    }
+    const group = groups.get(owner.prNumber) ?? [owner];
+    if (group.length === 1) {
+      return [owner];
+    }
+    if (emitted.has(owner.prNumber)) {
+      return [];
+    }
+    emitted.add(owner.prNumber);
+    const summaries = group.flatMap((member) => {
+      const summary = summaryById.get(member.id);
+      return summary === undefined ? [] : [summary];
+    });
+    return [{ ...owner, text: batchText({ prNumber: owner.prNumber, summaries }) }];
+  });
 };
 
 const openQuestionsOfAgent = ({
@@ -165,7 +203,7 @@ const ownerOfRow = ({
     return {
       ...base,
       kind: 'batch',
-      text: batchText({ prNumber: entry.prNumber, summary: entry.summary }),
+      text: batchText({ prNumber: entry.prNumber, summaries: [entry.summary] }),
       prNumber: entry.prNumber,
     };
   }
@@ -254,10 +292,16 @@ export const needsYouOwners = ({
   for (const entry of entries.filter(isLooseOpenQuestion)) {
     byId.set(entry.id, ownerOfQuestion({ entry }));
   }
-  return [...byId.values()].sort((first, second) => {
+  const summaryById = new Map<string, ResolveBatchSummary>(
+    rowItems.flatMap((item) =>
+      item.entry.kind === 'resolveBatch' ? [[item.id, item.entry.summary] as const] : [],
+    ),
+  );
+  const sorted = [...byId.values()].sort((first, second) => {
     if (first.at != null && second.at != null && first.at !== second.at) {
       return second.at.localeCompare(first.at);
     }
     return first.id.localeCompare(second.id);
   });
+  return mergeBatchOwners({ owners: sorted, summaryById });
 };

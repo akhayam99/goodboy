@@ -4,11 +4,12 @@ import { SessionCrumbs } from '../../SessionTrail/SessionCrumbs';
 
 type Props = {
   readonly session: Session;
+  readonly width?: 'column' | 'full';
 };
 
-export const TrailBar = ({ session }: Props) => (
+export const TrailBar = ({ session, width = 'column' }: Props) => (
   <div data-slot="trail-bar" className="h-10 shrink-0 pb-1 pt-3">
-    <PageColumn className="flex h-6 min-w-0 items-center">
+    <PageColumn width={width} className="flex h-6 min-w-0 items-center">
       <SessionCrumbs session={session} />
     </PageColumn>
   </div>
