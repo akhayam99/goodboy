@@ -1394,9 +1394,11 @@ run` and Up goes to the Comments tab. The page is read only (`FixRun`) and has
   Comments tab. A run that belongs to a batch also says how many comments were
   fixed together and opens them filtered in Comments. `Open transcript` and the
   Transcript tab show the conversation. Accepting, replying, editing and Push
-  live in Comments, never here. In Activity a resolver row says **Open fix
-  run**, and a burst row of several resolvers has an **Open comments** button
-  that calls `openReview` with the destination `{ kind: 'threads', threadIds }`.
+  live in Comments, never here. In Activity a fix run is one row, `Fix run ·
+#318 · 9 comments`, that opens this page; the Needs you row for the pull
+  request calls `openReview` with the destination `{ kind: 'threads', mountId,
+threadIds: [first comment that waits on you] }`. A question the run waits on
+  shows at the top of this page as well as in its thread.
   The agent pane tab is part of the address: the thread
   target carries `pane: 'brief' | 'transcript'` (`brief` is the Fix run tab),
   `agentPlace({ sessionId, agentId, pane })` asks for either, and the address

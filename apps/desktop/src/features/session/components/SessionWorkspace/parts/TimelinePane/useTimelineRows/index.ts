@@ -35,8 +35,6 @@ import {
   type TimelineStream,
   type TimelineStreamItem,
 } from '../../../../../timeline/buildTimelineStream';
-import { groupTotalsById } from '../../../../../timeline/groupTotalsById';
-import type { GroupTotals } from '../../../../../timeline/groupTotals';
 import { dayLabel } from '../../../../../timeline/dayLabel';
 import {
   decisionChangeDetail,
@@ -79,7 +77,6 @@ export type TimelineRows = {
   readonly stepById: ReadonlyMap<string, Step>;
   readonly spendByAgentId: ReadonlyMap<string, number>;
   readonly spendByRunId: ReadonlyMap<string, number>;
-  readonly groupTotals: ReadonlyMap<string, GroupTotals>;
   readonly decisionDetails: ReadonlyMap<string, DecisionChangeDetail>;
   readonly expandedRows: ReadonlySet<string>;
   readonly toggleExpanded: (rowId: string) => void;
@@ -108,7 +105,6 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
   const loadSessionDismissedQuestions = useAppStore((s) => s.loadSessionDismissedQuestions);
   const workflows = useAttachedWorkflowRuns({ session });
   const resolveActivity = useResolveActivity({ sessionId });
-  const spans = useAppStore((s) => s.sessionTurnSpans?.[sessionId]);
   const telemetry = useAppStore(
     (s) => s.sessionTelemetry[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
   );
@@ -236,11 +232,11 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
           decidingRunIds,
           dayLabelFor: dayLabel,
           showQuestions: false,
-          resolveBatchByAgentId: resolveActivity.batchByAgentId,
           resolveFactsByAgentId: resolveActivity.factsByAgentId,
         }).items,
         entries: model.entries,
         events,
+        resolveFactsByAgentId: resolveActivity.factsByAgentId,
       }),
     [advanceByRunId, decidingRunIds, events, model.entries, resolveActivity, unreadAgentIds],
   );
@@ -259,7 +255,6 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
         decidingRunIds,
         dayLabelFor: dayLabel,
         showQuestions: view === 'log',
-        resolveBatchByAgentId: resolveActivity.batchByAgentId,
         resolveFactsByAgentId: resolveActivity.factsByAgentId,
         expandedGroupIds: explode.expandedIds,
         fullGroupIds: explode.fullIds,
@@ -290,19 +285,6 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     }
     keepOpen({ ids: liveRootKey.split(' ') });
   }, [areAgentsLoaded, keepOpen, liveRootKey]);
-
-  const totalsCache = useRef<ReadonlyMap<string, GroupTotals>>(new Map());
-  const groupTotals = useMemo(() => {
-    const next = groupTotalsById({
-      items: stream.items,
-      agents,
-      spans: spans ?? [],
-      spendByAgentId,
-      previous: totalsCache.current,
-    });
-    totalsCache.current = next;
-    return next;
-  }, [agents, spans, spendByAgentId, stream.items]);
 
   const shownQuestions = useMemo(() => {
     const shown = new Set(shownQuestionIds({ items: stream.items }));
@@ -383,7 +365,6 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     stepById,
     spendByAgentId,
     spendByRunId,
-    groupTotals,
     decisionDetails,
     expandedRows,
     toggleExpanded,

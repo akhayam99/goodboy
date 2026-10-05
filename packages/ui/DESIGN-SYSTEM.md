@@ -362,7 +362,7 @@ tag that says a row was shown because you started it. Every kind of row has
 exactly one home (`activityView.ts`, `entriesOfView`):
 
 - **Activity** holds what you launched, one row per launch: an agent, a
-  workflow run, a burst of resolvers. The right side of a row says its state or
+  workflow run, a fix run. The right side of a row says its state or
   its one action, then time, then cost, and never reserves an empty slot. A
   launch folds what happens inside it into its own row: steps and subagents
   (a chip, "4 subagents"), answered questions (the tally), and its plans,
@@ -381,23 +381,23 @@ exactly one home (`activityView.ts`, `entriesOfView`):
 - **Needs you** is a block on top of Activity, drawn only while it is not
   empty: a card on `bg-subtle` with a `warning` eyebrow and one row per owner,
   never one per child. A row is an icon in the warning tone, one line of text
-  (`Resolve #318 · 2 ready · 1 couldn't fix`, `Retry policy · 1 question`,
+  (`#318 · 1 question · 5 to review`, `Retry policy · 1 question`,
   `Rebase of feat/export stopped ×2`) and a ghost **Open** that goes to
-  whoever owns the action: the review, the exact question, the branch. It never
+  whoever owns the action: the first comment that waits on you (the question
+  before the reviews, the reviews before the failures), the exact question, the
+  branch. A pull request is one row however many fix runs it had. It never
   offers Push or Answer, because the verb stays with its owner. The owners come
   from the same row states as the rows themselves (`needsYouOwners`), so a
   question is counted once however many rows could show it.
 
-A burst of resolvers is one row, `Resolve #318 · 7 agents`, with a mixed node,
-the tally of its states (`5 pushed · 1 failed · 1 needs you`), the real time
-span and the summed cost. Open, it shows one row per file (the file name in
-the code face, its lines as `:12 ×4 · :22`, its state and its cost) and a last
-row `Open #318`; a burst of more than eight files opens on the first eight
-under **Show N more**. Its agents come from the launch id every resolver
-writes. A fix run is one agent, and a follow-up or a retry is another turn of
-that agent, so a run never grows a retry count; only resolves from before 0.20,
-which started one agent per comment, still form a burst, grouped by launch or
-batch id. The title and the tally count comments.
+A fix run is one row, `Fix run · #318 · 9 comments`: the resolver agent's own
+row, with the tally of its comments in the five words (`5 ready · 1 needs you
+· 2 working · 1 couldn't fix`) as its state line, the model cell, and the time
+over the cost. It has no per-agent burst, no files below it, no `related` tag
+and no retry count: a fix run is one agent, and a follow-up or a retry is
+another turn of that agent. The row opens the run's page, and the comments
+stay in the Comments tab, one click away. The title and the tally count
+comments, never agents.
 
 ### Rail vocabulary
 
@@ -448,12 +448,11 @@ ends on its newest member.
 
 Folding. A branch folds only when it is finished. A live branch (a run that is
 not finished or asks you something, a step with a running, queued or failed
-subagent, a launch still working, a burst with a resolver still working) shows
+subagent, a launch still working) shows
 all its members and has no control to fold it. A finished branch folds by
 default, whatever its size, into one count row that sits on its lane exactly
 where its children would be, above the parent: `6 steps · 1 question answered`
-over a run, `3 subagents` over a step, `2 outputs` over a launch, `7 files` over
-a burst. A tally follows the total only when not everything is done (`3
+over a run, `3 subagents` over a step, `2 outputs` over a launch. A tally follows the total only when not everything is done (`3
 subagents · 1 closed`). A click on the count row, or Right on it, opens the
 branch; the count row stays as the top cap of the lane and a second click, or
 Left, folds it again. There is no chevron and no chip at the right of a row.
@@ -465,8 +464,8 @@ open until you fold it.
 The lane is a control: a click on it opens the run page, with the tooltip `Open
 workflow: <title>` and its shortcut, Shift+Enter on a focused row does the same
 (`activity.openRun` in the shortcut registry), and the lane gets no hover tint.
-A row click opens its own leaf: a step its chat, a run its page, a burst its
-comments. A count row never navigates; it only folds and opens.
+A row click opens its own leaf: a step its chat, a run its page, a fix run its
+page. A count row never navigates; it only folds and opens.
 
 The recipe is the run page: `layoutTimelineRail` runs there with `hasSpine:
 false`, the run lane takes column 0 and starts on the run's first step, steps
@@ -495,7 +494,7 @@ gap instead of 12px and a 12px muted label, so a log row weighs the same as a
 step and never as an agent.
 
 The direction of time is one rule: the feed is newest first at every level. A
-run, an agent or a burst sits where its origin started and its members stand
+run or an agent sits where its origin started and its members stand
 above it, each at its own time, so a step number only ever falls down the list
 (8, 7, 6 above the run row; 8.4, 8.3 above step 8). Day rules sit between any
 two rows of different days.
@@ -636,25 +635,9 @@ working: they read as running, never as "Needs you". A run you stopped reads
 as `stopped`, an agent you closed as `closed`: finished is not the same as
 succeeded.
 
-A group row (a burst of resolves) draws the `mixed` node. Its click opens the
-comments, like the Open comments action it replaces, and it folds nothing: its
-files hang above it on the burst's lane behind a count row, `7 files`. A burst
-with a resolver still working is open and has no count row; a settled one is
-folded. Open, the files stand above the group row, one column in: one row per
-file, then a last row `Open #318` right above the group row, and the count row
-tops the lane. Each row grows from zero height with `Reveal` (200ms, all at
-once, no stagger), and while they grow the scroller moves by the same amount
-every frame, so the count row you clicked stays under the pointer; folding runs
-the same transition backwards and removes the rows when it settles. A burst of
-more than eight files opens on the first eight, under a compact "Show 12 more"
-row above the Open row that brings the rest. The count row opens with a click,
-Enter, Space or the right arrow and closes with a second click or the left
-arrow; the group row answers the right and left arrows the same way. Reduced
-motion skips the transition and swaps the rows at once. The rail already
-reserves the lane's column through the count row, so opening never moves the
-list sideways. A failed comment never opens the group: its arc is `danger`, the
-summary says "1 failed" in `danger` text and the Needs you block carries the
-burst.
+A fix run is a plain agent row. Its state line is the tally of its comments in
+the five words, and its row never opens or folds anything: the comments live in
+the Comments tab and the Needs you block carries the run when one waits on you.
 
 Subagents have no group row and no chip. A finished step or agent that has
 subagents has a count row above it on its own lane: `3 subagents`, with a tally

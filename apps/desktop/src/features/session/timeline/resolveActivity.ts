@@ -1,3 +1,4 @@
+import type { MountId } from '@goodboy/types';
 import {
   resolveLabelOfState,
   resolveTallyOf,
@@ -7,6 +8,7 @@ import type { ReviewCommentState } from '../../resolve/reviewCommentState';
 import type { RowState, RowStateReason } from '../../workTreeModel/rowState';
 
 export type ResolveThreadFact = {
+  readonly threadId: string;
   readonly state: ReviewCommentState;
   readonly path: string | null;
   readonly line: number | null;
@@ -16,6 +18,20 @@ export type ResolveActivityFacts = {
   readonly state: ReviewCommentState;
   readonly word: string;
   readonly threads?: ReadonlyArray<ResolveThreadFact>;
+  readonly prNumber?: number | null;
+  readonly mountId?: MountId | null;
+  readonly runTitle?: string;
+};
+
+export const fixRunActivityTitle = ({
+  total,
+  prNumber,
+}: {
+  readonly total: number;
+  readonly prNumber: number | null;
+}): string => {
+  const comments = total === 1 ? '1 comment' : `${total} comments`;
+  return prNumber === null ? `Fix run · ${comments}` : `Fix run · #${prNumber} · ${comments}`;
 };
 
 const ATTENTION_STATES: ReadonlySet<ReviewCommentState> = new Set([
@@ -30,7 +46,12 @@ export const isResolveAttention = ({ state }: { readonly state: ReviewCommentSta
   ATTENTION_STATES.has(state);
 
 export const resolverRowState = ({ facts }: { readonly facts: ResolveActivityFacts }): RowState => {
-  const reason: RowStateReason = { kind: 'review', state: facts.state, word: facts.word };
+  const reason: RowStateReason = {
+    kind: 'review',
+    state: facts.state,
+    word: facts.word,
+    ...(facts.runTitle !== undefined && { runTitle: facts.runTitle }),
+  };
   switch (facts.state) {
     case 'new':
       return { phase: 'queued', reason, ask: null };
@@ -71,7 +92,7 @@ export type ResolveAttemptLike = {
   readonly launchId?: string | null;
   readonly retryOfLaunchId?: string | null;
   readonly provider?: string;
-  readonly mountTarget?: { readonly mountId: string } | null;
+  readonly mountTarget?: { readonly mountId: MountId } | null;
   readonly prNumber: number | null;
   readonly threadIds: ReadonlyArray<string>;
   readonly phase: 'queued' | 'running' | 'waiting' | 'finished' | 'failed' | 'cancelled';
@@ -124,10 +145,14 @@ const factsOfAttempt = ({
     state: picked.state,
     word: wordOfReviews({ reviews, picked }),
     threads: reviews.map((review) => ({
+      threadId: review.threadId,
       state: review.state,
       path: review.path ?? null,
       line: review.line ?? null,
     })),
+    prNumber: attempt.prNumber,
+    mountId: attempt.mountTarget?.mountId ?? null,
+    runTitle: fixRunActivityTitle({ total: reviews.length, prNumber: attempt.prNumber }),
   };
 };
 

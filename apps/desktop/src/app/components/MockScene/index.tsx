@@ -54,7 +54,6 @@ import {
 import { ActivityTimelineScene } from './scenes/ActivityScenes';
 import { ActivityRunScene } from './scenes/ActivityRunScene';
 import { ActivityRunFinishedScene } from './scenes/ActivityRunFinishedScene';
-import { ActivityBurstOpenScene } from './scenes/ActivityBurstOpenScene';
 import { ActivityLogScene } from './scenes/ActivityLogScene';
 import { ActivityResolvesScene } from './scenes/ActivityResolvesScene';
 import { ActivityQuestionScene } from './scenes/ActivityQuestionScene';
@@ -222,7 +221,6 @@ export const MOCK_SCENES = {
   'artifact-create-report': ArtifactCreateReportScene,
   'artifact-create-wireframe': ArtifactCreateWireframeScene,
   activity: ActivityTimelineScene,
-  'activity-burst-open': ActivityBurstOpenScene,
   'activity-log': ActivityLogScene,
   'activity-run': ActivityRunScene,
   'activity-run-finished': ActivityRunFinishedScene,

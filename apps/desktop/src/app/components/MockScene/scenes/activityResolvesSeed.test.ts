@@ -4,7 +4,6 @@ import { buildTimelineGroups } from '../../../../features/session/timeline/build
 import { buildTimelineStream } from '../../../../features/session/timeline/buildTimelineStream';
 import { entriesOfView } from '../../../../features/session/timeline/activityView';
 import { needsYouOwners } from '../../../../features/session/timeline/needsYou';
-import { resolveBatchByAgentId } from '../../../../features/session/timeline/resolveBatchSummary';
 import { resolveFactsByAgentId } from '../../../../features/session/timeline/resolveActivity';
 import { buildResolveQueueRows } from '../../../../features/resolve/buildResolveQueueRows';
 import {
@@ -13,11 +12,11 @@ import {
 } from '../../../../features/resolve/reviewCommentState';
 import { ACTIVITY_RESOLVES_SESSION, seedActivityResolvesScene } from './activityResolvesSeed';
 
-const refsOfScene = () => {
+const launchesOfScene = (): ReadonlyMap<string, string | null> => {
   seedActivityResolvesScene();
   const attempts =
     useAppStore.getState().sessionResolveAttempts[ACTIVITY_RESOLVES_SESSION.id] ?? [];
-  return resolveBatchByAgentId({ attempts });
+  return new Map(attempts.map((attempt) => [attempt.agentId, attempt.launchId ?? null] as const));
 };
 
 const modelOfScene = () => {
@@ -60,19 +59,13 @@ const reviewsOfScene = () => {
 
 describe('activity resolves scene', () => {
   it('runs the ten comments of PR 318 as one agent under one launch', () => {
-    const refs = refsOfScene();
+    const launches = launchesOfScene();
     const agents = (useAppStore.getState().sessionPhaseRuns[ACTIVITY_RESOLVES_SESSION.id] ?? [])
       .filter((agent) => agent.kind === 'resolver')
-      .filter((agent) => refs.has(agent.id));
+      .filter((agent) => launches.get(agent.id) != null);
     expect(agents.map((agent) => agent.id)).toEqual(['mock-resolves-agent-0']);
     expect(agents[0]?.sourceThreadIds).toHaveLength(10);
-    expect(refs.get('mock-resolves-agent-0')?.batchId).toBe('mock-launch-pr-318');
-  });
-
-  it('leaves the older single resolves out of any group', () => {
-    const refs = refsOfScene();
-    const legacy = [...refs.keys()].filter((agentId) => agentId !== 'mock-resolves-agent-0');
-    expect(legacy).toEqual([]);
+    expect(launches.get('mock-resolves-agent-0')).toBe('mock-launch-pr-318');
   });
 
   it('counts the comments of the run in five words, not the agents', () => {
@@ -99,10 +92,11 @@ describe('activity resolves scene', () => {
     );
   });
 
-  it('asks for the run of PR 318 as one row in Needs you, in comments', () => {
+  const streamOfScene = () => {
     const { entries, events } = modelOfScene();
     const state = useAppStore.getState();
     const attempts = state.sessionResolveAttempts[ACTIVITY_RESOLVES_SESSION.id] ?? [];
+    const factsByAgentId = resolveFactsByAgentId({ attempts, reviews: reviewsOfScene() });
     const items = buildTimelineStream({
       entries,
       unreadAgentIds: new Set(),
@@ -110,14 +104,36 @@ describe('activity resolves scene', () => {
       decidingRunIds: new Set(),
       dayLabelFor: () => null,
       showQuestions: false,
-      resolveBatchByAgentId: resolveBatchByAgentId({ attempts }),
-      resolveFactsByAgentId: resolveFactsByAgentId({ attempts, reviews: reviewsOfScene() }),
+      resolveFactsByAgentId: factsByAgentId,
     }).items;
-    const owners = needsYouOwners({ items, entries, events }).filter((owner) =>
-      owner.item?.id.includes('mock-resolves-agent-0'),
+    return { items, entries, events, factsByAgentId };
+  };
+
+  it('names the run of PR 318 as one Fix run row with its tally', () => {
+    const { items } = streamOfScene();
+    const rows = items.filter(
+      (item) => item.kind === 'row' && item.id.includes('mock-resolves-agent-0'),
     );
 
+    expect(rows).toHaveLength(1);
+    const reason = rows[0]?.kind === 'row' ? rows[0].rowState.reason : null;
+    expect(reason?.kind === 'review' ? reason.runTitle : null).toBe('Fix run · #318 · 10 comments');
+    expect(reason?.kind === 'review' ? reason.word : null).toBe(
+      "3 ready · 4 working · 1 couldn't fix",
+    );
+  });
+
+  it('asks for the run of PR 318 as one row in Needs you, with what you owe', () => {
+    const { items, entries, events, factsByAgentId } = streamOfScene();
+    const owners = needsYouOwners({
+      items,
+      entries,
+      events,
+      resolveFactsByAgentId: factsByAgentId,
+    }).filter((owner) => owner.kind === 'fixRun');
+
     expect(owners).toHaveLength(1);
-    expect(owners[0]?.text).toContain("3 ready · 4 working · 1 couldn't fix");
+    expect(owners[0]?.text).toBe("#318 · 3 to review · 2 couldn't fix");
+    expect(owners[0]?.owed?.target?.rank).toBe(1);
   });
 });
