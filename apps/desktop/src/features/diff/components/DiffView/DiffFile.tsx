@@ -223,11 +223,12 @@ const DiffFileView = ({
             onCancel={() => setComposer(null)}
             onAskAgent={
               comments.onAskAgent
-                ? () => {
+                ? (note) => {
                     comments.onAskAgent?.({
                       filePath: file.path,
                       anchor: composer.anchor,
                       text: lineText(file, composer.anchor),
+                      ...(note.length > 0 && { note }),
                     });
                     setComposer(null);
                   }

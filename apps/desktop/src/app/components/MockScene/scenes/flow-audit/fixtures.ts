@@ -1235,3 +1235,15 @@ export const LENS_QUESTIONS: ReadonlyArray<OpenQuestion> = [
     createdAt: clock.iso({ at: '2026-09-16T10:12:00.000Z' }),
   },
 ];
+
+export const PROSE_QUESTION: OpenQuestion = {
+  id: 'mock-flow-question-force-push' as OpenQuestionId,
+  sessionId: CHAT_SESSION_ID,
+  createdByAgentId: CHAT_AGENT_BACKOFF_ID,
+  text: 'Confirm the force-push to hl/relay-backoff? I will update the pull request title and body after.',
+  suggestedAnswers: [],
+  isBlocking: true,
+  userAnswer: null,
+  status: 'open',
+  createdAt: clock.iso({ at: '2026-09-16T10:55:00.000Z' }),
+};

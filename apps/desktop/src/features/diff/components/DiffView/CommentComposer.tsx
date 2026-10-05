@@ -8,7 +8,7 @@ type Props = {
   readonly initialBody?: string;
   readonly onSubmit: (body: string) => void;
   readonly onCancel: () => void;
-  readonly onAskAgent?: () => void;
+  readonly onAskAgent?: (body: string) => void;
 };
 
 export const CommentComposer = ({
@@ -68,7 +68,7 @@ export const CommentComposer = ({
           Cancel
         </Button>
         {onAskAgent ? (
-          <Button variant="secondary" size="sm" onClick={onAskAgent}>
+          <Button variant="secondary" size="sm" onClick={() => onAskAgent(trimmed)}>
             Ask agent
           </Button>
         ) : null}
