@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, type RefObject } from 'react';
-import { Check, ChevronRight, MessageSquare } from 'lucide-react';
-import { Button, ScrollFade, cn, tintClasses } from '@goodboy/ui';
+import { Check, ChevronRight, MessageSquare, MessageSquarePlus } from 'lucide-react';
+import { Button, ScrollFade, Tooltip, cn, tintClasses } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import {
@@ -14,7 +14,7 @@ import { Delta } from './Delta';
 import { ProgressRing } from './ProgressRing';
 import { TreeHead } from './TreeHead';
 
-export type TreeFilter = {
+type TreeFilter = {
   readonly query: string;
   readonly onQuery: (query: string) => void;
   readonly unviewedOnly: boolean;
@@ -36,6 +36,7 @@ type Props = {
   readonly collapsed: ReadonlySet<string>;
   readonly onToggleFolder: (id: string) => void;
   readonly onPick: (path: string) => void;
+  readonly onCommentOnFile: ((path: string) => void) | null;
   readonly stateOf: (file: FileDiff) => ViewedState;
   readonly noteCountOf: (path: string) => number;
 };
@@ -52,6 +53,7 @@ export const ChangeTree = ({
   collapsed,
   onToggleFolder,
   onPick,
+  onCommentOnFile,
   stateOf,
   noteCountOf,
 }: Props) => {
@@ -139,7 +141,7 @@ export const ChangeTree = ({
             const notes = noteCountOf(row.id);
             const tone = tintClasses(STATUS_TONE[row.file.status]);
             return (
-              <li key={row.id} className="list-none">
+              <li key={row.id} className="group relative list-none">
                 <button
                   ref={isActive ? activeRef : undefined}
                   type="button"
@@ -207,6 +209,21 @@ export const ChangeTree = ({
                     {STATUS_LETTER[row.file.status]}
                   </span>
                 </button>
+                {onCommentOnFile === null ? null : (
+                  <Tooltip
+                    content="Comment on file"
+                    anchorClassName="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
+                  >
+                    <button
+                      type="button"
+                      aria-label={`Comment on ${row.name}`}
+                      onClick={() => onCommentOnFile(row.id)}
+                      className="inline-flex size-6 items-center justify-center rounded-sm bg-subtle text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                    >
+                      <MessageSquarePlus size={ICON_SIZE.row} aria-hidden />
+                    </button>
+                  </Tooltip>
+                )}
               </li>
             );
           })}

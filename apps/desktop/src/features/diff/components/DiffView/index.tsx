@@ -34,12 +34,16 @@ type Props = {
   readonly onActivePathChange?: (path: string) => void;
   readonly presentation?: 'pane' | 'peek' | 'inline';
   readonly footer?: ReactNode;
+  readonly fileCommentPath?: string | null;
+  readonly onFileCommentOpened?: () => void;
   readonly toolbarStart?: ReactNode;
   readonly toolbarEnd?: ReactNode;
   readonly belowToolbar?: ReactNode;
 };
 
 const EMPTY_THREADS: ReadonlyArray<DiffThread> = [];
+
+const NOOP = () => undefined;
 
 const matchPath = (files: ReadonlyArray<FileDiff>, path: string): string | null =>
   files.find((file) => file.path === path || path.endsWith(`/${file.path}`))?.path ?? null;
@@ -60,6 +64,8 @@ export const DiffView = ({
   onActivePathChange,
   presentation = 'pane',
   footer,
+  fileCommentPath = null,
+  onFileCommentOpened = NOOP,
   toolbarStart,
   toolbarEnd,
   belowToolbar = null,
@@ -362,6 +368,8 @@ export const DiffView = ({
           fileActions={fileActions}
           registerRef={registerRef(file.path)}
           isVisible={seen.has(file.path)}
+          wantsFileComment={fileCommentPath === file.path}
+          onFileCommentOpened={onFileCommentOpened}
         />
       ))}
       {mountedCount < files.length ? (

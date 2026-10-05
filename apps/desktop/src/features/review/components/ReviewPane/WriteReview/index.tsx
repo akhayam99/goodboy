@@ -5,7 +5,8 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { DiffView, type DiffComments } from '../../../../diff/components/DiffView';
 import { useAskAgent } from '../../../../diff/hooks/useAskAgent';
-import { draftThread } from './draftThreads';
+import { FILE_LEVEL_LINE } from '../../../../../store/slices/review-drafts/fileLevel';
+import { FILE_DRAFT_COMPOSER, draftThread } from '../../../../diff/lib/draftThreads';
 import { useReviewDiff } from './useReviewDiff';
 import { ObjectOverflowMenu } from '../../../../actions/components/ObjectOverflowMenu';
 import { WriteReviewForm } from './WriteReviewForm';
@@ -42,18 +43,16 @@ export const WriteReview = ({ session }: Props) => {
       threads: drafts.filter((draft) => draft.status === 'draft').map(draftThread),
       submitLabel: 'Add draft',
       composerLabel: 'Draft',
-      allowFileLevel: false,
+      allowFileLevel: true,
+      fileComposer: FILE_DRAFT_COMPOSER,
       onSubmit: (filePath, anchor, body) => {
-        if (anchor === null) {
-          return;
-        }
-        const end = anchor.endLineNumber ?? anchor.lineNumber;
+        const end = anchor === null ? FILE_LEVEL_LINE : (anchor.endLineNumber ?? anchor.lineNumber);
         addReviewDraft({
           sessionId,
           path: filePath,
           line: end,
-          startLine: end > anchor.lineNumber ? anchor.lineNumber : null,
-          side: anchor.side,
+          startLine: anchor !== null && end > anchor.lineNumber ? anchor.lineNumber : null,
+          side: anchor?.side ?? 'new',
           body,
         }).catch((err: unknown) =>
           reportError({ title: "Couldn't save the review comment", error: err, sessionId }),

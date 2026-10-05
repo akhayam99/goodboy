@@ -1813,9 +1813,21 @@ previous and next file. A jump is instant, not smooth: file bodies keep
 measures the picked header and snaps it back to the top until the heights
 settle. The picked file stays the active one until you scroll, so `[` and `]`
 start from it. Each file has a sticky header (status letter, path, `from <old path>` on a rename,
-changes, comment count, `Viewed`, `⋯` with Open in editor, Copy path, Comment
-on file); a viewed file collapses and opens again when you unmark it, from the
-header or from anywhere else, and generated or binary files start collapsed. Rows are a CSS grid with `role="grid"`, never a table. Click a line
+changes, comment count, a visible `Comment on file` button, `Viewed`, `⋯` with
+Open in editor, Copy path, Comment on file); a viewed file collapses and opens again when you unmark it, from the
+header or from anywhere else, and generated or binary files start collapsed.
+`Comment on file` (the header button, the `⋯` entry, and a button on the file's
+tree row on hover or keyboard focus) opens a composer under the header and
+scrolls to it: on a branch with a GitHub or GitLab pull request it saves a
+review draft on the whole file (a `pr_review_drafts` row with `line` 0, no
+migration), sent with the next review as a GitHub `FILE` thread (pending
+review, `addPullRequestReviewThread` with `subjectType: FILE`, then submit) or a
+GitLab discussion with `position_type: file`; without a pull request it saves a
+local note on the file (the same note a line gets, without an anchor). Either
+one sits under the file header, counts in the header and the tree row, and the
+note shows in Comments like a line note, with the file path and no line.
+A file draft is stale, and skipped on submit, only when its file leaves the
+pull request. Rows are a CSS grid with `role="grid"`, never a table. Click a line
 number to comment, drag or shift-click to cover a range; the composer and the
 threads sit under the last line of the range. ⌘Enter saves, Escape cancels.
 `+ Add note` on a line saves the note with the project and branch of the active

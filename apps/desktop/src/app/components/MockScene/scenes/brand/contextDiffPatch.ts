@@ -169,8 +169,8 @@ const WEBHOOK_TEST: FilePatch = {
 export const CTX_PATCH = `${[APPLY_WEBHOOK, POST_CREDIT, WEBHOOK_TEST].map(fileText).join('\n')}\n`;
 
 export const RENAMED_PATH = 'src/ledger/ledgerClient.ts';
-export const RENAMED_FROM = 'src/ledger/client.ts';
-export const DELETED_PATH = 'src/webhooks/seenEvents.ts';
+const RENAMED_FROM = 'src/ledger/client.ts';
+const DELETED_PATH = 'src/webhooks/seenEvents.ts';
 
 const RENAMED_HUNK: Hunk = {
   oldStart: 1,
@@ -228,7 +228,7 @@ const DELETED_TEXT = [
   ...DELETED_LINES,
 ].join('\n');
 
-export const LOCKFILE_PATH = 'pnpm-lock.yaml';
+const LOCKFILE_PATH = 'pnpm-lock.yaml';
 
 const LOCKFILE: FilePatch = {
   path: LOCKFILE_PATH,

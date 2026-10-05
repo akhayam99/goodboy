@@ -64,7 +64,7 @@
     "resolve -> branch": 2,
     "resolve -> integrations": 2,
     "review -> actions": 1,
-    "review -> diff": 3,
+    "review -> diff": 2,
     "review -> integrations": 8,
     "scripts -> actions": 1,
     "scripts -> session": 2,

@@ -199,6 +199,8 @@ export const SessionDiffPane = ({
       focusPath={diff.focusPath}
       onFocusHandled={diff.clearFocus}
       onActivePathChange={review.setActivePath}
+      fileCommentPath={review.fileCommentPath}
+      onFileCommentOpened={review.clearFileComment}
       toolbarStart={selector}
       toolbarEnd={
         onWriteReview === null && toolbarExtra === null ? undefined : (
@@ -229,6 +231,7 @@ export const SessionDiffPane = ({
             collapsed={review.collapsed}
             onToggleFolder={review.toggleFolder}
             onPick={review.jumpTo}
+            onCommentOnFile={review.comments.allowFileLevel ? review.commentOnFile : null}
             stateOf={review.viewed.stateOf}
             noteCountOf={review.noteCountOf}
           />

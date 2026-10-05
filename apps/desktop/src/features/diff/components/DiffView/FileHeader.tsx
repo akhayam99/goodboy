@@ -1,5 +1,5 @@
-import { Check, ChevronRight, MessageSquare } from 'lucide-react';
-import { cn, tintClasses } from '@goodboy/ui';
+import { Check, ChevronRight, MessageSquare, MessageSquarePlus } from 'lucide-react';
+import { Tooltip, cn, tintClasses } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { STATUS_LETTER, STATUS_TONE, STATUS_WORD, splitPath } from '../../lib/fileStatus';
@@ -94,6 +94,18 @@ export const FileHeader = ({
       ) : null}
       {viewed === 'stale' ? (
         <span className="shrink-0 text-meta text-faint-foreground">Changed since viewed</span>
+      ) : null}
+      {onCommentOnFile ? (
+        <Tooltip content="Comment on file" anchorClassName="shrink-0">
+          <button
+            type="button"
+            onClick={onCommentOnFile}
+            aria-label="Comment on file"
+            className="inline-flex size-6 items-center justify-center rounded-sm text-faint-foreground transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          >
+            <MessageSquarePlus size={ICON_SIZE.row} aria-hidden />
+          </button>
+        </Tooltip>
       ) : null}
       {onToggleViewed ? (
         <button

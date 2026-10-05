@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseUnifiedDiff } from '@goodboy/core';
-import {
-  BRANCH_FILES_PATCH,
-  DELETED_PATH,
-  LOCKFILE_PATH,
-  RENAMED_FROM,
-  RENAMED_PATH,
-} from './contextDiffPatch';
+import { BRANCH_FILES_PATCH, RENAMED_PATH } from './contextDiffPatch';
 import { MANY_FILES_PATCH } from './manyFilesDiffPatch';
 
 describe('branch-files mock patch', () => {
@@ -15,9 +9,9 @@ describe('branch-files mock patch', () => {
   it('carries a rename with its old path and a deleted file', () => {
     expect(files.find((file) => file.path === RENAMED_PATH)).toMatchObject({
       status: 'renamed',
-      oldPath: RENAMED_FROM,
+      oldPath: 'src/ledger/client.ts',
     });
-    expect(files.find((file) => file.path === DELETED_PATH)).toMatchObject({
+    expect(files.find((file) => file.path === 'src/webhooks/seenEvents.ts')).toMatchObject({
       status: 'deleted',
       additions: 0,
       deletions: 10,
@@ -25,7 +19,7 @@ describe('branch-files mock patch', () => {
   });
 
   it('carries a generated lockfile for the Generated row', () => {
-    expect(files.some((file) => file.path === LOCKFILE_PATH)).toBe(true);
+    expect(files.some((file) => file.path === 'pnpm-lock.yaml')).toBe(true);
   });
 
   it('keeps the many-files scene at forty files', () => {

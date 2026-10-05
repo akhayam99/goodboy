@@ -11,6 +11,7 @@ import {
   APPLY_WEBHOOK_PATH,
   CTX_PATCH,
   POST_CREDIT_PATH,
+  RENAMED_PATH,
 } from './contextDiffPatch';
 import { DiffStage, handlersFor } from './DiffStage';
 import { MANY_FILES_PATCH } from './manyFilesDiffPatch';
@@ -26,6 +27,15 @@ const NOTES: ReadonlyArray<DiffComment> = [
     status: 'open',
     createdAt: minutesAgo(9),
     anchor: { side: 'new', lineNumber: APPLY_WEBHOOK_NOTE_LINE },
+    authorKind: 'user',
+  },
+  {
+    id: 'mock-brand-diff-note-rename',
+    sessionId: CTX_SESSION_ID,
+    filePath: RENAMED_PATH,
+    body: 'Keep the retries at three: the processor rate limits above that.',
+    status: 'open',
+    createdAt: minutesAgo(14),
     authorKind: 'user',
   },
 ];

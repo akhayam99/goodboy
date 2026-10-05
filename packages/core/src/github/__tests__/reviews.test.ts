@@ -106,6 +106,94 @@ describe('addPullRequestReview', () => {
     ).rejects.toBeInstanceOf(GhCliError);
   });
 
+  describe('with file level comments', () => {
+    const fileThread = { path: 'src/ledger/ledgerClient.ts', body: 'split this file' };
+    const queryOf = (call: ReadonlyArray<string>): string =>
+      call.find((arg) => arg.startsWith('query=')) ?? '';
+    const sequenceRunner = (responses: ReadonlyArray<GhResult>): GhRunner => {
+      let next = 0;
+      return {
+        run: vi.fn(async () => {
+          const response = responses[Math.min(next, responses.length - 1)];
+          next += 1;
+          return response as GhResult;
+        }),
+      };
+    };
+    const calls = (runner: GhRunner): ReadonlyArray<ReadonlyArray<string>> =>
+      (runner.run as ReturnType<typeof vi.fn>).mock.calls.map((call) => call[0] as string[]);
+
+    it('keeps the one call when there are no file comments', async () => {
+      const runner = makeRunner(okResponse);
+      await addPullRequestReview(runner, {
+        pullRequestId: 'PR_x',
+        event: 'COMMENT',
+        body: '',
+        threads: [thread],
+        fileThreads: [],
+      });
+      expect(runner.run).toHaveBeenCalledTimes(1);
+    });
+
+    it('opens a pending review, adds each file thread as FILE, then submits with the event', async () => {
+      const runner = sequenceRunner([
+        jsonOk({ data: { addPullRequestReview: { pullRequestReview: { id: 'PRR_9' } } } }),
+        jsonOk({ data: { addPullRequestReviewThread: { thread: { id: 'T_1' } } } }),
+        jsonOk({
+          data: {
+            submitPullRequestReview: {
+              pullRequestReview: { id: 'PRR_9', url: 'https://github.com/acme/web/pull/42#prr-9' },
+            },
+          },
+        }),
+      ]);
+
+      const result = await addPullRequestReview(runner, {
+        pullRequestId: 'PR_x',
+        event: 'REQUEST_CHANGES',
+        body: 'two things',
+        threads: [thread],
+        fileThreads: [fileThread],
+      });
+
+      const [open, add, submit] = calls(runner);
+      expect(queryOf(open!)).toContain('addPullRequestReview(input:{pullRequestId:$pullRequestId');
+      expect(queryOf(open!)).toContain(
+        '{path:"src/a.ts",line:12,side:RIGHT,body:"guard the null case"}',
+      );
+      expect(queryOf(open!)).not.toContain('event:');
+      expect(queryOf(add!)).toContain('subjectType:FILE');
+      expect(add).toContain('path=src/ledger/ledgerClient.ts');
+      expect(add).toContain('body=split this file');
+      expect(add).toContain('reviewId=PRR_9');
+      expect(queryOf(submit!)).toContain('event:REQUEST_CHANGES');
+      expect(submit).toContain('body=two things');
+      expect(result).toEqual({ id: 'PRR_9', url: 'https://github.com/acme/web/pull/42#prr-9' });
+    });
+
+    it('deletes the pending review and rethrows when a file thread fails', async () => {
+      const runner = sequenceRunner([
+        jsonOk({ data: { addPullRequestReview: { pullRequestReview: { id: 'PRR_9' } } } }),
+        jsonOk({ errors: [{ message: 'path not in diff' }] }),
+        jsonOk({ data: { deletePullRequestReview: { clientMutationId: null } } }),
+      ]);
+
+      await expect(
+        addPullRequestReview(runner, {
+          pullRequestId: 'PR_x',
+          event: 'COMMENT',
+          body: '',
+          threads: [],
+          fileThreads: [fileThread],
+        }),
+      ).rejects.toBeInstanceOf(GhCliError);
+
+      const all = calls(runner);
+      expect(all).toHaveLength(3);
+      expect(queryOf(all[2]!)).toContain('deletePullRequestReview');
+    });
+  });
+
   it('throws GhCliError when the response is missing the review payload', async () => {
     const runner = makeRunner(jsonOk({ data: { addPullRequestReview: null } }));
     await expect(

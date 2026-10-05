@@ -27,9 +27,20 @@ const baseStore = () => ({
   sessions: [],
   emitNotification: vi.fn(),
   navigate: vi.fn(),
+  reviewDrafts: {},
+  loadReviewDrafts: vi.fn(),
+  addReviewDraft: vi.fn(),
+  updateReviewDraft: vi.fn(),
+  discardReviewDraft: vi.fn(),
+  reportError: vi.fn(),
 });
 
+vi.mock('../../../../store/slices/review-drafts/resolveReviewTarget', () => ({
+  resolveReviewTarget: () => h.store['reviewTarget'] ?? null,
+}));
+
 vi.mock('../../../../store', () => ({
+  EMPTY_ARRAY: [],
   useAppStore: Object.assign(
     <T,>(selector: (state: Record<string, unknown>) => T) => selector(h.store),
     { getState: () => h.store, subscribe: () => () => undefined },

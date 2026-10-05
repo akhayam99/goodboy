@@ -48,6 +48,7 @@ const renderTree = (overrides: Partial<Parameters<typeof ChangeTree>[0]> = {}) =
       collapsed={new Set()}
       onToggleFolder={vi.fn()}
       onPick={vi.fn()}
+      onCommentOnFile={null}
       stateOf={() => 'none'}
       noteCountOf={() => 0}
       {...overrides}
@@ -94,6 +95,7 @@ describe('ChangeTree', () => {
         collapsed={new Set(['src/ledger/export'])}
         onToggleFolder={onToggleFolder}
         onPick={vi.fn()}
+        onCommentOnFile={null}
         stateOf={() => 'none'}
         noteCountOf={() => 0}
       />,
@@ -212,6 +214,34 @@ describe('ChangeTree', () => {
 
     expect(onQuery).toHaveBeenCalledWith('csvx');
     expect(onQuery).toHaveBeenCalledWith('');
+  });
+
+  it('offers a comment action on a file row that reaches the same keyboard focus as the row', () => {
+    const onCommentOnFile = vi.fn();
+    const onPick = vi.fn();
+    renderTree({ onCommentOnFile, onPick });
+
+    const action = screen.getByRole('button', { name: 'Comment on page.tsx' });
+    fireEvent.click(action);
+
+    expect(onCommentOnFile).toHaveBeenCalledWith('src/ledger/export/page.tsx');
+    expect(onPick).not.toHaveBeenCalled();
+  });
+
+  it('keeps the comment action a real button a keyboard can reach next to its row', () => {
+    renderTree({ onCommentOnFile: vi.fn() });
+
+    const row = screen.getByTitle('src/ledger/export/page.tsx');
+    const action = screen.getByRole('button', { name: 'Comment on page.tsx' });
+
+    expect(action.tabIndex).toBe(0);
+    expect(row.closest('li')).toBe(action.closest('li'));
+  });
+
+  it('has no comment action on rows when file comments are off', () => {
+    renderTree();
+
+    expect(screen.queryByRole('button', { name: /Comment on/ })).toBeNull();
   });
 
   it('lists generated files in a Generated row at the bottom', () => {
