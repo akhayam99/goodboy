@@ -1,6 +1,9 @@
 import type { ProviderId, TurnEvent, WorkflowRoutingProposal } from '@goodboy/types';
 import type { AgentKindLabel } from '../first-turn-classifier';
 import { parseWorkflowRoutingProposal } from '../orchestrator/parseWorkflowRoutingProposal';
+import { BITBUCKET_THREAD_PREFIX } from '../review-source/bitbucketReviewSource';
+import { GITLAB_THREAD_PREFIX } from '../review-source/gitlabReviewSource';
+import { NOTE_THREAD_PREFIX } from '../review-source/noteThreadPrefix';
 import { readClusterChecks } from './clusterChecks';
 
 export const extractFilesTouched = (events: ReadonlyArray<TurnEvent>): ReadonlyArray<string> => {
@@ -550,11 +553,17 @@ export const extractScribeText = (assistantText: string): ExtractedScribeText =>
   };
 };
 
-const REVIEW_THREAD_ID_RE = /^PRRT_/;
+const REVIEW_THREAD_ID_PREFIXES = [
+  'PRRT_',
+  GITLAB_THREAD_PREFIX,
+  BITBUCKET_THREAD_PREFIX,
+  NOTE_THREAD_PREFIX,
+] as const;
 
-export const isReviewThreadId = (threadId: string): boolean => {
-  return REVIEW_THREAD_ID_RE.test(threadId);
-};
+export const isReviewThreadId = (threadId: string): boolean =>
+  REVIEW_THREAD_ID_PREFIXES.some(
+    (prefix) => threadId.startsWith(prefix) && threadId.length > prefix.length,
+  );
 
 export type ExtractedCommentAnalysis = {
   readonly threadId: string;

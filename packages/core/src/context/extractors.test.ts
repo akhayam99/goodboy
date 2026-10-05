@@ -540,6 +540,34 @@ describe('extractAllCommentReplies', () => {
     ]);
   });
 
+  it.each([
+    ['github', 'PRRT_kwDOABC123'],
+    ['gitlab', 'gitlab:3f9a0c7d1e2b4a5c'],
+    ['bitbucket', 'bitbucket:88213'],
+    ['local notes', 'note:rounding'],
+    ['a reopened local note', 'note:rounding:g1'],
+  ])('keeps a reply for a %s thread', (_source, threadId) => {
+    const text = `<<comment-reply id="${threadId}">>Moved the check up.<</comment-reply>>`;
+
+    expect(extractAllCommentReplies(text)).toEqual([{ threadId, body: 'Moved the check up.' }]);
+  });
+
+  it('keeps replies from every source in one turn', () => {
+    const text = [
+      '<<comment-reply id="PRRT_1">>one<</comment-reply>>',
+      '<<comment-reply id="gitlab:abc">>two<</comment-reply>>',
+      '<<comment-reply id="bitbucket:7">>three<</comment-reply>>',
+      '<<comment-reply id="note:n1">>four<</comment-reply>>',
+    ].join('\n');
+
+    expect(extractAllCommentReplies(text).map((reply) => reply.threadId)).toEqual([
+      'PRRT_1',
+      'gitlab:abc',
+      'bitbucket:7',
+      'note:n1',
+    ]);
+  });
+
   it('discards replies that name no review thread, or nothing at all', () => {
     expect(extractAllCommentReplies('<<comment-reply id="th-1">>body<</comment-reply>>')).toEqual(
       [],
@@ -556,6 +584,20 @@ describe('isReviewThreadId', () => {
   it('accepts github review thread node ids', () => {
     expect(isReviewThreadId('PRRT_kwDOABC123')).toBe(true);
     expect(isReviewThreadId('PRRT_1')).toBe(true);
+  });
+
+  it('accepts gitlab, bitbucket and local note thread ids', () => {
+    expect(isReviewThreadId('gitlab:3f9a0c7d1e2b4a5c')).toBe(true);
+    expect(isReviewThreadId('bitbucket:88213')).toBe(true);
+    expect(isReviewThreadId('note:rounding')).toBe(true);
+    expect(isReviewThreadId('note:rounding:g1')).toBe(true);
+  });
+
+  it('rejects a bare prefix with no thread behind it', () => {
+    expect(isReviewThreadId('PRRT_')).toBe(false);
+    expect(isReviewThreadId('gitlab:')).toBe(false);
+    expect(isReviewThreadId('bitbucket:')).toBe(false);
+    expect(isReviewThreadId('note:')).toBe(false);
   });
 
   it('rejects local diff comment uuids and neighbouring node-id prefixes', () => {

@@ -1,7 +1,7 @@
+import { NOTE_THREAD_PREFIX } from '@goodboy/core';
 import type { DiffComment } from '@goodboy/types';
 import type { CommentThread } from '../../integrations/github/comment-threads';
 
-const NOTE_PREFIX = 'note:';
 const GENERATION_SUFFIX = /:g(\d+)$/;
 
 export const NOTE_AUTHOR_YOU = 'You';
@@ -14,14 +14,16 @@ export const noteThreadId = ({
   readonly noteId: string;
   readonly generation?: number;
 }): string =>
-  generation === 0 ? `${NOTE_PREFIX}${noteId}` : `${NOTE_PREFIX}${noteId}:g${generation}`;
+  generation === 0
+    ? `${NOTE_THREAD_PREFIX}${noteId}`
+    : `${NOTE_THREAD_PREFIX}${noteId}:g${generation}`;
 
 const isNoteThreadId = ({ threadId }: { readonly threadId: string }): boolean =>
-  threadId.startsWith(NOTE_PREFIX);
+  threadId.startsWith(NOTE_THREAD_PREFIX);
 
 export const noteIdOfThread = ({ threadId }: { readonly threadId: string }): string | null =>
   isNoteThreadId({ threadId })
-    ? threadId.slice(NOTE_PREFIX.length).replace(GENERATION_SUFFIX, '')
+    ? threadId.slice(NOTE_THREAD_PREFIX.length).replace(GENERATION_SUFFIX, '')
     : null;
 
 export const isOpenNote = ({ note }: { readonly note: DiffComment }): boolean =>
