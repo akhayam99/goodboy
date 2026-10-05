@@ -1014,6 +1014,17 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
     lands: async () => expect(await activeTreeFile()).toContain('notify.ts'),
   }),
   keyRow({
+    id: 'diff.focusFilter',
+    open: async () => {
+      await openDiff();
+      await pressed('diff.focusFilter', document.body);
+    },
+    lands: async () =>
+      expect(document.activeElement).toBe(
+        await screen.findByRole('textbox', { name: 'Filter files' }),
+      ),
+  }),
+  keyRow({
     id: 'session.model',
     open: async (ctx) => {
       const composer = await openAgentChat(ctx);

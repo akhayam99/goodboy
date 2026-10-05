@@ -55,8 +55,16 @@ vi.mock('../../../permissions/components/DiffViewSelector', () => ({
 }));
 
 vi.mock('../DiffView', () => ({
-  DiffView: ({ toolbarEnd }: { readonly toolbarEnd?: ReactNode }) => (
-    <div data-testid="diff-view">{toolbarEnd}</div>
+  DiffView: ({
+    files,
+    toolbarEnd,
+  }: {
+    readonly files: ReadonlyArray<FileDiff>;
+    readonly toolbarEnd?: ReactNode;
+  }) => (
+    <div data-testid="diff-view" data-files={files.map((file) => file.path).join(',')}>
+      {toolbarEnd}
+    </div>
   ),
 }));
 
@@ -145,6 +153,56 @@ describe('SessionDiffPane files', () => {
     const tree = screen.getByRole('navigation', { name: 'Changed files' });
     expect(within(tree).getByText('0 of 1 viewed')).toBeDefined();
     expect(within(tree).getByRole('button', { name: /postings\.ts/ })).toBeDefined();
+  });
+
+  it('filters the tree and the diff together, then restores both on Clear', () => {
+    const other: FileDiff = { ...FILE, path: 'src/ledger/export.ts' };
+    renderPane({ diff: diffOf([FILE, other]) });
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Filter files' }), {
+      target: { value: 'export' },
+    });
+
+    expect(screen.getByText('Showing 1 of 2')).toBeDefined();
+    expect(screen.getByTestId('diff-view').getAttribute('data-files')).toBe('src/ledger/export.ts');
+    expect(screen.queryByRole('button', { name: /postings\.ts/ })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+
+    expect(screen.getByTestId('diff-view').getAttribute('data-files')).toBe(
+      'src/ledger/export.ts,src/ledger/postings.ts',
+    );
+    expect(screen.queryByText(/Showing/)).toBeNull();
+  });
+
+  it('keeps only unviewed files when the Unviewed chip is on', () => {
+    const other: FileDiff = { ...FILE, path: 'src/ledger/export.ts' };
+    const diff = {
+      ...diffOf([FILE, other]),
+      viewed: {
+        stateOf: (file: FileDiff) =>
+          file.path === FILE.path ? ('viewed' as const) : ('none' as const),
+        onToggle: vi.fn(),
+      },
+    };
+    renderPane({ diff });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Unviewed' }));
+
+    expect(screen.getByTestId('diff-view').getAttribute('data-files')).toBe('src/ledger/export.ts');
+    expect(screen.getByText('Showing 1 of 2')).toBeDefined();
+  });
+
+  it('says no file matches and offers Clear in the diff when the filter hides everything', () => {
+    renderPane({ diff: diffOf([FILE]) });
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Filter files' }), {
+      target: { value: 'zzz' },
+    });
+
+    expect(screen.getByText('No files match')).toBeDefined();
+    expect(screen.queryByTestId('diff-view')).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Clear' })).toHaveLength(3);
   });
 
   it('puts Write review in the file toolbar when a pull request can take one', () => {

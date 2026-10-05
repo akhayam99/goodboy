@@ -106,11 +106,12 @@ describe('useReviewState', () => {
     const { result } = run();
     act(() => result.current.toggleFolder('src/ledger/export'));
     act(() => result.current.toggleFolder('src/ledger'));
-    expect(result.current.collapsed.size).toBe(2);
+    expect(result.current.collapsed.has('src/ledger')).toBe(true);
 
     act(() => result.current.setActivePath('src/ledger/export/page.tsx'));
 
-    expect(result.current.collapsed.size).toBe(0);
+    expect(result.current.collapsed.has('src/ledger')).toBe(false);
+    expect(result.current.collapsed.has('src/ledger/export')).toBe(false);
     expect(result.current.activePath).toBe('src/ledger/export/page.tsx');
   });
 
@@ -145,5 +146,96 @@ describe('useReviewState', () => {
       'src/ledger/export/page.tsx',
       'src/ledger/ledger.ts',
     ]);
+  });
+});
+
+describe('useReviewState filters', () => {
+  const FILES = [
+    fileAt('src/ledger/export/page.tsx'),
+    fileAt('src/ledger/ledger.ts'),
+    fileAt('pnpm-lock.yaml'),
+  ];
+  const STABLE: SessionDiff = {
+    ...diffOf(vi.fn()),
+    files: FILES,
+    viewed: {
+      stateOf: (file) => (file.path === 'src/ledger/ledger.ts' ? 'viewed' : 'none'),
+      onToggle: vi.fn(),
+    },
+  };
+  const runStable = () =>
+    renderHook(() =>
+      useReviewState({
+        sessionId: 'session-1' as SessionId,
+        worktreePath: '/w/ledger',
+        diff: STABLE,
+      }),
+    );
+  const shown = (result: { readonly current: ReturnType<typeof useReviewState> }) =>
+    result.current.tree.files.map((file) => file.path);
+
+  it('filters the tree files by the typed query and keeps the full list for the head', () => {
+    const { result } = runStable();
+
+    act(() => result.current.setQuery('exp'));
+
+    expect(shown(result)).toEqual(['src/ledger/export/page.tsx']);
+    expect(result.current.allFiles).toHaveLength(3);
+    expect(result.current.isFiltering).toBe(true);
+  });
+
+  it('keeps only files that are not viewed when Unviewed is on', () => {
+    const { result } = runStable();
+
+    act(() => result.current.setUnviewedOnly(true));
+
+    expect(shown(result)).toEqual(['src/ledger/export/page.tsx', 'pnpm-lock.yaml']);
+  });
+
+  it('keeps only files with open notes when With notes is on', () => {
+    h.threads = [
+      threadAt({ id: 'a', filePath: 'src/ledger/ledger.ts', isResolved: false }),
+      threadAt({ id: 'b', filePath: 'src/ledger/export/page.tsx', isResolved: true }),
+    ];
+    const { result } = runStable();
+
+    act(() => result.current.setNotesOnly(true));
+
+    expect(shown(result)).toEqual(['src/ledger/ledger.ts']);
+  });
+
+  it('combines the chips with the query and drops all of them on clear', () => {
+    const { result } = runStable();
+
+    act(() => {
+      result.current.setQuery('ledger');
+      result.current.setUnviewedOnly(true);
+    });
+    expect(shown(result)).toEqual(['src/ledger/export/page.tsx']);
+
+    act(() => result.current.clearFilters());
+
+    expect(shown(result)).toHaveLength(3);
+    expect(result.current.isFiltering).toBe(false);
+    expect(result.current.query).toBe('');
+  });
+
+  it('starts with the Generated row closed and opens it when a generated file is the target', () => {
+    const { result } = runStable();
+    expect(result.current.collapsed.has('group:generated')).toBe(true);
+
+    act(() => result.current.setActivePath('pnpm-lock.yaml'));
+
+    expect(result.current.collapsed.has('group:generated')).toBe(false);
+  });
+
+  it('regroups the tree by kind', () => {
+    const { result } = runStable();
+
+    act(() => result.current.setGroup('kind'));
+
+    expect(
+      result.current.tree.rows.filter((row) => row.kind === 'folder').map((row) => row.label),
+    ).toEqual(['Source', 'Generated']);
   });
 });

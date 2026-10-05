@@ -1,9 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { SessionId } from '@goodboy/types';
+import type { FileDiff, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectMountForPath } from '../../../../store/slices/project-mounts/selectors';
 import type { DiffComments, DiffViewed } from '../../components/DiffView/types';
-import { ancestorIds, buildChangeTree, type ChangeTree } from '../../lib/changeTree';
+import {
+  GENERATED_GROUP_ID,
+  ancestorIds,
+  buildChangeTree,
+  filterFiles,
+  type ChangeTree,
+  type TreeGroup,
+} from '../../lib/changeTree';
 import type { SessionDiff } from '../useSessionDiff';
 import { useDiffNotes } from '../useDiffNotes';
 import { useDiffReviewThreads } from '../useDiffReviewThreads';
@@ -16,6 +23,17 @@ type Params = {
 
 export type ReviewState = {
   readonly tree: ChangeTree;
+  readonly allFiles: ReadonlyArray<FileDiff>;
+  readonly query: string;
+  readonly setQuery: (query: string) => void;
+  readonly unviewedOnly: boolean;
+  readonly setUnviewedOnly: (next: boolean) => void;
+  readonly notesOnly: boolean;
+  readonly setNotesOnly: (next: boolean) => void;
+  readonly group: TreeGroup;
+  readonly setGroup: (group: TreeGroup) => void;
+  readonly isFiltering: boolean;
+  readonly clearFilters: () => void;
   readonly comments: DiffComments;
   readonly viewed: DiffViewed;
   readonly noteCountOf: (path: string) => number;
@@ -26,7 +44,7 @@ export type ReviewState = {
   readonly jumpTo: (path: string) => void;
 };
 
-const NO_FOLDERS_COLLAPSED: ReadonlySet<string> = new Set();
+const INITIALLY_COLLAPSED: ReadonlySet<string> = new Set([GENERATED_GROUP_ID]);
 
 export const useReviewState = ({ sessionId, worktreePath, diff }: Params): ReviewState => {
   const { comments: noteComments } = useDiffNotes({ sessionId });
@@ -41,11 +59,14 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
         : { ...noteComments, threads: [...noteComments.threads, ...reviewThreads] },
     [noteComments, reviewThreads],
   );
-  const tree = useMemo(() => buildChangeTree({ files: diff.files }), [diff.files]);
+  const [query, setQuery] = useState('');
+  const [unviewedOnly, setUnviewedOnly] = useState(false);
+  const [notesOnly, setNotesOnly] = useState(false);
+  const [group, setGroup] = useState<TreeGroup>('folders');
+  const { stateOf } = diff.viewed;
+  const isFiltering = query.trim() !== '' || unviewedOnly || notesOnly;
   const [activePath, setActivePath] = useState<string | null>(null);
-  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(NO_FOLDERS_COLLAPSED);
-  const rowsRef = useRef(tree.rows);
-  rowsRef.current = tree.rows;
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(INITIALLY_COLLAPSED);
   const { focusFile } = diff;
 
   const noteCounts = useMemo(() => {
@@ -58,6 +79,25 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
     return counts;
   }, [comments.threads]);
   const noteCountOf = useCallback((path: string) => noteCounts.get(path) ?? 0, [noteCounts]);
+
+  const shownFiles = useMemo(
+    () =>
+      filterFiles({ files: diff.files, query }).filter(
+        (file) =>
+          (!unviewedOnly || stateOf(file) !== 'viewed') &&
+          (!notesOnly || (noteCounts.get(file.path) ?? 0) > 0),
+      ),
+    [diff.files, noteCounts, notesOnly, query, stateOf, unviewedOnly],
+  );
+  const tree = useMemo(() => buildChangeTree({ files: shownFiles, group }), [group, shownFiles]);
+  const rowsRef = useRef(tree.rows);
+  rowsRef.current = tree.rows;
+
+  const clearFilters = useCallback(() => {
+    setQuery('');
+    setUnviewedOnly(false);
+    setNotesOnly(false);
+  }, []);
 
   const reveal = useCallback((path: string) => {
     const ancestors = ancestorIds({ rows: rowsRef.current, path });
@@ -100,6 +140,17 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
 
   return {
     tree,
+    allFiles: diff.files,
+    query,
+    setQuery,
+    unviewedOnly,
+    setUnviewedOnly,
+    notesOnly,
+    setNotesOnly,
+    group,
+    setGroup,
+    isFiltering,
+    clearFilters,
     comments,
     viewed: diff.viewed,
     noteCountOf,

@@ -936,7 +936,7 @@ Goodboy chip never hides. Past that the glyph strip scrolls.
 There is one registry with three modifier planes: bare ⌘ for the app, ⌘⇧ for
 the session, ⌘⌥ for the lens surfaces. A fourth, `pane`, holds plain keys a
 surface answers while it is on screen: the diff's [ and ] (previous and next
-file). Nobody writes a combo string by hand
+file) and T (focus the file filter). Nobody writes a combo string by hand
 outside the registry. So no two surfaces can claim the same chord, and no
 shortcut can exist without being documented. That holds for per-OS combos
 too. An entry carries its own combo for other systems where the plain mapping
@@ -1671,7 +1671,15 @@ check when viewed (its name goes grey) or an amber dot when it changed after
 it was viewed, the name (a rename shows `from <old path>` under it, a deleted
 file is struck through), its open notes, `+N −N` and the status letter.
 `N of M viewed` and a 2px bar head the tree, and no longer sit in the toolbar.
-Viewed marks are stored per session, mount and view, so two repos in one session
+Under the head a filter field (`T` focuses it, `Esc` clears it) matches a
+subsequence of the path, `Unviewed` and `With notes` chips narrow it further,
+and `Group: Folders | Kind` regroups the tree under Source, Tests, Config and
+Docs (each file then shows its folder beside the name). The filter narrows the
+diff as well as the tree, `Showing n of N` with `Clear` says so, and a filter
+that hides everything leaves `No files match` with `Clear` in both panes
+(`filterFiles` in `changeTree.ts`). Generated files (lockfiles, `dist`, `build`,
+`vendor`, minified and map files) sit in a closed `Generated` row at the bottom
+in both groupings and at the end of the diff. Viewed marks are stored per session, mount and view, so two repos in one session
 keep their own; marks saved before that are read until the mount saves its own.
 Click a file and the
 diff scrolls to it; scroll the diff and the tree highlights the file in view and

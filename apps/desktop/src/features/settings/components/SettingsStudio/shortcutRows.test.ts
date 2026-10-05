@@ -35,6 +35,7 @@ describe('shortcutRows', () => {
     expect(shortcutRows({ group: 'diff' }).map((row) => row.first)).toEqual([
       'diff.previousFile',
       'diff.nextFile',
+      'diff.focusFilter',
     ]);
   });
 

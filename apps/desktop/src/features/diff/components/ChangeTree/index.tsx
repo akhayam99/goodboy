@@ -1,16 +1,37 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import { Check, ChevronRight, MessageSquare } from 'lucide-react';
-import { ScrollFade, cn, tintClasses } from '@goodboy/ui';
+import { Button, ScrollFade, cn, tintClasses } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { visibleRows, type ChangeTree as ChangeTreeModel } from '../../lib/changeTree';
+import {
+  visibleRows,
+  type ChangeTree as ChangeTreeModel,
+  type TreeGroup,
+} from '../../lib/changeTree';
 import { STATUS_LETTER, STATUS_TONE, STATUS_WORD } from '../../lib/fileStatus';
 import type { ViewedState } from '../../lib/reviewedFiles';
 import { Delta } from './Delta';
 import { ProgressRing } from './ProgressRing';
+import { TreeHead } from './TreeHead';
+
+export type TreeFilter = {
+  readonly query: string;
+  readonly onQuery: (query: string) => void;
+  readonly unviewedOnly: boolean;
+  readonly onUnviewedOnly: (next: boolean) => void;
+  readonly notesOnly: boolean;
+  readonly onNotesOnly: (next: boolean) => void;
+  readonly group: TreeGroup;
+  readonly onGroup: (group: TreeGroup) => void;
+  readonly isFiltering: boolean;
+  readonly onClear: () => void;
+};
 
 type Props = {
   readonly tree: ChangeTreeModel;
+  readonly allFiles: ReadonlyArray<FileDiff>;
+  readonly filter: TreeFilter;
+  readonly filterRef: RefObject<HTMLInputElement | null>;
   readonly activePath: string | null;
   readonly collapsed: ReadonlySet<string>;
   readonly onToggleFolder: (id: string) => void;
@@ -24,6 +45,9 @@ const BASE_PX = 8;
 
 export const ChangeTree = ({
   tree,
+  allFiles,
+  filter,
+  filterRef,
   activePath,
   collapsed,
   onToggleFolder,
@@ -33,14 +57,13 @@ export const ChangeTree = ({
 }: Props) => {
   const rows = useMemo(() => visibleRows({ rows: tree.rows, collapsed }), [tree.rows, collapsed]);
   const states = useMemo(
-    () => new Map(tree.files.map((file) => [file.path, stateOf(file)] as const)),
-    [tree.files, stateOf],
+    () => new Map(allFiles.map((file) => [file.path, stateOf(file)] as const)),
+    [allFiles, stateOf],
   );
   const viewedCount = useMemo(
     () => [...states.values()].filter((state) => state === 'viewed').length,
     [states],
   );
-  const share = tree.files.length === 0 ? 0 : viewedCount / tree.files.length;
   const activeRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
@@ -49,21 +72,31 @@ export const ChangeTree = ({
 
   return (
     <nav aria-label="Changed files" className="flex min-h-0 w-full min-w-0 flex-col">
-      <div className="flex flex-col gap-2 px-3 pb-2">
-        <p className="text-meta tabular-nums text-muted-foreground">
-          {viewedCount} of {tree.files.length} viewed
-        </p>
-        <span
-          aria-hidden
-          className="relative block h-0.5 overflow-hidden rounded-full bg-border-soft"
-        >
-          <span
-            className="absolute inset-y-0 left-0 block rounded-full bg-primary"
-            style={{ width: `${Math.round(share * 100)}%` }}
-          />
-        </span>
-      </div>
+      <TreeHead
+        viewed={viewedCount}
+        total={allFiles.length}
+        query={filter.query}
+        onQuery={filter.onQuery}
+        filterRef={filterRef}
+        unviewedOnly={filter.unviewedOnly}
+        onUnviewedOnly={filter.onUnviewedOnly}
+        notesOnly={filter.notesOnly}
+        onNotesOnly={filter.onNotesOnly}
+        group={filter.group}
+        onGroup={filter.onGroup}
+        shown={tree.files.length}
+        isFiltering={filter.isFiltering}
+        onClear={filter.onClear}
+      />
       <ScrollFade className="min-h-0 flex-1" fadeSize="h-6">
+        {rows.length === 0 && filter.isFiltering ? (
+          <div className="flex flex-col items-start gap-2 px-3 py-2 text-meta text-muted-foreground">
+            <p>No files match.</p>
+            <Button size="sm" variant="ghost" onClick={filter.onClear}>
+              Clear
+            </Button>
+          </div>
+        ) : null}
         <ul className="flex min-w-0 flex-col px-1 pb-4">
           {rows.map((row) => {
             const indent = BASE_PX + row.depth * INDENT_PX;
@@ -136,13 +169,20 @@ export const ChangeTree = ({
                     ) : null}
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col">
-                    <span
-                      className={cn(
-                        'truncate',
-                        row.file.status === 'deleted' && 'text-faint-foreground line-through',
+                    <span className="flex min-w-0 items-baseline gap-1.5">
+                      <span
+                        className={cn(
+                          'truncate',
+                          row.file.status === 'deleted' && 'text-faint-foreground line-through',
+                        )}
+                      >
+                        {row.name}
+                      </span>
+                      {row.dir === null ? null : (
+                        <span className="min-w-0 truncate text-meta text-faint-foreground">
+                          {row.dir}
+                        </span>
                       )}
-                    >
-                      {row.name}
                     </span>
                     {row.fromPath === null ? null : (
                       <span className="truncate text-meta text-faint-foreground">

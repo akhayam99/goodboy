@@ -167,3 +167,88 @@ const WEBHOOK_TEST: FilePatch = {
 };
 
 export const CTX_PATCH = `${[APPLY_WEBHOOK, POST_CREDIT, WEBHOOK_TEST].map(fileText).join('\n')}\n`;
+
+export const RENAMED_PATH = 'src/ledger/ledgerClient.ts';
+export const RENAMED_FROM = 'src/ledger/client.ts';
+export const DELETED_PATH = 'src/webhooks/seenEvents.ts';
+
+const RENAMED_HUNK: Hunk = {
+  oldStart: 1,
+  newStart: 1,
+  context: '',
+  lines: [
+    " import { createClient } from '../processor/client';",
+    ' ',
+    "-export const ledger = createClient({ service: 'ledger' });",
+    '+export const ledger = createClient({',
+    "+  service: 'ledger',",
+    '+  retries: 3,',
+    '+});',
+    ' ',
+    ' export type LedgerPost = {',
+    '   account: string;',
+    '   amount: number;',
+    "   kind: 'credit' | 'debit';",
+    '+  idempotencyKey?: string;',
+    ' };',
+  ],
+};
+
+const RENAMED_TEXT = [
+  `diff --git a/${RENAMED_FROM} b/${RENAMED_PATH}`,
+  'similarity index 88%',
+  `rename from ${RENAMED_FROM}`,
+  `rename to ${RENAMED_PATH}`,
+  'index 7a2e4c1..c90d3f5 100644',
+  `--- a/${RENAMED_FROM}`,
+  `+++ b/${RENAMED_PATH}`,
+  hunkText(RENAMED_HUNK),
+].join('\n');
+
+const DELETED_LINES: ReadonlyArray<string> = [
+  "-import { db } from '../db';",
+  '-',
+  '-export const seenEvents = {',
+  '-  has: async (id: string): Promise<boolean> => {',
+  "-    return (await db.get('seen_events', id)) !== null;",
+  '-  },',
+  '-  add: async (id: string): Promise<void> => {',
+  "-    await db.insert('seen_events', { id });",
+  '-  },',
+  '-};',
+];
+
+const DELETED_TEXT = [
+  `diff --git a/${DELETED_PATH} b/${DELETED_PATH}`,
+  'deleted file mode 100644',
+  'index 9d41b07..0000000',
+  `--- a/${DELETED_PATH}`,
+  '+++ /dev/null',
+  `@@ -1,${DELETED_LINES.length} +0,0 @@`,
+  ...DELETED_LINES,
+].join('\n');
+
+export const LOCKFILE_PATH = 'pnpm-lock.yaml';
+
+const LOCKFILE: FilePatch = {
+  path: LOCKFILE_PATH,
+  index: 'e1b40a7..2f8c6d3',
+  hunks: [
+    {
+      oldStart: 212,
+      newStart: 212,
+      context: 'packages:',
+      lines: [
+        '   /pg@8.11.3:',
+        '-    resolution: {integrity: sha512-WQd0Qk5T1Yv3hZq0b6VtLm1aN9r2uK8jZc4oXe7sPfRw1Hg5nJ6yBvKiEw3dCaMxUq0tTlFo2zSrG8hYpVbD1A==}',
+        '+    resolution: {integrity: sha512-bL3nR8vE5qXw0dYtJ4hZk7uPc2mFa9sGoT1eCiNx6yWrKj8VzQ0HbDlA3tUMgSf5pOEv2xYn7ZkRq1cJh4wB9g==}',
+        '     engines: {node: ">= 8.0.0"}',
+      ],
+    },
+  ],
+};
+
+export const BRANCH_FILES_PATCH = `${[APPLY_WEBHOOK, POST_CREDIT, WEBHOOK_TEST]
+  .map(fileText)
+  .concat(RENAMED_TEXT, DELETED_TEXT, fileText(LOCKFILE))
+  .join('\n')}\n`;

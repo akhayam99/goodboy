@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { FileDiff } from '@goodboy/types';
-import { ancestorIds, buildChangeTree, visibleRows } from './changeTree';
+import { ancestorIds, buildChangeTree, filterFiles, visibleRows } from './changeTree';
 import { fileKindOf } from './fileStatus';
 
 const fileAt = (path: string, extra: Partial<FileDiff> = {}): FileDiff => ({
@@ -138,6 +138,84 @@ describe('ancestorIds', () => {
       'src',
     ]);
     expect(ancestorIds({ rows, path: 'package.json' })).toEqual([]);
+  });
+});
+
+describe('buildChangeTree groups', () => {
+  const MIXED = [
+    ...SAMPLE,
+    fileAt('pnpm-lock.yaml', { additions: 300, deletions: 80 }),
+    fileAt('dist/bundle.js'),
+    fileAt('test/ledger/buildCsv.test.ts'),
+  ];
+
+  it('moves generated files out of the folders into one row at the bottom', () => {
+    const { rows, files } = buildChangeTree({ files: MIXED });
+    const last = rows.filter((row) => row.kind === 'folder').at(-1);
+
+    expect(last).toMatchObject({
+      id: 'group:generated',
+      label: 'Generated',
+      fileCount: 2,
+      additions: 302,
+      deletions: 81,
+      depth: 0,
+    });
+    expect(rows.find((row) => row.id === 'dist')).toBeUndefined();
+    expect(files.slice(-2).map((file) => file.path)).toEqual(['dist/bundle.js', 'pnpm-lock.yaml']);
+  });
+
+  it('groups by kind in a fixed order with the folder kept beside each name', () => {
+    const { rows } = buildChangeTree({ files: MIXED, group: 'kind' });
+
+    expect(rows.filter((row) => row.kind === 'folder').map((row) => row.label)).toEqual([
+      'Source',
+      'Tests',
+      'Config',
+      'Docs',
+      'Generated',
+    ]);
+    const csv = rows.find((row) => row.id === 'src/ledger/export/csv.ts');
+    expect(csv).toMatchObject({
+      kind: 'file',
+      depth: 1,
+      dir: 'src/ledger/export',
+      parentId: 'group:source',
+    });
+  });
+
+  it('leaves out kinds that have no file', () => {
+    const { rows } = buildChangeTree({ files: [fileAt('src/a.ts')], group: 'kind' });
+
+    expect(rows.filter((row) => row.kind === 'folder').map((row) => row.label)).toEqual(['Source']);
+  });
+
+  it('keeps no folder dir on rows in the folder grouping', () => {
+    const { rows } = buildChangeTree({ files: SAMPLE });
+
+    expect(rows.filter((row) => row.kind === 'file').every((row) => row.dir === null)).toBe(true);
+  });
+});
+
+describe('filterFiles', () => {
+  it('keeps the order of the files and matches a subsequence of the path', () => {
+    const out = filterFiles({ files: SAMPLE, query: 'exp' });
+
+    expect(out.map((file) => file.path)).toEqual([
+      'src/ledger/export/page.tsx',
+      'src/ledger/export/buildCsv.ts',
+      'src/ledger/export/csv.ts',
+      'docs/export.md',
+    ]);
+  });
+
+  it('returns the same list for an empty or blank query', () => {
+    expect(filterFiles({ files: SAMPLE, query: '  ' })).toBe(SAMPLE);
+  });
+
+  it('is case insensitive and finds nothing for an unrelated query', () => {
+    expect(filterFiles({ files: SAMPLE, query: 'BUILDCSV' })).toHaveLength(1);
+    expect(filterFiles({ files: SAMPLE, query: 'zzz' })).toEqual([]);
   });
 });
 

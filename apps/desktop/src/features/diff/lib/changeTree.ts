@@ -1,5 +1,5 @@
 import type { FileDiff } from '@goodboy/types';
-import { fileKindOf, type FileKind } from './fileStatus';
+import { fileKindOf, isGeneratedPath, type FileKind } from './fileStatus';
 
 type TreeFolderRow = {
   readonly kind: 'folder';
@@ -22,9 +22,21 @@ type TreeFileRow = {
   readonly file: FileDiff;
   readonly fileKind: FileKind;
   readonly fromPath: string | null;
+  readonly dir: string | null;
 };
 
 export type TreeRow = TreeFolderRow | TreeFileRow;
+
+export type TreeGroup = 'folders' | 'kind';
+
+export const GENERATED_GROUP_ID = 'group:generated';
+
+const KIND_GROUPS: ReadonlyArray<{ readonly kind: FileKind; readonly label: string }> = [
+  { kind: 'source', label: 'Source' },
+  { kind: 'test', label: 'Tests' },
+  { kind: 'config', label: 'Config' },
+  { kind: 'docs', label: 'Docs' },
+];
 
 export type ChangeTree = {
   readonly rows: ReadonlyArray<TreeRow>;
@@ -59,7 +71,17 @@ const fromPathOf = (file: FileDiff): string | null =>
     ? file.oldPath
     : null;
 
-const fileRow = (file: FileDiff, parentId: string | null, depth: number): TreeFileRow => ({
+const dirOf = (path: string): string | null => {
+  const slash = path.lastIndexOf('/');
+  return slash < 0 ? null : path.slice(0, slash);
+};
+
+const fileRow = (
+  file: FileDiff,
+  parentId: string | null,
+  depth: number,
+  flat = false,
+): TreeFileRow => ({
   kind: 'file',
   id: file.path,
   parentId,
@@ -68,7 +90,42 @@ const fileRow = (file: FileDiff, parentId: string | null, depth: number): TreeFi
   file,
   fileKind: fileKindOf(file.path),
   fromPath: fromPathOf(file),
+  dir: flat ? dirOf(file.path) : null,
 });
+
+const emitFlatGroup = ({
+  id,
+  label,
+  files,
+  rows,
+  ordered,
+}: {
+  readonly id: string;
+  readonly label: string;
+  readonly files: ReadonlyArray<FileDiff>;
+  readonly rows: TreeRow[];
+  readonly ordered: FileDiff[];
+}): void => {
+  if (files.length === 0) {
+    return;
+  }
+  const sorted = [...files].sort((a, b) => compare(a.path, b.path));
+  rows.push({
+    kind: 'folder',
+    id,
+    parentId: null,
+    label,
+    depth: 0,
+    fileCount: sorted.length,
+    additions: sorted.reduce((sum, file) => sum + file.additions, 0),
+    deletions: sorted.reduce((sum, file) => sum + file.deletions, 0),
+    paths: sorted.map((file) => file.path),
+  });
+  for (const file of sorted) {
+    rows.push(fileRow(file, id, 1, true));
+    ordered.push(file);
+  }
+};
 
 const emitFolder = (
   node: Node,
@@ -128,17 +185,15 @@ const emitFolder = (
   return done;
 };
 
-export const buildChangeTree = ({
-  files,
-}: {
-  readonly files: ReadonlyArray<FileDiff>;
-}): ChangeTree => {
+const buildFolderRows = (
+  files: ReadonlyArray<FileDiff>,
+  rows: TreeRow[],
+  ordered: FileDiff[],
+): void => {
   const root = newNode('');
   for (const file of files) {
     insert(root, file);
   }
-  const rows: TreeRow[] = [];
-  const ordered: FileDiff[] = [];
   for (const sub of [...root.dirs.values()].sort((a, b) => compare(a.name, b.name))) {
     emitFolder(sub, null, 0, rows, ordered);
   }
@@ -146,7 +201,62 @@ export const buildChangeTree = ({
     rows.push(fileRow(file, null, 0));
     ordered.push(file);
   }
+};
+
+export const buildChangeTree = ({
+  files,
+  group = 'folders',
+}: {
+  readonly files: ReadonlyArray<FileDiff>;
+  readonly group?: TreeGroup;
+}): ChangeTree => {
+  const rows: TreeRow[] = [];
+  const ordered: FileDiff[] = [];
+  const generated = files.filter((file) => isGeneratedPath(file.path));
+  const authored = files.filter((file) => !isGeneratedPath(file.path));
+  if (group === 'kind') {
+    for (const { kind, label } of KIND_GROUPS) {
+      emitFlatGroup({
+        id: `group:${kind}`,
+        label,
+        files: authored.filter((file) => fileKindOf(file.path) === kind),
+        rows,
+        ordered,
+      });
+    }
+  } else {
+    buildFolderRows(authored, rows, ordered);
+  }
+  emitFlatGroup({ id: GENERATED_GROUP_ID, label: 'Generated', files: generated, rows, ordered });
   return { rows, files: ordered };
+};
+
+const subsequenceScore = (haystack: string, needle: string): number | null => {
+  let from = 0;
+  let gaps = 0;
+  for (const char of needle) {
+    const at = haystack.indexOf(char, from);
+    if (at < 0) {
+      return null;
+    }
+    gaps += at - from;
+    from = at + 1;
+  }
+  return gaps;
+};
+
+export const filterFiles = ({
+  files,
+  query,
+}: {
+  readonly files: ReadonlyArray<FileDiff>;
+  readonly query: string;
+}): ReadonlyArray<FileDiff> => {
+  const needle = query.trim().toLowerCase();
+  if (needle === '') {
+    return files;
+  }
+  return files.filter((file) => subsequenceScore(file.path.toLowerCase(), needle) !== null);
 };
 
 export const visibleRows = ({

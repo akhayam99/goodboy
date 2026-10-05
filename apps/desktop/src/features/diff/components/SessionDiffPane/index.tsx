@@ -1,4 +1,4 @@
-import { useCallback, useMemo, type ReactNode } from 'react';
+import { useCallback, useMemo, useRef, type ReactNode } from 'react';
 import { PencilLine } from 'lucide-react';
 import { Button, ErrorStrip, LensEmptyState, PageColumn, Skeleton, formatError } from '@goodboy/ui';
 import type { DiffView as DiffViewKind, SessionId } from '@goodboy/types';
@@ -7,6 +7,7 @@ import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/s
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { openFileInWorkspace } from '../../../../shared/lib/editor';
 import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
+import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { DiffViewSelector } from '../../../permissions/components/DiffViewSelector';
 import { useReviewState } from '../../hooks/useReviewState';
 import type { SessionDiff } from '../../hooks/useSessionDiff';
@@ -71,8 +72,38 @@ export const SessionDiffPane = ({
     selectMountBaseBranch({ state: s, sessionId, path: worktreePath }),
   );
 
+  const filterRef = useRef<HTMLInputElement | null>(null);
+  useShortcut('diff.focusFilter', () => filterRef.current?.focus());
+
   const isEmpty = !diff.loading && diff.error === null && diff.files.length === 0;
   const hasTree = !diff.loading && diff.error === null && diff.files.length > 0;
+  const isFilteredOut = hasTree && review.tree.files.length === 0;
+  const filter = useMemo(
+    () => ({
+      query: review.query,
+      onQuery: review.setQuery,
+      unviewedOnly: review.unviewedOnly,
+      onUnviewedOnly: review.setUnviewedOnly,
+      notesOnly: review.notesOnly,
+      onNotesOnly: review.setNotesOnly,
+      group: review.group,
+      onGroup: review.setGroup,
+      isFiltering: review.isFiltering,
+      onClear: review.clearFilters,
+    }),
+    [
+      review.clearFilters,
+      review.group,
+      review.isFiltering,
+      review.notesOnly,
+      review.query,
+      review.setGroup,
+      review.setNotesOnly,
+      review.setQuery,
+      review.setUnviewedOnly,
+      review.unviewedOnly,
+    ],
+  );
 
   const openInEditor = useCallback(
     async (filePath: string) => {
@@ -163,9 +194,23 @@ export const SessionDiffPane = ({
         description={emptyBlurb(diff.view, baseBranch)}
       />
     </PageColumn>
+  ) : isFilteredOut ? (
+    <PageColumn>
+      <LensEmptyState
+        tone={CONCEPT_TONE.diff}
+        icon={CONCEPT_ICONS.diff}
+        title="No files match"
+        description="Nothing in this diff matches the current filter."
+        action={
+          <Button size="sm" variant="secondary" onClick={review.clearFilters}>
+            Clear
+          </Button>
+        }
+      />
+    </PageColumn>
   ) : (
     <DiffView
-      files={diff.files}
+      files={review.tree.files}
       comments={review.comments}
       viewed={review.viewed}
       fileActions={fileActions}
@@ -194,6 +239,9 @@ export const SessionDiffPane = ({
         <aside aria-label="Files" className="hidden min-h-0 w-[280px] shrink-0 pl-3 @4xl:flex">
           <ChangeTree
             tree={review.tree}
+            allFiles={review.allFiles}
+            filter={filter}
+            filterRef={filterRef}
             activePath={review.activePath}
             collapsed={review.collapsed}
             onToggleFolder={review.toggleFolder}

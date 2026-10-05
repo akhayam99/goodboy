@@ -486,6 +486,13 @@ export const SHORTCUTS = {
     group: 'diff',
     scope: 'diff',
   },
+  'diff.focusFilter': {
+    combo: 'KeyT',
+    label: 'Filter files',
+    plane: 'pane',
+    group: 'diff',
+    scope: 'diff',
+  },
 
   'zoom.in': { combo: 'cmd+Equal', label: 'Zoom in', plane: 'app', group: 'window' },
   'zoom.out': { combo: 'cmd+Minus', label: 'Zoom out', plane: 'app', group: 'window' },
