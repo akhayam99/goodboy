@@ -5,6 +5,7 @@ export const STORAGE_KEYS = {
   pricingSortKey: `${PREFIX}pricing-sort-key`,
   diffLayoutMode: `${PREFIX}diff-layout-mode`,
   diffWrap: `${PREFIX}diff-wrap`,
+  diffTreeWidth: `${PREFIX}diff-tree-width`,
   sessionSidebarCollapsed: `${PREFIX}sessions-sidebar-collapsed`,
   leftSidebarWidth: `${PREFIX}left-sidebar-width:v2`,
   changelogCache: `${PREFIX}changelog-cache:v1`,
