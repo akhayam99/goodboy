@@ -13,7 +13,7 @@ const FACTS: readonly CardRowItem[] = [
   {
     key: 'repos',
     title: 'One task, several repos',
-    caption: 'Each branch gets its own working copy.',
+    caption: 'Each branch gets its own git worktree.',
   },
 ];
 
@@ -24,7 +24,7 @@ export const SharedContext = () => (
         headingId="context-title"
         eyebrow="Shared context"
         eyebrowKind="group"
-        heading={'Stop re‑explaining yourself'}
+        heading="Stop re-explaining yourself"
         lead="Goals and decisions live inside the task. The next agent reads them instead of asking you."
         isCentered
         className="sharedContextHead"

@@ -27,7 +27,7 @@ export const Hero = () => {
             Give your agents a structure to work in
           </h1>
           <p className="lead rise" style={rise(2)}>
-            One app to plan, run and review your code, with the subscriptions you already have.
+            Run Claude Code, Codex and Cursor on one task, with the subscriptions you already have.
           </p>
           <div className="ctaRow onlyFine rise" style={rise(3)}>
             <a className="btn" href={primary.href} data-download>

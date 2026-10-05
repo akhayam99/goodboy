@@ -1,5 +1,6 @@
 {
   "version": "0.12.1",
+  "date": "2026-09-28",
   "summary": "Rewrite history is rebuilt: drag commits to fold, squash or move them, and see what the branch becomes before you apply.",
   "new": [
     {

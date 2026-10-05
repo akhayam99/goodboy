@@ -1,5 +1,6 @@
 {
   "version": "0.17.1",
+  "date": "2026-10-04",
   "summary": "The resolver Brief always shows its comment and next action, a step's subagents hang from the step, and every provider page has the same CLI row.",
   "new": [],
   "groups": [

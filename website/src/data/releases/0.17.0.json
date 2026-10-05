@@ -1,5 +1,6 @@
 {
   "version": "0.17.0",
+  "date": "2026-10-04",
   "summary": "Every Activity group hangs on a numbered ball, a review comment is the message the agent gets, and each thing has one name.",
   "new": [
     {

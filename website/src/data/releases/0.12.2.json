@@ -1,5 +1,6 @@
 {
   "version": "0.12.2",
+  "date": "2026-09-28",
   "summary": "Typing the start of any word in Cmd+K finds the action you meant, and a waiting agent is the one thing marked in the activity.",
   "new": [],
   "groups": [

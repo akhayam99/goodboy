@@ -94,7 +94,7 @@ export const Cluster = ({ cluster }: Props) => {
       <p className="ftGuide" data-reveal="">
         <span>In the guide:</span>
         {cluster.guides.map((guide) => (
-          <a key={guide.area} className="refLink" href={SITE.featureDoc(guide.area)}>
+          <a key={guide.area} className="refLink" href={SITE.doc(guide.area)}>
             {guide.label}
           </a>
         ))}

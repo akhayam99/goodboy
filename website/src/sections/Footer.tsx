@@ -21,16 +21,17 @@ const COLUMNS: readonly Column[] = [
       { label: 'All features', href: SITE.features },
       { label: 'How it works', href: SITE.howItWorks },
       { label: 'Workflows', href: `${SITE.features}#workflows` },
-      { label: 'Releases', href: SITE.releases },
+      { label: 'Changelog', href: SITE.changelog },
     ],
   },
   {
     title: 'Docs',
     links: [
-      { label: 'Getting started', href: SITE.gettingStarted },
-      { label: 'Concepts', href: SITE.featureGuide },
-      { label: 'Providers', href: SITE.featureDoc('providers') },
-      { label: 'Workflows guide', href: SITE.featureDoc('workflows') },
+      { label: 'Getting started', href: SITE.doc('setup') },
+      { label: 'All docs', href: SITE.docs },
+      { label: 'Providers', href: SITE.doc('providers') },
+      { label: 'Workflows guide', href: SITE.doc('workflows') },
+      { label: 'Docs on GitHub', href: SITE.featureGuide },
     ],
   },
   {
@@ -38,7 +39,7 @@ const COLUMNS: readonly Column[] = [
     links: [
       { label: 'GitHub', href: SITE.repo },
       { label: 'Follow on X', href: SITE.x },
-      { label: 'Changelog', href: SITE.changelog },
+      { label: 'Releases', href: SITE.releases },
       { label: 'Security', href: SITE.security },
       { label: 'Report a bug', href: SITE.newIssue },
     ],

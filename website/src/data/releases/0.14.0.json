@@ -1,5 +1,6 @@
 {
   "version": "0.14.0",
+  "date": "2026-09-30",
   "summary": "Fix review comments in parallel on GitHub, GitLab and Bitbucket, start and track sessions from a chat, and read an agent's header in two rows.",
   "new": [
     {

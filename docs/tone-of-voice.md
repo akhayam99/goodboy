@@ -24,7 +24,9 @@ talking to a market. There are two voices:
 ### Words to avoid
 
 - **"AI"**. Say `agent`, `model`, `Claude`, `Codex`, `Cursor`, `Antigravity`, or the
-  specific behavior.
+  specific behavior. The one exception is a website page title, which may say
+  "AI coding agent" because that is what people type into a search box. The
+  visible copy on the page still avoids it.
 - Fluff: **"powered by"**, **"intelligent"**, **"smart"**, **"seamless"**,
   **"revolutionary"**, **"blazing fast"**, **"next-gen"**.
 - Minimizers: **"simply"**, **"just"**, **"obviously"**, **"basically"**.
