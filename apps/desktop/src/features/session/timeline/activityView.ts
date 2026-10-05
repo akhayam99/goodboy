@@ -1,5 +1,5 @@
 import type { SessionEvent } from '@goodboy/types';
-import { historyRowControls } from '../../history/historyRowControls';
+import { hasHistoryRecovery } from '../../history/historyRecovery';
 import type { TimelineEventEntry, TimelineTopLevelEntry } from './buildTimelineGroups';
 
 export type ActivityView = 'activity' | 'log';
@@ -27,7 +27,7 @@ const hasRecovery = ({
   if (event.kind === 'branch_deleted') {
     return event.payload?.deletedBranchId !== undefined;
   }
-  return historyRowControls({ event, events }) !== null;
+  return hasHistoryRecovery({ event, events });
 };
 
 const eventViewOf = ({

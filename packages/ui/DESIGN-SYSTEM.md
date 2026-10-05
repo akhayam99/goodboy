@@ -366,9 +366,11 @@ exactly one home (`activityView.ts`, `entriesOfView`):
   launch folds what happens inside it into its own row: steps and subagents
   (a chip, "4 subagents"), answered questions (the tally), and its plans,
   reports, wireframes and learnings behind the chip "N outputs", which opens
-  them as rows below the launch. A row that still carries a recovery
-  (`Undo rewrite`, `Restore previous history`, `Restore branch`, `Retry with a
-note`) stays in Activity and keeps its `⋯` menu. No other row has a `⋯`.
+  them as rows below the launch. A history row that still has a recovery
+  (a rewrite with a backup, a push, a stopped rewrite) stays in Activity with
+  no verb and no `⋯` of its own: `Undo rewrite`, `Restore previous history`,
+  `Retry` and `Retry with a note` live in the Commits tab of the Branch page,
+  and the row opens it. No Activity row has a `⋯`.
 - **Log** holds the facts: plans, reports, wireframes and learnings without a
   launch, Context, branch and worktree events, link events (an unlink carries
   **Re-link**), pull request events, answered questions without a launch and
@@ -664,9 +666,9 @@ when the model column folds to a glyph).
 
 The activity timeline has no routing column. Its agent rows draw the provider
 glyph at the left of the title, and the model and effort stay in the row
-tooltip and in the Brief. A row reserves an action or a menu slot only when it
-has one: a row that cannot ask and has no menu ends at its cost, so the right
-edge carries no empty band. Cost and duration stay on the row.
+tooltip and in the Brief. A row reserves an action slot only when it has one: a
+row that cannot ask ends at its cost, so the right edge carries no empty band.
+It has no menu slot. Cost and duration stay on the row.
 
 The narrow rules are container queries, never window breakpoints, because
 the same feed sits in a wide overview and in a split pane. The activity feed

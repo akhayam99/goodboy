@@ -1,4 +1,3 @@
-import { OverflowMenu } from '@goodboy/ui';
 import type {
   EffortLevel,
   ProviderId,
@@ -7,7 +6,6 @@ import type {
   Step,
 } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../../store';
-import type { HistoryRowActions } from '../../../../../history/useHistoryRowActions';
 import type { RailRow } from '../../../../../workTreeModel/railGeometry';
 import type { TimelineOpenTarget } from '../../../../hooks/useTimelineOpen';
 import type { DecisionChangeDetail } from '../../../../timeline/decisionChangeLines';
@@ -50,7 +48,6 @@ export type TimelineEntryRowProps = {
   readonly actionLabel: string | null;
   readonly actionVariant: TimelineRowAction['variant'] | null;
   readonly actionBusy: boolean;
-  readonly historyMenu: HistoryRowActions['menu'] | null;
   readonly diffStat: MountDiffStat | null;
   readonly worktrees: ReadonlyArray<string>;
   readonly step: Step | null;
@@ -74,7 +71,6 @@ export const TimelineEntryRow = ({
   actionLabel,
   actionVariant,
   actionBusy,
-  historyMenu,
   diffStat,
   worktrees,
   step,
@@ -186,14 +182,6 @@ export const TimelineEntryRow = ({
     );
   }
   const detailId = `${item.id}-decision-changes`;
-  const menu =
-    historyMenu === null || historyMenu.length === 0 ? null : (
-      <OverflowMenu
-        items={historyMenu}
-        label="More for this rewrite"
-        triggerClassName="size-6 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 motion-safe:transition-opacity"
-      />
-    );
   return (
     <TimelineStreamRow
       item={item}
@@ -224,7 +212,6 @@ export const TimelineEntryRow = ({
       action={action}
       diffStat={diffStat}
       runLane={runLane}
-      menu={menu}
       {...(entry.kind === 'resolveFile'
         ? {
             state: <TimelineRowStateLine state={item.rowState} />,

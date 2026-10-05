@@ -321,6 +321,60 @@ describe('TimelinePane Activity and Log', () => {
     expect(screen.getByText('Nothing in the log matches')).toBeDefined();
   });
 
+  it('keeps the rewrite rows in Activity with no recovery verb and no menu: recovery lives in Commits', () => {
+    storeState.sessionEvents = {
+      'session-1': [
+        {
+          id: 'ev-rewritten',
+          sessionId: 'session-1',
+          kind: 'history_rewritten',
+          payload: {
+            mountId: 'mount-ledger',
+            branch: 'fix/ledger-postings',
+            backupRef: 'refs/goodboy/backup/fix/1',
+          },
+          createdAt: '2026-08-20T10:00:00.000Z',
+        },
+        {
+          id: 'ev-pushed',
+          sessionId: 'session-1',
+          kind: 'history_pushed',
+          payload: { mountId: 'mount-notify', branch: 'feat/export' },
+          createdAt: '2026-08-20T11:00:00.000Z',
+        },
+        {
+          id: 'ev-stopped',
+          sessionId: 'session-1',
+          kind: 'history_stopped',
+          payload: {
+            mountId: 'mount-api',
+            branch: 'feat/api',
+            origin: 'plan',
+            reason: 'conflict',
+          },
+          createdAt: '2026-08-20T12:00:00.000Z',
+        },
+      ],
+    };
+
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    screen.getByText(/fix\/ledger-postings/);
+    screen.getByText(/feat\/export/);
+    screen.getByText(/feat\/api/);
+    for (const name of [
+      'Undo rewrite',
+      'Retry',
+      'Retry with a note',
+      'Restore previous history',
+      'Rewrite with an agent',
+      'Discard plan',
+    ]) {
+      expect(screen.queryByRole('button', { name })).toBeNull();
+    }
+    expect(screen.queryByRole('button', { name: 'More for this rewrite' })).toBeNull();
+  });
+
   it('offers Re-link on an unlink in the Log, which opens Link work on the overview', () => {
     vi.useFakeTimers();
     const opened = vi.fn();

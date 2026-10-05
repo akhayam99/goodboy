@@ -264,12 +264,12 @@ It includes:
 - History outcomes of Rewrite history and Rebase on main: `history_rewritten`,
   `history_pushed`, `history_stopped` and `history_restored`
 
-History rows are the only event rows with verbs, one primary and the rest in
-the row menu, and only while no later outcome of the same branch settled
-them: a rewrite offers `Undo rewrite`, a stopped one `Retry` (or `Retry with
-a note` when History rewriter needs you) with `Rewrite with an agent`,
-`Change the plan` and `Discard plan` behind it, a push `Restore previous
-history`. A stopped rewrite waits in Needs you until a later outcome settles it. Every notification
+History rows carry no verb and no `⋯`. They stay in Activity only while no
+later outcome of the same branch settled them, and the row opens the Commits
+tab of the Branch page, where the recovery lives: `Undo rewrite` for a
+rewrite, `Retry` (or `Retry with a note` when History rewriter needs you), `Rewrite with an agent`,
+`Change the plan` and `Discard plan` for a stopped one, `Restore previous
+history` for a push. A stopped rewrite waits in Needs you until a later outcome settles it. Every notification
 of the engine points at the row with `Open in Activity`, so closing it loses
 nothing.
 
@@ -286,9 +286,8 @@ the launch. The Log holds the facts: plans, reports, wireframes and learnings
 made without a launch, Context, branch and worktree events, link events (an
 unlink carries **Re-link**), pull request events and session archive and
 restore. It is flat, newest first, one muted row per fact, with a search box on
-top and no categories. A row that carries a recovery (`Undo rewrite`, `Restore
-previous history`, `Restore branch`, `Retry with a note`) stays in Activity
-until the Branch page takes that recovery.
+top and no categories. A history row that has a recovery stays in Activity and
+opens the Commits tab, which owns it; no Activity row has a `⋯`.
 
 A **Needs you** block sits on top of Activity, and only while something waits
 on you: one row per owner, never per child. A burst reads "Resolve #318 · 2

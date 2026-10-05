@@ -1,6 +1,6 @@
 import type { KeyboardEvent, ReactNode } from 'react';
 import type { ObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
-import { Button, Tooltip, WORK_META_COLUMN, WORK_ROW, cn, tintClasses } from '@goodboy/ui';
+import { Button, Tooltip, WORK_ROW, cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../../store';
 import { formatClock } from '../../../../../../shared/utils/time/formatClock';
@@ -43,7 +43,6 @@ type Props = {
   readonly meta?: ReactNode;
   readonly state?: ReactNode;
   readonly progress?: number | null;
-  readonly menu?: ReactNode;
   readonly subagents?: ReactNode;
   readonly outputs?: ReactNode;
   readonly runLane?: TimelineLaneTarget | null;
@@ -69,7 +68,6 @@ export const TimelineStreamRow = ({
   meta = null,
   state = null,
   progress = null,
-  menu = null,
   subagents = null,
   outputs = null,
   runLane = null,
@@ -224,11 +222,6 @@ export const TimelineStreamRow = ({
               >
                 {action.label}
               </Button>
-            </span>
-          )}
-          {menu == null ? null : (
-            <span className={WORK_META_COLUMN.menu} style={{ height: boxHeight }}>
-              {menu}
             </span>
           )}
         </div>

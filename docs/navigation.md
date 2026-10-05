@@ -1672,8 +1672,9 @@ Rewrite or `PR #N` control.
 surface (`CommitsHistory`), with `Refresh` and `Backups` at its top. Backups
 (`Restore previous history`, `Restore branch`) and the result of a run (`Undo
 rewrite`) live here. There is no Rewrite history page: the old `files/…/history`
-address, the palette verb, a mount row's `Rewrite history` and the recovery
-verbs of an Activity row all land on `branch/commits`. **Checks.** The checks of the pull request.
+address, the palette verb, a mount row's `Rewrite history` and an Activity
+history row (which has no verb and no `⋯` of its own) all land on
+`branch/commits`. **Checks.** The checks of the pull request.
 
 The Branch page shows one branch. The trail carries the choice (see Segment
 menus); there are no worktree tabs. Every rewrite takes the shown
