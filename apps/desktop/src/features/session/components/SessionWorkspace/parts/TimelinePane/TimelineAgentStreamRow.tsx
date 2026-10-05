@@ -1,18 +1,28 @@
+import { useContext, useMemo } from 'react';
 import { useObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
 import type {
   EffortLevel,
+  MeasuredTurnSpan,
   ProviderId,
   RoleModelPreferences,
   SessionId,
   Step,
 } from '@goodboy/types';
+import { formatUsd } from '@goodboy/ui';
 import type { MountDiffStat } from '../../../../../../store';
 import type { RailRow } from '../../../../../workTreeModel/railGeometry';
+import { WorkTimeContext } from '../../../../../workTreeModel/workTimeSource';
+import { agentKindPalette } from '../../../../agent-kind';
 import { useAgentRowWork } from '../../../../hooks/useAgentRowWork';
 import type { TimelineOpenTarget } from '../../../../hooks/useTimelineOpen';
 import type { TimelineAgentEntry } from '../../../../timeline/buildTimelineGroups';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
-import { TimelineAgentMeta } from './TimelineAgentMeta';
+import { agentRanModels, modelsSummary } from '../../../../timeline/ranModels';
+import { RowIdentityCard } from './RowIdentityCard';
+import { RowModelsCard } from './RowModelsCard';
+import { TimelineModelCell } from './TimelineModelCell';
+import { TimelineRowMeta } from './TimelineRowMeta';
+import type { TimelineRowIdentity } from './timelineRowIdentity';
 import { TimelineOutputsChip } from './TimelineOutputsChip';
 import { TimelineSubagentsChip } from './TimelineSubagentsChip';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
@@ -39,6 +49,8 @@ type Props = {
   readonly isOutputsExpanded: boolean;
   readonly onSetSubagents: (params: { readonly id: string; readonly isExpanded: boolean }) => void;
 };
+
+const NO_SPANS: ReadonlyArray<MeasuredTurnSpan> = [];
 
 export const TimelineAgentStreamRow = ({
   item,
@@ -73,6 +85,48 @@ export const TimelineAgentStreamRow = ({
     sessionEffort,
     phase: item.rowState.phase,
   });
+  const source = useContext(WorkTimeContext);
+  const spans = source?.spans ?? NO_SPANS;
+  const { provider, model, effort, isPlanned } = work.routing;
+  const isLive = item.rowState.phase === 'running';
+  const models = useMemo(
+    () =>
+      agentRanModels({
+        spans,
+        agentId: entry.agent.id,
+        routing: { provider, model, effort },
+        isRoutingPlanned: isPlanned,
+        isLive,
+      }),
+    [spans, entry.agent.id, provider, model, effort, isPlanned, isLive],
+  );
+  const summary = modelsSummary({ models: models.models });
+  const kindWord = agentKindPalette({ kind: entry.agentKind }).label;
+  const last = models.models[models.models.length - 1] ?? null;
+  const hasRole = !(
+    entry.agent.parentAgentId == null &&
+    entry.agent.stepId != null &&
+    step?.role == null &&
+    entry.agentKind === 'generic'
+  );
+  const identity: TimelineRowIdentity = {
+    hasGlyph: hasRole,
+    summary: hasRole
+      ? [kindWord, last?.name, last?.effort].filter((part) => part != null).join(', ')
+      : null,
+    card: (
+      <RowIdentityCard
+        entry={entry}
+        ordinal={item.ordinal}
+        kindWord={kindWord}
+        models={models}
+        work={work}
+        phase={item.rowState.phase}
+        costUsd={costUsd}
+      />
+    ),
+  };
+  const cost = costUsd > 0 ? formatUsd(costUsd) : null;
   return (
     <TimelineStreamRow
       contextMenu={contextMenu}
@@ -84,8 +138,30 @@ export const TimelineAgentStreamRow = ({
       action={action}
       diffStat={diffStat}
       worktrees={worktrees}
-      provider={work.routing.provider}
-      meta={<TimelineAgentMeta work={work} costUsd={costUsd} isRoutingShown={false} />}
+      identity={identity}
+      meta={
+        <TimelineRowMeta
+          model={
+            <TimelineModelCell
+              summary={summary}
+              isPlanned={models.isPlanned}
+              card={
+                summary === null ? null : (
+                  <RowModelsCard
+                    entry={entry}
+                    ordinal={item.ordinal}
+                    kindWord={kindWord}
+                    models={models}
+                  />
+                )
+              }
+            />
+          }
+          time={work.time ?? null}
+          cost={cost}
+          isPlanned={isPlanned}
+        />
+      }
       state={
         <TimelineRowStateLine
           state={item.rowState}

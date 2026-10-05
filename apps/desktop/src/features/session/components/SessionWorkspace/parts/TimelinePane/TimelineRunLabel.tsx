@@ -4,13 +4,21 @@ import type { GroupSummary } from '../../../../timeline/groupSummary';
 import { runWorkflowKind } from '../../../../timeline/runWorkflowKind';
 import { TimelineFoldTitle } from './TimelineFoldTitle';
 import { TimelineRunChip } from './TimelineRunChip';
+import type { TimelineRowIdentity } from './timelineRowIdentity';
 
 type Props = {
   readonly entry: TimelineRunEntry;
   readonly summary?: GroupSummary | null;
+  readonly identity?: TimelineRowIdentity | null;
+  readonly isCardOpen?: boolean;
 };
 
-export const TimelineRunLabel = ({ entry, summary = null }: Props) => {
+export const TimelineRunLabel = ({
+  entry,
+  summary = null,
+  identity = null,
+  isCardOpen = false,
+}: Props) => {
   const isDiscarded = entry.run.discardedAt != null;
   const title = entry.run.title ?? entry.workflow.name;
   return (
@@ -19,6 +27,8 @@ export const TimelineRunLabel = ({ entry, summary = null }: Props) => {
         kind={runWorkflowKind({ workflow: entry.workflow })}
         workflowName={entry.workflow.name}
         muted={isDiscarded}
+        identity={identity}
+        isCardOpen={isCardOpen}
       />
       {summary === null ? (
         <span

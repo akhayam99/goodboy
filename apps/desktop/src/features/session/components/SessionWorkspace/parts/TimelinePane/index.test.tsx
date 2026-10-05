@@ -1149,38 +1149,206 @@ describe('TimelinePane row meta', () => {
     attachedRuns.list = [RUN];
     storeState.sessionPhaseRuns = { 'session-1': [PLANNER, BUILDER] };
     storeState.sessionTelemetry = { 'session-1': [TURN] };
+    storeState.sessionTurnSpans = {};
     storeState.executed = new Map([
       ['agent-plan', { provider: 'anthropic', model: 'claude-opus-4-5' }],
     ]);
   });
 
-  it('shows the cost of a finished step and no model column', () => {
+  it('shows the model that ran on the right of a finished step, with its cost under the time', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
     const row = rowOf('Plan the fix');
     const meta = within(row).getByTestId('work-meta');
+    const model = meta.querySelector('[data-meta-column="model"]');
 
-    expect(within(meta).getByText('$0.62')).toBeDefined();
+    expect(model?.querySelector('[data-routing-part="name"]')?.textContent).toBe('Opus 4.5');
+    expect(model?.querySelector('[data-provider="anthropic"]')).not.toBeNull();
+    expect(
+      meta.querySelector('[data-meta-column="stack"] [data-meta-column="cost"]')?.textContent,
+    ).toBe('$0.62');
     expect(meta.querySelector('[data-meta-column="routing"]')).toBeNull();
-    expect(row.textContent).not.toContain('Opus 4.5');
-    expect(row.querySelector('[data-provider="anthropic"]')).not.toBeNull();
-    expect(meta.className).toContain('text-muted-foreground');
   });
 
-  it('shows a queued step in faint, with no cost and no model', () => {
+  it('keeps the provider glyph out of the label, ahead of the title', () => {
+    render(<TimelinePane session={SESSION} actions={null} />);
+    const label = within(rowOf('Plan the fix')).getByTitle('Plan the fix').parentElement;
+
+    expect(label?.querySelector('[data-provider]')).toBeNull();
+  });
+
+  it('shows a queued step with its planned model in faint, and no cost', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
     const meta = within(rowOf('Build the fix')).getByTestId('work-meta');
+    const model = meta.querySelector('[data-meta-column="model"]');
 
-    expect(meta.textContent).not.toContain('Sonnet 4.5');
-    expect(meta.className).toContain('text-faint-foreground');
-    expect(meta.querySelector('[data-meta-column="cost"]')?.textContent).toBe('');
+    expect(model?.querySelector('[data-routing-part="name"]')?.textContent).toBe('Sonnet 4.5');
+    expect(model?.className).toContain('text-faint-foreground');
+    expect(meta.querySelector('[data-meta-column="cost"]')).toBeNull();
   });
 
-  it('gives the run row the step it is on and the total spend', () => {
+  it('opens the identity card of a step on the role glyph after the pointer rests', () => {
+    vi.useFakeTimers();
+    try {
+      render(<TimelinePane session={SESSION} actions={null} />);
+      const glyph = within(rowOf('Plan the fix')).getByTestId('role-glyph');
+
+      fireEvent.mouseEnter(glyph);
+      act(() => {
+        vi.advanceTimersByTime(800);
+      });
+      const card = screen.getByRole('tooltip');
+
+      expect(card.textContent).toContain('Planner');
+      expect(card.textContent).toContain('Step 1 of 2');
+      expect(card.textContent).toContain('Opus 4.5 · High');
+      expect(card.textContent).toContain('$0.62');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('opens the models card of a step on the model cell, in run order', () => {
+    storeState.sessionTurnSpans = {
+      'session-1': [
+        {
+          agentId: 'agent-plan',
+          parentAgentId: null,
+          agentStatus: 'completed',
+          workflowRunId: 'run-meta',
+          isOrchestratedRunDone: false,
+          stepRole: 'planner',
+          provider: 'moonshot',
+          model: 'kimi-k3',
+          effort: 'high',
+          startedAtMs: 1_000,
+          endedAtMs: 2_000,
+          endReason: 'failed',
+          costUsd: 0.1,
+        },
+        {
+          agentId: 'agent-plan',
+          parentAgentId: null,
+          agentStatus: 'completed',
+          workflowRunId: 'run-meta',
+          isOrchestratedRunDone: false,
+          stepRole: 'planner',
+          provider: 'anthropic',
+          model: 'claude-opus-4-5',
+          effort: 'high',
+          startedAtMs: 3_000,
+          endedAtMs: 4_000,
+          endReason: 'succeeded',
+          costUsd: 0.5,
+        },
+      ],
+    };
+    vi.useFakeTimers();
+    try {
+      render(<TimelinePane session={SESSION} actions={null} />);
+      const cell = within(rowOf('Plan the fix'))
+        .getByTestId('work-meta')
+        .querySelector('[data-meta-column="model"]');
+      if (cell === null) {
+        throw new Error('no model cell');
+      }
+
+      fireEvent.mouseEnter(cell);
+      act(() => {
+        vi.advanceTimersByTime(800);
+      });
+      const items = within(screen.getByRole('tooltip')).getAllByRole('listitem');
+
+      expect(items.map((item) => item.textContent)).toEqual([
+        expect.stringContaining('Kimi K3 · High'),
+        expect.stringContaining('Opus 4.5 · High'),
+      ]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('names the run, its role and its model on the row for assistive tech', () => {
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    expect(screen.getByRole('button', { name: /Planner, Opus 4\.5, High/ })).toBeDefined();
+  });
+
+  it('puts the run row on the same columns, with the total spend and no step counter', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
     const meta = within(rowOf('Ship the checkout fix')).getByTestId('work-meta');
 
-    expect(within(meta).getByText('Step 1 of 2')).toBeDefined();
+    expect(meta.querySelector('[data-meta-column="model"]')).not.toBeNull();
     expect(within(meta).getByText('$0.62')).toBeDefined();
+    expect(meta.textContent).not.toContain('Step 1 of 2');
+  });
+
+  it('sums up the models a run used as the first one plus the rest', () => {
+    storeState.sessionTurnSpans = {
+      'session-1': [
+        {
+          agentId: 'agent-plan',
+          parentAgentId: null,
+          agentStatus: 'completed',
+          workflowRunId: 'run-meta',
+          isOrchestratedRunDone: false,
+          stepRole: 'planner',
+          provider: 'anthropic',
+          model: 'claude-opus-4-5',
+          effort: 'high',
+          startedAtMs: 1_000,
+          endedAtMs: 2_000,
+          endReason: 'succeeded',
+          costUsd: 0.4,
+        },
+        {
+          agentId: 'agent-build',
+          parentAgentId: null,
+          agentStatus: 'completed',
+          workflowRunId: 'run-meta',
+          isOrchestratedRunDone: false,
+          stepRole: 'implementer',
+          provider: 'anthropic',
+          model: 'claude-sonnet-4-5',
+          effort: 'medium',
+          startedAtMs: 3_000,
+          endedAtMs: 4_000,
+          endReason: 'succeeded',
+          costUsd: 0.2,
+        },
+      ],
+    };
+    render(<TimelinePane session={SESSION} actions={null} />);
+    const meta = within(rowOf('Ship the checkout fix')).getByTestId('work-meta');
+
+    expect(meta.querySelector('[data-routing-part="name"]')?.textContent).toBe('Opus 4.5 + 1');
+  });
+
+  it('lists a fallback in the order the models ran on the step row', () => {
+    const turn = (model: string, startedAtMs: number, endReason: string) => ({
+      agentId: 'agent-plan',
+      parentAgentId: null,
+      agentStatus: 'completed',
+      workflowRunId: 'run-meta',
+      isOrchestratedRunDone: false,
+      stepRole: 'planner',
+      provider: model.startsWith('kimi') ? 'moonshot' : 'anthropic',
+      model,
+      effort: 'high',
+      startedAtMs,
+      endedAtMs: startedAtMs + 1_000,
+      endReason,
+      costUsd: 0.1,
+    });
+    storeState.sessionTurnSpans = {
+      'session-1': [turn('claude-opus-4-5', 9_000, 'succeeded'), turn('kimi-k3', 1_000, 'failed')],
+    };
+    render(<TimelinePane session={SESSION} actions={null} />);
+    const meta = within(rowOf('Plan the fix')).getByTestId('work-meta');
+
+    expect(meta.querySelector('[data-routing-part="name"]')?.textContent).toBe(
+      'Kimi K3 → Opus 4.5',
+    );
+    expect(meta.querySelectorAll('[data-provider]')).toHaveLength(2);
   });
 
   describe('measured time', () => {
@@ -1239,9 +1407,14 @@ describe('TimelinePane row meta', () => {
 
       const wide = seen(900);
       expect(wide).toContain('Plan the fix');
-      expect(wide).not.toContain('Opus 4.5');
+      expect(wide).toContain('Opus 4.5');
       expect(wide).toContain('6m 40s');
       expect(wide).toContain('$0.62');
+
+      const glyphsOnly = seen(630);
+      expect(glyphsOnly).not.toContain('Opus 4.5');
+      expect(glyphsOnly).toContain('6m 40s');
+      expect(glyphsOnly).toContain('$0.62');
 
       const noCost = seen(560);
       expect(noCost).not.toContain('$0.62');

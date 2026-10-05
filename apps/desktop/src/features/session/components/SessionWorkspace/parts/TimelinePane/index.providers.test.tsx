@@ -201,7 +201,8 @@ const rowOf = ({ name }: { readonly name: string }): HTMLElement => {
   return row;
 };
 
-const slotIn = ({ row }: { readonly row: Element }) => row.querySelector('[data-provider]');
+const slotIn = ({ row }: { readonly row: Element }) =>
+  row.querySelector('[data-meta-column="model"] [data-provider]');
 
 const glyphsIn = ({ row }: { readonly row: HTMLElement }) =>
   slotIn({ row })?.querySelectorAll('svg[aria-hidden="true"]') ?? [];
@@ -227,7 +228,7 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('TimelinePane, provider icon on agent rows', () => {
-  it('shows a muted, hidden glyph and names the provider on a workflow step agent', () => {
+  it('shows a faint glyph and names the provider on a planned workflow step agent', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
 
     const row = rowOf({ name: 'Step 1' });
@@ -238,7 +239,7 @@ describe('TimelinePane, provider icon on agent rows', () => {
     expect(providerNameIn({ row: rowOf({ name: 'Step 2' }) })).toBe('Codex');
   });
 
-  it('shows the glyph before the agent name on a solo agent row', () => {
+  it('keeps the glyph on the right, after the agent name, on a solo agent row', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
 
     const row = rowOf({ name: 'Solo cursor' });
@@ -249,14 +250,14 @@ describe('TimelinePane, provider icon on agent rows', () => {
     expect(
       glyph !== null &&
         title !== null &&
-        (glyph.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0,
+        (title.compareDocumentPosition(glyph) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0,
     ).toBe(true);
   });
 
   it('puts the provider name in the accessible name of the row button', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    screen.getByRole('button', { name: /Cursor.*Solo cursor/ });
+    screen.getByRole('button', { name: /Solo cursor.*Cursor/ });
   });
 
   it('leaves no icon and no empty slot for an agent with no provider', () => {

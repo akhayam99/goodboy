@@ -309,8 +309,8 @@ else does:
   the set with stride 3 across workflow runs and agent chains, ordered by
   creation time and id. 3 and 8 share no factor, so every slot is used before
   one repeats. It gives two versions of one slot: `stroke` for an SVG lane and
-  `spin` for the running border. The run's "Workflow" chip stays neutral, so
-  a lane colour never lands on a pill. `runIdentityStroke`, next to it, turns the
+  `spin` for the running border. The run's glyph stays neutral, so
+  a lane colour never lands on a chip. `runIdentityStroke`, next to it, turns the
   index the rail geometry carries back into a stroke.
 - `workspaceAccent` in `apps/desktop/src/features/workspace/color.ts` hashes a
   workspace id onto the same eight slots for its sidebar dot.
@@ -324,14 +324,15 @@ Three limits keep identity small:
 - Identity colours the lane, the running border and the workspace dot, nothing
   else. Stage stays in the marker on top of the lane, which still goes through
   `tintClasses(tone)` like everything else.
-- `TimelineRunChip` is neutral at rest, fainter on a discarded run and a step
-  stronger while its lane is hovered, whatever the run state. The palette
-  never enters `packages/ui`.
+- `TimelineRunChip` is an 18px glyph circle with the icon of the run's origin
+  and no word. It is neutral at rest and fainter on a discarded run, whatever
+  the run state. The palette never enters `packages/ui`.
 
-A run row carries the chip, one title and at most one short status line.
+A run row carries the glyph, one title and at most one short status line.
 `TimelineRunLabel` prints the run title (`run.title`, falling back to the
 workflow name) with a single `truncate`, and never the run goal: a goal is a
-document and lives in the workflow detail. A preset or custom workflow names itself in the chip tooltip.
+document and lives in the workflow detail. A preset or custom workflow names itself in the glyph's hover card and
+accessible name.
 When any step of the run, at any depth, waits on an open question,
 `runOpenQuestion` picks the oldest one. The run row then takes the question
 node, says "Needs your answer in step 4.2" in the warning tone, and shows a
@@ -623,13 +624,12 @@ over the rows of the run's agents, and shows only when a row changed something.
 Those Context rows are members of the run, graded `fact`, and a closed run
 hides them; a Context event with no agent is a row of the Log. An answered or
 dismissed question inside a run is counted in its summary and drawn as no row,
-and an open one is carried by Needs you. The gutter clock carries a tooltip that says launches are newest
-first and a row is stamped with its own moment (agent start, answer time or
-record time), and the chevron. Its node is the same `mixed` ball with a dot in
+and an open one is carried by Needs you. The gutter clock carries a tooltip with the row's own times ("Started 16:41 ·
+finished 16:57", "Started 10:09 · running"), and the chevron. Its node is the same `mixed` ball with a dot in
 its center, closed or open, and its hint verb is Expand or Collapse. A run that asks you something,
-failed or is still running is never folded. Every group row fills the routing,
-time and cost columns with the totals of what it holds (`groupTotals`), counted
-once, and its time is fixed: a group row never reads the shared work clock. A
+failed or is still running is never folded. Every group row fills the stacked
+time and cost column with the totals of what it holds (`groupTotals`) and holds
+its model cell empty, counted once, and its time is fixed: a group row never reads the shared work clock. A
 row already on screen never grows again: when a run finishes under the pointer
 its rows join the group already open.
 
@@ -647,36 +647,51 @@ The right end of a work row is `WorkMeta` in
 `$12.40` never pushes the model of the row above out of line. A row says a duration one way, minutes and seconds ("4m 40s"),
 running or done, and so does every surface that reads `formatActiveTime`.
 
-| column     | width | holds                                                                                                     | in a narrow row                           |
-| ---------- | ----- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| routing    | 136px | provider glyph, model, then one detail (`Sonnet 5 · High`), right aligned; lists other than Activity only | glyph only under 840px, gone under 360px  |
-| time       | 80px  | measured time or estimate ("~3-7m left", "~6-9m", "4m 40s")                                               | "left" goes under 640px, gone under 500px |
-| cost       | 48px  | what the row has spent, empty before anything is spent                                                    | under 620px it leaves the row             |
-| cost range | 72px  | an estimated cost range before a step starts (`isCostRange`)                                              | under 620px it leaves the row             |
-| action     | 76px  | the one visible action, reserved for the tree of a live run                                               | never drops                               |
-| menu       | 24px  | the row menu, like Stop workflow on a run row                                                             | never drops                               |
+| column     | width | holds                                                                                                     | in a narrow row                                |
+| ---------- | ----- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| routing    | 136px | provider glyph, model, then one detail (`Sonnet 5 · High`), right aligned; lists other than Activity only | glyph only under 840px, gone under 360px       |
+| time       | 80px  | measured time or estimate ("~3-7m left", "~6-9m", "4m 40s")                                               | "left" goes under 640px, gone under 500px      |
+| cost       | 48px  | what the row has spent, empty before anything is spent                                                    | under 620px it leaves the row                  |
+| cost range | 72px  | an estimated cost range before a step starts (`isCostRange`)                                              | under 620px it leaves the row                  |
+| model      | 152px | Activity only: the provider glyphs and the models that ran, in run order                                  | glyphs only under 640px                        |
+| stack      | 72px  | Activity only: duration on top (meta size, muted), cost under it (chip size, faint)                       | cost leaves under 620px, all of it under 500px |
+| action     | 76px  | the one visible action, reserved for the tree of a live run                                               | never drops                                    |
+| menu       | 24px  | the row menu, like Stop workflow on a run row                                                             | never drops                                    |
 
 A row inside a `WorkTimeProvider` always renders the time column, empty when
 it has nothing to say, so the columns stay in line. The cost column follows
 the same rule: `cost={null}` keeps an empty column, and leaving `cost` out
 drops it, as the builder does for a plan with no measured estimate yet. A
-run row has no routing: its step progress sits in the routing column and its
-time in the time column (`WORK_META_COLUMN.progress`, which keeps its words
-when the model column folds to a glyph).
+run row has no routing column: it takes the time column and the cost column
+like any other row.
 
-The activity timeline has no routing column. Its agent rows draw the provider
-glyph at the left of the title, and the model and effort stay in the row
-tooltip and in the Brief. A row reserves an action slot only when it has one: a
-row that cannot ask ends at its cost, so the right edge carries no empty band.
-It has no menu slot. Cost and duration stay on the row.
+The activity timeline uses two other columns, in this order after the state
+word: the model cell (`TimelineModelCell`) and the stacked time and cost column
+(`TimelineRowMeta`). The model cell holds the provider glyph and the model that
+actually ran, read from the turn spans of the agent in run order. When several
+ran (a fallback, a retry, a routing change) it holds one glyph per provider and
+the names joined by an arrow ("Kimi K3 → Sonnet 5.5"), or "3 models" past two. A
+live agent ends on its current routing; an agent that has not started shows its
+planned model in faint. A run row shows the distinct models of its steps ("Sonnet
+5.5 + 2", glyphs side by side). Every row holds both columns, empty when it has
+nothing to say, so duration and cost line up down the feed. A row reserves an
+action slot only when it has one. It has no menu slot.
+
+The role glyph before the title and the model cell are the only two hover
+targets that open a card (`RowIdentityCard`, `RowModelsCard`, `RunIdentityCard`),
+on the `Tooltip` `card` variant with `restDelayMs` set to 800: the pointer has to
+rest, every move restarts the wait, the card closes as it leaves and a card
+never opens because another one just closed. `i` on a focused row opens the
+identity card. Nothing is only in a card: the Brief has the same facts and the
+accessible name of the row reads "Implementer, Sonnet 5.5, High".
 
 The narrow rules are container queries, never window breakpoints, because
 the same feed sits in a wide overview and in a split pane. The activity feed
 puts the container on each row's content box (`WORK_ROW.container`, right of
 the time gutter and the rail), so the widths above are the room the label and
 the meta share, not the width of the panel. The label always gets what the
-meta leaves: below 520px a role chip hugs its word and a run chip keeps only
-its glyph, and the state slot always reads the short form ("Needs you",
+meta leaves: the role and run glyphs are the same 18px circle at every width,
+the model cell keeps only its glyphs under 640px, and the state slot always reads the short form ("Needs you",
 "Step 3 ready"), with the full sentence in its tooltip. A row with no state
 word and no note draws no slot, so a finished row gives that room to its
 title. The slot never shrinks. The title keeps about 45% of the row: the
@@ -1172,6 +1187,11 @@ checks. Keyboard focus still cannot reach the control while it is `disabled`.
 A tooltip that has to show a small table (the top bar Limits chips) passes
 `variant="card"`: a 260px elevated card that wraps, instead of the one-line
 label.
+A card that must not open while the pointer only passes over a dense list
+passes `restDelayMs` (the Activity feed uses 800): the pointer has to rest, each
+move restarts the wait, focus does not open it, and every other tooltip keeps
+its 400ms. `isOpen` forces a tooltip open from the outside, as `i` does on an
+Activity row.
 That comes from the attribute itself. `icon-only-controls-carry-a-tooltip`
 enforces the rule.
 

@@ -16,7 +16,6 @@ import type {
 import { DecisionChangesDetail } from './DecisionChangesDetail';
 import type { GroupTotals } from '../../../../timeline/groupTotals';
 import { TimelineAgentStreamRow } from './TimelineAgentStreamRow';
-import { TimelineFoldAgentStreamRow } from './TimelineFoldAgentStreamRow';
 import { TimelineFoldStreamRow } from './TimelineFoldStreamRow';
 import { TimelineGroupMeta } from './TimelineGroupMeta';
 import { TimelineGroupStreamRow } from './TimelineGroupStreamRow';
@@ -98,22 +97,7 @@ export const TimelineEntryRow = ({
       />
     );
   }
-  if (item.fold !== undefined && entry.kind === 'agent') {
-    return (
-      <TimelineFoldAgentStreamRow
-        item={item}
-        entry={entry}
-        rail={rail}
-        railWidth={railWidth}
-        sessionId={sessionId}
-        isExpanded={isExpanded}
-        totals={groupTotals}
-        runLane={runLane}
-        onSetExpanded={handlers.setGroupExpanded}
-      />
-    );
-  }
-  if (item.fold !== undefined && entry.kind === 'run') {
+  if (item.fold !== undefined && (entry.kind === 'agent' || entry.kind === 'run')) {
     return (
       <TimelineFoldStreamRow
         item={item}
