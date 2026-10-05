@@ -180,4 +180,58 @@ describe('parseUnifiedDiff', () => {
 
     expect(parseUnifiedDiff(diff)).toEqual([]);
   });
+
+  describe('quoted headers', () => {
+    const plain = ['diff --git a/src/a.ts b/src/a.ts', '@@ -1 +1 @@', '-one', '+two'];
+
+    it('reads a path git quoted because of non-ASCII characters', () => {
+      const diff = [
+        ...plain,
+        'diff --git "a/src/caf\\303\\251.ts" "b/src/caf\\303\\251.ts"',
+        '@@ -1 +1 @@',
+        '-un',
+        '+deux',
+      ].join('\n');
+
+      const files = parseUnifiedDiff(diff);
+
+      expect(files.map((file) => file.path)).toEqual(['src/a.ts', 'src/café.ts']);
+      expect(files[0]).toMatchObject({ additions: 1, deletions: 1 });
+      expect(files[1]).toMatchObject({ additions: 1, deletions: 1 });
+      expect(files[1]?.oldPath).toBeUndefined();
+    });
+
+    it('reads a rename where only one side is quoted', () => {
+      const diff = [
+        'diff --git a/src/plain.ts "b/src/na\\303\\257ve.ts"',
+        'similarity index 90%',
+        'rename from src/plain.ts',
+        'rename to "src/na\\303\\257ve.ts"',
+        '@@ -1 +1 @@',
+        '-a',
+        '+b',
+      ].join('\n');
+
+      const [file] = parseUnifiedDiff(diff);
+
+      expect(file).toMatchObject({
+        path: 'src/naïve.ts',
+        oldPath: 'src/plain.ts',
+        status: 'renamed',
+      });
+    });
+
+    it('reads escaped quotes, backslashes and tabs in a name', () => {
+      const diff =
+        'diff --git "a/we\\"ird\\\\name\\t.ts" "b/we\\"ird\\\\name\\t.ts"\n@@ -1 +1 @@\n-a\n+b';
+
+      expect(parseUnifiedDiff(diff)[0]?.path).toBe('we"ird\\name\t.ts');
+    });
+
+    it('skips a quoted header it cannot read without eating the next file', () => {
+      const diff = ['diff --git "a/broken', ...plain].join('\n');
+
+      expect(parseUnifiedDiff(diff).map((file) => file.path)).toEqual(['src/a.ts']);
+    });
+  });
 });

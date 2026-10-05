@@ -108,6 +108,34 @@ export const insertDiffComment = async (
   );
 };
 
+const millisOf = (value: IsoDateTime | undefined): number | null =>
+  value === undefined ? null : Date.parse(value);
+
+export const restoreDiffComment = async (db: Database, comment: DiffComment): Promise<void> => {
+  await db.execute(
+    `INSERT INTO diff_comments (id, session_id, file_path, body, status, created_at, resolved_at, consumed_at, consumed_by_agent_id, line_number, line_side, end_line_number, author_kind, author_agent_id, project_id, branch)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      comment.id,
+      comment.sessionId,
+      comment.filePath,
+      comment.body,
+      comment.status,
+      Date.parse(comment.createdAt),
+      millisOf(comment.resolvedAt),
+      millisOf(comment.consumedAt),
+      comment.consumedByAgentId ?? null,
+      comment.anchor?.lineNumber ?? null,
+      comment.anchor?.side ?? null,
+      comment.anchor?.endLineNumber ?? null,
+      comment.authorKind,
+      comment.authorAgentId ?? null,
+      comment.projectId ?? null,
+      comment.branch ?? null,
+    ],
+  );
+};
+
 export const assignDiffCommentTarget = async (
   db: Database,
   id: string,

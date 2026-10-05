@@ -31,6 +31,10 @@ export type TreeGroup = 'folders' | 'kind';
 
 const GENERATED_GROUP_ID = 'group:generated';
 
+const FOLDER_ID_PREFIX = 'dir:';
+
+const folderIdOf = (path: string): string => `${FOLDER_ID_PREFIX}${path}`;
+
 const KIND_GROUPS: ReadonlyArray<{ readonly kind: FileKind; readonly label: string }> = [
   { kind: 'source', label: 'Source' },
   { kind: 'test', label: 'Tests' },
@@ -148,8 +152,8 @@ const emitFolder = (
   const index = rows.length;
   const placeholder: TreeFolderRow = {
     kind: 'folder',
-    id: path,
-    parentId: parentPath,
+    id: folderIdOf(path),
+    parentId: parentPath === null ? null : folderIdOf(parentPath),
     label,
     depth,
     fileCount: 0,
@@ -168,7 +172,7 @@ const emitFolder = (
     paths.push(...child.paths);
   }
   for (const file of [...current.files].sort((a, b) => compare(nameOf(a.path), nameOf(b.path)))) {
-    rows.push(fileRow(file, path, depth + 1));
+    rows.push(fileRow(file, folderIdOf(path), depth + 1));
     ordered.push(file);
     additions += file.additions;
     deletions += file.deletions;
@@ -229,6 +233,12 @@ export const buildChangeTree = ({
   emitFlatGroup({ id: GENERATED_GROUP_ID, label: 'Generated', files: generated, rows, ordered });
   return { rows, files: ordered };
 };
+
+export const orderLikeTree = ({
+  files,
+}: {
+  readonly files: ReadonlyArray<FileDiff>;
+}): ReadonlyArray<FileDiff> => buildChangeTree({ files }).files;
 
 const subsequenceScore = (haystack: string, needle: string): number | null => {
   let from = 0;

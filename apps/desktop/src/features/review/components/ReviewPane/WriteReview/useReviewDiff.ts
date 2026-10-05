@@ -10,6 +10,7 @@ import {
 } from '../../../../../store/slices/review-drafts/resolveReviewTarget';
 import { ghPrDiff } from '../../../../integrations/github/github';
 import { gitlabMrDiff } from '../../../../integrations/gitlab/client';
+import { orderLikeTree } from '../../../../diff/lib/changeTree';
 import { resolveSessionRepo } from '../../../../../store/slices/worktrees/resolveSessionRepo';
 
 type Params = {
@@ -76,7 +77,7 @@ export const useReviewDiff = ({ session }: Params): Result => {
         if (cancelled) {
           return;
         }
-        setFiles(parseUnifiedDiff(raw));
+        setFiles(orderLikeTree({ files: parseUnifiedDiff(raw) }));
         setLoading(false);
       })
       .catch((err) => {

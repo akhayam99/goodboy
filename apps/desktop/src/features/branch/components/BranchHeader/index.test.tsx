@@ -181,7 +181,6 @@ const diffOf = (): SessionDiff => ({
   viewed: { stateOf: () => 'none', onToggle: vi.fn() },
   focusPath: null,
   clearFocus: vi.fn(),
-  focusFile: vi.fn(),
 });
 
 const Harness = ({ pr, review, checks }: HarnessProps) => {
