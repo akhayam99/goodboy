@@ -11,7 +11,6 @@ import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';
 import type { ResolveQueueItem, ResolveStage, ResolveThread, SessionId } from '@goodboy/types';
 import { useAppStore, type AppStore } from '../../store';
 import { createResolveSlice } from '../resolve';
-import type { GetFn, SetFn } from '../resolve/types';
 import { createUndoSlice } from '../undo';
 import { createReviewBulkSlice } from './index';
 
@@ -85,15 +84,12 @@ const SEEDED: ReadonlyArray<{ readonly id: string; readonly stage: ResolveStage 
 let db: Database;
 
 const harness = async () => {
-  const store = createStore<AppStore>((set, get) => {
-    const resolveDeps = { set: set as unknown as SetFn, get: get as unknown as GetFn };
-    return {
-      ...useAppStore.getInitialState(),
-      ...createResolveSlice(resolveDeps),
-      ...createUndoSlice({ set, get }),
-      ...createReviewBulkSlice({ set, get }),
-    };
-  });
+  const store = createStore<AppStore>((set, get) => ({
+    ...useAppStore.getInitialState(),
+    ...createResolveSlice({ set, get }),
+    ...createUndoSlice({ set, get }),
+    ...createReviewBulkSlice({ set, get }),
+  }));
   await store.getState().loadResolveSession({ sessionId });
   return store;
 };

@@ -20,7 +20,7 @@ const openAnswersPanel = (attempt = 0): void => {
   }
 };
 
-const ResolveBulkScene = ({ stage }: { readonly stage: BulkStage }) => {
+export const ResolveBulkScene = ({ stage }: { readonly stage: BulkStage }) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -46,9 +46,3 @@ const ResolveBulkScene = ({ stage }: { readonly stage: BulkStage }) => {
     </main>
   );
 };
-
-export const ResolveBulkLaunchScene = () => <ResolveBulkScene stage="launch" />;
-export const ResolveBulkAnswersScene = () => <ResolveBulkScene stage="answers" />;
-export const ResolveBulkReviewScene = () => <ResolveBulkScene stage="review" />;
-export const ResolveBulkAcceptedScene = () => <ResolveBulkScene stage="accepted" />;
-export const ResolveBulkRetryScene = () => <ResolveBulkScene stage="retry" />;

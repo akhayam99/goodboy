@@ -26,12 +26,4 @@ export const launchStartLabel = ({ count }: { readonly count: number }): string 
 export const LAUNCH_ORDER_LINE =
   'One agent works through them in order, in its own copy of the branch.';
 
-export const startedLine = ({
-  count,
-  modelName,
-}: {
-  readonly count: number;
-  readonly modelName: string;
-}): string => `Fixing ${count} ${count === 1 ? 'comment' : 'comments'} on ${modelName}`;
-
 export const fixSelectedLabel = ({ count }: { readonly count: number }): string => `Fix ${count}`;

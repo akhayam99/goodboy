@@ -20,10 +20,7 @@ import {
   seedBulkScene,
   type BulkStage,
 } from '../../../../app/components/MockScene/scenes/bulkSeed';
-import {
-  ResolveBulkAnswersScene,
-  ResolveBulkLaunchScene,
-} from '../../../../app/components/MockScene/scenes/ResolveBulkScene';
+import { ResolveBulkScene } from '../../../../app/components/MockScene/scenes/ResolveBulkScene';
 import { BranchPage } from '../../../branch/components/BranchPage';
 import { eligibleReviewThreads } from '../../../suggestions/eligibleThreads';
 import { requestReview } from '../../../review/reviewRequest';
@@ -349,7 +346,7 @@ describe('bulk scenes', () => {
   it('shows the launch panel on the fixable set and the answers panel on the open questions', async () => {
     render(
       <ToastProvider>
-        <ResolveBulkLaunchScene />
+        <ResolveBulkScene stage="launch" />
       </ToastProvider>,
     );
     const launch = await screen.findByRole('region', { name: 'Fix launch' });
@@ -358,7 +355,7 @@ describe('bulk scenes', () => {
 
     render(
       <ToastProvider>
-        <ResolveBulkAnswersScene />
+        <ResolveBulkScene stage="answers" />
       </ToastProvider>,
     );
     const answers = await screen.findByRole('region', {

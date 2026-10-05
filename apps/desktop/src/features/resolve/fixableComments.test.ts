@@ -13,7 +13,11 @@ const thread = ({
   readonly stage: ResolveStage;
   readonly state: ResolveThreadState;
   readonly stateReason?: string | null;
-}): ResolveThread => ({ threadId, stage, state, stateReason }) as unknown as ResolveThread;
+}) =>
+  ({ threadId, stage, state, stateReason }) satisfies Pick<
+    ResolveThread,
+    'threadId' | 'stage' | 'state' | 'stateReason'
+  >;
 
 describe('fixable comments', () => {
   it('takes an open comment and a comment the run could not fix', () => {

@@ -1,4 +1,4 @@
-import { Button, cn, inlineMarkdownText } from '@goodboy/ui';
+import { Button, Chip, cn, inlineMarkdownText } from '@goodboy/ui';
 import { REVIEW_BULK_LABEL } from '../../../reviewBulkCopy';
 import type { BulkQuestion } from '../bulkQuestions';
 
@@ -69,7 +69,7 @@ export const AnswerCard = ({
               aria-checked={isChecked}
               onClick={() => onChoose(option.answer)}
               className={cn(
-                'flex min-w-0 items-center gap-3 rounded-md px-2 py-1.5 text-left motion-safe:transition-colors',
+                'flex min-w-0 items-center gap-3 rounded-md px-2 py-2 text-left motion-safe:transition-colors',
                 'hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
                 isChecked && 'bg-selected',
               )}
@@ -85,9 +85,7 @@ export const AnswerCard = ({
               </span>
               <span className="min-w-0 flex-1 text-label text-foreground">{option.answer}</span>
               {option.isRecommended && (
-                <span className="shrink-0 rounded-md bg-primary/15 px-2 text-chip text-primary">
-                  {REVIEW_BULK_LABEL.recommended}
-                </span>
+                <Chip tone="primary" size="3xs" label={REVIEW_BULK_LABEL.recommended} />
               )}
             </button>
           );

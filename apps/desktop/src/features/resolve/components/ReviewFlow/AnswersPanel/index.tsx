@@ -33,15 +33,11 @@ export const AnswersPanel = ({ sessionId, run, questions, onClose, onContinued }
     readonly threadId: string;
     readonly isDropped: boolean;
   }) =>
-    setDropped((current) => {
-      const next = new Set(current);
-      if (isDropped) {
-        next.add(threadId);
-      } else {
-        next.delete(threadId);
-      }
-      return next;
-    });
+    setDropped((current) =>
+      isDropped
+        ? new Set([...current, threadId])
+        : new Set([...current].filter((id) => id !== threadId)),
+    );
 
   const submit = async (): Promise<void> => {
     if (isContinuing || live.length === 0) {

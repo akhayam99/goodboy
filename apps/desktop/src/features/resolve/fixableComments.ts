@@ -1,6 +1,8 @@
 import type { ResolveThread } from '@goodboy/types';
 
-type ThreadParams = { readonly thread: ResolveThread };
+type ThreadParams = {
+  readonly thread: Pick<ResolveThread, 'stage' | 'state' | 'stateReason'>;
+};
 
 export const isRunFailedThread = ({ thread }: ThreadParams): boolean =>
   thread.state === 'failed' && thread.stateReason?.startsWith('publication_failed:') !== true;
