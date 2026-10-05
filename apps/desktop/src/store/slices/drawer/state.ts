@@ -25,6 +25,10 @@ export type DrawerContent =
       readonly payload: { readonly artifactId: ArtifactId; readonly tab: ArtifactDrawerTab };
     }
   | {
+      readonly kind: 'artifact-document';
+      readonly payload: { readonly artifactId: ArtifactId; readonly revision: number | null };
+    }
+  | {
       readonly kind: 'plan-part';
       readonly payload: { readonly planId: ArtifactId; readonly index: number };
     }
@@ -53,8 +57,10 @@ export type OpenDrawer = DrawerRequest;
 
 export type DrawerSliceState = {
   readonly drawer: OpenDrawer | null;
+  readonly documentDrawerExpanded: Readonly<Record<SessionId, boolean>>;
 };
 
 export const initialDrawerState: DrawerSliceState = {
   drawer: null,
+  documentDrawerExpanded: {},
 };

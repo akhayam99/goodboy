@@ -159,6 +159,11 @@ import { useBrandChrome } from './scenes/brand/brandChrome';
 import { applyDocumentTheme } from '../../../shared/lib/theme';
 import { AgentBriefScene } from './scenes/AgentBriefScene';
 import { AgentBriefQuestionScene } from './scenes/AgentBriefQuestionScene';
+import { PlannerTranscriptScene } from './scenes/PlannerTranscriptScene';
+import { PlannerTranscriptDrawerScene } from './scenes/PlannerTranscriptDrawerScene';
+import { PlannerTranscriptExpandedScene } from './scenes/PlannerTranscriptExpandedScene';
+import { PlannerTranscriptReplacedScene } from './scenes/PlannerTranscriptReplacedScene';
+import { PlannerTranscriptRevisingScene } from './scenes/PlannerTranscriptRevisingScene';
 import { FixRunScene } from './scenes/FixRunScene';
 import { ReportSheetHost } from '../../../features/bug-report/components/ReportSheetHost';
 import { CrashReportScene, useReportSheetParam } from './scenes/audit/ReportScenes';
@@ -314,6 +319,11 @@ export const MOCK_SCENES = {
   'brand-tools': BrandToolsScene,
   'agent-brief': AgentBriefScene,
   'agent-brief-question': AgentBriefQuestionScene,
+  'planner-transcript': PlannerTranscriptScene,
+  'planner-transcript-revising': PlannerTranscriptRevisingScene,
+  'planner-transcript-replaced': PlannerTranscriptReplacedScene,
+  'planner-transcript-drawer': PlannerTranscriptDrawerScene,
+  'planner-transcript-expanded': PlannerTranscriptExpandedScene,
   'fix-run': FixRunScene,
   'crash-report': CrashReportScene,
 };

@@ -10,6 +10,7 @@ import type {
 } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import { planPartRows } from '../plans/components/PlanParts/planPartRows';
+import { NOT_REVISING } from '../plans/planRevising';
 import { planStateInputsOf } from '../plans/planStateInputs';
 import type { ArtifactGeneration } from './artifactCollection';
 import { buildArtifactListRows } from './artifactListRows';
@@ -19,7 +20,13 @@ const SESSION_ID = 'session-1' as SessionId;
 const NO_ASKING: ReadonlySet<AgentId> = new Set();
 const NOW = '2026-09-14T16:40:00.000Z' as IsoDateTime;
 
-const NO_PLAN = { openQuestionCount: 0, partCount: 0, progress: null, hasPartAgents: false };
+const NO_PLAN = {
+  openQuestionCount: 0,
+  partCount: 0,
+  progress: null,
+  hasPartAgents: false,
+  revising: NOT_REVISING,
+};
 
 const stored = (params: {
   readonly kind: 'plan' | 'report' | 'wireframe';
@@ -228,6 +235,7 @@ describe('the list and the document agree', () => {
       agents,
       openQuestionCount: 0,
       askingAgentIds: NO_ASKING,
+      revising: new Map(),
       now: Date.parse(NOW),
     });
     const rows = planPartRows({ plan: planFixture, agents, askingAgentIds: NO_ASKING });

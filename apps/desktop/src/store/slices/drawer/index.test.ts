@@ -5,6 +5,7 @@ import type { ArtifactId, SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
 import { setActiveLens, setFocusedArtifactId } from '../session-view/workSurface';
 import { createDrawerSlice } from './index';
+import { selectDrawerSizing } from './selectDrawerSizing';
 import { selectOpenDrawer } from './selectOpenDrawer';
 import type { DrawerRequest } from './state';
 
@@ -43,6 +44,7 @@ type Harness = {
 const harness = (): Harness => {
   let state = {
     drawer: null,
+    documentDrawerExpanded: {},
     currentSessionId: SESSION_ID,
     activeLens: { [SESSION_ID]: 'explore' },
     lensHistory: {},
@@ -145,6 +147,49 @@ describe('drawer slice', () => {
     expect(h.get().drawer).not.toBeNull();
     h.focusArtifact(SESSION_ID, 'artifact-report' as ArtifactId);
     expect(h.get().drawer).toBeNull();
+  });
+
+  it('keeps a plan document drawer open while the focused artifact changes underneath it', () => {
+    const plan = 'plan-1' as ArtifactId;
+    h.slice.openDrawer({
+      kind: 'artifact-document',
+      sessionId: SESSION_ID,
+      payload: { artifactId: plan, revision: null },
+    });
+    h.focusArtifact(SESSION_ID, 'artifact-report' as ArtifactId);
+    expect(selectOpenDrawer(h.get())?.kind).toBe('artifact-document');
+  });
+
+  it('sizes a plan document drawer to half the window, full once expanded, per session', () => {
+    h.slice.openDrawer({
+      kind: 'artifact-document',
+      sessionId: SESSION_ID,
+      payload: { artifactId: 'plan-1' as ArtifactId, revision: null },
+    });
+    expect(selectDrawerSizing(h.get())).toBe('half');
+
+    h.slice.setDocumentDrawerExpanded(SESSION_ID, true);
+    expect(selectDrawerSizing(h.get())).toBe('full');
+
+    h.slice.closeDrawer();
+    h.slice.openDrawer({
+      kind: 'artifact-document',
+      sessionId: SESSION_ID,
+      payload: { artifactId: 'plan-2' as ArtifactId, revision: null },
+    });
+    expect(selectDrawerSizing(h.get())).toBe('full');
+
+    h.slice.setDocumentDrawerExpanded(OTHER_SESSION_ID, true);
+    h.slice.setDocumentDrawerExpanded(SESSION_ID, false);
+    expect(selectDrawerSizing(h.get())).toBe('half');
+    expect(h.get().documentDrawerExpanded[OTHER_SESSION_ID]).toBe(true);
+  });
+
+  it('keeps every other drawer at its own saved width', () => {
+    h.slice.setDocumentDrawerExpanded(SESSION_ID, true);
+    h.slice.openDrawer(GOAL_HISTORY);
+
+    expect(selectDrawerSizing(h.get())).toBe('default');
   });
 
   it('closes on request', () => {

@@ -3,6 +3,7 @@ import { selectDrawerPanel } from '../../store/slices/drawer/selectDrawerPanel';
 import { ContextDrawer } from '../../features/session/components/ContextDrawer';
 import { ExploreFileDrawer } from '../../features/explore/components/ExploreFileDrawer';
 import { ArtifactShellDrawer } from '../../features/artifacts/components/ArtifactShell/ArtifactShellDrawer';
+import { ArtifactDocumentDrawer } from '../../features/artifacts/components/ArtifactDocumentDrawer';
 import { PlanPartDrawer } from '../../features/plans/components/PlanParts/PlanPartDrawer';
 import { ScriptRunDrawer } from '../../features/scripts/components/ScriptRunDrawer';
 import { FileDiffDrawer } from '../../features/diff/components/FileDiffDrawer';
@@ -43,6 +44,16 @@ export const DrawerHost = () => {
           sessionId={drawer.sessionId}
           artifactId={drawer.payload.artifactId}
           tab={drawer.payload.tab}
+          onClose={closeDrawer}
+        />
+      );
+    case 'artifact-document':
+      return (
+        <ArtifactDocumentDrawer
+          key={drawerKey(drawer)}
+          sessionId={drawer.sessionId}
+          artifactId={drawer.payload.artifactId}
+          revision={drawer.payload.revision}
           onClose={closeDrawer}
         />
       );

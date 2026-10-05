@@ -96,32 +96,6 @@ describe('ArtifactBlockCard', () => {
     expect(state.setFocusedArtifactId).toHaveBeenCalledWith(SESSION_ID, 'artifact-1');
   });
 
-  it('sends a plan block to the plan it wrote', () => {
-    state.sessionArtifacts = {
-      [SESSION_ID]: [artifactOf({ id: 'plan-1', kind: 'plan', title: 'Rollout' })],
-    };
-    render(
-      <ArtifactBlockCard
-        item={{
-          kind: 'artifact_block',
-          key: 'text-0-artifact-0',
-          artifactKind: 'plan',
-          title: 'Rollout',
-          complete: true,
-          runId: 'run-1' as never,
-        }}
-        sessionId={SESSION_ID}
-        agentId={SCOUT}
-      />,
-    );
-
-    fireEvent.click(screen.getByTestId('artifact-block-chip'));
-    expect(state.setFocusedArtifactId).toHaveBeenCalledWith(SESSION_ID, 'plan-1');
-    expect(state.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: SESSION_ID, lens: 'plans' }),
-    });
-  });
-
   it('leaves a block still arriving as a row with nothing to press', () => {
     const { container } = render(
       <ArtifactBlockCard

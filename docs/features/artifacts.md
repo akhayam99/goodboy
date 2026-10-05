@@ -17,6 +17,14 @@ Each row has its action in place: **Run plan** or **Answer**, **Stop** while it 
 
 Check a plan before it runs. A plan can give each part done-when checks and the files it expects to touch, and **Run plan** turns each part into a sub-agent.
 
+A plan that came from a workflow continues that workflow. **Run plan** from the Artifacts page, the palette, the menu or the suggestion above the composer starts the next step of the run, the same as pressing it in the workflow. When the workflow cannot take the plan, nothing starts and the toast says why, with **Open the run**: "The next step (Review) does not run plans", "Step 3 already started", "The workflow has no step left for this plan", or "The planner stopped before finishing, so this plan cannot run yet". Only a plan whose run was discarded starts an implementer outside the workflow, and the toast says so: "Started outside the workflow, its run was discarded".
+
+### Plan beside the planner
+
+Read the plan without leaving the planner. In the planner's chat and in its Brief the plan is one row as wide as the page: **Plan · title**, its version, its state and **Run plan**. Press it to open the plan in a drawer on the right, at half the window, with the agent still where you were; a plan row in Activity opens it the same way. **Expand** gives it the whole pane and brings it back, **Open in Artifacts** is the only button that moves you to the Artifacts page, and **Esc** closes it.
+
+While the planner reworks the plan the row and the drawer say **Revising to v2**, the plan is dimmed and **Run plan** is off with the reason "Planner is revising this plan". A plan that already ran stays **Ran** and says **Writing a new version**. When the new version lands, the earlier row in the chat turns into a slim line, **Plan v1 · replaced by v2**, and pressing it reads v1 in the drawer.
+
 ### Report as a document
 
 <picture>
