@@ -275,6 +275,25 @@ describe('DiffView comments', () => {
     });
   });
 
+  it('hands the agent the note typed in the composer along with the lines', () => {
+    const comments = commentsWith([]);
+    render(<DiffView files={[LEDGER]} comments={comments} />);
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Comment on new line 40' }), {
+      key: 'Enter',
+    });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Note on line 40' }), {
+      target: { value: '  Rebuild this from the intro question.  ' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask agent' }));
+    expect(comments.onAskAgent).toHaveBeenCalledWith({
+      filePath: LEDGER.path,
+      anchor: { side: 'new', lineNumber: 40 },
+      text: '  const residual = total - sum(rounded);',
+      note: 'Rebuild this from the intro question.',
+    });
+    expect(comments.onSubmit).not.toHaveBeenCalled();
+  });
+
   it('shows a note under its line with Fix and Close note, and no control says Resolve', () => {
     const onFix = vi.fn();
     const comments = commentsWith([
