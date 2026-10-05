@@ -625,6 +625,7 @@ export {
   type RepoNameCheck,
   type ResolvedThread,
   type ReviewEvent,
+  type ReviewFileThreadDraft,
   type ReviewThreadDraft,
 } from './github';
 

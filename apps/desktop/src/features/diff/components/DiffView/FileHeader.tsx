@@ -1,5 +1,5 @@
-import { Check, ChevronRight, MessageSquare } from 'lucide-react';
-import { cn, tintClasses } from '@goodboy/ui';
+import { Check, ChevronRight, MessageSquare, MessageSquarePlus } from 'lucide-react';
+import { Tooltip, cn, tintClasses } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { STATUS_LETTER, STATUS_TONE, STATUS_WORD, splitPath } from '../../lib/fileStatus';
@@ -18,26 +18,6 @@ type Props = {
   readonly onOpenInEditor: (() => void) | null;
   readonly onCommentOnFile: (() => void) | null;
 };
-
-const BLOCKS = 5;
-
-const changeBlocks = (
-  additions: number,
-  deletions: number,
-): ReadonlyArray<'add' | 'del' | 'none'> => {
-  const total = additions + deletions;
-  const filled = Math.min(BLOCKS, total);
-  const adds = total === 0 ? 0 : Math.round((filled * additions) / total);
-  return Array.from({ length: BLOCKS }, (_, index) =>
-    index < adds ? 'add' : index < filled ? 'del' : 'none',
-  );
-};
-
-const BLOCK_CLASS = {
-  add: 'bg-success',
-  del: 'bg-danger',
-  none: 'bg-border-soft',
-} as const;
 
 export const FileHeader = ({
   file,
@@ -93,16 +73,14 @@ export const FileHeader = ({
         <span className="min-w-0 truncate text-code" title={file.path}>
           <span className="text-faint-foreground">{dir}</span>
           <span className="text-foreground">{name}</span>
+          {file.status === 'renamed' && file.oldPath !== undefined ? (
+            <span className="ml-2 text-meta text-faint-foreground">from {file.oldPath}</span>
+          ) : null}
         </span>
         <span className="shrink-0 text-meta tabular-nums">
           {file.additions > 0 ? <span className="text-success">+{file.additions}</span> : null}
           {file.additions > 0 && file.deletions > 0 ? ' ' : null}
           {file.deletions > 0 ? <span className="text-danger">−{file.deletions}</span> : null}
-        </span>
-        <span aria-hidden className="flex shrink-0 gap-px">
-          {changeBlocks(file.additions, file.deletions).map((kind, index) => (
-            <i key={index} className={cn('block size-1.5 rounded-sm', BLOCK_CLASS[kind])} />
-          ))}
         </span>
       </button>
       {commentCount > 0 ? (
@@ -116,6 +94,18 @@ export const FileHeader = ({
       ) : null}
       {viewed === 'stale' ? (
         <span className="shrink-0 text-meta text-faint-foreground">Changed since viewed</span>
+      ) : null}
+      {onCommentOnFile ? (
+        <Tooltip content="Comment on file" anchorClassName="shrink-0">
+          <button
+            type="button"
+            onClick={onCommentOnFile}
+            aria-label="Comment on file"
+            className="inline-flex size-6 items-center justify-center rounded-sm text-faint-foreground transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          >
+            <MessageSquarePlus size={ICON_SIZE.row} aria-hidden />
+          </button>
+        </Tooltip>
       ) : null}
       {onToggleViewed ? (
         <button

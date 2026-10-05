@@ -608,8 +608,13 @@ pub struct GitlabDiscussionPosition {
 }
 
 fn discussion_payload(body: &str, position: &GitlabDiscussionPosition) -> serde_json::Value {
+    let position_type = if position.new_line.is_none() && position.old_line.is_none() {
+        "file"
+    } else {
+        "text"
+    };
     let mut pos = serde_json::json!({
-        "position_type": "text",
+        "position_type": position_type,
         "base_sha": position.base_sha,
         "head_sha": position.head_sha,
         "start_sha": position.start_sha,
@@ -1326,6 +1331,24 @@ mod tests {
         assert_eq!(payload["position"]["new_line"], 12);
         assert!(payload["position"].get("old_path").is_none());
         assert!(payload["position"].get("old_line").is_none());
+    }
+
+    #[test]
+    fn discussion_payload_uses_a_file_position_when_no_line_is_given() {
+        let position = GitlabDiscussionPosition {
+            base_sha: "aaa".into(),
+            head_sha: "bbb".into(),
+            start_sha: "ccc".into(),
+            new_path: "src/a.ts".into(),
+            new_line: None,
+            old_path: Some("src/a.ts".into()),
+            old_line: None,
+        };
+        let payload = discussion_payload("split this file", &position);
+        assert_eq!(payload["position"]["position_type"], "file");
+        assert_eq!(payload["position"]["new_path"], "src/a.ts");
+        assert_eq!(payload["position"]["old_path"], "src/a.ts");
+        assert!(payload["position"].get("new_line").is_none());
     }
 
     #[test]

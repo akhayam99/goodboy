@@ -1,19 +1,17 @@
-import { useCallback, useMemo, type ReactNode } from 'react';
+import { useCallback, useMemo, useRef, type ReactNode } from 'react';
 import { PencilLine } from 'lucide-react';
 import { Button, ErrorStrip, LensEmptyState, PageColumn, Skeleton, formatError } from '@goodboy/ui';
 import type { DiffView as DiffViewKind, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import {
-  selectMountBaseBranch,
-  selectMountForPath,
-} from '../../../../store/slices/project-mounts/selectors';
+import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { openFileInWorkspace } from '../../../../shared/lib/editor';
 import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
+import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { DiffViewSelector } from '../../../permissions/components/DiffViewSelector';
-import { useDiffNotes } from '../../hooks/useDiffNotes';
-import { useDiffReviewThreads } from '../../hooks/useDiffReviewThreads';
+import { useReviewState } from '../../hooks/useReviewState';
 import type { SessionDiff } from '../../hooks/useSessionDiff';
+import { ChangeTree } from '../ChangeTree';
 import { DiffView } from '../DiffView';
 
 type Props = {
@@ -67,25 +65,45 @@ export const SessionDiffPane = ({
   onWriteReview,
   toolbarExtra = null,
 }: Props) => {
-  const { comments: noteComments } = useDiffNotes({ sessionId });
-  const mountId = useAppStore(
-    (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.mountId ?? null,
-  );
-  const reviewThreads = useDiffReviewThreads({ sessionId, mountId });
-  const comments = useMemo(
-    () =>
-      reviewThreads.length === 0
-        ? noteComments
-        : { ...noteComments, threads: [...noteComments.threads, ...reviewThreads] },
-    [noteComments, reviewThreads],
-  );
+  const review = useReviewState({ sessionId, worktreePath, diff });
   const editorBinary = useAppStore((s) => resolveEditorBinary({ settings: s.settings }));
   const emitNotification = useAppStore((s) => s.emitNotification);
   const baseBranch = useAppStore((s) =>
     selectMountBaseBranch({ state: s, sessionId, path: worktreePath }),
   );
 
+  const filterRef = useRef<HTMLInputElement | null>(null);
+  useShortcut('diff.focusFilter', () => filterRef.current?.focus());
+
   const isEmpty = !diff.loading && diff.error === null && diff.files.length === 0;
+  const hasTree = !diff.loading && diff.error === null && diff.files.length > 0;
+  const isFilteredOut = hasTree && review.tree.files.length === 0;
+  const filter = useMemo(
+    () => ({
+      query: review.query,
+      onQuery: review.setQuery,
+      unviewedOnly: review.unviewedOnly,
+      onUnviewedOnly: review.setUnviewedOnly,
+      notesOnly: review.notesOnly,
+      onNotesOnly: review.setNotesOnly,
+      group: review.group,
+      onGroup: review.setGroup,
+      isFiltering: review.isFiltering,
+      onClear: review.clearFilters,
+    }),
+    [
+      review.clearFilters,
+      review.group,
+      review.isFiltering,
+      review.notesOnly,
+      review.query,
+      review.setGroup,
+      review.setNotesOnly,
+      review.setQuery,
+      review.setUnviewedOnly,
+      review.unviewedOnly,
+    ],
+  );
 
   const openInEditor = useCallback(
     async (filePath: string) => {
@@ -113,36 +131,18 @@ export const SessionDiffPane = ({
     [openInEditor, workingDir],
   );
 
-  const totals = useMemo(
-    () =>
-      diff.files.reduce(
-        (sum, file) => ({ adds: sum.adds + file.additions, dels: sum.dels + file.deletions }),
-        { adds: 0, dels: 0 },
-      ),
-    [diff.files],
-  );
-
   const selector = (
-    <PageColumn className="flex min-w-0 items-center gap-2 pb-3">
-      <DiffViewSelector
-        view={diff.view}
-        onChange={diff.setView}
-        commits={diff.commits}
-        status={diff.status}
-        filesCount={diff.loading || diff.error !== null ? null : diff.files.length}
-        loading={diff.loading}
-      />
-      {diff.loading || diff.error !== null ? null : (
-        <span className="flex items-center gap-1 text-meta tabular-nums text-muted-foreground">
-          <span>
-            {diff.files.length} {diff.files.length === 1 ? 'file' : 'files'}
-          </span>
-          <span className="text-success">+{totals.adds}</span>
-          <span className="text-danger">−{totals.dels}</span>
-        </span>
-      )}
-    </PageColumn>
+    <DiffViewSelector
+      view={diff.view}
+      onChange={diff.setView}
+      commits={diff.commits}
+      status={diff.status}
+      baseBranch={baseBranch}
+      branch={diff.status?.branch ?? null}
+      loading={diff.loading}
+    />
   );
+  const showsDiff = !diff.loading && diff.error === null && !isEmpty && !isFilteredOut;
 
   const metaNotice =
     diff.metaError === null ? null : (
@@ -176,14 +176,32 @@ export const SessionDiffPane = ({
         description={emptyBlurb(diff.view, baseBranch)}
       />
     </PageColumn>
+  ) : isFilteredOut ? (
+    <PageColumn>
+      <LensEmptyState
+        tone={CONCEPT_TONE.diff}
+        icon={CONCEPT_ICONS.diff}
+        title="No files match"
+        description="Nothing in this diff matches the current filter."
+        action={
+          <Button size="sm" variant="secondary" onClick={review.clearFilters}>
+            Clear
+          </Button>
+        }
+      />
+    </PageColumn>
   ) : (
     <DiffView
-      files={diff.files}
-      comments={comments}
-      viewed={diff.viewed}
+      files={review.tree.files}
+      comments={review.comments}
+      viewed={review.viewed}
       fileActions={fileActions}
       focusPath={diff.focusPath}
       onFocusHandled={diff.clearFocus}
+      onActivePathChange={review.setActivePath}
+      fileCommentPath={review.fileCommentPath}
+      onFileCommentOpened={review.clearFileComment}
+      toolbarStart={selector}
       toolbarEnd={
         onWriteReview === null && toolbarExtra === null ? undefined : (
           <>
@@ -201,10 +219,29 @@ export const SessionDiffPane = ({
   );
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-      {selector}
-      {metaNotice}
-      {body}
+    <div className="flex min-h-0 min-w-0 flex-1">
+      {hasTree && (
+        <aside aria-label="Files" className="hidden min-h-0 w-[280px] shrink-0 pl-3 @4xl:flex">
+          <ChangeTree
+            tree={review.tree}
+            allFiles={review.allFiles}
+            filter={filter}
+            filterRef={filterRef}
+            activePath={review.activePath}
+            collapsed={review.collapsed}
+            onToggleFolder={review.toggleFolder}
+            onPick={review.jumpTo}
+            onCommentOnFile={review.comments.allowFileLevel ? review.commentOnFile : null}
+            stateOf={review.viewed.stateOf}
+            noteCountOf={review.noteCountOf}
+          />
+        </aside>
+      )}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        {showsDiff ? null : <PageColumn className="flex min-w-0 pb-3">{selector}</PageColumn>}
+        {metaNotice}
+        {body}
+      </div>
     </div>
   );
 };

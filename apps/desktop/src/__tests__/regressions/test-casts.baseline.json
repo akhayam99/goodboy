@@ -37,7 +37,6 @@
     "apps/desktop/src/features/context/components/QuestionsTab/QuestionCard/index.test.tsx": 1,
     "apps/desktop/src/features/context/hooks/useAnswerQuestion/index.test.ts": 1,
     "apps/desktop/src/features/diff/components/DiffView/index.test.tsx": 2,
-    "apps/desktop/src/features/diff/hooks/useFileJump/index.test.ts": 1,
     "apps/desktop/src/features/explore/components/ExplorePane/index.test.tsx": 2,
     "apps/desktop/src/features/history/useHistoryDrag/index.test.ts": 1,
     "apps/desktop/src/features/inbox/attachInboxProjects.test.ts": 3,

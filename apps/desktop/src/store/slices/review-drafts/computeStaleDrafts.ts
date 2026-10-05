@@ -1,4 +1,5 @@
 import type { FileDiff, PrReviewDraft } from '@goodboy/types';
+import { isFileLevelDraft } from './fileLevel';
 
 type Params = {
   readonly drafts: ReadonlyArray<PrReviewDraft>;
@@ -27,7 +28,16 @@ export const computeStaleDrafts = ({ drafts, files }: Params): Result => {
   }
   const fresh: PrReviewDraft[] = [];
   const stale: PrReviewDraft[] = [];
+  const paths = new Set(files.map((file) => file.path));
   for (const draft of drafts) {
+    if (isFileLevelDraft({ draft })) {
+      if (paths.has(draft.path)) {
+        fresh.push(draft);
+        continue;
+      }
+      stale.push({ ...draft, stale: true });
+      continue;
+    }
     const key = `${draft.path}:${draft.line}`;
     const anchored = draft.side === 'new' ? newLines.has(key) : oldLines.has(key);
     if (anchored) {
