@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { KEY_HELP } from './keyHelp';
+import { KeyHints } from './KeyHints';
 
 type Props = {
   readonly heading: string;
@@ -13,6 +13,6 @@ export const TreeFrame = ({ heading, children }: Props) => (
       <span aria-hidden className="block h-0.5 rounded-full bg-border-soft" />
     </div>
     <div className="min-h-0 flex-1 px-3 pt-2">{children}</div>
-    <p className="shrink-0 px-3 py-2 text-meta text-faint-foreground">{KEY_HELP}</p>
+    <KeyHints />
   </nav>
 );

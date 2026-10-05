@@ -18,7 +18,8 @@ import {
   windowOf,
 } from '../../lib/windowRows';
 import { Delta } from './Delta';
-import { KEY_HELP } from './keyHelp';
+import { KeyHints } from './KeyHints';
+import { MiddleText } from './MiddleText';
 import { ProgressRing } from './ProgressRing';
 import { TreeHead } from './TreeHead';
 
@@ -51,6 +52,8 @@ type Props = {
 
 const INDENT_PX = 12;
 const BASE_PX = 8;
+const EXTENSION = /\.[^./]*$/;
+const LAST_SEGMENT = /[^/]*$/;
 
 export const ChangeTree = ({
   tree,
@@ -248,7 +251,7 @@ export const ChangeTree = ({
                           row.file.status === 'deleted' && 'text-faint-foreground line-through',
                         )}
                       >
-                        {row.name}
+                        <MiddleText value={row.name} tail={EXTENSION} />
                       </span>
                       {row.dir === null ? null : (
                         <span className="min-w-0 truncate text-meta text-faint-foreground">
@@ -257,8 +260,12 @@ export const ChangeTree = ({
                       )}
                     </span>
                     {row.fromPath === null ? null : (
-                      <span className="truncate text-meta text-faint-foreground">
-                        from {row.fromPath}
+                      <span className="flex min-w-0 gap-1 text-meta text-faint-foreground">
+                        <span className="sr-only">from {row.fromPath}</span>
+                        <span aria-hidden className="shrink-0">
+                          from
+                        </span>
+                        <MiddleText value={row.fromPath} tail={LAST_SEGMENT} />
                       </span>
                     )}
                   </span>
@@ -299,7 +306,7 @@ export const ChangeTree = ({
           })}
         </ul>
       </ScrollFade>
-      <p className="shrink-0 px-3 py-2 text-meta text-faint-foreground">{KEY_HELP}</p>
+      <KeyHints />
     </nav>
   );
 };

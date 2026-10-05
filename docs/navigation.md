@@ -1663,7 +1663,7 @@ widths a 1024px window gets with a wide sidebar and an open drawer. Fix, Resolve
 properties; Fix launches from the list or the thread, never from Files.
 
 **Files.** The branch against its base with the change tree on the left
-(`ChangeTree`, 280px, from 900px of pane up): folders first, then files, alphabetical,
+(`ChangeTree`, 320px by default, from 900px of pane up; drag its right edge or use the arrow keys to resize it, never past 30% of the pane, saved as `goodboy:diff-tree-width`): folders first, then files, alphabetical,
 and the diff follows the same order. A chain of folders with one child is one
 row (`src/ledger/export`). A folder row holds a progress ring (empty, partial,
 or filled with a check once every file in it is viewed, tooltip `3 of 5
@@ -1671,10 +1671,12 @@ viewed`), the path, its file count and its `+N −N`; a file row holds a small
 check when viewed (its name goes grey) or an amber dot when it changed after
 it was viewed, the name (a rename shows `from <old path>` under it, a deleted
 file is struck through), its open notes, `+N −N` and the status letter.
+A long name is cut in the middle so its extension stays (the full path is the tooltip),
+and one key hint line ends the tree (`? all keys` opens the full list).
 `N of M viewed` and a 2px bar head the tree, and no longer sit in the toolbar.
 Under the head a filter field (`T` focuses it, `Esc` clears it) matches a
 subsequence of the path, `Unviewed` and `With notes` chips narrow it further,
-and `Group: Folders | Kind` regroups the tree under Source, Tests, Config and
+and `Folders | Kind` (on the chips' line) regroups the tree under Source, Tests, Config and
 Docs (each file then shows its folder beside the name). The filter narrows the
 diff as well as the tree, `Showing n of N` with `Clear` says so, and a filter
 that hides everything leaves `No files match` with `Clear` in both panes

@@ -103,8 +103,9 @@ describe('ChangeTree', () => {
 
     expect(screen.getByText(KEY_HELP)).toBeDefined();
     expect(KEY_HELP).toContain('J K move');
-    expect(KEY_HELP).toContain('/ T filter');
-    expect(KEY_HELP.match(/ T /g)).toHaveLength(1);
+    expect(KEY_HELP).toContain('viewed');
+    expect(KEY_HELP).toContain('/ filter');
+    expect(screen.getByRole('button', { name: '? all keys' })).toBeDefined();
   });
 
   it('shows folders with their file counts and sums, files with their status letter', () => {
