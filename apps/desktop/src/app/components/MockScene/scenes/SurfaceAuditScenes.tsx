@@ -19,7 +19,7 @@ import { ScriptsPanel } from '../../../../features/scripts/components/ScriptsPan
 import { parseScriptPins } from '../../../../features/scripts/parseScriptPins';
 import { scriptPinId } from '../../../../features/scripts/scriptPinId';
 import { scriptPinsKey } from '../../../../features/scripts/scriptPinsKey';
-import { ReviewPane } from '../../../../features/review/components/ReviewPane';
+import { BranchPage } from '../../../../features/branch/components/BranchPage';
 import { ArtifactStudio } from '../../../../features/artifacts/components/ArtifactStudio';
 import type { ScriptGroup, ScriptRunRecord } from '../../../../features/scripts/scripts';
 import { discoveredScriptId } from '../../../../features/scripts/scripts';
@@ -906,7 +906,12 @@ export const ResolveQueueShellScene = () => {
     return null;
   }
 
-  return <ShellFrame session={RESOLVE_SESSION} main={<ReviewPane session={RESOLVE_SESSION} />} />;
+  return (
+    <ShellFrame
+      session={RESOLVE_SESSION}
+      main={<BranchPage session={RESOLVE_SESSION} workingDir={null} />}
+    />
+  );
 };
 
 export const ResolvePublishBlockedScene = () => {
@@ -921,7 +926,12 @@ export const ResolvePublishBlockedScene = () => {
     return null;
   }
 
-  return <ShellFrame session={RESOLVE_SESSION} main={<ReviewPane session={RESOLVE_SESSION} />} />;
+  return (
+    <ShellFrame
+      session={RESOLVE_SESSION}
+      main={<BranchPage session={RESOLVE_SESSION} workingDir={null} />}
+    />
+  );
 };
 
 const ARTIFACT_SIBLINGS: ReadonlyArray<Session> = [

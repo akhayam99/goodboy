@@ -105,9 +105,6 @@ export const REMOTE_LABEL = {
   nothingToPost: 'Goodboy posts nothing here.',
 } as const;
 
-export const replyOnlyLine = ({ count }: { readonly count: number }): string =>
-  count === 1 ? '1 more needs only a reply' : `${count} more need only a reply`;
-
 export const commitUrlOf = ({
   prUrl,
   sha,

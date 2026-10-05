@@ -58,15 +58,24 @@ const destination = ({ reason }: DestinationParams) =>
   attentionPlace({ state, sessionId: SESSION_ID, reason });
 
 describe('attentionPlace', () => {
+  it('opens the questions lens for an open question', () => {
+    expect(destination({ reason: 'open-question' })).toMatchObject({
+      at: 'session',
+      view: { lens: 'questions' },
+    });
+  });
+
   it.each([
-    ['open-question', 'questions'],
-    ['ci-failed', 'pr'],
-    ['changes-requested', 'review'],
-    ['pr-approved', 'pr'],
+    ['ci-failed', 'checks'],
+    ['changes-requested', 'comments'],
+    ['pr-approved', 'comments'],
   ] satisfies ReadonlyArray<readonly [SessionAttentionReason, string]>)(
-    'opens the actionable lens for %s',
-    (reason, lens) => {
-      expect(destination({ reason })).toMatchObject({ at: 'session', view: { lens } });
+    'opens the Branch on the tab that answers %s',
+    (reason, tab) => {
+      expect(destination({ reason })).toMatchObject({
+        at: 'session',
+        view: { lens: 'branch', target: { kind: 'branch', tab } },
+      });
     },
   );
 

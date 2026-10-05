@@ -20,7 +20,7 @@ import type {
 import { useAppStore } from '../../../../store';
 import type { DiscoveredScriptScan } from '../../../../store/slices/scripts/state';
 import type { ScriptGroup, ScriptRunRecord } from '../../../../features/scripts/scripts';
-import { ReviewPane } from '../../../../features/review/components/ReviewPane';
+import { BranchPage } from '../../../../features/branch/components/BranchPage';
 import { ShellFrame, seedShellChrome } from './shellChrome';
 import { SESSION, SESSION_ID, WORKSPACE_ID, seedResolveScene } from './resolveSeed';
 import { sceneClock } from '../sceneClock';
@@ -423,7 +423,7 @@ const LensSwitcher = ({ isMenuOpen }: SceneProps) => {
     return null;
   }
 
-  return <ShellFrame session={SESSION} main={<ReviewPane session={SESSION} />} />;
+  return <ShellFrame session={SESSION} main={<BranchPage session={SESSION} workingDir={null} />} />;
 };
 
 export const LensSwitcherScene = () => <LensSwitcher isMenuOpen />;

@@ -51,29 +51,6 @@ const statusParams = ({ facts }: FactsOnly) => ({
 
 const DIFF_ACTIONS: ReadonlyArray<ActionDefinition<DiffFacts>> = [
   {
-    id: 'diff.openPullRequest',
-    label: ({ facts }) => `Open ${facts.requestLabel ?? 'the pull request'}`,
-    shortLabel: ({ facts }) => facts.requestLabel ?? 'Pull request',
-    icon: CONCEPT_ICONS.pr,
-    group: 'open',
-    shortcut: 'lens.pr',
-    when: hasPr,
-    slot: () => 'secondary',
-    run: async ({ facts, env }) => {
-      if (facts.requestProvider === null) {
-        return;
-      }
-      settleRequest({
-        outcome: await env.getState().openMountRequest({
-          sessionId: facts.sessionId,
-          mountId: facts.mountId,
-          provider: facts.requestProvider,
-          ...(facts.requestNumber !== null && { requestNumber: facts.requestNumber }),
-        }),
-      });
-    },
-  },
-  {
     id: 'diff.continueRebase',
     label: 'Open terminal',
     icon: CONCEPT_ICONS.terminal,

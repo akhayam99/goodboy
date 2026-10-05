@@ -5,7 +5,6 @@ import { useShortcut } from '../../keyboard/useShortcut';
 import { useAppStore } from '../../../store';
 import { captureWindowLocation } from '../../../store/slices/navigation/captureWindowLocation';
 import type { Location } from '../../../store/slices/navigation/types';
-import { layerChain } from '../../../store/slices/navigation/layers';
 
 const safeCapture = ({
   state,
@@ -29,14 +28,12 @@ export const useWindowShortcuts = (): void => {
     if (s.currentWorkspaceId) {
       const sessionId = s.currentSessionId;
       const location = safeCapture({ state: s });
-      const layers = layerChain({ state: s, location });
       writeReloadIntent({
         mode: 'restore',
         workspaceId: s.currentWorkspaceId,
         sessionId,
         agentId: sessionId ? (s.selectedAgentId[sessionId] ?? null) : null,
         ...(location !== undefined && { location }),
-        ...(layers.length > 0 && { layers }),
       });
     }
     window.location.reload();

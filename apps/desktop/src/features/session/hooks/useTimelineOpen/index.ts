@@ -4,7 +4,7 @@ import { linkIssueEventName } from '../../../actions/kinds/session';
 import { useCallback } from 'react';
 import type { SessionId } from '@goodboy/types';
 import type { SessionEventKind } from '@goodboy/types';
-import { agentPlace, sessionPlace, useAppStore } from '../../../../store';
+import { agentPlace, branchPlace, sessionPlace, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store/slices/session-view/types';
 import type { TimelineStreamEntry } from '../../timeline/buildTimelineStream';
 
@@ -204,6 +204,12 @@ export const useTimelineOpen = ({
             open: () => store.openRewriteHistory(sessionId, historyPath),
           };
         }
+        if (target.lens === 'pr') {
+          return {
+            label: target.label,
+            open: () => store.navigate({ to: branchPlace({ sessionId, tab: 'comments' }) }),
+          };
+        }
         return {
           label: target.label,
           open: () => store.navigate({ to: sessionPlace({ sessionId, lens: target.lens }) }),
@@ -221,7 +227,7 @@ export const useTimelineOpen = ({
       if (entry.kind === 'resolveFile' || entry.kind === 'resolveOpen') {
         return {
           label: entry.kind === 'resolveOpen' ? 'Open the review' : 'Open the comments',
-          open: () => store.navigate({ to: sessionPlace({ sessionId, lens: 'review' }) }),
+          open: () => store.navigate({ to: branchPlace({ sessionId, tab: 'comments' }) }),
         };
       }
       return {

@@ -47,12 +47,14 @@ export const BrandDiffScene = ({ manyFiles = false }: Props) => {
   const [isStaged, setIsStaged] = useState(false);
 
   useEffect(() => {
-    seedContextBase({ lens: 'files' });
+    seedContextBase({ lens: 'branch' });
     markViewed();
     useAppStore.setState({
       diffComments: { [CTX_SESSION_ID]: NOTES },
       diffFocus: {},
       diffPage: {},
+      branchTab: { [CTX_SESSION_ID]: 'files' },
+      branchThreadId: {},
       loadDiffComments: async () => undefined,
       sessionPhaseRuns: { [CTX_SESSION_ID]: [] },
     });

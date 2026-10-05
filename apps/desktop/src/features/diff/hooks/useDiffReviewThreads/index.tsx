@@ -66,7 +66,7 @@ export const useDiffReviewThreads = ({ sessionId, mountId }: Params): ReadonlyAr
               }
               className="inline-flex w-fit items-center gap-0.5 rounded-sm text-meta text-muted-foreground hover:text-foreground"
             >
-              Open in Review
+              Open in Comments
               <ArrowUpRight size={10} aria-hidden />
             </button>
           ),

@@ -1,8 +1,8 @@
 import type { HistoryBackup } from '@goodboy/types';
 import { historyBackupRef } from '../../../../../features/history/historyBackupRef';
-import { FilesPane } from '../../../../../features/session/components/SessionWorkspace/parts/FilesPane';
+import { BranchPage } from '../../../../../features/branch/components/BranchPage';
 import { BRAND_SESSION } from './canon';
-import { CTX_PAYMENTS_WORKTREE, CTX_SESSION_ID } from './contextBase';
+import { CTX_PAYMENTS_WORKTREE, CTX_SESSION } from './contextBase';
 import { CTX_COMMITS, CTX_STATUS } from './contextBranch';
 import { useFakeTauri, type FakeHandlers } from './fakeTauri';
 
@@ -26,13 +26,5 @@ const HANDLERS: FakeHandlers = {
 
 export const HistoryStage = () => {
   useFakeTauri({ handlers: HANDLERS, holdMs: 4000 });
-  return (
-    <FilesPane
-      sessionId={CTX_SESSION_ID}
-      sessionDir={CTX_PAYMENTS_WORKTREE}
-      worktreePath={CTX_PAYMENTS_WORKTREE}
-      isBranchless={false}
-      onClose={() => undefined}
-    />
-  );
+  return <BranchPage session={CTX_SESSION} workingDir={CTX_PAYMENTS_WORKTREE} />;
 };

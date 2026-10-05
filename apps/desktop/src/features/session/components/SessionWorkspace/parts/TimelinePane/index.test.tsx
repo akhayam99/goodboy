@@ -1,7 +1,11 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { agentPlace, sessionPlace } from '../../../../../../store/slices/navigation/place';
+import {
+  agentPlace,
+  branchPlace,
+  sessionPlace,
+} from '../../../../../../store/slices/navigation/place';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type {
   AgentId,
@@ -1468,7 +1472,7 @@ describe('TimelinePane resolve batch', () => {
     fireEvent.click(screen.getByRole('button', { name: /Open #318/ }));
 
     expect(storeState.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'review' }),
+      to: branchPlace({ sessionId: 'session-1' as SessionId, tab: 'comments' }),
     });
   });
 

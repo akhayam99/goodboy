@@ -1,11 +1,5 @@
 import type { ReviewCommitPreset } from './reviewCommits';
 
-export const REVIEW_VIEW_LABEL = {
-  group: 'Review view',
-  comments: 'Comments',
-  commits: 'Commits',
-} as const;
-
 export const REVIEW_COMMITS_LABEL = {
   presets: 'Arrange the resolve commits',
   custom: 'Custom',

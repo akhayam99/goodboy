@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ReviewPane } from '../../../../features/review/components/ReviewPane';
+import { BranchPage } from '../../../../features/branch/components/BranchPage';
 import { SESSION } from './resolveSeed';
 import { seedResolveCommitStoryScene } from './resolveCommitStorySeed';
 
@@ -17,7 +17,7 @@ export const ResolveCommitStoryScene = () => {
 
   return (
     <main className="h-screen overflow-hidden bg-background text-foreground">
-      <ReviewPane session={SESSION} />
+      <BranchPage session={SESSION} workingDir={null} />
     </main>
   );
 };

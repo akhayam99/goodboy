@@ -4,11 +4,12 @@ import { sentryRecordKey } from '../../../features/inbox/adapters/sentry';
 import { PROVIDER_LENS } from '../../../features/integrations/providerLens';
 import { workSurfaceFocus } from './workSurfaceFocus';
 import { drawerAfterArtifactFocus } from '../drawer/drawerAfterArtifactFocus';
-import { sessionPlace } from '../navigation/place';
+import { branchPlace, sessionPlace } from '../navigation/place';
 import { sessionById } from '../sessions/sessionIndex';
 
 export const setActiveLens = (set: SetFn) => {
   return (sessionId: SessionId, lens: LensKind | null): void => {
+    const isDiffLens = lens === 'files' || lens === 'branch';
     set((s) => ({
       ...workSurfaceFocus({
         sessionId,
@@ -21,9 +22,9 @@ export const setActiveLens = (set: SetFn) => {
         lens === 'workflows'
           ? s.focusedWorkflowRunId
           : { ...s.focusedWorkflowRunId, [sessionId]: null },
-      diffFocus: lens === 'files' ? s.diffFocus : { ...s.diffFocus, [sessionId]: null },
-      diffMountPath: lens === 'files' ? s.diffMountPath : { ...s.diffMountPath, [sessionId]: null },
-      diffPage: lens === 'files' ? s.diffPage : { ...s.diffPage, [sessionId]: null },
+      diffFocus: isDiffLens ? s.diffFocus : { ...s.diffFocus, [sessionId]: null },
+      diffMountPath: isDiffLens ? s.diffMountPath : { ...s.diffMountPath, [sessionId]: null },
+      diffPage: isDiffLens ? s.diffPage : { ...s.diffPage, [sessionId]: null },
       terminalMountPath:
         lens === 'terminal' ? s.terminalMountPath : { ...s.terminalMountPath, [sessionId]: null },
       focusedArtifactId:
@@ -70,14 +71,11 @@ export const setDiffFocus = (set: SetFn) => {
 export const openDiffLens = (get: GetFn) => {
   return (sessionId: SessionId, focus: DiffFocus | null): void => {
     get().navigate({
-      to: sessionPlace({
+      to: branchPlace({
         sessionId,
-        lens: 'files',
-        target: {
-          kind: 'diff',
-          mountPath: get().diffMountPath[sessionId] ?? null,
-          focus,
-        },
+        mountPath: get().diffMountPath[sessionId] ?? null,
+        tab: 'files',
+        focus,
       }),
     });
   };
@@ -86,15 +84,11 @@ export const openDiffLens = (get: GetFn) => {
 export const openMountDiff = (get: GetFn) => {
   return (sessionId: SessionId, worktreePath: string): void => {
     get().navigate({
-      to: sessionPlace({
+      to: branchPlace({
         sessionId,
-        lens: 'files',
-        target: {
-          kind: 'diff',
-          mountPath: worktreePath,
-          focus: null,
-          page: get().diffPage[sessionId] ?? null,
-        },
+        mountPath: worktreePath,
+        tab: 'files',
+        page: get().diffPage[sessionId] ?? null,
       }),
     });
   };
@@ -103,15 +97,11 @@ export const openMountDiff = (get: GetFn) => {
 export const openRewriteHistory = (get: GetFn) => {
   return (sessionId: SessionId, worktreePath: string | null): void => {
     get().navigate({
-      to: sessionPlace({
+      to: branchPlace({
         sessionId,
-        lens: 'files',
-        target: {
-          kind: 'diff',
-          mountPath: worktreePath ?? get().diffMountPath[sessionId] ?? null,
-          focus: null,
-          page: 'history',
-        },
+        mountPath: worktreePath ?? get().diffMountPath[sessionId] ?? null,
+        tab: 'commits',
+        page: 'history',
       }),
     });
   };
@@ -120,14 +110,10 @@ export const openRewriteHistory = (get: GetFn) => {
 export const closeRewriteHistory = (get: GetFn) => {
   return (sessionId: SessionId): void => {
     get().navigate({
-      to: sessionPlace({
+      to: branchPlace({
         sessionId,
-        lens: 'files',
-        target: {
-          kind: 'diff',
-          mountPath: get().diffMountPath[sessionId] ?? null,
-          focus: null,
-        },
+        mountPath: get().diffMountPath[sessionId] ?? null,
+        tab: 'commits',
       }),
     });
   };

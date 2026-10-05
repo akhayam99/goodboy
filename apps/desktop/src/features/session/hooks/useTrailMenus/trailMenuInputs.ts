@@ -29,7 +29,6 @@ type TrailMenuStoreActions = Pick<
   | 'cancelCurrentTurn'
   | 'recoverStuckStep'
   | 'reportError'
-  | 'openMountDiff'
   | 'selectSessionPr'
   | 'setPullRequestMode'
 >;

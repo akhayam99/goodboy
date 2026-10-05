@@ -1,5 +1,5 @@
 import type { SearchHit, WorkspaceId } from '@goodboy/types';
-import { agentPlace, sessionPlace, useAppStore } from '../../store';
+import { agentPlace, branchPlace, sessionPlace, useAppStore } from '../../store';
 import { openUrl } from '../../shared/lib/editor';
 import { useOpenQuestions } from '../context/components/QuestionsTab/useOpenQuestions';
 import { searchHitTarget, type SearchHitTarget } from './searchHitTarget';
@@ -93,13 +93,10 @@ const runTarget = async ({ target }: RunParams): Promise<boolean> => {
       store.openExternalTaskLens(sessionId, target.task);
       return true;
     case 'review':
-      store.navigate({ to: sessionPlace({ sessionId, lens: 'pr' }) });
+      store.navigate({ to: branchPlace({ sessionId, tab: 'comments' }) });
       return true;
     case 'comment':
-      store.navigate({
-        to: sessionPlace({ sessionId, lens: 'files' }),
-        drawer: { kind: 'diff-notes', sessionId, payload: {} },
-      });
+      store.navigate({ to: branchPlace({ sessionId, tab: 'comments' }) });
       return true;
     case 'diff': {
       const mount = (store.sessionMounts[sessionId] ?? []).find(

@@ -29,94 +29,62 @@ const MATRIX: ReadonlyArray<Row> = [
   {
     name: '3 open, mixed',
     facts: { open: 3, ready: 1 },
-    expected: [
-      'review.openPullRequest link Open PR #318',
-      'review.draftModel menu Model for drafts…',
-    ],
+    expected: [],
   },
   {
     name: 'all decided, 2 accepted',
     facts: { accepted: 2 },
-    expected: [
-      'review.openPullRequest link Open PR #318',
-      'review.push primary Push 2',
-      'review.draftModel menu Model for drafts…',
-    ],
+    expected: ['review.push primary Push 2'],
   },
   {
     name: '1 open, 2 accepted',
     facts: { open: 1, accepted: 2 },
-    expected: [
-      'review.openPullRequest link Open PR #318',
-      'review.push secondary Push 2',
-      'review.draftModel menu Model for drafts…',
-    ],
+    expected: ['review.push secondary Push 2'],
   },
   {
     name: 'pushing',
     facts: { accepted: 2, isPushing: true },
-    expected: [
-      'review.openPullRequest link Open PR #318',
-      'review.push primary Push 2 (Pushing now.)',
-      'review.draftModel menu Model for drafts…',
-    ],
+    expected: ['review.push primary Push 2 (Pushing now.)'],
   },
   {
     name: 'all pushed',
     facts: { pushed: 3 },
-    expected: [
-      'review.openPullRequest link Open PR #318',
-      'review.draftModel menu Model for drafts…',
-    ],
+    expected: [],
   },
   {
     name: 'push failed for 1',
     facts: { accepted: 1, failed: 1, pushed: 2 },
-    expected: [
-      'review.openPullRequest link Open PR #318',
-      'review.push primary Retry push for 1',
-      'review.draftModel menu Model for drafts…',
-    ],
+    expected: ['review.push primary Retry push for 1'],
   },
   {
     name: 'no comments',
     facts: {},
-    expected: [
-      'review.openPullRequest link Open PR #318',
-      'review.draftModel menu Model for drafts…',
-    ],
+    expected: [],
   },
   {
     name: 'no PR, 2 notes',
     facts: { prNumber: null, open: 2 },
-    expected: ['review.draftModel menu Model for drafts…'],
+    expected: [],
   },
   {
     name: 'PR with open notes',
     facts: { notes: 2 },
-    expected: [
-      'review.openPullRequest link Open PR #318',
-      'review.draftModel menu Model for drafts…',
-      'review.postNotes menu Post open notes to the PR',
-    ],
+    expected: ['review.postNotes menu Post open notes to the PR'],
   },
   {
     name: 'loading',
     facts: { isLoading: true },
-    expected: ['review.openPullRequest link Open PR #318'],
+    expected: [],
   },
   {
     name: 'GitHub unreachable',
     facts: { isError: true },
-    expected: ['review.openPullRequest link Open PR #318', 'review.retryLoad empty Retry'],
+    expected: [],
   },
   {
     name: 'one drafting, 2 not started',
     facts: { open: 3 },
-    expected: [
-      'review.openPullRequest link Open PR #318',
-      'review.draftModel menu Model for drafts…',
-    ],
+    expected: [],
   },
 ];
 
