@@ -47,6 +47,7 @@ export type ResumeScribePullRequestInput = {
   readonly mountId: MountId;
   readonly agentId: AgentId;
   readonly output: ExtractedScribeText;
+  readonly kickoff?: string | null;
 };
 
 export type RequestScribeInput = {

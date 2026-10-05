@@ -282,14 +282,18 @@ export const seedScribeBranch = async ({
 export const askScribe = ({
   useAppStore,
   sessionId,
+  isDraft = true,
+  base = null,
 }: {
   readonly useAppStore: StoryStore;
   readonly sessionId: SessionId;
+  readonly isDraft?: boolean;
+  readonly base?: string | null;
 }) =>
   useAppStore.getState().requestScribe({
     sessionId,
     mountId: MOUNT_ID,
-    task: { kind: 'pr', closedPrNumber: null, references: [], isDraft: true, base: null },
+    task: { kind: 'pr', closedPrNumber: null, references: [], isDraft, base },
   });
 
 export const scribeWorkOf = ({ useAppStore }: { readonly useAppStore: StoryStore }) =>

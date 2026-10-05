@@ -1,3 +1,4 @@
+import { pullRequestSettingsOfKickoff } from './pullRequestSettingsOfKickoff';
 import { patchScribeWork } from './requestScribe';
 import { scribeKeyOf } from './scribeKeyOf';
 import type { GetFn, ResumeScribePullRequestInput, SetFn } from './types';
@@ -8,6 +9,7 @@ export const resumeScribePullRequest = (set: SetFn, get: GetFn) => {
     mountId,
     agentId,
     output,
+    kickoff = null,
   }: ResumeScribePullRequestInput): Promise<void> => {
     const key = scribeKeyOf({ mountId, kind: 'pr' });
     const existing = get().scribeWork[key];
@@ -16,6 +18,7 @@ export const resumeScribePullRequest = (set: SetFn, get: GetFn) => {
       await get().openScribePullRequest({ key });
       return;
     }
+    const { isDraft, base } = pullRequestSettingsOfKickoff({ kickoff });
     set((state) => ({
       scribeAgents: {
         ...Object.fromEntries(
@@ -30,7 +33,7 @@ export const resumeScribePullRequest = (set: SetFn, get: GetFn) => {
           sessionId,
           mountId,
           agentId,
-          task: { kind: 'pr', closedPrNumber: null, references: [], isDraft: true, base: null },
+          task: { kind: 'pr', closedPrNumber: null, references: [], isDraft, base },
           status: 'failed',
           output,
           error: null,

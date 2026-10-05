@@ -3,7 +3,7 @@ import type { DiffLineTarget } from '../../components/DiffView/types';
 const lineRef = (target: DiffLineTarget): string => {
   const { anchor } = target;
   const range =
-    anchor.endLineNumber && anchor.endLineNumber !== anchor.lineNumber
+    anchor.endLineNumber !== undefined && anchor.endLineNumber !== anchor.lineNumber
       ? `${anchor.lineNumber}-${anchor.endLineNumber}`
       : `${anchor.lineNumber}`;
   return `${target.filePath}:${range}`;

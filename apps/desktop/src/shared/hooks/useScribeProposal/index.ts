@@ -89,6 +89,7 @@ export const useScribeProposal = ({
         commitMessages: [],
         changelogEntry: proposal.changelogEntry,
       },
+      kickoff: proposal.kickoff,
     });
   }, [agentId, canRetry, mountId, proposal, resume, sessionId]);
   return useMemo(

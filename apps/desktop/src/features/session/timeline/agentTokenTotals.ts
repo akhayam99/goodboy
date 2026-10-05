@@ -18,7 +18,7 @@ export const agentTokenTotals = ({ records, runIds }: Params): TokenTotals | nul
   let cached = 0;
   let count = 0;
   for (const record of records) {
-    if (record.kind === 'summarizer' || !owned.has(record.runId)) {
+    if (record.kind !== 'turn' || !owned.has(record.runId)) {
       continue;
     }
     input += record.inputTokens;

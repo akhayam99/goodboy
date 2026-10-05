@@ -8,7 +8,7 @@ const { state } = vi.hoisted(() => ({
   state: {
     answerOpenQuestions: vi.fn(async () => undefined),
     dismissOpenQuestion: vi.fn(async () => undefined),
-    sendQuestionAsMessage: vi.fn(async () => undefined),
+    sendQuestionAsMessage: vi.fn(async (): Promise<boolean> => true),
     navigate: vi.fn(),
     loadAgentTranscript: vi.fn(async () => undefined),
     spawnQuestionDelegates: vi.fn(
@@ -239,6 +239,18 @@ describe('OpenQuestionCluster, a blocking question the agent asked in prose', ()
     );
     expect(state.answerOpenQuestions).not.toHaveBeenCalled();
     expect(useOpenQuestions.getState().drafts['oq-prose']).toBeUndefined();
+  });
+
+  it('keeps what was written when the message did not go through', async () => {
+    state.sendQuestionAsMessage.mockResolvedValueOnce(false);
+    renderCluster([proseQuestion]);
+    typeReply('Not that one, I left a note on a line of the diff.');
+    fireEvent.click(screen.getByRole('button', { name: 'Send as message' }));
+    await waitFor(() => expect(state.sendQuestionAsMessage).toHaveBeenCalledTimes(1));
+    await Promise.resolve();
+    expect(useOpenQuestions.getState().drafts['oq-prose']?.customAnswer).toBe(
+      'Not that one, I left a note on a line of the diff.',
+    );
   });
 
   it('still answers as an answer from the same field', async () => {

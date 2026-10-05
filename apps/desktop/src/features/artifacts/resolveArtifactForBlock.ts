@@ -15,6 +15,7 @@ type ReplacedParams = Readonly<{
   artifacts: ReadonlyArray<SessionArtifact>;
   agentId: AgentId | null;
   ordinal: number | null;
+  title: string | null;
 }>;
 
 export type ReplacedPlan = Readonly<{
@@ -27,19 +28,21 @@ export const resolveReplacedPlan = ({
   artifacts,
   agentId,
   ordinal,
+  title,
 }: ReplacedParams): ReplacedPlan | null => {
   if (agentId === null) {
     return null;
   }
-  const reworked = artifacts
-    .filter(
-      (artifact) =>
-        artifact.kind === 'plan' &&
-        artifact.agentId === agentId &&
-        isLive(artifact) &&
-        artifact.revision >= 2,
-    )
-    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))[0];
+  const candidates = artifacts.filter(
+    (artifact) =>
+      artifact.kind === 'plan' &&
+      artifact.agentId === agentId &&
+      isLive(artifact) &&
+      artifact.revision >= 2,
+  );
+  const owners =
+    title === null ? candidates : candidates.filter((artifact) => artifact.title === title);
+  const reworked = owners.length === 1 ? owners[0] : undefined;
   if (reworked === undefined) {
     return null;
   }

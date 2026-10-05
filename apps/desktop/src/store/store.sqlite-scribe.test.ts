@@ -1,6 +1,8 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { extractScribeText } from '@goodboy/core';
 import type { SessionId } from '@goodboy/types';
+import { reduceTranscript } from '../features/chat/utils/transcript-items';
+import { scribeProposalOf } from '../shared/utils/scribeProposal';
 import { summarizerQueues } from './slices/turn/turnHelpers';
 import {
   importStore,
@@ -229,5 +231,30 @@ describe('after the app reloads', () => {
 
     expect(work()).toMatchObject({ status: 'created', pullRequest: { number: 418 } });
     expect(useAppStore.getState().scribeAgents[agentId]).toBe(SCRIBE_KEY);
+  });
+
+  it('opens a ready request on its custom base when Retry recovers both from the kickoff', async () => {
+    rejectCreate({ stderr: 'gh: command not found' });
+    storySpies.runTurn.mockImplementation(scribeTurn({ answer: PROPOSAL }));
+    await askScribe({ useAppStore, sessionId, isDraft: false, base: 'release/0.19' });
+    await settleScribeWork({ useAppStore });
+    const agentId = await reloadScribeAgent({ useAppStore, sessionId });
+    const items = reduceTranscript(useAppStore.getState().transcripts[agentId] ?? []);
+    const proposal = scribeProposalOf({ items });
+    expect(proposal?.kickoff).toContain('release/0.19');
+
+    acceptCreate();
+    await useAppStore.getState().resumeScribePullRequest({
+      sessionId,
+      mountId: MOUNT_ID,
+      agentId,
+      output: extractScribeText(proposal?.latestText ?? ''),
+      kickoff: proposal?.kickoff ?? null,
+    });
+
+    expect(work()).toMatchObject({ status: 'created' });
+    const args = createCalls().at(-1)?.[0] ?? [];
+    expect(args).not.toContain('--draft');
+    expect(args[args.indexOf('--base') + 1]).toBe('release/0.19');
   });
 });

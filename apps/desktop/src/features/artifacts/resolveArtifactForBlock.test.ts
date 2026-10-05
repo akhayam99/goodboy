@@ -10,7 +10,7 @@ import type {
   SessionArtifact,
   SessionId,
 } from '@goodboy/types';
-import { resolveArtifactForBlock } from './resolveArtifactForBlock';
+import { resolveArtifactForBlock, resolveReplacedPlan } from './resolveArtifactForBlock';
 
 const SESSION_ID = 'session-1' as SessionId;
 const SCOUT = 'agent-scout' as AgentId;
@@ -22,6 +22,8 @@ type Seed = Readonly<{
   kind: ArtifactKind;
   sourceTurnId: string | null;
   status?: ArtifactStatus;
+  title?: string;
+  revision?: number;
 }>;
 
 const base = {
@@ -41,8 +43,18 @@ const artifactOf = ({
   kind,
   sourceTurnId,
   status = 'active',
+  title = id,
+  revision = 1,
 }: Seed): SessionArtifact => {
-  const shared = { ...base, id: id as ArtifactId, agentId, title: id, status, sourceTurnId };
+  const shared = {
+    ...base,
+    id: id as ArtifactId,
+    agentId,
+    title,
+    status,
+    sourceTurnId,
+    revision,
+  };
   if (kind === 'wireframe') {
     return {
       ...shared,
@@ -210,5 +222,78 @@ describe('resolveArtifactForBlock', () => {
         artifactKind: 'report',
       }),
     ).toBeNull();
+  });
+});
+
+describe('resolveReplacedPlan', () => {
+  const retry = artifactOf({
+    id: 'p1',
+    agentId: SCOUT,
+    kind: 'plan',
+    sourceTurnId: 'run-3',
+    title: 'Retry-safe webhook credits',
+    revision: 3,
+  });
+  const ledger = artifactOf({
+    id: 'p2',
+    agentId: SCOUT,
+    kind: 'plan',
+    sourceTurnId: 'run-5',
+    title: 'Ledger export cutover',
+    revision: 2,
+  });
+  const newer = { ...ledger, updatedAt: '2026-09-14T12:00:00.000Z' as IsoDateTime };
+
+  it('opens the reworked plan whose title the old block carries, not the newest one', () => {
+    const replaced = resolveReplacedPlan({
+      artifacts: [retry, newer],
+      agentId: SCOUT,
+      ordinal: 1,
+      title: 'Retry-safe webhook credits',
+    });
+
+    expect(replaced?.artifact).toBe(retry);
+    expect(replaced?.latest).toBe(3);
+  });
+
+  it('refuses to guess when several reworked plans could own the block', () => {
+    expect(
+      resolveReplacedPlan({ artifacts: [retry, newer], agentId: SCOUT, ordinal: 1, title: null }),
+    ).toBeNull();
+    expect(
+      resolveReplacedPlan({
+        artifacts: [retry, newer],
+        agentId: SCOUT,
+        ordinal: 1,
+        title: 'Payments backfill',
+      }),
+    ).toBeNull();
+  });
+
+  it('refuses when two reworked plans share the block title', () => {
+    const twin = artifactOf({
+      id: 'p3',
+      agentId: SCOUT,
+      kind: 'plan',
+      sourceTurnId: 'run-6',
+      title: 'Retry-safe webhook credits',
+      revision: 2,
+    });
+
+    expect(
+      resolveReplacedPlan({
+        artifacts: [retry, twin],
+        agentId: SCOUT,
+        ordinal: 1,
+        title: 'Retry-safe webhook credits',
+      }),
+    ).toBeNull();
+  });
+
+  it('keeps resolving when the block has no title and one plan was reworked', () => {
+    expect(
+      resolveReplacedPlan({ artifacts: [retry], agentId: SCOUT, ordinal: 1, title: null })
+        ?.artifact,
+    ).toBe(retry);
   });
 });

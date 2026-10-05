@@ -50,7 +50,12 @@ export const PlanBlock = ({ item, sessionId, agentId, planVersion }: Props) => {
     return <PlanRow sessionId={sessionId} planId={resolved.id} />;
   }
 
-  const replaced = resolveReplacedPlan({ artifacts, agentId, ordinal: planVersion });
+  const replaced = resolveReplacedPlan({
+    artifacts,
+    agentId,
+    ordinal: planVersion,
+    title: item.title,
+  });
   if (replaced !== null) {
     return (
       <button

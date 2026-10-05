@@ -25,6 +25,26 @@ describe('askAgentPrompt', () => {
     ).toBe(`About \`src/ledger/settle.ts:40-41\`:\n> ${LINE}\n> return residual;\n`);
   });
 
+  it('names one line when the range ends where it starts', () => {
+    expect(
+      askAgentPrompt({
+        filePath: 'src/ledger/settle.ts',
+        anchor: { side: 'new', lineNumber: 40, endLineNumber: 40 },
+        text: LINE,
+      }),
+    ).toBe(`About \`src/ledger/settle.ts:40\`:\n> ${LINE}\n`);
+  });
+
+  it('treats a defined end line as a range even when it is zero', () => {
+    expect(
+      askAgentPrompt({
+        filePath: 'src/ledger/settle.ts',
+        anchor: { side: 'old', lineNumber: 40, endLineNumber: 0 },
+        text: LINE,
+      }),
+    ).toBe(`About \`src/ledger/settle.ts:40-0\`:\n> ${LINE}\n`);
+  });
+
   it('keeps the note written in the composer under the quote', () => {
     expect(
       askAgentPrompt({

@@ -18,13 +18,16 @@ export const useSendQuestionAsMessage = ({ sessionId }: Params) => {
   const clearDraft = useOpenQuestions((state) => state.clearDraft);
 
   return useCallback(
-    async (question: OpenQuestion) => {
+    async (question: OpenQuestion): Promise<boolean> => {
       const text = deriveDraftAnswer(useOpenQuestions.getState().drafts[question.id]);
       if (text.length === 0 || !canSendQuestionAsMessage(question)) {
-        return;
+        return false;
       }
-      clearDraft(question.id);
-      await sendQuestionAsMessage({ sessionId, question, text });
+      const isSent = await sendQuestionAsMessage({ sessionId, question, text });
+      if (isSent) {
+        clearDraft(question.id);
+      }
+      return isSent;
     },
     [clearDraft, sendQuestionAsMessage, sessionId],
   );

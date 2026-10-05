@@ -22,6 +22,7 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
+import type { SendTurnResult } from './slices/turn/types';
 import type { AgentInsertArgs } from '../features/workflows/workflows';
 import type { ProviderDisplayInfo } from '../features/providers/providers';
 import { reduceTranscript } from '../features/chat/utils/transcript-items';
@@ -445,6 +446,57 @@ describe('store on sqlite: a reply to a question that is not an answer', () => {
     await useAppStore.getState().sendQuestionAsMessage({ sessionId, question, text: '   ' });
 
     expect(await openQuestionTexts()).toEqual([question.text]);
+  });
+
+  it.each([
+    ['the session budget blocks the turn', { blockedOverBudget: true }, 'budget'],
+    [
+      'another agent holds the folder',
+      { blockedOverBudget: false, isWriterLeaseDenied: true },
+      'writing in this folder',
+    ],
+  ] satisfies ReadonlyArray<readonly [string, SendTurnResult, string]>)(
+    'keeps the question open and says why when %s',
+    async (_label, refusal, reason) => {
+      const question = await holdOnProseQuestion();
+      const realSendTurn = useAppStore.getState().sendTurn;
+      useAppStore.setState({ sendTurn: vi.fn(async (): Promise<SendTurnResult> => refusal) });
+
+      try {
+        const isSent = await useAppStore
+          .getState()
+          .sendQuestionAsMessage({ sessionId, question, text: REPLY });
+
+        expect(isSent).toBe(false);
+        expect(await openQuestionTexts()).toEqual([question.text]);
+        expect(
+          useAppStore.getState().notifications.some((entry) => entry.body?.includes(reason)),
+        ).toBe(true);
+      } finally {
+        useAppStore.setState({ sendTurn: realSendTurn });
+      }
+    },
+  );
+
+  it('keeps the question open when the turn throws', async () => {
+    const question = await holdOnProseQuestion();
+    const realSendTurn = useAppStore.getState().sendTurn;
+    useAppStore.setState({
+      sendTurn: vi.fn(async (): Promise<SendTurnResult> => {
+        throw new Error('provider offline');
+      }),
+    });
+
+    try {
+      const isSent = await useAppStore
+        .getState()
+        .sendQuestionAsMessage({ sessionId, question, text: REPLY });
+
+      expect(isSent).toBe(false);
+      expect(await openQuestionTexts()).toEqual([question.text]);
+    } finally {
+      useAppStore.setState({ sendTurn: realSendTurn });
+    }
   });
 
   it('keeps a note left on a line out of the answer to the question', async () => {

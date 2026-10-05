@@ -78,8 +78,11 @@ export const LiveQuestionCard = ({
   }, [answer, onAnswered, question]);
 
   const handleSendAsMessage = useCallback(() => {
-    void sendAsMessage(question);
-    onAnswered?.(question);
+    void sendAsMessage(question).then((isSent) => {
+      if (isSent) {
+        onAnswered?.(question);
+      }
+    });
   }, [onAnswered, question, sendAsMessage]);
 
   const handleUndo = () => {
