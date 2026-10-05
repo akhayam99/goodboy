@@ -7,18 +7,19 @@ import type {
 } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { ResolveQueueRow } from '../../../resolve/buildResolveQueueRows';
+import { RESOLVE_WORD_LABEL } from '../../../resolve/commentProjection';
 import type { ResolveUiState } from '../../../resolve/resolveRowState';
 import { threadLocationOf } from '../../../resolve/threadLocationOf';
 
 const CONVERSATION_STATE = {
-  new: { word: 'Open', tone: 'neutral' },
-  working: { word: 'Working', tone: 'info' },
-  needs_you: { word: 'Needs you', tone: 'warning' },
-  ready: { word: 'Reply ready', tone: 'success' },
-  approved: { word: 'Approved', tone: 'success' },
-  resolved: { word: 'Resolved', tone: 'neutral' },
-  failed: { word: 'Failed', tone: 'danger' },
-  later: { word: 'Later', tone: 'neutral' },
+  new: { word: RESOLVE_WORD_LABEL.open, tone: 'neutral' },
+  working: { word: RESOLVE_WORD_LABEL.working, tone: 'info' },
+  needs_you: { word: RESOLVE_WORD_LABEL.needs_you, tone: 'warning' },
+  ready: { word: RESOLVE_WORD_LABEL.ready, tone: 'success' },
+  approved: { word: RESOLVE_WORD_LABEL.done, tone: 'success' },
+  resolved: { word: RESOLVE_WORD_LABEL.done, tone: 'neutral' },
+  failed: { word: RESOLVE_WORD_LABEL.couldnt_fix, tone: 'danger' },
+  later: { word: RESOLVE_WORD_LABEL.done, tone: 'neutral' },
 } satisfies Record<ResolveUiState, CrumbState>;
 
 type ConversationParams = {

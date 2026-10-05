@@ -126,9 +126,9 @@ describe('buildTimelineStream resolve batches', () => {
     expect(group.entry.summary.total).toBe(10);
     expect(group.entry.summary.parts.map((part) => [part.state, part.count])).toEqual([
       ['ready', 3],
-      ['drafting', 4],
-      ['pushed', 2],
-      ['failed', 1],
+      ['working', 4],
+      ['done', 2],
+      ['couldnt_fix', 1],
     ]);
     expect(group.entry.prNumber).toBe(318);
   });
@@ -301,7 +301,7 @@ describe('buildTimelineStream resolve batches', () => {
     const owners = needsYouOwners({ items, entries, events: [] });
 
     expect(owners.map((owner) => [owner.id, owner.kind, owner.text])).toEqual([
-      [GROUP_ID, 'batch', 'Resolve #318 · 3 replies ready · 1 failed'],
+      [GROUP_ID, 'batch', "Resolve #318 · 3 ready · 1 couldn't fix"],
     ]);
   });
 

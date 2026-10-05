@@ -1,5 +1,5 @@
 import { threadFixSha } from '../../../features/resolve/threadFixSha';
-import { resolveOutcomeReason } from './resolveOutcomeReason';
+import { resolveOutcomeReason, withoutLegacyFailurePrefix } from './resolveOutcomeReason';
 import type { ResolveThread } from '@goodboy/types';
 import type { ResolverThreadOutcome } from '../../../features/session/resolverTurnOutcomes';
 
@@ -9,11 +9,9 @@ export const threadOutcome = ({
   row,
   shouldIncludeCandidate = false,
 }: Params): ResolverThreadOutcome | null => {
-  const savedReason =
-    resolveOutcomeReason({ stateReason: row.stateReason })?.replace(
-      /^(?:(?:missing_result|stopped|failed|dirty_tree):)+/,
-      '',
-    ) ?? null;
+  const savedReason = withoutLegacyFailurePrefix({
+    stateReason: resolveOutcomeReason({ stateReason: row.stateReason }),
+  });
   const isCandidate = savedReason?.startsWith('candidate:') === true;
   if (isCandidate && !shouldIncludeCandidate) {
     return null;

@@ -381,7 +381,7 @@ exactly one home (`activityView.ts`, `entriesOfView`):
 - **Needs you** is a block on top of Activity, drawn only while it is not
   empty: a card on `bg-subtle` with a `warning` eyebrow and one row per owner,
   never one per child. A row is an icon in the warning tone, one line of text
-  (`Resolve #318 · 2 replies ready · 1 failed`, `Retry policy · 1 question`,
+  (`Resolve #318 · 2 ready · 1 couldn't fix`, `Retry policy · 1 question`,
   `Rebase of feat/export stopped ×2`) and a ghost **Open** that goes to
   whoever owns the action: the review, the exact question, the branch. It never
   offers Push or Answer, because the verb stays with its owner. The owners come
@@ -625,8 +625,8 @@ single visible action from the ask. The state slot is a fixed 112px space
 row says its state at the same x and the title takes the rest and truncates.
 Quiet final states (Pushed, Accepted, Resolved, Reply only, Skipped, Closed)
 show as an icon in their tone, with the word in the tooltip and for screen
-readers; states that ask you or report trouble (Needs you, Ready for you,
-Draft failed, Longer than usual, Step 3 ready) stay a word, in their short form,
+readers; states that ask you or report trouble (Needs you, Ready,
+Couldn't fix, Longer than usual, Step 3 ready) stay a word, in their short form,
 with the full sentence in the tooltip. A new state is a row in the
 `statePresentation` tables, never a branch in the component.
 When several conditions hold, failed wins, then waiting (an answer, then the
@@ -692,10 +692,12 @@ already on screen never grows again: when a run finishes under the pointer its
 rows join the group already open.
 
 A resolver takes its row state from the comment it fixes, not from the agent:
-the `review` reason carries the Review state and its word (Ready for you,
-Drafting, Pushed, Draft failed), with Review's tone and node. A comment that
-needs you, has a ready fix or a failed draft sets the `reviewComment` ask, so
-Needs you carries it and the row itself is not tinted.
+the `review` reason carries the Review state and its word, one of five (Working,
+Needs you, Ready, Couldn't fix, Done) or the quiet sub-word of a Done comment
+(Pushed), with Review's tone and node. An agent that fixes several comments
+counts them in comments ("3 ready · 1 needs you"), never as agents. A comment
+that needs you, has a ready fix or could not be fixed sets the `reviewComment`
+ask, so Needs you carries it and the row itself is not tinted.
 
 ### Work meta
 

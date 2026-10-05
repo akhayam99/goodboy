@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import type { ResolveAttemptLike } from './resolveActivity';
-import { resolveBatchByAgentId, resolveBatchTag, resolveBatchTitle } from './resolveBatchSummary';
+import type { ResolveAttemptLike, ResolveThreadFact } from './resolveActivity';
+import {
+  resolveBatchByAgentId,
+  resolveBatchRowState,
+  resolveBatchSummary,
+  resolveBatchTag,
+  resolveBatchTitle,
+} from './resolveBatchSummary';
 
 const MINUTE = 60_000;
 const RELATED_WINDOW_MS = 10 * MINUTE;
@@ -109,9 +115,9 @@ describe('resolveBatchByAgentId', () => {
 });
 
 describe('resolve batch labels', () => {
-  it('titles a burst with the PR and the agent count', () => {
-    expect(resolveBatchTitle({ total: 7, prNumber: 318 })).toBe('Resolve #318 · 7 agents');
-    expect(resolveBatchTitle({ total: 1, prNumber: null })).toBe('Resolve · 1 agent');
+  it('titles a fix run with the PR and the number of comments, never agents', () => {
+    expect(resolveBatchTitle({ total: 7, prNumber: 318 })).toBe('Fix run · #318 · 7 comments');
+    expect(resolveBatchTitle({ total: 1, prNumber: null })).toBe('Fix run · 1 comment');
   });
 
   it('tags related groups and counts retries', () => {
@@ -119,5 +125,73 @@ describe('resolve batch labels', () => {
     expect(resolveBatchTag({ origin: 'launch', retryCount: 0 })).toBeNull();
     expect(resolveBatchTag({ origin: 'launch', retryCount: 1 })).toBe('1 retry');
     expect(resolveBatchTag({ origin: 'launch', retryCount: 3 })).toBe('3 retries');
+  });
+});
+
+describe('resolveBatchSummary', () => {
+  const thread = (state: ResolveThreadFact['state']): ResolveThreadFact => ({
+    state,
+    path: null,
+    line: null,
+  });
+
+  it('counts the comments of every agent in five words, not the agents', () => {
+    const summary = resolveBatchSummary({
+      facts: [
+        {
+          state: 'needs',
+          word: '9 comments',
+          threads: [
+            thread('ready'),
+            thread('ready'),
+            thread('edited'),
+            thread('outdated'),
+            thread('ready'),
+            thread('needs'),
+            thread('drafting'),
+            thread('drafting'),
+            thread('failed'),
+          ],
+        },
+      ],
+    });
+
+    expect(summary.total).toBe(9);
+    expect(summary.parts.map((part) => [part.state, part.count])).toEqual([
+      ['ready', 5],
+      ['needs_you', 1],
+      ['working', 2],
+      ['couldnt_fix', 1],
+    ]);
+    expect(summary.attentionCount).toBe(7);
+    expect(summary.failedCount).toBe(1);
+  });
+
+  it('counts an agent without comment facts as one comment', () => {
+    const summary = resolveBatchSummary({
+      facts: [
+        { state: 'pushed', word: 'Pushed' },
+        { state: 'failed', word: "Couldn't fix" },
+      ],
+    });
+
+    expect(summary.total).toBe(2);
+    expect(summary.parts.map((part) => `${part.count} ${part.noun}`)).toEqual([
+      '1 done',
+      "1 couldn't fix",
+    ]);
+  });
+
+  it('is waiting while something needs the owner, running while comments work, done otherwise', () => {
+    const rowPhase = (states: ReadonlyArray<ResolveThreadFact['state']>) =>
+      resolveBatchRowState({
+        summary: resolveBatchSummary({
+          facts: [{ state: states[0] ?? 'new', word: '', threads: states.map(thread) }],
+        }),
+      }).phase;
+
+    expect(rowPhase(['drafting', 'ready'])).toBe('waiting');
+    expect(rowPhase(['drafting', 'pushed'])).toBe('running');
+    expect(rowPhase(['pushed', 'skipped'])).toBe('done');
   });
 });

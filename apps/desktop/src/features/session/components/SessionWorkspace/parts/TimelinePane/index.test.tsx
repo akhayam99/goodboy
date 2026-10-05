@@ -1604,10 +1604,10 @@ describe('TimelinePane row meta', () => {
 describe('TimelinePane resolve batch', () => {
   const STATES = ['ready', 'drafting', 'pushed', 'failed'] as const;
   const WORD = {
-    ready: 'Ready for you',
-    drafting: 'Drafting',
+    ready: 'Ready',
+    drafting: 'Working',
     pushed: 'Pushed',
-    failed: 'Draft failed',
+    failed: "Couldn't fix",
   } as const;
 
   const seedBatch = () => {
@@ -1724,7 +1724,7 @@ describe('TimelinePane resolve batch', () => {
     expect(toggle().getAttribute('aria-expanded')).toBe('false');
     expect(within(toggle()).getByTestId('fold-summary').textContent).toBe('4 files');
     expect(screen.getByTestId('resolve-batch-summary').textContent).toBe(
-      '1 ready for you · 1 drafting · 1 pushed · 1 failed',
+      "1 ready · 1 working · 1 done · 1 couldn't fix",
     );
     expect(screen.queryByText('file0.ts')).toBeNull();
   });
@@ -1768,8 +1768,8 @@ describe('TimelinePane resolve batch', () => {
 
     expect(toggle().getAttribute('aria-expanded')).toBe('true');
     screen.getByText('file0.ts');
-    expect(screen.getAllByText('Ready for you').length).toBeGreaterThan(0);
-    screen.getByText('Draft failed');
+    expect(screen.getAllByText('Ready').length).toBeGreaterThan(0);
+    screen.getByText("Couldn't fix");
     const rowIds = Array.from(document.querySelectorAll('[data-row-id]')).map((element) =>
       element.getAttribute('data-row-id'),
     );
@@ -1862,7 +1862,7 @@ describe('TimelinePane resolve batch', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(toggle().getAttribute('aria-expanded')).toBe('false');
-    expect(screen.getByTestId('resolve-batch-summary').textContent).toContain('1 failed');
+    expect(screen.getByTestId('resolve-batch-summary').textContent).toContain("1 couldn't fix");
   });
 });
 

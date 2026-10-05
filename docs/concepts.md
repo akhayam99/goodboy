@@ -292,7 +292,7 @@ opens the Commits tab, which owns it; no Activity row has a `⋯`.
 
 A **Needs you** block sits on top of Activity, and only while something waits
 on you: one row per owner, never per child. A burst reads "Resolve #318 · 2
-replies ready · 1 failed", a run "Retry policy · 1 question", a stopped rebase
+ready · 1 couldn't fix", a run "Retry policy · 1 question", a stopped rebase
 "Rebase of feat/export stopped ×2". Each row has **Open**, which goes to
 whoever owns the action (the review, the exact question, the branch). Push is
 never offered there. The block disappears when nothing waits, and there is no
@@ -745,25 +745,41 @@ reads every page of threads GitHub returns. If the read fails, Review
 shows the error from `gh` instead of an empty list.
 
 Review is one flow: the list on the left, the focused comment on the right.
-Every comment shows one state word, grouped in three:
+Every comment shows one of five words, the same word in the list, the thread,
+Activity, Needs you, the transcript card and the breadcrumb menus. One pure
+projection (`features/resolve/commentProjection.ts`) owns them, and every count
+is a count of comments, never of agents:
 
-- **Open**: Not started, Drafting (one live line says what the agent does),
-  Needs you (the agent asked), Ready (the fix and the reply under the comment,
-  with an Edited tag once you changed the reply), Comment changed (the reviewer
-  edited the original comment since the draft), Draft failed or Push failed (the box under the comment
-  names the reason, such as the run ended before a result or the provider
-  error, never a generic error. A failed run also shows the last command it
-  ran with its result, such as `pnpm test src/webhooks · 2 failing`, and a
-  link to the transcript)
-- **Ready to push**: Accepted, Reply only (with a Resolve only tag when
-  nothing is posted)
-- **Done**: Skipped (it never blocks the push), Pushed, and Resolved on GitHub
-  when someone else closed it
+- **Working**: the resolver is on it (Waiting while a launch queues behind
+  another, Pushing while a push is in flight)
+- **Needs you**: the agent asked. A question comes from a `needs-input` outcome,
+  or from the agent's own last message when a turn ended without any outcome. A
+  turn that ends without an outcome is never a failure
+- **Ready**: the fix and the reply under the comment, with an Edited tag once
+  you changed the reply
+- **Couldn't fix**: the box under the comment says why in one sentence, from the
+  cause recorded on the attempt (`resolve_attempts.failure_cause`, m225): the fix
+  didn't start, the provider stopped the run, every provider is over its spend
+  cap, you stopped it (shown as Stopped), the app closed while it was working, it
+  conflicts with a fix you accepted before, the worktree is gone, or the fix
+  couldn't be saved from its copy of the branch. A comment written before m225
+  reads "Cause not recorded". A failed run also shows the last command it ran
+  with its result, such as `pnpm test src/webhooks · 2 failing`, and a link to
+  the transcript. A push that failed stays here as Push failed
+- **Done**: a quiet sub-word says how: Accepted (waiting for the push), Answered
+  (a reply only), Skipped (it never blocks the push), Pushed, and Resolved on
+  GitHub when someone else closed it
+
+A comment nobody started reads Open. What git says (Already on origin, Looks
+fixed, Still needed, Fix went missing), Comment changed (the reviewer edited the
+original comment since the draft) and Checks failed (the change stays Ready) are
+chips next to the word, never in place of it. The groups are Open, Ready to push
+and Done, and the header shows one summary line instead of a chip per state. The
+`…` above the list filters the list by state.
 
 The state word carries the tone: Needs you is the only warning, Ready is neutral
-(the Accept button is the signal), Edited and Comment changed have their own tones,
-and the header shows one summary line instead of a chip per state. The `…`
-above the list filters the list by state.
+(the Accept button is the signal), Couldn't fix is the danger tone, except a stop
+by you.
 
 Review reads git after a fetch when it opens and again before every push, and
 keeps one git state per thread in `resolve_threads.git_state` (`local`,

@@ -37,10 +37,9 @@ const plural = ({
 }): string => `${count} ${count === 1 ? one : many}`;
 
 const BATCH_ATTENTION: Readonly<Record<string, (params: { readonly count: number }) => string>> = {
-  ready: ({ count }) => `${count} ${count === 1 ? 'reply' : 'replies'} ready`,
-  needs: ({ count }) => `${count} ${count === 1 ? 'needs' : 'need'} you`,
-  outdated: ({ count }) => `${count} changed`,
-  failed: ({ count }) => `${count} failed`,
+  ready: ({ count }) => `${count} ready`,
+  needs_you: ({ count }) => `${count} needs you`,
+  couldnt_fix: ({ count }) => `${count} couldn't fix`,
 };
 
 const batchText = ({

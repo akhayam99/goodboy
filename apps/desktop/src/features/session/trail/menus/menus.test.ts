@@ -23,7 +23,7 @@ import { conversationMenu } from './conversationMenu';
 import { attemptMenu } from './attemptMenu';
 import { resolveAgainActions } from './crumbActions';
 import type { ResolveQueueRow } from '../../../resolve/buildResolveQueueRows';
-import type { ResolveAttempt } from '@goodboy/types';
+import type { ResolveAttempt, SessionId } from '@goodboy/types';
 import type { SessionProjectMount, WorktreeStatus } from '@goodboy/types';
 
 const rowsOf = (menu: CrumbMenuModel) => menu.groups.flatMap((group) => group.rows);
@@ -464,10 +464,10 @@ describe('conversationMenu', () => {
     ]);
     expect(menu.count).toBe('3 open');
     expect(rowsOf(menu).map((candidate) => candidate.state?.word)).toEqual([
-      'Reply ready',
+      'Ready',
       'Open',
       'Working',
-      'Resolved',
+      'Done',
     ]);
     expect(rowsOf(menu)[0]?.secondary).toBe(':42');
     expect(rowsOf(menu)[0]?.isCurrent).toBe(true);
@@ -493,10 +493,65 @@ describe('attemptMenu', () => {
 
     expect(labelsOf(menu)).toEqual(['Attempt 2', 'Attempt 1']);
     expect(rowsOf(menu).map((candidate) => candidate.state?.word)).toEqual([
-      'Reply ready',
-      'Failed',
+      'Ready',
+      "Couldn't fix",
     ]);
     expect(rowsOf(menu)[0]?.isCurrent).toBe(true);
+  });
+
+  it('says why an attempt could not fix, from the cause it recorded', () => {
+    const attempt = (
+      id: string,
+      phase: ResolveAttempt['phase'],
+      createdAt: number,
+      failureCause?: ResolveAttempt['failureCause'],
+    ): ResolveAttempt => ({
+      id,
+      sessionId: 'session' as SessionId,
+      agentId: 'agent' as AgentId,
+      prNumber: 318,
+      threadIds: [],
+      provider: 'anthropic',
+      model: 'Sonnet 5',
+      effort: null,
+      instructions: null,
+      phase,
+      mountTarget: null,
+      startedAt: null,
+      endedAt: null,
+      error: null,
+      failureCause,
+      createdAt,
+      batchId: null,
+      copyPath: null,
+      launchChoice: null,
+    });
+    const menu = attemptMenu({
+      attempts: [
+        attempt('a1', 'failed', 1, 'spend_cap'),
+        attempt('a2', 'finished', 2, 'accept_conflict'),
+        attempt('a3', 'failed', 3),
+        attempt('a4', 'cancelled', 4),
+      ],
+      threadLabel: 'retryPolicy.ts:42',
+      currentAgentId: null,
+      ageOf: () => '18m',
+      actions: [],
+      onSelect: vi.fn(),
+    });
+
+    expect(rowsOf(menu).map((candidate) => candidate.secondary)).toEqual([
+      'You stopped it · 18m',
+      'Cause not recorded · 18m',
+      'It conflicts with a fix you accepted before · 18m',
+      'Every provider is over its spend cap · 18m',
+    ]);
+    expect(rowsOf(menu).map((candidate) => candidate.state?.word)).toEqual([
+      'Stopped',
+      "Couldn't fix",
+      "Couldn't fix",
+      "Couldn't fix",
+    ]);
   });
 
   it('offers Resolve again once no attempt on the comment is live', () => {

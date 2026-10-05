@@ -154,8 +154,8 @@ describe('Review as one flow', () => {
       .map((button) => button.textContent ?? '');
     expect(words.some((text) => text.includes('Ready'))).toBe(true);
     expect(words.some((text) => text.includes('Needs you'))).toBe(true);
-    expect(words.some((text) => text.includes('Drafting'))).toBe(true);
-    expect(words.some((text) => text.includes('Not started'))).toBe(true);
+    expect(words.some((text) => text.includes('Working'))).toBe(true);
+    expect(words.some((text) => text.includes('Open'))).toBe(true);
     expect(words.some((text) => text.includes('Skipped'))).toBe(true);
     expect(words.some((text) => text.includes('Pushed'))).toBe(true);
     const labels = screen.getAllByRole('button').map((button) => button.textContent ?? '');
@@ -467,7 +467,7 @@ describe('Review as one flow', () => {
 
   it('keeps Stop and the transcript on the properties of a drafting comment, not in a menu', async () => {
     await mount({ threadId: null });
-    fireEvent.click(row(/Drafting/));
+    fireEvent.click(row(/Working/));
     await settle();
 
     expect(within(comment()).queryAllByRole('button', { name: /^Accept|^Edit|^Reply/ })).toEqual(
@@ -644,7 +644,7 @@ describe('Review of a failed run', () => {
     await mountFailed({ failure: 'run' });
 
     const failed = within(comment());
-    expect(failed.getByText('The run ended before the resolver reported a result')).toBeDefined();
+    expect(failed.getByText('The model provider stopped the run')).toBeDefined();
     expect(failed.getByText(/pnpm test src\/webhooks · 2 failing/)).toBeDefined();
     expect(failed.getByRole('button', { name: /^Retry/ })).toBeDefined();
     expect(failed.getByRole('button', { name: 'Try another model' })).toBeDefined();

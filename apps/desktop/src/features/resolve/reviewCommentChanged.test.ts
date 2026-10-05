@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { ResolveQueueItem, ResolveThread, SessionId } from '@goodboy/types';
 import { buildResolveQueueRows } from './buildResolveQueueRows';
-import { reviewCommentStateOf, reviewCommentWord } from './reviewCommentState';
+import {
+  projectReviewComment,
+  reviewCommentStateOf,
+  reviewCommentWord,
+} from './reviewCommentState';
 
 const sessionId = 'session' as SessionId;
 
@@ -75,7 +79,12 @@ describe('reviewCommentStateOf', () => {
     const row = rowOf();
     const state = reviewCommentStateOf({ row, isChanged: true });
     expect(state).toBe('outdated');
-    expect(reviewCommentWord({ state, row })).toBe('Comment changed');
+    expect(reviewCommentWord({ state, row })).toBe('Ready');
+    expect(projectReviewComment({ state, row })).toMatchObject({
+      word: 'ready',
+      isChanged: true,
+      chips: ['Comment changed'],
+    });
   });
 
   it('does not flag a change on a comment nobody drafted yet', () => {

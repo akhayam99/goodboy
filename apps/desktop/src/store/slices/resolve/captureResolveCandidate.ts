@@ -12,6 +12,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { withCandidateLock } from './candidateLock';
 import { loadResolveCandidatesInto } from './loadResolveCandidatesInto';
 import { recordCommitLinks } from './recordCommitLinks';
+import { ResolveFailure } from './resolveFailure';
 import type { CandidateCaptureParams, SliceParams } from './types';
 
 type Params = SliceParams & CandidateCaptureParams;
@@ -24,7 +25,19 @@ export const captureResolveCandidate = async ({
 }: Params): Promise<string | null> => {
   const db = tauriDatabase;
   const candidate = await getResolveCandidate({ db, candidateId: attemptId });
-  if (candidate === null || candidate.state !== 'building') {
+  if (candidate === null) {
+    const attempt = (await listResolveAttempts({ db, sessionId })).find(
+      (item) => item.id === attemptId,
+    );
+    if (attempt?.copyPath != null) {
+      throw new ResolveFailure({
+        failureCause: 'capture_failed',
+        message: 'the run had no candidate to save its commits',
+      });
+    }
+    return null;
+  }
+  if (candidate.state !== 'building') {
     return null;
   }
   const covered = (await listResolveQueueItems({ db, sessionId })).filter(

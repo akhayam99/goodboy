@@ -85,6 +85,6 @@ describe('activity resolves scene', () => {
     );
 
     expect(batches).toHaveLength(1);
-    expect(batches[0]?.text).toBe('Resolve #318 · 9 replies ready · 2 failed');
+    expect(batches[0]?.text).toBe("Resolve #318 · 9 ready · 2 couldn't fix");
   });
 });

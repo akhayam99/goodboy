@@ -8,6 +8,7 @@ import { createStore } from 'zustand/vanilla';
 import {
   insertResolveAttempt,
   insertResolveQueueItem,
+  listResolveAttempts,
   listResolveCandidates,
   listResolveQueueItems,
   listResolveThreads,
@@ -24,7 +25,7 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { ACCEPT_CONFLICT, acceptResolveQueueItem } from './acceptResolveQueueItem';
+import { acceptResolveQueueItem } from './acceptResolveQueueItem';
 import { integrateWorktreeCandidate } from '../../../features/worktree/worktree';
 import { createResolveSlice } from './index';
 import { resolveInitialState } from './state';
@@ -656,11 +657,7 @@ describe('resolve candidates keep the branch tip approved', () => {
   it('rolls a colliding fix back at accept and tells the comment to redo it on top', async () => {
     const live = makeHarness();
     const itemA = await seedItem({ threadId: 'thread-a' });
-    await live.actions.beginResolveCandidate({
-      sessionId: SESSION_ID,
-      attemptId: 'attempt-1',
-      mountTarget: mountTarget(),
-    });
+    await startAttempt({ harness: live, attemptId: 'attempt-1', createdAt: 10 });
     agentWrites({ files: [['a.txt', 'a\n']], message: 'fix a' });
     await live.actions.captureResolveCandidate({
       sessionId: SESSION_ID,
@@ -680,11 +677,15 @@ describe('resolve candidates keep the branch tip approved', () => {
         revision: 0,
         reply: 'Reply for thread-a',
       }),
-    ).rejects.toThrow(ACCEPT_CONFLICT);
+    ).rejects.toThrow('This fix collides with one accepted before it');
 
     expect(git(worktreePath, ['rev-parse', 'HEAD'])).toBe(head);
     const [thread] = await listResolveThreads({ db, sessionId: SESSION_ID });
-    expect(thread?.stateReason).toBe('failed:accept_conflict');
+    expect(thread?.state).toBe('failed');
+    const attempts = await listResolveAttempts({ db, sessionId: SESSION_ID });
+    expect(attempts.find((attempt) => attempt.id === 'attempt-1')?.failureCause).toBe(
+      'accept_conflict',
+    );
     const [candidate] = await listResolveCandidates({ db, sessionId: SESSION_ID });
     expect(candidate?.state).toBe('stale');
   });

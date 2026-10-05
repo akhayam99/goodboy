@@ -85,7 +85,7 @@ describe('the header status of an agent', () => {
   it('shows the Review state word of a resolver instead of Done', async () => {
     await show({ isResolver: true });
 
-    expect(screen.getByText('Ready for you')).toBeDefined();
+    expect(screen.getByText('Ready')).toBeDefined();
     expect(screen.queryByText('Done')).toBeNull();
   });
 

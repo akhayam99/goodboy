@@ -20,7 +20,7 @@ import {
   resolveProposalKind,
   type ResolveProposalKind,
 } from '../../store/slices/resolve/resolveProposalKind';
-import { runFailureReason } from './runFailureReason';
+import { attemptFailureSentence } from './failureSentence';
 import { threadFixSha } from './threadFixSha';
 import {
   resolveRowState,
@@ -228,12 +228,11 @@ export const buildResolveQueueRows = ({
     const receipts = resolveDeliveryReceiptsFor({ item, thread, deliveryReceipts });
     const rowState = resolveRowState({
       stage: thread.stage,
-      proposalKind,
       failedStep: thread.stage === 'failed' ? failedStepOf({ receipts, thread }) : null,
       isLeftOpen: delivery !== null && !delivery.isThreadResolved,
       pushedSha: threadFixSha({ commitShas: thread.commitShas, integratedSha: item.integratedSha }),
       pushError: publicationErrorOf({ thread }),
-      runFailure: runFailureReason({ thread, attempt }),
+      runFailure: attemptFailureSentence({ attempt }),
       provider: REVIEW_SOURCE_LABEL[thread.sourceKind ?? 'github'],
     });
     return {

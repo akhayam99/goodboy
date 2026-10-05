@@ -80,6 +80,7 @@ import { m221ResolveAttemptHumanInstructions } from './m221-resolve-attempt-huma
 import { m222ResolveAttemptLaunch } from './m222-resolve-attempt-launch';
 import { m223DiffCommentTarget } from './m223-diff-comment-target';
 import { m224ArtifactComments } from './m224-artifact-comments';
+import { m225ResolveAttemptFailureCause } from './m225-resolve-attempt-failure-cause';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -453,4 +454,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 222, sql: m222ResolveAttemptLaunch },
   { version: 223, sql: m223DiffCommentTarget },
   { version: 224, sql: m224ArtifactComments },
+  { version: 225, sql: m225ResolveAttemptFailureCause },
 ];

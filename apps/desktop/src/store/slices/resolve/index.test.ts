@@ -125,9 +125,11 @@ const closedThreadIdsFor = ({ get }: StatusParams): ReadonlyArray<string> =>
     .map((row) => row.threadId);
 const statusFor = ({ get }: StatusParams): string => {
   const rows = ownedRows({ get });
+  const attempts = get().sessionResolveAttempts[SESSION_ID] ?? [];
   if (
     rows.some(
-      (row) => row.stateReason === 'stopped' || row.stateReason?.startsWith('stopped:') === true,
+      (row) =>
+        attempts.find((attempt) => attempt.id === row.activeAttemptId)?.failureCause === 'stopped',
     )
   ) {
     return 'stopped';
@@ -261,7 +263,7 @@ describe('durable resolve store', () => {
       state: 'needs_answer',
       reason: 'proposed_fix',
     },
-    { marker: 'No marker survived.', state: 'failed', reason: 'interrupted' },
+    { marker: 'No marker survived.', state: 'failed', reason: null },
   ])(
     'recovers an interrupted candidate as $state after the import is already stamped',
     async ({ marker, state, reason }) => {
@@ -328,12 +330,13 @@ describe('durable resolve store', () => {
     const rebooted = createHarness();
     await rebooted.actions.loadResolveSession({ sessionId: SESSION_ID });
     expect(
-      rebooted
-        .get()
-        .sessionResolveThreads[SESSION_ID]?.every(
-          (row) => row.state === 'failed' && row.stateReason === 'interrupted',
-        ),
+      rebooted.get().sessionResolveThreads[SESSION_ID]?.every((row) => row.state === 'failed'),
     ).toBe(true);
+    expect(
+      (await listResolveAttempts({ db, sessionId: SESSION_ID })).find(
+        (attempt) => attempt.id === attemptId,
+      ),
+    ).toMatchObject({ phase: 'failed', failureCause: 'app_closed' });
     expect(outcomesFor({ get: rebooted.get })).toEqual({});
   });
 
@@ -549,7 +552,7 @@ describe('durable resolve store', () => {
     });
     await live.actions.persistResolveTurn({
       sessionId: SESSION_ID,
-      agent,
+      agent: { ...agent, sourceThreadIds: ['PRRT_1'] },
       assistantText:
         'Committed a8c81d935.\n<<comment-resolved threadId="PRRT_1" commitSha="a8c81d935">>',
       attemptId,
@@ -840,18 +843,71 @@ describe('durable resolve store', () => {
     expect(outcomesFor({ get: live.get })).toEqual({});
   });
 
-  it('restores stopped status for a legacy resolver without an attempt row', async () => {
+  it('records a stop by the user as the stopped cause and keeps it after a restart', async () => {
     const live = createHarness();
     await live.actions.loadResolveSession({ sessionId: SESSION_ID });
+    const attemptId = await live.actions.recordResolveAttempt({
+      sessionId: SESSION_ID,
+      agent,
+      provider: 'anthropic',
+      model: 'recorded-model',
+      effort: null,
+      instructions: null,
+      phase: 'running',
+      mountTarget: MOUNT_TARGET,
+    });
     await live.actions.recordResolvePhase({
       sessionId: SESSION_ID,
       agentId: AGENT_ID,
+      attemptId,
       phase: 'cancelled',
     });
     const rebooted = createHarness();
     await rebooted.actions.loadResolveSession({ sessionId: SESSION_ID });
     expect(statusFor({ get: live.get })).toBe('stopped');
     expect(statusFor({ get: rebooted.get })).toBe('stopped');
+    expect((await listResolveAttempts({ db, sessionId: SESSION_ID }))[0]).toMatchObject({
+      phase: 'cancelled',
+      failureCause: 'stopped',
+    });
+  });
+
+  it('records the cause a failed run was given and clears it on the next phase', async () => {
+    const live = createHarness();
+    await live.actions.loadResolveSession({ sessionId: SESSION_ID });
+    const attemptId = await live.actions.recordResolveAttempt({
+      sessionId: SESSION_ID,
+      agent,
+      provider: 'anthropic',
+      model: 'recorded-model',
+      effort: null,
+      instructions: null,
+      phase: 'running',
+      mountTarget: MOUNT_TARGET,
+    });
+    await live.actions.recordResolvePhase({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      attemptId,
+      phase: 'failed',
+      error: 'every provider is over its spend cap',
+      failureCause: 'spend_cap',
+    });
+    expect((await listResolveAttempts({ db, sessionId: SESSION_ID }))[0]).toMatchObject({
+      phase: 'failed',
+      error: 'every provider is over its spend cap',
+      failureCause: 'spend_cap',
+    });
+    await live.actions.recordResolvePhase({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      attemptId,
+      phase: 'running',
+    });
+    expect((await listResolveAttempts({ db, sessionId: SESSION_ID }))[0]).toMatchObject({
+      phase: 'running',
+      failureCause: null,
+    });
   });
 
   it('imports a proposed fix with its verdict and ignores later transcript edits', async () => {
@@ -962,10 +1018,7 @@ describe('durable resolve store', () => {
       state: 'failed',
       commitShas: ['abcdef1234567890'],
     });
-    expect(rows.find((row) => row.threadId === 'PRRT_2')).toMatchObject({
-      state: 'failed',
-      stateReason: 'stopped:interrupted',
-    });
+    expect(rows.find((row) => row.threadId === 'PRRT_2')).toMatchObject({ state: 'failed' });
   });
 
   it('promotes the fix a cleanly exited run already reported and fails the rest', async () => {
@@ -985,10 +1038,7 @@ describe('durable resolve store', () => {
       state: 'fixed',
       commitShas: ['abcdef1234567890'],
     });
-    expect(rows.find((row) => row.threadId === 'PRRT_2')).toMatchObject({
-      state: 'failed',
-      stateReason: 'failed:interrupted',
-    });
+    expect(rows.find((row) => row.threadId === 'PRRT_2')).toMatchObject({ state: 'failed' });
   });
 
   const askQuestion = async ({ agentId = AGENT_ID }: { readonly agentId?: AgentId } = {}) =>
@@ -1018,6 +1068,86 @@ describe('durable resolve store', () => {
       expect(row.stateReason).toBe('question');
       expect(row.question).toBe('Which timeout applies?');
     }
+  });
+
+  const runningAttempt = async ({ live }: { readonly live: ReturnType<typeof createHarness> }) => {
+    await live.actions.loadResolveSession({ sessionId: SESSION_ID });
+    return live.actions.recordResolveAttempt({
+      sessionId: SESSION_ID,
+      agent,
+      provider: 'anthropic',
+      model: 'model',
+      effort: null,
+      instructions: null,
+      phase: 'running',
+      mountTarget: MOUNT_TARGET,
+    });
+  };
+
+  it('turns a turn that ended with no outcome into a question carrying the agent message', async () => {
+    const live = createHarness();
+    const attemptId = await runningAttempt({ live });
+
+    await live.actions.persistResolveTurn({
+      sessionId: SESSION_ID,
+      agent,
+      attemptId,
+      assistantText: 'I changed both guards and the tests pass. Can I commit?',
+    });
+
+    const rows = await listResolveThreads({ db, sessionId: SESSION_ID });
+    for (const row of rows) {
+      expect(row).toMatchObject({
+        state: 'needs_answer',
+        stage: 'asking',
+        question: 'I changed both guards and the tests pass. Can I commit?',
+      });
+    }
+    const [attempt] = await listResolveAttempts({ db, sessionId: SESSION_ID });
+    expect(attempt).toMatchObject({ phase: 'waiting', failureCause: null });
+  });
+
+  it('never reads a markerless turn as a failed one, even for a thread that was ready before', async () => {
+    const live = createHarness();
+    await live.actions.loadResolveSession({ sessionId: SESSION_ID });
+    await live.actions.persistResolveTurn({
+      sessionId: SESSION_ID,
+      agent,
+      assistantText: ASSISTANT_TEXT,
+    });
+    const attemptId = await runningAttempt({ live });
+
+    await live.actions.persistResolveTurn({
+      sessionId: SESSION_ID,
+      agent,
+      attemptId,
+      assistantText:
+        'The first fix still stands. Should the second one wait for the schema change?',
+    });
+
+    const rows = await listResolveThreads({ db, sessionId: SESSION_ID });
+    expect(rows.every((row) => row.state === 'needs_answer')).toBe(true);
+    expect(outcomesFor({ get: live.get })).toMatchObject({
+      PRRT_1: { kind: 'resolved', commitSha: 'abcdef1234567890' },
+      PRRT_2: { kind: 'wontfix', reason: 'intentional' },
+    });
+  });
+
+  it('fails a turn that ended with nothing to show as a provider error', async () => {
+    const live = createHarness();
+    const attemptId = await runningAttempt({ live });
+
+    await live.actions.persistResolveTurn({
+      sessionId: SESSION_ID,
+      agent,
+      attemptId,
+      assistantText: '  ',
+    });
+
+    const rows = await listResolveThreads({ db, sessionId: SESSION_ID });
+    expect(rows.every((row) => row.state === 'failed')).toBe(true);
+    const [attempt] = await listResolveAttempts({ db, sessionId: SESSION_ID });
+    expect(attempt).toMatchObject({ phase: 'failed', failureCause: 'provider_error' });
   });
 
   it('lands a needs-input outcome as the question of that thread only', async () => {

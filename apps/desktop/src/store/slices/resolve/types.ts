@@ -5,6 +5,7 @@ import type {
   PrComment,
   ProjectId,
   ResolveAttemptPhase,
+  ResolveFailureCause,
   ResolveBatch,
   ResolveCheckBreadth,
   ResolveLaunchChoice,
@@ -78,6 +79,7 @@ export type PhaseParams = SessionParams & {
   readonly attemptId?: string;
   readonly phase: ResolveAttemptPhase;
   readonly error?: string | null;
+  readonly failureCause?: ResolveFailureCause;
   readonly isCleanExit?: boolean;
 };
 export type DrainParams = SessionParams & {

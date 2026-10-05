@@ -12,7 +12,11 @@ import {
   type WorktreeWriterLease,
 } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { resolverTurnOutcomes } from '../../../features/session/resolverTurnOutcomes';
+import {
+  resolverTurnOutcomes,
+  type ResolverThreadOutcome,
+  type ResolverThreadQuestion,
+} from '../../../features/session/resolverTurnOutcomes';
 import { isTurnSettling } from '../turn/turnSettled';
 import { outcomePatch } from './outcomePatch';
 import { projectResolveRows } from './projectResolveRows';
@@ -24,8 +28,6 @@ type Params = SliceParams &
     readonly rows: ReadonlyArray<ResolveThread>;
     readonly attempts: ReadonlyArray<ResolveAttempt>;
   };
-
-const TARGET_UNRESOLVED = 'target_unresolved';
 
 const isActive = ({ attempt }: { readonly attempt: ResolveAttempt }): boolean =>
   attempt.phase === 'queued' || attempt.phase === 'running';
@@ -44,7 +46,8 @@ const downgradeTargetless = async ({ attempts, rows }: DowngradeParams): Promise
       db: tauriDatabase,
       id: attempt.id,
       phase: 'failed',
-      error: TARGET_UNRESOLVED,
+      error: 'the worktree for this run is no longer available',
+      failureCause: 'worktree_missing',
     });
     for (const row of rows) {
       if (row.activeAttemptId !== attempt.id || row.state === 'closed') {
@@ -52,17 +55,36 @@ const downgradeTargetless = async ({ attempts, rows }: DowngradeParams): Promise
       }
       await saveResolveThread({
         db: tauriDatabase,
-        row: {
-          ...row,
-          state: 'failed',
-          stateReason: TARGET_UNRESOLVED,
-          activeAttemptId: null,
-          updatedAt: Date.now(),
-        },
+        row: { ...row, state: 'failed', updatedAt: Date.now() },
         expectedRevision: row.revision,
       });
     }
   }
+};
+
+const reconciledPatch = ({
+  outcome,
+  asked,
+  verdict,
+}: {
+  readonly outcome: ResolverThreadOutcome | undefined;
+  readonly asked: ResolverThreadQuestion | undefined;
+  readonly verdict: 'fix' | 'wontfix' | undefined;
+}): Partial<ResolveThread> => {
+  if (outcome !== undefined) {
+    return outcomePatch({ outcome, verdict });
+  }
+  if (asked !== undefined) {
+    return { state: 'needs_answer', stateReason: 'question', question: asked.question };
+  }
+  return {
+    state: 'failed',
+    stateReason: null,
+    disposition: null,
+    commitShas: null,
+    replyDraft: null,
+    question: null,
+  };
 };
 
 const reconcileWrites = async ({ get, sessionId, rows, attempts }: Params): Promise<void> => {
@@ -122,7 +144,8 @@ const reconcileWrites = async ({ get, sessionId, rows, attempts }: Params): Prom
           db: tauriDatabase,
           id: attempt.id,
           phase: 'failed',
-          error: 'interrupted',
+          error: 'the app closed while the run was working',
+          failureCause: 'app_closed',
         });
       }
       continue;
@@ -148,17 +171,12 @@ const reconcileWrites = async ({ get, sessionId, rows, attempts }: Params): Prom
     let hasQuestion = false;
     for (const row of working) {
       const outcome = parsed.turnOutcomes[row.threadId];
-      const patch =
-        outcome === undefined
-          ? ({
-              state: 'failed',
-              stateReason: 'interrupted',
-              disposition: null,
-              commitShas: null,
-              replyDraft: null,
-              question: null,
-            } satisfies Partial<ResolveThread>)
-          : outcomePatch({ outcome, verdict: parsed.analysisVerdicts[row.threadId] });
+      const asked = parsed.questions[row.threadId];
+      const patch = reconciledPatch({
+        outcome,
+        asked,
+        verdict: parsed.analysisVerdicts[row.threadId],
+      });
       hasFailure = hasFailure || patch.state === 'failed';
       hasQuestion = hasQuestion || patch.state === 'needs_answer';
       await saveResolveThread({
@@ -171,7 +189,8 @@ const reconcileWrites = async ({ get, sessionId, rows, attempts }: Params): Prom
       db: tauriDatabase,
       id: attempt.id,
       phase: hasFailure ? 'failed' : hasQuestion ? 'waiting' : 'finished',
-      error: hasFailure ? 'interrupted' : null,
+      error: hasFailure ? 'the app closed while the run was working' : null,
+      failureCause: hasFailure ? 'app_closed' : null,
     });
   }
 };

@@ -1,10 +1,13 @@
 import { insertResolveAttempt, listResolveAttempts, listResolveThreads } from '@goodboy/db';
 import { saveResolveThread } from './saveResolveThread';
+import { formatError } from '@goodboy/ui';
 import type { ResolveAttempt } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { agentThreadIds } from '../../../features/session/agentThreadIds';
 import { beginResolveCandidate } from './beginResolveCandidate';
 import { createResolveThread } from './createResolveThread';
+import { ResolveFailure } from './resolveFailure';
+import { withoutLegacyFailurePrefix } from './resolveOutcomeReason';
 import { threadOutcome } from './threadOutcome';
 import { projectResolveRows } from './projectResolveRows';
 import type { AttemptParams, SliceParams } from './types';
@@ -66,13 +69,17 @@ export const recordResolveAttempt = async ({
   };
   await insertResolveAttempt({ db, attempt });
   if (phase === 'running' && candidateMode === 'propose') {
-    await beginResolveCandidate({
-      set,
-      get,
-      sessionId,
-      attemptId: attempt.id,
-      mountTarget,
-    }).catch(() => undefined);
+    try {
+      await beginResolveCandidate({
+        set,
+        get,
+        sessionId,
+        attemptId: attempt.id,
+        mountTarget,
+      });
+    } catch (error) {
+      throw new ResolveFailure({ failureCause: 'capture_failed', message: formatError(error) });
+    }
   }
   const rows = await listResolveThreads({ db, sessionId });
   const claimed = threadIds ?? attempt.threadIds;
@@ -98,10 +105,7 @@ export const recordResolveAttempt = async ({
         stateReason:
           threadOutcome({ row }) === null
             ? null
-            : (row.stateReason?.replace(
-                /^(?:(?:missing_result|stopped|failed|dirty_tree):)+/,
-                '',
-              ) ?? null),
+            : withoutLegacyFailurePrefix({ stateReason: row.stateReason }),
         question: null,
         activeAttemptId: attempt.id,
         updatedAt: now,
