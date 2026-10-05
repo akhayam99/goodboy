@@ -2,6 +2,7 @@ import { expect } from 'vitest';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import {
   type Ctx,
+  branchTab,
   LENS_ROWS,
   type Row,
   WAIT,
@@ -38,8 +39,8 @@ const RIGHT_CLICK_SESSION_ROWS: ReadonlyArray<{
   readonly lens: string | null;
   readonly lands: (ctx: Ctx) => Promise<void>;
 }> = [
-  { label: 'Review', lens: 'review', lands: () => heading('Review') },
-  { label: 'Diff', lens: 'files', lands: () => heading('Diff') },
+  { label: 'Review', lens: 'branch', lands: branchTab('comments') },
+  { label: 'Diff', lens: 'branch', lands: branchTab('files') },
   { label: 'Terminal', lens: 'terminal', lands: () => heading('Terminal') },
 ];
 

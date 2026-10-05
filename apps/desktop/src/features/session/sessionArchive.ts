@@ -1,3 +1,4 @@
+import { useAppStore } from '../../store/store';
 import type { Session, SessionId } from '@goodboy/types';
 import type { ShowToast } from '../../shared/components/Toast';
 import type { AppStore } from '../../store/store';
@@ -59,13 +60,10 @@ export const archiveSessions = async (params: LifecycleParams): Promise<void> =>
     return;
   }
   const archived = sessions.filter((session) => succeeded.includes(session.id as SessionId));
-  showToast({
-    kind: 'info',
+  useAppStore.getState().undoable({
+    showToast,
     message: ARCHIVE_KEPT_COPY,
     title: archivedTitle({ count: archived.length }),
-    action: {
-      label: 'Undo',
-      onClick: () => void restoreSessions({ ...params, sessions: archived }),
-    },
+    undo: () => restoreSessions({ ...params, sessions: archived }),
   });
 };

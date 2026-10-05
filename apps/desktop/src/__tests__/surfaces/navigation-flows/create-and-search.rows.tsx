@@ -9,6 +9,7 @@ import {
   WAIT,
   band,
   both,
+  branchTab,
   click,
   clickButton,
   clickFirstButton,
@@ -104,20 +105,33 @@ const SEARCH_JUMPS: ReadonlyArray<{
     overrides: () => ({ kind: 'question', refId: 'q-1' }),
     lands: lens('questions'),
   },
-  { kind: 'pr', overrides: () => ({ kind: 'pr' }), lands: lens('pr') },
+  { kind: 'pr', overrides: () => ({ kind: 'pr' }), lands: branchTab('comments') },
   {
     kind: 'comment',
-    overrides: () => ({ kind: 'comment', refId: 'c-1' }),
+    overrides: (ctx) => {
+      const mount = useAppStore.getState().sessionMounts[ctx.sessionId]?.[0];
+      useAppStore.setState((state) => ({
+        diffComments: {
+          ...state.diffComments,
+          [ctx.sessionId]: [
+            {
+              id: 'c-1',
+              sessionId: ctx.sessionId,
+              filePath: 'src/ledger.ts',
+              body: 'Guard the batch',
+              status: 'open',
+              authorKind: 'user',
+              createdAt: STORY_NOW as IsoDateTime,
+              ...(mount === undefined ? {} : { projectId: mount.projectId, branch: mount.branch }),
+            },
+          ],
+        },
+      }));
+      return { kind: 'comment', refId: 'c-1' };
+    },
     lands: async (ctx) => {
-      await lens('files')(ctx);
-      await waitFor(
-        () =>
-          expect(useAppStore.getState().drawer).toMatchObject({
-            kind: 'diff-notes',
-            sessionId: ctx.sessionId,
-          }),
-        WAIT,
-      );
+      await branchTab('comments')(ctx);
+      expect(useAppStore.getState().drawer).toBeNull();
     },
   },
   {
@@ -133,7 +147,7 @@ const SEARCH_JUMPS: ReadonlyArray<{
   {
     kind: 'branch',
     overrides: (ctx) => ({ kind: 'branch', mountId: firstMountId(ctx), status: 'attached' }),
-    lands: lens('files'),
+    lands: branchTab('files'),
   },
 ];
 
@@ -142,7 +156,7 @@ export const CREATE_AND_SEARCH_ROWS: ReadonlyArray<Row> = [
     name: 'mount row: changes to the mount diff',
     covers: ['openMountDiff'],
     open: () => clickFirstButton(/^View the changes of /),
-    lands: both(lens('files'), () => heading('Diff')),
+    lands: branchTab('files'),
   },
   ...(['Report', 'Wireframe'] as const).map((kind): Row => ({
     name: `overview new menu: ${kind.toLowerCase()}`,

@@ -1,9 +1,16 @@
 import type { ReviewCommentState } from '../../resolve/reviewCommentState';
 import type { RowState, RowStateReason } from '../../workTreeModel/rowState';
 
+export type ResolveThreadFact = {
+  readonly state: ReviewCommentState;
+  readonly path: string | null;
+  readonly line: number | null;
+};
+
 export type ResolveActivityFacts = {
   readonly state: ReviewCommentState;
   readonly word: string;
+  readonly threads?: ReadonlyArray<ResolveThreadFact>;
 };
 
 const READY_WORD = 'Ready for you';
@@ -59,11 +66,17 @@ export type ResolveReviewState = {
   readonly threadId: string;
   readonly state: ReviewCommentState;
   readonly word: string;
+  readonly path?: string | null;
+  readonly line?: number | null;
 };
 
 export type ResolveAttemptLike = {
   readonly agentId: string;
   readonly batchId: string | null;
+  readonly launchId?: string | null;
+  readonly retryOfLaunchId?: string | null;
+  readonly provider?: string;
+  readonly mountTarget?: { readonly mountId: string } | null;
   readonly prNumber: number | null;
   readonly threadIds: ReadonlyArray<string>;
   readonly phase: 'queued' | 'running' | 'waiting' | 'finished' | 'failed' | 'cancelled';
@@ -107,6 +120,11 @@ const factsOfAttempt = ({
   return {
     state: picked.state,
     word: resolveActivityWord({ state: picked.state, reviewWord: picked.word }),
+    threads: reviews.map((review) => ({
+      state: review.state,
+      path: review.path ?? null,
+      line: review.line ?? null,
+    })),
   };
 };
 

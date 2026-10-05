@@ -78,6 +78,7 @@ export type SearchHitTarget =
       readonly kind: 'comment';
       readonly workspaceId: WorkspaceId | null;
       readonly sessionId: SessionId;
+      readonly commentId: string;
       readonly label: string;
     }
   | {
@@ -188,17 +189,17 @@ const sessionBound = ({ hit }: Params): SearchHitTarget | null => {
           }
         : viaUrl({ hit });
     case 'pr':
-      return { kind: 'review', ...base, label: 'Open in Review' };
+      return { kind: 'review', ...base, label: 'Open comments' };
     case 'branch':
       return hit.status === 'detached' || hit.mountId === null
         ? {
             kind: 'blocked',
             reason: 'This branch is no longer in the session, so there is no diff to show.',
-            label: 'Open in Diff',
+            label: 'Open files',
           }
-        : { kind: 'diff', ...base, mountId: hit.mountId, label: 'Open in Diff' };
+        : { kind: 'diff', ...base, mountId: hit.mountId, label: 'Open files' };
     case 'comment':
-      return { kind: 'comment', ...base, label: 'Open in Diff notes' };
+      return { kind: 'comment', ...base, commentId: hit.refId, label: 'Open comments' };
     case 'workflow':
       return null;
     default: {

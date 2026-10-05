@@ -383,7 +383,9 @@ export {
   resolveDiffComment,
   reopenDiffComment,
   deleteDiffComment,
+  assignDiffCommentTarget,
   type DiffCommentAuthor,
+  type DiffCommentTarget,
 } from './queries/diff-comment';
 export {
   insertPrReviewDraft,
@@ -617,3 +619,5 @@ export {
   setChatsArchived,
   settleStreamingChatMessages,
 } from './queries/chat';
+
+export { replaceSessionTaskLinks } from './queries/replaceSessionTaskLinks';

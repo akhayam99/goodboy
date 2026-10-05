@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { sessionPlace } from '../../../../../store/slices/navigation/place';
+import { branchPlace } from '../../../../../store/slices/navigation/place';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { HelpCircle, Play, type LucideIcon } from 'lucide-react';
 import type {
@@ -57,7 +57,9 @@ const { state, hooks, useDynamicActionsMock } = vi.hoisted(() => ({
 vi.mock('../../../../../store', async () => ({
   ...(await import('../../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: [] as readonly never[],
-  useAppStore: <T,>(selector: (store: typeof state) => T) => selector(state),
+  useAppStore: Object.assign(<T,>(selector: (store: typeof state) => T) => selector(state), {
+    getState: () => state,
+  }),
   useNonResolverStandaloneAgents: () => hooks.agents,
   useSessionCost: () => hooks.cost,
   useSessionPrFetchState: () => hooks.prFetchState,
@@ -498,7 +500,7 @@ describe('StageBoardCard review drafts', () => {
 
     await vi.waitFor(() =>
       expect(state.navigate).toHaveBeenCalledWith({
-        to: sessionPlace({ sessionId: SESSION_ID, lens: 'review' }),
+        to: branchPlace({ sessionId: SESSION_ID, tab: 'comments' }),
       }),
     );
     expect(nav.selectCard).not.toHaveBeenCalled();

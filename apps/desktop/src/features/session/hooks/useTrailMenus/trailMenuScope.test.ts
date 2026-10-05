@@ -46,7 +46,6 @@ const inputsFor = (overrides: Partial<TrailMenuInputs>): TrailMenuInputs => ({
   diffStats: new Map(),
   branchStatuses: new Map(),
   mergedMountIds: [],
-  openMountDiff: vi.fn(),
   queueRows: [],
   resolveAgain: vi.fn(),
   prNumber: null,

@@ -5,7 +5,7 @@ import type { MountId, ProjectId, PullRequestState, SessionId } from '@goodboy/t
 import { aSession } from '@goodboy/types/testing';
 import { useAppStore, type AppStore } from '../../store';
 import type { MountGithubState, SessionGithubState } from '../../types';
-import { sessionPlace } from '../navigation/place';
+import { branchPlace } from '../navigation/place';
 import { createReviewNavigationSlice } from './index';
 import { reviewNavigationInitialState } from './state';
 import { createReviewSelectionSlice } from '../review-selection';
@@ -215,7 +215,7 @@ describe('the review navigation target', () => {
     expect(outcome).toEqual({ kind: 'opened' });
     expect(live.state.selectSessionPr).not.toHaveBeenCalled();
     expect(live.state.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: SESSION_ID, lens: 'review' }),
+      to: branchPlace({ sessionId: SESSION_ID, tab: 'comments' }),
     });
     expect(live.get().reviewTargets[SESSION_ID]?.destination).toEqual({ kind: 'home' });
   });
@@ -232,7 +232,7 @@ describe('the review navigation target', () => {
     expect(outcome).toEqual({ kind: 'opened' });
     expect(live.state.selectSessionPr).toHaveBeenCalledWith(SESSION_ID, 248, MOUNT_ID);
     expect(live.state.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: SESSION_ID, lens: 'pr' }),
+      to: branchPlace({ sessionId: SESSION_ID, tab: 'comments' }),
     });
     expect(live.state.navigate).toHaveBeenCalledTimes(1);
     expect(live.get().reviewTargets[SESSION_ID] ?? null).toBeNull();
@@ -250,7 +250,7 @@ describe('the review navigation target', () => {
     expect(outcome).toEqual({ kind: 'opened' });
     expect(live.state.selectSessionPr).toHaveBeenCalledWith(SESSION_ID, 248, MOUNT_ID);
     expect(live.state.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: SESSION_ID, lens: 'review' }),
+      to: branchPlace({ sessionId: SESSION_ID, tab: 'comments' }),
     });
   });
 
@@ -281,7 +281,7 @@ describe('the review navigation target', () => {
     expect(live.state.ensureReviewThread).not.toHaveBeenCalled();
     expect(live.get().reviewTargets[SESSION_ID]?.status).toBe('unavailable');
     expect(live.state.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: SESSION_ID, lens: 'review' }),
+      to: branchPlace({ sessionId: SESSION_ID, tab: 'comments' }),
     });
   });
 

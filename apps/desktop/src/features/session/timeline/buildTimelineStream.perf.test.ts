@@ -5,7 +5,7 @@ import { layoutTimelineRail, type RailRow } from '../../workTreeModel/railGeomet
 import { buildTimelineGroups } from './buildTimelineGroups';
 import { buildTimelineStream, type TimelineStreamItem } from './buildTimelineStream';
 import { dayLabel } from './dayLabel';
-import { subagentGroupEntryId } from './subagentGroups';
+import { subagentsExpandId } from './subagentSummary';
 
 const SESSION_ID = 'session-perf' as SessionId;
 const NOW = new Date(2026, 8, 30, 12, 0);
@@ -62,7 +62,7 @@ const entries = buildTimelineGroups({
   agentKindOverride: {},
 }).entries;
 
-const GROUP_ID = subagentGroupEntryId({ parentId: 'agent:lead' });
+const GROUP_ID = subagentsExpandId({ parentId: 'agent:lead' });
 
 const streamOf = ({ expanded }: { readonly expanded: ReadonlyArray<string> }) =>
   buildTimelineStream({
@@ -157,7 +157,7 @@ describe('layoutTimelineRail with a head lane per group', () => {
 
   it('adds one head per opened chain and no more', () => {
     expect(headIds.size).toBe(CHAINS);
-    expect(headed.groups.length).toBe(CHAINS * 3);
+    expect(headed.groups.length).toBe(CHAINS * 2);
   });
 
   it('lays out within twice the time the same rows take without heads', () => {

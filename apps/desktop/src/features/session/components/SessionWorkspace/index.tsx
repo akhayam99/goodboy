@@ -29,10 +29,8 @@ import { LinkTicketPopover } from './parts/IntegrationPane/LinkTicketPopover';
 import { isStandaloneAgent, resolveRootAgent } from '../../agent-kind';
 import { selectResolverAgentIds } from '../../../review/selectResolverAgentIds';
 import { SessionOverviewLoading } from './parts/SessionOverviewLoading';
-import { PullRequestPage } from '../../../review/components/PullRequestPage';
-import { ReviewPane } from '../../../review/components/ReviewPane';
+import { BranchPage } from '../../../branch/components/BranchPage';
 import { useIsBranchlessSession } from '../../hooks/useIsBranchlessSession';
-import { useRemoteHostKind } from '../../../worktree/useRemoteHostKind';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import { resolveActiveMountPath } from '../../../../store/slices/worktrees/resolveActiveMountPath';
 import { ExplorePane } from '../../../explore/components/ExplorePane';
@@ -67,12 +65,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const sessionRepo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
   const projectWorktreePath = sessionRepo?.worktreePath ?? null;
   const sessionMounts = useAppStore((s) => s.sessionProjectMounts?.[sessionId] ?? EMPTY_ARRAY);
-  const requestedDiffMountPath = useAppStore((s) => s.diffMountPath?.[sessionId] ?? null);
-  const diffWorktreePath = resolveDiffMount({
-    mounts: sessionMounts,
-    requestedPath: requestedDiffMountPath,
-    fallbackPath: projectWorktreePath,
-  });
   const requestedTerminalMountPath = useAppStore((s) => s.terminalMountPath?.[sessionId] ?? null);
   const terminalWorkingDir = resolveDiffMount({
     mounts: sessionMounts,
@@ -92,13 +84,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const arePlansLoaded = useIsSessionCollectionLoaded({ sessionId, collection: 'plans' });
   const loadPhaseRunsForSession = useAppStore((s) => s.loadPhaseRunsForSession);
   const loadSessionPlans = useAppStore((s) => s.loadSessionPlans);
-
-  const githubPr = useAppStore((s) => s.sessionGithub[sessionId]?.pr ?? null);
-  const gitlabMr = useAppStore((s) => s.sessionGitlabMr[sessionId]?.mr ?? null);
-  const bitbucketPr = useAppStore((s) => s.sessionBitbucketPr[sessionId]?.pr ?? null);
-  const remoteKind = useRemoteHostKind({ sessionId });
-  const isGithubCodeHost =
-    gitlabMr === null && bitbucketPr === null && (remoteKind === 'github' || githubPr !== null);
 
   const lens: LensKind | null = activeLens ?? null;
   const surface = resolveLensSurface({ lens });
@@ -159,7 +144,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
 
   return (
     <div className="@container relative flex h-full w-full min-w-0 flex-col">
-      <TrailBar session={session} />
+      <TrailBar session={session} width={showLens && lens === 'branch' ? 'full' : 'column'} />
       <FirstLapBanner sessionId={sessionId} />
       <UnderTrailContext.Provider value>
         <div className="relative min-h-0 flex-1">
@@ -183,9 +168,8 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             {lens === 'scripts' ? (
               <ScriptsPanel workspaceId={session.workspaceId} sessionId={sessionId} />
             ) : null}
-            {lens === 'pr' && !isGithubCodeHost ? <PrPane session={session} /> : null}
-            {lens === 'pr' && isGithubCodeHost ? <PullRequestPage session={session} /> : null}
-            {lens === 'review' ? <ReviewPane session={session} /> : null}
+            {lens === 'pr' ? <PrPane session={session} /> : null}
+            {lens === 'branch' ? <BranchPage session={session} workingDir={workingDir} /> : null}
             {lens === 'linear' ? (
               <IntegrationPane
                 sessionId={sessionId}
@@ -245,13 +229,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               )
             ) : null}
             {lens === 'files' ? (
-              <FilesPane
-                sessionId={sessionId}
-                sessionDir={workingDir}
-                worktreePath={diffWorktreePath}
-                isBranchless={isBranchless}
-                onClose={onSelectOverview}
-              />
+              <FilesPane sessionId={sessionId} sessionDir={workingDir} onClose={onSelectOverview} />
             ) : null}
             {lens === 'explore' ? (
               <ExplorePane sessionId={sessionId} sessionDir={workingDir} />

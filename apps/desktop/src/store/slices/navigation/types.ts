@@ -12,6 +12,8 @@ export type { SetFn, GetFn } from '../../slice-types';
 
 export type AgentPane = 'brief' | 'transcript';
 
+export type BranchTab = 'comments' | 'files' | 'commits' | 'checks';
+
 export type SessionTarget =
   | { readonly kind: 'artifact'; readonly artifactId: ArtifactId }
   | { readonly kind: 'run'; readonly runId: string }
@@ -22,6 +24,13 @@ export type SessionTarget =
       readonly mountPath: string | null;
       readonly focus: DiffFocus | null;
       readonly page?: 'history' | null;
+    }
+  | {
+      readonly kind: 'branch';
+      readonly mountPath: string | null;
+      readonly tab: BranchTab;
+      readonly threadId: string | null;
+      readonly focus: DiffFocus | null;
     }
   | { readonly kind: 'terminal'; readonly mountPath: string }
   | { readonly kind: 'thread'; readonly threadId: string; readonly pane?: AgentPane };
@@ -54,14 +63,11 @@ export type Focus = {
   readonly revealed: ReadonlyArray<string>;
 };
 
-export type LayerKind = 'pr' | 'review' | 'diff' | 'history';
-
 export type Location = {
   readonly workspaceId: WorkspaceId | null;
   readonly place: Place;
   readonly studio: StudioPlace | null;
   readonly focus: Focus;
-  readonly layers?: ReadonlyArray<LayerKind>;
 };
 
 export type NavigationStack = {

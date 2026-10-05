@@ -40,16 +40,22 @@ const captureTarget = ({ state, sessionId, lens }: TargetParams): SessionTarget 
     const issueNumber = state.focusedGithubIssueNumber[sessionId] ?? null;
     return issueNumber === null ? null : { kind: 'github-issue', issueNumber };
   }
+  if (lens === 'branch') {
+    return {
+      kind: 'branch',
+      mountPath: state.diffMountPath[sessionId] ?? null,
+      tab: state.branchTab[sessionId] ?? 'comments',
+      threadId: state.branchThreadId[sessionId] ?? null,
+      focus: state.diffFocus[sessionId] ?? null,
+    };
+  }
   if (lens === 'files') {
     const mountPath = state.diffMountPath[sessionId] ?? null;
     const focus = state.diffFocus[sessionId] ?? null;
-    const page = state.diffPage[sessionId] ?? null;
-    if (mountPath === null && focus === null && page === null) {
+    if (mountPath === null && focus === null) {
       return null;
     }
-    return page === null
-      ? { kind: 'diff', mountPath, focus }
-      : { kind: 'diff', mountPath, focus, page };
+    return { kind: 'diff', mountPath, focus };
   }
   if (lens === 'terminal') {
     const mountPath = state.terminalMountPath[sessionId] ?? null;

@@ -8,13 +8,14 @@ import { LinkWorkPicker } from './LinkWorkPicker';
 import { useLinkWorkItems } from './useLinkWorkItems';
 
 type Props = {
+  readonly initialQuery?: string;
   readonly session: Session;
   readonly onLinked: () => void;
   readonly onClose: () => void;
 };
 
-export const LinkWorkPanel = ({ session, onLinked, onClose }: Props) => {
-  const [query, setQuery] = useState('');
+export const LinkWorkPanel = ({ session, onLinked, onClose, initialQuery = '' }: Props) => {
+  const [query, setQuery] = useState(initialQuery);
   const [error, setError] = useState<string | null>(null);
   const [isLinking, setIsLinking] = useState(false);
   const linkSessionExternalTask = useAppStore((state) => state.linkSessionExternalTask);

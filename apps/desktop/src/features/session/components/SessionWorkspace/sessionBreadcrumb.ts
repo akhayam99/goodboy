@@ -14,9 +14,13 @@ export type SessionBreadcrumbHandlers = {
   toArtifactsList: () => void;
   toParentAgent: () => void;
   toRootAgent: () => void;
-  toDiffBranch?: () => void;
+  toBranch?: () => void;
   toPullRequestHome: () => void;
-  toThread?: () => void;
+};
+
+export type BranchCrumbs = {
+  readonly label: string;
+  readonly leaf: BreadcrumbCrumb | null;
 };
 
 export type SessionBreadcrumbInput = {
@@ -36,9 +40,7 @@ export type SessionBreadcrumbInput = {
   selectedQuestionLabel: string | null;
   pullRequestModeLabel: string | null;
   pullRequestNumber?: number | null;
-  diffBranchLabel?: string | null;
-  diffPageLabel?: string | null;
-  selectedThreadLabel?: string | null;
+  branch?: BranchCrumbs | null;
   lensLabel: (lens: LensKind) => string;
   handlers: SessionBreadcrumbHandlers;
 };
@@ -46,6 +48,19 @@ export type SessionBreadcrumbInput = {
 const lensIcon = ({ lens }: { readonly lens: LensKind }) => ({
   icon: LENS_ICON[lens],
   iconClassName: lensIconClass({ lens }),
+});
+
+type BranchCrumbParams = {
+  readonly branch: BranchCrumbs;
+  readonly onClick: (() => void) | undefined;
+};
+
+const branchCrumb = ({ branch, onClick }: BranchCrumbParams): BreadcrumbCrumb => ({
+  id: 'branch',
+  label: branch.label,
+  icon: CONCEPT_ICONS.branch,
+  iconClassName: tintClasses(CONCEPT_TONE.branch).icon,
+  ...(onClick !== undefined && { onClick }),
 });
 
 const sealLast = (crumbs: BreadcrumbCrumb[]): BreadcrumbCrumb[] => {
@@ -73,9 +88,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     selectedQuestionLabel,
     pullRequestModeLabel,
     pullRequestNumber = null,
-    diffBranchLabel = null,
-    diffPageLabel = null,
-    selectedThreadLabel = null,
+    branch = null,
     lensLabel,
     handlers,
   } = input;
@@ -86,7 +99,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
 
   const overview: BreadcrumbCrumb = {
     id: 'overview',
-    label: 'Overview',
+    label: 'Session',
     icon: CONCEPT_ICONS.timeline,
     onClick: handlers.toOverview,
   };
@@ -150,7 +163,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
       selectedQuestionLabel == null
         ? {
             id: 'selected-child',
-            label: selectedChildHome === 'review' ? 'Resolver' : selectedChildLabel,
+            label: selectedChildHome === 'review' ? 'Fix run' : selectedChildLabel,
             ...agentIcon(selectedChildTone),
           }
         : { id: 'delegated-answers', label: 'Answers', icon: CONCEPT_ICONS.agents };
@@ -173,26 +186,16 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     }
 
     if (selectedChildHome !== 'workflows') {
-      const thread: BreadcrumbCrumb[] =
-        selectedChildHome === 'review' && selectedThreadLabel != null
-          ? [
-              {
-                id: 'review-thread',
-                label: selectedThreadLabel,
-                icon: CONCEPT_ICONS.comments,
-                ...(handlers.toThread !== undefined && { onClick: handlers.toThread }),
-              },
-            ]
-          : [];
       return sealLast([
         overview,
-        {
-          id: `lens-${selectedChildHome}`,
-          label: lensLabel(selectedChildHome),
-          ...lensIcon({ lens: selectedChildHome }),
-          onClick: () => handlers.toLens(selectedChildHome),
-        },
-        ...thread,
+        selectedChildHome === 'review' && branch !== null
+          ? branchCrumb({ branch, onClick: handlers.toBranch })
+          : {
+              id: `lens-${selectedChildHome}`,
+              label: lensLabel(selectedChildHome),
+              ...lensIcon({ lens: selectedChildHome }),
+              onClick: () => handlers.toLens(selectedChildHome),
+            },
         ...ancestors,
         selectedChild,
         ...question,
@@ -267,31 +270,15 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     return sealLast([overview, pullRequest, ...numbered, ...child]);
   }
 
-  if (lens === 'files' && diffBranchLabel != null && diffPageLabel != null) {
+  if (lens === 'branch') {
+    const leaf = branch?.leaf ?? null;
     return sealLast([
       overview,
-      { id: 'lens-files', label: lensLabel('files'), ...lensIcon({ lens: 'files' }) },
-      {
-        id: 'diff-branch',
-        label: diffBranchLabel,
-        icon: CONCEPT_ICONS.branch,
-        iconClassName: tintClasses(CONCEPT_TONE.branch).icon,
-        ...(handlers.toDiffBranch !== undefined && { onClick: handlers.toDiffBranch }),
-      },
-      { id: 'rewrite-history', label: diffPageLabel, icon: CONCEPT_ICONS.history },
-    ]);
-  }
-
-  if (lens === 'files' && diffBranchLabel != null) {
-    return sealLast([
-      overview,
-      { id: 'lens-files', label: lensLabel('files'), ...lensIcon({ lens: 'files' }) },
-      {
-        id: 'diff-branch',
-        label: diffBranchLabel,
-        icon: CONCEPT_ICONS.branch,
-        iconClassName: tintClasses(CONCEPT_TONE.branch).icon,
-      },
+      branchCrumb({
+        branch: branch ?? { label: lensLabel('branch'), leaf: null },
+        onClick: leaf === null ? undefined : handlers.toBranch,
+      }),
+      ...(leaf === null ? [] : [leaf]),
     ]);
   }
 

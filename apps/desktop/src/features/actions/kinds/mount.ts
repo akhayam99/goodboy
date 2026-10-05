@@ -16,7 +16,7 @@ import type { RemoteHostKind } from '../../../shared/lib/remoteHost';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
 import { NAMES } from '../../../shared/names';
-import { sessionPlace } from '../../../store/slices/navigation/place';
+import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
 import { mountCleanupBlockers } from '../../../store/slices/mount-cleanup/cleanupPolicy';
 import {
   mountRequestOf,
@@ -45,7 +45,7 @@ type FactsOnly = { readonly facts: MountFacts };
 
 export const MOUNT_SWITCH_BRANCH_EVENT = 'goodboy:mount-switch-branch';
 
-export const MOUNT_ADD_TASK_EVENT = 'goodboy:mount-add-task';
+export const MOUNT_PUT_TASK_EVENT = 'goodboy:mount-put-task';
 
 export const mountEventName = ({
   name,
@@ -73,7 +73,8 @@ const openLens = ({
   readonly env: Parameters<ActionDefinition<MountFacts>['run']>[0]['env'];
   readonly lens: 'review' | 'scripts';
 }): void => {
-  env.getState().navigate({ to: sessionPlace({ sessionId: facts.sessionId, lens }) });
+  const state = env.getState();
+  state.navigate({ to: lensPlace({ state, sessionId: facts.sessionId, lens }) });
 };
 
 const closeConfirm = ({ facts }: FactsOnly): ActionConfirm => {
@@ -329,14 +330,15 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
     },
   },
   {
-    id: 'mount.addTask',
-    label: 'Add a task',
+    id: 'mount.putTaskOnBranch',
+    slot: () => 'chip',
+    label: 'Put on a branch',
     icon: ListPlus,
     group: 'act',
     when: ({ facts }) => facts.branch !== '' && !facts.isClosed,
     run: ({ facts }) => {
       dispatchAfterNavigation({
-        name: mountEventName({ name: MOUNT_ADD_TASK_EVENT, mountId: facts.mountId }),
+        name: mountEventName({ name: MOUNT_PUT_TASK_EVENT, mountId: facts.mountId }),
       });
     },
   },

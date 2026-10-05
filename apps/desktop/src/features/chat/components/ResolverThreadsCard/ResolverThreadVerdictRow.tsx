@@ -103,7 +103,7 @@ export const ResolverThreadVerdictRow = ({
               onClick={onOpen}
               className="self-start text-meta text-muted-foreground motion-safe:transition-colors hover:text-primary"
             >
-              Open in Review
+              Open comment
             </button>
           )}
         </div>

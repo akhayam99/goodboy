@@ -39,7 +39,7 @@ const clock = sceneClock({ anchor: '2026-09-04T14:20:00.000Z' });
 
 export const WORKSPACE_ID = 'mock-resolve-workspace-harborline' as WorkspaceId;
 export const SESSION_ID = 'mock-resolve-session-webhook-retry' as SessionId;
-export const PROJECT_ID = 'mock-resolve-project-payments-api' as ProjectId;
+const PROJECT_ID = 'mock-resolve-project-payments-api' as ProjectId;
 
 export const NOW_ISO = clock.iso({ at: '2026-09-04T14:20:00.000Z' });
 const NOW_MS = Date.parse(NOW_ISO);
@@ -1049,14 +1049,9 @@ export const seedResolveScene = ({
     resolveQueueView: {
       [SESSION_ID]: EMPTY_RESOLVE_QUEUE_VIEW,
     },
-    drawer:
-      expandedThreadId === null
-        ? null
-        : {
-            kind: 'conversation',
-            sessionId: SESSION_ID,
-            payload: { threadId: expandedThreadId },
-          },
+    drawer: null,
+    branchTab: { [SESSION_ID]: 'comments' },
+    branchThreadId: { [SESSION_ID]: expandedThreadId },
     sessionGithub: {
       [SESSION_ID]: {
         ...EMPTY_GITHUB,

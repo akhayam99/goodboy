@@ -1,3 +1,4 @@
+import type { UndoState } from './slices/undo/state';
 import type { ArtifactsState } from './slices/artifacts/state';
 import type { ResolveState } from './slices/resolve/state';
 import type { ReviewNavigationState } from './slices/review-navigation/state';
@@ -36,7 +37,6 @@ import type { DecisionsSliceState } from './slices/decisions/state';
 import type { DrawerSliceState } from './slices/drawer/state';
 import type { NavigationSliceState } from './slices/navigation/types';
 import type { ChangelogState } from './slices/changelog/state';
-import type { ReviewCommitsState } from './slices/reviewCommits/state';
 import type { ResolveItemDraft } from '../features/resolve/resolveItemDraft';
 import type { ReviewSubmission } from './slices/review-drafts/reviewSubmission';
 import type { ResolveQueueView } from './slices/session-view';
@@ -129,7 +129,6 @@ type AppSliceState = ArtifactsState &
   SentryLinksState &
   UpdaterState &
   ChangelogState &
-  ReviewCommitsState &
   SlackThreadsSliceState &
   BugReportDraftState &
   SessionDraftState &
@@ -188,12 +187,12 @@ type AppSliceState = ArtifactsState &
   TerminalState &
   SessionViewState;
 
-export type AppState = AppSliceState & {
-  readonly reviewDrafts: Readonly<Record<SessionId, ReadonlyArray<PrReviewDraft>>>;
-  readonly reviewSubmission: Readonly<Record<SessionId, ReviewSubmission>>;
-  readonly resolveQueueView: Readonly<Record<SessionId, ResolveQueueView>>;
-  readonly resolveItemDrafts: Readonly<
-    Record<SessionId, Readonly<Record<string, ResolveItemDraft>>>
-  >;
-  readonly revealedActivityRows: Readonly<Record<SessionId, ReadonlySet<string>>>;
-};
+export type AppState = UndoState &
+  AppSliceState & {
+    readonly reviewDrafts: Readonly<Record<SessionId, ReadonlyArray<PrReviewDraft>>>;
+    readonly reviewSubmission: Readonly<Record<SessionId, ReviewSubmission>>;
+    readonly resolveQueueView: Readonly<Record<SessionId, ResolveQueueView>>;
+    readonly resolveItemDrafts: Readonly<
+      Record<SessionId, Readonly<Record<string, ResolveItemDraft>>>
+    >;
+  };

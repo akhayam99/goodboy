@@ -136,7 +136,7 @@ describe('search hit target', () => {
       searchHitTarget({
         hit: hit({ kind: 'branch', mountId: 'm1' as MountId, status: 'detached' }),
       }),
-    ).toMatchObject({ kind: 'blocked', label: 'Open in Diff' });
+    ).toMatchObject({ kind: 'blocked', label: 'Open files' });
   });
 
   it('opens a workflow in the workflow studio and a comment in the Diff notes', () => {
@@ -158,7 +158,8 @@ describe('search hit target', () => {
     expect(searchHitTarget({ hit: hit({ kind: 'comment', refId: 'c-1' }) })).toMatchObject({
       kind: 'comment',
       sessionId: SESSION,
-      label: 'Open in Diff notes',
+      commentId: 'c-1',
+      label: 'Open comments',
     });
   });
 

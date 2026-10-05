@@ -54,7 +54,7 @@ const Host = ({ polished, roleSetLine = null, onDone, onPin, onMoveDown }: HostP
     draft('plan', 'Plan the retries'),
   ]);
   const polish = usePolish({ onError: () => undefined });
-  const deleteStep = useStepDeleteUndo({ steps, setSteps });
+  const deleteStep = useStepDeleteUndo({ steps, setSteps, contextKey: null });
   const patch = (key: string, next: Partial<StepDraft>) =>
     setSteps((current) => current.map((step) => (step.key === key ? { ...step, ...next } : step)));
   const first = steps[0];

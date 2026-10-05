@@ -37,7 +37,10 @@ type ToastProviderProps = {
 };
 
 const isSameToast = ({ a, b }: { a: ToastItem; b: Omit<ToastItem, 'id' | 'count' | 'revision'> }) =>
-  a.kind === b.kind && a.title === b.title && a.message === b.message;
+  a.dedupeKey === b.dedupeKey &&
+  a.kind === b.kind &&
+  a.title === b.title &&
+  a.message === b.message;
 
 export const ToastProvider = ({ children }: ToastProviderProps) => {
   const [toasts, setToasts] = useState<ReadonlyArray<ToastItem>>([]);
@@ -60,8 +63,17 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
   }, []);
 
   const showToast = useCallback(
-    ({ kind, message, title, context, persist, action, onDismiss }: ShowToastParams) => {
-      pushToast({ kind, message, title, context, persist: persist === true, action, onDismiss });
+    ({ dedupeKey, kind, message, title, context, persist, action, onDismiss }: ShowToastParams) => {
+      pushToast({
+        dedupeKey,
+        kind,
+        message,
+        title,
+        context,
+        persist: persist === true,
+        action,
+        onDismiss,
+      });
     },
     [pushToast],
   );

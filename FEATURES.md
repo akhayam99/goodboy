@@ -16,7 +16,7 @@ Get from install to a first agent: connect a provider, check what it can do, lin
 
 [More on set up](docs/features/setup.md)
 
-<a id="how-do-you-want-to-start"></a><a id="pick-up-a-task-with-a-drafted-brief"></a><a id="run-a-workflow"></a><a id="ask-an-agent"></a><a id="start-blank"></a><a id="named-by-goodboy"></a>
+<a id="how-do-you-want-to-start"></a><a id="pick-up-a-task-with-a-drafted-brief"></a><a id="run-a-workflow"></a><a id="ask-an-agent"></a><a id="start-blank"></a><a id="named-by-goodboy"></a><a id="undo-an-unlink"></a>
 
 ## Start a task
 
@@ -76,30 +76,30 @@ Keep your repos together, and let sessions work across them.
 
 [More on workspace and projects](docs/features/workspace.md)
 
-<a id="rewrite-history"></a><a id="safe-apply"></a><a id="conflict-prediction"></a><a id="conflicts-merged-in-a-copy"></a><a id="push-with-lease-and-restore"></a><a id="backups"></a><a id="suggest-a-message"></a><a id="bring-them-into-the-plan"></a><a id="rebase-on-main"></a><a id="after-a-pull-request-merges"></a>
+<a id="rewrite-history"></a><a id="safe-apply"></a><a id="conflict-prediction"></a><a id="conflicts-merged-in-a-copy"></a><a id="push-with-lease-and-restore"></a><a id="backups"></a><a id="suggest-a-message"></a><a id="bring-them-into-the-plan"></a><a id="rebase-on-main"></a><a id="after-a-pull-request-merges"></a><a id="shape-the-history"></a>
 
-## Branch history
+## Commits and history
 
-Reshape a branch before it goes to review: fold, move, rename and remove commits, see what would conflict, and apply with a backup one click away.
+The Commits tab of the Branch page shapes a branch before it goes to review: fold, move, reword and drop commits, see what would conflict, and apply with a backup one click away.
 
-- Rewrite history
+- Shape the history
 - Safe apply
 - Conflict prediction
 
-[More on branch history](docs/features/branch-history.md)
+[More on commits and history](docs/features/branch-history.md)
 
-<a id="resolve"></a><a id="review-sources"></a><a id="comment-states"></a><a id="failed-drafts"></a><a id="manage-a-resolve-from-its-brief"></a><a id="fixes-already-on-the-branch"></a><a id="a-fix-that-went-missing"></a><a id="close-on-github"></a><a id="review-replies-in-your-voice"></a><a id="fixes-on-a-branch-that-moved"></a><a id="squash-and-fold-the-resolve-commits"></a><a id="notes-before-a-pull-request"></a><a id="github-pull-request-page"></a><a id="pull-request-diff-and-review-as-layers"></a><a id="write-it-for-me"></a><a id="write-it"></a><a id="pr-description-follows-the-push"></a><a id="diff"></a><a id="write-review"></a>
+<a id="resolve"></a><a id="review-sources"></a><a id="comment-states"></a><a id="failed-drafts"></a><a id="see-what-a-resolve-did"></a><a id="fixes-already-on-the-branch"></a><a id="a-fix-that-went-missing"></a><a id="close-on-github"></a><a id="review-replies-in-your-voice"></a><a id="fixes-on-a-branch-that-moved"></a><a id="squash-and-fold-the-resolve-commits"></a><a id="notes-before-a-pull-request"></a><a id="github-pull-request-page"></a><a id="pull-request-diff-and-review-as-layers"></a><a id="write-it-for-me"></a><a id="write-it"></a><a id="pr-description-follows-the-push"></a><a id="diff"></a><a id="write-review"></a><a id="read-the-code"></a><a id="pull-request-on-the-branch-page"></a><a id="one-trail-to-the-branch-page"></a>
 
-## Review, resolve and pull requests
+## Review and resolve on the Branch page
 
-Turn review comments into commits, push them back to GitHub, and read your own pull requests and diffs before anyone else does.
+One Branch page per branch holds the Comments, Files, Commits and Checks tabs. Turn review comments into commits with a Fix run, push them back with one Push, and read your own diff and notes before anyone else does.
 
 - Resolve
 - Review sources
 - Close on GitHub
-- Diff
+- Read the code
 
-[More on review, resolve and pull requests](docs/features/review.md)
+[More on review and resolve on the branch page](docs/features/review.md)
 
 <a id="stage-board"></a><a id="session-card"></a><a id="done-and-archived-dock"></a><a id="bulk-select"></a>
 

@@ -89,6 +89,12 @@
           "also": "ask an agent"
         },
         {
+          "title": "Undo an unlink",
+          "text": "Link work adds a task. Unlink acts at once and shows an Undo toast for about 10 seconds, and the Log keeps a Re-link. Cmd+Z undoes the last app operation when focus is not in a text field.",
+          "group": "Start a task",
+          "also": "undo unlink"
+        },
+        {
           "title": "Start blank",
           "text": "Start from the goal instead. A blank session opens on its overview, where you add the goal, projects and work.",
           "group": "Start a task",
@@ -160,7 +166,7 @@
         },
         {
           "title": "Activity",
-          "text": "Read the whole session as one timeline of agents, questions, fixes, pull requests and decisions. Related steps fold into a group that hangs on a numbered ball.",
+          "text": "One row per launch, a resolver run, a workflow run or an agent, with cost and duration. A Needs you block sits on top and the Log view holds the facts.",
           "group": "Overview and activity",
           "main": true
         },
@@ -542,213 +548,213 @@
     {
       "id": "review",
       "title": "Review and branches",
-      "lead": "Reshape history before it ships, turn comments into commits, and read your own diffs first.",
-      "groups": ["Branch history", "Review, resolve and pull requests"],
+      "lead": "One Branch page with Comments, Files, Commits and Checks: reshape history, turn comments into commits, and push once.",
+      "groups": ["Commits and history", "Review and resolve on the Branch page"],
       "mocks": ["diff"],
       "guides": [
         {
           "area": "review",
-          "label": "Review, resolve and pull requests"
+          "label": "Review and resolve on the Branch page"
         },
         {
           "area": "branch-history",
-          "label": "Branch history"
+          "label": "Commits and history"
         }
       ],
       "items": [
         {
-          "title": "Rewrite history",
-          "text": "Clean up a branch by hand. Drag commits to move them, drop one onto another to fold it, or rename and remove them.",
-          "group": "Branch history",
+          "title": "Shape the history",
+          "text": "Clean up a branch in the Commits tab. Reword, squash, fold, drop or reorder commits by hand, then apply.",
+          "group": "Commits and history",
           "main": true
         },
         {
           "title": "Safe apply",
           "text": "Your plan is tried on a temporary copy first, and a backup is saved before anything changes. If a step stops, your branch stays as it was.",
-          "group": "Branch history",
+          "group": "Commits and history",
           "main": true
         },
         {
           "title": "Conflict prediction",
           "text": "While you edit the plan, Goodboy tries it in memory and marks each change that may conflict. Your checkout stays untouched.",
-          "group": "Branch history",
+          "group": "Commits and history",
           "also": "conflict prediction",
           "shown": true
         },
         {
           "title": "Conflicts merged in a copy",
           "text": "When a step stops on a conflict, the notice names the step and the file. An agent can merge it in a copy, and Goodboy checks the result.",
-          "group": "Branch history",
+          "group": "Commits and history",
           "also": "conflict merge"
         },
         {
           "title": "Push with lease and restore",
           "text": "Updating the online branch never overwrites a teammate's newer push. Restore takes the old history back, and the backup stays for 30 days.",
-          "group": "Branch history",
+          "group": "Commits and history",
           "also": "push with lease",
           "shown": true
         },
         {
           "title": "Backups",
-          "text": "Open the menu and choose Backups to see older histories of the branch. Restore previous history puts one back.",
-          "group": "Branch history",
+          "text": "Open Backups in the Commits tab to see older histories of the branch. Restore previous history puts one back.",
+          "group": "Commits and history",
           "also": "backups"
         },
         {
           "title": "Suggest a message",
           "text": "Get a commit message drafted for a squash or a reword. Edit it before you apply.",
-          "group": "Branch history",
+          "group": "Commits and history",
           "also": "commit messages",
           "shown": true
         },
         {
           "title": "Bring them into the plan",
           "text": "If someone pushed after you applied, Goodboy lists their new commits and offers to add them to the plan.",
-          "group": "Branch history",
+          "group": "Commits and history",
           "also": "new commits"
         },
         {
           "title": "Rebase on main",
           "text": "Rebase on main with the same engine, and bring in an agent only when there is a conflict.",
-          "group": "Branch history",
+          "group": "Commits and history",
           "also": "rebase on main",
           "shown": true
         },
         {
           "title": "After a pull request merges",
           "text": "Choose what happens to a merged branch: ask me, delete on this Mac, or also on origin. You have 14 days to restore it.",
-          "group": "Branch history",
+          "group": "Commits and history",
           "also": "merged branches",
           "shown": true
         },
         {
           "title": "Resolve",
           "text": "Turn review comments into commits without writing the fix yourself. Each comment gets its own agent, and you accept, edit or skip the result.",
-          "group": "Review, resolve and pull requests",
+          "group": "Review and resolve on the Branch page",
           "main": true
         },
         {
           "title": "Review sources",
           "text": "One picker covers GitHub, GitLab, Bitbucket and notes on your machine. Reading and replying work everywhere, and resolving works where the host allows it.",
-          "group": "Review, resolve and pull requests",
+          "group": "Review and resolve on the Branch page",
           "also": "review sources",
           "shown": true
         },
         {
           "title": "Comment states",
           "text": "Each comment shows what it needs next, such as not started, drafting, needs you, ready or done. A summary line counts them.",
-          "group": "Review, resolve and pull requests",
+          "group": "Review and resolve on the Branch page",
           "also": "comment states",
           "shown": true
         },
         {
           "title": "Failed drafts",
           "text": "A failed draft says why in plain words and links to the transcript. Try again, try another model or add a hint.",
-          "group": "Review, resolve and pull requests",
+          "group": "Review and resolve on the Branch page",
           "also": "failed drafts"
         },
         {
-          "title": "Manage a resolve from its Brief",
-          "text": "Click a resolve in Activity to see the comment, the fix and the reply. Accept, edit, reply or skip, then push exactly that fix.",
-          "group": "Review, resolve and pull requests",
-          "also": "resolve brief"
+          "title": "See what a resolve did",
+          "text": "Click a resolve in Activity to open its Fix run, a read-only transcript with its commit. Accept and reply stay in Comments.",
+          "group": "Review and resolve on the Branch page",
+          "also": "fix run"
         },
         {
           "title": "Fixes already on the branch",
-          "text": "Review checks origin before it pushes. A fix already pushed, or one that someone else seems to have made, offers Reply and resolve instead.",
-          "group": "Review, resolve and pull requests",
+          "text": "Resolve checks origin before it pushes. A fix already pushed, or one that someone else seems to have made, offers Reply and resolve instead.",
+          "group": "Review and resolve on the Branch page",
           "also": "fixes on the branch"
         },
         {
           "title": "A fix that went missing",
           "text": "If a fix commit is no longer on the branch, the comment says so. Goodboy checks git first, then can ask a read-only agent.",
-          "group": "Review, resolve and pull requests",
+          "group": "Review and resolve on the Branch page",
           "also": "missing fixes"
         },
         {
           "title": "Close on GitHub",
-          "text": "Finish a review in one action. Push sends the fixes, posts the replies and resolves the threads, after a confirm that counts them.",
-          "group": "Review, resolve and pull requests",
+          "text": "One Push in the Branch header. Select commits, press Push N and read the preview inline. Replies post and threads resolve after a confirm that counts them.",
+          "group": "Review and resolve on the Branch page",
           "main": true
         },
         {
           "title": "Review replies in your voice",
           "text": "Choose replies that sound like you: terse, friendly, formal, or learned from your last 20 replies. You can edit the style note.",
-          "group": "Review, resolve and pull requests",
+          "group": "Review and resolve on the Branch page",
           "also": "replies in your voice"
         },
         {
           "title": "Fixes on a branch that moved",
           "text": "Accept a fix even after the branch got new commits. It lands on top, and on a conflict the branch goes back to its old head.",
-          "group": "Review, resolve and pull requests",
+          "group": "Review and resolve on the Branch page",
           "also": "moved branches"
         },
         {
           "title": "Squash and fold the resolve commits",
           "text": "Choose how fixes land before anyone sees them. Keep them, fold each into its original commit, or make one commit for the review.",
-          "group": "Review, resolve and pull requests",
+          "group": "Review and resolve on the Branch page",
           "also": "squash and fold",
           "shown": true
         },
         {
           "title": "Notes before a pull request",
-          "text": "Review your own diff first. Leave notes on lines, give each one its own agent with Fix, and post the open ones to the pull request later.",
-          "group": "Review, resolve and pull requests",
+          "text": "Read your own code first in the Files tab. Leave notes on lines, give each one its own agent with Fix, and post the open ones to the pull request. Notes belong to a branch, and notes with no branch are listed as Unassigned notes.",
+          "group": "Review and resolve on the Branch page",
           "also": "notes before a PR"
         },
         {
-          "title": "GitHub pull request page",
-          "text": "See in plain words whether a pull request can merge, with its checks. Merge, mark ready, draft or close it from there.",
-          "group": "Review, resolve and pull requests",
+          "title": "Pull request on the Branch page",
+          "text": "See in plain words whether a pull request can merge, with its checks. Merge, mark ready, draft or close it from the Branch page.",
+          "group": "Review and resolve on the Branch page",
           "also": "pull request page"
         },
         {
-          "title": "Pull request, Diff and Review as layers",
-          "text": "Move between a pull request, its diff and its review without losing your place. Back walks the same path.",
-          "group": "Review, resolve and pull requests",
+          "title": "One trail to the Branch page",
+          "text": "Open a branch from the palette, a notification, a chat card or the board and the trail reads the same. Up is the crumb on the left, and Back is history.",
+          "group": "Review and resolve on the Branch page",
           "also": "review layers"
         },
         {
           "title": "Write it",
           "text": "Get a pull request title, description and changelog entry in your repo's format. Linked issues become closing references.",
-          "group": "Review, resolve and pull requests",
+          "group": "Review and resolve on the Branch page",
           "also": "PR text",
           "shown": true
         },
         {
           "title": "PR description follows the push",
           "text": "A description Goodboy wrote is updated after a history push, unless you edited it.",
-          "group": "Review, resolve and pull requests",
+          "group": "Review and resolve on the Branch page",
           "also": "PR description sync"
         },
         {
-          "title": "Diff",
-          "text": "Read changes with syntax colors, word-level highlights, a unified or split view and a viewed tick per file. Quote a line into a note or a question for an agent.",
-          "group": "Review, resolve and pull requests",
+          "title": "Read the code",
+          "text": "The Files tab has a file tree and the changes with syntax colors, word-level highlights, a unified or split view and a viewed tick per file. Quote a line into a note or a question for an agent.",
+          "group": "Review and resolve on the Branch page",
           "also": "diff"
         },
         {
           "title": "Write review",
-          "text": "Review someone else's pull request in a form under the diff. Add line comments, pick comment, approve or request changes, and submit one review.",
-          "group": "Review, resolve and pull requests",
+          "text": "Review someone else's pull request in a form in the Files tab. Add line comments, pick comment, approve or request changes, and submit one review.",
+          "group": "Review and resolve on the Branch page",
           "also": "write review"
         },
         {
           "title": "Written by Goodboy",
           "text": "Comments Goodboy posts end with a line that says so, and a setting turns it off.",
-          "group": "Review, resolve and pull requests",
+          "group": "Review and resolve on the Branch page",
           "also": "written by Goodboy"
         },
         {
           "title": "Resolve again",
           "text": "Reread a comment and try the fix once more.",
-          "group": "Review, resolve and pull requests",
+          "group": "Review and resolve on the Branch page",
           "also": "resolve again"
         },
         {
           "title": "Checks",
-          "text": "See a pull request's checks with their durations. A failed check becomes a suggested next step.",
-          "group": "Review, resolve and pull requests",
+          "text": "The Checks tab lists CI runs with their durations and the failing step. Fix failing check hands a failed one to an agent.",
+          "group": "Review and resolve on the Branch page",
           "also": "checks",
           "shown": true
         }

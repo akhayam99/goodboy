@@ -12,7 +12,7 @@ import { useObjectMenuTrigger } from '../../../../actions/useObjectMenuTrigger';
 import type { MountActionTarget } from '../../../../actions/types';
 import { useMountRemoteHostKind } from '../../../../worktree/useMountRemoteHostKind';
 import { AlsoInChip } from './AlsoInChip';
-import { AddTaskPopover } from '../../../../../shared/components/TaskChipMenu/AddTaskPopover';
+import { PutOnBranchPopover } from '../../TaskPlacement/PutOnBranchPopover';
 import { BranchTaskChips } from './BranchTaskChips';
 import { MountBranchDecision } from './MountBranchDecision';
 import { MountChangeCell } from './MountChangeCell';
@@ -90,7 +90,7 @@ export const ProjectMountRow = ({
         data-testid="project-mount-cells"
         className="col-span-full grid min-h-8 grid-cols-subgrid items-center gap-x-4 rounded-md px-1 py-1 hover:bg-hover"
       >
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <MountKindGlyph
             projectKind={row.projectKind}
             isMainCheckout={row.isMainCheckout}
@@ -117,8 +117,8 @@ export const ProjectMountRow = ({
               isSkeleton={isSkeleton}
             />
           )}
-          {row.branch === '' ? null : (
-            <AddTaskPopover
+          {row.branch === '' || !row.isAttached ? null : (
+            <PutOnBranchPopover
               sessionId={sessionId}
               mountId={row.mountId}
               projectId={row.projectId}

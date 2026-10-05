@@ -180,8 +180,18 @@ under the header (properties, a banner, an approval rail, the agent's next
 action) is the first block of the body. A body that owns its scroll, such as a
 transcript or a diff, asks for `scroll="self"`.
 
-Long markdown documents (report, plan, brief) keep a 72ch prose measure,
-aligned left inside the column. Tables and code take the whole column.
+A Session or Agent page reads as one column: every child, banner, card and
+footer sits on the same edges. Only prose keeps a 72ch measure (long markdown
+and the text of a review comment), aligned left inside the column. Tables, code
+and cards take the whole column. `columnContract.test.ts` fails on any
+`max-w-[Nch]` other than `72ch`.
+
+There are two layouts, one rule each. **Reading** pages (the Session, an Agent,
+a Fix run) are one 960 column from `PaneShell`; every child starts at the same
+left edge, and only prose (an outcome, a summary) takes `max-w-[72ch]`. **Work**
+pages (the tabs of the Branch) take the whole width of the pane: Files puts its
+file tree on the left from `@4xl` up and the diff beside it, Comments puts the
+list and the thread side by side, and under `@4xl` they take turns.
 
 ## Layout: fixed-height shell, scroll on content
 

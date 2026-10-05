@@ -65,12 +65,12 @@ describe('useTimelineOpen', () => {
     chain: null,
   });
 
-  it('opens a resolver on its brief', () => {
+  it('opens a resolver on its fix run', () => {
     const sessionId = typedString<SessionId>({ value: 'session-1' });
     const { result } = renderHook(() => useTimelineOpen({ sessionId }));
     const target = result.current({ entry: agentEntry({ agentKind: 'resolver' }) });
 
-    expect(target?.label).toBe('Open brief');
+    expect(target?.label).toBe('Open fix run');
     target?.open();
     expect(state.navigate).toHaveBeenCalledWith({
       to: { at: 'agent', sessionId, agentId: 'agent-1', pane: 'brief' },

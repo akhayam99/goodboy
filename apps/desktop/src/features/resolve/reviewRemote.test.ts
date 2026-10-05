@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ThreadGitFacts } from '../../store/slices/resolve/threadGitState';
-import { commitUrlOf, remoteOf, remoteViewOf, replyOnlyLine } from './reviewRemote';
+import { commitUrlOf, remoteOf, remoteViewOf } from './reviewRemote';
 
 const facts = (overrides: Partial<ThreadGitFacts>): ThreadGitFacts => ({
   gitState: 'local',
@@ -40,13 +40,6 @@ describe('remoteOf', () => {
     expect(remoteOf({ state: 'resolved', facts: onOrigin })).toBeNull();
     expect(remoteOf({ state: 'drafting', facts: onOrigin })).toBeNull();
     expect(remoteOf({ state: 'skipped', facts: onOrigin })).toBeNull();
-  });
-});
-
-describe('replyOnlyLine', () => {
-  it('counts the threads the push leaves to a reply', () => {
-    expect(replyOnlyLine({ count: 1 })).toBe('1 more needs only a reply');
-    expect(replyOnlyLine({ count: 3 })).toBe('3 more need only a reply');
   });
 });
 

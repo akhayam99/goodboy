@@ -11,7 +11,6 @@ import type {
 import { tooltipTextOf } from '../../../../../../__tests__/helpers/tooltip';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 import { DONE_ROW_STATE, type RowState } from '../../../../../workTreeModel/rowState';
-import type { TimelineLaneControl } from './TimelineRail';
 import type { RailRow } from '../../../../../workTreeModel/railGeometry';
 import { runIdentity } from '../../../../timeline/runIdentity';
 import { TIMELINE_RHYTHM } from '../../../../../workTreeModel/timelineRhythm';
@@ -69,7 +68,6 @@ const itemOf = (): TimelineRowItem => ({
   identity: null,
   familyId: 'run:one',
   ordinal: '2',
-  nodeIndex: '2',
   rowState: DONE_ROW_STATE,
   hasUnread: false,
   height: TIMELINE_RHYTHM.grade.step.height + TIMELINE_RHYTHM.gap.sibling,
@@ -99,7 +97,6 @@ const runItemOf = ({ rowState }: { readonly rowState: RowState }): TimelineRowIt
   entry: runEntryOf(),
   identity: runIdentity({ laneIndex: 0, seed: 0 }),
   ordinal: null,
-  nodeIndex: null,
   rowState,
   groupId: null,
 });
@@ -329,18 +326,6 @@ describe('TimelineStreamRow', () => {
     ],
   });
 
-  const lanesOf = ({
-    hoveredLaneId = null,
-    openRun,
-  }: {
-    readonly hoveredLaneId?: string | null;
-    readonly openRun: () => void;
-  }): TimelineLaneControl => ({
-    targetFor: ({ laneId }) => ({ laneId, title: 'Orchestrated workflow 3', open: openRun }),
-    hoveredLaneId,
-    onHover: vi.fn(),
-  });
-
   const renderLaneRow = ({ onOpen = vi.fn(), openRun = vi.fn() } = {}) =>
     render(
       <TimelineStreamRow
@@ -350,24 +335,9 @@ describe('TimelineStreamRow', () => {
         sessionId={SESSION_ID}
         openTarget={{ label: 'Open chat', open: onOpen }}
         action={null}
-        lanes={lanesOf({ openRun })}
         runLane={{ laneId: 'lane:run:one', title: 'Orchestrated workflow 3', open: openRun }}
       />,
     );
-
-  it('opens the run from its lane and the leaf from the row text', () => {
-    const onOpen = vi.fn();
-    const openRun = vi.fn();
-    renderLaneRow({ onOpen, openRun });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Open workflow: Orchestrated workflow 3' }));
-    expect(openRun).toHaveBeenCalledTimes(1);
-    expect(onOpen).not.toHaveBeenCalled();
-
-    fireEvent.click(screen.getByRole('button', { name: /Implement the parser/ }));
-    expect(onOpen).toHaveBeenCalledTimes(1);
-    expect(openRun).toHaveBeenCalledTimes(1);
-  });
 
   it('opens the run of the focused row on Shift+Enter', () => {
     const onOpen = vi.fn();
@@ -382,48 +352,5 @@ describe('TimelineStreamRow', () => {
     fireEvent.keyDown(row, { code: 'Enter', key: 'Enter' });
     expect(openRun).toHaveBeenCalledTimes(1);
     expect(onOpen).not.toHaveBeenCalled();
-  });
-
-  it('lets the node on a lane pass the pointer through to the lane', () => {
-    const { container } = renderLaneRow();
-    const marker = container.querySelector('[style*="top: 18px"]');
-
-    expect(marker?.className).toContain('pointer-events-none');
-  });
-
-  it('lights the run chip while its lane is hovered', () => {
-    const openRun = vi.fn();
-    const runLane = { laneId: 'lane:run:one', title: 'Orchestrated workflow 3', open: openRun };
-    const { rerender } = render(
-      <TimelineStreamRow
-        item={runItemOf({ rowState: DONE_ROW_STATE })}
-        rail={railOf()}
-        railWidth={32}
-        sessionId={SESSION_ID}
-        openTarget={{ label: 'Open run', open: openRun }}
-        action={null}
-        lanes={lanesOf({ openRun })}
-        runLane={runLane}
-      />,
-    );
-    const chip = () => screen.getByText('Workflow').parentElement ?? document.body;
-
-    expect(chip().className).toContain('bg-fill');
-
-    rerender(
-      <TimelineStreamRow
-        item={runItemOf({ rowState: DONE_ROW_STATE })}
-        rail={railOf()}
-        railWidth={32}
-        sessionId={SESSION_ID}
-        openTarget={{ label: 'Open run', open: openRun }}
-        action={null}
-        lanes={lanesOf({ openRun, hoveredLaneId: 'lane:run:one' })}
-        runLane={runLane}
-      />,
-    );
-
-    expect(chip().className).toContain('bg-hover');
-    expect(chip().className).not.toContain('identity-');
   });
 });

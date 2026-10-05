@@ -52,7 +52,6 @@ const itemOf = ({ entry, grade = 'entry' }: ItemParams): TimelineRowItem => ({
   identity: null,
   familyId: null,
   ordinal: null,
-  nodeIndex: null,
   rowState: DONE_ROW_STATE,
   hasUnread: false,
   height: 52,
@@ -344,18 +343,6 @@ describe('TimelineRowLabel', () => {
     render(<TimelineRowLabel item={itemOf({ entry })} />);
 
     expect(screen.queryByText(expected)).not.toBeNull();
-  });
-
-  it('stays quiet about a row nobody just revealed', () => {
-    render(<TimelineRowLabel item={itemOf({ entry: mountEntry() })} />);
-
-    expect(screen.queryByText('Shown because you started it')).toBeNull();
-  });
-
-  it('tags a row that the active filter would otherwise have hidden', () => {
-    render(<TimelineRowLabel item={itemOf({ entry: mountEntry() })} isRevealed />);
-
-    expect(screen.getByText('Shown because you started it')).toBeDefined();
   });
 });
 

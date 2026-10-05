@@ -23,6 +23,7 @@ type Forbidden = {
 const NO_EXCEPTION: ReadonlySet<string> = new Set();
 
 const FORBIDDEN_WIDTHS: ReadonlyArray<Forbidden> = [
+  { pattern: /\bmax-w-\[(?!72ch\])\d+ch\]/, allowed: NO_EXCEPTION },
   { pattern: /PANE_RHYTHM\.measure/, allowed: NO_EXCEPTION },
   { pattern: /DIFF_CAPPED_COLUMN_CLASS/, allowed: NO_EXCEPTION },
   { pattern: /\bmax-w-(3xl|4xl|5xl|6xl|7xl)\b/, allowed: NO_EXCEPTION },
@@ -93,16 +94,9 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
     kind: 'shell',
     files: ['features/session/components/SessionWorkspace/parts/PrPane.tsx'],
   },
-  PullRequestPage: {
+  BranchPage: {
     kind: 'shell',
-    files: ['features/review/components/PullRequestPage/index.tsx'],
-  },
-  ReviewPane: {
-    kind: 'shell',
-    files: [
-      'features/review/components/ReviewPane/index.tsx',
-      'features/resolve/components/ReviewFlow/index.tsx',
-    ],
+    files: ['features/branch/components/BranchPage/index.tsx'],
   },
   GithubTaskDetail: {
     kind: 'shell',

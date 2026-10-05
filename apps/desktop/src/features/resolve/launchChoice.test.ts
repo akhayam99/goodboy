@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { AgentId, ResolveAttempt, SessionId } from '@goodboy/types';
-import { launchChoiceOf, modelChoiceOfLaunch, retryBatchOf, routingOfLaunch } from './launchChoice';
+import {
+  launchChoiceOf,
+  modelChoiceOfLaunch,
+  retryBatchOf,
+  retryOriginOf,
+  routingOfLaunch,
+} from './launchChoice';
 
 const CHOICE = launchChoiceOf({
   routing: { provider: 'anthropic', model: 'claude-sonnet-5', effort: 'medium' },
@@ -46,6 +52,21 @@ describe('launch choice', () => {
       effort: 'medium',
       hint: 'Keep the public API',
     });
+  });
+
+  it('names the launch a retry descends from: the root of a retry, else the launch, else the batch', () => {
+    const base = attempt({ id: 'a', threadIds: ['PRRT_1'], batchId: 'batch-1' });
+    expect(retryOriginOf({ attempts: [base], threadId: 'PRRT_1' })).toBe('batch-1');
+    expect(
+      retryOriginOf({ attempts: [{ ...base, launchId: 'launch-1' }], threadId: 'PRRT_1' }),
+    ).toBe('launch-1');
+    expect(
+      retryOriginOf({
+        attempts: [{ ...base, launchId: 'launch-2', retryOfLaunchId: 'launch-1' }],
+        threadId: 'PRRT_1',
+      }),
+    ).toBe('launch-1');
+    expect(retryOriginOf({ attempts: [], threadId: 'PRRT_1' })).toBeNull();
   });
 
   it('retries a comment in the batch its latest attempt belonged to', () => {

@@ -8,7 +8,8 @@ import {
 } from '../../../../shared/pullRequestPresentation';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { openUrl } from '../../../../shared/lib/editor';
-import { useAppStore, sessionPlace } from '../../../../store';
+import { useAppStore } from '../../../../store';
+import { lensPlace } from '../../../../store/slices/navigation/canonicalLocation';
 import { selectSessionForPr } from '../../../../store/slices/github/selectSessionForPr';
 
 type Props = {
@@ -30,7 +31,7 @@ export const LinkedPrChip = ({ pr }: Props) => {
     }
     const { sessionId, number } = sessionMatch;
     void selectSessionPr(sessionId, number);
-    navigate({ to: sessionPlace({ sessionId, lens: 'pr' }) });
+    navigate({ to: lensPlace({ state: useAppStore.getState(), sessionId, lens: 'pr' }) });
   };
 
   const state = linearPrStateKind({ status: pr.status });

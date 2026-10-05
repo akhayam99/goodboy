@@ -22,7 +22,7 @@ import type {
 } from '../../../features/artifacts/artifactCollection';
 import type { ResolveItemDraft } from '../../../features/resolve/resolveItemDraft';
 import type { AgentKindRouting } from '../../../features/session/agent-kind';
-import type { AgentPane } from '../navigation/types';
+import type { AgentPane, BranchTab } from '../navigation/types';
 
 export type { SetFn, GetFn } from '../../slice-types';
 
@@ -39,6 +39,7 @@ export type LensKind =
   | 'decisions'
   | 'last_output_summary'
   | 'pr'
+  | 'branch'
   | 'files'
   | 'explore'
   | 'linear'
@@ -60,6 +61,7 @@ export const LENS_KINDS: ReadonlySet<LensKind> = new Set<LensKind>([
   'decisions',
   'last_output_summary',
   'pr',
+  'branch',
   'files',
   'explore',
   'linear',
@@ -173,14 +175,12 @@ type SessionViewSliceState = {
     Record<SessionId, Readonly<Record<string, ResolveItemDraft>>>
   >;
   readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
-  readonly diffPage: Readonly<Record<SessionId, DiffPage | null>>;
+  readonly branchTab: Readonly<Record<SessionId, BranchTab>>;
+  readonly branchThreadId: Readonly<Record<SessionId, string | null>>;
   readonly terminalMountPath: Readonly<Record<SessionId, string | null>>;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
-  readonly revealedActivityRows: Readonly<Record<SessionId, ReadonlySet<string>>>;
   readonly sessionGroupExpanded: Readonly<Record<string, boolean>>;
 };
-
-type DiffPage = 'history';
 
 type SessionViewSliceActions = {
   setScriptsLensScope(params: { readonly scope: { readonly projectId: ProjectId } | null }): void;
@@ -229,14 +229,12 @@ type SessionViewSliceActions = {
   openDiffLens(sessionId: SessionId, focus: DiffFocus | null): void;
   openMountDiff(sessionId: SessionId, worktreePath: string): void;
   openRewriteHistory(sessionId: SessionId, worktreePath: string | null): void;
-  closeRewriteHistory(sessionId: SessionId): void;
   openMountTerminal(sessionId: SessionId, worktreePath: string): void;
   beginSessionCreation(
     sessionId: SessionId,
     creation: { readonly kind: SessionCreationKind; readonly label?: string | null },
   ): SessionCreationId;
   endSessionCreation(sessionId: SessionId, creationId: SessionCreationId): void;
-  revealActivityRow(sessionId: SessionId, rowId: string): void;
 };
 
 export type SessionViewSlice = SessionViewSliceState & SessionViewSliceActions;

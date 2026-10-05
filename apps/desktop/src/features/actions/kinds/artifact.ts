@@ -480,14 +480,12 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
         if (previous === null) {
           return;
         }
-        env.showToast({
-          kind: 'info',
+        env.getState().undoable({
+          showToast: env.showToast,
           title: `Deleted "${title}"`,
           message: 'It moved to Recently deleted.',
-          action: {
-            label: 'Undo',
-            onClick: () =>
-              void env.getState().restoreArtifact({ sessionId, artifactId, status: previous }),
+          undo: async () => {
+            await env.getState().restoreArtifact({ sessionId, artifactId, status: previous });
           },
         });
       },

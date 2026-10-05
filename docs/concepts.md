@@ -264,53 +264,49 @@ It includes:
 - History outcomes of Rewrite history and Rebase on main: `history_rewritten`,
   `history_pushed`, `history_stopped` and `history_restored`
 
-History rows are the only event rows with verbs, one primary and the rest in
-the row menu, and only while no later outcome of the same branch settled
-them: a rewrite offers `Undo rewrite`, a stopped one `Retry` (or `Retry with
-a note` when History rewriter needs you) with `Rewrite with an agent`,
-`Change the plan` and `Discard plan` behind it, a push `Restore previous
-history`. A stopped rewrite never hides behind the filter. Every notification
+History rows carry no verb and no `⋯`. They stay in Activity only while no
+later outcome of the same branch settled them, and the row opens the Commits
+tab of the Branch page, where the recovery lives: `Undo rewrite` for a
+rewrite, `Retry` (or `Retry with a note` when History rewriter needs you), `Rewrite with an agent`,
+`Change the plan` and `Discard plan` for a stopped one, `Restore previous
+history` for a push. A stopped rewrite waits in Needs you until a later outcome settles it. Every notification
 of the engine points at the row with `Open in Activity`, so closing it loses
 nothing.
 
 Every event has a reason. If an action cannot say why it happened, Goodboy
 refuses it instead of saving a blank entry.
 
-The header shows a neutral needs-you chip ("2 need you") only when no row
-that waits on you is on screen, because the filter hides it. It counts each open question once, the same number the Questions
-chip shows, and one per other ask, and a click switches to Needs you. **Filter** opens one panel with every kind of row at once, in three
-groups: Work (agents, workflows, questions, resolvers), Outputs (artifacts
-with plans, reports and wireframes, pull requests, issues) and Session log
-(branches and worktrees, decisions, session events). Each row shows how many
-of its kind the session holds, and how many of those rows the filter is
-hiding when the toggle is off. Presets set the whole
-filter in one click: **Everything**, **Work**, and **Needs you**, which shows
-only what waits on you whatever the filter hides and lasts until you leave
-it. A saved filter that matches the old Work preset migrates onto the new
-one, resolvers included. The trigger counts hidden rows, not hidden kinds
-("Work · 12 hidden"), and flashes briefly when a new row lands out of sight.
-A row your own action just caused (starting an agent, a resolve, a workflow,
-or acting on a suggestion) never hides behind the active filter: it stays
-visible, tagged "Shown because you started it", until you leave the session;
-the next visit it follows the filter like every other row. The filter shows
-once the feed holds more than one kind of row. **Start agent** is the one
-primary, and its menu starts a workflow, a report or a wireframe. When the
-activity column is narrower than 28rem, the needs-you chip keeps its count
-and Filter keeps its icon. Suggestions live in **Next steps**, above Activity
-and outside its filter, not as a row inside the feed.
+The feed has two views under one segmented header, **Activity | Log**, and
+every kind of row has exactly one home. Activity holds what you launched: an
+agent, a workflow run, a burst of resolvers, each as one row with its state
+or action, time and cost. What happens inside a launch folds into its row:
+the steps and subagents of a run, the questions it answered, and the plans,
+reports, wireframes and learnings it produced, listed behind "N outputs" on
+the launch. The Log holds the facts: plans, reports, wireframes and learnings
+made without a launch, Context, branch and worktree events, link events (an
+unlink carries **Re-link**), pull request events and session archive and
+restore. It is flat, newest first, one muted row per fact, with a search box on
+top and no categories. A history row that has a recovery stays in Activity and
+opens the Commits tab, which owns it; no Activity row has a `⋯`.
 
-An open question shows once on screen, on the agent that asked it. Its
-question row, on that agent's lane, carries the text and the one **Answer**,
-all neutral: the waiting agent row is the one amber mark in the activity. The
-agent row keeps its "Needs you" state without a second button, and takes
-the Answer back when the filter hides question rows. The workflow row says
-nothing about a question its step or the question row already shows: no
-sentence, no Answer, only a neutral "Waiting on a step" node. It names the
-question only when neither is in view (a sub-agent and question rows both
-filtered out), and then its Answer opens the asking agent at the question.
-The activity reports which open questions its rows show (`shownQuestionIds`),
-so Next steps do not repeat them. The
-needs-you count counts each family once, so one question never counts twice.
+A **Needs you** block sits on top of Activity, and only while something waits
+on you: one row per owner, never per child. A burst reads "Resolve #318 · 2
+replies ready · 1 failed", a run "Retry policy · 1 question", a stopped rebase
+"Rebase of feat/export stopped ×2". Each row has **Open**, which goes to
+whoever owns the action (the review, the exact question, the branch). Push is
+never offered there. The block disappears when nothing waits, and there is no
+filter to switch on first. **Start agent** is the one primary, and its menu
+starts a workflow, a report or a wireframe. Suggestions live in **Next steps**,
+above Activity, not as a row inside the feed.
+
+An open question is asked once on screen. A question inside a launch belongs
+to that launch: its agent or run row keeps its "Needs you" state and its
+**Answer**, and Needs you carries one row for the run, "1 question", whose
+**Open** goes to the asking agent at the question. A question without a launch
+has no row in Activity: it sits in Needs you while it is open and becomes one
+muted row of the Log once answered. The activity reports which open questions
+its rows show (`shownQuestionIds`), so Next steps do not repeat them. Each
+family counts once, so one question never counts twice.
 
 ## Next steps
 
@@ -321,7 +317,7 @@ suggestion, and every surface that shows one calls the same
 whether you clicked it on the board or in the session overview.
 
 - **`NextStepSlot`** (`features/suggestions/components/NextStepSlot/`) sits
-  in the session overview, above Activity, outside its filter and its
+  in the session overview, above Activity, outside its views and its
   grouping: a suggestion is not activity, it is a pointer to what activity
   should happen next. A new session shows the kickoff instead; the two never
   compete for the same moment.
@@ -745,8 +741,8 @@ too). **Fix went missing** (a fix sha that is neither on the branch nor on
 origin, or a pushed sha origin lost) gets its own detail and the
 `missing_commit` push blocker points to it. `computeThreadGitFacts` first asks
 `worktree_locate_fix`: the same patch on HEAD under another sha makes the thread
-`folded` (**Folded in**: it stays in the push with the remapped sha, the action
-reads `Push to reply`, and the reply "Fixed in <old>, squashed into <new>" is posted
+`folded` (**Folded in**: it stays in the push with the remapped sha, it goes
+out with the header `Push`, and the reply "Fixed in <old>, squashed into <new>" is posted
 by the normal push flow after the push lands; only `on_origin` skips the push). If git cannot answer, **Re-check** (`recheckThread`) spawns a
 read-only scout (`sourceKind` `comment_recheck`, FixMode `recheck`) on the
 cheapest model of the provider. It ends with `<<comment-verdict threadId verdict
@@ -834,9 +830,10 @@ once · each works on its own copy of the branch`, no price: nothing
   picker opens inline under the buttons) and **Add a hint** (F is Retry).
   `…` holds Reply yourself, Skip and Open transcript. The earlier attempts of
   the comment fold into one line above (`Attempt 1 · Sonnet 5.5 · Medium ·
-failed`) that opens to their reasons. A failed step after the run shows its
-  own verb: `Push again`, `Post the reply again` or `Open on GitHub` when
-  Goodboy could not confirm the reply landed
+failed`) that opens to their reasons. A failed delivery after the run has no
+  button on the comment: the Branch header reads `Retry N`, and the push
+  result there offers `Sync and try again`. The comment keeps `Open on GitHub`
+  when Goodboy could not confirm the reply landed
 - A batch fix runs in its own copy of the branch, up to four at a time (the
   session limit), so two fixes never fight over the same branch. The rest wait
   with `Waiting for a free slot`
@@ -888,7 +885,7 @@ e31b9f4` when a history rewrite folded the fix. Reply and page always read
   moved, Goodboy edits that reply in place with `updateReviewComment`: it adds
   `Update: c81e5aa was squashed into e31b9f4.` (or `is now`) above the
   signature, once per sha change, and rewrites the delivery receipt body so the
-  Review page shows the same text as GitHub. Replies from people are never edited. The
+  Branch page shows the same text as GitHub. Replies from people are never edited. The
   per-thread history (first sha, folded or not, posted sha and body, update
   lines) lives in the `settings` table under
   `resolve.commit_story.<sessionId>.<threadId>`, so it needs no migration
@@ -1263,16 +1260,17 @@ task up again in Goodboy.
 - One verb per intention. A button or menu entry takes its verb from this
   table, and the old verb stays a ⌘K alias:
 
-  | Verb           | Means                                             | Retired                                                            |
-  | -------------- | ------------------------------------------------- | ------------------------------------------------------------------ |
-  | **Delete**     | The object is gone (Undo where it can be)         | Wipe (now **Delete all data**)                                     |
-  | **Remove**     | Taken out of a list, it still exists elsewhere    | Detach (now **Remove from session**), Unlink (now **Remove link**) |
-  | **Archive**    | Hidden, restorable                                | Discard on a workflow run (now **Archive workflow**)               |
-  | **Disconnect** | Cuts the tie to an account, a tool or a workspace |                                                                    |
-  | **Stop**       | Ends what is running and keeps what it wrote      | Close workflow (now **Stop workflow**)                             |
-  | **Dismiss**    | Hides a notification or a suggestion              |                                                                    |
-  | **Clear**      | Resets filters or a selection                     |                                                                    |
-  | **Retry**      | Runs a failed action again                        | Try again                                                          |
+  | Verb           | Means                                             | Retired                                              |
+  | -------------- | ------------------------------------------------- | ---------------------------------------------------- |
+  | **Delete**     | The object is gone (Undo where it can be)         | Wipe (now **Delete all data**)                       |
+  | **Remove**     | Taken out of a list, it still exists elsewhere    | Detach (now **Remove from session**)                 |
+  | **Unlink**     | Removes a task link, keeps the task in its tool   | Remove link on a task                                |
+  | **Archive**    | Hidden, restorable                                | Discard on a workflow run (now **Archive workflow**) |
+  | **Disconnect** | Cuts the tie to an account, a tool or a workspace |                                                      |
+  | **Stop**       | Ends what is running and keeps what it wrote      | Close workflow (now **Stop workflow**)               |
+  | **Dismiss**    | Hides a notification or a suggestion              |                                                      |
+  | **Clear**      | Resets filters or a selection                     |                                                      |
+  | **Retry**      | Runs a failed action again                        | Try again                                            |
 
   **Discard** stays for a draft you abandon. **Close** stays for a panel and
   for sending an agent away without deleting it. **Check again** only
@@ -1308,7 +1306,7 @@ Agent kinds, in `AGENT_KIND_ORDER`:
 | `docs`        | Docs             | spawn menu                      |
 | `report`      | Report           | workflow step                   |
 | `wireframe`   | Wireframe        | workflow step                   |
-| `resolver`    | Resolve          | Review lens                     |
+| `resolver`    | Resolve          | Fix run on the Branch page      |
 | `rewriter`    | History rewriter | a history replay that conflicts |
 | `scribe`      | Scribe           | pull request panel              |
 | `generic`     | Generalist       | spawn menu                      |
@@ -1362,3 +1360,6 @@ An agent materializes a project through the query bridge like this:
   role reads
 - `apps/desktop/src-tauri/src/query_bridge/project.rs`: the `materialize` verb
 - `packages/db/src/queries/resolve-thread.ts`: review conversations
+
+Task-link removal uses **Unlink**, with **Unlinked** in its Undo toast and
+**Re-link** on the Activity event. **Link work** is the single linking entry.

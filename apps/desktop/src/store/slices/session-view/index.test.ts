@@ -349,7 +349,7 @@ describe('store contract', () => {
       const store = useAppStore;
       store.getState().setActiveLens(SESSION_ID, 'agents');
       store.getState().openDiffLens(SESSION_ID, { kind: 'commit', sha: 'abc1234', path: null });
-      expect(store.getState().activeLens[SESSION_ID]).toBe('files');
+      expect(store.getState().activeLens[SESSION_ID]).toBe('branch');
       expect(store.getState().diffFocus[SESSION_ID]).toEqual({
         kind: 'commit',
         sha: 'abc1234',
@@ -363,7 +363,7 @@ describe('store contract', () => {
       store.getState().openDiffLens(SESSION_ID, { kind: 'working', path: null });
       expect(store.getState().diffFocus[SESSION_ID]).toEqual({ kind: 'working', path: null });
       store.getState().back();
-      expect(store.getState().activeLens[SESSION_ID]).toBe('review');
+      expect(store.getState().activeLens[SESSION_ID]).toBe('branch');
     });
 
     it.each([
@@ -461,7 +461,7 @@ describe('store contract', () => {
       store.getState().setDiffFocus(SESSION_ID, { kind: 'working', path: null });
       store.getState().openMountDiff(SESSION_ID, '/wt/api');
 
-      expect(store.getState().activeLens[SESSION_ID]).toBe('files');
+      expect(store.getState().activeLens[SESSION_ID]).toBe('branch');
       expect(store.getState().diffMountPath[SESSION_ID]).toBe('/wt/api');
       expect(store.getState().diffFocus[SESSION_ID]).toBeNull();
     });

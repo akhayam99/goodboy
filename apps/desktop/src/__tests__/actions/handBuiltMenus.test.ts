@@ -12,8 +12,8 @@ const HAND_BUILT_MENU = /OverflowMenuItem|<OverflowMenu\b|<MenuItems\b|<MenuList
 const ALLOWED: Readonly<Record<string, string>> = {
   'features/artifacts/components/ArtifactList/ArtifactListOverflowMenu.tsx':
     'list header menu (open the artifacts folder), not an object in the map',
-  'features/resolve/components/ReviewFlow/ReviewListMenu.tsx':
-    'list filter menu (show comments by state), not an object in the map',
+  'features/branch/components/BranchHeader/BranchOverflow.tsx':
+    'branch header menu: its entries come from the pull request and diff kinds of the registry',
   'features/artifacts/components/ArtifactList/ArtifactNewMenu.tsx':
     'creation menu: picks the kind of artifact to create',
   'features/session/components/SessionOverviewPane/OverviewActions/index.tsx':
@@ -40,20 +40,14 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'workflow editor band actions, studio chrome',
   'features/workflows/components/WorkflowStudio/WorkflowList/index.tsx':
     'workflow library list menu (restore built-ins); the workflow kind is a follow-up',
-  'features/history/components/RewriteHistoryPage/HistoryPageActions.tsx':
-    'rewrite page menu (backups, terminal), page chrome',
-  'features/history/useHistoryRowActions/index.ts':
-    'rewrite event rows in Activity: event verbs, not an object in the map',
-  'features/session/components/SessionWorkspace/parts/TimelinePane/TimelineEntryRow.tsx':
-    'hosts the rewrite event menu of useHistoryRowActions',
+  'features/history/components/CommitsHistory/HistoryActions.tsx':
+    'commits tab menu (terminal), tab chrome',
   'features/search/components/SearchMode/SearchHitActions.tsx':
     'search preview: lists the registry verbs of the hit through toMenuEntries',
   'features/storage/components/StoragePage/ArtifactRowActions.tsx':
     'artifact files from deleted sessions: storage keep and delete',
-  'shared/components/TaskChipMenu/TaskBranchPicker.tsx':
-    'branch picker: chooses where a task sits, a value picker rather than object verbs',
-  'shared/components/TaskChipMenu/AddTaskPopover.tsx':
-    'task picker: chooses which task to link to a branch, a value picker rather than object verbs',
+  'features/session/components/TaskPlacement/PutOnBranchPopover.tsx':
+    'task picker: chooses a linked task for a branch, a value picker',
 };
 
 const isSource = (path: string): boolean =>

@@ -2,7 +2,7 @@
 
 import type { ReactElement, ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { sessionPlace } from '../../../../store/slices/navigation/place';
+import { branchPlace, sessionPlace } from '../../../../store/slices/navigation/place';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Agent, AgentId, Session, SessionId, SessionStageInfo } from '@goodboy/types';
 
@@ -181,7 +181,6 @@ const resetState = () => {
     sessionWorkflows: { [SESSION_ID]: [] },
     focusedWorkflowRunId: {},
     diffMountPath: {},
-    diffPage: {},
     sessions: [],
     workspaces: [],
     focusedArtifactId: {},
@@ -345,7 +344,7 @@ describe('SessionCrumbs', () => {
 
     fireEvent.click(within(menu).getByRole('menuitemradio', { name: /Review/ }));
     expect(h.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: SESSION_ID, lens: 'review' }),
+      to: branchPlace({ sessionId: SESSION_ID, tab: 'comments' }),
     });
   });
 
@@ -409,7 +408,7 @@ describe('SessionCrumbs', () => {
 
     expect(menu.textContent).not.toContain('Review');
     expect(current).toHaveLength(1);
-    expect(current[0]?.textContent).toContain('Overview');
+    expect(current[0]?.textContent).toContain('Session');
   });
 
   it('offers overview as a destination of its own', () => {
@@ -422,7 +421,7 @@ describe('SessionCrumbs', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Agents/ }));
     const menu = screen.getByRole('menu', { name: 'Switch page' });
-    fireEvent.click(within(menu).getByRole('menuitemradio', { name: /Overview/ }));
+    fireEvent.click(within(menu).getByRole('menuitemradio', { name: /Session/ }));
 
     expect(h.navigate).toHaveBeenCalledWith({
       to: sessionPlace({ sessionId: SESSION_ID, lens: null }),

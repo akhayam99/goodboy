@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, ResolveThread, Session, SessionProjectMount } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, agentPlace, sessionPlace } from '../../../store';
+import { EMPTY_ARRAY, useAppStore, agentPlace, branchPlace, sessionPlace } from '../../../store';
 import { sessionResolveStyle } from '../../../store/sessionReplySettings';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
@@ -186,7 +186,7 @@ export const useSuggestionActions = ({
       title: FIXERS_STARTED_TITLE,
       message: startedLine({ count: agentIds.length, modelName: modelLabel(routing.model) }),
       actionLabel: OPEN_SUMMARY_LABEL,
-      open: () => navigate({ to: sessionPlace({ sessionId, lens: 'review' }) }),
+      open: () => navigate({ to: branchPlace({ sessionId, tab: 'comments' }) }),
     });
   };
 

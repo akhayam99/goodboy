@@ -93,7 +93,6 @@ export const REMOTE_LABEL = {
   resolveOnly: 'Resolve only',
   fixAnyway: 'Fix anyway',
   recheck: 'Re-check',
-  pushToReply: 'Push to reply',
   lookAgain: 'Look again',
   fixAgain: 'Fix again',
   addHint: 'Add a hint',
@@ -104,9 +103,6 @@ export const REMOTE_LABEL = {
   nothingToPush: 'Nothing to push for this one.',
   nothingToPost: 'Goodboy posts nothing here.',
 } as const;
-
-export const replyOnlyLine = ({ count }: { readonly count: number }): string =>
-  count === 1 ? '1 more needs only a reply' : `${count} more need only a reply`;
 
 export const commitUrlOf = ({
   prUrl,

@@ -3,7 +3,7 @@ import { SkeletonChip } from '@goodboy/ui';
 import type { ProjectId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { externalTaskLinkKey } from '../../../../../store/slices/sessions/externalTaskLinkKey';
-import { TaskChipMenu } from '../../../../../shared/components/TaskChipMenu';
+import { LinkedTaskChip } from '../../../../../shared/components/LinkedTaskChip';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -27,12 +27,15 @@ export const BranchTaskChips = ({ sessionId, projectId, branch, isSkeleton }: Pr
     return null;
   }
   return (
-    <span aria-label={`Tasks on ${branch}`} className="flex shrink-0 items-center gap-1">
+    <span
+      aria-label={`Tasks on ${branch}`}
+      className="flex min-w-0 max-w-full flex-wrap items-center gap-1"
+    >
       {tasks.map((task) =>
         isSkeleton ? (
           <SkeletonChip key={externalTaskLinkKey({ task })} />
         ) : (
-          <TaskChipMenu
+          <LinkedTaskChip
             key={externalTaskLinkKey({ task })}
             sessionId={sessionId}
             task={task}

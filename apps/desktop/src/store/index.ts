@@ -6,7 +6,6 @@ export {
   useSessionHasUnread,
   useSessionLastTurnFinishedAt,
 } from './slices/agents/selectors';
-export { useDiffComments } from './slices/diff-comments/selectors';
 export { useRunningHere } from './slices/live-work/selectors';
 export {
   useSessionOpenQuestions,
@@ -33,7 +32,6 @@ export {
 export {
   useCurrentSession,
   useExecutedAgentRouting,
-  useExecutedAgentRoutings,
   useIsSessionCollectionLoaded,
   useRunSpendUsd,
   useSessionById,
@@ -63,7 +61,7 @@ export {
 export { useTranscript } from './slices/transcripts/selectors';
 export type { SessionStudio, LensKind, DiffFocus } from './slices/session-view';
 export { NO_PROJECT_FILTER_ID } from './slices/sessionFilters';
-export { BOARD_PLACE, agentPlace, sessionPlace } from './slices/navigation/place';
+export { BOARD_PLACE, agentPlace, branchPlace, sessionPlace } from './slices/navigation/place';
 export type { Location as NavigationLocation } from './slices/navigation/types';
 export type { InboxStudioFocus, StudioKind, StudioPlace } from './slices/navigation/studio';
 

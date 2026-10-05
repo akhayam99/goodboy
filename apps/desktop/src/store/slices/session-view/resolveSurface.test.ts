@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionId } from '@goodboy/types';
-import { sessionPlace } from '../navigation/place';
+import { branchPlace } from '../navigation/place';
 import { createSessionViewSlice } from './index';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -29,7 +29,6 @@ const buildSlice = (): { readonly actions: SliceState; readonly getState: () => 
     selectedAgentId: {},
     sessionPhaseRuns: {},
     diffMountPath: {},
-    diffPage: {},
     navigate,
     closeDrawer,
   } as unknown as SliceState;
@@ -60,14 +59,10 @@ describe('opening the diff from the resolve queue', () => {
     ]);
     expect(getState().resolveQueueView[SESSION_ID]?.scrollTop).toBe(240);
     expect(navigate).toHaveBeenCalledWith({
-      to: sessionPlace({
+      to: branchPlace({
         sessionId: SESSION_ID,
-        lens: 'files',
-        target: {
-          kind: 'diff',
-          mountPath: null,
-          focus: { kind: 'commit', sha: 'candidate-sha', path: 'src/parser.ts' },
-        },
+        tab: 'files',
+        focus: { kind: 'commit', sha: 'candidate-sha', path: 'src/parser.ts' },
       }),
     });
   });

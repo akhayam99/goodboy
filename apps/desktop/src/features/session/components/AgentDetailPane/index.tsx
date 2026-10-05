@@ -14,6 +14,9 @@ import { AgentHeaderStatus } from './AgentHeaderStatus';
 import { AgentHeaderActions } from '../AgentHeaderActions';
 import { useAgentDetailWorkTime } from '../../hooks/useAgentDetailWorkTime';
 import { AgentBrief } from './AgentBrief';
+import { AgentBriefHandoffLine } from './AgentBriefHandoffLine';
+import { FixRun } from './FixRun';
+import { useResolverBrief } from '../../../resolve/hooks/useResolverBrief';
 import { AgentHeader } from './AgentHeader';
 import { AgentHeaderTime } from './AgentHeaderTime';
 import { AgentTitle } from './AgentTitle';
@@ -33,6 +36,11 @@ const TABS = [
   { value: 'transcript', label: 'Transcript' },
 ] satisfies ReadonlyArray<{ readonly value: AgentTab; readonly label: string }>;
 
+const FIX_RUN_TABS = [
+  { value: 'brief', label: 'Fix run' },
+  { value: 'transcript', label: 'Transcript' },
+] satisfies ReadonlyArray<{ readonly value: AgentTab; readonly label: string }>;
+
 export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context }: Props) => {
   const turnState = useAppStore((state) => state.agentTurnState[agent.id] ?? null);
   const hasOpenQuestions = useAppStore((state) =>
@@ -46,6 +54,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
   const status = effectiveAgentStatus({ agent, turnState });
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
   const kind = classifyAgent({ agent, override: kindOverride });
+  const resolverBrief = useResolverBrief({ sessionId: session.id, agentId: agent.id });
   const requestedPane = useAppStore((state) => state.agentPane?.[session.id] ?? null);
   const openTab =
     requestedPane ?? agentOpenTab({ hasOpenQuestions, isResolver: kind === 'resolver' });
@@ -141,7 +150,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
           tabs={
             <SegmentedTabs
               ariaLabel="Agent sections"
-              options={TABS}
+              options={kind === 'resolver' && resolverBrief !== null ? FIX_RUN_TABS : TABS}
               value={tab}
               onChange={setTab}
               size="xs"
@@ -166,7 +175,14 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
       ) : (
         <>
           {lead}
-          <AgentBrief session={session} agent={agent} time={time ?? null} />
+          {kind === 'resolver' && resolverBrief !== null ? (
+            <div className="flex min-w-0 flex-col gap-4">
+              <AgentBriefHandoffLine sessionId={session.id} agentId={agent.id} />
+              <FixRun session={session} agent={agent} brief={resolverBrief} />
+            </div>
+          ) : (
+            <AgentBrief session={session} agent={agent} time={time ?? null} />
+          )}
         </>
       )}
     </PaneShell>

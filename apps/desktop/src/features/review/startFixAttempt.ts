@@ -10,7 +10,7 @@ import {
 import type { CommentThread } from '../integrations/github/comment-threads';
 import { chunkConversations } from './chunkConversations';
 import { modelChoiceOfLaunch } from '../resolve/launchChoice';
-import type { ResolveAttemptBatch } from '../../store/slices/resolve/types';
+import type { ResolveAttemptBatch, ResolveAttemptLaunch } from '../../store/slices/resolve/types';
 
 export type FixMode = 'shared' | 'separate' | 'retry' | 'recheck' | 'proceed';
 
@@ -28,6 +28,7 @@ type SpawnAgentArgs = {
   readonly focus: 'none';
   readonly parentAgentId?: AgentId;
   readonly resolveBatch?: ResolveAttemptBatch;
+  readonly resolveLaunch?: ResolveAttemptLaunch;
 };
 
 export type SpawnAgentFn = (sessionId: SessionId, args: SpawnAgentArgs) => Promise<AgentId>;
@@ -54,6 +55,7 @@ type Params = {
   readonly contextWindow?: number | null;
   readonly batch?: ResolveAttemptBatch | null;
   readonly parentAgentId?: AgentId | null;
+  readonly retryOfLaunchId?: string | null;
   readonly spawnAgent: SpawnAgentFn;
   readonly setAgentConfig: SetAgentConfigFn;
 };
@@ -100,6 +102,7 @@ export const startFixAttempt = async ({
   contextWindow = null,
   batch = null,
   parentAgentId = null,
+  retryOfLaunchId = null,
   spawnAgent,
   setAgentConfig,
 }: Params): Promise<ReadonlyArray<AgentId>> => {
@@ -114,6 +117,7 @@ export const startFixAttempt = async ({
       : joinHints({ hints: [launched.hint, instructions] });
   const chunks = fixAttemptChunks({ threads, mode, pr, hint, contextWindow });
   const agentIds: Array<AgentId> = [];
+  const resolveLaunch: ResolveAttemptLaunch = { launchId: crypto.randomUUID(), retryOfLaunchId };
   for (const chunk of chunks) {
     const owned = new Set(
       chunk.flatMap((thread) => (thread.head.threadId == null ? [] : [thread.head.threadId])),
@@ -149,6 +153,7 @@ export const startFixAttempt = async ({
       focus: 'none',
       ...(parentAgentId !== null && { parentAgentId }),
       ...(batch !== null && { resolveBatch: batch }),
+      ...(mode === 'recheck' ? {} : { resolveLaunch }),
     });
     await setAgentConfig(sessionId, agentId, {
       ...(choice.provider !== undefined && { providerOverride: choice.provider }),

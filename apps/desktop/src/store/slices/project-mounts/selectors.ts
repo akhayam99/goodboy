@@ -120,6 +120,22 @@ export const selectActiveMount = ({
   );
 };
 
+export const selectDisplayedMount = ({
+  state,
+  sessionId,
+}: ActiveParams & {
+  readonly state: Pick<AppState, 'diffMountPath'>;
+}): SessionProjectMount | null => {
+  const requestedPath = state.diffMountPath?.[sessionId] ?? null;
+  const displayed =
+    requestedPath === null
+      ? undefined
+      : selectWritableMounts({ state, sessionId }).find(
+          (mount) => mount.worktreePath === requestedPath,
+        );
+  return displayed ?? selectActiveMount({ state, sessionId });
+};
+
 export const selectActiveMountId = ({ state, sessionId }: ActiveParams): MountId | null =>
   selectActiveMount({ state, sessionId })?.mountId ?? null;
 

@@ -1,6 +1,8 @@
 import type { SearchHit, WorkspaceId } from '@goodboy/types';
-import { agentPlace, sessionPlace, useAppStore } from '../../store';
+import { agentPlace, branchPlace, sessionPlace, useAppStore } from '../../store';
 import { openUrl } from '../../shared/lib/editor';
+import { selectWritableMounts } from '../../store/slices/project-mounts/selectors';
+import { isNoteOnBranch, isUnassignedNote } from '../resolve/notes/noteThread';
 import { useOpenQuestions } from '../context/components/QuestionsTab/useOpenQuestions';
 import { searchHitTarget, type SearchHitTarget } from './searchHitTarget';
 
@@ -93,14 +95,32 @@ const runTarget = async ({ target }: RunParams): Promise<boolean> => {
       store.openExternalTaskLens(sessionId, target.task);
       return true;
     case 'review':
-      store.navigate({ to: sessionPlace({ sessionId, lens: 'pr' }) });
+      store.navigate({ to: branchPlace({ sessionId, tab: 'comments' }) });
       return true;
-    case 'comment':
-      store.navigate({
-        to: sessionPlace({ sessionId, lens: 'files' }),
-        drawer: { kind: 'diff-notes', sessionId, payload: {} },
+    case 'comment': {
+      await store.loadDiffComments(sessionId);
+      const state = useAppStore.getState();
+      const note = (state.diffComments[sessionId] ?? []).find(
+        (candidate) => candidate.id === target.commentId,
+      );
+      if (note === undefined) {
+        return false;
+      }
+      if (isUnassignedNote({ note })) {
+        state.navigate({ to: sessionPlace({ sessionId }) });
+        return true;
+      }
+      const mount = selectWritableMounts({ state, sessionId }).find((candidate) =>
+        isNoteOnBranch({ note, projectId: candidate.projectId, branch: candidate.branch }),
+      );
+      if (mount === undefined || mount.worktreePath === '') {
+        return false;
+      }
+      state.navigate({
+        to: branchPlace({ sessionId, mountPath: mount.worktreePath, tab: 'comments' }),
       });
       return true;
+    }
     case 'diff': {
       const mount = (store.sessionMounts[sessionId] ?? []).find(
         (candidate) => candidate.id === target.mountId,

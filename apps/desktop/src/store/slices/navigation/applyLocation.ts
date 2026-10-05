@@ -39,7 +39,7 @@ const surfaceChanges = ({
       [sessionId]: keep(
         lens === 'files',
         state.diffFocus[sessionId] ?? null,
-        target?.kind === 'diff' ? target.focus : null,
+        target?.kind === 'diff' || target?.kind === 'branch' ? target.focus : null,
       ),
     },
     diffMountPath: {
@@ -47,16 +47,16 @@ const surfaceChanges = ({
       [sessionId]: keep(
         lens === 'files',
         state.diffMountPath[sessionId] ?? null,
-        target?.kind === 'diff' ? target.mountPath : null,
+        target?.kind === 'diff' || target?.kind === 'branch' ? target.mountPath : null,
       ),
     },
-    diffPage: {
-      ...state.diffPage,
-      [sessionId]: keep(
-        lens === 'files',
-        state.diffPage[sessionId] ?? null,
-        target?.kind === 'diff' ? (target.page ?? null) : null,
-      ),
+    branchTab: {
+      ...state.branchTab,
+      [sessionId]: target?.kind === 'branch' ? target.tab : 'comments',
+    },
+    branchThreadId: {
+      ...state.branchThreadId,
+      [sessionId]: target?.kind === 'branch' ? target.threadId : null,
     },
     terminalMountPath: {
       ...state.terminalMountPath,

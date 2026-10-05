@@ -10,7 +10,6 @@ import {
   openDiffLens,
   openMountDiff,
   openRewriteHistory,
-  closeRewriteHistory,
   openMountTerminal,
   openExternalTaskLens,
   setActiveLens,
@@ -24,7 +23,6 @@ import {
 import { openResolveDiff, setResolveQueueView } from './resolveSurface';
 import { setResolveItemDraft } from './resolveItemDrafts';
 import { beginSessionCreation, endSessionCreation } from './sessionCreation';
-import { revealActivityRow } from './revealActivityRow';
 import type { SessionViewSlice } from './types';
 import type { SliceDeps } from '../../slice-types';
 
@@ -65,11 +63,9 @@ export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlic
     setResolveItemDraft: setResolveItemDraft(set),
     openMountDiff: openMountDiff(get),
     openRewriteHistory: openRewriteHistory(get),
-    closeRewriteHistory: closeRewriteHistory(get),
     openMountTerminal: openMountTerminal(get),
     openExternalTaskLens: openExternalTaskLens(get),
     beginSessionCreation: beginSessionCreation(set),
     endSessionCreation: endSessionCreation(set),
-    revealActivityRow: revealActivityRow(set),
   };
 };

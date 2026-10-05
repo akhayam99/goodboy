@@ -80,9 +80,14 @@ export const useAppShortcuts = ({
     if (sessionId == null || !isLensReachable({ state, sessionId, lens: kind })) {
       return;
     }
+    const active = state.activeLens[sessionId] ?? null;
+    const isBranchDoor =
+      active === 'branch' &&
+      (kind === 'review' || kind === 'pr' || kind === 'files') &&
+      (state.branchTab[sessionId] ?? 'comments') === (kind === 'files' ? 'files' : 'comments');
     openLens({
       sessionId,
-      lens: kind != null && state.activeLens[sessionId] === kind ? null : kind,
+      lens: kind != null && (active === kind || isBranchDoor) ? null : kind,
     });
   }, []);
 

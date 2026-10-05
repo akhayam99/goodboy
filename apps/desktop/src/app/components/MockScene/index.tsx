@@ -1,3 +1,7 @@
+import { TaskLinksScene } from './scenes/TaskLinksScene';
+import { TaskLinksHoverScene } from './scenes/TaskLinksHoverScene';
+import { TaskLinksUndoScene } from './scenes/TaskLinksUndoScene';
+import { UndoToastBridge } from '../UndoToastBridge';
 import { useEffect } from 'react';
 import { ToastProvider } from '../../../shared/components/Toast';
 import { ObjectMenuProvider } from '../../../features/actions/components/ObjectMenuProvider';
@@ -14,14 +18,16 @@ import { MountsScene } from './scenes/MountsScene';
 import { OverviewFullScene } from './scenes/OverviewFullScene';
 import { OverviewManyScene } from './scenes/OverviewManyScene';
 import { OverviewBranchTasksScene } from './scenes/OverviewBranchTasksScene';
+import { OverviewUnassignedNotesScene } from './scenes/OverviewUnassignedNotesScene';
 import { LinkScopeScene } from './scenes/LinkScopeScene';
 import { OverviewRefreshingScene } from './scenes/OverviewRefreshingScene';
 import { MountMismatchScene } from './scenes/MountMismatchScene';
 import { ResolveScene } from './scenes/ResolveScene';
 import { ResolveSelectScene } from './scenes/ResolveSelectScene';
+import { BranchCommentsScene } from './scenes/BranchCommentsScene';
+import { BranchNarrowScene } from './scenes/BranchNarrowScene';
+import { BranchPushScene } from './scenes/BranchPushScene';
 import { ResolveDriftScene } from './scenes/ResolveDriftScene';
-import { ResolveCommitStoryScene } from './scenes/ResolveCommitStoryScene';
-import { ResolveCommitsScene } from './scenes/ResolveCommitsScene';
 import { ResolveGitlabScene } from './scenes/ResolveGitlabScene';
 import { ResolveBitbucketScene } from './scenes/ResolveBitbucketScene';
 import { ResolveItemScene } from './scenes/ResolveItemScene';
@@ -43,9 +49,11 @@ import {
   ArtifactCreateReportScene,
   ArtifactCreateWireframeScene,
 } from './scenes/ArtifactCreationScenes';
-import { ActivityFilterScene, ActivityTimelineScene } from './scenes/ActivityScenes';
+import { ActivityTimelineScene } from './scenes/ActivityScenes';
 import { ActivityRunScene } from './scenes/ActivityRunScene';
 import { ActivityRunFinishedScene } from './scenes/ActivityRunFinishedScene';
+import { ActivityBurstOpenScene } from './scenes/ActivityBurstOpenScene';
+import { ActivityLogScene } from './scenes/ActivityLogScene';
 import { ActivityResolvesScene } from './scenes/ActivityResolvesScene';
 import { ActivityQuestionScene } from './scenes/ActivityQuestionScene';
 import { ActivityOneSignalScene } from './scenes/ActivityOneSignalScene';
@@ -135,8 +143,6 @@ import { BrandDiffScene } from './scenes/brand/DiffScene';
 import { BrandDiffManyFilesScene } from './scenes/brand/DiffManyFilesScene';
 import { DiffNotesScene } from './scenes/brand/DiffNotesScene';
 import { ResolveNotesScene } from './scenes/ResolveNotesScene';
-import { DiffNotesFixScene } from './scenes/brand/DiffNotesFixScene';
-import { DiffNotesSummaryScene } from './scenes/brand/DiffNotesSummaryScene';
 import { BrandHistoryScene } from './scenes/brand/HistoryScene';
 import { BrandHistoryPlanScene } from './scenes/brand/HistoryPlanScene';
 import { BrandHistoryResultScene } from './scenes/brand/HistoryResultScene';
@@ -152,7 +158,7 @@ import { useBrandChrome } from './scenes/brand/brandChrome';
 import { applyDocumentTheme } from '../../../shared/lib/theme';
 import { AgentBriefScene } from './scenes/AgentBriefScene';
 import { AgentBriefQuestionScene } from './scenes/AgentBriefQuestionScene';
-import { AgentBriefResolverScene } from './scenes/AgentBriefResolverScene';
+import { FixRunScene } from './scenes/FixRunScene';
 import { ReportSheetHost } from '../../../features/bug-report/components/ReportSheetHost';
 import { CrashReportScene, useReportSheetParam } from './scenes/audit/ReportScenes';
 
@@ -169,17 +175,24 @@ export const MOCK_SCENES = {
   'overview-full': OverviewFullScene,
   'overview-projects-many': OverviewManyScene,
   'overview-branch-tasks': OverviewBranchTasksScene,
+  'overview-unassigned-notes': OverviewUnassignedNotesScene,
   'link-scope': LinkScopeScene,
+  'task-links': TaskLinksScene,
+  'task-links-hover': TaskLinksHoverScene,
+  'task-links-undo': TaskLinksUndoScene,
   'overview-refreshing': OverviewRefreshingScene,
   'mount-mismatch': MountMismatchScene,
   resolve: ResolveScene,
   'resolve-select': ResolveSelectScene,
+  'branch-comments': BranchCommentsScene,
+  'branch-commits': BrandHistoryScene,
+  'branch-files': BrandDiffScene,
+  'branch-narrow': BranchNarrowScene,
+  'branch-push': BranchPushScene,
   'resolve-item': ResolveItemScene,
   'resolve-failed': ResolveFailedRunScene,
   'resolve-failed-history': ResolveFailedHistoryScene,
   'resolve-drift': ResolveDriftScene,
-  'resolve-commit-story': ResolveCommitStoryScene,
-  'resolve-commits': ResolveCommitsScene,
   'resolve-gitlab': ResolveGitlabScene,
   'resolve-bitbucket': ResolveBitbucketScene,
   board: BoardScene,
@@ -195,7 +208,8 @@ export const MOCK_SCENES = {
   'artifact-create-report': ArtifactCreateReportScene,
   'artifact-create-wireframe': ArtifactCreateWireframeScene,
   activity: ActivityTimelineScene,
-  'activity-filter': ActivityFilterScene,
+  'activity-burst-open': ActivityBurstOpenScene,
+  'activity-log': ActivityLogScene,
   'activity-run': ActivityRunScene,
   'activity-run-finished': ActivityRunFinishedScene,
   'activity-resolves': ActivityResolvesScene,
@@ -284,8 +298,6 @@ export const MOCK_SCENES = {
   'brand-diff': BrandDiffScene,
   'brand-diff-many': BrandDiffManyFilesScene,
   'diff-notes': DiffNotesScene,
-  'diff-notes-fix': DiffNotesFixScene,
-  'diff-notes-summary': DiffNotesSummaryScene,
   'resolve-notes': ResolveNotesScene,
   'brand-history': BrandHistoryScene,
   'brand-history-plan': BrandHistoryPlanScene,
@@ -300,7 +312,7 @@ export const MOCK_SCENES = {
   'brand-tools': BrandToolsScene,
   'agent-brief': AgentBriefScene,
   'agent-brief-question': AgentBriefQuestionScene,
-  'agent-brief-resolver': AgentBriefResolverScene,
+  'fix-run': FixRunScene,
   'crash-report': CrashReportScene,
 };
 
@@ -347,6 +359,7 @@ export const MockScene = () => {
 
   return (
     <ToastProvider>
+      <UndoToastBridge />
       <ObjectMenuProvider>
         <Scene />
         <ReportSheetHost />

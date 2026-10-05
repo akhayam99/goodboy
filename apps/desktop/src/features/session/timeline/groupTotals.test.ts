@@ -95,7 +95,6 @@ describe('groupTotals', () => {
       costUsd: rootsCost({ roots: ['lead' as AgentId], spendByAgentId: SPEND }),
       isSettled: true,
       source: settledTimeSource({ spans: SPANS, agents: AGENTS }),
-      agentById: new Map(AGENTS.map((entry) => [entry.id, entry])),
     });
     expect(totals.costUsd).toBe(1.25);
   });
@@ -106,23 +105,8 @@ describe('groupTotals', () => {
       costUsd: 0,
       isSettled: true,
       source: settledTimeSource({ spans: SPANS, agents: AGENTS }),
-      agentById: new Map(AGENTS.map((entry) => [entry.id, entry])),
     });
     expect(totals.time?.label).toBe('6m');
-  });
-
-  it('lists every model the family ran on', () => {
-    const totals = groupTotals({
-      roots: ['lead' as AgentId],
-      costUsd: 0,
-      isSettled: true,
-      source: settledTimeSource({ spans: SPANS, agents: AGENTS }),
-      agentById: new Map(AGENTS.map((entry) => [entry.id, entry])),
-    });
-    expect(totals.routes).toEqual([
-      { provider: 'anthropic', model: 'claude-sonnet-5' },
-      { provider: 'codex', model: 'gpt-5.6-sol' },
-    ]);
   });
 
   it('shows no time while the group is still working', () => {
@@ -131,7 +115,6 @@ describe('groupTotals', () => {
       costUsd: 0,
       isSettled: false,
       source: settledTimeSource({ spans: SPANS, agents: AGENTS }),
-      agentById: new Map(AGENTS.map((entry) => [entry.id, entry])),
     });
     expect(totals.time).toBeNull();
   });

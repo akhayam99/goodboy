@@ -1,17 +1,17 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { useCopyLink } from '@goodboy/ui';
 import type { OpenQuestion, Session, SessionId } from '@goodboy/types';
-import { useAppStore, useMountDiffStats, sessionPlace } from '../../../../../../../store';
+import {
+  useAppStore,
+  useMountDiffStats,
+  sessionPlace,
+  branchPlace,
+} from '../../../../../../../store';
 import { useSessionRoleModels } from '../../../../../../../shared/hooks/useSessionRoleModels';
 import { usePendingAction } from '../../../../../../../shared/hooks/usePendingAction';
 import { useAdvanceWorkflowAgent } from '../../../../../../workflows/useAdvanceWorkflowAgent';
 import { useOpenQuestions } from '../../../../../../context/components/QuestionsTab/useOpenQuestions';
 import { useOpenAgentQuestion } from '../../../../../../context/hooks/useOpenAgentQuestion';
-import {
-  useHistoryRowActions,
-  type HistoryRowActions,
-} from '../../../../../../history/useHistoryRowActions';
-import type { RailRow } from '../../../../../../workTreeModel/railGeometry';
 import type {
   TimelineRowItem,
   TimelineStreamItem,
@@ -20,9 +20,10 @@ import type { ExplodeGroups } from '../../../../../hooks/useExplodeGroups';
 import { useAgentTouchedWorktrees } from '../../../../../hooks/useAgentTouchedWorktrees';
 import { useTimelineOpen } from '../../../../../hooks/useTimelineOpen';
 import type { TimelineEntryRowHandlers } from '../TimelineEntryRow';
-import type { TimelineLaneControl, TimelineLaneTarget } from '../TimelineRail';
+import type { TimelineLaneTarget } from '../TimelineRail';
 import type { TimelineRowProps } from '../TimelineRow';
 import type { TimelineRowAction } from '../TimelineStreamRow';
+import type { NeedsYouOwner } from '../../../../../timeline/needsYou';
 import type { TimelineRows } from '../useTimelineRows';
 
 const NO_WORKTREES: ReadonlyArray<string> = [];
@@ -38,20 +39,12 @@ type RowParams = {
   readonly index: number;
 };
 
-type TouchesLaneParams = {
-  readonly rail: RailRow;
-  readonly laneId: string;
+type RowPropsControl = {
+  readonly rowPropsFor: (params: RowParams) => TimelineRowProps | null;
+  readonly openNeedsYou: (params: { readonly owner: NeedsYouOwner }) => void;
 };
 
-const railTouchesLane = ({ rail, laneId }: TouchesLaneParams): boolean =>
-  rail.segments.some((segment) => segment.laneId === laneId) ||
-  rail.joins.some((join) => join.laneId === laneId);
-
-export const useTimelineRowProps = ({
-  session,
-  explode,
-  rows,
-}: Params): ((params: RowParams) => TimelineRowProps | null) => {
+export const useTimelineRowProps = ({ session, explode, rows }: Params): RowPropsControl => {
   const sessionId: SessionId = session.id;
   const navigate = useAppStore((s) => s.navigate);
   const openMountDiff = useAppStore((s) => s.openMountDiff);
@@ -60,68 +53,43 @@ export const useTimelineRowProps = ({
   const focusQuestion = useOpenQuestions((s) => s.focusQuestion);
   const openAgentQuestion = useOpenAgentQuestion({ sessionId });
   const openTargetFor = useTimelineOpen({ sessionId });
-  const historyRowFor = useHistoryRowActions({ sessionId });
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
   const pending = usePendingAction({ sessionId });
   const diffStats = useMountDiffStats(sessionId);
   const touchedWorktrees = useAgentTouchedWorktrees(sessionId);
   const roleModels = useSessionRoleModels({ sessionId });
   const { copiedKey, failedKey, copy } = useCopyLink();
-  const [hoveredLaneId, setHoveredLaneId] = useState<string | null>(null);
   const sessionProvider = session.providerPreference?.defaultProvider ?? null;
   const sessionEffort = session.effort ?? null;
-  const { events, worktrees, laneRuns, stream } = rows;
-
-  const historyByRowId = useMemo(() => {
-    const byId = new Map<string, HistoryRowActions>();
-    for (const item of stream.items) {
-      if (item.kind !== 'row' || item.entry.kind !== 'event') {
-        continue;
-      }
-      const history = historyRowFor({ event: item.entry.event, events });
-      if (history !== null) {
-        byId.set(item.id, history);
-      }
-    }
-    return byId;
-  }, [events, historyRowFor, stream.items]);
+  const { worktrees, laneRuns, stream } = rows;
 
   const latestLaneRuns = useRef(laneRuns);
   latestLaneRuns.current = laneRuns;
 
-  const laneTargetFor = useCallback(
-    ({ laneId }: { readonly laneId: string }): TimelineLaneTarget | null => {
-      const entry = latestLaneRuns.current.runByLaneId.get(laneId);
-      if (entry === undefined) {
-        return null;
-      }
-      const target = openTargetFor({ entry });
-      if (target === null) {
-        return null;
-      }
-      return { laneId, title: entry.run.title ?? entry.workflow.name, open: target.open };
-    },
-    [openTargetFor],
-  );
+  const runLaneCache = useRef(new Map<string, TimelineLaneTarget>());
 
-  const onLaneHover = useCallback(
-    ({ laneId }: { readonly laneId: string | null }) => setHoveredLaneId(laneId),
-    [],
-  );
-
-  const idleLanes = useMemo(
-    (): TimelineLaneControl => ({
-      targetFor: laneTargetFor,
-      hoveredLaneId: null,
-      onHover: onLaneHover,
-    }),
-    [laneTargetFor, onLaneHover],
-  );
-
-  const hoveredLanes = useMemo(
-    (): TimelineLaneControl => ({ ...idleLanes, hoveredLaneId }),
-    [hoveredLaneId, idleLanes],
-  );
+  const runLaneFor = ({ laneId }: { readonly laneId: string }): TimelineLaneTarget | null => {
+    const cached = runLaneCache.current.get(laneId);
+    if (cached !== undefined) {
+      return cached;
+    }
+    const entry = latestLaneRuns.current.runByLaneId.get(laneId);
+    if (entry === undefined) {
+      return null;
+    }
+    const target: TimelineLaneTarget = {
+      laneId,
+      title: entry.run.title ?? entry.workflow.name,
+      open: () => {
+        const latest = latestLaneRuns.current.runByLaneId.get(laneId);
+        if (latest !== undefined) {
+          openTargetFor({ entry: latest })?.open();
+        }
+      },
+    };
+    runLaneCache.current.set(laneId, target);
+    return target;
+  };
 
   const mountPathByProjectId = useMemo(() => {
     const paths = new Map<string, string>();
@@ -183,9 +151,12 @@ export const useTimelineRowProps = ({
   const actionFor = ({ item }: { readonly item: TimelineRowItem }): TimelineRowAction | null => {
     const { entry } = item;
     if (entry.kind === 'event') {
-      const history = historyByRowId.get(item.id);
-      if (history !== undefined) {
-        return history.action;
+      if (entry.event.kind === 'issue_unlinked') {
+        const target = openTargetFor({ entry });
+        if (target == null) {
+          return null;
+        }
+        return { label: target.label, onAct: target.open };
       }
     }
     const mountPath = mountPathFor({ item });
@@ -283,30 +254,48 @@ export const useTimelineRowProps = ({
     [explode.set, openDecisionInContext, openTargetFor, rows.toggleExpanded, runAction],
   );
 
-  return ({ item, index }) => {
+  const openNeedsYou = useCallback(
+    ({ owner }: { readonly owner: NeedsYouOwner }) => {
+      if (owner.kind === 'batch') {
+        navigate({ to: branchPlace({ sessionId, tab: 'comments' }) });
+        return;
+      }
+      if (owner.kind === 'question') {
+        if (owner.question !== null) {
+          focusQuestion(owner.question.id);
+        }
+        navigate({ to: sessionPlace({ sessionId, lens: 'questions' }) });
+        return;
+      }
+      if (owner.question !== null) {
+        openAgentQuestion({ question: owner.question });
+        return;
+      }
+      if (owner.item !== null) {
+        openTargetFor({ entry: owner.item.entry })?.open();
+      }
+    },
+    [focusQuestion, navigate, openAgentQuestion, openTargetFor, sessionId],
+  );
+
+  const rowPropsFor = ({ item, index }: RowParams): TimelineRowProps | null => {
     const rail = rows.rail.rows[index];
     if (rail === undefined) {
       return null;
     }
     const railWidth = rows.rail.width;
     const rowLaneId = item.kind === 'row' ? (laneRuns.laneIdByRowId.get(item.id) ?? null) : null;
-    const lanes =
-      hoveredLaneId !== null &&
-      (rowLaneId === hoveredLaneId || railTouchesLane({ rail, laneId: hoveredLaneId }))
-        ? hoveredLanes
-        : idleLanes;
     if (item.kind === 'now') {
-      return { kind: 'now', item, rail, railWidth, sessionId, lanes };
+      return { kind: 'now', item, rail, railWidth, sessionId };
     }
     if (item.kind === 'day') {
-      return { kind: 'day', item, rail, railWidth, sessionId, lanes };
+      return { kind: 'day', item, rail, railWidth, sessionId };
     }
     if (item.kind === 'more') {
-      return { kind: 'more', item, rail, railWidth, sessionId, lanes, onShowAll: explode.showAll };
+      return { kind: 'more', item, rail, railWidth, sessionId, onShowAll: explode.showAll };
     }
     const { entry } = item;
-    const isGroup =
-      entry.kind === 'resolveBatch' || entry.kind === 'subagentGroup' || item.fold !== undefined;
+    const isGroup = entry.kind === 'resolveBatch' || item.fold !== undefined;
     const action = isGroup ? null : actionFor({ item });
     const agentId = entry.kind === 'agent' ? entry.agent.id : null;
     const stepId = entry.kind === 'agent' ? entry.agent.stepId : null;
@@ -316,13 +305,11 @@ export const useTimelineRowProps = ({
       rail,
       railWidth,
       sessionId,
-      lanes,
       handlers,
-      runLaneId: rowLaneId,
+      runLane: rowLaneId === null ? null : runLaneFor({ laneId: rowLaneId }),
       actionLabel: action === null ? null : action.label,
       actionVariant: action?.variant ?? null,
       actionBusy: action?.isBusy === true,
-      historyMenu: historyByRowId.get(item.id)?.menu ?? null,
       diffStat: diffStatFor({ item }),
       worktrees: agentId === null ? NO_WORKTREES : (touchedWorktrees.get(agentId) ?? NO_WORKTREES),
       step: stepId == null ? null : (rows.stepById.get(stepId) ?? null),
@@ -331,16 +318,25 @@ export const useTimelineRowProps = ({
           ? (rows.spendByAgentId.get(entry.agent.id) ?? 0)
           : entry.kind === 'run'
             ? (rows.spendByRunId.get(entry.run.id) ?? 0)
-            : 0,
+            : entry.kind === 'resolveFile'
+              ? entry.agentIds.reduce((total, id) => total + (rows.spendByAgentId.get(id) ?? 0), 0)
+              : 0,
       groupTotals: rows.groupTotals.get(item.id) ?? null,
-      isRevealed: rows.revealedRows.has(entry.id),
-      isExpanded: isGroup
-        ? explode.expandedIds.has(entry.id) && !explode.leavingIds.has(entry.id)
-        : rows.expandedRows.has(item.id),
+      isExpanded:
+        isGroup || item.subagents !== undefined
+          ? explode.expandedIds.has(item.subagents?.id ?? entry.id) &&
+            !explode.leavingIds.has(item.subagents?.id ?? entry.id)
+          : rows.expandedRows.has(item.id),
+      isOutputsExpanded:
+        item.outputs !== undefined &&
+        explode.expandedIds.has(item.outputs.id) &&
+        !explode.leavingIds.has(item.outputs.id),
       decisionDetail: rows.decisionDetails.get(item.id) ?? null,
       roleModels,
       sessionProvider,
       sessionEffort,
     };
   };
+
+  return { rowPropsFor, openNeedsYou };
 };

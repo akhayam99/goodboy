@@ -1,3 +1,4 @@
+import { taskOperationOf } from './taskOperationOf';
 import type {
   IsoDateTime,
   MaterializationDeferralCause,
@@ -131,6 +132,7 @@ const parsePayload = ({ raw }: ParsePayloadParams): SessionEventPayload | null =
   if (source === null) {
     return null;
   }
+  const taskOperation = taskOperationOf({ value: source.taskOperation });
   const worktreePath = stringAt({ source, key: 'worktreePath' });
   const branch = stringAt({ source, key: 'branch' });
   const from = stringAt({ source, key: 'from' });
@@ -173,6 +175,7 @@ const parsePayload = ({ raw }: ParsePayloadParams): SessionEventPayload | null =
   const questionId = stringAt({ source, key: 'questionId' });
   const deferralCause = deferralCauseAt({ source, key: 'deferralCause' });
   return {
+    ...(taskOperation != null ? { taskOperation } : {}),
     ...(worktreePath != null ? { worktreePath } : {}),
     ...(branch != null ? { branch } : {}),
     ...(from != null ? { from } : {}),

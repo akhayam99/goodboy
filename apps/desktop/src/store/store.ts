@@ -1,3 +1,5 @@
+import { createUndoSlice } from './slices/undo';
+import { undoInitialState } from './slices/undo/state';
 import { createBootstrapSlice } from './slices/bootstrap';
 import { bootstrapInitialState } from './slices/bootstrap/state';
 import { createResolveSlice } from './slices/resolve';
@@ -103,7 +105,6 @@ import { createUpdaterSlice } from './slices/updater';
 import { initialUpdaterState } from './slices/updater/state';
 import { createChangelogSlice } from './slices/changelog';
 import { initialChangelogState } from './slices/changelog/state';
-import { createReviewCommitsSlice, initialReviewCommitsState } from './slices/reviewCommits';
 import { createBugReportDraftSlice } from './slices/bugReportDraft';
 import { createSessionDraftSlice } from './slices/sessionDraft';
 import { createContextDrawerSlice } from './slices/contextDrawer';
@@ -181,6 +182,7 @@ type AppActions = {
 };
 
 export type AppStore = AppState &
+  ReturnType<typeof createUndoSlice> &
   AppActions &
   ReturnType<typeof createArtifactsSlice> &
   ReturnType<typeof createBootstrapSlice> &
@@ -206,7 +208,6 @@ export type AppStore = AppState &
   ReturnType<typeof createChatsSlice> &
   ReturnType<typeof createUpdaterSlice> &
   ReturnType<typeof createChangelogSlice> &
-  ReturnType<typeof createReviewCommitsSlice> &
   ReturnType<typeof createBugReportDraftSlice> &
   ReturnType<typeof createSessionDraftSlice> &
   ReturnType<typeof createContextDrawerSlice> &
@@ -266,9 +267,9 @@ export type AppStore = AppState &
   ReturnType<typeof createScribeSlice>;
 
 export const initialState: AppState = {
+  ...undoInitialState,
   ...initialUpdaterState,
   ...initialChangelogState,
-  ...initialReviewCommitsState,
   ...initialBugReportDraftState,
   ...initialSessionDraftState,
   ...initialContextDrawerState,
@@ -348,6 +349,7 @@ export const initialState: AppState = {
 
 export const useAppStore = create<AppStore>((set, get) => ({
   ...initialState,
+  ...createUndoSlice({ set, get }),
   ...createNotificationsSlice({ set, get }),
   ...createNudgesSlice({ set, get }),
   ...createArtifactsSlice({ set, get }),
@@ -423,7 +425,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createBootSlice({ set, get }),
   ...createUpdaterSlice({ set, get }),
   ...createChangelogSlice({ set, get }),
-  ...createReviewCommitsSlice({ set, get }),
   ...createBugReportDraftSlice({ set, get }),
   ...createSessionDraftSlice({ set, get }),
   ...createContextDrawerSlice({ set, get }),

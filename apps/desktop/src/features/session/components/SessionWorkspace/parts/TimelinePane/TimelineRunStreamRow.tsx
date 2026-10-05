@@ -1,4 +1,4 @@
-import { useContext, type ReactNode } from 'react';
+import { useContext } from 'react';
 import { useObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
 import type { EffortLevel, ProviderId, RoleModelPreferences, SessionId } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../../store';
@@ -10,7 +10,7 @@ import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 import { runStepProgress } from '../../../../timeline/runStepProgress';
 import { runWorkTime } from '../../../../timeline/runWorkTime';
 import type { RailRow } from '../../../../../workTreeModel/railGeometry';
-import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
+import type { TimelineLaneTarget } from './TimelineRail';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
 import { TimelineRunMeta } from './TimelineRunMeta';
 import { TimelineStreamRow, type TimelineRowAction } from './TimelineStreamRow';
@@ -24,14 +24,11 @@ type Props = {
   readonly openTarget: TimelineOpenTarget | null;
   readonly action: TimelineRowAction | null;
   readonly diffStat: MountDiffStat | null;
-  readonly lanes: TimelineLaneControl | null;
   readonly runLane: TimelineLaneTarget | null;
   readonly roleModels: RoleModelPreferences | null;
   readonly sessionProvider: ProviderId | null;
   readonly sessionEffort: EffortLevel | null;
   readonly costUsd: number;
-  readonly menu: ReactNode;
-  readonly isRevealed?: boolean;
 };
 
 export const TimelineRunStreamRow = ({
@@ -43,14 +40,11 @@ export const TimelineRunStreamRow = ({
   openTarget,
   action,
   diffStat,
-  lanes,
   runLane,
   roleModels,
   sessionProvider,
   sessionEffort,
   costUsd,
-  menu,
-  isRevealed = false,
 }: Props) => {
   const source = useContext(WorkTimeContext);
   const scope = useRoutingScope({ sessionId });
@@ -87,10 +81,7 @@ export const TimelineRunStreamRow = ({
         />
       }
       progress={time?.progress ?? null}
-      isRevealed={isRevealed}
-      menu={menu}
       contextMenu={contextMenu}
-      lanes={lanes}
       runLane={runLane}
     />
   );

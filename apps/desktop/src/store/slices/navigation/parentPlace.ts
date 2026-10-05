@@ -16,6 +16,22 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
   if (view.studio !== null) {
     return { ...place, view: { ...view, studio: null } };
   }
+  if (view.target?.kind === 'branch') {
+    const { target } = view;
+    if (target.threadId !== null) {
+      return { ...place, view: { ...view, target: { ...target, threadId: null } } };
+    }
+    if (target.tab === 'files' && target.focus?.path != null) {
+      return {
+        ...place,
+        view: { ...view, target: { ...target, focus: { ...target.focus, path: null } } },
+      };
+    }
+    return sessionPlace({ sessionId });
+  }
+  if (view.agentId !== null && view.target?.kind === 'thread' && view.lens === 'review') {
+    return sessionPlace({ sessionId, lens: 'review' });
+  }
   if (view.agentId !== null) {
     const home = agentHomeFor({ state, sessionId, agentId: view.agentId }) ?? view.lens;
     const runId =

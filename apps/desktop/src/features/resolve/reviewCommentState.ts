@@ -139,24 +139,6 @@ export const reviewCommentWord = ({
   }
 };
 
-export const resolverBriefWord = ({
-  state,
-  row,
-}: {
-  readonly state: ReviewCommentState;
-  readonly row: ResolveQueueRow;
-}): string => {
-  switch (state) {
-    case 'needs':
-      return 'Needs your reply';
-    case 'accepted':
-    case 'replied':
-      return 'Ready to push';
-    default:
-      return reviewCommentWord({ state, row });
-  }
-};
-
 export const REVIEW_COMMENT_NODE: Record<
   ReviewCommentState,
   Exclude<WorkNodeState, 'marker' | 'mixed'>
@@ -188,58 +170,4 @@ export const REVIEW_COMMENT_TONE: Record<ReviewCommentState, Tone> = {
   skipped: 'neutral',
   pushed: 'success',
   resolved: 'neutral',
-};
-
-export type ReviewStateFilter =
-  'all' | 'new' | 'drafting' | 'needs' | 'ready' | 'outdated' | 'failed';
-
-export const REVIEW_STATE_FILTERS: ReadonlyArray<ReviewStateFilter> = [
-  'all',
-  'needs',
-  'ready',
-  'new',
-  'drafting',
-  'outdated',
-  'failed',
-];
-
-export const REVIEW_STATE_FILTER_LABEL: Record<ReviewStateFilter, string> = {
-  all: 'All comments',
-  new: 'Not started',
-  drafting: 'Drafting',
-  needs: 'Needs you',
-  ready: 'Ready',
-  outdated: 'Comment changed',
-  failed: 'Failed',
-};
-
-export const matchesReviewStateFilter = ({
-  state,
-  filter,
-}: {
-  readonly state: ReviewCommentState;
-  readonly filter: ReviewStateFilter;
-}): boolean => {
-  if (filter === 'all') {
-    return true;
-  }
-  if (filter === 'ready') {
-    return state === 'ready' || state === 'edited';
-  }
-  return state === filter;
-};
-
-export const reviewSummaryLine = ({
-  states,
-}: {
-  readonly states: ReadonlyArray<ReviewCommentState>;
-}): ReadonlyArray<{ readonly count: number; readonly noun: string }> => {
-  const inGroup = (group: ReviewCommentGroup): number =>
-    states.filter((state) => reviewCommentGroup({ state }) === group).length;
-  return [
-    { count: inGroup('open'), noun: 'open' },
-    { count: states.filter((state) => state === 'drafting').length, noun: 'drafting' },
-    { count: inGroup('push'), noun: 'ready to push' },
-    { count: inGroup('done'), noun: 'done' },
-  ].filter((part) => part.count > 0);
 };

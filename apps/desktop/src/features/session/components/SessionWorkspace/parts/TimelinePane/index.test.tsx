@@ -1,7 +1,11 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { agentPlace, sessionPlace } from '../../../../../../store/slices/navigation/place';
+import {
+  agentPlace,
+  branchPlace,
+  sessionPlace,
+} from '../../../../../../store/slices/navigation/place';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type {
   AgentId,
@@ -51,7 +55,6 @@ const { storeState, diffStats, unread, questions, agentsLoaded, attachedRuns, re
       sessionWorktreeRecords: {} as Record<string, ReadonlyArray<unknown>>,
       sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
       selectedAgentId: {} as Record<string, string | null>,
-      revealedActivityRows: {} as Record<string, ReadonlySet<string>>,
       transcripts: {} as Record<string, ReadonlyArray<unknown>>,
       projects: [] as ReadonlyArray<unknown>,
       sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
@@ -99,7 +102,6 @@ vi.mock('../../../../../../store', async () => {
     useIsSessionCollectionLoaded: () => agentsLoaded.current,
     useExecutedAgentRouting: ({ agent }: { readonly agent: { readonly id: string } }) =>
       storeState.executed.get(agent.id) ?? null,
-    useExecutedAgentRoutings: () => storeState.executed,
   };
 });
 vi.mock('../../../../../../shared/hooks/useSessionRoleModels', () => ({
@@ -123,14 +125,10 @@ vi.mock('../../../../../workflows/useWorkflowAdvanceStates', () => ({
 vi.mock('../../../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
-vi.mock('./ActivityFilterPanel', () => ({
-  ActivityFilterPanel: () => <button type="button">Filter</button>,
-}));
 import { TimelinePane } from './index';
-import { shownElementsAt, visibleTextAt } from '../../../../../../test/containerView';
+import { visibleTextAt } from '../../../../../../test/containerView';
 import { useOpenQuestions } from '../../../../../context/components/QuestionsTab/useOpenQuestions';
 import { OverviewActions } from '../../../SessionOverviewPane/OverviewActions';
-import { DEFAULT_ACTIVITY_FILTER, writeActivityFilter } from '../../../../timeline/activityFilter';
 
 const SESSION: Session = aSession({
   id: 'session-1' as SessionId,
@@ -210,12 +208,15 @@ const withRevealTransitions = () => {
   });
 };
 
+const openLog = () => fireEvent.click(screen.getByRole('tab', { name: 'Log' }));
+
 describe('TimelinePane mount rows', () => {
   it('turns the mount row action into the diff once the mount has changes', () => {
     storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
     diffStats.current = new Map([['/worktrees/api', { additions: 7, deletions: 1 }]]);
 
     render(<TimelinePane session={SESSION} actions={null} />);
+    openLog();
 
     const action = screen.getByRole('button', { name: 'View diff' });
     fireEvent.click(action);
@@ -229,34 +230,193 @@ describe('TimelinePane mount rows', () => {
     diffStats.current = new Map([['/worktrees/api', { additions: 0, deletions: 0 }]]);
 
     render(<TimelinePane session={SESSION} actions={null} />);
+    openLog();
 
     expect(screen.getByRole('button', { name: 'Copy path' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'View diff' })).toBeNull();
   });
-});
 
-describe('TimelinePane under a full filter', () => {
-  it('reads an all-hidden timeline as filtered, not empty', () => {
+  it('keeps the mount out of Activity, where only launches live', () => {
     storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
-    localStorage.setItem(
-      'goodboy:activity-filter',
-      JSON.stringify({
-        worktree: false,
-        issues: false,
-        pullRequests: false,
-        workflows: false,
-        plans: false,
-        agents: false,
-        resolver: false,
-        decisions: false,
-      }),
-    );
 
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    expect(screen.getByText(/hidden by the activity filter/)).toBeDefined();
-    expect(screen.queryByText(/Nothing yet/)).toBeNull();
     expect(screen.queryByRole('button', { name: 'Copy path' })).toBeNull();
+    expect(screen.queryByText('Nothing yet')).toBeNull();
+    expect(screen.getByText(/Nothing launched yet/)).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'See Log' }));
+    expect(screen.getByRole('button', { name: 'Copy path' })).toBeDefined();
+  });
+});
+
+describe('TimelinePane Activity and Log', () => {
+  const SCOUT = {
+    id: 'agent-scout',
+    sessionId: 'session-1',
+    ordinal: 1,
+    name: 'Scout payments-api',
+    status: 'completed',
+    startedAt: '2026-08-20T10:00:00.000Z',
+    completedAt: '2026-08-20T10:04:00.000Z',
+  };
+
+  it('opens on Activity with the two views as one segmented control', () => {
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    const tabs = screen.getAllByRole('tab');
+
+    expect(tabs.map((tab) => tab.textContent)).toEqual(['Activity', 'Log']);
+    expect(screen.getByRole('tab', { name: 'Activity' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+  });
+
+  it('shows a launch in Activity and a worktree in the Log, never both', () => {
+    storeState.sessionPhaseRuns = { 'session-1': [SCOUT] };
+    storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
+
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    expect(screen.getByText('Scout payments-api')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Copy path' })).toBeNull();
+
+    openLog();
+
+    expect(screen.queryByText('Scout payments-api')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Copy path' })).toBeDefined();
+  });
+
+  it('searches the Log by the words of its rows', () => {
+    storeState.sessionEvents = {
+      'session-1': [
+        {
+          id: 'ev-branch',
+          sessionId: 'session-1',
+          kind: 'branch_created',
+          payload: { branch: 'hl/fix-duplicate-credit' },
+          createdAt: '2026-08-20T10:00:00.000Z',
+        },
+        {
+          id: 'ev-pr',
+          sessionId: 'session-1',
+          kind: 'pr_created',
+          payload: { prNumber: 318, title: 'Webhook redelivery' },
+          createdAt: '2026-08-20T11:00:00.000Z',
+        },
+      ],
+    };
+
+    render(<TimelinePane session={SESSION} actions={null} />);
+    openLog();
+    expect(screen.getByText('hl/fix-duplicate-credit')).toBeDefined();
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search the log' }), {
+      target: { value: 'duplicate' },
+    });
+
+    expect(screen.getByText('hl/fix-duplicate-credit')).toBeDefined();
+    expect(screen.queryByText(/#318/)).toBeNull();
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search the log' }), {
+      target: { value: 'zzz' },
+    });
+
+    expect(screen.getByText('Nothing in the log matches')).toBeDefined();
+  });
+
+  it('keeps the rewrite rows in Activity with no recovery verb and no menu: recovery lives in Commits', () => {
+    storeState.sessionEvents = {
+      'session-1': [
+        {
+          id: 'ev-rewritten',
+          sessionId: 'session-1',
+          kind: 'history_rewritten',
+          payload: {
+            mountId: 'mount-ledger',
+            branch: 'fix/ledger-postings',
+            backupRef: 'refs/goodboy/backup/fix/1',
+          },
+          createdAt: '2026-08-20T10:00:00.000Z',
+        },
+        {
+          id: 'ev-pushed',
+          sessionId: 'session-1',
+          kind: 'history_pushed',
+          payload: { mountId: 'mount-notify', branch: 'feat/export' },
+          createdAt: '2026-08-20T11:00:00.000Z',
+        },
+        {
+          id: 'ev-stopped',
+          sessionId: 'session-1',
+          kind: 'history_stopped',
+          payload: {
+            mountId: 'mount-api',
+            branch: 'feat/api',
+            origin: 'plan',
+            reason: 'conflict',
+          },
+          createdAt: '2026-08-20T12:00:00.000Z',
+        },
+      ],
+    };
+
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    screen.getByText(/fix\/ledger-postings/);
+    screen.getByText(/feat\/export/);
+    screen.getByText(/feat\/api/);
+    for (const name of [
+      'Undo rewrite',
+      'Retry',
+      'Retry with a note',
+      'Restore previous history',
+      'Rewrite with an agent',
+      'Discard plan',
+    ]) {
+      expect(screen.queryByRole('button', { name })).toBeNull();
+    }
+    expect(screen.queryByRole('button', { name: 'More for this rewrite' })).toBeNull();
+  });
+
+  it('offers Re-link on an unlink in the Log, which opens Link work on the overview', () => {
+    vi.useFakeTimers();
+    const opened = vi.fn();
+    window.addEventListener('goodboy:link-issue:session-1', opened);
+    storeState.sessionEvents = {
+      'session-1': [
+        {
+          id: 'ev-unlink',
+          sessionId: 'session-1',
+          kind: 'issue_unlinked',
+          payload: { identifier: 'HAR-212' },
+          createdAt: '2026-08-20T10:00:00.000Z',
+        },
+      ],
+    };
+
+    render(<TimelinePane session={SESSION} actions={null} />);
+    openLog();
+    fireEvent.click(screen.getByRole('button', { name: 'Re-link' }));
+    act(() => {
+      vi.runAllTimers();
+    });
+
+    expect(storeState.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: null }),
+    });
+    expect(opened).toHaveBeenCalledTimes(1);
+    window.removeEventListener('goodboy:link-issue:session-1', opened);
+    vi.useRealTimers();
+  });
+
+  it('has no filter, no hidden count and no row tag left', () => {
+    storeState.sessionPhaseRuns = { 'session-1': [SCOUT] };
+
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    expect(screen.queryByRole('button', { name: /filter/i })).toBeNull();
+    expect(screen.queryByText(/hidden/i)).toBeNull();
+    expect(screen.queryByText('Shown because you started it')).toBeNull();
   });
 });
 
@@ -283,13 +443,6 @@ describe('TimelinePane on an empty session', () => {
     expect(screen.getByRole('button', { name: 'Start agent' })).toBeDefined();
     expect(screen.getByText(/Nothing yet/)).toBeDefined();
     expect(screen.queryByRole('region', { name: 'Kickoff' })).toBeNull();
-  });
-
-  it('holds the filter back while the feed has a single kind of row', () => {
-    storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
-    renderEmptySession();
-
-    expect(screen.queryByRole('button', { name: 'Filter' })).toBeNull();
   });
 });
 
@@ -365,22 +518,31 @@ describe('TimelinePane questions', () => {
     expect(storeState.loadSessionDismissedQuestions).toHaveBeenCalledWith('session-1');
   });
 
-  it('feeds the builder the open and answered caches combined, as separate rows', () => {
+  it('puts an open question without a launch in Needs you and the answered one in the Log', () => {
     questions.open = [OPEN_QUESTION];
     questions.answered = [ANSWERED_QUESTION];
 
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    expect(screen.getByText(/Question: Which database should we use\?/)).toBeDefined();
+    const block = screen.getByRole('region', { name: 'Needs you' });
+    expect(within(block).getByText(/Question · Which database should we use\?/)).toBeDefined();
+    expect(screen.queryByText('1 question answered')).toBeNull();
+
+    openLog();
+
+    expect(screen.queryByRole('region', { name: 'Needs you' })).toBeNull();
     expect(screen.getByText('1 question answered')).toBeDefined();
+    expect(screen.queryByText(/Which database should we use/)).toBeNull();
   });
 
-  it('keeps the Answer action target on the open question artifact row', () => {
+  it('opens the exact question from Open, with no Push or Answer beside it', () => {
     questions.open = [OPEN_QUESTION];
 
     render(<TimelinePane session={SESSION} actions={null} />);
+    const block = screen.getByRole('region', { name: 'Needs you' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
+    expect(within(block).queryByRole('button', { name: /^(Push|Answer)/ })).toBeNull();
+    fireEvent.click(within(block).getByRole('button', { name: /^Open/ }));
 
     expect(storeState.navigate).toHaveBeenCalledWith({
       to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'questions' }),
@@ -388,48 +550,25 @@ describe('TimelinePane questions', () => {
     expect(useOpenQuestions.getState().focusedQuestionId).toBe('question-open');
   });
 
-  it('holds the needs-you chip back while the asking row is on screen', () => {
+  it('tells Next steps which questions Needs you already shows, while Activity is open', () => {
     questions.open = [OPEN_QUESTION];
+    const onShown = vi.fn();
+
+    render(<TimelinePane session={SESSION} actions={null} onShownQuestionsChange={onShown} />);
+
+    expect(onShown).toHaveBeenLastCalledWith(new Set(['question-open']));
+
+    openLog();
+
+    expect(onShown).toHaveBeenLastCalledWith(new Set());
+  });
+
+  it('shows no Needs you block while nothing needs you', () => {
     questions.answered = [ANSWERED_QUESTION];
 
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    expect(screen.getByRole('button', { name: 'Answer' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: /needs? you/ })).toBeNull();
-  });
-
-  it('keeps the Answer on the question row a neutral secondary button', () => {
-    questions.open = [OPEN_QUESTION];
-
-    render(<TimelinePane session={SESSION} actions={null} />);
-    const { className } = screen.getByRole('button', { name: 'Answer' });
-
-    expect(className).toContain('bg-fill');
-    expect(className).not.toContain('warning');
-  });
-
-  it('switches to Needs you when the filter hides every row that asks', () => {
-    questions.open = [OPEN_QUESTION];
-    questions.answered = [ANSWERED_QUESTION];
-    localStorage.setItem('goodboy:activity-filter', JSON.stringify({ questions: false }));
-
-    render(<TimelinePane session={SESSION} actions={null} />);
-    expect(screen.queryByText(/Question: Which database/)).toBeNull();
-
-    const chip = screen.getByRole('button', { name: '1 needs you' });
-    expect(chip.className).not.toContain('warning');
-    fireEvent.click(chip);
-
-    expect(screen.getByText(/Question: Which database should we use\?/)).toBeDefined();
-    expect(screen.queryByText('1 question answered')).toBeNull();
-  });
-
-  it('shows no chip while nothing needs you', () => {
-    questions.answered = [ANSWERED_QUESTION];
-
-    render(<TimelinePane session={SESSION} actions={null} />);
-
-    expect(screen.queryByRole('button', { name: /needs? you/ })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Needs you' })).toBeNull();
   });
 });
 
@@ -486,35 +625,35 @@ describe('TimelinePane run waiting on an answer', () => {
     expect(screen.queryByText(/Ecco il prompt/)).toBeNull();
   });
 
-  it('renders the Answer for a step question once, on its question row, and keeps the run row quiet', () => {
+  it('gives a run with a step question one Needs you row and no question row of its own', () => {
     attachedRuns.list = [RUN];
     storeState.sessionPhaseRuns = { 'session-1': [STEP] };
     questions.open = [STEP_QUESTION];
 
     render(<TimelinePane session={SESSION} actions={null} />);
-    const row = runRow();
-    if (!(row instanceof HTMLElement)) {
-      throw new Error('run row missing');
-    }
+    const block = screen.getByRole('region', { name: 'Needs you' });
 
-    expect(screen.getAllByRole('button', { name: 'Answer' })).toHaveLength(1);
-    expect(within(row).queryByRole('button', { name: 'Answer' })).toBeNull();
-    expect(within(row).queryByText(/Needs your answer/)).toBeNull();
-    expect(screen.getByText(/Retry on 5xx only\?/)).toBeDefined();
+    expect(within(block).getAllByTestId('needs-you-owner')).toHaveLength(1);
+    expect(within(block).getByText('Retry failed checkout payments · 1 question')).toBeDefined();
+    expect(screen.queryByText(/Question: Retry on 5xx only\?/)).toBeNull();
   });
 
-  it('opens the exact question from its one Answer', () => {
+  it('opens the exact question from the Open of the run', () => {
     attachedRuns.list = [RUN];
     storeState.sessionPhaseRuns = { 'session-1': [STEP] };
     questions.open = [STEP_QUESTION];
 
     render(<TimelinePane session={SESSION} actions={null} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
+    const block = screen.getByRole('region', { name: 'Needs you' });
+    fireEvent.click(within(block).getByRole('button', { name: /^Open/ }));
 
     expect(storeState.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'questions' }),
+      to: agentPlace({ sessionId: 'session-1' as SessionId, agentId: 'agent-step' as AgentId }),
     });
-    expect(useOpenQuestions.getState().focusedQuestionId).toBe('question-step');
+    expect(storeState.requestOpenQuestionScroll).toHaveBeenCalledWith({
+      agentId: 'agent-step',
+      questionId: 'question-step',
+    });
   });
 
   const SECOND_STEP_QUESTION = {
@@ -540,41 +679,16 @@ describe('TimelinePane run waiting on an answer', () => {
     if (agentRow === null) {
       throw new Error('agent row missing');
     }
-    const amber = amberElementsOf({ root: activity });
+    const block = screen.getByRole('region', { name: 'Needs you' });
+    const amber = amberElementsOf({ root: activity }).filter((element) => !block.contains(element));
 
-    expect(screen.getByText('2 questions')).toBeDefined();
+    expect(within(block).getByText('Retry failed checkout payments · 2 questions')).toBeDefined();
     expect(within(agentRow).getByText('Needs you')).toBeDefined();
     expect(amber.length).toBeGreaterThan(0);
     expect(amber.every((element) => agentRow.contains(element))).toBe(true);
-    expect(screen.queryByRole('button', { name: /needs? you/ })).toBeNull();
   });
 
-  it('shows the neutral needs-you chip only once the filter hides the waiting agent', () => {
-    writeActivityFilter({
-      filter: { ...DEFAULT_ACTIVITY_FILTER, workflows: false, questions: false },
-    });
-    attachedRuns.list = [RUN];
-    storeState.sessionPhaseRuns = { 'session-1': [STEP] };
-    questions.open = [STEP_QUESTION, SECOND_STEP_QUESTION];
-
-    render(<TimelinePane session={SESSION} actions={null} />);
-    const chip = screen.getByRole('button', { name: '2 need you' });
-    const activity = screen.getByRole('region', { name: 'Activity' });
-
-    expect(screen.queryByText('Implement retries')).toBeNull();
-    expect(amberElementsOf({ root: activity })).toHaveLength(0);
-
-    fireEvent.click(chip);
-    writeActivityFilter({ filter: DEFAULT_ACTIVITY_FILTER });
-
-    expect(screen.getByText('Implement retries')).toBeDefined();
-    expect(screen.queryByRole('button', { name: /needs? you/ })).toBeNull();
-  });
-
-  it('jumps from the run row to the asking agent when neither it nor its question shows', () => {
-    writeActivityFilter({
-      filter: { ...DEFAULT_ACTIVITY_FILTER, questions: false, workflowSubagents: false },
-    });
+  it('jumps from the Needs you row of the run to the asking agent behind a closed step', () => {
     const child = {
       ...STEP,
       id: 'agent-child',
@@ -587,14 +701,9 @@ describe('TimelinePane run waiting on an answer', () => {
     questions.open = [{ ...STEP_QUESTION, createdByAgentId: 'agent-child' } as OpenQuestion];
 
     render(<TimelinePane session={SESSION} actions={null} />);
-    const row = runRow();
-    if (!(row instanceof HTMLElement)) {
-      throw new Error('run row missing');
-    }
-    fireEvent.click(within(row).getByRole('button', { name: 'Answer' }));
-    writeActivityFilter({ filter: DEFAULT_ACTIVITY_FILTER });
+    const block = screen.getByRole('region', { name: 'Needs you' });
+    fireEvent.click(within(block).getByRole('button', { name: /^Open/ }));
 
-    expect(screen.getAllByRole('button', { name: 'Answer' })).toHaveLength(1);
     expect(storeState.navigate).toHaveBeenCalledWith({
       to: agentPlace({ sessionId: 'session-1' as SessionId, agentId: 'agent-child' as AgentId }),
     });
@@ -648,15 +757,15 @@ describe('TimelinePane run row menu', () => {
     return row;
   };
 
-  it('gives every run row the registry menu', () => {
+  it('keeps no menu button on a run row, which has nothing to recover', () => {
     attachedRuns.list = [RUN];
     storeState.sessionPhaseRuns = { 'session-1': [STEP] };
 
     render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(
-      within(runRow()).getByRole('button', { name: 'Add rate limiting workflow actions' }),
-    ).toBeDefined();
+      within(runRow()).queryByRole('button', { name: 'Add rate limiting workflow actions' }),
+    ).toBeNull();
   });
 
   it('reads a closed run as closed by you', () => {
@@ -691,6 +800,7 @@ describe('TimelinePane run row menu', () => {
     };
 
     render(<TimelinePane session={SESSION} actions={null} />);
+    openLog();
 
     const row = screen.getByText('Add rate limiting').closest('.group');
     expect(row?.textContent).toContain('Closed Add rate limiting by you');
@@ -726,12 +836,41 @@ describe('TimelinePane artifact rows', () => {
     updatedAt: '2026-08-20T11:30:00.000Z',
   };
 
-  it('loads the artifacts and seats a report and a wireframe on the feed', () => {
+  it('seats a report and a wireframe made outside a launch in the Log, not in Activity', () => {
     storeState.sessionArtifacts = { 'session-1': [REPORT, WIREFRAME] };
 
     render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(storeState.loadSessionArtifacts).toHaveBeenCalledWith('session-1');
+    expect(screen.queryByText('Rounding drift in ledger-core postings')).toBeNull();
+
+    openLog();
+
+    expect(screen.getByText('Rounding drift in ledger-core postings')).toBeDefined();
+    expect(screen.getByText('Settlement review flow')).toBeDefined();
+  });
+
+  it('folds the outputs of a launch into its row as "N outputs" and lists them on open', () => {
+    storeState.sessionPhaseRuns = {
+      'session-1': [
+        {
+          id: 'agent-report',
+          sessionId: 'session-1',
+          ordinal: 1,
+          name: 'Scout payments-api',
+          status: 'completed',
+          startedAt: '2026-08-20T10:00:00.000Z',
+          completedAt: '2026-08-20T10:30:00.000Z',
+        },
+      ],
+    };
+    storeState.sessionArtifacts = { 'session-1': [REPORT, WIREFRAME] };
+
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    expect(screen.queryByText('Rounding drift in ledger-core postings')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /2 outputs/ }));
+
     expect(screen.getByText('Rounding drift in ledger-core postings')).toBeDefined();
     expect(screen.getByText('Settlement review flow')).toBeDefined();
   });
@@ -740,6 +879,7 @@ describe('TimelinePane artifact rows', () => {
     storeState.sessionArtifacts = { 'session-1': [REPORT] };
 
     render(<TimelinePane session={SESSION} actions={null} />);
+    openLog();
     fireEvent.click(screen.getByRole('button', { name: /Rounding drift in ledger-core postings/ }));
 
     expect(storeState.navigate).toHaveBeenCalledWith({
@@ -749,26 +889,6 @@ describe('TimelinePane artifact rows', () => {
         target: { kind: 'artifact', artifactId: 'artifact-report' as ArtifactId },
       }),
     });
-  });
-
-  it('hides the kinds the activity filter turned off', () => {
-    storeState.sessionArtifacts = { 'session-1': [REPORT, WIREFRAME] };
-    localStorage.setItem('goodboy:activity-filter', JSON.stringify({ reports: false }));
-
-    render(<TimelinePane session={SESSION} actions={null} />);
-
-    expect(screen.queryByText('Rounding drift in ledger-core postings')).toBeNull();
-    expect(screen.getByText('Settlement review flow')).toBeDefined();
-  });
-
-  it('keeps every artifact kind off the feed once the artifacts category is hidden', () => {
-    storeState.sessionArtifacts = { 'session-1': [REPORT, WIREFRAME] };
-    localStorage.setItem('goodboy:activity-filter', JSON.stringify({ artifacts: false }));
-
-    render(<TimelinePane session={SESSION} actions={null} />);
-
-    expect(screen.queryByText('Rounding drift in ledger-core postings')).toBeNull();
-    expect(screen.queryByText('Settlement review flow')).toBeNull();
   });
 });
 
@@ -835,32 +955,16 @@ describe('TimelinePane artifacts inside a workflow run', () => {
     expect(screen.getByText('Round once per batch')).toBeDefined();
   });
 
-  it('hides the nested rows when the artifacts category is off, children left on', () => {
+  it('keeps the run artifacts out of the Log, where only facts without a launch go', () => {
     attachedRuns.list = [RUN];
     storeState.sessionArtifacts = { 'session-1': [RUN_REPORT] };
     storeState.sessionPlans = { 'session-1': [RUN_PLAN] };
-    localStorage.setItem(
-      'goodboy:activity-filter',
-      JSON.stringify({ artifacts: false, plans: true, reports: true, wireframes: true }),
-    );
 
     render(<TimelinePane session={SESSION} actions={null} />);
+    openLog();
 
     expect(screen.queryByText('Rounding drift in ledger-core postings')).toBeNull();
     expect(screen.queryByText('Round once per batch')).toBeNull();
-    expect(screen.getByText(/Rounding fix/)).toBeDefined();
-  });
-
-  it('hides only the nested reports when the report child is off', () => {
-    attachedRuns.list = [RUN];
-    storeState.sessionArtifacts = { 'session-1': [RUN_REPORT] };
-    storeState.sessionPlans = { 'session-1': [RUN_PLAN] };
-    localStorage.setItem('goodboy:activity-filter', JSON.stringify({ reports: false }));
-
-    render(<TimelinePane session={SESSION} actions={null} />);
-
-    expect(screen.queryByText('Rounding drift in ledger-core postings')).toBeNull();
-    expect(screen.getByText('Round once per batch')).toBeDefined();
   });
 });
 
@@ -903,6 +1007,7 @@ describe('TimelinePane log rows and the state slot', () => {
   it('reads a context row as words, with no diff colours', () => {
     seed();
     render(<TimelinePane session={SESSION} actions={null} />);
+    openLog();
     const row = rowById('event:event-context');
 
     expect(row?.textContent).toContain('Context');
@@ -947,11 +1052,11 @@ describe('TimelinePane log rows and the state slot', () => {
     expect(document.querySelectorAll('[data-action-slot]')).toHaveLength(0);
   });
 
-  it('reserves the action column on an open session even when no row asks yet', () => {
+  it('reserves no action slot on an open session for a row that cannot ask', () => {
     seed();
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    expect(rowById('agent:resolver-1')?.querySelectorAll('[data-action-slot]')).toHaveLength(1);
+    expect(rowById('agent:resolver-1')?.querySelectorAll('[data-action-slot]')).toHaveLength(0);
   });
 });
 
@@ -1049,22 +1154,23 @@ describe('TimelinePane row meta', () => {
     ]);
   });
 
-  it('shows the model that ran, its effort and its cost on a finished step', () => {
+  it('shows the cost of a finished step and no model column', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
-    const meta = within(rowOf('Plan the fix')).getByTestId('work-meta');
+    const row = rowOf('Plan the fix');
+    const meta = within(row).getByTestId('work-meta');
 
-    expect(within(meta).getByText('Opus 4.5')).toBeDefined();
-    expect(within(meta).getByText('High')).toBeDefined();
     expect(within(meta).getByText('$0.62')).toBeDefined();
+    expect(meta.querySelector('[data-meta-column="routing"]')).toBeNull();
+    expect(row.textContent).not.toContain('Opus 4.5');
+    expect(row.querySelector('[data-provider="anthropic"]')).not.toBeNull();
     expect(meta.className).toContain('text-muted-foreground');
   });
 
-  it('shows the planned routing in faint on a queued step, with no cost', () => {
+  it('shows a queued step in faint, with no cost and no model', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
     const meta = within(rowOf('Build the fix')).getByTestId('work-meta');
 
-    expect(within(meta).getByText('Sonnet 4.5')).toBeDefined();
-    expect(within(meta).getByText('Medium')).toBeDefined();
+    expect(meta.textContent).not.toContain('Sonnet 4.5');
     expect(meta.className).toContain('text-faint-foreground');
     expect(meta.querySelector('[data-meta-column="cost"]')?.textContent).toBe('');
   });
@@ -1117,7 +1223,7 @@ describe('TimelinePane row meta', () => {
       expect(time.textContent).toBe('6m 40s');
     });
 
-    it('lets the model fold to its glyph, then the cost, then the time go before the title', () => {
+    it('lets the cost, then the time go before the title', () => {
       storeState.sessionTurnSpans = { 'session-1': [span('agent-plan', 0, 6 * MINUTE + 40_000)] };
       storeState.workspaceDurationHistory = {
         'ws-1': {
@@ -1129,38 +1235,21 @@ describe('TimelinePane row meta', () => {
       };
       render(<TimelinePane session={SESSION} actions={null} />);
       const row = rowOf('Plan the fix');
-      const routing = within(row)
-        .getByTestId('work-meta')
-        .querySelector('[data-meta-column="routing"]');
-      if (routing === null) {
-        throw new Error('the step row has no routing column');
-      }
-      const seen = (width: number) => ({
-        text: visibleTextAt({ root: row, width }),
-        glyphs: shownElementsAt({ root: routing, width, selector: 'svg' }).length,
-      });
+      const seen = (width: number) => visibleTextAt({ root: row, width });
 
       const wide = seen(900);
-      expect(wide.text).toContain('Plan the fix');
-      expect(wide.text).toContain('Opus 4.5');
-      expect(wide.text).toContain('6m 40s');
-      expect(wide.text).toContain('$0.62');
-
-      const glyph = seen(700);
-      expect(glyph.text).not.toContain('Opus 4.5');
-      expect(glyph.glyphs).toBe(1);
-      expect(routing.textContent).toContain('Opus 4.5');
-      expect(glyph.text).toContain('$0.62');
-      expect(glyph.text).toContain('6m 40s');
+      expect(wide).toContain('Plan the fix');
+      expect(wide).not.toContain('Opus 4.5');
+      expect(wide).toContain('6m 40s');
+      expect(wide).toContain('$0.62');
 
       const noCost = seen(560);
-      expect(noCost.text).not.toContain('$0.62');
-      expect(noCost.text).toContain('6m 40s');
-      expect(noCost.glyphs).toBe(1);
+      expect(noCost).not.toContain('$0.62');
+      expect(noCost).toContain('6m 40s');
 
       const narrow = seen(460);
-      expect(narrow.text).not.toContain('6m 40s');
-      expect(narrow.text).toContain('Plan the fix');
+      expect(narrow).not.toContain('6m 40s');
+      expect(narrow).toContain('Plan the fix');
       expect(within(row).getByTitle('Plan the fix').textContent).toBe('Plan the fix');
     });
 
@@ -1362,12 +1451,22 @@ describe('TimelinePane resolve batch', () => {
         agents.map((agent) => [agent.id, { batchId: 'batch-1', prNumber: 318 }] as const),
       ),
       factsByAgentId: new Map(
-        STATES.map((state) => [`resolver-${state}`, { state, word: WORD[state] }] as const),
+        STATES.map(
+          (state, index) =>
+            [
+              `resolver-${state}`,
+              {
+                state,
+                word: WORD[state],
+                threads: [{ state, path: `src/file${index}.ts`, line: index + 1 }],
+              },
+            ] as const,
+        ),
       ),
     };
   };
 
-  const toggle = () => screen.getByRole('button', { name: /4 resolves on PR #318/ });
+  const toggle = () => screen.getByRole('button', { name: /Resolve #318 · 4 agents/ });
 
   const seedWideBatch = ({ count }: { readonly count: number }) => {
     const agents = Array.from({ length: count }, (_, index) => ({
@@ -1386,27 +1485,52 @@ describe('TimelinePane resolve batch', () => {
         agents.map((agent) => [agent.id, { batchId: 'batch-1', prNumber: 318 }] as const),
       ),
       factsByAgentId: new Map(
-        agents.map((agent) => [agent.id, { state: 'pushed', word: 'Pushed' }] as const),
+        agents.map(
+          (agent, index) =>
+            [
+              agent.id,
+              {
+                state: 'pushed',
+                word: 'Pushed',
+                threads: [{ state: 'pushed', path: `src/wide${index}.ts`, line: index + 1 }],
+              },
+            ] as const,
+        ),
       ),
     };
   };
 
-  it('mounts eight children and a Show 12 more row for a group of twenty', () => {
+  it('mounts eight files, a Show 12 more row and the Open row for a group of twenty', () => {
     seedWideBatch({ count: 20 });
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /20 resolves on PR #318/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Resolve #318 · 20 agents/ }));
 
-    expect(revealFrames()).toHaveLength(9);
+    expect(revealFrames()).toHaveLength(10);
     screen.getByRole('button', { name: 'Show 12 more' });
-    screen.getByText('tvarga on wide0.ts:1');
-    expect(screen.queryByText('tvarga on wide19.ts:20')).toBeNull();
+    screen.getByText('wide0.ts');
+    expect(screen.queryByText('wide19.ts')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Show 12 more' }));
 
-    expect(revealFrames()).toHaveLength(20);
+    expect(revealFrames()).toHaveLength(21);
     expect(screen.queryByRole('button', { name: /more$/ })).toBeNull();
-    screen.getByText('tvarga on wide19.ts:20');
+    screen.getByText('wide19.ts');
+  });
+
+  it('opens into the files with their lines and an Open #318 row that opens the review', () => {
+    seedBatch();
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    fireEvent.click(toggle());
+
+    screen.getByText('file0.ts');
+    screen.getByText(':1');
+    fireEvent.click(screen.getByRole('button', { name: /Open #318/ }));
+
+    expect(storeState.navigate).toHaveBeenCalledWith({
+      to: branchPlace({ sessionId: 'session-1' as SessionId, tab: 'comments' }),
+    });
   });
 
   it('draws one closed row with the state summary and no child rows', () => {
@@ -1417,10 +1541,10 @@ describe('TimelinePane resolve batch', () => {
     expect(screen.getByTestId('resolve-batch-summary').textContent).toBe(
       '1 ready for you · 1 drafting · 1 pushed · 1 failed',
     );
-    expect(screen.queryByText('tvarga on file0.ts:1')).toBeNull();
+    expect(screen.queryByText('file0.ts')).toBeNull();
   });
 
-  it('draws a mixed node with one arc per state and the count in the middle', () => {
+  it('draws a mixed node with one arc per state and no count in the middle', () => {
     seedBatch();
     render(<TimelinePane session={SESSION} actions={null} />);
 
@@ -1428,7 +1552,7 @@ describe('TimelinePane resolve batch', () => {
     const row = toggle().closest('[data-row-id]');
     const mixed = row?.querySelector('[data-node-state="mixed"]');
     expect(node).toBeNull();
-    expect(mixed?.textContent).toBe('4');
+    expect(mixed?.textContent).toBe('');
     expect(mixed?.querySelectorAll('[data-arc-tone]')).toHaveLength(4);
   });
 
@@ -1440,18 +1564,18 @@ describe('TimelinePane resolve batch', () => {
     fireEvent.click(toggle());
 
     expect(toggle().getAttribute('aria-expanded')).toBe('true');
-    screen.getByText('tvarga on file0.ts:1');
+    screen.getByText('file0.ts');
     expect(screen.getAllByText('Ready for you').length).toBeGreaterThan(0);
     screen.getByText('Draft failed');
     const rowIds = Array.from(document.querySelectorAll('[data-row-id]')).map((element) =>
       element.getAttribute('data-row-id'),
     );
-    const batchRows = rowIds.filter(
-      (id) => id?.startsWith('agent:resolver') === true || id === 'batch:batch-1',
-    );
-    expect(batchRows.at(-1)).toBe('batch:batch-1');
-    expect(batchRows).toHaveLength(5);
+    const batchRows = rowIds.filter((id) => id?.startsWith('batch:batch-1') === true);
+    expect(batchRows[0]).toBe('batch:batch-1');
+    expect(batchRows.at(-1)).toBe('batch:batch-1:open');
+    expect(batchRows).toHaveLength(6);
     expect(revealFrames().map((frame) => frame.dataset.state)).toEqual([
+      'open',
       'open',
       'open',
       'open',
@@ -1461,9 +1585,9 @@ describe('TimelinePane resolve batch', () => {
     fireEvent.click(toggle());
 
     expect(toggle().getAttribute('aria-expanded')).toBe('false');
-    screen.getByText('tvarga on file0.ts:1');
+    screen.getByText('file0.ts');
     const leaving = Array.from(document.querySelectorAll<HTMLElement>('[data-leaving="true"]'));
-    expect(leaving).toHaveLength(4);
+    expect(leaving).toHaveLength(5);
     expect(leaving.every((row) => row.inert)).toBe(true);
     expect(revealFrames().every((frame) => frame.dataset.state === 'closed')).toBe(true);
 
@@ -1471,7 +1595,7 @@ describe('TimelinePane resolve batch', () => {
       fireEvent.transitionEnd(frame);
     }
 
-    expect(screen.queryByText('tvarga on file0.ts:1')).toBeNull();
+    expect(screen.queryByText('file0.ts')).toBeNull();
     expect(document.querySelectorAll('[data-reveal-group]')).toHaveLength(0);
     transitions.mockRestore();
   });
@@ -1487,7 +1611,7 @@ describe('TimelinePane resolve batch', () => {
 
     expect(toggle().getAttribute('aria-expanded')).toBe('true');
     expect(document.querySelectorAll('[data-leaving="true"]')).toHaveLength(0);
-    expect(revealFrames()).toHaveLength(4);
+    expect(revealFrames()).toHaveLength(5);
     expect(revealFrames().every((frame) => frame.dataset.state === 'open')).toBe(true);
     transitions.mockRestore();
   });
@@ -1507,7 +1631,7 @@ describe('TimelinePane resolve batch', () => {
     fireEvent.click(toggle());
 
     expect(document.querySelectorAll('[data-reveal-group]')).toHaveLength(0);
-    expect(screen.queryByText('tvarga on file0.ts:1')).toBeNull();
+    expect(screen.queryByText('file0.ts')).toBeNull();
     window.matchMedia = original;
   });
 
@@ -1528,10 +1652,13 @@ describe('TimelinePane resolve batch', () => {
   });
 });
 
-describe('TimelinePane subagent group', () => {
+describe('TimelinePane subagents on a step', () => {
   const NAMES = ['Scout thresholds', 'Scout retry paths', 'Implement the hook', 'Test the banner'];
 
-  const seedSubagents = ({ count = NAMES.length }: { readonly count?: number } = {}) => {
+  const seedSubagents = ({
+    count = NAMES.length,
+    failedIndex = -1,
+  }: { readonly count?: number; readonly failedIndex?: number } = {}) => {
     const lead = {
       id: 'lead',
       sessionId: 'session-1',
@@ -1546,7 +1673,7 @@ describe('TimelinePane subagent group', () => {
       ordinal: index + 2,
       name,
       parentAgentId: 'lead',
-      status: index === count - 1 ? 'running' : 'completed',
+      status: index === failedIndex ? 'failed' : index === count - 1 ? 'running' : 'completed',
       startedAt: `2026-08-20T10:0${index + 1}:00.000Z`,
       ...(index === count - 1 ? {} : { completedAt: `2026-08-20T10:0${index + 1}:30.000Z` }),
     }));
@@ -1554,53 +1681,56 @@ describe('TimelinePane subagent group', () => {
     resolveActivity.current = { batchByAgentId: new Map(), factsByAgentId: new Map() };
   };
 
-  const toggle = () => screen.getByRole('button', { name: /4 subagents/ });
+  const chip = (name: RegExp = /subagents/) => screen.getByRole('button', { name });
 
   const rowIds = () =>
     Array.from(document.querySelectorAll('[data-row-id]')).map((element) =>
       element.getAttribute('data-row-id'),
     );
 
-  it('draws one closed row with the state summary above the parent and no child rows', () => {
+  it('keeps the subagents inside the step row: one chip, no group row, no child rows', () => {
     seedSubagents();
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    expect(toggle().getAttribute('aria-expanded')).toBe('false');
-    expect(screen.getByTestId('resolve-batch-summary').textContent).toBe('3 done · 1 running');
+    expect(chip().getAttribute('aria-expanded')).toBe('false');
+    expect(chip().textContent).toBe('4 subagents');
     expect(screen.queryByText('Scout thresholds')).toBeNull();
-    const ids = rowIds();
-    expect(ids.indexOf('subagents:agent:lead')).toBeLessThan(ids.indexOf('agent:lead'));
-    const mixed = toggle().closest('[data-row-id]')?.querySelector('[data-node-state="mixed"]');
-    expect(mixed?.textContent).toBe('4');
+    expect(rowIds().filter((id) => id?.startsWith('subagents:') === true)).toEqual([]);
+    expect(chip().closest('[data-row-id]')?.getAttribute('data-row-id')).toBe('agent:lead');
+    expect(document.querySelectorAll('[data-node-state="mixed"]')).toHaveLength(0);
   });
 
-  it('leaves two subagents as plain rows', () => {
-    seedSubagents({ count: 2 });
+  it('gives a single subagent the same chip', () => {
+    seedSubagents({ count: 1 });
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    expect(screen.queryByRole('button', { name: /subagents/ })).toBeNull();
-    screen.getByText('Scout thresholds');
+    expect(chip(/1 subagent/).textContent).toBe('1 subagent');
+    expect(screen.queryByText('Scout thresholds')).toBeNull();
   });
 
-  it('explodes upward on click and folds back on the second click', () => {
+  it('shows a failed child on the closed chip', () => {
+    seedSubagents({ failedIndex: 1 });
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    expect(chip().textContent).toContain('1 failed');
+  });
+
+  it('opens the children below the step on click and folds back on the second click', () => {
     vi.useFakeTimers();
     const transitions = withRevealTransitions();
     seedSubagents();
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    fireEvent.click(toggle());
+    fireEvent.click(chip());
 
-    expect(toggle().getAttribute('aria-expanded')).toBe('true');
+    expect(chip().getAttribute('aria-expanded')).toBe('true');
     screen.getByText('Scout thresholds');
-    const ids = rowIds().filter(
-      (id) => id?.startsWith('agent:sub') || id?.startsWith('subagents:'),
-    );
-    expect(ids.at(-1)).toBe('subagents:agent:lead');
-    expect(ids).toHaveLength(5);
+    const ids = rowIds().filter((id) => id?.startsWith('agent:') === true);
+    expect(ids).toEqual(['agent:lead', 'agent:sub-0', 'agent:sub-1', 'agent:sub-2', 'agent:sub-3']);
     expect(revealFrames()).toHaveLength(4);
 
-    fireEvent.click(toggle());
-    expect(toggle().getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(chip());
+    expect(chip().getAttribute('aria-expanded')).toBe('false');
     expect(document.querySelectorAll('[data-leaving="true"]')).toHaveLength(4);
     act(() => {
       vi.advanceTimersByTime(400);
@@ -1608,14 +1738,6 @@ describe('TimelinePane subagent group', () => {
     expect(screen.queryByText('Scout thresholds')).toBeNull();
     transitions.mockRestore();
     vi.useRealTimers();
-  });
-
-  it('opens and closes with the arrow keys', () => {
-    seedSubagents();
-    render(<TimelinePane session={SESSION} actions={null} />);
-
-    fireEvent.keyDown(toggle(), { key: 'ArrowRight' });
-    expect(toggle().getAttribute('aria-expanded')).toBe('true');
   });
 });
 
@@ -1727,7 +1849,7 @@ describe('TimelinePane finished run', () => {
     expect(runRow().getAttribute('aria-expanded')).toBe('false');
     expect(within(runRow()).getByText('3 steps')).toBeDefined();
     const meta = within(runRow()).getByTestId('work-meta');
-    expect(within(meta).getByText('2 models')).toBeDefined();
+    expect(meta.textContent).not.toContain('models');
     expect(within(meta).getByText('$1.50')).toBeDefined();
     expect(within(meta).getByText('2m')).toBeDefined();
 
@@ -1737,7 +1859,7 @@ describe('TimelinePane finished run', () => {
     expect(screen.getByText('Step plan')).toBeDefined();
   });
 
-  it('draws the run as a ball with its step count, closed and open', () => {
+  it('draws the run as a ball that shows state, never its step count, closed and open', () => {
     storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'completed' }) };
     const { container } = render(<TimelinePane session={SESSION} actions={null} />);
     const ball = () => {
@@ -1749,12 +1871,12 @@ describe('TimelinePane finished run', () => {
     };
 
     expect(ball().getAttribute('aria-label')).toBe('3 steps');
-    expect(ball().textContent).toBe('3');
+    expect(ball().textContent).toBe('');
     expect(runRow().getAttribute('aria-description')).toBe('Expand, Enter');
 
     fireEvent.click(runRow());
 
-    expect(ball().textContent).toBe('3');
+    expect(ball().textContent).toBe('');
     expect(runRow().getAttribute('aria-description')).toBe('Collapse, Enter');
   });
 
@@ -1779,22 +1901,12 @@ describe('TimelinePane finished run', () => {
     expect(within(runRow()).getByTitle('Refund keys').textContent).toBe('Refund keys');
   });
 
-  it('folds the models of a finished run to glyphs before its title gives way', () => {
+  it('lets the cost and the time of a finished run go before its title gives way', () => {
     storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'completed' }) };
     render(<TimelinePane session={SESSION} actions={null} />);
     const row = runRow();
-    const routing = within(row)
-      .getByTestId('work-meta')
-      .querySelector('[data-meta-column="routing"]');
-    if (routing === null) {
-      throw new Error('the folded run has no routing column');
-    }
 
-    expect(visibleTextAt({ root: row, width: 900 })).toContain('2 models');
-    expect(visibleTextAt({ root: row, width: 700 })).not.toContain('2 models');
-    expect(shownElementsAt({ root: routing, width: 700, selector: 'svg' }).length).toBeGreaterThan(
-      0,
-    );
+    expect(visibleTextAt({ root: row, width: 900 })).not.toContain('2 models');
     expect(visibleTextAt({ root: row, width: 700 })).toContain('$1.50');
     expect(visibleTextAt({ root: row, width: 560 })).not.toContain('$1.50');
     const narrow = visibleTextAt({ root: row, width: 460 });

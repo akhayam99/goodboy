@@ -76,7 +76,7 @@ const DRAFT: HistoryDraft = {
   loadError: null,
 };
 
-const CLICKS: ReadonlyArray<string> = ['More history actions', 'Backups'];
+const CLICKS: ReadonlyArray<string> = ['Backups'];
 
 export const BrandHistoryScene = () => {
   useSceneClicks({

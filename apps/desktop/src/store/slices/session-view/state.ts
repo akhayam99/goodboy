@@ -14,7 +14,7 @@ import type {
   ArtifactCreationTarget,
   FocusedExternalTask,
 } from './types';
-import type { AgentPane } from '../navigation/types';
+import type { AgentPane, BranchTab } from '../navigation/types';
 import type { ArtifactFilter } from '../../../features/artifacts/artifactCollection';
 
 export type SessionViewState = {
@@ -26,7 +26,8 @@ export type SessionViewState = {
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
   readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
   readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
-  readonly diffPage: Readonly<Record<SessionId, 'history' | null>>;
+  readonly branchTab: Readonly<Record<SessionId, BranchTab>>;
+  readonly branchThreadId: Readonly<Record<SessionId, string | null>>;
   readonly terminalMountPath: Readonly<Record<SessionId, string | null>>;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
   readonly sessionGroupExpanded: Readonly<Record<string, boolean>>;

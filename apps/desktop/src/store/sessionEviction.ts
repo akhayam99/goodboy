@@ -47,7 +47,6 @@ export const SESSION_EVICTION = [
   { key: 'mountSelectedPr', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'historyRuns', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'historyDrafts', keyedBy: 'mount', evictOn: 'archive' },
-  { key: 'reviewCommitDrafts', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'historyRewriters', keyedBy: 'agent', evictOn: 'archive' },
   { key: 'scribeAgents', keyedBy: 'agent', evictOn: 'archive' },
   { key: 'sessionGithub', keyedBy: 'session', evictOn: 'archive' },
@@ -97,7 +96,8 @@ export const SESSION_EVICTION = [
   { key: 'focusedWorkflowRunId', keyedBy: 'session', evictOn: 'archive' },
   { key: 'diffFocus', keyedBy: 'session', evictOn: 'archive' },
   { key: 'diffMountPath', keyedBy: 'session', evictOn: 'archive' },
-  { key: 'diffPage', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'branchTab', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'branchThreadId', keyedBy: 'session', evictOn: 'archive' },
   { key: 'terminalMountPath', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionCreations', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionStudio', keyedBy: 'session', evictOn: 'archive' },
@@ -109,7 +109,6 @@ export const SESSION_EVICTION = [
   { key: 'focusedExternalTask', keyedBy: 'session', evictOn: 'archive' },
   { key: 'agentPane', keyedBy: 'session', evictOn: 'archive' },
   { key: 'diffComments', keyedBy: 'session', evictOn: 'archive' },
-  { key: 'diffNoteLaunch', keyedBy: 'session', evictOn: 'archive' },
   { key: 'transcripts', keyedBy: 'agent', evictOn: 'archive' },
   { key: 'messages', keyedBy: 'agent', evictOn: 'archive' },
   { key: 'agentDraft', keyedBy: 'agent', evictOn: 'archive' },
@@ -150,7 +149,6 @@ export const SESSION_EVICTION = [
   { key: 'announcedRunBudget', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'pendingOrchestrations', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'sessionTurnSpans', keyedBy: 'session', evictOn: 'archive' },
-  { key: 'revealedActivityRows', keyedBy: 'session', evictOn: 'archive' },
 ] as const satisfies ReadonlyArray<SessionEvictionRule>;
 
 export const NON_SESSION_STATE_KEYS = [
@@ -277,7 +275,6 @@ export const NON_SESSION_STATE_KEYS = [
   'changelogSeenHydrated',
   'changelogFocusVersion',
   'changelogUpcoming',
-  'reviewCommitPresets',
   'bugReportDraft',
   'sessionDrafts',
   'openSessionDraftWorkspaceId',
@@ -301,6 +298,9 @@ export const NON_SESSION_STATE_KEYS = [
   'bootstrapRemoteProbe',
   'bootstrapMoveReport',
   'dormantSpend',
+  'undoStack',
+  'undoNotices',
+  'pendingUndoId',
 ] as const satisfies ReadonlyArray<keyof AppState>;
 
 type RegisteredKey =

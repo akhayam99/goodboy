@@ -1,3 +1,4 @@
+import type { SessionExternalTask } from './workspace';
 import type { IsoDateTime, SessionEventId, SessionId } from './ids';
 import type { SessionDecisionChange } from './session-decision';
 
@@ -46,6 +47,11 @@ export const MATERIALIZATION_DEFERRAL_CAUSES = ['batch', 'scope'] as const;
 export type MaterializationDeferralCause = (typeof MATERIALIZATION_DEFERRAL_CAUSES)[number];
 
 export type SessionEventPayload = Readonly<{
+  taskOperation?: {
+    readonly id: string;
+    readonly before: ReadonlyArray<SessionExternalTask>;
+    readonly after: ReadonlyArray<SessionExternalTask>;
+  };
   worktreePath?: string;
   branch?: string;
   from?: string;

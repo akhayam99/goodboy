@@ -60,6 +60,13 @@ export type ShortcutEntry = {
 };
 
 export const SHORTCUTS = {
+  'app.undo': {
+    combo: 'cmd+KeyZ',
+    label: 'Undo last operation',
+    plane: 'app',
+    group: 'general',
+    yieldsToText: true,
+  },
   'palette.open': { combo: 'cmd+KeyK', label: 'Command palette', plane: 'app', group: 'general' },
   'search.open': { combo: 'cmd+KeyF', label: 'Search', plane: 'app', group: 'general' },
   'settings.open': { combo: 'cmd+Comma', label: 'Settings', plane: 'app', group: 'general' },
@@ -273,7 +280,7 @@ export const SHORTCUTS = {
     group: 'session',
   },
 
-  'lens.overview': { combo: 'cmd+alt+KeyO', label: 'Overview', plane: 'lens', group: 'views' },
+  'lens.overview': { combo: 'cmd+alt+KeyO', label: 'Session', plane: 'lens', group: 'views' },
   'lens.context': { combo: 'cmd+alt+KeyC', label: 'Show context', plane: 'lens', group: 'views' },
   'lens.goal': { combo: 'cmd+alt+KeyG', label: 'Context: Goal', plane: 'lens', group: 'views' },
   'lens.decisions': {
@@ -460,13 +467,6 @@ export const SHORTCUTS = {
   'review.selectAll': {
     combo: 'cmd+KeyA',
     label: 'Select every fixable comment',
-    plane: 'app',
-    group: 'review',
-    scope: 'review',
-  },
-  'review.view': {
-    combo: 'KeyV',
-    label: 'Comments or commits',
     plane: 'app',
     group: 'review',
     scope: 'review',

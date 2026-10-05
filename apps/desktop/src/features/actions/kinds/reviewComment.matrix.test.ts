@@ -282,14 +282,7 @@ const MATRIX: ReadonlyArray<Row> = [
   {
     name: 'fix folded into another commit',
     facts: { state: 'accepted', approval: 'accepted', remote: 'folded' },
-    expected: [
-      ...OPEN,
-      ...TRANSCRIPT,
-      ...GITHUB,
-      'reviewComment.pushToReply primary Push to reply',
-      'reviewComment.undo secondary Undo',
-      ...COPY,
-    ],
+    expected: [...OPEN, ...TRANSCRIPT, ...GITHUB, 'reviewComment.undo secondary Undo', ...COPY],
   },
   {
     name: 'pushed fix is gone from origin',

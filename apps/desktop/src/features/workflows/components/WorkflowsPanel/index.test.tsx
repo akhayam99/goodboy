@@ -29,6 +29,7 @@ const { invokeMock, state } = vi.hoisted(() => ({
     clearWorkflowStudioDraft: vi.fn(),
     startWorkflowGeneration: vi.fn(async (_input: unknown) => true),
     consumeWorkflowGeneration: vi.fn(),
+    restoreWorkflowSnapshot: vi.fn(async (_input: unknown) => true),
     saveStepDef: vi.fn(
       async (_args: unknown, _workspaceId: unknown): Promise<unknown> => undefined,
     ),
@@ -87,6 +88,7 @@ beforeEach(() => {
   state.clearWorkflowStudioDraft = vi.fn();
   state.startWorkflowGeneration = vi.fn(async (_input: unknown) => true);
   state.consumeWorkflowGeneration = vi.fn();
+  state.restoreWorkflowSnapshot = vi.fn(async (_input: unknown) => true);
   state.saveStepDef = vi.fn(async (args: unknown, _workspaceId: unknown): Promise<unknown> => ({
     workspaceId: 'ws-1',
     promptPrefix: '',
@@ -291,7 +293,12 @@ describe('WorkflowsPanel editor', () => {
     expect(await screen.findByRole('button', { name: 'Step 1: Implement' })).toBeDefined();
     expect(state.consumeWorkflowGeneration).toHaveBeenCalledWith({ workspaceId: 'ws-1' });
     fireEvent.click(await screen.findByRole('button', { name: 'Undo' }));
-    expect(await screen.findByRole('button', { name: 'Step 1: Plan' })).toBeDefined();
+    await waitFor(() =>
+      expect(state.restoreWorkflowSnapshot).toHaveBeenCalledWith({
+        workspaceId: 'ws-1',
+        snapshot: previous,
+      }),
+    );
   });
 
   it('adds a blank step at the tip and opens its editor', () => {

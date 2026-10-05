@@ -10,13 +10,11 @@ import { TimelineDayRule } from './TimelineDayRule';
 import { TimelineEntryRow, type TimelineEntryRowProps } from './TimelineEntryRow';
 import { TimelineMoreRow } from './TimelineMoreRow';
 import { TimelineNowRule } from './TimelineNowRule';
-import type { TimelineLaneControl } from './TimelineRail';
 
 type RuleProps = {
   readonly rail: RailRow;
   readonly railWidth: number;
   readonly sessionId: SessionId;
-  readonly lanes: TimelineLaneControl;
 };
 
 export type TimelineRowProps =
@@ -31,24 +29,10 @@ export type TimelineRowProps =
 
 const TimelineRowView = (props: TimelineRowProps) => {
   if (props.kind === 'now') {
-    return (
-      <TimelineNowRule
-        item={props.item}
-        rail={props.rail}
-        railWidth={props.railWidth}
-        lanes={props.lanes}
-      />
-    );
+    return <TimelineNowRule item={props.item} rail={props.rail} railWidth={props.railWidth} />;
   }
   if (props.kind === 'day') {
-    return (
-      <TimelineDayRule
-        item={props.item}
-        rail={props.rail}
-        railWidth={props.railWidth}
-        lanes={props.lanes}
-      />
-    );
+    return <TimelineDayRule item={props.item} rail={props.rail} railWidth={props.railWidth} />;
   }
   if (props.kind === 'more') {
     return (
@@ -56,7 +40,6 @@ const TimelineRowView = (props: TimelineRowProps) => {
         item={props.item}
         rail={props.rail}
         railWidth={props.railWidth}
-        lanes={props.lanes}
         onShowAll={props.onShowAll}
       />
     );

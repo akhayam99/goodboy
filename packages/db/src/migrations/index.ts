@@ -77,6 +77,8 @@ import { m215IndexAudit } from './m215-index-audit';
 import { m216TaskLinksScope } from './m216-task-links-scope';
 import { m220ChatMessageAttachments } from './m220-chat-message-attachments';
 import { m221ResolveAttemptHumanInstructions } from './m221-resolve-attempt-human-instructions';
+import { m222ResolveAttemptLaunch } from './m222-resolve-attempt-launch';
+import { m223DiffCommentTarget } from './m223-diff-comment-target';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -447,4 +449,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 219, sql: m219SessionContextItems },
   { version: 220, sql: m220ChatMessageAttachments },
   { version: 221, sql: m221ResolveAttemptHumanInstructions },
+  { version: 222, sql: m222ResolveAttemptLaunch },
+  { version: 223, sql: m223DiffCommentTarget },
 ];

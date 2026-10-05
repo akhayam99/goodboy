@@ -91,6 +91,7 @@ vi.mock('@goodboy/ui', async (importOriginal) => ({
 
 import { lensDestinations } from '../../lens-destinations';
 import { createAgentEventName } from '../../createAgentEventName';
+import { branchPlace } from '../../../../store/slices/navigation/place';
 import { useTrailMenus } from '.';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -249,7 +250,7 @@ const setFocusedWorkflowRun = vi.fn();
 const setFocusedArtifactId = vi.fn();
 const cancelCurrentTurn = vi.fn();
 const recoverStuckStep = vi.fn();
-const openMountDiff = vi.fn();
+const setSessionActiveMount = vi.fn(async () => undefined);
 const selectSessionPr = vi.fn();
 const setPullRequestMode = vi.fn();
 
@@ -275,7 +276,7 @@ const resetState = () => {
     cancelCurrentTurn,
     recoverStuckStep,
     reportError,
-    openMountDiff,
+    setSessionActiveMount,
     selectSessionPr,
     setPullRequestMode,
   });
@@ -379,9 +380,11 @@ describe('useTrailMenus page crumb', () => {
     expect([...lone.keys()]).toEqual(['overview']);
   });
 
-  it('skips a layer crumb when it looks for the page crumb', () => {
-    const menus = menusFor({ crumbs: ['overview', 'layer-repo', 'lens-plans'] });
-    expect([...menus.keys()]).toEqual(['lens-plans']);
+  it('puts the branch switcher, not the page switcher, on the Branch crumb', () => {
+    h.state.sessionProjectMounts = { [SESSION_ID]: [mount('ledger-core', 'ak/feat-ledger')] };
+    const menus = menusFor({ crumbs: ['overview', 'branch'] });
+    expect([...menus.keys()]).toEqual(['branch']);
+    expect(rowIds(menus.get('branch') as CrumbMenuModel)).toEqual(['/work/ledger-core']);
   });
 
   it('carries the session title, the open lens and the summaries', () => {
@@ -588,7 +591,7 @@ describe('useTrailMenus review thread crumb', () => {
     expect(actionIds(menuOf(threadPage, 'review-thread'))).toEqual([]);
   });
 
-  it('opens the resolver page of a thread with an attempt, the drawer otherwise', () => {
+  it('opens the resolver page of a thread with an attempt, the Branch otherwise', () => {
     const menu = menuOf(threadPage, 'review-thread');
     rowById(menu, 'thread-2').onSelect();
     expect(navigate).toHaveBeenLastCalledWith({
@@ -604,16 +607,9 @@ describe('useTrailMenus review thread crumb', () => {
       },
     });
     rowById(menu, 'thread-1').onSelect();
-    const last = navigate.mock.calls.at(-1)?.[0] as Record<string, unknown>;
-    expect(last.drawer).toEqual({
-      kind: 'conversation',
-      sessionId: SESSION_ID,
-      payload: { threadId: 'thread-1' },
-    });
-    expect(last.to).toMatchObject({
-      at: 'session',
-      sessionId: SESSION_ID,
-      view: { lens: 'review' },
+    expect(navigate).toHaveBeenLastCalledWith({
+      to: branchPlace({ sessionId: SESSION_ID, threadId: 'thread-1' }),
+      mode: 'replace',
     });
   });
 });
@@ -688,7 +684,7 @@ describe('useTrailMenus resolver attempts', () => {
 });
 
 describe('useTrailMenus diff branch crumb', () => {
-  const branchPage = { crumbs: ['overview', 'lens-page', 'diff-branch'] };
+  const branchPage = { crumbs: ['overview', 'lens-page', 'branch'] };
 
   beforeEach(() => {
     h.state.sessionProjectMounts = {
@@ -701,7 +697,7 @@ describe('useTrailMenus diff branch crumb', () => {
 
   it('lists the mounts and marks the requested one', () => {
     h.state.diffMountPath = { [SESSION_ID]: '/work/notify-relay' };
-    const menu = menuOf(branchPage, 'diff-branch');
+    const menu = menuOf(branchPage, 'branch');
     expect(rowIds(menu)).toEqual(['/work/ledger-core', '/work/notify-relay']);
     expect(rowById(menu, '/work/notify-relay').isCurrent).toBe(true);
     expect(rowById(menu, '/work/ledger-core').isCurrent).toBe(false);
@@ -730,20 +726,23 @@ describe('useTrailMenus diff branch crumb', () => {
         },
       ],
     ]);
-    const menu = menuOf(branchPage, 'diff-branch');
+    const menu = menuOf(branchPage, 'branch');
     expect(rowById(menu, '/work/ledger-core').metaA).not.toBeNull();
     expect(rowById(menu, '/work/notify-relay').metaA).toBeNull();
     expect(rowById(menu, '/work/notify-relay').state?.word).toBe('Merged');
     expect(rowById(menu, '/work/ledger-core').state).toBeNull();
   });
 
-  it('offers all branches in Overview and opens the diff of a picked mount', () => {
-    const menu = menuOf(branchPage, 'diff-branch');
-    expect(labelsOf(menu)).toEqual([['all-branches', 'All branches in Overview']]);
+  it('offers all branches in Session and opens the diff of a picked mount', () => {
+    const menu = menuOf(branchPage, 'branch');
+    expect(labelsOf(menu)).toEqual([['all-branches', 'All branches in Session']]);
     actionOf(menu, 'all-branches').onRun();
     expect(h.openLens).toHaveBeenCalledWith({ sessionId: SESSION_ID, lens: null });
     rowById(menu, '/work/notify-relay').onSelect();
-    expect(openMountDiff).toHaveBeenCalledWith(SESSION_ID, '/work/notify-relay');
+    expect(navigate).toHaveBeenLastCalledWith({
+      to: branchPlace({ sessionId: SESSION_ID, mountPath: '/work/notify-relay', tab: 'comments' }),
+      mode: 'replace',
+    });
   });
 });
 

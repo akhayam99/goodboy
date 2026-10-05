@@ -22,11 +22,15 @@ const AREAS = [
     'Workspace and projects',
     ['Workspace with several projects', 'Worktrees', 'Repo status across projects'],
   ],
-  ['branch-history', 'Branch history', ['Rewrite history', 'Safe apply', 'Conflict prediction']],
+  [
+    'branch-history',
+    'Commits and history',
+    ['Shape the history', 'Safe apply', 'Conflict prediction'],
+  ],
   [
     'review',
-    'Review, resolve and pull requests',
-    ['Resolve', 'Review sources', 'Close on GitHub', 'Diff'],
+    'Review and resolve on the Branch page',
+    ['Resolve', 'Review sources', 'Close on GitHub', 'Read the code'],
   ],
   ['board', 'The board', ['Stage board', 'Session card']],
   ['workflows', 'Workflows', ['Workflow builder', 'Orchestrated', 'Workflow run', 'Spend cap']],

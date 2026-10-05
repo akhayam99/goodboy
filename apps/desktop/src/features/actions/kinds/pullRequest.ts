@@ -15,7 +15,7 @@ import type { PullRequestState, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openUrl } from '../../../shared/lib/editor';
 import { selectActiveProjectPrs } from '../../../store/slices/github/activeProjectPrs';
-import { sessionPlace } from '../../../store/slices/navigation/place';
+import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
 import { selectPrWrite } from '../../../store/slices/pr-writes/selectPrWrite';
 import { sessionMountViews } from '../../../store/slices/project-mounts/mountRowModel';
 import { resolveSessionRepo } from '../../../store/slices/worktrees/resolveSessionRepo';
@@ -132,7 +132,9 @@ const openPrLens = ({
 }): void => {
   const state = env.getState();
   state.setPullRequestMode({ sessionId: facts.sessionId, mode });
-  state.navigate({ to: sessionPlace({ sessionId: facts.sessionId, lens: 'pr' }) });
+  state.navigate({
+    to: lensPlace({ state: env.getState(), sessionId: facts.sessionId, lens: 'pr' }),
+  });
 };
 
 const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = [
@@ -149,33 +151,6 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
         void openUrl(facts.pr.url);
       }
     },
-  },
-  {
-    id: 'pullRequest.openReview',
-    label: 'Open Review',
-    shortLabel: ({ facts }) =>
-      `${plural({ count: facts.openComments, one: 'comment', many: 'comments' })} to resolve`,
-    icon: CONCEPT_ICONS.review,
-    group: 'open',
-    shortcut: 'lens.review',
-    when: ({ facts }) => facts.openComments > 0 && isLive({ facts }),
-    slot: () => 'nudge',
-    run: ({ facts, env }) => {
-      void env.getState().openReviewTarget({ sessionId: facts.sessionId });
-    },
-  },
-  {
-    id: 'pullRequest.openDiff',
-    label: 'Open diff',
-    shortLabel: ({ facts }) =>
-      facts.hasConflicts ? `Conflicts with ${baseOf({ facts })}` : 'Changes on this branch',
-    icon: CONCEPT_ICONS.diff,
-    group: 'open',
-    shortcut: 'lens.files',
-    when: hasPr,
-    slot: () => 'nudge',
-    run: ({ facts, env }) =>
-      env.getState().navigate({ to: sessionPlace({ sessionId: facts.sessionId, lens: 'files' }) }),
   },
   {
     id: 'pullRequest.checkLog',

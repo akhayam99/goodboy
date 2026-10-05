@@ -5,7 +5,7 @@ import { sessionResolveStyle } from '../../../../store/sessionReplySettings';
 import { groupThreads } from '../../../integrations/github/comment-threads';
 import { conversationSourceOf } from '../../notes/conversationSource';
 import { draftRoutingOf } from '../../draftRouting';
-import { retryBatchOf } from '../../launchChoice';
+import { retryBatchOf, retryOriginOf } from '../../launchChoice';
 import { startResolve } from '../../startResolve';
 import type { ResolveQueueRow } from '../../buildResolveQueueRows';
 
@@ -74,6 +74,7 @@ export const useResolveAgain = ({
           ],
           style: sessionResolveStyle({ state, sessionId }),
           batch: retryBatchOf({ attempts, threadId }),
+          retryOfLaunchId: retryOriginOf({ attempts, threadId }),
           spawnAgent,
           setAgentConfig,
         });

@@ -2,10 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import { buildTimelineGroups } from './buildTimelineGroups';
 import { buildTimelineStream, type TimelineRowItem } from './buildTimelineStream';
-import { needsYouCount, needsYouEntries, needsYouRootIds } from './needsYou';
+import { needsYouOwners } from './needsYou';
 import type { ResolveActivityFacts } from './resolveActivity';
 import { resolveBatchByAgentId, type ResolveBatchRef } from './resolveBatchSummary';
-import { layoutTimelineRail } from '../../workTreeModel/railGeometry';
 import { dayLabel } from './dayLabel';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -57,7 +56,14 @@ const tenResolvers = ({ batchId = BATCH }: { readonly batchId?: string } = {}): 
     factsByAgentId: new Map(
       agents.map((agent, index) => {
         const state = STATES[index] ?? 'ready';
-        return [agent.id, { state, word: WORDS[state] ?? '' }] as const;
+        return [
+          agent.id,
+          {
+            state,
+            word: WORDS[state] ?? '',
+            threads: [{ state, path: `src/file${index}.ts`, line: index + 1 }],
+          },
+        ] as const;
       }),
     ),
   };
@@ -149,19 +155,21 @@ describe('buildTimelineStream resolve batches', () => {
     expect(rowsOf(items).map((row) => row.id)).toEqual(['agent:solo']);
   });
 
-  it('grows the children upward above the group row on one lane', () => {
+  it('opens into one row per file and an Open row, below the group row on one down lane', () => {
     const { items, groups } = streamOf({
       setup: tenResolvers(),
       expanded: [GROUP_ID],
       full: [GROUP_ID],
     });
     const rows = rowsOf(items);
-    const groupIndex = rows.findIndex((row) => row.id === GROUP_ID);
 
-    expect(rows).toHaveLength(11);
-    expect(groupIndex).toBe(10);
-    expect(rows.slice(0, 10).every((row) => row.groupId === `lane:${GROUP_ID}`)).toBe(true);
-    expect(rows[groupIndex]?.groupId).toBe(`head:${GROUP_ID}`);
+    expect(rows.map((row) => row.id)).toEqual([
+      GROUP_ID,
+      ...Array.from({ length: 10 }, (_, index) => `${GROUP_ID}:file:src/file${index}.ts`),
+      `${GROUP_ID}:open`,
+    ]);
+    expect(rows.slice(1).every((row) => row.groupId === `lane:${GROUP_ID}`)).toBe(true);
+    expect(rows[0]?.groupId).toBe(`head:${GROUP_ID}`);
     expect(groups).toEqual([
       expect.objectContaining({
         id: `head:${GROUP_ID}`,
@@ -173,45 +181,74 @@ describe('buildTimelineStream resolve batches', () => {
         id: `lane:${GROUP_ID}`,
         originRowId: GROUP_ID,
         parentGroupId: `head:${GROUP_ID}`,
+        direction: 'down',
         shape: 'merged',
       }),
     ]);
-
-    const layout = layoutTimelineRail({ rows: items, groups });
-    const groupRail = layout.rows[items.findIndex((item) => item.id === GROUP_ID)];
-    expect(groupRail?.joins.map((join) => join.kind)).toEqual(['stub', 'branch']);
-    expect(groupRail?.markerColumn).toBe(1);
-    const topChild = layout.rows[items.findIndex((item) => item.id === rows[0]?.id)];
-    expect(topChild?.markerColumn).toBe(2);
   });
 
-  it('opens on the eight children nearest the group row, under a Show 2 more row', () => {
-    const { items, groups } = streamOf({ setup: tenResolvers(), expanded: [GROUP_ID] });
-    const groupIndex = items.findIndex((item) => item.id === GROUP_ID);
-    const opened = items.slice(0, groupIndex).filter((item) => item.kind !== 'now');
+  it('reads each file with its lines, its state and the comments it took', () => {
+    const setup = tenResolvers();
+    const threads = (state: ResolveActivityFacts['state'], lines: ReadonlyArray<number>) =>
+      lines.map((line) => ({ state, path: 'src/page.tsx', line }));
+    const facts = new Map(setup.factsByAgentId);
+    facts.set('r0', { state: 'pushed', word: 'Pushed', threads: threads('pushed', [12, 12, 22]) });
+    facts.set('r1', { state: 'failed', word: 'Draft failed', threads: threads('failed', [12]) });
+    const { items } = streamOf({
+      setup: { ...setup, factsByAgentId: facts },
+      expanded: [GROUP_ID],
+      full: [GROUP_ID],
+    });
+    const page = rowsOf(items).find((row) => row.id === `${GROUP_ID}:file:src/page.tsx`);
+
+    expect(page?.entry.kind === 'resolveFile' ? page.entry.lines : null).toEqual([
+      { line: 12, count: 3 },
+      { line: 22, count: 1 },
+    ]);
+    expect(page?.entry.kind === 'resolveFile' ? page.entry.state : null).toBe('failed');
+    expect(page?.entry.kind === 'resolveFile' ? page.entry.threadCount : null).toBe(4);
+  });
+
+  it('opens on the first eight files, under a Show 2 more row above the Open row', () => {
+    const { items } = streamOf({ setup: tenResolvers(), expanded: [GROUP_ID] });
+    const opened = items.filter((item) => item.kind !== 'now');
 
     expect(opened.map((item) => item.id)).toEqual([
+      GROUP_ID,
+      ...Array.from({ length: 8 }, (_, index) => `${GROUP_ID}:file:src/file${index}.ts`),
       `more:${GROUP_ID}`,
-      ...Array.from({ length: 8 }, (_, index) => `agent:r${7 - index}`),
+      `${GROUP_ID}:open`,
     ]);
-    const more = opened[0];
+    const more = items.find((item) => item.kind === 'more');
     expect(more?.kind === 'more' ? more.hiddenCount : null).toBe(2);
     expect(more?.groupId).toBe(`lane:${GROUP_ID}`);
     expect(
-      rowsOf(opened).every(
-        (row) => row.explode?.groupId === GROUP_ID && row.explode.kind === 'batch',
-      ),
+      rowsOf(opened)
+        .slice(1)
+        .every((row) => row.explode?.groupId === GROUP_ID && row.explode.kind === 'batch'),
     ).toBe(true);
   });
 
-  it('shows every child and no more row once the group is shown in full', () => {
+  it('shows every file and no more row once the group is shown in full', () => {
     const { items } = streamOf({ setup: tenResolvers(), expanded: [GROUP_ID], full: [GROUP_ID] });
-    const groupIndex = items.findIndex((item) => item.id === GROUP_ID);
 
     expect(items.some((item) => item.kind === 'more')).toBe(false);
-    expect(rowsOf(items.slice(0, groupIndex)).map((row) => row.id)).toEqual(
-      Array.from({ length: 10 }, (_, index) => `agent:r${9 - index}`),
-    );
+    expect(rowsOf(items).filter((row) => row.entry.kind === 'resolveFile')).toHaveLength(10);
+  });
+
+  it('puts threads without a file into one row of their own, last', () => {
+    const setup = tenResolvers();
+    const facts = new Map(setup.factsByAgentId);
+    facts.set('r0', { state: 'ready', word: 'Ready for you' });
+    const { items } = streamOf({
+      setup: { ...setup, factsByAgentId: facts },
+      expanded: [GROUP_ID],
+      full: [GROUP_ID],
+    });
+    const files = rowsOf(items).filter((row) => row.entry.kind === 'resolveFile');
+
+    expect(files.at(-1)?.id).toBe(`${GROUP_ID}:file:no-file`);
+    expect(files).toHaveLength(10);
   });
 
   it('stays newest first with the batch closed and open, the group at the batch start', () => {
@@ -236,19 +273,13 @@ describe('buildTimelineStream resolve batches', () => {
     }
   });
 
-  it('counts ready and failed children in the need-you count without opening the group', () => {
+  it('gives Needs you one row for the whole group, with the reasons, without opening it', () => {
     const { items, entries } = streamOf({ setup: tenResolvers() });
+    const owners = needsYouOwners({ items, entries, events: [] });
 
-    expect(needsYouCount({ items })).toBe(4);
-    const roots = needsYouRootIds({ items });
-    const kept = needsYouEntries({ entries, rootIds: roots }).map((entry) => entry.id);
-    expect([...kept].sort()).toEqual(['agent:r0', 'agent:r4', 'agent:r5', 'agent:r7']);
-  });
-
-  it('does not count a child twice once the group is open', () => {
-    const { items } = streamOf({ setup: tenResolvers(), expanded: [GROUP_ID] });
-
-    expect(needsYouCount({ items })).toBe(4);
+    expect(owners.map((owner) => [owner.id, owner.kind, owner.text])).toEqual([
+      [GROUP_ID, 'batch', 'Resolve #318 · 3 replies ready · 1 failed'],
+    ]);
   });
 
   it('does not open the group for a failed child', () => {
@@ -290,7 +321,7 @@ describe('buildTimelineStream resolve batches', () => {
       ],
     });
 
-    expect(refs.get('a1')).toEqual({ batchId: 'b', prNumber: 318 });
+    expect(refs.get('a1')).toEqual({ batchId: 'b', prNumber: 318, origin: 'launch' });
     expect(refs.has('a3')).toBe(false);
   });
 });

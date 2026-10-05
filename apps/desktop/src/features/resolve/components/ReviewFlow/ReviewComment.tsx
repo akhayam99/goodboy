@@ -13,7 +13,6 @@ import {
   PARTIAL_REFUSAL,
 } from '../../../../store/slices/resolve/acceptResolveQueueItem';
 import type { ResolveCandidateWithItems } from '../../../../store/slices/resolve/state';
-import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
 import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
 import type { ResolvedAction } from '../../../actions/types';
@@ -57,11 +56,7 @@ type Props = ReviewCommentBinding & {
   readonly entries: ReadonlyArray<ReviewEntry>;
   readonly onSelect: (threadId: string) => void;
   readonly onTryAgain: () => void;
-  readonly onRetryDelivery: () => void;
-  readonly onSync: () => void;
-  readonly variant?: 'review' | 'brief';
-  readonly actionsPrefix?: ReactNode;
-  readonly actionsReplacement?: ReactNode;
+  readonly hunk?: ReactNode;
 };
 
 const EMPTY_CANDIDATES: ReadonlyArray<ResolveCandidateWithItems> = [];
@@ -103,15 +98,11 @@ export const ReviewComment = ({
   onReplyDone,
   onSelect,
   onTryAgain,
-  onRetryDelivery,
-  onSync,
-  variant = 'review',
-  actionsPrefix = null,
-  actionsReplacement = null,
+  hunk = null,
 }: Props) => {
-  const isBrief = variant === 'brief';
   const { row, state, word, threadId } = entry;
   const provider = REVIEW_SOURCE_LABEL[row.thread.sourceKind ?? 'github'];
+  const originLabel = row.thread.sourceKind === 'local' ? 'Local' : provider;
   const canResolve = REVIEW_SOURCE_CAPABILITIES[row.thread.sourceKind ?? 'github'].canResolve;
   const target = useMemo(
     () => ({ kind: 'reviewComment' as const, sessionId, threadId }),
@@ -219,7 +210,7 @@ export const ReviewComment = ({
     <article
       aria-label={REVIEW_FLOW_LABEL.comment}
       data-review-comment={threadId}
-      className="flex min-w-0 max-w-[76ch] flex-col gap-5"
+      className="flex min-w-0 flex-col gap-5"
     >
       <header className="flex min-w-0 items-center gap-2 text-meta">
         {author !== null && (
@@ -242,17 +233,16 @@ export const ReviewComment = ({
         {row.commentThread?.head.outdated === true && (
           <Chip tone="neutral" size="3xs" label={REVIEW_FLOW_LABEL.lineMoved} />
         )}
-        <span className="ml-auto flex shrink-0 items-center">
-          <ObjectOverflowMenu target={target} label={REVIEW_FLOW_LABEL.commentActions} />
-        </span>
+        <Chip tone="neutral" size="3xs" label={originLabel} />
       </header>
 
-      {isBrief && <SectionHeader label={REVIEW_FLOW_LABEL.comment} headingLevel={2} />}
+      {hunk}
+
       <div className="min-w-0 rounded-lg bg-subtle px-4 py-3">
         <ReviewerCommentBlock commentThread={row.commentThread} />
       </div>
 
-      {!isBrief && <PreviousAttempts attempts={previous} />}
+      <PreviousAttempts attempts={previous} />
 
       {remote !== null && <ThreadGitEvidence sessionId={sessionId} entry={entry} />}
 
@@ -276,7 +266,7 @@ export const ReviewComment = ({
         </p>
       )}
 
-      {!isBrief && row.attempt !== null && !isOwnFixGone && (
+      {row.attempt !== null && !isOwnFixGone && (state === 'drafting' || isFailed) && (
         <AgentLine attempt={row.attempt} state={state} word={word} attemptNumber={attemptNumber} />
       )}
 
@@ -292,35 +282,27 @@ export const ReviewComment = ({
       )}
 
       {hasChange && state !== 'drafting' && (
-        <ProposedChange
-          files={diff.files}
-          isLoading={diff.isLoading}
-          error={diff.error}
-          {...(isBrief && { heading: REVIEW_FLOW_LABEL.fix })}
-        />
+        <ProposedChange files={diff.files} isLoading={diff.isLoading} error={diff.error} />
       )}
 
-      {!isBrief &&
-        members.length > 0 &&
-        remote === null &&
-        (state === 'ready' || state === 'edited') && (
-          <div className="flex min-w-0 flex-col gap-1 text-meta text-muted-foreground">
-            <p>{sharedFixLine({ count: members.length })}</p>
-            <ul className="flex min-w-0 flex-col">
-              {members.map((member) => (
-                <li key={member.threadId} className="min-w-0 list-none">
-                  <button
-                    type="button"
-                    onClick={() => onSelect(member.threadId)}
-                    className="block max-w-full truncate rounded-sm text-left text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                  >
-                    {member.title ?? RESOLVE_COMMENT_UNAVAILABLE}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+      {members.length > 0 && remote === null && (state === 'ready' || state === 'edited') && (
+        <div className="flex min-w-0 flex-col gap-1 text-meta text-muted-foreground">
+          <p>{sharedFixLine({ count: members.length })}</p>
+          <ul className="flex min-w-0 flex-col">
+            {members.map((member) => (
+              <li key={member.threadId} className="min-w-0 list-none">
+                <button
+                  type="button"
+                  onClick={() => onSelect(member.threadId)}
+                  className="block max-w-full truncate rounded-sm text-left text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                >
+                  {member.title ?? RESOLVE_COMMENT_UNAVAILABLE}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {blocker !== null && (
         <p className="text-meta text-warning">
           {blocker === 'deferred' ? PARTIAL_ACCEPTANCE : PARTIAL_REFUSAL}
@@ -411,8 +393,6 @@ export const ReviewComment = ({
           isBusy={isSubmitting || pendingActionId !== null}
           onTryAgain={onTryAgain}
           onAddHint={() => onRun('reviewComment.edit')}
-          onRetryDelivery={onRetryDelivery}
-          onSync={onSync}
           onRun={onRun}
         />
       )}
@@ -455,14 +435,11 @@ export const ReviewComment = ({
             </Button>
           </div>
         </div>
-      ) : actionsReplacement !== null ? (
-        actionsReplacement
       ) : (
         !isEditingReply &&
         !isFailed &&
-        (verbs.length > 0 || actionsPrefix !== null) && (
+        verbs.length > 0 && (
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            {actionsPrefix}
             {verbs.map((action) => {
               const button = (
                 <Button

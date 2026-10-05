@@ -21,6 +21,7 @@ import {
   BOARD_PLACE,
   SESSION_DRAFT_PLACE,
   agentPlace,
+  branchPlace,
   resolverPagePlace,
   sessionPlace,
 } from './place';
@@ -111,7 +112,8 @@ const makeStore = () =>
     focusedWorkflowRunId: {},
     diffFocus: {},
     diffMountPath: {},
-    diffPage: {},
+    branchTab: {},
+    branchThreadId: {},
     terminalMountPath: {},
     focusedArtifactId: {},
     focusedGithubIssueNumber: {},
@@ -243,7 +245,7 @@ describe('navigation slice', () => {
 
     store.getState().back();
     expect(store.getState().currentSessionId).toBe(S1);
-    expect(store.getState().activeLens[S1]).toBe('review');
+    expect(store.getState().activeLens[S1]).toBe('branch');
 
     store.getState().back();
     expect(store.getState().activeLens[S1]).toBeNull();
@@ -253,7 +255,7 @@ describe('navigation slice', () => {
 
     store.getState().forward();
     store.getState().forward();
-    expect(keyOf(store)).toBe(`s/${S1}/review`);
+    expect(keyOf(store)).toBe(`s/${S1}/branch/comments`);
   });
 
   it('truncates the forward entries on a new push', () => {
@@ -323,16 +325,46 @@ describe('navigation slice', () => {
     expect(store.getState().activeLens[S1]).toBeNull();
   });
 
-  it('keeps the pull request lens on a GitHub PR, apart from Review', () => {
+  it('opens the pull request as the Branch, with its Comments, and Back leaves it', () => {
     const store = makeStore();
     store.setState({ sessionGithub: { [S1]: githubWithPr(528) } });
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'linear' }) });
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'pr' }) });
-    expect(store.getState().activeLens[S1]).toBe('pr');
-    expect(keyOf(store)).toBe(`s/${S1}/pr`);
+    expect(store.getState().activeLens[S1]).toBe('branch');
+    expect(keyOf(store)).toBe(`s/${S1}/branch/comments`);
 
     store.getState().back();
     expect(store.getState().activeLens[S1]).toBe('linear');
+  });
+
+  it('keeps the pull request page for a GitLab merge request', () => {
+    const store = makeStore();
+    store.setState({
+      sessionGitlabMr: {
+        [S1]: {
+          mr: {
+            id: 57,
+            iid: 57,
+            projectId: 9,
+            title: 'Retry dispatch with a cap',
+            description: null,
+            state: 'opened',
+            webUrl: 'https://gitlab.example.test/notify-relay/-/merge_requests/57',
+            sourceBranch: 'fix/dispatch-retry',
+            targetBranch: 'main',
+            draft: false,
+            hasConflicts: false,
+            mergeStatus: 'can_be_merged',
+            updatedAt: '2026-09-25T00:00:00.000Z',
+          },
+          fetchedAt: null,
+          loading: false,
+          error: null,
+        },
+      },
+    });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'pr' }) });
+    expect(store.getState().activeLens[S1]).toBe('pr');
   });
 
   it('opens an agent under its home lens', () => {
@@ -343,7 +375,7 @@ describe('navigation slice', () => {
     expect(store.getState().selectedAgentId[S1]).toBe(RESOLVER);
   });
 
-  it('opens a resolver as its transcript layer over the comment in Review', () => {
+  it('opens a resolver as a Fix run under its Branch', () => {
     const store = makeStore();
     store.setState({
       sessionResolveAttempts: {
@@ -355,11 +387,8 @@ describe('navigation slice', () => {
     expect(keyOf(store)).toBe(`s/${S1}/review/t/gh:PRRT_42/agent`);
     expect(store.getState().selectedAgentId[S1]).toBe(RESOLVER);
     store.getState().up();
-    expect(store.getState().drawer).toEqual({
-      kind: 'conversation',
-      sessionId: S1,
-      payload: { threadId: 'gh:PRRT_42' },
-    });
+    expect(keyOf(store)).toBe(`s/${S1}/branch/comments`);
+    expect(store.getState().drawer).toBeNull();
   });
 
   it('carries the requested agent tab in the address of a resolver page', () => {
@@ -418,7 +447,7 @@ describe('navigation slice', () => {
     expect(keyOf(store)).toBe(`s/${S1}/review/t/gh:PRRT_42/agent/brief`);
   });
 
-  it('addresses the resolver page under its comment and goes back to the open comment', () => {
+  it('addresses the Fix run under its Branch and goes up to its Comments', () => {
     const store = makeStore();
     const conversation = {
       kind: 'conversation' as const,
@@ -430,8 +459,11 @@ describe('navigation slice', () => {
         [S1]: [resolveAttemptFor({ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] })],
       },
     });
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
-    store.getState().openDrawer(conversation);
+    store.getState().navigate({
+      to: sessionPlace({ sessionId: S1, lens: 'review' }),
+      drawer: conversation,
+    });
+    expect(keyOf(store)).toBe(`s/${S1}/branch/comments/t/gh:PRRT_42`);
     store.getState().navigate({
       to: resolverPagePlace({ sessionId: S1, agentId: RESOLVER, threadId: 'gh:PRRT_42' }),
     });
@@ -439,11 +471,11 @@ describe('navigation slice', () => {
     expect(store.getState().drawer).toBeNull();
 
     store.getState().up();
-    expect(store.getState().drawer).toEqual(conversation);
+    expect(keyOf(store)).toBe(`s/${S1}/branch/comments`);
     expect(store.getState().selectedAgentId[S1]).toBeNull();
   });
 
-  it('goes up from a resolver page reached from elsewhere to the queue with its comment', () => {
+  it('goes up from a Fix run reached from elsewhere to the Comments of its Branch', () => {
     const store = makeStore();
     store.setState({
       sessionResolveAttempts: {
@@ -455,12 +487,8 @@ describe('navigation slice', () => {
     });
     store.getState().up();
 
-    expect(keyOf(store)).toBe(`s/${S1}/review`);
-    expect(store.getState().drawer).toEqual({
-      kind: 'conversation',
-      sessionId: S1,
-      payload: { threadId: 'gh:PRRT_42' },
-    });
+    expect(keyOf(store)).toBe(`s/${S1}/branch/comments`);
+    expect(store.getState().drawer).toBeNull();
   });
 
   it('goes up with a back when the previous voice is the parent', () => {
@@ -514,18 +542,18 @@ describe('navigation slice', () => {
       },
     });
     store.getState().openStudio({ studio: { kind: 'workflow' } });
-    expect(keyOf(store)).toBe(`s/${S1}/review+workflows`);
+    expect(keyOf(store)).toBe(`s/${S1}/branch/comments+workflows`);
 
     store.getState().back();
     expect(store.getState().appStudio).toEqual({
       kind: 'inbox',
       focus: { provider: 'linear', kind: null, recordKey: 'NW-214', sessionId: null },
     });
-    expect(keyOf(store)).toBe(`s/${S1}/review+inbox/linear/NW-214`);
+    expect(keyOf(store)).toBe(`s/${S1}/branch/comments+inbox/linear/NW-214`);
 
     store.getState().back();
     expect(store.getState().appStudio).toBeNull();
-    expect(store.getState().activeLens[S1]).toBe('review');
+    expect(store.getState().activeLens[S1]).toBe('branch');
   });
 
   it('switches a door over the open studio instead of stacking it', () => {
@@ -722,139 +750,147 @@ describe('navigation slice', () => {
 });
 
 const DRAFTS: DrawerRequest = {
-  kind: 'diff-notes',
+  kind: 'conversation',
   sessionId: S1,
-  payload: {},
+  payload: { threadId: 'note:ledger-cast' },
 };
 
 const EMPTY = { drawer: null, selection: {}, scroll: {}, revealed: [] };
 
-const layersOf = (store: ReturnType<typeof makeStore>): ReadonlyArray<string> => {
+const MOUNT = '/w/payments-api';
+
+const branchOf = (store: ReturnType<typeof makeStore>) => {
   const state = store.getState();
   const stack = state.navigation[state.currentWorkspaceId ?? ''];
-  return stack?.entries[stack.index]?.layers ?? [];
+  const place = stack?.entries[stack.index]?.place;
+  return place?.at === 'session' && place.view.target?.kind === 'branch' ? place.view.target : null;
 };
 
 const depthOf = (store: ReturnType<typeof makeStore>): number =>
   store.getState().navigation[WS]?.entries.length ?? 0;
 
-const DIFF = sessionPlace({
-  sessionId: S1,
-  lens: 'files',
-  target: { kind: 'diff', mountPath: '/w/payments-api', focus: null },
-});
+describe('Branch page', () => {
+  it('opens the canonical Branch address from every former door', () => {
+    const doors = [
+      { request: sessionPlace({ sessionId: S1, lens: 'review' }), tab: 'comments' },
+      { request: sessionPlace({ sessionId: S1, lens: 'pr' }), tab: 'comments' },
+      {
+        request: sessionPlace({
+          sessionId: S1,
+          lens: 'files',
+          target: { kind: 'diff', mountPath: MOUNT, focus: null },
+        }),
+        tab: 'files',
+      },
+      {
+        request: sessionPlace({
+          sessionId: S1,
+          lens: 'files',
+          target: { kind: 'diff', mountPath: MOUNT, focus: null, page: 'history' },
+        }),
+        tab: 'commits',
+      },
+    ] as const;
+    for (const { request, tab } of doors) {
+      const store = makeStore();
+      store.getState().navigate({ to: request });
+      expect(store.getState().activeLens[S1]).toBe('branch');
+      expect(branchOf(store)?.tab).toBe(tab);
+    }
+  });
 
-const HISTORY = sessionPlace({
-  sessionId: S1,
-  lens: 'files',
-  target: { kind: 'diff', mountPath: '/w/payments-api', focus: null, page: 'history' },
-});
+  it('reads the same trail whichever door opened it', () => {
+    const keys = (['review', 'pr'] as const).map((lens) => {
+      const store = makeStore();
+      store.getState().navigate({ to: BOARD_PLACE });
+      store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
+      store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens }) });
+      return locationKey(captureWindowLocation({ state: store.getState() }));
+    });
+    expect(new Set(keys).size).toBe(1);
+  });
 
-describe('code host layers', () => {
-  it('stacks each layer opened from inside to the right, and Back removes one', () => {
+  it('keeps a requested mount and moves a conversation request into the address', () => {
+    const store = makeStore();
+    store.getState().navigate({
+      to: branchPlace({ sessionId: S1, mountPath: MOUNT }),
+      drawer: { kind: 'conversation', sessionId: S1, payload: { threadId: 'thread-9' } },
+    });
+    expect(branchOf(store)).toMatchObject({
+      mountPath: MOUNT,
+      tab: 'comments',
+      threadId: 'thread-9',
+    });
+    expect(store.getState().drawer).toBeNull();
+    expect(store.getState().branchThreadId[S1]).toBe('thread-9');
+  });
+
+  it('switches tabs in place so Back does not walk them', () => {
     const store = makeStore();
     store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'pr' }) });
-    expect(layersOf(store)).toEqual([]);
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
-    expect(layersOf(store)).toEqual(['pr']);
-
-    store.getState().back();
-    expect(store.getState().activeLens[S1]).toBe('pr');
+    store.getState().navigate({ to: branchPlace({ sessionId: S1, mountPath: MOUNT }) });
+    const depth = depthOf(store);
+    for (const tab of ['files', 'commits', 'checks', 'comments'] as const) {
+      store
+        .getState()
+        .navigate({ to: branchPlace({ sessionId: S1, mountPath: MOUNT, tab }), mode: 'replace' });
+    }
+    expect(depthOf(store)).toBe(depth);
     store.getState().back();
     expect(store.getState().activeLens[S1]).toBeNull();
   });
 
-  it('reads Overview, Diff, pull request when the pull request is opened from the diff', () => {
+  it('sends Up to the crumb on the left, one level at a time', () => {
     const store = makeStore();
     store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
-    store.getState().navigate({ to: DIFF });
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'pr' }) });
-    expect(layersOf(store)).toEqual(['diff']);
+    store
+      .getState()
+      .navigate({ to: branchPlace({ sessionId: S1, mountPath: MOUNT, threadId: 'thread-9' }) });
+    store.getState().up();
+    expect(branchOf(store)).toMatchObject({ tab: 'comments', threadId: null });
+    store.getState().up();
+    expect(store.getState().activeLens[S1]).toBeNull();
   });
 
-  it('pops back to a kind already in the trail instead of stacking a copy', () => {
+  it('opens history recovery on the Commits tab and redirects the old Rewrite history address', () => {
     const store = makeStore();
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'pr' }) });
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
-    store.getState().navigate({ to: DIFF });
-    expect(layersOf(store)).toEqual(['pr', 'review']);
-    const depth = depthOf(store);
-
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'pr' }) });
-    expect(store.getState().activeLens[S1]).toBe('pr');
-    expect(layersOf(store)).toEqual([]);
-    expect(depthOf(store)).toBe(depth);
-
-    store.getState().forward();
-    expect(store.getState().activeLens[S1]).toBe('review');
-  });
-
-  it('keeps Rewrite history a child of its diff, and the diff crumb pops back to it', () => {
-    const store = makeStore();
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'pr' }) });
-    store.getState().navigate({ to: DIFF });
-    store.getState().navigate({ to: HISTORY });
-    expect(layersOf(store)).toEqual(['pr']);
-    const depth = depthOf(store);
-
-    store.getState().navigate({ to: DIFF });
-    expect(store.getState().diffPage[S1] ?? null).toBeNull();
-    expect(layersOf(store)).toEqual(['pr']);
-    expect(depthOf(store)).toBe(depth);
-  });
-
-  it('gives a jump from outside the canonical path of its target', () => {
-    const store = makeStore();
-    store.setState({ sessionGithub: { [S1]: githubWithPr(318) } });
-    store.getState().navigate({ to: BOARD_PLACE });
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
-    expect(layersOf(store)).toEqual(['pr']);
-
-    store.getState().navigate({ to: sessionPlace({ sessionId: S2, lens: 'review' }) });
-    expect(layersOf(store)).toEqual([]);
-  });
-
-  it('opens Review from the Overview with the Overview as its only parent', () => {
-    const store = makeStore();
-    store.setState({ sessionGithub: { [S1]: githubWithPr(318) } });
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
-    expect(layersOf(store)).toEqual([]);
-  });
-
-  it('pushes a focused diff instead of popping to the diff below', () => {
-    const store = makeStore();
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
-    store.getState().navigate({ to: DIFF });
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
-    const depth = depthOf(store);
+    store
+      .getState()
+      .navigate({ to: branchPlace({ sessionId: S1, mountPath: MOUNT, tab: 'commits' }) });
+    expect(branchOf(store)).toMatchObject({ tab: 'commits', mountPath: MOUNT });
     store.getState().navigate({
       to: sessionPlace({
         sessionId: S1,
         lens: 'files',
-        target: {
-          kind: 'diff',
-          mountPath: '/w/payments-api',
-          focus: { kind: 'branch', path: 'src/webhooks.ts' },
-        },
+        target: { kind: 'diff', mountPath: MOUNT, focus: null, page: 'history' },
       }),
     });
-    expect(depthOf(store)).toBe(depth + 1);
-    expect(layersOf(store)).toEqual([]);
+    expect(branchOf(store)).toMatchObject({ tab: 'commits', mountPath: MOUNT });
+    expect(keyOf(store)).toBe(`s/${S1}/branch/commits:${MOUNT}`);
   });
 
-  it('drops the layers when a layer opens a page that is not one', () => {
+  it('sends Up from a Fix run to the Comments of its Branch', () => {
     const store = makeStore();
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'pr' }) });
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
-    expect(layersOf(store)).toEqual([]);
+    store.setState({
+      sessionResolveAttempts: {
+        [S1]: [resolveAttemptFor({ agentId: RESOLVER, threadIds: ['thread-9'] })],
+      },
+    });
+    store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: RESOLVER }) });
+    store.getState().up();
+    expect(branchOf(store)).toMatchObject({ tab: 'comments', threadId: null });
+  });
 
-    store.getState().back();
-    expect(layersOf(store)).toEqual(['pr']);
+  it('restores a saved place that still names a former lens at the Branch address', () => {
+    const store = makeStore();
+    store.getState().restoreLocation({
+      location: {
+        workspaceId: WS,
+        place: sessionPlace({ sessionId: S1, lens: 'review' }),
+        studio: null,
+        focus: EMPTY,
+      },
+    });
+    expect(store.getState().activeLens[S1]).toBe('branch');
   });
 });

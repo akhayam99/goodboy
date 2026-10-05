@@ -60,6 +60,7 @@ export type SessionDiff = {
   readonly viewed: DiffViewed;
   readonly focusPath: string | null;
   readonly clearFocus: () => void;
+  readonly focusFile: (path: string) => void;
 };
 
 export const useSessionDiff = ({
@@ -92,6 +93,7 @@ export const useSessionDiff = ({
 
   const refresh = useCallback(() => setRefreshTick((tick) => tick + 1), []);
   const clearFocus = useCallback(() => setFocusPath(null), []);
+  const focusFile = useCallback((path: string) => setFocusPath(path), []);
 
   useEffect(() => {
     if (isGitAware && previousSummarizer.current === 'running' && summarizer.status !== 'running') {
@@ -216,5 +218,6 @@ export const useSessionDiff = ({
     viewed,
     focusPath,
     clearFocus,
+    focusFile,
   };
 };

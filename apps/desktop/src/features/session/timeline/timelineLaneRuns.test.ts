@@ -27,7 +27,7 @@ const groupOf = ({
   parentGroupId,
   identityIndex: 0,
   isMuted: false,
-  shape: 'open',
+  shape: 'merged',
 });
 
 describe('timelineLaneRuns', () => {

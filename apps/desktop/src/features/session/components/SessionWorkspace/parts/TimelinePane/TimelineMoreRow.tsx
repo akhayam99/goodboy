@@ -3,21 +3,20 @@ import type { TimelineMoreItem } from '../../../../timeline/buildTimelineStream'
 import { railColumnX, type RailRow } from '../../../../../workTreeModel/railGeometry';
 import { TIMELINE_RHYTHM } from '../../../../../workTreeModel/timelineRhythm';
 import { TIMELINE_GUTTER } from './timelineLayout';
-import { TimelineRail, type TimelineLaneControl } from './TimelineRail';
+import { TimelineRail } from './TimelineRail';
 
 type Props = {
   readonly item: TimelineMoreItem;
   readonly rail: RailRow;
   readonly railWidth: number;
-  readonly lanes: TimelineLaneControl;
   readonly onShowAll: (params: { readonly id: string }) => void;
 };
 
-export const TimelineMoreRow = ({ item, rail, railWidth, lanes, onShowAll }: Props) => (
+export const TimelineMoreRow = ({ item, rail, railWidth, onShowAll }: Props) => (
   <div data-row-id={item.id} className="flex min-w-0" style={{ height: item.height }}>
     <span className={cn('shrink-0', TIMELINE_GUTTER)} />
     <span className="relative shrink-0" style={{ width: railWidth }}>
-      <TimelineRail rail={rail} width={railWidth} lanes={lanes} />
+      <TimelineRail rail={rail} width={railWidth} />
       {rail.markerY == null ? null : (
         <span
           aria-hidden

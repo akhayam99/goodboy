@@ -5,11 +5,9 @@ import type { ResolveProposalKind } from '../../store/slices/resolve/resolveProp
 import {
   REVIEW_COMMENT_GROUPS,
   REVIEW_COMMENT_GROUP_LABEL,
-  matchesReviewStateFilter,
   reviewCommentGroup,
   reviewCommentStateOf,
   reviewCommentWord,
-  reviewSummaryLine,
   type ReviewCommentState,
 } from './reviewCommentState';
 import { STATE_WORD_TONE } from './components/ReviewFlow/stateTone';
@@ -141,44 +139,6 @@ describe('review comment words', () => {
     expect(reviewCommentWord({ state: reviewCommentStateOf({ row: asking }), row: asking })).toBe(
       'Needs you',
     );
-  });
-});
-
-describe('review summary line', () => {
-  it('counts open, drafting, ready to push and done', () => {
-    const states: ReadonlyArray<ReviewCommentState> = [
-      'new',
-      'new',
-      'drafting',
-      'needs',
-      'accepted',
-      'replied',
-      'skipped',
-      'pushed',
-    ];
-    expect(reviewSummaryLine({ states })).toEqual([
-      { count: 4, noun: 'open' },
-      { count: 1, noun: 'drafting' },
-      { count: 2, noun: 'ready to push' },
-      { count: 2, noun: 'done' },
-    ]);
-  });
-
-  it('leaves out the zero parts', () => {
-    expect(reviewSummaryLine({ states: ['ready', 'ready'] })).toEqual([{ count: 2, noun: 'open' }]);
-    expect(reviewSummaryLine({ states: [] })).toEqual([]);
-  });
-});
-
-describe('review state filter', () => {
-  it('matches Ready for both a ready and an edited draft', () => {
-    expect(matchesReviewStateFilter({ state: 'edited', filter: 'ready' })).toBe(true);
-    expect(matchesReviewStateFilter({ state: 'ready', filter: 'ready' })).toBe(true);
-    expect(matchesReviewStateFilter({ state: 'needs', filter: 'ready' })).toBe(false);
-  });
-
-  it('matches everything on all', () => {
-    expect(matchesReviewStateFilter({ state: 'pushed', filter: 'all' })).toBe(true);
   });
 });
 

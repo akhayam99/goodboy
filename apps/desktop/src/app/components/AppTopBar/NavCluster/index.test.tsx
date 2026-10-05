@@ -200,7 +200,7 @@ describe('NavCluster', () => {
     expect(items.map((item) => item.textContent)).toEqual([
       'Board',
       'ReviewRetry failed webhook deliveries',
-      'OverviewRetry failed webhook deliveries',
+      'SessionRetry failed webhook deliveries',
     ]);
     expect(items[0]?.getAttribute('aria-checked')).toBe('true');
     fireEvent.click(items[2] as HTMLElement);

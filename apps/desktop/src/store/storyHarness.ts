@@ -171,6 +171,7 @@ export const storySpies = {
   resolveDiffComment: vi.fn(async () => undefined),
   reopenDiffComment: vi.fn(async () => undefined),
   deleteDiffComment: vi.fn(async () => undefined),
+  assignDiffCommentTarget: vi.fn(async () => undefined),
   upsertIntegrationBinding: vi.fn(async () => undefined),
   listIntegrationBindingsForWorkspace: vi.fn(async () => [] as ReadonlyArray<IntegrationBinding>),
   listProjectSentryLinks: vi.fn(
@@ -562,6 +563,7 @@ export const storyDbStubs = () => ({
   registerWorktreeRoot: vi.fn(async () => undefined),
   markWorktreeRootScanned: vi.fn(async () => undefined),
   upsertSessionExternalTask: storySpies.upsertSessionExternalTask,
+  replaceSessionTaskLinks: vi.fn(async () => true),
   deleteSessionExternalTask: vi.fn(async () => undefined),
   listExternalTasksForWorkspace: vi.fn(async () => []),
   listIntegrationBindingsForWorkspace: storySpies.listIntegrationBindingsForWorkspace,
@@ -613,6 +615,7 @@ export const storyDbStubs = () => ({
   resolveDiffComment: storySpies.resolveDiffComment,
   reopenDiffComment: storySpies.reopenDiffComment,
   deleteDiffComment: storySpies.deleteDiffComment,
+  assignDiffCommentTarget: storySpies.assignDiffCommentTarget,
   listProjectScripts: storySpies.listProjectScripts,
   upsertProjectScript: storySpies.upsertProjectScript,
   deleteProjectScript: storySpies.deleteProjectScript,

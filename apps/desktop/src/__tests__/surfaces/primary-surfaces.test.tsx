@@ -44,7 +44,7 @@ import { SettingsStudio } from '../../features/settings/components/SettingsStudi
 import { SessionDraftPane } from '../../features/session/components/SessionDraftPane';
 import { WorkspaceSwitcher } from '../../features/workspace/components/WorkspaceSwitcher';
 import { ContextDrawer } from '../../features/session/components/ContextDrawer';
-import { PullRequestPage } from '../../features/review/components/PullRequestPage';
+import { BranchPage } from '../../features/branch/components/BranchPage';
 import { CONTEXT_TAB_LABEL } from '../../features/session/components/ContextDrawer/contextTabs';
 import type { SettingsFocus } from '../../features/settings/settingsFocus';
 
@@ -317,7 +317,7 @@ describe('primary surfaces mount on real store selectors', () => {
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
 
-    expect(screen.getByRole('heading', { name: 'Diff' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /^Files/ }).getAttribute('aria-selected')).toBe('true');
     expect(screen.queryByText('No worktree for this session')).toBeNull();
     expectNoRenderLoop();
   });
@@ -331,7 +331,7 @@ describe('primary surfaces mount on real store selectors', () => {
       throw new Error('the board seed has no session with a tracked pull request');
     }
 
-    await mountSurface({ ui: <PullRequestPage session={session} /> });
+    await mountSurface({ ui: <BranchPage session={session} workingDir={null} /> });
 
     expect(screen.getAllByText(pr.title).length).toBeGreaterThan(0);
     expectNoRenderLoop();
