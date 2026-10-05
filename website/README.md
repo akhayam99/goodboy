@@ -13,8 +13,56 @@ deployed by Vercel from `website/vercel.json`.
 - Install from `website/` with `pnpm install --ignore-workspace`. The site
   keeps its own lockfile; why that matters is in
   [CONVENTIONS.md](../CONVENTIONS.md) → pnpm.
-- `pnpm dev` serves the page locally; `pnpm build` typechecks and builds
-  `dist/`.
+- `pnpm dev` serves the page locally; `pnpm build` typechecks, builds
+  `dist/` and prerenders every page. `pnpm preview` serves the built pages
+  without `.html`, as Vercel does.
+
+## Prerender
+
+Every page ships its full text as HTML, so a crawler or a link preview that
+runs no JavaScript reads the same page a visitor does.
+`website/scripts/prerender.mjs` runs the client build, then a server build of
+`website/src/server/renderSite.tsx`, and writes what `renderSite` returns into
+`dist/`: each template's
+`<!--app-html-->` mark gets the page rendered with `react-dom/server`. The
+client entries mount through `website/src/mountRoot.tsx`: it hydrates
+prerendered HTML and renders from scratch in `pnpm dev` or when the root holds
+no element, as the unbuilt templates do.
+
+Both builds share one star count (`GOODBOY_STARS`), so the server and the
+client render the same button. Server and client must render the same first
+frame: a component reads the browser (`window`, `matchMedia`, storage) only in
+an effect or a handler, never while it renders. The nav takes the current
+section as a prop for the same reason. `?fidelity=<Mock>` skips hydration and
+renders the mock alone.
+
+The templates hold no title or social tags. `pageHead` in `website/src/server/`
+writes them at each template's `<!--app-head-->` mark from the page's meta (the
+home and features meta live in `website/src/server/STATIC_PAGES.ts`): title, description,
+canonical, Open Graph and X card, all from one title and one description. A
+title names what the page is for in the words people search, such as AI coding
+agent orchestrator, Claude Code, Codex, Cursor or git worktrees, in about 70
+characters; a description stays under 160.
+
+## Search and sharing
+
+- Every page ends its head with one JSON-LD `@graph`, built by
+  `website/src/server/jsonLd.ts`: the schema.org Organization and WebSite with
+  the GitHub and X profiles, the SoftwareApplication with the newest
+  snapshot's version, date and release notes link and the four download URLs,
+  then the page itself and its BreadcrumbList when it sits below the home page.
+  Mark up only what the page shows: no rating and no FAQ that isn't on the
+  page.
+- `dist/sitemap.xml` and the `/changelog.xml` feed are written by the build,
+  so a new release or doc shows up on its own. A release page's `lastmod` is
+  its snapshot date; every other page takes the newest release date. No
+  sitemap lives in `website/public/`, so there is none to edit by hand.
+- `/404` is the branded not-found page, built from the content template and
+  marked `noindex`. Vercel serves `404.html` for any path it doesn't know.
+- `vercel.json` sets `trailingSlash: false`, so `/features/` redirects to
+  `/features`, and caches `/assets/` and `/fonts/` for a year as immutable. A
+  hashed asset changes name when it changes; the font carries its version in
+  its name, so a new font file needs a new name.
 
 ## Pages
 
@@ -26,6 +74,30 @@ deployed by Vercel from `website/vercel.json`.
   from `features.data.json` in that folder. Vite builds both pages as inputs,
   `vercel.json` serves them without `.html`, and the dev and preview servers
   rewrite `/features` the same way.
+- `/changelog`, every release newest first, and `/changelog/<version>`, one
+  page per release: its date and summary from the snapshot in
+  `website/src/data/releases/`, and its New, Improved and Fixed notes from the
+  `## Goodboy v<version>` entry in `CHANGELOG.md`. `/changelog.xml` is the
+  Atom feed of the same list.
+- `/docs`, the feature guide, and `/docs/<area>`, one page per
+  `docs/features/<area>.md`, in `FEATURES.md` index order. The doc's title is
+  the h1, its first paragraph the lead, and each `###` an h2 with the same
+  anchor GitHub gives it. A few areas add the words people search to their
+  page title, from a short map in `website/src/server/CONTENT_PAGES.tsx`. Every
+  page carries breadcrumbs, a link to the same file on GitHub and its
+  neighbours.
+
+These pages exist only in the build: `website/content.html` is their one
+template, and its client entry `website/src/pages/content/main.tsx` hydrates
+the nav alone, since the rest is static. The server build reads
+`CHANGELOG.md`, `FEATURES.md` and `docs/features/` from the repo root, so
+the Vercel project must keep files outside `website/` in the build (the
+default). Markdown renders with `marked` at build time and ships no parser to
+the browser. HTML comments come out with a character scanner
+(`website/src/server/stripComments.ts`), not a regex. A doc's
+`<picture>` with a `prefers-color-scheme: dark` source becomes two lazy
+images, one per site theme, so the header toggle picks the screenshot, not the
+system (`website/src/server/themePictures.ts`). `pnpm test` runs their tests.
 
 Each cluster shows its main features, not all of them. In `features.data.json`
 every item of the guide stays in the file: 3 to 5 items per cluster carry
@@ -33,8 +105,7 @@ every item of the guide stays in the file: 3 to 5 items per cluster carry
 a phone); every other item carries an `also` noun, and the nouns of the items
 marked `shown: true` render as one plain "Also:" line of two lines at most (the
 rest live in the area files). `guides` lists one `{ area, label }` per area file, shown as
-"In the guide:" links to `docs/features/<area>.md` through
-`SITE.featureDoc(area)`. A main item must also be a main item of that area in
+"In the guide:" links to its `/docs/<area>` page through `SITE.doc(area)`. A main item must also be a main item of that area in
 the `FEATURES.md` index, and an item title is the heading (or small features
 table row) it has in the area file. Check the page fails when they drift.
 
@@ -52,7 +123,9 @@ ships no raster file.
   `usePlayOnce`. It rests on its final state under `prefers-reduced-motion`.
 - The hero mock is the one `MockStage` with `isHero`, which sets
   `data-hero-mock`. At least 380 px of it must show in the first 900 px at 1440.
-- The only images are brand assets, see [docs/brand.md](../docs/brand.md).
+- On `/` and `/features` the only images are brand assets, see
+  [docs/brand.md](../docs/brand.md). The `/docs` pages show the guide's own
+  screenshots.
 
 ## Theme
 
@@ -120,10 +193,12 @@ All in `website/src/components/`, each with its own CSS file.
   tier 3. Each hex is sourced and recorded in `brandIcons.source.json`.
 
 A "learn more" link carries `data-see-more` and points at a `/features#cluster`
-anchor. A link to a repo doc points at `FEATURES.md` or at
-`docs/features/<area>.md`, and only from a `refLink` or the footer. The nav
-marks the current page with `aria-current="page"`, in the desktop links and in
-the phone sheet alike.
+anchor. A link to a feature doc points at its page on the site,
+`/docs/<area>`, and the GitHub copy (`FEATURES.md` or
+`docs/features/<area>.md`) is the secondary link; either sits only on a
+`refLink` or in the footer. The nav receives the current section as its
+`current` prop and marks that link with `aria-current="page"`, in the desktop
+links and in the phone sheet alike.
 
 ## Phones
 
@@ -159,18 +234,26 @@ the tap holds casks and has no Linux formula. A phone has no download buttons.
 
 `pnpm check:page [url...]` drives headless Chrome over a running page (default
 `http://localhost:1499/`) at 1440, 1024, 768, 660 and 390 pixels wide, in
-both themes, at twice the pixel density. The `/` and `/features` pages both
-pass it. Tag Manager is blocked during the run.
+both themes, at twice the pixel density. With no url it checks `/`,
+`/features` and one page of each content kind; every route passes it. Tag
+Manager is blocked during the run.
+
+`/` and `/features` are the marketing pages. On the changelog, docs and 404
+pages, which hold repo docs and their screenshots, the check skips the rules
+marked "marketing pages" below and lets any link reach a `/docs/<area>` page.
 
 Rules that run on every page:
 
-- No horizontal overflow, no em dash or middot triplet in visible text, no
-  heading that ends with a period, and Inter loaded.
+- No horizontal overflow, no em dash in visible text, no heading that ends
+  with a period, and Inter loaded. Marketing pages also have no middot
+  triplet; the docs quote app labels that use one.
 - A section never runs into the next one, and its content never spills below
   it. The consent card never covers the h1.
-- No raster image in `main`: no `img` and no `picture`.
-- No shadow on a mock window or a stage, outside `data-shadow-exception`. A page
-  with no `.mockStage` fails, so the rule cannot pass by finding nothing.
+- Marketing pages: no raster image in `main`, no `img` and no `picture`.
+- No shadow on a mock window or a stage, outside `data-shadow-exception`. A
+  marketing page with no `.mockStage` fails, so the rule cannot pass by finding
+  nothing.
+- Every image that renders has loaded; an image hidden by the theme is skipped.
 - Chapters alternate tones, and no two neighbours share one. Each chapter has
   at most one eyebrow; the tour has none, its tabs do that job. An eyebrow is a `FEATURES.md` group name verbatim, or one of the
   page eyebrows listed in the script (the hero's "Free desktop ADE, built in public", "Install" and "All features").
@@ -185,12 +268,13 @@ Rules that run on every page:
   painted gradient. Add no new gradient; use a flat colour.
 - Board mock: the cards of a row, across the stage columns, differ in height by
   at most 1 px.
-- Copy: a sentence has at most 20 words, and no word repeats across an eyebrow,
+- Copy, on marketing pages: a sentence has at most 20 words, and no word repeats across an eyebrow,
   heading and lead, apart from `goodboy`, `task`, `tasks` and the function
   words `your`, `with`, `that`, `this` and `from`.
 - Links: every `data-see-more` points at a real `/features` anchor. A link to
-  `FEATURES.md` or to a `docs/features/<area>.md` file sits only on a `.refLink`
-  or in the footer, the file exists, and any anchor is a heading in it.
+  `FEATURES.md`, to a `docs/features/<area>.md` file or to its `/docs/<area>`
+  page sits only on a `.refLink` or in the footer (or anywhere on a content
+  page, for `/docs/<area>`), the file exists, and any anchor is a heading in it.
 - Works with: `[data-works-with]` sits in the first screen on `/`.
 - Download: the download buttons show on `/` with a mouse and never on a phone,
   and every `[data-download]` href starts with `/releases/download/`.
@@ -210,7 +294,8 @@ Phone run, which emulates touch:
   type to 13 px under `(hover: none) and (pointer: coarse)` in its own css or in
   `kit/kit.css`, and keeps its desktop size otherwise.
 - Every button, `.btn`, nav link and menu link is 44 px tall or more.
-- There is a visible menu button, and a visible `[data-star]` element.
+- There is a visible menu button, and on marketing pages a visible
+  `[data-star]` element.
 
 Coverage, once per run: every group in `FEATURES.md` is in a cluster of
 `features.data.json`, and every cluster has an element with its id on

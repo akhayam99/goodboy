@@ -13,7 +13,7 @@ jobs:
   build:
     name: website build
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: website
@@ -31,6 +31,9 @@ jobs:
       - name: install
         run: pnpm install --ignore-workspace --frozen-lockfile
 
+      - name: test
+        run: pnpm test
+
       - name: build
         run: pnpm build
 
@@ -40,4 +43,4 @@ jobs:
           preview_pid=$!
           trap 'kill $preview_pid' EXIT
           until curl --fail --silent http://127.0.0.1:1561/ > /dev/null; do sleep 1; done
-          CHROME_PATH="$(command -v google-chrome || command -v chromium || command -v chromium-browser)" node scripts/check-page.mjs http://127.0.0.1:1561/ http://127.0.0.1:1561/features
+          CHROME_PATH="$(command -v google-chrome || command -v chromium || command -v chromium-browser)" node scripts/check-page.mjs http://127.0.0.1:1561/ http://127.0.0.1:1561/features http://127.0.0.1:1561/docs http://127.0.0.1:1561/docs/providers http://127.0.0.1:1561/changelog http://127.0.0.1:1561/404

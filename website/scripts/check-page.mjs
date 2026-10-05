@@ -17,7 +17,15 @@ const SCRIPT_DIRECTORY = dirname(fileURLToPath(import.meta.url));
 const WEBSITE_DIRECTORY = resolve(SCRIPT_DIRECTORY, '..');
 const CHROME =
   process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const DEFAULT_URLS = ['http://localhost:1499/', 'http://localhost:1499/features'];
+const DEFAULT_URLS = [
+  'http://localhost:1499/',
+  'http://localhost:1499/features',
+  'http://localhost:1499/docs',
+  'http://localhost:1499/docs/providers',
+  'http://localhost:1499/changelog',
+  'http://localhost:1499/404',
+];
+const MARKETING_PAGES = ['home', 'features'];
 const BLOCKED_URLS = ['*googletagmanager.com*', '*google-analytics.com*'];
 const SETTLE_MS = 1200;
 const SCROLL_STEP_PX = 600;
@@ -30,6 +38,12 @@ const REPO_BLOB_PREFIX = 'https://github.com/akhayam99/goodboy/blob/main/';
 const FEATURE_GUIDE_URL = `${REPO_BLOB_PREFIX}FEATURES.md`;
 const FEATURE_DOCS_URL = `${REPO_BLOB_PREFIX}docs/features/`;
 const FEATURE_DOCS_DIRECTORY = 'docs/features';
+const SITE_DOCS_PREFIX = '/docs/';
+
+const siteDocTarget = ({ href }) => {
+  const [area, anchor] = href.slice(SITE_DOCS_PREFIX.length).split('#');
+  return [`${FEATURE_DOCS_DIRECTORY}/${area}.md`, anchor];
+};
 const SOURCE_DIRECTORY = resolve(WEBSITE_DIRECTORY, 'src');
 const STAGE_GRADIENT_TOKEN = '--g-stage-gradient';
 const BOARD_ROW_TOLERANCE_PX = 1;
@@ -268,6 +282,7 @@ const PAGE_PROBE = `(async () => {
     .filter((node) => isShadow(getComputedStyle(node).boxShadow) || getComputedStyle(node).filter.includes('drop-shadow'))
     .map((node) => String(node.className || node.tagName));
   const brokenImages = [...document.querySelectorAll('img')]
+    .filter((image) => image.getClientRects().length > 0)
     .filter((image) => !(image.complete && image.naturalWidth > 0))
     .map((image) => (image.getAttribute('src') ?? '').split('/').pop());
   const heroMock = document.querySelector('[data-hero-mock]');
@@ -518,7 +533,7 @@ const buildRulesProbe = ({ clusterIds }) => `(() => {
     }),
     seeMoreLinks: [...document.querySelectorAll('[data-see-more]')].map((node) => node.getAttribute('href')),
     guideLinks: [...document.querySelectorAll('a[href]')]
-      .filter((node) => node.getAttribute('href').startsWith(${JSON.stringify(FEATURE_GUIDE_URL)}) || node.getAttribute('href').startsWith(${JSON.stringify(FEATURE_DOCS_URL)}))
+      .filter((node) => node.getAttribute('href').startsWith(${JSON.stringify(FEATURE_GUIDE_URL)}) || node.getAttribute('href').startsWith(${JSON.stringify(FEATURE_DOCS_URL)}) || node.getAttribute('href').startsWith(${JSON.stringify(SITE_DOCS_PREFIX)}))
       .map((node) => ({
         href: node.getAttribute('href'),
         isAllowed: node.classList.contains('refLink') || node.closest('footer') !== null,
@@ -576,7 +591,7 @@ const scrollThrough = ({ evaluate }) =>
       window.scrollTo(0, y);
       await new Promise((done) => setTimeout(done, ${SCROLL_PAUSE_MS}));
     }
-    await Promise.all([...document.images].map((image) => image.decode().catch(() => null)));
+    await Promise.all([...document.images].filter((image) => image.getClientRects().length > 0).map((image) => image.decode().catch(() => null)));
     window.scrollTo(0, 0);
     return true;
   })()`);
@@ -588,6 +603,7 @@ const checkRun = ({ page, viewport, theme, probe, rules, touch, groups, clusterI
   const budget = PAGE_BUDGETS[page] ?? {};
   const pageCap = budget.heightByViewport?.[viewport.name];
   const hasDownloadUi = PAGES_WITH_DOWNLOAD.includes(page);
+  const isMarketing = MARKETING_PAGES.includes(page);
   if (!probe.isInter) {
     fail('Inter is not loaded');
   }
@@ -619,7 +635,7 @@ const checkRun = ({ page, viewport, theme, probe, rules, touch, groups, clusterI
   if (probe.hasEmDash) {
     fail('an em dash in visible text');
   }
-  if (probe.middot !== null) {
+  if (isMarketing && probe.middot !== null) {
     fail(`a middot triplet in visible text: "${probe.middot}"`);
   }
   probe.shadowed.forEach((name) => fail(`a shadow on ${name}`));
@@ -647,7 +663,7 @@ const checkRun = ({ page, viewport, theme, probe, rules, touch, groups, clusterI
       fail(`tablist has ${tablist.invalidControls} tabs without a panel`);
     }
   });
-  if (!probe.hasMockStage) {
+  if (isMarketing && !probe.hasMockStage) {
     fail('no .mockStage on the page, so the shadow rule has nothing to check');
   }
   if (viewport.isTouch === true) {
@@ -657,7 +673,7 @@ const checkRun = ({ page, viewport, theme, probe, rules, touch, groups, clusterI
     if (probe.downloads > 0) {
       fail(`${probe.downloads} download links or Homebrew blocks show on a touch device`);
     }
-    if (probe.stars === 0) {
+    if (isMarketing && probe.stars === 0) {
       fail('no Star on GitHub button on a touch device');
     }
   } else {
@@ -667,8 +683,12 @@ const checkRun = ({ page, viewport, theme, probe, rules, touch, groups, clusterI
   }
   probe.downloadHrefs
     .filter((href) => !href.startsWith(DOWNLOAD_PREFIX))
-    .forEach((href) => fail(`a data-download link goes to ${href}, not a /releases/download/ asset`));
-  rules.rasters.forEach((image) => fail(`a raster image in main: ${image}`));
+    .forEach((href) =>
+      fail(`a data-download link goes to ${href}, not a /releases/download/ asset`),
+    );
+  if (isMarketing) {
+    rules.rasters.forEach((image) => fail(`a raster image in main: ${image}`));
+  }
   probe.brokenImages.forEach((source) => fail(`${source} did not load`));
   probe.periods.forEach((text) => fail(`heading ends with a period: "${text}"`));
   probe.collisions.forEach((message) => fail(message));
@@ -722,10 +742,12 @@ const checkRun = ({ page, viewport, theme, probe, rules, touch, groups, clusterI
     .filter((eyebrow) => eyebrow.group === null)
     .filter((eyebrow) => !PAGE_EYEBROWS.includes(eyebrow.text))
     .forEach((eyebrow) => fail(`eyebrow "${eyebrow.text}" names neither a feature nor a page`));
-  rules.longSentences.forEach((message) =>
-    fail(`a sentence over ${MAX_SENTENCE_WORDS} words, ${message}`),
-  );
-  rules.copyRepeats.forEach((message) => fail(message));
+  if (isMarketing) {
+    rules.longSentences.forEach((message) =>
+      fail(`a sentence over ${MAX_SENTENCE_WORDS} words, ${message}`),
+    );
+    rules.copyRepeats.forEach((message) => fail(message));
+  }
   probe.brandPaths.forEach((mark) => {
     const source = brands.find((entry) => entry.id === mark.brand);
     if (source === undefined) {
@@ -746,10 +768,13 @@ const checkRun = ({ page, viewport, theme, probe, rules, touch, groups, clusterI
     }
   });
   rules.guideLinks.forEach((link) => {
-    if (!link.isAllowed) {
+    const isContentDocLink = !isMarketing && link.href.startsWith(SITE_DOCS_PREFIX);
+    if (!link.isAllowed && !isContentDocLink) {
       fail(`doc link ${link.href} sits outside .refLink and the footer`);
     }
-    const [path, anchor = null] = link.href.slice(REPO_BLOB_PREFIX.length).split('#');
+    const [path, anchor = null] = link.href.startsWith(SITE_DOCS_PREFIX)
+      ? siteDocTarget({ href: link.href })
+      : link.href.slice(REPO_BLOB_PREFIX.length).split('#');
     const isGuide = path === 'FEATURES.md' || /^docs\/features\/[a-z-]+\.md$/.test(path);
     if (!isGuide) {
       fail(`doc link ${link.href} is neither FEATURES.md nor a docs/features/<area>.md file`);

@@ -1,5 +1,6 @@
 {
   "version": "0.15.5",
+  "date": "2026-10-03",
   "summary": "Settings open on a home, each workspace sets which providers it runs on, finished runs fold into one row, and one composer and selection bar work everywhere.",
   "new": [
     {

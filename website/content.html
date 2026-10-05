@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      (function () {
+        var theme = null;
+        try {
+          theme = window.localStorage.getItem('goodboy-site:theme');
+        } catch (e) {
+          theme = null;
+        }
+        if (theme !== 'light' && theme !== 'dark') {
+          theme =
+            window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light';
+        }
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.style.colorScheme = theme;
+      })();
+    </script>
+
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function () {
+        window.dataLayer.push(arguments);
+      };
+      window.gtag('consent', 'default', {
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+        analytics_storage: 'denied',
+        functionality_storage: 'denied',
+        personalization_storage: 'denied',
+        security_storage: 'granted',
+        wait_for_update: 500,
+      });
+      var _iub = window._iub || [];
+      window._iub = _iub;
+      _iub.csConfiguration = {
+        siteId: 4548648,
+        cookiePolicyId: 46359357,
+        lang: 'it',
+        storage: { useSiteId: true },
+        askConsentAtCookiePolicyUpdate: true,
+        enableFadp: true,
+        enableLgpd: true,
+        fadpApplies: true,
+        perPurposeConsent: true,
+        preferenceCookie: { expireAfter: 180 },
+        floatingPreferencesButtonDisplay: false,
+        callback: {
+          onBannerShown: function () {
+            document
+              .querySelectorAll(
+                '#iubenda-cs-banner .iubenda-cs-content, #iubenda-cs-banner .iubenda-cs-opt-group',
+              )
+              .forEach(function (node) {
+                node.removeAttribute('style');
+              });
+          },
+        },
+        banner: {
+          position: 'float-bottom-left',
+          acceptButtonDisplay: true,
+          rejectButtonDisplay: true,
+          customizeButtonDisplay: true,
+          closeButtonDisplay: false,
+          explicitWithdrawal: true,
+          listPurposes: true,
+          ownerName: 'goodboy-ai.dev',
+          showTitle: false,
+          showTotalNumberOfProviders: true,
+          backgroundOverlay: false,
+        },
+      };
+    </script>
+    <script src="https://cdn.iubenda.com/cs/iubenda_cs.js" charset="UTF-8" async></script>
+
+    <!-- Google Tag Manager -->
+    <script>
+      (function (w, d, s, l, i) {
+        w[l] = w[l] || [];
+        w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+        var done = false;
+        var load = function () {
+          if (done) return;
+          try {
+            var f = d.getElementsByTagName(s)[0],
+              j = d.createElement(s),
+              dl = l != 'dataLayer' ? '&l=' + l : '';
+            j.async = true;
+            j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+            f.parentNode.insertBefore(j, f);
+            done = true;
+          } catch (e) {}
+        };
+        var schedule = function () {
+          if (w.requestIdleCallback) w.requestIdleCallback(load, { timeout: 4000 });
+          else w.setTimeout(load, 2000);
+        };
+        var opts = { once: true, passive: true };
+        var events = ['pointerdown', 'keydown', 'scroll'];
+        if (typeof w.addEventListener === 'function') {
+          for (var k = 0; k < events.length; k++) {
+            try {
+              w.addEventListener(events[k], load, opts);
+            } catch (e) {
+              w.addEventListener(events[k], load, false);
+            }
+          }
+          if (d.readyState === 'complete') schedule();
+          else w.addEventListener('load', schedule, false);
+        } else {
+          schedule();
+        }
+      })(window, document, 'script', 'dataLayer', 'GTM-5NM3VX7Q');
+    </script>
+    <!-- End Google Tag Manager -->
+
+    <link
+      rel="preload"
+      href="/fonts/InterVariable-latin-v19.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!--app-head-->
+
+    <!-- Theme / PWA hints -->
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0d0f11" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+  </head>
+  <body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript
+      ><iframe
+        src="https://www.googletagmanager.com/ns.html?id=GTM-5NM3VX7Q"
+        height="0"
+        width="0"
+        style="display: none; visibility: hidden"
+      ></iframe
+    ></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <div id="root"><!--app-html--></div>
+    <script type="module" src="/src/pages/content/main.tsx"></script>
+  </body>
+</html>

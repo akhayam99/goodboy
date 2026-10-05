@@ -1,5 +1,7 @@
 # Keyboard and terminal
 
+Drive Goodboy from the keyboard, run a shell in the session's worktree, and open the code in your own editor.
+
 ### Terminal
 
 Open a real login shell in the session's worktree. **⌘⌥T** opens the Terminal view, **⌘T** adds a tab while the terminal has the focus, and the shell is still there after a reload. **⌘F** finds in its scrollback.
