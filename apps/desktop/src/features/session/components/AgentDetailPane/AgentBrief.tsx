@@ -20,6 +20,7 @@ import { AgentAnsweringFor } from './AgentAnsweringFor';
 import { AgentBriefDelegates } from './AgentBriefDelegates';
 import { AgentBriefChildren } from './AgentBriefChildren';
 import { AgentBriefPlans } from './AgentBriefPlans';
+import { AgentBriefPullRequestText } from './AgentBriefPullRequestText';
 import { AgentBriefQuestions } from './AgentBriefQuestions';
 import { AgentBriefHandoffLine } from './AgentBriefHandoffLine';
 import { AgentFollowUps } from './AgentFollowUps';
@@ -121,6 +122,9 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
       ) : null}
       <AgentAnsweringFor sessionId={session.id} question={answeredQuestion} asker={asker} />
       <AgentBriefQuestions session={session} agent={agent} />
+      {kind === 'scribe' ? (
+        <AgentBriefPullRequestText sessionId={session.id} agentId={agent.id} />
+      ) : null}
       {shownSummary !== '' && !isSplitIntoSubagents ? (
         <Band inset="content" label={hasOutputSummary ? 'Outcome' : 'Latest'} headingLevel={2}>
           <div className="max-w-[72ch] text-body text-foreground">

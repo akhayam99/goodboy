@@ -464,12 +464,23 @@ pick it when you start the agent.
   `<<history-stuck>>`; the engine rebuilds its commits with the plan messages
   and authors, checks the count, and moves the branch itself
 - **Scribe** is hidden too: it writes text about the code and never code.
-  `Write it` in the pull request panel asks it for the title and
-  body, which fill the form for you to check before `Create PR`; it can also
+  `Write it` in the pull request panel asks it for the title and body; when
+  its first turn ends, `settleScribe` hands them to `openScribePullRequest`,
+  which calls `createPrForSession` (that pushes the branch with
+  `--set-upstream` first, for every writer: the panel, the suggestion and an
+  agent through the bridge). The work moves `writing`, `creating`, then
+  `created` with the request number, or `failed` with the reason and the text
+  kept, and `Retry` runs the same step again. It can also
   write a commit message for a squash or a reword and a changelog entry. It
   answers only with `<<pr-title>>`, `<<pr-body>>`, `<<commit-message>>` and
   `<<changelog-entry>>` blocks, runs with push blocked like History rewriter,
-  and Goodboy opens or edits the pull request itself. A body Scribe wrote
+  and Goodboy opens or edits the pull request itself. Its agent stays a
+  scribe turn after the first one: a follow-up that brings new blocks merges
+  into the proposal (a block it leaves out stays) and reaches the request
+  while the body still carries the signature. The proposal is read back from
+  the persisted transcript (`scribeProposal`), so the `Pull request text` card
+  and the Brief section survive a reload without a table of their own; only
+  the live state (`creating`, `failed`) is in memory. A body Scribe wrote
   ends with an invisible `goodboy-scribe` signature; after Goodboy pushes new
   history to the branch it rewrites the body only while that signature still
   matches, so a body you edited stays yours

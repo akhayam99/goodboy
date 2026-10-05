@@ -36,6 +36,11 @@ export type CreatePrInput = {
   readonly isScribeBody?: boolean;
 };
 
+export type CreatedPr = {
+  readonly number: number | null;
+  readonly url: string | null;
+};
+
 const PR_URL = /\/pull\/(\d+)(?:$|[?#/])/;
 
 type ParseParams = {
@@ -88,7 +93,7 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
     draft,
     referenceMode,
     isScribeBody,
-  }: CreatePrInput): Promise<void> => {
+  }: CreatePrInput): Promise<CreatedPr> => {
     const target = resolveSessionPrFetch({
       state: get(),
       sessionId,
@@ -166,6 +171,19 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
     const isDraft = draft ?? true;
     if (isDraft) {
       args.push('--draft');
+    }
+
+    const pushed = await get().pushSessionBranch({ sessionId, mountId: mount.id });
+    if (!pushed.ok) {
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'error',
+        title: "Couldn't push the branch",
+        body: pushed.error,
+        sessionId,
+        workspaceId: workspace.id,
+      });
+      throw new ReportedError(`Couldn't push ${mount.branch}: ${pushed.error}`);
     }
 
     const res = await tauriGhRunner.run(args, ghOptions);
@@ -249,5 +267,10 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
       sessionId,
       workspaceId: workspace.id,
     });
+    const isNumbered = number !== null && Number.isInteger(number);
+    return {
+      number: isNumbered ? number : (created?.number ?? null),
+      url: url ?? created?.url ?? null,
+    };
   };
 };

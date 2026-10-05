@@ -13,7 +13,7 @@ import {
   Skeleton,
   Textarea,
 } from '@goodboy/ui';
-import { AlertTriangle, ArrowRight, GitBranch, PenLine } from 'lucide-react';
+import { AlertTriangle, ArrowRight, GitBranch, PenLine, RotateCw } from 'lucide-react';
 import { ghBaseBranches } from '../../github';
 import { usePrDraftAgentRunning } from '../../usePrDraftAgentRunning';
 import { closingIssueReferences } from '../../closingIssueReferences';
@@ -85,31 +85,45 @@ export const CreatePrPanel = ({
   const [agentConfig, setAgentConfig] = useState<AgentSpawnConfigValue>(resolvedAgentConfig);
   const [agentConfigUserTouched, setAgentConfigUserTouched] = useState(false);
   const [scribeBody, setScribeBody] = useState<string | null>(null);
+  const [hasAskedScribe, setHasAskedScribe] = useState(false);
   const requestScribe = useAppStore((s) => s.requestScribe);
+  const openScribePullRequest = useAppStore((s) => s.openScribePullRequest);
   const scribeMountId = mountId ?? repo?.mountId ?? null;
+  const scribeKey =
+    scribeMountId === null ? null : scribeKeyOf({ mountId: scribeMountId, kind: 'pr' });
   const scribeWork = useAppStore((s) =>
-    scribeMountId === null
-      ? null
-      : (s.scribeWork[scribeKeyOf({ mountId: scribeMountId, kind: 'pr' })] ?? null),
+    scribeKey === null ? null : (s.scribeWork[scribeKey] ?? null),
   );
   const isScribeWriting = scribeWork?.status === 'writing';
-  const scribeOutput = scribeWork?.status === 'ready' ? scribeWork.output : null;
+  const isScribeOpening = scribeWork?.status === 'creating';
+  const isScribeBusy = isScribeWriting || isScribeOpening;
+  const keptOutput = scribeWork?.status === 'failed' ? scribeWork.output : null;
   const scribeFailure = scribeWork?.status === 'failed' ? scribeWork.error : null;
-  const changelogEntry = scribeOutput?.changelogEntry ?? null;
+  const canRetry =
+    keptOutput !== null && (keptOutput.prTitle !== null || keptOutput.prBody !== null);
+  const changelogEntry = keptOutput?.changelogEntry ?? null;
 
   useEffect(() => {
-    if (scribeOutput === null) {
+    if (keptOutput === null) {
       return;
     }
-    if (scribeOutput.prTitle !== null) {
-      setTitle(scribeOutput.prTitle);
+    if (keptOutput.prTitle !== null) {
+      setTitle(keptOutput.prTitle);
     }
-    if (scribeOutput.prBody !== null) {
-      setBody(scribeOutput.prBody);
-      setScribeBody(scribeOutput.prBody);
+    if (keptOutput.prBody !== null) {
+      setBody(keptOutput.prBody);
+      setScribeBody(keptOutput.prBody);
     }
     setMode('manual');
-  }, [scribeOutput]);
+  }, [keptOutput]);
+
+  useEffect(() => {
+    if (!hasAskedScribe || scribeWork?.status !== 'created') {
+      return;
+    }
+    setHasAskedScribe(false);
+    onCreated();
+  }, [hasAskedScribe, onCreated, scribeWork?.status]);
 
   const branchOptions = useMemo<ReadonlyArray<LocalBranchInfo>>(
     () => branches.map((name) => ({ name, inUse: false, hasUncommitted: false })),
@@ -161,7 +175,7 @@ export const CreatePrPanel = ({
   }, [projectId, projectRoot, workspaceId]);
 
   const onCreate = async () => {
-    if (busy !== null || isDraftAgentRunning || isScribeWriting || title.trim().length === 0) {
+    if (busy !== null || isDraftAgentRunning || isScribeBusy || title.trim().length === 0) {
       return;
     }
     setBusy('create');
@@ -184,12 +198,22 @@ export const CreatePrPanel = ({
     }
   };
 
+  const onRetry = () => {
+    if (scribeKey === null || busy !== null || isScribeBusy) {
+      return;
+    }
+    setError(null);
+    setHasAskedScribe(true);
+    void openScribePullRequest({ key: scribeKey });
+  };
+
   const onCreateWithAi = async () => {
-    if (busy !== null || isDraftAgentRunning || isScribeWriting || scribeMountId === null) {
+    if (busy !== null || isDraftAgentRunning || isScribeBusy || scribeMountId === null) {
       return;
     }
     setBusy('ai');
     setError(null);
+    setHasAskedScribe(true);
     try {
       await requestScribe({
         sessionId,
@@ -199,6 +223,7 @@ export const CreatePrPanel = ({
           closedPrNumber: closedPr?.number ?? null,
           references: references.map((reference) => reference.line),
           isDraft: draft,
+          base: base.trim() === '' ? null : base.trim(),
         },
         hint: agentConfig.hint,
         routing: {
@@ -230,7 +255,7 @@ export const CreatePrPanel = ({
           <section className="flex flex-col">
             <SectionHeader
               label="How"
-              hint="Fill the pull request yourself, or let Scribe write the title and description for you to check."
+              hint="Fill the pull request yourself, or let Scribe write it and open it for you."
               action={
                 <SegmentedTabs
                   ariaLabel="Creation mode"
@@ -290,7 +315,7 @@ export const CreatePrPanel = ({
               <FieldRow
                 label="Agent"
                 layout="stacked"
-                help="Routing and optional notes for Scribe. It writes the title and description, never code, and you open the pull request."
+                help="Routing and optional notes for Scribe. It writes the title and description, never code. Goodboy then pushes the branch and opens the pull request."
               >
                 <AgentSpawnConfig
                   value={agentConfig}
@@ -360,10 +385,17 @@ export const CreatePrPanel = ({
                   Scribe is writing the title and description.
                 </span>
               )}
+              {error == null && isScribeOpening && (
+                <span className="inline-flex min-w-0 items-center gap-2 truncate text-label text-muted-foreground">
+                  <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+                  Pushing the branch and opening the pull request.
+                </span>
+              )}
               {error == null && scribeFailure !== null && (
                 <span
-                  role="status"
-                  className="inline-flex min-w-0 items-center gap-1 truncate text-label text-warning"
+                  role="alert"
+                  className="inline-flex min-w-0 items-center gap-1 truncate text-label text-danger"
+                  title={scribeFailure}
                 >
                   <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
                   {scribeFailure}
@@ -399,11 +431,22 @@ export const CreatePrPanel = ({
               Cancel
             </Button>
           )}
+          {canRetry && (
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={onRetry}
+              disabled={busy !== null || isScribeBusy}
+            >
+              <RotateCw size={ICON_SIZE.row} aria-hidden />
+              Retry
+            </Button>
+          )}
           {mode === 'manual' ? (
             <Button
               onClick={() => void onCreate()}
               disabled={
-                busy !== null || isDraftAgentRunning || isScribeWriting || title.trim().length === 0
+                busy !== null || isDraftAgentRunning || isScribeBusy || title.trim().length === 0
               }
             >
               {busy === 'create' ? (
@@ -419,15 +462,17 @@ export const CreatePrPanel = ({
             <Button
               onClick={() => void onCreateWithAi()}
               disabled={
-                busy !== null || isDraftAgentRunning || isScribeWriting || scribeMountId === null
+                busy !== null || isDraftAgentRunning || isScribeBusy || scribeMountId === null
               }
             >
               {busy === 'ai' || isScribeWriting ? (
                 <span className="text-shimmer">Writing…</span>
+              ) : isScribeOpening ? (
+                <span className="text-shimmer">Opening…</span>
               ) : (
                 <>
                   <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden />
-                  Write it
+                  Write and open
                 </>
               )}
             </Button>

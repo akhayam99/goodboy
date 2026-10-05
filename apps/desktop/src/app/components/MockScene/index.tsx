@@ -165,6 +165,9 @@ import { PlannerTranscriptDrawerScene } from './scenes/PlannerTranscriptDrawerSc
 import { PlannerTranscriptExpandedScene } from './scenes/PlannerTranscriptExpandedScene';
 import { PlannerTranscriptReplacedScene } from './scenes/PlannerTranscriptReplacedScene';
 import { PlannerTranscriptRevisingScene } from './scenes/PlannerTranscriptRevisingScene';
+import { ScribeProposalCreatingScene } from './scenes/ScribeProposalCreatingScene';
+import { ScribeProposalFailedScene } from './scenes/ScribeProposalFailedScene';
+import { ScribeProposalTranscriptScene } from './scenes/ScribeProposalTranscriptScene';
 import { FixRunScene } from './scenes/FixRunScene';
 import { ReportSheetHost } from '../../../features/bug-report/components/ReportSheetHost';
 import { CrashReportScene, useReportSheetParam } from './scenes/audit/ReportScenes';
@@ -326,6 +329,9 @@ export const MOCK_SCENES = {
   'planner-transcript-replaced': PlannerTranscriptReplacedScene,
   'planner-transcript-drawer': PlannerTranscriptDrawerScene,
   'planner-transcript-expanded': PlannerTranscriptExpandedScene,
+  'scribe-proposal-creating': ScribeProposalCreatingScene,
+  'scribe-proposal-failed': ScribeProposalFailedScene,
+  'scribe-proposal-transcript': ScribeProposalTranscriptScene,
   'fix-run': FixRunScene,
   'crash-report': CrashReportScene,
 };

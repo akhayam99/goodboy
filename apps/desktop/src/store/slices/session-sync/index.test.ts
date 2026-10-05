@@ -224,6 +224,7 @@ const harness = ({
     recordSessionEventOnce: vi.fn(async () => undefined),
     emitNotification: vi.fn(async () => undefined),
     editPr: vi.fn(async () => undefined),
+    pushSessionBranch: vi.fn(async () => ({ ok: true })),
     loadSessionMounts: vi.fn(async () => []),
     refreshSessionMr: vi.fn(async () => undefined),
     refreshSessionBitbucketPr: vi.fn(async () => undefined),

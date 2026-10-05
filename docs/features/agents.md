@@ -98,7 +98,7 @@ Run a plan part by part. An implementer given a plan splits into one sub-agent p
 
 ### History rewriter and Scribe
 
-Let two helpers work on your history and your pull request text without the power to push. Their git points at a push address that goes nowhere, and their GitHub tokens are removed.
+Let two helpers work on your history and your pull request text without the power to push. Their git points at a push address that goes nowhere, and their GitHub tokens are removed. When the Scribe writes a pull request, its page shows the text as **Pull request text**, in the transcript and in the Brief, with **Creating**, **Created #N** or **Failed** and a **Retry**. A later question to the Scribe does not erase it.
 
 ### One language per session
 

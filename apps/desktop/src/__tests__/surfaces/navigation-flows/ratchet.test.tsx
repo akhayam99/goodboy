@@ -84,6 +84,7 @@ const EXEMPT: Readonly<Record<string, string>> = {
   openResolveDiff: 'resolve queue control, covered by the resolve flows in main-flows',
   openStorageArtifact:
     'storage rows list artifacts read from disk, which the bridge mock has none of',
+  openScribePullRequest: 'the engine pushing and opening the pull request, not a page',
 };
 
 describe('navigation flow table ratchet', () => {
