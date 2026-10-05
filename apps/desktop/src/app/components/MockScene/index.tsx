@@ -42,6 +42,7 @@ import { BoardShellScene } from './scenes/BoardShellScene';
 import {
   ArtifactGeneratingScene,
   ArtifactReportScene,
+  ArtifactPlanCommentsScene,
   ArtifactWireframeHighScene,
   ArtifactWireframeLowScene,
 } from './scenes/ArtifactScenes';
@@ -203,6 +204,7 @@ export const MOCK_SCENES = {
   'transcript-mount': TranscriptMountScene,
   'board-shell': BoardShellScene,
   'artifact-report': ArtifactReportScene,
+  'artifact-plan-comments': ArtifactPlanCommentsScene,
   'artifact-wireframe-low': ArtifactWireframeLowScene,
   'artifact-wireframe-high': ArtifactWireframeHighScene,
   'artifact-generating': ArtifactGeneratingScene,
