@@ -15,13 +15,13 @@ import { segmentsToText, sessionEventLabel } from './sessionEventPresentation';
 
 export type NeedsYouOwnerKind = 'fixRun' | 'run' | 'agent' | 'question' | 'rebase';
 
-export type FixRunTarget = {
+type FixRunTarget = {
   readonly threadId: string;
   readonly mountId: MountId | null;
   readonly rank: number;
 };
 
-export type FixRunOwed = {
+type FixRunOwed = {
   readonly questions: number;
   readonly toReview: number;
   readonly couldntFix: number;

@@ -7,7 +7,7 @@ import {
 import type { ReviewCommentState } from '../../resolve/reviewCommentState';
 import type { RowState, RowStateReason } from '../../workTreeModel/rowState';
 
-export type ResolveThreadFact = {
+type ResolveThreadFact = {
   readonly threadId: string;
   readonly state: ReviewCommentState;
   readonly path: string | null;
@@ -23,7 +23,7 @@ export type ResolveActivityFacts = {
   readonly runTitle?: string;
 };
 
-export const fixRunActivityTitle = ({
+const fixRunActivityTitle = ({
   total,
   prNumber,
 }: {
@@ -42,7 +42,7 @@ const ATTENTION_STATES: ReadonlySet<ReviewCommentState> = new Set([
   'failed',
 ]);
 
-export const isResolveAttention = ({ state }: { readonly state: ReviewCommentState }): boolean =>
+const isResolveAttention = ({ state }: { readonly state: ReviewCommentState }): boolean =>
   ATTENTION_STATES.has(state);
 
 export const resolverRowState = ({ facts }: { readonly facts: ResolveActivityFacts }): RowState => {
@@ -156,7 +156,7 @@ const factsOfAttempt = ({
   };
 };
 
-export const latestAttemptByAgentId = ({
+const latestAttemptByAgentId = ({
   attempts,
 }: {
   readonly attempts: ReadonlyArray<ResolveAttemptLike>;

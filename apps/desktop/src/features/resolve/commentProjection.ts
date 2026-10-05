@@ -45,7 +45,7 @@ const SUB_LABEL: Readonly<Record<Exclude<ResolveSub, 'resolved_remote'>, string>
   pushed: 'Pushed',
 };
 
-export const RESOLVE_WORD_OF_STATE: Readonly<Record<ReviewCommentState, ResolveWord>> = {
+const RESOLVE_WORD_OF_STATE: Readonly<Record<ReviewCommentState, ResolveWord>> = {
   new: 'open',
   drafting: 'working',
   needs: 'needs_you',

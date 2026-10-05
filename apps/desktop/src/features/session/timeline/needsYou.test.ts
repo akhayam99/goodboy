@@ -5,7 +5,9 @@ import { DONE_ROW_STATE, type RowState } from '../../workTreeModel/rowState';
 import type { TimelineTopLevelEntry } from './buildTimelineGroups';
 import type { TimelineStreamItem } from './buildTimelineStream';
 import { needsYouOwners } from './needsYou';
-import type { ResolveActivityFacts, ResolveThreadFact } from './resolveActivity';
+import type { ResolveActivityFacts } from './resolveActivity';
+
+type ResolveThreadFact = NonNullable<ResolveActivityFacts['threads']>[number];
 
 const ASKING: RowState = {
   phase: 'waiting',

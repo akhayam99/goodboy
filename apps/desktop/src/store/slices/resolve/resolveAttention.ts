@@ -1,22 +1,24 @@
 import type { ResolveAttempt, ResolveThread } from '@goodboy/types';
 import { causeOfAttempt } from '../../../features/resolve/failureSentence';
+import type { EmitNotificationParams } from '../notifications/emitNotification';
 
 export type ResolveAttention = {
   readonly needsYou: number;
   readonly couldntFix: number;
 };
 
-export const NO_RESOLVE_ATTENTION: ResolveAttention = { needsYou: 0, couldntFix: 0 };
+type AttentionThread = Pick<ResolveThread, 'state' | 'stateReason' | 'activeAttemptId'>;
+type AttentionAttempt = Pick<ResolveAttempt, 'id' | 'failureCause' | 'phase'>;
 
-const isPushFailure = ({ thread }: { readonly thread: ResolveThread }): boolean =>
+const isPushFailure = ({ thread }: { readonly thread: AttentionThread }): boolean =>
   thread.stateReason?.startsWith('publication_failed:') === true;
 
 export const resolveAttentionOf = ({
   threads,
   attempts,
 }: {
-  readonly threads: ReadonlyArray<ResolveThread>;
-  readonly attempts: ReadonlyArray<ResolveAttempt>;
+  readonly threads: ReadonlyArray<AttentionThread>;
+  readonly attempts: ReadonlyArray<AttentionAttempt>;
 }): ResolveAttention => {
   const attemptById = new Map(attempts.map((attempt) => [attempt.id, attempt]));
   let needsYou = 0;
@@ -38,13 +40,39 @@ export const resolveAttentionOf = ({
   return { needsYou, couldntFix };
 };
 
-export const resolveAttentionRaised = ({
+export const resolveAttentionNotices = ({
   before,
   after,
+  sessionId,
 }: {
   readonly before: ResolveAttention;
   readonly after: ResolveAttention;
-}): { readonly needsYou: boolean; readonly couldntFix: boolean } => ({
-  needsYou: after.needsYou > before.needsYou,
-  couldntFix: after.couldntFix > before.couldntFix,
-});
+  readonly sessionId: NonNullable<EmitNotificationParams['sessionId']>;
+}): ReadonlyArray<EmitNotificationParams> => [
+  ...(after.needsYou > before.needsYou
+    ? [
+        {
+          kind: 'error',
+          severity: 'warning',
+          title: 'A fix run needs you',
+          body: `${after.needsYou === 1 ? '1 comment waits' : `${after.needsYou} comments wait`} for your answer.`,
+          sessionId,
+          action: { kind: 'open-activity', sessionId },
+          coalesceKey: `fix-run-needs-you:${sessionId}`,
+        } satisfies EmitNotificationParams,
+      ]
+    : []),
+  ...(after.couldntFix > before.couldntFix
+    ? [
+        {
+          kind: 'error',
+          severity: 'warning',
+          title: `A fix run couldn't fix ${after.couldntFix === 1 ? 'a comment' : `${after.couldntFix} comments`}`,
+          body: 'Retry it in the run or start over from the Comments tab.',
+          sessionId,
+          action: { kind: 'open-activity', sessionId },
+          coalesceKey: `fix-run-couldnt-fix:${sessionId}`,
+        } satisfies EmitNotificationParams,
+      ]
+    : []),
+];
