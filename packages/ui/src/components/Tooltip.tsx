@@ -11,10 +11,13 @@ export type TooltipProps = {
   variant?: TooltipVariant;
   side?: TooltipSide;
   anchorClassName?: string;
+  restDelayMs?: number;
+  isOpen?: boolean;
   children: React.ReactElement<{
     ref?: React.Ref<HTMLElement>;
     disabled?: boolean;
     onMouseEnter?: React.MouseEventHandler;
+    onMouseMove?: React.MouseEventHandler;
     onMouseLeave?: React.MouseEventHandler;
     onFocus?: React.FocusEventHandler;
     onBlur?: React.FocusEventHandler;
@@ -22,6 +25,8 @@ export type TooltipProps = {
 };
 
 const GAP = 6;
+
+const DEFAULT_DELAY_MS = 400;
 
 const assignRef = <T,>(ref: React.Ref<T> | undefined, value: T | null): void => {
   if (typeof ref === 'function') {
@@ -109,9 +114,13 @@ export const Tooltip = ({
   variant = 'label',
   side = 'top',
   anchorClassName,
+  restDelayMs,
+  isOpen = false,
   children,
 }: TooltipProps) => {
-  const [visible, setVisible] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const visible = isHovered || isOpen;
+  const isRestRequired = restDelayMs !== undefined;
   const [coords, setCoords] = useState<Coords | null>(null);
   const delayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const anchorRef = useRef<HTMLElement>(null);
@@ -129,14 +138,28 @@ export const Tooltip = ({
     clearDelay();
     delayRef.current = setTimeout(() => {
       delayRef.current = null;
-      setVisible(true);
-    }, 400);
+      setIsHovered(true);
+    }, restDelayMs ?? DEFAULT_DELAY_MS);
   };
 
   const hide = () => {
     clearDelay();
-    setVisible(false);
+    setIsHovered(false);
     setCoords(null);
+  };
+
+  const rest = () => {
+    if (!isRestRequired || isHovered) {
+      return;
+    }
+    show();
+  };
+
+  const focus = () => {
+    if (isRestRequired) {
+      return;
+    }
+    show();
   };
 
   useEffect(() => clearDelay, []);
@@ -190,8 +213,9 @@ export const Tooltip = ({
         anchorClassName,
       )}
       onMouseEnter={show}
+      onMouseMove={rest}
       onMouseLeave={hide}
-      onFocus={show}
+      onFocus={focus}
       onBlur={hide}
     >
       {cloneElement(children, { ref: mergedRef })}
@@ -203,12 +227,16 @@ export const Tooltip = ({
         show();
         children.props.onMouseEnter?.(e);
       },
+      onMouseMove: (e: React.MouseEvent) => {
+        rest();
+        children.props.onMouseMove?.(e);
+      },
       onMouseLeave: (e: React.MouseEvent) => {
         hide();
         children.props.onMouseLeave?.(e);
       },
       onFocus: (e: React.FocusEvent) => {
-        show();
+        focus();
         children.props.onFocus?.(e);
       },
       onBlur: (e: React.FocusEvent) => {

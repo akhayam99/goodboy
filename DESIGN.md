@@ -273,7 +273,10 @@ about its effect is a worse defect than one that reads badly.
   select, a field saved on blur) saves silently, like VS Code and Linear
   settings.
 - **Chips carry a word.** Use icon-only chips only where there is truly no
-  space, and then keep the label as a tooltip.
+  space, and then keep the label as a tooltip. The one standing exception is
+  the role of an agent on an Activity row: a tinted glyph chip before the
+  title, with its word in the hover card and in the accessible name, because
+  the same role would otherwise repeat down every row of a run.
 - **Empty means no active item.** A lens with nothing running keeps its empty
   state, even after a completed group is shown under it. Its primary action
   moves to the header only when there is live work. The copy matches: an empty

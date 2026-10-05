@@ -115,11 +115,24 @@ A kind always renders through `AgentKindChip`
 (`shared/components/AgentKindChip`), one tinted recipe at two densities:
 
 - `label` (default): the app `Chip` at `3xs`, tinted in the kind tone, with
-  the kind glyph and the name, hugging its word (tree rows, the timeline, step
-  and library cards, question rows, the spend list, the quick actions). `label`
-  can change the text where a surface names the role instead of the kind.
-- `glyph`: the kind glyph alone in its tinted circle, with the label in a
-  tooltip, for dense strips such as preset cards.
+  the kind glyph and the name, hugging its word (tree rows, step and library
+  cards, question rows, the spend list, the quick actions). `label` can change
+  the text where a surface names the role instead of the kind.
+- `glyph`: the kind glyph alone in an 18px tinted circle, with the label in a
+  tooltip and the accessible name, for dense strips such as preset cards. It
+  is also the role mark of every agent row in the Activity feed (launch, step,
+  subagent and chained child), before the title and at every row width. The
+  word, with the step position, the model and the effort, lives in the hover
+  card that opens after the pointer rests 800ms on the glyph (`i` on the
+  focused row opens it) and in the accessible name of the row ("Implementer,
+  Sonnet 5.5, High"). A step with no role, whose name no role fits, draws no
+  glyph: a guessed Generalist is worse than none.
+
+A workflow row in the feed carries the same circle in a neutral tint with the
+glyph of its origin, `LayoutTemplate` for a preset, `PenLine` for a custom
+workflow and `Network` for an orchestrated one, and never the word Workflow.
+The scouts', reviewers' and testers' tints sit close together, so the shape of
+the icon has to carry the difference, not the colour.
 
 A picker that already prints the kind name (the role select, the create-agent
 tiles) leads with the bare kind glyph in the kind tone instead of a chip.

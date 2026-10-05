@@ -1,18 +1,21 @@
-import { useContext } from 'react';
+import { useContext, useMemo } from 'react';
 import { useObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
 import type { EffortLevel, ProviderId, RoleModelPreferences, SessionId } from '@goodboy/types';
+import { formatUsd } from '@goodboy/ui';
 import type { MountDiffStat } from '../../../../../../store';
 import { useRoutingScope } from '../../../../../../shared/hooks/useRoutingScope';
 import { WorkTimeContext } from '../../../../../workTreeModel/workTimeSource';
 import type { TimelineOpenTarget } from '../../../../hooks/useTimelineOpen';
 import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
-import { runStepProgress } from '../../../../timeline/runStepProgress';
+import { modelsSummary, runRanModels } from '../../../../timeline/ranModels';
 import { runWorkTime } from '../../../../timeline/runWorkTime';
 import type { RailRow } from '../../../../../workTreeModel/railGeometry';
+import { RunIdentityCard } from './RunIdentityCard';
+import { TimelineModelCell } from './TimelineModelCell';
 import type { TimelineLaneTarget } from './TimelineRail';
+import { TimelineRowMeta } from './TimelineRowMeta';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
-import { TimelineRunMeta } from './TimelineRunMeta';
 import { TimelineStreamRow, type TimelineRowAction } from './TimelineStreamRow';
 
 type Props = {
@@ -64,6 +67,16 @@ export const TimelineRunStreamRow = ({
           sessionEffort,
           scope,
         });
+  const spans = source?.spans;
+  const summary = useMemo(
+    () =>
+      modelsSummary({
+        models: spans === undefined ? [] : runRanModels({ spans, runId: entry.run.id }),
+        isRun: true,
+      }),
+    [spans, entry.run.id],
+  );
+  const cost = costUsd > 0 ? formatUsd(costUsd) : null;
   return (
     <TimelineStreamRow
       item={item}
@@ -73,7 +86,19 @@ export const TimelineRunStreamRow = ({
       openTarget={openTarget}
       action={action}
       diffStat={diffStat}
-      meta={<TimelineRunMeta progress={runStepProgress({ entry })} time={time} costUsd={costUsd} />}
+      identity={{ hasGlyph: true, summary: null, card: <RunIdentityCard entry={entry} /> }}
+      meta={
+        <TimelineRowMeta
+          model={
+            <TimelineModelCell
+              summary={summary}
+              card={summary === null ? null : <RunIdentityCard entry={entry} isModelsOnly />}
+            />
+          }
+          time={time ?? null}
+          cost={cost}
+        />
+      }
       state={
         <TimelineRowStateLine
           state={item.rowState}
