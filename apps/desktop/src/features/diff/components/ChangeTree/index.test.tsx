@@ -40,6 +40,12 @@ const renderTree = (overrides: Partial<Parameters<typeof ChangeTree>[0]> = {}) =
 afterEach(cleanup);
 
 describe('ChangeTree', () => {
+  it('ends with a single line that teaches the keys', () => {
+    renderTree();
+
+    expect(screen.getByText('J K move · V viewed · N next unviewed')).toBeDefined();
+  });
+
   it('shows folders with their file counts and sums, files with their status letter', () => {
     renderTree();
 

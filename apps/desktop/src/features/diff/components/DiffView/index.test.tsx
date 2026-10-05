@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { FileDiff, IsoDateTime } from '@goodboy/types';
 import { DiffView } from '.';
 import type { DiffComments, DiffThread } from './types';
@@ -302,7 +302,7 @@ describe('DiffView comments', () => {
 });
 
 describe('DiffView navigation', () => {
-  it('reports the file it lands on', () => {
+  it('reports the file it lands on', async () => {
     const onActivePathChange = vi.fn();
     const { rerender } = render(
       <DiffView files={[LEDGER, RELAY]} onActivePathChange={onActivePathChange} />,
@@ -314,23 +314,7 @@ describe('DiffView navigation', () => {
         focusPath={RELAY.path}
       />,
     );
-    fireEvent.keyDown(window, { code: 'BracketRight', key: ']' });
-    expect(onActivePathChange).toHaveBeenCalledWith(RELAY.path);
-  });
-
-  it('moves between files with [ and ]', () => {
-    render(<DiffView files={[LEDGER, RELAY]} />);
-    const scroll = Element.prototype.scrollIntoView as ReturnType<typeof vi.fn>;
-    scroll.mockClear();
-    fireEvent.keyDown(window, { code: 'BracketRight', key: ']' });
-    expect(scroll).toHaveBeenCalledTimes(1);
-    expect((scroll.mock.contexts[0] as HTMLElement).getAttribute('data-file-path')).toBe(
-      RELAY.path,
-    );
-    fireEvent.keyDown(window, { code: 'BracketLeft', key: '[' });
-    expect((scroll.mock.contexts[1] as HTMLElement).getAttribute('data-file-path')).toBe(
-      LEDGER.path,
-    );
+    await waitFor(() => expect(onActivePathChange).toHaveBeenCalledWith(RELAY.path));
   });
 
   describe('landing with estimated heights', () => {
@@ -410,44 +394,29 @@ describe('DiffView navigation', () => {
       expect(headerTop(MANY[3]?.path ?? '')).toBe(0);
     });
 
-    it('steps with ] from the picked file', () => {
+    it('lands the next file header at the top after the picked one', () => {
       const view = render(<DiffView files={MANY} />);
       pickIn(view, 17);
-      fireEvent.keyDown(window, { code: 'BracketRight', key: ']' });
-      act(() => {
-        vi.advanceTimersByTime(1000);
-      });
+      pickIn(view, 18);
       expect(headerTop(MANY[18]?.path ?? '')).toBe(0);
     });
   });
 
-  it('ignores shortcuts while typing', () => {
-    render(<DiffView files={[LEDGER, RELAY]} comments={commentsWith([])} />);
-    fireEvent.keyDown(screen.getByRole('button', { name: 'Comment on new line 39' }), {
-      key: 'Enter',
-    });
-    const scroll = Element.prototype.scrollIntoView as ReturnType<typeof vi.fn>;
-    scroll.mockClear();
-    fireEvent.keyDown(screen.getByRole('textbox'), { code: 'BracketRight', key: ']' });
-    expect(scroll).not.toHaveBeenCalled();
-  });
-
-  it('keeps the peek free of the toolbar and shortcuts', () => {
+  it('keeps the peek free of the toolbar', () => {
     render(<DiffView files={[LEDGER, RELAY]} presentation="peek" />);
-    const scroll = Element.prototype.scrollIntoView as ReturnType<typeof vi.fn>;
-    scroll.mockClear();
     expect(screen.queryByRole('button', { name: /Wrap/ })).toBeNull();
-    fireEvent.keyDown(window, { code: 'BracketRight', key: ']' });
-    expect(scroll).not.toHaveBeenCalled();
   });
 });
 
 describe('DiffView file renders', () => {
-  it('leaves the file bodies alone when only the active file changes', () => {
-    render(<DiffView files={[LEDGER, RELAY]} />);
+  it('leaves the file bodies alone when only the active file changes', async () => {
+    const { rerender } = render(<DiffView files={[LEDGER, RELAY]} />);
     fileRenders.current = 0;
 
-    fireEvent.keyDown(window, { code: 'BracketRight', key: ']' });
+    rerender(<DiffView files={[LEDGER, RELAY]} focusPath={RELAY.path} />);
+    await act(async () => {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+    });
 
     expect(fileRenders.current).toBe(0);
   });

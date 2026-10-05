@@ -1,4 +1,4 @@
-import { useCallback, useMemo, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { PencilLine } from 'lucide-react';
 import { Button, ErrorStrip, LensEmptyState, PageColumn, Skeleton, formatError } from '@goodboy/ui';
 import type { DiffView as DiffViewKind, SessionId } from '@goodboy/types';
@@ -8,6 +8,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/compo
 import { openFileInWorkspace } from '../../../../shared/lib/editor';
 import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
 import { DiffViewSelector } from '../../../permissions/components/DiffViewSelector';
+import { useDiffKeys } from '../../hooks/useDiffKeys';
 import { useReviewState } from '../../hooks/useReviewState';
 import type { SessionDiff } from '../../hooks/useSessionDiff';
 import { ChangeTree } from '../ChangeTree';
@@ -71,8 +72,38 @@ export const SessionDiffPane = ({
     selectMountBaseBranch({ state: s, sessionId, path: worktreePath }),
   );
 
+  const [treeOpen, setTreeOpen] = useState(true);
+  const asideRef = useRef<HTMLElement | null>(null);
+  const focusPending = useRef(false);
+
+  const focusTreeRow = useCallback(() => {
+    const rows = asideRef.current?.querySelectorAll<HTMLElement>('button') ?? [];
+    const current = asideRef.current?.querySelector<HTMLElement>('[aria-current="true"]');
+    (current ?? rows[0])?.focus();
+  }, []);
+
+  const toggleTree = useCallback(() => setTreeOpen((open) => !open), []);
+
+  const focusTree = useCallback(() => {
+    if (treeOpen) {
+      focusTreeRow();
+      return;
+    }
+    focusPending.current = true;
+    setTreeOpen(true);
+  }, [focusTreeRow, treeOpen]);
+
+  useEffect(() => {
+    if (treeOpen && focusPending.current) {
+      focusPending.current = false;
+      focusTreeRow();
+    }
+  }, [focusTreeRow, treeOpen]);
+
   const isEmpty = !diff.loading && diff.error === null && diff.files.length === 0;
   const hasTree = !diff.loading && diff.error === null && diff.files.length > 0;
+
+  useDiffKeys({ enabled: hasTree, review, onToggleTree: toggleTree, onFocusTree: focusTree });
 
   const openInEditor = useCallback(
     async (filePath: string) => {
@@ -188,10 +219,16 @@ export const SessionDiffPane = ({
     />
   );
 
+  const showTree = hasTree && treeOpen;
+
   return (
     <div className="flex min-h-0 min-w-0 flex-1">
-      {hasTree && (
-        <aside aria-label="Files" className="hidden min-h-0 w-[280px] shrink-0 pl-3 @4xl:flex">
+      {showTree && (
+        <aside
+          ref={asideRef}
+          aria-label="Files"
+          className="hidden min-h-0 w-[280px] shrink-0 pl-3 @4xl:flex"
+        >
           <ChangeTree
             tree={review.tree}
             activePath={review.activePath}

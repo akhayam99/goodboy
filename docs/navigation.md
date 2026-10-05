@@ -935,8 +935,8 @@ Goodboy chip never hides. Past that the glyph strip scrolls.
 
 There is one registry with three modifier planes: bare ⌘ for the app, ⌘⇧ for
 the session, ⌘⌥ for the lens surfaces. A fourth, `pane`, holds plain keys a
-surface answers while it is on screen: the diff's [ and ] (previous and next
-file). Nobody writes a combo string by hand
+surface answers while it is on screen: the diff's J and K (next and previous
+file), H and L, V, N, F and /. Nobody writes a combo string by hand
 outside the registry. So no two surfaces can claim the same chord, and no
 shortcut can exist without being documented. That holds for per-OS combos
 too. An entry carries its own combo for other systems where the plain mapping
@@ -1794,11 +1794,19 @@ its `gitdir` names exactly that reserved copy, never the copy's own `.git`.
 Codex rewriter turns also lose write access to the temp folders. `Branch vs main` sits in the file
 toolbar under the title, with `N files +N -M`, because it decides which files
 you see, not what you do to the branch. The file toolbar row holds `Unified | Split` and `Wrap` (on by default,
-saved as `goodboy:diff-wrap`; split always wraps). `[` and `]` go to the
-previous and next file. A jump is instant, not smooth: file bodies keep
+saved as `goodboy:diff-wrap`; split always wraps). The diff scope has its own
+keys, wired by `useDiffKeys` in `SessionDiffPane`, all in tree order (folders
+first) and never while typing in a field: `J` and `K` go to the next and
+previous file and skip the files of a closed folder, `[` and `]` are aliases;
+`H` closes and `L` opens the folder of the file in view; `V` marks that file
+viewed and goes to the next unviewed one; `N` goes to the next unviewed file,
+wrapping to the first; `F` puts focus on the tree; `/` asks for the filter field
+through `requestFilterFocus` (`lib/filterFocus.ts`, a window event the filter
+listens to); `⌘⇧B` shows or hides the tree (`⌘B` stays the session sidebar). A
+line under the tree lists `J K move · V viewed · N next unviewed`. A jump is instant, not smooth: file bodies keep
 `content-visibility` with estimated heights, so for a few frames the view
 measures the picked header and snaps it back to the top until the heights
-settle. The picked file stays the active one until you scroll, so `[` and `]`
+settle. The picked file stays the active one until you scroll, so `J` and `K`
 start from it. Each file has a sticky header (status letter, path, `from <old path>` on a rename,
 changes, comment count, `Viewed`, `⋯` with Open in editor, Copy path, Comment
 on file); a viewed file collapses and opens again when you unmark it, from the

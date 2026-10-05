@@ -7,6 +7,7 @@ import { vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { StarredIssue, Workspace, WorkspaceId } from '@goodboy/types';
 import { shortcutGlyphs, type ShortcutId } from '../../../shared/keyboard/registry';
+import { onFilterFocusRequest } from '../../../features/diff/lib/filterFocus';
 import { agentPlace } from '../../../store';
 import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
 import { App } from '../../../App';
@@ -922,6 +923,8 @@ const activeTreeFile = async (): Promise<string> =>
     }, WAIT)
   )?.textContent ?? '';
 
+const filterFocusRequests: string[] = [];
+
 let terminalTabCount = 0;
 
 const openBoardCard = async (): Promise<HTMLElement> => {
@@ -996,22 +999,121 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       waitFor(() => expect(screen.getAllByRole('tab').length).toBe(terminalTabCount + 1), WAIT),
   }),
   keyRow({
-    id: 'diff.nextFile',
+    id: 'diff.fileDown',
+    also: ['diff.nextFile'],
+    note: 'the bracket key is the same move',
     open: async () => {
       await openDiff();
+      await pressed('diff.fileDown', document.body);
       await pressed('diff.nextFile', document.body);
     },
     lands: async () => expect(await activeTreeFile()).toContain('notify.ts'),
   }),
   keyRow({
-    id: 'diff.previousFile',
+    id: 'diff.fileUp',
+    also: ['diff.previousFile'],
+    note: 'the bracket key is the same move',
     open: async () => {
       await openDiff();
-      await pressed('diff.nextFile', document.body);
-      await pressed('diff.nextFile', document.body);
+      for (const id of [
+        'diff.fileDown',
+        'diff.fileDown',
+        'diff.fileDown',
+        'diff.fileUp',
+      ] as const) {
+        await pressed(id, document.body);
+      }
       await pressed('diff.previousFile', document.body);
+      await pressed('diff.nextFile', document.body);
     },
     lands: async () => expect(await activeTreeFile()).toContain('notify.ts'),
+  }),
+  keyRow({
+    id: 'diff.nextUnviewed',
+    open: async () => {
+      await openDiff();
+      await pressed('diff.fileDown', document.body);
+      await pressed('diff.nextUnviewed', document.body);
+    },
+    lands: async () => expect(await activeTreeFile()).toContain('notify.ts'),
+  }),
+  keyRow({
+    id: 'diff.markViewed',
+    open: async () => {
+      await openDiff();
+      await pressed('diff.fileDown', document.body);
+      await pressed('diff.markViewed', document.body);
+    },
+    lands: async () => {
+      expect(await activeTreeFile()).toContain('notify.ts');
+      await visible('navigation', 'Changed files');
+      expect(screen.getByText('1 of 3 viewed')).toBeDefined();
+    },
+  }),
+  keyRow({
+    id: 'diff.closeFolder',
+    open: async () => {
+      await openDiff();
+      await pressed('diff.fileDown', document.body);
+      await pressed('diff.closeFolder', document.body);
+    },
+    lands: async () =>
+      waitFor(
+        () =>
+          expect(
+            within(screen.getByRole('navigation', { name: 'Changed files' })).queryByText(
+              'ledger.ts',
+            ),
+          ).toBeNull(),
+        WAIT,
+      ),
+  }),
+  keyRow({
+    id: 'diff.openFolder',
+    open: async () => {
+      await openDiff();
+      await pressed('diff.fileDown', document.body);
+      await pressed('diff.closeFolder', document.body);
+      await pressed('diff.openFolder', document.body);
+    },
+    lands: async () =>
+      expect(
+        within(screen.getByRole('navigation', { name: 'Changed files' })).getByText('ledger.ts'),
+      ).toBeDefined(),
+  }),
+  keyRow({
+    id: 'diff.focusTree',
+    open: async () => {
+      await openDiff();
+      await pressed('diff.focusTree', document.body);
+    },
+    lands: async () =>
+      expect(
+        screen.getByRole('navigation', { name: 'Changed files' }).contains(document.activeElement),
+      ).toBe(true),
+  }),
+  keyRow({
+    id: 'diff.toggleTree',
+    open: async () => {
+      await openDiff();
+      await pressed('diff.toggleTree', document.body);
+    },
+    lands: async () =>
+      waitFor(
+        () => expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull(),
+        WAIT,
+      ),
+  }),
+  keyRow({
+    id: 'diff.focusFilter',
+    open: async () => {
+      await openDiff();
+      filterFocusRequests.length = 0;
+      const stop = onFilterFocusRequest(() => filterFocusRequests.push('asked'));
+      await pressed('diff.focusFilter', document.body);
+      stop();
+    },
+    lands: async () => expect(filterFocusRequests).toHaveLength(1),
   }),
   keyRow({
     id: 'session.model',

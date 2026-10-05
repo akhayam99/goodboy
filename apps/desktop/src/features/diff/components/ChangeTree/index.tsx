@@ -3,6 +3,7 @@ import { Check, ChevronRight, MessageSquare } from 'lucide-react';
 import { ScrollFade, cn, tintClasses } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { visibleRows, type ChangeTree as ChangeTreeModel } from '../../lib/changeTree';
 import { STATUS_LETTER, STATUS_TONE, STATUS_WORD } from '../../lib/fileStatus';
 import type { ViewedState } from '../../lib/reviewedFiles';
@@ -18,6 +19,8 @@ type Props = {
   readonly stateOf: (file: FileDiff) => ViewedState;
   readonly noteCountOf: (path: string) => number;
 };
+
+const KEY_HELP = `${shortcutGlyphs('diff.fileDown')} ${shortcutGlyphs('diff.fileUp')} move · ${shortcutGlyphs('diff.markViewed')} viewed · ${shortcutGlyphs('diff.nextUnviewed')} next unviewed`;
 
 const INDENT_PX = 12;
 const BASE_PX = 8;
@@ -172,6 +175,7 @@ export const ChangeTree = ({
           })}
         </ul>
       </ScrollFade>
+      <p className="shrink-0 truncate px-3 py-2 text-meta text-faint-foreground">{KEY_HELP}</p>
     </nav>
   );
 };
