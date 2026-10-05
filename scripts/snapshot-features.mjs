@@ -138,7 +138,12 @@ export const parseRelease = ({ changelog, version }) => {
   return { summary: summaryLine ? plainText(summaryLine) : '', items };
 };
 
-export const buildSnapshot = ({ version, featuresMarkdown, changelog }) => {
+export const buildSnapshot = ({
+  version,
+  date = new Date().toISOString().slice(0, 10),
+  featuresMarkdown,
+  changelog,
+}) => {
   const release = parseRelease({ changelog, version });
   const newTitles = new Set(release.items.map((item) => item.title.toLowerCase()));
   const groups = parseFeatures({ markdown: featuresMarkdown }).map((group) => ({
@@ -148,7 +153,7 @@ export const buildSnapshot = ({ version, featuresMarkdown, changelog }) => {
       isNew: newTitles.has(feature.title.toLowerCase()),
     })),
   }));
-  return { version, summary: release.summary, new: release.items, groups };
+  return { version, date, summary: release.summary, new: release.items, groups };
 };
 
 export const aggregateFeatureDocs = ({ root = ROOT_DIRECTORY } = {}) => {

@@ -18,15 +18,6 @@
         }
         document.documentElement.setAttribute('data-theme', theme);
         document.documentElement.style.colorScheme = theme;
-        var root = document.documentElement;
-        if (document.fonts && document.fonts.ready) {
-          root.classList.add('fontsWait');
-          var go = function () {
-            root.classList.remove('fontsWait');
-          };
-          document.fonts.ready.then(go, go);
-          window.setTimeout(go, 700);
-        }
       })();
     </script>
 
@@ -138,101 +129,13 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Primary -->
-    <title>Goodboy: give your agents a structure to work in</title>
-    <meta
-      name="description"
-      content="Goodboy is a free agentic development environment for macOS and Linux. The providers you connect do the work and Goodboy gives it structure: each task keeps its goal, decisions and summary, so the next agent starts briefed."
-    />
-    <meta
-      name="keywords"
-      content="ADE, agentic development environment, coding agents, agent workflows, shared context, stage board, session timeline, inbox, review resolve, multi-provider, spend limits, worktrees, desktop app"
-    />
-    <meta name="author" content="Amin Khayam" />
-    <link rel="canonical" href="https://goodboy-ai.dev/" />
-
-    <!-- Open Graph (Facebook, LinkedIn, Slack unfurls) -->
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Goodboy" />
-    <meta property="og:url" content="https://goodboy-ai.dev/" />
-    <meta property="og:title" content="Goodboy: give your agents a structure to work in" />
-    <meta
-      property="og:description"
-      content="Goodboy is a free agentic development environment for macOS and Linux. The providers you connect do the work and Goodboy gives it structure: each task keeps its goal, decisions and summary, so the next agent starts briefed."
-    />
-    <meta property="og:image" content="https://goodboy-ai.dev/og-image.png?v=4" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta
-      property="og:image:alt"
-      content="Goodboy, a free desktop ADE built in public: Stop re-explaining yourself, with the coding agents and tools it works with"
-    />
-    <meta property="og:locale" content="en_US" />
-
-    <!-- Twitter / X card -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@GoodboyWorks" />
-    <meta name="twitter:creator" content="@GoodboyWorks" />
-    <meta name="twitter:title" content="Goodboy: give your agents a structure to work in" />
-    <meta
-      name="twitter:description"
-      content="Goodboy is a free agentic development environment for macOS and Linux. The providers you connect do the work and Goodboy gives it structure: each task keeps its goal, decisions and summary, so the next agent starts briefed."
-    />
-    <meta name="twitter:image" content="https://goodboy-ai.dev/og-image.png?v=4" />
-    <meta
-      name="twitter:image:alt"
-      content="Goodboy, a free desktop ADE built in public: Stop re-explaining yourself, with the coding agents and tools it works with"
-    />
+    <!--app-head-->
 
     <!-- Theme / PWA hints -->
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0d0f11" media="(prefers-color-scheme: dark)" />
     <meta name="color-scheme" content="light dark" />
 
-    <!-- JSON-LD: SoftwareApplication -->
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "Goodboy",
-        "description": "Goodboy is a free agentic development environment for macOS and Linux. The providers you connect do the work and Goodboy gives it structure: each task keeps its goal, decisions and summary, so the next agent starts briefed.",
-        "url": "https://goodboy-ai.dev/",
-        "applicationCategory": "DeveloperApplication",
-        "operatingSystem": ["macOS", "Linux"],
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD"
-        },
-        "author": {
-          "@type": "Person",
-          "name": "Amin Khayam",
-          "url": "https://github.com/akhayam99"
-        },
-        "codeRepository": "https://github.com/akhayam99/goodboy",
-        "keywords": [
-          "coding agents",
-          "agent workflows",
-          "shared context",
-          "session timeline",
-          "multi-provider",
-          "worktrees",
-          "spend limits"
-        ],
-        "featureList": [
-          "A briefing per task: goal, decisions and summary, read by every agent on it",
-          "Workflows that run a goal as steps, each a fresh agent with a short brief",
-          "Seven providers in one session: Claude, Codex, Cursor, Gemini, OpenCode, OpenRouter, Moonshot",
-          "A board that shows which tasks are building, running, in review or need you",
-          "A timeline of what ran, what it cost and what was decided",
-          "Nine roles, each workflow step with its own provider, model and effort",
-          "Plans, reports and wireframes kept next to the task",
-          "GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack in one Inbox",
-          "Review comments resolved as commits, with replies you approve",
-          "Your tasks, decisions and settings stored on your computer, no account"
-        ]
-      }
-    </script>
   </head>
   <body>
     <!-- Google Tag Manager (noscript) -->
@@ -246,7 +149,7 @@
     ></noscript>
     <!-- End Google Tag Manager (noscript) -->
 
-    <div id="root"></div>
+    <div id="root"><!--app-html--></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

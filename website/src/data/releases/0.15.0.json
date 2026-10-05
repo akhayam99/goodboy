@@ -1,5 +1,6 @@
 {
   "version": "0.15.0",
+  "date": "2026-10-01",
   "summary": "Goodboy opens faster and redraws lists less, times and budget errors read the same everywhere, and switching workspace stops all live work.",
   "new": [],
   "groups": [

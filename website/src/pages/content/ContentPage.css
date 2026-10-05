@@ -1,0 +1,234 @@
+.navRoot {
+  display: contents;
+}
+
+.cpPage {
+  display: grid;
+  gap: 48px;
+  max-width: 880px;
+  padding: 72px 0 88px;
+}
+
+.cpHead {
+  display: grid;
+  gap: 20px;
+}
+
+.cpLinks {
+  gap: 12px 24px;
+  margin-top: 24px;
+}
+
+.cpDate {
+  font: var(--t-cell-text);
+  color: var(--t3);
+}
+
+.crumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  font: var(--t-caption);
+  color: var(--t3);
+}
+
+.crumbs li {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.crumbs li + li::before {
+  content: '/';
+  color: var(--t4);
+}
+
+.crumbs a {
+  color: var(--t3);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.crumbs a:hover {
+  color: var(--t1);
+}
+
+.cpList {
+  display: grid;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.cpItem {
+  display: grid;
+  gap: 6px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.cpItemTitle {
+  font: 600 20px/28px var(--display);
+  letter-spacing: var(--tr-lead);
+}
+
+.cpItemTitle a {
+  color: var(--t1);
+}
+
+.cpItemTitle a:hover {
+  color: var(--accent);
+}
+
+.cpItemMeta {
+  font: var(--t-caption);
+  color: var(--t3);
+}
+
+.cpItemText {
+  max-width: 68ch;
+  font: var(--t-body);
+  letter-spacing: var(--tr-body);
+  color: var(--t2);
+}
+
+.prose {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  font: var(--t-body);
+  letter-spacing: var(--tr-body);
+  color: var(--t2);
+}
+
+.prose > * {
+  max-width: 72ch;
+}
+
+.prose h2 {
+  padding-top: 24px;
+  font: var(--t-h3);
+  letter-spacing: var(--tr-h3);
+  color: var(--t1);
+  scroll-margin-top: 88px;
+}
+
+.prose h3 {
+  padding-top: 8px;
+  font: 600 20px/28px var(--display);
+  letter-spacing: var(--tr-lead);
+  color: var(--t1);
+  scroll-margin-top: 88px;
+}
+
+.prose strong {
+  font-weight: 600;
+  color: var(--t1);
+}
+
+.prose a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.prose code {
+  font-size: 0.92em;
+  color: var(--t1);
+}
+
+.prose ul,
+.prose ol {
+  display: grid;
+  gap: 8px;
+  padding-left: 20px;
+}
+
+.prose picture,
+.prose img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.prose img {
+  border: 1px solid var(--line);
+  border-radius: var(--r-view);
+}
+
+.prose .themeImage.dark,
+:root[data-theme='dark'] .prose .themeImage.light {
+  display: none;
+}
+
+:root[data-theme='dark'] .prose .themeImage.dark {
+  display: block;
+}
+
+.prose table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font: var(--t-cell-text);
+}
+
+.prose th,
+.prose td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.prose th {
+  font-weight: 600;
+  color: var(--t1);
+}
+
+.cpPager {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.cpPagerLink {
+  display: grid;
+  gap: 4px;
+  padding: 16px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  color: var(--t1);
+}
+
+.cpPagerLink:hover {
+  background: var(--hover);
+}
+
+.cpPagerLabel {
+  font: var(--t-caption);
+  color: var(--t3);
+}
+
+.cpPagerTitle {
+  font: var(--t-cell);
+  letter-spacing: var(--tr-cell);
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .crumbs a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 600px) {
+  .cpPage {
+    gap: 32px;
+    padding: 48px 0 72px;
+  }
+  .prose h2 {
+    font-size: 26px;
+    line-height: 32px;
+  }
+}

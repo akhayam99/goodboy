@@ -1,5 +1,6 @@
 {
   "version": "0.13.0",
+  "date": "2026-09-29",
   "summary": "Ask the whole workspace a question in Chat, and answer every agent question from one card with a number key.",
   "new": [
     {

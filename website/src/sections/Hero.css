@@ -70,10 +70,6 @@
   animation-delay: calc(160ms + var(--i, 0) * 140ms);
 }
 
-.fontsWait .rise {
-  animation-play-state: paused;
-}
-
 @keyframes hero-fade {
   from {
     opacity: 0;

@@ -16,15 +16,14 @@ export const usePlayOnce = <T extends Element = HTMLElement>({
   duration = DEFAULT_DURATION,
 }: Options = {}) => {
   const ref = useRef<T | null>(null);
-  const [isReduced] = useState(readIsReduced);
-  const [phase, setPhase] = useState<PlayPhase>(isReduced ? 'done' : 'idle');
+  const [phase, setPhase] = useState<PlayPhase>('idle');
 
   useEffect(() => {
     const node = ref.current;
-    if (isReduced || phase !== 'idle' || node === null) {
+    if (phase !== 'idle' || node === null) {
       return;
     }
-    if (typeof IntersectionObserver === 'undefined') {
+    if (readIsReduced() || typeof IntersectionObserver === 'undefined') {
       setPhase('done');
       return;
     }
@@ -39,7 +38,7 @@ export const usePlayOnce = <T extends Element = HTMLElement>({
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, [isReduced, phase, threshold]);
+  }, [phase, threshold]);
 
   useEffect(() => {
     if (phase !== 'run') {

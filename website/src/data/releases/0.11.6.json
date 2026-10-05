@@ -1,5 +1,6 @@
 {
   "version": "0.11.6",
+  "date": "2026-09-28",
   "summary": "Agents pick up where they were after a restart or an update, every form ends on one action row, and an open question shows once.",
   "new": [
     {

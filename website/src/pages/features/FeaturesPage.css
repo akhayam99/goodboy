@@ -9,23 +9,6 @@
   margin-top: 28px;
 }
 
-.refLink {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  font: var(--t-cell);
-  letter-spacing: var(--tr-cell);
-  color: var(--accent);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.refLink:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-  border-radius: 4px;
-}
-
 .ftBody {
   display: grid;
   grid-template-columns: 200px minmax(0, 1fr);
@@ -46,12 +29,6 @@
   }
   .ftClusters {
     gap: 56px;
-  }
-}
-
-@media (hover: none) and (pointer: coarse) {
-  .refLink {
-    min-height: 44px;
   }
 }
 

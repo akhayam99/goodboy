@@ -1,5 +1,6 @@
 {
   "version": "0.15.1",
+  "date": "2026-10-01",
   "summary": "Suggested agents start briefed and on the model you pick, stopped agents resume in one action, and an agent handed work by another role no longer ends Blocked.",
   "new": [],
   "groups": [

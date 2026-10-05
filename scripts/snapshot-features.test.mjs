@@ -150,10 +150,12 @@ describe('buildSnapshot', () => {
   it('flags the features that are new in the version', () => {
     const snapshot = buildSnapshot({
       version: '0.2.0',
+      date: '2026-01-02',
       featuresMarkdown: FEATURES,
       changelog: CHANGELOG,
     });
     assert.equal(snapshot.version, '0.2.0');
+    assert.equal(snapshot.date, '2026-01-02');
     assert.equal(snapshot.new.length, 1);
     const flags = snapshot.groups[0].features.map((feature) => [feature.title, feature.isNew]);
     assert.deepEqual(flags, [

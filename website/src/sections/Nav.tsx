@@ -6,20 +6,32 @@ import { ThemeToggle } from '../components/ThemeToggle';
 import { useScrolled } from '../hooks/useScrolled';
 import { SITE } from '../site';
 
-const NAV_LINKS: readonly NavMenuLink[] = [
-  { label: 'How it works', href: SITE.howItWorks },
-  { label: 'Features', href: SITE.features },
-  { label: 'Changelog', href: SITE.changelog },
+export type NavSection = 'home' | 'features' | 'docs' | 'changelog' | 'none';
+
+type NavLink = {
+  readonly label: string;
+  readonly href: string;
+  readonly section: NavSection;
+};
+
+type Props = {
+  readonly current: NavSection;
+};
+
+const NAV_LINKS: readonly NavLink[] = [
+  { label: 'How it works', href: SITE.howItWorks, section: 'none' },
+  { label: 'Features', href: SITE.features, section: 'features' },
+  { label: 'Docs', href: SITE.docs, section: 'docs' },
+  { label: 'Changelog', href: SITE.changelog, section: 'changelog' },
 ];
 
-const isCurrent = (href: string) =>
-  typeof window !== 'undefined' && href.startsWith('/features')
-    ? window.location.pathname.replace(/\/$/, '') === '/features'
-    : false;
-
-export const Nav = () => {
+export const Nav = ({ current }: Props) => {
   const isScrolled = useScrolled();
-  const menuLinks = NAV_LINKS.map((link) => ({ ...link, isCurrent: isCurrent(link.href) }));
+  const menuLinks: readonly NavMenuLink[] = NAV_LINKS.map((link) => ({
+    label: link.label,
+    href: link.href,
+    isCurrent: link.section !== 'none' && link.section === current,
+  }));
 
   return (
     <header className={isScrolled ? 'nav scrolled' : 'nav'} id="top">
@@ -27,11 +39,11 @@ export const Nav = () => {
         <div className="navInner">
           <Logo />
           <nav className="navLinks" aria-label="Primary">
-            {NAV_LINKS.map((link) => (
+            {menuLinks.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                aria-current={isCurrent(link.href) ? 'page' : undefined}
+                aria-current={link.isCurrent === true ? 'page' : undefined}
               >
                 {link.label}
               </a>

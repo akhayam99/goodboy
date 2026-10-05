@@ -12,9 +12,16 @@ export const useStepLoop = <T extends Element = HTMLElement>({
 }: LoopOptions) => {
   const ref = useRef<T | null>(null);
   const last = holds.length - 1;
-  const [isReduced] = useState(readIsReduced);
+  const [isReduced, setIsReduced] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const [step, setStep] = useState(isReduced ? last : 0);
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    if (readIsReduced()) {
+      setIsReduced(true);
+      setStep(last);
+    }
+  }, [last]);
 
   useEffect(() => {
     const node = ref.current;
