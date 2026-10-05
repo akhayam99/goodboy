@@ -3,7 +3,10 @@ import { formatError } from '@goodboy/ui';
 import { parseUnifiedDiff } from '@goodboy/core';
 import type { BranchCommit, DiffView, FileDiff, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore, useSummarizerStatus, type DiffFocus } from '../../../../store';
-import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
+import {
+  selectMountBaseBranch,
+  selectMountForPath,
+} from '../../../../store/slices/project-mounts/selectors';
 import {
   listBranchCommits,
   worktreeDiff,
@@ -81,8 +84,13 @@ export const useSessionDiff = ({
   const [metaError, setMetaError] = useState<string | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
   const [focusPath, setFocusPath] = useState<string | null>(null);
+  const mountId = useAppStore((s) =>
+    sessionId === null
+      ? null
+      : (selectMountForPath({ state: s, sessionId, path: worktreePath })?.mountId ?? null),
+  );
   const [reviewedMap, setReviewedMap] = useState<ReviewedMap>(() =>
-    readReviewedMap(sessionId, DEFAULT_VIEW),
+    readReviewedMap(sessionId, DEFAULT_VIEW, mountId),
   );
   const loadDiffComments = useAppStore((s) => s.loadDiffComments);
   const summarizer = useSummarizerStatus(sessionId);
@@ -176,8 +184,8 @@ export const useSessionDiff = ({
   }, [worktreePath, baseBranch, view, refreshTick, loader]);
 
   useEffect(() => {
-    setReviewedMap(readReviewedMap(sessionId, view));
-  }, [sessionId, view, files]);
+    setReviewedMap(readReviewedMap(sessionId, view, mountId));
+  }, [sessionId, view, mountId, files]);
 
   useEffect(() => {
     if (sessionId !== null) {
@@ -193,11 +201,11 @@ export const useSessionDiff = ({
         if (next) {
           updated[file.path] = fileSignature(file);
         }
-        writeReviewedMap(sessionId, view, updated);
+        writeReviewedMap(sessionId, view, updated, mountId);
         return updated;
       });
     },
-    [sessionId, view],
+    [sessionId, view, mountId],
   );
 
   const viewed = useMemo<DiffViewed>(

@@ -1,7 +1,7 @@
 import type { FileDiff } from '@goodboy/types';
 import { fileKindOf, type FileKind } from './fileStatus';
 
-export type TreeFolderRow = {
+type TreeFolderRow = {
   readonly kind: 'folder';
   readonly id: string;
   readonly parentId: string | null;
@@ -13,7 +13,7 @@ export type TreeFolderRow = {
   readonly paths: ReadonlyArray<string>;
 };
 
-export type TreeFileRow = {
+type TreeFileRow = {
   readonly kind: 'file';
   readonly id: string;
   readonly parentId: string | null;

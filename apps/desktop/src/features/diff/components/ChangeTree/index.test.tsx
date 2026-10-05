@@ -43,7 +43,7 @@ describe('ChangeTree', () => {
   it('shows folders with their file counts and sums, files with their status letter', () => {
     renderTree();
 
-    const folder = screen.getByRole('button', { name: /^export/ });
+    const folder = screen.getByRole('button', { name: /\bexport\b/ });
     expect(within(folder).getByText('2')).toBeDefined();
     expect(within(folder).getByText('+6')).toBeDefined();
     expect(screen.getByLabelText('Renamed').textContent).toBe('R');
@@ -64,7 +64,7 @@ describe('ChangeTree', () => {
     const onToggleFolder = vi.fn();
     const { rerender } = renderTree({ onToggleFolder });
 
-    fireEvent.click(screen.getByRole('button', { name: /^export/ }));
+    fireEvent.click(screen.getByRole('button', { name: /\bexport\b/ }));
     expect(onToggleFolder).toHaveBeenCalledWith('src/ledger/export');
 
     rerender(
@@ -79,7 +79,7 @@ describe('ChangeTree', () => {
       />,
     );
     expect(screen.queryByRole('button', { name: /page\.tsx/ })).toBeNull();
-    expect(screen.getByRole('button', { name: /^export/ }).getAttribute('aria-expanded')).toBe(
+    expect(screen.getByRole('button', { name: /\bexport\b/ }).getAttribute('aria-expanded')).toBe(
       'false',
     );
   });
@@ -96,6 +96,34 @@ describe('ChangeTree', () => {
       screen.getByRole('button', { name: /page\.tsx/ }).getAttribute('aria-current'),
     ).toBeNull();
     expect(scroll).toHaveBeenCalled();
+  });
+
+  it('draws a ring per folder that fills as its files are viewed', () => {
+    renderTree({
+      stateOf: (file) => (file.path === 'src/ledger/export/page.tsx' ? 'viewed' : 'none'),
+    });
+
+    expect(screen.getByRole('img', { name: '1 of 2 viewed' })).toBeDefined();
+    expect(screen.getByRole('img', { name: '1 of 3 viewed' })).toBeDefined();
+  });
+
+  it('closes a folder ring with a check once every file in it is viewed', () => {
+    renderTree({
+      stateOf: (file) => (file.path.startsWith('src/ledger/export/') ? 'viewed' : 'none'),
+    });
+
+    const done = screen.getByRole('img', { name: '2 of 2 viewed' });
+    expect(done.querySelector('circle')).toBeNull();
+  });
+
+  it('marks a file that changed after it was viewed with an amber dot instead of a check', () => {
+    renderTree({
+      stateOf: (file) => (file.path === 'package.json' ? 'stale' : 'none'),
+    });
+
+    expect(screen.getByRole('img', { name: 'Changed since viewed' })).toBeDefined();
+    expect(screen.queryByLabelText('Viewed')).toBeNull();
+    expect(screen.getByText('0 of 4 viewed')).toBeDefined();
   });
 
   it('counts viewed files in the head and shows notes on a file', () => {

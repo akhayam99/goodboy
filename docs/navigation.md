@@ -1664,10 +1664,16 @@ properties; Fix launches from the list or the thread, never from Files.
 **Files.** The branch against its base with the change tree on the left
 (`ChangeTree`, 280px, `@4xl` and up): folders first, then files, alphabetical,
 and the diff follows the same order. A chain of folders with one child is one
-row (`src/ledger/export`). A folder row holds the folder icon, the path, its
-file count and its `+N −N`; a file row holds the name (a rename shows `from
-<old path>` under it, a deleted file is struck through), its open notes, `+N
-−N` and the status letter. `N of M viewed` heads the tree. Click a file and the
+row (`src/ledger/export`). A folder row holds a progress ring (empty, partial,
+or filled with a check once every file in it is viewed, tooltip `3 of 5
+viewed`), the path, its file count and its `+N −N`; a file row holds a small
+check when viewed (its name goes grey) or an amber dot when it changed after
+it was viewed, the name (a rename shows `from <old path>` under it, a deleted
+file is struck through), its open notes, `+N −N` and the status letter.
+`N of M viewed` and a 2px bar head the tree, and no longer sit in the toolbar.
+Viewed marks are stored per session, mount and view, so two repos in one session
+keep their own; marks saved before that are read until the mount saves its own.
+Click a file and the
 diff scrolls to it; scroll the diff and the tree highlights the file in view and
 opens its folders. The tree and the diff share one `useReviewState` (active
 file, open folders, notes, `Viewed`), and a model in `features/diff/lib/changeTree.ts`
@@ -1795,8 +1801,8 @@ measures the picked header and snaps it back to the top until the heights
 settle. The picked file stays the active one until you scroll, so `[` and `]`
 start from it. Each file has a sticky header (status letter, path, `from <old path>` on a rename,
 changes, comment count, `Viewed`, `⋯` with Open in editor, Copy path, Comment
-on file); a viewed file collapses, and generated or binary files start
-collapsed. Rows are a CSS grid with `role="grid"`, never a table. Click a line
+on file); a viewed file collapses and opens again when you unmark it, from the
+header or from anywhere else, and generated or binary files start collapsed. Rows are a CSS grid with `role="grid"`, never a table. Click a line
 number to comment, drag or shift-click to cover a range; the composer and the
 threads sit under the last line of the range. ⌘Enter saves, Escape cancels.
 `+ Add note` on a line saves the note with the project and branch of the active

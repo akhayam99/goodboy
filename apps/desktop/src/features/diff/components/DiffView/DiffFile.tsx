@@ -80,6 +80,14 @@ const DiffFileView = ({
   const viewedState = viewed?.stateOf(file) ?? null;
   const isHeavy = file.binary || isGeneratedPath(file.path);
   const [collapsed, setCollapsed] = useState(viewedState === 'viewed' || isHeavy);
+  const wasViewed = useRef(viewedState === 'viewed');
+  useEffect(() => {
+    const isViewed = viewedState === 'viewed';
+    if (isViewed !== wasViewed.current) {
+      wasViewed.current = isViewed;
+      setCollapsed(isViewed);
+    }
+  }, [viewedState]);
   const [drag, setDrag] = useState<Drag | null>(null);
   const [composer, setComposer] = useState<Composer | null>(null);
   const [visibleLines, setVisibleLines] = useState(INITIAL_VISIBLE_LINES);
@@ -223,13 +231,7 @@ const DiffFileView = ({
   const remaining = Math.max(0, totalLines - visibleLines);
 
   const toggleViewed =
-    viewed === null
-      ? null
-      : () => {
-          const next = viewedState !== 'viewed';
-          viewed.onToggle(file, next);
-          setCollapsed(next);
-        };
+    viewed === null ? null : () => viewed.onToggle(file, viewedState !== 'viewed');
 
   return (
     <section

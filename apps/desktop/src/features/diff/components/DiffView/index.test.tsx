@@ -155,6 +155,21 @@ describe('DiffView rendering', () => {
     expect(within(header).queryByRole('grid')).toBeNull();
   });
 
+  it('follows a Viewed set from outside: closes the file, and opens it again when unset', () => {
+    const stateOf = (path: string | null) => (file: FileDiff) =>
+      file.path === path ? ('viewed' as const) : ('none' as const);
+    const viewedFor = (path: string | null) => ({ stateOf: stateOf(path), onToggle: vi.fn() });
+    const { rerender } = render(<DiffView files={[LEDGER, RELAY]} viewed={viewedFor(null)} />);
+    const header = screen.getByRole('region', { name: RELAY.path });
+    expect(within(header).queryByRole('grid')).not.toBeNull();
+
+    rerender(<DiffView files={[LEDGER, RELAY]} viewed={viewedFor(RELAY.path)} />);
+    expect(within(header).queryByRole('grid')).toBeNull();
+
+    rerender(<DiffView files={[LEDGER, RELAY]} viewed={viewedFor(null)} />);
+    expect(within(header).queryByRole('grid')).not.toBeNull();
+  });
+
   it('keeps generated files collapsed until asked', () => {
     const lock: FileDiff = { ...RELAY, path: 'pnpm-lock.yaml' };
     render(<DiffView files={[lock]} />);

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { ChevronRight, Folder, MessageSquare } from 'lucide-react';
+import { Check, ChevronRight, MessageSquare } from 'lucide-react';
 import { ScrollFade, cn, tintClasses } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -7,6 +7,7 @@ import { visibleRows, type ChangeTree as ChangeTreeModel } from '../../lib/chang
 import { STATUS_LETTER, STATUS_TONE, STATUS_WORD } from '../../lib/fileStatus';
 import type { ViewedState } from '../../lib/reviewedFiles';
 import { Delta } from './Delta';
+import { ProgressRing } from './ProgressRing';
 
 type Props = {
   readonly tree: ChangeTreeModel;
@@ -31,10 +32,15 @@ export const ChangeTree = ({
   noteCountOf,
 }: Props) => {
   const rows = useMemo(() => visibleRows({ rows: tree.rows, collapsed }), [tree.rows, collapsed]);
-  const viewedCount = useMemo(
-    () => tree.files.filter((file) => stateOf(file) === 'viewed').length,
+  const states = useMemo(
+    () => new Map(tree.files.map((file) => [file.path, stateOf(file)] as const)),
     [tree.files, stateOf],
   );
+  const viewedCount = useMemo(
+    () => [...states.values()].filter((state) => state === 'viewed').length,
+    [states],
+  );
+  const share = tree.files.length === 0 ? 0 : viewedCount / tree.files.length;
   const activeRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
@@ -43,9 +49,20 @@ export const ChangeTree = ({
 
   return (
     <nav aria-label="Changed files" className="flex min-h-0 w-full min-w-0 flex-col">
-      <p className="px-3 pb-2 text-meta tabular-nums text-muted-foreground">
-        {viewedCount} of {tree.files.length} viewed
-      </p>
+      <div className="flex flex-col gap-2 px-3 pb-2">
+        <p className="text-meta tabular-nums text-muted-foreground">
+          {viewedCount} of {tree.files.length} viewed
+        </p>
+        <span
+          aria-hidden
+          className="relative block h-0.5 overflow-hidden rounded-full bg-border-soft"
+        >
+          <span
+            className="absolute inset-y-0 left-0 block rounded-full bg-primary"
+            style={{ width: `${Math.round(share * 100)}%` }}
+          />
+        </span>
+      </div>
       <ScrollFade className="min-h-0 flex-1" fadeSize="h-6">
         <ul className="flex min-w-0 flex-col px-1 pb-4">
           {rows.map((row) => {
@@ -70,10 +87,9 @@ export const ChangeTree = ({
                         isOpen && 'rotate-90',
                       )}
                     />
-                    <Folder
-                      size={ICON_SIZE.row}
-                      aria-hidden
-                      className="shrink-0 text-muted-foreground"
+                    <ProgressRing
+                      viewed={row.paths.filter((path) => states.get(path) === 'viewed').length}
+                      total={row.fileCount}
                     />
                     <span className="min-w-0 flex-1 truncate">{row.label}</span>
                     <span className="shrink-0 text-meta tabular-nums text-faint-foreground">
@@ -85,7 +101,8 @@ export const ChangeTree = ({
               );
             }
             const isActive = row.id === activePath;
-            const viewed = stateOf(row.file) === 'viewed';
+            const state = states.get(row.id) ?? 'none';
+            const viewed = state === 'viewed';
             const notes = noteCountOf(row.id);
             const tone = tintClasses(STATUS_TONE[row.file.status]);
             return (
@@ -103,6 +120,21 @@ export const ChangeTree = ({
                     viewed ? 'text-muted-foreground' : 'text-foreground',
                   )}
                 >
+                  <span className="flex w-4 shrink-0 items-center justify-center">
+                    {viewed ? (
+                      <Check
+                        size={ICON_SIZE.row}
+                        aria-label="Viewed"
+                        className="text-muted-foreground"
+                      />
+                    ) : state === 'stale' ? (
+                      <span
+                        role="img"
+                        aria-label="Changed since viewed"
+                        className="size-2 rounded-full bg-warning"
+                      />
+                    ) : null}
+                  </span>
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span
                       className={cn(
