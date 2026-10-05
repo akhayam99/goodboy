@@ -5,7 +5,7 @@ import { SESSION_ID, seedArtifactScene } from './artifactSeed';
 
 const clock = sceneClock({ anchor: '2026-09-14T16:40:00.000Z' });
 
-export const PLAN_COMMENTS_ARTIFACT_ID = 'mock-states-plan-idempotency' as ArtifactId;
+const PLAN_COMMENTS_ARTIFACT_ID = 'mock-states-plan-idempotency' as ArtifactId;
 
 const GOAL_SENTENCE = 'Add idempotency keys to payments-api charges.';
 
