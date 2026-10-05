@@ -1,4 +1,10 @@
-import type { ResolveAttempt, ResolveAttemptPhase, SessionId } from '@goodboy/types';
+import {
+  RESOLVE_FAILURE_CAUSES,
+  type ResolveAttempt,
+  type ResolveAttemptPhase,
+  type ResolveFailureCause,
+  type SessionId,
+} from '@goodboy/types';
 import type { Database } from '../client';
 import { resolveStringArray } from './resolve-json';
 import { fromMountTarget, toMountTarget } from './resolve-mount-target';
@@ -11,9 +17,11 @@ type PhaseParams = {
   readonly id: string;
   readonly phase: ResolveAttemptPhase;
   readonly error?: string | null;
+  readonly failureCause?: ResolveFailureCause | null;
 };
-type Row = Omit<ResolveAttempt, 'threadIds' | 'mountTarget' | 'launchChoice'> & {
+type Row = Omit<ResolveAttempt, 'threadIds' | 'mountTarget' | 'launchChoice' | 'failureCause'> & {
   readonly threadIds: string;
+  readonly failureCause: string | null;
   readonly launchChoice: string | null;
   readonly mountId: string | null;
   readonly mountRevision: number | null;
@@ -23,14 +31,18 @@ type Row = Omit<ResolveAttempt, 'threadIds' | 'mountTarget' | 'launchChoice'> & 
 const COLUMNS = `id, session_id AS sessionId, agent_id AS agentId, pr_number AS prNumber,
   thread_ids_json AS threadIds, provider, model, effort, instructions,
   human_instructions AS humanInstructions, phase, mount_id AS mountId, mount_revision AS mountRevision, worktree_path AS worktreePath,
-  started_at AS startedAt, ended_at AS endedAt, error, created_at AS createdAt,
+  started_at AS startedAt, ended_at AS endedAt, error, failure_cause AS failureCause, created_at AS createdAt,
   batch_id AS batchId, copy_path AS copyPath, launch_choice_json AS launchChoice,
   launch_id AS launchId, retry_of_launch_id AS retryOfLaunchId`;
 
+const failureCauseOf = ({ raw }: { readonly raw: string | null }): ResolveFailureCause | null =>
+  RESOLVE_FAILURE_CAUSES.find((cause) => cause === raw) ?? null;
+
 const hydrate = ({ row }: { readonly row: Row }): ResolveAttempt => {
-  const { mountId, mountRevision, worktreePath, ...attempt } = row;
+  const { mountId, mountRevision, worktreePath, failureCause, ...attempt } = row;
   return {
     ...attempt,
+    failureCause: failureCauseOf({ raw: failureCause }),
     threadIds: resolveStringArray({ json: row.threadIds }),
     launchChoice: parseLaunchChoice({ json: row.launchChoice }),
     mountTarget: toMountTarget({ mountId, mountRevision, worktreePath }),
@@ -109,13 +121,29 @@ export const setResolveAttemptPhase = async ({
   id,
   phase,
   error = null,
+  failureCause = null,
 }: PhaseParams): Promise<void> => {
   const now = Date.now();
   const isTerminal = phase === 'finished' || phase === 'failed' || phase === 'cancelled';
   await db.execute(
-    `UPDATE resolve_attempts SET phase = ?, error = ?, started_at = CASE WHEN ? = 'running' THEN COALESCE(started_at, ?) ELSE started_at END, ended_at = CASE WHEN ? THEN ? WHEN ? IN ('running', 'queued') THEN NULL ELSE ended_at END WHERE id = ?`,
-    [phase, error, phase, now, Number(isTerminal), now, phase, id],
+    `UPDATE resolve_attempts SET phase = ?, error = ?, failure_cause = ?, started_at = CASE WHEN ? = 'running' THEN COALESCE(started_at, ?) ELSE started_at END, ended_at = CASE WHEN ? THEN ? WHEN ? IN ('running', 'queued') THEN NULL ELSE ended_at END WHERE id = ?`,
+    [phase, error, failureCause, phase, now, Number(isTerminal), now, phase, id],
   );
+};
+
+export const setResolveAttemptFailureCause = async ({
+  db,
+  id,
+  failureCause,
+}: {
+  readonly db: Database;
+  readonly id: string;
+  readonly failureCause: ResolveFailureCause | null;
+}): Promise<void> => {
+  await db.execute('UPDATE resolve_attempts SET failure_cause = ? WHERE id = ?', [
+    failureCause,
+    id,
+  ]);
 };
 
 export const setResolveAttemptCopyPath = async ({

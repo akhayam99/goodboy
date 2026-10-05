@@ -4,7 +4,7 @@ use super::slug::sanitize_slug;
 use super::status::read_working_tree;
 use super::types::{
     GitWorkingTree, IntegrateCandidateArgs, IntegratedCandidate, QuarantineCandidateArgs,
-    QuarantinedCandidate,
+    QuarantinedCandidate, SplitCandidate, SplitCandidatePick, SplitCandidatesArgs,
 };
 use std::path::{Path, PathBuf};
 
@@ -222,6 +222,65 @@ fn worktree_quarantine_candidate_blocking(
         sha: Some(tip),
         base_sha: base,
     })
+}
+
+#[tauri::command]
+pub async fn worktree_split_candidates(
+    args: SplitCandidatesArgs,
+) -> Result<Vec<SplitCandidate>, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || worktree_split_candidates_blocking(args))
+        .await
+        .map_err(|error| WorktreeError::Io(std::io::Error::other(error.to_string())))?
+}
+
+fn worktree_split_candidates_blocking(
+    args: SplitCandidatesArgs,
+) -> Result<Vec<SplitCandidate>, WorktreeError> {
+    let path = Path::new(&args.worktree_path);
+    if !path.exists() {
+        return Err(WorktreeError::RepoNotFound(args.worktree_path));
+    }
+    let base = resolve_commit(path, &args.base_sha)?;
+    if resolve_commit(path, "HEAD")? != base {
+        return Err(WorktreeError::Git {
+            message: "the copy is not at the candidate base".to_string(),
+        });
+    }
+    ensure_integrable_tree(path)?;
+    let mut out = Vec::with_capacity(args.picks.len());
+    for pick in args.picks {
+        let sha = split_one(path, &base, &pick)?;
+        out.push(SplitCandidate {
+            candidate_id: pick.candidate_id,
+            sha,
+        });
+    }
+    Ok(out)
+}
+
+fn split_one(
+    path: &Path,
+    base: &str,
+    pick: &SplitCandidatePick,
+) -> Result<Option<String>, WorktreeError> {
+    let Ok(commit) = resolve_commit(path, &pick.commit_sha) else {
+        return Ok(None);
+    };
+    if git(path, &["cherry-pick", "--allow-empty", &commit]).is_err() {
+        crate::logging::note_failure(
+            "split cherry-pick abort",
+            git(path, &["cherry-pick", "--abort"]),
+        );
+        git(path, &["reset", "--hard", "--quiet", base])?;
+        return Ok(None);
+    }
+    let tip = resolve_commit(path, "HEAD")?;
+    git(
+        path,
+        &["update-ref", &candidate_ref(&pick.candidate_id), &tip],
+    )?;
+    git(path, &["reset", "--hard", "--quiet", base])?;
+    Ok(Some(tip))
 }
 
 #[cfg(test)]

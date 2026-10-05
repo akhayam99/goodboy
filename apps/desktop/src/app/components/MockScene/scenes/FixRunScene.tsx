@@ -21,8 +21,7 @@ import {
 } from './agentBriefResolverLive';
 
 const SINGLE_ID = 'mock-brief-resolver-single' as AgentId;
-const BATCH_A_ID = 'mock-brief-resolver-batch-a' as AgentId;
-const BATCH_B_ID = 'mock-brief-resolver-batch-b' as AgentId;
+const BATCH_AGENT_ID = 'mock-brief-resolver-batch' as AgentId;
 const BATCH_ID = 'mock-brief-resolve-batch';
 const SINGLE_THREAD = 'PRRT_thread_retry_backoff';
 const SINGLE_ITEM = 'mock-resolve-item-retry-backoff';
@@ -69,13 +68,13 @@ const resolverAgent = ({
 const attemptOf = ({
   id,
   agentId,
-  threadId,
+  threadIds,
   minutes,
   batchId,
 }: {
   readonly id: string;
   readonly agentId: AgentId;
-  readonly threadId: string;
+  readonly threadIds: ReadonlyArray<string>;
   readonly minutes: number;
   readonly batchId: string | null;
 }): ResolveAttempt => ({
@@ -83,7 +82,8 @@ const attemptOf = ({
   sessionId: SESSION_ID,
   agentId,
   prNumber: 318,
-  threadIds: [threadId],
+  threadIds,
+  launchId: batchId === null ? null : `${batchId}-launch`,
   provider: 'anthropic',
   model: 'claude-sonnet-5',
   effort: null,
@@ -123,18 +123,11 @@ const AGENTS: ReadonlyArray<Agent> = [
     summary: 'Capped the retry loop and added jitter.',
   }),
   resolverAgent({
-    id: BATCH_A_ID,
+    id: BATCH_AGENT_ID,
     ordinal: 41,
-    name: 'Resolve: Theo Varga on config.ts',
+    name: 'Resolve: 2 review comments',
     minutes: 8,
-    summary: 'Fixed the typo in the retry comment.',
-  }),
-  resolverAgent({
-    id: BATCH_B_ID,
-    ordinal: 42,
-    name: 'Resolve: Mara Quint on retryPolicy.ts',
-    minutes: 8,
-    summary: 'Named the retry constant.',
+    summary: 'Fixed the typo in the retry comment and named the retry constant.',
   }),
 ];
 
@@ -275,21 +268,14 @@ export const FixRunScene = () => {
           attemptOf({
             id: 'mock-brief-attempt-single',
             agentId: SINGLE_ID,
-            threadId: SINGLE_THREAD,
+            threadIds: [SINGLE_THREAD],
             minutes: 9,
             batchId: null,
           }),
           attemptOf({
-            id: 'mock-brief-attempt-batch-a',
-            agentId: BATCH_A_ID,
-            threadId: BATCH_THREADS[0],
-            minutes: 8,
-            batchId: BATCH_ID,
-          }),
-          attemptOf({
-            id: 'mock-brief-attempt-batch-b',
-            agentId: BATCH_B_ID,
-            threadId: BATCH_THREADS[1],
+            id: 'mock-brief-attempt-batch',
+            agentId: BATCH_AGENT_ID,
+            threadIds: BATCH_THREADS,
             minutes: 8,
             batchId: BATCH_ID,
           }),
@@ -323,7 +309,8 @@ export const FixRunScene = () => {
       stagePush();
     }
     const open = sceneParam({ key: 'open' });
-    const target = open === 'batch' ? BATCH_A_ID : open === 'single' || isLive ? SINGLE_ID : null;
+    const target =
+      open === 'batch' ? BATCH_AGENT_ID : open === 'single' || isLive ? SINGLE_ID : null;
     const pane = sceneParam({ key: 'pane' }) === 'transcript' ? 'transcript' : 'brief';
     if (target !== null) {
       navigate({ to: agentPlace({ sessionId: SESSION_ID, agentId: target, pane }) });

@@ -933,7 +933,8 @@ const failedAttempt = ({
   phase: 'failed',
   startedAt: msAgo({ minutes: startedMinutesAgo }),
   endedAt: msAgo({ minutes: endedMinutesAgo }),
-  error: 'interrupted',
+  error: 'The provider returned an overloaded error',
+  failureCause: 'provider_error',
   createdAt: msAgo({ minutes: startedMinutesAgo }),
 });
 
@@ -992,7 +993,7 @@ const failureSeed = ({ failure }: { readonly failure: ResolveFailure }) => {
     ...THREAD_IDEMPOTENCY,
     state: 'failed',
     stage: 'failed',
-    stateReason: 'failed:interrupted',
+    stateReason: null,
     activeAttemptId: FAILED_ATTEMPT_ID,
   };
   const pushThread: ResolveThread = {

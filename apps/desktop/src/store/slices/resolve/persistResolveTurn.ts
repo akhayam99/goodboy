@@ -9,8 +9,10 @@ import {
   setResolveAttemptPhase,
 } from '@goodboy/db';
 import { saveResolveThread } from './saveResolveThread';
-import type { ResolveThread } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
+import type { ResolveAttempt, ResolveThread, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { agentLastMessage } from '../../../features/resolve/agentLastMessage';
 import { agentThreadIds } from '../../../features/session/agentThreadIds';
 import { resolverTurnOutcomes } from '../../../features/session/resolverTurnOutcomes';
 import { captureResolveCandidate } from './captureResolveCandidate';
@@ -22,6 +24,41 @@ import type { SliceParams, TurnParams } from './types';
 import { activeReviewSourceOf } from '../review-source/activeReviewSource';
 
 type Params = SliceParams & TurnParams;
+
+const isRecoverableCause = ({ attempt }: { readonly attempt: ResolveAttempt }): boolean =>
+  attempt.failureCause === 'app_closed' ||
+  attempt.failureCause === 'provider_error' ||
+  (attempt.failureCause == null && attempt.error === 'interrupted');
+
+const failUncaptured = async ({
+  sessionId,
+  attemptId,
+  error,
+}: {
+  readonly sessionId: SessionId;
+  readonly attemptId: string;
+  readonly error: unknown;
+}): Promise<void> => {
+  const db = tauriDatabase;
+  const rows = await listResolveThreads({ db, sessionId });
+  for (const row of rows) {
+    if (row.activeAttemptId !== attemptId || row.disposition !== 'fix' || row.state !== 'fixed') {
+      continue;
+    }
+    await saveResolveThread({
+      db,
+      row: { ...row, state: 'failed', updatedAt: Date.now() },
+      expectedRevision: row.revision,
+    });
+  }
+  await setResolveAttemptPhase({
+    db,
+    id: attemptId,
+    phase: 'failed',
+    error: formatError(error),
+    failureCause: 'capture_failed',
+  });
+};
 
 export const persistResolveTurn = async ({
   set,
@@ -46,7 +83,10 @@ export const persistResolveTurn = async ({
   if (owned.length === 0) {
     return;
   }
-  const hasOwnedMarkers = owned.some((threadId) => parsed.turnOutcomes[threadId] !== undefined);
+  const hasOwnedMarkers = owned.some(
+    (threadId) =>
+      parsed.turnOutcomes[threadId] !== undefined || parsed.questions[threadId] !== undefined,
+  );
   if (isCandidate && !hasOwnedMarkers) {
     return;
   }
@@ -56,7 +96,7 @@ export const persistResolveTurn = async ({
     !isCandidate &&
     hasOwnedMarkers &&
     attempt?.phase === 'failed' &&
-    attempt.error === 'interrupted';
+    isRecoverableCause({ attempt });
   if (
     attemptId !== undefined &&
     (attempt?.id !== attemptId ||
@@ -70,9 +110,14 @@ export const persistResolveTurn = async ({
     await insertResolveAttempt({ db, attempt: { ...attempt, threadIds: owned } });
   }
   const questions = isCandidate ? [] : await listOpenQuestionsForSession(db, sessionId);
-  const question =
-    questions.find((item) => item.createdByAgentId === agent.id && item.status === 'open')?.text ??
-    null;
+  const hasAsked = Object.keys(parsed.questions).length > 0;
+  const question = hasAsked
+    ? null
+    : (questions.find((item) => item.createdByAgentId === agent.id && item.status === 'open')
+        ?.text ?? null);
+  const lastMessage = agentLastMessage({ assistantText });
+  let hasSilentThread = false;
+  const processed: Array<string> = [];
   for (const threadId of owned) {
     const previous = rows.find((row) => row.threadId === threadId);
     if (
@@ -82,6 +127,8 @@ export const persistResolveTurn = async ({
       continue;
     }
     const outcome = parsed.turnOutcomes[threadId];
+    const asked = parsed.questions[threadId];
+    processed.push(threadId);
     if (isCandidate && outcome === undefined) {
       continue;
     }
@@ -98,19 +145,31 @@ export const persistResolveTurn = async ({
     const verdict =
       parsed.analysisVerdicts[threadId] ??
       (row.disposition === 'no_change' ? 'wontfix' : undefined);
-    const patch: Partial<ResolveThread> =
-      outcome === undefined
-        ? retained !== null && (hasOwnedMarkers || question !== null)
-          ? outcomePatch({ outcome: retained, verdict, previous })
-          : {
-              state: question === null ? 'failed' : 'needs_answer',
-              stateReason:
-                question === null
-                  ? `missing_result${retained !== null && row.stateReason !== null ? `:${row.stateReason}` : ''}`
-                  : 'question',
-              question,
-            }
-        : outcomePatch({ outcome, verdict, previous });
+    const askedText = question ?? (lastMessage === '' ? null : lastMessage);
+    const kept = retained !== null && (hasOwnedMarkers || question !== null) ? retained : null;
+    const asking = retained === null ? { stateReason: 'question' } : {};
+    const patch: Partial<ResolveThread> = (() => {
+      if (asked !== undefined) {
+        return { state: 'needs_answer', question: asked.question, ...asking };
+      }
+      if (outcome !== undefined) {
+        return outcomePatch({ outcome, verdict, previous });
+      }
+      if (kept !== null) {
+        return outcomePatch({ outcome: kept, verdict, previous });
+      }
+      if (askedText === null) {
+        return { state: 'failed' };
+      }
+      return { state: 'needs_answer', question: askedText, ...asking };
+    })();
+    hasSilentThread =
+      hasSilentThread ||
+      (!isCandidate &&
+        asked === undefined &&
+        outcome === undefined &&
+        kept === null &&
+        askedText === null);
     const next = {
       ...row,
       ...patch,
@@ -125,15 +184,25 @@ export const persistResolveTurn = async ({
   }
   if (!isCandidate && attempt !== undefined) {
     const waiting = (await listResolveThreads({ db, sessionId })).some(
-      (row) => owned.includes(row.threadId) && row.state === 'needs_answer',
+      (row) => processed.includes(row.threadId) && row.state === 'needs_answer',
     );
-    await setResolveAttemptPhase({ db, id: attempt.id, phase: waiting ? 'waiting' : 'finished' });
+    await setResolveAttemptPhase(
+      hasSilentThread
+        ? {
+            db,
+            id: attempt.id,
+            phase: 'failed',
+            error: 'the provider returned no message',
+            failureCause: 'provider_error',
+          }
+        : { db, id: attempt.id, phase: waiting ? 'waiting' : 'finished' },
+    );
   }
   if (!isCandidate) {
     const updatedRows = await listResolveThreads({ db, sessionId });
     const queueItems = await listResolveQueueItems({ db, sessionId });
     for (const row of updatedRows) {
-      if (!owned.includes(row.threadId) || row.disposition === null) {
+      if (!processed.includes(row.threadId) || row.disposition === null) {
         continue;
       }
       const queued = queueItems.find(({ thread }) => thread.threadId === row.threadId);
@@ -171,19 +240,24 @@ export const persistResolveTurn = async ({
       });
     }
     if (attempt !== undefined) {
-      await captureResolveCandidate({
-        set,
-        get,
-        sessionId,
-        attemptId: attempt.id,
-        threadIds: owned,
-      }).catch(() => null);
+      try {
+        await captureResolveCandidate({
+          set,
+          get,
+          sessionId,
+          attemptId: attempt.id,
+          threadIds: processed,
+        });
+      } catch (error) {
+        await failUncaptured({ sessionId, attemptId: attempt.id, error });
+      }
     }
+    const capturedRows = await listResolveThreads({ db, sessionId });
     projectResolveRows({
       set,
       get,
       sessionId,
-      rows: updatedRows,
+      rows: capturedRows,
       attempts: await listResolveAttempts({ db, sessionId }),
     });
     const refreshedQueueItems = await listResolveQueueItems({ db, sessionId });

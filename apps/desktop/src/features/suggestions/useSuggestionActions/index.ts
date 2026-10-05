@@ -32,7 +32,7 @@ const openProviderSignIn = ({ providerId }: { readonly providerId: string }) =>
     }),
   );
 
-const FIXERS_STARTED_TITLE = 'Fixers started';
+const FIXERS_STARTED_TITLE = 'Fix run started';
 const OPEN_SUMMARY_LABEL = 'Open summary';
 
 type Params = {
@@ -173,7 +173,7 @@ export const useSuggestionActions = ({
       ),
       launchChoice,
     });
-    const agentIds = await startResolve({
+    const { agentId } = await startResolve({
       sessionId,
       threads: unresolvedThreads,
       pr: pullRequest,
@@ -184,9 +184,12 @@ export const useSuggestionActions = ({
     });
     announceAgentStarted({
       sessionId,
-      agentId: agentIds[0] ?? null,
+      agentId,
       title: FIXERS_STARTED_TITLE,
-      message: startedLine({ count: agentIds.length, modelName: modelLabel(routing.model) }),
+      message: startedLine({
+        count: unresolvedThreads.length,
+        modelName: modelLabel(routing.model),
+      }),
       actionLabel: OPEN_SUMMARY_LABEL,
       open: () => navigate({ to: branchPlace({ sessionId, tab: 'comments' }) }),
     });

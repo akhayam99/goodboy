@@ -8,6 +8,8 @@ import { createStore } from 'zustand/vanilla';
 import {
   insertResolveAttempt,
   insertResolveQueueItem,
+  listResolveAttempts,
+  listResolveCandidateItems,
   listResolveCandidates,
   listResolveQueueItems,
   listResolveThreads,
@@ -24,7 +26,7 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { ACCEPT_CONFLICT, acceptResolveQueueItem } from './acceptResolveQueueItem';
+import { acceptResolveQueueItem } from './acceptResolveQueueItem';
 import { integrateWorktreeCandidate } from '../../../features/worktree/worktree';
 import { createResolveSlice } from './index';
 import { resolveInitialState } from './state';
@@ -153,6 +155,34 @@ vi.mock('../../../features/worktree/worktree', () => {
         return { sha: tip, baseSha };
       },
     ),
+    splitWorktreeCandidates: vi.fn(
+      async ({
+        worktreePath,
+        baseSha,
+        picks,
+      }: {
+        readonly worktreePath: string;
+        readonly baseSha: string;
+        readonly picks: ReadonlyArray<{ readonly candidateId: string; readonly commitSha: string }>;
+      }) =>
+        picks.map(({ candidateId, commitSha }) => {
+          try {
+            git(worktreePath, ['cherry-pick', '--allow-empty', commitSha]);
+            const tip = git(worktreePath, ['rev-parse', 'HEAD']);
+            git(worktreePath, ['update-ref', `refs/goodboy/candidates/${candidateId}`, tip]);
+            git(worktreePath, ['reset', '--hard', '--quiet', baseSha]);
+            return { candidateId, sha: tip };
+          } catch {
+            try {
+              git(worktreePath, ['cherry-pick', '--abort']);
+            } catch {
+              git(worktreePath, ['reset', '--hard', '--quiet', baseSha]);
+            }
+            git(worktreePath, ['reset', '--hard', '--quiet', baseSha]);
+            return { candidateId, sha: null };
+          }
+        }),
+    ),
     integrateWorktreeCandidate: vi.fn(
       async ({
         worktreePath,
@@ -222,7 +252,10 @@ let worktreePath = '';
 const mountTarget = () => ({ mountId: MOUNT_ID, mountRevision: 4, worktreePath });
 let rootSha = '';
 
-const makeThread = ({ threadId }: { readonly threadId: string }): ResolveThread => ({
+const makeThread = ({
+  threadId,
+  ...overrides
+}: { readonly threadId: string } & Partial<ResolveThread>): ResolveThread => ({
   id: `row-${threadId}`,
   sessionId: SESSION_ID,
   projectId: PROJECT_ID,
@@ -250,6 +283,7 @@ const makeThread = ({ threadId }: { readonly threadId: string }): ResolveThread 
   closedSource: null,
   createdAt: 1,
   updatedAt: 1,
+  ...overrides,
 });
 
 const makeHarness = () => {
@@ -284,8 +318,18 @@ const makeHarness = () => {
   return { store, set, get, actions: createResolveSlice({ set, get }) };
 };
 
-const seedItem = async ({ threadId }: { readonly threadId: string }): Promise<string> => {
-  await upsertResolveThread({ db, row: makeThread({ threadId }), expectedRevision: null });
+const seedItem = async ({
+  threadId,
+  thread = {},
+}: {
+  readonly threadId: string;
+  readonly thread?: Partial<ResolveThread>;
+}): Promise<string> => {
+  await upsertResolveThread({
+    db,
+    row: makeThread({ threadId, ...thread }),
+    expectedRevision: null,
+  });
   const rows = await listResolveQueueItems({ db, sessionId: SESSION_ID });
   const itemId = `item-${threadId}`;
   const revision =
@@ -450,6 +494,221 @@ beforeEach(async () => {
 
 afterEach(() => {
   rmSync(repoRoot, { recursive: true, force: true });
+});
+
+const startRun = async ({
+  harness,
+  attemptId,
+  threadIds,
+}: {
+  readonly harness: ReturnType<typeof makeHarness>;
+  readonly attemptId: string;
+  readonly threadIds: ReadonlyArray<string>;
+}): Promise<void> => {
+  await insertResolveAttempt({
+    db,
+    attempt: {
+      ...makeAttempt({ id: attemptId, createdAt: 10 }),
+      threadIds,
+      phase: 'running',
+      error: null,
+      copyPath: worktreePath,
+    },
+  });
+  await harness.actions.beginResolveCandidate({
+    sessionId: SESSION_ID,
+    attemptId,
+    mountTarget: mountTarget(),
+  });
+};
+
+const commitFile = ({ name, body }: { readonly name: string; readonly body: string }): string => {
+  agentWrites({ files: [[name, body]], message: `fix ${name}` });
+  return git(worktreePath, ['rev-parse', 'HEAD']);
+};
+
+const itemsOfCandidates = async (): Promise<ReadonlyArray<readonly [string, string, string[]]>> => {
+  const candidates = await listResolveCandidates({ db, sessionId: SESSION_ID });
+  return Promise.all(
+    candidates.map(
+      async (candidate) =>
+        [
+          candidate.id,
+          candidate.state,
+          (await listResolveCandidateItems({ db, candidateId: candidate.id })).map(
+            (item) => item.queueItemId,
+          ),
+        ] as const as readonly [string, string, string[]],
+    ),
+  );
+};
+
+describe('one candidate for each comment of a run', () => {
+  it('splits the fixes of one run into a candidate per comment, all on the same base', async () => {
+    const live = makeHarness();
+    const ids = ['thread-a', 'thread-b', 'thread-c'];
+    await startRun({ harness: live, attemptId: 'run-1', threadIds: ids });
+    const shas = [
+      commitFile({ name: 'a.txt', body: 'a\n' }),
+      commitFile({ name: 'b.txt', body: 'b\n' }),
+      commitFile({ name: 'c.txt', body: 'c\n' }),
+    ];
+    for (const [index, threadId] of ids.entries()) {
+      await seedItem({
+        threadId,
+        thread: { disposition: 'fix', commitShas: [shas[index] ?? ''] },
+      });
+    }
+
+    await live.actions.captureResolveCandidate({
+      sessionId: SESSION_ID,
+      attemptId: 'run-1',
+      threadIds: ids,
+    });
+
+    expect(await itemsOfCandidates()).toEqual([
+      ['run-1', 'discarded', []],
+      ['run-1-1', 'ready', ['item-thread-a']],
+      ['run-1-2', 'ready', ['item-thread-b']],
+      ['run-1-3', 'ready', ['item-thread-c']],
+    ]);
+    const candidates = await listResolveCandidates({ db, sessionId: SESSION_ID });
+    for (const candidate of candidates.filter((item) => item.state === 'ready')) {
+      expect(candidate.baseSha).toBe(rootSha);
+      expect(revList(worktreePath, `${rootSha}..${candidate.candidateSha}`)).toHaveLength(1);
+    }
+    const threads = await listResolveThreads({ db, sessionId: SESSION_ID });
+    const thirdSha = candidates.find((candidate) => candidate.id === 'run-1-3')?.candidateSha;
+    expect(threads.find((row) => row.threadId === 'thread-c')?.commitShas).toEqual([thirdSha]);
+    expect(git(worktreePath, ['rev-parse', 'HEAD'])).toBe(rootSha);
+  });
+
+  it('accepts one comment of a run on its own, and leaves the others to decide', async () => {
+    const live = makeHarness();
+    const ids = ['thread-a', 'thread-b'];
+    await startRun({ harness: live, attemptId: 'run-1', threadIds: ids });
+    const shas = [
+      commitFile({ name: 'a.txt', body: 'a\n' }),
+      commitFile({ name: 'b.txt', body: 'b\n' }),
+    ];
+    const items: string[] = [];
+    for (const [index, threadId] of ids.entries()) {
+      items.push(
+        await seedItem({
+          threadId,
+          thread: { disposition: 'fix', commitShas: [shas[index] ?? ''] },
+        }),
+      );
+    }
+    await live.actions.captureResolveCandidate({
+      sessionId: SESSION_ID,
+      attemptId: 'run-1',
+      threadIds: ids,
+    });
+    const itemB = items[1] ?? '';
+    const revision =
+      (await listResolveQueueItems({ db, sessionId: SESSION_ID })).find(
+        (entry) => entry.item.id === itemB,
+      )?.item.candidateRevision ?? 0;
+
+    await live.actions.acceptResolveQueueItem({
+      sessionId: SESSION_ID,
+      itemId: itemB,
+      revision,
+      reply: 'Reply for thread-b',
+    });
+
+    expect(existsSync(join(worktreePath, 'b.txt'))).toBe(true);
+    expect(existsSync(join(worktreePath, 'a.txt'))).toBe(false);
+    const states = await listResolveQueueItems({ db, sessionId: SESSION_ID });
+    expect(states.map((entry) => [entry.item.id, entry.item.approvalState])).toEqual([
+      ['item-thread-a', 'none'],
+      ['item-thread-b', 'accepted'],
+    ]);
+    expect(await itemsOfCandidates()).toEqual([
+      ['run-1', 'discarded', []],
+      ['run-1-1', 'ready', ['item-thread-a']],
+      ['run-1-2', 'integrated', ['item-thread-b']],
+    ]);
+  });
+
+  it('keeps a fix that builds on an earlier one in the shared candidate', async () => {
+    const live = makeHarness();
+    const ids = ['thread-a', 'thread-b'];
+    await startRun({ harness: live, attemptId: 'run-1', threadIds: ids });
+    const shas = [
+      commitFile({ name: 'shared.txt', body: 'one\n' }),
+      commitFile({ name: 'shared.txt', body: 'two\n' }),
+    ];
+    for (const [index, threadId] of ids.entries()) {
+      await seedItem({
+        threadId,
+        thread: { disposition: 'fix', commitShas: [shas[index] ?? ''] },
+      });
+    }
+
+    await live.actions.captureResolveCandidate({
+      sessionId: SESSION_ID,
+      attemptId: 'run-1',
+      threadIds: ids,
+    });
+
+    expect(await itemsOfCandidates()).toEqual([
+      ['run-1', 'ready', ['item-thread-b']],
+      ['run-1-1', 'ready', ['item-thread-a']],
+    ]);
+    expect(git(worktreePath, ['rev-parse', 'HEAD'])).toBe(rootSha);
+  });
+
+  it('ties only the fixes to the code, so a reply-only comment is accepted without landing it', async () => {
+    const live = makeHarness();
+    const ids = ['thread-a', 'thread-b', 'thread-c'];
+    await startRun({ harness: live, attemptId: 'run-1', threadIds: ids });
+    const sha = commitFile({ name: 'a.txt', body: 'a\n' });
+    const items = [
+      await seedItem({ threadId: 'thread-a', thread: { disposition: 'fix', commitShas: [sha] } }),
+      await seedItem({ threadId: 'thread-b', thread: { disposition: 'no_change' } }),
+      await seedItem({ threadId: 'thread-c', thread: { disposition: 'no_change' } }),
+    ];
+
+    await live.actions.captureResolveCandidate({
+      sessionId: SESSION_ID,
+      attemptId: 'run-1',
+      threadIds: ids,
+    });
+    expect(await itemsOfCandidates()).toEqual([['run-1', 'ready', [items[0] ?? '']]]);
+
+    const replyItem = items[1] ?? '';
+    const revision =
+      (await listResolveQueueItems({ db, sessionId: SESSION_ID })).find(
+        (entry) => entry.item.id === replyItem,
+      )?.item.candidateRevision ?? 0;
+    await live.actions.acceptResolveQueueItem({
+      sessionId: SESSION_ID,
+      itemId: replyItem,
+      revision,
+      reply: 'Reply for thread-b',
+    });
+
+    expect(existsSync(join(worktreePath, 'a.txt'))).toBe(false);
+    expect(git(worktreePath, ['rev-parse', 'HEAD'])).toBe(rootSha);
+    expect((await itemsOfCandidates())[0]?.[1]).toBe('ready');
+  });
+
+  it('does not split a run with a single fix', async () => {
+    const live = makeHarness();
+    await startRun({ harness: live, attemptId: 'run-1', threadIds: ['thread-a'] });
+    const sha = commitFile({ name: 'a.txt', body: 'a\n' });
+    await seedItem({ threadId: 'thread-a', thread: { disposition: 'fix', commitShas: [sha] } });
+
+    await live.actions.captureResolveCandidate({
+      sessionId: SESSION_ID,
+      attemptId: 'run-1',
+      threadIds: ['thread-a'],
+    });
+
+    expect(await itemsOfCandidates()).toEqual([['run-1', 'ready', ['item-thread-a']]]);
+  });
 });
 
 describe('resolve candidates keep the branch tip approved', () => {
@@ -656,11 +915,7 @@ describe('resolve candidates keep the branch tip approved', () => {
   it('rolls a colliding fix back at accept and tells the comment to redo it on top', async () => {
     const live = makeHarness();
     const itemA = await seedItem({ threadId: 'thread-a' });
-    await live.actions.beginResolveCandidate({
-      sessionId: SESSION_ID,
-      attemptId: 'attempt-1',
-      mountTarget: mountTarget(),
-    });
+    await startAttempt({ harness: live, attemptId: 'attempt-1', createdAt: 10 });
     agentWrites({ files: [['a.txt', 'a\n']], message: 'fix a' });
     await live.actions.captureResolveCandidate({
       sessionId: SESSION_ID,
@@ -680,11 +935,15 @@ describe('resolve candidates keep the branch tip approved', () => {
         revision: 0,
         reply: 'Reply for thread-a',
       }),
-    ).rejects.toThrow(ACCEPT_CONFLICT);
+    ).rejects.toThrow('This fix collides with one accepted before it');
 
     expect(git(worktreePath, ['rev-parse', 'HEAD'])).toBe(head);
     const [thread] = await listResolveThreads({ db, sessionId: SESSION_ID });
-    expect(thread?.stateReason).toBe('failed:accept_conflict');
+    expect(thread?.state).toBe('failed');
+    const attempts = await listResolveAttempts({ db, sessionId: SESSION_ID });
+    expect(attempts.find((attempt) => attempt.id === 'attempt-1')?.failureCause).toBe(
+      'accept_conflict',
+    );
     const [candidate] = await listResolveCandidates({ db, sessionId: SESSION_ID });
     expect(candidate?.state).toBe('stale');
   });

@@ -4,6 +4,8 @@ import {
   listResolveCandidateItems,
   listResolveAttempts,
   listResolveQueueItems,
+  listResolveThreads,
+  setResolveAttemptFailureCause,
   setResolveCandidateState,
   setResolveQueueItemApproval,
 } from '@goodboy/db';
@@ -16,7 +18,7 @@ import { withCandidateLock } from './candidateLock';
 import { hashResolveReply } from './hashResolveReply';
 import { loadResolveCandidatesInto } from './loadResolveCandidatesInto';
 import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';
-import { releaseResolveCopy } from './releaseResolveCopy';
+import { projectResolveRows } from './projectResolveRows';
 import { remapIntegratedCommits } from './remapIntegratedCommits';
 import { saveResolveThread } from './saveResolveThread';
 import { withSavedReplyDraft } from './saveResolveReplyDraft';
@@ -36,9 +38,8 @@ type Covered = {
 export const PARTIAL_ACCEPTANCE =
   'This change also answers comments you left for later. Resolve them together, or take those back up first';
 export const STALE_APPROVAL = 'Approval revision is stale';
-export const ACCEPT_CONFLICT =
+const ACCEPT_CONFLICT =
   'This fix collides with one accepted before it. Redo it on top of the branch';
-const ACCEPT_CONFLICT_REASON = 'failed:accept_conflict';
 const NO_LONGER_APPLIES = 'the fix no longer applies on the branch';
 
 type ConflictParams = SliceParams &
@@ -49,6 +50,7 @@ type ConflictParams = SliceParams &
 
 const markAcceptConflict = async ({
   set,
+  get,
   sessionId,
   candidateId,
   covered,
@@ -61,15 +63,26 @@ const markAcceptConflict = async ({
     }
     await saveResolveThread({
       db,
-      row: {
-        ...entry.thread,
-        state: 'failed',
-        stateReason: ACCEPT_CONFLICT_REASON,
-        updatedAt: Date.now(),
-      },
+      row: { ...entry.thread, state: 'failed', updatedAt: Date.now() },
       expectedRevision: entry.thread.revision,
     });
   }
+  const attemptIds = new Set<string>([
+    candidateId,
+    ...covered.flatMap(({ entry }) =>
+      entry?.thread.activeAttemptId == null ? [] : [entry.thread.activeAttemptId],
+    ),
+  ]);
+  for (const id of attemptIds) {
+    await setResolveAttemptFailureCause({ db, id, failureCause: 'accept_conflict' });
+  }
+  projectResolveRows({
+    set,
+    get,
+    sessionId,
+    rows: await listResolveThreads({ db, sessionId }),
+    attempts: await listResolveAttempts({ db, sessionId }),
+  });
   await loadResolveQueueItemsInto({ set, sessionId });
   await loadResolveCandidatesInto({ set, sessionId });
 };
@@ -198,12 +211,6 @@ const acceptDecidedItem = async ({
     throw new Error(ACCEPT_CONFLICT);
   }
   const integratedSha = integrated;
-  const attempt = (await listResolveAttempts({ db, sessionId })).find(
-    (item) => item.id === candidate.id,
-  );
-  if (attempt !== undefined) {
-    await releaseResolveCopy({ attempt });
-  }
   await finalizeResolveCandidateIntegration({
     db,
     candidateId: candidate.id,

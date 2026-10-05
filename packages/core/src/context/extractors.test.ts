@@ -3,6 +3,7 @@ import type { TurnEvent } from '@goodboy/types';
 import {
   assessPlanReadiness,
   extractAllCommentAnalysis,
+  extractAllCommentNeedsInput,
   extractAllCommentReplies,
   extractAllCommentResolved,
   extractAllCommentWontfix,
@@ -528,6 +529,99 @@ describe('extractAllCommentWontfix', () => {
       { threadId: 'PRRT_1', reason: 'first' },
       { threadId: 'PRRT_2', reason: 'second' },
     ]);
+  });
+});
+
+describe('extractAllCommentNeedsInput', () => {
+  it('reads the question, the options and the recommended one', () => {
+    const text = [
+      'two readings here.',
+      '<<needs-input id="PRRT_1" options="Rename the export|Keep the name and add an alias" recommended="Rename the export">>Should `settle` be renamed everywhere or aliased?<</needs-input>>',
+    ].join('\n');
+
+    expect(extractAllCommentNeedsInput(text)).toEqual([
+      {
+        threadId: 'PRRT_1',
+        question: 'Should `settle` be renamed everywhere or aliased?',
+        options: ['Rename the export', 'Keep the name and add an alias'],
+        recommended: 'Rename the export',
+      },
+    ]);
+  });
+
+  it('keeps at most three options and drops a recommended one that is not in the list', () => {
+    const text =
+      '<<needs-input id="note:7" options="a|b|c|d" recommended="z">>Which one?<</needs-input>>';
+
+    expect(extractAllCommentNeedsInput(text)).toEqual([
+      { threadId: 'note:7', question: 'Which one?', options: ['a', 'b', 'c'], recommended: null },
+    ]);
+  });
+
+  it('matches the recommended option without caring about case', () => {
+    const text =
+      '<<needs-input id="PRRT_1" options="Alias|Rename" recommended="rename">>Which?<</needs-input>>';
+
+    expect(extractAllCommentNeedsInput(text)[0]?.recommended).toBe('Rename');
+  });
+
+  it('keeps a question with a greater-than sign and a code arrow', () => {
+    const text =
+      '<<needs-input id="PRRT_1" options="Map<K, V>|A -> B">>Return `Map<K, V>` or `A -> B`?<</needs-input>>';
+
+    expect(extractAllCommentNeedsInput(text)).toEqual([
+      {
+        threadId: 'PRRT_1',
+        question: 'Return `Map<K, V>` or `A -> B`?',
+        options: ['Map<K, V>', 'A -> B'],
+        recommended: null,
+      },
+    ]);
+  });
+
+  it('ignores a marker without an id, without a question or cut off before its close', () => {
+    expect(
+      extractAllCommentNeedsInput('<<needs-input options="a|b">>Which?<</needs-input>>'),
+    ).toEqual([]);
+    expect(
+      extractAllCommentNeedsInput('<<needs-input id="PRRT_1" options="a|b">>   <</needs-input>>'),
+    ).toEqual([]);
+    expect(extractAllCommentNeedsInput('<<needs-input id="PRRT_1">>half a question')).toEqual([]);
+  });
+
+  it('keeps the last question when a thread asks twice, one entry per thread', () => {
+    const text = [
+      '<<needs-input id="PRRT_1" options="a|b">>first<</needs-input>>',
+      '<<needs-input id="PRRT_2" options="c|d">>other<</needs-input>>',
+      '<<needs-input id="PRRT_1" options="a|b">>second<</needs-input>>',
+    ].join('\n');
+
+    expect(extractAllCommentNeedsInput(text).map((marker) => marker.question)).toEqual([
+      'second',
+      'other',
+    ]);
+  });
+
+  it('becomes a blocking one-choice question for the existing question machinery', () => {
+    const text =
+      '<<needs-input id="PRRT_1" options="a|b" recommended="b">>Which one?<</needs-input>>';
+
+    expect(extractMarkers(text).questions).toEqual([
+      {
+        text: 'Which one?',
+        suggestedAnswers: ['a', 'b'],
+        recommendedAnswer: 'b',
+        selectMode: 'one',
+        isBlocking: true,
+      },
+    ]);
+  });
+
+  it('is stripped from the text the reader sees', () => {
+    const text =
+      'asking.\n<<needs-input id="PRRT_1" options="a|b">>Which one?<</needs-input>>\nbye';
+
+    expect(stripControlMarkers(text)).toBe('asking.\n\nbye');
   });
 });
 

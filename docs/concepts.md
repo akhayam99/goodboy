@@ -292,7 +292,7 @@ opens the Commits tab, which owns it; no Activity row has a `⋯`.
 
 A **Needs you** block sits on top of Activity, and only while something waits
 on you: one row per owner, never per child. A burst reads "Resolve #318 · 2
-replies ready · 1 failed", a run "Retry policy · 1 question", a stopped rebase
+ready · 1 couldn't fix", a run "Retry policy · 1 question", a stopped rebase
 "Rebase of feat/export stopped ×2". Each row has **Open**, which goes to
 whoever owns the action (the review, the exact question, the branch). Push is
 never offered there. The block disappears when nothing waits, and there is no
@@ -745,25 +745,41 @@ reads every page of threads GitHub returns. If the read fails, Review
 shows the error from `gh` instead of an empty list.
 
 Review is one flow: the list on the left, the focused comment on the right.
-Every comment shows one state word, grouped in three:
+Every comment shows one of five words, the same word in the list, the thread,
+Activity, Needs you, the transcript card and the breadcrumb menus. One pure
+projection (`features/resolve/commentProjection.ts`) owns them, and every count
+is a count of comments, never of agents:
 
-- **Open**: Not started, Drafting (one live line says what the agent does),
-  Needs you (the agent asked), Ready (the fix and the reply under the comment,
-  with an Edited tag once you changed the reply), Comment changed (the reviewer
-  edited the original comment since the draft), Draft failed or Push failed (the box under the comment
-  names the reason, such as the run ended before a result or the provider
-  error, never a generic error. A failed run also shows the last command it
-  ran with its result, such as `pnpm test src/webhooks · 2 failing`, and a
-  link to the transcript)
-- **Ready to push**: Accepted, Reply only (with a Resolve only tag when
-  nothing is posted)
-- **Done**: Skipped (it never blocks the push), Pushed, and Resolved on GitHub
-  when someone else closed it
+- **Working**: the resolver is on it (Waiting while a launch queues behind
+  another, Pushing while a push is in flight)
+- **Needs you**: the agent asked. A question comes from a `needs-input` outcome,
+  or from the agent's own last message when a turn ended without any outcome. A
+  turn that ends without an outcome is never a failure
+- **Ready**: the fix and the reply under the comment, with an Edited tag once
+  you changed the reply
+- **Couldn't fix**: the box under the comment says why in one sentence, from the
+  cause recorded on the attempt (`resolve_attempts.failure_cause`, m225): the fix
+  didn't start, the provider stopped the run, every provider is over its spend
+  cap, you stopped it (shown as Stopped), the app closed while it was working, it
+  conflicts with a fix you accepted before, the worktree is gone, or the fix
+  couldn't be saved from its copy of the branch. A comment written before m225
+  reads "Cause not recorded". A failed run also shows the last command it ran
+  with its result, such as `pnpm test src/webhooks · 2 failing`, and a link to
+  the transcript. A push that failed stays here as Push failed
+- **Done**: a quiet sub-word says how: Accepted (waiting for the push), Answered
+  (a reply only), Skipped (it never blocks the push), Pushed, and Resolved on
+  GitHub when someone else closed it
+
+A comment nobody started reads Open. What git says (Already on origin, Looks
+fixed, Still needed, Fix went missing), Comment changed (the reviewer edited the
+original comment since the draft) and Checks failed (the change stays Ready) are
+chips next to the word, never in place of it. The groups are Open, Ready to push
+and Done, and the header shows one summary line instead of a chip per state. The
+`…` above the list filters the list by state.
 
 The state word carries the tone: Needs you is the only warning, Ready is neutral
-(the Accept button is the signal), Edited and Comment changed have their own tones,
-and the header shows one summary line instead of a chip per state. The `…`
-above the list filters the list by state.
+(the Accept button is the signal), Couldn't fix is the danger tone, except a stop
+by you.
 
 Review reads git after a fetch when it opens and again before every push, and
 keeps one git state per thread in `resolve_threads.git_state` (`local`,
@@ -869,13 +885,14 @@ N` on Cmd+Enter (Esc closes, Cancel too). The commit style has no control in
   marker contract
 - A fix run starts on the resolver role default (Sonnet 5.5 · Medium out of
   the box), never on the model of the last launch. A model picked in the launch
-  strip is kept for that session only and the strip says so (`Your pick, kept
+  panel is kept for that session only and the panel says so (`Your pick, kept
 for this session`, else `Resolver default`); launching does not turn the
-  default into a pick. A retry follows the same rule: Redraft, Answer and
-  Retry take the model picked for the session, else the role default, and keep
-  the commit style and hint of the comment's last batch attempt (and the commit
-  style set in Review replies, so with fixup set the second round is a fixup
-  too). The hint you type before a retry lands in the prompt's operator notes
+  default into a pick. A retry (Redraft, Answer, Retry) continues the same fix
+  run on the model it started with and keeps its commit style and hint (and
+  the commit style set in Review replies, so with fixup set the second round is
+  a fixup too). Only a model picked for the session that differs from the one
+  the run used starts the comment over as a new fix run on that model. The hint
+  you type before a retry lands in the prompt's operator notes
 - A failed run offers **Retry** (`Retry on Opus 5` once you picked a
   model, `Retry with the hint` with a hint), **Try another model** (the
   picker opens inline under the buttons) and **Add a hint** (F is Retry).
@@ -885,9 +902,12 @@ failed`) that opens to their reasons. A failed delivery after the run has no
   button on the comment: the Branch header reads `Retry N`, and the push
   result there offers `Sync and try again`. The comment keeps `Open on GitHub`
   when Goodboy could not confirm the reply landed
-- A batch fix runs in its own copy of the branch, up to four at a time (the
-  session limit), so two fixes never fight over the same branch. The rest wait
-  with `Waiting for a free slot`
+- A fix run is one agent in its own copy of the branch, so it never fights the
+  branch you are on. Separate runs go up to four at a time (the session limit)
+  and the rest wait with `Waiting for a free slot`. Answering a question,
+  retrying a comment that could not be fixed and typing in the transcript all
+  continue the same agent in the same copy; Start over is the one way to a new
+  agent
 - After a restart, Goodboy rebuilds everything from its database, not from a
   chat log
 
@@ -1019,7 +1039,9 @@ shows it under "See who reads what".
 - Planner, orchestrator and the question delegate read roles, work and rules
 - Scout, investigator, report and wireframe read roles, work and topics
 - Implementer, tester and docs read roles and rules
-- Reviewer and resolver read roles, rules and topics
+- Reviewer reads roles, rules and topics
+- Resolver reads roles and topics, never the rules: it works unattended in its
+  own copy, so a rule written for chat ("ask before changing") would stop it
 - A custom role reads every field
 - Task models read nothing, except **Learnings**, which reads the topics, and the
   profile never goes into text Goodboy posts

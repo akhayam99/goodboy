@@ -1,3 +1,4 @@
+import { resolveLabelOfState } from '../../resolve/commentProjection';
 import type { ReviewCommentState } from '../../resolve/reviewCommentState';
 import type {
   TimelineAgentEntry,
@@ -22,21 +23,6 @@ const STATE_PRIORITY: ReadonlyArray<ReviewCommentState> = [
   'resolved',
   'skipped',
 ];
-
-const RESOLVE_STATE_WORD: Readonly<Record<ReviewCommentState, string>> = {
-  new: 'Not started',
-  drafting: 'Drafting',
-  needs: 'Needs you',
-  ready: 'Ready for you',
-  edited: 'Ready for you',
-  outdated: 'Changed',
-  failed: 'Draft failed',
-  accepted: 'Accepted',
-  replied: 'Reply only',
-  pushed: 'Pushed',
-  resolved: 'Resolved',
-  skipped: 'Skipped',
-};
 
 type Member = {
   readonly entry: TimelineAgentEntry;
@@ -127,7 +113,10 @@ export const resolveBatchFiles = ({
         lines: linesOf({ threads: bucket.threads }),
         threadCount: bucket.threads.length,
         state,
-        word: count > 1 ? `${RESOLVE_STATE_WORD[state]} ×${count}` : RESOLVE_STATE_WORD[state],
+        word:
+          count > 1
+            ? `${resolveLabelOfState({ state })} ×${count}`
+            : resolveLabelOfState({ state }),
         agentIds: bucket.agentIds,
       } satisfies TimelineResolveFileEntry;
     });

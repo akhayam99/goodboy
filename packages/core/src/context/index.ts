@@ -13,6 +13,7 @@ export { PREAMBLE_SLOT_TOTAL_BUDGET, SLOT_BUDGETS } from './budgets';
 export {
   assessPlanReadiness,
   extractAllCommentAnalysis,
+  extractAllCommentNeedsInput,
   extractAllCommentReplies,
   extractAllCommentResolved,
   extractAllCommentWontfix,

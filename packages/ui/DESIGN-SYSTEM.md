@@ -381,7 +381,7 @@ exactly one home (`activityView.ts`, `entriesOfView`):
 - **Needs you** is a block on top of Activity, drawn only while it is not
   empty: a card on `bg-subtle` with a `warning` eyebrow and one row per owner,
   never one per child. A row is an icon in the warning tone, one line of text
-  (`Resolve #318 · 2 replies ready · 1 failed`, `Retry policy · 1 question`,
+  (`Resolve #318 · 2 ready · 1 couldn't fix`, `Retry policy · 1 question`,
   `Rebase of feat/export stopped ×2`) and a ghost **Open** that goes to
   whoever owns the action: the review, the exact question, the branch. It never
   offers Push or Answer, because the verb stays with its owner. The owners come
@@ -394,10 +394,10 @@ span and the summed cost. Open, it shows one row per file (the file name in
 the code face, its lines as `:12 ×4 · :22`, its state and its cost) and a last
 row `Open #318`; a burst of more than eight files opens on the first eight
 under **Show N more**. Its agents come from the launch id every resolver
-writes, a retry stays inside the burst of its origin and the row says "1
-retry". Resolves from before launch ids are grouped at read time only on a full
-key (same session, repo, provider and pull request, each started within ten
-minutes of the first one) and the row carries a `related` chip.
+writes. A fix run is one agent, and a follow-up or a retry is another turn of
+that agent, so a run never grows a retry count; only resolves from before 0.20,
+which started one agent per comment, still form a burst, grouped by launch or
+batch id. The title and the tally count comments.
 
 ### Rail vocabulary
 
@@ -625,8 +625,8 @@ single visible action from the ask. The state slot is a fixed 112px space
 row says its state at the same x and the title takes the rest and truncates.
 Quiet final states (Pushed, Accepted, Resolved, Reply only, Skipped, Closed)
 show as an icon in their tone, with the word in the tooltip and for screen
-readers; states that ask you or report trouble (Needs you, Ready for you,
-Draft failed, Longer than usual, Step 3 ready) stay a word, in their short form,
+readers; states that ask you or report trouble (Needs you, Ready,
+Couldn't fix, Longer than usual, Step 3 ready) stay a word, in their short form,
 with the full sentence in the tooltip. A new state is a row in the
 `statePresentation` tables, never a branch in the component.
 When several conditions hold, failed wins, then waiting (an answer, then the
@@ -692,10 +692,12 @@ already on screen never grows again: when a run finishes under the pointer its
 rows join the group already open.
 
 A resolver takes its row state from the comment it fixes, not from the agent:
-the `review` reason carries the Review state and its word (Ready for you,
-Drafting, Pushed, Draft failed), with Review's tone and node. A comment that
-needs you, has a ready fix or a failed draft sets the `reviewComment` ask, so
-Needs you carries it and the row itself is not tinted.
+the `review` reason carries the Review state and its word, one of five (Working,
+Needs you, Ready, Couldn't fix, Done) or the quiet sub-word of a Done comment
+(Pushed), with Review's tone and node. An agent that fixes several comments
+counts them in comments ("3 ready · 1 needs you"), never as agents. A comment
+that needs you, has a ready fix or could not be fixed sets the `reviewComment`
+ask, so Needs you carries it and the row itself is not tinted.
 
 ### Work meta
 

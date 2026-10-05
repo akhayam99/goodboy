@@ -1,13 +1,7 @@
-import {
-  PROVIDER_IDS,
-  type ResolveAttempt,
-  type ResolveCommitStyle,
-  type ResolveLaunchChoice,
-} from '@goodboy/types';
+import { PROVIDER_IDS, type ResolveCommitStyle, type ResolveLaunchChoice } from '@goodboy/types';
 import { EFFORT_LEVELS } from '../chat/utils/chat-constants';
 import type { ResolveModelChoice } from '../chat/spawn-from-comment';
 import type { AgentKindRouting } from '../session/agent-kind';
-import type { ResolveAttemptBatch } from '../../store/slices/resolve/types';
 
 type LaunchParams = {
   readonly routing: AgentKindRouting;
@@ -44,46 +38,3 @@ export const modelChoiceOfLaunch = ({
     ...(launchChoice.hint !== null && { hint: launchChoice.hint }),
   };
 };
-
-export const retryOriginOf = ({
-  attempts,
-  threadId,
-}: {
-  readonly attempts: ReadonlyArray<ResolveAttempt>;
-  readonly threadId: string;
-}): string | null => {
-  const latest = [...attempts].reverse().find((attempt) => attempt.threadIds.includes(threadId));
-  return latest?.retryOfLaunchId ?? latest?.launchId ?? latest?.batchId ?? null;
-};
-
-export const retryBatchOf = ({
-  attempts,
-  threadId,
-}: {
-  readonly attempts: ReadonlyArray<ResolveAttempt>;
-  readonly threadId: string;
-}): ResolveAttemptBatch | null => {
-  const latest = [...attempts].reverse().find((attempt) => attempt.threadIds.includes(threadId));
-  if (latest === undefined || latest.batchId === null || latest.launchChoice === null) {
-    return null;
-  }
-  return { batchId: latest.batchId, launchChoice: latest.launchChoice };
-};
-
-export const batchOnRouting = ({
-  batch,
-  routing,
-}: {
-  readonly batch: ResolveAttemptBatch | null;
-  readonly routing: AgentKindRouting;
-}): ResolveAttemptBatch | null =>
-  batch === null
-    ? null
-    : {
-        ...batch,
-        launchChoice: launchChoiceOf({
-          routing,
-          commitStyle: batch.launchChoice.commitStyle,
-          hint: batch.launchChoice.hint,
-        }),
-      };

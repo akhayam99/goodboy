@@ -42,7 +42,7 @@ type Params = Readonly<{
 
 export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
   let resolvedPrompt = ctx.resolvedPrompt;
-  const { sessionId, content, origin, handoff } = ctx.input;
+  const { sessionId, content, origin, handoff, resolveThreadIds } = ctx.input;
   const {
     session,
     workspaceProjects,
@@ -89,10 +89,13 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
           instructions: resolvedPrompt,
           phase: 'running',
           mountTarget: turnTarget,
-          threadIds: resumableResolveThreadIds({
-            rows: get().sessionResolveThreads[sessionId] ?? [],
-            agent: agentRowEarly,
-          }),
+          threadIds:
+            resolveThreadIds ??
+            resumableResolveThreadIds({
+              rows: get().sessionResolveThreads[sessionId] ?? [],
+              agent: agentRowEarly,
+            }),
+          ...(copyPath !== null && { copyPath }),
           candidateMode: isCopyTurn
             ? 'propose'
             : resolveCandidateMode({

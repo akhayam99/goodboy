@@ -16,7 +16,7 @@ const lineText = (): string => {
 describe('AlsoSentLine', () => {
   it('names the roles that never get the working rules', () => {
     expect(lineText()).toBe(
-      'Also sent to every agent but Scout, Debugger, Report, Wireframe, Scribe: How agents should work with you',
+      'Also sent to every agent but Scout, Debugger, Report, Wireframe, Resolver, Scribe: How agents should work with you',
     );
   });
 

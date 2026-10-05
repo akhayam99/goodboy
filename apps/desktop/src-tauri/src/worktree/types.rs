@@ -197,6 +197,30 @@ pub struct QuarantineCandidateArgs {
     pub base_sha: String,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct SplitCandidatePick {
+    #[serde(rename = "candidateId")]
+    pub candidate_id: String,
+    #[serde(rename = "commitSha")]
+    pub commit_sha: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SplitCandidatesArgs {
+    #[serde(rename = "worktreePath")]
+    pub worktree_path: String,
+    #[serde(rename = "baseSha")]
+    pub base_sha: String,
+    pub picks: Vec<SplitCandidatePick>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SplitCandidate {
+    #[serde(rename = "candidateId")]
+    pub candidate_id: String,
+    pub sha: Option<String>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct IntegratedCandidate {
     pub sha: String,

@@ -20,6 +20,7 @@ const seed = async () => {
   );
   const result = await migrateThrough({ db, version: 222 });
   expect(result.applied).toEqual([222]);
+  await migrateThrough({ db, version: 225 });
   return db;
 };
 

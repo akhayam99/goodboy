@@ -555,6 +555,7 @@ export {
   insertResolveAttempt,
   setResolveAttemptPhase,
   setResolveAttemptCopyPath,
+  setResolveAttemptFailureCause,
 } from './queries/resolve-attempt';
 export {
   insertResolveBatch,

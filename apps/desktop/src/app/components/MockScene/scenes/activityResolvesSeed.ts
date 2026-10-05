@@ -22,7 +22,7 @@ export const ACTIVITY_RESOLVES_SESSION = SESSION;
 
 const PR_NUMBER = 318;
 const BATCH_ID = 'mock-batch-pr-318';
-const RETRY_LAUNCH_ID = 'mock-launch-retry-pr-318';
+const LAUNCH_ID = 'mock-launch-pr-318';
 const NOW_MS = Date.parse(NOW);
 
 type Kind = 'ready' | 'drafting' | 'pushed' | 'failed';
@@ -31,7 +31,6 @@ type ResolveSeed = {
   readonly author: string;
   readonly file: string;
   readonly kind: Kind;
-  readonly origin?: 'legacy' | 'retry';
   readonly minutesBack?: number;
 };
 
@@ -42,7 +41,7 @@ const MOUNT_TARGET = {
   worktreePath: '/Users/dev/harborline/payments-api',
 };
 
-const SEEDS: ReadonlyArray<ResolveSeed> = [
+const RUN_SEEDS: ReadonlyArray<ResolveSeed> = [
   { author: 'mquint', file: 'retryPolicy.ts:42', kind: 'ready' },
   { author: 'tvarga', file: 'config.ts:18', kind: 'drafting' },
   { author: 'iokafor', file: 'idempotency.ts:77', kind: 'pushed' },
@@ -53,36 +52,16 @@ const SEEDS: ReadonlyArray<ResolveSeed> = [
   { author: 'tvarga', file: 'retryPolicy.ts:88', kind: 'ready' },
   { author: 'mquint', file: 'idempotency.ts:20', kind: 'pushed' },
   { author: 'iokafor', file: 'config.ts:51', kind: 'drafting' },
-  { author: 'mquint', file: 'logging.ts:64', kind: 'ready', origin: 'retry' },
-  {
-    author: 'tvarga',
-    file: 'ledger.ts:4',
-    kind: 'pushed',
-    origin: 'legacy',
-    minutesBack: LEGACY_BACK,
-  },
-  {
-    author: 'tvarga',
-    file: 'ledger.ts:18',
-    kind: 'pushed',
-    origin: 'legacy',
-    minutesBack: LEGACY_BACK + 2,
-  },
-  {
-    author: 'iokafor',
-    file: 'rounding.ts:31',
-    kind: 'pushed',
-    origin: 'legacy',
-    minutesBack: LEGACY_BACK + 4,
-  },
-  {
-    author: 'mquint',
-    file: 'rounding.ts:8',
-    kind: 'failed',
-    origin: 'legacy',
-    minutesBack: LEGACY_BACK + 5,
-  },
 ];
+
+const LEGACY_SEEDS: ReadonlyArray<ResolveSeed> = [
+  { author: 'tvarga', file: 'ledger.ts:4', kind: 'pushed', minutesBack: LEGACY_BACK },
+  { author: 'tvarga', file: 'ledger.ts:18', kind: 'pushed', minutesBack: LEGACY_BACK + 2 },
+  { author: 'iokafor', file: 'rounding.ts:31', kind: 'pushed', minutesBack: LEGACY_BACK + 4 },
+  { author: 'mquint', file: 'rounding.ts:8', kind: 'failed', minutesBack: LEGACY_BACK + 5 },
+];
+
+const SEEDS: ReadonlyArray<ResolveSeed> = [...RUN_SEEDS, ...LEGACY_SEEDS];
 
 const STAGE: Record<Kind, ResolveStage> = {
   ready: 'proposed',
@@ -112,13 +91,47 @@ const ATTEMPT_PHASE: Record<Kind, ResolveAttempt['phase']> = {
   failed: 'failed',
 };
 
+const RUN_AGENT_ID = 'mock-resolves-agent-0' as AgentId;
+const FIRST_ATTEMPT_ID = 'mock-resolves-attempt-first';
+const FOLLOW_UP_ATTEMPT_ID = 'mock-resolves-attempt-follow-up';
+
 const isoOf = ({ minutesAgo }: { readonly minutesAgo: number }): IsoDateTime =>
   new Date(NOW_MS - minutesAgo * 60_000).toISOString() as IsoDateTime;
 
-const agentIdOf = ({ index }: { readonly index: number }): AgentId =>
-  `mock-resolves-agent-${index}` as AgentId;
+const isInRun = ({ index }: { readonly index: number }): boolean => index < RUN_SEEDS.length;
 
-const buildAgent = ({
+const agentIdOf = ({ index }: { readonly index: number }): AgentId =>
+  isInRun({ index }) ? RUN_AGENT_ID : (`mock-resolves-agent-${index}` as AgentId);
+
+const attemptIdOf = ({
+  seed,
+  index,
+}: {
+  readonly seed: ResolveSeed;
+  readonly index: number;
+}): string => {
+  if (!isInRun({ index })) {
+    return `mock-resolves-attempt-${index}`;
+  }
+  return seed.kind === 'drafting' ? FOLLOW_UP_ATTEMPT_ID : FIRST_ATTEMPT_ID;
+};
+
+const buildRunAgent = (): Agent => ({
+  id: RUN_AGENT_ID,
+  sessionId: SESSION.id,
+  ordinal: 100,
+  name: `Resolve: ${RUN_SEEDS.length} review comments`,
+  kind: 'resolver',
+  status: 'running',
+  runId: 'mock-resolves-run-0' as ProviderRunId,
+  startedAt: isoOf({ minutesAgo: 24 }),
+  lastViewedAt: NOW,
+  providerOverride: 'anthropic',
+  modelOverride: 'claude-sonnet-5',
+  sourceThreadIds: RUN_SEEDS.map((_, index) => threadIdOf({ index })),
+});
+
+const buildLegacyAgent = ({
   seed,
   index,
 }: {
@@ -126,7 +139,6 @@ const buildAgent = ({
   readonly index: number;
 }): Agent => {
   const minutesAgo = index + 1 + (seed.minutesBack ?? 0);
-  const isRunning = seed.kind === 'drafting';
   return {
     id: agentIdOf({ index }),
     sessionId: SESSION.id,
@@ -136,12 +148,8 @@ const buildAgent = ({
     status: AGENT_STATUS[seed.kind],
     runId: `mock-resolves-run-${index}` as ProviderRunId,
     startedAt: isoOf({ minutesAgo: minutesAgo + 1 }),
-    ...(isRunning
-      ? {}
-      : {
-          completedAt: isoOf({ minutesAgo }),
-          lastFinishedAt: isoOf({ minutesAgo }),
-        }),
+    completedAt: isoOf({ minutesAgo }),
+    lastFinishedAt: isoOf({ minutesAgo }),
     lastViewedAt: NOW,
     providerOverride: 'anthropic',
     modelOverride: 'claude-sonnet-5',
@@ -247,6 +255,8 @@ const buildSubagent = ({
   modelOverride: 'claude-sonnet-5',
 });
 
+const threadIdOf = ({ index }: { readonly index: number }): string => `PRRT_mock_resolves_${index}`;
+
 const buildThread = ({
   seed,
   index,
@@ -258,7 +268,7 @@ const buildThread = ({
   sessionId: SESSION.id,
   projectId: null,
   prNumber: PR_NUMBER,
-  threadId: `PRRT_mock_resolves_${index}`,
+  threadId: threadIdOf({ index }),
   originKind: 'review_comment',
   diffCommentId: null,
   state: THREAD_STATE[seed.kind],
@@ -267,7 +277,7 @@ const buildThread = ({
   revision: 1,
   generation: 0,
   reopenedFromThreadId: null,
-  activeAttemptId: `mock-resolves-attempt-${index}`,
+  activeAttemptId: attemptIdOf({ seed, index }),
   disposition: seed.kind === 'drafting' ? null : 'fix',
   replyDraft: seed.kind === 'drafting' ? null : 'Capped the retry backoff and read Retry-After.',
   commitShas: null,
@@ -309,7 +319,53 @@ const buildItem = ({
   updatedAt: thread.updatedAt,
 });
 
-const buildAttempt = ({
+const RUN_THREAD_IDS = RUN_SEEDS.map((_, index) => threadIdOf({ index }));
+const FOLLOW_UP_THREAD_IDS = RUN_SEEDS.flatMap((seed, index) =>
+  seed.kind === 'drafting' ? [threadIdOf({ index })] : [],
+);
+
+const buildRunAttempts = (): ReadonlyArray<ResolveAttempt> => {
+  const base = {
+    sessionId: SESSION.id,
+    agentId: RUN_AGENT_ID,
+    prNumber: PR_NUMBER,
+    provider: 'anthropic',
+    model: 'claude-sonnet-5',
+    effort: null,
+    instructions: null,
+    mountTarget: MOUNT_TARGET,
+    batchId: BATCH_ID,
+    launchId: LAUNCH_ID,
+    copyPath: null,
+    launchChoice: null,
+  } as const;
+  return [
+    {
+      ...base,
+      id: FIRST_ATTEMPT_ID,
+      threadIds: RUN_THREAD_IDS,
+      phase: 'finished',
+      startedAt: NOW_MS - 24 * 60_000,
+      endedAt: NOW_MS - 12 * 60_000,
+      error: null,
+      failureCause: 'accept_conflict',
+      createdAt: NOW_MS - 24 * 60_000,
+    },
+    {
+      ...base,
+      id: FOLLOW_UP_ATTEMPT_ID,
+      threadIds: FOLLOW_UP_THREAD_IDS,
+      phase: 'running',
+      startedAt: NOW_MS - 3 * 60_000,
+      endedAt: null,
+      error: null,
+      failureCause: null,
+      createdAt: NOW_MS - 3 * 60_000,
+    },
+  ];
+};
+
+const buildLegacyAttempt = ({
   seed,
   thread,
   index,
@@ -332,12 +388,12 @@ const buildAttempt = ({
     phase: ATTEMPT_PHASE[seed.kind],
     mountTarget: MOUNT_TARGET,
     startedAt: NOW_MS - (index + 2) * 60_000 - back,
-    endedAt: seed.kind === 'drafting' ? null : NOW_MS - (index + 1) * 60_000 - back,
+    endedAt: NOW_MS - (index + 1) * 60_000 - back,
     error: seed.kind === 'failed' ? 'The draft stopped before it produced a change.' : null,
+    failureCause: seed.kind === 'failed' ? 'provider_error' : null,
     createdAt: NOW_MS - (index + 2) * 60_000 - back,
-    batchId: seed.origin === 'legacy' ? null : BATCH_ID,
-    launchId: seed.origin === 'retry' ? RETRY_LAUNCH_ID : null,
-    retryOfLaunchId: seed.origin === 'retry' ? BATCH_ID : null,
+    batchId: null,
+    launchId: null,
     copyPath: null,
     launchChoice: null,
   };
@@ -383,7 +439,10 @@ export const seedActivityResolvesScene = (): void => {
   seedActivityRunScene();
   const state = useAppStore.getState();
   const agents = [
-    ...SEEDS.map((seed, index) => buildAgent({ seed, index })),
+    buildRunAgent(),
+    ...LEGACY_SEEDS.map((seed, offset) =>
+      buildLegacyAgent({ seed, index: RUN_SEEDS.length + offset }),
+    ),
     buildImplementer(),
     ...SUBAGENT_SEEDS.map((seed, index) => buildSubagent({ seed, index })),
   ];
@@ -395,12 +454,13 @@ export const seedActivityResolvesScene = (): void => {
     }
     return { item: buildItem({ seed, thread, index }), thread };
   });
-  const attempts = SEEDS.map((seed, index) => {
+  const legacyAttempts = LEGACY_SEEDS.map((seed, offset) => {
+    const index = RUN_SEEDS.length + offset;
     const thread = threads[index];
     if (thread === undefined) {
       throw new Error('resolve thread missing');
     }
-    return buildAttempt({ seed, thread, index });
+    return buildLegacyAttempt({ seed, thread, index });
   });
   useAppStore.setState({
     sessionPhaseRuns: {
@@ -416,27 +476,19 @@ export const seedActivityResolvesScene = (): void => {
       [SESSION.id]: [...CONTEXT_EVENTS, ...(state.sessionEvents?.[SESSION.id] ?? [])],
     },
     sessionResolveQueueItems: { ...state.sessionResolveQueueItems, [SESSION.id]: items },
-    sessionResolveAttempts: { ...state.sessionResolveAttempts, [SESSION.id]: attempts },
+    sessionResolveAttempts: {
+      ...state.sessionResolveAttempts,
+      [SESSION.id]: [...buildRunAttempts(), ...legacyAttempts],
+    },
     sessionResolvePublications: { ...state.sessionResolvePublications, [SESSION.id]: [] },
     loadResolveSession: async () => undefined,
     agentTurnState: {
       ...state.agentTurnState,
-      ...Object.fromEntries(
-        SEEDS.flatMap((seed, index) =>
-          seed.kind === 'drafting'
-            ? [
-                [
-                  agentIdOf({ index }),
-                  {
-                    kind: 'running',
-                    runId: `mock-resolves-run-${index}` as ProviderRunId,
-                    startedAt: isoOf({ minutesAgo: index + 2 }),
-                  },
-                ] as const,
-              ]
-            : [],
-        ),
-      ),
+      [RUN_AGENT_ID]: {
+        kind: 'running',
+        runId: 'mock-resolves-run-0' as ProviderRunId,
+        startedAt: isoOf({ minutesAgo: 3 }),
+      },
       [IMPLEMENTER_ID]: {
         kind: 'running',
         runId: 'mock-resolves-run-implementer' as ProviderRunId,

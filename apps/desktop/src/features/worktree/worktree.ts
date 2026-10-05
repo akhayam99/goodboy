@@ -66,6 +66,22 @@ export const quarantineWorktreeCandidate = async (
 ): Promise<QuarantinedCandidate> =>
   invokeCommand<QuarantinedCandidate>('worktree_quarantine_candidate', { args });
 
+type SplitCandidatesParams = {
+  readonly worktreePath: string;
+  readonly baseSha: string;
+  readonly picks: ReadonlyArray<{ readonly candidateId: string; readonly commitSha: string }>;
+};
+
+export type SplitCandidate = {
+  readonly candidateId: string;
+  readonly sha: string | null;
+};
+
+export const splitWorktreeCandidates = async (
+  args: SplitCandidatesParams,
+): Promise<ReadonlyArray<SplitCandidate>> =>
+  invokeCommand<ReadonlyArray<SplitCandidate>>('worktree_split_candidates', { args });
+
 export type ResolveCopy = {
   readonly copyPath: string;
   readonly head: string;

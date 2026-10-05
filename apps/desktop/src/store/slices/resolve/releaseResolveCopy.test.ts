@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AgentId, MountId, ResolveAttempt, SessionId } from '@goodboy/types';
+import type { AgentId, MountId, ResolveAttempt, ResolveThread, SessionId } from '@goodboy/types';
 
 const h = vi.hoisted(() => ({
   discard: vi.fn(async (_params: { worktreePath: string; copyPath: string }) => undefined),
-  setCopyPath: vi.fn(async () => undefined),
+  setCopyPath: vi.fn(async (_params: unknown) => undefined),
 }));
 
 vi.mock('@goodboy/db', () => ({ setResolveAttemptCopyPath: h.setCopyPath }));
@@ -76,17 +76,78 @@ describe('releaseResolveCopy', () => {
   });
 });
 
+const rowOf = (patch: Partial<ResolveThread>): ResolveThread =>
+  ({
+    threadId: 'PRRT_1',
+    state: 'fixed',
+    activeAttemptId: 'attempt-1',
+    ...patch,
+  }) as ResolveThread;
+
 describe('releaseEndedResolveCopies', () => {
   it('retries a failed discard on the next pass and leaves live attempts alone', async () => {
     const ended = attemptOf({});
-    const live = attemptOf({ id: 'attempt-2', phase: 'running' });
+    const live = attemptOf({
+      id: 'attempt-2',
+      agentId: 'agent-2' as AgentId,
+      copyPath: '/copies/attempt-2',
+      phase: 'running',
+    });
     h.discard.mockRejectedValueOnce(new Error('busy'));
 
-    await releaseEndedResolveCopies({ attempts: [ended, live] });
+    await releaseEndedResolveCopies({ attempts: [ended, live], rows: [] });
     expect(h.setCopyPath).not.toHaveBeenCalled();
 
-    await releaseEndedResolveCopies({ attempts: [ended, live] });
+    await releaseEndedResolveCopies({ attempts: [ended, live], rows: [] });
     expect(h.discard).toHaveBeenCalledTimes(2);
+    expect(h.discard).toHaveBeenLastCalledWith({
+      worktreePath: '/repo',
+      copyPath: '/copies/attempt-1',
+    });
     expect(h.setCopyPath).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the copy of a run whose agent still waits for an answer', async () => {
+    const ended = attemptOf({ launchId: 'launch-1', phase: 'waiting' });
+
+    const released = await releaseEndedResolveCopies({
+      attempts: [ended],
+      rows: [rowOf({ state: 'needs_answer' })],
+    });
+
+    expect(released).toBe(false);
+    expect(h.discard).not.toHaveBeenCalled();
+  });
+
+  it('keeps the copy while a later turn of the same run is working in it', async () => {
+    const first = attemptOf({ launchId: 'launch-1' });
+    const second = attemptOf({
+      id: 'attempt-2',
+      launchId: 'launch-1',
+      phase: 'running',
+      copyPath: '/copies/attempt-1',
+    });
+
+    const released = await releaseEndedResolveCopies({ attempts: [first, second], rows: [] });
+
+    expect(released).toBe(false);
+    expect(h.discard).not.toHaveBeenCalled();
+  });
+
+  it('releases a copy shared by the turns of one run once, and forgets it on every turn', async () => {
+    const first = attemptOf({ launchId: 'launch-1' });
+    const second = attemptOf({ id: 'attempt-2', launchId: 'launch-1' });
+
+    const released = await releaseEndedResolveCopies({
+      attempts: [first, second],
+      rows: [rowOf({ state: 'fixed' })],
+    });
+
+    expect(released).toBe(true);
+    expect(h.discard).toHaveBeenCalledOnce();
+    expect(h.setCopyPath.mock.calls.map((call) => call[0])).toEqual([
+      { db: {}, id: 'attempt-1', copyPath: null },
+      { db: {}, id: 'attempt-2', copyPath: null },
+    ]);
   });
 });

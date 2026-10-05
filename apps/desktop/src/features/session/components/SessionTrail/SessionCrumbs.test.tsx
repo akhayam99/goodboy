@@ -166,6 +166,7 @@ const resetState = () => {
     agentTurnState: {},
     sessionBranches: { [SESSION_ID]: 'ak/feat-one' },
     sessionGithub: {},
+    resolveQueueView: {},
     phaseTemplates: {
       'workspace-1': [
         {

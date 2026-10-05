@@ -32,6 +32,6 @@ export const startedLine = ({
 }: {
   readonly count: number;
   readonly modelName: string;
-}): string => `${count} ${count === 1 ? 'agent' : 'agents'} started on ${modelName}`;
+}): string => `Fixing ${count} ${count === 1 ? 'comment' : 'comments'} on ${modelName}`;
 
 export const fixSelectedLabel = ({ count }: { readonly count: number }): string => `Fix ${count}`;

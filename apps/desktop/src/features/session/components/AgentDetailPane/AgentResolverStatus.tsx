@@ -3,7 +3,6 @@ import type { Agent, AgentStatus, Session, SessionId } from '@goodboy/types';
 import { STATE_CHIP_TONE } from '../../../resolve/components/ReviewFlow/stateTone';
 import { useReviewEntries } from '../../../resolve/components/ReviewFlow/useReviewEntries';
 import { useResolverBrief } from '../../../resolve/hooks/useResolverBrief';
-import { resolveActivityWord } from '../../timeline/resolveActivity';
 import { AgentStatusBadge } from '../AgentTree/AgentStatusBadge';
 
 type Props = {
@@ -25,7 +24,7 @@ export const AgentResolverStatus = ({ session, agent, status }: Props) => {
       tone={STATE_CHIP_TONE[entry.state]}
       size="3xs"
       bordered={false}
-      label={resolveActivityWord({ state: entry.state, reviewWord: entry.word })}
+      label={entry.word}
       className="shrink-0"
     />
   );
