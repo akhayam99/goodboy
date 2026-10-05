@@ -1,12 +1,9 @@
-import type { ResolveThread } from '@goodboy/types';
+import { isRunFailedThread } from '../../../features/resolve/fixableComments';
 import { continueResolveLaunch } from './continueResolveLaunch';
 import { attemptsOfLaunch } from './resolveLaunch';
 import type { GetFn, RetryCouldntFixParams } from './types';
 
 type Params = { readonly get: GetFn } & RetryCouldntFixParams;
-
-const isRunFailure = ({ thread }: { readonly thread: ResolveThread }): boolean =>
-  thread.state === 'failed' && thread.stateReason?.startsWith('publication_failed:') !== true;
 
 export const retryCouldntFix = async ({
   get,
@@ -25,7 +22,7 @@ export const retryCouldntFix = async ({
     (thread) =>
       thread.activeAttemptId !== null &&
       attemptIds.has(thread.activeAttemptId) &&
-      isRunFailure({ thread }) &&
+      isRunFailedThread({ thread }) &&
       (threadIds === undefined || threadIds.includes(thread.threadId)),
   );
   if (wanted.length === 0) {
