@@ -1,4 +1,5 @@
-use super::{clean_stale_copies_in, copy_git_dirs, create_copy};
+use super::deps::link_dependencies;
+use super::{clean_stale_copies_in, copy_git_dirs, create_copy, prepare_resolve_copy_at};
 use crate::history::fixtures::{
     git_ok, ledger, ledger_plan, picks, slug, temp_root, worktree_count, Ledger,
 };
@@ -332,4 +333,141 @@ fn a_copy_whose_git_file_names_another_admin_dir_keeps_its_recorded_one() {
     discard_copy(&copy.to_string_lossy());
     assert!(review_admin.join("gitdir").exists());
     assert!(!own_admin.exists());
+}
+
+fn listing(dir: &Path) -> Vec<String> {
+    let mut found = Vec::new();
+    let mut pending = vec![dir.to_path_buf()];
+    while let Some(next) = pending.pop() {
+        for entry in std::fs::read_dir(&next).unwrap().flatten() {
+            let kind = entry.file_type().unwrap();
+            if entry.file_name() == ".git" {
+                continue;
+            }
+            found.push(entry.path().to_string_lossy().to_string());
+            if kind.is_dir() {
+                pending.push(entry.path());
+            }
+        }
+    }
+    found.sort();
+    found
+}
+
+#[cfg(unix)]
+fn pnpm_workspace(l: &Ledger) {
+    use std::os::unix::fs::symlink;
+    let root = &l.root;
+    std::fs::write(root.join(".gitignore"), "node_modules\n").unwrap();
+    std::fs::create_dir_all(root.join("packages/core")).unwrap();
+    std::fs::write(root.join("packages/core/index.ts"), "main core\n").unwrap();
+    std::fs::create_dir_all(root.join("apps/app")).unwrap();
+    std::fs::write(root.join("apps/app/main.ts"), "app\n").unwrap();
+    git_ok(
+        root,
+        &[
+            "add",
+            ".gitignore",
+            "packages/core/index.ts",
+            "apps/app/main.ts",
+        ],
+    );
+    git_ok(root, &["commit", "--no-verify", "-m", "Add workspace"]);
+    let store = root.join("node_modules/.pnpm/zod@3/node_modules/zod");
+    std::fs::create_dir_all(&store).unwrap();
+    std::fs::write(store.join("index.js"), "zod\n").unwrap();
+    symlink(
+        ".pnpm/zod@3/node_modules/zod",
+        root.join("node_modules/zod"),
+    )
+    .unwrap();
+    std::fs::create_dir_all(root.join("node_modules/@types")).unwrap();
+    symlink(
+        "../.pnpm/zod@3/node_modules/zod",
+        root.join("node_modules/@types/zod"),
+    )
+    .unwrap();
+    std::fs::create_dir_all(root.join("apps/app/node_modules/@acme")).unwrap();
+    symlink(
+        "../../../../packages/core",
+        root.join("apps/app/node_modules/@acme/core"),
+    )
+    .unwrap();
+    symlink(
+        "../../../node_modules/.pnpm/zod@3/node_modules/zod",
+        root.join("apps/app/node_modules/zod"),
+    )
+    .unwrap();
+    std::fs::create_dir_all(root.join(".claude/worktrees/other/node_modules")).unwrap();
+}
+
+#[cfg(unix)]
+#[test]
+fn the_resolve_copy_links_the_dependencies_of_the_main_tree() {
+    let l = ledger("deps-linked");
+    pnpm_workspace(&l);
+    let before = listing(&l.root);
+    let copy = copy_path_of(&slug("deps-linked"));
+    prepare_resolve_copy_at(&l.root, &copy).unwrap();
+    assert!(copy
+        .join("node_modules")
+        .symlink_metadata()
+        .unwrap()
+        .is_dir());
+    assert_eq!(
+        std::fs::read_to_string(copy.join("node_modules/zod/index.js")).unwrap(),
+        "zod\n"
+    );
+    assert_eq!(
+        std::fs::read_to_string(copy.join("node_modules/@types/zod/index.js")).unwrap(),
+        "zod\n"
+    );
+    assert_eq!(
+        std::fs::read_to_string(copy.join("apps/app/node_modules/zod/index.js")).unwrap(),
+        "zod\n"
+    );
+    assert!(!copy.join(".claude").exists());
+    assert_eq!(git_ok(&copy, &["status", "--porcelain"]), "");
+    assert_eq!(listing(&l.root), before);
+    discard_copy(&copy.to_string_lossy());
+    assert!(l.root.join("node_modules/zod/index.js").exists());
+}
+
+#[cfg(unix)]
+#[test]
+fn a_workspace_package_in_the_copy_resolves_to_the_copy_and_not_the_main_tree() {
+    let l = ledger("deps-workspace");
+    pnpm_workspace(&l);
+    let copy = copy_path_of(&slug("deps-workspace"));
+    prepare_resolve_copy_at(&l.root, &copy).unwrap();
+    std::fs::write(copy.join("packages/core/index.ts"), "copy core\n").unwrap();
+    assert_eq!(
+        std::fs::read_to_string(copy.join("apps/app/node_modules/@acme/core/index.ts")).unwrap(),
+        "copy core\n"
+    );
+    assert_eq!(
+        std::fs::read_to_string(l.root.join("packages/core/index.ts")).unwrap(),
+        "main core\n"
+    );
+    discard_copy(&copy.to_string_lossy());
+}
+
+#[test]
+fn a_main_tree_without_dependencies_gives_a_copy_without_links() {
+    let l = ledger("deps-missing");
+    let copy = copy_path_of(&slug("deps-missing"));
+    let prepared = prepare_resolve_copy_at(&l.root, &copy).unwrap();
+    assert_eq!(prepared.head, l.typo);
+    assert!(!copy.join("node_modules").exists());
+    assert!(copy.join("ledger.ts").exists());
+    discard_copy(&copy.to_string_lossy());
+}
+
+#[test]
+fn linking_dependencies_from_a_missing_main_tree_changes_nothing() {
+    let scratch = temp_root("deps-no-main");
+    let copy = scratch.join("copy");
+    std::fs::create_dir_all(&copy).unwrap();
+    link_dependencies(&scratch.join("gone"), &copy);
+    assert!(listing(&copy).is_empty());
 }

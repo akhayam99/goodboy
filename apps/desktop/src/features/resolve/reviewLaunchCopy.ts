@@ -9,6 +9,8 @@ export const REVIEW_LAUNCH_LABEL = {
   fixup: 'Fixup of the original',
   hintPlaceholder: 'Anything the fix run should know? Optional',
   hintLabel: 'Note for the fix run',
+  remembered: 'Your pick, kept for this session',
+  roleDefault: 'Resolver default',
   cancel: 'Cancel',
   noneIncluded: 'No comments included.',
 } as const;

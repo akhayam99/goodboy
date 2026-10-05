@@ -2,8 +2,15 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import type { PrComment, PullRequestState, SessionId } from '@goodboy/types';
+import type {
+  AgentId,
+  PrComment,
+  PullRequestState,
+  ResolveAttempt,
+  SessionId,
+} from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { selectKindRouting } from '../../../../store/slices/agents/selectKindRouting';
 import {
   EMPTY_RESOLVE_QUEUE_VIEW,
   type ResolveQueueView,
@@ -135,6 +142,33 @@ const ROW: ResolveQueueRow = {
 
 const PICKED = { provider: 'anthropic', model: 'claude-opus-5', effort: 'high' } as const;
 
+const LAUNCHED_ON_CODEX: ResolveAttempt = {
+  id: 'attempt-1',
+  sessionId: SESSION_ID,
+  agentId: 'agent-attempt-1' as AgentId,
+  prNumber: PR.number,
+  threadIds: ['PRRT_1'],
+  provider: 'codex',
+  model: 'gpt-5.5',
+  effort: 'medium',
+  instructions: null,
+  phase: 'failed',
+  mountTarget: null,
+  startedAt: null,
+  endedAt: null,
+  error: null,
+  createdAt: 1,
+  batchId: 'batch-1',
+  copyPath: null,
+  launchChoice: {
+    provider: 'codex',
+    model: 'gpt-5.5',
+    effort: 'medium',
+    commitStyle: 'fixup',
+    hint: 'Keep the public API',
+  },
+};
+
 const QUEUE_VIEW: ResolveQueueView = { ...EMPTY_RESOLVE_QUEUE_VIEW, lastRouting: PICKED };
 
 beforeEach(() => {
@@ -171,6 +205,50 @@ describe('useResolveAgain', () => {
       style: { commitStyle: 'new' },
       priorContext: [{ threadId: 'PRRT_1', reply: 'Tried a lock', intent: 'retry' }],
     });
+  });
+
+  it('retries on the model picked now, not on the model of the previous launch', async () => {
+    useAppStore.setState({ sessionResolveAttempts: { [SESSION_ID]: [LAUNCHED_ON_CODEX] } });
+    const { result } = renderHook(() => useResolveAgain({ sessionId: SESSION_ID, rows: [ROW] }));
+
+    await act(async () => {
+      await result.current({ threadId: 'PRRT_1', instruction: '' });
+    });
+
+    const [params] = startResolve.mock.calls[0] ?? [];
+    expect(params?.routing).toEqual(PICKED);
+    expect(params?.batch).toEqual({
+      batchId: 'batch-1',
+      launchChoice: {
+        provider: 'anthropic',
+        model: 'claude-opus-5',
+        effort: 'high',
+        commitStyle: 'fixup',
+        hint: 'Keep the public API',
+      },
+    });
+  });
+
+  it('retries on the resolver default when nothing was picked, whatever ran before', async () => {
+    useAppStore.setState({
+      resolveQueueView: {},
+      sessionResolveAttempts: { [SESSION_ID]: [LAUNCHED_ON_CODEX] },
+    });
+    const { result } = renderHook(() => useResolveAgain({ sessionId: SESSION_ID, rows: [ROW] }));
+
+    await act(async () => {
+      await result.current({ threadId: 'PRRT_1', instruction: '' });
+    });
+
+    const [params] = startResolve.mock.calls[0] ?? [];
+    const roleDefault = selectKindRouting({
+      state: useAppStore.getState(),
+      sessionId: SESSION_ID,
+      kind: 'resolver',
+    });
+    expect(params?.routing).toEqual(roleDefault);
+    expect(params?.batch?.launchChoice.model).toBe(roleDefault.model);
+    expect(params?.batch?.launchChoice.model).not.toBe('gpt-5.5');
   });
 
   it('reports a thread that left the pull request as missing', async () => {

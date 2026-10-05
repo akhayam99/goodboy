@@ -116,6 +116,11 @@ export const LaunchPanel = ({ sessionId, rows, onToggle, onClose, onStarted }: P
         onChange={draft.save}
         disabled={isStarting}
       />
+      <p className="text-meta text-faint-foreground">
+        {draft.source === 'session-pick'
+          ? REVIEW_LAUNCH_LABEL.remembered
+          : REVIEW_LAUNCH_LABEL.roleDefault}
+      </p>
       <PromptField
         kind="document"
         minRows={2}

@@ -5,7 +5,7 @@ import { sessionResolveStyle } from '../../../../store/sessionReplySettings';
 import { groupThreads } from '../../../integrations/github/comment-threads';
 import { conversationSourceOf } from '../../notes/conversationSource';
 import { draftRoutingOf } from '../../draftRouting';
-import { retryBatchOf, retryOriginOf } from '../../launchChoice';
+import { batchOnRouting, retryBatchOf, retryOriginOf } from '../../launchChoice';
 import { startResolve } from '../../startResolve';
 import type { ResolveQueueRow } from '../../buildResolveQueueRows';
 
@@ -56,12 +56,13 @@ export const useResolveAgain = ({
         return 'missing';
       }
       const state = useAppStore.getState();
+      const routing = draftRoutingOf({ state, sessionId });
       try {
         await startResolve({
           sessionId,
           threads: [thread],
           pr,
-          routing: draftRoutingOf({ state, sessionId, threadId }),
+          routing,
           note: instruction,
           mode: 'retry',
           priorContext: [
@@ -73,7 +74,7 @@ export const useResolveAgain = ({
             },
           ],
           style: sessionResolveStyle({ state, sessionId }),
-          batch: retryBatchOf({ attempts, threadId }),
+          batch: batchOnRouting({ batch: retryBatchOf({ attempts, threadId }), routing }),
           retryOfLaunchId: retryOriginOf({ attempts, threadId }),
           spawnAgent,
           setAgentConfig,
