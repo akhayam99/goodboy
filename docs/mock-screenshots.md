@@ -207,7 +207,8 @@ uses (a store opener or a click on the real control), never by mounting the
 studio itself.
 
 The dense capture fixtures are `rules-teleport`,
-`rules-no-limits`, `rail-ticket-ids`, and `activity-groups`. The resolver
+`rules-no-limits`, `rail-ticket-ids`, and `activity-groups` (it opens the finished
+run's `6 steps` count row and then a `subagents` count row). The resolver
 fixture uses `fix-run&live=1&pane=transcript`; add
 `&flow=recheck` or `&flow=follow-up` for its other starts. It builds the
 provider message with the production kickoff and handoff builders and leaves

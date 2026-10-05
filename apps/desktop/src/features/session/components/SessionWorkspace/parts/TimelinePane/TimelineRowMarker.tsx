@@ -11,7 +11,6 @@ import {
 import { IntegrationGlyph } from '../../../../../integrations/components/IntegrationGlyph';
 import { rowStateNode, rowStateTone } from '../../../../../workTreeModel/rowStateCopy';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
-import { groupSummaryText } from '../../../../timeline/groupSummary';
 import { resolveBatchTitle } from '../../../../timeline/resolveBatchSummary';
 import { sessionEventGlyph } from '../../../../timeline/sessionEventPresentation';
 
@@ -73,19 +72,6 @@ export const TimelineRowMarker = ({ item, progress = null }: Props) => {
         label={resolveBatchTitle({ total: entry.summary.total, prNumber: entry.prNumber })}
         mark={{ kind: 'dot' }}
         parts={entry.summary.parts.map((part) => ({ tone: part.tone, count: part.count }))}
-        hasUnread={item.hasUnread}
-      />
-    );
-  }
-
-  if ((entry.kind === 'run' || entry.kind === 'agent') && item.fold !== undefined) {
-    const { summary } = item.fold;
-    return (
-      <WorkNode
-        state="mixed"
-        label={groupSummaryText({ summary })}
-        mark={{ kind: 'dot' }}
-        parts={[{ tone: 'neutral', count: summary.total }]}
         hasUnread={item.hasUnread}
       />
     );

@@ -13,16 +13,17 @@ import { rowStateTone } from '../../../../../workTreeModel/rowStateCopy';
 import { eventMatches } from '../../../../../../shared/keyboard/dispatcher';
 import { SHORTCUTS } from '../../../../../../shared/keyboard/registry';
 import { TIMELINE_GUTTER } from './timelineLayout';
-import { CLOCK_ORDER_TOOLTIP, isClocklessRow } from './timelineClock';
-import { TimelineRail, type TimelineLaneTarget } from './TimelineRail';
+import { CLOCK_ORDER_TOOLTIP } from './timelineClock';
+import { TimelineRail, type TimelineLaneControl, type TimelineLaneTarget } from './TimelineRail';
 import { TimelineRowLabel } from './TimelineRowLabel';
 import { TimelineRowMarker } from './TimelineRowMarker';
 
 type TimelineRowExpansion = {
   readonly isExpanded: boolean;
   readonly controlsId: string | null;
-  readonly onSet?: (params: { readonly isExpanded: boolean }) => void;
 };
+
+export type TimelineBranchKey = (params: { readonly direction: 'expand' | 'collapse' }) => boolean;
 
 export type TimelineRowAction = {
   readonly label: string;
@@ -43,9 +44,9 @@ type Props = {
   readonly meta?: ReactNode;
   readonly state?: ReactNode;
   readonly progress?: number | null;
-  readonly subagents?: ReactNode;
-  readonly outputs?: ReactNode;
   readonly runLane?: TimelineLaneTarget | null;
+  readonly lanes?: TimelineLaneControl | null;
+  readonly onBranchKey?: TimelineBranchKey | null;
   readonly detail?: ReactNode;
   readonly detailHeight?: number;
   readonly expansion?: TimelineRowExpansion | null;
@@ -68,9 +69,9 @@ export const TimelineStreamRow = ({
   meta = null,
   state = null,
   progress = null,
-  subagents = null,
-  outputs = null,
   runLane = null,
+  lanes = null,
+  onBranchKey = null,
   detail = null,
   detailHeight = 0,
   expansion = null,
@@ -89,15 +90,12 @@ export const TimelineStreamRow = ({
     item.rowState.ask?.kind !== 'groupChild' &&
     rowStateTone({ state: item.rowState }) === 'warning';
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
-    if (expansion?.onSet !== undefined) {
-      if (event.key === 'ArrowRight' && !expansion.isExpanded) {
+    if (onBranchKey !== null && (event.key === 'ArrowRight' || event.key === 'ArrowLeft')) {
+      const isHandled = onBranchKey({
+        direction: event.key === 'ArrowRight' ? 'expand' : 'collapse',
+      });
+      if (isHandled) {
         event.preventDefault();
-        expansion.onSet({ isExpanded: true });
-        return;
-      }
-      if (event.key === 'ArrowLeft' && expansion.isExpanded) {
-        event.preventDefault();
-        expansion.onSet({ isExpanded: false });
         return;
       }
     }
@@ -151,7 +149,7 @@ export const TimelineStreamRow = ({
           className="flex items-center justify-end pr-2 text-meta text-faint-foreground"
           style={{ height: boxHeight }}
         >
-          {item.at == null || isClocklessRow({ item }) ? null : (
+          {item.at == null ? null : (
             <Tooltip content={CLOCK_ORDER_TOOLTIP}>
               <span>{formatClock({ at: item.at })}</span>
             </Tooltip>
@@ -159,7 +157,7 @@ export const TimelineStreamRow = ({
         </span>
       </span>
       <span className="relative shrink-0" style={{ width: railWidth }}>
-        <TimelineRail rail={rail} width={railWidth} />
+        <TimelineRail rail={rail} width={railWidth} lanes={lanes} />
         {rail.markerY == null ? null : (
           <span
             className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
@@ -203,8 +201,6 @@ export const TimelineStreamRow = ({
               {content}
             </button>
           )}
-          {subagents}
-          {outputs}
           {action == null ? null : (
             <span
               data-testid="timeline-row-action"

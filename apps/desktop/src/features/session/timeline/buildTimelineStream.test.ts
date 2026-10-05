@@ -189,6 +189,7 @@ type StreamParams = {
   readonly questions?: ReadonlyArray<OpenQuestion>;
   readonly showQuestions?: boolean;
   readonly expanded?: ReadonlyArray<string>;
+  readonly folds?: boolean;
 };
 
 const stream = ({
@@ -203,6 +204,7 @@ const stream = ({
   questions = [],
   showQuestions,
   expanded = [],
+  folds = false,
 }: StreamParams) =>
   buildTimelineStream({
     entries: buildTimelineGroups({
@@ -223,6 +225,7 @@ const stream = ({
     dayLabelFor: ({ at }) => dayLabel({ at, now: NOW }),
     ...(showQuestions != null ? { showQuestions } : {}),
     expandedGroupIds: new Set(expanded),
+    foldsFinished: folds,
   });
 
 type LaneSpan = {
@@ -280,8 +283,28 @@ const labelOf = (item: TimelineStreamItem): string => {
   if (item.kind === 'day') {
     return `day:${item.label}`;
   }
+  if (item.kind === 'count') {
+    return `count:${item.expandId}`;
+  }
+  if (item.kind === 'more') {
+    return 'more';
+  }
   return 'now';
 };
+
+const labelsOf = (items: ReadonlyArray<TimelineStreamItem>): ReadonlyArray<string> =>
+  items.map(labelOf);
+
+const timesDownTheFeed = (items: ReadonlyArray<TimelineStreamItem>): ReadonlyArray<string> =>
+  items.flatMap((item) => (item.kind === 'row' && item.at != null ? [item.at] : []));
+
+const indexOfId = ({
+  items,
+  id,
+}: {
+  readonly items: ReadonlyArray<TimelineStreamItem>;
+  readonly id: string;
+}): number => items.findIndex((item) => item.id === id);
 
 describe('buildTimelineStream', () => {
   describe('an agent started between two steps of a run (#1546)', () => {
@@ -311,23 +334,23 @@ describe('buildTimelineStream', () => {
     ];
 
     for (const second of ['queued', 'running'] as const) {
-      it(`keeps it out of the run, which reads step 1 then a ${second} step 2 in one block`, () => {
+      it(`seats it by its own time between the run steps, with the lane running past it (${second})`, () => {
         const { items, groups } = stream({
           workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 9 }) })],
           agents: agentsWith({ second }),
         });
         const order = items.filter((item) => item.kind === 'row').map((item) => item.id);
 
-        expect(order).toEqual(['agent:hand-agent', 'run:run-1', 'agent:scout', 'agent:build']);
+        expect(order).toEqual(['agent:build', 'agent:hand-agent', 'agent:scout', 'run:run-1']);
         const layout = layoutTimelineRail({ rows: items, groups });
-        const handRail = layout.rows[items.findIndex((item) => item.id === 'agent:hand-agent')];
+        const handRail = layout.rows[indexOfId({ items, id: 'agent:hand-agent' })];
         expect(handRail?.markerColumn).toBe(0);
-        expect(handRail?.segments.filter((segment) => segment.column > 0)).toEqual([]);
+        expect(handRail?.segments.filter((segment) => segment.column > 0)).toHaveLength(1);
       });
     }
   });
 
-  it('draws no day rule directly under NOW, since it would divide nothing', () => {
+  it('puts the day label of the newest group under NOW when that day is not today', () => {
     const { items } = stream({
       agents: [
         agent({ id: 'older', ordinal: 1, startedAt: localIso({ day: 11, hour: 9 }) }),
@@ -335,12 +358,15 @@ describe('buildTimelineStream', () => {
       ],
     });
 
-    expect(items.map(labelOf)[0]).toBe('now');
-    expect(items.map(labelOf)[1]).not.toContain('day:');
-    expect(items.filter((item) => item.kind === 'day')).toHaveLength(0);
+    expect(labelsOf(items)).toEqual([
+      'now',
+      'day:Aug 11',
+      'entry:agent:oldest',
+      'entry:agent:older',
+    ]);
   });
 
-  it('keeps the day rule where it actually separates two days', () => {
+  it('leaves the newest group unlabelled when it is from today', () => {
     const { items } = stream({
       agents: [
         agent({ id: 'today', ordinal: 2, startedAt: localIso({ day: 18, hour: 9 }) }),
@@ -348,15 +374,15 @@ describe('buildTimelineStream', () => {
       ],
     });
 
-    const labels = items.map(labelOf);
-    expect(labels[0]).toBe('now');
-    expect(labels.some((label) => label.startsWith('day:'))).toBe(true);
-    expect(labels.indexOf('entry:agent:before')).toBeGreaterThan(
-      labels.findIndex((label) => label.startsWith('day:')),
-    );
+    expect(labelsOf(items)).toEqual([
+      'now',
+      'entry:agent:today',
+      'day:Aug 11',
+      'entry:agent:before',
+    ]);
   });
 
-  it('puts the run origin first and its steps below it in execution order', () => {
+  it('puts the steps above the run row, newest first, so the run reads up like the feed', () => {
     const { items } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
       agents: [
@@ -381,16 +407,16 @@ describe('buildTimelineStream', () => {
       ],
     });
 
-    expect(items.map(labelOf)).toEqual([
+    expect(labelsOf(items)).toEqual([
       'now',
-      'entry:run:run-1',
-      'step:agent:one',
-      'step:agent:two',
       'step:agent:three',
+      'step:agent:two',
+      'step:agent:one',
+      'entry:run:run-1',
     ]);
   });
 
-  it('numbers a run top to bottom so ordinals climb down the list', () => {
+  it('numbers the steps of a run so the ordinals fall down the list', () => {
     const { items } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
       agents: [
@@ -418,10 +444,10 @@ describe('buildTimelineStream', () => {
       item.kind === 'row' && item.ordinal != null ? [item.ordinal] : [],
     );
 
-    expect(ordinals).toEqual(['1', '2', '3']);
+    expect(ordinals).toEqual(['3', '2', '1']);
   });
 
-  it('keeps every row of an unfinished run drawn whatever its age, with no day rule inside it', () => {
+  it('keeps a queued step above the dated steps of an old unfinished run, under NOW', () => {
     const { items } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 10, hour: 8 }) })],
       agents: [
@@ -436,15 +462,16 @@ describe('buildTimelineStream', () => {
       ],
     });
 
-    expect(items.map(labelOf)).toEqual([
+    expect(labelsOf(items)).toEqual([
       'now',
-      'entry:run:run-1',
-      'step:agent:done',
       'pending:agent:todo',
+      'day:Aug 10',
+      'step:agent:done',
+      'entry:run:run-1',
     ]);
   });
 
-  it('draws a settled run from yesterday step by step instead of summarising it', () => {
+  it('draws a settled run from yesterday step by step when folding is off', () => {
     const { items } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 17, hour: 8 }) })],
       agents: [
@@ -465,15 +492,16 @@ describe('buildTimelineStream', () => {
       ],
     });
 
-    expect(items.map(labelOf)).toEqual([
+    expect(labelsOf(items)).toEqual([
       'now',
-      'entry:run:run-1',
-      'step:agent:one',
+      'day:Yesterday',
       'step:agent:two',
+      'step:agent:one',
+      'entry:run:run-1',
     ]);
   });
 
-  it('orders runs newest first and keeps each run in one block', () => {
+  it('orders runs newest first and keeps each run above its own row', () => {
     const { items } = stream({
       workflows: [
         attachedWorkflow({ createdAt: localIso({ day: 12, hour: 8 }) }),
@@ -501,16 +529,17 @@ describe('buildTimelineStream', () => {
       ],
     });
 
-    expect(items.map(labelOf)).toEqual([
+    expect(labelsOf(items)).toEqual([
       'now',
-      'entry:run:run-2',
+      'day:Aug 12',
       'step:agent:two',
-      'entry:run:run-1',
+      'entry:run:run-2',
       'step:agent:one',
+      'entry:run:run-1',
     ]);
   });
 
-  it('emits a day divider only where one day actually meets another', () => {
+  it('emits a day divider once for a day and again only where another day meets it', () => {
     const { items } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 12, hour: 8 }) })],
       agents: [
@@ -525,16 +554,17 @@ describe('buildTimelineStream', () => {
       ],
     });
 
-    expect(items.filter((item) => item.kind === 'day')).toHaveLength(0);
-    expect(items.map(labelOf)).toEqual([
+    expect(items.filter((item) => item.kind === 'day')).toHaveLength(1);
+    expect(labelsOf(items)).toEqual([
       'now',
+      'day:Aug 12',
       'entry:agent:loose',
-      'entry:run:run-1',
       'step:agent:old',
+      'entry:run:run-1',
     ]);
   });
 
-  it('gives every queued step its own row and node, after the running step', () => {
+  it('lists every queued step above the running one, the last queued on top', () => {
     const { items } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
       agents: [
@@ -552,23 +582,23 @@ describe('buildTimelineStream', () => {
     });
     const queued = items.filter((item) => item.kind === 'row' && item.grade === 'pending');
 
-    expect(items.map(labelOf)).toEqual([
+    expect(labelsOf(items)).toEqual([
       'now',
-      'entry:run:run-1',
-      'step:agent:running',
-      'pending:agent:next',
-      'pending:agent:later',
       'pending:agent:last',
+      'pending:agent:later',
+      'pending:agent:next',
+      'step:agent:running',
+      'entry:run:run-1',
     ]);
     expect(queued.map((item) => item.height)).toEqual([
-      TIMELINE_RHYTHM.grade.pending.height + TIMELINE_RHYTHM.gap.sibling,
+      TIMELINE_RHYTHM.grade.pending.height,
       TIMELINE_RHYTHM.grade.pending.height + TIMELINE_RHYTHM.gap.sibling,
       TIMELINE_RHYTHM.grade.pending.height + TIMELINE_RHYTHM.gap.sibling,
     ]);
     expect(queued.map(stateOf)).toEqual(['queued', 'queued', 'queued']);
   });
 
-  it('leaves one lone pending step as its own row', () => {
+  it('leaves one lone queued step on the dashed stretch above the running step', () => {
     const { items } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
       agents: [
@@ -583,67 +613,65 @@ describe('buildTimelineStream', () => {
       ],
     });
 
-    expect(items.map(labelOf)).toEqual([
+    expect(labelsOf(items)).toEqual([
       'now',
-      'entry:run:run-1',
-      'step:agent:running',
       'pending:agent:next',
+      'step:agent:running',
+      'entry:run:run-1',
     ]);
   });
 
-  it('keeps pending steps in their run, after the steps that ran', () => {
+  it('keeps queued steps at the top, above everything that already ran', () => {
     const { items } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
       agents: RUN_WITH_PENDING_AGENTS,
     });
 
-    expect(items.map(labelOf)).toEqual([
+    expect(labelsOf(items)).toEqual([
       'now',
-      'entry:agent:built-by-hand',
-      'entry:run:run-1',
-      'step:agent:plan',
-      'step:agent:implement',
-      'pending:agent:test',
-      'pending:agent:review',
       'pending:agent:ship',
+      'pending:agent:review',
+      'pending:agent:test',
+      'entry:agent:built-by-hand',
+      'step:agent:implement',
+      'step:agent:plan',
+      'entry:run:run-1',
     ]);
   });
 
-  it('runs one unbroken lane from the run row down to its last step', () => {
+  it('runs one unbroken lane from the run marker up to NOW while the run is live', () => {
     const { items, groups } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
       agents: RUN_WITH_PENDING_AGENTS,
     });
     const layout = layoutTimelineRail({ rows: items, groups });
     const spans = laneSpansOf({ items, layout });
-    const originIndex = items.findIndex((item) => item.id === 'run:run-1');
-    const lastIndex = items.findIndex((item) => item.id === 'agent:ship');
+    const originIndex = indexOfId({ items, id: 'run:run-1' });
     const breaks = spans.filter((span, index) => {
       const previous = spans[index - 1];
       return previous !== undefined && span.from > previous.to;
     });
 
-    expect(spans[0]?.from).toBe(
+    expect(spans[0]?.from).toBe(TIMELINE_RHYTHM.now.ruleY);
+    expect(spans.at(-1)?.to).toBe(
       topOfItem({ items, index: originIndex }) + (layout.rows[originIndex]?.markerY ?? 0),
     );
-    expect(spans.at(-1)?.to).toBe(
-      topOfItem({ items, index: lastIndex }) + (layout.rows[lastIndex]?.markerY ?? 0),
-    );
     expect(breaks).toEqual([]);
+    expect(groups.find((group) => group.id === 'lane:run:run-1')?.shape).toBe('open');
   });
 
-  it('forks the lane off the run row and dashes the pending stretch of a live run', () => {
+  it('branches the lane off the run marker and dashes the queued stretch of a live run', () => {
     const { items, groups } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
       agents: RUN_WITH_PENDING_AGENTS,
     });
     const layout = layoutTimelineRail({ rows: items, groups });
     const queuedIndex = items.findIndex((item) => item.kind === 'row' && item.grade === 'pending');
-    const originIndex = items.findIndex((item) => item.id === 'run:run-1');
+    const originIndex = indexOfId({ items, id: 'run:run-1' });
     const queuedRail = layout.rows[queuedIndex];
     const originRail = layout.rows[originIndex];
 
-    expect(originRail?.joins.map((join) => `${join.kind}:${join.dash}`)).toEqual(['fork:solid']);
+    expect(originRail?.joins.map((join) => `${join.kind}:${join.dash}`)).toEqual(['branch:solid']);
     expect(originRail?.joins[0]?.anchorY).toBe(originRail?.markerY);
     expect(queuedRail?.joins).toEqual([]);
     expect(
@@ -654,7 +682,7 @@ describe('buildTimelineStream', () => {
     expect(queuedRail?.markerColumn).toBe(1);
   });
 
-  it('lists the pending steps after the open subagents of the running step', () => {
+  it('lists the queued steps above the open subagents of the running step', () => {
     const settledStep = ({ id, ordinal }: { readonly id: string; readonly ordinal: number }) =>
       agent({
         id,
@@ -665,7 +693,7 @@ describe('buildTimelineStream', () => {
       });
     const { items, groups } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
-      expanded: ['subagents:agent:step-4'],
+      folds: true,
       agents: [
         settledStep({ id: 'step-1', ordinal: 1 }),
         settledStep({ id: 'step-2', ordinal: 2 }),
@@ -701,35 +729,33 @@ describe('buildTimelineStream', () => {
       item.kind === 'row' && item.grade === 'pending' ? [item] : [],
     );
     const layout = layoutTimelineRail({ rows: items, groups });
-    const stepFourIndex = items.findIndex((item) => item.id === 'agent:step-4');
-    const childQueuedIndex = items.findIndex(
-      (item) => item.kind === 'row' && item.id === 'agent:child-2',
-    );
+    const stepFourIndex = indexOfId({ items, id: 'agent:step-4' });
+    const childQueuedIndex = indexOfId({ items, id: 'agent:child-2' });
 
-    expect(items.map(labelOf)).toEqual([
+    expect(labelsOf(items)).toEqual([
       'now',
-      'entry:run:run-1',
-      'step:agent:step-1',
-      'step:agent:step-2',
-      'step:agent:step-3',
-      'step:agent:step-4',
-      'step:agent:child-1',
-      'pending:agent:child-2',
-      'pending:agent:step-5',
-      'pending:agent:step-6',
       'pending:agent:step-7',
+      'pending:agent:step-6',
+      'pending:agent:step-5',
+      'pending:agent:child-2',
+      'step:agent:child-1',
+      'step:agent:step-4',
+      'step:agent:step-3',
+      'step:agent:step-2',
+      'step:agent:step-1',
+      'entry:run:run-1',
     ]);
-    expect(queued.map((item) => item.ordinal)).toEqual(['4.2', '5', '6', '7']);
-    expect(groups.find((group) => group.id === 'lane:agent:step-4')?.direction).toBe('down');
+    expect(queued.map((item) => item.ordinal)).toEqual(['7', '6', '5', '4.2']);
+    expect(groups.find((group) => group.id === 'lane:agent:step-4')?.direction).toBe('up');
     expect(
       layout.rows[stepFourIndex]?.joins.map(
         (join) => `${join.kind}:${join.laneColumn}->${join.spineColumn}:${join.dash}`,
       ),
-    ).toEqual(['fork:2->1:solid']);
+    ).toEqual(['branch:2->1:solid']);
     expect(layout.rows[childQueuedIndex]?.joins).toEqual([]);
   });
 
-  it('keeps two concurrent runs in their own block and their own lane', () => {
+  it('keeps two concurrent runs on their own lanes, side by side up to NOW', () => {
     const { items, groups } = stream({
       workflows: [
         attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) }),
@@ -766,16 +792,16 @@ describe('buildTimelineStream', () => {
     );
     const seed = runIdentitySeed({ sessionId: SESSION_ID });
 
-    expect(items.map(labelOf)).toEqual([
+    expect(labelsOf(items)).toEqual([
       'now',
-      'entry:run:run-2',
-      'step:agent:b-running',
-      'pending:agent:b-next',
       'pending:agent:b-last',
-      'entry:run:run-1',
-      'step:agent:a-done',
-      'pending:agent:a-next',
+      'pending:agent:b-next',
       'pending:agent:a-last',
+      'pending:agent:a-next',
+      'step:agent:b-running',
+      'entry:run:run-2',
+      'step:agent:a-done',
+      'entry:run:run-1',
     ]);
     expect(queued.map(({ item }) => item.groupId)).toEqual([
       'lane:run:run-2',
@@ -789,13 +815,13 @@ describe('buildTimelineStream', () => {
       runIdentity({ laneIndex: 0, seed }).index,
       runIdentity({ laneIndex: 0, seed }).index,
     ]);
-    expect(queued.map(({ rail }) => rail?.markerColumn)).toEqual([1, 1, 1, 1]);
+    expect(queued.map(({ rail }) => rail?.markerColumn)).toEqual([1, 1, 2, 2]);
     expect(queued.map(({ rail }) => rail?.joins)).toEqual([[], [], [], []]);
     expect(layout.columnByGroupId.get('lane:run:run-2')).toBe(1);
-    expect(layout.columnByGroupId.get('lane:run:run-1')).toBe(1);
+    expect(layout.columnByGroupId.get('lane:run:run-1')).toBe(2);
   });
 
-  it('gives a lone pending step no borrowed clock and no day rule of its own', () => {
+  it('gives a lone queued step no borrowed clock and keeps its day rule below it', () => {
     const { items } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 10, hour: 8 }) })],
       agents: [
@@ -812,18 +838,18 @@ describe('buildTimelineStream', () => {
     });
     const pending = items.find((item) => item.id === 'agent:todo');
 
-    expect(items.map(labelOf)).toEqual([
+    expect(labelsOf(items)).toEqual([
       'now',
+      'pending:agent:todo',
       'entry:agent:built-by-hand',
       'day:Aug 10',
-      'entry:run:run-1',
       'step:agent:done',
-      'pending:agent:todo',
+      'entry:run:run-1',
     ]);
     expect(pending?.kind === 'row' ? pending.at : 'borrowed').toBeNull();
   });
 
-  it('keeps a run that crossed midnight whole, with no day rule inside it', () => {
+  it('draws the day rule inside a run that crossed midnight and lets the lane pass through it', () => {
     const { items, groups } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 16, hour: 22, minute: 43 }) })],
       agents: [
@@ -842,22 +868,24 @@ describe('buildTimelineStream', () => {
       ],
     });
     const layout = layoutTimelineRail({ rows: items, groups });
-    const afterRail = layout.rows[items.findIndex((item) => item.id === 'agent:after')];
+    const innerRule = items.findIndex((item) => item.kind === 'day' && item.label === 'Aug 16');
 
-    expect(items.map(labelOf)).toEqual([
+    expect(labelsOf(items)).toEqual([
       'now',
-      'entry:run:run-1',
-      'step:agent:before',
+      'day:Yesterday',
       'step:agent:after',
+      'day:Aug 16',
+      'step:agent:before',
+      'entry:run:run-1',
     ]);
-    expect(items.filter((item) => item.kind === 'day')).toHaveLength(0);
-    expect(afterRail?.segments.filter((segment) => segment.column === 1)).toHaveLength(1);
+    expect(layout.rows[innerRule]?.segments.filter((segment) => segment.column === 1)).toHaveLength(
+      1,
+    );
   });
 
-  it('hangs a fan-out on a fork one column past the step it belongs to', () => {
+  it('hangs a fan-out on a branch one column past the step it belongs to', () => {
     const { items, groups } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
-      expanded: ['subagents:agent:implement'],
       agents: [
         agent({
           id: 'implement',
@@ -875,19 +903,23 @@ describe('buildTimelineStream', () => {
     });
     const layout = layoutTimelineRail({ rows: items, groups });
 
-    expect(items.map(labelOf)).toEqual([
+    expect(labelsOf(items)).toEqual([
       'now',
-      'entry:run:run-1',
-      'step:agent:implement',
       'step:agent:sub-a',
+      'step:agent:implement',
+      'entry:run:run-1',
     ]);
     expect(layout.columnByGroupId.get('lane:run:run-1')).toBe(1);
     expect(layout.columnByGroupId.get('lane:agent:implement')).toBe(2);
   });
 
-  it('shows a step with subagents closed, carrying the count in its own row', () => {
+  it('shows a finished step with its subagents folded into one count row above it', () => {
     const { items, groups } = stream({
-      workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
+      workflows: [
+        attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }), stepIds: ['implement'] }),
+      ],
+      expanded: ['run:run-1'],
+      folds: true,
       agents: [
         agent({
           id: 'implement',
@@ -904,15 +936,23 @@ describe('buildTimelineStream', () => {
       ],
     });
     const step = items.find((item) => item.id === 'agent:implement');
+    const count = items.find((item) => item.id === 'count:subagents:agent:implement');
 
-    expect(items.map(labelOf)).toEqual(['now', 'entry:run:run-1', 'step:agent:implement']);
-    expect(step?.kind === 'row' ? step.subagents?.summary.total : null).toBe(1);
-    expect(step?.kind === 'row' ? step.subagents?.isExpanded : null).toBe(false);
-    expect(step?.kind === 'row' ? step.opensLane : null).toBe(true);
-    expect(groups.map((group) => group.id)).toEqual(['lane:run:run-1']);
+    expect(labelsOf(items)).toEqual([
+      'now',
+      'count:run:run-1',
+      'count:subagents:agent:implement',
+      'step:agent:implement',
+      'entry:run:run-1',
+    ]);
+    expect(step?.kind === 'row' ? step.branches : null).toEqual([
+      { expandId: 'subagents:agent:implement', isExpanded: false },
+    ]);
+    expect(count?.kind === 'count' ? count.summary.parts[0]?.count : null).toBe(1);
+    expect(groups.map((group) => group.id)).toEqual(['lane:run:run-1', 'lane:agent:implement']);
   });
 
-  it('keeps a standalone agent out of a run that started before it', () => {
+  it('seats a launch started during a run by its own time, between the steps', () => {
     const { items, groups } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
       agents: [
@@ -932,51 +972,23 @@ describe('buildTimelineStream', () => {
       ],
     });
     const layout = layoutTimelineRail({ rows: items, groups });
-    const looseIndex = items.findIndex((item) => item.id === 'agent:loose');
+    const looseIndex = indexOfId({ items, id: 'agent:loose' });
 
-    expect(items.map(labelOf)).toEqual([
+    expect(labelsOf(items)).toEqual([
       'now',
-      'entry:agent:loose',
-      'entry:run:run-1',
-      'step:agent:step-one',
       'step:agent:step-two',
+      'entry:agent:loose',
+      'step:agent:step-one',
+      'entry:run:run-1',
     ]);
     expect(layout.rows[looseIndex]?.markerColumn).toBe(0);
-    expect(layout.rows[looseIndex]?.segments.filter((segment) => segment.column > 0)).toEqual([]);
+    expect(layout.rows[looseIndex]?.segments.filter((segment) => segment.column > 0)).toHaveLength(
+      1,
+    );
   });
 
-  it('orders launches newest first and the steps of one run oldest first', () => {
-    const { items } = stream({
-      workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
-      agents: [
-        agent({
-          id: 'step-one',
-          ordinal: 1,
-          startedAt: localIso({ day: 18, hour: 9 }),
-          workflowRunId: RUN_ID,
-        }),
-        agent({ id: 'loose', ordinal: 2, startedAt: localIso({ day: 18, hour: 9, minute: 30 }) }),
-        agent({
-          id: 'step-two',
-          ordinal: 3,
-          startedAt: localIso({ day: 18, hour: 10 }),
-          workflowRunId: RUN_ID,
-        }),
-      ],
-    });
-
-    expect(items.map(labelOf)).toEqual([
-      'now',
-      'entry:agent:loose',
-      'entry:run:run-1',
-      'step:agent:step-one',
-      'step:agent:step-two',
-    ]);
-  });
-
-  it('keeps a chain with its parent when the children landed a day later', () => {
+  it('keeps a chain above its parent when the children landed a day later', () => {
     const { items, groups } = stream({
-      expanded: ['subagents:agent:cluster-parent'],
       agents: [
         agent({
           id: 'cluster-parent',
@@ -1004,19 +1016,18 @@ describe('buildTimelineStream', () => {
     });
     const layout = layoutTimelineRail({ rows: items, groups });
     const laneSegmentsOf = ({ id }: { readonly id: string }) =>
-      layout.rows[items.findIndex((item) => item.id === id)]?.segments.filter(
-        (segment) => segment.column > 0,
-      ) ?? [];
+      layout.rows[indexOfId({ items, id })]?.segments.filter((segment) => segment.column > 0) ?? [];
 
-    expect(items.map(labelOf)).toEqual([
+    expect(labelsOf(items)).toEqual([
       'now',
+      'step:agent:cluster-child',
+      'day:Yesterday',
       'fact:event:ev-decision',
       'entry:agent:elenca',
       'entry:agent:cluster-parent',
-      'step:agent:cluster-child',
     ]);
-    expect(laneSegmentsOf({ id: 'event:ev-decision' })).toEqual([]);
-    expect(laneSegmentsOf({ id: 'agent:elenca' })).toEqual([]);
+    expect(laneSegmentsOf({ id: 'event:ev-decision' })).toHaveLength(1);
+    expect(laneSegmentsOf({ id: 'agent:elenca' })).toHaveLength(1);
     expect(laneSegmentsOf({ id: 'agent:cluster-child' })).toHaveLength(1);
   });
 
@@ -1051,10 +1062,351 @@ describe('buildTimelineStream', () => {
 
     expect(gaps).toEqual([
       'agent:loose:none',
-      'run:run-1:entry',
+      'agent:step-two:entry',
       'agent:step-one:sibling',
-      'agent:step-two:sibling',
+      'run:run-1:sibling',
     ]);
+  });
+
+  describe('one time order down the whole feed', () => {
+    const settled = ({
+      id,
+      ordinal,
+      minute,
+      workflowRunId,
+      parentAgentId,
+    }: {
+      readonly id: string;
+      readonly ordinal: number;
+      readonly minute: number;
+      readonly workflowRunId?: WorkflowRunId;
+      readonly parentAgentId?: string;
+    }): Agent =>
+      agent({
+        id,
+        ordinal,
+        startedAt: localIso({ day: 18, hour: 9, minute }),
+        completedAt: localIso({ day: 18, hour: 9, minute: minute + 5 }),
+        ...(workflowRunId === undefined ? {} : { workflowRunId }),
+        ...(parentAgentId === undefined ? {} : { parentAgentId }),
+      });
+    const busy = {
+      workflows: [
+        attachedWorkflow({
+          createdAt: localIso({ day: 18, hour: 8, minute: 50 }),
+          stepIds: ['one', 'two', 'three'],
+        }),
+        attachedWorkflow({
+          runId: OTHER_RUN_ID,
+          name: 'Refactor workflow',
+          createdAt: localIso({ day: 17, hour: 22 }),
+          stepIds: ['old-step'],
+        }),
+      ],
+      agents: [
+        agent({
+          id: 'old-step',
+          ordinal: 1,
+          startedAt: localIso({ day: 17, hour: 22, minute: 30 }),
+          completedAt: localIso({ day: 17, hour: 23 }),
+          workflowRunId: OTHER_RUN_ID,
+        }),
+        settled({ id: 'one', ordinal: 2, minute: 0, workflowRunId: RUN_ID }),
+        settled({ id: 'one-a', ordinal: 3, minute: 2, parentAgentId: 'one' }),
+        settled({ id: 'loose', ordinal: 4, minute: 12 }),
+        settled({ id: 'two', ordinal: 5, minute: 20, workflowRunId: RUN_ID }),
+        settled({ id: 'two-a', ordinal: 6, minute: 22, parentAgentId: 'two' }),
+        settled({ id: 'two-b', ordinal: 7, minute: 24, parentAgentId: 'two' }),
+        settled({ id: 'three', ordinal: 8, minute: 40, workflowRunId: RUN_ID }),
+      ],
+    };
+
+    it('never lets a clock rise going down, through steps, subagents and foreign rows', () => {
+      const { items } = stream(busy);
+      const times = timesDownTheFeed(items);
+
+      expect(times.length).toBeGreaterThan(8);
+      expect(times).toEqual([...times].sort((first, second) => second.localeCompare(first)));
+    });
+
+    it('puts every child above its parent and every step above its run row', () => {
+      const { items, groups } = stream(busy);
+
+      for (const group of groups) {
+        const originIndex = indexOfId({ items, id: group.originRowId });
+        const members = items.flatMap((item, index) => (item.groupId === group.id ? [index] : []));
+
+        expect(members.length).toBeGreaterThan(0);
+        expect(members.every((index) => index < originIndex)).toBe(true);
+      }
+    });
+
+    it('keeps the clocks falling when the run folds and its steps are shown again', () => {
+      const folded = stream({ ...busy, folds: true });
+      const opened = stream({
+        ...busy,
+        folds: true,
+        expanded: ['run:run-1', 'run:run-2', 'subagents:agent:two', 'subagents:agent:one'],
+      });
+
+      for (const result of [folded, opened]) {
+        const times = timesDownTheFeed(result.items);
+
+        expect(times).toEqual([...times].sort((first, second) => second.localeCompare(first)));
+      }
+    });
+  });
+
+  describe('folding a finished branch into a count row', () => {
+    const finishedRun = {
+      workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          startedAt: localIso({ day: 18, hour: 9 }),
+          completedAt: localIso({ day: 18, hour: 9, minute: 20 }),
+          workflowRunId: RUN_ID,
+        }),
+        agent({
+          id: 'two',
+          ordinal: 2,
+          startedAt: localIso({ day: 18, hour: 10 }),
+          completedAt: localIso({ day: 18, hour: 10, minute: 20 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+    };
+    const finishedRunWorkflows = [
+      attachedWorkflow({
+        createdAt: localIso({ day: 18, hour: 8 }),
+        stepIds: ['one', 'two'],
+      }),
+    ];
+
+    it('folds a finished run, whatever its size, to one count row above its run row', () => {
+      const { items, groups } = stream({
+        ...finishedRun,
+        workflows: finishedRunWorkflows,
+        folds: true,
+      });
+      const count = items.find((item) => item.kind === 'count');
+      const layout = layoutTimelineRail({ rows: items, groups });
+      const countIndex = items.findIndex((item) => item.kind === 'count');
+
+      expect(labelsOf(items)).toEqual(['now', 'count:run:run-1', 'entry:run:run-1']);
+      expect(count?.kind === 'count' ? count.isExpanded : null).toBe(false);
+      expect(count?.kind === 'count' ? count.summary.parts[0]?.count : null).toBe(2);
+      expect(layout.rows[countIndex]?.markerColumn).toBe(1);
+      expect(layout.rows[countIndex]?.markerY).toBe(count?.markerY);
+    });
+
+    it('keeps the count row as the top cap of the lane once the run is open', () => {
+      const { items } = stream({
+        ...finishedRun,
+        workflows: finishedRunWorkflows,
+        folds: true,
+        expanded: ['run:run-1'],
+      });
+      const count = items.find((item) => item.kind === 'count');
+
+      expect(labelsOf(items)).toEqual([
+        'now',
+        'count:run:run-1',
+        'step:agent:two',
+        'step:agent:one',
+        'entry:run:run-1',
+      ]);
+      expect(count?.kind === 'count' ? count.isExpanded : null).toBe(true);
+    });
+
+    it('gives a folded run row the keys to open its count row', () => {
+      const { items } = stream({
+        ...finishedRun,
+        workflows: finishedRunWorkflows,
+        folds: true,
+      });
+      const run = items.find((item) => item.id === 'run:run-1');
+
+      expect(run?.kind === 'row' ? run.branches : null).toEqual([
+        { expandId: 'run:run-1', isExpanded: false },
+      ]);
+    });
+
+    it('never folds a live run and gives it no count row or fold key', () => {
+      const { items } = stream({
+        workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
+        folds: true,
+        agents: [
+          agent({
+            id: 'one',
+            ordinal: 1,
+            startedAt: localIso({ day: 18, hour: 9 }),
+            completedAt: localIso({ day: 18, hour: 9, minute: 20 }),
+            workflowRunId: RUN_ID,
+          }),
+          agent({
+            id: 'two',
+            ordinal: 2,
+            status: 'running',
+            startedAt: localIso({ day: 18, hour: 10 }),
+            workflowRunId: RUN_ID,
+          }),
+        ],
+      });
+      const run = items.find((item) => item.id === 'run:run-1');
+
+      expect(labelsOf(items)).toEqual([
+        'now',
+        'step:agent:two',
+        'step:agent:one',
+        'entry:run:run-1',
+      ]);
+      expect(items.some((item) => item.kind === 'count')).toBe(false);
+      expect(run?.kind === 'row' ? run.branches : 'missing').toBeUndefined();
+    });
+
+    it('keeps the subagents of a running step shown, with no way to fold them', () => {
+      const { items } = stream({
+        workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
+        folds: true,
+        agents: [
+          agent({
+            id: 'step',
+            ordinal: 1,
+            status: 'running',
+            startedAt: localIso({ day: 18, hour: 9 }),
+            workflowRunId: RUN_ID,
+          }),
+          agent({
+            id: 'child-a',
+            ordinal: 2,
+            parentAgentId: 'step',
+            startedAt: localIso({ day: 18, hour: 9, minute: 10 }),
+            completedAt: localIso({ day: 18, hour: 9, minute: 20 }),
+          }),
+          agent({
+            id: 'child-b',
+            ordinal: 3,
+            parentAgentId: 'step',
+            status: 'running',
+            startedAt: localIso({ day: 18, hour: 9, minute: 30 }),
+          }),
+        ],
+      });
+      const step = items.find((item) => item.id === 'agent:step');
+
+      expect(labelsOf(items)).toEqual([
+        'now',
+        'step:agent:child-b',
+        'step:agent:child-a',
+        'step:agent:step',
+        'entry:run:run-1',
+      ]);
+      expect(items.some((item) => item.kind === 'count')).toBe(false);
+      expect(step?.kind === 'row' ? step.branches : 'missing').toBeUndefined();
+    });
+
+    it('folds a finished step with two subagents, however few', () => {
+      const { items } = stream({
+        workflows: [
+          attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }), stepIds: ['step'] }),
+        ],
+        folds: true,
+        expanded: ['run:run-1'],
+        agents: [
+          agent({
+            id: 'step',
+            ordinal: 1,
+            startedAt: localIso({ day: 18, hour: 9 }),
+            workflowRunId: RUN_ID,
+          }),
+          agent({
+            id: 'child-a',
+            ordinal: 2,
+            parentAgentId: 'step',
+            startedAt: localIso({ day: 18, hour: 9, minute: 10 }),
+          }),
+          agent({
+            id: 'child-b',
+            ordinal: 3,
+            parentAgentId: 'step',
+            startedAt: localIso({ day: 18, hour: 9, minute: 20 }),
+          }),
+        ],
+      });
+      const count = items.find((item) => item.id === 'count:subagents:agent:step');
+
+      expect(labelsOf(items)).toEqual([
+        'now',
+        'count:run:run-1',
+        'count:subagents:agent:step',
+        'step:agent:step',
+        'entry:run:run-1',
+      ]);
+      expect(count?.kind === 'count' ? count.summary.parts[0]?.count : null).toBe(2);
+    });
+
+    const stepWithChildren = ({
+      failed,
+    }: {
+      readonly failed: Pick<Agent, 'status' | 'doneAt'>;
+    }) => ({
+      workflows: [
+        attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }), stepIds: ['step'] }),
+      ],
+      folds: true,
+      expanded: ['run:run-1'],
+      agents: [
+        agent({
+          id: 'step',
+          ordinal: 1,
+          startedAt: localIso({ day: 18, hour: 9 }),
+          workflowRunId: RUN_ID,
+        }),
+        agent({
+          id: 'child-ok',
+          ordinal: 2,
+          parentAgentId: 'step',
+          startedAt: localIso({ day: 18, hour: 9, minute: 10 }),
+        }),
+        agent({
+          id: 'child-failed',
+          ordinal: 3,
+          parentAgentId: 'step',
+          startedAt: localIso({ day: 18, hour: 9, minute: 20 }),
+          status: failed.status,
+          ...(failed.doneAt === undefined ? {} : { doneAt: failed.doneAt }),
+        }),
+      ],
+    });
+
+    it('keeps the branch open while a subagent has failed and nobody dealt with it', () => {
+      const { items } = stream(stepWithChildren({ failed: { status: 'failed' } }));
+
+      expect(items.some((item) => item.kind === 'count' && item.id.includes('subagents'))).toBe(
+        false,
+      );
+      expect(labelsOf(items)).toContain('step:agent:child-failed');
+    });
+
+    it('counts a subagent that was closed beside the total once the branch settles', () => {
+      const { items } = stream(
+        stepWithChildren({
+          failed: {
+            status: 'failed',
+            doneAt: typedString<IsoDateTime>({ value: localIso({ day: 18, hour: 9, minute: 25 }) }),
+          },
+        }),
+      );
+      const count = items.find((item) => item.id === 'count:subagents:agent:step');
+
+      expect(
+        count?.kind === 'count'
+          ? count.summary.parts.map((part) => `${part.count} ${part.noun}`)
+          : [],
+      ).toEqual(['2 subagents', '1 closed']);
+    });
   });
 });
 
@@ -1644,63 +1996,73 @@ describe('buildTimelineStream, subagent collapse', () => {
 
   const FAN_OUT_WORKFLOWS = [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })];
 
-  it('keeps the descendants of a step closed until its row opens them', () => {
-    const closed = stream({ workflows: FAN_OUT_WORKFLOWS, agents: FAN_OUT });
+  it('folds the descendants of a finished step until its count row opens them', () => {
+    const closed = stream({ workflows: FAN_OUT_WORKFLOWS, agents: FAN_OUT, folds: true });
     const open = stream({
       workflows: FAN_OUT_WORKFLOWS,
       agents: FAN_OUT,
+      folds: true,
       expanded: ['subagents:agent:implement', 'subagents:agent:sub-a'],
     });
 
     expect(closed.items.map(labelOf)).toEqual([
       'now',
+      'count:subagents:agent:cluster-parent',
       'entry:agent:cluster-parent',
-      'entry:run:run-1',
+      'count:subagents:agent:implement',
       'step:agent:implement',
+      'entry:run:run-1',
     ]);
     expect(open.items.map(labelOf)).toEqual([
       'now',
+      'count:subagents:agent:cluster-parent',
       'entry:agent:cluster-parent',
-      'entry:run:run-1',
-      'step:agent:implement',
-      'step:agent:sub-a',
+      'count:subagents:agent:implement',
+      'count:subagents:agent:sub-a',
       'step:agent:sub-a-a',
+      'step:agent:sub-a',
+      'step:agent:implement',
+      'entry:run:run-1',
     ]);
     expect(open.items.map((item) => (item.kind === 'row' ? item.ordinal : null))).toEqual([
       null,
       null,
       null,
-      '1',
-      '1.1',
+      null,
+      null,
       '1.1.1',
+      '1.1',
+      '1',
+      null,
     ]);
   });
 
-  it('emits no lane for a collapsed brood, so the rail carries no empty group', () => {
+  it('keeps the lane of a folded brood, carrying only its count row', () => {
     const { items, groups } = stream({
       workflows: FAN_OUT_WORKFLOWS,
       agents: FAN_OUT,
+      folds: true,
     });
     const layout = layoutTimelineRail({ rows: items, groups });
 
-    expect(items.map(labelOf)).toEqual([
-      'now',
-      'entry:agent:cluster-parent',
-      'entry:run:run-1',
-      'step:agent:implement',
+    expect(groups.map((group) => group.id).sort()).toEqual([
+      'lane:agent:cluster-parent',
+      'lane:agent:implement',
+      'lane:run:run-1',
     ]);
-    expect(groups.map((group) => group.id)).toEqual(['lane:run:run-1']);
     for (const group of groups) {
       expect(items.some((item) => item.groupId === group.id)).toBe(true);
     }
-    expect(layout.columnByGroupId.get('lane:agent:implement')).toBeUndefined();
-    expect(layout.columnByGroupId.get('lane:agent:cluster-parent')).toBeUndefined();
+    expect(layout.columnByGroupId.get('lane:run:run-1')).toBe(1);
+    expect(layout.columnByGroupId.get('lane:agent:implement')).toBe(2);
+    expect(layout.columnByGroupId.get('lane:agent:cluster-parent')).toBe(2);
   });
 
   it('moves a hidden child unread onto the parent row', () => {
     const collapsed = stream({
       workflows: FAN_OUT_WORKFLOWS,
       agents: FAN_OUT,
+      folds: true,
       unreadAgentIds: new Set(['sub-a-a', 'cluster-child']),
     });
     const unreadIds = collapsed.items.flatMap((item) =>
@@ -1710,10 +2072,11 @@ describe('buildTimelineStream, subagent collapse', () => {
     expect(unreadIds).toEqual(expect.arrayContaining(['agent:implement', 'agent:cluster-parent']));
   });
 
-  it('moves a hidden child unread onto the closed step row', () => {
+  it('moves a hidden child unread onto the folded step row', () => {
     const closed = stream({
       workflows: FAN_OUT_WORKFLOWS,
       agents: FAN_OUT,
+      folds: true,
       unreadAgentIds: new Set(['sub-a-a']),
     });
     const unreadIds = closed.items.flatMap((item) =>
@@ -1727,6 +2090,7 @@ describe('buildTimelineStream, subagent collapse', () => {
     const expanded = stream({
       workflows: FAN_OUT_WORKFLOWS,
       agents: FAN_OUT,
+      folds: true,
       unreadAgentIds: new Set(['sub-a-a']),
       expanded: ['subagents:agent:implement', 'subagents:agent:sub-a'],
     });
@@ -1817,24 +2181,50 @@ describe('buildTimelineStream, plan visibility and family anchoring', () => {
     const params = {
       agents: [agent({ id: 'solo', ordinal: 0, startedAt: localIso({ day: 18, hour: 9 }) })],
       plans: [standalonePlan({ id: 'solo-plan', agentId: 'solo' })],
+      folds: true,
     };
     const closed = stream(params);
     const open = stream({ ...params, expanded: ['outputs:agent:solo'] });
     const launch = closed.items.find((item) => item.kind === 'row' && item.id === 'agent:solo');
     const planRow = open.items.find((item) => item.kind === 'row' && item.id === 'plan:solo-plan');
 
-    expect(closed.items.map(labelOf)).toEqual(['now', 'entry:agent:solo']);
-    expect(launch?.kind === 'row' ? launch.outputs : null).toEqual({
-      id: 'outputs:agent:solo',
-      isExpanded: false,
-      count: 1,
+    expect(closed.items.map(labelOf)).toEqual([
+      'now',
+      'count:outputs:agent:solo',
+      'entry:agent:solo',
+    ]);
+    expect(launch?.kind === 'row' ? launch.branches : null).toEqual([
+      { expandId: 'outputs:agent:solo', isExpanded: false },
+    ]);
+    expect(open.items.map(labelOf)).toEqual([
+      'now',
+      'count:outputs:agent:solo',
+      'step:plan:solo-plan',
+      'entry:agent:solo',
+    ]);
+    expect(planRow?.groupId).toBe('outputs-lane:agent:solo');
+  });
+
+  it('keeps the outputs of a running launch shown, with no count row', () => {
+    const { items } = stream({
+      agents: [
+        agent({
+          id: 'solo',
+          ordinal: 0,
+          status: 'running',
+          startedAt: localIso({ day: 18, hour: 9 }),
+        }),
+      ],
+      plans: [standalonePlan({ id: 'solo-plan', agentId: 'solo' })],
+      folds: true,
     });
-    expect(open.items.map(labelOf)).toEqual(['now', 'entry:agent:solo', 'step:plan:solo-plan']);
-    expect(planRow?.groupId).toBe('lane:agent:solo');
+
+    expect(items.map(labelOf)).toEqual(['now', 'step:plan:solo-plan', 'entry:agent:solo']);
   });
 
   it('counts every kind of output on the launch and keeps the ones of other launches apart', () => {
     const { items } = stream({
+      folds: true,
       agents: [
         agent({ id: 'solo', ordinal: 0, startedAt: localIso({ day: 18, hour: 9 }) }),
         agent({ id: 'other', ordinal: 1, startedAt: localIso({ day: 18, hour: 10 }) }),
@@ -1852,13 +2242,45 @@ describe('buildTimelineStream, plan visibility and family anchoring', () => {
         },
       ],
     });
-    const countOf = (id: string) => {
-      const row = items.find((item) => item.kind === 'row' && item.id === id);
-      return row?.kind === 'row' ? row.outputs?.count : undefined;
+    const countOf = (expandId: string) => {
+      const row = items.find((item) => item.kind === 'count' && item.expandId === expandId);
+      return row?.kind === 'count' ? row.summary.total : undefined;
     };
 
-    expect(countOf('agent:solo')).toBe(2);
-    expect(countOf('agent:other')).toBe(1);
+    expect(countOf('outputs:agent:solo')).toBe(2);
+    expect(countOf('outputs:agent:other')).toBe(1);
+  });
+
+  it('keeps the outputs of a closed chain in its lane instead of dropping them outside any group', () => {
+    const agents = [
+      agent({ id: 'planner', ordinal: 0, startedAt: localIso({ day: 18, hour: 9 }) }),
+      agent({
+        id: 'implementer',
+        ordinal: 1,
+        parentAgentId: 'planner',
+        startedAt: localIso({ day: 18, hour: 10 }),
+      }),
+    ];
+    const plans = [standalonePlan({ id: 'root-plan', agentId: 'planner' })];
+    const closed = stream({ agents, plans, folds: true });
+    const open = stream({ agents, plans, folds: true, expanded: ['subagents:agent:planner'] });
+    const groupIds = new Set(open.groups.map((group) => group.id));
+
+    expect(closed.items.map(labelOf)).toEqual([
+      'now',
+      'count:subagents:agent:planner',
+      'entry:agent:planner',
+    ]);
+    expect(open.items.map(labelOf)).toEqual([
+      'now',
+      'count:subagents:agent:planner',
+      'step:agent:implementer',
+      'step:plan:root-plan',
+      'entry:agent:planner',
+    ]);
+    for (const item of open.items) {
+      expect(item.groupId === null || groupIds.has(item.groupId)).toBe(true);
+    }
   });
 
   it('keeps a run plan in the stream by default', () => {
@@ -2025,20 +2447,19 @@ describe('buildTimelineStream, plan visibility and family anchoring', () => {
     agent({ id: 'review', ordinal: 5, status: 'pending', workflowRunId: RUN_ID }),
   ];
 
-  it('keeps every waiting family row after the dated rows it waits behind', () => {
+  it('keeps every waiting family row at the top, with a started child still above its parent', () => {
     const { items } = stream({
       workflows: PLAN_RUN_WORKFLOWS,
       agents: CLUSTER_RUN_AGENTS,
-      expanded: ['subagents:agent:implement'],
     });
 
     expect(items.map(labelOf)).toEqual([
       'now',
-      'entry:run:run-1',
-      'pending:agent:implement',
-      'step:agent:sub-1',
-      'pending:agent:sub-3',
       'pending:agent:review',
+      'pending:agent:sub-3',
+      'step:agent:sub-1',
+      'pending:agent:implement',
+      'entry:run:run-1',
     ]);
   });
 
@@ -2187,7 +2608,7 @@ describe('buildTimelineStream, question artifact rows', () => {
     expect(questionRow?.kind === 'row' ? questionRow.identity : 'missing').toBeNull();
   });
 
-  it('coalesces consecutive open questions from the same lane into one row', () => {
+  it('keeps every lane question on its own row, newest first', () => {
     const { items } = stream({
       agents: CHAIN_AGENTS,
       questions: [
@@ -2203,103 +2624,14 @@ describe('buildTimelineStream, question artifact rows', () => {
         }),
       ],
     });
-    const questionRows = items.filter(
-      (item) => item.kind === 'row' && item.entry.kind === 'question',
-    );
-    const [row] = questionRows;
 
-    expect(questionRows).toHaveLength(1);
     expect(
-      row?.kind === 'row' && row.entry.kind === 'question' ? row.entry.questions.length : 0,
-    ).toBe(2);
+      items.flatMap((item) =>
+        item.kind === 'row' && item.entry.kind === 'question' ? [item.id] : [],
+      ),
+    ).toEqual(['question:second-question', 'question:first-question']);
   });
 
-  it('keeps an open cluster and a consumed cluster from the same lane on separate rows', () => {
-    const { items } = stream({
-      agents: CHAIN_AGENTS,
-      questions: [
-        openQuestionFor({
-          id: 'open-question',
-          createdByAgentId: 'planner',
-          createdAt: localIso({ day: 18, hour: 11 }),
-        }),
-        answeredQuestionFor({
-          id: 'answered-question',
-          createdByAgentId: 'planner',
-          createdAt: localIso({ day: 18, hour: 11, minute: 15 }),
-          answeredAt: localIso({ day: 18, hour: 11, minute: 20 }),
-        }),
-      ],
-    });
-    const questionRows = items.filter(
-      (item) => item.kind === 'row' && item.entry.kind === 'question',
-    );
-
-    expect(questionRows).toHaveLength(2);
-  });
-
-  it('breaks the coalesced run when another row lands between two questions', () => {
-    const { items } = stream({
-      expanded: ['subagents:agent:planner'],
-      agents: [
-        agent({ id: 'planner', ordinal: 0, startedAt: localIso({ day: 18, hour: 9 }) }),
-        agent({
-          id: 'implementer',
-          ordinal: 1,
-          parentAgentId: 'planner',
-          startedAt: localIso({ day: 18, hour: 12 }),
-        }),
-      ],
-      questions: [
-        openQuestionFor({
-          id: 'first-question',
-          createdByAgentId: 'planner',
-          createdAt: localIso({ day: 18, hour: 11 }),
-        }),
-        openQuestionFor({
-          id: 'second-question',
-          createdByAgentId: 'planner',
-          createdAt: localIso({ day: 18, hour: 13 }),
-        }),
-      ],
-    });
-    const questionRows = items.filter(
-      (item) => item.kind === 'row' && item.entry.kind === 'question',
-    );
-
-    expect(questionRows).toHaveLength(2);
-  });
-
-  it('breaks the coalesced run across a day boundary', () => {
-    const { items } = stream({
-      agents: [
-        agent({ id: 'planner', ordinal: 0, startedAt: localIso({ day: 17, hour: 9 }) }),
-        agent({
-          id: 'implementer',
-          ordinal: 1,
-          parentAgentId: 'planner',
-          startedAt: localIso({ day: 17, hour: 10 }),
-        }),
-      ],
-      questions: [
-        openQuestionFor({
-          id: 'yesterday-question',
-          createdByAgentId: 'planner',
-          createdAt: localIso({ day: 17, hour: 23 }),
-        }),
-        openQuestionFor({
-          id: 'today-question',
-          createdByAgentId: 'planner',
-          createdAt: localIso({ day: 18, hour: 1 }),
-        }),
-      ],
-    });
-    const questionRows = items.filter(
-      (item) => item.kind === 'row' && item.entry.kind === 'question',
-    );
-
-    expect(questionRows).toHaveLength(2);
-  });
   it('keeps the run row quiet while the step that asks shows the question', () => {
     const { items } = stream({
       workflows: [

@@ -2,18 +2,25 @@ import { cn } from '@goodboy/ui';
 import type { TimelineNowItem } from '../../../../timeline/buildTimelineStream';
 import { RAIL_SPINE_X, type RailRow } from '../../../../../workTreeModel/railGeometry';
 import { TIMELINE_GUTTER, TIMELINE_GUTTER_FALLBACK } from './timelineLayout';
-import { TimelineRail } from './TimelineRail';
+import { TimelineRail, type TimelineLaneControl } from './TimelineRail';
 
 type Props = {
   readonly item: TimelineNowItem;
   readonly rail: RailRow;
   readonly railWidth: number;
+  readonly lanes?: TimelineLaneControl | null;
   readonly hasGutter?: boolean;
 };
 
 const LABEL_CLASS = 'absolute -translate-y-1/2 text-eyebrow text-muted-foreground';
 
-export const TimelineNowRule = ({ item, rail, railWidth, hasGutter = true }: Props) => (
+export const TimelineNowRule = ({
+  item,
+  rail,
+  railWidth,
+  lanes = null,
+  hasGutter = true,
+}: Props) => (
   <div className="flex min-w-0" style={{ height: item.height }}>
     {hasGutter && (
       <span className={cn('relative shrink-0', TIMELINE_GUTTER)}>
@@ -23,7 +30,7 @@ export const TimelineNowRule = ({ item, rail, railWidth, hasGutter = true }: Pro
       </span>
     )}
     <span className="relative shrink-0" style={{ width: railWidth }}>
-      <TimelineRail rail={rail} width={railWidth} />
+      <TimelineRail rail={rail} width={railWidth} lanes={lanes} />
       <span
         data-testid="timeline-now-dot"
         aria-hidden

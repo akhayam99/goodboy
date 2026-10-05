@@ -22,6 +22,7 @@ import { layoutTimelineRail } from '../../workTreeModel/railGeometry';
 const SESSION_ID = 'session-1' as SessionId;
 const RUN_ID = 'run-1' as WorkflowRunId;
 const NOW = new Date(2026, 7, 18, 12, 0);
+const RUN_ROW = 'run:run-1';
 const RUN_LANE = 'lane:run:run-1';
 const STEP_LANE = 'lane:agent:build';
 const SUBAGENTS_ID = 'subagents:agent:build';
@@ -98,10 +99,12 @@ const streamOf = ({
   expanded = [],
   count = 4,
   statuses = [],
+  folds = true,
 }: {
   readonly expanded?: ReadonlyArray<string>;
   readonly count?: number;
   readonly statuses?: ReadonlyArray<Agent['status']>;
+  readonly folds?: boolean;
 }) => {
   const agents: ReadonlyArray<Agent> = [
     ...STEP_IDS.map((id, index) => stepAgent({ id, ordinal: index + 1 })),
@@ -126,7 +129,7 @@ const streamOf = ({
     decidingRunIds: new Set(),
     dayLabelFor: ({ at: when }) => dayLabel({ at: when, now: NOW }),
     expandedGroupIds: new Set(expanded),
-    foldsFinished: false,
+    foldsFinished: folds,
   });
   return { ...stream, layout: layoutTimelineRail({ rows: stream.items, groups: stream.groups }) };
 };
@@ -135,105 +138,116 @@ const rowsOf = (items: ReadonlyArray<{ readonly kind: string }>) =>
   items.filter((item): item is TimelineRowItem => item.kind === 'row');
 
 describe('subagents under a workflow step', () => {
-  it('draws no group row: the step carries its subagents in its own row, closed', () => {
-    const { items, groups } = streamOf({});
+  it('draws no group row: the step has one count row above it while its subagents are folded', () => {
+    const { items, groups } = streamOf({ expanded: [RUN_ROW] });
     const ids = rowsOf(items).map((row) => row.id);
     const build = rowsOf(items).find((row) => row.id === 'agent:build');
+    const count = items.find((item) => item.kind === 'count' && item.expandId === SUBAGENTS_ID);
 
-    expect(ids).toEqual(['run:run-1', 'agent:scout', 'agent:plan', 'agent:build']);
-    expect(build?.subagents?.summary.total).toBe(4);
-    expect(build?.subagents?.id).toBe(SUBAGENTS_ID);
-    expect(build?.subagents?.isExpanded).toBe(false);
-    expect(build?.opensLane).toBe(true);
-    expect(groups.map((group) => group.id)).toEqual([RUN_LANE]);
+    expect(ids).toEqual(['agent:build', 'agent:plan', 'agent:scout', RUN_ROW]);
+    expect(build?.branches).toEqual([{ expandId: SUBAGENTS_ID, isExpanded: false }]);
+    expect(count?.kind === 'count' ? count.summary.total : null).toBe(4);
+    expect(count?.kind === 'count' ? count.groupId : null).toBe(STEP_LANE);
+    expect(items.findIndex((item) => item === count)).toBe(
+      items.findIndex((item) => item.id === 'agent:build') - 1,
+    );
+    expect(groups.map((group) => group.id).sort()).toEqual([STEP_LANE, RUN_LANE]);
   });
 
-  it('opens the children right under the step, numbered 3.1 onward', () => {
-    const { items } = streamOf({ expanded: [SUBAGENTS_ID] });
+  it('opens the children above the step, newest first, numbered 3.4 down to 3.1', () => {
+    const { items } = streamOf({ expanded: [RUN_ROW, SUBAGENTS_ID] });
     const rows = rowsOf(items);
 
     expect(rows.map((row) => row.id)).toEqual([
-      'run:run-1',
-      'agent:scout',
-      'agent:plan',
-      'agent:build',
-      'agent:build-sub0',
-      'agent:build-sub1',
-      'agent:build-sub2',
       'agent:build-sub3',
+      'agent:build-sub2',
+      'agent:build-sub1',
+      'agent:build-sub0',
+      'agent:build',
+      'agent:plan',
+      'agent:scout',
+      RUN_ROW,
     ]);
-    expect(rows.slice(3).map((row) => row.ordinal)).toEqual(['3', '3.1', '3.2', '3.3', '3.4']);
-    expect(rows.slice(4).every((row) => row.groupId === STEP_LANE)).toBe(true);
-    expect(rows.slice(4).map((row) => row.explode)).toEqual(
+    expect(rows.slice(0, 5).map((row) => row.ordinal)).toEqual(['3.4', '3.3', '3.2', '3.1', '3']);
+    expect(rows.slice(0, 4).every((row) => row.groupId === STEP_LANE)).toBe(true);
+    expect(rows.slice(0, 4).map((row) => row.explode)).toEqual(
       Array.from({ length: 4 }, () => ({ groupId: SUBAGENTS_ID, kind: 'subagents' })),
     );
+    expect(items.map((item) => item.id).slice(0, 3)).toEqual([
+      'now',
+      'count:run:run-1',
+      `count:${SUBAGENTS_ID}`,
+    ]);
   });
 
-  for (const expanded of [[], [SUBAGENTS_ID]]) {
-    it(`reserves the child column on the step ball, ${expanded.length === 0 ? 'closed' : 'open'}`, () => {
+  for (const expanded of [[RUN_ROW], [RUN_ROW, SUBAGENTS_ID]]) {
+    it(`reserves the child column on the step ball, ${expanded.length === 1 ? 'folded' : 'open'}`, () => {
       const { items, layout } = streamOf({ expanded });
       const stepIndex = items.findIndex((item) => item.id === 'agent:build');
 
       const runColumn = layout.columnByGroupId.get(RUN_LANE);
       expect(runColumn).toBe(1);
+      expect(layout.columnByGroupId.get(STEP_LANE)).toBe(2);
       expect(layout.rows[stepIndex]?.markerColumn).toBe(runColumn);
       expect(layout.width).toBeGreaterThanOrEqual(8 + ((runColumn ?? 0) + 1) * 16);
     });
   }
 
-  it('forks the child lane off the step ball and ends it on the last child', () => {
-    const { items, groups, layout } = streamOf({ expanded: [SUBAGENTS_ID] });
+  it('branches the child lane off the step ball and starts it at the count row on top', () => {
+    const { items, groups, layout } = streamOf({ expanded: [RUN_ROW, SUBAGENTS_ID] });
     const stepRail = layout.rows[items.findIndex((item) => item.id === 'agent:build')];
-    const lastRail = layout.rows[items.findIndex((item) => item.id === 'agent:build-sub3')];
+    const countRail = layout.rows[items.findIndex((item) => item.id === `count:${SUBAGENTS_ID}`)];
     const lane = groups.find((group) => group.id === STEP_LANE);
 
     expect(lane).toEqual(
       expect.objectContaining({
         parentGroupId: RUN_LANE,
         originRowId: 'agent:build',
-        direction: 'down',
+        direction: 'up',
       }),
     );
-    expect(layout.columnByGroupId.get(STEP_LANE)).toBe(2);
     expect(
       stepRail?.joins.map((join) => `${join.kind}:${join.spineColumn}->${join.laneColumn}`),
-    ).toEqual(['fork:1->2']);
-    expect(lastRail?.markerColumn).toBe(2);
-    const laneSegment = lastRail?.segments.find((segment) => segment.column === 2);
-    expect(laneSegment?.fromY).toBe(0);
-    expect(laneSegment?.toY).toBe(lastRail?.markerY);
+    ).toEqual(['branch:1->2']);
+    expect(countRail?.markerColumn).toBe(2);
+    const laneSegment = countRail?.segments.find((segment) => segment.column === 2);
+    expect(laneSegment?.fromY).toBe(countRail?.markerY);
+    expect(laneSegment?.toY).toBe(countRail?.height);
   });
 
-  it('shows a failed child on the closed step row without opening it', () => {
-    const { items } = streamOf({ statuses: ['completed', 'failed', 'completed', 'completed'] });
+  it('keeps the subagents shown while one has failed, with no count row to fold them under', () => {
+    const { items } = streamOf({
+      expanded: [RUN_ROW],
+      statuses: ['completed', 'failed', 'completed', 'completed'],
+    });
     const build = rowsOf(items).find((row) => row.id === 'agent:build');
 
-    expect(build?.subagents?.summary.failedCount).toBe(1);
-    expect(build?.subagents?.attentionKeys).toEqual(['agent:build-sub1']);
+    expect(items.some((item) => item.kind === 'count' && item.expandId === SUBAGENTS_ID)).toBe(
+      false,
+    );
+    expect(rowsOf(items).map((row) => row.id)).toContain('agent:build-sub1');
+    expect(build?.branches).toBeUndefined();
   });
 
-  it('counts a failed child once for the need-you chip, closed or open', () => {
+  it('lists a run with a failed subagent in Needs you, because that stream never folds', () => {
     const statuses: ReadonlyArray<Agent['status']> = [
       'failed',
       'completed',
       'completed',
       'completed',
     ];
-    const closed = streamOf({ statuses });
-    const open = streamOf({ statuses, expanded: [SUBAGENTS_ID] });
+    const { items } = streamOf({ statuses, folds: false });
 
-    const ownersOf = ({ items }: { readonly items: typeof closed.items }) =>
-      needsYouOwners({ items, entries: [], events: [] }).map((owner) => owner.id);
-
-    expect(ownersOf({ items: closed.items })).toEqual(['run:run-1']);
-    expect(ownersOf({ items: open.items })).toEqual(['run:run-1']);
+    expect(needsYouOwners({ items, entries: [], events: [] }).map((owner) => owner.id)).toEqual([
+      RUN_ROW,
+    ]);
   });
 
-  it('counts the children of one step once, whether the step is closed or open', () => {
-    const { items: closed } = streamOf({});
-    const { items: open } = streamOf({ expanded: [SUBAGENTS_ID] });
+  it('shows the children of one step once, whether its count row is folded or open', () => {
+    const { items: folded } = streamOf({ expanded: [RUN_ROW] });
+    const { items: open } = streamOf({ expanded: [RUN_ROW, SUBAGENTS_ID] });
 
-    expect(rowsOf(closed).filter((row) => row.id.startsWith('agent:build-sub'))).toHaveLength(0);
+    expect(rowsOf(folded).filter((row) => row.id.startsWith('agent:build-sub'))).toHaveLength(0);
     expect(rowsOf(open).filter((row) => row.id.startsWith('agent:build-sub'))).toHaveLength(4);
   });
 });

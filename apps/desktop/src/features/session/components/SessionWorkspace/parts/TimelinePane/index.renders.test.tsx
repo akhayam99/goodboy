@@ -199,20 +199,31 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('TimelinePane, row renders', () => {
-  it('draws the run and its steps on the spine alone, with no lane stroke and no lane to hit', () => {
+  it('draws the run and its steps on a lane in the run colour, dashed to NOW, with the lane to hit', () => {
     const view = render(pane({ actions: null }));
     const strokes = Array.from(
       view.container.querySelectorAll('[data-testid="timeline-rail-segment"]'),
     );
+    const laneStrokes = strokes.filter(
+      (line) => line.getAttribute('stroke') !== 'var(--color-border)',
+    );
 
     expect(view.container.querySelectorAll('[data-row-id]').length).toBe(8);
     expect(renders.entry).toBe(8);
-    expect(screen.queryByTestId('timeline-lane-hit')).toBeNull();
-    expect(strokes.length).toBeGreaterThan(0);
-    expect(strokes.every((line) => line.getAttribute('stroke') === 'var(--color-border)')).toBe(
-      true,
-    );
-    expect(view.container.querySelectorAll('svg.overflow-visible path')).toHaveLength(0);
+    expect(laneStrokes.length).toBeGreaterThan(0);
+    expect(
+      laneStrokes.every((line) => line.getAttribute('stroke')?.startsWith('var(--color-identity-')),
+    ).toBe(true);
+    expect(laneStrokes.some((line) => line.getAttribute('stroke-dasharray') !== null)).toBe(true);
+    expect(view.container.querySelectorAll('svg.overflow-visible path').length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId('timeline-lane-hit').length).toBeGreaterThan(0);
+  });
+
+  it('opens the run page from its lane', () => {
+    render(pane({ actions: null }));
+    const [hit] = screen.getAllByTestId('timeline-lane-hit');
+
+    expect(hit?.getAttribute('aria-label')).toBe('Open workflow: Ship the checkout fix');
   });
 
   it('re-renders no row when the parent re-renders with the same data', () => {
@@ -258,14 +269,14 @@ describe('TimelinePane, row renders', () => {
     attachedRuns.list = [];
     storeState.sessionPhaseRuns = { 'session-1': [lead, ...children, ...many] };
     const view = render(pane({ actions: null }));
-    expect(view.container.querySelectorAll('[data-row-id]').length).toBe(201);
+    expect(view.container.querySelectorAll('[data-row-id]').length).toBe(202);
     renders.entry = 0;
     renders.now = 0;
     renders.day = 0;
 
     fireEvent.click(screen.getByRole('button', { name: /3 subagents/ }));
 
-    expect(view.container.querySelectorAll('[data-row-id]').length).toBe(204);
+    expect(view.container.querySelectorAll('[data-row-id]').length).toBe(205);
     expect(renders.entry).toBeLessThanOrEqual(6);
     expect(renders.day).toBe(0);
   });
