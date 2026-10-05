@@ -185,6 +185,14 @@ describe('task link controls', () => {
     expect(await storedLinks()).toHaveLength(3);
   });
 
+  it('keeps the unlink cross out of the flow so chips carry no blank padding', async () => {
+    await seed();
+    renderChip();
+    const cross = screen.getByRole('button', { name: 'Unlink HBL-412 from session' });
+    expect(cross.className).toContain('absolute');
+    expect(cross.className).toContain('opacity-0');
+  });
+
   it('takes off the last branch through the chip and undoes its generated session placement', async () => {
     await useAppStore.getState().linkSessionExternalTask(SESSION_ID, TASK);
     renderChip({ branch: TASK.branch });
@@ -237,6 +245,35 @@ describe('task link controls', () => {
       fireEvent.click(screen.getByRole('menuitem', { name: /^HBL-412/ }));
     });
     expect(await storedLinks()).toHaveLength(2);
+  });
+
+  it('offers the placement only when a linked task is not already on that branch', async () => {
+    const projectId = 'project-payments-api' as ProjectId;
+    const props = {
+      sessionId: SESSION_ID,
+      projectId,
+      mountId: 'mount-payments' as MountId,
+      branch: TASK.branch ?? '',
+    };
+    const { container } = render(<PutOnBranchPopover {...props} />);
+    expect(screen.queryByRole('button', { name: /^Put on a branch/ })).toBeNull();
+    await act(async () => {
+      await useAppStore.getState().linkSessionExternalTask(SESSION_ID, { ...TASK, projectId });
+    });
+    expect(screen.queryByRole('button', { name: /^Put on a branch/ })).toBeNull();
+    await act(async () => {
+      await useAppStore.getState().linkSessionExternalTask(SESSION_ID, {
+        ...TASK,
+        externalId: 'lin-413',
+        identifier: 'HBL-413',
+        branch: 'hl/notify-retry',
+        projectId,
+      });
+    });
+    const trigger = screen.getByRole('button', { name: `Put on a branch ${props.branch}` });
+    expect(trigger.className).toContain('opacity-0');
+    expect(trigger.className).toContain('group-hover/mount-row:opacity-100');
+    expect(container.textContent).not.toContain('Put on a branch');
   });
 
   it('opens the worktree form from the branch row action', async () => {
