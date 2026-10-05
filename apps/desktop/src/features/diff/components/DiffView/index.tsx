@@ -375,9 +375,12 @@ export const DiffView = ({
   }
 
   const toolbar = (
-    <div data-slot="diff-toolbar" className="flex min-w-0 items-center gap-2">
-      {toolbarStart}
-      <div className="ml-auto flex shrink-0 items-center gap-2">
+    <div
+      data-slot="diff-toolbar"
+      className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2"
+    >
+      <div className="flex min-w-0 items-center gap-2">{toolbarStart}</div>
+      <div className="flex shrink-0 items-center gap-2">
         <DisplayMenu layout={layout} onLayout={setLayout} wrap={wrap} onWrap={setWrap} />
         {toolbarEnd}
       </div>

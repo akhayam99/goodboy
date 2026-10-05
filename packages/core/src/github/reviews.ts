@@ -144,7 +144,9 @@ const addFileThread = async ({
   readonly thread: ReviewFileThreadDraft;
   readonly opts: GhRunOptions;
 }): Promise<void> => {
-  await runGraphql<unknown>({
+  const data = await runGraphql<{
+    addPullRequestReviewThread?: { thread?: { id: string } | null } | null;
+  }>({
     runner,
     query: `mutation($reviewId:ID!,$path:String!,$body:String!){
   addPullRequestReviewThread(input:{pullRequestReviewId:$reviewId,path:$path,body:$body,subjectType:FILE}){
@@ -159,6 +161,9 @@ const addFileThread = async ({
     opts,
     label: 'addPullRequestReviewThread',
   });
+  if (!data.addPullRequestReviewThread?.thread?.id) {
+    throw new GhCliError('addPullRequestReviewThread returned no thread', JSON.stringify(data), 1);
+  }
 };
 
 const submitPendingReview = async ({

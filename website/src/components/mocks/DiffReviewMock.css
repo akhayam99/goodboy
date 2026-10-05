@@ -34,10 +34,17 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 4px;
+  gap: 10px;
   padding: 10px 6px 6px 12px;
   color: var(--g-muted-foreground);
   font: 400 11px / 16px var(--sans);
+}
+
+.mockStage .dfrTreeGroup {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .mockStage .dfrTree p {
@@ -52,7 +59,6 @@
   position: relative;
   display: block;
   height: 2px;
-  margin-bottom: 6px;
   overflow: hidden;
   border-radius: 2px;
   background: var(--g-border-soft);

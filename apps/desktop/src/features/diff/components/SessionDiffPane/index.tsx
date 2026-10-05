@@ -124,8 +124,16 @@ export const SessionDiffPane = ({
   });
 
   const viewedCount = useMemo(
-    () => review.tree.files.filter((file) => review.viewed.stateOf(file) === 'viewed').length,
-    [review.tree.files, review.viewed],
+    () => review.allFiles.filter((file) => review.viewed.stateOf(file) === 'viewed').length,
+    [review.allFiles, review.viewed],
+  );
+
+  const commentOnFile = useCallback(
+    (path: string) => {
+      review.commentOnFile(path);
+      panel.dismiss();
+    },
+    [panel, review],
   );
 
   const pickFile = useCallback(
@@ -262,7 +270,7 @@ export const SessionDiffPane = ({
       collapsed={review.collapsed}
       onToggleFolder={review.toggleFolder}
       onPick={pickFile}
-      onCommentOnFile={review.comments.allowFileLevel ? review.commentOnFile : null}
+      onCommentOnFile={review.comments.allowFileLevel ? commentOnFile : null}
       stateOf={review.viewed.stateOf}
       noteCountOf={review.noteCountOf}
     />
@@ -309,7 +317,7 @@ export const SessionDiffPane = ({
         <TreeStrip
           ref={panel.stripRef}
           viewed={viewedCount}
-          total={review.tree.files.length}
+          total={review.allFiles.length}
           isOpen={panel.isOpen}
           onToggle={panel.toggle}
         />

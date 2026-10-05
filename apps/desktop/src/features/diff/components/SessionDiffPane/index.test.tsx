@@ -59,7 +59,10 @@ vi.mock('../../hooks/useDiffReviewThreads', () => ({
 }));
 
 vi.mock('../../hooks/useDiffNotes', () => ({
-  useDiffNotes: () => ({ comments: { threads: [] }, fixes: [] }),
+  useDiffNotes: () => ({
+    comments: { threads: [], allowFileLevel: h.store['allowFileLevel'] === true },
+    fixes: [],
+  }),
 }));
 
 vi.mock('../../../permissions/components/DiffViewSelector', () => ({
@@ -221,6 +224,37 @@ describe('SessionDiffPane at a narrow width', () => {
 
     expect(diff.focusFile).toHaveBeenCalledWith('src/ledger/export.ts');
     expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
+  });
+
+  it('closes the tree overlay when a file comment is requested from a row', () => {
+    squeeze(700);
+    h.store['allowFileLevel'] = true;
+    renderPane({ diff: diffOf(FILES) });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Files, 0 of 2 viewed' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Comment on export.ts' }));
+
+    expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
+  });
+
+  it('keeps the strip on the whole review while the tree is filtered', () => {
+    squeeze(700);
+    const diff = {
+      ...diffOf(FILES),
+      viewed: {
+        stateOf: (file: FileDiff) =>
+          file.path === FILE.path ? ('viewed' as const) : ('none' as const),
+        onToggle: vi.fn(),
+      },
+    };
+    renderPane({ diff });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Files, 1 of 2 viewed' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Filter files' }), {
+      target: { value: 'postings' },
+    });
+
+    expect(screen.getByText('1/2')).toBeDefined();
   });
 
   it('opens the tree and puts focus in it with the focus key', () => {

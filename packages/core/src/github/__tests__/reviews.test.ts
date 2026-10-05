@@ -171,6 +171,28 @@ describe('addPullRequestReview', () => {
       expect(result).toEqual({ id: 'PRR_9', url: 'https://github.com/acme/web/pull/42#prr-9' });
     });
 
+    it('discards the pending review when a file thread mutation returns null', async () => {
+      const runner = sequenceRunner([
+        jsonOk({ data: { addPullRequestReview: { pullRequestReview: { id: 'PRR_9' } } } }),
+        jsonOk({ data: { addPullRequestReviewThread: null } }),
+        jsonOk({ data: { deletePullRequestReview: { clientMutationId: null } } }),
+      ]);
+
+      await expect(
+        addPullRequestReview(runner, {
+          pullRequestId: 'PR_x',
+          event: 'COMMENT',
+          body: '',
+          threads: [],
+          fileThreads: [fileThread],
+        }),
+      ).rejects.toBeInstanceOf(GhCliError);
+
+      const all = calls(runner);
+      expect(all).toHaveLength(3);
+      expect(queryOf(all[2]!)).toContain('deletePullRequestReview');
+    });
+
     it('deletes the pending review and rethrows when a file thread fails', async () => {
       const runner = sequenceRunner([
         jsonOk({ data: { addPullRequestReview: { pullRequestReview: { id: 'PRR_9' } } } }),

@@ -70,11 +70,15 @@ export const FileHeader = ({
         >
           {STATUS_LETTER[file.status]}
         </span>
-        <span className="min-w-0 truncate text-code" title={file.path}>
-          <span className="text-faint-foreground">{dir}</span>
-          <span className="text-foreground">{name}</span>
+        <span className="flex min-w-0 items-baseline gap-2 text-code" title={file.path}>
+          <span className="min-w-0 truncate">
+            <span className="text-faint-foreground">{dir}</span>
+            <span className="text-foreground">{name}</span>
+          </span>
           {file.status === 'renamed' && file.oldPath !== undefined ? (
-            <span className="ml-2 text-meta text-faint-foreground">from {file.oldPath}</span>
+            <span className="min-w-0 truncate text-meta text-faint-foreground">
+              from {file.oldPath}
+            </span>
           ) : null}
         </span>
         <span className="shrink-0 text-meta tabular-nums">

@@ -48,7 +48,8 @@ export const TreeResizer = ({ asideRef, width, paneWidth, onResize }: Props) => 
       return;
     }
     event.preventDefault();
-    onResize(width + (event.key === 'ArrowRight' ? KEY_STEP : -KEY_STEP));
+    const rendered = asideRef.current?.getBoundingClientRect().width ?? width;
+    onResize(rendered + (event.key === 'ArrowRight' ? KEY_STEP : -KEY_STEP));
   };
 
   return (

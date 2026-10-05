@@ -608,10 +608,9 @@ pub struct GitlabDiscussionPosition {
 }
 
 fn discussion_payload(body: &str, position: &GitlabDiscussionPosition) -> serde_json::Value {
-    let position_type = if position.new_line.is_none() && position.old_line.is_none() {
-        "file"
-    } else {
-        "text"
+    let position_type = match (position.new_line, position.old_line) {
+        (None, None) => "file",
+        _ => "text",
     };
     let mut pos = serde_json::json!({
         "position_type": position_type,
