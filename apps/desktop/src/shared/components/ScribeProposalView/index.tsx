@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Button, Markdown } from '@goodboy/ui';
 import { RotateCw } from 'lucide-react';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import type { ScribeProposal } from '../../../session/scribeProposal';
-import type { ScribeProposalState } from '../../../session/hooks/useScribeProposal';
+import { ICON_SIZE } from '../conceptIcons';
+import type { ScribeProposal } from '../../utils/scribeProposal';
+import type { ScribeProposalState } from '../../hooks/useScribeProposal';
 import { ScribeProposalChip } from './ScribeProposalChip';
 
 type Props = {
@@ -36,12 +36,12 @@ export const ScribeProposalView = ({
     >
       {hasHeader ? (
         <header className="flex items-center justify-between gap-3">
-          <span className="text-label font-medium text-foreground">Pull request text</span>
+          <span className="text-label text-muted-foreground">Pull request text</span>
           <ScribeProposalChip state={state} />
         </header>
       ) : null}
       {proposal.title !== null ? (
-        <p className="text-body font-medium text-foreground">{proposal.title}</p>
+        <p className="text-row text-foreground">{proposal.title}</p>
       ) : null}
       {proposal.body !== null ? (
         <div className="flex flex-col items-start gap-1">

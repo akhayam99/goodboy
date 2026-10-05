@@ -1,7 +1,7 @@
 import { AlertTriangle, Check } from 'lucide-react';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { openUrl } from '../../../../shared/lib/editor';
-import type { ScribeProposalState } from '../../../session/hooks/useScribeProposal';
+import { ICON_SIZE } from '../conceptIcons';
+import { openUrl } from '../../lib/editor';
+import type { ScribeProposalState } from '../../hooks/useScribeProposal';
 
 type Props = {
   readonly state: ScribeProposalState | null;

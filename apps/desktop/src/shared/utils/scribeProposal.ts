@@ -1,6 +1,6 @@
 import { extractScribeText, type ExtractedScribeText } from '@goodboy/core';
 import { mergeScribeOutput } from '../../store/slices/scribe/mergeScribeOutput';
-import type { TranscriptItem } from '../chat/utils/transcript-items';
+import type { TranscriptItem } from '../../features/chat/utils/transcript-items';
 
 export type ScribeProposal = {
   readonly title: string | null;

@@ -4,8 +4,8 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import { CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { classifyAgent } from '../../../session/agent-kind';
-import { useScribeProposal } from '../../../session/hooks/useScribeProposal';
-import { ScribeProposalView } from '../ScribeProposalView';
+import { useScribeProposal } from '../../../../shared/hooks/useScribeProposal';
+import { ScribeProposalView } from '../../../../shared/components/ScribeProposalView';
 import { TranscriptShell } from '../TranscriptShell';
 
 type Props = {

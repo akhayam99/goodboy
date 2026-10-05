@@ -1,8 +1,8 @@
 import { Band } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
-import { ScribeProposalChip } from '../../../chat/components/ScribeProposalView/ScribeProposalChip';
-import { ScribeProposalView } from '../../../chat/components/ScribeProposalView';
-import { useScribeProposal } from '../../hooks/useScribeProposal';
+import { ScribeProposalChip } from '../../../../shared/components/ScribeProposalView/ScribeProposalChip';
+import { ScribeProposalView } from '../../../../shared/components/ScribeProposalView';
+import { useScribeProposal } from '../../../../shared/hooks/useScribeProposal';
 
 type Props = {
   readonly sessionId: SessionId;

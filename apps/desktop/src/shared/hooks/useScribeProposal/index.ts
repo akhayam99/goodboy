@@ -1,11 +1,11 @@
 import { useCallback, useMemo } from 'react';
 import type { AgentId, PullRequestState, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { useTranscript } from '../../../../store/slices/transcripts/selectors';
-import type { ScribeWork } from '../../../../store/slices/scribe/types';
-import { reduceTranscript } from '../../../chat/utils/transcript-items';
-import { scribeMountOf } from '../../scribeMountOf';
-import { scribeProposalOf, type ScribeProposal } from '../../scribeProposal';
+import { EMPTY_ARRAY, useAppStore } from '../../../store';
+import { useTranscript } from '../../../store/slices/transcripts/selectors';
+import type { ScribeWork } from '../../../store/slices/scribe/types';
+import { reduceTranscript } from '../../../features/chat/utils/transcript-items';
+import { scribeMountOf } from '../../utils/scribeMountOf';
+import { scribeProposalOf, type ScribeProposal } from '../../utils/scribeProposal';
 
 export type ScribeProposalState =
   | { readonly kind: 'idle' }

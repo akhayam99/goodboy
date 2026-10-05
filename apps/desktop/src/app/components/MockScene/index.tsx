@@ -159,6 +159,9 @@ import { useBrandChrome } from './scenes/brand/brandChrome';
 import { applyDocumentTheme } from '../../../shared/lib/theme';
 import { AgentBriefScene } from './scenes/AgentBriefScene';
 import { AgentBriefQuestionScene } from './scenes/AgentBriefQuestionScene';
+import { ScribeProposalCreatingScene } from './scenes/ScribeProposalCreatingScene';
+import { ScribeProposalFailedScene } from './scenes/ScribeProposalFailedScene';
+import { ScribeProposalTranscriptScene } from './scenes/ScribeProposalTranscriptScene';
 import { FixRunScene } from './scenes/FixRunScene';
 import { ReportSheetHost } from '../../../features/bug-report/components/ReportSheetHost';
 import { CrashReportScene, useReportSheetParam } from './scenes/audit/ReportScenes';
@@ -314,6 +317,9 @@ export const MOCK_SCENES = {
   'brand-tools': BrandToolsScene,
   'agent-brief': AgentBriefScene,
   'agent-brief-question': AgentBriefQuestionScene,
+  'scribe-proposal-creating': ScribeProposalCreatingScene,
+  'scribe-proposal-failed': ScribeProposalFailedScene,
+  'scribe-proposal-transcript': ScribeProposalTranscriptScene,
   'fix-run': FixRunScene,
   'crash-report': CrashReportScene,
 };

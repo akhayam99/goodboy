@@ -13,31 +13,32 @@ export const resumeScribePullRequest = (set: SetFn, get: GetFn) => {
     const existing = get().scribeWork[key];
     if (existing !== undefined && existing.agentId === agentId) {
       patchScribeWork({ set, key, patch: { output } });
-    } else {
-      set((state) => ({
-        scribeAgents: {
-          ...Object.fromEntries(
-            Object.entries(state.scribeAgents).filter(([, agentKey]) => agentKey !== key),
-          ),
-          [agentId]: key,
-        },
-        scribeWork: {
-          ...state.scribeWork,
-          [key]: {
-            key,
-            sessionId,
-            mountId,
-            agentId,
-            task: { kind: 'pr', closedPrNumber: null, references: [], isDraft: true, base: null },
-            status: 'failed',
-            output,
-            error: null,
-            pullRequest: null,
-            updatedAt: Date.now(),
-          },
-        },
-      }));
+      await get().openScribePullRequest({ key });
+      return;
     }
+    set((state) => ({
+      scribeAgents: {
+        ...Object.fromEntries(
+          Object.entries(state.scribeAgents).filter(([, agentKey]) => agentKey !== key),
+        ),
+        [agentId]: key,
+      },
+      scribeWork: {
+        ...state.scribeWork,
+        [key]: {
+          key,
+          sessionId,
+          mountId,
+          agentId,
+          task: { kind: 'pr', closedPrNumber: null, references: [], isDraft: true, base: null },
+          status: 'failed',
+          output,
+          error: null,
+          pullRequest: null,
+          updatedAt: Date.now(),
+        },
+      },
+    }));
     await get().openScribePullRequest({ key });
   };
 };

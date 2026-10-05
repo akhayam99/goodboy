@@ -6,7 +6,7 @@ import { HandoffChip } from '../HandoffChip';
 import { PlanChip } from '../PlanChip';
 import { ResolverThreadsCard } from '../ResolverThreadsCard';
 import { ScribeTextCard } from '../ScribeTextCard';
-import { carriesPullRequestText } from '../../../session/scribeProposal';
+import { carriesPullRequestText } from '../../../../shared/utils/scribeProposal';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 
 type Props = {
