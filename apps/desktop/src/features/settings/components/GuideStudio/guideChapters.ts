@@ -219,7 +219,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Activity',
-        desc: 'Activity has two views, Activity and Log. Activity shows one row per launch: a workflow run, an agent, or a resolver launch with its comments. It reads newest first, and a run has a lane in its own colour. Each row starts with its role as an icon and ends with the model that ran, the duration and the cost. Rest the pointer on an icon or a model to see its card, or press I on a row. A finished run or step folds into a count row such as 4 subagents; click it or press Right to open it. Needs you sits on top with what waits for you. Log holds the facts, such as links, branches and decisions. The Runs tab lists the workflow runs of a session, and a run page reads in execution order.',
+        desc: 'Activity has two views, Activity and Log. Activity shows one row per launch: a workflow run, an agent, or a resolver launch with its comments. It reads newest first, and a run has a lane in its own colour. Each row starts with its role as an icon and ends with the model that ran (N models on a run past two), the duration and the cost. Rest the pointer on an icon or a model to see its card, or press I on a row. A finished run or step folds into a count row such as 4 subagents; click it or press Right to open it. Needs you sits on top with what waits for you. Log holds the facts, such as links, branches and decisions. The Runs tab lists the workflow runs of a session, and a run page reads in execution order.',
       },
       {
         term: 'Agent suggests',
@@ -247,7 +247,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Open questions',
-        desc: 'Each question is one card: pick an answer with its number and press Enter, or write something else. The Questions view lists what waits on you, and the same card sits in the transcript. A blocking question holds its step until you answer, and Let an agent decide hands it to another agent.',
+        desc: 'Each question is one card: pick an answer with its number and press Enter, or write something else. The Questions view lists what waits on you, and the same card sits in the transcript. A blocking question holds its step until you answer or choose Send as message, and Let an agent decide hands it to another agent.',
       },
     ],
     links: [{ label: 'Open Workflows', target: { kind: 'studio', studio: { kind: 'workflow' } } }],
