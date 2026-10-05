@@ -36,7 +36,6 @@ export const DiffNotesScene = () => {
       loadDiffComments: async () => undefined,
       loadResolveSession: async () => undefined,
       sessionPhaseRuns: { [CTX_SESSION_ID]: [] },
-      diffNoteLaunch: {},
       drawer: null,
     });
     setIsReady(true);

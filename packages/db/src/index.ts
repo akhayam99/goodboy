@@ -383,7 +383,9 @@ export {
   resolveDiffComment,
   reopenDiffComment,
   deleteDiffComment,
+  assignDiffCommentTarget,
   type DiffCommentAuthor,
+  type DiffCommentTarget,
 } from './queries/diff-comment';
 export {
   insertPrReviewDraft,

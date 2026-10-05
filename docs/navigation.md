@@ -1614,13 +1614,9 @@ page. The source is a worktree (a file opened from the chat) or a commit (a
 GitHub commit link clicked anywhere in a session; outside a session the link
 opens in the browser). It shows unified and wrapped, and a worktree peek offers
 `Open in Diff`, which opens the Diff lens on that mount with the file in focus.
-`diff-notes` is the notes summary of the Diff lens: the notes grouped by state
-(Not started, Working, Needs you, Ready to accept, Failed, and Done folded),
-each with file and line, a one-line excerpt, the model, effort and commit style
-of its fixer, and Fix or Open fix run. `Open in Review` sits in its header. The
-count in the diff toolbar opens it, and Start in the fix strip opens it too. It
-reads the notes, their queue items and their attempts only (`useNoteFixes`),
-never the rows of the pull request.
+There is no notes drawer: your notes are `Local` items in the Comments tab of
+the Branch page, next to the provider comments, and a note without a branch
+sits in `Unassigned notes` on the Session overview.
 
 ## The Branch page
 
@@ -1783,17 +1779,16 @@ on file); a viewed file collapses, and generated or binary files start
 collapsed. Rows are a CSS grid with `role="grid"`, never a table. Click a line
 number to comment, drag or shift-click to cover a range; the composer and the
 threads sit under the last line of the range. ⌘Enter saves, Escape cancels.
-The diff toolbar carries `N notes`, `Open in Review` and `Fix N notes` in the
-Diff lens; none is a footer bar. `Open in Review` opens Review on your notes
-with the review destination `{ kind: 'notes' }`, which picks the local source
-even when a pull request is open. A note shows `Fix` (primary), `Close note`
-and `Delete`; Fix and `Fix N notes` open the fix strip under the diff toolbar
-(the same `ReviewLaunchStrip` as Review, with the Runs on row) and never start
-an agent on the first click. Start launches one fixer per note through
-`startBatch` and opens the notes summary. While a fixer works on a note, Close
-note and Delete are disabled with "A fixer is working on this note". Close note
-goes through `closeResolvedNote`, the same path Review uses. A first lap
-session gets the first lap refusal in place of the strip. Write review puts
+`+ Add note` on a line saves the note with the project and branch of the active
+mount (`diff_comments.project_id` and `branch`, m223). A note shows `Close note`
+and `Delete` in the diff; Fix lives on the note's item in the Comments tab. While a fixer
+works on a note, Close note and Delete are disabled with "A fixer is working on
+this note". Close note goes through `closeResolvedNote`, the same path the
+Comments tab uses. The Files tab shows only the notes of its own branch; a note
+written before m223 is assigned to a branch only when a resolver run on a known
+mount used it, and the rest wait in `Unassigned notes` on the Session overview,
+each with `Move to <branch>`. `Post notes` in the toolbar moves the open notes
+of the branch into a review draft. Write review puts
 its form under the last file: the line comments with Edit and Delete on hover (Delete offers Undo), the verdict,
 the summary, and one primary that says the verdict (`Approve`,
 `Request changes`, `Submit comments`), ⌘↵ from the summary. The form's `⋯`

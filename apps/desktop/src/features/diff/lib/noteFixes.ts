@@ -1,6 +1,5 @@
 import type { Tone } from '@goodboy/ui';
 import type {
-  AgentId,
   DiffComment,
   EffortLevel,
   ResolveAttempt,
@@ -19,33 +18,6 @@ import { REVIEW_LAUNCH_LABEL } from '../../resolve/reviewLaunchCopy';
 
 export type NoteFixGroup = 'open' | 'working' | 'needs' | 'ready' | 'failed' | 'done';
 
-export const NOTE_FIX_GROUPS: ReadonlyArray<NoteFixGroup> = [
-  'open',
-  'working',
-  'needs',
-  'ready',
-  'failed',
-  'done',
-];
-
-export const NOTE_FIX_GROUP_LABEL: Record<NoteFixGroup, string> = {
-  open: 'Not started',
-  working: 'Working',
-  needs: 'Needs you',
-  ready: 'Ready to accept',
-  failed: 'Failed',
-  done: 'Done',
-};
-
-export const NOTE_FIX_GROUP_TONE: Record<NoteFixGroup, Tone> = {
-  open: 'neutral',
-  working: 'info',
-  needs: 'warning',
-  ready: 'success',
-  failed: 'danger',
-  done: 'neutral',
-};
-
 export const NOTE_LOCK_REASON = 'A fixer is working on this note';
 
 const OPEN_NOTE_WORD = 'Open note';
@@ -58,12 +30,10 @@ export type NoteFix = {
   readonly group: NoteFixGroup;
   readonly word: string;
   readonly tone: Tone;
-  readonly agentId: AgentId | null;
   readonly run: string | null;
   readonly isClosed: boolean;
   readonly canReopen: boolean;
   readonly isLocked: boolean;
-  readonly canFix: boolean;
 };
 
 type Params = {
@@ -156,12 +126,10 @@ export const noteFixesOf = ({ notes, entries, attempts }: Params): ReadonlyArray
       group,
       word: wordOf({ state, row, isClosed }),
       tone: state === null || state === 'new' ? 'primary' : REVIEW_COMMENT_TONE[state],
-      agentId: row?.attempt?.agentId ?? null,
       run: runLineOf({ attempt: row?.attempt ?? null }),
       isClosed,
       canReopen: isClosed && (state === null || state === 'new' || state === 'resolved'),
       isLocked: !isClosed && state === 'drafting',
-      canFix: !isClosed && (group === 'open' || group === 'failed'),
     };
   });
 };

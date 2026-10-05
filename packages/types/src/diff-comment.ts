@@ -1,4 +1,4 @@
-import type { AgentId, IsoDateTime, SessionId } from './ids';
+import type { AgentId, IsoDateTime, ProjectId, SessionId } from './ids';
 
 export type DiffCommentStatus = 'open' | 'resolved' | 'consumed';
 
@@ -25,4 +25,6 @@ export type DiffComment = Readonly<{
   anchor?: DiffCommentAnchor;
   authorKind: DiffCommentAuthorKind;
   authorAgentId?: AgentId;
+  projectId?: ProjectId;
+  branch?: string;
 }>;

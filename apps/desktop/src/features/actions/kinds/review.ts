@@ -1,6 +1,7 @@
 import { ArrowUp, MessageSquarePlus } from 'lucide-react';
-import type { DiffComment, SessionId } from '@goodboy/types';
+import type { SessionId } from '@goodboy/types';
 import { isOpenNote, noteThreadId } from '../../resolve/notes/noteThread';
+import { notesOnBranchOf } from '../../resolve/notes/notesOnBranchOf';
 import {
   POST_NOTES_LABEL,
   postNotesResultMessage,
@@ -29,8 +30,6 @@ export type ReviewFacts = {
 };
 
 const PUSHING_REASON = 'Pushing now.';
-
-const EMPTY_NOTES: ReadonlyArray<DiffComment> = [];
 
 export const draftFixesLabel = ({ fresh }: { readonly fresh: number }): string =>
   fresh === 1 ? 'Draft a fix' : `Draft fixes for ${fresh}`;
@@ -80,8 +79,7 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
       failed: count((entry) => entry.state === 'failed' && isPushFailure({ row: entry.row })),
       pushed: count((entry) => entry.state === 'pushed'),
       notes: hasPr
-        ? (state.diffComments[sessionId] ?? EMPTY_NOTES).filter((note) => isOpenNote({ note }))
-            .length
+        ? notesOnBranchOf({ state, sessionId }).filter((note) => isOpenNote({ note })).length
         : 0,
       isPushing: rows.some((entry) => entry.row.thread.stage === 'publishing'),
       isLoading: source !== null && !source.hasDetail && source.isLoading,
@@ -117,7 +115,7 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
         const state = env.getState();
         const result = await postNotesToPr({
           sessionId: facts.sessionId,
-          notes: (state.diffComments[facts.sessionId] ?? EMPTY_NOTES).filter((note) =>
+          notes: notesOnBranchOf({ state, sessionId: facts.sessionId }).filter((note) =>
             isOpenNote({ note }),
           ),
           addReviewDraft: state.addReviewDraft,

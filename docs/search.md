@@ -195,7 +195,7 @@ the one door (`navigate`, or the opener the rest of the app uses).
 | Pull request            | Its pull request page, or its page on the code host when no session has it  | No session and no link                     |
 | Branch                  | The Diff of its mount                                                       | The branch left the session                |
 | Workflow                | The workflow studio with that workflow open (a step hit opens its workflow) | Its workspace is gone                      |
-| Comment                 | The Diff lens with the Diff notes drawer open                               | The session is archived                    |
+| Comment                 | The Comments tab of the Branch page                                         | The session is archived                    |
 
 A refused hit stays in the list, dimmed, and the preview says why; Enter
 does nothing on it. A hit in another workspace switches to it first, the
