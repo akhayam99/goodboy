@@ -237,6 +237,7 @@ pub(crate) fn prepare_resolve_copy_at(
     }
     let head = resolve_commit(cwd, "HEAD")?;
     let mut guard = create_copy(cwd, copy, &head)?;
+    deps::link_dependencies(cwd, copy);
     guard.is_kept = true;
     drop(guard);
     Ok(ResolveCopy {
@@ -268,6 +269,8 @@ pub async fn resolve_copy_prepare(args: ResolveCopyArgs) -> Result<ResolveCopy, 
     .await
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
+
+mod deps;
 
 #[cfg(test)]
 mod tests;

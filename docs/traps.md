@@ -102,7 +102,13 @@ file holds those explanations. Everything below has been "fixed" at least once a
   set) never writes the real branch. `drainResolveQueue` makes it a detached
   copy at the branch head (`resolve_copy_prepare`, under the history copy
   reservations with the slug `resolve-<attemptId>`) and hands `sendTurn` the
-  `resolveCopyPath`. That turn takes no worktree writer lease, gets the copy
+  `resolveCopyPath`. The copy mirrors every `node_modules` of the main tree
+  (root and workspace packages, depth 3): the folders are real, `.pnpm` and
+  other real entries are symlinks to the main tree, and pnpm's own relative
+  links are recreated so a workspace package resolves to the copy's code,
+  not the main tree's. A main tree without dependencies yields a copy
+  without them. Nothing is written into the main tree. That turn takes no
+  worktree writer lease, gets the copy
   and its git admin folder as writable roots, and cannot push. The writer
   lease still guards the real branch for resolvers without a batch, and only
   one of them runs at a time. Up to the session limit
