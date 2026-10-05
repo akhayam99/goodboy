@@ -1,6 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, PermissionRuleId, ProviderRunId, TurnEvent } from '@goodboy/types';
+import type {
+  AgentId,
+  IsoDateTime,
+  PermissionRuleId,
+  ProviderRunId,
+  TurnEvent,
+} from '@goodboy/types';
 import { reduceTranscript } from '../features/chat/utils/transcript-items';
 
 const RUN = 'run-1' as ProviderRunId;
@@ -174,6 +180,105 @@ describe('reduceTranscript, step_transition', () => {
         at: AT,
       },
     ]);
+  });
+});
+
+const AUTH_BANNER = '__auth_required__:{"providerId":"cursor","identity":null}';
+const FALLBACK_NOTE = 'cursor rejected the credentials. retrying on anthropic Sonnet 5.5.';
+const REVIEW_AGENT = 'agent-review' as AgentId;
+
+const stepEvent = (runId: ProviderRunId): TurnEvent => ({
+  kind: 'step_transition',
+  runId,
+  fromStep: { ordinal: 9, name: 'Skip bonus steps for the settlement flow' },
+  toStep: { ordinal: 10, name: 'Review: skip bonus steps for the settlement flow' },
+  carryForwardContext: 'carry me forward',
+  fromAgentId: 'agent-previous' as AgentId,
+  at: AT,
+});
+
+const cursorFallback = (runId: ProviderRunId): ReadonlyArray<TurnEvent> => [
+  { kind: 'error', runId, message: AUTH_BANNER, retryable: false, at: AT },
+  { kind: 'decision_note', runId, message: FALLBACK_NOTE, at: AT },
+];
+
+describe('reduceTranscript, a step turn that fell back to another provider', () => {
+  const firstTurn: ReadonlyArray<TurnEvent> = [
+    {
+      kind: 'orchestrator_decision',
+      runId: 'orchestrator' as ProviderRunId,
+      action: 'next',
+      reason: 'The earlier step changed the rounding, so it needs a review.',
+      stepName: 'Review: skip bonus steps for the settlement flow',
+      at: AT,
+    },
+    {
+      kind: 'user_text',
+      runId: RUN,
+      text: '**Goal** Settle batches',
+      handoffId: REVIEW_AGENT,
+      at: AT,
+    },
+    stepEvent('run-1' as ProviderRunId),
+    ...cursorFallback('run-1' as ProviderRunId),
+    stepEvent('run-2' as ProviderRunId),
+  ];
+
+  it('shows the first message as a handoff and the step once', () => {
+    const items = reduceTranscript(firstTurn);
+
+    expect(items.map((item) => item.kind)).toEqual([
+      'orchestrator_decision',
+      'handoff',
+      'step_transition',
+      'auth_required',
+      'decision_note',
+    ]);
+    expect(items[1]).toMatchObject({ handoffId: REVIEW_AGENT });
+  });
+
+  it('keeps the same step when the agent moved on in between', () => {
+    const items = reduceTranscript([
+      ...firstTurn,
+      { kind: 'assistant_text', runId: RUN, delta: 'Done.', at: AT },
+      stepEvent('run-3' as ProviderRunId),
+    ]);
+
+    expect(items.filter((item) => item.kind === 'step_transition')).toHaveLength(2);
+  });
+
+  it('shows the credential notice and its decision once when the next turn falls back the same way', () => {
+    const items = reduceTranscript([
+      ...firstTurn,
+      { kind: 'assistant_text', runId: RUN, delta: 'Not created.', at: AT },
+      { kind: 'done', runId: RUN, at: AT },
+      userTextEvent(
+        '<<oq-answers>>\nAnswers to open questions:\n\n- Q: x\n  A: y\n<</oq-answers>>',
+      ),
+      ...cursorFallback('run-4' as ProviderRunId),
+      { kind: 'assistant_text', runId: RUN, delta: 'Reviewed.', at: AT },
+    ]);
+
+    expect(items.filter((item) => item.kind === 'auth_required')).toHaveLength(1);
+    expect(items.filter((item) => item.kind === 'decision_note')).toHaveLength(1);
+    expect(items.at(-1)).toMatchObject({ kind: 'assistant_text' });
+  });
+
+  it('shows the notice again when the fallback lands somewhere else', () => {
+    const items = reduceTranscript([
+      ...firstTurn,
+      { kind: 'done', runId: RUN, at: AT },
+      { kind: 'error', runId: RUN, message: AUTH_BANNER, retryable: false, at: AT },
+      {
+        kind: 'decision_note',
+        runId: RUN,
+        message: 'cursor rejected the credentials. retrying on codex GPT-5.6 Terra.',
+        at: AT,
+      },
+    ]);
+
+    expect(items.filter((item) => item.kind === 'auth_required')).toHaveLength(2);
+    expect(items.filter((item) => item.kind === 'decision_note')).toHaveLength(2);
   });
 });
 

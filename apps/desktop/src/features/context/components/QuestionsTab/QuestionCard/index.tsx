@@ -37,6 +37,7 @@ type Props = {
   readonly onSetCustomAnswer: (text: string) => void;
   readonly onAnswer: () => void;
   readonly onSkip: (() => void) | null;
+  readonly onSendAsMessage?: (() => void) | null;
   readonly onUndo: (() => void) | null;
   readonly onDismiss: (() => void) | null;
 };
@@ -107,6 +108,7 @@ export const QuestionCard = ({
   onSetCustomAnswer,
   onAnswer,
   onSkip,
+  onSendAsMessage = null,
   onUndo,
   onDismiss,
 }: Props) => {
@@ -293,6 +295,7 @@ export const QuestionCard = ({
             isHandOff={isHandedOff}
             onAnswer={submit}
             onSkip={onSkip}
+            onSendAsMessage={onSendAsMessage}
           />
         </>
       )}

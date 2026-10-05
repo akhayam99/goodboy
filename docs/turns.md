@@ -118,7 +118,9 @@ record a live turn already wrote wins.
   at the top of the prompt, with the kind prompt fenced as a role boundary.
 - A workflow step's first turn carries its predecessors' handoff summaries and
   the step prompt, and emits a `step_transition` event flagged `degraded` when
-  the handoff it inherited was a fallback summary.
+  the handoff it inherited was a fallback summary. A fallback rerun of that
+  turn does not emit it again, and the transcript shows one row for a
+  transition repeated with nothing between but failure notices.
 - The session's context slots are prepended, filtered by what the turn's role
   reads (`ROLE_SLOTS` in `slot-routing.ts`, one entry per role, so a new role
   does not compile without one). The role is the step's role, or the one the
@@ -166,9 +168,13 @@ record a live turn already wrote wins.
   plan, files, threads, scope and rules, about you, role instructions) and the exact text
   sent (`sent_system` only for Claude, `sent_message` for every provider). It
   lives only in the local database and includes the workspace profile.
-- A first turn is one with no run yet in `agentRunHistory`, an agent that never
-  started, and no fallback retry. Its `user_text` event carries
-  `handoffId`, the agent id, so the transcript can draw the handoff there.
+- A first turn is one with no turn run of its own in `agentRunHistory`, an
+  agent that never started, and no fallback retry (`hasOwnTurnRun`). The run
+  that paid for the orchestrator's decision is charged to the step's agent
+  before it starts, and the `orchestrator` and `pending` placeholders sit in
+  its history after a restart; none of them make a turn a later one. Its
+  `user_text` event carries `handoffId`, the agent id, so the transcript can
+  draw the handoff there.
 - A composer that knows more than the message passes a `HandoffDraft` to
   `sendTurn`: the workflow step passes its instruction, goal and plan, a
   cluster child its cluster and the parent it came from, a scout tree child its
@@ -214,9 +220,11 @@ record a live turn already wrote wins.
   **Show all**.
 - On screen the block never says "handoff" (an internal word,
   `jargon-copy.test.ts`): its eyebrow is "sent by". An agent from before m185
-  has no handoff row: its first message shows closed as "first message · older
-  format", the original text clamped to 8 lines with Show all. No parser reads it. `reduceTranscript` makes the `handoff` item and
-  `TranscriptRows` counts it as the first user turn.
+  has no handoff row, and neither does a step the orchestrator started in
+  0.18.1 or before, which lost its row to the first-turn check above: its first
+  message shows closed as "first message · older format", the original text
+  clamped to 8 lines with Show all. No parser reads it. `reduceTranscript` makes
+  the `handoff` item and `TranscriptRows` counts it as the first user turn.
 - The transcript is the record and the Brief is the dashboard. What the agent
   received lives only in the handoff block; the Brief shows one line, "Sent by
   Orchestrator · step 4", that switches to the Transcript tab with
@@ -437,7 +445,11 @@ attempts; an unclassified failure or a cancelled turn never falls back.
   for the session and not cooling down.
 
 A fallback marks the failed run, posts the original error plus a notice naming
-the move, and reruns the same input on the same mount target. A usage limit
+the move, and reruns the same input on the same mount target. An agent pinned
+to a provider that is signed out tries it again on every turn, so the notice
+repeats; the transcript keeps the first error banner with its notice and drops
+a later pair that is identical (same provider, same move). A different move
+shows again. A usage limit
 with no fallback notifies, and when the provider names its reset time it
 schedules one retry on the same model at that time. Any other failure leaves
 the agent in `error` with a retryable error event.

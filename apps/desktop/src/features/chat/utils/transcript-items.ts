@@ -13,6 +13,7 @@ import type {
 } from '@goodboy/types';
 import { isOpenQuestionAnswerText, type ArtifactScanState } from '@goodboy/core';
 import { decodeAuthRequiredMessage, decodeCliTooOldMessage, type CliTooOldPayload } from '../turn';
+import { isRepeatedStepTransition, repeatsEarlierFallbackNotice } from './repeatedNotices';
 import { splitArtifactText } from './split-artifact-blocks';
 import { reduceTranscriptTrace } from './transcript-items-trace';
 
@@ -401,6 +402,10 @@ export const reduceTranscript = (
         break;
       }
       case 'decision_note':
+        if (repeatsEarlierFallbackNotice({ items, message: event.message })) {
+          items.pop();
+          break;
+        }
         items.push({
           kind: 'decision_note',
           key: `decision-${i}`,
@@ -425,8 +430,8 @@ export const reduceTranscript = (
           args: event.args,
         });
         break;
-      case 'step_transition':
-        items.push({
+      case 'step_transition': {
+        const transition: Extract<TranscriptItem, { kind: 'step_transition' }> = {
           kind: 'step_transition',
           key: `phase-${i}`,
           fromStep: event.fromStep,
@@ -437,8 +442,12 @@ export const reduceTranscript = (
           degraded: event.degraded,
           durationMs: event.durationMs,
           at: event.at,
-        });
+        };
+        if (!isRepeatedStepTransition({ items, transition })) {
+          items.push(transition);
+        }
         break;
+      }
       case 'orchestrator_decision':
         items.push({
           kind: 'orchestrator_decision',

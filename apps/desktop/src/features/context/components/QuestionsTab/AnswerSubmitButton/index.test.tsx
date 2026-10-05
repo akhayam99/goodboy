@@ -70,6 +70,66 @@ describe('AnswerSubmitButton', () => {
     expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
   });
 
+  it('sends the text as a message when that is offered and the text is ready', () => {
+    const onSendAsMessage = vi.fn();
+    render(
+      <AnswerSubmitButton
+        inputMode="text"
+        optionCount={0}
+        canAnswer
+        isHandOff={false}
+        onAnswer={vi.fn()}
+        onSkip={null}
+        onSendAsMessage={onSendAsMessage}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send as message' }));
+    expect(onSendAsMessage).toHaveBeenCalledOnce();
+  });
+
+  it('keeps Send as message off until there is text', () => {
+    render(
+      <AnswerSubmitButton
+        inputMode="text"
+        optionCount={0}
+        canAnswer={false}
+        isHandOff={false}
+        onAnswer={vi.fn()}
+        onSkip={null}
+        onSendAsMessage={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Send as message' }).hasAttribute('disabled')).toBe(
+      true,
+    );
+  });
+
+  it('offers no Send as message to a question that is not offered it or is handed off', () => {
+    const { rerender } = render(
+      <AnswerSubmitButton
+        inputMode="text"
+        optionCount={0}
+        canAnswer
+        isHandOff={false}
+        onAnswer={vi.fn()}
+        onSkip={null}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Send as message' })).toBeNull();
+    rerender(
+      <AnswerSubmitButton
+        inputMode="text"
+        optionCount={0}
+        canAnswer
+        isHandOff
+        onAnswer={vi.fn()}
+        onSkip={null}
+        onSendAsMessage={vi.fn()}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Send as message' })).toBeNull();
+  });
+
   it('reads Hand off when an agent decides', () => {
     render(
       <AnswerSubmitButton

@@ -5,8 +5,7 @@ const HEADING_LINE_RE = /^\s*#{1,6}\s/;
 const SENTENCE_SPLIT_RE = /(?<=[?!.])\s+/;
 const TRAILING_WRAP_RE = /[\s*_"'`)\]]+$/;
 const ASK_RE =
-  /\b(confermi|conferma|confirm|approvi|approve|shall i|should i|do you want|would you like|can i proceed|may i proceed|ok to proceed|let me know|vuoi che|posso procedere|fammi sapere|dimmi se|serve il tuo ok|need your (?:ok|approval|confirmation)|waiting for your (?:ok|approval|confirmation))\b/i;
-const TAIL_PARAGRAPHS = 2;
+  /\b(confermi|approvi|please (?:confirm|approve)|shall i|should i|do you want|would you like|can i proceed|may i proceed|ok to proceed|let me know|vuoi che|posso procedere|fammi sapere|dimmi se|serve il tuo ok|need your (?:ok|approval|confirmation)|(?<!\b(?:were|was)\s)waiting for your (?:ok|approval|confirmation))\b/i;
 const MAX_QUESTION_CHARS = 500;
 
 type Params = {
@@ -45,12 +44,6 @@ const questionTextOf = (paragraph: string): string | null => {
 export const extractProseQuestion = ({ assistantText }: Params): string | null => {
   FENCED_BLOCK_RE.lastIndex = 0;
   const visible = stripControlMarkers(assistantText).replace(FENCED_BLOCK_RE, '');
-  const tail = paragraphsOf(visible).slice(-TAIL_PARAGRAPHS).reverse();
-  for (const paragraph of tail) {
-    const question = questionTextOf(paragraph);
-    if (question !== null) {
-      return question;
-    }
-  }
-  return null;
+  const closing = paragraphsOf(visible).at(-1);
+  return closing === undefined ? null : questionTextOf(closing);
 };

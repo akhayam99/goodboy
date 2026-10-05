@@ -4,6 +4,10 @@ import { useAppStore } from '../../../../store';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { classifyAgent } from '../../../session/agent-kind';
 import { useAnswerQuestion } from '../../hooks/useAnswerQuestion';
+import {
+  canSendQuestionAsMessage,
+  useSendQuestionAsMessage,
+} from '../../hooks/useSendQuestionAsMessage';
 import { useQuestionDelegateControls } from '../../hooks/useQuestionDelegateControls';
 import { QuestionCard, type QuestionCardState } from './QuestionCard';
 import type { QuestionPagerModel } from './QuestionCard/QuestionPager';
@@ -51,6 +55,7 @@ export const LiveQuestionCard = ({
   const setCustomAnswer = useOpenQuestions((state) => state.setCustomAnswer);
   const delegate = useQuestionDelegateControls({ sessionId, question });
   const { answer, undo } = useAnswerQuestion({ sessionId });
+  const sendAsMessage = useSendQuestionAsMessage({ sessionId });
 
   const asker =
     question.createdByAgentId == null
@@ -71,6 +76,11 @@ export const LiveQuestionCard = ({
     void answer(question);
     onAnswered?.(question);
   }, [answer, onAnswered, question]);
+
+  const handleSendAsMessage = useCallback(() => {
+    void sendAsMessage(question);
+    onAnswered?.(question);
+  }, [onAnswered, question, sendAsMessage]);
 
   const handleUndo = () => {
     if (state === 'staged') {
@@ -99,6 +109,7 @@ export const LiveQuestionCard = ({
         onSetCustomAnswer={(text) => setCustomAnswer(question.id, text)}
         onAnswer={handleAnswer}
         onSkip={onSkip}
+        onSendAsMessage={canSendQuestionAsMessage(question) ? handleSendAsMessage : null}
         onUndo={
           state === 'staged' || (state === 'dismissed' && onUndoDismiss !== null)
             ? handleUndo
