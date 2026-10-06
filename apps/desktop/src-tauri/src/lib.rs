@@ -374,6 +374,7 @@ pub fn run() {
             turn::turn_list_live,
             chat::chat_turn,
             chat::chat_cancel,
+            chat::ask_turn,
             chat_images::chat_attachment_write,
             chat_images::chat_attachment_read,
             chat_images::chat_attachments_remove,

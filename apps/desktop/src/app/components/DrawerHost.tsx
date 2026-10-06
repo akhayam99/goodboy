@@ -7,6 +7,7 @@ import { ArtifactDocumentDrawer } from '../../features/artifacts/components/Arti
 import { PlanPartDrawer } from '../../features/plans/components/PlanParts/PlanPartDrawer';
 import { ScriptRunDrawer } from '../../features/scripts/components/ScriptRunDrawer';
 import { FileDiffDrawer } from '../../features/diff/components/FileDiffDrawer';
+import { AskDrawer } from '../../features/session/ask/components/AskDrawer';
 import { drawerKey } from '../../store/slices/drawer/drawerKey';
 
 const NO_HIGHLIGHT: ReadonlyArray<number> = [];
@@ -76,6 +77,8 @@ export const DrawerHost = () => {
           onClose={closeDrawer}
         />
       );
+    case 'ask':
+      return <AskDrawer sessionId={drawer.sessionId} onClose={closeDrawer} />;
     case 'file-diff':
       return (
         <FileDiffDrawer

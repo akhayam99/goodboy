@@ -525,6 +525,44 @@ describe('PaletteOverlay, Ask in Chat', () => {
     });
   });
 
+  it('offers Ask about this session first inside a session, then Ask in Chat', () => {
+    const { input } = openIn(PAYOUT);
+
+    type(input, 'pay export');
+
+    expect(optionNames().slice(0, 2)).toEqual(['Ask about this session', 'Ask in Chat']);
+    expect(selectedName()).toBe('Speed up the payout export for large merchants');
+    type(input, 'Why did the tester fail?');
+    expect(selectedName()).toBe('Ask about this session');
+  });
+
+  it('opens Ask beside the session and sends the question on Enter', async () => {
+    const sendAskQuestion = vi.fn(async () => true);
+    useAppStore.setState({ sendAskQuestion });
+    const { input, onClose } = openIn(PAYOUT);
+
+    type(input, 'Why did the tester fail?');
+    await act(async () => {
+      fireEvent.keyDown(input, { key: 'Enter' });
+    });
+
+    expect(onClose).toHaveBeenCalled();
+    expect(useAppStore.getState().drawer).toEqual({
+      kind: 'ask',
+      sessionId: PAYOUT,
+      payload: null,
+    });
+    expect(sendAskQuestion).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId: PAYOUT, question: 'Why did the tester fail?' }),
+    );
+  });
+
+  it('keeps Ask in Chat alone on the Board', () => {
+    const { input } = openIn(null);
+    type(input, 'Why did the tester fail?');
+    expect(optionNames()).not.toContain('Ask about this session');
+  });
+
   it('stacks a filter popover opened inside the palette in the palette layer', () => {
     render(
       <ToastProvider>

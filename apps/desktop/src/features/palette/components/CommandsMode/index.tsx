@@ -19,7 +19,8 @@ import {
   flattenRows,
   type CommandRow,
 } from '../../commandList';
-import { ASK_IN_CHAT_KEY, askEntry } from '../../sources/askEntry';
+import { ASK_KEYS, askEntries } from '../../sources/askEntries';
+import { askAboutSession } from '../../../session/ask/askAboutSession';
 import { choiceEntries } from '../../sources/choiceEntries';
 import { askInChat } from '../../../workspace-chat/askInChat';
 import { useAppStore } from '../../../../store';
@@ -59,6 +60,8 @@ const REGISTRY_LENS_KEYS: ReadonlySet<string> = new Set([
   'lens:files',
   'lens:terminal',
 ]);
+
+const NO_ASKS: ReadonlyArray<PaletteEntry> = [];
 
 const isCaretAtEnd = (input: HTMLInputElement): boolean =>
   input.selectionStart === input.value.length && input.selectionEnd === input.value.length;
@@ -177,12 +180,23 @@ export const CommandsMode = ({
     );
   }, [entries, scopeVerbs, parentVerbs, scopeTarget, parentTarget]);
 
-  const ask = useMemo(
+  const askSessionId =
+    scopeTarget?.kind === 'session'
+      ? scopeTarget.sessionId
+      : parentTarget?.kind === 'session'
+        ? parentTarget.sessionId
+        : null;
+  const asks = useMemo(
     () =>
       hasWorkspace && query.trim() !== '' && parseQuery(query).prefix === null
-        ? askEntry({ query, ask: (question) => void askInChat({ question }) })
-        : null,
-    [hasWorkspace, query],
+        ? askEntries({
+            query,
+            sessionId: askSessionId,
+            askSession: askAboutSession,
+            askChat: (question) => void askInChat({ question }),
+          })
+        : NO_ASKS,
+    [askSessionId, hasWorkspace, query],
   );
 
   const sections = useMemo(
@@ -198,7 +212,7 @@ export const CommandsMode = ({
             parentTitle: parentTarget === null ? null : 'For this session',
             frecency,
             now,
-            ask,
+            asks,
           })
         : level.choicesOf !== null
           ? buildChoiceList({
@@ -219,7 +233,7 @@ export const CommandsMode = ({
       scopeInfo,
       frecency,
       now,
-      ask,
+      asks,
       filter,
       levelVerbs,
       levelChoices,
@@ -227,8 +241,7 @@ export const CommandsMode = ({
   );
   const rows = useMemo(() => flattenRows(sections), [sections]);
   const activeKey =
-    selectedKey ??
-    (level === null ? defaultCommandKey({ query, rows, askKey: ASK_IN_CHAT_KEY }) : null);
+    selectedKey ?? (level === null ? defaultCommandKey({ query, rows, askKeys: ASK_KEYS }) : null);
   const selectedIndex = Math.max(
     0,
     rows.findIndex((row) => row.item.key === activeKey),

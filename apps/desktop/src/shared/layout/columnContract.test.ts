@@ -110,6 +110,7 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
   },
   PaneShell: { kind: 'helper', files: [] },
   TrailBar: { kind: 'helper', files: [] },
+  AskTrailButton: { kind: 'helper', files: [] },
   FirstLapBanner: { kind: 'helper', files: [] },
   SessionCrumbs: { kind: 'helper', files: [] },
   Pane: { kind: 'helper', files: [] },

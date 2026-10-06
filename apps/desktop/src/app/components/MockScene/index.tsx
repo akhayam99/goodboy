@@ -11,6 +11,7 @@ import { WorkflowScene } from './scenes/WorkflowScene';
 import { ShellScene } from './scenes/ShellScene';
 import { ChatShellScene } from './scenes/ChatShellScene';
 import { ChatRoomScene } from './scenes/ChatRoomScene';
+import { SessionAskScene } from './scenes/SessionAskScene';
 import { InboxScene } from './scenes/InboxScene';
 import { InboxSourceScene } from './scenes/InboxSourceScene';
 import { ConversationScene } from './scenes/ConversationScene';
@@ -245,6 +246,7 @@ export const MOCK_SCENES = {
   'activity-one-signal': ActivityOneSignalScene,
   'activity-groups': ActivityGroupsScene,
   'context-drawer': ContextDrawerScene,
+  'session-ask': SessionAskScene,
   'workflow-builder': WorkflowBuilderScene,
   'workflow-run': WorkflowRunScene,
   'open-questions': OpenQuestionsScene,

@@ -361,6 +361,16 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({ id: 'lens.goal', lands: drawerIs('goal') }),
   pressRow({ id: 'lens.decisions', lands: drawerIs('decisions') }),
   pressRow({ id: 'lens.summary', lands: drawerIs('summary') }),
+  pressRow({
+    id: 'ask.open',
+    lands: async (ctx) => {
+      await waitFor(() => {
+        const drawer = selectOpenDrawer(useAppStore.getState());
+        expect(drawer?.kind).toBe('ask');
+        expect(drawer?.sessionId).toBe(ctx.sessionId);
+      }, WAIT);
+    },
+  }),
 ];
 
 const STARRED_TITLES = [

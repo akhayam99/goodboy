@@ -86,6 +86,7 @@ export {
   isChatProvider,
 } from './chat';
 export type {
+  AskThread,
   Chat,
   ChatMessage,
   ChatMessageAttachment,
