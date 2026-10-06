@@ -1382,8 +1382,7 @@ and then the action row inline at the end of the content. Two primitives carry
 it:
 
 - **`FormPage`** is the scrolling body of a page-sized form: a `ScrollFade`
-  holding `PANE_RHYTHM.column` and `PANE_RHYTHM.body` with `gap-8` between the
-  blocks. Put it inside the shell (`StudioShell`, `PaneShell scroll="self"`).
+  holding a centred `PageColumn` with `gap-8` between the blocks. Put it inside the shell (`StudioShell`, `PaneShell scroll="self"`).
 - **`FormActions`** is the action row. `leading` holds the quiet options or the
   status line on the left (Starts, Run on its own, Spend cap, routing, "Scribe is
   writing", an error with `role="alert"`). The children sit right-aligned in

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { PANE_RHYTHM, ScrollFade, cn } from '@goodboy/ui';
+import { PageColumn, ScrollFade } from '@goodboy/ui';
 import type { GuideChapter, GuideExtra } from '../guideChapters';
 import type { GuideTarget } from '../guideTarget';
 import { ChapterSection } from './ChapterSection';
@@ -79,8 +79,8 @@ export const GuideContent = ({ chapters, onOpen, onVisible, registerScrollTo }: 
   };
 
   return (
-    <ScrollFade className="h-full w-full" viewportClassName={PANE_RHYTHM.body}>
-      <div className={cn('flex flex-col gap-14 pb-24', PANE_RHYTHM.column)}>
+    <ScrollFade className="h-full w-full">
+      <PageColumn className="flex flex-col gap-14 pb-24 pt-5">
         {chapters.map((chapter) => (
           <div key={chapter.id} ref={anchor(chapter.id)}>
             <ChapterSection chapter={chapter} onOpen={onOpen}>
@@ -88,7 +88,7 @@ export const GuideContent = ({ chapters, onOpen, onVisible, registerScrollTo }: 
             </ChapterSection>
           </div>
         ))}
-      </div>
+      </PageColumn>
     </ScrollFade>
   );
 };

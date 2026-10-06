@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo } from 'react';
-import { PageColumn, PaneShell, ScrollFade, SegmentedTabs } from '@goodboy/ui';
+import { PaneShell, SegmentedTabs } from '@goodboy/ui';
 import type { PrCheckRun, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { branchPlace } from '../../../../store/slices/navigation/place';
@@ -191,20 +191,18 @@ export const BranchPage = ({ session, workingDir }: Props) => {
           An agent is drafting the pull request.
         </p>
       ) : (
-        <ScrollFade className="min-h-0 flex-1" fadeSize="h-6">
-          <PageColumn className="pb-6">
-            <CreatePrMode
-              sessionId={sessionId}
-              defaultTitle={session.goal}
-              closedPr={null}
-              onCreated={() => {
-                setPullRequestMode({ sessionId, mode: 'overview' });
-                onMutated();
-              }}
-              onCancel={() => setPullRequestMode({ sessionId, mode: 'overview' })}
-            />
-          </PageColumn>
-        </ScrollFade>
+        <div className="flex min-h-0 flex-1 flex-col">
+          <CreatePrMode
+            sessionId={sessionId}
+            defaultTitle={session.goal}
+            closedPr={null}
+            onCreated={() => {
+              setPullRequestMode({ sessionId, mode: 'overview' });
+              onMutated();
+            }}
+            onCancel={() => setPullRequestMode({ sessionId, mode: 'overview' })}
+          />
+        </div>
       );
     }
     if (tab === 'files') {

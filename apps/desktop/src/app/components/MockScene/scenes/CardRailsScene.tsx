@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
-import { PANE_RHYTHM, cn, Eyebrow } from '@goodboy/ui';
+import { PageColumn, Eyebrow } from '@goodboy/ui';
 import type { AgentId, OpenQuestion, ProviderRunId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../../../features/chat/utils/transcript-items';
 import { AnsweredCard } from '../../../../features/chat/components/ChatView/AnsweredCard';
@@ -131,7 +131,7 @@ export const CardRailsScene = () => {
 
   return (
     <main className="h-screen overflow-auto bg-background text-foreground">
-      <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.body, 'gap-6')}>
+      <PageColumn className="gap-6 py-5">
         <Row label="question, blocking">
           <QuestionCard {...questionProps} question={OPEN_QUESTION} />
         </Row>
@@ -223,7 +223,7 @@ export const CardRailsScene = () => {
             model="claude-opus-5"
           />
         </Row>
-      </div>
+      </PageColumn>
     </main>
   );
 };

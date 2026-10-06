@@ -15,9 +15,8 @@ describe('PANE_RHYTHM', () => {
     expect(PANE_RHYTHM.header).toBe('px-6 py-5');
   });
 
-  it('holds one left anchored content column, one prose measure and one hero measure', () => {
-    expect(PANE_RHYTHM.column).toBe('w-full max-w-[var(--column-max)]');
-    expect(PANE_RHYTHM.column).not.toContain('mx-auto');
+  it('holds one prose measure and one hero measure, and leaves the page column to PageColumn', () => {
+    expect(Object.keys(PANE_RHYTHM)).not.toContain('column');
     expect(PANE_RHYTHM.prose).toBe('max-w-[var(--measure)]');
     expect(PANE_RHYTHM.hero).toBe('max-w-[640px]');
     expect(Object.keys(PANE_RHYTHM)).not.toContain('measure');
