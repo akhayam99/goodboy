@@ -11,7 +11,7 @@ type Props = {
 
 const GROUP_LABEL: Partial<Record<QuickActionGroup, string>> = {
   script: 'Run a script',
-  workflow: 'Start a workflow',
+  workflow: 'Start a run',
   agent: 'Ask another agent',
   skill: 'Run a skill',
 };

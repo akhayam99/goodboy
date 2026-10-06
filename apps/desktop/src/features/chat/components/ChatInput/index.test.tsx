@@ -1112,7 +1112,7 @@ describe('ChatInput, composer flows', () => {
     const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
 
     await user.click(screen.getByRole('button', { name: 'More actions' }));
-    await user.click(screen.getByRole('menuitem', { name: /Start a workflow/ }));
+    await user.click(screen.getByRole('menuitem', { name: /Start a run/ }));
 
     expect(textarea.value).toBe('~');
     expect(screen.getByText('no workflows yet. create one in workspace settings')).toBeDefined();
