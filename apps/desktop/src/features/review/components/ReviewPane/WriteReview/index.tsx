@@ -10,6 +10,7 @@ import { FILE_DRAFT_COMPOSER, draftThread } from '../../../../diff/lib/draftThre
 import { useReviewDiff } from './useReviewDiff';
 import { ObjectOverflowMenu } from '../../../../actions/components/ObjectOverflowMenu';
 import { WriteReviewForm } from './WriteReviewForm';
+import { ReviewPanelButton } from './ReviewPanelButton';
 
 type Props = {
   readonly session: Session;
@@ -110,8 +111,13 @@ export const WriteReview = ({ session }: Props) => {
     <DiffView
       files={files}
       comments={comments}
-      footer={<WriteReviewForm sessionId={sessionId} />}
-      toolbarEnd={<ObjectOverflowMenu target={menuTarget} label={WRITE_REVIEW_ACTIONS_LABEL} />}
+      columnWidth="full"
+      toolbarEnd={
+        <>
+          <ReviewPanelButton sessionId={sessionId} />
+          <ObjectOverflowMenu target={menuTarget} label={WRITE_REVIEW_ACTIONS_LABEL} />
+        </>
+      }
     />
   );
 };

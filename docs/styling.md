@@ -261,7 +261,10 @@ position, painted above the viewport. So a `sticky` header inside the scroller
 is covered as soon as the region scrolls. An opaque `bg-*` does not save it,
 because the overlay paints over the header, not under it. The fix is in the
 structure. Titles, breadcrumbs, toolbars and error banners live in a
-`shrink-0` zone outside. Only the body is wrapped.
+`shrink-0` zone outside. Only the body is wrapped. A scroller whose sticky
+headers belong to its body, such as the file headers of a diff, passes
+`fadeEdges="end"`: only its bottom edge fades, so the header on top stays
+sharp.
 
 ## Dividers separate chrome from content, never content from content
 

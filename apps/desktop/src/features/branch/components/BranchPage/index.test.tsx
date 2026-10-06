@@ -204,8 +204,15 @@ describe('Branch page Comments', () => {
     expect(screen.queryByRole('complementary', { name: 'Thread details' })).toBeNull();
   });
 
+  it('keeps the properties inline under a wide thread until 1280px of pane', async () => {
+    await mountAt({ width: 1279, threadId: EXPANDED_THREAD_ID });
+
+    expect(screen.queryByRole('complementary', { name: 'Thread details' })).toBeNull();
+    expect(screen.getAllByRole('group', { name: 'Comment properties' })).toHaveLength(1);
+  });
+
   it('adds the properties rail only on a wide pane', async () => {
-    await mountAt({ width: 1100, threadId: EXPANDED_THREAD_ID });
+    await mountAt({ width: 1280, threadId: EXPANDED_THREAD_ID });
 
     screen.getByRole('navigation', { name: 'Comments' });
     const rail = screen.getByRole('complementary', { name: 'Thread details' });

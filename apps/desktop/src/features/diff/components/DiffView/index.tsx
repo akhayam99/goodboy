@@ -459,7 +459,12 @@ export const DiffView = ({
           {belowToolbar}
         </PageColumn>
       </div>
-      <ScrollFade className="min-h-0 flex-1" viewportRef={viewportRef} fadeSize={24}>
+      <ScrollFade
+        className="min-h-0 flex-1"
+        viewportRef={viewportRef}
+        fadeSize={24}
+        fadeEdges="end"
+      >
         <PageColumn width={columnWidth}>{body}</PageColumn>
       </ScrollFade>
     </div>

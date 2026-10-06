@@ -117,7 +117,7 @@ Read the branch against its base on the **Files** tab, with syntax colors, word-
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-write-light.webp" alt="The Write review form under a diff: Line comments 1 for src/webhooks/applyWebhook.ts:26, a Verdict of Comment, Approve or Request changes, an optional Summary, and a Submit comments button" width="800">
 </picture>
 
-Review someone else's pull request in a form under the diff, opened with **Write review** on the Files tab. It lists your **Line comments**, a **Verdict** (**Comment**, **Approve** or **Request changes**) and an optional **Summary**. The button under it reads **Submit comments**, **Approve** or **Request changes** to match the verdict, and GitHub shows it as one review. Outdated drafts are marked **Stale**.
+Review someone else's pull request from the diff, opened with **Write review** on the Files tab: click a line number to leave a line comment right under it, then press **Review** in the diff toolbar (it counts your line comments) for a panel that hangs under it. The panel lists your **Line comments**, a **Verdict** (**Comment**, **Approve** or **Request changes**) and an optional **Summary**. The button at its end reads **Submit comments**, **Approve** or **Request changes** to match the verdict, and GitHub shows it as one review. Outdated drafts are marked **Stale**.
 
 **Also in this area**
 
