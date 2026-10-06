@@ -927,9 +927,10 @@ stream reader) with a session scope: `ask_turn` in
   `R1`, `Q1`, `C1`, `PR`, `D1`). Live agents keep up to 2,000 characters of
   their summary, settled ones 280, and only the 15 newest settled agents are
   listed; the whole pack stops at 48,000 characters, about 12 thousand
-  tokens. Agent transcript tails (6,000 characters, at most 8 agents) go to
-  `agents/<handle>.md` as staged files, never inline. Free text passes
-  `redactSecrets`. The prompt is the pack, then the thread's last 12 messages
+  tokens. Agent transcript tails (the newest 6,000 characters, at most 8
+  agents) go to `agents/<handle>.md` as staged files, never inline. The
+  finished pack and every staged file pass `redactSecrets` last, so no field
+  skips it. The prompt is the pack, then the thread's last 12 messages
   (at most 24 thousand characters, as Chat), then the question.
 - **The answer.** `buildAskSystemPrompt` asks for one bold sentence, handles
   in double brackets (`[[A2]]`, `[[webhook.ts:88]]`), the app's state words and

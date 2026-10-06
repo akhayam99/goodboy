@@ -125,6 +125,9 @@ const clip = ({ text, limit, label, truncations }: ClipParams): string => {
   return clipped.text;
 };
 
+const keepEnd = ({ text, limit }: { readonly text: string; readonly limit: number }): string =>
+  clean(text).slice(-limit).trim();
+
 const oneLine = (text: string): string => text.replace(/\s+/g, ' ').trim();
 
 const agentRank = (agent: AskPackAgent): number => {
@@ -188,11 +191,9 @@ const agentSection = ({
     if (tail !== '' && collector.files.length < ASK_PACK_LIMITS.transcriptFiles) {
       collector.files.push({
         name: `agents/${key}.md`,
-        content: `# ${agent.name}, end of its transcript\n\n${clip({
+        content: `# ${agent.name}, end of its transcript\n\n${keepEnd({
           text: tail.slice(-ASK_PACK_LIMITS.transcriptTail * 2),
           limit: ASK_PACK_LIMITS.transcriptTail,
-          label: `${key} transcript`,
-          truncations: [],
         })}\n`,
       });
     }
@@ -394,14 +395,14 @@ export const buildAskPack = (input: AskPackInput): AskPack => {
   ];
   const head = `# Session: ${oneLine(clean(input.title))}`;
   const body = [head, ...sections.map(render).filter((block) => block !== '')].join('\n\n');
-  const fitted = clipToBoundary({ text: body, limit: ASK_PACK_LIMITS.total });
+  const fitted = clipToBoundary({ text: clean(body), limit: ASK_PACK_LIMITS.total });
   if (fitted.isClipped) {
     collector.truncations.push(`session pack cut at ${ASK_PACK_LIMITS.total} characters`);
   }
   return {
     text: fitted.text,
     handles: collector.handles,
-    files: collector.files,
+    files: collector.files.map((file) => ({ ...file, content: `${clean(file.content)}\n` })),
     truncations: collector.truncations,
   };
 };
