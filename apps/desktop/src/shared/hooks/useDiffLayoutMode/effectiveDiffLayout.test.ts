@@ -1,7 +1,9 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { LEFT_SIDEBAR_DEFAULT } from '@goodboy/ui';
-import { SPLIT_MIN_INNER_PX, effectiveDiffLayout } from './effectiveDiffLayout';
+import { effectiveDiffLayout } from './effectiveDiffLayout';
+
+const SPLIT_MIN_INNER_PX = 880;
 
 const TREE_AND_GUTTERS_PX = 321;
 

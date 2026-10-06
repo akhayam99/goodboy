@@ -1,6 +1,6 @@
 import type { DiffLayoutMode } from '@goodboy/ui';
 
-export const SPLIT_MIN_INNER_PX = 880;
+const SPLIT_MIN_INNER_PX = 880;
 
 type Params = {
   readonly preference: DiffLayoutMode;

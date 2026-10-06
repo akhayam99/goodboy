@@ -15,7 +15,9 @@ import {
   type StoryStore,
 } from '../../../../../store/storyHarness';
 import { ToastProvider } from '../../../../../shared/components/Toast';
-import { REVIEW_PANEL_LABEL, ReviewPanelButton } from './ReviewPanelButton';
+import { ReviewPanelButton } from './ReviewPanelButton';
+
+const REVIEW_PANEL_LABEL = 'Review changes';
 
 const SESSION_ID = 'session-review-panel' as SessionId;
 

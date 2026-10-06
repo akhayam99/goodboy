@@ -10,7 +10,7 @@ type Props = {
   readonly sessionId: SessionId;
 };
 
-export const REVIEW_PANEL_LABEL = 'Review changes';
+const REVIEW_PANEL_LABEL = 'Review changes';
 
 export const ReviewPanelButton = ({ sessionId }: Props) => {
   const drafts = useAppStore(
