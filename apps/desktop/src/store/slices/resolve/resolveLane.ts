@@ -4,14 +4,6 @@ import { launchKeyOf } from './resolveLaunch';
 
 type Chained = { readonly candidate: ResolveCandidate };
 
-export type ResolveLane<T extends Chained> = {
-  readonly worktreePath: string;
-  readonly holder: ResolveAttempt | null;
-  readonly queued: ReadonlyArray<ResolveAttempt>;
-  readonly chain: ReadonlyArray<T>;
-  readonly broken: ReadonlyArray<T>;
-};
-
 type AttemptsParams = {
   readonly attempts: ReadonlyArray<ResolveAttempt>;
   readonly worktreePath: string;
@@ -23,8 +15,6 @@ type ChainParams<T extends Chained> = {
   readonly candidates: ReadonlyArray<T>;
   readonly worktreePath: string;
 };
-
-type LaneParams<T extends Chained> = ChainParams<T> & HolderParams;
 
 export const attemptLanePathOf = ({
   attempt,
@@ -102,18 +92,6 @@ export const laneChainOf = <T extends Chained>({
 
 export const laneTipOf = <T extends Chained>(params: ChainParams<T>): string | null =>
   laneChainOf(params).chain.at(-1)?.candidate.candidateSha ?? null;
-
-export const laneOf = <T extends Chained>({
-  attempts,
-  agents,
-  candidates,
-  worktreePath,
-}: LaneParams<T>): ResolveLane<T> => ({
-  worktreePath,
-  holder: laneHolderOf({ attempts, agents, worktreePath }),
-  queued: laneQueueOf({ attempts, worktreePath }),
-  ...laneChainOf({ candidates, worktreePath }),
-});
 
 export const lanePathsOf = ({
   attempts,
