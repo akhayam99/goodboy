@@ -97,6 +97,7 @@ const sameIds = ({
 }): boolean => left.length === right.length && left.every((id, index) => id === right[index]);
 
 const SKELETON_ROWS = [0, 1, 2];
+const DOCK_BOTTOM_OFFSET = 24;
 
 export const ReviewFlow = ({ session, push }: Props) => {
   const sessionId = session.id as SessionId;
@@ -184,6 +185,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
   const [isAnswering, setIsAnswering] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
   const [isUndoing, setIsUndoing] = useState(false);
+  const [dockHeight, setDockHeight] = useState(0);
   const [acceptError, setAcceptError] = useState<string | null>(null);
   const acceptReviewComments = useAppStore((s) => s.acceptReviewComments);
   const undoReviewAccepts = useAppStore((s) => s.undoReviewAccepts);
@@ -579,14 +581,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
               isSingle ? 'w-full' : 'w-[300px]',
             )}
           >
-            <ScrollFade
-              className="min-h-0 flex-1"
-              viewportClassName={cn(
-                'pr-2',
-                selectedIds.length > 0 || undoableCount > 0 ? 'pb-24' : 'pb-5',
-              )}
-              fadeSize="h-6"
-            >
+            <ScrollFade className="min-h-0 flex-1" viewportClassName="pr-2 pb-5" fadeSize="h-6">
               <div ref={listRef}>
                 <ReviewList
                   groups={groups}
@@ -601,6 +596,11 @@ export const ReviewFlow = ({ session, push }: Props) => {
                   onToggle={(threadId) => toggleReviewSelection({ sessionId, threadId })}
                 />
               </div>
+              <div
+                aria-hidden
+                data-testid="review-list-clearance"
+                style={{ height: dockHeight === 0 ? 0 : dockHeight + DOCK_BOTTOM_OFFSET }}
+              />
             </ScrollFade>
             <ReviewSelectionBar
               count={selectedIds.length}
@@ -618,6 +618,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
                   />
                 ) : null
               }
+              onHeightChange={setDockHeight}
               onClear={() => clearReviewSelection({ sessionId })}
               onSelectAll={selectAllFixable}
               onFix={() => openLaunch({ threadIds: fixSelectedIds, isDirect: false })}

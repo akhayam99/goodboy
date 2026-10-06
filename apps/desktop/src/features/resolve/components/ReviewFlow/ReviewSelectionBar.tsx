@@ -11,6 +11,7 @@ type Props = {
   readonly acceptCount: number;
   readonly isAccepting: boolean;
   readonly note: ReactNode;
+  readonly onHeightChange: (height: number) => void;
   readonly onClear: () => void;
   readonly onSelectAll: () => void;
   readonly onFix: () => void;
@@ -24,6 +25,7 @@ export const ReviewSelectionBar = ({
   acceptCount,
   isAccepting,
   note,
+  onHeightChange,
   onClear,
   onSelectAll,
   onFix,
@@ -60,6 +62,7 @@ export const ReviewSelectionBar = ({
       total={total}
       verbs={verbs}
       note={note}
+      onHeightChange={onHeightChange}
       onClear={onClear}
       onSelectAll={onSelectAll}
       clearHint={shortcutGlyphs('selection.clear')}

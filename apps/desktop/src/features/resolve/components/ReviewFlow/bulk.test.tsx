@@ -326,6 +326,34 @@ describe('accept in bulk', () => {
     expect(within(done).getByText('Done 3')).toBeDefined();
   });
 
+  it('gives the list room under the last row for as tall a selection bar as it shows', async () => {
+    const observers: Array<(entries: ReadonlyArray<{ contentRect: { height: number } }>) => void> =
+      [];
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(
+          callback: (entries: ReadonlyArray<{ contentRect: { height: number } }>) => void,
+        ) {
+          observers.push(callback);
+        }
+        observe = (): void => undefined;
+        disconnect = (): void => undefined;
+      },
+    );
+    await mount({ stage: 'review' });
+
+    expect(screen.getByTestId('review-list-clearance').style.height).toBe('0px');
+    act(() => {
+      for (const notify of observers) {
+        notify([{ contentRect: { height: 120 } }]);
+      }
+    });
+
+    expect(Number.parseInt(screen.getByTestId('review-list-clearance').style.height, 10)).toBe(144);
+    vi.unstubAllGlobals();
+  });
+
   it('shows no undo bar once the accepted comments are no longer undoable', async () => {
     await mount({ stage: 'review' });
     useAppStore.getState().clearReviewSelection({ sessionId: SESSION.id });
