@@ -205,14 +205,21 @@ arrow.
 ## Models in the picker
 
 Each provider page has a **Models in the picker** group under Usage. A model you
-turn off is never offered for a new choice, for every workspace in the app: the
-pickers drop it, Auto skips it for roles and the workflow orchestrator never sees
-it in its model menu. A model you already pinned keeps running and its Models row
-says so (`Opus 5.5 · hidden, still runs because you pinned it`). A background task
-never climbs a cost tier because its model is hidden: Auto takes a visible model of
-the same tier or cheaper from the task's list, and when there is none it keeps the
-hidden one and the row says it (`Haiku 4.5 · hidden, still used for step
-summaries`). Its header says how many show (`Showing 6 of 11`) next to **Show all**.
+turn off is never offered for a new choice, for every workspace in the app, and no
+automatic choice uses it: the pickers drop it, Auto skips it for roles and for
+background tasks, the workflow orchestrator never sees it in its model menu, and a
+pick the orchestrator still names is replaced by an allowed model (the decision
+says `hidden`). Run planner, workflow recovery, turn fallback, task fallback, and
+the Ask and Chat defaults skip it too. A model that is the only one left for a
+role is never swapped for a hidden one: the run says so inline
+(`No model is allowed for this agent`).
+
+An explicit choice still wins. A model you pinned for a role or a task in Settings,
+a step or agent lock, and a model you pick by hand for one agent or run keep
+running even when hidden. Their Models row says so (`Opus 5.5 · hidden, still runs
+because you pinned it`). The group states the rule in one line: _Hidden models are
+not used by agents or the orchestrator, except where a task setting names one._ Its
+header says how many show (`Showing 6 of 11`) next to **Show all**.
 
 - Each family (Opus, Sonnet, Haiku and so on) has a switch, then one chip per
   version. A lit chip shows in the picker
