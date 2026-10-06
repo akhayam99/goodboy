@@ -49,7 +49,7 @@ describe('AgentTitle', () => {
     };
     render(
       <AgentTitle
-        agent={{ ...agent, kind: 'resolver', name: 'Resolve: 3 review comments' } as Agent}
+        agent={{ ...agent, kind: 'resolver', name: 'Resolve: 3 review comments' }}
         sessionId={sessionId}
       />,
     );
@@ -64,7 +64,7 @@ describe('AgentTitle', () => {
     };
     render(
       <AgentTitle
-        agent={{ ...agent, kind: 'resolver', name: 'Webhook retry pass' } as Agent}
+        agent={{ ...agent, kind: 'resolver', name: 'Webhook retry pass' }}
         sessionId={sessionId}
       />,
     );

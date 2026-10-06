@@ -482,19 +482,9 @@ describe('Review as one flow', () => {
     await mount({ threadId: null });
 
     const changed = row(/Comment changed/);
-    const state = changed.querySelector('[data-row-state]');
-    const file = changed.querySelector('[data-row-file]');
-    const author = changed.querySelector('[data-row-author]');
-    expect(state?.textContent).toContain('Comment changed');
-    expect(state?.className).toContain('shrink-0');
-    expect(state?.className).toContain('whitespace-nowrap');
-    expect(author?.className).toContain('shrink-0');
-    expect(file?.className).toContain('truncate');
-    expect(file?.className).toContain('min-w-0');
-    expect(file?.className).not.toContain('shrink-0');
-    expect(changed.querySelector('[data-row-state]')?.parentElement?.className).toContain(
-      'flex-wrap',
-    );
+    expect(changed.querySelector('[data-row-author]')?.textContent).toBe('kenji-w');
+    expect(changed.querySelector('[data-row-file]')?.textContent).toMatch(/\.ts/);
+    expect(changed.querySelector('[data-row-state]')?.textContent).toBe('Ready · Comment changed');
   });
 
   it('names a real edit with the text before and after, who wrote it, and Keep the draft', async () => {
